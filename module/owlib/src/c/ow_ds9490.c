@@ -123,7 +123,7 @@ static int DS9490wait(unsigned char * const buffer) {
     int ret ;
     do {
         if ( (ret=usb_bulk_read(devusb,0x81,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
-    } while ( (buffer[8]&0x20)==0 ) ;
+    } while ( !(buffer[8]&0x20) ) ;
 {
 int i ;
 printf ("USBwait return buffer:\n") ;
@@ -144,7 +144,7 @@ printf("9490RESET\n");
 
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
     AnyDevices = !(buffer[16]&0x01) ;
-printf("9490RESET=0\n");
+printf("9490RESET=0 anydevices=%d\n",AnyDevices);
     return 0 ;
 }
 
@@ -157,7 +157,10 @@ static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const
          (ret=DS9490wait(buffer))
           ) return ret ;
 
-    if ( usb_bulk_read(devusb,0x83,ibit,0x1, TIMEOUT_USB ) != -1 ) return 0 ;
+    if ( usb_bulk_read(devusb,0x83,ibit,0x1, TIMEOUT_USB ) >= 0 ) {
+printf("USB bit %.2X->%.2X\n",obit,*ibit) ;
+        return 0 ;
+    }
     usb_clear_halt(devusb,0x83) ;
     return -EIO ;
 }
@@ -185,9 +188,15 @@ printf("SENDBIT %d: %.2X->%.2X\n",i,outbits[i],inbits[i]);
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {
     int i ;
     int ret ;
-    for ( i=0 ; i<len ; ++i ) {
-        if ( (ret=DS9490_sendback_byte(data[i],&resp[i])) ) return ret ;
-printf("SENDDATA %d: %.2X->%.2X\n",i,data[i],resp[i]);
+//    for ( i=0 ; i<len ; ++i ) {
+//        if ( (ret=DS9490_sendback_byte(data[i],&resp[i])) ) return ret ;
+//        if ( (ret=DS9490_sendback_byte(data[i],&resp[i])) ) return ret ;
+
+    for ( i=0 ; i<len<<3 ; ++i ) {
+        unsigned char ibit, obit = UT_getbit(data,i) ;
+        if ( (ret=DS9490_read_bits(obit,&ibit)) ) return ret ;
+	UT_setbit(resp,i,ibit) ;
+printf("SENDDATA %d: %.2X->%.2X\n",i>>3,data[i>>3],resp[i>>3]);
     }
     return 0 ;
 }
