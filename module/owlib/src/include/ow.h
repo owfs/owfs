@@ -95,45 +95,56 @@ $Id$
 /* Parport enabled uses two flags (one a holdover from the embedded work) */
 #ifdef USE_NO_PARPORT
     #undef OW_PARPORT
-#endif
+#endif /* USE_NO_PARPORT */
 
 extern int multithreading ;
 extern int maxslots ;
 #ifdef OW_MT
     #include <pthread.h>
-#ifdef HAVE_SEMAPHORE_H
+ #ifdef HAVE_SEMAPHORE_H
     #include <semaphore.h>
-#else
+ #else /* HAVE_SEMAPHORE_H */
     #include "sem.h"
-#endif
-    extern pthread_mutex_t bus_mutex ;
+ #endif /* HAVE_SEMAPHORE_H */
+
+    extern pthread_mutex_t busstat_mutex ;
     extern pthread_mutex_t stat_mutex ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
     extern pthread_mutex_t fstat_mutex ;
     extern pthread_mutex_t simul_mutex ;
-#ifdef __UCLIBC__
+    extern pthread_mutex_t dir_mutex ;
+    
+    extern pthread_mutexattr_t * pmattr;
+ #ifdef __UCLIBC__
+    extern pthread_mutexattr_t mattr;
     extern pthread_mutex_t uclibc_mutex;
-#endif
-    #define STATLOCK       pthread_mutex_lock(  &stat_mutex) ;
-    #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex) ;
-    #define CACHELOCK      pthread_mutex_lock(  &cache_mutex) ;
-    #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex) ;
-    #define STORELOCK      pthread_mutex_lock(  &store_mutex) ;
-    #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex) ;
-    #define FSTATLOCK      pthread_mutex_lock(  &fstat_mutex) ;
-    #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex) ;
-    #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex) ;
-    #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex) ;
-#ifdef __UCLIBC__
+ #endif /* __UCLIBC__ */
+    #define BUSSTATLOCK    pthread_mutex_lock(  &busstat_mutex) ;
+    #define BUSSTATUNLOCK  pthread_mutex_unlock(&busstat_mutex) ;
+    #define STATLOCK       pthread_mutex_lock(  &stat_mutex   ) ;
+    #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex   ) ;
+    #define CACHELOCK      pthread_mutex_lock(  &cache_mutex  ) ;
+    #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex  ) ;
+    #define STORELOCK      pthread_mutex_lock(  &store_mutex  ) ;
+    #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex  ) ;
+    #define FSTATLOCK      pthread_mutex_lock(  &fstat_mutex  ) ;
+    #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex  ) ;
+    #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex  ) ;
+    #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  ) ;
+    #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    ) ;
+    #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    ) ;
+ #ifdef __UCLIBC__
     #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex) ;
     #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex) ;
-#else /* __UCLIBC__ */
+ #else /* __UCLIBC__ */
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
-#endif /* __UCLIBC__ */
+ #endif /* __UCLIBC__ */
 
 #else /* OW_MT */
+    #define BUSSTATLOCK
+    #define BUSSTATUNLOCK
     #define STATLOCK
     #define STATUNLOCK
     #define CACHELOCK
@@ -144,20 +155,17 @@ extern int maxslots ;
     #define FSTATUNLOCK
     #define SIMULLOCK
     #define SIMULUNLOCK
+    #define DIRLOCK
+    #define DIRUNLOCK
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
 #endif /* OW_MT */
-#define BUSLOCK    BUS_lock() ;
-#define BUSUNLOCK  BUS_unlock() ;
+
+#define BUSLOCK(pn)    BUS_lock(pn) ;
+#define BUSUNLOCK(pn)  BUS_unlock(pn) ;
 
 #ifdef OW_USB
     #include <usb.h>
-    extern usb_dev_handle * devusb ;
-    int DS9490_detect( void ) ;
-    void DS9490_close(void) ;
-
-#else /* OW_USB */
-    extern void * devusb ;
 #endif /* OW_USB */
 /*
     OW -- Onw Wire
@@ -216,7 +224,7 @@ extern char * fuse_opt ;
  *       the uart.
  */
 #define UART_FIFO_SIZE 160
-extern unsigned char combuffer[] ;
+//extern unsigned char combuffer[] ;
 
 /** USB bulk endpoint FIFO size
   Need one for each for read and write
@@ -299,6 +307,8 @@ enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft
 
 /* Predeclare parsedname */
 struct parsedname ;
+struct connection_in ;
+struct connection_out ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -367,6 +377,8 @@ extern void * Tree[6] ;
 
     /* supports RESUME command */
 #define DEV_resume  0x0001
+    /* can trigger an alarm */
+#define DEV_alarm   0x0002
     /* responds to simultaneous temperature convert 0x44 */
 #define DEV_temp    0x8000
     /* responds to simultaneous voltage convert 0x3C */
@@ -376,7 +388,7 @@ extern void * Tree[6] ;
 struct device {
     char * code ;
     char * name ;
-    uint16_t flags ;
+    uint32_t flags ;
     int nft ;
     struct filetype * ft ;
 } ;
@@ -451,6 +463,8 @@ struct buspath {
     unsigned char sn[8] ;
     unsigned char branch ;
 } ;
+
+/* data per transaction */
 struct stateinfo {
     int LastDiscrepancy ; // for search
     int LastFamilyDiscrepancy ; // for search
@@ -475,6 +489,7 @@ struct parsedname {
     int pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
     struct stateinfo * si ;
+    struct connection_in * in ;
 } ;
 
 enum simul_type { simul_temp, simul_volt, } ;
@@ -482,24 +497,15 @@ enum simul_type { simul_temp, simul_volt, } ;
 /* ---- end Parsedname ----------------- */
 /* ------------------------------------- */
 
-extern speed_t speed;        /* terminal speed constant */
-
 /* Delay for clearing buffer */
 #define    WASTE_TIME    (2)
 
 /* Globals */
-enum bus_mode { bus_unknown, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
-extern enum bus_mode busmode ;
-
 extern char * progname ; /* argv[0] stored */
-extern char * devport ;    /* Device name (COM port)*/
-extern int  devfd     ; /*file descriptor for serial port*/
-extern int useusb ; /* Which USB adapter to use (1-based index) */
-extern int portnum ; /* TCP port (for owhttpd) */
-extern char * portname ; /* TCP port (for owhttpd) */
-extern char * servername ; /* TCP port (for owhttpd) */
 extern int readonly ; /* readonly file system ? */
 
+/* device display format */
+enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;
 FLOAT Temperature( FLOAT C, const struct parsedname * pn) ;
@@ -519,6 +525,7 @@ struct s_timeout {
 extern struct s_timeout timeout ;
 
 /* Server (Socket-based) interface */
+enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_full, } ;
 /* message to owserver */
 struct server_msg {
     int32_t version ;
@@ -528,7 +535,8 @@ struct server_msg {
     int32_t size ;
     int32_t offset ;
 } ;
-/* message from owserver */
+
+/* message to client */
 struct client_msg {
     int32_t version ;
     int32_t payload ;
@@ -537,37 +545,30 @@ struct client_msg {
     int32_t size ;
     int32_t offset ;
 } ;
-enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_full, } ;
-
-
-/* device display format */
-enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
-extern enum deviceformat devform ;
 
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */
 struct interface_routines {
     /* assymetric read (only input, no slots emitted */
-    int (* read) ( unsigned char * const bytes , const size_t num ) ;
+    int (* read) ( unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
     /* assymetric write (only output, no response obtained */
-    int (* write) (const unsigned char * const bytes , const size_t num ) ;
+    int (* write) (const unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
     /* reset the interface -- actually the 1-wire bus */
-    int (* reset ) ( const struct parsedname * const pn ) ;
+    int (* reset ) (const struct parsedname * const pn ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */
     int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
     /* Set the electrical level of the 1-wire bus */
-    int (* level) (int new_level) ;
+    int (* level) (int new_level, const struct parsedname * pn) ;
     /* Send a byte with bus power to follow */
-    int (* PowerByte) (const unsigned char byte, const unsigned int delay) ;
+    int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
-    int (* ProgramPulse) ( void ) ;
+    int (* ProgramPulse) (const struct parsedname * pn) ;
     /* send and recieve data*/
-    int (* sendback_data) ( const unsigned char * const data , unsigned char * const resp , const int len ) ;
+    int (* sendback_data) (const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * pn ) ;
     /* select a device */
     int (* select) ( const struct parsedname * const pn ) ;
 
 } ;
-extern struct interface_routines iroutines ;
 
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
@@ -652,25 +653,70 @@ extern unsigned int read_timeout ;
 #define MODE_PROGRAM                   0x04
 #define MODE_BREAK                     0x08
 
+//enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
-struct network_work{
+enum bus_mode { bus_unknown, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
+enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_Bad=9, } ;
+struct connection_in {
+    struct connection_in * next ;
+    int index ;
+    char * name ;
     char * host ;
     char * service ;
     struct addrinfo * ai ;
     struct addrinfo * ai_ok ;
-    int listenfd ;
+    int fd ;
+#ifdef OW_USB
+    usb_dev_handle * usb ;
+#endif /* OW_USB */
+#ifdef OW_MT
+    pthread_mutex_t bus_mutex ;
+#endif /* OW_MT */
+    enum bus_mode busmode ;
+    struct interface_routines iroutines ;
+    enum adapter_type Adapter ;
+    char * adapter_name ;
+    /* Globals for DS2480B state */
+    speed_t speed;        /* terminal speed constant */
+    int UMode ;
+    int ULevel ;
+    int USpeed ;
+    int ProgramAvailable ;
+    /* Static buffer for serial conmmunications */
+    /* Since only used during actual transfer to/from the adapter,
+        should be protected from contention even when multithreading allowed */
+    unsigned char combuffer[MAX_FIFO_SIZE] ;
 } ;
-extern struct network_work server ;
-extern struct network_work client ;
+/* Network connection structure */
+struct connection_out {
+    struct connection_out * next ;
+    char * name ;
+    char * host ;
+    char * service ;
+    struct addrinfo * ai ;
+    struct addrinfo * ai_ok ;
+    int fd ;
+#ifdef OW_MT
+    pthread_mutex_t accept_mutex ;
+#endif /* OW_MT */
+} ;
+extern struct connection_out * outdevice ;
+extern struct connection_in * indevice ;
+extern int outdevices ;
+extern int indevices ;
+#ifdef OW_MT
+    #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) ) ;
+    #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) ) ;
+#else /* OW_MT */
+    #define ACCEPTLOCK(out)
+    #define ACCEPTUNLOCK(out)
+#endif /* OW_MT */
 
 /* Globals for DS2480B state */
-extern int UMode ;
-extern int ULevel ;
-extern int USpeed ;
-extern int ProgramAvailable ;
-enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_Bad=9, } ;
-extern enum adapter_type Adapter ;
-extern const char * adapter_name ;
+//extern int UMode ;
+//extern int ULevel ;
+//extern int USpeed ;
+//extern int ProgramAvailable ;
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
@@ -692,8 +738,6 @@ extern const char * adapter_name ;
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup( void ) ;
 int LibStart( void ) ;
-int ComSetup( const char * busdev ) ;
-int USBSetup( void ) ;
 void LibClose( void ) ;
 
 /* Initial sorting or the device and filetype lists */
@@ -726,7 +770,7 @@ unsigned char char2num( const char * s ) ;
 unsigned char string2num( const char * s ) ;
 char num2char( const unsigned char n ) ;
 void num2string( char * s , const unsigned char n ) ;
-void COM_speed(speed_t new_baud) ;
+void COM_speed(speed_t new_baud, const struct parsedname * pn) ;
 void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
 void bytes2string( char * str , const unsigned char * b , const int bytes ) ;
 int UT_getbit(const unsigned char * buf, const int loc) ;
@@ -735,10 +779,10 @@ void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
 void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
 
 /* Serial port */
-int COM_open( void ) ;
-void COM_flush( void ) ;
-void COM_close( void );
-void COM_break( void ) ;
+int COM_open( struct connection_in * in  ) ;
+void COM_flush( const struct parsedname * pn  ) ;
+void COM_close( struct connection_in * in  );
+void COM_break( const struct parsedname * pn  ) ;
 
 /* Cache  and Storage functions */
 void Cache_Open( void ) ;
@@ -767,21 +811,32 @@ void UT_delay(const unsigned int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
 ssize_t readn(int fd, void *vptr, size_t n) ;
-int ClientAddr(  char * sname, struct network_work * nw ) ;
-int ServerAddr(  char * sname, struct network_work * nw ) ;
-int ClientConnect( struct network_work * nw ) ;
-int ServerListen( struct network_work * nw ) ;
-void FreeAddr( struct network_work * nw ) ;
+int ClientAddr(  char * sname, struct connection_in * in ) ;
+int ServerAddr(  struct connection_out * out ) ;
+int ClientConnect( struct connection_in * in ) ;
+int ServerListen( struct connection_out * out ) ;
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
+void FreeIn( void ) ;
+void FreeOut( void ) ;
+struct connection_in * NewIn( void ) ;
+struct connection_out * NewOut( void ) ;
 
-int Server_detect( void ) ;
-int ServerSize( const char * path ) ;
-int ServerFull( const char * path ) ;
-int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
-int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
-int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn ) ;
+int OW_ArgNet( const char * arg ) ;
+int OW_ArgServer( const char * arg ) ;
+int OW_ArgUSB( const char * arg ) ;
+int OW_ArgSerial( const char * arg ) ;
+int OW_ArgGeneric( const char * arg ) ;
+
+int Server_detect( struct connection_in * in  ) ;
+int ServerSize( const char * path, const struct parsedname * pn ) ;
+int ServerFull( const char * path, const struct parsedname * pn ) ;
+int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn, uint32_t * flags ) ;
 
 /* High-level callback functions */
 int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) ;
+int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
@@ -811,48 +866,53 @@ int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const s
     slowly being abstracted and separated from individual
     interface type details
 */
-int DS2480_baud( speed_t baud );
-int DS2480_detect( void ) ;
+int DS2480_baud( speed_t baud, const struct parsedname * const pn );
+
+int DS2480_detect( struct connection_in * in ) ;
 #ifdef OW_PARPORT
-int DS1410_detect( void ) ;
+int DS1410_detect( struct connection_in * in ) ;
 #endif /* OW_PARPORT */
-int DS9097_detect( void ) ;
-int BadAdapter_detect( void ) ;
+int DS9097_detect( struct connection_in * in ) ;
+int BadAdapter_detect( struct connection_in * in ) ;
+#ifdef OW_USB
+    int DS9490_detect( struct connection_in * in ) ;
+    void DS9490_close( struct connection_in * in ) ;
+#endif /* OW_USB */
+
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
-
 int BUS_select_low(const struct parsedname * const pn) ;
-int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
-int BUS_send_cmd( const unsigned char * const cmd , const int len ) ;
-int BUS_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
-int BUS_send_data( const unsigned char * const data , const int len ) ;
-int BUS_send_and_get( const unsigned char * const senddata, const size_t sendlength, unsigned char * const getdate, const size_t getlength ) ;
-int BUS_readin_data( unsigned char * const data , const int len ) ;
+int BUS_sendout_cmd(const unsigned char * cmd , const int len, const struct parsedname * pn  ) ;
+int BUS_send_cmd(const unsigned char * const cmd , const int len, const struct parsedname * pn  ) ;
+int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const int len, const struct parsedname * pn  ) ;
+int BUS_send_data(const unsigned char * const data , const int len, const struct parsedname * pn  ) ;
+int BUS_send_and_get(const unsigned char * senddata, const size_t sendlength, unsigned char * getdate, const size_t getlength, const struct parsedname * pn ) ;
+int BUS_readin_data(unsigned char * const data , const int len, const struct parsedname * pn ) ;
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
 #define BUS_detect        DS2480_detect
 #define BUS_changebaud    DS2480_changebaud
-#define BUS_reset            (iroutines.reset)
-#define BUS_read             (iroutines.read)
-#define BUS_write            (iroutines.write)
-#define BUS_sendback_data    (iroutines.sendback_data)
-#define BUS_next_both        (iroutines.next_both)
-#define BUS_level            (iroutines.level)
-#define BUS_ProgramPulse     (iroutines.ProgramPulse)
-#define BUS_PowerByte        (iroutines.PowerByte)
-#define BUS_select           (iroutines.select)
+#define BUS_reset(pn)                       ((pn)->in->iroutines.reset)(pn)
+#define BUS_read(bytes,num,pn)              ((pn)->in->iroutines.read)(bytes,num,pn)
+#define BUS_write(bytes,num,pn)             ((pn)->in->iroutines.write)(bytes,num,pn)
+#define BUS_sendback_data(data,resp,len,pn) ((pn)->in->iroutines.sendback_data)(data,resp,len,pn)
+#define BUS_next_both(sn,search,pn)         ((pn)->in->iroutines.next_both)(sn,search,pn)
+#define BUS_level(lev,pn)                   ((pn)->in->iroutines.level)(lev,pn)
+#define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
+#define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
+#define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)
 #define BUS_databit       DS2480_databit
 #define BUS_datablock     DS2480_datablock
 
-void BUS_lock( void ) ;
-void BUS_unlock( void ) ;
+void BUS_lock( const struct parsedname * pn ) ;
+void BUS_unlock( const struct parsedname * pn ) ;
 
-#define IsCacheEnabled(ppn )       ( (ppn->si->sg.u[0] ) && (busmode != bus_remote) )
-#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (busmode != bus_remote) )
+#define IsCacheEnabled(ppn )       ( (ppn->si->sg.u[0] ) && (ppn->in->busmode != bus_remote) )
+#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (ppn->in->busmode != bus_remote) )
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
 

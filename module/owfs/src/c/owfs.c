@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     int c ;
 //    int multithreaded = 1;
 
-    progname = strdup(argv[0]) ;
+    if ( argc>0 ) progname = strdup(argv[0]) ;
 #if FUSE_MAJOR_VERSION == 1
     char ** opts = NULL ;
     char * tok ;
@@ -97,9 +97,14 @@ int main(int argc, char *argv[]) {
     if ( optind == argc ) {
         fprintf(stderr,"No mount point specified.\nTry '%s -h' for help.\n",argv[0]) ;
         ow_exit(1) ;
-    } else if ( optind == argc-2 ) {
-        ComSetup(argv[optind]) ;
-        ++optind ;
+    } else if ( outdevices ) {
+        fprintf(stderr,"Network output not supported\n");
+        ow_exit(1) ;
+    } else {
+        while ( optind < argc-1 ) {
+            OW_ArgGeneric(argv[optind]) ;
+            ++optind ;
+        }
     }
 
     // FUSE directory mounting

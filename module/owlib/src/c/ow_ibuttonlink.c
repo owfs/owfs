@@ -15,10 +15,10 @@ $Id$
 int LI_reset( const struct parsedname * const pn )
 {
     char resp[3] ;
-    COM_flush() ;
-    if ( BUS_write("r",1) ) return -errno ;
+    COM_flush(pn) ;
+    if ( BUS_write("r",1,pn) ) return -errno ;
     sleep(1) ;
-    if ( BUS_read(resp,3) ) return -errno ;
+    if ( BUS_read(resp,3,pn) ) return -errno ;
     switch( resp[0] ) {
     case 'P':
         pn->si->AnyDevices=1 ;

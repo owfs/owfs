@@ -38,20 +38,19 @@ ssize_t readn(int fd, void *vptr, size_t n) {
     return(n - nleft); /* return >= 0 */
 }
 
-int ServerAddr(  char * sname, struct network_work * nw ) {
+int ServerAddr(  struct connection_out * out ) {
     struct addrinfo hint ;
     int ret ;
     char * p ;
 
-//printf("ClientAddr port=%s\n",sname);
-    if ( sname == NULL ) return -1 ;
-    if ( (p=strrchr(sname,':')) ) { /* : exists */
+    if ( out->name == NULL ) return -1 ;
+    if ( (p=strrchr(out->name,':')) ) { /* : exists */
         *p = '\0' ; /* Separate tokens in the string */
-        nw->host = strdup(sname) ;
-	nw->service = strdup(&p[1]) ;
+        out->host = strdup(out->name) ;
+        out->service = strdup(&p[1]) ;
     } else {
-        nw->host = NULL ;
-        nw->service = strdup(sname) ;
+        out->host = NULL ;
+        out->service = strdup(out->name) ;
     }
 
     bzero( &hint, sizeof(struct addrinfo) ) ;
@@ -59,52 +58,46 @@ int ServerAddr(  char * sname, struct network_work * nw ) {
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
-    if ( (ret=getaddrinfo( 
-        nw->host, 
-	nw->service, 
-	&hint, 
-	&nw->ai )) 
-        ) {
-//printf("GetAddrInfo ret=%d\n",ret);
+    if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
         fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
     }
     return 0 ;
 }
 
-int ServerListen( struct network_work * nw ) {
+int ServerListen( struct connection_out * out ) {
     int fd ;
     int on = 1 ;
-    
-    if ( nw->ai == NULL ) {
+
+    if ( out->ai == NULL ) {
         fprintf(stderr,"Server address not yet parsed\n");
-	return -1 ;
+        return -1 ;
     }
-    
-    if ( nw->ai_ok == NULL ) nw->ai_ok = nw->ai ;
+
+    if ( out->ai_ok == NULL ) out->ai_ok = out->ai ;
     do {
         fd = socket(
-	    nw->ai_ok->ai_family,
-	    nw->ai_ok->ai_socktype,
-	    nw->ai_ok->ai_protocol
-	    ) ;
-	if ( fd >= 0 ) {
-	    setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ;
-	    if ( bind( fd, nw->ai_ok->ai_addr, nw->ai_ok->ai_addrlen )
-	        || listen(fd, 100)
-		) {
-		close( fd ) ;
-	    } else {
-	        nw->listenfd = fd ;
-		return fd ;
-	    }
-	}
-    } while ( (nw->ai_ok=nw->ai_ok->ai_next) ) ;
+            out->ai_ok->ai_family,
+            out->ai_ok->ai_socktype,
+            out->ai_ok->ai_protocol
+        ) ;
+        if ( fd >= 0 ) {
+            setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ;
+            if ( bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
+               || listen(fd, 100)
+            ) {
+                close( fd ) ;
+            } else {
+                out->fd = fd ;
+                return fd ;
+            }
+        }
+    } while ( (out->ai_ok=out->ai_ok->ai_next) ) ;
     fprintf(stderr,"Socket problem errno=%d\n",errno) ;
     return -1 ;
 }
 
-int ClientAddr(  char * sname, struct network_work * nw ) {
+int ClientAddr(  char * sname, struct connection_in * in ) {
     struct addrinfo hint ;
     char * p ;
     int ret ;
@@ -113,18 +106,18 @@ int ClientAddr(  char * sname, struct network_work * nw ) {
     if ( sname == NULL ) return -1 ;
     if ( (p=strrchr(sname,':')) ) { /* : exists */
         *p = '\0' ; /* Separate tokens in the string */
-        nw->host = strdup(sname) ;
-	nw->service = strdup(&p[1]) ;
+        in->host = strdup(sname) ;
+        in->service = strdup(&p[1]) ;
     } else {
-        nw->host = NULL ;
-        nw->service = strdup(sname) ;
+        in->host = NULL ;
+        in->service = strdup(sname) ;
     }
 
     bzero( &hint, sizeof(struct addrinfo) ) ;
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
-    if ( (ret=getaddrinfo( nw->host, nw->service, &hint, &nw->ai )) ) {
+    if ( (ret=getaddrinfo( in->host, in->service, &hint, &in->ai )) ) {
 //printf("GetAddrInfo ret=%d\n",ret);
         fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
@@ -132,43 +125,92 @@ int ClientAddr(  char * sname, struct network_work * nw ) {
     return 0 ;
 }
 
-int ClientConnect( struct network_work * nw ) {
+int ClientConnect( struct connection_in * in ) {
     int fd ;
 
-    if ( nw->ai == NULL ) {
+    if ( in->ai == NULL ) {
         fprintf(stderr,"Client address not yet parsed\n");
-	return -1 ;
+        return -1 ;
     }
-    
-    if ( nw->ai_ok == NULL ) nw->ai_ok = nw->ai ;
+
+    if ( in->ai_ok == NULL ) in->ai_ok = in->ai ;
     do {
         fd = socket(
-	    nw->ai_ok->ai_family,
-	    nw->ai_ok->ai_socktype,
-	    nw->ai_ok->ai_protocol
-	    ) ;
-	if ( fd >= 0 ) {
-	    if ( connect(fd, nw->ai_ok->ai_addr, nw->ai_ok->ai_addrlen) == 0 ) { 
-		return fd ;
-	    }
-	    close( fd ) ;
-	}
-    } while ( (nw->ai_ok=nw->ai_ok->ai_next) ) ;
+            in->ai_ok->ai_family,
+            in->ai_ok->ai_socktype,
+            in->ai_ok->ai_protocol
+        ) ;
+        if ( fd >= 0 ) {
+            if ( connect(fd, in->ai_ok->ai_addr, in->ai_ok->ai_addrlen) == 0 ) {
+                return fd ;
+            }
+            close( fd ) ;
+        }
+    } while ( (in->ai_ok=in->ai_ok->ai_next) ) ;
     fprintf(stderr,"Socket problem errno=%d\n",errno) ;
     return -1 ;
 }
 
-void FreeAddr( struct network_work * nw ) {
-    if ( nw->host ) {
-        free(nw->host) ;
-	nw->host = NULL ; 
+/*
+ Heap big magic!
+ Doubly embedded function.
+ Who says programming can't be fun.
+ Loops through outdevices, starting a detached thread for each except the last
+ Each loop spawn threads for accepting connections
+ Uses my non-patented "pre-threaded technique"
+*/
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
+    struct connection_out * out = outdevice ;
+    /* embedded function */
+    void ToListen( struct connection_out * o ) {
+        if ( ServerAddr( o ) || (ServerListen( o )<0) ) {
+            syslog(LOG_WARNING,"Cannot start server = %s\n",o->name);
+            Exit(1);
+        }
     }
-    if ( nw->service ) {
-        free(nw->service) ;
-	nw->service = NULL ;
+    /* embedded function */
+    void RunAccepted( int rafd ) {
+        if ( rafd>=0 ) {
+            HandlerRoutine( rafd ) ;
+            close( rafd ) ;
+        }
     }
-    if ( nw->ai ) {
-        freeaddrinfo(nw->ai) ;
-	nw->ai = NULL ;
+#ifdef OW_MT
+    pthread_t thread ;
+    pthread_attr_t attr ;
+
+    pthread_attr_init(&attr) ;
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+    /* Embedded function */
+    void * ConnectionThread( void * v ) {
+        struct connection_out * out2 = out ;
+        pthread_t thread2 ;
+        /* Doubly Embedded function */
+        void * AcceptThread( void * v2 ) {
+            int acceptfd ;
+            (void) v2 ;
+            //printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
+            acceptfd = accept( out2->fd, NULL, NULL ) ;
+            //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
+            ACCEPTUNLOCK(out2)
+            //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
+            RunAccepted( acceptfd ) ;
+            return NULL ;
+        }
+        (void) v ;
+        ToListen( out2 ) ;
+        for(;;) {
+            ACCEPTLOCK(out2)
+            if ( pthread_create( &thread2, &attr, AcceptThread, NULL ) ) Exit(1) ;
+        }
     }
+    while ( out->next ) {
+        if ( pthread_create( &thread, &attr, ConnectionThread, NULL ) ) Exit(1) ;
+        out = out->next ;
+    }
+    ConnectionThread( NULL ) ;
+#else /* OW_MT */
+    ToListen( out ) ;
+    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
+#endif /* OW_MT */
 }

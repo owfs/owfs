@@ -372,7 +372,7 @@ static int FS_w_atime(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
 
     if ( OW_r_mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
-    data = ( (unsigned char) u ) | (data&0x80) ; /* EM on */
+    data = ( (unsigned char) u[0] ) | (data&0x80) ; /* EM on */
     if ( OW_w_mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
     return 0 ;
 }
@@ -471,25 +471,25 @@ static int OW_w_mem( const unsigned char * data , const size_t length , const si
 
     /* Copy to scratchpad */
     memcpy( &p[3], data , length ) ;
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(p,3+length) ;
-        if ( rest==length && ret==0 ) ret = BUS_readin_data( &p[3+length], 2) || CRC16(p,3+length+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p,3+length,pn) ;
+        if ( rest==length && ret==0 ) ret = BUS_readin_data(&p[3+length],2,pn) || CRC16(p,3+length+2) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     p[0] = 0xAA ;
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+length) || memcmp(&p[4], data, length) ;
-        if ( rest==length && ret==0) ret = BUS_readin_data( &p[4+length], 2) || CRC16(p,4+length+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data( &p[1],3+length,pn) || memcmp(&p[4], data, length) ;
+        if ( rest==length && ret==0) ret = BUS_readin_data(  &p[4+length], 2,pn) || CRC16(p,4+length+2) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x55 ;
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(p,4) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p,4,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(2*length) ;
@@ -504,9 +504,9 @@ static int OW_r_mem( unsigned char * data , const int length , const int locatio
 
     if ( offset+length > 32 ) return OW_r_mem( data, (size_t) rest, location, pn) || OW_r_mem( &data[rest], length-rest, location+rest, pn) ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], rest+2 ) || CRC16(p,3+rest+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p , 3,pn) || BUS_readin_data(  &p[3], rest+2,pn ) || CRC16(p,3+rest+2) ;
+    BUSUNLOCK(pn)
     memcpy( data , &p[3], length ) ;
     return ret ;
 }
@@ -515,21 +515,21 @@ static int OW_temperature( int * T , const int delay, const struct parsedname * 
     unsigned char data ;
     int ret ;
 
-    BUSLOCK
+    BUSLOCK(pn)
         ret =OW_r_mem( &data, 1, 0x0214, pn) ; /* read status register */
-    BUSUNLOCK
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     if ( (data & 0x20)==0 ) { /* Mission not progress, force conversion */
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay,pn ) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
     }
 
-    BUSLOCK
+    BUSLOCK(pn)
         ret =OW_r_mem( &data, 1, 0x0211, pn) ; /* read temp register */
-    BUSUNLOCK
+    BUSUNLOCK(pn)
     *T = (int) data ;
     return ret ;
 }
@@ -578,8 +578,8 @@ static int OW_clearmemory( const struct parsedname * const pn) {
 
     /* Clear memory command */
     cr = 0x3C ;
-    BUSLOCK
-    ret = BUS_select(pn) || BUS_send_data( &cr, 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+    ret = BUS_select(pn) || BUS_send_data( &cr, 1,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }

@@ -42,6 +42,10 @@ $Id$
 #include "owfs_config.h"
 #include "ow_xxxx.h"
 
+/* ------- Prototypes ------------ */
+static int CheckPresence_low( const struct parsedname * const pn ) ;
+
+
 /* ------- Functions ------------ */
 
 int FS_type(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -85,15 +89,49 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 int CheckPresence( const struct parsedname * const pn ) {
     int ret = 0 ;
     if ( pn->type == pn_real ) {
-        if ( pn->dev == DeviceSimultaneous ) return 0 ;
-        BUSLOCK
-            ret = BUS_normalverify(pn) ;
-        BUSUNLOCK
+        if ( pn->dev != DeviceSimultaneous ) return CheckPresence_low(pn) ;
     }
     return ret ;
 }
 
+/* Check if device exists -- 0 yes, 1 no */
+/* lower level, cycle through the devices */
+static int CheckPresence_low( const struct parsedname * const pn ) {
+    int ret = 0 ;
+#ifdef OW_MT
+    pthread_t thread ;
+    /* Embedded function */
+    void * Read2( void * vp ) {
+        struct parsedname pn2 ;
+        struct stateinfo si ;
+        (void) vp ;
+        memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
+        pn2.in = pn->in->next ;
+        pn2.si = &si ;
+        return (void *) CheckPresence_low(&pn2) ;
+    }
+    int threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
+#endif /* OW_MT */
+    BUSLOCK(pn)
+        ret = BUS_normalverify(pn) ;
+    BUSUNLOCK(pn)
+#ifdef OW_MT
+    if ( !threadbad ) { /* was a thread created? */
+        void * v ;
+        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
+        return ret && ((int) v) ;
+    }
+#endif /* OW_MT */
+    return ret ;
+}
+
 int FS_present(int * y , const struct parsedname * pn) {
-    *y = !CheckPresence(pn);
+    if ( pn->type != pn_real || pn->dev == DeviceSimultaneous ) {
+        y[0]=0 ;
+    } else {
+        BUSLOCK(pn)
+            y[0] = BUS_normalverify(pn) ? 1 : 0 ;
+        BUSUNLOCK(pn)
+    }
     return 0 ;
 }

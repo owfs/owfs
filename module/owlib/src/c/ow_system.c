@@ -53,57 +53,63 @@ $Id$
 
 /* -------- Structures ---------- */
 struct filetype sys_adapter[] = {
-    {"name"       , -fl_adap_name, NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, & adapter_name , } ,
-    {"port"       , -fl_adap_port, NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, & devport      , } ,
-    {"version"    ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, & Adapter      , } ,
+    {"name"       , -fl_adap_name, NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, (void *) 0 , } ,
+    {"port"       , -fl_adap_port, NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, (void *) 1 , } ,
+    {"version"    ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 0      , } ,
     {"detail"     ,            16, NULL , ft_ascii,   ft_static, {a:FS_detail}, {v:NULL},   NULL         , } ,
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
     {"pidfile"    , -fl_pidfile  , NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, & pid_file     , } ,
-    {"pid"        ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, & pid_num      , } ,
+    {"pid"        ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 1      , } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
 /* special entry -- picked off by parsing before filetypes tried */
-struct device d_sys_structure = { "structure", "structure", pn_system, 0, NULL } ;
+struct filetype sys_structure[] = {
+    {"indevices"  ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 2      , } ,
+    {"outdevices" ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 3      , } ,
+} ;
+struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_structure), sys_structure } ;
 
 /* ------- Functions ------------ */
 
 /* special check, -remote file length won't match local sizes */
 static int FS_ascii(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    size_t s = FileLength(pn) ;
-    if( (char**)(pn->ft->data) == NULL ) return -ENODEV ;
+    char * x[] = { pn->in->adapter_name, pn->in->name, pid_file, } ;
+    char * c = x[(int)(pn->ft->data)] ;
+    size_t s ;
+    if( c == NULL ) return -ENODEV ;
+    s = strlen(c) ;
     if ( offset>s ) return -ERANGE ;
     s -= offset ;
-    if ( s>size ) s = size ; 
-    strncpy( buf, ((char **)(pn->ft->data))[offset], s ) ;
+    if ( s>size ) s = size ;
+    strncpy( buf, c, s ) ;
     return size ;
 }
 
 static int FS_uint(unsigned int * u, const struct parsedname * pn) {
-    u[0] = (((unsigned int *)pn->ft->data))[0] ;
+    unsigned int x[] = { pn->in->Adapter, pid_num, indevices, outdevices, } ;
+    u[0] = x[(int)(pn->ft->data)] ;
     return 0 ;
 }
 
 static int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    switch(Adapter) {
+    switch(pn->in->Adapter) {
     case adapter_LINK:
     case adapter_LINK_Multi:
-        if ( LI_reset(pn) || BUS_write(" ",1) ) {
+        if ( LI_reset(pn) || BUS_write(" ",1,pn) ) {
             return -ENODEV ;
         } else if (offset) {
             return -EADDRNOTAVAIL ;
         } else {
              memset(buf,0,size) ;
-             BUS_read(buf,size) ; // ignore return value -- will time out, probably
-             COM_flush() ;
+             BUS_read(buf,size,pn) ; // ignore return value -- will time out, probably
+             COM_flush(pn) ;
              return size ;
         }
     default:
         return 0 ;
     }
 }
-
-

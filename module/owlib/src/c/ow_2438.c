@@ -234,14 +234,14 @@ static int OW_r_page( unsigned char * const p , const int page , const struct pa
 //printf("Data: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8]) ;
     // read to scratch, then in
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(recall,2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(recall,2,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( r, 2 ) || BUS_readin_data( data,9 ) || CRC8( data,9 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( r, 2,pn ) || BUS_readin_data( data,9,pn ) || CRC8( data,9 ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     // copy to buffer
@@ -259,28 +259,28 @@ static int OW_w_page( const unsigned char * const p , const int page , const str
     int ret ;
 
     // write then read to scratch, then into EEPROM if scratch matches
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( w, 2 ) || BUS_send_data( p, 8 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) || BUS_send_data( p, 8,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( r, 2 ) || BUS_readin_data( data,9 ) || CRC8( data,9 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( r, 2,pn ) || BUS_readin_data( data,9,pn ) || CRC8( data,9 ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
     if ( page && memcmp( p, data, 8 ) ) return 1 ; /* page 0 has readonly fields that won't compare */
 
-    BUSLOCK
-    ret = BUS_select(pn) || BUS_send_data(eeprom,2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+    ret = BUS_select(pn) || BUS_send_data(eeprom,2,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     // Loop waiting for completion
     for ( i=0 ; i<10 ; ++i ) {
         UT_delay(1) ;
-        BUSLOCK
-            ret = BUS_readin_data(data,1) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_readin_data(data,1,pn) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
         if ( data[0] ) return 0 ;
     }
@@ -295,16 +295,16 @@ static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) {
 
     // write conversion command
     if ( Simul_Test( simul_temp, 10, pn ) != 0 ){
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_send_data( &t, 1 ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data(&t, 1,pn ) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
         // Loop waiting for completion
         for ( i=0 ; i<10 ; ++i ) {
             UT_delay(1) ;
-            BUSLOCK
-                ret = BUS_readin_data(data,1) ;
-            BUSUNLOCK
+            BUSLOCK(pn)
+                ret = BUS_readin_data(data,1,pn) ;
+            BUSUNLOCK(pn)
             if ( ret ) return 1 ;
             if ( data[0] ) break ;
         }
@@ -330,23 +330,23 @@ static int OW_volts( FLOAT * const V , const int src, const struct parsedname * 
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
     UT_setbit( data , 3 , src ) ; // AD bit in status register
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( w , 2 ) || BUS_send_data( data , 8 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) || BUS_send_data( data, 8,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     // write conversion command
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &v, 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &v, 1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     // Loop waiting for completion
     for ( i=0 ; i<10 ; ++i ) {
         UT_delay(1) ;
-        BUSLOCK
-            ret = BUS_readin_data(data,1) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_readin_data(data,1,pn) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
         if ( data[0] ) break ;
     }

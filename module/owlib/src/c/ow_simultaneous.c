@@ -142,16 +142,16 @@ static int OW_skiprom( enum simul_type type, const struct parsedname * const pn 
     struct parsedname pn2 ;
     memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
     pn2.dev = NULL ; /* only branch select done, not actual device */
-    BUSLOCK
+    BUSLOCK(pn)
 	switch ( type ) {
 	case simul_temp:
-            ret = BUS_select(&pn2) || BUS_send_data( cmd_temp , 2 ) ;
+            ret = BUS_select(&pn2) || BUS_send_data( cmd_temp,2,pn ) ;
 	    break ;
 	case simul_volt:
-            ret = BUS_select(&pn2) || BUS_sendback_data( cmd_volt , data , 6 ) || memcmp( cmd_volt , data , 4 ) || CRC16(&data[1],5) ;
+            ret = BUS_select(&pn2) || BUS_sendback_data( cmd_volt,data,6,pn ) || memcmp( cmd_volt , data , 4 ) || CRC16(&data[1],5) ;
 	    break ;
 	}
-    BUSUNLOCK
+    BUSUNLOCK(pn)
     return ret ;
 }
 

@@ -21,8 +21,9 @@ OWLIB_SOURCE = ow_xxxx.c         \
                ow_2502.c         \
                ow_2505.c         \
                ow_2760.c         \
-	       ow_2804.c         \
+               ow_2804.c         \
                ow_cache.c        \
+               ow_connect.c      \
                ow_lcd.c          \
                ow_parsename.c    \
                ow_name.c         \
@@ -45,7 +46,7 @@ OWLIB_SOURCE = ow_xxxx.c         \
                ow_temp.c         \
                ow_stats.c        \
                ow_server.c       \
-	       ow_net.c          \
+               ow_net.c          \
                ow_settings.c     \
                ow_simultaneous.c \
                ow_system.c       \

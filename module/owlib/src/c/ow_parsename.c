@@ -14,7 +14,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-static int FS_ParsedNameSub( char * const path , struct parsedname * pn ) ;
+static int FS_ParsedNameSub( char * path , struct parsedname * pn ) ;
 static int BranchAdd( struct parsedname * const pn ) ;
 static int DevicePart( const char * filename, const char ** next, struct parsedname * pn ) ;
 static int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
@@ -32,7 +32,9 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
         /* Reset persistent states from "local" stateinfo */
-        if ( (busmode != bus_remote)  && (SemiGlobal.int32 != pn->si->sg.int32) ) {
+    }
+    if ( pn && pn->in ) {
+        if ( (pn->in->busmode != bus_remote)  && (SemiGlobal.int32 != pn->si->sg.int32) ) {
             CACHELOCK
                 SemiGlobal.int32 = pn->si->sg.int32 ;
             CACHEUNLOCK
@@ -61,6 +63,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     /* save pointer to path */
     pn->path = path ;
 
+    pn->in = indevice ;
+
     if ( uncached == NULL ) { // first time through
       ltext      = strlen ( text      = (const char *)FS_dirname_state(pn_text      )) ;
       luncached  = strlen ( uncached  = (const char *)FS_dirname_state(pn_uncached  )) ;
@@ -87,6 +91,9 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 //        pn->si->sg.u[1] = presencecheck ;
 //        pn->si->sg.u[2] = tempscale ;
 //        pn->si->sg.u[3] = devform ;
+
+    /* minimal structure for setup use */
+    if ( path==NULL ) return 0 ;
 
     if ( (pathcpy=strdup( (path[0]=='/')? &path[1]:path )) == NULL ) return -ENOMEM ;
     pathnow = pathcpy ;
@@ -185,7 +192,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       pn->extension = -1 for ALL, 0 if non-aggregate, else 0-max extensionss-1
       pn->extension = -2 for BYTE, special bitfield representation of the data
 */
-static int FS_ParsedNameSub( char * const path , struct parsedname * pn ) {
+static int FS_ParsedNameSub( char * path , struct parsedname * pn ) {
     int ret ;
     const char * pFile ;
     const char * next ;

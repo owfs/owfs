@@ -19,12 +19,13 @@ $Id$
 static struct timeval tv ; /* statistics */
 
 #ifdef OW_MT
-pthread_mutex_t bus_mutex = PTHREAD_MUTEX_INITIALIZER ;
-pthread_mutex_t dev_mutex = PTHREAD_MUTEX_INITIALIZER ;
-pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER ;
-pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER ;
-pthread_mutex_t store_mutex = PTHREAD_MUTEX_INITIALIZER ;
-pthread_mutex_t fstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t busstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t dev_mutex     = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t stat_mutex    = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t cache_mutex   = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t store_mutex   = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t fstat_mutex   = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t dir_mutex     = PTHREAD_MUTEX_INITIALIZER ;
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
@@ -36,9 +37,10 @@ pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 sem_t devlocks ;
 struct devlock {
     unsigned char sn[8] ;
+    struct connection_in * in ;
     pthread_mutex_t lock ;
     int users ;
- } DevLock[DEVLOCKS] = { [0 ... DEVLOCKS-1]={"",PTHREAD_MUTEX_INITIALIZER,0}};
+ } DevLock[DEVLOCKS] = { [0 ... DEVLOCKS-1]={"",NULL,PTHREAD_MUTEX_INITIALIZER,0}};
 #define SLOTLOCK(slot)      pthread_mutex_lock(&DevLock[slot].lock) ;
 #define SLOTUNLOCK(slot)      pthread_mutex_unlock(&DevLock[slot].lock) ;
 #endif /* OW_MT */
@@ -116,7 +118,7 @@ void LockGet( const struct parsedname * const pn ) {
     for ( i=0 ; i<DEVLOCKS ; ++i ) {
         if ( DevLock[i].users == 0 ) {
             empty = i ;
-        } else if ( memcmp(DevLock[i].sn, pn->sn, 8) == 0 ) {
+        } else if ( DevLock[i].in==pn->in && memcmp(DevLock[i].sn, pn->sn, 8)==0 ) {
             /* found matching slot */
             /* release potential slot */
             sem_post( &devlocks ) ;
@@ -135,6 +137,7 @@ void LockGet( const struct parsedname * const pn ) {
     /* Fall though with 'empty' being the empty slot and the table locked */
     /* claim this slot */
     memcpy(DevLock[empty].sn, pn->sn, 8) ;
+    DevLock[empty].in = pn->in ;
     DevLock[empty].users = 1 ;
     pn->si->lock = empty ;
 //printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X NOT FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[empty].users) ;
@@ -163,35 +166,39 @@ void LockRelease( const struct parsedname * const pn ) {
 /* Special note on locking:
      The bus lock is universal -- only one thread can hold it
      Therefore, we don't need a STATLOCK for bus_locks and bus_unlocks or bus_time
+     Actually, the new design has several busses, so a separate lock
 */
 
-void BUS_lock( void ) {
+void BUS_lock( const struct parsedname * pn ) {
 #ifdef OW_MT
-    pthread_mutex_lock( &bus_mutex ) ;
+    pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */
     gettimeofday( &tv , NULL ) ; /* for statistics */
-    ++ bus_locks ; /* statistics */
+    BUSSTATLOCK
+        ++ bus_locks ; /* statistics */
+    BUSSTATUNLOCK
 }
 
-void BUS_unlock( void ) {
+void BUS_unlock( const struct parsedname * pn ) {
     struct timeval tv2 ;
     gettimeofday( &tv2, NULL ) ;
 
     /* avoid update if system-clock have changed */
-    if((tv2.tv_sec >= tv.tv_sec) && ((tv2.tv_sec-tv.tv_sec) < 60)) {
-      bus_time.tv_sec += (tv2.tv_sec - tv.tv_sec) ;
-      bus_time.tv_usec += (tv2.tv_usec - tv.tv_usec) ;
-      if ( bus_time.tv_usec >= 1000000 ) {
-        bus_time.tv_usec -= 1000000 ;
-        ++bus_time.tv_sec;
-      } else if ( bus_time.tv_usec < 0 ) {
-        bus_time.tv_usec += 1000000 ;
-        --bus_time.tv_sec;
-      }
-    }
-
-    ++ bus_unlocks ; /* statistics */
+    BUSSTATLOCK
+        if((tv2.tv_sec >= tv.tv_sec) && ((tv2.tv_sec-tv.tv_sec) < 60)) {
+        bus_time.tv_sec += (tv2.tv_sec - tv.tv_sec) ;
+        bus_time.tv_usec += (tv2.tv_usec - tv.tv_usec) ;
+        if ( bus_time.tv_usec >= 1000000 ) {
+            bus_time.tv_usec -= 1000000 ;
+            ++bus_time.tv_sec;
+        } else if ( bus_time.tv_usec < 0 ) {
+            bus_time.tv_usec += 1000000 ;
+            --bus_time.tv_sec;
+        }
+        }
+        ++ bus_unlocks ; /* statistics */
+    BUSSTATUNLOCK
 #ifdef OW_MT
-    pthread_mutex_unlock( &bus_mutex ) ;
+    pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */
 }

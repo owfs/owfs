@@ -121,7 +121,7 @@ int telnet_session_print(struct telnet_session_t *t, const char *s)
             return 0;
         }
         process_data(t, 1);
-    } 
+    }
 
     daemon_assert(invariant(t));
     return 1;
@@ -144,7 +144,7 @@ int telnet_session_println(struct telnet_session_t *t, const char *s)
 }
 
 /* read a line */
-int telnet_session_readln(struct telnet_session_t *t, char *buf, int buflen) 
+int telnet_session_readln(struct telnet_session_t *t, char *buf, int buflen)
 {
     int amt_read;
 
@@ -190,8 +190,7 @@ void telnet_session_destroy(struct telnet_session_t *t)
 }
 
 /* receive any incoming data, send any pending data */
-static void process_data(struct telnet_session_t *t, int wait_flag)
-{
+static void process_data(struct telnet_session_t *t, int wait_flag) {
     fd_set readfds;
     fd_set writefds;
     fd_set exceptfds;
@@ -211,9 +210,9 @@ static void process_data(struct telnet_session_t *t, int wait_flag)
     }
 
     /* only check for input if we can accept input */
-    if ((t->in_errno == 0) && 
-        (t->in_eof == 0) && 
-	(max_input_read(t) > 0)) 
+    if ((t->in_errno == 0) &&
+        (t->in_eof == 0) &&
+	(max_input_read(t) > 0))
     {
         FD_SET(t->in_fd, &readfds);
         FD_SET(t->in_fd, &exceptfds);
@@ -242,8 +241,7 @@ static void process_data(struct telnet_session_t *t, int wait_flag)
     }
 }
 
-static void read_incoming_data(struct telnet_session_t *t)
-{
+static void read_incoming_data(struct telnet_session_t *t) {
     size_t read_ret;
     char buf[BUF_LEN];
     size_t i;
@@ -266,8 +264,7 @@ static void read_incoming_data(struct telnet_session_t *t)
 
 
 /* process a single character */
-static void process_incoming_char(struct telnet_session_t *t, int c)
-{
+static void process_incoming_char(struct telnet_session_t *t, int c) {
     switch (t->in_status) {
         case GOT_IAC:
 	    switch (c) {
@@ -328,8 +325,7 @@ static void process_incoming_char(struct telnet_session_t *t, int c)
 }
 
 /* add a single character, wrapping buffer if necessary (should never occur) */
-static void add_incoming_char(struct telnet_session_t *t, int c)
-{
+static void add_incoming_char(struct telnet_session_t *t, int c) {
     daemon_assert(t->in_add >= 0);
     daemon_assert(t->in_add < BUF_LEN);
     t->in_buf[t->in_add] = c;
@@ -348,8 +344,7 @@ static void add_incoming_char(struct telnet_session_t *t, int c)
 }
 
 /* remove a single character */
-static int use_incoming_char(struct telnet_session_t *t)
-{
+static int use_incoming_char(struct telnet_session_t *t) {
     int c;
 
     daemon_assert(t->in_take >= 0);
@@ -365,8 +360,7 @@ static int use_incoming_char(struct telnet_session_t *t)
 }
 
 /* add a single character, hopefully will never happen :) */
-static void add_outgoing_char(struct telnet_session_t *t, int c)
-{
+static void add_outgoing_char(struct telnet_session_t *t, int c) {
     daemon_assert(t->out_add >= 0);
     daemon_assert(t->out_add < BUF_LEN);
     t->out_buf[t->out_add] = c;
@@ -384,9 +378,7 @@ static void add_outgoing_char(struct telnet_session_t *t, int c)
     }
 }
 
-
-static void write_outgoing_data(struct telnet_session_t *t)
-{
+static void write_outgoing_data(struct telnet_session_t *t) {
     size_t write_ret;
 
     if (t->out_take < t->out_add) {
@@ -403,8 +395,8 @@ static void write_outgoing_data(struct telnet_session_t *t)
         daemon_assert(t->out_take >= 0);
         daemon_assert(t->out_take < BUF_LEN);
         daemon_assert((BUF_LEN - t->out_take) > 0);
-        write_ret = write(t->out_fd, 
-	                  t->out_buf + t->out_take, 
+        write_ret = write(t->out_fd,
+	                  t->out_buf + t->out_take,
 			  BUF_LEN - t->out_take);
     }
 
@@ -423,8 +415,7 @@ static void write_outgoing_data(struct telnet_session_t *t)
 }
 
 /* return the amount of a read */
-static int max_input_read(struct telnet_session_t *t)
-{
+static int max_input_read(struct telnet_session_t *t) {
     int max_in;
     int max_out;
 
@@ -451,8 +442,7 @@ static int max_input_read(struct telnet_session_t *t)
 }
 
 #ifndef NDEBUG
-static int invariant(const struct telnet_session_t *t) 
-{
+static int invariant(const struct telnet_session_t *t) {
     if (t == NULL) {
         return 0;
     }
@@ -511,8 +501,7 @@ static int invariant(const struct telnet_session_t *t)
 #include <signal.h>
 #include <ctype.h>
 
-int main()
-{
+int main() {
     struct telnet_session_t t;
     char buf[64];
     int fd;
@@ -525,7 +514,7 @@ int main()
 
     daemon_assert((fd = socket(AF_INET, SOCK_STREAM, 0)) != -1);
     val = 1;
-    daemon_assert(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) 
+    daemon_assert(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))
         == 0);
     addr.sin_port = htons(23);
     addr.sin_addr.s_addr = INADDR_ANY;
@@ -554,4 +543,3 @@ int main()
     return 0;
 }
 #endif /* STUB_TEST */
-

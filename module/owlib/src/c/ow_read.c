@@ -36,7 +36,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
     pn.si = &si ;
 
-    if ( busmode == bus_remote ) return ServerRead(path,buf,size,offset) ;
+//    if ( indevice==NULL ) return -ENODEV ; /* probably unneeded */
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -64,54 +64,83 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    size_t s = size ;
     int r ;
-
-    if ( busmode == bus_remote ) return ServerRead(pn->path,buf,size,offset) ;
-    STATLOCK
-        AVERAGE_IN(&read_avg)
-        AVERAGE_IN(&all_avg)
-    STATUNLOCK
-    if ( pn->type == pn_structure ) {
-        r = FS_structure(buf,size,offset,pn) ;
-    } else {
-        STATLOCK
-            ++ read_calls ; /* statistics */
-        STATUNLOCK
-        /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
-            LockGet(pn) ;
-                r = FS_real_read( buf, size, offset, pn ) ;
-            LockRelease(pn) ;
-        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
-    //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
-            LockGet(pn) ;
-                r = FS_real_read( buf, size, offset, pn ) ;
-                if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
-            LockRelease(pn) ;
-        } else {
-    //printf("Read found %s\n",path) ;
-            STATLOCK
-                ++read_cache ; /* statistics */
-                read_cachebytes += s ; /* statistics */
-            STATUNLOCK
-            r = s ;
-        }
-
-        if ( r>=0 ) {
-            STATLOCK
-                ++read_success ; /* statistics */
-                read_bytes += r ; /* statistics */
-            STATUNLOCK
-        }
+#ifdef OW_MT
+    pthread_t thread ;
+    char buf2[size] ;
+    /* Embedded function */
+    void * Read2( void * vp ) {
+        struct parsedname pn2 ;
+        struct stateinfo si ;
+        (void) vp ;
+        memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
+        pn2.in = pn->in->next ;
+        pn2.si = &si ;
+        return (void *) FS_read_postparse(buf2,size,offset,&pn2) ;
     }
-    STATLOCK
-        AVERAGE_OUT(&read_avg)
-        AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    int threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
+#endif /* OW_MT */
+    if ( pn->in==NULL ) return -ENODEV ;
+
+    if ( pn->in->busmode == bus_remote ) {
+        r = ServerRead(buf,size,offset,pn) ;
+    } else {
+        size_t s = size ;
+        STATLOCK
+            AVERAGE_IN(&read_avg)
+            AVERAGE_IN(&all_avg)
+        STATUNLOCK
+        if ( pn->type == pn_structure ) {
+            r = FS_structure(buf,size,offset,pn) ;
+        } else {
+            STATLOCK
+                ++ read_calls ; /* statistics */
+            STATUNLOCK
+            /* Check the cache (if not pn_uncached) */
+            if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
+                LockGet(pn) ;
+                    r = FS_real_read( buf, size, offset, pn ) ;
+                LockRelease(pn) ;
+            } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
+        //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
+                LockGet(pn) ;
+                    r = FS_real_read( buf, size, offset, pn ) ;
+                    if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
+                LockRelease(pn) ;
+            } else {
+        //printf("Read found %s\n",path) ;
+                STATLOCK
+                    ++read_cache ; /* statistics */
+                    read_cachebytes += s ; /* statistics */
+                STATUNLOCK
+                r = s ;
+            }
+
+            if ( r>=0 ) {
+                STATLOCK
+                    ++read_success ; /* statistics */
+                    read_bytes += r ; /* statistics */
+                STATUNLOCK
+            }
+        }
+        STATLOCK
+            AVERAGE_OUT(&read_avg)
+            AVERAGE_OUT(&all_avg)
+        STATUNLOCK
+    }
+#ifdef OW_MT
+    if ( !threadbad ) { /* was a thread created? */
+        void * v ;
+        int rt ;
+        if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
+        rt = (int) v ;
+        if ( rt < 0 ) return r ; /* is it an error return? Then return this one */
+        memcpy( buf, buf2, (size_t) rt ) ; /* Use the thread's result */
+        return rt ;
+    }
+#endif /* OW_MT */
     return r ;
 }
-
 
 /* Real read -- called from read
    Integrates with cache -- read not called if cached value already set
@@ -304,7 +333,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 if ( y==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.y)(y,pn) ;
                 if (ret >= 0) {
-                    int i ;
+                    size_t i ;
                     for ( i=0 ; i<elements ; ++i ) {
                         buf[i*2] = y[i] ? '1' : '0' ;
                         if ( i<elements-1 ) buf[i*2+1] = ',' ;
@@ -320,7 +349,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
             unsigned int u ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret >= 0) {
-                int i ;
+                size_t i ;
                 for ( i=0 ; i<elements ; ++i ) {
                     buf[i*2] = u&0x01 ? '1' : '0' ;
                     u = u>>1 ;
@@ -388,7 +417,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 /* read the combined data, and then separate */
 /* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int elements = pn->ft->ag->elements ;
+    size_t elements = pn->ft->ag->elements ;
     int ret = 0 ;
     if (offset) {
         return -EADDRNOTAVAIL ;
@@ -401,7 +430,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
                 ret = (pn->ft->read.i)(i,pn) ;
                 if (ret >= 0) ret = FS_output_integer( i[pn->extension] , buf , size , pn ) ;
             free( i ) ;
-            return ret ;
+            break ;
         }
     case ft_unsigned:
         {
@@ -410,7 +439,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
                 ret = (pn->ft->read.u)(u,pn) ;
                 if (ret >= 0) ret = FS_output_unsigned( u[pn->extension] , buf , size , pn ) ;
             free( u ) ;
-            return ret ;
+            break ;
         }
     case ft_float:
         {
@@ -419,7 +448,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float( f[pn->extension] , buf , size , pn ) ;
             free( f ) ;
-            return ret ;
+            break ;
         }
     case ft_date:
         {
@@ -428,7 +457,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
                 ret = (pn->ft->read.d)(d,pn) ;
                 if (ret >= 0) ret = FS_output_date( d[pn->extension] , buf , size , pn ) ;
             free( d ) ;
-            return ret ;
+            break ;
         }
     case ft_yesno:
         {
@@ -464,6 +493,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
     case ft_subdir:
         return -ENOSYS ;
     }
+    return ret ;
 }
 
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) {
@@ -477,7 +507,7 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
         len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ( (len<0) || (len>suglen) ) return -EMSGSIZE ;
-    memcpy( buf, c, len ) ;
+    memcpy( buf, c, (size_t)len ) ;
     return len ;
 }
 
@@ -492,7 +522,7 @@ int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const
         len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
-    memcpy( buf, c, len ) ;
+    memcpy( buf, c, (size_t)len ) ;
     return len ;
 }
 
@@ -507,7 +537,7 @@ int FS_output_float( FLOAT value, char * buf, const size_t size, const struct pa
         len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
-    memcpy( buf, c, len ) ;
+    memcpy( buf, c, (size_t)len ) ;
     return len ;
 }
 

@@ -12,8 +12,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-enum deviceformat devform = fdi ;
-
 /* device display format */
 void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) {
     const unsigned char * p = pn->sn ;

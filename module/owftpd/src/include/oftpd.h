@@ -5,15 +5,8 @@
 #ifndef OFTPD_H
 #define OFTPD_H
 
-/* address to listen on (use NULL to listen on all addresses) */
-#define FTP_ADDRESS NULL
-
 /* default port FTP server listens on (use 0 to listen on default port) */
-#define FTP_PORT 0
-
-/* ranges possible for command-line specified port numbers */
-#define MIN_PORT 0
-#define MAX_PORT 65535
+#define DEFAULT_PORTNAME 22
 
 /* default maximum number of clients */
 #define MAX_CLIENTS 250

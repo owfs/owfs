@@ -25,31 +25,27 @@ $Id$
   owfs for WRT54G without any patched uClibc.
 */
 
-typedef struct node_t
-{
-  void        *key;
-  struct node_t *left, *right;
+typedef struct node_t {
+    void        *key;
+    struct node_t *left, *right;
 } node;
 
-static void
-tdestroy_recurse_ (node *root, void *freefct)
-{
-  if (root->left != NULL)
-    tdestroy_recurse_ (root->left, freefct);
-  if (root->right != NULL)
-    tdestroy_recurse_ (root->right, freefct);
-  //(*freefct) ((void *) root->key);
-  free((void *) root->key);
-  /* Free the node itself.  */
-  free (root);
+static void tdestroy_recurse_ (node *root, void *freefct) {
+    if (root->left != NULL)
+        tdestroy_recurse_ (root->left, freefct);
+    if (root->right != NULL)
+        tdestroy_recurse_ (root->right, freefct);
+    //(*freefct) ((void *) root->key);
+    free((void *) root->key);
+    /* Free the node itself.  */
+    free (root);
 }
 
-static void tdestroy_(void *vroot, void *freefct)
-{
-  node *root = (node *) vroot;
-  if (root != NULL) {
-    tdestroy_recurse_ (root, freefct);
-  }
+static void tdestroy_(void *vroot, void *freefct) {
+    node *root = (node *) vroot;
+    if (root != NULL) {
+        tdestroy_recurse_ (root, freefct);
+    }
 }
 #define tdestroy(a, b) tdestroy_((a), (b))
 #endif /* Older than 0.9.19 */
@@ -73,6 +69,7 @@ struct tree_key {
     union {
         struct filetype * ft ;
         char * nm ;
+        struct connection_in * in ;
     } p ;
     int extension ;
 } ;
@@ -243,7 +240,7 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
         if ( tn ) {
             FS_LoadPath( tn->tk.sn, pn ) ;
 //            memcpy( tn->tk.sn , pn->sn , 8 ) ;
-            tn->tk.p.ft = NULL ;
+            tn->tk.p.in = pn->in ;
             tn->tk.extension = dindex ;
             tn->expires = duration + time(NULL) ;
             tn->dsize = 8 ;
@@ -436,7 +433,7 @@ int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const 
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
 //        memcpy( tn.tk.sn , pn->sn , 8 ) ;
-        tn.tk.p.ft = NULL ;
+        tn.tk.p.in = pn->in ;
         tn.tk.extension = dindex ;
         return Get_Stat(&cache_dir, Cache_Get_Common(sn,&size,duration,&tn)) ;
     }
@@ -470,8 +467,8 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
     struct tree_opaque * opaque ;
 //printf("CACHE GET 1\n");
     CACHELOCK
-        if ( (opaque=tfind(tn,&cache.new_db,tree_compare)) 
-         || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) ) 
+        if ( (opaque=tfind(tn,&cache.new_db,tree_compare))
+         || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) )
        ) {
 //printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
             if ( opaque->key->expires >= now ) {
@@ -556,7 +553,7 @@ int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
 //        memcpy( tn.tk.sn , pn->sn , 8 ) ;
-        tn.tk.p.ft = NULL ;
+        tn.tk.p.in = pn->in ;
         tn.tk.extension = dindex ;
         return Del_Stat(&cache_dir, Cache_Del_Common(&tn)) ;
     }
@@ -587,7 +584,7 @@ static int Cache_Del_Common( const struct tree_node * tn ) {
     time_t now = time(NULL) ;
     int ret = 1 ;
     CACHELOCK
-        if ( (opaque=tfind( tn, &cache.new_db, tree_compare )) 
+        if ( (opaque=tfind( tn, &cache.new_db, tree_compare ))
          || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )
        ) {
             opaque->key->expires = now - 1 ;

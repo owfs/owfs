@@ -35,6 +35,7 @@ const struct option owopts_long[] = {
     {0,0,0,0},
 } ;
 
+/* Globals */
 char * pid_file = NULL ;
 char * fuse_opt = NULL ;
 
@@ -68,24 +69,14 @@ int owopt( const int c , const char * const arg ) {
         return 0 ;
     case 'u':
 #ifdef OW_USB
-        if ( arg ) {
-            useusb = atoi(arg) ;
-            if ( useusb < 1 ) {
-                fprintf(stderr,"USB option %s implies no USB detection.\n",arg) ;
-                useusb=0 ;
-            } else if ( useusb>1 ) {
-                syslog(LOG_INFO,"USB adapter %d requested.\n",useusb) ;
-            }
-        } else {
-            useusb=1 ;
-        }
-        return USBSetup() ;
+printf("OPT usb arg=%s\n",arg);
+        return OW_ArgUSB( arg ) ;
 #else /* OW_USB */
         fprintf(stderr,"Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n") ;
-#endif /* OW_USB */
         return 1 ;
+#endif /* OW_USB */
     case 'd':
-        ComSetup(arg) ;
+        return OW_ArgSerial( arg ) ;
     case 't':
         Timeout(arg) ;
         return 0 ;
@@ -111,13 +102,9 @@ int owopt( const int c , const char * const arg ) {
         printf("libow version:\n\t" VERSION "\n") ;
         return 1 ;
     case 's':
-        servername = strdup(optarg) ;
-        Server_detect() ;
-        return 0;
+        return OW_ArgNet( arg ) ;
     case 'p':
-        portname = strdup(optarg) ;
-        sscanf(optarg, "%i", &portnum);
-        return 0;
+        return OW_ArgServer( arg ) ;
     case 'f':
         if (strcasecmp(arg,"f.i")==0)        SemiGlobal.u[3]=fdi;
         else if (strcasecmp(arg,"fi")==0)    SemiGlobal.u[3]=fi;
@@ -145,4 +132,65 @@ int owopt( const int c , const char * const arg ) {
     default:
         return 1 ;
     }
+}
+
+int OW_ArgNet( const char * arg ) {
+    struct connection_in * in = NewIn() ;
+    if ( in==NULL ) {
+        fprintf(stderr,"Cannot allocate memory for network struct\n") ;
+        return 1 ;
+    }
+    in->name = strdup(arg) ;
+    in->busmode = bus_usb ;
+    return 0 ;
+}
+
+int OW_ArgServer( const char * arg ) {
+    struct connection_out * out = NewOut() ;
+    if ( out==NULL ) {
+        fprintf(stderr,"Cannot allocate memory for server struct\n") ;
+        return 1 ;
+    }
+    out->name = strdup(arg) ;
+    return 0 ;
+}
+
+int OW_ArgSerial( const char * arg ) {
+    struct connection_in * in = NewIn() ;
+    if ( in==NULL ) {
+        fprintf(stderr,"Cannot allocate memory for serial struct\n") ;
+        return 1 ;
+    }
+    in->name = strdup(arg) ;
+    in->busmode = bus_serial ;
+    return 0 ;
+}
+
+int OW_ArgUSB( const char * arg ) {
+    struct connection_in * in = NewIn() ;
+    if ( in==NULL ) {
+        fprintf(stderr,"Cannot allocate memory for USB struct\n") ;
+        return 1 ;
+    }
+    in->busmode = bus_usb ;
+    if ( arg ) {
+        in->fd = atoi(arg) ;
+//printf("ArgUSB fd=%d\n",in->fd);
+        if ( in->fd < 1 ) {
+            fprintf(stderr,"USB option %s implies no USB detection.\n",arg) ;
+            in->fd=0 ;
+        } else if ( in->fd>1 ) {
+            syslog(LOG_INFO,"USB adapter %d requested.\n",in->fd) ;
+        }
+    } else {
+        in->fd=1 ;
+    }
+    return 0 ;
+}
+
+int OW_ArgGeneric( const char * arg ) {
+    if ( arg && arg[0] ) {
+        return arg[0]=='/' ? OW_ArgSerial(arg) : OW_ArgNet(arg) ;
+    }
+    return 1 ;
 }

@@ -85,7 +85,7 @@ DeviceEntry( 12, DS2406 )
 /* DS2406 */
 static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) ;
+//static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_r_control( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
@@ -167,6 +167,7 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 
 /* 2406 switch activity latch*/
 static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
+    (void) u ;
     if ( OW_clear(pn) ) return -EINVAL ;
     return 0 ;
 }
@@ -202,9 +203,9 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     unsigned char p[3+128+2] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 128+2-offset ) || CRC16(p,3+128+2-offset) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(p , 3,pn ) || BUS_readin_data( &p[3], 128+2-offset,pn ) || CRC16(p,3+128+2-offset) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     memcpy( data , &p[3], size ) ;
@@ -217,17 +218,18 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     size_t i ;
     int ret ;
 
-    BUSLOCK
-        ret = (size==0) || BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],2) || CRC16(p,6) || BUS_ProgramPulse() || BUS_readin_data(&resp,1) || (resp&~data[0]) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = (size==0) || BUS_select(pn) || BUS_send_data(p,4,pn) || BUS_readin_data(&p[4],2,pn) || CRC16(p,6)
+        || BUS_ProgramPulse(pn) || BUS_readin_data(&resp,1,pn) || (resp&~data[0]) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     for ( i=1 ; i<size ; ++i ) {
         p[3] = data[i] ;
         if ( (++p[1])==0x00 ) ++p[2] ;
-        BUSLOCK
-            ret = BUS_send_data(&p[1],3) || BUS_readin_data(&p[4],2) || CRC16(&p[1],5) || BUS_ProgramPulse() || BUS_readin_data(&resp,1) || (resp&~data[i]) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_send_data(&p[1],3,pn) || BUS_readin_data(&p[4],2,pn) || CRC16(&p[1],5) || BUS_ProgramPulse(pn) || BUS_readin_data(&resp,1,pn) || (resp&~data[i]) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
     }
     return 0 ;
@@ -238,9 +240,9 @@ static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0xAA, 0x07 , 0x00, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 1+2 ) || CRC16(p,3+1+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 1+2,pn ) || CRC16(p,3+1+2) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     *data = p[3] ;
@@ -252,9 +254,9 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
     unsigned char p[3+1+2] = { 0x55, 0x07 , 0x00, data, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 4 ) || BUS_readin_data( &p[4], 2 ) || CRC16(p,6) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p , 4,pn ) || BUS_readin_data( &p[4], 2,pn ) || CRC16(p,6) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -278,9 +280,9 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
     int ret ;
 
-    BUSLOCK
-         ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+         ret =BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 2+2,pn ) || CRC16(p,3+2+2) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     *data = p[3] ;
@@ -293,9 +295,9 @@ static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
     int ret ;
 
-    BUSLOCK
-         ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+         ret =BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 2+2,pn ) || CRC16(p,3+2+2) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     return 0 ;

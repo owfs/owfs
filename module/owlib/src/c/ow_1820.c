@@ -280,13 +280,13 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
     /* Select particular device and start conversion */
     if ( ! pow ) { // unpowered, deliver power, no communication allowed
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
+        BUSUNLOCK(pn)
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ){ // powered, so release bus immediately after issuing convert
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
+        BUSUNLOCK(pn)
         UT_delay( delay ) ;
     }
     if ( ret ) return 1 ;
@@ -297,14 +297,14 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
         /* repeat the conversion (only once) */
         if ( pow ) { // powered, so release bus immediately after issuing convert
-            BUSLOCK
-                ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
-            BUSUNLOCK
+            BUSLOCK(pn)
+                ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
+            BUSUNLOCK(pn)
             UT_delay( delay ) ;
         } else { // unpowered, deliver power, no communication allowed
-            BUSLOCK
-                ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
-            BUSUNLOCK
+            BUSLOCK(pn)
+                ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
+            BUSUNLOCK(pn)
         }
         if ( ret || OW_r_scratchpad( data , pn ) ) return 1 ;
     }
@@ -326,10 +326,10 @@ static int OW_power( unsigned char * const data, const struct parsedname * const
     size_t s = sizeof(unsigned char) ;
 
     if ( (pn->state & pn_uncached) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data( &b4,1,pn ) || BUS_readin_data( data,1,pn ) ;
 //printf("Uncached power = %d\n",data[0]) ;
-        BUSUNLOCK
+        BUSUNLOCK(pn)
         Cache_Add_Internal(data,s,&ip_power,pn) ;
 //    } else {
 //printf("Cached power = %d\n",data[0]) ;
@@ -364,13 +364,13 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
 
     /* Conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
+        BUSUNLOCK(pn)
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
+        BUSUNLOCK(pn)
         UT_delay( delay ) ;
     }
     if ( ret ) return 1 ;
@@ -388,9 +388,9 @@ static int OW_r_templimit( FLOAT * const T, const int Tindex, const struct parse
     unsigned char recall = 0xB4 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &recall , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &recall,1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(10) ;
@@ -417,9 +417,9 @@ static int OW_r_scratchpad(unsigned char * const data, const struct parsedname *
     unsigned char td[9] ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &be , 1 ) || BUS_readin_data( td , 9 ) || CRC8(td,9) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &be,1,pn ) || BUS_readin_data( td,9,pn ) || CRC8(td,9) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     memcpy( data , td , 8 ) ;
@@ -432,9 +432,9 @@ static int OW_w_scratchpad(const unsigned char * const data, const struct parsed
     unsigned char d[] = { 0x4E, data[0], data[1], data[2], } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( d , 4 ) || BUS_select(pn) || BUS_PowerByte( 0x48, 10 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( d,4,pn ) || BUS_select(pn) || BUS_PowerByte( 0x48,10,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -443,10 +443,10 @@ static int OW_r_trim(unsigned char * const trim, const struct parsedname * const
     unsigned char cmd[] = { 0x93, 0x68, } ;
     int ret ;
 
-    BUSLOCK
-        ret =    BUS_select(pn) || BUS_send_data( &cmd[0] , 1 ) || BUS_readin_data( &trim[0] , 1 )
-              || BUS_select(pn) || BUS_send_data( &cmd[1] , 1 ) || BUS_readin_data( &trim[1] , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret =    BUS_select(pn) || BUS_send_data( &cmd[0],1,pn ) || BUS_readin_data( &trim[0],1,pn )
+              || BUS_select(pn) || BUS_send_data( &cmd[1],1,pn ) || BUS_readin_data( &trim[1],1,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -454,12 +454,12 @@ static int OW_w_trim(const unsigned char * const trim, const struct parsedname *
     unsigned char cmd[] = { 0x95, trim[0], 0x63, trim[1], 0x94, 0x64, } ;
     int ret ;
 
-    BUSLOCK
-        ret =    BUS_select(pn) || BUS_send_data( &cmd[0] , 2 )
-              || BUS_select(pn) || BUS_send_data( &cmd[2] , 2 )
-              || BUS_select(pn) || BUS_send_data( &cmd[4] , 1 )
-              || BUS_select(pn) || BUS_send_data( &cmd[5] , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret =    BUS_select(pn) || BUS_send_data( &cmd[0],2,pn )
+              || BUS_select(pn) || BUS_send_data( &cmd[2],2,pn )
+              || BUS_select(pn) || BUS_send_data( &cmd[4],1,pn )
+              || BUS_select(pn) || BUS_send_data( &cmd[5],1,pn ) ;
+    BUSUNLOCK(pn)
 
     return ret ;
 }

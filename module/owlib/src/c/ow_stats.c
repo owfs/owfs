@@ -45,6 +45,52 @@ $Id$
 #include "owfs_config.h"
 #include "ow_stats.h"
 
+/* ----------------- */
+/* ---- Globals ---- */
+/* ----------------- */
+unsigned int cache_flips = 0 ;
+unsigned int cache_adds = 0 ;
+struct average old_avg = {0L,0L,0L,0L,} ;
+struct average new_avg = {0L,0L,0L,0L,} ;
+struct average store_avg = {0L,0L,0L,0L,} ;
+struct cache cache_ext = {0L,0L,0L,0L,0L,} ;
+struct cache cache_int = {0L,0L,0L,0L,0L,} ;
+struct cache cache_dir = {0L,0L,0L,0L,0L,} ;
+struct cache cache_sto = {0L,0L,0L,0L,0L,} ;
+
+unsigned int read_calls = 0 ;
+unsigned int read_cache = 0 ;
+unsigned int read_bytes = 0 ;
+unsigned int read_cachebytes = 0 ;
+unsigned int read_array = 0 ;
+unsigned int read_tries[3] = {0,0,0,} ;
+unsigned int read_success = 0 ;
+struct average read_avg = {0L,0L,0L,0L,} ;
+
+unsigned int write_calls = 0 ;
+unsigned int write_bytes = 0 ;
+unsigned int write_array = 0 ;
+unsigned int write_tries[3] = {0,0,0,} ;
+unsigned int write_success = 0 ;
+struct average write_avg = {0L,0L,0L,0L,} ;
+
+struct directory dir_main = { 0L, 0L, } ;
+struct directory dir_dev = { 0L, 0L, } ;
+unsigned int dir_depth = 0 ;
+struct average dir_avg = {0L,0L,0L,0L,} ;
+
+struct timeval bus_time = {0, 0, } ;
+struct timeval bus_pause = {0, 0, } ;
+unsigned int bus_locks = 0 ;
+unsigned int bus_unlocks = 0 ;
+unsigned int crc8_tries = 0 ;
+unsigned int crc8_errors = 0 ;
+unsigned int crc16_tries = 0 ;
+unsigned int crc16_errors = 0 ;
+unsigned int read_timeout = 0 ;
+
+struct average all_avg = {0L,0L,0L,0L,} ;
+
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
  uREAD_FUNCTION( FS_stat ) ;

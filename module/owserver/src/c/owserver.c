@@ -45,19 +45,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, const char *data ) ;
-static void * Acceptor( int listenfd ) ;
 static void ow_exit( int e ) ;
-
-/* ----- Globals ------------- */
-#ifdef OW_MT
-    pthread_mutex_t accept_mutex = PTHREAD_MUTEX_INITIALIZER ;
-    #define ACCEPTLOCK       pthread_mutex_lock(  &accept_mutex) ;
-    #define ACCEPTUNLOCK     pthread_mutex_unlock(&accept_mutex) ;
-#else /* OW_MT */
-    #define ACCEPTLOCK
-    #define ACCEPTUNLOCK
-#endif /* OW_MT */
-
 
 /* read from client, free return pointer if not Null */
 static void * FromClientAlloc( int fd, struct server_msg * sm ) {
@@ -180,7 +168,6 @@ static int Handler( int fd ) {
 
     if (path) free(path) ;
     ToClient( fd, &cm, retbuffer ) ;
-    close(fd) ;
     if ( retbuffer ) free(retbuffer) ;
     return 0 ;
 }
@@ -254,6 +241,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, const struct parsedname * pn ) {
     int pathlen = strlen(pn->path) + 1 ;
     char retbuffer[pathlen + OW_FULLNAME_MAX + 2] ;
+    uint32_t flags ;
     /* nested function -- callback for directory entries */
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
@@ -277,47 +265,17 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         strcpy( &retbuffer[pathlen-1] , "/" ) ;
         ++pathlen ;
     }
-    cm->ret = FS_dir( directory, pn ) ;
+    cm->ret = FS_dir_remote( directory, pn, &flags ) ;
+    cm->offset = flags ; /* send the flags in the offset message */
 //printf("Handler: DIR done\n");
     /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
 }
 
-static void * ThreadedAccept( void * pv ) {
-    return (void *) Acceptor( ((struct network_work *)pv)->listenfd ) ;
-}
-
-static void * Acceptor( int listenfd ) {
-    int fd ;
-//printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
-    fd = accept( listenfd, NULL, NULL ) ;
-//printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),fd) ;
-    ACCEPTUNLOCK
-//printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
-    if ( fd>=0 ) Handler( fd ) ;
-    return NULL ;
-}
-
 int main( int argc , char ** argv ) {
     char c ;
-#ifdef OW_MT
-    pthread_t thread ;
-#ifdef __UCLIBC__
-    pthread_mutexattr_t mattr;
-    pthread_mutexattr_init(&mattr);
-    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-    pthread_mutex_init(&accept_mutex, &mattr);
-    pthread_mutexattr_destroy(&mattr);
-#else /* __UCLIBC__ */
-    pthread_attr_t attr ;
 
-    pthread_attr_init(&attr) ;
-    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
-#endif /* __UCLIBC__ */
-
-#endif /* OW_MT */
-
-    progname = strdup(argv[0]) ;
+    if ( argc>0 ) progname = strdup(argv[0]) ;
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
@@ -338,19 +296,14 @@ int main( int argc , char ** argv ) {
     }
 
     /* non-option arguments */
-    if ( optind == argc-1 ) {
-        ComSetup(argv[optind]) ;
+    while ( optind < argc ) {
+        OW_ArgGeneric(argv[optind]) ;
         ++optind ;
     }
 
-    if ( portname==NULL ) {
+    if ( outdevices==0 ) {
         fprintf(stderr, "No TCP port specified (-p)\n%s -h for help\n",argv[0]);
         ow_exit(1);
-    }
-
-    if ( ServerAddr( portname, &server ) || (ServerListen( &server )<0) ) {
-        fprintf(stderr,"Cannot start server.\n");
-        exit(1);
     }
 
     /*
@@ -358,21 +311,7 @@ int main( int argc , char ** argv ) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
-    for(;;) {
-//printf("MAIN prelock\n");
-        ACCEPTLOCK
-//printf("MAIN postlock\n");
-#ifdef OW_MT
-#ifdef __UCLIBC__
-        if ( pthread_create( &thread, NULL, ThreadedAccept, &server ) ) ow_exit(1) ;
-	pthread_detach(thread);
-#else /* __UCLIBC__ */
-        if ( pthread_create( &thread, &attr, ThreadedAccept, &server ) ) ow_exit(1) ;
-#endif /* __UCLIBC__ */
-#else /* OW_MT */
-        Acceptor( server.listenfd ) ;
-#endif /* OW_MT */
-    }
+    ServerProcess( Handler,ow_exit ) ;
 }
 
 static void ow_exit( int e ) {

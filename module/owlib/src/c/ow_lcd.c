@@ -257,9 +257,9 @@ static int OW_w_scratch( const unsigned char * data , const int length , const s
     unsigned char w = 0x4E ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) || BUS_send_data( data , length ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) || BUS_send_data( data, length,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -267,9 +267,9 @@ static int OW_r_scratch( unsigned char * data , const int length , const struct 
     unsigned char r = 0xBE ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &r , 1 ) || BUS_readin_data( data , length ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( data, length,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -277,9 +277,9 @@ static int OW_w_on( const int state , const struct parsedname* pn ) {
     unsigned char w[] = { 0x03, 0x05, } ; /* on off */
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w[!state] , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w[!state], 1,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -287,9 +287,9 @@ static int OW_w_backlight( const int state , const struct parsedname* pn ) {
     unsigned char w[] = { 0x08, 0x07, } ; /* on off */
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w[!state] , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w[!state], 1,pn ) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -297,9 +297,9 @@ static int OW_w_register( const unsigned char data , const struct parsedname* pn
     unsigned char w[] = { 0x10, data, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( w , 2 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 100uS
@@ -310,9 +310,9 @@ static int OW_r_register( unsigned char * data , const struct parsedname* pn ) {
     unsigned char w = 0x11 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 150uS
@@ -323,9 +323,9 @@ static int OW_w_data( const unsigned char data , const struct parsedname* pn ) {
     unsigned char w[] = { 0x12, data, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( w , 2 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 100uS
@@ -336,9 +336,9 @@ static int OW_r_data( unsigned char * data , const struct parsedname* pn ) {
     unsigned char w = 0x13 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 150uS
@@ -352,9 +352,9 @@ static int OW_w_gpio( const unsigned char data , const struct parsedname* pn ) {
     unsigned char w[] = { 0x21, data, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( w , 2 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 20uS
@@ -365,9 +365,9 @@ static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) {
     unsigned char w = 0x22 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 70uS
@@ -381,9 +381,9 @@ static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
     size_t s = sizeof(cum);
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 80uS
@@ -423,9 +423,9 @@ static int OW_r_memory( unsigned char * data , const size_t size, const size_t o
 
     if ( OW_w_scratch(buf,2,pn) ) return 1 ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(&w,1) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(&w,1,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 500uS
@@ -447,9 +447,9 @@ static int OW_w_memory( const unsigned char * data , const size_t size, const si
 
     if ( OW_w_scratch(buf,size+1,pn) ) return 1 ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(&w,1) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(&w,1,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(4*size) ; // 4mS/byte
@@ -461,9 +461,9 @@ static int OW_r_version( unsigned char * data , const struct parsedname* pn ) {
     unsigned char w = 0x41 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     UT_delay(1) ; // 500uS
@@ -484,9 +484,9 @@ static int OW_w_screen( const unsigned char loc , const char * text , const int 
 
         if ( OW_w_scratch(t,l+1,pn) ) return 1 ;
 
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data( &w , 1,pn ) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
 
         t[0]+=l ;
@@ -499,9 +499,9 @@ static int OW_clear( const struct parsedname* pn ) {
     unsigned char c = 0x49 ; /* clear */
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &c, 1) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( &c, 1,pn) ;
+    BUSUNLOCK(pn)
     UT_delay(3) ; // 2.5mS
     return ret ;
 }

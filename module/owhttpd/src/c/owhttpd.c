@@ -30,16 +30,6 @@ $Id$
 #include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
 
-/* ----- Globals ------------- */
-#ifdef OW_MT
-    pthread_mutex_t accept_mutex = PTHREAD_MUTEX_INITIALIZER ;
-    #define ACCEPTLOCK       pthread_mutex_lock(  &accept_mutex) ;
-    #define ACCEPTUNLOCK     pthread_mutex_unlock(&accept_mutex) ;
-#else /* OW_MT */
-    #define ACCEPTLOCK
-    #define ACCEPTUNLOCK
-#endif /* OW_MT */
-
 #if 0
 #ifdef OW_MT
 #include <pthread.h>
@@ -72,33 +62,8 @@ struct mythread threads[MAX_THREADS];
  */
 #define DEFAULTPORT    80
 
-struct listen_sock {
-    int             socket;
-    struct sockaddr_in sin;
-};
-
-//static struct listen_sock l_sock;
 static void ow_exit( int e ) ;
-static void shutdown_sock(struct listen_sock sock) ;
-//static int get_listen_sock(struct listen_sock *sock) ;
-//static void http_loop( struct listen_sock *sock ) ;
-static void * ThreadedAccept( void * pv ) ;
-static void * Acceptor( int listenfd ) ;
-
-#if 0
-void kill_threads(void) {
-#ifdef OW_MT
-    int i;
-    THREADLOCK
-        for (i = 0; i < MAX_THREADS; i++) {
-            if(!threads[i].avail) pthread_cancel(threads[i].tid);
-        }
-    THREADUNLOCK
-#endif
-    shutdown_sock(l_sock);
-    exit(0);
-}
-#endif /* 0 */
+static void Acceptor( int listenfd ) ;
 
 void handle_sighup(int unused) {
     (void) unused ;
@@ -117,24 +82,9 @@ void handle_sigchild(int unused) {
 
 int main(int argc, char *argv[]) {
     char c ;
-#ifdef OW_MT
-    pthread_t thread ;
-#ifdef __UCLIBC__
-    pthread_mutexattr_t mattr;
-    pthread_mutexattr_init(&mattr);
-    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-    pthread_mutex_init(&accept_mutex, &mattr);
-    pthread_mutexattr_destroy(&mattr);
-#else /* __UCLIBC__ */
-    pthread_attr_t attr ;
-
-    pthread_attr_init(&attr) ;
-    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
-#endif /* __UCLIBC__ */
-#endif /* OW_MT */
 
     LibSetup() ;
-    progname = strdup(argv[0]) ;
+    if ( argc>0 ) progname = strdup(argv[0]) ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -154,20 +104,14 @@ int main(int argc, char *argv[]) {
     }
 
     /* non-option arguments */
-    if ( optind == argc-1 ) {
-        ComSetup(argv[optind]) ;
+    while ( optind < argc ) {
+        OW_ArgGeneric(argv[optind]) ;
         ++optind ;
     }
 
-    if ( portname==NULL ) {
+    if ( outdevices==0 ) {
         fprintf(stderr, "No TCP port specified (-p)\n%s -h for help\n",argv[0]);
         ow_exit(1);
-    }
-
-    if ( ServerAddr( portname, &server ) || (ServerListen( &server )<0) ) {
-        fprintf(stderr, "socket problems: %s failed to start\n", progname);
-        fprintf(stderr,"Cannot start server.\n");
-        exit(1);
     }
 
     /*
@@ -175,160 +119,24 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
-#if 0
-#ifdef OW_MT
-    {
-      int i;
-      for(i=0; i<MAX_THREADS; i++) threads[i].avail = 1;
-      sem_init( &accept_sem, 0, MAX_THREADS ) ;
-    }
-#endif /* OW_MT */
-#endif /* 0 */
-
-    signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);
     signal(SIGHUP, handle_sighup);
     signal(SIGTERM, handle_sigterm);
 
-/*
-    for (;;) {
-        http_loop(&l_sock) ;
-    }
-    kill_threads();
-*/
-    for(;;) {
-        ACCEPTLOCK
-#ifdef OW_MT
-#ifdef __UCLIBC__
-        if ( pthread_create( &thread, NULL, ThreadedAccept, &server ) ) ow_exit(1) ;
-	pthread_detach(thread);
-#else /* __UCLIBC__ */
-        if ( pthread_create( &thread, &attr, ThreadedAccept, &server ) ) ow_exit(1) ;
-#endif /* __UCLIBC__ */
-#else /* OW_MT */
-        Acceptor( server.listenfd ) ;
-#endif /* OW_MT */
-    }
+    ServerProcess( Acceptor, ow_exit ) ;
 }
 
-static void * ThreadedAccept( void * pv ) {
-    return (void *) Acceptor( ((struct network_work *)pv)->listenfd ) ;
-}
-
-static void * Acceptor( int listenfd ) {
-    int fd = accept( listenfd, NULL, NULL ) ;
-    ACCEPTUNLOCK
-    if ( fd>=0 ) {
-        FILE * fp = fdopen(fd, "w+");
-        if (fp) {
-            handle_socket( fp ) ;
-            fflush(fp);
-        }
-        close(fd);
-    }
-    return NULL ;
-}
-
-#if 0
-static void * handle(void * ptr) {
-    struct mythread *mt = ((struct mythread *)ptr);
-    struct active_sock ch_sock;
-
-#ifdef OW_MT
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-#endif /* OW_MT */
-
-    ch_sock.socket = mt->socket;
-    ch_sock.io = fdopen(ch_sock.socket, "w+");
-    if (ch_sock.io) {
-        handle_socket( ch_sock.io ) ;
-        fflush(ch_sock.io);
-    }
-    close(ch_sock.socket);
-#ifdef OW_MT
-    THREADLOCK
-        mt->avail = 1;
-        mt->socket = 0;
-    THREADUNLOCK
-    sem_post(&accept_sem);
-    pthread_exit(NULL);
-#endif /* OW_MT */
-    return NULL ;
-}
-
-#ifdef OW_MT
-static int start_thread(struct mythread *mt) {
-    sigset_t oldset;
-    sigset_t newset;
-    int res;
-
-    /* Disallow signal reception in worker threads */
-    sigfillset(&newset);
-    pthread_sigmask(SIG_SETMASK, &newset, &oldset);
-    res = pthread_create(&mt->tid, NULL, handle, mt);
-    pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-    if (res != 0) {
-        fprintf(stderr, "start_thread: error creating thread: %s\n", strerror(res));
-        return -1;
-    }
-#ifdef DEBUG_SYSLOG
-    /* uClibc-0.9.19 which WRT54G use, seem to have a buggy syslog() function.
-       If syslogd is NOT started, syslog() hangs in the new thread (in ow_read.c)
-       If I add the syslog below (after creating the new thread), it doesn't hang in ow_read.c?
-       If syslogd is running the problem doesn't occour, but since WRT54G doesn't have any
-         syslogd as default, it's better to remove syslog() when version <= 0.9.19.
-    */
-    //syslog(LOG_WARNING,"This solves the problem of hanging syslog() in the new thread???\n");
-#endif /* DEBUG_SYSLOG */
-
-    pthread_detach(mt->tid);
-    return 0;
-}
-#endif /* OW_MT */
-
-static void http_loop( struct listen_sock *sock ) {
-    socklen_t size = sizeof((sock->sin));
-    int n_sock = accept((sock->socket),(struct sockaddr*)&(sock->sin), &size);
-    if (n_sock != -1) {
-#ifdef OW_MT
-        sem_wait(&accept_sem);
-        if (multithreading) {
-            int res, i;
-            THREADLOCK
-                for(i=0; i<MAX_THREADS; i++) if(threads[i].avail) break;
-                threads[i].avail = 0;
-                threads[i].socket = n_sock;
-            THREADUNLOCK
-            res = start_thread(&threads[i]);
-            if (res == -1) {
-                //shutdown(n_sock, SHUT_RDWR);
-                close(n_sock);
-                THREADLOCK
-                    threads[i].avail = 1;
-                THREADUNLOCK
-                sem_post(&accept_sem);
-            }
-        } else {
-            threads[0].avail = 0;
-            threads[0].socket = n_sock;
-            handle(&threads[0]);
-        }
-#else /* OW_MT */
-        threads[0].socket = n_sock;
-        handle(&threads[0]);
-#endif /* OW_MT */
-    } else {
-        /* failed to accept */
-        syslog(LOG_WARNING,"Failed to accept a socket\n");
+static void Acceptor( int listenfd ) {
+    FILE * fp = fdopen(listenfd, "w+");
+    if (fp) {
+        handle_socket( fp ) ;
+        fflush(fp);
     }
 }
-#endif /* 0 */
 
 static void ow_exit( int e ) {
     LibClose() ;
     closelog() ;
     exit( e ) ;
 }
-

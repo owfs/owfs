@@ -28,14 +28,14 @@ $Id$
     bad return sendback_data
     -EIO if memcpy
  */
-int BUS_send_data( const unsigned char * const data , const int len ) {
+int BUS_send_data( const unsigned char * const data, const int len, const struct parsedname * pn ) {
     int ret ;
     if ( len>16 ) {
         int dlen = len-(len>>1) ;
-        (ret=BUS_send_data(data,dlen)) || (ret=BUS_send_data(&data[dlen],len>>1)) ;
+        (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
     } else {
         unsigned char resp[16] ;
-        (ret=BUS_sendback_data( data, resp, len )) ||  (ret=memcmp(data, resp, (size_t) len)?-EIO:0) ;
+        (ret=BUS_sendback_data( data, resp, len,pn )) ||  (ret=memcmp(data, resp, (size_t) len)?-EIO:0) ;
     }
     return ret ;
 }
@@ -46,12 +46,13 @@ int BUS_send_data( const unsigned char * const data , const int len ) {
  Returns 0=good
    Bad sendback_data
  */
-int BUS_readin_data( unsigned char * const data , const int len ) {
-    return BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len) ;
+int BUS_readin_data( unsigned char * const data, const int len, const struct parsedname * pn ) {
+    return BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
 }
 
-int BUS_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength ) {
+int BUS_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
     int gl = getlength ;
+    int fd = pn->in->fd ;
     int ret ;
 
 /*
@@ -64,7 +65,7 @@ printf("\n");
 */
     if ( sendlength>0 ) {
         /* first flush */
-        COM_flush();
+        COM_flush(pn);
 //printf("SAG sendlength=%d, getlength=%d\n",sendlength,getlength);
 //{
 //int i;
@@ -73,7 +74,7 @@ printf("\n");
 //printf("\n");
 //}
         /* send out string */
-        if ( write(devfd,bussend,sendlength) != (int)sendlength ) return -EIO; /* Send the bit */
+        if ( write(fd,bussend,sendlength) != (int)sendlength ) return -EIO; /* Send the bit */
     }
 //printf("SAG written\n");
     /* get back string -- with timeout and partial read loop */
@@ -84,13 +85,13 @@ printf("\n");
         struct timeval tv = {5,0}; /* 5 seconds */
         /* Initialize readset */
         FD_ZERO(&readset);
-        FD_SET(devfd, &readset);
+        FD_SET(fd, &readset);
 
         /* Read if it doesn't timeout first */
-        if( select( devfd+1, &readset, NULL, NULL, &tv ) > 0 ) {
+        if( select( fd+1, &readset, NULL, NULL, &tv ) > 0 ) {
 //printf("SAG selected\n");
         /* Is there something to read? */
-        if( FD_ISSET( devfd, &readset )==0 ) return -EIO ; /* error */
+        if( FD_ISSET( fd, &readset )==0 ) return -EIO ; /* error */
 //printf("SAG selected readset\n");
 /*
 {
@@ -100,7 +101,7 @@ for(i=0;i<getlength;++i)printf("%.2X ",busget[i]);
 printf("\n");
 }
 */
-        ret = read( devfd, &busget[getlength-gl], (size_t) gl ) ; /* get available bytes */
+        ret = read( fd, &busget[getlength-gl], (size_t) gl ) ; /* get available bytes */
 //printf("SAG postread ret=%d\n",ret);
         if (ret<0) return ret ;
         gl -= ret ;
@@ -119,7 +120,7 @@ printf("\n");
         }
     }
     } else {
-        COM_flush() ;
+        COM_flush(pn) ;
     }
     return 0 ;
 }
@@ -150,16 +151,16 @@ int BUS_select_low(const struct parsedname * const pn) {
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
-        if ( (ret=BUS_send_data(sent,9)) ) return ret ;
+        if ( (ret=BUS_send_data(sent,9,pn)) ) return ret ;
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
-        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1)) || (ret=BUS_readin_data(resp,3)) ) return ret ;
+        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) return ret ;
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) return -EINVAL ;
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
     }
     if ( pn->dev ) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
-        return BUS_send_data( sent , 9 ) ;
+        return BUS_send_data( sent,9,pn ) ;
     }
     return 0 ;
 }

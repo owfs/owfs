@@ -21,20 +21,26 @@
 #include "ftp_listener.h"
 #include "ftp_error.h"
 
-/* put our executable name here where everybody can see it */
-static const char *exe_name = "owftpd";
-
 static void ow_exit( int e ) ;
 
 int main(int argc, char *argv[]) {
     char c ;
     int max_clients;
     int log_facility;
+#ifdef OW_MT
+    pthread_t thread ;
+    pthread_attr_t attr ;
+
+    pthread_attr_init(&attr) ;
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif /* OW_MT */
+
+    LibSetup() ;
 
     /* hard code the user as "nobody" */
     const char* username = "nobody";
     char *address;
-    
+
     struct passwd *user_info;
     error_code_t err;
 
@@ -44,22 +50,18 @@ int main(int argc, char *argv[]) {
     int sig;
 
     /* grab our executable name */
-    if (argc > 0) {
-        exe_name = argv[0];
-    }
+    if (argc > 0) progname = argv[0];
 
     /* Set up owlib */
     LibSetup() ;
 
     /* verify we're running as root */
     if (geteuid() != 0) {
-        fprintf(stderr, "%s: program needs root permission to run\n", exe_name);
+        fprintf(stderr, "%s: program needs root permission to run\n", progname);
         ow_exit(1);
     }
 
     /* default command-line arguments */
-    portnum = FTP_PORT;
-    address = FTP_ADDRESS;
     max_clients = MAX_CLIENTS;
     log_facility = LOG_FTP;
 
@@ -70,11 +72,11 @@ int main(int argc, char *argv[]) {
             "Usage: %s ttyDevice [options] \n"
             "   or: %s [options] -d ttyDevice \n"
             "    -p port   -- tcp port for ftp comnmand channel (default 21)\n" ,
-        exe_name,exe_name ) ;
+        progname,progname ) ;
             break ;
         case 'V':
             fprintf(stderr,
-            "%s version:\n\t" VERSION "\n",exe_name ) ;
+            "%s version:\n\t" VERSION "\n",progname ) ;
             break ;
         }
         if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
@@ -86,68 +88,32 @@ int main(int argc, char *argv[]) {
         ++optind ;
     }
 
-    if ( devfd==-1 && devusb==0 ) {
-        fprintf(stderr, "No device port specified (-d or -u)\n%s -h for help\n",argv[0]);
-        ow_exit(1);
-    }
+    /* Need default port? */
+    if ( outdevice->name==NULL ) outdevice->name = DEFAULT_PORTNAME ;
 
-    /*
-            } else if (strcmp(argv[i], "-i") == 0
-                       || strcmp(argv[i], "--interface") == 0) {
-                if (++i >= argc) {
-                    print_usage("missing interface");
-                    exit(1);
-                }
-                address = argv[i];
-            } else if (strcmp(argv[i], "-m") == 0
-                       || strcmp(argv[i], "--max-clients") == 0) {
-                if (++i >= argc) {
-                    print_usage("missing number of max clients");
-                    exit(1);
-                }
-                num = strtol(argv[i], &endptr, 0);
-                if ((num < MIN_NUM_CLIENTS) || (num > MAX_NUM_CLIENTS) 
-                    || (*endptr != '\0')) {
-
-                    snprintf(temp_buf, sizeof(temp_buf),
-                        "max clients must be a number between %d and %d",
-                        MIN_NUM_CLIENTS, MAX_NUM_CLIENTS);
-                    print_usage(temp_buf);
-
-                    exit(1);
-                }
-                max_clients = num;
-*/
-    
-    /* Test portnum */
-    if ((portnum < MIN_PORT) || (portnum > MAX_PORT) ) {
-        fprintf(stderr,"%s: port(=%d) must be a number between %d and %d",exe_name,portnum,MIN_PORT, MAX_PORT);
-        ow_exit(1);
-    }
-    
-    /* nobody user */
-printf("NAME: %s\n",username);
-    if ( (user_info=getpwnam(username)) == NULL) {
-        fprintf(stderr, "%s: invalid user name: %s, will run as root!\n", exe_name,username);
+    if ( ServerAddr( outdevice->name, &outdevice ) || (ServerListen( &outdevice )<0) ) {
+        fprintf(stderr, "socket problems: %s failed to start\n", progname);
+        fprintf(stderr,"Cannot start server.\n");
+        exit(1);
     }
 
     /* become a daemon */
     if ( LibStart() ) ow_exit(1) ;
 
     /* avoid SIGPIPE on socket activity */
-    signal(SIGPIPE, SIG_IGN);         
+    signal(SIGPIPE, SIG_IGN);
 
     /* log the start time */
     openlog(NULL, LOG_NDELAY, log_facility);
     syslog(LOG_INFO,"Starting, version %s, as PID %d", VERSION, getpid());
 
     /* create our main listener */
-    if (!ftp_listener_init(&ftp_listener, 
+    if (!ftp_listener_init(&ftp_listener,
                            address,
                            portnum,
                            max_clients,
-                           INACTIVITY_TIMEOUT, 
-                           &err)) 
+                           INACTIVITY_TIMEOUT,
+                           &err))
     {
         syslog(LOG_ERR, "error initializing FTP listener on port %d; %s",
           portnum,error_get_desc(&err));
@@ -166,6 +132,25 @@ printf("NAME: %s\n",username);
         }
     }
 
+    /*
+     * Now we drop privledges and become a daemon.
+     */
+    if ( LibStart() ) ow_exit(1) ;
+
+    signal(SIGCHLD, handle_sigchild);
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGHUP, handle_sighup);
+    signal(SIGTERM, handle_sigterm);
+
+    for(;;) {
+        ACCEPTLOCK
+#ifdef OW_MT
+        if ( pthread_create( &thread, &attr, ThreadedAccept, &outdevice ) ) ow_exit(1) ;
+#else /* OW_MT */
+        Acceptor( server.listenfd ) ;
+#endif /* OW_MT */
+    }
+
     /* start our listener */
     if (ftp_listener_start(&ftp_listener, &err) == 0) {
         syslog(LOG_ERR, "error starting FTP service; %s", error_get_desc(&err));
@@ -180,7 +165,7 @@ printf("NAME: %s\n",username);
     sigwait(&term_signal, &sig);
     if (sig == SIGTERM) {
         syslog(LOG_INFO, "SIGTERM received, shutting down");
-    } else { 
+    } else {
         syslog(LOG_INFO, "SIGINT received, shutting down");
     }
     ftp_listener_stop(&ftp_listener);
@@ -192,4 +177,3 @@ static void ow_exit( int e ) {
     LibClose() ;
     exit( e ) ;
 }
-

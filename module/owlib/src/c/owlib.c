@@ -28,10 +28,17 @@ void LibSetup( void ) {
     Cache_Open() ;
 //printf("CacheOpened\n");
 #endif /* OW_CACHE */
-    start_time = time(NULL) ;
 
-   /* Set up default adapter */
-    BadAdapter_detect() ;
+    /* global mutex attribute */
+#ifdef OW_MT
+ #ifdef __UCLIBC__
+    pthread_mutexattr_init(&mattr);
+    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+    pmattr = &mattr ;
+ #endif /* __UCLIBC__ */
+#endif /* OW_MT */
+    
+    start_time = time(NULL) ;
 }
 
 #ifdef __UCLIBC__
@@ -147,12 +154,63 @@ static int my_daemon(int nochdir, int noclose) {
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
-
-    if ( busmode == bus_unknown ) {
+    struct connection_in * in = indevice ;
+    if ( indevice==NULL ) {
         fprintf(stderr, "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname);
+        BadAdapter_detect(NewIn()) ;
         return 1;
     }
-
+    do {
+        int ret = 0 ;
+        switch( in->busmode ) {
+        case bus_remote:
+            ret = Server_detect(in) ;
+            break ;
+        case bus_serial:
+        {
+            /** Actually COM and Parallel */
+            struct stat s ;
+            if ( (ret=stat( in->name, &s )) ) {
+                syslog( LOG_ERR, "Cannot stat port: %s error=%s\n",in->name,strerror(ret)) ;
+            } else if ( ! S_ISCHR(s.st_mode) ) {
+                syslog( LOG_INFO , "Not a character device: %s\n",in->name) ;
+                ret = -EBADF ;
+            } else if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
+                ret = errno ;
+                syslog( LOG_ERR,"Cannot open port: %s error=%s\n",in->name,strerror(ret)) ;
+            } else if ( major(s.st_rdev) == 99 ) { /* parport device */
+#ifndef OW_PARPORT
+                ret =  -ENOPROTOOPT ;
+#else /* OW_PARPORT */
+                if ( (ret=DS1410_detect(in)) ) {
+                    syslog(LOG_WARNING, "Cannot detect the DS1410E parallel adapter\n");
+                }
+#endif /* OW_PARPORT */
+            } else if ( COM_open(in) ) { /* serial device */
+                ret = -ENODEV ;
+            } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
+                syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
+                if ( DS9097_detect(in) ) {
+                    syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
+                    ret = -ENODEV ;
+                }
+            }
+        }
+            break ;
+        case bus_usb:
+#ifdef OW_USB
+            ret = DS9490_detect(in) ;
+#else /* OW_USB */
+            fprintf(stderr,"Cannot setup USB port. Support not compiled into %s\n",progname);
+            ret = 1 ;
+#endif /* OW_USB */
+            break ;
+        default:
+            ret = 1 ;
+            break ;
+        }
+        if (ret) BadAdapter_detect(in) ;
+    } while ( (in=in->next) ) ;
 
     /* daemon() should work for embedded systems with MMU, but
      * I noticed that the WRT54G router somethimes had problem with this.
@@ -169,9 +227,9 @@ int LibStart( void ) {
     //if(background) printf("Call daemon\n");
     if ( background &&
 #if defined(__UCLIBC__)
-     my_daemon(1, 0)
+        my_daemon(1, 0)
 #else /* defined(__UCLIBC__) */
-     daemon(1, 0)
+        daemon(1, 0)
 #endif /* defined(__UCLIBC__) */
     ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
@@ -187,7 +245,7 @@ int LibStart( void ) {
             syslog(LOG_WARNING,"Cannot open PID file: %s Error=%s\n",pid_file,strerror(errno) ) ;
             free( pid_file ) ;
             pid_file = NULL ;
-        return 1 ;
+            return 1 ;
         }
         fprintf(pid,"%lu",pid_num ) ;
         fclose(pid) ;
@@ -197,66 +255,6 @@ int LibStart( void ) {
     return 0 ;
 }
 
-/** Actually COM and Parallel */
-int ComSetup( const char * busdev ) {
-    struct stat s ;
-    int ret = 0 ;
-
-    if ( devport ) {
-        fprintf(stderr,"1-wire port already set to %s, ignoring %s.\n",devport,busdev) ;
-        return 0 ;
-    }
-    if ( (devport=strdup(busdev)) == NULL ) {
-        ret = -ENOMEM ;
-    } else if ( (ret=stat( devport, &s )) ) {
-        syslog( LOG_ERR, "Cannot stat port: %s error=%s\n",devport,strerror(ret)) ;
-        ret = -ret ;
-    } else if ( ! S_ISCHR(s.st_mode) ) {
-        syslog( LOG_INFO , "Not a character device: %s\n",devport) ;
-        ret = -EBADF ;
-    } else if ((devfd = open(devport, O_RDWR | O_NONBLOCK)) < 0) {
-        ret = errno ;
-        syslog( LOG_ERR,"Cannot open port: %s error=%s\n",devport,strerror(ret)) ;
-        ret = -ret ;
-    } else if ( major(s.st_rdev) == 99 ) { /* parport device */
-#ifndef OW_PARPORT
-        ret =  -ENOPROTOOPT ;
-#else /* OW_PARPORT */
-        if ( (ret=DS1410_detect()) ) {
-            syslog(LOG_WARNING, "Cannot detect the DS1410E parallel adapter\n");
-        }
-#endif /* OW_PARPORT */
-    } else if ( COM_open() ) { /* serial device */
-        ret = -ENODEV ;
-    } else if ( DS2480_detect() ) { /* Set up DS2480/LINK interface */
-        syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",devport) ;
-        if ( DS9097_detect() ) {
-            syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",devport) ;
-            ret = -ENODEV ;
-        }
-    }
-    if (ret) BadAdapter_detect() ;
-    syslog(LOG_INFO,"Interface type = %d on %s\n",Adapter,devport) ;
-    return ret ;
-}
-
-int USBSetup( void ) {
-    int ret ;
-#ifdef OW_USB
-    if ( devport ) {
-        fprintf(stderr,"1-wire port already set to %s, ignoring USB.\n",devport) ;
-        ret = -EADDRINUSE ;
-    } else {
-        ret = DS9490_detect() ;
-    }
-#else /* OW_USB */
-    fprintf(stderr,"Cannot setup USB port properly. See the system log for details\n");
-    ret = -ENOPROTOOPT ;
-#endif /* OW_USB */
-    if ( ret ) BadAdapter_detect() ;
-    return ret ;
-}
-
 /* All ow library closeup */
 void LibClose( void ) {
     if ( pid_file ) {
@@ -264,21 +262,16 @@ void LibClose( void ) {
        free( pid_file ) ;
        pid_file = NULL ;
     }
-    COM_close() ;
-    if ( devport ) {
-        free(devport) ;
-        devport = NULL ;
-    }
-#ifdef OW_USB
-    DS9490_close() ;
-#endif /* OW_USB */
 #ifdef OW_CACHE
     Cache_Close() ;
 #endif /* OW_CACHE */
-    FreeAddr( &server ) ;
-    FreeAddr( &client ) ;
-    busmode = bus_unknown ;
+    FreeIn() ;
+    FreeOut() ;
     closelog() ;
+    
+#ifdef OW_MT
+    if ( pmattr ) pthread_mutexattr_destroy(pmattr);
+#endif /* OW_MT */
 
     if ( progname && progname[0] ) free(progname) ;
 }

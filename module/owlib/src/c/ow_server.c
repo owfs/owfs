@@ -18,28 +18,30 @@ $Id$
 static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) ;
-static int ServerSizeorFull( enum msg_type type, const char * path  ) ;
+static int ServerSizeorFull( enum msg_type type, const char * path, const struct parsedname * pn  ) ;
 
-int Server_detect( void ) {
-    if ( servername == NULL ) return -1 ;
-    if ( ClientAddr( servername, &client ) ) return -1 ;
-    busmode = bus_remote ;
+int Server_detect( struct connection_in * in ) {
+    if ( in->name == NULL ) return -1 ;
+    if ( ClientAddr( in->name, in ) ) return -1 ;
+    in->Adapter = -1 ;
+    in->adapter_name = "tcp" ;
+    in->busmode = bus_remote ;
     return 0 ;
 }
 
-int ServerSize( const char * path ) {
-    return ServerSizeorFull( msg_size, path) ;
+int ServerSize( const char * path, const struct parsedname * pn ) {
+    return ServerSizeorFull( msg_size, path,pn) ;
 }
 
-int ServerFull( const char * path ) {
-    return ServerSizeorFull( msg_full, path) ;
+int ServerFull( const char * path, const struct parsedname * pn ) {
+    return ServerSizeorFull( msg_full, path,pn) ;
 }
 
 /* Size of a data item */
-static int ServerSizeorFull( enum msg_type type, const char * path  ) {
+static int ServerSizeorFull( enum msg_type type, const char * path, const struct parsedname * pn  ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( &client ) ;
+    int connectfd = ClientConnect( pn->in ) ;
     int ret ;
 
     if ( connectfd < 0 ) return -EIO ;
@@ -59,10 +61,10 @@ static int ServerSizeorFull( enum msg_type type, const char * path  ) {
     return ret ;
 }
 
-int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) {
+int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( &client ) ;
+    int connectfd = ClientConnect( pn->in ) ;
     int ret ;
 
     if ( connectfd < 0 ) return -EIO ;
@@ -71,7 +73,7 @@ int ServerRead( const char * path, char * buf, const size_t size, const off_t of
     sm.size = size ;
     sm.sg =  SemiGlobal.int32;
     sm.offset = offset ;
-    if ( ToServer( connectfd, &sm, path, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, pn->path, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, buf, size ) < 0 ) {
         ret = -EIO ;
@@ -82,10 +84,10 @@ int ServerRead( const char * path, char * buf, const size_t size, const off_t of
     return ret ;
 }
 
-int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) {
+int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( &client ) ;
+    int connectfd = ClientConnect( pn->in ) ;
     int ret ;
 
     if ( connectfd < 0 ) return -EIO ;
@@ -94,7 +96,7 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
     sm.size = size ;
     sm.sg =  SemiGlobal.int32;
     sm.offset = offset ;
-    if ( ToServer( connectfd, &sm, path, buf, size) ) {
+    if ( ToServer( connectfd, &sm, pn->path, buf, size) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
@@ -110,11 +112,11 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
     return ret ;
 }
 
-int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
+int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
     char * path2 ;
-    int connectfd = ClientConnect( &client ) ;
+    int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
 
     if ( connectfd < 0 ) return -EIO ;
@@ -140,11 +142,17 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 break ;
             } else {
 //printf("DIRFUNC\n");
-                dirfunc(&pn2) ;
+                DIRLOCK
+                    dirfunc(&pn2) ;
+                DIRUNLOCK
                 FS_ParsedName_destroy( &pn2 ) ;
                 free(path2) ;
             }
         }
+        DIRLOCK
+            /* flags are sent back in "offset" of final blank entry */
+            flags[0] |= cm.offset ;
+        DIRUNLOCK
     }
     close( connectfd ) ;
     return cm.ret ;

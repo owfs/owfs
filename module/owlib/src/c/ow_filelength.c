@@ -23,7 +23,7 @@ size_t FileLength( const struct parsedname * const pn ) {
         return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
     } else if ( pn->ft->format==ft_bitfield &&  pn->extension==-2 ) {
         return 12 ; /* bitfield */
-    } else if ( busmode==bus_remote && pn->ft->suglen<0 ) {
+    } else if ( pn->in->busmode==bus_remote && pn->ft->suglen<0 ) {
         int ret ;
         if ( pn->badcopy ) { /* need correct path to send to server */
             int len = strlen(pn->path) ;
@@ -31,9 +31,9 @@ size_t FileLength( const struct parsedname * const pn ) {
             strcpy(fullpath,pn->path) ;
             fullpath[len] = '/' ;
             if ( FS_FileName(&fullpath[len+1],OW_FULLNAME_MAX,pn) ) return 0 ;
-            ret = ServerSize(fullpath) ;
+            ret = ServerSize(fullpath,pn) ;
         } else {
-            ret = ServerSize(pn->path) ;
+            ret = ServerSize(pn->path,pn) ;
         }
         return ret<0 ? 0 : ret ;
     } else {
@@ -41,9 +41,9 @@ size_t FileLength( const struct parsedname * const pn ) {
         case -fl_type:
             return strlen(pn->dev->name) ;
         case -fl_adap_name:
-            return strlen(adapter_name) ;
+            return strlen(pn->in->adapter_name) ;
         case -fl_adap_port:
-            return strlen(devport) ;
+            return strlen(pn->in->name) ;
         case -fl_pidfile:
             if ( pid_file ) return strlen(pid_file) ;
             return 0 ;

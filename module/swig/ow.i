@@ -25,25 +25,10 @@ int init( const char * dev ) {
 //    LibSetup() ;
     background = 0 ;
     pid_file = 0 ;
-    if ( busmode != bus_unknown ) {
-        return -EBUSY ;
-    } else if ( strcmp(dev,"u") ) {
-//printf("Comsetup\n");
-        if ( ComSetup(dev) ) {
-              servername = strdup(dev);
-//printf("Server_detect on %s\n",servername);
-            if ( Server_detect() ) {
-                free(servername);
-                servername = NULL ;
-                return 0 ;
-            }
-//printf("Server_detect good\n");
-        }
-//printf("Comsetup good\n");
+    if ( strcmp(dev,"u") ) {
+        OW_ArgGeneric( dev ) ;
     } else {
-//printf("USBsetup\n");
-        if ( USBSetup() ) return 0 ;
-//printf("USBsetup good\n");
+        OW_ArgUSB(NULL) ;
     }
     if ( LibStart() ) return 0 ;
 //printf("Libstart good\n");

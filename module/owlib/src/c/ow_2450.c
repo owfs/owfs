@@ -230,9 +230,9 @@ static int OW_r_mem( unsigned char * const p , const unsigned int size, const in
 //printf("2450 R mem data=%d size=%d location=%d\n",*p,size,location) ;
 
     /* First page */
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(buf,3) || BUS_readin_data(&buf[3],thispage+2) || CRC16(buf,thispage+5) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(buf,3,pn) || BUS_readin_data(&buf[3],thispage+2,pn) || CRC16(buf,thispage+5) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 //printf("2450 R mem 1\n") ;
 
@@ -241,9 +241,9 @@ static int OW_r_mem( unsigned char * const p , const unsigned int size, const in
 
     /* cycle through additional pages */
     for ( s=size-thispage; s>0; s-=thispage ) {
-        BUSLOCK
-            ret = BUS_readin_data(&buf[3],8+2) || CRC16(&buf[3],8+2) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret = BUS_readin_data(&buf[3],8+2,pn) || CRC16(&buf[3],8+2) ;
+        BUSUNLOCK(pn)
         if ( ret ) return 1 ;
 
         thispage = (s>8) ? 8 : s ;
@@ -263,9 +263,9 @@ static int OW_w_mem( const unsigned char * const p , const unsigned int size , c
     if ( size == 0 ) return 0 ;
 
     /* Send the first byte (handled differently) */
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_sendback_data(buf,buf,7) || CRC16(buf,6) || (buf[6]!=p[0]) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_sendback_data(buf,buf,7,pn) || CRC16(buf,6) || (buf[6]!=p[0]) ;
+    BUSUNLOCK(pn)
 //printf("2450 byte %d return=%d\n",0,ret );
     if ( ret ) return 1 ;
 
@@ -273,9 +273,9 @@ static int OW_w_mem( const unsigned char * const p , const unsigned int size , c
     for ( i=1 ; i<size ; ++i ) {
         buf[0] = p[i] ;
         buf[1] = buf[2] = buf[3] = 0xFF ;
-        BUSLOCK
-            ret =BUS_sendback_data(buf,buf,4) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
-        BUSUNLOCK
+        BUSLOCK(pn)
+            ret =BUS_sendback_data(buf,buf,4,pn) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
+        BUSUNLOCK(pn)
 //printf("2450 byte %d return=%d\n",i,ret );
 
         if ( ret ) return 1 ;
@@ -377,18 +377,18 @@ static int OW_convert( const struct parsedname * const pn ) {
 
     // Start conversion
     // 6 msec for 16bytex4channel (5.2)
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5 ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5,pn ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
         if ( ret==0 ) {
             if (power==0x40) {
-    BUSUNLOCK
+    BUSUNLOCK(pn)
                 UT_delay(6) ; /* don't need to hold line for conversion! */
             } else { /* power line for conversion */
-                ret = BUS_PowerByte( 0x04, 6) ;
-    BUSUNLOCK
+                ret = BUS_PowerByte( 0x04, 6,pn) ;
+    BUSUNLOCK(pn)
             }
         } else {
-    BUSUNLOCK
+    BUSUNLOCK(pn)
 	}
     return ret ;
 }

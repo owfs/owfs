@@ -101,9 +101,9 @@ static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) {
     unsigned char ninesix = 0x96 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(cmd,2) || BUS_readin_data(&resp,1) || (resp!=val) || BUS_sendback_data(&ninesix,&resp,1) || (resp!=ninesix) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(cmd,2,pn) || BUS_readin_data(&resp,1,pn) || (resp!=val) || BUS_sendback_data(&ninesix,&resp,1,pn) || (resp!=ninesix) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -113,9 +113,9 @@ static int OW_r_wiper(unsigned int *val, const struct parsedname * pn) {
     unsigned char resp[2] ;
     int ret ;
 
-    BUSLOCK
-        ret =BUS_select(pn) || BUS_send_data(&fo,1) || BUS_readin_data(resp,2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret =BUS_select(pn) || BUS_send_data(&fo,1,pn) || BUS_readin_data(resp,2,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     *val = resp[1] ;
@@ -129,9 +129,9 @@ static int OW_w_cp(const int val, const struct parsedname * pn) {
     unsigned char ninesix = 0x96 ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(cmd,2) || BUS_readin_data(&resp,1) || (resp!=cmd[1]) || BUS_sendback_data(&ninesix,&resp,1) || (resp!=ninesix) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(cmd,2,pn) || BUS_readin_data(&resp,1,pn) || (resp!=cmd[1]) || BUS_sendback_data(&ninesix,&resp,1,pn) || (resp!=ninesix) ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -141,9 +141,9 @@ static int OW_r_cp(int * val , const struct parsedname * pn) {
     unsigned char resp[2] ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(&aa,1) || BUS_readin_data(resp,2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data(&aa,1,pn) || BUS_readin_data(resp,2,pn) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     *val = resp[1] & 0x40 ;

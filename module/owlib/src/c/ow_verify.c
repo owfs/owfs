@@ -13,7 +13,7 @@ $Id$
 #include "ow.h"
 
 /* ------- Prototypes ----------- */
-static int BUS_verify(const unsigned char * const serialnumber) ;
+static int BUS_verify(const struct parsedname * const pn) ;
 
 /* ------- Functions ------------ */
 
@@ -28,7 +28,7 @@ int BUS_alarmverify(const struct parsedname * const pn) {
     memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pncopy.dev = NULL ;
     ret=BUS_select(&pncopy) ;
-    ret || (ret=BUS_send_data( &ec , 1 )) || (ret=BUS_verify(pn->sn)) ;
+    ret || (ret=BUS_send_data( &ec , 1,pn )) || (ret=BUS_verify(pn)) ;
     return ret ;
 }
 
@@ -43,7 +43,7 @@ int BUS_normalverify(const struct parsedname * const pn) {
     memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pncopy.dev = NULL ;
     ret=BUS_select(&pncopy) ;
-    ret || (ret=BUS_send_data( &fo , 1 )) || (ret=BUS_verify(pn->sn)) ;
+    ret || (ret=BUS_send_data( &fo , 1,pn )) || (ret=BUS_verify(pn)) ;
     return ret ;
 }
 
@@ -51,36 +51,34 @@ int BUS_normalverify(const struct parsedname * const pn) {
 //   tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-static int BUS_verify(const unsigned char * const serialnumber) {
+static int BUS_verify(const struct parsedname * const pn) {
    unsigned char buffer[24] ;
    int i, goodbits=0 ;
    // set all bits at first
    memset( buffer , 0xFF , 24 ) ;
 
    // now set or clear apropriate bits for search
-   for (i = 0; i < 64; i++) UT_setbit(buffer,3*i+2,UT_getbit(serialnumber,i)) ;
+   for (i = 0; i < 64; i++) UT_setbit(buffer,3*i+2,UT_getbit(pn->sn,i)) ;
 
    // send/recieve the transfer buffer
-   if ( BUS_sendback_data(buffer,buffer,24) ) return 1 ;
+   if ( BUS_sendback_data(buffer,buffer,24,pn) ) return 1 ;
    for ( i=0 ; (i<64) && (goodbits<64) ; i++ )
-//   for ( i=0 ; (i<64) && (goodbits<8) ; i++ )
    {
        switch (UT_getbit(buffer,3*i)<<1 | UT_getbit(buffer,3*i+1)) {
        case 0:
            break ;
        case 1:
-           if ( ! UT_getbit(serialnumber,i) ) goodbits++ ;
+           if ( ! UT_getbit(pn->sn,i) ) goodbits++ ;
            break ;
        case 2:
-           if ( UT_getbit(serialnumber,i) ) goodbits++ ;
+           if ( UT_getbit(pn->sn,i) ) goodbits++ ;
            break ;
        case 3: // No device on line
            return 1 ;
        }
    }
-
-      // check to see if there were enough good bits to be successful
-      // remember 1 is bad!
+   // check to see if there were enough good bits to be successful
+   // remember 1 is bad!
    return goodbits<8 ;
 }
 

@@ -62,7 +62,8 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
 
-    if ( busmode == bus_remote ) return ServerWrite( path, buf, size, offset ) ;
+//    if ( indevice==NULL ) return -ENODEV ;
+//    if ( indevice->busmode == bus_remote ) return ServerWrite( path, buf, size, offset ) ;
 
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
@@ -80,33 +81,62 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 /* return size if ok, else negative */
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
-
-    /* if readonly exit */
-    if ( readonly ) return -EROFS ;
-
-    STATLOCK
-        AVERAGE_IN(&write_avg)
-        AVERAGE_IN(&all_avg)
-        ++ write_calls ; /* statistics */
-    STATUNLOCK
-
-    LockGet(pn) ;
-        r = FS_real_write( buf, size, offset, pn ) ;
-    LockRelease(pn) ;
-
-    if ( r == 0 ) {
-        STATLOCK
-            ++write_success ; /* statistics */
-            write_bytes += size ; /* statistics */
-        STATUNLOCK
+#ifdef OW_MT
+    pthread_t thread ;
+    /* Embedded function */
+    void * Write2( void * vp ) {
+        struct parsedname pn2 ;
+        struct stateinfo si ;
+        (void) vp ;
+        memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
+        pn2.in = pn->in->next ;
+        pn2.si = &si ;
+        return (void *) FS_write_postparse(buf,size,offset,&pn2) ;
     }
+    int threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
+#endif /* OW_MT */
+    if ( pn->in==NULL ) return -ENODEV ;
 
-    STATLOCK
-        AVERAGE_OUT(&write_avg)
-        AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    if ( pn->in->busmode == bus_remote ) {
+        r = ServerWrite( buf, size, offset, pn ) ;
+    } else {
+        /* if readonly exit */
+        if ( readonly ) return -EROFS ;
+//        if ( indevice==NULL ) return -ENODEV ;
 
-    return (r) ? r : size ; /* here's where the size is used! */
+        STATLOCK
+            AVERAGE_IN(&write_avg)
+            AVERAGE_IN(&all_avg)
+            ++ write_calls ; /* statistics */
+        STATUNLOCK
+
+        LockGet(pn) ;
+            r = FS_real_write( buf, size, offset, pn ) ;
+        LockRelease(pn) ;
+
+        if ( r == 0 ) {
+            STATLOCK
+                ++write_success ; /* statistics */
+                write_bytes += size ; /* statistics */
+            STATUNLOCK
+        }
+
+        STATLOCK
+            AVERAGE_OUT(&write_avg)
+            AVERAGE_OUT(&all_avg)
+        STATUNLOCK
+        if ( r==0 ) r=size ; /* here's where the size is used! */
+    }
+#ifdef OW_MT
+    if ( !threadbad ) { /* was a thread created? */
+        void * v ;
+        int rt ;
+        if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
+        rt = (int) v ;
+        if ( rt > 0 ) return rt ; /* is it an error return? Then return this one */
+    }
+#endif /* OW_MT */
+    return r ;
 }
 
 /* return 0 if ok */

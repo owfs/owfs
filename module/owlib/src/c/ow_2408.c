@@ -200,9 +200,9 @@ static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+8+2] = { 0xF0, 0x88 , 0x00, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 8+2 ) || CRC16(p,3+8+2) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 8+2,pn ) || CRC16(p,3+8+2) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     memcpy( data , &p[3], 6 ) ;
@@ -213,9 +213,9 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
     unsigned char p[] = { 0x5A, data , ~data, 0xFF, 0xFF, } ;
     int ret ;
 //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_sendback_data(p,p,5) || p[3]!=0xAA ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_sendback_data(p,p,5,pn) || p[3]!=0xAA ;
+    BUSUNLOCK(pn)
 //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
     /* Ignore byte 5 p[4] the PIO status byte */
     return ret ;
@@ -225,9 +225,9 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
 static int OW_c_latch(const struct parsedname * pn) {
     unsigned char p[] = { 0xC3, 0xFF, } ;
     int ret ;
-    BUSLOCK
-    ret = BUS_select(pn) || BUS_sendback_data( p , p , 2 ) || p[1]!=0xAA ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+    ret = BUS_select(pn) || BUS_sendback_data( p , p , 2,pn ) || p[1]!=0xAA ;
+    BUSUNLOCK(pn)
     return ret ;
 }
 
@@ -237,9 +237,9 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
     unsigned char p[] = { 0xCC, 0x8D, 0x00, data, } ;
     int ret ;
 
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 4 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( p , 4,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return -EINVAL ;
 
     /* Read registers */
@@ -257,9 +257,9 @@ static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * p
 
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
     c[3] = cr = (data[2] & 0x03) | (d[5] & 0x0C) ;
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( s , 5 ) || BUS_send_data( c , 4 ) ;
-    BUSUNLOCK
+    BUSLOCK(pn)
+        ret = BUS_select(pn) || BUS_send_data( s , 5,pn ) || BUS_send_data( c , 4,pn ) ;
+    BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     /* Read registers */
