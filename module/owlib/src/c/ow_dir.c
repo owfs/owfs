@@ -62,36 +62,37 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         ret = FS_alarmdir( dirfunc, data, &pn2 ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         ret = FS_typedir( dirfunc, data, &pn2 ) ;
-    } else if ( pn->state == pn_uncached ) {
-        ret = FS_realdir( dirfunc, data, &pn2 ) ;
-    } else {  /* root or branch directory -- non-alarm */
-
-        /* Show alarm and uncached and stats... (if root directory) */
-        if ( pn2.pathlength == 0 ) { /* true root */
-            pn2.state = pn_alarm ;
-            dirfunc( data, &pn2 ) ;
-            pn2.state = pn->state ;
-            if ( cacheenabled ) { /* cached */
-                pn2.state = pn_uncached ;
+    } else {
+        pn2.state = pn_alarm ;
+        dirfunc( data, &pn2 ) ;
+        if ( pn->state == pn_uncached ) {
+            ret = FS_realdir( dirfunc, data, &pn2 ) ;
+        } else {  /* root or branch directory -- non-alarm */
+            /* Show uncached and stats... (if root directory) */
+            if ( pn2.pathlength == 0 ) { /* true root */
+                pn2.state = pn->state ;
+                if ( cacheenabled ) { /* cached */
+                    pn2.state = pn_uncached ;
+                    dirfunc( data, &pn2 ) ;
+                    pn2.state = pn_normal ;
+                }
+                pn2.type = pn_settings ;
                 dirfunc( data, &pn2 ) ;
-                pn2.state = pn_normal ;
+                pn2.type = pn_system ;
+                dirfunc( data, &pn2 ) ;
+                pn2.type = pn_statistics ;
+                dirfunc( data, &pn2 ) ;
+                pn2.type = pn_structure ;
+                dirfunc( data, &pn2 ) ;
+                pn2.type = pn_real ;
             }
-            pn2.type = pn_settings ;
-            dirfunc( data, &pn2 ) ;
-            pn2.type = pn_system ;
-            dirfunc( data, &pn2 ) ;
-            pn2.type = pn_statistics ;
-            dirfunc( data, &pn2 ) ;
-            pn2.type = pn_structure ;
-            dirfunc( data, &pn2 ) ;
-            pn2.type = pn_real ;
-        }
 
-        /* Show all devices in this directory */
-        if ( cacheenabled && timeout.dir ) {
-            FS_cache2real( dirfunc, data, &pn2 ) ;
-        } else {
-            FS_realdir( dirfunc, data, &pn2 ) ;
+            /* Show all devices in this directory */
+            if ( cacheenabled && timeout.dir ) {
+                FS_cache2real( dirfunc, data, &pn2 ) ;
+            } else {
+                FS_realdir( dirfunc, data, &pn2 ) ;
+            }
         }
     }
     STATLOCK
