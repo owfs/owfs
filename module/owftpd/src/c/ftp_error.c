@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "daemon_assert.h"
-#include "error.h"
+#include "ftp_error.h"
 
 static int invariant(const error_t *err);
 

@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include "oftpd.h"
 #include "ftp_listener.h"
-#include "error.h"
+#include "ftp_error.h"
 
 /* put our executable name here where everybody can see it */
 static const char *exe_name = "owftpd";

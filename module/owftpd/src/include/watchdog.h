@@ -1,4 +1,4 @@
-/* 
+/*
  * $Id$
  */
 
@@ -18,7 +18,7 @@
 # endif
 #endif
 
-#include "error.h"
+#include "ftp_error.h"
 
 /* each watched thread gets one of these structures */
 typedef struct watched {

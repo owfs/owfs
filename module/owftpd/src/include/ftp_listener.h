@@ -7,7 +7,7 @@
 
 #include <limits.h>
 #include <pthread.h>
-#include "error.h"
+#include "ftp_error.h"
 #include "watchdog.h"
 
 #define DEFAULT_FTP_PORT 21

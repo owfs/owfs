@@ -14,7 +14,7 @@
 #include <limits.h>
 #include "af_portability.h"
 #include "watchdog.h"
-#include "error.h"
+#include "ftp_error.h"
 
 /* data representation types supported */
 #define TYPE_ASCII  0
