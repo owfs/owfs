@@ -441,8 +441,8 @@ static int OW_w_trim(const unsigned char * const trim, const struct parsedname *
 
     BUS_lock() ;
         ret =    BUS_select(pn) || BUS_send_data( &cmd[0] , 2 )
-              || BUS_select(pn) || BUS_send_data( &cmd[2] , 1 )
-              || BUS_select(pn) || BUS_send_data( &cmd[3] , 2 )
+              || BUS_select(pn) || BUS_send_data( &cmd[2] , 2 )
+              || BUS_select(pn) || BUS_send_data( &cmd[4] , 1 )
               || BUS_select(pn) || BUS_send_data( &cmd[5] , 1 ) ;
     BUS_unlock() ;
 
