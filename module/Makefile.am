@@ -9,7 +9,7 @@ endif
 if ENABLE_OWFTPD
   MAYBE_OWFTPD = owftpd
 endif
-if ENABLE_OWFTPD
+if ENABLE_OWPERL
   MAYBE_OWPERL = owperl
 endif
 
