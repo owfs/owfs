@@ -9,10 +9,10 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-#include <stdlib.h>
-
 #include "owfs_config.h"
 #include "ow_devices.h"
+
+#include <stdlib.h>
 
 /* Length of file based on filetype alone */
 size_t FileLength( const struct parsedname * const pn ) {

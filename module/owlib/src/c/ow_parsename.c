@@ -9,10 +9,10 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-#include <stdlib.h>
-
 #include "owfs_config.h"
 #include "ow_devices.h"
+
+#include <stdlib.h>
 
 static int FS_ParsedNameSub( char * path , struct parsedname * pn ) ;
 static int BranchAdd( struct parsedname * const pn ) ;

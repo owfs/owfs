@@ -10,12 +10,11 @@ $Id$
 $ID: $
 */
 
-#include <sys/stat.h>
-#include <string.h>
-
 #include "owfs_config.h"
 #include "ow.h"
 
+#include <sys/stat.h>
+#include <string.h>
 
 /* ------- Prototypes ----------- */
 static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;

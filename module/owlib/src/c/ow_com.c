@@ -9,15 +9,15 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
+#include "owfs_config.h"
+#include "ow.h"
+
 #include <linux/limits.h>
 #include <termios.h>
 #include <syslog.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-
-#include "owfs_config.h"
-#include "ow.h"
 
 /* ---------------------------------------------- */
 /* raw COM port interface routines                */

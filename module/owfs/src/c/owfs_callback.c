@@ -14,12 +14,12 @@ $Id$
     Written 2003 Paul H Alfille
 */
 
-#include <sys/stat.h>
-#include <string.h>
-
 #include "owfs_config.h"
 #include "ow.h"
 #include "owfs.h"
+
+#include <sys/stat.h>
+#include <string.h>
 
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) ;
 static int FS_utime(const char *path, struct utimbuf *buf) ;

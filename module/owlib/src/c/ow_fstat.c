@@ -9,11 +9,11 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-#include <sys/stat.h>
-#include <string.h>
-
 #include "owfs_config.h"
 #include "ow.h"
+
+#include <sys/stat.h>
+#include <string.h>
 
 int FS_fstat(const char *path, struct stat *stbuf) {
     struct parsedname pn ;

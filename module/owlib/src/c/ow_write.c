@@ -9,11 +9,11 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-#include <sys/stat.h>
-#include <string.h>
-
 #include "owfs_config.h"
 #include "ow.h"
+
+#include <sys/stat.h>
+#include <string.h>
 
 /* ------- Prototypes ----------- */
 static int FS_real_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
