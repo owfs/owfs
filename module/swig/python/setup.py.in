@@ -40,6 +40,11 @@ Topic :: System :: Hardware
 Topic :: Utilities
 """
 
+enable_usb = '@ENABLE_USB@'
+ow_libs = [ 'ow' ]
+if enable_usb = 'true':
+    ow_libs.append( 'usb' )
+
 
 setup(
     name             = 'ow',
@@ -59,7 +64,7 @@ setup(
                                                      '../../../src/include',
                                                      ],
                                     library_dirs = [ '../../owlib/src/c/.libs', ],
-                                    libraries    = [ 'ow', 'usb', ],
+                                    libraries    = ow_libs,
                                     )
                          ],
     packages         = [ 'ow' ],

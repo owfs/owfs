@@ -10,3 +10,4 @@ libtool
 *tar.gz
 autoscan.log
 configure.scan
+autom4te.cache
