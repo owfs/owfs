@@ -36,6 +36,12 @@ static int FS_input_date_array( DATE * const results, const char * const buf, co
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
+
+/* Note on return values: */
+/* Write will return size if ok, else a negative number */
+/* Each function called will return 0 if ok, else non-zero */
+
+/* return size if ok, else negative */
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
     struct stateinfo si ;
@@ -81,9 +87,10 @@ printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
         AVERAGE_OUT(&write_avg)
         AVERAGE_OUT(&all_avg)
     STATUNLOCK
-    return r ;
+    return (r) ? r : size ;
 }
 
+/* return 0 if ok */
 static int FS_real_write(const char * const path, const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 //printf("REAL_WRITE\n");
@@ -102,19 +109,20 @@ static int FS_real_write(const char * const path, const char * const buf, const 
     STATLOCK
         ++ write_tries[0] ; /* statistics */
     STATUNLOCK
-    if ( (r=FS_parse_write( buf, size, offset, pn ))>=0  ) return r;
+    if ( (r=FS_parse_write( buf, size, offset, pn ))  ) return r;
     STATLOCK
         ++ write_tries[1] ; /* statistics */
     STATUNLOCK
-    if ( (r=FS_parse_write( buf, size, offset, pn ))>=0  ) return r;
+    if ( (r=FS_parse_write( buf, size, offset, pn ))  ) return r;
     STATLOCK
         ++ write_tries[2] ; /* statistics */
     STATUNLOCK
     r = FS_parse_write( buf, size, offset, pn ) ;
-    if (r<0) syslog(LOG_INFO,"Write error on %s (size=%d)\n",path,size) ;
+    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",path,size) ;
     return r ;
 }
 
+/* return 0 if ok */
 static int FS_parse_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t elements = 1 ;
     int ret ;
@@ -223,6 +231,7 @@ printf("WRITE s=%d\n",s) ;
 }
 
 /* Non-combined input  field, so treat  as serveral separate tranactions */
+/* return 0 if ok */
 static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t left = size ;
     const char * p = buf ;
@@ -241,7 +250,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
         int suglen = pname.ft->suglen ;
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             if ( (int) left < suglen ) return -ERANGE ;
-            if ( (r=FS_parse_write(p,(size_t) suglen,0,&pname)) < 0 ) return r ;
+            if ( (r=FS_parse_write(p,(size_t) suglen,0,&pname)) ) return r ;
             p += suglen ;
             left -= suglen ;
         }
@@ -249,11 +258,11 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             char * c = memchr( p , ',' , left ) ;
             if ( c==NULL ) {
-                if ( (r=FS_parse_write(p,left,0,&pname)) < 0 ) return r ;
+                if ( (r=FS_parse_write(p,left,0,&pname)) ) return r ;
                 p = buf + size ;
                 left = 0 ;
             } else {
-                if ( (r=FS_parse_write(p,(size_t)(c-p),0,&pname)) < 0 ) return r ;
+                if ( (r=FS_parse_write(p,(size_t)(c-p),0,&pname)) ) return r ;
                 p = c + 1 ;
                 left = size - (buf-p) ;
             }
@@ -263,6 +272,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
 }
 
 /* Combined field, so read all, change the relevant field, and write back */
+/* return 0 if ok */
 static int FS_w_split(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret ;
@@ -347,10 +357,10 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     case ft_subdir:
         return -ENOSYS ;
     }
-    if ( ret ) return -EINVAL ;
-    return 0 ;
+    return ret ? -EINVAL : 0 ;
 }
 
+/* return 0 if ok */
 static int FS_input_yesno( int * const result, const char * const buf, const size_t size ) {
 //printf("yesno size=%d, buf=%s\n",size,buf);
     if ( size ) {
@@ -368,6 +378,7 @@ static int FS_input_yesno( int * const result, const char * const buf, const siz
     return 1 ;
 }
 
+/* return 0 if ok */
 static int FS_input_integer( int * const result, const char * const buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
@@ -379,6 +390,7 @@ static int FS_input_integer( int * const result, const char * const buf, const s
     return end==cp || errno ;
 }
 
+/* return 0 if ok */
 static int FS_input_unsigned( unsigned int * const result, const char * const buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
@@ -391,6 +403,7 @@ static int FS_input_unsigned( unsigned int * const result, const char * const bu
     return end==cp || errno ;
 }
 
+/* return 0 if ok */
 static int FS_input_float( FLOAT * const result, const char * const buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
@@ -402,6 +415,7 @@ static int FS_input_float( FLOAT * const result, const char * const buf, const s
     return end==cp || errno ;
 }
 
+/* return 0 if ok */
 static int FS_input_date( DATE * const result, const char * const buf, const size_t size ) {
     struct tm tm ;
     if ( size==0 || buf[0]=='\0' ) {
@@ -414,104 +428,103 @@ static int FS_input_date( DATE * const result, const char * const buf, const siz
     return 0 ;
 }
 
-/* returns number of valid integers, or negative for error */
+/* returns 0 if ok */
 static int FS_input_yesno_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
     int i ;
-    size_t left = size ;
-    const char * first = buf ;
+    int last = pn->ft->ag->elements - 1 ;
+    const char * first ;
+    const char * end = buf + size - 1 ;
     const char * next = buf ;
-    for ( i=0 ; i<pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (next=memchr( first, ',' , left )) == NULL ) return -(i>0) ;
-        if ( FS_input_yesno( &results[i], first, next-first ) ) results[i]=0 ;
-//printf("IYA index=%d, result=%d, first=%s\n",i,results[i],first) ;
-        left -= (next-first) ;
-        if ( left < 2 ) return 0 ;
-        -- left ;
-        first = next + 1 ;
+    for ( i=0 ; i<=last ; ++i ) {
+        if ( next <= end ) {
+            first = next ;
+            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
+            if ( FS_input_yesno( &results[i], first, next-first ) ) results[i]=0 ;
+            ++next ; /* past comma */
+        } else { /* assume "no" for absent values */
+            results[i] = 0 ;
+        }
     }
-    /* i==elements now */
-    if ( FS_input_yesno( &results[i], first, next-first ) ) results[i]=0 ;
-//printf("IYA index=%d, result=%d, first=%s\n",i,results[i],first) ;
     return 0 ;
 }
 
 /* returns number of valid integers, or negative for error */
 static int FS_input_integer_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
     int i ;
-    size_t left = size ;
-    const char * first = buf ;
-    const char * next ;
-    for ( i=0 ; i<pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (next=memchr( first, ',' , left )) == NULL ) return -(i>0) ;
-        if ( FS_input_integer( &results[i], first, next-first ) ) results[i]=0 ;
-        left -= (next-first) ;
-        if ( left < 2 ) return 0 ;
-        -- left ;
-        first = next + 1 ;
+    int last = pn->ft->ag->elements - 1 ;
+    const char * first ;
+    const char * end = buf + size - 1 ;
+    const char * next = buf ;
+    for ( i=0 ; i<=last ; ++i ) {
+        if ( next <= end ) {
+            first = next ;
+            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
+            if ( FS_input_integer( &results[i], first, next-first ) ) results[i]=0 ;
+            ++next ; /* past comma */
+        } else { /* assume 0 for absent values */
+            results[i] = 0 ;
+        }
     }
-    /* i==elements now */
-    if ( FS_input_integer( &results[i], first, left ) ) results[i]=0 ;
     return 0 ;
 }
 
 /* returns 0, or negative for error */
 static int FS_input_unsigned_array( unsigned int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
     int i ;
-    size_t left = size ;
-    const char * first = buf ;
-    const char * next ;
-    for ( i=0 ; i<pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (next=memchr( first, ',' , left )) == NULL ) return -(i>0) ;
-//printf("UIA index %d\n",i) ;
-        if ( FS_input_unsigned( &results[i], first, next-first ) ) results[i]=0 ;
-//printf("UIA value= %u\n",results[i]) ;
-        left -= (next-first) ;
-        if ( left < 2 ) return 0 ;
-        -- left ;
-        first = next + 1 ;
+    int last = pn->ft->ag->elements - 1 ;
+    const char * first ;
+    const char * end = buf + size - 1 ;
+    const char * next = buf ;
+    for ( i=0 ; i<=last ; ++i ) {
+        if ( next <= end ) {
+            first = next ;
+            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
+            if ( FS_input_unsigned( &results[i], first, next-first ) ) results[i]=0 ;
+            ++next ; /* past comma */
+        } else { /* assume 0 for absent values */
+            results[i] = 0 ;
+        }
     }
-    /* i==elements now */
-//printf("UIA index %d\n",i) ;
-    if ( FS_input_unsigned( &results[i], first, left ) ) results[i]=0 ;
-//printf("UIA value= %u\n",results[i]) ;
-//printf("UIA done\n") ;
     return 0 ;
 }
 
 /* returns 0, or negative for error */
 static int FS_input_float_array( FLOAT * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
     int i ;
-    size_t left = size ;
-    const char * first = buf ;
-    const char * next ;
-    for ( i=0 ; i<pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (next=memchr( first, ',' , left )) == NULL ) return -(i>0) ;
-        if ( FS_input_float( &results[i], first, next-first ) ) results[i]=0. ;
-        left -= (next-first) ;
-        if ( left < 2 ) return 0 ;
-        -- left ;
-        first = next + 1 ;
+    int last = pn->ft->ag->elements - 1 ;
+    const char * first ;
+    const char * end = buf + size - 1 ;
+    const char * next = buf ;
+    for ( i=0 ; i<=last ; ++i ) {
+        if ( next <= end ) {
+            first = next ;
+            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
+            if ( FS_input_float( &results[i], first, next-first ) ) results[i]=0. ;
+            ++next ; /* past comma */
+        } else { /* assume 0. for absent values */
+            results[i] = 0. ;
+        }
     }
-    /* i==elements now */
-    if ( FS_input_float( &results[i], first, left ) ) results[i]=0. ;
     return 0 ;
 }
 
 /* returns 0, or negative for error */
 static int FS_input_date_array( DATE * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
     int i ;
-    size_t left = size ;
-    const char * first = buf ;
-    const char * next ;
-    for ( i=0 ; i<pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (next=memchr( first, ',' , left )) == NULL ) return -(i>0) ;
-        if ( FS_input_date( &results[i], first, next-first ) ) results[i]=0. ;
-        left -= (next-first) ;
-        if ( left < 2 ) return 0 ;
-        -- left ;
-        first = next + 1 ;
+    int last = pn->ft->ag->elements - 1 ;
+    const char * first ;
+    const char * end = buf + size - 1 ;
+    const char * next = buf ;
+    DATE now = time(NULL) ;
+    for ( i=0 ; i<=last ; ++i ) {
+        if ( next <= end ) {
+            first = next ;
+            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
+            if ( FS_input_date( &results[i], first, next-first ) ) results[i]=now ;
+            ++next ; /* past comma */
+        } else { /* assume now for absent values */
+            results[i] = now ;
+        }
     }
-    /* i==elements now */
-    if ( FS_input_date( &results[i], first, left ) ) results[i]=0. ;
     return 0 ;
 }

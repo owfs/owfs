@@ -117,8 +117,8 @@ static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset ,
     unsigned char p[8] ;
     size_t s = size ;
     if ( size>8 )  s = 8 ;
-    if ( OW_r_mem(p,s,((pn->extension)<<3),pn) ) return -EINVAL ;
-    return FS_read_return(buf,size,offset,p,s) ;
+    if ( OW_r_mem(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* write an 8-byte page */
@@ -199,17 +199,12 @@ static int FS_w_PIO(const int *y, const struct parsedname * pn) {
 
 /* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char p[32] ;
-    size_t s = size ;
-    if ( size>32 )  s = 32 ;
-//printf("2450 r mem: size %d offset %d \n ",size,offset);
-    if ( OW_r_mem(p,s,0,pn) ) return -EINVAL ;
-    return FS_read_return(buf,size,offset,p,s) ;
+    if ( OW_r_mem(buf,size,offset,pn) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* 2450 A/D */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-//printf("2450 w mem: size %d offset %d \n ",size,offset);
     size_t s = size ;
     if ( size>32 )  s = 32 ;
     if ( OW_w_mem(buf,s,0,pn) ) return -EINVAL ;
@@ -278,6 +273,7 @@ static int OW_w_mem( const char * const p , const unsigned int size , const int 
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_sendback_data(buf,buf,7) || CRC16(buf,6) || (buf[6]!=p[0]) ;
     BUS_unlock() ;
+printf("2450 byte %d return=%d\n",0,ret );
     if ( ret ) return 1 ;
 
     /* rest of the bytes */
@@ -287,6 +283,7 @@ static int OW_w_mem( const char * const p , const unsigned int size , const int 
         BUS_lock() ;
             ret =BUS_sendback_data(buf,buf,4) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
         BUS_unlock() ;
+printf("2450 byte %d return=%d\n",i,ret );
 
         if ( ret ) return 1 ;
     }

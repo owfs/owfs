@@ -93,20 +93,19 @@ static int OW_clear( const struct parsedname * pn ) ;
 
 /* 2406 memory read */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int len = size ;
-    if ( size+offset>128) len = 128-offset ;
-    if ( OW_r_mem( buf, len, (int) offset, pn ) ) return -EINVAL ;
-    return len ;
+    if ( OW_r_mem( buf, size, (int) offset, pn ) ) return -EINVAL ;
+    return size ;
 }
 
 /* 2406 memory write */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( size+offset>32) return -EMSGSIZE;
+//printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
     if ( OW_r_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+printf("2406 write size=%d, offset=%d\n",(int)size,(int)offset);
     if ( size+offset>32) return -EMSGSIZE;
     if ( OW_w_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
     return 0 ;

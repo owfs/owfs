@@ -447,7 +447,6 @@ static int FS_w_atrig(const unsigned int * u , const struct parsedname * pn) {
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( offset+size > 32 ) return -EMSGSIZE ;
     return OW_r_mem( buf, size, offset+((pn->extension)<<5), pn ) ? -EFAULT : (int) size ;
 }
 

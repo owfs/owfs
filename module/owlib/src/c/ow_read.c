@@ -187,7 +187,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             if ( offset > s ) return -EMSGSIZE ;
             s -= offset ;
             if ( s > size ) s = size ;
-            return (pn->ft->read.b)(buf,size,offset,pn) ;
+            return (pn->ft->read.b)(buf,s,offset,pn) ;
             }
         case ft_directory:
         case ft_subdir:
@@ -262,14 +262,14 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             return elements*2-1 ;
         }
         case ft_ascii: {
-            size_t s = FileLength(pn) ;
+            size_t s = FullFileLength(pn) ;
             if ( offset > s ) return -EMSGSIZE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->read.a)(buf,s,offset,pn) ;
             }
         case ft_binary: {
-            size_t s = FileLength(pn) ;
+            size_t s = FullFileLength(pn) ;
             if ( offset > s ) return -EMSGSIZE ;
             s -= offset ;
             if ( s > size ) s = size ;

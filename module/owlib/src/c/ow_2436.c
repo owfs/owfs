@@ -80,7 +80,7 @@ static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset ,
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ;
+    return OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ? -EINVAL : 0 ;
 }
 
 static int FS_temp(FLOAT * T , const struct parsedname * pn) {

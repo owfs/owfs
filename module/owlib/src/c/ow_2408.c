@@ -95,7 +95,7 @@ static int FS_w_strobe(const int * y, const struct parsedname * pn) {
 	unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
 	UT_setbit( &data[5], 2, y[0] ) ;
-	return OW_w_control( data[5] , pn ) ;
+	return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
 }
 
 /* 2408 switch PIO sensed*/

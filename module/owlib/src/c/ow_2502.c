@@ -82,33 +82,20 @@ static int OW_r_data( unsigned char * data , const struct parsedname * pn ) ;
 
 /* 2502 memory */
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int s = size ;
-    if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
-    if ( s<0 ) return -EMSGSIZE ;
-
-    if ( OW_r_mem( buf, (size_t) s, (size_t) offset, pn) ) return -EINVAL ;
-
-    return s ;
+    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int s = size ;
-    if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
-    if ( s<0 ) return -EMSGSIZE ;
-
-    if ( OW_r_mem( buf,  (size_t) s,  (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
-
-    return s ;
+    if ( OW_r_mem( buf, size,  (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_r_param(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char data[32] ;
-    if (offset != 0 ) return -EFAULT ;
-    if (size<pn->ft->suglen) return -EFAULT ;
-
     if ( OW_r_data(data,pn) ) return -EINVAL ;
-    memcpy( buf, &data[(int)pn->ft->data], pn->ft->suglen ) ;
-    return pn->ft->suglen ;
+    memcpy( buf, &data[(int)pn->ft->data+offset], size ) ;
+    return size ;
 }
 
 static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {

@@ -94,23 +94,13 @@ static int OW_r_mem( unsigned char * data , const size_t location , const size_t
 
 /* 2505 memory */
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int s = size ;
-    if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
-    if ( s<0 ) return -EMSGSIZE ;
-
-    if ( OW_r_mem( buf, (size_t) s, (size_t) offset, pn) ) return -EINVAL ;
-
-    return s ;
+    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int s = size ;
-    if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
-    if ( s<0 ) return -EMSGSIZE ;
-
-    if ( OW_r_mem( buf, (size_t) s, (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
-
-    return s ;
+    if ( OW_r_mem( buf, size, (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
