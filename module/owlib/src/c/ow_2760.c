@@ -281,7 +281,8 @@ static FLOAT OW_type(FLOAT T, FLOAT V, const struct thermo * thermo ) {
     int r ;
     int i ;
 
-    for ( r = (thermo->volt->n)-1 ; r>0 ; --r ) {
+    /* First compute ref voltage for ref temperature */
+    for ( r = (thermo->volt->n)-1 ; r>0 ; --r ) { /* find correct polynomial */
         if ( T > thermo->volt->p[r]->minf ) break ;
     }
     i = thermo->volt->p[r]->order ;
@@ -289,9 +290,13 @@ static FLOAT OW_type(FLOAT T, FLOAT V, const struct thermo * thermo ) {
         --i ;
         E = thermo->volt->p[r]->coef[i] + E*T ;
     }
+    E *= .001 ; /* convert mV to V */
 
-    E += V ;
-    for ( r = (thermo->temp->n)-1 ; r>0 ; --r ) {
+    /* Correct measured voltage by adding reference voltage */
+    E += V ; /* Add measured voltage to ref voltage */
+
+    /* Now compute temperature from corrected voltage */
+    for ( r = (thermo->temp->n)-1 ; r>0 ; --r ) { /* find correct polynomial */
         if ( E > thermo->temp->p[r]->minf ) break ;
     }
     i = thermo->temp->p[r]->order ;
