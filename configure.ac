@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([src/include/owfs_config.h.in])
 
 VERSION_MAJOR="0"
 VERSION_MINOR="98"
-PATCHLEVEL="1"
+PATCHLEVEL="2"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -59,11 +59,29 @@ CPPFLAGS="-I/opt/owfs/include $CPPFLAGS"
 
 # Checks for libraries.
 
+# A major annoyance, libdb. If owfs is linked with it, then the configure
+# script will want it, too. It'll fail unless the access to the library is
+# provided.
+
+AC_CHECK_LIB(db,__db_dbopen,[
+    AC_MSG_CHECKING([if libdb < DB41])
+    AC_MSG_RESULT()
+    AC_CHECK_LIB(db,__log_register,[ENABLE_CACHE41=false],[ENABLE_CACHE41=true])
+    
+    # VT: Provide the next check with the flag that allows it to use libdb
+    
+    LDFLAGS="-ldb ${LDFLAGS}"
+    ],[
+    AC_MSG_WARN([libdb1 not found, cache will be disabled])
+])
+
 AC_CHECK_LIB(ow,DS2480_detect, ,[AC_MSG_ERROR([
 
 You have to have libow installed first - get it from http://sf.net/projects/owfs
 If you *do* have it installed, then you may need to specify LDFLAGS=-L\${owlib-prefix}/lib
 Default \${owlib-prefix} value is /opt/owfs.
+
+Alternatively, install the owlib RPM.
 
 ])])
 
@@ -78,6 +96,8 @@ AC_CHECK_HEADERS([ow_stub.h], ,[AC_MSG_ERROR([
 You have to have libow installed first - get it from http://sf.net/projects/owfs
 If you *do* have it installed, then you may need to specify CPPFLAGS=-I\${owlib-prefix}/include
 Default \${owlib-prefix} value is /opt/owfs.
+
+Alternatively, install the owlib RPM.
 
 ])])
 
