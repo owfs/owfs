@@ -4,7 +4,7 @@ $Id$
    one-wire file system and
    one-wire web server
 
-    By PAul H Alfille
+    By Paul H Alfille
     {c} 2003 GPL
     palfille@earthlink.net
 */

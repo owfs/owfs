@@ -1,0 +1,16 @@
+Authors of oftpd:
+
+Shane Kerr <shane@time-travellers.org>
+
+
+Contributors:
+
+Beau Kuiper <kuiperba@cs.curtin.edu.au> (Netscape timing bug fix)
+Mauro Tortonesi <mauro@ferrara.linux.it> (IPv6 support, RPM spec file)
+Matthew Danish <mdanish@andrew.cmu.edu> (Debian compile help, 
+    command-line options, address parse consolidation, configure
+    modifications to deal with ss_family variations)
+Eric Jensen (Red Hat 7.0 init script)
+Anders Nordby <anders@fix.no> (FreeBSD port)
+
+Adapted to OWFS by Paul Alfille <palfille@earthlink.net>

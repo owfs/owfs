@@ -51,9 +51,6 @@ int main(int argc, char *argv[]) {
     int c ;
 //    int multithreaded = 1;
 
-    /* All output to syslog */
-    openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
-
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
@@ -161,7 +158,6 @@ static void fuser_mount_wrapper( void ) {
 
 static void ow_exit( int e ) {
     LibClose() ;
-	closelog() ;
     if(fuse != NULL)
         fuse_exit(fuse);
     if(fuse_mountpoint != NULL) {

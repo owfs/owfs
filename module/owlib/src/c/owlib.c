@@ -146,11 +146,14 @@ struct average all_avg = {0L,0L,0L,0L,} ;
 
 /* All ow library setup */
 void LibSetup( void ) {
+    /* All output to syslog */
+    openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
+    
     /* special resort in case static data (devices and filetypes) not properly sorted */
 //printf("LibSetup\n");
     DeviceSort() ;
 
-	/* DB cache code */
+    /* DB cache code */
 #ifdef OW_CACHE
 //printf("CacheOpen\n");
     Cache_Open() ;
@@ -253,6 +256,8 @@ void LibClose( void ) {
 #ifdef OW_CACHE
     Cache_Close() ;
 #endif /* OW_CACHE */
+
+    closelog() ;
 }
 
 void Timeout( const char * c ) {

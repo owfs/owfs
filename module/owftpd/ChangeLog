@@ -1,0 +1,256 @@
+2004-08-07 Paul Alfille <palfille@earthlink.net>
+- Start of OWFS adaptation.
+2004-03-25, Shane Kerr <shane@time-travellers.org>
+- Philippe Oechslin <philippe.oechslin@epfl.ch> discovered a DoS
+  vulnerability.  As reported:
+  "When the server receives a port command with a number that is
+  higher than 255 the server crashes and has to be restarted manually.
+  The port command can even be given before the user has given a
+  username and a password."
+  Yikes.  In some ways this isn't *so* bad, as the chroot+setuid of
+  oftpd means you are unlikely to have your server further
+  compromised, but it does point to a flaw with using threaded C as
+  the implementation language: if any connection has problems, your
+  application is more-or-less hosed.
+  Anyway, a one line fix.
+- Version 0.3.7 released.
+
+2001-06-21, Shane Kerr <shane@time-travellers.org>
+- #ifdef wrap GLOB_ABORTED for really old gcc compilers (Slackware or
+  older installations).
+- Add code to skip command line options that are intended for "ls".
+
+2001-06-12, Shane Kerr <shane@time-travellers.org>
+- Disabled support for sendfile() on FreeBSD.  It appears to me that
+  there's a bug in the sendfile() user-level library.  I would welcome
+  advice from any FreeBSD developer wishing to set me straight.
+
+2001-06-01, Shane Kerr <shane@time-travellers.org>
+- Changed SIZE command to return error for directories.
+
+2001-05-28, Shane Kerr <shane@time-travellers.org>
+- Version 0.3.6 released.
+- Beat FreeBSD into submission.  Now compiles (and runs!) on FreeBSD
+  out of the box.
+
+2001-05-11, Shane Kerr <shane@time-travellers.org>
+- Changed REST to only work for IMAGE (i.e. binary) mode.
+- Added the SIZE command.
+- Added the MDTM (modification time) command.
+
+2001-04-20, Shane Kerr <shane@time-travellers.org>
+- Moved SIGPIPE ignore to run even in --nodetach mode.  Needed to avoid
+  unwanted signals on TCP disconnects.
+
+2001-04-19, Shane Kerr <shane@time-travellers.org>
+- Added more logging: all client messages are logged with address and
+  port, and all server responses are also logged.  This occurs at DEBUG
+  level, as it is probably not normally of interest.
+
+2001-04-18, Shane Kerr <shane@time-travellers.org>
+- Version 0.3.5 released.
+- Changed resume code to reset offset to 0 after each file transfer.
+- Set accept() socket to NONBLOCK to insure the listener doesn't get
+  stuck waiting for a connection.  This is documented in the NOTES
+  section for the accept() call in Linux.
+- Added sendfile() support on Linux systems.
+
+2001-04-14, Shane Kerr <shane@time-travellers.org>
+- Fixed a bug caused by parsing EPRT commands.  The server doesn't
+  actually allow these commands, but it bravely attempts to parse them
+  anyway.  A special shout out to Anders Nordby for finding this.  The
+  error caused the server to terminate on an assert() fail, which is
+  good because no server corruption happened, but it's bad because the
+  server terminated without any indication.  Therefore....
+- Changed most assert() calls to daemon_assert() calls.  These terminate
+  the application as before, but log to syslog and STDERR.
+- Added ability to run as a non-daemon process.  This will allow the
+  server to be started from init, for instance.
+- Added support for SIGTERM and SIGINT.  If one of these is received,
+  then the server closes the port 21 socket - meaning that it will
+  accept no further connections.  When all existing connections have
+  closed, then the server exits.  A new server may be started before
+  this occurs, to handle new connections.  This allows very short
+  downtimes:
+      # killall oftpd; sleep 1; /etc/init.d/oftpd start
+  This will result in a 1 second period of time where no new connections
+  are accepted, with no existing connections closed.  It's probably best
+  to wait for this second, to allow the signal time to arrive.  :)
+
+2001-04-08, Shane Kerr <shane@time-travellers.org>
+- Changed check for '/' in path - was improperly allowing escaped '/'
+  characters through the check!
+- Set TCP_NODELAY flag on socket - much reduced latency on control
+  channel for high-speed connections.
+- New and improved init script from Eric Jensen.
+
+2001-04-07, Anders Nordby <anders@fix.no>
+- FreeBSD port.
+
+2001-04-03, Shane Kerr <shane@time-travellers.org>
+- Version 0.3.4 released.
+- Changed FTP listener code to attempt to continue processing when
+  formerly fatal errors occur.
+- Added man page.
+- Added Red Hat init script donated by Eric Jensen to release.
+
+2001-03-28, Shane Kerr <shane@time-travellers.org>
+- Version 0.3.3 released.
+- Use IP address and port of the control connection port for default
+  Data Transfer Port, as defined by RFC 959.  Note that the default
+  server process DTP is never used in oftpd, but that's not a problem as
+  I read the RFC.
+- Use config.h
+
+2001-03-27, Matthew Danish <mdanish@andrew.cmu.edu>
+- configure.in and af_portability.h fixes to allow compilation on
+  systems with both RFC 2553 and XNET formats
+
+2001-03-27, Shane Kerr <shane@time-travellers.org>
+- Fixed bug where wrong server address was used on initalization of
+  ftp_server class.  Passive probably didn't work in the 0.3.x series
+  for IPv4!
+
+2001-03-26, Shane Kerr <shane@time-travellers.org>
+- Version 0.3.2 released.
+- Minor additions for better error reporting on error creating threads
+  in listener, as well as checking success on setgid() and setuid().  I
+  can't believe I wasn't!!!
+- Set syslog() to use FTP_DAEMON
+
+2001-03-23, Shane Kerr <shane@time-travellers.org>
+- Fixed configure bug on Debian systems.  Special thanks to Matthew
+  Danish for helping me on this one.
+
+2001-03-20, Matthew Danish <mdanish@andrew.cmu.edu>
+- Clean up parsing of FTP address in ftp_listener.c
+- Added options to specify interface and maximum number of client
+  connections at startup.
+- Added --long-style command-line options.
+
+2001-03-21, Shane Kerr <shane@time-travellers.org>
+- The "Spring Fever" edition, version 0.3.1 released.
+
+  Added workaround for the evil glob() denial-of-service attack.  I
+  chose the simple method of preventing file listing with both path
+  separator and wildcards.  Either is okay, but not both.  I don't
+  expect this to cause problems with legitimate use, but I could be
+  wrong.  It was much simpler than my other thought.  :)
+
+  Changed code so that ECONNABORTED and ECONNRESET errors don't increase
+  the error count.  This is to prevent a malicious client from taking a
+  server down by sending a large number of connection requests that it
+  then aborts.
+
+  Integrated code from Matthew Danish <mdanish@andrew.cmu.edu> that
+  allows the user to specify the port to use from the command line.
+  Thanks!
+
+  Warnings from 0.3.0 still apply.  Use with caution.  Spring is in the
+  air, after all.
+
+2001-03-20, Shane Kerr <shane@time-travellers.org>
+- Version 0.3.0 released.  This is almost guaranteed not to work, as
+  I've not tested it with clients that support the new features.  But I
+  decided that after a year, I wasn't living up to the "release early,
+  release often" motto of open source.
+
+  In addition to working in the changes since the last release, I've
+  done:
+
+  o removed free list from ftp_listener; simple is better
+  o use a random port rather than incrememting sequence; useful for
+    preventing classes of data hijacking attacks
+
+  There is a potential DOS attack against all versions, see the BUGS
+  file.  This will be fixed ASAP (hopefully tomorrow).
+
+2001-02-22, Matthew Danish <mdanish@andrew.cmu.edu>
+- Fix for missing <sys/types.h> check in configure.in
+
+2000-12-13, Mauro Tortonesi <mauro@ferrara.linux.it>
+- Added IPv6 support (EPRT & EPSV - RFC2428)
+- Added LPRT and LPSV support (RFC1639)
+
+2000-08-25, Shane Kerr <shane@time-travellers.org>
+- Fixed telnet module to properly handle telnet escape sequences (since
+  no clients actually use this, it wasn't really a problem)
+
+2000-06-01, Shane Kerr <shane@time-travellers.org>
+- Beau Kuiper, author of muddleftpd, sent me a fix for the Netscape
+  timing bug.  Thanks!!!
+
+2000-04-03, Shane Kerr <shane@time-travellers.org>
+- Version 0.2.0 released
+
+2000-03-30, Shane Kerr <shane@time-travellers.org>
+- Changed README send to only send on directory change if you actually
+  change to a different directory.  That is, "CWD ." does not send a
+  README file.  The reason for this is that many clients perform a 
+  "CWD /" as soon as it connects, which cause the README to be sent
+  twice - yuck!
+- Added missing check for closed file descriptor in write_fully().
+- Converted use of FILE pointers to file descriptors.  This wasn't done
+  in the most efficient possible method (i.e. with buffers), but it does
+  remove the maximum FILE limitation from the server.
+
+2000-03-29, Shane Kerr <shane@time-travellers.org>
+- Added -D_REENTRANT flag to compile options.
+- Added an error data type to return details about errors that occur 
+  in module initialization.
+- Changed telnet module to never drop characters on outbound, even if
+  we have a ton of DO and WILL commands from the other end.
+
+2000-03-27, Shane Kerr <shane@time-travellers.org>
+- Fixed bug in telnet code when sending "" string.
+- Now sends README to client if file is in directory on connect
+  or directory change.
+- Simplified watchdog a bit by adding pointer to watchdog in the
+  watched structure.
+- Wrapped invariant() methods with #ifndef NDEBUG so they won't
+  get compiled in non-debug code (in case there's ever a 
+  non-debug version)
+
+2000-03-22, Shane Kerr <shane@time-travellers.org>
+- Changed NLST and LIST to silently drop a file specification that
+  starts with a '-'.  This will ignore attempts to pass an argument
+  to "ls" that some clients try - it probably won't do what they 
+  expect, but at least they'll get a list of files.
+
+2000-03-19, Shane Kerr <shane@time-travellers.org>
+- Set file descriptors 0, 1, and 2 to go to "/dev/null", so that
+  any error messages sent by, say, the kernel don't accidentally
+  go to a user.
+- Changed watchdog to have a single thread to watch all connections, 
+  rather than a thread per connection.  This is considerably more
+  complex, but effectively doubles the number of connections that
+  can be supported (due to thread limits).
+
+2000-03-16, Shane Kerr <shane@time-travellers.org>
+- Added support for REST command.  (Note that this is *not* the REST
+  exactly as described by RFC.  The REST in the RFC only applies to
+  block or compressed mode transfer, which oftpd does not currently
+  support.  However, it appears that Unix systems interpret the 
+  parameter to the REST command as the offset into the file to resume
+  from.
+
+2000-03-13, Shane Kerr <shane@time-travellers.org>
+- Version 0.1.3 released
+
+2000-03-12, Shane Kerr <shane@time-travellers.org>
+- Fixed bug when connection limit reached
+- Fixed bug when attempt to bind() an already bound port
+
+2000-03-12, Shane Kerr <shane@time-travellers.org>
+- Version 0.1.2 released
+
+2000-03-11, Shane Kerr <shane@time-travellers.org>
+- Move configuration values into oftpd.h
+- Wrap source to 80 columns
+- Fix pthread_create() error check (code had incorrectly used errno
+  rather than the return of pthread_create() to determine error)
+- Fix threads to run in detached mode (when appropriate)
+- Solaris port completed
+- Support for STOR added (reply with 553 error)
+- Added free list for per-thread information structures.
+

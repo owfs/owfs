@@ -5,7 +5,7 @@ if ENABLE_OWFS
 endif
 
 # VT: SUBDIRS: In *that* order
-SUBDIRS = owlib $(MAYBE_OWFS) owhttpd
+SUBDIRS = owlib $(MAYBE_OWFS) owhttpd owftpd
 
 clean-generic:
 

@@ -1,0 +1,4 @@
+clean-generic:
+
+	rm -rf *~
+

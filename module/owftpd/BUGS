@@ -1,0 +1,28 @@
+$Id$
+
+- On Solaris, new POSIX threads cannot be created from a chroot() jail!
+  pthread_create() uses mmap() on /dev/mem (or something like that) to
+  create the stack for new threads.  However, in a chroot() jail, no
+  /dev files are visible (hopefully).  It would still be possible to
+  support Solaris by using malloc() and specifying the stack explicitly,
+  but then there's the hassle of cleaning up this memory and so on.
+  Yuck.  So for now, no Solaris.  In 0.5.x I expect to support Solaris
+  again, as I'll only need a very small number of threads.
+
+- The pthread_cancel() does not actually meet POSIX compliance.  It is 
+  forbidden to use PTHREAD_CANCEL_ASYNCHRONOUS on anything that makes
+  system calls.  This seems to work fine on Linux, probably due to its
+  bizarre thread model.  This will also be fixed on 0.3.x, as I'll pay
+  careful attention to cancel points.
+
+- Probable memory leak when pthread_cancel() operates on a thread that
+  has allocated memory (in glob() for instance).  Need to disable cancel 
+  for appropriate regions of code.
+
+- Doesn't handle permissions properly.  If a file is world-readable but 
+  not group-readable and someone in the group tries to read it they
+  should not be allowed, apparently.  :(
+
+- strerror() may not be thread safe (depends on implementation).  Write
+  a thread safe version.
+
