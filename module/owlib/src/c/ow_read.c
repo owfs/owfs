@@ -90,7 +90,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
 
 /* Real read -- called from read
-   Integrates with cache -- read not called if cached value alread set
+   Integrates with cache -- read not called if cached value already set
 */
 static int FS_real_read(const char *path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
@@ -122,10 +122,16 @@ int FS_read_return( char *buf, const size_t size, const off_t offset , const cha
     return len ;
 }
 
+/* read without artificial separation of combination */
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = 1 ;
     int ret = 0 ;
     if ( pn->ft->ag && pn->ft->ag->combined==ag_aggregate ) elements = pn->ft->ag->elements ;
+    if ( pn->ft->ag
+          &&
+       (  ( pn->ft->ag->combined==ag_aggregate )
+          || ( pn->ft->ag->combined==ag_mixed && pn->extension==-1 )
+       ) ) elements = pn->ft->ag->elements ;
     if ( elements == 1 ) { /* read single values */
         switch( pn->ft->format ) {
         case ft_integer: {
@@ -234,7 +240,8 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
     return -ENOENT ;
 }
 
-/* Read each array independently */
+/* Read each array element independently, but return as one long string */
+/* called when pn->extension==-1 (ALL) and pn->ft->ag->combined==ag_separate */
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t left = size ;
     char * p = buf ;
@@ -266,7 +273,8 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     return size - left ;
 }
 
-/* read the combined data, and separate */
+/* read the combined data, and then separate */
+/* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //    char * all ;
     int suglen = pn->ft->suglen ;

@@ -78,7 +78,9 @@ static int OW_r_mem( char * p , const int size, const int location , const struc
 static int OW_w_mem( const char * p , const int size , const int location , const struct parsedname * pn) ;
 static int OW_volts( FLOAT * f , const int resolution , const struct parsedname * pn ) ;
 static int OW_r_pio( int * pio , const struct parsedname * pn ) ;
+static int OW_r_1_pio( int * pio , const int element , const struct parsedname * pn ) ;
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
+static int OW_w_1_pio( const int pio , const int element , const struct parsedname * pn ) ;
 
 /* 2450 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -113,13 +115,16 @@ static int FS_w_cont(const int *y, const struct parsedname * pn) {
 }
 /* 2450 A/D */
 static int FS_r_PIO(int *y, const struct parsedname * pn) {
-    if ( OW_r_pio(y,pn) ) return -EINVAL ;
+    int element = pn->extension ;
+    if ( (element<0)?OW_r_pio(y,pn):OW_r_1_pio(y,element,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2450 A/D */
+/* pio status -- special code for ag_mixed */
 static int FS_w_PIO(const int *y, const struct parsedname * pn) {
-    if ( OW_w_pio(y,pn) ) return -EINVAL ;
+    int element = pn->extension ;
+    if ( (element<0)?OW_w_pio(y,pn):OW_w_1_pio(y[0],element,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -252,6 +257,7 @@ static int OW_volts( FLOAT * f , const int resolution, const struct parsedname *
     return 0 ;
 }
 
+/* read all the pio registers */
 static int OW_r_pio( int * pio , const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
@@ -261,6 +267,14 @@ static int OW_r_pio( int * pio , const struct parsedname * pn ) {
     pio[3] = ((p[6]&0xC0)==0xC0) ;
 }
 
+/* write one pio register */
+static int OW_r_1_pio( int * pio , const int element , const struct parsedname * pn ) {
+    unsigned char p ;
+    if ( OW_r_mem(&p,1,(1<<3)+(element<<1),pn) ) return 1;
+    pio[0] = ((p&0xC0)==0xC0) ;
+}
+
+/* Write all the pio registers */
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) {
     unsigned char p[8] ;
     int i ;
@@ -271,6 +285,11 @@ static int OW_w_pio( const int * pio , const struct parsedname * pn ) {
     }
     return OW_w_mem(p,8,1<<3,pn) ;
 }
-
-
-
+/* write just one pio register */
+static int OW_w_1_pio( const int pio , const int element, const struct parsedname * pn ) {
+    unsigned char p ;
+    if ( OW_r_mem(&p,1,(1<<3)+(element<<1),pn) ) return 1;
+    p &= 0x3F ;
+    p |= pio?0x80:0xC0 ;
+    return OW_w_mem(p,1,(1<<3)+(element<<1),pn) ;
+}
