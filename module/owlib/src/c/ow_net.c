@@ -167,7 +167,13 @@ int ClientConnect( struct connection_in * in ) {
  Loops through outdevices, starting a detached thread for each except the last
  Each loop spawn threads for accepting connections
  Uses my non-patented "pre-threaded technique"
+ 
+ VALGRIND's mutexes doesn't handle locks/unlocks in different processes
+ so I added this define just to temporary be able to search for memory
+ leaks... The new accept() is not detached just to be able to wait
+ for thread to end.
 */
+//#define VALGRIND 1
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
     struct connection_out * out_last = NULL;
@@ -204,16 +210,28 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             ACCEPTUNLOCK(o2)
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
             RunAccepted( acceptfd ) ;
+#ifndef VALGRIND
             pthread_exit((void *)0);
+#else
+	    return NULL;
+#endif
         }
         ToListen( out2 ) ;
         for(;;) {
+#ifdef VALGRIND
+            void *v;
+#endif
             ACCEPTLOCK(out2)
 #ifdef __UCLIBC__
             if ( pthread_create( &thread2, NULL, AcceptThread, (void *)out2 ) ) Exit(1) ;
+#ifndef VALGRIND
             pthread_detach(thread2);
+#endif
 #else
             if ( pthread_create( &thread2, &attr, AcceptThread, (void *)out2 ) ) Exit(1) ;
+#endif
+#ifdef VALGRIND
+	    pthread_join(thread2, &v);
 #endif
         }
         if(out == out_last) {
@@ -226,7 +244,9 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 
 #ifndef __UCLIBC__
     pthread_attr_init(&attr) ;
+#ifndef VALGRIND
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif
 #endif
 
     /* find the last outdevice to make sure embedded function
