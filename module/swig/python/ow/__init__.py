@@ -133,11 +133,11 @@ class Sensor( object ):
 
         self._path = path
         if self._path == '/':
-            self._type    = _OW.get( '/system/adapter/name' )
-            self._divider = '.'
+            self._type  = _OW.get( '/system/adapter/name' )
+            self._attrs = { }
         else:
-            self._type    = _OW.get( '%s/type' % self._path )
-            self._divider = '/'
+            self._type  = _OW.get( '%s/type' % self._path )
+            self._attrs = dict( [ (n.replace( '.', '_' ), self._path + '/' + n ) for n in _OW.get( self._path ).split( ',' ) ] )
 
 
     def __str__( self ):
@@ -169,16 +169,10 @@ class Sensor( object ):
         and thr PIO.0 might be 1.
         """
         #print 'Sensor.__getattr__', name
-        attr = _OW.get( '%s/%s' % ( self._path, name.replace( '_', self._divider ) ) )
-        if not attr:
+        if name in self._attrs:
+            attr = _OW.get( self._attrs[ name ] )
+        else:
             raise exAttr, ( ( self._path, name ), )
-
-##         sattr = attr.strip( )
-##         if sattr.isdigit( ):
-##             attr = int( sattr )
-##         elif sattr.replace( '.', '' ).isdigit( ):
-##             if sattr.count( '.' ) == 1:
-##                 attr = float( sattr )
 
         return attr
 
@@ -200,21 +194,17 @@ class Sensor( object ):
         """
         #print 'Sensor.__setattr__', name, value
 
-        # Life can get tricky when using __setattr__. In this case,
-        # direct call to self._path would result in a recursive lookup
-        # through self.__getattr__ if path hasn't yet been
-        # assigned. So, call the parent class's __getattribute__ to
-        # see if the current instance has an attribute called path. If
-        # it doesn't then AttributeError will be raised.
-        try:
-            path = object.__getattribute__( self, 'path' )
-            attr = _OW.get( '%s/%s' % ( path, name.replace( '_', self._divider ) ) )
-            if attr:
-                _OW.put(  '%s/%s' % ( self._path, name.replace( '_', self._divider ) ), value )
+        # Life can get tricky when using __setattr__. Self doesn't
+        # have an _attrs atribute when it's initially created. _attrs
+        # is only there after it's been set in __init__. So we can
+        # only reference it if it's already been added.
+        if hasattr( self, '_attrs' ):
+            if name in self._attrs:
+                print '_OW.put', self._attrs[ name ], value
+                _OW.put( self._attrs[ name ], value )
             else:
                 self.__dict__[ name ] = value
-        except AttributeError:
-            #super( Sensor, self ).__setattr__( name, value )
+        else:
             self.__dict__[ name ] = value
 
 
