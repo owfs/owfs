@@ -9,6 +9,8 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
+// 8/18/2004 -- applied Serg Oskin's correction
+
 #include "owfs_config.h"
 #include "ow.h"
 
@@ -69,10 +71,10 @@ void Cache_Open( void ) {
         syslog( LOG_WARNING, "Cannot create first database table for caching, error=%s, will proceed uncached.",db_strerror(errno) );
     } else { /* Cache ok */
         cacheavailable = 1 ;
-        if ( db_create( &cache.old_db, NULL, 0 ) || DBOPEN(cache.new_db) ) {
+        if ( db_create( &cache.old_db, NULL, 0 ) || DBOPEN(cache.old_db) ) {
             syslog( LOG_WARNING, "Cannot create second database table for caching, error=%s, will proceed with unpruned cache.",db_strerror(errno) ) ;
         } else { /* Old ok */
-            cache.old_is = 0 ; // not yet is use
+            cache.old_is = 0 ; // not yet in use
             cache.lifespan = TimeOut( ft_stable ) ;
             if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
         }
