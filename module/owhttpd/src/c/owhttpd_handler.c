@@ -242,7 +242,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     if ( basename ) {
         ++basename ; /* after slash */
     } else {
-      basename = (char *)file ;
+      basename = file ;
     }
 
     /* full file name (with path and subdir) */
@@ -537,6 +537,9 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             } else if ( pn2->state & (pn_uncached | pn_alarm) ) {
 	        strcpy(buffer, FS_dirname_state(pn2->state & (pn_uncached | pn_alarm)));
             }
+	} else if ( pn2->dev == DeviceSimultaneous ) {
+	    loc = nam = pn2->dev->name ;
+            typ = "1-wire chip" ;
         } else if ( pn2->type == pn_real ) {
             FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn) ;
             nam = pn2->dev->name ;
