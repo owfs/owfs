@@ -469,6 +469,9 @@ extern speed_t speed;        /* terminal speed constant */
 #define    WASTE_TIME    (2)
 
 /* Globals */
+enum bus_mode { bus_unknown, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
+extern enum bus_mode busmode ;
+
 extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
 extern int connectfd ; /* server filedescriptor */
@@ -503,18 +506,20 @@ extern struct s_timeout timeout ;
 /* message to owserver */
 struct server_msg {
     int32_t version ;
-    int32_t size ;
+    int32_t payload ;
     int32_t type ;
     int32_t tempscale ;
+    int32_t size ;
     int32_t offset ;
 } ;
 /* message from owserver */
 struct client_msg {
     int32_t version ;
-    int32_t size ;
+    int32_t payload ;
     int32_t ret ;
     int32_t format ;
-    int32_t extra ;
+    int32_t size ;
+    int32_t offset ;
 } ;
 enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_fstat, msg_update, } ;
 

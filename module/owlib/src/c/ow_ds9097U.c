@@ -263,6 +263,7 @@ int DS2480_detect( void ) {
             break;
         }
 //printf("2480Detect version=%d\n",Adapter) ;
+        busmode = bus_serial ;
         return 0 ;
     }
 //printf("2480Detect bad echo\n");

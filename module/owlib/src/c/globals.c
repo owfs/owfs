@@ -14,6 +14,7 @@ $Id$
 #include "ow_devices.h"
 
 /* Globals for port and bus communication */
+enum bus_mode busmode = bus_unknown ;
 speed_t speed = B9600;
 int portnum = -1 ; /* TCP port (for owhttpd) */
 char * portname = NULL ; /* TCP port or server:port */

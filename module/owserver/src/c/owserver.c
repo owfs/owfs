@@ -41,7 +41,7 @@ $Id$
 static int Handler( int fd ) ;
 static ssize_t readn(int fd, void *vptr, size_t n) ;
 static void * FromClientAlloc( int fd, struct server_msg * sm ) ;
-static int ToClient( int fd, int format, const char * data, int datasize, int ret ) ;
+static int ToClient( int fd, struct client_msg * cm, const char * data ) ;
 static int Acceptor( int listenfd ) ;
 static int ListenFD( struct addrinfo * ai ) ;
 static int PortToFD(  char * port ) ;
@@ -90,16 +90,17 @@ printf("FromClientAlloc\n");
         return NULL ;
     }
 
+    sm->payload = ntohl(sm->payload) ;
     sm->size = ntohl(sm->size) ;
     sm->type = ntohl(sm->type) ;
     sm->tempscale = ntohl(sm->tempscale) ;
     sm->offset = ntohl(sm->offset) ;
-printf("FromClientAlloc size=%d type=%d tempscale=%d offset=%d\n",sm->size,sm->type,sm->tempscale,sm->offset);
+printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%d offset=%d\n",sm->payload,sm->size,sm->type,sm->tempscale,sm->offset);
 
-    if ( sm->size <= 0 ) return NULL ;
+    if ( sm->payload <= 0 ) return NULL ;
 
-    if ( (msg=malloc(sm->size)) ) {
-        if ( readn(fd,msg,sm->size) != sm->size ) {
+    if ( (msg=malloc(sm->payload)) ) {
+        if ( readn(fd,msg,sm->payload) != sm->payload ) {
             sm->size = -1 ;
             free(msg);
             msg = NULL ;
@@ -108,23 +109,24 @@ printf("FromClientAlloc size=%d type=%d tempscale=%d offset=%d\n",sm->size,sm->t
     return msg ;
 }
 
-static int ToClient( int fd, int format, const char * data, int datasize, int ret ) {
-    struct client_msg cm ;
+static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     int nio = 1 ;
     struct iovec io[] = {
-        { &cm, sizeof(struct client_msg), } ,
-        { data, datasize, } ,
+        { cm, sizeof(struct client_msg), } ,
+        { data, cm->payload, } ,
     } ;
 
-    if ( data && datasize ) {
+    if ( data && cm->size ) {
         ++nio ;
     }
+printf("ToClient payload=%d size=%d, ret=%d, format=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->format,cm->offset);
 
-    cm.size = htonl(datasize) ;
-    cm.ret = htonl(ret) ;
-    cm.format = htonl(format) ;
-printf("ToClient size=%d, ret=%d, format=%d\n",cm.size,cm.ret,cm.format);
-    return writev( fd, io, nio ) != cm.size + sizeof(struct client_msg) ;
+    cm->payload = htonl(cm->payload) ;
+    cm->size = htonl(cm->size) ;
+    cm->offset = htonl(cm->offset) ;
+    cm->ret = htonl(cm->ret) ;
+    cm->format = htonl(cm->format) ;
+    return writev( fd, io, nio ) != io[0].iov_len+io[1].iov_len ;
 }
 
 static int Handler( int fd ) {
@@ -134,6 +136,7 @@ static int Handler( int fd ) {
     char * returned = NULL ;
     int ret = 0 ;
     struct server_msg sm ;
+    struct client_msg cm ;
     char * path = FromClientAlloc( fd, &sm ) ;
     struct parsedname pn ;
     struct stateinfo si ;
@@ -142,38 +145,47 @@ static int Handler( int fd ) {
         char * p ;
         FS_DirName( D, OW_FULLNAME_MAX, pn2 ) ;
         p = memchr(D,0,OW_FULLNAME_MAX) ;
-        ToClient(fd,1,D,p?OW_FULLNAME_MAX:p-D,1) ;
+        cm.ret = 0 ;
+        cm.format = 1 ;
+        cm.payload = p?OW_FULLNAME_MAX:p-D ;
+        ToClient(fd,&cm,D) ;
     }
     /* error reading message */
     if ( sm.size < 0 ) {
         /* Nothing allocated */
-        return ToClient( fd, 0, NULL, 0, -EIO ) ;
+        cm.ret = -EIO ;
+        cm.payload = 0 ;
+        return ToClient( fd, &cm, NULL ) ;
     }
 
     /* No payload -- only ok if msg_nop */
-    if ( sm.size == 0 ) {
+    if ( path==NULL ) {
         /* Nothing allocated */
-        return ToClient( fd, 0, NULL, 0, (enum msg_type)sm.type==msg_nop?0:-EBADMSG ) ;
+        cm.ret = (sm.type==msg_nop)?0:-EBADMSG ;
+        cm.payload = 0 ;
+        return ToClient( fd, &cm, NULL ) ;
     }
 
     /* Now parse path and locate memory */
-    if ( memchr( path, 0, sm.size) == NULL ) { /* Bad string -- no trailing null */
-        FS_ParsedName_destroy(&pn) ;
+    if ( memchr( path, 0, sm.payload) == NULL ) { /* Bad string -- no trailing null */
         if ( path ) free(path) ;
-        return ToClient( fd, 0, NULL, 0, -EBADMSG ) ;
+        cm.ret = -EBADMSG ;
+        cm.payload = 0 ;
+        return ToClient( fd, &cm, NULL ) ;
     }
     len = strlen( path ) + 1 ; /* include trailing null */
 
     /* Locate post-path buffer as data */
-    datasize = sm.size - len ;
+    datasize = sm.payload - len ;
     if ( datasize ) data = &path[len] ;
 
     /* Parse the path string */
     pn.si = &si ;
     if ( (ret=FS_ParsedName( path , &pn )) ) {
-        FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
-        return ToClient( fd, 0, NULL, 0, ret ) ;
+        cm.ret = ret ;
+        cm.payload = 0 ;
+        return ToClient( fd, &cm, NULL ) ;
     }
 
     /* parse name? */
@@ -181,65 +193,79 @@ static int Handler( int fd ) {
     case msg_get:
         if ( pn.dev==NULL || pn.ft == NULL ) {
             sm.type = msg_dir ;
-            len = OW_FULLNAME_MAX ;
-            break ;
+            cm.size = OW_FULLNAME_MAX ;
+        } else {
+            sm.type = msg_read ;
+            cm.size = FullFileLength(&pn) ;
+            cm.offset = 0 ;
         }
-        sm.type = msg_read ;
-        /* fall through */
+        break ;
     case msg_read:
-        len = FullFileLength(&pn) ;
+        cm.size = sm.size ;
+        cm.offset = sm.offset ;
         break ;
     case msg_put:
     case msg_write:
-       len = 0 ;
-       break ;
+        cm.size = 0 ;
+        cm.offset = 0 ;
+        break ;
     case msg_dir:
-        len = 0 ;
+        cm.size = OW_FULLNAME_MAX ;
         break ;
     case msg_fstat:
-        len = sizeof(struct stat) ;
+        cm.size = sizeof(struct stat) ;
         break ;
     default:
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
-        return ToClient( fd, 0, NULL, 0, -ENOTSUP ) ;
+        cm.payload = 0 ;
+        cm.ret = -ENOTSUP ;
+        return ToClient( fd, &cm, NULL ) ;
     }
 
-    if ( len && (returned = malloc(len))==NULL ) {
+    if ( cm.size && (returned = malloc(cm.size))==NULL ) {
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
-        return ToClient( fd, 0, NULL, 0, -ENOBUFS ) ;
+        cm.payload = 0 ;
+        cm.ret = -ENOBUFS ;
+        return ToClient( fd, &cm, NULL ) ;
     }
 
     /* parse name? */
     switch( (enum msg_type) sm.type ) {
     case msg_read:
-        ret = FS_read_postparse(path,returned,len,0,&pn) ;
+        ret = FS_read_postparse(path,returned,cm.size,cm.offset,&pn) ;
         if ( ret<0 ) {
             free(returned);
             returned = NULL ;
         }
-        len = ret ;
+        cm.payload = cm.size = ret ;
         break ;
     case msg_put:
     case msg_write:
-        ret = FS_write_postparse(path,data,datasize,0,&pn) ;
+        ret = FS_write_postparse(path,data,cm.size,cm.offset,&pn) ;
         if ( ret<0 ) {
             free(returned);
             returned = NULL ;
         }
+        cm.payload = 0 ;
         break ;
     case msg_dir:
         FS_dir( directory, &pn ) ;
         ret = 0 ;
+        cm.payload = 0 ;
+        if ( data ) free(data) ;
+        data = NULL ;
         break ;
     case msg_fstat:
         ret = FS_fstat( path, &returned ) ;
-	break ;
+        cm.payload = cm.size ;
+        break ;
     }
     FS_ParsedName_destroy(&pn) ;
     if (path) free(path) ;
-    ret = ToClient( fd, 0, returned, len, ret ) ;
+    cm.ret = ret ;
+    ret = ToClient( fd, &cm, returned ) ;
     if ( returned ) free(returned) ;
     return ret<0 ;
 }
@@ -325,7 +351,7 @@ static int ListenFD( struct addrinfo * ai) {
         fprintf(stderr,"Listen problem. errno=%d\n",errno) ;
         return -1 ;
     }
-    
+
     return fd ;
 }
 

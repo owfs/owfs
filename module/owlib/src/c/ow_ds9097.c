@@ -50,6 +50,7 @@ int DS9097_detect( void ) {
     /* Reset the bus */
     Adapter = adapter_DS9097 ; /* OWFS assigned value */
     adapter_name = "DS9097" ;
+    busmode = bus_serial ;
     return DS9097_reset(NULL) ;
 }
 
