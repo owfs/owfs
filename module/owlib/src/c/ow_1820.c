@@ -197,7 +197,7 @@ static int FS_r_templimit(FLOAT * T , const struct parsedname * pn) {
 }
 
 static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
-    if ( OW_w_templimit( *T , (int) pn->ft->data, pn ) ) return -EINVAL ;
+    if ( OW_w_templimit( fromTemperature(T[0],pn) , (int) pn->ft->data, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
