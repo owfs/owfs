@@ -47,6 +47,47 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
+# our locals :)
+AC_DEFUN(DB_CHECK_COMPILE, [
+AC_TRY_LINK( [
+#include <db.h>	     
+], [
+    DB *q;
+    db_create(&q, (DB_ENV *)NULL, 0);
+], [
+    dbcheck_ok="yes"
+], [
+    dbcheck_ok="no"
+]) ])
+# Include libpthread if multithreading is enabled
+#
+# This stream of line noise will hopefully find out the best way to get
+# to a threading kit. Logic came from APR, but this will still cross-compile
+AC_DEFUN(PTHREADS_CHECK_COMPILE, [
+AC_TRY_LINK( [
+#include <pthread.h>
+#include <stddef.h>
+static void *doit(void *ignored) { return ignored; }
+], [
+    pthread_t t;
+    pthread_mutex_t m;
+    pthread_mutex_init(&m, (pthread_mutexattr_t *)NULL);
+    pthread_mutex_lock(&m);
+    pthread_create(&t, (pthread_attr_t *)NULL, doit, NULL);
+], [
+    pthreads_ok="yes"
+], [
+    pthreads_ok="no"
+]) ])
+
+
+
+
+
+
+
+
+
 # Check if the modules are enabled
 
 #Check owfs
@@ -102,12 +143,12 @@ AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 
 # Check if the cache is enabled.
 
-ENABLE_CACHE=true
+ENABLE_CACHE=auto
 
 AC_MSG_CHECKING([if 1-Wire cache is enabled])
 
 AC_ARG_ENABLE(cache,
-[  --enable-cache          Enable 1-Wire network cache (default true)],
+[  --enable-cache          Enable 1-Wire network cache (default auto)],
 [
 
     AC_MSG_RESULT([$enableval])
@@ -124,22 +165,35 @@ AC_ARG_ENABLE(cache,
 AC_SUBST(ENABLE_CACHE)
 
 # Include libdb if the cache is enabled
-if test "${ENABLE_CACHE}" = "true" ; then
-    AC_CHECK_LIB(db,db_create,[],[
-        AC_MSG_WARN([libdb not found, cache will be disabled. Try www.sleepycat.com])
-        ENABLE_CACHE=false
+if test "${ENABLE_CACHE}" != "false" ; then
+    ac_cv_libdb_flags=""
+    dbcheck_ok="no"
+    DB_CHECK_COMPILE
+    for lib in -ldb-4 -ldb4 -ldb-3 -ldb3 -ldb; do
+        if test "${dbcheck_ok}" != "yes"; then
+            ac_save="$LDFLAGS"
+            LDFLAGS="$LDFLAGS $lib"
+    	    DB_CHECK_COMPILE
+	    LDFLAGS="$ac_save"
+	    if test "${dbcheck_ok}" = "yes"; then
+                ac_cv_libdb_flags="$lib"
+		break
+	    fi
+	fi
+    done
+    if test "$dbcheck_ok" = "yes"; then
+	ENABLE_CACHE=true
         AC_SUBST(ENABLE_CACHE)
-    ])
-fi
-
-AC_MSG_WARN([test])
-
-if test "${ENABLE_CACHE}" = "true" ; then
-    AC_CHECK_HEADER(db.h,[],[
-        AC_MSG_WARN([db.h not found, probably need development version, cache will be disabled. Try www.sleepcat.com])
-        ENABLE_CACHE=false
-        AC_SUBST(ENABLE_CACHE)
-    ])
+	LDFLAGS="$CFLAGS $ac_cv_libdb_flags"
+    else
+        if test "${ENABLE_CACHE}" = "true" ; then
+	    AC_MSG_ERROR([libdb required to enable cache. Try www.sleepycat.com or twiddle CFLAGS and LDFLAGS])
+	else
+            AC_MSG_WARN([libdb not found, cache will be disabled. Try www.sleepycat.com])
+            ENABLE_CACHE=false
+            AC_SUBST(ENABLE_CACHE)
+	fi
+    fi
 fi
 
 AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
@@ -202,27 +256,6 @@ AC_ARG_ENABLE(mt,
 ])
 
 AC_SUBST(ENABLE_MT)
-
-# Include libpthread if multithreading is enabled
-#
-# This stream of line noise will hopefully find out the best way to get
-# to a threading kit. Logic came from APR, but this will still cross-compile
-AC_DEFUN(PTHREADS_CHECK_COMPILE, [
-AC_TRY_LINK( [
-#include <pthread.h>
-#include <stddef.h>
-static void *doit(void *ignored) { return ignored; }
-], [
-    pthread_t t;
-    pthread_mutex_t m;
-    pthread_mutex_init(&m, (pthread_mutexattr_t *)NULL);
-    pthread_mutex_lock(&m);
-    pthread_create(&t, (pthread_attr_t *)NULL, doit, NULL);
-], [
-    pthreads_ok="yes"
-], [
-    pthreads_ok="no"
-]) ])
 
 if test "${ENABLE_MT}" = "true" ; then
     PTHREADS_CHECK_COMPILE

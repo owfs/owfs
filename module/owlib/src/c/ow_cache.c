@@ -146,7 +146,11 @@ int Cache_Add_common( const char * const k, const size_t ksize, const void * dat
         if ( cache.old_db ) {
             if ( cache.old_is ) {
                 if  (cache.killed < time(NULL) ) cache.old_is = 0 ; /* oldcache completely timed out */
-            } else if ( ++cache.added>ADDS_TILL_OLDTIME && cache.old_db->truncate(cache.old_db,NULL,&discards,0)==0 ) {
+            } else if ( ++cache.added>ADDS_TILL_OLDTIME
+#if DB_VERSION_MAJOR >= 4
+			    && cache.old_db->truncate(cache.old_db,NULL,&discards,0)==0
+#endif
+			    ) {
     //printf("CacheAdd flipping add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
                 /* Flip caches! old = new. New truncated, reset time and counters and flag */
                 DB * swap = cache.old_db ;

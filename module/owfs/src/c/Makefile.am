@@ -19,11 +19,7 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64
 
-if ENABLE_CACHE
-CACHE_FLAG = -ldb
-endif
-                        
-AM_LDFLAGS = -low ${CACHE_FLAG}
+AM_LDFLAGS = -low
                         
 clean-generic:
 
