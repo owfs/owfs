@@ -111,12 +111,16 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     } else { /* root directory */
         char buf[16] ;
         char nam[16] ;
+		int i ; /* to loop through statistics files */
 //printf("GD - root directory\n") ;
         time( &scan_time ) ;
 //printf("GD - root directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
         /* Root directory, needs .,.. and scan of devices */
         filler(h, ".", DT_DIR);
         filler(h, "..", DT_DIR);
+		if ( cacheavailable && pn.type!=pn_uncached ) {
+            filler(h,"uncached",DT_DIR) ;
+		}
         switch (Version2480) {
         case 3:
             filler(h,"DS9097U",DT_DIR) ;
@@ -134,8 +138,8 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
             filler(h,nam,DT_DIR) ;
         } ;
         BUS_unlock() ;
-		if ( cacheavailable && pn.type!=pn_uncached ) {
-            filler(h,"uncached",DT_DIR) ;
+		for ( i=0 ; i<nDevices ; ++i ) {
+		    if ( Devices[i]->type == dev_statistic ) filler(h,Devices[i].code,DT_DIR) ;
 		}
     }
     return 0;
