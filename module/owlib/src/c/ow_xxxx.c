@@ -156,12 +156,12 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         struct parsedname *pn1 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
-        int ret;
+        int eret;
         memcpy( &pnnext, pn1 , sizeof(struct parsedname) ) ;
         pnnext.in = pn1->in->next ;
         pnnext.si = &si ;
-        ret = CheckPresence_low(&pnnext) ;
-        pthread_exit((void *)ret);
+        eret = CheckPresence_low(&pnnext) ;
+        pthread_exit((void *)eret);
     }
     //printf("CheckPresence_low\n"); UT_delay(100);
     threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
