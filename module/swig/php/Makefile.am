@@ -1,6 +1,12 @@
 # $Id$
 
-bin_PROGRAMS = OW.pm
+#include owfs header and php headers
+INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include `php-config --includes`
+
+#use libtool to build the php extension
+noinst_LTLIBRARIES = libowphp.la
+libowphp_la_LIBADD = $(top_builddir)/module/owlib/src/c/libow.la
+libowphp_la_LDFLAGS = -shared -shrext .so
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
@@ -31,19 +37,15 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
-#noinst_DATA = .made_mod
-
-#.made_mod: owperl_wrap.c Makefile.perl
-#	$(MAKE) -fMakefile.perl
-#	touch $@
+libowphp_la_SOURCES = ow_wrap.c
 
 ow_wrap.c: ../ow.i
-	$(SWIG) -php4 phpfull -o $@ ../ow.i
+	$(SWIG) -php4 -o $@ ../ow.i
 
-#CLEANFILES = *~ .made_mod  owperl.c OW.pm
-CLEANFILES = *~ *.o ow_wrap.c OW.*
+CLEANFILES = *~ *.o ow_wrap.c OW.* php_OW.h
 
 clean-local:
+	@RM@ -f $(CLEANFILES)
 
 clean-generic:
 
