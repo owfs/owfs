@@ -41,11 +41,12 @@ struct connection_in * NewIn( void ) {
             now->index = 1 ;
         }
         ++ indevices ;
-    }
-    now->speed = B9600;    return now ;
+	now->speed = B9600;
 #ifdef OW_MT
-    pthread_mutex_init(&(now->bus_mutex), pmattr);
+	pthread_mutex_init(&(now->bus_mutex), pmattr);
 #endif /* OW_MT */
+    }
+    return now ;
 }
 
 struct connection_out * NewOut( void ) {
@@ -65,10 +66,10 @@ struct connection_out * NewOut( void ) {
             outdevice = now ;
         }
         ++ outdevices ;
-    }
 #ifdef OW_MT
-    pthread_mutex_init(&(now->accept_mutex), pmattr);
+	pthread_mutex_init(&(now->accept_mutex), pmattr);
 #endif /* OW_MT */
+    }
     return now ;
 }
 
