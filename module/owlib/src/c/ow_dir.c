@@ -82,6 +82,8 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             dirfunc( data, &pn2 ) ;
             pn2.type = pn_statistics ;
             dirfunc( data, &pn2 ) ;
+            pn2.type = pn_structure ;
+            dirfunc( data, &pn2 ) ;
             pn2.type = pn_real ;
         }
 
@@ -272,6 +274,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
 static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+    enum pn_type type = pn2->type ;
     void action( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
 //printf("Action\n") ;
@@ -284,7 +287,8 @@ static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const),
             break ;
         }
     } ;
-    twalk( Tree[pn2->type],action) ;
+    if (type==pn_structure) type = pn_real ; // to go through "real" devices
+    twalk( Tree[type],action) ;
     pn2->dev = NULL ;
     return 0 ;
 }
@@ -332,6 +336,8 @@ char * FS_dirname_type( const enum pn_type type ) {
         return "system";
     case pn_settings:
         return "settings";
+    case pn_structure:
+        return "structure";
     default:
         return "" ;
     }
@@ -381,7 +387,7 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
         } else {
             strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
         }
-    } else if ( pn->dev->type == pn_real ) {
+    } else if ( pn->type == pn_real ) {
         FS_devicename( buffer, size, pn->sn ) ;
     } else {
         strncpy( buffer, pn->dev->code, size ) ;

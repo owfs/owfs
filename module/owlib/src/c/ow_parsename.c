@@ -47,6 +47,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       static size_t lsettings ;
     static char * statistics ;
       static size_t lstatistics ;
+    static char * structure ;
+      static size_t lstructure ;
     const char * pathnow = path ;
 
     if ( uncached == NULL ) { // first time through
@@ -55,6 +57,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       lsystem    = strlen ( system_   = FS_dirname_type( pn_system    )) ;
       lsettings  = strlen ( settings  = FS_dirname_type( pn_settings  )) ;
       lstatistics= strlen ( statistics= FS_dirname_type( pn_statistics)) ;
+      lstructure = strlen ( structure = FS_dirname_type( pn_structure )) ;
     }
 //printf("PN_pn\n");
     if ( pn == NULL ) return -EINVAL ;
@@ -95,6 +98,9 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     } else if ( strncasecmp(pathnow,settings,lsettings)==0 ) {
         pn->type = pn_settings ;
         pathnow += lsettings ;
+    } else if ( strncasecmp(pathnow,structure,lstructure)==0 ) {
+        pn->type = pn_structure ;
+        pathnow += lstructure ;
     } else {
         --pathnow ; // just to reset for the check that follows
     }
@@ -131,21 +137,21 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
     /* Note -- Path is zero-ended */
     /* First element, device name (family.ID) */
 //printf("PN:Pre %s\n",path);
-    if ( (ret=NamePart( path, &pFile, pn )) ) { // device name match?
-        if ( pn->type != pn_real ) return ret ; // no real devices in this directory
+    switch( pn->type ) {
+    case pn_real:
         if ( (ret=DevicePart( path, &pFile, pn )) ) return ret ; // search for valid 1-wire sn
-    }
-//printf("PN:POST %s\n",path);
-
-    if ( pFile ==NULL || pFile[0]=='\0' ) {
-//printf("PN no file\n");
-        return (presencecheck && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+        if ( pFile == NULL || pFile[0]=='\0' ) return (presencecheck && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+        break ;
+    default:
+        if ( (ret=NamePart( path, &pFile, pn )) ) return ret ; // device name match?
+        if ( pFile == NULL || pFile[0]=='\0' ) return 0 ; /* directory */
+        break ;
     }
 
     /* Now examine filetype */
     if ( (ret=FilePart(pFile, &next, pn )) ) return ret ;
 
-    if ( pn->ft->format==ft_directory ) {
+    if ( pn->ft->format==ft_directory && pn->type == pn_real ) {
         if ( (ret=BranchAdd(pn)) ) return ret ;
         /* STATISCTICS */
         if ( pn->pathlength > dir_depth ) dir_depth = pn->pathlength ;
@@ -171,15 +177,23 @@ static int NamePart( const char * filename, const char ** next, struct parsednam
     const char * f = filename ;
     char * sep ;
     char fn[33] ;
+    enum pn_type type = pn->type ;
+
     strncpy(fn,filename,32);
     fn[32] = '\0' ;
     if ( (sep=strchr(fn,'/')) ) *sep = '\0' ;
+
+    if ( type == pn_structure ) {
+        pn->type = pn_real ; /* temporary change */
+    }
     FS_devicefind( fn, pn ) ;
+    pn->type = type ; /* revert */
     if ( pn->dev != &NoDevice ) {
         f += strlen(fn) ;
     } else {
         return -ENOENT ; /* unknown device */
     }
+
     if ( f[0]=='/' ) {
         *next = &f[1] ;
     } else if ( f[0] == '\0' ) {
