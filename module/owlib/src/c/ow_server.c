@@ -14,7 +14,6 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
-//#include <sys/uio.h>
 
 static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
