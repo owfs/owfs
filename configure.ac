@@ -48,7 +48,7 @@ AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
 # our locals :)
-AC_DEFUN(DB_CHECK_COMPILE, [
+AC_DEFUN([DB_CHECK_COMPILE], [
 AC_TRY_LINK( [
 #include <db.h>	     
 ], [
@@ -63,7 +63,7 @@ AC_TRY_LINK( [
 #
 # This stream of line noise will hopefully find out the best way to get
 # to a threading kit. Logic came from APR, but this will still cross-compile
-AC_DEFUN(PTHREADS_CHECK_COMPILE, [
+AC_DEFUN([PTHREADS_CHECK_COMPILE], [
 AC_TRY_LINK( [
 #include <pthread.h>
 #include <stddef.h>
