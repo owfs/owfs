@@ -115,15 +115,17 @@ static int OW_w_por( const int por , const struct parsedname * const pn ) ;
 /* read a page of memory (8 bytes) */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
-    if ( size+offset>8 ) return -ERANGE ;
-    if ( OW_r_mem(p,8,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
-    return FS_read_return(buf,size,offset,p,8) ;
+    size_t s = size ;
+    if ( size>8 )  s = 8 ;
+    if ( OW_r_mem(p,s,((pn->extension)<<3),pn) ) return -EINVAL ;
+    return FS_read_return(buf,size,offset,p,s) ;
 }
 
 /* write an 8-byte page */
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( size+offset>8 ) return -ERANGE ;
-    if ( OW_w_mem(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
+    size_t s = size ;
+    if ( size>8 )  s = 8 ;
+    if ( OW_w_mem(buf,s,((pn->extension)<<3),pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -197,18 +199,20 @@ static int FS_w_PIO(const int *y, const struct parsedname * pn) {
 
 /* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char p[8] ;
+    unsigned char p[32] ;
+    size_t s = size ;
+    if ( size>32 )  s = 32 ;
 //printf("2450 r mem: size %d offset %d \n ",size,offset);
-    if ( size+offset>4*8 ) return -ERANGE ;
-    if ( OW_r_mem(p,size,offset,pn) ) return -EINVAL ;
-    return FS_read_return(buf,size,offset,p,8) ;
+    if ( OW_r_mem(p,s,0,pn) ) return -EINVAL ;
+    return FS_read_return(buf,size,offset,p,s) ;
 }
 
 /* 2450 A/D */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //printf("2450 w mem: size %d offset %d \n ",size,offset);
-    if ( size+offset>4*8 ) return -ERANGE ;
-    if ( OW_w_mem(buf,size,offset,pn) ) return -EINVAL ;
+    size_t s = size ;
+    if ( size>32 )  s = 32 ;
+    if ( OW_w_mem(buf,s,0,pn) ) return -EINVAL ;
     return 0 ;
 }
 

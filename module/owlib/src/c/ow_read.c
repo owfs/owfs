@@ -114,6 +114,7 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     return r ;
 }
 
+/* put read data in buffer after offset */
 int FS_read_return( char *buf, const size_t size, const off_t offset , const char * src, const size_t length ) {
     size_t len = length-offset ;
     if ( offset>(off_t)length ) return -ERANGE ;
