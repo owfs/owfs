@@ -780,10 +780,10 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
 int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn ) ;
 
 /* High-level callback functions */
-int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
+int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
-int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;

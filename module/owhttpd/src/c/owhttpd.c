@@ -30,6 +30,17 @@ $Id$
 #include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
 
+/* ----- Globals ------------- */
+#ifdef OW_MT
+    pthread_mutex_t accept_mutex = PTHREAD_MUTEX_INITIALIZER ;
+    #define ACCEPTLOCK       pthread_mutex_lock(  &accept_mutex) ;
+    #define ACCEPTUNLOCK     pthread_mutex_unlock(&accept_mutex) ;
+#else /* OW_MT */
+    #define ACCEPTLOCK
+    #define ACCEPTUNLOCK
+#endif /* OW_MT */
+
+#if 0
 #ifdef OW_MT
 #include <pthread.h>
 sem_t accept_sem ;
@@ -53,6 +64,7 @@ struct mythread threads[MAX_THREADS];
 #define THREADLOCK
 #define THREADUNLOCK
 #endif /* OW_MT */
+#endif /* 0 */
 
 /*
  * Default port to listen too. If you aren't root, you'll need it to
@@ -65,12 +77,15 @@ struct listen_sock {
     struct sockaddr_in sin;
 };
 
-static struct listen_sock l_sock;
+//static struct listen_sock l_sock;
 static void ow_exit( int e ) ;
 static void shutdown_sock(struct listen_sock sock) ;
-static int get_listen_sock(struct listen_sock *sock) ;
-static void http_loop( struct listen_sock *sock ) ;
+//static int get_listen_sock(struct listen_sock *sock) ;
+//static void http_loop( struct listen_sock *sock ) ;
+static void * ThreadedAccept( void * pv ) ;
+static void * Acceptor( int listenfd ) ;
 
+#if 0
 void kill_threads(void) {
 #ifdef OW_MT
     int i;
@@ -83,15 +98,16 @@ void kill_threads(void) {
     shutdown_sock(l_sock);
     exit(0);
 }
+#endif /* 0 */
 
 void handle_sighup(int unused) {
     (void) unused ;
-    kill_threads();
+//    kill_threads();
 }
 
 void handle_sigterm(int unused) {
     (void) unused ;
-    kill_threads();
+//    kill_threads();
 }
 
 void handle_sigchild(int unused) {
@@ -101,6 +117,13 @@ void handle_sigchild(int unused) {
 
 int main(int argc, char *argv[]) {
     char c ;
+#ifdef OW_MT
+    pthread_t thread ;
+    pthread_attr_t attr ;
+
+    pthread_attr_init(&attr) ;
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif /* OW_MT */
 
     LibSetup() ;
     progname = strdup(argv[0]) ;
@@ -128,14 +151,15 @@ int main(int argc, char *argv[]) {
         ++optind ;
     }
 
-    if ( portnum==-1 ) {
+    if ( portname==NULL ) {
         fprintf(stderr, "No TCP port specified (-p)\n%s -h for help\n",argv[0]);
         ow_exit(1);
     }
 
-    if (get_listen_sock(&l_sock) < 0) {
-        fprintf(stderr, "socket problems: %s failed to start\n", argv[0]);
-        ow_exit(1);
+    if ( ServerAddr( portname, &server ) || (ServerListen( &server )<0) ) {
+        fprintf(stderr, "socket problems: %s failed to start\n", progname);
+        fprintf(stderr,"Cannot start server.\n");
+        exit(1);
     }
 
     /*
@@ -143,6 +167,7 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
+#if 0
 #ifdef OW_MT
     {
       int i;
@@ -150,18 +175,48 @@ int main(int argc, char *argv[]) {
       sem_init( &accept_sem, 0, MAX_THREADS ) ;
     }
 #endif /* OW_MT */
+#endif /* 0 */
 
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);
     signal(SIGHUP, handle_sighup);
     signal(SIGTERM, handle_sigterm);
 
+/*
     for (;;) {
         http_loop(&l_sock) ;
     }
     kill_threads();
+*/
+    for(;;) {
+        ACCEPTLOCK
+#ifdef OW_MT
+        if ( pthread_create( &thread, &attr, ThreadedAccept, &server ) ) ow_exit(1) ;
+#else /* OW_MT */
+        Acceptor( server.listenfd ) ;
+#endif /* OW_MT */
+    }
 }
 
+static void * ThreadedAccept( void * pv ) {
+    return (void *) Acceptor( ((struct network_work *)pv)->listenfd ) ;
+}
+
+static void * Acceptor( int listenfd ) {
+    int fd = accept( listenfd, NULL, NULL ) ;
+    ACCEPTUNLOCK
+    if ( fd>=0 ) {
+        FILE * fp = fdopen(fd, "w+");
+        if (fp) {
+            handle_socket( fp ) ;
+            fflush(fp);
+        }
+        close(fd);
+    }
+    return NULL ;
+}
+
+#if 0
 static void * handle(void * ptr) {
     struct mythread *mt = ((struct mythread *)ptr);
     struct active_sock ch_sock;
@@ -174,7 +229,7 @@ static void * handle(void * ptr) {
     ch_sock.socket = mt->socket;
     ch_sock.io = fdopen(ch_sock.socket, "w+");
     if (ch_sock.io) {
-        handle_socket( &ch_sock ) ;
+        handle_socket( ch_sock.io ) ;
         fflush(ch_sock.io);
     }
     close(ch_sock.socket);
@@ -255,6 +310,7 @@ static void http_loop( struct listen_sock *sock ) {
         syslog(LOG_WARNING,"Failed to accept a socket\n");
     }
 }
+#endif /* 0 */
 
 static void ow_exit( int e ) {
     LibClose() ;
@@ -262,37 +318,3 @@ static void ow_exit( int e ) {
     exit( e ) ;
 }
 
-/* -------------------------------------------------------------------
-   ---------------- socket routines ----------------------------------
-   ------------------------------------------------------------------- */
-/*
- * get_listen_sock
- *   Start up the socket listening routines and return a filedescriptor
- *   for that socket
- */
-static int get_listen_sock(struct listen_sock *sock) {
-    int             status;
-    int             one;
-
-    status = 0;
-    one = 1;
-    memset(&(sock->sin), 0, sizeof(sock->sin));
-    sock->sin.sin_family = AF_INET;
-    sock->sin.sin_addr.s_addr = htonl(0);
-    sock->sin.sin_port = htons(portnum);
-
-    if ( ((sock->socket = socket(AF_INET, SOCK_STREAM, 0))==-1)
-         || setsockopt(sock->socket, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(one))
-         || bind(sock->socket, (struct sockaddr *) &(sock->sin), sizeof((sock->sin)))
-         || listen(sock->socket, 5)
-       ) {
-        shutdown(sock->socket, 2);
-        sock->socket = -1;
-    }
-    return (sock->socket);
-}
-
-static void shutdown_sock(struct listen_sock sock) {
-    if (sock.socket != -1)
-        shutdown(sock.socket, 2);
-}

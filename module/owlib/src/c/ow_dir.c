@@ -38,7 +38,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), str
     pn->ft loops through
 */
 /* path is the path which "pn" parses */
-int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) {
+int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
     int ret = 0 ;
     struct parsedname pn2 ;
 
@@ -61,7 +61,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         ret = FS_typedir( dirfunc, &pn2 ) ;
     } else if ( busmode == bus_remote ) {
-printf("DIR: to bus\n");
+//printf("DIR: to bus\n");
         ret = ServerDir( dirfunc, pn ) ;
     } else {
         pn2.state = (pn_alarm | (pn->state & pn_text)) ;

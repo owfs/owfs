@@ -130,7 +130,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         ret = -ENOENT;
     } else { /* Good pn */
         /* Call directory spanning function */
-        FS_dir( directory, path, &pn ) ;
+        FS_dir( directory, &pn ) ;
         FILLER(h,".") ;
         FILLER(h,"..") ;
         ret = 0 ;

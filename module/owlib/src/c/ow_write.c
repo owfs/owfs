@@ -16,7 +16,7 @@ $Id$
 #include "ow.h"
 
 /* ------- Prototypes ----------- */
-static int FS_real_write(const char * const path, const char * const buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_real_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_gamish(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
 static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
 static int FS_w_split(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
@@ -71,14 +71,14 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     } else if (pn.type == pn_structure ) { /* structure is read-only */
         r = -ENOTSUP ;
     } else {
-        r = FS_write_postparse( path, buf, size, offset, &pn ) ;
+        r = FS_write_postparse( buf, size, offset, &pn ) ;
     }
 
     FS_ParsedName_destroy(&pn) ;
     return r ; /* here's where the size is used! */
 }
 /* return size if ok, else negative */
-int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 
     /* if readonly exit */
@@ -91,26 +91,26 @@ int FS_write_postparse(const char *path, const char *buf, const size_t size, con
     STATUNLOCK
 
     LockGet(pn) ;
-        r = FS_real_write( path, buf, size, offset, pn ) ;
+        r = FS_real_write( buf, size, offset, pn ) ;
     LockRelease(pn) ;
-    
+
     if ( r == 0 ) {
         STATLOCK
             ++write_success ; /* statistics */
             write_bytes += size ; /* statistics */
         STATUNLOCK
     }
-    
+
     STATLOCK
         AVERAGE_OUT(&write_avg)
         AVERAGE_OUT(&all_avg)
     STATUNLOCK
-    
+
     return (r) ? r : size ; /* here's where the size is used! */
 }
 
 /* return 0 if ok */
-static int FS_real_write(const char * const path, const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+static int FS_real_write(const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 //printf("REAL_WRITE\n");
 
@@ -152,7 +152,7 @@ static int FS_real_write(const char * const path, const char * const buf, const 
         ++ write_tries[2] ; /* statistics */
     STATUNLOCK
     r = FS_parse_write( buf, size, offset, pn ) ;
-    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",path,(int)size) ;
+    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 

@@ -231,7 +231,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) {
-    int ret = FS_write_postparse(pn->path,data,sm->size,sm->offset,pn) ;
+    int ret = FS_write_postparse(data,sm->size,sm->offset,pn) ;
 //printf("Handler: WRITE done\n");
     if ( ret<0 ) {
         cm->size = 0 ;
@@ -275,7 +275,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         strcpy( &retbuffer[pathlen-1] , "/" ) ;
         ++pathlen ;
     }
-    cm->ret = FS_dir( directory, pn->path, pn ) ;
+    cm->ret = FS_dir( directory, pn ) ;
 //printf("Handler: DIR done\n");
     /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
