@@ -37,6 +37,24 @@ $Id$
 
 #include "owserver.h"
 
+/* --- Prototypes ------------ */
+int Handler( int fd ) ;
+ssize_t readn(int fd, void *vptr, size_t n) ;
+void * FromClientAlloc( int fd, struct server_msg * sm ) ;
+int ToClient( int fd, int format, const char * data, int datasize, int ret ) ;
+int Acceptor( int listenfd ) ;
+
+/* ----- Globals ------------- */
+#ifdef OW_MT
+    pthread_mutex_t accept_mutex = PTHREAD_MUTEX_INITIALIZER ;
+    #define ACCEPTLOCK       pthread_mutex_lock(  &accept_mutex) ;
+    #define ACCEPTUNLOCK     pthread_mutex_unlock(&accept_mutex) ;
+#else /* OW_MT */
+    #define ACCEPTLOCK
+    #define ACCEPTUNLOCK
+#endif /* OW_MT */
+
+
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 ssize_t readn(int fd, void *vptr, size_t n) {
@@ -63,7 +81,7 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 /* read from client, free return pointer if not Null */
 void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
-    
+
     if ( readn(fd, sm, sizeof(struct server_msg) ) != sizeof(struct server_msg) ) {
         sm->size = -1 ;
         return NULL ;
@@ -72,9 +90,9 @@ void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->size = ntohl(sm->size) ;
     sm->type = ntohl(sm->type) ;
     sm->tempscale = ntohl(sm->tempscale) ;
-    
+
     if ( sm->size <= 0 ) return NULL ;
-    
+
     if ( (msg=malloc(sm->size)) ) {
         if ( readn(fd,msg,sm->size) != sm->size ) {
             sm->size = -1 ;
@@ -92,15 +110,15 @@ int ToClient( int fd, int format, const char * data, int datasize, int ret ) {
         { &cm, sizeof(struct client_msg), } ,
         { data, datasize, } ,
     } ;
-    
+
     if ( data && datasize ) {
         ++nio ;
     }
-    
+
     cm.size = htonl(datasize) ;
     cm.ret = htonl(ret) ;
     cm.format = htonl(format) ;
-    
+
     return writev( fd, io, nio ) != cm.size + sizeof(struct client_msg) ;
 }
 
@@ -119,7 +137,7 @@ int Handler( int fd ) {
         char * p ;
         FS_DirName( D, OW_FULLNAME_MAX, pn2 ) ;
         p = memchr(D,0,OW_FULLNAME_MAX) ;
-        ToClient(fd,1,D,p?OW_FULLNAME_MAX:p-D,1) ;   
+        ToClient(fd,1,D,p?OW_FULLNAME_MAX:p-D,1) ;
     }
     /* error reading message */
     if ( sm.size < 0 ) {
@@ -134,17 +152,17 @@ int Handler( int fd ) {
     }
 
     /* Now parse path and locate memory */
-    len = strnlen(path,sm.size) ;
-    if ( len == sm.size ) { /* Bad string -- no trailing null */
+    if ( memchr( path, 0, sm.size) == NULL ) { /* Bad string -- no trailing null */
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
         return ToClient( fd, 0, NULL, 0, -EBADMSG ) ;
     }
-    
+    len = strlen( path ) + 1 ; /* include trailing null */
+
     /* Locate post-path buffer as data */
     datasize = sm.size - len ;
     if ( datasize ) data = &path[len] ;
-        
+
     /* Parse the path string */
     pn.si = &si ;
     if ( (ret=FS_ParsedName( path , &pn )) ) {
@@ -152,7 +170,7 @@ int Handler( int fd ) {
         if ( path ) free(path) ;
         return ToClient( fd, 0, NULL, 0, ret ) ;
     }
-    
+
     /* parse name? */
     switch( (enum msg_type) sm.type ) {
     case msg_get:
@@ -182,9 +200,9 @@ int Handler( int fd ) {
     default:
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
-        return ToClient( fd, 0, NULL, 0, -ENOTSUP ) ;    
+        return ToClient( fd, 0, NULL, 0, -ENOTSUP ) ;
     }
-    
+
     if ( len && (returned = malloc(len))==NULL ) {
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
@@ -221,4 +239,20 @@ int Handler( int fd ) {
     ret = ToClient( fd, 0, returned, len, ret ) ;
     if ( returned ) free(returned) ;
     return ret<0 ;
-}     
+}
+
+int Acceptor( int listenfd ) {
+    int fd = accept( listenfd, NULL, NULL ) ;
+    ACCEPTUNLOCK
+    if ( fd<0 ) return -1 ;
+    return Handler( fd ) ;
+}
+
+int main( int argc , char ** argv ) {
+    int listenfd ;
+
+    for(;;) {
+        ACCEPTLOCK
+        Acceptor(listenfd);
+    }
+}
