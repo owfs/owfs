@@ -149,7 +149,7 @@ void catchchild() {
 */
 int my_daemon(int nochdir, int noclose) {
     struct sigaction act;
-    int pid, rc;
+    int pid;
     int fd;
 
 //printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
