@@ -149,7 +149,7 @@ struct thermocouple type_t =
 };
 
 
-struct aggregate A2760p = { 16, ag_numbers, ag_separate, } ;
+struct aggregate A2760 = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS2760[] = {
     F_STANDARD     ,
     {"memory"      ,   256,   NULL,  ft_binary  , ft_volatile, {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,

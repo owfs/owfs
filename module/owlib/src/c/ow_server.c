@@ -46,19 +46,21 @@ void * FromServerAlloc( int fd, struct client_msg * cm ) {
     int r ;
     
     if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
-        cm->size = -1 ;
+        cm->size = 0 ;
+        cm->ret = -EIO ;
         return NULL ;
     }
 
     cm->size = ntohl(cm->size) ;
+    cm->ret = ntohl(cm->ret) ;
     cm->format = ntohl(cm->format) ;
-    cm->more = ntohl(cm->more) ;
     
-    if ( cm->size <= 0 ) return NULL ;
+    if ( cm->size == 0 ) return NULL ;
     
     if ( (msg=malloc(cm->size)) ) {
         if ( readn(fd,msg,cm->size) != cm->size ) {
-            cm->size = -1 ;
+            cm->size = 0 ;
+            cm->ret = -EIO ;
             free(msg);
             msg = NULL ;
         }
@@ -72,27 +74,30 @@ int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     int d ;
     
     if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
-        cm->size = -1 ;
+        cm->size = 0 ;
+        cm->ret = -EIO ;
         return -1 ;
     }
     
     cm->size = ntohl(cm->size) ;
+    cm->ret = ntohl(cm->ret) ;
     cm->format = ntohl(cm->format) ;
-    cm->more = ntohl(cm->more) ;
     
-    if ( cm->size <= 0 ) return cm->size ;
+    if ( cm->size == 0 ) return cm->size ;
     
     d = cm->size - size ;
     rtry = d<0 ? cm->size : size ;
     if ( readn(fd, msg, rtry ) != rtry ) {
-        cm->size = -1 ;
+        cm->size = 0 ;
+        cm->ret = -EIO ;
         return -1 ;
     }
     
     if ( d>0 ) {
         char extra[d] ;
         if ( readn(fd,extra,d) != d ) {
-            cm->size = -1 ;
+            cm->size = 0 ;
+            cm->ret = -EIO ;
             return -1 ;
         }
         return size ;

@@ -509,8 +509,8 @@ struct server_msg {
 struct client_msg {
     int32_t version ;
     int32_t size ;
+    int32_t ret ;
     int32_t format ;
-    int32_t more ;
     int32_t extra ;
 } ;
 enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_attr, msg_statf, } ;
@@ -738,6 +738,7 @@ int LI_reset( const struct parsedname * const pn ) ;
 int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
+int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
 int FS_read_postparse(const char * path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;

@@ -78,7 +78,8 @@ void * FromClientAlloc( int fd, struct server_msg * sm ) {
     
     if ( (msg=malloc(sm->size)) ) {
         if ( readn(fd,msg,sm->size) != sm->size ) {
-            sm->size = -1 ;
+            sm->size = 0 ;
+            sm->ret = -EIO ;
             free(msg);
             msg = NULL ;
         }
@@ -86,7 +87,7 @@ void * FromClientAlloc( int fd, struct server_msg * sm ) {
     return msg ;
 }
 
-int ToClient( int fd, const enum msg_type type, int format, const char * data, int datasize, int more ) {
+int ToClient( int fd, int int format, const char * data, int datasize, int ret ) {
     struct client_msg cm ;
     int nio = 1 ;
     struct iovec io[] = {
@@ -99,52 +100,125 @@ int ToClient( int fd, const enum msg_type type, int format, const char * data, i
     }
     
     cm.size = htonl(datasize) ;
+    cm.ret = htonl(ret) ;
     cm.format = htonl(format) ;
-    cm.more = htonl(more) ;
     
     return writev( fd, io, nio ) != size + sizeof(struct client_msg) ;
 }
 
 int Handler( int fd ) {
-    char * path ;
-    char * data ;
+    char * data = NULL ;
+    int datasize ;
+    int len ;
     char * returned = NULL ;
-    int nreturned = 0 ;
-    int err = 0 ;
     int ret = 0 ;
-    int more = 0 ;
     struct server_msg sm ;
-    char * msg = FromClientAlloc( fd, &sm ) ;
+    char * path = FromClientAlloc( fd, &sm ) ;
     struct parsedname pn ;
-    
-    if ( sm.size >= 0 ) {
-        /* parse name? */
-        switch( (enum msg_type) sm.type ) {
-        case msg_nop:
-            break ;
-        default:
-        
-        }
-        /* parse name? */
-        switch( (enum msg_type) sm.type ) {
-        case msg_nop:
-        case msg_read:
-        case msg_write:
-        case msg_dir:
-        case msg_get:
-        case msg_put:
-        case msg_attr:
-        case msg_statf:
-        }
-
-    } else {
-        err = sm.size ;
+    struct stateinfo si ;
+    void directory( void * d, const struct parsedname * const pn2 ) {
+        char D[OW_FULLNAME_MAX] ;
+        FS_DirName( D, OW_FULLNAME_MAX, pn2 ) ;
+        ToClient(fd,1,D,strnlen(D,OW_FULLNAME_MAX),1) ;   
     }
-    ret = ToClient( fd, 0, returned, err, more ) ;
+    /* error reading message */
+    if ( sm.ret < 0 ) {
+        /* Nothing allocated */
+        return ToClient( fd, 0, NULL, 0, -EIO ) ;
+    }
+
+    /* No payload -- only ok if msg_nop */
+    if ( sm.size == 0 ) {
+        /* Nothing allocated */
+        return ToClient( fd, 0, NULL, 0, (enum msg_type)type==msg_nop?0:-EBADMSG ) ;
+    }
+
+    /* Now parse path and locate memory */
+    len = strnlen(path,sm.size) ;
+    if ( len == sm.size ) { /* Bad string -- no trailing null */
+        FS_ParsedName_destroy(&pn) ;
+        if ( path ) free(path) ;
+        return ToClient( fd, 0, NULL, 0, -EBADMSG ) ;
+    }
+    
+    /* Locate post-path buffer as data */
+    datasize = sm.size - len ;
+    if ( datasize ) data = &path[len] ;
+        
+    /* Parse the path string */
+    pn.si = &si ;
+    if ( (ret=FS_ParseName( path , &pn )) )
+        FS_ParsedName_destroy(&pn) ;
+        if ( path ) free(path) ;
+        return ToClient( fd, 0, NULL, 0, ret ) ;
+    }
+    
+    /* parse name? */
+    switch( (enum msg_type) sm.type ) {
+    case msg_get:
+        if ( pn.dev==NLL || pn.ft == NULL ) {
+            sm.type = msg_dir ;
+            len = OW_FULLNAME_MAX ;
+            break ;
+        }
+        sm.type = msg_read ;
+        /* fall through */
+    case msg_read:
+        len = FullFileLength(&pn) ;
+        break ;
+    case msg_put:
+    case msg_write:
+       len = 0 ;
+       break ;
+    case msg_dir:
+        len = 0 ;
+        break ;
+    case msg_attr:
+        len = 0 ;
+        break ;
+    case msg_statf:
+        len = 0 ;
+        break ;
+    default:
+        FS_ParsedName_destroy(&pn) ;
+        if ( path ) free(path) ;
+        return ToClient( fd, 0, NULL, 0, -ENOTSUP ) ;    
+    }
+    
+    if ( len && (returned = malloc(len))==NULL ) {
+        FS_ParsedName_destroy(&pn) ;
+        if ( path ) free(path) ;
+        return ToClient( fd, 0, NULL, 0, -ENOBUFS ) ;
+    }
+
+    /* parse name? */
+    switch( (enum msg_type) sm.type ) {
+    case msg_read:
+        ret = FS_read_postparse(path,returned,len,0,&pn) ;
+        if ( ret<0 ) {
+            free(returned);
+            returned = NULL ;
+        }
+        len = ret ;
+        break ;
+    case msg_put:
+    case msg_write:
+        ret = FS_write_postparse(path,data,datasize,0,&pn) ;
+        if ( ret<0 ) {
+            free(returned);
+            returned = NULL ;
+        }
+        break ;
+    case msg_dir:
+        FS_dir( directory, NULL, &pn ) ;
+        ret = 0 ;
+        break ;
+    case msg_attr:
+    case msg_statf:
+    }
+    FS_ParsedName_destroy(&pn) ;
+    if (path) free(path) ;
+    ret = ToClient( fd, 0, returned, len, ret ) ;
     if ( returned ) free(returned) ;
-    if ( msg ) free(msg) ;
-    return ret ;
-     
-    
-    
-}
+    return ret<0 ;
+}     
