@@ -180,7 +180,9 @@ extern int maxslots ;
 #include <ctype.h>
 #include <sys/file.h> /* for flock */
 #include <sys/stat.h> /* for stat */
+#include <sys/uio.h>
 #include <sys/types.h> /* for stat */
+#include <sys/socket.h>
 #include <getopt.h> /* for long options */
 #include <netinet/in.h>
 #include <netdb.h> /* addrinfo */
@@ -848,5 +850,16 @@ void BUS_unlock( void ) ;
 #define IsCacheEnabled(ppn )       ( (ppn->si->sg.u[0] ) && (busmode != bus_remote) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[4]) )
+
+#ifdef __UCLIBC__
+//#include <features.h>
+#if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
+#if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000919
+#define syslog(a,...)	//ignore_syslog
+#define openlog(a,...)	//ignore_openlog
+#define closelog()	//ignore_closelog
+#endif
+#endif
+#endif
 
 #endif /* OW_H */

@@ -208,6 +208,16 @@ static int start_thread(struct mythread *mt) {
         fprintf(stderr, "start_thread: error creating thread: %s\n", strerror(res));
         return -1;
     }
+#ifdef DEBUG_SYSLOG
+    /* uClibc-0.9.19 which WRT54G use, seem to have a buggy syslog() function.
+       If syslogd is NOT started, syslog() hangs in the new thread (in ow_read.c)
+       If I add the syslog below (after creating the new thread), it doesn't hang in ow_read.c?
+       If syslogd is running the problem doesn't occour, but since WRT54G doesn't have any
+         syslogd as default, it's better to remove syslog() when version <= 0.9.19.
+    */
+    //syslog(LOG_WARNING,"This solves the problem of hanging syslog() in the new thread???\n");
+#endif
+
     pthread_detach(mt->tid);
     return 0;
 }
