@@ -310,7 +310,8 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     }
 
     /* fancy math */
-    temp[0] = (FLOAT)((((char)data[1])<<8|data[0])>>1) + .75 - .0625*data[6] ;
+//    temp[0] = (FLOAT)((((char)data[1])<<8|data[0])>>1) + .75 - .0625*data[6] ;
+    temp[0] = (FLOAT) ((int16_t)(data[1]<<8|data[0]))*.5  + .75 - .0625*data[6] ;
     return 0 ;
 }
 
@@ -368,7 +369,8 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
 
-    *temp = .0625*(((char)data[1])<<8|data[0]) ;
+//    *temp = .0625*(((char)data[1])<<8|data[0]) ;
+    temp[0] = (FLOAT) ((int16_t)(data[1]<<8|data[0])) * .0625 ;
     return 0 ;
 }
 
@@ -386,7 +388,8 @@ static int OW_r_templimit( FLOAT * const T, const int Tindex, const struct parse
     UT_delay(10) ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
-    *T = (char) data[2+Tindex] ;
+//    *T = (char) data[2+Tindex] ;
+    T[0] = (FLOAT) ((int8_t)data[2+Tindex]) ;
     return 0 ;
 }
 

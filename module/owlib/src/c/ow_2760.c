@@ -52,14 +52,13 @@ $Id$
 bWRITE_FUNCTION( FS_w_mem ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
- yREAD_FUNCTION( FS_r_pio ) ;
+ fREAD_FUNCTION( FS_r_volt ) ;
+ fREAD_FUNCTION( FS_r_temp ) ;
+ fREAD_FUNCTION( FS_r_current ) ;
+ fREAD_FUNCTION( FS_r_accum ) ;
+ fREAD_FUNCTION( FS_r_offset ) ;
+fWRITE_FUNCTION( FS_w_offset ) ;
 yWRITE_FUNCTION( FS_w_pio ) ;
- yREAD_FUNCTION( FS_r_latch ) ;
-yWRITE_FUNCTION( FS_w_latch ) ;
- uREAD_FUNCTION( FS_r_s_alarm ) ;
-uWRITE_FUNCTION( FS_w_s_alarm ) ;
- yREAD_FUNCTION( FS_power ) ;
- uREAD_FUNCTION( FS_channel ) ;
  yREAD_FUNCTION( FS_sense ) ;
 
 /* ------- Structures ----------- */
@@ -67,15 +66,16 @@ uWRITE_FUNCTION( FS_w_s_alarm ) ;
 struct aggregate A2760p = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS2760[] = {
     F_STANDARD   ,
-    {"memory"    ,   256,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
+    {"memory"    ,   256,  NULL,    ft_binary  , ft_volatile, {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
     {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
-    {"pages/page",    16,  NULL,    ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
-    {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL}     , NULL, } ,
-    {"PIO"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
+    {"pages/page",    16,  NULL,    ft_binary  , ft_volatile, {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"volt"      ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_volt}   , {v:NULL}     , NULL, } ,
+    {"temperature",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_temp}   , {v:NULL}     , NULL, } ,
+    {"current"   ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_current}, {v:NULL}     , NULL, } ,
+    {"accumulator",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_accum}  , {v:NULL}     , NULL, } ,
+    {"offset"    ,    12,  NULL,    ft_float   , ft_stable  , {f:FS_r_offset} , {f:FS_w_offset},NULL,} ,
+    {"PIO"       ,     1,  NULL,    ft_yesno   , ft_volatile, {v:NULL}        , {y:FS_w_pio} , NULL, } ,
     {"sensed"    ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
-    {"latch"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
-    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 30, DS2760 )
 
@@ -85,13 +85,6 @@ DeviceEntry( 30, DS2760 )
 static int OW_r_sram( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) ;
-static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) ;
-static int OW_r_control( unsigned char * data , const struct parsedname * pn ) ;
-static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
-static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) ;
-static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
-static int OW_clear( const struct parsedname * pn ) ;
 static int OW_r_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_eeprom( const size_t page, const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 
@@ -121,82 +114,73 @@ static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t off
     return 0 ;
 }
 
-/* 2406 switch */
-static int FS_r_pio(int * y , const struct parsedname * pn) {
-    unsigned char data ;
-    if ( OW_access(&data,pn) ) return -EINVAL ;
-//printf("RPIO data=%2X\n",data) ;
-    data ^= 0xFF ; /* reverse bits */
-//printf("RPIO data=%2X\n",data) ;
-    y[0] = UT_getbit(&data,0) ;
-    y[1] = UT_getbit(&data,1) ;
-//printf("RPIO pio=%d,%d\n",y[0],y[1]) ;
+static int FS_r_current(FLOAT * C , const struct parsedname * pn) {
+    unsigned char c[2] ;
+    int ret = OW_r_sram(c,2,0x0E,pn) ;
+    if (ret) return ret ;
+    C[0] = (FLOAT) (((int16_t)(c[0]<<8|c[1]))>>3)*.000625 ;
     return 0 ;
 }
 
-/* 2406 switch -- is Vcc powered?*/
-static int FS_power(int * y , const struct parsedname * pn) {
-    unsigned char data ;
-    if ( OW_access(&data,pn) ) return -EINVAL ;
-    *y = UT_getbit(&data,7) ;
+static int FS_r_accum(FLOAT * A , const struct parsedname * pn) {
+    unsigned char a[2] ;
+    int ret = OW_r_sram(a,2,0x10,pn) ;
+    if (ret) return ret ;
+    A[0] = (FLOAT) (((int16_t)(a[0]<<8|a[1])))*.00025 ;
     return 0 ;
 }
 
-/* 2406 switch -- number of channels (actually, if Vcc powered)*/
-static int FS_channel(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
-    if ( OW_access(&data,pn) ) return -EINVAL ;
-    *u = (data&0x40)?2:1 ;
+static int FS_r_offset(FLOAT * O , const struct parsedname * pn) {
+    unsigned char o ;
+    int ret = OW_r_mem(&o,1,0x33,pn) ;
+    if (ret) return ret ;
+    O[0] = (FLOAT) (int8_t)o * .000625 ;
+    return 0 ;
+}
+
+static int FS_w_offset(const FLOAT * O , const struct parsedname * pn) {
+    unsigned char o ;
+    if ( O[0] < -.08 ) return -ERANGE ;
+    if ( O[0] > .08 ) return -ERANGE ;
+    o = (uint8_t) (O[0]*1600) ; // 1600 == 1/.000625
+    return OW_w_mem(&o,1,0x33,pn) ? -EINVAL : 0 ;
+}
+
+static int FS_r_volt(FLOAT * V , const struct parsedname * pn) {
+    unsigned char v[2] ;
+    int ret = OW_r_sram(v,2,0x0C,pn) ;
+    if (ret) return ret ;
+    V[0] = (FLOAT) (((int16_t)(v[0]<<8|v[1]))>>5)*.00488 ;
+    return 0 ;
+}
+
+static int FS_r_temp(FLOAT * T , const struct parsedname * pn) {
+    unsigned char t[2] ;
+    int ret = OW_r_sram(t,2,0x18,pn) ;
+    if (ret) return ret ;
+    // .00390625 == 1/256
+    /* change to selected temperature units */
+    T[0] = Temperature( (FLOAT) (((int16_t)(t[0]<<8|t[1]))>>5) * .125 ) ;
     return 0 ;
 }
 
 /* 2406 switch PIO sensed*/
 static int FS_sense(int * y , const struct parsedname * pn) {
     unsigned char data ;
-    if ( OW_access(&data,pn) ) return -EINVAL ;
-    y[0] = UT_getbit(&data,2) ;
-    y[1] = UT_getbit(&data,3) ;
+    int ret = OW_r_sram(&data,1,0x08,pn);
+    if (ret) return -EINVAL ;
+    y[0] = UT_getbit(&data,6) ;
     return 0 ;
 }
 
-/* 2406 switch activity latch*/
-static int FS_r_latch(int * y , const struct parsedname * pn) {
-    unsigned char data ;
-    if ( OW_access(&data,pn) ) return -EINVAL ;
-    y[0] = UT_getbit(&data,4) ;
-    y[1] = UT_getbit(&data,5) ;
-    return 0 ;
-}
-
-/* 2406 switch activity latch*/
-static int FS_w_latch(const int * y , const struct parsedname * pn) {
-    (void) y ;
-    if ( OW_clear(pn) ) return -EINVAL ;
-    return 0 ;
-}
-
-/* 2406 alarm settings*/
-static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
-    if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    u[0] = (data & 0x01) + ((data & 0x06) >> 1) * 10 + ((data & 0x18) >> 3) * 100;
-    return 0 ;
-}
-
-/* 2406 alarm settings*/
-static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char data;
-    data = ((u[0] % 10) & 0x01) | (((u[0] / 10 % 10) & 0x03) << 1) | (((u[0] / 100 % 10) & 0x03) << 3);
-    if ( OW_w_control(data,pn) ) return -EINVAL ;
-    return 0 ;
-}
-
-/* write 2406 switch -- 2 values*/
+/* write PIO -- bit 6 */
 static int FS_w_pio(const int * y, const struct parsedname * pn) {
-    unsigned char data = 0;
-    UT_setbit( &data , 0 , y[0]==0 ) ;
-    UT_setbit( &data , 1 , y[1]==0 ) ;
-    if ( OW_w_pio(data,pn) ) return -EINVAL ;
+    unsigned char data ;
+    int ret = OW_r_sram(&data,1,0x08,pn);
+    if (ret) return -EINVAL ;
+    UT_setbit( &data , 6 , y[0]==0 ) ;
+    UT_setbit( &data , 7 , 1 ) ; // set PS bit after read to clear latch?!?
+    if ( OW_w_mem(&data,1,0x08,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -270,77 +254,3 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return OW_w_eeprom(0x20,data,size,offset,pn) || OW_w_eeprom(0x30,data,size,offset,pn) ;
 }
 
-/* read status byte */
-static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char p[3+1+2] = { 0xAA, 0x07 , 0x00, } ;
-    int ret ;
-
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 1+2 ) || CRC16(p,3+1+2) ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
-
-    *data = p[3] ;
-    return 0 ;
-}
-
-/* write status byte */
-static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
-    unsigned char p[3+1+2] = { 0x55, 0x07 , 0x00, data, } ;
-    int ret ;
-
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 4 ) || BUS_readin_data( &p[4], 2 ) || CRC16(p,6) ;
-    BUSUNLOCK
-    return ret ;
-}
-
-/* read alarm settings */
-static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) {
-    if ( OW_r_control(data,pn) ) return 1;
-    *data &= 0x1F;
-    return 0;
-}
-
-/* write alarm settings */
-static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) {
-    unsigned char b;
-    if ( OW_r_control(&b,pn) ) return 1;
-    b = (b & 0x60) | (data & 0x1F);
-    return OW_w_control(b,pn);
-}
-
-/* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
-static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
-    unsigned char b;
-    if ( OW_r_control(&b,pn) ) return 1;
-    b = (b & 0x9F) | ((data << 5) & 0x60);
-    return OW_w_control( b , pn ) ;
-}
-
-static int OW_access( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
-    int ret ;
-
-    BUSLOCK
-         ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
-
-    *data = p[3] ;
-//printf("ACCESS %.2X %.2X\n",p[3],p[4]);
-    return 0 ;
-}
-
-/* Clear latches */
-static int OW_clear( const struct parsedname * pn ) {
-    unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
-    int ret ;
-
-    BUSLOCK
-         ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
-
-    return 0 ;
-}

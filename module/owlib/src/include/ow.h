@@ -64,6 +64,7 @@ $Id$
 #include <stdlib.h>
 #include <dirent.h>
 #include <signal.h>
+#include <stdint.h> /* for bit twiddling */
 
 #include <unistd.h>
 #include <fcntl.h>
