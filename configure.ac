@@ -111,17 +111,24 @@ AC_SUBST(ENABLE_CACHE)
 
 # Include libdb if the cache is enabled
 if test "${ENABLE_CACHE}" = "true" ; then
-    AC_CHECK_LIB(db,__db_dbopen,[
-        AC_MSG_CHECKING([>DB4.0?])
-        AC_CHECK_LIB(db,__txn_reset,[ENABLE_CACHE41=true],[ENABLE_CACHE41=false])
-        ],[
-        AC_MSG_WARN([libdb1 not found, cache will be disabled])
+    AC_CHECK_LIB(db,db_create,[],[
+        AC_MSG_WARN([libdb not found, cache will be disabled. Try www.sleepycat.com])
         ENABLE_CACHE=false
         AC_SUBST(ENABLE_CACHE)
     ])
 fi
+
+AC_MSG_WARN([test])
+
+if test "${ENABLE_CACHE}" = "true" ; then
+    AC_CHECK_HEADER(db.h,[],[
+        AC_MSG_WARN([db.h not found, probably need development version, cache will be disabled. Try www.sleepcat.com])
+        ENABLE_CACHE=false
+        AC_SUBST(ENABLE_CACHE)
+    ])
+fi
+
 AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
-AM_CONDITIONAL(ENABLE_CACHE41, test "${ENABLE_CACHE41}" = "true")
 
 # Check for USB enabled
 

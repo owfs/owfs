@@ -50,10 +50,6 @@ if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
 endif
 
-if ENABLE_CACHE41
-CACHE41_FLAG = -DDB41
-endif
-
 if ENABLE_USB
 USB_FLAG = -DOW_USB
 endif
@@ -76,7 +72,6 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
          ${CACHE_FLAG} \
-         ${CACHE41_FLAG} \
          ${MT_FLAG} \
          ${USB_FLAG}
 

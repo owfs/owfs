@@ -23,8 +23,7 @@ int Cache_Del_common( const char * const k, const size_t ksize );
 
 /* Defines for db->open */
 /* Berkeley DB changed the format for version 4.1+, adding a "transaction parameter" */
-//#define DB41
-#ifdef DB41
+#ifdef ( (DB_VERSION_MAJOR > 3) && (DB_VERSION_MINOR > 0) ) || (DB_VERSION_MAJOR > 4)
     #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,NULL,DB_HASH,DB_CREATE|DB_THREAD,0)
 #else /* DB41 */
     #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,DB_HASH,DB_CREATE|DB_THREAD,0)
