@@ -291,9 +291,11 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay) 
     unsigned char buffer[32] ;
     unsigned char resp ;
     unsigned char dly = 1 + ( (unsigned char) (delay>>4) ) ;
-    int ret = DS9490_sendback_data( & byte , & resp , 1 ) ;
+    int ret ;
 
-    if ( ret ) return ret ;
+    /* Send the byte */
+    if ( (ret= DS9490_sendback_data(&byte, &resp , 1)) ) return ret ;
+printf("9490 Powerbyte in=%.2X out %.2X\n",byte,resp) ;
     if ( byte != resp ) return -EIO ;
 
     /** Pulse duration */
