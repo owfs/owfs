@@ -1,0 +1,42 @@
+What is new in 1.0
+
+* Cleanups and bugfixes
+
+* Added 'release()' VFS call to the FUSE interface
+
+* 64 bit file offsets (handling of > 4 GByte files)
+
+* libfuse is now under LGPL
+
+* New 'statfs' call (Mark Glines)
+
+* Cleaned up mount procedure (mostly by Mark Glines)
+
+  NOTE: Binaries linked with with a previous version of libavfs may
+  not work with the new version of the fusermount program.  In such
+  case recompile the program after installing the new libavfs library.
+
+* Fix for problems under linux kernel 2.4.19
+
+============================================================================
+
+What is new in 0.95
+
+* Optimized read/write operations.  Raw throughput has increased to
+about 60Mbyte/s on a Celeron/360
+
+* Python bindings by Jeff Epler
+
+* Perl bindings by Mark Glines
+
+* Improved multithreaded operation
+
+* Simplified library interface
+
+* Bugfixes
+
+============================================================================
+
+What is new in 0.9:
+
+* Everything
