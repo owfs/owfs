@@ -744,7 +744,7 @@ static int FS_input_float( FLOAT * const result, const char * const buf, const s
 /* return 0 if ok */
 static int FS_input_date( DATE * const result, const char * const buf, const size_t size ) {
     struct tm tm ;
-    if ( size==0 || buf[0]=='\0' ) {
+    if ( size<2 || buf[0]=='\0' || buf[0]=='\n' ) {
         *result = time(NULL) ;
     } else if ( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) ) {
         *result = mktime(&tm) ;

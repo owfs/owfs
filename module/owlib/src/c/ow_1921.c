@@ -329,11 +329,9 @@ static int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
 /* set clock */
 static int FS_w_date(const DATE * d , const struct parsedname * pn) {
     unsigned char data[7] ;
-    unsigned char sr ;
 
     /* Busy if in mission */
-    if ( OW_r_mem(&sr,1,0x0214,pn) ) return -EINVAL ;
-    if ( sr&0x20 ) return -EBUSY ;
+    if ( OW_MIP(pn) ) return -EBUSY ;
 
     OW_date( d, data ) ;
     return OW_w_mem(data,7,0x0200,pn)?-EINVAL:0 ;
@@ -342,11 +340,9 @@ static int FS_w_date(const DATE * d , const struct parsedname * pn) {
 static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data[7] ;
     DATE d = (DATE) u[0] ;
-    unsigned char sr ;
 
     /* Busy if in mission */
-    if ( OW_r_mem(&sr,1,0x0214,pn) ) return -EINVAL ;
-    if ( sr&0x20 ) return -EBUSY ;
+    if ( OW_MIP(pn) ) return -EBUSY ;
 
     OW_date( &d, data ) ;
     return OW_w_mem(data,7,0x0200,pn)?-EINVAL:0 ;
@@ -544,11 +540,11 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     memcpy( &p[3], data , size ) ;
     if ( (offset+size)&0x1F ) { /* to end of page */
         BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_send_data( p,3+size,pn) || BUS_readin_data(&p[3+size],2,pn) || CRC16(p,3+size+2) ;
+            ret = BUS_select(pn) || BUS_send_data( data,3+size,pn) ;
         BUSUNLOCK(pn)
     } else {
         BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_send_data( data,3+size,pn) ;
+            ret = BUS_select(pn) || BUS_send_data( p,3+size,pn) || BUS_readin_data(&p[3+size],2,pn) || CRC16(p,3+size+2) ;
         BUSUNLOCK(pn)
     }
     if ( ret ) return 1 ;
