@@ -74,7 +74,7 @@ struct filetype DS2450[] = {
     {"pages/page"         ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
     {"power"              ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_power}  , {y:FS_w_power}  , NULL, } ,
     {"memory"             ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}    , NULL, } ,
-    {"PIO"                ,     1,  &A2450m, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO}    , NULL, } ,
+    {"PIO"                ,     1,  &A2450m, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO}    , (void *) 0, } ,
     {"volt"               ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 1, } ,
     {"volt2"              ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 0, } ,
     {"set_alarm"          ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
@@ -296,8 +296,8 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
     if ( OW_r_mem( control , 8, 1<<3, pn ) ) return 1 ;
 //printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
     for ( i=0; i<8 ; i++ ){ // warning, counter in incremented in loop, too
-        if ( control[i] != 0x00 ) {
-            control[i] = 0x00 ; // 16bit, A/D
+        if ( control[i]&0x0F ) {
+            control[i] &= 0xF0 ; // 16bit, A/D
             writeback = 1 ;
         }
         if ( (control[++i]&0x01) != (resolution&0x01) ) {
@@ -337,8 +337,8 @@ static int OW_1_volts( FLOAT * const f , const int element, const int resolution
 
     // Get control registers and set to A/D 16 bits
     if ( OW_r_mem( control , 2, (1<<3)+(element<<1), pn ) ) return 1 ;
-    if ( control[0] != 0x00 ) {
-        control[0] = 0x00 ; // 16bit, A/D
+    if ( control[0]&0x0F ) {
+        control[0] &= 0xF0 ; // 16bit, A/D
         writeback = 1 ;
     }
     if ( (control[1]&0x01) != (resolution&0x01) ) {
@@ -397,10 +397,10 @@ static int OW_convert( const struct parsedname * const pn ) {
 static int OW_r_pio( int * const pio , const struct parsedname * const pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
-    pio[0] = ((p[0]&0xC0)==0xC0) ;
-    pio[1] = ((p[2]&0xC0)==0xC0) ;
-    pio[2] = ((p[4]&0xC0)==0xC0) ;
-    pio[3] = ((p[6]&0xC0)==0xC0) ;
+    pio[0] = ((p[0]&0xC0)!=0x80) ;
+    pio[1] = ((p[2]&0xC0)!=0x80) ;
+    pio[2] = ((p[4]&0xC0)!=0x80) ;
+    pio[3] = ((p[6]&0xC0)!=0x80) ;
     return 0;
 }
 
@@ -408,7 +408,7 @@ static int OW_r_pio( int * const pio , const struct parsedname * const pn ) {
 static int OW_r_1_pio( int * const pio , const int element , const struct parsedname * const pn ) {
     unsigned char p[2] ;
     if ( OW_r_mem(p,2,(1<<3)+(element<<1),pn) ) return 1;
-    pio[0] = ((p[0]&0xC0)==0xC0) ;
+    pio[0] = ((p[0]&0xC0)!=0x80) ;
     return 0;
 }
 
@@ -417,9 +417,9 @@ static int OW_w_pio( const int * const pio , const struct parsedname * const pn 
     unsigned char p[8] ;
     int i ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
-    for (i=0; i<3; ++i ){
+    for (i=0; i<=3; ++i ){
         p[i<<1] &= 0x3F ;
-        p[i<<1] |= pio[i]?0x80:0xC0 ;
+        p[i<<1] |= pio[i]?0xC0:0x80 ;
     }
     return OW_w_mem(p,8,1<<3,pn) ;
 }
@@ -428,7 +428,7 @@ static int OW_w_1_pio( const int pio , const int element, const struct parsednam
     unsigned char p[2] ;
     if ( OW_r_mem(p,2,(1<<3)+(element<<1),pn) ) return 1;
     p[0] &= 0x3F ;
-    p[0] |= pio?0x80:0xC0 ;
+    p[0] |= pio?0xC0:0x80 ;
     return OW_w_mem(p,2,(1<<3)+(element<<1),pn) ;
 }
 
