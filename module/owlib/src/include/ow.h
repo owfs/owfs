@@ -79,6 +79,23 @@ $Id$
 #include <sys/types.h> /* for stat */
 #include <getopt.h> /* for long options */
 
+#define OW_MT
+#ifdef OW_MT
+    #include <pthread.h>
+    #include <semaphore.h>
+    extern pthread_mutex_t bus_mutex ;
+    extern pthread_mutex_t dev_mutex ;
+    extern pthread_mutex_t stat_mutex ;
+    extern sem_t devlocks ;
+    struct devlock {
+        unsigned char sn[8] ;
+        pthread_mutex_t lock ;
+        int users ;
+    } ;
+    extern struct devlock DevLock[] ;
+    #define DEVLOCKS    10
+#endif /* OW_MT */
+
 #ifdef OW_USB
     #include <usb.h>
     extern usb_dev_handle * devusb ;
@@ -233,6 +250,10 @@ int Storage_Add( const char * path, const size_t size, const void * data ) ;
 int Storage_Get( const char * path, size_t *size, void * data ) ;
 int Storage_Del( const char * path ) ;
 
+void Lock_Setup( void ) ;
+void Lock_Get( const struct parsedname * const pn ) ;
+void Lock_Release( const struct parsedname * const pn ) ;
+
 /* 1-wire lowlevel */
 void UT_delay(const int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
@@ -334,7 +355,7 @@ struct aggregate {
 */
 enum ft_format { ft_directory, ft_subdir, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
-enum ft_change { ft_static, ft_stable, ft_volatile, ft_second, ft_statistic, } ;
+enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, } ;
 
 /* filetype gives -file types- for chip properties */
 struct filetype {
@@ -405,7 +426,14 @@ extern struct device NoDevice ;
 /* ------------------------------------- */
 
 
-/* -------------------------------------------- */
+/* ------------------------}
+struct devlock {
+    unsigned char sn[8] ;
+    pthread_mutex_t lock ;
+    int users ;
+} ;
+extern struct devlock DevLock[] ;
+-------------------- */
 /* Parsedname -- path converted into components */
 /*
 Parsed name is the primary structure interpreting a
@@ -436,6 +464,7 @@ struct stateinfo {
     int LastFamilyDiscrepancy ; // for search
     int LastDevice ; // for search
     int AnyDevices ;
+    int lock ; // place in dev lock array
 } ;
 
 enum pn_type { pn_normal, pn_uncached, pn_alarm, } ;

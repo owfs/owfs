@@ -48,7 +48,9 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     }
 
     ++ write_calls ; /* statistics */
+    Lock_Get(&pn) ;
     r = FS_real_write( path, buf, size, offset, &pn ) ;
+    Lock_Release(&pn) ;
 
     if ( offset  || r ) {
         Cache_Del( &pn ) ;
