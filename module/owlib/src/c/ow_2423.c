@@ -184,17 +184,23 @@ static int OW_counter( unsigned int * counter , const int page, const struct par
     return OW_r_mem_counter(NULL,counter,1,(page<<5)+31,pn) ;
 }
 
+/* read memory area and counter (just past memory) */
+/* Nathan Holmes help troubleshoot this one! */
 static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
     unsigned char data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     int ret ;
+    /* rest in the remaining length of the 32 byte page */
     size_t rest = 32 - (offset&0x1F) ;
 
     BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(data,3) || BUS_readin_data(&data[3],rest+10) || CRC16(p,rest+13) || data[rest+3] || data[rest+4] || data[rest+5] || data[rest+6];
+        /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
+        ret = BUS_select(pn) || BUS_send_data(data,3) || BUS_readin_data(&data[3],rest+10) || CRC16(data,rest+13) || data[rest+7] || data[rest+8] || data[rest+9] || data[rest+10];
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-    if ( counter ) *counter = (((((((unsigned int) data[rest+10])<<8)|data[rest+9])<<8)|data[rest+8])<<8)|data[rest+7] ;
+    /* counter is held in the 4 bytes after the data */
+    if ( counter ) *counter = (((((((unsigned int) data[rest+6])<<8)|data[rest+5])<<8)|data[rest+4])<<8)|data[rest+3] ;
+    /* memory contents after the command and location */
     if ( p ) memcpy(p,&data[3],size) ;
 
     return 0 ;
