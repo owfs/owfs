@@ -21,11 +21,19 @@ Non-volatile memory.
 |
 .B pages/page.[0-510|ALL]
 |
+.B set_number/full
+|
+.B set_number/read
+|
 .B set_password/enabled
 |
 .B set_password/full
 |
 .B set_password/read
+|
+.B use_number/full
+|
+.B use_number/read
 |
 .B use_password/full
 |
@@ -56,14 +64,11 @@ DS1977
 Memory is split into 511 pages of 64 bytes each.
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
-.SS use_password/full use_password/read
-.I write-only, binary
+.SS set_number/full set_number/read
+.I write-only, ascii
 .br
-Passwords (8 byte values) that allow read or full access to the DS1977 memory. The password set by
-.I use_password/xxx
-are stored in the program and must match the passwords stored in the DS1977. Changing the DS1977 passwords using
+Passwords entered as numbers, either decimal, or hex of form 0x0123456789ABCDEF. Handled the same as
 .I set_password/xxx
-will change these values as well.
 .SS set_password/enable
 .I read-write, yes-no
 .br
@@ -76,6 +81,27 @@ Passwords (8 byte values) that allow read or full access to the DS1977 memory. T
 are stored in the DS1977 and locally in the program as well (as if
 .I use_password/xxx
 was also called).
+.SS use_password/full use_password/read
+.I write-only, binary
+.br
+Passwords (8 byte values) that allow read or full access to the DS1977 memory. The password set by
+.SS use_number/full use_number/read
+.I write-only, ascii
+.br
+Passwords entered as numbers, either decimal, or hex of form 0x0123456789ABCDEF. Handled the same as
+.I use_password/xxx
+.SS use_password/full use_password/read
+.I write-only, binary
+.br
+Passwords (8 byte values) that allow read or full access to the DS1977 memory. The password set by
+.I use_password/xxx
+are stored in the program and must match the passwords stored in the DS1977. Changing the DS1977 passwords using
+.I set_password/xxx
+will change these values as well.
+.I use_password/xxx
+are stored in the program and must match the passwords stored in the DS1977. Changing the DS1977 passwords using
+.I set_password/xxx
+will change these values as well.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii
