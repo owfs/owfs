@@ -31,4 +31,6 @@ int FS_statfs(struct fuse_statfs *fst) ;
 
 extern struct fuse_operations owfs_oper;
 
+extern time_t scan_time ; /* time of last directory scan */
+
 #endif

@@ -169,10 +169,11 @@ int main(int argc, char *argv[]) {
     }
 
     set_signal_handlers();
-    time( &scan_time ) ;
 
 	/* 1-wire bus specific setup */
     LibSetup() ;
+//	scan_time = start_time ; /* set initial file time to start of program */
+
 
 //     printf( "argc=%d\nport=%s\noptind=%d\nav0=%s\nav1=%s\nav2=%s\nav3=%s\n", argc,devport,optind,argv[0],argv[1],argv[2],argv[3]);
     fuse = fuse_new(fuse_fd, flags, &owfs_oper);
