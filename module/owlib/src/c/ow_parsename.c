@@ -471,10 +471,14 @@ size_t FullFileLength( const struct parsedname * const pn ) {
     if ( pn->ft->ag ) { /* aggregate files */
         switch (pn->extension) {
         case -1: /* ALL */
-		if(pn->ft->format==ft_binary) {
+		if((pn->ft->format==ft_binary) || (pn->ft->format == ft_ascii)) {
+		  /* not comma-separated values are ft_binary and ft_ascii
+		     ft_binary is used for all memory devices
+		     ft_ascii is used in ow_lcd.c:line16.ALL */
 		  return (pn->ft->ag->elements) * (pn->ft->suglen) ;
 		} else {
-		  // used in ow_lcd.c:gpio.ALL which is ft_yesno for example
+		  /* comma separated, but does not end with a comma
+		     used in ow_lcd.c:gpio.ALL which is ft_yesno for example */
 		  return ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 ;
 		}
         case -2: /* BYTE */
