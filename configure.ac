@@ -212,6 +212,50 @@ AC_ARG_ENABLE(owpython,
 AC_SUBST(ENABLE_OWPYTHON)
 AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 
+#Check owtcl
+AC_MSG_CHECKING(if owtcl is enabled)
+ENABLE_OWTCL="false"
+AC_ARG_ENABLE(owtcl,
+[  --enable-owtcl       Enable owtcl module (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWTCL="true"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWTCL)
+AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
+if test "${ENABLE_OWTCL}" = "true" ; then
+	m4_include(module/swig/tcl/tcl.m4)
+	AC_MSG_RESULT(Looking for tclConfig.sh)
+	SC_PATH_TCLCONFIG
+	SC_LOAD_TCLCONFIG
+	AC_SUBST(TCL_SHLIB_CFLAGS)
+	AC_SUBST(TCL_SHLIB_LD)
+	AC_SUBST(TCL_SHLIB_LD_LIBS)
+	AC_SUBST(TCL_SHLIB_SUFFIX)
+	AC_SUBST(TCL_VERSION)
+	AC_SUBST(TCL_PREFIX)
+	AC_SUBST(TCL_EXEC_PREFIX)
+	AC_SUBST(TCL_CFLAGS)
+	AC_SUBST(TCL_DEFS)
+	AC_SUBST(TCL_LIB_SPEC)
+	AC_SUBST(TCL_LIBS)
+	AC_SUBST(TCL_LD_FLAGS)
+	AC_SUBST(TCL_COMPAT_OBJS)
+	AC_SUBST(TCL_LD_SEARCH_FLAGS)
+	AC_SUBST(TCL_SRC_DIR)
+	AC_SUBST(TCL_LIB_SPEC)
+	AC_SUBST(TCL_STUB_LIB_SPEC)
+	AC_SUBST(TCL_BUILD_LIB_SPEC)
+	AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
+	AC_SUBST(TCL_INCLUDE_SPEC)
+	AC_SUBST(TCL_PACKAGE_PATH)
+fi
+
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
     AC_CHECK_LIB(fuse,__fuse_process_cmd,, [
@@ -412,7 +456,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([gettimeofday memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy])
+AC_CHECK_FUNCS([gettimeofday memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf])
 
 # Process config.h.in
 
@@ -527,6 +571,11 @@ if test "${ENABLE_OWPYTHON}" = "true"; then
     AC_MSG_RESULT([    owpython is enabled])
 else
     AC_MSG_RESULT([    owpython is DISABLED])
+fi
+if test "${ENABLE_OWTCL}" = "true"; then
+    AC_MSG_RESULT([    owtcl is enabled])
+else
+    AC_MSG_RESULT([    owtcl is DISABLED])
 fi
 if test "${ENABLE_OWSERVER}" = "true"; then
     AC_MSG_RESULT([    owserver is enabled])

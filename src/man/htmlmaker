@@ -1,5 +1,5 @@
 #!/bin/sh
-for x in *.[1-8] ; do
+for x in *.[1-8n] ; do
     rman -f HTML $x > ../../../ow-website/$x.html; 
     perl -i -p -e 's#(<body.*?>)#$1<\!--\#include virtual=\"/head\.ssi\" -->#' ../../../ow-website/$x.html; 
     perl -i -p -e 's#</body>#<\!--\#include virtual=\"/foot\.ssi\" --><address>\&copy\; 2003-4 Paul H\. Alfille and The owfs Team</address><address>\$Id\$</address></body>#' ../../../ow-website/$x.html; 

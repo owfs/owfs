@@ -1,0 +1,21 @@
+.de Ip
+.br
+.ie \\n(.$>=3 .ne \\$3
+.el .ne 3
+.IP "\\$1" \\$2
+..
+.TH "Owtcl" TCL "20/January/2005" "Tcl"
+.SH NAME
+Owtcl - OWFS library access commands for Tcl
+.sp
+.SH "INTRODUCTION"
+.P
+Owtcl is an extention to the Tcl language designed to
+provide access to an OWFS library.
+.sp
+.SH BUGS
+None known.
+.sp
+.SH AUTHOR
+Serg Oskin (serg@oskin.ru)
+.sp
