@@ -554,8 +554,9 @@ static void ShowDevice( FILE * out, const struct parsedname * const pn ) {
 	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
 	  return;
 	}
-        if ( FS_FileName(file,OW_FULLNAME_MAX,pn2) ) return ;
-        Show( out, path2, file, pn2 ) ;
+        if ( ! FS_FileName(file,OW_FULLNAME_MAX,pn2) ) {
+	  Show( out, path2, file, pn2 ) ;
+	}
 	free(file);
     }
 
