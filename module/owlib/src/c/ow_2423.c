@@ -194,7 +194,8 @@ static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const si
 
     BUSLOCK(pn)
         /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-        ret = BUS_select(pn) || BUS_send_data(data,3,pn) || BUS_readin_data(&data[3],rest+10,pn) || CRC16(data,rest+13) || data[rest+7] || data[rest+8] || data[rest+9] || data[rest+10];
+        /* Incorporates fix by Fredrik Simonsson */
+        ret = BUS_select(pn) || BUS_send_data(data,3,pn) || BUS_readin_data(&data[3],rest+10,pn) || CRC16(data,rest+13) ;
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
