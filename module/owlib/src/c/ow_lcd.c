@@ -247,7 +247,7 @@ int FS_w_LCDline40(const char *buf, const size_t size, const off_t offset , cons
 static int FS_w_LCDscreen(const int width, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     int row = 0 ; /* screen line */
     int rows = (width==40)?2:4 ; /* max number of rows */
-    size_t len = size ; /* characters to print */
+    size_t len ; /* characters to print */
     size_t left = size ; /* number of characters left to print */
     char * ch ; /* search char for newline */
     const char * b = buf ; /* current location in buf */
