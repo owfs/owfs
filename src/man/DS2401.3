@@ -1,0 +1,87 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS2401 3  2003 "OWFS Manpage" "One-Wire File System""
+.SH NAME
+.B DS2401
+- Silicon Serial Number
+.br
+.B DS1990A
+- Serial Number iButton
+.SH SYNOPSIS
+Unique serial number only.
+.SH SPECIAL PROPERTIES
+None.
+.SH STANDARD PROPERTIES
+.SS address
+.I read-only, ascii
+.br
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits. (0-9A-F).
+.SS crc8
+.I read-only, ascii
+.br
+The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits. (0-9A-F).
+.SS family
+.I read-only, ascii
+.br
+The 8-bit family code. Unique to each
+.I type
+of device. Given as upper case hexidecimal digits. (0-9A-F).
+.SS id
+.I read-only, ascii
+.br
+The entire 64-bit unique ID. Given as upper case hexidecimal digits. (0-9A-F).
+.SS present
+.I read-only, yes-no
+.br
+Is the device currently
+.I present
+on the 1-wire bus?
+.SS type
+.I read-only, ascii
+.br
+Part name assigned by Dallas Semi. E.g.
+.I DS2401
+Alternative packaging (iButton vs chip) will not be distiguished.
+.SH ALARMS
+None.
+.SH ADDRESSING
+All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
+.br
+.B Family Code
+8 bits
+.br
+.B Address
+48 bits
+.br
+.B CRC
+8 bits
+.sp
+Addressing under OWFS is in hexidecimal, of form:
+.br
+.B 01.123456789ABC
+.br
+where
+.B 01
+is an example 8-bit family code, and
+.B 12345678ABC
+is an example 48 bit address.
+.PP
+The dot is optional, and the CRC code can included. If included, it must be correct.
+.SH DATASHEET
+.br
+.B http://pdfserv.maxim-ic.com/en/ds/DS2401.pdf
+.br
+.B http://pdfserv.maxim-ic.com/en/ds/DS1990A-F3-DS1990A-F5.pdf
+.SH NOTES
+See
+.B http://owfs.sourceforge.net
+for full package and documentation.
+.SH SEE ALSO
