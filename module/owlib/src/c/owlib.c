@@ -170,7 +170,7 @@ int LibStart( void ) {
     return 0 ;
 }
 
-/* Actaully COM and Parallel */
+/** Actually COM and Parallel */
 int ComSetup( const char * busdev ) {
     struct stat s ;
     int ret ;

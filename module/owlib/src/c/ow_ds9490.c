@@ -36,16 +36,6 @@ static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned 
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS9490_level(int new_level) ;
 
-#define ITEMS_PER_SEARCH		(((USB_FIFO_EACH)>>3)-1)
-/** Still in search mode -- USB FIFOs haven't been cleared */
-static struct {
-    int searchmode ;
-    int insearch ;
-    int icurrent ;
-    int ncurrent ;
-    int moreavailable ;
-} usb_search = {0,0,0,0,0} ;
-
 #define TIMEOUT_USB	5000 /* 5 seconds */
 
 #define CONTROL_CMD     0x00
@@ -71,6 +61,13 @@ static struct {
 #define MOD_PROG_PULSE_DURATION 0x0005
 #define MOD_WRITE1_LOWTIME      0x0006
 #define MOD_DSOW0_TREC          0x0007
+
+/** EP1 -- control read */
+#define DS2490_EP1              0x81
+/** EP2 -- bulk write */
+#define DS2490_EP2              0x02
+/** EP3 -- bulk read */
+#define DS2490_EP3              0x83
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
@@ -132,7 +129,7 @@ void DS9490_close(void) {
 static int DS9490wait(unsigned char * const buffer) {
     int ret ;
     do {
-        if ( (ret=usb_bulk_read(devusb,0x81,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
+        if ( (ret=usb_bulk_read(devusb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
     } while ( !(buffer[8]&0x20) ) ;
 //{
 //int i ;
@@ -168,12 +165,12 @@ static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const
          (ret=DS9490wait(buffer))
           ) return ret ;
 
-    if ( usb_bulk_read(devusb,0x83,ibit,0x1, TIMEOUT_USB ) > 0 ) {
+    if ( usb_bulk_read(devusb,DS2490_EP3,ibit,0x1, TIMEOUT_USB ) > 0 ) {
 //printf("USB bit %.2X->%.2X\n",obit,*ibit) ;
         return 0 ;
     }
 //printf("DS9490_sendback_bit error \n");
-    usb_clear_halt(devusb,0x83) ;
+    usb_clear_halt(devusb,DS2490_EP3) ;
     return -EIO ;
 }
 
@@ -208,11 +205,11 @@ static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * con
          (ret=DS9490wait(buffer))
           ) return ret ;
 
-    if ( usb_bulk_read(devusb,0x83,ibyte,0x1, TIMEOUT_USB ) > 0 ) {
+    if ( usb_bulk_read(devusb,DS2490_EP3,ibyte,0x1, TIMEOUT_USB ) > 0 ) {
 //printf("USB byte %.2X->%.2X\n",obyte,*ibyte) ;
         return 0 ;
     }
-    usb_clear_halt(devusb,0x83) ;
+    usb_clear_halt(devusb,DS2490_EP3) ;
     return -EIO ;
 }
 */
@@ -227,9 +224,9 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
             || DS9490_sendback_data(&data[USB_FIFO_EACH],&resp[USB_FIFO_EACH],len-USB_FIFO_EACH) ;
     }
 
-    if ( (ret=usb_bulk_write(devusb,0x82,data,len, TIMEOUT_USB )) < len ) {
+    if ( (ret=usb_bulk_write(devusb,DS2490_EP2,data,len, TIMEOUT_USB )) < len ) {
 //printf("USBsendback bulk write problem = %d\n",ret);
-        usb_clear_halt(devusb,0x83) ;
+        usb_clear_halt(devusb,DS2490_EP2) ;
         return -EIO ;
     }
 
@@ -241,77 +238,66 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
         return ret ;
     }
 
-    if ( usb_bulk_read(devusb,0x83,resp,len, TIMEOUT_USB ) > 0 ) return 0 ;
+    if ( usb_bulk_read(devusb,DS2490_EP3,resp,len, TIMEOUT_USB ) > 0 ) return 0 ;
 //printf("USBsendback bulk read problem\n");
-    usb_clear_halt(devusb,0x83) ;
+    usb_clear_halt(devusb,DS2490_EP3) ;
     return -EIO ;
 }
 
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) {
-    unsigned char search_direction = 0 ; /* set to 0 just to forestall compiler error, initialization not really needed */
-    unsigned char bit_number ;
-    unsigned char last_zero ;
-    unsigned char bits[3] ;
+    unsigned char buffer[32] ;
     int ret ;
+    int i ;
 
-    // initialize for search
-    last_zero = 0;
-
+//printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
     if ( !AnyDevices ) LastDevice = 1 ;
     if ( LastDevice ) return -ENODEV ;
 
-    /* Appropriate search command */
-    if ( (ret=BUS_send_data(&search,1)) ) return ret ;
-      // loop to do the search
-    for ( bit_number=0; 1 ; ++bit_number ) {
-        bits[1] = bits[2] = 0xFF ;
-        if ( bit_number==0 ) {
-            if ( (ret=DS9490_sendback_bits(&bits[1],&bits[1],2)) ) return ret ;
-        } else {
-            bits[0] = search_direction ;
-            if ( bit_number<64 ) {
-                if ( (ret=DS9490_sendback_bits(bits,bits,3)) ) return ret ;
-            } else {
-                if ( (ret=DS9490_sendback_bits(bits,bits,1)) ) return ret ;
+    /** Play LastDescrepancy games with bitstream */
+    memcpy( combuffer,serialnumber,8) ; /* set bufferto zeros */
+    if ( LastDiscrepancy > 0 ) UT_setbit(combuffer,LastDiscrepancy-1,1) ;
+    for ( i=LastDiscrepancy;i<64;i++) {
+        UT_setbit(combuffer,i,0) ;
+    }
+//printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
+
+//printf("USBnextboth\n");
+    if ( (ret=usb_bulk_write(devusb,DS2490_EP2,combuffer,8, TIMEOUT_USB )) < 8 ) {
+//printf("USBnextboth bulk write problem = %d\n",ret);
+        usb_clear_halt(devusb,DS2490_EP2) ;
+        return -EIO ;
+    }
+
+    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x48FD, 0x0100|search, NULL, 0, TIMEOUT_USB ))<0
+         ||
+         (ret=DS9490wait(buffer))
+          ) {
+//printf("USBnextboth control problem\n");
+        return ret ;
+    }
+
+    if ( (ret=usb_bulk_read(devusb,DS2490_EP3,combuffer,16, TIMEOUT_USB )) >0 ) {
+        memcpy(serialnumber,combuffer,8) ;
+//printf("DS9490_next_both SN out: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
+//printf("DS9490_next_both rest: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[8],combuffer[9],combuffer[10],combuffer[11],combuffer[12],combuffer[13],combuffer[14],combuffer[15]) ;
+//        LastDevice = !(combuffer[8]||combuffer[9]||combuffer[10]||combuffer[11]||combuffer[12]||combuffer[13]||combuffer[14]||combuffer[15]) ;
+        LastDevice = (ret==8) ;
+//printf("DS9490_next_both lastdevice=%d bytes=%d\n",LastDevice,ret) ;
+
+        for ( i=63 ; i>=0 ; i-- ) {
+            if ( UT_getbit(combuffer,i+64) && (UT_getbit(combuffer,i)==0) ) {
+                LastDiscrepancy = i + 1 ;
+//printf("DS9490_next_both lastdiscrepancy=%d\n",LastDiscrepancy) ;
                 break ;
             }
         }
-        if ( bits[1] ) {
-            if ( bits[2] ) {
-                break ; /* No devices respond */
-            } else {
-                search_direction = 1;  // bit write value for search
-            }
-        } else {
-            if ( bits[2] ) {
-                search_direction = 0;  // bit write value for search
-            } else  if (bit_number < LastDiscrepancy) {
-                // if this discrepancy if before the Last Discrepancy
-                // on a previous next then pick the same as last time
-                search_direction = UT_getbit(serialnumber,bit_number) ;
-            } else if (bit_number == LastDiscrepancy) {
-                search_direction = 1 ; // if equal to last pick 1, if not then pick 0
-            } else {
-                search_direction = 0 ;
-                // if 0 was picked then record its position in LastZero
-                last_zero = bit_number;
-                // check for Last discrepancy in family
-                if (last_zero < 9) LastFamilyDiscrepancy = last_zero;
-            }
-        }
-        UT_setbit(serialnumber,bit_number,search_direction) ;
 
-        // serial number search direction write bit
-        //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
-    } // loop until through serial number bits
-
-    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) return -EIO ;
-      // if the search was successful then
-
-    LastDiscrepancy = last_zero;
-    LastDevice = (last_zero == 0);
-    return 0 ;
+        return CRC8(serialnumber,8) || (serialnumber[0] == 0) ? -EIO:0 ;
+    }
+//printf("USBnextboth bulk read problem error=%d\n",ret);
+    usb_clear_halt(devusb,DS2490_EP3) ;
+    return -EIO ;
 }
 
 /* Set the 1-Wire Net line level.  The values for new_level are
