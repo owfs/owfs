@@ -246,15 +246,21 @@ int filecmp(const void * name , const void * ex ) {
 //
 void UT_delay(const int len)
 {
-    struct timespec s;              // Set aside memory space on the stack
+    struct timespec s = {0,0,};              // Set aside memory space on the stack
 
-    s.tv_sec = len / 1000;
-    s.tv_nsec = (len - (s.tv_sec * 1000)) * 1000000;
     bus_pause.tv_usec += len*1000 ;
     if ( bus_pause.tv_usec > 100000000 ) {
         bus_pause.tv_usec -= 100000000 ;
         bus_pause.tv_sec  += 100 ;
     }
+
+    while( len > 999 ) {
+        len -= 1000 ;
+        ++ s.tv_sec ;
+    }
+//    s.tv_sec = len / 1000;
+//    s.tv_nsec = (len - (s.tv_sec * 1000)) * 1000000;
+    s.tv_nsec = 1000000*len ;
 
     nanosleep(&s, NULL);
 }

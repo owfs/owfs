@@ -107,8 +107,12 @@ printf("READ=%d val = %.2X\n",ret,data) ;
 }
 
 static int RESET( void ) {
+    int ret ;
 printf("RESET\n") ;
-    return DS1410_send_bit( 0xFD , NULL ) ;
+//    return DS1410_send_bit( 0xFD , NULL ) ;
+    ret = DS1410_send_bit( 0xFD , NULL ) ;
+printf("Reset=%d\n",ret);
+    return ret ;
 }
 
 static int toggleOD( void ) {
@@ -173,7 +177,6 @@ printf("checkOD=%d\n",result) ;
     unsigned char cont ;
     unsigned char retval ;
     int i ;
-printf("CRITICAL\n");
     DATAout(0xEC);
     usleep(2);
     DATAout(0xFF);
@@ -184,13 +187,13 @@ printf("CRITICAL\n");
     DATAout(0xFF) ;
     i=0 ;
     while(BUSYraw==0 && ( i++ < 2000 ) ) usleep(4) ;
-printf("CRITICAL1\n");
     DATAout( 0xFE ) ;
     usleep(4);
     inb( BASE+1 ) ;
     CONTROLout( cont&0xFD ) ;
     DATAout( 0xCF ) ;
     usleep(5) ;
+printf("CheckOD=%d\n",retval);
     return retval ;
 }
 
@@ -233,6 +236,7 @@ static int PASSTHRU( void ){
 }
 
 static int START( void ) {
+printf("START\n");
     NOPASS() ;
     if ( checkOD() && toggleOD() ) toggleOD() ;
     return 1 ;
@@ -396,7 +400,10 @@ printf("SETTIME=%d\n",ret);
     /* Set up low-level routines */
     DS1410_setroutines( & iroutines ) ;
     /* Reset the bus */
-    return DS1410_reset() ;
+    ret =  DS1410_reset() ;
+printf("Detect=%d\n",ret);
+    return ret ;
+//    return DS1410_reset() ;
 }
 
 /* DS1410 Reset -- A little different frolm DS2480B */
@@ -564,23 +571,19 @@ printf("timeout=%d\n",timeout) ;
     unsigned char cont ;
     unsigned char retval ;
     int i ;
-printf("CRITICAL\n");
-    DATAout(0xEC);
-    usleep(2);
+//    DATAout(0xEC);
+//    usleep(2);
     DATAout(data);
     cont = CONTROLin;
     CONTROLout( cont|0x02 );
     i=0 ;
     while(BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
-printf("CRITICAL1\n");
-    usleep(4);
-    DATAout( 0xFF ) ;
-    while(!BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
-printf("CRITICAL2\n");
+    usleep(8);
+//    DATAout( 0xFF ) ;
+//    while(!BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
     DATAout( 0xFE ) ;
-    usleep(4);
+    usleep(8);
     retval = BUSYraw ? 1 : 0 ;
-printf("CRITICAL3\n");
     if ( retval && data==0xFD ) {
         usleep(400);
 	DATAout(0xFF);
@@ -593,9 +596,8 @@ printf("CRITICAL3\n");
     DATAout( 0xCF ) ;
     usleep(12) ;
     timeout = (i<2000) ? 0 : 1;
-printf("CRITICAL4\n");
 //    rsp[0] = retval ;
-printf("CRITICAL5\n");
+printf("Send Bit=%d, data=%.2X timeout=%d\n",retval,data,timeout);
     return retval ;
 }
 
