@@ -39,8 +39,6 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
 int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     static char * uncached = NULL ;
       static size_t luncached ;
-    static char * alarm_ ;
-      static size_t lalarm ;
     static char * structure ;
       static size_t lstructure ;
     static char * system_ ;
@@ -53,7 +51,6 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     if ( uncached == NULL ) { // first time through
       luncached  = strlen ( uncached  = FS_dirname_state(pn_uncached  )) ;
-      lalarm     = strlen ( alarm_    = FS_dirname_state(pn_alarm     )) ;
       lstructure = strlen ( structure = FS_dirname_type( pn_structure )) ;
       lsystem    = strlen ( system_   = FS_dirname_type( pn_system    )) ;
       lsettings  = strlen ( settings  = FS_dirname_type( pn_settings  )) ;
@@ -86,10 +83,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     }
 
     /* look for special root directory -- it is really a flag */
-    if ( strncasecmp(pathnow,alarm_,lalarm)==0 ) {
-        pn->state = pn_alarm ;
-        pathnow += lalarm ;
-    } else if ( strncasecmp(pathnow,statistics,lstatistics)==0 ) {
+    if ( strncasecmp(pathnow,statistics,lstatistics)==0 ) {
         pn->type = pn_statistics ;
         pathnow += lstatistics ;
     } else if ( strncasecmp(pathnow,structure,lstructure)==0 ) {
@@ -139,6 +133,14 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
 //printf("PN:Pre %s\n",path);
     switch( pn->type ) {
     case pn_real:
+        if ( strcmp( path, "alarm" )==0 ) {
+            pn->state = pn_alarm ;
+            return 0 ; /* directory */
+        }
+        if ( strncmp( path, "alarm/", 6 )==0 ) {
+            pn->state = pn_alarm ;
+            return FS_ParsedNameSub( &path[6], pn ) ;
+        }
         if ( (ret=DevicePart( path, &pFile, pn )) ) return ret ; // search for valid 1-wire sn
         if ( pFile == NULL || pFile[0]=='\0' ) return (presencecheck && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
         break ;
