@@ -88,6 +88,7 @@ static int FS_name(char *buf, const size_t size, const off_t offset , const stru
     while ( nin-- ) in = in->next ;
     
     if ( in->adapter_name == NULL ) return -EINVAL ;
+    buf[size-1] = '\0';
     strncpy(buf,&(in->adapter_name[offset]),size);
     return buf[size-1]?size:strlen(buf) ;
 }
@@ -99,6 +100,7 @@ static int FS_port(char *buf, const size_t size, const off_t offset , const stru
 
     while ( nin-- ) in = in->next ;
     
+    buf[size-1] = '\0';
     strncpy(buf,&(in->name[offset]),size);
     return buf[size-1]?size:strlen(buf) ;
 }
@@ -118,6 +120,7 @@ static int FS_version(unsigned int * u, const struct parsedname * pn) {
 static int FS_pidfile(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     (void) pn ;
     if( pid_file == NULL ) return -ENODEV ;
+    buf[size-1] = '\0';
     strncpy( buf,&pid_file[offset],size ) ;
     return buf[size-1]?size:strlen(buf) ;
 }

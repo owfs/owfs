@@ -16,6 +16,7 @@ $Id$
 #include <string.h>
 
 /* ------- Prototypes ----------- */
+static int FS_real_write_xtimes(char *buf, const size_t size, const off_t offset, const struct parsedname * pn, int rewrite );
 static int FS_real_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_gamish(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
 static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
@@ -112,17 +113,15 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         STATUNLOCK
 
         LockGet(pn) ;
-            r = FS_real_write( buf, size, offset, pn ) ;
+	/* Should we lock in pn_settings too? */
+	r = FS_real_write_xtimes( buf, size, offset, pn, 3 ) ;
         LockRelease(pn) ;
 
+        STATLOCK
         if ( r == 0 ) {
-            STATLOCK
                 ++write_success ; /* statistics */
                 write_bytes += size ; /* statistics */
-            STATUNLOCK
         }
-
-        STATLOCK
             AVERAGE_OUT(&write_avg)
             AVERAGE_OUT(&all_avg)
         STATUNLOCK
@@ -140,9 +139,28 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     return r ;
 }
 
+static int FS_real_write_xtimes(char *buf, const size_t size, const off_t offset, const struct parsedname * pn, int rewrite ) {
+    int r = 0;
+    int i;
+
+    /* Writable? */
+    if ( (pn->ft->write.v) == NULL ) return -ENOTSUP ;
+
+    /* Normal read. Try three times */
+    for(i=0; i<rewrite; i++) {
+      STATLOCK
+      ++write_tries[i] ; /* statitics */
+      STATUNLOCK
+//printf("FS_write_xtimes: pid=%d nrleft=%d\n", getpid(), rewrite-i);
+      r = FS_real_write( buf, size, offset, pn ) ;
+      if ( r==0 ) break;
+    }
+    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",pn->path,(int)size) ;
+    return r ;
+}
+
 /* return 0 if ok */
 static int FS_real_write(const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    int r ;
 //printf("REAL_WRITE\n");
 
     /* Writable? */
@@ -170,21 +188,7 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
         }
     }
 
-    /* Norml write. Triplicate attempt */
-    STATLOCK
-        ++ write_tries[0] ; /* statistics */
-    STATUNLOCK
-    if ( FS_parse_write( buf, size, offset, pn ) == 0 ) return 0;
-    STATLOCK
-        ++ write_tries[1] ; /* statistics */
-    STATUNLOCK
-    if ( FS_parse_write( buf, size, offset, pn ) == 0 ) return 0;
-    STATLOCK
-        ++ write_tries[2] ; /* statistics */
-    STATUNLOCK
-    r = FS_parse_write( buf, size, offset, pn ) ;
-    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",pn->path,(int)size) ;
-    return r ;
+    return FS_parse_write( buf, size, offset, pn );
 }
 
 /* return 0 if ok */
