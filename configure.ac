@@ -259,7 +259,7 @@ AC_ARG_ENABLE(owtcl,
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    AC_MSG_RESULT([no (default)])
 ])
 AC_SUBST(ENABLE_OWTCL)
 AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
