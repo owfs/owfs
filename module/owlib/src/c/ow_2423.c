@@ -118,7 +118,7 @@ static int FS_pagecount(unsigned int * u , const struct parsedname * pn) {
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
 static int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
-    int s = 3*sizeof(unsigned int) ;
+    size_t s = 3*sizeof(unsigned int) ;
     unsigned int st[3], ct[2] ; // stored and current counter values
 
     if ( OW_counter( &ct[0] , 0,  pn ) || OW_counter( &ct[1] , 1,  pn ) ) return -EINVAL ; // current counters
