@@ -36,6 +36,7 @@ OWLIB_SOURCE = ow_xxxx.c \
                ow_ds9490.c \
                ow_crc.c \
                ow_util.c \
+               ow_iterate.c \
                ow_temp.c \
                ow_stats.c \
                ow_fstat.c \

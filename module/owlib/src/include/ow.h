@@ -253,7 +253,8 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
 
 /* Utility functions */
 unsigned char CRC8( const unsigned char * bytes , const int length ) ;
-  unsigned char CRC8compute( const unsigned char * bytes , const int length ) ;
+unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) ;
+  unsigned char CRC8compute( const unsigned char * bytes , const int length  ,const int seed ) ;
 int CRC16( const unsigned char * bytes , const int length ) ;
 int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
 unsigned char char2num( const char * s ) ;
@@ -305,6 +306,11 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
 
+/* iteration functions for splitting writes to buffers */
+int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
+    size_t pagelen, int (*readfunc)(unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
+int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
+    size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
 
 /* Low-level functions
     slowly being abstracted and separated from individual

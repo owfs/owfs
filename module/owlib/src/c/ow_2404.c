@@ -82,8 +82,8 @@ DeviceEntry( 84, DS2404S )
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem( const unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data, const size_t length, const size_t location, const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 /* 1902 */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -92,6 +92,7 @@ static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset ,
 }
 
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    /* read is consecutive, unchecked. No paging */
     if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
     return size ;
 }
@@ -102,7 +103,9 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 }
 
 static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
+    /* paged write */
+//    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
+    if ( OW_write_paged( buf, size, (size_t) offset, pn, 32, OW_w_mem ) ) return -EFAULT ;
     return 0 ;
 }
 
@@ -173,25 +176,21 @@ static int FS_r_run(int * y , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_w_mem( const unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) {
-    unsigned char p[4+32] = { 0x0F, location&0xFF , location>>8, } ;
-    int offset = location & 0x1F ;
-    int rest = 32-offset ;
+/* PAged access -- pre-screened */
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
-
-    if ( offset+length > 32 ) return OW_w_mem( data, (size_t) rest, location, pn) || OW_w_mem( &data[rest], length-rest, location+rest, pn) ;
-    if ( (size_t)rest>length ) rest = length ;
 
     /* Copy to scratchpad */
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data(p,3) || BUS_send_data(data,rest) ;
+        ret = BUS_select(pn) || BUS_send_data(p,3) || BUS_send_data(data,size) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     p[0] = 0xAA ;
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+rest) || memcmp(&p[4], data, (size_t) rest) ;
+        ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+size) || memcmp(&p[4], data, size) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
@@ -206,12 +205,12 @@ static int OW_w_mem( const unsigned char * data , const size_t length , const si
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data, const size_t length, const size_t location, const struct parsedname * pn ) {
-    unsigned char p[3] = { 0xF0, location&0xFF , location>>8, } ;
+static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data( p, 3) || BUS_readin_data( data, (int) length) ;
+        ret = BUS_select(pn) || BUS_send_data( p, 3) || BUS_readin_data( data, (int) size) ;
     BUS_unlock() ;
     return ret ;
 

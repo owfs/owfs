@@ -41,12 +41,12 @@ static int FS_input_date_array( DATE * const results, const char * const buf, co
 /* Top level FS_write will return size if ok, else a negative number */
 /* Each lower level function called will return 0 if ok, else non-zero */
 
-/* Note on size and offset:
+/* Note on size and offset: */
 /* Buffer length (and requested data) is size bytes */
 /* writing should start after offset bytes in original data */
 /* only binary, and ascii data support offset in single data points */
 /* only binary supports offset in array data */
-/* size and offset are vetted against specification data size and calls
+/* size and offset are vetted against specification data size and calls */
 /*   outside of this module will not have buffer overflows */
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 

@@ -151,7 +151,7 @@ int NamePart( const char * filename, const char ** next, struct parsedname * pn 
             pn->sn[4] = string2num( &ID[8] ) ;
             pn->sn[5] = string2num( &ID[10] ) ;
             pn->sn[6] = string2num( &ID[12] ) ;
-            pn->sn[7] = CRC8compute(pn->sn,7) ;
+            pn->sn[7] = CRC8compute(pn->sn,7,0) ;
         }
         if ( *f == '.' ) ++f ;
         if ( isxdigit(f[0]) && isxdigit(f[1]) ) {

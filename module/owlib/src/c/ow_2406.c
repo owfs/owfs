@@ -83,8 +83,8 @@ DeviceEntry( 12, DS2406 )
 /* ------- Functions ------------ */
 
 /* DS2406 */
-static int OW_r_mem( unsigned char * data , const int length, const int location, const struct parsedname * pn ) ;
-static int OW_w_mem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_control( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
@@ -93,7 +93,8 @@ static int OW_clear( const struct parsedname * pn ) ;
 
 /* 2406 memory read */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem( buf, size, (int) offset, pn ) ) return -EINVAL ;
+    /* read is not a "paged" endeavor, the CRC comes after a full read */
+    if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return size ;
 }
 
@@ -111,6 +112,7 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 
 /* Note, it's EPROM -- write once */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    /* write is "byte at a time" -- not paged */
     if ( OW_w_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -190,31 +192,31 @@ static int FS_w_pio(const int * y, const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
-    unsigned char p[3+128+2] = { 0xF0, location&0xFF , location>>8, } ;
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3+128+2] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
     BUS_lock() ;
-        ret = (location+length>128) || BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 128+2-location ) || CRC16(p,3+128+2-location) ;
+        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 128+2-offset ) || CRC16(p,3+128+2-offset) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    memcpy( data , &p[3], (size_t) length ) ;
+    memcpy( data , &p[3], size ) ;
     return 0 ;
 }
 
-static int OW_w_mem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
-    unsigned char p[6] = { 0x0F, location&0xFF , location>>8, data[0], } ;
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[6] = { 0x0F, offset&0xFF , offset>>8, data[0], } ;
     unsigned char resp ;
-    int i ;
+    size_t i ;
     int ret ;
 
     BUS_lock() ;
-        ret = (length==0) || BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],2) || CRC16(p,6) || BUS_ProgramPulse() || BUS_readin_data(&resp,1) || ((p[3]|resp)!=p[3]) ;
+        ret = (size==0) || BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],2) || CRC16(p,6) || BUS_ProgramPulse() || BUS_readin_data(&resp,1) || ((p[3]|resp)!=p[3]) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    for ( i=1 ; i<length ; ++i ) {
+    for ( i=1 ; i<size ; ++i ) {
         p[3] = data[i] ;
         if ( (++p[1])==0x00 ) ++p[2] ;
         BUS_lock() ;

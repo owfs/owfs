@@ -45,6 +45,8 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
+ bREAD_FUNCTION( FS_r_mem ) ;
+bWRITE_FUNCTION( FS_w_mem ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  uREAD_FUNCTION( FS_counter ) ;
@@ -60,6 +62,7 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate,} ;
 struct aggregate A2423c = { 2, ag_letters, ag_separate,} ;
 struct filetype DS2423[] = {
     F_STANDARD   ,
+    {"memory"    ,   512,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem},        NULL, } ,
     {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}           , NULL, } ,
     {"pages/page",    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       NULL, } ,
     {"counters"  ,    32,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},            NULL, } ,
@@ -74,7 +77,7 @@ DeviceEntry( 1D, DS2423 )
 
 /* DS2423 */
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_counter( unsigned int * counter , const int page, const struct parsedname * pn ) ;
 static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
@@ -86,6 +89,16 @@ static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset ,
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_read_paged( buf, size, offset, pn, 32, OW_r_mem ) ) return -EINVAL ;
+    return size ;
+}
+
+static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -138,17 +151,14 @@ static int FS_w_mincount(const unsigned int * u , const struct parsedname * pn )
 
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
-    size_t rest = 32-(offset&0x1F) ;
     int ret ;
-
-    /* fill rest of data if needed */
-    if ( (size<rest) && OW_r_mem_counter(&p[3+size],NULL,rest-size,offset+size,pn) ) return 1 ;
 
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data(p,rest+3) || BUS_readin_data(&p[rest+3],2) || CRC16(p,1+2+rest+2) ;
+        ret = BUS_select(pn) || BUS_send_data(p,size+3) ;
+        if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2) || CRC16(p,1+2+size+2) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 

@@ -251,12 +251,14 @@ static int FS_w_screenX(const char *buf, const size_t size, const off_t offset ,
 }
 
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    if ( OW_r_memory((unsigned char *)buf,size,offset,pn) ) return -EFAULT ;
+//    if ( OW_r_memory(buf,size,offset,pn) ) return -EFAULT ;
+    if ( OW_read_paged(buf,size,offset,pn, 16,OW_r_memory) ) return -EFAULT ;
     return 0 ;
 }
 
 static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    if ( OW_w_memory((const unsigned char *)buf,size,offset,pn) ) return -EFAULT ;
+//    if ( OW_w_memory(buf,size,offset,pn) ) return -EFAULT ;
+    if ( OW_write_paged(buf,size,offset,pn, 16, OW_w_memory) ) return -EFAULT ;
     return 0 ;
 }
 
@@ -434,13 +436,17 @@ static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
     return 0 ;
 }
 
+/* memory is 112 bytes */
+/* can only read 16 bytes at a time (due to scratchpad size) */
+/* Will pretend pagesize = 16 */
+/* minor inefficiency if start is not on "page" boundary */
+/* Call will not span "page" */
 static int OW_r_memory( unsigned char * data , const int size, const int offset , const struct parsedname* pn ) {
-    unsigned char buf[2] = { (unsigned char)offset , (unsigned char)size, } ;
+    unsigned char buf[2] = { offset&0xFF , size&0xFF, } ;
     unsigned char w = 0x37 ;
     int ret ;
 
     if ( buf[1] == 0 ) return 0 ;
-    if ( buf[1] > 16 ) return OW_r_memory(data,16,offset,pn) || OW_r_memory(&data[16],size-16,offset+16,pn) ;
 
     if ( OW_w_scratch(buf,2,pn) ) return 1 ;
 
@@ -453,24 +459,27 @@ static int OW_r_memory( unsigned char * data , const int size, const int offset 
     return OW_r_scratch(data,buf[1],pn) ;
 }
 
+/* memory is 112 bytes */
+/* can only write 16 bytes at a time (due to scratchpad size) */
+/* Will pretend pagesize = 16 */
+/* minor inefficiency if start is not on "page" boundary */
+/* Call will not span "page" */
 static int OW_w_memory( const unsigned char * data , const int size, const int offset , const struct parsedname* pn ) {
-    unsigned char len = size ;
-    unsigned char buf[17] = { (unsigned char)offset , } ;
+    unsigned char buf[17] = { offset&0xFF , } ;
     unsigned char w = 0x39 ;
     int ret ;
 
     if ( size == 0 ) return 0 ;
-    if ( len > 16 ) return OW_w_memory(data,16,offset,pn) || OW_w_memory(&data[16],size-16,offset+16,pn) ;
-    memcpy( &buf[1], data, (size_t) len ) ;
+    memcpy( &buf[1], data, size ) ;
 
-    if ( OW_w_scratch(buf,len+1,pn) ) return 1 ;
+    if ( OW_w_scratch(buf,size+1,pn) ) return 1 ;
 
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data(&w,1) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    UT_delay(4*len) ;
+    UT_delay(4*size) ;
     return 0 ;
 }
 

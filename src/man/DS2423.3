@@ -19,6 +19,8 @@ RAM and counters.
 [.]XXXXXXXXXXXX[XX][/[
 .B counters.[A|B|ALL]
 |
+.B memory
+|
 .B pages/page.[0-15|ALL]
 |
 .B pages/count.[0-15|ALL]
@@ -48,6 +50,10 @@ and
 .br
 .I ALL
 returns the two values, separated by a comma. They are read sequentially.
+.SS memory
+.I read-write, binary
+.br
+512 bytes of memory.
 .SS pages/page.0 ... pages/page.15 pages/page.ALL
 .I read-write, binary
 .br

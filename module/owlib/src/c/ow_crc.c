@@ -36,8 +36,8 @@ static unsigned char crc8_table[] = {
 
 static unsigned int crc16_table[16] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
-unsigned char CRC8compute( const unsigned char * bytes , const int length ) {
-    unsigned char crc = 0 ;
+unsigned char CRC8compute( const unsigned char * bytes , const int length , const int seed ) {
+    unsigned char crc = seed ;
     int i = 0 ;
     while ( i<length ) {
         crc = crc8_table[crc ^ bytes[i++] ] ;
@@ -47,7 +47,12 @@ unsigned char CRC8compute( const unsigned char * bytes , const int length ) {
 
 /* wrap CRC8 calculation in statistics */
 unsigned char CRC8( const unsigned char * bytes , const int length ) {
-    unsigned char r = CRC8compute( bytes, length ) ;
+    return CRC8seeded( bytes, length, 0 ) ;
+}
+
+/* wrap CRC8 calculation in statistics */
+unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) {
+    unsigned char r = CRC8compute( bytes, length , seed ) ;
     STATLOCK
         ++crc8_tries ; /* statistics */
         if (r) ++crc8_errors ; /* statistics */
