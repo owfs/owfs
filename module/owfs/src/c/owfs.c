@@ -132,8 +132,12 @@ int main(int argc, char *argv[]) {
 
     set_signal_handlers();
 
-#if FUSE_MAJOR_VERSION == 1
+#if (FUSE_MAJOR_VERSION == 1)
     fuse = fuse_new(fuse_fd, 0, &owfs_oper);
+#elif (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION < 2)
+    fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
+#elif (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)
+    fuse = fuse_new(fuse_fd, NULL, &owfs_oper, sizeof(owfs_oper));
 #else
     fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
 #endif
