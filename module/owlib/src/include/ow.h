@@ -82,9 +82,7 @@ $Id$
 extern int multithreading ;
 extern int maxslots ;
 #ifdef OW_MT
-    #define __USE_GNU
     #include <pthread.h>
-    #undef  __USE_GNU
 #ifdef HAVE_SEMAPHORE_H
     #include <semaphore.h>
 #else
@@ -96,13 +94,6 @@ extern int maxslots ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
     extern pthread_mutex_t fstat_mutex ;
-    extern sem_t devlocks ;
-    struct devlock {
-        unsigned char sn[8] ;
-        pthread_mutex_t lock ;
-        int users ;
-    } ;
-    extern struct devlock DevLock[] ;
     #define STATLOCK      pthread_mutex_lock(&stat_mutex) ;
     #define STATUNLOCK    pthread_mutex_unlock(&stat_mutex) ;
     #define CACHELOCK      pthread_mutex_lock(&cache_mutex) ;

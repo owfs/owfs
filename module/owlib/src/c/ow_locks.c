@@ -19,29 +19,37 @@ $Id$
 static struct timeval tv ; /* statistics */
 
 #ifdef OW_MT
-pthread_mutex_t bus_mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP ;
-pthread_mutex_t dev_mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP ;
-pthread_mutex_t stat_mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP ;
-pthread_mutex_t cache_mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP ;
-pthread_mutex_t store_mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP ;
-pthread_mutex_t fstat_mutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP ;
+pthread_mutex_t bus_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t dev_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t store_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t fstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #define DEVLOCKS    10
-struct devlock DevLock[DEVLOCKS] ;
 sem_t devlocks ;
-int multithreading = 1 ;
-int maxslots = DEVLOCKS ;
-#else /* OW_MT */
-int multithreading = 0 ;
-int maxslots = 1 ;
+struct devlock {
+    unsigned char sn[8] ;
+    pthread_mutex_t lock ;
+    int users ;
+ } DevLock[DEVLOCKS] = { [0 ... DEVLOCKS-1]={"",PTHREAD_MUTEX_INITIALIZER,0}};
 #endif /* OW_MT */
+
+/* maxslots and multithreading are ints to allow address-of */
+#ifdef DEVLOCKS
+    int multithreading = 1 ;
+    int maxslots = DEVLOCKS ;
+#else /* DEVLOCKS */
+    int multithreading = 0 ;
+    int maxslots = 1 ;
+#endif /* DEVLOCKS */
 
 void LockSetup( void ) {
 #ifdef OW_MT
-    int i ;
-    for ( i=0 ; i<DEVLOCKS ; ++i) {
-        DevLock[i].users = 0 ;
-        pthread_mutex_init( &DevLock[i].lock, NULL ) ;
-    }
+//    int i ;
+//    for ( i=0 ; i<DEVLOCKS ; ++i) {
+//        DevLock[i].users = 0 ;
+//        pthread_mutex_init( &DevLock[i].lock, NULL ) ;
+//    }
     sem_init( &devlocks, 0, DEVLOCKS ) ;
 #endif /* OW_MT */
 }
