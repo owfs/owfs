@@ -327,7 +327,7 @@ static int OW_power( unsigned char * const data, const struct parsedname * const
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
         BUSUNLOCK
-        Cache_Add_Internal(data,sizeof(unsigned char),&ip_power,pn) ;
+        Cache_Add_Internal(&data,sizeof(unsigned char),&ip_power,pn) ;
     }
     return ret ;
 }
