@@ -48,7 +48,7 @@ int FS_getattr(const char *path, struct stat *stbuf) {
         if ( pn.ft->read ) stbuf->st_mode |= 0444 ;
         if ( pn.ft->write ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
-        stbuf->st_size = (pn.ft->suglen==fs_len_type) ? strlen(pn.dev->name) : pn.ft->suglen ;
+		stbuf->st_size = FileLength( &pn ) ;
     }
     return 0 ;
 }
@@ -72,19 +72,27 @@ int FS_truncate(const char *path, const off_t size) {
 
 int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
-    int ext ;
     if ( FS_ParsedName(path,&pn) ) { /* bad path */
         return -ENOENT;
     } else if ( pn.dev ) { /* 1-wire device */
         int i ;
         for ( i=0 ; i<pn.dev->nft ; ++i ) {
-            if ( (ext = ((pn.dev)->ft)[i].ag->elements ) ) {
+		    if ( ((pn.dev)->ft)[i].ag ) {
+                int ext = ((pn.dev)->ft)[i].ag->elements ;
                 int j ;
                 char extname[PATH_MAX+1] ; /* probably excessive */
                 for ( j=0 ; j < ext ; ++j ) {
-                    snprintf( extname , PATH_MAX, "%s.%-d",((pn.dev)->ft)[i].name,j) ;
+				    if ( ((pn.dev)->ft)[i].ag->letters == ag_letters ) {
+                        snprintf( extname , PATH_MAX, "%s.%c",((pn.dev)->ft)[i].name,j+'A') ;
+                    } else {
+                        snprintf( extname , PATH_MAX, "%s.%-d",((pn.dev)->ft)[i].name,j) ;
+					}
+printf("GD %s\n",extname) ;
                     filler ( h , extname , 0 ) ;
                 }
+                snprintf( extname , PATH_MAX, "%s.ALL",((pn.dev)->ft)[i].name) ;
+                filler ( h , extname , 0 ) ;
+printf("GD %s\n",extname) ;
             } else {
                 filler( h , ((pn.dev)->ft)[i].name , 0 ) ;
             }
