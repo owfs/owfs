@@ -19,17 +19,17 @@
 [.]XXXXXXXXXXXX[XX][/[
 .B aux
 |
-.B branch.[0|1|ALL]
+.B branch.[0|1|ALL|BYTE]
 |
 .B control
 |
 .B discharge
 |
-.B event.[0|1|ALL]
+.B event.[0|1|ALL|BYTE]
 |
 .B main
 |
-.B sensed.[0|1|ALL]
+.B sensed.[0|1|ALL|BYTE]
 |
 .B address
 |
@@ -54,7 +54,7 @@ branch of the
 network branch. It is implicitly accessed (via the
 .I aux smart-on
 command) when it is listed or devices on this branch are addressed.
-.SS branch.0 branch.1 branch.ALL
+.SS branch.0 branch.1 branch.ALL branch.BYTE
 .I read-only, yes-no
 .br
 Is the branch (
@@ -67,6 +67,9 @@ should not allow both to be on simultaneously.
 .br
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
+.br
+.I BYTE
+is an aggregate of the branches as a byte, A is bit 0.
 .SS control
 .I read-write, unsigned integer
 .br
@@ -93,7 +96,7 @@ branch switched in
 .I write-only, yes-no
 .br
 Writing a non-zero value to this property will electrically reset both the main and auxillary branches of the 1-wire bus by dropping power for 100 milliseconds. All devices on those branches will lose parasitic power and reset to power-up defaults.
-.SS event.0 event.1 event.ALL
+.SS event.0 event.1 event.ALL event.BYTE
 .I read-only, yes-no
 .br
 Has the
@@ -106,6 +109,9 @@ or
 .br
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
+.br
+.I BYTE
+is an aggregate of the branches as a byte, A is bit 0.
 .SS main
 .I directory
 .br
@@ -116,7 +122,7 @@ branch of the
 network branch. It is implicitly accessed (via the
 .I main smart-on
 command) when it is listed or devices on this branch are addressed.
-.SS sensed.0 sensed.1 sensed.ALL
+.SS sensed.0 sensed.1 sensed.ALL sensed.BYTE
 .I read-only, yes-no
 .br
 Voltage sensed at the
@@ -127,6 +133,9 @@ branch pin. Valid only when the branch is switched out. Value returned is 0 (low
 .br
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
+.br
+.I BYTE
+is an aggregate of the branches as a byte, A is bit 0.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii

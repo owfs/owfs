@@ -52,11 +52,6 @@ $Id$
 bWRITE_FUNCTION( FS_w_mem ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
-// yREAD_FUNCTION( FS_r_pio ) ;
-//yWRITE_FUNCTION( FS_w_pio ) ;
-// yREAD_FUNCTION( FS_sense ) ;
-// yREAD_FUNCTION( FS_r_latch ) ;
-//yWRITE_FUNCTION( FS_w_latch ) ;
  uREAD_FUNCTION( FS_r_pio ) ;
 uWRITE_FUNCTION( FS_w_pio ) ;
  uREAD_FUNCTION( FS_sense ) ;
@@ -78,9 +73,6 @@ struct filetype DS2406[] = {
     {"pages/page",    32,  &A2406p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
     {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL}     , NULL, } ,
-//    {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
-//    {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
-//    {"latch"     ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
     {"PIO"       ,     1,  &A2406,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
     {"sensed"    ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
     {"latch"     ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,

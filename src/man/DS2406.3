@@ -118,26 +118,55 @@ references both channels simultaneously as a single byte, with channel A in bit 
 .SS set_alarm
 .I read-write, unsigned integer (0-331)
 .br
-A number will consist of three digits XYZ, where:
+A number consisting of three digits XYZ, where:
 .TP
 X
-channel select (1-A, 2-B, 3-A or B, 0-no channel select)
+channel selection
+.br
+.I 0
+neither
+.br
+.I 1
+A only
+.br
+.I 2
+B only
+.br
+.I 3
+A or B
 .TP
 Y
-select source (1-latch, 2-PIO, 3-sensed, 0-reserved)
+source selection
+.br
+.I 0
+undefined
+.br
+.I 1
+latch
+.br
+.I 2
+PIO
+.br
+.I 3
+sensed
 .TP
 Z
-choice polarity (0-LOW, 1-HIGH)
+polarity selection
+.br
+.I 0
+low
+.br
+.I 1
+high
 .PP
-In this table, PIO refers to the sensed property. FlipFlop is  the  PIO state set, and Latch is the latch value.
-All digits will be truncated to the 0-3 (or 0-1) range. Leading zeroes are optional.
+All digits will be truncated to the 0-3 (or 0-1) range. Leading zeroes are optional (and may be problematic for some shells).
 .PP
 Example:
 .TP
 311
-Responds on Conditional Search when latch.A or latch.B are set in 1.
+Responds on Conditional Search when either latch.A or latch.B (or both) are set to 1.
 .TP
-011(11)
+<100
 Never responds to Conditional Search.
 .SH STANDARD PROPERTIES
 .SS address

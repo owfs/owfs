@@ -66,11 +66,7 @@ aWRITE_FUNCTION( FS_w_lineX ) ;
 
 /* ------- Structures ----------- */
 
-struct aggregate ALCDg    = { 4, ag_numbers, ag_aggregate, } ;
-struct aggregate ALCDc    = { 4, ag_numbers, ag_aggregate, } ;
-#ifdef OW_CACHE
-struct aggregate ALCDu    = { 4, ag_numbers, ag_aggregate, } ;
-#endif /*OW_CACHE*/
+struct aggregate ALCD     = { 4, ag_numbers, ag_aggregate, } ;
 struct aggregate ALCD_L16 = { 4, ag_numbers, ag_separate, } ;
 struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, } ;
 struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, } ;
@@ -79,12 +75,12 @@ struct filetype LCD[] = {
     {"LCDon"     ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_on}       , NULL, } ,
     {"backlight" ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_backlight}, NULL, } ,
     {"version"   ,    16,  NULL,      ft_ascii, ft_stable  , {a:FS_r_version} , {v:NULL}          , NULL, } ,
-    {"gpio"      ,     1,  &ALCDg,    ft_yesno, ft_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , NULL, } ,
+    {"gpio"      ,     1,  &ALCD,     ft_yesno, ft_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , NULL, } ,
     {"register"  ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , NULL, } ,
     {"data"      ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , NULL, } ,
-    {"counters"  ,    12,  &ALCDc, ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , NULL, } ,
+    {"counters"  ,    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , NULL, } ,
 #ifdef OW_CACHE
-    {"cumulative",    12,  &ALCDu, ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , NULL, } ,
+    {"cumulative",    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , NULL, } ,
 #endif /*OW_CACHE*/
     {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , NULL , } ,
     {"screen16"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 16 , } ,

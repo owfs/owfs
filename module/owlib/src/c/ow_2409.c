@@ -47,9 +47,9 @@ $Id$
 yWRITE_FUNCTION( FS_discharge ) ;
  uREAD_FUNCTION( FS_r_control ) ;
 uWRITE_FUNCTION( FS_w_control ) ;
- yREAD_FUNCTION( FS_r_sensed ) ;
- yREAD_FUNCTION( FS_r_branch ) ;
- yREAD_FUNCTION( FS_r_event ) ;
+ uREAD_FUNCTION( FS_r_sensed ) ;
+ uREAD_FUNCTION( FS_r_branch ) ;
+ uREAD_FUNCTION( FS_r_event ) ;
 
 /* ------- Structures ----------- */
 
@@ -58,9 +58,9 @@ struct filetype DS2409[] = {
     F_STANDARD   ,
     {"discharge" ,     1,  NULL,    ft_yesno , ft_stable  , {v:NULL}        , {y:FS_discharge}, NULL,       } ,
     {"control"   ,     1,  NULL, ft_unsigned , ft_stable  , {u:FS_r_control}, {u:FS_w_control}, NULL,       } ,
-    {"sensed"    ,     1,&A2409,    ft_yesno , ft_volatile, {y:FS_r_sensed} , {v:NULL}        , NULL,       } ,
-    {"branch"    ,     1,&A2409,    ft_yesno , ft_volatile, {y:FS_r_branch} , {v:NULL}        , NULL,       } ,
-    {"event"     ,     1,&A2409,    ft_yesno , ft_volatile, {y:FS_r_event}  , {v:NULL}        , NULL,       } ,
+    {"sensed"    ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_sensed} , {v:NULL}        , NULL,       } ,
+    {"branch"    ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_branch} , {v:NULL}        , NULL,       } ,
+    {"event"     ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_event}  , {v:NULL}        , NULL,       } ,
     {"aux"       ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 1, } ,
     {"main"      ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 0, } ,
 } ;
@@ -81,29 +81,32 @@ static int FS_discharge(const int * y, const struct parsedname * pn) {
 }
 
 /* 2409 switch -- branch pin voltage */
-static int FS_r_sensed(int * y , const struct parsedname * pn) {
+static int FS_r_sensed(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    y[0] = data&0x02 ? 1 : 0 ;
-    y[1] = data&0x08 ? 1 : 0 ;
+//    y[0] = data&0x02 ? 1 : 0 ;
+//    y[1] = data&0x08 ? 1 : 0 ;
+    u[0] = ((data>>1)&0x01) | ((data>>2)&0x02) ;
     return 0 ;
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
-static int FS_r_branch(int * y , const struct parsedname * pn) {
+static int FS_r_branch(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    y[0] = data&0x01 ? 0 : 1 ;
-    y[1] = data&0x04 ? 0 : 1 ;
+//    y[0] = data&0x01 ? 0 : 1 ;
+//    y[1] = data&0x04 ? 0 : 1 ;
+    u[0] = (((data)&0x01) | ((data>>1)&0x02)) ^ 0x03 ;
     return 0 ;
 }
 
 /* 2409 switch -- event status */
-static int FS_r_event(int * y , const struct parsedname * pn) {
+static int FS_r_event(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    y[0] = data&0x10 ? 1 : 0 ;
-    y[1] = data&0x20 ? 1 : 0 ;
+//    y[0] = data&0x10 ? 1 : 0 ;
+//    y[1] = data&0x20 ? 1 : 0 ;
+    u[0] = (data>>4)&0x03 ;
     return 0 ;
 }
 
