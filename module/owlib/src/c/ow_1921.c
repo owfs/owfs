@@ -199,6 +199,8 @@ struct Version Versions[] =
         { 0x3B2, "DS1921Z-F5" ,  -5.5, 0.125,  -5., +26., 360, } ,
         { 0x4F2, "DS1921H-F5" , +14.5, 0.125, +15., +46., 360, } ,
     } ;
+    /* AM/PM for hours field */    
+const int ampm[8] = {0,10,20,30,0,10,12,22} ;
 #define VersionElements ( sizeof(Versions) / sizeof(struct Version) )
 static int VersionCmp( const void * pn , const void * version ) {
     return ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) - ((const struct Version *)version)->ID ;
@@ -212,6 +214,7 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
 static int OW_temperature( int * T , const unsigned int delay, const struct parsedname * pn ) ;
 static int OW_clearmemory( const struct parsedname * pn) ;
 static int OW_2date(DATE * d, const unsigned char * data) ;
+static int OW_2mdate(DATE * d, const unsigned char * data) ;
 static void OW_date(const DATE * d , unsigned char * data) ;
 static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_FillMission( struct Mission * m , const struct parsedname * pn ) ;
@@ -830,7 +833,6 @@ static int OW_clearmemory( const struct parsedname * pn) {
 
 /* translate 7 byte field to a Unix-style date (number) */
 static int OW_2date(DATE * d, const unsigned char * data) {
-    const int ampm[8] = {0,10,20,30,0,10,12,22} ;
     struct tm tm ;
 
     /* Prefill entries */
@@ -852,6 +854,31 @@ static int OW_2date(DATE * d, const unsigned char * data) {
     return 0 ;
 }
 
+/* translate m byte field to a Unix-style date (number) */
+static int OW_2mdate(DATE * d, const unsigned char * data) {
+    struct tm tm ;
+    int year ;
+
+    /* Prefill entries */
+    d[0] = time(NULL) ;
+    if ( gmtime_r(d,&tm)==NULL ) return -EINVAL ;
+    year = tm.tm_year ;
+
+    /* Get date from chip */
+    tm.tm_sec  = 0 ; /* BCD->dec */
+    tm.tm_min  = (data[0]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
+    tm.tm_hour = (data[1]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
+    tm.tm_mday = (data[2]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
+    tm.tm_mon  = (data[3]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
+    tm.tm_year = (data[4]&0x0F) + 10*(data[6]>>4) ; /* BCD->dec */
+
+    /* Adjust the century -- should be within 50 years of current */
+    while ( tm.tm_year+50 < year ) tm.tm_year += 100 ;
+    
+    /* Pass through time_t again to validate */
+    if ( (d[0]=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
+    return 0 ;
+}
 
 /* set clock */
 static void OW_date(const DATE * d , unsigned char * data) {
@@ -892,12 +919,7 @@ static int OW_FillMission( struct Mission * mission , const struct parsedname * 
     mission->interval = 60 * (int)data[0] ;
     mission->rollover = UT_getbit(&data[1],3) ;
     mission->samples = (((((unsigned int)data[15])<<8)|data[14])<<8)|data[13] ;
-    data[7] = 0 ; //seconds
-    data[13] = data[12] ; // years
-    data[12] = data[11] ; // months
-    data[11] = data[10] ; // date
-    data[10] = 0 ; // dow
-    return OW_2date(&(mission->start),&data[7]) ;
+    return OW_2mdate(&(mission->start),&data[8]) ;
 }
 
 static int OW_alarmlog( int * t, int * c, const size_t offset, const struct parsedname * pn ) {
