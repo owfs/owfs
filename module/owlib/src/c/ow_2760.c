@@ -286,7 +286,7 @@ static int FS_r_current(FLOAT * C , const struct parsedname * pn) {
     unsigned char c[2] ;
     int ret = OW_r_sram(c,2,0x0E,pn) ;
     if (ret) return ret ;
-    C[0] = (FLOAT) ( ((int16_t)((char)c[0]))<<8 + c[1]>>3 ) * .000625 ;
+    C[0] = (FLOAT) ( ((int)((int8_t)c[0]))<<5 + c[1]>>3 ) * .000625 ;
     return 0 ;
 }
 
@@ -294,7 +294,7 @@ static int FS_r_extsense(FLOAT * C , const struct parsedname * pn) {
     unsigned char c[2] ;
     int ret = OW_r_sram(c,2,0x0E,pn) ;
     if (ret) return ret ;
-    C[0] = (FLOAT) ( ((int16_t)((char)c[0]))<<8 + c[1]>>3 ) * .000015625 ;
+    C[0] = (FLOAT) ( ((int)((int8_t)c[0]))<<5 + c[1]>>3 ) * .000015625 ;
     return 0 ;
 }
 
@@ -302,7 +302,7 @@ static int FS_r_accum(FLOAT * A , const struct parsedname * pn) {
     unsigned char a[2] ;
     int ret = OW_r_sram(a,2,0x10,pn) ;
     if (ret) return ret ;
-    A[0] = (FLOAT) (((int16_t)(a[0]<<8|a[1])))*.00025 ;
+    A[0] = (FLOAT) ( ((int)((int8_t)a[0]))<<8 + a[1] ) * .00025 ;
     return 0 ;
 }
 
@@ -326,7 +326,7 @@ static int FS_r_volt(FLOAT * V , const struct parsedname * pn) {
     unsigned char v[2] ;
     int ret = OW_r_sram(v,2,0x0C,pn) ;
     if (ret) return ret ;
-    V[0] = (FLOAT) (((int16_t)(v[0]<<8|v[1]))>>5)*.00488 ;
+    V[0] = (FLOAT) ( ((int)((int8_t)v[0]))<<3 + v[1]>>5 ) * .00488 ;
     return 0 ;
 }
 
@@ -423,7 +423,7 @@ static int OW_r_temp(FLOAT * T , const struct parsedname * pn) {
     unsigned char t[2] ;
     int ret = OW_r_sram(t,2,0x18,pn) ;
     if (ret) return ret ;
-    T[0] = (FLOAT) (((int16_t)(t[0]<<8|t[1]))>>5) * .125 ;
+    T[0] = (FLOAT) ( ((int)((int8_t)t[0]))<<3 + t[1]>>5 ) * .125 ;
     return 0 ;
 }
 
