@@ -39,7 +39,7 @@ $Id$
 #include <pthread.h>
 
 /* --- Prototypes ------------ */
-static int Handler( int fd ) ;
+static void Handler( int fd ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
@@ -109,7 +109,7 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     return ret ;
 }
 
-static int Handler( int fd ) {
+static void Handler( int fd ) {
     char * retbuffer = NULL ;
     struct server_msg sm ;
     struct client_msg cm = {0,0,0,0,0,0,} ; /* default values */
@@ -169,7 +169,6 @@ static int Handler( int fd ) {
     if (path) free(path) ;
     ToClient( fd, &cm, retbuffer ) ;
     if ( retbuffer ) free(retbuffer) ;
-    return 0 ;
 }
 
 /* Read, called from Handler with the following caveates: */
@@ -244,25 +243,25 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
-	int _pathlen = strlen(pn2->path) + 1 ;
-	//printf("Handler: DIR preloop\n");
+        int _pathlen = strlen(pn2->path) + 1 ;
+//printf("Handler: DIR preloop\n");
         /* Note, path preloaded into retbuffer */
         if( !(retbuffer = malloc(_pathlen + OW_FULLNAME_MAX + 2)) ) {
-	  //printf("malloc error\n");
-	  return;
-	}
+//printf("malloc error\n");
+            return;
+        }
         memcpy(retbuffer, pn2->path, _pathlen);
-	if ( (_pathlen <2) || (retbuffer[_pathlen-2] !='/') ) {
-	  strcpy( &retbuffer[_pathlen-1] , "/" ) ;
-	  ++_pathlen ;
-	}
-	//printf("Handler: DIR preloop %s\n",retbuffer);
+        if ( (_pathlen <2) || (retbuffer[_pathlen-2] !='/') ) {
+            strcpy( &retbuffer[_pathlen-1] , "/" ) ;
+            ++_pathlen ;
+        }
+//printf("Handler: DIR preloop %s\n",retbuffer);
         FS_DirName( &retbuffer[_pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
-	//printf("Handler: DIR loop %s\n",retbuffer);
+//printf("Handler: DIR loop %s\n",retbuffer);
         cm->size = strlen(retbuffer) ;
         cm->ret = 0 ;
         ToClient(fd,cm,retbuffer) ;
-	free(retbuffer);
+        free(retbuffer);
     }
 
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
@@ -270,7 +269,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
 
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     cm->offset = flags ; /* send the flags in the offset message */
-    //printf("Handler: DIR done ret=%d\n", cm->ret);
+//printf("Handler: DIR done ret=%d\n", cm->ret);
     /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
 }
@@ -294,8 +293,8 @@ int main( int argc , char ** argv ) {
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
-	default:
-	    break;
+        default:
+            break;
         }
         if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
@@ -317,6 +316,8 @@ int main( int argc , char ** argv ) {
     if ( LibStart() ) ow_exit(1) ;
 
     ServerProcess( Handler,ow_exit ) ;
+    ow_exit(0) ;
+    return 0 ;
 }
 
 static void ow_exit( int e ) {

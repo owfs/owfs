@@ -55,37 +55,38 @@ static int CheckPresence_low( const struct parsedname * const pn ) ;
  * This will probably not work with simultanious reading...
  */
 void update_max_delay(const struct parsedname * const pn) {
-  long sec, usec;
-  struct timeval *r, *w;
-  struct timeval last_delay;
-  if(!pn || !pn->in) return;
-  gettimeofday( &(pn->in->bus_read_time) , NULL );
-  r = &pn->in->bus_read_time;
-  w = &pn->in->bus_write_time;
+    long sec, usec;
+    struct timeval *r, *w;
+    struct timeval last_delay;
+    if(!pn || !pn->in) return;
+    gettimeofday( &(pn->in->bus_read_time) , NULL );
+    r = &pn->in->bus_read_time;
+    w = &pn->in->bus_write_time;
 
-  sec = r->tv_sec - w->tv_sec;
-  if((sec >= 0) && (sec <= 5)) {
-    usec = r->tv_usec - w->tv_usec;
-    last_delay.tv_sec = sec;
-    last_delay.tv_usec = usec;
+    sec = r->tv_sec - w->tv_sec;
+    if((sec >= 0) && (sec <= 5)) {
+        usec = r->tv_usec - w->tv_usec;
+        last_delay.tv_sec = sec;
+        last_delay.tv_usec = usec;
 
-    while( last_delay.tv_usec >= 1000000 ) {
-      last_delay.tv_usec -= 1000000 ;
-      last_delay.tv_sec++;
+        while( last_delay.tv_usec >= 1000000 ) {
+            last_delay.tv_usec -= 1000000 ;
+            last_delay.tv_sec++;
+        }
+        if (
+            (last_delay.tv_sec > max_delay.tv_sec)
+            || ((last_delay.tv_sec >= max_delay.tv_sec) && (last_delay.tv_usec > max_delay.tv_usec))
+           ) {
+            STATLOCK
+                max_delay.tv_sec =  last_delay.tv_sec;
+                max_delay.tv_usec =  last_delay.tv_usec;
+            STATUNLOCK
+        }
     }
-    if((last_delay.tv_sec > max_delay.tv_sec) ||
-       ((last_delay.tv_sec >= max_delay.tv_sec) &&
-	(last_delay.tv_usec > max_delay.tv_usec))) {
-      STATLOCK
-          max_delay.tv_sec =  last_delay.tv_sec;
-          max_delay.tv_usec =  last_delay.tv_usec;
-      STATUNLOCK
-    }
-  }
-  /* BUS_send_and_get() call this function many times, therefor
-   * I reset bus_write_time after every calls */
-  gettimeofday( &(pn->in->bus_write_time) , NULL );
-  return;
+    /* BUS_send_and_get() call this function many times, therefor
+     * I reset bus_write_time after every calls */
+    gettimeofday( &(pn->in->bus_write_time) , NULL );
+    return;
 }
 
 int FS_type(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -155,12 +156,12 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         struct parsedname *pn1 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
-	int ret;
+        int ret;
         memcpy( &pnnext, pn1 , sizeof(struct parsedname) ) ;
         pnnext.in = pn1->in->next ;
         pnnext.si = &si ;
         ret = CheckPresence_low(&pnnext) ;
-	pthread_exit((void *)ret);
+        pthread_exit((void *)ret);
     }
     //printf("CheckPresence_low\n"); UT_delay(100);
     threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;

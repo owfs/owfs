@@ -116,12 +116,12 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     /* Prints this directory element (not the whole path) */
     void directory( const struct parsedname * const pn2 ) {
         char *extname ;
-	if( !(extname = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
-	  return;
-	}
+        if( !(extname = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+            return;
+        }
         FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
         FILLER(h,extname) ;
-	free(extname);
+        free(extname);
     }
 
     pn.si = &si ;
@@ -133,7 +133,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         /* Call directory spanning function */
         //printf("call FS_dir\n");
         FS_dir( directory, &pn ) ;
-	//printf("FS_dir done\n");
+        //printf("FS_dir done\n");
         FILLER(h,".") ;
         FILLER(h,"..") ;
         ret = 0 ;

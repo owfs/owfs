@@ -86,19 +86,19 @@ int ServerListen( struct connection_out * out ) {
             out->ai_ok->ai_protocol
         ) ;
         if ( fd >= 0 ) {
-	    ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ||
-	      bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen ) ||
-	      listen(fd, 10);
-	    if ( ret ) {
-	      fprintf(stderr, "ServerListen: Socket problem [%s]\n", strerror(errno));
-	      close( fd ) ;
-	    } else {
-	      out->fd = fd ;
-	      return fd ;
-	    }
+            ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))
+                || bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
+                || listen(fd, 10) ;
+            if ( ret ) {
+                fprintf(stderr, "ServerListen: Socket problem [%s]\n", strerror(errno));
+                close( fd ) ;
+            } else {
+                out->fd = fd ;
+                return fd ;
+            }
         } else {
-	  fprintf(stderr, "ServerListen: socket() errno=%d [%s]", errno, strerror(errno));
-	}
+            fprintf(stderr, "ServerListen: socket() errno=%d [%s]", errno, strerror(errno));
+        }
     } while ( (out->ai_ok=out->ai_ok->ai_next) ) ;
     fprintf(stderr,"ServerListen: Socket problem errno=%d\n",errno) ;
     return -1 ;
@@ -124,7 +124,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
-    //printf("ClientAddr: [%s] [%s]\n", in->host, in->service);
+//printf("ClientAddr: [%s] [%s]\n", in->host, in->service);
 
     if ( (ret=getaddrinfo( in->host, in->service, &hint, &in->ai )) ) {
 //printf("GetAddrInfo ret=%d\n",ret);
@@ -216,12 +216,12 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             if ( pthread_create( &thread2, &attr, AcceptThread, (void *)out2 ) ) Exit(1) ;
 #endif
         }
-	if(out == out_last) {
-	  /* last connection_out wasn't a separate thread */
-	  return NULL;
-	} else {
-	  pthread_exit((void *)0);
-	}
+        if(out == out_last) {
+            /* last connection_out wasn't a separate thread */
+            return NULL;
+        } else {
+            pthread_exit((void *)0);
+        }
     }
 
 #ifndef __UCLIBC__

@@ -40,8 +40,7 @@ pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 /* Essentially sets up semaphore for device slots */
 void LockSetup( void ) {
 #ifdef OW_MT
-#ifdef __UCLIBC__
-    int i ;
+ #ifdef __UCLIBC__
     //pthread_mutex_init(&busstat_mutex, pmattr);
     pthread_mutex_init(&stat_mutex, pmattr);
     pthread_mutex_init(&cache_mutex, pmattr);
@@ -49,7 +48,7 @@ void LockSetup( void ) {
     pthread_mutex_init(&fstat_mutex, pmattr);
     pthread_mutex_init(&uclibc_mutex, pmattr);
     pthread_mutex_init(&dir_mutex, pmattr);
-#endif /* UCLIBC */
+ #endif /* UCLIBC */
 #endif /* OW_MT */
 }
 
@@ -157,38 +156,39 @@ void BUS_lock( const struct parsedname * pn ) {
 }
 
 void BUS_unlock( const struct parsedname * pn ) {
-  struct timeval *t;
-  long sec, usec;
+    struct timeval *t;
+    long sec, usec;
+
     gettimeofday( &(pn->in->last_unlock), NULL ) ;
 
     /* avoid update if system-clock have changed */
     STATLOCK
-      sec = pn->in->last_unlock.tv_sec - pn->in->last_lock.tv_sec;
-      if((sec >= 0) && (sec < 60)) {
-	usec = pn->in->last_unlock.tv_usec - pn->in->last_lock.tv_usec;
-	total_bus_time.tv_sec += sec;
-        total_bus_time.tv_usec += usec;
-        if ( total_bus_time.tv_usec >= 1000000 ) {
-	  total_bus_time.tv_usec -= 1000000 ;
-	  ++total_bus_time.tv_sec;
-        } else if ( total_bus_time.tv_usec < 0 ) {
-	  total_bus_time.tv_usec += 1000000 ;
-	  --total_bus_time.tv_sec;
-        }
+        sec = pn->in->last_unlock.tv_sec - pn->in->last_lock.tv_sec;
+        if((sec >= 0) && (sec < 60)) {
+            usec = pn->in->last_unlock.tv_usec - pn->in->last_lock.tv_usec;
+            total_bus_time.tv_sec += sec;
+            total_bus_time.tv_usec += usec;
+            if ( total_bus_time.tv_usec >= 1000000 ) {
+                total_bus_time.tv_usec -= 1000000 ;
+                ++total_bus_time.tv_sec;
+            } else if ( total_bus_time.tv_usec < 0 ) {
+                total_bus_time.tv_usec += 1000000 ;
+                --total_bus_time.tv_sec;
+            }
 
-	t = &pn->in->bus_time;
-	t->tv_sec += sec;
-        t->tv_usec += usec;
-        if ( t->tv_usec >= 1000000 ) {
-	  t->tv_usec -= 1000000 ;
-	  ++t->tv_sec;
-        } else if ( t->tv_usec < 0 ) {
-	  t->tv_usec += 1000000 ;
-	  --t->tv_sec;
+            t = &pn->in->bus_time;
+            t->tv_sec += sec;
+            t->tv_usec += usec;
+            if ( t->tv_usec >= 1000000 ) {
+                t->tv_usec -= 1000000 ;
+                ++t->tv_sec;
+            } else if ( t->tv_usec < 0 ) {
+                t->tv_usec += 1000000 ;
+                --t->tv_sec;
+            }
         }
-      }
-      ++ pn->in->bus_unlocks ; /* statistics */
-      ++ total_bus_unlocks ; /* statistics */
+        ++ pn->in->bus_unlocks ; /* statistics */
+        ++ total_bus_unlocks ; /* statistics */
     STATUNLOCK
 #ifdef OW_MT
     pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;

@@ -66,12 +66,12 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->in = indevice ;
 
     if ( uncached == NULL ) { // first time through
-      ltext      = strlen ( text      = (const char *)FS_dirname_state(pn_text      )) ;
-      luncached  = strlen ( uncached  = (const char *)FS_dirname_state(pn_uncached  )) ;
-      lstructure = strlen ( structure = (const char *)FS_dirname_type( pn_structure )) ;
-      lsystem    = strlen ( system_   = (const char *)FS_dirname_type( pn_system    )) ;
-      lsettings  = strlen ( settings  = (const char *)FS_dirname_type( pn_settings  )) ;
-      lstatistics= strlen ( statistics= (const char *)FS_dirname_type( pn_statistics)) ;
+        ltext      = strlen ( text      = (const char *)FS_dirname_state(pn_text      )) ;
+        luncached  = strlen ( uncached  = (const char *)FS_dirname_state(pn_uncached  )) ;
+        lstructure = strlen ( structure = (const char *)FS_dirname_type( pn_structure )) ;
+        lsystem    = strlen ( system_   = (const char *)FS_dirname_type( pn_system    )) ;
+        lsettings  = strlen ( settings  = (const char *)FS_dirname_type( pn_settings  )) ;
+        lstatistics= strlen ( statistics= (const char *)FS_dirname_type( pn_statistics)) ;
     }
 //printf("PARSENAME on %s\n",path);
     if ( pn == NULL ) return -EINVAL ;
@@ -195,9 +195,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 static int FS_ParsedNameSub( char * path , struct parsedname * pn ) {
     int ret ;
     const char * pFile ;
-//  const char * next ;
     char * next ;
-    //printf("PN: %s\n",pn->path);
+//printf("PN: %s\n",pn->path);
 
     /* must be of form /sdfa.sf/asdf.sdf */
     /* extensions optional */
@@ -360,13 +359,13 @@ static int FilePart( const char * const filename, const char ** next, struct par
     } else { /* no continued path */
         if (next) *next = NULL ;
     }
-    //printf("FilePart 2nd pass name=%s\n",pFile);
+//printf("FilePart 2nd pass name=%s\n",pFile);
 
     pExt = strchr(pF2,'.') ; /* look for extension */
     if ( pExt ) {
         *pExt = '\0' ;
         ++pExt ;
-	//printf("FP file with extension=%s\n",pExt);
+//printf("FP file with extension=%s\n",pExt);
     }
 
     /* Match to known filetypes for this device */
@@ -379,38 +378,38 @@ static int FilePart( const char * const filename, const char ** next, struct par
         } else if ( pn->ft->ag == NULL ) {
             return -ENOENT ; /* An extension not allowed when non-aggregate */
         } else if ( strcasecmp(pExt,"ALL")==0 ) {
-	  //printf("FP ALL\n");
+//printf("FP ALL\n");
             pn->extension = -1 ; /* ALL */
         } else if ( pn->ft->format==ft_bitfield && strcasecmp(pExt,"BYTE")==0 ) {
             pn->extension = -2 ; /* BYTE */
-	    //printf("FP BYTE\n") ;
+//printf("FP BYTE\n") ;
         } else {
             if ( pn->ft->ag->letters == ag_letters ) {
-	      //printf("FP letters\n") ;
+//printf("FP letters\n") ;
                 if ( (strlen(pExt)!=1) || !isupper(*pExt) ) return -ENOENT ;
                 pn->extension = *pExt - 'A' ; /* Letter extension */
             } else { /* Numbers */
-	      //printf("FP numbers\n") ;
+//printf("FP numbers\n") ;
                 pn->extension = strtol(pExt,&p,0) ; /* Number extension */
                 if ( (p==pExt) || ((pn->extension == 0) && (errno==-EINVAL)) ) return -ENOENT ; /* Bad number */
             }
-	    //printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
-	    if((pn->in->busmode==bus_remote) && (pn->type==pn_system)) {
-	      /* We have to agree any extension from remote bus
-	       * otherwise /system/adapter/address.1 wouldn't be accepted
-	       * Should not be needed on known devices though
-	       */
-	    } else {
-	      if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
-		return -ENOENT ; /* Extension out of range */
-	      }
-	    }
-	    //printf("FP in range\n") ;
+//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
+            if((pn->in->busmode==bus_remote) && (pn->type==pn_system)) {
+                /* We have to agree any extension from remote bus
+                * otherwise /system/adapter/address.1 wouldn't be accepted
+                * Should not be needed on known devices though
+                */
+            } else {
+                if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
+                    return -ENOENT ; /* Extension out of range */
+                }
+            }
+//printf("FP in range\n") ;
         }
-	//printf("FP Good\n") ;
+//printf("FP Good\n") ;
         return 0 ; /* Good file */
     }
-    //printf("FP not found\n") ;
+//printf("FP not found\n") ;
     return -ENOENT ; /* filetype not found */
 }
 
@@ -448,20 +447,16 @@ static void my_delay(const unsigned int len)
     rem.tv_nsec = 1000000*(len%1000) ;
 
     while(1) {
-      s.tv_sec = rem.tv_sec;
-      s.tv_nsec = rem.tv_nsec;
-      if(nanosleep(&s, &rem) < 0) {
-	if(errno == EINTR) {
-	  /* was interupted... continue sleeping... */
-	  //printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
-	} else {
-	  //printf("UT_delay: error s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
-	  break;
-	}
-      } else {
-	/* completed sleeping */
-	break;
-      }
+        s.tv_sec = rem.tv_sec;
+        s.tv_nsec = rem.tv_nsec;
+        if(nanosleep(&s, &rem) < 0) {
+            if(errno != EINTR) break ;
+            /* was interupted... continue sleeping... */
+//printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
+        } else {
+            /* completed sleeping */
+            break;
+        }
     }
 }
 
@@ -476,8 +471,7 @@ void UT_delay(const unsigned int len)
 }
 
 #if 0
-void UT_delay_pn(const unsigned int len, struct parsedname *pn)
-{
+void UT_delay_pn(const unsigned int len, struct parsedname *pn) {
     if(len == 0) return;
     update_bus_pause_time(len, pn);
     return my_delay(len);

@@ -137,14 +137,14 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-	    //printf("ServerDir got:%s\n",path2);
+//printf("ServerDir got:%s\n",path2);
 #if 0
-	    if(pn->in->busmode == bus_remote) {
-	      printf("ServerDir: use a new stateinfo?\n");
-	      memset(&si, 0, sizeof(struct stateinfo));
-	      pn2.si = &si ;
-	      pn2.badcopy = 1 ;
-	    } else
+            if(pn->in->busmode == bus_remote) {
+                printf("ServerDir: use a new stateinfo?\n");
+                memset(&si, 0, sizeof(struct stateinfo));
+                pn2.si = &si ;
+                pn2.badcopy = 1 ;
+            } else
 #endif
             pn2.si = pn->si ; /* reuse stateinfo */
  

@@ -40,7 +40,7 @@ struct connection_in * NewIn( void ) {
         now = now->next ;
     }
     now = (struct connection_in *)malloc( len ) ;
-    //printf("malloc len=%d %p\n", len, now);
+//printf("malloc len=%d %p\n", len, now);
     if (now) {
         memset(now,0,len) ;
         if ( indevice ) {
@@ -48,15 +48,15 @@ struct connection_in * NewIn( void ) {
             now->index = last->index+1 ;
         } else {
             indevice = now ;
-	    //printf("indevice = %p\n", indevice);
+//printf("indevice = %p\n", indevice);
             now->index = 1 ;
         }
         ++ indevices ;
-	now->speed = B9600;
+        now->speed = B9600;
 #ifdef OW_MT
-	pthread_mutex_init(&(now->bus_mutex), pmattr);
-	pthread_mutex_init(&(now->dev_mutex), pmattr);
-	now->dev_db = NULL ;
+    pthread_mutex_init(&(now->bus_mutex), pmattr);
+    pthread_mutex_init(&(now->dev_mutex), pmattr);
+    now->dev_db = NULL ;
 #endif /* OW_MT */
     }
     return now ;
@@ -71,18 +71,18 @@ struct connection_out * NewOut( void ) {
         now = now->next ;
     }
     now = (struct connection_out *)malloc( len ) ;
-    //printf("malloc len=%d %p\n", len, now);
+//printf("malloc len=%d %p\n", len, now);
     if (now) {
         memset(now,0,len) ;
         if ( outdevice ) {
             last->next = now ;
         } else {
             outdevice = now ;
-	    //printf("outdevice = %p\n", outdevice);
+//printf("outdevice = %p\n", outdevice);
         }
         ++ outdevices ;
 #ifdef OW_MT
-	pthread_mutex_init(&(now->accept_mutex), pmattr);
+        pthread_mutex_init(&(now->accept_mutex), pmattr);
 #endif /* OW_MT */
     }
     return now ;

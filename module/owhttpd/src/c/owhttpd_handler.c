@@ -108,7 +108,7 @@ int handle_socket(FILE * out) {
             Bad404( out ) ;
         /* Root directory -- show the bus */
         } else if ( pn.dev == NULL ) { /* directory! */
-	    ShowDir( out,& pn ) ;
+            ShowDir( out,& pn ) ;
         /* Single device, show it's properties */
         } else {
 //printf("PreChange\n");
@@ -256,8 +256,8 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     /* Jump to special text-mode routine */
     if(pn->state & pn_text) {
         ShowText( out, basename, fullpath, pn ) ;
-	free(buf);
-	return;
+        free(buf);
+        return;
    }
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
 
@@ -602,15 +602,15 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
     void directory( const struct parsedname * const pn2 ) {
         /* uncached tag */
         /* device name */
-	char *buffer ;
+        char *buffer ;
         char * loc ;
         char * nam ;
         char * typ = NULL ;
-	if( !(buffer = malloc(OW_FULLNAME_MAX+1) ) ) { /* buffer for name */
-	  //printf("ShowDir: error malloc %d bytes\n", OW_FULLNAME_MAX+1);
-	  return ;
-	}
-	loc = nam = buffer ;
+        if( !(buffer = malloc(OW_FULLNAME_MAX+1) ) ) { /* buffer for name */
+//printf("ShowDir: error malloc %d bytes\n", OW_FULLNAME_MAX+1);
+            return ;
+        }
+        loc = nam = buffer ;
         *buffer = '\000';
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
@@ -618,7 +618,7 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
             } else if ( pn2->state & (pn_uncached | pn_alarm) ) {
                 strcpy(buffer, FS_dirname_state(pn2->state & (pn_uncached | pn_alarm)));
             }
-	    typ = strdup("directory") ;
+            typ = strdup("directory") ;
         } else if ( pn2->dev == DeviceSimultaneous ) {
             loc = nam = pn2->dev->name ;
             typ = strdup("1-wire chip") ;
@@ -629,7 +629,7 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
         } else {
             loc = pn2->dev->code ;
             nam = loc ;
-	    typ = strdup("directory") ;
+            typ = strdup("directory") ;
         }
 //printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
         if (pncopy.state & pn_text) {
@@ -638,8 +638,8 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
             fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
                      (strcmp(pncopy.path,"/")?pncopy.path:""), loc, loc, nam, typ ) ;
         }
-	free(typ);
-	free(buffer);
+        free(typ);
+        free(buffer);
     }
 
     memcpy(&pncopy, pn, sizeof(struct parsedname));

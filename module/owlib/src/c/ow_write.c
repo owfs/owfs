@@ -62,9 +62,6 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
 
-//    if ( indevice==NULL ) return -ENODEV ;
-//    if ( indevice->busmode == bus_remote ) return ServerWrite( path, buf, size, offset ) ;
-
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -94,12 +91,12 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         struct parsedname *pn2 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
-	int ret;
+        int ret;
         memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
         pnnext.in = pn2->in->next ;
         pnnext.si = &si ;
         ret = FS_write_postparse(buf,size,offset,&pnnext) ;
-	pthread_exit((void *)ret);
+        pthread_exit((void *)ret);
     }
     threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
 #endif /* OW_MT */
@@ -122,10 +119,10 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         }
 
         STATLOCK
-        if ( r == 0 ) {
+            if ( r == 0 ) {
                 ++write_success ; /* statistics */
                 write_bytes += size ; /* statistics */
-        }
+            }
             AVERAGE_OUT(&write_avg)
             AVERAGE_OUT(&all_avg)
         STATUNLOCK

@@ -395,13 +395,13 @@ static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
     if (pn->ft == NULL) return -ENOENT ;
     switch((unsigned int)pn->ft->data) {
     case 0:
-      tv = &c->bus_time;
-      break;
+        tv = &c->bus_time;
+        break;
     default:
-      return -ENOENT;
+        return -ENOENT;
     }
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
-    f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
+        f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
     STATUNLOCK
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;
@@ -418,7 +418,7 @@ static int FS_time(FLOAT *u , const struct parsedname * pn) {
     if (tv == NULL) return -ENOENT ;
 
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
-    f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
+        f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
     STATUNLOCK
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;

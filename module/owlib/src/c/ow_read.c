@@ -52,28 +52,28 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
 int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
-  int r = 0 ;
-  int i;
-  //    if ( pn->in==NULL ) return -ENODEV ;
-  /* Normal read. Try three times */
-  STATLOCK
-    AVERAGE_IN(&read_avg)
-    AVERAGE_IN(&all_avg)
+    int r = 0 ;
+    int i;
+    //    if ( pn->in==NULL ) return -ENODEV ;
+    /* Normal read. Try three times */
+    STATLOCK
+        AVERAGE_IN(&read_avg)
+        AVERAGE_IN(&all_avg)
     STATUNLOCK
     for(i=0; i<3; i++) {
-      STATLOCK
-        ++read_tries[i] ; /* statitics */
-      STATUNLOCK
+        STATLOCK
+            ++read_tries[i] ; /* statitics */
+        STATUNLOCK
         r = FS_read_postparse( buf, size, offset, pn ) ;
-      if ( r>=0 ) break;
+        if ( r>=0 ) break;
     }
-  STATLOCK
-    if ( r>=0 ) {
-      ++read_success ; /* statistics */
-      read_bytes += r ; /* statistics */
-    }
-  AVERAGE_OUT(&read_avg)
-    AVERAGE_OUT(&all_avg)
+    STATLOCK
+        if ( r>=0 ) {
+            ++read_success ; /* statistics */
+            read_bytes += r ; /* statistics */
+        }
+        AVERAGE_OUT(&read_avg)
+        AVERAGE_OUT(&all_avg)
     STATUNLOCK
     return r ;
 }
@@ -107,57 +107,57 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     switch (pn->type) {
     case pn_structure:
         /* Get structure data from local memory */
-      //printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
+//printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
         r = FS_structure(buf,size,offset,pn) ;
-	break;
+        break;
     case pn_system: /* use local data, generic bus (actually specified by extension) */
-        //printf("FS_read_postparse: pid=%ld call fs_real_read\n", pthread_self());
+//printf("FS_read_postparse: pid=%ld call fs_real_read\n", pthread_self());
         if ( pn->in->busmode == bus_remote ) {
-	  //printf("FS_read_postparse: pid=%ld pn_system call ServerRead\n", pthread_self());
-	  r = ServerRead(buf, size, offset, pn) ;
-	} else {
-	  //printf("FS_read_postparse: pid=%ld pn_system call FS_real_read\n", pthread_self());
-	  r = FS_real_read( buf, size, offset, pn ) ;
-	}
-	break;
+//printf("FS_read_postparse: pid=%ld pn_system call ServerRead\n", pthread_self());
+            r = ServerRead(buf, size, offset, pn) ;
+        } else {
+//printf("FS_read_postparse: pid=%ld pn_system call FS_real_read\n", pthread_self());
+            r = FS_real_read( buf, size, offset, pn ) ;
+        }
+        break;
     case pn_settings:
-        //printf("FS_read_postparse: pid=%ld settings\n", pthread_self());
+//printf("FS_read_postparse: pid=%ld settings\n", pthread_self());
         /* Get internal data from first source */
         if ( pn->in->busmode == bus_remote ) {
-	  //printf("FS_read_postparse: pid=%ld pn_settings call ServerRead\n", pthread_self());
-	  r = ServerRead(buf, size, offset, pn) ;
-	} else {
-	  //printf("FS_read_postparse: pid=%ld pn_settings call FS_real_read\n", pthread_self());
-	  r = FS_real_read( buf, size, offset, pn ) ;
-	}
-	break;
+//printf("FS_read_postparse: pid=%ld pn_settings call ServerRead\n", pthread_self());
+            r = ServerRead(buf, size, offset, pn) ;
+        } else {
+//printf("FS_read_postparse: pid=%ld pn_settings call FS_real_read\n", pthread_self());
+            r = FS_real_read( buf, size, offset, pn ) ;
+        }
+        break;
     case pn_statistics:
-        //printf("FS_read_postparse: pid=%ld statistics\n", pthread_self());
+//printf("FS_read_postparse: pid=%ld statistics\n", pthread_self());
         /* Get internal data from first source */
         if ( pn->in->busmode == bus_remote ) {
-	  //printf("FS_read_postparse: pid=%ld pn_statistics call ServerRead\n", pthread_self());
-	  r = ServerRead(buf, size, offset, pn) ;
-	} else {
-	  //printf("FS_read_postparse: pid=%ld pn_statistics call FS_real_read\n", pthread_self());
-	  r = FS_real_read( buf, size, offset, pn ) ;
-	}
-	break;
+//printf("FS_read_postparse: pid=%ld pn_statistics call ServerRead\n", pthread_self());
+            r = ServerRead(buf, size, offset, pn) ;
+        } else {
+//printf("FS_read_postparse: pid=%ld pn_statistics call FS_real_read\n", pthread_self());
+            r = FS_real_read( buf, size, offset, pn ) ;
+        }
+        break;
     default:
-      //printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
+//printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
         /* real data -- go through device chain */
         r = FS_read_seek(buf,size,offset,pn) ;
     }
     STATLOCK
-    if ( r>=0 ) {
-      ++read_success ; /* statistics */
-      read_bytes += r ; /* statistics */
-    }
-    AVERAGE_OUT(&read_avg)
-    AVERAGE_OUT(&all_avg)
+        if ( r>=0 ) {
+        ++read_success ; /* statistics */
+        read_bytes += r ; /* statistics */
+        }
+        AVERAGE_OUT(&read_avg)
+        AVERAGE_OUT(&all_avg)
     STATUNLOCK
 
-  //printf("FS_read_postparse: pid=%ld return %d\n", pthread_self(), r);
-  return r;
+//printf("FS_read_postparse: pid=%ld return %d\n", pthread_self(), r);
+    return r;
 }
 
 /* Loop through input devices (busses) */
@@ -176,13 +176,13 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         struct parsedname *pn2 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
-	int ret;
+        int ret;
         memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
         pnnext.si = &si ;
         pnnext.in = pn2->in->next ;
         ret = FS_read_seek(buf2,size,offset,&pnnext) ;
-	pthread_exit((void *)ret);
+        pthread_exit((void *)ret);
     }
     //printf("READSEEK pid=%ld path=%s index=%d\n",pthread_self(), pn->path,pn->in->index); UT_delay(100);
     if( !(buf2 = malloc(size)) ) {
@@ -194,13 +194,13 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     if ( pn->in->busmode == bus_remote ) {
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
-	//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
+//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
-	STATLOCK
-	  ++ read_calls ; /* statistics */
-	STATUNLOCK
-	/* Check the cache (if not pn_uncached) */
+        STATLOCK
+            ++ read_calls ; /* statistics */
+        STATUNLOCK
+        /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
 //printf("READSEED1 pid=%d call FS_real_read\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
@@ -209,7 +209,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             }
 //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
-    //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
+//printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
 //printf("READSEED2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 r = FS_real_read( buf, size, offset, pn ) ;
@@ -231,18 +231,18 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     if ( threadbad == 0 ) { /* was a thread created? */
         //printf("READ call pthread_join\n");
         if ( pthread_join( thread, &v ) ) {
-	  free(buf2);
-	  return r ; /* wait for it (or return only this result) */
-	}
+            free(buf2);
+            return r ; /* wait for it (or return only this result) */
+        }
         rt = (int) v ;
-	//printf("READ 1st=%d 2nd=%d\n",r,rt);
+//printf("READ 1st=%d 2nd=%d\n",r,rt);
         if ( rt >= 0 && rt > r ) { /* is it an error return? Then return this one */
-	    //printf("READ from 2nd adapter\n") ;
+//printf("READ from 2nd adapter\n") ;
             memcpy( buf, buf2, (size_t) rt ) ; /* Use the thread's result */
-	    free(buf2);
+            free(buf2);
             return rt ;
         }
-	//printf("READ from 1st adapter\n") ;
+//printf("READ from 1st adapter\n") ;
     }
 #endif /* OW_MT */
     free(buf2);
@@ -575,9 +575,9 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
             if ( y==NULL ) return -ENOMEM ;
             ret = (pn->ft->read.y)(y,pn) ;
             if (ret >= 0) {
-		buf[0] = y[pn->extension]?'1':'0' ;
-		ret = 1;
-	    }
+                buf[0] = y[pn->extension]?'1':'0' ;
+                ret = 1;
+            }
             free( y ) ;
             break ;
         }

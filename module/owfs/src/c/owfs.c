@@ -47,8 +47,8 @@ void exit_handler(int i) ;
 void set_signal_handlers( void ) ;
 
 /*
-	OW -- Onw Wire
-	Global variables -- each invokation will have it's own data
+    OW -- Onw Wire
+    Global variables -- each invokation will have it's own data
 */
 struct fuse *fuse;
 char *fuse_mountpoint = NULL;
@@ -178,7 +178,7 @@ static void ow_exit( int e ) {
     if(fuse_mountpoint != NULL) {
         fuse_unmount(fuse_mountpoint);
         free(fuse_mountpoint) ;
-	fuse_mountpoint = NULL;
+        fuse_mountpoint = NULL;
     } else if(umount_cmd[0] != '\0') {
         system(umount_cmd);
     }
@@ -197,18 +197,17 @@ void set_signal_handlers( void ) {
     sigemptyset(&(sa.sa_mask));
     sa.sa_flags = 0;
 
-    if (sigaction(SIGHUP, &sa, NULL) == -1 ||
-	sigaction(SIGINT, &sa, NULL) == -1 ||
-	sigaction(SIGTERM, &sa, NULL) == -1) {
-
-	perror("Cannot set exit signal handlers");
+    if (sigaction(SIGHUP, &sa, NULL) == -1
+        || sigaction(SIGINT, &sa, NULL) == -1
+        || sigaction(SIGTERM, &sa, NULL) == -1) {
+        perror("Cannot set exit signal handlers");
         ow_exit(1);
     }
 
     sa.sa_handler = SIG_IGN;
 
     if(sigaction(SIGPIPE, &sa, NULL) == -1) {
-	perror("Cannot set ignored signals");
+        perror("Cannot set ignored signals");
         exit(1);
     }
 }

@@ -51,7 +51,7 @@ int owopt( const int c , const char * const arg ) {
         "    -u[n] --usb      USB adapter. Scans for usb connection to 1-wire bus.\n"
         "                 Optional number for multiple usb adapters\n"
         "    -s  --server     1-wire server daemon\n"
-	"                 port number, server:port or /local-socket-path\n"
+        "                 port number, server:port or /local-socket-path\n"
         "                 Each adapter chosen will be handled independly\n"
 #endif /* OW_USB */
 #ifdef OW_CACHE
@@ -105,7 +105,7 @@ int owopt( const int c , const char * const arg ) {
     case 's':
         return OW_ArgNet( arg ) ;
     case 'p':
-      //printf("Arg: -p [%s]\n", arg);
+//printf("Arg: -p [%s]\n", arg);
         return OW_ArgServer( arg ) ;
     case 'f':
         if (strcasecmp(arg,"f.i")==0)        SemiGlobal.u[3]=fdi;
