@@ -3,6 +3,7 @@
  */
 
 #include "owfs_config.h"
+#include <features.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -917,11 +918,11 @@ exit_epsv:
 static void init_passive_port( void )
 {
     struct timeval tv;
-#ifdef EMBEDDED
+#ifdef __UCLIBC__
     unsigned int seed ;
     seed = tv.tv_usec & 0xFFFF ;
     srand(seed) ;
-#else /* not embedded */
+#else /* __UCLIBC__ */
     unsigned short int seed[3];
 
     gettimeofday(&tv, NULL);
@@ -929,7 +930,7 @@ static void init_passive_port( void )
     seed[1] = tv.tv_sec & 0xFFFF;
     seed[2] = tv.tv_usec & 0xFFFF;
     seed48(seed);
-#endif /* EMBEDDED */
+#endif /* __UCLIBC__ */
 }
 
 /* pick a port to try to bind() for passive FTP connections */
@@ -944,11 +945,11 @@ static int get_passive_port( void )
 
     /* pick a random port between 1024 and 65535, inclusive */
     pthread_mutex_lock(&mutex);
-#ifdef EMBEDDED
+#ifdef __UCLIBC__
     port = (rand() % 64512 ) + 1024 ;
-#else /* EMBEDDED */
+#else /* __UCLIBC__ */
     port = (lrand48() % 64512) + 1024;
-#endif /* EMBEDDED */
+#endif /* __UCLIBC__ */
     pthread_mutex_unlock(&mutex);
 
     return port;

@@ -17,13 +17,12 @@ $Id$
 #ifdef OW_CACHE
 #include <limits.h>
 
-#if defined(USE_UCLIBC)
-#include <features.h>
+#if defined(__UCLIBC__)
 #if (__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913
 /*
-  uClibc older than 0.9.19 is missing tdestroy() (don't know exactly when it was added)
-  I added a replacement to this, just to be able to compile owfs for
-  WRT54G without any patched uClibc.
+  uClibc older than 0.9.19 is missing tdestroy() (don't know exactly when
+  it was added) I added a replacement to this, just to be able to compile
+  owfs for WRT54G without any patched uClibc.
 */
 
 typedef struct node_t
@@ -54,7 +53,7 @@ static void tdestroy_(void *vroot, void *freefct)
 }
 #define tdestroy(a, b) tdestroy_((a), (b))
 #endif /* Older than 0.9.19 */
-#endif /* USE_UCLIBC */
+#endif /* __UCLIBC__ */
 
 int cacheavailable = 1 ; /* is caching available */
 int cacheenabled = 1 ; /* is cacheing enabled */

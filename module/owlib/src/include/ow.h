@@ -59,6 +59,7 @@ $Id$
 #endif
 
 #define _FILE_OFFSET_BITS	64
+#include <features.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -111,7 +112,7 @@ extern int maxslots ;
     extern pthread_mutex_t store_mutex ;
     extern pthread_mutex_t fstat_mutex ;
     extern pthread_mutex_t simul_mutex ;
-#ifdef USE_UCLIBC
+#ifdef __UCLIBC__
     extern pthread_mutex_t uclibc_mutex;
 #endif
     #define STATLOCK       pthread_mutex_lock(  &stat_mutex) ;
@@ -124,13 +125,13 @@ extern int maxslots ;
     #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex) ;
     #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex) ;
     #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex) ;
-#ifdef USE_UCLIBC
+#ifdef __UCLIBC__
     #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex) ;
     #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex) ;
-#else /* USE_UCLIBC */
+#else /* __UCLIBC__ */
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
-#endif /* USE_UCLIBC */
+#endif /* __UCLIBC__ */
 
 #else /* OW_MT */
     #define STATLOCK
