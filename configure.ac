@@ -75,7 +75,7 @@ AC_CHECK_LIB(db,__db_dbopen,[
     AC_MSG_WARN([libdb1 not found, cache will be disabled])
 ])
 
-AC_CHECK_LIB(ow,DS2480_detect, ,[AC_MSG_ERROR([
+AC_CHECK_LIB(ow,owlib_signature_function, ,[AC_MSG_ERROR([
 
 You have to have libow installed first - get it from http://sf.net/projects/owfs
 If you *do* have it installed, then you may need to specify LDFLAGS=-L\${owlib-prefix}/lib
