@@ -107,13 +107,19 @@ state is set to zero (off), else will read zero.
 .I ALL
 references both channels simultaneously, comma separated.
 .SS set_alarm
-.I read-write, unsigned int(0-31)
+.I read-write, unsigned integer (0-31)
 .br
-A number in the range of 0 to 31 that sets the alarmtriggers for this chip. There are several items that trigger the alarm, and the alarm can be triggered by channel A, B or either.
+A number in the range of 0 to 31 that sets the alarm triggers for this chip. (Used for Conditional Searches). There are several sources that trigger the alarm, and the alarm can be triggered by channel A, B or (A or B).
 .br
-Choices are presented as (value=0)/(value=1) i.e. 10/11 is the setting for triggering A latch on 0 (10) or 1 (11).
+Choices are presented as (value=0)/(value=1) i.e. 10/11 is the setting for triggering A latch on 0 (10) or 1 (11). All entries will be truncated to the 0-31 range.
 .br
-All entries will be truncated to the 0-31 range.
+In this table, PIO refers to the
+.I sensed
+property. FlipFlop is the
+.I PIO
+state set, and Latch is the
+.I latch
+value.
 .TP
 0-1
 Reserved
@@ -125,31 +131,43 @@ Unconditional positive trigger. Responds to every Conditional Search.
 Unconditional negative trigger. Never responds to Conditional Search.
 .TP
 10/11
-A only. Latch value = 0/1
+.I latch.A
+= 0/1
 .TP
 12/13
-A only. FlipFlop = 0/1
+.I PIO.A
+= 0/1
 .TP
 14/15
-A only. PIO value = 0/1
+.I sensed.A
+= 0/1
 .TP
 18/19
-B only. Latch value = 0/1
+.I latch.B
+= 0/1
 .TP
 20/21
-B only. FlipFlop = 0/1
+.I PIO.B
+0/1
 .TP
 22/23
-B only. PIO value = 0/1
+.I sensed.B
+= 0/1
 .TP
 26/27
-A or B. Latch value = 0/1
+A or B.
+.I latch.A | latch.B
+= 0/1
 .TP
 28/29
-A or B. FlipFlop = 0/1
+A or B.
+.I PIO.A | PIO.B
+= 0/1
 .TP
 30/31
-A or B. PIO value = 0/1
+A or B.
+.I sensed.A | sensed.B
+= 0/1
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii
