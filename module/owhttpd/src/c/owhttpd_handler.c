@@ -250,7 +250,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
     char file[33] ;
     char * subdir ;
     char fullpath[PATH_MAX+1] ;
-    int suglen = FileLength(pn) ;
+    int suglen = FullFileLength(pn) ;
     char buf[suglen+1] ;
     int canwrite = !readonly && pn->ft->write.v ;
     
