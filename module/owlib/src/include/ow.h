@@ -83,7 +83,11 @@ extern int multithreading ;
 extern int maxslots ;
 #ifdef OW_MT
     #include <pthread.h>
+#ifdef HAVE_SEMAPHORE_H
+    #include <semaphore.h>
+#else
     #include "sem.h"
+#endif
     extern pthread_mutex_t bus_mutex ;
     extern pthread_mutex_t dev_mutex ;
     extern pthread_mutex_t stat_mutex ;
