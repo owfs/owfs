@@ -4,3 +4,4 @@ ow_wrap.c
 Makefile
 Makefile.in
 .deps
+setup.py
