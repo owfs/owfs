@@ -44,7 +44,7 @@ static int ServerSizeorFull( enum msg_type type, const char * path  ) {
 
     if ( connectfd < 0 ) return -EIO ;
 //printf("ServerRead path=%s, size=%d, offset=%d\n",path,size,offset);
-    sm.type = msg_size ;
+    sm.type = type ;
     sm.size = 0 ;
     sm.sg =  SemiGlobal.int32;
     sm.offset = 0 ;
@@ -167,6 +167,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
 //printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return NULL ;
+    if ( cm->ret < 0 ) return NULL ;
     if ( cm->payload > 65000 ) {
 //printf("FromServerAlloc payload too large\n");
         return NULL ;

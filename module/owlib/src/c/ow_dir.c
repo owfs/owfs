@@ -179,6 +179,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
         dirfunc( pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next_alarm(sn,pn2)) ;
+//printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret); 
     }
     BUSUNLOCK
     return ret ;

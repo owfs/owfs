@@ -19,13 +19,22 @@ die (
 
 OW::init($ARGV[0]) or die "Cannot open 1wire port $ARGV[0]" ;
 
+# for "paging" 
+#my $lin = 0 ;
+
 sub treelevel {
     my $lev = shift ;
     my $path = shift ;
+#sleep 1;
 #print "lev=$lev path=$path \n" ;
     my $res = OW::get($path) or return ;
     for (split(',',$res)) {
         for (1..$lev) { print("\t") } ;
+#for paging
+#if (++$lin == 30 ) {
+#$lin=0 ;
+#getc();
+#}
         print $_ ;
         if ( m{/$} ) {
 #            print "[".OW::get($path.$_)."]" ;

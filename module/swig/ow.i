@@ -30,15 +30,15 @@ int init( const char * dev ) {
     } else if ( strcmp(dev,"u") ) {
 //printf("Comsetup\n");
         if ( ComSetup(dev) ) {
-  	    servername = strdup(dev);
+              servername = strdup(dev);
 //printf("Server_detect on %s\n",servername);
-	    if ( Server_detect() ) {
-    	        free(servername);
-	        servername = NULL ;
-	        return 0 ;
-	    }
+            if ( Server_detect() ) {
+                free(servername);
+                servername = NULL ;
+                return 0 ;
+            }
 //printf("Server_detect good\n");
-	}
+        }
 //printf("Comsetup good\n");
     } else {
 //printf("USBsetup\n");
@@ -89,6 +89,7 @@ char * get( const char * path ) {
 
     /* Parse the input string */
     pn.si = &si ;
+    si.sg.int32 = SemiGlobal.int32 ;
     if ( FS_ParsedName( path, &pn ) ) return NULL ;
 //printf("path=%s dev=%p ft=%p subdir=%p format=%d\n",pathcpy,pn.dev,pn.ft,pn.subdir,pn.ft?pn.ft->format:-1) ;
 
