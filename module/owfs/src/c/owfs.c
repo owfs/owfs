@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
 //    mtrace() ;
     LibSetup() ;
-
+    
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
         case 'h':
@@ -131,8 +131,12 @@ int main(int argc, char *argv[]) {
     if ( LibStart() ) ow_exit(1) ;
 
     set_signal_handlers();
+
+#if FUSE_MAJOR_VERSION == 1
+    fuse = fuse_new(fuse_fd, 0, &owfs_oper);
+#else
     fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
-//        fuse_loop(fuse);
+#endif
         if (multithreading) {
             fuse_loop_mt(fuse) ;
         } else {
