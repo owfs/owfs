@@ -63,7 +63,7 @@ void owtcl_ErrorMsg(Tcl_Interp *interp, const char *format, ...)
 owtcl_ObjCmdProc(Owtcl_Connect)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-  char *con_str;
+  char *con_str, *arg;
   int con_len;
   int tcl_return = TCL_OK;
   owtcl_ArgObjIncr;
@@ -78,9 +78,45 @@ owtcl_ObjCmdProc(Owtcl_Connect)
     Tcl_WrongNumArgs(interp,
 		     objc,
 		     objv,
-		     "host:port|/dev/ttyS0|usb|u");
+		     "/dev/ttyS0|usb?N?|u?N?|host:port|socket:/local-socket-path ?options?");
     tcl_return = TCL_ERROR;
     goto common_exit;
+  }
+
+  for (objix=2; objix<objc; objix++) {
+    arg = Tcl_GetStringFromObj(objv[objix], &con_len);
+    if (!strncasecmp(arg, "-format", 7)) {
+      objix++;
+      arg = Tcl_GetStringFromObj(objv[objix], &con_len);
+      if (!strcasecmp(arg,"f.i"))        SemiGlobal.u[3]=fdi;
+      else if (!strcasecmp(arg,"fi"))    SemiGlobal.u[3]=fi;
+      else if (!strcasecmp(arg,"f.i.c")) SemiGlobal.u[3]=fdidc;
+      else if (!strcasecmp(arg,"f.ic"))  SemiGlobal.u[3]=fdic;
+      else if (!strcasecmp(arg,"fi.c"))  SemiGlobal.u[3]=fidc;
+      else if (!strcasecmp(arg,"fic"))   SemiGlobal.u[3]=fic;
+      else {
+	owtcl_ErrorMsg(interp, "bad format \"%s\": should be one of f.i, fi, f.i.c, f.ic, fi.c or fic\n",arg);
+	tcl_return = TCL_ERROR;
+	goto common_exit;
+      }
+    } else if (!strncasecmp(arg, "-celsius", 8)) {
+      SemiGlobal.u[2] = temp_celsius;
+    } else if (!strncasecmp(arg, "-fahrenheit", 11)) {
+      SemiGlobal.u[2] = temp_fahrenheit;
+    } else if (!strncasecmp(arg, "-kelvin", 7)) {
+      SemiGlobal.u[2] = temp_kelvin;
+    } else if (!strncasecmp(arg, "-rankine", 8)) {
+      SemiGlobal.u[2] = temp_rankine;
+    } else if (!strncasecmp(arg, "-cache", 6)) {
+      objix++;
+      Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));
+    } else if (!strncasecmp(arg, "-readonly", 9)) {
+      readonly = 1;
+    } else {
+      owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache or -readonly\n", arg);
+      tcl_return = TCL_ERROR;
+      goto common_exit;
+    }
   }
 
   LibSetup();
@@ -92,7 +128,10 @@ owtcl_ObjCmdProc(Owtcl_Connect)
     tcl_return = TCL_ERROR;
     goto common_exit;
   } else if (strrchr(con_str,':')) {
-    servername = strdup(con_str);
+    if (!strncasecmp(con_str, "socket:", 7))
+      servername = strdup(&con_str[7]);
+    else
+      servername = strdup(con_str);
     if (Server_detect()) {
       owtcl_ErrorMsg(interp, strerror(errno));
       free(servername);
@@ -102,6 +141,14 @@ owtcl_ObjCmdProc(Owtcl_Connect)
       goto common_exit;
     }
   } else if (!strncasecmp(con_str, "usb", 3) || !strncasecmp(con_str, "u", 1)) {
+    char *p = con_str;
+    while (*p != '\0') {
+      if ((*p >= '0') && (*p <= '9')) {
+	useusb = atoi(p);
+	break;
+      }
+      p++;
+    }
     if (USBSetup()) {
       owtcl_ErrorMsg(interp, strerror(errno));
       LibClose();
@@ -136,6 +183,7 @@ owtcl_ObjCmdProc(Owtcl_Delete)
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
   if (OwtclStatePtr->used)
     LibClose();
+  OwtclStatePtr->used = 0;
   return TCL_OK;
 }
 
@@ -211,16 +259,18 @@ owtcl_ObjCmdProc(Owtcl_Get)
     goto common_exit;
   }
 
-  if (objc != 2) {
+  if (objc < 2)
+    path = "";
+  else if (objc == 2)
+    path = Tcl_GetStringFromObj(objv[1], &s);
+  else {
     Tcl_WrongNumArgs(interp,
 		     1,
 		     objv,
-		     "path");
+		     "?path?");
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
-
-  path = Tcl_GetStringFromObj(objv[1], &s);
 
   pn.si = &si;
 //  si.sg.int32 = SemiGlobal.int32;
