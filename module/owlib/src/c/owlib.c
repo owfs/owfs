@@ -15,9 +15,6 @@ $Id$
 
 /* All ow library setup */
 void LibSetup( void ) {
-    /* store the PID */
-    pid_num = getpid() ;
-
     /* All output to syslog */
     openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
 
@@ -34,7 +31,7 @@ void LibSetup( void ) {
     start_time = time(NULL) ;
 }
 
-#if defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU)
+#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -68,8 +65,8 @@ int my_daemon(int nochdir, int noclose) {
     int pid;
     int fd;
 
-//printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
-//printf("owlib: Run application with --foreground instead.\n");
+printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
+printf("owlib: Run application with --foreground instead.\n");
 
     signal(SIGCHLD, SIG_DFL);
 
@@ -136,20 +133,24 @@ int my_daemon(int nochdir, int noclose) {
 #endif
     return 0;
 }
-#endif /* defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU) */
+#endif /* defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__) */
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
     if ( background &&
-#if defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU)
+#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
+#warning "my_daemon() used"
         my_daemon(1, 0)
-#else /* defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU) */
+#else /* defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__) */
         daemon(1, 0)
-#endif /* defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU) */
+#endif /* defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__) */
     ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
     }
+    /* store the PID */
+    pid_num = getpid() ;
+
     if (pid_file) {
         FILE * pid = fopen(  pid_file, "w+" ) ;
         if ( pid == NULL ) {
@@ -158,7 +159,6 @@ int LibStart( void ) {
             pid_file = NULL ;
         return 1 ;
         }
-//printf("opopts pid = %ld\n",(long unsigned int)getpid());
         fprintf(pid,"%lu",pid_num ) ;
         fclose(pid) ;
     }
