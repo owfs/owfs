@@ -63,7 +63,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
   //printf("FS_dir1 pn->subdir->name=%s\n",pn->subdir->name);
 
   if ( pn->dev && (pn->type == pn_real)) { /* device directory */
-    //printf("FS_dir: call FS_devdir 1\n");
+      //printf("FS_dir: call FS_devdir 1\n");
 #if 0
       if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
 	  ret = ServerDir(dirfunc, &pn2, &flags) ;
@@ -81,7 +81,11 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     /* this one seem to be called when browsing
      * /bus.0/bus.0/system/adapter . Therefor we have to call ServerDir()
      * to find the content */
-    //printf("FS_dir: call FS_devdir 1\n");
+#if 0
+    printf("FS_dir: call FS_devdir 2\n");
+    printf("1 pn2.state=%d busmode=%d\n", pn2.state, get_busmode(pn2.in));
+    printf("1 pn.state=%d  busmode=%d\n", pn->state, get_busmode(pn->in));
+#endif
     if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
       ret = ServerDir(dirfunc, &pn2, &flags) ;
     } else {
@@ -98,11 +102,13 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
   else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
       /* there are some files with variable sizes, and /system/adapter have variable
        * number of entries and we have to call ServerDir() */
+      //printf("2 pn2.state=%d busmode=%d\n", pn2.state, get_busmode(pn2.in));
+      //printf("2 pn.state=%d  busmode=%d\n", pn->state, get_busmode(pn->in));
       if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-	 //printf("FS_dir: pn->type != pn_real Call ServerDir pn->path=%s\n", pn->path);
+	  //printf("FS_dir: pn->type != pn_real Call ServerDir pn->path=%s\n", pn->path);
 	  ret = ServerDir(dirfunc, &pn2, &flags) ;
       } else {
-	 //printf("FS_dir: pn->type != pn_real Call FS_typedir pn->path=%s\n", pn->path);
+	  //printf("FS_dir: pn->type != pn_real Call FS_typedir pn->path=%s\n", pn->path);
 	  ret = FS_typedir( dirfunc, &pn2 ) ;
       }
   }

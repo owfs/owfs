@@ -124,7 +124,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         free(extname);
     }
 
-    //printf("GETDIR\n");
+    //printf("FS_getdir\n");
 
     pn.si = &si ;
     ret = FS_ParsedName( path, &pn ) ;

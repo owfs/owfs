@@ -184,14 +184,9 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-	    //printf("ServerDir: got %s\n",path2);
+	    //printf("ServerDir: got %s\n",path2) ;
             pn2.si = pn->si ; /* reuse stateinfo */
-	    ret = FS_ParsedName( path2, &pn2 );
-#if 0
-	    printf("ServerDir: parsed pn2.path=%s\n", pn2.path);
-	    printf("ServerDir: pn2.ft=%p pn2.subdir=%p pn2.dev=%p\n", pn2.ft, pn2.subdir, pn2.dev);
-	    printf("ServerDir: pn2.state=%d pn2.type=%d\n", pn2.state, pn2.type);
-#endif
+	    ret = FS_ParsedName( path2, &pn2 ) ;
 	    if ( ret ) {
 	        cm.ret = -EINVAL ;
 		//printf("ServerDir: error parsing %s\n", path2);

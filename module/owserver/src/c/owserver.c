@@ -209,7 +209,13 @@ void Handler( int fd ) {
 static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     char * retbuffer = NULL ;
 //printf("ReadHandler:\n");
-    cm->payload = FullFileLength(pn) ;
+    if ( ( pn->type != pn_real )   /* stat, sys or set dir */
+	 && ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) )) {
+        //printf("ReadHandler: call ServerSize pn->path=%s\n", pn->path);
+        cm->payload = ServerSize(pn->path, pn) ;
+    } else {
+        cm->payload = FullFileLength( pn ) ;
+    }
     if ( cm->payload > sm->size ) cm->payload = sm->size ;
     cm->offset = sm->offset ;
 

@@ -98,7 +98,7 @@ int FS_read_3times(char *buf, const size_t size, const off_t offset, const struc
 /* After parsing, choose special read based on path type */
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
-    //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d\n", pthread_self(), get_busmode(pn->in), pn->type);
+    //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
     STATLOCK
     AVERAGE_IN(&read_avg)
@@ -117,14 +117,16 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         //printf("FS_read_postparse: pid=%ld system/settings/statistics\n", pthread_self());
         if ( pn->state & pn_bus ) {
 	    /* this will either call ServerDir or FS_real_read */
+	    //printf("FS_read_postparse: call read_seek\n");
 	    r = FS_read_seek(buf, size, offset, pn) ;
         } else {
 	    /* Read from local memory */
+	    //printf("FS_read_postparse: call real_read\n");
             r = FS_real_read( buf, size, offset, pn ) ;
 	}
         break;
     default:
-//printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
+      //printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
 
 #if 0
       /* handle DeviceSimultaneous in some way */

@@ -36,7 +36,7 @@ size_t FileLength( const struct parsedname * const pn ) {
         if(pid_file) return strlen(pid_file) ;
         return 0;
     default:
-//printf("FileLength: pid=%ld ret sublen=%d\n", pthread_self(), pn->ft->suglen);
+//printf("FileLength: pid=%ld ret suglen=%d\n", pthread_self(), pn->ft->suglen);
         return pn->ft->suglen ;
     }
 }
@@ -54,12 +54,12 @@ size_t FullFileLength( const struct parsedname * const pn ) {
                 /* not comma-separated values are ft_binary and ft_ascii
                 * ft_binary is used for all memory devices
                 * ft_ascii is used in ow_lcd.c:line16.ALL */
-//printf("FullFileLength: pid=%ld size1=%d\n", pthread_self(), (pn->ft->ag->elements) * (pn->ft->suglen) );
+	      //printf("FullFileLength: pid=%ld size1=%d\n", pthread_self(), (pn->ft->ag->elements) * (pn->ft->suglen) );
                 return (pn->ft->ag->elements) * (pn->ft->suglen) ;
             } else {
                 /* comma separated, but does not end with a comma
                 * used in ow_lcd.c:gpio.ALL which is ft_yesno for example */
-//printf("FullFileLength: pid=%ld size2=%d\n", pthread_self(), ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 );
+	      //printf("FullFileLength: pid=%ld size2=%d\n", pthread_self(), ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 );
                 return ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 ;
             }
         case -2: /* BYTE */

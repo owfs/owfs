@@ -42,7 +42,7 @@ int FS_size_postparse( const struct parsedname * const pn ) {
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
-    //printf("FS_size_postparse pn->path=%s\n",pn->path);
+    //printf("FS_size_postparse pn->path=%s\n", pn->path);
 
     /* Those are stolen from FullFileLength just to avoid ServerSize()
      * beeing called */
@@ -53,16 +53,13 @@ int FS_size_postparse( const struct parsedname * const pn ) {
       return FullFileLength(pn) ;
     }
 
-    if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-      /* we can not call FS_size_seek for those directories, since
-       * they should ALWAYS be read locally */
-      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-	  ret = ServerSize(pn2.path, &pn2) ;
-      } else {
-	  ret = FullFileLength( &pn2 ) ;
-      }
-    } else
+    if ( (pn->type != pn_real )   /* stat, sys or set dir */
+	 && (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+      //printf("FS_size_postparse call ServerSize pn2.path=%s\n", pn2.path);
+      ret = ServerSize(pn2.path, &pn2) ;
+    } else {
       ret = FullFileLength( &pn2 ) ;
+    }
     return ret ;
 }
 
@@ -75,9 +72,9 @@ int FS_size( const char *path ) {
     struct stateinfo si ;
     int r ;
 
-    pn.si = &si ;
     //printf("FS_size: pid=%ld path=%s\n", pthread_self(), path);
 
+    pn.si = &si ;
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -114,17 +111,15 @@ int FS_size_remote( const struct parsedname * const pn ) {
       return FullFileLength(pn) ;
     }
 
-    if ( pn2.type != pn_real ) {  /* stat, sys or set dir */
-      /* we can not call FS_size_seek for those directories, since
-       * they should ALWAYS be read locally */
-      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-	  ret = ServerSize(pn2.path, &pn2) ;
-      } else {
-	  ret = FullFileLength( &pn2 ) ;
-      }
-    } else
-      ret = FullFileLength( &pn2 ) ;
+    //printf("FS_size_remote pn2.type=%d pn2.state=%d busmode(pn2.in)=%d\n", pn2.type, pn2.state, get_busmode(pn2.in));
 
+    if ( (pn2.type != pn_real )   /* stat, sys or set dir */
+	 && ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) )) {
+      //printf("FS_size_remote call ServerSize pn2.path=%s\n", pn2.path);
+      ret = ServerSize(pn2.path, &pn2) ;
+    } else {
+      ret = FullFileLength( &pn2 ) ;
+    }
     //printf("FS_size_remote ret=%d\n", ret);
     return ret ;
 }
@@ -164,9 +159,10 @@ static int FS_size_seek( const struct parsedname * const pn ) {
 
     /* is this a remote bus? */
     if ( get_busmode(pncopy.in) == bus_remote ) {
+        //printf("FS_size_seek call ServerSize pncopy.path=%s\n", pncopy.path);
         ret = ServerSize( pncopy.path, &pncopy ) ;
     } else { /* local bus */
-      ret = FullFileLength( &pncopy ) ;
+        ret = FullFileLength( &pncopy ) ;
     }
 
 #ifdef OW_MT

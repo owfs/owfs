@@ -21,31 +21,32 @@ int FS_fstat(const char *path, struct stat *stbuf) {
     int ret = 0 ;
     pn.si = &si ;
     /* Bad path */
-//printf("GA\n");
+//printf("FS_fstat\n");
     memset(stbuf, 0, sizeof(struct stat));
     if ( FS_ParsedName( path , &pn ) ) {
-//printf("GA bad\n");
+//printf("FS_fstat bad\n");
         ret = -ENOENT;
     } else if ( pn.dev==NULL ) { /* root directory */
+//printf("FS_fstat root\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 3;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
-//printf("GA root\n");
     } else if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* other directory */
+//printf("FS_fstat other dir\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 3;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         FSTATLOCK
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
         FSTATUNLOCK
-//printf("GA other dir\n");
     } else { /* known 1-wire filetype */
         stbuf->st_mode = S_IFREG ;
         if ( pn.ft->read.v ) stbuf->st_mode |= 0444 ;
         if ( !readonly && pn.ft->write.v ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
-        stbuf->st_size = FullFileLength( &pn ) ;
+	stbuf->st_size = FS_size_postparse(&pn) ;
+
         switch ( pn.ft->change ) {
         case ft_volatile:
         case ft_Avolatile:
@@ -62,7 +63,7 @@ int FS_fstat(const char *path, struct stat *stbuf) {
         default:
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
         }
-//printf("GA file\n");
+//printf("FS_fstat file\n");
     }
     FS_ParsedName_destroy(&pn) ;
     return ret ;
