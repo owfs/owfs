@@ -74,77 +74,56 @@ int FS_truncate(const char *path, const off_t size) {
     return 0 ;
 }
 
+struct dirback {
+    fuse_dirh_t h ;
+    fuse_dirfil_t filler ;
+} ;
+
+/* Callback function to FS_dir */
+void directory( void * data, const struct parsedname * const pn ) {
+    char extname[PATH_MAX+1] ; /* probably excessive */
+    if ( pn->ft ) {
+	    if ( pn->ft->ag == NULL ) {
+            snprintf( extname , PATH_MAX, "%s",pn->ft->name) ;
+        } else if ( pn->extension == -1 ) {
+            snprintf( extname , PATH_MAX, "%s.ALL",pn->ft->name) ;
+        } else if ( pn->ft->ag->letters == ag_letters ) {
+            snprintf( extname , PATH_MAX, "%s.%c",pn->ft->name,pn->extension+'A') ;
+        } else {
+            snprintf( extname , PATH_MAX, "%s.%-d",pn->ft->name,pn->extension) ;
+        }
+    } else if ( pn->dev->type == dev_1wire ) {
+        snprintf( extname , PATH_MAX, "%02X.%02X%02X%02X%02X%02X%02X",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6]) ;
+    } else {
+        snprintf( extname , PATH_MAX, "%s",pn->dev->code) ;
+    }
+    (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
+}
+
 int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
-//printf("GD path=%s\n",path) ;
+
+    /* dirback structure passed via void pointer to 'directory' */
+    struct dirback db;
+    db.h = h ;
+    db.filler = filler ;
+
     if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
-//printf("GD error\n") ;
         FS_ParsedName_destroy(&pn) ;
         return -ENOENT;
 	}
-//printf("GD Good\n") ;
-    if ( pn.dev ) { /* 1-wire device */
-        int i ;
-//printf("GD - directory\n") ;
-//printf("GD - directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
-		for ( i=0 ; i<pn.dev->nft ; ++i ) {
-		    if ( ((pn.dev)->ft)[i].ag ) {
-                int ext = ((pn.dev)->ft)[i].ag->elements ;
-                int j ;
-                char extname[PATH_MAX+1] ; /* probably excessive */
-                for ( j=0 ; j < ext ; ++j ) {
-				    if ( ((pn.dev)->ft)[i].ag->letters == ag_letters ) {
-                        snprintf( extname , PATH_MAX, "%s.%c",((pn.dev)->ft)[i].name,j+'A') ;
-                    } else {
-                        snprintf( extname , PATH_MAX, "%s.%-d",((pn.dev)->ft)[i].name,j) ;
-					}
-//printf("GD %s\n",extname) ;
-                    filler ( h , extname , DT_DIR ) ;
-                }
-                snprintf( extname , PATH_MAX, "%s.ALL",((pn.dev)->ft)[i].name) ;
-                filler ( h , extname , DT_DIR ) ;
-//printf("GD %s\n",extname) ;
-            } else {
-                filler( h , ((pn.dev)->ft)[i].name , DT_DIR ) ;
-            }
-        }
-    } else { /* root directory */
-        char buf[16] ;
-        char nam[16] ;
-		int i ; /* to loop through statistics files */
-//printf("GD - root directory\n") ;
-        scan_time = time( NULL ) ;
-//printf("GD - root directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
-//printf("GD - root directory post time\n") ;
-        /* Root directory, needs .,.. and scan of devices */
-        filler(h, ".", DT_DIR);
-        filler(h, "..", DT_DIR);
-		if ( cacheavailable && pn.type!=pn_uncached ) {
-            filler(h,"uncached",DT_DIR) ;
-		}
-        switch (Version2480) {
-        case 3:
-            filler(h,"DS9097U",DT_DIR) ;
-            break ;
-        case 7:
-            filler(h,"LINK",DT_DIR) ;
-            break ;
-        }
-        BUS_lock() ;
-        if ( OW_first(buf) ) return 0 ;
-        FS_parse_dir(nam,buf) ;
-        filler(h,nam,DT_DIR) ;
-        while ( ! OW_next(buf) ) {
-            FS_parse_dir(nam,buf) ;
-            filler(h,nam,DT_DIR) ;
-        } ;
-        BUS_unlock() ;
-		for ( i=0 ; i<nDevices ; ++i ) {
-		    if ( Devices[i]->type == dev_statistic ) filler(h,Devices[i]->code,DT_DIR) ;
-		}
+
+    /* 'uncached' directory added if root and not already uncached */
+    if ( cacheavailable && pn.type!=pn_uncached && pn.dev==NULL && pn.pathlength==0 ) {
+        filler(h,"uncached",DT_DIR) ;
     }
+
+    /* Call directory spanning function */
+    FS_dir( directory, &db, &pn ) ;
+
+    /* Clean up */
     FS_ParsedName_destroy(&pn) ;
-    return 0;
+    return 0 ;
 }
 
 int FS_open(const char *path, int flags) {
