@@ -36,6 +36,7 @@ $Id$
 #include "ow_1993.h" // ibutton memory
 #include "ow_2502.h" // write-only memory
 #include "ow_2505.h" // write-only memory
+#include "ow_2760.h" // battery
 #include "ow_lcd.h"  // LCD driver
 #include "ow_link.h" // Interface devices
 #include "ow_stats.h" // statistic reporting pseudo-device

@@ -20,6 +20,7 @@ OWLIB_SOURCE = ow_xxxx.c \
                ow_1993.c \
                ow_2502.c \
                ow_2505.c \
+               ow_2760.c \
                ow_cache.c \
                ow_lcd.c \
                ow_parsename.c \

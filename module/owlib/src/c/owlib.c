@@ -62,6 +62,7 @@ struct device * Devices[] = {
     & d_DS1985U ,
     & d_DS2506 ,
     & d_DS1986U ,
+    & d_DS2760 ,
     & d_DS2890 ,
     & d_LCD ,
     & d_DS9490 ,
