@@ -122,24 +122,15 @@ None implemented.
 This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
 .PP
 The
-.B DS2406
-allows control of other devices, like LEDs and relays. It superceeds the
-.B DS2405
-and
-.B DS2407
-Alternative switches include the
 .B DS2408
-or even
-.B DS2450
-.br
-The
-.B DS2407
-is practically identical to the
-.DS2406
-except for a strange
-.I hidden
-mode. It is supported as a
+allows control of other devices, like LEDs and relays. It extends the
 .B DS2406
+to 8 channels and includes memory.
+.br
+Alternative switches include the
+.B DS2406, DS2407
+and even
+.B DS2450
 .SH ADDRESSING
 All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
 .TP
