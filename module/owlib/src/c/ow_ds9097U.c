@@ -258,6 +258,7 @@ int DS2480_detect( struct connection_in * in ) {
         /* Apparently need to reset again to get the version number properly */
         DS2480_reset(&pn);
         switch (in->Adapter) {
+        case adapter_DS9097U2:
         case adapter_DS9097U:
             in->adapter_name = "DS9097U" ;
             break;

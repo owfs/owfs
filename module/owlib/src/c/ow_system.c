@@ -87,6 +87,7 @@ static int FS_name(char *buf, const size_t size, const off_t offset , const stru
     
     while ( nin-- ) in = in->next ;
     
+    if ( in->adapter_name == NULL ) return -EINVAL ;
     strncpy(buf,&(in->adapter_name[offset]),size);
     return buf[size-1]?size:strlen(buf) ;
 }
