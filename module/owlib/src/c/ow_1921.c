@@ -253,6 +253,7 @@ int FS_w_21date(const char *buf, const size_t size, const off_t offset , const s
     struct tm tm ;
     unsigned char data[7] ;
     int year ;
+    unsigned char sr ;
 
     /* Not sure if this is valid, but won't allow offset != 0 at first */
     /* otherwise need a buffer */
@@ -265,6 +266,11 @@ int FS_w_21date(const char *buf, const size_t size, const off_t offset , const s
 //printf("WDATE bad\n");
         return -EINVAL ;
     }
+
+    /* Busy if in mission */
+    if ( OW_r_21mem(&sr,1,0x0214,pn) ) return -EINVAL ;
+    if ( sr&0x20 ) return -EBUSY ;
+
     data[0] = tm.tm_sec + 6*(tm.tm_sec/10) ; /* dec->bcd */
     data[1] = tm.tm_min + 6*(tm.tm_min/10) ; /* dec->bcd */
     data[2] = tm.tm_hour + 6*(tm.tm_hour/10) ; /* dec->bcd */
@@ -305,8 +311,8 @@ int FS_w_21mip(const int * y, const struct parsedname * pn) {
         int clockstate ;
         if ( (cr&0x10) == 0x10 ) return 0 ; /* already in progress */
         /* Make sure the clock is running */
-    if ( FS_r_21run( &clockstate, pn ) ) return -EINVAL ;
-    if ( clockstate==0 ) {
+        if ( FS_r_21run( &clockstate, pn ) ) return -EINVAL ;
+        if ( clockstate==0 ) {
         clockstate = 1 ;
             if ( FS_w_21run( &clockstate, pn ) ) return -EINVAL ;
         UT_delay(1000) ;
@@ -341,9 +347,13 @@ int FS_r_21samplerate(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* write the interval between samples during a mission */
-/* NOTE: mission is turned OFF to avoid unintensional start! */
 int FS_w_21samplerate(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
+    unsigned char sr ;
+
+    /* Busy if in mission */
+    if ( OW_r_21mem(&sr,1,0x0214,pn) ) return -EINVAL ;
+    if ( sr&0x20 ) return -EBUSY ;
 
     if ( OW_r_21mem(&data,1,0x020E,pn) ) return -EFAULT ;
     data |= 0x10 ; /* EM on */

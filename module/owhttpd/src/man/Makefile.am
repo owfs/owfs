@@ -1,6 +1,7 @@
+
 ## $Id$
 
-man_MANS = owhttpd.1
+man_MANS = 
 
 EXTRA_DIST = ${man_MANS}
 
