@@ -284,8 +284,8 @@ ENABLE_PARPORT="false"
 AC_ARG_ENABLE(parport,
 [  --enable-parport         Enable parport (DS1410E) module (default parport)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "ues" ; then
+AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
         ENABLE_PARPORT=true
     fi
 ],
