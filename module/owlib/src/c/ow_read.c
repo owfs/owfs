@@ -48,6 +48,41 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     return r ;
 }
 
+/* After parsing, but before sending to various devices. Will repeat 3 times if needed */
+int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+    int r ;
+//    if ( pn->in==NULL ) return -ENODEV ;
+    /* Normal read. Try three times */
+    STATLOCK
+        AVERAGE_IN(&read_avg)
+        AVERAGE_IN(&all_avg)
+        ++read_tries[0] ; /* statitics */
+    STATUNLOCK
+    r = FS_read_postparse( buf, size, offset, pn ) ;
+    if ( r<0 ) {
+        STATLOCK
+            ++read_tries[1] ; /* statitics */
+        STATUNLOCK
+        r = FS_read_postparse( buf, size, offset, pn ) ;
+    }
+    if ( r<0 ) {
+        STATLOCK
+            ++read_tries[2] ; /* statitics */
+        STATUNLOCK
+        r = FS_read_postparse( buf, size, offset, pn ) ;
+    }
+    if ( r>=0 ) {
+        STATLOCK
+            ++read_success ; /* statistics */
+            read_bytes += r ; /* statistics */
+        STATUNLOCK
+    }
+    STATLOCK
+        AVERAGE_OUT(&read_avg)
+        AVERAGE_OUT(&all_avg)
+    STATUNLOCK
+    return r ;
+}
 /* Note on return values */
 /* functions return the actual number of bytes read, */
 /* or a negative value if an error */
@@ -63,45 +98,26 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 /*   outside of this module will not have buffer overflows */
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
+/* After parsing, choose special read based on path type */
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    int r ;
-    if ( pn->in==NULL ) return -ENODEV ;
-
-    STATLOCK
-        AVERAGE_IN(&read_avg)
-        AVERAGE_IN(&all_avg)
-    STATUNLOCK
     switch (pn->type) {
     case pn_system: /* use local data, generic bus (actually specified by extension) */
-        r = FS_real_read( buf, size, offset, pn ) ;
-        break ;
+        return FS_real_read( buf, size, offset, pn ) ;
     case pn_structure:
         /* Get structure data from local memory */
-        r = FS_structure(buf,size,offset,pn) ;
-        break ;
+        return FS_structure(buf,size,offset,pn) ;
     case pn_settings:
     case pn_statistics:
 //printf("Memory read\n");
         /* Get internal data from first source */
-        r = (pn->in->busmode==bus_remote) ? ServerRead(buf,size,offset,pn) : FS_real_read( buf, size, offset, pn ) ;
-        break ;
+        return (pn->in->busmode==bus_remote) ? ServerRead(buf,size,offset,pn) : FS_real_read( buf, size, offset, pn ) ;
     default:
         /* real data -- go through device chain */
-        r = FS_read_seek(buf,size,offset,pn) ;
+        return FS_read_seek(buf,size,offset,pn) ;
     }
-    if ( r>=0 ) {
-        STATLOCK
-            ++read_success ; /* statistics */
-            read_bytes += r ; /* statistics */
-        STATUNLOCK
-    }
-    STATLOCK
-        AVERAGE_OUT(&read_avg)
-        AVERAGE_OUT(&all_avg)
-    STATUNLOCK
-    return r ;
 }
 
+/* Loop through input devices (busses) */
 static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r ;
 #ifdef OW_MT
@@ -171,7 +187,6 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
    Integrates with cache -- read not called if cached value already set
 */
 static int FS_real_read(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    int r ;
 //printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index) ;
     /* Readable? */
     if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
@@ -195,17 +210,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
             break ; /* special bitfield case, extension==-2, read as a single entity */
         }
     }
-
-    /* Normal read. Try three times */
-    ++read_tries[0] ; /* statitics */
-    r = FS_parse_read( buf, size, offset, pn ) ;
-//printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d result=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index,r) ;
-//    ++read_tries[1] ; /* statitics */
-//    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
-//    ++read_tries[2] ; /* statitics */
-//    r = FS_parse_read( buf, size, offset, pn ) ;
-//    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",pn->path,(int)size) ;
-    return r ;
+    return FS_parse_read( buf, size, offset, pn ) ;
 }
 
 /* Structure file */

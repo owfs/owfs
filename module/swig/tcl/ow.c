@@ -272,7 +272,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
 	goto common_exit;
     }
     if ((buf=(char *) ckalloc((size_t)s+1))) {
-      r =  FS_read_postparse(buf, (size_t)s, (off_t)0, &pn) ;
+      r =  FS_read_3times(buf, (size_t)s, (off_t)0, &pn) ;
       FS_ParsedName_destroy(&pn) ;
       if ( r<0 ) {
 	owtcl_ErrorMsg(interp, strerror(-r));

@@ -88,7 +88,7 @@ char * get( const char * path ) {
         s = FullFileLength(&pn) ;
 //printf("File len=%d, %s\n",s,path);
         if ( (buf=(char *) malloc( s+1 )) ) {
-            int r =  FS_read_postparse( buf, s, 0, &pn ) ;
+            int r =  FS_read_3times( buf, s, 0, &pn ) ;
             FS_ParsedName_destroy(&pn) ;
             if ( r<0 ) {
                 free(buf) ;

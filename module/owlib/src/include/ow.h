@@ -898,6 +898,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
+int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
