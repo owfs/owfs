@@ -27,6 +27,8 @@
 |
 .B strobe
 |
+.B reset
+|
 .B set_alarm
 |
 .B address
@@ -106,6 +108,12 @@ references all channels simultaneously as a single byte. Channel 0 is bit 0.
 Is the
 .I DS2408
 powered parasitically (0) or separately on the Vcc pin (1)?
+.SS reset
+.I read-write, yes-no
+.br
+Specifies whether the device has performed power-on reset. This bit can only
+be cleared to 0 under software control. As long as this bit is 1 the device
+will allways respond to a conditional search.
 .SS set_alarm
 .I read-write, integer unsigned (0-333333333)
 .br
