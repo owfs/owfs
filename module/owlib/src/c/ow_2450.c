@@ -376,15 +376,14 @@ static int OW_convert( const struct parsedname * const pn ) {
     // 6 msec for 16bytex4channel (5.2)
     BUSLOCK
         ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5 ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
-        if ( ret ) {
+        if ( ret==0 ) {
+            if (power==0x40) {
     BUSUNLOCK
-        } else if (power==0x40) {
+                UT_delay(6) ; /* don't need to hold line for conversion! */
+            } else { /* power line for conversion */
+                ret = BUS_PowerByte( 0x04, 6) ;
     BUSUNLOCK
-        UT_delay(6) ; /* don't need to hold line for conversion! */
-    BUSLOCK
-        } else { /* power line for conversion */
-            ret = BUS_PowerByte( 0x04, 6) ;
-    BUSUNLOCK
+            }
         }
     return ret ;
 }
