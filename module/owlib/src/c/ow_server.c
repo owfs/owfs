@@ -299,6 +299,9 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
     int nio = 1 ;
     int payload = 0 ;
     int ret;
+    int32_t sg_new = 0 ;
+    union semiglobal sg ;
+    int i;
     struct iovec io[] = {
         { sm, sizeof(struct server_msg), } ,
         { path, 0, } ,
@@ -313,13 +316,22 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
         }
     }
 
-//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
+    /* Have to fix byte-order since sm->sg are wrong on BigEndian systems.
+     * Was easier to add the fix here, instead of all other places where
+     * the conversion from "union semiglobal sg.int32" -> int32_t is done. */
+    sg.int32 = sm->sg ;
+    for(i=3; i>=0; i--) {
+      sg_new <<= 8;
+      sg_new |= sg.u[i];
+    }
+
+//printf("ToServer payload=%d size=%d type=%d tempscale=%X(%X) offset=%d\n",payload,sm->size,sm->type,sm->sg,sg_new,sm->offset);
 //printf("<%.4d|%.4d\n",sm->type,payload);
 
     sm->payload = htonl(payload)       ;
     sm->size    = htonl(sm->size)      ;
     sm->type    = htonl(sm->type)      ;
-    sm->sg      = htonl(sm->sg) ;
+    sm->sg      = htonl(sg_new) ;
     sm->offset  = htonl(sm->offset)    ;
 
     ret = writev( fd, io, nio );
