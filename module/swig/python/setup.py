@@ -59,7 +59,7 @@ setup(
                                                      '../../../src/include',
                                                      ],
                                     library_dirs = [ '../../owlib/src/c/.libs', ],
-                                    libraries    = [ 'ow', 'usb', 'fuse', ],
+                                    libraries    = [ 'ow', 'usb', ],
                                     )
                          ],
     packages         = [ 'ow' ],
