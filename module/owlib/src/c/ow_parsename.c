@@ -123,13 +123,17 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
             pn->bus_nr = atoi(&pathnow[4]);
             /* Since we are going to use a specific in-device now, set
              * pn->in to point at that device at once. */
-            pn->in = indevice;
-            while(pn->in && pn->in->index!=pn->bus_nr) pn->in = pn->in->next;
+	    pn->in = find_connection_in(pn->bus_nr) ;
 	    //printf("parse bus.=%d\n", pn->bus_nr);
-	    /* we have to allow any bus-number here right now. This should
-	     * be fixed. */
-	    //if(!pn->in) return -ENOENT ;
-
+	    /* We have to allow any bus-number here right now. We receive
+	     * paths like /bus.4 from a remote owserver, and we have to trust
+	     * this result. */
+#if 0
+	    if(!pn->in) {
+	      printf("bus_nr %d doesn't exist\n", pn->bus_nr);
+	      return -ENOENT ;
+	    }
+#endif
             if(pathnext) len += strlen(&path[pathnext-pathcpy]);
             if(!(pn->path_busless = malloc(len))) return -ENOMEM;
             pn->path_busless[0] = '\000';
@@ -205,7 +209,7 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     if( pathnow && strncasecmp( pathnow, "bus.", 4) == 0) {
         if(!isdigit(pathnow[4])) return -ENOENT ;
         pathnow = strsep(&pathnext,"/") ;
-//printf("deeper bus. request pathnow=%s\n", pathnow);
+	//printf("deeper bus. request pathnow=%s\n", pathnow);
         return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
     }
     if ( pathnow==NULL || pathnow[0]=='\0' ) {

@@ -49,7 +49,8 @@ char * FS_dirname_state( const struct parsedname * pn ) {
     char tmp[64];
     //printf("dirname state on %.2X\n", pn->state);
     if ( pn->state & pn_alarm   ) return strdup(dirname_state_alarm) ;
-    if ( pn->state & pn_text    ) return strdup(dirname_state_text) ;
+    //should never return text in a directory list... it's a hidden feature.
+    //if ( pn->state & pn_text    ) return strdup(dirname_state_text) ;
     if ( pn->state & pn_uncached) return strdup(dirname_state_uncached) ;
     if ( pn->state & pn_bus ) {
       sprintf(tmp, "bus.%d", pn->bus_nr) ;
