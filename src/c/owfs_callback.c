@@ -139,7 +139,7 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         } ;
         BUS_unlock() ;
 		for ( i=0 ; i<nDevices ; ++i ) {
-		    if ( Devices[i]->type == dev_statistic ) filler(h,Devices[i].code,DT_DIR) ;
+		    if ( Devices[i]->type == dev_statistic ) filler(h,Devices[i]->code,DT_DIR) ;
 		}
     }
     return 0;
