@@ -8,12 +8,39 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS2401 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS2409 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .B DS2409
 - MicroLAN Coupler
 .SH SYNOPSIS
 1-wire network branch controller.
+.HP
+.B 1F
+[.]XXXXXXXXXXXX[XX][/[
+.B aux
+|
+.B branch.[0-1,ALL]
+|
+.B control
+|
+.B discharge
+|
+.B event.[0-1,ALL]
+|
+.B main
+|
+.B sensed.[0-1,ALL]
+|
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B present
+|
+.B type
+]]
 .SH FAMILY CODE
 1F
 .SH SPECIAL PROPERTIES

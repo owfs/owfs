@@ -8,16 +8,28 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS2401 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS2506 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B DS2401
-- Silicon Serial Number
+.B DS2506
+- Add-Only Memory (64 kBit)
 .br
-.B DS1990A
-- Serial Number iButton
+.B DS2506-UNW
+- UniqueWare Add-Only Memory (64 kBit)
+.br
+.B DS1986
+- Add-Only iButton (64 kBit)
+.br
+.B DS1986U
+- UniqueWare iButton (64 kBit)
+.SH SYNOPSIS
+EPROM add-only memory.
 .HP
-.B 01
+.B 0F
 [.]XXXXXXXXXXXX[XX][/[
+.B memory
+|
+.B page[0-255,ALL]
+|
 .B address
 |
 .B crc8
@@ -28,12 +40,41 @@
 |
 .B type
 ]]
-.SH SYNOPSIS
-Unique serial number only.
+.HP
+.B 8F
+[.]XXXXXXXXXXXX[XX][/[
+.B memory
+|
+.B page[0-255,ALL]
+|
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B present
+|
+.B type
+]]
 .SH FAMILY CODE
-01
+.TP
+0F
+DS2506 DS1986
+.TP
+8F
+DS2506-UNW DS1986U
 .SH SPECIAL PROPERTIES
-None.
+.SS memory
+.I read-write, binary
+.br
+8192 bytes of memory. Initially all bits are set to 1. Writing zero permanently alters the memory.
+.SS page.0 ... page.255 page.ALL
+.I read-write, yes-no
+.br
+Memory is split into 256 pages of 32 bytes each.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii
@@ -71,8 +112,22 @@ None.
 This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
 .PP
 The
-.B DS2401
-is the most basic of 1-wire devices. It's sole property is it's unique address. It can be used for unique identification.
+.B DS2506
+is used for write-once incremental storage. It's main advantage is for audit trails (i.e. a digital purse).
+.PP
+The
+.B DS2506-UNW
+is one of the
+.I UniqueWare
+class of devices. Some of the memory was preprogramed at the factory. See the datasheet for specifics. The
+.B DS2502
+,
+.B DS2505
+, and
+.B DS2506
+differ in their function by the amount of on-board memory they possess. (The internal protocols are slightly different, but the
+.I OWFS
+system handles this automatically.
 .SH ADDRESSING
 All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
 .TP
@@ -99,9 +154,13 @@ is an example 48 bit address.
 The dot is optional, and the CRC code can included. If included, it must be correct.
 .SH DATASHEET
 .br
-http://pdfserv.maxim-ic.com/en/ds/DS2401.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2506.pdf
 .br
-http://pdfserv.maxim-ic.com/en/ds/DS1990A-F3-DS1990A-F5.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2502-UNW-DS2506S-UNW.pdf
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS1986-F3-DS1986-F5.pdf
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS1982U-DS1986U.pdf
 .SH FILES
 .TP
 libow.so
@@ -116,6 +175,8 @@ Web server implementation of the OWFS system.
 owfs(3)
 owhttpd(3)
 DS2502(3)
+DS2505(3)
+DS2506(3)
 DS2409(3)
 .SH AVAILABILITY
 http://owfs.sourceforge.net

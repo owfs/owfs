@@ -41,7 +41,7 @@ int FS_getattr(const char *path, struct stat *stbuf) {
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
 //printf("GA root\n");
-    } else if ( pn.ft==NULL ) { /* other directory */
+    } else if ( pn.ft==NULL || pn.ft->format==ft_directory ) { /* other directory */
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
 //printf("GA other dir\n");
@@ -128,12 +128,14 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
 
 int FS_open(const char *path, int flags) {
     struct parsedname pn ;
+    int ret ;
 
     /* Unused */
     (void) flags ;
 
-    if ( FS_ParsedName( path , &pn ) ) return -ENOENT ;
-    return 0 ;
+    ret = FS_ParsedName( path , &pn ) ;
+    FS_ParsedName_destroy(&pn) ;
+    return ret ;
 }
 
 int FS_statfs(struct fuse_statfs *fst) {
