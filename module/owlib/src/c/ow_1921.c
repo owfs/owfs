@@ -101,9 +101,9 @@ struct filetype DS1921[] = {
     {"pages"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"pages/page"           , 32,&A1921p,  ft_binary,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
 
-    {"histogram"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"histogram"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"histogram/counts"     ,  6,&A1921h,ft_unsigned, ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,
-    {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,//
+    {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,
     {"histogram/gap"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,
 
     {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
@@ -122,8 +122,8 @@ struct filetype DS1921[] = {
     {"temperature"          , 12,   NULL,   ft_float, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
 
     {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[1], } ,//
-    {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[1], } ,
+    {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
     {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
     {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
     {"mission/last"         , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
@@ -147,7 +147,6 @@ struct filetype DS1921[] = {
 
     {"alarm_state"          ,  5,   NULL,ft_unsigned,   ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,//
 
-    {"samplerate"     ,  5,   NULL, ft_unsigned,  ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
     {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
     {"alarm_second"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0207, } ,
     {"alarm_minute"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0208, } ,
@@ -218,30 +217,32 @@ static int FS_rbitwrite( const int * y , const struct parsedname * pn ) {
     return FS_bitwrite(&z,pn) ;
 }
 
-/* histogram lower bound */
-static int FS_r_histall(unsigned int * h, const struct parsedname * pn ) {
-    int i ;
-    unsigned char data[63*2] ;
-    if ( OW_read_paged(data,sizeof(data),0x800,pn,32,OW_r_mem) ) return -EINVAL ;
-    for ( i=0 ; i<63 ; ++i ) {
-        h[i] = (((unsigned int)data[(i<<1)+1])<<8)|data[i<<1] ;
-    }
-    return 0 ;
-}    
-
+/* histogram counts */
 static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
-    unsigned char data[2] ;
-    if ( pn->extension < 0 ) return FS_r_histall(h,pn) ;
-    if ( OW_r_mem(data,2,0x800+((pn->extension)<<1),pn) ) return -EINVAL ;
-    h[0] = (((unsigned int)data[1])<<8)|data[0] ;
+    if ( pn->extension < 0 ) { /* ALL */
+        int i ;
+        unsigned char data[63*2] ;
+        if ( OW_read_paged(data,sizeof(data),0x800,pn,32,OW_r_mem) ) return -EINVAL ;
+        for ( i=0 ; i<63 ; ++i ) {
+            h[i] = (((unsigned int)data[(i<<1)+1])<<8)|data[i<<1] ;
+        }
+    } else { /* single element */
+        unsigned char data[2] ;
+        if ( OW_r_mem(data,2,0x800+((pn->extension)<<1),pn) ) return -EINVAL ;
+        h[0] = (((unsigned int)data[1])<<8)|data[0] ;
+    }
     return 0 ;
 }
     
 static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
-    int i ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    for ( i=0 ; i<63 ; ++i ) h[i] = Temperature(v->histolow + 4*i*v->resolution,pn) ;
+    if ( pn->extension < 0 ) { /* ALL */
+        int i ;
+        for ( i=0 ; i<63 ; ++i ) h[i] = Temperature(v->histolow + 4*i*v->resolution,pn) ;
+    } else { /* element */
+        h[0] = Temperature(v->histolow + 4*(pn->extension)*v->resolution,pn) ;
+    }
     return 0 ;
 }
 
