@@ -3,39 +3,39 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 /* Changes
@@ -44,6 +44,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow_2760.h"
+#include "thermocouple.h"
 
 /* ------- Prototypes ----------- */
 
@@ -55,8 +56,10 @@ bWRITE_FUNCTION( FS_w_page ) ;
  fREAD_FUNCTION( FS_r_volt ) ;
  fREAD_FUNCTION( FS_r_temp ) ;
  fREAD_FUNCTION( FS_r_current ) ;
+ fREAD_FUNCTION( FS_r_vis ) ;
  fREAD_FUNCTION( FS_r_accum ) ;
  fREAD_FUNCTION( FS_r_offset ) ;
+ fREAD_FUNCTION( FS_thermocouple ) ;
 fWRITE_FUNCTION( FS_w_offset ) ;
 yWRITE_FUNCTION( FS_w_pio ) ;
  yREAD_FUNCTION( FS_sense ) ;
@@ -69,9 +72,11 @@ struct filetype DS2760[] = {
     {"memory"    ,   256,  NULL,    ft_binary  , ft_volatile, {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
     {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"pages/page",    16,  NULL,    ft_binary  , ft_volatile, {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"typeK"     ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & thermoK, } ,
     {"volt"      ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_volt}   , {v:NULL}     , NULL, } ,
     {"temperature",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_temp}   , {v:NULL}     , NULL, } ,
     {"current"   ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_current}, {v:NULL}     , NULL, } ,
+    {"vis"       ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_vis}    , {v:NULL}     , NULL, } ,
     {"accumulator",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_accum}  , {v:NULL}     , NULL, } ,
     {"offset"    ,    12,  NULL,    ft_float   , ft_stable  , {f:FS_r_offset} , {f:FS_w_offset},NULL,} ,
     {"PIO"       ,     1,  NULL,    ft_yesno   , ft_volatile, {v:NULL}        , {y:FS_w_pio} , NULL, } ,
@@ -87,6 +92,7 @@ static int OW_r_mem( unsigned char * data , const size_t size, const size_t offs
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_eeprom( const size_t page, const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static FLOAT OW_type(FLOAT T, FLOAT V, const struct thermo * thermo ) ;
 
 /* 2406 memory read */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -111,6 +117,21 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* write is "byte at a time" -- not paged */
     if ( OW_w_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
+    int ret = FS_r_current(V,pn) ;
+    V[0] *= .025 ;
+    return ret ;
+}
+
+static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
+    FLOAT T, V;
+    int ret ;
+    if ((ret=FS_r_vis(&V,pn))) return ret ;
+    if ((ret=FS_r_temp(&T,pn))) return ret ;
+    F[0]=OW_type(T,V,(struct thermo *)pn->ft->data) ;
     return 0 ;
 }
 
@@ -254,3 +275,29 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return OW_w_eeprom(0x20,data,size,offset,pn) || OW_w_eeprom(0x30,data,size,offset,pn) ;
 }
 
+static FLOAT OW_type(FLOAT T, FLOAT V, const struct thermo * thermo ) {
+    FLOAT E ;
+    FLOAT R ;
+    int r ;
+    int i ;
+
+    for ( r = (thermo->volt->n)-1 ; r>0 ; --r ) {
+        if ( T > thermo->volt->p[r]->minf ) break ;
+    }
+    i = thermo->volt->p[r]->order ;
+    for ( E = thermo->volt->p[r]->coef[i] ; i ; ) {
+        --i ;
+        E = thermo->volt->p[r]->coef[i] + E*T ;
+    }
+
+    E += V ;
+    for ( r = (thermo->temp->n)-1 ; r>0 ; --r ) {
+        if ( E > thermo->temp->p[r]->minf ) break ;
+    }
+    i = thermo->temp->p[r]->order ;
+    for ( R = thermo->temp->p[r]->coef[i] ; i ; ) {
+        --i ;
+        R = thermo->temp->p[r]->coef[i] + E*R ;
+    }
+    return R ;
+}

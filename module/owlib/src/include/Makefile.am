@@ -26,7 +26,8 @@ header_DATA = ow_1820.h \
               ow_settings.h \
               ow_system.h \
               ow_stub.h \
-              sem.h
+              sem.h \
+              thermocouple.h
 
 EXTRA_DIST = ${header_DATA}
 
