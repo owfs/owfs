@@ -87,10 +87,6 @@ struct timeval max_delay = {0, 0, } ;
 struct timeval total_bus_time = {0, 0, } ;
 unsigned int total_bus_locks = 0 ;
 unsigned int total_bus_unlocks = 0 ;
-void *bus_locks[MAX_ADAPTERS]      = {[0 ... MAX_ADAPTERS-1]=NULL } ;
-void *bus_unlocks[MAX_ADAPTERS]    = {[0 ... MAX_ADAPTERS-1]=NULL } ;
-void *bus_time[MAX_ADAPTERS]       = {[0 ... MAX_ADAPTERS-1]=NULL } ;
-//void *bus_pause_time[MAX_ADAPTERS] = {[0 ... MAX_ADAPTERS-1]=NULL } ;
 
 // ow_crc.c
 unsigned int CRC8_tries = 0 ;
@@ -268,12 +264,12 @@ extern struct aggregate Asystem;
 
 struct filetype stats_bus[] = {
     {"elapsed_time"    , 15, NULL    , ft_unsigned, ft_statistic, {u:FS_elapsed},{v:NULL}, NULL          , } ,
-    {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, bus_time      , } ,
+    {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, (void *)0  , } ,
     /* bus_idle_time should be the same is elapsed_time - bus_time
      * Not any big idea to implement it */
   //{"bus_idle_time"   , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, bus_idle_time , } ,
-    {"bus_locks"       , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, bus_locks     , } ,
-    {"bus_unlocks"     , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, bus_unlocks   , } ,
+    {"bus_locks"       , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)0  , } ,
+    {"bus_unlocks"     , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)1  , } ,
 
     /* bus_pause_time is not very useful... Look at bus_time to see if the bus
      * has been used much instead */
@@ -367,15 +363,48 @@ static int FS_stat(unsigned int * u , const struct parsedname * pn) {
 
 static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
-    unsigned int * ptr;
-    unsigned int ** pptr = (unsigned int **) pn->ft->data ;
+    unsigned int *ptr;
+    struct connection_in *c;
     if (dindex<0) dindex = 0 ;
-    if(!pptr) return -ENOENT ;
-    ptr = (unsigned int *)pptr[dindex];
-    if (ptr == NULL) return -ENOENT ;
+    c = find_connection_in(dindex+1);
+    if(!c) return -ENOENT ;
+    switch((unsigned int)pn->ft->data) {
+    case 0:
+      ptr = &c->bus_locks;
+      break;
+    case 1:
+      ptr = &c->bus_unlocks;
+      break;
+    default:
+      return -ENOENT;
+    }
     STATLOCK
         u[0] =  *ptr;
     STATUNLOCK
+    return 0 ;
+}
+
+static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
+    FLOAT f;
+    int dindex = pn->extension ;
+    struct timeval * tv;
+    struct connection_in *c;
+    if (dindex<0) dindex = 0 ;
+    c = find_connection_in(dindex+1);
+    if(!c) return -ENOENT ;
+    
+    switch((unsigned int)pn->ft->data) {
+    case 0:
+      tv = &c->bus_time;
+      break;
+    default:
+      return -ENOENT;
+    }
+    STATLOCK /* to prevent simultaneous changes to bus timing variables */
+    f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
+    STATUNLOCK
+//printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
+    u[0] = f;
     return 0 ;
 }
 
@@ -388,23 +417,6 @@ static int FS_time(FLOAT *u , const struct parsedname * pn) {
 
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
     f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
-    STATUNLOCK
-//printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
-    u[0] = f;
-    return 0 ;
-}
-
-static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
-    FLOAT f;
-    int dindex = pn->extension ;
-    struct timeval * tv;
-    struct timeval ** tv_p = (struct timeval **) pn->ft->data ;
-    if (dindex<0) dindex = 0 ;
-    if(!tv_p) return -ENOENT ;
-    tv = (struct timeval *)tv_p[dindex];
-    if (tv == NULL) return -ENOENT ;
-    STATLOCK /* to prevent simultaneous changes to bus timing variables */
-    f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
     STATUNLOCK
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;

@@ -19,7 +19,6 @@ $ID: $
 /* ------- Prototypes ----------- */
 static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 static int FS_real_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_real_read_xtimes(char *buf, const size_t size, const off_t offset, const struct parsedname * pn, int reread );
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
@@ -51,6 +50,35 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     return r ;
 }
 
+/* After parsing, but before sending to various devices. Will repeat 3 times if needed */
+int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+  int r = 0 ;
+  int i;
+  //    if ( pn->in==NULL ) return -ENODEV ;
+  /* Normal read. Try three times */
+  STATLOCK
+    AVERAGE_IN(&read_avg)
+    AVERAGE_IN(&all_avg)
+    STATUNLOCK
+    for(i=0; i<3; i++) {
+      STATLOCK
+        ++read_tries[i] ; /* statitics */
+      STATUNLOCK
+        r = FS_read_postparse( buf, size, offset, pn ) ;
+      if ( r>=0 ) break;
+    }
+  STATLOCK
+    if ( r>=0 ) {
+      ++read_success ; /* statistics */
+      read_bytes += r ; /* statistics */
+    }
+  AVERAGE_OUT(&read_avg)
+    AVERAGE_OUT(&all_avg)
+    STATUNLOCK
+    return r ;
+}
+
+
 /* Note on return values */
 /* functions return the actual number of bytes read, */
 /* or a negative value if an error */
@@ -81,7 +109,10 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
       r = ServerRead(buf,size,offset,pn);
       break;
     }
-  } else {
+    return r;
+  }
+#if 0
+ else {
     //printf("FS_read_postparse: pid=%d busmode=local\n", getpid());
 
     STATLOCK
@@ -89,11 +120,11 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     AVERAGE_IN(&all_avg)
     ++ read_calls ; /* statistics */
     STATUNLOCK
-
+#endif
     switch (pn->type) {
     case pn_system: /* use local data, generic bus (actually specified by extension) */
         //printf("FS_read_postparse: pid=%d call fs_real_read\n", getpid());
-        r = FS_real_read_xtimes( buf, size, offset, pn, 3 ) ;
+        r = FS_real_read( buf, size, offset, pn ) ;
 	break;
     case pn_structure:
         /* Get structure data from local memory */
@@ -104,13 +135,14 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     case pn_statistics:
       //printf("FS_read_postparse: pid=%d settings/statistics\n", getpid());
         /* Get internal data from first source */
-        r = FS_real_read_xtimes( buf, size, offset, pn, 3 ) ;
+        r = FS_real_read( buf, size, offset, pn ) ;
 	break;
     default:
       //printf("FS_read_postparse: pid=%d call fs_read_seek\n", getpid());
         /* real data -- go through device chain */
         r = FS_read_seek(buf,size,offset,pn) ;
     }
+#if 0
     STATLOCK
     if ( r>=0 ) {
       ++read_success ; /* statistics */
@@ -120,6 +152,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     AVERAGE_OUT(&all_avg)
     STATUNLOCK
   }
+#endif
   //printf("FS_read_postparse: pid=%d return %d\n", getpid(), r);
   return r;
 }
@@ -150,18 +183,21 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READSEED0 pid=%d = %d\n",getpid(), r);
     } else {
         size_t s = size ;
-        /* Check the cache (if not pn_uncached) */
+	STATLOCK
+	  ++ read_calls ; /* statistics */
+	STATUNLOCK
+	/* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
 //printf("READSEED1 pid=%d call FS_real_read\n",getpid());
             LockGet(pn) ;
-	    r = FS_real_read_xtimes(buf, size, offset, pn, 3 ) ;
+	    r = FS_real_read(buf, size, offset, pn ) ;
             LockRelease(pn) ;
 //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
 //printf("READSEED2 pid=%d not found in cache\n",getpid());
             LockGet(pn) ;
-	    r = FS_real_read_xtimes( buf, size, offset, pn, 3 ) ;
+	    r = FS_real_read( buf, size, offset, pn ) ;
 	    if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
             LockRelease(pn) ;
 //printf("READSEED2 pid=%d = %d\n",getpid(), r);
@@ -190,26 +226,6 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READ from 1st adapter\n") ;
     }
 #endif /* OW_MT */
-    return r ;
-}
-
-
-/* After parsing, but before sending to various devices. Will repeat 3 times if needed */
-static int FS_real_read_xtimes(char *buf, const size_t size, const off_t offset, const struct parsedname * pn, int reread ) {
-    int r = 0;
-    int i;
-
-//    if ( pn->in==NULL ) return -ENODEV ;
-    /* Normal read. Try three times */
-    for(i=0; i<reread; i++) {
-      STATLOCK
-      ++read_tries[i] ; /* statitics */
-      STATUNLOCK
-	//printf("FS_read_xtimes: pid=%d nrleft=%d\n", getpid(), reread-i);
-      r = FS_real_read( buf, size, offset, pn ) ;
-      if ( r>=0 ) break;
-    }
-    if (r < 0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 
@@ -242,7 +258,6 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     }
     return FS_parse_read( buf, size, offset, pn ) ;
 }
-
 
 /* Structure file */
 static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {

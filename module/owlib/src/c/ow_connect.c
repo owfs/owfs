@@ -22,14 +22,19 @@ int outdevices = 0 ;
 struct connection_in * indevice = NULL ;
 int indevices = 0 ;
 
+struct connection_in *find_connection_in(int index) {
+  struct connection_in *c = indevice;
+  while(c) {
+    if(c->index == index) break;
+    c = c->next;
+  }
+  return c;
+}
+
 struct connection_in * NewIn( void ) {
     int len = sizeof(struct connection_in) ;
     struct connection_in * last = NULL ;
     struct connection_in * now = indevice ;
-    if( indevices >= MAX_ADAPTERS ) {
-      fprintf(stderr,"Maximum number of adapters allocated\n") ;
-      return NULL;
-    }
     while ( now ) {
         last = now ;
         now = now->next ;
