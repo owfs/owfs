@@ -66,6 +66,9 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
 static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) ;
 static int Cache_Del_Common( const struct tree_node * tn ) ;
 static int Cache_Del_Store( const struct tree_node * tn ) ;
+static int Add_Stat( struct cache * scache, const int result ) ;
+static int Get_Stat( struct cache * scache, const int result ) ;
+static int Del_Stat( struct cache * scache, const int result ) ;
 static int tree_compare( const void * a , const void * b ) ;
 static time_t TimeOut( const enum ft_change change ) ;
 
@@ -167,6 +170,15 @@ void Cache_Close( void ) {
     tdestroy( cache.store  , free ) ;
 }
 
+static int Add_Stat( struct cache * scache, const int result ) {
+    if ( result==0 ) {
+        STATLOCK
+            ++scache->adds ;
+        STATUNLOCK
+    }
+    return result ;
+}
+
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add( const void * data, const size_t datasize, const struct parsedname * const pn ) {
@@ -184,9 +196,9 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
 //printf("ADD EXTERNAL name= %s (%d) size=%d \n",tn->tk.p.ft->name,tn->tk.extension,tn->dsize);
                 switch (pn->ft->change) {
                 case ft_persistent:
-                    return Cache_Add_Store( tn ) ;
+                    return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
                 default:
-                    return Cache_Add_Common( tn ) ;
+                    return Add_Stat(&cache_ext, Cache_Add_Common( tn )) ;
                 }
             }
             return -ENOMEM ;
@@ -208,7 +220,7 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
             tn->expires = duration + time(NULL) ;
             tn->dsize = 8 ;
             memcpy( TREE_DATA(tn) , sn , 8 ) ;
-            return Cache_Add_Common( tn ) ;
+            return Add_Stat(&cache_dir, Cache_Add_Common( tn )) ;
         }
     }
     return -ENOMEM ;
@@ -231,9 +243,9 @@ int Cache_Add_Internal( const void * data, const size_t datasize, const struct i
 //printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
                 switch (ip->change) {
                 case ft_persistent:
-                    return Cache_Add_Store( tn ) ;
+                    return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
                 default:
-                    return Cache_Add_Common( tn ) ;
+                    return Add_Stat(&cache_int, Cache_Add_Common( tn )) ;
                 }
             }
             return -ENOMEM ;
@@ -251,7 +263,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
     void * flip = NULL ;
     CACHELOCK
         if  (cache.killed < time(NULL) ) { // old database has timed out
-	    flip = cache.old_db ;
+    	    flip = cache.old_db ;
             /* Flip caches! old = new. New truncated, reset time and counters and flag */
             cache.old_db  = cache.new_db ;
             cache.new_db = NULL ;
@@ -261,16 +273,16 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
         }
         if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
 //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
-	    if ( tn!=opaque->key ) {
-	        free(opaque->key);
-	        opaque->key = tn ;
-		state = just_update ;
-	    } else {
-		state = yes_add ;
-	    }
-	} else { // nothing found or added?!? free our memory segment
-	    free(tn) ;
-	}
+    	    if ( tn!=opaque->key ) {
+                free(opaque->key);
+    	        opaque->key = tn ;
+        		state = just_update ;
+    	    } else {
+        		state = yes_add ;
+    	    }
+    	} else { // nothing found or added?!? free our memory segment
+    	    free(tn) ;
+    	}
     CACHEUNLOCK
     /* flipped old database is now out of circulation -- can be destroyed without a lock */
     if ( flip ) {
@@ -285,19 +297,19 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
     /* Added or updated, update statistics */
     switch (state) {
     case yes_add:
-	STATLOCK
-	    AVERAGE_IN(&new_avg)
+    	STATLOCK
+    	    AVERAGE_IN(&new_avg)
     	    ++ cache_adds ; /* statistics */
-	STATUNLOCK
-	return 0 ;
+    	STATUNLOCK
+    	return 0 ;
     case just_update:
-	STATLOCK
-	    AVERAGE_MARK(&new_avg)
-    	    ++ cache_adds ; /* statistics */
-	STATUNLOCK
-	return 0 ;
+    	STATLOCK
+    	    AVERAGE_MARK(&new_avg)
+       	    ++ cache_adds ; /* statistics */
+    	STATUNLOCK
+    	return 0 ;
     default:
-	return 1 ;
+    	return 1 ;
     }
 }
 
@@ -308,22 +320,18 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
     struct tree_opaque * opaque ;
     enum { no_add, yes_add, just_update } state = no_add ;
     STORELOCK
-        if ( (opaque=tfind( tn , &cache.store, tree_compare ) ) ) {
-            tdelete( opaque->key, &cache.store, tree_compare ) ;
-            free( opaque->key ) ;
-        }
-        opaque = tsearch( (void *)tn, &cache.store, tree_compare ) ;
         if ( (opaque=tsearch(tn,&cache.store,tree_compare)) ) {
-	        if ( tn!=opaque->key ) {
-	            free(opaque->key);
-	            opaque->key = tn ;
-		        state = just_update ;
-	        } else {
-		        state = yes_add ;
-	        }
-	    } else { // Problem adding node, so free the memory
-	        free(tn) ;
-	    }
+//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
+    	    if ( tn!=opaque->key ) {
+                free(opaque->key);
+    	        opaque->key = tn ;
+        		state = just_update ;
+    	    } else {
+        		state = yes_add ;
+    	    }
+    	} else { // nothing found or added?!? free our memory segment
+    	    free(tn) ;
+    	}
     STOREUNLOCK
     switch (state) {
     case yes_add:
@@ -341,6 +349,18 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
     }
 }
 
+static int Get_Stat( struct cache * scache, const int result ) {
+    STATLOCK
+        if ( result == 0 ) {
+            ++scache->hits ;
+        } else if ( result == -ETIMEDOUT ) {
+            ++scache->expires ;
+        }
+        ++scache->tries ;
+    STATUNLOCK
+    return result ;
+}
+
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get( void * data, size_t * dsize, const struct parsedname * const pn ) {
     if ( pn ) { // do check here to avoid needless processing
@@ -352,9 +372,9 @@ int Cache_Get( void * data, size_t * dsize, const struct parsedname * const pn )
             tn.tk.extension = pn->extension ;
             switch(pn->ft->change) {
             case ft_persistent:
-                return Cache_Get_Store(data,dsize,duration,&tn) ;
+                return Get_Stat(&cache_sto, Cache_Get_Store(data,dsize,duration,&tn)) ;
             default:
-                return Cache_Get_Common(data,dsize,duration,&tn) ;
+                return Get_Stat(&cache_ext, Cache_Get_Common(data,dsize,duration,&tn)) ;
             }
         }
     }
@@ -370,7 +390,7 @@ int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const 
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.ft = NULL ;
         tn.tk.extension = dindex ;
-        return Cache_Get_Common(sn,&size,duration,&tn) ;
+        return Get_Stat(&cache_dir, Cache_Get_Common(sn,&size,duration,&tn)) ;
     }
     return 1 ;
 }
@@ -386,9 +406,9 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
             tn.tk.extension = -2 ;
             switch(ip->change) {
             case ft_persistent:
-                return Cache_Get_Store(data,dsize,duration,&tn) ;
+                return Get_Stat(&cache_sto, Cache_Get_Store(data,dsize,duration,&tn)) ;
             default:
-                return Cache_Get_Common(data,dsize,duration,&tn) ;
+                return Get_Stat(&cache_int, Cache_Get_Common(data,dsize,duration,&tn)) ;
             }
         }
     }
@@ -397,13 +417,10 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) {
-    int ret = 1 ;
+    int ret ;
     time_t now = time(NULL) ;
     struct tree_opaque * opaque ;
 //printf("CACHE GET 1\n");
-    STATLOCK
-        ++ cache_tries ; /* statistics */
-    STATUNLOCK
     CACHELOCK
         if ( (opaque=tfind(tn,&cache.new_db,tree_compare)) 
 	     || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) ) 
@@ -414,30 +431,23 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
                 if ( *dsize >= opaque->key->dsize ) {
 //printf("CACHE GET 4\n");
                         *dsize = opaque->key->dsize ;
-//printf("CACHE GET 4a\n");
 //tree_show(opaque,leaf,0);
 //printf("CACHE GET 5 size=%d\n",*dsize);
                         memcpy( data , TREE_DATA(opaque->key) , *dsize ) ;
-//printf("CACHE GET 6\n");
                         ret = 0 ;
-                        STATLOCK
-                            ++ cache_hits ; /* statistics */
-                        STATUNLOCK
 //printf("CACHE GOT\n");
 //twalk(cache.new_db,tree_show) ;
+                } else {
+                    ret = -EMSGSIZE ;
                 }
             } else {
 //char b[26];
 //printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
 //printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
-                STATLOCK
-                    ++ cache_expired ; /* statistics */
-                STATUNLOCK
+                ret = -ETIMEDOUT ;
             }
         } else {
-            STATLOCK
-                ++ cache_misses ; /* statistics */
-            STATUNLOCK
+            ret = -ENOENT ;
         }
     CACHEUNLOCK
     return ret ;
@@ -446,7 +456,7 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) {
     struct tree_opaque * opaque ;
-    int ret = 1 ;
+    int ret ;
     (void) duration ;
     STORELOCK
         if ( (opaque=tfind(tn,&cache.store,tree_compare)) ) {
@@ -454,10 +464,23 @@ static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const 
                     *dsize = opaque->key->dsize ;
                     memcpy( data, TREE_DATA(opaque->key), *dsize ) ;
                     ret = 0 ;
+            } else {
+                ret = -EMSGSIZE ;
             }
+        } else {
+            ret = -ENOENT ;
         }
     STOREUNLOCK
     return ret ;
+}
+
+static int Del_Stat( struct cache * scache, const int result ) {
+    if ( result==0 ) {
+        STATLOCK
+            ++scache->deletes ;
+        STATUNLOCK
+    }
+    return result ;
 }
 
 int Cache_Del( const struct parsedname * const pn ) {
@@ -470,9 +493,9 @@ int Cache_Del( const struct parsedname * const pn ) {
             tn.tk.extension = pn->extension ;
             switch(pn->ft->change) {
             case ft_persistent:
-                return Cache_Del_Store(&tn) ;
+                return Del_Stat(&cache_sto, Cache_Del_Store(&tn)) ;
             default:
-                return Cache_Del_Common(&tn) ;
+                return Del_Stat(&cache_ext, Cache_Del_Common(&tn)) ;
             }
         }
     }
@@ -480,13 +503,13 @@ int Cache_Del( const struct parsedname * const pn ) {
 }
 
 int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
-    time_t duration = TimeOut( pn->ft->change ) ;
+    time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.ft = NULL ;
         tn.tk.extension = dindex ;
-        return Cache_Del_Common(&tn) ;
+        return Del_Stat(&cache_dir, Cache_Del_Common(&tn)) ;
     }
     return 1 ;
 }
@@ -501,9 +524,9 @@ int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname
             tn.tk.extension = 0 ;
             switch(ip->change) {
             case ft_persistent:
-                return Cache_Del_Store(&tn) ;
+                return Del_Stat(&cache_sto, Cache_Del_Store(&tn)) ;
             default:
-                return Cache_Del_Common(&tn) ;
+                return Del_Stat(&cache_int, Cache_Del_Common(&tn)) ;
             }
         }
     }
@@ -518,12 +541,9 @@ static int Cache_Del_Common( const struct tree_node * tn ) {
         if ( (opaque=tfind( tn, &cache.new_db, tree_compare )) 
 	     || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )
 	   ) {
-	    opaque->key->expires = now - 1 ;
-	    ret = 0 ;
-            STATLOCK
-                ++ cache_dels ; /* statistics */
-            STATUNLOCK
-        }
+    	    opaque->key->expires = now - 1 ;
+	        ret = 0 ;
+          }
     CACHEUNLOCK
     return ret ;
 }
