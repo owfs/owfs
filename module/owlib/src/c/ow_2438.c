@@ -225,10 +225,10 @@ static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) {
     unsigned char data[9] ;
     static unsigned char t = 0x44 ;
     int i ;
-    int ret ;
+    int ret = 0 ;
 
     // write conversion command
-    if ( ! Simul_Test( DEV_temp, 10, pn ) ){
+    if ( Simul_Test( simul_temp, 10, pn ) != 0 ){
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &t, 1 ) ;
         BUSUNLOCK

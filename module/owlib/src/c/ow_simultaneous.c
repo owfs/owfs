@@ -76,7 +76,7 @@ struct internal_prop ipSimul[] = {
     };
 
 int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) {
-    return OW_getcache(msec,type,pn) ;
+    return OW_getcache(type,msec,pn) ;
 }
 
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) {

@@ -275,7 +275,7 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     unsigned char convert = 0x44 ;
     int delay = (int) pn->ft->data ;
     unsigned char pow ;
-    int ret ;
+    int ret = 0 ;
 
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
     /* Select particular device and start conversion */
@@ -283,7 +283,7 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
         BUSLOCK
             ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
         BUSUNLOCK
-    } else if ( ! Simul_Test( DEV_temp, delay, pn ) ){ // powered, so release bus immediately after issuing convert
+    } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ){ // powered, so release bus immediately after issuing convert
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
         BUSUNLOCK
@@ -340,7 +340,7 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
     int delay = Resolutions[resolution-9].delay ;
     int oldres ;
     int s = sizeof(oldres) ;
-    int ret ;
+    int ret = 0 ;
 
     /* powered? */
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
@@ -362,7 +362,7 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
         BUSLOCK
             ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
         BUSUNLOCK
-    } else if ( ! Simul_Test( DEV_temp, delay, pn ) ) { // powered, so release bus immediately after issuing convert
+    } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
         BUSUNLOCK
