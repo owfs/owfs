@@ -1,3 +1,22 @@
+This package uses the standard UNIX installation methods, with
+scripts that taylor the code to your environment.
+
+QUICK INSTALL:
+Note: Do this library first.
+
+1. install the owlib library
+   (you can find it on sourceforge:
+     http://www.sf.net/projects/owfs )
+1. cd owfs directory
+2. ./bootstrap
+3. make install
+4. run with a command such as:
+   /opt/owfs/bin/owfs /dev/ttyS1 /mnt/1wire
+   where /dev/ttyS1 is the serial port of your interface
+   and /mn/1wire is the directory to mount
+
+More complete instructions:
+---------------------------------------------------------------------
 Basic Installation
 ==================
 

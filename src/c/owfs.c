@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     {
     char c ;
 //    while ( (c=getopt(argc,argv,"p:dhs")) != -1 ) {
-    while ( (c=getopt(argc,argv,"p:dht:")) != -1 ) {
+    while ( (c=getopt(argc,argv,"d:ht:")) != -1 ) {
         switch (c) {
 //        case 's':
 //            multithreaded = 0 ;
@@ -96,25 +96,20 @@ int main(int argc, char *argv[]) {
              "Usage: %s mountpoint -p portname [options] \n"
              "   or: %s [options] portname mountpoint \n"
              "  Required:\n"
-             "    -p portname -- port connecting to 1-wire network (e.g. /dev/ttyS0)\n"
+             "    -d device -- serial port connecting to 1-wire network (e.g. /dev/ttyS0)\n"
              "  Options:\n"
-             "    -d      enable debug output\n"
 //             "    -s      disable multithreaded operation\n"
-#ifdef OW_CACHE
              "    -t      cache timeout (in seconds)\n"
-#endif
              "    -h      print help\n",
              argv[0],argv[0] ) ;
              ow_exit(1);
-#ifdef OW_CACHE
          case 't':
              Timeout( optarg ) ;
              break ;
-#endif
+//         case 'd':
+//             flags |= FUSE_DEBUG;
+//             break ;
          case 'd':
-             flags |= FUSE_DEBUG;
-             break ;
-         case 'p':
              com_tried = COM_open( optarg ) ;
              break ;
          default:
