@@ -5,8 +5,8 @@ AC_REVISION($Id$)
 AC_INIT
 AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
-VERSION_MAJOR="0"
-VERSION_MINOR="99"
+VERSION_MAJOR="1"
+VERSION_MINOR="0"
 PATCHLEVEL="0RC"
 
 AC_SUBST(VERSION_MAJOR)dnl
@@ -222,6 +222,7 @@ AC_CONFIG_FILES([
 	module/owhttpd/src/man/Makefile
 	src/Makefile
 	src/include/Makefile
+	src/man/Makefile
 	src/rpm/Makefile
 	src/rpm/owfs.spec
 	src/scripts/Makefile
