@@ -145,6 +145,8 @@ unsigned int DS2480_read_null = 0 ;
 unsigned int DS2480_read_read = 0 ;
 unsigned int DS2480_read_select_errors = 0 ;
 unsigned int DS2480_read_timeout = 0 ;
+unsigned int DS2480_PowerByte_1_errors = 0 ;
+unsigned int DS2480_PowerByte_2_errors = 0 ;
 unsigned int DS2480_PowerByte_errors = 0 ;
 unsigned int DS2480_level_errors = 0 ;
 unsigned int DS2480_databit_errors = 0 ;
@@ -342,6 +344,8 @@ FS_stat_ROW(DS2480_read_null),
 FS_stat_ROW(DS2480_read_read),
 FS_stat_ROW(DS2480_read_select_errors),
 FS_stat_ROW(DS2480_read_timeout),
+FS_stat_ROW(DS2480_PowerByte_1_errors),
+FS_stat_ROW(DS2480_PowerByte_2_errors),
 FS_stat_ROW(DS2480_PowerByte_errors),
 FS_stat_ROW(DS2480_level_errors),
 FS_stat_ROW(DS2480_databit_errors),

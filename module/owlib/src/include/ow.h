@@ -788,6 +788,8 @@ extern unsigned int DS2480_read_null ;
 extern unsigned int DS2480_read_read ;
 extern unsigned int DS2480_read_select_errors ;
 extern unsigned int DS2480_read_timeout ;
+extern unsigned int DS2480_PowerByte_1_errors ;
+extern unsigned int DS2480_PowerByte_2_errors ;
 extern unsigned int DS2480_PowerByte_errors ;
 extern unsigned int DS2480_level_errors ;
 extern unsigned int DS2480_databit_errors ;

@@ -244,7 +244,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
             ACCEPTUNLOCK(o2)
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
-//            RunAccepted( HandlerRoutine, acceptfd ) ;
             RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
             pthread_exit((void *)0);
@@ -260,7 +259,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
  #ifdef __UCLIBC__
             if ( pthread_create( &thread2, NULL, AcceptThread, out2 ) ) Exit(1) ;
   #ifndef VALGRIND
-            pthread_detach(thread2);
+	    pthread_detach(thread2);
   #endif /* VALGRIND */
  #else /* __UCLIBC__ */
             if ( pthread_create( &thread2, &attr, AcceptThread, out2 ) ) Exit(1) ;
@@ -301,7 +300,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
-//    for ( ;; ) RunAccepted( HandlerRoutine, accept(outdevice->fd,NULL,NULL) ) ;
     for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
 #endif /* OW_MT */
 }

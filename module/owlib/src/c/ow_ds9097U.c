@@ -373,7 +373,6 @@ static int DS2480_level(int new_level, const struct parsedname * const pn) {
     int ret ;
     if (new_level == pn->in->ULevel) {     // check if need to change level
         return 0 ;
-
     } else if (new_level == MODE_NORMAL) {     // check if just putting back to normal
         int docheck=0;
         unsigned char c ;
@@ -631,24 +630,42 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
     // read back the 9 byte response from setting time limit
     if ( (ret=DS2480_sendback_cmd(cmd,resp,9,pn)) || (ret=(resp[0]&0x81)?-EIO:0) ) {
       STATLOCK
-      DS2480_PowerByte_errors++;
+      DS2480_PowerByte_1_errors++;
       STATUNLOCK
+      /* Make sure it's set back to normal mode since the command might be sent
+       * correctly, but response is received with errors. Otherwise it will be
+       * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
+       * Just hope the command will return ok and ignore return value.
+       * Other read/write/dir functions will try to set it back to MODE_NORMAL
+       * if it fails the first time here.
+       */
+      pn->in->ULevel = MODE_STRONG5;
+      DS2480_level(MODE_NORMAL,pn) ;
       return ret ;
     }
 //printf("Sendback byte=%.2X Resp=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X Cmd=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X \n",byte,resp[1],resp[2],resp[3],resp[4],resp[5],resp[6],resp[7],resp[8],cmd[1],cmd[2],cmd[3],cmd[4],cmd[5],cmd[6],cmd[7],cmd[8]) ;
 //printf("All=%.2X\n",((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) );
 
-// indicate the port is now at power delivery
-    pn->in->ULevel = MODE_STRONG5;
-
     // check the response bit
     ret = byte ^ ( ((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) ) ;
     if ( ret ) {
       STATLOCK
-      DS2480_PowerByte_errors++;
+      DS2480_PowerByte_2_errors++;
       STATUNLOCK
+      /* Make sure it's set back to normal mode since the command might be sent
+       * correctly, but response is received with errors. Otherwise it will be
+       * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
+       * Just hope the command will return ok and ignore return value.
+       * Other read/write/dir functions will try to set it back to MODE_NORMAL
+       * if it fails the first time here.
+       */
+      pn->in->ULevel = MODE_STRONG5;
+      DS2480_level(MODE_NORMAL,pn) ;
       return ret ;
     }
+
+// indicate the port is now at power delivery
+    pn->in->ULevel = MODE_STRONG5;
 
     // delay
     UT_delay( delay ) ;
