@@ -43,7 +43,6 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 /* read from server, free return pointer if not Null */
 void * FromServerAlloc( int fd, struct client_msg * cm ) {
     char * msg ;
-    int r ;
     
     if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
         cm->size = 0 ;

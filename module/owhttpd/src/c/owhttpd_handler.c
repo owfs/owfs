@@ -487,11 +487,11 @@ static int Backup( const char * path ) {
 /* Now show the device */
 static void ShowDevice( struct active_sock * a_sock, const char * path, struct parsedname * pn ) {
     int b = Backup(path) ;
-    /* Nested function */
-    void directory( void * data, const struct parsedname * const pn2 ) {
+    char * path2 = strdup(path) ;
+    void directory( const struct parsedname * const pn2 ) {
         char file[OW_FULLNAME_MAX] ;
         if ( FS_FileName(file,OW_FULLNAME_MAX,pn2) ) return ;
-        Show( a_sock->io, (const char *)data, file, pn2 ) ;
+        Show( a_sock->io, path2, file, pn2 ) ;
     }
 
 //printf("ShowDevice = %s\n",path) ;
@@ -504,32 +504,31 @@ static void ShowDevice( struct active_sock * a_sock, const char * path, struct p
       fprintf( a_sock->io, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, path ) ;
     }
     if ( pn->ft ) { /* single item */
-        char * path2 = strdup(path) ;
         char * slash = strrchr(path2,'/') ;
+        /* Nested function */
         if ( slash ) slash[0] = '\0' ; /* pare off device name */
-        directory(path2,pn) ;
-        free(path2) ;
+        directory(pn) ;
     } else { /* whole device */
-        FS_dir( directory, (void *)path, pn ) ;
+        FS_dir( directory, pn ) ;
     }
     if(!(pn->state & pn_text)) {
       fprintf( a_sock->io, "</TABLE>" ) ;
       HTTPfoot( a_sock->io ) ;
     }
+    free(path2) ;
 }
 
 /* Misnamed. Actually all directory */
 static void RootDir( struct active_sock * a_sock, const char * path, struct parsedname * pn ) {
     /* Nested function, of all things! */
     /* Callback function to FS_dir */
-    void directory( void * data, const struct parsedname * const pn2 ) {
+    void directory( const struct parsedname * const pn2 ) {
         /* uncached tag */
         /* device name */
         char buffer[OW_FULLNAME_MAX] ;
         char * loc = buffer ;
         char * nam = buffer;
         char * typ = "directory" ;
-	int html = ((data == NULL) ? 1 : 0);
 	*buffer = '\000';
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
@@ -549,18 +548,19 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             nam = loc ;
         }
 //printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
-	if(html)
-	  fprintf( a_sock->io, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
-		   (strcmp(path,"/")?path:""), loc, loc, nam, typ ) ;
-	else
-	  fprintf( a_sock->io, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
+        if (pn->state & pn_text) {
+            fprintf( a_sock->io, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
+        } else {
+            fprintf( a_sock->io, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
+                     (strcmp(path,"/")?path:""), loc, loc, nam, typ ) ;
+        }
     }
 //printf("ROOTDIR=%s\n",path) ;
 
     HTTPstart( a_sock->io , "200 OK", (pn->state & pn_text) ) ;
 
     if(pn->state & pn_text) {
-      FS_dir( directory, (void *)(pn->state & pn_text), pn ) ;
+      FS_dir( directory, pn ) ;
       return;
     }
     HTTPtitle( a_sock->io , "Directory") ;
@@ -581,7 +581,7 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             fprintf( a_sock->io, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>" ) ;
         }
     }
-    FS_dir( directory, NULL, pn ) ;
+    FS_dir( directory, pn ) ;
     fprintf( a_sock->io, "</TABLE>" ) ;
     HTTPfoot( a_sock->io ) ;
 }

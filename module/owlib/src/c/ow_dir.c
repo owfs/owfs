@@ -13,11 +13,11 @@ $Id$
 #include "ow_devices.h"
 
 static int FS_branchoff( const struct parsedname * const pn) ;
-static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
+static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
+static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
+static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
+static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
+static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 enum deviceformat devform = fdi ;
 
 /* Calls dirfunc() for each element in directory */
@@ -39,7 +39,7 @@ enum deviceformat devform = fdi ;
     pn->ft loops through
 */
 
-int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) {
+int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
     int ret = 0 ;
     struct parsedname pn2 ;
 
@@ -56,41 +56,41 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
     if ( pn == NULL ) {
         ret = -ENOENT ; /* should never happen */
     } else if ( pn->dev ){ /* device directory */
-        ret = FS_devdir( dirfunc, data, &pn2 ) ;
+        ret = FS_devdir( dirfunc, &pn2 ) ;
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-        ret = FS_alarmdir( dirfunc, data, &pn2 ) ;
+        ret = FS_alarmdir( dirfunc, &pn2 ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-        ret = FS_typedir( dirfunc, data, &pn2 ) ;
+        ret = FS_typedir( dirfunc, &pn2 ) ;
     } else {
         pn2.state = (pn_alarm | (pn->state & pn_text)) ;
-        dirfunc( data, &pn2 ) ;
+        dirfunc( &pn2 ) ;
         if ( pn->state & pn_uncached ) {
-            ret = FS_realdir( dirfunc, data, &pn2 ) ;
+            ret = FS_realdir( dirfunc, &pn2 ) ;
         } else {  /* root or branch directory -- non-alarm */
             /* Show uncached and stats... (if root directory) */
             if ( pn2.pathlength == 0 ) { /* true root */
                 pn2.state = pn->state ;
                 if ( cacheenabled ) { /* cached */
                     pn2.state = (pn_uncached | (pn->state & pn_text)) ;
-                    dirfunc( data, &pn2 ) ;
+                    dirfunc( &pn2 ) ;
                     pn2.state = (pn_normal | (pn->state & pn_text)) ;
                 }
                 pn2.type = pn_settings ;
-                dirfunc( data, &pn2 ) ;
+                dirfunc( &pn2 ) ;
                 pn2.type = pn_system ;
-                dirfunc( data, &pn2 ) ;
+                dirfunc( &pn2 ) ;
                 pn2.type = pn_statistics ;
-                dirfunc( data, &pn2 ) ;
+                dirfunc( &pn2 ) ;
                 pn2.type = pn_structure ;
-                dirfunc( data, &pn2 ) ;
+                dirfunc( &pn2 ) ;
                 pn2.type = pn_real ;
             }
 
             /* Show all devices in this directory */
             if ( cacheenabled && timeout.dir ) {
-                FS_cache2real( dirfunc, data, &pn2 ) ;
+                FS_cache2real( dirfunc, &pn2 ) ;
             } else {
-                FS_realdir( dirfunc, data, &pn2 ) ;
+                FS_realdir( dirfunc, &pn2 ) ;
             }
         }
     }
@@ -103,7 +103,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
 }
 
 /* Device directory -- all from memory */
-static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
     struct filetype * lastft = & (pn2->dev->ft[pn2->dev->nft]) ; /* last filetype struct */
     struct filetype * firstft ; /* first filetype struct */
     char s[33] ;
@@ -132,14 +132,14 @@ static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), 
         }
         if ( pn2->ft->ag ) {
             for ( pn2->extension=(pn2->ft->format==ft_bitfield)?-2:-1 ; pn2->extension < pn2->ft->ag->elements ; ++pn2->extension ) {
-                dirfunc( data, pn2 ) ;
+                dirfunc( pn2 ) ;
                 STATLOCK
                     ++dir_dev.entries ;
                 STATUNLOCK
             }
         } else {
             pn2->extension = 0 ;
-            dirfunc( data, pn2 ) ;
+            dirfunc( pn2 ) ;
             STATLOCK
                 ++dir_dev.entries ;
             STATUNLOCK
@@ -149,7 +149,7 @@ static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), 
 }
 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
-static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
     int ret ;
     unsigned char sn[8] ;
 
@@ -173,7 +173,7 @@ static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const)
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         FS_devicefind( ID, pn2 ) ;
-        dirfunc( data, pn2 ) ;
+        dirfunc( pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next_alarm(sn,pn2)) ;
     }
@@ -194,7 +194,7 @@ static int FS_branchoff( const struct parsedname * const pn ) {
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Scan the directory from the BUS and add to cache */
-static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
     unsigned char sn[8] ;
     int dindex = 0 ;
     int simul = 0 ;
@@ -228,7 +228,7 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
         FS_devicefind( ID, pn2 ) ;
 //printf("DIR pathlength=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ft=%p \n",pn2->pathlength,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7],pn2->ft);
         simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
-        dirfunc( data, pn2 ) ;
+        dirfunc( pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
     }
@@ -237,7 +237,7 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
     if ( simul ) {
         pn2->dev = DeviceSimultaneous ;
         if ( pn2->dev ) {
-            dirfunc( data, pn2 ) ;
+            dirfunc( pn2 ) ;
             pn2->dev = NULL ;
         }
     }
@@ -257,14 +257,14 @@ void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn ) {
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else can directory from bus (and add to cache) */
-static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
     unsigned char sn[8] ;
     int simul = 0 ;
     int dindex = 0 ;
 
     /* Test to see whether we should get the directory "directly" */
     if ( (pn2->state & pn_uncached) || Cache_Get_Dir(sn,0,pn2 ) )
-        return FS_realdir(dirfunc,data,pn2) ;
+        return FS_realdir(dirfunc,pn2) ;
 
     /* STATISCTICS */
     STATLOCK
@@ -278,7 +278,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         FS_devicefind( ID, pn2 ) ;
-        dirfunc( data, pn2 ) ;
+        dirfunc( pn2 ) ;
         simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
 //        ++dindex ;
@@ -290,7 +290,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
     if ( simul ) {
         pn2->dev = DeviceSimultaneous ;
         if ( pn2->dev ) {
-            dirfunc( data, pn2 ) ;
+            dirfunc( pn2 ) ;
             pn2->dev = NULL ;
         }
     }
@@ -299,7 +299,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
 
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
-static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
     void action( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
 //printf("Action\n") ;
@@ -307,7 +307,7 @@ static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const),
         case leaf:
         case postorder:
             pn2->dev = ((const struct device_opaque *)t)->key ;
-            dirfunc(data, pn2 ) ;
+            dirfunc( pn2 ) ;
         default:
             break ;
         }

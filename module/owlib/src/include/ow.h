@@ -735,7 +735,7 @@ void UT_delay(const unsigned int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
 /* High-level callback functions */
-int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) ;
+int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;

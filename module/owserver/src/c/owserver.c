@@ -63,7 +63,6 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 /* read from client, free return pointer if not Null */
 void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
-    int r ;
     
     if ( readn(fd, sm, sizeof(struct server_msg) ) != sizeof(struct server_msg) ) {
         sm->size = -1 ;
@@ -78,8 +77,7 @@ void * FromClientAlloc( int fd, struct server_msg * sm ) {
     
     if ( (msg=malloc(sm->size)) ) {
         if ( readn(fd,msg,sm->size) != sm->size ) {
-            sm->size = 0 ;
-            sm->ret = -EIO ;
+            sm->size = -1 ;
             free(msg);
             msg = NULL ;
         }
@@ -87,7 +85,7 @@ void * FromClientAlloc( int fd, struct server_msg * sm ) {
     return msg ;
 }
 
-int ToClient( int fd, int int format, const char * data, int datasize, int ret ) {
+int ToClient( int fd, int format, const char * data, int datasize, int ret ) {
     struct client_msg cm ;
     int nio = 1 ;
     struct iovec io[] = {
@@ -103,7 +101,7 @@ int ToClient( int fd, int int format, const char * data, int datasize, int ret )
     cm.ret = htonl(ret) ;
     cm.format = htonl(format) ;
     
-    return writev( fd, io, nio ) != size + sizeof(struct client_msg) ;
+    return writev( fd, io, nio ) != cm.size + sizeof(struct client_msg) ;
 }
 
 int Handler( int fd ) {
@@ -116,13 +114,15 @@ int Handler( int fd ) {
     char * path = FromClientAlloc( fd, &sm ) ;
     struct parsedname pn ;
     struct stateinfo si ;
-    void directory( void * d, const struct parsedname * const pn2 ) {
+    void directory( const struct parsedname * const pn2 ) {
         char D[OW_FULLNAME_MAX] ;
+        char * p ;
         FS_DirName( D, OW_FULLNAME_MAX, pn2 ) ;
-        ToClient(fd,1,D,strnlen(D,OW_FULLNAME_MAX),1) ;   
+        p = memchr(D,0,OW_FULLNAME_MAX) ;
+        ToClient(fd,1,D,p?OW_FULLNAME_MAX:p-D,1) ;   
     }
     /* error reading message */
-    if ( sm.ret < 0 ) {
+    if ( sm.size < 0 ) {
         /* Nothing allocated */
         return ToClient( fd, 0, NULL, 0, -EIO ) ;
     }
@@ -130,7 +130,7 @@ int Handler( int fd ) {
     /* No payload -- only ok if msg_nop */
     if ( sm.size == 0 ) {
         /* Nothing allocated */
-        return ToClient( fd, 0, NULL, 0, (enum msg_type)type==msg_nop?0:-EBADMSG ) ;
+        return ToClient( fd, 0, NULL, 0, (enum msg_type)sm.type==msg_nop?0:-EBADMSG ) ;
     }
 
     /* Now parse path and locate memory */
@@ -147,7 +147,7 @@ int Handler( int fd ) {
         
     /* Parse the path string */
     pn.si = &si ;
-    if ( (ret=FS_ParseName( path , &pn )) )
+    if ( (ret=FS_ParsedName( path , &pn )) ) {
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
         return ToClient( fd, 0, NULL, 0, ret ) ;
@@ -156,7 +156,7 @@ int Handler( int fd ) {
     /* parse name? */
     switch( (enum msg_type) sm.type ) {
     case msg_get:
-        if ( pn.dev==NLL || pn.ft == NULL ) {
+        if ( pn.dev==NULL || pn.ft == NULL ) {
             sm.type = msg_dir ;
             len = OW_FULLNAME_MAX ;
             break ;
@@ -210,7 +210,7 @@ int Handler( int fd ) {
         }
         break ;
     case msg_dir:
-        FS_dir( directory, NULL, &pn ) ;
+        FS_dir( directory, &pn ) ;
         ret = 0 ;
         break ;
     case msg_attr:
