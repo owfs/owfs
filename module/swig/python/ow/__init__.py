@@ -200,7 +200,7 @@ class Sensor( object ):
         # only reference it if it's already been added.
         if hasattr( self, '_attrs' ):
             if name in self._attrs:
-                print '_OW.put', self._attrs[ name ], value
+                #print '_OW.put', self._attrs[ name ], value
                 _OW.put( self._attrs[ name ], value )
             else:
                 self.__dict__[ name ] = value
