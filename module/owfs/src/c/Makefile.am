@@ -25,4 +25,4 @@ AM_LDFLAGS = -low
 
 clean-generic:
 
-    rm -f *~ .*~
+	rm -f *~ .*~

@@ -151,12 +151,12 @@ AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
     AC_CHECK_LIB(fuse,__fuse_process_cmd,, [
-	if test "${ENABLE_OWFS}" = "true"; then
-		AC_MSG_ERROR([You have to have libfuse installed first - get it from http://fuse.sourceforge.net])
-	else
-		AC_MSG_WARN([[OWFS is disabled because libfuse is not installed.]])
-        	ENABLE_OWFS="false"
-	fi
+    if test "${ENABLE_OWFS}" = "true"; then
+        AC_MSG_ERROR([You have to have libfuse installed first - get it from http://fuse.sourceforge.net])
+    else
+        AC_MSG_WARN([[OWFS is disabled because libfuse is not installed.]])
+            ENABLE_OWFS="false"
+    fi
     ])
     if test "${ENABLE_OWFS}" != "false"; then
         ENABLE_OWFS="true"
@@ -209,13 +209,13 @@ AC_SUBST(ENABLE_USB)
 if test "${ENABLE_USB}" != "false" ; then
 
     AC_CHECK_LIB(usb,usb_open, ,[
-	if test "${ENABLE_USB}" = "true" ; then
-	    AC_MSG_ERROR([libusb must be installed to use a USB adapter])
-	else
+    if test "${ENABLE_USB}" = "true" ; then
+        AC_MSG_ERROR([libusb must be installed to use a USB adapter])
+    else
             AC_MSG_WARN([libusb not found, usb will be disabled])
             ENABLE_USB=false
             AC_SUBST(ENABLE_USB)
-	fi
+    fi
     ])
     if test "${ENABLE_USB}" != "false" ; then
         ENABLE_USB=true
@@ -251,24 +251,24 @@ AC_SUBST(ENABLE_MT)
 if test "${ENABLE_MT}" = "true" ; then
     PTHREADS_CHECK_COMPILE
     AC_CACHE_CHECK(for pthreads, ac_cv_pthreads_flags, [
-	ac_cv_pthreads_flags=""
-	if test "$pthreads_ok" != "yes"; then
-	    for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt; do
-	        ac_save="$CFLAGS"
-	        CFLAGS="$CFLAGS $flag"
-		PTHREADS_CHECK_COMPILE
-		CFLAGS="$ac_save"
+    ac_cv_pthreads_flags=""
+    if test "$pthreads_ok" != "yes"; then
+        for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt; do
+            ac_save="$CFLAGS"
+            CFLAGS="$CFLAGS $flag"
+        PTHREADS_CHECK_COMPILE
+        CFLAGS="$ac_save"
 
-		if test "$pthreads_ok" = "yes"; then
-		    ac_cv_pthreads_cflags="$flag"
-		    break
-		fi
+        if test "$pthreads_ok" = "yes"; then
+            ac_cv_pthreads_cflags="$flag"
+            break
+        fi
             done
-	fi
+    fi
 ])
     if test "$pthreads_ok" = "yes"; then
-	ENABLE_MT=true
-	CFLAGS="$CFLAGS $ac_cv_pthreads_cflags"
+    ENABLE_MT=true
+    CFLAGS="$CFLAGS $ac_cv_pthreads_cflags"
     else
         AC_CHECK_LIB(pthread,pthread_mutex_lock, ,[
             AC_MSG_WARN([libpthread not found, multithreading will be disabled])
@@ -276,11 +276,11 @@ if test "${ENABLE_MT}" = "true" ; then
             AC_SUBST(ENABLE_MT)
         ])
         if test "${ENABLE_MT}" = "true" ; then
-	    PTHREADS_CHECK_COMPILE
-	    if test "$pthreads_ok" != "yes"; then
+        PTHREADS_CHECK_COMPILE
+        if test "$pthreads_ok" != "yes"; then
                 AC_MSG_WARN([libpthread not found, multithreading will be disabled])
-		ENABLE_MT=false
-	    fi
+        ENABLE_MT=false
+        fi
         fi
     fi
 fi
@@ -361,38 +361,38 @@ AH_BOTTOM([#endif])
 AM_CONFIG_HEADER([src/include/owfs_config.h:src/include/owfs_config.h.in])
 
 AC_CONFIG_FILES([
-	Makefile
-	module/Makefile
-	module/owlib/Makefile
-	module/owlib/src/Makefile
-	module/owlib/src/include/Makefile
-	module/owlib/src/c/Makefile
-	module/owlib/src/man/Makefile
-	module/owfs/Makefile
-	module/owfs/src/Makefile
-	module/owfs/src/include/Makefile
-	module/owfs/src/c/Makefile
-	module/owfs/src/man/Makefile
-	module/owhttpd/Makefile
-	module/owhttpd/src/Makefile
-	module/owhttpd/src/include/Makefile
-	module/owhttpd/src/c/Makefile
-	module/owhttpd/src/man/Makefile
-	module/owftpd/Makefile
-	module/owftpd/src/Makefile
-	module/owftpd/src/include/Makefile
-	module/owftpd/src/c/Makefile
-	module/owftpd/src/man/Makefile
-	module/owperl/Makefile
-	module/owperl/src/Makefile
-	module/owperl/src/c/Makefile
-	module/owperl/src/c/Makefile.PL
-	src/Makefile
-	src/include/Makefile
-	src/man/Makefile
-	src/rpm/Makefile
-	src/rpm/owfs.spec
-	src/scripts/Makefile
+    Makefile
+    module/Makefile
+    module/owlib/Makefile
+    module/owlib/src/Makefile
+    module/owlib/src/include/Makefile
+    module/owlib/src/c/Makefile
+    module/owlib/src/man/Makefile
+    module/owfs/Makefile
+    module/owfs/src/Makefile
+    module/owfs/src/include/Makefile
+    module/owfs/src/c/Makefile
+    module/owfs/src/man/Makefile
+    module/owhttpd/Makefile
+    module/owhttpd/src/Makefile
+    module/owhttpd/src/include/Makefile
+    module/owhttpd/src/c/Makefile
+    module/owhttpd/src/man/Makefile
+    module/owftpd/Makefile
+    module/owftpd/src/Makefile
+    module/owftpd/src/include/Makefile
+    module/owftpd/src/c/Makefile
+    module/owftpd/src/man/Makefile
+    module/owperl/Makefile
+    module/owperl/src/Makefile
+    module/owperl/src/c/Makefile
+    module/owperl/src/c/Makefile.PL
+    src/Makefile
+    src/include/Makefile
+    src/man/Makefile
+    src/rpm/Makefile
+    src/rpm/owfs.spec
+    src/scripts/Makefile
 ])
 AC_OUTPUT
 
