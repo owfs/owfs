@@ -140,19 +140,20 @@ AC_SUBST(ENABLE_OWFTPD)
 
 #Check owserver
 AC_MSG_CHECKING(if owserver is enabled)
-ENABLE_OWSERVER="false"
+ENABLE_OWSERVER="true"
 AC_ARG_ENABLE(owserver,
-[  --enable-owserver       Enable owserver module (default false)],
+[  --enable-owserver       Enable owserver module (default true)],
 [
     AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWSERVER=true
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWSERVER="false"
     fi
 ],
 [
-    AC_MSG_RESULT([false (default)])
+    AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWSERVER)
+AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
 #Check owperl
 AC_MSG_CHECKING(if owperl is enabled)
@@ -359,7 +360,6 @@ AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 # conditionals for httpd/ftpd
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
-AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
 
 # Checks for typedefs, structures, and compiler characteristics.

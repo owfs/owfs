@@ -451,11 +451,11 @@ size_t FileLength( const struct parsedname * const pn ) {
         case -fl_type:
             return strlen(pn->dev->name) ;
         case -fl_adap_name:
-            return strlen(adapter_name) ;
+            return (busmode==bus_remote) ? OW_NAME_MAX : strlen(adapter_name) ;
         case -fl_adap_port:
-            return strlen(devport) ;
+            return (busmode==bus_remote) ? OW_DEFAULT_LENGTH : strlen(devport) ;
         case -fl_pidfile:
-            if ( pid_file ) return strlen(pid_file) ;
+            if ( pid_file ) return (busmode==bus_remote) ? PATH_MAX : strlen(pid_file) ;
             return 0 ;
         default:
             return pn->ft->suglen ;

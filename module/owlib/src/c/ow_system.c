@@ -71,9 +71,14 @@ struct device d_sys_structure = { "structure", "structure", pn_system, 0, NULL }
 
 /* ------- Functions ------------ */
 
+/* special check, -remote file length won't match local sizes */
 static int FS_ascii(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    size_t s = FileLength(pn) ;
     if( (char**)(pn->ft->data) == NULL ) return -ENODEV ;
-    strncpy( buf, ((char **)(pn->ft->data))[offset], size ) ;
+    if ( offset>s ) return -ERANGE ;
+    s -= offset ;
+    if ( s>size ) s = size ; 
+    strncpy( buf, ((char **)(pn->ft->data))[offset], s ) ;
     return size ;
 }
 

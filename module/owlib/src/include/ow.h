@@ -304,6 +304,7 @@ struct parsedname ;
 #define OW_NAME_MAX      (32)
 #define OW_EXT_MAX       (6)
 #define OW_FULLNAME_MAX  (OW_NAME_MAX+OW_EXT_MAX)
+#define OW_DEFAULT_LENGTH (128)
 
 /* filetype gives -file types- for chip properties */
 struct filetype {
@@ -533,7 +534,7 @@ struct client_msg {
     int32_t size ;
     int32_t offset ;
 } ;
-enum msg_type { msg_nop, msg_read, msg_write, msg_dir, } ;
+enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, } ;
 
 
 /* device display format */
@@ -846,20 +847,20 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 void BUS_lock( void ) ;
 void BUS_unlock( void ) ;
 
-#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (busmode != bus_remote) )
 #define IsCacheEnabled(ppn )       ( (ppn->si->sg.u[0] ) && (busmode != bus_remote) )
+#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (busmode != bus_remote) )
+#define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
-#define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[4]) )
 
 #ifdef __UCLIBC__
-//#include <features.h>
-#if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
-#if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000919
-#define syslog(a,...)	//ignore_syslog
-#define openlog(a,...)	//ignore_openlog
-#define closelog()	//ignore_closelog
-#endif
-#endif
-#endif
+ //#include <features.h>
+ #if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
+  #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000919
+   #define syslog(a,...)	//ignore_syslog
+   #define openlog(a,...)	//ignore_openlog
+   #define closelog()	//ignore_closelog
+  #endif    /* __UCLIBC__ */
+ #endif   /* __UCLIBC__ */
+#endif  /* __UCLIBC__ */
 
 #endif /* OW_H */

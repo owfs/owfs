@@ -131,7 +131,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     cm->offset = ntohl(cm->offset) ;
 
 //printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return NULL ;
     if ( cm->payload > 65000 ) {
 //printf("FromServerAlloc payload too large\n");
@@ -169,7 +169,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     cm->offset = ntohl(cm->offset) ;
 
 //printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return cm->payload ;
 
     d = cm->payload - size ;
@@ -208,7 +208,7 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
     }
 
 //printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
-printf("<%.4d|%.4d\n",sm->type,payload);
+//printf("<%.4d|%.4d\n",sm->type,payload);
 
     sm->payload = htonl(payload)       ;
     sm->size    = htonl(sm->size)      ;
