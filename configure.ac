@@ -22,7 +22,7 @@ AC_SUBST(VERSION)dnl
 AC_MSG_RESULT(Configuring ${PACKAGE}-${VERSION})
 
 AC_PREFIX_DEFAULT(/opt/owfs)dnl
-AC_PREREQ(2.53)dnl
+AC_PREREQ(2.59)dnl
 AC_CONFIG_AUX_DIR(src/scripts/install)dnl
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
