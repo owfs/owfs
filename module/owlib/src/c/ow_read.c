@@ -144,12 +144,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 	      if(Cache_Get_Device(&bus_nr, pn)) {
 		//printf("Cache_Get_Device didn't find bus_nr\n");
 		bus_nr = CheckPresence(pn);
-		if(bus_nr >= 0) {
-		  //printf("CheckPresence found bus_nr %d (add to cache)\n", bus_nr);
-		  Cache_Add_Device(bus_nr, pn);
-		}
-	      } else {
-		//printf("Cache_Get_Device found bus! %d\n", bus_nr);
+		/* Cache_Add_Device() is called in FS_read_seek() */
 	      }
 	      if(bus_nr >= 0) {
 		memcpy(&pn2, pn, sizeof(struct parsedname));
@@ -253,6 +248,12 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
         }
     }
+    /* If sucessfully reading a device, we know it exists on a specific bus.
+     * Update the cache content */
+    if((pn->type == pn_real) && (r >= 0)) {
+      Cache_Add_Device(pn->in->index, pn);
+    }
+
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
         //printf("READ call pthread_join\n");
@@ -262,7 +263,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         }
         rt = (int) v ;
 //printf("READ 1st=%d 2nd=%d\n",r,rt);
-        if ( rt >= 0 && rt > r ) { /* is it an error return? Then return this one */
+        if ( (rt >= 0) && (rt > r) ) { /* is it an error return? Then return this one */
 //printf("READ from 2nd adapter\n") ;
             memcpy( buf, buf2, (size_t) rt ) ; /* Use the thread's result */
             free(buf2);

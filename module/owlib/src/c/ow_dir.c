@@ -538,6 +538,8 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), str
     STATUNLOCK
 
     /* Get directory from the cache */
+    /* FIXME: First entry was valid in the cache, but after 1ms the 2nd entry might
+     * be old and invalidated. This would result into a incomplete directory listing. */
     do {
         char ID[] = "XX";
         num2string( ID, sn[0] ) ;
