@@ -533,14 +533,15 @@ static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
 }
 
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
+    unsigned char p[3+1+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
+    int rest = 32 - (offset&0x1F) ;
     int ret ;
 
     /* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
     memcpy( &p[3], data , size ) ;
     if ( (offset+size)&0x1F ) { /* to end of page */
         BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_send_data( data,3+size,pn) ;
+            ret = BUS_select(pn) || BUS_send_data( p,3+size,pn) ;
         BUSUNLOCK(pn)
     } else {
         BUSLOCK(pn)
@@ -553,9 +554,9 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Note: location of data has now shifted down a byte for E/S register */
     p[0] = 0xAA ;
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data( &p[1],3+size,pn) || memcmp(&p[4], data, size) ;
+            ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_readin_data( &p[3],1+rest+2,pn) || CRC16(p,4+rest+2) || memcmp(&p[4], data, size) ;
     BUSUNLOCK(pn)
-    if ( ret ) return 1 ;
+            if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x55 ;

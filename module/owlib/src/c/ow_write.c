@@ -154,7 +154,7 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
         pnnext.si = &si ;
         ret = FS_write_postparse(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
-	return (void *)ret;
+        return (void *)ret;
     }
     if(!(pn->state & pn_bus)) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
@@ -245,7 +245,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
             int I ;
             ret = FS_input_integer( &I, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_integer(I,cbuf,fl,pn) ; /* post-parse cachable string creation */
-            ret |= (pn->ft->write.i)(&I,pn) ;
+            ret = ret || (pn->ft->write.i)(&I,pn) ;
         }
         break ;
     case ft_bitfield:
@@ -256,7 +256,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
             unsigned int U ;
             ret = FS_input_unsigned( &U, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,fl,pn) ; /* post-parse cachable string creation */
-            ret |= (pn->ft->write.u)(&U,pn) ;
+            ret = ret || (pn->ft->write.u)(&U,pn) ;
         }
         break ;
     case ft_float:
@@ -266,7 +266,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
             FLOAT F ;
             ret = FS_input_float( &F, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
-            ret |= (pn->ft->write.f)(&F,pn) ;
+            ret = ret || (pn->ft->write.f)(&F,pn) ;
         }
         break ;
     case ft_date:
@@ -276,7 +276,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
             DATE D ;
             ret = FS_input_date( &D, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_date(D,cbuf,fl,pn) ; /* post-parse cachable string creation */
-            ret |= (pn->ft->write.d)(&D,pn) ;
+            ret = ret || (pn->ft->write.d)(&D,pn) ;
         }
         break ;
     case ft_yesno:
@@ -286,7 +286,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
             int Y ;
             ret = FS_input_yesno( &Y, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_integer(Y,cbuf,fl,pn) ; /* post-parse cachable string creation */
-            ret |= (pn->ft->write.y)(&Y,pn) ;
+            ret = ret || (pn->ft->write.y)(&Y,pn) ;
         }
         break ;
     case ft_ascii:
@@ -746,10 +746,15 @@ static int FS_input_date( DATE * const result, const char * const buf, const siz
     struct tm tm ;
     if ( size<2 || buf[0]=='\0' || buf[0]=='\n' ) {
         *result = time(NULL) ;
-    } else if ( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) ) {
-        *result = mktime(&tm) ;
-    } else {
+    } else if (
+            strptime(buf,"%a %b %d %T %Y",&tm) == NULL
+            && strptime(buf,"%b %d %T %Y",&tm) == NULL
+            && strptime(buf,"%c",&tm) == NULL
+            && strptime(buf,"%D %T",&tm) == NULL )
+    {
         return -EINVAL ;
+    } else {
+        *result = mktime(&tm) ;
     }
     return 0 ;
 }
