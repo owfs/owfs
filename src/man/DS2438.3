@@ -93,12 +93,12 @@ with units in Amps and Ohms.
 Current measurement will be temporarily enabled (see
 .I Ienable
 ) if not currently enabled (pun intended) for this reading.
-.SS disconnet/date
+.SS disconnect/date
 .I read-write, ascii
 .br
 26 character date representation of the
-.I disconnect/counter
-value. Format is the same as the 
+.I disconnect/udate
+value. Time when the battery pack waws removed from the charger. Format is the same as the 
 .I date
 property.
 .SS disconnect/udate
@@ -108,12 +108,12 @@ Representation of
 .I disconnect/date
 as a number. See
 .I udate
-for details
+for details.
 .SS endcharge/date
 .I read-write, ascii
 .br
 26 character date representation of the
-.I endcharge/counter
+.I endcharge/udate
 value. Format is the same as the 
 .date
 property.
@@ -124,7 +124,7 @@ Representation of
 .I endcharge/date
 as a number. See
 .I udate
-for details
+for details.
 .SS humidity
 .I read-only, floating point
 .br
