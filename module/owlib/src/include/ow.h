@@ -576,6 +576,11 @@ struct average {
     unsigned int current ;
 } ;
 
+struct directory {
+    unsigned int calls ;
+    unsigned int entries ;
+} ;
+
 #define AVERAGE_IN(pA)  ++(pA)->current; ++(pA)->count; (pA)->sum+=(pA)->current; if ((pA)->current>(pA)->max)++(pA)->max;
 #define AVERAGE_OUT(pA) --(pA)->current;
 
@@ -603,9 +608,8 @@ extern unsigned int write_tries[3] ;
 extern unsigned int write_success ;
 extern struct average write_avg ;
 
-extern unsigned int dir_calls ;
-extern unsigned int dir_tries ;
-extern unsigned int dir_success ;
+extern struct directory dir_main ;
+extern struct directory dir_dev ;
 extern unsigned int dir_depth ;
 extern struct average dir_avg ;
 

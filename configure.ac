@@ -129,6 +129,17 @@ AC_ARG_ENABLE(mt,
 
 AC_SUBST(ENABLE_MT)
 
+# Include libusb if the usb is enabled
+
+if test "${ENABLE_MT}" = "true" ; then
+
+    AC_CHECK_LIB(pthread,pthread_mutex_lock, ,[
+        AC_MSG_WARN([libpthread not found, multithreading will be disabled])
+        ENABLE_MT=false
+        AC_SUBST(ENABLE_MT)
+    ])
+fi
+
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
 
 # Check if the modules are enabled
@@ -170,8 +181,8 @@ AC_SUBST(ENABLE_OWHTTPD)
 # Include libdb if the cache is enabled
 if test "${ENABLE_CACHE}" = "true" ; then
     AC_CHECK_LIB(db,__db_dbopen,[
-        AC_MSG_CHECKING([<DB41?])
-        AC_CHECK_LIB(db,__log_register,[ENABLE_CACHE41=false],[ENABLE_CACHE41=true])
+        AC_MSG_CHECKING([>DB4.0?])
+        AC_CHECK_LIB(db,__txn_reset,[ENABLE_CACHE41=true],[ENABLE_CACHE41=false])
         ],[
         AC_MSG_WARN([libdb1 not found, cache will be disabled])
         ENABLE_CACHE=false

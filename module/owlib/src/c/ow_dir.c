@@ -38,6 +38,9 @@ enum deviceformat devform = fdi ;
 int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) {
     int ret ;
     struct parsedname pn2 ;
+unsigned int dir_tries = 0 ;
+unsigned int dir_calls = 0 ;
+unsigned int dir_success = 0 ;
 
     STATLOCK
         AVERAGE_IN(&dir_avg)
@@ -53,7 +56,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
 
         /* STATISCTICS */
         STATLOCK
-            ++dir_calls ;
+            ++dir_main.calls ;
         STATUNLOCK
 
         pn2.ft = NULL ; /* just in case not properly set */
@@ -89,9 +92,6 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         }
 //printf("DIR2\n");
         /* STATISCTICS */
-        STATLOCK
-            ++dir_tries ;
-        STATUNLOCK
         BUS_lock() ;
         /* Turn off all DS2409s */
 
@@ -100,8 +100,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         while (ret==0) {
             char ID[] = "XX";
             STATLOCK
-                ++dir_success ;
-                ++dir_tries ;
+                ++dir_main.entries ;
             STATUNLOCK
             num2string( ID, sn[0] ) ;
             memcpy( pn2.sn, sn, 8 ) ;
@@ -131,6 +130,9 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         struct filetype * firstft ; /* first filetype struct */
         char s[33] ;
         int len ;
+        STATLOCK
+            ++dir_dev.calls ;
+        STATUNLOCK
         if ( pn2.subdir ) { /* indevice subdir, name prepends */
 //printf("DIR device subdirectory\n");
             strcpy( s , pn2.subdir->name ) ;
@@ -151,10 +153,16 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             if ( pn2.ft->ag ) {
                 for ( pn2.extension=-1 ; pn2.extension < pn2.ft->ag->elements ; ++pn2.extension ) {
                     dirfunc( data, &pn2 ) ;
+                    STATLOCK
+                        ++dir_dev.entries ;
+                    STATUNLOCK
                 }
             } else {
                 pn2.extension = 0 ;
                 dirfunc( data, &pn2 ) ;
+                STATLOCK
+                    ++dir_dev.entries ;
+                STATUNLOCK
             }
         }
         ret = 0 ;

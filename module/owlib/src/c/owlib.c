@@ -125,9 +125,8 @@ unsigned int write_tries[3] = {0,0,0,} ;
 unsigned int write_success = 0 ;
 struct average write_avg = {0L,0L,0L,0L,} ;
 
-unsigned int dir_tries = 0 ;
-unsigned int dir_calls = 0 ;
-unsigned int dir_success = 0 ;
+struct directory dir_main = { 0L, 0L, } ;
+struct directory dir_dev = { 0L, 0L, } ;
 unsigned int dir_depth = 0 ;
 struct average dir_avg = {0L,0L,0L,0L,} ;
 

@@ -87,9 +87,12 @@ struct device d_stats_write = { "stats_write", "stats_write", dev_statistic, NFT
 
 struct filetype stats_directory[] = {
     {"maxdepth"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_depth        , } ,
-    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_success      , } ,
-    {"tries"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_tries        , } ,
-    {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_calls        , } ,
+    {"bus"             ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"bus/calls"       , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_main.calls   , } ,
+    {"bus/entries"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_main.entries , } ,
+    {"device"          ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"device/calls"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_dev.calls    , } ,
+    {"device/entries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_dev.entries  , } ,
 }
  ;
 struct device d_stats_directory = { "stats_directory", "stats_directory", dev_statistic, NFT(stats_directory), stats_directory } ;
