@@ -122,7 +122,7 @@ static int FS_r_version(char *buf, const size_t size, const off_t offset , const
     char v[16] ;
     if ( OW_r_version( v, pn ) ) return -EINVAL ;
     memcpy( buf, &v[offset], size ) ;
-    return 0 ;
+    return size ;
 }
 
 static int FS_w_on(const int * y , const struct parsedname * pn ) {
@@ -244,7 +244,7 @@ static int FS_w_screenX(const char *buf, const size_t size, const off_t offset ,
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
 //    if ( OW_r_memory(buf,size,offset,pn) ) return -EFAULT ;
     if ( OW_read_paged(buf,size,offset,pn, 16,OW_r_memory) ) return -EFAULT ;
-    return 0 ;
+    return size ;
 }
 
 static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
