@@ -71,7 +71,7 @@ struct filetype DS2438[] = {
     {"Ienable"   ,    12,  NULL  , ft_unsigned,ft_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable}, NULL      , } ,
     {"offset"    ,    12,  NULL  , ft_unsigned,ft_stable  , {i:FS_r_Offset} , {i:FS_w_Offset} , NULL      , } ,
 } ;
-DeviceEntry( 26, DS2438 )
+DeviceEntryExtended( 26, DS2438, DEV_temp )
 
 /* ------- Functions ------------ */
 
@@ -228,19 +228,20 @@ static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) {
     int ret ;
 
     // write conversion command
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &t, 1 ) ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
-
-    // Loop waiting for completion
-    for ( i=0 ; i<10 ; ++i ) {
-        UT_delay(1) ;
+    if ( ! Simul_Test( DEV_temp, 10, pn ) ){
         BUSLOCK
-            ret = BUS_readin_data(data,1) ;
+            ret = BUS_select(pn) || BUS_send_data( &t, 1 ) ;
         BUSUNLOCK
         if ( ret ) return 1 ;
-        if ( data[0] ) break ;
+        // Loop waiting for completion
+        for ( i=0 ; i<10 ; ++i ) {
+            UT_delay(1) ;
+            BUSLOCK
+                ret = BUS_readin_data(data,1) ;
+            BUSUNLOCK
+            if ( ret ) return 1 ;
+            if ( data[0] ) break ;
+        }
     }
 
     // read back registers

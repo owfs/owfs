@@ -279,15 +279,15 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
 
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
     /* Select particular device and start conversion */
-    if ( pow ) { // powered, so release bus immediately after issuing convert
+    if ( ! pow ) { // unpowered, deliver power, no communication allowed
+        BUSLOCK
+            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
+        BUSUNLOCK
+    } else if ( ! Simul_Test( DEV_temp, delay, pn ) ){ // powered, so release bus immediately after issuing convert
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
         BUSUNLOCK
         UT_delay( delay ) ;
-    } else { // unpowered, deliver power, no communication allowed
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
-        BUSUNLOCK
     }
     if ( ret ) return 1 ;
 
@@ -358,15 +358,15 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
     }
 
     /* Conversion */
-    if ( pow ) { // powered, so release bus immediately after issuing convert
+    if ( !pow ) { // unpowered, deliver power, no communication allowed
+        BUSLOCK
+            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
+        BUSUNLOCK
+    } else if ( ! Simul_Test( DEV_temp, delay, pn ) ) { // powered, so release bus immediately after issuing convert
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
         BUSUNLOCK
         UT_delay( delay ) ;
-    } else { // unpowered, deliver power, no communication allowed
-        BUSLOCK
-            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
-        BUSUNLOCK
     }
     if ( ret ) return 1 ;
 
