@@ -105,6 +105,7 @@ int owopt( const int c , const char * const arg ) {
     case 's':
         return OW_ArgNet( arg ) ;
     case 'p':
+      //printf("Arg: -p [%s]\n", arg);
         return OW_ArgServer( arg ) ;
     case 'f':
         if (strcasecmp(arg,"f.i")==0)        SemiGlobal.u[3]=fdi;

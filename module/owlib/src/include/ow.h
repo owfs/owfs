@@ -199,7 +199,7 @@ extern int multithreading ;
     Global variables -- each invokation will have it's own data#define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"CMD_ENV     "_FUSE_UNMOUNT_CMD"
 */
 /* command line options */
-/* These a re the owlib-specific options */
+/* These are the owlib-specific options */
 #define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 int owopt( const int c , const char * const arg ) ;
@@ -290,7 +290,7 @@ extern struct aggregate Asystem ; /* for remote directories */
 
 /* file lengths that need special processing */
 /* stored (as negative enum) in ft.suglen */
-enum fl_funny { fl_zero, fl_type, fl_store, } ;
+enum fl_funny { fl_zero, fl_type, fl_store, fl_pidfile } ;
 
     /* property format, controls web display */
 /* Some explanation of ft_format:

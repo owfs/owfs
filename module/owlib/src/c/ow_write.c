@@ -85,17 +85,23 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     int r ;
 #ifdef OW_MT
     pthread_t thread ;
+    int threadbad;
+    void * v ;
+    int rt ;
+
     /* Embedded function */
     void * Write2( void * vp ) {
-        struct parsedname pn2 ;
+        struct parsedname *pn2 = (struct parsedname *)vp ;
+        struct parsedname pnnext ;
         struct stateinfo si ;
-        (void) vp ;
-        memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
-        pn2.in = pn->in->next ;
-        pn2.si = &si ;
-        return (void *) FS_write_postparse(buf,size,offset,&pn2) ;
+	int ret;
+        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
+        pnnext.in = pn2->in->next ;
+        pnnext.si = &si ;
+        ret = FS_write_postparse(buf,size,offset,&pnnext) ;
+	pthread_exit((void *)ret);
     }
-    int threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
+    threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
 #endif /* OW_MT */
 
     if ( pn->in->busmode == bus_remote ) {
@@ -103,7 +109,6 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     } else {
         /* if readonly exit */
         if ( readonly ) return -EROFS ;
-//        if ( indevice==NULL ) return -ENODEV ;
 
         STATLOCK
             AVERAGE_IN(&write_avg)
@@ -127,9 +132,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         if ( r==0 ) r=size ; /* here's where the size is used! */
     }
 #ifdef OW_MT
-    if ( !threadbad ) { /* was a thread created? */
-        void * v ;
-        int rt ;
+    if ( threadbad == 0 ) { /* was a thread created? */
         if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
         rt = (int) v ;
         if ( rt > 0 ) return rt ; /* is it an error return? Then return this one */

@@ -351,6 +351,7 @@ struct device d_stats_errors = { "errors", "errors", 0, NFT(stats_errors), stats
 static int FS_stat(unsigned int * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     if (dindex<0) dindex = 0 ;
+    if (pn->ft == NULL) return -ENOENT ;
     if (pn->ft->data == NULL) return -ENOENT ;
     STATLOCK
         u[0] =  ((unsigned int *)pn->ft->data)[dindex] ;
@@ -365,6 +366,7 @@ static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
     if (dindex<0) dindex = 0 ;
     c = find_connection_in(dindex+1);
     if(!c) return -ENOENT ;
+    if (pn->ft == NULL) return -ENOENT ;
     switch((unsigned int)pn->ft->data) {
     case 0:
       ptr = &c->bus_locks;
@@ -390,6 +392,7 @@ static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
     c = find_connection_in(dindex+1);
     if(!c) return -ENOENT ;
     
+    if (pn->ft == NULL) return -ENOENT ;
     switch((unsigned int)pn->ft->data) {
     case 0:
       tv = &c->bus_time;
@@ -408,8 +411,10 @@ static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
 static int FS_time(FLOAT *u , const struct parsedname * pn) {
     FLOAT f;
     int dindex = pn->extension ;
-    struct timeval * tv = (struct timeval *) pn->ft->data ;
+    struct timeval * tv;
     if (dindex<0) dindex = 0 ;
+    if (pn->ft == NULL) return -ENOENT ;
+    tv = (struct timeval *) pn->ft->data ;
     if (tv == NULL) return -ENOENT ;
 
     STATLOCK /* to prevent simultaneous changes to bus timing variables */

@@ -149,22 +149,26 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
 #ifdef OW_MT
     pthread_t thread ;
     /* Embedded function */
-    void * Read2( void * vp ) {
+    void * Check2( void * vp ) {
+        struct parsedname *pn1 = (struct parsedname *)vp ;
         struct parsedname pn2 ;
         struct stateinfo si ;
-        (void) vp ;
-        memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
-        pn2.in = pn->in->next ;
+	int ret;
+        memcpy( &pn2, pn1 , sizeof(struct parsedname) ) ;
+        pn2.in = pn1->in->next ;
         pn2.si = &si ;
-        return (void *) CheckPresence_low(&pn2) ;
+        ret = CheckPresence_low(&pn2) ;
+	pthread_exit((void *)ret);
     }
-    int threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
+    int threadbad;
+    //printf("CheckPresence_low\n"); UT_delay(100);
+    threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
 #endif /* OW_MT */
     BUSLOCK(pn)
         ret = BUS_normalverify(pn) ;
     BUSUNLOCK(pn)
 #ifdef OW_MT
-    if ( !threadbad ) { /* was a thread created? */
+    if ( threadbad == 0 ) { /* was a thread created? */
         void * v ;
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
         return ret && ((int) v) ;

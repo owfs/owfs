@@ -59,14 +59,14 @@ $Id$
 struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
     {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, NULL , } ,
-    {"address"    , PATH_MAX, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
+    {"address"    ,      512, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
     {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
     {"detail"     ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_detail} , {v:NULL}, NULL , } ,
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
-    {"pidfile"    , PATH_MAX, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
+    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
     {"pid"        ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &pid_num , } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
@@ -82,10 +82,12 @@ struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_s
 
 /* special check, -remote file length won't match local sizes */
 static int FS_name(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    struct connection_in * in = indevice ;
-    int nin = pn->extension ;
-    
-    while ( nin-- ) in = in->next ;
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex+1);
+    if(!in) return -ENOENT ;
     
     if ( in->adapter_name == NULL ) return -EINVAL ;
     strncpy(buf,&(in->adapter_name[offset]),size);
@@ -94,10 +96,12 @@ static int FS_name(char *buf, const size_t size, const off_t offset , const stru
 
 /* special check, -remote file length won't match local sizes */
 static int FS_port(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    struct connection_in * in = indevice ;
-    int nin = pn->extension ;
+    int dindex = pn->extension ;
+    struct connection_in * in;
 
-    while ( nin-- ) in = in->next ;
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex+1);
+    if(!in) return -ENOENT ;
     
     strncpy(buf,&(in->name[offset]),size);
     return buf[size-1]?size:strlen(buf) ;
@@ -105,11 +109,12 @@ static int FS_port(char *buf, const size_t size, const off_t offset , const stru
 
 /* special check, -remote file length won't match local sizes */
 static int FS_version(unsigned int * u, const struct parsedname * pn) {
-    struct connection_in * in = indevice ;
-    int nin = pn->extension ;
-    
-//printf("VERSION ext=%d\n",nin);
-    while ( nin-- ) in = in->next ;
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex+1);
+    if(!in) return -ENOENT ;
     
     u[0] = in->Adapter ;
     return 0 ;
@@ -123,19 +128,21 @@ static int FS_pidfile(char *buf, const size_t size, const off_t offset , const s
 }
 
 static int FS_uint(unsigned int * u, const struct parsedname * pn) {
-    if ( pn->ft->data ) {
-        u[0] = ((unsigned int *) pn->ft->data)[0] ;
-        return 0 ;
-    }
-    return -ENODEV ;
+    if(!pn->ft) return -ENODEV ;
+    if(!pn->ft->data) return -ENODEV ;
+    u[0] = ((unsigned int *) pn->ft->data)[0] ;
+    //printf("FS_uint: pid=%ld nr=%d\n", pthread_self(), u[0]);
+    return 0 ;
 }
 
 static int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     char tmp[16] = "(none)";
-    struct connection_in * in = indevice ;
-    int nin = pn->extension ;
-    
-    while ( nin-- ) in = in->next ;
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex+1);
+    if(!in) return -ENOENT ;
     
     switch(in->Adapter) {
     case adapter_LINK:

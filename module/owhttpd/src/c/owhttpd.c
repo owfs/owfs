@@ -30,32 +30,6 @@ $Id$
 #include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
 
-#if 0
-#ifdef OW_MT
-#include <pthread.h>
-sem_t accept_sem ;
-#define MAX_THREADS 10
-pthread_mutex_t thread_lock = PTHREAD_MUTEX_INITIALIZER;
-struct mythread {
-    pthread_t tid;
-    int socket;
-    unsigned char avail;
-};
-struct mythread threads[MAX_THREADS];
-#define THREADLOCK      pthread_mutex_lock(&thread_lock);
-#define THREADUNLOCK    pthread_mutex_unlock(&thread_lock);
-
-#else /* OW_MT */
-#define MAX_THREADS 1
-struct mythread {
-    int socket;
-};
-struct mythread threads[MAX_THREADS];
-#define THREADLOCK
-#define THREADUNLOCK
-#endif /* OW_MT */
-#endif /* 0 */
-
 /*
  * Default port to listen too. If you aren't root, you'll need it to
  * be > 1024 unless you plan on using a config file

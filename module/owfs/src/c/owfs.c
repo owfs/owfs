@@ -145,13 +145,12 @@ int main(int argc, char *argv[]) {
 #else
     fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
 #endif
-        if (multithreading) {
-            fuse_loop_mt(fuse) ;
-        } else {
-            fuse_loop(fuse) ;
-        }
-    close(fuse_fd);
-
+    if (multithreading) {
+        fuse_loop_mt(fuse) ;
+    } else {
+        fuse_loop(fuse) ;
+    }
+    close(fuse_fd) ;
     ow_exit(0);
     return 0 ;
 }
@@ -167,6 +166,8 @@ static void ow_exit( int e ) {
     // fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
 #if (FUSE_MAJOR_VERSION == 2)
     if(fuse != NULL) {
+      /* this will unlink all inodes.. Could take some time on slow
+       * processors... eg. Coldfire 54MHz */
       fuse_destroy(fuse);
     }
 #endif

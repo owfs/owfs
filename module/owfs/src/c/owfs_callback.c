@@ -107,30 +107,33 @@ static int FS_truncate(const char *path, const off_t size) {
 #endif /* FUSE_MAJOR_VERSION */
 
 
-
-
-
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
     struct stateinfo si ;
     int ret ;
+    /* Embedded function */
     /* Callback function to FS_dir */
     /* Prints this directory element (not the whole path) */
     void directory( const struct parsedname * const pn2 ) {
-        char extname[OW_FULLNAME_MAX+1] ; /* buffer for name */
+        char *extname ;
+	if( !(extname = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+	  return;
+	}
         FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
-//printf("DIR %s\n",extname);
         FILLER(h,extname) ;
+	free(extname);
     }
 
     pn.si = &si ;
-//printf("GETDIR\n");
+    //printf("GETDIR\n");
 
     if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
         ret = -ENOENT;
     } else { /* Good pn */
         /* Call directory spanning function */
+        //printf("call FS_dir\n");
         FS_dir( directory, &pn ) ;
+	//printf("FS_dir done\n");
         FILLER(h,".") ;
         FILLER(h,"..") ;
         ret = 0 ;

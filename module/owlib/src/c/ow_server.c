@@ -30,11 +30,11 @@ int Server_detect( struct connection_in * in ) {
 }
 
 int ServerSize( const char * path, const struct parsedname * pn ) {
-    return ServerSizeorFull( msg_size, path,pn) ;
+    return ServerSizeorFull( msg_size, path, pn) ;
 }
 
 int ServerFull( const char * path, const struct parsedname * pn ) {
-    return ServerSizeorFull( msg_full, path,pn) ;
+    return ServerSizeorFull( msg_full, path, pn) ;
 }
 
 /* Size of a data item */
@@ -115,16 +115,19 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    struct stateinfo si;
     char * path2 ;
+    int ret;
     int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
 
     if ( connectfd < 0 ) return -EIO ;
+    memset(&cm, 0, sizeof(struct client_msg));
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
-//printf("ServerDir path=%s\n",path);
-    (void) pn ;
+    //printf("ServerDir path=%s\n", pn->path);
+    memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_dir ;
     sm.size = 0 ;
     sm.sg = SemiGlobal.int32;
@@ -134,14 +137,22 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-//printf("ServerDir got:%s\n",path2);
+	    //printf("ServerDir got:%s\n",path2);
+#if 0
+	    if(pn->in->busmode == bus_remote) {
+	      printf("ServerDir: use a new stateinfo?\n");
+	      memset(&si, 0, sizeof(struct stateinfo));
+	      pn2.si = &si ;
+	      pn2.badcopy = 1 ;
+	    } else
+#endif
             pn2.si = pn->si ; /* reuse stateinfo */
-            if ( FS_ParsedName( path2, &pn2 ) ) {
+ 
+            if ( (ret = FS_ParsedName( path2, &pn2 )) ) {
                 cm.ret = -EINVAL ;
                 free(path2) ;
                 break ;
             } else {
-//printf("DIRFUNC\n");
                 DIRLOCK
                     dirfunc(&pn2) ;
                 DIRUNLOCK
@@ -161,8 +172,9 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 /* read from server, free return pointer if not Null */
 static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     char * msg ;
-
-    if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
+    int ret;
+    ret = readn(fd, cm, sizeof(struct client_msg) );
+    if ( ret != sizeof(struct client_msg) ) {
         cm->size = 0 ;
         cm->ret = -EIO ;
         return NULL ;
@@ -183,7 +195,8 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     }
 
     if ( (msg=malloc(cm->payload)) ) {
-        if ( readn(fd,msg,cm->payload) != cm->payload ) {
+        ret = readn(fd,msg,cm->payload);
+        if ( ret != cm->payload ) {
 //printf("FromServer couldn't read payload\n");
             cm->payload = 0 ;
             cm->ret = -EIO ;
@@ -199,8 +212,10 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
 static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     int rtry ;
     int d ;
+    int ret;
 
-    if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
+    ret = readn(fd, cm, sizeof(struct client_msg) );
+    if ( ret != sizeof(struct client_msg) ) {
         cm->size = 0 ;
         cm->ret = -EIO ;
         return -EIO ;
@@ -218,14 +233,16 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
 
     d = cm->payload - size ;
     rtry = d<0 ? cm->payload : size ;
-    if ( readn(fd, msg, rtry ) != rtry ) {
+    ret = readn(fd, msg, rtry );
+    if ( ret != rtry ) {
         cm->ret = -EIO ;
         return -EIO ;
     }
 
     if ( d>0 ) {
         char extra[d] ;
-        if ( readn(fd,extra,d) != d ) {
+        ret = readn(fd,extra,d);
+        if ( ret != d ) {
             cm->ret = -EIO ;
             return -EIO ;
         }
@@ -237,6 +254,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
 static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) {
     int nio = 1 ;
     int payload = 0 ;
+    int ret;
     struct iovec io[] = {
         { sm, sizeof(struct server_msg), } ,
         { path, 0, } ,
@@ -260,5 +278,6 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
     sm->sg      = htonl(sm->sg) ;
     sm->offset  = htonl(sm->offset)    ;
 
-    return writev( fd, io, nio ) != payload + sizeof(struct server_msg) ;
+    ret = writev( fd, io, nio );
+    return ret != (payload + sizeof(struct server_msg)) ;
 }

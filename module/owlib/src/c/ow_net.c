@@ -58,6 +58,8 @@ int ServerAddr(  struct connection_out * out ) {
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
+    //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
+
     if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
         fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
@@ -68,6 +70,7 @@ int ServerAddr(  struct connection_out * out ) {
 int ServerListen( struct connection_out * out ) {
     int fd ;
     int on = 1 ;
+    int ret;
 
     if ( out->ai == NULL ) {
         fprintf(stderr,"Server address not yet parsed\n");
@@ -76,24 +79,28 @@ int ServerListen( struct connection_out * out ) {
 
     if ( out->ai_ok == NULL ) out->ai_ok = out->ai ;
     do {
+      //printf("ServerListen: out->ai_ok = %p\n", out->ai_ok);
         fd = socket(
             out->ai_ok->ai_family,
             out->ai_ok->ai_socktype,
             out->ai_ok->ai_protocol
         ) ;
         if ( fd >= 0 ) {
-            setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ;
-            if ( bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
-               || listen(fd, 100)
-            ) {
-                close( fd ) ;
-            } else {
-                out->fd = fd ;
-                return fd ;
-            }
-        }
+	    ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ||
+	      bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen ) ||
+	      listen(fd, 10);
+	    if ( ret ) {
+	      fprintf(stderr, "ServerListen: Socket problem [%s]\n", strerror(errno));
+	      close( fd ) ;
+	    } else {
+	      out->fd = fd ;
+	      return fd ;
+	    }
+        } else {
+	  fprintf(stderr, "ServerListen: socket() errno=%d [%s]", errno, strerror(errno));
+	}
     } while ( (out->ai_ok=out->ai_ok->ai_next) ) ;
-    fprintf(stderr,"Socket problem errno=%d\n",errno) ;
+    fprintf(stderr,"ServerListen: Socket problem errno=%d\n",errno) ;
     return -1 ;
 }
 
@@ -116,6 +123,8 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
     bzero( &hint, sizeof(struct addrinfo) ) ;
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
+
+    //printf("ClientAddr: [%s] [%s]\n", in->host, in->service);
 
     if ( (ret=getaddrinfo( in->host, in->service, &hint, &in->ai )) ) {
 //printf("GetAddrInfo ret=%d\n",ret);
@@ -147,7 +156,7 @@ int ClientConnect( struct connection_in * in ) {
             close( fd ) ;
         }
     } while ( (in->ai_ok=in->ai_ok->ai_next) ) ;
-    fprintf(stderr,"Socket problem errno=%d\n",errno) ;
+    fprintf(stderr,"ClientConnect: Socket problem errno=%d\n",errno) ;
     return -1 ;
 }
 
@@ -161,6 +170,11 @@ int ClientConnect( struct connection_in * in ) {
 */
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
+    struct connection_out * out_last = NULL;
+    pthread_t thread ;
+#ifndef __UCLIBC__
+    pthread_attr_t attr ;
+#endif
     /* embedded function */
     void ToListen( struct connection_out * o ) {
         if ( ServerAddr( o ) || (ServerListen( o )<0) ) {
@@ -176,51 +190,60 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
     }
 #ifdef OW_MT
-    pthread_t thread ;
-#ifndef __UCLIBC__
-    pthread_attr_t attr ;
-
-    pthread_attr_init(&attr) ;
-    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
-#endif
     /* Embedded function */
     void * ConnectionThread( void * v ) {
-        struct connection_out * out2 = out ;
+        struct connection_out * out2 = (struct connection_out *)v ;
         pthread_t thread2 ;
         /* Doubly Embedded function */
         void * AcceptThread( void * v2 ) {
             int acceptfd ;
-            (void) v2 ;
+	    struct connection_out *o2 = (struct connection_out *)v2;
             //printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
-            acceptfd = accept( out2->fd, NULL, NULL ) ;
+            acceptfd = accept( o2->fd, NULL, NULL ) ;
             //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
-            ACCEPTUNLOCK(out2)
+            ACCEPTUNLOCK(o2)
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
             RunAccepted( acceptfd ) ;
-            return NULL ;
+            pthread_exit((void *)0);
         }
-        (void) v ;
         ToListen( out2 ) ;
         for(;;) {
             ACCEPTLOCK(out2)
 #ifdef __UCLIBC__
-            if ( pthread_create( &thread2, NULL, AcceptThread, NULL ) ) Exit(1) ;
+            if ( pthread_create( &thread2, NULL, AcceptThread, (void *)out2 ) ) Exit(1) ;
             pthread_detach(thread2);
 #else
-            if ( pthread_create( &thread2, &attr, AcceptThread, NULL ) ) Exit(1) ;
+            if ( pthread_create( &thread2, &attr, AcceptThread, (void *)out2 ) ) Exit(1) ;
 #endif
         }
+	if(out == out_last) {
+	  /* last connection_out wasn't a separate thread */
+	  return NULL;
+	} else {
+	  pthread_exit((void *)0);
+	}
     }
+
+#ifndef __UCLIBC__
+    pthread_attr_init(&attr) ;
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif
+
+    /* find the last outdevice to make sure embedded function
+     * return currect value */
+    out_last = outdevice;
+    while ( out_last->next ) out_last = out_last->next ;
+
     while ( out->next ) {
 #ifdef __UCLIBC__
-        if ( pthread_create( &thread, NULL, ConnectionThread, NULL ) ) Exit(1) ;
+        if ( pthread_create( &thread, NULL, ConnectionThread, out) ) Exit(1) ;
         pthread_detach(thread);
 #else
-        if ( pthread_create( &thread, &attr, ConnectionThread, NULL ) ) Exit(1) ;
+        if ( pthread_create( &thread, &attr, ConnectionThread, out) ) Exit(1) ;
 #endif
         out = out->next ;
     }
-    ConnectionThread( NULL ) ;
+    ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
     for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;

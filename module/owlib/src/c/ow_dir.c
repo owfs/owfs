@@ -46,7 +46,10 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     struct parsedname pn2 ;
     uint32_t flags = 0 ;
 
-    if ( pn->in==NULL ) return -ENODEV ;
+    if ( pn == NULL || pn->in==NULL ) {
+      return -ENODEV ;
+    }
+
     STATLOCK
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
@@ -54,20 +57,44 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     FSTATLOCK
         dir_time = time(NULL) ; // protected by mutex
     FSTATUNLOCK
+
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
     pn2.badcopy = 1 ;
-//printf("DIR1 path=%s\n",path);
-    if ( pn == NULL ) {
-        ret = -ENOENT ; /* should never happen */
-    } else if ( pn->dev ){ /* device directory */
+
+    //printf("DIR1 pn->path=%s pn->type=%d\n",pn->path, pn->type);
+    //printf("DIR1 pn->subdir->name=%s\n",pn->subdir->name);
+    if ( pn->in->busmode == bus_remote ) {
+
+      switch(pn->type) {
+      case pn_system:
+      case pn_statistics:
+      case pn_settings:
+	//printf("FS_dir: Call ServerDir pid=%ld returned %d\n", pthread_self(), ret);
+	ret = ServerDir(dirfunc, &pn2, &flags) ;
+	//printf("FS_dir: ServerDir pid=%ld returned %d\n", pthread_self(), ret);
+	return ret;
+      default:
+	break;
+      }
+    }
+
+    if ( pn->dev ){ /* device directory */
+        //printf("FS_dir: call FS_devdir\n");
         ret = FS_devdir( dirfunc, &pn2 ) ;
+	//printf("FS_dir: done FS_devdir\n");
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+        //printf("FS_dir: call FS_dir_seek\n");
         ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
+	////printf("FS_dir: done FS_dir_seek\n");
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
+        //printf("FS_dir: call FS_typedir\n");
         ret = FS_typedir( dirfunc, &pn2 ) ;
+	//printf("FS_dir: done FS_typedir\n");
     } else if ( pn->state & pn_uncached ) {  /* root or branch directory -- uncached */
+        //printf("FS_dir: call FS_dir_seek2\n");
         ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
+	//printf("FS_dir: done FS_dir_seek2\n");
     } else {
         /* Show uncached and stats... (if root directory) */
         if ( pn2.pathlength == 0 ) { /* true root */
@@ -89,7 +116,9 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
             dirfunc( &pn2 ) ;
             pn2.type = pn_real ;
         }
+	//printf("dir root\n");
         ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
+	//printf("dir root done\n");
     }
     /* alarm directory */
     if ( flags & DEV_alarm ) {
@@ -106,7 +135,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
         AVERAGE_OUT(&dir_avg)
         AVERAGE_OUT(&all_avg)
     STATUNLOCK
-//printf("DIR out\n");
+    //printf("FS_dir out ret=%d\n", ret);
     return ret ;
 }
 
@@ -115,10 +144,13 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
 /* More checking is done, and the flags are returned */
 int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     int ret = 0 ;
+    struct parsedname pn2 ;
 
     /* initialize flags */
     flags[0] = 0 ;
-    if ( pn->in==NULL ) return -ENODEV ;
+    if ( pn == NULL || pn->in==NULL ) {
+      return -ENODEV ;
+    }
     STATLOCK
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
@@ -126,20 +158,32 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
     FSTATLOCK
         dir_time = time(NULL) ; // protected by mutex
     FSTATUNLOCK
-//printf("DIR1 path=%s\n",path);
-    if ( pn == NULL ) {
-    } else if ( pn->dev ){ /* device directory */
+    //printf("DIR1_remote pid=%ld path=%s\n",pthread_self(), pn->path); UT_delay(100);
+    if ( pn->dev ){ /* device directory */
+        //printf("call FS_devdir\n"); UT_delay(100);
+        /* Make a copy (shallow) of pn to modify for directory entries */
+        memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
+        pn2.badcopy = 1 ;
+        ret = FS_devdir( dirfunc, &pn2 ) ;
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-        ret = FS_dir_seek( dirfunc, pn, flags ) ;
+      //printf("call FS_dir_seek1\n"); UT_delay(100);
+      ret = FS_dir_seek( dirfunc, pn, flags ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
+        //printf("call FS_typedir\n"); UT_delay(100);
+        /* Make a copy (shallow) of pn to modify for directory entries */
+        memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
+        pn2.badcopy = 1 ;
+        ret = FS_typedir( dirfunc, &pn2 ) ;
     } else {
+        //printf("DIR1_remote pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path); UT_delay(100);
         ret = FS_dir_seek( dirfunc, pn, flags ) ;
+	//printf("DIR1_remote pid=%ld path=%s done dir_seek\n",pthread_self(), pn->path); UT_delay(100);
     }
     STATLOCK
         AVERAGE_OUT(&dir_avg)
         AVERAGE_OUT(&all_avg)
     STATUNLOCK
-//printf("DIR out\n");
+    //printf("DIR out ret=%d\n", ret);
     return ret ;
 }
 
@@ -149,46 +193,58 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
     int ret = 0 ;
 #ifdef OW_MT
     pthread_t thread ;
+    struct parsedname pncopy ;
+    int threadbad;
+    void * v ;
+    int rt ;
+
     /* Embedded function */
     void * Dir2( void * vp ) {
+        struct parsedname *pn2 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
-        /* we need a different state (search state) for a different bus -- subtle error */
         struct stateinfo si ;
-	int dret;
-        (void) vp ;
-        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
+	int ret;
+        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
+        /* we need a different state (search state) for a different bus -- subtle error */
         pnnext.si = &si ;
-        pnnext.in = pn->in->next ;
-        dret = FS_dir_seek(dirfunc,&pnnext,flags) ;
-	pthread_exit((void *)dret);
+        pnnext.in = pn2->in->next ;
+        ret = FS_dir_seek(dirfunc,&pnnext,flags) ;
+	pthread_exit((void *)ret);
     }
-    int threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, NULL ) ;
+    threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, (void *)pn ) ;
 #endif /* OW_MT */
 
-//printf("DIRseek adapter=%d path=%s\n",pn->in->index,pn->path);
-
     if ( pn->in->busmode == bus_remote ) {
+        //printf("DIRseek2 pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
         ret = ServerDir(dirfunc,pn,flags) ;
+	//printf("DIRseek3 pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
     } else {
-        struct parsedname pncopy ;
+        //printf("DIRseek4 pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
         /* Make a copy (shallow) of pn to modify for directory entries */
         memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
         pncopy.badcopy = 1 ;
         if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+	    //printf("DIRseeka pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
             ret = FS_alarmdir(dirfunc,&pncopy) ;
         } else {
             if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
-                ret = FS_realdir( dirfunc, &pncopy, flags ) ;
+	      //printf("DIRseekr pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
+	      ret = FS_realdir( dirfunc, &pncopy, flags ) ;
             } else {
-                ret = FS_cache2real( dirfunc, &pncopy, flags ) ;
+	      //printf("DIRseekc pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
+	      ret = FS_cache2real( dirfunc, &pncopy, flags ) ;
             }
         }
+	//printf("DIRseek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret); UT_delay(100);
     }
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
-        void * v ;
-        int rt ;
-        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
+        //printf("call pthread_join %ld\n", thread); UT_delay(1000);
+        if ( pthread_join( thread, &v ) ) {
+	  //printf("pthread_join returned error\n");
+	  return ret ; /* wait for it (or return only this result) */
+	}
+	//printf("pthread_join returned ok\n");
         rt = (int) v ;
         if ( rt >= 0 ) return rt ; /* is it an error return? Then return this one */
     }
@@ -253,11 +309,17 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     STATUNLOCK
 //printf("DIR alarm directory\n");
 
-    pn2->ft = NULL ; /* just in case not properly set */
     BUSLOCK(pn2)
+    pn2->ft = NULL ; /* just in case not properly set */
     /* Turn off all DS2409s */
     FS_branchoff(pn2) ;
     (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(sn,pn2)) ;
+#if 0
+    if(ret == -ENODEV) {
+      BUSUNLOCK(pn2)
+      return 0;  /* no more alarms is ok? */
+    }
+#endif
     while (ret==0) {
         char ID[] = "XX";
         STATLOCK
@@ -272,10 +334,10 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
         DIRUNLOCK
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next_alarm(sn,pn2)) ;
-//printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret);
+	//printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret);
     }
     BUSUNLOCK(pn2)
-    return ret ;
+    return ret ;  // always return "error"?
 }
 
 static int FS_branchoff( const struct parsedname * const pn ) {

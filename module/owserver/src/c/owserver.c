@@ -239,35 +239,38 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
 static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, const struct parsedname * pn ) {
-    int pathlen = strlen(pn->path) + 1 ;
-    char retbuffer[pathlen + OW_FULLNAME_MAX + 2] ;
     uint32_t flags ;
     /* nested function -- callback for directory entries */
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
+        char *retbuffer ;
+	int _pathlen = strlen(pn2->path) + 1 ;
+	//printf("Handler: DIR preloop\n");
         /* Note, path preloaded into retbuffer */
-//printf("Handler: DIR preloop %s\n",retbuffer);
-        FS_DirName( &retbuffer[pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
-//printf("Handler: DIR loop %s\n",retbuffer);
+        if( !(retbuffer = malloc(_pathlen + OW_FULLNAME_MAX + 2)) ) {
+	  //printf("malloc error\n");
+	  return;
+	}
+        memcpy(retbuffer, pn2->path, _pathlen);
+	if ( (_pathlen <2) || (retbuffer[_pathlen-2] !='/') ) {
+	  strcpy( &retbuffer[_pathlen-1] , "/" ) ;
+	  ++_pathlen ;
+	}
+	//printf("Handler: DIR preloop %s\n",retbuffer);
+        FS_DirName( &retbuffer[_pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
+	//printf("Handler: DIR loop %s\n",retbuffer);
         cm->size = strlen(retbuffer) ;
         cm->ret = 0 ;
         ToClient(fd,cm,retbuffer) ;
+	free(retbuffer);
     }
 
-    cm->payload = pathlen + OW_FULLNAME_MAX + 2 ;
+    cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
-    /* return buffer holds max file length */
-    /* copy current path into return buffer */
-    memcpy(retbuffer, pn->path, pathlen ) ;
-//printf("Handler: DIR retbuffer=%s\n",retbuffer);
-    /* Add a trailing '/' */
-    if ( (pathlen <2) || (retbuffer[pathlen-2] !='/') ) {
-        strcpy( &retbuffer[pathlen-1] , "/" ) ;
-        ++pathlen ;
-    }
+
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     cm->offset = flags ; /* send the flags in the offset message */
-//printf("Handler: DIR done\n");
+    //printf("Handler: DIR done ret=%d\n", cm->ret);
     /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
 }
@@ -291,6 +294,8 @@ int main( int argc , char ** argv ) {
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
+	default:
+	    break;
         }
         if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }

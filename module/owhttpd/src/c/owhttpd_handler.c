@@ -51,7 +51,7 @@ static void Bad400( FILE * out ) ;
 static void Bad404( FILE * out ) ;
 
     /* Directory display functions */
-static void RootDir( FILE * out, struct parsedname * pn ) ;
+static void ShowDir( FILE * out, const struct parsedname * const pn ) ;
 
 /* URL parsing function */
 static void URLparse( struct urlparse * up ) ;
@@ -60,9 +60,9 @@ static void URLparse( struct urlparse * up ) ;
 static void ChangeData( struct urlparse * up , const struct parsedname * pn ) ;
 
     /* Device display functions */
-static void ShowDevice( FILE * out, struct parsedname * pn ) ;
-static void Show( FILE * out, const char * const path, const char * const dev, const struct parsedname * pn ) ;
-static void ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * pn ) ;
+static void ShowDevice( FILE * out, const struct parsedname * const pn ) ;
+static void Show( FILE * out, const char * const path, const char * const dev, const struct parsedname * const pn ) ;
+static void ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * const pn ) ;
 
 /* --------------- Functions ---------------- */
 
@@ -76,9 +76,9 @@ int handle_socket(FILE * out) {
     pn.si = &si ;
 
     str = fgets(up.line, PATH_MAX, out);
-//printf("PreParse line=%s\n",up.line);
+    //printf("PreParse line=%s\n",up.line);
     URLparse( &up ) ; /* Braek up URL */
-//printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
+    //printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
 
     /* read lines until blank */
     if (up.version) {
@@ -102,15 +102,15 @@ int handle_socket(FILE * out) {
     } else if ( up.file == NULL ) {
         Bad404( out ) ;
     } else {
-//printf("PreParse\n");
+        //printf("PreParse up.file=%s\n", up.file);
         if ( FS_ParsedName( up.file , &pn ) ) {
         /* Can't understand the file name = URL */
             Bad404( out ) ;
         /* Root directory -- show the bus */
         } else if ( pn.dev == NULL ) { /* directory! */
-            RootDir( out,& pn ) ;
+	    ShowDir( out,& pn ) ;
         /* Single device, show it's properties */
-	    } else {
+        } else {
 //printf("PreChange\n");
             ChangeData( &up, &pn ) ;
 //printf("PreShow\n");
@@ -185,9 +185,9 @@ static void HTTPstart(FILE * out, const char * status, const int text ) {
     size_t l = strftime(d,sizeof(d),"%a, %d %b %Y %T GMT",gmtime(&t)) ;
 
     fprintf(out, "HTTP/1.0 %s\r\n", status);
-    fprintf(out, "Date: %*s\n", l, d );
+    fprintf(out, "Date: %*s\n", (int)l, d );
     fprintf(out, "Server: %s\r\n", SVERSION);
-    fprintf(out, "Last-Modified: %*s\r\n", l, d );
+    fprintf(out, "Last-Modified: %*s\r\n", (int)l, d );
     /*
      * fprintf( out, "MIME-version: 1.0\r\n" );
      */
@@ -213,16 +213,21 @@ static void HTTPfoot(FILE * out ) {
 
 
 /* Device entry -- table line for a filetype */
-static void Show( FILE * out, const char * const path, const char * const file, const struct parsedname * pn ) {
+static void Show( FILE * out, const char * const path, const char * const file, const struct parsedname * const pn ) {
     int len ;
     const char * basename ;
     char fullpath[PATH_MAX+1] ;
-    int suglen = FullFileLength(pn) ;
-    char buf[suglen+1] ;
+    int suglen ;
+    char *buf ;
     enum ft_format format = pn->ft->format ;
     int canwrite = !readonly && pn->ft->write.v ;
 
-//printf("Show path=%s, file=%s, pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
+    suglen = FullFileLength(pn) ;
+    if( ! (buf = malloc(suglen+1)) ) {
+      return;
+    }
+
+    //printf("Show path=%s, file=%s, suglen=%d pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,suglen,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
     /* Special processing for structure -- ascii text, not native format */
     if ( pn->type==pn_structure && format!=ft_directory && format!=ft_subdir ) {
         format = ft_ascii ;
@@ -231,7 +236,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
 
     buf[suglen] = '\0' ;
 
-//printf("path=%s, file=%s\n",path,file) ;
+    //printf("path=%s, file=%s\n",path,file) ;
     /* Parse out subdir */
     basename = strrchr(file,'/') ;
     if ( basename ) {
@@ -249,9 +254,11 @@ static void Show( FILE * out, const char * const path, const char * const file, 
 //printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
 
     /* Jump to special text-mode routine */
-    if(pn->state & pn_text)
-        return ShowText( out, basename, fullpath, pn ) ;
-
+    if(pn->state & pn_text) {
+        ShowText( out, basename, fullpath, pn ) ;
+	free(buf);
+	return;
+   }
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
 
     /* buffer for field value */
@@ -344,10 +351,11 @@ static void Show( FILE * out, const char * const path, const char * const file, 
         }
     }
     fprintf( out, "</TD></TR>\r\n" ) ;
+    free(buf);
 }
 
 /* Device entry -- table line for a filetype  -- text mode*/
-static void ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * pn ) {
+static void ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * const pn ) {
     int len ;
     int suglen = FullFileLength(pn) ;
     char buf[suglen+1] ;
@@ -475,7 +483,7 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
         struct parsedname pn2 ;
         memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
         strcat( linecopy , up->request ) ; /* add on requested file type */
-//printf("Change data on %s to %s\n",linecopy,up->value) ;
+printf("Change data on %s to %s\n",linecopy,up->value) ;
         if ( FS_ParsedName(linecopy,&pn2)==0 && pn2.ft && pn2.ft->write.v ) {
             switch ( pn2.ft->format ) {
             case ft_binary:
@@ -493,7 +501,7 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
                 }
                 // fall through
             default:
-                httpunescape(up->value) || FS_write(linecopy,up->value,strlen(up->value)+1,0) ;
+                if(!httpunescape(up->value)) FS_write(linecopy,up->value,strlen(up->value)+1,0) ;
                 break;
             }
         }
@@ -534,31 +542,48 @@ static int Backup( const char * path ) {
 }
 
 /* Now show the device */
-static void ShowDevice( FILE * out, struct parsedname * pn ) {
-    int b = Backup(pn->path) ;
-    char * path2 = strdup(pn->path) ;
+static void ShowDevice( FILE * out, const struct parsedname * const pn ) {
+    struct parsedname pncopy ;
+    char * slash;
+    int b ;
+    char * path2;
+    /* Embedded function */
     void directory( const struct parsedname * const pn2 ) {
-        char file[OW_FULLNAME_MAX] ;
+        char *file;
+	if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+	  return;
+	}
         if ( FS_FileName(file,OW_FULLNAME_MAX,pn2) ) return ;
         Show( out, path2, file, pn2 ) ;
+	free(file);
     }
 
-//printf("ShowDevice = %s\n",path) ;
+    //printf("ShowDevice = %s\n",pn->path) ;
+    if( !(path2 = strdup(pn->path)) ) {
+      return;
+    }
+    memcpy(&pncopy, pn, sizeof(struct parsedname));
+    pncopy.badcopy = 1;
+
     HTTPstart( out , "200 OK", (pn->state & pn_text) ) ;
     if(!(pn->state & pn_text)) {
+      b = Backup(pn->path) ;
       HTTPtitle( out , &path2[1] ) ;
       HTTPheader( out , &path2[1] ) ;
       if ( IsLocalCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( out , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
       fprintf( out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
       fprintf( out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, pn->path ) ;
     }
+
+
     if ( pn->ft ) { /* single item */
-        char * slash = strrchr(path2,'/') ;
+        slash = strrchr(path2,'/') ;
         /* Nested function */
         if ( slash ) slash[0] = '\0' ; /* pare off device name */
-        directory(pn) ;
+        directory(&pncopy) ;
     } else { /* whole device */
-        FS_dir( directory, pn ) ;
+        FS_dir( directory, &pncopy ) ;
     }
     if(!(pn->state & pn_text)) {
       fprintf( out, "</TABLE>" ) ;
@@ -568,16 +593,23 @@ static void ShowDevice( FILE * out, struct parsedname * pn ) {
 }
 
 /* Misnamed. Actually all directory */
-static void RootDir( FILE * out, struct parsedname * pn ) {
-    /* Nested function, of all things! */
+static void ShowDir( FILE * out, const struct parsedname * const pn ) {
+    struct parsedname pncopy;
+    int b;
+    /* Embedded function */
     /* Callback function to FS_dir */
     void directory( const struct parsedname * const pn2 ) {
         /* uncached tag */
         /* device name */
-        char buffer[OW_FULLNAME_MAX] ;
-        char * loc = buffer ;
-        char * nam = buffer;
-        char * typ = "directory" ;
+	char *buffer ;
+        char * loc ;
+        char * nam ;
+        char * typ = NULL ;
+	if( !(buffer = malloc(OW_FULLNAME_MAX+1) ) ) { /* buffer for name */
+	  //printf("ShowDir: error malloc %d bytes\n", OW_FULLNAME_MAX+1);
+	  return ;
+	}
+	loc = nam = buffer ;
         *buffer = '\000';
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
@@ -585,31 +617,38 @@ static void RootDir( FILE * out, struct parsedname * pn ) {
             } else if ( pn2->state & (pn_uncached | pn_alarm) ) {
                 strcpy(buffer, FS_dirname_state(pn2->state & (pn_uncached | pn_alarm)));
             }
+	    typ = strdup("directory") ;
         } else if ( pn2->dev == DeviceSimultaneous ) {
             loc = nam = pn2->dev->name ;
-            typ = "1-wire chip" ;
+            typ = strdup("1-wire chip") ;
         } else if ( pn2->type == pn_real ) {
             FS_devicename(loc,OW_FULLNAME_MAX,pn2) ;
             nam = pn2->dev->name ;
-            typ = "1-wire chip" ;
+            typ = strdup("1-wire chip") ;
         } else {
             loc = pn2->dev->code ;
             nam = loc ;
+	    typ = strdup("directory") ;
         }
 //printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
-        if (pn->state & pn_text) {
+        if (pncopy.state & pn_text) {
             fprintf( out, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
         } else {
             fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
-                     (strcmp(pn->path,"/")?pn->path:""), loc, loc, nam, typ ) ;
+                     (strcmp(pncopy.path,"/")?pncopy.path:""), loc, loc, nam, typ ) ;
         }
+	free(typ);
+	free(buffer);
     }
-//printf("ROOTDIR=%s\n",pn->path) ;
+
+    memcpy(&pncopy, pn, sizeof(struct parsedname));
+    pncopy.badcopy = 1;
 
     HTTPstart( out , "200 OK", (pn->state & pn_text) ) ;
 
+    //printf("ShowDir=%s\n", pn->path) ;
     if(pn->state & pn_text) {
-      FS_dir( directory, pn ) ;
+      FS_dir( directory, &pncopy ) ;
       return;
     }
     HTTPtitle( out , "Directory") ;
@@ -623,14 +662,14 @@ static void RootDir( FILE * out, struct parsedname * pn ) {
     }
     fprintf( out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
     {   // Find higher level by path manipulation
-        int b = Backup(pn->path) ;
+        b = Backup(pn->path) ;
         if (b!=1) {
             fprintf( out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>higher level</TD><TD>directory</TD></TR>",b, pn->path ) ;
         } else {
             fprintf( out, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>" ) ;
         }
     }
-    FS_dir( directory, pn ) ;
+    FS_dir( directory, &pncopy ) ;
     fprintf( out, "</TABLE>" ) ;
     HTTPfoot( out ) ;
 }

@@ -39,14 +39,16 @@ struct connection_in * NewIn( void ) {
         last = now ;
         now = now->next ;
     }
-    now = malloc( len ) ;
+    now = (struct connection_in *)malloc( len ) ;
+    //printf("malloc len=%d %p\n", len, now);
     if (now) {
-        bzero(now,len) ;
+        memset(now,0,len) ;
         if ( indevice ) {
             last->next = now ;
             now->index = last->index+1 ;
         } else {
             indevice = now ;
+	    //printf("indevice = %p\n", indevice);
             now->index = 1 ;
         }
         ++ indevices ;
@@ -68,13 +70,15 @@ struct connection_out * NewOut( void ) {
         last = now ;
         now = now->next ;
     }
-    now = malloc( len ) ;
+    now = (struct connection_out *)malloc( len ) ;
+    //printf("malloc len=%d %p\n", len, now);
     if (now) {
-        bzero(now,len) ;
+        memset(now,0,len) ;
         if ( outdevice ) {
             last->next = now ;
         } else {
             outdevice = now ;
+	    //printf("outdevice = %p\n", outdevice);
         }
         ++ outdevices ;
 #ifdef OW_MT
