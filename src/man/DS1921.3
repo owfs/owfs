@@ -8,12 +8,12 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS1921-Thermacron 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS1921-Thermachron 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .B DS1921
-- Thermacron
+- Thermachron
 .SH SYNOPSIS
-Thermacron temperature logging iButton.
+Thermachron temperature logging iButton.
 .HP
 .B 21
 [.]XXXXXXXXXXXX[XX][/[
@@ -104,20 +104,20 @@ Accepted date formats are:
 .I read-write, yes-no
 .br
 Is the
-.B Thermacron
+.B Thermachron
 in a \"mission\".
 .pp
 Missions involve periodic temperature measurements, wit logging and histogram updates. Many parameters cannot be altered while in a mission.
 .pp
 Unlike the
-.B Thermacron
+.B Thermachron
 datasheet specifications, OWFS does not allow implicit mission halting by writing to protected memory. All mission start and stop must be with the
 .I in_mission
 propety.
 .SS version
 .I read-only, ascii
 .br
-Thermacron sub-type.
+Thermachron sub-type.
 .SS running
 .I read-write, yes-no
 .br
