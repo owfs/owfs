@@ -15,27 +15,29 @@ $Id$
 #include "ow.h"
 
 const struct option owopts_long[] = {
-    {"device",required_argument,NULL,'d'},
-    {"usb",optional_argument,NULL,'u'},
-    {"help",no_argument,NULL,'h'},
-    {"port",required_argument,NULL,'p'},
-    {"Celsius",no_argument,NULL,'C'},
-    {"Fahrenheit",no_argument,NULL,'F'},
-    {"Kelvin",no_argument,NULL,'K'},
-    {"Rankine",no_argument,NULL,'R'},
-    {"version",no_argument,NULL,'V'},
-    {"format",required_argument,NULL,'f'},
-    {"pid-file",required_argument,NULL,'P'},
-    {"background",no_argument,&background,1},
-    {"foreground",no_argument,&background,0},
+    {"device",    required_argument,NULL,'d'},
+    {"usb",       optional_argument,NULL,'u'},
+    {"help",      no_argument,      NULL,'h'},
+    {"port",      required_argument,NULL,'p'},
+    {"Celsius",   no_argument,      NULL,'C'},
+    {"Fahrenheit",no_argument,      NULL,'F'},
+    {"Kelvin",    no_argument,      NULL,'K'},
+    {"Rankine",   no_argument,      NULL,'R'},
+    {"version",   no_argument,      NULL,'V'},
+    {"format",    required_argument,NULL,'f'},
+    {"fuse-opt",  required_argument,NULL,260},
+    {"pid-file",  required_argument,NULL,'P'},
+    {"background",no_argument,&background, 1},
+    {"foreground",no_argument,&background, 0},
     {0,0,0,0},
 } ;
 
 char * pid_file = NULL ;
+char * fuse_opt = NULL ;
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt( const char c , const char * const arg ) {
+int owopt( const int c , const char * const arg ) {
     static int useusb = 0 ;
     switch (c) {
     case 'h':
@@ -123,6 +125,10 @@ int owopt( const char c , const char * const arg ) {
             return 1 ;
         }
     return 0 ;
+    case 260: /* fuse-opt */
+        fuse_opt = strdup( arg ) ;
+        if ( fuse_opt == NULL ) fprintf(stderr,"Insufficient memolry to store FUSE options: %s\n",arg) ;
+        return 0 ;
     case 0:
         return 0 ;
     default:

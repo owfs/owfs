@@ -49,7 +49,7 @@ char umount_cmd[1024] = "";
 /* ---------------------------------------------- */
 int main(int argc, char *argv[]) {
     int flags = 0 ; /* flags to fuse */
-    char c ;
+    int c ;
 //    int multithreaded = 1;
 
     /* All output to syslog */
@@ -62,7 +62,8 @@ int main(int argc, char *argv[]) {
         case 'h':
             fprintf(stderr,
             "Usage: %s mountpoint -d devicename [options] \n"
-            "   or: %s [options] portname mountpoint \n",
+            "   or: %s [options] portname mountpoint \n"
+            "   --fuse-opt=\"-x -f\"  options to send to fuse_mount (must be quoted)\n",
             argv[0],argv[0] ) ;
             break ;
         case 'V':
@@ -99,11 +100,11 @@ int main(int argc, char *argv[]) {
         if(tmpstr != NULL)
             strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
         fuse_mountpoint = strdup(argv[optind]);
-        fuse_fd = fuse_mount(fuse_mountpoint, NULL);
+        fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt);
         if(fuse_fd == -1) ow_exit(1);
     } else {
         fuse_mountpoint = strdup(argv[optind]);
-        fuse_fd = fuse_mount(fuse_mountpoint, NULL);
+        fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt);
         if(fuse_fd == -1) ow_exit(1);
     }
 

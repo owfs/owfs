@@ -99,10 +99,12 @@ $Id$
 /* These a re the owlib-specific options */
 #define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
-int owopt( const char c , const char * const arg ) ;
+int owopt( const int c , const char * const arg ) ;
 
 /* PID file nsme */
 extern char * pid_file ;
+/* FUSE options */
+extern char * fuse_opt ;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
