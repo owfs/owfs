@@ -183,7 +183,7 @@ static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
 static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data;
     data = ((u[0] % 10) & 0x01) | (((u[0] / 10 % 10) & 0x03) << 1) | (((u[0] / 100 % 10) & 0x03) << 3);
-    if ( OW_w_control(data,pn) ) return -EINVAL ;
+    if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -269,7 +269,7 @@ static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) {
 static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) {
     unsigned char b;
     if ( OW_r_control(&b,pn) ) return 1;
-    b = (b & 0x60) | (data & 0x1F);
+    b = (b & 0xE0) | (data & 0x1F);
     return OW_w_control(b,pn);
 }
 
