@@ -51,8 +51,8 @@ $Id$
  fREAD_FUNCTION( FS_r_templimit ) ;
 fWRITE_FUNCTION( FS_w_templimit ) ;
  aREAD_FUNCTION( FS_r_die ) ;
- bREAD_FUNCTION( FS_r_trim ) ;
-bWRITE_FUNCTION( FS_w_trim ) ;
+ uREAD_FUNCTION( FS_r_trim ) ;
+uWRITE_FUNCTION( FS_w_trim ) ;
  yREAD_FUNCTION( FS_r_trimvalid ) ;
  yREAD_FUNCTION( FS_r_blanket ) ;
 yWRITE_FUNCTION( FS_w_blanket ) ;
@@ -60,14 +60,14 @@ yWRITE_FUNCTION( FS_w_blanket ) ;
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
     F_STANDARD   ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1000, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,   } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,   } ,
-    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,         } ,
-    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 1,   } ,
-    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,         } ,
-    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,         } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,         } ,
+    {"temperature",   12,  NULL, ft_float   , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1000, } ,
+    {"templow",       12,  NULL, ft_float   , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,   } ,
+    {"temphigh",      12,  NULL, ft_float   , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,   } ,
+    {"trim",          12,  NULL, ft_unsigned, ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , NULL,         } ,
+    {"die",            2,  NULL, ft_ascii   , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 1,   } ,
+    {"trimvalid",      1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,         } ,
+    {"trimblanket",    1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,         } ,
+    {"power"     ,     1,  NULL, ft_yesno   , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,         } ,
 }
  ;
 DeviceEntry( 10, DS18S20 )
@@ -75,30 +75,30 @@ DeviceEntry( 10, DS18S20 )
 struct filetype DS18B20[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, NULL,} ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
-    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,  } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,  } ,
-    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
-    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 2,  } ,
-    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
-    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
+    {"temperature",   12,  NULL, ft_float   , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
+    {"fasttemp"  ,    12,  NULL, ft_float   , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
+    {"templow",       12,  NULL, ft_float   , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,  } ,
+    {"temphigh",      12,  NULL, ft_float   , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,  } ,
+    {"trim",          12,  NULL, ft_unsigned, ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , NULL,        } ,
+    {"die",            2,  NULL, ft_ascii   , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 2,  } ,
+    {"trimvalid",      1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
+    {"trimblanket",    1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
+    {"power"     ,     1,  NULL, ft_yesno   , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
 } ;
 DeviceEntry( 28, DS18B20 )
 
 struct filetype DS1822[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, } ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
-    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,  } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,  } ,
-    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
-    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 0,  } ,
-    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
-    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
+    {"temperature",   12,  NULL, ft_float   , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
+    {"fasttemp"  ,    12,  NULL, ft_float   , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
+    {"templow",       12,  NULL, ft_float   , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,  } ,
+    {"temphigh",      12,  NULL, ft_float   , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,  } ,
+    {"trim",          12,  NULL, ft_unsigned, ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , NULL,        } ,
+    {"die",            2,  NULL, ft_ascii   , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 0,  } ,
+    {"trimvalid",      1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
+    {"trimblanket",    1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
+    {"power"     ,     1,  NULL, ft_yesno   , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
 } ;
 DeviceEntry( 22, DS1822 )
 
@@ -107,10 +107,14 @@ struct tempresolution {
     unsigned int delay ;
 } ;
 struct tempresolution Resolutions[] = {
-    { 0x1F,  94, } , /*  9 bit */
-    { 0x3F, 188, } , /* 10 bit */
-    { 0x5F, 375, } , /* 11 bit */
-    { 0x7F, 750, } , /* 12 bit */
+//    { 0x1F,  94, } , /*  9 bit */
+//    { 0x3F, 188, } , /* 10 bit */
+//    { 0x5F, 375, } , /* 11 bit */
+//    { 0x7F, 750, } , /* 12 bit */
+    { 0x1F, 110, } , /*  9 bit */
+    { 0x3F, 200, } , /* 10 bit */
+    { 0x5F, 400, } , /* 11 bit */
+    { 0x7F,1000, } , /* 12 bit */
 } ;
 
 struct die_limits {
@@ -134,20 +138,25 @@ struct die_limits DIE[] = {
         { 0x00, 0x00, 0x00, 0x54, 0x50, 0x10 } ,
         { 0x00, 0x00, 0x00, 0x66, 0x2B, 0x50 } ,
     } ,
-} ;            
+} ;
+
+/* Intermediate cached values  -- start with unlikely asterisk */
+/* RES -- resolution
+   POW -- power
+*/
 
 /* ------- Functions ------------ */
 
 /* DS1820&2*/
-static int OW_10temp(float * temp , const struct parsedname * pn) ;
-static int OW_22temp(float * temp , int resolution, const struct parsedname * pn) ;
-static int OW_power(unsigned char * data, const struct parsedname * pn) ;
-static int OW_r_templimit( float * T, const int Tindex, const struct parsedname * pn) ;
-static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * pn) ;
-static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) ;
-static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) ;
-static int OW_r_trim(unsigned char * const trim, const struct parsedname * pn) ;
-static int OW_w_trim(const unsigned char * const trim, const struct parsedname * pn) ;
+static int OW_10temp(float * const temp , const struct parsedname * const pn) ;
+static int OW_22temp(float * const temp , const int resolution, const struct parsedname * const pn) ;
+static int OW_power(unsigned char * const data, const struct parsedname * const pn) ;
+static int OW_r_templimit( float * const T, const int Tindex, const struct parsedname * const pn) ;
+static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * const pn) ;
+static int OW_r_scratchpad(unsigned char * const data, const struct parsedname * const pn) ;
+static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) ;
+static int OW_r_trim(unsigned char * const trim, const struct parsedname * const pn) ;
+static int OW_w_trim(const unsigned char * const trim, const struct parsedname * const pn) ;
 static enum eDie OW_die( const struct parsedname * const pn ) ;
 
 static int FS_10temp(float *T , const struct parsedname * pn) {
@@ -173,7 +182,7 @@ static int FS_22temp(float *T , const struct parsedname * pn) {
 static int FS_power(int * y , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_power( &data , pn ) ) return -EINVAL ;
-    *y = data ;
+    y[0] = data!=0x00 ;
     return 0 ;
 }
 
@@ -200,17 +209,20 @@ static int FS_r_die(char *buf, const size_t size, const off_t offset , const str
     return -EINVAL ;
 }
 
-
-static int FS_r_trim(unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( offset ) return -EINVAL ;
-    if ( OW_r_trim( T , pn ) ) return - EINVAL ;
-    return 2 ;
+static int FS_r_trim(unsigned int * const trim , const struct parsedname * pn) {
+    unsigned char t[2] ;
+    if ( OW_r_trim( t , pn ) ) return - EINVAL ;
+    trim[0] = (t[1]<<8) | t[0] ;
+//printf("TRIM t:%.2X %.2X trim:%u \n",t[0],t[1],trim[0]) ;
+    return 0 ;
 }
 
-static int FS_w_trim(const unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_trim(const unsigned int * const trim , const struct parsedname * pn) {
+    unsigned char t[2] ;
     if ( OW_die(pn) != eB7 ) return -EINVAL ;
-    if ( offset ) return -EINVAL ;
-    if ( OW_w_trim( T , pn ) ) return - EINVAL ;
+    t[0] = trim[0] && 0xFF ;
+    t[1] = (trim[0]>>8) && 0xFF ;
+    if ( OW_w_trim( t , pn ) ) return - EINVAL ;
     return 0 ;
 }
 
@@ -254,15 +266,25 @@ static int FS_tempdata(char *buf, const size_t size, const off_t offset , const 
 }
 */
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
-static int OW_10temp(float * temp , const struct parsedname * pn) {
+static int OW_10temp(float * const temp , const struct parsedname * const pn) {
     unsigned char data[8] ;
-    int delay = 750 ;
+    unsigned char convert = 0x44 ;
+    int delay = (int) pn->ft->data ;
+    unsigned char pow ;
     int ret ;
-    if ( pn->ft->data ) delay = (int) pn->ft->data ;
+
+    if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
     /* Select particular device and start conversion */
-    BUS_lock() ;
-        ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
-    BUS_unlock() ;
+    if ( pow ) { // powered, so release bus immediately after issuing convert
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
+        BUS_unlock() ;
+        UT_delay( delay ) ;
+    } else { // unpowered, deliver power, no communication allowed
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
+        BUS_unlock() ;
+    }
     if ( ret ) return 1 ;
 
     if ( OW_r_scratchpad( data , pn ) ) return 1 ;
@@ -270,9 +292,16 @@ static int OW_10temp(float * temp , const struct parsedname * pn) {
     /* Check for error condition */
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
         /* repeat the conversion (only once) */
-        BUS_lock() ;
-            ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
-        BUS_unlock() ;
+        if ( pow ) { // powered, so release bus immediately after issuing convert
+            BUS_lock() ;
+                ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
+            BUS_unlock() ;
+            UT_delay( delay ) ;
+        } else { // unpowered, deliver power, no communication allowed
+            BUS_lock() ;
+                ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
+            BUS_unlock() ;
+        }
         if ( ret || OW_r_scratchpad( data , pn ) ) return 1 ;
     }
 
@@ -281,34 +310,56 @@ static int OW_10temp(float * temp , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_power( unsigned char * data, const struct parsedname * pn) {
+static int OW_power( unsigned char * const data, const struct parsedname * const pn) {
     unsigned char b4 = 0xB4;
-    int ret ;
+    int ret = 0 ;
+    int s = sizeof(unsigned char) ;
 
-    BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
-    BUS_unlock() ;
-    if ( ret ) return 1 ;
-    return 0 ;
+    if ( Cache_Get_Internal(pn,"POW",data,&s) ) {
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
+        BUS_unlock() ;
+        Cache_Add_Internal(pn,"POW",data,sizeof(unsigned char)) ;
+    }
+    return ret ;
 }
 
-static int OW_22temp(float * temp , int resolution, const struct parsedname * pn) {
+static int OW_22temp(float * const temp , const int resolution, const struct parsedname * const pn) {
     unsigned char data[8] ;
+    unsigned char convert = 0x44 ;
+    unsigned char pow ;
     int res = Resolutions[resolution-9].config ;
+    int delay = Resolutions[resolution-9].delay ;
+    int oldres ;
+    int s = sizeof(oldres) ;
     int ret ;
 
-    /* Get existing settings */
-    if ( OW_r_scratchpad(data , pn ) ) return 1 ;
-        /* Put in new settings */
-        if ( data[4] != res ) {
-            data[4] = res ;
-        if ( OW_w_scratchpad(&data[2] , pn ) ) return 1 ;
+    /* powered? */
+    if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
+
+    /* Resolution */
+    if ( Cache_Get_Internal(pn,"RES",&oldres,&s) || oldres!=resolution ) {
+        /* Get existing settings */
+        if ( OW_r_scratchpad(data , pn ) ) return 1 ;
+            /* Put in new settings */
+            if ( data[4] != res ) {
+                data[4] = res ;
+            if ( OW_w_scratchpad(&data[2] , pn ) ) return 1 ;
+            Cache_Add_Internal(pn,"RES",&resolution,sizeof(int)) ;
+        }
     }
 
     /* Conversion */
-    BUS_lock() ;
-        ret =BUS_select(pn) || BUS_PowerByte( 0x44, Resolutions[resolution-9].delay ) ;
-    BUS_unlock() ;
+    if ( pow ) { // powered, so release bus immediately after issuing convert
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_send_data( &convert, 1 ) ;
+        BUS_unlock() ;
+        UT_delay( delay ) ;
+    } else { // unpowered, deliver power, no communication allowed
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_PowerByte( convert, delay ) ;
+        BUS_unlock() ;
+    }
     if ( ret ) return 1 ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
@@ -318,7 +369,7 @@ static int OW_22temp(float * temp , int resolution, const struct parsedname * pn
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit( float * T, const int Tindex, const struct parsedname * pn) {
+static int OW_r_templimit( float * const T, const int Tindex, const struct parsedname * const pn) {
     unsigned char data[8] ;
     unsigned char recall = 0xB4 ;
     int ret ;
@@ -336,7 +387,7 @@ static int OW_r_templimit( float * T, const int Tindex, const struct parsedname 
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * pn) {
+static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * const pn) {
     unsigned char data[8] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
@@ -345,7 +396,7 @@ static int OW_w_templimit( const float T, const int Tindex, const struct parsedn
 }
 
 /* read 8 bytes, includes CRC8 which is checked */
-static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) {
+static int OW_r_scratchpad(unsigned char * const data, const struct parsedname * const pn) {
     /* data is 8 bytes long */
     unsigned char be = 0xBE ;
     unsigned char td[9] ;
@@ -361,7 +412,7 @@ static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) {
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
-static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) {
+static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) {
     /* data is 3 bytes ng */
     unsigned char d[] = { 0x4E, data[0], data[1], data[2], } ;
     int ret ;
@@ -373,7 +424,7 @@ static int OW_w_scratchpad(const unsigned char * data, const struct parsedname *
 }
 
 /* Trim values -- undocumented except in AN247.pdf */
-static int OW_r_trim(unsigned char * const trim, const struct parsedname * pn) {
+static int OW_r_trim(unsigned char * const trim, const struct parsedname * const pn) {
     unsigned char cmd[] = { 0x93, 0x68, } ;
     int ret ;
 
@@ -384,7 +435,7 @@ static int OW_r_trim(unsigned char * const trim, const struct parsedname * pn) {
     return ret ;
 }
 
-static int OW_w_trim(const unsigned char * const trim, const struct parsedname * pn) {
+static int OW_w_trim(const unsigned char * const trim, const struct parsedname * const pn) {
     unsigned char cmd[] = { 0x95, trim[0], 0x63, trim[1], 0x94, 0x64, } ;
     int ret ;
 

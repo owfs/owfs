@@ -219,6 +219,19 @@ void COM_flush( void ) ;
 void COM_close( void );
 void COM_break( void ) ;
 
+/* Cache  and Storage functions */
+void Cache_Open( void ) ;
+void Cache_Close( void ) ;
+int Cache_Add(          const struct parsedname * const pn,                          const void * data, const size_t   dsize ) ;
+int Cache_Add_Internal( const struct parsedname * const pn, const char * const name, const void * data, const size_t   dsize ) ;
+int Cache_Get(          const struct parsedname * const pn,                                void * data,       size_t * dsize ) ;
+int Cache_Get_Internal( const struct parsedname * const pn, const char * const name,       void * data,       size_t * dsize ) ;
+int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
+int Cache_Del_Internal( const struct parsedname * const pn, const char * const name                                          ) ;
+int Storage_Add( const char * path, const size_t size, const void * data ) ;
+int Storage_Get( const char * path, size_t *size, void * data ) ;
+int Storage_Del( const char * path ) ;
+
 /* 1-wire search algorhythm */
 int OW_first( char * str ) ;
 int OW_next( char * str ) ;
@@ -542,9 +555,6 @@ extern unsigned int crc8_errors ;
 extern unsigned int crc16_tries ;
 extern unsigned int crc16_errors ;
 extern unsigned int read_timeout ;
-
-/* Cache code -- conditional */
-#include "ow_cache.h"
 
 /// mode bit flags
 #define MODE_NORMAL                    0x00

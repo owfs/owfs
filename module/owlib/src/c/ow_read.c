@@ -36,9 +36,7 @@ static int FS_output_float_array( float * values, char * buf, const size_t size,
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
-#ifdef OW_CACHE
     size_t s = size ;
-#endif /* OW_CACHE */
     int r ;
     if ( FS_ParsedName( path , &pn ) ) {
         FS_ParsedName_destroy(&pn) ;
@@ -51,17 +49,15 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     /* Check the cache (if not pn_uncached) */
     if ( offset!=0 || cacheavailable==0 ) {
         r = FS_real_read( path, buf, size, offset, &pn ) ;
-#ifdef OW_CACHE
-    } else if ( pn.type==pn_uncached || Cache_Get( path, &s, buf, pn.ft->change ) ) {
+    } else if ( pn.type==pn_uncached || Cache_Get( &pn, buf, &s ) ) {
 //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
         r = FS_real_read( path, buf, size, offset, &pn ) ;
-        if ( r>= 0 ) Cache_Add( path, r, buf, pn.ft->change ) ;
+        if ( r>= 0 ) Cache_Add( &pn, buf, r ) ;
     } else {
 //printf("Read found %s\n",path) ;
         ++read_cache ; /* statistics */
         read_cachebytes += s ; /* statistics */
         return s ;
-#endif /* OW_CACHE */
     }
     if ( r>=0 ) {
         ++read_success ; /* statistics */

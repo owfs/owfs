@@ -431,6 +431,12 @@ static int OW_r_version( unsigned char * data , const int len, const struct pars
 static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
     unsigned char w = 0x23 ;
     unsigned char d[8] ;
+    char key[] = {
+            pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
+            '/',      'c',      'u',      'm',       '\0',
+            } ;
+    unsigned int cum[4] ;
+    int s = sizeof(cum);
     int ret ;
 
     BUS_lock() ;
@@ -445,29 +451,19 @@ static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
     data[2] = ((unsigned int) d[5])<<8 | d[4] ;
     data[3] = ((unsigned int) d[7])<<8 | d[6] ;
 
-#ifdef OW_CACHE /* Cache-dependent special cumulative storage code */
-    if ( dbstore ) {
-        char key[] = {
-                pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
-                '/',      'c',      'u',      'm',       '\0',
-                } ;
-        unsigned int cum[4] ;
-        int s = sizeof(cum);
 //printf("OW_COUNTER key=%s\n",key);
-        if ( Storage_Get( key, &s, (void *) cum ) ) { /* First pass at cumulative */
-            cum[0] = data[0] ;
-            cum[1] = data[1] ;
-            cum[2] = data[2] ;
-            cum[3] = data[3] ;
-        } else {
-            cum[0] += data[0] ;
-            cum[1] += data[1] ;
-            cum[2] += data[2] ;
-            cum[3] += data[3] ;
-        }
-        Storage_Add( key, sizeof(cum), (void *) cum ) ;
+    if ( Storage_Get( key, &s, (void *) cum ) ) { /* First pass at cumulative */
+        cum[0] = data[0] ;
+        cum[1] = data[1] ;
+        cum[2] = data[2] ;
+        cum[3] = data[3] ;
+    } else {
+        cum[0] += data[0] ;
+        cum[1] += data[1] ;
+        cum[2] += data[2] ;
+        cum[3] += data[3] ;
     }
-#endif /* OW_CACHE */
+    Storage_Add( key, sizeof(cum), (void *) cum ) ;
     return 0 ;
 }
 

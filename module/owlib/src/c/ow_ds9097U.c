@@ -557,11 +557,7 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay) 
     UT_delay( delay ) ;
 
     // return to normal level
-    BUS_lock() ;
-        ret=DS2480_level(MODE_NORMAL) ;
-    BUS_unlock() ;
-
-    return ret ;
+   return DS2480_level(MODE_NORMAL) ;
 }
 
 /* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */

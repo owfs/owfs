@@ -48,14 +48,12 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     ++ write_calls ; /* statistics */
     r = FS_real_write( path, buf, size, offset, &pn ) ;
 
-#ifdef OW_CACHE
     if ( offset  || r ) {
-        Cache_Del( path ) ;
+        Cache_Del( &pn ) ;
     } else {
 //printf("Write adding %s\n",path) ;
-        Cache_Add( path, size, buf, pn.ft->change ) ;
+        Cache_Add( &pn, buf, size ) ;
     }
-#endif /* OW_CACHE */
     if ( r == 0 ) {
         ++write_success ; /* statistics */
         write_bytes += size ; /* statistics */
