@@ -157,7 +157,7 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) 
 static int DS2480_databit(int sendbit, int * getbit) ;
 static int DS2480_reset( void ) ;
 static int DS2480_read(unsigned char * const buf, const int size ) ;
-static int DS2480_write(const unsigned char * const buf, const int size ) ;
+static int DS2480_write(const unsigned char * const buf, const size_t size ) ;
 static int DS2480_sendout_data( const unsigned char * const data , const int len ) ;
 static int DS2480_level(int new_level) ;
 static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay) ;
@@ -586,7 +586,7 @@ static int DS2480_ProgramPulse( void ) {
 /* return 0=good,
           -EIO = error
  */
-static int DS2480_write(const unsigned char *const buf, const int size ) {
+static int DS2480_write(const unsigned char *const buf, const size_t size ) {
     ssize_t r = write(devfd,buf,size) ;
     tcdrain(devfd) ;
     return (r!=(ssize_t)size)?-EIO:0 ;

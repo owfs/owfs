@@ -18,7 +18,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search) 
 //int DS9097_detect( void ) ;
 static int DS9097_reset( void ) ;
 static int DS9097_read(unsigned char * const buf, const int size ) ;
-static int DS9097_write( const unsigned char * const bytes, const int num ) ;
+static int DS9097_write( const unsigned char * const bytes, const size_t num ) ;
 static int DS9097_level(int new_level) ;
 static int DS9097_read_bits( unsigned char * const bits , const int length ) ;
 static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
@@ -66,7 +66,7 @@ static int DS9097_ProgramPulse( void ) {
 
 
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search) {
-    unsigned char search_direction ;
+    unsigned char search_direction = 0 ; /* initilization just to forestall incorrect compiler warning */
     unsigned char bit_number ;
     unsigned char last_zero ;
     unsigned char bits[3] ;
@@ -226,7 +226,7 @@ static int DS9097_reset( void ) {
 /* Send a byte to the 9097 passive adapter */
 /* return 0 valid, else <0 error */
 /* no matching read */
-static int DS9097_write( const unsigned char * const bytes, const int num ) {
+static int DS9097_write( const unsigned char * const bytes, const size_t num ) {
     int i ;
     int remain = num - (UART_FIFO_SIZE>>3) ;
     int num8 = num<<3 ;

@@ -11,19 +11,19 @@ $Id$
     UT -- utility functions
 
     Written 2003 Paul H Alfille
-    	Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
-    	Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
-    	in turn based on "miniterm" by Sven Goldt, goldt@math.tu.berlin.de
+        Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
+        Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
+        in turn based on "miniterm" by Sven Goldt, goldt@math.tu.berlin.de
     GPL license
-	This program is free software; you can redistribute it and/or
-	modify it under the terms of the GNU General Public License
-	as published by the Free Software Foundation; either version 2
-	of the License, or (at your option) any later version.
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
     Other portions based on Dallas Semiconductor Public Domain Kit,
     ---------------------------------------------------------------------------
@@ -86,8 +86,8 @@ $Id$
     extern void * devusb ;
 #endif /* OW_USB */
 /*
-	OW -- Onw Wire
-	Global variables -- each invokation will have it's own data
+    OW -- Onw Wire
+    Global variables -- each invokation will have it's own data
 */
 /* Stuff from helper.h */
 #define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
@@ -152,8 +152,8 @@ int FilePart( const char * const filename, const char ** next, struct parsedname
   void FS_parse_dir( char * const dest , const char * const buf ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
-int CheckPresence( struct parsedname * const pn ) ;
-void FS_devicename( char * const buffer, const int length, const unsigned char * const sn ) ;
+int CheckPresence( const struct parsedname * const pn ) ;
+void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
 
 unsigned char CRC8( const unsigned char * bytes , const int length ) ;
   unsigned char CRC8compute( const unsigned char * bytes , const int length ) ;
@@ -204,23 +204,23 @@ int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
 int BUS_send_cmd( const unsigned char * const cmd , const int len ) ;
 int BUS_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
 int BUS_send_data( const unsigned char * const data , const int len ) ;
-int BUS_send_and_get( const unsigned char * const send, const int sendlength, unsigned char * const get, const int getlength ) ;
+int BUS_send_and_get( const unsigned char * const send, const size_t sendlength, unsigned char * const get, const size_t getlength ) ;
 int BUS_readin_data( unsigned char * const data , const int len ) ;
-int BUS_alarmverify(struct parsedname * const pn) ;
-int BUS_normalverify(struct parsedname * const pn) ;
+int BUS_alarmverify(const struct parsedname * const pn) ;
+int BUS_normalverify(const struct parsedname * const pn) ;
 
-#define BUS_detect		DS2480_detect
-#define BUS_changebaud		DS2480_changebaud
-#define BUS_reset		(iroutines.reset)
-#define BUS_read		(iroutines.read)
-#define BUS_write		(iroutines.write)
-#define BUS_sendback_data	(iroutines.sendback_data)
-#define BUS_next_both		(iroutines.next_both)
-#define BUS_level		(iroutines.level)
-#define BUS_ProgramPulse	(iroutines.ProgramPulse)
-#define BUS_PowerByte		(iroutines.PowerByte)
-#define BUS_databit		DS2480_databit
-#define BUS_datablock		DS2480_datablock
+#define BUS_detect        DS2480_detect
+#define BUS_changebaud        DS2480_changebaud
+#define BUS_reset        (iroutines.reset)
+#define BUS_read        (iroutines.read)
+#define BUS_write        (iroutines.write)
+#define BUS_sendback_data    (iroutines.sendback_data)
+#define BUS_next_both        (iroutines.next_both)
+#define BUS_level        (iroutines.level)
+#define BUS_ProgramPulse    (iroutines.ProgramPulse)
+#define BUS_PowerByte        (iroutines.PowerByte)
+#define BUS_databit        DS2480_databit
+#define BUS_datablock        DS2480_datablock
 
 void BUS_lock( void ) ;
 void BUS_unlock( void ) ;
@@ -239,8 +239,8 @@ enum ag_combined { ag_separate, ag_aggregate, } ;
 /* aggregate defines array properties */
 struct aggregate {
     int elements ; /* Maximum number of elements */
-	enum ag_index letters ; /* name them with letters or numbers */
-	enum ag_combined combined ; /* Combined bitmaps properties, or separately addressed */
+    enum ag_index letters ; /* name them with letters or numbers */
+    enum ag_combined combined ; /* Combined bitmaps properties, or separately addressed */
 } ;
 
 #define ft_len_type (-1)
@@ -265,25 +265,25 @@ struct filetype {
     enum ft_format format ; // type of data
     enum ft_change change ; // volatility
     union {
-		void * v ;
-    	int (*i) (int *, const struct parsedname *);
-    	int (*u) (unsigned int *, const struct parsedname *);
-    	int (*f) (float *, const struct parsedname *);
-    	int (*y) (int *, const struct parsedname *);
-    	int (*a) (char *, const size_t, const off_t, const struct parsedname *);
-    	int (*b) (unsigned char *, const size_t, const off_t, const struct parsedname *);
-	} read ;
+        void * v ;
+        int (*i) (int *, const struct parsedname *);
+        int (*u) (unsigned int *, const struct parsedname *);
+        int (*f) (float *, const struct parsedname *);
+        int (*y) (int *, const struct parsedname *);
+        int (*a) (char *, const size_t, const off_t, const struct parsedname *);
+        int (*b) (unsigned char *, const size_t, const off_t, const struct parsedname *);
+    } read ;
     union {
-		void * v ;
-    	int (*i) (const int *, const struct parsedname *);
-    	int (*u) (const unsigned int *, const struct parsedname *);
-    	int (*f) (const float *, const struct parsedname *);
-    	int (*y) (const int *, const struct parsedname *);
-    	int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
-    	int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
-	} write ;
+        void * v ;
+        int (*i) (const int *, const struct parsedname *);
+        int (*u) (const unsigned int *, const struct parsedname *);
+        int (*f) (const float *, const struct parsedname *);
+        int (*y) (const int *, const struct parsedname *);
+        int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
+        int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
+    } write ;
 //    int (*write) (const char *, const size_t, const off_t, const struct parsedname *);
-	void * data ;
+    void * data ;
 } ;
 #define NFT(ft) ((int)(sizeof(ft)/sizeof(struct filetype)))
 
@@ -315,7 +315,7 @@ extern struct device NoDevice ;
 /* Parsedname -- path converted into components */
 struct buspath {
     unsigned char sn[8] ;
-	unsigned char branch ;
+    unsigned char branch ;
 } ;
 
 enum pn_type { pn_normal, pn_uncached, pn_alarm, } ;
@@ -325,19 +325,19 @@ struct parsedname {
     struct device * dev ;
     struct filetype * ft ;
     int    extension ; // numerical extension (for array values) or -1
-	int pathlength ;
-	struct buspath * bp ;
+    int pathlength ;
+    struct buspath * bp ;
 } ;
 
-extern speed_t speed;		/* terminal speed constant */
+extern speed_t speed;        /* terminal speed constant */
 
 /* Delay for clearing buffer */
-#define	WASTE_TIME	(2)
+#define    WASTE_TIME    (2)
 
-struct termios oldSerialTio;	/*old serial port settings*/
+struct termios oldSerialTio;    /*old serial port settings*/
 
 /* Globals */
-extern char devport[] ;	/* Device name (COM port)*/
+extern char devport[] ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
 extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */
@@ -365,7 +365,7 @@ struct interface_routines {
     /* assymetric read (only input, no slots emitted */
     int (* read) ( unsigned char * const bytes , const int num ) ;
     /* assymetric write (only output, no response obtained */
-    int (* write) (const unsigned char * const bytes , const int num ) ;
+    int (* write) (const unsigned char * const bytes , const size_t num ) ;
     /* reset the interface -- actually the 1-wire bus */
     int (* reset ) ( void ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */

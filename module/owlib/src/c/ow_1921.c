@@ -3,40 +3,40 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      device type (chip, interface or pseudo)
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 #include "owfs_config.h"
@@ -222,45 +222,45 @@ int FS_r_21_3byte(unsigned int * u , const struct parsedname * pn) {
 /* read clock */
 int FS_r_21date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ampm[8] = {0,10,20,30,0,10,12,22} ;
-	unsigned char data[7] ;
-	char d[26] ;
-	struct tm tm ;
-	time_t t ;
+    unsigned char data[7] ;
+    char d[26] ;
+    struct tm tm ;
+    time_t t ;
 
-	/* Prefill entries */
-	t = time(NULL) ;
-	if ( gmtime_r(&t,&tm)==NULL ) return -EINVAL ;
+    /* Prefill entries */
+    t = time(NULL) ;
+    if ( gmtime_r(&t,&tm)==NULL ) return -EINVAL ;
 
     /* Get date from chip */
-	if ( OW_r_21mem(data,7,0x0200,pn) ) return -EINVAL ;
-	tm.tm_sec  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
-	tm.tm_min  = (data[1]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
-	tm.tm_hour = (data[2]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
-	tm.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
-	tm.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
-	tm.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
+    if ( OW_r_21mem(data,7,0x0200,pn) ) return -EINVAL ;
+    tm.tm_sec  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
+    tm.tm_min  = (data[1]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
+    tm.tm_hour = (data[2]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
+    tm.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
+    tm.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
+    tm.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
 //printf("DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
 //printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 
     /* Pass through time_t again to validate */
-	if ( (t=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
-	if ( ctime_r(&t,d)==NULL ) return -EINVAL ;
+    if ( (t=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
+    if ( ctime_r(&t,d)==NULL ) return -EINVAL ;
     return FS_read_return( buf, size, offset, d, 24 ) ;
 }
 
 /* set clock */
 int FS_w_21date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     struct tm tm ;
-	unsigned char data[7] ;
-	int year ;
+    unsigned char data[7] ;
+    int year ;
 
     /* Not sure if this is valid, but won't allow offset != 0 at first */
     /* otherwise need a buffer */
     if ( offset ) return -EFAULT ;
 //printf("WDATE size=%d, buf=%2X %2X %2X\n",size,buf[0],buf[1],buf[2]);
     if ( size<3 || buf[0]=='\0' ) { /* Set to current time */
-	    time_t t = time(NULL) ;
-	    gmtime_r(&t,&tm) ;
+        time_t t = time(NULL) ;
+        gmtime_r(&t,&tm) ;
     } else if (!( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) )) {
 //printf("WDATE bad\n");
         return -EINVAL ;
@@ -270,10 +270,10 @@ int FS_w_21date(const char *buf, const size_t size, const off_t offset , const s
     data[2] = tm.tm_hour + 6*(tm.tm_hour/10) ; /* dec->bcd */
     data[3] = tm.tm_wday ; /* dec->bcd */
     data[4] = tm.tm_mday + 6*(tm.tm_mday/10) ; /* dec->bcd */
-	data[5] = tm.tm_mon + 6*(tm.tm_mon/10) ; /* dec->bcd */
-	year = tm.tm_year % 100 ;
+    data[5] = tm.tm_mon + 6*(tm.tm_mon/10) ; /* dec->bcd */
+    year = tm.tm_year % 100 ;
     data[6] = year + 6*(year/10) ; /* dec->bcd */
-	if ( tm.tm_year>99 && tm.tm_year<200 ) data[5] |= 0x80 ;
+    if ( tm.tm_year>99 && tm.tm_year<200 ) data[5] |= 0x80 ;
 //printf("DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
 //printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
     return OW_w_21mem(data,7,0x0200,pn)?-EINVAL:0 ;
@@ -293,7 +293,7 @@ int FS_w_21run(const int * y, const struct parsedname * pn) {
 int FS_r_21run(int * y , const struct parsedname * pn) {
     unsigned char cr ;
     if ( OW_r_21mem(&cr, 1, 0x020E,pn) ) return -EINVAL ;
-    *y = ((cr&0x80)!=0) ;
+    y[0] = ((cr&0x80)==0) ;
     return 0 ;
 }
 
@@ -305,16 +305,16 @@ int FS_w_21mip(const int * y, const struct parsedname * pn) {
         int clockstate ;
         if ( (cr&0x10) == 0x10 ) return 0 ; /* already in progress */
         /* Make sure the clock is running */
-	if ( FS_r_21run( &clockstate, pn ) ) return -EINVAL ;
-	if ( clockstate==0 ) {
-	    clockstate = 1 ;
+    if ( FS_r_21run( &clockstate, pn ) ) return -EINVAL ;
+    if ( clockstate==0 ) {
+        clockstate = 1 ;
             if ( FS_w_21run( &clockstate, pn ) ) return -EINVAL ;
-	    UT_delay(1000) ;
-	}
-	/* Clear memory */
-	if ( OW_21clearmemory(pn ) ) return -EINVAL ;
+        UT_delay(1000) ;
+    }
+    /* Clear memory */
+    if ( OW_21clearmemory(pn ) ) return -EINVAL ;
         if ( OW_r_21mem(&cr, 1, 0x020E,pn) ) return -EINVAL ;
-	cr = (cr&0x3F) | 0x40 ;
+    cr = (cr&0x3F) | 0x40 ;
         if ( OW_w_21mem( &cr, 1, 0x020E, pn) ) return -EINVAL ;
     } else { /* turn off */
         if ( (cr&0x10) == 0x00 ) return 0 ; /* already off */
@@ -334,83 +334,83 @@ int FS_r_21mip(int * y , const struct parsedname * pn) {
 
 /* read the interval between samples during a mission */
 int FS_r_21samplerate(unsigned int * u , const struct parsedname * pn) {
-	unsigned char data ;
-	if ( OW_r_21mem(&data,1,0x020D,pn) ) return -EINVAL ;
-	*u = data ;
-	return 0 ;
+    unsigned char data ;
+    if ( OW_r_21mem(&data,1,0x020D,pn) ) return -EINVAL ;
+    *u = data ;
+    return 0 ;
 }
 
 /* write the interval between samples during a mission */
 /* NOTE: mission is turned OFF to avoid unintensional start! */
 int FS_w_21samplerate(const unsigned int * u , const struct parsedname * pn) {
-	unsigned char data ;
+    unsigned char data ;
 
-	if ( OW_r_21mem(&data,1,0x020E,pn) ) return -EFAULT ;
-	data |= 0x10 ; /* EM on */
-	if ( OW_w_21mem(&data,1,0x020E,pn) ) return -EFAULT ;
-	data = u[0] ;
-	if (OW_w_21mem(&data,1,0x020D,pn) ) return -EFAULT ;
-	return 0 ;
+    if ( OW_r_21mem(&data,1,0x020E,pn) ) return -EFAULT ;
+    data |= 0x10 ; /* EM on */
+    if ( OW_w_21mem(&data,1,0x020E,pn) ) return -EFAULT ;
+    data = u[0] ;
+    if (OW_w_21mem(&data,1,0x020D,pn) ) return -EFAULT ;
+    return 0 ;
 }
 
 /* read the alarm time field (not bit 7, though) */
 int FS_r_21atime(unsigned int * u , const struct parsedname * pn) {
-	unsigned char data ;
-	if ( OW_r_21mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
-	*u = data & 0x7F ;
-	return 0 ;
+    unsigned char data ;
+    if ( OW_r_21mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
+    *u = data & 0x7F ;
+    return 0 ;
 }
 
 /* write one of the alarm fields */
 /* NOTE: keep first bit */
 int FS_w_21atime(const unsigned int * u , const struct parsedname * pn) {
-	unsigned char data ;
+    unsigned char data ;
 
-	if ( OW_r_21mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
-	data = ( (unsigned char) u ) | (data&0x80) ; /* EM on */
-	if ( OW_w_21mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
-	return 0 ;
+    if ( OW_r_21mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
+    data = ( (unsigned char) u ) | (data&0x80) ; /* EM on */
+    if ( OW_w_21mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
+    return 0 ;
 }
 
 /* read the alarm time field (not bit 7, though) */
 int FS_r_21atrig(unsigned int * u , const struct parsedname * pn) {
-	unsigned char data[4] ;
-	if ( OW_r_21mem(data,4,0x0207,pn) ) return -EFAULT ;
-	if ( data[3] & 0x80 ) {
-	    *u = 4 ;
-	} else if (data[2] & 0x80) {
-	    *u = 3 ;
-	} else if (data[1] & 0x80) {
-	    *u = 2 ;
-	} else if (data[0] & 0x80) {
-	    *u = 1 ;
-	} else {
-	    *u = 0 ;
-	}
-	return 0 ;
+    unsigned char data[4] ;
+    if ( OW_r_21mem(data,4,0x0207,pn) ) return -EFAULT ;
+    if ( data[3] & 0x80 ) {
+        *u = 4 ;
+    } else if (data[2] & 0x80) {
+        *u = 3 ;
+    } else if (data[1] & 0x80) {
+        *u = 2 ;
+    } else if (data[0] & 0x80) {
+        *u = 1 ;
+    } else {
+        *u = 0 ;
+    }
+    return 0 ;
 }
 
 /* write one of the alarm fields */
 /* NOTE: keep first bit */
 int FS_w_21atrig(const unsigned int * u , const struct parsedname * pn) {
-	unsigned char data[4] ;
-	if ( OW_r_21mem(data,4,0x0207,pn) ) return -EFAULT ;
+    unsigned char data[4] ;
+    if ( OW_r_21mem(data,4,0x0207,pn) ) return -EFAULT ;
     data[0] &= 0x7F ;
     data[1] &= 0x7F ;
     data[2] &= 0x7F ;
     data[3] &= 0x7F ;
-	switch (*u) { /* Intentional fall-throughs in cases */
-	case 1:
-	    data[0] |= 0x80 ;
-	case 2:
-	    data[1] |= 0x80 ;
-	case 3:
-	    data[2] |= 0x80 ;
-	case 4:
-	    data[3] |= 0x80 ;
-	}
-	if ( OW_w_21mem(data,4,0x0207,pn) ) return -EFAULT ;
-	return 0 ;
+    switch (*u) { /* Intentional fall-throughs in cases */
+    case 1:
+        data[0] |= 0x80 ;
+    case 2:
+        data[1] |= 0x80 ;
+    case 3:
+        data[2] |= 0x80 ;
+    case 4:
+        data[3] |= 0x80 ;
+    }
+    if ( OW_w_21mem(data,4,0x0207,pn) ) return -EFAULT ;
+    return 0 ;
 }
 
 int FS_r_21mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -422,20 +422,20 @@ int FS_w_21mem(const unsigned char *buf, const size_t size, const off_t offset ,
 }
 
 int FS_r_21page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-	if ( offset+size > 32 ) return -EMSGSIZE ;
+    if ( offset+size > 32 ) return -EMSGSIZE ;
     return OW_r_21mem( buf, size, offset+((pn->extension)<<5), pn ) ? -EFAULT : (int) size ;
 }
 
 int FS_w_21page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-	if ( offset+size > 32 ) return -EMSGSIZE ;
+    if ( offset+size > 32 ) return -EMSGSIZE ;
     return OW_w_21mem( buf, size, offset+((pn->extension)<<5), pn ) ? -EFAULT : 0 ;
 }
 
 /* temperature log */
 int FS_r_21logtemp(float * T , const struct parsedname * pn) {
-	unsigned char data ;
-	struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
-	if ( v==NULL ) return -EINVAL ;
+    unsigned char data ;
+    struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
+    if ( v==NULL ) return -EINVAL ;
     if ( OW_r_21mem( &data , 1, 0x1000+pn->extension, pn ) ) return -EINVAL ;
     *T = (float)data * v->resolution + v->histolow ;
     return 0 ;
@@ -443,18 +443,18 @@ int FS_r_21logtemp(float * T , const struct parsedname * pn) {
 
 /* temperature log */
 int FS_r_21logtime(unsigned int * u , const struct parsedname * pn) {
-	time_t t ;
-	if ( OW_r_21logtime( &t, pn ) ) return -EINVAL ;
-	*u = t ;
-	return 0 ;
+    time_t t ;
+    if ( OW_r_21logtime( &t, pn ) ) return -EINVAL ;
+    *u = t ;
+    return 0 ;
 }
 
 int FS_r_21logdate(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-	time_t t ;
-	char d[26] ;
-	if ( offset ) return -EINVAL ;
-	if ( OW_r_21logtime( &t, pn ) ) return -EINVAL ;
-	if ( ctime_r(&t,d)==NULL ) return -EINVAL ;
+    time_t t ;
+    char d[26] ;
+    if ( offset ) return -EINVAL ;
+    if ( OW_r_21logtime( &t, pn ) ) return -EINVAL ;
+    if ( ctime_r(&t,d)==NULL ) return -EINVAL ;
     return FS_read_return( buf, size, offset, d, 24 ) ;
 }
 
@@ -469,9 +469,9 @@ static int OW_w_21mem( const unsigned char * data , const size_t length , const 
 
     /* Copy to scratchpad */
     memcpy( &p[3], data , length ) ;
-	BUS_lock() ;
+    BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data(p,3+length) ;
-		if ( rest==length && ret==0 ) ret = BUS_readin_data( &p[3+length], 2) || CRC16(p,3+length+2) ;
+        if ( rest==length && ret==0 ) ret = BUS_readin_data( &p[3+length], 2) || CRC16(p,3+length+2) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
@@ -479,7 +479,7 @@ static int OW_w_21mem( const unsigned char * data , const size_t length , const 
     p[0] = 0xAA ;
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+length) || memcmp(&p[4], data, length) ;
-		if ( rest==length && ret==0) ret = BUS_readin_data( &p[4+length], 2) || CRC16(p,4+length+2) ;
+        if ( rest==length && ret==0) ret = BUS_readin_data( &p[4+length], 2) || CRC16(p,4+length+2) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
@@ -500,12 +500,12 @@ static int OW_r_21mem( unsigned char * data , const int length , const int locat
     int rest = 32-offset ;
     int ret ;
 
-	if ( offset+length > 32 ) return OW_r_21mem( data, (size_t) rest, location, pn) || OW_r_21mem( &data[rest], length-rest, location+rest, pn) ;
+    if ( offset+length > 32 ) return OW_r_21mem( data, (size_t) rest, location, pn) || OW_r_21mem( &data[rest], length-rest, location+rest, pn) ;
 
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], rest+2 ) || CRC16(p,3+rest+2) ;
     BUS_unlock() ;
-	memcpy( data , &p[3], length ) ;
+    memcpy( data , &p[3], length ) ;
     return ret ;
 }
 
@@ -518,51 +518,51 @@ static int OW_21temperature( int * T , const int delay, const struct parsedname 
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-	if ( (data & 0x20)==0 ) { /* Mission not progress, force conversion */
-		BUS_lock() ;
-			ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
-		BUS_unlock() ;
-		if ( ret ) return 1 ;
-	}
+    if ( (data & 0x20)==0 ) { /* Mission not progress, force conversion */
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
+        BUS_unlock() ;
+        if ( ret ) return 1 ;
+    }
 
     BUS_lock() ;
         ret =OW_r_21mem( &data, 1, 0x0211, pn) ; /* read temp register */
     BUS_unlock() ;
     *T = (int) data ;
-	return ret ;
+    return ret ;
 }
 
 /* temperature log */
 static int OW_r_21logtime(time_t *t, const struct parsedname * pn) {
     int ampm[8] = {0,10,20,30,0,10,12,22} ;
-	unsigned char data[8] ;
-	struct tm tm ;
+    unsigned char data[8] ;
+    struct tm tm ;
 
-	/* Prefill entries */
-	*t = time(NULL) ;
-	if ( gmtime_r(t,&tm)==NULL ) return -EINVAL ;
+    /* Prefill entries */
+    *t = time(NULL) ;
+    if ( gmtime_r(t,&tm)==NULL ) return -EINVAL ;
 
     /* Get date from chip */
-	if ( OW_r_21mem(data,8,0x0215,pn) ) return -EINVAL ;
-	tm.tm_sec  = 0 ; /* BCD->dec */
-	tm.tm_min  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
-	tm.tm_hour = (data[1]&0x0F) + ampm[data[1]>>4] ; /* BCD->dec */
-	tm.tm_mday = (data[2]&0x0F) + 10*(data[2]>>4) ; /* BCD->dec */
-	tm.tm_mon  = (data[3]&0x0F) + 10*((data[3]&0x10)>>4) ; /* BCD->dec */
-	tm.tm_year = (data[4]&0x0F) + 10*(data[4]>>4) + 100; /* BCD->dec */
+    if ( OW_r_21mem(data,8,0x0215,pn) ) return -EINVAL ;
+    tm.tm_sec  = 0 ; /* BCD->dec */
+    tm.tm_min  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
+    tm.tm_hour = (data[1]&0x0F) + ampm[data[1]>>4] ; /* BCD->dec */
+    tm.tm_mday = (data[2]&0x0F) + 10*(data[2]>>4) ; /* BCD->dec */
+    tm.tm_mon  = (data[3]&0x0F) + 10*((data[3]&0x10)>>4) ; /* BCD->dec */
+    tm.tm_year = (data[4]&0x0F) + 10*(data[4]>>4) + 100; /* BCD->dec */
 
     /* Pass through time_t again to validate */
-	if ( (*t=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
+    if ( (*t=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
 
-	if ( OW_r_21mem(data,2,0x020D,pn) ) return -EINVAL ;
-	if ( data[1] & 0x08 ) { /* rollover */
-	    int u = (((((unsigned int) data[7])<<8)|data[6])<<8)|data[5] ;
-		int e = pn->extension ;
-		if ( u % 2048 < e ) e-=2048 ;
+    if ( OW_r_21mem(data,2,0x020D,pn) ) return -EINVAL ;
+    if ( data[1] & 0x08 ) { /* rollover */
+        int u = (((((unsigned int) data[7])<<8)|data[6])<<8)|data[5] ;
+        int e = pn->extension ;
+        if ( u % 2048 < e ) e-=2048 ;
         *t += 60*data[0]*((u/2048)+e) ;
-	} else {
+    } else {
         *t += 60*pn->extension*data[0] ;
-	}
+    }
     return 0 ;
 }
 
@@ -577,7 +577,7 @@ static int OW_21clearmemory( const struct parsedname * const pn) {
     /* Clear memory command */
     cr = 0x3C ;
     BUS_lock() ;
-	ret = BUS_select(pn) || BUS_send_data( &cr, 1 ) ;
+    ret = BUS_select(pn) || BUS_send_data( &cr, 1 ) ;
     BUS_unlock() ;
     return ret ;
 }

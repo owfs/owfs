@@ -53,7 +53,7 @@ int BUS_readin_data( unsigned char * const data , const int len ) {
     return BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len) ;
 }
 
-int BUS_send_and_get( const unsigned char * const bussend, const int sendlength, unsigned char * const busget, const int getlength ) {
+int BUS_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength ) {
     int gl = getlength ;
     int ret ;
 
@@ -103,7 +103,7 @@ for(i=0;i<getlength;++i)printf("%.2X ",busget[i]);
 printf("\n");
 }
 */
-		ret = read( devfd, &busget[getlength-gl], gl ) ; /* get available bytes */
+		ret = read( devfd, &busget[getlength-gl], (size_t) gl ) ; /* get available bytes */
 //printf("SAG postread ret=%d\n",ret);
 		if (ret<0) return ret ;
 		gl -= ret ;

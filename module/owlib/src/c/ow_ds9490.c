@@ -202,7 +202,7 @@ static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * con
 }
 
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) {
-    unsigned char search_direction ;
+    unsigned char search_direction = 0 ; /* set to 0 just to forestall compiler error, initialization not really needed */
     unsigned char bit_number ;
     unsigned char last_zero ;
     unsigned char bits[3] ;

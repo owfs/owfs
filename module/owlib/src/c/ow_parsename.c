@@ -32,7 +32,7 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
 int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
-    int preleng ; /* preamble length */
+    size_t preleng ; /* preamble length */
 //printf("PN_pn\n");
     if ( pn == NULL ) return -EINVAL ;
 

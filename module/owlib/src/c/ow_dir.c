@@ -3,10 +3,10 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 #include "owfs_config.h"
@@ -73,11 +73,13 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
                 dpp = bsearch("DS9097U",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
             case 7:
-		        dpp = bsearch("LINK",Devices,nDevices,sizeof(struct device *),devicecmp) ;
+                dpp = bsearch("LINK",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
             case 8:
-		        dpp = bsearch("DS9490",Devices,nDevices,sizeof(struct device *),devicecmp) ;
+                dpp = bsearch("DS9490",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
+            default : /* just in case an adapter isn't set */
+                dpp = NULL ;
             }
             if ( dpp ) {
                 pn->dev = *dpp ;
@@ -144,7 +146,7 @@ static int FS_branchoff( void ) {
 
 
 /* device display format */
-void FS_devicename( char * const buffer, const int length, const unsigned char * const sn ) {
+void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) {
     switch (devform) {
     case fdi:
         snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6]) ;

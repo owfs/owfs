@@ -81,7 +81,7 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 }
 
 /* Check if device exists -- 0 yes, 1 no */
-int CheckPresence( struct parsedname * const pn ) {
+int CheckPresence( const struct parsedname * const pn ) {
     switch ( pn->dev->type ) {
 	case dev_1wire:
 	    return BUS_normalverify(pn) ;

@@ -21,13 +21,13 @@ static int BUS_verify(const unsigned char * const serialnumber) ;
 //   tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-int BUS_alarmverify(struct parsedname * const pn) {
+int BUS_alarmverify(const struct parsedname * const pn) {
     unsigned char ec = 0xEC ;
     int ret ;
-    struct device * dev = pn->dev ;
-    pn->dev = NULL ;
-    ret=BUS_select(pn) ;
-    pn->dev = dev ;
+    struct parsedname pncopy ;
+    memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
+    pncopy.dev = NULL ;
+    ret=BUS_select(&pncopy) ;
     ret || (ret=BUS_send_data( &ec , 1 )) || (ret=BUS_verify(pn->sn)) ;
     return ret ;
 }
@@ -36,13 +36,13 @@ int BUS_alarmverify(struct parsedname * const pn) {
 //   tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-int BUS_normalverify(struct parsedname * const pn) {
+int BUS_normalverify(const struct parsedname * const pn) {
     unsigned char fo = 0xF0 ;
     int ret ;
-    struct device * dev = pn->dev ;
-    pn->dev = NULL ;
-    ret=BUS_select(pn) ;
-    pn->dev = dev ;
+    struct parsedname pncopy ;
+    memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
+    pncopy.dev = NULL ;
+    ret=BUS_select(&pncopy) ;
     ret || (ret=BUS_send_data( &fo , 1 )) || (ret=BUS_verify(pn->sn)) ;
     return ret ;
 }
