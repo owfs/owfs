@@ -123,13 +123,14 @@ AC_SUBST(ENABLE_OWFTPD)
 
 #Check owperl
 AC_MSG_CHECKING(if owperl is enabled)
-ENABLE_OWPERL="false"
+ENABLE_OWPERL="true"
 AC_ARG_ENABLE(owperl,
-[  --enable-owperl       Enable owperl module (default false)],
+[  --enable-owperl       Enable owperl module (default true)],
 [
     AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWPERL="true"
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWPERL="false"
+    else
         if test -z "$SWIG"  ; then
             AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
             AC_MSG_WARN([OWPERL is disabled because swig is not found])
@@ -143,7 +144,7 @@ AC_ARG_ENABLE(owperl,
     fi
 ],
 [
-    AC_MSG_RESULT([false (default)])
+    AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWPERL)
 AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
