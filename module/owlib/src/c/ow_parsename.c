@@ -76,6 +76,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->dev = NULL ; /* No Device */
     pn->ft = NULL ; /* No filetypes */
     pn->subdir = NULL ; /* Not subdirectory */
+    pn->badcopy = 0 ; /* real deal, not a incomplete copy */
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */

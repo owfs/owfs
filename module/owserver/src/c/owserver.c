@@ -143,10 +143,10 @@ static int Handler( int fd ) {
             si.sg.int32 = sm.sg ;
             switch( (enum msg_type) sm.type ) {
             case msg_full:
-                cm.ret = FullFileLength(&pn) ;
+                cm.ret = (pn.dev&&pn.ft)?FullFileLength(&pn):0 ;
                 break ;
             case msg_size:
-                cm.ret = FileLength(&pn) ;
+                cm.ret = (pn.dev&&pn.ft)?FileLength(&pn):0 ;
                 break ;
             case msg_read:
                 retbuffer = ReadHandler( &sm , &cm, &pn ) ;

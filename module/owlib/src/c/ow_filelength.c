@@ -24,7 +24,17 @@ size_t FileLength( const struct parsedname * const pn ) {
     } else if ( pn->ft->format==ft_bitfield &&  pn->extension==-2 ) {
         return 12 ; /* bitfield */
     } else if ( busmode==bus_remote && pn->ft->suglen<0 ) {
-        int ret = ServerSize(pn) ;
+        int ret ;
+        if ( pn->badcopy ) { /* need correct path to send to server */
+            int len = strlen(pn->path) ;
+            char fullpath[len+OW_FULLNAME_MAX+2] ;
+            strcpy(fullpath,pn->path) ;
+            fullpath[len] = '/' ;
+            if ( FS_FileName(&fullpath[len+1],OW_FULLNAME_MAX,pn) ) return 0 ;
+            ret = ServerSize(fullpath) ;
+        } else {
+            ret = ServerSize(pn->path) ;
+        }
         return ret<0 ? 0 : ret ;
     } else {
         switch(pn->ft->suglen) {

@@ -51,6 +51,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     FSTATUNLOCK
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
+    pn2.badcopy = 1 ;
 //printf("DIR1 path=%s\n",path);
     if ( pn == NULL ) {
         ret = -ENOENT ; /* should never happen */

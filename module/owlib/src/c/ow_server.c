@@ -27,12 +27,12 @@ int Server_detect( void ) {
     return 0 ;
 }
 
-int ServerSize( const struct parsedname *pn) {
-    return ServerSizeorFull( msg_size, pn->path) ;
+int ServerSize( const char * path ) {
+    return ServerSizeorFull( msg_size, path) ;
 }
 
-int ServerFull( const struct parsedname *pn) {
-    return ServerSizeorFull( msg_full, pn->path) ;
+int ServerFull( const char * path ) {
+    return ServerSizeorFull( msg_full, path) ;
 }
 
 /* Size of a data item */

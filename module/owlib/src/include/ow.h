@@ -470,6 +470,7 @@ struct parsedname {
     struct device * dev ; // 1-wire device
     struct filetype * ft ; // device property
     int    extension ; // numerical extension (for array values) or -1
+    int    badcopy ; // flag if this is an incomplete structure built by FS_dir
     struct filetype * subdir ; // in-device grouping
     int pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
@@ -773,8 +774,8 @@ int ServerListen( struct network_work * nw ) ;
 void FreeAddr( struct network_work * nw ) ;
 
 int Server_detect( void ) ;
-int ServerSize( const struct parsedname *pn) ;
-int ServerFull( const struct parsedname *pn) ;
+int ServerSize( const char * path ) ;
+int ServerFull( const char * path ) ;
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
 int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
 int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn ) ;
