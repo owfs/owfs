@@ -50,6 +50,7 @@ make install \
 
 %{prefix}/bin/owfs
 %{prefix}/include/owfs_config.h
+%{prefix}/include/owfs.h
 
 %changelog
 
