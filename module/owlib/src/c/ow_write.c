@@ -129,7 +129,7 @@ static int FS_real_write(const char * const path, const char * const buf, const 
         ++ write_tries[2] ; /* statistics */
     STATUNLOCK
     r = FS_parse_write( buf, size, offset, pn ) ;
-    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",path,size) ;
+    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",path,(int)size) ;
     return r ;
 }
 
@@ -285,7 +285,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
 /* return 0 if ok */
 static int FS_w_split(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t elements = pn->ft->ag->elements ;
-    int ret ;
+    int ret = 0;
 //printf("WRITE_SPLIT\n");
 
     (void) offset ;
