@@ -40,7 +40,9 @@ $Id$
 #define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
 
 static void ow_exit( int e ) ;
+#if 0
 static void fuser_mount_wrapper( void ) ;
+#endif
 void exit_handler(int i) ;
 void set_signal_handlers( void ) ;
 
@@ -59,6 +61,11 @@ char umount_cmd[1024] = "";
 int main(int argc, char *argv[]) {
     int c ;
 //    int multithreaded = 1;
+#if FUSE_MAJOR_VERSION == 1
+    char ** opts = NULL ;
+    char * tok ;
+    int i = 0 ;
+#endif
 
 //    mtrace() ;
     LibSetup() ;
@@ -101,7 +108,25 @@ int main(int argc, char *argv[]) {
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
 //    fuser_mount_wrapper() ;
-    if ( (fuse_fd = fuse_mount(fuse_mountpoint, NULL)) == -1 ) ow_exit(1) ;
+#if FUSE_MAJOR_VERSION == 1
+    if ( fuse_opt ) {
+        opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
+        if ( opts == NULL ) {
+            fprintf(stderr,"Memory allocation problem\n") ;
+            ow_exit(1) ;
+        }
+        tok = strtok(fuse_opt," ") ;
+        while ( tok ) {
+            opts[i++] = tok ;
+            tok = strtok(NULL," ") ;
+        }
+        opts[i] = NULL ;
+    }
+    if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
+    if (opts) free( opts ) ;
+#else
+    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt)) == -1 ) ow_exit(1) ;
+#endif
 
     if ( LibStart() ) ow_exit(1) ;
 
@@ -119,6 +144,7 @@ int main(int argc, char *argv[]) {
     return 0 ;
 }
 
+#if 0
 static void fuser_mount_wrapper( void ) {
     char ** opts = NULL ;
 
@@ -168,6 +194,7 @@ static void fuser_mount_wrapper( void ) {
     if (opts) free( opts ) ;
     free( fuse_opt ) ;
 }
+#endif
 
 static void ow_exit( int e ) {
     LibClose() ;
