@@ -125,7 +125,7 @@ AC_SUBST(ENABLE_OWFTPD)
 if test "${ENABLE_OWFS}" != "false" ; then
     AC_CHECK_LIB(fuse,__fuse_process_cmd,, [
 	if test "${ENABLE_OWFS}" = "true"; then
-		AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.sourceforge.net/projects/avf])
+		AC_MSG_ERROR([You have to have libfuse installed first - get it from http://fuse.sourceforge.net])
 	else
 		AC_MSG_WARN([OWFS is disabled because libfuse is not installed.])
         	ENABLE_OWFS="false"
