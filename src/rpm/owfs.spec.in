@@ -76,6 +76,7 @@ make install \
 %{prefix}/include/ow_1921.h
 %{prefix}/include/ow_1993.h
 %{prefix}/include/ow_2401.h
+%{prefix}/include/ow_2404.h
 %{prefix}/include/ow_2405.h
 %{prefix}/include/ow_2406.h
 %{prefix}/include/ow_2408.h
@@ -109,6 +110,7 @@ make install \
 %{prefix}/man/man3/DS1822.3.gz
 %{prefix}/man/man3/DS18B20.3.gz
 %{prefix}/man/man3/DS18S20.3.gz
+%{prefix}/man/man3/DS1921.3.gz
 %{prefix}/man/man3/DS1992.3.gz
 %{prefix}/man/man3/DS1993.3.gz
 %{prefix}/man/man3/DS1995.3.gz
