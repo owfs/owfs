@@ -189,7 +189,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 	    /* It's not possible to check extensions (nr of elements) here.
 	     * It's hard to know if /system/adapter/version.4 is valid or
 	     * not, so just accept it */
-	    ret = FS_ParsedName_nocheck( path2, &pn2 ) ;
+	    ret = FS_ParsedName( path2, &pn2 ) ;
 	    if ( ret ) {
 	        cm.ret = -EINVAL ;
 		//printf("ServerDir: error parsing %s\n", path2);

@@ -847,7 +847,6 @@ void DeviceDestroy( void ) ;
 
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
-int FS_ParsedName_nocheck( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
