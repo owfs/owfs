@@ -22,7 +22,7 @@ AC_SUBST(VERSION)dnl
 AC_MSG_RESULT(Configuring ${PACKAGE}-${VERSION})
 
 AC_PREFIX_DEFAULT(/opt/owfs)dnl
-AC_PREREQ(2.59)dnl
+AC_PREREQ(2.57)dnl
 AC_CONFIG_AUX_DIR(src/scripts/install)dnl
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
@@ -51,12 +51,12 @@ AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
 #Check owfs
 AC_MSG_CHECKING(if owfs is enabled)
-ENABLE_OWFS="true"
+ENABLE_OWFS="auto"
 AC_ARG_ENABLE(owfs,
-[  --enable-owfs         Enable owhttpd module (default true)],
+[  --enable-owfs         Enable owhttpd module (default auto)],
 [
     AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
+    if test "$enableval" != "yes" ; then
         ENABLE_OWFS=false
     fi
 ],
@@ -82,9 +82,23 @@ AC_ARG_ENABLE(owhttpd,
 AC_SUBST(ENABLE_OWHTTPD)
 
 # We need fuse only if OWFS is enabled
-if test "${ENABLE_OWFS}" = "true" ; then
-    AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.sourceforge.net/projects/avf])])
+if test "${ENABLE_OWFS}" != "false" ; then
+    AC_CHECK_LIB(fuse,__fuse_process_cmd,, [
+	if test "${ENABLE_OWFS}" = "true"; then
+		AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.sourceforge.net/projects/avf])
+	else
+		AC_MSG_WARN([OWFS is disabled because libfuse is not installed.])
+        	ENABLE_OWFS="false"
+	fi
+    ])
+    if test "${ENABLE_OWFS}" != "false"; then
+        ENABLE_OWFS="true"
+    fi
+else
+    ENABLE_OWFS="false"
 fi
+
+AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 
 # Check if the cache is enabled.
 
@@ -190,14 +204,61 @@ AC_ARG_ENABLE(mt,
 AC_SUBST(ENABLE_MT)
 
 # Include libpthread if multithreading is enabled
+#
+# This stream of line noise will hopefully find out the best way to get
+# to a threading kit. Logic came from APR, but this will still cross-compile
+AC_DEFUN(PTHREADS_CHECK_COMPILE, [
+AC_TRY_LINK( [
+#include <pthread.h>
+#include <stddef.h>
+static void *doit(void *ignored) { return ignored; }
+], [
+    pthread_t t;
+    pthread_mutex_t m;
+    pthread_mutex_init(&m, (pthread_mutexattr_t *)NULL);
+    pthread_mutex_lock(&m);
+    pthread_create(&t, (pthread_attr_t *)NULL, doit, NULL);
+], [
+    pthreads_ok="yes"
+], [
+    pthreads_ok="no"
+]) ])
 
 if test "${ENABLE_MT}" = "true" ; then
+    PTHREADS_CHECK_COMPILE
+    AC_CACHE_CHECK(for pthreads, ac_cv_pthreads_flags, [
+	ac_cv_pthreads_flags=""
+	if test "$pthreads_ok" != "yes"; then
+	    for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt; do
+	        ac_save="$CFLAGS"
+	        CFLAGS="$CFLAGS $flag"
+		PTHREADS_CHECK_COMPILE
+		CFLAGS="$ac_save"
 
-    AC_CHECK_LIB(pthread,pthread_mutex_lock, ,[
-        AC_MSG_WARN([libpthread not found, multithreading will be disabled])
-        ENABLE_MT=false
-        AC_SUBST(ENABLE_MT)
-    ])
+		if test "$pthreads_ok" = "yes"; then
+		    ac_cv_pthreads_cflags="$flag"
+		    break
+		fi
+            done
+	fi
+])
+    if test "$pthreads_ok" = "yes"; then
+	ENABLE_MT=true
+	CFLAGS="$CFLAGS $ac_cv_pthreads_cflags"
+    else
+        AC_CHECK_LIB(pthread,pthread_mutex_lock, ,[
+            AC_MSG_WARN([libpthread not found, multithreading will be disabled])
+            ENABLE_MT=false
+            AC_SUBST(ENABLE_MT)
+        ])
+        if test "${ENABLE_MT}" = "true" ; then
+	    PTHREADS_CHECK_COMPILE
+	    if test "$pthreads_ok" != "yes"; then
+                AC_MSG_WARN([libpthread not found, multithreading will be disabled])
+		ENABLE_MT=false
+	    fi
+        fi
+    fi
 fi
 
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
