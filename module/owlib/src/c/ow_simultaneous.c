@@ -85,7 +85,6 @@ int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) {
 }
 
 static int FS_w_convert(const int * y , const struct parsedname * pn) {
-    int ret = 0 ;
     if ( y[0]==0 ) {
         if ( OW_killcache((enum simul_type) pn->ft->data,pn) ) return -EINVAL ;
         return 0 ;
@@ -135,7 +134,7 @@ static int OW_skiprom( enum simul_type type, const struct parsedname * const pn 
     const unsigned char cmd_temp[] = { 0xCC, 0x44 } ;
     const unsigned char cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF } ;
     unsigned char data[6];
-    int ret ;
+    int ret = 0;
     struct parsedname pn2 ;
     memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
     pn2.dev = NULL ; /* only branch select done, not actual device */
