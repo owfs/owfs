@@ -22,6 +22,7 @@ $Id$
 #include "ow_2401.h" // Simple ID and base defines
 #include "ow_1820.h" // thermometer
 #include "ow_1921.h" // thermometer
+#include "ow_1977.h" // password memory
 #include "ow_2890.h" // potentiometer
 #include "ow_2404.h" // dual port  mem and clock
 #include "ow_2405.h" // switch
