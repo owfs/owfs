@@ -1,7 +1,7 @@
 # $Id$
 
-bin_PROGRAMS = owserver
-owhttpd_SOURCES = owserver.c
+bin_PROGRAMS = owhttpd
+owhttpd_SOURCES = owhttpd.c owhttpd_handler.c
 #owhttpd_LDADD = libow.la
 
 # multithreading -- must be available on the library as well

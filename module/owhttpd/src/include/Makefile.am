@@ -1,5 +1,5 @@
 headerdir = ${prefix}/include
-header_DATA = owserver.h
+header_DATA = owhttpd.h
 
 EXTRA_DIST = ${header_DATA}
 

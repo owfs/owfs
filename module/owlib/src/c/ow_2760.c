@@ -73,9 +73,9 @@ struct thermocouple {
     FLOAT mid[11] ;
     FLOAT high[11];
     FLOAT mV[11] ;
-} ;   
+} ;
 
-struct thermocouple type_b = 
+struct thermocouple type_b =
 {
         0.437,1.822,0,1820,
         { -3.34549e+09,7.57222e+09,-7.34952e+09,3.9973e+09,-1.3362e+09,2.83366e+08,-3.80268e+07,3.13466e+06,-151226,4738.17,31.9924,},
@@ -84,7 +84,7 @@ struct thermocouple type_b =
         { 3.4607e-21,-1.54436e-18,2.33598e-16,-6.23624e-15,-2.18387e-12,2.88144e-10,-1.60479e-08,4.47121e-07,1.95406e-07,-0.000227614,8.70069e-05,},
 };
 
-struct thermocouple type_e = 
+struct thermocouple type_e =
 {
         -3.306,9.86,-270,1000,
         { -0.00186348,-0.119593,-3.40982,-56.8497,-613.48,-4475.37,-22342.6,-75348.3,-164231,-208853,-117692,},
@@ -93,7 +93,7 @@ struct thermocouple type_e =
         { -1.07611e-22,1.31153e-20,4.65438e-18,-5.31167e-16,-7.78362e-14,7.82564e-12,7.64931e-10,-1.21373e-07,5.06679e-05,0.0586129,-0.000325966,},
 };
 
-struct thermocouple type_j = 
+struct thermocouple type_j =
 {
         14.055,27.057,-210,1200,
         { -1.86216e-09,7.06203e-08,-7.40759e-07,-1.68076e-06,5.62956e-05,3.08928e-05,-0.00342003,0.0233241,-0.217611,19.8171,-0.0342962,},
@@ -102,7 +102,7 @@ struct thermocouple type_j =
         { -6.97491e-24,1.3658e-21,2.04292e-19,-5.09902e-17,-1.49481e-15,4.67638e-13,1.34732e-10,-8.86546e-08,3.04846e-05,0.0503846,-1.05193e-06,},
 };
 
-struct thermocouple type_k = 
+struct thermocouple type_k =
 {
         11.176,22.691,-270,1370,
         { -2.46084e-07,6.81532e-06,-4.21632e-05,-0.000322014,0.00355914,0.0028323,-0.0906577,0.124291,0.192566,24.9404,-0.722592,},
@@ -111,7 +111,7 @@ struct thermocouple type_k =
         { -6.76827e-23,4.59786e-21,3.02777e-18,-1.80296e-16,-5.00204e-14,2.58284e-12,3.67046e-10,-1.31662e-07,2.61205e-05,0.0394427,-0.000165505,},
 };
 
-struct thermocouple type_n = 
+struct thermocouple type_n =
 {
         -0.26,7.631,-270,1300,
         { -0.384204,-8.51012,-81.238,-437.501,-1461.59,-3138.2,-4341.49,-3775.54,-1949.5,-493.211,-57.4264,},
@@ -120,7 +120,7 @@ struct thermocouple type_n =
         { -1.67472e-22,-5.75376e-21,7.87952e-18,2.66768e-16,-1.44225e-13,-4.94289e-12,1.51444e-09,1.06098e-08,1.15203e-05,0.0260828,-0.000928019,},
 };
 
-struct thermocouple type_r = 
+struct thermocouple type_r =
 {
         1.942,12.687,-50,1768,
         { -2.97833,28.6494,-117.396,268.213,-377.551,347.099,-226.83,130.345,-93.3971,188.87,-0.0165138,},
@@ -129,7 +129,7 @@ struct thermocouple type_r =
         { -2.61253e-22,5.71644e-20,4.54127e-18,-1.99547e-15,1.3374e-13,3.09864e-12,-4.60676e-10,-1.99743e-08,1.43025e-05,0.00528674,3.13725e-05,},
 };
 
-struct thermocouple type_s = 
+struct thermocouple type_s =
 {
         7.981,11.483,-50,1768,
         { -6.46807e-05,0.00270224,-0.0485888,0.492361,-3.09548,12.5625,-33.438,59.3949,-76.2119,186.708,-0.185908,},
@@ -138,7 +138,7 @@ struct thermocouple type_s =
         { -3.61972e-22,1.85682e-19,-3.38826e-17,2.28563e-15,2.46683e-14,-8.74753e-12,2.22002e-10,-1.75089e-08,1.24207e-05,0.00540621,2.31793e-05,},
 };
 
-struct thermocouple type_t = 
+struct thermocouple type_t =
 {
         -1.785,2.556,-270,400,
         { -0.0856873,-3.35591,-58.1948,-587.947,-3829.53,-16790.4,-50151.1,-100705,-130042,-97452.3,-32202.6,},
@@ -201,10 +201,11 @@ DeviceEntry( 30, DS2760 )
 
 /* DS2406 */
 static int OW_r_sram( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_sram( const unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_eeprom( const size_t page, const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_temp(FLOAT * T , const struct parsedname * pn) ;
 static FLOAT polycomp( FLOAT x , FLOAT * coef ) ;
 
@@ -254,26 +255,26 @@ static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
     FLOAT T, V;
     int ret ;
     struct thermocouple * thermo = (struct thermocouple *) pn->ft->data ;
-    
+
     /* Get reference temperature */
     if ((ret=OW_r_temp(&T,pn))) return ret ; /* in C */
-    
+
     /* Get measured voltage */
     if ((ret=FS_r_vis(&V,pn))) return ret ;
     V *= .001 ; /* convert Volts to mVolts */
-    
+
     /* Correct voltage by adding reference temperature voltage */
     V += polycomp(T,thermo->mV) ;
-    
+
     /* Find right range, them compute temparature from voltage */
     if ( V < thermo->v1 ) {
-	T = polycomp(V,thermo->low) ;
+    T = polycomp(V,thermo->low) ;
     } else if ( V < thermo->v2 ) {
-	T = polycomp(V,thermo->mid) ;
+    T = polycomp(V,thermo->mid) ;
     } else {
-	T = polycomp(V,thermo->high) ;
+    T = polycomp(V,thermo->high) ;
     }
-    
+
     /* Temperature units correction */
     F[0]=Temperature(T) ;
     return 0 ;
@@ -358,12 +359,6 @@ static int OW_r_eeprom( const size_t page, const size_t size , const size_t offs
     return ret ;
 }
 
-static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    return OW_r_eeprom(0x20,size,offset,pn)
-        || OW_r_eeprom(0x30,size,offset,pn)
-        || OW_r_sram(data,size,offset,pn) ;
-}
-
 /* just read the sram -- eeprom may need to be recalled if you want it */
 static int OW_r_sram( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[] = { 0x69, offset&0xFF , } ;
@@ -372,49 +367,46 @@ static int OW_r_sram( unsigned char * data , const size_t size , const size_t of
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 2 ) || BUS_readin_data( data, size ) ;
     BUSUNLOCK
-    if ( ret ) return 1 ;
 
-    return 0 ;
+    return ret ;
+}
+
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    return OW_r_eeprom(0x20,size,offset,pn)
+        || OW_r_eeprom(0x30,size,offset,pn)
+        || OW_r_sram(data,size,offset,pn) ;
 }
 
 /* Special processing for eeprom -- page is the address of a 16 byte page (e.g. 0x20) */
-static int OW_w_eeprom( const size_t page, const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[] = { 0x48, page, } ;
-    unsigned char cmp[16] ;
-    size_t pagenext = page + 16 ;
-    size_t eoffset = (offset<page) ? page : offset ;
-    size_t enext = size+offset ;
-    size_t esize ;
+static int OW_w_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[] = { 0x48, page&0xFF, } ;
     int ret ;
-
-    if ( offset >= pagenext ) return 0 ;
-    if ( enext <= page ) return 0 ;
-    if ( enext > pagenext ) enext = pagenext ;
-    esize = enext - eoffset ;
-
-    // reread and compare memory before writing
-    ret = OW_r_sram(cmp,esize,eoffset,pn) || memcmp(cmp,&data[offset-eoffset],esize) ;
-    if (ret) return ret ;
+    if ( offset > page+16 ) return 0 ;
+    if ( offset + size <= page ) return 0 ;
     BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(p,2) ;
+        ret = BUS_select(pn) || BUS_send_data( p , 2 ) ;
     BUSUNLOCK
-    if (ret) return ret ;
-    // delay to write eeprom -- with bus unlocked
-    UT_delay(10) ;
-    return 0 ;
+
+    return ret ;
 }
 
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_sram( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[] = { 0x6C, offset&0xFF , } ;
-    int ret ;
+    int ret  ;
 
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,2) || BUS_send_data(data,size) ;
     BUSUNLOCK
-    if ( ret ) return 1 ;
 
-    /* special processing for region 0x20--0x3F which is eeprom */
-    return OW_w_eeprom(0x20,data,size,offset,pn) || OW_w_eeprom(0x30,data,size,offset,pn) ;
+    return ret ;
+}
+
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    return OW_r_eeprom(0x20,size,offset,pn)
+        || OW_r_eeprom(0x30,size,offset,pn)
+        || OW_w_sram(  data,size,offset,pn)
+        || OW_w_eeprom(0x20,size,offset,pn)
+        || OW_w_eeprom(0x30,size,offset,pn) ;
 }
 
 static int OW_r_temp(FLOAT * T , const struct parsedname * pn) {
