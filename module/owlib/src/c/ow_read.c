@@ -156,18 +156,18 @@ static int FS_structure(const char *path, char *buf, const size_t size, const of
     pn->type = pn_structure ;
 
     UCLIBCLOCK
-    len = snprintf(
-        buf,
-        size,
-        "%c,%.6d,%.6d,%.2s,%.6d,",
-        ft_format_char[pn->ft->format],
-        (pn->ft->ag) ? pn->extension : 0 ,
-        (pn->ft->ag) ? pn->ft->ag->elements : 1 ,
-        (pn->ft->read.v) ?
-            ( (pn->ft->write.v) ? "rw" : "ro" ) :
-            ( (pn->ft->write.v) ? "wo" : "oo" ) ,
-        fl
-        ) ;
+        len = snprintf(
+            buf,
+            size,
+            "%c,%.6d,%.6d,%.2s,%.6d,",
+            ft_format_char[pn->ft->format],
+            (pn->ft->ag) ? pn->extension : 0 ,
+            (pn->ft->ag) ? pn->ft->ag->elements : 1 ,
+            (pn->ft->read.v) ?
+                ( (pn->ft->write.v) ? "rw" : "ro" ) :
+                ( (pn->ft->write.v) ? "wo" : "oo" ) ,
+            fl
+            ) ;
     UCLIBCUNLOCK
     return len;
 }
@@ -398,7 +398,7 @@ static int FS_output_int( int value, char * buf, const size_t size, const struct
     int len ;
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
-    len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
+        len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ( (len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
@@ -413,7 +413,7 @@ static int FS_output_unsigned( unsigned int value, char * buf, const size_t size
     int len ;
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
-    len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
+        len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
@@ -428,7 +428,7 @@ static int FS_output_float( FLOAT value, char * buf, const size_t size, const st
     int len ;
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
-    len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
+        len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;

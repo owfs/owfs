@@ -76,15 +76,9 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
             ++ write_calls ; /* statistics */
         STATUNLOCK
         LockGet(&pn) ;
-        r = FS_real_write( path, buf, size, offset, &pn ) ;
+            r = FS_real_write( path, buf, size, offset, &pn ) ;
         LockRelease(&pn) ;
 
-        if ( offset  || r ) {
-            Cache_Del( &pn ) ;
-        } else {
-    //printf("Write adding %s\n",path) ;
-            Cache_Add( buf, size, &pn ) ;
-        }
         if ( r == 0 ) {
             STATLOCK
                 ++write_success ; /* statistics */
@@ -136,111 +130,196 @@ static int FS_real_write(const char * const path, const char * const buf, const 
 /* return 0 if ok */
 static int FS_parse_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t elements = 1 ;
+    size_t fl = FileLength(pn) ;
+    size_t ffl = FullFileLength(pn);
     int ret ;
+    char * cbuf = NULL ;
+#ifdef OW_CACHE
+    /* buffer for storing parsed data to cache */
+    if ( cacheenabled ) cbuf = (char *) malloc( ffl+1 ) ;
+#endif /* OW_CACHE */
     /* We will allocate memory for array variables off heap, but not single vars for efficiency */
-//printf("PARSE_WRITE\n");
     if ( pn->ft->ag && ( pn->ft->ag->combined==ag_aggregate || ( pn->ft->ag->combined==ag_mixed && pn->extension==-1 ) ) )
         elements = pn->ft->ag->elements ;
     switch( pn->ft->format ) {
-    case ft_integer: {
-        int I ;
-        int * i = &I ;
-        if ( offset ) return -EADDRNOTAVAIL ;
-        if ( elements>1 ) {
-            i = (int *) calloc( elements , sizeof(int) ) ;
-            if ( i==NULL ) return -ENOMEM ;
-            ret = FS_input_integer_array( i, buf, size, pn ) ;
-        } else {
-            ret = FS_input_integer( i, buf, size ) ;
+    case ft_integer:
+        {
+            int I ;
+            int * i = &I ;
+            if ( offset ) return -EADDRNOTAVAIL ;
+            if ( elements>1 ) {
+                i = (int *) calloc( elements , sizeof(int) ) ;
+                if ( i==NULL ) return -ENOMEM ;
+                ret = FS_input_integer_array( i, buf, size, pn ) ;
+            } else {
+                ret = FS_input_integer( i, buf, size ) ;
+            }
+            ret |= (pn->ft->write.i)(i,pn) ;
+            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
+                int n ,l ;
+                char * c = cbuf ;
+                for( n=0; n<elements ; ++n ) {
+                    if (n>0) *(c++) = ',' ;
+                    UCLIBCLOCK
+                        l = snprintf(c,fl+1,"%i",i[n] ) ;
+                        if (l>0) c+=l ;
+//printf("I[%i]=%i (%s)\n",n,i[n],cbuf) ;
+                    UCLIBCUNLOCK
+                }
+            }
+            if ( elements>1) free(i) ;
         }
-        ret |= (pn->ft->write.i)(i,pn) ;
-        if ( elements>1) free(i) ;
-        return ret ;
-    }
-    case ft_unsigned: {
-        unsigned int U ;
-        unsigned int * u = &U ;
-        if ( offset ) return -EADDRNOTAVAIL ;
-        if ( elements>1 ) {
-            u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
-            if ( u==NULL ) return -ENOMEM ;
-            ret = FS_input_unsigned_array( u, buf, size, pn ) ;
-        } else {
-            ret = FS_input_unsigned( u, buf, size ) ;
+        break ;
+    case ft_unsigned:
+        {
+            unsigned int U ;
+            unsigned int * u = &U ;
+            if ( offset ) return -EADDRNOTAVAIL ;
+            if ( elements>1 ) {
+                u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
+                if ( u==NULL ) return -ENOMEM ;
+                ret = FS_input_unsigned_array( u, buf, size, pn ) ;
+            } else {
+                ret = FS_input_unsigned( u, buf, size ) ;
+            }
+            ret |= (pn->ft->write.u)(u,pn) ;
+            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
+                int n ,l ;
+                char * c = cbuf ;
+                for( n=0; n<elements ; ++n ) {
+                    if (n>0) *(c++) = ',' ;
+                    UCLIBCLOCK
+                        c += snprintf(c,fl+1,"%*u",fl,u[n] ) ;
+                        if (l>0) c+=l ;
+//printf("U[%i]=%u (%s)\n",n,u[n],cbuf) ;
+                    UCLIBCUNLOCK
+                }
+            }
+            if ( elements>1) free(u) ;
         }
-        ret |= (pn->ft->write.u)(u,pn) ;
-        if ( elements>1) free(u) ;
-        return ret ;
-    }
-    case ft_float: {
-        FLOAT F ;
-        FLOAT * f = &F ;
-        if ( offset ) return -EADDRNOTAVAIL ;
-        if ( elements>1 ) {
-            f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
-            if ( f==NULL ) return -ENOMEM ;
-            ret = FS_input_float_array( f, buf, size, pn ) ;
-        } else {
-            ret = FS_input_float( f, buf, size ) ;
+        break ;
+    case ft_float:
+        {
+            FLOAT F ;
+            FLOAT * f = &F ;
+            if ( offset ) return -EADDRNOTAVAIL ;
+            if ( elements>1 ) {
+                f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+                if ( f==NULL ) return -ENOMEM ;
+                ret = FS_input_float_array( f, buf, size, pn ) ;
+            } else {
+                ret = FS_input_float( f, buf, size ) ;
+            }
+            ret |= (pn->ft->write.f)(f,pn) ;
+            if ( cbuf && ret==0 ) {
+                int n, l ;
+                char * c = cbuf ;
+                for( n=0; n<elements ; ++n ) { /* post-parse cachable string creation */
+                    if (n>0) *(c++) = ',' ;
+                    UCLIBCLOCK
+                        l = snprintf(c,fl+1,"%*g",fl,f[n] ) ;
+                        if (l>0) c+=l ;
+//printf("F[%i]=%g (%s)\n",n,f[n],cbuf) ;
+                    UCLIBCUNLOCK
+                }
+            }
+            if ( elements>1) free(f) ;
         }
-        ret |= (pn->ft->write.f)(f,pn) ;
-        if ( elements>1) free(f) ;
-        return ret ;
-    }
-    case ft_date: {
-        DATE D ;
-        DATE * d = &D ;
-        if ( offset ) return -EADDRNOTAVAIL ;
-        if ( elements>1 ) {
-            d = (DATE *) calloc( elements , sizeof(DATE) ) ;
-            if ( d==NULL ) return -ENOMEM ;
-            ret = FS_input_date_array( d, buf, size, pn ) ;
-        } else {
-            ret = FS_input_date( d, buf, size ) ;
+        break ;
+    case ft_date:
+        {
+            DATE D ;
+            DATE * d = &D ;
+            if ( offset ) return -EADDRNOTAVAIL ;
+            if ( elements>1 ) {
+                d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+                if ( d==NULL ) return -ENOMEM ;
+                ret = FS_input_date_array( d, buf, size, pn ) ;
+            } else {
+                ret = FS_input_date( d, buf, size ) ;
+            }
+            ret |= (pn->ft->write.d)(d,pn) ;
+            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
+                int n ;
+                char c[26] ;
+                cbuf[0] = '\0' ;
+                for( n=0; n<elements ; ++n ) {
+                    if (n>0) strcat(cbuf,",") ;
+                    ctime_r(&d[n],c) ;
+                    strncat(cbuf,c,24) ;
+                }
+            }
+            if ( elements>1) free(d) ;
         }
-        ret |= (pn->ft->write.d)(d,pn) ;
-        if ( elements>1) free(d) ;
-        return ret ;
-    }
-    case ft_yesno: {
-        int Y ;
-        int * y = &Y ;
-        if ( offset ) return -EADDRNOTAVAIL ;
-        if ( elements>1 ) {
-            y = (int *) calloc( elements , sizeof(int) ) ;
-            if ( y==NULL ) return -ENOMEM ;
-            ret = FS_input_yesno_array( y, buf, size, pn ) ;
-        } else {
-            ret = FS_input_yesno( y, buf, size ) ;
+        break ;
+    case ft_yesno:
+        {
+            int Y ;
+            int * y = &Y ;
+            if ( offset ) return -EADDRNOTAVAIL ;
+            if ( elements>1 ) {
+                y = (int *) calloc( elements , sizeof(int) ) ;
+                if ( y==NULL ) return -ENOMEM ;
+                ret = FS_input_yesno_array( y, buf, size, pn ) ;
+            } else {
+                ret = FS_input_yesno( y, buf, size ) ;
+            }
+            ret |= (pn->ft->write.y)(y,pn) ;
+            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
+                int n ;
+                int m ;
+                for( n=0,m=0; n<elements ; ++n ) {
+                    cbuf[m++]= y[n]?'1':'0' ;
+                    cbuf[m++]= ',' ;
+                }
+                cbuf[m-1] = '\0' ;
+            }
+            if ( elements>1) free(y) ;
         }
-        ret |= (pn->ft->write.y)(y,pn) ;
-        if ( elements>1) free(y) ;
-        return ret ;
-    }
+        break ;
     case ft_ascii:
         {
             size_t s = FileLength(pn) ;
             if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
-            return (pn->ft->write.a)(buf,s,offset,pn) ;
+            ret = (pn->ft->write.a)(buf,s,offset,pn) ;
+            if ( cbuf && ret==0 ) strncpy(cbuf,buf,s) ; /* post-parse cachable string creation */
         }
+        break ;
     case ft_binary:
         {
             size_t s = FileLength(pn) ;
             if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
-            return (pn->ft->write.b)(buf,s,offset,pn) ;
+            ret = (pn->ft->write.b)(buf,s,offset,pn) ;
+            if ( cbuf && ret==0 ) memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
         }
+        break ;
     case ft_directory:
     case ft_subdir:
-        return -ENOSYS ;
+        ret = -ENOSYS ;
+        break ;
+    default:    /* Unknown data type */
+        ret = -EINVAL ;
+        break ;
     }
-    return -EINVAL ; /* unknown data type */
+
+    /* Add to cache? */
+    if ( offset==0 && cbuf && ret==0 ) {
+        Cache_Add( cbuf, strlen(cbuf), pn ) ;
+//printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
+    } else if ( cacheenabled ) {
+            Cache_Del( pn ) ;
+    }
+    /* free cache string buffer */
+    if ( cbuf ) free(cbuf) ;
+
+    return ret ;
 }
 
-/* Non-combined input  field, so treat  as several separate tranactions */
+/* Non-combined input  field, so treat  as several separate transactions */
 /* return 0 if ok */
 static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t left = size ;
@@ -252,7 +331,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
     STATLOCK
         ++ write_array ; /* statistics */
     STATUNLOCK
-    memcpy( &pname , pn , sizeof(struct parsedname) ) ;
+    memcpy( &pname , pn , sizeof(struct parsedname) ) ; /* shallow copy */
 //printf("WRITEALL(%p) %s\n",p,path) ;
     if ( offset ) return -ERANGE ;
 
