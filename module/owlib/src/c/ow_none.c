@@ -64,7 +64,7 @@ struct filetype NoDev[] = {
     F_id         ,
     F_present    ,
 } ;
-struct device NoDevice = { "XX", "generic", dev_1wire, NFT(NoDev), NoDev } ;
+struct device NoDevice = { "XX", "generic", pn_real, NFT(NoDev), NoDev } ;
 
 
 /* ------- Functions ------------ */

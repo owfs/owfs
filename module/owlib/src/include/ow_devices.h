@@ -40,6 +40,7 @@ $Id$
 #include "ow_lcd.h"  // LCD driver
 #include "ow_link.h" // Interface devices
 #include "ow_stats.h" // statistic reporting pseudo-device
+#include "ow_settings.h" // settings pseudo-device
 
 #endif
 

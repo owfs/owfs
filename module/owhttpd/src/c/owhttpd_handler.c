@@ -220,7 +220,7 @@ void directory( void * data, const struct parsedname * const pn ) {
     int i ;
 
     /* uncached tag */
-    if ( pn->type == pn_uncached ) strcat(extpath,"uncached/") ;
+    if ( pn->state == pn_uncached ) strcat(extpath,"uncached/") ;
 
     /* Branch path */
     for ( i=0 ; i < pn->pathlength ; ++i ) {
@@ -229,7 +229,7 @@ void directory( void * data, const struct parsedname * const pn ) {
     }
 
     /* device name */
-    if ( pn->dev->type == dev_1wire ) {
+    if ( pn->dev->type == pn_real ) {
         FS_devicename(extname,32,pn->sn) ;
     } else {
         snprintf( extname , 32, "%s",pn->dev->code) ;
@@ -473,7 +473,7 @@ static void ShowDevice( struct active_sock * a_sock, const char * file, struct p
 	*s = '\0';
 	fprintf( a_sock->io , "<BR><A href='%s'>%s</A>",back,&back[1]) ;
     }
-    if ( cacheavailable && pn->type!=pn_uncached ) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",file) ;
+    if ( cacheenabled && pn->state!=pn_uncached ) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",file) ;
     fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
     FS_dir( directory, a_sock->io, pn ) ;
     fprintf( a_sock->io, "</TABLE>" ) ;
@@ -500,7 +500,7 @@ static void RootDir( struct active_sock * a_sock, struct parsedname * pn ) {
         }
         fprintf( a_sock->io,"'><CODE><B><BIG>UP</BIG></B></CODE></A></TD><TD>Branch</TD><TD>Directory</TD></TR>") ;
     } else {
-        switch (pn->type) {
+        switch (pn->state) {
         case pn_uncached:
             HTTPtitle( a_sock->io , "Uncached Directory") ;
             HTTPheader( a_sock->io , "Device Listing (uncached)") ;
@@ -518,7 +518,7 @@ static void RootDir( struct active_sock * a_sock, struct parsedname * pn ) {
             if ( pn->pathlength ) break ; /* not root -- no uncached ot alarm entries */
             fprintf( a_sock->io,
                 "<TR><TD><A HREF='/alarm'><CODE><B><BIG>alarm</BIG></B></CODE></A></TD><TD>Conditional Search</TD><TD>Directory</TD></TR>") ;
-            if ( cacheavailable )
+            if ( cacheenabled )
                 fprintf( a_sock->io,
                     "<TR><TD><A HREF='/uncached'><CODE><B><BIG>uncached</BIG></B></CODE></A></TD><TD>Immediate</TD><TD>Directory</TD></TR>") ;
         }

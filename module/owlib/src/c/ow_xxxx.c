@@ -84,12 +84,12 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 int CheckPresence( const struct parsedname * const pn ) {
     int ret ;
     switch ( pn->dev->type ) {
-    case dev_1wire:
+    case pn_real:
         BUSLOCK
             ret = BUS_normalverify(pn) ;
         BUSUNLOCK
         return ret ;
-    case dev_interface:
+    case pn_adapter:
         switch ( Adapter ) {
         case adapter_DS9097:
             return strcmp( "DS9097", pn->dev->code ) ;
@@ -104,10 +104,8 @@ int CheckPresence( const struct parsedname * const pn ) {
         case adapter_DS9490:
             return strcmp( "DS9490", pn->dev->code ) ;
         }
-    case dev_statistic:
-        return 0 ;
     default:
-        return 1 ;
+        return 0 ;
     }
 }
 

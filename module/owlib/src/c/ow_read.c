@@ -73,11 +73,11 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
             ++ read_calls ; /* statistics */
         STATUNLOCK
         /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || cacheavailable==0 ) {
+        if ( offset!=0 || cacheenabled==0 ) {
             LockGet(&pn) ;
                 r = FS_real_read( path, buf, size, offset, &pn ) ;
             LockRelease(&pn) ;
-        } else if ( pn.type==pn_uncached || Cache_Get( buf, &s, &pn ) ) {
+        } else if ( pn.state==pn_uncached || Cache_Get( buf, &s, &pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
             LockGet(&pn) ;
                 r = FS_real_read( path, buf, size, offset, &pn ) ;

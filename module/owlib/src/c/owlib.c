@@ -31,61 +31,10 @@ enum adapter_type Adapter ;
     void * devusb = NULL ;
 #endif /* OW_USB */
 
-/* Device List Structure */
-/* Defined here, after all files defined */
-struct device * Devices[] = {
-    & d_DS1420 ,
-    & d_DS18S20 ,
-    & d_DS18B20 ,
-    & d_DS1822 ,
-    & d_DS1921 ,
-    & d_DS1992 ,
-    & d_DS1993 ,
-    & d_DS1995 ,
-    & d_DS1996 ,
-    & d_DS2401 ,
-    & d_DS2404 ,
-    & d_DS2404S ,
-    & d_DS2405 ,
-    & d_DS2406 ,
-    & d_DS2408 ,
-    & d_DS2409 ,
-    & d_DS2415 ,
-    & d_DS2417 ,
-    & d_DS2423 ,
-    & d_DS2436 ,
-    & d_DS2438 ,
-    & d_DS2450 ,
-    & d_DS2502 ,
-    & d_DS1982U ,
-    & d_DS2505 ,
-    & d_DS1985U ,
-    & d_DS2506 ,
-    & d_DS1986U ,
-    & d_DS2760 ,
-    & d_DS2890 ,
-    & d_LCD ,
-    & d_DS9490 ,
-    & d_DS9097 ,
-    & d_DS1410 ,
-    & d_DS9097U ,
-    & d_iButtonLink_Multiport ,
-    & d_iButtonLink ,
-    & d_stats_bus ,
-    & d_stats_cache ,
-    & d_stats_directory ,
-    & d_stats_read ,
-    & d_stats_thread ,
-    & d_stats_write ,
-}  ;
-
-size_t nDevices = (size_t) (sizeof(Devices)/sizeof(struct device *)) ;
-
 int presencecheck = 1 ; /* check if present whenever opening a directory or static file */
 time_t start_time ;
 time_t dir_time ; /* time of last directory scan */
 
-int cacheavailable = 0 ; /* assume no cache */
 int background = 1 ; /* operate in background mode */
 int readonly = 0 ; /* readonly file system */
 

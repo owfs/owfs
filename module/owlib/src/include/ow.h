@@ -79,6 +79,13 @@ $Id$
 #include <sys/stat.h> /* for stat */
 #include <sys/types.h> /* for stat */
 #include <getopt.h> /* for long options */
+#ifndef __USE_GNU
+ #define __USE_GNU
+ #include <search.h>
+ #undef __USE_GNU
+#else /* __USE_GNU */
+ #include <search.h>
+#endif /* __USE_GNU */
 
 extern int multithreading ;
 extern int maxslots ;
@@ -239,7 +246,10 @@ struct aggregate {
     enum ag_combined combined ; /* Combined bitmaps properties, or separately addressed */
 } ;
 
-#define ft_len_type (-1)
+/* file lengths that need special processing */
+/* stored (as negative enum) in ft.suglen */
+enum fl_funny { fl_zero, fl_type, fl_adap_name, fl_adap_det, fl_adap_port, fl_adap_ver, fl_store, } ;
+
     /* property format, controls web display */
 /* Some explanation of ft_format:
      Each file type is either a device (physical 1-wire chip or virtual statistics container).
@@ -296,7 +306,7 @@ struct filetype {
 /* ------------------------------------------- */
 
 /* Internal properties -- used by some devices */
-/* in passing to store stae information        */
+/* in passing to store state information        */
 struct internal_prop {
     char * name ;
     enum ft_change change ;
@@ -315,11 +325,14 @@ to device features (memory, name, temperature) and
 bound the allowable files in a device directory
 */
 
-enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
+enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_adapter } ;
+//enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
+extern void * Tree[5] ;
+
 struct device {
     char * code ;
     char * name ;
-    enum dev_type type ;
+    enum pn_type type ;
     int nft ;
     struct filetype * ft ;
 } ;
@@ -329,12 +342,22 @@ struct device {
 /* Cannot set the 3rd element (number of filetypes) at compile time because
    filetype arrays aren;t defined at this point */
 #define DeviceHeader( chip )  extern struct device d_##chip ;
-#define DeviceEntry( code , chip )  struct device d_##chip = { #code, #chip, dev_1wire, NFT(chip), chip } ;
+#define DeviceEntry( code , chip )  struct device d_##chip = { #code, #chip, pn_real, NFT(chip), chip } ;
+#define DeviceEntryExtended( code , chip , type )  struct device d_##chip = { #code, #chip, pn_##type, NFT(chip), chip } ;
+
+/* Bad bad C library */
+/* implementation of tfind, tsearch returns an opaque structure */
+/* you have to know that the first element is a pointer to your data */
+struct device_opaque {
+    struct device * key ;
+    void * other ;
+} ;
 
 /* Must be sorted for bsearch */
-extern struct device * Devices[] ;
-extern size_t nDevices ;
+//extern struct device * Devices[] ;
+//extern size_t nDevices ;
 extern struct device NoDevice ;
+
 /* ---- end device --------------------- */
 /* ------------------------------------- */
 
@@ -380,9 +403,10 @@ struct stateinfo {
     int lock ; // place in dev lock array
 } ;
 
-enum pn_type { pn_normal, pn_uncached, pn_alarm, } ;
+enum pn_state { pn_normal, pn_uncached, pn_alarm, } ;
 struct parsedname {
     enum pn_type type ; // global branch
+    enum pn_state state ; // global branch
     unsigned char sn[8] ; // 64-bit serial number
     struct device * dev ; // 1-wire device
     struct filetype * ft ; // device property
@@ -418,6 +442,7 @@ FLOAT Temperature( FLOAT C) ;
 FLOAT TemperatureGap( FLOAT C) ;
 
 extern int cacheavailable ; /* is caching available */
+extern int cacheenabled ; /* is caching enabled */
 extern int background ; /* operate in background mode */
 
 #define DEFAULT_TIMEOUT  (15)
@@ -582,13 +607,16 @@ void DeviceSort( void ) ;
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
-int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
-int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
-  void FS_parse_dir( char * const dest , const char * const buf ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
 int CheckPresence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
+void FS_devicefind( const char * code, struct parsedname * pn ) ;
+
+char * FS_dirname_state( const enum pn_state state ) ;
+char * FS_dirname_type( const enum pn_type type ) ;
+void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) ;
+
 
 /* Utility functions */
 unsigned char CRC8( const unsigned char * bytes , const int length ) ;
@@ -617,6 +645,7 @@ void COM_break( void ) ;
 /* Cache  and Storage functions */
 void Cache_Open( void ) ;
 void Cache_Close( void ) ;
+void Cache_Clear( void ) ;
 char * Cache_Version( void ) ;
 int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) ;
 int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) ;

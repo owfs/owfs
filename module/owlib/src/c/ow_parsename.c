@@ -16,10 +16,10 @@ $Id$
 
 static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) ;
 static int BranchAdd( struct parsedname * const pn ) ;
+static int DevicePart( const char * filename, const char ** next, struct parsedname * pn ) ;
+static int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
+static int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
 
-static int devicesort( const void * a , const void * b ) ;
-// int devicecmp(const void * code , const void * dev ) ;
-static int filesort( const void * a , const void * b ) ;
 static int filecmp(const void * name , const void * ex ) ;
 
 #define BRANCH_INCR (9)
@@ -37,7 +37,25 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
 int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
-    size_t preleng ; /* preamble length */
+    static char * uncached = NULL ;
+      static size_t luncached ;
+    static char * alarm_ ;
+      static size_t lalarm ;
+    static char * system_ ;
+      static size_t lsystem ;
+    static char * settings ;
+      static size_t lsettings ;
+    static char * statistics ;
+      static size_t lstatistics ;
+    const char * pathnow = path ;
+
+    if ( uncached == NULL ) { // first time through
+      luncached  = strlen ( uncached  = FS_dirname_state(pn_uncached  )) ;
+      lalarm     = strlen ( alarm_    = FS_dirname_state(pn_alarm     )) ;
+      lsystem    = strlen ( system_   = FS_dirname_type( pn_system    )) ;
+      lsettings  = strlen ( settings  = FS_dirname_type( pn_settings  )) ;
+      lstatistics= strlen ( statistics= FS_dirname_type( pn_statistics)) ;
+    }
 //printf("PN_pn\n");
     if ( pn == NULL ) return -EINVAL ;
 
@@ -49,19 +67,41 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     if ( path[0] != '/' ) return -ENOENT ;
+    ++pathnow ;
 
-    if ( strncasecmp(path,"/uncached",(preleng=9))==0 ) {
-        pn->type = pn_uncached ;
-    } else
-    if ( strncasecmp(path,"/alarm",(preleng=6))==0 ) {
-        pn->type = pn_alarm ;
-    } else {
-        preleng=0 ;
-        pn->type = pn_normal ; /* Not yet cache, etc... */
+    /* Default attributes */
+    pn->state = pn_normal ;
+    pn->type = pn_real ;
+
+    /* uncached is a special case, it can preceed anything */
+    if ( strncasecmp(pathnow,uncached,luncached)==0 ) {
+        pn->state = pn_uncached ;
+        pathnow += luncached ;
+        if ( pathnow[0] == '\0' ) return 0 ;
+        if ( pathnow[0] != '/' ) return -ENOENT ;
+        ++pathnow ;
     }
-    if ( path[preleng] == '\0' ) return 0 ;
-    if ( path[preleng] != '/' ) return -ENOENT ;
-    return FS_ParsedNameSub( &path[preleng+1], pn ) ;
+
+    /* look for special root directory -- it is really a flag */
+    if ( strncasecmp(pathnow,alarm_,lalarm)==0 ) {
+        pn->state = pn_alarm ;
+        pathnow += lalarm ;
+    } else if ( strncasecmp(pathnow,statistics,lstatistics)==0 ) {
+        pn->type = pn_statistics ;
+        pathnow += lstatistics ;
+    } else if ( strncasecmp(pathnow,system_,lsystem)==0 ) {
+        pn->type = pn_system ;
+        pathnow += lsystem ;
+    } else if ( strncasecmp(pathnow,settings,lsettings)==0 ) {
+        pn->type = pn_settings ;
+        pathnow += lsettings ;
+    } else {
+        --pathnow ; // just to reset for the check that follows
+    }
+    if ( pathnow[0] == '\0' ) return 0 ;
+    if ( pathnow[0] != '/' ) return -ENOENT ;
+    ++pathnow ;
+    return FS_ParsedNameSub( pathnow, pn ) ;
 }
 
 /* Parse the path to the correct device, filetype, directory, etc... */
@@ -91,7 +131,10 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
     /* Note -- Path is zero-ended */
     /* First element, device name (family.ID) */
 //printf("PN:Pre %s\n",path);
-    if ( (ret=NamePart( path, &pFile, pn )) ) return ret ;
+    if ( (ret=NamePart( path, &pFile, pn )) ) { // device name match?
+        if ( pn->type != pn_real ) return ret ; // no real devices in this directory
+        if ( (ret=DevicePart( path, &pFile, pn )) ) return ret ; // search for valid 1-wire sn
+    }
 //printf("PN:POST %s\n",path);
 
     if ( pFile ==NULL || pFile[0]=='\0' ) {
@@ -119,24 +162,47 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
     return next ? -ENOENT : 0 ; /* Bad file type for this device */
 }
 
-/* Parse Name (device name) part of string */
+/* Parse Name (non-device name) part of string */
 /* Return -ENOENT if not a valid name
    return 0 if good
    *next points to next statement, of NULL if not filetype
  */
-int NamePart( const char * filename, const char ** next, struct parsedname * pn ) {
-    struct device ** dpp ;
+static int NamePart( const char * filename, const char ** next, struct parsedname * pn ) {
+    const char * f = filename ;
+    char * sep ;
+    char fn[33] ;
+    strncpy(fn,filename,32);
+    fn[32] = '\0' ;
+    if ( (sep=strchr(fn,'/')) ) *sep = '\0' ;
+    FS_devicefind( fn, pn ) ;
+    if ( pn->dev != &NoDevice ) {
+        f += strlen(fn) ;
+    } else {
+        return -ENOENT ; /* unknown device */
+    }
+    if ( f[0]=='/' ) {
+        *next = &f[1] ;
+    } else if ( f[0] == '\0' ) {
+        *next = NULL ;
+    } else {
+        return -ENOENT ;
+    }
+    return 0 ;
+}
+
+/* Parse Name (only device name) part of string */
+/* Return -ENOENT if not a valid name
+   return 0 if good
+   *next points to next statement, of NULL if not filetype
+ */
+static int DevicePart( const char * filename, const char ** next, struct parsedname * pn ) {
     const char * f = filename ;
     if ( isxdigit(filename[0]) && isxdigit(filename[1]) ) { /* starts with 2 hex digits */
         unsigned char ID[14] = { filename[0], filename[1], 0x00, } ;
         int i ;
 //printf("NP hex = %s\n",filename ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-            pn->dev = *dpp ;
-        } else {
-            pn->dev = &NoDevice ; /* unknown device */
-        }
+        FS_devicefind( ID, pn ) ;
 //printf("NP cmp'ed %s\n",ID ) ;
         for ( i=2, f+=2 ; i<14 ; ++i,++f ) { /* get ID number */
             if ( *f == '.' ) ++f ;
@@ -162,18 +228,7 @@ int NamePart( const char * filename, const char ** next, struct parsedname * pn 
             f += 2 ;
         }
     } else {
-        char * sep ;
-        char fn[33] ;
-//printf("NP nonhex = %s\n",filename ) ;
-        strncpy(fn,filename,32);
-        fn[32] = '\0' ;
-        if ( (sep=strchr(fn,'/')) ) *sep = '\0' ;
-        if ( (dpp = bsearch(fn,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-            pn->dev = *dpp ;
-            f += strlen(fn) ;
-        } else {
-            return -ENOENT ; /* unknown device */
-        }
+        return -ENOENT ; /* unknown device */
     }
     if ( f[0]=='/' ) {
         *next = &f[1] ;
@@ -185,7 +240,7 @@ int NamePart( const char * filename, const char ** next, struct parsedname * pn 
     return 0 ;
 }
 
-int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) {
+static int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) {
     char pFile[65] ;
     char * pF2 = pFile ;
     char * pExt ;
@@ -282,79 +337,27 @@ void UT_delay(const unsigned int len)
     nanosleep(&s, NULL);
 }
 
-/* --------------------- */
-/* Sorting functions for */
-/* the name parsing data */
-/* structures.           */
-/* --------------------- */
-static int devicesort( const void * a , const void * b ) {
-    return strcmp( (*((struct device * const *)a))->code , (*((struct device * const *)b))->code ) ;
-}
-static int filesort( const void * a , const void * b ) {
-    return strcmp( ((const struct filetype *)a)->name , ((const struct filetype *)b)->name ) ;
-}
-
-/* ------------------------------- */
-/* special resort in case static data not properly sorted */
-void DeviceSort( void ) {
-    int i ;
-
-    /* Sort the devices */
-    qsort(Devices,nDevices,sizeof(struct device *),devicesort) ;
-
-    /* Sort the filetypes withing the devices */
-    /* Also set 3rd element */
-    for ( i=0 ; (size_t)i<nDevices ; ++i ) {
-//printf("DeviceSort code=%s name=%s nft=%d\n",Devices[i]->code,Devices[i]->name,Devices[i]->nft) ;
-        qsort( Devices[i]->ft,(size_t) Devices[i]->nft,sizeof(struct filetype),filesort) ;
-    }
-
-    /* Sort the filetypes for the unrecognized device */
-    qsort( NoDevice.ft,(size_t) NoDevice.nft,sizeof(struct filetype),filesort) ;
-}
-
-void FS_parse_dir( char * const dest , const char * const buf ) { /* shift address into path filename format */
-    dest[ 0]= buf[ 0] ;
-    dest[ 1] = buf[ 1] ;
-    dest[ 2] = '.' ;
-    dest[ 3] = buf[ 2] ;
-    dest[ 4] = buf[ 3] ;
-    dest[ 5] = buf[ 4] ;
-    dest[ 6] = buf[ 5] ;
-    dest[ 7] = buf[ 6] ;
-    dest[ 8] = buf[ 7] ;
-    dest[ 9] = buf[ 8] ;
-    dest[10] = buf[ 9] ;
-    dest[11] = buf[10] ;
-    dest[12] = buf[11] ;
-    dest[13] = buf[12] ;
-    dest[14] = buf[13] ;
-    dest[15] = '\0' ;
-}
-
 /* Length of file based on filetype alone */
 size_t FileLength( const struct parsedname * const pn ) {
     if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
         return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
-    } else if ( pn->ft->suglen == ft_len_type ) {
-        return strlen(pn->dev->name) ;
     } else {
-        return pn->ft->suglen ;
+        switch(pn->ft->suglen) {
+        case -fl_type:
+            return strlen(pn->dev->name) ;
+        default:
+            return pn->ft->suglen ;
+        }
     }
 }
 
 /* Length of file based on filetype and extension */
 size_t FullFileLength( const struct parsedname * const pn ) {
-    if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
-        return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
-    } else if ( pn->ft->suglen == ft_len_type ) {
-        return strlen(pn->dev->name) ;
-    } else if ( pn->ft->ag && pn->extension==-1 ) {
-            if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
-            return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
-    } else {
-        return pn->ft->suglen ;
+    if ( pn->ft->ag && pn->extension==-1 ) {
+        if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
+        return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
     }
+    return FileLength( pn ) ;
 }
 
 static int BranchAdd( struct parsedname * const pn ) {

@@ -38,7 +38,7 @@ int FS_present(int *, const struct parsedname * pn) ;
 #define F_present  \
     {"present"   ,   1,  NULL, ft_yesno , ft_volatile, {y:FS_present}      , {v:NULL}, NULL, }
 #define F_type     \
-    {"type"      ,ft_len_type,  NULL, ft_ascii , ft_static  , {a:FS_type}  , {v:NULL}, NULL, }
+    {"type"      ,-fl_type,  NULL, ft_ascii , ft_static  , {a:FS_type}  , {v:NULL}, NULL, }
 
 #define F_STANDARD          F_address,F_code,F_crc8,F_id,F_present,F_type
 

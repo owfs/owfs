@@ -16,13 +16,9 @@ $Id$
 
 #ifdef OW_CACHE
 #include <limits.h>
-#ifndef __USE_GNU
- #define __USE_GNU
- #include <search.h>
- #undef __USE_GNU
-#else /* __USE_GNU */
- #include <search.h>
-#endif /* __USE_GNU */
+
+int cacheavailable = 1 ; /* is caching available */
+int cacheenabled = 1 ; /* is cacheing enabled */
 
 /* Put the globals into a struct to declutter the namespace */
 static struct {
@@ -58,7 +54,7 @@ struct tree_opaque {
     void * other ;
 } ;
 
-#define TREE_DATA(tn)	( (unsigned char *)(tn) + sizeof(struct tree_node) )
+#define TREE_DATA(tn)    ( (unsigned char *)(tn) + sizeof(struct tree_node) )
 
 static int Cache_Add_Common( struct tree_node * const tn ) ;
 static int Cache_Add_Store( struct tree_node * const tn ) ;
@@ -105,40 +101,40 @@ static void tree_show( const void *node, const VISIT which, const int depth ) {
         switch(which){
         case leaf:
         case postorder:
-	    if ( tn->tk.extension == -2 ) {
+        if ( tn->tk.extension == -2 ) {
                 printf("Node %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X name=%s length=%d start=%p data=%p expires=%s",
-	        tn->tk.sn[0] ,
-    	        tn->tk.sn[1] ,
-        	tn->tk.sn[2] ,
-        	tn->tk.sn[3] ,
-        	tn->tk.sn[4] ,
-        	tn->tk.sn[5] ,
-        	tn->tk.sn[6] ,
-        	tn->tk.sn[7] ,
-        	tn->tk.p.nm ,
-        	tn->dsize ,
-		tn,TREE_DATA(tn),
-        	ctime_r(&tn->expires,b)
-        	) ;
-	    } else {
+            tn->tk.sn[0] ,
+                tn->tk.sn[1] ,
+            tn->tk.sn[2] ,
+            tn->tk.sn[3] ,
+            tn->tk.sn[4] ,
+            tn->tk.sn[5] ,
+            tn->tk.sn[6] ,
+            tn->tk.sn[7] ,
+            tn->tk.p.nm ,
+            tn->dsize ,
+        tn,TREE_DATA(tn),
+            ctime_r(&tn->expires,b)
+            ) ;
+        } else {
                 printf("Node %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X name=%s length=%d start=%p data=%p expires=%s",
-	        tn->tk.sn[0] ,
-    	        tn->tk.sn[1] ,
-        	tn->tk.sn[2] ,
-        	tn->tk.sn[3] ,
-        	tn->tk.sn[4] ,
-        	tn->tk.sn[5] ,
-        	tn->tk.sn[6] ,
-        	tn->tk.sn[7] ,
-        	tn->tk.p.ft->name ,
-        	tn->dsize ,
-		tn,TREE_DATA(tn),
-        	ctime_r(&tn->expires,b)
-        	) ;
-	    }
-	    // fall through
+            tn->tk.sn[0] ,
+                tn->tk.sn[1] ,
+            tn->tk.sn[2] ,
+            tn->tk.sn[3] ,
+            tn->tk.sn[4] ,
+            tn->tk.sn[5] ,
+            tn->tk.sn[6] ,
+            tn->tk.sn[7] ,
+            tn->tk.p.ft->name ,
+            tn->dsize ,
+        tn,TREE_DATA(tn),
+            ctime_r(&tn->expires,b)
+            ) ;
+        }
+        // fall through
         default:
-	    break ;
+        break ;
         }
     } else {
         printf("Node empty\n") ;
@@ -156,7 +152,6 @@ void Cache_Open( void ) {
     cache.new_db = NULL ;
     cache.old_db = NULL ;
     cache.store  = NULL ;
-    cacheavailable = 1 ;
     cache.lifespan = TimeOut( ft_stable ) ;
     if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
     cache.retired = time(NULL) ;
@@ -193,7 +188,6 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
                 tn->expires = duration + time(NULL) ;
                 tn->dsize = datasize ;
                 memcpy( TREE_DATA(tn) , data , datasize ) ;
-//printf("ADD EXTERNAL name= %s (%d) size=%d \n",tn->tk.p.ft->name,tn->tk.extension,tn->dsize);
                 switch (pn->ft->change) {
                 case ft_persistent:
                     return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
@@ -263,7 +257,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
     void * flip = NULL ;
     CACHELOCK
         if  (cache.killed < time(NULL) ) { // old database has timed out
-    	    flip = cache.old_db ;
+            flip = cache.old_db ;
             /* Flip caches! old = new. New truncated, reset time and counters and flag */
             cache.old_db  = cache.new_db ;
             cache.new_db = NULL ;
@@ -273,44 +267,62 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
         }
         if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
 //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
-    	    if ( tn!=opaque->key ) {
+            if ( tn!=opaque->key ) {
                 free(opaque->key);
-    	        opaque->key = tn ;
-        		state = just_update ;
-    	    } else {
-        		state = yes_add ;
-    	    }
-    	} else { // nothing found or added?!? free our memory segment
-    	    free(tn) ;
-    	}
+                opaque->key = tn ;
+                state = just_update ;
+            } else {
+                state = yes_add ;
+            }
+        } else { // nothing found or added?!? free our memory segment
+            free(tn) ;
+        }
     CACHEUNLOCK
     /* flipped old database is now out of circulation -- can be destroyed without a lock */
     if ( flip ) {
         tdestroy( flip, free ) ;
         STATLOCK
             ++ cache_flips ; /* statistics */
-	    memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
-	    AVERAGE_CLEAR(&new_avg)
+        memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
+        AVERAGE_CLEAR(&new_avg)
         STATUNLOCK
 //printf("FLIP points to: %p\n",flip);
     }
     /* Added or updated, update statistics */
     switch (state) {
     case yes_add:
-    	STATLOCK
-    	    AVERAGE_IN(&new_avg)
-    	    ++ cache_adds ; /* statistics */
-    	STATUNLOCK
-    	return 0 ;
+        STATLOCK
+            AVERAGE_IN(&new_avg)
+            ++ cache_adds ; /* statistics */
+        STATUNLOCK
+        return 0 ;
     case just_update:
-    	STATLOCK
-    	    AVERAGE_MARK(&new_avg)
-       	    ++ cache_adds ; /* statistics */
-    	STATUNLOCK
-    	return 0 ;
+        STATLOCK
+            AVERAGE_MARK(&new_avg)
+               ++ cache_adds ; /* statistics */
+        STATUNLOCK
+        return 0 ;
     default:
-    	return 1 ;
+        return 1 ;
     }
+}
+
+/* Clear the cache (a change was made that might give stale information) */
+void Cache_Clear( void ) {
+    void * c_new = NULL ;
+    void * c_old = NULL ;
+    CACHELOCK
+        c_old = cache.old_db ;
+        c_new = cache.new_db ;
+        cache.old_db = NULL ;
+        cache.new_db = NULL ;
+        cache.added = 0 ;
+        cache.retired = time(NULL) ;
+        cache.killed = cache.retired + cache.lifespan ;
+    CACHEUNLOCK
+    /* flipped old database is now out of circulation -- can be destroyed without a lock */
+    if ( c_new ) tdestroy( c_new, free ) ;
+    if ( c_old ) tdestroy( c_old, free ) ;
 }
 
 /* Add an item to the cache */
@@ -322,30 +334,30 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
     STORELOCK
         if ( (opaque=tsearch(tn,&cache.store,tree_compare)) ) {
 //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
-    	    if ( tn!=opaque->key ) {
+            if ( tn!=opaque->key ) {
                 free(opaque->key);
-    	        opaque->key = tn ;
-        		state = just_update ;
-    	    } else {
-        		state = yes_add ;
-    	    }
-    	} else { // nothing found or added?!? free our memory segment
-    	    free(tn) ;
-    	}
+                opaque->key = tn ;
+                state = just_update ;
+            } else {
+                state = yes_add ;
+            }
+        } else { // nothing found or added?!? free our memory segment
+            free(tn) ;
+        }
     STOREUNLOCK
     switch (state) {
     case yes_add:
-	    STATLOCK
-	        AVERAGE_IN(&store_avg)
-	    STATUNLOCK
-	    return 0 ;
+        STATLOCK
+            AVERAGE_IN(&store_avg)
+        STATUNLOCK
+        return 0 ;
     case just_update:
-	    STATLOCK
-	        AVERAGE_MARK(&store_avg)
-	    STATUNLOCK
-	    return 0 ;
+        STATLOCK
+            AVERAGE_MARK(&store_avg)
+        STATUNLOCK
+        return 0 ;
     default:
-    	return 1 ;
+        return 1 ;
     }
 }
 
@@ -423,8 +435,8 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
 //printf("CACHE GET 1\n");
     CACHELOCK
         if ( (opaque=tfind(tn,&cache.new_db,tree_compare)) 
-	     || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) ) 
-	   ) {
+         || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) ) 
+       ) {
 //printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
             if ( opaque->key->expires >= now ) {
 //printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
@@ -539,10 +551,10 @@ static int Cache_Del_Common( const struct tree_node * tn ) {
     int ret = 1 ;
     CACHELOCK
         if ( (opaque=tfind( tn, &cache.new_db, tree_compare )) 
-	     || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )
-	   ) {
-    	    opaque->key->expires = now - 1 ;
-	        ret = 0 ;
+         || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )
+       ) {
+            opaque->key->expires = now - 1 ;
+            ret = 0 ;
           }
     CACHEUNLOCK
     return ret ;
@@ -553,39 +565,44 @@ static int Cache_Del_Store( const struct tree_node * tn ) {
     struct tree_node * tn_found = NULL ;
     STORELOCK
         if ( (opaque = tfind( tn , &cache.store, tree_compare )) ) {
-	    tn_found = opaque->key ;
+        tn_found = opaque->key ;
             tdelete( tn , &cache.store , tree_compare ) ;
         }
     STOREUNLOCK
     if ( tn_found ) {
-	free(tn_found) ;
-	STATLOCK
-	    AVERAGE_OUT(&store_avg)
-	STATUNLOCK
-	return 0 ;
+    free(tn_found) ;
+    STATLOCK
+        AVERAGE_OUT(&store_avg)
+    STATUNLOCK
+    return 0 ;
     }
     return 1 ;
 }
 
 #else /* OW_CACHE is unset */
 
-void Cache_Open( void ) 
+int cacheavailable = 0 ; /* is caching available */
+int cacheenabled = 0 ; /* is cacheing enabled */
+
+void Cache_Open( void )
     {}
-void Cache_Close( void ) 
+void Cache_Close( void )
     {}
-char * Cache_Version( void ) 
+void Cache_Clear( void )
+    {}
+char * Cache_Version( void )
     { return ""; }
-int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) 
+int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn )
     { return 1; }
-int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) 
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn )
     { return 1; }
-int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn ) 
+int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn )
     { return 1; }
-int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) 
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn )
     { return 1; }
-int Cache_Del(          const struct parsedname * const pn                                                                   ) 
+int Cache_Del(          const struct parsedname * const pn                                                                   )
     { return 1; }
-int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) 
+int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn )
     { return 1; }
 
 #endif /* OW_CACHE */

@@ -16,7 +16,7 @@ static int FS_branchoff( const struct parsedname * const pn) ;
 static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_adapterdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static int FS_statdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
+static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static void loadpath( struct parsedname * const pn2 ) ;
@@ -59,26 +59,44 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         ret = -ENOENT ; /* should ever happen */
     } else if ( pn->dev ){ /* device directory */
         ret = FS_devdir( dirfunc, data, &pn2 ) ;
-    } else if ( pn->type == pn_alarm ) {  /* root or branch directory -- alarm state */
+    } else if ( pn->state == pn_alarm ) {  /* root or branch directory -- alarm state */
         ret = FS_alarmdir( dirfunc, data, &pn2 ) ;
+    } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
+        ret = FS_typedir( dirfunc, data, &pn2 ) ;
+    } else if ( pn->state == pn_uncached ) {
+        ret = FS_realdir( dirfunc, data, &pn2 ) ;
     } else {  /* root or branch directory -- non-alarm */
+
+        /* Show alarm and uncached and stats... (if root directory) */
+        if ( pn2.pathlength == 0 ) { /* true root */
+            pn2.state = pn_alarm ;
+            dirfunc( data, &pn2 ) ;
+            pn2.state = pn->state ;
+            if ( cacheenabled ) { /* cached */
+                pn2.state = pn_uncached ;
+                dirfunc( data, &pn2 ) ;
+                pn2.state = pn_normal ;
+            }
+            pn2.type = pn_settings ;
+            dirfunc( data, &pn2 ) ;
+            pn2.type = pn_system ;
+            dirfunc( data, &pn2 ) ;
+            pn2.type = pn_statistics ;
+            dirfunc( data, &pn2 ) ;
+            pn2.type = pn_real ;
+        }
 
         /* Show adapter (if root directory) */
         if ( pn2.pathlength == 0 ) { /* true root */
             //printf("DIR: True root, interface=%d\n",Adapter) ;
             FS_adapterdir( dirfunc, data, &pn2 ) ; /* adapter entry */
         }
-        
+
         /* Show all devices in this directory */
-        if ( cacheavailable && timeout.dir ) {
+        if ( cacheenabled && timeout.dir ) {
             FS_cache2real( dirfunc, data, &pn2 ) ;
         } else {
             FS_realdir( dirfunc, data, &pn2 ) ;
-        }
-        
-        /* Now show statistics entries (if root directory) */
-        if ( pn->pathlength == 0 ) { /* true root */
-            FS_statdir( dirfunc, data, &pn2 ) ;
         }
     }
     STATLOCK
@@ -94,6 +112,7 @@ static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), 
     struct filetype * firstft ; /* first filetype struct */
     char s[33] ;
     int len ;
+
     STATLOCK
         ++dir_dev.calls ;
     STATUNLOCK
@@ -131,12 +150,11 @@ static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), 
         }
     }
     return 0 ;
-}    
+}
 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
 static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
     int ret ;
-    struct device ** dpp ;
     unsigned char sn[8] ;
 
     /* STATISCTICS */
@@ -157,11 +175,7 @@ static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const)
         num2string( ID, sn[0] ) ;
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-            pn2->dev = *dpp ;
-        } else {
-            pn2->dev = &NoDevice ; /* unknown device */
-        }
+        FS_devicefind( ID, pn2 ) ;
         dirfunc( data, pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next_alarm(sn,pn2)) ;
@@ -169,7 +183,7 @@ static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const)
     BUSUNLOCK
     return ret ;
 }
-                
+
 static int FS_branchoff( const struct parsedname * const pn ) {
     int ret ;
     unsigned char cmd[] = { 0xCC, 0x66, } ;
@@ -180,8 +194,8 @@ static int FS_branchoff( const struct parsedname * const pn ) {
 }
 
 static int FS_adapterdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
-    struct device ** dpp ;
     pn2->ft = NULL ; /* just in case not properly set */
+/*
     switch (Adapter) {
     case adapter_DS9097:
         dpp = bsearch("DS9097",Devices,nDevices,sizeof(struct device *),devicecmp) ;
@@ -201,14 +215,15 @@ static int FS_adapterdir( void (* dirfunc)(void *,const struct parsedname * cons
     case adapter_DS9490:
         dpp = bsearch("DS9490",Devices,nDevices,sizeof(struct device *),devicecmp) ;
         break ;
-    default : /* just in case an adapter isn't set */
+    default : // just in case an adapter isn't set
         dpp = NULL ;
     }
     if ( dpp ) {
         pn2->dev = *dpp ;
         dirfunc( data, pn2 ) ;
-        pn2->dev = NULL ; /* clear for the rest of directory listing */
+        pn2->dev = NULL ; // clear for the rest of directory listing
     }
+*/
     return 0 ;
 }
 
@@ -219,20 +234,19 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
     unsigned char sn[8] ;
     int dindex = 0 ;
     int ret ;
-    
+
     /* STATISCTICS */
     STATLOCK
         ++dir_main.calls ;
     STATUNLOCK
-    
-    BUSLOCK        
+
+    BUSLOCK
     /* Turn off all DS2409s */
     FS_branchoff(pn2) ;
 
-//printf("DIR pathlength=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ft=%p \n",pn2->pathlength,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7],pn2->ft);    
+//printf("DIR pathlength=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ft=%p \n",pn2->pathlength,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7],pn2->ft);
     (ret=BUS_select(pn2)) || (ret=BUS_first(sn,pn2)) ;
     while (ret==0) {
-        struct device ** dpp ;
         char ID[] = "XX";
         STATLOCK
             ++dir_main.entries ;
@@ -243,11 +257,7 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
         num2string( ID, sn[0] ) ;
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-            pn2->dev = *dpp ;
-        } else {
-            pn2->dev = &NoDevice ; /* unknown device */
-        }
+        FS_devicefind( ID, pn2 ) ;
         dirfunc( data, pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
@@ -272,28 +282,23 @@ static void loadpath( struct parsedname * const pn ) {
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
     unsigned char sn[8] , snpath[8] ;
     int dindex = 0 ;
-    
+
     loadpath(pn2) ;
     memcpy(snpath,pn2->sn,8);
-    if ( pn2->type==pn_uncached || Cache_Get_Dir(sn,0,pn2 ) ) 
+    if ( pn2->state==pn_uncached || Cache_Get_Dir(sn,0,pn2 ) )
         return FS_realdir(dirfunc,data,pn2) ;
 
     /* STATISCTICS */
     STATLOCK
         ++dir_main.calls ;
     STATUNLOCK
-    
+
     do {
-        struct device ** dpp ;
         char ID[] = "XX";
         num2string( ID, sn[0] ) ;
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-            pn2->dev = *dpp ;
-        } else {
-            pn2->dev = &NoDevice ; /* unknown device */
-        }
+        FS_devicefind( ID, pn2 ) ;
         dirfunc( data, pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         memcpy(pn2->sn,snpath,8) ;
@@ -305,20 +310,26 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
     return 0 ;
 }
 
-/* Show the statistics entries */
+/* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
-static int FS_statdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
-    int i ;
-    for ( i=0 ; i<nDevices ; ++i ) {
-        if ( Devices[i]->type == dev_statistic ) {
-            pn2->dev = Devices[i] ;
-            dirfunc( data, pn2 ) ;
-            // pn2.dev = NULL ; /* clear for the rest of directory listing */
+static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
+    void action( const void * t, const VISIT which, const int depth ) {
+        (void) depth ;
+//printf("Action\n") ;
+        switch(which) {
+        case leaf:
+        case postorder:
+            pn2->dev = ((const struct device_opaque *)t)->key ;
+            dirfunc(data, pn2 ) ;
+        default:
+            break ;
         }
-    }
+    } ;
+    twalk( Tree[pn2->type],action) ;
+    pn2->dev = NULL ;
     return 0 ;
 }
-            
+
 /* device display format */
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) {
     switch (devform) {
@@ -340,5 +351,65 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
     case fic:
         snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
         break ;
+    }
+}
+
+char * FS_dirname_state( const enum pn_state state ) {
+    switch (state) {
+    case pn_uncached:
+        return "uncached";
+    case pn_alarm:
+        return "alarm";
+    default:
+        return "" ;
+    }
+}
+
+char * FS_dirname_type( const enum pn_type type ) {
+    switch (type) {
+    case pn_statistics:
+        return "statistics";
+    case pn_system:
+        return "system";
+    case pn_settings:
+        return "settings";
+    default:
+        return "" ;
+    }
+}
+
+/* Return the last part of the file name specified by pn */
+/* Prints this directory element (not the whole path) */
+/* Suggest that size = OW_FULLNAME_MAX */
+void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) {
+    if ( pn->ft ) { /* A real file! */
+        char * pname = strchr(pn->ft->name,'/') ; // for subdirectories
+        if ( pname ) {
+            ++ pname ;
+        } else {
+            pname = pn->ft->name ;
+        }
+
+        if ( pn->ft->ag == NULL ) {
+            snprintf( buffer , size, "%s",pname) ;
+        } else if ( pn->extension == -1 ) {
+            snprintf( buffer , size, "%s.ALL",pname) ;
+        } else if ( pn->ft->ag->letters == ag_letters ) {
+            snprintf( buffer , size, "%s.%c",pname,pn->extension+'A') ;
+        } else {
+            snprintf( buffer , size, "%s.%-d",pname,pn->extension) ;
+        }
+    } else if ( pn->subdir ) { /* in-device subdirectory */
+        strncpy( buffer, pn->subdir->name, size) ;
+    } else if (pn->dev == NULL ) { /* root-type directory */
+        if ( pn->state != pn_normal ) {
+            strncpy( buffer, FS_dirname_state( pn->state ), size ) ;
+        } else {
+            strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
+        }
+    } else if ( pn->dev->type == pn_real ) {
+        FS_devicename( buffer, size, pn->sn ) ;
+    } else {
+        strncpy( buffer, pn->dev->code, size ) ;
     }
 }

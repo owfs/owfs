@@ -96,33 +96,10 @@ struct dirback {
 } ;
 
 /* Callback function to FS_dir */
+/* Prints this directory element (not the whole path) */
 static void directory( void * data, const struct parsedname * const pn ) {
-    char extname[OW_FULLNAME_MAX+1] ; /* probably excessive */
-//printf("directory callback\n");
-    if ( pn->ft ) {
-        char * pname = strchr(pn->ft->name,'/') ;
-        if ( pname ) {
-            ++ pname ;
-        } else {
-            pname = pn->ft->name ;
-        }
-
-        if ( pn->ft->ag == NULL ) {
-            snprintf( extname , OW_NAME_MAX, "%s",pname) ;
-        } else if ( pn->extension == -1 ) {
-            snprintf( extname , OW_FULLNAME_MAX, "%s.ALL",pname) ;
-        } else if ( pn->ft->ag->letters == ag_letters ) {
-            snprintf( extname , OW_FULLNAME_MAX, "%s.%c",pname,pn->extension+'A') ;
-        } else {
-            snprintf( extname , OW_FULLNAME_MAX, "%s.%-d",pname,pn->extension) ;
-        }
-    } else if ( pn->subdir ) { /* in-device subdirectory */
-        snprintf( extname , OW_NAME_MAX, "%s",pn->subdir->name) ;
-    } else if ( pn->dev->type == dev_1wire ) {
-        FS_devicename( extname, OW_NAME_MAX, pn->sn ) ;
-    } else {
-        snprintf( extname , OW_NAME_MAX, "%s",pn->dev->code) ;
-    }
+    char extname[OW_FULLNAME_MAX+1] ; /* buffer for name */
+    FS_DirName( extname, OW_FULLNAME_MAX+1, pn ) ;
     (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
 }
 
@@ -131,6 +108,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct stateinfo si ;
     /* dirback structure passed via void pointer to 'directory' */
     struct dirback db;
+    int ret ;
     pn.si = &si ;
 //printf("GETDIR\n");
 
@@ -138,26 +116,16 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     db.filler = filler ;
 
     if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
-        FS_ParsedName_destroy(&pn) ;
-        return -ENOENT;
+        ret = -ENOENT;
+    } else { /* Good pn */
+        /* Call directory spanning function */
+        FS_dir( directory, &db, &pn ) ;
+        ret = 0 ;
     }
-
-    /* Special directories -- entry only appear in root normal directory */
-    if ( pn.type==pn_normal && pn.dev==NULL && pn.pathlength==0 ) {
-
-        /* 'alarm' directory added if root and normal */
-        filler(h,"alarm",DT_DIR) ;
-    
-        /* 'uncached' directory added if root and normal */
-        if ( cacheavailable ) filler(h,"uncached",DT_DIR) ;
-    }
-
-    /* Call directory spanning function */
-    FS_dir( directory, &db, &pn ) ;
 
     /* Clean up */
     FS_ParsedName_destroy(&pn) ;
-    return 0 ;
+    return ret ;
 }
 
 /* Change in statfs definition for newer FUSE versions */
