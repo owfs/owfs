@@ -93,7 +93,8 @@ printf("FromClientAlloc\n");
     sm->size = ntohl(sm->size) ;
     sm->type = ntohl(sm->type) ;
     sm->tempscale = ntohl(sm->tempscale) ;
-printf("FromClientAlloc size=%d type=%d tempscale=%d\n",sm->size,sm->type,sm->tempscale);
+    sm->offset = ntohl(sm->offset) ;
+printf("FromClientAlloc size=%d type=%d tempscale=%d offset=%d\n",sm->size,sm->type,sm->tempscale,sm->offset);
 
     if ( sm->size <= 0 ) return NULL ;
 

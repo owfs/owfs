@@ -16,11 +16,38 @@ $Id$
 #include "ow.h"
 //#include <sys/uio.h>
 #include <netinet/in.h>
-#include <netdb.h> // addrinfo 
+#include <netdb.h> /* addrinfo */
 
 static int ConnectFD( struct addrinfo * ai) ;
 static int PortToFD(  char * port ) ;
+static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
+static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
+static int ToServer( int fd, enum msg_type type, const char * path, const char * data, int datasize, int offset, int tscale ) ;
 
+int OpenServer( void ) {
+    if ( servername ) {
+        connectfd = PortToFD( servername ) ;
+    }
+    return (connectfd>-1) ;
+}
+
+void CloseServer( void ) {
+    if ( connectfd > -1 ) {
+        close(connectfd) ;
+        connectfd = -1 ;
+    }
+}
+
+
+int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) {
+    struct client_msg cm ;
+    int ret = ToServer( connectfd, msg_read, path, NULL, 0, 0, tempscale ) ;
+    if (ret) return ret ;
+    ret = FromServer( connectfd, &cm, NULL, 0 ) ;
+    if (ret) return ret ;
+    if ( cm.ret <0 ) return cm.ret ;
+    return cm.size ;
+}
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
@@ -46,7 +73,7 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 }
 
 /* read from server, free return pointer if not Null */
-void * FromServerAlloc( int fd, struct client_msg * cm ) {
+static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     char * msg ;
     
     if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
@@ -54,11 +81,11 @@ void * FromServerAlloc( int fd, struct client_msg * cm ) {
         cm->ret = -EIO ;
         return NULL ;
     }
-
     cm->size = ntohl(cm->size) ;
     cm->ret = ntohl(cm->ret) ;
     cm->format = ntohl(cm->format) ;
     
+printf("FromServerAlloc size=%d ret=%d format=%d\n",cm->size,cm->ret,cm->format);
     if ( cm->size == 0 ) return NULL ;
     
     if ( (msg=malloc(cm->size)) ) {
@@ -73,7 +100,7 @@ void * FromServerAlloc( int fd, struct client_msg * cm ) {
 }
 /* Read from server -- return negative on error,
     return 0 or positive giving size of data element */
-int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
+static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     int rtry ;
     int d ;
     
@@ -87,6 +114,7 @@ int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     cm->ret = ntohl(cm->ret) ;
     cm->format = ntohl(cm->format) ;
     
+printf("FromServer size=%d ret=%d format=%d\n",cm->size,cm->ret,cm->format);
     if ( cm->size == 0 ) return cm->size ;
     
     d = cm->size - size ;
@@ -109,7 +137,7 @@ int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     return cm->size ;
 }
 
-int ToServer( int fd, enum msg_type type, const char * path, const char * data, int datasize, int tscale ) {
+static int ToServer( int fd, enum msg_type type, const char * path, const char * data, int datasize, int offset, int tscale ) {
     struct server_msg sm ;
     int nio = 1 ;
     int size = 0 ;
@@ -129,6 +157,9 @@ int ToServer( int fd, enum msg_type type, const char * path, const char * data, 
     sm.size = htonl(size) ;
     sm.type = htonl(type) ;
     sm.tempscale = htonl(tscale) ;
+    sm.offset = htonl(offset) ;
+
+printf("ToServer size=%d type=%d tempscale=%d offset=%d\n",size,type,tscale,offset);
     
     return writev( fd, io, nio ) != size + sizeof(struct server_msg) ;
 }
@@ -171,7 +202,6 @@ static int PortToFD(  char * port ) {
 
 static int ConnectFD( struct addrinfo * ai) {
     int fd ;
-    int on = 1 ;
     
     if ( (fd=socket(ai->ai_family,ai->ai_socktype,ai->ai_protocol))<0 ) {
         fprintf(stderr,"Socket problem errno=%d\n",errno) ;

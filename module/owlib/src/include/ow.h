@@ -471,6 +471,7 @@ extern speed_t speed;        /* terminal speed constant */
 /* Globals */
 extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
+extern int connectfd ; /* server filedescriptor */
 extern int useusb ; /* Which USB adapter to use (1-based index) */
 extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */
@@ -505,7 +506,7 @@ struct server_msg {
     int32_t size ;
     int32_t type ;
     int32_t tempscale ;
-    int32_t extra ;
+    int32_t offset ;
 } ;
 /* message from owserver */
 struct client_msg {
@@ -515,11 +516,8 @@ struct client_msg {
     int32_t format ;
     int32_t extra ;
 } ;
-enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_fstat, } ;
+enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_fstat, msg_update, } ;
 
-int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
-void * FromServerAlloc( int fd, struct client_msg * cm ) ;
-int ToServer( int fd, enum msg_type type, const char * path, const char * data, int datasize, int tscale ) ;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;

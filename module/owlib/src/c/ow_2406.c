@@ -258,13 +258,6 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
     return ret ;
 }
 
-/* read alarm settings */
-static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) {
-    if ( OW_r_control(data,pn) ) return 1;
-    *data &= 0x1F;
-    return 0;
-}
-
 /* write alarm settings */
 static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) {
     unsigned char b;
