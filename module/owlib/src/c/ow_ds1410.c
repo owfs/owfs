@@ -59,6 +59,18 @@ unsigned char ctl_low  = 0x00 ;
 #define CONTROL_HIGH ioctl( devfd, PPWCONTROL, &ctl_high )
 #define CONTROL_LOW  ioctl( devfd, PPWCONTROL, &ctl_low )
 
+static void CLAIM( void ) {
+    int ret = ioctl( devfd, PPCLAIM ) ;
+if ( ret ) printf("CLAIM=%d\n",ret) ;
+}
+
+static void RELEASE( void ) {
+    int ret = ioctl( devfd, PPRELEASE ) ;
+if ( ret ) printf("RELEASE=%d\n",ret) ;
+}
+
+int timeout ;
+
 static int BUSY( void ) {
     unsigned char s ;
     int ret = ioctl( devfd, PPRSTATUS, &s ) ;
@@ -74,7 +86,8 @@ printf( "CONTROL=%d frob={%.2X,%.2X}\n",ret,mask,val) ;
 
 static void DATA( const unsigned char data ) {
     unsigned char d = data ;
-    int ret = ioctl( devfd, PPWDATA, &d ) ;
+    int z = 0 ;
+    int ret = ioctl( devfd, PPDATADIR, &z) || ioctl( devfd, PPWDATA, &d ) ;
 printf("DATA=%d val=%.2X\n",ret,d) ;
 }
 
@@ -85,37 +98,99 @@ printf("READ=%d val = %.2X\n",ret,data) ;
     return data ;
 }
 
+static int RESET( void ) {
+printf("RESET\n") ;
+    return DS1410_send_bit( 0xFD , NULL ) ;
+}
+
 static int toggleOD( void ) {
     int result ;
-    unsigned char save = READ() ;
+    CLAIM() ;
+    DATA( 0xEC ) ;
+    usleep(2) ;
     DATA( 0xFC ) ;
-    CONTROL( DS1410_ENI, 0x00 ) ;
-    CONTROL( DS1410_ENI, DS1410_ENI ) ;
-    usleep(4) ;
+    usleep(2) ;
+    CONTROL( 0xE3, 0x06 ) ;
+    usleep(8) ;
     result = BUSY() ? 1 : 0 ;
-printf("ToggleOD result=%d\n",result) ;
-    CONTROL( DS1410_ENI, 0x00 ) ;
-    DATA(save) ;
+    usleep(8) ;
+    CONTROL( 0xE3, 0x04 ) ;
+    DATA( 0xCF ) ;
+    usleep(8) ;
+    RELEASE() ;
+printf("toggleOD=%d\n",result) ;
     return result ;
 }
 
-static void togglePassthru( void ) {
-    toggleOD() ;
-    toggleOD() ;
-    toggleOD() ;
-    toggleOD() ;
+static int checkOD( void ) {
+    int result ;
+    int i ;
+    CLAIM() ;
+    DATA( 0xEC ) ;
+    usleep(2) ;
+    DATA( 0xFF ) ;
+    usleep(2) ;
+    CONTROL( 0xE3, 0x06 ) ;
+    usleep(16) ;
+    result = BUSY() ? 1 : 0 ;
+    DATA( 0xFF ) ;
+    for( i=0 ; i<100 ;  ++i ) {
+        usleep(4);
+        if ( BUSY() ) break ;
+    }
+    DATA( 0xFE ) ;
+    BUSY() ;
+    CONTROL( 0xE3, 0x04 ) ;
+    DATA( 0xCF ) ;
+    usleep(5) ;
+    RELEASE() ;
+printf("checkOD=%d\n",result) ;
+    return result ;
 }
 
-static void CLAIM( void ) {
-    int ret = ioctl( devfd, PPCLAIM ) ;
-if ( ret ) printf("CLAIM=%d\n",ret) ;
+static void togglePASS( void ) {
+    toggleOD() ;
+    toggleOD() ;
+    toggleOD() ;
+    toggleOD() ;
+    usleep(20000) ;
 }
 
-static void RELEASE( void ) {
-    int ret = ioctl( devfd, PPRELEASE ) ;
-if ( ret ) printf("RELEASE=%d\n",ret) ;
+static int PRESENT( void ) {
+    RESET() ;
+    if ( DS1410_send_bit( 0xFF , NULL ) ) return !timeout ;
+    return 0 ;
 }
 
+static int NOPASS( void ){
+    togglePASS() ;
+    if ( PRESENT() ) return 1 ;
+    togglePASS() ;
+    if ( PRESENT() ) return 1 ;
+    togglePASS() ;
+    if ( PRESENT() ) return 1 ;
+    togglePASS() ;
+    if ( PRESENT() ) return 1 ;
+    return 0 ;
+}
+
+static int PASSTHRU( void ){
+    togglePASS() ;
+    if ( !PRESENT() ) return 1 ;
+    togglePASS() ;
+    if ( !PRESENT() ) return 1 ;
+    togglePASS() ;
+    if ( !PRESENT() ) return 1 ;
+    togglePASS() ;
+    if ( !PRESENT() ) return 1 ;
+    return 0 ;
+}
+
+static int START( void ) {
+    NOPASS() ;
+    if ( checkOD() && toggleOD() ) toggleOD() ;
+    return 1 ;
+}
 
 //--------------------------------------------------------------------------
 // Send 8 bits of communication to the 1-Wire Net and verify that the
@@ -268,10 +343,7 @@ printf("NEGOT=%d\n",ret);
     ret = ioctl( devfd, PPSETTIME, &t) ;
 printf("SETTIME=%d\n",ret);
     RELEASE () ;
-
-    CLAIM() ;
-    togglePassthru() ;
-    RELEASE () ;
+    START() ;
     /* Set up low-level routines */
     DS1410_setroutines( & iroutines ) ;
     /* Reset the bus */
@@ -282,9 +354,8 @@ printf("SETTIME=%d\n",ret);
 /* Puts in 9600 baud, sends 11110000 then reads response */
 static int DS1410_reset( void ) {
     unsigned char c;
-    int ret ;
-    if ( (ret=DS1410_send_bit( DS1410_Reset , &c )) ) return ret ;
-
+//    int ret ;
+    c = RESET() ;
     switch(c) {
     case 0:
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
@@ -363,6 +434,7 @@ static int DS1410_sendback_data( const unsigned char * data, unsigned char * con
 /* Symmetric */
 /* send a bit -- read a bit */
 static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) {
+/*
     unsigned char save, result ;
     int i ;
 
@@ -394,6 +466,49 @@ static int DS1410_send_bit( const unsigned char data, unsigned char * const resp
 
     RELEASE() ;
     *resp = result ;
+    return result ;
+}
+*/
+    unsigned char save, result ;
+    int i ;
+
+    CLAIM () ;
+    DATA( 0xEC ) ;
+    usleep(2);
+    DATA( data ) ;
+    CONTROL( 0xE3 , 0x06 ) ;
+
+    i = 0 ;
+    do {
+        usleep(4) ;
+    } while( BUSY()!=0 && ++i < 100) ;
+
+    usleep(4) ;
+
+    DATA( 0xFF ) ;
+
+    do {
+        usleep(4) ;
+    } while( BUSY()==0 && ++i < 100 ) ;
+
+    DATA( 0xFE ) ;
+    usleep(4) ;
+    result = BUSY() ? 1 : 0  ;
+    if ( result && data==0xFD ) {
+        usleep(400) ;
+        DATA( 0xFF ) ;
+        usleep(4) ;
+        DATA( 0xFE ) ;
+        usleep(4) ;
+        result = BUSY() ? 1 : 0 ;
+    }
+    CONTROL( 0xE3 , 0x04 ) ;
+    DATA( 0xCF ) ;
+    usleep(12) ;
+    RELEASE() ;
+    timeout = (i>99)?1:0 ;
+printf("timeout=%d\n",timeout) ;
+    if ( resp ) *resp = result ;
     return result ;
 }
 
