@@ -88,6 +88,7 @@ static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset ,
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( pn->extension > 15 ) return -ERANGE ;
+    //printf("FS_w_page: size=%d offset=%d pn->extension=%d (%d)\n", size, offset, pn->extension, (pn->extension)<<5);
     if ( OW_w_mem(buf,size,offset+((pn->extension)<<5),pn) ) return -EINVAL ;
     return 0 ;
 }
@@ -111,29 +112,43 @@ static int OW_r_mem( unsigned char * p , const size_t size , const size_t offset
 }
 
 static int OW_w_mem( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
-    unsigned char data[33] ;
-    unsigned char scratchwrite[] = {  0x0F, offset&0xFF, (offset>>8)&0x01, size} ;
-    unsigned char scratchread[] =  {  0xAA, offset&0xFF, (offset>>8)&0x01, size } ;
+    unsigned char data[32+4] ;
     unsigned char scratchcopy[] =  {  0x55, offset&0xFF, (offset>>8)&0x01, size } ;
+    unsigned char scratchwrite[] = {  0x0F, offset&0xFF, (offset>>8)&0x01, } ;
+    unsigned char scratchread[] =  {  0xAA, } ;
     int ret ;
+    int i;
 
     //printf("writing offset=%d size=%d\n", offset, size);
 
     memcpy( data , p , size ) ;
+    //for(i=0; i<size; i++) printf("%02X ", data[i]);
+    //printf("\n");
 
     // write data to scratchpad
     BUSLOCK
-    ret = BUS_select(pn) || BUS_send_data( scratchwrite , 4 ) || BUS_send_data( data, size ) ;
+    ret = BUS_select(pn) || BUS_send_data( scratchwrite , 3 ) || BUS_send_data( data, size) ;
     BUSUNLOCK
     if ( ret ) return 1;
 
+    // read data from scratchpad
+    BUSLOCK
+    ret = BUS_select(pn) || BUS_send_data( scratchread , 1 ) || BUS_readin_data( data,3+size );
+    BUSUNLOCK
+    if ( ret ) return 1;
+
+    //printf("got %02X %02X %02X data=%02X %02X\n", data[0], data[1], data[2], data[3], data[4]);
     // copy scratchpad to memory
     BUSLOCK
+    scratchcopy[1] = data[0];
+    scratchcopy[2] = data[1];
+    scratchcopy[3] = data[2];
     ret = BUS_select(pn) || BUS_send_data( scratchcopy , 4 );
     BUSUNLOCK
     if ( ret ) return 1;
 
-    //printf("write ok\n");
+    UT_delay(5); // 5ms pullup
+
     // Could recheck with a read, but no point
     return 0 ;
 }
