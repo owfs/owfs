@@ -92,7 +92,7 @@ AC_SUBST(ENABLE_OWFS)
 #Check owhttpd
 AC_MSG_CHECKING(if owhttpd is enabled)
 ENABLE_OWHTTPD="true"
-AC_ARG_ENABLE(owhttpd,
+AC_ARG_ENABLE(owhttpd,
 [  --enable-owhttpd      Enable owhttpd module (default true)],
 [
     AC_MSG_RESULT([$enableval])

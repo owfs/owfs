@@ -5,6 +5,8 @@ owfs_SOURCES = owfs.c owfs_callback.c
 
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
+         -I/usr/local/include/fuse \
+         -I/usr/local/include \
          -L../../../owlib/src/c \
          -fexceptions \
          -Wall \
@@ -20,7 +22,7 @@ AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64
 
 AM_LDFLAGS = -low
-                        
+
 clean-generic:
 
-	rm -f *~ .*~
+    rm -f *~ .*~
