@@ -11,8 +11,8 @@ $Id$
 
 /* OWSERVER - specific header */
 
-#ifndef OWHTTPD_H
-#define OWHTTPD_H
+#ifndef OWSERVER_H
+#define OWSERVER_H
 
 #include "owfs_config.h"
 #include "ow.h"
@@ -51,4 +51,4 @@ struct active_sock {
 int handle_socket(struct active_sock * const a_sock);
 #define MAXBUFFERSIZE  65000
 
-#endif /* OWHTTPD_H */
+#endif /* OWSERVER_H */
