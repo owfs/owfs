@@ -123,7 +123,7 @@ static int FS_w_line(const int width, const int row, const char *buf, const size
 static int FS_w_screen(const int width, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) ;
 
 /* LCD */
-int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* Not sure if this is valid, but won't allow offset != 0 at first */
     /* otherwise need a buffer */
     if ( offset != 0 ) return -EFAULT ;
@@ -132,17 +132,17 @@ int FS_r_version(char *buf, const size_t size, const off_t offset , const struct
     return (size>16)?16:size ;
 }
 
-int FS_w_on(const int * y , const struct parsedname * pn ) {
+static int FS_w_on(const int * y , const struct parsedname * pn ) {
     if ( OW_w_on(y[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_w_backlight(const int * y , const struct parsedname * pn ) {
+static int FS_w_backlight(const int * y , const struct parsedname * pn ) {
     if ( OW_w_backlight(y[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_r_gpio(int * y , const struct parsedname * pn ) {
+static int FS_r_gpio(int * y , const struct parsedname * pn ) {
     unsigned char data ;
     int i ;
     if ( OW_r_gpio(&data,pn) ) return -EINVAL ;
@@ -151,7 +151,7 @@ int FS_r_gpio(int * y , const struct parsedname * pn ) {
 }
 
 /* 4 value array */
-int FS_w_gpio(const int * y , const struct parsedname * pn ) {
+static int FS_w_gpio(const int * y , const struct parsedname * pn ) {
     int i ;
     unsigned char data ;
 
@@ -163,37 +163,37 @@ int FS_w_gpio(const int * y , const struct parsedname * pn ) {
     return 0 ;
 }
 
-int FS_r_register(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_register(unsigned int * u , const struct parsedname * pn ) {
     unsigned char data ;
     if ( OW_r_register(&data,pn) ) return -EINVAL ;
     u[0] = data ;
     return 1 ;
 }
 
-int FS_w_register(const unsigned int * u , const struct parsedname * pn ) {
+static int FS_w_register(const unsigned int * u , const struct parsedname * pn ) {
     if ( OW_w_register(u[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_r_data(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_data(unsigned int * u , const struct parsedname * pn ) {
     unsigned char data ;
     if ( OW_r_data(&data,pn) ) return -EINVAL ;
     u[0] = data ;
     return 1 ;
 }
 
-int FS_w_data(const unsigned int * u , const struct parsedname * pn ) {
+static int FS_w_data(const unsigned int * u , const struct parsedname * pn ) {
     if ( OW_w_data(u[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_r_counters(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_counters(unsigned int * u , const struct parsedname * pn ) {
     if ( OW_r_counters(u,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
-int FS_r_cum(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_cum(unsigned int * u , const struct parsedname * pn ) {
     int s = 4*sizeof(unsigned int) ;
     char key[] = {
                 pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
@@ -205,7 +205,7 @@ int FS_r_cum(unsigned int * u , const struct parsedname * pn ) {
     return 0 ;
 }
 
-int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
+static int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
     char key[] = {
                 pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
                 '/',      'c',      'u',      'm',       '\0',
@@ -232,15 +232,15 @@ static int FS_w_line(const int width, const int row, const char *buf, const size
     return 0 ;
 }
 
-int FS_w_line16(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_line16(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     return FS_w_line( 16, pn->extension, buf, size, offset, pn ) ;
 }
 
-int FS_w_line20(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_line20(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     return FS_w_line( 20, pn->extension, buf, size, offset, pn ) ;
 }
 
-int FS_w_line40(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_line40(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     return FS_w_line( 40, pn->extension, buf, size, offset, pn ) ;
 }
 
@@ -271,25 +271,25 @@ static int FS_w_screen(const int width, const char *buf, const size_t size, cons
     return 0 ;
 }
 
-int FS_w_screen16(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_screen16(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     return FS_w_screen( 16, buf, size, offset, pn ) ;
 }
 
-int FS_w_screen20(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_screen20(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     return FS_w_screen( 20, buf, size, offset, pn ) ;
 }
 
-int FS_w_screen40(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_screen40(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     return FS_w_screen( 40, buf, size, offset, pn ) ;
 }
 
-int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     if ( offset > 112 ) return 0 ;
     if ( OW_r_memory((unsigned char *)buf,size,offset,pn) ) return -EFAULT ;
     return (size+offset>112) ? 112-offset : size ;
 }
 
-int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     if ( OW_w_memory((const unsigned char *)buf,size,offset,pn) ) return -EFAULT ;
     return 0 ;
 }

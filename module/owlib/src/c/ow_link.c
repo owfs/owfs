@@ -90,14 +90,14 @@ struct device d_DS9490 = { "DS9490", "DS9490", dev_interface, NFT(DS9490), DS949
 
 /* ------- Functions ------------ */
 
-int FS_version(int * v , const struct parsedname * pn) {
+static int FS_version(int * v , const struct parsedname * pn) {
     /* Unused */
     (void) pn ;
 	*v = Version2480 ;
 	return 0 ;
 }
 
-int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* Unused */
     (void) pn ;
 
@@ -111,8 +111,7 @@ int FS_detail(char *buf, const size_t size, const off_t offset , const struct pa
     }
 }
 
-int FS_port(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-
+static int FS_port(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* Unused */
     (void) pn ;
 

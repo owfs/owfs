@@ -57,9 +57,10 @@ struct aggregate A2450  = { 4, ag_numbers, ag_separate, } ;
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, } ;
 struct filetype DS2450[] = {
     F_STANDARD   ,
-    {"page"      ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}, NULL, } ,
-    {"volts"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}, NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
+    {"volts"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , NULL, } ,
 } ;
 DeviceEntry( 20, DS2450 )
 
@@ -71,7 +72,7 @@ static int OW_w_page( const char * p , const int size , const int location , con
 static int OW_volts( float * f , const struct parsedname * pn ) ;
 
 /* 2450 A/D */
-int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
     if ( size+offset>8 ) return -ERANGE ;
     if ( OW_r_page(p,8,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
@@ -79,14 +80,14 @@ int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const 
 }
 
 /* 2450 A/D */
-int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( size+offset>8 ) return -ERANGE ;
     if ( OW_w_page(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2450 A/D */
-int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
 
     if ( size+offset>4*8 ) return -ERANGE ;
@@ -95,14 +96,14 @@ int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const s
 }
 
 /* 2450 A/D */
-int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( size+offset>4*8 ) return -ERANGE ;
     if ( OW_w_page(buf,size,offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2450 A/D */
-int FS_volts(float * V , const struct parsedname * pn) {
+static int FS_volts(float * V , const struct parsedname * pn) {
     if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }

@@ -61,14 +61,15 @@ iWRITE_FUNCTION( FS_w_Offset ) ;
 struct aggregate A2438 = { 8, ag_numbers, ag_separate, } ;
 struct filetype DS2438[] = {
     F_STANDARD   ,
-    {"page"      ,     8,  &A2438, ft_binary , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"VDD"       ,    12,  NULL  , ft_float  , ft_volatile, {f:FS_volts}    , {v:NULL}, (void *) 1 , } ,
-    {"VAD"       ,    12,  NULL  , ft_float  , ft_volatile, {f:FS_volts}    , {v:NULL}, (void *) 0, } ,
-    {"temperature",   12,  NULL  , ft_float  , ft_volatile, {f:FS_temp}     , {v:NULL}, NULL, } ,
-    {"humidity"  ,    12,  NULL  , ft_float  , ft_volatile, {f:FS_Humid}    , {v:NULL} , NULL,} ,
-    {"current"   ,    12,  NULL  , ft_integer, ft_volatile, {i:FS_Current}  , {v:NULL} , NULL,} ,
-    {"Ienable"   ,    12,  NULL  , ft_unsigned,ft_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable} , NULL,} ,
-    {"offset"    ,    12,  NULL  , ft_unsigned,ft_stable  , {i:FS_r_Offset} , {i:FS_w_Offset}  , NULL,} ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",     8,  &A2438, ft_binary , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL      , } ,
+    {"VDD"       ,    12,  NULL  , ft_float  , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 1, } ,
+    {"VAD"       ,    12,  NULL  , ft_float  , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 0, } ,
+    {"temperature",   12,  NULL  , ft_float  , ft_volatile, {f:FS_temp}     , {v:NULL}        , NULL      , } ,
+    {"humidity"  ,    12,  NULL  , ft_float  , ft_volatile, {f:FS_Humid}    , {v:NULL}        , NULL      , } ,
+    {"current"   ,    12,  NULL  , ft_integer, ft_volatile, {i:FS_Current}  , {v:NULL}        , NULL      , } ,
+    {"Ienable"   ,    12,  NULL  , ft_unsigned,ft_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable}, NULL      , } ,
+    {"offset"    ,    12,  NULL  , ft_unsigned,ft_stable  , {i:FS_r_Offset} , {i:FS_w_Offset} , NULL      , } ,
 } ;
 DeviceEntry( 26, DS2438 )
 
@@ -87,61 +88,61 @@ static int OW_w_int( const int I , const unsigned int address, const struct pars
 static int OW_w_offset( const int I , const struct parsedname * const pn ) ;
 
 /* 2438 A/D */
-int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char data[8] ;
     if ( OW_r_page( data, pn->extension, pn ) ) return -EINVAL ;
     return FS_read_return(buf,size,offset,data,8) ;
 }
 
-int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     if (size != 8 ) return -EMSGSIZE ;
     if (offset != 8 ) return -EINVAL ;
     if ( OW_w_page(buf,pn->extension,pn) ) return -EFAULT ;
     return 0 ;
 }
 
-int FS_temp(float * T , const struct parsedname * pn) {
+static int FS_temp(float * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
     *T = Temperature( *T ) ;
     return 0 ;
 }
 
-int FS_volts(float * V , const struct parsedname * pn) {
+static int FS_volts(float * V , const struct parsedname * pn) {
     /* data=1 VDD data=0 VAD */
     if ( OW_volts( V , (int) pn->ft->data , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_Humid(float * H , const struct parsedname * pn) {
+static int FS_Humid(float * H , const struct parsedname * pn) {
     float T,VAD,VDD ;
     if ( OW_volts( &VDD , 1 , pn ) || OW_volts( &VAD , 0 , pn ) || OW_temp( &T , pn ) ) return -EINVAL ;
     *H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
     return 0 ;
 }
 
-int FS_Current(int * I , const struct parsedname * pn) {
+static int FS_Current(int * I , const struct parsedname * pn) {
     if ( OW_current( I , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_r_Ienable(unsigned * u , const struct parsedname * pn) {
+static int FS_r_Ienable(unsigned * u , const struct parsedname * pn) {
     if ( OW_r_Ienable( u , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_w_Ienable(const unsigned * u , const struct parsedname * pn) {
+static int FS_w_Ienable(const unsigned * u , const struct parsedname * pn) {
     if ( *u > 3 ) return -EINVAL ;
     if ( OW_w_Ienable( *u , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_r_Offset(int * i , const struct parsedname * pn) {
+static int FS_r_Offset(int * i , const struct parsedname * pn) {
     if ( OW_r_int( i , 0x0D, pn ) ) return -EINVAL ; /* page1 byte 5 */
     *i >>= 3 ;
     return 0 ;
 }
 
-int FS_w_Offset(const int * i , const struct parsedname * pn) {
+static int FS_w_Offset(const int * i , const struct parsedname * pn) {
     int I = *i ;
     if ( I > 255 || I < -256 ) return -EINVAL ;
     if ( OW_w_offset( I<<3 , pn ) ) return -EINVAL ;

@@ -58,10 +58,10 @@ yWRITE_FUNCTION( FS_w_pio ) ;
 struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, } ;
 struct filetype DS2408[] = {
     F_STANDARD   ,
-    {"power"     ,     1,  NULL,    ft_yesno , ft_volatile, {y:FS_power}    , {v:NULL}, NULL, } ,
-    {"PIO"       ,     1,  &A2408,  ft_yesno , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio}, NULL, } ,
-    {"sensed"    ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_sense}    , {v:NULL}, NULL, } ,
-    {"latch"     ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_latch}    , {v:NULL}, NULL, } ,
+    {"power"     ,     1,  NULL,    ft_yesno , ft_volatile, {y:FS_power}    , {v:NULL},        NULL, } ,
+    {"PIO"       ,     1,  &A2408,  ft_yesno , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio},    NULL, } ,
+    {"sensed"    ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_sense}    , {v:NULL},        NULL, } ,
+    {"latch"     ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_latch}    , {v:NULL},        NULL, } ,
     {"strobe"    ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, NULL, } ,
 } ;
 DeviceEntry( 29, DS2408 )
@@ -77,21 +77,21 @@ static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) ;
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
-int FS_power(int * y , const struct parsedname * pn) {
+static int FS_power(int * y , const struct parsedname * pn) {
     unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],7) ;
     return 0 ;
 }
 
-int FS_r_strobe(int * y , const struct parsedname * pn) {
+static int FS_r_strobe(int * y , const struct parsedname * pn) {
     unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],2) ;
     return 0 ;
 }
 
-int FS_w_strobe(const int * y, const struct parsedname * pn) {
+static int FS_w_strobe(const int * y, const struct parsedname * pn) {
 	unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
 	UT_setbit( &data[5], 2, y[0] ) ;
@@ -99,7 +99,7 @@ int FS_w_strobe(const int * y, const struct parsedname * pn) {
 }
 
 /* 2408 switch PIO sensed*/
-int FS_sense(int * y , const struct parsedname * pn) {
+static int FS_sense(int * y , const struct parsedname * pn) {
     unsigned char data[6] ;
     int i ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
@@ -108,7 +108,7 @@ int FS_sense(int * y , const struct parsedname * pn) {
 }
 
 /* 2408 switch PIO set*/
-int FS_r_pio(int * y , const struct parsedname * pn) {
+static int FS_r_pio(int * y , const struct parsedname * pn) {
     unsigned char data[6] ;
     int i ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
@@ -118,7 +118,7 @@ int FS_r_pio(int * y , const struct parsedname * pn) {
 }
 
 /* 2408 switch PIO change*/
-int FS_w_pio(const int * y , const struct parsedname * pn) {
+static int FS_w_pio(const int * y , const struct parsedname * pn) {
     unsigned char data ;
 	UT_setbit(&data,0,y[0]) ;
 	UT_setbit(&data,1,y[1]) ;
@@ -135,7 +135,7 @@ int FS_w_pio(const int * y , const struct parsedname * pn) {
 }
 
 /* 2408 switch activity latch -- resets*/
-int FS_latch(int * y , const struct parsedname * pn) {
+static int FS_latch(int * y , const struct parsedname * pn) {
     unsigned char data ;
     int i ;
     if ( OW_r_latch(&data,pn) ) return -EINVAL ;

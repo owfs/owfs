@@ -90,7 +90,7 @@ int DS9490_detect( int useusb ) {
                     strcat(devport,dev->filename) ;
                     if ( (devusb=usb_open(dev)) ) {
                         if ( usb_set_configuration( devusb, 1 )==0 && usb_claim_interface( devusb, 0)==0 ) {
-                            if ( usb_set_altinterface( devusb, 0)==0 ) {
+                            if ( usb_set_altinterface( devusb, 3)==0 ) {
                                 syslog(LOG_INFO,"Opened USB 2490 adapter at %s.\n",devport) ;
                                 DS9490_setroutines( & iroutines ) ;
                                 Version2480 = 8 ; /* dummy value */

@@ -53,64 +53,64 @@ $Id$
 
 /* -------- Structures ---------- */
 struct filetype stats_cache[] = {
-    {"tries"      ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_tries , } ,
-    {"hits"       ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_hits , } ,
-    {"misses"     ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_misses , } ,
-    {"flips"      ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_flips , } ,
-    {"additions"  ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_adds , } ,
-    {"deletions"  ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dels , } ,
-    {"expirations",  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_expired , } ,
+    {"tries"      ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_tries  ,  } ,
+    {"hits"       ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_hits   ,  } ,
+    {"misses"     ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_misses ,  } ,
+    {"flips"      ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_flips  ,  } ,
+    {"additions"  ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_adds   ,  } ,
+    {"deletions"  ,  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dels   ,  } ,
+    {"expirations",  15, NULL, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_expired,  } ,
 }
  ;
 struct device d_stats_cache = { "stats_cache", "stats_cache", dev_statistic, NFT(stats_cache), stats_cache } ;
 
 struct aggregate Aread = { 3 , ag_numbers, ag_separate, } ;
 struct filetype stats_read[] = {
-    {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_calls , } ,
-    {"cachesuccess"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_cache , } ,
-    {"cachebytes"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_cachebytes , } ,
-    {"arraytries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_array , } ,
-    {"arraysuccess"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_arraysuccess , } ,
-    {"aggregatetries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_aggregate , } ,
-    {"aggregatesuccess", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_aggregatesuccess , } ,
-    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_success , } ,
-    {"bytes"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_bytes , } ,
-    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL},   read_tries , } ,
+    {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_calls            ,  } ,
+    {"cachesuccess"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_cache            ,  } ,
+    {"cachebytes"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_cachebytes       ,  } ,
+    {"arraytries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_array            ,  } ,
+    {"arraysuccess"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_arraysuccess     ,  } ,
+    {"aggregatetries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_aggregate        ,  } ,
+    {"aggregatesuccess", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_aggregatesuccess ,  } ,
+    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_success          ,  } ,
+    {"bytes"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_bytes            ,  } ,
+    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL},   read_tries            ,  } ,
 }
  ;
 struct device d_stats_read = { "stats_read", "stats_read", dev_statistic, NFT(stats_read), stats_read } ;
 
 struct filetype stats_write[] = {
-    {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_calls , } ,
-    {"arraytries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_array , } ,
-    {"arraysuccess"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_arraysuccess , } ,
-    {"aggregatetries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_aggregate , } ,
-    {"aggregatesuccess", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_aggregatesuccess , } ,
-    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_success , } ,
-    {"bytes"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_bytes , } ,
-    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL},   write_tries , } ,
+    {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_calls            ,  } ,
+    {"arraytries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_array            ,  } ,
+    {"arraysuccess"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_arraysuccess     ,  } ,
+    {"aggregatetries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_aggregate        ,  } ,
+    {"aggregatesuccess", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_aggregatesuccess ,  } ,
+    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_success          ,  } ,
+    {"bytes"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_bytes            ,  } ,
+    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL},   write_tries            ,  } ,
 }
  ;
 struct device d_stats_write = { "stats_write", "stats_write", dev_statistic, NFT(stats_write), stats_write } ;
 
 struct filetype stats_directory[] = {
-    {"maxdepth"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_depth , } ,
-    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_success , } ,
-    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL},   dir_tries , } ,
+    {"maxdepth"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_depth   ,  } ,
+    {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_success ,  } ,
+    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL},   dir_tries   ,  } ,
 }
  ;
 struct device d_stats_directory = { "stats_directory", "stats_directory", dev_statistic, NFT(stats_directory), stats_directory } ;
 
 struct filetype stats_bus[] = {
-    {"bus_time"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_time , } ,
-    {"pause_time"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_pause , } ,
-    {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL , } ,
-    {"locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks , } ,
-    {"CRC8_tries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_tries , } ,
-    {"CRC8_errors"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_errors , } ,
-    {"CRC16_tries"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_tries , } ,
-    {"CRC16_errors"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_errors , } ,
-    {"read_timeout"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_timeout , } ,
+    {"bus_time"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_time     ,  } ,
+    {"pause_time"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_pause    ,  } ,
+    {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL        ,  } ,
+    {"locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks    ,  } ,
+    {"CRC8_tries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_tries   ,  } ,
+    {"CRC8_errors"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_errors  ,  } ,
+    {"CRC16_tries"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_tries  ,  } ,
+    {"CRC16_errors"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_errors ,  } ,
+    {"read_timeout"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_timeout ,  } ,
 }
  ;
 struct device d_stats_bus = { "stats_bus", "stats_bus", dev_statistic, NFT(stats_bus), stats_bus } ;
@@ -118,7 +118,7 @@ struct device d_stats_bus = { "stats_bus", "stats_bus", dev_statistic, NFT(stats
 
 /* ------- Functions ------------ */
 
-int FS_stat(unsigned int * u , const struct parsedname * pn) {
+static int FS_stat(unsigned int * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
 	if (dindex<0) dindex = 0 ;
     if (pn->ft->data == NULL) return -ENOENT ;
@@ -126,7 +126,7 @@ int FS_stat(unsigned int * u , const struct parsedname * pn) {
 	return 0 ;
 }
 
-int FS_time(unsigned int * u , const struct parsedname * pn) {
+static int FS_time(unsigned int * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
 	struct timeval * tv = (struct timeval *) pn->ft->data ;
 	long ul ; /* seconds and microseconds */
@@ -151,7 +151,7 @@ int FS_time(unsigned int * u , const struct parsedname * pn) {
 	return 0 ;
 }
 
-int FS_elapsed(unsigned int * u , const struct parsedname * pn) {
+static int FS_elapsed(unsigned int * u , const struct parsedname * pn) {
 //printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
     (void) pn ;
     *u = time(NULL)-start_time ;

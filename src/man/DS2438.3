@@ -25,7 +25,7 @@ Temperature Voltages (Humidity) and Memory.
 |
 .I offset
 |
-.B page.[0-7|ALL]
+.B pages/page.[0-7|ALL]
 |
 .B temperature
 |
@@ -97,7 +97,7 @@ Correction for
 readings. A value between -256 and 255. See the datasheet for details. Should be set to the negative of a true zero
 .I current
 reading.
-.SS page.0 ... page.7 page.ALL
+.SS pages/page.0 ... pages/page.7 pages/page.ALL
 .I read-write, binary
 .br
 Memory is split into 8 pages of 8 bytes each. Only the pages 3-7 are really available, and some of that appears to be reserved. See the datasheet for details.

@@ -56,18 +56,20 @@ bWRITE_FUNCTION( FS_w_memory ) ;
 struct aggregate A2502 = { 4, ag_numbers, ag_separate, } ;
 struct filetype DS2502[] = {
     F_STANDARD   ,
-    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
-    {"page"      ,    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
+    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}, {b:FS_w_memory}, NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
 } ;
 DeviceEntry( 09, DS2502 )
 
 struct filetype DS1982U[] = {
     F_STANDARD   ,
-    {"mac_e"     ,     6,  NULL,   ft_binary, ft_stable  , {b:FS_r_param}   , {v:NULL} , (void *) 4 } ,
-    {"mac_fw"    ,     8,  NULL,   ft_binary, ft_stable  , {b:FS_r_param}   , {v:NULL} , (void *) 4 } ,
-    {"project"   ,     4,  NULL,   ft_binary, ft_stable  , {b:FS_r_param}   , {v:NULL} , (void *) 0 } ,
-    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
-    {"page"      ,    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
+    {"mac_e"     ,     6,  NULL,   ft_binary, ft_stable  , {b:FS_r_param} , {v:NULL}       , (void *) 4, } ,
+    {"mac_fw"    ,     8,  NULL,   ft_binary, ft_stable  , {b:FS_r_param} , {v:NULL}       , (void *) 4, } ,
+    {"project"   ,     4,  NULL,   ft_binary, ft_stable  , {b:FS_r_param} , {v:NULL}       , (void *) 0, } ,
+    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}, {b:FS_w_memory}, NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
 } ;
 DeviceEntry( 89, DS1982U )
 
@@ -79,7 +81,7 @@ static int OW_r_mem( unsigned char * data , const size_t location , const size_t
 static int OW_r_data( unsigned char * data , const struct parsedname * pn ) ;
 
 /* 2502 memory */
-int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int s = size ;
     if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
     if ( s<0 ) return -EMSGSIZE ;
@@ -89,7 +91,7 @@ int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , cons
     return s ;
 }
 
-int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int s = size ;
     if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
     if ( s<0 ) return -EMSGSIZE ;
@@ -99,7 +101,7 @@ int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const 
     return s ;
 }
 
-int FS_r_param(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_param(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char data[32] ;
     if (offset != 0 ) return -EFAULT ;
     if (size<pn->ft->suglen) return -EFAULT ;
@@ -109,12 +111,12 @@ int FS_r_param(unsigned char *buf, const size_t size, const off_t offset , const
     return pn->ft->suglen ;
 }
 
-int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem(buf,size, (size_t) offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem(buf,size, (size_t) (offset+(pn->extension<<5)),pn) ) return -EINVAL ;
     return 0 ;
 }

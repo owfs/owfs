@@ -19,7 +19,7 @@ Voltage * 4  and Memory.
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
 |
-.B page.[0-3|ALL]
+.B pages/page.[0-3|ALL]
 |
 .B volts.[0-3|ALL]
 |
@@ -41,7 +41,7 @@ Voltage * 4  and Memory.
 .I read-write, binary
 .br
 32 bytes of data. Much has special implications. See the datasheet.
-.SS page.0 ... page.3 page.ALL
+.SS pages/page.0 ... pages/page.3 pages/page.ALL
 .I read-write, binary
 .br
 Memory is split into 4 pages of 8 bytes each. Mostly for reading and setting device properties. See the datasheet for details.

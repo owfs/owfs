@@ -136,6 +136,7 @@ unsigned int read_timeout = 0 ;
 /* All ow library setup */
 void LibSetup( void ) {
     /* special resort in case static data (devices and filetypes) not properly sorted */
+//printf("LibSetup\n");
     DeviceSort() ;
 
 	/* DB cache code */

@@ -65,7 +65,7 @@ static int OW_r_PIO( int * val , const struct parsedname * pn) ;
 static int OW_w_PIO( int val , const struct parsedname * pn) ;
 
 /* 2405 switch */
-int FS_r_PIO(int * y , const struct parsedname * pn) {
+static int FS_r_PIO(int * y , const struct parsedname * pn) {
     int num ;
     if ( OW_r_PIO(&num,pn) ) return -EINVAL ;
     y[0] = (num!=0) ;
@@ -73,7 +73,7 @@ int FS_r_PIO(int * y , const struct parsedname * pn) {
 }
 
 /* 2405 switch */
-int FS_r_sense(int * y , const struct parsedname * pn) {
+static int FS_r_sense(int * y , const struct parsedname * pn) {
     int num ;
     if ( OW_r_sense(&num,pn) ) return -EINVAL ;
     y[0] = (num!=0) ;
@@ -81,7 +81,7 @@ int FS_r_sense(int * y , const struct parsedname * pn) {
 }
 
 /* write 2405 switch */
-int FS_w_PIO(const int * y, const struct parsedname * pn) {
+static int FS_w_PIO(const int * y, const struct parsedname * pn) {
     if ( OW_w_PIO(y[0],pn) ) return -EINVAL ;
     return 0 ;
 }

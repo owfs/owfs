@@ -33,7 +33,7 @@ struct urlparse {
     char * value ;
 } ;
 
-	/* Utility HTML page display functions */
+    /* Utility HTML page display functions */
 static void HTTPstart(FILE * out, const char * status ) ;
 static void HTTPtitle(FILE * out, const char * title ) ;
 static void HTTPheader(FILE * out, const char * head ) ;
@@ -54,7 +54,7 @@ static void RootDir( struct active_sock * a_sock, struct parsedname * pn ) ;
 /* URL parsing function */
 static void URLparse( struct urlparse * up ) ;
 
-	/* Data edit function */
+    /* Data edit function */
 static void ChangeData( struct urlparse * up , struct parsedname * pn ) ;
 
     /* Device display functions */
@@ -71,25 +71,25 @@ int handle_socket(struct active_sock a_sock) {
     struct urlparse up ;
     struct parsedname pn ;
 
-    {
-		struct sockaddr_in peer;
-		socklen_t          socklen = sizeof(peer);
-		if ( getpeername(a_sock.socket, (struct sockaddr *) &peer, &socklen) < 0) {
-			syslog(LOG_WARNING,"couldn't get peer name, dropping connection\n");
-			return 1;
-		}
-		a_sock.peer_addr = peer.sin_addr;
+    { /* magic socket stuff */
+        struct sockaddr_in peer;
+        socklen_t          socklen = sizeof(peer);
+        if ( getpeername(a_sock.socket, (struct sockaddr *) &peer, &socklen) < 0) {
+            syslog(LOG_WARNING,"couldn't get peer name, dropping connection\n");
+            return 1;
+        }
+        a_sock.peer_addr = peer.sin_addr;
     }
     str = fgets(up.line, PATH_MAX, a_sock.io);
 //printf("PreParse line=%s\n",up.line);
-    URLparse( &up ) ;
+    URLparse( &up ) ; /* Braek up URL */
 //printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
 
     /* read lines until blank */
     if (up.version) {
-    	do {
-	        str = fgets(linecopy, PATH_MAX, a_sock.io);
-	    } while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
+        do {
+            str = fgets(linecopy, PATH_MAX, a_sock.io);
+        } while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
     }
 
 //printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
@@ -101,25 +101,25 @@ int handle_socket(struct active_sock a_sock) {
 
     /* Good command line? */
     if ( up.cmd==NULL || strcmp(up.cmd, "GET")!=0 ) {
-	    Bad400( & a_sock ) ;
+        Bad400( & a_sock ) ;
 
     /* Can't understand the file name = URL */
     } else if ( up.file == NULL ) {
-	    Bad404( & a_sock ) ;
+        Bad404( & a_sock ) ;
     } else {
 //printf("PreParse\n");
         if ( FS_ParsedName( up.file , &pn ) ) {
         /* Can't understand the file name = URL */
-	        Bad404( & a_sock ) ;
+            Bad404( & a_sock ) ;
         /* Root directory -- show the bus */
         } else if ( pn.dev == NULL ) { /* directory! */
-		    RootDir( & a_sock, & pn ) ;
+            RootDir( & a_sock, & pn ) ;
         /* Single device, show it's properties */
         } else { /* a single device */
 //printf("PreChange\n");
-		    ChangeData( &up, &pn ) ;
+            ChangeData( &up, &pn ) ;
 //printf("PreShow\n");
-		    ShowDevice( & a_sock, up.file, &pn ) ;
+            ShowDevice( & a_sock, up.file, &pn ) ;
         }
 //printf("PreDestroy\n");
         FS_ParsedName_destroy( &pn ) ;
@@ -183,8 +183,8 @@ static void URLparse( struct urlparse * up ) {
 
 static void HTTPstart(FILE * out, const char * status ) {
     char d[44] ;
-	time_t t = time(NULL) ;
-	size_t l = strftime(d,sizeof(d),"%a, %d %b %Y %T GMT",gmtime(&t)) ;
+    time_t t = time(NULL) ;
+    size_t l = strftime(d,sizeof(d),"%a, %d %b %Y %T GMT",gmtime(&t)) ;
 
     fprintf(out, "HTTP/1.0 %s\r\n", status);
     fprintf(out, "Date: %*s\n", l, d );
@@ -246,10 +246,12 @@ void directory( void * data, const struct parsedname * const pn ) {
 static void Show( FILE * out, const char * const path, const char * const dev, const struct parsedname * pn ) {
     int len ;
     char file[33] ;
+    char * subdir ;
     char fullpath[PATH_MAX+1] ;
-	int suglen = FileLength(pn) + 1 ;
-	char buf[suglen] ;
+    int suglen = FileLength(pn) + 1 ;
+    char buf[suglen] ;
 
+    /* Construct filename with extension */
     if ( pn->ft->ag == NULL ) {
         snprintf( file , PATH_MAX, "%s",pn->ft->name) ;
     } else if ( pn->extension == -1 ) {
@@ -260,8 +262,16 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
         snprintf( file , PATH_MAX, "%s.%-d",pn->ft->name,pn->extension) ;
     }
 
-    fprintf( out, "<TR><TD><B>%s</B></TD><TD>", file ) ;
+    /* Parse out subdir */
+    subdir = strrchr(file,'/') ;
+    if ( subdir ) {
+        ++subdir ; /* after slash */
+    } else {
+        subdir = file ;
+    }
+    fprintf( out, "<TR><TD><B>%s</B></TD><TD>", subdir ) ;
 
+    /* full file name (with path and subdir) */
     strcpy(fullpath,path) ;
     strcat(fullpath,dev) ;
     strcat(fullpath,"/") ;
@@ -280,9 +290,10 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
         } else if ( pn->ft->write.v ) { /* rare write-only */
             fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file ) ;
         }
-	} else {
+    } else {
         switch( pn->ft->format ) {
         case ft_directory:
+        case ft_subdir:
             fprintf( out, "<A HREF='%s'>%s</A>",fullpath,file);
             break ;
         case ft_yesno:
@@ -395,77 +406,77 @@ static int httpunescape(unsigned char *httpstr) {
 }
 
 static void ChangeData( struct urlparse * up, struct parsedname * pn ) {
-	char *property ;
+    char *property ;
     char linecopy[PATH_MAX+1];
-	strcpy( linecopy , up->file ) ;
-	strcat( linecopy , "/" ) ;
-	property = linecopy+strlen(linecopy) ;
-	/* Do command processing and make changes to 1-wire devices */
-	if ( pn->dev!=&NoDevice && up->request && up->value ) {
-		strcpy( property , up->request ) ;
-		if ( FS_ParsedName(linecopy,pn)==0 && pn->ft && pn->ft->write.v ) {
-			switch ( pn->ft->format ) {
-			case ft_binary:
-				httpunescape(up->value) ;
-				hex_only(up->value) ;
-				if ( strlen(up->value) == pn->ft->suglen<<1 ) {
-					hex_convert(up->value) ;
-					FS_write( linecopy, up->value, pn->ft->suglen, 0 ) ;
-				}
-				break;
-			case ft_yesno:
-				if ( pn->ft->ag==NULL || pn->extension>=0 ) { // Single check box handled differently
-					FS_write( linecopy, strncasecmp(up->value,"on",2)?"0":"1", 2, 0 ) ;
-					break;
-				}
-				// fall through
-			default:
-				httpunescape(up->value) || FS_write(linecopy,up->value,strlen(up->value)+1,0) ;
-				break;
-			}
-		}
-	}
+    strcpy( linecopy , up->file ) ;
+    strcat( linecopy , "/" ) ;
+    property = linecopy+strlen(linecopy) ;
+    /* Do command processing and make changes to 1-wire devices */
+    if ( pn->dev!=&NoDevice && up->request && up->value ) {
+        strcpy( property , up->request ) ;
+        if ( FS_ParsedName(linecopy,pn)==0 && pn->ft && pn->ft->write.v ) {
+            switch ( pn->ft->format ) {
+            case ft_binary:
+                httpunescape(up->value) ;
+                hex_only(up->value) ;
+                if ( strlen(up->value) == pn->ft->suglen<<1 ) {
+                    hex_convert(up->value) ;
+                    FS_write( linecopy, up->value, pn->ft->suglen, 0 ) ;
+                }
+                break;
+            case ft_yesno:
+                if ( pn->ft->ag==NULL || pn->extension>=0 ) { // Single check box handled differently
+                    FS_write( linecopy, strncasecmp(up->value,"on",2)?"0":"1", 2, 0 ) ;
+                    break;
+                }
+                // fall through
+            default:
+                httpunescape(up->value) || FS_write(linecopy,up->value,strlen(up->value)+1,0) ;
+                break;
+            }
+        }
+    }
 }
 
 static void Bad400( struct active_sock * a_sock ) {
-	HTTPstart( a_sock->io , "400 Bad Request" ) ;
-	HTTPtitle( a_sock->io , "Error 400 -- Bad request") ;
-	HTTPheader( a_sock->io , "Unrecognized Request") ;
-	fprintf( a_sock->io, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>" ) ;
-	fprintf( a_sock->io, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>" ) ;
-	HTTPfoot( a_sock->io ) ;
+    HTTPstart( a_sock->io , "400 Bad Request" ) ;
+    HTTPtitle( a_sock->io , "Error 400 -- Bad request") ;
+    HTTPheader( a_sock->io , "Unrecognized Request") ;
+    fprintf( a_sock->io, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>" ) ;
+    fprintf( a_sock->io, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>" ) ;
+    HTTPfoot( a_sock->io ) ;
 }
 
 static void Bad404( struct active_sock * a_sock ) {
-	HTTPstart( a_sock->io , "404 File not found" ) ;
-	HTTPtitle( a_sock->io , "Error 400 -- Item doesn't exist") ;
-	HTTPheader( a_sock->io , "Non-existent Device") ;
-	fprintf( a_sock->io, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>" ) ;
-	fprintf( a_sock->io, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>" ) ;
-	HTTPfoot( a_sock->io ) ;
+    HTTPstart( a_sock->io , "404 File not found" ) ;
+    HTTPtitle( a_sock->io , "Error 400 -- Item doesn't exist") ;
+    HTTPheader( a_sock->io , "Non-existent Device") ;
+    fprintf( a_sock->io, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>" ) ;
+    fprintf( a_sock->io, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>" ) ;
+    HTTPfoot( a_sock->io ) ;
 }
 
 static void ShowDevice( struct active_sock * a_sock, const char * file, struct parsedname * pn ) {
-	/* Now show the device */
-	HTTPstart( a_sock->io , "200 OK" ) ;
-	HTTPtitle( a_sock->io , &file[1]) ;
-	HTTPheader( a_sock->io , &file[1]) ;
-	if ( cacheavailable && pn->type!=pn_uncached ) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",file) ;
-	fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
+    /* Now show the device */
+    HTTPstart( a_sock->io , "200 OK" ) ;
+    HTTPtitle( a_sock->io , &file[1]) ;
+    HTTPheader( a_sock->io , &file[1]) ;
+    if ( cacheavailable && pn->type!=pn_uncached ) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",file) ;
+    fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
     FS_dir( directory, a_sock->io, pn ) ;
-	fprintf( a_sock->io, "</TABLE>" ) ;
-	HTTPfoot( a_sock->io ) ;
+    fprintf( a_sock->io, "</TABLE>" ) ;
+    HTTPfoot( a_sock->io ) ;
 }
 
 /* Misnamed. Actually all directory */
 static void RootDir( struct active_sock * a_sock, struct parsedname * pn ) {
-	HTTPstart( a_sock->io , "200 OK" ) ;
+    HTTPstart( a_sock->io , "200 OK" ) ;
 
     if ( pn->pathlength ) { /* Branch */
         int i ;
-    	HTTPtitle( a_sock->io , "Branch Directory") ;
-	    HTTPheader( a_sock->io , "Device Listing") ;
-    	fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
+        HTTPtitle( a_sock->io , "Branch Directory") ;
+        HTTPheader( a_sock->io , "Device Listing") ;
+        fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
         /* Branch path */
         fprintf( a_sock->io,"<TR><TD><A HREF='/") ;
         for ( i=0 ; i < pn->pathlength ; ++i ) {
@@ -498,6 +509,6 @@ static void RootDir( struct active_sock * a_sock, struct parsedname * pn ) {
         }
     }
     FS_dir( directory, a_sock->io, pn ) ;
-	fprintf( a_sock->io, "</TABLE>" ) ;
-	HTTPfoot( a_sock->io ) ;
+    fprintf( a_sock->io, "</TABLE>" ) ;
+    HTTPfoot( a_sock->io ) ;
 }

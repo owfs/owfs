@@ -52,7 +52,7 @@ int FS_getattr(const char *path, struct stat *stbuf) {
     struct parsedname pn ;
     /* Bad path */
 //printf("GA\n");
-	memset(stbuf, 0, sizeof(struct stat));
+    memset(stbuf, 0, sizeof(struct stat));
     stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = scan_time ;
     if ( FS_ParsedName( path , &pn ) ) {
 //printf("GA bad\n");
@@ -60,18 +60,19 @@ int FS_getattr(const char *path, struct stat *stbuf) {
         return -ENOENT;
     } else if ( pn.dev==NULL ) { /* root directory */
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
+        stbuf->st_nlink = 3;
 //printf("GA root\n");
-    } else if ( pn.ft==NULL || pn.ft->format==ft_directory ) { /* other directory */
+    } else if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* other directory */
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
+        stbuf->st_nlink = 3;
+        stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
 //printf("GA other dir\n");
     } else { /* known 1-wire filetype */
         stbuf->st_mode = S_IFREG ;
         if ( pn.ft->read.v ) stbuf->st_mode |= 0444 ;
         if ( pn.ft->write.v ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
-		stbuf->st_size = FileLength( &pn ) ;
+        stbuf->st_size = FileLength( &pn ) ;
 //printf("GA file\n");
     }
     FS_ParsedName_destroy(&pn) ;
@@ -103,16 +104,26 @@ struct dirback {
 /* Callback function to FS_dir */
 void directory( void * data, const struct parsedname * const pn ) {
     char extname[PATH_MAX+1] ; /* probably excessive */
+//printf("directory callback\n");
     if ( pn->ft ) {
-	    if ( pn->ft->ag == NULL ) {
-            snprintf( extname , PATH_MAX, "%s",pn->ft->name) ;
-        } else if ( pn->extension == -1 ) {
-            snprintf( extname , PATH_MAX, "%s.ALL",pn->ft->name) ;
-        } else if ( pn->ft->ag->letters == ag_letters ) {
-            snprintf( extname , PATH_MAX, "%s.%c",pn->ft->name,pn->extension+'A') ;
+        char * pname = strchr(pn->ft->name,'/') ;
+        if ( pname ) {
+            ++ pname ;
         } else {
-            snprintf( extname , PATH_MAX, "%s.%-d",pn->ft->name,pn->extension) ;
+            pname = pn->ft->name ;
         }
+
+        if ( pn->ft->ag == NULL ) {
+            snprintf( extname , PATH_MAX, "%s",pname) ;
+        } else if ( pn->extension == -1 ) {
+            snprintf( extname , PATH_MAX, "%s.ALL",pname) ;
+        } else if ( pn->ft->ag->letters == ag_letters ) {
+            snprintf( extname , PATH_MAX, "%s.%c",pname,pn->extension+'A') ;
+        } else {
+            snprintf( extname , PATH_MAX, "%s.%-d",pname,pn->extension) ;
+        }
+    } else if ( pn->subdir ) { /* in-device subdirectory */
+        snprintf( extname , PATH_MAX, "%s",pn->subdir->name) ;
     } else if ( pn->dev->type == dev_1wire ) {
         FS_devicename( extname, PATH_MAX, pn->sn ) ;
     } else {
@@ -133,7 +144,7 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
         FS_ParsedName_destroy(&pn) ;
         return -ENOENT;
-	}
+    }
 
     /* 'uncached' directory added if root and not already uncached */
     if ( cacheavailable && pn.type!=pn_uncached && pn.dev==NULL && pn.pathlength==0 ) {

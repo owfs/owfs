@@ -31,7 +31,7 @@ EPROM add-only memory.
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
 |
-.B page.[0-3|ALL]
+.B pages/page.[0-3|ALL]
 |
 .B address
 |
@@ -52,7 +52,7 @@ EPROM add-only memory.
 |
 .B memory
 |
-.B page.[0-3|ALL]
+.B pages/page.[0-3|ALL]
 |
 .B project
 |
@@ -84,7 +84,7 @@ number. Unique, and unrelated to the 1-wire address. It is apparently used for e
 .I read-write, binary
 .br
 128 bytes of memory. Initially all bits are set to 1. Writing zero permanently alters the memory.
-.SS page.0 ... page.3 page.ALL
+.SS pages/page.0 ... pages/page.3 pages/page.ALL
 .I read-write, yes-no
 .br
 Memory is split into 4 pages of 32 bytes each.

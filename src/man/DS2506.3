@@ -28,7 +28,7 @@ EPROM add-only memory.
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
 |
-.B page.[0-255|ALL]
+.B pages/page.[0-255|ALL]
 |
 .B address
 |
@@ -45,7 +45,7 @@ EPROM add-only memory.
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
 |
-.B page.[0-255|ALL]
+.B pages/page.[0-255|ALL]
 |
 .B address
 |
@@ -69,7 +69,7 @@ DS2506-UNW DS1986U
 .I read-write, binary
 .br
 8192 bytes of memory. Initially all bits are set to 1. Writing zero permanently alters the memory.
-.SS page.0 ... page.255 page.ALL
+.SS pages/page.0 ... pages/page.255 pages/page.ALL
 .I read-write, yes-no
 .br
 Memory is split into 256 pages of 32 bytes each.

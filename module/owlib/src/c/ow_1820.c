@@ -62,43 +62,43 @@ struct filetype DS18S20[] = {
     {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 750, } ,
     {"temp800",       12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 800, } ,
     {"temp900",       12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 900, } ,
-    {"temp1000",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1000, } ,
-    {"temp1100",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1100, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1, } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0, } ,
-    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL, } ,
-    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {b:FS_r_trimvalid}, {v:NULL}          , NULL, } ,
-    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL, } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL, } ,
+    {"temp1000",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1000,} ,
+    {"temp1100",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1100,} ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,    } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,    } ,
+    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,         } ,
+    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,         } ,
+    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,         } ,
+    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,         } ,
 }
  ;
 DeviceEntry( 10, DS18S20 )
 
 struct filetype DS18B20[] = {
     F_STANDARD   ,
-//    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, } ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12, } ,
-    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1, } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0, } ,
-    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL, } ,
-    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {b:FS_r_trimvalid}, {v:NULL}          , NULL, } ,
-    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL, } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL, } ,
+//    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, NULL,} ,
+    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
+    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,   } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,   } ,
+    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
+    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
+    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
+    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
 } ;
 DeviceEntry( 28, DS18B20 )
 
 struct filetype DS1822[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, } ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12, } ,
-    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1, } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0, } ,
-    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL, } ,
-    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {b:FS_r_trimvalid}, {v:NULL}          , NULL, } ,
-    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL, } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL, } ,
+    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
+    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,   } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,   } ,
+    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
+    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
+    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
+    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
 } ;
 DeviceEntry( 22, DS1822 )
 

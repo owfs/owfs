@@ -17,7 +17,7 @@ Temperature Voltage and Memory.
 .HP
 .B 1B
 [.]XXXXXXXXXXXX[XX][/[
-.B page.[0-4|ALL]
+.B pages/page.[0-4|ALL]
 |
 .B temperature
 |
@@ -37,7 +37,7 @@ Temperature Voltage and Memory.
 .TP
 1B
 .SH SPECIAL PROPERTIES
-.SS page.0 ... page.4 page.ALL
+.SS pages/page.0 ... pages/page.4 pages/page.ALL
 .I read-write, binary
 .br
 Memory is split into 5 pages of 32 bytes each. Only the first 3 pages are really available, and some of that appears to be reserved. See the datasheet for details.

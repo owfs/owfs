@@ -60,6 +60,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
         ++write_success ; /* statistics */
         write_bytes += size ; /* statistics */
     }
+
     FS_ParsedName_destroy(&pn) ;
     return r ;
 }
@@ -160,6 +161,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_binary:
         return (pn->ft->write.b)(buf,size,offset,pn) ;
     case ft_directory:
+    case ft_subdir:
         return -ENOSYS ;
     }
     return -EINVAL ; /* unknown data type */
@@ -269,6 +271,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         }
         break ;
     case ft_directory:
+    case ft_subdir:
         return -ENOSYS ;
         }
     }

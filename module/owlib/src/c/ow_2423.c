@@ -60,12 +60,13 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate,} ;
 struct aggregate A2423c = { 2, ag_letters, ag_separate,} ;
 struct filetype DS2423[] = {
     F_STANDARD   ,
-    {"page"      ,    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},  NULL, } ,
-    {"counters"  ,    32,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},         NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       NULL, } ,
+    {"counters"  ,    32,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},            NULL, } ,
 #ifdef OW_CACHE
-    {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount},NULL, } ,
+    {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount}, NULL, } ,
 #endif /*OW_CACHE*/
-    {"pagecount" ,    32,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},         NULL, } ,
+    {"pages/count",   32,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            NULL, } ,
 } ;
 DeviceEntry( 1D, DS2423 )
 
@@ -77,7 +78,7 @@ static int OW_r_mem( unsigned char * data , const int length , const int locatio
 static int OW_counter( unsigned int * counter , const int page, const struct parsedname * pn ) ;
 
 /* 2423A/D Counter */
-int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int len = size ;
     if ( (offset&0x1F)+size>32 ) len = 32-offset ;
     if ( OW_r_mem( buf, len, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
@@ -85,23 +86,23 @@ int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const 
     return len ;
 }
 
-int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     return OW_w_mem( buf, (int)size, offset+((pn->extension)<<5), pn) ;
 }
 
-int FS_counter(unsigned int * u , const struct parsedname * pn) {
+static int FS_counter(unsigned int * u , const struct parsedname * pn) {
     if ( OW_counter( u , (pn->extension)+14,  pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_pagecount(unsigned int * u , const struct parsedname * pn) {
+static int FS_pagecount(unsigned int * u , const struct parsedname * pn) {
     if ( OW_counter( u , pn->extension,  pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
-int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
     int s = 3*sizeof(unsigned int) ;
     unsigned int st[3], ct[2] ; // stored and current counter values
     char key[] = {
@@ -123,8 +124,7 @@ int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
     return Storage_Add( key, s, (void *) st ) ? -EINVAL  : 0 ;
 }
 
-int FS_w_mincount(const unsigned int * u , const struct parsedname * pn ) {
-    int s = 3*sizeof(unsigned int) ;
+static int FS_w_mincount(const unsigned int * u , const struct parsedname * pn ) {
     unsigned int st[3] ; // stored and current counter values
     char key[] = {
                 pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],

@@ -34,36 +34,19 @@ enum deviceformat devform = fdi ;
     pn->ft loops through
 */
 
-int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn ) {
+int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) {
     int ret ;
+    struct parsedname pn2 ;
 
 //printf("DIR\n");
-    if ( pn==NULL ) {
-        return -ENOENT ;
-    } else if ( pn->dev ) { /* device directory */
-        int i ;
-        struct filetype * ft = pn->ft ; /* temp storage */
-        int extension = pn->extension ; /* temp storage */
-        for ( i=0 ; i < pn->dev->nft ; ++i ) { /* loop through filetypes */
-            pn->ft = &(pn->dev->ft[i]) ;
-            if ( pn->ft->ag ) {
-                for ( pn->extension=-1 ; pn->extension < pn->ft->ag->elements ; ++pn->extension ) {
-                    dirfunc( data, pn ) ;
-                }
-                pn->extension = 0 ;
-            } else {
-                dirfunc( data, pn ) ;
-            }
-        }
-        pn->ft = ft ; /* restore */
-        pn->extension = extension ; /* restore */
-        return 0 ;
-    } else { /* root or branch directory */
+    if ( pn == NULL ) return -ENOENT ; /* should ever happen */
+    memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
+
+    if ( pn->dev == NULL ) {  /* root or branch directory */
         struct device ** dpp ;
         unsigned char sn[8] ;
-        char ID[] = "XX";
-        pn->ft = NULL ; /* just in case not properly set */
-        if ( pn->pathlength == 0 ) { /* true root */
+        pn2.ft = NULL ; /* just in case not properly set */
+        if ( pn2.pathlength == 0 ) { /* true root */
 //printf("DIR: True root, interface=%d\n",Version2480) ;
             switch (Version2480) {
             case 0:
@@ -88,9 +71,9 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
                 dpp = NULL ;
             }
             if ( dpp ) {
-                pn->dev = *dpp ;
-                dirfunc( data, pn ) ;
-                pn->dev = NULL ; /* clear for the rest of directory listing */
+                pn2.dev = *dpp ;
+                dirfunc( data, &pn2 ) ;
+                pn2.dev = NULL ; /* clear for the rest of directory listing */
             }
         }
         BUS_lock() ;
@@ -100,45 +83,78 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         /* Triplicate bus read */
         /* STATISCTICS */
         ++dir_tries[0] ;
-        (ret=BUS_select(pn)) || (ret=BUS_first(sn)) ;
+        (ret=BUS_select(&pn2)) || (ret=BUS_first(sn)) ;
         if (ret) {
             /* STATISCTICS */
             ++dir_tries[1] ;
-            (ret=BUS_select(pn)) || (ret=BUS_first(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=BUS_first(sn)) ;
         }
         if (ret) {
             /* STATISCTICS */
             ++dir_tries[2] ;
-            (ret=BUS_select(pn)) || (ret=BUS_first(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=BUS_first(sn)) ;
         } else {
             /* STATISCTICS */
             ++dir_success ;
         }
         while (ret==0) {
+            char ID[] = "XX";
             num2string( ID, sn[0] ) ;
-            memcpy( pn->sn, sn, 8 ) ;
+            memcpy( pn2.sn, sn, 8 ) ;
             /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
             if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-                pn->dev = *dpp ;
+                pn2.dev = *dpp ;
             } else {
-                 pn->dev = &NoDevice ; /* unknown device */
+                pn2.dev = &NoDevice ; /* unknown device */
             }
-            dirfunc( data, pn ) ;
-            pn->dev = NULL ; /* clear for the rest of directory listing */
-            (ret=BUS_select(pn)) || (ret=BUS_next(sn)) ;
+            dirfunc( data, &pn2 ) ;
+            pn2.dev = NULL ; /* clear for the rest of directory listing */
+            (ret=BUS_select(&pn2)) || (ret=BUS_next(sn)) ;
         }
         BUS_unlock() ;
         if ( pn->pathlength == 0 ) { /* true root */
             int i ;
             for ( i=0 ; i<nDevices ; ++i ) {
                 if ( Devices[i]->type == dev_statistic ) {
-                    pn->dev = Devices[i] ;
-                    dirfunc( data, pn ) ;
-                    pn->dev = NULL ; /* clear for the rest of directory listing */
+                    pn2.dev = Devices[i] ;
+                    dirfunc( data, &pn2 ) ;
+                    // pn2.dev = NULL ; /* clear for the rest of directory listing */
                 }
             }
         }
         return ret ;
+    } else { /* device directory */
+        struct filetype * lastft = &pn2.dev->ft[pn2.dev->nft] ; /* last filetype struct */
+        struct filetype * firstft ; /* first filetype struct */
+        char s[33] ;
+        int len ;
+        if ( pn2.subdir ) { /* indevice subdir, name prepends */
+//printf("DIR device subdirectory\n");
+            strcpy( s , pn2.subdir->name ) ;
+            strcat( s , "/" ) ;
+            len = strlen(s) ;
+            firstft = pn2.subdir  + 1 ;
+        } else {
+//printf("DIR device directory\n");
+            len = 0 ;
+            firstft = pn2.dev->ft ;
+        }
+        for ( pn2.ft=firstft ; pn2.ft < lastft ; ++pn2.ft ) { /* loop through filetypes */
+            if ( len ) { /* subdir */
+                if ( strncmp( pn2.ft->name , s , len ) ) break ;
+            } else { /* promary device directory */
+                if ( strchr( pn2.ft->name, '/' ) ) continue ;
+            }
+            if ( pn2.ft->ag ) {
+                for ( pn2.extension=-1 ; pn2.extension < pn2.ft->ag->elements ; ++pn2.extension ) {
+                    dirfunc( data, &pn2 ) ;
+                }
+            } else {
+                pn2.extension = 0 ;
+                dirfunc( data, &pn2 ) ;
+            }
+        }
+        return 0 ;
     }
 }
 static int FS_branchoff( void ) {

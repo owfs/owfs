@@ -54,7 +54,7 @@ uWRITE_FUNCTION( FS_w_wiper ) ;
 
 struct filetype DS2890[] = {
     F_STANDARD   ,
-    {"chargepump",     1,  NULL, ft_yesno  , ft_stable  , {y:FS_r_cp}       , {y:FS_w_cp}, NULL, } ,
+    {"chargepump",     1,  NULL, ft_yesno  , ft_stable  , {y:FS_r_cp}       , {y:FS_w_cp}   , NULL, } ,
     {"wiper"     ,     3,  NULL,ft_unsigned, ft_stable  , {u:FS_r_wiper}    , {u:FS_w_wiper}, NULL, } ,
 } ;
 DeviceEntry( 2C, DS2890 )
@@ -68,7 +68,7 @@ static int OW_r_cp(int * val , const struct parsedname * pn) ;
 static int OW_w_cp(const int val, const struct parsedname * pn) ;
 
 /* Wiper */
-int FS_w_wiper(const unsigned int * i , const struct parsedname * pn) {
+static int FS_w_wiper(const unsigned int * i , const struct parsedname * pn) {
     unsigned int num=i[0] ;
     if ( num>255 ) num=255 ;
 
@@ -77,19 +77,19 @@ int FS_w_wiper(const unsigned int * i , const struct parsedname * pn) {
 }
 
 /* write Charge Pump */
-int FS_w_cp(const int * y , const struct parsedname * pn) {
+static int FS_w_cp(const int * y , const struct parsedname * pn) {
     if ( OW_w_cp(y[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* read Wiper */
-int FS_r_wiper(unsigned int * w , const struct parsedname * pn) {
+static int FS_r_wiper(unsigned int * w , const struct parsedname * pn) {
     if ( OW_r_wiper( w , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* Charge Pump */
-int FS_r_cp(int * y , const struct parsedname * pn) {
+static int FS_r_cp(int * y , const struct parsedname * pn) {
     if ( OW_r_cp(y,pn) ) return -EINVAL ;
     return 0 ;
 }

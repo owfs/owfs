@@ -86,7 +86,7 @@ static int OW_w_mem( const unsigned char * data , const size_t length , const si
 static int OW_r_mem( unsigned char * data, const size_t length, const size_t location, const struct parsedname * pn ) ;
 
 /* 1902 */
-int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t len = size ;
     if ( (offset&0x1F)+size>32 ) len = 32-offset ;
     if ( OW_r_mem( buf, len, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
@@ -94,7 +94,7 @@ int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const 
     return len ;
 }
 
-int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int len = pn->ft->suglen - offset ;
     if ( len < 0 ) return -ERANGE ;
     if ( (size_t)len > size ) len = size ;
@@ -102,12 +102,12 @@ int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , cons
     return len ;
 }
 
-int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EFAULT ;
     return 0 ;
 }
 
-int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int len = pn->ft->suglen - offset ;
     if ( len < 0 ) return -ERANGE ;
     if ( (size_t)len > size ) len = size ;
@@ -116,7 +116,7 @@ int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset
 }
 
 /* set clock */
-int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     struct tm tm ;
     unsigned int t ;
     unsigned char data[5] ;
@@ -139,8 +139,9 @@ int FS_w_date(const char *buf, const size_t size, const off_t offset , const str
     if ( OW_w_mem( data, 5, 0x0202, pn) ) return -EFAULT ;
     return 0 ;
 }
+
 /* read clock */
-int FS_r_date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned int t ; /* must me 32bit (or more) */
     unsigned char data[5] ;
     if ( offset ) return -EFAULT ;

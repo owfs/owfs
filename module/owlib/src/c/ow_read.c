@@ -146,6 +146,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         case ft_binary:
             return (pn->ft->read.b)(buf,size,offset,pn) ;
         case ft_directory:
+        case ft_subdir:
             return -ENOSYS ;
         }
     } else { /* array -- allocate off heap */
@@ -209,6 +210,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         case ft_binary:
             return (pn->ft->read.b)(buf,size,offset,pn) ;
         case ft_directory:
+        case ft_subdir:
             return -ENOSYS ;
         }
     }

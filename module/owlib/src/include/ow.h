@@ -140,18 +140,19 @@ struct parsedname ;
 struct device ;
 struct filetype ;
 
+/* Prototypes for owlib.c -- libow overall control */
 void LibSetup( void ) ;
 int LibStart( void ) ;
 int ComSetup( const char * busdev ) ;
 int USBSetup( int useusb ) ;
 void LibClose( void ) ;
 
+/* Initial sorting or the device and filetype lists */
 void DeviceSort( void ) ;
   int devicecmp(const void * code , const void * dev ) ;
-  int filecmp(const void * name , const void * ex ) ;
-  int devicesort( const void * a , const void * b ) ;
-  int filesort( const void * a , const void * b ) ;
+//  int filecmp(const void * name , const void * ex ) ;
 
+/* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
 int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
@@ -162,6 +163,7 @@ int FilePart( const char * const filename, const char ** next, struct parsedname
 int CheckPresence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
 
+/* Utility functions */
 unsigned char CRC8( const unsigned char * bytes , const int length ) ;
   unsigned char CRC8compute( const unsigned char * bytes , const int length ) ;
 int CRC16( const unsigned char * bytes , const int length ) ;
@@ -177,26 +179,34 @@ int UT_get2bit(const unsigned char * buf, const int loc) ;
 void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
 void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
 
+/* Serial port */
 int COM_open( void ) ;
 void COM_flush( void ) ;
 void COM_close( void );
 void COM_break( void ) ;
 
+/* 1-wire search algorhythm */
 int OW_first( char * str ) ;
 int OW_next( char * str ) ;
 int OW_first_alarm( char * str ) ;
 int OW_next_alarm( char * str ) ;
 
+/* 1-wire lowlevel */
 void UT_delay(const int len) ;
 int LI_reset( void ) ;
 
-int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn ) ;
+/* High-level callback functions */
+int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
   int FS_read_return( char *buf, const size_t size, const off_t offset , const char * src, const size_t len ) ;
 
+/* Low-level functions
+    slowly being abstracted and separated from individual
+    interface type details
+*/
 int DS2480_baud( speed_t baud );
 int DS2480_detect( void ) ;
 int DS1410_detect( void ) ;
@@ -241,6 +251,24 @@ void BUS_unlock( void ) ;
 
 /* --------------------------------------------------------- */
 /* Filetypes -- directory entries for each 1-wire chip found */
+/*
+Filetype is the most elaborate of the internal structures, though
+simple in concept.
+
+Actually a little misnamed. Each filetype corresponds to a device
+property, and to a file in the file system (though there are Filetype
+entries for some directory elements too)
+
+Filetypes belong to a particular device. (i.e. each device has it's list
+of filetypes) and have a name and pointers to processing functions. Filetypes
+also have a data format (integer, ascii,...) and a data length, and an indication
+of whether the property is static, changes only on command, or is volatile.
+
+Some properties occur are arrays (pages of memory, logs of temperature
+values). The "aggregate" structure holds to allowable size, and the method
+of access. -- Aggregate properties are either accessed all at once, then
+split, or accessed individually. The choice depends on the device hardware.
+ */
 
 enum ag_index {ag_numbers, ag_letters, } ;
 enum ag_combined { ag_separate, ag_aggregate, } ;
@@ -261,7 +289,7 @@ struct aggregate {
      If properties, they can be integer, text, etc or special directory types.
      There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
 */
-enum ft_format { ft_directory, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno } ;
+enum ft_format { ft_directory, ft_subdir, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
 enum ft_change { ft_static, ft_stable, ft_volatile, ft_second, ft_statistic, } ;
 
@@ -280,7 +308,7 @@ struct filetype {
         int (*y) (int *, const struct parsedname *);
         int (*a) (char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (unsigned char *, const size_t, const off_t, const struct parsedname *);
-    } read ;
+    } read ; // read callback function
     union {
         void * v ;
         int (*i) (const int *, const struct parsedname *);
@@ -289,16 +317,28 @@ struct filetype {
         int (*y) (const int *, const struct parsedname *);
         int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
-    } write ;
-//    int (*write) (const char *, const size_t, const off_t, const struct parsedname *);
-    void * data ;
+    } write ; // write callback function
+    void * data ; // extra data pointer (used for separating similar but differently name functions)
 } ;
 #define NFT(ft) ((int)(sizeof(ft)/sizeof(struct filetype)))
 
+/* --------- end Filetype -------------------- */
+/* ------------------------------------------- */
+
 /* -------------------------------- */
 /* Devices -- types of 1-wire chips */
-enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
+/*
+device structure corresponds to 1-wire device
+also to virtual devices, like statistical groupings
+and interfaces (LINK, DS2408, ... )
 
+devices have a list or properties that appear as
+files under the device directory, they correspond
+to device features (memory, name, temperature) and
+bound the allowable files in a device directory
+*/
+
+enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
 struct device {
     char * code ;
     char * name ;
@@ -318,9 +358,32 @@ struct device {
 extern struct device * Devices[] ;
 extern size_t nDevices ;
 extern struct device NoDevice ;
+/* ---- end device --------------------- */
+/* ------------------------------------- */
+
 
 /* -------------------------------------------- */
 /* Parsedname -- path converted into components */
+/*
+Parsed name is the primary structure interpreting a
+owfs systrem call. It is the interpretation of the owfs
+file name, or the owhttpd URL. It contains everything
+but the operation requested. The operation (read, write
+or directory is in the extended URL or the actual callback
+function requested).
+*/
+/*
+Parsed name has several components:
+sn is the serial number of the device
+dev and ft are pointers to device and filetype
+  members corresponding to the element
+buspath and pathlength interpret the route through
+  DS2409 branch controllers
+filetype and extension correspond to property
+  (filetype) details
+subdir points to in-device groupings
+*/
+
 struct buspath {
     unsigned char sn[8] ;
     unsigned char branch ;
@@ -328,14 +391,18 @@ struct buspath {
 
 enum pn_type { pn_normal, pn_uncached, pn_alarm, } ;
 struct parsedname {
-    enum pn_type type ;
-    unsigned char sn[8] ;
-    struct device * dev ;
-    struct filetype * ft ;
+    enum pn_type type ; // global branch
+    unsigned char sn[8] ; // 64-bit serial number
+    struct device * dev ; // 1-wire device
+    struct filetype * ft ; // device property
     int    extension ; // numerical extension (for array values) or -1
-    int pathlength ;
-    struct buspath * bp ;
+    struct filetype * subdir ; // in-device grouping
+    int pathlength ; // DS2409 branching depth
+    struct buspath * bp ; // DS2409 branching route
 } ;
+
+/* ---- end Parsedname ----------------- */
+/* ------------------------------------- */
 
 extern speed_t speed;        /* terminal speed constant */
 

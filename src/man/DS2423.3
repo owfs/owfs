@@ -19,9 +19,9 @@ RAM and counters.
 [.]XXXXXXXXXXXX[XX][/[
 .B counters.[A|B|ALL]
 |
-.B page.[0-15|ALL]
+.B pages/page.[0-15|ALL]
 |
-.B pagecount.[0-15|ALL]
+.B pages/count.[0-15|ALL]
 |
 .B address
 |
@@ -48,13 +48,13 @@ and
 .br
 .I ALL
 returns the two values, separated by a comma. They are read sequentially.
-.SS page.0 ... page.15 page.ALL
+.SS pages/page.0 ... pages/page.15 pages/page.ALL
 .I read-write, binary
 .br
 Memory is split into 16 pages of 32 bytes each. Memory is RAM, contents are lost when power is lost.
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
-.SS pagecount.0 ... pagecount.15 pagecount.ALL
+.SS pages/count.0 ... pages/count.15 pages/count.ALL
 .I read-only, unsigned integer
 .br
 
@@ -74,9 +74,9 @@ and
 triggers.
 .br
 The value 0xFFFFFFFF is returned for
-.I pagecount.0
+.I pages/count.0
 through
-.I pagecount.11
+.I pages/count.11
 .br
 .I ALL
 is an aggregate of the counters, comma separated. Each page is accessed sequentially.

@@ -55,9 +55,10 @@ bWRITE_FUNCTION( FS_w_page ) ;
 struct aggregate A2436 = { 5, ag_numbers, ag_separate,} ;
 struct filetype DS2436[] = {
     F_STANDARD   ,
-    {"page"      ,    32,  &A2436, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"volts"     ,    12,  NULL  , ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}, NULL, } ,
-    {"temperature",    12,  NULL , ft_float , ft_volatile, {f:FS_temp}     , {v:NULL}, NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",    32,  &A2436, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"volts"     ,    12,  NULL  , ft_float , ft_volatile, {f:FS_volts}    , {v:NULL},      NULL, } ,
+    {"temperature",    12,  NULL , ft_float , ft_volatile, {f:FS_temp}     , {v:NULL},      NULL, } ,
 } ;
 DeviceEntry( 1B, DS2436 )
 
@@ -70,7 +71,7 @@ static int OW_temp( float * T , const struct parsedname * pn ) ;
 static int OW_volts( float * V , const struct parsedname * pn ) ;
 
 /* 2436 A/D */
-int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t len = size ;
     if ( (offset&0x1F)+size>32 ) len = 32-offset ;
     if ( OW_r_page( buf, offset+((pn->extension)<<5), len, pn) ) return -EINVAL ;
@@ -78,17 +79,17 @@ int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const 
     return len ;
 }
 
-int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     return OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ;
 }
 
-int FS_temp(float * T , const struct parsedname * pn) {
+static int FS_temp(float * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
     *T = Temperature( *T ) ;
     return 0 ;
 }
 
-int FS_volts(float * V , const struct parsedname * pn) {
+static int FS_volts(float * V , const struct parsedname * pn) {
     if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }

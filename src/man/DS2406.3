@@ -21,7 +21,7 @@ Dual Switch, Write-once Memory
 |
 .B memory
 |
-.B page.[0-3|ALL]
+.B pages/page.[0-3|ALL]
 |
 .B PIO.[A|B|ALL]
 |
@@ -54,7 +54,7 @@ pin (PIO.A). Returns 1 or 2.
 .I read-write, binary
 .br
 128 bytes of non-volatile, write-once data.
-.SS page.0 ... page.3 page.ALL
+.SS pages/page.0 ... pages/page.3 pages/page.ALL
 .I read-write, binary
 .br
 Memory organized as 4 pages or 32 bytes. Memory is write-once.
