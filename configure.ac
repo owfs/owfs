@@ -385,8 +385,8 @@ AC_CONFIG_FILES([
 	module/owftpd/src/man/Makefile
 	module/owperl/Makefile
 	module/owperl/src/Makefile
-	module/owperl/src/include/Makefile
 	module/owperl/src/c/Makefile
+	module/owperl/src/c/Makefile.PL
 	src/Makefile
 	src/include/Makefile
 	src/man/Makefile
