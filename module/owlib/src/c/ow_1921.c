@@ -179,7 +179,7 @@ static int VersionCmp( const void * pn , const void * version ) {
 /* DS1921 */
 static int OW_w_mem( const unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) ;
 static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_temperature( int * T , const int delay, const struct parsedname * pn ) ;
+static int OW_temperature( int * T , const unsigned int delay, const struct parsedname * pn ) ;
 static int OW_r_logtime(time_t *t, const struct parsedname * pn) ;
 static int OW_clearmemory( const struct parsedname * const pn) ;
 static int OW_2date(DATE * d, const unsigned char * data) ;
@@ -583,7 +583,7 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     return ret ;
 }
 
-static int OW_temperature( int * T , const int delay, const struct parsedname * pn ) {
+static int OW_temperature( int * T , const unsigned int delay, const struct parsedname * pn ) {
     unsigned char data = 0x44 ;
     int ret ;
 
@@ -596,9 +596,7 @@ static int OW_temperature( int * T , const int delay, const struct parsedname * 
     /* Thermochron is powered (internally by battery) -- no reason to hold bus */
     UT_delay(delay) ;
 
-    BUSLOCK(pn)
-        ret = BUS_select(pn) || OW_r_mem( &data, 1, 0x0211, pn) ; /* read temp register */
-    BUSUNLOCK(pn)
+    ret = OW_r_mem( &data, 1, 0x0211, pn) ; /* read temp register */
     *T = (int) data ;
     return ret ;
 }
