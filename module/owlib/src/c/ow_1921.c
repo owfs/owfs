@@ -184,6 +184,7 @@ static int OW_r_logtime(time_t *t, const struct parsedname * pn) ;
 static int OW_clearmemory( const struct parsedname * const pn) ;
 static int OW_2date(DATE * d, const unsigned char * data) ;
 static void OW_date(const DATE * d , unsigned char * data) ;
+static int OW_MIP( const struct parsedname * pn ) ;
 
 static int FS_bitread( int * y , const struct parsedname * pn ) {
     unsigned char d ;
@@ -287,6 +288,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     int temp ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
+    if ( OW_MIP(pn) ) return -EBUSY ; /* Mission in progress */
     if ( OW_temperature( &temp , v->delay, pn ) ) return -EINVAL ;
     T[0] = Temperature( (FLOAT)temp * v->resolution + v->histolow,pn ) ;
     return 0 ;
@@ -397,10 +399,16 @@ static int FS_w_mip(const int * y, const struct parsedname * pn) {
 
 /* mission is progress? */
 static int FS_r_mip(int * y , const struct parsedname * pn) {
-    unsigned char cr ;
-    if ( OW_r_mem(&cr, 1, 0x0214,pn) ) return -EINVAL ;
-    *y = ((cr&0x10)!=0) ;
-    return 0 ;
+    switch ( OW_MIP(pn) ) {
+    case 1:
+        y[0] = 1 ;
+        return 0 ;
+    case 0:
+        y[0] = 0 ;
+        return 0 ;
+    default:
+        return -EINVAL ;
+    }
 }
 
 /* read the interval between samples during a mission */
@@ -417,8 +425,7 @@ static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn
     unsigned char sr ;
 
     /* Busy if in mission */
-    if ( OW_r_mem(&sr,1,0x0214,pn) ) return -EINVAL ;
-    if ( sr&0x20 ) return -EBUSY ;
+    if ( OW_MIP(pn) ) return -EBUSY ; /* Mission in progress */
 
     if ( OW_r_mem(&data,1,0x020E,pn) ) return -EFAULT ;
     data |= 0x10 ; /* EM on */
@@ -533,7 +540,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     int ret ;
 
-    /* Copy to scratchpad */
+    /* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
     memcpy( &p[3], data , size ) ;
     if ( (offset+size)&0x1F ) { /* to end of page */
         BUSLOCK(pn)
@@ -547,6 +554,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
+    /* Note: location of data has now shifted down a byte for E/S register */
     p[0] = 0xAA ;
     BUSLOCK(pn)
         ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data( &p[1],3+size,pn) || memcmp(&p[4], data, size) ;
@@ -565,8 +573,9 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 }
 
 /* Pre-paged */
+/* read memory as "pages" with CRC16 check */
 static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
+    unsigned char p[3+32+2] = { 0xA5, offset&0xFF , (offset>>8)&0xFF, } ;
     int rest = 32 - (offset&0x1F) ;
     int ret ;
 
@@ -578,23 +587,20 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
 }
 
 static int OW_temperature( int * T , const int delay, const struct parsedname * pn ) {
-    unsigned char data ;
+    unsigned char data = 0x44 ;
     int ret ;
 
+    /* Mission not progress, force conversion */
     BUSLOCK(pn)
-        ret =OW_r_mem( &data, 1, 0x0214, pn) ; /* read status register */
+        ret = BUS_select(pn) || BUS_send_data( &data,1,pn ) ;
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
-
-    if ( (data & 0x20)==0 ) { /* Mission not progress, force conversion */
-        BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay,pn ) ;
-        BUSUNLOCK(pn)
-        if ( ret ) return 1 ;
-    }
+    
+    /* Thermochron is powered (internally by battery) -- no reason to hold bus */
+    UT_delay(delay) ;
 
     BUSLOCK(pn)
-        ret =OW_r_mem( &data, 1, 0x0211, pn) ; /* read temp register */
+        ret = BUS_select(pn) || OW_r_mem( &data, 1, 0x0211, pn) ; /* read temp register */
     BUSUNLOCK(pn)
     *T = (int) data ;
     return ret ;
@@ -695,3 +701,14 @@ static void OW_date(const DATE * d , unsigned char * data) {
 //printf("DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
 //printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
+
+/* many things are disallowed if mission in progress */
+/* returns 1 if MIP, 0 if not, <0 if error */
+static int OW_MIP( const struct parsedname * pn ) {
+    unsigned char data ;
+    int ret = OW_r_mem( &data, 1, 0x0214, pn) ; /* read status register */
+    
+    if ( ret ) return -EINVAL ;
+    return UT_getbit(&data,5) ;
+}
+
