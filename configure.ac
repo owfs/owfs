@@ -32,7 +32,7 @@ AC_PATH_PROG(RM,rm,$PATH)dnl
 
 # Check for additional programs
 
-#AC_PROG_CXX
+AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -126,8 +126,8 @@ AC_ARG_ENABLE(owperl,
 [  --enable-owperl       Enable owperl module (default false)],
 [
     AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWPERL=false
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWPERL=true
     fi
 ],
 [
