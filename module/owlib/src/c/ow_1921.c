@@ -75,6 +75,8 @@ fWRITE_FUNCTION( FS_w_alarmtemp ) ;
  dWRITE_FUNCTION( FS_w_date ) ;
  uREAD_FUNCTION( FS_r_counter ) ;
 uWRITE_FUNCTION( FS_w_counter ) ;
+ uREAD_FUNCTION( FS_r_delay ) ;
+uWRITE_FUNCTION( FS_w_delay ) ;
  bREAD_FUNCTION( FS_r_mem ) ;
  bWRITE_FUNCTION( FS_w_mem ) ;
  bREAD_FUNCTION( FS_r_page ) ;
@@ -140,9 +142,10 @@ struct filetype DS1921[] = {
     {"temperature"          , 12,   NULL,   ft_float, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
 
     {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[1], } ,
+    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , &BitReads[1], } ,
     {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
     {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
+    {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
     {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
     {"mission/date"         , 24,   NULL,    ft_date, ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
     {"mission/sampling"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[2], } ,
@@ -219,6 +222,8 @@ static void OW_date(const DATE * d , unsigned char * data) ;
 static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_FillMission( struct Mission * m , const struct parsedname * pn ) ;
 static int OW_alarmlog( int * t, int * c, const size_t offset, const struct parsedname * pn ) ;
+static int OW_stopmission( const struct parsedname * pn ) ;
+static int OW_startmission( unsigned int freq, const struct parsedname * pn ) ;
 
 static int FS_bitread( int * y , const struct parsedname * pn ) {
     unsigned char d ;
@@ -493,29 +498,13 @@ static int FS_r_run(int * y , const struct parsedname * pn) {
 
 /* start/stop mission */
 static int FS_w_mip(const int * y, const struct parsedname * pn) {
-    unsigned char cr ;
-    if ( OW_r_mem(&cr, 1, 0x0214,pn) ) return -EINVAL ;
     if ( y[0] ) { /* start a mission! */
-        int clockstate ;
-        if ( (cr&0x10) == 0x10 ) return 0 ; /* already in progress */
-        /* Make sure the clock is running */
-        if ( FS_r_run( &clockstate, pn ) ) return -EINVAL ;
-        if ( clockstate==0 ) {
-        clockstate = 1 ;
-            if ( FS_w_run( &clockstate, pn ) ) return -EINVAL ;
-        UT_delay(1000) ;
+        unsigned char data ;
+        if ( OW_r_mem(&data, 1, 0x020D,pn) ) return -EINVAL ;
+        return OW_startmission( (unsigned int) data, pn ) ;
+    } else {
+        return OW_stopmission(pn ) ;
     }
-    /* Clear memory */
-    if ( OW_clearmemory(pn ) ) return -EINVAL ;
-        if ( OW_r_mem(&cr, 1, 0x020E,pn) ) return -EINVAL ;
-    cr = (cr&0x3F) | 0x40 ;
-        if ( OW_w_mem( &cr, 1, 0x020E, pn) ) return -EINVAL ;
-    } else { /* turn off */
-        if ( (cr&0x10) == 0x00 ) return 0 ; /* already off */
-        cr ^= 0x10 ;
-        if ( OW_w_mem( &cr, 1, 0x0214, pn) ) return -EINVAL ;
-    }
-    return 0 ;
 }
 
 /* read the interval between samples during a mission */
@@ -528,17 +517,11 @@ static int FS_r_samplerate(unsigned int * u , const struct parsedname * pn) {
 
 /* write the interval between samples during a mission */
 static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
-
-    /* Busy if in mission */
-    if ( OW_MIP(pn) ) return -EBUSY ; /* Mission in progress */
-
-    if ( OW_r_mem(&data,1,0x020E,pn) ) return -EFAULT ;
-    data |= 0x10 ; /* EM on */
-    if ( OW_w_mem(&data,1,0x020E,pn) ) return -EFAULT ;
-    data = u[0] ;
-    if (OW_w_mem(&data,1,0x020D,pn) ) return -EFAULT ;
-    return 0 ;
+    if ( u[0] ) {
+        return OW_startmission( u[0], pn ) ;
+    } else {
+        return OW_stopmission( pn ) ;
+    }
 }
 
 /* read the alarm time field (not bit 7, though) */
@@ -654,6 +637,22 @@ static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
     return 0 ;
 }
 
+/* mission delay */
+static int FS_r_delay( unsigned int * u , const struct parsedname * pn) {
+    unsigned char data[2] ;
+    if ( OW_r_mem( data, 2, 0x0212, pn ) ) return -EINVAL ;
+    u[0] = (((unsigned int)data[1])<<8) | data[0] ;
+    return 0 ;
+}
+    
+/* mission delay */
+static int FS_w_delay( const unsigned int * u , const struct parsedname * pn) {
+    unsigned char data[] = { u[0]&0xFF, (u[0]>>8)&0xFF, } ;
+    if ( OW_MIP(pn) ) return -EBUSY ;
+    if ( OW_w_mem( data, 2, 0x0212, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+    
 /* temperature log */
 static int FS_r_logudate( unsigned int * u , const struct parsedname * pn) {
     struct Mission mission ;
@@ -716,32 +715,13 @@ static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
 }
 
 static int FS_easystart( const unsigned int * u, const struct parsedname * pn ) {
-    int y = 0 ;
-    DATE d = time(NULL) ;
-
     /* write 0x020E -- 0x0214 */
-    unsigned char data[] = { 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, } ;
+    unsigned char data[] = { 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, } ;
     
-    /* stop the mission */
-    if ( FS_w_mip( &y, pn )  ) return -EINVAL; /* stop */
-    
-    if ( u[0]==0 ) return 0 ; /* stay stopped */
-    
-    if ( u[0] > 255 ) return -ERANGE ; /* Bad interval */
-
-    /* start clock */
-    if ( FS_w_date(&d,pn ) ) return -EINVAL ; /* set the clock to current time */
-    UT_delay(1000) ; /* wait for the clock to count a second */
-
-    /* clear memory */
-    if ( OW_clearmemory(pn) ) return -EINVAL ;
-
-    /* no rollover, no delay, temp alarms on, alarms cleared */
+    /* Stop clock, no rollover, no delay, temp alarms on, alarms cleared */
     if ( OW_w_mem(data, 7, 0x020E, pn ) ) return -EINVAL ;
 
-    /* finally, set the sample interval (to start the mission) */
-    data[0] = u[0] & 0xFF ;
-    return OW_w_mem( data, 1, 0x020D, pn ) ;
+    return OW_startmission( u[0], pn ) ;
 }
 
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
@@ -766,7 +746,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Note: location of data has now shifted down a byte for E/S register */
     p[0] = 0xAA ;
     BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_readin_data( &p[3],1+rest+2,pn) || CRC16(p,4+rest+2) || memcmp(&p[4], data, size) ;
+        ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_readin_data( &p[3],1+rest+2,pn) || CRC16(p,4+rest+2) || memcmp(&p[4], data, size) ;
     BUSUNLOCK(pn)
             if ( ret ) return 1 ;
 
@@ -833,50 +813,52 @@ static int OW_clearmemory( const struct parsedname * pn) {
 
 /* translate 7 byte field to a Unix-style date (number) */
 static int OW_2date(DATE * d, const unsigned char * data) {
-    struct tm tm ;
+    struct tm t ;
 
     /* Prefill entries */
     d[0] = time(NULL) ;
-    if ( gmtime_r(d,&tm)==NULL ) return -EINVAL ;
+    if ( gmtime_r(d,&t)==NULL ) return -EINVAL ;
 
     /* Get date from chip */
-    tm.tm_sec  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
-    tm.tm_min  = (data[1]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
-    tm.tm_hour = (data[2]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
-    tm.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
-    tm.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
-    tm.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
+    t.tm_sec  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
+    t.tm_min  = (data[1]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
+    t.tm_hour = (data[2]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
+    t.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
+    t.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
+    t.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
 //printf("DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
 //printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 
     /* Pass through time_t again to validate */
-    if ( (d[0]=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
+    if ( (d[0]=mktime(&t)) == (time_t)-1 ) return -EINVAL ;
     return 0 ;
 }
 
 /* translate m byte field to a Unix-style date (number) */
 static int OW_2mdate(DATE * d, const unsigned char * data) {
-    struct tm tm ;
+    struct tm t ;
     int year ;
-
+//printf("MDATE data=%.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4]);
     /* Prefill entries */
     d[0] = time(NULL) ;
-    if ( gmtime_r(d,&tm)==NULL ) return -EINVAL ;
-    year = tm.tm_year ;
+    if ( gmtime_r(d,&t)==NULL ) return -EINVAL ;
+    year = t.tm_year ;
+//printf("MDATE year=%d\n",year);
 
     /* Get date from chip */
-    tm.tm_sec  = 0 ; /* BCD->dec */
-    tm.tm_min  = (data[0]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
-    tm.tm_hour = (data[1]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
-    tm.tm_mday = (data[2]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
-    tm.tm_mon  = (data[3]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
-    tm.tm_year = (data[4]&0x0F) + 10*(data[6]>>4) ; /* BCD->dec */
-
+    t.tm_sec  = 0 ; /* BCD->dec */
+    t.tm_min  = (data[0]&0x0F) +  10*(data[0]>>4) ; /* BCD->dec */
+    t.tm_hour = (data[1]&0x0F) + ampm[data[1]>>4] ; /* BCD->dec */
+    t.tm_mday = (data[2]&0x0F) +  10*(data[2]>>4) ; /* BCD->dec */
+    t.tm_mon  = (data[3]&0x0F) + 10*((data[3]&0x10)>>4) ; /* BCD->dec */
+    t.tm_year = (data[4]&0x0F) +  10*(data[4]>>4) ; /* BCD->dec */
+//printf("MDATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
     /* Adjust the century -- should be within 50 years of current */
-    while ( tm.tm_year+50 < year ) tm.tm_year += 100 ;
+    while ( t.tm_year+50 < year ) t.tm_year += 100 ;
+//printf("MDATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
     
     /* Pass through time_t again to validate */
-    if ( (d[0]=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
+    if ( (d[0]=mktime(&t)) == (time_t)-1 ) return -EINVAL ;
     return 0 ;
 }
 
@@ -916,6 +898,7 @@ static int OW_FillMission( struct Mission * mission , const struct parsedname * 
 
     /* Get date from chip */
     if ( OW_r_mem(data,16,0x020D,pn) ) return -EINVAL ;
+//printf("FILL data= %.2x %.2X %.2X %.2x  %.2x %.2X %.2X %.2x  %.2x %.2X %.2X %.2x  %.2x %.2X %.2X %.2x\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15]);
     mission->interval = 60 * (int)data[0] ;
     mission->rollover = UT_getbit(&data[1],3) ;
     mission->samples = (((((unsigned int)data[15])<<8)|data[14])<<8)|data[13] ;
@@ -934,5 +917,36 @@ static int OW_alarmlog( int * t, int * c, const size_t offset, const struct pars
         j += 4 ;
     }
     return 0 ;
+}
+
+static int OW_stopmission( const struct parsedname * pn ) {
+    unsigned char data = 0x00 ; /* dummy */
+    return OW_r_mem( &data, 1, 0x0210, pn ) ;
+}
+
+static int OW_startmission( unsigned int freq, const struct parsedname * pn ) {
+    unsigned char data ;
+   
+    /* stop the mission */
+    if ( OW_stopmission( pn )  ) return -EINVAL; /* stop */
+    
+    if ( freq==0 ) return 0 ; /* stay stopped */
+    
+    if ( freq > 255 ) return -ERANGE ; /* Bad interval */
+
+    if ( OW_r_mem( &data, 1, 0x020E, pn ) ) return -EINVAL ;
+    if ( (data&0x80) ) { /* clock stopped */
+        DATE d = time(NULL) ;
+        /* start clock */
+        if ( FS_w_date(&d,pn ) ) return -EINVAL ; /* set the clock to current time */
+        UT_delay(1000) ; /* wait for the clock to count a second */
+    }
+
+    /* clear memory */
+    if ( OW_clearmemory(pn) ) return -EINVAL ;
+
+    /* finally, set the sample interval (to start the mission) */
+    data = freq & 0xFF ;
+    return OW_w_mem( &data, 1, 0x020D, pn ) ;
 }
 
