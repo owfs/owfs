@@ -43,7 +43,7 @@ ow_wrap.c: ../ow.i Makefile.perl
 Makefile.perl: Makefile.PL
 	$(PERL) $< MAKEFILE=$@
 
-OW.pm: owperl_wrap.c
+OW.pm: ow_wrap.c
 	$(MAKE) -fMakefile.perl
 
 install-data-local:
