@@ -184,21 +184,15 @@ static int FS_stat(unsigned int * u , const struct parsedname * pn) {
 static int FS_time(FLOAT *u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct timeval * tv = (struct timeval *) pn->ft->data ;
-    long ul ; /* seconds and microseconds */
     FLOAT f;
     if (dindex<0) dindex = 0 ;
     if (tv == NULL) return -ENOENT ;
 
-//printf("TIME1 sec=%ld usec=%ld pn->extension=%d\n",tv->tv_sec,tv->tv_usec, pn->extension) ;
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
-        ul = tv[dindex].tv_usec ;
-        tv[dindex].tv_usec = ul % 1000000 ;
-        tv[dindex].tv_sec += ul / 1000000 ;
-//printf("TIME2 sec=%ld usec=%ld\n",tv->tv_sec,tv->tv_usec) ;
-	f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
+    f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
     STATUNLOCK
-//printf("TIME3 sec=%ld usec=%ld f=%7.3f\n",tv->tv_sec,tv->tv_usec, f) ;
-      u[0] = f;
+//printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
+    u[0] = f;
     return 0 ;
 }
 
