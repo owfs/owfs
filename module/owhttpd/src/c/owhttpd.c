@@ -67,12 +67,12 @@ static void Acceptor( int listenfd ) ;
 
 void handle_sighup(int unused) {
     (void) unused ;
-//    kill_threads();
+    exit(0);
 }
 
 void handle_sigterm(int unused) {
     (void) unused ;
-//    kill_threads();
+    exit(0);
 }
 
 void handle_sigchild(int unused) {
@@ -121,7 +121,6 @@ int main(int argc, char *argv[]) {
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, handle_sigchild);
-    signal(SIGHUP, SIG_IGN);
     signal(SIGHUP, handle_sighup);
     signal(SIGTERM, handle_sigterm);
 
