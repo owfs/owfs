@@ -55,8 +55,8 @@ uWRITE_FUNCTION( FS_w_pio ) ;
 uWRITE_FUNCTION( FS_w_latch ) ;
  uREAD_FUNCTION( FS_r_s_alarm ) ;
 uWRITE_FUNCTION( FS_w_s_alarm ) ;
- yREAD_FUNCTION( FS_r_reset ) ;
-yWRITE_FUNCTION( FS_w_reset ) ;
+ yREAD_FUNCTION( FS_r_por ) ;
+yWRITE_FUNCTION( FS_w_por ) ;
 
 /* ------- Structures ----------- */
 
@@ -69,7 +69,7 @@ struct filetype DS2408[] = {
     {"latch"     ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},  NULL, } ,
     {"strobe"    ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, NULL, } ,
     {"set_alarm" ,     9,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
-    {"reset"     ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_reset}  , {y:FS_w_reset},  NULL, } ,
+    {"por"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_por}    , {y:FS_w_por},    NULL, } ,
 } ;
 DeviceEntryExtended( 29, DS2408, DEV_alarm )
 
@@ -174,14 +174,14 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_reset(int * y , const struct parsedname * pn) {
+static int FS_r_por(int * y , const struct parsedname * pn) {
     unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],3) ;
     return 0 ;
 }
 
-static int FS_w_reset(const int * y, const struct parsedname * pn) {
+static int FS_w_por(const int * y, const struct parsedname * pn) {
     unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     UT_setbit( &data[5], 3, y[0] ) ;
