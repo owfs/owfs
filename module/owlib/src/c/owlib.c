@@ -143,9 +143,21 @@ void LibSetup( void ) {
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
-    if ( background && daemon(0,0) ) {
+    if ( background && daemon(1,0) ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
+    }
+    if (pid_file) {
+        FILE * pid = fopen(  pid_file, "w+" ) ;
+        if ( pid == NULL ) {
+            syslog(LOG_WARNING,"Cannot open PID file: %s Error=%s\n",pid_file,strerror(errno) ) ;
+            free( pid_file ) ;
+            pid_file = NULL ;
+	    return 1 ;
+        }
+//printf("opopts pid = %ld\n",(long unsigned int)getpid());
+        fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
+        fclose(pid) ;
     }
     return 0 ;
 }
@@ -193,7 +205,7 @@ int USBSetup( int useusb ) {
 
 /* All ow library closeup */
 void LibClose( void ) {
-    if ( pid_file || unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s.\n",pid_file) ;
+    if ( pid_file && unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno)) ;
     COM_close() ;
 #ifdef OW_USB
     DS9490_close() ;

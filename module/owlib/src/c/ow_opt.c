@@ -118,24 +118,11 @@ int owopt( const char c , const char * const arg ) {
         if ( arg==NULL || strlen(arg)==0 ) {
               fprintf(stderr,"No PID file specified\n") ;
               return 1 ;
-        }
-        pid_file = strdup( arg ) ;
-//printf("opopts pid_file for %s\n",arg);
-        if (pid_file) {
-            FILE * pid = fopen(  pid_file, "w+" ) ;
-            if ( pid == NULL ) {
-                perror("Error opening PID file") ;
-                fprintf( stderr , "PID file attempted: %s\n",arg ) ;
-                return 1 ;
-            }
-//printf("opopts pid = %ld\n",(long unsigned int)getpid());
-            fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
-            fclose(pid) ;
-            return 0 ;
-        } else {
+        } else if ( (pid_file=strdup(arg)) == NULL ) {
             fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
             return 1 ;
         }
+	return 0 ;
     case 0:
         return 0 ;
     default:
