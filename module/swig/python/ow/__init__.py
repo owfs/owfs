@@ -61,14 +61,6 @@ class exNotInitialized( exError ):
     """Exception raised when a controller has not been initialized."""
 
 
-class exPath( exErrorValue ):
-    """Exception raised when a specified path doesn't exist."""
-
-
-class exAttr( exErrorValue ):
-    """Exception raised when a sensor attribute doesn't exist."""
-
-
 #
 # Module variable used to insure that the _OW library has been
 # initialized before any calls into it are made.
@@ -129,6 +121,11 @@ def init( iface ):
 
     Will initialize the 1-wire interface to use the /dev/ttyS0 serial
     port.
+
+        ow.init( 'remote_system:3003' )
+
+    Will initialize the 1-wire interface to use the owserver running
+    on remote_system on port 3003.
     """
     #print 'ow.__init__'
     global initialized
@@ -190,7 +187,10 @@ class Sensor( object ):
 
         path - type
 
-        / - DS9490
+        Example:
+        
+            >>> print Sensor( '/' )
+            / - DS9490
         """
         #print 'Sensor.__str__'
         return "%s - %s" % ( self._usePath, self._type )
@@ -202,7 +202,10 @@ class Sensor( object ):
 
         Sensor( path )
 
-        Sensor( / )
+        Example:
+
+            >>> Sensor( '/' )
+            Sensor("/")
         """
         #print 'Sensor.__repr__'
         return 'Sensor("%s")' % self._usePath
@@ -214,8 +217,13 @@ class Sensor( object ):
         equal. This is done by comparing their _path attributes so
         that cached and uncached Sensors compare equal.
 
-        >>> Sensor( '/' ) == Sensor( '/uncached' )
-        True
+        Examples:
+        
+            >>> Sensor( '/' ) == Sensor( '/1F.440701000000' )
+            False
+
+            >>> Sensor( '/' ) == Sensor( '/uncached' )
+            True
         """
         return self._path == other._path
 
@@ -327,6 +335,13 @@ class Sensor( object ):
     def entryList( self ):
         """
         List of the sensor's attributes.
+
+        Example:
+
+            >>> Sensor("/10.B7B64D000800").entryList( )
+            ['address', 'crc8', 'die', 'family', 'id', 'power',
+            'present', 'temperature', 'temphigh', 'templow',
+            'trim', 'trimblanket', 'trimvalid', 'type']
         """
         #print 'Sensor.entryList'
         return [ e for e in self.entries( ) ]
@@ -381,6 +396,11 @@ class Sensor( object ):
         (such as a DS2409) the list of directories found in the names
         list parameter will be searched and any sensors found will be
         yielded. The names parameter defaults to [ 'main', 'aux' ].
+
+        Example:
+
+            >>> Sensor("/1F.440701000000").sensorList( )
+            [Sensor("/1F.440701000000/main/29.400900000000")]
         """
         #print 'Sensor.sensorList'
         return [ s for s in self.sensors( ) ]
