@@ -15,6 +15,12 @@ LibSetup() ;
 #include "owfs_config.h"
 #include "ow.h"
 
+
+char *version( ) {
+    return VERSION;
+}
+
+
 int init( const char * dev ) {
 //    LibSetup() ;
     background = 0 ;
@@ -118,6 +124,7 @@ void finish( void ) {
 %typemap(newfree) char * { if ($1) free($1) ; }
 %newobject get ;
 
+extern char *version( );
 extern int init( const char * dev ) ;
 extern char * get( const char * path ) ;
 extern int put( const char * path, const char * value ) ;

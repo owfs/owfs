@@ -1,5 +1,9 @@
 # $Id$
 
+bin_PROGRAMS = owpython
+
+owpython_SOURCES = ow_wrap.c
+
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
 endif
@@ -12,11 +16,7 @@ if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
 
-AM_CFLAGS = -I../../owlib/src/include \
-         -I../../../src/include \
-         -I/usr/local/include/fuse \
-         -I/usr/local/include \
-         -L../../owlib/src/c \
+AM_CFLAGS = -I../include \
          -fexceptions \
          -Wall \
          -W \
@@ -33,12 +33,25 @@ AM_CFLAGS = -I../../owlib/src/include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
-AM_LDFLAGS = -low
+#noinst_DATA = .made_mod
+
+#.made_mod: owperl_wrap.c Makefile.perl
+#	$(MAKE) -fMakefile.perl
+#	touch $@
 
 ow_wrap.c: ../ow.i
 	$(SWIG) -python -o $@ ../ow.i
 
+owpython: ow_wrap.c setup.py
+	$(PYTHON) setup.py build
+
+install-data-local:
+	$(PYTHON) setup.py install
+
+CLEANFILES = *~ *.o
+
+clean-local:
+	@RM@ -rf build OW.py ow_wrap.c
 
 clean-generic:
-
 	@RM@ -f *~ .*~

@@ -27,10 +27,10 @@ http://owfs.sourceforge.net.
 """
 
 
-__version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
-
-
 import _OW
+
+
+__version__ = _OW.version( ) + '-%s' % '$Id$'.split( )[ 2 ]
 
 
 #
@@ -170,6 +170,14 @@ class Sensor( object ):
         attr = _OW.get( '%s/%s' % ( self._path, name.replace( '_', self._divider ) ) )
         if not attr:
             raise exAttr, ( ( self._path, name ), )
+
+##         sattr = attr.strip( )
+##         if sattr.isdigit( ):
+##             attr = int( sattr )
+##         elif sattr.replace( '.', '' ).isdigit( ):
+##             if sattr.count( '.' ) == 1:
+##                 attr = float( sattr )
+
         return attr
 
 
