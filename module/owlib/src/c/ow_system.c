@@ -53,6 +53,8 @@ $Id$
  uREAD_FUNCTION( FS_uint ) ;
  uREAD_FUNCTION( FS_version ) ;
  aREAD_FUNCTION( FS_detail ) ;
+ yREAD_FUNCTION( FS_r_overdrive ) ;
+yWRITE_FUNCTION( FS_w_overdrive ) ;
 
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
@@ -60,6 +62,7 @@ struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
     {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, NULL , } ,
     {"address"    ,      512, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
+    {"overdrive"  ,        1, &Asystem, ft_yesno,   ft_static, {y:FS_r_overdrive}   , {y:FS_w_overdrive}, NULL , } ,
     {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
     {"detail"     ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_detail} , {v:NULL}, NULL , } ,
 } ;
@@ -80,6 +83,18 @@ struct filetype sys_structure[] = {
 struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_structure), sys_structure } ;
 
 /* ------- Functions ------------ */
+
+
+/* Just some tests to support overdrive */
+static int FS_r_overdrive(int * y , const struct parsedname * pn) {
+    *y = pn->in->use_overdrive_speed ;
+    return 0 ;
+}
+
+static int FS_w_overdrive(const int * y , const struct parsedname * pn) {
+    pn->in->use_overdrive_speed = (*y ? 1 : 0) ;
+    return 0 ;
+}
 
 /* special check, -remote file length won't match local sizes */
 static int FS_name(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {

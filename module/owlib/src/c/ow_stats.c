@@ -113,7 +113,6 @@ unsigned int DS9490_sendback_data_errors = 0 ;
 unsigned int DS9490_next_both_errors = 0 ;
 unsigned int DS9490_PowerByte_errors = 0 ;
 unsigned int DS9490_level_errors = 0 ;
-unsigned int DS9490_select_low_errors = 0 ;
 
 // ow_ds9097.c
 unsigned int DS9097_detect_errors = 0 ;
@@ -312,7 +311,6 @@ FS_stat_ROW(DS9490_sendback_data_errors),
 FS_stat_ROW(DS9490_next_both_errors),
 FS_stat_ROW(DS9490_PowerByte_errors),
 FS_stat_ROW(DS9490_level_errors),
-FS_stat_ROW(DS9490_select_low_errors),
 
 // ow_ds9097.c
 FS_stat_ROW(DS9097_detect_errors),

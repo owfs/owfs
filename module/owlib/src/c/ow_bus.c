@@ -200,6 +200,16 @@ int BUS_select_low(const struct parsedname * const pn) {
     unsigned char resp[3] ;
 
 //printf("SELECT\n");
+
+    if(pn->in->use_overdrive_speed) {
+      if((ret=DS9490_testoverdrive(pn)) < 0) {
+	return ret ;
+      } else {
+	//printf("use overdrive speed\n");
+	sent[0] = 0x69 ;
+      }
+    }
+
     // reset the 1-wire
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
@@ -213,6 +223,7 @@ int BUS_select_low(const struct parsedname * const pn) {
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
+       /* Perhaps support overdrive here ? */
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
           STATLOCK
 	  BUS_select_low_errors++;
@@ -237,11 +248,22 @@ int BUS_select_low(const struct parsedname * const pn) {
     if ( pn->dev ) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
-        ret = BUS_send_data( sent,9,pn ) ;
-	if(ret) {
-	  STATLOCK
+        if ( (ret=BUS_send_data(sent,1,pn)) ) {
+          STATLOCK
 	  BUS_select_low_errors++;
 	  STATUNLOCK
+	  return ret ;
+	}
+	if(sent[0] == 0x69) {
+	  if((ret=DS9490_speed(MODE_OVERDRIVE, pn))< 0) {
+	    return ret ;
+	  }
+	}
+        if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
+          STATLOCK
+	  BUS_select_low_errors++;
+	  STATUNLOCK
+	  return ret ;
 	}
 	return ret ;
     }

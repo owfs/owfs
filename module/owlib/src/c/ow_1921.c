@@ -94,7 +94,7 @@ yWRITE_FUNCTION( FS_w_mip ) ;
 
 /* ------- Structures ----------- */
 struct BitRead { size_t location ; int bit ; } ;
-struct BitRead BitReads[] =
+static struct BitRead BitReads[] =
 {
     { 0x0214, 7, } , //temperature in progress
     { 0x0214, 5, } , // Mission in progress

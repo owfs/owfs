@@ -368,6 +368,7 @@ struct connection_in {
     struct interface_routines iroutines ;
     enum adapter_type Adapter ;
     char * adapter_name ;
+    int use_overdrive_speed ;
     /* Globals for DS2480B state */
     speed_t speed;        /* terminal speed constant */
     int UMode ;
@@ -756,7 +757,6 @@ extern unsigned int DS9490_sendback_data_errors ;
 extern unsigned int DS9490_next_both_errors ;
 extern unsigned int DS9490_PowerByte_errors ;
 extern unsigned int DS9490_level_errors ;
-extern unsigned int DS9490_select_low_errors ;
 
 // ow_ds9097.c
 extern unsigned int DS9097_detect_errors ;
