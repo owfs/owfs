@@ -378,6 +378,21 @@ char * FS_dirname_type( const enum pn_type type ) {
     }
 }
 
+int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) {
+    int s ;
+    if ( pn->ft == NULL ) return -ENOENT ;
+    if ( pn->ft->ag == NULL ) {
+        s = snprintf( name , size, "%s",pn->ft->name) ;
+    } else if ( pn->extension == -1 ) {
+        s = snprintf( name , size, "%s.ALL",pn->ft->name) ;
+    } else if ( pn->ft->ag->letters == ag_letters ) {
+        s = snprintf( name , size, "%s.%c",pn->ft->name,pn->extension+'A') ;
+    } else {
+        s = snprintf( name , size, "%s.%-d",pn->ft->name,pn->extension) ;
+    }
+    return (s<0) ? -ENOBUFS : 0 ;
+}
+
 /* Return the last part of the file name specified by pn */
 /* Prints this directory element (not the whole path) */
 /* Suggest that size = OW_FULLNAME_MAX */
