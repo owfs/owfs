@@ -157,21 +157,22 @@ static int my_daemon(int nochdir, int noclose) {
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
     struct connection_in * in = indevice ;
+    struct stat s ;
+    int ret = 0 ;
+
     if ( indevice==NULL ) {
         fprintf(stderr, "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname);
         BadAdapter_detect(NewIn()) ;
         return 1;
     }
     do {
-        int ret = 0 ;
-        switch( in->busmode ) {
+        switch( get_busmode(in) ) {
         case bus_remote:
             ret = Server_detect(in) ;
             break ;
         case bus_serial:
         {
             /** Actually COM and Parallel */
-            struct stat s ;
             if ( (ret=stat( in->name, &s )) ) {
                 syslog( LOG_ERR, "Cannot stat port: %s error=%s\n",in->name,strerror(ret)) ;
             } else if ( ! S_ISCHR(s.st_mode) ) {
@@ -215,22 +216,10 @@ int LibStart( void ) {
 	  BadAdapter_detect(in) ;
 	}
 
-	//printf("Adapter(%d) = %s\n",in->index,in->adapter_name);
     } while ( (in=in->next) ) ;
     Asystem.elements = indevices ;
 
-    /* daemon() should work for embedded systems with MMU, but
-     * I noticed that the WRT54G router somethimes had problem with this.
-     * If owfs was started in background AND owfs was statically linked,
-     *   it seemed to work.
-     * If owfs was started in background AND owfs was dynamically linked,
-     *   daemon() hanged in systemcall dup2() for some reason???
-     * I tried to replace uClibc's daemon() with the one above. It worked
-     * in both cases sometimes, but not always... ?!?
-     *
-     * The best would be to use a statically linked owfs-binary, and then it
-     * works in both cases.
-     */
+
     //if(background) printf("Call daemon\n");
     if ( background &&
 #if defined(__UCLIBC__)

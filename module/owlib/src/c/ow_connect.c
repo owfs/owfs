@@ -18,7 +18,6 @@ $Id$
 /* Globals */
 struct connection_out * outdevice = NULL ;
 int outdevices = 0 ;
-
 struct connection_in * indevice = NULL ;
 int indevices = 0 ;
 
@@ -31,8 +30,23 @@ struct connection_in *find_connection_in(int iindex) {
   return c;
 }
 
+enum bus_mode get_busmode(struct connection_in *c) {
+  if(!c) return bus_unknown;
+  return c->busmode;
+}
+
+enum bus_mode get_busmode_inx(int iindex) {
+  struct connection_in *c = indevice;
+  while(c) {
+    if(c->index == iindex) break;
+    c = c->next;
+  }
+  if(!c) return bus_unknown;
+  return c->busmode;
+}
+
 struct connection_in * NewIn( void ) {
-    int len = sizeof(struct connection_in) ;
+    size_t len = sizeof(struct connection_in) ;
     struct connection_in * last = NULL ;
     struct connection_in * now = indevice ;
     while ( now ) {
@@ -40,7 +54,6 @@ struct connection_in * NewIn( void ) {
         now = now->next ;
     }
     now = (struct connection_in *)malloc( len ) ;
-//printf("malloc len=%d %p\n", len, now);
     if (now) {
         memset(now,0,len) ;
         if ( indevice ) {
@@ -48,7 +61,6 @@ struct connection_in * NewIn( void ) {
             now->index = last->index+1 ;
         } else {
             indevice = now ;
-//printf("indevice = %p\n", indevice);
             now->index = 0 ;
         }
         ++ indevices ;
@@ -63,7 +75,7 @@ struct connection_in * NewIn( void ) {
 }
 
 struct connection_out * NewOut( void ) {
-    int len = sizeof(struct connection_out) ;
+    size_t len = sizeof(struct connection_out) ;
     struct connection_out * last = NULL ;
     struct connection_out * now = outdevice ;
     while ( now ) {
@@ -71,14 +83,12 @@ struct connection_out * NewOut( void ) {
         now = now->next ;
     }
     now = (struct connection_out *)malloc( len ) ;
-//printf("malloc len=%d %p\n", len, now);
     if (now) {
         memset(now,0,len) ;
         if ( outdevice ) {
             last->next = now ;
         } else {
             outdevice = now ;
-//printf("outdevice = %p\n", outdevice);
         }
         ++ outdevices ;
 #ifdef OW_MT
@@ -100,7 +110,7 @@ void FreeIn( void ) {
 #ifdef OW_MT
         pthread_mutex_destroy(&(now->bus_mutex)) ;
 #endif /* OW_MT */
-        switch (now->busmode) {
+        switch (get_busmode(now)) {
         case bus_remote:
             if ( now->host ) {
                 free(now->host) ;
@@ -124,7 +134,7 @@ void FreeIn( void ) {
             break ;
 #endif /* OW_USB */
         default:
-	    printf("FreeIn: unknown busmode %d on index=%d\n", now->busmode, now->index);
+	    printf("FreeIn: unknown busmode %d on index=%d\n", get_busmode(now), now->index);
             break ;
         }
         if ( now->name) {

@@ -53,7 +53,7 @@ int ServerAddr(  struct connection_out * out ) {
         out->service = strdup(out->name) ;
     }
 
-    bzero( &hint, sizeof(struct addrinfo) ) ;
+    memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_flags = AI_PASSIVE ;
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
@@ -79,7 +79,6 @@ int ServerListen( struct connection_out * out ) {
 
     if ( out->ai_ok == NULL ) out->ai_ok = out->ai ;
     do {
-      //printf("ServerListen: out->ai_ok = %p\n", out->ai_ok);
         fd = socket(
             out->ai_ok->ai_family,
             out->ai_ok->ai_socktype,
@@ -97,10 +96,10 @@ int ServerListen( struct connection_out * out ) {
                 return fd ;
             }
         } else {
-            fprintf(stderr, "ServerListen: socket() errno=%d [%s]", errno, strerror(errno));
+            fprintf(stderr, "ServerListen: socket() [%s]", strerror(errno));
         }
     } while ( (out->ai_ok=out->ai_ok->ai_next) ) ;
-    fprintf(stderr,"ServerListen: Socket problem errno=%d\n",errno) ;
+    fprintf(stderr,"ServerListen: Socket problem [%s]\n", strerror(errno)) ;
     return -1 ;
 }
 
@@ -109,7 +108,6 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
     char * p ;
     int ret ;
 
-//printf("ClientAddr port=%s\n",sname);
     if ( sname == NULL ) return -1 ;
     if ( (p=strrchr(sname,':')) ) { /* : exists */
         *p = '\0' ; /* Separate tokens in the string */
@@ -119,15 +117,14 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
         in->host = NULL ;
         in->service = strdup(sname) ;
     }
-
-    bzero( &hint, sizeof(struct addrinfo) ) ;
+    
+    memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
 //printf("ClientAddr: [%s] [%s]\n", in->host, in->service);
 
     if ( (ret=getaddrinfo( in->host, in->service, &hint, &in->ai )) ) {
-//printf("GetAddrInfo ret=%d\n",ret);
         fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
     }
@@ -156,9 +153,10 @@ int ClientConnect( struct connection_in * in ) {
             close( fd ) ;
         }
     } while ( (in->ai_ok=in->ai_ok->ai_next) ) ;
-    fprintf(stderr,"ClientConnect: Socket problem errno=%d\n",errno) ;
+    fprintf(stderr,"ClientConnect: Socket problem [%s]\n", strerror(errno)) ;
     return -1 ;
 }
+
 
 /*
  Heap big magic!
@@ -181,6 +179,8 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 #ifndef __UCLIBC__
     pthread_attr_t attr ;
 #endif
+#ifdef OW_MT
+
     /* embedded function */
     void ToListen( struct connection_out * o ) {
         if ( ServerAddr( o ) || (ServerListen( o )<0) ) {
@@ -188,17 +188,18 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             Exit(1);
         }
     }
+
     /* embedded function */
-    void RunAccepted( int rafd ) {
+    void RunAccepted( void (*HandlerRoutine)(int fd), int rafd ) {
         if ( rafd>=0 ) {
             HandlerRoutine( rafd ) ;
             close( rafd ) ;
         }
     }
-#ifdef OW_MT
+
     /* Embedded function */
-    void * ConnectionThread( void * v ) {
-        struct connection_out * out2 = (struct connection_out *)v ;
+    void * ConnectionThread( void * v3 ) {
+        struct connection_out * out2 = (struct connection_out *)v3 ;
         pthread_t thread2 ;
         /* Doubly Embedded function */
         void * AcceptThread( void * v2 ) {
@@ -209,38 +210,37 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
             ACCEPTUNLOCK(o2)
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
-            RunAccepted( acceptfd ) ;
+            RunAccepted( HandlerRoutine, acceptfd ) ;
  #ifndef VALGRIND
             pthread_exit((void *)0);
- #else /* VALGRIND */
-            return NULL;
  #endif /* VALGRIND */
+            return NULL;
         }
+
         ToListen( out2 ) ;
         for(;;) {
  #ifdef VALGRIND
-            void *v;
  #endif /* VALGRIND */
             ACCEPTLOCK(out2)
  #ifdef __UCLIBC__
-            if ( pthread_create( &thread2, NULL, AcceptThread, (void *)out2 ) ) Exit(1) ;
+            if ( pthread_create( &thread2, NULL, AcceptThread, out2 ) ) Exit(1) ;
   #ifndef VALGRIND
             pthread_detach(thread2);
   #endif /* VALGRIND */
  #else /* __UCLIBC__ */
-            if ( pthread_create( &thread2, &attr, AcceptThread, (void *)out2 ) ) Exit(1) ;
+            if ( pthread_create( &thread2, &attr, AcceptThread, out2 ) ) Exit(1) ;
  #endif /* __UCLIBC__ */
  #ifdef VALGRIND
-            pthread_join(thread2, &v);
+            pthread_join(thread2, NULL);
  #endif /* VALGRIND */
         }
-        if(out == out_last) {
-            /* last connection_out wasn't a separate thread */
-            return NULL;
-        } else {
+        if(out != out_last) {
             pthread_exit((void *)0);
         }
+	/* last connection_out wasn't a separate thread */
+	return NULL;
     }
+
 
  #ifndef __UCLIBC__
     pthread_attr_init(&attr) ;
@@ -266,6 +266,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
-    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
+    for ( ;; ) RunAccepted( HandlerRoutine, accept(outdevice->fd,NULL,NULL) ) ;
 #endif /* OW_MT */
 }

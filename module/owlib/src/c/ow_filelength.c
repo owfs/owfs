@@ -17,29 +17,17 @@ $Id$
 /* Length of file based on filetype alone */
 size_t FileLength( const struct parsedname * const pn ) {
     /* structure ? */
-    if ( pn-> type == pn_structure ) return 30 ; /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
+    if ( pn->type == pn_structure ) return 30 ; /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
     /* directory ? */
+    if ( pn->ft == NULL ) {
+      if ( pn->subdir ) {
+	return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
+      }
+      return 8 ;
+    }
     if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
     /* bitfield ? */
     if ( pn->ft->format==ft_bitfield &&  pn->extension==-2 ) return 12 ; /* bitfield */
-    /* remote ? */
-    if ( pn->in->busmode==bus_remote && pn->ft->suglen<0 ) { /* remote, special case */
-        int ret ;
-	printf("FileLength pn->path=%s shouldn't be here!\n", pn->path);
-        if ( pn->badcopy ) { /* need correct path to send to server */
-            int len = strlen(pn->path) ;
-            char fullpath[len+OW_FULLNAME_MAX+2] ;
-            strcpy(fullpath,pn->path) ;
-            fullpath[len] = '/' ;
-            if ( FS_FileName(&fullpath[len+1],OW_FULLNAME_MAX,pn) ) return 0 ;
-            ret = ServerSize(fullpath,pn) ;
-	    //printf("FileLength3 pn->path=%s fullpath=%s ret=%d\n", pn->path, fullpath, ret);
-        } else {
-            ret = ServerSize(pn->path,pn) ;
-	    //printf("FileLength5 pn->path=%s ret=%d\n", pn->path, ret);
-        }
-        return ret<0 ? 0 : ret ;
-    }
     /* local or simple remote, test for special case */
     switch(pn->ft->suglen) {
     case -fl_type:
@@ -59,7 +47,7 @@ size_t FullFileLength( const struct parsedname * const pn ) {
     if ( pn->type == pn_structure ) return 30 ;
     /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
     //printf("FullFileLength: pid=%ld %s\n", pthread_self(), pn->path);
-    if ( pn->ft->ag ) { /* aggregate files */
+    if ( pn->ft && pn->ft->ag ) { /* aggregate files */
         switch (pn->extension) {
         case -1: /* ALL */
             if((pn->ft->format==ft_binary) || (pn->ft->format == ft_ascii)) {

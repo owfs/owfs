@@ -41,20 +41,28 @@ int FS_size_postparse( const struct parsedname * const pn ) {
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-    pn2.badcopy = 1 ;
 
     //printf("FS_size_postparse pn->path=%s\n",pn->path);
 
+    /* Those are stolen from FullFileLength just to avoid ServerSize()
+     * beeing called */
+    if (( pn2.type == pn_structure ) ||
+	( pn2.ft && ((pn2.ft->format==ft_directory ) ||
+		     ( pn2.ft->format==ft_subdir ) ||
+		     ( pn2.ft->format==ft_bitfield &&  pn2.extension==-2 )))) {
+      return FullFileLength(pn) ;
+    }
+
     if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-      if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote) {
+      /* we can not call FS_size_seek for those directories, since
+       * they should ALWAYS be read locally */
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
 	  ret = ServerSize(pn2.path, &pn2) ;
       } else {
 	  ret = FullFileLength( &pn2 ) ;
       }
-    }
-    else {
-      ret = FS_size_seek( &pn2 ) ;
-    }
+    } else
+      ret = FullFileLength( &pn2 ) ;
     return ret ;
 }
 
@@ -75,10 +83,10 @@ int FS_size( const char *path ) {
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
         r = -EISDIR ;
     } else {
-      //printf("FS_size: pn->state=pn_bus=%c pn->bus_nr=%d\n", pn.state&pn_bus?'Y':'N', pn.bus_nr);
-      //printf("FS_size: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
-      //printf("FS_size: pid=%ld call postparse pn->type=%d\n", pthread_self(), pn.type);
-      r = FS_size_postparse( &pn ) ;
+        //printf("FS_size: pn->state=pn_bus=%c pn->bus_nr=%d\n", pn.state&pn_bus?'Y':'N', pn.bus_nr);
+        //printf("FS_size: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
+        //printf("FS_size: pid=%ld call postparse pn->type=%d\n", pthread_self(), pn.type);
+        r = FS_size_postparse( &pn ) ;
     }
     FS_ParsedName_destroy(&pn) ;
     return r ;
@@ -92,29 +100,31 @@ int FS_size_remote( const struct parsedname * const pn ) {
     
     if ( pn == NULL || pn->in==NULL ) return -ENODEV ;
     
-    //printf("FS_size_remote pid=%ld path=%s\n",pthread_self(), pn->path); UT_delay(100);
+    //printf("FS_size_remote pid=%ld path=%s\n",pthread_self(), pn->path);
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-    pn2.badcopy = 1 ;
 
-    if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-      if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote) {
-	  ret = ServerSize(pn2.path, &pn2) ;
-      } else {
-	  ret = FullFileLength( &pn2 ) ;
-      }
-    } else {
-      if ( pn2.state & pn_bus ) {
-	if(pn2.in->busmode == bus_remote) {
-	  ret = ServerSize(pn2.path, &pn2) ;
-	} else {
-	  ret = FullFileLength( &pn2 ) ;
-	}
-      } else {
-	ret = FS_size_seek( &pn2 ) ;
-      }
+    /* Those are stolen from FullFileLength just to avoid ServerSize()
+     * beeing called */
+    if (( pn2.type == pn_structure ) ||
+	( pn2.ft && ((pn2.ft->format==ft_directory ) ||
+		     ( pn2.ft->format==ft_subdir ) ||
+		     ( pn2.ft->format==ft_bitfield &&  pn2.extension==-2 )))) {
+      return FullFileLength(pn) ;
     }
+
+    if ( pn2.type != pn_real ) {  /* stat, sys or set dir */
+      /* we can not call FS_size_seek for those directories, since
+       * they should ALWAYS be read locally */
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+	  ret = ServerSize(pn2.path, &pn2) ;
+      } else {
+	  ret = FullFileLength( &pn2 ) ;
+      }
+    } else
+      ret = FullFileLength( &pn2 ) ;
+
     //printf("FS_size_remote ret=%d\n", ret);
     return ret ;
 }
@@ -142,20 +152,18 @@ static int FS_size_seek( const struct parsedname * const pn ) {
         pnnext.in = pn2->in->next ;
         eret = FS_size_seek( &pnnext ) ;
         pthread_exit((void *)eret);
+	return (void *)eret;
     }
     if(!(pn->state & pn_bus)) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Size2, (void *)pn ) ;
-    } else {
-      //printf("size_seek: Only dir bus %d\n", pn->bus_nr);
     }
 #endif /* OW_MT */
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-    pncopy.badcopy = 1 ;
 
     /* is this a remote bus? */
-    if ( pncopy.in->busmode == bus_remote ) {
+    if ( get_busmode(pncopy.in) == bus_remote ) {
         ret = ServerSize( pncopy.path, &pncopy ) ;
     } else { /* local bus */
       ret = FullFileLength( &pncopy ) ;
@@ -164,7 +172,7 @@ static int FS_size_seek( const struct parsedname * const pn ) {
 #ifdef OW_MT
     /* See if next bus was also queried */
     if ( threadbad == 0 ) { /* was a thread created? */
-        //printf("call pthread_join %ld\n", thread); UT_delay(1000);
+        //printf("call pthread_join %ld\n", thread);
         if ( pthread_join( thread, &v ) ) {
 //printf("pthread_join returned error\n");
             return ret ; /* wait for it (or return only this result) */

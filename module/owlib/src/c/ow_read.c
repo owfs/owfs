@@ -98,7 +98,7 @@ int FS_read_3times(char *buf, const size_t size, const off_t offset, const struc
 /* After parsing, choose special read based on path type */
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
-    //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d\n", pthread_self(), pn->in->busmode, pn->type); UT_delay(100);
+    //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d\n", pthread_self(), get_busmode(pn->in), pn->type);
 
     STATLOCK
     AVERAGE_IN(&read_avg)
@@ -116,17 +116,27 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     case pn_statistics:
         //printf("FS_read_postparse: pid=%ld system/settings/statistics\n", pthread_self());
         if ( pn->state & pn_bus ) {
-	  //printf("FS_read_postparse: bus is set, call read_seek\n");
+	    /* this will either call ServerDir or FS_real_read */
 	    r = FS_read_seek(buf, size, offset, pn) ;
         } else {
-	  //printf("FS_read_postparse: bus is NOT set, call real_read\n");
+	    /* Read from local memory */
             r = FS_real_read( buf, size, offset, pn ) ;
 	}
         break;
     default:
 //printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
-        /* real data -- go through device chain */
-        r = FS_read_seek(buf, size, offset, pn) ;
+
+#if 0
+      /* handle DeviceSimultaneous in some way */
+        if(pn->dev == DeviceSimultaneous) {
+	    printf("FS_read_postparse: DeviceSimultaneous %s\n", pn->path);
+            r = FS_real_read(buf, size, offset, pn) ;
+	} else
+#endif
+	{
+	    /* real data -- go through device chain */
+	    r = FS_read_seek(buf, size, offset, pn) ;
+	}
     }
     STATLOCK
         if ( r>=0 ) {
@@ -164,22 +174,21 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         pnnext.in = pn2->in->next ;
         ret = FS_read_seek(buf2,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
+	return (void *)ret;
     }
-    //printf("READSEEK pid=%ld path=%s index=%d\n",pthread_self(), pn->path,pn->in->index); UT_delay(100);
+    //printf("READSEEK pid=%ld path=%s index=%d\n",pthread_self(), pn->path,pn->in->index);
     if( !(buf2 = malloc(size)) ) {
-      //printf("FS_read_seek: error malloc %ld bytes\n", size);
       return -ENOMEM;
     }
     if(!(pn->state & pn_bus)) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, (void *)pn ) ;
-    } else {
-      //printf("ow_read_seek: don't scan all busses\n");
     }
 #endif /* OW_MT */
-    if ( pn->in->busmode == bus_remote ) {
+
+    if ( (get_busmode(pn->in) == bus_remote) ) {
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
-//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
+	//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
         STATLOCK
@@ -229,8 +238,8 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         }
 //printf("READ from 1st adapter\n") ;
     }
-#endif /* OW_MT */
     free(buf2);
+#endif /* OW_MT */
     return r ;
 }
 

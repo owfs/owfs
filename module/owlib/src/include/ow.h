@@ -307,8 +307,100 @@ enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft
 
 /* Predeclare parsedname */
 struct parsedname ;
-struct connection_in ;
-struct connection_out ;
+
+/* -------------------------------------------- */
+/* Interface-specific routines ---------------- */
+struct interface_routines {
+    /* assymetric read (only input, no slots emitted */
+    int (* read) ( unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
+    /* assymetric write (only output, no response obtained */
+    int (* write) (const unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
+    /* reset the interface -- actually the 1-wire bus */
+    int (* reset ) (const struct parsedname * const pn ) ;
+    /* Bulk of search routine, after set ups for first or alarm or family */
+    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
+    /* Set the electrical level of the 1-wire bus */
+    int (* level) (int new_level, const struct parsedname * pn) ;
+    /* Send a byte with bus power to follow */
+    int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+    /* Send a 12V 480msec oulse to program EEPROM */
+    int (* ProgramPulse) (const struct parsedname * pn) ;
+    /* send and recieve data*/
+    int (* sendback_data) (const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * pn ) ;
+    /* select a device */
+    int (* select) ( const struct parsedname * const pn ) ;
+
+} ;
+
+
+//enum server_type { srv_unknown, srv_direct, srv_client, src_
+/* Network connection structure */
+enum bus_mode { bus_unknown=0, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
+enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U2=2, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_tcp=9, adapter_Bad=10, } ;
+struct connection_in {
+    struct connection_in * next ;
+    int index ;
+    char * name ;
+    char * host ;
+    char * service ;
+    struct addrinfo * ai ;
+    struct addrinfo * ai_ok ;
+    int fd ;
+#ifdef OW_USB
+    usb_dev_handle * usb ;
+#endif /* OW_USB */
+#ifdef OW_MT
+    pthread_mutex_t bus_mutex ;
+    pthread_mutex_t dev_mutex ;
+    void * dev_db ;
+#endif /* OW_MT */
+    struct timeval last_lock ; /* statistics */
+    struct timeval last_unlock ;
+    unsigned int bus_locks ;
+    unsigned int bus_unlocks ;
+    struct timeval bus_time ;
+    //struct timeval bus_pause_time ;
+
+    struct timeval bus_read_time ;
+    struct timeval bus_write_time ; /* for statistics */
+  
+    enum bus_mode busmode ;
+    struct interface_routines iroutines ;
+    enum adapter_type Adapter ;
+    char * adapter_name ;
+    /* Globals for DS2480B state */
+    speed_t speed;        /* terminal speed constant */
+    int UMode ;
+    int ULevel ;
+    int USpeed ;
+    int ProgramAvailable ;
+    /* Static buffer for serial conmmunications */
+    /* Since only used during actual transfer to/from the adapter,
+        should be protected from contention even when multithreading allowed */
+    unsigned char combuffer[MAX_FIFO_SIZE] ;
+} ;
+/* Network connection structure */
+struct connection_out {
+    struct connection_out * next ;
+    char * name ;
+    char * host ;
+    char * service ;
+    struct addrinfo * ai ;
+    struct addrinfo * ai_ok ;
+    int fd ;
+#ifdef OW_MT
+    pthread_mutex_t accept_mutex ;
+#endif /* OW_MT */
+} ;
+extern struct connection_out * outdevice ;
+extern struct connection_in * indevice ;
+extern int outdevices ;
+extern int indevices ;
+
+
+enum bus_mode get_busmode(struct connection_in *c);
+enum bus_mode get_busmode_inx(int iindex);
+
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -505,7 +597,6 @@ struct parsedname {
     struct device * dev ; // 1-wire device
     struct filetype * ft ; // device property
     int    extension ; // numerical extension (for array values) or -1
-    int    badcopy ; // flag if this is an incomplete structure built by FS_dir
     struct filetype * subdir ; // in-device grouping
     int pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
@@ -568,29 +659,6 @@ struct client_msg {
     int32_t offset ;
 } ;
 
-/* -------------------------------------------- */
-/* Interface-specific routines ---------------- */
-struct interface_routines {
-    /* assymetric read (only input, no slots emitted */
-    int (* read) ( unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
-    /* assymetric write (only output, no response obtained */
-    int (* write) (const unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
-    /* reset the interface -- actually the 1-wire bus */
-    int (* reset ) (const struct parsedname * const pn ) ;
-    /* Bulk of search routine, after set ups for first or alarm or family */
-    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-    /* Set the electrical level of the 1-wire bus */
-    int (* level) (int new_level, const struct parsedname * pn) ;
-    /* Send a byte with bus power to follow */
-    int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
-    /* Send a 12V 480msec oulse to program EEPROM */
-    int (* ProgramPulse) (const struct parsedname * pn) ;
-    /* send and recieve data*/
-    int (* sendback_data) (const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * pn ) ;
-    /* select a device */
-    int (* select) ( const struct parsedname * const pn ) ;
-
-} ;
 
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
@@ -732,69 +800,6 @@ extern unsigned int DS2480_ProgramPulse_errors ;
 #define MODE_PROGRAM                   0x04
 #define MODE_BREAK                     0x08
 
-//enum server_type { srv_unknown, srv_direct, srv_client, src_
-/* Network connection structure */
-enum bus_mode { bus_unknown, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
-enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U2=2, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_tcp=9, adapter_Bad=10, } ;
-struct connection_in {
-    struct connection_in * next ;
-    int index ;
-    char * name ;
-    char * host ;
-    char * service ;
-    struct addrinfo * ai ;
-    struct addrinfo * ai_ok ;
-    int fd ;
-#ifdef OW_USB
-    usb_dev_handle * usb ;
-#endif /* OW_USB */
-#ifdef OW_MT
-    pthread_mutex_t bus_mutex ;
-    pthread_mutex_t dev_mutex ;
-    void * dev_db ;
-#endif /* OW_MT */
-    struct timeval last_lock ; /* statistics */
-    struct timeval last_unlock ;
-    unsigned int bus_locks ;
-    unsigned int bus_unlocks ;
-    struct timeval bus_time ;
-    //struct timeval bus_pause_time ;
-
-    struct timeval bus_read_time ;
-    struct timeval bus_write_time ; /* for statistics */
-  
-    enum bus_mode busmode ;
-    struct interface_routines iroutines ;
-    enum adapter_type Adapter ;
-    char * adapter_name ;
-    /* Globals for DS2480B state */
-    speed_t speed;        /* terminal speed constant */
-    int UMode ;
-    int ULevel ;
-    int USpeed ;
-    int ProgramAvailable ;
-    /* Static buffer for serial conmmunications */
-    /* Since only used during actual transfer to/from the adapter,
-        should be protected from contention even when multithreading allowed */
-    unsigned char combuffer[MAX_FIFO_SIZE] ;
-} ;
-/* Network connection structure */
-struct connection_out {
-    struct connection_out * next ;
-    char * name ;
-    char * host ;
-    char * service ;
-    struct addrinfo * ai ;
-    struct addrinfo * ai_ok ;
-    int fd ;
-#ifdef OW_MT
-    pthread_mutex_t accept_mutex ;
-#endif /* OW_MT */
-} ;
-extern struct connection_out * outdevice ;
-extern struct connection_in * indevice ;
-extern int outdevices ;
-extern int indevices ;
 #ifdef OW_MT
     #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) ) ;
     #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) ) ;
@@ -1017,7 +1022,7 @@ void BUS_unlock( const struct parsedname * pn ) ;
 
 #define IsLocalCacheEnabled(ppn )  ( (ppn->si->sg.u[0] & 0x01) )
 #define ShouldReturnBusList(ppn )  ( (ppn->si->sg.u[0] & 0x02) )
-#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (ppn->in->busmode != bus_remote) )
+#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (get_busmode(ppn->in) != bus_remote) )
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
 

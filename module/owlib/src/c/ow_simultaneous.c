@@ -93,7 +93,8 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
         if ( OW_killcache((enum simul_type) pn->ft->data,pn) ) return -EINVAL ;
         return 0 ;
     }
-    if ( OW_skiprom( (enum simul_type) pn->ft->data, pn ) || OW_setcache( (enum simul_type) pn->ft->data,pn ) ) return -EINVAL ;
+    if ( OW_skiprom(  (enum simul_type) pn->ft->data, pn ) ) return -EINVAL ;
+    if ( OW_setcache( (enum simul_type) pn->ft->data, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -142,6 +143,7 @@ static int OW_skiprom( enum simul_type type, const struct parsedname * const pn 
     struct parsedname pn2 ;
     memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
     pn2.dev = NULL ; /* only branch select done, not actual device */
+    /* Make sure pn has bus-mutex initiated and it on local bus, NOT remote */
     BUSLOCK(pn)
 	switch ( type ) {
 	case simul_temp:

@@ -44,7 +44,7 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
         pn->path_busless = NULL;
     }
     if ( pn->in ) {
-        if ( (pn->in->busmode != bus_remote) ) {
+        if ( get_busmode(pn->in) != bus_remote ) {
 #if 0
 	  if (SemiGlobal.int32 != pn->si->sg.int32) {
 	    CACHELOCK
@@ -59,16 +59,13 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
 	  if (SemiGlobal.u[0] != (pn->si->sg.u[0] & 0x01)) {
 	    CACHELOCK
 	    SemiGlobal.u[0] = (pn->si->sg.u[0] & 0x01) ;
-	    //SemiGlobalBusList.u[0] = (pn->si->sg.u[0] & 0x01) ;
 	    CACHEUNLOCK
 	  }
-	  //SemiGlobalBusList.u[0] |= 0x02;  // always set this bit
 
 	  for(i=1; i<4; i++) {
 	    if (SemiGlobal.u[i] != pn->si->sg.u[i]) {
 	      CACHELOCK
 	      SemiGlobal.u[i] = pn->si->sg.u[i] ;
-	      //SemiGlobalBusList.u[i] = pn->si->sg.u[i] ;
 	      CACHEUNLOCK
 	    }
 	  }
@@ -97,7 +94,6 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->dev = NULL ; /* No Device */
     pn->ft = NULL ; /* No filetypes */
     pn->subdir = NULL ; /* Not subdirectory */
-    pn->badcopy = 0 ; /* real deal, not a incomplete copy */
     pn->bus_nr = 0 ;
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
@@ -139,6 +135,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     /* Processing for bus.X directories -- eventually will make this more generic */
     while ( pathnow && strncasecmp(pathnow,"bus.",4)==0 ) {
+        if(!isdigit(pathnow[4])) return -ENOENT ;
         if(!(pn->state & pn_bus)) {
             size_t len = 1+5+9; // max size of text+uncached
             /* this will only be reached once */
@@ -149,6 +146,9 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
             pn->in = indevice;
             while(pn->in && pn->in->index!=pn->bus_nr) pn->in = pn->in->next;
 //printf("parse bus.=%d\n", pn->bus_nr);
+	    /* we have to allow any bus-number here right now. This should
+	     * be fixed. */
+	    //if(!pn->in) return -ENOENT ;
 
             if(pathnext) len += strlen(&path[pathnext-pathcpy]);
             if(!(pn->path_busless = malloc(len))) return -ENOMEM;
@@ -220,6 +220,7 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
 //printf("PN_sub\n");
 
     if( pathnow && strncasecmp( pathnow, "bus.", 4) == 0) {
+        if(!isdigit(pathnow[4])) return -ENOENT ;
         pathnow = strsep(&pathnext,"/") ;
 //printf("deeper bus. request pathnow=%s\n", pathnow);
         return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
@@ -271,7 +272,7 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     }
 
     if ( pathnext==NULL || pathnext[0]=='\0' ) {
-        if (pn->in->busmode == bus_remote) {
+        if (get_busmode(pn->in) == bus_remote) {
 //printf("PN No presence check for %s\n", pn->path);
             /* don't make a presence check for remote devices */
             return 0;
@@ -344,7 +345,7 @@ static int DevicePart( char * filename, struct parsedname * pn ) {
 //printf("DevicePart: no more slash??\n");
             return -ENOENT ;
         }
-        printf("move dot from [%s] to [%s]\n", filename, dot);
+        //printf("move dot from [%s] to [%s]\n", filename, dot);
         filename = dot;
     }
 
@@ -434,7 +435,7 @@ static int FilePart( char * filename, struct parsedname * pn ) {
                 if ( (p==dot) || ((pn->extension == 0) && (errno==-EINVAL)) ) return -ENOENT ; /* Bad number */
             }
 //printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
-            if((pn->in->busmode==bus_remote) && (pn->type==pn_system)) {
+            if((get_busmode(pn->in)==bus_remote) && (pn->type==pn_system)) {
                 /* We have to agree any extension from remote bus
                 * otherwise /system/adapter/address.1 wouldn't be accepted
                 * Should not be needed on known devices though

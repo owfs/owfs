@@ -115,11 +115,13 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     return ret ;
 }
 
-static void Handler( int fd ) {
+void Handler( int fd ) {
     char * retbuffer = NULL ;
     struct server_msg sm ;
-    struct client_msg cm = {0,0,0,0,0,0,} ; /* default values */
+    struct client_msg cm ;
     char * path = FromClientAlloc( fd, &sm ) ;
+
+    memset(&cm, 0, sizeof(struct client_msg));
 
     switch( (enum msg_type) sm.type ) {
     case msg_full:
@@ -136,10 +138,12 @@ static void Handler( int fd ) {
             pn.si = &si ;
 	    //printf("Handler: path=%s\n",path);
             /* Parse the path string */
+
             if ( (cm.ret=FS_ParsedName( path, &pn )) ) {
-	      //printf("Handler: Error parsedname\n");
-	      break ;
+	        //printf("Handler: Error parsedname %s\n", path);
+		break ;
 	    }
+
             /* Use client persistent settings (temp scale, discplay mode ...) */
             si.sg.int32 = sm.sg ;
             switch( (enum msg_type) sm.type ) {
@@ -260,36 +264,35 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 /* cm.ret is also set to an error or 0 */
 static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, const struct parsedname * pn ) {
     uint32_t flags ;
-    /* nested function -- callback for directory entries */
+    /* embedded function -- callback for directory entries */
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
-        size_t _pathlen = strlen(pn2->path) + 1 ;
-//printf("DirHandler: preloop\n");
+        size_t _pathlen ;
+	char *path ;
+
+        if (pn->state & pn_bus) {
+	  path = pn->path_busless ;
+	} else {
+	  path = pn->path ;
+	}
+        _pathlen = strlen(path) ;
+
         /* Note, path preloaded into retbuffer */
 	// writev() seem to read whole block, so clear it
         if( !(retbuffer = (char *)calloc(1, _pathlen + OW_FULLNAME_MAX + 2)) ) {
-	  //printf("malloc error\n");
             return;
         }
-        memcpy(retbuffer, pn2->path, _pathlen);
-#if 0
-	printf("DirHandler: pn=%p pn->in=%p\n", pn, pn->in);
-	printf("DirHandler: pn2=%p pn2->in=%p\n", pn2, pn2->in);
-	printf("DirHandler: pn2->state=%d pn2->in->busmode=%d\n", pn2->state, pn2->in->busmode);
-	printf("DirHandler: pn->state=%d pn->in->busmode=%d\n", pn->state, pn->in->busmode);
-        if((pn->state & pn_bus)) {
-	  printf("DirHandler: bus was specified to DirHandler, so assume correct path\n");
-	} else
-#endif
-	  {
-	  if ( (_pathlen <2) || (retbuffer[_pathlen-2] !='/') ) {
-            strcpy( &retbuffer[_pathlen-1] , "/" ) ;
-            ++_pathlen ;
-	  }
-	  //printf("DirHandler: DIR preloop [%s]\n",retbuffer);
-	  FS_DirName( &retbuffer[_pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
-	  }
+        strcpy(retbuffer, path);
+
+	//printf("DirHandler: DIR preloop [%s]\n",retbuffer);
+	if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
+	  retbuffer[_pathlen] = '/' ;
+	  ++_pathlen ;
+	}
+	retbuffer[_pathlen] = '\000' ;
+	FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
+
         cm->size = strlen(retbuffer) ;
 	//printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
         cm->ret = 0 ;
@@ -299,8 +302,6 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
 
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
-
-    //printf("DirHandler: pn->path=[%s] bus=%d\n", pn->path, pn->bus_nr);
 
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     cm->offset = flags ; /* send the flags in the offset message */
@@ -370,17 +371,22 @@ int main( int argc , char ** argv ) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
+    /* this row will give a very strange output??
+     * indevice->busmode is not working for me?
+     * main7: indevice=0x9d314d0 indevice->busmode==858692 2 */
+    //printf("main7: indevice=%p indevice->busmode==%d %d\n", indevice, indevice->busmode, get_busmode(indevice));
+
     signal(SIGPIPE, SIG_IGN);
     signal(SIGHUP, handle_exit);
     signal(SIGINT, handle_exit);
     signal(SIGTERM, handle_exit);
 
-    ServerProcess( Handler,ow_exit ) ;
+    ServerProcess( Handler, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }
 
-static void ow_exit( int e ) {
+void ow_exit( int e ) {
     LibClose() ;
     exit( e ) ;
 }

@@ -53,7 +53,7 @@ static int ServerSizeorFull( enum msg_type type, const char * path, const struct
     sm.offset = 0 ;
 
     if(pn->state & pn_bus) {
-      //printf("use path_bussless = %s\n", pn->path_busless);
+      //printf("use path_busless = %s\n", pn->path_busless);
       pathnow = pn->path_busless;
     } else {
       //printf("use path = %s\n", pn->path);
@@ -170,13 +170,12 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     if(pn->state & pn_bus) {
       sg.u[0] |= 0x02 ; // make sure it returns bus-list
       //printf("use path_bussless = %s\n", pn->path_busless);
-      pathnow = strdup(pn->path_busless);
+      pathnow = pn->path_busless;
     } else {
       //printf("use path = %s\n", pn->path);
-      pathnow = strdup(pn->path);
+      pathnow = pn->path;
     }
     sm.sg = sg.int32;
-    if(!pathnow) return -ENOMEM;
 
     //printf("ServerDir path=%s\n", pathnow);
 
@@ -185,19 +184,22 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-//printf("ServerDir got:%s\n",path2);
+	    //printf("ServerDir: got %s\n",path2);
             pn2.si = pn->si ; /* reuse stateinfo */
-	    //printf("ServerDir: path2=[%s]\n", path2);
 	    ret = FS_ParsedName( path2, &pn2 );
+#if 0
+	    printf("ServerDir: parsed pn2.path=%s\n", pn2.path);
+	    printf("ServerDir: pn2.ft=%p pn2.subdir=%p pn2.dev=%p\n", pn2.ft, pn2.subdir, pn2.dev);
+	    printf("ServerDir: pn2.state=%d pn2.type=%d\n", pn2.state, pn2.type);
+#endif
 	    if ( ret ) {
-                cm.ret = -EINVAL ;
+	        cm.ret = -EINVAL ;
+		//printf("ServerDir: error parsing %s\n", path2);
                 free(path2) ;
                 break ;
             } else {
                 DIRLOCK
-		  //printf("call dirfunc\n");
-                    dirfunc(&pn2) ;
-		  //printf("dirfunc done\n");
+		  dirfunc(&pn2) ;
                 DIRUNLOCK
 
                 FS_ParsedName_destroy( &pn2 ) ;
@@ -210,7 +212,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
         DIRUNLOCK
     }
     close( connectfd ) ;
-    free(pathnow);
     return cm.ret ;
 }
 

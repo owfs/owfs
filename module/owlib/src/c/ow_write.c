@@ -16,6 +16,7 @@ $Id$
 #include <string.h>
 
 /* ------- Prototypes ----------- */
+static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 static int FS_real_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_gamish(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
 static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
@@ -77,8 +78,64 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     FS_ParsedName_destroy(&pn) ;
     return r ; /* here's where the size is used! */
 }
+
 /* return size if ok, else negative */
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+    int r ;
+
+    STATLOCK
+      AVERAGE_IN(&write_avg)
+      AVERAGE_IN(&all_avg)
+      ++ write_calls ; /* statistics */
+    STATUNLOCK
+
+
+    switch (pn->type) {
+    case pn_structure:
+        r = -ENOTSUP ;
+        break;
+    case pn_system:
+    case pn_settings:
+    case pn_statistics:
+        //printf("FS_write_postparse: pid=%ld system/settings/statistics\n", pthread_self());
+        if ( pn->state & pn_bus ) {
+	    /* this will either call ServerWrite or FS_real_write */
+	    r = FS_write_seek(buf, size, offset, pn) ;
+        } else {
+            r = FS_real_write( buf, size, offset, pn ) ;
+	}
+        break;
+    default:
+//printf("FS_write_postparse: pid=%ld call fs_write_seek size=%ld\n", pthread_self(), size);
+
+#if 0
+      /* handle DeviceSimultaneous in some way */
+        if(pn->dev == DeviceSimultaneous) {
+	  //printf("FS_write_postparse: DeviceSimultaneous %s\n", pn->path);
+            r = FS_real_write( buf, size, offset, pn ) ;
+	} else
+#endif
+	{
+	  /* real data -- go through device chain */
+	  r = FS_write_seek(buf, size, offset, pn) ;
+	}
+    }
+
+    STATLOCK
+    if ( r == 0 ) {
+      ++write_success ; /* statistics */
+      write_bytes += size ; /* statistics */
+      r = size ; /* here's where the size is used! */
+    }
+    AVERAGE_OUT(&write_avg)
+    AVERAGE_OUT(&all_avg)
+    STATUNLOCK
+
+    return r ;
+}
+
+/* return 0 if ok, else negative */
+static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 #ifdef OW_MT
     pthread_t thread ;
@@ -97,40 +154,23 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         pnnext.si = &si ;
         ret = FS_write_postparse(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
+	return (void *)ret;
     }
     if(!(pn->state & pn_bus)) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
-    } else {
-      //printf("ow_write_seek: don't scan all busses\n");
     }
 #endif /* OW_MT */
 
-    if ( pn->in->busmode == bus_remote ) {
+    if ( (get_busmode(pn->in) == bus_remote) ) {
         r = ServerWrite( buf, size, offset, pn ) ;
     } else {
         /* if readonly exit */
         if ( readonly ) return -EROFS ;
 
-        STATLOCK
-            AVERAGE_IN(&write_avg)
-            AVERAGE_IN(&all_avg)
-            ++ write_calls ; /* statistics */
-        STATUNLOCK
-
         if ( (r=LockGet(pn))==0 ) {
             r = FS_real_write( buf, size, offset, pn ) ;
             LockRelease(pn) ;
         }
-
-        STATLOCK
-            if ( r == 0 ) {
-                ++write_success ; /* statistics */
-                write_bytes += size ; /* statistics */
-            }
-            AVERAGE_OUT(&write_avg)
-            AVERAGE_OUT(&all_avg)
-        STATUNLOCK
-        if ( r==0 ) r=size ; /* here's where the size is used! */
     }
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
@@ -144,8 +184,8 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 
 /* return 0 if ok */
 static int FS_real_write(const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-//printf("REAL_WRITE\n");
     int i, r = 0;
+    //printf("FS_real_write\n");
 
     /* Writable? */
     if ( (pn->ft->write.v) == NULL ) return -ENOTSUP ;
@@ -176,7 +216,6 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
       STATLOCK
       ++write_tries[i] ; /* statitics */
       STATUNLOCK
-	//printf("FS_write_xtimes: pid=%d nrleft=%d\n", getpid(), rewrite-i);
       r = FS_parse_write( buf, size, offset, pn ) ;
       if ( r==0 ) break;
     }
@@ -190,6 +229,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     size_t fl = FileLength(pn) ;
     int ret ;
     char * cbuf = NULL ;
+//printf("FS_parse_write\n");
 
 #ifdef OW_CACHE
     /* buffer for storing parsed data to cache */
@@ -277,14 +317,16 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
 
     /* Add to cache? */
     if ( cbuf && ret==0 ) {
+      //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
-//printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
     } else if ( IsLocalCacheEnabled(pn) ) {
+      //printf("CACHEDEL: %s\n",pn->path);
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */
     if ( cbuf ) free(cbuf) ;
 
+    //printf("FS_parse_write: return %d\n", ret);
     return ret ;
 }
 

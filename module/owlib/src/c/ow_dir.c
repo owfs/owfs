@@ -58,27 +58,35 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
 
   /* Make a copy (shallow) of pn to modify for directory entries */
   memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-  pn2.badcopy = 1 ;
 
   //printf("FS_dir1 pn->path=%s pn->type=%d\n",pn->path, pn->type);
   //printf("FS_dir1 pn->subdir->name=%s\n",pn->subdir->name);
 
-  if ( pn->dev ){ /* device directory */
+  if ( pn->dev && (pn->type == pn_real)) { /* device directory */
     //printf("FS_dir: call FS_devdir 1\n");
-    if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote ) {
+#if 0
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+	  ret = ServerDir(dirfunc, &pn2, &flags) ;
+      } else {
+	  //printf("FS_dir: call FS_devdir pn->path=%s\n", pn->path);
+	  ret = FS_devdir( dirfunc, &pn2 ) ;
+      }
+#else
+      /* Device structure is always know for ordinary devices, so don't
+       * bother calling ServerDir() */
+      ret = FS_devdir( dirfunc, &pn2 ) ;
+#endif
+  }
+  else if ( pn->dev ) { /* device directory */
+    /* this one seem to be called when browsing
+     * /bus.0/bus.0/system/adapter . Therefor we have to call ServerDir()
+     * to find the content */
+    //printf("FS_dir: call FS_devdir 1\n");
+    if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
       ret = ServerDir(dirfunc, &pn2, &flags) ;
     } else {
       //printf("FS_dir: call FS_devdir pn->path=%s\n", pn->path);
       ret = FS_devdir( dirfunc, &pn2 ) ;
-    }
-  }
-  else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-    if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote) {
-      //printf("FS_dir: pn->type != pn_real Call ServerDir pn->path=%s\n", pn->path);
-      ret = ServerDir(dirfunc, &pn2, &flags) ;
-    } else {
-      //printf("FS_dir: pn->type != pn_real Call FS_typedir pn->path=%s\n", pn->path);
-      ret = FS_typedir( dirfunc, &pn2 ) ;
     }
   }
   else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
@@ -86,58 +94,71 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
   }
   else if ( pn->state & pn_uncached ) {  /* root or branch directory -- uncached */
     ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
-  } else {
+  }
+  else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
+      /* there are some files with variable sizes, and /system/adapter have variable
+       * number of entries and we have to call ServerDir() */
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+	 //printf("FS_dir: pn->type != pn_real Call ServerDir pn->path=%s\n", pn->path);
+	  ret = ServerDir(dirfunc, &pn2, &flags) ;
+      } else {
+	 //printf("FS_dir: pn->type != pn_real Call FS_typedir pn->path=%s\n", pn->path);
+	  ret = FS_typedir( dirfunc, &pn2 ) ;
+      }
+  }
+  else {
+   //printf("FS_dir pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path);
 
-  if(ShouldReturnBusList(pn)) {
-    if ( pn2.pathlength == 0 ) { /* true root */
-      if ( !(pn2.state & (pn_bus | pn_alarm | pn_uncached)) ) {
-	struct connection_in *ci;
+    if(ShouldReturnBusList(pn)) {
+      if ( pn2.pathlength == 0 ) { /* true root */
+	if ( !(pn2.state & (pn_bus | pn_alarm | pn_uncached)) ) {
+	  struct connection_in *ci ;
 
-	/* restore state */
-	pn2.state = pn->state ;
-	//pn2.type = pn_real ;
-	if ( IsLocalCacheEnabled(pn) ) { /* cached */
-	  pn2.state = (pn_uncached | (pn->state & pn_text)) ;
-	  //printf("state set to %d at uncached\n", pn2.state);
-	  dirfunc( &pn2 ) ;
 	  /* restore state */
 	  pn2.state = pn->state ;
-	}
+	  pn2.type = pn_real ;
+	  if ( IsLocalCacheEnabled(pn) ) { /* cached */
+	    pn2.state = (pn_uncached | (pn->state & pn_text)) ;
+	    //printf("state set to %d at uncached\n", pn2.state);
+	    dirfunc( &pn2 ) ;
+	    /* restore state */
+	    pn2.state = pn->state ;
+	  }
 
-	//pn2.type = pn_real ;
-	ci = indevice ;
-	while(ci) {
-	  pn2.state = (pn_bus | (pn->state & pn_text )) ;
-	  pn2.bus_nr = ci->index ;
+	  //pn2.type = pn_real ;
+	  ci = indevice ;
+	  while(ci) {
+	    pn2.state = (pn_bus | (pn->state & pn_text )) ;
+	    pn2.bus_nr = ci->index ;
+	    dirfunc( &pn2 ) ;
+	    ci = ci->next ;
+	  }
+	  pn2.state = pn->state ;
+	  pn2.bus_nr = pn->bus_nr ;
+	  //pn2.type = pn->type;
+
+	  pn2.state = (pn_normal | (pn->state & pn_text )) ;
+	  pn2.type = pn_settings ;
 	  dirfunc( &pn2 ) ;
-	  ci = ci->next ;
-	}
-	pn2.state = pn->state ;
-	pn2.bus_nr = pn->bus_nr ;
-	//pn2.type = pn->type;
-
-
-	pn2.state = (pn_normal | (pn->state & pn_text )) ;
-	pn2.type = pn_settings ;
-	dirfunc( &pn2 ) ;
-	pn2.type = pn_system ;
-	dirfunc( &pn2 ) ;
-	pn2.type = pn_statistics ;
-	dirfunc( &pn2 ) ;
-	pn2.type = pn_structure ;
-	dirfunc( &pn2 ) ;
-	pn2.type = pn_real ;
+	  pn2.type = pn_system ;
+	  dirfunc( &pn2 ) ;
+	  pn2.type = pn_statistics ;
+	  dirfunc( &pn2 ) ;
+	  pn2.type = pn_structure ;
+	  dirfunc( &pn2 ) ;
+	  pn2.type = pn_real ;
 	
-	pn2.type = pn->type;
-	pn2.state = pn->state;
+	  pn2.type = pn->type;
+	  pn2.state = pn->state;
+	}
       }
     }
-  }
     
-    //printf("Call dir_seek\n");
-    if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote) {
+    if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+     //printf("FS_dir: Call ServerDir\n");
       ret = ServerDir(dirfunc, &pn2, &flags) ;
     } else {
+     //printf("FS_dir: Call FS_dir_seek\n");
       ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
     }
   }
@@ -182,25 +203,45 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-    pn2.badcopy = 1 ;
 
-    if ( pn->dev ){ /* device directory */
-      if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote ) {
-	//printf("FS_dir_remote: Call ServerDir %s\n", pn2.path);
+    if ( pn->dev && (pn->type == pn_real)) { /* device directory */
+#if 0
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+	//printf("FS_dir_remote: pn->type != pn_real Call ServerDir %s\n", pn2.path);
 	ret = ServerDir(dirfunc, &pn2, flags) ;
       } else {
-	//printf("FS_dir_remote: Call FS_devdir %s\n", pn2.path);
+	ret = FS_devdir( dirfunc, &pn2 ) ;
+      }
+#else
+      /* Device structure is always know for ordinary devices, so don't
+       * bother calling ServerDir() */
+      ret = FS_devdir( dirfunc, &pn2 ) ;
+#endif
+    }
+    else if ( pn->dev ) { /* device directory */
+      /* this one seem to be called when browsing
+       * /bus.0/bus.0/system/adapter . Therefor we have to call ServerDir()
+       * to find the content */
+      //printf("FS_dir_remote pid=%ld path=%s call fs_devdir\n",pthread_self(), pn->path);
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
+	//printf("FS_dir_remote: pn->type != pn_real Call ServerDir %s\n", pn2.path);
+	ret = ServerDir(dirfunc, &pn2, flags) ;
+      } else {
 	ret = FS_devdir( dirfunc, &pn2 ) ;
       }
     }
     else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-      ret = FS_dir_seek( dirfunc, pn, flags ) ;
+     //printf("FS_dir_remote pid=%ld path=%s call dir_seek alarm\n",pthread_self(), pn->path);
+      ret = FS_dir_seek( dirfunc, &pn2, flags ) ;
     }
     else if ( pn->state & pn_uncached ) {  /* root or branch directory -- uncached */
+     //printf("FS_dir_remote pid=%ld path=%s call dir_seek uncached\n",pthread_self(), pn->path);
       ret = FS_dir_seek( dirfunc, &pn2, flags ) ;
     }
     else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-      if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote ) {
+      /* there are some files with variable sizes, and /system/adapter have variable
+       * number of entries and we have to call ServerDir() */
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
 	//printf("FS_dir_remote: pn->type != pn_real Call ServerDir %s\n", pn2.path);
 	ret = ServerDir(dirfunc, &pn2, flags) ;
       } else {
@@ -209,54 +250,56 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
       }
     }
     else {
-      //printf("FS_dir_remote pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path);
+     //printf("FS_dir_remote pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path);
 
-    if(ShouldReturnBusList(pn))
-      if ( pn2.pathlength == 0 ) { /* true root */
-        if ( !(pn2.state & (pn_bus | pn_alarm | pn_uncached)) ) {
-	  struct connection_in *ci ;
+      if(ShouldReturnBusList(pn))
+	if ( pn2.pathlength == 0 ) { /* true root */
+	  if ( !(pn2.state & (pn_bus | pn_alarm | pn_uncached)) ) {
+	    struct connection_in *ci ;
 
-	  /* restore state */
-	  pn2.state = pn->state ;
-	  //pn2.type = pn_real ;
-	  if ( IsLocalCacheEnabled(pn) ) { /* cached */
-	    pn2.state = (pn_uncached | (pn->state & pn_text)) ;
-	    //printf("2state set to %d at uncached\n", pn2.state);
-	    dirfunc( &pn2 ) ;
 	    /* restore state */
 	    pn2.state = pn->state ;
-	  }
+	    pn2.type = pn_real ;
+	    if ( IsLocalCacheEnabled(pn) ) { /* cached */
+	      pn2.state = (pn_uncached | (pn->state & pn_text)) ;
+	      //printf("2state set to %d at uncached\n", pn2.state);
+	      dirfunc( &pn2 ) ;
+	      /* restore state */
+	      pn2.state = pn->state ;
+	    }
 
-	  //pn2.type = pn_real ;
-	  ci = indevice ;
-	  while(ci) {
-	    pn2.state = (pn_bus | (pn->state & pn_text )) ;
-	    pn2.bus_nr = ci->index ;
+	    //pn2.type = pn_real ;
+	    ci = indevice ;
+	    while(ci) {
+	      pn2.state = (pn_bus | (pn->state & pn_text )) ;
+	      pn2.bus_nr = ci->index ;
+	      dirfunc( &pn2 ) ;
+	      ci = ci->next ;
+	    }
+	    pn2.state = pn->state ;
+	    pn2.bus_nr = pn->bus_nr ;
+	    //pn2.type = pn->type;
+
+	    pn2.state = (pn_normal | (pn->state & pn_text )) ;
+	    pn2.type = pn_settings ;
 	    dirfunc( &pn2 ) ;
-	    ci = ci->next ;
-	  }
-	  pn2.state = pn->state ;
-	  pn2.bus_nr = pn->bus_nr ;
-	  //pn2.type = pn->type;
-
-
-	  pn2.state = (pn_normal | (pn->state & pn_text )) ;
-	  pn2.type = pn_settings ;
-	  dirfunc( &pn2 ) ;
-	  pn2.type = pn_system ;
-	  dirfunc( &pn2 ) ;
-	  pn2.type = pn_statistics ;
-	  dirfunc( &pn2 ) ;
-	  pn2.type = pn_structure ;
-	  dirfunc( &pn2 ) ;
-	  pn2.type = pn_real ;
+	    pn2.type = pn_system ;
+	    dirfunc( &pn2 ) ;
+	    pn2.type = pn_statistics ;
+	    dirfunc( &pn2 ) ;
+	    pn2.type = pn_structure ;
+	    dirfunc( &pn2 ) ;
+	    pn2.type = pn_real ;
 	
-	  pn2.type = pn->type;
-	  pn2.state = pn->state;
+	    pn2.type = pn->type;
+	    pn2.state = pn->state;
+	  }
 	}
-      }
 
-      if ( pn2.state & pn_bus && pn2.in->busmode == bus_remote) {
+      /* If we have specified if the listed root is remote, then we have
+       * to call ServerDir(). Otherwise call FS_dir_seek to search all
+       * local in-devices. */
+      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
 	//printf("FS_dir_remote: call ServerDir\n");
 	ret = ServerDir(dirfunc, &pn2, flags) ;
       } else {
@@ -295,20 +338,21 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         pnnext.in = pn2->in->next ;
         eret = FS_dir_seek(dirfunc,&pnnext,flags) ;
         pthread_exit((void *)eret);
+	return (void *)eret;
     }
-    if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, (void *)pn ) ;
-    } else {
-      //printf("dir_seek: Only dir bus %d\n", pn->bus_nr);
-    }
-#endif /* OW_MT */
-
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-    pncopy.badcopy = 1 ;
+
+    if(!(pn->state & pn_bus)) {
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, (void *)&pncopy ) ;
+    }
+#else
+    /* Make a copy (shallow) of pn to modify for directory entries */
+    memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
+#endif /* OW_MT */
 
     /* is this a remote bus? */
-    if ( pncopy.in->busmode == bus_remote ) {
+    if ( get_busmode(pncopy.in) == bus_remote ) {
         ret = ServerDir(dirfunc,&pncopy,flags) ;
     } else { /* local bus */
         if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
@@ -316,19 +360,19 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
             ret = FS_alarmdir(dirfunc,&pncopy) ;
 #if 0
 	} else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-	    //printf("FS_dir_seek: Call FS_typedir %s\n", pncopy.path);
+	  //printf("FS_dir_seek: listing stat/sys/set???\n");
+	    /* nobody should use this function for listing stat-dir
+	     * It should already be done in owhttpd or owfs */
 	    ret = FS_typedir( dirfunc, &pncopy ) ;
 #endif
         } else {
             if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
-	        //printf("FS_dir_seekr pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
 	        ret = FS_realdir( dirfunc, &pncopy, flags ) ;
             } else {
-	        //printf("FS_dir_seekc pid=%ld adapter=%d path=%s\n",pthread_self(), pn->in->index,pn->path); UT_delay(100);
                 ret = FS_cache2real( dirfunc, &pncopy, flags ) ;
             }
         }
-	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret); UT_delay(100);
+	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
     }
 #ifdef OW_MT
     /* See if next bus was also queried */

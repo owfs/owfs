@@ -124,22 +124,18 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         free(extname);
     }
 
-    pn.si = &si ;
     //printf("GETDIR\n");
 
+    pn.si = &si ;
     ret = FS_ParsedName( path, &pn ) ;
     // first root always return Bus-list and settings/system/statistics
     pn.si->sg.u[0] |= 0x02 ;
-
-    //    if(ret || pn.ft) printf("FS_GetDir: ret=%d pn.ft=%p path=%s\n", ret, pn.ft, path);
 
     if ( ret || pn.ft ) {
         ret = -ENOENT;
     } else { /* Good pn */
         /* Call directory spanning function */
-        //printf("call FS_dir\n");
         FS_dir( directory, &pn ) ;
-        //printf("FS_dir done\n");
         FILLER(h,".") ;
         FILLER(h,"..") ;
         ret = 0 ;

@@ -160,17 +160,16 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         memcpy( &pnnext, pn1 , sizeof(struct parsedname) ) ;
         pnnext.in = pn1->in->next ;
         pnnext.si = &si ;
-	if(pnnext.in->busmode != bus_remote) {
+	if(get_busmode(pnnext.in) != bus_remote) {
 	  eret = CheckPresence_low(&pnnext) ;
 	} else {
 	  eret = 1;
 	}
         pthread_exit((void *)eret);
+	return (void *)eret;
     }
     if(!(pn->state & pn_bus)) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
-    } else {
-      //printf("CheckPresence_low: Only seek bus %d\n", pn->bus_nr);
     }
     
 #endif /* OW_MT */
