@@ -24,11 +24,11 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
 static int FS_input_yesno( int * const result, const char * const buf, const size_t size ) ;
 static int FS_input_integer( int * const result, const char * const buf, const size_t size ) ;
 static int FS_input_unsigned( unsigned int * const result, const char * const buf, const size_t size ) ;
-static int FS_input_float( float * const result, const char * const buf, const size_t size ) ;
+static int FS_input_float( FLOAT * const result, const char * const buf, const size_t size ) ;
 static int FS_input_yesno_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int FS_input_unsigned_array( unsigned int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int FS_input_integer_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int FS_input_float_array( float * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
+static int FS_input_float_array( FLOAT * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -39,31 +39,41 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     int r ;
     pn.si = &si ;
 //printf("WRITE\n");
+    STATLOCK
+        AVERAGE_IN(&write_avg)
+        AVERAGE_IN(&all_avg)
+    STATUNLOCK
     if ( FS_ParsedName( path , &pn ) ) {
-         FS_ParsedName_destroy(&pn) ;
-        return -ENOENT;
+        r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
-        FS_ParsedName_destroy(&pn) ;
-        return -EISDIR ;
-    }
-
-    ++ write_calls ; /* statistics */
-    LockGet(&pn) ;
-    r = FS_real_write( path, buf, size, offset, &pn ) ;
-    LockRelease(&pn) ;
-
-    if ( offset  || r ) {
-        Cache_Del( &pn ) ;
+        r = -EISDIR ;
     } else {
-//printf("Write adding %s\n",path) ;
-        Cache_Add( &pn, buf, size ) ;
-    }
-    if ( r == 0 ) {
-        ++write_success ; /* statistics */
-        write_bytes += size ; /* statistics */
+        STATLOCK
+            ++ write_calls ; /* statistics */
+        STATUNLOCK
+        LockGet(&pn) ;
+        r = FS_real_write( path, buf, size, offset, &pn ) ;
+        LockRelease(&pn) ;
+
+        if ( offset  || r ) {
+            Cache_Del( &pn ) ;
+        } else {
+    //printf("Write adding %s\n",path) ;
+            Cache_Add( &pn, buf, size ) ;
+        }
+        if ( r == 0 ) {
+            STATLOCK
+                ++write_success ; /* statistics */
+                write_bytes += size ; /* statistics */
+            STATUNLOCK
+        }
     }
 
     FS_ParsedName_destroy(&pn) ;
+    STATLOCK
+        AVERAGE_OUT(&write_avg)
+        AVERAGE_OUT(&all_avg)
+    STATUNLOCK
     return r ;
 }
 
@@ -82,11 +92,17 @@ static int FS_real_write(const char * const path, const char * const buf, const 
     if ( pn->ft->ag && pn->extension>=0 && pn->ft->ag->combined==ag_aggregate ) return FS_w_split(buf,size,offset,pn) ;
 
     /* Norml write. Triplicate attempt */
-    ++ write_tries[0] ; /* statistics */
+    STATLOCK
+        ++ write_tries[0] ; /* statistics */
+    STATUNLOCK
     if ( (r=FS_parse_write( buf, size, offset, pn ))>=0  ) return r;
-    ++ write_tries[1] ; /* statistics */
+    STATLOCK
+        ++ write_tries[1] ; /* statistics */
+    STATUNLOCK
     if ( (r=FS_parse_write( buf, size, offset, pn ))>=0  ) return r;
-    ++ write_tries[2] ; /* statistics */
+    STATLOCK
+        ++ write_tries[2] ; /* statistics */
+    STATUNLOCK
     r = FS_parse_write( buf, size, offset, pn ) ;
     if (r<0) syslog(LOG_INFO,"Write error on %s (size=%d)\n",path,size) ;
     return r ;
@@ -129,11 +145,11 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         return ret ;
     }
     case ft_float: {
-        float F ;
-        float * f = &F ;
+        FLOAT F ;
+        FLOAT * f = &F ;
         if ( offset ) return -EINVAL ;
         if ( elements>1 ) {
-            f = (float *) calloc( elements , sizeof(float) ) ;
+            f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
             if ( f==NULL ) return -ENOMEM ;
             ret = FS_input_float_array( f, buf, size, pn ) ;
         } else {
@@ -177,7 +193,9 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
     struct parsedname pname ;
 //printf("WRITE_ALL\n");
 
-    ++ write_array ; /* statistics */
+    STATLOCK
+        ++ write_array ; /* statistics */
+    STATUNLOCK
     memcpy( &pname , pn , sizeof(struct parsedname) ) ;
 //printf("WRITEALL(%p) %s\n",p,path) ;
     if ( offset ) return -ERANGE ;
@@ -204,7 +222,6 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
             }
         }
     }
-    ++write_arraysuccess ; /* statistics */
     return 0 ;
 }
 
@@ -213,8 +230,6 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     size_t elements = pn->ft->ag->elements ;
     int ret ;
 //printf("WRITE_SPLIT\n");
-
-    ++ write_aggregate ; /* statistics */
 
     (void) offset ;
 
@@ -241,7 +256,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         break ;
         }
     case ft_float: {
-        float * f = (float *) calloc( elements , sizeof(float) ) ;
+        FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
             if ( f==NULL ) return -ENOMEM ;
             ret = ((pn->ft->read.f)(f,pn)<0) || FS_input_float(&f[pn->extension],buf,size) || (pn->ft->write.f)(f,pn) ;
         free(f) ;
@@ -278,7 +293,6 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         }
     }
     if ( ret ) return -EINVAL ;
-    ++write_aggregatesuccess ; /* statistics */
     return 0 ;
 }
 
@@ -322,7 +336,7 @@ static int FS_input_unsigned( unsigned int * const result, const char * const bu
     return end==cp || errno ;
 }
 
-static int FS_input_float( float * const result, const char * const buf, const size_t size ) {
+static int FS_input_float( FLOAT * const result, const char * const buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
 
@@ -398,7 +412,7 @@ static int FS_input_unsigned_array( unsigned int * const results, const char * c
 }
 
 /* returns 0, or negative for error */
-static int FS_input_float_array( float * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int FS_input_float_array( FLOAT * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
     int i ;
     size_t left = size ;
     const char * first = buf ;

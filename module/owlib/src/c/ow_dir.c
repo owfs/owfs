@@ -29,6 +29,7 @@ enum deviceformat devform = fdi ;
     pn->dev set
     pn->sn set appropriately
     pn->ft not set
+
     DEVICE
     pn->dev and pn->sn still set
     pn->ft loops through
@@ -38,33 +39,43 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
     int ret ;
     struct parsedname pn2 ;
 
-//printf("DIR\n");
-    if ( pn == NULL ) return -ENOENT ; /* should ever happen */
+    STATLOCK
+        AVERAGE_IN(&dir_avg)
+        AVERAGE_IN(&all_avg)
+    STATUNLOCK
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-
-    if ( pn->dev == NULL ) {  /* root or branch directory */
+//printf("DIR\n");
+    if ( pn == NULL ) {
+        ret = -ENOENT ; /* should ever happen */
+    } else if ( pn->dev == NULL ) {  /* root or branch directory */
         struct device ** dpp ;
         unsigned char sn[8] ;
+
+        /* STATISCTICS */
+        STATLOCK
+            ++dir_calls ;
+        STATUNLOCK
+
         pn2.ft = NULL ; /* just in case not properly set */
         if ( pn2.pathlength == 0 ) { /* true root */
-//printf("DIR: True root, interface=%d\n",Version2480) ;
-            switch (Version2480) {
-            case 0:
+//printf("DIR: True root, interface=%d\n",Adapter) ;
+            switch (Adapter) {
+            case adapter_DS9097:
                 dpp = bsearch("DS9097",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
-            case 1:
+            case adapter_DS1410:
                 dpp = bsearch("DS1410",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
-            case 3:
+            case adapter_DS9097U:
                 dpp = bsearch("DS9097U",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
-            case 6:
+            case adapter_LINK_Multi:
                 dpp = bsearch("LINK_Multiport",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
-            case 7:
+            case adapter_LINK:
                 dpp = bsearch("LINK",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
-            case 8:
+            case adapter_DS9490:
                 dpp = bsearch("DS9490",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
             default : /* just in case an adapter isn't set */
@@ -76,29 +87,21 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
                 pn2.dev = NULL ; /* clear for the rest of directory listing */
             }
         }
+//printf("DIR2\n");
+        /* STATISCTICS */
+        STATLOCK
+            ++dir_tries ;
+        STATUNLOCK
         BUS_lock() ;
         /* Turn off all DS2409s */
         FS_branchoff(&pn2) ;
-//printf("DIR2\n");
-        /* Triplicate bus read */
-        /* STATISCTICS */
-        ++dir_tries[0] ;
         (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
-        if (ret) {
-            /* STATISCTICS */
-            ++dir_tries[1] ;
-            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
-        }
-        if (ret) {
-            /* STATISCTICS */
-            ++dir_tries[2] ;
-            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
-        } else {
-            /* STATISCTICS */
-            ++dir_success ;
-        }
         while (ret==0) {
             char ID[] = "XX";
+            STATLOCK
+                ++dir_success ;
+                ++dir_tries ;
+            STATUNLOCK
             num2string( ID, sn[0] ) ;
             memcpy( pn2.sn, sn, 8 ) ;
             /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
@@ -122,7 +125,6 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
                 }
             }
         }
-        return ret ;
     } else { /* device directory */
         struct filetype * lastft = &pn2.dev->ft[pn2.dev->nft] ; /* last filetype struct */
         struct filetype * firstft ; /* first filetype struct */
@@ -154,8 +156,13 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
                 dirfunc( data, &pn2 ) ;
             }
         }
-        return 0 ;
+        ret = 0 ;
     }
+    STATLOCK
+        AVERAGE_OUT(&dir_avg)
+        AVERAGE_OUT(&all_avg)
+    STATUNLOCK
+    return ret ;
 }
 static int FS_branchoff( const struct parsedname * const pn ) {
     int ret ;

@@ -148,25 +148,25 @@ struct die_limits DIE[] = {
 /* ------- Functions ------------ */
 
 /* DS1820&2*/
-static int OW_10temp(float * const temp , const struct parsedname * const pn) ;
-static int OW_22temp(float * const temp , const int resolution, const struct parsedname * const pn) ;
+static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) ;
+static int OW_22temp(FLOAT * const temp , const int resolution, const struct parsedname * const pn) ;
 static int OW_power(unsigned char * const data, const struct parsedname * const pn) ;
-static int OW_r_templimit( float * const T, const int Tindex, const struct parsedname * const pn) ;
-static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * const pn) ;
+static int OW_r_templimit( FLOAT * const T, const int Tindex, const struct parsedname * const pn) ;
+static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * const pn) ;
 static int OW_r_scratchpad(unsigned char * const data, const struct parsedname * const pn) ;
 static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) ;
 static int OW_r_trim(unsigned char * const trim, const struct parsedname * const pn) ;
 static int OW_w_trim(const unsigned char * const trim, const struct parsedname * const pn) ;
 static enum eDie OW_die( const struct parsedname * const pn ) ;
 
-static int FS_10temp(float *T , const struct parsedname * pn) {
+static int FS_10temp(FLOAT *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
     *T = Temperature(*T) ;
     return 0 ;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
-static int FS_22temp(float *T , const struct parsedname * pn) {
+static int FS_22temp(FLOAT *T , const struct parsedname * pn) {
     switch( (int) pn->ft->data ) {
     case 9:
     case 10:
@@ -186,13 +186,13 @@ static int FS_power(int * y , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_templimit(float * T , const struct parsedname * pn) {
+static int FS_r_templimit(FLOAT * T , const struct parsedname * pn) {
     if ( OW_r_templimit( T , (int) pn->ft->data, pn ) ) return -EINVAL ;
     *T = Temperature(*T) ;
     return 0 ;
 }
 
-static int FS_w_templimit(const float * T, const struct parsedname * pn) {
+static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
     if ( OW_w_templimit( *T , (int) pn->ft->data, pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -266,7 +266,7 @@ static int FS_tempdata(char *buf, const size_t size, const off_t offset , const 
 }
 */
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
-static int OW_10temp(float * const temp , const struct parsedname * const pn) {
+static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     unsigned char data[8] ;
     unsigned char convert = 0x44 ;
     int delay = (int) pn->ft->data ;
@@ -306,7 +306,7 @@ static int OW_10temp(float * const temp , const struct parsedname * const pn) {
     }
 
     /* fancy math */
-    *temp = (float)((((char)data[1])<<8|data[0])>>1) + .75 - .0625*data[6] ;
+    temp[0] = (FLOAT)((((char)data[1])<<8|data[0])>>1) + .75 - .0625*data[6] ;
     return 0 ;
 }
 
@@ -324,7 +324,7 @@ static int OW_power( unsigned char * const data, const struct parsedname * const
     return ret ;
 }
 
-static int OW_22temp(float * const temp , const int resolution, const struct parsedname * const pn) {
+static int OW_22temp(FLOAT * const temp , const int resolution, const struct parsedname * const pn) {
     unsigned char data[8] ;
     unsigned char convert = 0x44 ;
     unsigned char pow ;
@@ -369,7 +369,7 @@ static int OW_22temp(float * const temp , const int resolution, const struct par
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit( float * const T, const int Tindex, const struct parsedname * const pn) {
+static int OW_r_templimit( FLOAT * const T, const int Tindex, const struct parsedname * const pn) {
     unsigned char data[8] ;
     unsigned char recall = 0xB4 ;
     int ret ;
@@ -387,7 +387,7 @@ static int OW_r_templimit( float * const T, const int Tindex, const struct parse
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * const pn) {
+static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * const pn) {
     unsigned char data[8] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;

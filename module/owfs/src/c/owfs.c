@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
 
     set_signal_handlers();
     fuse = fuse_new(fuse_fd, flags, &owfs_oper);
-//#ifdef OW_MT
-//        fuse_loop_mt(fuse);
-//#else /* OW_MT */
-//#error "Not MT"
-        fuse_loop(fuse);
-//#endif /* OW_MT */
+//        fuse_loop(fuse);
+        if (multithreading) {
+            fuse_loop_mt(fuse) ;
+        } else {
+            fuse_loop(fuse) ;
+        }
     close(fuse_fd);
 
     ow_exit(0);

@@ -164,7 +164,7 @@ int DS9097_detect( void ) {
     /* Set up low-level routines */
     DS9097_setroutines( & iroutines ) ;
     /* Reset the bus */
-    Version2480 = 0 ; /* dummy value */
+    Adapter = adapter_DS9097 ; /* OWFS assigned value */
     return DS9097_reset(NULL) ;
 }
 
@@ -222,10 +222,10 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 /* return 0 valid, else <0 error */
 /* no matching read */
 static int DS9097_write( const unsigned char * const bytes, const size_t num ) {
-    int i ;
+    unsigned int i ;
     int remain = num - (UART_FIFO_SIZE>>3) ;
-    int num8 = num<<3 ;
-    if ( remain>0 ) return DS9097_write(bytes,UART_FIFO_SIZE>>3) || DS9097_write(&bytes[UART_FIFO_SIZE>>3],remain) ;
+    unsigned int num8 = num<<3 ;
+    if ( remain>0 ) return DS9097_write(bytes,UART_FIFO_SIZE>>3) || DS9097_write(&bytes[UART_FIFO_SIZE>>3],(unsigned)remain) ;
     for ( i=0;i<num8;++i) combuffer[i] = UT_getbit(bytes,i)?0xFF:0xC0;
     return BUS_send_and_get(combuffer,num8,NULL,0) ;
 }
@@ -236,9 +236,9 @@ static int DS9097_write( const unsigned char * const bytes, const size_t num ) {
 /* return 0 valid, else <0 error */
 /* No matching read */
 static int DS9097_read( unsigned char * const byte, const int num ) {
-    int i,ret ;
+    int ret ;
     int remain = num-(UART_FIFO_SIZE>>3) ;
-    int num8 = num<<3 ;
+    unsigned int i, num8 = num<<3 ;
     if ( remain > 0 ) {
         return DS9097_read( byte , UART_FIFO_SIZE>>3 ) || DS9097_read( &byte[UART_FIFO_SIZE>>3],remain) ;
     }
@@ -255,7 +255,7 @@ int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * 
     int i ;
     if ( length > UART_FIFO_SIZE ) return DS9097_sendback_bits(outbits,inbits,UART_FIFO_SIZE)||DS9097_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
     for ( i=0 ; i<length ; ++i ) combuffer[i] = outbits[i] ? 0xFF : 0xC0 ;
-    if ( (ret= BUS_send_and_get(combuffer,length,inbits,length)) ) return ret ;
+    if ( (ret= BUS_send_and_get(combuffer,(unsigned)length,inbits,(unsigned)length)) ) return ret ;
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
     return 0 ;
 }
@@ -268,8 +268,8 @@ static int DS9097_sendback_data( const unsigned char * data, unsigned char * con
     if ( remain>0 ) {
         return DS9097_sendback_data( data,resp,UART_FIFO_SIZE>>3) || DS9097_sendback_data( &data[UART_FIFO_SIZE>>3],&resp[UART_FIFO_SIZE>>3],remain) ;
     } else {
-        int bits = len<<3 ;
-        int i, ret ;
+        unsigned int i, bits = len<<3 ;
+        int ret ;
         for ( i=0 ; i<bits ; ++i ) combuffer[i] = UT_getbit(data,i) ? 0xFF : 0xC0 ;
         if ( (ret=BUS_send_and_get(combuffer,bits,combuffer,bits)) ) return ret ;
         for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,combuffer[i]&0x01) ;
@@ -283,7 +283,7 @@ static int DS9097_read_bits( unsigned char * const bits , const int length ) {
     int i, ret ;
     if ( length > UART_FIFO_SIZE ) return DS9097_read_bits(bits,UART_FIFO_SIZE)||DS9097_read_bits(&bits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
     memset( combuffer,0xFF,(size_t)length) ;
-    if ( (ret=BUS_send_and_get(combuffer,length,bits,length)) ) return ret ;
+    if ( (ret=BUS_send_and_get(combuffer,(unsigned)length,bits,(unsigned)length)) ) return ret ;
     for ( i=0;i<length;++i) bits[i]&=0x01 ;
     return 0 ;
 }

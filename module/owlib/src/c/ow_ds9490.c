@@ -105,7 +105,7 @@ static int DS9490_detect_low( void ) {
                             if ( usb_set_altinterface( devusb, 3)==0 ) {
                                 syslog(LOG_INFO,"Opened USB 2490 adapter at %s.\n",devport) ;
                                 DS9490_setroutines( & iroutines ) ;
-                                Version2480 = 8 ; /* dummy value */
+                                Adapter = adapter_DS9490 ; /* OWFS assigned value */
                                 ret = DS9490_reset(NULL) ;
                                 if (ret) {
                                     syslog(LOG_INFO,"Couldn\'t RESET 2490.\n") ;
@@ -396,7 +396,7 @@ printf("SELECT write error=%d\n",ret) ;
         return -EIO ;
     }
 
-    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0465|reset, 0x0055, NULL, 0, TIMEOUT_USB ))<0
+    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0465|reset, (int) 0x0055, NULL, 0, TIMEOUT_USB ))<0
          ||
          (ret=DS9490wait(buffer))
           ) {

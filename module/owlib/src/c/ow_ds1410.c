@@ -426,7 +426,7 @@ static int DS1410_reset( const struct parsedname * const pn ) {
         UT_delay(5); //delay for DS1994
     }
 
-    Version2480 = 1 ; /* dummy value */
+    Adapter = adapter_DS1410 ; /* OWFS assigned choice */
     return 0 ;
 }
 

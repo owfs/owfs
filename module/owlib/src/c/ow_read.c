@@ -25,10 +25,10 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
 
 static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_float( float value, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_float_array( float * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -39,38 +39,52 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     struct stateinfo si ;
     size_t s = size ;
     int r ;
+
+    STATLOCK
+        AVERAGE_IN(&read_avg)
+        AVERAGE_IN(&all_avg)
+    STATUNLOCK
     pn.si = &si ;
     if ( FS_ParsedName( path , &pn ) ) {
-        FS_ParsedName_destroy(&pn) ;
-        return -ENOENT;
+        r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
-        FS_ParsedName_destroy(&pn) ;
-        return -EISDIR ;
-    }
-    ++ read_calls ; /* statistics */
-    /* Check the cache (if not pn_uncached) */
-    if ( offset!=0 || cacheavailable==0 ) {
-        LockGet(&pn) ;
-        r = FS_real_read( path, buf, size, offset, &pn ) ;
-        LockRelease(&pn) ;
-    } else if ( pn.type==pn_uncached || Cache_Get( &pn, buf, &s ) ) {
-//printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
-        LockGet(&pn) ;
-        r = FS_real_read( path, buf, size, offset, &pn ) ;
-        if ( r>= 0 ) Cache_Add( &pn, buf, r ) ;
-        LockRelease(&pn) ;
+        r = -EISDIR ;
     } else {
-//printf("Read found %s\n",path) ;
-        ++read_cache ; /* statistics */
-        read_cachebytes += s ; /* statistics */
-        return s ;
-    }
+        STATLOCK
+            ++ read_calls ; /* statistics */
+        STATUNLOCK
+        /* Check the cache (if not pn_uncached) */
+        if ( offset!=0 || cacheavailable==0 ) {
+            LockGet(&pn) ;
+                r = FS_real_read( path, buf, size, offset, &pn ) ;
+            LockRelease(&pn) ;
+        } else if ( pn.type==pn_uncached || Cache_Get( &pn, buf, &s ) ) {
+    //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
+            LockGet(&pn) ;
+                r = FS_real_read( path, buf, size, offset, &pn ) ;
+                if ( r>= 0 ) Cache_Add( &pn, buf, r ) ;
+            LockRelease(&pn) ;
+        } else {
+    //printf("Read found %s\n",path) ;
+            STATLOCK
+                ++read_cache ; /* statistics */
+                read_cachebytes += s ; /* statistics */
+            STATUNLOCK
+            r = s ;
+        }
 
-    if ( r>=0 ) {
-        ++read_success ; /* statistics */
-        read_bytes += r ; /* statistics */
+        if ( r>=0 ) {
+            STATLOCK
+                ++read_success ; /* statistics */
+                read_bytes += r ; /* statistics */
+            STATUNLOCK
+        }
     }
     FS_ParsedName_destroy(&pn) ;
+    STATLOCK
+        AVERAGE_OUT(&read_avg)
+        AVERAGE_OUT(&all_avg)
+    STATUNLOCK
     return r ;
 }
 
@@ -129,7 +143,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             return FS_output_unsigned( u , buf , size , pn ) ;
             }
         case ft_float: {
-            float f ;
+            FLOAT f ;
             if ( offset ) return -EINVAL ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
@@ -179,7 +193,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             return ret ;
         }
         case ft_float: {
-            float * f = (float *) calloc( elements, sizeof(float) ) ;
+            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
             if ( f==NULL ) return -ENOMEM ;
             if ( offset ) {
                 free( f ) ;
@@ -227,7 +241,9 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     int r ;
     struct parsedname pname ;
 
-    ++read_array ; /* statistics */
+    STATLOCK
+        ++read_array ; /* statistics */
+    STATUNLOCK
     memcpy( &pname , pn , sizeof(struct parsedname) ) ;
 //printf("READALL(%p) %s size=%d\n",p,path,size) ;
     if ( offset ) return -ERANGE ;
@@ -247,7 +263,6 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 //printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
     }
 //printf("READALL return %d\n",size-left) ;
-    ++ read_arraysuccess ; /* statistics */
     return size - left ;
 }
 
@@ -261,7 +276,6 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
     char * all ;
 //printf("SPLIT %s\n",path) ;
     (void) offset ;
-    ++ read_aggregate ; /* statistics */
     if( size < (size_t) suglen ) return -ERANGE ;
 
     if ( pn->ft->format == ft_binary ) {
@@ -278,8 +292,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         free( all ) ;
         return -EINVAL ;
     } else {
-           memcpy(buf,&all[loc],(size_t)suglen) ;
-        ++ read_aggregatesuccess ; /* statistics */
+        memcpy(buf,&all[loc],(size_t)suglen) ;
         free( all ) ;
         return suglen ;
     }
@@ -307,7 +320,7 @@ static int FS_output_unsigned( unsigned int value, char * buf, const size_t size
     return len ;
 }
 
-static int FS_output_float( float value, char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = pn->ft->suglen ;
     char c[suglen+1] ;
     size_t len ;
@@ -355,7 +368,7 @@ static int FS_output_unsigned_array( unsigned int * values, char * buf, const si
     return size-(left-len) ;
 }
 
-static int FS_output_float_array( float * values, char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;

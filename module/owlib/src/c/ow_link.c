@@ -93,7 +93,7 @@ struct device d_DS9490 = { "DS9490", "DS9490", dev_interface, NFT(DS9490), DS949
 static int FS_version(int * v , const struct parsedname * pn) {
     /* Unused */
     (void) pn ;
-	*v = Version2480 ;
+	*v = Adapter ;
 	return 0 ;
 }
 

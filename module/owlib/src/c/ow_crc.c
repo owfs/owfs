@@ -48,9 +48,11 @@ unsigned char CRC8compute( const unsigned char * bytes , const int length ) {
 /* wrap CRC8 calculation in statistics */
 unsigned char CRC8( const unsigned char * bytes , const int length ) {
     unsigned char r = CRC8compute( bytes, length ) ;
-	++crc8_tries ; /* statistics */
-	if (r) ++crc8_errors ; /* statistics */
-	return r ;
+    STATLOCK
+        ++crc8_tries ; /* statistics */
+        if (r) ++crc8_errors ; /* statistics */
+    STATUNLOCK
+    return r ;
 }
 
 /* Returns 0 for good match */

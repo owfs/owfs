@@ -248,10 +248,10 @@ int DS2480_detect( void ) {
         ((setup[4] & 0x0C) == DS2480_baud(speed))
        ) {
 //printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
-//printf("2480Detect version=%d\n",Version2480) ;
+//printf("2480Detect version=%d\n",Adapter) ;
         /* Apparently need to reset again to get the version number properly */
         DS2480_reset(NULL);
-//printf("2480Detect version=%d\n",Version2480) ;
+//printf("2480Detect version=%d\n",Adapter) ;
         return 0 ;
     }
 //printf("2480Detect bad echo\n");
@@ -283,7 +283,10 @@ static int DS2480_reset( const struct parsedname * const pn ) {
     // read back the 1 byte response
     if ( (ret=DS2480_sendback_cmd(&buf,&buf,1)) ) return ret ;
 
-    Version2480 = (buf&RB_CHIPID_MASK)>>2 ;
+    /* The adapter type is encode in this response byte */
+    /* The known values coorespond to the types in enum adapter_type */
+    /* Other values are assigned for adapters that don't have this hardcoded value */
+    Adapter = (buf&RB_CHIPID_MASK)>>2 ;
 
     switch ( buf& RB_RESET_MASK ) {
     case RB_1WIRESHORT:
@@ -402,7 +405,7 @@ static int DS2480_level(int new_level) {
 static int DS2480_databit(int sendbit, int * getbit) {
     unsigned char readbuffer[10],sendpacket[10];
     int ret ;
-    int sendlen=0;
+    unsigned int sendlen=0;
 
     // make sure normal level
     if ( (ret=DS2480_level(MODE_NORMAL)) ) return ret ;
@@ -616,7 +619,9 @@ static int DS2480_read(unsigned char * const buf, const int size ) {
         if (select(devfd+1,&fd,NULL,NULL,&tval) != 0) {
             if ( read(devfd,&buf[cnt],1)!= 1 ) return -errno ;
         } else {
-            ++read_timeout ; /* statistics */
+            STATLOCK
+                ++read_timeout ; /* statistics */
+            STATUNLOCK
             buf[cnt] = '\0' ;
             return -EINTR;
         }
@@ -647,9 +652,9 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len ) {
     if ( UMode != MODSEL_COMMAND ) {
         // change back to command mode
         UMode = MODSEL_COMMAND;
-        (ret=DS2480_write( &mc , 1 )) || (ret= DS2480_write( cmd , len )) ;
+        (ret=DS2480_write( &mc , 1 )) || (ret= DS2480_write( cmd , (unsigned)len )) ;
     } else {
-        ret=DS2480_write( cmd , len ) ;
+        ret=DS2480_write( cmd , (unsigned)len ) ;
     }
 	return ret ;
 }
@@ -715,7 +720,7 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
     } else {
         unsigned char data2[32] ;
         int i ;
-        int j=0 ;
+        unsigned int j=0 ;
         for ( i=0 ; i<len ; ++i ) {
             data2[j++]=data[i] ;
             if ( data[i] == MODE_COMMAND ) data2[j++] = MODE_COMMAND ;

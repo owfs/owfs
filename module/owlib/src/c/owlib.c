@@ -23,7 +23,7 @@ int UMode ;
 int ULevel ;
 int USpeed ;
 int ProgramAvailable ;
-int Version2480 ;
+enum adapter_type Adapter ;
 
 #ifdef OW_USB
     usb_dev_handle * devusb = NULL ;
@@ -70,11 +70,12 @@ struct device * Devices[] = {
     & d_DS9097U ,
     & d_iButtonLink_Multiport ,
     & d_iButtonLink ,
-    & d_stats_cache ,
-    & d_stats_read ,
-    & d_stats_write ,
-    & d_stats_directory ,
     & d_stats_bus ,
+    & d_stats_cache ,
+    & d_stats_directory ,
+    & d_stats_read ,
+    & d_stats_thread ,
+    & d_stats_write ,
 }  ;
 
 size_t nDevices = (size_t) (sizeof(Devices)/sizeof(struct device *)) ;
@@ -113,24 +114,22 @@ unsigned int read_cache = 0 ;
 unsigned int read_bytes = 0 ;
 unsigned int read_cachebytes = 0 ;
 unsigned int read_array = 0 ;
-unsigned int read_aggregate = 0 ;
-unsigned int read_arraysuccess = 0 ;
-unsigned int read_aggregatesuccess = 0 ;
 unsigned int read_tries[3] = {0,0,0,} ;
 unsigned int read_success = 0 ;
+struct average read_avg = {0L,0L,0L,0L,} ;
 
 unsigned int write_calls = 0 ;
 unsigned int write_bytes = 0 ;
 unsigned int write_array = 0 ;
-unsigned int write_aggregate = 0 ;
-unsigned int write_arraysuccess = 0 ;
-unsigned int write_aggregatesuccess = 0 ;
 unsigned int write_tries[3] = {0,0,0,} ;
 unsigned int write_success = 0 ;
+struct average write_avg = {0L,0L,0L,0L,} ;
 
-unsigned int dir_tries[3] = {0, 0, 0, } ;
+unsigned int dir_tries = 0 ;
+unsigned int dir_calls = 0 ;
 unsigned int dir_success = 0 ;
 unsigned int dir_depth = 0 ;
+struct average dir_avg = {0L,0L,0L,0L,} ;
 
 struct timeval bus_time = {0, 0, } ;
 struct timeval bus_pause = {0, 0, } ;
@@ -141,6 +140,8 @@ unsigned int crc8_errors = 0 ;
 unsigned int crc16_tries = 0 ;
 unsigned int crc16_errors = 0 ;
 unsigned int read_timeout = 0 ;
+
+struct average all_avg = {0L,0L,0L,0L,} ;
 
 /* All ow library setup */
 void LibSetup( void ) {
@@ -216,7 +217,7 @@ int ComSetup( const char * busdev ) {
             }
         }
     }
-    syslog(LOG_INFO,"Interface type = %d on %s\n",Version2480,devport) ;
+    syslog(LOG_INFO,"Interface type = %d on %s\n",Adapter,devport) ;
     return 0 ;
 }
 

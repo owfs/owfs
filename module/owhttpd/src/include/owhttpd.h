@@ -4,7 +4,7 @@ $Id$
    one-wire file system and
    one-wire web server
 
-    By PAul H Alfille
+    By Paul H Alfille
     {c} 2003 GPL
     palfille@earthlink.net
 */
@@ -26,11 +26,6 @@ $Id$
 #include <grp.h> // initgroups
 #include <syslog.h>
 
-struct listen_sock {
-    int             socket;
-    struct sockaddr_in sin;
-};
-
 struct active_sock {
     int             socket;
     FILE           *io;
@@ -42,7 +37,7 @@ struct active_sock {
  * Main routine for actually handling a request
  * deals with a conncection
  */
-int handle_socket(struct active_sock a_sock);
+int handle_socket(struct active_sock * const a_sock);
 
 
-#endif
+#endif /* OWHTTPD_H */

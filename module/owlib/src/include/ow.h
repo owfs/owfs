@@ -79,10 +79,11 @@ $Id$
 #include <sys/types.h> /* for stat */
 #include <getopt.h> /* for long options */
 
-#define OW_MT
+extern int multithreading ;
+extern int maxslots ;
 #ifdef OW_MT
     #include <pthread.h>
-    #include <semaphore.h>
+    #include "sem.h"
     extern pthread_mutex_t bus_mutex ;
     extern pthread_mutex_t dev_mutex ;
     extern pthread_mutex_t stat_mutex ;
@@ -93,6 +94,11 @@ $Id$
         int users ;
     } ;
     extern struct devlock DevLock[] ;
+    #define STATLOCK      pthread_mutex_lock(&stat_mutex) ;
+    #define STATUNLOCK    pthread_mutex_unlock(&stat_mutex) ;
+#else /* OW_MT */
+    #define STATLOCK
+    #define STATUNLOCK
 #endif /* OW_MT */
 
 #ifdef OW_USB
@@ -172,17 +178,23 @@ extern unsigned char combuffer[] ;
     #define MAX_FIFO_SIZE UART_FIFO_SIZE
 #endif
 
+/* Floating point */
+/* I hate to do this, making everything a double */
+/* The compiler complains mercilessly, however */
+/* 1-wire really is low precision -- float is more than enough */
+#define FLOAT   double
+
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
 #define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
-#define fREAD_FUNCTION( fname )  static int fname(float *, const struct parsedname * pn)
+#define fREAD_FUNCTION( fname )  static int fname(FLOAT *, const struct parsedname * pn)
 #define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
 #define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bREAD_FUNCTION( fname )  static int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 #define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
-#define fWRITE_FUNCTION( fname )  static int fname(const float *, const struct parsedname * pn)
+#define fWRITE_FUNCTION( fname )  static int fname(const FLOAT *, const struct parsedname * pn)
 #define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bWRITE_FUNCTION( fname )  static int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
@@ -254,7 +266,7 @@ void LockGet( const struct parsedname * const pn ) ;
 void LockRelease( const struct parsedname * const pn ) ;
 
 /* 1-wire lowlevel */
-void UT_delay(const int len) ;
+void UT_delay(const unsigned int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
 /* High-level callback functions */
@@ -367,7 +379,7 @@ struct filetype {
         void * v ;
         int (*i) (int *, const struct parsedname *);
         int (*u) (unsigned int *, const struct parsedname *);
-        int (*f) (float *, const struct parsedname *);
+        int (*f) (FLOAT *, const struct parsedname *);
         int (*y) (int *, const struct parsedname *);
         int (*a) (char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (unsigned char *, const size_t, const off_t, const struct parsedname *);
@@ -376,7 +388,7 @@ struct filetype {
         void * v ;
         int (*i) (const int *, const struct parsedname *);
         int (*u) (const unsigned int *, const struct parsedname *);
-        int (*f) (const float *, const struct parsedname *);
+        int (*f) (const FLOAT *, const struct parsedname *);
         int (*y) (const int *, const struct parsedname *);
         int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
@@ -499,8 +511,8 @@ extern int portnum ; /* TCP port (for owhttpd) */
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;
 extern enum temp_type tempscale ;
-float Temperature( float C) ;
-float TemperatureGap( float C) ;
+FLOAT Temperature( FLOAT C) ;
+FLOAT TemperatureGap( FLOAT C) ;
 
 #define DEFAULT_TIMEOUT  (15)
 extern int cacheavailable ; /* is caching available */
@@ -545,6 +557,16 @@ extern time_t start_time ;
 /* ----------------- */
 /* -- Statistics --- */
 /* ----------------- */
+struct average {
+    unsigned int max ;
+    unsigned int sum ;
+    unsigned int count ;
+    unsigned int current ;
+} ;
+
+#define AVERAGE_IN(pA)  ++(pA)->current; ++(pA)->count; (pA)->sum+=(pA)->current; if ((pA)->current>(pA)->max)++(pA)->max;
+#define AVERAGE_OUT(pA) --(pA)->current;
+
 extern unsigned int cache_tries ;
 extern unsigned int cache_hits ;
 extern unsigned int cache_misses ;
@@ -558,24 +580,24 @@ extern unsigned int read_cache ;
 extern unsigned int read_cachebytes ;
 extern unsigned int read_bytes ;
 extern unsigned int read_array ;
-extern unsigned int read_aggregate ;
-extern unsigned int read_arraysuccess ;
-extern unsigned int read_aggregatesuccess ;
 extern unsigned int read_tries[3] ;
 extern unsigned int read_success ;
+extern struct average read_avg ;
 
 extern unsigned int write_calls ;
 extern unsigned int write_bytes ;
 extern unsigned int write_array ;
-extern unsigned int write_aggregate ;
-extern unsigned int write_arraysuccess ;
-extern unsigned int write_aggregatesuccess ;
 extern unsigned int write_tries[3] ;
 extern unsigned int write_success ;
+extern struct average write_avg ;
 
-extern unsigned int dir_tries[3] ;
+extern unsigned int dir_calls ;
+extern unsigned int dir_tries ;
 extern unsigned int dir_success ;
 extern unsigned int dir_depth ;
+extern struct average dir_avg ;
+
+extern struct average all_avg ;
 
 extern struct timeval bus_time ;
 extern struct timeval bus_pause ;
@@ -599,6 +621,7 @@ extern int UMode ;
 extern int ULevel ;
 extern int USpeed ;
 extern int ProgramAvailable ;
-extern int Version2480 ;
+enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, } ;
+extern enum adapter_type Adapter ;
 
 #endif /* OW_H */

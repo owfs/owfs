@@ -73,7 +73,7 @@ printf("\n");
 //printf("\n");
 //}
         /* send out string */
-        if ( write(devfd,bussend,sendlength) != sendlength ) return -EIO; /* Send the bit */
+        if ( write(devfd,bussend,sendlength) != (int)sendlength ) return -EIO; /* Send the bit */
     }
 //printf("SAG written\n");
     /* get back string -- with timeout and partial read loop */

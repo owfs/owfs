@@ -108,6 +108,29 @@ fi
 
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
+ENABLE_MT=true
+
+AC_MSG_CHECKING([if multithreading is enabled])
+
+AC_ARG_ENABLE(mt,
+[  --enable-mt          Enable multithreading support (default true)],
+[
+
+    AC_MSG_RESULT([$enableval])
+
+    if ! test "$enableval" = "yes" ; then
+
+        ENABLE_MT=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+AC_SUBST(ENABLE_MT)
+
+AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
+
 # Check if the modules are enabled
 
 #Check owfs
@@ -251,6 +274,11 @@ if test "${ENABLE_USB}" = "true"; then
     AC_MSG_RESULT([    USB is enabled])
 else
     AC_MSG_RESULT([    USB is DISABLED])
+fi
+if test "${ENABLE_MT}" = "true"; then
+    AC_MSG_RESULT([    Multithreading is enabled])
+else
+    AC_MSG_RESULT([    Multithreading is DISABLED])
 fi
 
 AC_MSG_RESULT()

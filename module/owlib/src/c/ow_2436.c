@@ -67,8 +67,8 @@ DeviceEntry( 1B, DS2436 )
 /* DS2436 */
 static int OW_r_page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) ;
 static int OW_w_page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) ;
-static int OW_temp( float * T , const struct parsedname * pn ) ;
-static int OW_volts( float * V , const struct parsedname * pn ) ;
+static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
+static int OW_volts( FLOAT * V , const struct parsedname * pn ) ;
 
 /* 2436 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -83,13 +83,13 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
     return OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ;
 }
 
-static int FS_temp(float * T , const struct parsedname * pn) {
+static int FS_temp(FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
     *T = Temperature( *T ) ;
     return 0 ;
 }
 
-static int FS_volts(float * V , const struct parsedname * pn) {
+static int FS_volts(FLOAT * V , const struct parsedname * pn) {
     if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -159,7 +159,7 @@ static int OW_w_page( const unsigned char * p , const size_t location , const si
     return 0 ;
 }
 
-static int OW_temp( float * T , const struct parsedname * pn ) {
+static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     unsigned char d2 = 0xD2 ;
     unsigned char b2[] = { 0xB2 , 0x60, } ;
     unsigned char t[3] ;
@@ -191,7 +191,7 @@ static int OW_temp( float * T , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_volts( float * V , const struct parsedname * pn ) {
+static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
     unsigned char b4 = 0xB4 ;
     unsigned char status[] = { 0xB2 , 0x62, } ;
     unsigned char volts[] = { 0xB2 , 0x77, } ;
@@ -227,7 +227,7 @@ static int OW_volts( float * V , const struct parsedname * pn ) {
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    *V = .01 * (float)( ( ((int)v[1]) <<8 )|v[0] ) ;
+    *V = .01 * (FLOAT)( ( ((int)v[1]) <<8 )|v[0] ) ;
     return 0 ;
 }
 

@@ -29,21 +29,25 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
-
+#ifdef OW_MT
+    #include <pthread.h>
+#endif /* OW_MT */
 /*
  * Default port to listen too. If you aren't root, you'll need it to
  * be > 1024 unless you plan on using a config file
  */
-#define DEFAULTPORT	80
+#define DEFAULTPORT    80
+
+struct listen_sock {
+    int             socket;
+    struct sockaddr_in sin;
+};
 
 static struct listen_sock l_sock;
 static void ow_exit( int e ) ;
-static int accept_sock(struct listen_sock sock) ;
 static void shutdown_sock(struct listen_sock sock) ;
-static int get_active_sock(struct active_sock *a_sock, const int socketd) ;
 static int get_listen_sock(struct listen_sock *sock) ;
-
-unsigned int    debug;
+static void http_loop( struct listen_sock *sock ) ;
 
 void handle_sigchild(int unused) {
     (void) unused ;
@@ -58,18 +62,16 @@ void handle_sigterm(int unused) {
 
 int main(int argc, char *argv[]) {
     char c ;
-    int s ;
 
-//    pid_t           pid;
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
         case 'h':
             fprintf(stderr,
-			"Usage: %s ttyDevice -p tcpPort [options] \n"
-			"   or: %s [options] -d ttyDevice -p tcpPort \n"
-			"    -p port   -- tcp port for web serving process (e.g. 3001)\n" ,
+            "Usage: %s ttyDevice -p tcpPort [options] \n"
+            "   or: %s [options] -d ttyDevice -p tcpPort \n"
+            "    -p port   -- tcp port for web serving process (e.g. 3001)\n" ,
             argv[0],argv[0] ) ;
             break ;
         case 'V':
@@ -97,8 +99,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (get_listen_sock(&l_sock) < 0) {
-	fprintf(stderr, "socket problems: %s failed to start\n", argv[0]);
-	ow_exit(1);
+        fprintf(stderr, "socket problems: %s failed to start\n", argv[0]);
+        ow_exit(1);
     }
 
     /*
@@ -111,19 +113,43 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, handle_sigterm);
 
     for (;;) {
-        s = accept_sock(l_sock);
+        http_loop(&l_sock) ;
+    }
+}
+
+static void * handle(void * p){
+    struct active_sock ch_sock;
+
+    ch_sock.socket = *(int *) p;
+    ch_sock.io = fdopen(ch_sock.socket, "w+");
+    if (ch_sock.io) {
+        handle_socket( &ch_sock ) ;
+        fflush(ch_sock.io);
+        fclose(ch_sock.io);
+        shutdown(ch_sock.socket, SHUT_RDWR);
+    }
+    close(ch_sock.socket);
+    return NULL ;
+}
+
+static void http_loop( struct listen_sock *sock ) {
+    socklen_t size = sizeof((sock->sin));
+    int n_sock = accept((sock->socket),(struct sockaddr*)&(sock->sin), &size);
 //printf("LOOP\n");
-            if (s != -1) {
-                struct active_sock ch_sock;
-                if ( !get_active_sock(&ch_sock, s) ) handle_socket(ch_sock);
-                fflush(ch_sock.io);
-                fclose(ch_sock.io);
-                shutdown(s, 2);
-                close(s);
-            } else {
-                /* failed to accept */
-                syslog(LOG_WARNING,"Failed to accept a socket\n");
-            }
+    if (n_sock != -1) {
+#ifdef OW_MT
+        if (multithreading) {
+            pthread_t thread ;
+            pthread_create(&thread,NULL,handle,&n_sock);
+        } else {
+            handle(&n_sock);
+        }
+#else /* OW_MT */
+        handle(&n_sock);
+#endif /* OW_MT */
+    } else {
+        /* failed to accept */
+        syslog(LOG_WARNING,"Failed to accept a socket\n");
     }
 }
 
@@ -152,48 +178,18 @@ static int get_listen_sock(struct listen_sock *sock) {
     sock->sin.sin_addr.s_addr = htonl(0);
     sock->sin.sin_port = htons(portnum);
 
-    if ( ((sock->socket = socket(AF_INET, SOCK_STREAM, 0))==-1) ||
-	setsockopt(sock->socket, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(one)) ||
-	bind(sock->socket, (struct sockaddr *) &(sock->sin), sizeof((sock->sin))) ||
-        listen(sock->socket, 5)
+    if ( ((sock->socket = socket(AF_INET, SOCK_STREAM, 0))==-1)
+         || setsockopt(sock->socket, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(one))
+         || bind(sock->socket, (struct sockaddr *) &(sock->sin), sizeof((sock->sin)))
+         || listen(sock->socket, 5)
        ) {
-	shutdown(sock->socket, 2);
-	sock->socket = -1;
+        shutdown(sock->socket, 2);
+        sock->socket = -1;
     }
     return (sock->socket);
 }
 
-/*
- * accept_sock:
- * accepts a new socket and returns the file descriptor
- */
-static int accept_sock(struct listen_sock sock) {
-    int             n_sock;
-    socklen_t       size = sizeof((sock.sin));
-    n_sock = accept((sock.socket),(struct sockaddr*)&(sock.sin), &size);
-    return n_sock;
-
-}
-
 static void shutdown_sock(struct listen_sock sock) {
     if (sock.socket != -1)
-	shutdown(sock.socket, 2);
+        shutdown(sock.socket, 2);
 }
-
-/*
- * get_active_sock:
- * sets up FILE* for http socket.
- * returns 1 for failure 0 for success
- * Note, changed return to match OWFS style
- */
-static int get_active_sock(struct active_sock *a_sock, const int socketd) {
-    a_sock->socket = socketd;
-    a_sock->io = fdopen(a_sock->socket, "w+");
-    if (!(a_sock->io)) {
-	close(a_sock->socket);
-	return (-1);
-    }
-    return 0;
-}
-
-

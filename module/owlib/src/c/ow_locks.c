@@ -25,6 +25,11 @@ pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #define DEVLOCKS    10
 struct devlock DevLock[DEVLOCKS] ;
 sem_t devlocks ;
+int multithreading = 1 ;
+int maxslots = DEVLOCKS ;
+#else /* OW_MT */
+int multithreading = 0 ;
+int maxslots = 1 ;
 #endif /* OW_MT */
 
 void LockSetup( void ) {
@@ -60,14 +65,14 @@ void LockGet( const struct parsedname * const pn ) {
     default:
         break ;
     }
-{ int e; sem_getvalue( &devlocks, &e);
-printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X pre slots=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],e);
-}
+//{ int e; sem_getvalue( &devlocks, &e);
+//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X pre slots=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],e);
+//}
     /* potentially need an empty slot */
     sem_wait( &devlocks ) ;
-{ int e; sem_getvalue( &devlocks, &e);
-printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X post slots=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],e);
-}
+//{ int e; sem_getvalue( &devlocks, &e);
+//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X post slots=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],e);
+//}
 
     pthread_mutex_lock( &dev_mutex ) ;
     for ( i=0 ; i<DEVLOCKS ; ++i ) {
@@ -77,7 +82,7 @@ printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X post slots=%d\n",pn->sn[0],pn->sn[1],
             sem_post( &devlocks ) ;
             ++DevLock[i].users ;
             pn->si->lock = i ;
-printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[i].users) ;
+//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[i].users) ;
             pthread_mutex_unlock( &dev_mutex ) ;
             pthread_mutex_lock( &DevLock[i].lock ) ;
             return ;
@@ -86,7 +91,7 @@ printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X FOUND match=%d users=%d\n",pn->sn[0],
     memcpy(DevLock[empty].sn, pn->sn, 8) ;
     DevLock[empty].users = 1 ;
     pn->si->lock = empty ;
-printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X NOT FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[empty].users) ;
+//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X NOT FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[empty].users) ;
     pthread_mutex_lock(&DevLock[empty].lock) ;
     pthread_mutex_unlock( &dev_mutex ) ;
 #endif /* OW_MT */
@@ -96,23 +101,28 @@ void LockRelease( const struct parsedname * const pn ) {
 #ifdef OW_MT
     int lock = pn->si->lock ;
     if ( lock < 0 ) return ;
-printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X PRE slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
+//printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X PRE slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
     pthread_mutex_lock( &dev_mutex ) ;
     pthread_mutex_unlock(&DevLock[lock].lock) ;
     if ( (--DevLock[lock].users) == 0 ) sem_post( &devlocks ) ;
-printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X POST slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
+//printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X POST slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
     pthread_mutex_unlock( &dev_mutex ) ;
 #endif /* OW_MT */
 }
 
+/* Special note on locking:
+     The bus lock is universal -- only one thread can hold it
+     Therefore, we don't need a STATLOCK for bos_locks and bus_unlocks or bus_time
+*/
+
 void BUS_lock( void ) {
-    ++ bus_locks ; /* statistics */
 #ifdef OW_MT
     pthread_mutex_lock( &bus_mutex ) ;
 #else /* OW_MT */
 //    flock( devfd, LOCK_EX) ;
 #endif /* OW_MT */
     gettimeofday( &tv , NULL ) ; /* for statistics */
+    ++ bus_locks ; /* statistics */
 }
 
 void BUS_unlock( void ) {
@@ -127,11 +137,10 @@ void BUS_unlock( void ) {
         bus_time.tv_usec += 100000000 ;
         bus_time.tv_sec  -= 100 ;
     }
-    ++ bus_unlocks ; /* statistics */
+        ++ bus_unlocks ; /* statistics */
 #ifdef OW_MT
     pthread_mutex_unlock( &bus_mutex ) ;
 #else /* OW_MT */
 //    flock( devfd, LOCK_UN) ;
 #endif /* OW_MT */
-    gettimeofday( &tv , NULL ) ; /* for statistics */
 }

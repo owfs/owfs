@@ -24,25 +24,25 @@ $Id$
 time_t scan_time ;
 
 struct fuse_operations owfs_oper = {
-	getattr:	FS_getattr,
-	readlink:	NULL,
-	getdir:     FS_getdir,
-	mknod:	NULL,
-	mkdir:	NULL,
-	symlink:	NULL,
-	unlink:	NULL,
-	rmdir:	NULL,
-	rename:     NULL,
-	link:	NULL,
-	chmod:	NULL,
-	chown:	NULL,
-	truncate:	FS_truncate,
-	utime:	FS_utime,
-	open:	FS_open,
-	read:	FS_read,
-	write:	FS_write,
-	statfs:	FS_statfs,
-	release:	NULL
+    getattr:    FS_getattr,
+    readlink:    NULL,
+    getdir:     FS_getdir,
+    mknod:    NULL,
+    mkdir:    NULL,
+    symlink:    NULL,
+    unlink:    NULL,
+    rmdir:    NULL,
+    rename:     NULL,
+    link:    NULL,
+    chmod:    NULL,
+    chown:    NULL,
+    truncate:    FS_truncate,
+    utime:    FS_utime,
+    open:    FS_open,
+    read:    FS_read,
+    write:    FS_write,
+    statfs:    FS_statfs,
+    release:    NULL
 };
 
 /* ---------------------------------------------- */

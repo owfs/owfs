@@ -69,7 +69,7 @@ DeviceEntry( 20, DS2450 )
 /* DS2450 */
 static int OW_r_mem( char * p , const int size, const int location , const struct parsedname * pn) ;
 static int OW_w_mem( const char * p , const int size , const int location , const struct parsedname * pn) ;
-static int OW_volts( float * f , const struct parsedname * pn ) ;
+static int OW_volts( FLOAT * f , const struct parsedname * pn ) ;
 
 /* 2450 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -103,7 +103,7 @@ static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t off
 }
 
 /* 2450 A/D */
-static int FS_volts(float * V , const struct parsedname * pn) {
+static int FS_volts(FLOAT * V , const struct parsedname * pn) {
     if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -170,7 +170,7 @@ static int OW_w_mem( const char * p , const int size , const int location, const
 
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution and all 4 channels */
-static int OW_volts( float * f , const struct parsedname * pn ) {
+static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
     unsigned char control[8] ;
     unsigned char data[8] ;
     unsigned char convert[] = { 0x3C , 0x0F , 0x00, 0xFF, 0xFF, } ;

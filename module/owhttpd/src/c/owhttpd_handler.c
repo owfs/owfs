@@ -65,7 +65,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
 /* --------------- Functions ---------------- */
 
 /* Main handler for a web page */
-int handle_socket(struct active_sock a_sock) {
+int handle_socket(struct active_sock * const a_sock) {
     char linecopy[PATH_MAX+1];
     char * str;
     struct urlparse up ;
@@ -76,13 +76,13 @@ int handle_socket(struct active_sock a_sock) {
     { /* magic socket stuff */
         struct sockaddr_in peer;
         socklen_t          socklen = sizeof(peer);
-        if ( getpeername(a_sock.socket, (struct sockaddr *) &peer, &socklen) < 0) {
+        if ( getpeername(a_sock->socket, (struct sockaddr *) &peer, &socklen) < 0) {
             syslog(LOG_WARNING,"couldn't get peer name, dropping connection\n");
             return 1;
         }
-        a_sock.peer_addr = peer.sin_addr;
+        a_sock->peer_addr = peer.sin_addr;
     }
-    str = fgets(up.line, PATH_MAX, a_sock.io);
+    str = fgets(up.line, PATH_MAX, a_sock->io);
 //printf("PreParse line=%s\n",up.line);
     URLparse( &up ) ; /* Braek up URL */
 //printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
@@ -90,7 +90,7 @@ int handle_socket(struct active_sock a_sock) {
     /* read lines until blank */
     if (up.version) {
         do {
-            str = fgets(linecopy, PATH_MAX, a_sock.io);
+            str = fgets(linecopy, PATH_MAX, a_sock->io);
         } while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
     }
 
@@ -99,29 +99,29 @@ int handle_socket(struct active_sock a_sock) {
      * This is necessary for some stupid *
      * * operating system such as SunOS
      */
-    fflush(a_sock.io);
+    fflush(a_sock->io);
 
     /* Good command line? */
     if ( up.cmd==NULL || strcmp(up.cmd, "GET")!=0 ) {
-        Bad400( & a_sock ) ;
+        Bad400( a_sock ) ;
 
     /* Can't understand the file name = URL */
     } else if ( up.file == NULL ) {
-        Bad404( & a_sock ) ;
+        Bad404( a_sock ) ;
     } else {
 //printf("PreParse\n");
         if ( FS_ParsedName( up.file , &pn ) ) {
         /* Can't understand the file name = URL */
-            Bad404( & a_sock ) ;
+            Bad404( a_sock ) ;
         /* Root directory -- show the bus */
         } else if ( pn.dev == NULL ) { /* directory! */
-            RootDir( & a_sock, & pn ) ;
+            RootDir( a_sock, & pn ) ;
         /* Single device, show it's properties */
         } else { /* a single device */
 //printf("PreChange\n");
             ChangeData( &up, &pn ) ;
 //printf("PreShow\n");
-            ShowDevice( & a_sock, up.file, &pn ) ;
+            ShowDevice( a_sock, up.file, &pn ) ;
         }
 //printf("PreDestroy\n");
         FS_ParsedName_destroy( &pn ) ;

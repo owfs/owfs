@@ -58,6 +58,10 @@ if ENABLE_USB
 USB_FLAG = -DOW_USB
 endif
 
+if ENABLE_MT
+MT_FLAG = -DOW_MT
+endif
+
 AM_CFLAGS = -I../include \
          -fexceptions \
          -Wall \
@@ -73,6 +77,7 @@ AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          ${CACHE_FLAG} \
          ${CACHE41_FLAG} \
+         ${MT_FLAG} \
          ${USB_FLAG}
 
 clean-generic:

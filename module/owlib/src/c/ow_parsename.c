@@ -265,7 +265,7 @@ static int filecmp(const void * name , const void * ex ) {
 //  Description:
 //     Delay for at least 'len' ms
 //
-void UT_delay(const int len)
+void UT_delay(const unsigned int len)
 {
     struct timespec s = {0,0,};              // Set aside memory space on the stack
 

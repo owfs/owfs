@@ -148,7 +148,9 @@ int Cache_Add_common( const char * const k, const size_t ksize, const void * dat
             add_till = 0 ;
             old_going = 1 ;
             oldstart = time(NULL) ;
-            ++ cache_flips ; /* statistics */
+            STATLOCK
+                ++ cache_flips ; /* statistics */
+            STATUNLOCK
 //printf("CacheAdd flipped add_till=%d old_going=%d\n",add_till,old_going);
         }
     }
@@ -164,7 +166,9 @@ int Cache_Add_common( const char * const k, const size_t ksize, const void * dat
     memcpy(v+sizeof(time_t),data,dsize );
     val.size=vsize ;
     val.data = v ;
-    ++ cache_adds ; /* statistics */
+    STATLOCK
+        ++ cache_adds ; /* statistics */
+    STATUNLOCK
     return dbnewcache->put(dbnewcache,NULL,&key,&val,0) ;
 }
 
@@ -200,7 +204,9 @@ int Cache_Get_common( const char * const k, const size_t ksize, void * data, siz
     time_t to = TimeOut(change) ;
 //printf("GET path=%s size=%d ft_change=%d\n",path,(int)(*size),change);
     if ( to == 0 ) return 1 ; /* uncached item */
+    STATLOCK
         ++ cache_tries ; /* statistics */
+    STATUNLOCK
     if ( old_going && (oldstart + maxold < time(NULL)) ) {
         old_going = 0 ; /* oldcache completely timed out */
     }
@@ -213,12 +219,16 @@ int Cache_Get_common( const char * const k, const size_t ksize, void * data, siz
 //printf("GET about to get old 1\n") ;
         if ( old_going && (oldstart + to > time(NULL)) ) { /* can we look in oldcache */
 //printf("GET about to get old 2\n") ;
-        if ( dboldcache->get(dboldcache,NULL,&key,&val,0) ) {
-                        ++ cache_misses ; /* statistics */
-                        return 1 ; /* found in oldcache? */
-                    }
-                } else {
+            if ( dboldcache->get(dboldcache,NULL,&key,&val,0) ) {
+                STATLOCK
                     ++ cache_misses ; /* statistics */
+                STATUNLOCK
+                return 1 ; /* found in oldcache? */
+            }
+        } else {
+            STATLOCK
+                ++ cache_misses ; /* statistics */
+            STATUNLOCK
             return 1 ; /* Old cache shouldnt be searched */
         }
     }
@@ -226,15 +236,19 @@ int Cache_Get_common( const char * const k, const size_t ksize, void * data, siz
     memcpy(&to, val.data, sizeof(time_t)) ;
 //printf("GOT expire=%s\n",ctime(&to)) ;
     if ( to <= time(NULL) ) {
-                ++ cache_expired ; /* statistics */
-                return 1 ; /* check time of item */
-            }
+        STATLOCK
+            ++ cache_expired ; /* statistics */
+        STATUNLOCK
+        return 1 ; /* check time of item */
+    }
 //printf("GOT unexpired\n") ;
     s = val.size - sizeof(time_t) ;
     if ( s>= *dsize ) return -EMSGSIZE ; /* buffer too small */
     *dsize = s ;
     memcpy(data,val.data+sizeof(time_t), s );
-    ++ cache_hits ; /* statistics */
+    STATLOCK
+        ++ cache_hits ; /* statistics */
+    STATUNLOCK
     return 0 ;
 }
 
@@ -263,7 +277,9 @@ int Cache_Del_Internal( const struct parsedname * const pn, const char * const n
 int Cache_Del_common( const char * const k, const size_t ksize ) {
     DBT key ;
 
-    ++ cache_dels ; /* statistics */
+    STATLOCK
+        ++ cache_dels ; /* statistics */
+    STATUNLOCK
     memset( &key, 0, sizeof(key) ) ;
     key.size = ksize ;
     key.data = k ;

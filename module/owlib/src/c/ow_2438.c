@@ -78,8 +78,8 @@ DeviceEntry( 26, DS2438 )
 /* DS2438 */
 static int OW_r_page( unsigned char * const p , const int page , const struct parsedname * const pn) ;
 static int OW_w_page( const unsigned char * const p , const int page , const struct parsedname * const pn ) ;
-static int OW_temp( float * const T , const struct parsedname * const pn ) ;
-static int OW_volts( float * const V , const int src, const struct parsedname * const pn ) ;
+static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) ;
+static int OW_volts( FLOAT * const V , const int src, const struct parsedname * const pn ) ;
 static int OW_current( int * const I , const struct parsedname * const pn ) ;
 static int OW_r_Ienable( unsigned * const u , const struct parsedname * const pn ) ;
 static int OW_w_Ienable( const unsigned u , const struct parsedname * const pn ) ;
@@ -101,20 +101,20 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
     return 0 ;
 }
 
-static int FS_temp(float * T , const struct parsedname * pn) {
+static int FS_temp(FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
     *T = Temperature( *T ) ;
     return 0 ;
 }
 
-static int FS_volts(float * V , const struct parsedname * pn) {
+static int FS_volts(FLOAT * V , const struct parsedname * pn) {
     /* data=1 VDD data=0 VAD */
     if ( OW_volts( V , (int) pn->ft->data , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_Humid(float * H , const struct parsedname * pn) {
-    float T,VAD,VDD ;
+static int FS_Humid(FLOAT * H , const struct parsedname * pn) {
+    FLOAT T,VAD,VDD ;
     if ( OW_volts( &VDD , 1 , pn ) || OW_volts( &VAD , 0 , pn ) || OW_temp( &T , pn ) ) return -EINVAL ;
     *H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
     return 0 ;
@@ -215,7 +215,7 @@ static int OW_w_page( const unsigned char * const p , const int page , const str
     return 1 ; // timeout
 }
 
-static int OW_temp( float * const T , const struct parsedname * const pn ) {
+static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) {
     unsigned char data[9] ;
     static unsigned char t = 0x44 ;
     int i ;
@@ -243,7 +243,7 @@ static int OW_temp( float * const T , const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int OW_volts( float * const V , const int src, const struct parsedname * const pn ) {
+static int OW_volts( FLOAT * const V , const int src, const struct parsedname * const pn ) {
     // src deserves some explanation:
     //   1 -- VDD (battery) measured
     //   0 -- VAD (other) measured
@@ -280,7 +280,7 @@ static int OW_volts( float * const V , const int src, const struct parsedname * 
 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
-    *V = .01 * (float)( ( ((int)data[4]) <<8 )|data[3] ) ;
+    *V = .01 * (FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
     return 0 ;
 }
 

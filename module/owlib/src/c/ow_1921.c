@@ -111,7 +111,7 @@ struct filetype DS1921[] = {
 DeviceEntry( 21, DS1921 )
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
-struct Version { unsigned int ID ; char * name ; float histolow ; float resolution ; float rangelow ; float rangehigh ; unsigned int delay ;} ;
+struct Version { unsigned int ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; unsigned int delay ;} ;
 struct Version Versions[] =
     {
         { 0x000, "DS1921G-F5" , -40.0, 0.500, -40., +85.,  90, } ,
@@ -160,7 +160,7 @@ static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_histotemp(float * h , const struct parsedname * pn) {
+static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
     int i ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
@@ -168,7 +168,7 @@ static int FS_r_histotemp(float * h , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_histogap(float * g , const struct parsedname * pn) {
+static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     *g = TemperatureGap(v->resolution*4) ;
@@ -181,21 +181,21 @@ static int FS_r_version(char *buf, const size_t size, const off_t offset , const
     return FS_read_return( buf, size, offset , v->name , strlen(v->name) ) ;
 }
 
-static int FS_r_resolution(float * r , const struct parsedname * pn) {
+static int FS_r_resolution(FLOAT * r , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     *r = TemperatureGap(v->resolution) ;
     return 0 ;
 }
 
-static int FS_r_rangelow(float * rl , const struct parsedname * pn) {
+static int FS_r_rangelow(FLOAT * rl , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     *rl = Temperature(v->rangelow) ;
     return 0 ;
 }
 
-static int FS_r_rangehigh(float * rh , const struct parsedname * pn) {
+static int FS_r_rangehigh(FLOAT * rh , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     *rh = Temperature(v->rangehigh) ;
@@ -203,12 +203,12 @@ static int FS_r_rangehigh(float * rh , const struct parsedname * pn) {
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_temperature(float * T , const struct parsedname * pn) {
+static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     int temp ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_temperature( &temp , v->delay, pn ) ) return -EINVAL ;
-    *T = Temperature( (float)temp * v->resolution + v->histolow ) ;
+    *T = Temperature( (FLOAT)temp * v->resolution + v->histolow ) ;
     return 0 ;
 }
 
@@ -445,12 +445,12 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 }
 
 /* temperature log */
-static int FS_r_logtemp(float * T , const struct parsedname * pn) {
+static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
     unsigned char data ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_r_mem( &data , 1, 0x1000+pn->extension, pn ) ) return -EINVAL ;
-    *T = (float)data * v->resolution + v->histolow ;
+    *T = (FLOAT)data * v->resolution + v->histolow ;
     return 0 ;
 }
 
