@@ -7,7 +7,7 @@
 # entry on shell.sf.net.
 #
 # Crontab entry
-# 3 * * * *      /home/groups/o/ow/owfs/owfs/src/scripts/ow-website/update.sh >> /home/groups/o/ow/owfs/web_update.log 2>&1
+# 3 * * * *	/bin/sh /home/groups/o/ow/owfs/owfs/src/scripts/ow-website/update.sh >> /home/groups/o/ow/owfs/web_update.log 2>&1
 
 
 date
