@@ -10,17 +10,96 @@
 '\"
 .TH DS2401 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B DS2401
-- Silicon Serial Number
-.br
-.B DS1990A
-- Serial Number iButton
+.B DS2409
+- MicroLAN Coupler
 .SH SYNOPSIS
-Unique serial number only.
+1-wire network branch controller.
 .SH FAMILY CODE
-01
+1F
 .SH SPECIAL PROPERTIES
-None.
+.SS aux
+.I directory
+.br
+This is the
+.I aux
+branch of the
+.I DS2409
+network branch. It is implicitly accessed (via the
+.I aux smart-on
+command) when it is listed or devices on this branch are addressed.
+.SS branch.0 branch.1 branch.ALL
+.I read-only, yes-no
+.br
+Is the branch (
+.I 0=main
+or
+.I 1=aux
+) currently connected to the master bus? Value returned is 1 (yes) or 0 (no). The
+.I DS2409
+should not allow both to be on simultaneously.
+.br
+.I ALL
+is an aggregate of the properties, comma separated. It is an atomic operation.
+.SS control
+.I read-write, unsigned integer
+.br
+Setting of the PIO
+.I control
+pin. There are 4 possible settings:
+.TP
+.B 0
+Unconditionally off (non-conducting)
+.TP
+.B 1
+Unconditionally on (conducting)
+.TP
+.B 2
+Auto on when
+.I main
+branch switched in
+.TP
+.B 3
+Auto on when
+.I aux
+branch switched in
+.SS discharge
+.I write-only, yes-no
+.br
+Writing a non-zero value to this property will electrically reset both the main and auxillary branches of the 1-wire bus by dropping power for 100 milliseconds. All devices on those branches will lose parasitic power and reset to power-up defaults.
+.SS event.0 event.1 event.ALL
+.I read-only, yes-no
+.br
+Has the
+.I event
+flag for the branch been triggered? A negative edge on the disconnected branch (
+.I 0=main
+or
+.I 1=aux
+) sets the flag. Value returned is 1 (yes) or 0 (no).
+.br
+.I ALL
+is an aggregate of the properties, comma separated. It is an atomic operation.
+.SS main
+.I directory
+.br
+This is the
+.I main
+branch of the
+.I DS2409
+network branch. It is implicitly accessed (via the
+.I main smart-on
+command) when it is listed or devices on this branch are addressed.
+.SS sensed.0 sensed.1 sensed.ALL
+.I read-only, yes-no
+.br
+Voltage sensed at the
+.I 0=main
+or
+.I 1=aux
+branch pin. Valid only when the branch is switched out. Value returned is 0 (low) or 1 (high).
+.br
+.I ALL
+is an aggregate of the properties, comma separated. It is an atomic operation.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii
@@ -53,13 +132,13 @@ Part name assigned by Dallas Semi. E.g.
 .I DS2401
 Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
-None.
+None implemented.
 .SH DESCRIPTION
 This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
 .PP
 The
-.B DS2401
-is the most basic of 1-wire devices. It's sole property is it's unique address. It can be used for unique identification.
+.B DS2409
+allows complex 1-wire network topology. Each branch has it's power preserved, even when isolated from the master. A separate PIO pin can be configured to show branch switching, or controlled explicitly.
 .SH ADDRESSING
 All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
 .TP
@@ -86,9 +165,7 @@ is an example 48 bit address.
 The dot is optional, and the CRC code can included. If included, it must be correct.
 .SH DATASHEET
 .br
-http://pdfserv.maxim-ic.com/en/ds/DS2401.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS1990A-F3-DS1990A-F5.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2409.pdf
 .SH FILES
 .TP
 libow.so
@@ -102,8 +179,8 @@ Web server implementation of the OWFS system.
 .SH SEE ALSO
 owfs(3)
 owhttpd(3)
+DS2401(3)
 DS2502(3)
-DS2409(3)
 .SH AVAILABILITY
 http://owfs.sourceforge.net
 .SH AUTHOR
