@@ -1,5 +1,5 @@
-/* File: owperl.i */
-/* $ID: Exp $ */
+/* File: ow.i */
+/* $Id$ */
 
 %module OW
 
