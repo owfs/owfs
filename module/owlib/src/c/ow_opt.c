@@ -96,34 +96,35 @@ int owopt( const int c , const char * const arg ) {
         readonly = 0 ;
         return 0 ;
     case 'C':
-        tempscale = temp_celsius ;
+        SemiGlobal.u[2] = temp_celsius ;
         return 0 ;
     case 'F':
-        tempscale = temp_fahrenheit ;
+        SemiGlobal.u[2] = temp_fahrenheit ;
         return 0 ;
     case 'R':
-        tempscale = temp_rankine ;
+        SemiGlobal.u[2] = temp_rankine ;
         return 0 ;
     case 'K':
-        tempscale = temp_kelvin ;
+        SemiGlobal.u[2] = temp_kelvin ;
         return 0 ;
     case 'V':
         printf("libow version:\n\t" VERSION "\n") ;
         return 1 ;
     case 's':
         servername = strdup(optarg) ;
+        Server_detect() ;
         return 0;
     case 'p':
         portname = strdup(optarg) ;
         sscanf(optarg, "%i", &portnum);
         return 0;
     case 'f':
-        if (strcasecmp(arg,"f.i")==0) devform=fdi;
-        else if (strcasecmp(arg,"fi")==0) devform=fi;
-        else if (strcasecmp(arg,"f.i.c")==0) devform=fdidc;
-        else if (strcasecmp(arg,"f.ic")==0) devform=fdic;
-        else if (strcasecmp(arg,"fi.c")==0) devform=fidc;
-        else if (strcasecmp(arg,"fic")==0) devform=fic;
+        if (strcasecmp(arg,"f.i")==0)        SemiGlobal.u[3]=fdi;
+        else if (strcasecmp(arg,"fi")==0)    SemiGlobal.u[3]=fi;
+        else if (strcasecmp(arg,"f.i.c")==0) SemiGlobal.u[3]=fdidc;
+        else if (strcasecmp(arg,"f.ic")==0)  SemiGlobal.u[3]=fdic;
+        else if (strcasecmp(arg,"fi.c")==0)  SemiGlobal.u[3]=fidc;
+        else if (strcasecmp(arg,"fic")==0)   SemiGlobal.u[3]=fic;
         else {
              fprintf(stderr,"Unrecognized format type %s\n",arg);
              return 1 ;

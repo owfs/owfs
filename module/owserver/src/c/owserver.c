@@ -91,15 +91,18 @@ printf("FromClientAlloc\n");
     }
 
     sm->payload = ntohl(sm->payload) ;
-    sm->size = ntohl(sm->size) ;
-    sm->type = ntohl(sm->type) ;
-    sm->tempscale = ntohl(sm->tempscale) ;
-    sm->offset = ntohl(sm->offset) ;
-printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%d offset=%d\n",sm->payload,sm->size,sm->type,sm->tempscale,sm->offset);
+    sm->size    = ntohl(sm->size)    ;
+    sm->type    = ntohl(sm->type)    ;
+    sm->sg      = ntohl(sm->sg)      ;
+    sm->offset  = ntohl(sm->offset)  ;
+printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%d offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
 
-    if ( sm->payload <= 0 ) return NULL ;
-
-    if ( (msg=malloc(sm->payload)) ) {
+    if ( sm->payload <= 0 ) {
+         msg = NULL ;
+    } else if ( sm->payload > MAXBUFFERSIZE ) {
+        sm->size = -1 ;
+        msg = NULL ;
+    } else if ( (msg=malloc(sm->payload)) ) {
         if ( readn(fd,msg,sm->payload) != sm->payload ) {
             sm->size = -1 ;
             free(msg);
@@ -116,7 +119,7 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
         { data, cm->payload, } ,
     } ;
 
-    if ( data && cm->size ) {
+    if ( data && cm->payload ) {
         ++nio ;
     }
 printf("ToClient payload=%d size=%d, ret=%d, format=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->format,cm->offset);
@@ -132,23 +135,22 @@ printf("ToClient payload=%d size=%d, ret=%d, format=%d offset=%d\n",cm->payload,
 static int Handler( int fd ) {
     char * data = NULL ;
     int datasize ;
-    int len ;
-    char * returned = NULL ;
+    int pathlen ;
+    char * retbuffer = NULL ;
     int ret = 0 ;
     struct server_msg sm ;
     struct client_msg cm ;
     char * path = FromClientAlloc( fd, &sm ) ;
     struct parsedname pn ;
     struct stateinfo si ;
+    /* nested function -- callback for directory entries */
+    /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
-        char D[OW_FULLNAME_MAX] ;
-        char * p ;
-        FS_DirName( D, OW_FULLNAME_MAX, pn2 ) ;
-        p = memchr(D,0,OW_FULLNAME_MAX) ;
+        /* Note, path preloaded into retbuffer */
+        FS_DirName( &retbuffer[pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
         cm.ret = 0 ;
         cm.format = 1 ;
-        cm.payload = p?OW_FULLNAME_MAX:p-D ;
-        ToClient(fd,&cm,D) ;
+        ToClient(fd,&cm,retbuffer) ;
     }
     /* error reading message */
     if ( sm.size < 0 ) {
@@ -173,11 +175,11 @@ static int Handler( int fd ) {
         cm.payload = 0 ;
         return ToClient( fd, &cm, NULL ) ;
     }
-    len = strlen( path ) + 1 ; /* include trailing null */
+    pathlen = strlen( path ) + 1 ; /* include trailing null */
 
     /* Locate post-path buffer as data */
-    datasize = sm.payload - len ;
-    if ( datasize ) data = &path[len] ;
+    datasize = sm.payload - pathlen ;
+    if ( datasize ) data = &path[pathlen] ;
 
     /* Parse the path string */
     pn.si = &si ;
@@ -187,33 +189,21 @@ static int Handler( int fd ) {
         cm.payload = 0 ;
         return ToClient( fd, &cm, NULL ) ;
     }
+    pn.si->sg.int32 = sm.sg ;
 
-    /* parse name? */
+    /* First pass -- figure out return size */
     switch( (enum msg_type) sm.type ) {
-    case msg_get:
-        if ( pn.dev==NULL || pn.ft == NULL ) {
-            sm.type = msg_dir ;
-            cm.size = OW_FULLNAME_MAX ;
-        } else {
-            sm.type = msg_read ;
-            cm.size = FullFileLength(&pn) ;
-            cm.offset = 0 ;
-        }
-        break ;
     case msg_read:
         cm.size = sm.size ;
         cm.offset = sm.offset ;
         break ;
-    case msg_put:
     case msg_write:
         cm.size = 0 ;
         cm.offset = 0 ;
         break ;
     case msg_dir:
-        cm.size = OW_FULLNAME_MAX ;
-        break ;
-    case msg_fstat:
-        cm.size = sizeof(struct stat) ;
+        cm.size = pathlen + OW_FULLNAME_MAX ;
+        cm.offset = 0 ;
         break ;
     default:
         FS_ParsedName_destroy(&pn) ;
@@ -223,7 +213,8 @@ static int Handler( int fd ) {
         return ToClient( fd, &cm, NULL ) ;
     }
 
-    if ( cm.size && (returned = malloc(cm.size))==NULL ) {
+    /* Allocate return buffer */
+    if ( cm.size>0 && cm.size <MAXBUFFERSIZE && (retbuffer = malloc(cm.size))==NULL ) {
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
         cm.payload = 0 ;
@@ -231,42 +222,40 @@ static int Handler( int fd ) {
         return ToClient( fd, &cm, NULL ) ;
     }
 
-    /* parse name? */
+    /* Second pass -- do actual function */
     switch( (enum msg_type) sm.type ) {
     case msg_read:
-        ret = FS_read_postparse(path,returned,cm.size,cm.offset,&pn) ;
+        ret = FS_read_postparse(path,retbuffer,cm.size,cm.offset,&pn) ;
         if ( ret<0 ) {
-            free(returned);
-            returned = NULL ;
+            cm.payload = 0 ;
+            cm.format = sm.sg ;
+        } else {
+            cm.payload = cm.size ;
+            cm.format = pn.si->sg.int32 ;
         }
-        cm.payload = cm.size = ret ;
         break ;
-    case msg_put:
     case msg_write:
         ret = FS_write_postparse(path,data,cm.size,cm.offset,&pn) ;
-        if ( ret<0 ) {
-            free(returned);
-            returned = NULL ;
-        }
         cm.payload = 0 ;
         break ;
     case msg_dir:
-        FS_dir( directory, &pn ) ;
+        /* return buffer holds max file length */
+        cm.payload = cm.size ;
+        /* copy current path into return buffer */
+        memcpy(retbuffer, path, pathlen ) ;
+        FS_dir( directory, path, &pn ) ;
+        /* Now null entry to show end of directy listing */
         ret = 0 ;
         cm.payload = 0 ;
-        if ( data ) free(data) ;
-        data = NULL ;
-        break ;
-    case msg_fstat:
-        ret = FS_fstat( path, &returned ) ;
-        cm.payload = cm.size ;
         break ;
     }
+    
+    /* Clean up and return result */
     FS_ParsedName_destroy(&pn) ;
     if (path) free(path) ;
     cm.ret = ret ;
-    ret = ToClient( fd, &cm, returned ) ;
-    if ( returned ) free(returned) ;
+    ret = ToClient( fd, &cm, retbuffer ) ;
+    if ( retbuffer ) free(retbuffer) ;
     return ret<0 ;
 }
 

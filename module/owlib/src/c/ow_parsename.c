@@ -31,6 +31,11 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
     if ( pn && pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
+        if ( (busmode != bus_remote)  && (SemiGlobal.int32 != pn->si->sg.int32) ) {
+            CACHELOCK
+                SemiGlobal.int32 = pn->si->sg.int32 ;
+            CACHEUNLOCK
+        }
     }
 //printf("PN_destroy post\n");
 }
@@ -70,6 +75,13 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->subdir = NULL ; /* Not subdirectory */
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
+    if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */
+    if ( busmode != bus_remote ) pn->si->sg.int32 = SemiGlobal.int32 ;
+//        pn->si->sg.u[0] = cacheenabled ;
+//        pn->si->sg.u[1] = presencecheck ;
+//        pn->si->sg.u[2] = tempscale ;
+//        pn->si->sg.u[3] = devform ;
+    
     if ( (pathcpy=strdup( (path[0]=='/')? &path[1]:path )) == NULL ) return -ENOMEM ;
     pathnow = pathcpy ;
 
@@ -195,7 +207,7 @@ static int FS_ParsedNameSub( char * const path , struct parsedname * pn ) {
             }
         }
         if ( (ret=DevicePart( path, &pFile, pn )) ) return ret ; // search for valid 1-wire sn
-        if ( pFile == NULL || pFile[0]=='\0' ) return (presencecheck && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+        if ( pFile == NULL || pFile[0]=='\0' ) return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
         break ;
     default:
         if ( (ret=NamePart( path, &pFile, pn )) ) return ret ; // device name match?

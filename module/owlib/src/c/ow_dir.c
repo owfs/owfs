@@ -38,11 +38,13 @@ enum deviceformat devform = fdi ;
     pn->dev and pn->sn still set
     pn->ft loops through
 */
-
-int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
+/* path is the path which "pn" parses */
+int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) {
     int ret = 0 ;
     struct parsedname pn2 ;
 
+    if ( busmode == bus_remote ) return ServerDir( dirfunc, path, pn ) ;
+    
     STATLOCK
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
@@ -70,7 +72,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
             /* Show uncached and stats... (if root directory) */
             if ( pn2.pathlength == 0 ) { /* true root */
                 pn2.state = pn->state ;
-                if ( cacheenabled ) { /* cached */
+                if ( IsCacheEnabled(pn) ) { /* cached */
                     pn2.state = (pn_uncached | (pn->state & pn_text)) ;
                     dirfunc( &pn2 ) ;
                     pn2.state = (pn_normal | (pn->state & pn_text)) ;
@@ -87,7 +89,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
             }
 
             /* Show all devices in this directory */
-            if ( cacheenabled && timeout.dir ) {
+            if ( IsCacheEnabled(pn) && timeout.dir ) {
                 FS_cache2real( dirfunc, &pn2 ) ;
             } else {
                 FS_realdir( dirfunc, &pn2 ) ;
@@ -318,26 +320,28 @@ static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct
 }
 
 /* device display format */
-void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) {
+void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) {
+    const unsigned char * p = pn->sn ;
     UCLIBCLOCK
-    switch (devform) {
+//printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
+    switch (DeviceFormat(pn)) {
     case fdi:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6]) ;
+        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6]) ;
         break ;
     case fi:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6]) ;
+        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6]) ;
         break ;
     case fdidc:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X.%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X.%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
         break ;
     case fdic:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
         break ;
     case fidc:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X.%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X.%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
         break ;
     case fic:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
         break ;
     }
     UCLIBCUNLOCK
@@ -439,7 +443,7 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
     } else if ( pn->dev == DeviceSimultaneous ) {
         strncpy( buffer, DeviceSimultaneous->code, size ) ;
     } else if ( pn->type == pn_real ) { /* real device */
-        FS_devicename( buffer, size, pn->sn ) ;
+        FS_devicename( buffer, size, pn ) ;
     } else { /* pseudo device */
         strncpy( buffer, pn->dev->code, size ) ;
     }

@@ -165,7 +165,7 @@ static enum eDie OW_die( const struct parsedname * const pn ) ;
 
 static int FS_10temp(FLOAT *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
-    *T = Temperature(*T) ;
+    *T = Temperature(*T,pn) ;
     return 0 ;
 }
 
@@ -177,7 +177,7 @@ static int FS_22temp(FLOAT *T , const struct parsedname * pn) {
     case 11:
     case 12:
         if ( OW_22temp( T, (int) pn->ft->data , pn ) ) return -EINVAL ;
-        *T = Temperature(*T) ;
+        *T = Temperature(*T,pn) ;
         return 0 ;
     }
     return -ENODEV ;
@@ -192,7 +192,7 @@ static int FS_power(int * y , const struct parsedname * pn) {
 
 static int FS_r_templimit(FLOAT * T , const struct parsedname * pn) {
     if ( OW_r_templimit( T , (int) pn->ft->data, pn ) ) return -EINVAL ;
-    *T = Temperature(*T) ;
+    *T = Temperature(*T,pn) ;
     return 0 ;
 }
 

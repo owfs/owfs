@@ -499,7 +499,7 @@ static void ShowDevice( struct active_sock * a_sock, const char * path, struct p
     if(!(pn->state & pn_text)) {
       HTTPtitle( a_sock->io , &path[1] ) ;
       HTTPheader( a_sock->io , &path[1] ) ;
-      if ( cacheenabled && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",path) ;
+      if ( IsCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",path) ;
       fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
       fprintf( a_sock->io, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, path ) ;
     }
@@ -509,7 +509,7 @@ static void ShowDevice( struct active_sock * a_sock, const char * path, struct p
         if ( slash ) slash[0] = '\0' ; /* pare off device name */
         directory(pn) ;
     } else { /* whole device */
-        FS_dir( directory, pn ) ;
+        FS_dir( directory, path, pn ) ;
     }
     if(!(pn->state & pn_text)) {
       fprintf( a_sock->io, "</TABLE>" ) ;
@@ -540,7 +540,7 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
 	    loc = nam = pn2->dev->name ;
             typ = "1-wire chip" ;
         } else if ( pn2->type == pn_real ) {
-            FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn) ;
+            FS_devicename(loc,OW_FULLNAME_MAX,pn2) ;
             nam = pn2->dev->name ;
             typ = "1-wire chip" ;
         } else {
@@ -560,7 +560,7 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
     HTTPstart( a_sock->io , "200 OK", (pn->state & pn_text) ) ;
 
     if(pn->state & pn_text) {
-      FS_dir( directory, pn ) ;
+      FS_dir( directory, path, pn ) ;
       return;
     }
     HTTPtitle( a_sock->io , "Directory") ;
@@ -581,7 +581,7 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             fprintf( a_sock->io, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>" ) ;
         }
     }
-    FS_dir( directory, pn ) ;
+    FS_dir( directory, path, pn ) ;
     fprintf( a_sock->io, "</TABLE>" ) ;
     HTTPfoot( a_sock->io ) ;
 }

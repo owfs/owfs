@@ -109,7 +109,7 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 
 static int FS_temp(FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
-    *T = Temperature( *T ) ;
+    *T = Temperature( *T, pn ) ;
     return 0 ;
 }
 

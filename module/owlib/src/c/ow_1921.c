@@ -164,14 +164,14 @@ static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
     int i ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    for ( i=0 ; i<63 ; ++i ) h[i] = Temperature(v->histolow + 4*i*v->resolution) ;
+    for ( i=0 ; i<63 ; ++i ) h[i] = Temperature(v->histolow + 4*i*v->resolution,pn) ;
     return 0 ;
 }
 
 static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *g = TemperatureGap(v->resolution*4) ;
+    *g = TemperatureGap(v->resolution*4,pn) ;
     return 0 ;
 }
 
@@ -186,21 +186,21 @@ static int FS_r_version(char *buf, const size_t size, const off_t offset , const
 static int FS_r_resolution(FLOAT * r , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *r = TemperatureGap(v->resolution) ;
+    *r = TemperatureGap(v->resolution,pn) ;
     return 0 ;
 }
 
 static int FS_r_rangelow(FLOAT * rl , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *rl = Temperature(v->rangelow) ;
+    *rl = Temperature(v->rangelow,pn) ;
     return 0 ;
 }
 
 static int FS_r_rangehigh(FLOAT * rh , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *rh = Temperature(v->rangehigh) ;
+    *rh = Temperature(v->rangehigh,pn) ;
     return 0 ;
 }
 
@@ -210,7 +210,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_temperature( &temp , v->delay, pn ) ) return -EINVAL ;
-    *T = Temperature( (FLOAT)temp * v->resolution + v->histolow ) ;
+    *T = Temperature( (FLOAT)temp * v->resolution + v->histolow,pn ) ;
     return 0 ;
 }
 

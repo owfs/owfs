@@ -56,7 +56,6 @@ static void tdestroy_(void *vroot, void *freefct)
 #endif /* __UCLIBC__ */
 
 int cacheavailable = 1 ; /* is caching available */
-int cacheenabled = 1 ; /* is cacheing enabled */
 
 /* Put the globals into a struct to declutter the namespace */
 static struct {
@@ -620,7 +619,6 @@ static int Cache_Del_Store( const struct tree_node * tn ) {
 #else /* OW_CACHE is unset */
 
 int cacheavailable = 0 ; /* is caching available */
-int cacheenabled = 0 ; /* is cacheing enabled */
 
 void Cache_Open( void )
     {}

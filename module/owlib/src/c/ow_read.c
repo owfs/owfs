@@ -35,6 +35,8 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     int r ;
 
     pn.si = &si ;
+    
+    if ( busmode == bus_remote ) return ServerRead(path,buf,size,offset) ;
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -65,6 +67,7 @@ int FS_read_postparse(const char * path, char *buf, const size_t size, const off
     size_t s = size ;
     int r ;
 
+    if ( busmode == bus_remote ) return ServerRead(path,buf,size,offset) ;
     STATLOCK
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
@@ -76,7 +79,7 @@ int FS_read_postparse(const char * path, char *buf, const size_t size, const off
             ++ read_calls ; /* statistics */
         STATUNLOCK
         /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || cacheenabled==0 ) {
+        if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
             LockGet(pn) ;
                 r = FS_real_read( path, buf, size, offset, pn ) ;
             LockRelease(pn) ;
@@ -117,8 +120,9 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     int r ;
 //printf("RealRead path=%s size=%d, offset=%d, extension=%d\n",path,size,offset,pn->extension) ;
     /* Readable? */
+    if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
     /* Do we exist? Only test static cases */
-    if ( ( (pn->ft->read.v) == NULL ) || ( presencecheck && pn->ft->change==ft_static && CheckPresence(pn) ) ) return -ENOENT ;
+    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && CheckPresence(pn) ) return -ENOENT ;
 
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) {

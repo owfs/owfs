@@ -45,21 +45,25 @@ void CloseServer( void ) {
     }
 }
 
-
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    void * r ;
     int ret ;
 
     sm.type = msg_read ;
     sm.size = size ;
-    sm.tempscale = tempscale ;
+    sm.sg =  SemiGlobal.int32;
     sm.offset = offset ;
     ret = ToServer( connectfd, &sm, path, NULL, 0) ;
     if (ret) return ret ;
     ret = FromServer( connectfd, &cm, buf, size ) ;
     if (ret) return ret ;
+    if ( SemiGlobal.int32 != cm.format ) {
+        CACHELOCK
+            SemiGlobal.int32 = cm.format ;
+        CACHEUNLOCK
+    }
+    
     return cm.ret ;
 }
 
@@ -70,13 +74,38 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
 
     sm.type = msg_write ;
     sm.size = size ;
-    sm.tempscale = tempscale ;
+    sm.sg =  SemiGlobal.int32;
     sm.offset = offset ;
-    ret = ToServer( connectfd, &sm, path, NULL, 0) ;
+    ret = ToServer( connectfd, &sm, path, buf, size) ;
     if (ret) return ret ;
     ret = FromServer( connectfd, &cm, NULL, 0 ) ;
     if (ret) return ret ;
     return cm.ret ;
+}
+
+int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    char * path2 ;
+    int ret = 0 ;
+    struct parsedname pn2 ;
+    struct stateinfo si ;
+    pn2.si = &si ;
+
+    (void) pn ;
+    sm.type = msg_dir ;
+    sm.size = 0 ;
+    sm.sg =  SemiGlobal.int32;
+    sm.offset = 0 ;
+    ret = ToServer( connectfd, &sm, path, NULL, 0) ;
+    if (ret) return ret ;
+    while( (path2=FromServerAlloc( connectfd, &cm))  ) {
+        path2[sm.payload-1] = '\0' ; /* Ensure trailing null */
+        if ( (ret=FS_ParsedName( path2, &pn2 )) == 0 ) dirfunc(&pn2) ;
+        FS_ParsedName_destroy( &pn2 ) ;
+        free(path2) ;
+    }
+    return ret ;
 }
 
 /* Read "n" bytes from a descriptor. */
@@ -186,13 +215,13 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
         }
     }
 
-printf("ToServer payload=%d size=%d type=%d tempscale=%d offset=%d\n",payload,sm->size,sm->type,sm->tempscale,sm->offset);
+printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
 
-    sm->payload   = htonl(payload)       ;
-    sm->size      = htonl(sm->size)      ;
-    sm->type      = htonl(sm->type)      ;
-    sm->tempscale = htonl(sm->tempscale) ;
-    sm->offset    = htonl(sm->offset)    ;
+    sm->payload = htonl(payload)       ;
+    sm->size    = htonl(sm->size)      ;
+    sm->type    = htonl(sm->type)      ;
+    sm->sg      = htonl(sm->sg) ;
+    sm->offset  = htonl(sm->offset)    ;
 
     return writev( fd, io, nio ) != payload + sizeof(struct server_msg) ;
 }

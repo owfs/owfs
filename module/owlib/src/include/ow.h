@@ -431,6 +431,17 @@ filetype and extension correspond to property
 subdir points to in-device groupings
 */
 
+/* Semi-global information (for remote control) */
+union semiglobal {
+    int32_t int32 ;
+    /* cacheenabled */
+    /* presencecheck */
+    /* tempscale */
+    /* device format */
+    uint8_t u[4] ;
+} ;
+extern union semiglobal SemiGlobal ;
+
 struct buspath {
     unsigned char sn[8] ;
     unsigned char branch ;
@@ -441,6 +452,7 @@ struct stateinfo {
     int LastDevice ; // for search
     int AnyDevices ;
     int lock ; // place in dev lock array
+    union semiglobal sg ; // more state info, packed for network transmission */
 } ;
 
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
@@ -476,7 +488,6 @@ extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
 extern int connectfd ; /* server filedescriptor */
 extern int useusb ; /* Which USB adapter to use (1-based index) */
-extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */
 extern char * portname ; /* TCP port (for owhttpd) */
 extern char * servername ; /* TCP port (for owhttpd) */
@@ -484,12 +495,10 @@ extern int readonly ; /* readonly file system ? */
 
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;
-extern enum temp_type tempscale ;
-FLOAT Temperature( FLOAT C) ;
-FLOAT TemperatureGap( FLOAT C) ;
+FLOAT Temperature( FLOAT C, const struct parsedname * pn) ;
+FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) ;
 
 extern int cacheavailable ; /* is caching available */
-extern int cacheenabled ; /* is caching enabled */
 extern int background ; /* operate in background mode */
 
 #define DEFAULT_TIMEOUT  (15)
@@ -508,7 +517,7 @@ struct server_msg {
     int32_t version ;
     int32_t payload ;
     int32_t type ;
-    int32_t tempscale ;
+    int32_t sg ;
     int32_t size ;
     int32_t offset ;
 } ;
@@ -521,7 +530,7 @@ struct client_msg {
     int32_t size ;
     int32_t offset ;
 } ;
-enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_fstat, msg_update, } ;
+enum msg_type { msg_nop, msg_read, msg_write, msg_dir, } ;
 
 
 /* device display format */
@@ -680,7 +689,7 @@ int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
 int CheckPresence( const struct parsedname * const pn ) ;
-void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
+void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
 const char * FS_dirname_state( const enum pn_state state ) ;
@@ -739,11 +748,13 @@ void LockRelease( const struct parsedname * const pn ) ;
 void UT_delay(const unsigned int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
+int Server_detect( void ) ;
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
 int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
+int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
 
 /* High-level callback functions */
-int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) ;
+int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
@@ -812,5 +823,10 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 
 void BUS_lock( void ) ;
 void BUS_unlock( void ) ;
+
+#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (busmode != bus_remote) )
+#define IsCacheEnabled(ppn )       ( (ppn->si->sg.u[0] ) && (busmode != bus_remote) )
+#define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
+#define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[4]) )
 
 #endif /* OW_H */

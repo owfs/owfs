@@ -13,8 +13,8 @@ $Id$
 #include "ow.h"
 
 /* Temperture Conversion routines  */
-FLOAT Temperature( FLOAT C) {
-    switch( tempscale ) {
+FLOAT Temperature( FLOAT C, const struct parsedname * pn) {
+    switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
         return 1.8*C+32. ;
     case temp_kelvin:
@@ -26,8 +26,8 @@ FLOAT Temperature( FLOAT C) {
     }
 }
 
-FLOAT TemperatureGap( FLOAT C) {
-    switch( tempscale ) {
+FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) {
+    switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
     case temp_rankine:
         return 1.8*C ;
@@ -36,8 +36,8 @@ FLOAT TemperatureGap( FLOAT C) {
     }
 }
 
-FLOAT fromTemperature( FLOAT C) {
-    switch( tempscale ) {
+FLOAT fromTemperature( FLOAT C, const struct parsedname * pn) {
+    switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
         return (C-32.)/1.8 ;
     case temp_kelvin:

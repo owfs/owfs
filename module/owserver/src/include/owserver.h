@@ -49,6 +49,6 @@ struct active_sock {
  * deals with a conncection
  */
 int handle_socket(struct active_sock * const a_sock);
-
+#define MAXBUFFERSIZE  65000
 
 #endif /* OWHTTPD_H */

@@ -62,6 +62,8 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
 
+    if ( busmode == bus_remote ) return ServerWrite( path, buf, size, offset ) ;
+    
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -113,7 +115,8 @@ static int FS_real_write(const char * const path, const char * const buf, const 
     if ( (pn->ft->write.v) == NULL ) return -ENOTSUP ;
 
     /* Do we exist? Only test static cases */
-    if ( presencecheck && pn->ft->change==ft_static && CheckPresence(pn) ) return -ENOENT ;
+    /* Already parsed -- presence  check done there! on non-static */
+//    if ( presencecheck && pn->ft->change==ft_static && CheckPresence(pn) ) return -ENOENT ;
 
     /* Array properties? Write all together if aggregate */
     if ( pn->ft->ag ) {
@@ -159,7 +162,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
 
 #ifdef OW_CACHE
     /* buffer for storing parsed data to cache */
-    if ( cacheenabled ) cbuf = (char *) malloc( fl ) ;
+    if ( IsCacheEnabled(pn) ) cbuf = (char *) malloc( fl ) ;
 #endif /* OW_CACHE */
 
     switch( pn->ft->format ) {
@@ -245,7 +248,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-    } else if ( cacheenabled ) {
+    } else if ( IsCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */
@@ -264,7 +267,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
 
 #ifdef OW_CACHE
     /* buffer for storing parsed data to cache */
-    if ( cacheenabled ) cbuf = (char *) malloc( ffl ) ;
+    if ( IsCacheEnabled(pn) ) cbuf = (char *) malloc( ffl ) ;
 #endif /* OW_CACHE */
 
     if ( offset ) return -EADDRNOTAVAIL ;
@@ -392,7 +395,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
     if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-    } else if ( cacheenabled ) {
+    } else if ( IsCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */
@@ -600,7 +603,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-    } else if ( cacheenabled ) {
+    } else if ( IsCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */

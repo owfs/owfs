@@ -43,7 +43,6 @@ pid_t pid_num ;
     void * devusb = NULL ;
 #endif /* OW_USB */
 
-int presencecheck = 1 ; /* check if present whenever opening a directory or static file */
 time_t start_time ;
 time_t dir_time ; /* time of last directory scan */
 
@@ -52,7 +51,19 @@ int readonly = 0 ; /* readonly file system */
 
 struct interface_routines iroutines ;
 
-enum temp_type tempscale = temp_celsius ; /* Default Celsius */
+/* State informatoin, sent to remote or kept locally */
+/* cacheenabled, presencecheck, tempscale, devform */
+union semiglobal SemiGlobal  = { u:{ 
+#ifdef OW_CACHE
+    1,
+#else /* OW_CACHE */
+    0,
+#endif /* OW_CACHE */ 
+    1, 
+    (uint8_t)temp_celsius, 
+    (uint8_t)fdi, } 
+};
+
 
 /* Static buffer for serial conmmunications */
 /* Since only used during actual transfer to/from the adapter,

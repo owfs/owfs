@@ -252,12 +252,12 @@ static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
 }
 
 static int FS_rangelow(FLOAT *F , const struct parsedname * pn) {
-    F[0] = Temperature(((struct thermocouple *) pn->ft->data)->rangeLow) ;
+    F[0] = Temperature(((struct thermocouple *) pn->ft->data)->rangeLow,pn) ;
     return 0 ;
 }
 
 static int FS_rangehigh(FLOAT *F , const struct parsedname * pn) {
-    F[0] = Temperature(((struct thermocouple *) pn->ft->data)->rangeHigh) ;
+    F[0] = Temperature(((struct thermocouple *) pn->ft->data)->rangeHigh,pn) ;
     return 0 ;
 }
 
@@ -286,7 +286,7 @@ static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
     }
 
     /* Temperature units correction */
-    F[0]=Temperature(T) ;
+    F[0]=Temperature(T,pn) ;
     return 0 ;
 }
 
@@ -344,7 +344,7 @@ static int FS_r_temp(FLOAT * T , const struct parsedname * pn) {
     int ret = OW_r_temp( T , pn ) ;
     if (ret) return ret ;
     /* change to selected temperature units */
-    T[0] = Temperature( T[0] ) ;
+    T[0] = Temperature( T[0],pn ) ;
     return 0 ;
 }
 
