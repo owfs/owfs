@@ -31,6 +31,7 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
     if ( pn && pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
+        /* Reset persistent states from "local" stateinfo */
         if ( (busmode != bus_remote)  && (SemiGlobal.int32 != pn->si->sg.int32) ) {
             CACHELOCK
                 SemiGlobal.int32 = pn->si->sg.int32 ;
@@ -80,7 +81,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */
-    if ( busmode != bus_remote ) pn->si->sg.int32 = SemiGlobal.int32 ;
+    /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
+    pn->si->sg.int32 = SemiGlobal.int32 ;
 //        pn->si->sg.u[0] = cacheenabled ;
 //        pn->si->sg.u[1] = presencecheck ;
 //        pn->si->sg.u[2] = tempscale ;

@@ -89,7 +89,7 @@ char * get( const char * path ) {
 
     /* Parse the input string */
     pn.si = &si ;
-    si.sg.int32 = SemiGlobal.int32 ;
+//    si.sg.int32 = SemiGlobal.int32 ;
     if ( FS_ParsedName( path, &pn ) ) return NULL ;
 //printf("path=%s dev=%p ft=%p subdir=%p format=%d\n",pathcpy,pn.dev,pn.ft,pn.subdir,pn.ft?pn.ft->format:-1) ;
 

@@ -133,6 +133,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
 //printf("ServerDir got:%s\n",path2);
+            pn2.si = pn->si ; /* reuse stateinfo */
             if ( FS_ParsedName( path2, &pn2 ) ) {
                 cm.ret = -EINVAL ;
                 free(path2) ;

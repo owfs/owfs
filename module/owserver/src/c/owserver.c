@@ -140,6 +140,7 @@ static int Handler( int fd ) {
             pn.si = &si ;
             /* Parse the path string */
             if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
+            /* Use client persistent settings (temp scale, discplay mode ...) */
             si.sg.int32 = sm.sg ;
             switch( (enum msg_type) sm.type ) {
             case msg_full:
