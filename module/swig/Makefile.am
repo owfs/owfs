@@ -1,10 +1,8 @@
 if ENABLE_OWTCL
-TCLDIR = tcl
-else
-TCLDIR =
+  MAYBE_OWTCL = tcl
 endif
 
-SUBDIRS = perl5 python ${TCLDIR}
+SUBDIRS = perl5 python $(MAYBE_OWTCL)
 
 clean-generic:
 
