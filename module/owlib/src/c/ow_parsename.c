@@ -69,8 +69,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->subdir = NULL ; /* Not subdirectory */
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
-    if ( path[0] != '/' ) return -ENOENT ;
-    ++pathnow ;
+    if ( path[0] == '/' ) ++pathnow ;
 
     /* Default attributes */
     pn->state = pn_normal ;
@@ -372,15 +371,15 @@ void UT_delay(const unsigned int len)
       s.tv_sec = rem.tv_sec;
       s.tv_nsec = rem.tv_nsec;
       if(nanosleep(&s, &rem) < 0) {
-	if(errno == EINTR) {
-	  /* was interupted... continue sleeping... */
-	} else {
-	  //printf("UT_delay: error: %s\n", strerror(errno));
-	  break;
-	}
+    if(errno == EINTR) {
+      /* was interupted... continue sleeping... */
+    } else {
+      //printf("UT_delay: error: %s\n", strerror(errno));
+      break;
+    }
       } else {
-	/* completed sleeping */
-	break;
+    /* completed sleeping */
+    break;
       }
     }
     return;

@@ -52,7 +52,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
     FSTATUNLOCK
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-//printf("DIR\n");
+//printf("DIR in\n");
     if ( pn == NULL ) {
         ret = -ENOENT ; /* should never happen */
     } else if ( pn->dev ){ /* device directory */
@@ -98,6 +98,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         AVERAGE_OUT(&dir_avg)
         AVERAGE_OUT(&all_avg)
     STATUNLOCK
+//printf("DIR out\n");
     return ret ;
 }
 
@@ -156,6 +157,7 @@ static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const)
     STATLOCK
         ++dir_main.calls ;
     STATUNLOCK
+//printf("DIR alarm directory\n");
 
     pn2->ft = NULL ; /* just in case not properly set */
     BUSLOCK
@@ -191,6 +193,7 @@ static int FS_branchoff( const struct parsedname * const pn ) {
 /* A directory of devices -- either main or branch */
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
+/* Scan the directory from the BUS and add to cache */
 static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
     unsigned char sn[8] ;
     int dindex = 0 ;
@@ -203,10 +206,13 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
     STATUNLOCK
 
     BUSLOCK
+
+    /* Operate at dev level, not filetype */
+    pn2->ft = NULL ;
+
     /* Turn off all DS2409s */
     FS_branchoff(pn2) ;
 
-//printf("DIR pathlength=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ft=%p \n",pn2->pathlength,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7],pn2->ft);
     (ret=BUS_select(pn2)) || (ret=BUS_first(sn,pn2)) ;
     while (ret==0) {
         char ID[] = "XX";
@@ -220,6 +226,7 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         FS_devicefind( ID, pn2 ) ;
+//printf("DIR pathlength=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ft=%p \n",pn2->pathlength,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7],pn2->ft);
         simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
         dirfunc( data, pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
@@ -249,11 +256,13 @@ void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn ) {
 /* A directory of devices -- either main or branch */
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
+/* Cache2Real try the cache first, else can directory from bus (and add to cache) */
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
     unsigned char sn[8] ;
     int simul = 0 ;
     int dindex = 0 ;
 
+    /* Test to see whether we should get the directory "directly" */
     if ( (pn2->state & pn_uncached) || Cache_Get_Dir(sn,0,pn2 ) )
         return FS_realdir(dirfunc,data,pn2) ;
 
@@ -262,6 +271,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
         ++dir_main.calls ;
     STATUNLOCK
 
+    /* Get directory from the cache */
     do {
         char ID[] = "XX";
         num2string( ID, sn[0] ) ;
@@ -276,6 +286,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
     STATLOCK
         dir_main.entries += dindex ;
     STATUNLOCK
+    /* Add the simultaneous directory? */
     if ( simul ) {
         pn2->dev = DeviceSimultaneous ;
         if ( pn2->dev ) {

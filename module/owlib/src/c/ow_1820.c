@@ -217,7 +217,7 @@ static int FS_r_die(char *buf, const size_t size, const off_t offset , const str
         return -EINVAL ;
     }
     memcpy(buf,&d[offset],size) ;
-    return 0 ;
+    return 2 ;
 }
 
 static int FS_r_trim(unsigned int * const trim , const struct parsedname * pn) {
@@ -404,7 +404,7 @@ static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedn
     unsigned char data[8] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
-    (char) data[2+Tindex] = T ;
+    data[2+Tindex] = T ;
     return OW_w_scratchpad( &data[2], pn ) ;
 }
 

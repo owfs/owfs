@@ -29,7 +29,6 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
-
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
     struct stateinfo si ;
