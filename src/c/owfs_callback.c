@@ -30,7 +30,7 @@ time_t scan_time ;
 int FS_getattr(const char *path, struct stat *stbuf) {
     struct parsedname pn ;
     /* Bad path */
-printf("GA\n");
+//printf("GA\n");
 	memset(stbuf, 0, sizeof(struct stat));
     stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = scan_time ;
     if ( FS_ParsedName( path , &pn ) ) {
@@ -102,7 +102,7 @@ void directory( void * data, const struct parsedname * const pn ) {
 
 int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
-printf("GETDIR\n");
+//printf("GETDIR\n");
 
     /* dirback structure passed via void pointer to 'directory' */
     struct dirback db;
@@ -127,18 +127,13 @@ printf("GETDIR\n");
     return 0 ;
 }
 
+/* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
 int FS_open(const char *path, int flags) {
-    struct parsedname pn ;
-    int ret =0;
-
     /* Unused */
     (void) flags ;
-printf("OPEN\n");
-/*
-    ret = FS_ParsedName( path , &pn ) ;
-    FS_ParsedName_destroy(&pn) ;
-*/
-    return ret ;
+    (void) path ;
+//printf("OPEN\n");
+    return 0 ;
 }
 
 int FS_statfs(struct fuse_statfs *fst) {
