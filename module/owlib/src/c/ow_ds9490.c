@@ -256,8 +256,8 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
 
     /** Play LastDescrepancy games with bitstream */
     memcpy( combuffer,serialnumber,8) ; /* set bufferto zeros */
-    if ( LastDiscrepancy > 0 ) UT_setbit(combuffer,LastDiscrepancy-1,1) ;
-    for ( i=LastDiscrepancy;i<64;i++) {
+    if ( LastDiscrepancy > -1 ) UT_setbit(combuffer,LastDiscrepancy,1) ;
+    for ( i=LastDiscrepancy+1;i<64;i++) {
         UT_setbit(combuffer,i,0) ;
     }
 //printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
@@ -287,7 +287,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
 
         for ( i=63 ; i>=0 ; i-- ) {
             if ( UT_getbit(combuffer,i+64) && (UT_getbit(combuffer,i)==0) ) {
-                LastDiscrepancy = i + 1 ;
+                LastDiscrepancy = i ;
 //printf("DS9490_next_both lastdiscrepancy=%d\n",LastDiscrepancy) ;
                 break ;
             }

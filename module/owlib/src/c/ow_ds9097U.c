@@ -460,14 +460,11 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) 
     // set the bits in the added buffer
     for (i = 0; i < LastDiscrepancy; i++) {
         // before last discrepancy
-        if (i < LastDiscrepancy - 1) {
-            UT_set2bit( bitpairs,i,UT_getbit(serialnumber,i)<<1 ) ;
-        // at last discrepancy
-        } else if (i == LastDiscrepancy - 1) {
-            UT_set2bit( bitpairs,i,1<<1 ) ;
-        }
-        // after last discrepancy so leave zeros
+        UT_set2bit( bitpairs,i,UT_getbit(serialnumber,i)<<1 ) ;
     }
+    // at last discrepancy
+    if (LastDiscrepancy > -1 ) UT_set2bit( bitpairs,LastDiscrepancy,1<<1 ) ;
+    // after last discrepancy so leave zeros
 
     // flush the buffers
     COM_flush();
@@ -484,9 +481,9 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) 
         UT_setbit(sn,i,UT_get2bit(bitpairs,i)>>1) ;
         // check LastDiscrepancy
         if ( UT_get2bit(bitpairs,i)==0x1 ) {
-            mismatched = i + 1;
+            mismatched = i ;
             // check LastFamilyDiscrepancy
-            if (i < 8) LastFamilyDiscrepancy = i + 1;
+            if (i < 8) LastFamilyDiscrepancy = i ;
         }
     }
 

@@ -534,14 +534,14 @@ extern unsigned int read_timeout ;
 #define MODE_BREAK                     0x08
 
 /* Globals for DS2480B state */
-int UMode ;
-int ULevel ;
-int USpeed ;
-int ProgramAvailable ;
-int LastDiscrepancy ; // for search
-int LastFamilyDiscrepancy ; // for search
-int LastDevice ; // for search
-int Version2480 ;
-int AnyDevices ;
+extern int UMode ;
+extern int ULevel ;
+extern int USpeed ;
+extern int ProgramAvailable ;
+extern int LastDiscrepancy ; // for search
+extern int LastFamilyDiscrepancy ; // for search
+extern int LastDevice ; // for search
+extern int Version2480 ;
+extern int AnyDevices ;
 
 #endif /* OW_H */

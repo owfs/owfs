@@ -174,16 +174,16 @@ int BUS_select(const struct parsedname * const pn) {
 */
 int BUS_first(unsigned char * serialnumber ) {
     // reset the search state
-    LastDiscrepancy = 0;
-    LastFamilyDiscrepancy = 0;
+    LastDiscrepancy = -1;
+    LastFamilyDiscrepancy = -1;
     LastDevice = 0 ;
     return BUS_next(serialnumber) ;
 }
 
 int BUS_first_alarm(unsigned char * serialnumber ) {
     // reset the search state
-    LastDiscrepancy = 0;
-    LastFamilyDiscrepancy = 0;
+    LastDiscrepancy = -1 ;
+    LastFamilyDiscrepancy = -1 ;
     LastDevice = 0 ;
     return BUS_next_alarm(serialnumber) ;
 }
@@ -198,8 +198,8 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) 
     serialnumber[5] = 0x00 ;
     serialnumber[6] = 0x00 ;
     serialnumber[7] = 0x00 ;
-    LastDiscrepancy = 64;
-    LastFamilyDiscrepancy = 0;
+    LastDiscrepancy = 63;
+    LastFamilyDiscrepancy = -1 ;
     LastDevice = 0 ;
     return BUS_next(serialnumber) ;
 }

@@ -18,6 +18,16 @@ int portnum = -1 ; /* TCP port (for owhttpd) */
 char * devport = NULL ; /* Device name (COM or parallel port) */
 int devfd = -1; /*file descriptor for serial/parallel port*/
 int useusb = 0 ; /* which DS9490 to connect */
+/* Globals for DS2480B state */
+int UMode ;
+int ULevel ;
+int USpeed ;
+int ProgramAvailable ;
+int LastDiscrepancy = 0 ; // for search
+int LastFamilyDiscrepancy = 0 ; // for search
+int LastDevice ; // for search
+int Version2480 ;
+int AnyDevices ;
 
 #ifdef OW_USB
     usb_dev_handle * devusb = NULL ;
