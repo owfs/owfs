@@ -81,11 +81,16 @@ static int FS_ascii(char *buf, const size_t size, const off_t offset , const str
     char * c = x[(int)(pn->ft->data)] ;
     size_t s ;
     if( c == NULL ) return -ENODEV ;
+#if 0
+    // offset and size adjustment already handled in FS_parse_read... isn't it?
     s = strlen(c) ;
     if ( offset>s ) return -ERANGE ;
     s -= offset ;
     if ( s>size ) s = size ;
     strncpy( buf, c, s ) ;
+#else
+    memcpy( buf, &c[offset], size);
+#endif
     return size ;
 }
 
@@ -96,22 +101,28 @@ static int FS_uint(unsigned int * u, const struct parsedname * pn) {
 }
 
 static int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    char tmp[16];
     switch(pn->in->Adapter) {
     case adapter_LINK:
     case adapter_LINK_Multi:
         if ( LI_reset(pn) || BUS_write(" ",1,pn) ) {
             return -ENODEV ;
+#if 0
+	    /* Why not handle offset when possible... */
         } else if (offset) {
             return -EADDRNOTAVAIL ;
+#endif
         } else {
-             memset(buf,0,size) ;
-             BUS_read(buf,size,pn) ; // ignore return value -- will time out, probably
+             memset(tmp,0,size) ;
+             BUS_read(tmp,size,pn) ; // ignore return value -- will time out, probably
              COM_flush(pn) ;
+	     memcpy(buf,&tmp[offset],size) ;
              return size ;
         }
     default:
-        memset(buf,0,size) ;
-        strcpy(buf, "(none)");
+        memset(tmp,0,size) ;
+	strcpy(tmp, "(none)");
+	memcpy(buf,&tmp[offset],size) ;
         return size;
     }
 }
