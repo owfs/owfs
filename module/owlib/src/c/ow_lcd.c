@@ -44,7 +44,7 @@ $Id$
 
 /* ------- Prototypes ----------- */
 
-/* DS2438 Battery */
+/* LCD display */
  aREAD_FUNCTION( FS_r_version ) ;
  uREAD_FUNCTION( FS_r_counters ) ;
 yWRITE_FUNCTION( FS_w_on ) ;
@@ -80,8 +80,8 @@ struct filetype LCD[] = {
     {"backlight" ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_backlight}, NULL, } ,
     {"version"   ,    16,  NULL,      ft_ascii, ft_stable  , {a:FS_r_version} , {v:NULL}          , NULL, } ,
     {"gpio"      ,     1,  &ALCDg,    ft_yesno, ft_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , NULL, } ,
-    {"register"  ,     1,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , NULL, } ,
-    {"data"      ,     1,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , NULL, } ,
+    {"register"  ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , NULL, } ,
+    {"data"      ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , NULL, } ,
     {"counters"  ,    12,  &ALCDc, ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , NULL, } ,
 #ifdef OW_CACHE
     {"cumulative",    12,  &ALCDu, ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , NULL, } ,
@@ -164,11 +164,11 @@ static int FS_r_register(unsigned int * u , const struct parsedname * pn ) {
     unsigned char data ;
     if ( OW_r_register(&data,pn) ) return -EINVAL ;
     u[0] = data ;
-    return 1 ;
+    return 0 ;
 }
 
 static int FS_w_register(const unsigned int * u , const struct parsedname * pn ) {
-    if ( OW_w_register(u[0],pn) ) return -EINVAL ;
+    if ( OW_w_register(((unsigned char)(u[0]&0xFF)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -176,11 +176,11 @@ static int FS_r_data(unsigned int * u , const struct parsedname * pn ) {
     unsigned char data ;
     if ( OW_r_data(&data,pn) ) return -EINVAL ;
     u[0] = data ;
-    return 1 ;
+    return 0 ;
 }
 
 static int FS_w_data(const unsigned int * u , const struct parsedname * pn ) {
-    if ( OW_w_data(u[0],pn) ) return -EINVAL ;
+    if ( OW_w_data(((unsigned char)(u[0]&0xFF)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -191,7 +191,7 @@ static int FS_r_counters(unsigned int * u , const struct parsedname * pn ) {
 
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 static int FS_r_cum(unsigned int * u , const struct parsedname * pn ) {
-    int s = 4*sizeof(unsigned int) ;
+    size_t s = 4*sizeof(unsigned int) ;
 
     if ( OW_r_counters(u,pn) ) return -EINVAL ; /* just to prime the "CUM" data */
     if ( Cache_Get_Internal( (void *) u, &s, &ip_cum, pn ) ) return -EINVAL ;
@@ -306,7 +306,7 @@ static int OW_w_register( const unsigned char data , const struct parsedname* pn
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(100) ;
+    UT_delay(1) ; // 100uS
     return 0 ;
 }
 
@@ -317,9 +317,9 @@ static int OW_r_register( unsigned char * data , const struct parsedname* pn ) {
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
     BUSUNLOCK
-    return ret ;
+    if ( ret ) return 1 ;
 
-//    UT_delay(150) ;
+    UT_delay(1) ; // 150uS
     return OW_r_scratch( data, 1, pn ) ;
 }
 
@@ -332,7 +332,7 @@ static int OW_w_data( const unsigned char data , const struct parsedname* pn ) {
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(100) ;
+    UT_delay(1) ; // 100uS
     return 0 ;
 }
 
@@ -345,7 +345,7 @@ static int OW_r_data( unsigned char * data , const struct parsedname* pn ) {
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(150) ;
+    UT_delay(1) ; // 150uS
     return OW_r_scratch( data, 1, pn ) ;
 }
 
@@ -361,7 +361,7 @@ static int OW_w_gpio( const unsigned char data , const struct parsedname* pn ) {
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(20) ;
+    UT_delay(1) ; // 20uS
     return 0 ;
 }
 
@@ -374,29 +374,15 @@ static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) {
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(150) ;
+    UT_delay(1) ; // 70uS
     return OW_r_scratch( data, 1, pn ) ;
-}
-
-/* data is 16 bytes */
-static int OW_r_version( unsigned char * data , const struct parsedname* pn ) {
-    unsigned char w = 0x41 ;
-    int ret ;
-
-    BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
-
-//    UT_delay(500) ;
-    return OW_r_scratch( data, 16, pn ) ;
 }
 
 static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
     unsigned char w = 0x23 ;
     unsigned char d[8] ;
     unsigned int cum[4] ;
-    int s = sizeof(cum);
+    size_t s = sizeof(cum);
     int ret ;
 
     BUSLOCK
@@ -404,7 +390,7 @@ static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(80) ;
+    UT_delay(1) ; // 80uS
     if ( OW_r_scratch( d, 8, pn ) ) return 1 ;
     data[0] = ((unsigned int) d[1])<<8 | d[0] ;
     data[1] = ((unsigned int) d[3])<<8 | d[2] ;
@@ -446,7 +432,7 @@ static int OW_r_memory( unsigned char * data , const size_t size, const size_t o
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-//    UT_delay(400) ;
+    UT_delay(1) ; // 500uS
     return OW_r_scratch(data,buf[1],pn) ;
 }
 
@@ -470,18 +456,22 @@ static int OW_w_memory( const unsigned char * data , const size_t size, const si
     BUSUNLOCK
     if ( ret ) return 1 ;
 
-    UT_delay(4*size) ;
+    UT_delay(4*size) ; // 4mS/byte
     return 0 ;
 }
 
-static int OW_clear( const struct parsedname* pn ) {
-    unsigned char c = 0x49 ; /* clear */
+/* data is 16 bytes */
+static int OW_r_version( unsigned char * data , const struct parsedname* pn ) {
+    unsigned char w = 0x41 ;
     int ret ;
 
     BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( &c, 1) ;
+        ret = BUS_select(pn) || BUS_send_data( &w , 1 ) ;
     BUSUNLOCK
-    return ret ;
+    if ( ret ) return 1 ;
+
+    UT_delay(1) ; // 500uS
+    return OW_r_scratch( data, 16, pn ) ;
 }
 
 static int OW_w_screen( const unsigned char loc , const char * text , const int size, const struct parsedname* pn ) {
@@ -505,6 +495,17 @@ static int OW_w_screen( const unsigned char loc , const char * text , const int 
 
         t[0]+=l ;
     }
-//    UT_delay(120*size) ;
+    UT_delay(2) ; // 120uS/byte (max 1.92mS)
     return 0 ;
+}
+
+static int OW_clear( const struct parsedname* pn ) {
+    unsigned char c = 0x49 ; /* clear */
+    int ret ;
+
+    BUSLOCK
+        ret = BUS_select(pn) || BUS_send_data( &c, 1) ;
+    BUSUNLOCK
+    UT_delay(3) ; // 2.5mS
+    return ret ;
 }
