@@ -378,7 +378,6 @@ AC_CONFIG_FILES([
 	module/owperl/src/Makefile
 	module/owperl/src/include/Makefile
 	module/owperl/src/c/Makefile
-	module/owperl/src/man/Makefile
 	src/Makefile
 	src/include/Makefile
 	src/man/Makefile
