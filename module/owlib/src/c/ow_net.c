@@ -190,8 +190,10 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     }
 
     /* embedded function */
-    void RunAccepted( void (*HandlerRoutine)(int fd), int rafd ) {
+//    void RunAccepted( void (*HandlerRtn)(int fd), int rafd ) {
+    void RunAccepted( int rafd ) {
         if ( rafd>=0 ) {
+//            HandlerRtn( rafd ) ;
             HandlerRoutine( rafd ) ;
             close( rafd ) ;
         }
@@ -210,8 +212,9 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
             ACCEPTUNLOCK(o2)
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
-            RunAccepted( HandlerRoutine, acceptfd ) ;
- #ifndef VALGRIND
+//            RunAccepted( HandlerRoutine, acceptfd ) ;
+            RunAccepted( acceptfd ) ;
+#ifndef VALGRIND
             pthread_exit((void *)0);
  #endif /* VALGRIND */
             return NULL;
@@ -266,6 +269,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
-    for ( ;; ) RunAccepted( HandlerRoutine, accept(outdevice->fd,NULL,NULL) ) ;
+//    for ( ;; ) RunAccepted( HandlerRoutine, accept(outdevice->fd,NULL,NULL) ) ;
+    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
 #endif /* OW_MT */
 }
