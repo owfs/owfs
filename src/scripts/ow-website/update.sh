@@ -12,6 +12,8 @@
 
 date
 cd /home/groups/o/ow/owfs/htdocs
-cvs update
+pwd
+cvs -q update
 cd /home/groups/o/ow/owfs/owfs
-cvs update
+pwd
+cvs -q update
