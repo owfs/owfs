@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     {
     char c ;
 //    while ( (c=getopt(argc,argv,"p:dhs")) != -1 ) {
-    while ( (c=getopt(argc,argv,"d:ht:")) != -1 ) {
+    while ( (c=getopt(argc,argv,"d:ht:CFRK")) != -1 ) {
         switch (c) {
 //        case 's':
 //            multithreaded = 0 ;
@@ -100,7 +100,8 @@ int main(int argc, char *argv[]) {
              "  Options:\n"
 //             "    -s      disable multithreaded operation\n"
              "    -t      cache timeout (in seconds)\n"
-             "    -h      print help\n",
+             "    -h      print help\n"
+             "    -C | -F | -K | -R Temperature scale Celsius(default)|Fahrenheit|Kelvin|Rankine\n",
              argv[0],argv[0] ) ;
              ow_exit(1);
          case 't':
@@ -112,12 +113,24 @@ int main(int argc, char *argv[]) {
          case 'd':
              com_tried = COM_open( optarg ) ;
              break ;
-         default:
-             fprintf(stderr, "invalid option: %c, try -h for help\n", c);
-             ow_exit(1) ;
+        case 'C':
+		    tempscale = temp_celsius ;
+			break ;
+        case 'F':
+		    tempscale = temp_fahrenheit ;
+			break ;
+        case 'R':
+		    tempscale = temp_rankine ;
+			break ;
+        case 'K':
+		    tempscale = temp_kelvin ;
+			break ;
+	 	default:
+            fprintf(stderr, "invalid option: %c, try -h for help\n", c);
+            ow_exit(1) ;
          }
-     }
-     }
+    }
+    }
 
      if ( optind == argc ) {
          fprintf(stderr,"No mount point specified.\nTry '%s -h' for help.\n",argv[0]) ;
