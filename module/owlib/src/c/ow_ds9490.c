@@ -131,11 +131,11 @@ static int DS9490wait(unsigned char * const buffer) {
     do {
         if ( (ret=usb_bulk_read(devusb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
     } while ( !(buffer[8]&0x20) ) ;
-{
-int i ;
-printf ("USBwait return buffer:\n") ;
-for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
-}
+//{
+//int i ;
+//printf ("USBwait return buffer:\n") ;
+//for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
+//}
     return 0 ;
 }
 
@@ -244,7 +244,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
     }
 //printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
 
-printf("USBnextboth\n");
+//printf("USBnextboth\n");
     if ( (ret=usb_bulk_write(devusb,DS2490_EP2,combuffer,8, TIMEOUT_USB )) < 8 ) {
 //printf("USBnextboth bulk write problem = %d\n",ret);
         usb_clear_halt(devusb,DS2490_EP2) ;
