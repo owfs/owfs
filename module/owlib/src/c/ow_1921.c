@@ -683,7 +683,7 @@ static int FS_r_logudate( unsigned int * u , const struct parsedname * pn) {
 static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
     struct Mission mission ;
     int pass=0 ;
-    int off ;
+    int off=0 ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     
     if ( v==NULL ) return -EINVAL ;
