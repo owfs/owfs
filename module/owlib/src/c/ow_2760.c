@@ -318,7 +318,7 @@ static int FS_r_offset(FLOAT * O , const struct parsedname * pn) {
     unsigned char o ;
     int ret = OW_r_mem(&o,1,0x33,pn) ;
     if (ret) return ret ;
-    O[0] = (FLOAT) (int8_t)o * .000625 ;
+    O[0] = ((FLOAT) ((int8_t)o)) * .000625 ;
 printf("FS_r_offset read byte=%.2X value=%g\n",o,O[0]);
     return 0 ;
 }
@@ -327,7 +327,7 @@ static int FS_w_offset(const FLOAT * O , const struct parsedname * pn) {
     unsigned char o ;
     if ( O[0] < -.08 ) return -ERANGE ;
     if ( O[0] > .08 ) return -ERANGE ;
-    o = (uint8_t) (O[0]*1600) ; // 1600 == 1/.000625
+    o = (int8_t) (O[0]*1600.) ; // 1600 == 1/.000625
 printf("FS_w_offset write byte=%.2X value=%g\n",o,O[0]);
     return OW_w_mem(&o,1,0x33,pn) ? -EINVAL : 0 ;
 }

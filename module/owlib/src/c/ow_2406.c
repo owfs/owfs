@@ -167,7 +167,7 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 
 /* 2406 switch activity latch*/
 static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
-    if ( u[0] && OW_clear(pn) ) return -EINVAL ;
+    if ( OW_clear(pn) ) return -EINVAL ;
     return 0 ;
 }
 
