@@ -127,7 +127,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             ++ read_calls ; /* statistics */
         STATUNLOCK
         /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
+        if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
             LockGet(pn) ;
                 r = FS_real_read( buf, size, offset, pn ) ;
             LockRelease(pn) ;

@@ -548,7 +548,7 @@ static void ShowDevice( FILE * out, struct parsedname * pn ) {
     if(!(pn->state & pn_text)) {
       HTTPtitle( out , &path2[1] ) ;
       HTTPheader( out , &path2[1] ) ;
-      if ( IsCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( out , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
+      if ( IsLocalCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( out , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
       fprintf( out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
       fprintf( out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, pn->path ) ;
     }

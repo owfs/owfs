@@ -912,7 +912,7 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
 
-#define IsCacheEnabled(ppn )       ( (ppn->si->sg.u[0] ) && (ppn->in->busmode != bus_remote) )
+#define IsLocalCacheEnabled(ppn )  ( (ppn->si->sg.u[0] ) )
 #define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (ppn->in->busmode != bus_remote) )
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )

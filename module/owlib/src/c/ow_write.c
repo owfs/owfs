@@ -196,7 +196,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
 
 #ifdef OW_CACHE
     /* buffer for storing parsed data to cache */
-    if ( IsCacheEnabled(pn) ) cbuf = (char *) malloc( fl ) ;
+    if ( IsLocalCacheEnabled(pn) ) cbuf = (char *) malloc( fl ) ;
 #endif /* OW_CACHE */
 
     switch( pn->ft->format ) {
@@ -282,7 +282,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-    } else if ( IsCacheEnabled(pn) ) {
+    } else if ( IsLocalCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */
@@ -301,7 +301,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
 
 #ifdef OW_CACHE
     /* buffer for storing parsed data to cache */
-    if ( IsCacheEnabled(pn) ) cbuf = (char *) malloc( ffl ) ;
+    if ( IsLocalCacheEnabled(pn) ) cbuf = (char *) malloc( ffl ) ;
 #endif /* OW_CACHE */
 
     if ( offset ) return -EADDRNOTAVAIL ;
@@ -429,7 +429,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
     if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-    } else if ( IsCacheEnabled(pn) ) {
+    } else if ( IsLocalCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */
@@ -637,7 +637,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-    } else if ( IsCacheEnabled(pn) ) {
+    } else if ( IsLocalCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
     }
     /* free cache string buffer */

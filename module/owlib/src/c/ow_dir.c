@@ -73,7 +73,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
         if ( pn2.pathlength == 0 ) { /* true root */
             /* restore state */
             pn2.state = pn->state ;
-            if ( IsCacheEnabled(pn) ) { /* cached */
+            if ( IsLocalCacheEnabled(pn) ) { /* cached */
                 pn2.state = (pn_uncached | (pn->state & pn_text)) ;
                 dirfunc( &pn2 ) ;
                 /* restore state */
@@ -175,7 +175,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
             ret = FS_alarmdir(dirfunc,&pncopy) ;
         } else {
-            if ( (pn->state&pn_uncached) || !IsCacheEnabled(pn) || timeout.dir==0 ) {
+            if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
                 ret = FS_realdir( dirfunc, &pncopy, flags ) ;
             } else {
                 ret = FS_cache2real( dirfunc, &pncopy, flags ) ;

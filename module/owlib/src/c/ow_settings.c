@@ -83,7 +83,7 @@ static int FS_w_presencecheck(const int * y , const struct parsedname * pn) {
 static int FS_r_enable(int * y , const struct parsedname * pn) {
     (void) pn ; /* to avoid compiler warning about unused parameter */
     CACHELOCK
-        y[0] =  IsCacheEnabled(pn) ;
+        y[0] =  IsLocalCacheEnabled(pn) ;
     CACHEUNLOCK
     return 0 ;
 }
@@ -92,7 +92,7 @@ static int FS_w_enable(const int * y , const struct parsedname * pn) {
     (void) pn ; /* to avoid compiler warning about unused parameter */
     if ( cacheavailable==0 ) return -EINVAL ;
     pn->si->sg.u[0] = y[0] ;
-    if ( !IsCacheEnabled(pn) ) Cache_Clear() ;
+    if ( !IsLocalCacheEnabled(pn) ) Cache_Clear() ;
     return 0 ;
 }
 
