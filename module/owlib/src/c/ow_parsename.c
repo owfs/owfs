@@ -37,27 +37,27 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
 int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
-    static char * uncached = NULL ;
+    static const char * uncached = NULL ;
       static size_t luncached ;
-    static char * structure ;
+    static const char * structure ;
       static size_t lstructure ;
-    static char * text ;
+    static const char * text ;
       static size_t ltext ;
-    static char * system_ ;
+    static const char * system_ ;
       static size_t lsystem ;
-    static char * settings ;
+    static const char * settings ;
       static size_t lsettings ;
-    static char * statistics ;
+    static const char * statistics ;
       static size_t lstatistics ;
     const char * pathnow = path ;
 
     if ( uncached == NULL ) { // first time through
-      ltext      = strlen ( text      = (char *)FS_dirname_state(pn_text      )) ;
-      luncached  = strlen ( uncached  = (char *)FS_dirname_state(pn_uncached  )) ;
-      lstructure = strlen ( structure = (char *)FS_dirname_type( pn_structure )) ;
-      lsystem    = strlen ( system_   = (char *)FS_dirname_type( pn_system    )) ;
-      lsettings  = strlen ( settings  = (char *)FS_dirname_type( pn_settings  )) ;
-      lstatistics= strlen ( statistics= (char *)FS_dirname_type( pn_statistics)) ;
+      ltext      = strlen ( text      = (const char *)FS_dirname_state(pn_text      )) ;
+      luncached  = strlen ( uncached  = (const char *)FS_dirname_state(pn_uncached  )) ;
+      lstructure = strlen ( structure = (const char *)FS_dirname_type( pn_structure )) ;
+      lsystem    = strlen ( system_   = (const char *)FS_dirname_type( pn_system    )) ;
+      lsettings  = strlen ( settings  = (const char *)FS_dirname_type( pn_settings  )) ;
+      lstatistics= strlen ( statistics= (const char *)FS_dirname_type( pn_statistics)) ;
     }
 //printf("PN_pn\n");
     if ( pn == NULL ) return -EINVAL ;

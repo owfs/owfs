@@ -725,6 +725,16 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
 int FS_read_postparse(const char * path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
+int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
+
+int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+
 int FS_fstat(const char *path, struct stat *stbuf) ;
 
 /* iteration functions for splitting writes to buffers */

@@ -24,16 +24,6 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_structure(const char *path, char *buf, const size_t size, const off_t offset, struct parsedname * pn) ;
 
-static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
-
-static int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
@@ -189,7 +179,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             if ( offset ) return -EADDRNOTAVAIL ;
             ret = (pn->ft->read.i)(&i,pn) ;
             if (ret < 0) return ret ;
-            return FS_output_int( i , buf , size , pn ) ;
+            return FS_output_integer( i , buf , size , pn ) ;
         }
         case ft_unsigned: {
             unsigned int u ;
@@ -390,7 +380,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
     }
 }
 
-static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
     char c[suglen+2] ;
     /* should only need suglen+1, but uClibc's snprintf()
@@ -405,7 +395,7 @@ static int FS_output_int( int value, char * buf, const size_t size, const struct
     return len ;
 }
 
-static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
     char c[suglen+2] ;
     /* should only need suglen+1, but uClibc's snprintf()
@@ -420,7 +410,7 @@ static int FS_output_unsigned( unsigned int value, char * buf, const size_t size
     return len ;
 }
 
-static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
     char c[suglen+2] ;
     /* should only need suglen+1, but uClibc's snprintf()
@@ -435,7 +425,7 @@ static int FS_output_float( FLOAT value, char * buf, const size_t size, const st
     return len ;
 }
 
-static int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) {
     char c[26] ;
     (void) pn ;
     if ( size < 24 ) return -EMSGSIZE ;
@@ -444,13 +434,13 @@ static int FS_output_date( DATE value, char * buf, const size_t size, const stru
     return 24 ;
 }
 
-static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
     int i ;
     for ( i=0 ; i < pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (len=FS_output_int( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+        if ( (len=FS_output_integer( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
         left -= len ;
         first += len ;
         if ( left<1 ) return -EMSGSIZE ;
@@ -462,7 +452,7 @@ static int FS_output_integer_array( int * values, char * buf, const size_t size,
     return size-(left-len) ;
 }
 
-static int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
@@ -481,7 +471,7 @@ static int FS_output_unsigned_array( unsigned int * values, char * buf, const si
     return size-(left-len) ;
 }
 
-static int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
@@ -499,7 +489,7 @@ static int FS_output_float_array( FLOAT * values, char * buf, const size_t size,
     return size-(left-len) ;
 }
 
-static int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;

@@ -134,13 +134,16 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     size_t ffl = FullFileLength(pn);
     int ret ;
     char * cbuf = NULL ;
-#ifdef OW_CACHE
-    /* buffer for storing parsed data to cache */
-    if ( cacheenabled ) cbuf = (char *) malloc( ffl+1 ) ;
-#endif /* OW_CACHE */
+
     /* We will allocate memory for array variables off heap, but not single vars for efficiency */
     if ( pn->ft->ag && ( pn->ft->ag->combined==ag_aggregate || ( pn->ft->ag->combined==ag_mixed && pn->extension==-1 ) ) )
         elements = pn->ft->ag->elements ;
+
+#ifdef OW_CACHE
+    /* buffer for storing parsed data to cache */
+    if ( cacheenabled ) cbuf = (char *) malloc( elements==1?fl:ffl ) ;
+#endif /* OW_CACHE */
+
     switch( pn->ft->format ) {
     case ft_integer:
         {
@@ -151,22 +154,12 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
                 i = (int *) calloc( elements , sizeof(int) ) ;
                 if ( i==NULL ) return -ENOMEM ;
                 ret = FS_input_integer_array( i, buf, size, pn ) ;
+                if ( cbuf && ret==0 ) FS_output_integer_array(i,cbuf,ffl,pn) ; /* post-parse cachable string creation */
             } else {
                 ret = FS_input_integer( i, buf, size ) ;
+                if ( cbuf && ret==0 ) FS_output_integer(I,cbuf,fl,pn) ; /* post-parse cachable string creation */
             }
             ret |= (pn->ft->write.i)(i,pn) ;
-            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
-                int n ,l ;
-                char * c = cbuf ;
-                for( n=0; n<elements ; ++n ) {
-                    if (n>0) *(c++) = ',' ;
-                    UCLIBCLOCK
-                        l = snprintf(c,fl+1,"%i",i[n] ) ;
-                        if (l>0) c+=l ;
-//printf("I[%i]=%i (%s)\n",n,i[n],cbuf) ;
-                    UCLIBCUNLOCK
-                }
-            }
             if ( elements>1) free(i) ;
         }
         break ;
@@ -179,22 +172,12 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
                 u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
                 if ( u==NULL ) return -ENOMEM ;
                 ret = FS_input_unsigned_array( u, buf, size, pn ) ;
+                if ( cbuf && ret==0 ) FS_output_unsigned_array(u,cbuf,ffl,pn) ; /* post-parse cachable string creation */
             } else {
                 ret = FS_input_unsigned( u, buf, size ) ;
+                if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,fl,pn) ; /* post-parse cachable string creation */
             }
             ret |= (pn->ft->write.u)(u,pn) ;
-            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
-                int n ,l ;
-                char * c = cbuf ;
-                for( n=0; n<elements ; ++n ) {
-                    if (n>0) *(c++) = ',' ;
-                    UCLIBCLOCK
-                        c += snprintf(c,fl+1,"%*u",fl,u[n] ) ;
-                        if (l>0) c+=l ;
-//printf("U[%i]=%u (%s)\n",n,u[n],cbuf) ;
-                    UCLIBCUNLOCK
-                }
-            }
             if ( elements>1) free(u) ;
         }
         break ;
@@ -207,22 +190,12 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
                 f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = FS_input_float_array( f, buf, size, pn ) ;
+                if ( cbuf && ret==0 ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
             } else {
                 ret = FS_input_float( f, buf, size ) ;
+                if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
             }
             ret |= (pn->ft->write.f)(f,pn) ;
-            if ( cbuf && ret==0 ) {
-                int n, l ;
-                char * c = cbuf ;
-                for( n=0; n<elements ; ++n ) { /* post-parse cachable string creation */
-                    if (n>0) *(c++) = ',' ;
-                    UCLIBCLOCK
-                        l = snprintf(c,fl+1,"%*g",fl,f[n] ) ;
-                        if (l>0) c+=l ;
-//printf("F[%i]=%g (%s)\n",n,f[n],cbuf) ;
-                    UCLIBCUNLOCK
-                }
-            }
             if ( elements>1) free(f) ;
         }
         break ;
@@ -235,20 +208,12 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
                 d = (DATE *) calloc( elements , sizeof(DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
                 ret = FS_input_date_array( d, buf, size, pn ) ;
+                if ( cbuf && ret==0 ) FS_output_date_array(d,cbuf,ffl,pn) ; /* post-parse cachable string creation */
             } else {
                 ret = FS_input_date( d, buf, size ) ;
+                if ( cbuf && ret==0 ) FS_output_date(D,cbuf,fl,pn) ; /* post-parse cachable string creation */
             }
             ret |= (pn->ft->write.d)(d,pn) ;
-            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
-                int n ;
-                char c[26] ;
-                cbuf[0] = '\0' ;
-                for( n=0; n<elements ; ++n ) {
-                    if (n>0) strcat(cbuf,",") ;
-                    ctime_r(&d[n],c) ;
-                    strncat(cbuf,c,24) ;
-                }
-            }
             if ( elements>1) free(d) ;
         }
         break ;
@@ -261,25 +226,18 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
                 y = (int *) calloc( elements , sizeof(int) ) ;
                 if ( y==NULL ) return -ENOMEM ;
                 ret = FS_input_yesno_array( y, buf, size, pn ) ;
+                if ( cbuf && ret==0 ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
             } else {
                 ret = FS_input_yesno( y, buf, size ) ;
+                if ( cbuf && ret==0 ) FS_output_integer(Y,cbuf,fl,pn) ; /* post-parse cachable string creation */
             }
             ret |= (pn->ft->write.y)(y,pn) ;
-            if ( cbuf && ret==0 ) { /* post-parse cachable string creation */
-                int n ;
-                int m ;
-                for( n=0,m=0; n<elements ; ++n ) {
-                    cbuf[m++]= y[n]?'1':'0' ;
-                    cbuf[m++]= ',' ;
-                }
-                cbuf[m-1] = '\0' ;
-            }
             if ( elements>1) free(y) ;
         }
         break ;
     case ft_ascii:
         {
-            size_t s = FileLength(pn) ;
+            size_t s = fl ;
             if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
@@ -289,7 +247,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         break ;
     case ft_binary:
         {
-            size_t s = FileLength(pn) ;
+            size_t s = fl ;
             if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
@@ -307,7 +265,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     }
 
     /* Add to cache? */
-    if ( offset==0 && cbuf && ret==0 ) {
+    if ( cbuf && ret==0 ) {
         Cache_Add( cbuf, strlen(cbuf), pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
     } else if ( cacheenabled ) {
@@ -365,9 +323,15 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
 static int FS_w_split(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0;
-//printf("WRITE_SPLIT\n");
 
-    (void) offset ;
+    int ffl = FullFileLength(pn) ;
+    char * cbuf = NULL ;
+
+#ifdef OW_CACHE
+    cbuf = (char *) malloc( FullFileLength(pn)) ;
+#endif /* OW_CACHE */
+
+//printf("WRITE_SPLIT\n");
 
     switch( pn->ft->format ) {
     case ft_yesno:
@@ -377,6 +341,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             int * y = (int *) calloc( elements , sizeof(int) ) ;
                 if ( y==NULL ) return -ENOMEM ;
                 ret = ((pn->ft->read.y)(y,pn)<0) || FS_input_yesno(&y[pn->extension],buf,size) || (pn->ft->write.y)(y,pn)  ;
+                if ( cbuf && ret==0 ) FS_output_integer_array(y,cbuf,ffl,pn) ;
             free( y ) ;
             break ;
         }
@@ -387,6 +352,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             int * i = (int *) calloc( elements , sizeof(int) ) ;
                 if ( i==NULL ) return -ENOMEM ;
                 ret = ((pn->ft->read.i)(i,pn)<0) || FS_input_integer(&i[pn->extension],buf,size) || (pn->ft->write.i)(i,pn) ;
+                if ( cbuf && ret==0 ) FS_output_integer_array(i,cbuf,ffl,pn) ;
             free( i ) ;
             break ;
         }
@@ -397,6 +363,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             int * u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
                 if ( u==NULL ) return -ENOMEM ;
                 ret = ((pn->ft->read.u)(u,pn)<0) || FS_input_unsigned(&u[pn->extension],buf,size) || (pn->ft->write.u)(u,pn) ;
+                if ( cbuf && ret==0 ) FS_output_unsigned_array(u,cbuf,ffl,pn) ;
             free( u ) ;
             break ;
         }
@@ -407,6 +374,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = ((pn->ft->read.f)(f,pn)<0) || FS_input_float(&f[pn->extension],buf,size) || (pn->ft->write.f)(f,pn) ;
+                if ( cbuf && ret==0 ) FS_output_float_array(f,cbuf,ffl,pn) ;
             free(f) ;
             break ;
         }
@@ -417,6 +385,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
                 ret = ((pn->ft->read.d)(d,pn)<0) || FS_input_date(&d[pn->extension],buf,size) || (pn->ft->write.d)(d,pn) ;
+                if ( cbuf && ret==0 ) FS_output_date_array(d,cbuf,ffl,pn) ;
             free(d) ;
             break ;
         }
@@ -424,14 +393,14 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         unsigned char * all ;
         int suglen = pn->ft->suglen ;
         size_t s = suglen ;
-        size_t len = suglen*elements ;
         if ( offset > suglen ) return -ERANGE ;
         s -= offset ;
         if ( s>size ) s = size ;
-        if ( (all = (unsigned char *) malloc( len ) ) ) { ;
-            if ( (ret = (pn->ft->read.b)(all,len,0,pn))==0 ) {
+        if ( (all = (unsigned char *) malloc( ffl ) ) ) { ;
+            if ( (ret = (pn->ft->read.b)(all,ffl,0,pn))==0 ) {
                 memcpy(&all[suglen*pn->extension+offset],buf,s) ;
-                ret = (pn->ft->write.b)(all,len,0,pn) ;
+                ret = (pn->ft->write.b)(all,ffl,0,pn) ;
+                if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
             }
             free( all ) ;
         } else {
@@ -446,12 +415,12 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             char * all ;
             int suglen = pn->ft->suglen ;
             size_t s = suglen ;
-            size_t len = (suglen+1)*elements - 1 ;
             if ( s>size ) s = size ;
-            if ( (all=(char *) malloc(len)) ) {
-                if ((ret = (pn->ft->read.a)(all,len,0,pn))==0 ) {
+            if ( (all=(char *) malloc(ffl)) ) {
+                if ((ret = (pn->ft->read.a)(all,ffl,0,pn))==0 ) {
                     memcpy(&all[(suglen+1)*pn->extension],buf,s) ;
-                    ret = (pn->ft->write.a)(all,len,0,pn) ;
+                    ret = (pn->ft->write.a)(all,ffl,0,pn) ;
+                    if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
                 }
                 free( all ) ;
             } else
@@ -463,6 +432,17 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     case ft_subdir:
         return -ENOSYS ;
     }
+
+    /* Add to cache? */
+    if ( cbuf && ret==0 ) {
+        Cache_Add( cbuf, strlen(cbuf), pn ) ;
+//printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
+    } else if ( cacheenabled ) {
+            Cache_Del( pn ) ;
+    }
+    /* free cache string buffer */
+    if ( cbuf ) free(cbuf) ;
+
     return ret ? -EINVAL : 0 ;
 }
 
