@@ -326,8 +326,11 @@ static int OW_power( unsigned char * const data, const struct parsedname * const
     if ( Cache_Get_Internal(data,&s,&ip_power,pn) ) {
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
+//printf("Uncached power = %d\n",data[0]) ;
         BUSUNLOCK
-        Cache_Add_Internal(&data,sizeof(unsigned char),&ip_power,pn) ;
+        Cache_Add_Internal(data,s,&ip_power,pn) ;
+    } else {
+//printf("Cached power = %d\n",data[0]) ;
     }
     return ret ;
 }

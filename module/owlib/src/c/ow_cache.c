@@ -236,6 +236,7 @@ int Cache_Add_Internal( const void * data, const size_t datasize, const struct i
                 tn->dsize = datasize ;
                 memcpy( TREE_DATA(tn) , data , datasize ) ;
 //printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
+//printf("  ADD INTERNAL data[0]=%d size=%d \n",((unsigned char *)data)[0],datasize);
                 switch (ip->change) {
                 case ft_persistent:
                     return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
