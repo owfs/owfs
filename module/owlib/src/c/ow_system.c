@@ -66,6 +66,9 @@ struct filetype sys_process[] = {
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
+/* special entry -- picked off by parsing before filetypes tried */
+struct device d_sys_structure = { "structure", "structure", pn_system, 0, NULL } ;
+
 /* ------- Functions ------------ */
 
 static int FS_ascii(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {

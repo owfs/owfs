@@ -30,7 +30,7 @@ void * Tree[] = {NULL, NULL, NULL, NULL, NULL, };
 
 static void Device2Tree( const struct device * d, enum pn_type type ) {
     tsearch( d, &Tree[type], device_compare ) ;
-    qsort( d->ft,(size_t) d->nft,sizeof(struct filetype),file_compare ) ;
+    if (d->ft) qsort( d->ft,(size_t) d->nft,sizeof(struct filetype),file_compare ) ;
 /*
 {
 int i ;
@@ -85,6 +85,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_set_cache ,    pn_settings ) ;
     Device2Tree( & d_sys_adapter ,  pn_system ) ;
     Device2Tree( & d_sys_process ,  pn_system ) ;
+    Device2Tree( & d_sys_structure, pn_system ) ;
 }
 
 void FS_devicefind( const char * code, struct parsedname * pn ) {

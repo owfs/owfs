@@ -22,6 +22,7 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_structure(const char *path, char *buf, const size_t size, const off_t offset, struct parsedname * pn) ;
 
 static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
@@ -68,6 +69,8 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
         r = -EISDIR ;
+    } else if ( pn.type == pn_structure ) {
+        r = FS_structure(path,buf,size,offset,&pn) ;
     } else {
         STATLOCK
             ++ read_calls ; /* statistics */
@@ -131,6 +134,28 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     r = FS_parse_read( buf, size, offset, pn ) ;
     if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",path,size) ;
     return r ;
+}
+
+/* Structure file */
+static int FS_structure(const char *path, char *buf, const size_t size, const off_t offset, struct parsedname * pn) {
+    char ft_format_char[] = "  iufabyd" ;
+    int fl ;
+    if ( offset ) return -EADDRNOTAVAIL ;
+    pn->type = pn_real ;
+        fl = FullFileLength(pn) ;
+    pn->type = pn_structure ;
+    return snprintf(
+        buf,
+        size,
+        "%c,%.6d,%.6d,%.2s,%.6d,",
+        ft_format_char[pn->ft->format],
+        (pn->ft->ag) ? pn->extension : 0 ,
+        (pn->ft->ag) ? pn->ft->ag->elements : 1 ,
+        (pn->ft->read.v) ?
+            ( (pn->ft->write.v) ? "rw" : "ro" ) :
+            ( (pn->ft->write.v) ? "wo" : "oo" ) ,
+        fl
+        ) ;
 }
 
 /* read without artificial separation of combination */

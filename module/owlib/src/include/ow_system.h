@@ -20,6 +20,7 @@ $Id$
 /* -------- Structures ---------- */
 DeviceHeader( sys_adapter )
 DeviceHeader( sys_process )
+DeviceHeader( sys_structure )
 
 #endif /* OW_SYSTEM_H */
 

@@ -69,6 +69,8 @@ printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
         r = -EISDIR ;
+    } else if (pn.type == pn_structure ) { /* structure is read-only */
+        r = -ENOTSUP ;
     } else {
         STATLOCK
             ++ write_calls ; /* statistics */

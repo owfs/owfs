@@ -41,23 +41,23 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       static size_t luncached ;
     static char * alarm_ ;
       static size_t lalarm ;
+    static char * structure ;
+      static size_t lstructure ;
     static char * system_ ;
       static size_t lsystem ;
     static char * settings ;
       static size_t lsettings ;
     static char * statistics ;
       static size_t lstatistics ;
-    static char * structure ;
-      static size_t lstructure ;
     const char * pathnow = path ;
 
     if ( uncached == NULL ) { // first time through
       luncached  = strlen ( uncached  = FS_dirname_state(pn_uncached  )) ;
       lalarm     = strlen ( alarm_    = FS_dirname_state(pn_alarm     )) ;
+      lstructure = strlen ( structure = FS_dirname_type( pn_structure )) ;
       lsystem    = strlen ( system_   = FS_dirname_type( pn_system    )) ;
       lsettings  = strlen ( settings  = FS_dirname_type( pn_settings  )) ;
       lstatistics= strlen ( statistics= FS_dirname_type( pn_statistics)) ;
-      lstructure = strlen ( structure = FS_dirname_type( pn_structure )) ;
     }
 //printf("PN_pn\n");
     if ( pn == NULL ) return -EINVAL ;
@@ -92,15 +92,15 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     } else if ( strncasecmp(pathnow,statistics,lstatistics)==0 ) {
         pn->type = pn_statistics ;
         pathnow += lstatistics ;
+    } else if ( strncasecmp(pathnow,structure,lstructure)==0 ) {
+        pn->type = pn_structure ;
+        pathnow += lstructure ;
     } else if ( strncasecmp(pathnow,system_,lsystem)==0 ) {
         pn->type = pn_system ;
         pathnow += lsystem ;
     } else if ( strncasecmp(pathnow,settings,lsettings)==0 ) {
         pn->type = pn_settings ;
         pathnow += lsettings ;
-    } else if ( strncasecmp(pathnow,structure,lstructure)==0 ) {
-        pn->type = pn_structure ;
-        pathnow += lstructure ;
     } else {
         --pathnow ; // just to reset for the check that follows
     }
@@ -353,7 +353,9 @@ void UT_delay(const unsigned int len)
 
 /* Length of file based on filetype alone */
 size_t FileLength( const struct parsedname * const pn ) {
-    if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
+    if ( pn-> type == pn_structure ) {
+        return 26 ;
+    } else if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
         return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
     } else {
         switch(pn->ft->suglen) {
@@ -374,7 +376,7 @@ size_t FileLength( const struct parsedname * const pn ) {
 
 /* Length of file based on filetype and extension */
 size_t FullFileLength( const struct parsedname * const pn ) {
-    if ( pn->ft->ag && pn->extension==-1 ) {
+    if ( pn->type != pn_structure && pn->ft->ag && pn->extension==-1 ) {
         if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
         return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
     }
