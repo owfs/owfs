@@ -87,16 +87,13 @@ int main(int argc, char *argv[]) {
             "Usage: %s mountpoint -d devicename [options] \n"
             "   or: %s [options] portname mountpoint \n",
             argv[0],argv[0] ) ;
-            owopt(c,optarg) ; /* rest of message */
-            ow_exit(1);
+            break ;
         case 'V':
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
-            owopt(c,optarg) ; /* rest of message */
-            ow_exit(0);
-        default:
-            owopt(c,optarg) ;
+            break ;
         }
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */

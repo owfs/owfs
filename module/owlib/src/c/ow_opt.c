@@ -31,9 +31,12 @@ const struct option owopts_long[] = {
     {0,0,0,0},
 } ;
 
-void owopt( const char c , const char * const arg ) {
+char * pid_file = NULL ;
+
+/* Parses one argument */
+/* return 0 if ok */
+int owopt( const char c , const char * const arg ) {
     static int useusb = 0 ;
-//printf("owopts in\n");
     switch (c) {
     case 'h':
         fprintf(stderr,
@@ -53,10 +56,10 @@ void owopt( const char c , const char * const arg ) {
         "    -P --pid-file filename     put the PID of this program into filename\n"
         "    -V --version\n"
         ) ;
-        break ;
+        return 1 ;
     case 't':
     	Timeout( arg ) ;
-	    break ;
+	    return 0 ;
     case 'u':
         if ( arg ) {
             useusb = atoi(arg) ;
@@ -74,31 +77,31 @@ void owopt( const char c , const char * const arg ) {
         fprintf(stderr,"Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n") ;
         useusb=0;
 #endif /* OW_USB */
-        break ;
+        return 0 ;
     case 'd':
     	ComSetup(arg) ;
-	    break ;
+	    return 0 ;
     case 'C':
 	    tempscale = temp_celsius ;
-	    break ;
+	    return 0 ;
     case 'F':
 	    tempscale = temp_fahrenheit ;
-	    break ;
+	    return 0 ;
     case 'R':
 	    tempscale = temp_rankine ;
-	    break ;
+	    return 0 ;
     case 'K':
 	    tempscale = temp_kelvin ;
-	    break ;
+	    return 0 ;
     case 'V':
 	    printf("libow version:\n\t" VERSION "\n") ;
 #ifdef OW_CACHE
         printf("libdb version:\n\t%s\n",db_version(NULL,NULL,NULL) ) ;
 #endif /* OW_CACHE */
-	    break ;
+	    return 1 ;
     case 'p':
         sscanf(optarg, "%i", &portnum);
-        break;
+        return 0;
     case 'f':
         if (strcasecmp(arg,"f.i")==0) devform=fdi;
         else if (strcasecmp(arg,"fi")==0) devform=fi;
@@ -106,24 +109,36 @@ void owopt( const char c , const char * const arg ) {
         else if (strcasecmp(arg,"f.ic")==0) devform=fdic;
         else if (strcasecmp(arg,"fi.c")==0) devform=fidc;
         else if (strcasecmp(arg,"fic")==0) devform=fic;
-        else fprintf(stderr,"Unrecognized format type %s\n",arg);
-        break;
+        else {
+             fprintf(stderr,"Unrecognized format type %s\n",arg);
+             return 1 ;
+        }
+        return 0 ;
     case 'P':
+        if ( arg==NULL || strlen(arg)==0 ) {
+              fprintf(stderr,"No PID file specified\n") ;
+              return 1 ;
+        }
+        pid_file = strdup( arg ) ;
 //printf("opopts pid_file for %s\n",arg);
-        {
-            FILE * pid = fopen( arg , "w+" ) ;
+        if (pid_file) {
+            FILE * pid = fopen(  pid_file, "w+" ) ;
             if ( pid == NULL ) {
                 perror("Error opening PID file") ;
                 fprintf( stderr , "PID file attempted: %s\n",arg ) ;
-                exit(1) ;
+                return 1 ;
             }
 //printf("opopts pid = %ld\n",(long unsigned int)getpid());
             fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
             fclose(pid) ;
+            return 0 ;
+        } else {
+            fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
+            return 1 ;
         }
-        break ;
     case 0:
-        break;
+        return 0 ;
+    default:
+        return 1 ;
     }
-//printf("owopts out\n");
 }

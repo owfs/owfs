@@ -71,16 +71,13 @@ int main(int argc, char *argv[]) {
 			"   or: %s [options] -d ttyDevice -p tcpPort \n"
 			"    -p port   -- tcp port for web serving process (e.g. 3001)\n" ,
             argv[0],argv[0] ) ;
-            owopt(c,optarg) ; /* rest of message */
-            ow_exit(1);
+            break ;
         case 'V':
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
-            owopt(c,optarg) ; /* rest of message */
-            ow_exit(0);
-        default:
-            owopt(c,optarg) ;
+            break ;
         }
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
