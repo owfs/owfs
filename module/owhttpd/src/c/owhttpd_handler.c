@@ -220,11 +220,19 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     char fullpath[PATH_MAX+1] ;
     int suglen = FullFileLength(pn) ;
     char buf[suglen+1] ;
+    enum ft_format format = pn->ft->format ;
     int canwrite = !readonly && pn->ft->write.v ;
+
+    /* Special processing for structure -- ascii text, not native format */
+    if ( pn->type == pn_structure && ( format==ft_directory || format==ft_subdir ) )
+    {
+        format = ft_ascii ;
+        canwrite = 0 ;
+    }
 
     buf[suglen] = '\0' ;
 
-printf("path=%s, file=%s\n",path,file) ;
+//printf("path=%s, file=%s\n",path,file) ;
     /* Parse out subdir */
     basename = strrchr(file,'/') ;
     if ( basename ) {
@@ -234,12 +242,12 @@ printf("path=%s, file=%s\n",path,file) ;
     }
     /* full file name (with path and subdir) */
     if ( snprintf(fullpath,PATH_MAX,path[strlen(path)-1]=='/'?"%s%s":"%s/%s",path,basename)<0 ) return ;
-printf("  fullpath=%s\n",fullpath);
+//printf("  fullpath=%s\n",fullpath);
 
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
 
     /* buffer for field value */
-    if ( pn->ft->ag && pn->ft->format!=ft_binary && pn->extension==-1 ) {
+    if ( pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
         if ( pn->ft->read.v ) { /* At least readable */
             if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                 buf[len] = '\0' ;
@@ -253,7 +261,7 @@ printf("  fullpath=%s\n",fullpath);
             fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
         }
     } else {
-        switch( pn->ft->format ) {
+        switch( format ) {
         case ft_directory:
         case ft_subdir:
             fprintf( out, "<A HREF='%s'>%s</A>",fullpath,file);
@@ -484,10 +492,11 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             loc = pn2->dev->code ;
             nam = loc ;
         }
+//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
         fprintf( a_sock->io, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
-                &path[1], loc, loc, nam, typ ) ;
+                (strcmp(path,"/")?path:""), loc, loc, nam, typ ) ;
     }
-printf("ROOTDIR=%s\n",path) ;
+//printf("ROOTDIR=%s\n",path) ;
     HTTPstart( a_sock->io , "200 OK" ) ;
     HTTPtitle( a_sock->io , "Directory") ;
     if ( pn->type != pn_real ) {

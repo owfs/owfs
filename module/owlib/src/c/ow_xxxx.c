@@ -83,7 +83,7 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 /* Check if device exists -- 0 yes, 1 no */
 int CheckPresence( const struct parsedname * const pn ) {
     int ret = 0 ;
-    if ( pn->dev->type == pn_real ) {
+    if ( pn->type == pn_real ) {
         BUSLOCK
             ret = BUS_normalverify(pn) ;
         BUSUNLOCK

@@ -266,7 +266,7 @@ static int OW_w_mem( const char * const p , const unsigned int size , const int 
     BUSLOCK
         ret = BUS_select(pn) || BUS_sendback_data(buf,buf,7) || CRC16(buf,6) || (buf[6]!=p[0]) ;
     BUSUNLOCK
-printf("2450 byte %d return=%d\n",0,ret );
+//printf("2450 byte %d return=%d\n",0,ret );
     if ( ret ) return 1 ;
 
     /* rest of the bytes */
@@ -276,7 +276,7 @@ printf("2450 byte %d return=%d\n",0,ret );
         BUSLOCK
             ret =BUS_sendback_data(buf,buf,4) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
         BUSUNLOCK
-printf("2450 byte %d return=%d\n",i,ret );
+//printf("2450 byte %d return=%d\n",i,ret );
 
         if ( ret ) return 1 ;
     }

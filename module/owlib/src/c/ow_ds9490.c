@@ -3,10 +3,10 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* DS9490R-W USB 1-Wire master
@@ -51,7 +51,7 @@ static void DS9490_setroutines( struct interface_routines * const f ) {
     f->select        = BUS_select_low ;
 }
 
-#define TIMEOUT_USB	5000 /* 5 seconds */
+#define TIMEOUT_USB    5000 /* 5 seconds */
 
 #define CONTROL_CMD     0x00
 #define COMM_CMD        0x01
@@ -297,7 +297,7 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay) 
 
     /* Send the byte */
     if ( (ret= DS9490_sendback_data(&byte, &resp , 1)) ) return ret ;
-printf("9490 Powerbyte in=%.2X out %.2X\n",byte,resp) ;
+//printf("9490 Powerbyte in=%.2X out %.2X\n",byte,resp) ;
     if ( byte != resp ) return -EIO ;
 
     /** Pulse duration */
@@ -381,7 +381,7 @@ if ( reset ) {
     if ( (ret=BUS_reset(pn)) ) return ret ;
         reset = 0x0000 ;
     }
-printf("SELECT\n");
+//printf("SELECT\n");
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
@@ -410,7 +410,7 @@ printf("SELECT\n");
     combuffer[7] = pn->sn[0] ;
     if ( (ret=usb_bulk_write(devusb,DS2490_EP2,combuffer,8, TIMEOUT_USB )) < 8 ) {
         usb_clear_halt(devusb,DS2490_EP2) ;
-printf("SELECT write error=%d\n",ret) ;
+//printf("SELECT write error=%d\n",ret) ;
         return -EIO ;
     }
 
@@ -418,7 +418,7 @@ printf("SELECT write error=%d\n",ret) ;
          ||
          (ret=DS9490wait(buffer))
           ) {
-printf("SELECT control problem = %d\n",ret);
+//printf("SELECT control problem = %d\n",ret);
         return ret ;
     }
     return 0 ;

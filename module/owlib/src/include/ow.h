@@ -329,11 +329,12 @@ bound the allowable files in a device directory
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 //enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
 extern void * Tree[5] ;
-
+uint16_t dev_flags ;
+#define DEV_resume  0x0001
 struct device {
     char * code ;
     char * name ;
-    enum pn_type type ;
+    uint16_t flags ;
     int nft ;
     struct filetype * ft ;
 } ;

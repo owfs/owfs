@@ -80,36 +80,36 @@ if ( ret ) printf("RELEASE=%d\n",ret) ;
 static int BUSY( void ) {
     unsigned char s ;
     int ret = ioctl( devfd, PPRSTATUS, &s ) ;
-printf( "BUSY=%d, status=%.2X, result=%d\n",ret,s,( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ) ;
+//printf( "BUSY=%d, status=%.2X, result=%d\n",ret,s,( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ) ;
     return ( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ;
 }
 
 static void CONTROL( const unsigned char mask, const unsigned char val ) {
     struct ppdev_frob_struct frob = { mask, val, } ;
     int ret = ioctl( devfd, PPFCONTROL, &frob ) ;
-printf( "CONTROL=%d frob={%.2X,%.2X}\n",ret,mask,val) ;
+//printf( "CONTROL=%d frob={%.2X,%.2X}\n",ret,mask,val) ;
 }
 
 static void DATA( const unsigned char data ) {
     unsigned char d = data ;
     int z = 0 ;
     int ret = ioctl( devfd, PPDATADIR, &z) || ioctl( devfd, PPWDATA, &d ) ;
-printf("DATA=%d val=%.2X\n",ret,d) ;
+//printf("DATA=%d val=%.2X\n",ret,d) ;
 }
 
 static unsigned char READ( void ) {
     unsigned char data ;
     int ret = ioctl( devfd, PPRDATA, &data ) ;
-printf("READ=%d val = %.2X\n",ret,data) ;
+//printf("READ=%d val = %.2X\n",ret,data) ;
     return data ;
 }
 
 static int RESET( void ) {
     int ret ;
-printf("RESET\n") ;
+//printf("RESET\n") ;
 //    return DS1410_send_bit( 0xFD , NULL ) ;
     ret = DS1410_send_bit( 0xFD , NULL ) ;
-printf("Reset=%d\n",ret);
+//printf("Reset=%d\n",ret);
     return ret ;
 }
 
@@ -142,7 +142,7 @@ static int toggleOD( void ) {
     CONTROLout( cont&0xFD ) ;
     DATAout( 0xCF );
     usleep(8);
-printf("toggleOD=%d\n",result) ;
+//printf("toggleOD=%d\n",result) ;
     return result ;
 }
 
@@ -191,7 +191,7 @@ printf("checkOD=%d\n",result) ;
     CONTROLout( cont&0xFD ) ;
     DATAout( 0xCF ) ;
     usleep(5) ;
-printf("CheckOD=%d\n",retval);
+//printf("CheckOD=%d\n",retval);
     return retval ;
 }
 
@@ -234,7 +234,7 @@ static int PASSTHRU( void ){
 }
 
 static int START( void ) {
-printf("START\n");
+//printf("START\n");
     NOPASS() ;
     if ( checkOD() && toggleOD() ) toggleOD() ;
     return 1 ;
@@ -387,20 +387,20 @@ int DS1410_detect( void ) {
     struct timeval t = { 1 , 0 } ; /* 1 second */
     int ret ;
     ret = ioperm( BASE, 3, 1 ) ;
-printf("IOPERM=%d\n",ret) ;
+//printf("IOPERM=%d\n",ret) ;
     CLAIM() ;
 
     ret = ioctl( devfd, PPNEGOT, &mode) ;
-printf("NEGOT=%d\n",ret);
+//printf("NEGOT=%d\n",ret);
     ret = ioctl( devfd, PPSETTIME, &t) ;
-printf("SETTIME=%d\n",ret);
+//printf("SETTIME=%d\n",ret);
     RELEASE () ;
     START() ;
     /* Set up low-level routines */
     DS1410_setroutines( & iroutines ) ;
     /* Reset the bus */
     ret =  DS1410_reset(NULL) ;
-printf("Detect=%d\n",ret);
+//printf("Detect=%d\n",ret);
     return ret ;
 //    return DS1410_reset() ;
 }

@@ -3,10 +3,10 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 #include "owfs_config.h"
@@ -78,19 +78,19 @@ printf("\n");
 //printf("SAG written\n");
     /* get back string -- with timeout and partial read loop */
     if ( busget && getlength ) {
-	while ( gl > 0 ) {
+    while ( gl > 0 ) {
 //printf("SAG readlength=%d\n",gl);
-		fd_set readset;
-		struct timeval tv = {5,0}; /* 5 seconds */
-		/* Initialize readset */
-		FD_ZERO(&readset);
-		FD_SET(devfd, &readset);
+        fd_set readset;
+        struct timeval tv = {5,0}; /* 5 seconds */
+        /* Initialize readset */
+        FD_ZERO(&readset);
+        FD_SET(devfd, &readset);
 
-		/* Read if it doesn't timeout first */
-		if( select( devfd+1, &readset, NULL, NULL, &tv ) > 0 ) {
+        /* Read if it doesn't timeout first */
+        if( select( devfd+1, &readset, NULL, NULL, &tv ) > 0 ) {
 //printf("SAG selected\n");
-		/* Is there something to read? */
-		if( FD_ISSET( devfd, &readset )==0 ) return -EIO ; /* error */
+        /* Is there something to read? */
+        if( FD_ISSET( devfd, &readset )==0 ) return -EIO ; /* error */
 //printf("SAG selected readset\n");
 /*
 {
@@ -100,10 +100,10 @@ for(i=0;i<getlength;++i)printf("%.2X ",busget[i]);
 printf("\n");
 }
 */
-		ret = read( devfd, &busget[getlength-gl], (size_t) gl ) ; /* get available bytes */
+        ret = read( devfd, &busget[getlength-gl], (size_t) gl ) ; /* get available bytes */
 //printf("SAG postread ret=%d\n",ret);
-		if (ret<0) return ret ;
-		gl -= ret ;
+        if (ret<0) return ret ;
+        gl -= ret ;
 //printf("SAG postreadlength=%d\n",gl);
 /*
 {
@@ -113,11 +113,11 @@ for(i=0;i<getlength;++i)printf("%.2X ",busget[i]);
 printf("\n");
 }
 */
-		} else { /* timed out */
+        } else { /* timed out */
 //printf("SAG selected timeout\n");
-		return -EAGAIN;
-		}
-	}
+        return -EAGAIN;
+        }
+    }
     } else {
         COM_flush() ;
     }

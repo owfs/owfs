@@ -56,7 +56,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     struct stateinfo si ;
     int r ;
     pn.si = &si ;
-printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
+//printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
 
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
