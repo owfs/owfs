@@ -496,6 +496,29 @@ struct s_timeout {
 } ;
 extern struct s_timeout timeout ;
 
+/* Server (Socket-based) interface */
+/* message to owserver */
+struct server_msg {
+    int32_t version ;
+    int32_t size ;
+    int32_t type ;
+    int32_t tempscale ;
+    int32_t extra ;
+} ;
+/* message from owserver */
+struct client_msg {
+    int32_t version ;
+    int32_t size ;
+    int32_t format ;
+    int32_t more ;
+    int32_t extra ;
+} ;
+enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_attr, msg_statf, } ;
+
+int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
+void * FromServerAlloc( int fd, struct client_msg * cm ) ;
+int ToServer( int fd, enum msg_type type, const char * path, const char * data, int datasize, int tscale ) ;
+
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
 extern enum deviceformat devform ;
