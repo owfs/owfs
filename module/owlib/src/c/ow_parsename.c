@@ -14,7 +14,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) ;
+static int FS_ParsedNameSub( char * const path , struct parsedname * pn ) ;
 static int BranchAdd( struct parsedname * const pn ) ;
 static int DevicePart( const char * filename, const char ** next, struct parsedname * pn ) ;
 static int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
@@ -49,7 +49,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       static size_t lsettings ;
     static const char * statistics ;
       static size_t lstatistics ;
-    const char * pathnow = path ;
+    char * pathcpy ;
+    char * pathnow ;
 
     if ( uncached == NULL ) { // first time through
       ltext      = strlen ( text      = (const char *)FS_dirname_state(pn_text      )) ;
@@ -69,7 +70,14 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->subdir = NULL ; /* Not subdirectory */
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
-    if ( path[0] == '/' ) ++pathnow ;
+    if ( (pathcpy=strdup( (path[0]=='/')? &path[1]:path )) == NULL ) return -ENOMEM ;
+    pathnow = pathcpy ;
+
+    /* remove trailing '/' -- not needed for owfs but needed for other modules */
+    {
+        int s = strlen(pathnow) ;
+        if ( s && pathnow[s-1]=='/' ) pathnow[s-1]='\0' ;
+    }
 
     /* Default attributes */
     pn->state = pn_normal ;
@@ -77,42 +85,74 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     /* text is a special case, it can preceed anything */
     if ( strncasecmp(pathnow,text,ltext)==0 ) {
-        pn->state |= pn_text ;
-        pathnow += ltext ;
-        if ( pathnow[0] == '\0' ) return 0 ;
-        if ( pathnow[0] != '/' ) return -ENOENT ;
-        ++pathnow ;
+        if ( pathnow[ltext] == '\0' ) {
+            pn->state |= pn_text ;
+            free(pathcpy) ;
+            return 0 ;
+        } else if ( pathnow[ltext]== '/' ) {
+            pn->state |= pn_text ;
+            pathnow += ltext+1 ;
+        }
     }
 
     /* uncached is a special case, it can preceed anything */
     if ( strncasecmp(pathnow,uncached,luncached)==0 ) {
-        pn->state |= pn_uncached ;
-        pathnow += luncached ;
-        if ( pathnow[0] == '\0' ) return 0 ;
-        if ( pathnow[0] != '/' ) return -ENOENT ;
-        ++pathnow ;
+        if ( pathnow[luncached] == '\0' ) {
+            pn->state |= pn_uncached ;
+            free(pathcpy) ;
+            return 0 ;
+        } else if ( pathnow[luncached]== '/' ) {
+            pn->state |= pn_uncached ;
+            pathnow += luncached+1 ;
+        }
     }
 
     /* look for special root directory -- it is really a flag */
     if ( strncasecmp(pathnow,statistics,lstatistics)==0 ) {
-        pn->type = pn_statistics ;
-        pathnow += lstatistics ;
-    } else if ( strncasecmp(pathnow,structure,lstructure)==0 ) {
-        pn->type = pn_structure ;
-        pathnow += lstructure ;
-    } else if ( strncasecmp(pathnow,system_,lsystem)==0 ) {
-        pn->type = pn_system ;
-        pathnow += lsystem ;
-    } else if ( strncasecmp(pathnow,settings,lsettings)==0 ) {
-        pn->type = pn_settings ;
-        pathnow += lsettings ;
-    } else {
-        --pathnow ; // just to reset for the check that follows
+        if ( pathnow[lstatistics] == '\0' ) {
+            pn->type |= pn_statistics ;
+            free(pathcpy) ;
+            return 0 ;
+        } else if ( pathnow[lstatistics]== '/' ) {
+            pn->type |= pn_statistics ;
+            pathnow += lstatistics+1 ;
+        }
     }
-    if ( pathnow[0] == '\0' ) return 0 ;
-    if ( pathnow[0] != '/' ) return -ENOENT ;
-    ++pathnow ;
-    return FS_ParsedNameSub( pathnow, pn ) ;
+    if ( strncasecmp(pathnow,structure,lstructure)==0 ) {
+        if ( pathnow[lstructure] == '\0' ) {
+            pn->type |= pn_structure ;
+            free(pathcpy) ;
+            return 0 ;
+        } else if ( pathnow[lstructure]== '/' ) {
+            pn->type |= pn_structure ;
+            pathnow += lstructure+1 ;
+        }
+    }
+    if ( strncasecmp(pathnow,system_,lsystem)==0 ) {
+        if ( pathnow[lsystem] == '\0' ) {
+            pn->type |= pn_system ;
+            free(pathcpy) ;
+            return 0 ;
+        } else if ( pathnow[lsystem]== '/' ) {
+            pn->type |= pn_system ;
+            pathnow += lsystem+1 ;
+        }
+    }
+    if ( strncasecmp(pathnow,settings,lsettings)==0 ) {
+        if ( pathnow[lsettings] == '\0' ) {
+            pn->type |= pn_settings ;
+            free(pathcpy) ;
+            return 0 ;
+        } else if ( pathnow[lsettings]== '/' ) {
+            pn->type |= pn_settings ;
+            pathnow += lsettings+1 ;
+        }
+    }
+    {
+        int ret = FS_ParsedNameSub( pathnow, pn ) ;
+        free(pathcpy) ;
+        return ret ;
+    }
 }
 
 /* Parse the path to the correct device, filetype, directory, etc... */
@@ -127,7 +167,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       pn->extension = -1 for ALL, 0 if non-aggregate, else 0-max extensionss-1
       pn->extension = -2 for BYTE, special bitfield representation of the data
 */
-static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) {
+static int FS_ParsedNameSub( char * const path , struct parsedname * pn ) {
     int ret ;
     const char * pFile ;
     const char * next ;
@@ -145,13 +185,14 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
 //printf("PN:Pre %s\n",path);
     switch( pn->type ) {
     case pn_real:
-        if ( strcmp( path, "alarm" )==0 ) {
-            pn->state |= pn_alarm ;
-            return 0 ; /* directory */
-        }
-        if ( strncmp( path, "alarm/", 6 )==0 ) {
-            pn->state |= pn_alarm ;
-            return FS_ParsedNameSub( &path[6], pn ) ;
+        if ( strncmp( path, "alarm", 5 )==0 ) {
+            if ( path[5]=='\0' ) {
+                pn->state |= pn_alarm ;
+                return 0 ; /* directory */
+            } else if ( path[5] == '/' ) {
+                pn->state |= pn_alarm ;
+                return FS_ParsedNameSub( &path[6], pn ) ;
+            }
         }
         if ( (ret=DevicePart( path, &pFile, pn )) ) return ret ; // search for valid 1-wire sn
         if ( pFile == NULL || pFile[0]=='\0' ) return (presencecheck && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
