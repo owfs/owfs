@@ -77,15 +77,14 @@ char umount_cmd[1024] = "";
 /* ---------------------------------------------- */
 int main(int argc, char *argv[]) {
     int flags = 0 ; /* flags to fuse */
-    int com_tried = 0 ;
+    char c ;
 //    int multithreaded = 1;
 
     /* All output to syslog */
     openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
 
-    {
-    char c ;
-//    while ( (c=getopt(argc,argv,"p:dhs")) != -1 ) {
+    devport[0] = '\0' ; /* initialize the serial port name to blank */
+
     while ( (c=getopt(argc,argv,"d:ht:CFRK")) != -1 ) {
         switch (c) {
 //        case 's':
@@ -111,7 +110,7 @@ int main(int argc, char *argv[]) {
 //             flags |= FUSE_DEBUG;
 //             break ;
          case 'd':
-             com_tried = COM_open( optarg ) ;
+		     strncpy( devport, optarg, PATH_MAX ) ;
              break ;
         case 'C':
 		    tempscale = temp_celsius ;
@@ -130,23 +129,23 @@ int main(int argc, char *argv[]) {
             ow_exit(1) ;
          }
     }
+
+    /* non-option arguments */
+    if ( optind == argc ) {
+        fprintf(stderr,"No mount point specified.\nTry '%s -h' for help.\n",argv[0]) ;
+        ow_exit(1) ;
+    } else if ( optind == argc-2 ) {
+	    strncpy( devport, argv[optind], PATH_MAX ) ;
+        ++optind ;
     }
 
-     if ( optind == argc ) {
-         fprintf(stderr,"No mount point specified.\nTry '%s -h' for help.\n",argv[0]) ;
-         ow_exit(1) ;
-     } else if ( optind == argc-2 ) {
-         com_tried = COM_open( argv[optind] ) ;
-         ++optind ;
-     }
-
-     if ( com_tried ) {
-         fprintf(stderr, "Cannot open serial port, see system log for details.\n");
-         ow_exit(1);
-     } else if ( devfd==-1 ) {
-         fprintf(stderr, "No port specified (-p portname)\n%s -h for help\n",argv[0]);
-         ow_exit(1);
-     }
+    if ( devport[0] == '\0' ) {
+        fprintf(stderr, "No port specified (-p portname)\n%s -h for help\n",argv[0]);
+        ow_exit(1);
+    } else if ( LibSetup(devport) ) { /* 1-wire bus specific setup */
+        fprintf(stderr, "Cannot open serial port, see system log for details.\n");
+        ow_exit(1);
+    }
 
     // FUSE magic. I don't understand it.
     if(getenv(FUSE_MOUNTED_ENV)) {
@@ -169,11 +168,6 @@ int main(int argc, char *argv[]) {
     }
 
     set_signal_handlers();
-
-	/* 1-wire bus specific setup */
-    LibSetup() ;
-//	scan_time = start_time ; /* set initial file time to start of program */
-
 
 //     printf( "argc=%d\nport=%s\noptind=%d\nav0=%s\nav1=%s\nav2=%s\nav3=%s\n", argc,devport,optind,argv[0],argv[1],argv[2],argv[3]);
     fuse = fuse_new(fuse_fd, flags, &owfs_oper);
@@ -231,5 +225,3 @@ void set_signal_handlers( void ) {
         exit(1);
     }
 }
-
-
