@@ -15,6 +15,7 @@ $Id$
 #include <sys/ioctl.h>
 #include <linux/ppdev.h>
 #include <linux/parport.h>
+#include <sys/io.h>
 
 void DS1410_setroutines( struct interface_routines * const f ) ;
 static int DS1410_PowerByte(const unsigned char byte, const unsigned int delay) ;
@@ -58,6 +59,13 @@ unsigned char ctl_low  = 0x00 ;
 #define DATA_OD      ioctl( devfd, PPWDATA, &bit_od )
 #define CONTROL_HIGH ioctl( devfd, PPWCONTROL, &ctl_high )
 #define CONTROL_LOW  ioctl( devfd, PPWCONTROL, &ctl_low )
+
+#define BASE 0x378
+#define DATAout(x)    outb((x),BASE)
+#define BUSYraw  ((inb(BASE+1)^0x80)&0x90)
+#define CONTROLin ((inb(BASE+2)|0x04))
+#define CONTROLout(x) outb((x),BASE+2)
+
 
 static void CLAIM( void ) {
     int ret = ioctl( devfd, PPCLAIM ) ;
@@ -105,6 +113,7 @@ printf("RESET\n") ;
 
 static int toggleOD( void ) {
     int result ;
+/*
     CLAIM() ;
     DATA( 0xEC ) ;
     usleep(2) ;
@@ -118,6 +127,20 @@ static int toggleOD( void ) {
     DATA( 0xCF ) ;
     usleep(8) ;
     RELEASE() ;
+*/
+    unsigned char cont ;
+    DATAout( 0xEC ) ;
+    usleep(2);
+    DATAout(0xFC );
+    cont = CONTROLin ;
+    cont &= 0x1C;
+    CONTROLout( cont|0x02 );
+    usleep(8);
+    result = BUSYraw ? 1 : 0 ;
+    usleep(8);
+    CONTROLout( cont&0xFD ) ;
+    DATAout( 0xCF );
+    usleep(8);
 printf("toggleOD=%d\n",result) ;
     return result ;
 }
@@ -337,7 +360,10 @@ int DS1410_detect( void ) {
     int mode = IEEE1284_MODE_COMPAT ;
     struct timeval t = { 1 , 0 } ; /* 1 second */
     int ret ;
+    ret = ioperm( BASE, 3, 1 ) ;
+printf("IOPERM=%d\n",ret) ;
     CLAIM() ;
+
     ret = ioctl( devfd, PPNEGOT, &mode) ;
 printf("NEGOT=%d\n",ret);
     ret = ioctl( devfd, PPSETTIME, &t) ;
@@ -433,7 +459,7 @@ static int DS1410_sendback_data( const unsigned char * data, unsigned char * con
 
 /* Symmetric */
 /* send a bit -- read a bit */
-static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) {
+static int DS1410_send_bit( const unsigned char data, unsigned char * const rsp ) {
 /*
     unsigned char save, result ;
     int i ;
@@ -469,6 +495,7 @@ static int DS1410_send_bit( const unsigned char data, unsigned char * const resp
     return result ;
 }
 */
+/*
     unsigned char save, result ;
     int i ;
 
@@ -510,6 +537,45 @@ static int DS1410_send_bit( const unsigned char data, unsigned char * const resp
 printf("timeout=%d\n",timeout) ;
     if ( resp ) *resp = result ;
     return result ;
+*/
+    unsigned char cont ;
+    unsigned char retval ;
+    int i ;
+printf("CRITICAL\n");
+    DATAout(0xEC);
+    usleep(2);
+    outb( data, BASE );
+    DATAout(data);
+    cont = CONTROLin;
+    cont &= 0x1C ;
+    CONTROLout( cont|0x02 );
+    i=0 ;
+    while(BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
+printf("CRITICAL1\n");
+    usleep(4);
+    DATAout( 0xFF ) ;
+    while(!BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
+printf("CRITICAL2\n");
+    DATAout( 0xFE ) ;
+    usleep(4);
+    retval = BUSYraw ? 1 : 0 ;
+printf("CRITICAL3\n");
+    if ( retval && data==0xFD ) {
+        usleep(400);
+	DATAout(0xFF);
+	usleep(4);
+	DATAout(0xFE);
+	usleep(4);
+        retval = BUSYraw ? 1 : 0 ;
+    }
+    CONTROLout( cont&0xFD ) ;
+    DATAout( 0xCF ) ;
+    usleep(12) ;
+    timeout = (i<2000) ? 0 : 1;
+printf("CRITICAL4\n");
+//    rsp[0] = retval ;
+printf("CRITICAL5\n");
+    return retval ;
 }
 
 /* Symetric */
