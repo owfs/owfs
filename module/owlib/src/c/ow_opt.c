@@ -38,7 +38,6 @@ char * fuse_opt = NULL ;
 /* Parses one argument */
 /* return 0 if ok */
 int owopt( const int c , const char * const arg ) {
-    static int useusb = 0 ;
     switch (c) {
     case 'h':
         fprintf(stderr,
@@ -63,6 +62,7 @@ int owopt( const int c , const char * const arg ) {
         Timeout( arg ) ;
         return 0 ;
     case 'u':
+#ifdef OW_USB
         if ( arg ) {
             useusb = atoi(arg) ;
             if ( useusb < 1 ) {
@@ -74,10 +74,9 @@ int owopt( const int c , const char * const arg ) {
         } else {
             useusb=1 ;
         }
-        USBSetup(useusb) ;
-#ifndef OW_USB
+        USBSetup() ;
+#else /* OW_USB */
         fprintf(stderr,"Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n") ;
-        useusb=0;
 #endif /* OW_USB */
         return 0 ;
     case 'd':

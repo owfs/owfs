@@ -81,7 +81,7 @@ $Id$
 #ifdef OW_USB
     #include <usb.h>
     extern usb_dev_handle * devusb ;
-    int DS9490_detect( int useusb ) ;
+    int DS9490_detect( void ) ;
     void DS9490_close(void) ;
 
 #else /* OW_USB */
@@ -144,7 +144,7 @@ struct filetype ;
 void LibSetup( void ) ;
 int LibStart( void ) ;
 int ComSetup( const char * busdev ) ;
-int USBSetup( int useusb ) ;
+int USBSetup( void ) ;
 void LibClose( void ) ;
 
 /* Initial sorting or the device and filetype lists */
@@ -413,6 +413,7 @@ struct termios oldSerialTio;    /*old serial port settings*/
 /* Globals */
 extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
+extern int useusb ; /* Which USB adapter to use (1-based index) */
 extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */
 

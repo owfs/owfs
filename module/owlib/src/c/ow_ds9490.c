@@ -66,7 +66,7 @@ static int DS9490_level(int new_level) ;
 /* _detect is a bit of a misnomer, no detection is actually done */
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
-int DS9490_detect( int useusb ) {
+int DS9490_detect( void ) {
     struct usb_bus *bus ;
     struct usb_device *dev ;
     int usbnum = 0 ;
@@ -135,13 +135,19 @@ for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.
     /* Reset the bus */
 static int DS9490_reset( void ) {
     int ret ;
+    static int lastret ; /* for reentrant retry of reset */
     unsigned char buffer[32] ;
 printf("9490RESET\n");
     if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0043, 0x0000, NULL, 0, TIMEOUT_USB ))<0
          ||
          (ret=DS9490wait(buffer))
-    ) return ret ;
-
+    ) {
+        if ( lastret ) return ret ;
+        usb_reset( devusb ) ;
+        lastret = ret ;
+        return DS9490_detect() ;
+    }
+    lastret = 0 ;
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
     AnyDevices = !(buffer[16]&0x01) ;
 printf("9490RESET=0 anydevices=%d\n",AnyDevices);
@@ -180,7 +186,8 @@ static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned 
     int i ;
     int ret ;
     for ( i=0 ; i<length ; ++i ) {
-        if ( (ret=DS9490_sendback_bit(outbits[i],&inbits[i])) ) return ret ;
+        if ( (ret=DS9490_sendback_bit(outbits[i]&0x01,&inbits[i])) ) return ret ;
+        inbits[i] &= 0x01 ;
 printf("SENDBIT %d: %.2X->%.2X\n",i,outbits[i],inbits[i]);
     }
     return 0 ;
@@ -197,7 +204,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
         unsigned char ibit, obit = UT_getbit(data,i) ;
         if ( (ret=DS9490_sendback_bit(obit,&ibit)) ) return ret ;
         UT_setbit(resp,i,ibit) ;
-printf("SENDDATA %d: %.2X->%.2X\n",i>>3,data[i>>3],resp[i>>3]);
+printf("SENDDATA %d:%d: %.2X->%.2X\n",i,i>>3,data[i>>3],resp[i>>3]);
     }
     return 0 ;
 }

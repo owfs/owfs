@@ -17,6 +17,7 @@ speed_t speed = B9600;
 int portnum = -1 ; /* TCP port (for owhttpd) */
 char * devport = NULL ; /* Device name (COM or parallel port) */
 int devfd = -1; /*file descriptor for serial/parallel port*/
+int useusb = 0 ; /* which DS9490 to connect */
 
 #ifdef OW_USB
     usb_dev_handle * devusb = NULL ;
@@ -209,13 +210,13 @@ int ComSetup( const char * busdev ) {
     return 0 ;
 }
 
-int USBSetup( int useusb ) {
+int USBSetup( void ) {
 #ifdef OW_USB
     if ( devport ) {
         fprintf(stderr,"1-wire port already set to %s, ignoring USB.\n",devport) ;
         return 1 ;
     }
-    return DS9490_detect( useusb ) ;
+    return DS9490_detect() ;
 #else /* OW_USB */
     fprintf(stderr,"Attempt to use a USB 1-wire interface without compiling support for libusb\n");
     return 1 ;
