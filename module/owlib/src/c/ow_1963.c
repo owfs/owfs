@@ -79,95 +79,95 @@ DeviceEntry( 1A, DS1963L )
 
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_counter( unsigned int * counter, int page, const struct parsedname * pn ) ;
+static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 static int FS_w_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   return -EINVAL;
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-  return -EINVAL;
+    if ( OW_r_mem_counter(buf,NULL,size,offset+((pn->extension)<<5),pn) ) return -EINVAL;
+    return size ;
 }
 
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
-  return -EINVAL;
+    if ( OW_read_paged( buf, size, offset, pn, 32, OW_r_mem ) ) return -EINVAL;
+    return size ;
 }
 
 static int FS_counter( unsigned int * u, const struct parsedname * pn ) {
-    if ( OW_r_counter(u,pn->extension,pn) ) return -EINVAL ;
+    if ( OW_r_mem_counter(NULL,u,1,((pn->extension)<<5)+31,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-  return -EINVAL;
+  if ( OW_w_mem( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
+  return 0 ;
 }
 
 static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-  return -EINVAL;
+    if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem ) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* paged, and pre-screened */
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[4+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
+    unsigned char p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
 
     /* Copy to scratchpad */
+    memcpy( &p[3], data, size ) ;
+
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_send_data(data,size,pn) ;
+        ret = BUS_select(pn) || BUS_send_data(p,size+3,pn) ;
+        if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2,pn) || CRC16(p,1+2+size+2) ;
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
+    /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp(&p[4], data, (size_t) size) ;
+        ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp( &p[4], data, size) ;
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
-    p[0] = 0x55 ;
+    p[0] = 0x5A ;
     BUSLOCK(pn)
         ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
     BUSUNLOCK(pn)
-    if ( ret ) return 1 ;
-
-    UT_delay(32) ;
-    return 0 ;
+    return ret ;
 }
 
 static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3+32+2] = { 0xF0, offset&0xFF , offset>>8, } ;
-    int ret ;
-
-    if ( (size+offset)&0x1F ) { /* doesn't end at end of page */
-        BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_send_data( p, 3,pn) || BUS_readin_data( data, (int) size, pn) ;
-        BUSUNLOCK(pn)
-    } else { /* ends at end-of-page, use CRC16 */
-        BUSLOCK(pn)
-            ret = BUS_select(pn) || BUS_send_data( p, 3,pn) || BUS_readin_data( &p[3], (int) size+2, pn) || CRC16(p,3+size+2) ;
-        BUSUNLOCK(pn)
-        memcpy( data, &p[3], size ) ;
-    }
-    return ret ;
-    
+    return OW_r_mem_counter(data,NULL,size,((pn->extension)<<5)+offset,pn) ;
 }
 
-static int OW_r_counter( unsigned int * counter, int page, const struct parsedname * pn ) {
-    unsigned int loc = (page<<5) + 31 ;
-    unsigned char p[3+1+10] = { 0xA5, loc&0xFF , loc>>8, } ;
-    const unsigned char t[] = {0x55,0x55,0x55,0x55,} ;
+/* read memory area and counter (just past memory) */
+/* Nathan Holmes help troubleshoot this one! */
+static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    unsigned char data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     int ret ;
+    /* rest in the remaining length of the 32 byte page */
+    size_t rest = 32 - (offset&0x1F) ;
 
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p, 3,pn) || BUS_readin_data( &p[3], 1+10, pn) || memcmp(&p[8],t,4) || CRC16(p,3+1+10) ;
+        /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
+        ret = BUS_select(pn) || BUS_send_data(data,3,pn) || BUS_readin_data(&data[3],rest+10,pn) || CRC16(data,rest+13) || data[rest+7]!=0x55 || data[rest+8]!=0x55 || data[rest+9]!=0x55 || data[rest+10]!=0x55 ;
     BUSUNLOCK(pn)
-    if ( ret==0 ) 
+    if ( ret ) return 1 ;
+
+    /* counter is held in the 4 bytes after the data */
+    if ( counter ) 
         counter[0] = 
-             ((unsigned int)p[4])
-           + (((unsigned int)p[5])<<8) 
-           + (((unsigned int)p[6])<<16) 
-           + (((unsigned int)p[7])<<24) ;
-    return ret ;    
+             ((unsigned int)data[rest+3])
+           + (((unsigned int)data[rest+4])<<8) 
+           + (((unsigned int)data[rest+5])<<16) 
+           + (((unsigned int)data[rest+6])<<24) ;
+    /* memory contents after the command and location */
+    if ( p ) memcpy(p,&data[3],size) ;
+
+    return 0 ;
 }
