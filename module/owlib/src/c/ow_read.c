@@ -51,35 +51,27 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
 int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r ;
+    int i;
 //    if ( pn->in==NULL ) return -ENODEV ;
     /* Normal read. Try three times */
     STATLOCK
-        AVERAGE_IN(&read_avg)
-        AVERAGE_IN(&all_avg)
-        ++read_tries[0] ; /* statitics */
+    AVERAGE_IN(&read_avg)
+    AVERAGE_IN(&all_avg)
     STATUNLOCK
-    r = FS_read_postparse( buf, size, offset, pn ) ;
-    if ( r<0 ) {
-        STATLOCK
-            ++read_tries[1] ; /* statitics */
-        STATUNLOCK
-        r = FS_read_postparse( buf, size, offset, pn ) ;
-    }
-    if ( r<0 ) {
-        STATLOCK
-            ++read_tries[2] ; /* statitics */
-        STATUNLOCK
-        r = FS_read_postparse( buf, size, offset, pn ) ;
-    }
-    if ( r>=0 ) {
-        STATLOCK
-            ++read_success ; /* statistics */
-            read_bytes += r ; /* statistics */
-        STATUNLOCK
+    for(i=0; i<3; i++) {
+      STATLOCK
+      ++read_tries[i] ; /* statitics */
+      STATUNLOCK
+      r = FS_read_postparse( buf, size, offset, pn ) ;
+      if ( r>=0 ) break;
     }
     STATLOCK
-        AVERAGE_OUT(&read_avg)
-        AVERAGE_OUT(&all_avg)
+    if ( r>=0 ) {
+      ++read_success ; /* statistics */
+      read_bytes += r ; /* statistics */
+    }
+    AVERAGE_OUT(&read_avg)
+    AVERAGE_OUT(&all_avg)
     STATUNLOCK
     return r ;
 }
