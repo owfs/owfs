@@ -302,6 +302,17 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h])
 
+# owftpd section
+AC_CHECK_HEADERS([sys/time.h sys/types.h])
+AC_SUBST(HAVE_NEW_SS_FAMILY)
+AC_EGREP_HEADER(__ss_family,
+    [sys/socket.h],
+    [HAVE_NEW_SS_FAMILY=false],
+    [HAVE_NEW_SS_FAMILY=true] )
+AC_MSG_WARN([SS is ${HAVE_NEW_SS_FAMILY}])
+AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
+# end owftpd section 
+
 # Checks for typedefs, structures, and compiler characteristics.
 
 AC_C_CONST
@@ -353,6 +364,11 @@ AC_CONFIG_FILES([
 	module/owhttpd/src/include/Makefile
 	module/owhttpd/src/c/Makefile
 	module/owhttpd/src/man/Makefile
+	module/owftpd/Makefile
+	module/owftpd/src/Makefile
+	module/owftpd/src/include/Makefile
+	module/owftpd/src/c/Makefile
+	module/owftpd/src/man/Makefile
 	src/Makefile
 	src/include/Makefile
 	src/man/Makefile
