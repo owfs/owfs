@@ -145,7 +145,12 @@ int main(int argc, char *argv[]) {
     for(;;) {
         ACCEPTLOCK
 #ifdef OW_MT
+#ifdef __UCLIBC__
+        if ( pthread_create( &thread, NULL, ThreadedAccept, &outdevice ) ) ow_exit(1) ;
+        pthread_detach(thread);
+#else
         if ( pthread_create( &thread, &attr, ThreadedAccept, &outdevice ) ) ow_exit(1) ;
+#endif
 #else /* OW_MT */
         Acceptor( server.listenfd ) ;
 #endif /* OW_MT */
