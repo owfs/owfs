@@ -38,6 +38,10 @@ $Id$
 	  whether the elements are stored together and split, or separately and joined
 */
 
+/* Changes
+    7/2004 Extensive improvements based on input from Serg Oskin
+*/
+
 #include "owfs_config.h"
 #include "ow_2406.h"
 
@@ -50,6 +54,10 @@ bWRITE_FUNCTION( FS_w_mem ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  yREAD_FUNCTION( FS_r_pio ) ;
 yWRITE_FUNCTION( FS_w_pio ) ;
+ yREAD_FUNCTION( FS_r_latch ) ;
+yWRITE_FUNCTION( FS_w_latch ) ;
+ uREAD_FUNCTION( FS_r_s_alarm ) ;
+uWRITE_FUNCTION( FS_w_s_alarm ) ;
  yREAD_FUNCTION( FS_power ) ;
  uREAD_FUNCTION( FS_channel ) ;
  yREAD_FUNCTION( FS_sense ) ;
@@ -60,13 +68,15 @@ struct aggregate A2406 = { 2, ag_letters, ag_aggregate, } ;
 struct aggregate A2406p = { 4, ag_numbers, ag_separate, } ;
 struct filetype DS2406[] = {
     F_STANDARD   ,
-    {"memory"    ,   128,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem},  NULL, } ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"memory"    ,   128,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
+    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"pages/page",    32,  &A2406p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL},      NULL, } ,
-    {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL},      NULL, } ,
-    {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio},  NULL, } ,
-    {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL},      NULL, } ,
+    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
+    {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL}     , NULL, } ,
+    {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
+    {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
+    {"latch"     ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
+    {"set_alarm" ,    12,  NULL,    ft_unsigned, ft_stable  , {y:FS_r_s_alarm}, {y:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 12, DS2406 )
 
@@ -79,6 +89,7 @@ static int OW_w_mem( const unsigned char * data , const int length , const int l
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
 static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_clear( const struct parsedname * pn ) ;
 
 /* 2406 memory read */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -147,6 +158,36 @@ static int FS_sense(int * y , const struct parsedname * pn) {
     return 0 ;
 }
 
+/* 2406 switch activity latch*/
+static int FS_r_latch(int * y , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_access(&data,pn) ) return -EINVAL ;
+    y[0] = UT_getbit(&data,4) ;
+    y[1] = UT_getbit(&data,5) ;
+    return 0 ;
+}
+
+/* 2406 switch activity latch*/
+static int FS_w_latch(const int * y , const struct parsedname * pn) {
+    if ( OW_clear(pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2406 alarm settings*/
+static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_control(&data,pn) ) return -EINVAL ;
+    u[0] = data & 0x1F ; /* lower 5 bits */
+    return 0 ;
+}
+
+/* 2406 alarm settings*/
+static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
+    unsigned char data = u[0] & 0x1F ;
+    if ( OW_w_control(data,pn) ) return -EINVAL ;
+    return 0 ;
+}
+
 /* write 2406 switch -- 2 values*/
 static int FS_w_pio(const int * y, const struct parsedname * pn) {
     if ( OW_w_pio(y,pn) ) return -EINVAL ;
@@ -188,21 +229,21 @@ static int OW_w_mem( const unsigned char * data , const int length , const int l
     return 0 ;
 }
 
-/*
+/* read status byte */
 static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char p[3+8+2] = { 0xAA, 0x00 , 0x00, } ;
+    unsigned char p[3+1+2] = { 0xAA, 0x07 , 0x00, } ;
     int ret ;
 
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 8+2 ) || CRC16(p,3+8+2) ;
+        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 1+2 ) || CRC16(p,3+1+2) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    *data = p[3+7] ;
+    *data = p[3] ;
     return 0 ;
 }
-*/
 
+/* write status byte */
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0x55, 0x07 , 0x00, data, } ;
     int ret ;
@@ -215,14 +256,15 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
 
 /* set PIO state pio: open=1 closed=0 num: A=0 B=1 */
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) {
-    unsigned char data = 0x1F;
+    unsigned char data;
+    if ( OW_r_control(&data,pn) ) return 1;
     UT_setbit( &data , 5 , pio[0]==0 ) ;
     UT_setbit( &data , 6 , pio[1]==0 ) ;
     return OW_w_control( data , pn ) ;
 }
 
 static int OW_access( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
+    unsigned char p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
     int ret ;
 
     BUS_lock() ;
@@ -235,7 +277,15 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
     return 0 ;
 }
 
+/* Clear latches */
+static int OW_clear( const struct parsedname * pn ) {
+    unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
+    int ret ;
 
+    BUS_lock() ;
+         ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
+    BUS_unlock() ;
+    if ( ret ) return 1 ;
 
-
-
+    return 0 ;
+}

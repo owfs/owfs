@@ -144,7 +144,7 @@ static int OW_w_mem( const unsigned char * data , const int length , const int l
     int ret ;
 
     /* die if too big, split across pages */
-    if ( location + length > 0x1FF ) return 1;
+    if ( location + length > 0x200 ) return 1;
     if ( offset+length > 32 ) return OW_w_mem( data, rest, location, pn ) || OW_w_mem( &data[rest], length-rest, location+rest, pn ) ;
     /* Copy to scratchpad */
     memcpy( &p[3], data, (size_t) length ) ;
@@ -177,7 +177,7 @@ static int OW_r_mem( unsigned char * data , const int length , const int locatio
     int ret ;
 
     BUS_lock() ;
-        ret = (location+length>0x1FF) || BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( data, length ) ;
+        ret = (location+length>0x200) || BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( data, length ) ;
     BUS_unlock() ;
     return ret ;
 }

@@ -19,6 +19,8 @@ Dual Switch, Write-once Memory
 [.]XXXXXXXXXXXX[XX][/[
 .B channels
 |
+.B latch.[A|B|ALL]
+|
 .B memory
 |
 .B pages/page.[0-3|ALL]
@@ -28,6 +30,8 @@ Dual Switch, Write-once Memory
 .B power
 |
 .B sensed.[A|B|ALL]
+|
+.B set_alarm
 |
 .B address
 |
@@ -50,6 +54,15 @@ Is this a 1 or 2 channel switch? The
 comes in two forms, one has only one
 .PIO
 pin (PIO.A). Returns 1 or 2.
+.SS latch
+.I read-write, yes-no
+.br
+The activity latch is set to 1 with the first negative or positive edge detected on the associated PIO channel.
+.br
+Writing any data will clear latch for all (both)) channels. This is a hardware "feature" of the chip.
+.br
+.I ALL
+references both channels simultaneously, comma separated
 .SS memory
 .I read-write, binary
 .br
@@ -93,6 +106,50 @@ state is set to zero (off), else will read zero.
 .br
 .I ALL
 references both channels simultaneously, comma separated.
+.SS set_alarm
+.I read-write, unsigned int(0-31)
+.br
+A number in the range of 0 to 31 that sets the alarmtriggers for this chip. There are several items that trigger the alarm, and the alarm can be triggered by channel A, B or either.
+.br
+Choices are presented as (value=0)/(value=1) i.e. 10/11 is the setting for triggering A latch on 0 (10) or 1 (11).
+.br
+All entries will be truncated to the 0-31 range.
+.TP
+0-1
+Reserved
+.TP
+2,4,6,8,16,24
+Unconditional positive trigger. Responds to every Conditional Search.
+.TP
+3,5,7,9,17,25
+Unconditional negative trigger. Never responds to Conditional Search.
+.TP
+10/11
+A only. Latch value = 0/1
+.TP
+12/13
+A only. FlipFlop = 0/1
+.TP
+14/15
+A only. PIO value = 0/1
+.TP
+18/19
+B only. Latch value = 0/1
+.TP
+20/21
+B only. FlipFlop = 0/1
+.TP
+22/23
+B only. PIO value = 0/1
+.TP
+26/27
+A or B. Latch value = 0/1
+.TP
+28/29
+A or B. FlipFlop = 0/1
+.TP
+30/31
+A or B. PIO value = 0/1
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii
@@ -125,9 +182,11 @@ Part name assigned by Dallas Semi. E.g.
 .I DS2401
 Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
-None implemented.
+Use the
+.I set_alarm
+property to set the alarm triggering criteria.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
+This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dallas Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
 .PP
 The
 .B DS2406

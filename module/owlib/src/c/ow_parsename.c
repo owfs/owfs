@@ -203,12 +203,12 @@ int FilePart( const char * const filename, const char ** next, struct parsedname
     strncpy( pF2 , filename , 32 ) ; /* Max length of filename */
     pF2[32] = '\0' ;
     if ( (p=strchr(pF2,'/')) ) { /* found continued path */
-        *next = &filename[p-pF2] +1 ; /* start of next path element */
+        if (next) *next = &filename[p-pF2] +1 ; /* start of next path element */
         *p = '\0' ;
     } else if ( strlen(filename) > 32 ) { /* filename too long */
         return -ENOENT ; /* filename too long */
     } else { /* no continued path */
-        *next = NULL ;
+        if (next) *next = NULL ;
     }
 //printf("FilePart 2nd pass name=%s\n",pFile);
 
@@ -356,4 +356,11 @@ static int BranchAdd( struct parsedname * const pn ) {
     pn->ft = NULL ;
     pn->dev = NULL ;
     return 0 ;
+}
+
+int Add_Brother_To_Cache( const char * const name, const void * const data, const size_t datasize, const struct parsedname * const pn ) {
+    struct parsedname pn2 ;
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+    pn2.subdir = NULL ;
+    return FilePart( name, NULL, &pn2 ) || Cache_Add( &pn2, data, datasize ) ;
 }

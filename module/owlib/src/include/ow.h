@@ -230,6 +230,7 @@ void DeviceSort( void ) ;
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
+int Add_Brother_To_Cache( const char * const name, const void * const data, const size_t datasize, const struct parsedname * const pn ) ;
 int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
 int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
   void FS_parse_dir( char * const dest , const char * const buf ) ;
