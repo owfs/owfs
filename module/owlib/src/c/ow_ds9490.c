@@ -69,9 +69,9 @@ static int DS9490_detect_low( void ) ;
 
 int DS9490_detect( void ) {
     int ret = DS9490_detect_low() ;
-    if (ret) return ret;
+    if (ret==0) return 0;
     ret = usb_reset(devusb) ;
-    if (ret) return ret;
+    if (ret==0) return 0;
     return DS9490_detect_low() ;
 }
 
@@ -113,15 +113,21 @@ static int DS9490_detect_low( void ) {
                                     unsigned char buffer[32] ;
                                     ret = usb_control_msg(devusb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )<0;
                                     ret = ret || DS9490wait(buffer) ;
+                                    syslog(LOG_INFO,"Successful setup (reset=%d) USB 2490 adapter at %s.\n",ret,devport) ;
                                 }
                                 return ret ;
+                            } else {
+                                syslog(LOG_INFO,"Failed to configure alt interface on USB 2490 adapter at %s.\n",devport) ;
                             }
                             usb_release_interface( devusb, 0) ;
+                        } else {
+                            syslog(LOG_INFO,"Failed to configure/claim interface on USB 2490 adapter at %s.\n",devport) ;
                         }
                         usb_close( devusb ) ;
                         devusb = 0 ;
+                    } else {
+                        syslog(LOG_INFO,"Failed to open USB 2490 adapter at %s.\n",devport) ;
                     }
-                    syslog(LOG_INFO,"Failed to open/configure USB 2490 adapter at %s.\n",devport) ;
                     return -EIO ;
                 }
             }
