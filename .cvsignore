@@ -1,0 +1,12 @@
+Makefile.in
+Makefile
+configure
+configure-options
+auto*cache
+aclocal.m4
+config.log
+config.status
+libtool
+*tar.gz
+autoscan.log
+configure.scan

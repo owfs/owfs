@@ -1,0 +1,85 @@
+%define kernelversion %(uname -r)
+%define fusemoduledir /lib/modules/%{kernelversion}/kernel/fs/fuse
+
+%define kernelrel %(uname -r | sed -e s/-/_/g)
+%define real_release 6
+
+Name: owlib
+Version: @VERSION@
+Release: 1
+Summary: 1-Wire Virtual File System
+Source: %{name}-%{version}.tar.gz
+Copyright: GPL
+Group: Utilities/System
+URL: http://sourceforge.net/projects/owfs
+Buildroot: %{_tmppath}/%{name}-root
+Prefix: /usr
+Packager: Vadim Tkachenko <vt@freehold.crocodile.org>
+Requires: fuse = 1.0
+%description
+
+OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
+owlib is a core library providing base functions to other OWFS modules.
+
+
+%clean
+case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
+
+%prep
+%setup
+
+%build
+./configure --prefix=%{prefix}
+make
+make check
+
+%install
+case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
+make install \
+	prefix=$RPM_BUILD_ROOT%{prefix}
+
+%post
+
+%preun
+
+%postun
+
+
+%files
+%defattr(-,root,root)
+%doc README NEWS INSTALL ChangeLog AUTHORS COPYING
+
+%{prefix}/lib/libow.so
+%{prefix}/lib/libow.so.0
+%{prefix}/lib/libow.so.0.0.0
+%{prefix}/lib/libow.la
+%{prefix}/lib/libow.a
+%{prefix}/bin/owfs
+%{prefix}/include/config.h
+%{prefix}/include/mime_types.h
+%{prefix}/include/ow_1820.h
+%{prefix}/include/ow_1993.h
+%{prefix}/include/ow_2401.h
+%{prefix}/include/ow_2405.h
+%{prefix}/include/ow_2406.h
+%{prefix}/include/ow_2415.h
+%{prefix}/include/ow_2423.h
+%{prefix}/include/ow_2436.h
+%{prefix}/include/ow_2438.h
+%{prefix}/include/ow_2450.h
+%{prefix}/include/ow_2502.h
+%{prefix}/include/ow_2505.h
+%{prefix}/include/ow_2890.h
+%{prefix}/include/ow_devices.h
+%{prefix}/include/owfs.h
+%{prefix}/include/ow.h
+%{prefix}/include/ow_lcd.h
+%{prefix}/include/ow_link.h
+%{prefix}/include/ow_none.h
+%{prefix}/include/ow_xxxx.h
+%{prefix}/include/ow_stub.h
+
+%changelog
+
+* Wed Sep 24 2003 Vadim Tkachenko <vt@freehold.crocodile.org>
+- Initial take at RPM build

@@ -1,0 +1,5 @@
+#! /bin/sh
+
+# Just in case you haven't noticed: configure takes a command line tail.
+
+aclocal && autoconf && automake && ./configure $* 
