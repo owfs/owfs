@@ -207,9 +207,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         }
         break ;
     case ft_ascii:
-        if ( offset ) {
-            ret = -EADDRNOTAVAIL ;
-        } else {
+        {
             size_t s = fl ;
             s -= offset ;
             if ( s > size ) s = size ;
@@ -218,9 +216,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         }
         break ;
     case ft_binary:
-        if ( offset ) {
-            ret = -EADDRNOTAVAIL ;
-        } else {
+        {
             size_t s = fl ;
             s -= offset ;
             if ( s > size ) s = size ;
@@ -268,8 +264,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
     switch( pn->ft->format ) {
     case ft_integer:
         {
-            int * i ;
-            i = (int *) calloc( elements , sizeof(int) ) ;
+            int * i = (int *) calloc( elements , sizeof(int) ) ;
             if ( i==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -282,8 +277,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
         break ;
     case ft_unsigned:
         {
-            unsigned int * u ;
-            u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
+            unsigned int * u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
             if ( u==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -296,8 +290,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
         break ;
     case ft_float:
         {
-            FLOAT * f ;
-            f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
             if ( f==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -310,8 +303,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
         break ;
     case ft_date:
         {
-            DATE * d ;
-            d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+            DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
             if ( d==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -324,8 +316,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
         break ;
     case ft_yesno:
         {
-            int * y ;
-            y = (int *) calloc( elements , sizeof(int) ) ;
+            int * y = (int *) calloc( elements , sizeof(int) ) ;
             if ( y==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -338,8 +329,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
         break ;
     case ft_bitfield:
         {
-            int * y ;
-            y = (int *) calloc( elements , sizeof(int) ) ;
+            int * y = (int *) calloc( elements , sizeof(int) ) ;
             if ( y==NULL ) {
                 ret = -ENOMEM ;
             } else {
