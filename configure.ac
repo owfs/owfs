@@ -226,6 +226,10 @@ if test "${ENABLE_USB}" != "false" ; then
             AC_SUBST(ENABLE_USB)
 	fi
     ])
+    if test "${ENABLE_USB}" != "false" ; then
+        ENABLE_USB=true
+        AC_SUBST(ENABLE_USB)
+    fi
 fi
 
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
