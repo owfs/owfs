@@ -32,6 +32,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
 static int DS9490_level(int new_level) ;
 static void DS9490_setroutines( struct interface_routines * const f ) ;
 static int DS9490_select_low(const struct parsedname * const pn) ;
+static int DS9490_detect_low( void ) ;
 
 #define TIMEOUT_USB	5000 /* 5 seconds */
 
@@ -66,14 +67,23 @@ static int DS9490_select_low(const struct parsedname * const pn) ;
 /** EP3 -- bulk read */
 #define DS2490_EP3              0x83
 
+int DS9490_detect( void ) {
+    int ret = DS9490_detect_low() ;
+    if (ret) return ret;
+    ret = usb_reset(devusb) ;
+    if (ret) return ret;
+    return DS9490_detect_low() ;
+}
+
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
-int DS9490_detect( void ) {
+static int DS9490_detect_low( void ) {
     struct usb_bus *bus ;
     struct usb_device *dev ;
     int usbnum = 0 ;
+    int ret ;
 
     usb_init() ;
     usb_find_busses() ;
@@ -96,7 +106,15 @@ int DS9490_detect( void ) {
                                 syslog(LOG_INFO,"Opened USB 2490 adapter at %s.\n",devport) ;
                                 DS9490_setroutines( & iroutines ) ;
                                 Version2480 = 8 ; /* dummy value */
-                                return DS9490_reset(NULL) ;
+                                ret = DS9490_reset(NULL) ;
+                                if (ret) {
+                                    syslog(LOG_INFO,"Couldn\'t RESET 2490.\n") ;
+                                } else {
+                                    unsigned char buffer[32] ;
+                                    ret = usb_control_msg(devusb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )<0;
+                                    ret = ret || DS9490wait(buffer) ;
+                                }
+                                return ret ;
                             }
                             usb_release_interface( devusb, 0) ;
                         }
@@ -104,13 +122,13 @@ int DS9490_detect( void ) {
                         devusb = 0 ;
                     }
                     syslog(LOG_INFO,"Failed to open/configure USB 2490 adapter at %s.\n",devport) ;
-                    return 1 ;
+                    return -EIO ;
                 }
             }
         }
     }
     syslog(LOG_INFO,"No USB 2490 adapter found\n") ;
-    return 1 ;
+    return -ENODEV ;
 }
 
 void DS9490_close(void) {
@@ -118,7 +136,7 @@ void DS9490_close(void) {
         usb_release_interface( devusb, 0) ;
         usb_close( devusb ) ;
         devusb = 0 ;
-    }
+    }syslog(LOG_INFO,"Opened USB 2490 adapter at %s.\n",devport) ;
 }
 
 static int DS9490wait(unsigned char * const buffer) {
