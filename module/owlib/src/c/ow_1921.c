@@ -55,6 +55,10 @@ $Id$
  uREAD_FUNCTION( FS_r_logtime ) ;
  dREAD_FUNCTION( FS_r_logdate ) ;
  fREAD_FUNCTION( FS_r_temperature ) ;
+ yREAD_FUNCTION( FS_bitread ) ;
+yWRITE_FUNCTION( FS_bitwrite ) ;
+ yREAD_FUNCTION( FS_rbitread ) ;
+yWRITE_FUNCTION( FS_rbitwrite ) ;
 
  dREAD_FUNCTION( FS_r_date ) ;
 dWRITE_FUNCTION( FS_w_date ) ;
@@ -75,11 +79,21 @@ uWRITE_FUNCTION( FS_w_atime ) ;
 uWRITE_FUNCTION( FS_w_atrig ) ;
  yREAD_FUNCTION( FS_r_mip ) ;
 yWRITE_FUNCTION( FS_w_mip ) ;
-/* ------- Structures ----------- */
 
+/* ------- Structures ----------- */
+struct BitRead { size_t location ; int bit ; } ;
+struct BitRead BitReads[] =
+{
+    { 0x0214, 7, } , //temperature in progress
+    { 0x0214, 5, } , // Mission in progress
+    { 0x0214, 4, } , //sample in progress
+    { 0x020E, 3, } , // rollover
+    { 0x020E, 7, } , // clock running (reversed)
+} ;
+    
 struct aggregate A1921p = { 16, ag_numbers, ag_separate, } ;
 struct aggregate A1921l = { 2048, ag_numbers, ag_separate, } ;
-struct aggregate A1921h = { 63, ag_numbers, ag_aggregate, } ;
+struct aggregate A1921h = { 63, ag_numbers, ag_mixed, } ;
 struct filetype DS1921[] = {
     F_STANDARD              ,
     {"memory"               ,512,   NULL,  ft_binary,   ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
@@ -88,32 +102,32 @@ struct filetype DS1921[] = {
     {"pages/page"           , 32,&A1921p,  ft_binary,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
 
     {"histogram"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
-    {"histogram/counts"     ,  6,&A1921h,ft_unsigned, ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,//
+    {"histogram/counts"     ,  6,&A1921h,ft_unsigned, ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,
     {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,//
-    {"histogram/gap"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,//
+    {"histogram/gap"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,
 
     {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
     {"clock/counter"        , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
-    {"clock/running"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,//
+    {"clock/running"        ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , &BitReads[4], } ,
 
     {"about"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"about/resolution"     ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,//
-    {"about/templow"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,//
-    {"about/temphigh"       ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,//
-    {"about/version"        , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,//
+    {"about/resolution"     ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,
+    {"about/templow"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,
+    {"about/temphigh"       ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
+    {"about/version"        , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
     {"about/samples"        , 11,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021D, } ,
-    {"about/measuring"      , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,//
+    {"about/measuring"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[0], } ,
 
     {"temperature"          , 12,   NULL,   ft_float, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
 
     {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[1], } ,//
     {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
     {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
-    {"mission/rollover"     , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
+    {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
     {"mission/last"         , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
-    {"mission/sampling"     , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
+    {"mission/sampling"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[2], } ,
 
     {"log"                  ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"log/temperature"      ,  5,&A1921l,   ft_float, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,//
@@ -135,15 +149,13 @@ struct filetype DS1921[] = {
 
     {"samplerate"     ,  5,   NULL, ft_unsigned,  ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
     {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
-    {"total_samples"  , 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r_3byte}     , {v:NULL}           , (void *)0x021D, } ,
     {"alarm_second"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0207, } ,
     {"alarm_minute"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0208, } ,
     {"alarm_hour"     , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0209, } ,
     {"alarm_dow"      , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x020A, } ,
     {"alarm_trigger"  , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atrig}      , {u:FS_w_atrig}     , NULL, } ,
     {"in_mission"     ,  1,   NULL,    ft_yesno,ft_volatile, {y:FS_r_mip}        , {y:FS_w_mip}       , NULL, } ,
-    {"version"        , 11,   NULL,    ft_ascii,  ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
-} ;
+ } ;
 DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp )
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
@@ -162,6 +174,7 @@ struct Version Versions[] =
 static int VersionCmp( const void * pn , const void * version ) {
     return ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) - ((const struct Version *)version)->ID ;
 }
+
 /* ------- Functions ------------ */
 
 /* DS1921 */
@@ -173,29 +186,57 @@ static int OW_clearmemory( const struct parsedname * const pn) ;
 static int OW_2date(DATE * d, const unsigned char * data) ;
 static void OW_date(const DATE * d , unsigned char * data) ;
 
-/* histogram lower bound */
-static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
-    int j ;
-    int i = 0 ;
-    unsigned char data[32] ;
-
-    if ( OW_r_mem( data , 32, 0x0800, pn ) ) return -EINVAL ;
-    for ( j=0 ; j<32 ; j+=2 ) h[i++] =  ((unsigned int)data[j+1])<<8 | data[j] ;
-//for ( j=0 ; j<16 ; j+=2 ) printf("HIS j=%3d %2X %2X %4X %u\n",j,data[j],data[j+1],((unsigned int)data[j+1])<<8 | data[j],((unsigned int)data[j+1])<<8 | data[j]) ;
-
-    if ( OW_r_mem( data , 32, 0x0820, pn ) ) return -EINVAL ;
-    for ( j=0 ; j<32 ; j+=2 ) h[i++] =  ((unsigned int)data[j+1])<<8 | data[j] ;
-//for ( j=0 ; j<16 ; j+=2 ) printf("HIS j=%3d %2X %2X %4X %u\n",j,data[j],data[j+1],((unsigned int)data[j+1])<<8 | data[j],((unsigned int)data[j+1])<<8 | data[j]) ;
-    if ( OW_r_mem( data , 32, 0x0840, pn ) ) return -EINVAL ;
-    for ( j=0 ; j<32 ; j+=2 ) h[i++] =  ((unsigned int)data[j+1])<<8 | data[j] ;
-//for ( j=0 ; j<16 ; j+=2 ) printf("HIS j=%3d %2X %2X %4X %u\n",j,data[j],data[j+1],((unsigned int)data[j+1])<<8 | data[j],((unsigned int)data[j+1])<<8 | data[j]) ;
-    if ( OW_r_mem( data , 32, 0x0860, pn ) ) return -EINVAL ;
-    for ( j=0 ; j<30 ; j+=2 ) h[i++] =  ((unsigned int)data[j+1])<<8 | data[j] ;
-//for ( j=0 ; j<14 ; j+=2 ) printf("HIS j=%3d %2X %2X %4X %u\n",j,data[j],data[j+1],((unsigned int)data[j+1])<<8 | data[j],((unsigned int)data[j+1])<<8 | data[j]) ;
-//for ( j=0;j<63;++j) printf("HIH j=%3d, %u\n",j,h[j]) ;
+static int FS_bitread( int * y , const struct parsedname * pn ) {
+    unsigned char d ;
+    struct BitRead * br ;
+    if (pn->ft->data==NULL) return -EINVAL ;
+    br = ((struct BitRead *)(pn->ft->data)) ;
+    if ( OW_r_mem(&d,1,br->location,pn) ) return -EINVAL ;
+    y[0] = UT_getbit(&d,br->bit ) ;
     return 0 ;
 }
 
+static int FS_bitwrite( const int * y , const struct parsedname * pn ) {
+    unsigned char d ;
+    struct BitRead * br ;
+    if (pn->ft->data==NULL) return -EINVAL ;
+    br = ((struct BitRead *)(pn->ft->data)) ;
+    if ( OW_r_mem(&d,1,br->location,pn) ) return -EINVAL ;
+    UT_setbit(&d,br->bit,y[0] ) ;
+    if ( OW_w_mem(&d,1,br->location,pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+static int FS_rbitread( int * y , const struct parsedname * pn ) {
+    int ret = FS_bitread(y,pn) ;
+    y[0] = !y[0] ;
+    return ret ;
+}
+
+static int FS_rbitwrite( const int * y , const struct parsedname * pn ) {
+    int z = !y[0] ;
+    return FS_bitwrite(&z,pn) ;
+}
+
+/* histogram lower bound */
+static int FS_r_histall(unsigned int * h, const struct parsedname * pn ) {
+    int i ;
+    unsigned char data[63*2] ;
+    if ( OW_read_paged(data,sizeof(data),0x800,pn,32,OW_r_mem) ) return -EINVAL ;
+    for ( i=0 ; i<63 ; ++i ) {
+        h[i] = (((unsigned int)data[(i<<1)+1])<<8)|data[i<<1] ;
+    }
+    return 0 ;
+}    
+
+static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
+    unsigned char data[2] ;
+    if ( pn->extension < 0 ) return FS_r_histall(h,pn) ;
+    if ( OW_r_mem(data,2,0x800+((pn->extension)<<1),pn) ) return -EINVAL ;
+    h[0] = (((unsigned int)data[1])<<8)|data[0] ;
+    return 0 ;
+}
+    
 static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
     int i ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
