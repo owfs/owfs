@@ -89,7 +89,7 @@ struct filetype DS2450[] = {
     {"alarm/high"         ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , (void *) 1, } ,
     {"alarm/low"          ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , (void *) 0, } ,
 } ;
-DeviceEntryExtended( 20, DS2450, DEV_volt )
+DeviceEntryExtended( 20, DS2450, DEV_volt | DEV_alarm )
 
 /* ------- Functions ------------ */
 

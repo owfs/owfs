@@ -81,7 +81,7 @@ struct filetype DS28E04[] = {
     {"latch"     ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,
     {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
-DeviceEntry( 1C, DS28E04 )
+DeviceEntryExtended( 1C, DS28E04, DEV_alarm )
 
 /* ------- Functions ------------ */
 
