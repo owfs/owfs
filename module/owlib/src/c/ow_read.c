@@ -151,12 +151,14 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     void * Read2( void * vp ) {
         struct parsedname pn2 ;
         struct stateinfo si ;
+	int ret;
         (void) vp ;
         memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
         pn2.in = pn->in->next ;
         pn2.si = &si ;
 	//printf("READSEEK fork new process pid=%d\n",getpid());
-        return (void *) FS_read_seek(buf2,size,offset,&pn2) ;
+        ret = FS_read_seek(buf2,size,offset,&pn2) ;
+	pthread_exit((void *)ret);
     }
     int threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
 #endif /* OW_MT */
