@@ -51,8 +51,8 @@ bWRITE_FUNCTION( FS_w_page ) ;
 bWRITE_FUNCTION( FS_w_memory ) ;
  uREAD_FUNCTION( FS_r_counter ) ;
 uWRITE_FUNCTION( FS_w_counter ) ;
- aREAD_FUNCTION( FS_r_date ) ;
-aWRITE_FUNCTION( FS_w_date ) ;
+ dREAD_FUNCTION( FS_r_date ) ;
+dWRITE_FUNCTION( FS_w_date ) ;
  yREAD_FUNCTION( FS_r_run ) ;
 yWRITE_FUNCTION( FS_w_run ) ;
 
@@ -65,7 +65,7 @@ struct filetype DS2404[] = {
     {"memory"    ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_run}    , {y:FS_w_run}    , NULL, } ,
     {"counter"   ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
-    {"date"      ,    26,  NULL,   ft_ascii   , ft_second, {a:FS_r_date}   , {a:FS_w_date}   , NULL, } ,
+    {"date"      ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
 } ;
 DeviceEntry( 04, DS2404 )
 
@@ -75,7 +75,7 @@ struct filetype DS2404S[] = {
     {"memory"    ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_run}    , {y:FS_w_run}    , NULL, } ,
     {"counter"   ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
-    {"date"      ,    26,  NULL,   ft_ascii   , ft_second, {a:FS_r_date}   , {a:FS_w_date}   , NULL, } ,
+    {"date"      ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
 } ;
 DeviceEntry( 84, DS2404S )
 
@@ -87,19 +87,13 @@ static int OW_r_mem( unsigned char * data, const size_t length, const size_t loc
 
 /* 1902 */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    size_t len = size ;
-    if ( (offset&0x1F)+size>32 ) len = 32-offset ;
-    if ( OW_r_mem( buf, len, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
-
-    return len ;
+    if ( OW_r_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int len = pn->ft->suglen - offset ;
-    if ( len < 0 ) return -ERANGE ;
-    if ( (size_t)len > size ) len = size ;
-    if ( OW_r_mem( buf, (size_t) len, (size_t) offset, pn) ) return -EINVAL ;
-    return len ;
+    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -108,50 +102,31 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 }
 
 static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int len = pn->ft->suglen - offset ;
-    if ( len < 0 ) return -ERANGE ;
-    if ( (size_t)len > size ) len = size ;
-    if ( OW_w_mem( buf, (size_t) len, (size_t) offset, pn) ) return -EFAULT ;
+    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
     return 0 ;
 }
 
 /* set clock */
-static int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    struct tm tm ;
-    unsigned int t ;
+static int FS_w_date(const DATE * d , const struct parsedname * pn) {
     unsigned char data[5] ;
 
-    /* Not sure if this is valid, but won't allow offset != 0 at first */
-    /* otherwise need a buffer */
-    if ( offset != 0 ) return -EFAULT ;
-    if ( size==0 || buf[0]=='\0' ) {
-        t = (unsigned int) time(NULL) ;
-    } else if ( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) ) {
-        t = (unsigned int) mktime(&tm) ;
-    } else {
-        return -EINVAL ;
-    }
     data[0] = 0x00 ;
-    data[1] = t & 0xFF ;
-    data[2] = (t>>8) & 0xFF ;
-    data[3] = (t>>16) & 0xFF ;
-    data[4] = (t>>24) & 0xFF ;
+    data[1] = d[0] & 0xFF ;
+    data[2] = (d[0]>>8) & 0xFF ;
+    data[3] = (d[0]>>16) & 0xFF ;
+    data[4] = (d[0]>>24) & 0xFF ;
     if ( OW_w_mem( data, 5, 0x0202, pn) ) return -EFAULT ;
     return 0 ;
 }
 
 /* read clock */
-static int FS_r_date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned int t ; /* must me 32bit (or more) */
+static int FS_r_date( DATE * d , const struct parsedname * pn) {
     unsigned char data[5] ;
-    if ( offset ) return -EFAULT ;
-    if ( size<26 ) return -EMSGSIZE ;
 
     if ( OW_r_mem(data,5,0x0202,pn) ) return -EINVAL ;
-    t = ((unsigned int) data[1]) || ((unsigned int) data[2])<<8 || ((unsigned int) data[3])<<16 || ((unsigned int) data[4])<<24 ;
-    if ( data[0] & 0x80 ) ++t ;
-    if ( ctime_r((time_t *) &t,buf) ) return 24 ;
-    return -EINVAL ;
+    d[0] = ((unsigned int) data[1]) || ((unsigned int) data[2])<<8 || ((unsigned int) data[3])<<16 || ((unsigned int) data[4])<<24 ;
+    if ( data[0] & 0x80 ) ++d[0] ;
+    return 0 ;
 }
 
 /* set clock */

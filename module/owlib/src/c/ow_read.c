@@ -26,9 +26,12 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
 static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
+
 static int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -156,6 +159,13 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             if (ret < 0) return ret ;
             return FS_output_float( f , buf , size , pn ) ;
             }
+        case ft_date: {
+            DATE d ;
+            if ( offset ) return -EINVAL ;
+            ret = (pn->ft->read.d)(&d,pn) ;
+            if (ret < 0) return ret ;
+            return FS_output_date( d , buf , size , pn ) ;
+            }
         case ft_yesno: {
             int y ;
             if ( offset ) return -EINVAL ;
@@ -165,10 +175,20 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             buf[0] = y ? '1' : '0' ;
             return 1 ;
             }
-        case ft_ascii:
-            return (pn->ft->read.a)(buf,size,offset,pn) ;
-        case ft_binary:
+        case ft_ascii: {
+            size_t s = FileLength(pn) ;
+            if ( offset > s ) return -EMSGSIZE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+            return (pn->ft->read.a)(buf,s,offset,pn) ;
+            }
+        case ft_binary: {
+            size_t s = FileLength(pn) ;
+            if ( offset > s ) return -EMSGSIZE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
             return (pn->ft->read.b)(buf,size,offset,pn) ;
+            }
         case ft_directory:
         case ft_subdir:
             return -ENOSYS ;
@@ -211,6 +231,18 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             free( f ) ;
             return ret ;
         }
+        case ft_date: {
+            DATE * d = (DATE *) calloc( elements, sizeof(DATE) ) ;
+            if ( d==NULL ) return -ENOMEM ;
+            if ( offset ) {
+                free( d ) ;
+                return -EINVAL ;
+            }
+            ret = (pn->ft->read.d)(d,pn) ;
+            if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
+            free( d ) ;
+            return ret ;
+        }
         case ft_yesno: {
             int * y = (int *) calloc( elements, sizeof(int) ) ;
             if ( y==NULL ) return -ENOMEM ;
@@ -229,10 +261,20 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             free( y ) ;
             return elements*2-1 ;
         }
-        case ft_ascii:
-            return (pn->ft->read.a)(buf,size,offset,pn) ;
-        case ft_binary:
-            return (pn->ft->read.b)(buf,size,offset,pn) ;
+        case ft_ascii: {
+            size_t s = FileLength(pn) ;
+            if ( offset > s ) return -EMSGSIZE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+            return (pn->ft->read.a)(buf,s,offset,pn) ;
+            }
+        case ft_binary: {
+            size_t s = FileLength(pn) ;
+            if ( offset > s ) return -EMSGSIZE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+            return (pn->ft->read.b)(buf,s,offset,pn) ;
+            }
         case ft_directory:
         case ft_subdir:
             return -ENOSYS ;
@@ -340,6 +382,15 @@ static int FS_output_float( FLOAT value, char * buf, const size_t size, const st
     return len ;
 }
 
+static int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) {
+    char c[26] ;
+    (void) pn ;
+    if ( size < 24 ) return -EMSGSIZE ;
+    ctime_r( &value, c) ;
+    memcpy( buf, c, 24 ) ;
+    return 24 ;
+}
+
 static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
@@ -392,5 +443,23 @@ static int FS_output_float_array( FLOAT * values, char * buf, const size_t size,
         --left ;
     }
     if ( (len=FS_output_float( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+    return size-(left-len) ;
+}
+
+static int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
+    int len ;
+    int left = size ;
+    char * first = buf ;
+    int i ;
+    for ( i=0 ; i < pn->ft->ag->elements - 1 ; ++i ) {
+        if ( (len=FS_output_date( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+        left -= len ;
+        first += len ;
+        if ( left<1 ) return -EMSGSIZE ;
+        first[0] = ',' ;
+        ++first ;
+        --left ;
+    }
+    if ( (len=FS_output_date( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
     return size-(left-len) ;
 }

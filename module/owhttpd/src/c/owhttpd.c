@@ -121,6 +121,7 @@ static void * handle(void * p){
     struct active_sock ch_sock;
 
     ch_sock.socket = *(int *) p;
+//printf("Handler sock=%d\n",ch_sock.socket);
     ch_sock.io = fdopen(ch_sock.socket, "w+");
     if (ch_sock.io) {
         handle_socket( &ch_sock ) ;
@@ -129,13 +130,14 @@ static void * handle(void * p){
         shutdown(ch_sock.socket, SHUT_RDWR);
     }
     close(ch_sock.socket);
+//printf("End handler\n");
     return NULL ;
 }
 
 static void http_loop( struct listen_sock *sock ) {
     socklen_t size = sizeof((sock->sin));
     int n_sock = accept((sock->socket),(struct sockaddr*)&(sock->sin), &size);
-//printf("LOOP\n");
+//printf("LOOP sock=%d\n",n_sock);
     if (n_sock != -1) {
 #ifdef OW_MT
         if (multithreading) {

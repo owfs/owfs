@@ -331,8 +331,19 @@ void FS_parse_dir( char * const dest , const char * const buf ) { /* shift addre
     dest[15] = '\0' ;
 }
 
-/* Length of file based on filetype and extension */
+/* Length of file based on filetype alone */
 size_t FileLength( const struct parsedname * const pn ) {
+    if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
+        return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
+    } else if ( pn->ft->suglen == ft_len_type ) {
+        return strlen(pn->dev->name) ;
+    } else {
+        return pn->ft->suglen ;
+    }
+}
+
+/* Length of file based on filetype and extension */
+size_t FullFileLength( const struct parsedname * const pn ) {
     if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
         return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
     } else if ( pn->ft->suglen == ft_len_type ) {

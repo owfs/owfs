@@ -25,10 +25,13 @@ static int FS_input_yesno( int * const result, const char * const buf, const siz
 static int FS_input_integer( int * const result, const char * const buf, const size_t size ) ;
 static int FS_input_unsigned( unsigned int * const result, const char * const buf, const size_t size ) ;
 static int FS_input_float( FLOAT * const result, const char * const buf, const size_t size ) ;
+static int FS_input_date( DATE * const result, const char * const buf, const size_t size ) ;
+
 static int FS_input_yesno_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int FS_input_unsigned_array( unsigned int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int FS_input_integer_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int FS_input_float_array( FLOAT * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
+static int FS_input_date_array( DATE * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -38,7 +41,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     struct stateinfo si ;
     int r ;
     pn.si = &si ;
-//printf("WRITE\n");
+printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
 
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
@@ -117,7 +120,9 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     int ret ;
     /* We will allocate memory for array variables off heap, but not single vars for efficiency */
 //printf("PARSE_WRITE\n");
-    if ( pn->ft->ag && pn->ft->ag->combined==ag_aggregate ) elements = pn->ft->ag->elements ;                                                                switch( pn->ft->format ) {
+    if ( pn->ft->ag && ( pn->ft->ag->combined==ag_aggregate || ( pn->ft->ag->combined==ag_mixed && pn->extension==-1 ) ) )
+        elements = pn->ft->ag->elements ;
+    switch( pn->ft->format ) {
     case ft_integer: {
         int I ;
         int * i = &I ;
@@ -163,6 +168,21 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         if ( elements>1) free(f) ;
         return ret ;
     }
+    case ft_date: {
+        DATE D ;
+        DATE * d = &D ;
+        if ( offset ) return -EINVAL ;
+        if ( elements>1 ) {
+            d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+            if ( d==NULL ) return -ENOMEM ;
+            ret = FS_input_date_array( d, buf, size, pn ) ;
+        } else {
+            ret = FS_input_date( d, buf, size ) ;
+        }
+        ret |= (pn->ft->write.d)(d,pn) ;
+        if ( elements>1) free(d) ;
+        return ret ;
+    }
     case ft_yesno: {
         int Y ;
         int * y = &Y ;
@@ -179,9 +199,22 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         return ret ;
     }
     case ft_ascii:
-        return (pn->ft->write.a)(buf,size,offset,pn) ;
+        {
+            size_t s = FileLength(pn) ;
+            if ( offset > s ) return -EMSGSIZE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+            return (pn->ft->write.a)(buf,s,offset,pn) ;
+        }
     case ft_binary:
-        return (pn->ft->write.b)(buf,size,offset,pn) ;
+        {
+            size_t s = FileLength(pn) ;
+            if ( offset > s ) return -EMSGSIZE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+printf("WRITE s=%d\n",s) ;
+            return (pn->ft->write.b)(buf,s,offset,pn) ;
+        }
     case ft_directory:
     case ft_subdir:
         return -ENOSYS ;
@@ -266,35 +299,53 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         free(f) ;
         break ;
         }
+    case ft_date: {
+        DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+            if ( d==NULL ) return -ENOMEM ;
+            ret = ((pn->ft->read.d)(d,pn)<0) || FS_input_date(&d[pn->extension],buf,size) || (pn->ft->write.d)(d,pn) ;
+        free(d) ;
+        break ;
+        }
     case ft_binary: {
+        unsigned char * all ;
         int suglen = pn->ft->suglen ;
-        if( size != (size_t) suglen ) {
-            return -EMSGSIZE ;
-        } else {
-            unsigned char * all = (unsigned char *) malloc( suglen*elements ) ;
-                if ( all==NULL ) return -ENOMEM ;
-                memcpy(&all[suglen*pn->extension],buf,(size_t)suglen) ;
-                ret = (pn->ft->write.b)(all,suglen*elements,0,pn) ;
+        size_t s = suglen ;
+        size_t len = suglen*elements ;
+        if ( offset > suglen ) return -EMSGSIZE ;
+        s -= offset ;
+        if ( s>size ) s = size ;
+        if ( (all = (unsigned char *) malloc( len ) ) ) { ;
+            if ( (ret = (pn->ft->write.b)(all,len,0,pn))==0 ) {
+                memcpy(&all[suglen*pn->extension+offset],buf,s) ;
+                ret = (pn->ft->write.b)(all,len,0,pn) ;
+            }
             free( all ) ;
+        } else {
+            return -ENOMEM ;
         }
         break ;
         }
     case ft_ascii: {
+        char * all ;
         int suglen = pn->ft->suglen ;
-        if( size != (size_t) suglen ) {
-            return -EMSGSIZE ;
-        } else {
-            char * all = (char *) malloc((suglen+1)*elements-1) ;
-                if ( all==NULL ) return -ENOMEM ;
-                memcpy(&all[(suglen+1)*pn->extension],buf,(size_t)suglen) ;
-                ret = (pn->ft->write.a)(all,suglen*elements,0,pn) ;
+        size_t s = suglen ;
+        size_t len = (suglen+1)*elements - 1 ;
+        if ( offset > suglen ) return -EMSGSIZE ;
+        s -= offset ;
+        if ( s>size ) s = size ;
+        if ( (all=(char *) malloc(len)) ) {
+            if ((ret = (pn->ft->read.a)(all,len,0,pn))==0 ) {
+                memcpy(&all[(suglen+1)*pn->extension+offset],buf,s) ;
+                ret = (pn->ft->write.a)(all,len,0,pn) ;
+            }
             free( all ) ;
+        } else
+            return -ENOMEM ;
         }
         break ;
     case ft_directory:
     case ft_subdir:
         return -ENOSYS ;
-        }
     }
     if ( ret ) return -EINVAL ;
     return 0 ;
@@ -349,6 +400,18 @@ static int FS_input_float( FLOAT * const result, const char * const buf, const s
     errno = 0 ;
     * result = strtod( cp,&end) ;
     return end==cp || errno ;
+}
+
+static int FS_input_date( DATE * const result, const char * const buf, const size_t size ) {
+    struct tm tm ;
+    if ( size==0 || buf[0]=='\0' ) {
+        *result = time(NULL) ;
+    } else if ( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) ) {
+        *result = mktime(&tm) ;
+    } else {
+        return -EINVAL ;
+    }
+    return 0 ;
 }
 
 /* returns number of valid integers, or negative for error */
@@ -431,5 +494,24 @@ static int FS_input_float_array( FLOAT * const results, const char * const buf, 
     }
     /* i==elements now */
     if ( FS_input_float( &results[i], first, left ) ) results[i]=0. ;
+    return 0 ;
+}
+
+/* returns 0, or negative for error */
+static int FS_input_date_array( DATE * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+    int i ;
+    size_t left = size ;
+    const char * first = buf ;
+    const char * next ;
+    for ( i=0 ; i<pn->ft->ag->elements - 1 ; ++i ) {
+        if ( (next=memchr( first, ',' , left )) == NULL ) return -(i>0) ;
+        if ( FS_input_date( &results[i], first, next-first ) ) results[i]=0. ;
+        left -= (next-first) ;
+        if ( left < 2 ) return 0 ;
+        -- left ;
+        first = next + 1 ;
+    }
+    /* i==elements now */
+    if ( FS_input_date( &results[i], first, left ) ) results[i]=0. ;
     return 0 ;
 }

@@ -40,7 +40,6 @@ void set_signal_handlers( void ) ;
 	Global variables -- each invokation will have it's own data
 */
 struct fuse *fuse;
-time_t scan_time ;
 char *fuse_mountpoint = NULL;
 int fuse_fd = -1 ;
 char umount_cmd[1024] = "";
@@ -49,7 +48,6 @@ char umount_cmd[1024] = "";
 /* Command line parsing and mount handler to FUSE */
 /* ---------------------------------------------- */
 int main(int argc, char *argv[]) {
-    int flags = 0 ; /* flags to fuse */
     int c ;
 //    int multithreaded = 1;
 
@@ -100,7 +98,7 @@ int main(int argc, char *argv[]) {
     if ( LibStart() ) ow_exit(1) ;
 
     set_signal_handlers();
-    fuse = fuse_new(fuse_fd, flags, &owfs_oper);
+    fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
 //        fuse_loop(fuse);
         if (multithreading) {
             fuse_loop_mt(fuse) ;

@@ -21,81 +21,73 @@ $Id$
 #include "ow.h"
 #include "owfs.h"
 
-time_t scan_time ;
+static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) ;
+static int FS_utime(const char *path, struct utimbuf *buf) ;
+static int FS_truncate(const char *path, const off_t size) ;
+static int FS_open(const char *path, int flags) ;
+static int FS_release(const char *path, int flags) ;
+static int FS_chmod(const char *path, mode_t mode) ;
+static int FS_chown(const char *path, uid_t uid, gid_t gid ) ;
+/* Change in statfs definition for newer FUSE versions */
+#if defined(FUSE_MAJOR_VERSION) && FUSE_MAJOR_VERSION > 1
+    #define FS_statfs   NULL
+#else /* FUSE_MAJOR_VERSION */
+    static int FS_statfs(struct fuse_statfs *fst) ;
+#endif /* FUSE_MAJOR_VERSION */
 
 struct fuse_operations owfs_oper = {
-    getattr:    FS_getattr,
-    readlink:    NULL,
-    getdir:     FS_getdir,
-    mknod:    NULL,
-    mkdir:    NULL,
-    symlink:    NULL,
+    getattr:  FS_fstat,
+    readlink:  NULL,
+    getdir:   FS_getdir,
+    mknod:     NULL,
+    mkdir:     NULL,
+    symlink:   NULL,
     unlink:    NULL,
-    rmdir:    NULL,
-    rename:     NULL,
-    link:    NULL,
-    chmod:    NULL,
-    chown:    NULL,
-    truncate:    FS_truncate,
+    rmdir:     NULL,
+    rename:    NULL,
+    link:      NULL,
+    chmod:    FS_chmod,
+    chown:    FS_chown,
+    truncate: FS_truncate,
     utime:    FS_utime,
-    open:    FS_open,
-    read:    FS_read,
+    open:     FS_open,
+    read:     FS_read,
     write:    FS_write,
-    statfs:    FS_statfs,
-    release:    NULL
+    statfs:   FS_statfs,
+    release:  FS_release,
 };
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
-int FS_getattr(const char *path, struct stat *stbuf) {
-    struct parsedname pn ;
-    struct stateinfo si ;
-    pn.si = &si ;
-    /* Bad path */
-//printf("GA\n");
-    memset(stbuf, 0, sizeof(struct stat));
-    stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = scan_time ;
-    if ( FS_ParsedName( path , &pn ) ) {
-//printf("GA bad\n");
-        FS_ParsedName_destroy(&pn) ;
-        return -ENOENT;
-    } else if ( pn.dev==NULL ) { /* root directory */
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 3;
-//printf("GA root\n");
-    } else if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* other directory */
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 3;
-        stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
-//printf("GA other dir\n");
-    } else { /* known 1-wire filetype */
-        stbuf->st_mode = S_IFREG ;
-        if ( pn.ft->read.v ) stbuf->st_mode |= 0444 ;
-        if ( !readonly && pn.ft->write.v ) stbuf->st_mode |= 0222 ;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = FileLength( &pn ) ;
-//printf("GA file\n");
-    }
-    FS_ParsedName_destroy(&pn) ;
-    return 0 ;
+/* Needed for "SETATTR" */
+static int FS_utime(const char *path, struct utimbuf *buf) {
+    (void) path ; (void) buf ; return 0;
 }
 
-int FS_utime(const char *path, struct utimbuf *buf) {
-    /* Unused */
-    (void) path ;
-    (void) buf ;
-
-    return 0;
+/* Needed for "SETATTR" */
+static int FS_chmod(const char *path, mode_t mode) {
+    (void) path ; (void) mode ; return 0;
 }
 
-int FS_truncate(const char *path, const off_t size) {
+/* Needed for "SETATTR" */
+static int FS_chown(const char *path, uid_t uid, gid_t gid ) {
+    (void) path ; (void) uid ; (void) gid ; return 0;
+}
 
-    /* Unused */
-    (void) path ;
-    (void) size ;
+/* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
+static int FS_open(const char *path, int flags) {
+    (void) flags ; (void) path ; return 0 ;
+}
 
-    return 0 ;
+/* In theory, should handle file closing, but OWFS doesn't care. Device opened/closed with every read/write */
+static int FS_release(const char *path, int flags) {
+    (void) flags ; (void) path ; return 0 ;
+}
+
+/* dummy truncation (empty) function */
+static int FS_truncate(const char *path, const off_t size) {
+    (void) path ; (void) size ; return 0 ;
 }
 
 struct dirback {
@@ -104,7 +96,7 @@ struct dirback {
 } ;
 
 /* Callback function to FS_dir */
-void directory( void * data, const struct parsedname * const pn ) {
+static void directory( void * data, const struct parsedname * const pn ) {
     char extname[PATH_MAX+1] ; /* probably excessive */
 //printf("directory callback\n");
     if ( pn->ft ) {
@@ -134,7 +126,7 @@ void directory( void * data, const struct parsedname * const pn ) {
     (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
 }
 
-int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
+static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
     struct stateinfo si ;
     /* dirback structure passed via void pointer to 'directory' */
@@ -163,15 +155,6 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     return 0 ;
 }
 
-/* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
-int FS_open(const char *path, int flags) {
-    /* Unused */
-    (void) flags ;
-    (void) path ;
-//printf("OPEN\n");
-    return 0 ;
-}
-
 /* Change in statfs definition for newer FUSE versions */
 #if !defined(FUSE_MAJOR_VERSION) || !(FUSE_MAJOR_VERSION > 1)
 int FS_statfs(struct fuse_statfs *fst) {
@@ -179,3 +162,4 @@ int FS_statfs(struct fuse_statfs *fst) {
     return 0 ;
 }
 #endif /* FUSE_MAJOR_VERSION */
+

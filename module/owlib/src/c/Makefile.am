@@ -38,6 +38,7 @@ OWLIB_SOURCE = ow_xxxx.c \
                ow_util.c \
                ow_temp.c \
                ow_stats.c \
+               ow_fstat.c \
                ow_locks.c \
                ow_opt.c \
                owlib.c

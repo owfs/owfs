@@ -82,6 +82,7 @@ size_t nDevices = (size_t) (sizeof(Devices)/sizeof(struct device *)) ;
 
 int presencecheck = 1 ; /* check if present whenever opening a directory or static file */
 time_t start_time ;
+time_t dir_time ; /* time of last directory scan */
 
 int cacheavailable = 0 ; /* assume no cache */
 int background = 1 ; /* operate in background mode */

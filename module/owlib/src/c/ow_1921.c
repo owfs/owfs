@@ -53,13 +53,15 @@ $Id$
  uREAD_FUNCTION( FS_r_histogram ) ;
  fREAD_FUNCTION( FS_r_logtemp ) ;
  uREAD_FUNCTION( FS_r_logtime ) ;
- aREAD_FUNCTION( FS_r_logdate ) ;
+ dREAD_FUNCTION( FS_r_logdate ) ;
  fREAD_FUNCTION( FS_r_temperature ) ;
 
- aREAD_FUNCTION( FS_r_date ) ;
-aWRITE_FUNCTION( FS_w_date ) ;
+ dREAD_FUNCTION( FS_r_date ) ;
+dWRITE_FUNCTION( FS_w_date ) ;
  bREAD_FUNCTION( FS_r_mem ) ;
 bWRITE_FUNCTION( FS_w_mem ) ;
+ bREAD_FUNCTION( FS_r_test ) ;
+bWRITE_FUNCTION( FS_w_test ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  uREAD_FUNCTION( FS_r_samplerate ) ;
@@ -81,6 +83,11 @@ struct aggregate A1921h = { 63, ag_numbers, ag_aggregate, } ;
 struct filetype DS1921[] = {
     F_STANDARD        ,
     {"memory"         ,512,   NULL,   ft_binary,  ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
+    {"test1k"         ,1024,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
+    {"test2k"         ,2048,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
+    {"test4k"         ,4096,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
+    {"test8k"         ,8192,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
+    {"test16k"         ,16384,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
     {"pages"          ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"pages/page"     ,256,&A1921p,   ft_binary,  ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
     {"histogram"      ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
@@ -91,11 +98,11 @@ struct filetype DS1921[] = {
     {"temprangelow"   ,  9,   NULL,    ft_float,  ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,
     {"temprangehigh"  ,  9,   NULL,    ft_float,  ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
     {"temperature"    , 12,   NULL,    ft_float,ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
-    {"date"           , 24,   NULL,    ft_ascii,  ft_second, {a:FS_r_date}       , {a:FS_w_date}      , NULL, } ,
+    {"date"           , 24,   NULL,    ft_date ,  ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
     {"log"            ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"log/temperature",  5,&A1921l,    ft_float,ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,
     {"log/time"       , 12,&A1921l, ft_unsigned,ft_volatile, {u:FS_r_logtime}    , {v:NULL}           , NULL, } ,
-    {"log/date"       , 24,&A1921l,    ft_ascii,ft_volatile, {a:FS_r_logdate}    , {v:NULL}           , NULL, } ,
+    {"log/date"       , 24,&A1921l,    ft_date ,ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,
     {"samplerate"     ,  5,   NULL, ft_unsigned,  ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
     {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
     {"mission_samples", 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r__3byte}     , {v:NULL}           , (void *)0x021A, } ,
@@ -223,10 +230,9 @@ static int FS_r__3byte(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* read clock */
-static int FS_r_date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_date(DATE * d , const struct parsedname * pn) {
     int ampm[8] = {0,10,20,30,0,10,12,22} ;
     unsigned char data[7] ;
-    char d[26] ;
     struct tm tm ;
     time_t t ;
 
@@ -247,32 +253,23 @@ static int FS_r_date(char *buf, const size_t size, const off_t offset , const st
 
     /* Pass through time_t again to validate */
     if ( (t=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
-    if ( ctime_r(&t,d)==NULL ) return -EINVAL ;
-    return FS_read_return( buf, size, offset, d, 24 ) ;
+    d[0] = t ;
+    return 0 ;
 }
 
 /* set clock */
-static int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_date(const DATE * d , const struct parsedname * pn) {
     struct tm tm ;
     unsigned char data[7] ;
     int year ;
     unsigned char sr ;
 
-    /* Not sure if this is valid, but won't allow offset != 0 at first */
-    /* otherwise need a buffer */
-    if ( offset ) return -EFAULT ;
-//printf("WDATE size=%d, buf=%2X %2X %2X\n",size,buf[0],buf[1],buf[2]);
-    if ( size<3 || buf[0]=='\0' ) { /* Set to current time */
-        time_t t = time(NULL) ;
-        gmtime_r(&t,&tm) ;
-    } else if (!( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) )) {
-//printf("WDATE bad\n");
-        return -EINVAL ;
-    }
-
     /* Busy if in mission */
     if ( OW_r_mem(&sr,1,0x0214,pn) ) return -EINVAL ;
     if ( sr&0x20 ) return -EBUSY ;
+
+    /* Convert time format */
+    gmtime_r(d,&tm) ;
 
     data[0] = tm.tm_sec + 6*(tm.tm_sec/10) ; /* dec->bcd */
     data[1] = tm.tm_min + 6*(tm.tm_min/10) ; /* dec->bcd */
@@ -405,6 +402,29 @@ static int FS_r_atrig(unsigned int * u , const struct parsedname * pn) {
 
 /* write one of the alarm fields */
 /* NOTE: keep first bit */
+static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    return OW_r_mem( buf, size, offset, pn ) ? -EFAULT : (int) size ;
+}
+
+static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    return OW_w_mem( buf, size, offset, pn ) ? -EFAULT : 0 ;
+}
+
+static int FS_r_test(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    int suglen = pn->ft->suglen ;
+    int s = (size>suglen)?suglen:size ;
+printf("Test read name=%s size=%d offset=%d suglen=%d return=%d\n",pn->ft->name,(int)size,(int)offset,suglen,s);
+    memset(buf,'A',s);
+    return s ;
+}
+
+static int FS_w_test(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    int suglen = pn->ft->suglen ;
+    int s = (size>suglen)?suglen:size ;
+printf("Test write name=%s size=%d offset=%d suglen=%d return=%d\n",pn->ft->name,(int)size,(int)offset,suglen,0);
+    return 0 ;
+}
+
 static int FS_w_atrig(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data[4] ;
     if ( OW_r_mem(data,4,0x0207,pn) ) return -EFAULT ;
@@ -424,14 +444,6 @@ static int FS_w_atrig(const unsigned int * u , const struct parsedname * pn) {
     }
     if ( OW_w_mem(data,4,0x0207,pn) ) return -EFAULT ;
     return 0 ;
-}
-
-static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_r_mem( buf, size, offset, pn ) ? -EFAULT : (int) size ;
-}
-
-static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_w_mem( buf, size, offset, pn ) ? -EFAULT : 0 ;
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -462,15 +474,10 @@ static int FS_r_logtime(unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_logdate(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    time_t t ;
-    char d[26] ;
-    if ( offset ) return -EINVAL ;
-    if ( OW_r_logtime( &t, pn ) ) return -EINVAL ;
-    if ( ctime_r(&t,d)==NULL ) return -EINVAL ;
-    return FS_read_return( buf, size, offset, d, 24 ) ;
+static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
+    if ( OW_r_logtime( d, pn ) ) return -EINVAL ;
+    return 0 ;
 }
-
 
 static int OW_w_mem( const unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) {
     unsigned char p[4+32+2] = { 0x0F, location&0xFF , location>>8, } ;

@@ -47,8 +47,8 @@ $Id$
 /* DS2415/DS1904 Digital clock in a can */
  uREAD_FUNCTION( FS_r_counter ) ;
 uWRITE_FUNCTION( FS_w_counter ) ;
- aREAD_FUNCTION( FS_r_date ) ;
-aWRITE_FUNCTION( FS_w_date ) ;
+ dREAD_FUNCTION( FS_r_date ) ;
+dWRITE_FUNCTION( FS_w_date ) ;
  yREAD_FUNCTION( FS_r_run ) ;
 yWRITE_FUNCTION( FS_w_run ) ;
  uREAD_FUNCTION( FS_r_flags ) ;
@@ -67,7 +67,7 @@ struct filetype DS2415[] = {
     {"flags"     ,     1,  NULL, ft_unsigned, ft_stable  , {u:FS_r_flags}  , {u:FS_w_flags},   NULL, } ,
     {"running"   ,     1,  NULL, ft_yesno   , ft_stable  , {y:FS_r_run}    , {y:FS_w_run},     NULL, } ,
     {"counter"   ,    12,  NULL, ft_unsigned, ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
-    {"date"      ,    26,  NULL, ft_ascii   , ft_second  , {a:FS_r_date}   , {a:FS_w_date},    NULL, } ,
+    {"date"      ,    24,  NULL, ft_date    , ft_second  , {d:FS_r_date}   , {d:FS_w_date},    NULL, } ,
 } ;
 DeviceEntry( 24, DS2415 )
 
@@ -78,7 +78,7 @@ struct filetype DS2417[] = {
     {"itime"     ,     1,  NULL, ft_integer,ft_stable  , {i:FS_r_itime}  , {i:FS_w_itime},    NULL, } ,
     {"running"   ,     1,  NULL, ft_yesno , ft_stable  , {y:FS_r_run}    , {y:FS_w_run},      NULL, } ,
     {"counter"   ,    12,  NULL, ft_unsigned,ft_second , {u:FS_r_counter}, {u:FS_w_counter},  NULL, } ,
-    {"date"      ,    26,  NULL, ft_ascii , ft_second  , {a:FS_r_date}   , {a:FS_w_date},     NULL, } ,
+    {"date"      ,    24,  NULL, ft_date  , ft_second  , {d:FS_r_date}   , {d:FS_w_date},     NULL, } ,
 } ;
 DeviceEntry( 27, DS2417 )
 
@@ -88,32 +88,21 @@ static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, } ;
 /* DS2415/DS1904 Digital clock in a can */
 
 /* DS1904 */
-static int OW_r_clock( unsigned int * num , const struct parsedname * pn ) ;
+static int OW_r_clock( DATE * d , const struct parsedname * pn ) ;
 static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) ;
-static int OW_w_clock( const unsigned int num , const struct parsedname * pn ) ;
+static int OW_w_clock( const DATE d , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char cr , const struct parsedname * pn ) ;
 
 /* set clock */
 static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
-    if ( OW_w_clock(u[0],pn) ) return -EINVAL ;
+    if ( OW_w_clock( (DATE) u[0] , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* set clock */
-static int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    struct tm tm ;
-
-    /* Not sure if this is valid, but won't allow offset != 0 at first */
-    /* otherwise need a buffer */
-    if ( offset != 0 ) return -EFAULT ;
-    if ( size==0 || buf[0]=='\0' ) {
-        if ( OW_w_clock( (unsigned int) time(NULL), pn) ) return -EINVAL ;
-        return 0 ;
-    } else if ( strptime(buf,"%a %b %d %T %Y",&tm) || strptime(buf,"%b %d %T %Y",&tm) || strptime(buf,"%c",&tm) || strptime(buf,"%D %T",&tm) ) {
-        if ( OW_w_clock( (unsigned int) mktime(&tm), pn) ) return -EINVAL ;
-        return 0 ;
-    }
-    return -EINVAL ;
+static int FS_w_date(const DATE *d , const struct parsedname * pn) {
+    if ( OW_w_clock( d[0], pn ) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* write running */
@@ -219,18 +208,13 @@ int FS_r_enable(int * y , const struct parsedname * pn) {
 
 /* read clock */
 int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
-    return OW_r_clock(u,pn) ? -EINVAL : 0 ;
+    return OW_r_clock( (DATE *) u, pn) ? -EINVAL : 0 ;
 }
 
 /* read clock */
-int FS_r_date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned int num ; /* must be 32bit (or more) */
-    if ( offset ) return -EFAULT ;
-    if ( size<26 ) return -EMSGSIZE ;
-
-    if ( OW_r_clock(&num,pn) ) return -EINVAL ;
-    if ( ctime_r((time_t *) &num,buf) ) return 24 ;
-    return -EINVAL ;
+int FS_r_date( DATE * d , const struct parsedname * pn) {
+    if ( OW_r_clock(d,pn) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* 1904 clock-in-a-can */
@@ -245,7 +229,7 @@ static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) {
 }
 
 /* 1904 clock-in-a-can */
-static int OW_r_clock( unsigned int * num , const struct parsedname * pn ) {
+static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
     unsigned char r = 0x66 ;
     unsigned char data[5] ;
     int ret ;
@@ -255,11 +239,11 @@ static int OW_r_clock( unsigned int * num , const struct parsedname * pn ) {
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    *num = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
+    d[0] = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
     return 0 ;
 }
 
-static int OW_w_clock( const unsigned int num , const struct parsedname * pn ) {
+static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
     unsigned char r = 0x66 ;
     unsigned char w[6] = { 0x99, } ;
     int ret ;
@@ -270,10 +254,10 @@ static int OW_w_clock( const unsigned int num , const struct parsedname * pn ) {
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    w[2] = num & 0xFF ;
-    w[3] = (num>>8) & 0xFF ;
-    w[4] = (num>>16) & 0xFF ;
-    w[5] = (num>>24) & 0xFF ;
+    w[2] = d & 0xFF ;
+    w[3] = (d>>8) & 0xFF ;
+    w[4] = (d>>16) & 0xFF ;
+    w[5] = (d>>24) & 0xFF ;
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data( w , 6 ) ;
     BUS_unlock() ;
@@ -283,7 +267,7 @@ static int OW_w_clock( const unsigned int num , const struct parsedname * pn ) {
 static int OW_w_control( const unsigned char cr , const struct parsedname * pn ) {
     unsigned char w[2] = { 0x99, cr, } ;
     int ret ;
-    
+
     /* read in existing control byte to preserve bits 4-7 */
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data( w , 2 ) ;

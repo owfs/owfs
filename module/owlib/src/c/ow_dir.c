@@ -38,14 +38,14 @@ enum deviceformat devform = fdi ;
 int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) {
     int ret ;
     struct parsedname pn2 ;
-unsigned int dir_tries = 0 ;
-unsigned int dir_calls = 0 ;
-unsigned int dir_success = 0 ;
 
     STATLOCK
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
     STATUNLOCK
+    FSTATLOCK
+        dir_time = time(NULL) ; // protected by mutex
+    FSTATUNLOCK
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 //printf("DIR\n");
     if ( pn == NULL ) {

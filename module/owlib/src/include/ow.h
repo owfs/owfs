@@ -93,6 +93,7 @@ extern int maxslots ;
     extern pthread_mutex_t stat_mutex ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
+    extern pthread_mutex_t fstat_mutex ;
     extern sem_t devlocks ;
     struct devlock {
         unsigned char sn[8] ;
@@ -106,6 +107,8 @@ extern int maxslots ;
     #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex) ;
     #define STORELOCK      pthread_mutex_lock(&store_mutex) ;
     #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex) ;
+    #define FSTATLOCK      pthread_mutex_lock(&store_mutex) ;
+    #define FSTATUNLOCK    pthread_mutex_unlock(&store_mutex) ;
 #else /* OW_MT */
     #define STATLOCK
     #define STATUNLOCK
@@ -113,6 +116,8 @@ extern int maxslots ;
     #define CACHEUNLOCK
     #define STORELOCK
     #define STOREUNLOCK
+    #define FSTATLOCK
+    #define FSTATUNLOCK
 #endif /* OW_MT */
 #define BUSLOCK    BUS_lock() ;
 #define BUSUNLOCK  BUS_unlock() ;
@@ -199,11 +204,13 @@ extern unsigned char combuffer[] ;
 /* The compiler complains mercilessly, however */
 /* 1-wire really is low precision -- float is more than enough */
 #define FLOAT   double
+#define DATE    time_t
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
 #define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
 #define fREAD_FUNCTION( fname )  static int fname(FLOAT *, const struct parsedname * pn)
+#define dREAD_FUNCTION( fname )  static int fname(DATE *, const struct parsedname * pn)
 #define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
 #define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bREAD_FUNCTION( fname )  static int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
@@ -211,6 +218,7 @@ extern unsigned char combuffer[] ;
 #define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
 #define fWRITE_FUNCTION( fname )  static int fname(const FLOAT *, const struct parsedname * pn)
+#define dWRITE_FUNCTION( fname )  static int fname(const DATE *, const struct parsedname * pn)
 #define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bWRITE_FUNCTION( fname )  static int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
@@ -239,6 +247,7 @@ int NamePart( const char * filename, const char ** next, struct parsedname * pn 
 int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
   void FS_parse_dir( char * const dest , const char * const buf ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
+  size_t FullFileLength( const struct parsedname * const pn ) ;
 int CheckPresence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
 
@@ -294,6 +303,9 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
   int FS_read_return( char *buf, const size_t size, const off_t offset , const char * src, const size_t len ) ;
+
+int FS_fstat(const char *path, struct stat *stbuf) ;
+
 
 /* Low-level functions
     slowly being abstracted and separated from individual
@@ -386,7 +398,7 @@ struct aggregate {
      If properties, they can be integer, text, etc or special directory types.
      There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
 */
-enum ft_format { ft_directory, ft_subdir, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno } ;
+enum ft_format { ft_directory, ft_subdir, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno, ft_date, } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
 enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, } ;
 
@@ -403,6 +415,7 @@ struct filetype {
         int (*u) (unsigned int *, const struct parsedname *);
         int (*f) (FLOAT *, const struct parsedname *);
         int (*y) (int *, const struct parsedname *);
+        int (*d) (DATE *, const struct parsedname *);
         int (*a) (char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (unsigned char *, const size_t, const off_t, const struct parsedname *);
     } read ; // read callback function
@@ -412,6 +425,7 @@ struct filetype {
         int (*u) (const unsigned int *, const struct parsedname *);
         int (*f) (const FLOAT *, const struct parsedname *);
         int (*y) (const int *, const struct parsedname *);
+        int (*d) (const DATE *, const struct parsedname *);
         int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
     } write ; // write callback function
@@ -576,6 +590,7 @@ extern struct interface_routines iroutines ;
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
 extern time_t start_time ;
+extern time_t dir_time ; /* time of last directory scan */
 
 /* ----------------- */
 /* -- Statistics --- */

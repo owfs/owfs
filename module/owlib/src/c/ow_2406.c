@@ -76,7 +76,7 @@ struct filetype DS2406[] = {
     {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
     {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
     {"latch"     ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
-    {"set_alarm" ,    12,  NULL,    ft_unsigned, ft_stable  , {y:FS_r_s_alarm}, {y:FS_w_s_alarm},NULL, } ,
+    {"set_alarm" ,    12,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 12, DS2406 )
 
@@ -85,7 +85,7 @@ DeviceEntry( 12, DS2406 )
 /* DS2406 */
 static int OW_r_mem( unsigned char * data , const int length, const int location, const struct parsedname * pn ) ;
 static int OW_w_mem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
-// static int OW_r_control( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_r_control( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
 static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
@@ -169,6 +169,7 @@ static int FS_r_latch(int * y , const struct parsedname * pn) {
 
 /* 2406 switch activity latch*/
 static int FS_w_latch(const int * y , const struct parsedname * pn) {
+    (void) y ;
     if ( OW_clear(pn) ) return -EINVAL ;
     return 0 ;
 }
