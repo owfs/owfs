@@ -329,7 +329,14 @@ bound the allowable files in a device directory
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 //enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
 extern void * Tree[5] ;
+    /* supports RESUME command */
 #define DEV_resume  0x0001
+    /* responds to simultaneous temperature convert 0x44 */
+#define DEV_temp    0x8000
+    /* responds to simultaneous voltage convert 0x3C */
+#define DEV_volt    0x4000
+
+
 struct device {
     char * code ;
     char * name ;
@@ -338,13 +345,13 @@ struct device {
     struct filetype * ft ;
 } ;
 
-/* #define DeviceEntry( code , chip )  { #code, #chip, NFT(chip), chip } */
+#define DeviceHeader( chip )    extern struct device d_##chip ;
+//#define DeviceEntry( code , chip )  { #code, #chip, 0, NFT(chip), chip } ;
 /* Entries for struct device */
 /* Cannot set the 3rd element (number of filetypes) at compile time because
    filetype arrays aren;t defined at this point */
-#define DeviceHeader( chip )  extern struct device d_##chip ;
-#define DeviceEntry( code , chip )  struct device d_##chip = { #code, #chip, pn_real, NFT(chip), chip } ;
-#define DeviceEntryExtended( code , chip , type )  struct device d_##chip = { #code, #chip, pn_##type, NFT(chip), chip } ;
+#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  NFT(chip), chip } ;
+#define DeviceEntry( code , chip )  DeviceEntryExtended( code, chip, 0 )
 
 /* Bad bad C library */
 /* implementation of tfind, tsearch returns an opaque structure */
@@ -358,6 +365,7 @@ struct device_opaque {
 //extern struct device * Devices[] ;
 //extern size_t nDevices ;
 extern struct device NoDevice ;
+extern struct device * DeviceSimultaneous ;
 
 /* ---- end device --------------------- */
 /* ------------------------------------- */
@@ -663,8 +671,9 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
 int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
 int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) ;
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
+void FS_LoadPath( struct parsedname * const pn2 ) ;
 
-int Simul_Test( const enum simul_type type, const struct parsedname * pn ) ;
+int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
 void LockSetup( void ) ;

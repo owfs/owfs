@@ -17,6 +17,8 @@ static int device_compare( const void * a , const void * b ) ;
 static int file_compare( const void * a , const void * b ) ;
 static void Device2Tree( const struct device * d, enum pn_type type ) ;
 
+struct device * DeviceSimultaneous ;
+
 static int device_compare( const void * a , const void * b ) {
     return strcmp( ((const struct device *)a)->code , ((const struct device *)b)->code ) ;
 }
@@ -87,6 +89,12 @@ void DeviceSort( void ) {
     Device2Tree( & d_sys_process ,  pn_system ) ;
     Device2Tree( & d_sys_structure, pn_system ) ;
     Device2Tree( & d_simultaneous , pn_real ) ;
+    {
+        struct parsedname pn ;
+        pn.type = pn_real ;
+        FS_devicefind( "simultaneous", &pn ) ;
+        DeviceSimultaneous = pn.dev ;
+    }
 }
 
 void FS_devicefind( const char * code, struct parsedname * pn ) {

@@ -90,7 +90,7 @@ struct filetype stats_cache[] = {
     {"directory/deleted",15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.deletes, } ,
 } ;
 
-struct device d_stats_cache = { "cache", "cache", pn_statistics, NFT(stats_cache), stats_cache } ;
+struct device d_stats_cache = { "cache", "cache", 0, NFT(stats_cache), stats_cache } ;
     // Note, the store hit rate and deletions are not shown -- too much information!
 
 struct aggregate Aread = { 3 , ag_numbers, ag_separate, } ;
@@ -103,7 +103,7 @@ struct filetype stats_read[] = {
     {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, read_tries         , } ,
 }
  ;
-struct device d_stats_read = { "read", "read", pn_statistics, NFT(stats_read), stats_read } ;
+struct device d_stats_read = { "read", "read", 0, NFT(stats_read), stats_read } ;
 
 struct filetype stats_write[] = {
     {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_calls      , } ,
@@ -112,7 +112,7 @@ struct filetype stats_write[] = {
     {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, write_tries        , } ,
 }
  ;
-struct device d_stats_write = { "write", "write", pn_statistics, NFT(stats_write), stats_write } ;
+struct device d_stats_write = { "write", "write", 0, NFT(stats_write), stats_write } ;
 
 struct filetype stats_directory[] = {
     {"maxdepth"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_depth        , } ,
@@ -124,7 +124,7 @@ struct filetype stats_directory[] = {
     {"device/entries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_dev.entries  , } ,
 }
  ;
-struct device d_stats_directory = { "directory", "directory", pn_statistics, NFT(stats_directory), stats_directory } ;
+struct device d_stats_directory = { "directory", "directory", 0, NFT(stats_directory), stats_directory } ;
 
 struct filetype stats_thread[] = {
     {"multithreading"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & multithreading   , } ,
@@ -151,7 +151,7 @@ struct filetype stats_thread[] = {
     {"write/max"       , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & write_avg.max    , } ,
 }
  ;
-struct device d_stats_thread = { "threads", "threads", pn_statistics, NFT(stats_thread), stats_thread } ;
+struct device d_stats_thread = { "threads", "threads", 0, NFT(stats_thread), stats_thread } ;
 
 struct filetype stats_bus[] = {
     {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL            , } ,
@@ -166,7 +166,7 @@ struct filetype stats_bus[] = {
     {"read_timeout"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_timeout     , } ,
 }
  ;
-struct device d_stats_bus = { "bus", "bus", pn_statistics, NFT(stats_bus), stats_bus } ;
+struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus } ;
 
 
 /* ------- Functions ------------ */

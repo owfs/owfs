@@ -205,7 +205,7 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
 /* return 0 if good, 1 if not */
 int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) {
     time_t duration = TimeOut( ft_directory ) ;
-    if ( duration > 0 ) { /* incase timeout set to 0 */
+    if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
         if ( tn ) {
             memcpy( tn->tk.sn , pn->sn , 8 ) ;

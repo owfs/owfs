@@ -18,7 +18,6 @@ static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const)
 static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static void loadpath( struct parsedname * const pn2 ) ;
 enum deviceformat devform = fdi ;
 
 /* Calls dirfunc() for each element in directory */
@@ -195,6 +194,7 @@ static int FS_branchoff( const struct parsedname * const pn ) {
 static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
     unsigned char sn[8] ;
     int dindex = 0 ;
+    int simul = 0 ;
     int ret ;
 
     /* STATISCTICS */
@@ -213,23 +213,31 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
         STATLOCK
             ++dir_main.entries ;
         STATUNLOCK
-        loadpath( pn2 ) ;
+        FS_LoadPath( pn2 ) ;
         Cache_Add_Dir(sn,dindex,pn2) ;
         ++dindex ;
         num2string( ID, sn[0] ) ;
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         FS_devicefind( ID, pn2 ) ;
+        simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
         dirfunc( data, pn2 ) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
     }
     BUSUNLOCK
     Cache_Del_Dir(dindex,pn2) ;
+    if ( simul ) {
+        pn2->dev = DeviceSimultaneous ;
+        if ( pn2->dev ) {
+            dirfunc( data, pn2 ) ;
+            pn2->dev = NULL ;
+        }
+    }
     return 0 ;
 }
 
-static void loadpath( struct parsedname * const pn ) {
+void FS_LoadPath( struct parsedname * const pn ) {
     if ( pn->pathlength==0 ) {
         memset(pn->sn,0,8) ;
     } else {
@@ -243,9 +251,10 @@ static void loadpath( struct parsedname * const pn ) {
 /* Also, adapters and stats handled elsewhere */
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
     unsigned char sn[8] , snpath[8] ;
+    int simul = 0 ;
     int dindex = 0 ;
 
-    loadpath(pn2) ;
+    FS_LoadPath(pn2) ;
     memcpy(snpath,pn2->sn,8);
     if ( pn2->state==pn_uncached || Cache_Get_Dir(sn,0,pn2 ) )
         return FS_realdir(dirfunc,data,pn2) ;
@@ -269,6 +278,14 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
     STATLOCK
         dir_main.entries += dindex ;
     STATUNLOCK
+    if ( simul ) {
+        pn2->dev = DeviceSimultaneous ;
+        if ( pn2->dev ) {
+            dirfunc( data, pn2 ) ;
+            simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
+            pn2->dev = NULL ;
+        }
+    }
     return 0 ;
 }
 
@@ -388,6 +405,8 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
         } else {
             strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
         }
+    } else if ( pn->dev == DeviceSimultaneous ) {
+        strncpy( buffer, DeviceSimultaneous->code, size ) ;
     } else if ( pn->type == pn_real ) {
         FS_devicename( buffer, size, pn->sn ) ;
     } else {

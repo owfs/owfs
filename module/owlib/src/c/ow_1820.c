@@ -70,7 +70,7 @@ struct filetype DS18S20[] = {
     {"power"     ,     1,  NULL, ft_yesno   , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,         } ,
 }
  ;
-DeviceEntry( 10, DS18S20 )
+DeviceEntryExtended( 10, DS18S20, DEV_temp )
 
 struct filetype DS18B20[] = {
     F_STANDARD   ,
@@ -85,7 +85,7 @@ struct filetype DS18B20[] = {
     {"trimblanket",    1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
     {"power"     ,     1,  NULL, ft_yesno   , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
 } ;
-DeviceEntry( 28, DS18B20 )
+DeviceEntryExtended( 28, DS18B20, DEV_temp )
 
 struct filetype DS1822[] = {
     F_STANDARD   ,
@@ -100,7 +100,7 @@ struct filetype DS1822[] = {
     {"trimblanket",    1,  NULL, ft_yesno   , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
     {"power"     ,     1,  NULL, ft_yesno   , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
 } ;
-DeviceEntry( 22, DS1822 )
+DeviceEntryExtended( 22, DS1822, DEV_temp )
 
 /* Internal properties */
 static struct internal_prop ip_resolution = {"RES",ft_stable} ;

@@ -61,20 +61,28 @@ struct filetype simultaneous[] = {
     {"temperature"     ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, (void *)simul_temp , } ,
     {"voltage"         ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, (void *)simul_volt , } ,
 } ;
-struct device d_simultaneous = { "simultaneous", "simultaneous", pn_real, NFT(simultaneous), simultaneous } ;
-
-struct internal_prop ip_simul[] = {
-    { "simul_temp", ft_volatile },
-    { "simul_volt", ft_volatile }, } ;
+DeviceEntry( simultaneous, simultaneous )
 
 /* ------- Functions ------------ */
 static int OW_skiprom( unsigned char cmd, const struct parsedname * const pn );
+static int OW_setcache( const struct parsedname * const pn ) ;
+static int OW_getcache( const unsigned int msec, const struct parsedname * const pn ) ;
+static int OW_killcache( const struct parsedname * const pn ) ;
 
-int Simul_Test( const enum simul_type type, const struct parsedname * pn ) { return 0 ;}
+int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) { return 0 ;}
+
+int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) {
+    return OW_getcache(msec,pn) ;
+}
+
 
 static int FS_w_convert(const int * y , const struct parsedname * pn) {
     int ret;
+    if ( y[0]==0 ) {
+        if ( OW_killcache(pn) ) return -EINVAL ;
+        return 0 ;
+    }
     switch( (enum simul_type) pn->ft->data ) {
     case simul_temp:
         ret = OW_skiprom(0x44,pn) ;
@@ -83,19 +91,44 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
         ret = OW_skiprom(0x3C,pn) ;
         break ;
     }
+    if ( ret || OW_setcache( pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_r_convert(int * y , const struct parsedname * pn) {
-    int ret;
-    switch( (enum simul_type) pn->ft->data ) {
-    case simul_temp:
-        ret = OW_skiprom(0x44,pn) ;
-        break ;
-    case simul_volt:
-        ret = OW_skiprom(0x3C,pn) ;
-        break ;
-    }
+    y[0] = 1 ;
+    if ( OW_getcache(0,pn) ) y[0] = 0 ;
+    return 0 ;
+}
+
+static int OW_setcache( const struct parsedname * const pn ) {
+    struct parsedname pn2 ;
+    struct timeval tv ;
+    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
+    FS_LoadPath(&pn2) ;
+    gettimeofday(&tv,0) ;
+    return Cache_Add(&tv,sizeof(struct timeval),&pn2) ;
+}
+
+static int OW_killcache( const struct parsedname * const pn ) {
+    struct parsedname pn2 ;
+    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
+    FS_LoadPath(&pn2) ;
+    return Cache_Del(&pn2) ;
+}
+
+static int OW_getcache( const unsigned int msec, const struct parsedname * const pn ) {
+    struct parsedname pn2 ;
+    struct timeval tv,now ;
+    long int diff ;
+    int dsize ;
+    int ret ;
+    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
+    FS_LoadPath(&pn2) ;
+    if ( (ret=Cache_Get(&tv, &dsize, &pn2)) ) return ret ;
+    gettimeofday(&now,0) ;
+    diff =  1000*(now.tv_sec-tv.tv_sec) + (now.tv_usec-tv.tv_usec)/1000 ;
+    if ( diff<msec ) UT_delay(msec-diff) ;
     return 0 ;
 }
 

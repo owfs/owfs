@@ -243,6 +243,10 @@ static int DevicePart( const char * filename, const char ** next, struct parsedn
             if ( strncasecmp( crc, f, 2 ) ) return -ENOENT ;
             f += 2 ;
         }
+    } else if ( strncmp( f, "simultaneous", 12 )==0 ) {
+        pn->dev = DeviceSimultaneous ;
+        f += 12 ;
+        memset(pn->sn,0,8) ;
     } else {
         return -ENOENT ; /* unknown device */
     }
@@ -339,7 +343,7 @@ static int filecmp(const void * name , const void * ex ) {
 //
 void UT_delay(const unsigned int len)
 {
-    struct timespec s = {0,0,};              // Set aside memory space on the stack
+    struct timespec s ;              // Set aside memory space on the stack
 
     bus_pause.tv_usec += len*1000 ;
     if ( bus_pause.tv_usec > 100000000 ) {
@@ -347,7 +351,7 @@ void UT_delay(const unsigned int len)
         bus_pause.tv_sec  += 100 ;
     }
 
-    s.tv_sec += len / 1000 ;
+    s.tv_sec = len / 1000 ;
     s.tv_nsec = 1000000*(len%1000) ;
 
     nanosleep(&s, NULL);
