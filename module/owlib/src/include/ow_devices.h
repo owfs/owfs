@@ -29,6 +29,7 @@ $Id$
 #include "ow_2408.h" // switch
 #include "ow_2409.h" // hub
 #include "ow_2450.h" // A/D convertor
+#include "ow_2433.h" // eeprom
 #include "ow_2436.h" // Battery
 #include "ow_2438.h" // Battery
 #include "ow_2415.h" // Clock
