@@ -27,8 +27,8 @@ header_DATA = ow_1820.h \
               ow_settings.h \
               ow_system.h \
               ow_simultaneous.h \
-              ow_stub.h \
-              sem.h
+              ow_stub.h 
+#              sem.h
 
 EXTRA_DIST = ${header_DATA}
 
