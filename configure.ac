@@ -49,6 +49,23 @@ AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],$PATH)dnl
 AC_PATH_PROG([PERL],[perl],$PATH)dnl
 
+# ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
+AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
+AC_SUBST(CCMALLLOC)
+AC_ARG_ENABLE(ccmalloc, 
+[--enable-ccmalloc        ccmalloc memory checking],
+[ AC_MSG_RESULT(["$enableval"])
+ if test "$enableval" = yes; then
+   CCLD="$CCMALLOC --no-wrapper $CC"
+ else
+   CCLD="$CC"
+ fi],
+   CCLD=$CC
+)
+AC_SUBST(CCLD)
+ 
+
+
 
 # Include libpthread if multithreading is enabled
 #

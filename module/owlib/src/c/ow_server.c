@@ -34,7 +34,7 @@ int ServerRead( const char * path, char * buf, const size_t size, const off_t of
     int ret ;
 
     if ( connectfd < 0 ) return -EIO ;
-printf("ServerRead path=%s, size=%d, offset=%d\n",path,size,offset);
+//printf("ServerRead path=%s, size=%d, offset=%d\n",path,size,offset);
     sm.type = msg_read ;
     sm.size = size ;
     sm.sg =  SemiGlobal.int32;
@@ -57,7 +57,7 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
     int ret ;
 
     if ( connectfd < 0 ) return -EIO ;
-printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
+//printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     sm.type = msg_write ;
     sm.size = size ;
     sm.sg =  SemiGlobal.int32;
@@ -89,7 +89,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
-printf("ServerDir path=%s\n",path);
+//printf("ServerDir path=%s\n",path);
     (void) pn ;
     sm.type = msg_dir ;
     sm.size = 0 ;
@@ -100,7 +100,7 @@ printf("ServerDir path=%s\n",path);
     } else { 
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-printf("ServerDir got:%s\n",path2);
+//printf("ServerDir got:%s\n",path2);
 	    if ( FS_ParsedName( path2, &pn2 ) ) {
 	        cm.ret = -EINVAL ;
 		free(path2) ;
@@ -131,22 +131,23 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     cm->sg = ntohl(cm->sg) ;
     cm->offset = ntohl(cm->offset) ;
 
-printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return NULL ;
     if ( cm->payload > 65000 ) {
-printf("FromServerAlloc payload too large\n");
+//printf("FromServerAlloc payload too large\n");
         return NULL ;
     }
     
     if ( (msg=malloc(cm->payload)) ) {
         if ( readn(fd,msg,cm->payload) != cm->payload ) {
-printf("FromServer couldn't read payload\n");
+//printf("FromServer couldn't read payload\n");
             cm->payload = 0 ;
             cm->ret = -EIO ;
             free(msg);
             msg = NULL ;
         }
-printf("FromServer payload read ok\n");
+//printf("FromServer payload read ok\n");
     }
     return msg ;
 }
@@ -168,14 +169,15 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     cm->sg = ntohl(cm->sg) ;
     cm->offset = ntohl(cm->offset) ;
 
-printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return cm->payload ;
 
     d = cm->payload - size ;
     rtry = d<0 ? cm->payload : size ;
     if ( readn(fd, msg, rtry ) != rtry ) {
         cm->ret = -EIO ;
-        return -1 ;
+        return -EIO ;
     }
 
     if ( d>0 ) {
@@ -206,7 +208,8 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
         }
     }
 
-printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
+//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
+printf("<%.4d|%.4d\n",sm->type,payload);
 
     sm->payload = htonl(payload)       ;
     sm->size    = htonl(sm->size)      ;

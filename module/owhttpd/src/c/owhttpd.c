@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
       for(i=0; i<MAX_THREADS; i++) threads[i].avail = 1;
       sem_init( &accept_sem, 0, MAX_THREADS ) ;
     }
-#endif
+#endif /* OW_MT */
 
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);
@@ -173,7 +173,7 @@ static void * handle(void * ptr) {
 #ifdef OW_MT
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-#endif
+#endif /* OW_MT */
 
     ch_sock.socket = mt->socket;
     ch_sock.io = fdopen(ch_sock.socket, "w+");
@@ -189,10 +189,11 @@ static void * handle(void * ptr) {
     THREADUNLOCK
     sem_post(&accept_sem);
     pthread_exit(NULL);
-#endif
+#endif /* OW_MT */
     return NULL ;
 }
 
+#ifdef OW_MT
 static int start_thread(struct mythread *mt) {
     sigset_t oldset;
     sigset_t newset;
@@ -210,6 +211,7 @@ static int start_thread(struct mythread *mt) {
     pthread_detach(mt->tid);
     return 0;
 }
+#endif /* OW_MT */
 
 static void http_loop( struct listen_sock *sock ) {
     socklen_t size = sizeof((sock->sin));

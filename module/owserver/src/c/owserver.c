@@ -69,8 +69,8 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->type    = ntohl(sm->type)    ;
     sm->sg      = ntohl(sm->sg)      ;
     sm->offset  = ntohl(sm->offset)  ;
-printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
-
+//printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
+printf("<%.4d|%.4d\n",sm->type,sm->payload);
     if ( sm->payload <= 0 ) {
          msg = NULL ;
     } else if ( sm->payload > MAXBUFFERSIZE ) {
@@ -97,7 +97,8 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     if ( data && cm->payload ) {
         ++nio ;
     }
-printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+//printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     cm->payload = htonl(cm->payload) ;
     cm->size = htonl(cm->size) ;
     cm->offset = htonl(cm->offset) ;
@@ -119,7 +120,7 @@ static int Handler( int fd ) {
     char * retbuffer = NULL ;
     int ret = 0 ;
     struct server_msg sm ;
-    struct client_msg cm ;
+    struct client_msg cm = {0,0,0,0,0,0,} ; /* default values */
     char * path = FromClientAlloc( fd, &sm ) ;
     struct parsedname pn ;
     struct stateinfo si ;
@@ -138,7 +139,6 @@ static int Handler( int fd ) {
     if ( sm.size < 0 ) {
         /* Nothing allocated */
         cm.ret = -EIO ;
-        cm.payload = 0 ;
         return ToClient( fd, &cm, NULL ) ;
     }
 
@@ -146,7 +146,6 @@ static int Handler( int fd ) {
     if ( path==NULL ) {
         /* Nothing allocated */
         cm.ret = (sm.type==msg_nop)?0:-EBADMSG ;
-        cm.payload = 0 ;
         return ToClient( fd, &cm, NULL ) ;
     }
 
@@ -154,7 +153,6 @@ static int Handler( int fd ) {
     if ( memchr( path, 0, sm.payload) == NULL ) { /* Bad string -- no trailing null */
         if ( path ) free(path) ;
         cm.ret = -EBADMSG ;
-        cm.payload = 0 ;
         return ToClient( fd, &cm, NULL ) ;
     }
     pathlen = strlen( path ) + 1 ; /* include trailing null */
@@ -215,7 +213,7 @@ static int Handler( int fd ) {
     case msg_read:
         ret = FS_read_postparse(path,retbuffer,cm.payload,cm.offset,&pn) ;
         if ( ret<0 ) {
-printf("Handler: READ done path=%s, err = %d cm.size=%d cm.payload=%d\n",path,ret,cm.size,cm.payload);
+//printf("Handler: READ done path=%s, err = %d cm.size=%d cm.payload=%d\n",path,ret,cm.size,cm.payload);
             cm.size = cm.payload = 0 ;
         } else {
 //printf("Handler: READ done string = %s\n",retbuffer);
@@ -224,7 +222,7 @@ printf("Handler: READ done path=%s, err = %d cm.size=%d cm.payload=%d\n",path,re
         break ;
     case msg_write:
         ret = FS_write_postparse(path,data,cm.size,cm.offset,&pn) ;
-printf("Handler: WRITE done\n");
+//printf("Handler: WRITE done\n");
         if ( ret<0 ) {
             cm.size = 0 ;
             cm.sg = sm.sg ;
@@ -235,7 +233,7 @@ printf("Handler: WRITE done\n");
        break ;
     case msg_dir:
         cm.sg = sm.sg ;
-printf("Handler: DIR retbuffer=%p\n",retbuffer);
+//printf("Handler: DIR retbuffer=%p\n",retbuffer);
 	/* return buffer holds max file length */
         /* copy current path into return buffer */
         memcpy(retbuffer, path, pathlen ) ;
@@ -245,7 +243,7 @@ printf("Handler: DIR retbuffer=%p\n",retbuffer);
 	    ++pathlen ;
 	}
         FS_dir( directory, path, &pn ) ;
-printf("Handler: DIR done\n");
+//printf("Handler: DIR done\n");
         /* Now null entry to show end of directy listing */
         ret = 0 ;
         cm.payload = cm.size = 0 ;
