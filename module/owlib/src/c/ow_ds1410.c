@@ -29,16 +29,6 @@ static int DS1410_read_bits( unsigned char * const bits , const int length ) ;
 static int DS1410_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) ;
-static int DS1410_status_loop( const unsigned int flag, const int * const waits ) ;
-
-static int normal_busy[] = {  1,1,1,1, 1,1,1,1, 1,1,0, } ;
-static int normal_slot[] = { 50,5,5,5, 5,5,5,5, 5,5,0, } ;
-
-#define PIN2  0x01
-#define PIN3  0x02
-#define PIN14 DS1410_ENI
-#define PIN11 DS1410_O1BSY
-#define PIN13 DS1410_O2BSY
 
 /* Data */
 #define DS1410_Bit0  (0xFC | 0x02 | 0x00 )
@@ -49,6 +39,83 @@ static int normal_slot[] = { 50,5,5,5, 5,5,5,5, 5,5,0, } ;
 /* Status */
 #define DS1410_O1BSY PARPORT_STATUS_BUSY /* inverted */
 #define DS1410_O2BSY PARPORT_STATUS_SELECT
+
+#define PIN2  0x01
+#define PIN3  0x02
+#define PIN14 DS1410_ENI
+#define PIN11 DS1410_O1BSY
+#define PIN13 DS1410_O2BSY
+
+unsigned char bit_on = 0xFC | PIN2 | PIN3 ;
+unsigned char bit_off = 0xFC | PIN3 ;
+unsigned char bit_reset = 0xFC | PIN2 ;
+unsigned char bit_od = 0xFC ;
+unsigned char ctl_high = 0x02 ;
+unsigned char ctl_low  = 0x00 ;
+#define DATA_BIT_ON  ioctl( devfd, PPWDATA, &bit_on )
+#define DATA_BIT_OFF ioctl( devfd, PPWDATA, &bit_off )
+#define DATA_RESET   ioctl( devfd, PPWDATA, &bit_reset )
+#define DATA_OD      ioctl( devfd, PPWDATA, &bit_od )
+#define CONTROL_HIGH ioctl( devfd, PPWCONTROL, &ctl_high )
+#define CONTROL_LOW  ioctl( devfd, PPWCONTROL, &ctl_low )
+
+static int BUSY( void ) {
+    unsigned char s ;
+    int ret = ioctl( devfd, PPRSTATUS, &s ) ;
+printf( "BUSY=%d, status=%.2X, result=%d\n",ret,s,( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ) ;
+    return ( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ;
+}
+
+static void CONTROL( const unsigned char mask, const unsigned char val ) {
+    struct ppdev_frob_struct frob = { mask, val, } ;
+    int ret = ioctl( devfd, PPFCONTROL, &frob ) ;
+printf( "CONTROL=%d frob={%.2X,%.2X}\n",ret,mask,val) ;
+}
+
+static void DATA( const unsigned char data ) {
+    unsigned char d = data ;
+    int ret = ioctl( devfd, PPWDATA, &d ) ;
+printf("DATA=%d val=%.2X\n",ret,d) ;
+}
+
+static unsigned char READ( void ) {
+    unsigned char data ;
+    int ret = ioctl( devfd, PPRDATA, &data ) ;
+printf("READ=%d val = %.2X\n",ret,data) ;
+    return data ;
+}
+
+static int toggleOD( void ) {
+    int result ;
+    unsigned char save = READ() ;
+    DATA( 0xFC ) ;
+    CONTROL( DS1410_ENI, 0x00 ) ;
+    CONTROL( DS1410_ENI, DS1410_ENI ) ;
+    usleep(4) ;
+    result = BUSY() ? 1 : 0 ;
+printf("ToggleOD result=%d\n",result) ;
+    CONTROL( DS1410_ENI, 0x00 ) ;
+    DATA(save) ;
+    return result ;
+}
+
+static void togglePassthru( void ) {
+    toggleOD() ;
+    toggleOD() ;
+    toggleOD() ;
+    toggleOD() ;
+}
+
+static void CLAIM( void ) {
+    int ret = ioctl( devfd, PPCLAIM ) ;
+if ( ret ) printf("CLAIM=%d\n",ret) ;
+}
+
+static void RELEASE( void ) {
+    int ret = ioctl( devfd, PPRELEASE ) ;
+if ( ret ) printf("RELEASE=%d\n",ret) ;
+}
+
 
 //--------------------------------------------------------------------------
 // Send 8 bits of communication to the 1-Wire Net and verify that the
@@ -192,26 +259,19 @@ static int DS1410_level(int new_level) {
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
 int DS1410_detect( void ) {
-    int mode = IEEE1284_MODE_BYTE ;
+    int mode = IEEE1284_MODE_COMPAT ;
     struct timeval t = { 1 , 0 } ; /* 1 second */
-    int ret = ioctl( devfd, PPCLAIM) ;
-//    ret = ioctl( devfd, PPNEGOT, &mode) ;
-    ret = ioctl( devfd, PPSETMODE, &mode) ;
-printf("SETMODE=%d\n",ret);
-    ret = ioctl( devfd, PPGETMODE, &mode) ;
-printf("GETMODE=%d\n",ret);
+    int ret ;
+    CLAIM() ;
+    ret = ioctl( devfd, PPNEGOT, &mode) ;
 printf("NEGOT=%d\n",ret);
     ret = ioctl( devfd, PPSETTIME, &t) ;
 printf("SETTIME=%d\n",ret);
-    ioctl( devfd , PPRELEASE ) ;
-switch(mode) {
-case IEEE1284_MODE_COMPAT: printf("COMPAT\n");break;
-case IEEE1284_MODE_NIBBLE: printf("NIBBLE\n");break;
-case IEEE1284_MODE_BYTE: printf("BYTE\n");break;
-case IEEE1284_MODE_EPP: printf("EPP\n");break;
-case IEEE1284_MODE_ECP: printf("ECP\n");break;
-default: printf("NO MODE\n");
-}
+    RELEASE () ;
+
+    CLAIM() ;
+    togglePassthru() ;
+    RELEASE () ;
     /* Set up low-level routines */
     DS1410_setroutines( & iroutines ) ;
     /* Reset the bus */
@@ -223,8 +283,8 @@ default: printf("NO MODE\n");
 static int DS1410_reset( void ) {
     unsigned char c;
     int ret ;
-
     if ( (ret=DS1410_send_bit( DS1410_Reset , &c )) ) return ret ;
+
     switch(c) {
     case 0:
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
@@ -288,153 +348,53 @@ int DS1410_sendback_bits( const unsigned char * const outbits , unsigned char * 
 /* Symmetric */
 /* send a bit -- read a bit */
 static int DS1410_sendback_data( const unsigned char * data, unsigned char * const resp , const int len ) {
-     if ( ioctl( devfd, PPCLAIM ) ) {
-printf("PPCLAIM\n");
-        return -EFAULT ;
-     } else {
-        int bits = len<<3 ;
-        int i, ret = 0 ;
-        for ( i=0 ; i<bits ; ++i ) {
-            unsigned char out ;
-            if ( (ret=DS1410_send_bit( UT_getbit( data, i ), &out )) ) break ;
-            UT_setbit( resp, i , out ) ;
-        }
-        ioctl( devfd , PPRELEASE ) ;
-        return ret ;
+    int bits = len<<3 ;
+    int i, ret = 0 ;
+    CLAIM() ;
+    for ( i=0 ; i<bits ; ++i ) {
+        unsigned char out ;
+        if ( (ret=DS1410_send_bit( UT_getbit( data, i ), &out )) ) break ;
+        UT_setbit( resp, i , out ) ;
     }
-}
-
-void teststatus( void ) {
-    unsigned int st ;
-    ioctl( devfd, PPRSTATUS, &st ) ;
-    printf("Status %.2X PIN11=%.2X PIN13=%.2X\n",st,st&PIN11,st&PIN13);
-}
-
-
-static int DS1410_status_loop( const unsigned int flag, const int * const waits ) {
-/*
-    int * sl ;
-    unsigned char st ;
-    for ( sl = waits ; *sl ; ++sl ) {
-        usleep(*sl) ;
-        ioctl( devfd, PPRSTATUS, &st ) ;
-        if ( st & 0x90 == flag ) return 0 ;
-    }
-    return 1 ;
-*/
-    int i ;
-    unsigned char st ;
-printf("LOOP flag=%.2X ",flag);
-    for ( i=0 ; i<10 ; ++i ) {
-        usleep(100) ;
-        ioctl( devfd, PPRSTATUS, &st ) ;
-printf(" %.2X",st) ;
-        if ( (st & 0x90) == flag ) {
-printf("LOOP flag=%.2X reps=%d\n",flag,i);
-            return 0 ;
-        }
-    }
-printf("BAD LOOP flag=%.2X reps=%d\n",flag,i);
-    return 1 ;
+    RELEASE() ;
+    return ret ;
 }
 
 /* Symmetric */
 /* send a bit -- read a bit */
 static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) {
-    unsigned char save, res ;
-    int w=0;
-    int r=1;
-    int ret ;
+    unsigned char save, result ;
     int i ;
-    unsigned char ff = 0xFF ;
-    unsigned char fe = 0xFE ;
-    unsigned char ct, rsp ;
-    struct ppdev_frob_struct c[] = {
-        {DS1410_ENI,0x00},
-        {DS1410_ENI,DS1410_ENI},
-    } ;
 
-    if ( ioctl( devfd, PPCLAIM ) ) {
-teststatus();
-printf("PPCLAIM\n");
-       return -EFAULT ;
-    }
-teststatus();
+    CLAIM () ;
+    save = READ() ;
+    DATA( data ) ;
+    CONTROL( DS1410_ENI, 0x00 ) ;
+    CONTROL( DS1410_ENI, DS1410_ENI ) ;
 
-    ret =ioctl( devfd, PPRDATA,    &save ) ;
-printf("DATA(read) ret=%d save=%.2X\n",ret,save);
-teststatus();
-
-    ret = ioctl( devfd, PPWDATA,    &data ) ;
-printf("DATA(write) ret=%d data=%.2X\n",ret,data);
-teststatus();
-
-    ret = ioctl( devfd, PPRCONTROL, &ct ) ;
-printf("CONTROL(read)=%d ctl=%.2X\n",ret,ct) ;
-teststatus();
-
-    ct &= ~(PIN14) ;
-    ret = ioctl( devfd, PPWCONTROL, &ct ) ;
-printf("CONTROL(write)=%d ctl=%.2X\n",ret,ct) ;
-teststatus();
-
-    ct |= PIN14 ;
-    ret = ioctl( devfd, PPWCONTROL, &ct ) ;
-printf("CONTROL(write)=%d ctl=%.2X\n",ret,ct) ;
-teststatus();
-
-    i=0 ;
+    i = 0 ;
     do {
-        if ( (i++%100) == 0 ) teststatus();
-        usleep(1) ;
-        ioctl( devfd, PPRSTATUS, &rsp ) ;
-    } while( !(rsp&PIN11) && (rsp&PIN13) && i<1000 ) ;
-printf("LOOP i=%d\n",i) ;
-teststatus();
+        usleep(4) ;
+    } while( BUSY()!=0 && ++i < 10) ;
 
-    ret = ioctl( devfd, PPWDATA,    &ff   ) ;
-printf("DATA(write) ret=%d data=%.2X\n",ret,ff);
-teststatus();
+    DATA( 0xFF ) ;
 
-    i=0 ;
+    i = 0 ;
     do {
-        if ( (i++%100) == 0 ) teststatus();
-        usleep(1) ;
-        ioctl( devfd, PPRSTATUS, &rsp ) ;
-    } while( (rsp&PIN11) && !(rsp&PIN13) && i<1000 ) ;
-printf("LOOP i=%d\n",i) ;
-teststatus();
+        usleep(4) ;
+    } while( BUSY()==0 && ++i < 10 ) ;
 
-    ret = ioctl( devfd, PPWDATA,    &fe   ) ;
-printf("DATA(write) ret=%d data=%.2X\n",ret,fe);
-teststatus();
-
+    DATA( 0xFE ) ;
     usleep(2) ;
-teststatus();
+    result = BUSY() ? 1 : 0  ;
+    DATA( 0xFF ) ;
 
-    ret =ioctl( devfd, PPRDATA,    &rsp ) ;
-printf("DATA(read) ret=%d resp=%.2X\n",ret,rsp);
-teststatus();
+    CONTROL( DS1410_ENI, 0x00 ) ;
+    DATA( save ) ;
 
-    ret = ioctl( devfd, PPWDATA,    &ff   ) ;
-printf("DATA(write) ret=%d data=%.2X\n",ret,ff);
-teststatus();
-
-    resp[0] = ((rsp^0x80)&0x90)?1:0 ;
-printf("RESP = %.2X\n",resp[0]) ;
-
-    ct &= ~(PIN14) ;
-    ret = ioctl( devfd, PPWCONTROL, &ct ) ;
-printf("CONTROL(write)=%d ctl=%.2X\n",ret,ct) ;
-teststatus();
-
-    ret = ioctl( devfd, PPWDATA,    &save   ) ;
-printf("DATA(write) ret=%d data=%.2X\n",ret,save);
-teststatus();
-
-    ret = ioctl( devfd , PPRELEASE ) ;
-printf("RELEASE ret=%d\n",ret);
-    return ret ;
+    RELEASE() ;
+    *resp = result ;
+    return result ;
 }
 
 /* Symetric */

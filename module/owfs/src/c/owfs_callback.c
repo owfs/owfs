@@ -158,15 +158,9 @@ int FS_open(const char *path, int flags) {
 }
 
 /* Change in statfs definition for newer FUSE versions */
-#if defined(FUSE_MAJOR_VERSION) && FUSE_MAJOR_VERSION > 1
-int FS_statfs(const char * path, struct statfs *st) {
-    (void) path ;
-    (void) st ;
-    return 0 ;
-}
-#else /* FUSE_MAJOR_VERSION */
+#if !defined(FUSE_MAJOR_VERSION) || !(FUSE_MAJOR_VERSION > 1)
 int FS_statfs(struct fuse_statfs *fst) {
-    (void) fst ;
+    memset( fst, 0, sizeof(struct fuse_statfs) ) ;
     return 0 ;
 }
 #endif /* FUSE_MAJOR_VERSION */

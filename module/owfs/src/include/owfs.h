@@ -31,9 +31,9 @@ int FS_truncate(const char *path, const off_t size) ;
 int FS_open(const char *path, int flags) ;
 /* Change in statfs definition for newer FUSE versions */
 #if defined(FUSE_MAJOR_VERSION) && FUSE_MAJOR_VERSION > 1
-int FS_statfs(const char * path, struct statfs *st) ;
+    #define FS_statfs   NULL
 #else /* FUSE_MAJOR_VERSION */
-int FS_statfs(struct fuse_statfs *fst) ;
+    int FS_statfs(struct fuse_statfs *fst) ;
 #endif /* FUSE_MAJOR_VERSION */
 
 extern struct fuse_operations owfs_oper;
