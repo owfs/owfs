@@ -53,8 +53,10 @@ bWRITE_FUNCTION( FS_w_page ) ;
  yREAD_FUNCTION( FS_r_pwd ) ;
 yWRITE_FUNCTION( FS_w_pwd ) ;
 bWRITE_FUNCTION( FS_set ) ;
+aWRITE_FUNCTION( FS_nset ) ;
 #ifdef OW_CACHE
 bWRITE_FUNCTION( FS_use ) ;
+aWRITE_FUNCTION( FS_nuse ) ;
 #endif /* OW_CACHE */
 
 /* ------- Structures ----------- */
@@ -69,11 +71,17 @@ struct filetype DS1977[] = {
     {"set_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , (void*) 0, } ,
     {"set_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , (void*) 8, } ,
     {"set_password/enabled",1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_pwd}    , {y:FS_w_pwd}       , NULL, } ,
+    {"set_number",          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
+    {"set_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , (void*) 0, } ,
+    {"set_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , (void*) 8, } ,
     {"version"   ,         12,  NULL,    ft_unsigned, ft_stable  , {u:FS_ver}      , {v:NULL}           , NULL, } ,
 #ifdef OW_CACHE
     {"use_password",        0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
     {"use_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , (void*) 0, } ,
     {"use_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , (void*) 8, } ,
+    {"use_number",          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
+    {"use_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , (void*) 0, } ,
+    {"use_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , (void*) 8, } ,
 #endif /*OW_CACHE*/
 } ;
 DeviceEntryExtended( 37, DS1977, DEV_resume )
@@ -130,6 +138,22 @@ static int FS_w_pwd( const int * y , const struct parsedname * pn ) {
     return 0 ;
 }
 
+static int FS_nset( const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    char a[48] ;
+    char * end ;
+    union {
+        unsigned char b[8] ;
+        long long int i ;
+    } xfer ;
+
+    bzero(a,48) ;
+    bzero(xfer.b,8) ;
+    memcpy(&a[offset],buf,size) ;
+    xfer.i = strtoll(a,&end,0) ;
+    if ( end==a || errno ) return -EINVAL ;
+    return FS_set( xfer.b, 8, 0, pn ) ;
+}
+
 static int FS_set( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret;
     unsigned char p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
@@ -165,6 +189,22 @@ static int FS_set( const unsigned char *buf, const size_t size, const off_t offs
 }
 
 #ifdef OW_CACHE
+static int FS_nuse( const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    char a[48] ;
+    char * end ;
+    union {
+        unsigned char b[8] ;
+        long long int i ;
+    } xfer ;
+
+    bzero(a,48) ;
+    bzero(xfer.b,8) ;
+    memcpy(&a[offset],buf,size) ;
+    xfer.i = strtoll(a,&end,0) ;
+    if ( end==a || errno ) return -EINVAL ;
+    return FS_use( xfer.b, 8, 0, pn ) ;
+}
+
 static int FS_use( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     size_t s = size ;

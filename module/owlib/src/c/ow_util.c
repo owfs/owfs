@@ -12,6 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/* hex-digit to number */
 unsigned char char2num( const char * s ) {
     if ( s == NULL ) return 0 ;
     switch (*s) {
@@ -44,11 +45,13 @@ unsigned char char2num( const char * s ) {
     return 0 ;
 }
 
+/* 2 hex digits to number */
 unsigned char string2num( const char * s ) {
     if ( s == NULL ) return 0 ;
     return char2num(&s[0])<<4 | char2num(&s[1]) ;
 }
 
+/* number to a hex digit */
 char num2char( const unsigned char n ) {
     switch(n) {
     case  0: return '0' ;
@@ -71,16 +74,18 @@ char num2char( const unsigned char n ) {
     }
 }
 
+/* number to 2 hex digits */
 void num2string( char * s , const unsigned char n ) {
     s[0] = num2char((unsigned char)(n>>4)) ;
     s[1] = num2char((unsigned char)(n&0xF)) ;
 }
 
+/* 2x hex digits to x number bytes */
 void string2bytes( const char * str , unsigned char * b , const int bytes ) {
     int i ;
     for ( i=0 ; i<bytes ; ++i ) b[i]=string2num(&str[i<<1]) ;
 }
-
+/* number(x bytes) to 2x hex digits */
 void bytes2string( char * str , const unsigned char * b , const int bytes ) {
     int i ;
     for ( i=0 ; i<bytes ; ++i ) num2string(&str[i<<1],b[i]) ;
