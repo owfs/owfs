@@ -177,10 +177,12 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     }
 #ifdef OW_MT
     pthread_t thread ;
+#ifndef __UCLIBC__
     pthread_attr_t attr ;
 
     pthread_attr_init(&attr) ;
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif
     /* Embedded function */
     void * ConnectionThread( void * v ) {
         struct connection_out * out2 = out ;
@@ -201,11 +203,21 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         ToListen( out2 ) ;
         for(;;) {
             ACCEPTLOCK(out2)
+#ifdef __UCLIBC__
+            if ( pthread_create( &thread2, NULL, AcceptThread, NULL ) ) Exit(1) ;
+            pthread_detach(thread2);
+#else
             if ( pthread_create( &thread2, &attr, AcceptThread, NULL ) ) Exit(1) ;
+#endif
         }
     }
     while ( out->next ) {
+#ifdef __UCLIBC__
+        if ( pthread_create( &thread, NULL, ConnectionThread, NULL ) ) Exit(1) ;
+        pthread_detach(thread);
+#else
         if ( pthread_create( &thread, &attr, ConnectionThread, NULL ) ) Exit(1) ;
+#endif
         out = out->next ;
     }
     ConnectionThread( NULL ) ;
