@@ -141,7 +141,7 @@ int OW_ArgNet( const char * arg ) {
         return 1 ;
     }
     in->name = strdup(arg) ;
-    in->busmode = bus_usb ;
+    in->busmode = bus_remote ;
     return 0 ;
 }
 
