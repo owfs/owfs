@@ -62,8 +62,6 @@ int owopt( const int c , const char * const arg ) {
         "    -V --version\n"
         ) ;
         return 1 ;
-    case 't':
-        Timeout( arg ) ;
         return 0 ;
     case 'u':
 #ifdef OW_USB
@@ -85,6 +83,8 @@ int owopt( const int c , const char * const arg ) {
         return 0 ;
     case 'd':
         ComSetup(arg) ;
+    case 't':
+        Timeout(arg) ;
         return 0 ;
     case 'r':
         readonly = 1 ;

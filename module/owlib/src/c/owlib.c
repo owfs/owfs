@@ -1,12 +1,12 @@
 /*
 $Id$
-	OWFS -- One-Wire filesystem
+    OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 #include "owfs_config.h"
@@ -87,8 +87,6 @@ time_t dir_time ; /* time of last directory scan */
 int cacheavailable = 0 ; /* assume no cache */
 int background = 1 ; /* operate in background mode */
 int readonly = 0 ; /* readonly file system */
-int timeout = DEFAULT_TIMEOUT ;
-int timeout_slow = 10*DEFAULT_TIMEOUT ;
 
 struct interface_routines iroutines ;
 
@@ -177,7 +175,7 @@ int LibStart( void ) {
             syslog(LOG_WARNING,"Cannot open PID file: %s Error=%s\n",pid_file,strerror(errno) ) ;
             free( pid_file ) ;
             pid_file = NULL ;
-	    return 1 ;
+        return 1 ;
         }
 //printf("opopts pid = %ld\n",(long unsigned int)getpid());
         fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
@@ -263,10 +261,12 @@ void LibClose( void ) {
     closelog() ;
 }
 
+struct s_timeout timeout = {1,DEFAULT_TIMEOUT,10*DEFAULT_TIMEOUT,5*DEFAULT_TIMEOUT,} ;
 void Timeout( const char * c ) {
-	timeout = strtol( c,NULL,10 ) ;
-	if ( errno || timeout<1 ) timeout = DEFAULT_TIMEOUT ;
-	timeout_slow = 10*timeout ;
+    timeout.vol = strtol( c,NULL,10 ) ;
+    if ( errno || timeout.vol<1 ) timeout.vol = DEFAULT_TIMEOUT ;
+    timeout.stable = 10*timeout.vol ;
+    timeout.dir = 5*timeout.vol ;
 }
 
 /* Library presence function -- NOP */

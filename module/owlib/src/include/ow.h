@@ -419,12 +419,18 @@ extern enum temp_type tempscale ;
 FLOAT Temperature( FLOAT C) ;
 FLOAT TemperatureGap( FLOAT C) ;
 
-#define DEFAULT_TIMEOUT  (15)
 extern int cacheavailable ; /* is caching available */
 extern int background ; /* operate in background mode */
+
+#define DEFAULT_TIMEOUT  (15)
 void Timeout( const char * c ) ;
-extern int timeout ; /* timeout (in seconds) for the volatile cached values */
-extern int timeout_slow ; /* timeout for the stable cached values */
+struct s_timeout {
+    int second ; /* timeout for clocks */
+    int vol ;/* timeout (in seconds) for the volatile cached values */
+    int stable ;/* timeout for the stable cached values */
+    int dir ;/* timeout for directory listings */
+} ;
+extern struct s_timeout timeout ;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;

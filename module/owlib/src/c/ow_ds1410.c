@@ -77,8 +77,6 @@ static void RELEASE( void ) {
 if ( ret ) printf("RELEASE=%d\n",ret) ;
 }
 
-int timeout ;
-
 static int BUSY( void ) {
     unsigned char s ;
     int ret = ioctl( devfd, PPRSTATUS, &s ) ;
@@ -207,7 +205,7 @@ static void togglePASS( void ) {
 
 static int PRESENT( void ) {
     RESET() ;
-    if ( DS1410_send_bit( 0xFF , NULL ) ) return timeout==0 ;
+//    if ( DS1410_send_bit( 0xFF , NULL ) ) return timeout==0 ;
     return 0 ;
 }
 
@@ -596,9 +594,9 @@ printf("timeout=%d\n",timeout) ;
     CONTROLout( cont&0xFD ) ;
     DATAout( 0xCF ) ;
     usleep(12) ;
-    timeout = (i<2000) ? 0 : 1;
+//    timeout = (i<2000) ? 0 : 1;
 //    rsp[0] = retval ;
-printf("Send Bit=%d, data=%.2X timeout=%d\n",retval,data,timeout);
+//printf("Send Bit=%d, data=%.2X timeout=%d\n",retval,data,timeout);
     return retval ;
 }
 

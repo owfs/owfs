@@ -80,10 +80,10 @@ static time_t TimeOut( const enum ft_change change ) {
         return 1 ;
     case ft_volatile:
     case ft_Avolatile:
-        return timeout ;
+        return timeout.vol ;
     case ft_stable:
     case ft_Astable:
-        return timeout_slow;
+        return timeout.stable;
     default: /* static or statistic */
         return 0 ;
     }
