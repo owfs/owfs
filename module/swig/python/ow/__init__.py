@@ -27,6 +27,7 @@ http://owfs.sourceforge.net.
 """
 
 
+import os
 import _OW
 
 
@@ -74,6 +75,40 @@ class exAttr( exErrorValue ):
 #
 
 initialized = False
+
+
+#
+# Module varialbe used to turn on _OW function call logging
+#
+
+use_logging = False
+#use_logging = True
+
+
+def log_get( path ):
+    """
+    Write the _OW.get call details out to the log file.
+    """
+    logfile.write( "_OW.get( '%s' )%s" % ( path, os.linesep ) )
+    return _OW.get( path )
+
+
+def log_put( path, value ):
+    """
+    Write the _OW.put call details out to the log file.
+    """
+    logfile.write( "_OW.put( '%s', '%s' )%s" % ( path, value, os.linesep ) )
+    return _OW.put( path, value )
+
+
+if use_logging:
+    logfile = open( 'OW.log', 'w' )
+    owfs_get = log_get
+    owfs_put = log_put
+else:
+    owfs_get = _OW.get
+    owfs_put = _OW.put
+
 
 #
 # Initialize and cleanup the _OW library.
@@ -127,17 +162,26 @@ class Sensor( object ):
         """
         Create a new Sensor as it exists at the specified path.
         """
-        #print 'Sensor.__init__'
+        #print 'Sensor.__init__: <%s>' % path
         if not initialized:
             raise exNotInitialized
 
-        self._path = path
-        if self._path == '/':
-            self._type  = _OW.get( '/system/adapter/name' )
-            self._attrs = { }
+        self._attrs = { }
+        if path == '/':
+            self._path    = path
+            self._useCache = True
+        elif path == '/uncached':
+            self._path    = '/'
+            self._useCache = False
         else:
-            self._type  = _OW.get( '%s/type' % self._path )
-            self._attrs = dict( [ (n.replace( '.', '_' ), self._path + '/' + n ) for n in _OW.get( self._path ).split( ',' ) ] )
+            if path[ :len( '/uncached' ) ] == '/uncached':
+                self._path     = path[ len( '/uncached' ): ]
+                self._useCache = False
+            else:
+                self._path     = path
+                self._useCache = True
+
+        self.useCache( self._useCache )
 
 
     def __str__( self ):
@@ -149,7 +193,31 @@ class Sensor( object ):
         / - DS9490
         """
         #print 'Sensor.__str__'
-        return "%s - %s" % ( self._path, self._type )
+        return "%s - %s" % ( self._usePath, self._type )
+
+
+    def __repr__( self ):
+        """
+        Print a representation of the Sensor in the form of:
+
+        Sensor( path )
+
+        Sensor( / )
+        """
+        #print 'Sensor.__repr__'
+        return 'Sensor("%s")' % self._usePath
+
+
+    def __eq__( self, other ):
+        """
+        Two sensors are considered equal if their paths are
+        equal. This is done by comparing their _path attributes so
+        that cached and uncached Sensors compare equal.
+
+        >>> Sensor( '/' ) == Sensor( '/uncached' )
+        True
+        """
+        return self._path == other._path
 
 
     def __getattr__( self, name ):
@@ -170,9 +238,9 @@ class Sensor( object ):
         """
         #print 'Sensor.__getattr__', name
         if name in self._attrs:
-            attr = _OW.get( self._attrs[ name ] )
+            attr = owfs_get( self._attrs[ name ] )
         else:
-            raise exAttr, ( ( self._path, name ), )
+            raise AttributeError, name
 
         return attr
 
@@ -200,12 +268,48 @@ class Sensor( object ):
         # only reference it if it's already been added.
         if hasattr( self, '_attrs' ):
             if name in self._attrs:
-                #print '_OW.put', self._attrs[ name ], value
-                _OW.put( self._attrs[ name ], value )
+                #print 'owfs_put', self._attrs[ name ], value
+                owfs_put( self._attrs[ name ], value )
             else:
                 self.__dict__[ name ] = value
         else:
             self.__dict__[ name ] = value
+
+
+    def useCache( self, use_cache ):
+        """
+        Set the sensor to use the underlying owfs cache (or not)
+        depending on the use_cache parameter.
+
+        Usage:
+
+            s = ow.Sensor( '/1F.5D0B01000000' )
+            s.useCache( False )
+
+        will set the internal sensor path to /uncached/1F.5D0B01000000.
+
+        Also:
+
+            s = ow.Sensor( '/uncached/1F.5D0B01000000' )
+            s.useCache( True )
+
+        will set the internal sensor path to /1F.5D0B01000000.
+        """
+        self._useCache = use_cache
+        if self._useCache:
+            self._usePath = self._path
+        else:
+            if self._path == '/':
+                self._usePath = '/uncached'
+            else:
+                self._usePath = '/uncached' + self._path
+
+        if self._path == '/':
+            self._type    = owfs_get( '/system/adapter/name' )
+        else:
+            self._type  = owfs_get( '%s/type' % self._usePath )
+        self._attrs = dict( [ (n.replace( '.', '_' ), self._usePath + '/' + n )
+                              for n in owfs_get( self._usePath ).split( ',' ) ] )
 
 
     def entries( self ):
@@ -213,11 +317,19 @@ class Sensor( object ):
         Generator which yields the attributes of a sensor.
         """
         #print 'Sensor.entries'
-        list = _OW.get( self._path )
+        list = owfs_get( self._usePath )
         if list:
             for entry in list.split( ',' ):
-                if not _OW.get( entry + 'type' ):
+                if not owfs_get( entry + 'type' ):
                     yield entry.split( '/' )[ 0 ]
+
+
+    def entryList( self ):
+        """
+        List of the sensor's attributes.
+        """
+        #print 'Sensor.entryList'
+        return [ e for e in self.entries( ) ]
 
 
     def sensors( self, names = [ 'main', 'aux' ] ):
@@ -235,20 +347,43 @@ class Sensor( object ):
         yielded. The names parameter defaults to [ 'main', 'aux' ].
         """
         #print 'Sensor.sensors'
-        if self._path == '/':
-            list = _OW.get( '/' )
-            if list:
-                for entry in list.split( ',' ):
-                    if _OW.get( entry + 'type' ):
-                        yield Sensor( '/' + entry.split( '/' )[ 0 ] )
-        else:
+        if self._type == 'DS2409':
             for branch in names:
-                path = self._path + '/' + branch
-                list = _OW.get( path )
+                path = self._usePath + '/' + branch
+                list = owfs_get( path )
                 if list:
                     for branch_entry in list.split( ',' ):
-                        if _OW.get( branch_entry + 'type' ):
-                            yield Sensor( self._path + '/' + branch + '/' + branch_entry.split( '/' )[ 0 ] )
+                        branch_path = self._usePath + '/' + branch + '/' + branch_entry.split( '/' )[ 0 ]
+                        if owfs_get( branch_path + '/type' ):
+                            yield Sensor( branch_path )
+
+        else:
+            list = owfs_get( self._usePath )
+            if list:
+                for branch_entry in list.split( ',' ):
+                    if owfs_get( branch_entry + 'type' ):
+                        path = self._usePath + '/' + branch_entry.split( '/' )[ 0 ]
+                        if path[ :2 ] == '//':
+                            path = path[ 1: ]
+                        yield Sensor( path )
+
+
+    def sensorList( self, names = [ 'main', 'aux' ] ):
+        """
+        List of all the sensors that are associated with the current
+        sensor.
+
+        In the event that the current sensor is the adapter (such as a
+        DS9490 USB adapter) the list of sensors directly attached to
+        the 1-wire network will be yielded.
+
+        In the event that the current sensor is a microlan controller
+        (such as a DS2409) the list of directories found in the names
+        list parameter will be searched and any sensors found will be
+        yielded. The names parameter defaults to [ 'main', 'aux' ].
+        """
+        #print 'Sensor.sensorList'
+        return [ s for s in self.sensors( ) ]
 
 
     def find( self, **keywords ):

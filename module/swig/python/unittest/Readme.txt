@@ -3,6 +3,17 @@ $HeadURL: http://subversion/stuff/svn/owfs/trunk/unittest/Readme.txt $
 
 Unittests
 
+Status
+
+    As of 2/7/2005, the OWSensor.testCacheUncached and
+    OWSensor.testSensorList unittest will fail. This seems to be
+    caused by a reading from the cached and then uncached trees. Under
+    the right circumstances, it looks like the uncached tree doesn't
+    show sensors connected to a ds2409 microlan controller. The
+    problem has been reproduced with the Perl interface so it appears
+    that it's not directly related to the Python module. But more work
+    is needed to verify and resolve the issue.
+
 
 Environment
 

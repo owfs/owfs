@@ -55,8 +55,15 @@ class OWSensors( unittest.TestCase ):
         self.sensors.sort( )
 
 
-    def testEntries( self ):
-        #print 'OWSensors.testEntries'
+    def testRootNameType( self ):
+        #print 'OWSensors.testRootNameType'
+        path, name = str( ow.Sensor( '/' ) ).split( ' - ' )
+        self.failUnlessEqual( path, '/' )
+        self.failUnlessEqual( name, self.config.get( 'Root', 'type' ) )
+
+
+    def testRootEntries( self ):
+        #print 'OWSensors.testRootEntries'
         entries = list( ow.Sensor( '/' ).entries( ) )
         entries.sort( )
 
@@ -126,7 +133,9 @@ class OWSensors( unittest.TestCase ):
                 list[ ( family, id_type ) ] = 1
 
         for pair in list:
-            sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( all = True, family = pair[ 0 ], type = pair[ 1 ] ) ]
+            sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( all = True,
+                                                                        family = pair[ 0 ],
+                                                                        type = pair[ 1 ] ) ]
             self.failUnlessEqual( len( sensor_list ), list[ pair ] )
 
 
@@ -143,8 +152,91 @@ class OWSensors( unittest.TestCase ):
                 list[ ( family, id_type ) ] = 1
 
         for pair in list:
-            sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( all = True, xyzzy = True, family = pair[ 0 ], type = pair[ 1 ] ) ]
+            sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( all = True,
+                                                                        xyzzy = True,
+                                                                        family = pair[ 0 ],
+                                                                        type = pair[ 1 ] ) ]
             self.failUnlessEqual( len( sensor_list ), 0 )
+
+
+    def testCacheUncached( self ):
+        for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
+            c = ow.Sensor( '/' + id )
+            u = ow.Sensor( '/uncached/' + id )
+            self.failUnlessEqual( c._path, u._path )
+
+            ce = [ entry for entry in c.entries( ) ]
+            ue = [ entry for entry in u.entries( ) ]
+            self.failUnlessEqual( ce, ue )
+
+            cs = [ sensor for sensor in c.sensors( ) ]
+            us = [ sensor for sensor in u.sensors( ) ]
+            self.failUnlessEqual( cs, us )
+
+
+    def testCacheSwitch( self ):
+        for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
+            s = ow.Sensor( '/' + id )
+            ce = s.entryList( )
+            cs = s.sensorList( )
+
+            s.useCache( False )
+
+            ue = s.entryList( )
+            us = s.sensorList( )
+
+            self.failUnlessEqual( ce, ue )
+            self.failUnlessEqual( cs, us )
+
+
+    def testRootCache( self ):
+        r = ow.Sensor( '/' )
+        ce = r.entryList( )
+        cs = r.sensorList( )
+
+        r.useCache( False )
+        ue = r.entryList( )
+        us = r.sensorList( )
+
+        self.failUnlessEqual( cs, us )
+        self.failUnlessEqual( ue, [ 'alarm', 'simultaneous' ] )
+
+
+    def testEntryList( self ):
+        for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
+            c = ow.Sensor( '/' + id )
+            u = ow.Sensor( '/uncached/' + id )
+
+            ce = [ entry for entry in c.entries( ) ]
+            self.failUnlessEqual( ce, c.entryList( ) )
+
+            ue = [ entry for entry in u.entries( ) ]
+            self.failUnlessEqual( ue, u.entryList( ) )
+
+            self.failUnlessEqual( ce, ue )
+
+
+    def testSensorList( self ):
+        for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
+            c = ow.Sensor( '/' + id )
+            u = ow.Sensor( '/uncached/' + id )
+
+            cs = [ sensor for sensor in c.sensors( ) ]
+            self.failUnlessEqual( cs, c.sensorList( ) )
+
+            us = [ sensor for sensor in u.sensors( ) ]
+            self.failUnlessEqual( us, u.sensorList( ) )
+
+            self.failUnlessEqual( cs, us )
+
+
+    def testEqual( self ):
+        s1 = ow.Sensor( '/' )
+        s2 = ow.Sensor( '/' )
+        s3 = ow.Sensor( self.config.get( 'Root', 'sensors' ).split( ' ' )[ 0 ] )
+        self.failUnlessEqual( s1, s2 )
+        self.failIfEqual( s1, s3 )
+        self.failIfEqual( s2, s3 )
 
 
 def Suite( ):
@@ -152,5 +244,7 @@ def Suite( ):
 
 
 if __name__ == "__main__":
-    #unittest.main()
-    unittest.TextTestRunner( verbosity=2 ).run( Suite( ) )
+    if len( sys.argv ) > 1:
+        unittest.main( )
+    else:
+        unittest.TextTestRunner( verbosity=2 ).run( Suite( ) )

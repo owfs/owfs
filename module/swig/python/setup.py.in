@@ -65,6 +65,7 @@ setup(
                                                      ],
                                     library_dirs = [ '../../owlib/src/c/.libs', ],
                                     libraries    = ow_libs,
+                                    runtime_library_dirs = [ '@prefix@/lib' ],
                                     )
                          ],
     packages         = [ 'ow' ],

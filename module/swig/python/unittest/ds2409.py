@@ -102,5 +102,7 @@ def Suite( ):
 
 
 if __name__ == "__main__":
-    #unittest.main()
-    unittest.TextTestRunner( verbosity=2 ).run( Suite( ) )
+    if len( sys.argv ) > 1:
+        unittest.main( )
+    else:
+        unittest.TextTestRunner( verbosity=2 ).run( Suite( ) )

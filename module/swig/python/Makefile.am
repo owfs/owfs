@@ -46,7 +46,7 @@ owpython: ow_wrap.c setup.py
 	$(PYTHON) setup.py build
 
 install-data-local:
-	$(PYTHON) setup.py install --root=$(DESTDIR)
+	$(PYTHON) setup.py install
 
 CLEANFILES = *~ *.o
 
