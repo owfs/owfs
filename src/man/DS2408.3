@@ -105,9 +105,14 @@ references all channels simultaneously as a single byte. Channel 0 is bit 0.
 .SS strobe
 .I read-write, yes-no
 .br
-Is the
-.I DS2408
-powered parasitically (0) or separately on the Vcc pin (1)?
+RSTZ Pin Mode Control. Configures RSTZ as either RST input or STRB output:
+.TP
+.I 0
+configured as RST input (default)
+.TP
+.I 1
+configured as STRB output
+.PP
 .SS reset
 .I read-write, yes-no
 .br
