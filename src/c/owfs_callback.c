@@ -49,7 +49,7 @@ int FS_getattr(const char *path, struct stat *stbuf) {
 //printf("GA other dir\n");
     } else { /* known 1-wire filetype */
         stbuf->st_mode = S_IFREG ;
-        if ( pn.ft->read ) stbuf->st_mode |= 0444 ;
+        if ( pn.ft->read.v ) stbuf->st_mode |= 0444 ;
         if ( pn.ft->write ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
 		stbuf->st_size = FileLength( &pn ) ;
