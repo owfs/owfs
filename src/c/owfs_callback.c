@@ -116,7 +116,7 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
 //printf("GD - root directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
         /* Root directory, needs .,.. and scan of devices */
         filler(h, ".", DT_DIR);
-        filler(h, "..", 0);
+        filler(h, "..", DT_DIR);
         switch (Version2480) {
         case 3:
             filler(h,"DS9097U",DT_DIR) ;
@@ -134,6 +134,9 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
             filler(h,nam,DT_DIR) ;
         } ;
         BUS_unlock() ;
+		if ( cacheavailable && pn.type!=pn_uncached ) {
+            filler(h,"uncached",DT_DIR) ;
+		}
     }
     return 0;
 }
