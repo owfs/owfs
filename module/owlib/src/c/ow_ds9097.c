@@ -27,6 +27,9 @@ static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned 
 static int DS9097_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static void DS9097_setroutines( struct interface_routines * const f ) ;
 
+#define	OneBit	0xFF
+#define ZeroBit 0x00
+
 /* Device-specific functions */
 static void DS9097_setroutines( struct interface_routines * const f ) {
     f->write = DS9097_write ;
@@ -90,7 +93,7 @@ static int DS9097_ProgramPulse( void ) {
 
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     struct stateinfo * si = pn->si ;
-    unsigned char search_direction = 0 ; /* initilization just to forestall incorrect compiler warning */
+    unsigned char search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
     unsigned char bit_number ;
     unsigned char last_zero ;
     unsigned char bits[3] ;
@@ -106,27 +109,29 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     /* Appropriate search command */
     if ( (ret=BUS_send_data(&search,1)) ) return ret ;
       // loop to do the search
-    for ( bit_number=0; 1 ; ++bit_number ) {
+    for ( bit_number=0 ;; ++bit_number ) {
         bits[1] = bits[2] = 0xFF ;
-        if ( bit_number==0 ) {
+        if ( bit_number==0 ) { /* First bit */
+	    /* get two bits (AND'ed bit and AND'ed complement) */
             if ( (ret=DS9097_sendback_bits(&bits[1],&bits[1],2)) ) return ret ;
         } else {
             bits[0] = search_direction ;
             if ( bit_number<64 ) {
+	        /* Send chosen bit path, then check match on next two */
                 if ( (ret=DS9097_sendback_bits(bits,bits,3)) ) return ret ;
-            } else {
+            } else { /* last bit */
                 if ( (ret=DS9097_sendback_bits(bits,bits,1)) ) return ret ;
                 break ;
             }
         }
         if ( bits[1] ) {
-            if ( bits[2] ) {
+            if ( bits[2] ) { /* 1,1 */
                 break ; /* No devices respond */
-            } else {
+            } else { /* 1,0 */
                 search_direction = 1;  // bit write value for search
             }
-        } else {
-            if ( bits[2] ) {
+        } else { 
+            if ( bits[2] ) { /* 0,1 */
                 search_direction = 0;  // bit write value for search
             } else  if (bit_number < si->LastDiscrepancy) {
                 // if this discrepancy if before the Last Discrepancy
@@ -243,7 +248,7 @@ static int DS9097_write( const unsigned char * const bytes, const size_t num ) {
     int remain = num - (UART_FIFO_SIZE>>3) ;
     unsigned int num8 = num<<3 ;
     if ( remain>0 ) return DS9097_write(bytes,UART_FIFO_SIZE>>3) || DS9097_write(&bytes[UART_FIFO_SIZE>>3],(unsigned)remain) ;
-    for ( i=0;i<num8;++i) combuffer[i] = UT_getbit(bytes,i)?0xFF:0xC0;
+    for ( i=0;i<num8;++i) combuffer[i] = UT_getbit(bytes,i)?OneBit:ZeroBit;
     return BUS_send_and_get(combuffer,num8,NULL,0) ;
 }
 
@@ -271,7 +276,7 @@ int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * 
     int ret ;
     int i ;
     if ( length > UART_FIFO_SIZE ) return DS9097_sendback_bits(outbits,inbits,UART_FIFO_SIZE)||DS9097_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
-    for ( i=0 ; i<length ; ++i ) combuffer[i] = outbits[i] ? 0xFF : 0xC0 ;
+    for ( i=0 ; i<length ; ++i ) combuffer[i] = outbits[i] ? OneBit : ZeroBit ;
     if ( (ret= BUS_send_and_get(combuffer,(unsigned)length,inbits,(unsigned)length)) ) return ret ;
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
     return 0 ;
@@ -287,7 +292,7 @@ static int DS9097_sendback_data( const unsigned char * data, unsigned char * con
     } else {
         unsigned int i, bits = len<<3 ;
         int ret ;
-        for ( i=0 ; i<bits ; ++i ) combuffer[i] = UT_getbit(data,i) ? 0xFF : 0xC0 ;
+        for ( i=0 ; i<bits ; ++i ) combuffer[i] = UT_getbit(data,i) ? OneBit : ZeroBit ;
         if ( (ret=BUS_send_and_get(combuffer,bits,combuffer,bits)) ) return ret ;
         for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,combuffer[i]&0x01) ;
         return 0 ;
