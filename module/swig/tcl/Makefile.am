@@ -60,6 +60,6 @@ ow.tcl.h: ow.tcl
 pkgIndex.tcl:
 	(echo 'if {[catch {package require Tcl 8.1}]} return';\
 	echo 'package ifneeded $(PACKAGE) $(OWTCL_VERSION)\
-	     [list load [file join $$dir $(PACKAGE)$(TCL_SHLIB_SUFFIX)] $(PACKAGE)]"'\
+	     [list load [file join $$dir $(PACKAGE)$(TCL_SHLIB_SUFFIX)] $(PACKAGE)]'\
 	) > pkgIndex.tcl
 

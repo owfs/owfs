@@ -223,7 +223,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
   path = Tcl_GetStringFromObj(objv[1], &s);
 
   pn.si = &si;
-  si.sg.int32 = SemiGlobal.int32;
+//  si.sg.int32 = SemiGlobal.int32;
   if ((r = FS_ParsedName(path, &pn))) {
     owtcl_ErrorMsg(interp, strerror(-r));
     tcl_return = TCL_ERROR;
@@ -362,7 +362,7 @@ Ow_Init (Tcl_Interp *interp) {
   		      (Tcl_InterpDeleteProc *) Owtcl_Delete,
   		      (ClientData) &OwtclState);
   
-  if (Tcl_PkgProvide(interp, "Ow", OWTCL_VERSION) != TCL_OK) {
+  if (Tcl_PkgProvide(interp, "ow", OWTCL_VERSION) != TCL_OK) {
     return TCL_ERROR;
   }
 
