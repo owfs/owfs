@@ -102,7 +102,7 @@ static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) {
     int ret ;
 
     BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(cmd,2) || BUS_readin_data(&resp,1) || (resp!=val) || BUS_sendback_data(&ninesix,&resp,1) || resp ;
+        ret = BUS_select(pn) || BUS_send_data(cmd,2) || BUS_readin_data(&resp,1) || (resp!=val) || BUS_sendback_data(&ninesix,&resp,1) || (resp!=ninesix) ;
     BUSUNLOCK
     return ret ;
 }
@@ -130,7 +130,7 @@ static int OW_w_cp(const int val, const struct parsedname * pn) {
     int ret ;
 
     BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data(cmd,2) || BUS_readin_data(&resp,1) || (resp!=cmd[1]) || BUS_sendback_data(&ninesix,&resp,1) || resp ;
+        ret = BUS_select(pn) || BUS_send_data(cmd,2) || BUS_readin_data(&resp,1) || (resp!=cmd[1]) || BUS_sendback_data(&ninesix,&resp,1) || (resp!=ninesix) ;
     BUSUNLOCK
     return ret ;
 }
