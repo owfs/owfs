@@ -76,7 +76,7 @@ struct filetype DS2406[] = {
     {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
     {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
     {"latch"     ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
-    {"set_alarm" ,    12,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
+    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 12, DS2406 )
 
@@ -85,9 +85,11 @@ DeviceEntry( 12, DS2406 )
 /* DS2406 */
 static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_r_control( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
-static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
+static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
 
@@ -175,20 +177,24 @@ static int FS_w_latch(const int * y , const struct parsedname * pn) {
 static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    u[0] = data & 0x1F ; /* lower 5 bits */
+    u[0] = (data & 0x01) + ((data & 0x06) >> 1) * 10 + ((data & 0x18) >> 3) * 100;
     return 0 ;
 }
 
 /* 2406 alarm settings*/
 static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char data = u[0] & 0x1F ;
+    unsigned char data;
+    data = ((u[0] % 10) & 0x01) | (((u[0] / 10 % 10) & 0x03) << 1) | (((u[0] / 100 % 10) & 0x03) << 3);
     if ( OW_w_control(data,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write 2406 switch -- 2 values*/
 static int FS_w_pio(const int * y, const struct parsedname * pn) {
-    if ( OW_w_pio(y,pn) ) return -EINVAL ;
+    unsigned char data = 0;
+    UT_setbit( &data , 0 , y[0]==0 ) ;
+    UT_setbit( &data , 1 , y[1]==0 ) ;
+    if ( OW_w_pio(data,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -252,13 +258,27 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
     return ret ;
 }
 
-/* set PIO state pio: open=1 closed=0 num: A=0 B=1 */
-static int OW_w_pio( const int * pio , const struct parsedname * pn ) {
-    unsigned char data;
-    if ( OW_r_control(&data,pn) ) return 1;
-    UT_setbit( &data , 5 , pio[0]==0 ) ;
-    UT_setbit( &data , 6 , pio[1]==0 ) ;
-    return OW_w_control( data , pn ) ;
+/* read alarm settings */
+static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) {
+    if ( OW_r_control(data,pn) ) return 1;
+    *data &= 0x1F;
+    return 0;
+}
+
+/* write alarm settings */
+static int OW_w_s_alarm( const unsigned char data , const struct parsedname * pn ) {
+    unsigned char b;
+    if ( OW_r_control(&b,pn) ) return 1;
+    b = (b & 0x60) | (data & 0x1F);
+    return OW_w_control(b,pn);
+}
+
+/* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
+static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
+    unsigned char b;
+    if ( OW_r_control(&b,pn) ) return 1;
+    b = (b & 0x9F) | ((data << 5) & 0x60);
+    return OW_w_control( b , pn ) ;
 }
 
 static int OW_access( unsigned char * data , const struct parsedname * pn ) {
