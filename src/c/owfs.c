@@ -79,51 +79,18 @@ int main(int argc, char *argv[]) {
     /* All output to syslog */
     openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
 
-    devport[0] = '\0' ; /* initialize the serial port name to blank */
-
-    while ( (c=getopt(argc,argv,"d:ht:CFRK")) != -1 ) {
+    while ( (c=getopt(argc,argv,OWLIB_OPT)) != -1 ) {
         switch (c) {
-//        case 's':
-//            multithreaded = 0 ;
-//            break ;
-         case 'h':
-             fprintf(stderr,
-             "Usage: %s mountpoint -d devicename [options] \n"
-             "   or: %s [options] portname mountpoint \n"
-             "  Required:\n"
-             "    -d device -- serial port connecting to 1-wire network (e.g. /dev/ttyS0)\n"
-             "  Options:\n"
-//             "    -s      disable multithreaded operation\n"
-             "    -t      cache timeout (in seconds)\n"
-             "    -h      print help\n"
-             "    -C | -F | -K | -R Temperature scale Celsius(default)|Fahrenheit|Kelvin|Rankine\n",
-             argv[0],argv[0] ) ;
-             ow_exit(1);
-         case 't':
-             Timeout( optarg ) ;
-             break ;
-//         case 'd':
-//             flags |= FUSE_DEBUG;
-//             break ;
-         case 'd':
-		     strncpy( devport, optarg, PATH_MAX ) ;
-             break ;
-        case 'C':
-		    tempscale = temp_celsius ;
-			break ;
-        case 'F':
-		    tempscale = temp_fahrenheit ;
-			break ;
-        case 'R':
-		    tempscale = temp_rankine ;
-			break ;
-        case 'K':
-		    tempscale = temp_kelvin ;
-			break ;
-	 	default:
-            fprintf(stderr, "invalid option: %c, try -h for help\n", c);
-            ow_exit(1) ;
-         }
+        case 'h':
+            fprintf(stderr,
+            "Usage: %s mountpoint -d devicename [options] \n"
+            "   or: %s [options] portname mountpoint \n",
+            argv[0],argv[0] ) ;
+            owopt(c,optarg) ; /* rest of message */
+            ow_exit(1);
+        default:
+            owopt(c,optarg) ;
+        }
     }
 
     /* non-option arguments */
@@ -131,15 +98,12 @@ int main(int argc, char *argv[]) {
         fprintf(stderr,"No mount point specified.\nTry '%s -h' for help.\n",argv[0]) ;
         ow_exit(1) ;
     } else if ( optind == argc-2 ) {
-	    strncpy( devport, argv[optind], PATH_MAX ) ;
+        ComSetup(argv[optind]) ;
         ++optind ;
     }
 
-    if ( devport[0] == '\0' ) {
-        fprintf(stderr, "No port specified (-p portname)\n%s -h for help\n",argv[0]);
-        ow_exit(1);
-    } else if ( LibSetup(devport) ) { /* 1-wire bus specific setup */
-        fprintf(stderr, "Cannot open serial port, see system log for details.\n");
+    if ( devfd==-1 && devusb==0 ) {
+        fprintf(stderr, "No port specified (-d or -u)\n%s -h for help\n",argv[0]);
         ow_exit(1);
     }
 
