@@ -61,7 +61,7 @@ struct filetype sys_adapter[] = {
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
-    {"pidfile"    , -fl_pidfile  , NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, & pid_file     , } ,
+    {"pidfile"    , -fl_pidfile  , NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, (void *) 2      , } ,
     {"pid"        ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 1      , } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
