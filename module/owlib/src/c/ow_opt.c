@@ -108,6 +108,7 @@ int owopt( const int c , const char * const arg ) {
         printf("libow version:\n\t" VERSION "\n") ;
         return 1 ;
     case 'p':
+        portname = strdup(optarg) ;
         sscanf(optarg, "%i", &portnum);
         return 0;
     case 'f':

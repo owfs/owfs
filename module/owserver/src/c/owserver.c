@@ -38,11 +38,14 @@ $Id$
 #include "owserver.h"
 
 /* --- Prototypes ------------ */
-int Handler( int fd ) ;
-ssize_t readn(int fd, void *vptr, size_t n) ;
-void * FromClientAlloc( int fd, struct server_msg * sm ) ;
-int ToClient( int fd, int format, const char * data, int datasize, int ret ) ;
-int Acceptor( int listenfd ) ;
+static int Handler( int fd ) ;
+static ssize_t readn(int fd, void *vptr, size_t n) ;
+static void * FromClientAlloc( int fd, struct server_msg * sm ) ;
+static int ToClient( int fd, int format, const char * data, int datasize, int ret ) ;
+static int Acceptor( int listenfd ) ;
+static int ListenFD( struct addrinfo * ai ) ;
+static int PortToFD(  char * port ) ;
+static void ow_exit( int e ) ;
 
 /* ----- Globals ------------- */
 #ifdef OW_MT
@@ -57,7 +60,7 @@ int Acceptor( int listenfd ) ;
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
-ssize_t readn(int fd, void *vptr, size_t n) {
+static ssize_t readn(int fd, void *vptr, size_t n) {
     size_t	nleft;
     ssize_t	nread;
     char	*ptr;
@@ -79,7 +82,7 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 }
 
 /* read from client, free return pointer if not Null */
-void * FromClientAlloc( int fd, struct server_msg * sm ) {
+static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
 
     if ( readn(fd, sm, sizeof(struct server_msg) ) != sizeof(struct server_msg) ) {
@@ -103,7 +106,7 @@ void * FromClientAlloc( int fd, struct server_msg * sm ) {
     return msg ;
 }
 
-int ToClient( int fd, int format, const char * data, int datasize, int ret ) {
+static int ToClient( int fd, int format, const char * data, int datasize, int ret ) {
     struct client_msg cm ;
     int nio = 1 ;
     struct iovec io[] = {
@@ -122,7 +125,7 @@ int ToClient( int fd, int format, const char * data, int datasize, int ret ) {
     return writev( fd, io, nio ) != cm.size + sizeof(struct client_msg) ;
 }
 
-int Handler( int fd ) {
+static int Handler( int fd ) {
     char * data = NULL ;
     int datasize ;
     int len ;
@@ -241,7 +244,7 @@ int Handler( int fd ) {
     return ret<0 ;
 }
 
-int Acceptor( int listenfd ) {
+static int Acceptor( int listenfd ) {
     int fd = accept( listenfd, NULL, NULL ) ;
     ACCEPTUNLOCK
     if ( fd<0 ) return -1 ;
@@ -282,9 +285,15 @@ int main( int argc , char ** argv ) {
         ow_exit(1);
     }
 
-    if ( portnum==-1 ) {
+    if ( portname==NULL ) {
         fprintf(stderr, "No TCP port specified (-p)\n%s -h for help\n",argv[0]);
         ow_exit(1);
+    }
+
+    listenfd = PortToFD(portname) ;
+    if (listenfd < 0 ) {
+        fprintf(stderr,"Cannot start server.\n");
+        exit(1);
     }
 
     for(;;) {
@@ -293,14 +302,36 @@ int main( int argc , char ** argv ) {
     }
 }
 
-int ListenFD( char * port ) {
+static int ListenFD( struct addrinfo * ai) {
+    int fd ;
+    int on = 1 ;
+    
+    if ( (fd=socket(ai->ai_family,ai->ai_socktype,ai->ai_protocol))<0 || setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ) {
+        fprintf(stderr,"Socket problem errno=%d\n",errno) ;
+        return -1 ;
+    }
+    
+    if ( bind( fd, ai->ai_addr, ai->ai_addrlen ) ) {
+        fprintf(stderr,"Cannot bind socket. Errno=%d\n",errno);
+        return -1 ;
+    }
+
+    if ( listen(fd, 100) ) { /* Arbitrary "backlog" parameter */
+        fprintf(stderr,"Listen problem. errno=%d\n",errno) ;
+        return -1 ;
+    }
+    
+    return fd ;
+}
+
+
+static int PortToFD(  char * port ) {
     char * host ;
     char * serv ;
     struct addrinfo hint ;
     struct addrinfo * ai ;
-    int fd ;
-    int one = 1 ;
-    int ret ;
+    int matches = 0 ;
+    int ret = -1;
     
     if ( port == NULL ) return -1 ;
     if ( (serv=strrchr(port,':')) ) { /* : exists */
@@ -312,6 +343,27 @@ int ListenFD( char * port ) {
         serv = port ;
     }
 
-    bzero( &hint, sizeof(struct addrinfo) ;
-    hint. = AI_PASSIVE ;
-     = 
+    bzero( &hint, sizeof(struct addrinfo) ) ;
+    hint.ai_flags = AI_PASSIVE ;
+    hint.ai_socktype = SOCK_STREAM ;
+    hint.ai_family = AF_UNSPEC ;
+
+    for ( matches=0 ; matches<1 ; ++matches ) {
+        if ( (ret=getaddrinfo( host, serv, &hint, &ai )) )
+            break ;
+    }
+
+    if (matches) {
+        ret = ListenFD(ai) ;
+        freeaddrinfo(ai) ;
+    }
+
+    return ret ;
+}
+
+static void ow_exit( int e ) {
+    LibClose() ;
+    closelog() ;
+    exit( e ) ;
+}
+

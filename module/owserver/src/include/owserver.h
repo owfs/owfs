@@ -18,6 +18,7 @@ $Id$
 #include "ow.h"
 
 #include <netinet/in.h> // ntohl ...
+#include <netdb.h> // addrinfo 
 
 
 /*
