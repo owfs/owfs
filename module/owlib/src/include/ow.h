@@ -881,6 +881,8 @@ int OW_ArgUSB( const char * arg ) ;
 int OW_ArgSerial( const char * arg ) ;
 int OW_ArgGeneric( const char * arg ) ;
 
+void update_max_delay( const struct parsedname * const pn ) ;
+
 int Server_detect( struct connection_in * in  ) ;
 int ServerSize( const char * path, const struct parsedname * pn ) ;
 int ServerFull( const char * path, const struct parsedname * pn ) ;

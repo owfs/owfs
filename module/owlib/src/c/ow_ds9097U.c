@@ -815,7 +815,8 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
 #else
 static int DS2480_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
     fd_set fdset;
-    size_t r, rl = size;
+    size_t rl = size;
+    ssize_t r ;
     struct timeval tval;
     int rc;
 

@@ -77,13 +77,13 @@ int CRC16seeded( const unsigned char * bytes , const int length , const int seed
         ret ^= ( c<<1 ) ;
     }
     STATLOCK
-    ++ CRC16_tries ; /* statistics */
-    if ( ret == 0xB001 ) {
-      ret = 0;  /* good */
-    } else {
-      ret = -1; /* error */
-      ++CRC16_errors ; /* statistics */
-    }
+	++ CRC16_tries ; /* statistics */
+        if ( ret == 0xB001 ) {
+	    ret = 0;  /* good */
+        } else {
+	    ret = 1; /* error */
+	    ++CRC16_errors ; /* statistics */
+        }
     STATUNLOCK
     return ret;
 }

@@ -196,6 +196,7 @@ static int FS_ParsedNameSub( char * path , struct parsedname * pn ) {
     int ret ;
     const char * pFile ;
     const char * next ;
+//    char * next ;
 //printf("PN: %s\n",path);
 
     /* must be of form /sdfa.sf/asdf.sdf */

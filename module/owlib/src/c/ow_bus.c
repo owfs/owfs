@@ -68,7 +68,8 @@ int BUS_readin_data( unsigned char * const data, const int len, const struct par
 
 int BUS_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
   size_t gl = getlength ;
-  size_t r, sl = sendlength ;
+  ssize_t r ;
+  size_t sl = sendlength ;
   int rc ;
 
   if ( sl > 0 ) {
@@ -84,7 +85,7 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 	if(errno == EINTR) {
 	  /* write() was interrupted, try again */
 	  STATLOCK
-	  BUS_send_and_get_interrupted++;
+	      BUS_send_and_get_interrupted++;
 	  STATUNLOCK
 	  continue;
 	}
@@ -98,7 +99,7 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
     }
     if(sl > 0) {
       STATLOCK
-      BUS_send_and_get_errors++;
+          BUS_send_and_get_errors++;
       STATUNLOCK
       return -EIO;
     }
@@ -132,7 +133,7 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
         /* Is there something to read? */
         if( FD_ISSET( pn->in->fd, &readset )==0 ) {
 	  STATLOCK
-	  BUS_send_and_get_errors++;
+	      BUS_send_and_get_errors++;
 	  STATUNLOCK
 	  return -EIO ; /* error */
 	}
@@ -143,7 +144,7 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 	  if(errno == EINTR) {
 	    /* read() was interrupted, try again */
 	    STATLOCK
-	    BUS_send_and_get_interrupted++;
+	        BUS_send_and_get_interrupted++;
 	    STATUNLOCK
 	    continue;
 	  }

@@ -70,8 +70,8 @@ void update_max_delay(const struct parsedname * const pn) {
        ((last_delay.tv_sec >= max_delay.tv_sec) &&
 	(last_delay.tv_usec > max_delay.tv_usec))) {
       STATLOCK
-      max_delay.tv_sec =  last_delay.tv_sec;
-      max_delay.tv_usec =  last_delay.tv_usec;
+          max_delay.tv_sec =  last_delay.tv_sec;
+          max_delay.tv_usec =  last_delay.tv_usec;
       STATUNLOCK
     }
   }
