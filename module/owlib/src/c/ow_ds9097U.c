@@ -309,7 +309,7 @@ static int DS2480_reset( const struct parsedname * const pn ) {
     int ret ;
     unsigned char buf = (unsigned char)(CMD_COMM | FUNCTSEL_RESET | pn->in->USpeed) ;
 
-//printf("RESET\n");
+    //printf("DS2480_reset\n");
     // make sure normal level
     if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) {
       STATLOCK
@@ -338,15 +338,16 @@ static int DS2480_reset( const struct parsedname * const pn ) {
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
         // fall through
     case RB_NOPRESENCE:
-        if (pn ) pn->si->AnyDevices = 0 ;
+        if ( pn->si ) pn->si->AnyDevices = 0 ;
         break ;
     case RB_PRESENCE:
     case RB_ALARMPRESENCE:
-        if ( pn ) pn->si->AnyDevices = 1 ;
+        if( pn->si ) pn->si->AnyDevices = 1 ;
         // check if programming voltage available
         pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
         UT_delay(5); // delay 5 ms to give DS1994 enough time
         COM_flush(pn);
+	break;
      }
      return 0 ;
 }
@@ -735,10 +736,16 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
     size_t rl = size;
     ssize_t r ;
     struct timeval tval;
-    int rc;
+    int rc ;
 
     while(rl > 0) {
-        if(!pn->in) { rc = -EIO; break; }
+        if(!pn->in) { 
+	  rc = -EIO;
+	  STATLOCK
+	  DS2480_read_null++;
+	  STATUNLOCK
+	  break;
+	}
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
@@ -768,6 +775,9 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
         if (rc > 0) {
 	    if( FD_ISSET( pn->in->fd, &fdset )==0 ) {
 	      rc = -EIO;  /* error */
+	      STATLOCK
+	      DS2480_read_fd_isset++;
+	      STATUNLOCK
 	      break;
 	    }
 	    update_max_delay(pn);
@@ -781,6 +791,9 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
 		continue;
 	      }
 	      rc = -errno;  /* error */
+	      STATLOCK
+	      DS2480_read_read++;
+	      STATUNLOCK
 	      break;
 	    }
 	    rl -= r;

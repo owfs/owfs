@@ -133,26 +133,60 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
 
 int ClientConnect( struct connection_in * in ) {
     int fd ;
+    struct addrinfo *ai ;
+
+    if(!in) {
+      //printf("ClientConnect: in is NULL\n");
+      return -1 ;
+    }
 
     if ( in->ai == NULL ) {
         fprintf(stderr,"Client address not yet parsed\n");
         return -1 ;
     }
 
-    if ( in->ai_ok == NULL ) in->ai_ok = in->ai ;
+    /* Can't change ai_ok without locking the in-device.
+     * First try the last working address info, if it fails lock
+     * the in-device and loop through the list until it works.
+     * Not a perfect solution, but it should work at least.
+     */
+    pthread_mutex_lock( &(in->bus_mutex) ) ;
+    ai = in->ai_ok ;
+    if( ai ) {
+      pthread_mutex_unlock( &(in->bus_mutex) ) ;
+      fd = socket(
+		  ai->ai_family,
+		  ai->ai_socktype,
+		  ai->ai_protocol
+		  ) ;
+      if ( fd >= 0 ) {
+	if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
+	  return fd ;
+	}
+	close( fd ) ;
+      }
+      pthread_mutex_lock( &(in->bus_mutex) ) ;
+    }
+
+    ai = in->ai ;  // loop from first address info since it failed.
     do {
         fd = socket(
-            in->ai_ok->ai_family,
-            in->ai_ok->ai_socktype,
-            in->ai_ok->ai_protocol
+		    ai->ai_family,
+		    ai->ai_socktype,
+		    ai->ai_protocol
         ) ;
         if ( fd >= 0 ) {
-            if ( connect(fd, in->ai_ok->ai_addr, in->ai_ok->ai_addrlen) == 0 ) {
+            if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
+	        in->ai_ok = ai ;
+		pthread_mutex_unlock( &(in->bus_mutex) ) ;
                 return fd ;
             }
             close( fd ) ;
         }
-    } while ( (in->ai_ok=in->ai_ok->ai_next) ) ;
+    } while ( (ai = ai->ai_next) ) ;
+    in->ai_ok = NULL ;
+    pthread_mutex_unlock( &(in->bus_mutex) ) ;
+
     fprintf(stderr,"ClientConnect: Socket problem [%s]\n", strerror(errno)) ;
     return -1 ;
 }
@@ -190,10 +224,8 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     }
 
     /* embedded function */
-//    void RunAccepted( void (*HandlerRtn)(int fd), int rafd ) {
     void RunAccepted( int rafd ) {
         if ( rafd>=0 ) {
-//            HandlerRtn( rafd ) ;
             HandlerRoutine( rafd ) ;
             close( rafd ) ;
         }

@@ -34,7 +34,9 @@ struct termios oldSerialTio;    /*old serial port settings*/
 /* return 0 for success, 1 for failure */
 int COM_open( struct connection_in * in ) {
     struct termios newSerialTio; /*new serial port settings*/
-    int fd = in->fd ;
+    int fd ;
+    if(!in) return -ENODEV;
+    fd = in->fd ;
 
     tcgetattr(fd, &oldSerialTio);
     tcgetattr(fd, &newSerialTio);
@@ -56,11 +58,12 @@ int COM_open( struct connection_in * in ) {
 }
 
 void COM_close( struct connection_in * in ) {
-    int fd = in->fd ;
+    int fd ;
+    if(!in) return;
+    fd = in->fd ;
     // restore tty settings
     if ( fd > -1 ) {
         tcsetattr(fd, TCSAFLUSH, &oldSerialTio);
-//        COM_flush(pn);
         tcflush(fd, TCIOFLUSH);
         close(fd);
         in->fd=-1 ;
@@ -68,15 +71,18 @@ void COM_close( struct connection_in * in ) {
 }
 
 void COM_flush( const struct parsedname * pn ) {
+    if(!pn || !pn->in) return;
     tcflush(pn->in->fd, TCIOFLUSH);
 }
 
 void COM_break( const struct parsedname * pn ) {
+    if(!pn || !pn->in) return;
     tcsendbreak(pn->in->fd, 0);
 }
 
 void COM_speed(speed_t new_baud, const struct parsedname * pn) {
      struct termios t;
+    if(!pn || !pn->in) return;
 
      // read the attribute structure
      if (tcgetattr(pn->in->fd, &t) < 0) return;

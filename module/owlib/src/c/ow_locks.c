@@ -41,13 +41,12 @@ pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 void LockSetup( void ) {
 #ifdef OW_MT
  #ifdef __UCLIBC__
-    //pthread_mutex_init(&busstat_mutex, pmattr);
     pthread_mutex_init(&stat_mutex, pmattr);
     pthread_mutex_init(&cache_mutex, pmattr);
     pthread_mutex_init(&store_mutex, pmattr);
     pthread_mutex_init(&fstat_mutex, pmattr);
-    pthread_mutex_init(&uclibc_mutex, pmattr);
     pthread_mutex_init(&dir_mutex, pmattr);
+    pthread_mutex_init(&uclibc_mutex, pmattr);
  #endif /* UCLIBC */
 #endif /* OW_MT */
 }
@@ -147,6 +146,7 @@ void LockRelease( const struct parsedname * const pn ) {
 */
 
 void BUS_lock( const struct parsedname * pn ) {
+    if(!pn || !pn->in) return ;
 #ifdef OW_MT
     pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */
@@ -160,6 +160,7 @@ void BUS_lock( const struct parsedname * pn ) {
 void BUS_unlock( const struct parsedname * pn ) {
     struct timeval *t;
     long sec, usec;
+    if(!pn || !pn->in) return ;
 
     gettimeofday( &(pn->in->last_unlock), NULL ) ;
 

@@ -18,7 +18,6 @@ $Id$
 static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) ;
-static int ServerSizeorFull( enum msg_type type, const char * path, const struct parsedname * pn  ) ;
 
 int Server_detect( struct connection_in * in ) {
     if ( in->name == NULL ) return -1 ;
@@ -50,7 +49,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
-    //printf("ServerSizeorFull pathnow=%s (path=%s)\n",pathnow, path);
+    //printf("ServerSize pathnow=%s (path=%s)\n",pathnow, path);
 
     if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
@@ -258,7 +257,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     int ret;
     ret = readn(fd, cm, sizeof(struct client_msg) );
     if ( ret != sizeof(struct client_msg) ) {
-        cm->size = 0 ;
+        memset(cm, 0, sizeof(struct client_msg)) ;
         cm->ret = -EIO ;
         return NULL ;
     }
@@ -282,6 +281,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
         if ( ret != cm->payload ) {
 //printf("FromServer couldn't read payload\n");
             cm->payload = 0 ;
+            cm->offset = 0 ;
             cm->ret = -EIO ;
             free(msg);
             msg = NULL ;

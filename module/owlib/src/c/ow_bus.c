@@ -37,7 +37,7 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
         (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
     } else {
         unsigned char resp[16] ;
-        (ret=BUS_sendback_data( data, resp, len,pn )) ||  (ret=memcmp(data, resp, (size_t) len)?-EIO:0) ;
+        (ret=BUS_sendback_data( data, resp, len,pn )) ||  ((ret=memcmp(data, resp, (size_t) len))?-EIO:0) ;
 	if(ret) {
 	  STATLOCK
 	    if(ret == -EIO)
