@@ -22,6 +22,8 @@ static struct timeval tv ; /* statistics */
 pthread_mutex_t bus_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t dev_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t store_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #define DEVLOCKS    10
 struct devlock DevLock[DEVLOCKS] ;
 sem_t devlocks ;

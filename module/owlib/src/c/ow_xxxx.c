@@ -82,9 +82,13 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 
 /* Check if device exists -- 0 yes, 1 no */
 int CheckPresence( const struct parsedname * const pn ) {
+    int ret ;
     switch ( pn->dev->type ) {
     case dev_1wire:
-        return BUS_normalverify(pn) ;
+        BUS_lock() ;
+            ret = BUS_normalverify(pn) ;
+        BUS_unlock() ;
+        return ret ;
     case dev_interface:
         switch ( Adapter ) {
         case adapter_DS9097:

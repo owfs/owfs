@@ -25,21 +25,26 @@ int Cache_Del_common( const char * const k, const size_t ksize );
 /* Berkeley DB changed the format for version 4.1+, adding a "transaction parameter" */
 //#define DB41
 #ifdef DB41
-    #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,NULL,DB_HASH,DB_CREATE,0)
+    #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,NULL,DB_HASH,DB_CREATE|DB_THREAD,0)
 #else /* DB41 */
-    #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,DB_HASH,DB_CREATE,0)
+    #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,DB_HASH,DB_CREATE|DB_THREAD,0)
 #endif /* DB41 */
 
-DB * dbnewcache = NULL ;
-DB * dboldcache = NULL ;
-DB * dbstore = NULL ;
+static DB * dbstore = NULL ;
 
 /* Flipping cache databases, some parameters to determine when to flip */
 #define ADDS_TILL_OLDTIME (100) /* transactions before flip */
-time_t oldstart ; /* When flipped (last new transation in old) */
-int old_going = 0 ; /* old exists? */
-time_t maxold ; /* Expire time for old */
 #define CACHEPATHLENGTH  (2)
+
+static struct {
+    DB * new_db ; // current cache database
+    DB * old_db ; // older cache database
+    int old_is ; // does old exist
+    time_t retired ; // start time of older
+    time_t killed ; // deathtime of older
+    time_t lifespan ; // lifetime of older
+    unsigned int added ; // items added
+} cache ;
 
 time_t TimeOut( enum ft_change ftc ) {
     switch( ftc ) {
@@ -58,17 +63,19 @@ char * Cache_Version( void ) {
     return db_version( NULL, NULL, NULL ) ;
 }
 
-    /* DB cache code */
+    /* DB cache creation code */
+    /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open( void ) {
-    if ( db_create( &dbnewcache, NULL, 0 ) || DBOPEN(dbnewcache) ) {
+    if ( db_create( &cache.new_db, NULL, 0 ) || DBOPEN(cache.new_db) ) {
         syslog( LOG_WARNING, "Cannot create first database table for caching, error=%s, will proceed uncached.",db_strerror(errno) );
     } else { /* Cache ok */
         cacheavailable = 1 ;
-        if ( db_create( &dboldcache, NULL, 0 ) || DBOPEN(dbnewcache) ) {
+        if ( db_create( &cache.old_db, NULL, 0 ) || DBOPEN(cache.new_db) ) {
             syslog( LOG_WARNING, "Cannot create second database table for caching, error=%s, will proceed with unpruned cache.",db_strerror(errno) ) ;
         } else { /* Old ok */
-            maxold = TimeOut( ft_stable ) ;
-            if (maxold>3600 ) maxold = 3600 ; /* 1 hour tops */
+            cache.old_is = 0 ; // not yet is use
+            cache.lifespan = TimeOut( ft_stable ) ;
+            if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
         }
     }
 
@@ -77,14 +84,15 @@ void Cache_Open( void ) {
     }
 }
 
+    /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Close( void ) {
-   if ( dbnewcache ) {
-        dbnewcache->close( dbnewcache, DB_NOSYNC ) ;
-        dbnewcache = NULL ;
+   if ( cache.new_db ) {
+        cache.new_db->close( cache.new_db, DB_NOSYNC ) ;
+        cache.new_db = NULL ;
     }
-   if ( dboldcache ) {
-        dboldcache->close( dboldcache, DB_NOSYNC ) ;
-        dboldcache = NULL ;
+   if ( cache.old_db ) {
+        cache.old_db->close( cache.old_db, DB_NOSYNC ) ;
+        cache.old_db = NULL ;
     }
    if ( dbstore ) {
         dbstore->close( dbstore, DB_NOSYNC ) ;
@@ -96,8 +104,8 @@ void Cache_Close( void ) {
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
 int Cache_Add( const struct parsedname * const pn, const void * data, const size_t datasize ) {
-    if ( dbnewcache && pn ) { // do check here to avoid needless processing
-        int l = strlen( pn->ft->name ) ;
+    if ( cache.new_db && pn ) { // do check here to avoid needless processing
+        unsigned int l = strlen( pn->ft->name ) ;
         char k[8+l] ;
         /* Key is serialnumber and name */
         memcpy( k , pn->sn , 8 ) ;
@@ -111,7 +119,7 @@ int Cache_Add( const struct parsedname * const pn, const void * data, const size
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
 int Cache_Add_Internal( const struct parsedname * const pn, const char * const name, const void * data, const size_t datasize ) {
-    if ( dbnewcache && pn ) { // do check here to avoid needless processing
+    if ( cache.new_db && pn ) { // do check here to avoid needless processing
         char k[8+4] ;
         /* Key is serialnumber and name */
         memcpy( k , pn->sn , 8 ) ;
@@ -124,58 +132,60 @@ int Cache_Add_Internal( const struct parsedname * const pn, const char * const n
 
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
-/* Already tested for existence of dbnewcache */
+/* Already tested for existence of cache.new_db */
 /* return 0 if good, 1 if not */
 int Cache_Add_common( const char * const k, const size_t ksize, const void * data, const size_t dsize, const enum ft_change change ) {
-    static int add_till = 0 ; /* counter up to ADDS_TILL_OLDTIME */
     DBT key, val ;
-    time_t to = TimeOut( change ) ;
+    time_t duration = TimeOut( change ) ;
     size_t vsize = dsize+sizeof(time_t) ;
     unsigned char v[vsize] ;
     unsigned int discards ;
 
-    if ( to == 0 ) return 0 ; /* Uncached parameter */
-//printf("CacheAdd test add_till=%d old_going=%d\n",add_till,old_going);
-    if ( dboldcache ) {
-        if ( old_going ) {
-            if  (oldstart + maxold < time(NULL) ) old_going = 0 ; /* oldcache completely timed out */
-        } else if ( ++add_till>ADDS_TILL_OLDTIME && dboldcache->truncate(dboldcache,NULL,&discards,0)==0 ) {
-//printf("CacheAdd flipping add_till=%d old_going=%d\n",add_till,old_going);
-            /* Flip caches! old = new. New truncated, reset time and counters and flag */
-            DB * swap = dboldcache ;
-            dboldcache  = dbnewcache ;
-            dbnewcache = swap ;
-            add_till = 0 ;
-            old_going = 1 ;
-            oldstart = time(NULL) ;
-            STATLOCK
-                ++ cache_flips ; /* statistics */
-            STATUNLOCK
-//printf("CacheAdd flipped add_till=%d old_going=%d\n",add_till,old_going);
+    if ( duration == 0 ) return 0 ; /* Uncached parameter */
+//printf("CacheAdd test add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
+    CACHELOCK
+        if ( cache.old_db ) {
+            if ( cache.old_is ) {
+                if  (cache.killed < time(NULL) ) cache.old_is = 0 ; /* oldcache completely timed out */
+            } else if ( ++cache.added>ADDS_TILL_OLDTIME && cache.old_db->truncate(cache.old_db,NULL,&discards,0)==0 ) {
+    //printf("CacheAdd flipping add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
+                /* Flip caches! old = new. New truncated, reset time and counters and flag */
+                DB * swap = cache.old_db ;
+                cache.old_db  = cache.new_db ;
+                cache.new_db = swap ;
+                cache.added = 0 ;
+                cache.old_is = 1 ;
+                cache.retired = time(NULL) ;
+                cache.killed = cache.retired + cache.lifespan ;
+                STATLOCK
+                    ++ cache_flips ; /* statistics */
+                STATUNLOCK
+    //printf("CacheAdd flipped add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
+            }
         }
-    }
+    CACHEUNLOCK
     /* Key is serialnumber and name */
     memset( &key, 0, sizeof(key) ) ;
     key.size = ksize ;
     key.data = k ;
 
     memset( &val, 0, sizeof(val) ) ;
-    to += time(NULL) ;
+    duration += time(NULL) ;
 //printf("ADD path=%s, size=%d, data=%s, time=%s\n",path,size,data,ctime(&to)) ;
-    memcpy(v,&to,sizeof(time_t)) ;
+    memcpy(v,&duration,sizeof(time_t)) ;
     memcpy(v+sizeof(time_t),data,dsize );
     val.size=vsize ;
     val.data = v ;
     STATLOCK
         ++ cache_adds ; /* statistics */
     STATUNLOCK
-    return dbnewcache->put(dbnewcache,NULL,&key,&val,0) ;
+    return cache.new_db->put(cache.new_db,NULL,&key,&val,0) ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get( const struct parsedname * const pn, void * data, size_t * dsize ) {
-    if ( dbnewcache && pn ) {
-        int l = strlen( pn->ft->name ) ;
+    if ( cache.new_db && pn ) {
+        unsigned int l = strlen( pn->ft->name ) ;
         char k[8+l] ;
         memcpy( k , pn->sn , 8 ) ;
         memcpy( &k[8], pn->ft->name , l ) ;
@@ -186,7 +196,7 @@ int Cache_Get( const struct parsedname * const pn, void * data, size_t * dsize )
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Internal( const struct parsedname * const pn, const char * const name, void * data, size_t * dsize ) {
-    if ( dbnewcache && pn ) {
+    if ( cache.new_db && pn ) {
         char k[8+4] ;
         memcpy( k , pn->sn , 8 ) ;
         k[8] = 0xFF ;
@@ -197,29 +207,31 @@ int Cache_Get_Internal( const struct parsedname * const pn, const char * const n
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-/* Already tested for existence of dbnewcache */
+/* Already tested for existence of cache.new_db */
 int Cache_Get_common( const char * const k, const size_t ksize, void * data, size_t * dsize, const enum ft_change change ) {
     DBT key, val ;
     size_t s ;
-    time_t to = TimeOut(change) ;
+    time_t duration = TimeOut(change) ;
 //printf("GET path=%s size=%d ft_change=%d\n",path,(int)(*size),change);
-    if ( to == 0 ) return 1 ; /* uncached item */
+    if ( duration == 0 ) return 1 ; /* uncached item */
     STATLOCK
         ++ cache_tries ; /* statistics */
     STATUNLOCK
-    if ( old_going && (oldstart + maxold < time(NULL)) ) {
-        old_going = 0 ; /* oldcache completely timed out */
-    }
     memset( &key, 0, sizeof(key) ) ;
     memset( &val, 0, sizeof(val) ) ;
     key.size = ksize ;
     key.data = k ;
+    CACHELOCK
+        if ( cache.old_is && (cache.killed < time(NULL)) ) {
+            cache.old_is = 0 ; /* oldcache completely timed out */
+        }
+    CACHEUNLOCK
 //printf("GET about to get new\n") ;
-    if ( dbnewcache->get(dbnewcache,NULL,&key,&val,0) ) { /* look in newcache */
+    if ( cache.new_db->get(cache.new_db,NULL,&key,&val,0) ) { /* look in newcache */
 //printf("GET about to get old 1\n") ;
-        if ( old_going && (oldstart + to > time(NULL)) ) { /* can we look in oldcache */
+        if ( cache.old_is && (cache.retired + duration > time(NULL)) ) { /* can we look in oldcache */
 //printf("GET about to get old 2\n") ;
-            if ( dboldcache->get(dboldcache,NULL,&key,&val,0) ) {
+            if ( cache.old_db->get(cache.old_db,NULL,&key,&val,0) ) {
                 STATLOCK
                     ++ cache_misses ; /* statistics */
                 STATUNLOCK
@@ -233,9 +245,9 @@ int Cache_Get_common( const char * const k, const size_t ksize, void * data, siz
         }
     }
 //printf("GOT \n") ;
-    memcpy(&to, val.data, sizeof(time_t)) ;
+    memcpy(&duration, val.data, sizeof(time_t)) ;
 //printf("GOT expire=%s\n",ctime(&to)) ;
-    if ( to <= time(NULL) ) {
+    if ( duration <= time(NULL) ) {
         STATLOCK
             ++ cache_expired ; /* statistics */
         STATUNLOCK
@@ -253,8 +265,8 @@ int Cache_Get_common( const char * const k, const size_t ksize, void * data, siz
 }
 
 int Cache_Del( const struct parsedname * const pn ) {
-    if ( dbnewcache && pn ) {
-        int l = strlen( pn->ft->name ) ;
+    if ( cache.new_db && pn ) {
+        unsigned int l = strlen( pn->ft->name ) ;
         char k[8+l] ;
         memcpy( k , pn->sn , 8 ) ;
         memcpy( &k[8], pn->ft->name , l ) ;
@@ -264,7 +276,7 @@ int Cache_Del( const struct parsedname * const pn ) {
 }
 
 int Cache_Del_Internal( const struct parsedname * const pn, const char * const name) {
-    if ( dbnewcache && pn ) {
+    if ( cache.new_db && pn ) {
         char k[8+4] ;
         memcpy( k , pn->sn , 8 ) ;
         k[8] = 0xFF ;
@@ -283,8 +295,8 @@ int Cache_Del_common( const char * const k, const size_t ksize ) {
     memset( &key, 0, sizeof(key) ) ;
     key.size = ksize ;
     key.data = k ;
-    if ( old_going ) dboldcache->del(dboldcache,NULL,&key,0) ;
-    return dbnewcache->del(dbnewcache,NULL,&key,0) ;
+    if ( cache.old_is ) cache.old_db->del(cache.old_db,NULL,&key,0) ;
+    return cache.new_db->del(cache.new_db,NULL,&key,0) ;
 }
 
 /* Add a persistent entry -- no time signature */

@@ -87,6 +87,8 @@ extern int maxslots ;
     extern pthread_mutex_t bus_mutex ;
     extern pthread_mutex_t dev_mutex ;
     extern pthread_mutex_t stat_mutex ;
+    extern pthread_mutex_t cache_mutex ;
+    extern pthread_mutex_t store_mutex ;
     extern sem_t devlocks ;
     struct devlock {
         unsigned char sn[8] ;
@@ -96,10 +98,20 @@ extern int maxslots ;
     extern struct devlock DevLock[] ;
     #define STATLOCK      pthread_mutex_lock(&stat_mutex) ;
     #define STATUNLOCK    pthread_mutex_unlock(&stat_mutex) ;
+    #define CACHELOCK      pthread_mutex_lock(&cache_mutex) ;
+    #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex) ;
+    #define STORELOCK      pthread_mutex_lock(&store_mutex) ;
+    #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex) ;
 #else /* OW_MT */
     #define STATLOCK
     #define STATUNLOCK
+    #define CACHELOCK
+    #define CACHEUNLOCK
+    #define STORELOCK
+    #define STOREUNLOCK
 #endif /* OW_MT */
+#define BUSLOCK    BUS_lock() ;
+#define BUSUNLOCK  BUS_unlock() ;
 
 #ifdef OW_USB
     #include <usb.h>

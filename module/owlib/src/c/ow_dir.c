@@ -94,6 +94,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         STATUNLOCK
         BUS_lock() ;
         /* Turn off all DS2409s */
+
         FS_branchoff(&pn2) ;
         (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
         while (ret==0) {
