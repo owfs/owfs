@@ -119,10 +119,18 @@ int main(int argc, char *argv[]) {
     char c ;
 #ifdef OW_MT
     pthread_t thread ;
+#ifdef __UCLIBC__
+    pthread_mutexattr_t mattr;
+    pthread_mutexattr_init(&mattr);
+    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+    pthread_mutex_init(&accept_mutex, &mattr);
+    pthread_mutexattr_destroy(&mattr);
+#else /* __UCLIBC__ */
     pthread_attr_t attr ;
 
     pthread_attr_init(&attr) ;
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif /* __UCLIBC__ */
 #endif /* OW_MT */
 
     LibSetup() ;
@@ -177,6 +185,7 @@ int main(int argc, char *argv[]) {
 #endif /* OW_MT */
 #endif /* 0 */
 
+    signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);
     signal(SIGHUP, handle_sighup);
@@ -191,7 +200,12 @@ int main(int argc, char *argv[]) {
     for(;;) {
         ACCEPTLOCK
 #ifdef OW_MT
+#ifdef __UCLIBC__
+        if ( pthread_create( &thread, NULL, ThreadedAccept, &server ) ) ow_exit(1) ;
+	pthread_detach(thread);
+#else /* __UCLIBC__ */
         if ( pthread_create( &thread, &attr, ThreadedAccept, &server ) ) ow_exit(1) ;
+#endif /* __UCLIBC__ */
 #else /* OW_MT */
         Acceptor( server.listenfd ) ;
 #endif /* OW_MT */
