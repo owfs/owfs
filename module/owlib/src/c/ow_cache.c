@@ -640,5 +640,10 @@ int Cache_Del(          const struct parsedname * const pn                      
     { return 1; }
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn )
     { return 1; }
-
+int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn )
+    { return 1; }
+int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn )
+    { return 1; }
+int Cache_Del_Dir( const int dindex, const struct parsedname * const pn )
+    { return 1; }
 #endif /* OW_CACHE */

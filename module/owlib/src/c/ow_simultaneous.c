@@ -45,10 +45,14 @@ $Id$
 #include "ow_simultaneous.h"
 #include    <sys/time.h> /* for gettimeofday */
 
+
+/* Not currently implemented -- cannot do simultaneous without a cache */
+/* Some day will be able to store one path */
 #ifndef OW_CACHE
     struct buspath simulpath[2] ;
     int simulpathlength ;
     time_t simulexpire ;
+    #define SIMULTANEOUS_TIME 10
 #endif /* OW_CACHE */
 
 

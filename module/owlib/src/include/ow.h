@@ -459,12 +459,6 @@ struct parsedname {
 } ;
 
 enum simul_type { simul_temp, simul_volt, } ;
-#ifndef OW_CACHE
-    extern unsigned char simulpath[8] ;
-    extern time_t simulexpire ;
-    /* seconds until simultaneous is not valid */
-    #define SIMULTANEOUS_TIME 10
-#endif /* OW_CACHE */
 
 /* ---- end Parsedname ----------------- */
 /* ------------------------------------- */

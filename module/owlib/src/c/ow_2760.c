@@ -263,7 +263,7 @@ static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
 
     /* Get measured voltage */
     if ((ret=FS_r_extsense(&V,pn))) return ret ;
-    V *= .001 ; /* convert Volts to mVolts */
+    V *= 1000 ; /* convert Volts to mVolts */
 
     /* Correct voltage by adding reference temperature voltage */
     V += polycomp(T,thermo->mV) ;
@@ -286,7 +286,7 @@ static int FS_r_current(FLOAT * C , const struct parsedname * pn) {
     unsigned char c[2] ;
     int ret = OW_r_sram(c,2,0x0E,pn) ;
     if (ret) return ret ;
-    C[0] = (FLOAT) (((int16_t)(c[0]<<8|c[1]))>>3)*.000625 ;
+    C[0] = (FLOAT) ( ((int16_t)((char)c[0]))<<8 + c[1]>>3 ) * .000625 ;
     return 0 ;
 }
 
@@ -294,7 +294,7 @@ static int FS_r_extsense(FLOAT * C , const struct parsedname * pn) {
     unsigned char c[2] ;
     int ret = OW_r_sram(c,2,0x0E,pn) ;
     if (ret) return ret ;
-    C[0] = (FLOAT) (((int16_t)(c[0]<<8|c[1]))>>3)*.000015625 ;
+    C[0] = (FLOAT) ( ((int16_t)((char)c[0]))<<8 + c[1]>>3 ) * .000015625 ;
     return 0 ;
 }
 

@@ -253,6 +253,16 @@ void * acceptor( void * fd ) {
     close(acceptfd) ;
 }
 
+/* Read a message, return a pointer that must be free-ed */
+/* Null return is an error -- bail */
+static void * ReadMsg( int acceptfd ) {
+    int size ;
+    int
+    void * msg = malloc( sizeof( struct msg_in_data ) ) ;
+    if (msg == NULL) return NULL ;
+
+
+
 /* Read "n" bytes from a descriptor. */
 /* "borrowed" from Stevens */
 int readn(int fd, void *vptr, size_t n) {

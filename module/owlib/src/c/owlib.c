@@ -241,7 +241,7 @@ int USBSetup( void ) {
     }
 #else /* OW_USB */
     fprintf(stderr,"Cannot setup USB port properly. See the system log for details\n");
-    ret = -ENPPROTOOPT ;
+    ret = -ENOPROTOOPT ;
 #endif /* OW_USB */
     if ( ret ) BadAdapter_detect() ;
     return ret ;
