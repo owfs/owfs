@@ -194,11 +194,8 @@ static int Handler( int fd ) {
     case msg_dir:
         len = 0 ;
         break ;
-    case msg_attr:
-        len = 0 ;
-        break ;
-    case msg_statf:
-        len = 0 ;
+    case msg_fstat:
+        len = sizeof(struct stat) ;
         break ;
     default:
         FS_ParsedName_destroy(&pn) ;
@@ -234,8 +231,9 @@ static int Handler( int fd ) {
         FS_dir( directory, &pn ) ;
         ret = 0 ;
         break ;
-    case msg_attr:
-    case msg_statf:
+    case msg_fstat:
+        ret = FS_stat( path, &returned ) ;
+	break ;
     }
     FS_ParsedName_destroy(&pn) ;
     if (path) free(path) ;
