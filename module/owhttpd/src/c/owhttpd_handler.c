@@ -35,7 +35,7 @@ struct urlparse {
 } ;
 
     /* Utility HTML page display functions */
-static void HTTPstart(FILE * out, const char * status ) ;
+static void HTTPstart(FILE * out, const char * status, const int text ) ;
 static void HTTPtitle(FILE * out, const char * title ) ;
 static void HTTPheader(FILE * out, const char * head ) ;
 static void HTTPfoot(FILE * out ) ;
@@ -184,7 +184,7 @@ static void URLparse( struct urlparse * up ) {
     }
 }
 
-static void HTTPstart(FILE * out, const char * status ) {
+static void HTTPstart(FILE * out, const char * status, const int text ) {
     char d[44] ;
     time_t t = time(NULL) ;
     size_t l = strftime(d,sizeof(d),"%a, %d %b %Y %T GMT",gmtime(&t)) ;
@@ -196,7 +196,10 @@ static void HTTPstart(FILE * out, const char * status ) {
     /*
      * fprintf( out, "MIME-version: 1.0\r\n" );
      */
-    fprintf(out, "Content-Type: text/html\r\n");
+    if(text)
+      fprintf(out, "Content-Type: text/plain\r\n");
+    else
+      fprintf(out, "Content-Type: text/html\r\n");
     fprintf(out, "\r\n");
 }
 
@@ -246,7 +249,10 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     if ( snprintf(fullpath,PATH_MAX,path[strlen(path)-1]=='/'?"%s%s":"%s/%s",path,basename)<0 ) return ;
 //printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
 
-    fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
+    if(pn->state & pn_text)
+      fprintf( out, "%s ", basename ) ;
+    else
+      fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
 
     /* buffer for field value */
     if ( pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
@@ -254,26 +260,36 @@ static void Show( FILE * out, const char * const path, const char * const file, 
             if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                 buf[len] = '\0' ;
                 if ( canwrite ) { /* read-write */
+		  if(pn->state & pn_text)
+                    fprintf( out, "%s",buf ) ;
+		  else
                     fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
                 } else { /* read only */
                     fprintf( out, "%s", buf ) ;
                 }
             }
         } else if ( canwrite ) { /* rare write-only */
-            fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
+	    if(pn->state & pn_text)
+	      fprintf( out, "(writeonly)" ) ;
+	    else
+	      fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
         }
     } else {
         switch( format ) {
         case ft_directory:
         case ft_subdir:
-            fprintf( out, "<A HREF='%s'>%s</A>",fullpath,file);
+	    if(!(pn->state & pn_text))
+	      fprintf( out, "<A HREF='%s'>%s</A>",fullpath,file);
             break ;
         case ft_yesno:
             if ( pn->ft->read.v ) { /* at least readable */
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     buf[len]='\0' ;
                     if ( canwrite ) { /* read-write */
-                        fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", basename, (buf[0]=='0')?"":"CHECKED", basename ) ;
+		        if(pn->state & pn_text)
+			  fprintf( out, "%c", buf[0] ) ;
+			else
+			  fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", basename, (buf[0]=='0')?"":"CHECKED", basename ) ;
                     } else { /* read-only */
                         switch( buf[0] ) {
                         case '0':
@@ -286,7 +302,10 @@ static void Show( FILE * out, const char * const path, const char * const file, 
                     }
                 }
             } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",basename,basename ) ;
+	        if(pn->state & pn_text)
+		  fprintf( out, "(writeonly)" ) ;
+		else
+		  fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",basename,basename ) ;
             }
             break ;
         case ft_binary:
@@ -311,7 +330,10 @@ static void Show( FILE * out, const char * const path, const char * const file, 
                     }
                 }
             } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",basename,(pn->ft->suglen)>>5 ) ;
+	        if(pn->state & pn_text)
+		  fprintf( out, "(writeonly)" ) ;
+		else
+		  fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",basename,(pn->ft->suglen)>>5 ) ;
             }
             break ;
         default:
@@ -319,17 +341,29 @@ static void Show( FILE * out, const char * const path, const char * const file, 
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     buf[len] = '\0' ;
                     if ( canwrite ) { /* read-write */
+		      if(pn->state & pn_text)
+                        fprintf( out, "%s",buf ) ;
+		      else
                         fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
                     } else { /* read only */
+		      if(pn->state & pn_text)
+                        fprintf( out, "%s", buf ) ;
+		      else
                         fprintf( out, "%s", buf ) ;
                     }
                 }
             } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
+	        if(pn->state & pn_text)
+		  fprintf( out, "(writeonly)") ;
+		else
+		  fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
             }
         }
     }
-    fprintf( out, "</TD></TR>\r\n" ) ;
+    if(pn->state & pn_text)
+      fprintf( out, "\r\n" ) ;
+    else
+      fprintf( out, "</TD></TR>\r\n" ) ;
 }
 
 /* reads an as ascii hex string, strips out non-hex, converts in place */
@@ -418,18 +452,18 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
 }
 
 static void Bad400( struct active_sock * a_sock ) {
-    HTTPstart( a_sock->io , "400 Bad Request" ) ;
-    HTTPtitle( a_sock->io , "Error 400 -- Bad request") ;
-    HTTPheader( a_sock->io , "Unrecognized Request") ;
+    HTTPstart( a_sock->io , "400 Bad Request", 0 ) ;
+    HTTPtitle( a_sock->io , "Error 400 -- Bad request" ) ;
+    HTTPheader( a_sock->io , "Unrecognized Request" ) ;
     fprintf( a_sock->io, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>" ) ;
     fprintf( a_sock->io, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>" ) ;
     HTTPfoot( a_sock->io ) ;
 }
 
 static void Bad404( struct active_sock * a_sock ) {
-    HTTPstart( a_sock->io , "404 File not found" ) ;
-    HTTPtitle( a_sock->io , "Error 400 -- Item doesn't exist") ;
-    HTTPheader( a_sock->io , "Non-existent Device") ;
+    HTTPstart( a_sock->io , "404 File not found", 0 ) ;
+    HTTPtitle( a_sock->io , "Error 400 -- Item doesn't exist" ) ;
+    HTTPheader( a_sock->io , "Non-existent Device" ) ;
     fprintf( a_sock->io, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>" ) ;
     fprintf( a_sock->io, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>" ) ;
     HTTPfoot( a_sock->io ) ;
@@ -461,12 +495,14 @@ static void ShowDevice( struct active_sock * a_sock, const char * path, struct p
     }
 
 //printf("ShowDevice = %s\n",path) ;
-    HTTPstart( a_sock->io , "200 OK" ) ;
-    HTTPtitle( a_sock->io , &path[1]) ;
-    HTTPheader( a_sock->io , &path[1]) ;
-    if ( cacheenabled && pn->state!=pn_uncached && pn->type==pn_real) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",path) ;
-    fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
-    fprintf( a_sock->io, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, path ) ;
+    HTTPstart( a_sock->io , "200 OK", (pn->state & pn_text) ) ;
+    if(!(pn->state & pn_text)) {
+      HTTPtitle( a_sock->io , &path[1] ) ;
+      HTTPheader( a_sock->io , &path[1] ) ;
+      if ( cacheenabled && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",path) ;
+      fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
+      fprintf( a_sock->io, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, path ) ;
+    }
     if ( pn->ft ) { /* single item */
         char * path2 = strdup(path) ;
         char * slash = strrchr(path2,'/') ;
@@ -476,8 +512,10 @@ static void ShowDevice( struct active_sock * a_sock, const char * path, struct p
     } else { /* whole device */
         FS_dir( directory, (void *)path, pn ) ;
     }
-    fprintf( a_sock->io, "</TABLE>" ) ;
-    HTTPfoot( a_sock->io ) ;
+    if(!(pn->state & pn_text)) {
+      fprintf( a_sock->io, "</TABLE>" ) ;
+      HTTPfoot( a_sock->io ) ;
+    }
 }
 
 /* Misnamed. Actually all directory */
@@ -489,16 +527,16 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
         /* device name */
         char buffer[OW_FULLNAME_MAX] ;
         char * loc = buffer ;
-        char * nam = "" ;
+        char * nam = buffer;
         char * typ = "directory" ;
-        (void) data ;
+	int html = ((data == NULL) ? 1 : 0);
+	*buffer = '\000';
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
-                loc = FS_dirname_type(pn2->type) ;
-            } else if ( pn2->state != pn_normal ) {
-                loc = FS_dirname_state(pn2->state) ;
+		strcpy(buffer, FS_dirname_type(pn2->type));
+            } else if ( pn2->state & (pn_uncached | pn_alarm) ) {
+	        strcpy(buffer, FS_dirname_state(pn2->state & (pn_uncached | pn_alarm)));
             }
-            nam = loc ;
         } else if ( pn2->type == pn_real ) {
             FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn) ;
             nam = pn2->dev->name ;
@@ -508,18 +546,28 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             nam = loc ;
         }
 //printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
-        fprintf( a_sock->io, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
-                (strcmp(path,"/")?path:""), loc, loc, nam, typ ) ;
+	if(html)
+	  fprintf( a_sock->io, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
+		   (strcmp(path,"/")?path:""), loc, loc, nam, typ ) ;
+	else
+	  fprintf( a_sock->io, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
     }
 //printf("ROOTDIR=%s\n",path) ;
-    HTTPstart( a_sock->io , "200 OK" ) ;
+
+    HTTPstart( a_sock->io , "200 OK", (pn->state & pn_text) ) ;
+
+    if(pn->state & pn_text) {
+      FS_dir( directory, (void *)(pn->state & pn_text), pn ) ;
+      return;
+    }
     HTTPtitle( a_sock->io , "Directory") ;
+
     if ( pn->type != pn_real ) {
-        HTTPheader( a_sock->io , FS_dirname_type(pn->type)) ;
-    } else if (pn->state != pn_normal) {
-        HTTPheader( a_sock->io , FS_dirname_state(pn->state)) ;
+        HTTPheader( a_sock->io , FS_dirname_type(pn->type) ) ;
+    } else if (pn->state & (pn_uncached | pn_alarm) ) {
+        HTTPheader( a_sock->io , FS_dirname_state(pn->state & (pn_uncached | pn_alarm)) ) ;
     } else {
-        HTTPheader( a_sock->io , "directory") ;
+        HTTPheader( a_sock->io , "directory" ) ;
     }
     fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
     {   // Find higher level by path manipulation
