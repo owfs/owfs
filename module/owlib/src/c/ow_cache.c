@@ -257,7 +257,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
         STATLOCK
             ++ cache_flips ; /* statistics */
 	    memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
-	    AVERAGE_CLEAR(&old_avg)
+	    AVERAGE_CLEAR(&new_avg)
         STATUNLOCK
 //printf("FLIP points to: %p\n",flip);
     }
