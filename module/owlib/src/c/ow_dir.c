@@ -292,7 +292,6 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
 static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
-    enum pn_type type = pn2->type ;
     void action( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
 //printf("Action\n") ;
@@ -305,8 +304,7 @@ static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const),
             break ;
         }
     } ;
-    if (type==pn_structure) type = pn_real ; // to go through "real" devices
-    twalk( Tree[type],action) ;
+    twalk( Tree[pn2->type],action) ;
     pn2->dev = NULL ;
     return 0 ;
 }

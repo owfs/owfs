@@ -326,9 +326,11 @@ to device features (memory, name, temperature) and
 bound the allowable files in a device directory
 */
 
-enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
-//enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
-extern void * Tree[5] ;
+/* Device tree for matching names */
+/* Bianry tree implementation */
+/* A separate root for each device type: real, statistics, settings, system, structure */
+extern void * Tree[6] ;
+
     /* supports RESUME command */
 #define DEV_resume  0x0001
     /* responds to simultaneous temperature convert 0x44 */
@@ -412,6 +414,7 @@ struct stateinfo {
     int lock ; // place in dev lock array
 } ;
 
+enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 enum pn_state { pn_normal, pn_uncached, pn_alarm, } ;
 struct parsedname {
     enum pn_type type ; // global branch

@@ -89,25 +89,22 @@ void DeviceSort( void ) {
     Device2Tree( & d_sys_process ,  pn_system ) ;
     Device2Tree( & d_sys_structure, pn_system ) ;
     Device2Tree( & d_simultaneous , pn_real ) ;
+
+    /* Match simultaneous for special processing */
     {
         struct parsedname pn ;
         pn.type = pn_real ;
         FS_devicefind( "simultaneous", &pn ) ;
         DeviceSimultaneous = pn.dev ;
     }
+
+    /* structure uses same tree as real */
+    Tree[pn_structure] = Tree[pn_real] ;
 }
 
 void FS_devicefind( const char * code, struct parsedname * pn ) {
    const struct device d = { code, NULL, 0,0,NULL } ;
-   struct device_opaque * p ;
-   enum pn_type type = pn->type ;
-   switch(type) {
-   case pn_real:
-   case pn_alarm:
-   case pn_uncached:
-       type = pn_real ;
-   }
-   p = tfind( &d, & Tree[type], device_compare ) ;
+   struct device_opaque * p = tfind( &d, & Tree[pn->type], device_compare ) ;
    if (p) {
        pn->dev = p->key ;
    } else {
