@@ -29,7 +29,12 @@ int FS_getattr(const char *path, struct stat *stbuf) ;
 int FS_utime(const char *path, struct utimbuf *buf) ;
 int FS_truncate(const char *path, const off_t size) ;
 int FS_open(const char *path, int flags) ;
+/* Change in statfs definition for newer FUSE versions */
+#if defined(FUSE_MAJOR_VERSION) && FUSE_MAJOR_VERSION > 1
+int FS_statfs(const char * path, struct statfs *st) ;
+#else /* FUSE_MAJOR_VERSION */
 int FS_statfs(struct fuse_statfs *fst) ;
+#endif /* FUSE_MAJOR_VERSION */
 
 extern struct fuse_operations owfs_oper;
 

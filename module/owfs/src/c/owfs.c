@@ -34,29 +34,6 @@ static void ow_exit( int e ) ;
 void exit_handler(int i) ;
 void set_signal_handlers( void ) ;
 
-struct fuse_operations owfs_oper = {
-	getattr:	FS_getattr,
-	readlink:	NULL,
-	getdir:     FS_getdir,
-	mknod:	NULL,
-	mkdir:	NULL,
-	symlink:	NULL,
-	unlink:	NULL,
-	rmdir:	NULL,
-	rename:     NULL,
-	link:	NULL,
-	chmod:	NULL,
-	chown:	NULL,
-	truncate:	FS_truncate,
-	utime:	FS_utime,
-	open:	FS_open,
-	read:	FS_read,
-	write:	FS_write,
-	statfs:	FS_statfs,
-	release:	NULL
-};
-
-
 /*
 	OW -- Onw Wire
 	Global variables -- each invokation will have it's own data

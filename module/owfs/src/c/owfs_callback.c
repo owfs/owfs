@@ -23,6 +23,28 @@ $Id$
 
 time_t scan_time ;
 
+struct fuse_operations owfs_oper = {
+	getattr:	FS_getattr,
+	readlink:	NULL,
+	getdir:     FS_getdir,
+	mknod:	NULL,
+	mkdir:	NULL,
+	symlink:	NULL,
+	unlink:	NULL,
+	rmdir:	NULL,
+	rename:     NULL,
+	link:	NULL,
+	chmod:	NULL,
+	chown:	NULL,
+	truncate:	FS_truncate,
+	utime:	FS_utime,
+	open:	FS_open,
+	read:	FS_read,
+	write:	FS_write,
+	statfs:	FS_statfs,
+	release:	NULL
+};
+
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
@@ -135,8 +157,16 @@ int FS_open(const char *path, int flags) {
     return 0 ;
 }
 
-int FS_statfs(struct fuse_statfs *fst) {
+/* Change in statfs definition for newer FUSE versions */
+#if defined(FUSE_MAJOR_VERSION) && FUSE_MAJOR_VERSION > 1
+int FS_statfs(const char * path, struct statfs *st) {
+    (void) path ;
+    (void) st ;
+    return 0 ;
+}
+#else /* FUSE_MAJOR_VERSION */
+int FS_statfs(struct fuse_statfs *fst) ;
     (void) fst ;
     return 0 ;
 }
-
+#endif /* FUSE_MAJOR_VERSION */
