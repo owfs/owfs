@@ -495,6 +495,7 @@ AC_CONFIG_FILES([
     module/swig/perl5/Makefile
     module/swig/perl5/Makefile.PL
     module/swig/python/Makefile
+    module/swig/python/setup.py
     module/swig/tcl/Makefile
     module/owserver/Makefile
     module/owserver/src/Makefile

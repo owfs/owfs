@@ -44,7 +44,7 @@ Topic :: Utilities
 setup(
     name             = 'ow',
     description      = '1-wire hardware interface.',
-    version          = '2.0p0RC',
+    version          = '@VERSION@',
     author           = 'Peter Kropf',
     author_email     = 'peterk@bayarea.net',
     url              = 'http://owfs.sourceforge.net/',
