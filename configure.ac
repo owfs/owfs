@@ -86,7 +86,7 @@ static void *doit(void *ignored) { return ignored; }
 AC_MSG_CHECKING(if owfs is enabled)
 ENABLE_OWFS="auto"
 AC_ARG_ENABLE(owfs,
-[  --enable-owfs         Enable owhttpd module (default auto)],
+[  --enable-owfs         Enable owfs module (default auto)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" != "yes" ; then
@@ -113,6 +113,24 @@ AC_ARG_ENABLE(owhttpd,
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWHTTPD)
+
+#Check owftpd
+AC_MSG_CHECKING(if owftpd is enabled)
+ENABLE_OWFTPD="true"
+AC_ARG_ENABLE(owftpd,
+[  --enable-owftpd       Enable owftpd module (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWFTPD=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWFTPD)
+
+
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
@@ -300,10 +318,9 @@ AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h])
+AC_CHECK_HEADERS([sys/time.h sys/types.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h])
 
 # owftpd section
-AC_CHECK_HEADERS([sys/time.h sys/types.h])
 AC_SUBST(HAVE_NEW_SS_FAMILY)
 AC_EGREP_HEADER(__ss_family,
     [sys/socket.h],
@@ -312,6 +329,12 @@ AC_EGREP_HEADER(__ss_family,
 AC_MSG_WARN([SS is ${HAVE_NEW_SS_FAMILY}])
 AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 # end owftpd section 
+
+
+# conditionals for httpd/ftpd
+AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
+AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -419,5 +442,10 @@ if test "${ENABLE_OWHTTPD}" = "true"; then
     AC_MSG_RESULT([    owhttpd is enabled])
 else
     AC_MSG_RESULT([    owhttpd is DISABLED])
+fi
+if test "${ENABLE_OWFTPD}" = "true"; then
+    AC_MSG_RESULT([    owftpd is enabled])
+else
+    AC_MSG_RESULT([    owftpd is DISABLED])
 fi
 AC_MSG_RESULT()
