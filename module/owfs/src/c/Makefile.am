@@ -3,11 +3,9 @@
 bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c
 
-CFLAGS = -I../include \
+AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
          -L../../../owlib/src/c \
-         -low \
-         -ldb \
          -fexceptions \
          -Wall \
          -W \
@@ -19,6 +17,12 @@ CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls
+
+if ENABLE_CACHE
+CACHE_FLAG = -ldb
+endif
+                        
+AM_LDFLAGS = -low ${CACHE_FLAG}
                         
 clean-generic:
 

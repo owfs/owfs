@@ -4,11 +4,9 @@ bin_PROGRAMS = owhttpd
 owhttpd_SOURCES = owhttpd.c owhttpd_handler.c
 #owhttpd_LDADD = libow.la
 
-CFLAGS = -I../include \
+AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
          -L../../../owlib/src/c \
-         -low \
-         -ldb \
          -fexceptions \
          -Wall \
          -W \
@@ -19,9 +17,14 @@ CFLAGS = -I../include \
          -Wcast-align \
          -Wconversion \
          -Wstrict-prototypes \
-         -Wredundant-decls \
-         -Wunreachable-code
+         -Wredundant-decls
+
+if ENABLE_CACHE
+CACHE_FLAG = -ldb
+endif
                         
+AM_LDFLAGS = -low ${CACHE_FLAG}
+
 clean-generic:
 
 	rm -f *~ .*~
