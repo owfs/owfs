@@ -480,6 +480,18 @@ struct stateinfo {
     union semiglobal sg ; // more state info, packed for network transmission */
 } ;
 
+enum pn_desc {
+    desc_error,
+    desc_rootdir,
+    desc_device,
+    desc_nondevice,
+    desc_subdir,
+    desc_simuldir,
+    desc_alarmdir,
+    desc_branchdir,
+    desc_file,
+} ;
+
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
 struct parsedname {
@@ -488,6 +500,7 @@ struct parsedname {
     int    bus_nr ;
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch
+    enum pn_desc desc ; // description of parsed path
     unsigned char sn[8] ; // 64-bit serial number
     struct device * dev ; // 1-wire device
     struct filetype * ft ; // device property

@@ -29,19 +29,19 @@ static int filecmp(const void * name , const void * ex ) ;
 /* Filename (path) parsing functions              */
 /* ---------------------------------------------- */
 void FS_ParsedName_destroy( struct parsedname * const pn ) {
-    if(!pn) return;
+    if(!pn) return ;
     if ( pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
         /* Reset persistent states from "local" stateinfo */
     }
     if ( pn->path ) {
-      free(pn->path);
-      pn->path = NULL;
+        free(pn->path);
+        pn->path = NULL;
     }
     if ( pn->path_busless ) {
-      free(pn->path_busless);
-      pn->path_busless = NULL;
+        free(pn->path_busless);
+        pn->path_busless = NULL;
     }
     if ( pn->in ) {
         if ( (pn->in->busmode != bus_remote) ) {
@@ -89,6 +89,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     if ( pn == NULL ) return -EINVAL ;
 
     pn->path = NULL ;
+    pn->desc = desc_error ; /* assume the worst */
     pn->path_busless = NULL ;
     pn->in = indevice ;
     pn->pathlength = 0 ; /* No branches yet */
@@ -136,38 +137,39 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
         pn->state |= pn_uncached ;
     }
 
+    /* Processing for bus.X directories -- eventually will make this more generic */
     while ( pathnow && strncasecmp(pathnow,"bus.",4)==0 ) {
-      if(!(pn->state & pn_bus)) {
-	size_t len = 1+5+9; // max size of text+uncached
-	/* this will only be reached once */
-	pn->state |= pn_bus ;
-	pn->bus_nr = atoi(&pathnow[4]);
-	/* Since we are going to use a specific in-device now, set
-	 * pn->in to point at that device at once. */
-	pn->in = indevice;
-	while(pn->in && pn->in->index!=pn->bus_nr) pn->in = pn->in->next;
-	//printf("parse bus.=%d\n", pn->bus_nr);
-	
-	if(pathnext) len += strlen(&path[pathnext-pathcpy]);
-	if(!(pn->path_busless = malloc(len))) return -ENOMEM;
-	pn->path_busless[0] = '\000';
-	if(pn->state & pn_text) {
-	  strcat(pn->path_busless, "/text");
-	}
-	if(pn->state & pn_uncached) {
-	  strcat(pn->path_busless, "/uncached");
-	}
-	strcat(pn->path_busless, "/");
-	if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
-	
-	//printf("strip away %s\n", pathnow);
-	pn->path = strdup(path);
-      }
-      pathnow = strsep(&pathnext,"/") ;
+        if(!(pn->state & pn_bus)) {
+            size_t len = 1+5+9; // max size of text+uncached
+            /* this will only be reached once */
+            pn->state |= pn_bus ;
+            pn->bus_nr = atoi(&pathnow[4]);
+            /* Since we are going to use a specific in-device now, set
+             * pn->in to point at that device at once. */
+            pn->in = indevice;
+            while(pn->in && pn->in->index!=pn->bus_nr) pn->in = pn->in->next;
+//printf("parse bus.=%d\n", pn->bus_nr);
+
+            if(pathnext) len += strlen(&path[pathnext-pathcpy]);
+            if(!(pn->path_busless = malloc(len))) return -ENOMEM;
+            pn->path_busless[0] = '\000';
+            if(pn->state & pn_text) {
+                strcat(pn->path_busless, "/text");
+            }
+            if(pn->state & pn_uncached) {
+                strcat(pn->path_busless, "/uncached");
+            }
+            strcat(pn->path_busless, "/");
+            if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
+
+//printf("strip away %s\n", pathnow);
+            pn->path = strdup(path);
+        }
+        pathnow = strsep(&pathnext,"/") ;
     }
     if ( !pn->path ) {
-      pn->path = strdup(path);
-      pn->path_busless = NULL;
+        pn->path = strdup(path);
+        pn->path_busless = NULL;
     }
     //printf("pn->path=%s\n", pn->path);
     //printf("pn->path_busless=%s\n", pn->path_busless);
@@ -191,7 +193,6 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     }
 
     //printf("2pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
-
     ret = FS_ParsedNameSub( pathnow, pathnext, pn ) ;
     free(pathcpy) ;
     return ret ;
@@ -211,7 +212,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 */
 static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname * pn ) {
     int ret ;
-    //printf("PN: %s %s : %s\n",pn->path,pathnow,pathnext);
+//printf("PN: %s %s : %s\n",pn->path,pathnow,pathnext);
 
     /* must be of form /sdfa.sf/asdf.sdf */
     /* extensions optional */
@@ -219,11 +220,22 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
 //printf("PN_sub\n");
 
     if( pathnow && strncasecmp( pathnow, "bus.", 4) == 0) {
-      pathnow = strsep(&pathnext,"/") ;
-      //printf("deeper bus. request pathnow=%s\n", pathnow);
-      return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+        pathnow = strsep(&pathnext,"/") ;
+//printf("deeper bus. request pathnow=%s\n", pathnow);
+        return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
     }
-    if ( pathnow==NULL || pathnow[0]=='\0' ) return 0 ; /* root entry */
+    if ( pathnow==NULL || pathnow[0]=='\0' ) {
+        if ( pn->state & pn_alarm ) {
+            pn->desc = desc_alarmdir ;
+        } else if ( pn->dev == DeviceSimultaneous ) {
+            pn->desc = desc_simuldir ;
+        } else if ( pn->pathlength ) {
+            pn->desc = desc_branchdir ;
+        } else {
+            pn->desc = desc_rootdir ;
+        }
+        return 0 ; /* root entry */
+    }
 
     switch( pn->type ) {
     case pn_real:
@@ -242,28 +254,32 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         if ( strcasecmp( pathnow, "simultaneous" ) == 0 ) {
             pn->dev = DeviceSimultaneous ;
         } else if ( (ret=DevicePart( pathnow, pn )) ) { // search for valid 1-wire sn
-	    printf("PN DevicePart failed for %s %s\n", pathnow, pn->path);
+//printf("PN DevicePart failed for %s %s\n", pathnow, pn->path);
             return ret ;
         }
+        pn->desc = desc_device ;
         break ;
     default:
         ret = NamePart( pathnow, pn );
         if (ret ) {
-	  //printf("PN NamePart failed for %s\n", pn->path);
-	  return ret ; // device name match?
-	}
+//printf("PN NamePart failed for %s\n", pn->path);
+            pn->desc = desc_error ;
+            return ret ; // device name match?
+        }
+        pn->desc = desc_nondevice ;
         break ;
     }
 
     if ( pathnext==NULL || pathnext[0]=='\0' ) {
-      if(pn->in->busmode == bus_remote) {
-	//printf("PN No presence check for %s\n", pn->path);
-	/* don't make a presence check for remote devices */
-	return 0;
-      }
-      return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+        if (pn->in->busmode == bus_remote) {
+//printf("PN No presence check for %s\n", pn->path);
+            /* don't make a presence check for remote devices */
+            return 0;
+        }
+        return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
     }
     pathnow = strsep(&pathnext,"/") ;
+    pn->desc = desc_error ; /* Assume the worst, again */
 //printf("PN2: %s %s : %s\n",pn->path,pathnow,pathnext);
 
     /* Now examine filetype */
@@ -273,31 +289,30 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     }
     if ( pn->ft->format==ft_directory && pn->type == pn_real ) {
         if ( (ret=BranchAdd(pn)) ) {
-	  //printf("PN BranchAdd failed for %s\n", pn->path);
-	  return ret ;
-	}
+//printf("PN BranchAdd failed for %s\n", pn->path);
+            return ret ;
+        }
         /* STATISCTICS */
         if ( pn->pathlength > dir_depth ) dir_depth = pn->pathlength ;
 //if ( next ) printf("Resub = %s->%s\n",pFile,next) ;
         pathnow = strsep(&pathnext,"/") ;
         return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
-#if 1
-    } else if ( pathnext==NULL || pathnext[0]=='\0' ) {
-        return 0 ; 
-#endif
     } else if ( pn->ft->format==ft_subdir ) { /* in-device subdirectory */
         if ( pathnext==NULL || pathnext[0]=='\0' ) {
             pn->subdir = pn->ft ;
+            pn->ft = NULL ;
+            pn->desc = desc_subdir ;
             return 0 ;
         } else {
             char * p = strsep( &pathnext, "/" ) ;
             p[-1] = '/' ; /* replace former "/" to make subdir */
             if ( (ret=FilePart( pathnow, pn )) ) {
-	      //printf("PN FilePart failed for %s %s\n", pathnow, pn->path);
-	      return ret ;
-	    }
+//printf("PN FilePart failed for %s %s\n", pathnow, pn->path);
+                return ret ;
+            }
         }
     }
+    pn->desc = desc_file ;
 
     return ( pathnext==NULL || pathnext[0]=='\0' ) ? 0 : -ENOENT ; /* Bad file type for this device */
 }
@@ -324,17 +339,17 @@ static int DevicePart( char * filename, struct parsedname * pn ) {
     if(filename == NULL) return -ENOENT;
     
     while(dot && strncasecmp(dot, "/bus.", 5) == 0) {
-      dot = strchr(&dot[1], '/');
-      if(!dot) {
-	printf("DevicePart: no more slash??\n");
-	return -ENOENT ;
-      }
-      printf("move dot from [%s] to [%s]\n", filename, dot);
-      filename = dot;
+        dot = strchr(&dot[1], '/');
+        if(!dot) {
+//printf("DevicePart: no more slash??\n");
+            return -ENOENT ;
+        }
+        printf("move dot from [%s] to [%s]\n", filename, dot);
+        filename = dot;
     }
 
     if ( !isxdigit(filename[0]) || !isxdigit(filename[1]) ) {
-      //printf("devicepart2: not xdigit\n");
+//printf("devicepart2: not xdigit\n");
         return -ENOENT ; /* starts with 2 hex digits ? */
     } else {
         unsigned char ID[14] = { filename[0], filename[1], 0x00, } ;
@@ -380,14 +395,14 @@ static int FilePart( char * filename, struct parsedname * pn ) {
     if(filename == NULL) return -ENOENT;
 
     while(dot && strncasecmp(dot, "/bus.", 5) == 0) {
-      dot = strchr(&dot[1], '/');
-      if(!dot) {
-	printf("FilePart: no more slash??\n");
-	dot = filename;
-	break;
-      }
-      printf("move dot from [%s] to [%s]\n", filename, dot);
-      filename = dot;
+        dot = strchr(&dot[1], '/');
+        if(!dot) {
+//printf("FilePart: no more slash??\n");
+            dot = filename;
+            break;
+        }
+//printf("move dot from [%s] to [%s]\n", filename, dot);
+        filename = dot;
     }
     
     filename = strsep(&dot,".") ;
@@ -426,7 +441,7 @@ static int FilePart( char * filename, struct parsedname * pn ) {
                 */
             } else
                 if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
-		    //printf("FP Extension out of range %d %d %s\n", pn->extension, pn->ft->ag->elements, pn->path);
+//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->ft->ag->elements, pn->path);
                     return -ENOENT ; /* Extension out of range */
                 }
 //printf("FP in range\n") ;
@@ -455,24 +470,7 @@ static int filecmp(const void * name , const void * ex ) {
     return strcmp( (const char *) name , ((const struct filetype *) ex)->name ) ;
 }
 
-#if 0
-/* Don't think this is valuable information */
-static void update_bus_pause_time(const unsigned int len, struct parsedname *pn)
-{
-    struct timeval *t = &pn->in->bus_pause_time;
-    STATLOCK /* to prevent simultaneous changes to bus timing variables */
-    t->tv_usec += len*1000 ;
-    while( t->tv_usec >= 1000000 ) {
-        t->tv_usec -= 1000000 ;
-        t->tv_sec++;
-    }
-    STATUNLOCK
-    return;
-}
-#endif
-
-static void my_delay(const unsigned int len)
-{
+static void my_delay(const unsigned int len) {
     struct timespec s;
     struct timespec rem;
     rem.tv_sec = len / 1000 ;
@@ -496,16 +494,7 @@ static void my_delay(const unsigned int len)
 //  Description:
 //     Delay for at least 'len' ms
 //
-void UT_delay(const unsigned int len)
-{
+void UT_delay(const unsigned int len) {
     if(len == 0) return;
     return my_delay(len);
 }
-
-#if 0
-void UT_delay_pn(const unsigned int len, struct parsedname *pn) {
-    if(len == 0) return;
-    update_bus_pause_time(len, pn);
-    return my_delay(len);
-}
-#endif
