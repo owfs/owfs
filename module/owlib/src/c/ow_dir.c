@@ -271,6 +271,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         FS_devicefind( ID, pn2 ) ;
         dirfunc( data, pn2 ) ;
+        simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         memcpy(pn2->sn,snpath,8) ;
         ++dindex ;
@@ -282,7 +283,6 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
         pn2->dev = DeviceSimultaneous ;
         if ( pn2->dev ) {
             dirfunc( data, pn2 ) ;
-            simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
             pn2->dev = NULL ;
         }
     }

@@ -43,6 +43,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow_simultaneous.h"
+#include    <sys/time.h> /* for gettimeofday */
 
 #ifndef OW_CACHE
     struct buspath simulpath[2] ;
@@ -65,22 +66,27 @@ DeviceEntry( simultaneous, simultaneous )
 
 /* ------- Functions ------------ */
 static int OW_skiprom( unsigned char cmd, const struct parsedname * const pn );
-static int OW_setcache( const struct parsedname * const pn ) ;
-static int OW_getcache( const unsigned int msec, const struct parsedname * const pn ) ;
-static int OW_killcache( const struct parsedname * const pn ) ;
+static int OW_setcache( enum simul_type type, const struct parsedname * const pn ) ;
+static int OW_getcache( enum simul_type type, const unsigned int msec, const struct parsedname * const pn ) ;
+static int OW_killcache( enum simul_type type, const struct parsedname * const pn ) ;
 
-int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
-int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) { return 0 ;}
+struct internal_prop ipSimul[] = {
+    {"temperature",ft_volatile},
+    {"voltage",ft_volatile},
+    };
 
 int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) {
-    return OW_getcache(msec,pn) ;
+    return OW_getcache(msec,type,pn) ;
 }
 
+int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) {
+    return OW_killcache(type,pn) ;
+}
 
 static int FS_w_convert(const int * y , const struct parsedname * pn) {
-    int ret;
+    int ret = 0 ;
     if ( y[0]==0 ) {
-        if ( OW_killcache(pn) ) return -EINVAL ;
+        if ( OW_killcache((enum simul_type) pn->ft->data,pn) ) return -EINVAL ;
         return 0 ;
     }
     switch( (enum simul_type) pn->ft->data ) {
@@ -91,33 +97,33 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
         ret = OW_skiprom(0x3C,pn) ;
         break ;
     }
-    if ( ret || OW_setcache( pn ) ) return -EINVAL ;
+    if ( ret || OW_setcache( (enum simul_type) pn->ft->data,pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_r_convert(int * y , const struct parsedname * pn) {
     y[0] = 1 ;
-    if ( OW_getcache(0,pn) ) y[0] = 0 ;
+    if ( OW_getcache(0,(enum simul_type) pn->ft->data,pn) ) y[0] = 0 ;
     return 0 ;
 }
 
-static int OW_setcache( const struct parsedname * const pn ) {
+static int OW_setcache( enum simul_type type, const struct parsedname * const pn ) {
     struct parsedname pn2 ;
     struct timeval tv ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(&pn2) ;
     gettimeofday(&tv,0) ;
-    return Cache_Add(&tv,sizeof(struct timeval),&pn2) ;
+    return Cache_Add_Internal(&tv,sizeof(struct timeval),&ipSimul[type],&pn2) ;
 }
 
-static int OW_killcache( const struct parsedname * const pn ) {
+static int OW_killcache( enum simul_type type, const struct parsedname * const pn ) {
     struct parsedname pn2 ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(&pn2) ;
-    return Cache_Del(&pn2) ;
+    return Cache_Del_Internal(&ipSimul[type],&pn2) ;
 }
 
-static int OW_getcache( const unsigned int msec, const struct parsedname * const pn ) {
+static int OW_getcache( enum simul_type type ,const unsigned int msec, const struct parsedname * const pn ) {
     struct parsedname pn2 ;
     struct timeval tv,now ;
     long int diff ;
@@ -125,7 +131,7 @@ static int OW_getcache( const unsigned int msec, const struct parsedname * const
     int ret ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(&pn2) ;
-    if ( (ret=Cache_Get(&tv, &dsize, &pn2)) ) return ret ;
+    if ( (ret=Cache_Get_Internal(&tv, &dsize, &ipSimul[type],&pn2)) ) return ret ;
     gettimeofday(&now,0) ;
     diff =  1000*(now.tv_sec-tv.tv_sec) + (now.tv_usec-tv.tv_usec)/1000 ;
     if ( diff<msec ) UT_delay(msec-diff) ;
