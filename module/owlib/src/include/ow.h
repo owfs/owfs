@@ -514,7 +514,7 @@ struct client_msg {
     int32_t format ;
     int32_t extra ;
 } ;
-enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_attr, msg_statf, } ;
+enum msg_type { msg_nop, msg_read, msg_write, msg_dir, msg_get, msg_put, msg_parse, msg_fstat, } ;
 
 int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
 void * FromServerAlloc( int fd, struct client_msg * cm ) ;

@@ -232,7 +232,7 @@ static int Handler( int fd ) {
         ret = 0 ;
         break ;
     case msg_fstat:
-        ret = FS_stat( path, &returned ) ;
+        ret = FS_fstat( path, &returned ) ;
 	break ;
     }
     FS_ParsedName_destroy(&pn) ;
