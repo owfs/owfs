@@ -14,6 +14,13 @@ $Id$
 #ifndef OWHTTPD_H
 #define OWHTTPD_H
 
+#include "owfs_config.h"
+#include "ow.h"
+
+#include <netinet/in.h> // ntohl ...
+
+
+/*
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -27,6 +34,7 @@ $Id$
 #include <pwd.h> // getpwuid
 #include <grp.h> // initgroups
 #include <syslog.h>
+*/
 
 struct active_sock {
     int             socket;
