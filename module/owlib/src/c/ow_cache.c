@@ -84,6 +84,8 @@ static time_t TimeOut( const enum ft_change change ) {
     case ft_stable:
     case ft_Astable:
         return timeout.stable;
+    case ft_directory:
+        return timeout.dir ;
     default: /* static or statistic */
         return 0 ;
     }
@@ -193,6 +195,25 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
     return 0 ;
 }
 
+/* Add a directory entry to the cache */
+/* return 0 if good, 1 if not */
+int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) {
+    time_t duration = TimeOut( ft_directory ) ;
+    if ( duration > 0 ) { /* incase timeout set to 0 */
+        struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
+        if ( tn ) {
+            memcpy( tn->tk.sn , pn->sn , 8 ) ;
+            tn->tk.p.ft = NULL ;
+            tn->tk.extension = dindex ;
+            tn->expires = duration + time(NULL) ;
+            tn->dsize = 8 ;
+            memcpy( TREE_DATA(tn) , sn , 8 ) ;
+            return Cache_Add_Common( tn ) ;
+        }
+    }
+    return -ENOMEM ;
+}
+
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) {
@@ -293,30 +314,30 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
         }
         opaque = tsearch( (void *)tn, &cache.store, tree_compare ) ;
         if ( (opaque=tsearch(tn,&cache.store,tree_compare)) ) {
-	    if ( tn!=opaque->key ) {
-	        free(opaque->key);
-	        opaque->key = tn ;
-		state = just_update ;
-	    } else {
-		state = yes_add ;
+	        if ( tn!=opaque->key ) {
+	            free(opaque->key);
+	            opaque->key = tn ;
+		        state = just_update ;
+	        } else {
+		        state = yes_add ;
+	        }
+	    } else { // Problem adding node, so free the memory
+	        free(tn) ;
 	    }
-	} else { // Problem adding node, so free the memory
-	    free(tn) ;
-	}
     STOREUNLOCK
     switch (state) {
     case yes_add:
-	STATLOCK
-	    AVERAGE_IN(&store_avg)
-	STATUNLOCK
-	return 0 ;
+	    STATLOCK
+	        AVERAGE_IN(&store_avg)
+	    STATUNLOCK
+	    return 0 ;
     case just_update:
-	STATLOCK
-	    AVERAGE_MARK(&store_avg)
-	STATUNLOCK
-	return 0 ;
+	    STATLOCK
+	        AVERAGE_MARK(&store_avg)
+	    STATUNLOCK
+	    return 0 ;
     default:
-	return 1 ;
+    	return 1 ;
     }
 }
 
@@ -336,6 +357,20 @@ int Cache_Get( void * data, size_t * dsize, const struct parsedname * const pn )
                 return Cache_Get_Common(data,dsize,duration,&tn) ;
             }
         }
+    }
+    return 1 ;
+}
+
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn ) {
+    time_t duration = TimeOut( ft_directory ) ;
+    if ( duration > 0 ) {
+        size_t size = 8 ;
+        struct tree_node tn  ;
+        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        tn.tk.p.ft = NULL ;
+        tn.tk.extension = dindex ;
+        return Cache_Get_Common(sn,&size,duration,&tn) ;
     }
     return 1 ;
 }
@@ -440,6 +475,18 @@ int Cache_Del( const struct parsedname * const pn ) {
                 return Cache_Del_Common(&tn) ;
             }
         }
+    }
+    return 1 ;
+}
+
+int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
+    time_t duration = TimeOut( pn->ft->change ) ;
+    if ( duration > 0 ) {
+        struct tree_node tn  ;
+        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        tn.tk.p.ft = NULL ;
+        tn.tk.extension = dindex ;
+        return Cache_Del_Common(&tn) ;
     }
     return 1 ;
 }

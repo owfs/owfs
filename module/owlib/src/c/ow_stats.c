@@ -53,13 +53,8 @@ $Id$
 
 /* -------- Structures ---------- */
 struct filetype stats_cache[] = {
-    {"tries"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_tries      , } ,
-    {"hits"            , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_hits       , } ,
-    {"misses"          , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_misses     , } ,
     {"flips"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_flips      , } ,
     {"additions"       , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_adds       , } ,
-    {"deletions"       , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dels       , } ,
-    {"expirations"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_expired    , } ,
     {"primary"         ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
     {"primary/now"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & new_avg.current  , } ,
     {"primary/sum"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & new_avg.sum      , } ,
@@ -75,9 +70,28 @@ struct filetype stats_cache[] = {
     {"persistent/sum"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.sum    , } ,
     {"persistent/num"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.count  , } ,
     {"persistent/max"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.max    , } ,
-}
- ;
+    {"external"        ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"external/tries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_ext.tries  , } ,
+    {"external/hits"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_ext.hits   , } ,
+    {"external/added"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_ext.adds, } ,
+    {"external/expired", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_ext.expires, } ,
+    {"external/deleted", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_ext.deletes, } ,
+    {"internal"        ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"internal/tries"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_int.tries  , } ,
+    {"internal/hits"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_int.hits   , } ,
+    {"internal/added"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_int.adds, } ,
+    {"internal/expired", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_int.expires, } ,
+    {"internal/deleted", 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_int.deletes, } ,
+    {"directory"        , 0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"directory/tries"  ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.tries  , } ,
+    {"directory/hits"   ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.hits   , } ,
+    {"directory/added"  ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.adds   , } ,
+    {"directory/expired",15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.expires, } ,
+    {"directory/deleted",15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.deletes, } ,
+} ;
+
 struct device d_stats_cache = { "stats_cache", "stats_cache", dev_statistic, NFT(stats_cache), stats_cache } ;
+    // Note, the store hit rate and deletions are not shown -- too much information!
 
 struct aggregate Aread = { 3 , ag_numbers, ag_separate, } ;
 struct filetype stats_read[] = {

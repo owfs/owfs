@@ -82,7 +82,9 @@ $Id$
 extern int multithreading ;
 extern int maxslots ;
 #ifdef OW_MT
+    #define __USE_GNU
     #include <pthread.h>
+    #undef  __USE_GNU
 #ifdef HAVE_SEMAPHORE_H
     #include <semaphore.h>
 #else
@@ -481,6 +483,14 @@ struct average {
     unsigned int current ;
 } ;
 
+struct cache {
+    unsigned int tries ;
+    unsigned int hits ;
+    unsigned int adds ;
+    unsigned int expires ;
+    unsigned int deletes ;
+} ;
+
 struct directory {
     unsigned int calls ;
     unsigned int entries ;
@@ -491,16 +501,15 @@ struct directory {
 #define AVERAGE_MARK(pA)  ++(pA)->count; (pA)->sum+=(pA)->current;
 #define AVERAGE_CLEAR(pA)  (pA)->current=0;
 
-extern unsigned int cache_tries ;
-extern unsigned int cache_hits ;
-extern unsigned int cache_misses ;
 extern unsigned int cache_flips ;
-extern unsigned int cache_dels ;
 extern unsigned int cache_adds ;
-extern unsigned int cache_expired ;
 extern struct average new_avg ;
 extern struct average old_avg ;
 extern struct average store_avg ;
+extern struct cache cache_ext ;
+extern struct cache cache_int ;
+extern struct cache cache_dir ;
+extern struct cache cache_sto ;
 
 extern unsigned int read_calls ;
 extern unsigned int read_cache ;
@@ -619,10 +628,13 @@ void Cache_Open( void ) ;
 void Cache_Close( void ) ;
 char * Cache_Version( void ) ;
 int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) ;
+int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) ;
 int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
 int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn ) ;
+int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn ) ;
 int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
 int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
+int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) ;
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
 
 void LockSetup( void ) ;

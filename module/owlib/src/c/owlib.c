@@ -101,16 +101,15 @@ unsigned char combuffer[MAX_FIFO_SIZE] ;
 /* ----------------- */
 /* -- Statistics --- */
 /* ----------------- */
-unsigned int cache_tries = 0 ;
-unsigned int cache_hits = 0 ;
-unsigned int cache_misses = 0 ;
 unsigned int cache_flips = 0 ;
-unsigned int cache_dels = 0 ;
 unsigned int cache_adds = 0 ;
-unsigned int cache_expired = 0 ;
 struct average old_avg = {0L,0L,0L,0L,} ;
 struct average new_avg = {0L,0L,0L,0L,} ;
 struct average store_avg = {0L,0L,0L,0L,} ;
+struct cache cache_ext = {0L,0L,0L,0L,0L,} ;
+struct cache cache_int = {0L,0L,0L,0L,0L,} ;
+struct cache cache_dir = {0L,0L,0L,0L,0L,} ;
+struct cache cache_sto = {0L,0L,0L,0L,0L,} ;
 
 unsigned int read_calls = 0 ;
 unsigned int read_cache = 0 ;
