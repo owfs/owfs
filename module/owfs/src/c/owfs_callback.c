@@ -165,7 +165,7 @@ int FS_statfs(const char * path, struct statfs *st) {
     return 0 ;
 }
 #else /* FUSE_MAJOR_VERSION */
-int FS_statfs(struct fuse_statfs *fst) ;
+int FS_statfs(struct fuse_statfs *fst) {
     (void) fst ;
     return 0 ;
 }

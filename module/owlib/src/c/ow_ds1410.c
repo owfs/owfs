@@ -192,14 +192,26 @@ static int DS1410_level(int new_level) {
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
 int DS1410_detect( void ) {
-    int mode = IEEE1284_MODE_COMPAT ;
+    int mode = IEEE1284_MODE_BYTE ;
     struct timeval t = { 1 , 0 } ; /* 1 second */
     int ret = ioctl( devfd, PPCLAIM) ;
-    ret = ioctl( devfd, PPNEGOT, &mode) ;
+//    ret = ioctl( devfd, PPNEGOT, &mode) ;
+    ret = ioctl( devfd, PPSETMODE, &mode) ;
+printf("SETMODE=%d\n",ret);
+    ret = ioctl( devfd, PPGETMODE, &mode) ;
+printf("GETMODE=%d\n",ret);
 printf("NEGOT=%d\n",ret);
     ret = ioctl( devfd, PPSETTIME, &t) ;
 printf("SETTIME=%d\n",ret);
     ioctl( devfd , PPRELEASE ) ;
+switch(mode) {
+case IEEE1284_MODE_COMPAT: printf("COMPAT\n");break;
+case IEEE1284_MODE_NIBBLE: printf("NIBBLE\n");break;
+case IEEE1284_MODE_BYTE: printf("BYTE\n");break;
+case IEEE1284_MODE_EPP: printf("EPP\n");break;
+case IEEE1284_MODE_ECP: printf("ECP\n");break;
+default: printf("NO MODE\n");
+}
     /* Set up low-level routines */
     DS1410_setroutines( & iroutines ) ;
     /* Reset the bus */
