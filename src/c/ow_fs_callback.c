@@ -87,12 +87,12 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
                     } else {
                         snprintf( extname , PATH_MAX, "%s.%-d",((pn.dev)->ft)[i].name,j) ;
 					}
-printf("GD %s\n",extname) ;
+//printf("GD %s\n",extname) ;
                     filler ( h , extname , 0 ) ;
                 }
                 snprintf( extname , PATH_MAX, "%s.ALL",((pn.dev)->ft)[i].name) ;
                 filler ( h , extname , 0 ) ;
-printf("GD %s\n",extname) ;
+//printf("GD %s\n",extname) ;
             } else {
                 filler( h , ((pn.dev)->ft)[i].name , 0 ) ;
             }
