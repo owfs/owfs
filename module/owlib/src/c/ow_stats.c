@@ -48,7 +48,7 @@ $Id$
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
  uREAD_FUNCTION( FS_stat ) ;
- uREAD_FUNCTION( FS_time ) ;
+ fREAD_FUNCTION( FS_time ) ;
  uREAD_FUNCTION( FS_elapsed ) ;
 
 /* -------- Structures ---------- */
@@ -155,8 +155,8 @@ struct device d_stats_thread = { "threads", "threads", 0, NFT(stats_thread), sta
 
 struct filetype stats_bus[] = {
     {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL            , } ,
-    {"bus_time"        , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_time         , } ,
-    {"pause_time"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_pause        , } ,
+    {"bus_time"        , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_time         , } ,
+    {"pause_time"      , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_pause        , } ,
     {"locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks        , } ,
     {"unlocks"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_unlocks      , } ,
     {"CRC8_tries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_tries       , } ,
@@ -181,27 +181,24 @@ static int FS_stat(unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_time(unsigned int * u , const struct parsedname * pn) {
+static int FS_time(FLOAT *u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct timeval * tv = (struct timeval *) pn->ft->data ;
     long ul ; /* seconds and microseconds */
+    FLOAT f;
     if (dindex<0) dindex = 0 ;
     if (tv == NULL) return -ENOENT ;
 
-//printf("TIME1 sec=%ld usec=%ld\n",tv->tv_sec,tv->tv_usec) ;
+//printf("TIME1 sec=%ld usec=%ld pn->extension=%d\n",tv->tv_sec,tv->tv_usec, pn->extension) ;
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
         ul = tv[dindex].tv_usec ;
         tv[dindex].tv_usec = ul % 1000000 ;
         tv[dindex].tv_sec += ul / 1000000 ;
-    //printf("TIME2 sec=%ld usec=%ld\n",tv->tv_sec,tv->tv_usec) ;
-        if ( ul<0 ) {
-            tv[dindex].tv_usec += 1000000 ;
-            --tv[dindex].tv_sec ;
-        }
-        ul = tv[dindex].tv_sec ; /* now can unlock */
+//printf("TIME2 sec=%ld usec=%ld\n",tv->tv_sec,tv->tv_usec) ;
+	f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
     STATUNLOCK
-//printf("TIME3 sec=%ld usec=%ld\n",tv->tv_sec,tv->tv_usec) ;
-    u[0] = ul ;
+//printf("TIME3 sec=%ld usec=%ld f=%7.3f\n",tv->tv_sec,tv->tv_usec, f) ;
+      u[0] = f;
     return 0 ;
 }
 
