@@ -60,6 +60,12 @@ struct filetype DS9097[] = {
 } ;
 struct device d_DS9097 = { "DS9097", "DS9097", dev_interface, NFT(DS9097), DS9097 } ;
 
+struct filetype DS1410[] = {
+    F_present ,
+    {"port"      , PATH_MAX,NULL,ft_ascii  , ft_static  , {a:FS_port}       , {v:NULL}, NULL, } ,
+} ;
+struct device d_DS1410 = { "DS1410", "DS1410", dev_interface, NFT(DS1410), DS1410 } ;
+
 struct filetype DS9097U[] = {
     F_present ,
     {"port"      , PATH_MAX,NULL,ft_ascii  , ft_static  , {a:FS_port}       , {v:NULL}, NULL, } ,
@@ -73,10 +79,12 @@ struct filetype iButtonLink[] = {
     {"port"      , PATH_MAX,NULL,ft_ascii  , ft_static  , {a:FS_port}       , {v:NULL}, NULL, } ,
     {"version"   ,    32,  NULL, ft_integer, ft_static  , {i:FS_version}    , {v:NULL}, NULL, } ,
 } ;
-struct device d_iButtonLink = { "LINK", "iButtonLink", dev_interface, NFT(iButtonLink), iButtonLink } ;
+struct device d_iButtonLink = { "LINK_Multiport", "iButtonLink_Multiport", dev_interface, NFT(iButtonLink), iButtonLink } ;
+struct device d_iButtonLink_Multiport = { "LINK", "iButtonLink", dev_interface, NFT(iButtonLink), iButtonLink } ;
 
 struct filetype DS9490[] = {
     F_present ,
+    {"port"      , PATH_MAX,NULL,ft_ascii  , ft_static  , {a:FS_port}       , {v:NULL}, NULL, } ,
 } ;
 struct device d_DS9490 = { "DS9490", "DS9490", dev_interface, NFT(DS9490), DS9490 } ;
 

@@ -74,6 +74,8 @@ $Id$
 #include <syslog.h>
 #include <ctype.h>
 #include <sys/file.h> /* for flock */
+#include <sys/stat.h> /* for stat */
+#include <sys/types.h> /* for stat */
 #include <getopt.h> /* for long options */
 
 #ifdef OW_USB
@@ -173,7 +175,7 @@ int UT_get2bit(const unsigned char * buf, const int loc) ;
 void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
 void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
 
-int COM_open( const char * port ) ;
+int COM_open( void ) ;
 void COM_flush( void ) ;
 void COM_close( void );
 void COM_break( void ) ;
@@ -195,6 +197,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
 int DS2480_baud( speed_t baud );
 int DS2480_detect( void ) ;
+int DS1410_detect( void ) ;
 int DS9097_detect( void ) ;
 int BUS_first(unsigned char * serialnumber) ;
 int BUS_next(unsigned char * serialnumber) ;
@@ -340,7 +343,7 @@ extern speed_t speed;        /* terminal speed constant */
 struct termios oldSerialTio;    /*old serial port settings*/
 
 /* Globals */
-extern char devport[] ;    /* Device name (COM port)*/
+extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
 extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */

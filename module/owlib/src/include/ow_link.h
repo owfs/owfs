@@ -21,8 +21,10 @@ $Id$
 /* ------- Structures ----------- */
 
 DeviceHeader( DS9097 )
+DeviceHeader( DS1410 )
 DeviceHeader( DS9097U )
 DeviceHeader( iButtonLink )
+DeviceHeader( iButtonLink_Multiport )
 DeviceHeader( DS9490 )
 
 #endif

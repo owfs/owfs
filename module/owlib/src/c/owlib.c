@@ -15,6 +15,8 @@ $Id$
 
 speed_t speed = B9600;
 int portnum = -1 ; /* TCP port (for owhttpd) */
+char * devport = NULL ; /* Device name (COM or parallel port) */
+int devfd = -1; /*file descriptor for serial/parallel port*/
 
 #ifdef OW_USB
     usb_dev_handle * devusb = NULL ;
@@ -54,7 +56,9 @@ struct device * Devices[] = {
     & d_LCD ,
     & d_DS9490 ,
     & d_DS9097 ,
+    & d_DS1410 ,
     & d_DS9097U ,
+    & d_iButtonLink_Multiport ,
     & d_iButtonLink ,
     & d_stats_cache ,
     & d_stats_read ,
@@ -162,43 +166,55 @@ int LibStart( void ) {
     return 0 ;
 }
 
+/* Actaully COM and Parallel */
 int ComSetup( const char * busdev ) {
-    if ( devfd != -1 ) {
-        fprintf(stderr,"Serial port already set to %s, ignoring %s.\n",devport,busdev) ;
-	return 1 ;
-    }
-    if ( devusb ) {
-        fprintf(stderr,"Already set to USB port, serial port %s ignored.\n",busdev) ;
-	return 1 ;
-    }
-    if ( COM_open( busdev ) ) return -ENODEV ;
+    struct stat s ;
+    int ret ;
 
-/* Set up DS2480/LINK interface */
-    Version2480 = 0 ;
-    if ( DS2480_detect() ) {
-        syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",busdev) ;
-        if ( DS9097_detect() ) {
-            syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",busdev) ;
+    if ( devport ) {
+        fprintf(stderr,"1-wire port already set to %s, ignoring %s.\n",devport,busdev) ;
+        return 1 ;
+    }
+    if ( (devport=strdup(busdev)) == NULL ) return -ENOMEM ;
+    if ( (ret=stat( devport, &s )) ) {
+        syslog( LOG_ERR, "Cannot stat port: %s error=%s\n",devport,strerror(ret)) ;
+        return -ret ;
+    }
+    if ( ! S_ISCHR(s.st_mode) ) syslog( LOG_INFO , "Not a character device: %s\n",devport) ;
+    if ((devfd = open(devport, O_RDWR | O_NONBLOCK)) < 0) {
+        ret = errno ;
+        syslog( LOG_ERR,"Cannot open port: %s error=%s\n",devport,strerror(ret)) ;
+        return -ret ;
+    }
+    if ( major(s.st_rdev) == 99 ) { /* parport device */
+        if ( DS1410_detect() ) {
+            syslog(LOG_WARNING, "Cannot detect the DS1410E parallel adapter\n");
             return 1 ;
         }
+    } else { /* serial device */
+        if ( COM_open() ) return -ENODEV ;
+        /* Set up DS2480/LINK interface */
+        if ( DS2480_detect() ) {
+            syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",devport) ;
+            if ( DS9097_detect() ) {
+                syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",devport) ;
+                return 1 ;
+            }
+        }
     }
-    syslog(LOG_INFO,"DS2480 type = %d on %s\n",Version2480,busdev) ;
-    strncpy( devport, busdev, PATH_MAX ) ;
+    syslog(LOG_INFO,"Interface type = %d on %s\n",Version2480,devport) ;
     return 0 ;
 }
 
 int USBSetup( int useusb ) {
 #ifdef OW_USB
-    if ( devfd != -1 ) {
-        fprintf(stderr,"Serial port already open (%s), ignoring USB.\n",devport) ;
-	return 1 ;
-    }
-    if ( devusb ) {
-        fprintf(stderr,"Already opened USB port.\n") ;
-	return 1 ;
+    if ( devport ) {
+        fprintf(stderr,"1-wire port already set to %s, ignoring USB.\n",devport) ;
+        return 1 ;
     }
     return DS9490_detect( useusb ) ;
 #else /* OW_USB */
+    fprintf(stderr,"Attempt to use a USB 1-wire interface without compiling support for libusb\n");
     return 1 ;
 #endif /* OW_USB */
 }
@@ -211,6 +227,10 @@ void LibClose( void ) {
        pid_file = NULL ;
     }
     COM_close() ;
+    if ( devport ) {
+        free(devport) ;
+        devport = NULL ;
+    }
 #ifdef OW_USB
     DS9490_close() ;
 #endif /* OW_USB */

@@ -21,8 +21,6 @@ $Id$
 #include "ow.h"
 
 /* Global variables */
-char devport[PATH_MAX] ; /* Device name (COM port) */
-int devfd = -1; /*file descriptor for serial port*/
 static struct timeval tv ; /* statistics */
 
 /* ---------------------------------------------- */
@@ -35,39 +33,27 @@ static struct timeval tv ; /* statistics */
  *        -errno = cannot opon
  *        -EFAULT = already open
  */
-int COM_open( const char * port ) {
+/* return 0 for success, 1 for failure */
+int COM_open( void ) {
     struct termios newSerialTio; /*new serial port settings*/
-    /* return 0 for success, 1 for failure */
-    if ( devfd>=0 ) {
-        syslog( LOG_NOTICE, "Only one port should be specified, try '-h' for help.\n" ) ;
-    } else {
-        strncpy( devport, port, PATH_MAX ) ;
-        if ((devfd = open(devport, O_RDWR | O_NONBLOCK)) < 0) {
-		    int ret = errno ;
-            syslog( LOG_ERR,"Cannot open port: %s error=%d\n",devport,errno) ;
-            return -ret ;
-        }
-        tcgetattr(devfd, &oldSerialTio);
-        tcgetattr(devfd, &newSerialTio);
 
-        speed = B9600 ;
-        cfsetospeed(&newSerialTio, speed);
-        cfsetispeed(&newSerialTio, speed);
+    tcgetattr(devfd, &oldSerialTio);
+    tcgetattr(devfd, &newSerialTio);
+    speed = B9600 ;
+    cfsetospeed(&newSerialTio, speed);
+    cfsetispeed(&newSerialTio, speed);
 
-        // Set to non-canonical mode, and no RTS/CTS handshaking
-        newSerialTio.c_iflag = IGNBRK|IGNPAR|IXANY;
-        newSerialTio.c_oflag &= ~(OPOST);
-        newSerialTio.c_cflag = CLOCAL|CS8|CREAD;
-        newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
-        newSerialTio.c_cc[VMIN] = 0;
-        newSerialTio.c_cc[VTIME] = 3;
-
-        tcsetattr(devfd, TCSAFLUSH, &newSerialTio);
+    // Set to non-canonical mode, and no RTS/CTS handshaking
+    newSerialTio.c_iflag = IGNBRK|IGNPAR|IXANY;
+    newSerialTio.c_oflag &= ~(OPOST);
+    newSerialTio.c_cflag = CLOCAL|CS8|CREAD;
+    newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
+    newSerialTio.c_cc[VMIN] = 0;
+    newSerialTio.c_cc[VTIME] = 3;
+    tcsetattr(devfd, TCSAFLUSH, &newSerialTio);
 
 //        fcntl(devfd, F_SETFL, fcntl(devfd, F_GETFL, 0) & ~O_NONBLOCK);
-        return 0 ;
-    }
-    return -EFAULT ;
+    return 0 ;
 }
 
 void COM_close( void ) {

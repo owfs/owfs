@@ -110,54 +110,42 @@ AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
 # Check if the modules are enabled
 
+#Check owfs
 AC_MSG_CHECKING(if owfs is enabled)
-
 ENABLE_OWFS="true"
-
 AC_ARG_ENABLE(owfs,
 [  --enable-owfs         Enable owhttpd module (default true)],
 [
-
     AC_MSG_RESULT([$enableval])
-
     if test ! "$enableval" = "yes" ; then
-
         ENABLE_OWFS=false
     fi
 ],
 [
     AC_MSG_RESULT([yes (default)])
 ])
-
 AC_SUBST(ENABLE_OWFS)
 
+#Check owhttpd
 AC_MSG_CHECKING(if owhttpd is enabled)
-
 ENABLE_OWHTTPD="true"
-
 AC_ARG_ENABLE(owhttpd,
 [  --enable-owhttpd      Enable owhttpd module (default true)],
 [
-
     AC_MSG_RESULT([$enableval])
-
     if test ! "$enableval" = "yes" ; then
-    
         ENABLE_OWHTTPD=false
     fi
 ],
 [
     AC_MSG_RESULT([yes (default)])
 ])
-
 AC_SUBST(ENABLE_OWHTTPD)
 
 # Check for libraries
 
-# Include libdb1 if the cache is enabled
-
+# Include libdb if the cache is enabled
 if test "${ENABLE_CACHE}" = "true" ; then
-
     AC_CHECK_LIB(db,__db_dbopen,[
         AC_MSG_CHECKING([<DB41?])
         AC_CHECK_LIB(db,__log_register,[ENABLE_CACHE41=false],[ENABLE_CACHE41=true])
@@ -167,16 +155,12 @@ if test "${ENABLE_CACHE}" = "true" ; then
         AC_SUBST(ENABLE_CACHE)
     ])
 fi
-
 AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 AM_CONDITIONAL(ENABLE_CACHE41, test "${ENABLE_CACHE41}" = "true")
 
 # We need fuse only if OWFS is enabled
-
 if test "${ENABLE_OWFS}" = "true" ; then
-
     AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.inf.bme.hu/~mszeredi/avfs/])])
-    
 fi
 
 # Checks for header files.
@@ -281,5 +265,4 @@ if test "${ENABLE_OWHTTPD}" = "true"; then
 else
     AC_MSG_RESULT([    owhttpd is DISABLED])
 fi
-
 AC_MSG_RESULT()

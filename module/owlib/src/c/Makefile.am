@@ -31,6 +31,7 @@ OWLIB_SOURCE = ow_xxxx.c \
                ow_ibuttonlink.c \
                ow_bus.c \
                ow_ds9097.c \
+               ow_ds1410.c \
                ow_ds9097U.c \
                ow_ds9490.c \
                ow_crc.c \

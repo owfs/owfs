@@ -69,8 +69,14 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             case 0:
                 dpp = bsearch("DS9097",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
+            case 1:
+                dpp = bsearch("DS1410",Devices,nDevices,sizeof(struct device *),devicecmp) ;
+                break ;
             case 3:
                 dpp = bsearch("DS9097U",Devices,nDevices,sizeof(struct device *),devicecmp) ;
+                break ;
+            case 6:
+                dpp = bsearch("LINK_Multiport",Devices,nDevices,sizeof(struct device *),devicecmp) ;
                 break ;
             case 7:
                 dpp = bsearch("LINK",Devices,nDevices,sizeof(struct device *),devicecmp) ;

@@ -169,6 +169,7 @@ int DS9097_detect( void ) {
     /* Set up low-level routines */
     DS9097_setroutines( & iroutines ) ;
     /* Reset the bus */
+    Version2480 = 0 ; /* dummy value */
     return DS9097_reset() ;
 }
 
@@ -218,7 +219,6 @@ static int DS9097_reset( void ) {
     if(tcsetattr(devfd, TCSANOW, &term) < 0 ) return -EFAULT ;
     /* Flush the input and output buffers */
     COM_flush() ;
-    Version2480 = 0 ; /* dummy value */
     return 0 ;
 }
 

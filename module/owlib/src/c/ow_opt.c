@@ -3,10 +3,10 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* ow_opt -- owlib specific command line options processing */
@@ -58,8 +58,8 @@ int owopt( const char c , const char * const arg ) {
         ) ;
         return 1 ;
     case 't':
-    	Timeout( arg ) ;
-	    return 0 ;
+        Timeout( arg ) ;
+        return 0 ;
     case 'u':
         if ( arg ) {
             useusb = atoi(arg) ;
@@ -79,26 +79,26 @@ int owopt( const char c , const char * const arg ) {
 #endif /* OW_USB */
         return 0 ;
     case 'd':
-    	ComSetup(arg) ;
-	    return 0 ;
+        ComSetup(arg) ;
+        return 0 ;
     case 'C':
-	    tempscale = temp_celsius ;
-	    return 0 ;
+        tempscale = temp_celsius ;
+        return 0 ;
     case 'F':
-	    tempscale = temp_fahrenheit ;
-	    return 0 ;
+        tempscale = temp_fahrenheit ;
+        return 0 ;
     case 'R':
-	    tempscale = temp_rankine ;
-	    return 0 ;
+        tempscale = temp_rankine ;
+        return 0 ;
     case 'K':
-	    tempscale = temp_kelvin ;
-	    return 0 ;
+        tempscale = temp_kelvin ;
+        return 0 ;
     case 'V':
-	    printf("libow version:\n\t" VERSION "\n") ;
+        printf("libow version:\n\t" VERSION "\n") ;
 #ifdef OW_CACHE
         printf("libdb version:\n\t%s\n",db_version(NULL,NULL,NULL) ) ;
 #endif /* OW_CACHE */
-	    return 1 ;
+        return 1 ;
     case 'p':
         sscanf(optarg, "%i", &portnum);
         return 0;
@@ -122,7 +122,7 @@ int owopt( const char c , const char * const arg ) {
             fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
             return 1 ;
         }
-	return 0 ;
+    return 0 ;
     case 0:
         return 0 ;
     default:

@@ -67,9 +67,9 @@ static int DS9490_level(int new_level) ;
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
 int DS9490_detect( int useusb ) {
-        struct usb_bus *bus ;
-        struct usb_device *dev ;
-	int usbnum = 0 ;
+    struct usb_bus *bus ;
+    struct usb_device *dev ;
+    int usbnum = 0 ;
 
     /* Set up low-level routines */
     DS9097_setroutines( & iroutines ) ;
@@ -81,13 +81,19 @@ int DS9490_detect( int useusb ) {
         for ( dev=bus->devices ; dev ; dev=dev->next ) {
             if ( dev->descriptor.idVendor==0x04FA && dev->descriptor.idProduct==0x2490 ) {
                 if ( ++usbnum < useusb ) {
-                        syslog(LOG_INFO,"USB 2490 adapter at %s/%s passed over.\n",bus->dirname,dev->filename) ;
+                    syslog(LOG_INFO,"USB 2490 adapter at %s/%s passed over.\n",bus->dirname,dev->filename) ;
+                } else if ( (devport=(char *)malloc(strlen(bus->dirname)+strlen(dev->filename)+2) ) == NULL ) {
+                    return -ENOMEM ;
                 } else {
+                    strcpy(devport,bus->dirname) ;
+                    strcat(devport,"/") ;
+                    strcat(devport,dev->filename) ;
                     if ( (devusb=usb_open(dev)) ) {
                         if ( usb_set_configuration( devusb, 1 )==0 && usb_claim_interface( devusb, 0)==0 ) {
                             if ( usb_set_altinterface( devusb, 0)==0 ) {
-                                syslog(LOG_INFO,"Opened USB 2490 adapter at %s/%s.\n",bus->dirname,dev->filename) ;
+                                syslog(LOG_INFO,"Opened USB 2490 adapter at %s.\n",devport) ;
                                 DS9490_setroutines( & iroutines ) ;
+                                Version2480 = 8 ; /* dummy value */
                                 return DS9490_reset() ;
                             }
                             usb_release_interface( devusb, 0) ;
@@ -95,7 +101,7 @@ int DS9490_detect( int useusb ) {
                         usb_close( devusb ) ;
                         devusb = 0 ;
                     }
-                    syslog(LOG_INFO,"Failed to open/configure USB 2490 adapter at %s/%s.\n",bus->dirname,dev->filename) ;
+                    syslog(LOG_INFO,"Failed to open/configure USB 2490 adapter at %s.\n",devport) ;
                     return 1 ;
                 }
             }
@@ -137,7 +143,6 @@ printf("9490RESET\n");
     ) return ret ;
 
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
-    Version2480 = 8 ; /* dummy value */
     AnyDevices = !(buffer[16]&0x01) ;
 printf("9490RESET=0\n");
     return 0 ;
