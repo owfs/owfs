@@ -117,3 +117,37 @@ void UT_set2bit( unsigned char * buf, const int loc , const int bits ) {
         return ;
     }
 }
+
+#include <features.h>
+#if defined(__UCLIBC__)
+#if (__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913
+/*
+  uClibc older than 0.9.19 is missing tdestroy() (don't know exactly when
+  it was added) I added a replacement to this, just to be able to compile
+  owfs for WRT54G without any patched uClibc.
+*/
+
+typedef struct node_t {
+    void        *key;
+    struct node_t *left, *right;
+} node;
+
+static void tdestroy_recurse_ (node *root, void *freefct) {
+    if (root->left != NULL)
+        tdestroy_recurse_ (root->left, freefct);
+    if (root->right != NULL)
+        tdestroy_recurse_ (root->right, freefct);
+    //(*freefct) ((void *) root->key);
+    free((void *) root->key);
+    /* Free the node itself.  */
+    free (root);
+}
+
+void tdestroy_(void *vroot, void *freefct) {
+    node *root = (node *) vroot;
+    if (root != NULL) {
+        tdestroy_recurse_ (root, freefct);
+    }
+}
+#endif /* Older than 0.9.19 */
+#endif /* __UCLIBC__ */

@@ -1002,10 +1002,13 @@ void BUS_unlock( const struct parsedname * pn ) ;
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
 
+#include <features.h>
 #ifdef __UCLIBC__
- //#include <features.h>
  #if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
   #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000913
+/* tdestroy() is missing in older versions */
+void tdestroy_(void *vroot, void *freefct);
+#define tdestroy(a, b) tdestroy_((a), (b))
    #define syslog(a,...)	{ /* ignore_syslog */ }
    #define openlog(a,...)	{ /* ignore_openlog */ }
    #define closelog()		{ /* ignore_closelog */ }

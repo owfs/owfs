@@ -17,40 +17,6 @@ $Id$
 #ifdef OW_CACHE
 #include <limits.h>
 
-#if defined(__UCLIBC__)
-#if (__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913
-/*
-  uClibc older than 0.9.19 is missing tdestroy() (don't know exactly when
-  it was added) I added a replacement to this, just to be able to compile
-  owfs for WRT54G without any patched uClibc.
-*/
-
-typedef struct node_t {
-    void        *key;
-    struct node_t *left, *right;
-} node;
-
-static void tdestroy_recurse_ (node *root, void *freefct) {
-    if (root->left != NULL)
-        tdestroy_recurse_ (root->left, freefct);
-    if (root->right != NULL)
-        tdestroy_recurse_ (root->right, freefct);
-    //(*freefct) ((void *) root->key);
-    free((void *) root->key);
-    /* Free the node itself.  */
-    free (root);
-}
-
-static void tdestroy_(void *vroot, void *freefct) {
-    node *root = (node *) vroot;
-    if (root != NULL) {
-        tdestroy_recurse_ (root, freefct);
-    }
-}
-#define tdestroy(a, b) tdestroy_((a), (b))
-#endif /* Older than 0.9.19 */
-#endif /* __UCLIBC__ */
-
 int cacheavailable = 1 ; /* is caching available */
 
 /* Put the globals into a struct to declutter the namespace */
