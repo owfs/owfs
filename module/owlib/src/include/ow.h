@@ -89,7 +89,6 @@ extern int maxslots ;
     #include "sem.h"
 #endif
     extern pthread_mutex_t bus_mutex ;
-    extern pthread_mutex_t dev_mutex ;
     extern pthread_mutex_t stat_mutex ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
