@@ -9,8 +9,6 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
-#include <linux/stddef.h>
-
 #include "owfs_config.h"
 #include "ow.h"
 
