@@ -125,102 +125,100 @@ void LibSetup( void ) {
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-void catchchild()
-{
-  char buf[40];
-  pid_t pid;
-  int status;
+void catchchild() {
+    char buf[40];
+    pid_t pid;
+    int status;
 
   /*signal(SIGCHLD, catchchild);*/ /* Unneeded */
 
-  pid = wait4(-1, &status, WUNTRACED, 0);
-  if (WIFSTOPPED(status))
-    sprintf(buf, "owlib: %d: Child %d stopped\n", getpid(), pid);
-  else
-    sprintf(buf, "owlib: %d: Child %d died\n", getpid(), pid);
+    pid = wait4(-1, &status, WUNTRACED, 0);
+    if (WIFSTOPPED(status))
+        sprintf(buf, "owlib: %d: Child %d stopped\n", getpid(), pid);
+    else
+        sprintf(buf, "owlib: %d: Child %d died\n", getpid(), pid);
 
-  //if (intcrlf) write(STDOUT, "\n", 1);
-  //write(STDOUT, buf, strlen(buf));
-  printf(buf);
+    //if (intcrlf) write(STDOUT, "\n", 1);
+    //write(STDOUT, buf, strlen(buf));
+//printf(buf);
 }
 
 /*
   This is a test to implement daemon() on uClinux with uClibc...
   I'm not sure it works correctly, so don't use it yet.
 */
-int my_daemon(int nochdir, int noclose)
-{
-  struct sigaction act;
-  int pid, rc;
-  int fd;
+int my_daemon(int nochdir, int noclose) {
+    struct sigaction act;
+    int pid, rc;
+    int fd;
 
-  printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
-  printf("owlib: Run application with --foreground instead.\n");
+//printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
+//printf("owlib: Run application with --foreground instead.\n");
 
-  signal(SIGCHLD, SIG_DFL);
+    signal(SIGCHLD, SIG_DFL);
 
-  pid = vfork();
-  switch(pid) {
-  case -1:
+    pid = vfork();
+    switch(pid) {
+    case -1:
+        memset(&act, 0, sizeof(act));
+        act.sa_handler = catchchild;
+        act.sa_flags = SA_RESTART;
+        sigaction(SIGCHLD, &act, NULL);
+//printf("owlib: my_daemon: pid=%d fork error\n", getpid());
+
+        return(-1);
+    case 0:
+        break;
+    default:
+    //signal(SIGCHLD, SIG_DFL);
+//printf("owlib: my_daemon: pid=%d exit parent\n", getpid());
+        _exit(0);
+    }
+
+//printf("owlib: my_daemon: pid=%d call setsid()\n", getpid());
+
+    if(setsid() < 0) {
+        perror("setsid:");
+        return -1;
+    }
+
+#if 0
+    pid = vfork();
+    if(pid) {
+        printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
+        _exit(0);
+    }
+#endif
+
     memset(&act, 0, sizeof(act));
     act.sa_handler = catchchild;
     act.sa_flags = SA_RESTART;
     sigaction(SIGCHLD, &act, NULL);
-    printf("owlib: my_daemon: pid=%d fork error\n", getpid());
 
-    return(-1);
-  case 0:
-    break;
-  default:
-    //signal(SIGCHLD, SIG_DFL);
-    printf("owlib: my_daemon: pid=%d exit parent\n", getpid());
-    _exit(0);
-  }
-
-  printf("owlib: my_daemon: pid=%d call setsid()\n", getpid());
-
-  if(setsid() < 0) {
-    perror("setsid:");
-    return -1;
-  }
-
-#if 0
-  pid = vfork();
-  if(pid) {
-    printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
-    _exit(0);
-  }
-#endif
-
-  memset(&act, 0, sizeof(act));
-  act.sa_handler = catchchild;
-  act.sa_flags = SA_RESTART;
-  sigaction(SIGCHLD, &act, NULL);
-
-  if(!nochdir) {
-    chdir("/");
-  }
+    if(!nochdir) {
+        chdir("/");
+    }
 
 #if 1
-  if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
-    dup2(fd, STDIN_FILENO);
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
-    if (fd > 2)
-      close(fd);
-  }
-#else
-  if(!noclose) {
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    if (dup(dup(open("/dev/null", O_APPEND)))==-1){
-      perror("dup:");
-      return -1;
+    if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        if (fd > 2)
+            close(fd);
     }
-  }
+#else
+    if(!noclose) {
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+        if (dup(dup(open("/dev/null", O_APPEND)))==-1){
+            perror("dup:");
+            return -1;
+        }
+    }
 #endif
-  return 0;
+    return 0;
 }
 #endif /* __uClinux__ */
 
@@ -228,11 +226,11 @@ int my_daemon(int nochdir, int noclose)
 int LibStart( void ) {
     if ( background &&
 #ifdef __uClinux__
-	 my_daemon(1, 0)
+        my_daemon(1, 0)
 #else /* __uClinux__ */
-	 daemon(1, 0)
+        daemon(1, 0)
 #endif /* __uClinux__ */
-	 ) {
+    ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
     }

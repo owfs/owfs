@@ -31,27 +31,29 @@ $Id$
 #include "owhttpd.h" // httpd-specific
 
 #ifdef OW_MT
-
-    #include <pthread.h>
+#include <pthread.h>
 sem_t accept_sem ;
 #define MAX_THREADS 10
 pthread_mutex_t thread_lock = PTHREAD_MUTEX_INITIALIZER;
 struct mythread {
-  pthread_t tid;
-  int socket;
-  unsigned char avail;
+    pthread_t tid;
+    int socket;
+    unsigned char avail;
 };
 struct mythread threads[MAX_THREADS];
+#define THREADLOCK      pthread_mutex_lock(&thread_lock);
+#define THREADUNLOCK    pthread_mutex_unlock(&thread_lock);
 
-#else
-
+#else /* OW_MT */
 #define MAX_THREADS 1
 struct mythread {
-  int socket;
+    int socket;
 };
 struct mythread threads[MAX_THREADS];
-
+#define THREADLOCK
+#define THREADUNLOCK
 #endif /* OW_MT */
+
 /*
  * Default port to listen too. If you aren't root, you'll need it to
  * be > 1024 unless you plan on using a config file
@@ -72,11 +74,11 @@ static void http_loop( struct listen_sock *sock ) ;
 void kill_threads(void) {
 #ifdef OW_MT
     int i;
-    pthread_mutex_lock(&thread_lock);
-    for (i = 0; i < MAX_THREADS; i++) {
-      if(!threads[i].avail) pthread_cancel(threads[i].tid);
-    }
-    pthread_mutex_unlock(&thread_lock);
+    THREADLOCK
+        for (i = 0; i < MAX_THREADS; i++) {
+            if(!threads[i].avail) pthread_cancel(threads[i].tid);
+        }
+    THREADUNLOCK
 #endif
     shutdown_sock(l_sock);
     exit(0);
@@ -183,33 +185,32 @@ static void * handle(void * ptr) {
     }
     close(ch_sock.socket);
 #ifdef OW_MT
-    pthread_mutex_lock(&thread_lock);
-    mt->avail = 1;
-    mt->socket = 0;
-    pthread_mutex_unlock(&thread_lock);
+    THREADLOCK
+        mt->avail = 1;
+        mt->socket = 0;
+    THREADUNLOCK
     sem_post(&accept_sem);
     pthread_exit(NULL);
 #endif
     return NULL ;
 }
 
-static int start_thread(struct mythread *mt)
-{
-  sigset_t oldset;
-  sigset_t newset;
-  int res;
+static int start_thread(struct mythread *mt) {
+    sigset_t oldset;
+    sigset_t newset;
+    int res;
 
-  /* Disallow signal reception in worker threads */
-  sigfillset(&newset);
-  pthread_sigmask(SIG_SETMASK, &newset, &oldset);
-  res = pthread_create(&mt->tid, NULL, handle, mt);
-  pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-  if (res != 0) {
-    fprintf(stderr, "start_thread: error creating thread: %s\n", strerror(res));
-    return -1;
-  }
-  pthread_detach(mt->tid);
-  return 0;
+    /* Disallow signal reception in worker threads */
+    sigfillset(&newset);
+    pthread_sigmask(SIG_SETMASK, &newset, &oldset);
+    res = pthread_create(&mt->tid, NULL, handle, mt);
+    pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+    if (res != 0) {
+        fprintf(stderr, "start_thread: error creating thread: %s\n", strerror(res));
+        return -1;
+    }
+    pthread_detach(mt->tid);
+    return 0;
 }
 
 static void http_loop( struct listen_sock *sock ) {
@@ -219,25 +220,23 @@ static void http_loop( struct listen_sock *sock ) {
 #ifdef OW_MT
         sem_wait(&accept_sem);
         if (multithreading) {
-	    int res, i;
-	    pthread_mutex_lock(&thread_lock);
-	    
-	    for(i=0; i<MAX_THREADS; i++) if(threads[i].avail) break;
-	    threads[i].avail = 0;
-	    threads[i].socket = n_sock;
-	    pthread_mutex_unlock(&thread_lock);
-
-	    res = start_thread(&threads[i]);
-	    if (res == -1) {
-	      //shutdown(n_sock, SHUT_RDWR);
-	      close(n_sock);
-	      pthread_mutex_lock(&thread_lock);
-	      threads[i].avail = 1;
-	      pthread_mutex_unlock(&thread_lock);
-	      sem_post(&accept_sem);
-	    }
+            int res, i;
+            THREADLOCK
+                for(i=0; i<MAX_THREADS; i++) if(threads[i].avail) break;
+                threads[i].avail = 0;
+                threads[i].socket = n_sock;
+            THREADUNLOCK
+            res = start_thread(&threads[i]);
+            if (res == -1) {
+                //shutdown(n_sock, SHUT_RDWR);
+                close(n_sock);
+                THREADLOCK
+                    threads[i].avail = 1;
+                THREADUNLOCK
+                sem_post(&accept_sem);
+            }
         } else {
-	    threads[0].avail = 0;
+            threads[0].avail = 0;
             threads[0].socket = n_sock;
             handle(&threads[0]);
         }
