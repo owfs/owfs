@@ -110,6 +110,8 @@ static int FS_detail(char *buf, const size_t size, const off_t offset , const st
              return size ;
         }
     default:
-        return 0 ;
+        memset(buf,0,size) ;
+        strcpy(buf, "(none)");
+        return size;
     }
 }
