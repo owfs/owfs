@@ -100,7 +100,11 @@ struct dirback {
 static void directory( void * data, const struct parsedname * const pn ) {
     char extname[OW_FULLNAME_MAX+1] ; /* buffer for name */
     FS_DirName( extname, OW_FULLNAME_MAX+1, pn ) ;
+#if defined(FUSE_MAJOR_VERSION) && (FUSE_MAJOR_VERSION >= 3)
+    (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR , 0) ;
+#else
     (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
+#endif
 }
 
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
