@@ -24,7 +24,8 @@ header_DATA = ow_1820.h \
               ow_none.h \
               ow_xxxx.h \
               ow_stats.h \
-              ow_stub.h
+              ow_stub.h \
+              sem.h
 
 EXTRA_DIST = ${header_DATA}
 
