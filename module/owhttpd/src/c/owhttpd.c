@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     char c ;
 
     LibSetup() ;
+    progname = strdup(argv[0]) ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -125,11 +126,6 @@ int main(int argc, char *argv[]) {
     if ( optind == argc-1 ) {
         ComSetup(argv[optind]) ;
         ++optind ;
-    }
-
-    if ( busmode == bus_unknown ) {
-        fprintf(stderr, "No device port/server specified (-d or -u or -s)\n%s -h for help\n",argv[0]);
-        ow_exit(1);
     }
 
     if ( portnum==-1 ) {
@@ -216,7 +212,7 @@ static int start_thread(struct mythread *mt) {
          syslogd as default, it's better to remove syslog() when version <= 0.9.19.
     */
     //syslog(LOG_WARNING,"This solves the problem of hanging syslog() in the new thread???\n");
-#endif
+#endif /* DEBUG_SYSLOG */
 
     pthread_detach(mt->tid);
     return 0;

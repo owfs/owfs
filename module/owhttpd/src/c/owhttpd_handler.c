@@ -75,15 +75,15 @@ int handle_socket(struct active_sock * const a_sock) {
     struct stateinfo si ;
     pn.si = &si ;
 
-    { /* magic socket stuff */
-        struct sockaddr_in peer;
-        socklen_t          socklen = sizeof(peer);
-        if ( getpeername(a_sock->socket, (struct sockaddr *) &peer, &socklen) < 0) {
-            syslog(LOG_WARNING,"couldn't get peer name, dropping connection\n");
-            return 1;
-        }
-        a_sock->peer_addr = peer.sin_addr;
-    }
+//    { /* magic socket stuff */
+//        struct sockaddr_in peer;
+//        socklen_t          socklen = sizeof(peer);
+//        if ( getpeername(a_sock->socket, (struct sockaddr *) &peer, &socklen) < 0) {
+//            syslog(LOG_WARNING,"couldn't get peer name, dropping connection\n");
+//            return 1;
+//        }
+//        a_sock->peer_addr = peer.sin_addr;
+//    }
     str = fgets(up.line, PATH_MAX, a_sock->io);
 //printf("PreParse line=%s\n",up.line);
     URLparse( &up ) ; /* Braek up URL */
@@ -209,7 +209,7 @@ static void HTTPtitle(FILE * out, const char * title ) {
 }
 
 static void HTTPheader(FILE * out, const char * head ) {
-    fprintf(out, "<BODY "BODYCOLOR"><TABLE "TOPTABLE"><TR><TD>OWFS on %s</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://owfs.sourceforge.net'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n", devport);
+    fprintf(out, "<BODY "BODYCOLOR"><TABLE "TOPTABLE"><TR><TD>OWFS on %s</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://owfs.sourceforge.net'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n", busmode==bus_remote?"server":devport);
     fprintf(out, "<H1>%s</H1><HR>\n", head);
 }
 

@@ -17,7 +17,6 @@ $Id$
 static int DS9097_PowerByte(const unsigned char byte, const unsigned int delay) ;
 static int DS9097_ProgramPulse( void ) ;
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-//int DS9097_detect( void ) ;
 static int DS9097_reset( const struct parsedname * const pn ) ;
 static int DS9097_read(unsigned char * const buf, const size_t size ) ;
 static int DS9097_write( const unsigned char * const bytes, const size_t num ) ;
@@ -28,7 +27,7 @@ static int DS9097_sendback_data( const unsigned char * const data , unsigned cha
 static void DS9097_setroutines( struct interface_routines * const f ) ;
 
 #define	OneBit	0xFF
-#define ZeroBit 0x00
+#define ZeroBit 0xC0
 
 /* Device-specific functions */
 static void DS9097_setroutines( struct interface_routines * const f ) {
@@ -130,7 +129,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
             } else { /* 1,0 */
                 search_direction = 1;  // bit write value for search
             }
-        } else { 
+        } else {
             if ( bits[2] ) { /* 0,1 */
                 search_direction = 0;  // bit write value for search
             } else  if (bit_number < si->LastDiscrepancy) {

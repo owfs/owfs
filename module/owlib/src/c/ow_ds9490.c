@@ -371,7 +371,7 @@ static int DS9490_select_low(const struct parsedname * const pn) {
     int ret ;
     int ibranch ;
     // match Serial Number command 0x55
-    unsigned char send[9] = { 0x55, } ;
+    unsigned char sendbytes[9] = { 0x55, } ;
     unsigned char branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
     unsigned char resp[3] ;
     unsigned char buffer[32] ;
@@ -391,9 +391,9 @@ if ( reset ) {
            if ( (ret=BUS_reset(pn)) ) return ret ;
            reset = 0 ;
        }
-       memcpy( &send[1], pn->bp[ibranch].sn, 8 ) ;
+       memcpy( &sendbytes[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
-        if ( (ret=BUS_send_data(send,9)) ) return ret ;
+        if ( (ret=BUS_send_data(sendbytes,9)) ) return ret ;
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1)) || (ret=BUS_readin_data(resp,3)) ) return ret ;
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) return -EINVAL ;

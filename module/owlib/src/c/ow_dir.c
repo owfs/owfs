@@ -18,7 +18,6 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
-enum deviceformat devform = fdi ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -43,9 +42,6 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path
     int ret = 0 ;
     struct parsedname pn2 ;
 
-//printf("DIR0 path=%s\n",path);
-    if ( busmode == bus_remote ) return ServerDir( dirfunc, path, pn ) ;
-
     STATLOCK
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
@@ -61,9 +57,12 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path
     } else if ( pn->dev ){ /* device directory */
         ret = FS_devdir( dirfunc, &pn2 ) ;
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-        ret = FS_alarmdir( dirfunc, &pn2 ) ;
+        ret = ( busmode == bus_remote ) ? ServerDir( dirfunc, pn ) : FS_alarmdir( dirfunc, &pn2 ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         ret = FS_typedir( dirfunc, &pn2 ) ;
+    } else if ( busmode == bus_remote ) {
+printf("DIR: to bus\n");
+        ret = ServerDir( dirfunc, pn ) ;
     } else {
         pn2.state = (pn_alarm | (pn->state & pn_text)) ;
         dirfunc( &pn2 ) ;
@@ -318,141 +317,4 @@ static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct
     twalk( Tree[pn2->type],action) ;
     pn2->dev = NULL ;
     return 0 ;
-}
-
-/* device display format */
-void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) {
-    const unsigned char * p = pn->sn ;
-    UCLIBCLOCK
-//printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
-    switch (DeviceFormat(pn)) {
-    case fdi:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6]) ;
-        break ;
-    case fi:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6]) ;
-        break ;
-    case fdidc:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X.%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    case fdic:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    case fidc:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X.%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    case fic:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    }
-    UCLIBCUNLOCK
-}
-
-const char dirname_state_uncached[] = "uncached";
-const char dirname_state_alarm[]    = "alarm";
-const char dirname_state_text[]     = "text";
-const char dirname_state_unknown[]  = "";
-
-const char * FS_dirname_state( const enum pn_state state ) {
-//printf("dirname state on %.2X\n",state);
-    if ( state & pn_alarm   ) return dirname_state_alarm   ;
-    if ( state & pn_text    ) return dirname_state_text    ;
-    if ( state & pn_uncached) return dirname_state_uncached;
-    return dirname_state_unknown ;
-/*
-    switch (state) {
-    case pn_uncached:
-        return dirname_state_uncached;
-    case pn_alarm:
-        return dirname_state_alarm;
-    case pn_text:
-        return dirname_state_text;
-    default:
-        return dirname_state_unknown;
-    }
-*/
-}
-
-const char dirname_type_statistics[] = "statistics";
-const char dirname_type_system[]     = "system";
-const char dirname_type_settings[]   = "settings";
-const char dirname_type_structure[]  = "structure";
-const char dirname_type_unknown[]    = "";
-
-const char * FS_dirname_type( const enum pn_type type ) {
-    switch (type) {
-    case pn_statistics:
-        return dirname_type_statistics;
-    case pn_system:
-        return dirname_type_system;
-    case pn_settings:
-        return dirname_type_settings;
-    case pn_structure:
-        return dirname_type_structure;
-    default:
-        return dirname_type_unknown;
-    }
-}
-
-/* name of file from filetype structure -- includes extension */
-int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) {
-    int s ;
-    if ( pn->ft == NULL ) return -ENOENT ;
-    UCLIBCLOCK
-        if ( pn->ft->ag == NULL ) {
-            s = snprintf( name , size, "%s",pn->ft->name) ;
-        } else if ( pn->extension == -1 ) {
-            s = snprintf( name , size, "%s.ALL",pn->ft->name) ;
-        } else if ( pn->extension == -2 ) {
-            s = snprintf( name , size, "%s.BYTE",pn->ft->name) ;
-        } else if ( pn->ft->ag->letters == ag_letters ) {
-            s = snprintf( name , size, "%s.%c",pn->ft->name,pn->extension+'A') ;
-        } else {
-            s = snprintf( name , size, "%s.%-d",pn->ft->name,pn->extension) ;
-        }
-    UCLIBCUNLOCK
-    return (s<0) ? -ENOBUFS : 0 ;
-}
-
-/* Return the last part of the file name specified by pn */
-/* This can be a device, directory, subdiirectory, if property file */
-/* Prints this directory element (not the whole path) */
-/* Suggest that size = OW_FULLNAME_MAX */
-void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) {
-    if ( pn->ft ) { /* A real file! */
-        char * pname = strchr(pn->ft->name,'/') ; // for subdirectories
-        if ( pname ) {
-            ++ pname ;
-        } else {
-            pname = pn->ft->name ;
-        }
-
-        UCLIBCLOCK
-            if ( pn->ft->ag == NULL ) {
-                snprintf( buffer , size, "%s",pname) ;
-            } else if ( pn->extension == -1 ) {
-                snprintf( buffer , size, "%s.ALL",pname) ;
-            } else if ( pn->extension == -2 ) {
-                snprintf( buffer , size, "%s.BYTE",pname) ;
-            } else if ( pn->ft->ag->letters == ag_letters ) {
-                snprintf( buffer , size, "%s.%c",pname,pn->extension+'A') ;
-            } else {
-                snprintf( buffer , size, "%s.%-d",pname,pn->extension) ;
-            }
-        UCLIBCUNLOCK
-    } else if ( pn->subdir ) { /* in-device subdirectory */
-        strncpy( buffer, pn->subdir->name, size) ;
-    } else if (pn->dev == NULL ) { /* root-type directory */
-        if ( (pn->state & (pn_uncached | pn_alarm)) ) {
-            strncpy( buffer, FS_dirname_state( pn->state & (pn_uncached | pn_alarm)), size ) ;
-        } else {
-            strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
-        }
-    } else if ( pn->dev == DeviceSimultaneous ) {
-        strncpy( buffer, DeviceSimultaneous->code, size ) ;
-    } else if ( pn->type == pn_real ) { /* real device */
-        FS_devicename( buffer, size, pn ) ;
-    } else { /* pseudo device */
-        strncpy( buffer, pn->dev->code, size ) ;
-    }
 }

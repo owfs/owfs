@@ -39,9 +39,9 @@ $Id$
 
 /* --- Prototypes ------------ */
 static int Handler( int fd ) ;
-static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const char *path, const struct parsedname *pn ) ;
-static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const char *path, const unsigned char *data, const struct parsedname *pn ) ;
-static void DirHandler(struct server_msg *sm, struct client_msg *cm, const char * path, int fd, const struct parsedname * pn ) ;
+static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
+static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
+static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, const char *data ) ;
 static void * Acceptor( int listenfd ) ;
@@ -127,6 +127,8 @@ static int Handler( int fd ) {
     char * path = FromClientAlloc( fd, &sm ) ;
 
     switch( (enum msg_type) sm.type ) {
+    case msg_full:
+    case msg_size:
     case msg_read:
     case msg_write:
     case msg_dir:
@@ -140,8 +142,14 @@ static int Handler( int fd ) {
             if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
             si.sg.int32 = sm.sg ;
             switch( (enum msg_type) sm.type ) {
+            case msg_full:
+                cm.ret = FullFileLength(&pn) ;
+                break ;
+            case msg_size:
+                cm.ret = FileLength(&pn) ;
+                break ;
             case msg_read:
-                retbuffer = ReadHandler( &sm , &cm, path, &pn ) ;
+                retbuffer = ReadHandler( &sm , &cm, &pn ) ;
                 break ;
             case msg_write: {
                     int pathlen = strlen( path ) + 1 ; /* include trailing null */
@@ -150,12 +158,12 @@ static int Handler( int fd ) {
                         cm.ret = -EMSGSIZE ;
                     } else {
                         unsigned char * data = &path[pathlen] ;
-                        WriteHandler( &sm, &cm, path, data, &pn ) ;
+                        WriteHandler( &sm, &cm, data, &pn ) ;
                     }
                 }
                 break ;
             case msg_dir:
-                DirHandler( &sm, &cm, path, fd, &pn ) ;
+                DirHandler( &sm, &cm, fd, &pn ) ;
                 break ;
             }
             FS_ParsedName_destroy(&pn) ;
@@ -185,7 +193,7 @@ static int Handler( int fd ) {
 /* The length of string in cm.payload */
 /* If cm.payload is 0, then a NULL string is returned */
 /* cm.ret is also set to an error <0 or the read length */
-static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const char * path, const struct parsedname * pn ) {
+static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     char * retbuffer = NULL ;
 
     cm->payload = FullFileLength(pn) ;
@@ -203,7 +211,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const c
 //printf("Handler: Allocating buffer size=%d\n",cm.payload);
         cm->payload = 0 ;
         cm->ret = -ENOBUFS ;
-    } else if ( (cm->ret = FS_read_postparse(path,retbuffer,cm->payload,cm->offset,pn)) <= 0 ) {
+    } else if ( (cm->ret = FS_read_postparse(retbuffer,cm->payload,cm->offset,pn)) <= 0 ) {
         cm->payload = 0 ;
         free(retbuffer) ;
         retbuffer = NULL ;
@@ -222,8 +230,8 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const c
 /* Read, will return: */
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
-static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const char *path, const unsigned char *data, const struct parsedname *pn ) {
-    int ret = FS_write_postparse(path,data,sm->size,sm->offset,pn) ;
+static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) {
+    int ret = FS_write_postparse(pn->path,data,sm->size,sm->offset,pn) ;
 //printf("Handler: WRITE done\n");
     if ( ret<0 ) {
         cm->size = 0 ;
@@ -241,8 +249,8 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const cha
 /* Read, will return: */
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
-static void DirHandler(struct server_msg *sm , struct client_msg *cm, const char * path, int fd, const struct parsedname * pn ) {
-    int pathlen = strlen(path) + 1 ;
+static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, const struct parsedname * pn ) {
+    int pathlen = strlen(pn->path) + 1 ;
     char retbuffer[pathlen + OW_FULLNAME_MAX + 2] ;
     /* nested function -- callback for directory entries */
     /* return the full path length, including current entry */
@@ -260,14 +268,14 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, const char
     cm->sg = sm->sg ;
     /* return buffer holds max file length */
     /* copy current path into return buffer */
-    memcpy(retbuffer, path, pathlen ) ;
+    memcpy(retbuffer, pn->path, pathlen ) ;
 //printf("Handler: DIR retbuffer=%s\n",retbuffer);
     /* Add a trailing '/' */
     if ( (pathlen <2) || (retbuffer[pathlen-2] !='/') ) {
         strcpy( &retbuffer[pathlen-1] , "/" ) ;
         ++pathlen ;
     }
-    cm->ret = FS_dir( directory, path, pn ) ;
+    cm->ret = FS_dir( directory, pn->path, pn ) ;
 //printf("Handler: DIR done\n");
     /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
@@ -290,6 +298,7 @@ static void * Acceptor( int listenfd ) {
 
 int main( int argc , char ** argv ) {
     char c ;
+    progname = strdup(argv[0]) ;
 #ifdef OW_MT
     pthread_t thread ;
     pthread_attr_t attr ;
@@ -321,11 +330,6 @@ int main( int argc , char ** argv ) {
     if ( optind == argc-1 ) {
         ComSetup(argv[optind]) ;
         ++optind ;
-    }
-
-    if ( devfd==-1 && devusb==0 ) {
-        fprintf(stderr, "No device port specified (-d or -u or -s)\n%s -h for help\n",argv[0]);
-        ow_exit(1);
     }
 
     if ( portname==NULL ) {

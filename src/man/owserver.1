@@ -45,7 +45,7 @@ is the backend component of the OWFS 1-wire bus control system.
 .I owserver
 arbitrates access to the bus from multiple client processes. The physical bus is usually connected to a serial or USB port, and other processes connect to
 .I owserver
-over network sockets (tcp port). Communication can be local, or over a network, and secure tunneling can be implemented using standard techniques.
+over network sockets (tcp port). Communication can be local or over a network. Secure tunneling can be implemented using standard techniques.
 .PP
 Frontend clients include a filesystem representation:
 .I owfs(1)
@@ -63,16 +63,17 @@ with the clients connecting. Note:
 .I owserver
 can connect to another
 .I owserver
-process, though the utility of this technique is limited.
+process, though the utility of this technique is limited (perhaps as a
+.I readonly
+buffer?)
 .PP
 .I owserver
-is by default multithreaded. Optional data caching is shared among all the clients improves efficiency.
+is by default multithreaded. Optional data caching is in the server, not clients, so all the clients gain efficiency.
 .PP
 The 1-wire protocol is a simple networking system and assiciated devices developed by Dallas Semiconductor (now Maxim). Communication is over a single line, with both power and data being supplied. Each 1-wire device has a unique address, hardwired during manufacture. Devices can be individually discovered and addressed. 1-wire devices include simple IDs, memory, temperature, pressure, voltage, humidity, clock, switches, encryption and more.
 .SH OPTIONS
 .SS \-\-background | \-\-foreground
-Whether the program releases the console and
-after evaluating command line options.
+Whether the program releases the console and enters daemon mode after evaluating command line options.
 .I background
 is the default.
 .SS \-d \-\-device "deviceport" | \-u | -s portnum

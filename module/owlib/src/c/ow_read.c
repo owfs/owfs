@@ -18,7 +18,7 @@ $ID: $
 
 
 /* ------- Prototypes ----------- */
-static int FS_real_read(const char *path, char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_real_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
@@ -35,14 +35,14 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     int r ;
 
     pn.si = &si ;
-    
+
     if ( busmode == bus_remote ) return ServerRead(path,buf,size,offset) ;
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
         r = -EISDIR ;
     } else {
-        r = FS_read_postparse(path, buf, size, offset, &pn ) ;
+        r = FS_read_postparse(buf, size, offset, &pn ) ;
     }
     FS_ParsedName_destroy(&pn) ;
     return r ;
@@ -63,11 +63,11 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 /*   outside of this module will not have buffer overflows */
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
-int FS_read_postparse(const char * path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     size_t s = size ;
     int r ;
 
-    if ( busmode == bus_remote ) return ServerRead(path,buf,size,offset) ;
+    if ( busmode == bus_remote ) return ServerRead(pn->path,buf,size,offset) ;
     STATLOCK
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
@@ -81,12 +81,12 @@ int FS_read_postparse(const char * path, char *buf, const size_t size, const off
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
             LockGet(pn) ;
-                r = FS_real_read( path, buf, size, offset, pn ) ;
+                r = FS_real_read( buf, size, offset, pn ) ;
             LockRelease(pn) ;
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
             LockGet(pn) ;
-                r = FS_real_read( path, buf, size, offset, pn ) ;
+                r = FS_real_read( buf, size, offset, pn ) ;
                 if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
             LockRelease(pn) ;
         } else {
@@ -116,7 +116,7 @@ int FS_read_postparse(const char * path, char *buf, const size_t size, const off
 /* Real read -- called from read
    Integrates with cache -- read not called if cached value already set
 */
-static int FS_real_read(const char *path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+static int FS_real_read(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 //printf("RealRead path=%s size=%d, offset=%d, extension=%d\n",path,size,offset,pn->extension) ;
     /* Readable? */
@@ -149,7 +149,7 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
     ++read_tries[2] ; /* statitics */
     r = FS_parse_read( buf, size, offset, pn ) ;
-    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",path,(int)size) ;
+    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 

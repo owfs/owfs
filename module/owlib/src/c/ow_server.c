@@ -18,12 +18,45 @@ $Id$
 static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) ;
+static int ServerSizeorFull( enum msg_type type, const char * path  ) ;
 
 int Server_detect( void ) {
     if ( servername == NULL ) return -1 ;
     if ( ClientAddr( servername, &client ) ) return -1 ;
     busmode = bus_remote ;
     return 0 ;
+}
+
+int ServerSize( const struct parsedname *pn) {
+    return ServerSizeorFull( msg_size, pn->path) ;
+}
+
+int ServerFull( const struct parsedname *pn) {
+    return ServerSizeorFull( msg_full, pn->path) ;
+}
+
+/* Size of a data item */
+static int ServerSizeorFull( enum msg_type type, const char * path  ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    int connectfd = ClientConnect( &client ) ;
+    int ret ;
+
+    if ( connectfd < 0 ) return -EIO ;
+//printf("ServerRead path=%s, size=%d, offset=%d\n",path,size,offset);
+    sm.type = msg_size ;
+    sm.size = 0 ;
+    sm.sg =  SemiGlobal.int32;
+    sm.offset = 0 ;
+    if ( ToServer( connectfd, &sm, path, NULL, 0) ) {
+        ret = -EIO ;
+    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
+        ret = -EIO ;
+    } else {
+        ret = cm.ret ;
+    }
+    close( connectfd ) ;
+    return ret ;
 }
 
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) {
@@ -77,7 +110,7 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
     return ret ;
 }
 
-int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) {
+int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
     char * path2 ;
@@ -94,7 +127,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     sm.size = 0 ;
     sm.sg = SemiGlobal.int32;
     sm.offset = 0 ;
-    if ( ToServer( connectfd, &sm, path, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, pn->path, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {

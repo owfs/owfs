@@ -24,6 +24,8 @@ OWLIB_SOURCE = ow_xxxx.c         \
                ow_cache.c        \
                ow_lcd.c          \
                ow_parsename.c    \
+               ow_name.c         \
+               ow_filelength.c   \
                ow_read.c         \
                ow_write.c        \
                ow_dir.c          \

@@ -463,6 +463,7 @@ struct stateinfo {
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 enum pn_state { pn_normal=1, pn_uncached=2, pn_alarm=4, pn_text=8} ;
 struct parsedname {
+    const char * path ; // text-more device name
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch
     unsigned char sn[8] ; // 64-bit serial number
@@ -489,6 +490,7 @@ extern speed_t speed;        /* terminal speed constant */
 enum bus_mode { bus_unknown, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
 extern enum bus_mode busmode ;
 
+extern char * progname ; /* argv[0] stored */
 extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
 extern int useusb ; /* Which USB adapter to use (1-based index) */
@@ -534,7 +536,7 @@ struct client_msg {
     int32_t size ;
     int32_t offset ;
 } ;
-enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, } ;
+enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_full, } ;
 
 
 /* device display format */
@@ -770,11 +772,12 @@ int ClientConnect( struct network_work * nw ) ;
 int ServerListen( struct network_work * nw ) ;
 void FreeAddr( struct network_work * nw ) ;
 
-
 int Server_detect( void ) ;
+int ServerSize( const struct parsedname *pn) ;
+int ServerFull( const struct parsedname *pn) ;
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
 int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
-int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
+int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn ) ;
 
 /* High-level callback functions */
 int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
@@ -783,7 +786,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
-int FS_read_postparse(const char * path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;

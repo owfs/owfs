@@ -61,6 +61,8 @@ char umount_cmd[1024] = "";
 int main(int argc, char *argv[]) {
     int c ;
 //    int multithreaded = 1;
+
+    progname = strdup(argv[0]) ;
 #if FUSE_MAJOR_VERSION == 1
     char ** opts = NULL ;
     char * tok ;
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
 
 //    mtrace() ;
     LibSetup() ;
-    
+
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
         case 'h':
@@ -100,11 +102,6 @@ int main(int argc, char *argv[]) {
         ++optind ;
     }
 
-    if ( busmode == bus_unknown ) {
-        fprintf(stderr, "No port/server specified (-d or -u or -s) or error opening port\nSee system log for details\n%s -h for help\n",argv[0]);
-        ow_exit(1);
-    }
-
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
 //    fuser_mount_wrapper() ;
@@ -124,9 +121,9 @@ int main(int argc, char *argv[]) {
     }
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
     if (opts) free( opts ) ;
-#else
+#else /* FUSE_MAJOR_VERSION == 1 */
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt)) == -1 ) ow_exit(1) ;
-#endif
+#endif /* FUSE_MAJOR_VERSION == 1 */
 
     if ( LibStart() ) ow_exit(1) ;
 
@@ -151,58 +148,6 @@ int main(int argc, char *argv[]) {
     ow_exit(0);
     return 0 ;
 }
-
-#if 0
-static void fuser_mount_wrapper( void ) {
-    char ** opts = NULL ;
-
-//printf("FUSERMOUNT fuse_opt=%s\n",fuse_opt) ;
-    char * tok ;
-    int i = 0 ;
-    if ( fuse_opt ) {
-        opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
-        if ( opts == NULL ) {
-            fprintf(stderr,"Memory allocation problem\n") ;
-            ow_exit(1) ;
-        }
-        tok = strtok(fuse_opt," ") ;
-        while ( tok ) {
-            opts[i++] = tok ;
-            tok = strtok(NULL," ") ;
-        }
-        opts[i] = NULL ;
-    }
-
-    // FUSE magic. I don't understand it.
-    if(getenv(FUSE_MOUNTED_ENV)) {
-        char *tmpstr = getenv(FUSE_UMOUNT_CMD_ENV);
-
-         /* Old (obsolescent) way of doing the mount:
-             fusermount [options] mountpoint [program [args ...]]
-           fusermount execs this program and passes the control file
-           descriptor dup()-ed to stdin */
-        fuse_fd = 0;
-//printf("Mountpoint = %s\n",fuse_mountpoint) ;
-        if(tmpstr != NULL)
-            strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
-        fuse_fd = fuse_mount(fuse_mountpoint, NULL);
-//        fuse_fd = fuse_mount(fuse_mountpoint, "direct_io");
-        if(fuse_fd < 0) {
-            fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
-            ow_exit(1);
-        }
-    } else {
-        fuse_fd = fuse_mount(fuse_mountpoint, NULL);
-//        fuse_fd = fuse_mount(fuse_mountpoint, "direct_io");
-        if(fuse_fd < 0) {
-            fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
-            ow_exit(1);
-        }
-    }
-    if (opts) free( opts ) ;
-    free( fuse_opt ) ;
-}
-#endif
 
 static void ow_exit( int e ) {
     LibClose() ;

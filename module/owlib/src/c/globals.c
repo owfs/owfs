@@ -13,6 +13,8 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 
+char * progname = "" ;
+
 /* Globals for port and bus communication */
 enum bus_mode busmode = bus_unknown ;
 speed_t speed = B9600;

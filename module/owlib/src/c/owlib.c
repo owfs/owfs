@@ -36,12 +36,15 @@ void LibSetup( void ) {
 
 #ifdef __UCLIBC__
 
+static void catchchild() ;
+static int my_daemon(int nochdir, int noclose) ;
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-void catchchild() {
+static void catchchild() {
     pid_t pid;
     int status;
 
@@ -53,14 +56,14 @@ void catchchild() {
         sprintf(buf, "owlib: %d: Child %d stopped\n", getpid(), pid);
     else
         sprintf(buf, "owlib: %d: Child %d died\n", getpid(), pid);
-#endif
+#endif /* 0 */
 }
 
 /*
   This is a test to implement daemon() with uClibc and without MMU...
   I'm not sure it works correctly, so don't use it yet.
 */
-int my_daemon(int nochdir, int noclose) {
+static int my_daemon(int nochdir, int noclose) {
     struct sigaction act;
     int pid;
     int fd;
@@ -70,11 +73,12 @@ int my_daemon(int nochdir, int noclose) {
 
     signal(SIGCHLD, SIG_DFL);
 
-#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
-    pid = vfork();
-#else
+//#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
+#ifdef __UCLIBC_HAS_MMU__
     pid = fork();
-#endif
+#else /* __UCLIBC_HAS_MMU__ */
+    pid = vfork();
+#endif /* __UCLIBC_HAS_MMU__ */
     switch(pid) {
     case -1:
         memset(&act, 0, sizeof(act));
@@ -99,11 +103,11 @@ int my_daemon(int nochdir, int noclose) {
 
     /* Make certain we are not a session leader, or else we
      * might reacquire a controlling terminal */
-#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
-    pid = vfork();
-#else
+#ifdef __UCLIBC_HAS_MMU__
     pid = fork();
-#endif
+#else /* __UCLIBC_HAS_MMU__ */
+    pid = vfork();
+#endif /* __UCLIBC_HAS_MMU__ */
     if(pid) {
       //printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
         _exit(0);
@@ -126,7 +130,7 @@ int my_daemon(int nochdir, int noclose) {
         if (fd > 2)
             close(fd);
     }
-#else
+#else /* 0 */
     if(!noclose) {
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
@@ -136,13 +140,19 @@ int my_daemon(int nochdir, int noclose) {
             return -1;
         }
     }
-#endif
+#endif /* 0 */
     return 0;
 }
-#endif /* defined(__UCLIBC__) */
+#endif /* __UCLIBC__ */
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
+
+    if ( busmode == bus_unknown ) {
+        fprintf(stderr, "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname);
+        return 1;
+    }
+
 
     /* daemon() should work for embedded systems with MMU, but
      * I noticed that the WRT54G router somethimes had problem with this.
@@ -269,6 +279,8 @@ void LibClose( void ) {
     FreeAddr( &client ) ;
     busmode = bus_unknown ;
     closelog() ;
+
+    if ( progname && progname[0] ) free(progname) ;
 }
 
 struct s_timeout timeout = {1,DEFAULT_TIMEOUT,10*DEFAULT_TIMEOUT,5*DEFAULT_TIMEOUT,} ;
@@ -277,8 +289,4 @@ void Timeout( const char * c ) {
     if ( errno || timeout.vol<1 ) timeout.vol = DEFAULT_TIMEOUT ;
     timeout.stable = 10*timeout.vol ;
     timeout.dir = 5*timeout.vol ;
-}
-
-/* Library presence function -- NOP */
-void owlib_signature_function( void ) {
 }
