@@ -135,9 +135,6 @@ extern int maxslots ;
     OW -- Onw Wire
     Global variables -- each invokation will have it's own data
 */
-/* Stuff from helper.h */
-#define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
-#define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
 
 /* command line options */
 /* These a re the owlib-specific options */
@@ -433,6 +430,8 @@ enum simul_type { simul_temp, simul_volt, } ;
 #ifndef OW_CACHE
     extern unsigned char simulpath[8] ;
     extern time_t simulexpire ;
+    /* seconds until simultaneous is not valid */
+    #define SIMULTANEOUS_TIME 10
 #endif /* OW_CACHE */
 
 /* ---- end Parsedname ----------------- */
@@ -674,7 +673,7 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
 int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
 int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) ;
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
-void FS_LoadPath( struct parsedname * const pn2 ) ;
+void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn2 ) ;
 
 int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;

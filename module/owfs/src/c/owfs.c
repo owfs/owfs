@@ -35,6 +35,10 @@ $Id$
 #include "owfs.h"
 //#include <mcheck.h>
 
+/* Stuff from helper.h */
+#define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
+#define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
+
 static void ow_exit( int e ) ;
 static void fuser_mount_wrapper( void ) ;
 void exit_handler(int i) ;
@@ -96,7 +100,8 @@ int main(int argc, char *argv[]) {
 
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
-    fuser_mount_wrapper() ;
+//    fuser_mount_wrapper() ;
+    if ( (fuse_fd = fuse_mount(fuse_mountpoint, NULL)) == -1 ) ow_exit(1) ;
 
     if ( LibStart() ) ow_exit(1) ;
 
@@ -146,13 +151,15 @@ static void fuser_mount_wrapper( void ) {
 //printf("Mountpoint = %s\n",fuse_mountpoint) ;
         if(tmpstr != NULL)
             strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
-        fuse_fd = fuse_mount(fuse_mountpoint, opts);
+        fuse_fd = fuse_mount(fuse_mountpoint, NULL);
+//        fuse_fd = fuse_mount(fuse_mountpoint, "direct_io");
         if(fuse_fd < 0) {
             fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
             ow_exit(1);
         }
     } else {
-        fuse_fd = fuse_mount(fuse_mountpoint, opts);
+        fuse_fd = fuse_mount(fuse_mountpoint, NULL);
+//        fuse_fd = fuse_mount(fuse_mountpoint, "direct_io");
         if(fuse_fd < 0) {
             fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
             ow_exit(1);

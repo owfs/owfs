@@ -208,7 +208,8 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
         if ( tn ) {
-            memcpy( tn->tk.sn , pn->sn , 8 ) ;
+            FS_LoadPath( tn->tk.sn, pn ) ;
+//            memcpy( tn->tk.sn , pn->sn , 8 ) ;
             tn->tk.p.ft = NULL ;
             tn->tk.extension = dindex ;
             tn->expires = duration + time(NULL) ;
@@ -399,7 +400,8 @@ int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const 
     if ( duration > 0 ) {
         size_t size = 8 ;
         struct tree_node tn  ;
-        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        FS_LoadPath( tn.tk.sn, pn ) ;
+//        memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.ft = NULL ;
         tn.tk.extension = dindex ;
         return Get_Stat(&cache_dir, Cache_Get_Common(sn,&size,duration,&tn)) ;
@@ -518,7 +520,8 @@ int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
-        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        FS_LoadPath( tn.tk.sn, pn ) ;
+//        memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.ft = NULL ;
         tn.tk.extension = dindex ;
         return Del_Stat(&cache_dir, Cache_Del_Common(&tn)) ;

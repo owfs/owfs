@@ -213,7 +213,7 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
         STATLOCK
             ++dir_main.entries ;
         STATUNLOCK
-        FS_LoadPath( pn2 ) ;
+//        FS_LoadPath( pn2 ) ;
         Cache_Add_Dir(sn,dindex,pn2) ;
         ++dindex ;
         num2string( ID, sn[0] ) ;
@@ -237,12 +237,12 @@ static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const),
     return 0 ;
 }
 
-void FS_LoadPath( struct parsedname * const pn ) {
+void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn ) {
     if ( pn->pathlength==0 ) {
-        memset(pn->sn,0,8) ;
+        memset(sn,0,8) ;
     } else {
-        memcpy( pn->sn,pn->bp[pn->pathlength-1].sn,7) ;
-        pn->sn[7] = pn->bp[pn->pathlength-1].branch ;
+        memcpy( sn,pn->bp[pn->pathlength-1].sn,7) ;
+        sn[7] = pn->bp[pn->pathlength-1].branch ;
     }
 }
 
@@ -250,12 +250,10 @@ void FS_LoadPath( struct parsedname * const pn ) {
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
-    unsigned char sn[8] , snpath[8] ;
+    unsigned char sn[8] ;
     int simul = 0 ;
     int dindex = 0 ;
 
-    FS_LoadPath(pn2) ;
-    memcpy(snpath,pn2->sn,8);
     if ( pn2->state==pn_uncached || Cache_Get_Dir(sn,0,pn2 ) )
         return FS_realdir(dirfunc,data,pn2) ;
 
@@ -273,9 +271,8 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
         dirfunc( data, pn2 ) ;
         simul |= pn2->dev->flags & (DEV_temp|DEV_volt) ;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        memcpy(pn2->sn,snpath,8) ;
-        ++dindex ;
-    } while ( Cache_Get_Dir( sn, dindex, pn2 )==0 ) ;
+//        ++dindex ;
+    } while ( Cache_Get_Dir( sn, ++dindex, pn2 )==0 ) ;
     STATLOCK
         dir_main.entries += dindex ;
     STATUNLOCK
