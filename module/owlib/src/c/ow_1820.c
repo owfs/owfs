@@ -111,10 +111,6 @@ struct tempresolution {
     unsigned int delay ;
 } ;
 struct tempresolution Resolutions[] = {
-//    { 0x1F,  94, } , /*  9 bit */
-//    { 0x3F, 188, } , /* 10 bit */
-//    { 0x5F, 375, } , /* 11 bit */
-//    { 0x7F, 750, } , /* 12 bit */
     { 0x1F, 110, } , /*  9 bit */
     { 0x3F, 200, } , /* 10 bit */
     { 0x5F, 400, } , /* 11 bit */
@@ -406,7 +402,7 @@ static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedn
     unsigned char data[8] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
-    data[2+Tindex] = T ;
+    data[2+Tindex] = (uint8_t) T ;
     return OW_w_scratchpad( &data[2], pn ) ;
 }
 
@@ -429,11 +425,15 @@ static int OW_r_scratchpad(unsigned char * const data, const struct parsedname *
 /* write 3 bytes (byte2,3,4 of register) */
 static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) {
     /* data is 3 bytes ng */
-    unsigned char d[] = { 0x4E, data[0], data[1], data[2], } ;
+    unsigned char d[4] = { 0x4E, data[0], data[1], data[2], } ;
+    int bytes = 2 ;
     int ret ;
 
+    /* different processing for DS18S20 and both DS19B20 and DS1822 */
+    if ( strncmp( "10", pn->dev->code, 2 ) ) bytes = 3 ;
+
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( d,4,pn ) || BUS_select(pn) || BUS_PowerByte( 0x48,10,pn ) ;
+        ret = BUS_select(pn) || BUS_send_data( d,bytes+1,pn ) || BUS_select(pn) || BUS_PowerByte( 0x48,10,pn ) ;
     BUSUNLOCK(pn)
     return ret ;
 }
