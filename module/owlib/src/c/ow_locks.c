@@ -135,7 +135,7 @@ void LockRelease( const struct parsedname * const pn ) {
 //printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X PRE slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
     /* Lock the table before manipulating slots */
     DEVLOCK
-        SLOTLUNLOCK(lock)
+        SLOTUNLOCK(lock)
         if ( (--DevLock[lock].users) == 0 ) sem_post( &devlocks ) ;
 //printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X POST slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
     DEVUNLOCK
