@@ -33,27 +33,27 @@
 int FS_getattr(const char *path, struct stat *stbuf) {
     struct parsedname pn ;
     /* Bad path */
-printf("GA\n");
+//printf("GA\n");
 	memset(stbuf, 0, sizeof(struct stat));
     stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = scan_time ;
     if ( FS_ParsedName( path , &pn ) ) {
-printf("GA bad\n");
+//printf("GA bad\n");
         return -ENOENT;
     } else if ( pn.dev==NULL ) { /* root directory */
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
-printf("GA root\n");
+//printf("GA root\n");
     } else if ( pn.ft==NULL ) { /* other directory */
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
-printf("GA other dir\n");
+//printf("GA other dir\n");
     } else { /* known 1-wire filetype */
         stbuf->st_mode = S_IFREG ;
         if ( pn.ft->read ) stbuf->st_mode |= 0444 ;
         if ( pn.ft->write ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
 		stbuf->st_size = FileLength( &pn ) ;
-printf("GA file\n");
+//printf("GA file\n");
     }
     return 0 ;
 }
@@ -77,16 +77,16 @@ int FS_truncate(const char *path, const off_t size) {
 
 int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
-printf("GD path=%s\n",path) ;
+//printf("GD path=%s\n",path) ;
     if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
-printf("GD error\n") ;
+//printf("GD error\n") ;
         return -ENOENT;
 	}
-printf("GD Good\n") ;
+//printf("GD Good\n") ;
     if ( pn.dev ) { /* 1-wire device */
         int i ;
-printf("GD - directory\n") ;
-printf("GD - directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
+//printf("GD - directory\n") ;
+//printf("GD - directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
 		for ( i=0 ; i<pn.dev->nft ; ++i ) {
 		    if ( ((pn.dev)->ft)[i].ag ) {
                 int ext = ((pn.dev)->ft)[i].ag->elements ;
@@ -111,9 +111,8 @@ printf("GD - directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft
     } else { /* root directory */
         char buf[16] ;
         char nam[16] ;
-printf("GD - root directory\n") ;
+//printf("GD - root directory\n") ;
         time( &scan_time ) ;
-printf("GD - root directory\n") ;
 //printf("GD - root directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
         /* Root directory, needs .,.. and scan of devices */
         filler(h, ".", 0);
