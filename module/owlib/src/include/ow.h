@@ -752,6 +752,7 @@ int Server_detect( void ) ;
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
 int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
+void CloseServer( void ) ;
 
 /* High-level callback functions */
 int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;

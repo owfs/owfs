@@ -35,7 +35,7 @@ static int OpenServer( void ) {
     if ( servername ) {
         connectfd = PortToFD( servername ) ;
     }
-    return (connectfd>-1) ;
+    return (connectfd<0) ;
 }
 
 void CloseServer( void ) {
@@ -50,6 +50,7 @@ int ServerRead( const char * path, char * buf, const size_t size, const off_t of
     struct client_msg cm ;
     int ret ;
 
+printf("ServerRead path=%s, size=%d, offset=%d\n",path,size,offset);
     sm.type = msg_read ;
     sm.size = size ;
     sm.sg =  SemiGlobal.int32;
@@ -72,6 +73,7 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
     struct client_msg cm ;
     int ret ;
 
+printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     sm.type = msg_write ;
     sm.size = size ;
     sm.sg =  SemiGlobal.int32;
@@ -92,6 +94,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     struct stateinfo si ;
     pn2.si = &si ;
 
+printf("ServerDir path=%s\n",path);
     (void) pn ;
     sm.type = msg_dir ;
     sm.size = 0 ;
@@ -100,9 +103,12 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     ret = ToServer( connectfd, &sm, path, NULL, 0) ;
     if (ret) return ret ;
     while( (path2=FromServerAlloc( connectfd, &cm))  ) {
-        path2[sm.payload-1] = '\0' ; /* Ensure trailing null */
-        if ( (ret=FS_ParsedName( path2, &pn2 )) == 0 ) dirfunc(&pn2) ;
-        FS_ParsedName_destroy( &pn2 ) ;
+        path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
+printf("ServerDir got:%s\n",path2);
+	if ( (ret=FS_ParsedName( path2, &pn2 )) == 0 ) {
+	    dirfunc(&pn2) ;
+            FS_ParsedName_destroy( &pn2 ) ;
+	}
         free(path2) ;
     }
     return ret ;
@@ -147,15 +153,21 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     cm->offset = ntohl(cm->offset) ;
 
 printf("FromServer payload=%d size=%d ret=%d format=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->format,cm->offset);
-    if ( cm->size == 0 ) return NULL ;
-
-    if ( (msg=malloc(cm->size)) ) {
-        if ( readn(fd,msg,cm->size) != cm->size ) {
-            cm->size = 0 ;
+    if ( cm->payload == 0 ) return NULL ;
+    if ( cm->payload > 65000 ) {
+printf("FromServerAlloc payload too large\n");
+        return NULL ;
+    }
+    
+    if ( (msg=malloc(cm->payload)) ) {
+        if ( readn(fd,msg,cm->payload) != cm->payload ) {
+printf("FromServer couldn't read payload\n");
+            cm->payload = 0 ;
             cm->ret = -EIO ;
             free(msg);
             msg = NULL ;
         }
+printf("FromServer payload read ok\n");
     }
     return msg ;
 }
@@ -226,7 +238,7 @@ printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm
     return writev( fd, io, nio ) != payload + sizeof(struct server_msg) ;
 }
 
-static int PortToFD(  char * port ) {
+static int PortToFD(  char * sname ) {
     char * host ;
     char * serv ;
     struct addrinfo hint ;
@@ -234,14 +246,15 @@ static int PortToFD(  char * port ) {
     int matches = 0 ;
     int ret = -1;
 
-    if ( port == NULL ) return -1 ;
-    if ( (serv=strrchr(port,':')) ) { /* : exists */
+printf("PortToFD port=%s\n",sname);
+    if ( sname == NULL ) return -1 ;
+    if ( (serv=strrchr(sname,':')) ) { /* : exists */
         *serv = '\0' ;
         ++serv ;
-        host = port ;
+        host = sname ;
     } else {
         host = NULL ;
-        serv = port ;
+        serv = sname ;
     }
 
     bzero( &hint, sizeof(struct addrinfo) ) ;
@@ -249,16 +262,14 @@ static int PortToFD(  char * port ) {
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
-    for ( matches=0 ; matches<1 ; ++matches ) {
-        if ( (ret=getaddrinfo( host, serv, &hint, &ai )) )
-            break ;
-    }
-
-    if (matches) {
+    while( (ret=getaddrinfo( host, serv, &hint, &ai ))==0 ) {
+printf("GetAddrInfo ret=%d\n",ret);
         ret = ConnectFD(ai) ;
         freeaddrinfo(ai) ;
+	++matches ;
+        break ;
     }
-
+    
     return ret ;
 }
 
@@ -274,7 +285,7 @@ static int ConnectFD( struct addrinfo * ai) {
         fprintf(stderr,"Connect problem. errno=%d\n",errno) ;
         return -1 ;
     }
-    
+printf("ConnectFD happy\n");    
     return fd ;
 }
 

@@ -123,13 +123,19 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
         ++nio ;
     }
 printf("ToClient payload=%d size=%d, ret=%d, format=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->format,cm->offset);
-
+    int ret ;
     cm->payload = htonl(cm->payload) ;
     cm->size = htonl(cm->size) ;
     cm->offset = htonl(cm->offset) ;
     cm->ret = htonl(cm->ret) ;
     cm->format = htonl(cm->format) ;
-    return writev( fd, io, nio ) != io[0].iov_len+io[1].iov_len ;
+    ret = writev( fd, io, nio ) != io[0].iov_len+io[1].iov_len ;
+    cm->payload = ntohl(cm->payload) ;
+    cm->size = ntohl(cm->size) ;
+    cm->offset = ntohl(cm->offset) ;
+    cm->ret = ntohl(cm->ret) ;
+    cm->format = ntohl(cm->format) ;
+    return ret ;
 }
 
 static int Handler( int fd ) {
@@ -148,6 +154,8 @@ static int Handler( int fd ) {
     void directory( const struct parsedname * const pn2 ) {
         /* Note, path preloaded into retbuffer */
         FS_DirName( &retbuffer[pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
+printf("Handler: DIR loop %s\n",retbuffer);
+	cm.size = strlen(retbuffer) ;
         cm.ret = 0 ;
         cm.format = 1 ;
         ToClient(fd,&cm,retbuffer) ;
@@ -194,18 +202,22 @@ static int Handler( int fd ) {
     /* First pass -- figure out return size */
     switch( (enum msg_type) sm.type ) {
     case msg_read:
-        cm.size = sm.size ;
+printf("Handler: READ \n");
+        cm.payload = sm.size ;
         cm.offset = sm.offset ;
         break ;
     case msg_write:
-        cm.size = 0 ;
+printf("Handler: WRITE \n");
+        cm.payload = 0 ;
         cm.offset = 0 ;
         break ;
     case msg_dir:
-        cm.size = pathlen + OW_FULLNAME_MAX ;
+printf("Handler: DIR \n");
+        cm.payload = pathlen + OW_FULLNAME_MAX ;
         cm.offset = 0 ;
         break ;
     default:
+printf("Handler: OTHER \n");
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
         cm.payload = 0 ;
@@ -214,7 +226,8 @@ static int Handler( int fd ) {
     }
 
     /* Allocate return buffer */
-    if ( cm.size>0 && cm.size <MAXBUFFERSIZE && (retbuffer = malloc(cm.size))==NULL ) {
+printf("Handler: Allocating buffer size=%d\n",cm.payload);
+    if ( cm.payload>0 && cm.payload <MAXBUFFERSIZE && (retbuffer = malloc(cm.payload))==NULL ) {
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
         cm.payload = 0 ;
@@ -226,24 +239,27 @@ static int Handler( int fd ) {
     switch( (enum msg_type) sm.type ) {
     case msg_read:
         ret = FS_read_postparse(path,retbuffer,cm.size,cm.offset,&pn) ;
+printf("Handler: READ done\n");
         if ( ret<0 ) {
             cm.payload = 0 ;
             cm.format = sm.sg ;
         } else {
-            cm.payload = cm.size ;
+            cm.size = ret ;
             cm.format = pn.si->sg.int32 ;
         }
         break ;
     case msg_write:
         ret = FS_write_postparse(path,data,cm.size,cm.offset,&pn) ;
-        cm.payload = 0 ;
+printf("Handler: WRITE done\n");
+        cm.size = ret ;
         break ;
     case msg_dir:
-        /* return buffer holds max file length */
-        cm.payload = cm.size ;
+printf("Handler: DIR retbuffer=%p\n",retbuffer);
+	/* return buffer holds max file length */
         /* copy current path into return buffer */
         memcpy(retbuffer, path, pathlen ) ;
         FS_dir( directory, path, &pn ) ;
+printf("Handler: DIR done\n");
         /* Now null entry to show end of directy listing */
         ret = 0 ;
         cm.payload = 0 ;
