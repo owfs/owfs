@@ -323,13 +323,13 @@ static int OW_power( unsigned char * const data, const struct parsedname * const
     int ret = 0 ;
     size_t s = sizeof(unsigned char) ;
 
-    if ( Cache_Get_Internal(data,&s,&ip_power,pn) ) {
+    if ( pn->state==pn_uncached || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
         BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
 //printf("Uncached power = %d\n",data[0]) ;
         BUSUNLOCK
         Cache_Add_Internal(data,s,&ip_power,pn) ;
-    } else {
+//    } else {
 //printf("Cached power = %d\n",data[0]) ;
     }
     return ret ;
