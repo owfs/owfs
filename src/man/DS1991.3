@@ -1,0 +1,186 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS1991 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B DS1991
+- 1152bit MultiKey iButton
+.SH SYNOPSIS
+Non-volatile memory with password protection.
+.HP
+.B 02
+[.]XXXXXXXXXXXX[XX][/[
+.B memory
+|
+.B pages/ident.[0-2|ALL]
+|
+.B pages/page.[0-2|ALL]
+|
+.B pages/password.[0-2|ALL]
+|
+.B settings/ident.[0-2|ALL]
+|
+.B settings/page.[0-2|ALL]
+|
+.B settings/password.[0-2|ALL]
+|
+.B settings/change_password.[0-2|ALL]
+|
+.B settings/reset_password.[0-2|ALL]
+|
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B present
+|
+.B type
+]]
+.SH FAMILY CODE
+.TP
+02
+.SH SPECIAL PROPERTIES
+.SS memory
+.I read-write, binary
+.br
+144 bytes of non-volatile memory. Reading and writing (with offset) to the files will only work if currently used password is correct for all 3 pages.
+.SS pages/page.0 pages/page.1 pages/page.2 pages/page.ALL
+.I read-write, binary
+.br
+Memory is split into 3 pages of 48 bytes each.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially. If currently used password is incorrect, random data will be returned when reading a page.
+.SS pages/password.0 pages/password.1 pages/password.2 pages/password.ALL
+.I write, binary
+.br
+Memory is split into 3 pages and each page has a unique password (8 bytes).
+.I ALL
+is an aggregate of the password. Each page is accessed sequentially. Writing to this file will set the currently used password when accessing memory in corresponding page. If the password is wrong, random data will be returned when reading memory.
+.SS pages/ident.0 pages/ident.1 pages/ident.2 pages/ident.ALL
+.I read-write, binary
+.br
+Memory is split into 3 pages and each page has a unique identification (8 bytes).
+.I ALL
+is an aggregate of the ident. Each page is accessed sequentially. Identification will return correct result even if currently used password is incorrect.
+.SS settings/page.0 settings/page.1 settings/page.2 settings/page.ALL
+.I read-write, binary
+.br
+Memory is split into 3 pages of 48 bytes each.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially. If currently used password is incorrect, random data will be returned when reading a page. (same as pages/page.*)
+.SS settings/ident.0 settings/ident.1 settings/ident.2 settings/ident.ALL
+.I read-write, binary
+.br
+Memory is split into 3 pages and each page has a unique identification (8 bytes).
+.I ALL
+is an aggregate of the ident. Each page is accessed sequentially. Identification will return correct result even if currently used password is incorrect. (same as pages/ident.*)
+.SS settings/password.0 settings/password.1 settings/password.2 settings/password.ALL
+.I write, binary
+.br
+Memory is split into 3 pages and each page has a unique password (8 bytes).
+.I ALL
+is an aggregate of the password. Each page is accessed sequentially. Writing to this file will set the currently used password when accessing memory in corresponding page. If the password is wrong, random data will be returned when reading memory. (same as pages/password.*)
+.SS settings/reset_password.0 settings/reset_password.1 settings/reset_password.2 settings/reset_password.ALL
+.I write, binary
+.br
+Memory is split into 3 pages and each page has a unique password (8 bytes).
+.I ALL
+is an aggregate of the ident. Each page is accessed sequentially. Writing to this file will reset the password on the page. NOTE: All data in corresponding page will be deleted!
+.SS settings/change_password.0 settings/change_password.1 settings/change_password.2 settings/change_password.ALL
+.I write, binary
+.br
+Memory is split into 3 pages and each page has a unique password (8 bytes).
+.I ALL
+is an aggregate of the ident. Each page is accessed sequentially. Writing to this file will change the password on the page. NOTE: Currently used password have to be set to correct password before changing password. Data in the corresponding page is NOT effected.
+.SH STANDARD PROPERTIES
+.SS address
+.I read-only, ascii
+.br
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
+.SS crc8
+.I read-only, ascii
+.br
+The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
+.SS family
+.I read-only, ascii
+.br
+The 8-bit family code. Unique to each
+.I type
+of device. Given as upper case hexidecimal digits (0-9A-F).
+.SS id
+.I read-only, ascii
+.br
+The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
+.SS present
+.I read-only, yes-no
+.br
+Is the device currently
+.I present
+on the 1-wire bus?
+.SS type
+.I read-only, ascii
+.br
+Part name assigned by Dallas Semi. E.g.
+.I DS2401
+Alternative packaging (iButton vs chip) will not be distiguished.
+.SH ALARMS
+None.
+.SH DESCRIPTION
+This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
+.PP
+The
+.B DS1991
+is an iButton with password protected non-volatile memory. Data is read/written with error checking (transparent to the user). The memory is divided into 3 different pages with 3 separate passwords.
+.SH ADDRESSING
+All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
+.TP
+.B Family Code
+8 bits
+.TP
+.B Address
+48 bits
+.TP
+.B CRC
+8 bits
+.IP
+.PP
+Addressing under OWFS is in hexidecimal, of form:
+.IP
+.B 01.123456789ABC
+.PP
+where
+.B 01
+is an example 8-bit family code, and
+.B 12345678ABC
+is an example 48 bit address.
+.PP
+The dot is optional, and the CRC code can included. If included, it must be correct.
+.SH DATASHEET
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS1991.pdf
+.SH FILES
+.TP
+libow.so
+Library providing most of the OWFS system. Bus master control, data parsing, etc.
+.TP
+owfs
+Filesystem implementation. User space, using the FUSE kernel module.
+.TP
+owhttpd
+Web server implementation of the OWFS system.
+.SH SEE ALSO
+owfs(1)
+owhttpd(1)
+.SH AVAILABILITY
+http://owfs.sourceforge.net
+.SH AUTHOR
+Christian Magnusson (mag@mag.cx)
