@@ -177,14 +177,15 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
 //if ( next ) printf("Resub = %s->%s\n",pFile,next) ;
         pathnow = strsep(&pathnext,"/") ;
         return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
-    } else if ( pathnext==NULL || pathnext[0]=='\0' ) {
-        return 0 ; 
     } else if ( pn->ft->format==ft_subdir ) { /* in-device subdirectory */
         if ( pathnext==NULL || pathnext[0]=='\0' ) {
+//printf("PN pure subdir found\n");
             pn->subdir = pn->ft ;
+            pn->ft = NULL ;
             return 0 ;
         } else {
             char * p = strsep( &pathnext, "/" ) ;
+//printf("PN impure subdir found\n");
             p[-1] = '/' ; /* replace former "/" to make subdir */
             if ( (ret=FilePart( pathnow, pn )) ) return ret ;
         }
@@ -253,7 +254,7 @@ static int FilePart( char * filename, struct parsedname * pn ) {
 //printf("FP name=%s, dot=%s\n",filename,dot);
     /* Match to known filetypes for this device */
     if ( (pn->ft = bsearch( filename , pn->dev->ft , (size_t) pn->dev->nft , sizeof(struct filetype) , filecmp )) ) {
-//printf("FP known filetype %s\n",pn->ft->name) ;
+//printf("FP known filetype %s path=%s\n",pn->ft->name,pn->path) ;
         /* Filetype found, now process extension */
         if ( dot==NULL  || dot[0]=='\0' ) { /* no extension */
             if ( pn->ft->ag ) return -ENOENT ; /* aggregate filetypes need an extension */

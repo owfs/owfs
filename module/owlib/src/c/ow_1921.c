@@ -58,15 +58,17 @@ $Id$
 
  dREAD_FUNCTION( FS_r_date ) ;
 dWRITE_FUNCTION( FS_w_date ) ;
+ uREAD_FUNCTION( FS_r_counter ) ;
+uWRITE_FUNCTION( FS_w_counter ) ;
  bREAD_FUNCTION( FS_r_mem ) ;
-bWRITE_FUNCTION( FS_w_mem ) ;
+ bWRITE_FUNCTION( FS_w_mem ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  uREAD_FUNCTION( FS_r_samplerate ) ;
 uWRITE_FUNCTION( FS_w_samplerate ) ;
  yREAD_FUNCTION( FS_r_run ) ;
 yWRITE_FUNCTION( FS_w_run ) ;
- uREAD_FUNCTION( FS_r__3byte ) ;
+ uREAD_FUNCTION( FS_r_3byte ) ;
  uREAD_FUNCTION( FS_r_atime ) ;
 uWRITE_FUNCTION( FS_w_atime ) ;
  uREAD_FUNCTION( FS_r_atrig ) ;
@@ -79,27 +81,61 @@ struct aggregate A1921p = { 16, ag_numbers, ag_separate, } ;
 struct aggregate A1921l = { 2048, ag_numbers, ag_separate, } ;
 struct aggregate A1921h = { 63, ag_numbers, ag_aggregate, } ;
 struct filetype DS1921[] = {
-    F_STANDARD        ,
-    {"memory"         ,512,   NULL,   ft_binary,  ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
-    {"pages"          ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"pages/page"     ,256,&A1921p,   ft_binary,  ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
-    {"histogram"      ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"histogram/counts"     ,  6,&A1921h, ft_unsigned,ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,
-    {"histogram/temperature",  6,&A1921h,    ft_float,  ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,
-    {"histogram/gap"        ,  9,   NULL,    ft_float,  ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,
-    {"tempresolution" ,  9,   NULL,    ft_float,  ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,
-    {"temprangelow"   ,  9,   NULL,    ft_float,  ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,
-    {"temprangehigh"  ,  9,   NULL,    ft_float,  ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
-    {"temperature"    , 12,   NULL,    ft_float,ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
-    {"date"           , 24,   NULL,    ft_date ,  ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
-    {"log"            ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"log/temperature",  5,&A1921l,    ft_float,ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,
-    {"log/time"       , 12,&A1921l, ft_unsigned,ft_volatile, {u:FS_r_logtime}    , {v:NULL}           , NULL, } ,
-    {"log/date"       , 24,&A1921l,    ft_date ,ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,
+    F_STANDARD              ,
+    {"memory"               ,512,   NULL,  ft_binary,   ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
+    
+    {"pages"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"pages/page"           , 32,&A1921p,  ft_binary,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
+
+    {"histogram"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"histogram/counts"     ,  6,&A1921h,ft_unsigned, ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,//
+    {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,//
+    {"histogram/gap"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,//
+
+    {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
+    {"clock/counter"        , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
+    {"clock/running"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,//
+
+    {"about"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"about/resolution"     ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,//
+    {"about/templow"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,//
+    {"about/temphigh"       ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,//
+    {"about/version"        , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,//
+    {"about/samples"        , 11,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021D, } ,
+    {"about/measuring"      , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,//
+
+    {"temperature"          , 12,   NULL,   ft_float, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
+
+    {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
+    {"mission/rollover"     , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
+    {"mission/last"         , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
+    {"mission/sampling"     , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,//
+
+    {"log"                  ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"log/temperature"      ,  5,&A1921l,   ft_float, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,//
+    {"log/counter"          , 12,&A1921l,ft_unsigned, ft_volatile, {u:FS_r_logtime}    , {v:NULL}           , NULL, } ,//
+    {"log/date"             , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,//
+    {"log/start"            , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,//
+    {"log/end"              , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,//
+    {"log/elements"         , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,//
+    {"log/temphigh"         , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,//
+    {"log/templow"          , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,// 
+
+    {"set_alarm"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"set_alarm/trigger"    ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"set_alarm/templow"    ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"set_alarm/temphigh"   ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+    {"set_alarm/date"       ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
+
+    {"alarm_state"          ,  5,   NULL,ft_unsigned,   ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,//
+
     {"samplerate"     ,  5,   NULL, ft_unsigned,  ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
     {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
-    {"mission_samples", 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r__3byte}     , {v:NULL}           , (void *)0x021A, } ,
-    {"total_samples"  , 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r__3byte}     , {v:NULL}           , (void *)0x021D, } ,
+    {"total_samples"  , 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r_3byte}     , {v:NULL}           , (void *)0x021D, } ,
     {"alarm_second"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0207, } ,
     {"alarm_minute"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0208, } ,
     {"alarm_hour"     , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0209, } ,
@@ -108,7 +144,7 @@ struct filetype DS1921[] = {
     {"in_mission"     ,  1,   NULL,    ft_yesno,ft_volatile, {y:FS_r_mip}        , {y:FS_w_mip}       , NULL, } ,
     {"version"        , 11,   NULL,    ft_ascii,  ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
 } ;
-DeviceEntry( 21, DS1921 )
+DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp )
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
 struct Version { unsigned int ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; unsigned int delay ;} ;
@@ -123,19 +159,19 @@ struct Version Versions[] =
         { 0x4F2, "DS1921H-F5" , +14.5, 0.125, +15., +46., 360, } ,
     } ;
 #define VersionElements ( sizeof(Versions) / sizeof(struct Version) )
-int VersionCmp( const void * pn , const void * version ) {
-//printf("VC sn[5]=%.4X sn[6]=%.4X versionID=%.4X\n",((const struct parsedname *)pn)->sn[5],((const struct parsedname *)pn)->sn[6],((const struct Version *)version)->ID) ;
-//printf("VC combo=%.4X\n", ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) );
+static int VersionCmp( const void * pn , const void * version ) {
     return ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) - ((const struct Version *)version)->ID ;
 }
 /* ------- Functions ------------ */
 
 /* DS1921 */
 static int OW_w_mem( const unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_temperature( int * T , const int delay, const struct parsedname * pn ) ;
 static int OW_r_logtime(time_t *t, const struct parsedname * pn) ;
 static int OW_clearmemory( const struct parsedname * const pn) ;
+static int OW_2date(DATE * d, const unsigned char * data) ;
+static void OW_date(const DATE * d , unsigned char * data) ;
 
 /* histogram lower bound */
 static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
@@ -210,73 +246,65 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_temperature( &temp , v->delay, pn ) ) return -EINVAL ;
-    *T = Temperature( (FLOAT)temp * v->resolution + v->histolow,pn ) ;
+    T[0] = Temperature( (FLOAT)temp * v->resolution + v->histolow,pn ) ;
     return 0 ;
 }
 
 /* read counter */
 /* Save a function by shoving address in data field */
-static int FS_r__3byte(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_3byte(unsigned int * u , const struct parsedname * pn) {
     int addr = (int) pn->ft->data ;
     unsigned char data[3] ;
     if ( OW_r_mem(data,3,addr,pn) ) return -EINVAL ;
-    *u = (((((unsigned int)data[2])<<8)|data[1])<<8)|data[0] ;
+    u[0] = (((((unsigned int)data[2])<<8)|data[1])<<8)|data[0] ;
     return 0 ;
 }
 
 /* read clock */
 static int FS_r_date(DATE * d , const struct parsedname * pn) {
-    int ampm[8] = {0,10,20,30,0,10,12,22} ;
     unsigned char data[7] ;
-    struct tm tm ;
-    time_t t ;
-
-    /* Prefill entries */
-    t = time(NULL) ;
-    if ( gmtime_r(&t,&tm)==NULL ) return -EINVAL ;
 
     /* Get date from chip */
     if ( OW_r_mem(data,7,0x0200,pn) ) return -EINVAL ;
-    tm.tm_sec  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
-    tm.tm_min  = (data[1]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
-    tm.tm_hour = (data[2]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
-    tm.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
-    tm.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
-    tm.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
-//printf("DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
-//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
+    return OW_2date(d,data) ;
+}
 
-    /* Pass through time_t again to validate */
-    if ( (t=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
-    d[0] = t ;
+/* read clock */
+static int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data[7] ;
+    DATE d ;
+    int ret ;
+
+    /* Get date from chip */
+    if ( OW_r_mem(data,7,0x0200,pn) ) return -EINVAL ;
+    if ( (ret=OW_2date(&d,data)) ) return ret ;
+    u[0]  = (unsigned int) d ;
     return 0 ;
 }
 
 /* set clock */
 static int FS_w_date(const DATE * d , const struct parsedname * pn) {
-    struct tm tm ;
     unsigned char data[7] ;
-    int year ;
     unsigned char sr ;
 
     /* Busy if in mission */
     if ( OW_r_mem(&sr,1,0x0214,pn) ) return -EINVAL ;
     if ( sr&0x20 ) return -EBUSY ;
 
-    /* Convert time format */
-    gmtime_r(d,&tm) ;
+    OW_date( d, data ) ;
+    return OW_w_mem(data,7,0x0200,pn)?-EINVAL:0 ;
+}
 
-    data[0] = tm.tm_sec + 6*(tm.tm_sec/10) ; /* dec->bcd */
-    data[1] = tm.tm_min + 6*(tm.tm_min/10) ; /* dec->bcd */
-    data[2] = tm.tm_hour + 6*(tm.tm_hour/10) ; /* dec->bcd */
-    data[3] = tm.tm_wday ; /* dec->bcd */
-    data[4] = tm.tm_mday + 6*(tm.tm_mday/10) ; /* dec->bcd */
-    data[5] = tm.tm_mon + 6*(tm.tm_mon/10) ; /* dec->bcd */
-    year = tm.tm_year % 100 ;
-    data[6] = year + 6*(year/10) ; /* dec->bcd */
-    if ( tm.tm_year>99 && tm.tm_year<200 ) data[5] |= 0x80 ;
-//printf("DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
-//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
+static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+    unsigned char data[7] ;
+    DATE d = (DATE) u[0] ;
+    unsigned char sr ;
+
+    /* Busy if in mission */
+    if ( OW_r_mem(&sr,1,0x0214,pn) ) return -EINVAL ;
+    if ( sr&0x20 ) return -EBUSY ;
+
+    OW_date( &d, data ) ;
     return OW_w_mem(data,7,0x0200,pn)?-EINVAL:0 ;
 }
 
@@ -395,15 +423,13 @@ static int FS_r_atrig(unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-/* write one of the alarm fields */
-/* NOTE: keep first bit */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    if ( OW_read_paged( buf, size, offset, pn, 32 , OW_r_mem ) ) return -EINVAL ;
     return size ;
 }
 
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -461,27 +487,27 @@ static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_w_mem( const unsigned char * data , const size_t length , const size_t location, const struct parsedname * pn ) {
-    unsigned char p[4+32+2] = { 0x0F, location&0xFF , location>>8, } ;
-    int offset = location & 0x1F ;
-    int rest = 32-offset ;
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     int ret ;
 
-    if ( offset+length > 32 ) return OW_w_mem( data, (size_t) rest, location, pn) || OW_w_mem( &data[rest], length-rest, location+rest, pn) ;
-
     /* Copy to scratchpad */
-    memcpy( &p[3], data , length ) ;
-    BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p,3+length,pn) ;
-        if ( rest==length && ret==0 ) ret = BUS_readin_data(&p[3+length],2,pn) || CRC16(p,3+length+2) ;
-    BUSUNLOCK(pn)
+    memcpy( &p[3], data , size ) ;
+    if ( (offset+size)&0x1F ) { /* to end of page */
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data( p,3+size,pn) || BUS_readin_data(&p[3+size],2,pn) || CRC16(p,3+size+2) ;
+        BUSUNLOCK(pn)
+    } else {
+        BUSLOCK(pn)
+            ret = BUS_select(pn) || BUS_send_data( data,3+size,pn) ;
+        BUSUNLOCK(pn)
+    }
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     p[0] = 0xAA ;
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data( &p[1],3+length,pn) || memcmp(&p[4], data, length) ;
-        if ( rest==length && ret==0) ret = BUS_readin_data(  &p[4+length], 2,pn) || CRC16(p,4+length+2) ;
+        ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data( &p[1],3+size,pn) || memcmp(&p[4], data, size) ;
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
@@ -492,22 +518,20 @@ static int OW_w_mem( const unsigned char * data , const size_t length , const si
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
-    UT_delay(2*length) ;
+    UT_delay(1) ; /* 1 msec >> 2 usec per byte */
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
-    unsigned char p[3+32+2] = { 0xA5, location&0xFF , location>>8, } ;
-    int offset = location & 0x1F ;
-    int rest = 32-offset ;
+/* Pre-paged */
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
+    int rest = 32 - (offset&0x1F) ;
     int ret ;
 
-    if ( offset+length > 32 ) return OW_r_mem( data, (size_t) rest, location, pn) || OW_r_mem( &data[rest], length-rest, location+rest, pn) ;
-
     BUSLOCK(pn)
-        ret = BUS_select(pn) || BUS_send_data( p , 3,pn) || BUS_readin_data(  &p[3], rest+2,pn ) || CRC16(p,3+rest+2) ;
+            ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_readin_data(&p[3],rest+2,pn ) || CRC16(p,3+rest+2) ;
     BUSUNLOCK(pn)
-    memcpy( data , &p[3], length ) ;
+    memcpy( data , &p[3], size ) ;
     return ret ;
 }
 
@@ -582,4 +606,50 @@ static int OW_clearmemory( const struct parsedname * const pn) {
     ret = BUS_select(pn) || BUS_send_data( &cr, 1,pn ) ;
     BUSUNLOCK(pn)
     return ret ;
+}
+
+/* translate 7 byte field to a Unix-style date (number) */
+static int OW_2date(DATE * d, const unsigned char * data) {
+    const int ampm[8] = {0,10,20,30,0,10,12,22} ;
+    struct tm tm ;
+
+    /* Prefill entries */
+    d[0] = time(NULL) ;
+    if ( gmtime_r(d,&tm)==NULL ) return -EINVAL ;
+
+    /* Get date from chip */
+    tm.tm_sec  = (data[0]&0x0F) + 10*(data[0]>>4) ; /* BCD->dec */
+    tm.tm_min  = (data[1]&0x0F) + 10*(data[1]>>4) ; /* BCD->dec */
+    tm.tm_hour = (data[2]&0x0F) + ampm[data[2]>>4] ; /* BCD->dec */
+    tm.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
+    tm.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
+    tm.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
+//printf("DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
+//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
+
+    /* Pass through time_t again to validate */
+    if ( (d[0]=mktime(&tm)) == (time_t)-1 ) return -EINVAL ;
+    return 0 ;
+}
+
+
+/* set clock */
+static void OW_date(const DATE * d , unsigned char * data) {
+    struct tm tm ;
+    int year ;
+
+    /* Convert time format */
+    gmtime_r(d,&tm) ;
+
+    data[0] = tm.tm_sec + 6*(tm.tm_sec/10) ; /* dec->bcd */
+    data[1] = tm.tm_min + 6*(tm.tm_min/10) ; /* dec->bcd */
+    data[2] = tm.tm_hour + 6*(tm.tm_hour/10) ; /* dec->bcd */
+    data[3] = tm.tm_wday ; /* dec->bcd */
+    data[4] = tm.tm_mday + 6*(tm.tm_mday/10) ; /* dec->bcd */
+    data[5] = tm.tm_mon + 6*(tm.tm_mon/10) ; /* dec->bcd */
+    year = tm.tm_year % 100 ;
+    data[6] = year + 6*(year/10) ; /* dec->bcd */
+    if ( tm.tm_year>99 && tm.tm_year<200 ) data[5] |= 0x80 ;
+//printf("DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
+//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }

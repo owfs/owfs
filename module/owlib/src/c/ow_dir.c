@@ -78,7 +78,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     }
 
     if ( pn->dev ){ /* device directory */
-        //printf("FS_dir: call FS_devdir\n");
+//printf("FS_dir: call FS_devdir\n");
         ret = FS_devdir( dirfunc, &pn2 ) ;
 //printf("FS_dir: done FS_devdir\n");
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
@@ -261,8 +261,9 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
     STATLOCK
         ++dir_dev.calls ;
     STATUNLOCK
+//printf("DIR device directory (%s)\n",pn2->path);
     if ( pn2->subdir ) { /* indevice subdir, name prepends */
-//printf("DIR device subdirectory\n");
+//printf("DIR device subdirectory (%s)\n",pn2->path);
         strcpy( s , pn2->subdir->name ) ;
         strcat( s , "/" ) ;
         len = strlen(s) ;
