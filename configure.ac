@@ -405,6 +405,11 @@ AC_CONFIG_FILES([
     module/owperl/src/Makefile
     module/owperl/src/c/Makefile
     module/owperl/src/c/Makefile.PL
+    module/owserver/Makefile
+    module/owserver/src/Makefile
+    module/owserver/src/include/Makefile
+    module/owserver/src/c/Makefile
+    module/owserver/src/man/Makefile
     src/Makefile
     src/include/Makefile
     src/man/Makefile
@@ -413,11 +418,6 @@ AC_CONFIG_FILES([
     src/scripts/Makefile
 ])
 AC_OUTPUT
-#    module/owserver/Makefile
-#    module/owserver/src/Makefile
-#    module/owserver/src/include/Makefile
-#    module/owserver/src/c/Makefile
-#    module/owserver/src/man/Makefile
 
 # Now, let's tell them what is the current configuration. Only the items
 # that are funny (like current default prefix) or configurable (like the
