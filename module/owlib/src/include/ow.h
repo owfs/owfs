@@ -58,6 +58,7 @@ $Id$
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
 
+#define _FILE_OFFSET_BITS	64
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -95,6 +96,25 @@ $Id$
 #define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
 #define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
 
+/* command line options */
+/* These a re the owlib-specific options */
+#include <fcntl.h>
+#define __USE_XOPEN /* for strptime fuction */
+#include <time.h>
+#undef __USE_XOPEN /* for strptime fuction */
+#include <termios.h>
+#include <errno.h>
+#include <syslog.h>
+#include <ctype.h>
+#include <sys/file.h> /* for flock */
+#include <sys/stat.h> /* for stat */
+#include <sys/types.h> /* for stat */
+#include <getopt.h> /* for long options */
+
+/*
+    OW -- Onw Wire
+    Global variables -- each invokation will have it's own data#define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"CMD_ENV     "_FUSE_UNMOUNT_CMD"
+*/
 /* command line options */
 /* These a re the owlib-specific options */
 #define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"
