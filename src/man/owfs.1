@@ -70,20 +70,14 @@ The underlying interface to the 1-wire bus is identical to OWHTTPD -- the 1-wire
 The 1-wire file system is a modified version of fuse examples by Miklos Szeredi. Th, and serves no files. Security should therefore be good. Only the 1-wire bus is at risk. The fuse library and kernel module is needed. (See http://fuse.sourceforge.net)
 
 .SH OPTIONS
-.SS \-h \-\-help
-Shows this summary of options.
-.SS \-d \-\-device "deviceport"
-Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples). The
-.I \-d
-and
-.I \-u
-options are mutually exclusive.
-.SS \-u \-\-usb
-Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
-.SS \-t \-\-timeout "seconds"
-Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default.
 .SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
 Temperature scale used for data output. Celsius is the default.
+.SS \-d \-\-device "deviceport"
+Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples). 
+.br
+Note: multiple instances of 
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
 .SS \-f \-\-format "f[.]i[[.]c]"
 Display format for the 1-wire devices. Each device has a 8byte address, consisting of 1byte
 .I f
@@ -101,6 +95,26 @@ and
 .I fi.c
 .PP
 All formats are accepted as input, but the output will be in the specified format.
+.SS \-h \-\-help
+Shows this summary of options.
+.SS \-t \-\-timeout "seconds"
+Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default.
+.SS \-s [host:]port
+Connect via tcp (network) to an 
+.I owserver
+process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The 
+.I owserver
+process can be local, or remote.
+.br
+Note: multiple instances of 
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
+.SS \-u \-\-usb
+Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
+.br
+Note: multiple instances of 
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
 .SS \-\-background | \-\-foreground
 Whether the program releases the console and runs in the
 \.I background

@@ -76,22 +76,22 @@ The 1-wire protocol is a simple networking system and assiciated devices develop
 Whether the program releases the console and enters daemon mode after evaluating command line options.
 .I background
 is the default.
-.SS \-d \-\-device "deviceport" | \-u | -s portnum
+.SS \-d \-\-device "deviceport"
 Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples).
 .br
-Note: The
-.I \-d
-and
-.I \-u
-and
-.I \-s
-options are mutually exclusive.
+Note: multiple instances of 
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
 .SS \-h \-\-help
 Shows this summary of options.
 .SS \-p portnum
 Sets the tcp port that
 .I owserver
 runs on. Clients access this port with the \"-s\" command line option.
+.br
+Note: multiple instances of 
+.I -p
+are allowed. Each port will be treated identically.
 .SS \-r \-\-readonly | \-w \-\-write
 Set the read / write permissions on the 1-wire bus. Clients can also be started in read-only mode, which will restrict THAT client, even if
 .I owserver
@@ -104,10 +104,18 @@ mode does not prevent all 1-wire bus changes. On some 1-wire devices, reading wi
 Connect to another
 .I owserver
 and not the physical 1-wire bus. Format port number, service name, (or host:port for a remote target).
+.br
+Note: multiple instances of 
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
 .SS \-t \-\-timeout "seconds"
 Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default. May be subsequently changed through client interface to the /settings/cache entries.
 .SS \-u \-\-usb
 Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
+.br
+Note: multiple instances of 
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
 .SS \-V \-\-version
 .I Version
 of this program and related libraries.
