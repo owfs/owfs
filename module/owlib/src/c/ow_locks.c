@@ -18,7 +18,6 @@ $Id$
 
 #ifdef OW_MT
 //pthread_mutex_t busstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
-pthread_mutex_t dev_mutex     = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t stat_mutex    = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t cache_mutex   = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t store_mutex   = PTHREAD_MUTEX_INITIALIZER ;
@@ -29,28 +28,14 @@ pthread_mutex_t dir_mutex     = PTHREAD_MUTEX_INITIALIZER ;
    even if thread-support is enabled. */
 pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #endif
-#define DEVLOCK      pthread_mutex_lock(&dev_mutex) ;
-#define DEVUNLOCK    pthread_mutex_unlock(&dev_mutex) ;
-#define DEVLOCKS    10
-sem_t devlocks ;
-struct devlock {
-    unsigned char sn[8] ;
-    struct connection_in * in ;
-    pthread_mutex_t lock ;
-    int users ;
- } DevLock[DEVLOCKS] = { [0 ... DEVLOCKS-1]={"",NULL,PTHREAD_MUTEX_INITIALIZER,0}};
-#define SLOTLOCK(slot)      pthread_mutex_lock(&DevLock[slot].lock) ;
-#define SLOTUNLOCK(slot)      pthread_mutex_unlock(&DevLock[slot].lock) ;
 #endif /* OW_MT */
 
 /* maxslots and multithreading are ints to allow address-of */
-#ifdef DEVLOCKS
+#ifdef OW_MT
     int multithreading = 1 ;
-    int maxslots = DEVLOCKS ;
-#else /* DEVLOCKS */
+#else /* OW_MT */
     int multithreading = 0 ;
-    int maxslots = 1 ;
-#endif /* DEVLOCKS */
+#endif /* OW_MT */
 
 /* Essentially sets up semaphore for device slots */
 void LockSetup( void ) {
@@ -58,33 +43,40 @@ void LockSetup( void ) {
 #ifdef __UCLIBC__
     int i ;
     //pthread_mutex_init(&busstat_mutex, pmattr);
-    pthread_mutex_init(&dev_mutex, pmattr);
     pthread_mutex_init(&stat_mutex, pmattr);
     pthread_mutex_init(&cache_mutex, pmattr);
     pthread_mutex_init(&store_mutex, pmattr);
     pthread_mutex_init(&fstat_mutex, pmattr);
     pthread_mutex_init(&uclibc_mutex, pmattr);
     pthread_mutex_init(&dir_mutex, pmattr);
-    for ( i=0 ; i<DEVLOCKS ; ++i) {
-        pthread_mutex_init( &DevLock[i].lock, pmattr ) ;
-    }
-#endif
-    sem_init( &devlocks, 0, DEVLOCKS ) ;
+#endif /* UCLIBC */
 #endif /* OW_MT */
 }
 
+/* Bad bad C library */
+/* implementation of tfind, tsearch returns an opaque structure */
+/* you have to know that the first element is a pointer to your data */
+struct dev_opaque {
+    struct devlock * key ;
+    void * other ;
+} ;
+
 /* Grabs a device slot, either one already matching, or an empty one */
-void LockGet( const struct parsedname * const pn ) {
+int LockGet( const struct parsedname * const pn ) {
 #ifdef OW_MT
-    int i ; /* counter through slots */
-    int empty = 0;
-    /* Exclude requests that don't need locking */
-    /* Basically directories, subdirectories, static and statistic data, and atomic items */
-    pn->si->lock = -1 ; /* No slot owned, yet */
+    struct devlock * dlock ;
+    struct dev_opaque * opaque ;
+    /* embedded function */
+    static int dev_compare( const void * a , const void * b ) {
+        return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
+    }
+
+    pn->si->lock = NULL ;
+    /* Need locking? */
     switch( pn->ft->format ) {
     case ft_directory:
     case ft_subdir:
-        return ;
+        return 0 ;
     default:
         break ;
     }
@@ -93,67 +85,57 @@ void LockGet( const struct parsedname * const pn ) {
     case ft_Astable:
     case ft_Avolatile:
     case ft_statistic:
-        return ;
+        return 0 ;
     default:
         break ;
     }
-//{ int e; sem_getvalue( &devlocks, &e);
-//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X pre slots=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],e);
-//}
-    /* potentially need an empty slot */
-    sem_wait( &devlocks ) ;
-    /* guaranteed to have a slot available at this point */
-//{ int e; sem_getvalue( &devlocks, &e);
-//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X post slots=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],e);
-//}
-
-    /* Lock the slots table */
-    DEVLOCK
-    for ( i=0 ; i<DEVLOCKS ; ++i ) {
-        if ( DevLock[i].users == 0 ) {
-            empty = i ;
-        } else if ( DevLock[i].in==pn->in && memcmp(DevLock[i].sn, pn->sn, 8)==0 ) {
-            /* found matching slot */
-            /* release potential slot */
-            sem_post( &devlocks ) ;
-            /* Add self to number of users */
-            ++DevLock[i].users ;
-            /* set my slot */
-            pn->si->lock = i ; /* slot owned */
-//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[i].users) ;
-            /* Release table -- since I'm a 'user' the slot can't be emptied */
-            DEVUNLOCK
-            /* Now wait on just this slot */
-            SLOTLOCK(i) ;
-            return ;
-        }
+    
+    if ( (dlock = malloc( sizeof( struct devlock ) ))==NULL ) return -ENOMEM ;
+    memcpy( dlock->sn, pn->sn, 8 ) ;
+    
+    DEVLOCK(pn)
+    if ( (opaque=tsearch(dlock,&(pn->in->dev_db),dev_compare))==NULL ) {
+        DEVUNLOCK(pn)
+        free(dlock) ;
+        return -ENOMEM ;
+    } else if ( dlock==opaque->key ) {
+        dlock->users = 1 ;
+        pthread_mutex_init(&(dlock->lock), pmattr);
+        pthread_mutex_lock(&(dlock->lock) ) ;
+        DEVUNLOCK(pn)
+        pn->si->lock = dlock ;
+    } else {
+        ++(opaque->key->users) ;
+        DEVUNLOCK(pn) ;
+        free(dlock) ;
+        pthread_mutex_lock( &(opaque->key->lock) ) ;
+        pn->si->lock = opaque->key ;
     }
-    /* Fall though with 'empty' being the empty slot and the table locked */
-    /* claim this slot */
-    memcpy(DevLock[empty].sn, pn->sn, 8) ;
-    DevLock[empty].in = pn->in ;
-    DevLock[empty].users = 1 ;
-    pn->si->lock = empty ;
-//printf("LOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X NOT FOUND match=%d users=%d\n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],pn->si->lock,DevLock[empty].users) ;
-    /* free table -- this slot is properly claimed */
-    DEVUNLOCK
-    /* Now wait on slot */
-    SLOTLOCK(empty) ;
 #endif /* OW_MT */
+    return 0 ;
 }
 
 void LockRelease( const struct parsedname * const pn ) {
 #ifdef OW_MT
-    int lock = pn->si->lock ;
-    /* No slot for this device */
-    if ( lock < 0 ) return ;
-//printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X PRE slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
-    /* Lock the table before manipulating slots */
-    DEVLOCK
-        SLOTUNLOCK(lock)
-        if ( (--DevLock[lock].users) == 0 ) sem_post( &devlocks ) ;
-//printf("UNLOCK %.2X.%.2X%.2X%.2X%.2X%.2X%.2X POST slot=%d users=%d \n",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6],lock,DevLock[lock].users) ;
-    DEVUNLOCK
+    if ( pn->si->lock ) {
+        /* embedded function */
+        static int dev_compare( const void * a , const void * b ) {
+            return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
+        }
+       
+        pthread_mutex_unlock( &(pn->si->lock->lock) ) ;
+        DEVLOCK(pn)
+        if ( pn->si->lock->users==1 ) {
+                tdelete( pn->si->lock, &(pn->in->dev_db), dev_compare ) ;
+                DEVUNLOCK(pn)
+                pthread_mutex_destroy(&(pn->si->lock->lock) ) ;
+                free(pn->si->lock) ;
+        } else {
+                --pn->si->lock->users;
+                DEVUNLOCK(pn)
+        }
+        pn->si->lock = NULL ;
+    }
 #endif /* OW_MT */
 }
 

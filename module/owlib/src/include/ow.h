@@ -98,14 +98,13 @@ $Id$
 #endif /* USE_NO_PARPORT */
 
 extern int multithreading ;
-extern int maxslots ;
 #ifdef OW_MT
     #include <pthread.h>
- #ifdef HAVE_SEMAPHORE_H
-    #include <semaphore.h>
- #else /* HAVE_SEMAPHORE_H */
-    #include "sem.h"
- #endif /* HAVE_SEMAPHORE_H */
+// #ifdef HAVE_SEMAPHORE_H
+//    #include <semaphore.h>
+// #else /* HAVE_SEMAPHORE_H */
+//    #include "sem.h"
+// #endif /* HAVE_SEMAPHORE_H */
 
     //extern pthread_mutex_t busstat_mutex ;
     extern pthread_mutex_t stat_mutex ;
@@ -287,6 +286,7 @@ struct aggregate {
     enum ag_index letters ; /* name them with letters or numbers */
     enum ag_combined combined ; /* Combined bitmaps properties, or separately addressed */
 } ;
+extern struct aggregate Asystem ; /* for remote directories */
 
 /* file lengths that need special processing */
 /* stored (as negative enum) in ft.suglen */
@@ -464,13 +464,19 @@ struct buspath {
     unsigned char branch ;
 } ;
 
+struct devlock {
+    unsigned char sn[8] ;
+    unsigned int users ;
+    pthread_mutex_t lock ;
+} ;
+
 /* data per transaction */
 struct stateinfo {
     int LastDiscrepancy ; // for search
     int LastFamilyDiscrepancy ; // for search
     int LastDevice ; // for search
     int AnyDevices ;
-    int lock ; // place in dev lock array
+    struct devlock * lock ; // need to clear dev lock?
     union semiglobal sg ; // more state info, packed for network transmission */
 } ;
 
@@ -729,6 +735,8 @@ struct connection_in {
 #endif /* OW_USB */
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
+    pthread_mutex_t dev_mutex ;
+    void * dev_db ;
 #endif /* OW_MT */
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
@@ -773,9 +781,13 @@ extern struct connection_in * indevice ;
 extern int outdevices ;
 extern int indevices ;
 #ifdef OW_MT
+    #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) ) ;
+    #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) ) ;
     #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) ) ;
     #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) ) ;
 #else /* OW_MT */
+    #define DEVLOCK(pn)
+    #define DEVUNLOCK(pn)
     #define ACCEPTLOCK(out)
     #define ACCEPTUNLOCK(out)
 #endif /* OW_MT */
@@ -872,7 +884,7 @@ int Simul_Test( const enum simul_type type, unsigned int msec, const struct pars
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
 void LockSetup( void ) ;
-void LockGet( const struct parsedname * const pn ) ;
+int LockGet( const struct parsedname * const pn ) ;
 void LockRelease( const struct parsedname * const pn ) ;
 
 /* 1-wire lowlevel */

@@ -82,6 +82,10 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
 static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 static int FS_w_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    (void) buf ;
+    (void) size ;
+    (void) offset ;
+    (void) pn ;
   return -EINVAL;
 }
 

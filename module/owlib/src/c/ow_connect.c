@@ -22,10 +22,10 @@ int outdevices = 0 ;
 struct connection_in * indevice = NULL ;
 int indevices = 0 ;
 
-struct connection_in *find_connection_in(int index) {
+struct connection_in *find_connection_in(int iindex) {
   struct connection_in *c = indevice;
   while(c) {
-    if(c->index == index) break;
+    if(c->index == iindex) break;
     c = c->next;
   }
   return c;
@@ -53,6 +53,8 @@ struct connection_in * NewIn( void ) {
 	now->speed = B9600;
 #ifdef OW_MT
 	pthread_mutex_init(&(now->bus_mutex), pmattr);
+	pthread_mutex_init(&(now->dev_mutex), pmattr);
+	now->dev_db = NULL ;
 #endif /* OW_MT */
     }
     return now ;
@@ -88,12 +90,12 @@ void FreeIn( void ) {
 
     indevice = NULL ;
     indevices = 0 ;
-#ifdef OW_MT
-    pthread_mutex_destroy(&(now->bus_mutex)) ;
-#endif /* OW_MT */
     while ( next ) {
         now = next ;
         next = now->next ;
+#ifdef OW_MT
+        pthread_mutex_destroy(&(now->bus_mutex)) ;
+#endif /* OW_MT */
         switch (now->busmode) {
         case bus_remote:
             if ( now->host ) {
@@ -117,6 +119,8 @@ void FreeIn( void ) {
             DS9490_close(now) ;
             break ;
 #endif /* OW_USB */
+        default:
+            break ;
         }
         if ( now->name) {
             free(now->name ) ;

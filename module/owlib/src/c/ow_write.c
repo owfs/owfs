@@ -111,9 +111,10 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             ++ write_calls ; /* statistics */
         STATUNLOCK
 
-        LockGet(pn) ;
-	r = FS_real_write( buf, size, offset, pn ) ;
-        LockRelease(pn) ;
+        if ( (r=LockGet(pn))==0 ) {
+            r = FS_real_write( buf, size, offset, pn ) ;
+            LockRelease(pn) ;
+        }
 
         STATLOCK
         if ( r == 0 ) {

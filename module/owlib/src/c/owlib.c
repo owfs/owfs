@@ -12,7 +12,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_devices.h"
-#include "ow_system.h" /* For Asystem structure */
 
 /* All ow library setup */
 void LibSetup( void ) {

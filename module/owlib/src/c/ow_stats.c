@@ -235,7 +235,6 @@ struct device d_stats_directory = { "directory", "directory", 0, NFT(stats_direc
 
 struct filetype stats_thread[] = {
     {"multithreading"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & multithreading   , } ,
-    {"device_slots"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & maxslots         , } ,
     {"directory"       ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
     {"directory/now"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_avg.current  , } ,
     {"directory/sum"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & dir_avg.sum      , } ,
@@ -260,11 +259,9 @@ struct filetype stats_thread[] = {
  ;
 struct device d_stats_thread = { "threads", "threads", 0, NFT(stats_thread), stats_thread } ;
 
-extern struct aggregate Asystem;
-
 struct filetype stats_bus[] = {
     {"elapsed_time"    , 15, NULL    , ft_unsigned, ft_statistic, {u:FS_elapsed},{v:NULL}, NULL          , } ,
-    {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, (void *)0  , } ,
+    {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {f:FS_time_p}, {v:NULL}, (void *)0  , } ,
     /* bus_idle_time should be the same is elapsed_time - bus_time
      * Not any big idea to implement it */
   //{"bus_idle_time"   , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, bus_idle_time , } ,

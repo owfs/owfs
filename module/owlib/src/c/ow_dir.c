@@ -154,13 +154,13 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         struct parsedname pnnext ;
         /* we need a different state (search state) for a different bus -- subtle error */
         struct stateinfo si ;
-	int ret;
+	int dret;
         (void) vp ;
         memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
         pnnext.si = &si ;
         pnnext.in = pn->in->next ;
-        ret = FS_dir_seek(dirfunc,&pnnext,flags) ;
-	pthread_exit((void *)ret);
+        dret = FS_dir_seek(dirfunc,&pnnext,flags) ;
+	pthread_exit((void *)dret);
     }
     int threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, NULL ) ;
 #endif /* OW_MT */

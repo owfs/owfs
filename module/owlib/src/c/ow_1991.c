@@ -53,7 +53,6 @@ bWRITE_FUNCTION( FS_w_memory ) ;
 bWRITE_FUNCTION( FS_w_password ) ;
 bWRITE_FUNCTION( FS_w_reset_password ) ;
 bWRITE_FUNCTION( FS_w_change_password ) ;
-bWRITE_FUNCTION( FS_w_password ) ;
 
 /* ------- Structures ----------- */
 
@@ -109,6 +108,7 @@ static const unsigned char cp_array[9][8] = {
 #endif
 
 static int FS_w_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    (void) offset ;
   memset(global_passwd[pn->extension], 0, 8);
   memcpy(global_passwd[pn->extension], buf, MIN(size,8));
   //printf("Use password [%s] for subkey %d\n", global_passwd[pn->extension], pn->extension);

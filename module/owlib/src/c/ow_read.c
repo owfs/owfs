@@ -175,17 +175,19 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 	/* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
 //printf("READSEED1 pid=%d call FS_real_read\n",getpid());
-            LockGet(pn) ;
-	    r = FS_real_read(buf, size, offset, pn ) ;
-            LockRelease(pn) ;
+            if ( (r=LockGet(pn))==0 ) {
+                r = FS_real_read(buf, size, offset, pn ) ;
+                LockRelease(pn) ;
+            }
 //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
 //printf("READSEED2 pid=%d not found in cache\n",getpid());
-            LockGet(pn) ;
-	    r = FS_real_read( buf, size, offset, pn ) ;
-	    if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
-            LockRelease(pn) ;
+            if ( (r=LockGet(pn))==0 ) {
+                r = FS_real_read( buf, size, offset, pn ) ;
+                if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
+                LockRelease(pn) ;
+            }
 //printf("READSEED2 pid=%d = %d\n",getpid(), r);
         } else {
 //printf("READSEEK3 pid=%d cached found\n",getpid()) ;
