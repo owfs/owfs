@@ -132,7 +132,7 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
     ++read_tries[2] ; /* statitics */
     r = FS_parse_read( buf, size, offset, pn ) ;
-    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",path,size) ;
+    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",path,(int)size) ;
     return r ;
 }
 
@@ -388,7 +388,7 @@ static int FS_output_int( int value, char * buf, const size_t size, const struct
     int len ;
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
-    len = snprintf(c,suglen+1,"%*d",suglen,value) ;
+    len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ( (len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
@@ -403,7 +403,7 @@ static int FS_output_unsigned( unsigned int value, char * buf, const size_t size
     int len ;
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
-    len = snprintf(c,suglen+1,"%*u",suglen,value) ;
+    len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
@@ -418,7 +418,7 @@ static int FS_output_float( FLOAT value, char * buf, const size_t size, const st
     int len ;
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
-    len = snprintf(c,suglen+1,"%*G",suglen,value) ;
+    len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
     UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
