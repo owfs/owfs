@@ -441,7 +441,8 @@ void UT_delay(const unsigned int len)
 /* Length of file based on filetype alone */
 size_t FileLength( const struct parsedname * const pn ) {
     if ( pn-> type == pn_structure )
-        return 26 ;
+        return 30 ;
+    /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
     if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
         return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
     } else if ( pn->ft->format==ft_bitfield &&  pn->extension==-2 ) {
@@ -465,11 +466,17 @@ size_t FileLength( const struct parsedname * const pn ) {
 
 /* Length of file based on filetype and extension */
 size_t FullFileLength( const struct parsedname * const pn ) {
-    if ( pn->type == pn_structure ) return 26 ;
+    if ( pn->type == pn_structure ) return 30 ;
+    /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
     if ( pn->ft->ag ) { /* aggregate files */
         switch (pn->extension) {
         case -1: /* ALL */
-            return (pn->ft->ag->elements) * (pn->ft->suglen + (pn->ft->format!=ft_binary)) - 1 ;
+		if(pn->ft->format==ft_binary) {
+		  return (pn->ft->ag->elements) * (pn->ft->suglen) ;
+		} else {
+		  // used in ow_lcd.c:gpio.ALL which is ft_yesno for example
+		  return ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 ;
+		}
         case -2: /* BYTE */
             return 12 ;
         }
