@@ -80,14 +80,6 @@ static void *doit(void *ignored) { return ignored; }
     pthreads_ok="no"
 ]) ])
 
-
-
-
-
-
-
-
-
 # Check if the modules are enabled
 
 #Check owfs
@@ -200,12 +192,12 @@ AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 
 # Check for USB enabled
 
-ENABLE_USB=true
+ENABLE_USB=auto
 
 AC_MSG_CHECKING([if usb support is enabled])
 
 AC_ARG_ENABLE(usb,
-[  --enable-usb          Enable 1-Wire usb DS2490 support (default true)],
+[  --enable-usb          Enable 1-Wire usb DS2490 support (default auto)],
 [
 
     AC_MSG_RESULT([$enableval])
@@ -223,12 +215,16 @@ AC_SUBST(ENABLE_USB)
 
 # Include libusb if the usb is enabled
 
-if test "${ENABLE_USB}" = "true" ; then
+if test "${ENABLE_USB}" != "false" ; then
 
     AC_CHECK_LIB(usb,usb_open, ,[
-        AC_MSG_WARN([libusb not found, usb will be disabled])
-        ENABLE_USB=false
-        AC_SUBST(ENABLE_USB)
+	if test "${ENABLE_USB}" = "true" ; then
+	    AC_MSG_ERROR([libusb must be installed to use a USB adapter])
+	else
+            AC_MSG_WARN([libusb not found, usb will be disabled])
+            ENABLE_USB=false
+            AC_SUBST(ENABLE_USB)
+	fi
     ])
 fi
 
