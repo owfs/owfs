@@ -78,7 +78,8 @@ int DS9490_detect( void ) {
     usb_init() ;
     usb_find_busses() ;
     usb_find_devices() ;
-    for ( bus = usb_get_busses() ; bus ; bus=bus->next ) {
+//    for ( bus = usb_get_busses() ; bus ; bus=bus->next ) {
+    for ( bus = usb_busses ; bus ; bus=bus->next ) {
         for ( dev=bus->devices ; dev ; dev=dev->next ) {
             if ( dev->descriptor.idVendor==0x04FA && dev->descriptor.idProduct==0x2490 ) {
                 if ( ++usbnum < useusb ) {
