@@ -20,7 +20,6 @@ void LibSetup( void ) {
     openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
 
     /* special resort in case static data (devices and filetypes) not properly sorted */
-//printf("LibSetup\n");
     DeviceSort() ;
 
     /* DB cache code */
@@ -38,6 +37,9 @@ void LibSetup( void ) {
     pmattr = &mattr ;
  #endif /* __UCLIBC__ */
 #endif /* OW_MT */
+
+    /* Setup the multithreading synchronizing locks */
+    LockSetup();
     
     start_time = time(NULL) ;
 }
@@ -190,12 +192,12 @@ int LibStart( void ) {
             } else if ( COM_open(in) ) { /* serial device */
                 ret = -ENODEV ;
             } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
-                syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
+	        syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
                 if ( DS9097_detect(in) ) {
-                    syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
+		    syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
                     ret = -ENODEV ;
                 }
-            }
+            } 
         }
             break ;
         case bus_usb:
@@ -210,8 +212,11 @@ int LibStart( void ) {
             ret = 1 ;
             break ;
         }
-        if (ret) BadAdapter_detect(in) ;
-//printf("Adapter(%d) = %s\n",in->index,in->adapter_name);
+        if (ret) {
+	  BadAdapter_detect(in) ;
+	}
+
+	//printf("Adapter(%d) = %s\n",in->index,in->adapter_name);
     } while ( (in=in->next) ) ;
     Asystem.elements = indevices ;
 
@@ -253,8 +258,6 @@ int LibStart( void ) {
         fprintf(pid,"%lu",pid_num ) ;
         fclose(pid) ;
     }
-    /* Setup the multithreading synchronizing locks */
-    LockSetup() ;
     return 0 ;
 }
 

@@ -12,6 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+#include "ow_xxxx.h"
 #include <sys/time.h>
 
 static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
@@ -195,6 +196,7 @@ int DS2480_detect( struct connection_in * in ) {
     int ret ;
     unsigned char setup[5] ;
 
+    memset(&pn, 0, sizeof(struct parsedname));
     pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
@@ -213,9 +215,10 @@ int DS2480_detect( struct connection_in * in ) {
 
     /* Set up low-level routines */
     DS2480_setroutines( & (in->iroutines) ) ;
+
     /* Reset the bus and adapter */
     DS2480_reset(&pn) ;
-//printf("2480Detect reset\n");
+
     // reset modes
     in->UMode = MODSEL_COMMAND;
     in->USpeed = SPEEDSEL_FLEX;
@@ -234,7 +237,6 @@ int DS2480_detect( struct connection_in * in ) {
 
     // send the timing byte
     if ((ret=DS2480_write(&timing,1,&pn))) return ret ;
-//printf("2480Detect timing\n");
 
     // delay to let line settle
     UT_delay(4);
@@ -244,8 +246,9 @@ int DS2480_detect( struct connection_in * in ) {
 
     // send the packet
     // read back the response
-    if ( (ret=DS2480_sendback_cmd(setup,setup,5,&pn)) ) return ret ;
-//printf("2480Detect cmd packet\n");
+    if ( (ret=DS2480_sendback_cmd(setup,setup,5,&pn)) ) {
+      return ret ;
+    }
 
     // look at the baud rate and bit operation
     // to see if the response makes sense
@@ -255,10 +258,10 @@ int DS2480_detect( struct connection_in * in ) {
         ((setup[4] & 0xF0) == 0x90) &&
         ((setup[4] & 0x0C) == DS2480_baud(in->speed,&pn))
        ) {
-//printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
-//printf("2480Detect version=%d\n",Adapter) ;
+      //printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
         /* Apparently need to reset again to get the version number properly */
         DS2480_reset(&pn);
+
         switch (in->Adapter) {
         case adapter_DS9097U2:
         case adapter_DS9097U:
@@ -271,11 +274,11 @@ int DS2480_detect( struct connection_in * in ) {
             in->adapter_name = "MultiLINK" ;
             break;
         }
-//printf("2480Detect version=%d\n",Adapter) ;
+	//printf("2480Detect version=%d\n",in->Adapter) ;
         in->busmode = bus_serial ;
         return 0 ;
     }
-//printf("2480Detect bad echo\n");
+    //printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 
     return -EINVAL ;
 }
@@ -312,7 +315,6 @@ static int DS2480_reset( const struct parsedname * const pn ) {
       STATLOCK
       DS2480_reset_errors++;
       STATUNLOCK
-	//printf("DS2480_reset: DS2480_level failed\n");
       return ret ;
     }
     // flush the buffers
@@ -324,7 +326,6 @@ static int DS2480_reset( const struct parsedname * const pn ) {
       STATLOCK
       DS2480_reset_errors++;
       STATUNLOCK
-	//printf("DS2480_reset: DS2480_sendback_cmd failed\n");
       return ret ;
     }
     /* The adapter type is encode in this response byte */
@@ -443,8 +444,12 @@ static int DS2480_level(int new_level, const struct parsedname * const pn) {
         // send the packet
         // read back the 1 byte response from setting time limit
         // check response byte
-        if ( (ret=DS2480_sendout_cmd(b,2,pn)) || (ret=DS2480_read(b,1,pn)) || (ret=(b[0]&0x81)==0x00?0:-EIO) ) return ret ;
-
+        if ( (ret=DS2480_sendout_cmd(b,2,pn)) || (ret=DS2480_read(b,1,pn)) || (ret=(b[0]&0x81)==0x00?0:-EIO) ) {
+	  STATLOCK
+	  DS2480_level_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
     }
     pn->in->ULevel = new_level;
     return 0 ;
@@ -468,8 +473,12 @@ static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * c
     unsigned int sendlen=0;
 
     // make sure normal level
-    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) return ret ;
-
+    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) {
+      STATLOCK
+      DS2480_databit_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     // check if correct mode
     if (pn->in->UMode != MODSEL_COMMAND)
     {
@@ -485,8 +494,12 @@ static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * c
     COM_flush(pn);
 
     // send the packet
-    if ( (ret=DS2480_write(sendpacket,sendlen,pn)) || (ret=DS2480_read(readbuffer,1,pn)) ) return ret ;
-
+    if ( (ret=DS2480_write(sendpacket,sendlen,pn)) || (ret=DS2480_read(readbuffer,1,pn)) ) {
+      STATLOCK
+      DS2480_databit_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     // interpret the response
     *getbit = ((readbuffer[0] & 0xE0) == 0x80) && ((readbuffer[0] & RB_BIT_MASK) == RB_BIT_ONE) ;
 
@@ -539,9 +552,12 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     // send the packet
     // search OFF
     if ( (ret=BUS_send_data( &search,1,pn )) || (ret=DS2480_sendout_cmd( &searchon,1,pn ))
-    || (ret=BUS_sendback_data( bitpairs,bitpairs,16,pn )) || (ret=DS2480_sendout_cmd( &searchoff,1,pn )) )
+	 || (ret=BUS_sendback_data( bitpairs,bitpairs,16,pn )) || (ret=DS2480_sendout_cmd( &searchoff,1,pn )) ) {
+        STATLOCK
+	DS2480_next_both_errors++;
+	STATUNLOCK
         return ret ;
-
+    }
     // interpret the bit stream
     for (i = 0; i < 64; i++) {
         // get the SerialNum bit
@@ -555,8 +571,12 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     }
 
     // CRC check
-    if ( CRC8(sn,8) || (si->LastDiscrepancy == 63) || (sn[0] == 0)) return -EIO ;
-
+    if ( CRC8(sn,8) || (si->LastDiscrepancy == 63) || (sn[0] == 0)) {
+      STATLOCK
+      DS2480_next_both_errors++;
+      STATUNLOCK
+      return -EIO ;
+    }
     // successful search
     // check for last one
     if ((mismatched == si->LastDiscrepancy) || (mismatched == -1)) si->LastDevice = 1 ;
@@ -633,7 +653,13 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
     UT_delay( delay ) ;
 
     // return to normal level
-   return DS2480_level(MODE_NORMAL,pn) ;
+    ret = DS2480_level(MODE_NORMAL,pn) ;
+    if(ret) {
+      STATLOCK
+      DS2480_PowerByte_errors++;
+      STATUNLOCK
+    }
+    return ret;
 }
 
 /* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */
@@ -647,12 +673,16 @@ static int DS2480_ProgramPulse( const struct parsedname * const pn ) {
     unsigned char cmd[] = { CMD_CONFIG|PARMSEL_12VPULSE|PARMSET_512us, CMD_COMM|FUNCTSEL_CHMOD|BITPOL_12V|SPEEDSEL_PULSE, } ;
     unsigned char resp[2] ;
     COM_flush(pn) ;
-    (ret=pn->in->ProgramAvailable?0:-EINVAL)
-    || (ret=DS2480_level(MODE_NORMAL,pn))
-    || (ret=DS2480_sendback_cmd(cmd,resp,2,pn))
-    || (ret=DS2480_read(resp,2,pn))
-    || ((cmd[0]==resp[0])?0:-EIO)
-    || (ret=((cmd[1]&0xFC)==(resp[1]&0xFC))?0:-EIO ) ;
+    if( ((ret=pn->in->ProgramAvailable?0:-EINVAL)
+	 || (ret=DS2480_level(MODE_NORMAL,pn))
+	 || (ret=DS2480_sendback_cmd(cmd,resp,2,pn))
+	 || (ret=DS2480_read(resp,2,pn))
+	 || ((cmd[0]==resp[0])?0:-EIO)
+	 || (ret=((cmd[1]&0xFC)==(resp[1]&0xFC))?0:-EIO)) ) {
+      STATLOCK
+      DS2480_ProgramPulse_errors++;
+      STATUNLOCK
+    }
     return ret ;
 }
 
@@ -700,6 +730,7 @@ static int DS2480_write(const unsigned char *const buf, const size_t size, const
           -errno = read error
           -EINTR = timeout
  */
+#if 0
 static int DS2480_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
     fd_set fdset;
     int fd = pn->in->fd ;
@@ -738,7 +769,6 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
         rc = select(fd+1,&fdset,NULL,NULL,&tval);
         if (rc > 0) {
 	    if( FD_ISSET( fd, &fdset )==0 ) {
-	      //printf("DS2480_read: FD_ISSET() failed %d/%d bytes\n", cnt, size);
 	      STATLOCK
 	      DS2480_read_errors++;
 	      STATUNLOCK
@@ -755,7 +785,6 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
 		STATUNLOCK
 		continue;
 	      }
-	      //printf("DS2480_read: read() failed %d/%d bytes: rc=%d\n", cnt, size, rc);
 	      STATLOCK
 	      DS2480_read_errors++;
 	      STATUNLOCK
@@ -770,23 +799,101 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
 	    STATUNLOCK
 	    continue;
 	  }
-          buf[cnt] = '\0' ;
 	  STATLOCK
 	  DS2480_read_select_errors++;
 	  STATUNLOCK
-	    //printf("DS2480_read: select() failed after %d/%d bytes: %s\n", cnt, size, strerror(errno));
 	  return -EINTR;
         } else {
 	  STATLOCK
 	    ++DS2480_read_timeout ;
 	  STATUNLOCK
-          buf[cnt] = '\0' ;
-	  //printf("DS2480_read: select() timed out after %d/%d bytes\n", cnt, size);
 	  return -EINTR;
         }
    }
    return 0;
 }
+#else
+static int DS2480_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
+    fd_set fdset;
+    size_t r, rl = size;
+    struct timeval tval;
+    int rc;
+
+    while(rl > 0) {
+        if(!pn->in) { rc = -EIO; break; }
+        // set a descriptor to wait for a character available
+        FD_ZERO(&fdset);
+        FD_SET(pn->in->fd,&fdset);
+        tval.tv_sec = 0;
+        tval.tv_usec = 500000;
+	/* This timeout need to be pretty big for some reason.
+	 * Even commands like DS2480_reset() fails with too low
+	 * timeout. I raise it to 0.5 seconds, since it shouldn't
+	 * be any bad experience for any user... Less read and
+	 * timeout errors for users with slow machines. I have seen
+	 * 276ms delay on my Coldfire board.
+	 *
+	 * DS2480_reset()
+	 *   DS2480_sendback_cmd()
+	 *     DS2480_sendout_cmd()
+	 *       DS2480_write()
+	 *         write()
+	 *         tcdrain()   (all data should be written on serial port)
+	 *     DS2480_read()
+	 *       select()      (waiting 40ms should be enough!)
+	 *       read()
+	 * 
+	 */
+
+        // if byte available read or return bytes read
+        rc = select(pn->in->fd+1,&fdset,NULL,NULL,&tval);
+        if (rc > 0) {
+	    if( FD_ISSET( pn->in->fd, &fdset )==0 ) {
+	      rc = -EIO;  /* error */
+	      break;
+	    }
+	    update_max_delay(pn);
+	    r = read(pn->in->fd,&buf[size-rl],rl);
+            if ( r < 0 ) {
+	      if(errno == EINTR) {
+		/* read() was interrupted, try again */
+		STATLOCK
+		DS2480_read_interrupted++;
+		STATUNLOCK
+		continue;
+	      }
+	      rc = -errno;  /* error */
+	      break;
+	    }
+	    rl -= r;
+	} else if(rc < 0) {
+	  if(errno == EINTR) {
+	    /* select() was interrupted, try again */
+	    STATLOCK
+	    DS2480_read_interrupted++;
+	    STATUNLOCK
+	    continue;
+	  }
+	  STATLOCK
+	  DS2480_read_select_errors++;
+	  STATUNLOCK
+	  return -EINTR;
+        } else {
+	  STATLOCK
+	  DS2480_read_timeout++;
+	  STATUNLOCK
+	  return -EINTR;
+        }
+    }
+    if(rl > 0) {
+        STATLOCK
+	DS2480_read_errors++;
+	STATUNLOCK
+	return rc;  /* error */
+    }
+   return 0;
+}
+#endif
 //
 // DS2480_sendout_cmd
 //  Send a command but expect no response
@@ -803,11 +910,11 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len, const 
         (ret=DS2480_write( &mc,1,pn )) || (ret= DS2480_write( cmd,(unsigned)len,pn )) ;
     } else {
         ret=DS2480_write(cmd,(unsigned)len,pn ) ;
-    }
-    if(ret) {
-      STATLOCK
-      DS2480_sendout_cmd_errors++;
-      STATUNLOCK
+	if(ret) {
+	  STATLOCK
+	    DS2480_sendout_cmd_errors++;
+	  STATUNLOCK
+	}
     }
     return ret ;
 }
@@ -828,11 +935,14 @@ static int DS2480_send_cmd( const unsigned char * const cmd , const int len, con
         (ret=DS2480_send_cmd(cmd,clen,pn)) || (ret=DS2480_send_cmd(&cmd[clen],len>>1,pn)) ;
     } else {
         unsigned char resp[16] ;
-        (ret=DS2480_sendback_cmd(cmd,resp,len,pn)) ||  (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0) ;
-	if(ret) {
-	  STATLOCK
-	  DS2480_send_cmd_errors++;
-	  STATUNLOCK
+        if( ((ret=DS2480_sendback_cmd(cmd,resp,len,pn))
+          || (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0)) ) {
+             STATLOCK
+	    if(ret == -EIO)
+                DS2480_send_cmd_memcmp_errors++;
+	    else
+	        DS2480_send_cmd_errors++;
+            STATUNLOCK
 	}
     }
     return ret ;
@@ -875,7 +985,12 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
         unsigned char md = MODE_DATA ;
         // change back to command mode
         pn->in->UMode = MODSEL_DATA;
-        if ( (ret=DS2480_write( &md,1,pn )) )  return ret ;
+        if ( (ret=DS2480_write( &md,1,pn )) )  {
+	  STATLOCK
+	  DS2480_sendout_data_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
     }
     if ( len>16 ) {
         int dlen = len-(len>>1) ;

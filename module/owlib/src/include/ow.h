@@ -675,6 +675,7 @@ extern unsigned int DS9097_reset_tcsetattr_errors ;
 // ow_ds9097U.c
 extern unsigned int DS2480_reset_errors ;
 extern unsigned int DS2480_send_cmd_errors ;
+extern unsigned int DS2480_send_cmd_memcmp_errors ;
 extern unsigned int DS2480_sendout_data_errors ;
 extern unsigned int DS2480_sendout_cmd_errors ;
 extern unsigned int DS2480_sendback_data_errors ;
@@ -687,6 +688,9 @@ extern unsigned int DS2480_read_select_errors ;
 extern unsigned int DS2480_read_timeout ;
 extern unsigned int DS2480_PowerByte_errors ;
 extern unsigned int DS2480_level_errors ;
+extern unsigned int DS2480_databit_errors ;
+extern unsigned int DS2480_next_both_errors ;
+extern unsigned int DS2480_ProgramPulse_errors ;
 
 /// mode bit flags
 #define MODE_NORMAL                    0x00

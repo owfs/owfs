@@ -40,12 +40,12 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
         (ret=BUS_sendback_data( data, resp, len,pn )) ||  (ret=memcmp(data, resp, (size_t) len)?-EIO:0) ;
 	if(ret) {
 	  STATLOCK
-	  if(ret == -EIO)
-	    BUS_send_data_memcmp_errors++;
-	  else
-	    BUS_send_data_errors++;
+	    if(ret == -EIO)
+	      BUS_send_data_memcmp_errors++;
+	    else
+	      BUS_send_data_errors++;
 	  STATUNLOCK
-        }
+	}
     }
     return ret ;
 }
@@ -161,13 +161,11 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 	  STATUNLOCK
 	  continue;
 	}
-	//printf("SAG select error\n");
 	STATLOCK
 	BUS_send_and_get_select_errors++;
 	STATUNLOCK
         return -EINTR;
       } else { /* timed out */
-	//printf("SAG select timeout\n");
 	STATLOCK
 	BUS_send_and_get_timeout++;
 	STATUNLOCK
@@ -215,7 +213,6 @@ int BUS_select_low(const struct parsedname * const pn) {
        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
-	  //printf("BUS_select_low: BUS_send_data failed\n");
           STATLOCK
 	  BUS_select_low_errors++;
 	  STATUNLOCK
@@ -223,7 +220,6 @@ int BUS_select_low(const struct parsedname * const pn) {
 	}
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-	  //printf("BUS_select_low: BUS_send_data or BUS_readin_data failed\n");
           STATLOCK
 	  BUS_select_low_errors++;
 	  STATUNLOCK
@@ -231,7 +227,6 @@ int BUS_select_low(const struct parsedname * const pn) {
 	}
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
-	  //printf("BUS_select_low: branch error\n");
           STATLOCK
 	  BUS_select_low_branch_errors++;
 	  STATUNLOCK
@@ -243,7 +238,6 @@ int BUS_select_low(const struct parsedname * const pn) {
         memcpy( &sent[1], pn->sn, 8 ) ;
         ret = BUS_send_data( sent,9,pn ) ;
 	if(ret) {
-	  //printf("BUS_select_low: BUS_send_data 2 failed\n");
 	  STATLOCK
 	  BUS_select_low_errors++;
 	  STATUNLOCK

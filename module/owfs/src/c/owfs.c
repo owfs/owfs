@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
         }
         opts[i] = NULL ;
     }
+
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
     if (opts) free( opts ) ;
 #else /* FUSE_MAJOR_VERSION == 1 */
@@ -157,11 +158,26 @@ int main(int argc, char *argv[]) {
 
 static void ow_exit( int e ) {
     LibClose() ;
-    if(fuse != NULL)
-        fuse_exit(fuse);
+    if(fuse != NULL) {
+      fuse_exit(fuse);
+    }
+    
+    /* Should perhaps only use fuse_teardown() if FUSE 2
+     * It doesn't check for NULL pointers though */
+    // fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
+#if (FUSE_MAJOR_VERSION == 2)
+    if(fuse != NULL) {
+      fuse_destroy(fuse);
+    }
+#endif
+    fuse = NULL;
+    if(fuse_fd != -1) {
+      close(fuse_fd);
+    }
     if(fuse_mountpoint != NULL) {
         fuse_unmount(fuse_mountpoint);
         free(fuse_mountpoint) ;
+	fuse_mountpoint = NULL;
     } else if(umount_cmd[0] != '\0') {
         system(umount_cmd);
     }

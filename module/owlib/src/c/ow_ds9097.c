@@ -51,17 +51,23 @@ int DS9097_detect( struct connection_in * in ) {
     struct parsedname pn ;
     int ret ;
     
+    memset(&pn, 0, sizeof(struct parsedname));
     pn.si = &si ;
     /* Set up low-level routines */
     DS9097_setroutines( & (in->iroutines) ) ;
+
     /* Reset the bus */
     in->Adapter = adapter_DS9097 ; /* OWFS assigned value */
     in->adapter_name = "DS9097" ;
     in->busmode = bus_serial ;
     
-    if ( (ret=FS_ParsedName(NULL,&pn)) ) return ret ;
+    if ( (ret=FS_ParsedName(NULL,&pn)) ) {
+      return ret ;
+    }
     pn.in = in ;
-    return DS9097_reset(&pn) ;
+
+    ret = DS9097_reset(&pn) ;
+    return ret;
 }
 
 //--------------------------------------------------------------------------
@@ -224,6 +230,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
       STATUNLOCK
       return ret ;
     }
+
     switch(c) {
     case 0:
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;

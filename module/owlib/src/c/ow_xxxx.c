@@ -49,7 +49,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) ;
 
 /* ------- Functions ------------ */
 
-void update_max_delay(struct parsedname *pn) {
+void update_max_delay(const struct parsedname * const pn) {
   struct timeval last_delay;
   if(!pn || !pn->in) return;
 

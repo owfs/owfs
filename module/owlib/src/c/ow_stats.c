@@ -117,6 +117,7 @@ unsigned int DS9097_reset_tcsetattr_errors = 0 ;
 // ow_ds9097U.c
 unsigned int DS2480_reset_errors = 0 ;
 unsigned int DS2480_send_cmd_errors = 0 ;
+unsigned int DS2480_send_cmd_memcmp_errors = 0 ;
 unsigned int DS2480_sendout_data_errors = 0 ;
 unsigned int DS2480_sendout_cmd_errors = 0 ;
 unsigned int DS2480_sendback_data_errors = 0 ;
@@ -129,6 +130,9 @@ unsigned int DS2480_read_select_errors = 0 ;
 unsigned int DS2480_read_timeout = 0 ;
 unsigned int DS2480_PowerByte_errors = 0 ;
 unsigned int DS2480_level_errors = 0 ;
+unsigned int DS2480_databit_errors = 0 ;
+unsigned int DS2480_next_both_errors = 0 ;
+unsigned int DS2480_ProgramPulse_errors = 0 ;
 
 
 struct average all_avg = {0L,0L,0L,0L,} ;
@@ -278,6 +282,7 @@ FS_stat_ROW(DS9097_reset_tcsetattr_errors),
 // ow_ds9097U.c
 FS_stat_ROW(DS2480_reset_errors),
 FS_stat_ROW(DS2480_send_cmd_errors),
+FS_stat_ROW(DS2480_send_cmd_memcmp_errors),
 FS_stat_ROW(DS2480_sendout_data_errors),
 FS_stat_ROW(DS2480_sendout_cmd_errors),
 FS_stat_ROW(DS2480_sendback_data_errors),
@@ -290,6 +295,9 @@ FS_stat_ROW(DS2480_read_select_errors),
 FS_stat_ROW(DS2480_read_timeout),
 FS_stat_ROW(DS2480_PowerByte_errors),
 FS_stat_ROW(DS2480_level_errors),
+FS_stat_ROW(DS2480_databit_errors),
+FS_stat_ROW(DS2480_next_both_errors),
+FS_stat_ROW(DS2480_ProgramPulse_errors),
 
 FS_stat_ROW(CRC8_errors),
 FS_stat_ROW(CRC8_tries),
