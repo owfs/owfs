@@ -739,6 +739,9 @@ void LockRelease( const struct parsedname * const pn ) ;
 void UT_delay(const unsigned int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
+int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
+int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
+
 /* High-level callback functions */
 int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) ;
 

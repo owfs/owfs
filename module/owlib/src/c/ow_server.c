@@ -49,9 +49,26 @@ void CloseServer( void ) {
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    void * r ;
     int ret ;
 
     sm.type = msg_read ;
+    sm.size = size ;
+    sm.tempscale = tempscale ;
+    sm.offset = offset ;
+    ret = ToServer( connectfd, &sm, path, NULL, 0) ;
+    if (ret) return ret ;
+    ret = FromServer( connectfd, &cm, buf, size ) ;
+    if (ret) return ret ;
+    return cm.ret ;
+}
+
+int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    int ret ;
+
+    sm.type = msg_write ;
     sm.size = size ;
     sm.tempscale = tempscale ;
     sm.offset = offset ;
