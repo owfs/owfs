@@ -45,81 +45,81 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
- bREAD_FUNCTION( FS_r_09page ) ;
-bWRITE_FUNCTION( FS_w_09page ) ;
- bREAD_FUNCTION( FS_r_09memory ) ;
-bWRITE_FUNCTION( FS_w_09memory ) ;
- bREAD_FUNCTION( FS_r_89param ) ;
+ bREAD_FUNCTION( FS_r_page ) ;
+bWRITE_FUNCTION( FS_w_page ) ;
+ bREAD_FUNCTION( FS_r_memory ) ;
+bWRITE_FUNCTION( FS_w_memory ) ;
+ bREAD_FUNCTION( FS_r_param ) ;
 
 /* ------- Structures ----------- */
 
 struct aggregate A2502 = { 4, ag_numbers, ag_separate, } ;
 struct filetype DS2502[] = {
     F_STANDARD   ,
-    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_09memory}  , {b:FS_w_09memory}, NULL, } ,
-    {"page"      ,    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_09page}    , {b:FS_w_09page}, NULL, } ,
+    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
 } ;
 DeviceEntry( 09, DS2502 )
 
 struct filetype DS1982U[] = {
     F_STANDARD   ,
-    {"mac_e"     ,     6,  NULL,   ft_binary, ft_stable  , {b:FS_r_89param}   , {v:NULL} , (void *) 4 } ,
-    {"mac_fw"    ,     8,  NULL,   ft_binary, ft_stable  , {b:FS_r_89param}   , {v:NULL} , (void *) 4 } ,
-    {"project"   ,     4,  NULL,   ft_binary, ft_stable  , {b:FS_r_89param}   , {v:NULL} , (void *) 0 } ,
-    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_09memory}  , {b:FS_w_09memory}, NULL, } ,
-    {"page"      ,    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_09page}    , {b:FS_w_09page}, NULL, } ,
+    {"mac_e"     ,     6,  NULL,   ft_binary, ft_stable  , {b:FS_r_param}   , {v:NULL} , (void *) 4 } ,
+    {"mac_fw"    ,     8,  NULL,   ft_binary, ft_stable  , {b:FS_r_param}   , {v:NULL} , (void *) 4 } ,
+    {"project"   ,     4,  NULL,   ft_binary, ft_stable  , {b:FS_r_param}   , {v:NULL} , (void *) 0 } ,
+    {"memory"    ,   128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
 } ;
 DeviceEntry( 89, DS1982U )
 
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static int OW_w_09mem( const unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
-static int OW_r_09mem( unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
-static int OW_r_89data( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
+static int OW_r_data( unsigned char * data , const struct parsedname * pn ) ;
 
 /* 2502 memory */
-int FS_r_09memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int s = size ;
     if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
     if ( s<0 ) return -EMSGSIZE ;
 
-    if ( OW_r_09mem( buf, (size_t) s, (size_t) offset, pn) ) return -EINVAL ;
+    if ( OW_r_mem( buf, (size_t) s, (size_t) offset, pn) ) return -EINVAL ;
 
     return s ;
 }
 
-int FS_r_09page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int s = size ;
     if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
     if ( s<0 ) return -EMSGSIZE ;
 
-    if ( OW_r_09mem( buf,  (size_t) s,  (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
+    if ( OW_r_mem( buf,  (size_t) s,  (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
 
     return s ;
 }
 
-int FS_r_89param(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_param(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char data[32] ;
     if (offset != 0 ) return -EFAULT ;
     if (size<pn->ft->suglen) return -EFAULT ;
 
-    if ( OW_r_89data(data,pn) ) return -EINVAL ;
+    if ( OW_r_data(data,pn) ) return -EINVAL ;
     memcpy( buf, &data[(int)pn->ft->data], pn->ft->suglen ) ;
     return pn->ft->suglen ;
 }
 
-int FS_w_09memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_09mem(buf,size, (size_t) offset,pn) ) return -EINVAL ;
+int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_w_mem(buf,size, (size_t) offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_w_09page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_09mem(buf,size, (size_t) (offset+(pn->extension<<5)),pn) ) return -EINVAL ;
+int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_w_mem(buf,size, (size_t) (offset+(pn->extension<<5)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int OW_w_09mem( const unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
+static int OW_w_mem( const unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
     unsigned char p[5] = { 0x0F, location&0xFF , location>>8, data[0] } ;
     size_t i ;
     int ret ;
@@ -143,7 +143,7 @@ static int OW_w_09mem( const unsigned char * data , const size_t length, const s
     return 0 ;
 }
 
-static int OW_r_09mem( unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
+static int OW_r_mem( unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
     unsigned char p[33] = { 0xC3, location&0xFF , location>>8, } ;
 
     int start = location ;
@@ -170,10 +170,10 @@ static int OW_r_09mem( unsigned char * data , const size_t length, const size_t 
     return 0 ;
 }
 
-static int OW_r_89data( unsigned char * data , const struct parsedname * pn ) {
+static int OW_r_data( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[32] ;
 
-    if ( OW_r_09mem(p,32,0,pn) || CRC16(p,3+p[0]) ) return 1 ;
+    if ( OW_r_mem(p,32,0,pn) || CRC16(p,3+p[0]) ) return 1 ;
     memcpy( data, &p[1], p[0] ) ;
     return 0 ;
 }

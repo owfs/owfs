@@ -45,81 +45,81 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
- bREAD_FUNCTION( FS_r_0Bpage ) ;
-bWRITE_FUNCTION( FS_w_0Bpage ) ;
- bREAD_FUNCTION( FS_r_0Bmemory ) ;
-bWRITE_FUNCTION( FS_w_0Bmemory ) ;
+ bREAD_FUNCTION( FS_r_page ) ;
+bWRITE_FUNCTION( FS_w_page ) ;
+ bREAD_FUNCTION( FS_r_memory ) ;
+bWRITE_FUNCTION( FS_w_memory ) ;
 
 /* ------- Structures ----------- */
 
 struct aggregate A2505 = { 64, ag_numbers, ag_separate, } ;
 struct filetype DS2505[] = {
     F_STANDARD   ,
-    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_0Bmemory}  , {b:FS_w_0Bmemory}, NULL, } ,
-    {"page"      ,    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_0Bpage}    , {b:FS_w_0Bpage}, NULL, } ,
+    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
 } ;
 DeviceEntry( 0B, DS2505 )
 
 struct filetype DS1985U[] = {
     F_STANDARD   ,
-    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_0Bmemory}  , {b:FS_w_0Bmemory}, NULL, } ,
-    {"page"      ,    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_0Bpage}    , {b:FS_w_0Bpage}, NULL, } ,
+    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
 } ;
 DeviceEntry( 8B, DS1985U )
 
 struct aggregate A2506 = { 256, ag_numbers, ag_separate, } ;
 struct filetype DS2506[] = {
     F_STANDARD   ,
-    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_0Bmemory}  , {b:FS_w_0Bmemory}, NULL, } ,
-    {"page"      ,    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_0Bpage}    , {b:FS_w_0Bpage}, NULL, } ,
+    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
 } ;
 DeviceEntry( 0F, DS2506 )
 
 struct filetype DS1986U[] = {
     F_STANDARD   ,
-    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_0Bmemory}  , {b:FS_w_0Bmemory}, NULL, } ,
-    {"page"      ,    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_0Bpage}    , {b:FS_w_0Bpage}, NULL, } ,
+    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}, NULL, } ,
 } ;
 DeviceEntry( 8F, DS1986U )
 
 /* ------- Functions ------------ */
 
 /* DS2505 */
-static int OW_w_0Bmem( const unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
-static int OW_r_0Bmem( unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data , const size_t location , const size_t length, const struct parsedname * pn ) ;
 
 /* 2505 memory */
-int FS_r_0Bmemory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int s = size ;
     if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
     if ( s<0 ) return -EMSGSIZE ;
 
-    if ( OW_r_0Bmem( buf, (size_t) s, (size_t) offset, pn) ) return -EINVAL ;
+    if ( OW_r_mem( buf, (size_t) s, (size_t) offset, pn) ) return -EINVAL ;
 
     return s ;
 }
 
-int FS_r_0Bpage(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int s = size ;
     if ( (int) (size+offset) > pn->ft->suglen ) s = pn->ft->suglen-offset ;
     if ( s<0 ) return -EMSGSIZE ;
 
-    if ( OW_r_0Bmem( buf, (size_t) s, (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
+    if ( OW_r_mem( buf, (size_t) s, (size_t) (offset+(pn->extension<<5)), pn) ) return -EINVAL ;
 
     return s ;
 }
 
-int FS_w_0Bmemory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_0Bmem(buf,size,(size_t) offset,pn) ) return -EINVAL ;
+int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_w_mem(buf,size,(size_t) offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_w_0Bpage(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_0Bmem(buf,size,(size_t) (offset+(pn->extension<<5)),pn) ) return -EINVAL ;
+int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_w_mem(buf,size,(size_t) (offset+(pn->extension<<5)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int OW_w_0Bmem( const unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
+static int OW_w_mem( const unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
     unsigned char p[6] = { 0x0F, location&0xFF , location>>8, data[0] } ;
     size_t i ;
     int ret ;
@@ -142,7 +142,7 @@ static int OW_w_0Bmem( const unsigned char * data , const size_t length, const s
     return 0 ;
 }
 
-static int OW_r_0Bmem( unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
+static int OW_r_mem( unsigned char * data , const size_t length, const size_t location , const struct parsedname * pn ) {
     unsigned char p[6] = { 0xA5, location&0xFF , location>>8, } ;
     unsigned char d[34] ;
 

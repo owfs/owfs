@@ -49,40 +49,28 @@ $Id$
 bWRITE_FUNCTION( FS_w_page ) ;
  bREAD_FUNCTION( FS_r_memory ) ;
 bWRITE_FUNCTION( FS_w_memory ) ;
+ uREAD_FUNCTION( FS_r_counter ) ;
+uWRITE_FUNCTION( FS_w_counter ) ;
+ aREAD_FUNCTION( FS_r_date ) ;
+aWRITE_FUNCTION( FS_w_date ) ;
+ yREAD_FUNCTION( FS_r_run ) ;
+yWRITE_FUNCTION( FS_w_run ) ;
+ uREAD_FUNCTION( FS_r_flags ) ;
+uWRITE_FUNCTION( FS_w_flags ) ;
 
 /* ------- Structures ----------- */
 
-struct aggregate A1992 = { 4, ag_numbers, ag_separate, } ;
-struct filetype DS1992[] = {
+struct aggregate A2404 = { 16, ag_numbers, ag_separate, } ;
+struct filetype DS2404[] = {
     F_STANDARD   ,
-    {"page"      ,    32,  &A1992, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"memory"    ,   128,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
+    {"page"      ,    32,  &A2404, ft_binary  , ft_stable, {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
+    {"memory"    ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
+    {"flags"     ,     1,  NULL,   ft_unsigned, ft_stable, {u:FS_r_flags}  , {u:FS_w_flags}  , NULL, } ,
+    {"running"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_run}    , {y:FS_w_run}    , NULL, } ,
+    {"counter"   ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
+    {"date"      ,    26,  NULL,   ft_ascii   , ft_second, {a:FS_r_date}   , {a:FS_w_date}   , NULL, } ,
 } ;
-DeviceEntry( 08, DS1992 )
-
-struct aggregate A1993 = { 16, ag_numbers, ag_separate, } ;
-struct filetype DS1993[] = {
-    F_STANDARD   ,
-    {"page"      ,    32,  &A1993, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
-} ;
-DeviceEntry( 06, DS1993 )
-
-struct aggregate A1995 = { 64, ag_numbers, ag_separate, } ;
-struct filetype DS1995[] = {
-    F_STANDARD   ,
-    {"page"      ,    32,  &A1995, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"memory"    ,  2048,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
-} ;
-DeviceEntry( 0A, DS1995 )
-
-struct aggregate A1996 = { 256, ag_numbers, ag_separate, } ;
-struct filetype DS1996[] = {
-    F_STANDARD   ,
-    {"page"      ,    32,  &A1996, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"memory"    ,  8192,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
-} ;
-DeviceEntry( 0C, DS1996 )
+DeviceEntry( 04, DS1993 )
 
 /* ------- Functions ------------ */
 
@@ -161,5 +149,5 @@ static int OW_r_mem( unsigned char * data, const size_t length, const size_t loc
         ret = BUS_select(pn) || BUS_send_data( p, 3) || BUS_readin_data( data, (int) length) ;
     BUS_unlock() ;
     return ret ;
-    
+
 }

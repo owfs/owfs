@@ -45,10 +45,10 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
- bREAD_FUNCTION( FS_r_1Dpage ) ;
-bWRITE_FUNCTION( FS_w_1Dpage ) ;
- uREAD_FUNCTION( FS_1Dcounter ) ;
- uREAD_FUNCTION( FS_1Dpagecount ) ;
+ bREAD_FUNCTION( FS_r_page ) ;
+bWRITE_FUNCTION( FS_w_page ) ;
+ uREAD_FUNCTION( FS_counter ) ;
+ uREAD_FUNCTION( FS_pagecount ) ;
 #ifdef OW_CACHE
  uREAD_FUNCTION( FS_r_mincount ) ;
 uWRITE_FUNCTION( FS_w_mincount ) ;
@@ -60,42 +60,42 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate,} ;
 struct aggregate A2423c = { 2, ag_letters, ag_separate,} ;
 struct filetype DS2423[] = {
     F_STANDARD   ,
-    {"page"      ,    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_1Dpage}   , {b:FS_w_1Dpage},  NULL, } ,
-    {"counters"  ,    32,  &A2423c, ft_unsigned, ft_volatile, {u:FS_1Dcounter}  , {v:NULL},         NULL, } ,
+    {"page"      ,    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},  NULL, } ,
+    {"counters"  ,    32,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},         NULL, } ,
 #ifdef OW_CACHE
     {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount},NULL, } ,
 #endif /*OW_CACHE*/
-    {"pagecount" ,    32,  &A2423,  ft_unsigned, ft_volatile, {u:FS_1Dpagecount}, {v:NULL},         NULL, } ,
+    {"pagecount" ,    32,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},         NULL, } ,
 } ;
 DeviceEntry( 1D, DS2423 )
 
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_1Dmem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
-static int OW_r_1Dmem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
-static int OW_1Dcounter( unsigned int * counter , const int page, const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
+static int OW_r_mem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
+static int OW_counter( unsigned int * counter , const int page, const struct parsedname * pn ) ;
 
 /* 2423A/D Counter */
-int FS_r_1Dpage(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int len = size ;
     if ( (offset&0x1F)+size>32 ) len = 32-offset ;
-    if ( OW_r_1Dmem( buf, len, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
+    if ( OW_r_mem( buf, len, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
 
     return len ;
 }
 
-int FS_w_1Dpage(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_w_1Dmem( buf, (int)size, offset+((pn->extension)<<5), pn) ;
+int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    return OW_w_mem( buf, (int)size, offset+((pn->extension)<<5), pn) ;
 }
 
-int FS_1Dcounter(unsigned int * u , const struct parsedname * pn) {
-    if ( OW_1Dcounter( u , (pn->extension)+14,  pn ) ) return -EINVAL ;
+int FS_counter(unsigned int * u , const struct parsedname * pn) {
+    if ( OW_counter( u , (pn->extension)+14,  pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-int FS_1Dpagecount(unsigned int * u , const struct parsedname * pn) {
-    if ( OW_1Dcounter( u , pn->extension,  pn ) ) return -EINVAL ;
+int FS_pagecount(unsigned int * u , const struct parsedname * pn) {
+    if ( OW_counter( u , pn->extension,  pn ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -109,7 +109,7 @@ int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
                 '/',      'c',      'u',      'm',       '\0',
                 } ;
 
-    if ( OW_1Dcounter( &ct[0] , 0,  pn ) || OW_1Dcounter( &ct[1] , 1,  pn ) ) return -EINVAL ; // current counters
+    if ( OW_counter( &ct[0] , 0,  pn ) || OW_counter( &ct[1] , 1,  pn ) ) return -EINVAL ; // current counters
     if ( Storage_Get( key, &s, (void *) st ) ) { // record doesn't (yet) exist
         st[2] = ct[0]<ct[1] ? ct[0] : ct[1] ;
     } else {
@@ -131,13 +131,13 @@ int FS_w_mincount(const unsigned int * u , const struct parsedname * pn ) {
                 '/',      'c',      'u',      'm',       '\0',
                 } ;
 
-    if ( OW_1Dcounter( &st[0] , 0,  pn ) || OW_1Dcounter( &st[1] , 1,  pn ) ) return -EINVAL ;
+    if ( OW_counter( &st[0] , 0,  pn ) || OW_counter( &st[1] , 1,  pn ) ) return -EINVAL ;
     st[2] = u[0] ;
     return Storage_Add( key, 3*sizeof(unsigned int), (void *) st ) ? -EINVAL  : 0 ;
 }
 #endif /*OW_CACHE*/
 
-static int OW_w_1Dmem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
+static int OW_w_mem( const unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
     unsigned char p[1+2+32+2] = { 0x0F, location&0xFF , location>>8, } ;
     int offset = location & 0x1F ;
     int rest = 32-offset ;
@@ -145,7 +145,7 @@ static int OW_w_1Dmem( const unsigned char * data , const int length , const int
 
     /* die if too big, split across pages */
     if ( location + length > 0x1FF ) return 1;
-    if ( offset+length > 32 ) return OW_w_1Dmem( data, rest, location, pn ) || OW_w_1Dmem( &data[rest], length-rest, location+rest, pn ) ;
+    if ( offset+length > 32 ) return OW_w_mem( data, rest, location, pn ) || OW_w_mem( &data[rest], length-rest, location+rest, pn ) ;
     /* Copy to scratchpad */
     memcpy( &p[3], data, (size_t) length ) ;
 
@@ -172,7 +172,7 @@ static int OW_w_1Dmem( const unsigned char * data , const int length , const int
     return 0 ;
 }
 
-static int OW_r_1Dmem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
+static int OW_r_mem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) {
     unsigned char p[3] = { 0xF0, location&0xFF , location>>8, } ;
     int ret ;
 
@@ -182,7 +182,7 @@ static int OW_r_1Dmem( unsigned char * data , const int length , const int locat
     return ret ;
 }
 
-static int OW_1Dcounter( unsigned int * counter , const int page, const struct parsedname * pn ) {
+static int OW_counter( unsigned int * counter , const int page, const struct parsedname * pn ) {
     ssize_t location = (page<<5)+31;
     unsigned char p[1+2+1+10] = { 0xA5, location&0xFF , location>>8, } ;
     int ret ;

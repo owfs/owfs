@@ -45,49 +45,49 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2405 */
- yREAD_FUNCTION( FS_r_2405sense ) ;
- yREAD_FUNCTION( FS_r_2405 ) ;
-yWRITE_FUNCTION( FS_w_2405 ) ;
+ yREAD_FUNCTION( FS_r_sense ) ;
+ yREAD_FUNCTION( FS_r_PIO ) ;
+yWRITE_FUNCTION( FS_w_PIO ) ;
 
 /* ------- Structures ----------- */
 
 struct filetype DS2405[] = {
     F_STANDARD   ,
-    {"PIO"       ,     1,  NULL, ft_yesno , ft_stable  , {y:FS_r_2405}     , {y:FS_w_2405} , NULL,} ,
-    {"sensed"    ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_r_2405sense}, {v:NULL}, NULL, } ,
+    {"PIO"       ,     1,  NULL, ft_yesno , ft_stable  , {y:FS_r_PIO}  , {y:FS_w_PIO} , NULL, } ,
+    {"sensed"    ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_r_sense}, {v:NULL}     , NULL, } ,
 } ;
 DeviceEntry( 05, DS2405 )
 
 /* ------- Functions ------------ */
 
-static int OW_r_2405sense( int * val , const struct parsedname * pn) ;
-static int OW_r_2405( int * val , const struct parsedname * pn) ;
-static int OW_w_2405( int val , const struct parsedname * pn) ;
+static int OW_r_sense( int * val , const struct parsedname * pn) ;
+static int OW_r_PIO( int * val , const struct parsedname * pn) ;
+static int OW_w_PIO( int val , const struct parsedname * pn) ;
 
 /* 2405 switch */
-int FS_r_2405(int * y , const struct parsedname * pn) {
+int FS_r_PIO(int * y , const struct parsedname * pn) {
     int num ;
-    if ( OW_r_2405(&num,pn) ) return -EINVAL ;
+    if ( OW_r_PIO(&num,pn) ) return -EINVAL ;
     y[0] = (num!=0) ;
     return 0 ;
 }
 
 /* 2405 switch */
-int FS_r_2405sense(int * y , const struct parsedname * pn) {
+int FS_r_sense(int * y , const struct parsedname * pn) {
     int num ;
-    if ( OW_r_2405sense(&num,pn) ) return -EINVAL ;
+    if ( OW_r_sense(&num,pn) ) return -EINVAL ;
     y[0] = (num!=0) ;
     return 0 ;
 }
 
 /* write 2405 switch */
-int FS_w_2405(const int * y, const struct parsedname * pn) {
-    if ( OW_w_2405(y[0],pn) ) return -EINVAL ;
+int FS_w_PIO(const int * y, const struct parsedname * pn) {
+    if ( OW_w_PIO(y[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* read the sense of the DS2405 switch */
-static int OW_r_2405sense( int * val , const struct parsedname * pn) {
+static int OW_r_sense( int * val , const struct parsedname * pn) {
     unsigned char inp ;
     int ret ;
 
@@ -101,7 +101,7 @@ static int OW_r_2405sense( int * val , const struct parsedname * pn) {
 }
 
 /* read the state of the DS2405 switch */
-static int OW_r_2405( int * val , const struct parsedname * pn) {
+static int OW_r_PIO( int * val , const struct parsedname * pn) {
     int ret ;
 
     BUS_lock() ;
@@ -120,12 +120,12 @@ static int OW_r_2405( int * val , const struct parsedname * pn) {
 }
 
 /* write (set) the state of the DS2405 switch */
-static int OW_w_2405( const int val , const struct parsedname * pn) {
+static int OW_w_PIO( const int val , const struct parsedname * pn) {
     int current ;
     int ret = 0 ;
-    
-    if ( OW_r_2405(&current,pn) ) return 1 ;
-    
+
+    if ( OW_r_PIO(&current,pn) ) return 1 ;
+
     BUS_lock() ;
     if ( current != val ) {
         ret = BUS_select(pn) ;
@@ -135,5 +135,3 @@ static int OW_w_2405( const int val , const struct parsedname * pn) {
     BUS_unlock() ;
     return ret ;
 }
-
-

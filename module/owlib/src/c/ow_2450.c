@@ -45,11 +45,11 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2450 A/D */
- bREAD_FUNCTION( FS_r_20page ) ;
-bWRITE_FUNCTION( FS_w_20page ) ;
- bREAD_FUNCTION( FS_r_20mem ) ;
-bWRITE_FUNCTION( FS_w_20mem ) ;
- fREAD_FUNCTION( FS_20volts ) ;
+ bREAD_FUNCTION( FS_r_page ) ;
+bWRITE_FUNCTION( FS_w_page ) ;
+ bREAD_FUNCTION( FS_r_mem ) ;
+bWRITE_FUNCTION( FS_w_mem ) ;
+ fREAD_FUNCTION( FS_volts ) ;
 
 /* ------- Structures ----------- */
 
@@ -57,58 +57,58 @@ struct aggregate A2450  = { 4, ag_numbers, ag_separate, } ;
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, } ;
 struct filetype DS2450[] = {
     F_STANDARD   ,
-    {"page"      ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_20page}   , {b:FS_w_20page}, NULL, } ,
-    {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_20mem}    , {b:FS_w_20mem}, NULL, } ,
-    {"volts"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_20volts}    , {v:NULL}, NULL, } ,
+    {"page"      ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}, NULL, } ,
+    {"volts"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}, NULL, } ,
 } ;
 DeviceEntry( 20, DS2450 )
 
 /* ------- Functions ------------ */
 
 /* DS2450 */
-static int OW_r_20page( char * p , const int size, const int location , const struct parsedname * pn) ;
-static int OW_w_20page( const char * p , const int size , const int location , const struct parsedname * pn) ;
-static int OW_20volts( float * f , const struct parsedname * pn ) ;
+static int OW_r_page( char * p , const int size, const int location , const struct parsedname * pn) ;
+static int OW_w_page( const char * p , const int size , const int location , const struct parsedname * pn) ;
+static int OW_volts( float * f , const struct parsedname * pn ) ;
 
 /* 2450 A/D */
-int FS_r_20page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
     if ( size+offset>8 ) return -ERANGE ;
-    if ( OW_r_20page(p,8,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
+    if ( OW_r_page(p,8,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
     return FS_read_return(buf,size,offset,p,8) ;
 }
 
 /* 2450 A/D */
-int FS_w_20page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( size+offset>8 ) return -ERANGE ;
-    if ( OW_w_20page(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
+    if ( OW_w_page(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2450 A/D */
-int FS_r_20mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
 
     if ( size+offset>4*8 ) return -ERANGE ;
-    if ( OW_r_20page(p,size,offset,pn) ) return -EINVAL ;
+    if ( OW_r_page(p,size,offset,pn) ) return -EINVAL ;
     return FS_read_return(buf,size,offset,p,8) ;
 }
 
 /* 2450 A/D */
-int FS_w_20mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( size+offset>4*8 ) return -ERANGE ;
-    if ( OW_w_20page(buf,size,offset,pn) ) return -EINVAL ;
+    if ( OW_w_page(buf,size,offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2450 A/D */
-int FS_20volts(float * V , const struct parsedname * pn) {
-    if ( OW_20volts( V , pn ) ) return -EINVAL ;
+int FS_volts(float * V , const struct parsedname * pn) {
+    if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* read page from 2450 */
-static int OW_r_20page( char * p , const int size, const int location , const struct parsedname * pn) {
+static int OW_r_page( char * p , const int size, const int location , const struct parsedname * pn) {
     unsigned char buf[3+8+2] = {0xAA, location&0xFF,location>>8, } ;
     int s = size ;
     int rest = 8-(location&0x07);
@@ -134,7 +134,7 @@ static int OW_r_20page( char * p , const int size, const int location , const st
 }
 
 /* write to 2450 */
-static int OW_w_20page( const char * p , const int size , const int location, const struct parsedname * pn) {
+static int OW_w_page( const char * p , const int size , const int location, const struct parsedname * pn) {
     // command, address(2) , data , crc(2), databack
     unsigned char buf[] = {0x55, location&0xFF,location>>8, p[0], 0xFF,0xFF, 0xFF, } ;
     int i ;
@@ -171,14 +171,14 @@ static int OW_w_20page( const char * p , const int size , const int location, co
 
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution and all 4 channels */
-static int OW_20volts( float * f , const struct parsedname * pn ) {
+static int OW_volts( float * f , const struct parsedname * pn ) {
     unsigned char control[8] ;
     unsigned char data[8] ;
     unsigned char convert[] = { 0x3C , 0x0F , 0x00, 0xFF, 0xFF, } ;
     int ret ;
 
     // Get control registers and set to A2D 16 bits
-    if ( OW_r_20page( control , 8, 1<<3, pn ) ) return 1 ;
+    if ( OW_r_page( control , 8, 1<<3, pn ) ) return 1 ;
     control[0] = 0x00 ; // 16bit, A/D
     control[1] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
     control[2] = 0x00 ; // 16bit, A/D
@@ -189,7 +189,7 @@ static int OW_20volts( float * f , const struct parsedname * pn ) {
     control[7] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
 
     // Set control registers
-    if ( OW_w_20page( control, 8, 1<<3, pn) ) return 1 ;
+    if ( OW_w_page( control, 8, 1<<3, pn) ) return 1 ;
 
     // Start conversion
 	// 6 msec for 16bytex4channel (5.2)
@@ -204,7 +204,7 @@ static int OW_20volts( float * f , const struct parsedname * pn ) {
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
-    if ( OW_r_20page( data, 8, 0<<3, pn) ) return 1 ;
+    if ( OW_r_page( data, 8, 0<<3, pn) ) return 1 ;
 
     // data conversions
     f[0] = ((control[1]&0x01)?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;

@@ -44,86 +44,86 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2409 switch */
-yWRITE_FUNCTION( FS_1Fdischarge ) ;
- uREAD_FUNCTION( FS_r_1Fcontrol ) ;
-uWRITE_FUNCTION( FS_w_1Fcontrol ) ;
- yREAD_FUNCTION( FS_r_1Fsensed ) ;
- yREAD_FUNCTION( FS_r_1Fbranch ) ;
- yREAD_FUNCTION( FS_r_1Fevent ) ;
+yWRITE_FUNCTION( FS_discharge ) ;
+ uREAD_FUNCTION( FS_r_control ) ;
+uWRITE_FUNCTION( FS_w_control ) ;
+ yREAD_FUNCTION( FS_r_sensed ) ;
+ yREAD_FUNCTION( FS_r_branch ) ;
+ yREAD_FUNCTION( FS_r_event ) ;
 
 /* ------- Structures ----------- */
 
 struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, } ;
 struct filetype DS2409[] = {
     F_STANDARD   ,
-    {"discharge" ,     1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}          , {y:FS_1Fdischarge}, NULL, } ,
-    {"control"   ,     1,  NULL, ft_unsigned   , ft_stable  , {u:FS_r_1Fcontrol}, {u:FS_w_1Fcontrol}, NULL, } ,
-    {"sensed"    ,     1,&A2409,    ft_yesno   , ft_volatile, {y:FS_r_1Fsensed} , {v:NULL}          , NULL, } ,
-    {"branch"    ,     1,&A2409,    ft_yesno   , ft_volatile, {y:FS_r_1Fbranch} , {v:NULL}          , NULL, } ,
-    {"event"     ,     1,&A2409,    ft_yesno   , ft_volatile, {y:FS_r_1Fevent}  , {v:NULL}          , NULL, } ,
-    {"aux"       ,     0,  NULL, ft_directory  , ft_volatile, {v:NULL}          , {v:NULL}          , (void *) 1, } ,
-    {"main"      ,     0,  NULL, ft_directory  , ft_volatile, {v:NULL}          , {v:NULL}          , (void *) 0, } ,
+    {"discharge" ,     1,  NULL,    ft_yesno , ft_stable  , {v:NULL}        , {y:FS_discharge}, NULL, } ,
+    {"control"   ,     1,  NULL, ft_unsigned , ft_stable  , {u:FS_r_control}, {u:FS_w_control}, NULL, } ,
+    {"sensed"    ,     1,&A2409,    ft_yesno , ft_volatile, {y:FS_r_sensed} , {v:NULL}        , NULL, } ,
+    {"branch"    ,     1,&A2409,    ft_yesno , ft_volatile, {y:FS_r_branch} , {v:NULL}        , NULL, } ,
+    {"event"     ,     1,&A2409,    ft_yesno , ft_volatile, {y:FS_r_event}  , {v:NULL}        , NULL, } ,
+    {"aux"       ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 1, } ,
+    {"main"      ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 0, } ,
 } ;
 DeviceEntry( 1F, DS2409 )
 
 /* ------- Functions ------------ */
 
 /* DS2409 */
-static int OW_r_1Fcontrol( unsigned char * const data, const struct parsedname * const pn ) ;
+static int OW_r_control( unsigned char * const data, const struct parsedname * const pn ) ;
 
-static int OW_1Fdischarge( const struct parsedname * const pn ) ;
-static int OW_w_1Fcontrol( const unsigned int data , const struct parsedname * const pn ) ;
+static int OW_discharge( const struct parsedname * const pn ) ;
+static int OW_w_control( const unsigned int data , const struct parsedname * const pn ) ;
 
 /* discharge 2409 lines */
-int FS_1Fdischarge(const int * y, const struct parsedname * pn) {
-    if ( (*y) && OW_1Fdischarge(pn) ) return -EINVAL ;
+int FS_discharge(const int * y, const struct parsedname * pn) {
+    if ( (*y) && OW_discharge(pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2409 switch -- branch pin voltage */
-int FS_r_1Fsensed(int * y , const struct parsedname * pn) {
+int FS_r_sensed(int * y , const struct parsedname * pn) {
     unsigned char data ;
-    if ( OW_r_1Fcontrol(&data,pn) ) return -EINVAL ;
+    if ( OW_r_control(&data,pn) ) return -EINVAL ;
     y[0] = data&0x02 ? 1 : 0 ;
     y[1] = data&0x08 ? 1 : 0 ;
     return 0 ;
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
-int FS_r_1Fbranch(int * y , const struct parsedname * pn) {
+int FS_r_branch(int * y , const struct parsedname * pn) {
     unsigned char data ;
-    if ( OW_r_1Fcontrol(&data,pn) ) return -EINVAL ;
+    if ( OW_r_control(&data,pn) ) return -EINVAL ;
     y[0] = data&0x01 ? 0 : 1 ;
     y[1] = data&0x04 ? 0 : 1 ;
     return 0 ;
 }
 
 /* 2409 switch -- event status */
-int FS_r_1Fevent(int * y , const struct parsedname * pn) {
+int FS_r_event(int * y , const struct parsedname * pn) {
     unsigned char data ;
-    if ( OW_r_1Fcontrol(&data,pn) ) return -EINVAL ;
+    if ( OW_r_control(&data,pn) ) return -EINVAL ;
     y[0] = data&0x10 ? 1 : 0 ;
     y[1] = data&0x20 ? 1 : 0 ;
     return 0 ;
 }
 
 /* 2409 switch -- control pin state */
-int FS_r_1Fcontrol(unsigned int * u , const struct parsedname * pn) {
+int FS_r_control(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     unsigned int control[] = { 2, 3, 0, 1, } ;
-    if ( OW_r_1Fcontrol(&data,pn) ) return -EINVAL ;
+    if ( OW_r_control(&data,pn) ) return -EINVAL ;
     *u = control[data>>6] ;
     return 0 ;
 }
 
 /* 2409 switch -- control pin state */
-int FS_w_1Fcontrol(const unsigned int * u , const struct parsedname * pn) {
+int FS_w_control(const unsigned int * u , const struct parsedname * pn) {
     if ( *u > 3 ) return -EINVAL ;
-    if ( OW_w_1Fcontrol(*u,pn) ) return -EINVAL ;
+    if ( OW_w_control(*u,pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int OW_1Fdischarge( const struct parsedname * const pn ) {
+static int OW_discharge( const struct parsedname * const pn ) {
     unsigned char dis = 0xCC ;
     unsigned char all = 0x66 ;
     int ret ;
@@ -141,7 +141,7 @@ static int OW_1Fdischarge( const struct parsedname * const pn ) {
     return ret ;
 }
 
-static int OW_w_1Fcontrol( const unsigned int data , const struct parsedname * const pn ) {
+static int OW_w_control( const unsigned int data , const struct parsedname * const pn ) {
     const unsigned char d[] = { 0x20, 0xA0, 0x00, 0x40, } ;
     unsigned char p[] = { 0x5A, d[data], } ;
     const unsigned char r[] = { 0x80, 0xC0, 0x00, 0x40, } ;
@@ -156,7 +156,7 @@ static int OW_w_1Fcontrol( const unsigned int data , const struct parsedname * c
     return (info&0xC0)==r[data] ? 0 : 1 ;
 }
 
-static int OW_r_1Fcontrol( unsigned char * const data , const struct parsedname * const pn ) {
+static int OW_r_control( unsigned char * const data , const struct parsedname * const pn ) {
     unsigned char p[] = { 0x5A, 0xFF, } ;
     int ret ;
 

@@ -18,12 +18,12 @@ $Id$
 #include "ow.h"
 
 /* ------- Prototypes ----------- */
- aREAD_FUNCTION( FS_type ) ;
- aREAD_FUNCTION( FS_code ) ;
- aREAD_FUNCTION( FS_crc8 ) ;
- aREAD_FUNCTION( FS_ID ) ;
- aREAD_FUNCTION( FS_address ) ;
- yREAD_FUNCTION( FS_present ) ;
+int FS_type(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+int FS_code(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+int FS_crc8(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+int FS_ID(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+int FS_address(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+int FS_present(int *, const struct parsedname * pn) ;
 
 /* ------- Structures ----------- */
 

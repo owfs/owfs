@@ -122,19 +122,19 @@ extern char * fuse_opt ;
 extern unsigned char combuffer[] ;
 
 /* Prototypes */
-#define iREAD_FUNCTION( fname )  int fname(int *, const struct parsedname *)
-#define uREAD_FUNCTION( fname )  int fname(unsigned int *, const struct parsedname * pn)
-#define fREAD_FUNCTION( fname )  int fname(float *, const struct parsedname * pn)
-#define yREAD_FUNCTION( fname )  int fname(int *, const struct parsedname * pn)
-#define aREAD_FUNCTION( fname )  int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bREAD_FUNCTION( fname )  int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
+#define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
+#define fREAD_FUNCTION( fname )  static int fname(float *, const struct parsedname * pn)
+#define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
+#define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define bREAD_FUNCTION( fname )  static int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
-#define iWRITE_FUNCTION( fname )  int fname(const int *, const struct parsedname * pn)
-#define uWRITE_FUNCTION( fname )  int fname(const unsigned int *, const struct parsedname * pn)
-#define fWRITE_FUNCTION( fname )  int fname(const float *, const struct parsedname * pn)
-#define yWRITE_FUNCTION( fname )  int fname(const int *, const struct parsedname * pn)
-#define aWRITE_FUNCTION( fname )  int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bWRITE_FUNCTION( fname )  int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
+#define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
+#define fWRITE_FUNCTION( fname )  static int fname(const float *, const struct parsedname * pn)
+#define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
+#define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define bWRITE_FUNCTION( fname )  static int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 struct parsedname ;
 struct device ;

@@ -45,56 +45,56 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2436 Battery */
- bREAD_FUNCTION( FS_r_36page ) ;
-bWRITE_FUNCTION( FS_w_36page ) ;
- fREAD_FUNCTION( FS_36temp ) ;
- fREAD_FUNCTION( FS_36volts ) ;
+ bREAD_FUNCTION( FS_r_page ) ;
+bWRITE_FUNCTION( FS_w_page ) ;
+ fREAD_FUNCTION( FS_temp ) ;
+ fREAD_FUNCTION( FS_volts ) ;
 
 /* ------- Structures ----------- */
 
 struct aggregate A2436 = { 5, ag_numbers, ag_separate,} ;
 struct filetype DS2436[] = {
     F_STANDARD   ,
-    {"page"      ,    32,  &A2436, ft_binary, ft_stable  , {b:FS_r_36page}   , {b:FS_w_36page}, NULL, } ,
-    {"volts"     ,    12,  NULL  , ft_float , ft_volatile, {f:FS_36volts}    , {v:NULL}, NULL, } ,
-    {"temperature",    12,  NULL , ft_float , ft_volatile, {f:FS_36temp}     , {v:NULL}, NULL, } ,
+    {"page"      ,    32,  &A2436, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"volts"     ,    12,  NULL  , ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}, NULL, } ,
+    {"temperature",    12,  NULL , ft_float , ft_volatile, {f:FS_temp}     , {v:NULL}, NULL, } ,
 } ;
 DeviceEntry( 1B, DS2436 )
 
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_36page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) ;
-static int OW_w_36page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) ;
-static int OW_36temp( float * T , const struct parsedname * pn ) ;
-static int OW_36volts( float * V , const struct parsedname * pn ) ;
+static int OW_r_page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) ;
+static int OW_w_page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) ;
+static int OW_temp( float * T , const struct parsedname * pn ) ;
+static int OW_volts( float * V , const struct parsedname * pn ) ;
 
 /* 2436 A/D */
-int FS_r_36page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t len = size ;
     if ( (offset&0x1F)+size>32 ) len = 32-offset ;
-    if ( OW_r_36page( buf, offset+((pn->extension)<<5), len, pn) ) return -EINVAL ;
+    if ( OW_r_page( buf, offset+((pn->extension)<<5), len, pn) ) return -EINVAL ;
 
     return len ;
 }
 
-int FS_w_36page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_w_36page(buf,size,offset+((pn->extension)<<5),pn) ;
+int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    return OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ;
 }
 
-int FS_36temp(float * T , const struct parsedname * pn) {
-    if ( OW_36temp( T , pn ) ) return -EINVAL ;
+int FS_temp(float * T , const struct parsedname * pn) {
+    if ( OW_temp( T , pn ) ) return -EINVAL ;
     *T = Temperature( *T ) ;
     return 0 ;
 }
 
-int FS_36volts(float * V , const struct parsedname * pn) {
-    if ( OW_36volts( V , pn ) ) return -EINVAL ;
+int FS_volts(float * V , const struct parsedname * pn) {
+    if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* DS2436 simple battery */
-static int OW_r_36page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) {
+static int OW_r_page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) {
     unsigned char data[33] ;
     static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
     unsigned char scratchpad[] = {0x11 , location, } ;
@@ -116,7 +116,7 @@ static int OW_r_36page( unsigned char * p , const size_t location , const size_t
     return 0 ;
 }
 
-static int OW_w_36page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) {
+static int OW_w_page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) {
     int offset = location&0x1F ;
     size_t pagestart = location - offset ;
     size_t rest = 32-offset ;
@@ -130,10 +130,10 @@ static int OW_w_36page( const unsigned char * p , const size_t location , const 
     if ( (location>>5) > 2 ) return -ERANGE ; 
 
     // split across pages
-    if ( size > rest ) return OW_w_36page( p,location,rest,pn) || OW_w_36page(&p[rest],location+rest,size-rest,pn) ;
+    if ( size > rest ) return OW_w_page( p,location,rest,pn) || OW_w_page(&p[rest],location+rest,size-rest,pn) ;
 
     // read scratchpad (sets it, too)
-    if ( OW_r_36page(data,pagestart,32,pn) ) return 1 ;
+    if ( OW_r_page(data,pagestart,32,pn) ) return 1 ;
     memcpy( &data[offset] , p , size ) ;
 
     // write to scratchpad 
@@ -158,7 +158,7 @@ static int OW_w_36page( const unsigned char * p , const size_t location , const 
     return 0 ;
 }
 
-static int OW_36temp( float * T , const struct parsedname * pn ) {
+static int OW_temp( float * T , const struct parsedname * pn ) {
     unsigned char d2 = 0xD2 ;
     unsigned char b2[] = { 0xB2 , 0x60, } ;
     unsigned char t[3] ;
@@ -190,7 +190,7 @@ static int OW_36temp( float * T , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_36volts( float * V , const struct parsedname * pn ) {
+static int OW_volts( float * V , const struct parsedname * pn ) {
     unsigned char b4 = 0xB4 ;
     unsigned char status[] = { 0xB2 , 0x62, } ;
     unsigned char volts[] = { 0xB2 , 0x77, } ;
