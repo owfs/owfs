@@ -263,6 +263,7 @@ int DS2480_detect( void ) {
             break;
         }
 //printf("2480Detect version=%d\n",Adapter) ;
+        GoodSetup = 1 ; /* Happy with setup! */
         return 0 ;
     }
 //printf("2480Detect bad echo\n");
@@ -663,9 +664,9 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len ) {
     if ( len > UART_FIFO_SIZE-1 ) return DS2480_sendout_cmd(cmd,UART_FIFO_SIZE-1) || DS2480_sendout_cmd(&cmd[UART_FIFO_SIZE-1],len-(UART_FIFO_SIZE-1)) ;
     if ( UMode != MODSEL_COMMAND ) {
         combuffer[0] = MODE_COMMAND ;
-	memcpy( &combuffer[1], cmd , len ) ;
+    memcpy( &combuffer[1], cmd , len ) ;
         UMode = MODSEL_COMMAND;
-	return BUS_send_and_get( combuffer,len+1,NULL,0) ;
+    return BUS_send_and_get( combuffer,len+1,NULL,0) ;
     }
     return BUS_send_and_get( cmd , len , NULL , 0 ) ;
 }
@@ -679,7 +680,7 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len ) {
     } else {
         ret=DS2480_write( cmd , (unsigned)len ) ;
     }
-	return ret ;
+    return ret ;
 }
 
 
@@ -700,7 +701,7 @@ static int DS2480_send_cmd( const unsigned char * const cmd , const int len ) {
         unsigned char resp[16] ;
         (ret=DS2480_sendback_cmd( cmd , resp , len )) ||  (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0) ;
     }
-	return ret ;
+    return ret ;
 }
 
 //
@@ -718,7 +719,7 @@ static int DS2480_sendback_cmd( const unsigned char * const cmd , unsigned char 
     } else {
         (ret=DS2480_sendout_cmd( cmd , len )) || (ret=DS2480_read( resp , len )) ;
     }
-	return ret ;
+    return ret ;
 }
 
 
@@ -750,7 +751,7 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
         }
         ret = DS2480_write( data2 , j ) ;
     }
-	return ret ;
+    return ret ;
 }
 
 //
@@ -763,6 +764,6 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
 static int DS2480_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {
     int ret ;
     (ret=DS2480_sendout_data( data , len )) || (ret=DS2480_read( resp , len )) ;
-	return ret ;
+    return ret ;
 }
 

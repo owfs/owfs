@@ -58,7 +58,7 @@ $Id$
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
 
-#define _FILE_OFFSET_BITS	64
+#define _FILE_OFFSET_BITS   64
 #include <features.h>
 #include <stdio.h>
 #include <string.h>
@@ -622,6 +622,9 @@ extern int ProgramAvailable ;
 enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, } ;
 extern enum adapter_type Adapter ;
 extern const char * adapter_name ;
+
+/* Overall flag for valid setup */
+extern int GoodSetup ;
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)

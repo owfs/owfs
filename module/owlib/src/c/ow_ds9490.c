@@ -128,6 +128,7 @@ static int DS9490_detect_low( void ) {
                                     unsigned char buffer[32] ;
                                     ret = usb_control_msg(devusb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )<0;
                                     ret = ret || DS9490wait(buffer) ;
+                                    GoodSetup = 1 ; /* Happy with setup */
                                     syslog(LOG_INFO,"Successful setup (reset=%d) USB DS9490 adapter at %s.\n",ret,devport) ;
                                 }
                                 return ret ;
