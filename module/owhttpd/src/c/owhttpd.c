@@ -180,8 +180,6 @@ static void * handle(void * ptr) {
     if (ch_sock.io) {
         handle_socket( &ch_sock ) ;
         fflush(ch_sock.io);
-        fclose(ch_sock.io);
-        shutdown(ch_sock.socket, SHUT_RDWR);
     }
     close(ch_sock.socket);
 #ifdef OW_MT
