@@ -47,18 +47,6 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
-## our locals :)
-#AC_DEFUN([DB_CHECK_COMPILE], [
-#AC_TRY_LINK( [
-##include <db.h>	     
-#], [
-#    DB *q;
-#    db_create(&q, (DB_ENV *)NULL, 0);
-#], [
-#    dbcheck_ok="yes"
-#], [
-#    dbcheck_ok="no"
-#]) ])
 
 # Include libpthread if multithreading is enabled
 #
