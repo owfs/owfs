@@ -6,8 +6,8 @@ AC_INIT
 AC_CONFIG_SRCDIR([src/include/owfs_config.h.in])
 
 VERSION_MAJOR="0"
-VERSION_MINOR="97"
-PATCHLEVEL="0"
+VERSION_MINOR="98"
+PATCHLEVEL="1"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -117,6 +117,7 @@ AC_OUTPUT([Makefile
            src/Makefile
            src/c/Makefile
            src/include/Makefile
+           src/man/Makefile
            src/rpm/Makefile
            src/rpm/owfs.spec
            src/scripts/Makefile

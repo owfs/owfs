@@ -15,7 +15,7 @@ URL: http://sourceforge.net/projects/owfs
 Buildroot: %{_tmppath}/%{name}-root
 Prefix: /usr
 Packager: Vadim Tkachenko <vt@freehold.crocodile.org>
-Requires: fuse = 1.0, owlib = 0.97p0
+Requires: fuse = 1.0, owlib = 0.98p1
 %description
 
 OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
@@ -51,6 +51,7 @@ make install \
 %{prefix}/bin/owfs
 %{prefix}/include/owfs_config.h
 %{prefix}/include/owfs.h
+%{prefix}/man/man1/owfs.1.gz
 
 %changelog
 
