@@ -27,6 +27,7 @@ $Id$
 #include "ow_2404.h" // dual port  mem and clock
 #include "ow_2405.h" // switch
 #include "ow_2406.h" // switch
+#include "ow_2413.h" // switch
 #include "ow_2408.h" // switch
 #include "ow_2409.h" // hub
 #include "ow_2450.h" // A/D convertor

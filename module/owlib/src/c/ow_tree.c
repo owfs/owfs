@@ -84,6 +84,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_DS2406 ,       pn_real ) ;
     Device2Tree( & d_DS2408 ,       pn_real ) ;
     Device2Tree( & d_DS2409 ,       pn_real ) ;
+    Device2Tree( & d_DS2413 ,       pn_real ) ;
     Device2Tree( & d_DS2415 ,       pn_real ) ;
     Device2Tree( & d_DS2417 ,       pn_real ) ;
     Device2Tree( & d_DS2423 ,       pn_real ) ;
