@@ -65,7 +65,7 @@ struct filetype simultaneous[] = {
 DeviceEntry( simultaneous, simultaneous )
 
 /* ------- Functions ------------ */
-static int OW_skiprom( unsigned char cmd, const struct parsedname * const pn );
+static int OW_skiprom( enum simul_type type, const struct parsedname * const pn );
 static int OW_setcache( enum simul_type type, const struct parsedname * const pn ) ;
 static int OW_getcache( enum simul_type type, const unsigned int msec, const struct parsedname * const pn ) ;
 static int OW_killcache( enum simul_type type, const struct parsedname * const pn ) ;
@@ -90,15 +90,7 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
         if ( OW_killcache((enum simul_type) pn->ft->data,pn) ) return -EINVAL ;
         return 0 ;
     }
-    switch( (enum simul_type) pn->ft->data ) {
-    case simul_temp:
-        ret = OW_skiprom(0x44,pn) ;
-        break ;
-    case simul_volt:
-        ret = OW_skiprom(0x3C,pn) ;
-        break ;
-    }
-    if ( ret || OW_setcache( (enum simul_type) pn->ft->data,pn ) ) return -EINVAL ;
+    if ( OW_skiprom( (enum simul_type) pn->ft->data, pn ) || OW_setcache( (enum simul_type) pn->ft->data,pn ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -139,14 +131,23 @@ static int OW_getcache( enum simul_type type ,const unsigned int msec, const str
     return 0 ;
 }
 
-static int OW_skiprom( unsigned char cmd, const struct parsedname * const pn ) {
-    const unsigned char p[] = { 0xCC, cmd } ;
+static int OW_skiprom( enum simul_type type, const struct parsedname * const pn ) {
+    const unsigned char cmd_temp[] = { 0xCC, 0x44 } ;
+    const unsigned char cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF } ;
+    unsigned char data[6];
     int ret ;
     struct parsedname pn2 ;
     memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
     pn2.dev = NULL ; /* only branch select done, not actual device */
     BUSLOCK
-        ret = BUS_select(&pn2) || BUS_send_data( p , 2 ) ;
+	switch ( type ) {
+	case simul_temp:
+            ret = BUS_select(&pn2) || BUS_send_data( cmd_temp , 2 ) ;
+	    break ;
+	case simul_volt:
+            ret = BUS_select(&pn2) || BUS_sendback_data( cmd_volt , data , 6 ) || memcmp( cmd_volt , data , 4 ) || CRC16(&data[1],5) ;
+	    break ;
+	}
     BUSUNLOCK
     return ret ;
 }
