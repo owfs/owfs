@@ -42,11 +42,44 @@ $Id$
 #include "owfs_config.h"
 #include "ow_xxxx.h"
 
+#include <sys/time.h>
+
 /* ------- Prototypes ------------ */
 static int CheckPresence_low( const struct parsedname * const pn ) ;
 
-
 /* ------- Functions ------------ */
+
+void update_max_delay(struct parsedname *pn) {
+  struct timeval last_delay;
+  if(!pn || !pn->in) return;
+
+  gettimeofday( &(pn->in->bus_read_time) , NULL );
+  
+  if((pn->in->bus_read_time.tv_sec >= pn->in->bus_write_time.tv_sec) &&
+     ((pn->in->bus_read_time.tv_sec-pn->in->bus_write_time.tv_sec) <= 5)) {
+    last_delay.tv_sec = (pn->in->bus_read_time.tv_sec - pn->in->bus_write_time.tv_sec) ;
+    last_delay.tv_usec = (pn->in->bus_read_time.tv_usec - pn->in->bus_write_time.tv_usec) ;
+    if ( last_delay.tv_usec >= 1000000 ) {
+      last_delay.tv_usec -= 1000000 ;
+      ++last_delay.tv_sec;
+    } else if ( last_delay.tv_usec < 0 ) {
+      last_delay.tv_usec += 1000000 ;
+      --last_delay.tv_sec;
+    }
+    if((last_delay.tv_sec > max_delay.tv_sec) ||
+       ((last_delay.tv_sec >= max_delay.tv_sec) &&
+	(last_delay.tv_usec > max_delay.tv_usec))) {
+      STATLOCK
+      max_delay.tv_sec =  last_delay.tv_sec;
+      max_delay.tv_usec =  last_delay.tv_usec;
+      STATUNLOCK
+    }
+  }
+  /* BUS_send_and_get call this many time, therefor I reset bus_write_time
+   * after every calls */
+  gettimeofday( &(pn->in->bus_write_time) , NULL );
+  return;
+}
 
 int FS_type(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t len = strlen(pn->dev->name) ;

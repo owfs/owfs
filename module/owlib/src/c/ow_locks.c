@@ -17,7 +17,7 @@ $Id$
 /* ------- Globals ----------- */
 
 #ifdef OW_MT
-pthread_mutex_t busstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
+//pthread_mutex_t busstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t dev_mutex     = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t stat_mutex    = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t cache_mutex   = PTHREAD_MUTEX_INITIALIZER ;
@@ -57,7 +57,7 @@ void LockSetup( void ) {
 #ifdef OW_MT
 #ifdef __UCLIBC__
     int i ;
-    pthread_mutex_init(&busstat_mutex, pmattr);
+    //pthread_mutex_init(&busstat_mutex, pmattr);
     pthread_mutex_init(&dev_mutex, pmattr);
     pthread_mutex_init(&stat_mutex, pmattr);
     pthread_mutex_init(&cache_mutex, pmattr);
@@ -217,16 +217,16 @@ void BUS_lock( const struct parsedname * pn ) {
 
 #endif
 
-    BUSSTATLOCK
+    STATLOCK
         ++ bus_locks ; /* statistics */
-    BUSSTATUNLOCK
+    STATUNLOCK
 }
 
 void BUS_unlock( const struct parsedname * pn ) {
     gettimeofday( &(pn->in->last_unlock), NULL ) ;
 
     /* avoid update if system-clock have changed */
-    BUSSTATLOCK
+    STATLOCK
       if((pn->in->last_unlock.tv_sec >= pn->in->last_lock.tv_sec) &&
 	 ((pn->in->last_unlock.tv_sec-pn->in->last_lock.tv_sec) < 60)) {
 	bus_time.tv_sec += (pn->in->last_unlock.tv_sec - pn->in->last_lock.tv_sec) ;
@@ -240,7 +240,7 @@ void BUS_unlock( const struct parsedname * pn ) {
         }
       }
       ++ bus_unlocks ; /* statistics */
-    BUSSTATUNLOCK
+    STATUNLOCK
 #ifdef OW_MT
     pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */

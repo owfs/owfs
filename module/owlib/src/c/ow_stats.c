@@ -79,15 +79,56 @@ struct directory dir_dev = { 0L, 0L, } ;
 unsigned int dir_depth = 0 ;
 struct average dir_avg = {0L,0L,0L,0L,} ;
 
+/* max delay between a write and when reading first char */
+struct timeval max_delay = {0, 0, } ;
+
+// ow_locks.c
 struct timeval bus_time = {0, 0, } ;
 struct timeval bus_pause = {0, 0, } ;
 unsigned int bus_locks = 0 ;
 unsigned int bus_unlocks = 0 ;
-unsigned int crc8_tries = 0 ;
-unsigned int crc8_errors = 0 ;
-unsigned int crc16_tries = 0 ;
-unsigned int crc16_errors = 0 ;
-unsigned int read_timeout = 0 ;
+
+// ow_crc.c
+unsigned int CRC8_tries = 0 ;
+unsigned int CRC8_errors = 0 ;
+unsigned int CRC16_tries = 0 ;
+unsigned int CRC16_errors = 0 ;
+
+// ow_bus.c
+unsigned int BUS_send_data_errors = 0 ;
+unsigned int BUS_readin_data_errors = 0 ;
+unsigned int BUS_send_and_get_timeout = 0 ;
+unsigned int BUS_send_and_get_select_errors = 0 ;
+unsigned int BUS_send_and_get_errors = 0 ;
+unsigned int BUS_send_and_get_interrupted = 0 ;
+unsigned int BUS_select_low_errors = 0 ;
+unsigned int BUS_select_low_branch_errors = 0 ;
+
+// ow_ds9097.c
+unsigned int DS9097_read_bits_errors = 0 ;
+unsigned int DS9097_sendback_data_errors = 0 ;
+unsigned int DS9097_sendback_bits_errors = 0 ;
+unsigned int DS9097_read_errors = 0 ;
+unsigned int DS9097_write_errors = 0 ;
+unsigned int DS9097_reset_errors = 0 ;
+unsigned int DS9097_reset_tcsetattr_errors = 0 ;
+
+// ow_ds9097U.c
+unsigned int DS2480_reset_errors = 0 ;
+unsigned int DS2480_send_cmd_errors = 0 ;
+unsigned int DS2480_sendout_data_errors = 0 ;
+unsigned int DS2480_sendout_cmd_errors = 0 ;
+unsigned int DS2480_sendback_data_errors = 0 ;
+unsigned int DS2480_sendback_cmd_errors = 0 ;
+unsigned int DS2480_write_errors = 0 ;
+unsigned int DS2480_write_interrupted = 0 ;
+unsigned int DS2480_read_errors = 0 ;
+unsigned int DS2480_read_interrupted = 0 ;
+unsigned int DS2480_read_select_errors = 0 ;
+unsigned int DS2480_read_timeout = 0 ;
+unsigned int DS2480_PowerByte_errors = 0 ;
+unsigned int DS2480_level_errors = 0 ;
+
 
 struct average all_avg = {0L,0L,0L,0L,} ;
 
@@ -202,17 +243,61 @@ struct device d_stats_thread = { "threads", "threads", 0, NFT(stats_thread), sta
 struct filetype stats_bus[] = {
     {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL            , } ,
     {"bus_time"        , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_time         , } ,
-    {"pause_time"      , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_pause        , } ,
-    {"locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks        , } ,
-    {"unlocks"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_unlocks      , } ,
-    {"CRC8_tries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_tries       , } ,
-    {"CRC8_errors"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_errors      , } ,
-    {"CRC16_tries"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_tries      , } ,
-    {"CRC16_errors"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_errors     , } ,
-    {"read_timeout"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & read_timeout     , } ,
+    {"bus_pause_time"      , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_pause        , } ,
+    {"bus_unlocks"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_unlocks, },
+    {"bus_locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks, },
+};
+struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus } ;
+
+#define FS_stat_ROW(var) {"" #var "",      15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & var, }
+
+struct filetype stats_errors[] = {
+    {"max_delay"        , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & max_delay         , } ,
+
+// ow_bus.c
+FS_stat_ROW(BUS_send_data_errors),
+FS_stat_ROW(BUS_readin_data_errors),
+FS_stat_ROW(BUS_send_and_get_timeout),
+FS_stat_ROW(BUS_send_and_get_select_errors),
+FS_stat_ROW(BUS_send_and_get_errors),
+FS_stat_ROW(BUS_send_and_get_interrupted),
+FS_stat_ROW(BUS_select_low_errors),
+FS_stat_ROW(BUS_select_low_branch_errors),
+
+// ow_ds9097.c
+FS_stat_ROW(DS9097_read_bits_errors),
+FS_stat_ROW(DS9097_sendback_data_errors),
+FS_stat_ROW(DS9097_sendback_bits_errors),
+FS_stat_ROW(DS9097_read_errors),
+FS_stat_ROW(DS9097_write_errors),
+FS_stat_ROW(DS9097_reset_errors),
+FS_stat_ROW(DS9097_reset_tcsetattr_errors),
+
+// ow_ds9097U.c
+FS_stat_ROW(DS2480_reset_errors),
+FS_stat_ROW(DS2480_send_cmd_errors),
+FS_stat_ROW(DS2480_sendout_data_errors),
+FS_stat_ROW(DS2480_sendout_cmd_errors),
+FS_stat_ROW(DS2480_sendback_data_errors),
+FS_stat_ROW(DS2480_sendback_cmd_errors),
+FS_stat_ROW(DS2480_write_errors),
+FS_stat_ROW(DS2480_write_interrupted),
+FS_stat_ROW(DS2480_read_errors),
+FS_stat_ROW(DS2480_read_interrupted),
+FS_stat_ROW(DS2480_read_select_errors),
+FS_stat_ROW(DS2480_read_timeout),
+FS_stat_ROW(DS2480_PowerByte_errors),
+FS_stat_ROW(DS2480_level_errors),
+
+FS_stat_ROW(CRC8_errors),
+FS_stat_ROW(CRC8_tries),
+FS_stat_ROW(CRC16_errors),
+FS_stat_ROW(CRC16_tries),
+
 }
  ;
-struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus } ;
+
+struct device d_stats_errors = { "errors", "errors", 0, NFT(stats_errors), stats_errors } ;
 
 
 /* ------- Functions ------------ */

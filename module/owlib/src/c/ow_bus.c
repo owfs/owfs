@@ -12,6 +12,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+#include <sys/time.h>
+
 // Mode Commands
 #define MODE_DATA                      0xE1
 #define MODE_COMMAND                   0xE3
@@ -37,6 +39,11 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
         unsigned char resp[16] ;
         (ret=BUS_sendback_data( data, resp, len,pn )) ||  (ret=memcmp(data, resp, (size_t) len)?-EIO:0) ;
     }
+    if(ret) {
+      STATLOCK
+      BUS_send_data_errors++;
+      STATUNLOCK
+    }
     return ret ;
 }
 
@@ -47,82 +54,129 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
    Bad sendback_data
  */
 int BUS_readin_data( unsigned char * const data, const int len, const struct parsedname * pn ) {
-    return BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
+  int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
+  if(ret) {
+    STATLOCK
+    BUS_readin_data_errors++;
+    STATUNLOCK
+  }
+  return ret;
 }
 
 int BUS_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
-    int gl = getlength ;
-    int fd = pn->in->fd ;
-    int ret ;
+  size_t gl = getlength ;
+  size_t r, sl = sendlength ;
+  int rc ;
 
-/*
-{
-int i;
-printf("SAG prewrite: ");
-for(i=0;i<sendlength;++i)printf("%.2X ",bussend[i]);
-printf("\n");
-}
-*/
-    if ( sendlength>0 ) {
-        /* first flush */
-        COM_flush(pn);
-//printf("SAG sendlength=%d, getlength=%d\n",sendlength,getlength);
-//{
-//int i;
-//printf("SAG write: ");
-//for(i=0;i<sendlength;++i)printf("%.2X ",bussend[i]);
-//printf("\n");
-//}
-        /* send out string */
-        if ( write(fd,bussend,sendlength) != (int)sendlength ) return -EIO; /* Send the bit */
+  if ( sl > 0 ) {
+    /* first flush... should this really be done? Perhaps it's a good idea
+     * so read function below doesn't get any other old result */
+    COM_flush(pn);
+
+    /* send out string, and handle interrupted system call too */
+    while(sl > 0) {
+      if(!pn->in) break;
+      r = write(pn->in->fd, &bussend[sendlength-sl], sl);
+      if(r < 0) {
+	if(errno == EINTR) {
+	  /* write() was interrupted, try again */
+	  STATLOCK
+	  BUS_send_and_get_interrupted++;
+	  STATUNLOCK
+	  continue;
+	}
+	break;
+      }
+      sl -= r;
     }
-//printf("SAG written\n");
-    /* get back string -- with timeout and partial read loop */
-    if ( busget && getlength ) {
+    if(pn->in) {
+      tcdrain(pn->in->fd) ; /* make sure everthing is sent */
+      gettimeofday( &(pn->in->bus_write_time) , NULL );
+    }
+    if(sl > 0) {
+      STATLOCK
+      BUS_send_and_get_errors++;
+      STATUNLOCK
+      return -EIO;
+    }
+    //printf("SAG written\n");
+  }
+
+  /* get back string -- with timeout and partial read loop */
+  if ( busget && getlength ) {
     while ( gl > 0 ) {
-//printf("SAG readlength=%d\n",gl);
-        fd_set readset;
-        struct timeval tv = {5,0}; /* 5 seconds */
-        /* Initialize readset */
-        FD_ZERO(&readset);
-        FD_SET(fd, &readset);
+      fd_set readset;
+      struct timeval tv;
+      //printf("SAG readlength=%d\n",gl);
+      if(!pn->in) break;
+#if 1
+      /* I can't imagine that 5 seconds timeout is needed???
+       * Any comments Paul ? */
+      tv.tv_sec = 5;
+      tv.tv_usec = 0;
+#else
+      tv.tv_sec = 0;
+      tv.tv_usec = 500000;  // 500ms
+#endif
+      /* Initialize readset */
+      FD_ZERO(&readset);
+      FD_SET(pn->in->fd, &readset);
 
-        /* Read if it doesn't timeout first */
-        if( select( fd+1, &readset, NULL, NULL, &tv ) > 0 ) {
-//printf("SAG selected\n");
+      /* Read if it doesn't timeout first */
+      rc = select( pn->in->fd+1, &readset, NULL, NULL, &tv );
+      if( rc > 0 ) {
+	//printf("SAG selected\n");
         /* Is there something to read? */
-        if( FD_ISSET( fd, &readset )==0 ) return -EIO ; /* error */
-//printf("SAG selected readset\n");
-/*
-{
-int i;
-printf("SAG prebuf: ");
-for(i=0;i<getlength;++i)printf("%.2X ",busget[i]);
-printf("\n");
-}
-*/
-        ret = read( fd, &busget[getlength-gl], (size_t) gl ) ; /* get available bytes */
-//printf("SAG postread ret=%d\n",ret);
-        if (ret<0) return ret ;
-        gl -= ret ;
-//printf("SAG postreadlength=%d\n",gl);
-/*
-{
-int i;
-printf("SAG postbuf: ");
-for(i=0;i<getlength;++i)printf("%.2X ",busget[i]);
-printf("\n");
-}
-*/
-        } else { /* timed out */
-//printf("SAG selected timeout\n");
+        if( FD_ISSET( pn->in->fd, &readset )==0 ) {
+	  STATLOCK
+	  BUS_send_and_get_errors++;
+	  STATUNLOCK
+	  return -EIO ; /* error */
+	}
+	update_max_delay(pn);
+        r = read( pn->in->fd, &busget[getlength-gl], gl ) ; /* get available bytes */
+	//printf("SAG postread ret=%d\n",r);
+        if (r < 0) {
+	  if(errno == EINTR) {
+	    /* read() was interrupted, try again */
+	    STATLOCK
+	    BUS_send_and_get_interrupted++;
+	    STATUNLOCK
+	    continue;
+	  }
+	  STATLOCK
+	  BUS_send_and_get_errors++;
+	  STATUNLOCK
+	  return r ;
+	}
+        gl -= r ;
+      } else if(rc < 0) { /* select error */
+	if(errno == EINTR) {
+	  /* select() was interrupted, try again */
+	  STATLOCK
+	  BUS_send_and_get_interrupted++;
+	  STATUNLOCK
+	  continue;
+	}
+	//printf("SAG select error\n");
+	STATLOCK
+	BUS_send_and_get_select_errors++;
+	STATUNLOCK
+        return -EINTR;
+      } else { /* timed out */
+	//printf("SAG select timeout\n");
+	STATLOCK
+	BUS_send_and_get_timeout++;
+	STATUNLOCK
         return -EAGAIN;
-        }
+      }
     }
-    } else {
-        COM_flush(pn) ;
-    }
-    return 0 ;
+  } else {
+    /* I'm not sure about this... Shouldn't flush buffer if
+       user decide not to read any bytes. Any comments Paul ? */
+    //COM_flush(pn) ;
+  }
+  return 0 ;
 }
 
 //--------------------------------------------------------------------------
@@ -147,20 +201,51 @@ int BUS_select_low(const struct parsedname * const pn) {
     // reset the 1-wire
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
-    if ( (ret=BUS_reset(pn)) ) return ret ;
+    if ( (ret=BUS_reset(pn)) ) {
+      //printf("BUS_select_low: BUS_reset failed\n");
+      STATLOCK
+      BUS_select_low_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
-        if ( (ret=BUS_send_data(sent,9,pn)) ) return ret ;
+        if ( (ret=BUS_send_data(sent,9,pn)) ) {
+	  //printf("BUS_select_low: BUS_send_data failed\n");
+          STATLOCK
+	  BUS_select_low_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
-        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) return ret ;
-        if ( resp[2] != branch[pn->bp[ibranch].branch] ) return -EINVAL ;
+        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
+	  //printf("BUS_select_low: BUS_send_data or BUS_readin_data failed\n");
+          STATLOCK
+	  BUS_select_low_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
+        if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
+	  //printf("BUS_select_low: branch error\n");
+          STATLOCK
+	  BUS_select_low_branch_errors++;
+	  STATUNLOCK
+	  return -EINVAL ;
+	}
     }
     if ( pn->dev ) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
-        return BUS_send_data( sent,9,pn ) ;
+        ret = BUS_send_data( sent,9,pn ) ;
+	if(ret) {
+	  //printf("BUS_select_low: BUS_send_data 2 failed\n");
+	  STATLOCK
+	  BUS_select_low_errors++;
+	  STATUNLOCK
+	}
+	return ret ;
     }
     return 0 ;
 }

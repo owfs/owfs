@@ -83,6 +83,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_stats_bus ,    pn_statistics ) ;
     Device2Tree( & d_stats_cache ,  pn_statistics ) ;
     Device2Tree( & d_stats_directory, pn_statistics ) ;
+    Device2Tree( & d_stats_errors , pn_statistics ) ;
     Device2Tree( & d_stats_read ,   pn_statistics ) ;
     Device2Tree( & d_stats_thread , pn_statistics ) ;
     Device2Tree( & d_stats_write ,  pn_statistics ) ;

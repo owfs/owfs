@@ -18,6 +18,7 @@ $Id$
 #include "ow.h"
 
 /* ------- Prototypes ----------- */
+void update_max_delay(struct parsedname *pn);
 int FS_type(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 int FS_code(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 int FS_crc8(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;

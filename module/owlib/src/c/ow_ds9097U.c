@@ -12,6 +12,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+#include <sys/time.h>
+
 static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * const pn) ;
 static int DS2480_reset( const struct parsedname * const pn ) ;
@@ -306,15 +308,25 @@ static int DS2480_reset( const struct parsedname * const pn ) {
 
 //printf("RESET\n");
     // make sure normal level
-    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) return ret ;
-
+    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) {
+      STATLOCK
+      DS2480_reset_errors++;
+      STATUNLOCK
+	//printf("DS2480_reset: DS2480_level failed\n");
+      return ret ;
+    }
     // flush the buffers
     COM_flush(pn);
 
     // send the packet
     // read back the 1 byte response
-    if ( (ret=DS2480_sendback_cmd(&buf,&buf,1,pn)) ) return ret ;
-
+    if ( (ret=DS2480_sendback_cmd(&buf,&buf,1,pn)) ) {
+      STATLOCK
+      DS2480_reset_errors++;
+      STATUNLOCK
+	//printf("DS2480_reset: DS2480_sendback_cmd failed\n");
+      return ret ;
+    }
     /* The adapter type is encode in this response byte */
     /* The known values coorespond to the types in enum adapter_type */
     /* Other values are assigned for adapters that don't have this hardcoded value */
@@ -374,19 +386,31 @@ static int DS2480_level(int new_level, const struct parsedname * const pn) {
         COM_flush(pn);
 
         // send the packet
-        if ( (ret=DS2480_sendout_cmd(&c,1,pn)) ) return ret ;
-
+        if ( (ret=DS2480_sendout_cmd(&c,1,pn)) ) {
+	  STATLOCK
+	  DS2480_level_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
         UT_delay(4);
 
         // read back the 1 byte response
         // check response byte
-        if ( (ret=DS2480_read(&c,1,pn)) || (ret=((c&0xE0)==0xE0)?0:-EIO) ) return ret ;
-
+        if ( (ret=DS2480_read(&c,1,pn)) || (ret=((c&0xE0)==0xE0)?0:-EIO) ) {
+	  STATLOCK
+	  DS2480_level_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
         pn->in->ULevel = MODE_NORMAL;
 
         // do extra bit for DS2480 disable strong pullup
-        if ( !docheck || DS2480_databit(1,&docheck,pn) ) return -EIO ;
-
+        if ( !docheck || DS2480_databit(1,&docheck,pn) ) {
+	  STATLOCK
+	  DS2480_level_errors++;
+	  STATUNLOCK
+	  return -EIO ;
+	}
     } else if (new_level == MODE_STRONG5) { // strong 5 volts
         unsigned char b[] = {
             // set the SPUD time value
@@ -399,8 +423,12 @@ static int DS2480_level(int new_level, const struct parsedname * const pn) {
         // send the packet
         // read back the 1 byte response from setting time limit
         // check response byte
-        if ( (ret=DS2480_sendout_cmd(b,2,pn)) || (ret=DS2480_read(b,1,pn)) || (ret=(b[0]&0x81)==0x00?0:-EIO) ) return ret ;
-
+        if ( (ret=DS2480_sendout_cmd(b,2,pn)) || (ret=DS2480_read(b,1,pn)) || (ret=(b[0]&0x81)==0x00?0:-EIO) ) {
+	  STATLOCK
+	  DS2480_level_errors++;
+	  STATUNLOCK
+	  return ret ;
+	}
     } else if (new_level == MODE_PROGRAM) { // 12 volts
         unsigned char b[] = {
             // set the PPD time value
@@ -580,7 +608,12 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
 
     // send the packet
     // read back the 9 byte response from setting time limit
-    if ( (ret=DS2480_sendback_cmd(cmd,resp,9,pn)) || (ret=(resp[0]&0x81)?-EIO:0) ) return ret ;
+    if ( (ret=DS2480_sendback_cmd(cmd,resp,9,pn)) || (ret=(resp[0]&0x81)?-EIO:0) ) {
+      STATLOCK
+      DS2480_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
 //printf("Sendback byte=%.2X Resp=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X Cmd=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X \n",byte,resp[1],resp[2],resp[3],resp[4],resp[5],resp[6],resp[7],resp[8],cmd[1],cmd[2],cmd[3],cmd[4],cmd[5],cmd[6],cmd[7],cmd[8]) ;
 //printf("All=%.2X\n",((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) );
 
@@ -589,7 +622,12 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
 
     // check the response bit
     ret = byte ^ ( ((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) ) ;
-    if ( ret ) return ret ;
+    if ( ret ) {
+      STATLOCK
+      DS2480_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
 
     // delay
     UT_delay( delay ) ;
@@ -624,9 +662,33 @@ static int DS2480_ProgramPulse( const struct parsedname * const pn ) {
           -EIO = error
  */
 static int DS2480_write(const unsigned char *const buf, const size_t size, const struct parsedname * const pn ) {
-    ssize_t r = write(pn->in->fd,buf,size) ;
-    tcdrain(pn->in->fd) ;
-    return (r!=(ssize_t)size)?-EIO:0 ;
+    ssize_t r, sl = size;
+
+    while(sl > 0) {
+      if(!pn->in) break;
+      r = write(pn->in->fd,&buf[size-sl],sl) ;
+      if(r < 0) {
+	if(errno == EINTR) {
+	  STATLOCK
+	  DS2480_write_interrupted++;
+	  STATUNLOCK
+	  continue;
+	}
+	break;
+      }
+      sl -= r;
+    }
+    if(pn->in) {
+      tcdrain(pn->in->fd) ;
+      gettimeofday( &(pn->in->bus_write_time) , NULL );
+    }
+    if(sl > 0) {
+      STATLOCK
+      DS2480_write_errors++;
+      STATUNLOCK
+      return -EIO;
+    }
+    return 0;
 }
 
 /* Assymetric */
@@ -643,27 +705,84 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
     int fd = pn->in->fd ;
     struct timeval tval;
     int cnt;
+    int rc;
 
     // loop to wait until each byte is available and read it
-    for (cnt = 0; cnt < size; cnt++)
-    {
+    cnt = 0;
+    while(cnt < size) {
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(fd,&fdset);
-        // set timeout to 40ms
-        // NOTE: LINK needs 40msec, not 10 msec!
         tval.tv_sec = 0;
-        tval.tv_usec = 40000;
+        tval.tv_usec = 500000;
+	/* This timeout need to be pretty big for some reason.
+	 * Even commands like DS2480_reset() fails with too low
+	 * timeout. I raise it to 0.5 seconds, since it shouldn't
+	 * be any bad experience for any user... Less read and
+	 * timeout errors for users with slow machines. I have seen
+	 * 276ms delay on my Coldfire board.
+	 *
+	 * DS2480_reset()
+	 *   DS2480_sendback_cmd()
+	 *     DS2480_sendout_cmd()
+	 *       DS2480_write()
+	 *         write()
+	 *         tcdrain()   (all data should be written on serial port)
+	 *     DS2480_read()
+	 *       select()      (waiting 40ms should be enough!)
+	 *       read()
+	 * 
+	 */
 
         // if byte available read or return bytes read
-        if (select(fd+1,&fdset,NULL,NULL,&tval) != 0) {
-            if ( read(fd,&buf[cnt],1)!= 1 ) return -errno ;
+        rc = select(fd+1,&fdset,NULL,NULL,&tval);
+        if (rc > 0) {
+	    if( FD_ISSET( fd, &fdset )==0 ) {
+	      //printf("DS2480_read: FD_ISSET() failed %d/%d bytes\n", cnt, size);
+	      STATLOCK
+	      DS2480_read_errors++;
+	      STATUNLOCK
+	      return -EIO ; /* error */
+	    }
+	    update_max_delay(pn);
+
+	    rc = read(fd,&buf[cnt],1);
+            if ( rc < 1 ) {
+	      if(errno == EINTR) {
+		/* read() was interrupted, try again */
+		STATLOCK
+		DS2480_read_interrupted++;
+		STATUNLOCK
+		continue;
+	      }
+	      //printf("DS2480_read: read() failed %d/%d bytes: rc=%d\n", cnt, size, rc);
+	      STATLOCK
+	      DS2480_read_errors++;
+	      STATUNLOCK
+	      return -errno ;
+	    }
+	    cnt++;
+	} else if(rc < 0) {
+	  if(errno == EINTR) {
+	    /* select() was interrupted, try again */
+	    STATLOCK
+	    DS2480_read_interrupted++;
+	    STATUNLOCK
+	    continue;
+	  }
+          buf[cnt] = '\0' ;
+	  STATLOCK
+	  DS2480_read_select_errors++;
+	  STATUNLOCK
+	    //printf("DS2480_read: select() failed after %d/%d bytes: %s\n", cnt, size, strerror(errno));
+	  return -EINTR;
         } else {
-            STATLOCK
-                ++read_timeout ; /* statistics */
-            STATUNLOCK
-            buf[cnt] = '\0' ;
-            return -EINTR;
+	  STATLOCK
+	    ++DS2480_read_timeout ;
+	  STATUNLOCK
+          buf[cnt] = '\0' ;
+	  //printf("DS2480_read: select() timed out after %d/%d bytes\n", cnt, size);
+	  return -EINTR;
         }
    }
    return 0;
@@ -685,6 +804,11 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len, const 
     } else {
         ret=DS2480_write(cmd,(unsigned)len,pn ) ;
     }
+    if(ret) {
+      STATLOCK
+      DS2480_sendout_cmd_errors++;
+      STATUNLOCK
+    }
     return ret ;
 }
 
@@ -705,6 +829,11 @@ static int DS2480_send_cmd( const unsigned char * const cmd , const int len, con
     } else {
         unsigned char resp[16] ;
         (ret=DS2480_sendback_cmd(cmd,resp,len,pn)) ||  (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0) ;
+	if(ret) {
+	  STATLOCK
+	  DS2480_send_cmd_errors++;
+	  STATUNLOCK
+	}
     }
     return ret ;
 }
@@ -723,6 +852,11 @@ static int DS2480_sendback_cmd(const unsigned char * const cmd , unsigned char *
         (ret=DS2480_sendback_cmd(cmd,resp,clen,pn)) || (ret=DS2480_sendback_cmd(&cmd[clen],&resp[clen],len>>1,pn)) ;
     } else {
         (ret=DS2480_sendout_cmd(cmd,len,pn)) || (ret=DS2480_read(resp,len,pn)) ;
+	if(ret) {
+	  STATLOCK
+	  DS2480_sendback_cmd_errors++;
+	  STATUNLOCK
+	}
     }
     return ret ;
 }
@@ -755,6 +889,11 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
             if ( data[i] == MODE_COMMAND ) data2[j++] = MODE_COMMAND ;
         }
         ret = DS2480_write(data2,j,pn) ;
+	if(ret) {
+	  STATLOCK
+	  DS2480_sendout_data_errors++;
+	  STATUNLOCK
+	}
     }
     return ret ;
 }
@@ -769,5 +908,10 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
 static int DS2480_sendback_data( const unsigned char * const data, unsigned char * const resp, const int len, const struct parsedname * const pn ) {
     int ret ;
     (ret=DS2480_sendout_data( data,len,pn )) || (ret=DS2480_read( resp,len,pn )) ;
+    if(ret) {
+      STATLOCK
+      DS2480_sendback_data_errors++;
+      STATUNLOCK
+    }
     return ret ;
 }

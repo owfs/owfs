@@ -107,7 +107,7 @@ extern int maxslots ;
     #include "sem.h"
  #endif /* HAVE_SEMAPHORE_H */
 
-    extern pthread_mutex_t busstat_mutex ;
+    //extern pthread_mutex_t busstat_mutex ;
     extern pthread_mutex_t stat_mutex ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
@@ -120,8 +120,8 @@ extern int maxslots ;
     extern pthread_mutexattr_t mattr;
     extern pthread_mutex_t uclibc_mutex;
  #endif /* __UCLIBC__ */
-    #define BUSSTATLOCK    pthread_mutex_lock(  &busstat_mutex) ;
-    #define BUSSTATUNLOCK  pthread_mutex_unlock(&busstat_mutex) ;
+//    #define BUSSTATLOCK    pthread_mutex_lock(  &busstat_mutex) ;
+//    #define BUSSTATUNLOCK  pthread_mutex_unlock(&busstat_mutex) ;
     #define STATLOCK       pthread_mutex_lock(  &stat_mutex   ) ;
     #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex   ) ;
     #define CACHELOCK      pthread_mutex_lock(  &cache_mutex  ) ;
@@ -143,8 +143,8 @@ extern int maxslots ;
  #endif /* __UCLIBC__ */
 
 #else /* OW_MT */
-    #define BUSSTATLOCK
-    #define BUSSTATUNLOCK
+//    #define BUSSTATLOCK
+//    #define BUSSTATUNLOCK
     #define STATLOCK
     #define STATUNLOCK
     #define CACHELOCK
@@ -637,15 +637,55 @@ extern struct average dir_avg ;
 
 extern struct average all_avg ;
 
+extern struct timeval max_delay ;
+
+// ow_locks.c
 extern struct timeval bus_time ;
 extern struct timeval bus_pause ;
 extern unsigned int bus_locks ;
 extern unsigned int bus_unlocks ;
-extern unsigned int crc8_tries ;
-extern unsigned int crc8_errors ;
-extern unsigned int crc16_tries ;
-extern unsigned int crc16_errors ;
-extern unsigned int read_timeout ;
+
+
+// ow_crc.c
+extern unsigned int CRC8_tries ;
+extern unsigned int CRC8_errors ;
+extern unsigned int CRC16_tries ;
+extern unsigned int CRC16_errors ;
+
+// ow_bus.c
+extern unsigned int BUS_send_data_errors ;
+extern unsigned int BUS_readin_data_errors ;
+extern unsigned int BUS_send_and_get_timeout ;
+extern unsigned int BUS_send_and_get_select_errors ;
+extern unsigned int BUS_send_and_get_errors ;
+extern unsigned int BUS_send_and_get_interrupted ;
+extern unsigned int BUS_select_low_errors ;
+extern unsigned int BUS_select_low_branch_errors ;
+
+// ow_ds9097.c
+extern unsigned int DS9097_read_bits_errors ;
+extern unsigned int DS9097_sendback_data_errors ;
+extern unsigned int DS9097_sendback_bits_errors ;
+extern unsigned int DS9097_read_errors ;
+extern unsigned int DS9097_write_errors ;
+extern unsigned int DS9097_reset_errors ;
+extern unsigned int DS9097_reset_tcsetattr_errors ;
+
+// ow_ds9097U.c
+extern unsigned int DS2480_reset_errors ;
+extern unsigned int DS2480_send_cmd_errors ;
+extern unsigned int DS2480_sendout_data_errors ;
+extern unsigned int DS2480_sendout_cmd_errors ;
+extern unsigned int DS2480_sendback_data_errors ;
+extern unsigned int DS2480_sendback_cmd_errors ;
+extern unsigned int DS2480_write_errors ;
+extern unsigned int DS2480_write_interrupted ;
+extern unsigned int DS2480_read_errors ;
+extern unsigned int DS2480_read_interrupted ;
+extern unsigned int DS2480_read_select_errors ;
+extern unsigned int DS2480_read_timeout ;
+extern unsigned int DS2480_PowerByte_errors ;
+extern unsigned int DS2480_level_errors ;
 
 /// mode bit flags
 #define MODE_NORMAL                    0x00
@@ -676,6 +716,9 @@ struct connection_in {
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
     // struct timeval bus_time ;  // FIXME: move this from global to here
+
+    struct timeval bus_read_time ;
+    struct timeval bus_write_time ; /* for statistics */
   
     enum bus_mode busmode ;
     struct interface_routines iroutines ;
