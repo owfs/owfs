@@ -3,40 +3,40 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      device type (chip, interface or pseudo)
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 #include "owfs_config.h"
@@ -73,13 +73,10 @@ DeviceEntry( 29, DS2408 )
 /* ------- Functions ------------ */
 
 /* DS2408 */
-static int OW_w_conditional( const unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
-static int OW_r_latch( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_c_latch( const struct parsedname * pn ) ;
 static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) ;
 static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) ;
-static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) ;
 
 /* 2408 switch */
@@ -99,13 +96,14 @@ static int FS_r_strobe(int * y , const struct parsedname * pn) {
 }
 
 static int FS_w_strobe(const int * y, const struct parsedname * pn) {
-	unsigned char data[8] ;
+    unsigned char data[8] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
-	UT_setbit( &data[5], 2, y[0] ) ;
-	return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
+    UT_setbit( &data[5], 2, y[0] ) ;
+    return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
 }
 
 /* 2408 switch PIO sensed*/
+/* From register 0x88 */
 static int FS_sense(int * y , const struct parsedname * pn) {
     unsigned char data[6] ;
     int i ;
@@ -115,11 +113,12 @@ static int FS_sense(int * y , const struct parsedname * pn) {
 }
 
 /* 2408 switch PIO set*/
+/* From register 0x89 */
 static int FS_r_pio(int * y , const struct parsedname * pn) {
     unsigned char data[6] ;
     int i ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
-	data[1] ^= 0xFF ; /* reverse bits */
+    data[1] ^= 0xFF ; /* reverse bits */
     for ( i=0 ; i<8 ; ++i ) y[i] = UT_getbit(&data[1],i) ;
     return 0 ;
 }
@@ -127,42 +126,48 @@ static int FS_r_pio(int * y , const struct parsedname * pn) {
 /* 2408 switch PIO change*/
 static int FS_w_pio(const int * y , const struct parsedname * pn) {
     unsigned char data ;
-	UT_setbit(&data,0,y[0]) ;
-	UT_setbit(&data,1,y[1]) ;
-	UT_setbit(&data,2,y[2]) ;
-	UT_setbit(&data,3,y[3]) ;
-	UT_setbit(&data,4,y[4]) ;
-	UT_setbit(&data,5,y[5]) ;
-	UT_setbit(&data,6,y[6]) ;
-	UT_setbit(&data,7,y[7]) ;
-	data ^= 0xFF ; /* reverse bits */
+    UT_setbit(&data,0,y[0]) ;
+    UT_setbit(&data,1,y[1]) ;
+    UT_setbit(&data,2,y[2]) ;
+    UT_setbit(&data,3,y[3]) ;
+    UT_setbit(&data,4,y[4]) ;
+    UT_setbit(&data,5,y[5]) ;
+    UT_setbit(&data,6,y[6]) ;
+    UT_setbit(&data,7,y[7]) ;
+    data ^= 0xFF ; /* reverse bits */
 
     if ( OW_w_pio(data,pn) ) return -EINVAL ;
-	return 0 ;
+    return 0 ;
 }
 
 /* 2408 read activity latch */
+/* From register 0x8A */
 static int FS_r_latch(int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    unsigned char data[6] ;
     int i ;
-    if ( OW_r_latch(&data,pn) ) return -EINVAL ;
-    for ( i=0 ; i<8 ; ++i ) y[i] = UT_getbit(&data,i) ;
+    if ( OW_r_reg(data,pn) ) return -EINVAL ;
+    for ( i=0 ; i<8 ; ++i ) y[i] = UT_getbit(&data[2],i) ;
     return 0 ;
 }
 
 /* 2408 write activity latch */
+/* Actually resets them all */
 static int FS_w_latch(const int * y, const struct parsedname * pn) {
-    if ( OW_c_latch(pn) ) return -EINVAL ;
+    if ( y[0] && OW_c_latch(pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2408 alarm settings*/
+/* From registers 0x8B-0x8D */
 static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data[3] ;
+    unsigned char d[6] ;
     int i, p ;
-    if ( OW_r_s_alarm(data,pn) ) return -EINVAL ;
-    u[0] = ( data[2] & 0x03 ) * 100000000 ;
-    for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) UT_getbit(&data[0],i) | ( UT_getbit(&data[1],i) << 1 ) * p ;
+    if ( OW_r_reg(d,pn) ) return -EINVAL ;
+    /* register 0x8D */
+    u[0] = ( d[5] & 0x03 ) * 100000000 ;
+    /* registers 0x8B and 0x8C */
+    for ( i=0, p=1 ; i<8 ; ++i, p*=10 )
+        u[0] += UT_getbit(&d[3],i) | ( UT_getbit(&d[4],i) << 1 ) * p ;
     return 0 ;
 }
 
@@ -171,8 +176,8 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data[3];
     int i, p ;
     for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) {
-	UT_setbit(&data[0],i,(int)(u[0] / p % 10) & 0x01) ;
-	UT_setbit(&data[1],i,((int)(u[0] / p % 10) & 0x02) >> 1) ;
+        UT_setbit(&data[0],i,(int)(u[0] / p % 10) & 0x01) ;
+        UT_setbit(&data[1],i,((int)(u[0] / p % 10) & 0x02) >> 1) ;
     }
     data[2] = (u[0] / 100000000 % 10) & 0x03 ;
     if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
@@ -186,6 +191,7 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
    0x8B Conditional Ch Mask
    0x8C Londitional Ch Polarity
    0x8D Control/Status
+   plus 2 more bytes to get to the end of the page and qualify for a CRC16 checksum
 */
 static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+8+2] = { 0xF0, 0x88 , 0x00, } ;
@@ -208,19 +214,8 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
         ret = BUS_select(pn) || BUS_sendback_data(p,p,5) || p[3]!=0xAA ;
     BUSUNLOCK
 //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
-	/* Ignore byte 5 p[4] the PIO status byte */
+    /* Ignore byte 5 p[4] the PIO status byte */
     return ret ;
-}
-
-/* Read activity latch */
-static int OW_r_latch( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char d[6] ; /* register read */
-
-    /* Read registers (before clearing) */
-    if ( OW_r_reg(d,pn) ) return 1 ;
-
-    *data = d[2] ; /* register 0x8A */
-    return 0 ;
 }
 
 /* Reset activity latch */
@@ -250,47 +245,23 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
     return ( (data & 0x0F) != (d[5] & 0x0F) ) ;
 }
 
-/* Write conditionakl search bytes (2 bytes) */
-static int OW_w_conditional( const unsigned char * data , const struct parsedname * pn ) {
-    unsigned char d[6] ; /* register read */
-    unsigned char p[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
-    int ret ;
-
-    BUSLOCK
-	ret = BUS_select(pn) || BUS_send_data( p , 5 ) ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
-
-    /* Read registers */
-    if ( OW_r_reg(d,pn) ) return 1 ;
-
-    return  ( data[0] != d[3] ) || ( data[1] != d[4] ) ;
-}
-
-/* read alarm settings */
-static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char d[6] ;
-    if ( OW_r_reg(d,pn) ) return -EINVAL ;
-    data[0] = d[3] ; data[1] = d[4] ; data[2] = d[5] & 0x03 ;
-    return 0 ;
-}
-
 /* write alarm settings */
 static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) {
     unsigned char d[6], cr ;
     unsigned char c[] = { 0xCC, 0x8D, 0x00, 0x00, } ;
     unsigned char s[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
     int ret ;
+
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
     c[3] = cr = (data[2] & 0x03) | (d[5] & 0x0C) ;
     BUSLOCK
-	ret = BUS_select(pn) || BUS_send_data( s , 5 ) || BUS_send_data( c , 4 ) ;
+        ret = BUS_select(pn) || BUS_send_data( s , 5 ) || BUS_send_data( c , 4 ) ;
     BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Read registers */
     if ( OW_r_reg(d,pn) ) return 1 ;
-                                                                                                                                                 
+
     return  ( data[0] != d[3] ) || ( data[1] != d[4] ) || ( cr != (d[5] & 0x0F) ) ;
 }
 

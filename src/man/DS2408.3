@@ -45,10 +45,20 @@
 .SS latch.0 ... latch.7 latch.ALL
 .I read-write, binary
 .br
-Memory organized as 4 pages or 32 bytes. Memory is write-once.
+The 8 pins (PIO) latch a bit when their state changes, either externally, or through a write to the pin. 
+.br
+Reading the
+.I latch
+property indicates that the latch has been set.
+.br
+Writing "true" (non-zero) to ANY 
+.I latch 
+will reset them all. (This is the hardware design).
 .br
 .I ALL
-is all latch states, accessed simultaneously, comma separated.
+is all 
+.I latch 
+states, accessed simultaneously, comma separated.
 .SS PIO.0 ...  PIO.7 PIO.ALL
 .I read-write, yes-no
 .br
@@ -90,23 +100,47 @@ powered parasitically (0) or separately on the Vcc pin (1)?
 .SS set_alarm
 .I read-write, integer unsigned (0-333333333)
 .br
-A number will consist of three digits XYYYYYYYY, where:
+A number will consist of 9 digits XYYYYYYYY, where:
 .TP
 X
-select source and logical term (0=>pin+OR, 1=>latch+OR, 2=>pin+AND, 3=>latch+AND)
+select source and logical term 
+.br 
+.I 0
+PIO   OR 
+.br 
+.I 1
+latch OR 
+.br 
+.I 2
+PIO   AND 
+.br 
+.I 3
+latch AND
 .TP
 Y
-select cannel and polarity (0=>unselected+LOW, 1=>unselected+HIGH, 2=>selected+LOW, 3=>selected+HIGH)
+select channel and polarity
+.br 
+.I 0
+Unselected (LOW) 
+.br
+.I 1
+Unselected (HIGH) 
+.br
+.I 2
+Selected    LOW 
+.br
+.I 3
+Selected    HIGH
 .PP
-All digits will be truncated to the 0-3 (or 0-1) range. Leading zeroes are optional. Low-oder digit - channel 0.
+All digits will be truncated to the 0-3 range. Leading zeroes are optional. Low-order digit is channel 0.
 .PP
 Example:
 .TP
 100000033
-Responds on Conditional Search when latch.1 or latch.0 are set in 1.
+Responds on Conditional Search when latch.1 or latch.0 are set to 1.
 .TP
 222000000
-Responds on Conditional Search when sensed.7 and sensed.6 are set in 0.
+Responds on Conditional Search when sensed.7 and sensed.6 are set to 0.
 .TP
 000000000 (0)
 Never responds to Conditional Search.

@@ -242,7 +242,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     if ( basename ) {
         ++basename ; /* after slash */
     } else {
-      basename = (char *)file ;
+      basename = file ;
     }
 
     /* full file name (with path and subdir) */

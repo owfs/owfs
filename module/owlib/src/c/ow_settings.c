@@ -69,16 +69,19 @@ struct device d_set_cache = { "cache", "cache", pn_settings, NFT(set_cache), set
 /* ------- Functions ------------ */
 
 static int FS_r_presencecheck(int * y , const struct parsedname * pn) {
+    (void) pn ; /* to avoid compiler warning about unused parameter */
     y[0] =  presencecheck ;
     return 0 ;
 }
 
 static int FS_w_presencecheck(const int * y , const struct parsedname * pn) {
+    (void) pn ; /* to avoid compiler warning about unused parameter */
     presencecheck = y[0] ;
     return 0 ;
 }
 
 static int FS_r_enable(int * y , const struct parsedname * pn) {
+    (void) pn ; /* to avoid compiler warning about unused parameter */
     CACHELOCK
         y[0] =  cacheenabled ;
     CACHEUNLOCK
@@ -86,6 +89,7 @@ static int FS_r_enable(int * y , const struct parsedname * pn) {
 }
 
 static int FS_w_enable(const int * y , const struct parsedname * pn) {
+    (void) pn ; /* to avoid compiler warning about unused parameter */
     if ( cacheavailable==0 ) return -EINVAL ;
     CACHELOCK
         cacheenabled = y[0] ;

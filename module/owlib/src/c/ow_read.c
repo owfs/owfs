@@ -22,7 +22,7 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_structure(const char *path, char *buf, const size_t size, const off_t offset, struct parsedname * pn) ;
+static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -32,7 +32,6 @@ static int FS_structure(const char *path, char *buf, const size_t size, const of
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
     struct stateinfo si ;
-    size_t s = size ;
     int r ;
 
     pn.si = &si ;
@@ -71,7 +70,7 @@ int FS_read_postparse(const char * path, char *buf, const size_t size, const off
         AVERAGE_IN(&all_avg)
     STATUNLOCK
     if ( pn->type == pn_structure ) {
-        r = FS_structure(path,buf,size,offset,pn) ;
+        r = FS_structure(buf,size,offset,pn) ;
     } else {
         STATLOCK
             ++ read_calls ; /* statistics */
@@ -80,7 +79,7 @@ int FS_read_postparse(const char * path, char *buf, const size_t size, const off
         if ( offset!=0 || cacheenabled==0 ) {
             LockGet(pn) ;
                 r = FS_real_read( path, buf, size, offset, pn ) ;
-            LockRelease(&pn) ;
+            LockRelease(pn) ;
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
             LockGet(pn) ;
@@ -137,13 +136,16 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
 }
 
 /* Structure file */
-static int FS_structure(const char *path, char *buf, const size_t size, const off_t offset, struct parsedname * pn) {
-    char ft_format_char[] = "  iufabyd" ;
-    int fl, len ;
+static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+    char ft_format_char[] = "  iufabyd" ; /* return type */
+    /* dir,dir,int,unsigned,float,ascii,binary,yesno,date */
+    int len ;
+    struct parsedname pn2 ;
+
     if ( offset ) return -EADDRNOTAVAIL ;
-    pn->type = pn_real ;
-        fl = FullFileLength(pn) ;
-    pn->type = pn_structure ;
+
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
+    pn2.type = pn_real ; /* "real" type to get return length, rather than "structure" length */
 
     UCLIBCLOCK
         len = snprintf(
@@ -156,7 +158,7 @@ static int FS_structure(const char *path, char *buf, const size_t size, const of
             (pn->ft->read.v) ?
                 ( (pn->ft->write.v) ? "rw" : "ro" ) :
                 ( (pn->ft->write.v) ? "wo" : "oo" ) ,
-            fl
+            FullFileLength(&pn2)
             ) ;
     UCLIBCUNLOCK
     return len;
