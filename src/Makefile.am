@@ -1,4 +1,4 @@
-SUBDIRS = include rpm scripts
+SUBDIRS = include man rpm scripts
 
 clean-generic:
 
