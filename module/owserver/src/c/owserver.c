@@ -333,6 +333,5 @@ int main( int argc , char ** argv ) {
 
 static void ow_exit( int e ) {
     LibClose() ;
-    closelog() ;
     exit( e ) ;
 }

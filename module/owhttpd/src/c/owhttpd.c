@@ -103,6 +103,5 @@ static void Acceptor( int listenfd ) {
 
 static void ow_exit( int e ) {
     LibClose() ;
-    closelog() ;
     exit( e ) ;
 }
