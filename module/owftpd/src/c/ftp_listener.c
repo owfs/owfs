@@ -17,6 +17,7 @@ to end.
 */
 
 #include "owfs_config.h"
+#include "ow.h"
 #include <features.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -238,17 +239,8 @@ int ftp_listener_init(struct ftp_listener_t *f,
     f->max_connections = max_connections;
     f->num_connections = 0;
     f->inactivity_timeout = inactivity_timeout;
-#ifdef __UCLIBC__
-    {
-        pthread_mutexattr_t attr ;
-        pthread_mutexattr_init(&attr) ;
-        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_ADAPTIVE_NP) ;
-        pthread_mutex_init(&f->mutex,&attr) ;
-        pthread_mutexattr_destroy(&attr) ;
-    }
-#else /* non-embedded */
-    pthread_mutex_init(&f->mutex, NULL);
-#endif
+
+    pthread_mutex_init(&f->mutex, pmattr);
 
     daemon_assert(strlen(dir) < sizeof(f->dir));
     strcpy(f->dir, dir);

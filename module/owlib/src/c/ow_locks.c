@@ -59,21 +59,17 @@ void LockSetup( void ) {
 #ifdef OW_MT
 #ifdef __UCLIBC__
     int i ;
-    pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ADAPTIVE_NP);
-
-    pthread_mutex_init(&bus_mutex, &attr);
-    pthread_mutex_init(&dev_mutex, &attr);
-    pthread_mutex_init(&stat_mutex, &attr);
-    pthread_mutex_init(&cache_mutex, &attr);
-    pthread_mutex_init(&store_mutex, &attr);
-    pthread_mutex_init(&fstat_mutex, &attr);
-    pthread_mutex_init(&uclibc_mutex, &attr);
+    pthread_mutex_init(&busstat_mutex, pmattr);
+    pthread_mutex_init(&dev_mutex, pmattr);
+    pthread_mutex_init(&stat_mutex, pmattr);
+    pthread_mutex_init(&cache_mutex, pmattr);
+    pthread_mutex_init(&store_mutex, pmattr);
+    pthread_mutex_init(&fstat_mutex, pmattr);
+    pthread_mutex_init(&uclibc_mutex, pmattr);
+    pthread_mutex_init(&dir_mutex, pmattr);
     for ( i=0 ; i<DEVLOCKS ; ++i) {
-        pthread_mutex_init( &DevLock[i].lock, &attr ) ;
+        pthread_mutex_init( &DevLock[i].lock, pmattr ) ;
     }
-    pthread_mutexattr_destroy(&attr);
 #endif
     sem_init( &devlocks, 0, DEVLOCKS ) ;
 #endif /* OW_MT */

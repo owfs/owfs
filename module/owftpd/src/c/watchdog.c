@@ -3,6 +3,7 @@
  */
 
 #include "owfs_config.h"
+#include "ow.h"
 #include <features.h>
 #include <unistd.h>
 #include "daemon_assert.h"
@@ -24,17 +25,8 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
     daemon_assert(inactivity_timeout > 0);
     daemon_assert(err != NULL);
 
-#ifdef __UCLIBC__
-    {
-        pthread_mutexattr_t attr ;
-        pthread_mutexattr_init(&attr) ;
-        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_ADAPTIVE_NP) ;
-        pthread_mutex_init(&w->mutex,&attr) ;
-        pthread_mutexattr_destroy(&attr) ;
-    }
-#else /* __UCLIBC__ */
-    pthread_mutex_init(&w->mutex, NULL);
-#endif /* __UCLIBC__ */
+    pthread_mutex_init(&w->mutex, pmattr);
+
     w->inactivity_timeout = inactivity_timeout;
     w->oldest = NULL;
     w->newest = NULL;
