@@ -82,31 +82,13 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 
 /* Check if device exists -- 0 yes, 1 no */
 int CheckPresence( const struct parsedname * const pn ) {
-    int ret ;
-    switch ( pn->dev->type ) {
-    case pn_real:
+    int ret = 0 ;
+    if ( pn->dev->type == pn_real ) {
         BUSLOCK
             ret = BUS_normalverify(pn) ;
         BUSUNLOCK
-        return ret ;
-    case pn_adapter:
-        switch ( Adapter ) {
-        case adapter_DS9097:
-            return strcmp( "DS9097", pn->dev->code ) ;
-        case adapter_DS1410:
-            return strcmp( "DS1410", pn->dev->code ) ;
-        case adapter_DS9097U:
-            return strcmp( "DS9097U", pn->dev->code ) ;
-        case adapter_LINK_Multi:
-            return strcmp( "LINK_Multiport", pn->dev->code ) ;
-        case adapter_LINK:
-            return strcmp( "LINK", pn->dev->code ) ;
-        case adapter_DS9490:
-            return strcmp( "DS9490", pn->dev->code ) ;
-        }
-    default:
-        return 0 ;
     }
+    return ret ;
 }
 
 int FS_present(int * y , const struct parsedname * pn) {

@@ -76,12 +76,6 @@ void DeviceSort( void ) {
     Device2Tree( & d_DS2760 ,       pn_real ) ;
     Device2Tree( & d_DS2890 ,       pn_real ) ;
     Device2Tree( & d_LCD ,          pn_real ) ;
-    Device2Tree( & d_DS9490 ,       pn_adapter ) ;
-    Device2Tree( & d_DS9097 ,       pn_adapter ) ;
-    Device2Tree( & d_DS1410 ,       pn_adapter ) ;
-    Device2Tree( & d_DS9097U ,      pn_adapter ) ;
-    Device2Tree( & d_iButtonLink_Multiport , pn_adapter ) ;
-    Device2Tree( & d_iButtonLink ,  pn_adapter ) ;
     Device2Tree( & d_stats_bus ,    pn_statistics ) ;
     Device2Tree( & d_stats_cache ,  pn_statistics ) ;
     Device2Tree( & d_stats_directory, pn_statistics ) ;

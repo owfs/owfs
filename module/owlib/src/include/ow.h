@@ -326,7 +326,7 @@ to device features (memory, name, temperature) and
 bound the allowable files in a device directory
 */
 
-enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_adapter } ;
+enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 //enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
 extern void * Tree[5] ;
 

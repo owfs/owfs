@@ -15,7 +15,6 @@ $Id$
 static int FS_branchoff( const struct parsedname * const pn) ;
 static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_alarmdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
-static int FS_adapterdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_realdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
 static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) ;
@@ -84,12 +83,6 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             pn2.type = pn_statistics ;
             dirfunc( data, &pn2 ) ;
             pn2.type = pn_real ;
-        }
-
-        /* Show adapter (if root directory) */
-        if ( pn2.pathlength == 0 ) { /* true root */
-            //printf("DIR: True root, interface=%d\n",Adapter) ;
-            FS_adapterdir( dirfunc, data, &pn2 ) ; /* adapter entry */
         }
 
         /* Show all devices in this directory */
@@ -191,40 +184,6 @@ static int FS_branchoff( const struct parsedname * const pn ) {
     /* Turn off all DS2409s */
     if ( (ret=BUS_reset(pn)) || (ret=BUS_send_data(cmd,2)) ) return ret ;
     return ret ;
-}
-
-static int FS_adapterdir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, struct parsedname * const pn2 ) {
-    pn2->ft = NULL ; /* just in case not properly set */
-/*
-    switch (Adapter) {
-    case adapter_DS9097:
-        dpp = bsearch("DS9097",Devices,nDevices,sizeof(struct device *),devicecmp) ;
-        break ;
-    case adapter_DS1410:
-        dpp = bsearch("DS1410",Devices,nDevices,sizeof(struct device *),devicecmp) ;
-        break ;
-    case adapter_DS9097U:
-        dpp = bsearch("DS9097U",Devices,nDevices,sizeof(struct device *),devicecmp) ;
-        break ;
-    case adapter_LINK_Multi:
-        dpp = bsearch("LINK_Multiport",Devices,nDevices,sizeof(struct device *),devicecmp) ;
-        break ;
-    case adapter_LINK:
-        dpp = bsearch("LINK",Devices,nDevices,sizeof(struct device *),devicecmp) ;
-        break ;
-    case adapter_DS9490:
-        dpp = bsearch("DS9490",Devices,nDevices,sizeof(struct device *),devicecmp) ;
-        break ;
-    default : // just in case an adapter isn't set
-        dpp = NULL ;
-    }
-    if ( dpp ) {
-        pn2->dev = *dpp ;
-        dirfunc( data, pn2 ) ;
-        pn2->dev = NULL ; // clear for the rest of directory listing
-    }
-*/
-    return 0 ;
 }
 
 /* A directory of devices -- either main or branch */
