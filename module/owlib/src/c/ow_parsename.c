@@ -350,18 +350,6 @@ size_t FileLength( const struct parsedname * const pn ) {
     }
 }
 
-/* For array properties -- length of full aggregate file */
-size_t FullFileLength( const struct parsedname * const pn ) {
-    if ( pn->ft->suglen == ft_len_type ) {
-        return strlen(pn->dev->name) ;
-    } else if ( pn->ft->ag ) {
-            if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
-            return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
-    } else {
-        return pn->ft->suglen ;
-    }
-}
-
 static int BranchAdd( struct parsedname * const pn ) {
 //printf("BRANCHADD\n");
     if ( (pn->pathlength%BRANCH_INCR)==0 ) {

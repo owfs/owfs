@@ -31,6 +31,7 @@ $Id$
 #include "owfs.h"
 
 static void ow_exit( int e ) ;
+static void fuser_mount_wrapper( void ) ;
 void exit_handler(int i) ;
 void set_signal_handlers( void ) ;
 
@@ -89,28 +90,8 @@ int main(int argc, char *argv[]) {
     }
 
     // FUSE magic. I don't understand it.
-    if(getenv(FUSE_MOUNTED_ENV)) {
-        char *tmpstr = getenv(FUSE_UMOUNT_CMD_ENV);
-
-         /* Old (obsolescent) way of doing the mount:
-             fusermount [options] mountpoint [program [args ...]]
-           fusermount execs this program and passes the control file
-           descriptor dup()-ed to stdin */
-        fuse_fd = 0;
-        if(tmpstr != NULL)
-            strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
-        fuse_mountpoint = strdup(argv[optind]);
-        fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt);
-        if(fuse_fd == -1) ow_exit(1);
-    } else {
-        fuse_mountpoint = strdup(argv[optind]);
-        fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt);
-        if(fuse_fd == -1) ow_exit(1);
-    }
-    if ( fuse_opt ) { /* just to be anal, clear the string memory */
-        free( fuse_opt ) ;
-        fuse_opt = NULL ;
-    }
+    fuse_mountpoint = strdup(argv[optind]);
+    fuser_mount_wrapper() ;
 
     if ( LibStart() ) ow_exit(1) ;
 
@@ -126,6 +107,47 @@ int main(int argc, char *argv[]) {
 
     ow_exit(0);
     return 0 ;
+}
+
+static void fuser_mount_wrapper( void ) {
+    char ** opts = NULL ;
+
+    if ( fuse_opt ) {
+        char * tok ;
+        int i = 0 ;
+        opts = (char **) malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
+        tok = strtok(fuse_opt," ") ;
+        while ( tok ) {
+            opts[i++] = tok ;
+            tok = strtok(NULL," ") ;
+        }
+        opts[i] = NULL ;
+    }
+
+    // FUSE magic. I don't understand it.
+    if(getenv(FUSE_MOUNTED_ENV)) {
+        char *tmpstr = getenv(FUSE_UMOUNT_CMD_ENV);
+
+         /* Old (obsolescent) way of doing the mount:
+             fusermount [options] mountpoint [program [args ...]]
+           fusermount execs this program and passes the control file
+           descriptor dup()-ed to stdin */
+        fuse_fd = 0;
+        if(tmpstr != NULL)
+            strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
+//        fuse_mountpoint = strdup(argv[optind]);
+        fuse_fd = fuse_mount(fuse_mountpoint, opts);
+        if(fuse_fd == -1) ow_exit(1);
+    } else {
+//        fuse_mountpoint = strdup(argv[optind]);
+        fuse_fd = fuse_mount(fuse_mountpoint, opts);
+        if(fuse_fd == -1) ow_exit(1);
+    }
+    if ( opts ) { /* just to be anal, clear the string memory */
+        free( opts ) ;
+        free( fuse_opt ) ;
+        fuse_opt = NULL ;
+    }
 }
 
 static void ow_exit( int e ) {

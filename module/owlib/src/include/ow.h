@@ -159,7 +159,6 @@ int NamePart( const char * filename, const char ** next, struct parsedname * pn 
 int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
   void FS_parse_dir( char * const dest , const char * const buf ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
-  size_t FullFileLength( const struct parsedname * const pn ) ;
 int CheckPresence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
 

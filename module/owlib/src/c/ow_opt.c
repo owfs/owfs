@@ -124,7 +124,7 @@ int owopt( const int c , const char * const arg ) {
             fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
             return 1 ;
         }
-    return 0 ;
+        return 0 ;
     case 260: /* fuse-opt */
         fuse_opt = strdup( arg ) ;
         if ( fuse_opt == NULL ) fprintf(stderr,"Insufficient memolry to store FUSE options: %s\n",arg) ;
