@@ -104,9 +104,9 @@ static int OW_r_page( unsigned char * p , const size_t size , const size_t offse
     int ret ;
 
     // read to scratch, then in
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( scratchpad , 3 ) || BUS_readin_data( data,rest+1 ) || CRC8( data,rest+1) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     // copy to buffer
@@ -128,30 +128,30 @@ static int OW_w_page( const unsigned char * p , const size_t size , const size_t
     if ( size != rest ) { /* partial page write (doesn't go to end of page) */
         if ( OW_r_page(&data[size],offset+size,rest-size,pn) ) return 1 ;
     } else { /* just copy in NVram to make sure scratchpad is set */
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_select(pn) || BUS_send_data( &copyin[offset>>5] , 1 ) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return 1 ;
     }
 
     memcpy( data , p , size ) ;
 
     // write to scratchpad
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( scratchout , 2 ) || BUS_send_data( data,rest ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     // re-read scratchpad and compare
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( scratchin , 2 ) || BUS_readin_data( data,rest+1 ) || CRC8( data,rest+1 ) || memcmp(data,p,size) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     // send scratchpad to perment memory
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_send_data(&copyout[offset>>5],1) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     // Could recheck with a read, but no point
@@ -165,25 +165,25 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     int ret ;
 
     // initiate conversion
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( &d2 , 1 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     UT_delay(6) ;
 
     /* Is it done? */
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_send_data( b2, 2 ) || BUS_readin_data(t , 3 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Is it done, now? */
     if ( t[2] & 0x01 ) {
         UT_delay(5) ;
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_send_data( b2, 2 ) || BUS_readin_data(t , 3 ) || (t[2]&0x01) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return 1 ;
     }
     *T = ((int)((signed char)t[1])) + .00390625*t[0] ;
@@ -198,32 +198,32 @@ static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
     int ret ;
 
     // initiate conversion
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     UT_delay(10) ;
 
     /* Is it done? */
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_send_data( status, 2 ) || BUS_readin_data(&s , 1 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Is it done, now? */
     if ( s & 0x08 ) {
         UT_delay(10) ;
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_send_data( status, 2 ) || BUS_readin_data(&s , 1 ) || (s&0x08) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return 1 ;
     }
 
     /* Read it in */
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_send_data( volts , 2 ) || BUS_readin_data( v , 2 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     *V = .01 * (FLOAT)( ( ((int)v[1]) <<8 )|v[0] ) ;

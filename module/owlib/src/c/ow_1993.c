@@ -124,23 +124,23 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     int ret ;
 
     /* Copy to scratchpad */
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,3) || BUS_send_data(data,size) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     p[0] = 0xAA ;
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+size) || memcmp(&p[4], data, (size_t) size) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x55 ;
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,4) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     UT_delay(32) ;
@@ -151,9 +151,9 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
     unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p, 3) || BUS_readin_data( data, (int) size) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     return ret ;
     
 }

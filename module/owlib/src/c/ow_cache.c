@@ -10,390 +10,515 @@ $Id$
 */
 
 // 8/18/2004 -- applied Serg Oskin's correction
-
+// 8/20/2004 -- changed everything, specifically no longer using db, tsearch instead!
 #include "owfs_config.h"
 #include "ow.h"
 
 #ifdef OW_CACHE
 #include <limits.h>
-#include <db.h>
+#ifndef __USE_GNU
+ #define __USE_GNU
+ #include <search.h>
+ #undef __USE_GNU
+#else /* __USE_GNU */
+ #include <search.h>
+#endif /* __USE_GNU */
 
-int Cache_Add_common( const char * const k, const size_t ksize, const void * data, const size_t dsize, const enum ft_change change );
-int Cache_Get_common( const char * const k, const size_t ksize, void * data, size_t * dsize, const enum ft_change change );
-int Cache_Del_common( const char * const k, const size_t ksize );
-
-
-/* Defines for db->open */
-/* Berkeley DB changed the format for version 4.1+, adding a "transaction parameter" */
-#if   ( (DB_VERSION_MAJOR > 3) && (DB_VERSION_MINOR > 0) ) || (DB_VERSION_MAJOR > 4)
-    #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,NULL,DB_HASH,DB_CREATE|DB_THREAD,0)
-#else /* DB41 */
-    #define DBOPEN(DBASE)    DBASE->open(DBASE,NULL,NULL,DB_HASH,DB_CREATE|DB_THREAD,0)
-#endif /* DB41 */
-
-static DB * dbstore = NULL ;
-
-/* Flipping cache databases, some parameters to determine when to flip */
-#define ADDS_TILL_OLDTIME (100) /* transactions before flip */
-#define CACHEPATHLENGTH  (2)
-
+/* Put the globals into a struct to declutter the namespace */
 static struct {
-    DB * new_db ; // current cache database
-    DB * old_db ; // older cache database
-    int old_is ; // does old exist
+    void * new_db ; // current cache database
+    void * old_db ; // older cache database
+    void * store  ; // persistent database
     time_t retired ; // start time of older
     time_t killed ; // deathtime of older
     time_t lifespan ; // lifetime of older
     unsigned int added ; // items added
 } cache ;
 
-time_t TimeOut( enum ft_change ftc ) {
-    switch( ftc ) {
+struct tree_key {
+    unsigned char sn[8] ;
+    union {
+        struct filetype * ft ;
+        char * nm ;
+    } p ;
+    int extension ;
+} ;
+
+struct tree_node {
+    struct tree_key tk ;
+    time_t expires ;
+    int dsize ;
+} ;
+
+/* Bad bad C library */
+/* implementation of tfind, tsearch returns an opaque structure */
+/* you have to know that the first element is a pointer to your data */
+struct tree_opaque {
+    struct tree_node * key ;
+    void * other ;
+} ;
+
+#define TREE_DATA(tn)	( (unsigned char *)(tn) + sizeof(struct tree_node) )
+
+static int Cache_Add_Common( struct tree_node * const tn ) ;
+static int Cache_Add_Store( struct tree_node * const tn ) ;
+static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) ;
+static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) ;
+static int Cache_Del_Common( const struct tree_node * tn ) ;
+static int Cache_Del_Store( const struct tree_node * tn ) ;
+static int tree_compare( const void * a , const void * b ) ;
+static time_t TimeOut( const enum ft_change change ) ;
+
+static int tree_compare( const void * a , const void * b ) {
+    return memcmp( &((const struct tree_node *)a)->tk , &((const struct tree_node *)b)->tk , sizeof(struct tree_key) ) ;
+}
+
+static time_t TimeOut( const enum ft_change change ) {
+    switch( change ) {
     case ft_second:
+    case ft_persistent : /* arbitrary non-zero */
         return 1 ;
     case ft_volatile:
+    case ft_Avolatile:
         return timeout ;
     case ft_stable:
+    case ft_Astable:
         return timeout_slow;
     default: /* static or statistic */
         return 0 ;
     }
 }
 
+/* debug routine -- shows a table */
+/* Run it as twalk(dababase, tree_show ) */
+/*
+static void tree_show( const void *node, const VISIT which, const int depth ) {
+    const struct tree_node * tn = *(struct tree_node * const *) node ;
+    char b[26] ;
+    (void) depth ;
+    if (node) {
+        switch(which){
+        case leaf:
+        case postorder:
+	    if ( tn->tk.extension == -2 ) {
+                printf("Node %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X name=%s length=%d start=%p data=%p expires=%s",
+	        tn->tk.sn[0] ,
+    	        tn->tk.sn[1] ,
+        	tn->tk.sn[2] ,
+        	tn->tk.sn[3] ,
+        	tn->tk.sn[4] ,
+        	tn->tk.sn[5] ,
+        	tn->tk.sn[6] ,
+        	tn->tk.sn[7] ,
+        	tn->tk.p.nm ,
+        	tn->dsize ,
+		tn,TREE_DATA(tn),
+        	ctime_r(&tn->expires,b)
+        	) ;
+	    } else {
+                printf("Node %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X name=%s length=%d start=%p data=%p expires=%s",
+	        tn->tk.sn[0] ,
+    	        tn->tk.sn[1] ,
+        	tn->tk.sn[2] ,
+        	tn->tk.sn[3] ,
+        	tn->tk.sn[4] ,
+        	tn->tk.sn[5] ,
+        	tn->tk.sn[6] ,
+        	tn->tk.sn[7] ,
+        	tn->tk.p.ft->name ,
+        	tn->dsize ,
+		tn,TREE_DATA(tn),
+        	ctime_r(&tn->expires,b)
+        	) ;
+	    }
+	    // fall through
+        default:
+	    break ;
+        }
+    } else {
+        printf("Node empty\n") ;
+    }
+}
+*/
+
 char * Cache_Version( void ) {
-    return db_version( NULL, NULL, NULL ) ;
+    return "intrinsic tree routines" ;
 }
 
     /* DB cache creation code */
     /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open( void ) {
-    if ( db_create( &cache.new_db, NULL, 0 ) || DBOPEN(cache.new_db) ) {
-        syslog( LOG_WARNING, "Cannot create first database table for caching, error=%s, will proceed uncached.",db_strerror(errno) );
-    } else { /* Cache ok */
-        cacheavailable = 1 ;
-        if ( db_create( &cache.old_db, NULL, 0 ) || DBOPEN(cache.old_db) ) {
-            syslog( LOG_WARNING, "Cannot create second database table for caching, error=%s, will proceed with unpruned cache.",db_strerror(errno) ) ;
-        } else { /* Old ok */
-            cache.old_is = 0 ; // not yet in use
-            cache.lifespan = TimeOut( ft_stable ) ;
-            if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
-        }
-    }
-
-    if ( db_create( &dbstore, NULL, 0 ) || DBOPEN(dbstore) ) {
-        syslog( LOG_WARNING, "Cannot create database table for storage, error=%s, will proceed unstored.",db_strerror(errno) ) ;
-    }
+    cache.new_db = NULL ;
+    cache.old_db = NULL ;
+    cache.store  = NULL ;
+    cacheavailable = 1 ;
+    cache.lifespan = TimeOut( ft_stable ) ;
+    if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
+    cache.retired = time(NULL) ;
+    cache.killed = cache.retired+cache.lifespan ;
 }
 
     /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Close( void ) {
-   if ( cache.new_db ) {
-        cache.new_db->close( cache.new_db, DB_NOSYNC ) ;
-        cache.new_db = NULL ;
+    tdestroy( cache.new_db , free ) ;
+    tdestroy( cache.old_db , free ) ;
+    tdestroy( cache.store  , free ) ;
+}
+
+/* Add an item to the cache */
+/* return 0 if good, 1 if not */
+int Cache_Add( const void * data, const size_t datasize, const struct parsedname * const pn ) {
+    if ( pn ) { // do check here to avoid needless processing
+        time_t duration = TimeOut( pn->ft->change ) ;
+        if ( duration > 0 ) {
+            struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + datasize ) ;
+            if ( tn ) {
+                memcpy( tn->tk.sn , pn->sn , 8 ) ;
+                tn->tk.p.ft = pn->ft ;
+                tn->tk.extension = pn->extension ;
+                tn->expires = duration + time(NULL) ;
+                tn->dsize = datasize ;
+                memcpy( TREE_DATA(tn) , data , datasize ) ;
+//printf("ADD EXTERNAL name= %s (%d) size=%d \n",tn->tk.p.ft->name,tn->tk.extension,tn->dsize);
+                switch (pn->ft->change) {
+                case ft_persistent:
+                    return Cache_Add_Store( tn ) ;
+                default:
+                    return Cache_Add_Common( tn ) ;
+                }
+            }
+            return -ENOMEM ;
+        }
     }
-   if ( cache.old_db ) {
-        cache.old_db->close( cache.old_db, DB_NOSYNC ) ;
-        cache.old_db = NULL ;
+    return 0 ;
+}
+
+/* Add an item to the cache */
+/* return 0 if good, 1 if not */
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) {
+    if ( pn ) { // do check here to avoid needless processing
+        time_t duration = TimeOut( ip->change ) ;
+        if ( duration > 0 ) {
+            struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + datasize ) ;
+            if ( tn ) {
+                memcpy( tn->tk.sn , pn->sn , 8 ) ;
+                tn->tk.p.nm = ip->name ;
+                tn->tk.extension = -2 ;
+                tn->expires = duration + time(NULL) ;
+                tn->dsize = datasize ;
+                memcpy( TREE_DATA(tn) , data , datasize ) ;
+//printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
+                switch (ip->change) {
+                case ft_persistent:
+                    return Cache_Add_Store( tn ) ;
+                default:
+                    return Cache_Add_Common( tn ) ;
+                }
+            }
+            return -ENOMEM ;
+        }
     }
-   if ( dbstore ) {
-        dbstore->close( dbstore, DB_NOSYNC ) ;
-        dbstore = NULL ;
-    }
+    return 0 ;
 }
 
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
-int Cache_Add( const struct parsedname * const pn, const void * data, const size_t datasize ) {
-    if ( cache.new_db && pn ) { // do check here to avoid needless processing
-        unsigned int l = strlen( pn->ft->name ) ;
-        char k[8+l] ;
-        /* Key is serialnumber and name */
-        memcpy( k , pn->sn , 8 ) ;
-        memcpy( &k[8], pn->ft->name , l ) ;
-        return Cache_Add_common( k, 8+l, data, datasize, pn->ft->change ) ;
-    }
-    return 1 ;
-}
-
-/* Add an item to the cache */
-/* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
-/* return 0 if good, 1 if not */
-int Cache_Add_Internal( const struct parsedname * const pn, const char * const name, const void * data, const size_t datasize ) {
-    if ( cache.new_db && pn ) { // do check here to avoid needless processing
-        char k[8+4] ;
-        /* Key is serialnumber and name */
-        memcpy( k , pn->sn , 8 ) ;
-        k[8] = 0xFF ; // invalid char for ral filename
-        memcpy( &k[9], name , 3 ) ; // use only first 3 chars
-        return Cache_Add_common( k, 8+4, data, datasize, ft_stable ) ;
-    }
-    return 1 ;
-}
-
-/* Add an item to the cache */
-/* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
-/* Already tested for existence of cache.new_db */
-/* return 0 if good, 1 if not */
-int Cache_Add_common( const char * const k, const size_t ksize, const void * data, const size_t dsize, const enum ft_change change ) {
-    DBT key, val ;
-    time_t duration = TimeOut( change ) ;
-    size_t vsize = dsize+sizeof(time_t) ;
-    unsigned char v[vsize] ;
-    unsigned int discards ;
-
-    if ( duration == 0 ) return 0 ; /* Uncached parameter */
-//printf("CacheAdd test add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
+static int Cache_Add_Common( struct tree_node * const tn ) {
+    struct tree_opaque * opaque ;
+    enum { no_add, yes_add, just_update } state = no_add ;
+    void * flip = NULL ;
     CACHELOCK
-        if ( cache.old_db ) {
-            if ( cache.old_is ) {
-                if  (cache.killed < time(NULL) ) cache.old_is = 0 ; /* oldcache completely timed out */
-            } else if ( ++cache.added>ADDS_TILL_OLDTIME
-#if DB_VERSION_MAJOR >= 4
-			    && cache.old_db->truncate(cache.old_db,NULL,&discards,0)==0
-#endif
-			    ) {
-    //printf("CacheAdd flipping add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
-                /* Flip caches! old = new. New truncated, reset time and counters and flag */
-                DB * swap = cache.old_db ;
-                cache.old_db  = cache.new_db ;
-                cache.new_db = swap ;
-                cache.added = 0 ;
-                cache.old_is = 1 ;
-                cache.retired = time(NULL) ;
-                cache.killed = cache.retired + cache.lifespan ;
-                STATLOCK
-                    ++ cache_flips ; /* statistics */
-                STATUNLOCK
-    //printf("CacheAdd flipped add_till=%d cache.old_is=%d\n",add_till,cache.old_is);
+        if  (cache.killed < time(NULL) ) { // old database has timed out
+	    flip = cache.old_db ;
+            /* Flip caches! old = new. New truncated, reset time and counters and flag */
+            cache.old_db  = cache.new_db ;
+            cache.new_db = NULL ;
+            cache.added = 0 ;
+            cache.retired = time(NULL) ;
+            cache.killed = cache.retired + cache.lifespan ;
+        }
+        if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
+//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
+	    if ( tn!=opaque->key ) {
+	        free(opaque->key);
+	        opaque->key = tn ;
+		state = just_update ;
+	    } else {
+		state = yes_add ;
+	    }
+	} else { // nothing found or added?!? free our memory segment
+	    free(tn) ;
+	}
+    CACHEUNLOCK
+    /* flipped old database is now out of circulation -- can be destroyed without a lock */
+    if ( flip ) {
+        tdestroy( flip, free ) ;
+        STATLOCK
+            ++ cache_flips ; /* statistics */
+	    memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
+	    AVERAGE_CLEAR(&old_avg)
+        STATUNLOCK
+//printf("FLIP points to: %p\n",flip);
+    }
+    /* Added or updated, update statistics */
+    switch (state) {
+    case yes_add:
+	STATLOCK
+	    AVERAGE_IN(&new_avg)
+    	    ++ cache_adds ; /* statistics */
+	STATUNLOCK
+	return 0 ;
+    case just_update:
+	STATLOCK
+	    AVERAGE_MARK(&new_avg)
+    	    ++ cache_adds ; /* statistics */
+	STATUNLOCK
+	return 0 ;
+    default:
+	return 1 ;
+    }
+}
+
+/* Add an item to the cache */
+/* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
+/* return 0 if good, 1 if not */
+static int Cache_Add_Store( struct tree_node * const tn ) {
+    struct tree_opaque * opaque ;
+    enum { no_add, yes_add, just_update } state = no_add ;
+    STORELOCK
+        if ( (opaque=tfind( tn , &cache.store, tree_compare ) ) ) {
+            tdelete( opaque->key, &cache.store, tree_compare ) ;
+            free( opaque->key ) ;
+        }
+        opaque = tsearch( (void *)tn, &cache.store, tree_compare ) ;
+        if ( (opaque=tsearch(tn,&cache.store,tree_compare)) ) {
+	    if ( tn!=opaque->key ) {
+	        free(opaque->key);
+	        opaque->key = tn ;
+		state = just_update ;
+	    } else {
+		state = yes_add ;
+	    }
+	} else { // Problem adding node, so free the memory
+	    free(tn) ;
+	}
+    STOREUNLOCK
+    switch (state) {
+    case yes_add:
+	STATLOCK
+	    AVERAGE_IN(&store_avg)
+	STATUNLOCK
+	return 0 ;
+    case just_update:
+	STATLOCK
+	    AVERAGE_MARK(&store_avg)
+	STATUNLOCK
+	return 0 ;
+    default:
+	return 1 ;
+    }
+}
+
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+int Cache_Get( void * data, size_t * dsize, const struct parsedname * const pn ) {
+    if ( pn ) { // do check here to avoid needless processing
+        time_t duration = TimeOut( pn->ft->change ) ;
+        if ( duration > 0 ) {
+            struct tree_node tn  ;
+            memcpy( tn.tk.sn , pn->sn , 8 ) ;
+            tn.tk.p.ft = pn->ft ;
+            tn.tk.extension = pn->extension ;
+            switch(pn->ft->change) {
+            case ft_persistent:
+                return Cache_Get_Store(data,dsize,duration,&tn) ;
+            default:
+                return Cache_Get_Common(data,dsize,duration,&tn) ;
             }
         }
-    CACHEUNLOCK
-    /* Key is serialnumber and name */
-    memset( &key, 0, sizeof(key) ) ;
-    key.size = ksize ;
-    key.data = k ;
-
-    memset( &val, 0, sizeof(val) ) ;
-    duration += time(NULL) ;
-//printf("ADD path=%s, size=%d, data=%s, time=%s\n",path,size,data,ctime(&to)) ;
-    memcpy(v,&duration,sizeof(time_t)) ;
-    memcpy(v+sizeof(time_t),data,dsize );
-    val.size=vsize ;
-    val.data = v ;
-    STATLOCK
-        ++ cache_adds ; /* statistics */
-    STATUNLOCK
-    return cache.new_db->put(cache.new_db,NULL,&key,&val,0) ;
-}
-
-/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get( const struct parsedname * const pn, void * data, size_t * dsize ) {
-    if ( cache.new_db && pn ) {
-        unsigned int l = strlen( pn->ft->name ) ;
-        char k[8+l] ;
-        memcpy( k , pn->sn , 8 ) ;
-        memcpy( &k[8], pn->ft->name , l ) ;
-        return Cache_Get_common( k, 8+l, data, dsize, pn->ft->change ) ;
     }
     return 1 ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Internal( const struct parsedname * const pn, const char * const name, void * data, size_t * dsize ) {
-    if ( cache.new_db && pn ) {
-        char k[8+4] ;
-        memcpy( k , pn->sn , 8 ) ;
-        k[8] = 0xFF ;
-        memcpy( &k[9], name , 3 ) ;
-        return Cache_Get_common( k, 8+4, data, dsize, ft_stable ) ;
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) {
+    if ( pn ) { // do check here to avoid needless processing
+        time_t duration = TimeOut( ip->change ) ;
+        if ( duration > 0 ) {
+            struct tree_node tn  ;
+            memcpy( tn.tk.sn , pn->sn , 8 ) ;
+            tn.tk.p.nm = ip->name ;
+            tn.tk.extension = -2 ;
+            switch(ip->change) {
+            case ft_persistent:
+                return Cache_Get_Store(data,dsize,duration,&tn) ;
+            default:
+                return Cache_Get_Common(data,dsize,duration,&tn) ;
+            }
+        }
     }
     return 1 ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-/* Already tested for existence of cache.new_db */
-int Cache_Get_common( const char * const k, const size_t ksize, void * data, size_t * dsize, const enum ft_change change ) {
-    DBT key, val ;
-    size_t s ;
-    time_t duration = TimeOut(change) ;
-//printf("GET path=%s size=%d ft_change=%d\n",path,(int)(*size),change);
-    if ( duration == 0 ) return 1 ; /* uncached item */
+static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) {
+    int ret = 1 ;
+    time_t now = time(NULL) ;
+    struct tree_opaque * opaque ;
+//printf("CACHE GET 1\n");
     STATLOCK
         ++ cache_tries ; /* statistics */
     STATUNLOCK
-    memset( &key, 0, sizeof(key) ) ;
-    memset( &val, 0, sizeof(val) ) ;
-    key.size = ksize ;
-    key.data = k ;
     CACHELOCK
-        if ( cache.old_is && (cache.killed < time(NULL)) ) {
-            cache.old_is = 0 ; /* oldcache completely timed out */
-        }
-    CACHEUNLOCK
-//printf("GET about to get new\n") ;
-    if ( cache.new_db->get(cache.new_db,NULL,&key,&val,0) ) { /* look in newcache */
-//printf("GET about to get old 1\n") ;
-        if ( cache.old_is && (cache.retired + duration > time(NULL)) ) { /* can we look in oldcache */
-//printf("GET about to get old 2\n") ;
-            if ( cache.old_db->get(cache.old_db,NULL,&key,&val,0) ) {
+        if ( (opaque=tfind(tn,&cache.new_db,tree_compare)) 
+	     || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) ) 
+	   ) {
+//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
+            if ( opaque->key->expires >= now ) {
+//printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
+                if ( *dsize >= opaque->key->dsize ) {
+//printf("CACHE GET 4\n");
+                        *dsize = opaque->key->dsize ;
+//printf("CACHE GET 4a\n");
+//tree_show(opaque,leaf,0);
+//printf("CACHE GET 5 size=%d\n",*dsize);
+                        memcpy( data , TREE_DATA(opaque->key) , *dsize ) ;
+//printf("CACHE GET 6\n");
+                        ret = 0 ;
+                        STATLOCK
+                            ++ cache_hits ; /* statistics */
+                        STATUNLOCK
+//printf("CACHE GOT\n");
+//twalk(cache.new_db,tree_show) ;
+                }
+            } else {
+//char b[26];
+//printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
+//printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
                 STATLOCK
-                    ++ cache_misses ; /* statistics */
+                    ++ cache_expired ; /* statistics */
                 STATUNLOCK
-                return 1 ; /* found in oldcache? */
             }
         } else {
             STATLOCK
                 ++ cache_misses ; /* statistics */
             STATUNLOCK
-            return 1 ; /* Old cache shouldnt be searched */
         }
-    }
-//printf("GOT \n") ;
-    memcpy(&duration, val.data, sizeof(time_t)) ;
-//printf("GOT expire=%s\n",ctime(&to)) ;
-    if ( duration <= time(NULL) ) {
-        STATLOCK
-            ++ cache_expired ; /* statistics */
-        STATUNLOCK
-        return 1 ; /* check time of item */
-    }
-//printf("GOT unexpired\n") ;
-    s = val.size - sizeof(time_t) ;
-    if ( s>= *dsize ) return -EMSGSIZE ; /* buffer too small */
-    *dsize = s ;
-    memcpy(data,val.data+sizeof(time_t), s );
-    STATLOCK
-        ++ cache_hits ; /* statistics */
-    STATUNLOCK
-    return 0 ;
+    CACHEUNLOCK
+    return ret ;
+}
+
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) {
+    struct tree_opaque * opaque ;
+    int ret = 1 ;
+    (void) duration ;
+    STORELOCK
+        if ( (opaque=tfind(tn,&cache.store,tree_compare)) ) {
+            if ( *dsize >= opaque->key->dsize ) {
+                    *dsize = opaque->key->dsize ;
+                    memcpy( data, TREE_DATA(opaque->key), *dsize ) ;
+                    ret = 0 ;
+            }
+        }
+    STOREUNLOCK
+    return ret ;
 }
 
 int Cache_Del( const struct parsedname * const pn ) {
-    if ( cache.new_db && pn ) {
-        unsigned int l = strlen( pn->ft->name ) ;
-        char k[8+l] ;
-        memcpy( k , pn->sn , 8 ) ;
-        memcpy( &k[8], pn->ft->name , l ) ;
-        return Cache_Del_common( k, 8+l ) ;
+    if ( pn ) { // do check here to avoid needless processing
+        time_t duration = TimeOut( pn->ft->change ) ;
+        if ( duration > 0 ) {
+            struct tree_node tn  ;
+            memcpy( tn.tk.sn , pn->sn , 8 ) ;
+            tn.tk.p.ft = pn->ft ;
+            tn.tk.extension = pn->extension ;
+            switch(pn->ft->change) {
+            case ft_persistent:
+                return Cache_Del_Store(&tn) ;
+            default:
+                return Cache_Del_Common(&tn) ;
+            }
+        }
     }
     return 1 ;
 }
 
-int Cache_Del_Internal( const struct parsedname * const pn, const char * const name) {
-    if ( cache.new_db && pn ) {
-        char k[8+4] ;
-        memcpy( k , pn->sn , 8 ) ;
-        k[8] = 0xFF ;
-        memcpy( &k[9], name , 3 ) ;
-        return Cache_Del_common( k, 8+4 ) ;
+int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) {
+    if ( pn ) { // do check here to avoid needless processing
+        time_t duration = TimeOut( ip->change ) ;
+        if ( duration > 0 ) {
+            struct tree_node tn  ;
+            memcpy( tn.tk.sn , pn->sn , 8 ) ;
+            tn.tk.p.nm = ip->name ;
+            tn.tk.extension = 0 ;
+            switch(ip->change) {
+            case ft_persistent:
+                return Cache_Del_Store(&tn) ;
+            default:
+                return Cache_Del_Common(&tn) ;
+            }
+        }
     }
     return 1 ;
 }
 
-int Cache_Del_common( const char * const k, const size_t ksize ) {
-    DBT key ;
-
-    STATLOCK
-        ++ cache_dels ; /* statistics */
-    STATUNLOCK
-    memset( &key, 0, sizeof(key) ) ;
-    key.size = ksize ;
-    key.data = k ;
-    if ( cache.old_is ) cache.old_db->del(cache.old_db,NULL,&key,0) ;
-    return cache.new_db->del(cache.new_db,NULL,&key,0) ;
+static int Cache_Del_Common( const struct tree_node * tn ) {
+    struct tree_opaque * opaque ;
+    time_t now = time(NULL) ;
+    int ret = 1 ;
+    CACHELOCK
+        if ( (opaque=tfind( tn, &cache.new_db, tree_compare )) 
+	     || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )
+	   ) {
+	    opaque->key->expires = now - 1 ;
+	    ret = 0 ;
+            STATLOCK
+                ++ cache_dels ; /* statistics */
+            STATUNLOCK
+        }
+    CACHEUNLOCK
+    return ret ;
 }
 
-/* Add a persistent entry -- no time signature */
-int Storage_Add( const char * path, const size_t size, const void * data ) {
-    if ( dbstore ) {
-        DBT key, val ;
-//int * d = data ;
-
-        memset( &key, 0, sizeof(key) ) ;
-        key.size = strlen(path) ;
-        key.data = path ;
-//printf("STORAGE_ADD key=%s, val=%d %d %d %d\n",path, d[0],d[1],d[2],d[3] ) ;
-
-        memset( &val, 0, sizeof(val) ) ;
-        val.size=size ;
-        val.data = data ;
-        return dbstore->put(dbstore,NULL,&key,&val,0) ;
-//{
-//int r = dbstore->put(dbstore,NULL,&key,&val,0) ;
-//printf("STORAGE ADD = %d error=%s\n",r,db_strerror(r)) ;
-//return r ;
-//}
-    }
-    return 1 ;
-}
-
-int Storage_Get( const char * path, size_t *size, void * data ) {
-    if ( dbstore ) {
-        DBT key, val ;
-//int * d ;
-        memset( &key, 0, sizeof(key) ) ;
-        key.size = strlen(path) ;
-        key.data = path ;
-//printf("STORAGE preget key=%s\n",key.data);
-
-        memset( &val, 0, sizeof(val) ) ;
-        if ( dbstore->get(dbstore,NULL,&key,&val,0) ) return 1 ;
-//{
-//int r = dbstore->get(dbstore,NULL,&key,&val,0) ;
-//printf("STORAGE GET = %d error=%s\n",r,db_strerror(r)) ;
-//if (r) return 1 ;
-//}
-//d = val.data ;
-//printf("STORAGE_GET key=%s, val=%d %d %d %d\n",path, d[0],d[1],d[2],d[3] ) ;
-        if ( val.size > *size ) return 1 ;
-        *size = val.size ;
-        memcpy(data,val.data, *size );
-        return 0 ;
-    }
-    return 1 ;
-}
-
-int Storage_Del( const char * path ) {
-    if ( dbstore ) {
-        DBT key ;
-        memset( &key, 0, sizeof(key) ) ;
-        key.size = strlen(path) ;
-        key.data = (char *) path ;
-        return dbstore->del(dbstore,NULL,&key,0) ;
+static int Cache_Del_Store( const struct tree_node * tn ) {
+    struct tree_opaque * opaque ;
+    struct tree_node * tn_found = NULL ;
+    STORELOCK
+        if ( (opaque = tfind( tn , &cache.store, tree_compare )) ) {
+	    tn_found = opaque->key ;
+            tdelete( tn , &cache.store , tree_compare ) ;
+        }
+    STOREUNLOCK
+    if ( tn_found ) {
+	free(tn_found) ;
+	STATLOCK
+	    AVERAGE_OUT(&store_avg)
+	STATUNLOCK
+	return 0 ;
     }
     return 1 ;
 }
 
 #else /* OW_CACHE is unset */
 
-char * Cache_Version( void )
+void Cache_Open( void ) 
+    {}
+void Cache_Close( void ) 
+    {}
+char * Cache_Version( void ) 
     { return ""; }
-void Cache_Open( void )
-    {}
-void Cache_Close( void )
-    {}
-
-int Cache_Add(          const struct parsedname * const pn,                          const void * data, const size_t datasize )
+int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) 
     { return 1; }
-int Cache_Add_Internal( const struct parsedname * const pn, const char * const name, const void * data, const size_t datasize )
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) 
     { return 1; }
-
-int Cache_Get(          const struct parsedname * const pn,                                void * data,       size_t * dsize )
+int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn ) 
     { return 1; }
-int Cache_Get_Internal( const struct parsedname * const pn, const char * const name,       void * data,       size_t * dsize )
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) 
     { return 1; }
-
-int Cache_Del(          const struct parsedname * const pn                                                                   )
+int Cache_Del(          const struct parsedname * const pn                                                                   ) 
     { return 1; }
-int Cache_Del_Internal( const struct parsedname * const pn, const char * const name                                          )
-    { return 1; }
-
-int Storage_Add( const char * path, const size_t size, const void * data )
-    { return 1; }
-int Storage_Get( const char * path, size_t *size, void * data )
-    { return 1; }
-int Storage_Del( const char * path )
+int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) 
     { return 1; }
 
 #endif /* OW_CACHE */

@@ -85,9 +85,9 @@ int CheckPresence( const struct parsedname * const pn ) {
     int ret ;
     switch ( pn->dev->type ) {
     case dev_1wire:
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_normalverify(pn) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         return ret ;
     case dev_interface:
         switch ( Adapter ) {

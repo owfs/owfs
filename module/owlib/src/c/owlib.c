@@ -110,6 +110,9 @@ unsigned int cache_flips = 0 ;
 unsigned int cache_dels = 0 ;
 unsigned int cache_adds = 0 ;
 unsigned int cache_expired = 0 ;
+struct average old_avg = {0L,0L,0L,0L,} ;
+struct average new_avg = {0L,0L,0L,0L,} ;
+struct average store_avg = {0L,0L,0L,0L,} ;
 
 unsigned int read_calls = 0 ;
 unsigned int read_cache = 0 ;

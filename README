@@ -1,27 +1,37 @@
 $Id$
 
-This is owfs, part of OWFS project -- 1-Wire Filesystem for Linux.
-This modlue provieds the frontend for the owlib and fuse library,
-implementing a user-space filesystem, with appropriate ties
-into system calls.
+See OWFS (http://owfs.sourceforge.net).
 
-Basically, fuse (http://avf.sourceforge.net) exposes filesysstem calls
+This is OWFS -- the one-wire filesystem.
+1-Wire is a data protocol stat allows simple connections to
+clever chips. The chips are uniquely addressed, and have a
+variety of types, including temperature and voltage sensors,
+switches, memory and clocks.
+
+The base functionality is in the owlib library. It includes adapter
+interface, chip interface, caching, statistics, inumeration and
+command line processing.
+
+owfs is the filesystem portion of the package. It depends on fuse:
+Basically, fuse (http://avf.sourceforge.net) exposes filesystem calls
 in the appropriate directory to this program. This program then
 calls owlib to query and modify the 1-wire bus.
 
-See OWFS (http://owfs.sourceforge.net).
-
-Fully functional, though development is ongoing.
+owhttpd is a simple webserver exposing owlib. It does not need a kernel
+module and will probably run on a greater platform variety.
 
 Your contribution is welcome.
 
 ---
 
-You will need to get, build and install the 'owlib' module from the same
-location you've obtained this module in order to be able to build this
-module. As an alternative, you may try to get the RPM modules (owfs-libs and
-owfs) from SourceForge download site, here:
-
-	http://sourceforge.net/project/showfiles.php?group_id=85502
-
---vt
+If you pulled from the cvs:
+  ./bootstrap
+  make install
+  /opt/owfs/bin/owfs -d /dev/ttyS0 /mnt/1wire (for example)
+  
+If you downloaded the source package:
+  ./configure
+  make install
+  /opt/owfs/bin/owfs -d /dev/ttyS0 /mnt/1wire (for example)
+  
+  

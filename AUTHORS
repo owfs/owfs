@@ -1,4 +1,5 @@
 $Id$
 
 Paul H Allfille:	Concept and original work
-Vadim Tkachenko:	Module split, build infrastructure
+Vadim Tkachenko:	Module split, build infrastructure, configuration
+Geo Carncross:          Configuration work

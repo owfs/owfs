@@ -46,6 +46,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->dev = NULL ; /* No Device */
     pn->ft = NULL ; /* No filetypes */
     pn->subdir = NULL ; /* Not subdirectory */
+    memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     if ( path[0] != '/' ) return -ENOENT ;
 
@@ -367,11 +368,4 @@ static int BranchAdd( struct parsedname * const pn ) {
     pn->ft = NULL ;
     pn->dev = NULL ;
     return 0 ;
-}
-
-int Add_Brother_To_Cache( const char * const name, const void * const data, const size_t datasize, const struct parsedname * const pn ) {
-    struct parsedname pn2 ;
-    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
-    pn2.subdir = NULL ;
-    return FilePart( name, NULL, &pn2 ) || Cache_Add( &pn2, data, datasize ) ;
 }

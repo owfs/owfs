@@ -250,10 +250,11 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
     char file[33] ;
     char * subdir ;
     char fullpath[PATH_MAX+1] ;
-    int suglen = FileLength(pn) + 1 ;
-    char buf[suglen] ;
+    int suglen = FileLength(pn) ;
+    char buf[suglen+1] ;
     int canwrite = !readonly && pn->ft->write.v ;
-
+    
+    buf[suglen] = '\0' ;
     /* Construct filename with extension */
     if ( pn->ft->ag == NULL ) {
         snprintf( file , PATH_MAX, "%s",pn->ft->name) ;

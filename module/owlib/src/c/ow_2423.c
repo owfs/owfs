@@ -73,6 +73,9 @@ struct filetype DS2423[] = {
 } ;
 DeviceEntry( 1D, DS2423 )
 
+/* Persistent storage */
+static struct internal_prop ip_cum = { "CUM", ft_persistent } ;
+
 /* ------- Functions ------------ */
 
 /* DS2423 */
@@ -117,13 +120,9 @@ static int FS_pagecount(unsigned int * u , const struct parsedname * pn) {
 static int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
     int s = 3*sizeof(unsigned int) ;
     unsigned int st[3], ct[2] ; // stored and current counter values
-    char key[] = {
-                pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
-                '/',      'c',      'u',      'm',       '\0',
-                } ;
 
     if ( OW_counter( &ct[0] , 0,  pn ) || OW_counter( &ct[1] , 1,  pn ) ) return -EINVAL ; // current counters
-    if ( Storage_Get( key, &s, (void *) st ) ) { // record doesn't (yet) exist
+    if ( Cache_Get_Internal( (void *) st, &s, &ip_cum, pn ) ) { // record doesn't (yet) exist
         st[2] = ct[0]<ct[1] ? ct[0] : ct[1] ;
     } else {
         unsigned int d0 = ct[0] - st[0] ; //delta counter.A
@@ -133,19 +132,15 @@ static int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
     st[0] = ct[0] ;
     st[1] = ct[1] ;
     u[0] = st[2] ;
-    return Storage_Add( key, s, (void *) st ) ? -EINVAL  : 0 ;
+    return Cache_Add_Internal( (void *) st, s, &ip_cum, pn ) ? -EINVAL  : 0 ;
 }
 
 static int FS_w_mincount(const unsigned int * u , const struct parsedname * pn ) {
     unsigned int st[3] ; // stored and current counter values
-    char key[] = {
-                pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
-                '/',      'c',      'u',      'm',       '\0',
-                } ;
 
     if ( OW_counter( &st[0] , 0,  pn ) || OW_counter( &st[1] , 1,  pn ) ) return -EINVAL ;
     st[2] = u[0] ;
-    return Storage_Add( key, 3*sizeof(unsigned int), (void *) st ) ? -EINVAL  : 0 ;
+    return Cache_Add_Internal( (void *) st, 3*sizeof(unsigned int), &ip_cum, pn ) ? -EINVAL  : 0 ;
 }
 #endif /*OW_CACHE*/
 
@@ -156,25 +151,25 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,size+3) ;
         if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2) || CRC16(p,1+2+size+2) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+size) || memcmp( &p[4], data, size) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x5A ;
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,4) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     UT_delay(32) ;
@@ -194,9 +189,9 @@ static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const si
     int ret ;
     size_t rest = 32 - (offset&0x1F) ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(data,3) || BUS_readin_data(&data[3],rest+10) || CRC16(p,rest+13) || data[rest+3] || data[rest+4] || data[rest+5] || data[rest+6];
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     if ( counter ) *counter = (((((((unsigned int) data[rest+10])<<8)|data[rest+9])<<8)|data[rest+8])<<8)|data[rest+7] ;

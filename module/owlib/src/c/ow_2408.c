@@ -155,9 +155,9 @@ static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+8+2] = { 0xF0, 0x88 , 0x00, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 8+2 ) || CRC16(p,3+8+2) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     memcpy( data , &p[3], 6 ) ;
@@ -168,9 +168,9 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
     unsigned char p[] = { 0x5A, data , ~data, 0xFF, 0xFF, } ;
     int ret ;
 //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_sendback_data(p,p,5) || p[3]!=0xAA ;
-    BUS_unlock() ;
+    BUSUNLOCK
 //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
 	/* Ignore byte 5 p[4] the PIO status byte */
     return ret ;
@@ -185,9 +185,9 @@ static int OW_r_latch( unsigned char * data , const struct parsedname * pn ) {
     /* Read registers (before clearing) */
 	if ( OW_r_reg(d,pn) ) return 1 ;
 
-	BUS_lock() ;
+	BUSLOCK
         ret = BUS_select(pn) || BUS_sendback_data( p , p , 2 ) || p[1]!=0xAA ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     *data = d[2] ; /* register 0x8A */
@@ -200,9 +200,9 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
 	unsigned char p[] = { 0xCC, 0x8D, 0x00, data, } ;
     int ret ;
 
-	BUS_lock() ;
+	BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 4 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return -EINVAL ;
 
     /* Read registers */
@@ -217,9 +217,9 @@ static int OW_w_conditional( const unsigned char * data , const struct parsednam
 	unsigned char p[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
     int ret ;
 
-	BUS_lock() ;
+	BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 5 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Read registers */

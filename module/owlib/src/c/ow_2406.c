@@ -196,9 +196,9 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     unsigned char p[3+128+2] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 128+2-offset ) || CRC16(p,3+128+2-offset) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     memcpy( data , &p[3], size ) ;
@@ -211,17 +211,17 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     size_t i ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = (size==0) || BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],2) || CRC16(p,6) || BUS_ProgramPulse() || BUS_readin_data(&resp,1) || (resp&~data[0]) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     for ( i=1 ; i<size ; ++i ) {
         p[3] = data[i] ;
         if ( (++p[1])==0x00 ) ++p[2] ;
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_send_data(&p[1],3) || BUS_readin_data(&p[4],2) || CRC16(&p[1],5) || BUS_ProgramPulse() || BUS_readin_data(&resp,1) || (resp&~data[i]) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return 1 ;
     }
     return 0 ;
@@ -232,9 +232,9 @@ static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0xAA, 0x07 , 0x00, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 1+2 ) || CRC16(p,3+1+2) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     *data = p[3] ;
@@ -246,9 +246,9 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
     unsigned char p[3+1+2] = { 0x55, 0x07 , 0x00, data, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 4 ) || BUS_readin_data( &p[4], 2 ) || CRC16(p,6) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     return ret ;
 }
 
@@ -265,9 +265,9 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
          ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     *data = p[3] ;
@@ -280,9 +280,9 @@ static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
          ret =BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 2+2 ) || CRC16(p,3+2+2) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     return 0 ;

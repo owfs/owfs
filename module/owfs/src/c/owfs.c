@@ -30,6 +30,11 @@ $Id$
 
 #include <fuse.h>
 
+#include "owfs_config.h"
+#include "ow.h"
+#include "owfs.h"
+//#include <mcheck.h>
+
 static void ow_exit( int e ) ;
 static void fuser_mount_wrapper( void ) ;
 void exit_handler(int i) ;
@@ -51,6 +56,7 @@ int main(int argc, char *argv[]) {
     int c ;
 //    int multithreaded = 1;
 
+//    mtrace() ;
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {

@@ -128,16 +128,16 @@ static int OW_discharge( const struct parsedname * const pn ) {
     unsigned char all = 0x66 ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( &dis , 1 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if (ret) return ret ;
 
     UT_delay(100) ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( &all ,1 ) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     return ret ;
 }
 
@@ -148,9 +148,9 @@ static int OW_w_control( const unsigned int data , const struct parsedname * con
     unsigned char info ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         (ret=BUS_select(pn)) || (ret=BUS_send_data(p,2)) || (ret=BUS_readin_data(&info,1)) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if (ret) return ret ;
     /* Check that Info corresponds */
     return (info&0xC0)==r[data] ? 0 : 1 ;
@@ -160,8 +160,8 @@ static int OW_r_control( unsigned char * const data , const struct parsedname * 
     unsigned char p[] = { 0x5A, 0xFF, } ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         (ret=BUS_select(pn)) || (ret=BUS_send_data(p,2)) || (ret=BUS_readin_data(data,1)) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     return ret ;
 }

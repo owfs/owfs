@@ -47,18 +47,19 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
-# our locals :)
-AC_DEFUN([DB_CHECK_COMPILE], [
-AC_TRY_LINK( [
-#include <db.h>	     
-], [
-    DB *q;
-    db_create(&q, (DB_ENV *)NULL, 0);
-], [
-    dbcheck_ok="yes"
-], [
-    dbcheck_ok="no"
-]) ])
+## our locals :)
+#AC_DEFUN([DB_CHECK_COMPILE], [
+#AC_TRY_LINK( [
+##include <db.h>	     
+#], [
+#    DB *q;
+#    db_create(&q, (DB_ENV *)NULL, 0);
+#], [
+#    dbcheck_ok="yes"
+#], [
+#    dbcheck_ok="no"
+#]) ])
+
 # Include libpthread if multithreading is enabled
 #
 # This stream of line noise will hopefully find out the best way to get
@@ -152,61 +153,21 @@ fi
 AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 
 # Check if the cache is enabled.
-
-ENABLE_CACHE=auto
-
-AC_MSG_CHECKING([if 1-Wire cache is enabled])
-
+AC_MSG_CHECKING(if caching is enabled)
+ENABLE_CACHE="true"
 AC_ARG_ENABLE(cache,
-[  --enable-cache          Enable 1-Wire network cache (default auto)],
+[  --enable-cache      Enable caching (default true)],
 [
-
     AC_MSG_RESULT([$enableval])
-
-    if ! test "$enableval" = "yes" ; then
-
+    if test ! "$enableval" = "yes" ; then
         ENABLE_CACHE=false
     fi
 ],
 [
     AC_MSG_RESULT([yes (default)])
 ])
-
 AC_SUBST(ENABLE_CACHE)
 
-# Include libdb if the cache is enabled
-if test "${ENABLE_CACHE}" != "false" ; then
-    ac_cv_libdb_flags=""
-    dbcheck_ok="no"
-    DB_CHECK_COMPILE
-    for lib in -ldb-4 -ldb4 -ldb-3 -ldb3 -ldb; do
-        if test "${dbcheck_ok}" != "yes"; then
-            ac_save="$LDFLAGS"
-            LDFLAGS="$LDFLAGS $lib"
-    	    DB_CHECK_COMPILE
-	    LDFLAGS="$ac_save"
-	    if test "${dbcheck_ok}" = "yes"; then
-                ac_cv_libdb_flags="$lib"
-		break
-	    fi
-	fi
-    done
-    if test "$dbcheck_ok" = "yes"; then
-	ENABLE_CACHE=true
-        AC_SUBST(ENABLE_CACHE)
-	LDFLAGS="$CFLAGS $ac_cv_libdb_flags"
-    else
-        if test "${ENABLE_CACHE}" = "true" ; then
-	    AC_MSG_ERROR([libdb required to enable cache. Try www.sleepycat.com or twiddle CFLAGS and LDFLAGS])
-	else
-            AC_MSG_WARN([libdb not found, cache will be disabled. Try www.sleepycat.com])
-            ENABLE_CACHE=false
-            AC_SUBST(ENABLE_CACHE)
-	fi
-    fi
-fi
-
-AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 
 # Check for USB enabled
 
@@ -230,6 +191,7 @@ AC_ARG_ENABLE(usb,
 ])
 
 AC_SUBST(ENABLE_USB)
+AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 
 # Include libusb if the usb is enabled
 
@@ -349,15 +311,15 @@ AC_STRUCT_TM
 # Checks for library functions.
 
 AC_FUNC_FORK
-AC_FUNC_MALLOC
+#AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_MKTIME
-AC_FUNC_REALLOC
+#AC_FUNC_REALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([gettimeofday memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul])
+AC_CHECK_FUNCS([gettimeofday memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy])
 
 # Process config.h.in
 

@@ -121,8 +121,6 @@ void LockRelease( const struct parsedname * const pn ) {
 void BUS_lock( void ) {
 #ifdef OW_MT
     pthread_mutex_lock( &bus_mutex ) ;
-#else /* OW_MT */
-//    flock( devfd, LOCK_EX) ;
 #endif /* OW_MT */
     gettimeofday( &tv , NULL ) ; /* for statistics */
     ++ bus_locks ; /* statistics */
@@ -143,7 +141,5 @@ void BUS_unlock( void ) {
         ++ bus_unlocks ; /* statistics */
 #ifdef OW_MT
     pthread_mutex_unlock( &bus_mutex ) ;
-#else /* OW_MT */
-//    flock( devfd, LOCK_UN) ;
 #endif /* OW_MT */
 }

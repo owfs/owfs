@@ -60,6 +60,21 @@ struct filetype stats_cache[] = {
     {"additions"       , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_adds       , } ,
     {"deletions"       , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dels       , } ,
     {"expirations"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_expired    , } ,
+    {"primary"         ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"primary/now"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & new_avg.current  , } ,
+    {"primary/sum"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & new_avg.sum      , } ,
+    {"primary/num"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & new_avg.count    , } ,
+    {"primary/max"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & new_avg.max      , } ,
+    {"secondary"       ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"secondary/now"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & old_avg.current  , } ,
+    {"secondary/sum"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & old_avg.sum      , } ,
+    {"secondary/num"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & old_avg.count    , } ,
+    {"secondary/max"   , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & old_avg.max      , } ,
+    {"persistent"      ,  0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"persistent/now"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.current, } ,
+    {"persistent/sum"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.sum    , } ,
+    {"persistent/num"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.count  , } ,
+    {"persistent/max"  , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & store_avg.max    , } ,
 }
  ;
 struct device d_stats_cache = { "stats_cache", "stats_cache", dev_statistic, NFT(stats_cache), stats_cache } ;

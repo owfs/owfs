@@ -58,6 +58,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     size_t s = size ;
     int r ;
 
+//printf("READ path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
     STATLOCK
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
@@ -76,11 +77,11 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
             LockGet(&pn) ;
                 r = FS_real_read( path, buf, size, offset, &pn ) ;
             LockRelease(&pn) ;
-        } else if ( pn.type==pn_uncached || Cache_Get( &pn, buf, &s ) ) {
+        } else if ( pn.type==pn_uncached || Cache_Get( buf, &s, &pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
             LockGet(&pn) ;
                 r = FS_real_read( path, buf, size, offset, &pn ) ;
-                if ( r>= 0 ) Cache_Add( &pn, buf, r ) ;
+                if ( r>= 0 ) Cache_Add( buf, r, &pn ) ;
             LockRelease(&pn) ;
         } else {
     //printf("Read found %s\n",path) ;

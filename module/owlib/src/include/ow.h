@@ -206,153 +206,6 @@ extern unsigned char combuffer[] ;
 #define FLOAT   double
 #define DATE    time_t
 
-/* Prototypes */
-#define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
-#define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
-#define fREAD_FUNCTION( fname )  static int fname(FLOAT *, const struct parsedname * pn)
-#define dREAD_FUNCTION( fname )  static int fname(DATE *, const struct parsedname * pn)
-#define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
-#define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bREAD_FUNCTION( fname )  static int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-
-#define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
-#define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
-#define fWRITE_FUNCTION( fname )  static int fname(const FLOAT *, const struct parsedname * pn)
-#define dWRITE_FUNCTION( fname )  static int fname(const DATE *, const struct parsedname * pn)
-#define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
-#define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bWRITE_FUNCTION( fname )  static int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-
-struct parsedname ;
-struct device ;
-struct filetype ;
-
-/* Prototypes for owlib.c -- libow overall control */
-void LibSetup( void ) ;
-int LibStart( void ) ;
-int ComSetup( const char * busdev ) ;
-int USBSetup( void ) ;
-void LibClose( void ) ;
-
-/* Initial sorting or the device and filetype lists */
-void DeviceSort( void ) ;
-  int devicecmp(const void * code , const void * dev ) ;
-//  int filecmp(const void * name , const void * ex ) ;
-
-/* Pasename processing -- URL/path comprehension */
-int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
-  void FS_ParsedName_destroy( struct parsedname * const pn ) ;
-int Add_Brother_To_Cache( const char * const name, const void * const data, const size_t datasize, const struct parsedname * const pn ) ;
-int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
-int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
-  void FS_parse_dir( char * const dest , const char * const buf ) ;
-  size_t FileLength( const struct parsedname * const pn ) ;
-  size_t FullFileLength( const struct parsedname * const pn ) ;
-int CheckPresence( const struct parsedname * const pn ) ;
-void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
-
-/* Utility functions */
-unsigned char CRC8( const unsigned char * bytes , const int length ) ;
-unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) ;
-  unsigned char CRC8compute( const unsigned char * bytes , const int length  ,const int seed ) ;
-int CRC16( const unsigned char * bytes , const int length ) ;
-int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
-unsigned char char2num( const char * s ) ;
-unsigned char string2num( const char * s ) ;
-char num2char( const unsigned char n ) ;
-void num2string( char * s , const unsigned char n ) ;
-void COM_speed(speed_t new_baud) ;
-void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
-void bytes2string( char * str , const unsigned char * b , const int bytes ) ;
-int UT_getbit(const unsigned char * buf, const int loc) ;
-int UT_get2bit(const unsigned char * buf, const int loc) ;
-void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
-void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
-
-/* Serial port */
-int COM_open( void ) ;
-void COM_flush( void ) ;
-void COM_close( void );
-void COM_break( void ) ;
-
-/* Cache  and Storage functions */
-void Cache_Open( void ) ;
-void Cache_Close( void ) ;
-char * Cache_Version( void ) ;
-int Cache_Add(          const struct parsedname * const pn,                          const void * data, const size_t   dsize ) ;
-int Cache_Add_Internal( const struct parsedname * const pn, const char * const name, const void * data, const size_t   dsize ) ;
-int Cache_Get(          const struct parsedname * const pn,                                void * data,       size_t * dsize ) ;
-int Cache_Get_Internal( const struct parsedname * const pn, const char * const name,       void * data,       size_t * dsize ) ;
-int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
-int Cache_Del_Internal( const struct parsedname * const pn, const char * const name                                          ) ;
-int Storage_Add( const char * path, const size_t size, const void * data ) ;
-int Storage_Get( const char * path, size_t *size, void * data ) ;
-int Storage_Del( const char * path ) ;
-
-void LockSetup( void ) ;
-void LockGet( const struct parsedname * const pn ) ;
-void LockRelease( const struct parsedname * const pn ) ;
-
-/* 1-wire lowlevel */
-void UT_delay(const unsigned int len) ;
-int LI_reset( const struct parsedname * const pn ) ;
-
-/* High-level callback functions */
-int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) ;
-
-int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
-
-int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
-
-int FS_fstat(const char *path, struct stat *stbuf) ;
-
-/* iteration functions for splitting writes to buffers */
-int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
-    size_t pagelen, int (*readfunc)(unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
-int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
-    size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
-
-/* Low-level functions
-    slowly being abstracted and separated from individual
-    interface type details
-*/
-int DS2480_baud( speed_t baud );
-int DS2480_detect( void ) ;
-int DS1410_detect( void ) ;
-int DS9097_detect( void ) ;
-int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
-
-int BUS_select_low(const struct parsedname * const pn) ;
-int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
-int BUS_send_cmd( const unsigned char * const cmd , const int len ) ;
-int BUS_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
-int BUS_send_data( const unsigned char * const data , const int len ) ;
-int BUS_send_and_get( const unsigned char * const send, const size_t sendlength, unsigned char * const get, const size_t getlength ) ;
-int BUS_readin_data( unsigned char * const data , const int len ) ;
-int BUS_alarmverify(const struct parsedname * const pn) ;
-int BUS_normalverify(const struct parsedname * const pn) ;
-
-#define BUS_detect        DS2480_detect
-#define BUS_changebaud    DS2480_changebaud
-#define BUS_reset            (iroutines.reset)
-#define BUS_read             (iroutines.read)
-#define BUS_write            (iroutines.write)
-#define BUS_sendback_data    (iroutines.sendback_data)
-#define BUS_next_both        (iroutines.next_both)
-#define BUS_level            (iroutines.level)
-#define BUS_ProgramPulse     (iroutines.ProgramPulse)
-#define BUS_PowerByte        (iroutines.PowerByte)
-#define BUS_select           (iroutines.select)
-#define BUS_databit       DS2480_databit
-#define BUS_datablock     DS2480_datablock
-
-void BUS_lock( void ) ;
-void BUS_unlock( void ) ;
-
 /* Several different structures:
   device -- one for each type of 1-wire device
   filetype -- one for each type of file
@@ -405,7 +258,10 @@ struct aggregate {
 */
 enum ft_format { ft_directory, ft_subdir, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno, ft_date, } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
-enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, } ;
+enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, ft_persistent, } ;
+
+/* Predeclare parsedname */
+struct parsedname ;
 
 /* filetype gives -file types- for chip properties */
 struct filetype {
@@ -440,6 +296,13 @@ struct filetype {
 
 /* --------- end Filetype -------------------- */
 /* ------------------------------------------- */
+
+/* Internal properties -- used by some devices */
+/* in passing to store stae information        */
+struct internal_prop {
+    char * name ;
+    enum ft_change change ;
+} ;
 
 /* -------------------------------- */
 /* Devices -- types of 1-wire chips */
@@ -614,6 +477,8 @@ struct directory {
 
 #define AVERAGE_IN(pA)  ++(pA)->current; ++(pA)->count; (pA)->sum+=(pA)->current; if ((pA)->current>(pA)->max)++(pA)->max;
 #define AVERAGE_OUT(pA) --(pA)->current;
+#define AVERAGE_MARK(pA)  ++(pA)->count; (pA)->sum+=(pA)->current;
+#define AVERAGE_CLEAR(pA)  (pA)->current=0;
 
 extern unsigned int cache_tries ;
 extern unsigned int cache_hits ;
@@ -622,6 +487,9 @@ extern unsigned int cache_flips ;
 extern unsigned int cache_dels ;
 extern unsigned int cache_adds ;
 extern unsigned int cache_expired ;
+extern struct average new_avg ;
+extern struct average old_avg ;
+extern struct average store_avg ;
 
 extern unsigned int read_calls ;
 extern unsigned int read_cache ;
@@ -670,5 +538,144 @@ extern int USpeed ;
 extern int ProgramAvailable ;
 enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, } ;
 extern enum adapter_type Adapter ;
+
+/* Prototypes */
+#define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
+#define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
+#define fREAD_FUNCTION( fname )  static int fname(FLOAT *, const struct parsedname * pn)
+#define dREAD_FUNCTION( fname )  static int fname(DATE *, const struct parsedname * pn)
+#define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
+#define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define bREAD_FUNCTION( fname )  static int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+
+#define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
+#define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
+#define fWRITE_FUNCTION( fname )  static int fname(const FLOAT *, const struct parsedname * pn)
+#define dWRITE_FUNCTION( fname )  static int fname(const DATE *, const struct parsedname * pn)
+#define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
+#define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define bWRITE_FUNCTION( fname )  static int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+
+/* Prototypes for owlib.c -- libow overall control */
+void LibSetup( void ) ;
+int LibStart( void ) ;
+int ComSetup( const char * busdev ) ;
+int USBSetup( void ) ;
+void LibClose( void ) ;
+
+/* Initial sorting or the device and filetype lists */
+void DeviceSort( void ) ;
+  int devicecmp(const void * code , const void * dev ) ;
+//  int filecmp(const void * name , const void * ex ) ;
+
+/* Pasename processing -- URL/path comprehension */
+int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
+  void FS_ParsedName_destroy( struct parsedname * const pn ) ;
+int NamePart( const char * filename, const char ** next, struct parsedname * pn ) ;
+int FilePart( const char * const filename, const char ** next, struct parsedname * const pn ) ;
+  void FS_parse_dir( char * const dest , const char * const buf ) ;
+  size_t FileLength( const struct parsedname * const pn ) ;
+  size_t FullFileLength( const struct parsedname * const pn ) ;
+int CheckPresence( const struct parsedname * const pn ) ;
+void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
+
+/* Utility functions */
+unsigned char CRC8( const unsigned char * bytes , const int length ) ;
+unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) ;
+  unsigned char CRC8compute( const unsigned char * bytes , const int length  ,const int seed ) ;
+int CRC16( const unsigned char * bytes , const int length ) ;
+int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
+unsigned char char2num( const char * s ) ;
+unsigned char string2num( const char * s ) ;
+char num2char( const unsigned char n ) ;
+void num2string( char * s , const unsigned char n ) ;
+void COM_speed(speed_t new_baud) ;
+void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
+void bytes2string( char * str , const unsigned char * b , const int bytes ) ;
+int UT_getbit(const unsigned char * buf, const int loc) ;
+int UT_get2bit(const unsigned char * buf, const int loc) ;
+void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
+void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
+
+/* Serial port */
+int COM_open( void ) ;
+void COM_flush( void ) ;
+void COM_close( void );
+void COM_break( void ) ;
+
+/* Cache  and Storage functions */
+void Cache_Open( void ) ;
+void Cache_Close( void ) ;
+char * Cache_Version( void ) ;
+int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) ;
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
+int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn ) ;
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
+int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
+int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
+
+void LockSetup( void ) ;
+void LockGet( const struct parsedname * const pn ) ;
+void LockRelease( const struct parsedname * const pn ) ;
+
+/* 1-wire lowlevel */
+void UT_delay(const unsigned int len) ;
+int LI_reset( const struct parsedname * const pn ) ;
+
+/* High-level callback functions */
+int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) ;
+
+int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
+
+int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
+
+int FS_fstat(const char *path, struct stat *stbuf) ;
+
+/* iteration functions for splitting writes to buffers */
+int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
+    size_t pagelen, int (*readfunc)(unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
+int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
+    size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
+
+/* Low-level functions
+    slowly being abstracted and separated from individual
+    interface type details
+*/
+int DS2480_baud( speed_t baud );
+int DS2480_detect( void ) ;
+int DS1410_detect( void ) ;
+int DS9097_detect( void ) ;
+int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
+
+int BUS_select_low(const struct parsedname * const pn) ;
+int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
+int BUS_send_cmd( const unsigned char * const cmd , const int len ) ;
+int BUS_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
+int BUS_send_data( const unsigned char * const data , const int len ) ;
+int BUS_send_and_get( const unsigned char * const send, const size_t sendlength, unsigned char * const get, const size_t getlength ) ;
+int BUS_readin_data( unsigned char * const data , const int len ) ;
+int BUS_alarmverify(const struct parsedname * const pn) ;
+int BUS_normalverify(const struct parsedname * const pn) ;
+
+#define BUS_detect        DS2480_detect
+#define BUS_changebaud    DS2480_changebaud
+#define BUS_reset            (iroutines.reset)
+#define BUS_read             (iroutines.read)
+#define BUS_write            (iroutines.write)
+#define BUS_sendback_data    (iroutines.sendback_data)
+#define BUS_next_both        (iroutines.next_both)
+#define BUS_level            (iroutines.level)
+#define BUS_ProgramPulse     (iroutines.ProgramPulse)
+#define BUS_PowerByte        (iroutines.PowerByte)
+#define BUS_select           (iroutines.select)
+#define BUS_databit       DS2480_databit
+#define BUS_datablock     DS2480_datablock
+
+void BUS_lock( void ) ;
+void BUS_unlock( void ) ;
 
 #endif /* OW_H */

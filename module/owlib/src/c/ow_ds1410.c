@@ -259,9 +259,9 @@ static int DS1410_PowerByte(unsigned char byte, unsigned int delay) {
     COM_flush();
 
     // send the packet
-    BUS_lock() ;
+    BUSLOCK
         ret=BUS_send_data(&byte,1) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if (ret) return ret ;
 
 // indicate the port is now at power delivery
@@ -271,9 +271,9 @@ static int DS1410_PowerByte(unsigned char byte, unsigned int delay) {
     UT_delay( delay ) ;
 
     // return to normal level
-    BUS_lock() ;
+    BUSLOCK
         ret=BUS_level(MODE_NORMAL) ;
-    BUS_unlock() ;
+    BUSUNLOCK
 
     return ret ;
 }

@@ -230,9 +230,9 @@ static int OW_r_mem( char * const p , const unsigned int size, const int locatio
 //printf("2450 R mem data=%d size=%d location=%d\n",*p,size,location) ;
 
     /* First page */
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(buf,3) || BUS_readin_data(&buf[3],thispage+2) || CRC16(buf,thispage+5) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 //printf("2450 R mem 1\n") ;
 
@@ -241,9 +241,9 @@ static int OW_r_mem( char * const p , const unsigned int size, const int locatio
 
     /* cycle through additional pages */
     for ( s=size-thispage; s>0; s-=thispage ) {
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_readin_data(&buf[3],8+2) || CRC16(&buf[3],8+2) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return 1 ;
 
         thispage = (s>8) ? 8 : s ;
@@ -263,9 +263,9 @@ static int OW_w_mem( const char * const p , const unsigned int size , const int 
     if ( size == 0 ) return 0 ;
 
     /* Send the first byte (handled differently) */
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_sendback_data(buf,buf,7) || CRC16(buf,6) || (buf[6]!=p[0]) ;
-    BUS_unlock() ;
+    BUSUNLOCK
 printf("2450 byte %d return=%d\n",0,ret );
     if ( ret ) return 1 ;
 
@@ -273,9 +273,9 @@ printf("2450 byte %d return=%d\n",0,ret );
     for ( i=1 ; i<size ; ++i ) {
         buf[0] = p[i] ;
         buf[1] = buf[2] = buf[3] = 0xFF ;
-        BUS_lock() ;
+        BUSLOCK
             ret =BUS_sendback_data(buf,buf,4) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
-        BUS_unlock() ;
+        BUSUNLOCK
 printf("2450 byte %d return=%d\n",i,ret );
 
         if ( ret ) return 1 ;
@@ -374,17 +374,17 @@ static int OW_convert( const struct parsedname * const pn ) {
 
     // Start conversion
     // 6 msec for 16bytex4channel (5.2)
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5 ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
         if ( ret ) {
-    BUS_unlock() ;
+    BUSUNLOCK
         } else if (power==0x40) {
-    BUS_unlock() ;
+    BUSUNLOCK
         UT_delay(6) ; /* don't need to hold line for conversion! */
-    BUS_lock() ;
+    BUSLOCK
         } else { /* power line for conversion */
             ret = BUS_PowerByte( 0x04, 6) ;
-    BUS_unlock() ;
+    BUSUNLOCK
         }
     return ret ;
 }

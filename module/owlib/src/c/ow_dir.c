@@ -102,7 +102,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         STATUNLOCK
 
         pn2.ft = NULL ; /* just in case not properly set */
-        BUS_lock() ;
+        BUSLOCK
         /* Turn off all DS2409s */
         FS_branchoff(&pn2) ;
         (ret=BUS_select(&pn2)) || (ret=BUS_first_alarm(sn,&pn2)) ;
@@ -123,7 +123,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             pn2.dev = NULL ; /* clear for the rest of directory listing */
             (ret=BUS_select(&pn2)) || (ret=BUS_next_alarm(sn,&pn2)) ;
         }
-        BUS_unlock() ;
+        BUSUNLOCK
     } else {  /* root or branch directory -- non-alarm */
         struct device ** dpp ;
         unsigned char sn[8] ;
@@ -166,7 +166,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         }
 //printf("DIR2\n");
         /* STATISCTICS */
-        BUS_lock() ;
+        BUSLOCK
         /* Turn off all DS2409s */
 
         FS_branchoff(&pn2) ;
@@ -188,7 +188,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             pn2.dev = NULL ; /* clear for the rest of directory listing */
             (ret=BUS_select(&pn2)) || (ret=BUS_next(sn,&pn2)) ;
         }
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( pn->pathlength == 0 ) { /* true root */
             int i ;
             for ( i=0 ; i<nDevices ; ++i ) {

@@ -117,16 +117,16 @@ static int OW_w_mem( const unsigned char * data , const size_t size, const size_
 
     if (size>0) {
         /* First byte */
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],1) || CRC8(p,5) || BUS_ProgramPulse() || BUS_readin_data(&p[3],1) || (p[3]!=data[0]) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return 1 ;
 
         /* Successive bytes */
         for ( i=1 ; i<size ; ++i ) {
-            BUS_lock() ;
+            BUSLOCK
                 ret = BUS_send_data(&data[i],1) || BUS_readin_data(p,1) || CRC8seeded(p,1,(offset+i)&0xFF) || BUS_ProgramPulse() || BUS_readin_data(p,1) || (p[0]!=data[i]) ;
-            BUS_unlock() ;
+            BUSUNLOCK
             if ( ret ) return 1 ;
         }
     }
@@ -140,9 +140,9 @@ static int OW_r_mem( unsigned char * data , const size_t size, const size_t offs
     int rest = 32 - (offset & 0x1F) ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,3) || BUS_readin_data(&p[3],1) || CRC8(p,4) || BUS_readin_data(p,rest+1) || CRC8(p,rest+1) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
     memcpy( data, p, size ) ;

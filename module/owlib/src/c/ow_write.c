@@ -81,7 +81,7 @@ printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
             Cache_Del( &pn ) ;
         } else {
     //printf("Write adding %s\n",path) ;
-            Cache_Add( &pn, buf, size ) ;
+            Cache_Add( buf, size, &pn ) ;
         }
         if ( r == 0 ) {
             STATLOCK

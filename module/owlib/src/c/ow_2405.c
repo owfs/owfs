@@ -91,9 +91,9 @@ static int OW_r_sense( int * val , const struct parsedname * pn) {
     unsigned char inp ;
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_normalverify(pn) || BUS_readin_data(&inp,1) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) return 1 ;
 
      *val = (inp!=0) ;
@@ -104,13 +104,13 @@ static int OW_r_sense( int * val , const struct parsedname * pn) {
 static int OW_r_PIO( int * val , const struct parsedname * pn) {
     int ret ;
 
-    BUS_lock() ;
+    BUSLOCK
         ret = BUS_alarmverify(pn) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     if ( ret ) {
-        BUS_lock() ;
+        BUSLOCK
             ret = BUS_normalverify(pn) ;
-        BUS_unlock() ;
+        BUSUNLOCK
         if ( ret ) return -ENOENT ;
          *val = 0 ;
     } else {
@@ -126,12 +126,12 @@ static int OW_w_PIO( const int val , const struct parsedname * pn) {
 
     if ( OW_r_PIO(&current,pn) ) return 1 ;
 
-    BUS_lock() ;
+    BUSLOCK
     if ( current != val ) {
         ret = BUS_select(pn) ;
     }
     ret |= BUS_reset(pn) ;
  //printf("2405write current=%d new=%d\n",current,val) ;
-    BUS_unlock() ;
+    BUSUNLOCK
     return ret ;
 }
