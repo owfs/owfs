@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     int log_facility;
 
     /* hard code the user as "nobody" */
-    const char* user_ptr = "nobody";
+    const char* username = "nobody";
     char *address;
     
     struct passwd *user_info;
@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
 
     /* default command-line arguments */
     portnum = FTP_PORT;
-    user_ptr = NULL;
     address = FTP_ADDRESS;
     max_clients = MAX_CLIENTS;
     log_facility = LOG_FTP;
@@ -127,8 +126,9 @@ int main(int argc, char *argv[]) {
     }
     
     /* nobody user */
-    if ( (user_info=getpwnam(user_ptr)) == NULL) {
-        fprintf(stderr, "%s: invalid user name: %s, will run as root!\n", exe_name,user_ptr);
+printf("NAME: %s\n",username);
+    if ( (user_info=getpwnam(username)) == NULL) {
+        fprintf(stderr, "%s: invalid user name: %s, will run as root!\n", exe_name,username);
     }
 
     /* become a daemon */

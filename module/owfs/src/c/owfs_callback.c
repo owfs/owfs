@@ -97,7 +97,7 @@ struct dirback {
 
 /* Callback function to FS_dir */
 static void directory( void * data, const struct parsedname * const pn ) {
-    char extname[PATH_MAX+1] ; /* probably excessive */
+    char extname[OW_FULLNAME_MAX+1] ; /* probably excessive */
 //printf("directory callback\n");
     if ( pn->ft ) {
         char * pname = strchr(pn->ft->name,'/') ;
@@ -108,20 +108,20 @@ static void directory( void * data, const struct parsedname * const pn ) {
         }
 
         if ( pn->ft->ag == NULL ) {
-            snprintf( extname , PATH_MAX, "%s",pname) ;
+            snprintf( extname , OW_NAME_MAX, "%s",pname) ;
         } else if ( pn->extension == -1 ) {
-            snprintf( extname , PATH_MAX, "%s.ALL",pname) ;
+            snprintf( extname , OW_FULLNAME_MAX, "%s.ALL",pname) ;
         } else if ( pn->ft->ag->letters == ag_letters ) {
-            snprintf( extname , PATH_MAX, "%s.%c",pname,pn->extension+'A') ;
+            snprintf( extname , OW_FULLNAME_MAX, "%s.%c",pname,pn->extension+'A') ;
         } else {
-            snprintf( extname , PATH_MAX, "%s.%-d",pname,pn->extension) ;
+            snprintf( extname , OW_FULLNAME_MAX, "%s.%-d",pname,pn->extension) ;
         }
     } else if ( pn->subdir ) { /* in-device subdirectory */
-        snprintf( extname , PATH_MAX, "%s",pn->subdir->name) ;
+        snprintf( extname , OW_NAME_MAX, "%s",pn->subdir->name) ;
     } else if ( pn->dev->type == dev_1wire ) {
-        FS_devicename( extname, PATH_MAX, pn->sn ) ;
+        FS_devicename( extname, OW_NAME_MAX, pn->sn ) ;
     } else {
-        snprintf( extname , PATH_MAX, "%s",pn->dev->code) ;
+        snprintf( extname , OW_NAME_MAX, "%s",pn->dev->code) ;
     }
     (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
 }

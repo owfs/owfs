@@ -4,6 +4,7 @@
 
 #include "owfs_config.h"
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -28,39 +29,13 @@
 #define ARG_HOST_PORT_EXT     9
 #define ARG_OPTIONAL_NUMBER  10
 
-/* our FTP commands */
-struct {
+#define NUM_COMMAND (sizeof(command_def) / sizeof(struct command_struct))
+
+struct command_struct {
     char *name;
     int arg_type;
-} command_def[] = {
-    { "USER", ARG_STRING          },
-    { "PASS", ARG_STRING          },
-    { "CWD",  ARG_STRING          },
-    { "CDUP", ARG_NONE            },
-    { "QUIT", ARG_NONE            },
-    { "PORT", ARG_HOST_PORT       },
-    { "LPRT", ARG_HOST_PORT_LONG  },
-    { "EPRT", ARG_HOST_PORT_EXT   },
-    { "PASV", ARG_NONE            },
-    { "LPSV", ARG_NONE            },
-    { "EPSV", ARG_OPTIONAL_NUMBER },
-    { "TYPE", ARG_TYPE            },
-    { "STRU", ARG_STRUCTURE       },
-    { "MODE", ARG_MODE            },
-    { "RETR", ARG_STRING          },
-    { "STOR", ARG_STRING          },
-    { "PWD",  ARG_NONE            },
-    { "LIST", ARG_OPTIONAL_STRING },
-    { "NLST", ARG_OPTIONAL_STRING },
-    { "SYST", ARG_NONE            },
-    { "HELP", ARG_OPTIONAL_STRING },
-    { "NOOP", ARG_NONE            },
-    { "REST", ARG_OFFSET          },
-    { "SIZE", ARG_STRING          },
-    { "MDTM", ARG_STRING          }
-};
-
-#define NUM_COMMAND (sizeof(command_def) / sizeof(command_def[0]))
+    int len ;
+} ;
 
 /* prototypes */
 static const char *copy_string(char *dst, const char *src);
@@ -69,38 +44,71 @@ static const char *parse_number(int *num, const char *s, int max_num);
 static const char *parse_offset(off_t *ofs, const char *s);
 static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s);
 static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s); 
+static int commandsort( const void * a , const void * b ) ;
+static int commandcmp( const void * a , const void * b ) ;
+
+static int commandsort( const void * a , const void * b ) {
+    return strcmp( ((const struct command_struct *)a)->name , ((const struct command_struct *)b)->name ) ;
+}
+
+static int commandcmp( const void * a , const void * b ) {
+    return strncmp( (const char *)a , ((const struct command_struct *)b)->name, ((const struct command_struct *)b)->len ) ;
+}
 
 int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
-    int i;
-    int match;
     struct ftp_command_t tmp;
     int c;
     const char *optional_number;
     int no_args ; /* Is there a space after the command for an argument? */
+    static int first_time = 1 ;
+/* our FTP commands */
+    struct command_struct * command_found ;
+    static struct command_struct command_def[] = {
+	{ "USER", ARG_STRING          ,4,},
+	{ "PASS", ARG_STRING          ,4,},
+	{ "CWD",  ARG_STRING          ,3,},
+	{ "CDUP", ARG_NONE            ,4,},
+	{ "QUIT", ARG_NONE            ,4,},
+	{ "PORT", ARG_HOST_PORT       ,4,},
+	{ "LPRT", ARG_HOST_PORT_LONG  ,4,},
+	{ "EPRT", ARG_HOST_PORT_EXT   ,4,},
+	{ "PASV", ARG_NONE            ,4,},
+	{ "LPSV", ARG_NONE            ,4,},
+	{ "EPSV", ARG_OPTIONAL_NUMBER ,4,},
+	{ "TYPE", ARG_TYPE            ,4,},
+	{ "STRU", ARG_STRUCTURE       ,4,},
+	{ "MODE", ARG_MODE            ,4,},
+	{ "RETR", ARG_STRING          ,4,},
+	{ "STOR", ARG_STRING          ,4,},
+	{ "PWD",  ARG_NONE            ,3,},
+	{ "LIST", ARG_OPTIONAL_STRING ,4,},
+	{ "NLST", ARG_OPTIONAL_STRING ,4,},
+	{ "SYST", ARG_NONE            ,4,},
+	{ "HELP", ARG_OPTIONAL_STRING ,4,},
+	{ "NOOP", ARG_NONE            ,4,},
+	{ "REST", ARG_OFFSET          ,4,},
+	{ "SIZE", ARG_STRING          ,4,},
+	{ "MDTM", ARG_STRING          ,4,}
+    };
+    static int num_commands = (sizeof(command_def) / sizeof(struct command_struct)) ;
+
+    if ( first_time ) {
+	first_time = 0 ;
+	qsort(command_def,num_commands,sizeof(struct command_struct),commandsort);
+    }
 
     daemon_assert(input != NULL);
     daemon_assert(cmd != NULL);
 
     /* see if our input starts with a valid command */
-    match = -1;
-    for (i=0; i<NUM_COMMAND; i++) {
-        if (strncasecmp(input, command_def[i].name, strlen(command_def[i].name) ) == 0) {
-            match = i;
-            break ;
-        }
-    }
-    /* if we didn't find a match, return error */
-    if (match == -1) {
-        return 0;
-    }
-//    daemon_assert(match >= 0);
-//    daemon_assert(match < NUM_COMMAND);
+    if ( (command_found=bsearch(input,command_def,num_commands,sizeof(struct command_struct), commandcmp)) == NULL )
+	return 0 ;
 
     /* copy our command */
-    strcpy(tmp.command, command_def[match].name);
+    strcpy(tmp.command, command_found->name);
 
     /* advance input past the command */
-    input += strlen(command_def[match].name);
+    input += command_found->len;
 
     if ( *input == ' ' ) {
         no_args = 0 ;
@@ -112,7 +120,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
     }
     
     /* now act based on the command */
-    switch (command_def[match].arg_type) {
+    switch (command_found->arg_type) {
 
     case ARG_NONE:
         if (!no_args) return 0 ;

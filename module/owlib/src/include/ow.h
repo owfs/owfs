@@ -263,6 +263,11 @@ enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft
 /* Predeclare parsedname */
 struct parsedname ;
 
+/* Maximum length of a file or directory name, and extension */
+#define OW_NAME_MAX      (32)
+#define OW_EXT_MAX       (6)
+#define OW_FULLNAME_MAX  (OW_NAME_MAX+OW_EXT_MAX)
+
 /* filetype gives -file types- for chip properties */
 struct filetype {
     char * name ;
