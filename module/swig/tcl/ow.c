@@ -223,6 +223,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
   path = Tcl_GetStringFromObj(objv[1], &s);
 
   pn.si = &si;
+  si.sg.int32 = SemiGlobal.int32;
   if ((r = FS_ParsedName(path, &pn))) {
     owtcl_ErrorMsg(interp, strerror(-r));
     tcl_return = TCL_ERROR;
