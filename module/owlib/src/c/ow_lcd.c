@@ -447,7 +447,7 @@ static int OW_r_LCDcounters( unsigned int * data , const struct parsedname* pn )
 
 #ifdef OW_CACHE /* Cache-dependent special cumulative storage code */
     if ( dbstore ) {
-    char key[] = {
+        char key[] = {
                 pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
                 '/',      'c',      'u',      'm',       '\0',
                 } ;
