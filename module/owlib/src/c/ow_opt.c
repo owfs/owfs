@@ -50,7 +50,7 @@ void owopt( const char c , const char * const arg ) {
         "    --format f[.]i[[.]c] format of device names f_amily i_d c_rc\n"
         "    -C | -F | -K | -R Temperature scale --Celsius(default)|--Fahrenheit|--Kelvin|--Rankine\n"
         "    --foreground --background(default)\n"
-        "    -P --pid-file fielname outs the PID of this program into filename\n"
+        "    -P --pid-file filename     put the PID of this program into filename\n"
         "    -V --version\n"
         ) ;
         break ;

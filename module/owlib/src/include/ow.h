@@ -95,7 +95,7 @@ $Id$
 
 /* command line options */
 /* These a re the owlib-specific options */
-#define OWLIB_OPT "f:p:hu::d:t:CFRKV"
+#define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 void owopt( const char c , const char * const arg ) ;
 

@@ -33,6 +33,8 @@ timeout
 |
 .I \-\-foreground
 .I \-V \-\-version
+.I \-P \-\-pid-file
+filename
 .I mountpoint
 .SH "DESCRIPTION"
 .B owfs
@@ -85,6 +87,8 @@ is the default.
 .SS \-V \-\-version
 .I Version
 of this program and related libraries.
+.SS \-P \-\-pid-file "filename"
+Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.
 .SH EXAMPLE
 owfs -d /dev/ttyS0 /mnt/1wire
 .TP
