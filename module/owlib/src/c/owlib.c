@@ -138,6 +138,7 @@ unsigned int dir_depth = 0 ;
 struct timeval bus_time = {0, 0, } ;
 struct timeval bus_pause = {0, 0, } ;
 unsigned int bus_locks = 0 ;
+unsigned int bus_unlocks = 0 ;
 unsigned int crc8_tries = 0 ;
 unsigned int crc8_errors = 0 ;
 unsigned int crc16_tries = 0 ;

@@ -102,10 +102,10 @@ int main(int argc, char *argv[]) {
     set_signal_handlers();
     fuse = fuse_new(fuse_fd, flags, &owfs_oper);
 //    if(multithreaded) {
-        fuse_loop_mt(fuse);
+//        fuse_loop_mt(fuse);
 //    } else {
 //printf("FUSELOOP\n");
-//        fuse_loop(fuse);
+        fuse_loop(fuse);
 //    }
     close(fuse_fd);
 

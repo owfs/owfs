@@ -113,5 +113,6 @@ void BUS_unlock( void ) {
         bus_time.tv_usec += 100000000 ;
         bus_time.tv_sec  -= 100 ;
 	}
+    ++ bus_unlocks ; /* statistics */
     flock( devfd, LOCK_UN) ;
 }

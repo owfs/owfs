@@ -54,6 +54,10 @@ time_t TimeOut( enum ft_change ftc ) {
     }
 }
 
+char * Cache_Version( void ) {
+    return db_version( NULL, NULL, NULL ) ;
+}
+
     /* DB cache code */
 void Cache_Open( void ) {
     if ( db_create( &dbnewcache, NULL, 0 ) || DBOPEN(dbnewcache) ) {
@@ -330,6 +334,8 @@ int Storage_Del( const char * path ) {
 
 #else /* OW_CACHE is unset */
 
+char * Cache_Version( void )
+    { return ""; }
 void Cache_Open( void )
     {}
 void Cache_Close( void )

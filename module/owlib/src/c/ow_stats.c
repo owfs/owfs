@@ -106,6 +106,7 @@ struct filetype stats_bus[] = {
     {"pause_time"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_time}, {v:NULL}, & bus_pause    ,  } ,
     {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL        ,  } ,
     {"locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks    ,  } ,
+    {"unlocks"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_unlocks  ,  } ,
     {"CRC8_tries"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_tries   ,  } ,
     {"CRC8_errors"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc8_errors  ,  } ,
     {"CRC16_tries"     , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & crc16_tries  ,  } ,

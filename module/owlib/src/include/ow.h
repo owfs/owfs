@@ -222,6 +222,7 @@ void COM_break( void ) ;
 /* Cache  and Storage functions */
 void Cache_Open( void ) ;
 void Cache_Close( void ) ;
+char * Cache_Version( void ) ;
 int Cache_Add(          const struct parsedname * const pn,                          const void * data, const size_t   dsize ) ;
 int Cache_Add_Internal( const struct parsedname * const pn, const char * const name, const void * data, const size_t   dsize ) ;
 int Cache_Get(          const struct parsedname * const pn,                                void * data,       size_t * dsize ) ;
@@ -550,6 +551,7 @@ extern unsigned int dir_depth ;
 extern struct timeval bus_time ;
 extern struct timeval bus_pause ;
 extern unsigned int bus_locks ;
+extern unsigned int bus_unlocks ;
 extern unsigned int crc8_tries ;
 extern unsigned int crc8_errors ;
 extern unsigned int crc16_tries ;
