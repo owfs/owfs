@@ -55,6 +55,7 @@ bWRITE_FUNCTION( FS_w_page ) ;
  fREAD_FUNCTION( FS_r_volt ) ;
  fREAD_FUNCTION( FS_r_temp ) ;
  fREAD_FUNCTION( FS_r_current ) ;
+ fREAD_FUNCTION( FS_r_extsense ) ;
  fREAD_FUNCTION( FS_r_vis ) ;
  fREAD_FUNCTION( FS_r_accum ) ;
  fREAD_FUNCTION( FS_r_offset ) ;
@@ -156,39 +157,40 @@ struct filetype DS2760[] = {
     {"pages/page",    16,  NULL,    ft_binary  , ft_volatile, {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"typeB"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeB/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_b, } ,
-    {"typeB/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_b, } ,
-    {"typeB/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_b, } ,
+    {"typeB/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_b, } ,
+    {"typeB/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_b, } ,
     {"typeE"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeE/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_e, } ,
-    {"typeE/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_e, } ,
-    {"typeE/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_e, } ,
+    {"typeE/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_e, } ,
+    {"typeE/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_e, } ,
     {"typeJ"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeJ/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_j, } ,
-    {"typeJ/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_j, } ,
-    {"typeJ/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_j, } ,
+    {"typeJ/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_j, } ,
+    {"typeJ/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_j, } ,
     {"typeK"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeK/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_k, } ,
-    {"typeK/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_k, } ,
-    {"typeK/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_k, } ,
+    {"typeK/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_k, } ,
+    {"typeK/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_k, } ,
     {"typeN"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeN/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_n, } ,
-    {"typeN/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_n, } ,
-    {"typeN/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_n, } ,
+    {"typeN/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_n, } ,
+    {"typeN/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_n, } ,
     {"typeR"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeR/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_r, } ,
-    {"typeR/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_r, } ,
-    {"typeR/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_r, } ,
+    {"typeR/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_r, } ,
+    {"typeR/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_r, } ,
     {"typeS"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeS/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_s, } ,
-    {"typeS/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_s, } ,
-    {"typeS/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_s, } ,
+    {"typeS/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_s, } ,
+    {"typeS/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_s, } ,
     {"typeT"            ,  0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"typeT/temperature", 12, NULL, ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & type_t, } ,
-    {"typeT/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow}    , {v:NULL}  , & type_t, } ,
-    {"typeT/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}   , {v:NULL}  , & type_t, } ,
+    {"typeT/range_low"  , 12, NULL, ft_float   , ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_t, } ,
+    {"typeT/range_high" , 12, NULL, ft_float   , ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_t, } ,
     {"volt"      ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_volt}   , {v:NULL}     , NULL, } ,
     {"temperature",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_temp}   , {v:NULL}     , NULL, } ,
     {"current"   ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_current}, {v:NULL}     , NULL, } ,
+    {"ext_sense" ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_extsense},{v:NULL}     , NULL, } ,
     {"vis"       ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_vis}    , {v:NULL}     , NULL, } ,
     {"accumulator",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_accum}  , {v:NULL}     , NULL, } ,
     {"offset"    ,    12,  NULL,    ft_float   , ft_stable  , {f:FS_r_offset} , {f:FS_w_offset},NULL,} ,
@@ -260,7 +262,7 @@ static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
     if ((ret=OW_r_temp(&T,pn))) return ret ; /* in C */
 
     /* Get measured voltage */
-    if ((ret=FS_r_vis(&V,pn))) return ret ;
+    if ((ret=FS_r_extsense(&V,pn))) return ret ;
     V *= .001 ; /* convert Volts to mVolts */
 
     /* Correct voltage by adding reference temperature voltage */
@@ -285,6 +287,14 @@ static int FS_r_current(FLOAT * C , const struct parsedname * pn) {
     int ret = OW_r_sram(c,2,0x0E,pn) ;
     if (ret) return ret ;
     C[0] = (FLOAT) (((int16_t)(c[0]<<8|c[1]))>>3)*.000625 ;
+    return 0 ;
+}
+
+static int FS_r_extsense(FLOAT * C , const struct parsedname * pn) {
+    unsigned char c[2] ;
+    int ret = OW_r_sram(c,2,0x0E,pn) ;
+    if (ret) return ret ;
+    C[0] = (FLOAT) (((int16_t)(c[0]<<8|c[1]))>>3)*.000015625 ;
     return 0 ;
 }
 

@@ -21,6 +21,8 @@ Temperature Voltage and Current.
 |
 .B current
 |
+.B ext_sense
+|
 .B offset
 |
 .B pages/page.[0-16|ALL]
@@ -73,6 +75,20 @@ Correction for
 readings. Units are in
 .B Amp
 and can range from -.08 to +.08
+.SS ext_sense
+.I read-only, floating point
+.br
+External resistor current sensor reading. Units are in
+.B Volts
+(Assumes external resistor).
+.SS offset
+.I read-write, floating point
+.br
+Correction for
+.I current
+readings. Units are in
+.B Amp
+and can range from -.08 to +.08
 .SS pages/page.0 ... pages/page.16 pages/page.ALL
 .I read-write, binary
 .br
@@ -109,7 +125,7 @@ Value will be 0 or 1 depending on the voltage threshold.
 .SS typeX/
 .I directory
 .br
-Thermocouple circuit using the 
+Thermocouple circuit using the
 .I  DS2760
 to read the Seebeck voltage and the reference temperature. Since the type interpretation of the values read depends on the type of thermocouple, the correct directory must be chosen. Supported thermocouple types include types B, E, J, K, N, R, S and T.
 .SS typeX/range_low typeX/ranges_high
@@ -121,10 +137,10 @@ The lower and upper temperature supported by this thermocouple (at least by the 
 .br
 Thermocouple temperature. Requires a voltage and temperature conversion. Returned in globally chosen temperature units.
 .br
-Note: there are two types of temperature measurements possible. The 
-.I temperature 
-value in the main device directory is the reference temperature read at the chip. The 
-.I typeX/temperature 
+Note: there are two types of temperature measurements possible. The
+.I temperature
+value in the main device directory is the reference temperature read at the chip. The
+.I typeX/temperature
 value is at the thermocouple junction, probably remote from the chip.
 .SS temperature
 .I read-only, floating point
