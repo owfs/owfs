@@ -135,10 +135,10 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
 
 int FS_present(int * y , const struct parsedname * pn) {
     if ( pn->type != pn_real || pn->dev == DeviceSimultaneous ) {
-        y[0]=0 ;
+        y[0]=1 ;
     } else {
         BUSLOCK(pn)
-            y[0] = BUS_normalverify(pn) ? 1 : 0 ;
+            y[0] = BUS_normalverify(pn) ? 0 : 1 ;
         BUSUNLOCK(pn)
     }
     return 0 ;
