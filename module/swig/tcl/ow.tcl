@@ -5,5 +5,13 @@
 #
 # $Id$
 #
-namespace eval OW {
+proc ::ow {interface args} {
+    if {$args == ""} {
+	::OW::init $interface
+    } else {
+	::OW::init $interface $args
+    }
+}
+
+namespace eval ::OW {
 }

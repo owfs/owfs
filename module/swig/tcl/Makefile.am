@@ -3,8 +3,10 @@
 include version.h
 
 pkglib_LTLIBRARIES = ow.la
-ow_la_SOURCES = ow.c owtclInitScript.h ow.tcl.h version.h
+ow_la_SOURCES = ow.c
 ow_la_LDFLAGS = -module -release $(OWTCL_VERSION)
+nodist_ow_la_SOURCES = owtclInitScript.h ow.tcl.h version.h
+ow.lo: owtclInitScript.h ow.tcl.h version.h
 
 data_DATA = ow.tcl pkgIndex.tcl
 #mann_MANS = owtcl.n
@@ -41,10 +43,12 @@ AM_CFLAGS = -I../../owlib/src/include \
 	${MT_FLAG} \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \
-	$(TCL_INCLUDE_SPEC)
+	$(TCL_INCLUDE_SPEC) \
+	-DTCL_PACKAGE_PATH=\"'$(TCL_PACKAGE_PATH)'\" \
+	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\"
 	
 
-AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) $(TCL_SHLIB_CFLAGS) -DTCL_PACKAGE_PATH="$(TCL_PACKAGE_PATH)" -DOWTCL_PACKAGE_PATH="$(pkglibdir)"
+AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) $(TCL_SHLIB_CFLAGS)
 
 SHLIB_LD = $(TCL_SHLIB_LD)
 

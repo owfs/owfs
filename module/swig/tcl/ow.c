@@ -395,6 +395,21 @@ struct CmdListType {
 int
 Ow_Init (Tcl_Interp *interp) {
   int i;
+
+
+  /* This defines the static chars tkTable(Safe)InitScript */
+#include "owtclInitScript.h"
+
+  if (
+#ifdef USE_TCL_STUBS
+      Tcl_InitStubs(interp, "8.1", 0)
+#else
+      Tcl_PkgRequire(interp, "Tcl", "8.1", 0)
+#endif
+      == NULL) {
+    return TCL_ERROR;
+  }
+
   OwtclState.used = 0;
 
   /*
@@ -415,6 +430,13 @@ Ow_Init (Tcl_Interp *interp) {
   if (Tcl_PkgProvide(interp, "ow", OWTCL_VERSION) != TCL_OK) {
     return TCL_ERROR;
   }
+
+  /*
+   * The init script can't make certain calls in a safe interpreter,
+   * so we always have to use the embedded runtime for it
+   */
+  return Tcl_Eval(interp, Tcl_IsSafe(interp) ?
+		  owtclSafeInitScript : owtclInitScript);
 
   return TCL_OK;
 }
