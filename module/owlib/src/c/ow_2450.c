@@ -50,8 +50,8 @@ bWRITE_FUNCTION( FS_w_page ) ;
  bREAD_FUNCTION( FS_r_mem ) ;
 bWRITE_FUNCTION( FS_w_mem ) ;
  fREAD_FUNCTION( FS_volts ) ;
- yREAD_FUNCTION( FS_r_cont ) ;
-yWRITE_FUNCTION( FS_w_cont ) ;
+ yREAD_FUNCTION( FS_r_power ) ;
+yWRITE_FUNCTION( FS_w_power ) ;
  yREAD_FUNCTION( FS_r_high ) ;
 yWRITE_FUNCTION( FS_w_high ) ;
  yREAD_FUNCTION( FS_r_PIO ) ;
@@ -72,7 +72,7 @@ struct filetype DS2450[] = {
     F_STANDARD            ,
     {"pages"              ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
     {"pages/page"         ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
-    {"continuous"         ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_cont}   , {y:FS_w_cont}   , NULL, } ,
+    {"power"              ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_power}  , {y:FS_w_power}  , NULL, } ,
     {"memory"             ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}    , NULL, } ,
     {"PIO"                ,     1,  &A2450m, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO}    , NULL, } ,
     {"volt"               ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 1, } ,
@@ -98,7 +98,7 @@ static int OW_r_mem( char * const p , const unsigned int size, const int locatio
 static int OW_w_mem( const char * p , const unsigned int size , const int location , const struct parsedname * const pn) ;
 static int OW_volts( FLOAT * const f , const int resolution , const struct parsedname * const pn ) ;
 static int OW_1_volts( FLOAT * const f , const int element, const int resolution , const struct parsedname * const pn ) ;
-static int OW_convert( const int continuous, const struct parsedname * const pn ) ;
+static int OW_convert( const struct parsedname * const pn ) ;
 static int OW_r_pio( int * const pio , const struct parsedname * const pn ) ;
 static int OW_r_1_pio( int * const pio , const int element , const struct parsedname * const pn ) ;
 static int OW_w_pio( const int * const pio , const struct parsedname * const pn ) ;
@@ -124,8 +124,8 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
     return 0 ;
 }
 
-/* read "continuous conversion" flag */
-static int FS_r_cont(int *y, const struct parsedname * pn) {
+/* read powered flag */
+static int FS_r_power(int *y, const struct parsedname * pn) {
     unsigned char p ;
     if ( OW_r_mem(&p,1,0x1C,pn) ) return -EINVAL ;
 //printf("Cont %d\n",p) ;
@@ -133,10 +133,10 @@ static int FS_r_cont(int *y, const struct parsedname * pn) {
     return 0 ;
 }
 
-/* write "continuous conversion" flag */
-static int FS_w_cont(const int *y, const struct parsedname * pn) {
-    unsigned char p = 0x40 ; /* continuous */
-    unsigned char q = 0x00 ; /* on demand */
+/* write powered flag */
+static int FS_w_power(const int *y, const struct parsedname * pn) {
+    unsigned char p = 0x40 ; /* powered */
+    unsigned char q = 0x00 ; /* parasitic */
     if ( OW_w_mem(y[0]?&p:&q,1,0x1C,pn) ) return -EINVAL ;
     return 0 ;
 }
@@ -290,11 +290,7 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
     unsigned char control[8] ;
     unsigned char data[8] ;
     int i ;
-    unsigned char cont ;
     int writeback = 0 ; /* write control back? */
-
-    /* get continuous flag -- to see if conversion can be avoided */
-    if ( OW_r_mem(&cont,1,0x1C,pn) ) return 1 ;
 
     // Get control registers and set to A/D 16 bits
     if ( OW_r_mem( control , 8, 1<<3, pn ) ) return 1 ;
@@ -316,8 +312,7 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
         if ( OW_w_mem( control, 8, 1<<3, pn) ) return 1 ;
 
     // Start A/D process if needed
-    if ( writeback || cont!=0x40 )
-        if ( OW_convert( cont==0x40, pn ) ) return 1 ;
+    if ( OW_convert( pn ) ) return 1 ;
 
     // read data
     if ( OW_r_mem( data, 8, 0<<3, pn) ) return 1 ;
@@ -338,11 +333,7 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
 static int OW_1_volts( FLOAT * const f , const int element, const int resolution , const struct parsedname * const pn ) {
     unsigned char control[2] ;
     unsigned char data[2] ;
-    unsigned char cont ;
     int writeback = 0 ; /* write control back? */
-
-    /* get continuous flag -- to see if conversion can be avoided */
-    if ( OW_r_mem(&cont,1,0x1C,pn) ) return 1 ;
 
     // Get control registers and set to A/D 16 bits
     if ( OW_r_mem( control , 2, (1<<3)+(element<<1), pn ) ) return 1 ;
@@ -359,9 +350,8 @@ static int OW_1_volts( FLOAT * const f , const int element, const int resolution
     if ( writeback )
         if ( OW_w_mem( control, 2, (1<<3)+(element<<1), pn) ) return 1 ;
 
-    // Start A/D process if needed
-    if ( writeback || cont!=0x40 )
-        if ( OW_convert( cont==0x40, pn ) ) return 1 ;
+    // Start A/D process
+    if ( OW_convert( pn ) ) return 1 ;
 
     // read data
     if ( OW_r_mem( data, 2, (0<<3)+(element<<1), pn) ) return 1 ;
@@ -373,10 +363,14 @@ static int OW_1_volts( FLOAT * const f , const int element, const int resolution
 }
 
 /* send A/D conversion command */
-static int OW_convert( const int continuous, const struct parsedname * const pn ) {
+static int OW_convert( const struct parsedname * const pn ) {
     unsigned char convert[] = { 0x3C , 0x0F , 0x00, 0xFF, 0xFF, } ;
     unsigned char data[5] ;
+    unsigned char power ;
     int ret ;
+
+    /* get power flag -- to see if pullup can be avoided */
+    if ( OW_r_mem(&power,1,0x1C,pn) ) return 1 ;
 
     // Start conversion
     // 6 msec for 16bytex4channel (5.2)
@@ -384,9 +378,10 @@ static int OW_convert( const int continuous, const struct parsedname * const pn 
         ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5 ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
         if ( ret ) {
     BUS_unlock() ;
-        } else if (continuous) {
+        } else if (power==0x40) {
     BUS_unlock() ;
         UT_delay(6) ; /* don't need to hold line for conversion! */
+    BUS_lock() ;
         } else { /* power line for conversion */
             ret = BUS_PowerByte( 0x04, 6) ;
     BUS_unlock() ;

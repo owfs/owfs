@@ -17,13 +17,13 @@ Voltage * 4  and Memory.
 .HP
 .B 20
 [.]XXXXXXXXXXXX[XX][/[
-.B continuous
-|
 .B memory
 |
 .B pages/page.[0-3|ALL]
 |
 .B PIO.[A-D|ALL]
+|
+.B power
 |
 .B volt.[A-D|ALL]
 |
@@ -43,10 +43,6 @@ Voltage * 4  and Memory.
 .TP
 20
 .SH SPECIAL PROPERTIES
-.SS continuous
-.I read-write, yes-no
-.br
-Should A/D be performed continuously? Set true (1) only if Vcc powered (not parasitically powered).
 .SS memory
 .I read-write, binary
 .br
@@ -69,6 +65,22 @@ will turn off this control.
 .br
 .I ALL
 is an aggregate of the voltages. Readings are made separately.
+.SS power
+.I read-write, yes-no
+.br
+Is the
+.I DS2450
+externally powered? (As opposed to parasitically powered from the data line).
+.br
+The analog A/D  will be kept on continuously. And the bus will be released during a conversion allowing other devices to communicate.
+.br
+Set true (1) only if Vcc powered (not parasitically powered). Unfortunately, the
+.I DS2450
+cannot sense it's powered state. This flag must be explicitly written, and thus is a potential source of error if incorrectly set.
+.br
+It is always safe to leave
+.I power
+set to the default 0 (off) state.
 .SS volt.A ... volt.D volt.ALL
 .I read-only, floating point
 .br
