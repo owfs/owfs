@@ -131,6 +131,7 @@ static int FS_w_pwd( const int * y , const struct parsedname * pn ) {
 }
 
 static int FS_set( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    int ret;
     unsigned char p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     int oldy, y =0 ;
     size_t off = 0x7FC0 + (int)(pn->ft->data) ;
@@ -145,7 +146,7 @@ static int FS_set( const unsigned char *buf, const size_t size, const off_t offs
     if ( oldy ) if ( FS_w_pwd(&y,pn) ) return -EACCES ;
 
     /* write password */
-    ret =  FS_w_mem(p,8,off,pn) ) {
+    ret =  FS_w_mem(p,8,off,pn) ;
     OW_clear(pn) ;
     if ( ret ) return -EINVAL ;
 
@@ -271,6 +272,7 @@ static int OW_verify( unsigned char * pwd, const size_t offset, const struct par
 /* Clear first 16 bytes of scratchpad after password setting */
 static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[1+2+16] = { 0x0F, 0x00 , 0x00, } ;
+    int ret;
 
     /* Copy to scratchpad */
     bzero( &p[3], 16 ) ;
