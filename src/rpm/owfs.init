@@ -35,9 +35,11 @@ start() {
 				[ -d $mountpoint ] || mkdir -p $mountpoint
 				case $interface in
 				[uU][sS][bB][0-9]*)
+					/sbin/modprobe -rq ds9490r
 					$owfs $mountpoint -u`echo $interface | sed -e 's/usb//i'` $options >/dev/null
 					;;
 				[uU][sS][bB])
+					/sbin/modprobe -rq ds9490r
 					$owfs $mountpoint -u $options >/dev/null
 					;;
 				/*)

@@ -34,9 +34,11 @@ start() {
 			if [ "$interface" != "" ]; then
 				case $interface in
 				[uU][sS][bB][0-9]*)
+					/sbin/modprobe -rq ds9490r
 					$owhttpd -u`echo $interface | sed -e 's/usb//i'` -p $port $options >/dev/null
 					;;
 				[uU][sS][bB])
+					/sbin/modprobe -rq ds9490r
 					$owhttpd -u -p $port $options >/dev/null
 					;;
 				/*)
