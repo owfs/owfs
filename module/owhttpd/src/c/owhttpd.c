@@ -119,6 +119,7 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
+    signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);
     signal(SIGHUP, handle_sighup);
