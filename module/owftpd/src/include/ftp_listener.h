@@ -57,8 +57,8 @@ int ftp_listener_init(struct ftp_listener_t *f,
                       int port,
                       int max_connections,
                       int inactivity_timeout,
-                      error_t *err);
-int ftp_listener_start(struct ftp_listener_t *f, error_t *err);
+                      error_code_t *err);
+int ftp_listener_start(struct ftp_listener_t *f, error_code_t *err);
 void ftp_listener_stop(struct ftp_listener_t *f);
 
 #endif /* FTP_LISTENER_H */

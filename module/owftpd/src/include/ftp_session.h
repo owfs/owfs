@@ -82,7 +82,7 @@ int ftp_session_init(struct ftp_session_t *f,
                      const sockaddr_storage_t *server_addr, 
                      struct telnet_session_t *t,
                      const char *dir,
-                     error_t *err);
+                     error_code_t *err);
 void ftp_session_drop(struct ftp_session_t *f, const char *reason);
 void ftp_session_run(struct ftp_session_t *f, watched_t *watched);
 void ftp_session_destroy(struct ftp_session_t *f);

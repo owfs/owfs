@@ -49,7 +49,7 @@ typedef struct {
     watched_t *newest;
 } watchdog_t;
 
-int watchdog_init(watchdog_t *w, int inactivity_timeout, error_t *err);
+int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err);
 void watchdog_add_watched(watchdog_t *w, watched_t *watched);
 void watchdog_defer_watched(watched_t *watched);
 void watchdog_remove_watched(watched_t *watched);

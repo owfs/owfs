@@ -7,12 +7,14 @@
 #include "daemon_assert.h"
 #include "watchdog.h"
 
+#include    <pthread.h>
+
 static int invariant(watchdog_t *w);
 static void insert(watchdog_t *w, watched_t *watched);
 static void delete(watchdog_t *w, watched_t *watched);
 static void *watcher(void *void_w);
 
-int watchdog_init(watchdog_t *w, int inactivity_timeout, error_t *err)
+int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
 {
     pthread_t thread_id;
     int error_code;
@@ -21,7 +23,17 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_t *err)
     daemon_assert(inactivity_timeout > 0);
     daemon_assert(err != NULL);
 
+#if defined(__uClinux__) || defined(EMBEDDED)
+    {
+        pthread_mutexattr_t attr ;
+        pthread_mutexattr_init(&attr) ;
+        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_ADAPTIVE_NP) ;
+        pthread_mutexattr_init(&w->mutex,&attr) ;
+        pthread_mutexattr_destroy(&attr) ;
+    }
+#else /* non-embedded */
     pthread_mutex_init(&w->mutex, NULL);
+#endif /* EMBEDDED */
     w->inactivity_timeout = inactivity_timeout;
     w->oldest = NULL;
     w->newest = NULL;

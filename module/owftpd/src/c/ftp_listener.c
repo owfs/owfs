@@ -83,7 +83,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
                       int port, 
                       int max_connections,
                       int inactivity_timeout,
-                      error_t *err)
+                      error_code_t *err)
 {
     sockaddr_storage_t sock_addr;
     int fd;
@@ -237,7 +237,17 @@ int ftp_listener_init(struct ftp_listener_t *f,
     f->max_connections = max_connections;
     f->num_connections = 0;
     f->inactivity_timeout = inactivity_timeout;
+#if defined(__uClinux__) || defined(EMBEDDED)
+    {
+        pthread_mutexattr_t attr ;
+        pthread_mutexattr_init(&attr) ;
+        pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_ADAPTIVE_NP) ;
+        pthread_mutexattr_init(&f->mutex,&attr) ;
+        pthread_mutexattr_destroy(&attr) ;
+    }
+#else /* non-embedded */
     pthread_mutex_init(&f->mutex, NULL);
+#endif
 
     daemon_assert(strlen(dir) < sizeof(f->dir));
     strcpy(f->dir, dir);
@@ -252,7 +262,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
 }
 
 /* receive connections */
-int ftp_listener_start(struct ftp_listener_t *f, error_t *err)
+int ftp_listener_start(struct ftp_listener_t *f, error_code_t *err)
 {
     pthread_t thread_id;
     int ret_val;
@@ -315,7 +325,7 @@ static int invariant(const struct ftp_listener_t *f)
 /* handle incoming connections */
 static void *connection_acceptor(struct ftp_listener_t *f)
 {
-    error_t err;
+    error_code_t err;
     int num_error;
 
     int fd;

@@ -17,9 +17,9 @@
 #include "daemon_assert.h"
 #include "ftp_error.h"
 
-static int invariant(const error_t *err);
+static int invariant(const error_code_t *err);
 
-void error_init(error_t *err, int error_code, const char *desc_fmt, ...)
+void error_init(error_code_t *err, int error_code, const char *desc_fmt, ...)
 {
     va_list args;
 
@@ -35,20 +35,20 @@ void error_init(error_t *err, int error_code, const char *desc_fmt, ...)
     daemon_assert(invariant(err));
 }
 
-int error_get_error_code(const error_t *err)
+int error_get_error_code(const error_code_t *err)
 {
     daemon_assert(invariant(err));
     return err->error_code;
 }
 
-const char *error_get_desc(const error_t *err)
+const char *error_get_desc(const error_code_t *err)
 {
     daemon_assert(invariant(err));
     return err->desc;
 }
 
 #ifndef NDEBUG
-static int invariant(const error_t *err)
+static int invariant(const error_code_t *err)
 {
     if (err == NULL) {
         return 0;

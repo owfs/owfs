@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     char *address;
     
     struct passwd *user_info;
-    error_t err;
+    error_code_t err;
 
     struct ftp_listener_t ftp_listener;
 

@@ -127,7 +127,7 @@ int ftp_session_init(struct ftp_session_t *f,
                      const sockaddr_storage_t *server_addr, 
                      struct telnet_session_t *t, 
                      const char *dir,
-                   error_t *err)
+                   error_code_t *err)
 {
     daemon_assert(f != NULL);
     daemon_assert(client_addr != NULL);
@@ -917,6 +917,11 @@ exit_epsv:
 static void init_passive_port( void )
 {
     struct timeval tv;
+#ifdef EMBEDDED
+    unsigned int seed ;
+    seed = tv.tv_usec & 0xFFFF ;
+    srand(seed) ;
+#else /* not embedded */
     unsigned short int seed[3];
 
     gettimeofday(&tv, NULL);
@@ -924,6 +929,7 @@ static void init_passive_port( void )
     seed[1] = tv.tv_sec & 0xFFFF;
     seed[2] = tv.tv_usec & 0xFFFF;
     seed48(seed);
+#endif /* EMBEDDED */
 }
 
 /* pick a port to try to bind() for passive FTP connections */
@@ -938,7 +944,11 @@ static int get_passive_port( void )
 
     /* pick a random port between 1024 and 65535, inclusive */
     pthread_mutex_lock(&mutex);
+#ifdef EMBEDDED
+    port = (rand() % 64512 ) + 1024 ;
+#else /* EMBEDDED */
     port = (lrand48() % 64512) + 1024;
+#endif /* EMBEDDED */
     pthread_mutex_unlock(&mutex);
 
     return port;
