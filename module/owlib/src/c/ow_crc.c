@@ -81,7 +81,7 @@ int CRC16seeded( const unsigned char * bytes , const int length , const int seed
         if ( ret == 0xB001 ) {
 	    ret = 0;  /* good */
         } else {
-	    ret = 1; /* error */
+	    ret = -1; /* error */
 	    ++CRC16_errors ; /* statistics */
         }
     STATUNLOCK
