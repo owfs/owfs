@@ -22,6 +22,8 @@ $Id$
 /* ---------------------------------------------- */
 /* raw COM port interface routines                */
 /* ---------------------------------------------- */
+
+struct termios oldSerialTio;    /*old serial port settings*/
 //
 //open serial port
 // set global devfd and devport

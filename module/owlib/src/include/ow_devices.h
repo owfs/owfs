@@ -38,6 +38,7 @@ $Id$
 #include "ow_2505.h" // write-only memory
 #include "ow_2760.h" // battery
 #include "ow_lcd.h"  // LCD driver
+#include "ow_simultaneous.h" // fake entry to address entire directory
 #include "ow_stats.h" // statistic reporting pseudo-device
 #include "ow_settings.h" // settings pseudo-device
 #include "ow_system.h" // system pseudo-device

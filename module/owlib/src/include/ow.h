@@ -329,7 +329,6 @@ bound the allowable files in a device directory
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 //enum dev_type { dev_1wire, dev_interface, dev_status, dev_statistic, } ;
 extern void * Tree[5] ;
-uint16_t dev_flags ;
 #define DEV_resume  0x0001
 struct device {
     char * code ;
@@ -419,6 +418,12 @@ struct parsedname {
     struct stateinfo * si ;
 } ;
 
+enum simul_type { simul_temp, simul_volt, } ;
+#ifndef OW_CACHE
+    extern unsigned char simulpath[8] ;
+    extern time_t simulexpire ;
+#endif /* OW_CACHE */
+
 /* ---- end Parsedname ----------------- */
 /* ------------------------------------- */
 
@@ -426,8 +431,6 @@ extern speed_t speed;        /* terminal speed constant */
 
 /* Delay for clearing buffer */
 #define    WASTE_TIME    (2)
-
-struct termios oldSerialTio;    /*old serial port settings*/
 
 /* Globals */
 extern char * devport ;    /* Device name (COM port)*/
@@ -660,6 +663,9 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
 int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
 int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) ;
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
+
+int Simul_Test( const enum simul_type type, const struct parsedname * pn ) ;
+int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
 void LockSetup( void ) ;
 void LockGet( const struct parsedname * const pn ) ;

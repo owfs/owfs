@@ -25,6 +25,7 @@ header_DATA = ow_1820.h \
               ow_stats.h \
               ow_settings.h \
               ow_system.h \
+              ow_simultaneous.h \
               ow_stub.h \
               sem.h \
               thermocouple.h
