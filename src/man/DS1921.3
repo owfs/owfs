@@ -61,6 +61,8 @@ Thermacron temperature logging iButton.
 |
 .B total_samples
 |
+.B version
+|
 .B address
 |
 .B crc8
@@ -96,20 +98,10 @@ Accepted date formats are:
   3/23/04 23:34:57
 .br
   current locale setting (your system's format)
-.SS current
-.I read-only, integer
+.SS version
+.I read-only, ascii
 .br
-Current reading. Actual current depends on Rsens resistor (see datasheet).
-.br
-The formula for current is I =
-.I current
-/(4096*Rsens)
-.br
-with units in Amps and Ohms.
-.br
-Current measurement will be temporarily enabled (see
-.I Ienable
-) if not currently enabled (pun intended) for this reading.
+Thermacron sub-type.
 .SS humidity
 .I read-only, floating point
 .br

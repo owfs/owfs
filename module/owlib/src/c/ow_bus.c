@@ -68,21 +68,21 @@ printf("\n");
     if ( sendlength>0 ) {
         /* first flush */
         COM_flush();
-printf("SAG sendlength=%d, getlength=%d\n",sendlength,getlength);
-{
-int i;
-printf("SAG write: ");
-for(i=0;i<sendlength;++i)printf("%.2X ",bussend[i]);
-printf("\n");
-}
+//printf("SAG sendlength=%d, getlength=%d\n",sendlength,getlength);
+//{
+//int i;
+//printf("SAG write: ");
+//for(i=0;i<sendlength;++i)printf("%.2X ",bussend[i]);
+//printf("\n");
+//}
         /* send out string */
         if ( write(devfd,bussend,sendlength) != sendlength ) return -EIO; /* Send the bit */
     }
-printf("SAG written\n");
+//printf("SAG written\n");
     /* get back string -- with timeout and partial read loop */
     if ( busget && getlength ) {
 	while ( gl > 0 ) {
-printf("SAG readlength=%d\n",gl);
+//printf("SAG readlength=%d\n",gl);
 		fd_set readset;
 		struct timeval tv = {5,0}; /* 5 seconds */
 		/* Initialize readset */
@@ -91,10 +91,10 @@ printf("SAG readlength=%d\n",gl);
 
 		/* Read if it doesn't timeout first */
 		if( select( devfd+1, &readset, NULL, NULL, &tv ) > 0 ) {
-printf("SAG selected\n");
+//printf("SAG selected\n");
 		/* Is there something to read? */
 		if( FD_ISSET( devfd, &readset )==0 ) return -EIO ; /* error */
-printf("SAG selected readset\n");
+//printf("SAG selected readset\n");
 /*
 {
 int i;

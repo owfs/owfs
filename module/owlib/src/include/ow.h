@@ -245,6 +245,14 @@ struct aggregate {
 
 #define ft_len_type (-1)
     /* property format, controls web display */
+/* Some explanation of ft_format:
+     Each file type is either a device (physical 1-wire chip or virtual statistics container).
+     or a file (property).
+     The devices act as directories of properties.
+     The files are either properties of the device, or sometimes special directories themselves.
+     If properties, they can be integer, text, etc or special directory types.
+     There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
+*/
 enum ft_format { ft_directory, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
 enum ft_change { ft_static, ft_stable, ft_volatile, ft_second, ft_statistic, } ;

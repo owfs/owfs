@@ -47,6 +47,7 @@ $Id$
  fREAD_FUNCTION( FS_r_21histotemp ) ;
  fREAD_FUNCTION( FS_r_21histogap ) ;
  fREAD_FUNCTION( FS_r_21resolution ) ;
+ aREAD_FUNCTION( FS_r_21version ) ;
  fREAD_FUNCTION( FS_r_21rangelow ) ;
  fREAD_FUNCTION( FS_r_21rangehigh ) ;
  uREAD_FUNCTION( FS_r_21histogram ) ;
@@ -70,6 +71,8 @@ yWRITE_FUNCTION( FS_w_21run ) ;
 uWRITE_FUNCTION( FS_w_21atime ) ;
  uREAD_FUNCTION( FS_r_21atrig ) ;
 uWRITE_FUNCTION( FS_w_21atrig ) ;
+ yREAD_FUNCTION( FS_r_21mip ) ;
+yWRITE_FUNCTION( FS_w_21mip ) ;
 /* ------- Structures ----------- */
 
 struct aggregate A1921p = { 16, ag_numbers, ag_separate, } ;
@@ -91,7 +94,7 @@ struct filetype DS1921[] = {
     {"logtime"        , 12,&A1921l, ft_unsigned,ft_volatile, {u:FS_r_21logtime}    , {v:NULL}             , NULL, } ,
     {"logdate"        , 24,&A1921l,    ft_ascii,ft_volatile, {a:FS_r_21logdate}    , {v:NULL}             , NULL, } ,
     {"samplerate"     ,  5,   NULL, ft_unsigned,  ft_stable, {u:FS_r_21samplerate} , {u:FS_w_21samplerate}, NULL, } ,
-    {"running"        ,  5,   NULL,    ft_yesno,  ft_stable, {y:FS_r_21run}        , {y:FS_w_21run}       , NULL, } ,
+    {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_21run}        , {y:FS_w_21run}       , NULL, } ,
     {"mission_samples", 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r_21_3byte}     , {v:NULL}             , (void *)0x021A, } ,
     {"total_samples"  , 12,   NULL, ft_unsigned,ft_volatile, {u:FS_r_21_3byte}     , {v:NULL}             , (void *)0x021D, } ,
     {"alarm_second"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_21atime}      , {u:FS_w_21atime}     , (void *)0x0207, } ,
@@ -99,6 +102,8 @@ struct filetype DS1921[] = {
     {"alarm_hour"     , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_21atime}      , {u:FS_w_21atime}     , (void *)0x0209, } ,
     {"alarm_dow"      , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_21atime}      , {u:FS_w_21atime}     , (void *)0x020A, } ,
     {"alarm_trigger"  , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_21atrig}      , {u:FS_w_21atrig}     , NULL, } ,
+    {"in_mission"     ,  1,   NULL,    ft_yesno,ft_volatile, {y:FS_r_21mip}        , {y:FS_w_21mip}       , NULL, } ,
+    {"version"        , 11,   NULL,    ft_ascii,  ft_stable, {a:FS_r_21version}    , {v:NULL}             , NULL, } ,
 } ;
 DeviceEntry( 21, DS1921 )
 
@@ -116,7 +121,9 @@ struct Version Versions[] =
     } ;
 #define VersionElements ( sizeof(Versions) / sizeof(struct Version) )
 int VersionCmp( const void * pn , const void * version ) {
-    return ((const struct parsedname *)pn)->sn[6] ^ ((const struct Version *)version)->ID ^ (((unsigned int)((const struct parsedname *)pn)->sn[7])&0x0F)<<8;
+//printf("VC sn[5]=%.4X sn[6]=%.4X versionID=%.4X\n",((const struct parsedname *)pn)->sn[5],((const struct parsedname *)pn)->sn[6],((const struct Version *)version)->ID) ;
+//printf("VC combo=%.4X\n", ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) );
+    return ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) - ((const struct Version *)version)->ID ;
 }
 /* ------- Functions ------------ */
 
@@ -125,6 +132,7 @@ static int OW_w_21mem( const unsigned char * data , const size_t length , const 
 static int OW_r_21mem( unsigned char * data , const int length , const int location, const struct parsedname * pn ) ;
 static int OW_21temperature( int * T , const int delay, const struct parsedname * pn ) ;
 static int OW_r_21logtime(time_t *t, const struct parsedname * pn) ;
+static int OW_21clearmemory( const struct parsedname * const pn) ;
 
 /* histogram lower bound */
 int FS_r_21histogram(unsigned int * h , const struct parsedname * pn) {
@@ -162,6 +170,12 @@ int FS_r_21histogap(float * g , const struct parsedname * pn) {
     if ( v==NULL ) return -EINVAL ;
     *g = TemperatureGap(v->resolution*4) ;
     return 0 ;
+}
+
+int FS_r_21version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
+    if ( v==NULL ) return -EINVAL ;
+    return FS_read_return( buf, size, offset , v->name , strlen(v->name) ) ;
 }
 
 int FS_r_21resolution(float * r , const struct parsedname * pn) {
@@ -269,17 +283,52 @@ int FS_w_21date(const char *buf, const size_t size, const off_t offset , const s
 int FS_w_21run(const int * y, const struct parsedname * pn) {
     unsigned char cr ;
 
-    if ( OW_r_21mem( &cr, 1, 0x020D, pn) ) return -EINVAL ;
+    if ( OW_r_21mem( &cr, 1, 0x020E, pn) ) return -EINVAL ;
     cr = y[0] ? cr&0x7F : cr|0x80 ;
-    if ( OW_w_21mem( &cr, 1, 0x020D, pn) ) return -EINVAL ;
+    if ( OW_w_21mem( &cr, 1, 0x020E, pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* clock running? */
 int FS_r_21run(int * y , const struct parsedname * pn) {
     unsigned char cr ;
-    if ( OW_r_21mem(&cr, 1, 0x020D,pn) ) return -EINVAL ;
-    *y = ((cr&=0x80)!=0) ;
+    if ( OW_r_21mem(&cr, 1, 0x020E,pn) ) return -EINVAL ;
+    *y = ((cr&0x80)!=0) ;
+    return 0 ;
+}
+
+/* start/stop mission */
+int FS_w_21mip(const int * y, const struct parsedname * pn) {
+    unsigned char cr ;
+    if ( OW_r_21mem(&cr, 1, 0x0214,pn) ) return -EINVAL ;
+    if ( y[0] ) { /* start a mission! */
+        int clockstate ;
+        if ( (cr&0x10) == 0x10 ) return 0 ; /* already in progress */
+        /* Make sure the clock is running */
+	if ( FS_r_21run( &clockstate, pn ) ) return -EINVAL ;
+	if ( clockstate==0 ) {
+	    clockstate = 1 ;
+            if ( FS_w_21run( &clockstate, pn ) ) return -EINVAL ;
+	    UT_delay(1000) ;
+	}
+	/* Clear memory */
+	if ( OW_21clearmemory(pn ) ) return -EINVAL ;
+        if ( OW_r_21mem(&cr, 1, 0x020E,pn) ) return -EINVAL ;
+	cr = (cr&0x3F) | 0x40 ;
+        if ( OW_w_21mem( &cr, 1, 0x020E, pn) ) return -EINVAL ;
+    } else { /* turn off */
+        if ( (cr&0x10) == 0x00 ) return 0 ; /* already off */
+        cr ^= 0x10 ;
+        if ( OW_w_21mem( &cr, 1, 0x0214, pn) ) return -EINVAL ;
+    }
+    return 0 ;
+}
+
+/* mission is progress? */
+int FS_r_21mip(int * y , const struct parsedname * pn) {
+    unsigned char cr ;
+    if ( OW_r_21mem(&cr, 1, 0x0214,pn) ) return -EINVAL ;
+    *y = ((cr&0x10)!=0) ;
     return 0 ;
 }
 
@@ -515,4 +564,20 @@ static int OW_r_21logtime(time_t *t, const struct parsedname * pn) {
         *t += 60*pn->extension*data[0] ;
 	}
     return 0 ;
+}
+
+static int OW_21clearmemory( const struct parsedname * const pn) {
+    unsigned char cr ;
+    int ret ;
+    /* Clear memory flag */
+    if ( OW_r_21mem(&cr, 1, 0x020E,pn) ) return -EINVAL ;
+    cr = (cr&0x3F) | 0x40 ;
+    if ( OW_w_21mem( &cr, 1, 0x020E, pn) ) return -EINVAL ;
+
+    /* Clear memory command */
+    cr = 0x3C ;
+    BUS_lock() ;
+	ret = BUS_select(pn) || BUS_send_data( &cr, 1 ) ;
+    BUS_unlock() ;
+    return ret ;
 }

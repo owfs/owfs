@@ -3,10 +3,10 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 #include <stdlib.h>
@@ -67,7 +67,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       pn->dev != NoDevice, pn->ft == NULL    Known device directory
       pn->dev != NoDevice, pn->ft != NULL    Known device, known file type
 
-	  pn->extension = -1 for ALL, 0 if non-aggregate, else 0-max extensionss-1
+      pn->extension = -1 for ALL, 0 if non-aggregate, else 0-max extensionss-1
 */
 static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) {
     int ret ;
@@ -113,56 +113,56 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
    *next points to next statement, of NULL if not filetype
  */
 int NamePart( const char * filename, const char ** next, struct parsedname * pn ) {
-	struct device ** dpp ;
-	const char * f = filename ;
-	if ( isxdigit(filename[0]) && isxdigit(filename[1]) ) { /* starts with 2 hex digits */
-		unsigned char ID[14] = { filename[0], filename[1], 0x00, } ;
-		int i ;
+    struct device ** dpp ;
+    const char * f = filename ;
+    if ( isxdigit(filename[0]) && isxdigit(filename[1]) ) { /* starts with 2 hex digits */
+        unsigned char ID[14] = { filename[0], filename[1], 0x00, } ;
+        int i ;
 //printf("NP hex = %s\n",filename ) ;
-		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-			pn->dev = *dpp ;
-		} else {
-			pn->dev = &NoDevice ; /* unknown device */
-		}
+        /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
+        if ( (dpp = bsearch(ID,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
+            pn->dev = *dpp ;
+        } else {
+            pn->dev = &NoDevice ; /* unknown device */
+        }
 //printf("NP cmp'ed %s\n",ID ) ;
-		for ( i=2, f+=2 ; i<14 ; ++i,++f ) { /* get ID number */
-			if ( *f == '.' ) ++f ;
-			if ( isxdigit(*f) ) {
-				ID[i] = *f ;
-			} else {
-				return -ENOENT ;
-			}
-			pn->sn[0] = string2num( &ID[0] ) ;
-			pn->sn[1] = string2num( &ID[2] ) ;
-			pn->sn[2] = string2num( &ID[4] ) ;
-			pn->sn[3] = string2num( &ID[6] ) ;
-			pn->sn[4] = string2num( &ID[8] ) ;
-			pn->sn[5] = string2num( &ID[10] ) ;
-			pn->sn[6] = string2num( &ID[12] ) ;
-			pn->sn[7] = CRC8compute(pn->sn,7) ;
-		}
-		if ( *f == '.' ) ++f ;
-		if ( isxdigit(f[0]) && isxdigit(f[1]) ) {
-			char crc[2] ;
-			num2string(crc,pn->sn[7]) ;
-			if ( strncasecmp( crc, f, 2 ) ) return -ENOENT ;
-			f += 2 ;
-		}
-	} else {
-		char * sep ;
-		char fn[33] ;
+        for ( i=2, f+=2 ; i<14 ; ++i,++f ) { /* get ID number */
+            if ( *f == '.' ) ++f ;
+            if ( isxdigit(*f) ) {
+                ID[i] = *f ;
+            } else {
+                return -ENOENT ;
+            }
+            pn->sn[0] = string2num( &ID[0] ) ;
+            pn->sn[1] = string2num( &ID[2] ) ;
+            pn->sn[2] = string2num( &ID[4] ) ;
+            pn->sn[3] = string2num( &ID[6] ) ;
+            pn->sn[4] = string2num( &ID[8] ) ;
+            pn->sn[5] = string2num( &ID[10] ) ;
+            pn->sn[6] = string2num( &ID[12] ) ;
+            pn->sn[7] = CRC8compute(pn->sn,7) ;
+        }
+        if ( *f == '.' ) ++f ;
+        if ( isxdigit(f[0]) && isxdigit(f[1]) ) {
+            char crc[2] ;
+            num2string(crc,pn->sn[7]) ;
+            if ( strncasecmp( crc, f, 2 ) ) return -ENOENT ;
+            f += 2 ;
+        }
+    } else {
+        char * sep ;
+        char fn[33] ;
 //printf("NP nonhex = %s\n",filename ) ;
-		strncpy(fn,filename,32);
-		fn[32] = '\0' ;
-		if ( (sep=strchr(fn,'/')) ) *sep = '\0' ;
-		if ( (dpp = bsearch(fn,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
-			pn->dev = *dpp ;
-			f += strlen(fn) ;
-		} else {
-			return -ENOENT ; /* unknown device */
-		}
-	}
+        strncpy(fn,filename,32);
+        fn[32] = '\0' ;
+        if ( (sep=strchr(fn,'/')) ) *sep = '\0' ;
+        if ( (dpp = bsearch(fn,Devices,nDevices,sizeof(struct device *),devicecmp)) ) {
+            pn->dev = *dpp ;
+            f += strlen(fn) ;
+        } else {
+            return -ENOENT ; /* unknown device */
+        }
+    }
     if ( f[0]=='/' ) {
         *next = &f[1] ;
     } else if ( f[0] == '\0' ) {
@@ -192,38 +192,38 @@ int FilePart( const char * const filename, const char ** next, struct parsedname
 
     pExt = strchr(pFile,'.') ; /* look for extension */
     if ( pExt ) {
-    	*pExt = '\0' ;
-    	++pExt ;
+        *pExt = '\0' ;
+        ++pExt ;
 //printf("FP file with extension=%s\n",pExt);
     }
 
-    /* Mathc to known filetypes for this device */
+    /* Match to known filetypes for this device */
     if ( (pn->ft = bsearch( pFile , pn->dev->ft , (size_t) pn->dev->nft , sizeof(struct filetype) , filecmp )) ) {
 //printf("FP known filetype %s\n",pn->ft->name) ;
         /* Filetype found, now process extension */
-		if ( pExt==NULL ) { /* no extension */
-		    if ( pn->ft->ag ) return -ENOENT ; /* aggregate filetypes need an extension */
+        if ( pExt==NULL ) { /* no extension */
+            if ( pn->ft->ag ) return -ENOENT ; /* aggregate filetypes need an extension */
             pn->extension = 0 ; /* default when no aggregate */
-		} else if ( pn->ft->ag == NULL ) {
-		    return -ENOENT ; /* An extension not allowed when non-aggregate */
-		} else if ( strcasecmp(pExt,"ALL")==0 ) {
+        } else if ( pn->ft->ag == NULL ) {
+            return -ENOENT ; /* An extension not allowed when non-aggregate */
+        } else if ( strcasecmp(pExt,"ALL")==0 ) {
             pn->extension = -1 ; /* ALL */
 //printf("FP ALL\n") ;
         } else {
-		    if ( pn->ft->ag->letters == ag_letters ) {
+            if ( pn->ft->ag->letters == ag_letters ) {
 //printf("FP letters\n") ;
-		        if ( (strlen(pExt)!=1) || !isupper(*pExt) ) return -ENOENT ;
-			    pn->extension = *pExt - 'A' ; /* Letter extension */
+                if ( (strlen(pExt)!=1) || !isupper(*pExt) ) return -ENOENT ;
+                pn->extension = *pExt - 'A' ; /* Letter extension */
             } else { /* Numbers */
 //printf("FP numbers\n") ;
-            	pn->extension = strtol(pExt,&p,0) ; /* Number extension */
+                pn->extension = strtol(pExt,&p,0) ; /* Number extension */
                 if ( (p==pExt) || ((pn->extension == 0) && (errno==-EINVAL)) ) return -ENOENT ; /* Bad number */
-			}
-			if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) return -ENOENT ; /* Extension out of range */
+            }
+            if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) return -ENOENT ; /* Extension out of range */
 //printf("FP in range\n") ;
-		}
+        }
 ///printf("FP Good\n") ;
-		return 0 ; /* Good file */
+        return 0 ; /* Good file */
     }
     return -ENOENT ; /* filetype not found */
 }
@@ -311,26 +311,26 @@ void FS_parse_dir( char * const dest , const char * const buf ) { /* shift addre
 
 /* Length of file based on filetype and extension */
 size_t FileLength( const struct parsedname * const pn ) {
-	if ( pn->ft->suglen == ft_len_type ) {
-		return strlen(pn->dev->name) ;
-	} else if ( pn->ft->ag && pn->extension==-1 ) {
-			if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
-			return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
-	} else {
-		return pn->ft->suglen ;
-	}
+    if ( pn->ft->suglen == ft_len_type ) {
+        return strlen(pn->dev->name) ;
+    } else if ( pn->ft->ag && pn->extension==-1 ) {
+            if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
+            return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
+    } else {
+        return pn->ft->suglen ;
+    }
 }
 
 /* For array properties -- length of full aggregate file */
 size_t FullFileLength( const struct parsedname * const pn ) {
-	if ( pn->ft->suglen == ft_len_type ) {
-		return strlen(pn->dev->name) ;
-	} else if ( pn->ft->ag ) {
-			if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
-			return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
-	} else {
-		return pn->ft->suglen ;
-	}
+    if ( pn->ft->suglen == ft_len_type ) {
+        return strlen(pn->dev->name) ;
+    } else if ( pn->ft->ag ) {
+            if ( pn->ft->format==ft_binary ) return pn->ft->suglen * pn->ft->ag->elements ;
+            return (1+pn->ft->suglen)*(pn->ft->ag->elements)-1 ;
+    } else {
+        return pn->ft->suglen ;
+    }
 }
 
 static int BranchAdd( struct parsedname * const pn ) {
