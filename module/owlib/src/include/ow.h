@@ -751,6 +751,7 @@ int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
 int CheckPresence( const struct parsedname * const pn ) ;
+int Check1Presence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 

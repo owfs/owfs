@@ -71,6 +71,8 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
         r = -EISDIR ;
     } else if (pn.type == pn_structure ) { /* structure is read-only */
         r = -ENOTSUP ;
+    } else if ( pn.in == NULL ) {
+        r = -ENODEV ;
     } else {
         r = FS_write_postparse( buf, size, offset, &pn ) ;
     }
@@ -93,9 +95,8 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         pn2.si = &si ;
         return (void *) FS_write_postparse(buf,size,offset,&pn2) ;
     }
-    int threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
+    int threadbad = pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
 #endif /* OW_MT */
-    if ( pn->in==NULL ) return -ENODEV ;
 
     if ( pn->in->busmode == bus_remote ) {
         r = ServerWrite( buf, size, offset, pn ) ;

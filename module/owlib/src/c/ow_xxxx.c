@@ -87,11 +87,19 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 
 /* Check if device exists -- 0 yes, 1 no */
 int CheckPresence( const struct parsedname * const pn ) {
-    int ret = 0 ;
     if ( pn->type == pn_real ) {
         if ( pn->dev != DeviceSimultaneous ) return CheckPresence_low(pn) ;
     }
-    return ret ;
+    return 0 ;
+}
+
+/* Check if device exists -- 0 yes, 1 no */
+int Check1Presence( const struct parsedname * const pn ) {
+    int y ;
+    if ( pn->type == pn_real ) {
+        if ( pn->dev != DeviceSimultaneous ) return FS_present(&y,pn) || y==0 ;
+    }
+    return 0 ;
 }
 
 /* Check if device exists -- 0 yes, 1 no */

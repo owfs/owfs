@@ -61,7 +61,7 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->type    = ntohl(sm->type)    ;
     sm->sg      = ntohl(sm->sg)      ;
     sm->offset  = ntohl(sm->offset)  ;
-printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
+//printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
 //printf("<%.4d|%.4d\n",sm->type,sm->payload);
     if ( sm->payload == 0 ) {
          msg = NULL ;
@@ -89,7 +89,7 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     if ( data && cm->payload ) {
         ++nio ;
     }
-printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
+//printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 
     cm->payload = htonl(cm->payload) ;

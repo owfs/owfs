@@ -69,7 +69,7 @@ int owopt( const int c , const char * const arg ) {
         return 0 ;
     case 'u':
 #ifdef OW_USB
-printf("OPT usb arg=%s\n",arg);
+//printf("OPT usb arg=%s\n",arg);
         return OW_ArgUSB( arg ) ;
 #else /* OW_USB */
         fprintf(stderr,"Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n") ;

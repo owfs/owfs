@@ -210,6 +210,7 @@ int LibStart( void ) {
             break ;
         }
         if (ret) BadAdapter_detect(in) ;
+//printf("Adapter(%d) = %s\n",in->index,in->adapter_name);
     } while ( (in=in->next) ) ;
 
     /* daemon() should work for embedded systems with MMU, but

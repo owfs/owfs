@@ -18,6 +18,7 @@ $ID: $
 
 
 /* ------- Prototypes ----------- */
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 static int FS_real_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
@@ -65,6 +66,43 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r ;
+    if ( pn->in==NULL ) return -ENODEV ;
+
+    STATLOCK
+        AVERAGE_IN(&read_avg)
+        AVERAGE_IN(&all_avg)
+    STATUNLOCK
+    switch (pn->type) {
+    case pn_structure:
+        /* Get structure data from local memory */
+        r = FS_structure(buf,size,offset,pn) ;
+        break ;
+    case pn_system:
+    case pn_settings:
+    case pn_statistics:
+//printf("Memory read\n");
+        /* Get internal data from first source */
+        r = (pn->in->busmode==bus_remote) ? ServerRead(buf,size,offset,pn) : FS_real_read( buf, size, offset, pn ) ;
+        break ;
+    default:
+        /* real data -- go through device chain */
+        r = FS_read_seek(buf,size,offset,pn) ;
+    }
+    if ( r>=0 ) {
+        STATLOCK
+            ++read_success ; /* statistics */
+            read_bytes += r ; /* statistics */
+        STATUNLOCK
+    }
+    STATLOCK
+        AVERAGE_OUT(&read_avg)
+        AVERAGE_OUT(&all_avg)
+    STATUNLOCK
+    return r ;
+}
+
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+    int r ;
 #ifdef OW_MT
     pthread_t thread ;
     char buf2[size] ;
@@ -76,57 +114,39 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         memcpy( &pn2, pn , sizeof(struct parsedname) ) ;
         pn2.in = pn->in->next ;
         pn2.si = &si ;
-        return (void *) FS_read_postparse(buf2,size,offset,&pn2) ;
+        return (void *) FS_read_seek(buf2,size,offset,&pn2) ;
     }
     int threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
 #endif /* OW_MT */
-    if ( pn->in==NULL ) return -ENODEV ;
-
+//printf("READSEEK path=%s index=%d\n",pn->path,pn->in->index);
     if ( pn->in->busmode == bus_remote ) {
         r = ServerRead(buf,size,offset,pn) ;
     } else {
         size_t s = size ;
         STATLOCK
-            AVERAGE_IN(&read_avg)
-            AVERAGE_IN(&all_avg)
+            ++ read_calls ; /* statistics */
         STATUNLOCK
-        if ( pn->type == pn_structure ) {
-            r = FS_structure(buf,size,offset,pn) ;
+        /* Check the cache (if not pn_uncached) */
+        if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
+            LockGet(pn) ;
+                r = FS_real_read( buf, size, offset, pn ) ;
+            LockRelease(pn) ;
+//printf("Result1 = %d\n",r);
+        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
+    //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
+            LockGet(pn) ;
+                r = FS_real_read( buf, size, offset, pn ) ;
+                if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
+            LockRelease(pn) ;
+//printf("Result2 = %d\n",r);
         } else {
+    //printf("Read found %s\n",path) ;
             STATLOCK
-                ++ read_calls ; /* statistics */
+                ++read_cache ; /* statistics */
+                read_cachebytes += s ; /* statistics */
             STATUNLOCK
-            /* Check the cache (if not pn_uncached) */
-            if ( offset!=0 || IsCacheEnabled(pn)==0 ) {
-                LockGet(pn) ;
-                    r = FS_real_read( buf, size, offset, pn ) ;
-                LockRelease(pn) ;
-            } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
-        //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
-                LockGet(pn) ;
-                    r = FS_real_read( buf, size, offset, pn ) ;
-                    if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
-                LockRelease(pn) ;
-            } else {
-        //printf("Read found %s\n",path) ;
-                STATLOCK
-                    ++read_cache ; /* statistics */
-                    read_cachebytes += s ; /* statistics */
-                STATUNLOCK
-                r = s ;
-            }
-
-            if ( r>=0 ) {
-                STATLOCK
-                    ++read_success ; /* statistics */
-                    read_bytes += r ; /* statistics */
-                STATUNLOCK
-            }
+            r = s ;
         }
-        STATLOCK
-            AVERAGE_OUT(&read_avg)
-            AVERAGE_OUT(&all_avg)
-        STATUNLOCK
     }
 #ifdef OW_MT
     if ( !threadbad ) { /* was a thread created? */
@@ -134,9 +154,13 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         int rt ;
         if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
         rt = (int) v ;
-        if ( rt < 0 ) return r ; /* is it an error return? Then return this one */
-        memcpy( buf, buf2, (size_t) rt ) ; /* Use the thread's result */
-        return rt ;
+//printf("READ 1st=%d 2nd=%d\n",r,rt);
+        if ( rt >= 0 && rt > r ) { /* is it an error return? Then return this one */
+//printf("READ from 2nd adapter\n") ;
+            memcpy( buf, buf2, (size_t) rt ) ; /* Use the thread's result */
+            return rt ;
+        }
+//printf("READ from 1st adapter\n") ;
     }
 #endif /* OW_MT */
     return r ;
@@ -147,11 +171,11 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 */
 static int FS_real_read(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
-//printf("RealRead path=%s size=%d, offset=%d, extension=%d\n",path,size,offset,pn->extension) ;
+//printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index) ;
     /* Readable? */
     if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
     /* Do we exist? Only test static cases */
-    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && CheckPresence(pn) ) return -ENOENT ;
+    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) return -ENODEV ;
 
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) {
@@ -173,12 +197,13 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
 
     /* Normal read. Try three times */
     ++read_tries[0] ; /* statitics */
-    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
-    ++read_tries[1] ; /* statitics */
-    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
-    ++read_tries[2] ; /* statitics */
     r = FS_parse_read( buf, size, offset, pn ) ;
-    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",pn->path,(int)size) ;
+//printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d result=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index,r) ;
+//    ++read_tries[1] ; /* statitics */
+//    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
+//    ++read_tries[2] ; /* statitics */
+//    r = FS_parse_read( buf, size, offset, pn ) ;
+//    if (r<0) syslog(LOG_INFO,"Read error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 
@@ -214,6 +239,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
 /* read without artificial separation of combination */
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret = 0 ;
+//printf("ParseRead path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index) ;
 
     switch( pn->ft->format ) {
     case ft_integer: {
@@ -338,9 +364,10 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                         buf[i*2] = y[i] ? '1' : '0' ;
                         if ( i<elements-1 ) buf[i*2+1] = ',' ;
                     }
+                    ret = elements*2-1 ;
                 }
             free( y ) ;
-            return elements*2-1 ;
+            return ret ; ;
         }
     case ft_bitfield:
         if (offset) {
@@ -355,8 +382,9 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                     u = u>>1 ;
                     if ( i<elements-1 ) buf[i*2+1] = ',' ;
                 }
+                ret = elements*2-1 ;
             }
-            return elements*2-1 ;
+            return ret ;
         }
     case ft_ascii: {
         size_t s = FullFileLength(pn) ;
@@ -466,14 +494,17 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
                 ret = (pn->ft->read.y)(y,pn) ;
                 if (ret >= 0) buf[0] = y[pn->extension]?'1':'0' ;
             free( y ) ;
-            return 1 ;
+            break ;
         }
     case ft_bitfield:
         {
             unsigned int u ;
             ret = (pn->ft->read.u)(&u,pn) ;
-            if (ret >= 0) buf[0] = u & (1<<pn->extension) ? '1' : '0' ;
-            return 1 ;
+            if (ret >= 0) {
+                buf[0] = u & (1<<pn->extension) ? '1' : '0' ;
+                ret = 1 ;
+            }
+            break ;
         }
     case ft_ascii: {
         size_t s = FullFileLength(pn) ;
