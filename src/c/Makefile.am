@@ -14,8 +14,7 @@ CFLAGS = -I../include \
          -Wcast-align \
          -Wconversion \
          -Wstrict-prototypes \
-         -Wredundant-decls \
-         -Wunreachable-code
+         -Wredundant-decls
                         
 clean-generic:
 
