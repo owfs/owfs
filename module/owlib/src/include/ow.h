@@ -361,10 +361,14 @@ Some properties occur are arrays (pages of memory, logs of temperature
 values). The "aggregate" structure holds to allowable size, and the method
 of access. -- Aggregate properties are either accessed all at once, then
 split, or accessed individually. The choice depends on the device hardware.
+There is even a further wrinkle: mixed. In cases where the handling can be either,
+mixed causes separate handling of individual items are querried, and combined
+if ALL are requested. This is useful for the DS2450 quad A/D where volt and PIO functions
+step on each other, but the conversion time for individual is rather costly.
  */
 
 enum ag_index {ag_numbers, ag_letters, } ;
-enum ag_combined { ag_separate, ag_aggregate, } ;
+enum ag_combined { ag_separate, ag_aggregate, ag_mixed, } ;
 /* aggregate defines array properties */
 struct aggregate {
     int elements ; /* Maximum number of elements */

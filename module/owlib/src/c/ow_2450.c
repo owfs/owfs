@@ -52,6 +52,8 @@ bWRITE_FUNCTION( FS_w_mem ) ;
  fREAD_FUNCTION( FS_volts ) ;
  yREAD_FUNCTION( FS_r_cont ) ;
 yWRITE_FUNCTION( FS_w_cont ) ;
+ yREAD_FUNCTION( FS_r_PIO ) ;
+yWRITE_FUNCTION( FS_w_PIO ) ;
 
 /* ------- Structures ----------- */
 
@@ -63,6 +65,7 @@ struct filetype DS2450[] = {
     {"pages/page",     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"continuous",     1,  NULL,    ft_yesno , ft_stable  , {b:FS_r_cont}   , {b:FS_w_cont}, NULL, } ,
     {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
+    {"PIO"       ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO} , NULL, } ,
     {"volt"      ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , (void *) 1, } ,
     {"volt2"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , (void *) 0, } ,
 } ;
@@ -74,6 +77,8 @@ DeviceEntry( 20, DS2450 )
 static int OW_r_mem( char * p , const int size, const int location , const struct parsedname * pn) ;
 static int OW_w_mem( const char * p , const int size , const int location , const struct parsedname * pn) ;
 static int OW_volts( FLOAT * f , const int resolution , const struct parsedname * pn ) ;
+static int OW_r_pio( int * pio , const struct parsedname * pn ) ;
+static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
 
 /* 2450 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -104,6 +109,17 @@ static int FS_w_cont(const int *y, const struct parsedname * pn) {
     unsigned char p = 0x40 ;
     unsigned char q = 0x00 ;
     if ( OW_w_mem(y[0]?&p:&q,1,0x1C,pn) ) return -EINVAL ;
+    return 0 ;
+}
+/* 2450 A/D */
+static int FS_r_PIO(int *y, const struct parsedname * pn) {
+    if ( OW_r_pio(y,pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2450 A/D */
+static int FS_w_PIO(const int *y, const struct parsedname * pn) {
+    if ( OW_w_pio(y,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -236,6 +252,25 @@ static int OW_volts( FLOAT * f , const int resolution, const struct parsedname *
     return 0 ;
 }
 
+static int OW_r_pio( int * pio , const struct parsedname * pn ) {
+    unsigned char p[8] ;
+    if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
+    pio[0] = ((p[0]&0xC0)==0xC0) ;
+    pio[1] = ((p[2]&0xC0)==0xC0) ;
+    pio[2] = ((p[4]&0xC0)==0xC0) ;
+    pio[3] = ((p[6]&0xC0)==0xC0) ;
+}
+
+static int OW_w_pio( const int * pio , const struct parsedname * pn ) {
+    unsigned char p[8] ;
+    int i ;
+    if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
+    for (i=0; i<3; ++i ){
+        p[i<<1] &= 0x3F ;
+        p[i<<1] |= pio[i]?0x80:0xC0 ;
+    }
+    return OW_w_mem(p,8,1<<3,pn) ;
+}
 
 
 
