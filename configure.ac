@@ -121,6 +121,22 @@ AC_ARG_ENABLE(owftpd,
 ])
 AC_SUBST(ENABLE_OWFTPD)
 
+#Check owserver
+AC_MSG_CHECKING(if owserver is enabled)
+ENABLE_OWSERVER="false"
+AC_ARG_ENABLE(owserver,
+[  --enable-owserver       Enable owserver module (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWSERVER=true
+    fi
+],
+[
+    AC_MSG_RESULT([false (default)])
+])
+AC_SUBST(ENABLE_OWSERVER)
+
 #Check owperl
 AC_MSG_CHECKING(if owperl is enabled)
 ENABLE_OWPERL="true"
@@ -326,6 +342,7 @@ AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 # conditionals for httpd/ftpd
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
+AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -384,6 +401,11 @@ AC_CONFIG_FILES([
     module/owftpd/src/include/Makefile
     module/owftpd/src/c/Makefile
     module/owftpd/src/man/Makefile
+    module/owserver/Makefile
+    module/owserver/src/Makefile
+    module/owserver/src/include/Makefile
+    module/owserver/src/c/Makefile
+    module/owserver/src/man/Makefile
     module/owperl/Makefile
     module/owperl/src/Makefile
     module/owperl/src/c/Makefile
@@ -453,5 +475,10 @@ if test "${ENABLE_OWPERL}" = "true"; then
     AC_MSG_RESULT([    owperl is enabled])
 else
     AC_MSG_RESULT([    owperl is DISABLED])
+fi
+if test "${ENABLE_OWSERVER}" = "true"; then
+    AC_MSG_RESULT([    owserver is enabled])
+else
+    AC_MSG_RESULT([    owserver is DISABLED])
 fi
 AC_MSG_RESULT()

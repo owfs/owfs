@@ -12,9 +12,12 @@ endif
 if ENABLE_OWPERL
   MAYBE_OWPERL = owperl
 endif
+if ENABLE_OWSERVER
+  MAYBE_OWSERVER = owserver
+endif
 
 # VT: SUBDIRS: In *that* order
-SUBDIRS = owlib $(MAYBE_OWPERL) $(MAYBE_OWFS) $(MAYBE_OWHTTPD) $(MAYBE_OWFTPD)
+SUBDIRS = owlib $(MAYBE_OWPERL) $(MAYBE_OWFS) $(MAYBE_OWHTTPD) $(MAYBE_OWFTPD) $(MAYBE_OWSERVER)
 
 clean-generic:
 
