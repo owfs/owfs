@@ -27,12 +27,8 @@ $Id$
 
 static int DS9490_reset( void ) ;
 static int DS9490wait(unsigned char * const buffer) ;
-void DS9490_setroutines( struct interface_routines * const f ) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) ;
 static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const ibit ) ;
-//static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * const ibyte ) ;
-static int DS9490_read_bits( unsigned char * const bits , const int length ) ;
-static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS9490_level(int new_level) ;
 static void DS9490_setroutines( struct interface_routines * const f ) ;
@@ -170,27 +166,6 @@ static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const
 //printf("DS9490_sendback_bit error \n");
     usb_clear_halt(devusb,DS2490_EP3) ;
     return -EIO ;
-}
-
-static int DS9490_read_bits( unsigned char * const bits , const int length ) {
-    int i ;
-    int ret ;
-    for ( i=0 ; i<length ; ++i ) {
-        if ( (ret=DS9490_sendback_bit(0xFF,&bits[i])) ) return ret ;
-//printf("READBIT %d: ->%.2X\n",i,bits[i]);
-    }
-    return 0 ;
-}
-
-static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) {
-    int i ;
-    int ret ;
-    for ( i=0 ; i<length ; ++i ) {
-        if ( (ret=DS9490_sendback_bit(outbits[i]&0x01,&inbits[i])) ) return ret ;
-        inbits[i] &= 0x01 ;
-//printf("SENDBIT %d: %.2X->%.2X\n",i,outbits[i],inbits[i]);
-    }
-    return 0 ;
 }
 
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {

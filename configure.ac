@@ -160,7 +160,7 @@ AM_CONDITIONAL(ENABLE_CACHE41, test "${ENABLE_CACHE41}" = "true")
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" = "true" ; then
-    AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.inf.bme.hu/~mszeredi/avfs/])])
+    AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.sourceforge.net/projects/avf])])
 fi
 
 # Checks for header files.

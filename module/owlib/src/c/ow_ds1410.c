@@ -17,7 +17,6 @@ $Id$
 #include <linux/parport.h>
 #include <sys/io.h>
 
-void DS1410_setroutines( struct interface_routines * const f ) ;
 static int DS1410_PowerByte(const unsigned char byte, const unsigned int delay) ;
 static int DS1410_ProgramPulse( void ) ;
 static int DS1410_next_both(unsigned char * serialnumber, unsigned char search) ;

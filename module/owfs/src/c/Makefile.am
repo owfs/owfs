@@ -16,7 +16,8 @@ AM_CFLAGS = -I../include \
          -Wcast-align \
          -Wconversion \
          -Wstrict-prototypes \
-         -Wredundant-decls
+         -Wredundant-decls \
+         -D_FILE_OFFSET_BITS=64
 
 if ENABLE_CACHE
 CACHE_FLAG = -ldb

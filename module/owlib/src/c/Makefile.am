@@ -70,6 +70,7 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
+         -D_FILE_OFFSET_BITS=64 \
          ${CACHE_FLAG} \
          ${CACHE41_FLAG} \
          ${USB_FLAG}
