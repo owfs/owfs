@@ -131,11 +131,11 @@ static int DS9490wait(unsigned char * const buffer) {
     do {
         if ( (ret=usb_bulk_read(devusb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
     } while ( !(buffer[8]&0x20) ) ;
-//{
-//int i ;
-//printf ("USBwait return buffer:\n") ;
-//for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
-//}
+{
+int i ;
+printf ("USBwait return buffer:\n") ;
+for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
+}
     return 0 ;
 }
 
@@ -195,25 +195,6 @@ static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned 
     return 0 ;
 }
 
-/*
-static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * const ibyte ) {
-    int ret ;
-    unsigned char buffer[32] ;
-
-    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0053, 0x0000|obyte, NULL, 0, TIMEOUT_USB ))<0
-         ||
-         (ret=DS9490wait(buffer))
-          ) return ret ;
-
-    if ( usb_bulk_read(devusb,DS2490_EP3,ibyte,0x1, TIMEOUT_USB ) > 0 ) {
-//printf("USB byte %.2X->%.2X\n",obyte,*ibyte) ;
-        return 0 ;
-    }
-    usb_clear_halt(devusb,DS2490_EP3) ;
-    return -EIO ;
-}
-*/
-
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {
     int ret ;
     unsigned char buffer[32] ;
@@ -248,6 +229,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
     unsigned char buffer[32] ;
     int ret ;
     int i ;
+    int buflen ;
 
 //printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
@@ -262,7 +244,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
     }
 //printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
 
-//printf("USBnextboth\n");
+printf("USBnextboth\n");
     if ( (ret=usb_bulk_write(devusb,DS2490_EP2,combuffer,8, TIMEOUT_USB )) < 8 ) {
 //printf("USBnextboth bulk write problem = %d\n",ret);
         usb_clear_halt(devusb,DS2490_EP2) ;
@@ -276,8 +258,8 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
 //printf("USBnextboth control problem\n");
         return ret ;
     }
-
-    if ( (ret=usb_bulk_read(devusb,DS2490_EP3,combuffer,16, TIMEOUT_USB )) >0 ) {
+    buflen = buffer[13] ;
+    if ( (ret=usb_bulk_read(devusb,DS2490_EP3,combuffer,buflen, TIMEOUT_USB )) > 0 ) {
         memcpy(serialnumber,combuffer,8) ;
 //printf("DS9490_next_both SN out: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
 //printf("DS9490_next_both rest: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[8],combuffer[9],combuffer[10],combuffer[11],combuffer[12],combuffer[13],combuffer[14],combuffer[15]) ;
@@ -292,12 +274,41 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
                 break ;
             }
         }
-
         return CRC8(serialnumber,8) || (serialnumber[0] == 0) ? -EIO:0 ;
     }
 //printf("USBnextboth bulk read problem error=%d\n",ret);
     usb_clear_halt(devusb,DS2490_EP3) ;
     return -EIO ;
+}
+
+//--------------------------------------------------------------------------
+// Send 8 bits of communication to the 1-Wire Net and verify that the
+// 8 bits read from the 1-Wire Net is the same (write operation).
+// The parameter 'byte' least significant 8 bits are used.  After the
+// 8 bits are sent change the level of the 1-Wire net.
+// Delay delay msec and return to normal
+//
+/* Returns 0=good
+   bad = -EIO
+ */
+static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay) {
+    unsigned char buffer[32] ;
+    unsigned char resp ;
+    unsigned char dly = 1 + ( (unsigned char) (delay>>4) ) ;
+    int ret = DS9490_sendback_data( & byte , & resp , 1 ) ;
+
+    if ( ret ) return ret ;
+    if ( byte != resp ) return -EIO ;
+
+    /** Pulse duration */
+    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0213, 0x0000|dly, NULL, 0, TIMEOUT_USB ))<0 ) return ret ;
+    /** Pulse start */
+    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0431, 0x0000, NULL, 0, TIMEOUT_USB ))<0 ) return ret ;
+    /** Delay */
+    UT_delay( delay ) ;
+    /** wait */
+    if ( (ret=DS9490wait(buffer)) ) return ret ;
+    return 0 ;
 }
 
 /* Set the 1-Wire Net line level.  The values for new_level are
@@ -351,7 +362,7 @@ void DS9490_setroutines( struct interface_routines * const f ) {
     f->reset = DS9490_reset ;
     f->next_both = DS9490_next_both ;
     f->level = DS9490_level ;
-    f->PowerByte = NULL ;
+    f->PowerByte = DS9490_PowerByte ;
     f->ProgramPulse = NULL ;
     f->sendback_data = DS9490_sendback_data ;
 }
