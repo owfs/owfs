@@ -19,6 +19,7 @@ const struct option owopts_long[] = {
     {"usb",       optional_argument,NULL,'u'},
     {"help",      no_argument,      NULL,'h'},
     {"port",      required_argument,NULL,'p'},
+    {"server",    required_argument,NULL,'s'},
     {"readonly",  required_argument,NULL,'r'},
     {"write",     required_argument,NULL,'w'},
     {"Celsius",   no_argument,      NULL,'C'},
@@ -47,7 +48,9 @@ int owopt( const int c , const char * const arg ) {
 #ifdef OW_USB
         "    -u[n] --usb      USB adapter. Scans for usb connection to 1-wire bus.\n"
         "                 Optional number for multiple usb adapters\n"
-        "                 Note that -d and -u are mutually exclusive\n"
+        "    -s  --server     1-wire server daemon\n"
+	"                 port number, server:port or /local-socket-path\n"
+        "                 Note that -s, -d and -u are mutually exclusive\n"
 #endif /* OW_USB */
 #ifdef OW_CACHE
         "    -t    cache timeout (in seconds)\n"
@@ -107,6 +110,9 @@ int owopt( const int c , const char * const arg ) {
     case 'V':
         printf("libow version:\n\t" VERSION "\n") ;
         return 1 ;
+    case 's':
+        servername = strdup(optarg) ;
+        return 0;
     case 'p':
         portname = strdup(optarg) ;
         sscanf(optarg, "%i", &portnum);

@@ -16,6 +16,7 @@ $Id$
 speed_t speed = B9600;
 int portnum = -1 ; /* TCP port (for owhttpd) */
 char * portname = NULL ;
+char * servername = NULL ;
 char * devport = NULL ; /* Device name (COM or parallel port) */
 int devfd = -1; /*file descriptor for serial/parallel port*/
 int useusb = 0 ; /* which DS9490 to connect */

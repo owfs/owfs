@@ -189,7 +189,7 @@ extern int maxslots ;
 */
 /* command line options */
 /* These a re the owlib-specific options */
-#define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"
+#define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 int owopt( const int c , const char * const arg ) ;
 
@@ -475,6 +475,7 @@ extern int useusb ; /* Which USB adapter to use (1-based index) */
 extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */
 extern char * portname ; /* TCP port (for owhttpd) */
+extern char * servername ; /* TCP port (for owhttpd) */
 extern int readonly ; /* readonly file system ? */
 
 /* Gobal temperature scale */

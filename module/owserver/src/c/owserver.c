@@ -84,7 +84,7 @@ static ssize_t readn(int fd, void *vptr, size_t n) {
 /* read from client, free return pointer if not Null */
 static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
-
+printf("FromClientAlloc\n");
     if ( readn(fd, sm, sizeof(struct server_msg) ) != sizeof(struct server_msg) ) {
         sm->size = -1 ;
         return NULL ;
@@ -93,6 +93,7 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->size = ntohl(sm->size) ;
     sm->type = ntohl(sm->type) ;
     sm->tempscale = ntohl(sm->tempscale) ;
+printf("FromClientAlloc size=%d type=%d tempscale=%d\n",sm->size,sm->type,sm->tempscale);
 
     if ( sm->size <= 0 ) return NULL ;
 
@@ -121,7 +122,7 @@ static int ToClient( int fd, int format, const char * data, int datasize, int re
     cm.size = htonl(datasize) ;
     cm.ret = htonl(ret) ;
     cm.format = htonl(format) ;
-
+printf("ToClient size=%d, ret=%d, format=%d\n",cm.size,cm.ret,cm.format);
     return writev( fd, io, nio ) != cm.size + sizeof(struct client_msg) ;
 }
 
@@ -293,6 +294,11 @@ int main( int argc , char ** argv ) {
         fprintf(stderr,"Cannot start server.\n");
         exit(1);
     }
+
+    /*
+     * Now we drop privledges and become a daemon.
+     */
+    if ( LibStart() ) ow_exit(1) ;
 
     for(;;) {
         ACCEPTLOCK

@@ -16,6 +16,11 @@ $Id$
 #include "ow.h"
 //#include <sys/uio.h>
 #include <netinet/in.h>
+#include <netdb.h> // addrinfo 
+
+static int ConnectFD( struct addrinfo * ai) ;
+static int PortToFD(  char * port ) ;
+
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
@@ -127,3 +132,58 @@ int ToServer( int fd, enum msg_type type, const char * path, const char * data, 
     
     return writev( fd, io, nio ) != size + sizeof(struct server_msg) ;
 }
+
+static int PortToFD(  char * port ) {
+    char * host ;
+    char * serv ;
+    struct addrinfo hint ;
+    struct addrinfo * ai ;
+    int matches = 0 ;
+    int ret = -1;
+    
+    if ( port == NULL ) return -1 ;
+    if ( (serv=strrchr(port,':')) ) { /* : exists */
+        *serv = '\0' ;
+        ++serv ;
+        host = port ;
+    } else {
+        host = NULL ;
+        serv = port ;
+    }
+
+    bzero( &hint, sizeof(struct addrinfo) ) ;
+    hint.ai_flags = AI_PASSIVE ;
+    hint.ai_socktype = SOCK_STREAM ;
+    hint.ai_family = AF_UNSPEC ;
+
+    for ( matches=0 ; matches<1 ; ++matches ) {
+        if ( (ret=getaddrinfo( host, serv, &hint, &ai )) )
+            break ;
+    }
+
+    if (matches) {
+        ret = ConnectFD(ai) ;
+        freeaddrinfo(ai) ;
+    }
+
+    return ret ;
+}
+
+static int ConnectFD( struct addrinfo * ai) {
+    int fd ;
+    int on = 1 ;
+    
+    if ( (fd=socket(ai->ai_family,ai->ai_socktype,ai->ai_protocol))<0 ) {
+        fprintf(stderr,"Socket problem errno=%d\n",errno) ;
+        return -1 ;
+    }
+    
+    if ( connect(fd, ai->ai_addr, ai->ai_addrlen) ) { /* Arbitrary "backlog" parameter */
+        fprintf(stderr,"Connect problem. errno=%d\n",errno) ;
+        return -1 ;
+    }
+    
+    return fd ;
+}
+
+
