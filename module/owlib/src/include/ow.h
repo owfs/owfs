@@ -859,10 +859,10 @@ void BUS_unlock( void ) ;
 #ifdef __UCLIBC__
  //#include <features.h>
  #if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
-  #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000919
-   #define syslog(a,...)	//ignore_syslog
-   #define openlog(a,...)	//ignore_openlog
-   #define closelog()	//ignore_closelog
+  #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000913
+   #define syslog(a,...)	{ /* ignore_syslog */ }
+   #define openlog(a,...)	{ /* ignore_openlog */ }
+   #define closelog()		{ /* ignore_closelog */ }
   #endif    /* __UCLIBC__ */
  #endif   /* __UCLIBC__ */
 #endif  /* __UCLIBC__ */
