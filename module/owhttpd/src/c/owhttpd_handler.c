@@ -548,7 +548,7 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
             loc = pn2->dev->code ;
             nam = loc ;
         }
-printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
+//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
 	if(html)
 	  fprintf( a_sock->io, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
 		   (strcmp(path,"/")?path:""), loc, loc, nam, typ ) ;
