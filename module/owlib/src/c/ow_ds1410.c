@@ -63,7 +63,7 @@ unsigned char ctl_low  = 0x00 ;
 #define BASE 0x378
 #define DATAout(x)    outb((x),BASE)
 #define BUSYraw  ((inb(BASE+1)^0x80)&0x90)
-#define CONTROLin ((inb(BASE+2)|0x04))
+#define CONTROLin ((inb(BASE+2)|0x04)&0x1C)
 #define CONTROLout(x) outb((x),BASE+2)
 
 
@@ -133,7 +133,6 @@ static int toggleOD( void ) {
     usleep(2);
     DATAout(0xFC );
     cont = CONTROLin ;
-    cont &= 0x1C;
     CONTROLout( cont|0x02 );
     usleep(8);
     result = BUSYraw ? 1 : 0 ;
@@ -146,6 +145,7 @@ printf("toggleOD=%d\n",result) ;
 }
 
 static int checkOD( void ) {
+/*
     int result ;
     int i ;
     CLAIM() ;
@@ -169,6 +169,29 @@ static int checkOD( void ) {
     RELEASE() ;
 printf("checkOD=%d\n",result) ;
     return result ;
+*/
+    unsigned char cont ;
+    unsigned char retval ;
+    int i ;
+printf("CRITICAL\n");
+    DATAout(0xEC);
+    usleep(2);
+    DATAout(0xFF);
+    cont = CONTROLin;
+    CONTROLout( cont|0x02 );
+    usleep(16);
+    retval = BUSYraw ? 1 : 0 ;
+    DATAout(0xFF) ;
+    i=0 ;
+    while(BUSYraw==0 && ( i++ < 2000 ) ) usleep(4) ;
+printf("CRITICAL1\n");
+    DATAout( 0xFE ) ;
+    usleep(4);
+    inb( BASE+1 ) ;
+    CONTROLout( cont&0xFD ) ;
+    DATAout( 0xCF ) ;
+    usleep(5) ;
+    return retval ;
 }
 
 static void togglePASS( void ) {
@@ -181,7 +204,7 @@ static void togglePASS( void ) {
 
 static int PRESENT( void ) {
     RESET() ;
-    if ( DS1410_send_bit( 0xFF , NULL ) ) return !timeout ;
+    if ( DS1410_send_bit( 0xFF , NULL ) ) return timeout==0 ;
     return 0 ;
 }
 
@@ -544,10 +567,8 @@ printf("timeout=%d\n",timeout) ;
 printf("CRITICAL\n");
     DATAout(0xEC);
     usleep(2);
-    outb( data, BASE );
     DATAout(data);
     cont = CONTROLin;
-    cont &= 0x1C ;
     CONTROLout( cont|0x02 );
     i=0 ;
     while(BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
