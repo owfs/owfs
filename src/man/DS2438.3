@@ -17,7 +17,11 @@ Temperature Voltages (Humidity) and Memory.
 .HP
 .B 26
 [.]XXXXXXXXXXXX[XX][/[
+.B current
+|
 .B humidity
+|
+.I Ienable
 |
 .B page.[0-7|ALL]
 |
@@ -41,6 +45,20 @@ Temperature Voltages (Humidity) and Memory.
 .TP
 26
 .SH SPECIAL PROPERTIES
+.SS current
+.I read-only, integer
+.br
+Current reading. Actual current depends on Rsens resistor (see datasheet).
+.br
+The formula for current is I =
+.I current
+/(4096*Rsens)
+.br
+with units in Amps and Ohms.
+.br
+Current measurement will be temporarily enabled (see
+.I Ienable
+) if not currently enabled (pun intended) for this reading.
 .SS humidity
 .I read-only, floating point
 .br
@@ -49,6 +67,26 @@ Relative humidity, as percent (1-100 scale).
 The
 .B DS2438
 actually does not read humidity, but a widely available and publicised circuit based on the chip, does. See the datasheets for details.
+.SS Ienable
+.I read-write, unsigned integer
+.br
+Status of
+.I current
+monitoring. When enabled, current sensing is performed 36.41 times/second. Values of
+.I Ienable
+are:
+.TP
+.B 0
+no current conversion
+.TP
+.B 1
+current conversion enabled
+.TP
+.B 2
+current conversion and accumulation
+.TP
+.B 3
+current conversion and accumulation with EEPROM backup
 .SS page.0 ... page.7 page.ALL
 .I read-write, binary
 .br
