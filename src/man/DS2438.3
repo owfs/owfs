@@ -23,6 +23,8 @@ Temperature Voltages (Humidity) and Memory.
 |
 .I Ienable
 |
+.I offset
+|
 .B page.[0-7|ALL]
 |
 .B temperature
@@ -87,6 +89,14 @@ current conversion and accumulation
 .TP
 .B 3
 current conversion and accumulation with EEPROM backup
+.SS offset
+.I read-write, integer
+.br
+Correction for
+.I current
+readings. A value between -256 and 255. See the datasheet for details. Should be set to the negative of a true zero
+.I current
+reading.
 .SS page.0 ... page.7 page.ALL
 .I read-write, binary
 .br
