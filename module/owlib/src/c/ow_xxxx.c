@@ -49,22 +49,29 @@ static int CheckPresence_low( const struct parsedname * const pn ) ;
 
 /* ------- Functions ------------ */
 
+/*
+ * Funcation to calculated maximum delay between writing a
+ * command to the bus, and reading the answer.
+ * This will probably not work with simultanious reading...
+ */
 void update_max_delay(const struct parsedname * const pn) {
+  long sec, usec;
+  struct timeval *r, *w;
   struct timeval last_delay;
   if(!pn || !pn->in) return;
-
   gettimeofday( &(pn->in->bus_read_time) , NULL );
-  
-  if((pn->in->bus_read_time.tv_sec >= pn->in->bus_write_time.tv_sec) &&
-     ((pn->in->bus_read_time.tv_sec-pn->in->bus_write_time.tv_sec) <= 5)) {
-    last_delay.tv_sec = (pn->in->bus_read_time.tv_sec - pn->in->bus_write_time.tv_sec) ;
-    last_delay.tv_usec = (pn->in->bus_read_time.tv_usec - pn->in->bus_write_time.tv_usec) ;
-    if ( last_delay.tv_usec >= 1000000 ) {
+  r = &pn->in->bus_read_time;
+  w = &pn->in->bus_write_time;
+
+  sec = r->tv_sec - w->tv_sec;
+  if((sec >= 0) && (sec <= 5)) {
+    usec = r->tv_usec - w->tv_usec;
+    last_delay.tv_sec = sec;
+    last_delay.tv_usec = usec;
+
+    while( last_delay.tv_usec >= 1000000 ) {
       last_delay.tv_usec -= 1000000 ;
-      ++last_delay.tv_sec;
-    } else if ( last_delay.tv_usec < 0 ) {
-      last_delay.tv_usec += 1000000 ;
-      --last_delay.tv_sec;
+      last_delay.tv_sec++;
     }
     if((last_delay.tv_sec > max_delay.tv_sec) ||
        ((last_delay.tv_sec >= max_delay.tv_sec) &&
@@ -75,8 +82,8 @@ void update_max_delay(const struct parsedname * const pn) {
       STATUNLOCK
     }
   }
-  /* BUS_send_and_get call this many time, therefor I reset bus_write_time
-   * after every calls */
+  /* BUS_send_and_get() call this function many times, therefor
+   * I reset bus_write_time after every calls */
   gettimeofday( &(pn->in->bus_write_time) , NULL );
   return;
 }

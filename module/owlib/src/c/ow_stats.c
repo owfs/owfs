@@ -83,10 +83,14 @@ struct average dir_avg = {0L,0L,0L,0L,} ;
 struct timeval max_delay = {0, 0, } ;
 
 // ow_locks.c
-struct timeval bus_time = {0, 0, } ;
-struct timeval bus_pause = {0, 0, } ;
-unsigned int bus_locks = 0 ;
-unsigned int bus_unlocks = 0 ;
+//struct timeval bus_pause = {0, 0, } ;
+struct timeval total_bus_time = {0, 0, } ;
+unsigned int total_bus_locks = 0 ;
+unsigned int total_bus_unlocks = 0 ;
+void *bus_locks[MAX_ADAPTERS]      = {[0 ... MAX_ADAPTERS-1]=NULL } ;
+void *bus_unlocks[MAX_ADAPTERS]    = {[0 ... MAX_ADAPTERS-1]=NULL } ;
+void *bus_time[MAX_ADAPTERS]       = {[0 ... MAX_ADAPTERS-1]=NULL } ;
+//void *bus_pause_time[MAX_ADAPTERS] = {[0 ... MAX_ADAPTERS-1]=NULL } ;
 
 // ow_crc.c
 unsigned int CRC8_tries = 0 ;
@@ -153,7 +157,9 @@ struct average all_avg = {0L,0L,0L,0L,} ;
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
  uREAD_FUNCTION( FS_stat ) ;
+ uREAD_FUNCTION( FS_stat_p ) ;
  fREAD_FUNCTION( FS_time ) ;
+ fREAD_FUNCTION( FS_time_p ) ;
  uREAD_FUNCTION( FS_elapsed ) ;
 
 /* -------- Structures ---------- */
@@ -258,12 +264,23 @@ struct filetype stats_thread[] = {
  ;
 struct device d_stats_thread = { "threads", "threads", 0, NFT(stats_thread), stats_thread } ;
 
+extern struct aggregate Asystem;
+
 struct filetype stats_bus[] = {
-    {"elapsed_time"    , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_elapsed}, {v:NULL}, NULL            , } ,
-    {"bus_time"        , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_time         , } ,
-    {"bus_pause_time"      , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & bus_pause        , } ,
-    {"bus_unlocks"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_unlocks, },
-    {"bus_locks"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & bus_locks, },
+    {"elapsed_time"    , 15, NULL    , ft_unsigned, ft_statistic, {u:FS_elapsed},{v:NULL}, NULL          , } ,
+    {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, bus_time      , } ,
+    /* bus_idle_time should be the same is elapsed_time - bus_time
+     * Not any big idea to implement it */
+  //{"bus_idle_time"   , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, bus_idle_time , } ,
+    {"bus_locks"       , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, bus_locks     , } ,
+    {"bus_unlocks"     , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, bus_unlocks   , } ,
+
+    /* bus_pause_time is not very useful... Look at bus_time to see if the bus
+     * has been used much instead */
+  //{"bus_pause_time"  , 12, NULL , ft_float,    ft_statistic, {f:FS_time}, {v:NULL}, & bus_pause        , } ,
+    {"total_bus_time"  , 12, NULL , ft_float,    ft_statistic, {f:FS_time}, {v:NULL}, & total_bus_time   , } ,
+    {"total_bus_unlocks",15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & total_bus_unlocks, } ,
+    {"total_bus_locks" , 15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & total_bus_locks  , } ,
 };
 struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus } ;
 
@@ -348,15 +365,46 @@ static int FS_stat(unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
+static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
+    int dindex = pn->extension ;
+    unsigned int * ptr;
+    unsigned int ** pptr = (unsigned int **) pn->ft->data ;
+    if (dindex<0) dindex = 0 ;
+    if(!pptr) return -ENOENT ;
+    ptr = (unsigned int *)pptr[dindex];
+    if (ptr == NULL) return -ENOENT ;
+    STATLOCK
+        u[0] =  *ptr;
+    STATUNLOCK
+    return 0 ;
+}
+
 static int FS_time(FLOAT *u , const struct parsedname * pn) {
+    FLOAT f;
     int dindex = pn->extension ;
     struct timeval * tv = (struct timeval *) pn->ft->data ;
-    FLOAT f;
     if (dindex<0) dindex = 0 ;
     if (tv == NULL) return -ENOENT ;
 
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
     f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
+    STATUNLOCK
+//printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
+    u[0] = f;
+    return 0 ;
+}
+
+static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
+    FLOAT f;
+    int dindex = pn->extension ;
+    struct timeval * tv;
+    struct timeval ** tv_p = (struct timeval **) pn->ft->data ;
+    if (dindex<0) dindex = 0 ;
+    if(!tv_p) return -ENOENT ;
+    tv = (struct timeval *)tv_p[dindex];
+    if (tv == NULL) return -ENOENT ;
+    STATLOCK /* to prevent simultaneous changes to bus timing variables */
+    f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
     STATUNLOCK
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;

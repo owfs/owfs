@@ -38,6 +38,7 @@ const struct option owopts_long[] = {
 /* Globals */
 char * pid_file = NULL ;
 char * fuse_opt = NULL ;
+unsigned int nr_adapters = 0;
 
 /* Parses one argument */
 /* return 0 if ok */
@@ -161,6 +162,10 @@ int OW_ArgSerial( const char * arg ) {
         fprintf(stderr,"Cannot allocate memory for serial struct\n") ;
         return 1 ;
     }
+    bus_locks[indevices-1]   = &in->bus_locks;
+    bus_unlocks[indevices-1] = &in->bus_unlocks;
+    bus_time[indevices-1]    = &in->bus_time;
+
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
     return 0 ;
@@ -172,6 +177,10 @@ int OW_ArgUSB( const char * arg ) {
         fprintf(stderr,"Cannot allocate memory for USB struct\n") ;
         return 1 ;
     }
+    bus_locks[indevices-1]   = &in->bus_locks;
+    bus_unlocks[indevices-1] = &in->bus_unlocks;
+    bus_time[indevices-1]    = &in->bus_time;
+
     in->busmode = bus_usb ;
     if ( arg ) {
         in->fd = atoi(arg) ;

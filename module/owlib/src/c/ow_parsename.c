@@ -412,26 +412,26 @@ static int filecmp(const void * name , const void * ex ) {
     return strcmp( (const char *) name , ((const struct filetype *) ex)->name ) ;
 }
 
+#if 0
+/* Don't think this is valuable information */
+static void update_bus_pause_time(const unsigned int len, struct parsedname *pn)
+{
+    struct timeval *t = &pn->in->bus_pause_time;
+    STATLOCK /* to prevent simultaneous changes to bus timing variables */
+    t->tv_usec += len*1000 ;
+    while( t->tv_usec >= 1000000 ) {
+        t->tv_usec -= 1000000 ;
+        t->tv_sec++;
+    }
+    STATUNLOCK
+    return;
+}
+#endif
 
-//--------------------------------------------------------------------------
-//  Description:
-//     Delay for at least 'len' ms
-//
-void UT_delay(const unsigned int len)
+static void my_delay(const unsigned int len)
 {
     struct timespec s;
     struct timespec rem;
-
-    if(len == 0) return;
-
-    STATLOCK /* to prevent simultaneous changes to bus timing variables */
-    bus_pause.tv_usec += len*1000 ;
-    while( bus_pause.tv_usec >= 1000000 ) {
-        bus_pause.tv_usec -= 1000000 ;
-        bus_pause.tv_sec++;
-    }
-    STATUNLOCK
-
     rem.tv_sec = len / 1000 ;
     rem.tv_nsec = 1000000*(len%1000) ;
 
@@ -439,19 +439,38 @@ void UT_delay(const unsigned int len)
       s.tv_sec = rem.tv_sec;
       s.tv_nsec = rem.tv_nsec;
       if(nanosleep(&s, &rem) < 0) {
-    if(errno == EINTR) {
-      /* was interupted... continue sleeping... */
-    } else {
-      //printf("UT_delay: error: %s\n", strerror(errno));
-      break;
-    }
+	if(errno == EINTR) {
+	  /* was interupted... continue sleeping... */
+	  //printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
+	} else {
+	  //printf("UT_delay: error s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
+	  break;
+	}
       } else {
-    /* completed sleeping */
-    break;
+	/* completed sleeping */
+	break;
       }
     }
-    return;
 }
+
+//--------------------------------------------------------------------------
+//  Description:
+//     Delay for at least 'len' ms
+//
+void UT_delay(const unsigned int len)
+{
+    if(len == 0) return;
+    return my_delay(len);
+}
+
+#if 0
+void UT_delay_pn(const unsigned int len, struct parsedname *pn)
+{
+    if(len == 0) return;
+    update_bus_pause_time(len, pn);
+    return my_delay(len);
+}
+#endif
 
 static int BranchAdd( struct parsedname * const pn ) {
 //printf("BRANCHADD\n");

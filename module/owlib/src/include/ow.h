@@ -211,6 +211,11 @@ extern char * pid_file ;
 /* FUSE options */
 extern char * fuse_opt ;
 
+#define MAX_ADAPTERS 10
+extern void *bus_locks[MAX_ADAPTERS];
+extern void *bus_unlocks[MAX_ADAPTERS];
+extern void *bus_time[MAX_ADAPTERS];
+
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
  * reading the reply. Any positive value should work and 16 is probably low
@@ -640,11 +645,12 @@ extern struct average all_avg ;
 extern struct timeval max_delay ;
 
 // ow_locks.c
-extern struct timeval bus_time ;
-extern struct timeval bus_pause ;
-extern unsigned int bus_locks ;
-extern unsigned int bus_unlocks ;
-
+extern struct timeval total_bus_time ;  // total bus_time
+//extern struct timeval bus_pause ; 
+extern unsigned int total_bus_locks ;   // total number of locks
+extern unsigned int total_bus_unlocks ; // total number of unlocks
+extern struct aggregate Abus_stat;
+extern unsigned int nr_adapters;
 
 // ow_crc.c
 extern unsigned int CRC8_tries ;
@@ -733,7 +739,10 @@ struct connection_in {
 #endif /* OW_MT */
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
-    // struct timeval bus_time ;  // FIXME: move this from global to here
+    unsigned int bus_locks ;
+    unsigned int bus_unlocks ;
+    struct timeval bus_time ;
+    //struct timeval bus_pause_time ;
 
     struct timeval bus_read_time ;
     struct timeval bus_write_time ; /* for statistics */

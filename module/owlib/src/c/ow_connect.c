@@ -26,6 +26,10 @@ struct connection_in * NewIn( void ) {
     int len = sizeof(struct connection_in) ;
     struct connection_in * last = NULL ;
     struct connection_in * now = indevice ;
+    if( indevices >= MAX_ADAPTERS ) {
+      fprintf(stderr,"Maximum number of adapters allocated\n") ;
+      return NULL;
+    }
     while ( now ) {
         last = now ;
         now = now->next ;
