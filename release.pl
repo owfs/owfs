@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-my $prefix = "/snowmass/home/owfs/" ;
+my $prefix = ".." ;
 my $pwd = `pwd 2> /dev/null` ;
 chomp($pwd) ;
 
@@ -37,8 +37,6 @@ sub PerModule {
   system("cvs","tag","-b",join("_",("RELEASE",@v,"RC")) ) ;
   printf "RELEASE -- cvs updating ".join("_",("RELEASE",@v,"RC"))."\n" ;
   system("cvs","update","-r",join("_",("RELEASE",@v,"RC")) ) ;
-  printf "RELEASE -- bootstrapping\n" ;
-  `./bootstrap` ;
 
   # change the configure.ac and re-bootstrap
   ConfigureAC(@v) ;
@@ -48,12 +46,17 @@ sub PerModule {
   system("make","clean") ;
   printf "RELEASE -- make distclean\n" ;
   system("make","distclean") ;
+  printf "RELEASE -- bootstrapping\n" ;
+  `./bootstrap` ;
   printf "RELEASE -- make tarball\n" ;
   system("make","dist") ;
   printf "RELEASE -- make rpm\n" ;
   system("make","rpm") ;
 
   printf $mod."-".$v[0].".".$v[1]."p".$v[2].".tar.gz = ".system("ls","*.tar.gz") ;
+  
+  printf "Commit now\n" ;
+  system( "cvs","-z3","commit","-R","-m", "''". "'.'");
 
   printf "RELEASE -- cvs branch tagging ".join("_",("RELEASE",@v))."\n" ;
   #system("cvs","tag","-b",join("_",("RELEASE",@v,"RC")) ) ;
@@ -72,3 +75,5 @@ my @v = GetVersion() ;
 printf "RELEASE -- release name\n" ;
 printf join("_",("RELEASE",@v,"RC"))."\n" ;
 PerModule("owlib",@v) ;
+PerModule("owfs",@v) ;
+PerModule("owhttpd",@v) ;
