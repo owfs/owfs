@@ -349,18 +349,36 @@ static int filecmp(const void * name , const void * ex ) {
 //
 void UT_delay(const unsigned int len)
 {
-    struct timespec s = {0,0,};              // Set aside memory space on the stack
+    struct timespec s;
+    struct timespec rem;
 
+    STATLOCK /* to prevent simultaneous changes to bus timing variables */
     bus_pause.tv_usec += len*1000 ;
-    if ( bus_pause.tv_usec > 100000000 ) {
-        bus_pause.tv_usec -= 100000000 ;
-        bus_pause.tv_sec  += 100 ;
+    while( bus_pause.tv_usec >= 1000000 ) {
+        bus_pause.tv_usec -= 1000000 ;
+        bus_pause.tv_sec++;
     }
+    STATUNLOCK
 
-    s.tv_sec += len / 1000 ;
-    s.tv_nsec = 1000000*(len%1000) ;
+    rem.tv_sec = len / 1000 ;
+    rem.tv_nsec = 1000000*(len%1000) ;
 
-    nanosleep(&s, NULL);
+    while(1) {
+      s.tv_sec = rem.tv_sec;
+      s.tv_nsec = rem.tv_nsec;
+      if(nanosleep(&s, &rem) < 0) {
+	if(errno == EINTR) {
+	  /* was interupted... continue sleeping... */
+	} else {
+	  //printf("UT_delay: error: %s\n", strerror(errno));
+	  break;
+	}
+      } else {
+	/* completed sleeping */
+	break;
+      }
+    }
+    return;
 }
 
 /* Length of file based on filetype alone */
