@@ -41,6 +41,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       static size_t luncached ;
     static char * structure ;
       static size_t lstructure ;
+    static char * text ;
+      static size_t ltext ;
     static char * system_ ;
       static size_t lsystem ;
     static char * settings ;
@@ -50,6 +52,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     const char * pathnow = path ;
 
     if ( uncached == NULL ) { // first time through
+      ltext      = strlen ( text      = FS_dirname_state(pn_text      )) ;
       luncached  = strlen ( uncached  = FS_dirname_state(pn_uncached  )) ;
       lstructure = strlen ( structure = FS_dirname_type( pn_structure )) ;
       lsystem    = strlen ( system_   = FS_dirname_type( pn_system    )) ;
@@ -73,9 +76,18 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->state = pn_normal ;
     pn->type = pn_real ;
 
+    /* text is a special case, it can preceed anything */
+    if ( strncasecmp(pathnow,text,ltext)==0 ) {
+        pn->state |= pn_text ;
+        pathnow += ltext ;
+        if ( pathnow[0] == '\0' ) return 0 ;
+        if ( pathnow[0] != '/' ) return -ENOENT ;
+        ++pathnow ;
+    }
+
     /* uncached is a special case, it can preceed anything */
     if ( strncasecmp(pathnow,uncached,luncached)==0 ) {
-        pn->state = pn_uncached ;
+        pn->state |= pn_uncached ;
         pathnow += luncached ;
         if ( pathnow[0] == '\0' ) return 0 ;
         if ( pathnow[0] != '/' ) return -ENOENT ;
@@ -134,11 +146,11 @@ static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) 
     switch( pn->type ) {
     case pn_real:
         if ( strcmp( path, "alarm" )==0 ) {
-            pn->state = pn_alarm ;
+            pn->state |= pn_alarm ;
             return 0 ; /* directory */
         }
         if ( strncmp( path, "alarm/", 6 )==0 ) {
-            pn->state = pn_alarm ;
+            pn->state |= pn_alarm ;
             return FS_ParsedNameSub( &path[6], pn ) ;
         }
         if ( (ret=DevicePart( path, &pFile, pn )) ) return ret ; // search for valid 1-wire sn
