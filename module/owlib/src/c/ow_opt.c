@@ -76,11 +76,11 @@ int owopt( const int c , const char * const arg ) {
         } else {
             useusb=1 ;
         }
-        USBSetup() ;
+        return USBSetup() ;
 #else /* OW_USB */
         fprintf(stderr,"Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n") ;
 #endif /* OW_USB */
-        return 0 ;
+        return 1 ;
     case 'd':
         ComSetup(arg) ;
     case 't':
