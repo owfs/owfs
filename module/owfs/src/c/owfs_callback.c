@@ -142,9 +142,14 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         return -ENOENT;
     }
 
-    /* 'uncached' directory added if root and not already uncached */
-    if ( cacheavailable && pn.type!=pn_uncached && pn.dev==NULL && pn.pathlength==0 ) {
-        filler(h,"uncached",DT_DIR) ;
+    /* Special directories -- entry only appear in root normal directory */
+    if ( pn.type==pn_normal && pn.dev==NULL && pn.pathlength==0 ) {
+
+        /* 'alarm' directory added if root and normal */
+        filler(h,"alarm",DT_DIR) ;
+    
+        /* 'uncached' directory added if root and normal */
+        if ( cacheavailable ) filler(h,"uncached",DT_DIR) ;
     }
 
     /* Call directory spanning function */

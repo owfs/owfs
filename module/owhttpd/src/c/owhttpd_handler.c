@@ -506,7 +506,10 @@ static void RootDir( struct active_sock * a_sock, struct parsedname * pn ) {
             HTTPtitle( a_sock->io , "Directory") ;
             HTTPheader( a_sock->io , "Device Listing") ;
             fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
-            if ( cacheavailable && pn->pathlength==0 )
+            if ( pn->pathlength ) break ; /* not root -- no uncached ot alarm entries */
+            fprintf( a_sock->io,
+                "<TR><TD><A HREF='/alarm'><CODE><B><BIG>alarm</BIG></B></CODE></A></TD><TD>Conditional Search</TD><TD>Directory</TD></TR>") ;
+            if ( cacheavailable )
                 fprintf( a_sock->io,
                     "<TR><TD><A HREF='/uncached'><CODE><B><BIG>uncached</BIG></B></CODE></A></TD><TD>Immediate</TD><TD>Directory</TD></TR>") ;
         }
