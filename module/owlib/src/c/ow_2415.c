@@ -94,13 +94,13 @@ static int OW_w_clock( const unsigned int num , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char cr , const struct parsedname * pn ) ;
 
 /* set clock */
-int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
     if ( OW_w_clock(u[0],pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* set clock */
-int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_date(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     struct tm tm ;
 
     /* Not sure if this is valid, but won't allow offset != 0 at first */
@@ -117,14 +117,14 @@ int FS_w_date(const char *buf, const size_t size, const off_t offset , const str
 }
 
 /* write running */
-int FS_w_run(const int * y , const struct parsedname * pn) {
+static int FS_w_run(const int * y , const struct parsedname * pn) {
     unsigned char cr ;
     if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) (y[0]?cr|0x0C:cr&0xF3), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write running */
-int FS_w_enable(const int * y , const struct parsedname * pn) {
+static int FS_w_enable(const int * y , const struct parsedname * pn) {
     unsigned char cr ;
 
     if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) (y[0]?cr|0x80:cr&0x7F), pn) ) return -EINVAL ;
@@ -132,7 +132,7 @@ int FS_w_enable(const int * y , const struct parsedname * pn) {
 }
 
 /* write flags */
-int FS_w_flags(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_flags(const unsigned int * u , const struct parsedname * pn) {
     unsigned char cr ;
 
     if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) ((cr&0x0F)|((((unsigned int)u[0])&0x0F)<<4)), pn) ) return -EINVAL ;
@@ -140,7 +140,7 @@ int FS_w_flags(const unsigned int * u , const struct parsedname * pn) {
 }
 
 /* write flags */
-int FS_w_interval(const int * i , const struct parsedname * pn) {
+static int FS_w_interval(const int * i , const struct parsedname * pn) {
     unsigned char cr ;
 
     if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) ((cr&0x8F)|((((unsigned int)i[0])&0x07)<<4)), pn) ) return -EINVAL ;
@@ -148,7 +148,7 @@ int FS_w_interval(const int * i , const struct parsedname * pn) {
 }
 
 /* write flags */
-int FS_w_itime(const int * i , const struct parsedname * pn) {
+static int FS_w_itime(const int * i , const struct parsedname * pn) {
     unsigned char cr ;
 
     if ( OW_r_control( &cr, pn) ) return -EINVAL ;

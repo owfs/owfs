@@ -3,6 +3,7 @@ header_DATA = ow_1820.h \
               ow_1921.h \
               ow_1993.h \
               ow_2401.h \
+              ow_2404.h \
               ow_2405.h \
               ow_2406.h \
               ow_2408.h \

@@ -36,6 +36,8 @@ struct device * Devices[] = {
     & d_DS1995 ,
     & d_DS1996 ,
     & d_DS2401 ,
+    & d_DS2404 ,
+    & d_DS2404S ,
     & d_DS2405 ,
     & d_DS2406 ,
     & d_DS2408 ,
