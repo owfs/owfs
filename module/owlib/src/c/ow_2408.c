@@ -142,7 +142,7 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 /* 2408 write activity latch */
 /* Actually resets them all */
 static int FS_w_latch(const unsigned int * u, const struct parsedname * pn) {
-    if ( u[0] && OW_c_latch(pn) ) return -EINVAL ;
+    if ( OW_c_latch(pn) ) return -EINVAL ;
     return 0 ;
 }
 
