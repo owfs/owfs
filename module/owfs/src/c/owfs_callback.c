@@ -100,9 +100,19 @@ struct dirback {
 static void directory( void * data, const struct parsedname * const pn ) {
     char extname[OW_FULLNAME_MAX+1] ; /* buffer for name */
     FS_DirName( extname, OW_FULLNAME_MAX+1, pn ) ;
-#if defined(FUSE_MAJOR_VERSION) && (FUSE_MAJOR_VERSION >= 3)
-    (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR , 0) ;
+#ifdef FUSE_MAJOR_VERSION
+
+#if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)) || \
+     (FUSE_MAJOR_VERSION >= 3)
+    /* Newer fuse versions (2.2 and later) have an inode argument */
+    (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR, 0 ) ;
 #else
+    /* Probably fuse-version 1.0 to 2.1 */
+    (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
+#endif
+
+#else
+    /* Probably really old fuse-version */
     (((struct dirback *)data)->filler)( ((struct dirback *)data)->h, extname, DT_DIR ) ;
 #endif
 }
