@@ -352,6 +352,8 @@ void UT_delay(const unsigned int len)
     struct timespec s;
     struct timespec rem;
 
+    if(len == 0) return;
+
     STATLOCK /* to prevent simultaneous changes to bus timing variables */
     bus_pause.tv_usec += len*1000 ;
     while( bus_pause.tv_usec >= 1000000 ) {
