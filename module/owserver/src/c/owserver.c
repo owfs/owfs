@@ -250,9 +250,68 @@ int Acceptor( int listenfd ) {
 
 int main( int argc , char ** argv ) {
     int listenfd ;
+    char c ;
+
+    LibSetup() ;
+
+    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
+        switch (c) {
+        case 'h':
+            fprintf(stderr,
+            "Usage: %s ttyDevice -p tcpPort [options] \n"
+            "   or: %s [options] -d ttyDevice -p tcpPort \n"
+            "    -p port   -- tcp port for server process (e.g. 3001)\n" ,
+            argv[0],argv[0] ) ;
+            break ;
+        case 'V':
+            fprintf(stderr,
+            "%s version:\n\t" VERSION "\n",argv[0] ) ;
+            break ;
+        }
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
+    }
+
+    /* non-option arguments */
+    if ( optind == argc-1 ) {
+        ComSetup(argv[optind]) ;
+        ++optind ;
+    }
+
+    if ( devfd==-1 && devusb==0 ) {
+        fprintf(stderr, "No device port specified (-d or -u)\n%s -h for help\n",argv[0]);
+        ow_exit(1);
+    }
+
+    if ( portnum==-1 ) {
+        fprintf(stderr, "No TCP port specified (-p)\n%s -h for help\n",argv[0]);
+        ow_exit(1);
+    }
 
     for(;;) {
         ACCEPTLOCK
         Acceptor(listenfd);
     }
 }
+
+int ListenFD( char * port ) {
+    char * host ;
+    char * serv ;
+    struct addrinfo hint ;
+    struct addrinfo * ai ;
+    int fd ;
+    int one = 1 ;
+    int ret ;
+    
+    if ( port == NULL ) return -1 ;
+    if ( (serv=strrchr(port,':')) ) { /* : exists */
+        *serv = '\0' ;
+        ++serv ;
+        host = port ;
+    } else {
+        host = NULL ;
+        serv = port ;
+    }
+
+    bzero( &hint, sizeof(struct addrinfo) ;
+    hint. = AI_PASSIVE ;
+     = 

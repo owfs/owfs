@@ -166,7 +166,8 @@ void DS9490_close(void) {
 static int DS9490wait(unsigned char * const buffer) {
     int ret ;
     do {
-        if ( (ret=usb_bulk_read(devusb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
+        // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
+        if ( (ret=usb_interrupt_read(devusb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
     } while ( !(buffer[8]&0x20) ) ;
 //{
 //int i ;
