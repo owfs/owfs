@@ -123,45 +123,25 @@ owtcl_ObjCmdProc(Owtcl_Connect)
   background = 0 ;
   pid_file = 0 ;
   con_str = Tcl_GetStringFromObj(objv[1], &con_len);
-  if ( busmode != bus_unknown ) {
-    owtcl_ErrorMsg(interp, "owlib is busy");
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  } else if (strrchr(con_str,':')) {
+  //  if ( busmode != bus_unknown ) {
+  //    owtcl_ErrorMsg(interp, "owlib is busy");
+  //    tcl_return = TCL_ERROR;
+  //    goto common_exit;
+  //  } else
+  if (strrchr(con_str,':')) {
     if (!strncasecmp(con_str, "socket:", 7))
-      servername = strdup(&con_str[7]);
+      OW_ArgNet(&con_str[7]);
     else
-      servername = strdup(con_str);
-    if (Server_detect()) {
-      owtcl_ErrorMsg(interp, strerror(errno));
-      free(servername);
-      servername = NULL;
-      LibClose();
-      tcl_return = TCL_ERROR;
-      goto common_exit;
-    }
+      OW_ArgNet(con_str);
   } else if (!strncasecmp(con_str, "usb", 3) || !strncasecmp(con_str, "u", 1)) {
     char *p = con_str;
     while (*p != '\0') {
-      if ((*p >= '0') && (*p <= '9')) {
-	useusb = atoi(p);
-	break;
-      }
+      if ((*p >= '0') && (*p <= '9')) break;
       p++;
     }
-    if (USBSetup()) {
-      owtcl_ErrorMsg(interp, strerror(errno));
-      LibClose();
-      tcl_return = TCL_ERROR;
-      goto common_exit;
-    }
+    OW_ArgUSB(p);
   } else {
-    if (ComSetup(con_str)) {
-      owtcl_ErrorMsg(interp, strerror(errno));
-      LibClose();
-      tcl_return = TCL_ERROR;
-      goto common_exit;
-    }
+    OW_ArgSerial(con_str);
   }
 
   if (LibStart()) {
