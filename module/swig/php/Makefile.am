@@ -4,7 +4,7 @@
 INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include `php-config --includes`
 
 #use libtool to build the php extension
-noinst_LTLIBRARIES = libowphp.la
+lib_LTLIBRARIES = libowphp.la
 libowphp_la_LIBADD = $(top_builddir)/module/owlib/src/c/libow.la
 libowphp_la_LDFLAGS = -shared -shrext .so
 
