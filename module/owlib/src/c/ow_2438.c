@@ -196,7 +196,7 @@ static int OW_w_page( const unsigned char * const p , const int page , const str
         ret = BUS_select(pn) || BUS_send_data( r, 2 ) || BUS_readin_data( data,9 ) || CRC8( data,9 ) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
-    if ( page && memcpy( p, data, 8 ) ) return 1 ; /* page 0 has readonly fields that won't compare */
+    if ( page && memcmp( p, data, 8 ) ) return 1 ; /* page 0 has readonly fields that won't compare */
 
     BUS_lock() ;
     ret = BUS_select(pn) || BUS_send_data(eeprom,2) ;

@@ -25,9 +25,9 @@ $Id$
 #include "ow.h"
 #include <usb.h>
 
-static int DS9490_reset( void ) ;
+static int DS9490_reset( const struct parsedname * const pn ) ;
 static int DS9490wait(unsigned char * const buffer) ;
-static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) ;
+static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS9490_level(int new_level) ;
 static void DS9490_setroutines( struct interface_routines * const f ) ;
@@ -95,7 +95,7 @@ int DS9490_detect( void ) {
                                 syslog(LOG_INFO,"Opened USB 2490 adapter at %s.\n",devport) ;
                                 DS9490_setroutines( & iroutines ) ;
                                 Version2480 = 8 ; /* dummy value */
-                                return DS9490_reset() ;
+                                return DS9490_reset(NULL) ;
                             }
                             usb_release_interface( devusb, 0) ;
                         }
@@ -134,7 +134,7 @@ static int DS9490wait(unsigned char * const buffer) {
 }
 
     /* Reset the bus */
-static int DS9490_reset( void ) {
+static int DS9490_reset( const struct parsedname * const pn ) {
     int ret ;
     unsigned char buffer[32] ;
 //printf("9490RESET\n");
@@ -145,7 +145,7 @@ static int DS9490_reset( void ) {
         return ret ;
     }
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
-    AnyDevices = !(buffer[16]&0x01) ;
+    if ( pn ) pn->si->AnyDevices = !(buffer[16]&0x01) ;
 //printf("9490RESET=0 anydevices=%d\n",AnyDevices);
     return 0 ;
 }
@@ -180,8 +180,9 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
     return -EIO ;
 }
 
-static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) {
+static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     unsigned char buffer[32] ;
+    struct stateinfo * si = pn->si ;
     int ret ;
     int i ;
     int buflen ;
@@ -189,13 +190,13 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
 //printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",AnyDevices,LastDevice);
 //printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
-    if ( !AnyDevices ) LastDevice = 1 ;
-    if ( LastDevice ) return -ENODEV ;
+    if ( !si->AnyDevices ) si->LastDevice = 1 ;
+    if ( si->LastDevice ) return -ENODEV ;
 
     /** Play LastDescrepancy games with bitstream */
     memcpy( combuffer,serialnumber,8) ; /* set bufferto zeros */
-    if ( LastDiscrepancy > -1 ) UT_setbit(combuffer,LastDiscrepancy,1) ;
-    for ( i=LastDiscrepancy+1;i<64;i++) {
+    if ( si->LastDiscrepancy > -1 ) UT_setbit(combuffer,si->LastDiscrepancy,1) ;
+    for ( i=si->LastDiscrepancy+1;i<64;i++) {
         UT_setbit(combuffer,i,0) ;
     }
 //printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
@@ -220,13 +221,13 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
 //printf("DS9490_next_both SN out: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
 //printf("DS9490_next_both rest: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[8],combuffer[9],combuffer[10],combuffer[11],combuffer[12],combuffer[13],combuffer[14],combuffer[15]) ;
 //        LastDevice = !(combuffer[8]||combuffer[9]||combuffer[10]||combuffer[11]||combuffer[12]||combuffer[13]||combuffer[14]||combuffer[15]) ;
-        LastDevice = (ret==8) ;
-//printf("DS9490_next_both lastdevice=%d bytes=%d\n",LastDevice,ret) ;
+        si->LastDevice = (ret==8) ;
+//printf("DS9490_next_both lastdevice=%d bytes=%d\n",si->LastDevice,ret) ;
 
         for ( i=63 ; i>=0 ; i-- ) {
             if ( UT_getbit(combuffer,i+64) && (UT_getbit(combuffer,i)==0) ) {
-                LastDiscrepancy = i ;
-//printf("DS9490_next_both lastdiscrepancy=%d\n",LastDiscrepancy) ;
+                si->LastDiscrepancy = i ;
+//printf("DS9490_next_both lastdiscrepancy=%d\n",si->LastDiscrepancy) ;
                 break ;
             }
         }
@@ -334,7 +335,7 @@ static int DS9490_select_low(const struct parsedname * const pn) {
 
 if ( reset ) {
     // reset the 1-wire
-    if ( (ret=BUS_reset()) ) return ret ;
+    if ( (ret=BUS_reset(pn)) ) return ret ;
         reset = 0x0000 ;
     }
 printf("SELECT\n");
@@ -343,7 +344,7 @@ printf("SELECT\n");
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
        if ( reset ) {
            // reset the 1-wire
-           if ( (ret=BUS_reset()) ) return ret ;
+           if ( (ret=BUS_reset(pn)) ) return ret ;
            reset = 0 ;
        }
        memcpy( &send[1], pn->bp[ibranch].sn, 8 ) ;

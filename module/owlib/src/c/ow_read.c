@@ -36,6 +36,8 @@ static int FS_output_float_array( float * values, char * buf, const size_t size,
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
+    struct stateinfo si ;
+    pn.si = &si ;
     size_t s = size ;
     int r ;
     if ( FS_ParsedName( path , &pn ) ) {

@@ -23,11 +23,7 @@ int UMode ;
 int ULevel ;
 int USpeed ;
 int ProgramAvailable ;
-int LastDiscrepancy = 0 ; // for search
-int LastFamilyDiscrepancy = 0 ; // for search
-int LastDevice ; // for search
 int Version2480 ;
-int AnyDevices ;
 
 #ifdef OW_USB
     usb_dev_handle * devusb = NULL ;
@@ -38,6 +34,7 @@ int AnyDevices ;
 /* Device List Structure */
 /* Defined here, after all files defined */
 struct device * Devices[] = {
+    & d_DS1420 ,
     & d_DS18S20 ,
     & d_DS18B20 ,
     & d_DS1822 ,

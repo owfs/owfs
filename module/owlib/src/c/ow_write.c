@@ -35,6 +35,8 @@ static int FS_input_float_array( float * const results, const char * const buf, 
 /* ---------------------------------------------- */
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
+    struct stateinfo si ;
+    pn.si = &si ;
     int r ;
 //printf("WRITE\n");
     if ( FS_ParsedName( path , &pn ) ) {

@@ -233,15 +233,9 @@ int Storage_Add( const char * path, const size_t size, const void * data ) ;
 int Storage_Get( const char * path, size_t *size, void * data ) ;
 int Storage_Del( const char * path ) ;
 
-/* 1-wire search algorhythm */
-int OW_first( char * str ) ;
-int OW_next( char * str ) ;
-int OW_first_alarm( char * str ) ;
-int OW_next_alarm( char * str ) ;
-
 /* 1-wire lowlevel */
 void UT_delay(const int len) ;
-int LI_reset( void ) ;
+int LI_reset( const struct parsedname * const pn ) ;
 
 /* High-level callback functions */
 int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * const data, const struct parsedname * const pn ) ;
@@ -259,11 +253,11 @@ int DS2480_baud( speed_t baud );
 int DS2480_detect( void ) ;
 int DS1410_detect( void ) ;
 int DS9097_detect( void ) ;
-int BUS_first(unsigned char * serialnumber) ;
-int BUS_next(unsigned char * serialnumber) ;
-int BUS_first_alarm(unsigned char * serialnumber) ;
-int BUS_next_alarm(unsigned char * serialnumber) ;
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) ;
+int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
+int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
 
 int BUS_select_low(const struct parsedname * const pn) ;
 int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
@@ -437,6 +431,12 @@ struct buspath {
     unsigned char sn[8] ;
     unsigned char branch ;
 } ;
+struct stateinfo {
+    int LastDiscrepancy ; // for search
+    int LastFamilyDiscrepancy ; // for search
+    int LastDevice ; // for search
+    int AnyDevices ;
+} ;
 
 enum pn_type { pn_normal, pn_uncached, pn_alarm, } ;
 struct parsedname {
@@ -448,6 +448,7 @@ struct parsedname {
     struct filetype * subdir ; // in-device grouping
     int pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
+    struct stateinfo * si ;
 } ;
 
 /* ---- end Parsedname ----------------- */
@@ -492,9 +493,9 @@ struct interface_routines {
     /* assymetric write (only output, no response obtained */
     int (* write) (const unsigned char * const bytes , const size_t num ) ;
     /* reset the interface -- actually the 1-wire bus */
-    int (* reset ) ( void ) ;
+    int (* reset ) ( const struct parsedname * const pn ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */
-    int (* next_both) (unsigned char * serialnumber, unsigned char search) ;
+    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
     /* Set the electrical level of the 1-wire bus */
     int (* level) (int new_level) ;
     /* Send a byte with bus power to follow */
@@ -570,10 +571,6 @@ extern int UMode ;
 extern int ULevel ;
 extern int USpeed ;
 extern int ProgramAvailable ;
-extern int LastDiscrepancy ; // for search
-extern int LastFamilyDiscrepancy ; // for search
-extern int LastDevice ; // for search
 extern int Version2480 ;
-extern int AnyDevices ;
 
 #endif /* OW_H */

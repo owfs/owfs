@@ -50,6 +50,8 @@ struct fuse_operations owfs_oper = {
 /* ---------------------------------------------- */
 int FS_getattr(const char *path, struct stat *stbuf) {
     struct parsedname pn ;
+    struct stateinfo si ;
+    pn.si = &si ;
     /* Bad path */
 //printf("GA\n");
     memset(stbuf, 0, sizeof(struct stat));
@@ -134,6 +136,8 @@ void directory( void * data, const struct parsedname * const pn ) {
 
 int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
+    struct stateinfo si ;
+    pn.si = &si ;
 //printf("GETDIR\n");
 
     /* dirback structure passed via void pointer to 'directory' */

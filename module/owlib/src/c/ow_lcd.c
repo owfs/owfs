@@ -210,7 +210,7 @@ static int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
                 pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
                 '/',      'c',      'u',      'm',       '\0',
                 } ;
-    return Storage_Add( key, 4*sizeof(unsigned int), (void *) u ) ? -EINVAL  : 0 ;
+    return Storage_Add( key, 4*sizeof(unsigned int), (const void *) u ) ? -EINVAL  : 0 ;
 }
 #endif /*OW_CACHE*/
 

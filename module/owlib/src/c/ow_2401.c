@@ -56,4 +56,9 @@ struct filetype DS2401[] = {
 } ;
 DeviceEntry( 01, DS2401 )
 
+struct filetype DS1420[] = {
+    F_STANDARD,
+} ;
+DeviceEntry( 81, DS1420 )
+
 /* ------- Functions ------------ */

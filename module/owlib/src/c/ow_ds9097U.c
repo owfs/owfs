@@ -153,9 +153,9 @@ $Id$
 // DS2480B program voltage available
 #define DS2480PROG_MASK                0x20
 
-static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) ;
+static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS2480_databit(int sendbit, int * getbit) ;
-static int DS2480_reset( void ) ;
+static int DS2480_reset( const struct parsedname * const pn ) ;
 static int DS2480_read(unsigned char * const buf, const int size ) ;
 static int DS2480_write(const unsigned char * const buf, const size_t size ) ;
 static int DS2480_sendout_data( const unsigned char * const data , const int len ) ;
@@ -206,7 +206,7 @@ int DS2480_detect( void ) {
     /* Set up low-level routines */
     DS2480_setroutines( & iroutines ) ;
     /* Reset the bus and adapter */
-    DS2480_reset() ;
+    DS2480_reset(NULL) ;
 //printf("2480Detect reset\n");
     // reset modes
     UMode = MODSEL_COMMAND;
@@ -250,7 +250,7 @@ int DS2480_detect( void ) {
 //printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 //printf("2480Detect version=%d\n",Version2480) ;
         /* Apparently need to reset again to get the version number properly */
-        DS2480_reset();
+        DS2480_reset(NULL);
 //printf("2480Detect version=%d\n",Version2480) ;
         return 0 ;
     }
@@ -268,7 +268,7 @@ int DS2480_detect( void ) {
 /* return 0=good
    bad = _level, sendback_cmd
  */
-static int DS2480_reset( void ) {
+static int DS2480_reset( const struct parsedname * const pn ) {
     int ret ;
     unsigned char buf = (unsigned char)(CMD_COMM | FUNCTSEL_RESET | USpeed) ;
 
@@ -290,11 +290,11 @@ static int DS2480_reset( void ) {
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
         // fall through
     case RB_NOPRESENCE:
-        AnyDevices = 0 ;
+        if (pn ) pn->si->AnyDevices = 0 ;
         break ;
     case RB_PRESENCE:
     case RB_ALARMPRESENCE:
-        AnyDevices = 1 ;
+        if ( pn ) pn->si->AnyDevices = 1 ;
         // check if programming voltage available
         ProgramAvailable = ((buf & 0x20) == 0x20);
         UT_delay(5); // delay 5 ms to give DS1994 enough time
@@ -431,9 +431,10 @@ static int DS2480_databit(int sendbit, int * getbit) {
 }
 
 /* search = 0xF0 normal 0xEC alarm */
-static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) {
+static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     int ret ;
     int mismatched;
+    struct stateinfo * si = pn->si ;
     unsigned char sn[8];
     unsigned char bitpairs[16];
     unsigned char searchon  = (unsigned char)(CMD_COMM | FUNCTSEL_SEARCHON  | USpeed);
@@ -441,8 +442,8 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) 
     int i ;
 
 //printf("NEXT\n");
-    if ( !AnyDevices ) LastDevice = 1 ;
-    if ( LastDevice ) return -ENODEV ;
+    if ( !si->AnyDevices ) si->LastDevice = 1 ;
+    if ( si->LastDevice ) return -ENODEV ;
 
     // build the command stream
     // call a function that may add the change mode command to the buff
@@ -459,12 +460,12 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) 
     memset( bitpairs,0,16) ;
 
     // set the bits in the added buffer
-    for (i = 0; i < LastDiscrepancy; i++) {
+    for (i = 0; i < si->LastDiscrepancy; i++) {
         // before last discrepancy
         UT_set2bit( bitpairs,i,UT_getbit(serialnumber,i)<<1 ) ;
     }
     // at last discrepancy
-    if (LastDiscrepancy > -1 ) UT_set2bit( bitpairs,LastDiscrepancy,1<<1 ) ;
+    if (si->LastDiscrepancy > -1 ) UT_set2bit( bitpairs,si->LastDiscrepancy,1<<1 ) ;
     // after last discrepancy so leave zeros
 
     // flush the buffers
@@ -484,22 +485,22 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search) 
         if ( UT_get2bit(bitpairs,i)==0x1 ) {
             mismatched = i ;
             // check LastFamilyDiscrepancy
-            if (i < 8) LastFamilyDiscrepancy = i ;
+            if (i < 8) si->LastFamilyDiscrepancy = i ;
         }
     }
 
     // CRC check
-    if ( CRC8(sn,8) || (LastDiscrepancy == 63) || (sn[0] == 0)) return -EIO ;
+    if ( CRC8(sn,8) || (si->LastDiscrepancy == 63) || (sn[0] == 0)) return -EIO ;
 
     // successful search
     // check for last one
-    if ((mismatched == LastDiscrepancy) || (mismatched == -1)) LastDevice = 1 ;
+    if ((mismatched == si->LastDiscrepancy) || (mismatched == -1)) si->LastDevice = 1 ;
 
     // copy the SerialNum to the buffer
     memcpy(serialnumber,sn,8) ;
 
     // set the count
-    LastDiscrepancy = mismatched;
+    si->LastDiscrepancy = mismatched;
 
    return 0 ;
 }

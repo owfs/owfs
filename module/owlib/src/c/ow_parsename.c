@@ -275,13 +275,8 @@ void UT_delay(const int len)
         bus_pause.tv_sec  += 100 ;
     }
 
-    while( len > 999 ) {
-        len -= 1000 ;
-        ++ s.tv_sec ;
-    }
-//    s.tv_sec = len / 1000;
-//    s.tv_nsec = (len - (s.tv_sec * 1000)) * 1000000;
-    s.tv_nsec = 1000000*len ;
+    s.tv_sec += len / 1000 ;
+    s.tv_nsec = 1000000*(len%1000) ;
 
     nanosleep(&s, NULL);
 }

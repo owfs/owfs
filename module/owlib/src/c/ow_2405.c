@@ -130,7 +130,7 @@ static int OW_w_PIO( const int val , const struct parsedname * pn) {
     if ( current != val ) {
         ret = BUS_select(pn) ;
     }
-    ret |= BUS_reset() ;
+    ret |= BUS_reset(pn) ;
  //printf("2405write current=%d new=%d\n",current,val) ;
     BUS_unlock() ;
     return ret ;

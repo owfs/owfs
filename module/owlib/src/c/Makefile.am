@@ -27,7 +27,6 @@ OWLIB_SOURCE = ow_xxxx.c \
                ow_write.c \
                ow_dir.c \
                ow_com.c \
-               ow_select.c \
                ow_verify.c \
                ow_ibuttonlink.c \
                ow_bus.c \

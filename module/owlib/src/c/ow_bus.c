@@ -146,7 +146,7 @@ int BUS_select_low(const struct parsedname * const pn) {
     // reset the 1-wire
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
-    if ( (ret=BUS_reset()) ) return ret ;
+    if ( (ret=BUS_reset(pn)) ) return ret ;
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
        memcpy( &send[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
@@ -172,23 +172,23 @@ int BUS_select_low(const struct parsedname * const pn) {
 
  Returns:   0-device found 1-no dev or error
 */
-int BUS_first(unsigned char * serialnumber ) {
+int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn ) {
     // reset the search state
-    LastDiscrepancy = -1;
-    LastFamilyDiscrepancy = -1;
-    LastDevice = 0 ;
-    return BUS_next(serialnumber) ;
+    pn->si->LastDiscrepancy = -1;
+    pn->si->LastFamilyDiscrepancy = -1;
+    pn->si->LastDevice = 0 ;
+    return BUS_next(serialnumber,pn) ;
 }
 
-int BUS_first_alarm(unsigned char * serialnumber ) {
+int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn ) {
     // reset the search state
-    LastDiscrepancy = -1 ;
-    LastFamilyDiscrepancy = -1 ;
-    LastDevice = 0 ;
-    return BUS_next_alarm(serialnumber) ;
+    pn->si->LastDiscrepancy = -1 ;
+    pn->si->LastFamilyDiscrepancy = -1 ;
+    pn->si->LastDevice = 0 ;
+    return BUS_next_alarm(serialnumber,pn) ;
 }
 
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) {
+int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) {
     // reset the search state
     serialnumber[0] = family ;
     serialnumber[1] = 0x00 ;
@@ -198,10 +198,10 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) 
     serialnumber[5] = 0x00 ;
     serialnumber[6] = 0x00 ;
     serialnumber[7] = 0x00 ;
-    LastDiscrepancy = 63;
-    LastFamilyDiscrepancy = -1 ;
-    LastDevice = 0 ;
-    return BUS_next(serialnumber) ;
+    pn->si->LastDiscrepancy = 63;
+    pn->si->LastFamilyDiscrepancy = -1 ;
+    pn->si->LastDevice = 0 ;
+    return BUS_next(serialnumber,pn) ;
 }
 
 //--------------------------------------------------------------------------
@@ -213,10 +213,10 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) 
 
  Sets LastDevice=1 if no more
 */
-int BUS_next(unsigned char * serialnumber) {
-    return BUS_next_both( serialnumber, 0xF0 ) ;
+int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) {
+    return BUS_next_both( serialnumber, 0xF0, pn ) ;
 }
 
-int BUS_next_alarm(unsigned char * serialnumber) {
-    return BUS_next_both( serialnumber, 0xEC ) ;
+int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) {
+    return BUS_next_both( serialnumber, 0xEC, pn ) ;
 }

@@ -19,9 +19,9 @@ $Id$
 
 static int DS1410_PowerByte(const unsigned char byte, const unsigned int delay) ;
 static int DS1410_ProgramPulse( void ) ;
-static int DS1410_next_both(unsigned char * serialnumber, unsigned char search) ;
+static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 //int DS1410_detect( void ) ;
-static int DS1410_reset( void ) ;
+static int DS1410_reset( const struct parsedname * const pn ) ;
 static int DS1410_read(unsigned char * const buf, const int size ) ;
 static int DS1410_write( const unsigned char * const bytes, const size_t num ) ;
 static int DS1410_level(int new_level) ;
@@ -283,9 +283,10 @@ static int DS1410_ProgramPulse( void ) {
 }
 
 
-static int DS1410_next_both(unsigned char * serialnumber, unsigned char search) {
+static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     unsigned char search_direction = 0 ; /* initilization just to forestall incorrect compiler warning */
     unsigned char bit_number ;
+    struct stateinfo * si = pn->si ;
     unsigned char last_zero ;
     unsigned char bits[3] ;
     int ret ;
@@ -294,8 +295,8 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search) 
     last_zero = 0;
 
     // if the last call was not the last one
-    if ( !AnyDevices ) LastDevice = 1 ;
-    if ( LastDevice ) return -ENODEV ;
+    if ( !si->AnyDevices ) si->LastDevice = 1 ;
+    if ( si->LastDevice ) return -ENODEV ;
 
     /* Appropriate search command */
     if ( (ret=BUS_send_data(&search,1)) ) return ret ;
@@ -322,18 +323,18 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search) 
         } else {
             if ( bits[2] ) {
                 search_direction = 0;  // bit write value for search
-            } else  if (bit_number < LastDiscrepancy) {
+            } else  if (bit_number < si->LastDiscrepancy) {
                 // if this discrepancy if before the Last Discrepancy
                 // on a previous next then pick the same as last time
                 search_direction = UT_getbit(serialnumber,bit_number) ;
-            } else if (bit_number == LastDiscrepancy) {
+            } else if (bit_number == si->LastDiscrepancy) {
                 search_direction = 1 ; // if equal to last pick 1, if not then pick 0
             } else {
                 search_direction = 0 ;
                 // if 0 was picked then record its position in LastZero
                 last_zero = bit_number;
                 // check for Last discrepancy in family
-                if (last_zero < 9) LastFamilyDiscrepancy = last_zero;
+                if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
             }
         }
         UT_setbit(serialnumber,bit_number,search_direction) ;
@@ -345,8 +346,8 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search) 
     if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) return -EIO ;
       // if the search was successful then
 
-    LastDiscrepancy = last_zero;
-    LastDevice = (last_zero == 0);
+    si->LastDiscrepancy = last_zero;
+    si->LastDevice = (last_zero == 0);
     return 0 ;
 }
 
@@ -400,7 +401,7 @@ printf("SETTIME=%d\n",ret);
     /* Set up low-level routines */
     DS1410_setroutines( & iroutines ) ;
     /* Reset the bus */
-    ret =  DS1410_reset() ;
+    ret =  DS1410_reset(NULL) ;
 printf("Detect=%d\n",ret);
     return ret ;
 //    return DS1410_reset() ;
@@ -408,7 +409,7 @@ printf("Detect=%d\n",ret);
 
 /* DS1410 Reset -- A little different frolm DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
-static int DS1410_reset( void ) {
+static int DS1410_reset( const struct parsedname * const pn ) {
     unsigned char c;
 //    int ret ;
     c = RESET() ;
@@ -417,10 +418,10 @@ static int DS1410_reset( void ) {
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
         /* fall through */
     case 0xF0:
-        AnyDevices = 0 ;
+        if (pn) pn->si->AnyDevices = 0 ;
         break ;
     default:
-        AnyDevices = 1 ;
+        if (pn) pn->si->AnyDevices = 1 ;
         ProgramAvailable = 0 ; /* from digitemp docs */
         UT_delay(5); //delay for DS1994
     }

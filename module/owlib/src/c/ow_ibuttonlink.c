@@ -12,7 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-int LI_reset( void )
+int LI_reset( const struct parsedname * const pn )
 {
     char resp[3] ;
     COM_flush() ;
@@ -21,13 +21,13 @@ int LI_reset( void )
     if ( BUS_read(resp,3) ) return -errno ;
     switch( resp[0] ) {
     case 'P':
-        AnyDevices=1 ;
+        pn->si->AnyDevices=1 ;
         break ;
     case 'N':
-        AnyDevices=0 ;
+        pn->si->AnyDevices=0 ;
         break ;
     default:
-        AnyDevices=0 ;
+        pn->si->AnyDevices=0 ;
         syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
     }
     return 0 ;

@@ -101,7 +101,7 @@ static int FS_detail(char *buf, const size_t size, const off_t offset , const st
     /* Unused */
     (void) pn ;
 
-    if ( LI_reset() || BUS_write(" ",1) ) {
+    if ( LI_reset(pn) || BUS_write(" ",1) ) {
         return -ENODEV ;
     } else {
          char v[127] ;

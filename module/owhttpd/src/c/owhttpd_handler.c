@@ -70,6 +70,8 @@ int handle_socket(struct active_sock a_sock) {
     char * str;
     struct urlparse up ;
     struct parsedname pn ;
+    struct stateinfo si ;
+    pn.si = &si ;
 
     { /* magic socket stuff */
         struct sockaddr_in peer;

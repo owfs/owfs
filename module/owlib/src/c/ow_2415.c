@@ -224,7 +224,7 @@ int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
 
 /* read clock */
 int FS_r_date(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned int num ; /* must me 32bit (or more) */
+    unsigned int num ; /* must be 32bit (or more) */
     if ( offset ) return -EFAULT ;
     if ( size<26 ) return -EMSGSIZE ;
 

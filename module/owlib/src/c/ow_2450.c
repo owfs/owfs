@@ -165,7 +165,7 @@ static int OW_w_page( const char * p , const int size , const int location, cons
     }
 
     BUS_lock() ;
-        BUS_reset() ;
+        BUS_reset(pn) ;
     BUS_unlock() ;
     return 0 ;
 }

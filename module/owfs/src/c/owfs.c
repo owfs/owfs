@@ -114,30 +114,24 @@ int main(int argc, char *argv[]) {
 }
 
 static void fuser_mount_wrapper( void ) {
-    char ** opts  ;
-    
+    char ** opts = NULL ;
+
 //printf("FUSERMOUNT fuse_opt=%s\n",fuse_opt) ;
     char * tok ;
     int i = 0 ;
     if ( fuse_opt ) {
         opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
-        if ( opts == NULL ) { 
-            fprintf(stderr,"Memory allocation problem\n") ; 
-            ow_exit(1) ; 
+        if ( opts == NULL ) {
+            fprintf(stderr,"Memory allocation problem\n") ;
+            ow_exit(1) ;
         }
         tok = strtok(fuse_opt," ") ;
         while ( tok ) {
             opts[i++] = tok ;
             tok = strtok(NULL," ") ;
         }
-    } else {
-        opts = malloc( sizeof(char *) ) ; // oversized
-        if ( opts == NULL ) { 
-            fprintf(stderr,"Memory allocation problem\n") ; 
-            ow_exit(1) ; 
-        }
-    }    
-    opts[i] = NULL ;
+        opts[i] = NULL ;
+    }
 
     // FUSE magic. I don't understand it.
     if(getenv(FUSE_MOUNTED_ENV)) {
@@ -152,18 +146,18 @@ static void fuser_mount_wrapper( void ) {
         if(tmpstr != NULL)
             strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
         fuse_fd = fuse_mount(fuse_mountpoint, opts);
-        if(fuse_fd < 0) { 
+        if(fuse_fd < 0) {
             fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
             ow_exit(1);
         }
     } else {
         fuse_fd = fuse_mount(fuse_mountpoint, opts);
-        if(fuse_fd < 0) { 
+        if(fuse_fd < 0) {
             fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
             ow_exit(1);
         }
     }
-    free( opts ) ;
+    if (opts) free( opts ) ;
     free( fuse_opt ) ;
 }
 

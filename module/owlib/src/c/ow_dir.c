@@ -12,7 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-static int FS_branchoff( void) ;
+static int FS_branchoff( const struct parsedname * const pn) ;
 enum deviceformat devform = fdi ;
 
 
@@ -78,21 +78,21 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         }
         BUS_lock() ;
         /* Turn off all DS2409s */
-        FS_branchoff() ;
+        FS_branchoff(&pn2) ;
 //printf("DIR2\n");
         /* Triplicate bus read */
         /* STATISCTICS */
         ++dir_tries[0] ;
-        (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn):BUS_first(sn)) ;
+        (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
         if (ret) {
             /* STATISCTICS */
             ++dir_tries[1] ;
-            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn):BUS_first(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
         }
         if (ret) {
             /* STATISCTICS */
             ++dir_tries[2] ;
-            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn):BUS_first(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn,&pn2):BUS_first(sn,&pn2)) ;
         } else {
             /* STATISCTICS */
             ++dir_success ;
@@ -109,7 +109,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             }
             dirfunc( data, &pn2 ) ;
             pn2.dev = NULL ; /* clear for the rest of directory listing */
-            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_next_alarm(sn):BUS_next(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_next_alarm(sn,&pn2):BUS_next(sn,&pn2)) ;
         }
         BUS_unlock() ;
         if ( pn->pathlength == 0 ) { /* true root */
@@ -157,12 +157,12 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         return 0 ;
     }
 }
-static int FS_branchoff( void ) {
+static int FS_branchoff( const struct parsedname * const pn ) {
     int ret ;
     unsigned char cmd[] = { 0xCC, 0x66, } ;
 
     /* Turn off all DS2409s */
-    if ( (ret=BUS_reset()) || (ret=BUS_send_data(cmd,2)) ) return ret ;
+    if ( (ret=BUS_reset(pn)) || (ret=BUS_send_data(cmd,2)) ) return ret ;
     return ret ;
 }
 
