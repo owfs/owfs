@@ -96,6 +96,7 @@ unsigned int CRC16_errors = 0 ;
 
 // ow_bus.c
 unsigned int BUS_send_data_errors = 0 ;
+unsigned int BUS_send_data_memcmp_errors = 0 ;
 unsigned int BUS_readin_data_errors = 0 ;
 unsigned int BUS_send_and_get_timeout = 0 ;
 unsigned int BUS_send_and_get_select_errors = 0 ;
@@ -256,6 +257,7 @@ struct filetype stats_errors[] = {
 
 // ow_bus.c
 FS_stat_ROW(BUS_send_data_errors),
+FS_stat_ROW(BUS_send_data_memcmp_errors),
 FS_stat_ROW(BUS_readin_data_errors),
 FS_stat_ROW(BUS_send_and_get_timeout),
 FS_stat_ROW(BUS_send_and_get_select_errors),

@@ -654,6 +654,7 @@ extern unsigned int CRC16_errors ;
 
 // ow_bus.c
 extern unsigned int BUS_send_data_errors ;
+extern unsigned int BUS_send_data_memcmp_errors ;
 extern unsigned int BUS_readin_data_errors ;
 extern unsigned int BUS_send_and_get_timeout ;
 extern unsigned int BUS_send_and_get_select_errors ;
