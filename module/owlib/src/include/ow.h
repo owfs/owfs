@@ -121,6 +121,21 @@ extern char * fuse_opt ;
 #define UART_FIFO_SIZE 160
 extern unsigned char combuffer[] ;
 
+/** USB bulk endpoint FIFO size
+  Need one for each for read and write
+  This is for alt setting "3" -- 64 bytes, 1msec polling
+*/
+#define USB_FIFO_EACH 64
+#define USB_FIFO_READ 0
+#define USB_FIFO_WRITE USB_FIFO_EACH
+#define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
+
+#if USB_FIFO_SIZE > UART_FIFO_SIZE
+    #define MAX_FIFO_SIZE USB_FIFO_SIZE
+#else
+    #define MAX_FIFO_SIZE UART_FIFO_SIZE
+#endif
+
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
 #define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)

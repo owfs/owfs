@@ -30,11 +30,21 @@ static int DS9490wait(unsigned char * const buffer) ;
 void DS9490_setroutines( struct interface_routines * const f ) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) ;
 static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const ibit ) ;
-static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * const ibyte ) ;
+//static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * const ibyte ) ;
 static int DS9490_read_bits( unsigned char * const bits , const int length ) ;
 static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS9490_level(int new_level) ;
+
+#define ITEMS_PER_SEARCH		(((USB_FIFO_EACH)>>3)-1)
+/** Still in search mode -- USB FIFOs haven't been cleared */
+static struct {
+    int searchmode ;
+    int insearch ;
+    int icurrent ;
+    int ncurrent ;
+    int moreavailable ;
+} usb_search = {0,0,0,0,0} ;
 
 #define TIMEOUT_USB	5000 /* 5 seconds */
 
@@ -124,33 +134,28 @@ static int DS9490wait(unsigned char * const buffer) {
     do {
         if ( (ret=usb_bulk_read(devusb,0x81,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
     } while ( !(buffer[8]&0x20) ) ;
-{
-int i ;
-printf ("USBwait return buffer:\n") ;
-for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
-}
+//{
+//int i ;
+//printf ("USBwait return buffer:\n") ;
+//for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
+//}
     return 0 ;
 }
 
     /* Reset the bus */
 static int DS9490_reset( void ) {
     int ret ;
-    static int lastret ; /* for reentrant retry of reset */
     unsigned char buffer[32] ;
-printf("9490RESET\n");
+//printf("9490RESET\n");
     if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0043, 0x0000, NULL, 0, TIMEOUT_USB ))<0
          ||
          (ret=DS9490wait(buffer))
     ) {
-        if ( lastret ) return ret ;
-        usb_reset( devusb ) ;
-        lastret = ret ;
-        return DS9490_detect() ;
+        return ret ;
     }
-    lastret = 0 ;
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
     AnyDevices = !(buffer[16]&0x01) ;
-printf("9490RESET=0 anydevices=%d\n",AnyDevices);
+//printf("9490RESET=0 anydevices=%d\n",AnyDevices);
     return 0 ;
 }
 
@@ -164,10 +169,10 @@ static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const
           ) return ret ;
 
     if ( usb_bulk_read(devusb,0x83,ibit,0x1, TIMEOUT_USB ) > 0 ) {
-printf("USB bit %.2X->%.2X\n",obit,*ibit) ;
+//printf("USB bit %.2X->%.2X\n",obit,*ibit) ;
         return 0 ;
     }
-printf("DS9490_sendback_bit error \n");
+//printf("DS9490_sendback_bit error \n");
     usb_clear_halt(devusb,0x83) ;
     return -EIO ;
 }
@@ -177,7 +182,7 @@ static int DS9490_read_bits( unsigned char * const bits , const int length ) {
     int ret ;
     for ( i=0 ; i<length ; ++i ) {
         if ( (ret=DS9490_sendback_bit(0xFF,&bits[i])) ) return ret ;
-printf("READBIT %d: ->%.2X\n",i,bits[i]);
+//printf("READBIT %d: ->%.2X\n",i,bits[i]);
     }
     return 0 ;
 }
@@ -188,27 +193,12 @@ static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned 
     for ( i=0 ; i<length ; ++i ) {
         if ( (ret=DS9490_sendback_bit(outbits[i]&0x01,&inbits[i])) ) return ret ;
         inbits[i] &= 0x01 ;
-printf("SENDBIT %d: %.2X->%.2X\n",i,outbits[i],inbits[i]);
+//printf("SENDBIT %d: %.2X->%.2X\n",i,outbits[i],inbits[i]);
     }
     return 0 ;
 }
 
-static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {
-    int i ;
-    int ret ;
-//    for ( i=0 ; i<len ; ++i ) {
-//        if ( (ret=DS9490_sendback_byte(data[i],&resp[i])) ) return ret ;
-//        if ( (ret=DS9490_sendback_byte(data[i],&resp[i])) ) return ret ;
-
-    for ( i=0 ; i<len<<3 ; ++i ) {
-        unsigned char ibit, obit = UT_getbit(data,i) ;
-        if ( (ret=DS9490_sendback_bit(obit,&ibit)) ) return ret ;
-        UT_setbit(resp,i,ibit) ;
-printf("SENDDATA %d:%d: %.2X->%.2X\n",i,i>>3,data[i>>3],resp[i>>3]);
-    }
-    return 0 ;
-}
-
+/*
 static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * const ibyte ) {
     int ret ;
     unsigned char buffer[32] ;
@@ -218,7 +208,41 @@ static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * con
          (ret=DS9490wait(buffer))
           ) return ret ;
 
-    if ( usb_bulk_read(devusb,0x83,ibyte,0x1, TIMEOUT_USB ) > 0 ) return 0 ;
+    if ( usb_bulk_read(devusb,0x83,ibyte,0x1, TIMEOUT_USB ) > 0 ) {
+//printf("USB byte %.2X->%.2X\n",obyte,*ibyte) ;
+        return 0 ;
+    }
+    usb_clear_halt(devusb,0x83) ;
+    return -EIO ;
+}
+*/
+
+static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {
+    int ret ;
+    unsigned char buffer[32] ;
+
+    if ( len > USB_FIFO_EACH ) {
+//printf("USBsendback splitting\n");
+        return DS9490_sendback_data(data,resp,USB_FIFO_EACH)
+            || DS9490_sendback_data(&data[USB_FIFO_EACH],&resp[USB_FIFO_EACH],len-USB_FIFO_EACH) ;
+    }
+
+    if ( (ret=usb_bulk_write(devusb,0x82,data,len, TIMEOUT_USB )) < len ) {
+//printf("USBsendback bulk write problem = %d\n",ret);
+        usb_clear_halt(devusb,0x83) ;
+        return -EIO ;
+    }
+
+    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0075, len, NULL, 0, TIMEOUT_USB ))<0
+         ||
+         (ret=DS9490wait(buffer))
+          ) {
+//printf("USBsendback control problem\n");
+        return ret ;
+    }
+
+    if ( usb_bulk_read(devusb,0x83,resp,len, TIMEOUT_USB ) > 0 ) return 0 ;
+//printf("USBsendback bulk read problem\n");
     usb_clear_halt(devusb,0x83) ;
     return -EIO ;
 }

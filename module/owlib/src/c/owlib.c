@@ -88,7 +88,7 @@ enum temp_type tempscale = temp_celsius ; /* Default Celsius */
 /* Since only used during actual transfer to/from the adapter,
    should be protected from contention even when multithreading allowed */
 
-unsigned char combuffer[UART_FIFO_SIZE] ;
+unsigned char combuffer[MAX_FIFO_SIZE] ;
 
 /* ----------------- */
 /* -- Statistics --- */

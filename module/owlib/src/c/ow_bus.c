@@ -21,14 +21,12 @@ $Id$
 #define MODSEL_DATA                    0x00
 #define MODSEL_COMMAND                 0x02
 
-
-//
-// DS2480_send_data
-//  Send a data and expect response match
-//  puts into data mode if needed.
-/* return 0=good
-   bad return sendback_data
-   -EIO if memcpy
+/** DS2480_send_data
+    Send a data and expect response match
+    puts into data mode if needed.
+    return 0=good
+    bad return sendback_data
+    -EIO if memcpy
  */
 int BUS_send_data( const unsigned char * const data , const int len ) {
     int ret ;
@@ -39,14 +37,13 @@ int BUS_send_data( const unsigned char * const data , const int len ) {
         unsigned char resp[16] ;
         (ret=BUS_sendback_data( data, resp, len )) ||  (ret=memcmp(data, resp, (size_t) len)?-EIO:0) ;
     }
-	return ret ;
+    return ret ;
 }
 
-//
-// DS2480_readin_data
-//  Send 0xFFs and return response block
-//  puts into data mode if needed.
-/* Retuns 0=good
+/** DS2480_readin_data
+  Send 0xFFs and return response block
+  puts into data mode if needed.
+ Returns 0=good
    Bad sendback_data
  */
 int BUS_readin_data( unsigned char * const data , const int len ) {
@@ -128,7 +125,7 @@ printf("\n");
 }
 
 //--------------------------------------------------------------------------
-/* Select
+/** Select
    -- selects a 1-wire device to respond to further commands.
    First resets, then climbs down the branching tree,
     finally 'selects' the device.
@@ -168,13 +165,13 @@ int BUS_select(const struct parsedname * const pn) {
 }
 
 //--------------------------------------------------------------------------
-// The 'owFirst' doesn't find the first device on the 1-Wire Net.
-// instead, it sets up for DS2480_next interator.
-//
-// serialnumber -- 8byte (64 bit) serial number found
-//
-// Returns:   0-device found 1-no dev or error
-//
+/** The 'owFirst' doesn't find the first device on the 1-Wire Net.
+ instead, it sets up for DS2480_next interator.
+
+ serialnumber -- 8byte (64 bit) serial number found
+
+ Returns:   0-device found 1-no dev or error
+*/
 int BUS_first(unsigned char * serialnumber ) {
     // reset the search state
     LastDiscrepancy = 0;
@@ -208,14 +205,14 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) 
 }
 
 //--------------------------------------------------------------------------
-// The DS2480_next function does a general search.  This function
-// continues from the previous search state. The search state
-// can be reset by using the DS2480_first function.
-//
-// Returns:  0=No problems, 1=Problems
-//
-// Sets LastDevice=1 if no more
-//
+/** The DS2480_next function does a general search.  This function
+ continues from the previous search state. The search state
+ can be reset by using the DS2480_first function.
+
+ Returns:  0=No problems, 1=Problems
+
+ Sets LastDevice=1 if no more
+*/
 int BUS_next(unsigned char * serialnumber) {
     return BUS_next_both( serialnumber, 0xF0 ) ;
 }
@@ -223,4 +220,3 @@ int BUS_next(unsigned char * serialnumber) {
 int BUS_next_alarm(unsigned char * serialnumber) {
     return BUS_next_both( serialnumber, 0xEC ) ;
 }
-
