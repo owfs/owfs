@@ -79,7 +79,9 @@ int main(int argc, char *argv[]) {
     /* All output to syslog */
     openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
 
-    while ( (c=getopt(argc,argv,OWLIB_OPT)) != -1 ) {
+    LibSetup() ;
+
+    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
         case 'h':
             fprintf(stderr,

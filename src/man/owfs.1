@@ -4,7 +4,15 @@
 owfs \- 1-wire filesystem.
 .SH SYNOPSIS
 .B owfs
-.I "-h  -p -d -t mountpoint"
+.I \-h
+.I -f
+format
+.I \-d
+serialport
+.I | \-u
+.I -t
+timeout
+.I mountpoint
 .SH "DESCRIPTION"
 .B owfs
 is a user-space filesystem that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main directory shows the devices found, You can then navigate to individual devices, and view/alter their properties.
@@ -17,15 +25,42 @@ The 1-wire file system is a modified version of fuse examples by Miklos Szeredi.
 
 .SH OPTIONS
 .TP
-.B \-h
+.B \-h \-\-help
 Show summary of options.
 .TP
-.B \-d device
-Set the serial port to monitor. It should have a LINK or DS9097U attached. The "-d" is optional if two arguments are supplied. (See examples).
+.B \-d \-\-device "serialport"
+Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples). The
+.I \-d
+and
+.I \-u
+options are mutually exclusive.
+.TP
+.B \-u \-\-usb
+Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
 .TP
 .B \-t seconds
 Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents).
-
+.TP
+.B \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
+Temperature scale used for data output.
+.TP
+.B \-f \-\-format "format"
+Display format for the 1-wire devices. Each device has a 8byte address, consisting of 1byte
+.I f
+amily code, 6 byte
+.I I
+D number, and 1 byte
+.I C
+RC checksum.
+.PP
+Possible formats are
+.I f.i
+(default, 01.A1B2C3D4E5F6),
+.I fi fic f.ic f.i.c
+and
+.I fi.c
+.PP
+All formats are accepted as input, but the output will be in the specified format.
 .SH EXAMPLE
 owfs -d /dev/ttyS0 /mnt/1wire
 .TP

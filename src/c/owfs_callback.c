@@ -4,13 +4,12 @@ $Id$
     version 0.4 7/2/2003
 
     Function naming scheme:
-    OW -- Generic call to interaface
+    OW -- Generic call to interface
     LI -- LINK commands
-    L1 -- 2480B commands
     FS -- filesystem commands
     UT -- utility functions
     COM - serial port functions
-    DS2480 -- DS9097 serial connector
+    DS2480 -- DS9097U serial connector
 
     Written 2003 Paul H Alfille
 */
@@ -93,7 +92,7 @@ void directory( void * data, const struct parsedname * const pn ) {
             snprintf( extname , PATH_MAX, "%s.%-d",pn->ft->name,pn->extension) ;
         }
     } else if ( pn->dev->type == dev_1wire ) {
-        snprintf( extname , PATH_MAX, "%02X.%02X%02X%02X%02X%02X%02X",pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3],pn->sn[4],pn->sn[5],pn->sn[6]) ;
+        FS_devicename( extname, PATH_MAX, pn->sn ) ;
     } else {
         snprintf( extname , PATH_MAX, "%s",pn->dev->code) ;
     }
