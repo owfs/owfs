@@ -50,14 +50,26 @@ $Id$
  yREAD_FUNCTION( FS_22power ) ;
  fREAD_FUNCTION( FS_r_templimit ) ;
 fWRITE_FUNCTION( FS_w_templimit ) ;
+ bREAD_FUNCTION( FS_r_trim ) ;
+bWRITE_FUNCTION( FS_w_trim ) ;
+ yREAD_FUNCTION( FS_r_trimvalid ) ;
+ yREAD_FUNCTION( FS_r_blanket ) ;
+yWRITE_FUNCTION( FS_w_blanket ) ;
 
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
     F_STANDARD   ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}, NULL, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit},{f:FS_w_templimit}, (void *)1, } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit},{f:FS_w_templimit}, (void *)0, } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_22power}    , {v:NULL}, NULL, } ,
+    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 750, } ,
+    {"temp800",       12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 800, } ,
+    {"temp900",       12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 900, } ,
+    {"temp1000",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1000, } ,
+    {"temp1100",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1100, } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1, } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0, } ,
+    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL, } ,
+    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {b:FS_r_trimvalid}, {v:NULL}          , NULL, } ,
+    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL, } ,
+    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_22power}    , {v:NULL}          , NULL, } ,
 }
  ;
 DeviceEntry( 10, DS18S20 )
@@ -65,22 +77,28 @@ DeviceEntry( 10, DS18S20 )
 struct filetype DS18B20[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, } ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}, (void *)12, } ,
-    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}, (void *) 9, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit},{f:FS_w_templimit}, (void *)1, } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit},{f:FS_w_templimit}, (void *)0, } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_22power}    , {v:NULL}, NULL, } ,
+    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12, } ,
+    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9, } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1, } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0, } ,
+    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL, } ,
+    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {b:FS_r_trimvalid}, {v:NULL}          , NULL, } ,
+    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL, } ,
+    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_22power}    , {v:NULL}          , NULL, } ,
 } ;
 DeviceEntry( 28, DS18B20 )
 
 struct filetype DS1822[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, } ,
-    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}, (void *)12, } ,
-    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}, (void *) 9, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit},{f:FS_w_templimit}, (void *)1, } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit},{f:FS_w_templimit}, (void *)0, } ,
-    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_22power}    , {v:NULL}, NULL, } ,
+    {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12, } ,
+    {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9, } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1, } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0, } ,
+    {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL, } ,
+    {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {b:FS_r_trimvalid}, {v:NULL}          , NULL, } ,
+    {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL, } ,
+    {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_22power}    , {v:NULL}          , NULL, } ,
 } ;
 DeviceEntry( 22, DS1822 )
 
@@ -105,6 +123,8 @@ static int OW_r_templimit( float * T, const int Tindex, const struct parsedname 
 static int OW_w_templimit( const float T, const int Tindex, const struct parsedname * pn) ;
 static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) ;
 static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) ;
+static int OW_r_trim(unsigned char * const trim, const struct parsedname * pn) ;
+static int OW_w_trim(const unsigned char * const trim, const struct parsedname * pn) ;
 
 int FS_10temp(float *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
@@ -140,8 +160,50 @@ int FS_r_templimit(float * T , const struct parsedname * pn) {
 }
 
 int FS_w_templimit(const float * T, const struct parsedname * pn) {
-    if ( pn->ft->data==NULL ) return -ENODEV ;
     if ( OW_w_templimit( *T , (int) pn->ft->data, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+int FS_r_trim(unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( offset ) return -EINVAL ;
+    if ( OW_r_trim( T , pn ) ) return - EINVAL ;
+    return 2 ;
+}
+
+int FS_w_trim(const unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( offset ) return -EINVAL ;
+    if ( OW_w_trim( T , pn ) ) return - EINVAL ;
+    return 0 ;
+}
+
+/* Are the trim values valid-looking? */
+int FS_r_trimvalid(int * y , const struct parsedname * pn) {
+    unsigned char trim[2] ;
+    if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
+    y[0] = (
+             ( (trim[0]&0x08) == 0x05 )
+	     || ( (trim[0]&0x08) == 0x03 )
+	   )
+	   && ( trim[1] == 0xBB );
+    return 0 ;
+}
+
+/* Put in a black trim value if non-zero */
+int FS_r_blanket(int * y , const struct parsedname * pn) {
+    unsigned char trim[2] ;
+    unsigned char blanket[] = { 0x9D, 0xBB } ;
+
+    if ( OW_r_trim( trim , pn ) ) return - EINVAL ;
+    y[0] = ( memcmp(trim, blanket, 2) == 0 ) ;
+    return 0 ;
+}
+
+/* Put in a black trim value if non-zero */
+int FS_w_blanket(const int * y , const struct parsedname * pn) {
+    unsigned char blanket[] = { 0x9D, 0xBB } ;
+    if ( y[0] ) {
+        if ( OW_w_trim( blanket , pn ) ) return -EINVAL ;
+    }
     return 0 ;
 }
 
@@ -155,15 +217,25 @@ int FS_tempdata(char *buf, const size_t size, const off_t offset , const struct 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
 static int OW_10temp(float * temp , const struct parsedname * pn) {
     unsigned char data[8] ;
+    int delay = 750 ;
     int ret ;
-
+    if ( pn->ft->data ) delay = (int) pn->ft->data ;
     /* Select particular device and start conversion */
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_PowerByte( 0x44, 750 ) ;
+        ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
     if ( OW_r_scratchpad( data , pn ) ) return 1 ;
+
+    /* Check for error condition */
+    if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
+        /* repeat the conversion (only once) */
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_PowerByte( 0x44, delay ) ;
+        BUS_unlock() ;
+        if ( ret || OW_r_scratchpad( data , pn ) ) return 1 ;
+    }
 
     /* fancy math */
     *temp = (float)((((char)data[1])<<8|data[0])>>1) + .75 - .0625*data[6] ;
@@ -174,7 +246,7 @@ static int OW_22power( unsigned char * data, const struct parsedname * pn) {
     unsigned char b4 = 0xB4;
     int ret ;
 
-	BUS_lock() ;
+    BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data( &b4 , 1 ) || BUS_readin_data( data , 1 ) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
@@ -183,18 +255,18 @@ static int OW_22power( unsigned char * data, const struct parsedname * pn) {
 
 static int OW_22temp(float * temp , int resolution, const struct parsedname * pn) {
     unsigned char data[8] ;
-	int res = Resolutions[resolution-9].config ;
+    int res = Resolutions[resolution-9].config ;
     int ret ;
 
-	/* Get existing settings */
+    /* Get existing settings */
     if ( OW_r_scratchpad(data , pn ) ) return 1 ;
-	/* Put in new settings */
-	if ( data[4] != res ) {
-    	data[4] = res ;
+        /* Put in new settings */
+        if ( data[4] != res ) {
+            data[4] = res ;
         if ( OW_w_scratchpad(&data[2] , pn ) ) return 1 ;
-	}
+    }
 
-	/* Conversion */
+    /* Conversion */
     BUS_lock() ;
         ret =BUS_select(pn) || BUS_PowerByte( 0x44, Resolutions[resolution-9].delay ) ;
     BUS_unlock() ;
@@ -258,5 +330,31 @@ static int OW_w_scratchpad(const unsigned char * data, const struct parsedname *
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data( d , 4 ) || BUS_select(pn) || BUS_PowerByte( 0x48, 10 ) ;
     BUS_unlock() ;
+    return ret ;
+}
+
+/* Trim values -- undocumented except in AN247.pdf */
+static int OW_r_trim(unsigned char * const trim, const struct parsedname * pn) {
+    unsigned char cmd[] = { 0x93, 0x68, } ;
+    int ret ;
+
+    BUS_lock() ;
+        ret =    BUS_select(pn) || BUS_send_data( &cmd[0] , 1 ) || BUS_readin_data( &trim[0] , 1 )
+              || BUS_select(pn) || BUS_send_data( &cmd[1] , 1 ) || BUS_readin_data( &trim[1] , 1 ) ;
+    BUS_unlock() ;
+    return ret ;
+}
+
+static int OW_w_trim(const unsigned char * const trim, const struct parsedname * pn) {
+    unsigned char cmd[] = { 0x95, trim[0], 0x63, trim[1], 0x94, 0x64, } ;
+    int ret ;
+
+    BUS_lock() ;
+        ret =    BUS_select(pn) || BUS_send_data( &cmd[0] , 2 )
+              || BUS_select(pn) || BUS_send_data( &cmd[2] , 2 )
+              || BUS_select(pn) || BUS_send_data( &cmd[4] , 1 )
+              || BUS_select(pn) || BUS_send_data( &cmd[5] , 1 ) ;
+    BUS_unlock() ;
+
     return ret ;
 }
