@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 //            break ;
          case 'h':
              fprintf(stderr,
-             "Usage: %s mountpoint -p portname [options] \n"
+             "Usage: %s mountpoint -d devicename [options] \n"
              "   or: %s [options] portname mountpoint \n"
              "  Required:\n"
              "    -d device -- serial port connecting to 1-wire network (e.g. /dev/ttyS0)\n"
