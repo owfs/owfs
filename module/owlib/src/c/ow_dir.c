@@ -83,16 +83,16 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         /* Triplicate bus read */
         /* STATISCTICS */
         ++dir_tries[0] ;
-        (ret=BUS_select(&pn2)) || (ret=BUS_first(sn)) ;
+        (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn):BUS_first(sn)) ;
         if (ret) {
             /* STATISCTICS */
             ++dir_tries[1] ;
-            (ret=BUS_select(&pn2)) || (ret=BUS_first(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn):BUS_first(sn)) ;
         }
         if (ret) {
             /* STATISCTICS */
             ++dir_tries[2] ;
-            (ret=BUS_select(&pn2)) || (ret=BUS_first(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_first_alarm(sn):BUS_first(sn)) ;
         } else {
             /* STATISCTICS */
             ++dir_success ;
@@ -109,7 +109,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
             }
             dirfunc( data, &pn2 ) ;
             pn2.dev = NULL ; /* clear for the rest of directory listing */
-            (ret=BUS_select(&pn2)) || (ret=BUS_next(sn)) ;
+            (ret=BUS_select(&pn2)) || (ret=(pn2.type==pn_alarm)?BUS_next_alarm(sn):BUS_next(sn)) ;
         }
         BUS_unlock() ;
         if ( pn->pathlength == 0 ) { /* true root */

@@ -3,40 +3,40 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      device type (chip, interface or pseudo)
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 #include "owfs_config.h"
@@ -50,6 +50,7 @@ $Id$
  yREAD_FUNCTION( FS_power ) ;
  fREAD_FUNCTION( FS_r_templimit ) ;
 fWRITE_FUNCTION( FS_w_templimit ) ;
+ aREAD_FUNCTION( FS_r_die ) ;
  bREAD_FUNCTION( FS_r_trim ) ;
 bWRITE_FUNCTION( FS_w_trim ) ;
  yREAD_FUNCTION( FS_r_trimvalid ) ;
@@ -60,10 +61,6 @@ yWRITE_FUNCTION( FS_w_blanket ) ;
 struct filetype DS18S20[] = {
     F_STANDARD   ,
     {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 750, } ,
-    {"temp800",       12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 800, } ,
-    {"temp900",       12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 900, } ,
-    {"temp1000",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1000,} ,
-    {"temp1100",      12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 1100,} ,
     {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,    } ,
     {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,    } ,
     {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,         } ,
@@ -82,6 +79,7 @@ struct filetype DS18B20[] = {
     {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,   } ,
     {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,   } ,
     {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
+    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , NULL,        } ,
     {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
     {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
     {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
@@ -104,7 +102,7 @@ DeviceEntry( 22, DS1822 )
 
 struct tempresolution {
     unsigned char config ;
-	unsigned int delay ;
+    unsigned int delay ;
 } ;
 struct tempresolution Resolutions[] = {
     { 0x1F,  94, } , /*  9 bit */
@@ -128,21 +126,21 @@ static int OW_w_trim(const unsigned char * const trim, const struct parsedname *
 
 static int FS_10temp(float *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
-	*T = Temperature(*T) ;
-	return 0 ;
+    *T = Temperature(*T) ;
+    return 0 ;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
 static int FS_22temp(float *T , const struct parsedname * pn) {
-	switch( (int) pn->ft->data ) {
-	case 9:
-	case 10:
-	case 11:
-	case 12:
-		if ( OW_22temp( T, (int) pn->ft->data , pn ) ) return -EINVAL ;
-    	*T = Temperature(*T) ;
-		return 0 ;
-	}
+    switch( (int) pn->ft->data ) {
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+        if ( OW_22temp( T, (int) pn->ft->data , pn ) ) return -EINVAL ;
+        *T = Temperature(*T) ;
+        return 0 ;
+    }
     return -ENODEV ;
 }
 
@@ -150,19 +148,27 @@ static int FS_power(int * y , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_power( &data , pn ) ) return -EINVAL ;
     *y = data ;
-	return 0 ;
+    return 0 ;
 }
 
 static int FS_r_templimit(float * T , const struct parsedname * pn) {
     if ( OW_r_templimit( T , (int) pn->ft->data, pn ) ) return -EINVAL ;
-	*T = Temperature(*T) ;
-	return 0 ;
+    *T = Temperature(*T) ;
+    return 0 ;
 }
 
 static int FS_w_templimit(const float * T, const struct parsedname * pn) {
     if ( OW_w_templimit( *T , (int) pn->ft->data, pn ) ) return -EINVAL ;
     return 0 ;
 }
+
+static int FS_r_die(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    unsigned int ss = ((unsigned int)pn->sn[1]) | (((unsigned int)pn->sn[2])<<8) | (((unsigned int)pn->sn[3])<<16) | (((unsigned int)(pn->sn[4])&0x0F)<<24) ;
+    if ( ss > 0x0662B4F ) return FS_read_return( buf, size, offset, "C2", 2 ) ;
+    if ( ss > 0x054BBDF ) return FS_read_return( buf, size, offset, "B7", 2 ) ;
+    FS_read_return( buf, size, offset, "B6", 2 ) ;
+}
+
 
 static int FS_r_trim(unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( offset ) return -EINVAL ;
@@ -181,10 +187,10 @@ static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
     unsigned char trim[2] ;
     if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
     y[0] = (
-             ( (trim[0]&0x08) == 0x05 )
-	     || ( (trim[0]&0x08) == 0x03 )
-	   )
-	   && ( trim[1] == 0xBB );
+             ( (trim[0]&0x07) == 0x05 )
+         || ( (trim[0]&0x07) == 0x03 )
+       )
+       && ( trim[1] == 0xBB );
     return 0 ;
 }
 
@@ -281,19 +287,19 @@ static int OW_22temp(float * temp , int resolution, const struct parsedname * pn
 /* Limits Tindex=0 high 1=low */
 static int OW_r_templimit( float * T, const int Tindex, const struct parsedname * pn) {
     unsigned char data[8] ;
-	unsigned char recall = 0xB4 ;
-	int ret ;
+    unsigned char recall = 0xB4 ;
+    int ret ;
 
     BUS_lock() ;
         ret = BUS_select(pn) || BUS_send_data( &recall , 1 ) ;
     BUS_unlock() ;
-	if ( ret ) return 1 ;
+    if ( ret ) return 1 ;
 
     UT_delay(10) ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
     *T = (char) data[2+Tindex] ;
-	return 0 ;
+    return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
@@ -302,7 +308,7 @@ static int OW_w_templimit( const float T, const int Tindex, const struct parsedn
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
     (char) data[2+Tindex] = T ;
-	return OW_w_scratchpad( &data[2], pn ) ;
+    return OW_w_scratchpad( &data[2], pn ) ;
 }
 
 /* read 8 bytes, includes CRC8 which is checked */
@@ -351,8 +357,8 @@ static int OW_w_trim(const unsigned char * const trim, const struct parsedname *
 
     BUS_lock() ;
         ret =    BUS_select(pn) || BUS_send_data( &cmd[0] , 2 )
-              || BUS_select(pn) || BUS_send_data( &cmd[2] , 2 )
-              || BUS_select(pn) || BUS_send_data( &cmd[4] , 1 )
+              || BUS_select(pn) || BUS_send_data( &cmd[2] , 1 )
+              || BUS_select(pn) || BUS_send_data( &cmd[3] , 2 )
               || BUS_select(pn) || BUS_send_data( &cmd[5] , 1 ) ;
     BUS_unlock() ;
 
