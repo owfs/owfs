@@ -47,11 +47,46 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
-# Check if the cache is enabled.
+# Check if the modules are enabled
 
-# VT: I'd guess this has to be done before the rest because this may impact
-# other checks, but this is just a guess - if someone knows otherwise, speak
-# up now
+#Check owfs
+AC_MSG_CHECKING(if owfs is enabled)
+ENABLE_OWFS="true"
+AC_ARG_ENABLE(owfs,
+[  --enable-owfs         Enable owhttpd module (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWFS=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWFS)
+
+#Check owhttpd
+AC_MSG_CHECKING(if owhttpd is enabled)
+ENABLE_OWHTTPD="true"
+AC_ARG_ENABLE(owhttpd,
+[  --enable-owhttpd      Enable owhttpd module (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWHTTPD=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWHTTPD)
+
+# We need fuse only if OWFS is enabled
+if test "${ENABLE_OWFS}" = "true" ; then
+    AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.sourceforge.net/projects/avf])])
+fi
+
+# Check if the cache is enabled.
 
 ENABLE_CACHE=true
 
@@ -73,6 +108,22 @@ AC_ARG_ENABLE(cache,
 ])
 
 AC_SUBST(ENABLE_CACHE)
+
+# Include libdb if the cache is enabled
+if test "${ENABLE_CACHE}" = "true" ; then
+    AC_CHECK_LIB(db,__db_dbopen,[
+        AC_MSG_CHECKING([>DB4.0?])
+        AC_CHECK_LIB(db,__txn_reset,[ENABLE_CACHE41=true],[ENABLE_CACHE41=false])
+        ],[
+        AC_MSG_WARN([libdb1 not found, cache will be disabled])
+        ENABLE_CACHE=false
+        AC_SUBST(ENABLE_CACHE)
+    ])
+fi
+AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
+AM_CONDITIONAL(ENABLE_CACHE41, test "${ENABLE_CACHE41}" = "true")
+
+# Check for USB enabled
 
 ENABLE_USB=true
 
@@ -108,6 +159,8 @@ fi
 
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
+# Check for multithreading
+
 ENABLE_MT=true
 
 AC_MSG_CHECKING([if multithreading is enabled])
@@ -129,7 +182,7 @@ AC_ARG_ENABLE(mt,
 
 AC_SUBST(ENABLE_MT)
 
-# Include libusb if the usb is enabled
+# Include libpthread if multithreading is enabled
 
 if test "${ENABLE_MT}" = "true" ; then
 
@@ -141,61 +194,6 @@ if test "${ENABLE_MT}" = "true" ; then
 fi
 
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
-
-# Check if the modules are enabled
-
-#Check owfs
-AC_MSG_CHECKING(if owfs is enabled)
-ENABLE_OWFS="true"
-AC_ARG_ENABLE(owfs,
-[  --enable-owfs         Enable owhttpd module (default true)],
-[
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWFS=false
-    fi
-],
-[
-    AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_OWFS)
-
-#Check owhttpd
-AC_MSG_CHECKING(if owhttpd is enabled)
-ENABLE_OWHTTPD="true"
-AC_ARG_ENABLE(owhttpd,
-[  --enable-owhttpd      Enable owhttpd module (default true)],
-[
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWHTTPD=false
-    fi
-],
-[
-    AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_OWHTTPD)
-
-# Check for libraries
-
-# Include libdb if the cache is enabled
-if test "${ENABLE_CACHE}" = "true" ; then
-    AC_CHECK_LIB(db,__db_dbopen,[
-        AC_MSG_CHECKING([>DB4.0?])
-        AC_CHECK_LIB(db,__txn_reset,[ENABLE_CACHE41=true],[ENABLE_CACHE41=false])
-        ],[
-        AC_MSG_WARN([libdb1 not found, cache will be disabled])
-        ENABLE_CACHE=false
-        AC_SUBST(ENABLE_CACHE)
-    ])
-fi
-AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
-AM_CONDITIONAL(ENABLE_CACHE41, test "${ENABLE_CACHE41}" = "true")
-
-# We need fuse only if OWFS is enabled
-if test "${ENABLE_OWFS}" = "true" ; then
-    AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.sourceforge.net/projects/avf])])
-fi
 
 # Checks for header files.
 
