@@ -99,13 +99,13 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
                         snprintf( extname , PATH_MAX, "%s.%-d",((pn.dev)->ft)[i].name,j) ;
 					}
 //printf("GD %s\n",extname) ;
-                    filler ( h , extname , 0 ) ;
+                    filler ( h , extname , DT_DIR ) ;
                 }
                 snprintf( extname , PATH_MAX, "%s.ALL",((pn.dev)->ft)[i].name) ;
-                filler ( h , extname , 0 ) ;
+                filler ( h , extname , DT_DIR ) ;
 //printf("GD %s\n",extname) ;
             } else {
-                filler( h , ((pn.dev)->ft)[i].name , 0 ) ;
+                filler( h , ((pn.dev)->ft)[i].name , DT_DIR ) ;
             }
         }
     } else { /* root directory */
@@ -115,23 +115,23 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         time( &scan_time ) ;
 //printf("GD - root directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
         /* Root directory, needs .,.. and scan of devices */
-        filler(h, ".", 0);
+        filler(h, ".", DT_DIR);
         filler(h, "..", 0);
         switch (Version2480) {
         case 3:
-            filler(h,"DS9097U",0) ;
+            filler(h,"DS9097U",DT_DIR) ;
             break ;
         case 7:
-            filler(h,"LINK",0) ;
+            filler(h,"LINK",DT_DIR) ;
             break ;
         }
         BUS_lock() ;
         if ( OW_first(buf) ) return 0 ;
         FS_parse_dir(nam,buf) ;
-        filler(h,nam,0) ;
+        filler(h,nam,DT_DIR) ;
         while ( ! OW_next(buf) ) {
             FS_parse_dir(nam,buf) ;
-            filler(h,nam,0) ;
+            filler(h,nam,DT_DIR) ;
         } ;
         BUS_unlock() ;
     }
