@@ -204,6 +204,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) 
     int i ;
     int buflen ;
 
+//printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",AnyDevices,LastDevice);
 //printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
     if ( !AnyDevices ) LastDevice = 1 ;

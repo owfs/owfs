@@ -125,9 +125,6 @@ int owopt( const int c , const char * const arg ) {
         }
         return 0 ;
     case 260: /* fuse-opt */
-        fuse_opt = strdup( arg ) ;
-        if ( fuse_opt == NULL ) fprintf(stderr,"Insufficient memolry to store FUSE options: %s\n",arg) ;
-        return 0 ;
     case 0:
         return 0 ;
     default:

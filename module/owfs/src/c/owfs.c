@@ -71,6 +71,10 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
+        case 260: /* fuse-opt */
+            fuse_opt = strdup( optarg ) ;
+            if ( fuse_opt == NULL ) fprintf(stderr,"Insufficient memory to store FUSE options: %s\n",optarg) ;
+            break ;
         }
         if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
@@ -110,19 +114,30 @@ int main(int argc, char *argv[]) {
 }
 
 static void fuser_mount_wrapper( void ) {
-    char ** opts = NULL ;
-
+    char ** opts  ;
+    
+//printf("FUSERMOUNT fuse_opt=%s\n",fuse_opt) ;
+    char * tok ;
+    int i = 0 ;
     if ( fuse_opt ) {
-        char * tok ;
-        int i = 0 ;
-        opts = (char **) malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
+        opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
+        if ( opts == NULL ) { 
+            fprintf(stderr,"Memory allocation problem\n") ; 
+            ow_exit(1) ; 
+        }
         tok = strtok(fuse_opt," ") ;
         while ( tok ) {
             opts[i++] = tok ;
             tok = strtok(NULL," ") ;
         }
-        opts[i] = NULL ;
-    }
+    } else {
+        opts = malloc( sizeof(char *) ) ; // oversized
+        if ( opts == NULL ) { 
+            fprintf(stderr,"Memory allocation problem\n") ; 
+            ow_exit(1) ; 
+        }
+    }    
+    opts[i] = NULL ;
 
     // FUSE magic. I don't understand it.
     if(getenv(FUSE_MOUNTED_ENV)) {
@@ -133,21 +148,23 @@ static void fuser_mount_wrapper( void ) {
            fusermount execs this program and passes the control file
            descriptor dup()-ed to stdin */
         fuse_fd = 0;
+//printf("Mountpoint = %s\n",fuse_mountpoint) ;
         if(tmpstr != NULL)
             strncpy(umount_cmd, tmpstr, sizeof(umount_cmd) - 1);
-//        fuse_mountpoint = strdup(argv[optind]);
         fuse_fd = fuse_mount(fuse_mountpoint, opts);
-        if(fuse_fd == -1) ow_exit(1);
+        if(fuse_fd < 0) { 
+            fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
+            ow_exit(1);
+        }
     } else {
-//        fuse_mountpoint = strdup(argv[optind]);
         fuse_fd = fuse_mount(fuse_mountpoint, opts);
-        if(fuse_fd == -1) ow_exit(1);
+        if(fuse_fd < 0) { 
+            fprintf(stderr,"Mount error = %d\n",fuse_fd) ;
+            ow_exit(1);
+        }
     }
-    if ( opts ) { /* just to be anal, clear the string memory */
-        free( opts ) ;
-        free( fuse_opt ) ;
-        fuse_opt = NULL ;
-    }
+    free( opts ) ;
+    free( fuse_opt ) ;
 }
 
 static void ow_exit( int e ) {

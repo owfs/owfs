@@ -17,6 +17,8 @@ Thermometer.
 .HP
 .B 28
 [.]XXXXXXXXXXXX[XX][/[
+.B die
+|
 .B fasttemp
 |
 .B power
@@ -26,6 +28,12 @@ Thermometer.
 .B temphigh
 |
 .B templow
+|
+.B trim
+|
+.B trimblanket
+|
+.B trimvalid
 |
 .B address
 |
@@ -49,6 +57,10 @@ or
 .B owhttp (3)
 for choises. Default is Celsius.
 Conversion takes 94 msec.
+.SS die
+.I read-only,ascii
+.br
+Two character manufacturing die lot. "B6" "B7" or "C2"
 .SS power
 .I read-only,yes-no
 .br
@@ -73,6 +85,26 @@ or
 for choises. Default is Celsius.
 .br
 Note that alarms are not implemented.
+.SS trim
+.I read-write,binary
+.br
+32 bit trim value in the EEPROM of the chip. When written, it does not seem to read back. Used for a production problem in the B7
+.I die.
+See AN247.pdf
+.br
+Read allowed for all chips. Only the B7 chips can be written.
+.SS trimblanket
+.I read-write,yes-no
+.br
+Writing non-zero (1) puts a default trim value in the chip. Only applied to the B7
+.I die.
+Reading will be true (non-zero) if trim value is the blanket value. Again, only B7 chips will register true, and since the written trim values cannot be read, this value may have little utility.
+.SS trimvalid
+.I read-only,yes-no
+.br
+Is the 
+.I trim 
+value in the valid range? Non-zero if true, which includes all non-B7 chips.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii

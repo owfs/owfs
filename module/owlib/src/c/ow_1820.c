@@ -61,9 +61,10 @@ yWRITE_FUNCTION( FS_w_blanket ) ;
 struct filetype DS18S20[] = {
     F_STANDARD   ,
     {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_10temp}     , {v:NULL}          , (void *) 750, } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,    } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,    } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,   } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,   } ,
     {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,         } ,
+    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 1,   } ,
     {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,         } ,
     {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,         } ,
     {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,         } ,
@@ -76,10 +77,10 @@ struct filetype DS18B20[] = {
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, NULL,} ,
     {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
     {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,   } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,   } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,  } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,  } ,
     {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
-    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , NULL,        } ,
+    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 2,  } ,
     {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
     {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
     {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
@@ -91,9 +92,10 @@ struct filetype DS1822[] = {
 //    {"scratchpad",     8,  NULL, ft_binary, ft_volatile, FS_tempdata   , NULL, NULL, } ,
     {"temperature",   12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *)12,  } ,
     {"fasttemp"  ,    12,  NULL, ft_float , ft_volatile, {f:FS_22temp}     , {v:NULL}          , (void *) 9,  } ,
-    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)1,   } ,
-    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *)0,   } ,
+    {"templow",       12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 1,  } ,
+    {"temphigh",      12,  NULL, ft_float , ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, (void *) 0,  } ,
     {"trim",           2,  NULL, ft_binary, ft_volatile, {b:FS_r_trim}     , {b:FS_w_trim}     , NULL,        } ,
+    {"die",            2,  NULL, ft_ascii , ft_static  , {a:FS_r_die}      , {v:NULL}          , (void *) 0,  } ,
     {"trimvalid",      1,  NULL, ft_yesno , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
     {"trimblanket",    1,  NULL, ft_yesno , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
     {"power"     ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
@@ -110,6 +112,27 @@ struct tempresolution Resolutions[] = {
     { 0x5F, 375, } , /* 11 bit */
     { 0x7F, 750, } , /* 12 bit */
 } ;
+
+struct die_limits {
+    unsigned char B7[6] ;
+    unsigned char C2[6] ;
+} ;
+
+// ID ranges for the different chip dies
+struct die_limits DIE[] = {
+    {   // DS1822 Family code 22
+        { 0x00, 0x00, 0x00, 0x08, 0x97, 0x8A } ,
+        { 0x00, 0x00, 0x00, 0x0C, 0xB8, 0x1A } ,
+    } ,
+    {   // DS18S20 Family code 10
+        { 0x00, 0x08, 0x00, 0x59, 0x1D, 0x20 } ,
+        { 0x00, 0x08, 0x00, 0x80, 0x88, 0x60 } ,
+    } ,
+    {   // DS18B20 Family code 28
+        { 0x00, 0x00, 0x00, 0x54, 0x50, 0x10 } ,
+        { 0x00, 0x00, 0x00, 0x66, 0x2B, 0x50 } ,
+    } ,
+} ;            
 
 /* ------- Functions ------------ */
 
@@ -163,10 +186,11 @@ static int FS_w_templimit(const float * T, const struct parsedname * pn) {
 }
 
 static int FS_r_die(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned int ss = ((unsigned int)pn->sn[1]) | (((unsigned int)pn->sn[2])<<8) | (((unsigned int)pn->sn[3])<<16) | (((unsigned int)(pn->sn[4])&0x0F)<<24) ;
-    if ( ss > 0x0662B4F ) return FS_read_return( buf, size, offset, "C2", 2 ) ;
-    if ( ss > 0x054BBDF ) return FS_read_return( buf, size, offset, "B7", 2 ) ;
-    FS_read_return( buf, size, offset, "B6", 2 ) ;
+    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    // data gives index into die matrix
+    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return FS_read_return( buf, size, offset, "C2", 2 ) ;
+    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) > 0 ) return FS_read_return( buf, size, offset, "B7", 2 ) ;
+    return FS_read_return( buf, size, offset, "B6", 2 ) ;
 }
 
 
@@ -177,6 +201,10 @@ static int FS_r_trim(unsigned char * T, const size_t size, const off_t offset , 
 }
 
 static int FS_w_trim(const unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
+    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    // data gives index into die matrix
+    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return -EINVAL ;
+    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return -EINVAL ;
     if ( offset ) return -EINVAL ;
     if ( OW_w_trim( T , pn ) ) return - EINVAL ;
     return 0 ;
@@ -185,6 +213,11 @@ static int FS_w_trim(const unsigned char * T, const size_t size, const off_t off
 /* Are the trim values valid-looking? */
 static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
     unsigned char trim[2] ;
+    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    // data gives index into die matrix
+    y[0] = 1 ; /* Assume true */
+    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return 0 ;
+    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return 0 ;
     if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
     y[0] = (
              ( (trim[0]&0x07) == 0x05 )
@@ -198,7 +231,10 @@ static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
 static int FS_r_blanket(int * y , const struct parsedname * pn) {
     unsigned char trim[2] ;
     unsigned char blanket[] = { 0x9D, 0xBB } ;
-
+    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    // data gives index into die matrix
+    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return -EINVAL ;
+    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return -EINVAL ;
     if ( OW_r_trim( trim , pn ) ) return - EINVAL ;
     y[0] = ( memcmp(trim, blanket, 2) == 0 ) ;
     return 0 ;
@@ -207,6 +243,10 @@ static int FS_r_blanket(int * y , const struct parsedname * pn) {
 /* Put in a black trim value if non-zero */
 static int FS_w_blanket(const int * y , const struct parsedname * pn) {
     unsigned char blanket[] = { 0x9D, 0xBB } ;
+    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    // data gives index into die matrix
+    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return -EINVAL ;
+    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return -EINVAL ;
     if ( y[0] ) {
         if ( OW_w_trim( blanket , pn ) ) return -EINVAL ;
     }
