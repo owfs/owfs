@@ -90,6 +90,26 @@ static int FS_truncate(const char *path, const off_t size) {
     (void) path ; (void) size ; return 0 ;
 }
 
+
+
+#ifdef FUSE_MAJOR_VERSION
+    #if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)) || \
+     (FUSE_MAJOR_VERSION >= 3)
+        /* Newer fuse versions (2.2 and later) have an inode argument */
+        #define FILLER(handle,name) filler( handle, name, DT_DIR, 0 ) ;
+    #else
+        /* Probably fuse-version 1.0 to 2.1 */
+        #define FILLER(handle,name) filler( handle, name, DT_DIR ) ;
+    #endif
+#else /* FUSE_MAJOR_VERSION */
+        /* Probably really old fuse-version */
+        #define FILLER(handle,name) filler( handle, name, DT_DIR ) ;
+#endif /* FUSE_MAJOR_VERSION */
+
+
+
+
+
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
     struct stateinfo si ;
@@ -100,23 +120,9 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         char extname[OW_FULLNAME_MAX+1] ; /* buffer for name */
         FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
 //printf("DIR %s\n",extname);
-#ifdef FUSE_MAJOR_VERSION
-
-    #if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)) || \
-     (FUSE_MAJOR_VERSION >= 3)
-        /* Newer fuse versions (2.2 and later) have an inode argument */
-        filler( h, extname, DT_DIR, 0 ) ;
-    #else
-        /* Probably fuse-version 1.0 to 2.1 */
-        filler( h, extname, DT_DIR ) ;
-    #endif
-
-#else /* FUSE_MAJOR_VERSION */
-        /* Probably really old fuse-version */
-        filler( h, extname, DT_DIR ) ;
-#endif /* FUSE_MAJOR_VERSION */
+        FILLER(h,extname) ;
     }
-    
+
     pn.si = &si ;
 //printf("GETDIR\n");
 
@@ -125,6 +131,8 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     } else { /* Good pn */
         /* Call directory spanning function */
         FS_dir( directory, path, &pn ) ;
+        FILLER(h,".") ;
+        FILLER(h,"..") ;
         ret = 0 ;
     }
 

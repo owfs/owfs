@@ -71,7 +71,7 @@ int ServerWrite( const char * path, const char * buf, const size_t size, const o
             CACHELOCK
                 SemiGlobal.int32 = cm.sg ;
             CACHEUNLOCK
-	}
+        }
     }
     close( connectfd ) ;
     return ret ;
@@ -83,7 +83,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     char * path2 ;
     int connectfd = ClientConnect( &client ) ;
     struct parsedname pn2 ;
-    
+
     if ( connectfd < 0 ) return -EIO ;
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
@@ -92,23 +92,24 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     (void) pn ;
     sm.type = msg_dir ;
     sm.size = 0 ;
-    sm.sg =  SemiGlobal.int32;
+    sm.sg = SemiGlobal.int32;
     sm.offset = 0 ;
     if ( ToServer( connectfd, &sm, path, NULL, 0) ) {
         cm.ret = -EIO ;
-    } else { 
+    } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
 //printf("ServerDir got:%s\n",path2);
-	    if ( FS_ParsedName( path2, &pn2 ) ) {
-	        cm.ret = -EINVAL ;
-		free(path2) ;
-		break ;
-	    } else {
-	        dirfunc(&pn2) ;
+            if ( FS_ParsedName( path2, &pn2 ) ) {
+                cm.ret = -EINVAL ;
+                free(path2) ;
+                break ;
+            } else {
+//printf("DIRFUNC\n");
+                dirfunc(&pn2) ;
                 FS_ParsedName_destroy( &pn2 ) ;
                 free(path2) ;
-	    }
+            }
         }
     }
     close( connectfd ) ;
@@ -137,7 +138,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
 //printf("FromServerAlloc payload too large\n");
         return NULL ;
     }
-    
+
     if ( (msg=malloc(cm->payload)) ) {
         if ( readn(fd,msg,cm->payload) != cm->payload ) {
 //printf("FromServer couldn't read payload\n");

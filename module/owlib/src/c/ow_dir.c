@@ -43,8 +43,9 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path
     int ret = 0 ;
     struct parsedname pn2 ;
 
+//printf("DIR0 path=%s\n",path);
     if ( busmode == bus_remote ) return ServerDir( dirfunc, path, pn ) ;
-    
+
     STATLOCK
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
@@ -54,7 +55,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path
     FSTATUNLOCK
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-//printf("DIR in\n");
+//printf("DIR1 path=%s\n",path);
     if ( pn == NULL ) {
         ret = -ENOENT ; /* should never happen */
     } else if ( pn->dev ){ /* device directory */
@@ -353,6 +354,12 @@ const char dirname_state_text[]     = "text";
 const char dirname_state_unknown[]  = "";
 
 const char * FS_dirname_state( const enum pn_state state ) {
+//printf("dirname state on %.2X\n",state);
+    if ( state & pn_alarm   ) return dirname_state_alarm   ;
+    if ( state & pn_text    ) return dirname_state_text    ;
+    if ( state & pn_uncached) return dirname_state_uncached;
+    return dirname_state_unknown ;
+/*
     switch (state) {
     case pn_uncached:
         return dirname_state_uncached;
@@ -363,6 +370,7 @@ const char * FS_dirname_state( const enum pn_state state ) {
     default:
         return dirname_state_unknown;
     }
+*/
 }
 
 const char dirname_type_statistics[] = "statistics";

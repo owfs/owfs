@@ -81,7 +81,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 //        pn->si->sg.u[1] = presencecheck ;
 //        pn->si->sg.u[2] = tempscale ;
 //        pn->si->sg.u[3] = devform ;
-    
+
     if ( (pathcpy=strdup( (path[0]=='/')? &path[1]:path )) == NULL ) return -ENOMEM ;
     pathnow = pathcpy ;
 
@@ -107,7 +107,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
         }
     }
 
-    /* uncached is a special case, it can preceed anything */
+    /* uncached is a special case, it can preceed anything except text */
     if ( strncasecmp(pathnow,uncached,luncached)==0 ) {
         if ( pathnow[luncached] == '\0' ) {
             pn->state |= pn_uncached ;
@@ -198,6 +198,7 @@ static int FS_ParsedNameSub( char * const path , struct parsedname * pn ) {
     switch( pn->type ) {
     case pn_real:
         if ( strncmp( path, "alarm", 5 )==0 ) {
+//printf("PARSENAME alarm %s\n",path) ;
             if ( path[5]=='\0' ) {
                 pn->state |= pn_alarm ;
                 return 0 ; /* directory */

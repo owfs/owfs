@@ -72,7 +72,7 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->type    = ntohl(sm->type)    ;
     sm->sg      = ntohl(sm->sg)      ;
     sm->offset  = ntohl(sm->offset)  ;
-printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
+//printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
 //printf("<%.4d|%.4d\n",sm->type,sm->payload);
     if ( sm->payload == 0 ) {
          msg = NULL ;
@@ -100,23 +100,23 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     if ( data && cm->payload ) {
         ++nio ;
     }
-printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+//printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-    
+
     cm->payload = htonl(cm->payload) ;
     cm->size = htonl(cm->size) ;
     cm->offset = htonl(cm->offset) ;
     cm->ret = htonl(cm->ret) ;
     cm->sg  = htonl(cm->sg) ;
-    
+
     ret = writev( fd, io, nio ) != io[0].iov_len+io[1].iov_len ;
-    
+
     cm->payload = ntohl(cm->payload) ;
     cm->size = ntohl(cm->size) ;
     cm->offset = ntohl(cm->offset) ;
     cm->ret = ntohl(cm->ret) ;
     cm->sg   = ntohl(cm->sg) ;
-    
+
     return ret ;
 }
 
@@ -125,7 +125,7 @@ static int Handler( int fd ) {
     struct server_msg sm ;
     struct client_msg cm = {0,0,0,0,0,0,} ; /* default values */
     char * path = FromClientAlloc( fd, &sm ) ;
-    
+
     switch( (enum msg_type) sm.type ) {
     case msg_read:
     case msg_write:
@@ -133,7 +133,7 @@ static int Handler( int fd ) {
         if ( (path==NULL) || (memchr( path, 0, sm.payload)==NULL) ) { /* Bad string -- no trailing null */
             cm.ret = -EBADMSG ;
         } else {
-	    struct parsedname pn ;
+            struct parsedname pn ;
             struct stateinfo si ;
             pn.si = &si ;
             /* Parse the path string */
@@ -142,32 +142,32 @@ static int Handler( int fd ) {
             switch( (enum msg_type) sm.type ) {
             case msg_read:
                 retbuffer = ReadHandler( &sm , &cm, path, &pn ) ;
-	        break ;
+                break ;
             case msg_write: {
                     int pathlen = strlen( path ) + 1 ; /* include trailing null */
                     int datasize = sm.payload - pathlen ;
-	            if ( (datasize<=0) || (datasize<sm.size) ) {
-	                cm.ret = -EMSGSIZE ;
-	            } else {
+                    if ( (datasize<=0) || (datasize<sm.size) ) {
+                        cm.ret = -EMSGSIZE ;
+                    } else {
                         unsigned char * data = &path[pathlen] ;
                         WriteHandler( &sm, &cm, path, data, &pn ) ;
-	            }
-		}
-	        break ;
+                    }
+                }
+                break ;
             case msg_dir:
                 DirHandler( &sm, &cm, path, fd, &pn ) ;
-	        break ;
-	    }
+                break ;
+            }
             FS_ParsedName_destroy(&pn) ;
-	}
-	/* Fall through */
+        }
+        /* Fall through */
     case msg_nop:
-	break ;
+        break ;
     default:
         cm.ret = -EIO ;
-	break ;
+        break ;
     }
-    
+
     if (path) free(path) ;
     ToClient( fd, &cm, retbuffer ) ;
     close(fd) ;
@@ -193,7 +193,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const c
     cm->offset = sm->offset ;
 
     if ( cm->payload <= 0 ) {
-	cm->payload = 0 ;
+        cm->payload = 0 ;
         cm->ret = 0 ;
     } else if ( cm->payload > MAXBUFFERSIZE ) {
         cm->payload = 0 ;
@@ -204,9 +204,9 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const c
         cm->payload = 0 ;
         cm->ret = -ENOBUFS ;
     } else if ( (cm->ret = FS_read_postparse(path,retbuffer,cm->payload,cm->offset,pn)) <= 0 ) {
-	cm->payload = 0 ;
+        cm->payload = 0 ;
         free(retbuffer) ;
-	retbuffer = NULL ;
+        retbuffer = NULL ;
     } else {
         cm->size = cm->ret ;
 //printf("Handler: READ done string = %s\n",retbuffer);
@@ -251,21 +251,21 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, const char
 //printf("Handler: DIR preloop %s\n",retbuffer);
         FS_DirName( &retbuffer[pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
 //printf("Handler: DIR loop %s\n",retbuffer);
-	cm->size = strlen(retbuffer) ;
+        cm->size = strlen(retbuffer) ;
         cm->ret = 0 ;
         ToClient(fd,cm,retbuffer) ;
     }
-    
+
     cm->payload = pathlen + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
-//printf("Handler: DIR retbuffer=%p\n",retbuffer);
     /* return buffer holds max file length */
     /* copy current path into return buffer */
     memcpy(retbuffer, path, pathlen ) ;
+//printf("Handler: DIR retbuffer=%s\n",retbuffer);
     /* Add a trailing '/' */
     if ( (pathlen <2) || (retbuffer[pathlen-2] !='/') ) {
-	strcpy( &retbuffer[pathlen-1] , "/" ) ;
-	++pathlen ;
+        strcpy( &retbuffer[pathlen-1] , "/" ) ;
+        ++pathlen ;
     }
     cm->ret = FS_dir( directory, path, pn ) ;
 //printf("Handler: DIR done\n");
@@ -293,7 +293,7 @@ int main( int argc , char ** argv ) {
 #ifdef OW_MT
     pthread_t thread ;
     pthread_attr_t attr ;
-    
+
     pthread_attr_init(&attr) ;
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
 #endif /* OW_MT */
@@ -360,4 +360,3 @@ static void ow_exit( int e ) {
     closelog() ;
     exit( e ) ;
 }
-
