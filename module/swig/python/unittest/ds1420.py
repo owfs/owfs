@@ -57,6 +57,7 @@ class DS1420( unittest.TestCase ):
 
 
     def testAttributes( self ):
+        self.failIfEqual( len( sensors ), 0 )
         for name in sensors:
             sensor = ow.Sensor( name )
             family, id = name[ 1: ].split( '.' )

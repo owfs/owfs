@@ -24,9 +24,13 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 Test suite for basic reality checks on a 1-wire nerwork.
 
-PIO.0/  PIO.3/  PIO.6/    PIO.BYTE/  family/   latch.1/  latch.4/  latch.7/     power/    sensed.0/  sensed.3/  sensed.6/    sensed.BYTE/  type/
-PIO.1/  PIO.4/  PIO.7/    address/   id/       latch.2/  latch.5/  latch.ALL/   present/  sensed.1/  sensed.4/  sensed.7/    set_alarm/
-PIO.2/  PIO.5/  PIO.ALL/  crc8/      latch.0/  latch.3/  latch.6/  latch.BYTE/  reset/    sensed.2/  sensed.5/  sensed.ALL/  strobe/
+PIO.0/       PIO.1/     PIO.2/    PIO.3/    PIO.4/     PIO.5/
+PIO.6/       PIO.7/     PIO.ALL/  PIO.BYTE/ address/   crc8/
+family/      id/        latch.0/  latch.1/  latch.2/   latch.3/
+latch.4/     latch.5/   latch.6/  latch.7/  latch.ALL/ latch.BYTE/
+power/       present/   reset/    sensed.0/ sensed.1/  sensed.2/
+sensed.3/    sensed.4/  sensed.5/ sensed.6/ sensed.7/  sensed.ALL/
+sensed.BYTE/ set_alarm/ strobe/   type/
 """
 
 
@@ -35,9 +39,11 @@ import sys
 import os
 import ConfigParser
 import ow
+import util
 
 
 __version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
+
 
 if not os.path.exists( 'owtest.ini' ):
     raise IOError, 'owtest.ini'
@@ -45,8 +51,7 @@ if not os.path.exists( 'owtest.ini' ):
 config = ConfigParser.ConfigParser( )
 config.read( 'owtest.ini' )
 
-sensors = [ name for name in config.get( 'Root', 'sensors' ).split( ' ' ) ]
-sensors = [ '/' + name for name in sensors if config.get( name, 'type' ) == 'DS2408' ]
+sensors = util.find_config( config, 'DS2408' )
 if len( sensors ):
     load = True
 else:
@@ -59,52 +64,130 @@ class DS2408( unittest.TestCase ):
 
 
     def testAttributes( self ):
+        self.failIfEqual( len( sensors ), 0 )
         for name in sensors:
             sensor = ow.Sensor( name )
-            family, id = name[ 1: ].split( '.' )
+            family, id = name.split( '/' )[ -1 ].split( '.' )
 
             self.failUnlessEqual( family + id,                      sensor.address[ :-2 ] )
             #self.failUnlessEqual( config.get( name, 'crc8' ),       sensor.crc8 )
             self.failUnlessEqual( family,                           sensor.family )
             self.failUnlessEqual( id,                               sensor.id )
             self.failUnlessEqual( '1',                              sensor.present )
-            self.failUnlessEqual( config.get( name[ 1: ], 'type' ), sensor.type )
+            self.failUnlessEqual( config.get( name.split( '/' )[ -1 ], 'type' ), sensor.type )
 
-            self.failUnlessEqual( hasattr( sensor, 'PIO.0' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.1' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.2' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.3' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.4' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.5' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.6' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.7' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.ALL' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'PIO.BYTE' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.0' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.1' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.2' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.3' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.4' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.5' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.6' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.7' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.ALL' ),   True )
-            self.failUnlessEqual( hasattr( sensor, 'latch.BYTE' ),  True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_0' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_1' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_2' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_3' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_4' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_5' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_6' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_7' ),       True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_ALL' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'PIO_BYTE' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_0' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_1' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_2' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_3' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_4' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_5' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_6' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_7' ),     True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_ALL' ),   True )
+            self.failUnlessEqual( hasattr( sensor, 'latch_BYTE' ),  True )
             self.failUnlessEqual( hasattr( sensor, 'power' ),       True )
             self.failUnlessEqual( hasattr( sensor, 'reset' ),       True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.0' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.1' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.2' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.3' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.4' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.5' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.6' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.7' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.ALL' ),  True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed.BYTE' ), True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_0' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_1' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_2' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_3' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_4' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_5' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_6' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_7' ),    True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_ALL' ),  True )
+            self.failUnlessEqual( hasattr( sensor, 'sensed_BYTE' ), True )
             self.failUnlessEqual( hasattr( sensor, 'set_alarm' ),   True )
             self.failUnlessEqual( hasattr( sensor, 'strobe' ),      True )
-                
+
+
+    def testSet( self ):
+        self.failIfEqual( len( sensors ), 0 )
+        for name in sensors:
+            sensor = ow.Sensor( name )
+
+            sensor.PIO_0 = '0'
+            self.failUnlessEqual( sensor.PIO_0, '0' )
+            self.failUnlessEqual( 'PIO_0' in dir( sensor ), False )
+
+            sensor.PIO_0 = '1'
+            self.failUnlessEqual( sensor.PIO_0, '1' )
+            self.failUnlessEqual( 'PIO_0' in dir( sensor ), False )
+
+
+            sensor.PIO_1 = '0'
+            self.failUnlessEqual( sensor.PIO_1, '0' )
+            self.failUnlessEqual( 'PIO_1' in dir( sensor ), False )
+
+            sensor.PIO_1 = '1'
+            self.failUnlessEqual( sensor.PIO_1, '1' )
+            self.failUnlessEqual( 'PIO_1' in dir( sensor ), False )
+
+
+            sensor.PIO_2 = '0'
+            self.failUnlessEqual( sensor.PIO_2, '0' )
+            self.failUnlessEqual( 'PIO_2' in dir( sensor ), False )
+
+            sensor.PIO_2 = '1'
+            self.failUnlessEqual( sensor.PIO_2, '1' )
+            self.failUnlessEqual( 'PIO_2' in dir( sensor ), False )
+
+
+            sensor.PIO_3 = '0'
+            self.failUnlessEqual( sensor.PIO_3, '0' )
+            self.failUnlessEqual( 'PIO_3' in dir( sensor ), False )
+
+            sensor.PIO_3 = '1'
+            self.failUnlessEqual( sensor.PIO_3, '1' )
+            self.failUnlessEqual( 'PIO_3' in dir( sensor ), False )
+
+
+            sensor.PIO_4 = '0'
+            self.failUnlessEqual( sensor.PIO_4, '0' )
+            self.failUnlessEqual( 'PIO_4' in dir( sensor ), False )
+
+            sensor.PIO_4 = '1'
+            self.failUnlessEqual( sensor.PIO_4, '1' )
+            self.failUnlessEqual( 'PIO_4' in dir( sensor ), False )
+
+
+            sensor.PIO_5 = '0'
+            self.failUnlessEqual( sensor.PIO_5, '0' )
+            self.failUnlessEqual( 'PIO_5' in dir( sensor ), False )
+
+            sensor.PIO_5 = '1'
+            self.failUnlessEqual( sensor.PIO_5, '1' )
+            self.failUnlessEqual( 'PIO_5' in dir( sensor ), False )
+
+
+            sensor.PIO_6 = '0'
+            self.failUnlessEqual( sensor.PIO_6, '0' )
+            self.failUnlessEqual( 'PIO_6' in dir( sensor ), False )
+
+            sensor.PIO_6 = '1'
+            self.failUnlessEqual( sensor.PIO_6, '1' )
+            self.failUnlessEqual( 'PIO_6' in dir( sensor ), False )
+
+
+            sensor.PIO_7 = '0'
+            self.failUnlessEqual( sensor.PIO_7, '0' )
+            self.failUnlessEqual( 'PIO_7' in dir( sensor ), False )
+
+            sensor.PIO_7 = '1'
+            self.failUnlessEqual( sensor.PIO_7, '1' )
+            self.failUnlessEqual( 'PIO_7' in dir( sensor ), False )
+
 
 
 def Suite( ):
