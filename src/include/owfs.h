@@ -1,7 +1,9 @@
-/* OWFS and OWHTTPD
-   one-wire file system and 
-   one-wire web server */
 /*
+$Id$
+   OWFS and OWHTTPD
+   one-wire file system and
+   one-wire web server
+
     By PAul H Alfille
     {c} 2003 GPL
     palfille@earthlink.net

@@ -1,10 +1,6 @@
-   /*
-    FUSE: Filesystem in Userspace
-    OW: Module for reading 1-wire devices
-*/
-
 /*
-    OW -- One-Wire filesystem
+$Id$
+     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
     Function naming scheme:

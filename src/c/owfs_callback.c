@@ -1,9 +1,5 @@
-   /*
-    FUSE: Filesystem in Userspace
-    OW: Module for reading 1-wire devices
-*/
-
 /*
+$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 

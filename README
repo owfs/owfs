@@ -1,9 +1,17 @@
-This is a skeleton for owfs, part of OWFS project
-(http://owfs.sourceforge.net).
+$Id$
 
-At this time, it is not completely functional (it is assumed that you've
-obtained this code from the CVS repository). If you have any questions, ask
-them to owfs-developers mailing list.
+This is owfs, part of OWFS project -- 1-Wire Filesystem for Linux.
+This modlue provieds the frontend for the owlib and fuse library,
+implementing a user-space filesystem, with appropriate ties
+into system calls.
+
+Basically, fuse (http://avf.sourceforge.net) exposes filesysstem calls
+in the appropriate directory to this program. This program then
+calls owlib to query and modify the 1-wire bus.
+
+See OWFS (http://owfs.sourceforge.net).
+
+Fully functional, though development is ongoing.
 
 Your contribution is welcome.
 
