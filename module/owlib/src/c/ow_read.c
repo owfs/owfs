@@ -490,9 +490,12 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
     case ft_yesno:
         {
             int * y = (int *) calloc( elements, sizeof(int) ) ;
-                if ( y==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.y)(y,pn) ;
-                if (ret >= 0) buf[0] = y[pn->extension]?'1':'0' ;
+            if ( y==NULL ) return -ENOMEM ;
+            ret = (pn->ft->read.y)(y,pn) ;
+            if (ret >= 0) {
+		buf[0] = y[pn->extension]?'1':'0' ;
+		ret = 1;
+	    }
             free( y ) ;
             break ;
         }
