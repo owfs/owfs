@@ -122,7 +122,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size, const size_
     if (size>0) {
         /* First byte */
         BUS_lock() ;
-            ret = BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],2) || CRC16(p,6) || BUS_ProgramPulse() || BUS_readin_data(&p[3],1) || (p[3]!=data[0]);
+            ret = BUS_select(pn) || BUS_send_data(p,4) || BUS_readin_data(&p[4],2) || CRC16(p,6) || BUS_ProgramPulse() || BUS_readin_data(&p[3],1) || (p[3]&~data[0]);
         BUS_unlock() ;
         if ( ret ) return 1 ;
 
@@ -130,7 +130,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size, const size_
         for ( i=1 ; i<size ; ++i ) {
             p[0] = data[i] ;
             BUS_lock() ;
-                ret = BUS_send_data(p,1) || BUS_readin_data(&p[1],2) || CRC16seeded(p,3,offset+i) || BUS_ProgramPulse() || BUS_readin_data(p,1) || (p[0]!=data[i]) ;
+                ret = BUS_send_data(p,1) || BUS_readin_data(&p[1],2) || CRC16seeded(p,3,offset+i) || BUS_ProgramPulse() || BUS_readin_data(p,1) || (p[0]&~data[i]) ;
             BUS_unlock() ;
             if ( ret ) return 1 ;
         }
