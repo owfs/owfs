@@ -63,7 +63,7 @@ void LockSetup( void ) {
 void LockGet( const struct parsedname * const pn ) {
 #ifdef OW_MT
     int i ; /* counter through slots */
-    int empty ;
+    int empty = 0;
     /* Exclude requests that don't need locking */
     /* Basically directories, subdirectories, static and statistic data, and atomic items */
     pn->si->lock = -1 ; /* No slot owned, yet */
@@ -144,7 +144,7 @@ void LockRelease( const struct parsedname * const pn ) {
 
 /* Special note on locking:
      The bus lock is universal -- only one thread can hold it
-     Therefore, we don't need a STATLOCK for bos_locks and bus_unlocks or bus_time
+     Therefore, we don't need a STATLOCK for bus_locks and bus_unlocks or bus_time
 */
 
 void BUS_lock( void ) {
@@ -158,14 +158,15 @@ void BUS_lock( void ) {
 void BUS_unlock( void ) {
     struct timeval tv2 ;
     gettimeofday( &tv2, NULL ) ;
-    bus_time.tv_sec += tv2.tv_sec - tv.tv_sec ;
-    bus_time.tv_usec += tv2.tv_usec - tv.tv_usec ;
-    if ( bus_time.tv_usec > 100000000 ) {
-        bus_time.tv_usec -= 100000000 ;
-        bus_time.tv_sec  += 100 ;
-	} else if ( bus_time.tv_usec < -100000000 ) {
-        bus_time.tv_usec += 100000000 ;
-        bus_time.tv_sec  -= 100 ;
+
+    bus_time.tv_sec += (tv2.tv_sec - tv.tv_sec) ;
+    bus_time.tv_usec += (tv2.tv_usec - tv.tv_usec) ;
+    if ( bus_time.tv_usec >= 1000000 ) {
+        bus_time.tv_usec -= 1000000 ;
+        ++bus_time.tv_sec;
+    } else if ( bus_time.tv_usec < 0 ) {
+        bus_time.tv_usec += 1000000 ;
+        --bus_time.tv_sec;
     }
         ++ bus_unlocks ; /* statistics */
 #ifdef OW_MT
