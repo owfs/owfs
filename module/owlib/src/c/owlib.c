@@ -31,7 +31,7 @@ void LibSetup( void ) {
     start_time = time(NULL) ;
 }
 
-#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
+#ifdef __UCLIBC__
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -39,21 +39,18 @@ void LibSetup( void ) {
 #include <sys/wait.h>
 
 void catchchild() {
-    char buf[40];
     pid_t pid;
     int status;
 
-  /*signal(SIGCHLD, catchchild);*/ /* Unneeded */
+    /*signal(SIGCHLD, catchchild);*/ /* Unneeded */
 
     pid = wait4(-1, &status, WUNTRACED, 0);
+#if 0
     if (WIFSTOPPED(status))
         sprintf(buf, "owlib: %d: Child %d stopped\n", getpid(), pid);
     else
         sprintf(buf, "owlib: %d: Child %d died\n", getpid(), pid);
-
-    //if (intcrlf) write(STDOUT, "\n", 1);
-    //write(STDOUT, buf, strlen(buf));
-//printf(buf);
+#endif
 }
 
 /*
@@ -65,12 +62,16 @@ int my_daemon(int nochdir, int noclose) {
     int pid;
     int fd;
 
-printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
-printf("owlib: Run application with --foreground instead.\n");
+    //printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
+    //printf("owlib: Run application with --foreground instead.\n");
 
     signal(SIGCHLD, SIG_DFL);
 
+#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
     pid = vfork();
+#else
+    pid = fork();
+#endif
     switch(pid) {
     case -1:
         memset(&act, 0, sizeof(act));
@@ -88,20 +89,22 @@ printf("owlib: Run application with --foreground instead.\n");
         _exit(0);
     }
 
-//printf("owlib: my_daemon: pid=%d call setsid()\n", getpid());
-
     if(setsid() < 0) {
         perror("setsid:");
         return -1;
     }
 
-#if 0
+    /* Make certain we are not a session leader, or else we
+     * might reacquire a controlling terminal */
+#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
     pid = vfork();
+#else
+    pid = fork();
+#endif
     if(pid) {
-        printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
+      //printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
         _exit(0);
     }
-#endif
 
     memset(&act, 0, sizeof(act));
     act.sa_handler = catchchild;
@@ -112,7 +115,7 @@ printf("owlib: Run application with --foreground instead.\n");
         chdir("/");
     }
 
-#if 1
+#if 0
     if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
         dup2(fd, STDIN_FILENO);
         dup2(fd, STDOUT_FILENO);
@@ -133,21 +136,35 @@ printf("owlib: Run application with --foreground instead.\n");
 #endif
     return 0;
 }
-#endif /* defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__) */
+#endif /* defined(__UCLIBC__) */
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
+
+    /* daemon() should work for embedded systems with MMU, but
+     * I noticed that the WRT54G router somethimes had problem with this.
+     * If owfs was started in background AND owfs was statically linked,
+     *   it seemed to work.
+     * If owfs was started in background AND owfs was dynamically linked,
+     *   daemon() hanged in systemcall dup2() for some reason???
+     * I tried to replace uClibc's daemon() with the one above. It worked
+     * in both cases sometimes, but not always... ?!?
+     * 
+     * The best would be to use a statically linked owfs-binary, and then it
+     * works in both cases.
+     */
+    //if(background) printf("Call daemon\n");
     if ( background &&
-#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
-#warning "my_daemon() used"
-        my_daemon(1, 0)
-#else /* defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__) */
-        daemon(1, 0)
-#endif /* defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__) */
+#if defined(__UCLIBC__)
+	 my_daemon(1, 0)
+#else /* defined(__UCLIBC__) */
+	 daemon(1, 0)
+#endif /* defined(__UCLIBC__) */
     ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
     }
+    //if(background) printf("Call daemon done\n");
     /* store the PID */
     pid_num = getpid() ;
 
