@@ -126,6 +126,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       pn->dev != NoDevice, pn->ft != NULL    Known device, known file type
 
       pn->extension = -1 for ALL, 0 if non-aggregate, else 0-max extensionss-1
+      pn->extension = -2 for BYTE, special bitfield representation of the data
 */
 static int FS_ParsedNameSub( const char * const path , struct parsedname * pn ) {
     int ret ;
@@ -312,6 +313,8 @@ static int FilePart( const char * const filename, const char ** next, struct par
             return -ENOENT ; /* An extension not allowed when non-aggregate */
         } else if ( strcasecmp(pExt,"ALL")==0 ) {
             pn->extension = -1 ; /* ALL */
+        } else if ( pn->ft->format==ft_bitfield && strcasecmp(pExt,"BYTE")==0 ) {
+            pn->extension = -2 ; /* BYTE */
 //printf("FP ALL\n") ;
         } else {
             if ( pn->ft->ag->letters == ag_letters ) {
@@ -389,6 +392,8 @@ size_t FileLength( const struct parsedname * const pn ) {
         return 26 ;
     } else if ( pn->ft->format==ft_directory ||  pn->ft->format==ft_subdir ) {
         return 8 ; /* arbitrary, but non-zero for "find" and "tree" commands */
+    } else if ( pn->ft->format==ft_bitfield &&  pn->extension>-1 ) {
+        return 1 ; /* bitfield elements */
     } else {
         switch(pn->ft->suglen) {
         case -fl_type:

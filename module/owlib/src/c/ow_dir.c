@@ -130,7 +130,7 @@ static int FS_devdir( void (* dirfunc)(void *,const struct parsedname * const), 
             if ( strchr( pn2->ft->name, '/' ) ) continue ;
         }
         if ( pn2->ft->ag ) {
-            for ( pn2->extension=-1 ; pn2->extension < pn2->ft->ag->elements ; ++pn2->extension ) {
+            for ( pn2->extension=(pn2->ft->format==ft_bitfield)?-2:-1 ; pn2->extension < pn2->ft->ag->elements ; ++pn2->extension ) {
                 dirfunc( data, pn2 ) ;
                 STATLOCK
                     ++dir_dev.entries ;
@@ -379,6 +379,8 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
             s = snprintf( name , size, "%s",pn->ft->name) ;
         } else if ( pn->extension == -1 ) {
             s = snprintf( name , size, "%s.ALL",pn->ft->name) ;
+        } else if ( pn->extension == -2 ) {
+            s = snprintf( name , size, "%s.BYTE",pn->ft->name) ;
         } else if ( pn->ft->ag->letters == ag_letters ) {
             s = snprintf( name , size, "%s.%c",pn->ft->name,pn->extension+'A') ;
         } else {
@@ -405,6 +407,8 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
                 snprintf( buffer , size, "%s",pname) ;
             } else if ( pn->extension == -1 ) {
                 snprintf( buffer , size, "%s.ALL",pname) ;
+            } else if ( pn->extension == -2 ) {
+                snprintf( buffer , size, "%s.BYTE",pname) ;
             } else if ( pn->ft->ag->letters == ag_letters ) {
                 snprintf( buffer , size, "%s.%c",pname,pn->extension+'A') ;
             } else {

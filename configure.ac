@@ -6,7 +6,7 @@ AC_INIT
 AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="1"
-VERSION_MINOR="1"
+VERSION_MINOR="2"
 PATCHLEVEL="0RC"
 
 AC_SUBST(VERSION_MAJOR)dnl
@@ -46,6 +46,7 @@ AC_SUBST(LIBTOOL_DEPS)
 
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
+AC_PATH_PROG([SWIG],[swig],$PATH)dnl
 
 
 # Include libpthread if multithreading is enabled
@@ -72,14 +73,14 @@ static void *doit(void *ignored) { return ignored; }
 # Check if the modules are enabled
 
 #Check owfs
-AC_MSG_CHECKING(if owfs is enabled)
+AC_MSG_CHECKING([if owfs is enabled])
 ENABLE_OWFS="auto"
 AC_ARG_ENABLE(owfs,
 [  --enable-owfs         Enable owfs module (default auto)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" != "yes" ; then
-        ENABLE_OWFS=false
+        ENABLE_OWFS="false"
     fi
 ],
 [
@@ -90,7 +91,7 @@ AC_SUBST(ENABLE_OWFS)
 #Check owhttpd
 AC_MSG_CHECKING(if owhttpd is enabled)
 ENABLE_OWHTTPD="true"
-AC_ARG_ENABLE(owhttpd,
+AC_ARG_ENABLE(owhttpd,
 [  --enable-owhttpd      Enable owhttpd module (default true)],
 [
     AC_MSG_RESULT([$enableval])
@@ -127,13 +128,22 @@ AC_ARG_ENABLE(owperl,
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
-        ENABLE_OWPERL=true
+    [
+    if test -z "$SWIG" ; then
+#        AC_MSG_WARN([[Cannot find swig program. Look for it at http://www.swig.org or use CPAN]])
+#        AC_MSG_WARN([[OWPERL is disabled because swig is not found]])
+        ENABLE_OWPERL="false"
+    else
+        ENABLE_OWPERL="true"
+    fi
+    ]
     fi
 ],
 [
     AC_MSG_RESULT([false (default)])
 ])
 AC_SUBST(ENABLE_OWPERL)
+AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
@@ -141,7 +151,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	if test "${ENABLE_OWFS}" = "true"; then
 		AC_MSG_ERROR([You have to have libfuse installed first - get it from http://fuse.sourceforge.net])
 	else
-		AC_MSG_WARN([OWFS is disabled because libfuse is not installed.])
+		AC_MSG_WARN([[OWFS is disabled because libfuse is not installed.]])
         	ENABLE_OWFS="false"
 	fi
     ])
@@ -161,6 +171,7 @@ AC_ARG_ENABLE(cache,
 [  --enable-cache      Enable caching (default true)],
 [
     AC_MSG_RESULT([$enableval])
+
     if test ! "$enableval" = "yes" ; then
         ENABLE_CACHE=false
     fi
@@ -169,22 +180,18 @@ AC_ARG_ENABLE(cache,
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_CACHE)
-
+AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 
 # Check for USB enabled
-
 ENABLE_USB=auto
-
 AC_MSG_CHECKING([if usb support is enabled])
 
 AC_ARG_ENABLE(usb,
 [  --enable-usb          Enable 1-Wire usb DS2490 support (default auto)],
 [
-
     AC_MSG_RESULT([$enableval])
 
     if ! test "$enableval" = "yes" ; then
-
         ENABLE_USB=false
     fi
 ],
@@ -193,7 +200,6 @@ AC_ARG_ENABLE(usb,
 ])
 
 AC_SUBST(ENABLE_USB)
-AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 
 # Include libusb if the usb is enabled
 
