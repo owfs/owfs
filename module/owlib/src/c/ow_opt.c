@@ -106,9 +106,6 @@ int owopt( const int c , const char * const arg ) {
         return 0 ;
     case 'V':
         printf("libow version:\n\t" VERSION "\n") ;
-#ifdef OW_CACHE
-        printf("libdb version:\n\t%s\n",Cache_Version() ) ;
-#endif /* OW_CACHE */
         return 1 ;
     case 'p':
         sscanf(optarg, "%i", &portnum);

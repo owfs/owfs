@@ -694,7 +694,6 @@ void COM_break( void ) ;
 void Cache_Open( void ) ;
 void Cache_Close( void ) ;
 void Cache_Clear( void ) ;
-char * Cache_Version( void ) ;
 int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) ;
 int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) ;
 int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) ;

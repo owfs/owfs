@@ -142,11 +142,6 @@ static void tree_show( const void *node, const VISIT which, const int depth ) {
 }
 */
 
-const char cache_version[] = "intrinsic tree routines" ;
-char * Cache_Version( void ) {
-    return cache_version ;
-}
-
     /* DB cache creation code */
     /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open( void ) {
@@ -595,8 +590,6 @@ void Cache_Close( void )
     {}
 void Cache_Clear( void )
     {}
-char * Cache_Version( void )
-    { return ""; }
 int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn )
     { return 1; }
 int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn )
