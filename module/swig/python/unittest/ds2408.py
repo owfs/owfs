@@ -22,7 +22,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ::EOH
 
-Test suite for basic reality checks on a 1-wire nerwork.
+Test suite for basic reality checks on a 1-wire network.
 
 PIO.0/       PIO.1/     PIO.2/    PIO.3/    PIO.4/     PIO.5/
 PIO.6/       PIO.7/     PIO.ALL/  PIO.BYTE/ address/   crc8/
@@ -118,6 +118,8 @@ class DS2408( unittest.TestCase ):
             sensor = ow.Sensor( name )
 
             sensor.PIO_0 = '0'
+            #print sensor._path + '/PIO.0'
+            self.failUnlessEqual( ow._OW.get( sensor._path + '/PIO.0' ), '0' )
             self.failUnlessEqual( sensor.PIO_0, '0' )
             self.failUnlessEqual( 'PIO_0' in dir( sensor ), False )
 
