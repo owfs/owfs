@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# owftpd        Startup script for the 1-Wire networks
+#
+# chkconfig: - 95 05
+# description: OWFTPD is a FTP daemon providing access to 1-Wire networks.
+#
+# config: /etc/sysconfig/owftpd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/owftpd ]; then
+        . /etc/sysconfig/owftpd
+fi
+
+numfs=${#PORT[*]}
+if [ $numfs -eq 0 ]; then
+	exit 0
+fi
+
+lockfile=/var/lock/subsys/owftpd
+owftpd=/usr/sbin/owftpd
+RETVAL=0
+
+start() {
+        echo -n $"Starting owftpd: "
+	i=0; n=0
+	while [ $n -lt $numfs ]; do
+		port=${PORT[$i]}
+		interface=${INTERFACE[$i]}
+		options=${OPTIONS[$i]}
+		if [ "$port" != "" ]; then
+			if [ "$interface" != "" ]; then
+				case $interface in
+				[uU][sS][bB][0-9]*)
+					$owftpd -u`echo $interface | sed -e 's/usb//i'` -p $port $options >/dev/null
+					;;
+				[uU][sS][bB])
+					$owftpd -u -p $port $options >/dev/null
+					;;
+				/*)
+					$owftpd -d $interface -p $port $options >/dev/null
+					;;
+				[sS][oO][cC][kK][eE][tT]:*)
+					socket=`echo $interface | sed -e 's/^socket://i'`
+					$owftpd -s $socket -p $port $options >/dev/null
+					;;
+				*:*)
+					$owftpd -s $interface -p $port $options >/dev/null
+					;;
+				*)
+					echo "ERROR: Bad interface \"$interface\""
+					/bin/false
+					;;
+				esac
+				RETVAL=$?
+				[ $RETVAL = 0 ] || {
+					echo_failure
+					echo
+					return $RETVAL
+				}
+			fi
+			n=`expr $n + 1`
+		fi
+		i=`expr $i + 1`
+	done
+	echo_success
+	echo
+	touch ${lockfile}
+	return 0
+}
+
+stop() {
+	echo -n $"Shutdown owftpd: "
+	killproc $owftpd
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile}
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status $owftpd
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if /sbin/pidof $owftpd >/dev/null ; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL

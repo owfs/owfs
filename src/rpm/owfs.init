@@ -1,0 +1,132 @@
+#!/bin/bash
+#
+# owfs        Startup script for the 1-Wire networks
+#
+# chkconfig: - 95 05
+# description: OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
+#
+# config: /etc/sysconfig/owfs
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/owfs ]; then
+        . /etc/sysconfig/owfs
+fi
+
+numfs=${#MOUNTPOINT[*]}
+if [ $numfs -eq 0 ]; then
+	exit 0
+fi
+
+lockfile=/var/lock/subsys/owfs
+owfs=/usr/sbin/owfs
+RETVAL=0
+
+start() {
+        echo -n $"Mounting One Wire file system: "
+	i=0; n=0
+	while [ $n -lt $numfs ]; do
+		mountpoint=${MOUNTPOINT[$i]}
+		interface=${INTERFACE[$i]}
+		options=${OPTIONS[$i]}
+		if [ "$mountpoint" != "" ]; then
+			if [ "$interface" != "" ]; then
+				[ -d $mountpoint ] || mkdir -p $mountpoint
+				case $interface in
+				[uU][sS][bB][0-9]*)
+					$owfs $mountpoint -u`echo $interface | sed -e 's/usb//i'` $options >/dev/null
+					;;
+				[uU][sS][bB])
+					$owfs $mountpoint -u $options >/dev/null
+					;;
+				/*)
+					$owfs $mountpoint -d $interface $options >/dev/null
+					;;
+				[sS][oO][cC][kK][eE][tT]:*)
+					socket=`echo $interface | sed -e 's/^socket://i'`
+					$owfs $mountpoint -s $socket $options >/dev/null
+					;;
+				*:*)
+					$owfs $mountpoint -s $interface $options >/dev/null
+					;;
+				*)
+					echo "ERROR: Bad interface \"$interface\""
+					/bin/false
+					;;
+				esac
+				RETVAL=$?
+				[ $RETVAL = 0 ] || {
+					echo_failure
+					echo
+					return $RETVAL
+				}
+			fi
+			n=`expr $n + 1`
+		fi
+		i=`expr $i + 1`
+	done
+	echo_success
+	echo
+	touch ${lockfile}
+	return 0
+}
+
+stop() {
+	echo -n $"Umounting One Wire file system: "
+#	i=0; n=0
+#	while [ $n -lt $numfs ]; do
+#		mountpoint=${MOUNTPOINT[$i]}
+#		interface=${INTERFACE[$i]}
+#		options=${OPTIONS[$i]}
+#		if [ "$mountpoint" != "" ]; then
+#			if [ "$interface" != "" ]; then
+#				/bin/umount $mountpoint
+#				RETVAL=$?
+#				[ $RETVAL = 0 ] || {
+#					echo_failure
+#					echo
+#					return $RETVAL
+#				}
+#			fi
+#			n=`expr $n + 1`
+#		fi
+#		i=`expr $i + 1`
+#	done
+	killproc $owfs
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f ${lockfile}
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	for mountpoint in ${MOUNTPOINT[@]}; do
+		/bin/mount | /bin/grep $mountpoint
+	done
+	status $owfs
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if /sbin/pidof $owfs >/dev/null ; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL

@@ -1,3 +1,13 @@
+%define build_fs 1
+%define build_httpd 1
+%define build_ftpd 0
+%define build_server 1
+%define build_perl 1
+%define build_python 1
+%define build_tcl 1
+
+%define debug_package   %{nil}
+
 Name: owfs
 Version: @VERSION@
 Release: 1
@@ -8,136 +18,342 @@ Group: System Environment/Libraries
 URL: http://sourceforge.net/projects/owfs
 Buildroot: %{_tmppath}/%{name}-root
 Prefix: /usr
-Packager: Vadim Tkachenko <vt@freehold.crocodile.org>
-%description
+Packager: Serg Oskin <oskin@macomnet.ru>
+Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
 
+%description
 OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
 
 %package libs
 Summary: Core library providing base functions to other OWFS modules.
 Group: System Environment/Libraries
-Requires: libusb = 0.1.6, db4-devel = 4.0.14
+Requires: libusb >= 0.1.6, db4-devel >= 4.0.14
+BuildRequires: db4-devel >= 4.0.14 automake autoconf libtool
 
 %description libs
-
 %{name}-libs is a core library providing base functions to other OWFS modules.
 
-%package fs
-Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
-Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, fuse = 1.0
-
-%description fs
-
-%{name}-fs is a virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
-
-%package httpd
-Summary: HTTP daemon providing access to 1-Wire networks.
+%package devel
+Summary: Files for development of OWFS applications.
 Group: System Environment/Libraries
 Requires: %{name}-libs = %{version}
 
-%description httpd
+%description devel
+This package contains the libraries and header files that are needed for
+developing OWFS applications.
 
-%{name}-httpd is an HTTP daemon on top of %{name}-libs providing access to 1-Wire networks.
+%if %{build_fs}
+%package fs
+Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}, fuse >= 1.0
+
+%description fs
+%{name}-fs is a virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+%endif
+
+%if %{build_httpd}
+%package httpd
+Summary: HTTP daemon providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}
+
+%description httpd
+%{name}-httpd is an HTTP daemon on top of %{name} providing access to 1-Wire networks.
+%endif
+
+%if %{build_ftpd}
+%package ftpd
+Summary: FTP daemon providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}
+
+%description ftpd
+%{name}-ftpd is an FTP daemon on top of %{name} providing access to 1-Wire networks.
+%endif
+
+%if %{build_server}
+%package server
+Summary: Backend server (daemon) for 1-wire control
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}
+
+%description server
+%{name}-server is the backend component of the OWFS 1-wire bus control system.
+owserver arbitrates access to the bus from multiple client processes. The
+physical bus is usually connected to a serial or USB port, and other processes
+connect to owserver over network sockets (tcp port). Communication can be local
+or over a network.
+%endif
+
+%if %{build_perl}
+%package perl
+Summary: %{name}-perl is a Perl interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}
+
+%description perl
+%{name}-perl is a Perl interface for the 1-wire filesystem
+%endif
+
+%if %{build_python}
+%package python
+Summary: %{name}-python is a python interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version} python >= 2.0
+BuildRequires: python-devel >= 2.0
+
+%description python
+%{name}-python is a Python interface for the 1-wire filesystem
+%endif
+
+%if %{build_tcl}
+%package tcl
+Summary: %{name}-tcl is a Tcl interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version} tcl >= 8.1
+BuildRequires: tcl-devel >= 8.1
+
+%description tcl
+%{name}-tcl is a Tcl interface for the 1-wire filesystem
+%endif
+
 
 %clean
-case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
+rm -rf $RPM_BUILD_ROOT
 
 %prep
 %setup
 
 %build
-./configure --enable-usb --enable-caching --enable-owfs --enable-owhttpd --prefix=%{prefix}
+aclocal
+libtoolize -f -c
+autoheader
+autoconf
+automake -a -c
+./configure \
+	--prefix=%{prefix} \
+	--enable-usb \
+	--enable-caching \
+	--enable-mt \
+%if %{build_fs}
+	--enable-owfs \
+%else
+	--disable-owfs \
+%endif
+%if %{build_httpd}
+	--enable-owhttpd \
+%else
+	--disable-owhttpd \
+%endif
+%if %{build_ftpd}
+	--enable-owftpd \
+%else
+	--disable-owftpd \
+%endif
+%if %{build_server}
+	--enable-owserver \
+%else
+	--disable-owserver \
+%endif
+%if %{build_perl}
+	--enable-owperl \
+%else
+	--disable-owperl \
+%endif
+%if %{build_python}
+	--enable-owpython \
+%else
+	--disable-owpython \
+%endif
+%if %{build_tcl}
+	--enable-owtcl \
+%else
+	--disable-owtcl \
+%endif
+
 make
-make check
+#make check
 
 %install
 case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 make install \
-	prefix=$RPM_BUILD_ROOT%{prefix}
+	DESTDIR=$RPM_BUILD_ROOT
 
-%post -p /sbin/ldconfig
+rm -f $RPM_BUILD_ROOT/usr/lib/libowperl.*
 
-%preun
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
+mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
 
-%postun -p /sbin/ldconfig
+install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
+mv -f $RPM_BUILD_ROOT%{prefix}/man/* $RPM_BUILD_ROOT%{_mandir}
+rm -rf $RPM_BUILD_ROOT%{prefix}/man
 
+%if %{build_fs}
+install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
+install -D -m 755 src/rpm/owfs.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owfs
+%endif
+%if %{build_httpd}
+install -D -m 755 src/rpm/owhttpd.conf $RPM_BUILD_ROOT/etc/rc.d/init.d/owhttpd
+install -D -m 644 src/rpm/owhttpd.init $RPM_BUILD_ROOT/etc/sysconfig/owhttpd
+%endif
+%if %{build_ftpd}
+install -D -m 644 src/rpm/owftpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owftpd
+install -D -m 755 src/rpm/owftpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owftpd
+%endif
+%if %{build_server}
+install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
+install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
+[ -f $RPM_BUILD_ROOT%{prefix}/man/man1/owserver.1 ] || \
+	install -D -m 644 src/man/owserver.1 $RPM_BUILD_ROOT%{_mandir}/man1/owserver.1
+%endif
+%if %{build_perl}
+[ -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm ] && \
+	mv -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm $RPM_BUILD_ROOT%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*
+rm -rf $RPM_BUILD_ROOT%{prefix}/lib/perl5/5.*
+rm -f $RPM_BUILD_ROOT%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/.packlist
+%endif
+%if %{build_python}
+%endif
+%if %{build_tcl}
+rm -f $RPM_BUILD_ROOT%{prefix}/lib/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib/owtcl-*/ow.a
+%endif
+
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/* $RPM_BUILD_ROOT%{prefix}/sbin
+rm -rf $RPM_BUILD_ROOT%{prefix}/bin
+
+%post libs
+/sbin/ldconfig
+
+%postun libs
+/sbin/ldconfig
+
+%if %{build_fs}
+%post fs
+/sbin/chkconfig --add owfs
+
+%postun fs
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owfs
+fi
+%endif
+
+%if %{build_httpd}
+%post httpd
+/sbin/chkconfig --add owhttpd
+
+%postun httpd
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owhttpd
+fi
+%endif
+
+%if %{build_ftpd}
+%post ftpd
+/sbin/chkconfig --add owftpd
+
+%postun ftpd
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owftpd
+fi
+%endif
+
+%if %{build_server}
+%post server
+/sbin/chkconfig --add owserver
+
+%postun server
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owserver
+fi
+%endif
 
 %files libs
 %defattr(-,root,root)
 %doc README NEWS INSTALL ChangeLog AUTHORS COPYING
+%{prefix}/lib/libow.so*
 
-%{prefix}/lib/libow.so
-%{prefix}/lib/libow.so.0
-%{prefix}/lib/libow.so.0.0.0
+%files devel
+%defattr(-,root,root)
 %{prefix}/lib/libow.la
 %{prefix}/lib/libow.a
-%{prefix}/include/ow_1820.h
-%{prefix}/include/ow_1921.h
-%{prefix}/include/ow_1993.h
-%{prefix}/include/ow_2401.h
-%{prefix}/include/ow_2404.h
-%{prefix}/include/ow_2405.h
-%{prefix}/include/ow_2406.h
-%{prefix}/include/ow_2408.h
-%{prefix}/include/ow_2409.h
-%{prefix}/include/ow_2415.h
-%{prefix}/include/ow_2423.h
-%{prefix}/include/ow_2436.h
-%{prefix}/include/ow_2438.h
-%{prefix}/include/ow_2450.h
-%{prefix}/include/ow_2502.h
-%{prefix}/include/ow_2505.h
-%{prefix}/include/ow_2890.h
-%{prefix}/include/ow_cache.h
-%{prefix}/include/ow_devices.h
-%{prefix}/include/owfs_config.h
-%{prefix}/include/ow.h
-%{prefix}/include/ow_lcd.h
-%{prefix}/include/ow_link.h
-%{prefix}/include/ow_none.h
-%{prefix}/include/ow_xxxx.h
-%{prefix}/include/ow_stats.h
-%{prefix}/include/ow_stub.h
+%{prefix}/include/owfs/*.h
+%{_mandir}/man3/*.3.gz
 
+%if %{build_fs}
 %files fs
 %defattr(-,root,root)
+/etc/rc.d/init.d/owfs
+%config /etc/sysconfig/owfs
+%{prefix}/sbin/owfs
+%{_mandir}/man1/owfs.1.gz
+%endif
 
-%{prefix}/bin/owfs
-%{prefix}/include/owfs.h
-%{prefix}/man/man1/owfs.1.gz
-%{prefix}/man/man1/owhttpd.1.gz
-%{prefix}/man/man3/DS1822.3.gz
-%{prefix}/man/man3/DS18B20.3.gz
-%{prefix}/man/man3/DS18S20.3.gz
-%{prefix}/man/man3/DS1921.3.gz
-%{prefix}/man/man3/DS1992.3.gz
-%{prefix}/man/man3/DS1993.3.gz
-%{prefix}/man/man3/DS1995.3.gz
-%{prefix}/man/man3/DS1996.3.gz
-%{prefix}/man/man3/DS2401.3.gz
-%{prefix}/man/man3/DS2405.3.gz
-%{prefix}/man/man3/DS2406.3.gz
-%{prefix}/man/man3/DS2408.3.gz
-%{prefix}/man/man3/DS2409.3.gz
-%{prefix}/man/man3/DS2415.3.gz
-%{prefix}/man/man3/DS2423.3.gz
-%{prefix}/man/man3/DS2436.3.gz
-%{prefix}/man/man3/DS2438.3.gz
-%{prefix}/man/man3/DS2450.3.gz
-%{prefix}/man/man3/DS2502.3.gz
-%{prefix}/man/man3/DS2505.3.gz
-%{prefix}/man/man3/DS2506.3.gz
-%{prefix}/man/man3/DS2890.3.gz
-%{prefix}/man/man3/LCD.3.gz
-         
+%if %{build_httpd}
 %files httpd
 %defattr(-,root,root)
+/etc/rc.d/init.d/owhttpd
+%config /etc/sysconfig/owhttpd
+%{prefix}/sbin/owhttpd
+%{_mandir}/man1/owhttpd.1.gz
+%endif
 
-%{prefix}/bin/owhttpd
-%{prefix}/include/owhttpd.h
+%if %{build_ftpd}
+%files ftpd
+%defattr(-,root,root)
+/etc/rc.d/init.d/owftpd
+%config /etc/sysconfig/owftpd
+%{prefix}/sbin/owftpd
+#%{_mandir}/man1/owftpd.1.gz
+%endif
+
+%if %{build_server}
+%files server
+%defattr(-,root,root)
+/etc/rc.d/init.d/owserver
+%config /etc/sysconfig/owserver
+%{prefix}/sbin/owserver
+%{_mandir}/man1/owserver.1.gz
+%endif
+
+%if %{build_perl}
+%files perl
+%defattr(-,root,root)
+%dir %{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW
+%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.bs
+%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.so
+%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/OW.pm
+%endif
+
+%if %{build_python}
+%files python
+%defattr(-,root,root)
+%dir %{prefix}/lib/python*/site-packages/ow
+%{prefix}/lib/python2.3/site-packages/ow/__init__.py
+%{prefix}/lib/python2.3/site-packages/ow/__init__.pyc
+%{prefix}/lib/python2.3/site-packages/ow/_OW.so
+%endif
+
+%if %{build_tcl}
+%files tcl
+%defattr(-,root,root)
+%dir %{prefix}/lib/owtcl-*
+%{prefix}/lib/owtcl-*/ow-*.so
+%{prefix}/lib/owtcl-*/ow.so
+%{prefix}/lib/owtcl-*/ow.tcl
+%{prefix}/lib/owtcl-*/pkgIndex.tcl
+%{_mandir}/mann/owtcl.n.gz
+%endif
+
 
 %changelog
+
+* Thu Jan 13 2005 Serg Oskin <oskin@macomnet.ru>
+- reorganized
+
+* Sun Oct 24 2004 Serg Oskin <oskin@macomnet.ru>
+- recreated
 
 * Wed Sep 24 2003 Vadim Tkachenko <vt@freehold.crocodile.org>
 - Initial take at RPM build
