@@ -20,7 +20,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) ;
 
 int Server_detect( void ) {
-    if ( servername== NULL ) return -1 ;
+    if ( servername == NULL ) return -1 ;
     if ( ClientAddr( servername, &client ) ) return -1 ;
     busmode = bus_remote ;
     return 0 ;

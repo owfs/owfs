@@ -265,7 +265,9 @@ void LibClose( void ) {
 #ifdef OW_CACHE
     Cache_Close() ;
 #endif /* OW_CACHE */
-
+    FreeAddr( &server ) ;
+    FreeAddr( &client ) ;
+    busmode = bus_unknown ;
     closelog() ;
 }
 
