@@ -39,19 +39,9 @@ $Id$
 static void ow_exit( int e ) ;
 static void Acceptor( int listenfd ) ;
 
-void handle_sighup(int unused) {
+static void handle_exit(int unused) {
     (void) unused ;
-    exit(0);
-}
-
-void handle_sigterm(int unused) {
-    (void) unused ;
-    exit(0);
-}
-
-void handle_sigchild(int unused) {
-    (void) unused ;
-    signal(SIGCHLD, handle_sigchild);
+    ow_exit(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -94,11 +84,13 @@ int main(int argc, char *argv[]) {
     if ( LibStart() ) ow_exit(1) ;
 
     signal(SIGPIPE, SIG_IGN);
-    signal(SIGCHLD, handle_sigchild);
-    signal(SIGHUP, handle_sighup);
-    signal(SIGTERM, handle_sigterm);
+    signal(SIGHUP, handle_exit);
+    signal(SIGINT, handle_exit);
+    signal(SIGTERM, handle_exit);
 
     ServerProcess( Acceptor, ow_exit ) ;
+    ow_exit(0) ;
+    return 0 ;
 }
 
 static void Acceptor( int listenfd ) {

@@ -47,6 +47,11 @@ static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, const char *data ) ;
 static void ow_exit( int e ) ;
 
+static void handle_exit(int unused) {
+  (void) unused ;
+  ow_exit(0);
+}
+
 /* read from client, free return pointer if not Null */
 static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
@@ -68,8 +73,8 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     } else if ( (sm->payload<0) || (sm->payload>MAXBUFFERSIZE) ) {
         sm->type = msg_error ;
         msg = NULL ;
-    } else if ( (msg=malloc(sm->payload)) ) {
-        if ( readn(fd,msg,sm->payload) != sm->payload ) {
+    } else if ( (msg = (char *)malloc((size_t)sm->payload)) ) {
+        if ( readn(fd,msg, (size_t)sm->payload) != sm->payload ) {
             sm->type = msg_error ;
             free(msg);
             msg = NULL ;
@@ -98,7 +103,7 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     cm->ret = htonl(cm->ret) ;
     cm->sg  = htonl(cm->sg) ;
 
-    ret = writev( fd, io, nio ) != io[0].iov_len+io[1].iov_len ;
+    ret = writev( fd, io, nio ) != (ssize_t)(io[0].iov_len+io[1].iov_len) ;
 
     cm->payload = ntohl(cm->payload) ;
     cm->size = ntohl(cm->size) ;
@@ -121,7 +126,7 @@ static void Handler( int fd ) {
     case msg_read:
     case msg_write:
     case msg_dir:
-        if ( (path==NULL) || (memchr( path, 0, sm.payload)==NULL) ) { /* Bad string -- no trailing null */
+        if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
             cm.ret = -EBADMSG ;
         } else {
             struct parsedname pn ;
@@ -194,12 +199,12 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
     } else if ( cm->payload > MAXBUFFERSIZE ) {
         cm->payload = 0 ;
         cm->ret = -EMSGSIZE ;
-    } else if ( (retbuffer = malloc(cm->payload))==NULL ) {
+    } else if ( (retbuffer = (char *)calloc(1, (size_t)cm->payload))==NULL ) {
     /* Allocate return buffer */
 //printf("Handler: Allocating buffer size=%d\n",cm.payload);
         cm->payload = 0 ;
         cm->ret = -ENOBUFS ;
-    } else if ( (cm->ret = FS_read_postparse(retbuffer,cm->payload,cm->offset,pn)) <= 0 ) {
+    } else if ( (cm->ret = FS_read_postparse(retbuffer,(size_t)cm->payload,(off_t)cm->offset,pn)) <= 0 ) {
         cm->payload = 0 ;
         free(retbuffer) ;
         retbuffer = NULL ;
@@ -219,7 +224,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) {
-    int ret = FS_write_postparse(data,sm->size,sm->offset,pn) ;
+    int ret = FS_write_postparse(data,(size_t)sm->size,(off_t)sm->offset,pn) ;
 //printf("Handler: WRITE done\n");
     if ( ret<0 ) {
         cm->size = 0 ;
@@ -243,11 +248,12 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
-        int _pathlen = strlen(pn2->path) + 1 ;
+        size_t _pathlen = strlen(pn2->path) + 1 ;
 //printf("Handler: DIR preloop\n");
         /* Note, path preloaded into retbuffer */
-        if( !(retbuffer = malloc(_pathlen + OW_FULLNAME_MAX + 2)) ) {
-//printf("malloc error\n");
+	// writev() seem to read whole block, so clear it
+        if( !(retbuffer = (char *)calloc(1, _pathlen + OW_FULLNAME_MAX + 2)) ) {
+	  //printf("malloc error\n");
             return;
         }
         memcpy(retbuffer, pn2->path, _pathlen);
@@ -255,10 +261,10 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
             strcpy( &retbuffer[_pathlen-1] , "/" ) ;
             ++_pathlen ;
         }
-//printf("Handler: DIR preloop %s\n",retbuffer);
+//printf("Handler: DIR preloop [%s]\n",retbuffer);
         FS_DirName( &retbuffer[_pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
-//printf("Handler: DIR loop %s\n",retbuffer);
         cm->size = strlen(retbuffer) ;
+//printf("Handler: DIR loop size=%d [%s]\n",cm->size, retbuffer);
         cm->ret = 0 ;
         ToClient(fd,cm,retbuffer) ;
         free(retbuffer);
@@ -314,6 +320,11 @@ int main( int argc , char ** argv ) {
      * Now we drop privledges and become a daemon.
      */
     if ( LibStart() ) ow_exit(1) ;
+
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGHUP, handle_exit);
+    signal(SIGINT, handle_exit);
+    signal(SIGTERM, handle_exit);
 
     ServerProcess( Handler,ow_exit ) ;
     ow_exit(0) ;
