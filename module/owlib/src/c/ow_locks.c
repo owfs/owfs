@@ -15,8 +15,6 @@ $Id$
 #include "ow.h"
 #include <sys/time.h> /* for gettimeofday */
 /* ------- Globals ----------- */
-/* time elapsed in lock */
-static struct timeval tv ; /* statistics */
 
 #ifdef OW_MT
 pthread_mutex_t busstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
@@ -169,30 +167,79 @@ void BUS_lock( const struct parsedname * pn ) {
 #ifdef OW_MT
     pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */
-    gettimeofday( &tv , NULL ) ; /* for statistics */
+    gettimeofday( &(pn->in->last_lock) , NULL ) ; /* for statistics */
+
+    /* Has anyone else seen problems with failing BUS_select? and does
+     * this code help anyone?  It makes some difference for me,
+     * especially with I'm polling the buttons on the LCD-display
+     * 5 times per second.
+     */
+#if 0
+    /* I have noticed that BUS_select() sometimes fail when the
+     * 1-wire bus is _very_ busy.
+     * One easy solution would be to make a small delay after a
+     * process has unlocked the bus (let the bus be idle),
+     * and a another waiting process is locking it (and usually
+     * begin sending BUS_select()).
+     */
+  #if 1
+    /* Only wait 5ms if needed... This seems to be overkill to test..
+     * Why not always wait?
+     */
+    {
+      struct timeval time_diff;
+      int ms;
+      // first time last_unlock is uninitialized, but I don't care...
+      time_diff.tv_sec = (pn->in->last_lock.tv_sec - pn->in->last_unlock.tv_sec) ;
+      time_diff.tv_usec = (pn->in->last_lock.tv_usec - pn->in->last_unlock.tv_usec) ;
+      if ( time_diff.tv_usec >= 1000000 ) {
+	time_diff.tv_usec -= 1000000 ;
+	++time_diff.tv_sec;
+      } else if ( time_diff.tv_usec < 0 ) {
+	time_diff.tv_usec += 1000000 ;
+	--time_diff.tv_sec;
+      }
+      ms = 5;
+      if(pn->dev != NULL) {
+	if(pn->type == pn_real) {
+	  if(pn->sn[0] == 0xFF) {
+	    ms = 20;  // extra long wait for LCD
+	  }
+	}
+      }
+      if(!time_diff.tv_sec && (time_diff.tv_usec < ms*1000))
+	UT_delay(ms - (time_diff.tv_usec/1000));
+    }
+  #else
+    /* Always wait 5ms */
+    UT_delay(5) ;
+  #endif
+
+#endif
+
     BUSSTATLOCK
         ++ bus_locks ; /* statistics */
     BUSSTATUNLOCK
 }
 
 void BUS_unlock( const struct parsedname * pn ) {
-    struct timeval tv2 ;
-    gettimeofday( &tv2, NULL ) ;
+    gettimeofday( &(pn->in->last_unlock), NULL ) ;
 
     /* avoid update if system-clock have changed */
     BUSSTATLOCK
-        if((tv2.tv_sec >= tv.tv_sec) && ((tv2.tv_sec-tv.tv_sec) < 60)) {
-        bus_time.tv_sec += (tv2.tv_sec - tv.tv_sec) ;
-        bus_time.tv_usec += (tv2.tv_usec - tv.tv_usec) ;
+      if((pn->in->last_unlock.tv_sec >= pn->in->last_lock.tv_sec) &&
+	 ((pn->in->last_unlock.tv_sec-pn->in->last_lock.tv_sec) < 60)) {
+	bus_time.tv_sec += (pn->in->last_unlock.tv_sec - pn->in->last_lock.tv_sec) ;
+        bus_time.tv_usec += (pn->in->last_unlock.tv_usec - pn->in->last_lock.tv_usec) ;
         if ( bus_time.tv_usec >= 1000000 ) {
-            bus_time.tv_usec -= 1000000 ;
-            ++bus_time.tv_sec;
+	  bus_time.tv_usec -= 1000000 ;
+	  ++bus_time.tv_sec;
         } else if ( bus_time.tv_usec < 0 ) {
-            bus_time.tv_usec += 1000000 ;
-            --bus_time.tv_sec;
+	  bus_time.tv_usec += 1000000 ;
+	  --bus_time.tv_sec;
         }
-        }
-        ++ bus_unlocks ; /* statistics */
+      }
+      ++ bus_unlocks ; /* statistics */
     BUSSTATUNLOCK
 #ifdef OW_MT
     pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;

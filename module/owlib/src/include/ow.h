@@ -60,6 +60,8 @@ $Id$
 
 #define _FILE_OFFSET_BITS   64
 #include <features.h>
+#include <sys/stat.h> /* for stat */
+#include <sys/types.h> /* for stat */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -81,8 +83,6 @@ $Id$
 #include <syslog.h>
 #include <ctype.h>
 #include <sys/file.h> /* for flock */
-#include <sys/stat.h> /* for stat */
-#include <sys/types.h> /* for stat */
 #include <getopt.h> /* for long options */
 #ifndef __USE_GNU
  #define __USE_GNU
@@ -672,6 +672,10 @@ struct connection_in {
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
 #endif /* OW_MT */
+    struct timeval last_lock ; /* statistics */
+    struct timeval last_unlock ;
+    // struct timeval bus_time ;  // FIXME: move this from global to here
+  
     enum bus_mode busmode ;
     struct interface_routines iroutines ;
     enum adapter_type Adapter ;
