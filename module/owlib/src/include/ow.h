@@ -934,6 +934,7 @@ void update_max_delay( const struct parsedname * const pn ) ;
 
 int Server_detect( struct connection_in * in  ) ;
 int ServerSize( const char * path, const struct parsedname * pn ) ;
+int ServerPresence( const struct parsedname * pn ) ;
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn, uint32_t * flags ) ;
