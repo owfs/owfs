@@ -248,7 +248,7 @@ void directory( void * data, const struct parsedname * const pn ) {
 static void Show( FILE * out, const char * const path, const char * const dev, const struct parsedname * pn ) {
     int len ;
     char file[33] ;
-    char * subdir ;
+    char * subdir, * basename ;
     char fullpath[PATH_MAX+1] ;
     int suglen = FullFileLength(pn) ;
     char buf[suglen+1] ;
@@ -273,6 +273,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
     } else {
         subdir = file ;
     }
+    basename = subdir;
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", subdir ) ;
 
     /* full file name (with path and subdir) */
@@ -286,13 +287,13 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
             if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                 buf[len] = '\0' ;
                 if ( canwrite ) { /* read-write */
-                    fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file,buf ) ;
+                    fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
                 } else { /* read only */
                     fprintf( out, "%s", buf ) ;
                 }
             }
         } else if ( canwrite ) { /* rare write-only */
-            fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file ) ;
+            fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
         }
     } else {
         switch( pn->ft->format ) {
@@ -305,7 +306,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     buf[len]='\0' ;
                     if ( canwrite ) { /* read-write */
-                        fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", file, (buf[0]=='0')?"":"CHECKED", file ) ;
+                        fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", basename, (buf[0]=='0')?"":"CHECKED", basename ) ;
                     } else { /* read-only */
                         switch( buf[0] ) {
                         case '0':
@@ -318,7 +319,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                     }
                 }
             } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",file,file ) ;
+                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",basename,basename ) ;
             }
             break ;
         case ft_binary:
@@ -326,7 +327,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     if ( canwrite ) { /* read-write */
                         int i = 0 ;
-                        fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",file,len>>5 ) ;
+                        fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",basename,len>>5 ) ;
                         while (i<len) {
                             fprintf( out, "%.2hhX", buf[i] ) ;
                             if ( ((++i)<len) && (i&0x1F)==0 ) fprintf( out, "\r\n" ) ;
@@ -343,7 +344,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                     }
                 }
             } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",file,(pn->ft->suglen)>>5 ) ;
+                fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",basename,(pn->ft->suglen)>>5 ) ;
             }
             break ;
         default:
@@ -351,13 +352,13 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     buf[len] = '\0' ;
                     if ( canwrite ) { /* read-write */
-                        fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file,buf ) ;
+                        fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
                     } else { /* read only */
                         fprintf( out, "%s", buf ) ;
                     }
                 }
             } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file ) ;
+                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
             }
         }
     }
@@ -439,6 +440,7 @@ static void ChangeData( struct urlparse * up, struct parsedname * pn ) {
                 break;
             }
         }
+	FS_ParsedName(up->file,pn);
     }
 }
 
@@ -462,9 +464,15 @@ static void Bad404( struct active_sock * a_sock ) {
 
 static void ShowDevice( struct active_sock * a_sock, const char * file, struct parsedname * pn ) {
     /* Now show the device */
+    char back[PATH_MAX+1], *s;
     HTTPstart( a_sock->io , "200 OK" ) ;
     HTTPtitle( a_sock->io , &file[1]) ;
     HTTPheader( a_sock->io , &file[1]) ;
+    strcpy(back, file);
+    if ( pn->subdir!=NULL && pn->subdir->format==ft_subdir && (s=strrchr(back,'/'))!=NULL ) {
+	*s = '\0';
+	fprintf( a_sock->io , "<BR><A href='%s'>%s</A>",back,&back[1]) ;
+    }
     if ( cacheavailable && pn->type!=pn_uncached ) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",file) ;
     fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
     FS_dir( directory, a_sock->io, pn ) ;
