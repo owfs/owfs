@@ -333,9 +333,10 @@ static int DS1410_send_bit( const unsigned char data, unsigned char * const resp
     int w=0;
     int r=1;
     int ret ;
+    int i ;
     unsigned char ff = 0xFF ;
     unsigned char fe = 0xFE ;
-    unsigned char ct ;
+    unsigned char ct, rsp ;
     struct ppdev_frob_struct c[] = {
         {DS1410_ENI,0x00},
         {DS1410_ENI,DS1410_ENI},
@@ -346,76 +347,81 @@ teststatus();
 printf("PPCLAIM\n");
        return -EFAULT ;
     }
+teststatus();
 
-//    ioctl( devfd, PPDATADIR,  &r    ) ;
-//    ioctl( devfd, PPRDATA,    &save ) ;
-//    ioctl( devfd, PPDATADIR,  &w    ) ;
+    ret =ioctl( devfd, PPRDATA,    &save ) ;
+printf("DATA(read) ret=%d save=%.2X\n",ret,save);
 teststatus();
+
     ret = ioctl( devfd, PPWDATA,    &data ) ;
-//    ret = write( devfd, &data, 1 ) ;
-printf("SENDBIT0 ret=%d\n",ret);
+printf("DATA(write) ret=%d data=%.2X\n",ret,data);
 teststatus();
-//    ret = ioctl( devfd, PPFCONTROL, &c[0] ) ;
+
     ret = ioctl( devfd, PPRCONTROL, &ct ) ;
-printf("CONTROL(read)=%.2X %.2X %.2X \n",ct,~PIN14,ct&(~PIN14)) ;
-printf("SENDBIT1 ret=%d\n",ret);
+printf("CONTROL(read)=%d ctl=%.2X\n",ret,ct) ;
 teststatus();
-     ct &= ~PIN14 ;
+
+    ct &= ~(PIN14) ;
     ret = ioctl( devfd, PPWCONTROL, &ct ) ;
-printf("CONTROL(written)=%.2X\n",ct) ;
-printf("SENDBIT1 ret=%d\n",ret);
+printf("CONTROL(write)=%d ctl=%.2X\n",ret,ct) ;
 teststatus();
-    ret = ioctl( devfd, PPRCONTROL, &ct ) ;
-printf("CONTROL(reread)=%.2X\n",ct) ;
-printf("SENDBIT1 ret=%d\n",ret);
-teststatus();
-    ret = ioctl( devfd, PPRCONTROL, &ct ) ;
-printf("CONTROL(reread)=%.2X\n",ct) ;
-printf("SENDBIT1 ret=%d\n",ret);
-teststatus();
-usleep(1) ;
-teststatus();
-//    ret = ioctl( devfd, PPFCONTROL, &c[1] ) ;
+
     ct |= PIN14 ;
     ret = ioctl( devfd, PPWCONTROL, &ct ) ;
-printf("CONTROL(written)=%.2X\n",ct) ;
-printf("SENDBIT2 ret=%d\n",ret);
+printf("CONTROL(write)=%d ctl=%.2X\n",ret,ct) ;
 teststatus();
-    ret = ioctl( devfd, PPRCONTROL, &ct ) ;
-printf("CONTROL(reread)=%.2X\n",ct) ;
-printf("SENDBIT2 ret=%d\n",ret);
+
+    i=0 ;
+    do {
+        if ( (i++%100) == 0 ) teststatus();
+        usleep(1) ;
+        ioctl( devfd, PPRSTATUS, &rsp ) ;
+    } while( !(rsp&PIN11) && (rsp&PIN13) && i<1000 ) ;
+printf("LOOP i=%d\n",i) ;
 teststatus();
-    ret = DS1410_status_loop( 0x80, normal_busy ) ; /* wsait for 11 and 13 to go low */
-printf("SENDBIT3 ret=%d\n",ret);
-teststatus();
+
     ret = ioctl( devfd, PPWDATA,    &ff   ) ;
-printf("SENDBIT4 ret=%d\n",ret);
+printf("DATA(write) ret=%d data=%.2X\n",ret,ff);
 teststatus();
-    ret = DS1410_status_loop( 0x10, normal_slot ) ;
-printf("SENDBIT5 ret=%d\n",ret);
+
+    i=0 ;
+    do {
+        if ( (i++%100) == 0 ) teststatus();
+        usleep(1) ;
+        ioctl( devfd, PPRSTATUS, &rsp ) ;
+    } while( (rsp&PIN11) && !(rsp&PIN13) && i<1000 ) ;
+printf("LOOP i=%d\n",i) ;
 teststatus();
+
     ret = ioctl( devfd, PPWDATA,    &fe   ) ;
-printf("SENDBIT6 ret=%d\n",ret);
+printf("DATA(write) ret=%d data=%.2X\n",ret,fe);
 teststatus();
+
     usleep(2) ;
 teststatus();
-    ret = ioctl( devfd, PPRSTATUS,  &res  ) ;
-printf("SENDBIT6 ret=%d\n",ret);
-teststatus();
-    ret = ioctl( devfd, PPWDATA,    &ff   ) ;
-printf("SENDBIT7 ret=%d\n",ret);
-teststatus();
-    resp[0] = ((res ^ 0x80) & 0x90) ? 1 : 0 ;
 
-    ret = ioctl( devfd, PPFCONTROL, &c[0] ) ;
+    ret =ioctl( devfd, PPRDATA,    &rsp ) ;
+printf("DATA(read) ret=%d resp=%.2X\n",ret,rsp);
 teststatus();
-printf("SENDBIT8 ret=%d\n",ret);
-    ret = ioctl( devfd, PPWDATA,    &save ) ;
+
+    ret = ioctl( devfd, PPWDATA,    &ff   ) ;
+printf("DATA(write) ret=%d data=%.2X\n",ret,ff);
 teststatus();
-printf("SENDBIT9 ret=%d\n",ret);
+
+    resp[0] = ((rsp^0x80)&0x90)?1:0 ;
+printf("RESP = %.2X\n",resp[0]) ;
+
+    ct &= ~(PIN14) ;
+    ret = ioctl( devfd, PPWCONTROL, &ct ) ;
+printf("CONTROL(write)=%d ctl=%.2X\n",ret,ct) ;
+teststatus();
+
+    ret = ioctl( devfd, PPWDATA,    &save   ) ;
+printf("DATA(write) ret=%d data=%.2X\n",ret,save);
+teststatus();
 
     ret = ioctl( devfd , PPRELEASE ) ;
-printf("SENDBIT10 ret=%d\n",ret);
+printf("RELEASE ret=%d\n",ret);
     return ret ;
 }
 
