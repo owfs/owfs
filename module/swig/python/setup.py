@@ -3,7 +3,7 @@
 $Id$
 $HeadURL: http://subversion/stuff/svn/owfs/trunk/setup.py $
 
-Copyright (c) 2004 Peter Kropf. All rights reserved.
+Copyright (c) 2004, 2005 Peter Kropf. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -44,13 +44,13 @@ Topic :: Utilities
 setup(
     name             = 'ow',
     description      = '1-wire hardware interface.',
-    version          = '0.0',
+    version          = '2.0p0RC',
     author           = 'Peter Kropf',
     author_email     = 'peterk@bayarea.net',
     url              = 'http://owfs.sourceforge.net/',
     license          = 'GPL',
     platforms        = 'Linux',
-    long_description = 'Interface with 1-wire controllers and sensors directly from within Python.',
+    long_description = 'Interface with 1-wire controllers and sensors from Python.',
     classifiers      = filter( None, classifiers.split( '\n' ) ),
     ext_package      = 'ow',
     ext_modules      = [ Extension( '_OW',

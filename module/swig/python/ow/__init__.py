@@ -3,7 +3,7 @@
 $Id$
 $HeadURL: http://subversion/stuff/svn/owfs/trunk/ow/__init__.py $
 
-Copyright (c) 2004 Peter Kropf. All rights reserved.
+Copyright (c) 2004, 2005 Peter Kropf. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ http://owfs.sourceforge.net.
 import _OW
 
 
+__author__ = 'Peter Kropf'
+__email__ = 'peterk at bayarea dot net'
 __version__ = _OW.version( ) + '-%s' % '$Id$'.split( )[ 2 ]
 
 

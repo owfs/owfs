@@ -3,7 +3,6 @@
 """
 ::BOH
 $Id$
-$HeadURL: http://subversion/stuff/svn/owfs/trunk/examples/temperature.py $
 
 Copyright (c) 2004 Peter Kropf. All rights reserved.
 
@@ -29,9 +28,6 @@ temperature reading.
 
 import sys
 import ow
-
-
-__version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
 
 
 def temperature( ):
