@@ -642,8 +642,8 @@ int CheckPresence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
-char * FS_dirname_state( const enum pn_state state ) ;
-char * FS_dirname_type( const enum pn_type type ) ;
+const char * FS_dirname_state( const enum pn_state state ) ;
+const char * FS_dirname_type( const enum pn_type type ) ;
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
 

@@ -335,7 +335,7 @@ const char dirname_state_alarm[]    = "alarm";
 const char dirname_state_text[]     = "text";
 const char dirname_state_unknown[]  = "";
 
-char * FS_dirname_state( const enum pn_state state ) {
+const char * FS_dirname_state( const enum pn_state state ) {
     switch (state) {
     case pn_uncached:
         return dirname_state_uncached;
@@ -354,7 +354,7 @@ const char dirname_type_settings[]   = "settings";
 const char dirname_type_structure[]  = "structure";
 const char dirname_type_unknown[]    = "";
 
-char * FS_dirname_type( const enum pn_type type ) {
+const char * FS_dirname_type( const enum pn_type type ) {
     switch (type) {
     case pn_statistics:
         return dirname_type_statistics;

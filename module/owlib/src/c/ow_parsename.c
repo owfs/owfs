@@ -52,12 +52,12 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     const char * pathnow = path ;
 
     if ( uncached == NULL ) { // first time through
-      ltext      = strlen ( text      = FS_dirname_state(pn_text      )) ;
-      luncached  = strlen ( uncached  = FS_dirname_state(pn_uncached  )) ;
-      lstructure = strlen ( structure = FS_dirname_type( pn_structure )) ;
-      lsystem    = strlen ( system_   = FS_dirname_type( pn_system    )) ;
-      lsettings  = strlen ( settings  = FS_dirname_type( pn_settings  )) ;
-      lstatistics= strlen ( statistics= FS_dirname_type( pn_statistics)) ;
+      ltext      = strlen ( text      = (char *)FS_dirname_state(pn_text      )) ;
+      luncached  = strlen ( uncached  = (char *)FS_dirname_state(pn_uncached  )) ;
+      lstructure = strlen ( structure = (char *)FS_dirname_type( pn_structure )) ;
+      lsystem    = strlen ( system_   = (char *)FS_dirname_type( pn_system    )) ;
+      lsettings  = strlen ( settings  = (char *)FS_dirname_type( pn_settings  )) ;
+      lstatistics= strlen ( statistics= (char *)FS_dirname_type( pn_statistics)) ;
     }
 //printf("PN_pn\n");
     if ( pn == NULL ) return -EINVAL ;
