@@ -98,6 +98,7 @@ int FS_read_3times(char *buf, const size_t size, const off_t offset, const struc
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
     //printf("FS_read_postparse: pid=%d busmode=%d pn->type=%d\n", getpid(), pn->in->busmode, pn->type);
+#if 0
   if(pn->in->busmode==bus_remote) {
     //printf("FS_read_postparse: pid=%d busmode=remote\n", getpid());
     switch (pn->type) {
@@ -111,7 +112,6 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     }
     return r;
   }
-#if 0
  else {
     //printf("FS_read_postparse: pid=%d busmode=local\n", getpid());
 
