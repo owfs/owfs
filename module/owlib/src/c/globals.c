@@ -20,12 +20,14 @@ int portnum = -1 ; /* TCP port (for owhttpd) */
 char * portname = NULL ; /* TCP port or server:port */
 
 char * servername = NULL ; /* server port or server:port */
-int connectfd = -1 ; /* socket file descriptor */
 
 char * devport = NULL ; /* Device name (COM or parallel port) */
 int devfd = -1; /*file descriptor for serial/parallel port*/
 
 int useusb = 0 ; /* which DS9490 to connect */
+
+struct network_work server = { NULL, NULL, NULL, -1, } ;
+struct network_work client = { NULL, NULL, NULL, -1, } ;
 
 /* Globals for DS2480B state */
 int UMode ;

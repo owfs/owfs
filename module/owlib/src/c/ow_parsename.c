@@ -65,7 +65,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       lsettings  = strlen ( settings  = (const char *)FS_dirname_type( pn_settings  )) ;
       lstatistics= strlen ( statistics= (const char *)FS_dirname_type( pn_statistics)) ;
     }
-//printf("PN_pn\n");
+//printf("PARSENAME on %s\n",path);
     if ( pn == NULL ) return -EINVAL ;
 
     pn->pathlength = 0 ; /* No branches yet */

@@ -39,12 +39,9 @@ $Id$
 
 /* --- Prototypes ------------ */
 static int Handler( int fd ) ;
-static ssize_t readn(int fd, void *vptr, size_t n) ;
 static void * FromClientAlloc( int fd, struct server_msg * sm ) ;
 static int ToClient( int fd, struct client_msg * cm, const char * data ) ;
-static int Acceptor( int listenfd ) ;
-static int ListenFD( struct addrinfo * ai ) ;
-static int PortToFD(  char * port ) ;
+static void * Acceptor( int listenfd ) ;
 static void ow_exit( int e ) ;
 
 /* ----- Globals ------------- */
@@ -58,33 +55,10 @@ static void ow_exit( int e ) ;
 #endif /* OW_MT */
 
 
-/* Read "n" bytes from a descriptor. */
-/* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
-static ssize_t readn(int fd, void *vptr, size_t n) {
-    size_t	nleft;
-    ssize_t	nread;
-    char	*ptr;
-
-    ptr = vptr;
-    nleft = n;
-    while (nleft > 0) {
-        if ( (nread = read(fd, ptr, nleft)) < 0) {
-            if (errno == EINTR)
-                nread = 0; /* and call read() again */
-            else
-                return(-1);
-        } else if (nread == 0)
-            break; /* EOF */
-        nleft -= nread ;
-        ptr   += nread;
-    }
-    return(n - nleft); /* return >= 0 */
-}
-
 /* read from client, free return pointer if not Null */
 static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
-printf("FromClientAlloc\n");
+//printf("FromClientAlloc\n");
     if ( readn(fd, sm, sizeof(struct server_msg) ) != sizeof(struct server_msg) ) {
         sm->size = -1 ;
         return NULL ;
@@ -95,7 +69,7 @@ printf("FromClientAlloc\n");
     sm->type    = ntohl(sm->type)    ;
     sm->sg      = ntohl(sm->sg)      ;
     sm->offset  = ntohl(sm->offset)  ;
-printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%d offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
+printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
 
     if ( sm->payload <= 0 ) {
          msg = NULL ;
@@ -114,6 +88,7 @@ printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%d offset=%d\n",sm-
 
 static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     int nio = 1 ;
+    int ret ;
     struct iovec io[] = {
         { cm, sizeof(struct client_msg), } ,
         { data, cm->payload, } ,
@@ -122,19 +97,18 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     if ( data && cm->payload ) {
         ++nio ;
     }
-printf("ToClient payload=%d size=%d, ret=%d, format=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->format,cm->offset);
-    int ret ;
+printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
     cm->payload = htonl(cm->payload) ;
     cm->size = htonl(cm->size) ;
     cm->offset = htonl(cm->offset) ;
     cm->ret = htonl(cm->ret) ;
-    cm->format = htonl(cm->format) ;
+    cm->sg  = htonl(cm->sg) ;
     ret = writev( fd, io, nio ) != io[0].iov_len+io[1].iov_len ;
     cm->payload = ntohl(cm->payload) ;
     cm->size = ntohl(cm->size) ;
     cm->offset = ntohl(cm->offset) ;
     cm->ret = ntohl(cm->ret) ;
-    cm->format = ntohl(cm->format) ;
+    cm->sg   = ntohl(cm->sg) ;
     return ret ;
 }
 
@@ -153,11 +127,11 @@ static int Handler( int fd ) {
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
         /* Note, path preloaded into retbuffer */
+//printf("Handler: DIR preloop %s\n",retbuffer);
         FS_DirName( &retbuffer[pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
-printf("Handler: DIR loop %s\n",retbuffer);
+//printf("Handler: DIR loop %s\n",retbuffer);
 	cm.size = strlen(retbuffer) ;
         cm.ret = 0 ;
-        cm.format = 1 ;
         ToClient(fd,&cm,retbuffer) ;
     }
     /* error reading message */
@@ -202,22 +176,23 @@ printf("Handler: DIR loop %s\n",retbuffer);
     /* First pass -- figure out return size */
     switch( (enum msg_type) sm.type ) {
     case msg_read:
-printf("Handler: READ \n");
-        cm.payload = sm.size ;
+//printf("Handler: READ \n");
+        cm.payload = FullFileLength(&pn) ;
+        if ( cm.payload > sm.size ) cm.payload = sm.size ;
         cm.offset = sm.offset ;
         break ;
     case msg_write:
-printf("Handler: WRITE \n");
+//printf("Handler: WRITE \n");
         cm.payload = 0 ;
         cm.offset = 0 ;
         break ;
     case msg_dir:
-printf("Handler: DIR \n");
-        cm.payload = pathlen + OW_FULLNAME_MAX ;
+//printf("Handler: DIR \n");
+        cm.payload = pathlen + OW_FULLNAME_MAX + 2 ;
         cm.offset = 0 ;
         break ;
     default:
-printf("Handler: OTHER \n");
+//printf("Handler: OTHER \n");
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
         cm.payload = 0 ;
@@ -226,7 +201,7 @@ printf("Handler: OTHER \n");
     }
 
     /* Allocate return buffer */
-printf("Handler: Allocating buffer size=%d\n",cm.payload);
+//printf("Handler: Allocating buffer size=%d\n",cm.payload);
     if ( cm.payload>0 && cm.payload <MAXBUFFERSIZE && (retbuffer = malloc(cm.payload))==NULL ) {
         FS_ParsedName_destroy(&pn) ;
         if ( path ) free(path) ;
@@ -238,31 +213,42 @@ printf("Handler: Allocating buffer size=%d\n",cm.payload);
     /* Second pass -- do actual function */
     switch( (enum msg_type) sm.type ) {
     case msg_read:
-        ret = FS_read_postparse(path,retbuffer,cm.size,cm.offset,&pn) ;
-printf("Handler: READ done\n");
+        ret = FS_read_postparse(path,retbuffer,cm.payload,cm.offset,&pn) ;
         if ( ret<0 ) {
-            cm.payload = 0 ;
-            cm.format = sm.sg ;
+printf("Handler: READ done path=%s, err = %d cm.size=%d cm.payload=%d\n",path,ret,cm.size,cm.payload);
+            cm.size = cm.payload = 0 ;
         } else {
+//printf("Handler: READ done string = %s\n",retbuffer);
             cm.size = ret ;
-            cm.format = pn.si->sg.int32 ;
         }
         break ;
     case msg_write:
         ret = FS_write_postparse(path,data,cm.size,cm.offset,&pn) ;
 printf("Handler: WRITE done\n");
-        cm.size = ret ;
-        break ;
+        if ( ret<0 ) {
+            cm.size = 0 ;
+            cm.sg = sm.sg ;
+        } else {
+            cm.size = ret ;
+            cm.sg = pn.si->sg.int32 ;
+        }
+       break ;
     case msg_dir:
+        cm.sg = sm.sg ;
 printf("Handler: DIR retbuffer=%p\n",retbuffer);
 	/* return buffer holds max file length */
         /* copy current path into return buffer */
         memcpy(retbuffer, path, pathlen ) ;
+	/* Add a trailing '/' */
+	if ( (pathlen <2) || (retbuffer[pathlen-2] !='/') ) {
+	    strcpy( &retbuffer[pathlen-1] , "/" ) ;
+	    ++pathlen ;
+	}
         FS_dir( directory, path, &pn ) ;
 printf("Handler: DIR done\n");
         /* Now null entry to show end of directy listing */
         ret = 0 ;
-        cm.payload = 0 ;
+        cm.payload = cm.size = 0 ;
         break ;
     }
     
@@ -272,19 +258,33 @@ printf("Handler: DIR done\n");
     cm.ret = ret ;
     ret = ToClient( fd, &cm, retbuffer ) ;
     if ( retbuffer ) free(retbuffer) ;
-    return ret<0 ;
+    return 0 ;
 }
 
-static int Acceptor( int listenfd ) {
-    int fd = accept( listenfd, NULL, NULL ) ;
+static void * ThreadedAccept( void * pv ) {
+    return (void *) Acceptor( ((struct network_work *)pv)->listenfd ) ;
+}
+
+static void * Acceptor( int listenfd ) {
+    int fd ;
+//printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
+    fd = accept( listenfd, NULL, NULL ) ;
+//printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),fd) ;
     ACCEPTUNLOCK
-    if ( fd<0 ) return -1 ;
-    return Handler( fd ) ;
+//printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
+    if ( fd>=0 ) Handler( fd ) ;
+    return NULL ;
 }
 
 int main( int argc , char ** argv ) {
-    int listenfd ;
     char c ;
+#ifdef OW_MT
+    pthread_t thread ;
+    pthread_attr_t attr ;
+    
+    pthread_attr_init(&attr) ;
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
+#endif /* OW_MT */
 
     LibSetup() ;
 
@@ -321,8 +321,7 @@ int main( int argc , char ** argv ) {
         ow_exit(1);
     }
 
-    listenfd = PortToFD(portname) ;
-    if (listenfd < 0 ) {
+    if ( ServerAddr( portname, &server ) || (ServerListen( &server )<0) ) {
         fprintf(stderr,"Cannot start server.\n");
         exit(1);
     }
@@ -333,68 +332,15 @@ int main( int argc , char ** argv ) {
     if ( LibStart() ) ow_exit(1) ;
 
     for(;;) {
+//printf("MAIN prelock\n");
         ACCEPTLOCK
-        Acceptor(listenfd);
+//printf("MAIN postlock\n");
+#ifdef OW_MT
+        if ( pthread_create( &thread, &attr, ThreadedAccept, &server ) ) ow_exit(1) ;
+#else /* OW_MT */
+        Acceptor( server.listenfd ) ;
+#endif /* OW_MT */
     }
-}
-
-static int ListenFD( struct addrinfo * ai) {
-    int fd ;
-    int on = 1 ;
-    
-    if ( (fd=socket(ai->ai_family,ai->ai_socktype,ai->ai_protocol))<0 || setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ) {
-        fprintf(stderr,"Socket problem errno=%d\n",errno) ;
-        return -1 ;
-    }
-    
-    if ( bind( fd, ai->ai_addr, ai->ai_addrlen ) ) {
-        fprintf(stderr,"Cannot bind socket. Errno=%d\n",errno);
-        return -1 ;
-    }
-
-    if ( listen(fd, 100) ) { /* Arbitrary "backlog" parameter */
-        fprintf(stderr,"Listen problem. errno=%d\n",errno) ;
-        return -1 ;
-    }
-
-    return fd ;
-}
-
-
-static int PortToFD(  char * port ) {
-    char * host ;
-    char * serv ;
-    struct addrinfo hint ;
-    struct addrinfo * ai ;
-    int matches = 0 ;
-    int ret = -1;
-    
-    if ( port == NULL ) return -1 ;
-    if ( (serv=strrchr(port,':')) ) { /* : exists */
-        *serv = '\0' ;
-        ++serv ;
-        host = port ;
-    } else {
-        host = NULL ;
-        serv = port ;
-    }
-
-    bzero( &hint, sizeof(struct addrinfo) ) ;
-    hint.ai_flags = AI_PASSIVE ;
-    hint.ai_socktype = SOCK_STREAM ;
-    hint.ai_family = AF_UNSPEC ;
-
-    for ( matches=0 ; matches<1 ; ++matches ) {
-        if ( (ret=getaddrinfo( host, serv, &hint, &ai )) )
-            break ;
-    }
-
-    if (matches) {
-        ret = ListenFD(ai) ;
-        freeaddrinfo(ai) ;
-    }
-
-    return ret ;
 }
 
 static void ow_exit( int e ) {

@@ -182,6 +182,8 @@ extern int maxslots ;
 #include <sys/stat.h> /* for stat */
 #include <sys/types.h> /* for stat */
 #include <getopt.h> /* for long options */
+#include <netinet/in.h>
+#include <netdb.h> /* addrinfo */
 
 /*
     OW -- Onw Wire
@@ -486,7 +488,6 @@ extern enum bus_mode busmode ;
 
 extern char * devport ;    /* Device name (COM port)*/
 extern int  devfd     ; /*file descriptor for serial port*/
-extern int connectfd ; /* server filedescriptor */
 extern int useusb ; /* Which USB adapter to use (1-based index) */
 extern int portnum ; /* TCP port (for owhttpd) */
 extern char * portname ; /* TCP port (for owhttpd) */
@@ -526,7 +527,7 @@ struct client_msg {
     int32_t version ;
     int32_t payload ;
     int32_t ret ;
-    int32_t format ;
+    int32_t sg ;
     int32_t size ;
     int32_t offset ;
 } ;
@@ -645,6 +646,16 @@ extern unsigned int read_timeout ;
 #define MODE_PROGRAM                   0x04
 #define MODE_BREAK                     0x08
 
+/* Network connection structure */
+struct network_work{
+    char * host ;
+    char * service ;
+    struct addrinfo * ai ;
+    int listenfd ;
+} ;
+extern struct network_work server ;
+extern struct network_work client ;
+
 /* Globals for DS2480B state */
 extern int UMode ;
 extern int ULevel ;
@@ -748,11 +759,18 @@ void LockRelease( const struct parsedname * const pn ) ;
 void UT_delay(const unsigned int len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
+ssize_t readn(int fd, void *vptr, size_t n) ;
+int ClientAddr(  char * sname, struct network_work * nw ) ;
+int ServerAddr(  char * sname, struct network_work * nw ) ;
+int ClientConnect( struct network_work * nw ) ;
+int ServerListen( struct network_work * nw ) ;
+void FreeAddr( struct network_work * nw ) ;
+
+
 int Server_detect( void ) ;
 int ServerRead( const char * path, char * buf, const size_t size, const off_t offset ) ;
 int ServerWrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
-void CloseServer( void ) ;
 
 /* High-level callback functions */
 int FS_dir( void (* dirfunc)(const struct parsedname * const), const char * path, const struct parsedname * const pn ) ;
@@ -803,7 +821,7 @@ int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
 int BUS_send_cmd( const unsigned char * const cmd , const int len ) ;
 int BUS_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
 int BUS_send_data( const unsigned char * const data , const int len ) ;
-int BUS_send_and_get( const unsigned char * const send, const size_t sendlength, unsigned char * const get, const size_t getlength ) ;
+int BUS_send_and_get( const unsigned char * const senddata, const size_t sendlength, unsigned char * const getdate, const size_t getlength ) ;
 int BUS_readin_data( unsigned char * const data , const int len ) ;
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;

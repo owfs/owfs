@@ -46,6 +46,7 @@ $Id$
 
 int FS_type(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t len = strlen(pn->dev->name) ;
+//printf("TYPE len=%d, size=%d\n",len,size);
     if ( offset ) return -EFAULT ;
     if ( len > size ) return -EMSGSIZE ;
     strcpy( buf , pn->dev->name ) ;

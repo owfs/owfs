@@ -319,7 +319,7 @@ static int FS_r_offset(FLOAT * O , const struct parsedname * pn) {
     int ret = OW_r_mem(&o,1,0x33,pn) ;
     if (ret) return ret ;
     O[0] = ((FLOAT) ((int8_t)o)) * .000625 ;
-printf("FS_r_offset read byte=%.2X value=%g\n",o,O[0]);
+//printf("FS_r_offset read byte=%.2X value=%g\n",o,O[0]);
     return 0 ;
 }
 
@@ -328,7 +328,7 @@ static int FS_w_offset(const FLOAT * O , const struct parsedname * pn) {
     if ( O[0] < -.08 ) return -ERANGE ;
     if ( O[0] > .08 ) return -ERANGE ;
     o = (int8_t) (O[0]*1600.) ; // 1600 == 1/.000625
-printf("FS_w_offset write byte=%.2X value=%g\n",o,O[0]);
+//printf("FS_w_offset write byte=%.2X value=%g\n",o,O[0]);
     return OW_w_mem(&o,1,0x33,pn) ? -EINVAL : 0 ;
 }
 
@@ -376,7 +376,7 @@ static int OW_r_eeprom( const size_t page, const size_t size , const size_t offs
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 2 ) ;
     BUSUNLOCK
-printf("OW_r_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
+//printf("OW_r_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
     return ret ;
 }
 
@@ -388,7 +388,7 @@ static int OW_r_sram( unsigned char * data , const size_t size , const size_t of
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 2 ) || BUS_readin_data( data, size ) ;
     BUSUNLOCK
-printf("OW_r_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
+//printf("OW_r_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
 
     return ret ;
 }
@@ -408,7 +408,7 @@ static int OW_w_eeprom( const size_t page, const size_t size , const size_t offs
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 2 ) ;
     BUSUNLOCK
-printf("OW_w_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
+//printf("OW_w_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
 
     return ret ;
 }
@@ -420,7 +420,7 @@ static int OW_w_sram( const unsigned char * data , const size_t size , const siz
     BUSLOCK
         ret = BUS_select(pn) || BUS_send_data(p,2) || BUS_send_data(data,size) ;
     BUSUNLOCK
-printf("OW_w_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
+//printf("OW_w_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
     return ret ;
 }
 
