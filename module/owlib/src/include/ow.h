@@ -246,6 +246,7 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
 unsigned char CRC8( const unsigned char * bytes , const int length ) ;
   unsigned char CRC8compute( const unsigned char * bytes , const int length ) ;
 int CRC16( const unsigned char * bytes , const int length ) ;
+int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
 unsigned char char2num( const char * s ) ;
 unsigned char string2num( const char * s ) ;
 char num2char( const unsigned char n ) ;

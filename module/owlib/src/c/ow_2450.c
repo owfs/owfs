@@ -57,7 +57,7 @@ struct aggregate A2450  = { 4, ag_numbers, ag_separate, } ;
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, } ;
 struct filetype DS2450[] = {
     F_STANDARD   ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages"     ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"pages/page",     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
     {"volts"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , NULL, } ,
@@ -89,7 +89,7 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 /* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
-
+printf("2450 r mem: size %d offset %d \n ",size,offset);
     if ( size+offset>4*8 ) return -ERANGE ;
     if ( OW_r_mem(p,size,offset,pn) ) return -EINVAL ;
     return FS_read_return(buf,size,offset,p,8) ;
@@ -97,6 +97,7 @@ static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , 
 
 /* 2450 A/D */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+printf("2450 w mem: size %d offset %d \n ",size,offset);
     if ( size+offset>4*8 ) return -ERANGE ;
     if ( OW_w_mem(buf,size,offset,pn) ) return -EINVAL ;
     return 0 ;
@@ -111,8 +112,8 @@ static int FS_volts(FLOAT * V , const struct parsedname * pn) {
 /* read page from 2450 */
 static int OW_r_mem( char * p , const int size, const int location , const struct parsedname * pn) {
     unsigned char buf[3+8+2] = {0xAA, location&0xFF,(location>>8)&0xFF, } ;
-    int s = size ;
     int rest = 8-(location&0x07);
+    int s = size - rest ;
     int ret ;
 
     BUS_lock() ;
@@ -122,7 +123,7 @@ static int OW_r_mem( char * p , const int size, const int location , const struc
 
     memcpy( p , &buf[3] , (size_t) rest ) ;
 
-    for ( s-=rest; s>0; s-=8 ) {
+    for ( ; s>0; s-=8 ) {
         BUS_lock() ;
             ret = BUS_readin_data(&buf[3],8+2) || CRC16(&buf[3],8+2) ;
         BUS_unlock() ;
@@ -137,7 +138,7 @@ static int OW_r_mem( char * p , const int size, const int location , const struc
 /* write to 2450 */
 static int OW_w_mem( const char * p , const int size , const int location, const struct parsedname * pn) {
     // command, address(2) , data , crc(2), databack
-    unsigned char buf[] = {0x55, location&0xFF,location>>8, p[0], 0xFF,0xFF, 0xFF, } ;
+    unsigned char buf[] = {0x55, location&0xFF,(location>>8)&0xFF, p[0], 0xFF,0xFF, 0xFF, } ;
     int i ;
     int ret ;
 
@@ -151,18 +152,12 @@ static int OW_w_mem( const char * p , const int size , const int location, const
 
     /* rest of the bytes */
     for ( i=1 ; i<size ; ++i ) {
-        if ( buf[2] == 0xFF ) {
-            buf[2] = 0 ;
-            ++buf[1] ;
-        } else {
-            ++buf[2] ;
-        }
         buf[3] = p[i] ;
         buf[4] = buf[5] = buf[6] = 0xFF ;
-
         BUS_lock() ;
-            ret =BUS_sendback_data(&buf[3],&buf[3],4) || CRC16(&buf[1],5) || (buf[6]!=p[i]) ;
+            ret =BUS_sendback_data(&buf[3],&buf[3],4) || CRC16seeded(&buf[3],3, location+i) || (buf[6]!=p[i]) ;
         BUS_unlock() ;
+
         if ( ret ) return 1 ;
     }
     return 0 ;
@@ -175,9 +170,9 @@ static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
     unsigned char data[8] ;
     unsigned char convert[] = { 0x3C , 0x0F , 0x00, 0xFF, 0xFF, } ;
     int ret ;
-
     // Get control registers and set to A2D 16 bits
     if ( OW_r_mem( control , 8, 1<<3, pn ) ) return 1 ;
+//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
     control[0] = 0x00 ; // 16bit, A/D
     control[1] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
     control[2] = 0x00 ; // 16bit, A/D
@@ -186,6 +181,7 @@ static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
     control[5] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
     control[6] = 0x00 ; // 16bit, A/D
     control[7] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
+//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
 
     // Set control registers
     if ( OW_w_mem( control, 8, 1<<3, pn) ) return 1 ;
@@ -193,7 +189,7 @@ static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
     // Start conversion
 	// 6 msec for 16bytex4channel (5.2)
     BUS_lock() ;
-        ret = BUS_sendback_data( convert , data , 5 ) || memcmp( convert , data , 3 ) || CRC16(data,6) || BUS_PowerByte(0x04, 6) ;
+        ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5 ) || memcmp( convert , data , 3 ) || CRC16(data,5) || BUS_PowerByte(0x04, 6) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
@@ -204,6 +200,7 @@ static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
     if ( ret ) return 1 ;
 
     if ( OW_r_mem( data, 8, 0<<3, pn) ) return 1 ;
+//printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
     f[0] = ((control[1]&0x01)?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;

@@ -56,8 +56,13 @@ unsigned char CRC8( const unsigned char * bytes , const int length ) {
 }
 
 /* Returns 0 for good match */
+/* Standard -- seed = 0 */
 int CRC16( const unsigned char * bytes , const int length ) {
-    unsigned int ret = 0 ;
+    return CRC16seeded( bytes, length, 0 ) ;
+}
+/* Returns 0 for good match */
+int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) {
+    unsigned int ret = seed ;
     int i ;
 	++ crc16_tries ; /* satistics */
     for ( i=0 ; i<length ; ++i ) {
