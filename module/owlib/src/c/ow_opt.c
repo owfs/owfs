@@ -25,6 +25,7 @@ const struct option owopts_long[] = {
     {"Rankine",no_argument,NULL,'R'},
     {"version",no_argument,NULL,'V'},
     {"format",required_argument,NULL,'f'},
+    {"pid-file",required_argument,NULL,'P'},
     {"background",no_argument,&background,1},
     {"foreground",no_argument,&background,0},
     {0,0,0,0},
@@ -32,6 +33,7 @@ const struct option owopts_long[] = {
 
 void owopt( const char c , const char * const arg ) {
     static int useusb = 0 ;
+//printf("owopts in\n");
     switch (c) {
     case 'h':
         fprintf(stderr,
@@ -48,6 +50,7 @@ void owopt( const char c , const char * const arg ) {
         "    --format f[.]i[[.]c] format of device names f_amily i_d c_rc\n"
         "    -C | -F | -K | -R Temperature scale --Celsius(default)|--Fahrenheit|--Kelvin|--Rankine\n"
         "    --foreground --background(default)\n"
+        "    -P --pid-file fielname outs the PID of this program into filename\n"
         "    -V --version\n"
         ) ;
         break ;
@@ -105,8 +108,22 @@ void owopt( const char c , const char * const arg ) {
         else if (strcasecmp(arg,"fic")==0) devform=fic;
         else fprintf(stderr,"Unrecognized format type %s\n",arg);
         break;
+    case 'P':
+//printf("opopts pid_file for %s\n",arg);
+        {
+            FILE * pid = fopen( arg , "w+" ) ;
+            if ( pid == NULL ) {
+                perror("Error opening PID file") ;
+                fprintf( stderr , "PID file attempted: %s\n",arg ) ;
+                exit(1) ;
+            }
+//printf("opopts pid = %ld\n",(long unsigned int)getpid());
+            fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
+            fclose(pid) ;
+        }
+        break ;
     case 0:
         break;
     }
+//printf("owopts out\n");
 }
-
