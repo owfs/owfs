@@ -219,8 +219,17 @@ static int DS9490_reset( const struct parsedname * const pn ) {
         return ret ;
     }
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
-    if ( pn ) pn->si->AnyDevices = !(buffer[16]&0x01) ;
-//printf("9490RESET=0 anydevices=%d\n",AnyDevices);
+    if ( pn ) {
+      pn->si->AnyDevices = !(buffer[16]&0x01) ;
+#if 0
+      /* I seem to loose some devices if this isn't set (only when using
+       * owserver though) */
+      if(!(buffer[16]&0x01) != 1) {
+	printf("DS9490_reset: anydevices would be set to 0 !\n");
+      }
+      pn->si->AnyDevices = 1 ;
+#endif
+    }
     return 0 ;
 }
 
@@ -273,7 +282,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     int i ;
     int buflen ;
 
-//printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",AnyDevices,LastDevice);
+//printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",si->AnyDevices, si->LastDevice);
 //printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
     if ( !si->AnyDevices ) si->LastDevice = 1 ;

@@ -730,89 +730,6 @@ static int DS2480_write(const unsigned char *const buf, const size_t size, const
           -errno = read error
           -EINTR = timeout
  */
-#if 0
-static int DS2480_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
-    fd_set fdset;
-    int fd = pn->in->fd ;
-    struct timeval tval;
-    int cnt;
-    int rc;
-
-    // loop to wait until each byte is available and read it
-    cnt = 0;
-    while(cnt < size) {
-        // set a descriptor to wait for a character available
-        FD_ZERO(&fdset);
-        FD_SET(fd,&fdset);
-        tval.tv_sec = 0;
-        tval.tv_usec = 500000;
-	/* This timeout need to be pretty big for some reason.
-	 * Even commands like DS2480_reset() fails with too low
-	 * timeout. I raise it to 0.5 seconds, since it shouldn't
-	 * be any bad experience for any user... Less read and
-	 * timeout errors for users with slow machines. I have seen
-	 * 276ms delay on my Coldfire board.
-	 *
-	 * DS2480_reset()
-	 *   DS2480_sendback_cmd()
-	 *     DS2480_sendout_cmd()
-	 *       DS2480_write()
-	 *         write()
-	 *         tcdrain()   (all data should be written on serial port)
-	 *     DS2480_read()
-	 *       select()      (waiting 40ms should be enough!)
-	 *       read()
-	 * 
-	 */
-
-        // if byte available read or return bytes read
-        rc = select(fd+1,&fdset,NULL,NULL,&tval);
-        if (rc > 0) {
-	    if( FD_ISSET( fd, &fdset )==0 ) {
-	      STATLOCK
-	      DS2480_read_errors++;
-	      STATUNLOCK
-	      return -EIO ; /* error */
-	    }
-	    update_max_delay(pn);
-
-	    rc = read(fd,&buf[cnt],1);
-            if ( rc < 1 ) {
-	      if(errno == EINTR) {
-		/* read() was interrupted, try again */
-		STATLOCK
-		DS2480_read_interrupted++;
-		STATUNLOCK
-		continue;
-	      }
-	      STATLOCK
-	      DS2480_read_errors++;
-	      STATUNLOCK
-	      return -errno ;
-	    }
-	    cnt++;
-	} else if(rc < 0) {
-	  if(errno == EINTR) {
-	    /* select() was interrupted, try again */
-	    STATLOCK
-	    DS2480_read_interrupted++;
-	    STATUNLOCK
-	    continue;
-	  }
-	  STATLOCK
-	  DS2480_read_select_errors++;
-	  STATUNLOCK
-	  return -EINTR;
-        } else {
-	  STATLOCK
-	    ++DS2480_read_timeout ;
-	  STATUNLOCK
-	  return -EINTR;
-        }
-   }
-   return 0;
-}
-#else
 static int DS2480_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
     fd_set fdset;
     size_t rl = size;
@@ -894,7 +811,6 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
     }
    return 0;
 }
-#endif
 //
 // DS2480_sendout_cmd
 //  Send a command but expect no response

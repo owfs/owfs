@@ -103,10 +103,10 @@ int handle_socket(FILE * out) {
     } else if ( up.file == NULL ) {
         Bad404( out ) ;
     } else {
-//printf("PreParse up.file=%s\n", up.file);
+        //printf("PreParse up.file=%s\n", up.file);
         ret = FS_ParsedName( up.file , &pn ) ;
 	// first root always return Bus-list and settings/system/statistics
-	pn.si->sg.u[0] |= 0x02 ;
+	pn.si->sg |= (1<<BUSRET_BIT) ;
 
         if ( ret ) {
         /* Can't understand the file name = URL */
@@ -260,6 +260,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
       }
     } else {
       suglen = 0;
+      //printf("FAILED parsename %s\n", fullpath);
     }
     FS_ParsedName_destroy( &pn2 ) ;
 
@@ -359,6 +360,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
                         fprintf( out, "</PRE>" ) ;
                     }
                 } else {
+		    //printf("Error read %s %d\n", fullpath, suglen);
                     fprintf(out,"Error: %s",strerror(-len)) ;
                 }
             } else if ( canwrite ) { /* rare write-only */
@@ -527,7 +529,7 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
 	 * memory leak here if FS_ParsedName_destroy() isn't called. */
 #endif
         strcat( linecopy , up->request ) ; /* add on requested file type */
-printf("Change data on %s to %s\n",linecopy,up->value) ;
+	//printf("Change data on %s to %s\n",linecopy,up->value) ;
         if ( FS_ParsedName(linecopy,&pn2)==0 && pn2.ft && pn2.ft->write.v ) {
             switch ( pn2.ft->format ) {
             case ft_binary:
@@ -598,8 +600,8 @@ static void ShowDevice( FILE * out, const struct parsedname * const pn ) {
 	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
 	  return;
 	}
-	//printf("pn2->ft=%p pn2->subdir=%p pn2->dev=%p\n", pn2->ft, pn2->subdir, pn2->dev);
 	FS_DirName(file,OW_FULLNAME_MAX,pn2);
+	//printf("pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
 	Show( out, path2, file, pn2 ) ;
 	free(file);
     }

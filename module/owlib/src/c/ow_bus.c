@@ -258,6 +258,7 @@ int BUS_select_low(const struct parsedname * const pn) {
 */
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn ) {
     // reset the search state
+    memset(serialnumber,0,8);  // clear the serial number
     pn->si->LastDiscrepancy = -1;
     pn->si->LastFamilyDiscrepancy = -1;
     pn->si->LastDevice = 0 ;
@@ -266,6 +267,7 @@ int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn )
 
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn ) {
     // reset the search state
+    memset(serialnumber,0,8);  // clear the serial number
     pn->si->LastDiscrepancy = -1 ;
     pn->si->LastFamilyDiscrepancy = -1 ;
     pn->si->LastDevice = 0 ;

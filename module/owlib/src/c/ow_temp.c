@@ -12,6 +12,17 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+const char *tempscale[4] = {
+  "Celsius",
+  "Fahrenheit",
+  "Kelvin",
+  "Rankine",
+};
+
+const char *TemperatureScaleName(enum temp_type t) {
+  return tempscale[t];
+}
+
 /* Temperture Conversion routines  */
 FLOAT Temperature( FLOAT C, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {

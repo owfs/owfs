@@ -128,12 +128,6 @@ void DeviceSort( void ) {
 void FS_devicefind( const char * code, struct parsedname * pn ) {
    const struct device d = { code, NULL, 0,0,NULL } ;
    struct device_opaque * p = tfind( &d, & Tree[pn->type], device_compare ) ;
-#if 0
-   if (strncasecmp(code, "bus.", 4) == 0) {
-     pn->dev = &NoDevice;
-     return;
-   }
-#endif
    if (p) {
        pn->dev = p->key ;
    } else {

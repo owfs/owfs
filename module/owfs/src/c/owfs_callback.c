@@ -129,7 +129,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     pn.si = &si ;
     ret = FS_ParsedName( path, &pn ) ;
     // first root always return Bus-list and settings/system/statistics
-    pn.si->sg.u[0] |= 0x02 ;
+    pn.si->sg |= (1<<BUSRET_BIT) ;
 
     if ( ret || pn.ft ) {
         ret = -ENOENT;

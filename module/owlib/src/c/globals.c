@@ -39,16 +39,11 @@ int readonly = 0 ; /* readonly file system */
 
 /* State informatoin, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
-union semiglobal SemiGlobal  = { u:{
 #ifdef OW_CACHE
-    1, /* bit0=cacheenabled  bit1=return-buslist */
-#else /* OW_CACHE */
-    0, /* bit0=cacheenabled  bit1=return-buslist */
-#endif /* OW_CACHE */
-    1,
-    (uint8_t)temp_celsius,
-    (uint8_t)fdi, }
-};
+uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 | ((uint8_t)1) ;
+#else
+uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 ;
+#endif
 
 /* Statistics globalsw stored in ow_stats.c */
 

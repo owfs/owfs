@@ -45,31 +45,11 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
     }
     if ( pn->in ) {
         if ( get_busmode(pn->in) != bus_remote ) {
-#if 0
-	  if (SemiGlobal.int32 != pn->si->sg.int32) {
-	    CACHELOCK
-	    SemiGlobal.int32 = pn->si->sg.int32 ;
-	    CACHEUNLOCK
-	  }
-#else
-	  /* sorry for this mess... it should be fixed in some other way.
-	   * I need some flags to tell remote-owservers to return their
-	   * bus-list and system/settings/adapter in some cases */
-	  int i;
-	  if (SemiGlobal.u[0] != (pn->si->sg.u[0] & 0x01)) {
-	    CACHELOCK
-	    SemiGlobal.u[0] = (pn->si->sg.u[0] & 0x01) ;
-	    CACHEUNLOCK
-	  }
-
-	  for(i=1; i<4; i++) {
-	    if (SemiGlobal.u[i] != pn->si->sg.u[i]) {
+	  if ((SemiGlobal & ~BUSRET_MASK) != (pn->si->sg & ~BUSRET_MASK)) {
 	      CACHELOCK
-	      SemiGlobal.u[i] = pn->si->sg.u[i] ;
+	      SemiGlobal = (pn->si->sg & ~BUSRET_MASK) ;
 	      CACHEUNLOCK
-	    }
 	  }
-#endif
 	}
     }
 //printf("PN_destroy post\n");
@@ -99,7 +79,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
-    pn->si->sg.int32 = SemiGlobal.int32 ;
+    pn->si->sg = SemiGlobal ;
 //        pn->si->sg.u[0]&0x01 = cacheenabled ;
 //        pn->si->sg.u[0]&0x02 = return bus-list from owserver
 //        pn->si->sg.u[1]      = presencecheck ;
@@ -162,14 +142,17 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
             strcat(pn->path_busless, "/");
             if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
 
-//printf("strip away %s\n", pathnow);
             pn->path = strdup(path);
+	    //printf("PN set pn->path=%s\n", pn->path);
+	    //printf("PN set pn->path_busless=%s\n", pn->path_busless);
         }
         pathnow = strsep(&pathnext,"/") ;
     }
     if ( !pn->path ) {
         pn->path = strdup(path);
-        pn->path_busless = NULL;
+        pn->path_busless = strdup("");
+	//printf("PN set2 pn->path=%s\n", pn->path);
+	//printf("PN set2 pn->path_busless=%s\n", pn->path_busless);
     }
     //printf("pn->path=%s\n", pn->path);
     //printf("pn->path_busless=%s\n", pn->path_busless);
@@ -280,12 +263,12 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         return 0;
 #else
         if ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
-printf("PN No presence check for %s\n", pn->path);
+//printf("PN No presence check for %s\n", pn->path);
             /* don't make a presence check for remote devices */
             return 0;
         }
         if ( pn->pathlength == 0 ) {
-printf("PN No presence check in root-directory %s\n", pn->path);
+//printf("PN No presence check in root-directory %s\n", pn->path);
             return 0;
         }
         return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */

@@ -97,6 +97,7 @@ static int ToClient( int fd, struct client_msg * cm, const char * data ) {
     }
 //printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+    //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 
     cm->payload = htonl(cm->payload) ;
     cm->size = htonl(cm->size) ;
@@ -119,6 +120,8 @@ void Handler( int fd ) {
     char * retbuffer = NULL ;
     struct server_msg sm ;
     struct client_msg cm ;
+    struct parsedname pn ;
+    struct stateinfo si ;
     char * path = FromClientAlloc( fd, &sm ) ;
 
     memset(&cm, 0, sizeof(struct client_msg));
@@ -132,8 +135,6 @@ void Handler( int fd ) {
         if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
             cm.ret = -EBADMSG ;
         } else {
-            struct parsedname pn ;
-            struct stateinfo si ;
 	    memset(&si, 0, sizeof(struct stateinfo));
             pn.si = &si ;
 	    //printf("Handler: path=%s\n",path);
@@ -145,7 +146,10 @@ void Handler( int fd ) {
 	    }
 
             /* Use client persistent settings (temp scale, discplay mode ...) */
-            si.sg.int32 = sm.sg ;
+            si.sg = sm.sg ;
+	    //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
+	    //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
+
             switch( (enum msg_type) sm.type ) {
             case msg_full:
 	        //cm.ret = (pn.dev&&pn.ft)?FullFileLength(&pn):0 ;
@@ -257,7 +261,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
         cm->sg = sm->sg ;
     } else {
         cm->size = ret ;
-        cm->sg = pn->si->sg.int32 ;
+        cm->sg = pn->si->sg ;
     }
 }
 
@@ -269,7 +273,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
 static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, const struct parsedname * pn ) {
-    uint32_t flags ;
+    uint32_t flags = 0 ;
     /* embedded function -- callback for directory entries */
     /* return the full path length, including current entry */
     void directory( const struct parsedname * const pn2 ) {
@@ -277,37 +281,53 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         size_t _pathlen ;
 	char *path ;
 
-        if (pn->state & pn_bus) {
+        if ((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
 	  path = pn->path_busless ;
 	} else {
 	  path = pn->path ;
 	}
-        _pathlen = strlen(path) ;
-
-        /* Note, path preloaded into retbuffer */
-	// writev() seem to read whole block, so clear it
-        if( !(retbuffer = (char *)calloc(1, _pathlen + OW_FULLNAME_MAX + 2)) ) {
-            return;
-        }
-        strcpy(retbuffer, path);
-
-	//printf("DirHandler: DIR preloop [%s]\n",retbuffer);
-	if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
-	  retbuffer[_pathlen] = '/' ;
-	  ++_pathlen ;
+	_pathlen = strlen(path);
+	if(!(retbuffer = (char *)calloc(1, _pathlen + OW_FULLNAME_MAX + 2))) {
+	  return;
 	}
-	retbuffer[_pathlen] = '\000' ;
-	FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
+
+        if ( pn2->dev==NULL ) {
+            if ( pn2->type != pn_real ) {
+	        //printf("DirHandler: call FS_dirname_type\n");
+                strcpy(retbuffer, FS_dirname_type(pn2->type));
+            } else if ( pn2->state ) {
+	        char *dname ;
+	        //printf("DirHandler: call FS_dirname_state\n");
+		if( (dname = FS_dirname_state(pn2)) ) {
+		  strcpy(retbuffer, dname);
+		  free(dname) ;
+		}
+            } else {
+	        printf("DirHandler: shouldn't be here\n");
+	    }
+	} else {
+	    //printf("DirHandler: call FS_DirName pn2->dev=%p  Nodevice=%p\n", pn2->dev, NoDevice);
+	    strcpy(retbuffer, path);
+	    if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
+	      retbuffer[_pathlen] = '/' ;
+	      ++_pathlen ;
+	    }
+	    retbuffer[_pathlen] = '\000' ;
+	    /* make sure path ends with a / */
+	    FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
+	}
 
         cm->size = strlen(retbuffer) ;
 	//printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
         cm->ret = 0 ;
-	ToClient(fd,cm,retbuffer) ;
+	ToClient(fd, cm, retbuffer) ;
         free(retbuffer);
     }
 
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
+
+    //printf("DirHandler: pn->path=%s\n", pn->path);
 
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     cm->offset = flags ; /* send the flags in the offset message */

@@ -49,7 +49,7 @@ static int ServerSizeorFull( enum msg_type type, const char * path, const struct
     if ( connectfd < 0 ) return -EIO ;
     sm.type = type ;
     sm.size = 0 ;
-    sm.sg =  SemiGlobal.int32;
+    sm.sg =  SemiGlobal ;
     sm.offset = 0 ;
 
     if(pn->state & pn_bus) {
@@ -83,9 +83,8 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     //printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
     sm.type = msg_read ;
     sm.size = size ;
-    sm.sg =  SemiGlobal.int32;
+    sm.sg =  SemiGlobal ;
     sm.offset = offset ;
-
 
     if(pn->state & pn_bus) {
       //printf("use path_bussless = %s\n", pn->path_busless);
@@ -118,7 +117,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     sm.type = msg_write ;
     sm.size = size ;
-    sm.sg =  SemiGlobal.int32;
+    sm.sg =  SemiGlobal ;
     sm.offset = offset ;
 
     if(pn->state & pn_bus) {
@@ -136,9 +135,10 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         ret = -EIO ;
     } else {
         ret = cm.ret ;
-        if ( SemiGlobal.int32 != cm.sg ) {
+        if ( SemiGlobal != cm.sg ) {
+	    //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
             CACHELOCK
-                SemiGlobal.int32 = cm.sg ;
+                SemiGlobal = cm.sg ;
             CACHEUNLOCK
         }
     }
@@ -150,14 +150,16 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct server_msg sm ;
     struct client_msg cm ;
     char * path2 ;
-    char *pathnow;
+    char *pathnow ;
+    char *fullpath ;
     int ret;
     int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
-    union semiglobal sg ;
+    int _pathlen ;
 
     if ( connectfd < 0 ) return -EIO ;
     memset(&cm, 0, sizeof(struct client_msg));
+
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
@@ -166,17 +168,30 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.size = 0 ;
     sm.offset = 0 ;
 
-    sg.int32 = SemiGlobal.int32;
-    if(pn->state & pn_bus) {
-      sg.u[0] |= 0x02 ; // make sure it returns bus-list
+    sm.sg = SemiGlobal ;
+    if((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
+      sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
       //printf("use path_bussless = %s\n", pn->path_busless);
       pathnow = pn->path_busless;
     } else {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
-    sm.sg = sg.int32;
 
+    _pathlen = strlen(pathnow) ;
+    if( !(fullpath = (char *)malloc(_pathlen + OW_FULLNAME_MAX + 2)) ) {
+      return -ENOMEM ;
+    }
+    strcpy(fullpath, pathnow);
+
+//printf("DirHandler: DIR preloop [%s]\n",retbuffer);
+    if ( (_pathlen == 0) || (fullpath[_pathlen-1] !='/') ) {
+      fullpath[_pathlen] = '/' ;
+      ++_pathlen ;
+    }
+    fullpath[_pathlen] = '\000' ;
+    /* path always end with an / here */
+    
     //printf("ServerDir path=%s\n", pathnow);
 
     if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -184,12 +199,11 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else {
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-	    //printf("ServerDir: got %s\n",path2) ;
             pn2.si = pn->si ; /* reuse stateinfo */
-	    /* It's not possible to check extensions (nr of elements) here.
-	     * It's hard to know if /system/adapter/version.4 is valid or
-	     * not, so just accept it */
+
+	    //printf("ServerDir: got %s\n",path2) ;
 	    ret = FS_ParsedName( path2, &pn2 ) ;
+
 	    if ( ret ) {
 	        cm.ret = -EINVAL ;
 		//printf("ServerDir: error parsing %s\n", path2);
@@ -229,7 +243,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     cm->sg = ntohl(cm->sg) ;
     cm->offset = ntohl(cm->offset) ;
 
-//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return NULL ;
     if ( cm->ret < 0 ) return NULL ;
@@ -299,9 +313,6 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
     int nio = 1 ;
     int payload = 0 ;
     int ret;
-    int32_t sg_new = 0 ;
-    union semiglobal sg ;
-    int i;
     struct iovec io[] = {
         { sm, sizeof(struct server_msg), } ,
         { path, 0, } ,
@@ -316,22 +327,14 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
         }
     }
 
-    /* Have to fix byte-order since sm->sg are wrong on BigEndian systems.
-     * Was easier to add the fix here, instead of all other places where
-     * the conversion from "union semiglobal sg.int32" -> int32_t is done. */
-    sg.int32 = sm->sg ;
-    for(i=3; i>=0; i--) {
-      sg_new <<= 8;
-      sg_new |= sg.u[i];
-    }
-
-//printf("ToServer payload=%d size=%d type=%d tempscale=%X(%X) offset=%d\n",payload,sm->size,sm->type,sm->sg,sg_new,sm->offset);
+//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
 //printf("<%.4d|%.4d\n",sm->type,payload);
+    //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));
 
     sm->payload = htonl(payload)       ;
     sm->size    = htonl(sm->size)      ;
     sm->type    = htonl(sm->type)      ;
-    sm->sg      = htonl(sg_new) ;
+    sm->sg      = htonl(sm->sg)        ;
     sm->offset  = htonl(sm->offset)    ;
 
     ret = writev( fd, io, nio );

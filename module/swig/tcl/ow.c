@@ -88,25 +88,25 @@ owtcl_ObjCmdProc(Owtcl_Connect)
     if (!strncasecmp(arg, "-format", 7)) {
       objix++;
       arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-      if (!strcasecmp(arg,"f.i"))        SemiGlobal.u[3]=fdi;
-      else if (!strcasecmp(arg,"fi"))    SemiGlobal.u[3]=fi;
-      else if (!strcasecmp(arg,"f.i.c")) SemiGlobal.u[3]=fdidc;
-      else if (!strcasecmp(arg,"f.ic"))  SemiGlobal.u[3]=fdic;
-      else if (!strcasecmp(arg,"fi.c"))  SemiGlobal.u[3]=fidc;
-      else if (!strcasecmp(arg,"fic"))   SemiGlobal.u[3]=fic;
+      if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+      else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+      else if (!strcasecmp(arg,"f.i.c")) set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+      else if (!strcasecmp(arg,"f.ic"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+      else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+      else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
       else {
 	owtcl_ErrorMsg(interp, "bad format \"%s\": should be one of f.i, fi, f.i.c, f.ic, fi.c or fic\n",arg);
 	tcl_return = TCL_ERROR;
 	goto common_exit;
       }
     } else if (!strncasecmp(arg, "-celsius", 8)) {
-      SemiGlobal.u[2] = temp_celsius;
+      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
     } else if (!strncasecmp(arg, "-fahrenheit", 11)) {
-      SemiGlobal.u[2] = temp_fahrenheit;
+      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
     } else if (!strncasecmp(arg, "-kelvin", 7)) {
-      SemiGlobal.u[2] = temp_kelvin;
+      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
     } else if (!strncasecmp(arg, "-rankine", 8)) {
-      SemiGlobal.u[2] = temp_rankine;
+      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
     } else if (!strncasecmp(arg, "-cache", 6)) {
       objix++;
       Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));

@@ -88,16 +88,16 @@ int owopt( const int c , const char * const arg ) {
         readonly = 0 ;
         return 0 ;
     case 'C':
-        SemiGlobal.u[2] = temp_celsius ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
         return 0 ;
     case 'F':
-        SemiGlobal.u[2] = temp_fahrenheit ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit) ;
         return 0 ;
     case 'R':
-        SemiGlobal.u[2] = temp_rankine ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine) ;
         return 0 ;
     case 'K':
-        SemiGlobal.u[2] = temp_kelvin ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin) ;
         return 0 ;
     case 'V':
         printf("libow version:\n\t" VERSION "\n") ;
@@ -108,12 +108,12 @@ int owopt( const int c , const char * const arg ) {
 //printf("Arg: -p [%s]\n", arg);
         return OW_ArgServer( arg ) ;
     case 'f':
-        if (strcasecmp(arg,"f.i")==0)        SemiGlobal.u[3]=fdi;
-        else if (strcasecmp(arg,"fi")==0)    SemiGlobal.u[3]=fi;
-        else if (strcasecmp(arg,"f.i.c")==0) SemiGlobal.u[3]=fdidc;
-        else if (strcasecmp(arg,"f.ic")==0)  SemiGlobal.u[3]=fdic;
-        else if (strcasecmp(arg,"fi.c")==0)  SemiGlobal.u[3]=fidc;
-        else if (strcasecmp(arg,"fic")==0)   SemiGlobal.u[3]=fic;
+        if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+        else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+        else if (!strcasecmp(arg,"f.i.c")) set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+        else if (!strcasecmp(arg,"f.ic"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+        else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+        else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
         else {
              fprintf(stderr,"Unrecognized format type %s\n",arg);
              return 1 ;

@@ -108,7 +108,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     switch (pn->type) {
     case pn_structure:
         /* Get structure data from local memory */
-//printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
+        //printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
         r = FS_structure(buf,size,offset,pn) ;
         break;
     case pn_system:
@@ -138,6 +138,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 	{
 	    /* real data -- go through device chain */
 	    /* this will either call ServerDir or FS_real_read */
+	    //printf("FS_read_postparse: call read_seek\n");
 	    r = FS_read_seek(buf, size, offset, pn) ;
 	}
     }
@@ -189,9 +190,9 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 #endif /* OW_MT */
 
     if ( (get_busmode(pn->in) == bus_remote) ) {
-        //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
+//printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
-	//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
+//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
         STATLOCK
@@ -206,9 +207,9 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             }
 //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
-//printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
 //printf("READSEED2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
+//printf("READSEED2 lock get size=%d offset=%d\n", size, offset);
                 r = FS_real_read( buf, size, offset, pn ) ;
                 if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
                 LockRelease(pn) ;
@@ -255,8 +256,10 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     /* Readable? */
     if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
     /* Do we exist? Only test static cases */
-    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) return -ENODEV ;
-
+    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) {
+      //printf("FS_real_read: not present!! sg=%d\n", pn->si->sg);
+      return -ENODEV ;
+    }
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) {
         switch(pn->ft->ag->combined) {

@@ -541,15 +541,11 @@ subdir points to in-device groupings
 */
 
 /* Semi-global information (for remote control) */
-union semiglobal {
-    int32_t int32 ;
     /* bit0: cacheenabled  bit1: return bus-list */
     /* presencecheck */
     /* tempscale */
     /* device format */
-    uint8_t u[4] ;
-} ;
-extern union semiglobal SemiGlobal ;
+extern uint32_t SemiGlobal ;
 
 struct buspath {
     unsigned char sn[8] ;
@@ -569,7 +565,7 @@ struct stateinfo {
     int LastDevice ; // for search
     int AnyDevices ;
     struct devlock * lock ; // need to clear dev lock?
-    union semiglobal sg ; // more state info, packed for network transmission */
+    uint32_t sg ; // more state info, packed for network transmission */
 } ;
 
 enum pn_desc {
@@ -623,6 +619,7 @@ enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;
 FLOAT Temperature( FLOAT C, const struct parsedname * pn) ;
 FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) ;
 FLOAT fromTemperature( FLOAT C, const struct parsedname * pn) ;
+const char *TemperatureScaleName(enum temp_type t) ;
 
 extern int cacheavailable ; /* is caching available */
 extern int background ; /* operate in background mode */
@@ -1020,12 +1017,23 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
 
-#define IsLocalCacheEnabled(ppn )  ( (ppn->si->sg.u[0] & 0x01) )
-#define ShouldReturnBusList(ppn )  ( (ppn->si->sg.u[0] & 0x02) )
-#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) ) 
-// && !((ppn->state & pn_bus) && (get_busmode(ppn->in) == bus_remote)) )
-#define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
-#define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
+#define CACHE_MASK     0x00000001
+#define CACHE_BIT      0
+#define BUSRET_MASK    0x00000002
+#define BUSRET_BIT     1
+#define PRESENCE_MASK  0x0000FF00
+#define PRESENCE_BIT   8
+#define TEMPSCALE_MASK 0x00FF0000
+#define TEMPSCALE_BIT  16
+#define DEVFORMAT_MASK 0xFF000000
+#define DEVFORMAT_BIT  24
+#define IsLocalCacheEnabled(ppn)  ( ((ppn)->si->sg & CACHE_MASK) )
+#define ShouldReturnBusList(ppn)  ( ((ppn)->si->sg & BUSRET_MASK) )
+#define ShouldCheckPresence(ppn)  ( ((ppn)->si->sg & PRESENCE_MASK) ) 
+#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->si->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
+#define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
+#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->si->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
+#define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
 #include <features.h>
 #ifdef __UCLIBC__

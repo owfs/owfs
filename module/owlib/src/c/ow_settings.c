@@ -76,7 +76,7 @@ static int FS_r_presencecheck(int * y , const struct parsedname * pn) {
 
 static int FS_w_presencecheck(const int * y , const struct parsedname * pn) {
     (void) pn ; /* to avoid compiler warning about unused parameter */
-    pn->si->sg.u[1] = y[0] ;
+    set_semiglobal(&pn->si->sg, PRESENCE_MASK, PRESENCE_BIT, (1 && y[0]));
     return 0 ;
 }
 
@@ -91,8 +91,7 @@ static int FS_r_enable(int * y , const struct parsedname * pn) {
 static int FS_w_enable(const int * y , const struct parsedname * pn) {
     (void) pn ; /* to avoid compiler warning about unused parameter */
     if ( cacheavailable==0 ) return -EINVAL ;
-    pn->si->sg.u[0] = (pn->si->sg.u[0] & 0xFE) | (1 && y[0]);
-    //pn->si->sg.u[0] = y[0] ;
+    set_semiglobal(&pn->si->sg, CACHE_MASK, CACHE_BIT, (1 && y[0]));
     if ( !IsLocalCacheEnabled(pn) ) Cache_Clear() ;
     return 0 ;
 }
