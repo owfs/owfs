@@ -30,6 +30,7 @@ static int DS1410_read_bits( unsigned char * const bits , const int length ) ;
 static int DS1410_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) ;
+static void DS1410_setroutines( struct interface_routines * const f ) ;
 
 /* Data */
 #define DS1410_Bit0  (0xFC | 0x02 | 0x00 )
@@ -612,7 +613,7 @@ static int DS1410_read_bits( unsigned char * const bits , const int length ) {
     return 0 ;
 }
 
-void DS1410_setroutines( struct interface_routines * const f ) {
+static void DS1410_setroutines( struct interface_routines * const f ) {
     f->write = DS1410_write ;
     f->read  = DS1410_read ;
     f->reset = DS1410_reset ;
@@ -621,4 +622,5 @@ void DS1410_setroutines( struct interface_routines * const f ) {
     f->PowerByte = DS1410_PowerByte ;
     f->ProgramPulse = DS1410_ProgramPulse ;
     f->sendback_data = DS1410_sendback_data ;
+    f->select        = BUS_select_low ;
 }

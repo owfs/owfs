@@ -231,7 +231,7 @@ int BUS_first_alarm(unsigned char * serialnumber) ;
 int BUS_next_alarm(unsigned char * serialnumber) ;
 int BUS_first_family(const unsigned char family, unsigned char * serialnumber ) ;
 
-int BUS_select(const struct parsedname * const pn) ;
+int BUS_select_low(const struct parsedname * const pn) ;
 int BUS_sendout_cmd( const unsigned char * cmd , const int len ) ;
 int BUS_send_cmd( const unsigned char * const cmd , const int len ) ;
 int BUS_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
@@ -242,17 +242,18 @@ int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
 #define BUS_detect        DS2480_detect
-#define BUS_changebaud        DS2480_changebaud
-#define BUS_reset        (iroutines.reset)
-#define BUS_read        (iroutines.read)
-#define BUS_write        (iroutines.write)
+#define BUS_changebaud    DS2480_changebaud
+#define BUS_reset            (iroutines.reset)
+#define BUS_read             (iroutines.read)
+#define BUS_write            (iroutines.write)
 #define BUS_sendback_data    (iroutines.sendback_data)
 #define BUS_next_both        (iroutines.next_both)
-#define BUS_level        (iroutines.level)
-#define BUS_ProgramPulse    (iroutines.ProgramPulse)
+#define BUS_level            (iroutines.level)
+#define BUS_ProgramPulse     (iroutines.ProgramPulse)
 #define BUS_PowerByte        (iroutines.PowerByte)
-#define BUS_databit        DS2480_databit
-#define BUS_datablock        DS2480_datablock
+#define BUS_select           (iroutines.select)
+#define BUS_databit       DS2480_databit
+#define BUS_datablock     DS2480_datablock
 
 void BUS_lock( void ) ;
 void BUS_unlock( void ) ;
@@ -468,12 +469,11 @@ struct interface_routines {
     int (* ProgramPulse) ( void ) ;
     /* send and recieve data*/
     int (* sendback_data) ( const unsigned char * const data , unsigned char * const resp , const int len ) ;
+    /* select a device */
+    int (* select) ( const struct parsedname * const pn ) ;
 
 } ;
 extern struct interface_routines iroutines ;
-
-void DS2480_setroutines( struct interface_routines * const f ) ;
-void DS9097_setroutines( struct interface_routines * const f ) ;
 
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */

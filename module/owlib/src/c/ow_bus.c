@@ -134,7 +134,7 @@ printf("\n");
    Return 0=good, else
     reset, send_data, sendback_data
  */
-int BUS_select(const struct parsedname * const pn) {
+int BUS_select_low(const struct parsedname * const pn) {
     int ret ;
     int ibranch ;
     // match Serial Number command 0x55

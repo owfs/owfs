@@ -35,6 +35,7 @@ static int DS9490_read_bits( unsigned char * const bits , const int length ) ;
 static int DS9490_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS9490_level(int new_level) ;
+static void DS9490_setroutines( struct interface_routines * const f ) ;
 
 #define TIMEOUT_USB	5000 /* 5 seconds */
 
@@ -77,9 +78,6 @@ int DS9490_detect( void ) {
     struct usb_bus *bus ;
     struct usb_device *dev ;
     int usbnum = 0 ;
-
-    /* Set up low-level routines */
-    DS9097_setroutines( & iroutines ) ;
 
     usb_init() ;
     usb_find_busses() ;
@@ -356,7 +354,7 @@ static int DS9490_level(int new_level) {
     return 0 ;
 }
 
-void DS9490_setroutines( struct interface_routines * const f ) {
+static void DS9490_setroutines( struct interface_routines * const f ) {
     f->write = NULL ;
     f->read  = NULL ;
     f->reset = DS9490_reset ;
@@ -365,6 +363,7 @@ void DS9490_setroutines( struct interface_routines * const f ) {
     f->PowerByte = DS9490_PowerByte ;
     f->ProgramPulse = NULL ;
     f->sendback_data = DS9490_sendback_data ;
+    f->select        = BUS_select_low ;
 }
 
 #endif /* OW_USB */

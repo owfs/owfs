@@ -23,6 +23,7 @@ static int DS9097_level(int new_level) ;
 static int DS9097_read_bits( unsigned char * const bits , const int length ) ;
 static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS9097_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
+static void DS9097_setroutines( struct interface_routines * const f ) ;
 
 //--------------------------------------------------------------------------
 // Send 8 bits of communication to the 1-Wire Net and verify that the
@@ -293,7 +294,7 @@ static int DS9097_read_bits( unsigned char * const bits , const int length ) {
     return 0 ;
 }
 
-void DS9097_setroutines( struct interface_routines * const f ) {
+static void DS9097_setroutines( struct interface_routines * const f ) {
     f->write = DS9097_write ;
     f->read  = DS9097_read ;
     f->reset = DS9097_reset ;
@@ -302,4 +303,5 @@ void DS9097_setroutines( struct interface_routines * const f ) {
     f->PowerByte = DS9097_PowerByte ;
     f->ProgramPulse = DS9097_ProgramPulse ;
     f->sendback_data = DS9097_sendback_data ;
+    f->select        = BUS_select_low ;
 }

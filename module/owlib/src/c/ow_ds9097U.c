@@ -166,6 +166,7 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len ) ;
 static int DS2480_send_cmd( const unsigned char * const cmd , const int len ) ;
 static int DS2480_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
 static int DS2480_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
+static void DS2480_setroutines( struct interface_routines * const f ) ;
 
 /* returns baud rate variable, no errors */
 int DS2480_baud( speed_t baud ) {
@@ -740,7 +741,7 @@ static int DS2480_sendback_data( const unsigned char * const data , unsigned cha
 	return ret ;
 }
 
-void DS2480_setroutines( struct interface_routines * const f ) {
+static void DS2480_setroutines( struct interface_routines * const f ) {
     f->write = DS2480_write ;
     f->read  = DS2480_read ;
     f->reset = DS2480_reset ;
@@ -749,4 +750,5 @@ void DS2480_setroutines( struct interface_routines * const f ) {
     f->PowerByte = DS2480_PowerByte ;
     f->ProgramPulse = DS2480_ProgramPulse ;
     f->sendback_data = DS2480_sendback_data ;
+    f->select        = BUS_select_low ;
 }
