@@ -157,10 +157,11 @@ static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const
          (ret=DS9490wait(buffer))
           ) return ret ;
 
-    if ( usb_bulk_read(devusb,0x83,ibit,0x1, TIMEOUT_USB ) >= 0 ) {
+    if ( usb_bulk_read(devusb,0x83,ibit,0x1, TIMEOUT_USB ) > 0 ) {
 printf("USB bit %.2X->%.2X\n",obit,*ibit) ;
         return 0 ;
     }
+printf("DS9490_sendback_bit error \n");
     usb_clear_halt(devusb,0x83) ;
     return -EIO ;
 }
@@ -194,8 +195,8 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
 
     for ( i=0 ; i<len<<3 ; ++i ) {
         unsigned char ibit, obit = UT_getbit(data,i) ;
-        if ( (ret=DS9490_read_bits(obit,&ibit)) ) return ret ;
-	UT_setbit(resp,i,ibit) ;
+        if ( (ret=DS9490_sendback_bit(obit,&ibit)) ) return ret ;
+        UT_setbit(resp,i,ibit) ;
 printf("SENDDATA %d: %.2X->%.2X\n",i>>3,data[i>>3],resp[i>>3]);
     }
     return 0 ;
@@ -210,7 +211,7 @@ static int DS9490_sendback_byte( const unsigned char obyte , unsigned char * con
          (ret=DS9490wait(buffer))
           ) return ret ;
 
-    if ( usb_bulk_read(devusb,0x83,ibyte,0x1, TIMEOUT_USB ) != -1 ) return 0 ;
+    if ( usb_bulk_read(devusb,0x83,ibyte,0x1, TIMEOUT_USB ) > 0 ) return 0 ;
     usb_clear_halt(devusb,0x83) ;
     return -EIO ;
 }
