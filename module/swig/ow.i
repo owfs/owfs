@@ -1,0 +1,124 @@
+/* File: owperl.i */
+/* $ID: Exp $ */
+
+%module OW
+
+%include "typemaps.i"
+
+%init %{
+#include "owfs_config.h"
+#include "ow.h"
+LibSetup() ;
+%}
+
+%{
+#include "owfs_config.h"
+#include "ow.h"
+
+int init( const char * dev ) {
+//    LibSetup() ;
+    background = 0 ;
+    pid_file = 0 ;
+    if ( busmode != bus_unknown ) {
+        return -EBUSY ;
+    } else if ( strcmp(dev,"u") ) {
+//printf("Comsetup\n");
+        if ( ComSetup(dev) ) {
+  	    servername = strdup(dev);
+//printf("Server_detect on %s\n",servername);
+	    if ( Server_detect() ) {
+    	        free(servername);
+	        servername = NULL ;
+	        return 0 ;
+	    }
+//printf("Server_detect good\n");
+	}
+//printf("Comsetup good\n");
+    } else {
+//printf("USBsetup\n");
+        if ( USBSetup() ) return 0 ;
+//printf("USBsetup good\n");
+    }
+    if ( LibStart() ) return 0 ;
+//printf("Libstart good\n");
+    return 1 ;
+}
+
+int put( const char * path, const char * value ) {
+    int s ;
+    /* Overall flag for valid setup */
+    if ( value==NULL) return 0 ;
+    s = strlen(value) ;
+    if ( FS_write(path,value,s,0) ) return 0 ;
+    return 1 ;
+}
+
+char * get( const char * path ) {
+    struct parsedname pn ;
+    struct stateinfo si ;
+    char * buf = NULL ;
+    int sz ; /* current buffer size */
+    int s = strlen(path) ; /* current string length */
+    /* Embedded callback function */
+    void directory( const struct parsedname * const pn2 ) {
+        int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
+        if ( sz<sn ) {
+            sz = sn ;
+            buf = realloc( buf, sn ) ;
+//printf("Realloc buf pointer=%p,%p\n",buf,&buf);
+        }
+        if ( buf ) {
+            if ( s ) strcpy( &buf[s++], "," ) ;
+            FS_DirName( &buf[s], OW_FULLNAME_MAX, pn2 ) ;
+            if (
+                pn2->dev ==NULL
+                || pn2->ft ==NULL
+                || pn2->ft->format ==ft_subdir
+                || pn2->ft->format ==ft_directory
+            ) strcat( &buf[s], "/" );
+            s = strlen( buf ) ;
+//printf("buf=%s len=%d\n",buf,s);
+        }
+    }
+
+    /* Parse the input string */
+    pn.si = &si ;
+    if ( FS_ParsedName( path, &pn ) ) return NULL ;
+//printf("path=%s dev=%p ft=%p subdir=%p format=%d\n",pathcpy,pn.dev,pn.ft,pn.subdir,pn.ft?pn.ft->format:-1) ;
+
+    if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
+//printf("Directory\n");
+        s=sz=0 ;
+        FS_dir( directory, &pn ) ;
+        FS_ParsedName_destroy(&pn) ;
+    } else { /* A regular file */
+//printf("File %s\n",path);
+        s = FullFileLength(&pn) ;
+//printf("File len=%d, %s\n",s,path);
+        if ( (buf=(char *) malloc( s+1 )) ) {
+            int r =  FS_read_postparse( buf, s, 0, &pn ) ;
+            FS_ParsedName_destroy(&pn) ;
+            if ( r<0 ) {
+                free(buf) ;
+                return NULL ;
+            }
+            buf[s] = '\0' ;
+ //           if (r!=s) printf("Mismatch path=%s read=%d len=%d\n",path,r,s);
+        }
+    }
+//printf("End GET\n");
+    return buf ;
+}
+
+void finish( void ) {
+    LibClose() ;
+}
+
+%}
+%typemap(newfree) char * { if ($1) free($1) ; }
+%newobject get ;
+
+extern int init( const char * dev ) ;
+extern char * get( const char * path ) ;
+extern int put( const char * path, const char * value ) ;
+extern void finish( void ) ;
