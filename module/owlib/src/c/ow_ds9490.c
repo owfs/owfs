@@ -1,4 +1,4 @@
- /*
+/*
 $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
@@ -28,7 +28,7 @@ $Id$
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 static int DS9490_reset( const struct parsedname * const pn ) ;
-static int DS9490wait(unsigned char * const buffer,const struct parsedname * const pn) ;
+static int DS9490_getstatus(unsigned char * const buffer,const struct parsedname * const pn) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len,const struct parsedname * const pn ) ;
 static int DS9490_level(int new_level,const struct parsedname * const pn) ;
@@ -100,6 +100,14 @@ int DS9490_detect( struct connection_in * in ) {
     return ret ;
 }
 
+static int DS9490_poweron_reset(const struct parsedname * const pn) {
+    int ret = usb_control_msg(pn->in->usb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB ) ;
+    if(ret < 0) {
+      syslog(LOG_INFO,"Error sending reset (reset=%d) to USB DS9490 adapter at %s.\n",ret,pn->in->name) ;
+    }
+    return (ret < 0) ;
+}
+
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static int DS9490_detect_low( const struct parsedname * const pn ) {
     struct usb_bus *bus ;
@@ -134,15 +142,11 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                                 DS9490_setroutines( & pn->in->iroutines ) ;
                                 pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
                                 pn->in->adapter_name = "DS9490" ;
-                                ret = DS9490_reset(pn) ;
-                                if (ret) {
-                                    syslog(LOG_INFO,"Couldn\'t RESET 2490.\n") ;
-                                } else {
-                                    unsigned char buffer[32] ;
-                                    ret = usb_control_msg(pn->in->usb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )<0;
-                                    ret = ret || DS9490wait(buffer,pn) ;
-                                    syslog(LOG_INFO,"Successful setup (reset=%d) USB DS9490 adapter at %s.\n",ret,pn->in->name) ;
-                                }
+
+				ret = DS9490_reset(pn) ;
+				if (ret) {
+				  syslog(LOG_INFO,"Couldn\'t reset 2490.\n") ;
+				}
                                 return ret ;
                             } else {
                                 syslog(LOG_INFO,"Failed to configure alt interface on USB DS9490 adapter at %s.\n",pn->in->name) ;
@@ -176,43 +180,67 @@ void DS9490_close(struct connection_in * in) {
     syslog(LOG_INFO,"Closed USB DS9490 adapter at %s.\n",in->name) ;
 }
 
-static int DS9490wait(unsigned char * const buffer,const struct parsedname * const pn) {
+/* DS9490_getstatus()
+   return -1 on error
+   otherwise return number of status bytes in buffer
+*/
+static int DS9490_getstatus(unsigned char * const buffer, const struct parsedname * const pn) {
     int ret ;
+    int i ;
+    //printf("DS9490_getstatus:\n");
     do {
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-        if ( (ret=usb_interrupt_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) {
-          STATLOCK
-          DS9490_wait_errors++;
-          STATUNLOCK
-	  return ret ;
-	}
+        if ( (ret=usb_interrupt_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
 #else
-        if ( (ret=usb_bulk_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) {
+        if ( (ret=usb_bulk_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
+#endif
+	{
           STATLOCK
           DS9490_wait_errors++;
           STATUNLOCK
 	  return ret ;
 	}
-#endif
-    } while ( !(buffer[8]&0x20) ) ;
+	//printf("DS9490_getstatus: read %d bytes\n", ret);
+    } while ( !(buffer[8]&0x20) ) ; // wait until not idle
 //{
 //int i ;
 //printf ("USBwait return buffer:\n") ;
 //for( i=0;i<8;++i) printf("%.2X: %.2X  |  %.2X: %.2X  ||  %.2X: %.2X  |  %.2X: %.2X\n",i,buffer[i],i+8,buffer[i+8],i+16,buffer[i+16],i+24,buffer[i+24]);
 //}
-    return 0 ;
+    if(ret < 16) {
+      // incomplete packet??
+      return 0 ;
+    }
+    for(i=16; i<ret; i++) {
+      if(buffer[i] & 0x02) {
+	// short detected
+	syslog(LOG_INFO,"Short detected on USB DS9490 adapter at %s.\n",pn->in->name) ;
+	return -1;
+      }
+    }
+    //printf("DS9490_getstatus: %d status bytes\n", (ret-16));
+    return (ret - 16) ;  // return number of status bytes in buffer
 }
 
-    /* Reset the bus */
+/* Reset adapter and detect devices on the bus */
 static int DS9490_reset( const struct parsedname * const pn ) {
     int ret ;
     unsigned char buffer[32] ;
 //printf("9490RESET\n");
 //printf("DS9490_reset() index=%d pn->in->Adapter=%d %s\n", pn->in->index, pn->in->Adapter, pn->in->adapter_name);
+ 
+    if((ret = DS9490_poweron_reset(pn))<0) {
+        STATLOCK
+        DS9490_reset_errors++;
+        STATUNLOCK
+        return ret ;
+    }
+    memset(buffer, 0, 32); 
+    // COMM_1_WIRE_RESET + strong pull-up
     if ( (ret=usb_control_msg(pn->in->usb,0x40,COMM_CMD,0x0043, 0x0000, NULL, 0, TIMEOUT_USB ))<0
          ||
-         (ret=DS9490wait(buffer,pn))
+         ((ret=DS9490_getstatus(buffer,pn)) < 0)
     ) {
         STATLOCK
         DS9490_reset_errors++;
@@ -221,15 +249,20 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     }
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
     if ( pn ) {
-      pn->si->AnyDevices = !(buffer[16]&0x01) ;
-#if 0
-      /* I seem to loose some devices if this isn't set (only when using
-       * owserver though?) Have to find out why this happens... */
-      if(!(buffer[16]&0x01) != 1) {
-	printf("DS9490_reset: anydevices would be set to 0 !\n");
+      int i ;
+      unsigned char val ;
+      pn->si->AnyDevices = 1;
+      for(i=0; i<ret; i++) {
+	val = buffer[16+i];
+	//printf("Status bytes: %X\n", val);
+	if(val != 0xA5) {
+	  // check for NRS bit (0x01)
+	  if(val & 0x01) {
+	    // empty bus detected, no presence pulse detected
+	    pn->si->AnyDevices = 0;
+	  }
+	}
       }
-      pn->si->AnyDevices = 1 ;
-#endif
     }
     return 0 ;
 }
@@ -254,9 +287,10 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
         return -EIO ;
     }
 
+    // COMM_BLOCK_IO + strong pull-up
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0075, len, NULL, 0, TIMEOUT_USB ))<0
          ||
-         (ret=DS9490wait(buffer,pn))
+         ((ret=DS9490_getstatus(buffer,pn))<0)
           ) {
 //printf("USBsendback control problem\n");
         STATLOCK
@@ -307,9 +341,10 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         return -EIO ;
     }
 
+
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x48FD, 0x0100|search, NULL, 0, TIMEOUT_USB ))<0
          ||
-         (ret=DS9490wait(buffer,pn))
+         ((ret=DS9490_getstatus(buffer,pn))<0)
           ) {
 //printf("USBnextboth control problem\n");
 	STATLOCK
@@ -397,7 +432,7 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     /** Delay */
     UT_delay( delay ) ;
     /** wait */
-    if ( (ret=DS9490wait(buffer,pn)) ) {
+    if ( ((ret=DS9490_getstatus(buffer,pn))<0) ) {
       STATLOCK
       DS9490_PowerByte_errors++;
       STATUNLOCK
@@ -444,7 +479,7 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
 
     if ( (ret=usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_PULSE_EN, lev, NULL, 0, TIMEOUT_USB ))<0
          ||
-         (ret=DS9490wait(buffer,pn))
+         ((ret=DS9490_getstatus(buffer,pn))<0)
           ) {
       STATLOCK
       DS9490_level_errors++;
@@ -477,6 +512,8 @@ static int DS9490_select_low(const struct parsedname * const pn) {
     unsigned int reset = 0x0100 ;
     unsigned char * cb = pn->in->combuffer ;
 
+    //printf("SELECT\n");
+
     if ( reset ) {
       // reset the 1-wire
       if ( (ret=BUS_reset(pn)) ) {
@@ -487,7 +524,6 @@ static int DS9490_select_low(const struct parsedname * const pn) {
       }
       reset = 0x0000 ;
     }
-//printf("SELECT\n");
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
@@ -536,9 +572,9 @@ static int DS9490_select_low(const struct parsedname * const pn) {
         return -EIO ;
     }
 
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0465|reset, (int) 0x0055, NULL, 0, TIMEOUT_USB ))<0
+    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0465|reset, 0x0055, NULL, 0, TIMEOUT_USB ))<0
          ||
-         (ret=DS9490wait(buffer,pn))
+         ((ret=DS9490_getstatus(buffer,pn))<0)
           ) {
 //printf("SELECT control problem = %d\n",ret);
         STATLOCK
