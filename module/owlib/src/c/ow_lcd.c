@@ -3,40 +3,40 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      device type (chip, interface or pseudo)
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 #include "owfs_config.h"
@@ -166,7 +166,7 @@ int FS_w_LCDgpio(const int * y , const struct parsedname * pn ) {
 int FS_r_LCDregister(unsigned int * u , const struct parsedname * pn ) {
     unsigned char data ;
     if ( OW_r_LCDregister(&data,pn) ) return -EINVAL ;
-	u[0] = data ;
+    u[0] = data ;
     return 1 ;
 }
 
@@ -178,7 +178,7 @@ int FS_w_LCDregister(const unsigned int * u , const struct parsedname * pn ) {
 int FS_r_LCDdata(unsigned int * u , const struct parsedname * pn ) {
     unsigned char data ;
     if ( OW_r_LCDdata(&data,pn) ) return -EINVAL ;
-	u[0] = data ;
+    u[0] = data ;
     return 1 ;
 }
 
@@ -194,11 +194,11 @@ int FS_r_LCDcounters(unsigned int * u , const struct parsedname * pn ) {
 
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 int FS_r_LCDcum(unsigned int * u , const struct parsedname * pn ) {
-	int s = 4*sizeof(unsigned int) ;
-	char key[] = {
-				pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
-				'/',      'c',      'u',      'm',       '\0',
-				} ;
+    int s = 4*sizeof(unsigned int) ;
+    char key[] = {
+                pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
+                '/',      'c',      'u',      'm',       '\0',
+                } ;
 
     if ( OW_r_LCDcounters(u,pn) ) return -EINVAL ;
     if ( Storage_Get( key, &s, (void *) u ) ) return -EINVAL ;
@@ -206,11 +206,11 @@ int FS_r_LCDcum(unsigned int * u , const struct parsedname * pn ) {
 }
 
 int FS_w_LCDcum(const unsigned int * u , const struct parsedname * pn ) {
-	char key[] = {
-				pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
-				'/',      'c',      'u',      'm',       '\0',
-				} ;
-	return Storage_Add( key, 4*sizeof(unsigned int), (void *) u ) ? -EINVAL  : 0 ;
+    char key[] = {
+                pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
+                '/',      'c',      'u',      'm',       '\0',
+                } ;
+    return Storage_Add( key, 4*sizeof(unsigned int), (void *) u ) ? -EINVAL  : 0 ;
 }
 #endif /*OW_CACHE*/
 
@@ -245,10 +245,12 @@ int FS_w_LCDline40(const char *buf, const size_t size, const off_t offset , cons
 }
 
 static int FS_w_LCDscreen(const int width, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    int row = 0 ;
-    int len = size ;
-    char * ch ;
-    const char * b = buf ;
+    int row = 0 ; /* screen line */
+    int rows = (width==40)?2:4 ; /* max number of rows */
+    size_t len = size ; /* characters to print */
+    size_t left = size ; /* number of characters left to print */
+    char * ch ; /* search char for newline */
+    const char * b = buf ; /* current location in buf */
 
     /* Not sure if this is valid, but won't allow offset != 0 at first */
     /* otherwise need a buffer */
@@ -256,17 +258,14 @@ static int FS_w_LCDscreen(const int width, const char *buf, const size_t size, c
 
     if ( OW_LCDclear(pn) ) return -EFAULT ;
 
-    while ( (row<((width==40)?2:4)) && (buf+size>b) ) {
-        if ( len>width ) len = width ;
-        if ( (ch=memchr(b, '\n', (size_t) len)) ) {
-            len = ch - b ;
-            if ( FS_w_LCDline(width,row,b,len,0,pn) ) return -EFAULT ;
-            b += len+1 ;
-            ++row ;
-        } else {
-            if ( FS_w_LCDline(width,row,b,len,0,pn) ) return -EFAULT ;
-            b += len ;
-            ++row ;
+    for ( ; (row<rows) && (left>0) ; b+=len, left-=len, ++row ) {
+        len = (left>width) ? width : left ; /* look only in this line */
+        /* search for newline */
+        if ( (ch=memchr(b, '\n', len)) ) len = ch - b ; /* shorten line up to newline */
+        if ( FS_w_LCDline(width,row,b,len,0,pn) ) return -EFAULT ;
+        if (ch) { /* newline found */
+            ++b ; /* move buf pointer to AFTER the newline */
+            --left ;
         }
     }
     return 0 ;
@@ -448,28 +447,28 @@ static int OW_r_LCDcounters( unsigned int * data , const struct parsedname* pn )
 
 #ifdef OW_CACHE /* Cache-dependent special cumulative storage code */
     if ( dbstore ) {
-	char key[] = {
-				pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
-				'/',      'c',      'u',      'm',       '\0',
-				} ;
-	    unsigned int cum[4] ;
-		int s = sizeof(cum);
+    char key[] = {
+                pn->sn[0],pn->sn[1],pn->sn[2],pn->sn[3], pn->sn[4], pn->sn[5], pn->sn[6], pn->sn[7],
+                '/',      'c',      'u',      'm',       '\0',
+                } ;
+        unsigned int cum[4] ;
+        int s = sizeof(cum);
 //printf("OW_COUNTER key=%s\n",key);
-		if ( Storage_Get( key, &s, (void *) cum ) ) { /* First pass at cumulative */
-		    cum[0] = data[0] ;
-		    cum[1] = data[1] ;
-		    cum[2] = data[2] ;
-		    cum[3] = data[3] ;
-		} else {
-		    cum[0] += data[0] ;
-		    cum[1] += data[1] ;
-		    cum[2] += data[2] ;
-		    cum[3] += data[3] ;
-		}
-	    Storage_Add( key, sizeof(cum), (void *) cum ) ;
+        if ( Storage_Get( key, &s, (void *) cum ) ) { /* First pass at cumulative */
+            cum[0] = data[0] ;
+            cum[1] = data[1] ;
+            cum[2] = data[2] ;
+            cum[3] = data[3] ;
+        } else {
+            cum[0] += data[0] ;
+            cum[1] += data[1] ;
+            cum[2] += data[2] ;
+            cum[3] += data[3] ;
+        }
+        Storage_Add( key, sizeof(cum), (void *) cum ) ;
     }
 #endif /* OW_CACHE */
-	return 0 ;
+    return 0 ;
 }
 
 static int OW_r_LCDmemory( unsigned char * data , const int size, const int offset , const struct parsedname* pn ) {
