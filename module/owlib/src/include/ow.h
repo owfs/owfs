@@ -321,6 +321,10 @@ struct interface_routines {
     int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
     /* Set the electrical level of the 1-wire bus */
     int (* level) (int new_level, const struct parsedname * pn) ;
+    /* Change speed between overdrive and normal on the 1-wire bus */
+    int (* overdrive) (const unsigned int overdrive, const struct parsedname * const pn) ;
+    /* Change speed between overdrive and normal on the 1-wire bus */
+    int (* testoverdrive) (const struct parsedname * const pn) ;
     /* Send a byte with bus power to follow */
     int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
@@ -1020,6 +1024,8 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 #define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
 #define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
 #define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)
+#define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive) ? (((pn)->in->iroutines.overdrive)(speed,(pn))) : (-ENOTSUP))
+#define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive) ? (((pn)->in->iroutines.testoverdrive)((pn))) : (-ENOTSUP))
 #define BUS_databit       DS2480_databit
 #define BUS_datablock     DS2480_datablock
 

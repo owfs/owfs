@@ -39,7 +39,8 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
 static int DS9490_ProgramPulse( const struct parsedname * const pn) ;
 static int DS9490_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn) ;
 static int DS9490_write( const unsigned char * const buf, const size_t size, const struct parsedname * const pn) ;
-static int DS9490_speed( const int overdrive, const struct parsedname * const pn ) ;
+static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * const pn ) ;
+static int DS9490_testoverdrive(const struct parsedname * const pn) ;
 
 /* Device-specific routines */
 static void DS9490_setroutines( struct interface_routines * const f ) {
@@ -52,6 +53,8 @@ static void DS9490_setroutines( struct interface_routines * const f ) {
     f->ProgramPulse = DS9490_ProgramPulse ;
     f->sendback_data = DS9490_sendback_data ;
     f->select        = BUS_select_low ;
+    f->overdrive = DS9490_overdrive ;
+    f->testoverdrive = DS9490_testoverdrive ;
 }
 
 #define TIMEOUT_USB    5000 /* 5 seconds */
@@ -243,7 +246,7 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                                 pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
                                 pn->in->adapter_name = "DS9490" ;
 
-				ret = DS9490_setup_adapter(pn) || DS9490_speed(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
+				ret = DS9490_setup_adapter(pn) || DS9490_overdrive(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
 				if(!ret) return 0 ;
 				printf("Error setting up USB DS9490 adapter at %s.\n",pn->in->name) ;
 				syslog(LOG_INFO,"Error setting up USB DS9490 adapter at %s.\n",pn->in->name) ;
@@ -348,7 +351,7 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
     return (ret - 16) ;  // return number of status bytes in buffer
 }
 
-int DS9490_testoverdrive(const struct parsedname * const pn) {
+static int DS9490_testoverdrive(const struct parsedname * const pn) {
   unsigned char buffer[32] ;
   unsigned char r[8] ;
   unsigned char p = 0x69 ;
@@ -360,14 +363,14 @@ int DS9490_testoverdrive(const struct parsedname * const pn) {
   DS9490_level(MODE_NORMAL, pn) ;
 
   // force to normal communication speed
-  DS9490_speed(MODE_NORMAL, pn) ;
+  DS9490_overdrive(MODE_NORMAL, pn) ;
 
   if(DS9490_reset(pn) < 0) {
     return -1 ;
   }
 
-  if (!DS9490_sendback_data(&p,buffer,1, pn) || (p!=buffer[0])) {  // match command 0x69
-    if(!DS9490_speed(MODE_OVERDRIVE, pn)) {
+  if (!DS9490_sendback_data(&p,buffer,1, pn) && (p==buffer[0])) {  // match command 0x69
+    if(!DS9490_overdrive(MODE_OVERDRIVE, pn)) {
       for (i=0; i<8; i++) buffer[i] = pn->sn[i] ;
 #if 0
       for (i=0; i<8; i++) {
@@ -393,11 +396,11 @@ int DS9490_testoverdrive(const struct parsedname * const pn) {
     }
   }
   //printf("DS9490_testoverdrive failed\n");
-  DS9490_speed(MODE_NORMAL, pn);
+  DS9490_overdrive(MODE_NORMAL, pn);
   return -EINVAL ;
 }
 
-static int DS9490_speed( const int overdrive, const struct parsedname * const pn ) {
+static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * const pn ) {
   int ret ;
   unsigned int speed;
   unsigned char sp = 0x3C;
@@ -461,7 +464,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
 
     // force normal speed if not using overdrive anymore
     if (!pn->in->use_overdrive_speed || (pn->in->USpeed & MODE_OVERDRIVE)) {
-      if((ret=DS9490_speed(MODE_NORMAL, pn)) < 0) {
+      if((ret=DS9490_overdrive(MODE_NORMAL, pn)) < 0) {
 	return ret ;
       }
     }

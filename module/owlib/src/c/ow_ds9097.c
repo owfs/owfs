@@ -40,6 +40,8 @@ static void DS9097_setroutines( struct interface_routines * const f ) {
     f->ProgramPulse = DS9097_ProgramPulse ;
     f->sendback_data = DS9097_sendback_data ;
     f->select        = BUS_select_low ;
+    f->overdrive = NULL ;
+    f->testoverdrive = NULL ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */

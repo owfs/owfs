@@ -40,6 +40,8 @@ static void DS2480_setroutines( struct interface_routines * const f ) {
     f->ProgramPulse = DS2480_ProgramPulse ;
     f->sendback_data = DS2480_sendback_data ;
     f->select        = BUS_select_low ;
+    f->overdrive = NULL ;
+    f->testoverdrive = NULL ;
 }
 
 /* --------------------------- */

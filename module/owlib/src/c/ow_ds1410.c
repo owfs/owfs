@@ -623,6 +623,8 @@ static void DS1410_setroutines( struct interface_routines * const f ) {
     f->ProgramPulse = DS1410_ProgramPulse ;
     f->sendback_data = DS1410_sendback_data ;
     f->select        = BUS_select_low ;
+    f->overdrive = NULL ;
+    f->testoverdrive = NULL ;
 }
 
 #endif /* OW_PARPORT */
