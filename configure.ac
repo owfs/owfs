@@ -258,7 +258,7 @@ fi
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
-    AC_CHECK_LIB(fuse,__fuse_process_cmd,, [
+    AC_CHECK_LIB(fuse,fuse_mount,, [
     if test "${ENABLE_OWFS}" = "true"; then
         AC_MSG_ERROR([You have to have libfuse installed first - get it from http://fuse.sourceforge.net])
     else
