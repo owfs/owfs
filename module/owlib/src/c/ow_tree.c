@@ -43,6 +43,22 @@ printf("\n");
 */
 }
 
+static void free_node(void *nodep) {
+  /* nothing to free */
+  return;
+}
+
+void DeviceDestroy( void ) {
+  int i;
+  for(i=0; i<sizeof(Tree)/sizeof(void *); i++) {
+    if(Tree[i]) {
+      /* pn_structure is just a duplicate of pn_real */
+      if(i != pn_structure) tdestroy(Tree[i], free_node);
+      Tree[i] = NULL;
+    }
+  }
+}
+
 void DeviceSort( void ) {
     /* Sort the filetypes for the unrecognized device */
     qsort( NoDevice.ft,(size_t) NoDevice.nft,sizeof(struct filetype),file_compare) ;

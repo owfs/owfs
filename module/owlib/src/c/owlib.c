@@ -273,6 +273,7 @@ void LibClose( void ) {
     FreeIn() ;
     FreeOut() ;
     closelog() ;
+    DeviceDestroy() ;
     
 #ifdef OW_MT
     if ( pmattr ) pthread_mutexattr_destroy(pmattr);

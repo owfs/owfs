@@ -822,6 +822,7 @@ void LibClose( void ) ;
 
 /* Initial sorting or the device and filetype lists */
 void DeviceSort( void ) ;
+void DeviceDestroy( void ) ;
   int devicecmp(const void * code , const void * dev ) ;
 //  int filecmp(const void * name , const void * ex ) ;
 
