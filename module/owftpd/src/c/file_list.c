@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#include <config.h>
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
@@ -13,18 +12,19 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#if TIME_WITH_SYS_TIME
+#include "owfs_config.h"
+
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
 
-#include "owfs_config.h"
 #include "file_list.h"
 #include "daemon_assert.h"
 
@@ -76,11 +76,11 @@ struct tm *localtime_r(const time_t *timep, struct tm *timeptr)
 
 int file_nlst(int out, const char *cur_dir, const char *filespec)
 {
-    int dir_len;
+    unsigned int dir_len;
     char pattern[PATH_MAX+1];
     int glob_ret;
     glob_t glob_buf;
-    int i;
+    unsigned int i;
     char *file_name;
 
     daemon_assert(out >= 0);
@@ -150,13 +150,13 @@ typedef struct {
 
 int file_list(int out, const char *cur_dir, const char *filespec)
 {
-    int dir_len;
+    unsigned int dir_len;
     char pattern[PATH_MAX+1];
     int glob_ret;
     glob_t glob_buf;
-    int i;
+    unsigned int i;
     file_info_t *file_info;
-    int num_files;
+    unsigned int num_files;
     unsigned long total_blocks;
     char *file_name;
 
@@ -165,8 +165,8 @@ int file_list(int out, const char *cur_dir, const char *filespec)
     struct tm tm_now;
     double age;
     char date_buf[13];
-    char link[PATH_MAX+1];
-    int link_len;
+    char xlink[PATH_MAX+1];
+    int xlink_len;
     
     daemon_assert(out >= 0);
     daemon_assert(is_valid_dir(cur_dir));
@@ -321,11 +321,11 @@ int file_list(int out, const char *cur_dir, const char *filespec)
   
         /* display symbolic link information */
 	if ((mode & S_IFMT) == S_IFLNK) {
-	    link_len = readlink(file_info[i].full_path, link, sizeof(link));
-	    if (link_len > 0) {
+	    xlink_len = readlink(file_info[i].full_path, xlink, sizeof(xlink));
+	    if (xlink_len > 0) {
 	        fdprintf(out, " -> ");
-	        link[link_len] = '\0';
-	        fdprintf(out, "%s", link);
+	        xlink[xlink_len] = '\0';
+	        fdprintf(out, "%s", xlink);
 	    }
 	}
 
@@ -365,9 +365,9 @@ static int is_valid_dir(const char *dir)
 static void fdprintf(int fd, const char *fmt, ...)
 {
     char buf[PATH_MAX+1];
-    int buflen;
+    unsigned int buflen;
     va_list ap;
-    int amt_written;
+    unsigned int amt_written;
     int write_ret;
 
     daemon_assert(fd >= 0);
