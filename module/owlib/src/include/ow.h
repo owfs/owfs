@@ -663,7 +663,20 @@ extern unsigned int BUS_send_and_get_interrupted ;
 extern unsigned int BUS_select_low_errors ;
 extern unsigned int BUS_select_low_branch_errors ;
 
+// ow_ds9490.c
+extern unsigned int DS9490_wait_errors ;
+extern unsigned int DS9490_reset_errors ;
+extern unsigned int DS9490_sendback_data_errors ;
+extern unsigned int DS9490_next_both_errors ;
+extern unsigned int DS9490_PowerByte_errors ;
+extern unsigned int DS9490_level_errors ;
+extern unsigned int DS9490_select_low_errors ;
+
 // ow_ds9097.c
+extern unsigned int DS9097_detect_errors ;
+extern unsigned int DS9097_PowerByte_errors ;
+extern unsigned int DS9097_level_errors ;
+extern unsigned int DS9097_next_both_errors ;
 extern unsigned int DS9097_read_bits_errors ;
 extern unsigned int DS9097_sendback_data_errors ;
 extern unsigned int DS9097_sendback_bits_errors ;

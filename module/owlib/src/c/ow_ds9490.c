@@ -181,9 +181,19 @@ static int DS9490wait(unsigned char * const buffer,const struct parsedname * con
     do {
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-        if ( (ret=usb_interrupt_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
+        if ( (ret=usb_interrupt_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) {
+          STATLOCK
+          DS9490_wait_errors++;
+          STATUNLOCK
+	  return ret ;
+	}
 #else
-        if ( (ret=usb_bulk_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) return ret ;
+        if ( (ret=usb_bulk_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 ) {
+          STATLOCK
+          DS9490_wait_errors++;
+          STATUNLOCK
+	  return ret ;
+	}
 #endif
     } while ( !(buffer[8]&0x20) ) ;
 //{
@@ -203,6 +213,9 @@ static int DS9490_reset( const struct parsedname * const pn ) {
          ||
          (ret=DS9490wait(buffer,pn))
     ) {
+        STATLOCK
+        DS9490_reset_errors++;
+        STATUNLOCK
         return ret ;
     }
 //    USBpowered = (buffer[8]&0x08) == 0x08 ;
@@ -225,6 +238,9 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
     if ( (ret=usb_bulk_write(usb,DS2490_EP2,data,len, TIMEOUT_USB )) < len ) {
 //printf("USBsendback bulk write problem = %d\n",ret);
         usb_clear_halt(usb,DS2490_EP2) ;
+        STATLOCK
+        DS9490_sendback_data_errors++;
+        STATUNLOCK
         return -EIO ;
     }
 
@@ -233,12 +249,18 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
          (ret=DS9490wait(buffer,pn))
           ) {
 //printf("USBsendback control problem\n");
+        STATLOCK
+        DS9490_sendback_data_errors++;
+        STATUNLOCK
         return ret ;
     }
 
     if ( usb_bulk_read(usb,DS2490_EP3,resp,len, TIMEOUT_USB ) > 0 ) return 0 ;
 //printf("USBsendback bulk read problem\n");
     usb_clear_halt(usb,DS2490_EP3) ;
+    STATLOCK
+    DS9490_sendback_data_errors++;
+    STATUNLOCK
     return -EIO ;
 }
 
@@ -269,6 +291,9 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     if ( (ret=usb_bulk_write(usb,DS2490_EP2,cb,8, TIMEOUT_USB )) < 8 ) {
 //printf("USBnextboth bulk write problem = %d\n",ret);
         usb_clear_halt(usb,DS2490_EP2) ;
+	STATLOCK
+	DS9490_next_both_errors++;
+	STATUNLOCK
         return -EIO ;
     }
 
@@ -277,6 +302,9 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
          (ret=DS9490wait(buffer,pn))
           ) {
 //printf("USBnextboth control problem\n");
+	STATLOCK
+	DS9490_next_both_errors++;
+	STATUNLOCK
         return ret ;
     }
     buflen = buffer[13] ;
@@ -295,10 +323,19 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
                 break ;
             }
         }
-        return CRC8(serialnumber,8) || (serialnumber[0] == 0) ? -EIO:0 ;
+        if( CRC8(serialnumber,8) || (serialnumber[0] == 0) ) {
+	  STATLOCK
+	  DS9490_next_both_errors++;
+	  STATUNLOCK
+	  return -EIO;
+	}
+	return 0;
     }
 //printf("USBnextboth bulk read problem error=%d\n",ret);
     usb_clear_halt(usb,DS2490_EP3) ;
+    STATLOCK
+    DS9490_next_both_errors++;
+    STATUNLOCK
     return -EIO ;
 }
 
@@ -320,18 +357,42 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     int ret ;
 
     /* Send the byte */
-    if ( (ret= DS9490_sendback_data(&byte, &resp , 1,pn)) ) return ret ;
+    if ( (ret= DS9490_sendback_data(&byte, &resp , 1,pn)) ) {
+      STATLOCK
+      DS9490_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
 //printf("9490 Powerbyte in=%.2X out %.2X\n",byte,resp) ;
-    if ( byte != resp ) return -EIO ;
-
+    if ( byte != resp ) {
+      STATLOCK
+      DS9490_PowerByte_errors++;
+      STATUNLOCK
+      return -EIO ;
+    }
     /** Pulse duration */
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0213, 0x0000|dly, NULL, 0, TIMEOUT_USB ))<0 ) return ret ;
+    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0213, 0x0000|dly, NULL, 0, TIMEOUT_USB ))<0 ) {
+      STATLOCK
+      DS9490_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     /** Pulse start */
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0431, 0x0000, NULL, 0, TIMEOUT_USB ))<0 ) return ret ;
+    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0431, 0x0000, NULL, 0, TIMEOUT_USB ))<0 ) {
+      STATLOCK
+      DS9490_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     /** Delay */
     UT_delay( delay ) ;
     /** wait */
-    if ( (ret=DS9490wait(buffer,pn)) ) return ret ;
+    if ( (ret=DS9490wait(buffer,pn)) ) {
+      STATLOCK
+      DS9490_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     return 0 ;
 }
 
@@ -374,8 +435,12 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     if ( (ret=usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_PULSE_EN, lev, NULL, 0, TIMEOUT_USB ))<0
          ||
          (ret=DS9490wait(buffer,pn))
-          ) return ret ;
-
+          ) {
+      STATLOCK
+      DS9490_level_errors++;
+      STATUNLOCK
+      return ret ;
+    }
     pn->in->ULevel = new_level ;
     return 0 ;
 }
@@ -402,26 +467,44 @@ static int DS9490_select_low(const struct parsedname * const pn) {
     unsigned int reset = 0x0100 ;
     unsigned char * cb = pn->in->combuffer ;
 
-if ( reset ) {
-    // reset the 1-wire
-    if ( (ret=BUS_reset(pn)) ) return ret ;
-        reset = 0x0000 ;
+    if ( reset ) {
+      // reset the 1-wire
+      if ( (ret=BUS_reset(pn)) ) {
+        STATLOCK
+        DS9490_select_low_errors++;
+        STATUNLOCK
+        return ret ;
+      }
+      reset = 0x0000 ;
     }
 //printf("SELECT\n");
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
+#if 0
+       /* never reached since reset was cleared above */
        if ( reset ) {
            // reset the 1-wire
            if ( (ret=BUS_reset(pn)) ) return ret ;
            reset = 0 ;
        }
+#endif
        memcpy( &sendbytes[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
-        if ( (ret=BUS_send_data(sendbytes,9,pn)) ) return ret ;
+        if ( (ret=BUS_send_data(sendbytes,9,pn)) ) {
+          STATLOCK
+          DS9490_select_low_errors++;
+          STATUNLOCK
+          return ret ;
+        }
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) return ret ;
-        if ( resp[2] != branch[pn->bp[ibranch].branch] ) return -EINVAL ;
+        if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
+          STATLOCK
+          DS9490_select_low_errors++;
+          STATUNLOCK
+          return -EINVAL ;
+        }
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
     }
     if ( pn->dev == NULL) return 0 ;
@@ -437,6 +520,9 @@ if ( reset ) {
     if ( (ret=usb_bulk_write(usb,DS2490_EP2,cb,8, TIMEOUT_USB )) < 8 ) {
         usb_clear_halt(usb,DS2490_EP2) ;
 //printf("SELECT write error=%d\n",ret) ;
+        STATLOCK
+        DS9490_select_low_errors++;
+        STATUNLOCK
         return -EIO ;
     }
 
@@ -445,6 +531,9 @@ if ( reset ) {
          (ret=DS9490wait(buffer,pn))
           ) {
 //printf("SELECT control problem = %d\n",ret);
+        STATLOCK
+        DS9490_select_low_errors++;
+        STATUNLOCK
         return ret ;
     }
     return 0 ;

@@ -62,11 +62,18 @@ int DS9097_detect( struct connection_in * in ) {
     in->busmode = bus_serial ;
     
     if ( (ret=FS_ParsedName(NULL,&pn)) ) {
+      STATLOCK
+      DS9097_detect_errors++;
+      STATUNLOCK
       return ret ;
     }
     pn.in = in ;
 
-    ret = DS9097_reset(&pn) ;
+    if((ret = DS9097_reset(&pn))) {
+      STATLOCK
+      DS9097_detect_errors++;
+      STATUNLOCK
+    }
     return ret;
 }
 
@@ -87,16 +94,24 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
     COM_flush(pn);
 
     // send the packet
-    ret=BUS_send_data(&byte,1,pn) ;
-    if (ret) return ret ;
-
+    if((ret=BUS_send_data(&byte,1,pn))) {
+      STATLOCK
+      DS9097_PowerByte_errors++;
+      STATUNLOCK
+      return ret ;
+    }
 // indicate the port is now at power delivery
     pn->in->ULevel = MODE_STRONG5;
     // delay
     UT_delay( delay ) ;
 
     // return to normal level
-    return BUS_level(MODE_NORMAL,pn) ;
+    if((ret=BUS_level(MODE_NORMAL,pn))) {
+      STATLOCK
+      DS9097_PowerByte_errors++;
+      STATUNLOCK
+    }
+    return ret;
 }
 
 static int DS9097_ProgramPulse( const struct parsedname * const pn ) {
@@ -127,14 +142,29 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
         bits[1] = bits[2] = 0xFF ;
         if ( bit_number==0 ) { /* First bit */
 	    /* get two bits (AND'ed bit and AND'ed complement) */
-            if ( (ret=DS9097_sendback_bits(&bits[1],&bits[1],2,pn)) ) return ret ;
+            if ( (ret=DS9097_sendback_bits(&bits[1],&bits[1],2,pn)) ) {
+              STATLOCK
+              DS9097_next_both_errors++;
+              STATUNLOCK
+              return ret ;
+            }
         } else {
             bits[0] = search_direction ;
             if ( bit_number<64 ) {
 	        /* Send chosen bit path, then check match on next two */
-                if ( (ret=DS9097_sendback_bits(bits,bits,3,pn)) ) return ret ;
+                if ( (ret=DS9097_sendback_bits(bits,bits,3,pn)) ) {
+		  STATLOCK
+		    DS9097_next_both_errors++;
+		  STATUNLOCK
+		  return ret ;
+		}
             } else { /* last bit */
-                if ( (ret=DS9097_sendback_bits(bits,bits,1,pn)) ) return ret ;
+                if ( (ret=DS9097_sendback_bits(bits,bits,1,pn)) ) {
+		  STATLOCK
+		    DS9097_next_both_errors++;
+		  STATUNLOCK
+		  return ret ;
+		}
                 break ;
             }
         }
@@ -167,7 +197,12 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
         //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
     } // loop until through serial number bits
 
-    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) return -EIO ;
+    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
+      STATLOCK
+      DS9097_next_both_errors++;
+      STATUNLOCK
+      return -EIO ;
+    }
       // if the search was successful then
 
     si->LastDiscrepancy = last_zero;
@@ -199,8 +234,14 @@ static int DS9097_level(int new_level, const struct parsedname * const pn) {
         return 0 ;
     case MODE_PROGRAM:
         pn->in->ULevel = MODE_NORMAL ;
+	STATLOCK
+	DS9097_level_errors++;
+	STATUNLOCK
         return -EIO ;
     }
+    STATLOCK
+    DS9097_level_errors++;
+    STATUNLOCK
     return -EIO ;
 }
 
