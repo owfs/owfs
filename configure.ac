@@ -52,6 +52,11 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
+# Keep in mind that we may be installed in /opt/owfs
+
+LDFLAGS="-L/opt/owfs/lib $LDFLAGS"
+CPPFLAGS="-I/opt/owfs/include $CPPFLAGS"
+
 # Checks for libraries.
 
 AC_CHECK_LIB(ow,DS2480_detect, ,[AC_MSG_ERROR([
