@@ -238,6 +238,9 @@ static int DevicePart( const char * filename, const char ** next, struct parsedn
             if ( strncasecmp( crc, f, 2 ) ) return -ENOENT ;
             f += 2 ;
         }
+    } else if ( strncasecmp( filename, "simultaneous", 12 ) == 0 ) {
+       FS_devicefind( "simultaneous", pn ) ;
+       f += 12 ;
     } else {
         return -ENOENT ; /* unknown device */
     }
