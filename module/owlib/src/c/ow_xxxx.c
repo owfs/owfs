@@ -160,23 +160,25 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         memcpy( &pnnext, pn1 , sizeof(struct parsedname) ) ;
         pnnext.in = pn1->in->next ;
         pnnext.si = &si ;
-	if(get_busmode(pnnext.in) != bus_remote) {
-	  eret = CheckPresence_low(&pnnext) ;
-	} else {
-	  eret = 1;
-	}
+	eret = CheckPresence_low(&pnnext) ;
         pthread_exit((void *)eret);
 	return (void *)eret;
     }
     if(!(pn->state & pn_bus)) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
     }
-    
 #endif /* OW_MT */
-    BUSLOCK(pn)
-      ret = BUS_normalverify(pn) ;
-    BUSUNLOCK(pn)
-      //printf("CheckPresence_low: ret=%d\n", ret);
+    if(get_busmode(pn->in) == bus_remote) {
+      /* Do we need to implement a ServerPresence() function here? */
+      //ret = ServerPresence(pn) ;
+      ret = 1 ; /* return "not found" */
+    } else {
+      /* this can only be done on local busses */
+      BUSLOCK(pn)
+	ret = BUS_normalverify(pn) ;
+      BUSUNLOCK(pn)
+    }
+    //printf("CheckPresence_low: ret=%d\n", ret);
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */

@@ -15,11 +15,11 @@ $Id$
 #include <stdlib.h>
 #include <string.h>
 
-static int FS_ParsedNameSub( char * pathnow , char * pathnext, struct parsedname * pn ) ;
+static int FS_ParsedNameSub( char * pathnow , char * pathnext, struct parsedname * pn, int nocheck ) ;
 static int BranchAdd( struct parsedname * pn ) ;
 static int DevicePart( char * filename, struct parsedname * pn ) ;
 static int NamePart( char * filename, struct parsedname * pn ) ;
-static int FilePart( char * filename, struct parsedname * pn ) ;
+static int FilePart( char * filename, struct parsedname * pn, int nocheck ) ;
 
 static int filecmp(const void * name , const void * ex ) ;
 
@@ -76,7 +76,7 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
 }
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
-int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
+static int FS_ParsedName_( const char * const path , struct parsedname * const pn, int nocheck ) {
     char * pathcpy ;
     char * pathnow ;
     char * pathnext ;
@@ -193,9 +193,17 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     }
 
     //printf("2pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
-    ret = FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+    ret = FS_ParsedNameSub( pathnow, pathnext, pn, nocheck ) ;
     free(pathcpy) ;
     return ret ;
+}
+
+int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
+    return FS_ParsedName_(path, pn, 0);
+}
+
+int FS_ParsedName_nocheck( const char * const path , struct parsedname * const pn ) {
+    return FS_ParsedName_(path, pn, 1);
 }
 
 /* Parse the path to the correct device, filetype, directory, etc... */
@@ -210,7 +218,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
       pn->extension = -1 for ALL, 0 if non-aggregate, else 0-max extensionss-1
       pn->extension = -2 for BYTE, special bitfield representation of the data
 */
-static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname * pn ) {
+static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname * pn, int nocheck ) {
     int ret ;
 //printf("PN: %s %s : %s\n",pn->path,pathnow,pathnext);
 
@@ -223,7 +231,7 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         if(!isdigit(pathnow[4])) return -ENOENT ;
         pathnow = strsep(&pathnext,"/") ;
 //printf("deeper bus. request pathnow=%s\n", pathnow);
-        return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+        return FS_ParsedNameSub( pathnow, pathnext, pn, nocheck ) ;
     }
     if ( pathnow==NULL || pathnow[0]=='\0' ) {
         if ( pn->state & pn_alarm ) {
@@ -244,13 +252,13 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
             pn->state |= pn_uncached ;
             pathnow = strsep(&pathnext,"/") ;
 //printf("PARSENAME uncached %s\n",pathnext) ;
-            return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+            return FS_ParsedNameSub( pathnow, pathnext, pn, nocheck ) ;
         }
         if ( strcasecmp( pathnow, "alarm" )==0 ) {
             pn->state |= pn_alarm ;
             pathnow = strsep(&pathnext,"/") ;
 //printf("PARSENAME alarm %s\n",pathnext) ;
-            return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+            return FS_ParsedNameSub( pathnow, pathnext, pn, nocheck ) ;
         }
         if ( strcasecmp( pathnow, "simultaneous" ) == 0 ) {
             pn->dev = DeviceSimultaneous ;
@@ -272,19 +280,31 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     }
 
     if ( pathnext==NULL || pathnext[0]=='\0' ) {
-        if (get_busmode(pn->in) == bus_remote) {
-//printf("PN No presence check for %s\n", pn->path);
+#if 1
+        /* It seems to be impossible to do presence check in FS_ParsedName()
+	 * since it's used when receiving a devicename from a remote server
+	 * too. We have to trust the information, and eventually check for
+	 * presence just before reading or writing to a device. */
+        return 0;
+#else
+        if ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
+printf("PN No presence check for %s\n", pn->path);
             /* don't make a presence check for remote devices */
             return 0;
         }
+        if ( pn->pathlength == 0 ) {
+printf("PN No presence check in root-directory %s\n", pn->path);
+            return 0;
+        }
         return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+#endif
     }
     pathnow = strsep(&pathnext,"/") ;
     pn->desc = desc_error ; /* Assume the worst, again */
 //printf("PN2: %s %s : %s\n",pn->path,pathnow,pathnext);
 
     /* Now examine filetype */
-    if ( (ret=FilePart( pathnow, pn )) ) {
+    if ( (ret=FilePart( pathnow, pn, nocheck )) ) {
       //printf("PN didn't find filetype %s %s\n", pathnow, pn->path);
       return ret ;
     }
@@ -297,7 +317,7 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         if ( pn->pathlength > dir_depth ) dir_depth = pn->pathlength ;
 //if ( next ) printf("Resub = %s->%s\n",pFile,next) ;
         pathnow = strsep(&pathnext,"/") ;
-        return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+        return FS_ParsedNameSub( pathnow, pathnext, pn, nocheck ) ;
     } else if ( pn->ft->format==ft_subdir ) { /* in-device subdirectory */
         if ( pathnext==NULL || pathnext[0]=='\0' ) {
             pn->subdir = pn->ft ;
@@ -307,7 +327,7 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         } else {
             char * p = strsep( &pathnext, "/" ) ;
             p[-1] = '/' ; /* replace former "/" to make subdir */
-            if ( (ret=FilePart( pathnow, pn )) ) {
+            if ( (ret=FilePart( pathnow, pn, nocheck )) ) {
 //printf("PN FilePart failed for %s %s\n", pathnow, pn->path);
                 return ret ;
             }
@@ -388,7 +408,7 @@ static int DevicePart( char * filename, struct parsedname * pn ) {
     return 0 ;
 }
 
-static int FilePart( char * filename, struct parsedname * pn ) {
+static int FilePart( char * filename, struct parsedname * pn, int nocheck ) {
     char * dot = filename ;
 
     //printf("FilePart: %s %s\n", filename, pn->path);
@@ -435,11 +455,15 @@ static int FilePart( char * filename, struct parsedname * pn ) {
                 if ( (p==dot) || ((pn->extension == 0) && (errno==-EINVAL)) ) return -ENOENT ; /* Bad number */
             }
 //printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
-            if((get_busmode(pn->in)==bus_remote) && (pn->type==pn_system)) {
-                /* We have to agree any extension from remote bus
-                * otherwise /system/adapter/address.1 wouldn't be accepted
-                * Should not be needed on known devices though
-                */
+            if(nocheck) {
+	      /* Would like to test something like this, but it's not possible
+	       * (pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote) &&
+	       * (pn->type==pn_system)
+	       *
+	       * We have to agree any extension from remote bus
+	       * otherwise /system/adapter/address.1 wouldn't be accepted
+	       * Should not be needed on known devices though
+	       */
             } else
                 if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
 //printf("FP Extension out of range %d %d %s\n", pn->extension, pn->ft->ag->elements, pn->path);

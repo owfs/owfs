@@ -847,6 +847,7 @@ void DeviceDestroy( void ) ;
 
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
+int FS_ParsedName_nocheck( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
@@ -1022,7 +1023,8 @@ void BUS_unlock( const struct parsedname * pn ) ;
 
 #define IsLocalCacheEnabled(ppn )  ( (ppn->si->sg.u[0] & 0x01) )
 #define ShouldReturnBusList(ppn )  ( (ppn->si->sg.u[0] & 0x02) )
-#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (get_busmode(ppn->in) != bus_remote) )
+#define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) ) 
+// && !((ppn->state & pn_bus) && (get_busmode(ppn->in) == bus_remote)) )
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )
 

@@ -137,6 +137,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 #endif
 	{
 	    /* real data -- go through device chain */
+	    /* this will either call ServerDir or FS_real_read */
 	    r = FS_read_seek(buf, size, offset, pn) ;
 	}
     }

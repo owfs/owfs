@@ -193,6 +193,7 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
     /* Do we exist? Only test static cases */
     /* Already parsed -- presence  check done there! on non-static */
 //    if ( presencecheck && pn->ft->change==ft_static && CheckPresence(pn) ) return -ENOENT ;
+    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) return -ENOENT ;
 
     /* Array properties? Write all together if aggregate */
     if ( pn->ft->ag ) {
