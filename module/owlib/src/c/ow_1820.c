@@ -198,15 +198,22 @@ static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
 }
 
 static int FS_r_die(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    char * d ;
     switch ( OW_die(pn) ) {
     case eB6:
-        return FS_read_return( buf, size, offset, "B6", 2 ) ;
+        d = "B6" ;
+        break ;
     case eB7:
-        return FS_read_return( buf, size, offset, "B7", 2 ) ;
+        d = "B7" ;
+        break ;
     case eC2:
-        return FS_read_return( buf, size, offset, "C2", 2 ) ;
+        d = "C2" ;
+        break ;
+    default:
+        return -EINVAL ;
     }
-    return -EINVAL ;
+    memcpy(buf,&d[offset],size) ;
+    return 0 ;
 }
 
 static int FS_r_trim(unsigned int * const trim , const struct parsedname * pn) {

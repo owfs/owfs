@@ -61,12 +61,8 @@ uWRITE_FUNCTION( FS_w_register ) ;
  uREAD_FUNCTION( FS_r_cum ) ;
 uWRITE_FUNCTION( FS_w_cum ) ;
 #endif /* OW_CACHE */
-aWRITE_FUNCTION( FS_w_screen16 ) ;
-aWRITE_FUNCTION( FS_w_screen20 ) ;
-aWRITE_FUNCTION( FS_w_screen40 ) ;
-aWRITE_FUNCTION( FS_w_line16 ) ;
-aWRITE_FUNCTION( FS_w_line20 ) ;
-aWRITE_FUNCTION( FS_w_line40 ) ;
+aWRITE_FUNCTION( FS_w_screenX ) ;
+aWRITE_FUNCTION( FS_w_lineX ) ;
 
 /* ------- Structures ----------- */
 
@@ -90,13 +86,13 @@ struct filetype LCD[] = {
 #ifdef OW_CACHE
     {"cumulative",    12,  &ALCDu, ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , NULL, } ,
 #endif /*OW_CACHE*/
-    {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , NULL, } ,
-    {"screen16"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screen16} , NULL, } ,
-    {"screen20"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screen20} , NULL, } ,
-    {"screen40"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screen40} , NULL, } ,
-    {"line16"    ,    16,  &ALCD_L16, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_line16}   , NULL, } ,
-    {"line20"    ,    20,  &ALCD_L20, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_line20}   , NULL, } ,
-    {"line40"    ,    40,  &ALCD_L40, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_line40}   , NULL, } ,
+    {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , NULL , } ,
+    {"screen16"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 16 , } ,
+    {"screen20"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 20 , } ,
+    {"screen40"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 40 , } ,
+    {"line16"    ,    16,  &ALCD_L16, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 16 , } ,
+    {"line20"    ,    20,  &ALCD_L20, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 20 , } ,
+    {"line40"    ,    40,  &ALCD_L40, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 40 , } ,
 } ;
 DeviceEntry( FF, LCD )
 
@@ -113,23 +109,21 @@ static int OW_w_data( const unsigned char data , const struct parsedname* pn ) ;
 static int OW_r_data( unsigned char * data , const struct parsedname* pn ) ;
 static int OW_w_gpio( const unsigned char data , const struct parsedname* pn ) ;
 static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) ;
-static int OW_r_version( unsigned char * data , const int len, const struct parsedname* pn ) ;
+static int OW_r_version( unsigned char * data , const struct parsedname* pn ) ;
 static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) ;
 static int OW_r_memory( unsigned char * data , int size, const int offset , const struct parsedname* pn ) ;
 static int OW_w_memory( const unsigned char * data , const int size, const int offset , const struct parsedname* pn ) ;
 static int OW_clear( const struct parsedname* pn ) ;
 static int OW_w_screen( const unsigned char loc , const char * text , const int size, const struct parsedname* pn ) ;
-static int FS_w_line(const int width, const int row, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) ;
-static int FS_w_screen(const int width, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) ;
 
 /* LCD */
 static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* Not sure if this is valid, but won't allow offset != 0 at first */
     /* otherwise need a buffer */
-    if ( offset != 0 ) return -EFAULT ;
-
-    if ( OW_r_version( buf, (int)size, pn ) ) return -EINVAL ;
-    return (size>16)?16:size ;
+    char v[16] ;
+    if ( OW_r_version( v, pn ) ) return -EINVAL ;
+    memcpy( buf, &v[offset], size ) ;
+    return 0 ;
 }
 
 static int FS_w_on(const int * y , const struct parsedname * pn ) {
@@ -214,79 +208,51 @@ static int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
 }
 #endif /*OW_CACHE*/
 
-static int FS_w_line(const int width, const int row, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_lineX(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+    int width = (int) pn->ft->data ;
     unsigned char loc[] = { 0x00, 0x40, 0x00+width, 0x40+width } ;
-    char line[40] ;
-    int i ;
-    int cp =1 ;
+    char line[width] ;
 
-    for ( i=offset ; i<width ; ++i ) {
-        if ( cp && ((size_t)i<size) && buf[i] ) {
-            line[i] = buf[i] ;
-        } else {
-            cp = 0 ;
-            line[i] = ' ' ;
-        }
-    }
-    if ( OW_w_screen(loc[row],line,width,pn) ) return -EINVAL ;
+    if ( offset ) return -EADDRNOTAVAIL ;
+    memcpy(line,buf,size) ;
+    memset(&line[size],' ',width-size) ;
+    if ( OW_w_screen(loc[pn->extension],line,width,pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_w_line16(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    return FS_w_line( 16, pn->extension, buf, size, offset, pn ) ;
-}
-
-static int FS_w_line20(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    return FS_w_line( 20, pn->extension, buf, size, offset, pn ) ;
-}
-
-static int FS_w_line40(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    return FS_w_line( 40, pn->extension, buf, size, offset, pn ) ;
-}
-
-static int FS_w_screen(const int width, const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    int row = 0 ; /* screen line */
+static int FS_w_screenX(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+    int width = (int) pn->ft->data ;
     int rows = (width==40)?2:4 ; /* max number of rows */
-    size_t len ; /* characters to print */
-    size_t left = size ; /* number of characters left to print */
-    char * ch ; /* search char for newline */
-    const char * b = buf ; /* current location in buf */
+    struct parsedname pn2 ;
+    const char * nl ;
+    const char * b = buf ;
+    const char * end = buf + size ;
 
-    /* Not sure if this is valid, but won't allow offset != 0 at first */
-    /* otherwise need a buffer */
-    if ( offset != 0 ) return -EFAULT ;
+    if ( offset ) return -EADDRNOTAVAIL ;
 
     if ( OW_clear(pn) ) return -EFAULT ;
 
-    for ( ; (row<rows) && (left>0) ; b+=len, left-=len, ++row ) {
-        len = (left>width) ? width : left ; /* look only in this line */
-        /* search for newline */
-        if ( (ch=memchr(b, '\n', len)) ) len = ch - b ; /* shorten line up to newline */
-        if ( FS_w_line(width,row,b,len,0,pn) ) return -EFAULT ;
-        if (ch) { /* newline found */
-            ++b ; /* move buf pointer to AFTER the newline */
-            --left ;
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
+
+    for ( pn2.extension=0 ; pn2.extension<rows ; ++ pn2.extension ) {
+        nl = memchr(b,'\n',end-b) ;
+        if ( nl && nl<b+width ) {
+            if ( FS_w_lineX(b,b-nl,0,&pn2) ) return -EINVAL ;
+            b = nl+1 ; /* skip over newline */
+        } else {
+            nl = b + width ;
+            if ( nl > end ) nl = end ;
+            if ( FS_w_lineX(b,b-nl,0,&pn2) ) return -EINVAL ;
+            b = nl ;
         }
+        if ( b >= end ) break ;
     }
     return 0 ;
 }
 
-static int FS_w_screen16(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    return FS_w_screen( 16, buf, size, offset, pn ) ;
-}
-
-static int FS_w_screen20(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    return FS_w_screen( 20, buf, size, offset, pn ) ;
-}
-
-static int FS_w_screen40(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    return FS_w_screen( 40, buf, size, offset, pn ) ;
-}
-
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    if ( offset > 112 ) return 0 ;
     if ( OW_r_memory((unsigned char *)buf,size,offset,pn) ) return -EFAULT ;
-    return (size+offset>112) ? 112-offset : size ;
+    return 0 ;
 }
 
 static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
@@ -415,7 +381,8 @@ static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) {
     return OW_r_scratch( data, 1, pn ) ;
 }
 
-static int OW_r_version( unsigned char * data , const int len, const struct parsedname* pn ) {
+/* data is 16 bytes */
+static int OW_r_version( unsigned char * data , const struct parsedname* pn ) {
     unsigned char w = 0x41 ;
     int ret ;
 
@@ -425,7 +392,7 @@ static int OW_r_version( unsigned char * data , const int len, const struct pars
     if ( ret ) return 1 ;
 
 //    UT_delay(500) ;
-    return OW_r_scratch( data, (len>16)?16:len, pn ) ;
+    return OW_r_scratch( data, 16, pn ) ;
 }
 
 static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
@@ -473,8 +440,6 @@ static int OW_r_memory( unsigned char * data , const int size, const int offset 
     int ret ;
 
     if ( buf[1] == 0 ) return 0 ;
-    if ( offset >= 112 ) return 0 ;
-    if ( offset+buf[1] >= 112 ) buf[1] = 112-offset ;
     if ( buf[1] > 16 ) return OW_r_memory(data,16,offset,pn) || OW_r_memory(&data[16],size-16,offset+16,pn) ;
 
     if ( OW_w_scratch(buf,2,pn) ) return 1 ;
@@ -495,8 +460,6 @@ static int OW_w_memory( const unsigned char * data , const int size, const int o
     int ret ;
 
     if ( size == 0 ) return 0 ;
-    if ( offset >= 112 ) return 0 ;
-    if ( offset+len >= 112 ) len = 112-offset ;
     if ( len > 16 ) return OW_w_memory(data,16,offset,pn) || OW_w_memory(&data[16],size-16,offset+16,pn) ;
     memcpy( &buf[1], data, (size_t) len ) ;
 

@@ -3,40 +3,40 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      device type (chip, interface or pseudo)
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 #include "owfs_config.h"
@@ -65,22 +65,22 @@ DeviceEntry( 1B, DS2436 )
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) ;
-static int OW_w_page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) ;
+static int OW_r_page( unsigned char * p , const size_t size, const size_t offset , const struct parsedname * pn) ;
+static int OW_w_page( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) ;
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) ;
 
 /* 2436 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    size_t len = size ;
-    if ( (offset&0x1F)+size>32 ) len = 32-offset ;
-    if ( OW_r_page( buf, offset+((pn->extension)<<5), len, pn) ) return -EINVAL ;
-
-    return len ;
+    if ( pn->extension > 2 ) return -ERANGE ;
+    if ( OW_r_page( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ? -EINVAL : 0 ;
+    if ( pn->extension > 2 ) return -ERANGE ;
+    if ( OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ) return -EINVAL ;
+    return 0 ;
 }
 
 static int FS_temp(FLOAT * T , const struct parsedname * pn) {
@@ -95,63 +95,62 @@ static int FS_volts(FLOAT * V , const struct parsedname * pn) {
 }
 
 /* DS2436 simple battery */
-static int OW_r_page( unsigned char * p , const size_t location , const size_t length, const struct parsedname * pn) {
+/* only called for a single page, and that page is 0,1,2 only*/
+static int OW_r_page( unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
     unsigned char data[33] ;
     static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
-    unsigned char scratchpad[] = {0x11 , location, } ;
-    size_t offset = location&0x1F ;
-    size_t size = 33-offset ;
+    unsigned char scratchpad[] = { copyin[offset>>5], 0x11 , offset, } ;
+    size_t rest = 32-(offset&0x1F) ;
     int ret ;
-
-    // past page 2
-    if ( (location>>5) > 2 ) return -EFAULT ;
 
     // read to scratch, then in
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data( &copyin[location>>5] , 1 ) || BUS_send_data( scratchpad , 2 ) || BUS_readin_data( &data[offset],size ) || CRC8( &data[offset],size) ;
+        ret = BUS_select(pn) || BUS_send_data( scratchpad , 3 ) || BUS_readin_data( data,rest+1 ) || CRC8( data,rest+1) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
     // copy to buffer
-    memcpy( &p[offset] , &data[offset] , (size>length)?length:size-1 ) ;
+    memcpy( p , data , size ) ;
     return 0 ;
 }
 
-static int OW_w_page( const unsigned char * p , const size_t location , const size_t size , const struct parsedname * pn ) {
-    int offset = location&0x1F ;
-    size_t pagestart = location - offset ;
-    size_t rest = 32-offset ;
-    unsigned char scratchin[] = {0x11 , location, } ;
-    unsigned char scratchout[] = {0x17 , location, } ;
+/* only called for a single page, and that page is 0,1,2 only*/
+static int OW_w_page( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
+    size_t rest = 32-(offset&0x1F) ;
+    unsigned char scratchin[] = {0x11 , offset, } ;
+    unsigned char scratchout[] = {0x17 , offset, } ;
     unsigned char data[33] ;
+    static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
     static unsigned char copyout[] = {0x22, 0x25, 0x27, } ;
     int ret ;
 
-    // past page 2
-    if ( (location>>5) > 2 ) return -ERANGE ; 
-
-    // split across pages
-    if ( size > rest ) return OW_w_page( p,location,rest,pn) || OW_w_page(&p[rest],location+rest,size-rest,pn) ;
-
     // read scratchpad (sets it, too)
-    if ( OW_r_page(data,pagestart,32,pn) ) return 1 ;
-    memcpy( &data[offset] , p , size ) ;
+    if ( size != rest ) { /* partial page write (doesn't go to end of page) */
+        if ( OW_r_page(&data[size],offset+size,rest-size,pn) ) return 1 ;
+    } else { /* just copy in NVram to make sure scratchpad is set */
+        BUS_lock() ;
+            ret = BUS_select(pn) || BUS_send_data( &copyin[offset>>5] , 1 ) ;
+        BUS_unlock() ;
+        if ( ret ) return 1 ;
+    }
 
-    // write to scratchpad 
+    memcpy( data , p , size ) ;
+
+    // write to scratchpad
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data( scratchout , 2 ) || BUS_send_data( &data[offset],size ) ;
+        ret = BUS_select(pn) || BUS_send_data( scratchout , 2 ) || BUS_send_data( data,rest ) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
     // re-read scratchpad and compare
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data( scratchin , 2 ) || BUS_readin_data( &data[offset],rest+1 ) || CRC8( &data[offset],rest+1 ) || memcmp(&data[offset],p,size) ;
+        ret = BUS_select(pn) || BUS_send_data( scratchin , 2 ) || BUS_readin_data( data,rest+1 ) || CRC8( data,rest+1 ) || memcmp(data,p,size) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 
     // send scratchpad to perment memory
     BUS_lock() ;
-        ret = BUS_send_data(&copyout[location>>5],1) ;
+        ret = BUS_send_data(&copyout[offset>>5],1) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
 

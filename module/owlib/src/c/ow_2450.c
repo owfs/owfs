@@ -114,18 +114,13 @@ static int OW_w_por( const int por , const struct parsedname * const pn ) ;
 
 /* read a page of memory (8 bytes) */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char p[8] ;
-    size_t s = size ;
-    if ( size>8 )  s = 8 ;
     if ( OW_r_mem(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
-    return 0 ;
+    return size ;
 }
 
 /* write an 8-byte page */
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    size_t s = size ;
-    if ( size>8 )  s = 8 ;
-    if ( OW_w_mem(buf,s,((pn->extension)<<3),pn) ) return -EINVAL ;
+    if ( OW_w_mem(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -200,14 +195,12 @@ static int FS_w_PIO(const int *y, const struct parsedname * pn) {
 /* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_r_mem(buf,size,offset,pn) ) return -EINVAL ;
-    return 0 ;
+    return size ;
 }
 
 /* 2450 A/D */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    size_t s = size ;
-    if ( size>32 )  s = 32 ;
-    if ( OW_w_mem(buf,s,0,pn) ) return -EINVAL ;
+    if ( OW_w_mem(buf,size,offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 

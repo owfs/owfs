@@ -38,8 +38,17 @@ static int FS_input_date_array( DATE * const results, const char * const buf, co
 /* ---------------------------------------------- */
 
 /* Note on return values: */
-/* Write will return size if ok, else a negative number */
-/* Each function called will return 0 if ok, else non-zero */
+/* Top level FS_write will return size if ok, else a negative number */
+/* Each lower level function called will return 0 if ok, else non-zero */
+
+/* Note on size and offset:
+/* Buffer length (and requested data) is size bytes */
+/* writing should start after offset bytes in original data */
+/* only binary, and ascii data support offset in single data points */
+/* only binary supports offset in array data */
+/* size and offset are vetted against specification data size and calls
+/*   outside of this module will not have buffer overflows */
+/* I.e. the rest of owlib can trust size and buffer to be legal */
 
 /* return size if ok, else negative */
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) {
@@ -87,7 +96,7 @@ printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
         AVERAGE_OUT(&write_avg)
         AVERAGE_OUT(&all_avg)
     STATUNLOCK
-    return (r) ? r : size ;
+    return (r) ? r : size ; /* here's where the size is used! */
 }
 
 /* return 0 if ok */
@@ -134,7 +143,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_integer: {
         int I ;
         int * i = &I ;
-        if ( offset ) return -EINVAL ;
+        if ( offset ) return -EADDRNOTAVAIL ;
         if ( elements>1 ) {
             i = (int *) calloc( elements , sizeof(int) ) ;
             if ( i==NULL ) return -ENOMEM ;
@@ -149,7 +158,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_unsigned: {
         unsigned int U ;
         unsigned int * u = &U ;
-        if ( offset ) return -EINVAL ;
+        if ( offset ) return -EADDRNOTAVAIL ;
         if ( elements>1 ) {
             u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
             if ( u==NULL ) return -ENOMEM ;
@@ -164,7 +173,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_float: {
         FLOAT F ;
         FLOAT * f = &F ;
-        if ( offset ) return -EINVAL ;
+        if ( offset ) return -EADDRNOTAVAIL ;
         if ( elements>1 ) {
             f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
             if ( f==NULL ) return -ENOMEM ;
@@ -179,7 +188,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_date: {
         DATE D ;
         DATE * d = &D ;
-        if ( offset ) return -EINVAL ;
+        if ( offset ) return -EADDRNOTAVAIL ;
         if ( elements>1 ) {
             d = (DATE *) calloc( elements , sizeof(DATE) ) ;
             if ( d==NULL ) return -ENOMEM ;
@@ -194,7 +203,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_yesno: {
         int Y ;
         int * y = &Y ;
-        if ( offset ) return -EINVAL ;
+        if ( offset ) return -EADDRNOTAVAIL ;
         if ( elements>1 ) {
             y = (int *) calloc( elements , sizeof(int) ) ;
             if ( y==NULL ) return -ENOMEM ;
@@ -209,7 +218,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_ascii:
         {
             size_t s = FileLength(pn) ;
-            if ( offset > s ) return -EMSGSIZE ;
+            if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->write.a)(buf,s,offset,pn) ;
@@ -217,10 +226,9 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
     case ft_binary:
         {
             size_t s = FileLength(pn) ;
-            if ( offset > s ) return -EMSGSIZE ;
+            if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
-printf("WRITE s=%d\n",s) ;
             return (pn->ft->write.b)(buf,s,offset,pn) ;
         }
     case ft_directory:
@@ -230,7 +238,7 @@ printf("WRITE s=%d\n",s) ;
     return -EINVAL ; /* unknown data type */
 }
 
-/* Non-combined input  field, so treat  as serveral separate tranactions */
+/* Non-combined input  field, so treat  as several separate tranactions */
 /* return 0 if ok */
 static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
     size_t left = size ;
@@ -246,7 +254,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
 //printf("WRITEALL(%p) %s\n",p,path) ;
     if ( offset ) return -ERANGE ;
 
-    if ( pname.ft->format==ft_binary ) {
+    if ( pname.ft->format==ft_binary ) { /* handle binary differently, no commas */
         int suglen = pname.ft->suglen ;
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             if ( (int) left < suglen ) return -ERANGE ;
@@ -254,7 +262,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
             p += suglen ;
             left -= suglen ;
         }
-    } else {
+    } else { /* comma separation */
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             char * c = memchr( p , ',' , left ) ;
             if ( c==NULL ) {
@@ -281,51 +289,66 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     (void) offset ;
 
     switch( pn->ft->format ) {
-    case ft_yesno: {
-        int * y = (int *) calloc( elements , sizeof(int) ) ;
-            if ( y==NULL ) return -ENOMEM ;
-            ret = ((pn->ft->read.y)(y,pn)<0) || FS_input_yesno(&y[pn->extension],buf,size) || (pn->ft->write.y)(y,pn)  ;
-        free( y ) ;
-        break ;
+    case ft_yesno:
+        if ( offset ) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            int * y = (int *) calloc( elements , sizeof(int) ) ;
+                if ( y==NULL ) return -ENOMEM ;
+                ret = ((pn->ft->read.y)(y,pn)<0) || FS_input_yesno(&y[pn->extension],buf,size) || (pn->ft->write.y)(y,pn)  ;
+            free( y ) ;
+            break ;
         }
-    case ft_integer: {
-        int * i = (int *) calloc( elements , sizeof(int) ) ;
-            if ( i==NULL ) return -ENOMEM ;
-            ret = ((pn->ft->read.i)(i,pn)<0) || FS_input_integer(&i[pn->extension],buf,size) || (pn->ft->write.i)(i,pn) ;
-        free( i ) ;
-        break ;
+    case ft_integer:
+        if ( offset ) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            int * i = (int *) calloc( elements , sizeof(int) ) ;
+                if ( i==NULL ) return -ENOMEM ;
+                ret = ((pn->ft->read.i)(i,pn)<0) || FS_input_integer(&i[pn->extension],buf,size) || (pn->ft->write.i)(i,pn) ;
+            free( i ) ;
+            break ;
         }
-    case ft_unsigned: {
-        int * u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
-            if ( u==NULL ) return -ENOMEM ;
-            ret = ((pn->ft->read.u)(u,pn)<0) || FS_input_unsigned(&u[pn->extension],buf,size) || (pn->ft->write.u)(u,pn) ;
-        free( u ) ;
-        break ;
+    case ft_unsigned:
+        if ( offset ) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            int * u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
+                if ( u==NULL ) return -ENOMEM ;
+                ret = ((pn->ft->read.u)(u,pn)<0) || FS_input_unsigned(&u[pn->extension],buf,size) || (pn->ft->write.u)(u,pn) ;
+            free( u ) ;
+            break ;
         }
-    case ft_float: {
-        FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
-            if ( f==NULL ) return -ENOMEM ;
-            ret = ((pn->ft->read.f)(f,pn)<0) || FS_input_float(&f[pn->extension],buf,size) || (pn->ft->write.f)(f,pn) ;
-        free(f) ;
-        break ;
+    case ft_float:
+        if ( offset ) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+                if ( f==NULL ) return -ENOMEM ;
+                ret = ((pn->ft->read.f)(f,pn)<0) || FS_input_float(&f[pn->extension],buf,size) || (pn->ft->write.f)(f,pn) ;
+            free(f) ;
+            break ;
         }
     case ft_date: {
-        DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
-            if ( d==NULL ) return -ENOMEM ;
-            ret = ((pn->ft->read.d)(d,pn)<0) || FS_input_date(&d[pn->extension],buf,size) || (pn->ft->write.d)(d,pn) ;
-        free(d) ;
-        break ;
+        if ( offset ) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+                if ( d==NULL ) return -ENOMEM ;
+                ret = ((pn->ft->read.d)(d,pn)<0) || FS_input_date(&d[pn->extension],buf,size) || (pn->ft->write.d)(d,pn) ;
+            free(d) ;
+            break ;
         }
     case ft_binary: {
         unsigned char * all ;
         int suglen = pn->ft->suglen ;
         size_t s = suglen ;
         size_t len = suglen*elements ;
-        if ( offset > suglen ) return -EMSGSIZE ;
+        if ( offset > suglen ) return -ERANGE ;
         s -= offset ;
         if ( s>size ) s = size ;
         if ( (all = (unsigned char *) malloc( len ) ) ) { ;
-            if ( (ret = (pn->ft->write.b)(all,len,0,pn))==0 ) {
+            if ( (ret = (pn->ft->read.b)(all,len,0,pn))==0 ) {
                 memcpy(&all[suglen*pn->extension+offset],buf,s) ;
                 ret = (pn->ft->write.b)(all,len,0,pn) ;
             }
@@ -335,24 +358,26 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         }
         break ;
         }
-    case ft_ascii: {
-        char * all ;
-        int suglen = pn->ft->suglen ;
-        size_t s = suglen ;
-        size_t len = (suglen+1)*elements - 1 ;
-        if ( offset > suglen ) return -EMSGSIZE ;
-        s -= offset ;
-        if ( s>size ) s = size ;
-        if ( (all=(char *) malloc(len)) ) {
-            if ((ret = (pn->ft->read.a)(all,len,0,pn))==0 ) {
-                memcpy(&all[(suglen+1)*pn->extension+offset],buf,s) ;
-                ret = (pn->ft->write.a)(all,len,0,pn) ;
+    case ft_ascii:
+        if ( offset ) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            char * all ;
+            int suglen = pn->ft->suglen ;
+            size_t s = suglen ;
+            size_t len = (suglen+1)*elements - 1 ;
+            if ( s>size ) s = size ;
+            if ( (all=(char *) malloc(len)) ) {
+                if ((ret = (pn->ft->read.a)(all,len,0,pn))==0 ) {
+                    memcpy(&all[(suglen+1)*pn->extension],buf,s) ;
+                    ret = (pn->ft->write.a)(all,len,0,pn) ;
+                }
+                free( all ) ;
+            } else
+                return -ENOMEM ;
             }
-            free( all ) ;
-        } else
-            return -ENOMEM ;
+            break ;
         }
-        break ;
     case ft_directory:
     case ft_subdir:
         return -ENOSYS ;

@@ -37,6 +37,21 @@ static int FS_output_date_array( DATE * values, char * buf, const size_t size, c
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
+/* Note on return values */
+/* functions return the actual number of bytes read, */
+/* or a negative value if an error */
+/* negative values are of the form -EINVAL, etc */
+/* the negative of a system errno */
+
+/* Note on size and offset:
+/* Buffer length (and requested data) is size bytes */
+/* reading should start after offset bytes in original data */
+/* only date, binary, and ascii data support offset in single data points */
+/* only binary supports offset in array data */
+/* size and offset are vetted against specification data size and calls
+/*   outside of this module will not have buffer overflows */
+/* I.e. the rest of owlib can trust size and buffer to be legal */
+
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
     struct stateinfo si ;
@@ -102,7 +117,7 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     /* Do we exist? Only test static cases */
     if ( ( (pn->ft->read.v) == NULL ) || ( presencecheck && pn->ft->change==ft_static && CheckPresence(pn) ) ) return -ENOENT ;
 
-    /* Array property? Read separately? Read together and separate? */
+    /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag && pn->extension==-1 && pn->ft->ag->combined==ag_separate ) return FS_r_all(buf,size,offset,pn) ;
     if ( pn->ft->ag && pn->extension>= 0 && pn->ft->ag->combined==ag_aggregate ) return FS_r_split(buf,size,offset,pn) ;
 
@@ -140,35 +155,35 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         switch( pn->ft->format ) {
         case ft_integer: {
             int i ;
-            if ( offset ) return -EINVAL ;
+            if ( offset ) return -EADDRNOTAVAIL ;
             ret = (pn->ft->read.i)(&i,pn) ;
             if (ret < 0) return ret ;
             return FS_output_int( i , buf , size , pn ) ;
         }
         case ft_unsigned: {
             unsigned int u ;
-            if ( offset ) return -EINVAL ;
+            if ( offset ) return -EADDRNOTAVAIL ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret < 0) return ret ;
             return FS_output_unsigned( u , buf , size , pn ) ;
             }
         case ft_float: {
             FLOAT f ;
-            if ( offset ) return -EINVAL ;
+            if ( offset ) return -EADDRNOTAVAIL ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
             return FS_output_float( f , buf , size , pn ) ;
             }
         case ft_date: {
             DATE d ;
-            if ( offset ) return -EINVAL ;
+            if ( offset ) return -EADDRNOTAVAIL ;
             ret = (pn->ft->read.d)(&d,pn) ;
             if (ret < 0) return ret ;
             return FS_output_date( d , buf , size , pn ) ;
             }
         case ft_yesno: {
             int y ;
-            if ( offset ) return -EINVAL ;
+            if ( offset ) return -EADDRNOTAVAIL ;
             if (size < 1) return -EMSGSIZE ;
             ret = (pn->ft->read.y)(&y,pn) ;
             if (ret < 0) return ret ;
@@ -177,14 +192,14 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             }
         case ft_ascii: {
             size_t s = FileLength(pn) ;
-            if ( offset > s ) return -EMSGSIZE ;
+            if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->read.a)(buf,s,offset,pn) ;
             }
         case ft_binary: {
             size_t s = FileLength(pn) ;
-            if ( offset > s ) return -EMSGSIZE ;
+            if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->read.b)(buf,s,offset,pn) ;
@@ -195,82 +210,77 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         }
     } else { /* array -- allocate off heap */
         switch( pn->ft->format ) {
-        case ft_integer: {
-            int * i = (int *) calloc( elements, sizeof(int) ) ;
-            if ( i==NULL ) return -ENOMEM ;
-            if ( offset ) {
+        case ft_integer:
+            if (offset) {
+                return -EADDRNOTAVAIL ;
+            } else {
+                int * i = (int *) calloc( elements, sizeof(int) ) ;
+                    if ( i==NULL ) return -ENOMEM ;
+                    ret = (pn->ft->read.i)(i,pn) ;
+                    if (ret >= 0) ret = FS_output_integer_array( i , buf , size , pn ) ;
                 free( i ) ;
-                return -EINVAL ;
+                return ret ;
             }
-            ret = (pn->ft->read.i)(i,pn) ;
-            if (ret >= 0) ret = FS_output_integer_array( i , buf , size , pn ) ;
-            free( i ) ;
-            return ret ;
-        }
-        case ft_unsigned: {
-            unsigned int * u = (unsigned int *) calloc( elements, sizeof(unsigned int) ) ;
-            if ( u==NULL ) return -ENOMEM ;
-            if ( offset ) {
+        case ft_unsigned:
+            if (offset) {
+                return -EADDRNOTAVAIL ;
+            } else {
+                unsigned int * u = (unsigned int *) calloc( elements, sizeof(unsigned int) ) ;
+                    if ( u==NULL ) return -ENOMEM ;
+                    ret = (pn->ft->read.u)(u,pn) ;
+                    if (ret >= 0) ret = FS_output_unsigned_array( u , buf , size , pn ) ;
                 free( u ) ;
-                return -EINVAL ;
+                return ret ;
             }
-            ret = (pn->ft->read.u)(u,pn) ;
-            if (ret >= 0) ret = FS_output_unsigned_array( u , buf , size , pn ) ;
-            free( u ) ;
-            return ret ;
-        }
-        case ft_float: {
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
-            if ( f==NULL ) return -ENOMEM ;
-            if ( offset ) {
+        case ft_float:
+            if (offset) {
+                return -EADDRNOTAVAIL ;
+            } else {
+                FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+                    if ( f==NULL ) return -ENOMEM ;
+                    ret = (pn->ft->read.f)(f,pn) ;
+                    if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
                 free( f ) ;
-                return -EINVAL ;
+                return ret ;
             }
-            ret = (pn->ft->read.f)(f,pn) ;
-            if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
-            free( f ) ;
-            return ret ;
-        }
-        case ft_date: {
-            DATE * d = (DATE *) calloc( elements, sizeof(DATE) ) ;
-            if ( d==NULL ) return -ENOMEM ;
-            if ( offset ) {
+        case ft_date:
+            if (offset) {
+                return -EADDRNOTAVAIL ;
+            } else {
+                DATE * d = (DATE *) calloc( elements, sizeof(DATE) ) ;
+                    if ( d==NULL ) return -ENOMEM ;
+                    ret = (pn->ft->read.d)(d,pn) ;
+                    if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
                 free( d ) ;
-                return -EINVAL ;
+                return ret ;
             }
-            ret = (pn->ft->read.d)(d,pn) ;
-            if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
-            free( d ) ;
-            return ret ;
-        }
-        case ft_yesno: {
-            int * y = (int *) calloc( elements, sizeof(int) ) ;
-            if ( y==NULL ) return -ENOMEM ;
-            if ( offset ) {
+        case ft_yesno:
+            if (offset) {
+                return -EADDRNOTAVAIL ;
+            } else {
+                int * y = (int *) calloc( elements, sizeof(int) ) ;
+                    if ( y==NULL ) return -ENOMEM ;
+                    ret = (pn->ft->read.y)(y,pn) ;
+                    if (ret >= 0) {
+                        int i ;
+                        for ( i=0 ; i<elements ; ++i ) {
+                            buf[i*2] = y[i] ? '1' : '0' ;
+                            if ( i<elements-1 ) buf[i*2+1] = ',' ;
+                        }
+                    }
                 free( y ) ;
-                return -EINVAL ;
+                return elements*2-1 ;
             }
-            ret = (pn->ft->read.y)(y,pn) ;
-            if (ret >= 0) {
-                int i ;
-                for ( i=0 ; i<elements ; ++i ) {
-                    buf[i*2] = y[i] ? '1' : '0' ;
-                    if ( i<elements-1 ) buf[i*2+1] = ',' ;
-                }
-            }
-            free( y ) ;
-            return elements*2-1 ;
-        }
         case ft_ascii: {
             size_t s = FullFileLength(pn) ;
-            if ( offset > s ) return -EMSGSIZE ;
+            if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->read.a)(buf,s,offset,pn) ;
             }
         case ft_binary: {
             size_t s = FullFileLength(pn) ;
-            if ( offset > s ) return -EMSGSIZE ;
+            if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->read.b)(buf,s,offset,pn) ;
@@ -296,7 +306,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     STATUNLOCK
     memcpy( &pname , pn , sizeof(struct parsedname) ) ;
 //printf("READALL(%p) %s size=%d\n",p,path,size) ;
-    if ( offset ) return -ERANGE ;
+    if ( offset ) return -EADDRNOTAVAIL ;
 
     for ( pname.extension=0 ; pname.extension<pname.ft->ag->elements ; ++pname.extension ) {
         /* Add a separating comma if not the first element */
@@ -350,34 +360,34 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
 }
 
 static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) {
-    size_t suglen = pn->ft->suglen ;
-    char c[suglen+1] ;
-    size_t len ;
+    size_t suglen = FileLength(pn) ;
+    char c[suglen+1] ; // for
+    int len ;
     if ( suglen>size ) suglen=size ;
     len = snprintf(c,suglen+1,"%*d",suglen,value) ;
-    if (len > suglen) return -EMSGSIZE ;
+    if ( (len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
     return len ;
 }
 
 static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) {
-    size_t suglen = pn->ft->suglen ;
+    size_t suglen = FileLength(pn) ;
     char c[suglen+1] ;
-    size_t len ;
+    int len ;
     if ( suglen>size ) suglen=size ;
     len = snprintf(c,suglen+1,"%*u",suglen,value) ;
-    if (len > suglen) return -EMSGSIZE ;
+    if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
     return len ;
 }
 
 static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
-    size_t suglen = pn->ft->suglen ;
+    size_t suglen = FileLength(pn) ;
     char c[suglen+1] ;
-    size_t len ;
+    int len ;
     if ( suglen>size ) suglen=size ;
     len = snprintf(c,suglen+1,"%*G",suglen,value) ;
-    if (len > suglen) return -EMSGSIZE ;
+    if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
     return len ;
 }

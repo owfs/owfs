@@ -3,40 +3,40 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-	email: palfille@earthlink.net
-	Released under the GPL
-	See the header file: ow.h for full attribution
-	1wire/iButton system from Dallas Semiconductor
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
 */
 
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
+    ( or a closely related family of chips )
 
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
+    The connection to the larger program is through the "device" data structure,
+      which must be declared in the acompanying header file.
 
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
+    The device structure holds the
+      family code,
+      name,
+      device type (chip, interface or pseudo)
+      number of properties,
+      list of property structures, called "filetype".
 
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
+    Each filetype structure holds the
+      name,
+      estimated length (in bytes),
+      aggregate structure pointer,
+      data format,
+      read function,
+      write funtion,
+      generic data pointer
 
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
+    The aggregate structure, is present for properties that several members
+    (e.g. pages of memory or entries in a temperature log. It holds:
+      number of elements
+      whether the members are lettered or numbered
+      whether the elements are stored together and split, or separately and joined
 */
 
 #include "owfs_config.h"
@@ -91,13 +91,19 @@ static int OW_w_offset( const int I , const struct parsedname * const pn ) ;
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char data[8] ;
     if ( OW_r_page( data, pn->extension, pn ) ) return -EINVAL ;
-    return FS_read_return(buf,size,offset,data,8) ;
+    memcpy(buf,&data[offset],size) ;
+    return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    if (size != 8 ) return -EMSGSIZE ;
-    if (offset != 8 ) return -EINVAL ;
-    if ( OW_w_page(buf,pn->extension,pn) ) return -EFAULT ;
+    if (size != 8 ) { /* partial page */
+        unsigned char data[8] ;
+        if ( OW_r_page( data, pn->extension, pn ) ) return -EINVAL ;
+        memcpy(&data[offset],buf,size) ;
+        if ( OW_w_page(data,pn->extension,pn) ) return -EFAULT ;
+    } else { /* complete page */
+        if ( OW_w_page(buf,pn->extension,pn) ) return -EFAULT ;
+    }
     return 0 ;
 }
 

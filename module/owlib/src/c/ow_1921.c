@@ -60,8 +60,6 @@ $Id$
 dWRITE_FUNCTION( FS_w_date ) ;
  bREAD_FUNCTION( FS_r_mem ) ;
 bWRITE_FUNCTION( FS_w_mem ) ;
- bREAD_FUNCTION( FS_r_test ) ;
-bWRITE_FUNCTION( FS_w_test ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  uREAD_FUNCTION( FS_r_samplerate ) ;
@@ -83,11 +81,6 @@ struct aggregate A1921h = { 63, ag_numbers, ag_aggregate, } ;
 struct filetype DS1921[] = {
     F_STANDARD        ,
     {"memory"         ,512,   NULL,   ft_binary,  ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
-    {"test1k"         ,1024,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
-    {"test2k"         ,2048,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
-    {"test4k"         ,4096,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
-    {"test8k"         ,8192,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
-    {"test16k"         ,16384,   NULL,   ft_binary,  ft_stable, {b:FS_r_test}        , {b:FS_w_test}       , NULL, } ,
     {"pages"          ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"pages/page"     ,256,&A1921p,   ft_binary,  ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
     {"histogram"      ,  0,   NULL,   ft_subdir,ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
@@ -185,7 +178,9 @@ static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
 static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    return FS_read_return( buf, size, offset , v->name , strlen(v->name) ) ;
+    if ( offset > strlen(v->name) ) return -EMSGSIZE ;
+    strncpy(buf,(v->name)+offset,size) ;
+    return size ;
 }
 
 static int FS_r_resolution(FLOAT * r , const struct parsedname * pn) {
@@ -403,25 +398,12 @@ static int FS_r_atrig(unsigned int * u , const struct parsedname * pn) {
 /* write one of the alarm fields */
 /* NOTE: keep first bit */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_r_mem( buf, size, offset, pn ) ? -EFAULT : (int) size ;
+    if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_w_mem( buf, size, offset, pn ) ? -EFAULT : 0 ;
-}
-
-static int FS_r_test(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int suglen = pn->ft->suglen ;
-    int s = (size>suglen)?suglen:size ;
-printf("Test read name=%s size=%d offset=%d suglen=%d return=%d\n",pn->ft->name,(int)size,(int)offset,suglen,s);
-    memset(buf,'A',s);
-    return s ;
-}
-
-static int FS_w_test(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int suglen = pn->ft->suglen ;
-    int s = (size>suglen)?suglen:size ;
-printf("Test write name=%s size=%d offset=%d suglen=%d return=%d\n",pn->ft->name,(int)size,(int)offset,suglen,0);
+    if ( OW_w_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -447,12 +429,13 @@ static int FS_w_atrig(const unsigned int * u , const struct parsedname * pn) {
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    return OW_r_mem( buf, size, offset+((pn->extension)<<5), pn ) ? -EFAULT : (int) size ;
+    if ( OW_r_mem( buf, size, offset+((pn->extension)<<5), pn ) ) return -EINVAL ;
+    return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( offset+size > 32 ) return -EMSGSIZE ;
-    return OW_w_mem( buf, size, offset+((pn->extension)<<5), pn ) ? -EFAULT : 0 ;
+    if ( OW_w_mem( buf, size, offset+((pn->extension)<<5), pn ) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* temperature log */

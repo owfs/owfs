@@ -105,17 +105,13 @@ static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset ,
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-printf("2406 write size=%d, offset=%d\n",(int)size,(int)offset);
-    if ( size+offset>32) return -EMSGSIZE;
     if ( OW_w_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* Note, it's EPROM -- write once */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    int len = size ;
-    if ( size+offset>128) len = 128-offset ;
-    if ( OW_w_mem( buf, len, (int) offset, pn ) ) return -EINVAL ;
+    if ( OW_w_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
