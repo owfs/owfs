@@ -42,7 +42,7 @@ Topic :: Utilities
 
 enable_usb = '@ENABLE_USB@'
 ow_libs = [ 'ow' ]
-if enable_usb = 'true':
+if enable_usb == 'true':
     ow_libs.append( 'usb' )
 
 
