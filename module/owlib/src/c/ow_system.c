@@ -66,7 +66,8 @@ struct filetype sys_adapter[] = {
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
-    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
+  //    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
+    {"pidfile"    ,      128, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
     {"pid"        ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &pid_num , } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
@@ -86,7 +87,7 @@ static int FS_name(char *buf, const size_t size, const off_t offset , const stru
     struct connection_in * in;
 
     if (dindex<0) dindex = 0 ;
-    in = find_connection_in(dindex+1);
+    in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
     
     if ( in->adapter_name == NULL ) return -EINVAL ;
@@ -100,7 +101,7 @@ static int FS_port(char *buf, const size_t size, const off_t offset , const stru
     struct connection_in * in;
 
     if (dindex<0) dindex = 0 ;
-    in = find_connection_in(dindex+1);
+    in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
     
     strncpy(buf,&(in->name[offset]),size);
@@ -113,7 +114,7 @@ static int FS_version(unsigned int * u, const struct parsedname * pn) {
     struct connection_in * in;
 
     if (dindex<0) dindex = 0 ;
-    in = find_connection_in(dindex+1);
+    in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
     
     u[0] = in->Adapter ;
@@ -141,7 +142,7 @@ static int FS_detail(char *buf, const size_t size, const off_t offset , const st
     struct connection_in * in;
 
     if (dindex<0) dindex = 0 ;
-    in = find_connection_in(dindex+1);
+    in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
     
     switch(in->Adapter) {

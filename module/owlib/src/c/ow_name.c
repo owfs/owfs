@@ -45,24 +45,18 @@ const char dirname_state_alarm[]    = "alarm";
 const char dirname_state_text[]     = "text";
 const char dirname_state_unknown[]  = "";
 
-const char * FS_dirname_state( const enum pn_state state ) {
-//printf("dirname state on %.2X\n",state);
-    if ( state & pn_alarm   ) return dirname_state_alarm   ;
-    if ( state & pn_text    ) return dirname_state_text    ;
-    if ( state & pn_uncached) return dirname_state_uncached;
-    return dirname_state_unknown ;
-/*
-    switch (state) {
-    case pn_uncached:
-        return dirname_state_uncached;
-    case pn_alarm:
-        return dirname_state_alarm;
-    case pn_text:
-        return dirname_state_text;
-    default:
-        return dirname_state_unknown;
+char * FS_dirname_state( const struct parsedname * pn ) {
+    char tmp[64];
+    //printf("dirname state on %.2X\n", pn->state);
+    if ( pn->state & pn_alarm   ) return strdup(dirname_state_alarm) ;
+    if ( pn->state & pn_text    ) return strdup(dirname_state_text) ;
+    if ( pn->state & pn_uncached) return strdup(dirname_state_uncached) ;
+    if ( pn->state & pn_bus ) {
+      sprintf(tmp, "bus.%d", pn->bus_nr) ;
+      return strdup(tmp) ;
     }
-*/
+    printf("FS_dirname_state: unknown state %.2X on %s\n", pn->state, pn->path);
+    return strdup(dirname_state_unknown);
 }
 
 const char dirname_type_statistics[] = "statistics";
@@ -135,8 +129,12 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */
-        if ( (pn->state & (pn_uncached | pn_alarm)) ) {
-            strncpy( buffer, FS_dirname_state( pn->state & (pn_uncached | pn_alarm)), size ) ;
+        if ( pn->state ) {
+	      char *dname ;
+	      if( (dname = FS_dirname_state(pn)) ) {
+		strncpy( buffer, dname, size );
+		free(dname) ;
+	      }
         } else {
             strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
         }

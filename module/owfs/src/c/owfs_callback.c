@@ -127,7 +127,13 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     pn.si = &si ;
     //printf("GETDIR\n");
 
-    if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
+    ret = FS_ParsedName( path, &pn ) ;
+    // first root always return Bus-list and settings/system/statistics
+    pn.si->sg.u[0] |= 0x02 ;
+
+    //    if(ret || pn.ft) printf("FS_GetDir: ret=%d pn.ft=%p path=%s\n", ret, pn.ft, path);
+
+    if ( ret || pn.ft ) {
         ret = -ENOENT;
     } else { /* Good pn */
         /* Call directory spanning function */

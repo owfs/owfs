@@ -49,7 +49,7 @@ struct connection_in * NewIn( void ) {
         } else {
             indevice = now ;
 //printf("indevice = %p\n", indevice);
-            now->index = 1 ;
+            now->index = 0 ;
         }
         ++ indevices ;
         now->speed = B9600;
@@ -124,6 +124,7 @@ void FreeIn( void ) {
             break ;
 #endif /* OW_USB */
         default:
+	    printf("FreeIn: unknown busmode %d on index=%d\n", now->busmode, now->index);
             break ;
         }
         if ( now->name) {

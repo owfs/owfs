@@ -48,6 +48,7 @@ OWLIB_SOURCE = ow_xxxx.c         \
                ow_iterate.c      \
                ow_temp.c         \
                ow_stats.c        \
+               ow_size.c         \
                ow_server.c       \
                ow_net.c          \
                ow_settings.c     \

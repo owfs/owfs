@@ -40,6 +40,7 @@ $Id$
 
 /* --- Prototypes ------------ */
 static void Handler( int fd ) ;
+static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
@@ -131,17 +132,32 @@ static void Handler( int fd ) {
         } else {
             struct parsedname pn ;
             struct stateinfo si ;
+	    memset(&si, 0, sizeof(struct stateinfo));
             pn.si = &si ;
+	    //printf("Handler: path=%s\n",path);
             /* Parse the path string */
-            if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
+            if ( (cm.ret=FS_ParsedName( path, &pn )) ) {
+	      //printf("Handler: Error parsedname\n");
+	      break ;
+	    }
             /* Use client persistent settings (temp scale, discplay mode ...) */
             si.sg.int32 = sm.sg ;
             switch( (enum msg_type) sm.type ) {
             case msg_full:
-                cm.ret = (pn.dev&&pn.ft)?FullFileLength(&pn):0 ;
+	        //cm.ret = (pn.dev&&pn.ft)?FullFileLength(&pn):0 ;
+	        if(pn.dev && pn.ft)
+		  SizeHandler( &sm, &cm, &pn ) ;
+		else
+		  cm.ret = 0;
+		//printf("msg_full: cm.ret=%d\n", cm.ret);
                 break ;
             case msg_size:
-                cm.ret = (pn.dev&&pn.ft)?FileLength(&pn):0 ;
+	        //cm.ret = (pn.dev&&pn.ft)?FileLength(&pn):0 ;
+	        if(pn.dev && pn.ft)
+		  SizeHandler( &sm, &cm, &pn ) ;
+		else
+		  cm.ret = 0;
+		//printf("msg_size: cm.ret=%d\n", cm.ret);
                 break ;
             case msg_read:
                 retbuffer = ReadHandler( &sm , &cm, &pn ) ;
@@ -188,7 +204,7 @@ static void Handler( int fd ) {
 /* cm.ret is also set to an error <0 or the read length */
 static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     char * retbuffer = NULL ;
-
+//printf("ReadHandler:\n");
     cm->payload = FullFileLength(pn) ;
     if ( cm->payload > sm->size ) cm->payload = sm->size ;
     cm->offset = sm->offset ;
@@ -249,7 +265,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
         size_t _pathlen = strlen(pn2->path) + 1 ;
-//printf("Handler: DIR preloop\n");
+//printf("DirHandler: preloop\n");
         /* Note, path preloaded into retbuffer */
 	// writev() seem to read whole block, so clear it
         if( !(retbuffer = (char *)calloc(1, _pathlen + OW_FULLNAME_MAX + 2)) ) {
@@ -257,25 +273,58 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
             return;
         }
         memcpy(retbuffer, pn2->path, _pathlen);
-        if ( (_pathlen <2) || (retbuffer[_pathlen-2] !='/') ) {
+#if 0
+	printf("DirHandler: pn=%p pn->in=%p\n", pn, pn->in);
+	printf("DirHandler: pn2=%p pn2->in=%p\n", pn2, pn2->in);
+	printf("DirHandler: pn2->state=%d pn2->in->busmode=%d\n", pn2->state, pn2->in->busmode);
+	printf("DirHandler: pn->state=%d pn->in->busmode=%d\n", pn->state, pn->in->busmode);
+        if((pn->state & pn_bus)) {
+	  printf("DirHandler: bus was specified to DirHandler, so assume correct path\n");
+	} else
+#endif
+	  {
+	  if ( (_pathlen <2) || (retbuffer[_pathlen-2] !='/') ) {
             strcpy( &retbuffer[_pathlen-1] , "/" ) ;
             ++_pathlen ;
-        }
-//printf("Handler: DIR preloop [%s]\n",retbuffer);
-        FS_DirName( &retbuffer[_pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
+	  }
+	  //printf("DirHandler: DIR preloop [%s]\n",retbuffer);
+	  FS_DirName( &retbuffer[_pathlen-1], OW_FULLNAME_MAX, pn2 ) ;
+	  }
         cm->size = strlen(retbuffer) ;
-//printf("Handler: DIR loop size=%d [%s]\n",cm->size, retbuffer);
+	//printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
         cm->ret = 0 ;
-        ToClient(fd,cm,retbuffer) ;
+	ToClient(fd,cm,retbuffer) ;
         free(retbuffer);
     }
 
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
 
+    //printf("DirHandler: pn->path=[%s] bus=%d\n", pn->path, pn->bus_nr);
+
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     cm->offset = flags ; /* send the flags in the offset message */
-//printf("Handler: DIR done ret=%d\n", cm->ret);
+    //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
+    /* Now null entry to show end of directy listing */
+    cm->payload = cm->size = 0 ;
+}
+
+/* Size, called from Handler with the following caveates: */
+/* sm has been read, cm has been zeroed */
+/* pn is configured */
+/* Size, will return: */
+/* cm fully constructed for error message or null marker (end of directory elements */
+/* cm.ret is also set to an error or 0 */
+static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
+
+    cm->payload = 0 ;
+    cm->sg = sm->sg ;
+
+    //printf("SizeHandler: pn->path=[%s] bus=%d\n", pn->path, pn->bus_nr);
+
+    cm->ret = FS_size_remote( pn ) ;
+    //printf("Handler: SIZE done ret=%d flags=%ul\n", cm->ret, flags);
+
     /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
 }

@@ -41,9 +41,9 @@ int readonly = 0 ; /* readonly file system */
 /* cacheenabled, presencecheck, tempscale, devform */
 union semiglobal SemiGlobal  = { u:{
 #ifdef OW_CACHE
-    1,
+    1, /* bit0=cacheenabled  bit1=return-buslist */
 #else /* OW_CACHE */
-    0,
+    0, /* bit0=cacheenabled  bit1=return-buslist */
 #endif /* OW_CACHE */
     1,
     (uint8_t)temp_celsius,

@@ -149,7 +149,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
     int ret = 0 ;
 #ifdef OW_MT
     pthread_t thread ;
-    int threadbad;
+    int threadbad = 1 ;
     void * v ;
     /* Embedded function */
     void * Check2( void * vp ) {
@@ -160,15 +160,24 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         memcpy( &pnnext, pn1 , sizeof(struct parsedname) ) ;
         pnnext.in = pn1->in->next ;
         pnnext.si = &si ;
-        eret = CheckPresence_low(&pnnext) ;
+	if(pnnext.in->busmode != bus_remote) {
+	  eret = CheckPresence_low(&pnnext) ;
+	} else {
+	  eret = 1;
+	}
         pthread_exit((void *)eret);
     }
-    //printf("CheckPresence_low\n"); UT_delay(100);
-    threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
+    if(!(pn->state & pn_bus)) {
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
+    } else {
+      //printf("CheckPresence_low: Only seek bus %d\n", pn->bus_nr);
+    }
+    
 #endif /* OW_MT */
     BUSLOCK(pn)
-        ret = BUS_normalverify(pn) ;
+      ret = BUS_normalverify(pn) ;
     BUSUNLOCK(pn)
+      //printf("CheckPresence_low: ret=%d\n", ret);
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */

@@ -451,7 +451,7 @@ subdir points to in-device groupings
 /* Semi-global information (for remote control) */
 union semiglobal {
     int32_t int32 ;
-    /* cacheenabled */
+    /* bit0: cacheenabled  bit1: return bus-list */
     /* presencecheck */
     /* tempscale */
     /* device format */
@@ -481,9 +481,11 @@ struct stateinfo {
 } ;
 
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
-enum pn_state { pn_normal=1, pn_uncached=2, pn_alarm=4, pn_text=8} ;
+enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
 struct parsedname {
-    const char * path ; // text-more device name
+    char * path ; // text-more device name
+    char * path_busless ; // text-more device name
+    int    bus_nr ;
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch
     unsigned char sn[8] ; // 64-bit serial number
@@ -835,7 +837,7 @@ int Check1Presence( const struct parsedname * const pn ) ;
 void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
-const char * FS_dirname_state( const enum pn_state state ) ;
+char * FS_dirname_state( const struct parsedname * pn ) ;
 const char * FS_dirname_type( const enum pn_type type ) ;
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
@@ -929,6 +931,10 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
+int FS_size_remote( const struct parsedname * const pn ) ;
+int FS_size_postparse( const struct parsedname * const pn ) ;
+int FS_size( const char *path ) ;
+
 int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
@@ -996,7 +1002,8 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
 
-#define IsLocalCacheEnabled(ppn )  ( (ppn->si->sg.u[0] ) )
+#define IsLocalCacheEnabled(ppn )  ( (ppn->si->sg.u[0] & 0x01) )
+#define ShouldReturnBusList(ppn )  ( (ppn->si->sg.u[0] & 0x02) )
 #define ShouldCheckPresence( ppn ) ( (ppn->si->sg.u[1]) && (ppn->in->busmode != bus_remote) )
 #define TemperatureScale(ppn)      ( (enum temp_type) (ppn->si->sg.u[2]) )
 #define DeviceFormat(ppn)          ( (enum deviceformat) (ppn->si->sg.u[3]) )

@@ -82,7 +82,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     int r ;
 #ifdef OW_MT
     pthread_t thread ;
-    int threadbad;
+    int threadbad = 1;
     void * v ;
     int rt ;
 
@@ -98,7 +98,11 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         ret = FS_write_postparse(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
     }
-    threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
+    if(!(pn->state & pn_bus)) {
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
+    } else {
+      //printf("ow_write_seek: don't scan all busses\n");
+    }
 #endif /* OW_MT */
 
     if ( pn->in->busmode == bus_remote ) {

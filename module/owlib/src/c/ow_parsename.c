@@ -29,17 +29,51 @@ static int filecmp(const void * name , const void * ex ) ;
 /* Filename (path) parsing functions              */
 /* ---------------------------------------------- */
 void FS_ParsedName_destroy( struct parsedname * const pn ) {
-    if ( pn && pn->bp ) {
+    if(!pn) return;
+    if ( pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
         /* Reset persistent states from "local" stateinfo */
     }
-    if ( pn && pn->in ) {
-        if ( (pn->in->busmode != bus_remote)  && (SemiGlobal.int32 != pn->si->sg.int32) ) {
-            CACHELOCK
-                SemiGlobal.int32 = pn->si->sg.int32 ;
-            CACHEUNLOCK
-        }
+    if ( pn->path ) {
+      free(pn->path);
+      pn->path = NULL;
+    }
+    if ( pn->path_busless ) {
+      free(pn->path_busless);
+      pn->path_busless = NULL;
+    }
+    if ( pn->in ) {
+        if ( (pn->in->busmode != bus_remote) ) {
+#if 0
+	  if (SemiGlobal.int32 != pn->si->sg.int32) {
+	    CACHELOCK
+	    SemiGlobal.int32 = pn->si->sg.int32 ;
+	    CACHEUNLOCK
+	  }
+#else
+	  /* sorry for this mess... it should be fixed in some other way.
+	   * I need some flags to tell remote-owservers to return their
+	   * bus-list and system/settings/adapter in some cases */
+	  int i;
+	  if (SemiGlobal.u[0] != (pn->si->sg.u[0] & 0x01)) {
+	    CACHELOCK
+	    SemiGlobal.u[0] = (pn->si->sg.u[0] & 0x01) ;
+	    //SemiGlobalBusList.u[0] = (pn->si->sg.u[0] & 0x01) ;
+	    CACHEUNLOCK
+	  }
+	  //SemiGlobalBusList.u[0] |= 0x02;  // always set this bit
+
+	  for(i=1; i<4; i++) {
+	    if (SemiGlobal.u[i] != pn->si->sg.u[i]) {
+	      CACHELOCK
+	      SemiGlobal.u[i] = pn->si->sg.u[i] ;
+	      //SemiGlobalBusList.u[i] = pn->si->sg.u[i] ;
+	      CACHEUNLOCK
+	    }
+	  }
+#endif
+	}
     }
 //printf("PN_destroy post\n");
 }
@@ -51,12 +85,11 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     char * pathnext ;
     int ret ;
 
-    /* save pointer to path */
-    pn->path = path ;
-
-//printf("PARSENAME on %s\n",path);
+    //printf("PARSENAME on %s\n",path);
     if ( pn == NULL ) return -EINVAL ;
 
+    pn->path = NULL ;
+    pn->path_busless = NULL ;
     pn->in = indevice ;
     pn->pathlength = 0 ; /* No branches yet */
     pn->bp = NULL ; /* No list of branches */
@@ -64,18 +97,24 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->ft = NULL ; /* No filetypes */
     pn->subdir = NULL ; /* Not subdirectory */
     pn->badcopy = 0 ; /* real deal, not a incomplete copy */
+    pn->bus_nr = 0 ;
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
     pn->si->sg.int32 = SemiGlobal.int32 ;
-//        pn->si->sg.u[0] = cacheenabled ;
-//        pn->si->sg.u[1] = presencecheck ;
-//        pn->si->sg.u[2] = tempscale ;
-//        pn->si->sg.u[3] = devform ;
+//        pn->si->sg.u[0]&0x01 = cacheenabled ;
+//        pn->si->sg.u[0]&0x02 = return bus-list from owserver
+//        pn->si->sg.u[1]      = presencecheck ;
+//        pn->si->sg.u[2]      = tempscale ;
+//        pn->si->sg.u[3]      = devform ;
 
     /* minimal structure for setup use */
     if ( path==NULL ) return 0 ;
+
+    /* Default attributes */
+    pn->state = pn_normal ;
+    pn->type = pn_real ;
 
     if ( (pathcpy=strdup( path )) == NULL ) return -ENOMEM ;
     pathnext = pathcpy ;
@@ -84,10 +123,6 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     /* remove initial "/" */
     if ( pathnow[0]=='\0' ) pathnow = strsep(&pathnext,"/") ;
-    
-    /* Default attributes */
-    pn->state = pn_normal ;
-    pn->type = pn_real ;
 
     /* text is a special case, it can preceed anything */
     if ( pathnow && strcasecmp(pathnow,"text")==0 ) {
@@ -100,6 +135,45 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
         pathnow = strsep(&pathnext,"/") ;
         pn->state |= pn_uncached ;
     }
+
+    while ( pathnow && strncasecmp(pathnow,"bus.",4)==0 ) {
+      if(!(pn->state & pn_bus)) {
+	size_t len = 1+5+9; // max size of text+uncached
+	/* this will only be reached once */
+	pn->state |= pn_bus ;
+	pn->bus_nr = atoi(&pathnow[4]);
+	/* Since we are going to use a specific in-device now, set
+	 * pn->in to point at that device at once. */
+	pn->in = indevice;
+	while(pn->in && pn->in->index!=pn->bus_nr) pn->in = pn->in->next;
+	//printf("parse bus.=%d\n", pn->bus_nr);
+	
+	if(pathnext) len += strlen(&path[pathnext-pathcpy]);
+	if(!(pn->path_busless = malloc(len))) return -ENOMEM;
+	pn->path_busless[0] = '\000';
+	if(pn->state & pn_text) {
+	  strcat(pn->path_busless, "/text");
+	}
+	if(pn->state & pn_uncached) {
+	  strcat(pn->path_busless, "/uncached");
+	}
+	strcat(pn->path_busless, "/");
+	if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
+	
+	//printf("strip away %s\n", pathnow);
+	pn->path = strdup(path);
+      }
+      pathnow = strsep(&pathnext,"/") ;
+    }
+    if ( !pn->path ) {
+      pn->path = strdup(path);
+      pn->path_busless = NULL;
+    }
+    //printf("pn->path=%s\n", pn->path);
+    //printf("pn->path_busless=%s\n", pn->path_busless);
+
+
+    //printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
     /* look for special root directory -- it is really a flag */
     if ( pathnow && strcasecmp(pathnow,"statistics")==0 ) {
@@ -115,6 +189,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
         pathnow = strsep(&pathnext,"/") ;
         pn->type |= pn_structure ;
     }
+
+    //printf("2pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
     ret = FS_ParsedNameSub( pathnow, pathnext, pn ) ;
     free(pathcpy) ;
@@ -135,17 +211,28 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 */
 static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname * pn ) {
     int ret ;
-//printf("PN: %s %s : %s\n",pn->path,pathnow,pathnext);
+    //printf("PN: %s %s : %s\n",pn->path,pathnow,pathnext);
 
     /* must be of form /sdfa.sf/asdf.sdf */
     /* extensions optional */
     /* subdirectory optional (but only directories in "root") */
 //printf("PN_sub\n");
+
+    if( pathnow && strncasecmp( pathnow, "bus.", 4) == 0) {
+      pathnow = strsep(&pathnext,"/") ;
+      //printf("deeper bus. request pathnow=%s\n", pathnow);
+      return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+    }
     if ( pathnow==NULL || pathnow[0]=='\0' ) return 0 ; /* root entry */
 
-//printf("PN:Pre %s\n",pathnow);
     switch( pn->type ) {
     case pn_real:
+        if ( strcasecmp( pathnow, "uncached" )==0 ) {
+            pn->state |= pn_uncached ;
+            pathnow = strsep(&pathnext,"/") ;
+//printf("PARSENAME uncached %s\n",pathnext) ;
+            return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+        }
         if ( strcasecmp( pathnow, "alarm" )==0 ) {
             pn->state |= pn_alarm ;
             pathnow = strsep(&pathnext,"/") ;
@@ -155,39 +242,60 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         if ( strcasecmp( pathnow, "simultaneous" ) == 0 ) {
             pn->dev = DeviceSimultaneous ;
         } else if ( (ret=DevicePart( pathnow, pn )) ) { // search for valid 1-wire sn
+	    printf("PN DevicePart failed for %s %s\n", pathnow, pn->path);
             return ret ;
         }
         break ;
     default:
-        if ( (ret=NamePart( pathnow, pn )) ) return ret ; // device name match?
+        ret = NamePart( pathnow, pn );
+        if (ret ) {
+	  //printf("PN NamePart failed for %s\n", pn->path);
+	  return ret ; // device name match?
+	}
         break ;
     }
 
-    if ( pathnext==NULL || pathnext[0]=='\0' ) return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+    if ( pathnext==NULL || pathnext[0]=='\0' ) {
+      if(pn->in->busmode == bus_remote) {
+	//printf("PN No presence check for %s\n", pn->path);
+	/* don't make a presence check for remote devices */
+	return 0;
+      }
+      return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
+    }
     pathnow = strsep(&pathnext,"/") ;
 //printf("PN2: %s %s : %s\n",pn->path,pathnow,pathnext);
 
     /* Now examine filetype */
-    if ( (ret=FilePart( pathnow, pn )) ) return ret ;
-//printf("PN found filetype \n");
+    if ( (ret=FilePart( pathnow, pn )) ) {
+      //printf("PN didn't find filetype %s %s\n", pathnow, pn->path);
+      return ret ;
+    }
     if ( pn->ft->format==ft_directory && pn->type == pn_real ) {
-        if ( (ret=BranchAdd(pn)) ) return ret ;
+        if ( (ret=BranchAdd(pn)) ) {
+	  //printf("PN BranchAdd failed for %s\n", pn->path);
+	  return ret ;
+	}
         /* STATISCTICS */
         if ( pn->pathlength > dir_depth ) dir_depth = pn->pathlength ;
 //if ( next ) printf("Resub = %s->%s\n",pFile,next) ;
         pathnow = strsep(&pathnext,"/") ;
         return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
+#if 1
+    } else if ( pathnext==NULL || pathnext[0]=='\0' ) {
+        return 0 ; 
+#endif
     } else if ( pn->ft->format==ft_subdir ) { /* in-device subdirectory */
         if ( pathnext==NULL || pathnext[0]=='\0' ) {
-//printf("PN pure subdir found\n");
             pn->subdir = pn->ft ;
-            pn->ft = NULL ;
             return 0 ;
         } else {
             char * p = strsep( &pathnext, "/" ) ;
-//printf("PN impure subdir found\n");
             p[-1] = '/' ; /* replace former "/" to make subdir */
-            if ( (ret=FilePart( pathnow, pn )) ) return ret ;
+            if ( (ret=FilePart( pathnow, pn )) ) {
+	      //printf("PN FilePart failed for %s %s\n", pathnow, pn->path);
+	      return ret ;
+	    }
         }
     }
 
@@ -209,7 +317,24 @@ static int NamePart( char * filename, struct parsedname * pn ) {
    *next points to next statement, of NULL if not filetype
  */
 static int DevicePart( char * filename, struct parsedname * pn ) {
-    if ( filename==NULL || !isxdigit(filename[0]) || !isxdigit(filename[1]) ) {
+    char *dot = filename;
+
+    //printf("DevicePart: %s %s\n", filename, pn->path);
+    
+    if(filename == NULL) return -ENOENT;
+    
+    while(dot && strncasecmp(dot, "/bus.", 5) == 0) {
+      dot = strchr(&dot[1], '/');
+      if(!dot) {
+	printf("DevicePart: no more slash??\n");
+	return -ENOENT ;
+      }
+      printf("move dot from [%s] to [%s]\n", filename, dot);
+      filename = dot;
+    }
+
+    if ( !isxdigit(filename[0]) || !isxdigit(filename[1]) ) {
+      //printf("devicepart2: not xdigit\n");
         return -ENOENT ; /* starts with 2 hex digits ? */
     } else {
         unsigned char ID[14] = { filename[0], filename[1], 0x00, } ;
@@ -249,12 +374,27 @@ static int DevicePart( char * filename, struct parsedname * pn ) {
 
 static int FilePart( char * filename, struct parsedname * pn ) {
     char * dot = filename ;
+
+    //printf("FilePart: %s %s\n", filename, pn->path);
+
+    if(filename == NULL) return -ENOENT;
+
+    while(dot && strncasecmp(dot, "/bus.", 5) == 0) {
+      dot = strchr(&dot[1], '/');
+      if(!dot) {
+	printf("FilePart: no more slash??\n");
+	dot = filename;
+	break;
+      }
+      printf("move dot from [%s] to [%s]\n", filename, dot);
+      filename = dot;
+    }
     
     filename = strsep(&dot,".") ;
-//printf("FP name=%s, dot=%s\n",filename,dot);
+//printf("FP name=%s, dot=%s\n", filename, dot);
     /* Match to known filetypes for this device */
     if ( (pn->ft = bsearch( filename , pn->dev->ft , (size_t) pn->dev->nft , sizeof(struct filetype) , filecmp )) ) {
-//printf("FP known filetype %s path=%s\n",pn->ft->name,pn->path) ;
+//printf("FP known filetype %s\n",pn->ft->name) ;
         /* Filetype found, now process extension */
         if ( dot==NULL  || dot[0]=='\0' ) { /* no extension */
             if ( pn->ft->ag ) return -ENOENT ; /* aggregate filetypes need an extension */
@@ -284,11 +424,11 @@ static int FilePart( char * filename, struct parsedname * pn ) {
                 * otherwise /system/adapter/address.1 wouldn't be accepted
                 * Should not be needed on known devices though
                 */
-            } else {
+            } else
                 if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
+		    //printf("FP Extension out of range %d %d %s\n", pn->extension, pn->ft->ag->elements, pn->path);
                     return -ENOENT ; /* Extension out of range */
                 }
-            }
 //printf("FP in range\n") ;
         }
 //printf("FP Good\n") ;

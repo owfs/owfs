@@ -364,8 +364,9 @@ static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
     unsigned int *ptr;
     struct connection_in *c;
     if (dindex<0) dindex = 0 ;
-    c = find_connection_in(dindex+1);
+    c = find_connection_in(dindex);
     if(!c) return -ENOENT ;
+
     if (pn->ft == NULL) return -ENOENT ;
     switch((unsigned int)pn->ft->data) {
     case 0:
@@ -389,7 +390,7 @@ static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
     struct timeval * tv;
     struct connection_in *c;
     if (dindex<0) dindex = 0 ;
-    c = find_connection_in(dindex+1);
+    c = find_connection_in(dindex);
     if(!c) return -ENOENT ;
     
     if (pn->ft == NULL) return -ENOENT ;
