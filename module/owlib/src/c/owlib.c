@@ -205,7 +205,11 @@ int USBSetup( int useusb ) {
 
 /* All ow library closeup */
 void LibClose( void ) {
-    if ( pid_file && unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno)) ;
+    if ( pid_file ) {
+       if ( unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno)) ;
+       free( pid_file ) ;
+       pid_file = NULL ;
+    }
     COM_close() ;
 #ifdef OW_USB
     DS9490_close() ;
