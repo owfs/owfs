@@ -69,6 +69,7 @@ int presencecheck = 1 ; /* check if present whenever opening a directory or stat
 time_t start_time ;
 
 int cacheavailable = 0 ; /* assume no cache */
+int background = 1 ; /* operate in background mode */
 int timeout = DEFAULT_TIMEOUT ;
 int timeout_slow = 10*DEFAULT_TIMEOUT ;
 
@@ -140,6 +141,15 @@ void LibSetup( void ) {
     start_time = time(NULL) ;
 }
 
+/* Start the owlib process -- actually only tests for backgrounding */
+int LibStart( void ) {
+    if ( background && daemon(0,0) ) {
+        fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
+        return 1 ;
+    }
+    return 0 ;
+}
+
 int ComSetup( const char * busdev ) {
     if ( devfd != -1 ) {
         fprintf(stderr,"Serial port already set to %s, ignoring %s.\n",devport,busdev) ;
@@ -201,4 +211,3 @@ void Timeout( const char * c ) {
 /* Library presence function -- NOP */
 void owlib_signature_function( void ) {
 }
-

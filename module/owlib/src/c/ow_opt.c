@@ -23,7 +23,10 @@ const struct option owopts_long[] = {
     {"Fahrenheit",no_argument,NULL,'F'},
     {"Kelvin",no_argument,NULL,'K'},
     {"Rankine",no_argument,NULL,'R'},
+    {"version",no_argument,NULL,'V'},
     {"format",required_argument,NULL,'f'},
+    {"background",no_argument,&background,1},
+    {"foreground",no_argument,&background,0},
     {0,0,0,0},
 } ;
 
@@ -44,6 +47,8 @@ void owopt( const char c , const char * const arg ) {
         "    -h     --help    print help\n"
         "    --format f[.]i[[.]c] format of device names f_amily i_d c_rc\n"
         "    -C | -F | -K | -R Temperature scale --Celsius(default)|--Fahrenheit|--Kelvin|--Rankine\n"
+        "    --foreground --background(default)\n"
+        "    -V --version\n"
         ) ;
         break ;
     case 't':
@@ -81,6 +86,12 @@ void owopt( const char c , const char * const arg ) {
 	    break ;
     case 'K':
 	    tempscale = temp_kelvin ;
+	    break ;
+    case 'V':
+	    printf("libow version:\n\t" VERSION "\n") ;
+#ifdef OW_CACHE
+        printf("libdb version:\n\t%s\n",db_version(NULL,NULL,NULL) ) ;
+#endif /* OW_CACHE */
 	    break ;
     case 'p':
         sscanf(optarg, "%i", &portnum);

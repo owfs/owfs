@@ -29,12 +29,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
-/*
- * Set these as the user and group id's you want chttpd to use when
- * starting it as root.  You can get this info from /etc/passwd.
- */
-#define UID		65534
-#define GID		65534
 
 /*
  * Default port to listen too. If you aren't root, you'll need it to
@@ -62,62 +56,9 @@ void handle_sigterm(int unused) {
     exit(0);
 }
 
-static void d_fork(int debugmode ) {
-    struct passwd  *pwent;
-    int             user_id,
-                    group_id;
-
-    if ( debugmode ) {
-        chdir("/");
-        if ( (user_id=fork()) ){
-    	    if (user_id==-1) perror("fork:");
-	        exit(0);
-        }
-
-        setsid();
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
-        if (dup(dup(open("/dev/null", O_APPEND)))==-1){
-	    perror("dup:");
-	    exit(1);
-        }
-    } else {
-        if (daemon( 0, 0)==-1){
-            perror("daemon:");
-	    exit(1);
-        }
-    }
-    user_id = UID;
-    group_id = GID;
-    /*
-     * If we're the super user, set user id, if new id is different
-     */
-    if (getuid() == 0 && user_id != 0) {
-	/*
-	 * Check password file
-	 */
-	if ((pwent = getpwuid(user_id)) == NULL)
-	    exit(1);
-	/*
-	 * Reset groups attribute.
-	 */
-	if (initgroups(pwent->pw_name, group_id) == -1)
-	    exit(1);
-	/*
-	 * Switch to our new user id.  We have to set the group first
-	 */
-	if (setgid(group_id) == -1)
-	    exit(1);
-	if (setuid(user_id) == -1)
-	    exit(1);
-    }
-}
-
 int main(int argc, char *argv[]) {
     char c ;
     int s ;
-    int debugmode = 0 ;
 
 //    pid_t           pid;
     LibSetup() ;
@@ -132,6 +73,11 @@ int main(int argc, char *argv[]) {
             argv[0],argv[0] ) ;
             owopt(c,optarg) ; /* rest of message */
             ow_exit(1);
+        case 'V':
+            fprintf(stderr,
+            "%s version:\n\t" VERSION "\n",argv[0] ) ;
+            owopt(c,optarg) ; /* rest of message */
+            ow_exit(0);
         default:
             owopt(c,optarg) ;
         }
@@ -161,7 +107,7 @@ int main(int argc, char *argv[]) {
     /*
      * Now we drop privledges and become a daemon.
      */
-    d_fork(debugmode);
+    if ( LibStart() ) ow_exit(1) ;
 
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);

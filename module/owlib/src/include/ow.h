@@ -95,7 +95,7 @@ $Id$
 
 /* command line options */
 /* These a re the owlib-specific options */
-#define OWLIB_OPT "f:p:hu::d:t:CFRK"
+#define OWLIB_OPT "f:p:hu::d:t:CFRKV"
 extern const struct option owopts_long[] ;
 void owopt( const char c , const char * const arg ) ;
 
@@ -134,6 +134,7 @@ struct device ;
 struct filetype ;
 
 void LibSetup( void ) ;
+int LibStart( void ) ;
 int ComSetup( const char * busdev ) ;
 int USBSetup( int useusb ) ;
 void LibClose( void ) ;
@@ -341,6 +342,7 @@ float TemperatureGap( float C) ;
 
 #define DEFAULT_TIMEOUT  (15)
 extern int cacheavailable ; /* is caching available */
+extern int background ; /* operate in background mode */
 void Timeout( const char * c ) ;
 extern int timeout ; /* timeout (in seconds) for the volatile cached values */
 extern int timeout_slow ; /* timeout for the stable cached values */

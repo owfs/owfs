@@ -89,6 +89,11 @@ int main(int argc, char *argv[]) {
             argv[0],argv[0] ) ;
             owopt(c,optarg) ; /* rest of message */
             ow_exit(1);
+        case 'V':
+            fprintf(stderr,
+            "%s version:\n\t" VERSION "\n",argv[0] ) ;
+            owopt(c,optarg) ; /* rest of message */
+            ow_exit(0);
         default:
             owopt(c,optarg) ;
         }
@@ -128,18 +133,16 @@ int main(int argc, char *argv[]) {
         if(fuse_fd == -1) ow_exit(1);
     }
 
+    if ( LibStart() ) ow_exit(1) ;
+
     set_signal_handlers();
-
-//     printf( "argc=%d\nport=%s\noptind=%d\nav0=%s\nav1=%s\nav2=%s\nav3=%s\n", argc,devport,optind,argv[0],argv[1],argv[2],argv[3]);
     fuse = fuse_new(fuse_fd, flags, &owfs_oper);
-
 //    if(multithreaded) {
 //        fuse_loop_mt(fuse);
 //    } else {
 //printf("FUSELOOP\n");
         fuse_loop(fuse);
 //    }
-
     close(fuse_fd);
 
     ow_exit(0);
