@@ -175,6 +175,8 @@ int LibStart( void ) {
         fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
         fclose(pid) ;
     }
+    /* Setup the multithreading synchronizing locks */
+    LockSetup() ;
     return 0 ;
 }
 

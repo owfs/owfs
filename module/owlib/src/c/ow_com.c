@@ -15,13 +15,9 @@ $Id$
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/time.h> /* for gettimeofday */
 
 #include "owfs_config.h"
 #include "ow.h"
-
-/* Global variables */
-static struct timeval tv ; /* statistics */
 
 /* ---------------------------------------------- */
 /* raw COM port interface routines                */
@@ -91,28 +87,4 @@ void COM_speed(speed_t new_baud) {
      }
      speed = new_baud ;
      return ;
-}
-
-/* Lock the COM port for a complete conversation */
-void BUS_lock( void ) {
-    ++ bus_locks ; /* statistics */
-    flock( devfd, LOCK_EX) ;
-	gettimeofday( &tv , NULL ) ; /* for statistics */
-}
-
-/* Lock the COM port for a complete conversation */
-void BUS_unlock( void ) {
-    struct timeval tv2 ;
-	gettimeofday( &tv2, NULL ) ;
-	bus_time.tv_sec += tv2.tv_sec - tv.tv_sec ;
-	bus_time.tv_usec += tv2.tv_usec - tv.tv_usec ;
-	if ( bus_time.tv_usec > 100000000 ) {
-        bus_time.tv_usec -= 100000000 ;
-        bus_time.tv_sec  += 100 ;
-	} else if ( bus_time.tv_usec < -100000000 ) {
-        bus_time.tv_usec += 100000000 ;
-        bus_time.tv_sec  -= 100 ;
-	}
-    ++ bus_unlocks ; /* statistics */
-    flock( devfd, LOCK_UN) ;
 }

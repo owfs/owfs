@@ -50,15 +50,15 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     ++ read_calls ; /* statistics */
     /* Check the cache (if not pn_uncached) */
     if ( offset!=0 || cacheavailable==0 ) {
-        Lock_Get(&pn) ;
+        LockGet(&pn) ;
         r = FS_real_read( path, buf, size, offset, &pn ) ;
-        Lock_Release(&pn) ;
+        LockRelease(&pn) ;
     } else if ( pn.type==pn_uncached || Cache_Get( &pn, buf, &s ) ) {
 //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
-        Lock_Get(&pn) ;
+        LockGet(&pn) ;
         r = FS_real_read( path, buf, size, offset, &pn ) ;
         if ( r>= 0 ) Cache_Add( &pn, buf, r ) ;
-        Lock_Release(&pn) ;
+        LockRelease(&pn) ;
     } else {
 //printf("Read found %s\n",path) ;
         ++read_cache ; /* statistics */

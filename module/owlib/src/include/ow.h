@@ -93,7 +93,6 @@ $Id$
         int users ;
     } ;
     extern struct devlock DevLock[] ;
-    #define DEVLOCKS    10
 #endif /* OW_MT */
 
 #ifdef OW_USB
@@ -250,9 +249,9 @@ int Storage_Add( const char * path, const size_t size, const void * data ) ;
 int Storage_Get( const char * path, size_t *size, void * data ) ;
 int Storage_Del( const char * path ) ;
 
-void Lock_Setup( void ) ;
-void Lock_Get( const struct parsedname * const pn ) ;
-void Lock_Release( const struct parsedname * const pn ) ;
+void LockSetup( void ) ;
+void LockGet( const struct parsedname * const pn ) ;
+void LockRelease( const struct parsedname * const pn ) ;
 
 /* 1-wire lowlevel */
 void UT_delay(const int len) ;

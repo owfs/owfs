@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         ow_exit(1);
     }
 
-    // FUSE magic. I don't understand it.
+    // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
     fuser_mount_wrapper() ;
 
@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
 
     set_signal_handlers();
     fuse = fuse_new(fuse_fd, flags, &owfs_oper);
-//    if(multithreaded) {
+//#ifdef OW_MT
 //        fuse_loop_mt(fuse);
-//    } else {
-//printf("FUSELOOP\n");
+//#else /* OW_MT */
+//#error "Not MT"
         fuse_loop(fuse);
-//    }
+//#endif /* OW_MT */
     close(fuse_fd);
 
     ow_exit(0);
