@@ -125,6 +125,9 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                     strcat(pn->in->name,"/") ;
                     strcat(pn->in->name,dev->filename) ;
                     if ( (pn->in->usb=usb_open(dev)) ) {
+#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
+                        usb_detach_kernel_driver_np(pn->in->usb,0);
+#endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
                         if ( usb_set_configuration( pn->in->usb, 1 )==0 && usb_claim_interface( pn->in->usb, 0)==0 ) {
                             if ( usb_set_altinterface( pn->in->usb, 3)==0 ) {
                                 syslog(LOG_INFO,"Opened USB DS9490 adapter at %s.\n",pn->in->name) ;

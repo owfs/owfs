@@ -604,6 +604,11 @@ if test "${ENABLE_OWPERL}" = "true"; then
 else
     AC_MSG_RESULT([    owperl is DISABLED])
 fi
+if test "${ENABLE_OWPHP}" = "true"; then
+    AC_MSG_RESULT([    owphp is enabled])
+else
+    AC_MSG_RESULT([    owphp is DISABLED])
+fi
 if test "${ENABLE_OWPYTHON}" = "true"; then
     AC_MSG_RESULT([    owpython is enabled])
 else
