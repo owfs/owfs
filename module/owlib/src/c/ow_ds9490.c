@@ -28,10 +28,10 @@ $Id$
 static int DS9490_reset( void ) ;
 static int DS9490wait(unsigned char * const buffer) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search) ;
-static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const ibit ) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS9490_level(int new_level) ;
 static void DS9490_setroutines( struct interface_routines * const f ) ;
+static int DS9490_select_low(const struct parsedname * const pn) ;
 
 #define TIMEOUT_USB	5000 /* 5 seconds */
 
@@ -148,24 +148,6 @@ static int DS9490_reset( void ) {
     AnyDevices = !(buffer[16]&0x01) ;
 //printf("9490RESET=0 anydevices=%d\n",AnyDevices);
     return 0 ;
-}
-
-static int DS9490_sendback_bit( const unsigned char obit , unsigned char * const ibit ) {
-    int ret ;
-    unsigned char buffer[32] ;
-
-    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0021 | (obit<<3), 0x0000, NULL, 0, TIMEOUT_USB ))<0
-         ||
-         (ret=DS9490wait(buffer))
-          ) return ret ;
-
-    if ( usb_bulk_read(devusb,DS2490_EP3,ibit,0x1, TIMEOUT_USB ) > 0 ) {
-//printf("USB bit %.2X->%.2X\n",obit,*ibit) ;
-        return 0 ;
-    }
-//printf("DS9490_sendback_bit error \n");
-    usb_clear_halt(devusb,DS2490_EP3) ;
-    return -EIO ;
 }
 
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) {
@@ -327,6 +309,74 @@ static int DS9490_level(int new_level) {
           ) return ret ;
 
     ULevel = new_level ;
+    return 0 ;
+}
+
+//--------------------------------------------------------------------------
+/** Select
+   -- selects a 1-wire device to respond to further commands.
+   First resets, then climbs down the branching tree,
+    finally 'selects' the device.
+   If no device is listed in the parsedname structure,
+    only the reset and branching is done. This allows selective listing.
+   Return 0=good, else
+    reset, send_data, sendback_data
+ */
+static int DS9490_select_low(const struct parsedname * const pn) {
+    int ret ;
+    int ibranch ;
+    // match Serial Number command 0x55
+    unsigned char send[9] = { 0x55, } ;
+    unsigned char branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
+    unsigned char resp[3] ;
+    unsigned char buffer[32] ;
+    unsigned int reset = 0x0100 ;
+
+if ( reset ) {
+    // reset the 1-wire
+    if ( (ret=BUS_reset()) ) return ret ;
+        reset = 0x0000 ;
+    }
+printf("SELECT\n");
+    // send/recieve the transfer buffer
+    // verify that the echo of the writes was correct
+    for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
+       if ( reset ) {
+           // reset the 1-wire
+           if ( (ret=BUS_reset()) ) return ret ;
+           reset = 0 ;
+       }
+       memcpy( &send[1], pn->bp[ibranch].sn, 8 ) ;
+//printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
+        if ( (ret=BUS_send_data(send,9)) ) return ret ;
+//printf("select2 branch=%d\n",pn->bp[ibranch].branch);
+        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1)) || (ret=BUS_readin_data(resp,3)) ) return ret ;
+        if ( resp[2] != branch[pn->bp[ibranch].branch] ) return -EINVAL ;
+//printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
+    }
+    if ( pn->dev == NULL) return 0 ;
+
+    combuffer[0] = pn->sn[7] ;
+    combuffer[1] = pn->sn[6] ;
+    combuffer[2] = pn->sn[5] ;
+    combuffer[3] = pn->sn[4] ;
+    combuffer[4] = pn->sn[3] ;
+    combuffer[5] = pn->sn[2] ;
+    combuffer[6] = pn->sn[1] ;
+    combuffer[7] = pn->sn[0] ;
+    if ( (ret=usb_bulk_write(devusb,DS2490_EP2,combuffer,8, TIMEOUT_USB )) < 8 ) {
+        usb_clear_halt(devusb,DS2490_EP2) ;
+printf("SELECT write error=%d\n",ret) ;
+        return -EIO ;
+    }
+
+    if ( (ret=usb_control_msg(devusb,0x40,COMM_CMD,0x0465|reset, 0x0055, NULL, 0, TIMEOUT_USB ))<0
+         ||
+         (ret=DS9490wait(buffer))
+          ) {
+printf("SELECT control problem = %d\n",ret);
+        return ret ;
+    }
     return 0 ;
 }
 

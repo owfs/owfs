@@ -118,6 +118,8 @@ struct die_limits {
     unsigned char C2[6] ;
 } ;
 
+enum eDie { eB6, eB7, eC2 } ;
+
 // ID ranges for the different chip dies
 struct die_limits DIE[] = {
     {   // DS1822 Family code 22
@@ -146,6 +148,7 @@ static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) ;
 static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) ;
 static int OW_r_trim(unsigned char * const trim, const struct parsedname * pn) ;
 static int OW_w_trim(const unsigned char * const trim, const struct parsedname * pn) ;
+static enum eDie OW_die( const struct parsedname * const pn ) ;
 
 static int FS_10temp(float *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
@@ -186,11 +189,15 @@ static int FS_w_templimit(const float * T, const struct parsedname * pn) {
 }
 
 static int FS_r_die(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
-    // data gives index into die matrix
-    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return FS_read_return( buf, size, offset, "C2", 2 ) ;
-    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) > 0 ) return FS_read_return( buf, size, offset, "B7", 2 ) ;
-    return FS_read_return( buf, size, offset, "B6", 2 ) ;
+    switch ( OW_die(pn) ) {
+    case eB6:
+        return FS_read_return( buf, size, offset, "B6", 2 ) ;
+    case eB7:
+        return FS_read_return( buf, size, offset, "B7", 2 ) ;
+    case eC2:
+        return FS_read_return( buf, size, offset, "C2", 2 ) ;
+    }
+    return -EINVAL ;
 }
 
 
@@ -201,10 +208,7 @@ static int FS_r_trim(unsigned char * T, const size_t size, const off_t offset , 
 }
 
 static int FS_w_trim(const unsigned char * T, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
-    // data gives index into die matrix
-    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return -EINVAL ;
-    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return -EINVAL ;
+    if ( OW_die(pn) != eB7 ) return -EINVAL ;
     if ( offset ) return -EINVAL ;
     if ( OW_w_trim( T , pn ) ) return - EINVAL ;
     return 0 ;
@@ -212,18 +216,13 @@ static int FS_w_trim(const unsigned char * T, const size_t size, const off_t off
 
 /* Are the trim values valid-looking? */
 static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
-    unsigned char trim[2] ;
-    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
-    // data gives index into die matrix
-    y[0] = 1 ; /* Assume true */
-    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return 0 ;
-    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return 0 ;
-    if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
-    y[0] = (
-             ( (trim[0]&0x07) == 0x05 )
-         || ( (trim[0]&0x07) == 0x03 )
-       )
-       && ( trim[1] == 0xBB );
+    if ( OW_die(pn) == eB7 ) {
+        unsigned char trim[2] ;
+        if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
+        y[0] = ( ((trim[0]&0x07)==0x05) || ((trim[0]&0x07)==0x03)) && (trim[1]==0xBB);
+    } else {
+        y[0] = 1 ; /* Assume true */
+    }
     return 0 ;
 }
 
@@ -231,10 +230,7 @@ static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
 static int FS_r_blanket(int * y , const struct parsedname * pn) {
     unsigned char trim[2] ;
     unsigned char blanket[] = { 0x9D, 0xBB } ;
-    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
-    // data gives index into die matrix
-    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return -EINVAL ;
-    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return -EINVAL ;
+    if ( OW_die(pn) != eB7 ) return -EINVAL ;
     if ( OW_r_trim( trim , pn ) ) return - EINVAL ;
     y[0] = ( memcmp(trim, blanket, 2) == 0 ) ;
     return 0 ;
@@ -243,10 +239,7 @@ static int FS_r_blanket(int * y , const struct parsedname * pn) {
 /* Put in a black trim value if non-zero */
 static int FS_w_blanket(const int * y , const struct parsedname * pn) {
     unsigned char blanket[] = { 0x9D, 0xBB } ;
-    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
-    // data gives index into die matrix
-    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return -EINVAL ;
-    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) < 0 ) return -EINVAL ;
+    if ( OW_die(pn) != eB7 ) return -EINVAL ;
     if ( y[0] ) {
         if ( OW_w_trim( blanket , pn ) ) return -EINVAL ;
     }
@@ -403,4 +396,12 @@ static int OW_w_trim(const unsigned char * const trim, const struct parsedname *
     BUS_unlock() ;
 
     return ret ;
+}
+
+static enum eDie OW_die( const struct parsedname * const pn ) {
+    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    // data gives index into die matrix
+    if ( memcmp(die, DIE[(int) pn->ft->data].C2 , 6 ) > 0 ) return eC2 ;
+    if ( memcmp(die, DIE[(int) pn->ft->data].B7 , 6 ) > 0 ) return eB7 ;
+    return eB6 ;
 }
