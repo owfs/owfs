@@ -73,6 +73,7 @@ struct filetype DS2760[] = {
     {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"pages/page",    16,  NULL,    ft_binary  , ft_volatile, {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"typeK"     ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & thermoK, } ,
+    {"typeN"     ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_thermocouple}, {v:NULL}  , & thermoN, } ,
     {"volt"      ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_volt}   , {v:NULL}     , NULL, } ,
     {"temperature",   12,  NULL,    ft_float   , ft_volatile, {f:FS_r_temp}   , {v:NULL}     , NULL, } ,
     {"current"   ,    12,  NULL,    ft_float   , ft_volatile, {f:FS_r_current}, {v:NULL}     , NULL, } ,
