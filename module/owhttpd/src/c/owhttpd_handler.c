@@ -685,7 +685,7 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
         }
 	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
 	if(typ) {
-	  if (pn2->state & pn_text) {
+	  if (pn->state & pn_text) {
             fprintf( out, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
 	  } else {
             fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",

@@ -25,7 +25,11 @@ int FS_fstat(const char *path, struct stat *stbuf) {
     memset(stbuf, 0, sizeof(struct stat));
     if ( FS_ParsedName( path , &pn ) ) {
 //printf("FS_fstat bad\n");
-        ret = -ENOENT;
+	ret = -ENOENT ;
+    } else if( (pn.state & pn_bus) && !find_connection_in(pn.bus_nr)) {
+        /* check for presence of first in-device at least since FS_ParsedName
+	 * doesn't do it yet. */
+        ret = -ENOENT ;
     } else if ( pn.dev==NULL ) { /* root directory */
 //printf("FS_fstat root\n");
         stbuf->st_mode = S_IFDIR | 0755;

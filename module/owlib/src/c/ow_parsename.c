@@ -116,6 +116,9 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     /* Processing for bus.X directories -- eventually will make this more generic */
     while ( pathnow && strncasecmp(pathnow,"bus.",4)==0 ) {
         if(!isdigit(pathnow[4])) return -ENOENT ;
+	/* Should make a presence check on remote busses here, but
+	 * it's not a major problem if people use bad paths since
+	 * they will just end up with empty direcotry listings. */
         if(!(pn->state & pn_bus)) {
             size_t len = 1+5+9; // max size of text+uncached
             /* this will only be reached once */
