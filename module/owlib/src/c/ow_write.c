@@ -57,7 +57,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     struct stateinfo si ;
     int r ;
     pn.si = &si ;
-//printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
+printf("WRITE path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
 
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
@@ -85,7 +85,7 @@ int FS_write_postparse(const char *path, const char *buf, const size_t size, con
         ++ write_calls ; /* statistics */
     STATUNLOCK
     
-    LockGet(&pn) ;
+    LockGet(pn) ;
         r = FS_real_write( path, buf, size, offset, pn ) ;
     LockRelease(pn) ;
     
@@ -107,7 +107,7 @@ int FS_write_postparse(const char *path, const char *buf, const size_t size, con
 /* return 0 if ok */
 static int FS_real_write(const char * const path, const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
-//printf("REAL_WRITE\n");
+printf("REAL_WRITE\n");
 
     /* Writable? */
     if ( (pn->ft->write.v) == NULL ) return -ENOTSUP ;
