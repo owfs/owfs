@@ -1,0 +1,306 @@
+/*
+$Id$
+    OWFS -- One-Wire filesystem
+    OWHTTPD -- One-Wire Web Server
+    Written 2003 Paul H Alfille
+	email: palfille@earthlink.net
+	Released under the GPL
+	See the header file: ow.h for full attribution
+	1wire/iButton system from Dallas Semiconductor
+*/
+
+/* General Device File format:
+    This device file corresponds to a specific 1wire/iButton chip type
+	( or a closely related family of chips )
+
+	The connection to the larger program is through the "device" data structure,
+	  which must be declared in the acompanying header file.
+
+	The device structure holds the
+	  family code,
+	  name,
+	  number of properties,
+	  list of property structures, called "filetype".
+
+	Each filetype structure holds the
+	  name,
+	  estimated length (in bytes),
+	  aggregate structure pointer,
+	  data format,
+	  read function,
+	  write funtion,
+	  generic data pointer
+
+	The aggregate structure, is present for properties that several members
+	(e.g. pages of memory or entries in a temperature log. It holds:
+	  number of elements
+	  whether the members are lettered or numbered
+	  whether the elements are stored together and split, or separately and joined
+*/
+
+/* Changes
+    7/2004 Extensive improvements based on input from Serg Oskin
+*/
+
+#include "owfs_config.h"
+#include "ow_2804.h"
+
+/* ------- Prototypes ----------- */
+
+/* DS2406 switch */
+ bREAD_FUNCTION( FS_r_mem ) ;
+bWRITE_FUNCTION( FS_w_mem ) ;
+ bREAD_FUNCTION( FS_r_page ) ;
+bWRITE_FUNCTION( FS_w_page ) ;
+ uREAD_FUNCTION( FS_r_pio ) ;
+uWRITE_FUNCTION( FS_w_pio ) ;
+ uREAD_FUNCTION( FS_sense ) ;
+ uREAD_FUNCTION( FS_r_latch ) ;
+uWRITE_FUNCTION( FS_w_latch ) ;
+// uREAD_FUNCTION( FS_r_s_alarm ) ;
+//uWRITE_FUNCTION( FS_w_s_alarm ) ;
+ yREAD_FUNCTION( FS_power ) ;
+ yREAD_FUNCTION( FS_r_por ) ;
+ yREAD_FUNCTION( FS_polarity ) ;
+yWRITE_FUNCTION( FS_w_por ) ;
+
+/* ------- Structures ----------- */
+
+struct aggregate A2804 = { 2, ag_numbers, ag_aggregate, } ;
+struct aggregate A2804p = { 17, ag_numbers, ag_separate, } ;
+struct filetype DS28E04[] = {
+    F_STANDARD   ,
+    {"memory"    ,   550,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
+    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
+    {"pages/page",    32,  &A2804p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"polarity"  ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_polarity} , {v:NULL}     , NULL, } ,
+    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
+    {"por"       ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_r_por}    , {y:FS_w_por} , NULL, } ,
+    {"PIO"       ,     1,  &A2804,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
+    {"sensed"    ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
+    {"latch"     ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,
+//    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
+} ;
+DeviceEntry( 1C, DS28E04 )
+
+/* ------- Functions ------------ */
+
+/* DS2804 */
+static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_scratch( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) ;
+//static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_clear( const struct parsedname * pn ) ;
+static int OW_w_reg( const unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+
+/* 2804 memory read */
+static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    /* read is not a "paged" endeavor, the CRC comes after a full read */
+    if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    return size ;
+}
+
+/* Note, it's EPROM -- write once */
+static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    /* write is "byte at a time" -- not paged */
+    if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem ) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2406 memory write */
+static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+//printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
+    if ( OW_r_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
+    return size ;
+}
+
+static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if ( OW_w_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2406 switch */
+static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_mem(&data,1,0x0221,pn) ) return -EINVAL ;
+    u[0] = ( data^0xFF ) & 0x03 ; /* reverse bits */
+    return 0 ;
+}
+
+/* write 2406 switch -- 2 values*/
+static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
+    unsigned char data = 0;
+    /* reverse bits */
+    data = ( u[0] ^ 0xFF ) | 0xFC ; /* Set bits 2-7 to "1" */
+    if ( OW_w_pio(data,pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2406 switch -- is Vcc powered?*/
+static int FS_power(int * y , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
+    y[0] = UT_getbit(&data,7) ;
+    return 0 ;
+}
+
+/* 2406 switch -- power-on status of polrity pin */
+static int FS_polarity(int * y , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
+    y[0] = UT_getbit(&data,6) ;
+    return 0 ;
+}
+
+/* 2406 switch -- power-on status of polrity pin */
+static int FS_r_por(int * y , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
+    y[0] = UT_getbit(&data,3) ;
+    return 0 ;
+}
+
+/* 2406 switch -- power-on status of polrity pin */
+static int FS_w_por(const int * y , const struct parsedname * pn) {
+    unsigned char data ;
+    (void) y ;
+    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ; /* get current register */
+    if ( UT_getbit(&data,3) ) { /* needs resetting? bit3==1 */
+        int yy ;
+        data ^= 0x08 ; /* flip bit 3 */
+        if ( OW_w_reg(&data,1,0x0225,pn) ) return -EINVAL ; /* reset */
+        if ( FS_r_por(&yy,pn) ) return -EINVAL ; /* reread */
+        if ( yy ) return -EINVAL ; /* not reset despite our try */
+    }
+    return 0 ; /* good */
+}
+
+/* 2406 switch PIO sensed*/
+static int FS_sense(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_mem(&data,1,0x0220,pn) ) return -EINVAL ;
+    u[0] = ( data ) & 0x03 ;
+    return 0 ;
+}
+
+/* 2406 switch activity latch*/
+static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_mem(&data,1,0x0222,pn) ) return -EINVAL ;
+    u[0] = data & 0x03 ;
+    return 0 ;
+}
+
+/* 2406 switch activity latch*/
+static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
+    (void) u ;
+    if ( OW_clear(pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2406 alarm settings*/
+#if 0
+static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data ;
+    if ( OW_r_control(&data,pn) ) return -EINVAL ;
+    u[0] = (data & 0x01) + ((data & 0x06) >> 1) * 10 + ((data & 0x18) >> 3) * 100;
+    return 0 ;
+}
+
+/* 2406 alarm settings*/
+static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
+    unsigned char data;
+    data = ((u[0] % 10) & 0x01) | (((u[0] / 10 % 10) & 0x03) << 1) | (((u[0] / 100 % 10) & 0x03) << 3);
+    if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
+    return 0 ;
+}
+#endif /* 0 */
+
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
+    int ret ;
+
+    BUSLOCK
+        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( data, size ) ;
+    BUSUNLOCK
+    if ( ret ) return 1 ;
+
+    return 0 ;
+}
+
+static int OW_w_scratch( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
+    int ret ;
+    
+    memcpy( &p[3] , data, size ) ;
+    BUSLOCK
+        ret = BUS_select(pn) || BUS_send_data(p,3+size) ;
+        if ( ret==0 && ((size+offset)&0x1F)==0 ) { /* Check CRC if write is to end of page */
+            ret = BUS_readin_data(&p[3+size],2) || CRC16(p,3+size+2) ;
+        }
+    BUSUNLOCK
+    
+    return ret ;
+}    
+
+/* pre-paged */
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[4+32+2] = { 0xAA, offset&0xFF , (offset>>8)&0xFF, } ;
+    int ret = OW_w_scratch(data,size,offset,pn) ;
+    
+    if ( ret ) return ret ;
+    
+    BUSLOCK
+        ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],1+size+2) || CRC16(p,4+size+2) ;
+        if ( ret==0 ) {
+            p[0] = 0x55 ;
+            ret = BUS_select(pn) || BUS_send_data(p,4) ;
+        }
+    if ( ret ) {
+    BUSUNLOCK
+    } else {
+        UT_delay(10) ;
+    BUSUNLOCK
+    }
+
+    return ret ;
+}    
+
+//* write status byte */
+static int OW_w_reg( const unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3] = { 0xCC, offset&0xFF , (offset>>8)&0xFF , } ;
+    int ret ;
+
+    BUSLOCK
+        ret = BUS_select(pn) || BUS_send_data( p , 3 ) ||BUS_send_data( data , size ) ;
+    BUSUNLOCK
+    return ret ;
+}
+
+/* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
+static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
+    unsigned char p[4] = { 0x5A, data&0xFF, (data&0xFF)^0xFF, } ;
+    int ret ;
+    
+    BUSLOCK
+        ret = BUS_select(pn) || BUS_send_data( p , 3 ) || BUS_readin_data( &p[3], 1 ) ;
+    BUSUNLOCK
+    if (ret) return ret ;
+    
+    return p[3] != 0xAA ;
+}
+
+/* Clear latches */
+static int OW_clear( const struct parsedname * pn ) {
+    unsigned char p[2] = { 0xC3, } ;
+    int ret ;
+
+    BUSLOCK
+         ret =BUS_select(pn) || BUS_send_data( p , 1 ) || BUS_readin_data(&p[1],1) ;
+    BUSUNLOCK
+    if ( ret ) return 1 ;
+
+    return p[1]!=0xAA ;
+}

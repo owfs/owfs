@@ -15,6 +15,7 @@ header_DATA = ow_1820.h \
               ow_2450.h \
               ow_2502.h \
               ow_2505.h \
+	      ow_2804.h \
               ow_2890.h \
               ow_cache.h \
               ow_devices.h \
