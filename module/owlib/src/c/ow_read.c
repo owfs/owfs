@@ -72,11 +72,13 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         AVERAGE_IN(&all_avg)
     STATUNLOCK
     switch (pn->type) {
+    case pn_system: /* use local data, generic bus (actually specified by extension) */
+        r = FS_real_read( buf, size, offset, pn ) ;
+        break ;
     case pn_structure:
         /* Get structure data from local memory */
         r = FS_structure(buf,size,offset,pn) ;
         break ;
-    case pn_system:
     case pn_settings:
     case pn_statistics:
 //printf("Memory read\n");

@@ -18,6 +18,8 @@ $Id$
 #include "ow_xxxx.h"
 
 /* -------- Structures ---------- */
+/* Unusual -- Asustem is made visible so the number of adapters can be dynamically set */
+extern struct aggregate Asystem ;
 DeviceHeader( sys_adapter )
 DeviceHeader( sys_process )
 DeviceHeader( sys_structure )

@@ -290,7 +290,7 @@ struct aggregate {
 
 /* file lengths that need special processing */
 /* stored (as negative enum) in ft.suglen */
-enum fl_funny { fl_zero, fl_type, fl_adap_name, fl_adap_port, fl_pidfile, fl_store, } ;
+enum fl_funny { fl_zero, fl_type, fl_store, } ;
 
     /* property format, controls web display */
 /* Some explanation of ft_format:
@@ -656,7 +656,7 @@ extern unsigned int read_timeout ;
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
 enum bus_mode { bus_unknown, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
-enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_Bad=9, } ;
+enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_tcp=9, adapter_Bad=10, } ;
 struct connection_in {
     struct connection_in * next ;
     int index ;

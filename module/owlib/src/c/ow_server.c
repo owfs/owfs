@@ -23,7 +23,7 @@ static int ServerSizeorFull( enum msg_type type, const char * path, const struct
 int Server_detect( struct connection_in * in ) {
     if ( in->name == NULL ) return -1 ;
     if ( ClientAddr( in->name, in ) ) return -1 ;
-    in->Adapter = -1 ;
+    in->Adapter = adapter_tcp ;
     in->adapter_name = "tcp" ;
     in->busmode = bus_remote ;
     return 0 ;

@@ -12,6 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_devices.h"
+#include "ow_system.h" /* For Asystem structure */
 
 /* All ow library setup */
 void LibSetup( void ) {
@@ -212,6 +213,7 @@ int LibStart( void ) {
         if (ret) BadAdapter_detect(in) ;
 //printf("Adapter(%d) = %s\n",in->index,in->adapter_name);
     } while ( (in=in->next) ) ;
+    Asystem.elements = indevices ;
 
     /* daemon() should work for embedded systems with MMU, but
      * I noticed that the WRT54G router somethimes had problem with this.

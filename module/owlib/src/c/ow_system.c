@@ -47,82 +47,114 @@ $Id$
 
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
- aREAD_FUNCTION( FS_ascii ) ;
+ aREAD_FUNCTION( FS_name ) ;
+ aREAD_FUNCTION( FS_port ) ;
+ aREAD_FUNCTION( FS_pidfile ) ;
  uREAD_FUNCTION( FS_uint ) ;
+ uREAD_FUNCTION( FS_version ) ;
  aREAD_FUNCTION( FS_detail ) ;
 
 /* -------- Structures ---------- */
+/* Rare PUBLIC aggregate structure to allow changing the number of adapters */
+struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
-    {"name"       , -fl_adap_name, NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, (void *) 0 , } ,
-    {"port"       , -fl_adap_port, NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, (void *) 1 , } ,
-    {"version"    ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 0      , } ,
-    {"detail"     ,            16, NULL , ft_ascii,   ft_static, {a:FS_detail}, {v:NULL},   NULL         , } ,
+    {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, NULL , } ,
+    {"address"    , PATH_MAX, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
+    {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
+    {"detail"     ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_detail} , {v:NULL}, NULL , } ,
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
-    {"pidfile"    , -fl_pidfile  , NULL , ft_ascii,   ft_static, {a:FS_ascii} , {v:NULL}, (void *) 2      , } ,
-    {"pid"        ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 1      , } ,
+    {"pidfile"    , PATH_MAX, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
+    {"pid"        ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &pid_num , } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_structure[] = {
-    {"indevices"  ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 2      , } ,
-    {"outdevices" ,            12, NULL , ft_unsigned,ft_static, {u:FS_uint}  , {v:NULL}, (void *) 3      , } ,
+    {"indevices"  ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &indevices , } ,
+    {"outdevices" ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &outdevices , } ,
 } ;
 struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_structure), sys_structure } ;
 
 /* ------- Functions ------------ */
 
 /* special check, -remote file length won't match local sizes */
-static int FS_ascii(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    char * x[] = { pn->in->adapter_name, pn->in->name, pid_file, } ;
-    char * c = x[(int)(pn->ft->data)] ;
-    size_t s ;
-    if( c == NULL ) return -ENODEV ;
-#if 0
-    // offset and size adjustment already handled in FS_parse_read... isn't it?
-    s = strlen(c) ;
-    if ( offset>s ) return -ERANGE ;
-    s -= offset ;
-    if ( s>size ) s = size ;
-    strncpy( buf, c, s ) ;
-#else
-    memcpy( buf, &c[offset], size);
-#endif
-    return size ;
+static int FS_name(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    struct connection_in * in = indevice ;
+    int nin = pn->extension ;
+    
+    while ( nin-- ) in = in->next ;
+    
+    strncpy(buf,&(in->adapter_name[offset]),size);
+    return buf[size-1]?size:strlen(buf) ;
 }
 
-static int FS_uint(unsigned int * u, const struct parsedname * pn) {
-    unsigned int x[] = { pn->in->Adapter, pid_num, indevices, outdevices, } ;
-    u[0] = x[(int)(pn->ft->data)] ;
+/* special check, -remote file length won't match local sizes */
+static int FS_port(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    struct connection_in * in = indevice ;
+    int nin = pn->extension ;
+
+    while ( nin-- ) in = in->next ;
+    
+    strncpy(buf,&(in->name[offset]),size);
+    return buf[size-1]?size:strlen(buf) ;
+}
+
+/* special check, -remote file length won't match local sizes */
+static int FS_version(unsigned int * u, const struct parsedname * pn) {
+    struct connection_in * in = indevice ;
+    int nin = pn->extension ;
+    
+//printf("VERSION ext=%d\n",nin);
+    while ( nin-- ) in = in->next ;
+    
+    u[0] = in->Adapter ;
     return 0 ;
 }
 
+static int FS_pidfile(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    (void) pn ;
+    if( pid_file == NULL ) return -ENODEV ;
+    strncpy( buf,&pid_file[offset],size ) ;
+    return buf[size-1]?size:strlen(buf) ;
+}
+
+static int FS_uint(unsigned int * u, const struct parsedname * pn) {
+    if ( pn->ft->data ) {
+        u[0] = ((unsigned int *) pn->ft->data)[0] ;
+        return 0 ;
+    }
+    return -ENODEV ;
+}
+
 static int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    char tmp[16];
-    switch(pn->in->Adapter) {
+    char tmp[16] = "(none)";
+    struct connection_in * in = indevice ;
+    int nin = pn->extension ;
+    
+    while ( nin-- ) in = in->next ;
+    
+    switch(in->Adapter) {
     case adapter_LINK:
     case adapter_LINK_Multi:
-        if ( LI_reset(pn) || BUS_write(" ",1,pn) ) {
+    {
+        struct parsedname pn2 ;
+	memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
+        pn2.in = in ; /* so correct bus is querried */
+        if ( LI_reset(&pn2) || BUS_write(" ",1,&pn2) ) {
             return -ENODEV ;
-#if 0
-	    /* Why not handle offset when possible... */
-        } else if (offset) {
-            return -EADDRNOTAVAIL ;
-#endif
         } else {
              memset(tmp,0,size) ;
-             BUS_read(tmp,size,pn) ; // ignore return value -- will time out, probably
-             COM_flush(pn) ;
-	     memcpy(buf,&tmp[offset],size) ;
-             return size ;
+             BUS_read(tmp,size,&pn2) ; // ignore return value -- will time out, probably
+             COM_flush(&pn2) ;
+	     strncpy(buf,&tmp[offset],size) ;
         }
-    default:
-        memset(tmp,0,size) ;
-	strcpy(tmp, "(none)");
-	memcpy(buf,&tmp[offset],size) ;
-        return size;
     }
+    default:
+        if ( offset>strlen(tmp) ) return 0 ;
+	strncpy(buf,&tmp[offset],size) ;
+    }
+    return buf[size-1]?size:strlen(buf) ;
 }
