@@ -48,6 +48,7 @@ AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],$PATH)dnl
 AC_PATH_PROG([PERL],[perl],$PATH)dnl
+AC_PATH_PROG([PYTHON],[python],$PATH)dnl
 
 # ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
 AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
@@ -182,6 +183,34 @@ AC_ARG_ENABLE(owperl,
 ])
 AC_SUBST(ENABLE_OWPERL)
 AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
+
+#Check owpython
+AC_MSG_CHECKING(if owpython is enabled)
+ENABLE_OWPYTHON="true"
+AC_ARG_ENABLE(owpython,
+[  --enable-owpython       Enable owpython module (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWPYTHON="false"
+    else
+        if test -z "$SWIG"  ; then
+            AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+            AC_MSG_WARN([OWPYTHON is disabled because swig is not found])
+            ENABLE_OWPYTHON="false"
+        fi
+        if test -z "$PYTHON"  ; then
+            AC_MSG_WARN([Cannot find python program. Look for it at http://www.python.org])
+            AC_MSG_WARN([OWPYTHON is disabled because python is not found])
+            ENABLE_OWPYTHON="false"
+        fi
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWPYTHON)
+AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
@@ -418,10 +447,11 @@ AC_CONFIG_FILES([
     module/owftpd/src/include/Makefile
     module/owftpd/src/c/Makefile
     module/owftpd/src/man/Makefile
-    module/owperl/Makefile
-    module/owperl/src/Makefile
-    module/owperl/src/c/Makefile
-    module/owperl/src/c/Makefile.PL
+    module/swig/Makefile
+    module/swig/perl5/Makefile
+    module/swig/perl5/Makefile.PL
+    module/swig/python/Makefile
+    module/swig/tcl/Makefile
     module/owserver/Makefile
     module/owserver/src/Makefile
     module/owserver/src/include/Makefile
@@ -492,6 +522,11 @@ if test "${ENABLE_OWPERL}" = "true"; then
     AC_MSG_RESULT([    owperl is enabled])
 else
     AC_MSG_RESULT([    owperl is DISABLED])
+fi
+if test "${ENABLE_OWPYTHON}" = "true"; then
+    AC_MSG_RESULT([    owpython is enabled])
+else
+    AC_MSG_RESULT([    owpython is DISABLED])
 fi
 if test "${ENABLE_OWSERVER}" = "true"; then
     AC_MSG_RESULT([    owserver is enabled])
