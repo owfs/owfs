@@ -203,36 +203,36 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         /* Doubly Embedded function */
         void * AcceptThread( void * v2 ) {
             int acceptfd ;
-	    struct connection_out *o2 = (struct connection_out *)v2;
+            struct connection_out *o2 = (struct connection_out *)v2;
             //printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
             acceptfd = accept( o2->fd, NULL, NULL ) ;
             //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
             ACCEPTUNLOCK(o2)
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
             RunAccepted( acceptfd ) ;
-#ifndef VALGRIND
+ #ifndef VALGRIND
             pthread_exit((void *)0);
-#else
-	    return NULL;
-#endif
+ #else /* VALGRIND */
+            return NULL;
+ #endif /* VALGRIND */
         }
         ToListen( out2 ) ;
         for(;;) {
-#ifdef VALGRIND
+ #ifdef VALGRIND
             void *v;
-#endif
+ #endif /* VALGRIND */
             ACCEPTLOCK(out2)
-#ifdef __UCLIBC__
+ #ifdef __UCLIBC__
             if ( pthread_create( &thread2, NULL, AcceptThread, (void *)out2 ) ) Exit(1) ;
-#ifndef VALGRIND
+  #ifndef VALGRIND
             pthread_detach(thread2);
-#endif
-#else
+  #endif /* VALGRIND */
+ #else /* __UCLIBC__ */
             if ( pthread_create( &thread2, &attr, AcceptThread, (void *)out2 ) ) Exit(1) ;
-#endif
-#ifdef VALGRIND
-	    pthread_join(thread2, &v);
-#endif
+ #endif /* __UCLIBC__ */
+ #ifdef VALGRIND
+            pthread_join(thread2, &v);
+ #endif /* VALGRIND */
         }
         if(out == out_last) {
             /* last connection_out wasn't a separate thread */
@@ -242,12 +242,12 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
     }
 
-#ifndef __UCLIBC__
+ #ifndef __UCLIBC__
     pthread_attr_init(&attr) ;
-#ifndef VALGRIND
+  #ifndef VALGRIND
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
-#endif
-#endif
+  #endif /* VALGRIND */
+ #endif /* __UCLIBC__ */
 
     /* find the last outdevice to make sure embedded function
      * return currect value */
@@ -255,12 +255,12 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     while ( out_last->next ) out_last = out_last->next ;
 
     while ( out->next ) {
-#ifdef __UCLIBC__
+ #ifdef __UCLIBC__
         if ( pthread_create( &thread, NULL, ConnectionThread, out) ) Exit(1) ;
         pthread_detach(thread);
-#else
+ #else /* __UCLIBC__ */
         if ( pthread_create( &thread, &attr, ConnectionThread, out) ) Exit(1) ;
-#endif
+ #endif /* __UCLIBC__ */
         out = out->next ;
     }
     ConnectionThread( out ) ;

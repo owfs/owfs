@@ -120,7 +120,7 @@ void UT_set2bit( unsigned char * buf, const int loc , const int bits ) {
 
 #include <features.h>
 #if defined(__UCLIBC__)
-#if (__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913
+ #if (__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913
 /*
   uClibc older than 0.9.19 is missing tdestroy() (don't know exactly when
   it was added) I added a replacement to this, just to be able to compile
@@ -149,5 +149,5 @@ void tdestroy_(void *vroot, void *freefct) {
         tdestroy_recurse_ (root, freefct);
     }
 }
-#endif /* Older than 0.9.19 */
+ #endif /* Older than 0.9.19 */
 #endif /* __UCLIBC__ */
