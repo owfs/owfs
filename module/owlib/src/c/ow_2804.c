@@ -57,8 +57,8 @@ uWRITE_FUNCTION( FS_w_pio ) ;
  uREAD_FUNCTION( FS_sense ) ;
  uREAD_FUNCTION( FS_r_latch ) ;
 uWRITE_FUNCTION( FS_w_latch ) ;
-// uREAD_FUNCTION( FS_r_s_alarm ) ;
-//uWRITE_FUNCTION( FS_w_s_alarm ) ;
+ uREAD_FUNCTION( FS_r_s_alarm ) ;
+uWRITE_FUNCTION( FS_w_s_alarm ) ;
  yREAD_FUNCTION( FS_power ) ;
  yREAD_FUNCTION( FS_r_por ) ;
  yREAD_FUNCTION( FS_polarity ) ;
@@ -79,7 +79,7 @@ struct filetype DS28E04[] = {
     {"PIO"       ,     1,  &A2804,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
     {"sensed"    ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
     {"latch"     ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,
-//    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
+    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 1C, DS28E04 )
 
@@ -93,7 +93,6 @@ static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) ;
 //static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
 static int OW_w_reg( const unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 
 /* 2804 memory read */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -200,23 +199,28 @@ static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-/* 2406 alarm settings*/
-#if 0
+/* 2804 alarm settings*/
 static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
-    if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    u[0] = (data & 0x01) + ((data & 0x06) >> 1) * 10 + ((data & 0x18) >> 3) * 100;
+    unsigned char data[3] ;
+    if ( OW_r_mem(data,3,0x0223,pn) ) return -EINVAL ;
+    u[0] = ( data[2] & 0x03 ) * 100 ;
+    u[0] += UT_getbit(&data[1],0) | ( UT_getbit(&data[0],0) << 1 ) ;
+    u[0] += UT_getbit(&data[1],1) | ( UT_getbit(&data[0],1) << 1 ) * 10 ;
     return 0 ;
 }
 
-/* 2406 alarm settings*/
+/* 2804 alarm settings*/
 static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char data;
-    data = ((u[0] % 10) & 0x01) | (((u[0] / 10 % 10) & 0x03) << 1) | (((u[0] / 100 % 10) & 0x03) << 3);
-    if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
+    unsigned char data[3] = { 0, 0, 0, } ;
+    if ( OW_r_mem(&data[2],1,0x0225,pn) ) return -EINVAL ;
+    data[2] |= (u[0] / 100 % 10) & 0x03 ;
+    UT_setbit(&data[1],0,(int)(u[0] % 10) & 0x01) ;
+    UT_setbit(&data[1],1,(int)(u[0] / 10 % 10) & 0x01) ;
+    UT_setbit(&data[0],0,((int)(u[0] % 10) & 0x02) >> 1) ;
+    UT_setbit(&data[0],1,((int)(u[0] / 10 % 10) & 0x02) >> 1) ;
+    if ( OW_w_reg(data,3,0x0223,pn) ) return -EINVAL ;
     return 0 ;
 }
-#endif /* 0 */
 
 static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;

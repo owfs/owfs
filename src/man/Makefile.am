@@ -23,6 +23,7 @@ man_MANS = owfs.1 \
            DS2502.3 \
            DS2505.3 \
            DS2506.3 \
+           DS2804.3 \
            DS2890.3 \
            LCD.3 \
            owtcl.n
