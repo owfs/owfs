@@ -171,6 +171,7 @@ int main(int argc, char *argv[]) {
 //    if(multithreaded) {
 //        fuse_loop_mt(fuse);
 //    } else {
+//printf("FUSELOOP\n");
         fuse_loop(fuse);
 //    }
 

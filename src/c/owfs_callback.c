@@ -22,6 +22,7 @@ $Id$
 #include "ow.h"
 #include "owfs.h"
 
+time_t scan_time ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -34,6 +35,7 @@ int FS_getattr(const char *path, struct stat *stbuf) {
     stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = scan_time ;
     if ( FS_ParsedName( path , &pn ) ) {
 //printf("GA bad\n");
+        FS_ParsedName_destroy(&pn) ;
         return -ENOENT;
     } else if ( pn.dev==NULL ) { /* root directory */
         stbuf->st_mode = S_IFDIR | 0755;
@@ -51,6 +53,7 @@ int FS_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_size = FileLength( &pn ) ;
 //printf("GA file\n");
     }
+    FS_ParsedName_destroy(&pn) ;
     return 0 ;
 }
 
@@ -76,6 +79,7 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
 //printf("GD path=%s\n",path) ;
     if ( FS_ParsedName(path,&pn) || pn.ft ) { /* bad path */ /* or filetype specified */
 //printf("GD error\n") ;
+        FS_ParsedName_destroy(&pn) ;
         return -ENOENT;
 	}
 //printf("GD Good\n") ;
@@ -109,8 +113,9 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         char nam[16] ;
 		int i ; /* to loop through statistics files */
 //printf("GD - root directory\n") ;
-        time( &scan_time ) ;
+        scan_time = time( NULL ) ;
 //printf("GD - root directory dev=%p, nodev= %p, nft=%d\n",pn.dev,&NoDevice,pn.dev->nft ) ;
+//printf("GD - root directory post time\n") ;
         /* Root directory, needs .,.. and scan of devices */
         filler(h, ".", DT_DIR);
         filler(h, "..", DT_DIR);
@@ -138,6 +143,7 @@ int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
 		    if ( Devices[i]->type == dev_statistic ) filler(h,Devices[i]->code,DT_DIR) ;
 		}
     }
+    FS_ParsedName_destroy(&pn) ;
     return 0;
 }
 
