@@ -9,15 +9,13 @@ $Id$
     palfille@earthlink.net
 */
 
-/* OWSERVER - specific header */
+/* OWHTTPD - specific header */
 
 #ifndef OWHTTPD_H
 #define OWHTTPD_H
 
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netdb.h>
-
 #include <netinet/in.h>
 #include <signal.h> // signal
 #include <stdlib.h> // exit
