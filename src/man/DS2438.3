@@ -17,19 +17,17 @@ Temperature Voltages (Humidity) and Memory.
 .HP
 .B 26
 [.]XXXXXXXXXXXX[XX][/[
-.B counter
-|
 .B current
 |
 .B date
 |
-.B disconnect/current
-|
 .B disconnect/date
 |
-.B endcharge/current
+.B disconnect/udate
 |
 .B endcharge/date
+|
+.B endcharge/udate
 |
 .B humidity
 |
@@ -40,6 +38,8 @@ Temperature Voltages (Humidity) and Memory.
 .B pages/page.[0-7|ALL]
 |
 .B temperature
+|
+.B udate
 |
 .B VAD
 |
@@ -59,18 +59,6 @@ Temperature Voltages (Humidity) and Memory.
 .TP
 26
 .SH SPECIAL PROPERTIES
-.SS counter
-.I read-write, unsigned integer
-.br
-Time represented as a number.
-.I counter
-increments once per second.
-.br
-Usually set to unix time standard: number of seconds since Jan 1, 1970. The
-.I date
-field will be the unix representation of
-.I counter
-and setting either will change the other.
 .SS date
 .I read-write, ascii
 .br
@@ -105,38 +93,22 @@ with units in Amps and Ohms.
 Current measurement will be temporarily enabled (see
 .I Ienable
 ) if not currently enabled (pun intended) for this reading.
-.SS disconnect/counter
-.I read-write, unsigned integer
-.br
-Time stamp represented as a number. Takes the
-.counter
-value when the battery is disconnected.
-.br
-Usually set to unix time standard: number of seconds since Jan 1, 1970. The
-.I disconnect/date
-field will be the unix representation of
-.I disconnect/counter
-and setting either will change the other.
 .SS disconnet/date
 .I read-write, ascii
 .br
 26 character date representation of the
 .I disconnect/counter
 value. Format is the same as the 
-.date
+.I date
 property.
-.SS endcharge/counter
+.SS disconnect/udate
 .I read-write, unsigned integer
 .br
-Time stamp represented as a number. Takes the
-.counter
-value when the battery charge is finished.
-.br
-Usually set to unix time standard: number of seconds since Jan 1, 1970. The
-.I endcharge/date
-field will be the unix representation of
-.I endcharge/counter
-and setting either will change the other.
+Representation of
+.I disconnect/date
+as a number. See
+.I udate
+for details
 .SS endcharge/date
 .I read-write, ascii
 .br
@@ -145,6 +117,14 @@ and setting either will change the other.
 value. Format is the same as the 
 .date
 property.
+.SS endcharge/udate
+.I read-write, unsigned integer
+.br
+Representation of
+.I endcharge/date
+as a number. See
+.I udate
+for details
 .SS humidity
 .I read-only, floating point
 .br
@@ -198,6 +178,18 @@ or
 .B owhttpd(1)
 for choices. Default is Celsius.
 Conversion takes ~20 msec.
+.SS udate
+.I read-write, unsigned integer
+.br
+Time represented as a number.
+.I udate
+increments once per second.
+.br
+Usually set to unix time standard: number of seconds since Jan 1, 1970. The
+.I date
+field will be the unix representation (ascii text) of
+.I udate
+and setting either will change the other.
 .SS VAD VDD
 .I read-only, floating point
 .br

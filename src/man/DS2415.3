@@ -44,7 +44,7 @@ Real time clock.
 .HP
 .B 27
 [.]XXXXXXXXXXXX[XX][/[
-.B counter
+.B udate
 |
 .B date
 |
@@ -74,20 +74,6 @@ DS2415 DS1904
 27
 DS2417
 .SH SPECIAL PROPERTIES
-.SS counter
-.I read-write, unsigned integer
-.br
-Time represented as a number.
-.I counter
-increments once per second, while
-.I running
-is on.
-.br
-Usually set to unix time standard: number of seconds since Jan 1, 1970. The
-.I date
-field will be the unix representation of
-.I counter
-and setting either will change the other.
 .SS date
 .I read-write, ascii
 .br
@@ -141,6 +127,20 @@ General use data. 4 bits (0-15 accepted values).
 .I read-write, yes-no
 .br
 State of the clock. 0=off 1=running.
+.SS udate
+.I read-write, unsigned integer
+.br
+Time represented as a number.
+.I udate
+increments once per second, while
+.I running
+is on.
+.br
+Usually set to unix time standard: number of seconds since Jan 1, 1970. The
+.I date
+field will be the unix representation of
+.I udate
+and setting either will change the other.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii

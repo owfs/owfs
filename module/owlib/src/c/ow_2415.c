@@ -66,7 +66,7 @@ struct filetype DS2415[] = {
     F_STANDARD   ,
     {"flags"     ,     1,  NULL, ft_unsigned, ft_stable  , {u:FS_r_flags}  , {u:FS_w_flags},   NULL, } ,
     {"running"   ,     1,  NULL, ft_yesno   , ft_stable  , {y:FS_r_run}    , {y:FS_w_run},     NULL, } ,
-    {"counter"   ,    12,  NULL, ft_unsigned, ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
+    {"udate"     ,    12,  NULL, ft_unsigned, ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
     {"date"      ,    24,  NULL, ft_date    , ft_second  , {d:FS_r_date}   , {d:FS_w_date},    NULL, } ,
 } ;
 DeviceEntry( 24, DS2415 )
@@ -77,7 +77,7 @@ struct filetype DS2417[] = {
     {"interval"  ,     1,  NULL, ft_integer,ft_stable  , {i:FS_r_interval},{i:FS_w_interval}, NULL, } ,
     {"itime"     ,     1,  NULL, ft_integer,ft_stable  , {i:FS_r_itime}  , {i:FS_w_itime},    NULL, } ,
     {"running"   ,     1,  NULL, ft_yesno , ft_stable  , {y:FS_r_run}    , {y:FS_w_run},      NULL, } ,
-    {"counter"   ,    12,  NULL, ft_unsigned,ft_second , {u:FS_r_counter}, {u:FS_w_counter},  NULL, } ,
+    {"udate"     ,    12,  NULL, ft_unsigned,ft_second , {u:FS_r_counter}, {u:FS_w_counter},  NULL, } ,
     {"date"      ,    24,  NULL, ft_date  , ft_second  , {d:FS_r_date}   , {d:FS_w_date},     NULL, } ,
 } ;
 DeviceEntry( 27, DS2417 )

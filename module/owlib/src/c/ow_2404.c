@@ -64,7 +64,7 @@ struct filetype DS2404[] = {
     {"page"      ,    32,  &A2404, ft_binary  , ft_stable, {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
     {"memory"    ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_run}    , {y:FS_w_run}    , NULL, } ,
-    {"counter"   ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
+    {"udate"     ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
     {"date"      ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
 } ;
 DeviceEntry( 04, DS2404 )
@@ -74,7 +74,7 @@ struct filetype DS2404S[] = {
     {"page"      ,    32,  &A2404, ft_binary  , ft_stable, {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
     {"memory"    ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_run}    , {y:FS_w_run}    , NULL, } ,
-    {"counter"   ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
+    {"udate"     ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
     {"date"      ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
 } ;
 DeviceEntry( 84, DS2404S )

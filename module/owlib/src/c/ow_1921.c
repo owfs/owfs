@@ -53,6 +53,8 @@ $Id$
  uREAD_FUNCTION( FS_r_histogram ) ;
  fREAD_FUNCTION( FS_r_logtemp ) ;
  dREAD_FUNCTION( FS_r_logdate ) ;
+ uREAD_FUNCTION( FS_r_logudate ) ;
+ uREAD_FUNCTION( FS_logelements ) ;
  fREAD_FUNCTION( FS_r_temperature ) ;
  yREAD_FUNCTION( FS_bitread ) ;
 yWRITE_FUNCTION( FS_bitwrite ) ;
@@ -119,7 +121,7 @@ struct filetype DS1921[] = {
 
     {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
-    {"clock/counter"        , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
+    {"clock/udate"          , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
     {"clock/running"        ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , &BitReads[4], } ,
 
     {"about"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
@@ -147,8 +149,10 @@ struct filetype DS1921[] = {
     {"mission/lowcount"     , 12,&A1921m,ft_unsigned, ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0250, } ,//
 
     {"log"                  ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"log/temperature"      ,  5,&A1921l,   ft_float, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,//
-    {"log/date"             , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,//
+    {"log/temperature"      ,  5,&A1921l,   ft_float, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,
+    {"log/date"             , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,
+    {"log/udate"            , 12,&A1921l,ft_unsigned, ft_volatile, {u:FS_r_logudate}   , {v:NULL}           , NULL, } ,
+    {"log/elements"         , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_logelements}  , {v:NULL}           , NULL, } ,
 
     {"set_alarm"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
     {"set_alarm/trigger"    ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
@@ -474,7 +478,6 @@ static int FS_r_samplerate(unsigned int * u , const struct parsedname * pn) {
 /* write the interval between samples during a mission */
 static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
-    unsigned char sr ;
 
     /* Busy if in mission */
     if ( OW_MIP(pn) ) return -EBUSY ; /* Mission in progress */
@@ -566,6 +569,16 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 }
 
 /* temperature log */
+static int FS_logelements( unsigned int * u , const struct parsedname * pn) {
+    struct Mission mission ;
+
+    if ( OW_FillMission( &mission , pn ) ) return -EINVAL ;
+
+    u[0] = (mission.samples>2048) ? 2048 : mission.samples ;
+    return 0 ;
+}
+
+/* temperature log */
 static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
     struct Mission mission ;
     int pass=0 ;
@@ -585,6 +598,31 @@ static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
             for (i=0;i<2048;++i) d[i] = mission.start + (mission.samples-2048 - i) * mission.interval ;
         } else {
             for (i=0;i<2048;++i) d[i] = mission.start + i * mission.interval ;
+        }
+    }
+    return 0 ;
+}
+
+/* temperature log */
+static int FS_r_logudate( unsigned int * u , const struct parsedname * pn) {
+    struct Mission mission ;
+    int pass=0 ;
+
+    if ( OW_FillMission( &mission , pn ) ) return -EINVAL ;
+    if ( mission.rollover) pass = mission.samples >> 11 ; // samples/2048
+
+    if ( pn->extension> -1 ) {
+        if ( pass ) {
+            u[0] = mission.start + (mission.samples-2048 - pn->extension) * mission.interval ;
+        } else {
+            u[0] = mission.start + pn->extension * mission.interval ;
+        }
+    } else {
+        int i ;
+        if ( pass ) {
+            for (i=0;i<2048;++i) u[i] = mission.start + (mission.samples-2048 - i) * mission.interval ;
+        } else {
+            for (i=0;i<2048;++i) u[i] = mission.start + i * mission.interval ;
         }
     }
     return 0 ;
