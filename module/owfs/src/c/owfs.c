@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     }
 
     if ( busmode == bus_unknown ) {
-        fprintf(stderr, "No port specified (-d or -u) or error opening port\nSee system log for details\n%s -h for help\n",argv[0]);
+        fprintf(stderr, "No port/server specified (-d or -u or -s) or error opening port\nSee system log for details\n%s -h for help\n",argv[0]);
         ow_exit(1);
     }
 

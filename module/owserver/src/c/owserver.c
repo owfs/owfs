@@ -324,7 +324,7 @@ int main( int argc , char ** argv ) {
     }
 
     if ( devfd==-1 && devusb==0 ) {
-        fprintf(stderr, "No device port specified (-d or -u)\n%s -h for help\n",argv[0]);
+        fprintf(stderr, "No device port specified (-d or -u or -s)\n%s -h for help\n",argv[0]);
         ow_exit(1);
     }
 

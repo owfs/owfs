@@ -63,7 +63,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     if ( readonly ) return -EROFS ;
 
     if ( busmode == bus_remote ) return ServerWrite( path, buf, size, offset ) ;
-    
+
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -81,12 +81,15 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(const char *path, const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 
+    /* if readonly exit */
+    if ( readonly ) return -EROFS ;
+
     STATLOCK
         AVERAGE_IN(&write_avg)
         AVERAGE_IN(&all_avg)
         ++ write_calls ; /* statistics */
     STATUNLOCK
-    
+
     LockGet(pn) ;
         r = FS_real_write( path, buf, size, offset, pn ) ;
     LockRelease(pn) ;
