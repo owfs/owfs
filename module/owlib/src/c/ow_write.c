@@ -120,11 +120,11 @@ static int FS_real_write(const char * const path, const char * const buf, const 
     STATLOCK
         ++ write_tries[0] ; /* statistics */
     STATUNLOCK
-    if ( (r=FS_parse_write( buf, size, offset, pn ))  ) return r;
+    if ( FS_parse_write( buf, size, offset, pn ) == 0 ) return 0;
     STATLOCK
         ++ write_tries[1] ; /* statistics */
     STATUNLOCK
-    if ( (r=FS_parse_write( buf, size, offset, pn ))  ) return r;
+    if ( FS_parse_write( buf, size, offset, pn ) == 0 ) return 0;
     STATLOCK
         ++ write_tries[2] ; /* statistics */
     STATUNLOCK
