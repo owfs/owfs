@@ -62,12 +62,13 @@ int main(int argc, char *argv[]) {
     int c ;
 //    int multithreaded = 1;
 
-    if ( argc>0 ) progname = strdup(argv[0]) ;
 #if FUSE_MAJOR_VERSION == 1
     char ** opts = NULL ;
     char * tok ;
     int i = 0 ;
 #endif
+
+    if ( argc>0 ) progname = strdup(argv[0]) ;
 
 //    mtrace() ;
     LibSetup() ;
