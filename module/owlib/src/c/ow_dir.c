@@ -57,23 +57,23 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
         ret = -ENOENT ; /* should ever happen */
     } else if ( pn->dev ){ /* device directory */
         ret = FS_devdir( dirfunc, data, &pn2 ) ;
-    } else if ( pn->state == pn_alarm ) {  /* root or branch directory -- alarm state */
+    } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
         ret = FS_alarmdir( dirfunc, data, &pn2 ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         ret = FS_typedir( dirfunc, data, &pn2 ) ;
     } else {
-        pn2.state = pn_alarm ;
+        pn2.state = (pn_alarm | (pn->state & pn_text)) ;
         dirfunc( data, &pn2 ) ;
-        if ( pn->state == pn_uncached ) {
+        if ( pn->state & pn_uncached ) {
             ret = FS_realdir( dirfunc, data, &pn2 ) ;
         } else {  /* root or branch directory -- non-alarm */
             /* Show uncached and stats... (if root directory) */
             if ( pn2.pathlength == 0 ) { /* true root */
                 pn2.state = pn->state ;
                 if ( cacheenabled ) { /* cached */
-                    pn2.state = pn_uncached ;
+                    pn2.state = (pn_uncached | (pn->state & pn_text)) ;
                     dirfunc( data, &pn2 ) ;
-                    pn2.state = pn_normal ;
+                    pn2.state = (pn_normal | (pn->state & pn_text)) ;
                 }
                 pn2.type = pn_settings ;
                 dirfunc( data, &pn2 ) ;
@@ -254,7 +254,7 @@ static int FS_cache2real( void (* dirfunc)(void *,const struct parsedname * cons
     int simul = 0 ;
     int dindex = 0 ;
 
-    if ( pn2->state==pn_uncached || Cache_Get_Dir(sn,0,pn2 ) )
+    if ( (pn2->state & pn_uncached) || Cache_Get_Dir(sn,0,pn2 ) )
         return FS_realdir(dirfunc,data,pn2) ;
 
     /* STATISCTICS */
@@ -330,29 +330,42 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
     }
 }
 
+const char dirname_state_uncached[] = "uncached";
+const char dirname_state_alarm[]    = "alarm";
+const char dirname_state_text[]     = "text";
+const char dirname_state_unknown[]  = "";
+
 char * FS_dirname_state( const enum pn_state state ) {
     switch (state) {
     case pn_uncached:
-        return "uncached";
+        return dirname_state_uncached;
     case pn_alarm:
-        return "alarm";
+        return dirname_state_alarm;
+    case pn_text:
+        return dirname_state_text;
     default:
-        return "" ;
+        return dirname_state_unknown;
     }
 }
+
+const char dirname_type_statistics[] = "statistics";
+const char dirname_type_system[]     = "system";
+const char dirname_type_settings[]   = "settings";
+const char dirname_type_structure[]  = "structure";
+const char dirname_type_unknown[]    = "";
 
 char * FS_dirname_type( const enum pn_type type ) {
     switch (type) {
     case pn_statistics:
-        return "statistics";
+        return dirname_type_statistics;
     case pn_system:
-        return "system";
+        return dirname_type_system;
     case pn_settings:
-        return "settings";
+        return dirname_type_settings;
     case pn_structure:
-        return "structure";
+        return dirname_type_structure;
     default:
-        return "" ;
+        return dirname_type_unknown;
     }
 }
 
@@ -395,8 +408,8 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */
-        if ( pn->state != pn_normal ) {
-            strncpy( buffer, FS_dirname_state( pn->state ), size ) ;
+        if ( (pn->state & (pn_uncached | pn_alarm)) ) {
+            strncpy( buffer, FS_dirname_state( pn->state & (pn_uncached | pn_alarm)), size ) ;
         } else {
             strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
         }

@@ -425,7 +425,7 @@ struct stateinfo {
 } ;
 
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
-enum pn_state { pn_normal, pn_uncached, pn_alarm, } ;
+enum pn_state { pn_normal=1, pn_uncached=2, pn_alarm=4, pn_text=8} ;
 struct parsedname {
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch
