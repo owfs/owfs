@@ -13,12 +13,18 @@ interface, chip interface, caching, statistics, inumeration and
 command line processing.
 
 owfs is the filesystem portion of the package. It depends on fuse:
-Basically, fuse (http://avf.sourceforge.net) exposes filesystem calls
+Basically, fuse (http://fuse.sourceforge.net) exposes filesystem calls
 in the appropriate directory to this program. This program then
 calls owlib to query and modify the 1-wire bus.
 
 owhttpd is a simple webserver exposing owlib. It does not need a kernel
 module and will probably run on a greater platform variety.
+
+owtcl, owphp, owperl, owpython are language bindings using the same
+backend and naming scheme as owfs
+
+owserver is a generic backend. It can be remote, and shared by several
+front ends.
 
 Your contribution is welcome.
 

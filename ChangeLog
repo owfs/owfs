@@ -6,5 +6,5 @@ For release 2:
 More chip support (just about everything except the encryption, java, and thermocrons)
 Client server architecture.
 Fully multithreading
-perl, python and tcl bindings
-
+perl, python, php and tcl bindings
+multiple 1-wire busses
