@@ -26,7 +26,6 @@ $Id$
 
 #include <fuse.h>
 
-#include "owlib_config.h"
 #include "owfs_config.h"
 #include "ow.h"
 #include "owfs.h"

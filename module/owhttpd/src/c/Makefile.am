@@ -1,9 +1,14 @@
 # $Id$
 
-bin_PROGRAMS = owfs
-owfs_SOURCES = owfs.c owfs_callback.c
+bin_PROGRAMS = owhttpd
+owhttpd_SOURCES = owhttpd.c owhttpd_handler.c
+#owhttpd_LDADD = libow.la
 
 CFLAGS = -I../include \
+         -I../../../owlib/src/include \
+         -L../../../owlib/src/c \
+         -low \
+         -ldb \
          -fexceptions \
          -Wall \
          -W \
@@ -14,7 +19,8 @@ CFLAGS = -I../include \
          -Wcast-align \
          -Wconversion \
          -Wstrict-prototypes \
-         -Wredundant-decls
+         -Wredundant-decls \
+         -Wunreachable-code
                         
 clean-generic:
 

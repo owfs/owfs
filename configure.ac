@@ -3,11 +3,11 @@ dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Id$)
 
 AC_INIT
-AC_CONFIG_SRCDIR([src/include/owfs_config.h.in])
+AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="0"
-VERSION_MINOR="98"
-PATCHLEVEL="2"
+VERSION_MINOR="99"
+PATCHLEVEL="0RC"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -27,16 +27,11 @@ AC_CONFIG_AUX_DIR(src/scripts/install)dnl
 
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
 
-# put them in config.h
-AH_TOP([
-#ifndef OWFS_CONFIG_H
-#define OWFS_CONFIG_H
-])
-AH_BOTTOM([#endif])
+AC_PATH_PROG(TEST,test,$PATH)dnl
+AC_PATH_PROG(RM,rm,$PATH)dnl
 
-AM_CONFIG_HEADER(src/include/owfs_config.h)
+# Check for additional programs
 
-# Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
@@ -52,62 +47,152 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 
-# Keep in mind that we may be installed in /opt/owfs
+# Check if the cache is enabled.
 
-LDFLAGS="-L/opt/owfs/lib $LDFLAGS"
-CPPFLAGS="-I/opt/owfs/include $CPPFLAGS"
+# VT: I'd guess this has to be done before the rest because this may impact
+# other checks, but this is just a guess - if someone knows otherwise, speak
+# up now
 
-# Checks for libraries.
+ENABLE_CACHE=true
 
-# A major annoyance, libdb. If owfs is linked with it, then the configure
-# script will want it, too. It'll fail unless the access to the library is
-# provided.
+AC_MSG_CHECKING([if 1-Wire cache is enabled])
 
-AC_CHECK_LIB(db,__db_dbopen,[
-    AC_MSG_CHECKING([if libdb < DB41])
-    AC_MSG_RESULT()
-    AC_CHECK_LIB(db,__log_register,[ENABLE_CACHE41=false],[ENABLE_CACHE41=true])
-    
-    # VT: Provide the next check with the flag that allows it to use libdb
-    
-    LDFLAGS="-ldb ${LDFLAGS}"
-    ],[
-    AC_MSG_WARN([libdb1 not found, cache will be disabled])
+AC_ARG_ENABLE(cache,
+[  --enable-cache          Enable 1-Wire network cache (default true)],
+[
+
+    AC_MSG_RESULT([$enableval])
+
+    if ! test "$enableval" = "yes" ; then
+
+        ENABLE_CACHE=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
 ])
 
-AC_CHECK_LIB(ow,owlib_signature_function, ,[AC_MSG_ERROR([
+AC_SUBST(ENABLE_CACHE)
 
-You have to have libow installed first - get it from http://sf.net/projects/owfs
-If you *do* have it installed, then you may need to specify LDFLAGS=-L\${owlib-prefix}/lib
-Default \${owlib-prefix} value is /opt/owfs.
+ENABLE_USB=true
 
-Alternatively, install the owlib RPM.
+AC_MSG_CHECKING([if usb support is enabled])
 
-])])
+AC_ARG_ENABLE(usb,
+[  --enable-usb          Enable 1-Wire usb DS2490 support (default true)],
+[
+
+    AC_MSG_RESULT([$enableval])
+
+    if ! test "$enableval" = "yes" ; then
+
+        ENABLE_USB=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+AC_SUBST(ENABLE_USB)
+
+# Include libusb if the usb is enabled
+
+if test "${ENABLE_USB}" = "true" ; then
+
+    AC_CHECK_LIB(usb,usb_open, ,[
+        AC_MSG_WARN([libusb not found, usb will be disabled])
+        ENABLE_USB=false
+        AC_SUBST(ENABLE_USB)
+    ])
+fi
+
+AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
+
+# Check if the modules are enabled
+
+AC_MSG_CHECKING(if owfs is enabled)
+
+ENABLE_OWFS="true"
+
+AC_ARG_ENABLE(owfs,
+[  --enable-owfs         Enable owhttpd module (default true)],
+[
+
+    AC_MSG_RESULT([$enableval])
+
+    if test ! "$enableval" = "yes" ; then
+
+        ENABLE_OWFS=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+AC_SUBST(ENABLE_OWFS)
+
+AC_MSG_CHECKING(if owhttpd is enabled)
+
+ENABLE_OWHTTPD="true"
+
+AC_ARG_ENABLE(owhttpd,
+[  --enable-owhttpd      Enable owhttpd module (default true)],
+[
+
+    AC_MSG_RESULT([$enableval])
+
+    if test ! "$enableval" = "yes" ; then
+    
+        ENABLE_OWHTTPD=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+AC_SUBST(ENABLE_OWHTTPD)
+
+# Check for libraries
+
+# Include libdb1 if the cache is enabled
+
+if test "${ENABLE_CACHE}" = "true" ; then
+
+    AC_CHECK_LIB(db,__db_dbopen,[
+        AC_MSG_CHECKING([<DB41?])
+        AC_CHECK_LIB(db,__log_register,[ENABLE_CACHE41=false],[ENABLE_CACHE41=true])
+        ],[
+        AC_MSG_WARN([libdb1 not found, cache will be disabled])
+        ENABLE_CACHE=false
+        AC_SUBST(ENABLE_CACHE)
+    ])
+fi
+
+AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
+AM_CONDITIONAL(ENABLE_CACHE41, test "${ENABLE_CACHE41}" = "true")
+
+# We need fuse only if OWFS is enabled
+
+if test "${ENABLE_OWFS}" = "true" ; then
+
+    AC_CHECK_LIB(fuse,__fuse_process_cmd, ,[AC_MSG_ERROR([You have to have libfuse installed first - get it from http://www.inf.bme.hu/~mszeredi/avfs/])])
+    
+fi
 
 # Checks for header files.
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h sys/socket.h syslog.h termios.h unistd.h])
-AC_CHECK_HEADERS([ow_stub.h], ,[AC_MSG_ERROR([
-
-You have to have libow installed first - get it from http://sf.net/projects/owfs
-If you *do* have it installed, then you may need to specify CPPFLAGS=-I\${owlib-prefix}/include
-Default \${owlib-prefix} value is /opt/owfs.
-
-Alternatively, install the owlib RPM.
-
-])])
+AC_CHECK_HEADERS([fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 
 AC_C_CONST
-AC_HEADER_TIME
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_HEADER_STDBOOL
 AC_STRUCT_TM
 
 # Checks for library functions.
@@ -116,29 +201,85 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_MKTIME
-AC_FUNC_VPRINTF
+AC_FUNC_REALLOC
+AC_FUNC_SELECT_ARGTYPES
+AC_FUNC_STRFTIME
+AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([memchr memset select socket strchr strdup strncasecmp strtol])
+AC_CHECK_FUNCS([gettimeofday memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul])
 
-#AC_MSG_CHECKING(if we have socklen_t)
-#AC_EGREP_CPP(socklen_t,[
-##define _POSIX_PII_SOCKET	
-##include <sys/types.h>
-##include <sys/socket.h>],
-#  socklen=yes, socklen=no)
-#if test $socklen = yes
-#then
-#	AC_DEFINE(HAVE_SOCKLEN_T)
-#	AC_MSG_RESULT(yes)
-#else
-#	AC_MSG_RESULT(no)
-#fi
-AC_OUTPUT([Makefile
-           src/Makefile
-           src/c/Makefile
-           src/include/Makefile
-           src/man/Makefile
-           src/rpm/Makefile
-           src/rpm/owfs.spec
-           src/scripts/Makefile
+# Process config.h.in
+
+AH_TOP([
+#ifndef OWFS_CONFIG_H
+#define OWFS_CONFIG_H
 ])
+AH_BOTTOM([#endif])
+
+AM_CONFIG_HEADER([src/include/owfs_config.h:src/include/owfs_config.h.in])
+
+AC_CONFIG_FILES([
+	Makefile
+	module/Makefile
+	module/owlib/Makefile
+	module/owlib/src/Makefile
+	module/owlib/src/include/Makefile
+	module/owlib/src/c/Makefile
+	module/owlib/src/man/Makefile
+	module/owfs/Makefile
+	module/owfs/src/Makefile
+	module/owfs/src/include/Makefile
+	module/owfs/src/c/Makefile
+	module/owfs/src/man/Makefile
+	module/owhttpd/Makefile
+	module/owhttpd/src/Makefile
+	module/owhttpd/src/include/Makefile
+	module/owhttpd/src/c/Makefile
+	module/owhttpd/src/man/Makefile
+	src/Makefile
+	src/include/Makefile
+	src/rpm/Makefile
+	src/rpm/owfs.spec
+	src/scripts/Makefile
+])
+AC_OUTPUT
+
+# Now, let's tell them what is the current configuration. Only the items
+# that are funny (like current default prefix) or configurable (like the
+# cache) should be included.
+
+AC_MSG_RESULT()
+AC_MSG_RESULT([Current configuration:])
+AC_MSG_RESULT()
+
+AC_MSG_RESULT([    Deployment location: ${prefix}])
+
+AC_MSG_RESULT()
+AC_MSG_RESULT([Compile-time options:])
+
+if test "${ENABLE_CACHE}" = "true"; then
+    AC_MSG_RESULT([    Caching is enabled])
+else
+    AC_MSG_RESULT([    Caching is DISABLED])
+fi
+if test "${ENABLE_USB}" = "true"; then
+    AC_MSG_RESULT([    USB is enabled])
+else
+    AC_MSG_RESULT([    USB is DISABLED])
+fi
+
+AC_MSG_RESULT()
+AC_MSG_RESULT([Module configuration:])
+
+if test "${ENABLE_OWFS}" = "true"; then
+    AC_MSG_RESULT([    owfs is enabled])
+else
+    AC_MSG_RESULT([    owfs is DISABLED])
+fi
+if test "${ENABLE_OWHTTPD}" = "true"; then
+    AC_MSG_RESULT([    owhttpd is enabled])
+else
+    AC_MSG_RESULT([    owhttpd is DISABLED])
+fi
+
+AC_MSG_RESULT()

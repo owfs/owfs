@@ -1,0 +1,38 @@
+.TH OWHTTPD 8
+.SH OWHTTPD
+owhttpd \- Tiny webserver for 1-wire control.
+.SH SYNOPSIS
+.B owhttpd
+.I "-h  -p -d -t"
+.SH "DESCRIPTION"
+.B owhttpd
+is a small webserver that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main view shows the devices found, You can then navigate to individual devices, and view/alter their properties.
+.TP
+There is optional data caching. Which can speed repeated access to the same 1wire properties (but is potentially confusing). Use the uncached links to see immediate values.
+.TP
+The underlying interface to the 1-wire bus is identical to OWFS -- the 1-wire filesystem for linux. Only the top layer has been modified to serve web pages instead of files. Development here, and support for new devices, will progress with that project.
+.TP
+The web server is a modified version of chttpd by Greg Olszewski. It is now single-threaded, and serves no files. Security should therefore be good. Only the 1-wire bus is at risk.
+
+.SH OPTIONS
+.TP
+.B \-h
+Show summary of options.
+.TP
+.B \-p portnum
+Set the tcp port the web server runs on. Access with the URL http://servernameoripaddress:portnum
+.TP
+.B \-d device
+Set the serial port to monitor. It should have a LINK or DS9097U attached.
+.TP
+.B \-t seconds
+Set the number of seconds that volitile data (measured values like temperture and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents).
+
+.SH EXAMPLE
+owhttpd -d /dev/ttyS0 -p 3001
+
+.SH NOTES
+See http://owfs.sourceforge.net for the current version.
+
+.SH AUTHOR
+Paul Alfille (palfille@earthlink.net)

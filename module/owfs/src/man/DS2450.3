@@ -1,0 +1,155 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS2450 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B DS2450
+- Quad A/D Converter
+.SH SYNOPSIS
+Voltage * 4  and Memory.
+.HP
+.B 20
+[.]XXXXXXXXXXXX[XX][/[
+.B memory
+|
+.B page.[0-3|ALL]
+|
+.B volts.[0-3|ALL]
+|
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B present
+|
+.B type
+]]
+.SH FAMILY CODE
+.TP
+20
+.SH SPECIAL PROPERTIES
+.SS memory
+.I read-write, binary
+.br
+32 bytes of data. Much has special implications. See the datasheet.
+.SS page.0 ... page.3 page.ALL
+.I read-write, binary
+.br
+Memory is split into 4 pages of 8 bytes each. Mostly for reading and setting device properties. See the datasheet for details.
+.br
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
+.SS volts.0 ... volts.3 volts.ALL
+.I read-only, floating point
+.br
+Voltage read, 16 bit resolution. Range 0 - 5.12V.
+.br
+.I ALL
+is an aggregate of the pages. Readings are made simultaneously.
+.SH STANDARD PROPERTIES
+.SS address
+.I read-only, ascii
+.br
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
+.SS crc8
+.I read-only, ascii
+.br
+The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
+.SS family
+.I read-only, ascii
+.br
+The 8-bit family code. Unique to each
+.I type
+of device. Given as upper case hexidecimal digits (0-9A-F).
+.SS id
+.I read-only, ascii
+.br
+The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
+.SS present
+.I read-only, yes-no
+.br
+Is the device currently
+.I present
+on the 1-wire bus?
+.SS type
+.I read-only, ascii
+.br
+Part name assigned by Dallas Semi. E.g.
+.I DS2401
+Alternative packaging (iButton vs chip) will not be distiguished.
+.SH ALARMS
+None.
+.SH DESCRIPTION
+This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
+.PP
+The
+.B DS2450
+is a high resolution A/D converter with 4 channels. Lower resolution voltage sensing (but with temperature) can be obtained with the
+.B DS2436
+and
+.B DS2438
+.SH ADDRESSING
+All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
+.TP
+.B Family Code
+8 bits
+.TP
+.B Address
+48 bits
+.TP
+.B CRC
+8 bits
+.IP
+.PP
+Addressing under OWFS is in hexidecimal, of form:
+.IP
+.B 01.123456789ABC
+.PP
+where
+.B 01
+is an example 8-bit family code, and
+.B 12345678ABC
+is an example 48 bit address.
+.PP
+The dot is optional, and the CRC code can included. If included, it must be correct.
+.SH DATASHEET
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS2450.pdf
+.SH FILES
+.TP
+libow.so
+Library providing most of the OWFS system. Bus master control, data parsing, etc.
+.TP
+owfs
+Filesystem implementation. User space, using the FUSE kernel module.
+.TP
+owhttpd
+Web server implementation of the OWFS system.
+.SH SEE ALSO
+owfs(3)
+owhttpd(3)
+DS18S20(3)
+DS18B20(3)
+DS1822(3)
+DS2502(3)
+DS2401(3)
+DS2409(3)
+DS2436(3)
+DS2438(3)
+DS1992(3)
+DS1993(3)
+DS1995(3)
+DS1996(3)
+.SH AVAILABILITY
+http://owfs.sourceforge.net
+.SH AUTHOR
+Paul Alfille (palfille@earthlink.net)

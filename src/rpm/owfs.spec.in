@@ -1,25 +1,44 @@
-%define kernelversion %(uname -r)
-%define fusemoduledir /lib/modules/%{kernelversion}/kernel/fs/fuse
-
-%define kernelrel %(uname -r | sed -e s/-/_/g)
-%define real_release 6
-
 Name: owfs
 Version: @VERSION@
 Release: 1
 Summary: 1-Wire Virtual File System
 Source: %{name}-%{version}.tar.gz
 Copyright: GPL
-Group: Utilities/System
+Group: System Environment/Libraries
 URL: http://sourceforge.net/projects/owfs
 Buildroot: %{_tmppath}/%{name}-root
 Prefix: /usr
 Packager: Vadim Tkachenko <vt@freehold.crocodile.org>
-Requires: fuse = 1.0, owlib = 0.98p1
 %description
 
 OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
 
+%package libs
+Summary: Core library providing base functions to other OWFS modules.
+Group: System Environment/Libraries
+Requires: libusb = 0.1.6, db4-devel = 4.0.14
+
+%description libs
+
+%{name}-libs is a core library providing base functions to other OWFS modules.
+
+%package fs
+Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}, fuse = 1.0
+
+%description fs
+
+%{name}-fs is a virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+
+%package httpd
+Summary: HTTP daemon providing access to 1-Wire networks.
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}
+
+%description httpd
+
+%{name}-httpd is an HTTP daemon on top of %{name}-libs providing access to 1-Wire networks.
 
 %clean
 case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
@@ -28,7 +47,7 @@ case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 %setup
 
 %build
-./configure --prefix=%{prefix}
+./configure --enable-usb --enable-caching --enable-owfs --enable-owhttpd --prefix=%{prefix}
 make
 make check
 
@@ -37,23 +56,86 @@ case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 make install \
 	prefix=$RPM_BUILD_ROOT%{prefix}
 
-%post
+%post -p /sbin/ldconfig
 
 %preun
 
-%postun
+%postun -p /sbin/ldconfig
 
 
-%files
+%files libs
 %defattr(-,root,root)
 %doc README NEWS INSTALL ChangeLog AUTHORS COPYING
 
-%{prefix}/bin/owfs
+%{prefix}/lib/libow.so
+%{prefix}/lib/libow.so.0
+%{prefix}/lib/libow.so.0.0.0
+%{prefix}/lib/libow.la
+%{prefix}/lib/libow.a
+%{prefix}/include/ow_1820.h
+%{prefix}/include/ow_1921.h
+%{prefix}/include/ow_1993.h
+%{prefix}/include/ow_2401.h
+%{prefix}/include/ow_2405.h
+%{prefix}/include/ow_2406.h
+%{prefix}/include/ow_2408.h
+%{prefix}/include/ow_2409.h
+%{prefix}/include/ow_2415.h
+%{prefix}/include/ow_2423.h
+%{prefix}/include/ow_2436.h
+%{prefix}/include/ow_2438.h
+%{prefix}/include/ow_2450.h
+%{prefix}/include/ow_2502.h
+%{prefix}/include/ow_2505.h
+%{prefix}/include/ow_2890.h
+%{prefix}/include/ow_cache.h
+%{prefix}/include/ow_devices.h
 %{prefix}/include/owfs_config.h
+%{prefix}/include/ow.h
+%{prefix}/include/ow_lcd.h
+%{prefix}/include/ow_link.h
+%{prefix}/include/ow_none.h
+%{prefix}/include/ow_xxxx.h
+%{prefix}/include/ow_stats.h
+%{prefix}/include/ow_stub.h
+
+%files fs
+%defattr(-,root,root)
+
+%{prefix}/bin/owfs
 %{prefix}/include/owfs.h
 %{prefix}/man/man1/owfs.1.gz
+%{prefix}/man/man1/owhttpd.1.gz
+%{prefix}/man/man3/DS1822.3.gz
+%{prefix}/man/man3/DS18B20.3.gz
+%{prefix}/man/man3/DS18S20.3.gz
+%{prefix}/man/man3/DS1992.3.gz
+%{prefix}/man/man3/DS1993.3.gz
+%{prefix}/man/man3/DS1995.3.gz
+%{prefix}/man/man3/DS1996.3.gz
+%{prefix}/man/man3/DS2401.3.gz
+%{prefix}/man/man3/DS2405.3.gz
+%{prefix}/man/man3/DS2406.3.gz
+%{prefix}/man/man3/DS2408.3.gz
+%{prefix}/man/man3/DS2409.3.gz
+%{prefix}/man/man3/DS2415.3.gz
+%{prefix}/man/man3/DS2423.3.gz
+%{prefix}/man/man3/DS2436.3.gz
+%{prefix}/man/man3/DS2438.3.gz
+%{prefix}/man/man3/DS2450.3.gz
+%{prefix}/man/man3/DS2502.3.gz
+%{prefix}/man/man3/DS2505.3.gz
+%{prefix}/man/man3/DS2506.3.gz
+%{prefix}/man/man3/DS2890.3.gz
+%{prefix}/man/man3/LCD.3.gz
+         
+%files httpd
+%defattr(-,root,root)
+
+%{prefix}/bin/owhttpd
+%{prefix}/include/owhttpd.h
 
 %changelog
 
-* Tue Oct 7 2003 Vadim Tkachenko <vt@freehold.crocodile.org>
+* Wed Sep 24 2003 Vadim Tkachenko <vt@freehold.crocodile.org>
 - Initial take at RPM build

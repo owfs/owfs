@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src module
 RPMMACROS = ${HOME}/.rpmmacros
 RPMDIR = ${HOME}/.rpm
 

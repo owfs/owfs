@@ -2,4 +2,5 @@
 
 # Just in case you haven't noticed: configure takes a command line tail.
 
+rm -rf *cache
 aclocal && autoconf && automake && ./configure $* 
