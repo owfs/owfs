@@ -302,7 +302,6 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
-  int FS_read_return( char *buf, const size_t size, const off_t offset , const char * src, const size_t len ) ;
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
 

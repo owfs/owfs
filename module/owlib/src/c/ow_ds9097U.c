@@ -12,6 +12,33 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
+static int DS2480_databit(int sendbit, int * getbit) ;
+static int DS2480_reset( const struct parsedname * const pn ) ;
+static int DS2480_read(unsigned char * const buf, const int size ) ;
+static int DS2480_write(const unsigned char * const buf, const size_t size ) ;
+static int DS2480_sendout_data( const unsigned char * const data , const int len ) ;
+static int DS2480_level(int new_level) ;
+static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay) ;
+static int DS2480_ProgramPulse( void ) ;
+static int DS2480_sendout_cmd( const unsigned char * cmd , const int len ) ;
+static int DS2480_send_cmd( const unsigned char * const cmd , const int len ) ;
+static int DS2480_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
+static int DS2480_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
+static void DS2480_setroutines( struct interface_routines * const f ) ;
+
+static void DS2480_setroutines( struct interface_routines * const f ) {
+    f->write = DS2480_write ;
+    f->read  = DS2480_read ;
+    f->reset = DS2480_reset ;
+    f->next_both = DS2480_next_both ;
+    f->level = DS2480_level ;
+    f->PowerByte = DS2480_PowerByte ;
+    f->ProgramPulse = DS2480_ProgramPulse ;
+    f->sendback_data = DS2480_sendback_data ;
+    f->select        = BUS_select_low ;
+}
+
 /* --------------------------- */
 /* DS2480 defines from PDkit   */
 /* --------------------------- */
@@ -153,38 +180,11 @@ $Id$
 // DS2480B program voltage available
 #define DS2480PROG_MASK                0x20
 
-static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-static int DS2480_databit(int sendbit, int * getbit) ;
-static int DS2480_reset( const struct parsedname * const pn ) ;
-static int DS2480_read(unsigned char * const buf, const int size ) ;
-static int DS2480_write(const unsigned char * const buf, const size_t size ) ;
-static int DS2480_sendout_data( const unsigned char * const data , const int len ) ;
-static int DS2480_level(int new_level) ;
-static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay) ;
-static int DS2480_ProgramPulse( void ) ;
-static int DS2480_sendout_cmd( const unsigned char * cmd , const int len ) ;
-static int DS2480_send_cmd( const unsigned char * const cmd , const int len ) ;
-static int DS2480_sendback_cmd( const unsigned char * const cmd , unsigned char * const resp , const int len ) ;
-static int DS2480_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
-static void DS2480_setroutines( struct interface_routines * const f ) ;
-
-/* returns baud rate variable, no errors */
-int DS2480_baud( speed_t baud ) {
-    switch ( baud ) {
-    case B9600:    return PARMSET_9600    ;
-    case B19200:   return PARMSET_19200   ;
-    case B57600:   return PARMSET_57600   ;
-    case B115200:  return PARMSET_115200  ;
-    }
-    return PARMSET_9600 ;
-}
-
 /* Reset and detect a DS2480B */
 /* returns 0=good
    DS2480 sendback error
    COM_write error
    -EINVAL baudrate error
-
    If no detection, try a DS9097 passive port */
 int DS2480_detect( void ) {
     unsigned char timing = 0xC1 ;
@@ -258,6 +258,18 @@ int DS2480_detect( void ) {
 
     return -EINVAL ;
 }
+
+/* returns baud rate variable, no errors */
+int DS2480_baud( speed_t baud ) {
+    switch ( baud ) {
+    case B9600:    return PARMSET_9600    ;
+    case B19200:   return PARMSET_19200   ;
+    case B57600:   return PARMSET_57600   ;
+    case B115200:  return PARMSET_115200  ;
+    }
+    return PARMSET_9600 ;
+}
+
 //--------------------------------------------------------------------------
 // Reset all of the devices on the 1-Wire Net and return the result.
 //
@@ -743,14 +755,3 @@ static int DS2480_sendback_data( const unsigned char * const data , unsigned cha
 	return ret ;
 }
 
-static void DS2480_setroutines( struct interface_routines * const f ) {
-    f->write = DS2480_write ;
-    f->read  = DS2480_read ;
-    f->reset = DS2480_reset ;
-    f->next_both = DS2480_next_both ;
-    f->level = DS2480_level ;
-    f->PowerByte = DS2480_PowerByte ;
-    f->ProgramPulse = DS2480_ProgramPulse ;
-    f->sendback_data = DS2480_sendback_data ;
-    f->select        = BUS_select_low ;
-}

@@ -265,13 +265,6 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
     return 0 ;
 }
 
-/*
-static int FS_tempdata(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char data[8] ;
-    if ( OW_r_scratchpad( data, pn ) ) return -EINVAL ;
-    return FS_read_return( buf,size,offset,data,8 ) ;
-}
-*/
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
 static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     unsigned char data[8] ;

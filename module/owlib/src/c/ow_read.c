@@ -132,15 +132,6 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
     return r ;
 }
 
-/* put read data in buffer after offset */
-int FS_read_return( char *buf, const size_t size, const off_t offset , const char * src, const size_t length ) {
-    size_t len = length-offset ;
-    if ( offset>(off_t)length ) return -ERANGE ;
-    if (len>size) len = size ;
-    memcpy(buf, src + offset , len ) ;
-    return len ;
-}
-
 /* read without artificial separation of combination */
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = 1 ;

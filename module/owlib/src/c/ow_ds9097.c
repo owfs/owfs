@@ -12,6 +12,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
+
 static int DS9097_PowerByte(const unsigned char byte, const unsigned int delay) ;
 static int DS9097_ProgramPulse( void ) ;
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
@@ -24,6 +26,31 @@ static int DS9097_read_bits( unsigned char * const bits , const int length ) ;
 static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
 static int DS9097_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static void DS9097_setroutines( struct interface_routines * const f ) ;
+
+/* Device-specific functions */
+static void DS9097_setroutines( struct interface_routines * const f ) {
+    f->write = DS9097_write ;
+    f->read  = DS9097_read ;
+    f->reset = DS9097_reset ;
+    f->next_both = DS9097_next_both ;
+    f->level = DS9097_level ;
+    f->PowerByte = DS9097_PowerByte ;
+    f->ProgramPulse = DS9097_ProgramPulse ;
+    f->sendback_data = DS9097_sendback_data ;
+    f->select        = BUS_select_low ;
+}
+
+/* Open a DS9097 after an unsucessful DS2480_detect attempt */
+/* _detect is a bit of a misnomer, no detection is actually done */
+/* Note, devfd alread allocated */
+/* Note, terminal settings already saved */
+int DS9097_detect( void ) {
+    /* Set up low-level routines */
+    DS9097_setroutines( & iroutines ) ;
+    /* Reset the bus */
+    Adapter = adapter_DS9097 ; /* OWFS assigned value */
+    return DS9097_reset(NULL) ;
+}
 
 //--------------------------------------------------------------------------
 // Send 8 bits of communication to the 1-Wire Net and verify that the
@@ -156,18 +183,6 @@ static int DS9097_level(int new_level) {
     return -EIO ;
 }
 
-/* Open a DS9097 after an unsucessful DS2480_detect attempt */
-/* _detect is a bit of a misnomer, no detection is actually done */
-/* Note, devfd alread allocated */
-/* Note, terminal settings already saved */
-int DS9097_detect( void ) {
-    /* Set up low-level routines */
-    DS9097_setroutines( & iroutines ) ;
-    /* Reset the bus */
-    Adapter = adapter_DS9097 ; /* OWFS assigned value */
-    return DS9097_reset(NULL) ;
-}
-
 /* DS9097 Reset -- A little different frolm DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
 static int DS9097_reset( const struct parsedname * const pn ) {
@@ -286,16 +301,4 @@ static int DS9097_read_bits( unsigned char * const bits , const int length ) {
     if ( (ret=BUS_send_and_get(combuffer,(unsigned)length,bits,(unsigned)length)) ) return ret ;
     for ( i=0;i<length;++i) bits[i]&=0x01 ;
     return 0 ;
-}
-
-static void DS9097_setroutines( struct interface_routines * const f ) {
-    f->write = DS9097_write ;
-    f->read  = DS9097_read ;
-    f->reset = DS9097_reset ;
-    f->next_both = DS9097_next_both ;
-    f->level = DS9097_level ;
-    f->PowerByte = DS9097_PowerByte ;
-    f->ProgramPulse = DS9097_ProgramPulse ;
-    f->sendback_data = DS9097_sendback_data ;
-    f->select        = BUS_select_low ;
 }

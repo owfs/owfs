@@ -25,6 +25,8 @@ $Id$
 #include "ow.h"
 #include <usb.h>
 
+/* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
+
 static int DS9490_reset( const struct parsedname * const pn ) ;
 static int DS9490wait(unsigned char * const buffer) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
@@ -33,6 +35,21 @@ static int DS9490_level(int new_level) ;
 static void DS9490_setroutines( struct interface_routines * const f ) ;
 static int DS9490_select_low(const struct parsedname * const pn) ;
 static int DS9490_detect_low( void ) ;
+static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay) ;
+static int DS9490_ProgramPulse( void ) ;
+
+/* Device-specific routines */
+static void DS9490_setroutines( struct interface_routines * const f ) {
+    f->write = NULL ;
+    f->read  = NULL ;
+    f->reset = DS9490_reset ;
+    f->next_both = DS9490_next_both ;
+    f->level = DS9490_level ;
+    f->PowerByte = DS9490_PowerByte ;
+    f->ProgramPulse = DS9490_ProgramPulse ;
+    f->sendback_data = DS9490_sendback_data ;
+    f->select        = BUS_select_low ;
+}
 
 #define TIMEOUT_USB	5000 /* 5 seconds */
 
@@ -75,10 +92,7 @@ int DS9490_detect( void ) {
     return DS9490_detect_low() ;
 }
 
-/* Open a DS9097 after an unsucessful DS2480_detect attempt */
-/* _detect is a bit of a misnomer, no detection is actually done */
-/* Note, devfd alread allocated */
-/* Note, terminal settings already saved */
+/* Open a DS9490  -- low level code (to allow for repeats)  */
 static int DS9490_detect_low( void ) {
     struct usb_bus *bus ;
     struct usb_device *dev ;
@@ -406,16 +420,9 @@ printf("SELECT control problem = %d\n",ret);
     return 0 ;
 }
 
-static void DS9490_setroutines( struct interface_routines * const f ) {
-    f->write = NULL ;
-    f->read  = NULL ;
-    f->reset = DS9490_reset ;
-    f->next_both = DS9490_next_both ;
-    f->level = DS9490_level ;
-    f->PowerByte = DS9490_PowerByte ;
-    f->ProgramPulse = NULL ;
-    f->sendback_data = DS9490_sendback_data ;
-    f->select        = BUS_select_low ;
+/* The USB device can't actually deliver the EPROM programming voltage */
+static int DS9490_ProgramPulse( void ) {
+    return -ENOPROTOOPT ;
 }
 
 #endif /* OW_USB */
