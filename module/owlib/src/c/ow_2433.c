@@ -55,9 +55,9 @@ bWRITE_FUNCTION( FS_w_memory ) ;
 struct aggregate A2433 = { 16, ag_numbers, ag_separate,} ;
 struct filetype DS2433[] = {
     F_STANDARD   ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
-    {"pages/page",   32,  &A2433, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"memory"    ,  512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
+    {"pages"     ,    0,  NULL,   ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}       , NULL, } ,
+    {"pages/page",   32,  &A2433, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}  , NULL, } ,
+    {"memory"    ,  512,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
 DeviceEntry( 23, DS2433 )
 
@@ -67,6 +67,7 @@ DeviceEntry( 23, DS2433 )
 
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+
 
 static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
@@ -81,74 +82,60 @@ static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( pn->extension > 15 ) return -ERANGE ;
+//    if ( pn->extension > 15 ) return -ERANGE ;
     if ( OW_r_mem( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( pn->extension > 15 ) return -ERANGE ;
+//    if ( pn->extension > 15 ) return -ERANGE ;
     //printf("FS_w_page: size=%d offset=%d pn->extension=%d (%d)\n", size, offset, pn->extension, (pn->extension)<<5);
     if ( OW_w_mem(buf,size,offset+((pn->extension)<<5),pn) ) return -EINVAL ;
     return 0 ;
 }
 
 static int OW_r_mem( unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
-    unsigned char data[513] ;
-    unsigned char memread[] = {  0xF0, offset&0xFF, (offset>>8)&0x01, } ;
-    size_t rest = 512-(offset&0x1FF) ;
+    unsigned char memread[] = {  0xF0, offset&0xFF, offset>>8, } ;
     int ret ;
-
-    //printf("reading offset=%d rest=%d size=%d bytes\n", offset, rest, size);
+    //printf("reading offset=%d size=%d bytes\n", offset, size);
       
     BUSLOCK
-    ret = BUS_select(pn) || BUS_send_data( memread, 3 ) || BUS_readin_data( data,rest+1 );
+        ret = BUS_select(pn) || BUS_send_data( memread, 3 ) || BUS_readin_data( p,size );
     BUSUNLOCK
     if ( ret ) return 1;
 
-    // copy to buffer
-    memcpy( p , data , size ) ;
     return 0 ;
 }
 
-static int OW_w_mem( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
-    unsigned char data[32+4] ;
-    unsigned char scratchcopy[] =  {  0x55, offset&0xFF, (offset>>8)&0x01, size } ;
-    unsigned char scratchwrite[] = {  0x0F, offset&0xFF, (offset>>8)&0x01, } ;
-    unsigned char scratchread[] =  {  0xAA, } ;
+/* paged, and pre-screened */
+static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
-    int i;
 
-    //printf("writing offset=%d size=%d\n", offset, size);
+    /* Copy to scratchpad */
+    memcpy( &p[3], data, size ) ;
 
-    memcpy( data , p , size ) ;
-    //for(i=0; i<size; i++) printf("%02X ", data[i]);
-    //printf("\n");
-
-    // write data to scratchpad
     BUSLOCK
-    ret = BUS_select(pn) || BUS_send_data( scratchwrite , 3 ) || BUS_send_data( data, size) ;
+        ret = BUS_select(pn) || BUS_send_data(p,size+3) ;
+        if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2) || CRC16(p,1+2+size+2) ;
     BUSUNLOCK
-    if ( ret ) return 1;
+    if ( ret ) return 1 ;
 
-    // read data from scratchpad
+    /* Re-read scratchpad and compare */
+    /* Note that we tacitly shift the data one byte down for the E/S byte */
+    p[0] = 0xAA ;
     BUSLOCK
-    ret = BUS_select(pn) || BUS_send_data( scratchread , 1 ) || BUS_readin_data( data,3+size );
+        ret = BUS_select(pn) || BUS_send_data(p,1) || BUS_readin_data(&p[1],3+size) || memcmp( &p[4], data, size) ;
     BUSUNLOCK
-    if ( ret ) return 1;
+    if ( ret ) return 1 ;
 
-    //printf("got %02X %02X %02X data=%02X %02X\n", data[0], data[1], data[2], data[3], data[4]);
-    // copy scratchpad to memory
+    /* Copy Scratchpad to EPROM */
+    p[0] = 0x55 ;
     BUSLOCK
-    scratchcopy[1] = data[0];
-    scratchcopy[2] = data[1];
-    scratchcopy[3] = data[2];
-    ret = BUS_select(pn) || BUS_send_data( scratchcopy , 4 );
+        ret = BUS_select(pn) || BUS_send_data(p,4) ;
+        UT_delay(5) ;
     BUSUNLOCK
-    if ( ret ) return 1;
+    if ( ret ) return 1 ;
 
-    UT_delay(5); // 5ms pullup
-
-    // Could recheck with a read, but no point
     return 0 ;
 }
