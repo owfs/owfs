@@ -520,6 +520,7 @@ extern int  devfd     ; /*file descriptor for serial port*/
 extern int useusb ; /* Which USB adapter to use (1-based index) */
 extern int presencecheck ; /* check if present whenever opening a directory or static file */
 extern int portnum ; /* TCP port (for owhttpd) */
+extern int readonly ; /* readonly file system ? */
 
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;

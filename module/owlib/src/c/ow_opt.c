@@ -19,6 +19,8 @@ const struct option owopts_long[] = {
     {"usb",       optional_argument,NULL,'u'},
     {"help",      no_argument,      NULL,'h'},
     {"port",      required_argument,NULL,'p'},
+    {"readonly",  required_argument,NULL,'r'},
+    {"write",     required_argument,NULL,'w'},
     {"Celsius",   no_argument,      NULL,'C'},
     {"Fahrenheit",no_argument,      NULL,'F'},
     {"Kelvin",    no_argument,      NULL,'K'},
@@ -43,14 +45,16 @@ int owopt( const int c , const char * const arg ) {
         fprintf(stderr,
         "    -d    --device   serial adapter. Serial port connecting to 1-wire network (e.g. /dev/ttyS0)\n"
 #ifdef OW_USB
-        "    -u[n]  --usb     USB adapter. Scans for usb connection to 1-wire bus.\n"
-        "                Optional number for multiple usb adapters\n"
-        "                Note that -d and -u are mutually exclusive\n"
+        "    -u[n] --usb      USB adapter. Scans for usb connection to 1-wire bus.\n"
+        "                 Optional number for multiple usb adapters\n"
+        "                 Note that -d and -u are mutually exclusive\n"
 #endif /* OW_USB */
 #ifdef OW_CACHE
-        "    -t     cache timeout (in seconds)\n"
+        "    -t    cache timeout (in seconds)\n"
 #endif /* OW_CACHE */
-        "    -h     --help    print help\n"
+        "    -h    --help     print help\n"
+        "    -r    --readonly Only allow reading of 1-wire devices.\n"
+        "    -w    --write    Allow reading and writing (default).\n"
         "    --format f[.]i[[.]c] format of device names f_amily i_d c_rc\n"
         "    -C | -F | -K | -R Temperature scale --Celsius(default)|--Fahrenheit|--Kelvin|--Rankine\n"
         "    --foreground --background(default)\n"
@@ -81,6 +85,12 @@ int owopt( const int c , const char * const arg ) {
         return 0 ;
     case 'd':
         ComSetup(arg) ;
+        return 0 ;
+    case 'r':
+        readonly = 1 ;
+        return 0 ;
+    case 'w':
+        readonly = 0 ;
         return 0 ;
     case 'C':
         tempscale = temp_celsius ;

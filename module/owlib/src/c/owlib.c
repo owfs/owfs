@@ -85,6 +85,7 @@ time_t start_time ;
 
 int cacheavailable = 0 ; /* assume no cache */
 int background = 1 ; /* operate in background mode */
+int readonly = 0 ; /* readonly file system */
 int timeout = DEFAULT_TIMEOUT ;
 int timeout_slow = 10*DEFAULT_TIMEOUT ;
 

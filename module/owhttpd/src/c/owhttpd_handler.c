@@ -252,6 +252,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
     char fullpath[PATH_MAX+1] ;
     int suglen = FileLength(pn) + 1 ;
     char buf[suglen] ;
+    int canwrite = !readonly && pn->ft->write.v ;
 
     /* Construct filename with extension */
     if ( pn->ft->ag == NULL ) {
@@ -283,13 +284,13 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
         if ( pn->ft->read.v ) { /* At least readable */
             if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                 buf[len] = '\0' ;
-                if ( pn->ft->write.v ) { /* read-write */
+                if ( canwrite ) { /* read-write */
                     fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file,buf ) ;
                 } else { /* read only */
                     fprintf( out, "%s", buf ) ;
                 }
             }
-        } else if ( pn->ft->write.v ) { /* rare write-only */
+        } else if ( canwrite ) { /* rare write-only */
             fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file ) ;
         }
     } else {
@@ -302,7 +303,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
             if ( pn->ft->read.v ) { /* at least readable */
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     buf[len]='\0' ;
-                    if ( pn->ft->write.v ) { /* read-write */
+                    if ( canwrite ) { /* read-write */
                         fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", file, (buf[0]=='0')?"":"CHECKED", file ) ;
                     } else { /* read-only */
                         switch( buf[0] ) {
@@ -315,14 +316,14 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                         }
                     }
                 }
-            } else if ( pn->ft->write.v ) { /* rare write-only */
+            } else if ( canwrite ) { /* rare write-only */
                 fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",file,file ) ;
             }
             break ;
         case ft_binary:
             if ( pn->ft->read.v ) { /* At least readable */
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
-                    if ( pn->ft->write.v ) { /* read-write */
+                    if ( canwrite ) { /* read-write */
                         int i = 0 ;
                         fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",file,len>>5 ) ;
                         while (i<len) {
@@ -340,7 +341,7 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
                         fprintf( out, "</PRE>" ) ;
                     }
                 }
-            } else if ( pn->ft->write.v ) { /* rare write-only */
+            } else if ( canwrite ) { /* rare write-only */
                 fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",file,(pn->ft->suglen)>>5 ) ;
             }
             break ;
@@ -348,13 +349,13 @@ static void Show( FILE * out, const char * const path, const char * const dev, c
             if ( pn->ft->read.v ) { /* At least readable */
                 if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
                     buf[len] = '\0' ;
-                    if ( pn->ft->write.v ) { /* read-write */
+                    if ( canwrite ) { /* read-write */
                         fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file,buf ) ;
                     } else { /* read only */
                         fprintf( out, "%s", buf ) ;
                     }
                 }
-            } else if ( pn->ft->write.v ) { /* rare write-only */
+            } else if ( canwrite ) { /* rare write-only */
                 fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file ) ;
             }
         }
@@ -414,7 +415,7 @@ static void ChangeData( struct urlparse * up, struct parsedname * pn ) {
     strcat( linecopy , "/" ) ;
     property = linecopy+strlen(linecopy) ;
     /* Do command processing and make changes to 1-wire devices */
-    if ( pn->dev!=&NoDevice && up->request && up->value ) {
+    if ( pn->dev!=&NoDevice && up->request && up->value && !readonly ) {
         strcpy( property , up->request ) ;
         if ( FS_ParsedName(linecopy,pn)==0 && pn->ft && pn->ft->write.v ) {
             switch ( pn->ft->format ) {

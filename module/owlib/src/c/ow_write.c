@@ -39,6 +39,10 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     int r ;
     pn.si = &si ;
 //printf("WRITE\n");
+
+    /* if readonly exit */
+    if ( readonly ) return -EROFS ;
+
     STATLOCK
         AVERAGE_IN(&write_avg)
         AVERAGE_IN(&all_avg)
