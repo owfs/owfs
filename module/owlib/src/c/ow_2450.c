@@ -387,7 +387,9 @@ static int OW_convert( const struct parsedname * const pn ) {
                 ret = BUS_PowerByte( 0x04, 6) ;
     BUSUNLOCK
             }
-        }
+        } else {
+    BUSUNLOCK
+	}
     return ret ;
 }
 
