@@ -164,16 +164,20 @@ void BUS_unlock( void ) {
     struct timeval tv2 ;
     gettimeofday( &tv2, NULL ) ;
 
-    bus_time.tv_sec += (tv2.tv_sec - tv.tv_sec) ;
-    bus_time.tv_usec += (tv2.tv_usec - tv.tv_usec) ;
-    if ( bus_time.tv_usec >= 1000000 ) {
+    /* avoid update if system-clock have changed */
+    if((tv2.tv_sec >= tv.tv_sec) && ((tv2.tv_sec-tv.tv_sec) < 60)) {
+      bus_time.tv_sec += (tv2.tv_sec - tv.tv_sec) ;
+      bus_time.tv_usec += (tv2.tv_usec - tv.tv_usec) ;
+      if ( bus_time.tv_usec >= 1000000 ) {
         bus_time.tv_usec -= 1000000 ;
         ++bus_time.tv_sec;
-    } else if ( bus_time.tv_usec < 0 ) {
+      } else if ( bus_time.tv_usec < 0 ) {
         bus_time.tv_usec += 1000000 ;
         --bus_time.tv_sec;
+      }
     }
-        ++ bus_unlocks ; /* statistics */
+
+    ++ bus_unlocks ; /* statistics */
 #ifdef OW_MT
     pthread_mutex_unlock( &bus_mutex ) ;
 #endif /* OW_MT */
