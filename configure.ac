@@ -6,8 +6,8 @@ AC_INIT
 AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="1"
-VERSION_MINOR="0"
-PATCHLEVEL="0RC2"
+VERSION_MINOR="1"
+PATCHLEVEL="0RC"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -105,21 +105,35 @@ AC_SUBST(ENABLE_OWHTTPD)
 
 #Check owftpd
 AC_MSG_CHECKING(if owftpd is enabled)
-ENABLE_OWFTPD="true"
+ENABLE_OWFTPD="false"
 AC_ARG_ENABLE(owftpd,
-[  --enable-owftpd       Enable owftpd module (default true)],
+[  --enable-owftpd       Enable owftpd module (default false)],
 [
     AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWFTPD=false
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWFTPD=true
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    AC_MSG_RESULT([false (default)])
 ])
 AC_SUBST(ENABLE_OWFTPD)
 
-
+#Check owperl
+AC_MSG_CHECKING(if owperl is enabled)
+ENABLE_OWPERL="false"
+AC_ARG_ENABLE(owperl,
+[  --enable-owperl       Enable owperl module (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWPERL=false
+    fi
+],
+[
+    AC_MSG_RESULT([false (default)])
+])
+AC_SUBST(ENABLE_OWPERL)
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
@@ -264,6 +278,24 @@ fi
 
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
 
+#Check parallel port
+AC_MSG_CHECKING(if parport DS1410E is enabled)
+ENABLE_PARPORT="false"
+AC_ARG_ENABLE(parport,
+[  --enable-parport         Enable parport (DS1410E) module (default parport)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "ues" ; then
+        ENABLE_PARPORT=true
+    fi
+],
+[
+    AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(ENABLE_PARPORT)
+
+AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
+
 # Checks for header files.
 
 AC_HEADER_DIRENT
@@ -278,7 +310,7 @@ AC_EGREP_HEADER(__ss_family,
     [HAVE_NEW_SS_FAMILY=true] )
 AC_MSG_WARN([SS is ${HAVE_NEW_SS_FAMILY}])
 AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
-# end owftpd section 
+# end owftpd section
 
 
 # conditionals for httpd/ftpd
@@ -342,6 +374,11 @@ AC_CONFIG_FILES([
 	module/owftpd/src/include/Makefile
 	module/owftpd/src/c/Makefile
 	module/owftpd/src/man/Makefile
+	module/owperl/Makefile
+	module/owperl/src/Makefile
+	module/owperl/src/include/Makefile
+	module/owperl/src/c/Makefile
+	module/owperl/src/man/Makefile
 	src/Makefile
 	src/include/Makefile
 	src/man/Makefile
@@ -379,6 +416,11 @@ if test "${ENABLE_MT}" = "true"; then
 else
     AC_MSG_RESULT([    Multithreading is DISABLED])
 fi
+if test "${ENABLE_PARPORT}" = "true"; then
+    AC_MSG_RESULT([    Parallel port DS1410E is enabled])
+else
+    AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
+fi
 
 AC_MSG_RESULT()
 AC_MSG_RESULT([Module configuration:])
@@ -397,5 +439,10 @@ if test "${ENABLE_OWFTPD}" = "true"; then
     AC_MSG_RESULT([    owftpd is enabled])
 else
     AC_MSG_RESULT([    owftpd is DISABLED])
+fi
+if test "${ENABLE_OWPERL}" = "true"; then
+    AC_MSG_RESULT([    owperl is enabled])
+else
+    AC_MSG_RESULT([    owperl is DISABLED])
 fi
 AC_MSG_RESULT()

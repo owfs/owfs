@@ -91,6 +91,11 @@ $Id$
  #include <search.h>
 #endif /* __USE_GNU */
 
+/* Parport enabled uses two flags (one a holdover from the embedded work) */
+#ifdef USE_NO_PARPORT
+    #undef OW_PARPORT
+#endif
+
 extern int multithreading ;
 extern int maxslots ;
 #ifdef OW_MT
@@ -718,6 +723,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
+int FS_read_postparse(const char * path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
 
@@ -733,7 +739,9 @@ int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const s
 */
 int DS2480_baud( speed_t baud );
 int DS2480_detect( void ) ;
+#ifdef OW_PARPORT
 int DS1410_detect( void ) ;
+#endif /* OW_PARPORT */
 int DS9097_detect( void ) ;
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;

@@ -38,6 +38,25 @@ static int FS_output_date_array( DATE * values, char * buf, const size_t size, c
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
+
+int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
+    struct parsedname pn ;
+    struct stateinfo si ;
+    size_t s = size ;
+    int r ;
+
+    pn.si = &si ;
+    if ( FS_ParsedName( path , &pn ) ) {
+        r = -ENOENT;
+    } else if ( pn.dev==NULL || pn.ft == NULL ) {
+        r = -EISDIR ;
+    } else {
+        r = FS_read_postparse(path, buf, size, offset, &pn ) ;
+    }
+    FS_ParsedName_destroy(&pn) ;
+    return r ;
+}
+
 /* Note on return values */
 /* functions return the actual number of bytes read, */
 /* or a negative value if an error */
@@ -53,39 +72,31 @@ static int FS_output_date_array( DATE * values, char * buf, const size_t size, c
 /*   outside of this module will not have buffer overflows */
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
-int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
-    struct parsedname pn ;
-    struct stateinfo si ;
+int FS_read_postparse(const char * path, char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     size_t s = size ;
     int r ;
 
-//printf("READ path=%s size=%d offset=%d\n",path,(int)size,(int)offset);
     STATLOCK
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
     STATUNLOCK
-    pn.si = &si ;
-    if ( FS_ParsedName( path , &pn ) ) {
-        r = -ENOENT;
-    } else if ( pn.dev==NULL || pn.ft == NULL ) {
-        r = -EISDIR ;
-    } else if ( pn.type == pn_structure ) {
-        r = FS_structure(path,buf,size,offset,&pn) ;
+    if ( pn->type == pn_structure ) {
+        r = FS_structure(path,buf,size,offset,pn) ;
     } else {
         STATLOCK
             ++ read_calls ; /* statistics */
         STATUNLOCK
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || cacheenabled==0 ) {
-            LockGet(&pn) ;
-                r = FS_real_read( path, buf, size, offset, &pn ) ;
+            LockGet(pn) ;
+                r = FS_real_read( path, buf, size, offset, pn ) ;
             LockRelease(&pn) ;
-        } else if ( (pn.state & pn_uncached) || Cache_Get( buf, &s, &pn ) ) {
+        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
     //printf("Read didnt find %s(%d->%d)\n",path,size,s) ;
-            LockGet(&pn) ;
-                r = FS_real_read( path, buf, size, offset, &pn ) ;
-                if ( r>= 0 ) Cache_Add( buf, r, &pn ) ;
-            LockRelease(&pn) ;
+            LockGet(pn) ;
+                r = FS_real_read( path, buf, size, offset, pn ) ;
+                if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
+            LockRelease(pn) ;
         } else {
     //printf("Read found %s\n",path) ;
             STATLOCK
@@ -102,7 +113,6 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
             STATUNLOCK
         }
     }
-    FS_ParsedName_destroy(&pn) ;
     STATLOCK
         AVERAGE_OUT(&read_avg)
         AVERAGE_OUT(&all_avg)

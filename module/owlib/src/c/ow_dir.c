@@ -54,7 +54,7 @@ int FS_dir( void (* dirfunc)(void *,const struct parsedname * const), void * con
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 //printf("DIR\n");
     if ( pn == NULL ) {
-        ret = -ENOENT ; /* should ever happen */
+        ret = -ENOENT ; /* should never happen */
     } else if ( pn->dev ){ /* device directory */
         ret = FS_devdir( dirfunc, data, &pn2 ) ;
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
@@ -375,15 +375,15 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
     int s ;
     if ( pn->ft == NULL ) return -ENOENT ;
     UCLIBCLOCK
-    if ( pn->ft->ag == NULL ) {
-        s = snprintf( name , size, "%s",pn->ft->name) ;
-    } else if ( pn->extension == -1 ) {
-        s = snprintf( name , size, "%s.ALL",pn->ft->name) ;
-    } else if ( pn->ft->ag->letters == ag_letters ) {
-        s = snprintf( name , size, "%s.%c",pn->ft->name,pn->extension+'A') ;
-    } else {
-        s = snprintf( name , size, "%s.%-d",pn->ft->name,pn->extension) ;
-    }
+        if ( pn->ft->ag == NULL ) {
+            s = snprintf( name , size, "%s",pn->ft->name) ;
+        } else if ( pn->extension == -1 ) {
+            s = snprintf( name , size, "%s.ALL",pn->ft->name) ;
+        } else if ( pn->ft->ag->letters == ag_letters ) {
+            s = snprintf( name , size, "%s.%c",pn->ft->name,pn->extension+'A') ;
+        } else {
+            s = snprintf( name , size, "%s.%-d",pn->ft->name,pn->extension) ;
+        }
     UCLIBCUNLOCK
     return (s<0) ? -ENOBUFS : 0 ;
 }
@@ -400,16 +400,16 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
             pname = pn->ft->name ;
         }
 
-	UCLIBCLOCK
-        if ( pn->ft->ag == NULL ) {
-            snprintf( buffer , size, "%s",pname) ;
-        } else if ( pn->extension == -1 ) {
-            snprintf( buffer , size, "%s.ALL",pname) ;
-        } else if ( pn->ft->ag->letters == ag_letters ) {
-            snprintf( buffer , size, "%s.%c",pname,pn->extension+'A') ;
-        } else {
-            snprintf( buffer , size, "%s.%-d",pname,pn->extension) ;
-        }
+        UCLIBCLOCK
+            if ( pn->ft->ag == NULL ) {
+                snprintf( buffer , size, "%s",pname) ;
+            } else if ( pn->extension == -1 ) {
+                snprintf( buffer , size, "%s.ALL",pname) ;
+            } else if ( pn->ft->ag->letters == ag_letters ) {
+                snprintf( buffer , size, "%s.%c",pname,pn->extension+'A') ;
+            } else {
+                snprintf( buffer , size, "%s.%-d",pname,pn->extension) ;
+            }
         UCLIBCUNLOCK
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;

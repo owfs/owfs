@@ -188,14 +188,14 @@ int ComSetup( const char * busdev ) {
         return -ret ;
     }
     if ( major(s.st_rdev) == 99 ) { /* parport device */
-#ifdef USE_NO_PARPORT
+#ifndef OW_PARPORT
 	return 1;
-#else /* USE_NO_PARPORT */
+#else /* OW_PARPORT */
         if ( DS1410_detect() ) {
             syslog(LOG_WARNING, "Cannot detect the DS1410E parallel adapter\n");
             return 1 ;
         }
-#endif /* USE_NO_PARPORT */
+#endif /* OW_PARPORT */
     } else { /* serial device */
         if ( COM_open() ) return -ENODEV ;
         /* Set up DS2480/LINK interface */

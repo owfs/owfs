@@ -65,6 +65,10 @@ if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
 
+if ENABLE_PARPORT
+PARPORT_FLAG = -DOW_PARPORT
+endif
+
 AM_CFLAGS = -I../include \
          -fexceptions \
          -Wall \
@@ -80,6 +84,7 @@ AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          ${CACHE_FLAG} \
          ${MT_FLAG} \
+         ${PARPORT_FLAG} \
          ${USB_FLAG}
 
 clean-generic:
