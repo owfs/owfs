@@ -107,6 +107,10 @@ int main(int argc, char *argv[]) {
         fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt);
         if(fuse_fd == -1) ow_exit(1);
     }
+    if ( fuse_opt ) { /* just to be anal, clear the string memory */
+        free( fuse_opt ) ;
+        fuse_opt = NULL ;
+    }
 
     if ( LibStart() ) ow_exit(1) ;
 

@@ -8,12 +8,14 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH OWFS 1 2004 "OWFS Manpage" "One-Wire File System"
+.TH OWHTTPD 1 2004 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B owfs
-\- 1-wire filesystem
+.B owhttpd
+\- Tiny webserver for 1-wire control
 .SH SYNOPSIS
-.B owfs
+.B owhttpd
+.B \-p
+tcp-port
 .I \-h
 .I \-f
 f[.]i[[.]c]
@@ -33,23 +35,20 @@ timeout
 |
 .I \-\-foreground
 .I \-V \-\-version
-.I \-P \-\-pid-file
-filename
-|
-.I -\-fuse-opt
-"quoted options"
 .I mountpoint
 .SH "DESCRIPTION"
-.B owfs
-is a user-space filesystem that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main directory shows the devices found, You can then navigate to individual devices, and view/alter their properties.
+.B owhttpd
+is a small webserver that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main view shows the devices found, You can then navigate to individual devices, and view/alter their properties.
 .TP
-There is optional data caching. Which can speed repeated access to the same 1wire properties (but is potentially confusing). Use the uncached directory to see immediate values.
+There is optional data caching. Which can speed repeated access to the same 1wire properties (but is potentially confusing). Use the uncached links to see immediate values.
 .TP
-The underlying interface to the 1-wire bus is identical to OWHTTPD -- the 1-wire web server. Only the top layer has been modified to serve files instead of web pages. Development here, and support for new devices, will progress with that project.
+The underlying interface to the 1-wire bus is identical to OWFS -- the 1-wire filesystem for linux. Only the top layer has been modified to serve web pages instead of files. Development here, and support for new devices, will progress with that project.
 .TP
-The 1-wire file system is a modified version of fuse examples by Miklos Szeredi. It is now single-threaded, and serves no files. Security should therefore be good. Only the 1-wire bus is at risk. The fuse library and kernel module is needed. (See http://www.sourceforge.net/projects/avf).
+The web server is a modified version of chttpd by Greg Olszewski. It is now single-threaded, and serves no files. Security should therefore be good. Only the 1-wire bus is at risk.
 
 .SH OPTIONS
+.SS \-p portnum
+Sets the tcp port the web server runs on. Access with the URL http://servernameoripaddress:portnum
 .SS \-h \-\-help
 Shows this summary of options.
 .SS \-d \-\-device "deviceport"
@@ -90,15 +89,8 @@ is the default.
 .SS \-V \-\-version
 .I Version
 of this program and related libraries.
-.SS \-P \-\-pid-file "filename"
-Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.
-.SS \-\-fuse-opt "options"
-Sends options to the fuse-mount process. Options should be quoted, e.g. "-x" (which allows others to mount this directory).
 .SH EXAMPLE
-owfs -d /dev/ttyS0 /mnt/1wire
-.TP
-owfs /dev/ttyS0 /mnt/1wire
-
+owhttpd -p 3001 -d /dev/ttyS0
 .SH NOTES
 See http://owfs.sourceforge.net for the current version.
 
