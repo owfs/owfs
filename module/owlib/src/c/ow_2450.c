@@ -373,7 +373,7 @@ static int OW_convert( const struct parsedname * const pn ) {
     if ( OW_r_mem(&power,1,0x1C,pn) ) return 1 ;
 
     /* See if a conversion was globally triggered */
-    if ( power==0x40 && Simul_Test( DEV_volt, 6, pn ) ) return 0 ;
+    if ( power==0x40 && Simul_Test( DEV_volt, 6, pn )==0 ) return 0 ;
 
     // Start conversion
     // 6 msec for 16bytex4channel (5.2)

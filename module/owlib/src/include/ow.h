@@ -101,14 +101,17 @@ extern int maxslots ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
     extern pthread_mutex_t fstat_mutex ;
-    #define STATLOCK      pthread_mutex_lock(&stat_mutex) ;
-    #define STATUNLOCK    pthread_mutex_unlock(&stat_mutex) ;
-    #define CACHELOCK      pthread_mutex_lock(&cache_mutex) ;
+    extern pthread_mutex_t simul_mutex ;
+    #define STATLOCK       pthread_mutex_lock(  &stat_mutex) ;
+    #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex) ;
+    #define CACHELOCK      pthread_mutex_lock(  &cache_mutex) ;
     #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex) ;
-    #define STORELOCK      pthread_mutex_lock(&store_mutex) ;
+    #define STORELOCK      pthread_mutex_lock(  &store_mutex) ;
     #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex) ;
-    #define FSTATLOCK      pthread_mutex_lock(&store_mutex) ;
-    #define FSTATUNLOCK    pthread_mutex_unlock(&store_mutex) ;
+    #define FSTATLOCK      pthread_mutex_lock(  &fstat_mutex) ;
+    #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex) ;
+    #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex) ;
+    #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex) ;
 #else /* OW_MT */
     #define STATLOCK
     #define STATUNLOCK
@@ -118,6 +121,8 @@ extern int maxslots ;
     #define STOREUNLOCK
     #define FSTATLOCK
     #define FSTATUNLOCK
+    #define SIMULLOCK
+    #define SIMULUNLOCK
 #endif /* OW_MT */
 #define BUSLOCK    BUS_lock() ;
 #define BUSUNLOCK  BUS_unlock() ;

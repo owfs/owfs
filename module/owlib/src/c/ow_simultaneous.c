@@ -75,6 +75,7 @@ struct internal_prop ipSimul[] = {
     {"voltage",ft_volatile},
     };
 
+/* returns 0 if valid conversion exists */
 int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) {
     return OW_getcache(type,msec,pn) ;
 }
