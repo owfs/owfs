@@ -298,7 +298,6 @@ static void * Acceptor( int listenfd ) {
 
 int main( int argc , char ** argv ) {
     char c ;
-    progname = strdup(argv[0]) ;
 #ifdef OW_MT
     pthread_t thread ;
     pthread_attr_t attr ;
@@ -307,6 +306,7 @@ int main( int argc , char ** argv ) {
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
 #endif /* OW_MT */
 
+    progname = strdup(argv[0]) ;
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {

@@ -17,7 +17,19 @@ Temperature Voltages (Humidity) and Memory.
 .HP
 .B 26
 [.]XXXXXXXXXXXX[XX][/[
+.B counter
+|
 .B current
+|
+.B date
+|
+.B disconnect/current
+|
+.B disconnect/date
+|
+.B endcharge/current
+|
+.B endcharge/date
 |
 .B humidity
 |
@@ -47,6 +59,38 @@ Temperature Voltages (Humidity) and Memory.
 .TP
 26
 .SH SPECIAL PROPERTIES
+.SS counter
+.I read-write, unsigned integer
+.br
+Time represented as a number.
+.I counter
+increments once per second.
+.br
+Usually set to unix time standard: number of seconds since Jan 1, 1970. The
+.I date
+field will be the unix representation of
+.I counter
+and setting either will change the other.
+.SS date
+.I read-write, ascii
+.br
+26 character date representation of the
+.I counter
+value. Increments once per second.
+.br
+Setting
+.I date
+to a null string will put the current system time.
+.br
+Accepted date formats are:
+.br
+  Sat[urday] March 12 12:23:59 2001
+.br
+  Apr[il] 4 9:34:56 2002
+.br
+  3/23/04 23:34:57
+.br
+  current locale setting (your system's format)
 .SS current
 .I read-only, integer
 .br
@@ -61,6 +105,46 @@ with units in Amps and Ohms.
 Current measurement will be temporarily enabled (see
 .I Ienable
 ) if not currently enabled (pun intended) for this reading.
+.SS disconnect/counter
+.I read-write, unsigned integer
+.br
+Time stamp represented as a number. Takes the
+.counter
+value when the battery is disconnected.
+.br
+Usually set to unix time standard: number of seconds since Jan 1, 1970. The
+.I disconnect/date
+field will be the unix representation of
+.I disconnect/counter
+and setting either will change the other.
+.SS disconnet/date
+.I read-write, ascii
+.br
+26 character date representation of the
+.I disconnect/counter
+value. Format is the same as the 
+.date
+property.
+.SS endcharge/counter
+.I read-write, unsigned integer
+.br
+Time stamp represented as a number. Takes the
+.counter
+value when the battery charge is finished.
+.br
+Usually set to unix time standard: number of seconds since Jan 1, 1970. The
+.I endcharge/date
+field will be the unix representation of
+.I endcharge/counter
+and setting either will change the other.
+.SS endcharge/date
+.I read-write, ascii
+.br
+26 character date representation of the
+.I endcharge/counter
+value. Format is the same as the 
+.date
+property.
 .SS humidity
 .I read-only, floating point
 .br

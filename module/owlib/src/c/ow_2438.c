@@ -55,6 +55,10 @@ bWRITE_FUNCTION( FS_w_page ) ;
 uWRITE_FUNCTION( FS_w_Ienable ) ;
  iREAD_FUNCTION( FS_r_Offset ) ;
 iWRITE_FUNCTION( FS_w_Offset ) ;
+ uREAD_FUNCTION( FS_r_counter ) ;
+uWRITE_FUNCTION( FS_w_counter ) ;
+ dREAD_FUNCTION( FS_r_date ) ;
+dWRITE_FUNCTION( FS_w_date ) ;
 
 /* ------- Structures ----------- */
 
@@ -70,6 +74,14 @@ struct filetype DS2438[] = {
     {"current"   ,    12,  NULL  , ft_integer, ft_volatile, {i:FS_Current}  , {v:NULL}        , NULL      , } ,
     {"Ienable"   ,    12,  NULL  , ft_unsigned,ft_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable}, NULL      , } ,
     {"offset"    ,    12,  NULL  , ft_unsigned,ft_stable  , {i:FS_r_Offset} , {i:FS_w_Offset} , NULL      , } ,
+    {"counter"            ,  12, NULL, ft_unsigned, ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, (void *) ((1<<3)|0x00) , } ,
+    {"date"               ,  24, NULL, ft_date    , ft_second  , {d:FS_r_date}   , {d:FS_w_date}   , (void *) ((1<<3)|0x00) , } ,
+    {"disconnect"         ,   0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}        , NULL                   , } ,
+    {"disconnect/counter" ,  12, NULL, ft_unsigned, ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) ((2<<3)|0x00) , } ,
+    {"disconnect/date"    ,  24, NULL, ft_date    , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) ((2<<3)|0x00) , } ,
+    {"endcharge"          ,   0, NULL, ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}        , NULL                   , } ,
+    {"endcharge/counter"  ,  12, NULL, ft_unsigned, ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) ((2<<3)|0x04) , } ,
+    {"endcharge/date"     ,  24, NULL, ft_date    , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) ((2<<3)|0x04) , } ,
 } ;
 DeviceEntryExtended( 26, DS2438, DEV_temp )
 
@@ -152,6 +164,60 @@ static int FS_w_Offset(const int * i , const struct parsedname * pn) {
     int I = *i ;
     if ( I > 255 || I < -256 ) return -EINVAL ;
     if ( OW_w_offset( I<<3 , pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* set clock */
+static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+    int page   = ((uint32_t)(pn->ft->data))>>3   ;
+    int offset = ((uint32_t)(pn->ft->data))&0x07 ;
+    unsigned char data[8] ;
+    if ( OW_r_page( data, page, pn ) ) return -EINVAL ;
+    data[offset] = u[0]&0xFF ;
+    data[offset+1] = (u[0]>>8)&0xFF ;
+    data[offset+2] = (u[0]>>16)&0xFF ;
+    data[offset+3] = (u[0]>>24)&0xFF ;
+    if ( OW_w_page( data, page, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* set clock */
+static int FS_w_date(const DATE *d , const struct parsedname * pn) {
+    int page   = ((uint32_t)(pn->ft->data))>>3   ;
+    int offset = ((uint32_t)(pn->ft->data))&0x07 ;
+    unsigned char data[8] ;
+    if ( OW_r_page( data, page, pn ) ) return -EINVAL ;
+    data[offset] = d[0]&0xFF ;
+    data[offset+1] = (d[0]>>8)&0xFF ;
+    data[offset+2] = (d[0]>>16)&0xFF ;
+    data[offset+3] = (d[0]>>24)&0xFF ;
+    if ( OW_w_page( data, page, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* read clock */
+int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
+    int page   = ((uint32_t)(pn->ft->data))>>3   ;
+    int offset = ((uint32_t)(pn->ft->data))&0x07 ;
+    unsigned char data[8] ;
+    if ( OW_r_page( data, page, pn ) ) return -EINVAL ;
+    u[0] = ((uint32_t) data[offset])
+        || ((uint32_t) data[offset+1]<<8)
+        || ((uint32_t) data[offset+2]<<16)
+        || ((uint32_t) data[offset+3]<<24) ;
+    return 0 ;
+}
+
+/* read clock */
+int FS_r_date( DATE * d , const struct parsedname * pn) {
+    int page   = ((uint32_t)(pn->ft->data))>>3   ;
+    int offset = ((uint32_t)(pn->ft->data))&0x07 ;
+    unsigned char data[8] ;
+    if ( OW_r_page( data, page, pn ) ) return -EINVAL ;
+    d[0] = ((uint32_t) data[offset])
+        || ((uint32_t) data[offset+1]<<8)
+        || ((uint32_t) data[offset+2]<<16)
+        || ((uint32_t) data[offset+3]<<24) ;
     return 0 ;
 }
 
