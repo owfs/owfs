@@ -62,23 +62,23 @@ to end.
 
 /* information for a specific connection */
 typedef struct connection_info {
-    ftp_listener_t *ftp_listener;
-    telnet_session_t telnet_session;
-    ftp_session_t ftp_session;
+    struct ftp_listener_t *ftp_listener;
+    struct telnet_session_t telnet_session;
+    struct ftp_session_t ftp_session;
     watched_t watched;
-    
+
     struct connection_info *next;
 } connection_info_t;
 
 /* prototypes */
-static int invariant(const ftp_listener_t *f);
-static void *connection_acceptor(ftp_listener_t *f);
+static int invariant(const struct ftp_listener_t *f);
+static void *connection_acceptor(struct ftp_listener_t *f);
 static void addr_to_string(const sockaddr_storage_t *s, char *addr);
 static void *connection_handler(connection_info_t *info);
 static void connection_handler_cleanup(connection_info_t *info);
 
 /* initialize an FTP listener */
-int ftp_listener_init(ftp_listener_t *f, 
+int ftp_listener_init(struct ftp_listener_t *f, 
                       char *address, 
                       int port, 
                       int max_connections,
@@ -252,7 +252,7 @@ int ftp_listener_init(ftp_listener_t *f,
 }
 
 /* receive connections */
-int ftp_listener_start(ftp_listener_t *f, error_t *err)
+int ftp_listener_start(struct ftp_listener_t *f, error_t *err)
 {
     pthread_t thread_id;
     int ret_val;
@@ -282,7 +282,7 @@ int ftp_listener_start(ftp_listener_t *f, error_t *err)
 
 
 #ifndef NDEBUG
-static int invariant(const ftp_listener_t *f) 
+static int invariant(const struct ftp_listener_t *f) 
 {
     int dir_len;
 
@@ -313,7 +313,7 @@ static int invariant(const ftp_listener_t *f)
 #endif /* NDEBUG */
 
 /* handle incoming connections */
-static void *connection_acceptor(ftp_listener_t *f)
+static void *connection_acceptor(struct ftp_listener_t *f)
 {
     error_t err;
     int num_error;
@@ -476,7 +476,7 @@ static char *addr2string(const sockaddr_storage_t *s)
 
 static void *connection_handler(connection_info_t *info) 
 {
-    ftp_listener_t *f;
+    struct ftp_listener_t *f;
     int num_connections;
     char drop_reason[80];
 
@@ -535,7 +535,7 @@ static void *connection_handler(connection_info_t *info)
 /* clean up a connection */
 static void connection_handler_cleanup(connection_info_t *info) 
 {
-    ftp_listener_t *f;
+    struct ftp_listener_t *f;
 
     f = info->ftp_listener;
 
@@ -559,7 +559,7 @@ static void connection_handler_cleanup(connection_info_t *info)
     free(info);
 }
 
-void ftp_listener_stop(ftp_listener_t *f)
+void ftp_listener_stop(struct ftp_listener_t *f)
 {
     daemon_assert(invariant(f));
 

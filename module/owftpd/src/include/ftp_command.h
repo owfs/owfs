@@ -1,11 +1,11 @@
-/* 
+/*
  * $Id$
  *
  * The following comands are parsed:
  *
  * USER <SP> <username>
  * PASS <SP> <password>
- * CWD  <SP> <pathname> 
+ * CWD  <SP> <pathname>
  * CDUP
  * QUIT
  * PORT <SP> <host-port>
@@ -45,19 +45,19 @@
 /* maximum string length */
 #define MAX_STRING_LEN PATH_MAX
 
-typedef struct {
+struct ftp_command_t {
     char command[5];
     int num_arg;
     union {
         char string[MAX_STRING_LEN+1];
         sockaddr_storage_t host_port;
         int num;
-	off_t offset;
+        off_t offset;
     } arg[MAX_ARG];
-} ftp_command_t;
+} ;
 
 
-int ftp_command_parse(const char *input, ftp_command_t *cmd);
+int ftp_command_parse(const char *input, struct ftp_command_t *cmd);
 
 #endif /* FTP_COMMAND_H */
 

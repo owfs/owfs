@@ -70,10 +70,10 @@ static const char *parse_offset(off_t *ofs, const char *s);
 static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s);
 static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s); 
 
-int ftp_command_parse(const char *input, ftp_command_t *cmd) {
+int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
     int i;
     int match;
-    ftp_command_t tmp;
+    struct ftp_command_t tmp;
     int c;
     const char *optional_number;
     int no_args ; /* Is there a space after the command for an argument? */

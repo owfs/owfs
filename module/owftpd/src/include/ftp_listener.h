@@ -1,4 +1,4 @@
-/* 
+/*
  * $Id$
  */
 
@@ -12,7 +12,7 @@
 
 #define DEFAULT_FTP_PORT 21
 
-typedef struct {
+struct ftp_listener_t {
 
     /* file descriptor incoming connections arrive on */
     int fd;
@@ -50,16 +50,16 @@ typedef struct {
     /* condition to signal thread requesting shutdown */
     pthread_cond_t shutdown_cond;
 
-} ftp_listener_t;
+} ;
 
-int ftp_listener_init(ftp_listener_t *f, 
-                      char *address, 
-                      int port, 
+int ftp_listener_init(struct ftp_listener_t *f,
+                      char *address,
+                      int port,
                       int max_connections,
-                      int inactivity_timeout, 
+                      int inactivity_timeout,
                       error_t *err);
-int ftp_listener_start(ftp_listener_t *f, error_t *err);
-void ftp_listener_stop(ftp_listener_t *f);
+int ftp_listener_start(struct ftp_listener_t *f, error_t *err);
+void ftp_listener_stop(struct ftp_listener_t *f);
 
 #endif /* FTP_LISTENER_H */
 

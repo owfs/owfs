@@ -63,8 +63,7 @@ static const char *skip_ls_options(const char *filespec);
 #ifndef HAVE_LOCALTIME_R
 #include <pthread.h>
 
-struct tm *localtime_r(const time_t *timep, struct tm *timeptr) 
-{
+struct tm *localtime_r(const time_t *timep, struct tm *timeptr)  {
     static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
     pthread_mutex_lock(&time_lock);
@@ -107,7 +106,7 @@ int file_nlst(int out, const char *cur_dir, const char *filespec)
 
     /* do a glob() */
     memset(&glob_buf, 0, sizeof(glob_buf));
-    glob_ret = glob(pattern, 
+    glob_ret = glob(pattern,
                     GLOB_ERR | GLOB_NOSORT | GLOB_PERIOD, 
             NULL, 
             &glob_buf);

@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     struct passwd *user_info;
     error_t err;
 
-    ftp_listener_t ftp_listener;
+    struct ftp_listener_t ftp_listener;
 
     sigset_t term_signal;
     int sig;

@@ -15,6 +15,10 @@ $Id$
     Written 2003 Paul H Alfille
 */
 
+#include "owfs_config.h"
+#include "ow.h"
+#include "owfs.h"
+
 #include <linux/stddef.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -25,10 +29,6 @@ $Id$
 #include <signal.h>
 
 #include <fuse.h>
-
-#include "owfs_config.h"
-#include "ow.h"
-#include "owfs.h"
 
 static void ow_exit( int e ) ;
 static void fuser_mount_wrapper( void ) ;
