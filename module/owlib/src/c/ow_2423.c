@@ -69,7 +69,7 @@ struct filetype DS2423[] = {
 #ifdef OW_CACHE
     {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount}, NULL, } ,
 #endif /*OW_CACHE*/
-    {"pages/count",   32,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            NULL, } ,
+    {"pages/count",   12,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            NULL, } ,
 } ;
 DeviceEntry( 1D, DS2423 )
 
