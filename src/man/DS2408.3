@@ -27,6 +27,8 @@
 |
 .B strobe
 |
+.B set_alarm
+|
 .B address
 |
 .B crc8
@@ -85,6 +87,29 @@ references all channels simultaneously, comma separated.
 Is the
 .I DS2408
 powered parasitically (0) or separately on the Vcc pin (1)?
+.SS set_alarm
+.I read-write, integer unsigned (0-333333333)
+.br
+A number will consist of three digits XYYYYYYYY, where:
+.TP
+X
+select source and logical term (0=>pin+OR, 1=>latch+OR, 2=>pin+AND, 3=>latch+AND)
+.TP
+Y
+select cannel and polarity (0=>unselected+LOW, 1=>unselected+HIGH, 2=>selected+LOW, 3=>selected+HIGH)
+.PP
+All digits will be truncated to the 0-3 (or 0-1) range. Leading zeroes are optional. Low-oder digit - channel 0.
+.PP
+Example:
+.TP
+100000033
+Responds on Conditional Search when latch.1 or latch.0 are set in 1.
+.TP
+222000000
+Responds on Conditional Search when sensed.7 and sensed.6 are set in 0.
+.TP
+000000000 (0)
+Never responds to Conditional Search.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii
@@ -117,7 +142,9 @@ Part name assigned by Dallas Semi. E.g.
 .I DS2401
 Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
-None implemented.
+Use the
+.I set_alarm
+property to set the alarm triggering criteria.
 .SH DESCRIPTION
 This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
 .PP

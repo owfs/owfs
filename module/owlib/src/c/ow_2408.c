@@ -51,7 +51,10 @@ yWRITE_FUNCTION( FS_w_strobe ) ;
 yWRITE_FUNCTION( FS_w_pio ) ;
  yREAD_FUNCTION( FS_sense ) ;
  yREAD_FUNCTION( FS_power ) ;
- yREAD_FUNCTION( FS_latch ) ;
+ yREAD_FUNCTION( FS_r_latch ) ;
+yWRITE_FUNCTION( FS_w_latch ) ;
+ uREAD_FUNCTION( FS_r_s_alarm ) ;
+uWRITE_FUNCTION( FS_w_s_alarm ) ;
 
 /* ------- Structures ----------- */
 
@@ -61,8 +64,9 @@ struct filetype DS2408[] = {
     {"power"     ,     1,  NULL,    ft_yesno , ft_volatile, {y:FS_power}    , {v:NULL},        NULL, } ,
     {"PIO"       ,     1,  &A2408,  ft_yesno , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio},    NULL, } ,
     {"sensed"    ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_sense}    , {v:NULL},        NULL, } ,
-    {"latch"     ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_latch}    , {v:NULL},        NULL, } ,
+    {"latch"     ,     1,  &A2408,  ft_yesno , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},  NULL, } ,
     {"strobe"    ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, NULL, } ,
+    {"set_alarm" ,     9,  NULL,    ft_unsigned,ft_stable , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 29, DS2408 )
 
@@ -72,8 +76,11 @@ DeviceEntry( 29, DS2408 )
 static int OW_w_conditional( const unsigned char * data , const struct parsedname * pn ) ;
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
 static int OW_r_latch( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_c_latch( const struct parsedname * pn ) ;
 static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) ;
 static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) ;
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
@@ -134,12 +141,41 @@ static int FS_w_pio(const int * y , const struct parsedname * pn) {
 	return 0 ;
 }
 
-/* 2408 switch activity latch -- resets*/
-static int FS_latch(int * y , const struct parsedname * pn) {
+/* 2408 read activity latch */
+static int FS_r_latch(int * y , const struct parsedname * pn) {
     unsigned char data ;
     int i ;
     if ( OW_r_latch(&data,pn) ) return -EINVAL ;
     for ( i=0 ; i<8 ; ++i ) y[i] = UT_getbit(&data,i) ;
+    return 0 ;
+}
+
+/* 2408 write activity latch */
+static int FS_w_latch(const int * y, const struct parsedname * pn) {
+    if ( OW_c_latch(pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2408 alarm settings*/
+static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
+    unsigned char data[3] ;
+    int i, p ;
+    if ( OW_r_s_alarm(data,pn) ) return -EINVAL ;
+    u[0] = ( data[2] & 0x03 ) * 100000000 ;
+    for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) UT_getbit(&data[0],i) | ( UT_getbit(&data[1],i) << 1 ) * p ;
+    return 0 ;
+}
+
+/* 2408 alarm settings*/
+static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
+    unsigned char data[3];
+    int i, p ;
+    for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) {
+	UT_setbit(&data[0],i,(int)(u[0] / p % 10) & 0x01) ;
+	UT_setbit(&data[1],i,((int)(u[0] / p % 10) & 0x02) >> 1) ;
+    }
+    data[2] = (u[0] / 100000000 % 10) & 0x03 ;
+    if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -176,54 +212,85 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
     return ret ;
 }
 
-/* Read and reset teh activity latch */
+/* Read activity latch */
 static int OW_r_latch( unsigned char * data , const struct parsedname * pn ) {
     unsigned char d[6] ; /* register read */
-	unsigned char p[] = { 0xC3, 0xFF, } ;
-    int ret ;
 
     /* Read registers (before clearing) */
-	if ( OW_r_reg(d,pn) ) return 1 ;
-
-	BUSLOCK
-        ret = BUS_select(pn) || BUS_sendback_data( p , p , 2 ) || p[1]!=0xAA ;
-    BUSUNLOCK
-    if ( ret ) return 1 ;
+    if ( OW_r_reg(d,pn) ) return 1 ;
 
     *data = d[2] ; /* register 0x8A */
     return 0 ;
 }
 
+/* Reset activity latch */
+static int OW_c_latch(const struct parsedname * pn) {
+    unsigned char p[] = { 0xC3, 0xFF, } ;
+    int ret ;
+    BUSLOCK
+    ret = BUS_select(pn) || BUS_sendback_data( p , p , 2 ) || p[1]!=0xAA ;
+    BUSUNLOCK
+    return ret ;
+}
+
 /* Write control/status */
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
     unsigned char d[6] ; /* register read */
-	unsigned char p[] = { 0xCC, 0x8D, 0x00, data, } ;
+    unsigned char p[] = { 0xCC, 0x8D, 0x00, data, } ;
     int ret ;
 
-	BUSLOCK
+    BUSLOCK
         ret = BUS_select(pn) || BUS_send_data( p , 4 ) ;
     BUSUNLOCK
     if ( ret ) return -EINVAL ;
 
     /* Read registers */
-	if ( OW_r_reg(d,pn) ) return -EINVAL ;
+    if ( OW_r_reg(d,pn) ) return -EINVAL ;
 
-    return ( data != d[5] ) ;
+    return ( (data & 0x0F) != (d[5] & 0x0F) ) ;
 }
 
 /* Write conditionakl search bytes (2 bytes) */
 static int OW_w_conditional( const unsigned char * data , const struct parsedname * pn ) {
     unsigned char d[6] ; /* register read */
-	unsigned char p[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
+    unsigned char p[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
     int ret ;
 
-	BUSLOCK
-        ret = BUS_select(pn) || BUS_send_data( p , 5 ) ;
+    BUSLOCK
+	ret = BUS_select(pn) || BUS_send_data( p , 5 ) ;
     BUSUNLOCK
     if ( ret ) return 1 ;
 
     /* Read registers */
-	if ( OW_r_reg(d,pn) ) return 1 ;
+    if ( OW_r_reg(d,pn) ) return 1 ;
 
     return  ( data[0] != d[3] ) || ( data[1] != d[4] ) ;
 }
+
+/* read alarm settings */
+static int OW_r_s_alarm( unsigned char * data , const struct parsedname * pn ) {
+    unsigned char d[6] ;
+    if ( OW_r_reg(d,pn) ) return -EINVAL ;
+    data[0] = d[3] ; data[1] = d[4] ; data[2] = d[5] & 0x03 ;
+    return 0 ;
+}
+
+/* write alarm settings */
+static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) {
+    unsigned char d[6], cr ;
+    unsigned char c[] = { 0xCC, 0x8D, 0x00, 0x00, } ;
+    unsigned char s[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
+    int ret ;
+    if ( OW_r_reg(d,pn) ) return -EINVAL ;
+    c[3] = cr = (data[2] & 0x03) | (d[5] & 0x0C) ;
+    BUSLOCK
+	ret = BUS_select(pn) || BUS_send_data( s , 5 ) || BUS_send_data( c , 4 ) ;
+    BUSUNLOCK
+    if ( ret ) return 1 ;
+
+    /* Read registers */
+    if ( OW_r_reg(d,pn) ) return 1 ;
+                                                                                                                                                 
+    return  ( data[0] != d[3] ) || ( data[1] != d[4] ) || ( cr != (d[5] & 0x0F) ) ;
+}
+
