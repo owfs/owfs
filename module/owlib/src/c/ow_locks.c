@@ -55,11 +55,24 @@ struct devlock {
 /* Essentially sets up semaphore for device slots */
 void LockSetup( void ) {
 #ifdef OW_MT
-//    int i ;
-//    for ( i=0 ; i<DEVLOCKS ; ++i) {
-//        DevLock[i].users = 0 ;
-//        pthread_mutex_init( &DevLock[i].lock, NULL ) ;
-//    }
+#ifdef __UCLIBC__
+    int i ;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ADAPTIVE_NP);
+
+    pthread_mutex_init(&bus_mutex, &attr);
+    pthread_mutex_init(&dev_mutex, &attr);
+    pthread_mutex_init(&stat_mutex, &attr);
+    pthread_mutex_init(&cache_mutex, &attr);
+    pthread_mutex_init(&store_mutex, &attr);
+    pthread_mutex_init(&fstat_mutex, &attr);
+    pthread_mutex_init(&uclibc_mutex, &attr);
+    for ( i=0 ; i<DEVLOCKS ; ++i) {
+        pthread_mutex_init( &DevLock[i].lock, &attr ) ;
+    }
+    pthread_mutexattr_destroy(&attr);
+#endif
     sem_init( &devlocks, 0, DEVLOCKS ) ;
 #endif /* OW_MT */
 }
