@@ -24,6 +24,8 @@ int ULevel ;
 int USpeed ;
 int ProgramAvailable ;
 enum adapter_type Adapter ;
+const char * adapter_name = "Unknown" ;
+
 
 #ifdef OW_USB
     usb_dev_handle * devusb = NULL ;

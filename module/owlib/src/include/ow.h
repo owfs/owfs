@@ -574,6 +574,7 @@ extern int USpeed ;
 extern int ProgramAvailable ;
 enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, } ;
 extern enum adapter_type Adapter ;
+extern const char * adapter_name ;
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
