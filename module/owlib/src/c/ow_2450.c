@@ -94,8 +94,8 @@ DeviceEntryExtended( 20, DS2450, DEV_volt )
 /* ------- Functions ------------ */
 
 /* DS2450 */
-static int OW_r_mem( char * const p , const unsigned int size, const int location , const struct parsedname * const pn) ;
-static int OW_w_mem( const char * p , const unsigned int size , const int location , const struct parsedname * const pn) ;
+static int OW_r_mem( unsigned char * const p , const unsigned int size, const int location , const struct parsedname * const pn) ;
+static int OW_w_mem( const unsigned char * p , const unsigned int size , const int location , const struct parsedname * const pn) ;
 static int OW_volts( FLOAT * const f , const int resolution , const struct parsedname * const pn ) ;
 static int OW_1_volts( FLOAT * const f , const int element, const int resolution , const struct parsedname * const pn ) ;
 static int OW_convert( const struct parsedname * const pn ) ;
@@ -103,8 +103,8 @@ static int OW_r_pio( int * const pio , const struct parsedname * const pn ) ;
 static int OW_r_1_pio( int * const pio , const int element , const struct parsedname * const pn ) ;
 static int OW_w_pio( const int * const pio , const struct parsedname * const pn ) ;
 static int OW_w_1_pio( const int pio , const int element , const struct parsedname * const pn ) ;
-static int OW_r_vset( FLOAT * const V , const int high, const int two, const struct parsedname * const pn ) ;
-static int OW_w_vset( const FLOAT * const V , const int high, const int two, const struct parsedname * const pn ) ;
+static int OW_r_vset( FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) ;
+static int OW_w_vset( const FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) ;
 static int OW_r_high( unsigned int * const y , const int high, const struct parsedname * const pn ) ;
 static int OW_w_high( const unsigned int * const y , const int high, const struct parsedname * const pn ) ;
 static int OW_r_flag( unsigned int * const y , const int high, const struct parsedname * const pn ) ;
@@ -114,13 +114,13 @@ static int OW_w_por( const int por , const struct parsedname * const pn ) ;
 
 /* read a page of memory (8 bytes) */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
+    if ( OW_r_mem(buf,size,(int)(((pn->extension)<<3)+offset),pn) ) return -EINVAL ;
     return size ;
 }
 
 /* write an 8-byte page */
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_mem(buf,size,((pn->extension)<<3)+offset,pn) ) return -EINVAL ;
+    if ( OW_w_mem(buf,size,(int)(((pn->extension)<<3)+offset),pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -194,13 +194,13 @@ static int FS_w_PIO(const int *y, const struct parsedname * pn) {
 
 /* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem(buf,size,offset,pn) ) return -EINVAL ;
+    if ( OW_r_mem(buf,size,(int)offset,pn) ) return -EINVAL ;
     return size ;
 }
 
 /* 2450 A/D */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_mem(buf,size,offset,pn) ) return -EINVAL ;
+    if ( OW_w_mem(buf,size,(int)offset,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -222,7 +222,7 @@ static int FS_w_setvolt( const FLOAT * const V, const struct parsedname * const 
 }
 
 /* read page from 2450 */
-static int OW_r_mem( char * const p , const unsigned int size, const int location , const struct parsedname * const pn) {
+static int OW_r_mem( unsigned char * const p , const unsigned int size, const int location , const struct parsedname * const pn) {
     unsigned char buf[3+8+2] = {0xAA, location&0xFF,(location>>8)&0xFF, } ;
     int thispage = 8-(location&0x07);
     int s = size ;
@@ -253,10 +253,10 @@ static int OW_r_mem( char * const p , const unsigned int size, const int locatio
 }
 
 /* write to 2450 */
-static int OW_w_mem( const char * const p , const unsigned int size , const int location, const struct parsedname * const pn) {
+static int OW_w_mem( const unsigned char * const p , const unsigned int size , const int location, const struct parsedname * const pn) {
     // command, address(2) , data , crc(2), databack
     unsigned char buf[] = {0x55, location&0xFF,(location>>8)&0xFF, p[0], 0xFF,0xFF, 0xFF, } ;
-    int i ;
+    unsigned int i ;
     int ret ;
 //printf("2450 W mem size=%d location=%d\n",size,location) ;
 
@@ -430,23 +430,23 @@ static int OW_w_1_pio( const int pio , const int element, const struct parsednam
     return OW_w_mem(p,2,(1<<3)+(element<<1),pn) ;
 }
 
-static int OW_r_vset( FLOAT * const V , const int high, const int two, const struct parsedname * const pn ) {
+static int OW_r_vset( FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,2<<3,pn) ) return 1;
-    V[0] = (two?.01:.02) * p[0+high] ;
-    V[1] = (two?.01:.02) * p[2+high] ;
-    V[2] = (two?.01:.02) * p[4+high] ;
-    V[3] = (two?.01:.02) * p[6+high] ;
+    V[0] = (resolution?.02:.01) * p[0+high] ;
+    V[1] = (resolution?.02:.01) * p[2+high] ;
+    V[2] = (resolution?.02:.01) * p[4+high] ;
+    V[3] = (resolution?.02:.01) * p[6+high] ;
     return 0 ;
 }
 
-static int OW_w_vset( const FLOAT * const V , const int high, const int two, const struct parsedname * const pn ) {
+static int OW_w_vset( const FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,2<<3,pn) ) return 1;
-    p[0+high] = V[0] * (two?100.:50.) ;
-    p[2+high] = V[1] * (two?100.:50.) ;
-    p[4+high] = V[2] * (two?100.:50.) ;
-    p[6+high] = V[3] * (two?100.:50.) ;
+    p[0+high] = V[0] * (resolution?50.:100.) ;
+    p[2+high] = V[1] * (resolution?50.:100.) ;
+    p[4+high] = V[2] * (resolution?50.:100.) ;
+    p[6+high] = V[3] * (resolution?50.:100.) ;
     if ( OW_w_mem(p,8,2<<3,pn) ) return 1;
     /* turn POR off */
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
