@@ -17,11 +17,15 @@ Voltage * 4  and Memory.
 .HP
 .B 20
 [.]XXXXXXXXXXXX[XX][/[
+.B continuous
+|
 .B memory
 |
 .B pages/page.[0-3|ALL]
 |
-.B volts.[0-3|ALL]
+.B volt.[A-D|ALL]
+|
+.B volt2.[A-D|ALL]
 |
 .B address
 |
@@ -37,6 +41,10 @@ Voltage * 4  and Memory.
 .TP
 20
 .SH SPECIAL PROPERTIES
+.SS continuous
+.I read-write, yes-no
+.br
+Should A/D be performed continuously? Set true (1) only if Vcc powered (not parasitically powered).
 .SS memory
 .I read-write, binary
 .br
@@ -48,13 +56,20 @@ Memory is split into 4 pages of 8 bytes each. Mostly for reading and setting dev
 .br
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
-.SS volts.0 ... volts.3 volts.ALL
+.SS volt.A ... volt.D volt.ALL
 .I read-only, floating point
 .br
-Voltage read, 16 bit resolution. Range 0 - 5.12V.
+Voltage read, 16 bit resolution. Range 0 - 5.10V.
 .br
 .I ALL
-is an aggregate of the pages. Readings are made simultaneously.
+is an aggregate of the voltages. Readings are made simultaneously.
+.SS volt2.A ... volt2.D volt2.ALL
+.I read-only, floating point
+.br
+Voltage read, 16 bit resolution. Range 0 - 2.55V.
+.br
+.I ALL
+is an aggregate of the voltages. Readings are made simultaneously.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii

@@ -50,6 +50,8 @@ bWRITE_FUNCTION( FS_w_page ) ;
  bREAD_FUNCTION( FS_r_mem ) ;
 bWRITE_FUNCTION( FS_w_mem ) ;
  fREAD_FUNCTION( FS_volts ) ;
+ yREAD_FUNCTION( FS_r_cont ) ;
+yWRITE_FUNCTION( FS_w_cont ) ;
 
 /* ------- Structures ----------- */
 
@@ -59,8 +61,10 @@ struct filetype DS2450[] = {
     F_STANDARD   ,
     {"pages"     ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
     {"pages/page",     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"continuous",     1,  NULL,    ft_yesno , ft_stable  , {b:FS_r_cont}   , {b:FS_w_cont}, NULL, } ,
     {"memory"    ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
-    {"volts"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , NULL, } ,
+    {"volt"      ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , (void *) 1, } ,
+    {"volt2"     ,    12,  &A2450v, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}     , (void *) 0, } ,
 } ;
 DeviceEntry( 20, DS2450 )
 
@@ -69,7 +73,7 @@ DeviceEntry( 20, DS2450 )
 /* DS2450 */
 static int OW_r_mem( char * p , const int size, const int location , const struct parsedname * pn) ;
 static int OW_w_mem( const char * p , const int size , const int location , const struct parsedname * pn) ;
-static int OW_volts( FLOAT * f , const struct parsedname * pn ) ;
+static int OW_volts( FLOAT * f , const int resolution , const struct parsedname * pn ) ;
 
 /* 2450 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -87,9 +91,26 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 }
 
 /* 2450 A/D */
+static int FS_r_cont(int *y, const struct parsedname * pn) {
+    unsigned char p ;
+    if ( OW_r_mem(&p,1,0x1C,pn) ) return -EINVAL ;
+//printf("Cont %d\n",p) ;
+    y[0] = (p==0x40) ;
+    return 0 ;
+}
+
+/* 2450 A/D */
+static int FS_w_cont(const int *y, const struct parsedname * pn) {
+    unsigned char p = 0x40 ;
+    unsigned char q = 0x00 ;
+    if ( OW_w_mem(y[0]?&p:&q,1,0x1C,pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     unsigned char p[8] ;
-printf("2450 r mem: size %d offset %d \n ",size,offset);
+//printf("2450 r mem: size %d offset %d \n ",size,offset);
     if ( size+offset>4*8 ) return -ERANGE ;
     if ( OW_r_mem(p,size,offset,pn) ) return -EINVAL ;
     return FS_read_return(buf,size,offset,p,8) ;
@@ -97,7 +118,7 @@ printf("2450 r mem: size %d offset %d \n ",size,offset);
 
 /* 2450 A/D */
 static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-printf("2450 w mem: size %d offset %d \n ",size,offset);
+//printf("2450 w mem: size %d offset %d \n ",size,offset);
     if ( size+offset>4*8 ) return -ERANGE ;
     if ( OW_w_mem(buf,size,offset,pn) ) return -EINVAL ;
     return 0 ;
@@ -105,32 +126,37 @@ printf("2450 w mem: size %d offset %d \n ",size,offset);
 
 /* 2450 A/D */
 static int FS_volts(FLOAT * V , const struct parsedname * pn) {
-    if ( OW_volts( V , pn ) ) return -EINVAL ;
+    if ( OW_volts( V , (int) pn->ft->data , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* read page from 2450 */
 static int OW_r_mem( char * p , const int size, const int location , const struct parsedname * pn) {
     unsigned char buf[3+8+2] = {0xAA, location&0xFF,(location>>8)&0xFF, } ;
-    int rest = 8-(location&0x07);
-    int s = size - rest ;
+    int thispage = 8-(location&0x07);
+    int s = size ;
     int ret ;
+//printf("2450 R mem data=%d size=%d location=%d\n",*p,size,location) ;
 
+    /* First page */
     BUS_lock() ;
-        ret = BUS_select(pn) || BUS_send_data(buf,3) || BUS_readin_data(&buf[3],rest+2) || CRC16(buf,rest+5) ;
+        ret = BUS_select(pn) || BUS_send_data(buf,3) || BUS_readin_data(&buf[3],thispage+2) || CRC16(buf,thispage+5) ;
     BUS_unlock() ;
     if ( ret ) return 1 ;
+//printf("2450 R mem 1\n") ;
 
-    memcpy( p , &buf[3] , (size_t) rest ) ;
+    if (s>thispage) s=thispage ;
+    memcpy( p , &buf[3] , (size_t) s ) ;
 
-    for ( ; s>0; s-=8 ) {
+    /* cycle through additional pages */
+    for ( s=size-thispage; s>0; s-=thispage ) {
         BUS_lock() ;
             ret = BUS_readin_data(&buf[3],8+2) || CRC16(&buf[3],8+2) ;
         BUS_unlock() ;
         if ( ret ) return 1 ;
 
-        rest = (s>8) ? 8 : s ;
-        memcpy( &p[size-s] , &buf[3] , (size_t) rest ) ;
+        thispage = (s>8) ? 8 : s ;
+        memcpy( &p[size-s] , &buf[3] , (size_t) thispage ) ;
     }
     return 0 ;
 }
@@ -141,6 +167,7 @@ static int OW_w_mem( const char * p , const int size , const int location, const
     unsigned char buf[] = {0x55, location&0xFF,(location>>8)&0xFF, p[0], 0xFF,0xFF, 0xFF, } ;
     int i ;
     int ret ;
+//printf("2450 W mem size=%d location=%d\n",size,location) ;
 
     if ( size == 0 ) return 0 ;
 
@@ -152,10 +179,10 @@ static int OW_w_mem( const char * p , const int size , const int location, const
 
     /* rest of the bytes */
     for ( i=1 ; i<size ; ++i ) {
-        buf[3] = p[i] ;
-        buf[4] = buf[5] = buf[6] = 0xFF ;
+        buf[0] = p[i] ;
+        buf[1] = buf[2] = buf[3] = 0xFF ;
         BUS_lock() ;
-            ret =BUS_sendback_data(&buf[3],&buf[3],4) || CRC16seeded(&buf[3],3, location+i) || (buf[6]!=p[i]) ;
+            ret =BUS_sendback_data(buf,buf,4) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
         BUS_unlock() ;
 
         if ( ret ) return 1 ;
@@ -165,22 +192,21 @@ static int OW_w_mem( const char * p , const int size , const int location, const
 
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution and all 4 channels */
-static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
+/* resolution is 1->5.10V 0->2.55V */
+static int OW_volts( FLOAT * f , const int resolution, const struct parsedname * pn ) {
     unsigned char control[8] ;
     unsigned char data[8] ;
+    int i ;
     unsigned char convert[] = { 0x3C , 0x0F , 0x00, 0xFF, 0xFF, } ;
     int ret ;
     // Get control registers and set to A2D 16 bits
     if ( OW_r_mem( control , 8, 1<<3, pn ) ) return 1 ;
 //printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
-    control[0] = 0x00 ; // 16bit, A/D
-    control[1] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
-    control[2] = 0x00 ; // 16bit, A/D
-    control[3] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
-    control[4] = 0x00 ; // 16bit, A/D
-    control[5] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
-    control[6] = 0x00 ; // 16bit, A/D
-    control[7] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
+    for ( i=0; i<8 ; i++ ){
+        control[i] = 0x00 ; // 16bit, A/D
+        control[++i] &= 0x7F ; // Reset -- leave input range alone    control[0] = 0x00 ; // 16bit, A/D
+        control[i] |= (unsigned char) resolution ;
+    }
 //printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
 
     // Set control registers
@@ -203,10 +229,10 @@ static int OW_volts( FLOAT * f , const struct parsedname * pn ) {
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
-    f[0] = ((control[1]&0x01)?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;
-    f[1] = ((control[3]&0x01)?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[3])<<8)|data[2]) ;
-    f[2] = ((control[5]&0x01)?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[5])<<8)|data[4]) ;
-    f[3] = ((control[7]&0x01)?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[7])<<8)|data[6]) ;
+    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;
+    f[1] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[3])<<8)|data[2]) ;
+    f[2] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[5])<<8)|data[4]) ;
+    f[3] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[7])<<8)|data[6]) ;
     return 0 ;
 }
 
