@@ -15,7 +15,7 @@ $Id$
 static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS2480_databit(int sendbit, int * getbit) ;
 static int DS2480_reset( const struct parsedname * const pn ) ;
-static int DS2480_read(unsigned char * const buf, const int size ) ;
+static int DS2480_read(unsigned char * const buf, const size_t size ) ;
 static int DS2480_write(const unsigned char * const buf, const size_t size ) ;
 static int DS2480_sendout_data( const unsigned char * const data , const int len ) ;
 static int DS2480_level(int new_level) ;
@@ -263,7 +263,6 @@ int DS2480_detect( void ) {
             break;
         }
 //printf("2480Detect version=%d\n",Adapter) ;
-        GoodSetup = 1 ; /* Happy with setup! */
         return 0 ;
     }
 //printf("2480Detect bad echo\n");
@@ -623,13 +622,13 @@ static int DS2480_write(const unsigned char *const buf, const size_t size ) {
           -errno = read error
           -EINTR = timeout
  */
-static int DS2480_read(unsigned char * const buf, const int size ) {
+static int DS2480_read(unsigned char * const buf, const size_t size ) {
     fd_set fd;
     struct timeval tval;
     int cnt;
 
     // loop to wait until each byte is available and read it
-    for (cnt = 0; cnt < (ssize_t)size; cnt++)
+    for (cnt = 0; cnt < size; cnt++)
     {
         // set a descriptor to wait for a character available
         FD_ZERO(&fd);

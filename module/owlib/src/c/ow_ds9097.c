@@ -19,7 +19,7 @@ static int DS9097_ProgramPulse( void ) ;
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 //int DS9097_detect( void ) ;
 static int DS9097_reset( const struct parsedname * const pn ) ;
-static int DS9097_read(unsigned char * const buf, const int size ) ;
+static int DS9097_read(unsigned char * const buf, const size_t size ) ;
 static int DS9097_write( const unsigned char * const bytes, const size_t num ) ;
 static int DS9097_level(int new_level) ;
 static int DS9097_read_bits( unsigned char * const bits , const int length ) ;
@@ -49,7 +49,6 @@ int DS9097_detect( void ) {
     DS9097_setroutines( & iroutines ) ;
     /* Reset the bus */
     Adapter = adapter_DS9097 ; /* OWFS assigned value */
-    GoodSetup = 1 ; /* Happy with setup (actually can't really tell) */
     adapter_name = "DS9097" ;
     return DS9097_reset(NULL) ;
 }
@@ -252,9 +251,9 @@ static int DS9097_write( const unsigned char * const bytes, const size_t num ) {
 /* Time out on each byte */
 /* return 0 valid, else <0 error */
 /* No matching read */
-static int DS9097_read( unsigned char * const byte, const int num ) {
+static int DS9097_read( unsigned char * const byte, const size_t num ) {
     int ret ;
-    int remain = num-(UART_FIFO_SIZE>>3) ;
+    int remain = (int)num-(UART_FIFO_SIZE>>3) ;
     unsigned int i, num8 = num<<3 ;
     if ( remain > 0 ) {
         return DS9097_read( byte , UART_FIFO_SIZE>>3 ) || DS9097_read( &byte[UART_FIFO_SIZE>>3],remain) ;

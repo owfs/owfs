@@ -41,9 +41,6 @@ time_t dir_time ; /* time of last directory scan */
 int background = 1 ; /* operate in background mode */
 int readonly = 0 ; /* readonly file system */
 
-/* Overall flag for valid setup */
-int GoodSetup = 0 ;
-
 struct interface_routines iroutines ;
 
 enum temp_type tempscale = temp_celsius ; /* Default Celsius */

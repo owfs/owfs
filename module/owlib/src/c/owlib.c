@@ -29,6 +29,9 @@ void LibSetup( void ) {
 //printf("CacheOpened\n");
 #endif /* OW_CACHE */
     start_time = time(NULL) ;
+
+   /* Set up default adapter */
+    BadAdapter_detect() ;
 }
 
 #ifdef __UCLIBC__
@@ -149,16 +152,16 @@ int LibStart( void ) {
      *   daemon() hanged in systemcall dup2() for some reason???
      * I tried to replace uClibc's daemon() with the one above. It worked
      * in both cases sometimes, but not always... ?!?
-     * 
+     *
      * The best would be to use a statically linked owfs-binary, and then it
      * works in both cases.
      */
     //if(background) printf("Call daemon\n");
     if ( background &&
 #if defined(__UCLIBC__)
-	 my_daemon(1, 0)
+     my_daemon(1, 0)
 #else /* defined(__UCLIBC__) */
-	 daemon(1, 0)
+     daemon(1, 0)
 #endif /* defined(__UCLIBC__) */
     ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
@@ -187,58 +190,61 @@ int LibStart( void ) {
 /** Actually COM and Parallel */
 int ComSetup( const char * busdev ) {
     struct stat s ;
-    int ret ;
+    int ret = 0 ;
 
     if ( devport ) {
         fprintf(stderr,"1-wire port already set to %s, ignoring %s.\n",devport,busdev) ;
-        return 1 ;
+        return 0 ;
     }
-    if ( (devport=strdup(busdev)) == NULL ) return -ENOMEM ;
-    if ( (ret=stat( devport, &s )) ) {
+    if ( (devport=strdup(busdev)) == NULL ) {
+        ret = -ENOMEM ;
+    } else if ( (ret=stat( devport, &s )) ) {
         syslog( LOG_ERR, "Cannot stat port: %s error=%s\n",devport,strerror(ret)) ;
-        return -ret ;
-    }
-    if ( ! S_ISCHR(s.st_mode) ) syslog( LOG_INFO , "Not a character device: %s\n",devport) ;
-    if ((devfd = open(devport, O_RDWR | O_NONBLOCK)) < 0) {
+        ret = -ret ;
+    } else if ( ! S_ISCHR(s.st_mode) ) {
+        syslog( LOG_INFO , "Not a character device: %s\n",devport) ;
+        ret = -EBADF ;
+    } else if ((devfd = open(devport, O_RDWR | O_NONBLOCK)) < 0) {
         ret = errno ;
         syslog( LOG_ERR,"Cannot open port: %s error=%s\n",devport,strerror(ret)) ;
-        return -ret ;
-    }
-    if ( major(s.st_rdev) == 99 ) { /* parport device */
+        ret = -ret ;
+    } else if ( major(s.st_rdev) == 99 ) { /* parport device */
 #ifndef OW_PARPORT
-	return 1;
+        ret =  -ENOPROTOOPT ;
 #else /* OW_PARPORT */
-        if ( DS1410_detect() ) {
+        if ( (ret=DS1410_detect()) ) {
             syslog(LOG_WARNING, "Cannot detect the DS1410E parallel adapter\n");
-            return 1 ;
         }
 #endif /* OW_PARPORT */
-    } else { /* serial device */
-        if ( COM_open() ) return -ENODEV ;
-        /* Set up DS2480/LINK interface */
-        if ( DS2480_detect() ) {
-            syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",devport) ;
-            if ( DS9097_detect() ) {
-                syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",devport) ;
-                return 1 ;
-            }
+    } else if ( COM_open() ) { /* serial device */
+        ret = -ENODEV ;
+    } else if ( DS2480_detect() ) { /* Set up DS2480/LINK interface */
+        syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",devport) ;
+        if ( DS9097_detect() ) {
+            syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",devport) ;
+            ret = -ENODEV ;
         }
     }
+    if (ret) BadAdapter_detect() ;
     syslog(LOG_INFO,"Interface type = %d on %s\n",Adapter,devport) ;
-    return 0 ;
+    return ret ;
 }
 
 int USBSetup( void ) {
+    int ret ;
 #ifdef OW_USB
     if ( devport ) {
         fprintf(stderr,"1-wire port already set to %s, ignoring USB.\n",devport) ;
-        return 1 ;
+        ret = -EADDRINUSE ;
+    } else {
+        ret = DS9490_detect() ;
     }
-    return DS9490_detect() ;
 #else /* OW_USB */
     fprintf(stderr,"Cannot setup USB port properly. See the system log for details\n");
-    return 1 ;
+    ret = -ENPPROTOOPT ;
 #endif /* OW_USB */
+    if ( ret ) BadAdapter_detect() ;
+    return ret ;
 }
 
 /* All ow library closeup */

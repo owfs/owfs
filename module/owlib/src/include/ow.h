@@ -510,7 +510,7 @@ extern enum deviceformat devform ;
 /* Interface-specific routines ---------------- */
 struct interface_routines {
     /* assymetric read (only input, no slots emitted */
-    int (* read) ( unsigned char * const bytes , const int num ) ;
+    int (* read) ( unsigned char * const bytes , const size_t num ) ;
     /* assymetric write (only output, no response obtained */
     int (* write) (const unsigned char * const bytes , const size_t num ) ;
     /* reset the interface -- actually the 1-wire bus */
@@ -619,12 +619,9 @@ extern int UMode ;
 extern int ULevel ;
 extern int USpeed ;
 extern int ProgramAvailable ;
-enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, } ;
+enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_Bad=9, } ;
 extern enum adapter_type Adapter ;
 extern const char * adapter_name ;
-
-/* Overall flag for valid setup */
-extern int GoodSetup ;
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
@@ -756,6 +753,7 @@ int DS2480_detect( void ) ;
 int DS1410_detect( void ) ;
 #endif /* OW_PARPORT */
 int DS9097_detect( void ) ;
+int BadAdapter_detect( void ) ;
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
