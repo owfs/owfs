@@ -3,7 +3,7 @@
 %define build_ftpd 0
 %define build_server 1
 %define build_perl 1
-%define build_python 1
+%define build_python 0
 %define build_tcl 1
 
 %define debug_package   %{nil}
