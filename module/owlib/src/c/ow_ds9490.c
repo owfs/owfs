@@ -85,10 +85,10 @@ static void DS9490_setroutines( struct interface_routines * const f ) {
 #define DS2490_EP3              0x83
 
 int DS9490_detect( void ) {
-    int ret = DS9490_detect_low() ;
-    if (ret==0) return 0;
-    ret = usb_reset(devusb) ;
-    if (ret==0) return 0;
+//    int ret = DS9490_detect_low() ;
+//    if (ret==0 || ret==-ENODEV ) return ret;
+//    ret = usb_reset(devusb) ;
+//    if (ret==0 || ret==-ENODEV ) return ret;
     return DS9490_detect_low() ;
 }
 
@@ -142,13 +142,13 @@ static int DS9490_detect_low( void ) {
                         devusb = 0 ;
                     } else {
                         syslog(LOG_INFO,"Failed to open USB DS9490 adapter at %s.\n",devport) ;
+                        return -EIO ;
                     }
-                    return -EIO ;
                 }
             }
         }
     }
-    syslog(LOG_INFO,"No USB DS9490 adapter found\n") ;
+    syslog(LOG_INFO,"No available USB DS9490 adapter found\n") ;
     return -ENODEV ;
 }
 

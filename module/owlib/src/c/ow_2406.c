@@ -52,15 +52,20 @@ $Id$
 bWRITE_FUNCTION( FS_w_mem ) ;
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
- yREAD_FUNCTION( FS_r_pio ) ;
-yWRITE_FUNCTION( FS_w_pio ) ;
- yREAD_FUNCTION( FS_r_latch ) ;
-yWRITE_FUNCTION( FS_w_latch ) ;
+// yREAD_FUNCTION( FS_r_pio ) ;
+//yWRITE_FUNCTION( FS_w_pio ) ;
+// yREAD_FUNCTION( FS_sense ) ;
+// yREAD_FUNCTION( FS_r_latch ) ;
+//yWRITE_FUNCTION( FS_w_latch ) ;
+ uREAD_FUNCTION( FS_r_pio ) ;
+uWRITE_FUNCTION( FS_w_pio ) ;
+ uREAD_FUNCTION( FS_sense ) ;
+ uREAD_FUNCTION( FS_r_latch ) ;
+uWRITE_FUNCTION( FS_w_latch ) ;
  uREAD_FUNCTION( FS_r_s_alarm ) ;
 uWRITE_FUNCTION( FS_w_s_alarm ) ;
  yREAD_FUNCTION( FS_power ) ;
  uREAD_FUNCTION( FS_channel ) ;
- yREAD_FUNCTION( FS_sense ) ;
 
 /* ------- Structures ----------- */
 
@@ -73,9 +78,12 @@ struct filetype DS2406[] = {
     {"pages/page",    32,  &A2406p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
     {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL}     , NULL, } ,
-    {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
-    {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
-    {"latch"     ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
+//    {"PIO"       ,     1,  &A2406,  ft_yesno   , ft_stable  , {y:FS_r_pio}    , {y:FS_w_pio} , NULL, } ,
+//    {"sensed"    ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_sense}    , {v:NULL}     , NULL, } ,
+//    {"latch"     ,     1,  &A2406,  ft_yesno   , ft_volatile, {y:FS_r_latch}  , {y:FS_w_latch},NULL, } ,
+    {"PIO"       ,     1,  &A2406,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
+    {"sensed"    ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
+    {"latch"     ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,
     {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
 } ;
 DeviceEntry( 12, DS2406 )
@@ -120,15 +128,10 @@ static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t off
 }
 
 /* 2406 switch */
-static int FS_r_pio(int * y , const struct parsedname * pn) {
+static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
-//printf("RPIO data=%2X\n",data) ;
-    data ^= 0xFF ; /* reverse bits */
-//printf("RPIO data=%2X\n",data) ;
-    y[0] = UT_getbit(&data,0) ;
-    y[1] = UT_getbit(&data,1) ;
-//printf("RPIO pio=%d,%d\n",y[0],y[1]) ;
+    u[0] = ( data^0xFF ) & 0x03 ; /* reverse bits */
     return 0 ;
 }
 
@@ -149,27 +152,30 @@ static int FS_channel(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2406 switch PIO sensed*/
-static int FS_sense(int * y , const struct parsedname * pn) {
+/* bits 2 and 3 */
+static int FS_sense(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
-    y[0] = UT_getbit(&data,2) ;
-    y[1] = UT_getbit(&data,3) ;
+    u[0] = ( data>>2 ) & 0x03 ;
+//    y[0] = UT_getbit(&data,2) ;
+//    y[1] = UT_getbit(&data,3) ;
     return 0 ;
 }
 
 /* 2406 switch activity latch*/
-static int FS_r_latch(int * y , const struct parsedname * pn) {
+/* bites 4 and 5 */
+static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
-    y[0] = UT_getbit(&data,4) ;
-    y[1] = UT_getbit(&data,5) ;
+    u[0] = ( data >> 4 ) & 0x03 ;
+//    y[0] = UT_getbit(&data,4) ;
+//    y[1] = UT_getbit(&data,5) ;
     return 0 ;
 }
 
 /* 2406 switch activity latch*/
-static int FS_w_latch(const int * y , const struct parsedname * pn) {
-    (void) y ;
-    if ( OW_clear(pn) ) return -EINVAL ;
+static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
+    if ( u[0] && OW_clear(pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -190,10 +196,12 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
 }
 
 /* write 2406 switch -- 2 values*/
-static int FS_w_pio(const int * y, const struct parsedname * pn) {
+static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
     unsigned char data = 0;
-    UT_setbit( &data , 0 , y[0]==0 ) ;
-    UT_setbit( &data , 1 , y[1]==0 ) ;
+    /* reverse bits */
+    data = ( u[0] ^ 0xFF ) & 0x03 ;
+//    UT_setbit( &data , 0 , y[0]==0 ) ;
+//    UT_setbit( &data , 1 , y[1]==0 ) ;
     if ( OW_w_pio(data,pn) ) return -EINVAL ;
     return 0 ;
 }

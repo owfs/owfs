@@ -19,17 +19,17 @@ Dual Switch, Write-once Memory
 [.]XXXXXXXXXXXX[XX][/[
 .B channels
 |
-.B latch.[A|B|ALL]
+.B latch.[A|B|ALL|BYTE]
 |
 .B memory
 |
 .B pages/page.[0-3|ALL]
 |
-.B PIO.[A|B|ALL]
+.B PIO.[A|B|ALL|BYTE]
 |
 .B power
 |
-.B sensed.[A|B|ALL]
+.B sensed.[A|B|ALL|BYTE]
 |
 .B set_alarm
 |
@@ -54,7 +54,7 @@ Is this a 1 or 2 channel switch? The
 comes in two forms, one has only one
 .I PIO
 pin (PIO.A). Returns 1 or 2.
-.SS latch
+.SS latch.A latch.B latch.ALL latch.BYTE
 .I read-write, yes-no
 .br
 The activity latch is set to 1 with the first negative or positive edge detected on the associated PIO channel.
@@ -63,6 +63,9 @@ Writing any data will clear latch for all (both)) channels. This is a hardware "
 .br
 .I ALL
 references both channels simultaneously, comma separated
+.br
+.I BYTE
+references both channels simultaneously as a single byte, with channel A in bit 0.
 .SS memory
 .I read-write, binary
 .br
@@ -74,7 +77,7 @@ Memory organized as 4 pages or 32 bytes. Memory is write-once.
 .br
 .I ALL
 is the aggregate of all 4 pages, sequentially accessed.
-.SS PIO.A PIO.B PIO.ALL
+.SS PIO.A PIO.B PIO.ALL PIO.BYTE
 .I read-write, yes-no
 .br
 State of the open-drain output (
@@ -89,13 +92,16 @@ property.
 .br
 .I ALL
 references both channels simultaneously, comma separated.
+.br
+.I BYTE
+references both channels simultaneously as a single byte, with channel A in bit 0.
 .SS power
 .I read-only, yes-no
 .br
 Is the
 .I DS2406
 powered parasitically (0) or separately on the Vcc pin (1)?
-.SS sensed.A sensed.B sensed.ALL
+.SS sensed.A sensed.B sensed.ALL sensed.BYTE
 .I read-only, yes-no
 .br
 Logic level at the
@@ -106,6 +112,9 @@ state is set to zero (off), else will read zero.
 .br
 .I ALL
 references both channels simultaneously, comma separated.
+.br
+.I BYTE
+references both channels simultaneously as a single byte, with channel A in bit 0.
 .SS set_alarm
 .I read-write, unsigned integer (0-331)
 .br

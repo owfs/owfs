@@ -219,7 +219,7 @@ int USBSetup( void ) {
     }
     return DS9490_detect() ;
 #else /* OW_USB */
-    fprintf(stderr,"Attempt to use a USB 1-wire interface without compiling support for libusb\n");
+    fprintf(stderr,"Cannot setup USB port properly. See the system log for details\n");
     return 1 ;
 #endif /* OW_USB */
 }

@@ -509,13 +509,18 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             unsigned int U ;
             int y ;
             unsigned int f = 1<< pn->extension ;
+//printf("BITFIELD0 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
             ret = ((pn->ft->read.u)(&U,pn)<0) || FS_input_unsigned(&y,buf,size) ;
+//printf("BITFIELD1 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
             if ( ret==0) {
-                U |= ~f ;
+                U &= ~f ;
+//printf("BITFIELD2 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
                 if (y) U |= f ;
+//printf("BITFIELD3 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
                 ret = (pn->ft->write.u)(&U,pn) ;
             }
             if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,ffl,pn) ;
+//printf("BITFIELD4 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
         }
         break ;
     case ft_float:

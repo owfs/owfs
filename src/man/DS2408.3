@@ -17,13 +17,13 @@
 .HP
 .B 29
 [.]XXXXXXXXXXXX[XX][/[
-.B latch.[0-7|ALL]
+.B latch.[0-7|ALL|BYTE]
 |
-.B PIO.[0-7|ALL]
+.B PIO.[0-7|ALL|BYTE]
 |
 .B power
 |
-.B sensed.[0-7|ALL]
+.B sensed.[0-7|ALL|BYTE]
 |
 .B strobe
 |
@@ -42,7 +42,7 @@
 .SH FAMILY CODE
 29
 .SH SPECIAL PROPERTIES
-.SS latch.0 ... latch.7 latch.ALL
+.SS latch.0 ... latch.7 latch.ALL latch.BYTE
 .I read-write, binary
 .br
 The 8 pins (PIO) latch a bit when their state changes, either externally, or through a write to the pin. 
@@ -59,7 +59,10 @@ will reset them all. (This is the hardware design).
 is all 
 .I latch 
 states, accessed simultaneously, comma separated.
-.SS PIO.0 ...  PIO.7 PIO.ALL
+.br
+.I BYTE
+references all channels simultaneously as a single byte. Channel 0 is bit 0.
+.SS PIO.0 ...  PIO.7 PIO.ALL PIO.BYTE
 .I read-write, yes-no
 .br
 State of the open-drain output (
@@ -69,11 +72,14 @@ State of the open-drain output (
 Writing zero will turn off the switch, non-zero will turn on the switch. Reading the
 .I PIO
 state will return the switch setting. To determine the actual logic level at the switch, refer to the
-.I sensed.0 ... sensed.7 sensed.ALL
+.I sensed.0 ... sensed.7 sensed.ALL sensed.BYTE
 property.
 .br
 .I ALL
 references all channels simultaneously, comma separated.
+.br
+.I BYTE
+references all channels simultaneously as a single byte. Channel 0 is bit 0.
 .SS power
 .I read-only, yes-no
 .br
@@ -91,6 +97,9 @@ state is set to zero (off), else will read zero.
 .br
 .I ALL
 references all channels simultaneously, comma separated.
+.br
+.I BYTE
+references all channels simultaneously as a single byte. Channel 0 is bit 0.
 .SS strobe
 .I read-write, yes-no
 .br

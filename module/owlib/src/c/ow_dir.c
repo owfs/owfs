@@ -371,6 +371,7 @@ const char * FS_dirname_type( const enum pn_type type ) {
     }
 }
 
+/* name of file from filetype structure -- includes extension */
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) {
     int s ;
     if ( pn->ft == NULL ) return -ENOENT ;
@@ -391,6 +392,7 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
 }
 
 /* Return the last part of the file name specified by pn */
+/* This can be a device, directory, subdiirectory, if property file */
 /* Prints this directory element (not the whole path) */
 /* Suggest that size = OW_FULLNAME_MAX */
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) {
@@ -425,9 +427,9 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
         }
     } else if ( pn->dev == DeviceSimultaneous ) {
         strncpy( buffer, DeviceSimultaneous->code, size ) ;
-    } else if ( pn->type == pn_real ) {
+    } else if ( pn->type == pn_real ) { /* real device */
         FS_devicename( buffer, size, pn->sn ) ;
-    } else {
+    } else { /* pseudo device */
         strncpy( buffer, pn->dev->code, size ) ;
     }
 }
