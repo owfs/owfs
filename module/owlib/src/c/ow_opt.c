@@ -51,7 +51,7 @@ int owopt( const int c , const char * const arg ) {
         "                 Optional number for multiple usb adapters\n"
         "    -s  --server     1-wire server daemon\n"
 	"                 port number, server:port or /local-socket-path\n"
-        "                 Note that -s, -d and -u are mutually exclusive\n"
+        "                 Each adapter chosen will be handled independly\n"
 #endif /* OW_USB */
 #ifdef OW_CACHE
         "    -t    cache timeout (in seconds)\n"
