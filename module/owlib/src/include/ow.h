@@ -165,6 +165,7 @@ extern const struct option owopts_long[] ;
 int owopt( const int c , const char * const arg ) ;
 
 /* PID file nsme */
+extern pid_t pid_num ;
 extern char * pid_file ;
 /* FUSE options */
 extern char * fuse_opt ;
@@ -248,7 +249,7 @@ struct aggregate {
 
 /* file lengths that need special processing */
 /* stored (as negative enum) in ft.suglen */
-enum fl_funny { fl_zero, fl_type, fl_adap_name, fl_adap_det, fl_adap_port, fl_adap_ver, fl_store, } ;
+enum fl_funny { fl_zero, fl_type, fl_adap_name, fl_adap_port, fl_pidfile, fl_store, } ;
 
     /* property format, controls web display */
 /* Some explanation of ft_format:

@@ -41,6 +41,7 @@ $Id$
 #include "ow_link.h" // Interface devices
 #include "ow_stats.h" // statistic reporting pseudo-device
 #include "ow_settings.h" // settings pseudo-device
+#include "ow_system.h" // system pseudo-device
 
 #endif
 

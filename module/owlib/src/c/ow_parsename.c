@@ -345,6 +345,13 @@ size_t FileLength( const struct parsedname * const pn ) {
         switch(pn->ft->suglen) {
         case -fl_type:
             return strlen(pn->dev->name) ;
+        case -fl_adap_name:
+            return strlen(adapter_name) ;
+        case -fl_adap_port:
+            return strlen(devport) ;
+        case -fl_pidfile:
+            if ( pid_file ) return strlen(pid_file) ;
+            return 0 ;
         default:
             return pn->ft->suglen ;
         }

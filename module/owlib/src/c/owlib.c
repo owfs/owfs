@@ -25,6 +25,7 @@ int USpeed ;
 int ProgramAvailable ;
 enum adapter_type Adapter ;
 const char * adapter_name = "Unknown" ;
+pid_t pid_num ;
 
 
 #ifdef OW_USB
@@ -98,6 +99,9 @@ struct average all_avg = {0L,0L,0L,0L,} ;
 
 /* All ow library setup */
 void LibSetup( void ) {
+    /* store the PID */
+    pid_num = getpid() ;
+
     /* All output to syslog */
     openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
     
@@ -129,7 +133,7 @@ int LibStart( void ) {
         return 1 ;
         }
 //printf("opopts pid = %ld\n",(long unsigned int)getpid());
-        fprintf(pid,"%lu",(long unsigned int)getpid() ) ;
+        fprintf(pid,"%lu",pid_num ) ;
         fclose(pid) ;
     }
     /* Setup the multithreading synchronizing locks */

@@ -251,6 +251,17 @@ int DS2480_detect( void ) {
 //printf("2480Detect version=%d\n",Adapter) ;
         /* Apparently need to reset again to get the version number properly */
         DS2480_reset(NULL);
+        switch (Adapter) {
+        case adapter_DS9097U:
+            adapter_name = "DS9097U" ;
+            break;
+        case adapter_LINK:
+            adapter_name = "LINK" ;
+            break;
+        case adapter_LINK_Multi:
+            adapter_name = "MultiLINK" ;
+            break;
+        }
 //printf("2480Detect version=%d\n",Adapter) ;
         return 0 ;
     }

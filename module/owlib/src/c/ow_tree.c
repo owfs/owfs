@@ -84,11 +84,13 @@ void DeviceSort( void ) {
     Device2Tree( & d_iButtonLink ,  pn_adapter ) ;
     Device2Tree( & d_stats_bus ,    pn_statistics ) ;
     Device2Tree( & d_stats_cache ,  pn_statistics ) ;
-    Device2Tree( & d_stats_directory , pn_statistics ) ;
+    Device2Tree( & d_stats_directory, pn_statistics ) ;
     Device2Tree( & d_stats_read ,   pn_statistics ) ;
     Device2Tree( & d_stats_thread , pn_statistics ) ;
     Device2Tree( & d_stats_write ,  pn_statistics ) ;
     Device2Tree( & d_set_cache ,    pn_settings ) ;
+    Device2Tree( & d_sys_adapter ,  pn_system ) ;
+    Device2Tree( & d_sys_process ,  pn_system ) ;
 }
 
 void FS_devicefind( const char * code, struct parsedname * pn ) {
