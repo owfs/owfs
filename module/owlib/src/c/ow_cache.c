@@ -142,8 +142,9 @@ static void tree_show( const void *node, const VISIT which, const int depth ) {
 }
 */
 
+const char cache_version[] = "intrinsic tree routines" ;
 char * Cache_Version( void ) {
-    return "intrinsic tree routines" ;
+    return cache_version ;
 }
 
     /* DB cache creation code */
