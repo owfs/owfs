@@ -252,7 +252,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     pn2.si = &si;
     if ( (FS_ParsedName(fullpath, &pn2) == 0) ) {
       if ((pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote)) {
-	//printf("call FS_size\n");
+	//printf("call FS_size(%s)\n", fullpath);
 	suglen = FS_size(fullpath) ;
       } else {
 	//printf("call FS_size_postparse\n");
@@ -601,7 +601,7 @@ static void ShowDevice( FILE * out, const struct parsedname * const pn ) {
 	  return;
 	}
 	FS_DirName(file,OW_FULLNAME_MAX,pn2);
-	//printf("pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+	//printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
 	Show( out, path2, file, pn2 ) ;
 	free(file);
     }

@@ -126,10 +126,11 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
     return 16 ;
 }
 
-/* Check if device exists -- 0 yes, 1 no */
+/* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence( const struct parsedname * const pn ) {
     if ( pn->type == pn_real ) {
-        if ( pn->dev != DeviceSimultaneous ) return CheckPresence_low(pn) ;
+        if ( pn->dev != DeviceSimultaneous )
+	  return CheckPresence_low(pn) ;
     }
     return 0 ;
 }
@@ -137,13 +138,15 @@ int CheckPresence( const struct parsedname * const pn ) {
 /* Check if device exists -- 0 yes, 1 no */
 int Check1Presence( const struct parsedname * const pn ) {
     int y ;
+    //printf("Check1Presence type=%d\n", pn->type);
     if ( pn->type == pn_real ) {
+        //printf("Check1Presence pn->dev=%p DS=%p\n", pn->dev, DeviceSimultaneous);
         if ( pn->dev != DeviceSimultaneous ) return FS_present(&y,pn) || y==0 ;
     }
     return 0 ;
 }
 
-/* Check if device exists -- 0 yes, 1 no */
+/* Check if device exists -- -1 no, >=0 yes (bus number) */
 /* lower level, cycle through the devices */
 static int CheckPresence_low( const struct parsedname * const pn ) {
     int ret = 0 ;
@@ -168,21 +171,40 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
       threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
     }
 #endif /* OW_MT */
+    //printf("CheckPresence_low:\n");
     if(get_busmode(pn->in) == bus_remote) {
-      /* Do we need to implement a ServerPresence() function here? */
-      //ret = ServerPresence(pn) ;
-      ret = 1 ; /* return "not found" */
+      //printf("CheckPresence_low: call ServerPresence\n");
+      ret = ServerPresence(pn) ;
+      if(ret >= 0) {
+	/* Device was found on this in-device, return it's index */
+	ret = pn->in->index;
+      } else {
+	ret = -1;
+      }
+      //printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
     } else {
+      //printf("CheckPresence_low: call BUS_normalverify\n");
       /* this can only be done on local busses */
       BUSLOCK(pn)
 	ret = BUS_normalverify(pn) ;
       BUSUNLOCK(pn)
+      if(ret == 0) {
+	/* Device was found on this in-device, return it's index */
+	ret = pn->in->index;
+      } else {
+	ret = -1;
+      }
+      //printf("CheckPresence_low: BUS_normalverify(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
     }
-    //printf("CheckPresence_low: ret=%d\n", ret);
+    //printf("CheckPresence_low: pn->in->index=%d ret=%d\n", pn->in->index, ret);
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
-        return ret && ((int) v) ;
+	if((int)v >= 0) {
+	  //printf("child returned ok %d\n", (int)v);
+	  return (int)v ;
+	}
+	return ret ;
     }
 #endif /* OW_MT */
     return ret ;
@@ -193,7 +215,7 @@ int FS_present(int * y , const struct parsedname * pn) {
         y[0]=1 ;
     } else {
         BUSLOCK(pn)
-            y[0] = BUS_normalverify(pn) ? 0 : 1 ;
+	  y[0] = BUS_normalverify(pn) ? 0 : 1 ;
         BUSUNLOCK(pn)
     }
     return 0 ;

@@ -204,14 +204,34 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
         if ( tn ) {
-            FS_LoadPath( tn->tk.sn, pn ) ;
-//            memcpy( tn->tk.sn , pn->sn , 8 ) ;
+	    FS_LoadPath( tn->tk.sn, pn ) ;
+	    //memcpy( tn->tk.sn , pn->sn , 8 ) ;
             tn->tk.p.in = pn->in ;
             tn->tk.extension = dindex ;
             tn->expires = duration + time(NULL) ;
             tn->dsize = 8 ;
             memcpy( TREE_DATA(tn) , sn , 8 ) ;
             return Add_Stat(&cache_dir, Cache_Add_Common( tn )) ;
+        }
+    }
+    return -ENOMEM ;
+}
+
+/* Add a device entry to the cache */
+/* return 0 if good, 1 if not */
+int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) {
+    time_t duration = TimeOut( ft_directory ) ;
+    if ( duration > 0 ) { /* in case timeout set to 0 */
+        struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + sizeof(int) ) ;
+        if ( tn ) {
+	    //FS_LoadPath( tn->tk.sn, pn ) ;
+	    memcpy( tn->tk.sn , pn->sn , 8 ) ;
+            tn->tk.p.in = pn->in ;
+            tn->tk.extension = -1 ;
+            tn->expires = duration + time(NULL) ;
+            tn->dsize = sizeof(int) ;
+            memcpy( TREE_DATA(tn) , &bus_nr , sizeof(int) ) ;
+            return Add_Stat(&cache_dev, Cache_Add_Common( tn )) ;
         }
     }
     return -ENOMEM ;
@@ -398,10 +418,27 @@ int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const 
         size_t size = 8 ;
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
-//        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        //memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = pn->in ;
         tn.tk.extension = dindex ;
         return Get_Stat(&cache_dir, Cache_Get_Common(sn,&size,duration,&tn)) ;
+    }
+    return 1 ;
+}
+
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) {
+    int ret ;
+    time_t duration = TimeOut( ft_directory ) ;
+    if ( duration > 0 ) {
+        size_t size = sizeof(int) ;
+        struct tree_node tn  ;
+        //FS_LoadPath( tn.tk.sn, pn ) ;
+        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        tn.tk.p.in = pn->in ;
+        tn.tk.extension = -1 ;
+        ret = Get_Stat(&cache_dev, Cache_Get_Common(bus_nr,&size,duration,&tn)) ;
+	return ret;
     }
     return 1 ;
 }
@@ -518,10 +555,23 @@ int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
     if ( duration > 0 ) {
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
-//        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        //memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = pn->in ;
         tn.tk.extension = dindex ;
         return Del_Stat(&cache_dir, Cache_Del_Common(&tn)) ;
+    }
+    return 1 ;
+}
+
+int Cache_Del_Device( const struct parsedname * const pn ) {
+    time_t duration = TimeOut( ft_directory ) ;
+    if ( duration > 0 ) {
+        struct tree_node tn  ;
+        //FS_LoadPath( tn.tk.sn, pn ) ;
+        memcpy( tn.tk.sn , pn->sn , 8 ) ;
+        tn.tk.p.in = pn->in ;
+        tn.tk.extension = -1 ;
+        return Del_Stat(&cache_dev, Cache_Del_Common(&tn)) ;
     }
     return 1 ;
 }
@@ -603,8 +653,14 @@ int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname
     { return 1; }
 int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn )
     { return 1; }
+int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn )
+    { return 1; }
 int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn )
     { return 1; }
+int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn )
+    { return 1; }
 int Cache_Del_Dir( const int dindex, const struct parsedname * const pn )
+    { return 1; }
+int Cache_Del_Device( const struct parsedname * const pn )
     { return 1; }
 #endif /* OW_CACHE */

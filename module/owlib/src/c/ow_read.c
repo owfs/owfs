@@ -138,8 +138,34 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 	{
 	    /* real data -- go through device chain */
 	    /* this will either call ServerDir or FS_real_read */
-	    //printf("FS_read_postparse: call read_seek\n");
-	    r = FS_read_seek(buf, size, offset, pn) ;
+	    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
+	      struct parsedname pn2;
+	      int bus_nr = -1;
+	      if(Cache_Get_Device(&bus_nr, pn)) {
+		//printf("Cache_Get_Device didn't find bus_nr\n");
+		bus_nr = CheckPresence(pn);
+		if(bus_nr >= 0) {
+		  //printf("CheckPresence found bus_nr %d (add to cache)\n", bus_nr);
+		  Cache_Add_Device(bus_nr, pn);
+		}
+	      } else {
+		//printf("Cache_Get_Device found bus! %d\n", bus_nr);
+	      }
+	      if(bus_nr >= 0) {
+		memcpy(&pn2, pn, sizeof(struct parsedname));
+		/* fake that we read from only one indevice now! */
+		pn2.in = find_connection_in(bus_nr);
+		pn2.state |= pn_bus ;
+		pn2.bus_nr = bus_nr ;
+		//printf("read only from bus_nr=%d\n", bus_nr);
+		r = FS_read_seek(buf, size, offset, &pn2) ;
+	      } else {
+		//printf("CheckPresence failed, no use to read\n");
+		r = -ENOENT ;
+	      }
+	    } else {
+	      r = FS_read_seek(buf, size, offset, pn) ;
+	    }
 	}
     }
     STATLOCK
@@ -192,7 +218,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     if ( (get_busmode(pn->in) == bus_remote) ) {
 //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
-//printf("READSEED0 pid=%ld r=%d\n",pthread_self(), r);
+//printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
         STATLOCK
@@ -200,21 +226,23 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         STATUNLOCK
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
-//printf("READSEED1 pid=%d call FS_real_read\n",getpid());
+//printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 r = FS_real_read(buf, size, offset, pn ) ;
+//printf("READSEEK1 FS_real_read ret=%d\n", r);
                 LockRelease(pn) ;
             }
 //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
-//printf("READSEED2 pid=%d not found in cache\n",getpid());
+//printf("READSEEK2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
-//printf("READSEED2 lock get size=%d offset=%d\n", size, offset);
+//printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
                 r = FS_real_read( buf, size, offset, pn ) ;
-                if ( r>= 0 ) Cache_Add( buf, r, pn ) ;
+//printf("READSEEK2 FS_real_read ret=%d\n", r);
+                if ( r>0 ) Cache_Add( buf, r, pn ) ;
                 LockRelease(pn) ;
             }
-//printf("READSEED2 pid=%d = %d\n",getpid(), r);
+//printf("READSEEK2 pid=%d = %d\n",getpid(), r);
         } else {
 //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             STATLOCK
@@ -222,7 +250,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
                 read_cachebytes += s ; /* statistics */
             STATUNLOCK
             r = s ;
-//printf("READSEED3 pid=%ld r=%d\n",pthread_self(), r);
+//printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
         }
     }
 #ifdef OW_MT
@@ -255,11 +283,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     //printf("RealRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n", pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
     /* Readable? */
     if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
-    /* Do we exist? Only test static cases */
-    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) {
-      //printf("FS_real_read: not present!! sg=%d\n", pn->si->sg);
-      return -ENODEV ;
-    }
+
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) {
         switch(pn->ft->ag->combined) {

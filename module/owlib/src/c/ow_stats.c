@@ -57,6 +57,7 @@ struct cache cache_ext = {0L,0L,0L,0L,0L,} ;
 struct cache cache_int = {0L,0L,0L,0L,0L,} ;
 struct cache cache_dir = {0L,0L,0L,0L,0L,} ;
 struct cache cache_sto = {0L,0L,0L,0L,0L,} ;
+struct cache cache_dev = {0L,0L,0L,0L,0L,} ;
 
 unsigned int read_calls = 0 ;
 unsigned int read_cache = 0 ;
@@ -195,6 +196,12 @@ struct filetype stats_cache[] = {
     {"directory/added"  ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.adds   , } ,
     {"directory/expired",15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.expires, } ,
     {"directory/deleted",15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dir.deletes, } ,
+    {"device"           , 0, NULL  , ft_subdir  , ft_statistic, {v:NULL}   , {v:NULL}, NULL               , } ,
+    {"device/tries"     ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dev.tries  , } ,
+    {"device/hits"      ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dev.hits   , } ,
+    {"device/added"     ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dev.adds   , } ,
+    {"device/expired"   ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dev.expires, } ,
+    {"device/deleted"   ,15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & cache_dev.deletes, } ,
 } ;
 
 struct device d_stats_cache = { "cache", "cache", 0, NFT(stats_cache), stats_cache } ;

@@ -30,15 +30,6 @@ int Server_detect( struct connection_in * in ) {
 }
 
 int ServerSize( const char * path, const struct parsedname * pn ) {
-    return ServerSizeorFull( msg_size, path, pn) ;
-}
-
-int ServerFull( const char * path, const struct parsedname * pn ) {
-    return ServerSizeorFull( msg_full, path, pn) ;
-}
-
-/* Size of a data item */
-static int ServerSizeorFull( enum msg_type type, const char * path, const struct parsedname * pn  ) {
     struct server_msg sm ;
     struct client_msg cm ;
     char *pathnow ;
@@ -47,7 +38,7 @@ static int ServerSizeorFull( enum msg_type type, const char * path, const struct
     (void) path;  // not used anymore
 
     if ( connectfd < 0 ) return -EIO ;
-    sm.type = type ;
+    sm.type = msg_size ;
     sm.size = 0 ;
     sm.sg =  SemiGlobal ;
     sm.offset = 0 ;
@@ -98,6 +89,40 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, buf, size ) < 0 ) {
+        ret = -EIO ;
+    } else {
+        ret = cm.ret ;
+    }
+    close( connectfd ) ;
+    return ret ;
+}
+
+int ServerPresence( const struct parsedname * pn ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    char *pathnow ;
+    int connectfd = ClientConnect( pn->in ) ;
+    int ret ;
+
+    if ( connectfd < 0 ) return -EIO ;
+    //printf("ServerPresence pn->path=%s\n",pn->path);
+    sm.type = msg_presence ;
+    sm.sg =  SemiGlobal ;
+    sm.size = 0 ;
+    sm.offset = 0 ;
+
+    if(pn->state & pn_bus) {
+      //printf("use path_bussless = %s\n", pn->path_busless);
+      pathnow = pn->path_busless;
+    } else {
+      //printf("use path = %s\n", pn->path);
+      pathnow = pn->path;
+    }
+    //printf("ServerPresence path=%s\n", pathnow);
+
+    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+        ret = -EIO ;
+    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
     } else {
         ret = cm.ret ;

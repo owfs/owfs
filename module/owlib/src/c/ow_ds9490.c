@@ -209,6 +209,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     int ret ;
     unsigned char buffer[32] ;
 //printf("9490RESET\n");
+//printf("DS9490_reset() index=%d pn->in->Adapter=%d %s\n", pn->in->index, pn->in->Adapter, pn->in->adapter_name);
     if ( (ret=usb_control_msg(pn->in->usb,0x40,COMM_CMD,0x0043, 0x0000, NULL, 0, TIMEOUT_USB ))<0
          ||
          (ret=DS9490wait(buffer,pn))
@@ -223,7 +224,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
       pn->si->AnyDevices = !(buffer[16]&0x01) ;
 #if 0
       /* I seem to loose some devices if this isn't set (only when using
-       * owserver though) */
+       * owserver though?) Have to find out why this happens... */
       if(!(buffer[16]&0x01) != 1) {
 	printf("DS9490_reset: anydevices would be set to 0 !\n");
       }

@@ -117,7 +117,34 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 #endif
 	{
 	  /* real data -- go through device chain */
-	  r = FS_write_seek(buf, size, offset, pn) ;
+	    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
+	      struct parsedname pn2;
+	      int bus_nr = -1;
+	      if(Cache_Get_Device(&bus_nr, pn)) {
+		//printf("Cache_Get_Device didn't find bus_nr\n");
+		bus_nr = CheckPresence(pn);
+		if(bus_nr >= 0) {
+		  //printf("CheckPresence found bus_nr %d (add to cache)\n", bus_nr);
+		  Cache_Add_Device(bus_nr, pn);
+		}
+	      } else {
+		//printf("Cache_Get_Device found bus! %d\n", bus_nr);
+	      }
+	      if(bus_nr >= 0) {
+		memcpy(&pn2, pn, sizeof(struct parsedname));
+		/* fake that we write from only one indevice now! */
+		pn2.in = find_connection_in(bus_nr);
+		pn2.state |= pn_bus ;
+		pn2.bus_nr = bus_nr ;
+		//printf("write only to bus_nr=%d\n", bus_nr);
+		r = FS_write_seek(buf, size, offset, &pn2) ;
+	      } else {
+		//printf("CheckPresence failed, no use to write\n");
+		r = -ENOENT ;
+	      }
+	    } else {
+	      r = FS_write_seek(buf, size, offset, pn) ;
+	    }
 	}
     }
 
@@ -192,8 +219,7 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
 
     /* Do we exist? Only test static cases */
     /* Already parsed -- presence  check done there! on non-static */
-//    if ( presencecheck && pn->ft->change==ft_static && CheckPresence(pn) ) return -ENOENT ;
-    if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) return -ENOENT ;
+    //if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) return -ENOENT ;
 
     /* Array properties? Write all together if aggregate */
     if ( pn->ft->ag ) {

@@ -40,10 +40,16 @@ int BUS_normalverify(const struct parsedname * const pn) {
     unsigned char fo = 0xF0 ;
     int ret ;
     struct parsedname pncopy ;
+
+    if(get_busmode(pn->in) == bus_remote) {
+      //printf("BUS_normalverify: bus is remote... shouldn't come here.\n");
+      return 1;
+    }
     memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pncopy.dev = NULL ;
     ret=BUS_select(&pncopy) ;
     ret || (ret=BUS_send_data( &fo , 1,pn )) || (ret=BUS_verify(pn)) ;
+    //printf("BUS_normalverify ret=%d\n", ret) ;
     return ret ;
 }
 

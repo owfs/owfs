@@ -62,7 +62,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
   if ( pn->dev && (pn->type == pn_real)) { /* device directory */
       /* Device structure is always know for ordinary devices, so don't
        * bother calling ServerDir() */
-    //printf("FS_dir: call FS_devdir 1\n");
+      //printf("FS_dir: call FS_devdir 1\n");
       ret = FS_devdir( dirfunc, &pn2 ) ;
   }
   else if ( pn->dev ) { /* device directory */
@@ -70,10 +70,10 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
      * /bus.0/bus.0/system/adapter . Therefor we have to call ServerDir()
      * to find the content */
     if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-      //printf("FS_dir: call ServerDir 2 pn->path=%s\n", pn->path);
+     //printf("FS_dir: call ServerDir 2 pn->path=%s\n", pn->path);
       ret = ServerDir(dirfunc, &pn2, &flags) ;
     } else {
-      //printf("FS_dir: call FS_devdir 2 pn->path=%s\n", pn->path);
+     //printf("FS_dir: call FS_devdir 2 pn->path=%s\n", pn->path);
       ret = FS_devdir( dirfunc, &pn2 ) ;
     }
   }
@@ -95,7 +95,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
       }
   }
   else {
-    //printf("FS_dir pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path);
+   //printf("FS_dir pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path);
     //printf("FS_dir: pn->si->sg=%X  pn2.pathlength=%d pn2.state=%d pn->state=%X\n", pn->si->sg, pn2.pathlength, pn2.state, pn->state);
 
     if(ShouldReturnBusList(pn)) {
@@ -140,10 +140,10 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     }
     
     if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-      //printf("FS_dir: Call ServerDir\n");
+     //printf("FS_dir: Call ServerDir\n");
       ret = ServerDir(dirfunc, &pn2, &flags) ;
     } else {
-      //printf("FS_dir: Call FS_dir_seek\n");
+     //printf("FS_dir: Call FS_dir_seek\n");
       ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
     }
   }
@@ -194,19 +194,10 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
     if ( pn->dev && (pn->type == pn_real)) { /* device directory */
-#if 0
-      if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-	//printf("FS_dir_remote: pn->type != pn_real Call ServerDir %s\n", pn2.path);
-	ret = ServerDir(dirfunc, &pn2, flags) ;
-      } else {
-	ret = FS_devdir( dirfunc, &pn2 ) ;
-      }
-#else
       /* Device structure is always know for ordinary devices, so don't
        * bother calling ServerDir() */
       //printf("FS_dir_remote: call FS_devdir 1 pn->path=%s\n", pn->path);
       ret = FS_devdir( dirfunc, &pn2 ) ;
-#endif
     }
     else if ( pn->dev ) { /* device directory */
       /* this one seem to be called when browsing
@@ -340,7 +331,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
 
     /* is this a remote bus? */
     if ( get_busmode(pncopy.in) == bus_remote ) {
-        //printf("FS_dir_seek: Call ServerDir %s\n", pncopy.path);
+      //printf("FS_dir_seek: Call ServerDir %s\n", pncopy.path);
         ret = ServerDir(dirfunc,&pncopy,flags) ;
     } else { /* local bus */
         if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
@@ -348,15 +339,15 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
             ret = FS_alarmdir(dirfunc,&pncopy) ;
         } else {
             if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
-	        //printf("FS_dir_seek: call FS_realdir\n");
+	      //printf("FS_dir_seek: call FS_realdir\n");
 	        ret = FS_realdir( dirfunc, &pncopy, flags ) ;
             } else {
-	        //printf("FS_dir_seek: call FS_cache2real\n");
+	      //printf("FS_dir_seek: call FS_cache2real\n");
                 ret = FS_cache2real( dirfunc, &pncopy, flags ) ;
             }
         }
-	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
     }
+    //printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
 #ifdef OW_MT
     /* See if next bus was also queried */
     if ( threadbad == 0 ) { /* was a thread created? */

@@ -40,6 +40,7 @@ $Id$
 
 /* --- Prototypes ------------ */
 static void Handler( int fd ) ;
+static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
@@ -127,11 +128,11 @@ void Handler( int fd ) {
     memset(&cm, 0, sizeof(struct client_msg));
 
     switch( (enum msg_type) sm.type ) {
-    case msg_full:
     case msg_size:
     case msg_read:
     case msg_write:
     case msg_dir:
+    case msg_presence:
         if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
             cm.ret = -EBADMSG ;
         } else {
@@ -151,21 +152,20 @@ void Handler( int fd ) {
 	    //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
             switch( (enum msg_type) sm.type ) {
-            case msg_full:
-	        //cm.ret = (pn.dev&&pn.ft)?FullFileLength(&pn):0 ;
-	        if(pn.dev && pn.ft)
-		  SizeHandler( &sm, &cm, &pn ) ;
-		else
+            case msg_presence:
+	        if(pn.dev && pn.ft) {
+		  PresenceHandler( &sm, &cm, &pn ) ;
+		  //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
+		} else {
 		  cm.ret = 0;
-		//printf("msg_full: cm.ret=%d\n", cm.ret);
+		  //printf("msg_presence: cm.ret=%d\n", cm.ret);
+		}
                 break ;
             case msg_size:
-	        //cm.ret = (pn.dev&&pn.ft)?FileLength(&pn):0 ;
 	        if(pn.dev && pn.ft)
 		  SizeHandler( &sm, &cm, &pn ) ;
 		else
 		  cm.ret = 0;
-		//printf("msg_size: cm.ret=%d\n", cm.ret);
                 break ;
             case msg_read:
                 retbuffer = ReadHandler( &sm , &cm, &pn ) ;
@@ -352,9 +352,42 @@ static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const str
     cm->ret = FS_size_remote( pn ) ;
     //printf("Handler: SIZE done ret=%d flags=%ul\n", cm->ret, flags);
 
-    /* Now null entry to show end of directy listing */
     cm->payload = cm->size = 0 ;
 }
+
+/* Presence, called from Handler with the following caveates: */
+/* sm has been read, cm has been zeroed */
+/* pn is configured */
+/* Presence, will return: */
+/* cm fully constructed for error message or null marker (end of directory elements */
+/* cm.ret is also set to an error or 0 */
+static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
+    int bus_nr = -1;
+    cm->payload = 0 ;
+    cm->sg = sm->sg ;
+
+    //printf("PresenceHandler: pn->path=[%s] state=%d bus_nr=%d\n", pn->path, pn->state, pn->bus_nr);
+
+    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
+      if(Cache_Get_Device(&bus_nr, pn)) {
+	//printf("Cache_Get_Device didn't find bus_nr\n");
+	bus_nr = CheckPresence(pn);
+	if(bus_nr >= 0) {
+	  //printf("PresenceHandler(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
+	  Cache_Add_Device(bus_nr, pn);
+	} else {
+	  //printf("PresenceHandler(%s) didn't find device\n", pn->path);
+	}
+      } else {
+	//printf("Cache_Get_Device found bus! %d\n", bus_nr);
+      }
+      cm->ret = bus_nr ;
+    } else {
+      cm->ret = pn->bus_nr ;
+    }
+    cm->payload = cm->size = 0 ;
+}
+
 
 int main( int argc , char ** argv ) {
     char c ;

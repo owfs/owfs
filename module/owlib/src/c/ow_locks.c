@@ -70,6 +70,8 @@ int LockGet( const struct parsedname * const pn ) {
         return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
     }
 
+    //printf("LockGet() pn->path=%s\n", pn->path);
+
     pn->si->lock = NULL ;
     /* Need locking? */
     switch( pn->ft->format ) {

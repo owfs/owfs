@@ -635,7 +635,7 @@ struct s_timeout {
 extern struct s_timeout timeout ;
 
 /* Server (Socket-based) interface */
-enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_full, } ;
+enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_presence, } ;
 /* message to owserver */
 struct server_msg {
     int32_t version ;
@@ -698,6 +698,7 @@ extern struct average store_avg ;
 extern struct cache cache_ext ;
 extern struct cache cache_int ;
 extern struct cache cache_dir ;
+extern struct cache cache_dev ;
 extern struct cache cache_sto ;
 
 extern unsigned int read_calls ;
@@ -888,12 +889,15 @@ void Cache_Close( void ) ;
 void Cache_Clear( void ) ;
 int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) ;
 int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) ;
+int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) ;
 int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
 int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn ) ;
 int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn ) ;
+int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) ;
 int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
 int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
 int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) ;
+int Cache_Del_Device( const struct parsedname * const pn ) ;
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
 void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn2 ) ;
 
@@ -930,7 +934,6 @@ void update_max_delay( const struct parsedname * const pn ) ;
 
 int Server_detect( struct connection_in * in  ) ;
 int ServerSize( const char * path, const struct parsedname * pn ) ;
-int ServerFull( const char * path, const struct parsedname * pn ) ;
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn, uint32_t * flags ) ;

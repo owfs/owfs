@@ -125,7 +125,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
              * pn->in to point at that device at once. */
             pn->in = indevice;
             while(pn->in && pn->in->index!=pn->bus_nr) pn->in = pn->in->next;
-//printf("parse bus.=%d\n", pn->bus_nr);
+	    //printf("parse bus.=%d\n", pn->bus_nr);
 	    /* we have to allow any bus-number here right now. This should
 	     * be fixed. */
 	    //if(!pn->in) return -ENOENT ;
@@ -150,7 +150,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     }
     if ( !pn->path ) {
         pn->path = strdup(path);
-        pn->path_busless = strdup("");
+        pn->path_busless = strdup(path);
 	//printf("PN set2 pn->path=%s\n", pn->path);
 	//printf("PN set2 pn->path_busless=%s\n", pn->path_busless);
     }
@@ -195,7 +195,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 */
 static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname * pn ) {
     int ret ;
-//printf("PN: %s %s : %s\n",pn->path,pathnow,pathnext);
+//printf("PN_sub: %s %s : %s\n",pn->path,pathnow,pathnext);
 
     /* must be of form /sdfa.sf/asdf.sdf */
     /* extensions optional */
@@ -255,24 +255,28 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     }
 
     if ( pathnext==NULL || pathnext[0]=='\0' ) {
-#if 1
-        /* It seems to be impossible to do presence check in FS_ParsedName()
-	 * since it's used when receiving a devicename from a remote server
-	 * too. We have to trust the information, and eventually check for
-	 * presence just before reading or writing to a device. */
-        return 0;
-#else
-        if ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
-//printf("PN No presence check for %s\n", pn->path);
-            /* don't make a presence check for remote devices */
-            return 0;
-        }
-        if ( pn->pathlength == 0 ) {
-//printf("PN No presence check in root-directory %s\n", pn->path);
-            return 0;
-        }
-        return (ShouldCheckPresence(pn) && CheckPresence(pn)) ? -ENOENT : 0 ; /* directory */
-#endif
+        if((pn->type ==pn_real) && !(pn->state & pn_bus)) {
+	  int bus_nr = -1;
+	  if(Cache_Get_Device(&bus_nr, pn)) {
+	    //printf("PN Cache_Get_Device didn't find bus_nr\n");
+	    bus_nr = CheckPresence(pn);
+	    if(bus_nr >= 0) {
+	      //printf("PN CheckPresence(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
+	      Cache_Add_Device(bus_nr, pn);
+	    }
+	  } else {
+	    //printf("PN Cache_Get_Device found bus! %d\n", bus_nr);
+	  }
+	  if(bus_nr < 0) {
+	    //printf("PN CheckPresence failed\n");
+	    return -ENOENT ;
+	  }
+	  /* fake that we read from only one indevice now! */
+	  pn->in = find_connection_in(bus_nr);
+	  pn->state |= pn_bus ;
+	  pn->bus_nr = bus_nr ;
+	}
+        return 0 ;
     }
     pathnow = strsep(&pathnext,"/") ;
     pn->desc = desc_error ; /* Assume the worst, again */
@@ -290,7 +294,6 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         }
         /* STATISCTICS */
         if ( pn->pathlength > dir_depth ) dir_depth = pn->pathlength ;
-//if ( next ) printf("Resub = %s->%s\n",pFile,next) ;
         pathnow = strsep(&pathnext,"/") ;
         return FS_ParsedNameSub( pathnow, pathnext, pn ) ;
     } else if ( pn->ft->format==ft_subdir ) { /* in-device subdirectory */
@@ -310,7 +313,31 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     }
     pn->desc = desc_file ;
 
-    return ( pathnext==NULL || pathnext[0]=='\0' ) ? 0 : -ENOENT ; /* Bad file type for this device */
+    if ( pathnext==NULL || pathnext[0]=='\0' ) {
+        if((pn->type ==pn_real) && !(pn->state & pn_bus)) {
+	  int bus_nr = -1;
+	  if(Cache_Get_Device(&bus_nr, pn)) {
+	    //printf("PN2 Cache_Get_Device didn't find bus_nr\n");
+	    bus_nr = CheckPresence(pn);
+	    if(bus_nr >= 0) {
+	      //printf("PN2 CheckPresence(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
+	      Cache_Add_Device(bus_nr, pn);
+	    }
+	  } else {
+	    //printf("PN2 Cache_Get_Device found bus! %d\n", bus_nr);
+	  }
+	  if(bus_nr < 0) {
+	    //printf("PN2 CheckPresence failed\n");
+	    return -ENOENT ;
+	  }
+	  /* fake that we read from only one indevice now! */
+	  pn->in = find_connection_in(bus_nr);
+	  pn->state |= pn_bus ;
+	  pn->bus_nr = bus_nr ;
+	}
+	return 0 ;
+    }
+    return -ENOENT ; /* Bad file type for this device */
 }
 
 /* Parse Name (non-device name) part of string */
@@ -430,14 +457,12 @@ static int FilePart( char * filename, struct parsedname * pn ) {
                 if ( (p==dot) || ((pn->extension == 0) && (errno==-EINVAL)) ) return -ENOENT ; /* Bad number */
             }
 //printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
-            if (pn->type==pn_system) {
-	      /* Would like to test something like this, but it's not possible
-	       * (pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote) &&
-	       * (pn->type==pn_system)
-	       *
+            if (pn->type!=pn_real) {
+	      /*
 	       * We have to agree any extension from remote bus
-	       * otherwise /system/adapter/address.1 wouldn't be accepted
-	       * Should not be needed on known devices though
+	       * otherwise /system/adapter/address.4 and
+	       * /statistics/bus/bus_locks.4 wouldn't be accepted
+	       * Should not be needed on known devices...
 	       */
             } else
                 if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
