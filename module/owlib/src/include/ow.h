@@ -651,6 +651,7 @@ struct network_work{
     char * host ;
     char * service ;
     struct addrinfo * ai ;
+    struct addrinfo * ai_ok ;
     int listenfd ;
 } ;
 extern struct network_work server ;

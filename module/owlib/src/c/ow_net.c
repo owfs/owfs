@@ -38,35 +38,6 @@ ssize_t readn(int fd, void *vptr, size_t n) {
     return(n - nleft); /* return >= 0 */
 }
 
-int ClientAddr(  char * sname, struct network_work * nw ) {
-    struct addrinfo hint ;
-    char * p ;
-    int ret ;
-
-//printf("ClientAddr port=%s\n",sname);
-    if ( sname == NULL ) return -1 ;
-    if ( (p=strrchr(sname,':')) ) { /* : exists */
-        *p = '\0' ; /* Separate tokens in the string */
-        nw->host = strdup(sname) ;
-	nw->service = strdup(&p[1]) ;
-    } else {
-        nw->host = NULL ;
-        nw->service = strdup(sname) ;
-    }
-
-    bzero( &hint, sizeof(struct addrinfo) ) ;
-    hint.ai_flags = AI_PASSIVE ;
-    hint.ai_socktype = SOCK_STREAM ;
-    hint.ai_family = AF_UNSPEC ;
-
-    if ( (ret=getaddrinfo( nw->host, nw->service, &hint, &nw->ai )) ) {
-//printf("GetAddrInfo ret=%d\n",ret);
-        fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
-        return -1 ;
-    }
-    return 0 ;
-}
-
 int ServerAddr(  char * sname, struct network_work * nw ) {
     struct addrinfo hint ;
     int ret ;
@@ -88,6 +59,71 @@ int ServerAddr(  char * sname, struct network_work * nw ) {
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
+    if ( (ret=getaddrinfo( 
+        nw->host, 
+	nw->service, 
+	&hint, 
+	&nw->ai )) 
+        ) {
+//printf("GetAddrInfo ret=%d\n",ret);
+        fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
+        return -1 ;
+    }
+    return 0 ;
+}
+
+int ServerListen( struct network_work * nw ) {
+    int fd ;
+    int on = 1 ;
+    
+    if ( nw->ai == NULL ) {
+        fprintf(stderr,"Server address not yet parsed\n");
+	return -1 ;
+    }
+    
+    if ( nw->ai_ok == NULL ) nw->ai_ok = nw->ai ;
+    do {
+        fd = socket(
+	    nw->ai_ok->ai_family,
+	    nw->ai_ok->ai_socktype,
+	    nw->ai_ok->ai_protocol
+	    ) ;
+	if ( fd >= 0 ) {
+	    setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ;
+	    if ( bind( fd, nw->ai_ok->ai_addr, nw->ai_ok->ai_addrlen )
+	        || listen(fd, 100)
+		) {
+		close( fd ) ;
+	    } else {
+	        nw->listenfd = fd ;
+		return fd ;
+	    }
+	}
+    } while ( (nw->ai_ok=nw->ai_ok->ai_next) ) ;
+    fprintf(stderr,"Socket problem errno=%d\n",errno) ;
+    return -1 ;
+}
+
+int ClientAddr(  char * sname, struct network_work * nw ) {
+    struct addrinfo hint ;
+    char * p ;
+    int ret ;
+
+//printf("ClientAddr port=%s\n",sname);
+    if ( sname == NULL ) return -1 ;
+    if ( (p=strrchr(sname,':')) ) { /* : exists */
+        *p = '\0' ; /* Separate tokens in the string */
+        nw->host = strdup(sname) ;
+	nw->service = strdup(&p[1]) ;
+    } else {
+        nw->host = NULL ;
+        nw->service = strdup(sname) ;
+    }
+
+    bzero( &hint, sizeof(struct addrinfo) ) ;
+    hint.ai_socktype = SOCK_STREAM ;
+    hint.ai_family = AF_UNSPEC ;
+
     if ( (ret=getaddrinfo( nw->host, nw->service, &hint, &nw->ai )) ) {
 //printf("GetAddrInfo ret=%d\n",ret);
         fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
@@ -104,46 +140,22 @@ int ClientConnect( struct network_work * nw ) {
 	return -1 ;
     }
     
-    if ( (fd=socket(nw->ai->ai_family,nw->ai->ai_socktype,nw->ai->ai_protocol))<0 ) {
-        fprintf(stderr,"Socket problem errno=%d\n",errno) ;
-        return -1 ;
-    }
-    
-    if ( connect(fd, nw->ai->ai_addr, nw->ai->ai_addrlen) ) { 
-        fprintf(stderr,"Connect problem. errno=%d\n",errno) ;
-        return -1 ;
-    }
-//printf("ClientConnect happy\n");    
-    return fd ;
-}
-
-int ServerListen( struct network_work * nw ) {
-    int fd ;
-    int on = 1 ;
-    
-    if ( nw->ai == NULL ) {
-        fprintf(stderr,"Server address not yet parsed\n");
-	return -1 ;
-    }
-    
-    if ( (fd=socket(nw->ai->ai_family,nw->ai->ai_socktype,nw->ai->ai_protocol))<0 
-        || setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)) ) {
-        fprintf(stderr,"Socket problem errno=%d\n",errno) ;
-        return -1 ;
-    }
-    
-    if ( bind( fd, nw->ai->ai_addr, nw->ai->ai_addrlen ) ) {
-        fprintf(stderr,"Cannot bind socket. Errno=%d\n",errno);
-        return -1 ;
-    }
-
-    if ( listen(fd, 100) ) { /* Arbitrary "backlog" parameter */
-        fprintf(stderr,"Listen problem. errno=%d\n",errno) ;
-        return -1 ;
-    }
-
-    nw->listenfd = fd ;
-    return fd ;
+    if ( nw->ai_ok == NULL ) nw->ai_ok = nw->ai ;
+    do {
+        fd = socket(
+	    nw->ai_ok->ai_family,
+	    nw->ai_ok->ai_socktype,
+	    nw->ai_ok->ai_protocol
+	    ) ;
+	if ( fd >= 0 ) {
+	    if ( connect(fd, nw->ai_ok->ai_addr, nw->ai_ok->ai_addrlen) == 0 ) { 
+		return fd ;
+	    }
+	    close( fd ) ;
+	}
+    } while ( (nw->ai_ok=nw->ai_ok->ai_next) ) ;
+    fprintf(stderr,"Socket problem errno=%d\n",errno) ;
+    return -1 ;
 }
 
 void FreeAddr( struct network_work * nw ) {

@@ -26,8 +26,8 @@ int devfd = -1; /*file descriptor for serial/parallel port*/
 
 int useusb = 0 ; /* which DS9490 to connect */
 
-struct network_work server = { NULL, NULL, NULL, -1, } ;
-struct network_work client = { NULL, NULL, NULL, -1, } ;
+struct network_work server = { NULL, NULL, NULL, NULL, -1, } ;
+struct network_work client = { NULL, NULL, NULL, NULL, -1, } ;
 
 /* Globals for DS2480B state */
 int UMode ;

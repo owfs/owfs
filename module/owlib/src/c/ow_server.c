@@ -83,7 +83,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const char * p
     struct client_msg cm ;
     char * path2 ;
     int connectfd = ClientConnect( &client ) ;
-    int ret = 0 ;
     struct parsedname pn2 ;
     
     if ( connectfd < 0 ) return -EIO ;
@@ -97,20 +96,24 @@ printf("ServerDir path=%s\n",path);
     sm.sg =  SemiGlobal.int32;
     sm.offset = 0 ;
     if ( ToServer( connectfd, &sm, path, NULL, 0) ) {
-        ret = -EIO ;
+        cm.ret = -EIO ;
     } else { 
         while( (path2=FromServerAlloc( connectfd, &cm))  ) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
 printf("ServerDir got:%s\n",path2);
-	    if ( (ret=FS_ParsedName( path2, &pn2 )) == 0 ) {
+	    if ( FS_ParsedName( path2, &pn2 ) ) {
+	        cm.ret = -EINVAL ;
+		free(path2) ;
+		break ;
+	    } else {
 	        dirfunc(&pn2) ;
                 FS_ParsedName_destroy( &pn2 ) ;
+                free(path2) ;
 	    }
-            free(path2) ;
         }
     }
     close( connectfd ) ;
-    return ret ;
+    return cm.ret ;
 }
 
 /* read from server, free return pointer if not Null */
@@ -156,7 +159,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     if ( readn(fd, cm, sizeof(struct client_msg) ) != sizeof(struct client_msg) ) {
         cm->size = 0 ;
         cm->ret = -EIO ;
-        return -1 ;
+        return -EIO ;
     }
 
     cm->payload = ntohl(cm->payload) ;
@@ -179,7 +182,7 @@ printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->
         char extra[d] ;
         if ( readn(fd,extra,d) != d ) {
             cm->ret = -EIO ;
-            return -1 ;
+            return -EIO ;
         }
         return size ;
     }
