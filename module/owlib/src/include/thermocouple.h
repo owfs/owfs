@@ -20,7 +20,7 @@ $Id$
 struct poly {
     FLOAT minf ;
     int   order ;
-#ifdef __uClinux__
+#ifdef USE_UCLIBC
     // this won't compile with m68k-uclinux-gcc unless size is set.
     FLOAT coef[12] ;
 #else
@@ -30,7 +30,7 @@ struct poly {
 
 struct polys {
     int n ;
-#ifdef __uClinux__
+#ifdef USE_UCLIBC
     const struct poly *p[4] ;
     // this won't compile with m68k-uclinux-gcc unless size is set.
 #else

@@ -25,6 +25,11 @@ pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t store_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t fstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
+#ifdef USE_UCLIBC
+/* vsnprintf() doesn't seem to be thread-safe in uClibc
+   even if thread-support is enabled. */
+pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif
 #define DEVLOCK      pthread_mutex_lock(&dev_mutex) ;
 #define DEVUNLOCK    pthread_mutex_unlock(&dev_mutex) ;
 #define DEVLOCKS    10

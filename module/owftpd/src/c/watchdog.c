@@ -23,7 +23,7 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
     daemon_assert(inactivity_timeout > 0);
     daemon_assert(err != NULL);
 
-#if defined(__uClinux__) || defined(EMBEDDED)
+#ifdef USE_UCLIBC
     {
         pthread_mutexattr_t attr ;
         pthread_mutexattr_init(&attr) ;

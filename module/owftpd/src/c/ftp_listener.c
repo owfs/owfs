@@ -237,7 +237,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
     f->max_connections = max_connections;
     f->num_connections = 0;
     f->inactivity_timeout = inactivity_timeout;
-#if defined(__uClinux__) || defined(EMBEDDED)
+#ifdef USE_UCLIBC
     {
         pthread_mutexattr_t attr ;
         pthread_mutexattr_init(&attr) ;

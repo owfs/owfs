@@ -118,7 +118,7 @@ void LibSetup( void ) {
     start_time = time(NULL) ;
 }
 
-#ifdef __uClinux__
+#if defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU)
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -144,7 +144,7 @@ void catchchild() {
 }
 
 /*
-  This is a test to implement daemon() on uClinux with uClibc...
+  This is a test to implement daemon() with uClibc and without MMU...
   I'm not sure it works correctly, so don't use it yet.
 */
 int my_daemon(int nochdir, int noclose) {
@@ -220,16 +220,16 @@ int my_daemon(int nochdir, int noclose) {
 #endif
     return 0;
 }
-#endif /* __uClinux__ */
+#endif /* defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU) */
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
     if ( background &&
-#ifdef __uClinux__
+#if defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU)
         my_daemon(1, 0)
-#else /* __uClinux__ */
+#else /* defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU) */
         daemon(1, 0)
-#endif /* __uClinux__ */
+#endif /* defined(USE_UCLIBC) && !defined(UCLIBC_HAS_MMU) */
     ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;

@@ -308,6 +308,7 @@ static int FS_typedir( void (* dirfunc)(void *,const struct parsedname * const),
 
 /* device display format */
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * const sn ) {
+    UCLIBCLOCK
     switch (devform) {
     case fdi:
         snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6]) ;
@@ -328,6 +329,7 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
         snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
         break ;
     }
+    UCLIBCUNLOCK
 }
 
 const char dirname_state_uncached[] = "uncached";
@@ -372,6 +374,7 @@ const char * FS_dirname_type( const enum pn_type type ) {
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) {
     int s ;
     if ( pn->ft == NULL ) return -ENOENT ;
+    UCLIBCLOCK
     if ( pn->ft->ag == NULL ) {
         s = snprintf( name , size, "%s",pn->ft->name) ;
     } else if ( pn->extension == -1 ) {
@@ -381,6 +384,7 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
     } else {
         s = snprintf( name , size, "%s.%-d",pn->ft->name,pn->extension) ;
     }
+    UCLIBCUNLOCK
     return (s<0) ? -ENOBUFS : 0 ;
 }
 
@@ -396,6 +400,7 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
             pname = pn->ft->name ;
         }
 
+	UCLIBCLOCK
         if ( pn->ft->ag == NULL ) {
             snprintf( buffer , size, "%s",pname) ;
         } else if ( pn->extension == -1 ) {
@@ -405,6 +410,7 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
         } else {
             snprintf( buffer , size, "%s.%-d",pname,pn->extension) ;
         }
+        UCLIBCUNLOCK
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */

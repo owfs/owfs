@@ -139,12 +139,14 @@ static int FS_real_read(const char *path, char *buf, const size_t size, const of
 /* Structure file */
 static int FS_structure(const char *path, char *buf, const size_t size, const off_t offset, struct parsedname * pn) {
     char ft_format_char[] = "  iufabyd" ;
-    int fl ;
+    int fl, len ;
     if ( offset ) return -EADDRNOTAVAIL ;
     pn->type = pn_real ;
         fl = FullFileLength(pn) ;
     pn->type = pn_structure ;
-    return snprintf(
+
+    UCLIBCLOCK
+    len = snprintf(
         buf,
         size,
         "%c,%.6d,%.6d,%.2s,%.6d,",
@@ -156,6 +158,8 @@ static int FS_structure(const char *path, char *buf, const size_t size, const of
             ( (pn->ft->write.v) ? "wo" : "oo" ) ,
         fl
         ) ;
+    UCLIBCUNLOCK
+    return len;
 }
 
 /* read without artificial separation of combination */
@@ -378,10 +382,14 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
 
 static int FS_output_int( int value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
-    char c[suglen+1] ; // for
+    char c[suglen+2] ;
+    /* should only need suglen+1, but uClibc's snprintf()
+       seem to trash 'len' if not increased */
     int len ;
     if ( suglen>size ) suglen=size ;
+    UCLIBCLOCK
     len = snprintf(c,suglen+1,"%*d",suglen,value) ;
+    UCLIBCUNLOCK
     if ( (len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
     return len ;
@@ -389,10 +397,14 @@ static int FS_output_int( int value, char * buf, const size_t size, const struct
 
 static int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
-    char c[suglen+1] ;
+    char c[suglen+2] ;
+    /* should only need suglen+1, but uClibc's snprintf()
+       seem to trash 'len' if not increased */
     int len ;
     if ( suglen>size ) suglen=size ;
+    UCLIBCLOCK
     len = snprintf(c,suglen+1,"%*u",suglen,value) ;
+    UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
     return len ;
@@ -400,10 +412,14 @@ static int FS_output_unsigned( unsigned int value, char * buf, const size_t size
 
 static int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
-    char c[suglen+1] ;
+    char c[suglen+2] ;
+    /* should only need suglen+1, but uClibc's snprintf()
+       seem to trash 'len' if not increased */
     int len ;
     if ( suglen>size ) suglen=size ;
+    UCLIBCLOCK
     len = snprintf(c,suglen+1,"%*G",suglen,value) ;
+    UCLIBCUNLOCK
     if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, len ) ;
     return len ;
