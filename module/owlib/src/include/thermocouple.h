@@ -20,12 +20,22 @@ $Id$
 struct poly {
     FLOAT minf ;
     int   order ;
+#ifdef __uClinux__
+    // this won't compile with m68k-uclinux-gcc unless size is set.
+    FLOAT coef[12] ;
+#else
     FLOAT coef[] ;
+#endif
 } ;
 
 struct polys {
     int n ;
+#ifdef __uClinux__
+    const struct poly *p[4] ;
+    // this won't compile with m68k-uclinux-gcc unless size is set.
+#else
     const struct poly * p[] ;
+#endif
 } ;
 
 struct thermo {

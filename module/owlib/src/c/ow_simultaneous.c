@@ -120,7 +120,7 @@ static int OW_getcache( enum simul_type type ,const unsigned int msec, const str
     struct parsedname pn2 ;
     struct timeval tv,now ;
     long int diff ;
-    int dsize ;
+    size_t dsize ;
     int ret ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;

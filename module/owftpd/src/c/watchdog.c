@@ -28,7 +28,7 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
         pthread_mutexattr_t attr ;
         pthread_mutexattr_init(&attr) ;
         pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_ADAPTIVE_NP) ;
-        pthread_mutexattr_init(&w->mutex,&attr) ;
+        pthread_mutex_init(&w->mutex,&attr) ;
         pthread_mutexattr_destroy(&attr) ;
     }
 #else /* non-embedded */

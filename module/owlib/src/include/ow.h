@@ -68,9 +68,13 @@ $Id$
 
 #include <unistd.h>
 #include <fcntl.h>
+#ifndef __USE_XOPEN
 #define __USE_XOPEN /* for strptime fuction */
 #include <time.h>
 #undef __USE_XOPEN /* for strptime fuction */
+#else
+#include <time.h>
+#endif
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
@@ -144,9 +148,13 @@ extern int maxslots ;
 /* command line options */
 /* These a re the owlib-specific options */
 #include <fcntl.h>
+#ifndef __USE_XOPEN
 #define __USE_XOPEN /* for strptime fuction */
 #include <time.h>
 #undef __USE_XOPEN /* for strptime fuction */
+#else
+#include <time.h>
+#endif
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>

@@ -21,6 +21,7 @@ $Id$
 #include "ow.h"
 #include "owhttpd.h"
 
+// #include <libgen.h>  /* for dirname() */
 
 /* ------------ Protoypes ---------------- */
 
@@ -56,7 +57,7 @@ static void RootDir( struct active_sock * a_sock, const char * path, struct pars
 static void URLparse( struct urlparse * up ) ;
 
     /* Data edit function */
-static void ChangeData( struct urlparse * up , struct parsedname * pn ) ;
+static void ChangeData( struct urlparse * up , const struct parsedname * pn ) ;
 
     /* Device display functions */
 static void ShowDevice( struct active_sock * a_sock, const char * file, struct parsedname * pn ) ;
@@ -117,7 +118,7 @@ int handle_socket(struct active_sock * const a_sock) {
         } else if ( pn.dev == NULL ) { /* directory! */
             RootDir( a_sock,up.file,& pn ) ;
         /* Single device, show it's properties */
-        } else { /* a single device */
+	    } else {
 //printf("PreChange\n");
             ChangeData( &up, &pn ) ;
 //printf("PreShow\n");
@@ -216,7 +217,7 @@ static void HTTPfoot(FILE * out ) {
 /* Device entry -- table line for a filetype */
 static void Show( FILE * out, const char * const path, const char * const file, const struct parsedname * pn ) {
     int len ;
-    char * basename ;
+    const char * basename ;
     char fullpath[PATH_MAX+1] ;
     int suglen = FullFileLength(pn) ;
     char buf[suglen+1] ;
@@ -238,11 +239,12 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     if ( basename ) {
         ++basename ; /* after slash */
     } else {
-        basename = file ;
+      basename = (char *)file ;
     }
+
     /* full file name (with path and subdir) */
     if ( snprintf(fullpath,PATH_MAX,path[strlen(path)-1]=='/'?"%s%s":"%s/%s",path,basename)<0 ) return ;
-//printf("  fullpath=%s\n",fullpath);
+//printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
 
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
 
@@ -375,27 +377,34 @@ static int httpunescape(unsigned char *httpstr) {
     return 0;
 }
 
-static void ChangeData( struct urlparse * up, struct parsedname * pn ) {
-    char *property ;
+static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
     char linecopy[PATH_MAX+1];
     strcpy( linecopy , up->file ) ;
-    strcat( linecopy , "/" ) ;
-    property = linecopy+strlen(linecopy) ;
+    if ( pn->ft ) { /* pare off any filetype */
+        char * r = strrchr(linecopy,'/') ;
+        if (r) r[1] = '\0' ;
+//printf("Change data ft yes \n") ;
+    } else {
+        strcat( linecopy , "/" ) ;
+    }
     /* Do command processing and make changes to 1-wire devices */
     if ( pn->dev!=&NoDevice && up->request && up->value && !readonly ) {
-        strcpy( property , up->request ) ;
-        if ( FS_ParsedName(linecopy,pn)==0 && pn->ft && pn->ft->write.v ) {
-            switch ( pn->ft->format ) {
+        struct parsedname pn2 ;
+        memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
+        strcat( linecopy , up->request ) ; /* add on requested file type */
+//printf("Change data on %s to %s\n",linecopy,up->value) ;
+        if ( FS_ParsedName(linecopy,&pn2)==0 && pn2.ft && pn2.ft->write.v ) {
+            switch ( pn2.ft->format ) {
             case ft_binary:
                 httpunescape(up->value) ;
                 hex_only(up->value) ;
-                if ( strlen(up->value) == pn->ft->suglen<<1 ) {
+                if ( strlen(up->value) == pn2.ft->suglen<<1 ) {
                     hex_convert(up->value) ;
-                    FS_write( linecopy, up->value, pn->ft->suglen, 0 ) ;
+                    FS_write( linecopy, up->value, pn2.ft->suglen, 0 ) ;
                 }
                 break;
             case ft_yesno:
-                if ( pn->ft->ag==NULL || pn->extension>=0 ) { // Single check box handled differently
+                if ( pn2.ft->ag==NULL || pn2.extension>=0 ) { // Single check box handled differently
                     FS_write( linecopy, strncasecmp(up->value,"on",2)?"0":"1", 2, 0 ) ;
                     break;
                 }
@@ -405,7 +414,6 @@ static void ChangeData( struct urlparse * up, struct parsedname * pn ) {
                 break;
             }
         }
-	FS_ParsedName(up->file,pn);
     }
 }
 
@@ -448,19 +456,26 @@ static void ShowDevice( struct active_sock * a_sock, const char * path, struct p
     /* Nested function */
     void directory( void * data, const struct parsedname * const pn2 ) {
         char file[OW_FULLNAME_MAX] ;
-        (void) data ;
         if ( FS_FileName(file,OW_FULLNAME_MAX,pn2) ) return ;
-        Show( a_sock->io, path, file, pn2 ) ;
+        Show( a_sock->io, (const char *)data, file, pn2 ) ;
     }
 
-printf("ShowDevice = %s\n",path) ;
+//printf("ShowDevice = %s\n",path) ;
     HTTPstart( a_sock->io , "200 OK" ) ;
     HTTPtitle( a_sock->io , &path[1]) ;
     HTTPheader( a_sock->io , &path[1]) ;
     if ( cacheenabled && pn->state!=pn_uncached && pn->type==pn_real) fprintf( a_sock->io , "<BR><small><A href='/uncached%s'>uncached version</A></small>",path) ;
     fprintf( a_sock->io, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
     fprintf( a_sock->io, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, path ) ;
-    FS_dir( directory, a_sock->io, pn ) ;
+    if ( pn->ft ) { /* single item */
+        char * path2 = strdup(path) ;
+        char * slash = strrchr(path2,'/') ;
+        if ( slash ) slash[0] = '\0' ; /* pare off device name */
+        directory(path2,pn) ;
+        free(path2) ;
+    } else { /* whole device */
+        FS_dir( directory, (void *)path, pn ) ;
+    }
     fprintf( a_sock->io, "</TABLE>" ) ;
     HTTPfoot( a_sock->io ) ;
 }

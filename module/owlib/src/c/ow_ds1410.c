@@ -9,6 +9,8 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
+#ifndef USE_NO_PARPORT
+
 #include "owfs_config.h"
 #include "ow.h"
 
@@ -622,3 +624,5 @@ static void DS1410_setroutines( struct interface_routines * const f ) {
     f->sendback_data = DS1410_sendback_data ;
     f->select        = BUS_select_low ;
 }
+
+#endif /* USE_NO_PARPORT */

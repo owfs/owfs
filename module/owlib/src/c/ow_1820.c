@@ -321,7 +321,7 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
 static int OW_power( unsigned char * const data, const struct parsedname * const pn) {
     unsigned char b4 = 0xB4;
     int ret = 0 ;
-    int s = sizeof(unsigned char) ;
+    size_t s = sizeof(unsigned char) ;
 
     if ( Cache_Get_Internal(data,&s,&ip_power,pn) ) {
         BUSLOCK
@@ -339,7 +339,7 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
     int res = Resolutions[resolution-9].config ;
     int delay = Resolutions[resolution-9].delay ;
     int oldres ;
-    int s = sizeof(oldres) ;
+    size_t s = sizeof(oldres) ;
     int ret = 0 ;
 
     /* powered? */

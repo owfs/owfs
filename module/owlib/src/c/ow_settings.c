@@ -51,10 +51,13 @@ $Id$
 yWRITE_FUNCTION( FS_w_enable ) ;
  iREAD_FUNCTION( FS_r_timeout ) ;
 iWRITE_FUNCTION( FS_w_timeout ) ;
+ yREAD_FUNCTION( FS_r_presencecheck ) ;
+yWRITE_FUNCTION( FS_w_presencecheck ) ;
 
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
+    {"presencecheck"   ,  1, NULL  , ft_yesno,    ft_static, {y:FS_r_presencecheck},  {y:FS_w_presencecheck},    NULL          , } ,
     {"enabled"         ,  1, NULL  , ft_yesno,    ft_static, {y:FS_r_enable},  {y:FS_w_enable},    NULL          , } ,
     {"volatile"        , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, & timeout.vol   , } ,
     {"stable"          , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, & timeout.stable, } ,
@@ -64,6 +67,16 @@ struct filetype set_cache[] = {
 struct device d_set_cache = { "cache", "cache", pn_settings, NFT(set_cache), set_cache } ;
 
 /* ------- Functions ------------ */
+
+static int FS_r_presencecheck(int * y , const struct parsedname * pn) {
+    y[0] =  presencecheck ;
+    return 0 ;
+}
+
+static int FS_w_presencecheck(const int * y , const struct parsedname * pn) {
+    presencecheck = y[0] ;
+    return 0 ;
+}
 
 static int FS_r_enable(int * y , const struct parsedname * pn) {
     CACHELOCK

@@ -242,7 +242,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
         pthread_mutexattr_t attr ;
         pthread_mutexattr_init(&attr) ;
         pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_ADAPTIVE_NP) ;
-        pthread_mutexattr_init(&f->mutex,&attr) ;
+        pthread_mutex_init(&f->mutex,&attr) ;
         pthread_mutexattr_destroy(&attr) ;
     }
 #else /* non-embedded */

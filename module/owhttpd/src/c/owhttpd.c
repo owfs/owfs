@@ -29,8 +29,28 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
+
 #ifdef OW_MT
+
     #include <pthread.h>
+sem_t accept_sem ;
+#define MAX_THREADS 10
+pthread_mutex_t thread_lock = PTHREAD_MUTEX_INITIALIZER;
+struct mythread {
+  pthread_t tid;
+  int socket;
+  unsigned char avail;
+};
+struct mythread threads[MAX_THREADS];
+
+#else
+
+#define MAX_THREADS 1
+struct mythread {
+  int socket;
+};
+struct mythread threads[MAX_THREADS];
+
 #endif /* OW_MT */
 /*
  * Default port to listen too. If you aren't root, you'll need it to
@@ -49,15 +69,32 @@ static void shutdown_sock(struct listen_sock sock) ;
 static int get_listen_sock(struct listen_sock *sock) ;
 static void http_loop( struct listen_sock *sock ) ;
 
-void handle_sigchild(int unused) {
+void kill_threads(void) {
+#ifdef OW_MT
+    int i;
+    pthread_mutex_lock(&thread_lock);
+    for (i = 0; i < MAX_THREADS; i++) {
+      if(!threads[i].avail) pthread_cancel(threads[i].tid);
+    }
+    pthread_mutex_unlock(&thread_lock);
+#endif
+    shutdown_sock(l_sock);
+    exit(0);
+}
+
+void handle_sighup(int unused) {
     (void) unused ;
-    signal(SIGCHLD, handle_sigchild);
+    kill_threads();
 }
 
 void handle_sigterm(int unused) {
     (void) unused ;
-    shutdown_sock(l_sock);
-    exit(0);
+    kill_threads();
+}
+
+void handle_sigchild(int unused) {
+    (void) unused ;
+    signal(SIGCHLD, handle_sigchild);
 }
 
 int main(int argc, char *argv[]) {
@@ -108,20 +145,35 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
+#ifdef OW_MT
+    {
+      int i;
+      for(i=0; i<MAX_THREADS; i++) threads[i].avail = 1;
+      sem_init( &accept_sem, 0, MAX_THREADS ) ;
+    }
+#endif
+
     signal(SIGCHLD, handle_sigchild);
     signal(SIGHUP, SIG_IGN);
+    signal(SIGHUP, handle_sighup);
     signal(SIGTERM, handle_sigterm);
 
     for (;;) {
         http_loop(&l_sock) ;
     }
+    kill_threads();
 }
 
-static void * handle(void * p){
+static void * handle(void * ptr) {
+    struct mythread *mt = ((struct mythread *)ptr);
     struct active_sock ch_sock;
 
-    ch_sock.socket = *(int *) p;
-//printf("Handler sock=%d\n",ch_sock.socket);
+#ifdef OW_MT
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+#endif
+
+    ch_sock.socket = mt->socket;
     ch_sock.io = fdopen(ch_sock.socket, "w+");
     if (ch_sock.io) {
         handle_socket( &ch_sock ) ;
@@ -130,24 +182,68 @@ static void * handle(void * p){
         shutdown(ch_sock.socket, SHUT_RDWR);
     }
     close(ch_sock.socket);
-//printf("End handler\n");
+#ifdef OW_MT
+    pthread_mutex_lock(&thread_lock);
+    mt->avail = 1;
+    mt->socket = 0;
+    pthread_mutex_unlock(&thread_lock);
+    sem_post(&accept_sem);
+    pthread_exit(NULL);
+#endif
     return NULL ;
+}
+
+static int start_thread(struct mythread *mt)
+{
+  sigset_t oldset;
+  sigset_t newset;
+  int res;
+
+  /* Disallow signal reception in worker threads */
+  sigfillset(&newset);
+  pthread_sigmask(SIG_SETMASK, &newset, &oldset);
+  res = pthread_create(&mt->tid, NULL, handle, mt);
+  pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+  if (res != 0) {
+    fprintf(stderr, "start_thread: error creating thread: %s\n", strerror(res));
+    return -1;
+  }
+  pthread_detach(mt->tid);
+  return 0;
 }
 
 static void http_loop( struct listen_sock *sock ) {
     socklen_t size = sizeof((sock->sin));
     int n_sock = accept((sock->socket),(struct sockaddr*)&(sock->sin), &size);
-//printf("LOOP sock=%d\n",n_sock);
     if (n_sock != -1) {
 #ifdef OW_MT
+        sem_wait(&accept_sem);
         if (multithreading) {
-            pthread_t thread ;
-            pthread_create(&thread,NULL,handle,&n_sock);
+	    int res, i;
+	    pthread_mutex_lock(&thread_lock);
+	    
+	    for(i=0; i<MAX_THREADS; i++) if(threads[i].avail) break;
+	    threads[i].avail = 0;
+	    threads[i].socket = n_sock;
+	    pthread_mutex_unlock(&thread_lock);
+
+	    res = start_thread(&threads[i]);
+	    if (res == -1) {
+	      //shutdown(n_sock, SHUT_RDWR);
+	      close(n_sock);
+	      pthread_mutex_lock(&thread_lock);
+	      threads[i].avail = 1;
+	      pthread_mutex_unlock(&thread_lock);
+	      sem_post(&accept_sem);
+	    }
         } else {
-            handle(&n_sock);
+	    threads[0].avail = 0;
+            threads[0].socket = n_sock;
+            handle(&threads[0]);
         }
 #else /* OW_MT */
-        handle(&n_sock);
+        threads[0].socket = n_sock;
+        handle(&threads[0]);
 #endif /* OW_MT */
     } else {
         /* failed to accept */
