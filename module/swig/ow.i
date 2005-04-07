@@ -25,10 +25,10 @@ int init( const char * dev ) {
 //    LibSetup() ;
     background = 0 ;
     pid_file = 0 ;
-    if ( strcmp(dev,"u") ) {
-        OW_ArgGeneric( dev ) ;
-    } else {
+    if ( !strcmp(dev,"u") ) {
         OW_ArgUSB(NULL) ;
+    } else {
+        OW_ArgGeneric( dev ) ;
     }
     if ( LibStart() ) return 0 ;
 //printf("Libstart good\n");
@@ -85,20 +85,21 @@ char * get( const char * path ) {
         FS_ParsedName_destroy(&pn) ;
     } else { /* A regular file */
 //printf("File %s\n",path);
-        s = FullFileLength(&pn) ;
+	s = FS_size_postparse(&pn) ;
 //printf("File len=%d, %s\n",s,path);
         if ( (buf=(char *) malloc( s+1 )) ) {
             int r =  FS_read_3times( buf, s, 0, &pn ) ;
             FS_ParsedName_destroy(&pn) ;
             if ( r<0 ) {
                 free(buf) ;
-                return NULL ;
+                return strdup("") ; // have to return empty string on error
             }
             buf[s] = '\0' ;
  //           if (r!=s) printf("Mismatch path=%s read=%d len=%d\n",path,r,s);
         }
     }
 //printf("End GET\n");
+    if(!buf) return strdup("") ; // have to return empty string on error
     return buf ;
 }
 

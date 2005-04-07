@@ -265,7 +265,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
     FS_ParsedName_destroy(&pn) ;
     Tcl_SetObjResult(interp, resultPtr);
   } else { /* A regular file */
-    s = FullFileLength(&pn);
+    s = FS_size_postparse(&pn) ;
     if (s < 0) {
 	owtcl_ErrorMsg(interp, strerror(-s));
 	tcl_return = TCL_ERROR;
