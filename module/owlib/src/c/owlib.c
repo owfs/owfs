@@ -207,6 +207,8 @@ int LibStart( void ) {
             fprintf(stderr,"Cannot setup USB port. Support not compiled into %s\n",progname);
             ret = 1 ;
 #endif /* OW_USB */
+	    // in->name should be set to something, even if DS9490_detect fails
+	    if(!in->name) in->name = strdup("-1/-1") ;
             break ;
         default:
             ret = 1 ;
