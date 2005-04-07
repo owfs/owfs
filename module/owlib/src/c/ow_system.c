@@ -87,12 +87,26 @@ struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_s
 
 /* Just some tests to support overdrive */
 static int FS_r_overdrive(int * y , const struct parsedname * pn) {
-    *y = pn->in->use_overdrive_speed ;
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex);
+    if(!in) return -ENOENT ;
+
+    *y = in->use_overdrive_speed ;
     return 0 ;
 }
 
 static int FS_w_overdrive(const int * y , const struct parsedname * pn) {
-    pn->in->use_overdrive_speed = (*y ? 1 : 0) ;
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex);
+    if(!in) return -ENOENT ;
+
+    in->use_overdrive_speed = (*y ? 1 : 0) ;
     return 0 ;
 }
 
