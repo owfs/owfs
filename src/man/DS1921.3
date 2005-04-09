@@ -8,7 +8,7 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS1921-Thermachron 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS1921-Thermachron 3  2005 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .B DS1921
 - Thermachron
@@ -17,53 +17,35 @@ Thermachron temperature logging iButton.
 .HP
 .B 21
 [.]XXXXXXXXXXXX[XX][/[
-.B alarm_dow
+.br
+.B about/[measuring| resolution| samples| templow| temphigh| version]
 |
-.B alarm_hour
+.br
+.B clock/[date| running| udate]
 |
-.B alarm_minute
+.br
+.B histotgram/[counts[0-62|ALL]| gap| temperature[counts[0-62|ALL]]
 |
-.B alarm_second
+.br
+.B log[date[0-2047|ALL]| elements| temperature[0-2047|ALL]| udate[0-2047|ALL]]
 |
-.B alarm_trigger
-|
-.B date
-|
-.B histogap
-|
-.B histogram.[0-62|ALL]
-|
-.B histotemp.[0-62|ALL]
-|
-.B in_mission
-|
-.B logdate.[0-2047|ALL]
-|
-.B logtemp.[0-2047|ALL]
-|
-.B logtime.[0-2047|ALL]
-|
+.br
 .B memory
 |
-.B mission_samples
+.br
+.B mission/[date| delay| easystart| frequency| rollover| running| samples| sampling| udate]
 |
-.B page.[0-15|ALL]
+.br
+.B overtemp/[date[0-11|ALL]| elements| end[0-11|ALL]| count[0-11|ALL]| temperature[0-11|ALL]| udate[0-11|ALL]]
 |
-.B running
+.br
+.B pages/page.[0-15|ALL]
 |
-.B samplerate
-|
+.br
 .B temperature
 |
-.B temprangehigh
-|
-.B temprangelow
-|
-.B tempresolution
-|
-.B total_samples
-|
-.B version
+.br
+.B undertemp/[date[0-11|ALL]| elements|end[0-11|ALL]| count[0-11|ALL]| temperature[0-11|ALL]| udate[0-11|ALL]]
 |
 .B address
 |
@@ -79,13 +61,52 @@ Thermachron temperature logging iButton.
 .TP
 21
 .SH SPECIAL PROPERTIES
-.SS date
+.SS about/measuring
+.I read-only, yes-no
+.br
+Is this
+.I DS1921
+currently
+.I measuring
+a temperature?
+.SS about/resolution
+.I read-only, floating point
+.br
+What is the
+.I resolution
+of the temperature measurments (in the current temperature scale).
+.SS about/samples
+.I read-only, unsigned integer
+.br
+How many total temperature measurements has this
+.I DS1921
+performed?
+.SS about/temphigh
+.I read-only, floating point
+.br
+Highest temperature this
+.I DS1921
+can measure (in the current temperature scale).
+.SS about/templow
+.I read-only, floating point
+.br
+Lowest temperature this
+.I DS1921
+can measure (in the current temperature scale).
+.SS abount/version
+.I read-only, ascii
+.br
+Specific
+.I version
+of this
+.I DS1921.
+.SS clock/date
 .I read-write, ascii
 .br
-26 character date representation of the
-.I counter
-value. Increments once per second while
-.I running
+26 character date representation of the internal time stored in this
+.I DS1921.
+Increments once per second while
+.I clock/running
 .br
 Setting
 .I date
@@ -100,62 +121,194 @@ Accepted date formats are:
   3/23/04 23:34:57
 .br
   current locale setting (your system's format)
-.SS in_mission
+.SS clock/running
 .I read-write, yes-no
 .br
-Is the
-.B Thermachron
-in a \"mission\".
+Whether the internal clock is running. This can be explicitly set, and is automatically started by
+setting
+.I clock/date
+or
+.I clock/udate
+or by starting a mission with
+.I mission/easystart
+or
+.I mission/frequency
 .PP
-Missions involve periodic temperature measurements, with logging and histogram updates. Many parameters cannot be altered while in a mission.
+The main reason to stop the clock is to conserve the internal battery.
+The clock cannot be stopped during a mission, and the clock is essential for a mission.
+.SS clock/udate
+.I read-write, unsigned integer
+.br
+A numeric representation of
+.I clock/date
+.br
+The number of seconds in UNIX time (since Jan 1, 1970).
+.SS histogram/counts.0 ... histogram/counts.62 histogram/counts.ALL
+.I read-only, unsigned integer
+.br
+The number of samples in the current mission whose temperature fell within the
+.I histogram/temperature
+to
+.I histogram/temperature+histogram/gap
+range.
+.SS histogram/elements
+.I read-only, unsigned integer
+.br
+The number of bins in the histogram. Always 63.
+.SS histogram/gap
+.I read-only, floating point
+.br
+The size of the histogram bin. Depends on the Thermochron version (
+.I about/version
+) and is usually 4 times
+.I about/resolution
 .PP
-Unlike the
-.B Thermachron
-datasheet specifications, OWFS does not allow implicit mission halting by writing to protected memory. All mission start and stop must be with the
-.I in_mission
-propety.
-.SS version
+Given in the current temperatature scale.
+.SS histogram/temperature.0 ... histogram/temperature.62 histogram/temperature.ALL
+.I read-only, floating point
+.br
+Lower limit of the temperature range for the corresponding histogram bin. In the current temperature scale.
+.SS log/date.0 ... log/date.2047 log/date.ALL
 .I read-only, ascii
 .br
-Thermachron sub-type.
-.SS running
-.I read-write, yes-no
-.br
-Status of the real time clock (RTC).
+Date that the corresponding
+.I log/temperature
+was taken, in ascii format. (See
+.I clock/date
+for more on the format).
+The number of valid entries is actually
+.I log/elements
+since the log may not be full.
 .PP
-.I running
-controls whether the clock is ticking (updating every second). This is required for a mission, and for accurate time-keeping. Setting the clock is done with the
-.I date
-property.
-.SS offset
-.I read-write, integer
+.I mission/samples
+gives the total number of samples that have been taken but there is only room in the log for 2048 entries.
+Once the log is full,
+.I mission/rollover
+determines the Thermochron's behavior.
+.PP
+If
+.I mission/rollover
+is false(0), the log will hold the
+.B first
+2048 samples and
+.I log/date.0
+will always be the same as
+.I mission/date
+.PP
+If
+.I mission/rollover
+is true (1) then the log will hold the
+.B last
+2048 samples and the entries will be shifted down with each new sample.
+.PP
+Note the
+.I OWFS
+code "untwists" the rollover behavior. The data will always be a linear array of earliest to latest.
+.PP
+.I ALL
+is the all data elements comma separated.
+.SS log/elements
+.I read-only, unsigned integer
 .br
-Correction for
-.I current
-readings. A value between -256 and 255. See the datasheet for details. Should be set to the negative of a true zero
-.I current
-reading.
-.SS page.0 ... page.7 page.ALL
+Number of valid entries in the log.
+.I OWFS
+offers the full 2048 values in the log memory, but not that many samples may yet have been taken.
+.I log/elements
+will range from 0 to 2048 and always be less than or equal to
+.I mission/samples
+.SS log/temperature.0 ... log/temperature.2047 log/temperature.ALL
+.I read-write, floating point
+.br
+The temperature readings (in the current temperature scale) that correspond to the
+.I log/date
+sample. See
+.I log/date
+for details on the indexing scheme and rollover behavior.
+.SS log/udate.0 ... log/udate.2047 log/udate.ALL
+.I read-write, unsigned integer
+.br
+A numeric representation of
+.I log/date
+.br
+The number of seconds in UNIX time (since Jan 1, 1970).
+.SS memory
 .I read-write, binary
 .br
-Memory is split into 8 pages of 8 bytes each. Only the pages 3-7 are really available, and some of that appears to be reserved. See the datasheet for details.
+User available storage space. 512 bytes. Can also be accessed as 16 pages of 32 bytes with the
+.I pages/page.x
+properties.
+.SS overtemp/count.0 ... overtemp/count.11 overtemp/count.ALL
+.SS undertemp/count.0 ... undertemp/count.11 undertemp/count.ALL
+.I read-only, unsigned integer
+.br
+Number of sampling periods that the Thermochron stayed out of range durring a mission. Each sampling period is
+.I mission/frequency
+minutes long.
+.SS overtemp/end.0 ... overtemp/end.11 overtemp/end.ALL
+.SS undertemp/end.0 ... undertemp/end.11 undertemp/end.ALL
+.I read-only, ascii
+.br
+End of time that the Thermochron went out of range during the current mission. See
+.I clock/date
+for format.
+.PP
+Each period can be up to 255 samples in length, and span the time
+.I overtemp/date
+to
+.I overtemp/end
+( or
+.I undertemp/date
+to
+.I undertemp/end
+).
+.SS overtemp/date.0 ... overtemp/date.11 overtemp/date.ALL
+.SS undertemp/date.0 ... undertemp/date.11 undertemp/date.ALL
+.I read-only, ascii
+.br
+Time that the Thermochron went out of range during the current mission. See
+.I clock/date
+for format.
+.SS overtemp/elements
+.SS undertemp/elements
+.I read-only, unsigned integer
+.br
+Number of entries (0 to 12) in the
+.I overtemp
+or
+.I undertemp
+array.
+.SS overtemp/temperature
+.SS undertemp/temperature
+.I read-write, floating point
+.br
+Temperature limit to trigger alarm and error log.
+.I overtemp/temperature
+gives upper limit and 
+.I undertemp/temperature
+gives lower limit.
+.br
+In current temperature scale.
+.SS overtemp/udate.0 ... overtemp/udate.11 overtemp/udate.ALL
+.SS undertemp/udate.0 ... undertemp/udate.11 undertemp/udate.ALL
+.I read-only, unsigned integer
+.br
+A numeric representation of
+.I overtemp/date
+or
+.I undertemp/date
+.br
+The number of seconds in UNIX time (since Jan 1, 1970).
+.SS pages/page.0 ... pages/page.15 pages/page.ALL
+.I read-write, binary
+.br
+Memory is split into 16 pages of 32 bytes each. User available. The log memory, register banks and histogram data area are all separate from this memory area.
 .br
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
 .SS temperature
 .I read-only, floating point
 .br
-.I Temperature
-read by the chip at high resolution (~13 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-Conversion takes ~20 msec.
-.SS VAD VDD
-.I read-only, floating point
-.br
-Voltage read (~10 bits) at the one of the chip's two supply voltages. Range VDD= 2.4V to 10V, VAD=1.5 to 10V.
+Last temperature explicitly requested. Only available when the mission is not in progress. Value returned in in the current temperature scale.
 .SH STANDARD PROPERTIES
 .SS address
 .I read-only, ascii

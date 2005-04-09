@@ -46,6 +46,7 @@ $Id$
 /* DS1921 Temperature */
  fREAD_FUNCTION( FS_r_histotemp ) ;
  fREAD_FUNCTION( FS_r_histogap ) ;
+ uREAD_FUNCTION( FS_r_histoelem ) ;
  fREAD_FUNCTION( FS_r_resolution ) ;
  aREAD_FUNCTION( FS_r_version ) ;
  fREAD_FUNCTION( FS_r_rangelow ) ;
@@ -71,6 +72,7 @@ uWRITE_FUNCTION( FS_easystart ) ;
 fWRITE_FUNCTION( FS_w_alarmtemp ) ;
  
  dREAD_FUNCTION( FS_mdate ) ;
+ uREAD_FUNCTION( FS_umdate ) ;
  dREAD_FUNCTION( FS_r_date ) ;
  dWRITE_FUNCTION( FS_w_date ) ;
  uREAD_FUNCTION( FS_r_counter ) ;
@@ -123,8 +125,9 @@ struct filetype DS1921[] = {
 
     {"histogram"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"histogram/counts"     ,  6,&A1921h,ft_unsigned, ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,
-    {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,
+    {"histogram/elements"   ,  9,   NULL,ft_unsigned,   ft_static, {u:FS_r_histoelem}  , {v:NULL}           , NULL, } ,
     {"histogram/gap"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,
+    {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,
 
     {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
@@ -137,7 +140,7 @@ struct filetype DS1921[] = {
     {"about/temphigh"       ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
     {"about/version"        , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
     {"about/samples"        , 11,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021D, } ,
-    {"about/measuring"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[0], } ,
+    {"about/measuring"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_rbitread}     , {v:NULL}           , &BitReads[0], } ,
 
     {"temperature"          , 12,   NULL,   ft_float, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
 
@@ -148,6 +151,7 @@ struct filetype DS1921[] = {
     {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
     {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
     {"mission/date"         , 24,   NULL,    ft_date, ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
+    {"mission/udate"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_umdate}       , {v:NULL}           , NULL, } ,
     {"mission/sampling"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[2], } ,
     {"mission/easystart"    , 12,   NULL,ft_unsigned,   ft_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
 
@@ -192,7 +196,7 @@ DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp )
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
 struct Version { unsigned int ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; unsigned int delay ;} ;
-struct Version Versions[] =
+static struct Version Versions[] =
     {
         { 0x000, "DS1921G-F5" , -40.0, 0.500, -40., +85.,  90, } ,
         { 0x064, "DS1921L-F50", -40.0, 0.500, -40., +85., 300, } ,
@@ -268,7 +272,7 @@ static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
         }
     } else { /* single element */
         unsigned char data[2] ;
-        if ( OW_r_mem(data,2,0x800+((pn->extension)<<1),pn) ) return -EINVAL ;
+        if ( OW_r_mem(data,2,(size_t)0x800+((pn->extension)<<1),pn) ) return -EINVAL ;
         h[0] = (((unsigned int)data[1])<<8)|data[0] ;
     }
     return 0 ;
@@ -292,6 +296,12 @@ static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
     *g = TemperatureGap(v->resolution*4,pn) ;
     return 0 ;
 }
+static int FS_r_histoelem(unsigned int * u , const struct parsedname * pn) {
+    (void) pn ;
+    u[0] = 63 ;
+    return 0 ;
+}
+
 
 static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
@@ -336,7 +346,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
 /* read counter */
 /* Save a function by shoving address in data field */
 static int FS_r_3byte(unsigned int * u , const struct parsedname * pn) {
-    int addr = (int) pn->ft->data ;
+    size_t addr = (size_t) pn->ft->data ;
     unsigned char data[3] ;
     if ( OW_r_mem(data,3,addr,pn) ) return -EINVAL ;
     u[0] = (((((unsigned int)data[2])<<8)|data[1])<<8)|data[0] ;
@@ -350,6 +360,16 @@ static int FS_mdate(DATE * d , const struct parsedname * pn) {
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
     /* Get date from chip */
     d[0] = mission.start ;
+    return 0 ;
+}
+
+/* mission start date */
+static int FS_umdate(unsigned int * u , const struct parsedname * pn) {
+    struct Mission mission ;
+
+    if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
+    /* Get date from chip */
+    u[0] = mission.start ;
     return 0 ;
 }
 
@@ -527,7 +547,7 @@ static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn
 /* read the alarm time field (not bit 7, though) */
 static int FS_r_atime(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
-    if ( OW_r_mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
+    if ( OW_r_mem(&data,1,(size_t) pn->ft->data,pn) ) return -EFAULT ;
     *u = data & 0x7F ;
     return 0 ;
 }
@@ -537,9 +557,9 @@ static int FS_r_atime(unsigned int * u , const struct parsedname * pn) {
 static int FS_w_atime(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
 
-    if ( OW_r_mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
+    if ( OW_r_mem(&data,1,(size_t) pn->ft->data,pn) ) return -EFAULT ;
     data = ( (unsigned char) u[0] ) | (data&0x80) ; /* EM on */
-    if ( OW_w_mem(&data,1,(int) pn->ft->data,pn) ) return -EFAULT ;
+    if ( OW_w_mem(&data,1,(size_t) pn->ft->data,pn) ) return -EFAULT ;
     return 0 ;
 }
 
@@ -593,12 +613,12 @@ static int FS_w_atrig(const unsigned int * u , const struct parsedname * pn) {
 }
 
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem( buf, size, offset+((pn->extension)<<5), pn ) ) return -EINVAL ;
+    if ( OW_r_mem( buf, size, (size_t)(offset+((pn->extension)<<5)), pn ) ) return -EINVAL ;
     return size ;
 }
 
 static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_w_mem( buf, size, offset+((pn->extension)<<5), pn ) ) return -EINVAL ;
+    if ( OW_w_mem( buf, size, (size_t)(offset+((pn->extension)<<5)), pn ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -640,7 +660,7 @@ static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
 /* mission delay */
 static int FS_r_delay( unsigned int * u , const struct parsedname * pn) {
     unsigned char data[2] ;
-    if ( OW_r_mem( data, 2, 0x0212, pn ) ) return -EINVAL ;
+    if ( OW_r_mem( data, 2, (size_t)0x0212, pn ) ) return -EINVAL ;
     u[0] = (((unsigned int)data[1])<<8) | data[0] ;
     return 0 ;
 }
@@ -649,7 +669,7 @@ static int FS_r_delay( unsigned int * u , const struct parsedname * pn) {
 static int FS_w_delay( const unsigned int * u , const struct parsedname * pn) {
     unsigned char data[] = { u[0]&0xFF, (u[0]>>8)&0xFF, } ;
     if ( OW_MIP(pn) ) return -EBUSY ;
-    if ( OW_w_mem( data, 2, 0x0212, pn ) ) return -EINVAL ;
+    if ( OW_w_mem( data, 2, (size_t)0x0212, pn ) ) return -EINVAL ;
     return 0 ;
 }
     
@@ -696,9 +716,9 @@ static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
     if ( pn->extension> -1 ) {
         unsigned char data[1] ;
         if ( pass ) {
-            if ( OW_r_mem( data , 1, 0x1000+((pn->extension+off)&0x07FF), pn ) ) return -EINVAL ;
+            if ( OW_r_mem( data , 1,(size_t) (0x1000+((pn->extension+off)&0x07FF)), pn ) ) return -EINVAL ;
         } else {
-            if ( OW_r_mem( data , 1, 0x1000+pn->extension, pn ) ) return -EINVAL ;
+            if ( OW_r_mem( data , 1,(size_t) (0x1000+pn->extension), pn ) ) return -EINVAL ;
         }
         T[0] = (FLOAT)data[0] * v->resolution + v->histolow ;
     } else {
