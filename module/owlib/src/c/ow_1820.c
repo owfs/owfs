@@ -275,11 +275,11 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
 
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
     /* Select particular device and start conversion */
-    if ( ! pow ) { // unpowered, deliver power, no communication allowed
+    if ( !pow ) { // unpowered, deliver power, no communication allowed
         BUSLOCK(pn)
             ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
         BUSUNLOCK(pn)
-    } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ){ // powered, so release bus immediately after issuing convert
+    } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
         BUSLOCK(pn)
             ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
         BUSUNLOCK(pn)
@@ -287,7 +287,7 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     }
     if ( ret ) return 1 ;
 
-    if ( OW_r_scratchpad( data , pn ) ) return 1 ;
+    if ( OW_r_scratchpad( data, pn ) ) return 1 ;
 
     /* Check for error condition */
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {

@@ -796,6 +796,7 @@ extern unsigned int DS2480_PowerByte_1_errors ;
 extern unsigned int DS2480_PowerByte_2_errors ;
 extern unsigned int DS2480_PowerByte_errors ;
 extern unsigned int DS2480_level_errors ;
+extern unsigned int DS2480_level_docheck_errors ;
 extern unsigned int DS2480_databit_errors ;
 extern unsigned int DS2480_next_both_errors ;
 extern unsigned int DS2480_ProgramPulse_errors ;

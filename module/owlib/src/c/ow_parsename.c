@@ -262,7 +262,10 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     }
 
     if ( pathnext==NULL || pathnext[0]=='\0' ) {
-        if((pn->type ==pn_real) && !(pn->state & pn_bus)) {
+        if(pn->dev == DeviceSimultaneous) {
+	  /* We don't want to find any any bus_nr for simultaneous
+	   * unless it's already set with /bus.x prefix */
+	} else if((pn->type==pn_real) && !(pn->state & pn_bus)) {
 	  int bus_nr = -1;
 	  if(Cache_Get_Device(&bus_nr, pn)) {
 	    //printf("PN Cache_Get_Device didn't find bus_nr\n");
@@ -321,7 +324,10 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
     pn->desc = desc_file ;
 
     if ( pathnext==NULL || pathnext[0]=='\0' ) {
-        if((pn->type ==pn_real) && !(pn->state & pn_bus)) {
+        if(pn->dev == DeviceSimultaneous) {
+	  /* We don't want to find any any bus_nr for simultaneous
+	   * unless it's already set with /bus.x prefix */
+	} else if((pn->type==pn_real) && !(pn->state & pn_bus)) {
 	  int bus_nr = -1;
 	  if(Cache_Get_Device(&bus_nr, pn)) {
 	    //printf("PN2 Cache_Get_Device didn't find bus_nr\n");

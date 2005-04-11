@@ -405,13 +405,16 @@ static int DS2480_level(int new_level, const struct parsedname * const pn) {
 	  STATUNLOCK
 	  return ret ;
 	}
+
+	// we don't want DS2480_databit to change level, so set ULevel here.
         pn->in->ULevel = MODE_NORMAL;
 
         // do extra bit for DS2480 disable strong pullup
         if ( !docheck || DS2480_databit(1,&docheck,pn) ) {
 	  STATLOCK
-	  DS2480_level_errors++;
+	  DS2480_level_docheck_errors++;
 	  STATUNLOCK
+	  pn->in->ULevel = MODE_STRONG5 ; // it failed! restore ULevel
 	  return -EIO ;
 	}
     } else if (new_level == MODE_STRONG5) { // strong 5 volts
@@ -650,6 +653,7 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
 
     // check the response bit
     ret = byte ^ ( ((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) ) ;
+
     if ( ret ) {
       STATLOCK
       DS2480_PowerByte_2_errors++;

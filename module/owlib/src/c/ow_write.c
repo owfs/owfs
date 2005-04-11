@@ -102,20 +102,20 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 	    /* this will either call ServerWrite or FS_real_write */
 	    r = FS_write_seek(buf, size, offset, pn) ;
         } else {
-            r = FS_real_write( buf, size, offset, pn ) ;
+            r = FS_real_write(buf, size, offset, pn) ;
 	}
         break;
     default:
 //printf("FS_write_postparse: pid=%ld call fs_write_seek size=%ld\n", pthread_self(), size);
 
-#if 0
-      /* handle DeviceSimultaneous in some way */
+        /* handle DeviceSimultaneous */
         if(pn->dev == DeviceSimultaneous) {
-	  //printf("FS_write_postparse: DeviceSimultaneous %s\n", pn->path);
-            r = FS_real_write( buf, size, offset, pn ) ;
-	} else
-#endif
-	{
+	  /* writing to /simultaneous/temperature will write to ALL
+	   * available bus.?/simultaneous/temperature
+	   * not just /simultaneous/temperature
+	   */
+	  r = FS_write_seek(buf, size, offset, pn) ;
+	} else {
 	  /* real data -- go through device chain */
 	    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
 	      struct parsedname pn2;
@@ -189,9 +189,9 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
         /* if readonly exit */
         if ( readonly ) return -EROFS ;
 
-        if ( (r=LockGet(pn))==0 ) {
-            r = FS_real_write( buf, size, offset, pn ) ;
-            LockRelease(pn) ;
+	if ( (r=LockGet(pn))==0 ) {
+	  r = FS_real_write( buf, size, offset, pn ) ;
+	  LockRelease(pn) ;
         }
     }
     /* If sucessfully writing a device, we know it exists on a specific bus.

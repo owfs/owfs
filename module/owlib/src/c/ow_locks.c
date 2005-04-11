@@ -70,6 +70,10 @@ int LockGet( const struct parsedname * const pn ) {
     }
 
     //printf("LockGet() pn->path=%s\n", pn->path);
+    if(pn->dev == DeviceSimultaneous) {
+      /* Shouldn't call LockGet() on DeviceSimultaneous. No sn exists */
+      return 0 ;
+    }
 
     pn->si->lock = NULL ;
     /* Need locking? */
@@ -122,6 +126,11 @@ void LockRelease( const struct parsedname * const pn ) {
         static int dev_compare( const void * a , const void * b ) {
             return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
         }
+
+	if(pn->dev == DeviceSimultaneous) {
+	  /* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
+	  return 0 ;
+	}
        
         pthread_mutex_unlock( &(pn->si->lock->lock) ) ;
         DEVLOCK(pn)

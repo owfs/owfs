@@ -127,15 +127,28 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         break;
     default:
       //printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
-
-#if 0
-      /* handle DeviceSimultaneous in some way */
+        /* handle DeviceSimultaneous */
         if(pn->dev == DeviceSimultaneous) {
-	    printf("FS_read_postparse: DeviceSimultaneous %s\n", pn->path);
-            r = FS_real_read(buf, size, offset, pn) ;
-	} else
-#endif
-	{
+	    if(pn->state & pn_bus) {
+	      r = FS_read_seek(buf, size, offset, pn) ;
+	    } else {
+	      struct connection_in *p = indevice ;
+	      while(p) {
+		if(get_busmode(p) == bus_remote) break ;
+		p = p->next;
+	      }
+	      if(p) {
+		/* A remote server exists, and we can't read this value!!
+		 * /simultaneous/temperature is unknown when:
+		 * /bus.0/simultaneous/temperature = 0
+		 * /bus.1/simultaneous/temperature = 1
+		 */
+		r = -EINVAL ;
+	      } else {
+		r = FS_real_read(buf, size, offset, pn) ;
+	      }
+	    }
+	} else {
 	    /* real data -- go through device chain */
 	    /* this will either call ServerDir or FS_real_read */
 	    if((pn->type == pn_real) && !(pn->state & pn_bus)) {

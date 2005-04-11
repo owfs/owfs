@@ -186,7 +186,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
       //printf("CheckPresence_low: call BUS_normalverify\n");
       /* this can only be done on local busses */
       BUSLOCK(pn)
-	ret = BUS_normalverify(pn) ;
+      ret = BUS_normalverify(pn) ;
       BUSUNLOCK(pn)
       if(ret == 0) {
 	/* Device was found on this in-device, return it's index */

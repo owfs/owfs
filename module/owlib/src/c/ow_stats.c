@@ -148,6 +148,7 @@ unsigned int DS2480_PowerByte_1_errors = 0 ;
 unsigned int DS2480_PowerByte_2_errors = 0 ;
 unsigned int DS2480_PowerByte_errors = 0 ;
 unsigned int DS2480_level_errors = 0 ;
+unsigned int DS2480_level_docheck_errors = 0 ;
 unsigned int DS2480_databit_errors = 0 ;
 unsigned int DS2480_next_both_errors = 0 ;
 unsigned int DS2480_ProgramPulse_errors = 0 ;
@@ -346,6 +347,7 @@ FS_stat_ROW(DS2480_PowerByte_1_errors),
 FS_stat_ROW(DS2480_PowerByte_2_errors),
 FS_stat_ROW(DS2480_PowerByte_errors),
 FS_stat_ROW(DS2480_level_errors),
+FS_stat_ROW(DS2480_level_docheck_errors),
 FS_stat_ROW(DS2480_databit_errors),
 FS_stat_ROW(DS2480_next_both_errors),
 FS_stat_ROW(DS2480_ProgramPulse_errors),
