@@ -100,7 +100,7 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
 
 static int FS_r_convert(int * y , const struct parsedname * pn) {
     y[0] = 1 ;
-    if ( OW_getcache(0,(enum simul_type) pn->ft->data,pn) ) y[0] = 0 ;
+    if ( OW_getcache((enum simul_type) pn->ft->data,0,pn) ) y[0] = 0 ;
     return 0 ;
 }
 
