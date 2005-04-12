@@ -74,9 +74,9 @@ typedef struct connection_info {
 
 /* prototypes */
 static int invariant(const struct ftp_listener_t *f);
-static void *connection_acceptor(struct ftp_listener_t *f);
+void *connection_acceptor(struct ftp_listener_t *f);
 static void addr_to_string(const sockaddr_storage_t *s, char *addr);
-static void *connection_handler(connection_info_t *info);
+void *connection_handler(connection_info_t *info);
 static void connection_handler_cleanup(connection_info_t *info);
 
 /* initialize an FTP listener */
@@ -85,6 +85,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
                       int port, 
                       int max_connections,
                       int inactivity_timeout,
+		      char *rootdir,
                       error_code_t *err)
 {
     sockaddr_storage_t sock_addr;
@@ -102,11 +103,15 @@ int ftp_listener_init(struct ftp_listener_t *f,
     daemon_assert(max_connections > 0);
     daemon_assert(err != NULL);
 
-    /* get our current directory */
-    if (getcwd(dir, sizeof(dir)) == NULL) {
+    if(!rootdir) {
+      /* get our current directory */
+      if (getcwd(dir, sizeof(dir)) == NULL) {
         error_init(err, errno, "error getting current directory; %s",
                    strerror(errno));
         return 0;
+      }
+    } else {
+      strncpy(dir, rootdir, sizeof(dir));
     }
 
     /* set up our socket address */
@@ -316,7 +321,7 @@ static int invariant(const struct ftp_listener_t *f)
 #endif /* NDEBUG */
 
 /* handle incoming connections */
-static void *connection_acceptor(struct ftp_listener_t *f)
+void *connection_acceptor(struct ftp_listener_t *f)
 {
     error_code_t err;
     int num_error;

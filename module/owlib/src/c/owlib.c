@@ -280,3 +280,25 @@ void Timeout( const char * c ) {
     timeout.stable = 10*timeout.vol ;
     timeout.dir = 5*timeout.vol ;
 }
+
+void set_signal_handlers( void (*exit_handler)(int errcode) ) {
+    struct sigaction sa;
+
+    sa.sa_handler = exit_handler;
+    sigemptyset(&(sa.sa_mask));
+    sa.sa_flags = 0;
+
+    if (sigaction(SIGHUP, &sa, NULL) == -1
+        || sigaction(SIGINT, &sa, NULL) == -1
+        || sigaction(SIGTERM, &sa, NULL) == -1) {
+        perror("Cannot set exit signal handlers");
+        exit_handler(-1);
+    }
+
+    sa.sa_handler = SIG_IGN;
+
+    if(sigaction(SIGPIPE, &sa, NULL) == -1) {
+        perror("Cannot set ignored signals");
+        exit_handler(-1);
+    }
+}

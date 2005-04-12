@@ -43,8 +43,11 @@ static void ow_exit( int e ) ;
 #if 0
 static void fuser_mount_wrapper( void ) ;
 #endif
-void exit_handler(int i) ;
-void set_signal_handlers( void ) ;
+
+static void exit_handler(int i) {
+    (void) i ;
+    return ow_exit( ((i<0) ? 1 : 0) ) ;
+}
 
 /*
     OW -- Onw Wire
@@ -132,9 +135,9 @@ int main(int argc, char *argv[]) {
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt)) == -1 ) ow_exit(1) ;
 #endif /* FUSE_MAJOR_VERSION == 1 */
 
-    if ( LibStart() ) ow_exit(1) ;
+    set_signal_handlers(exit_handler);
 
-    set_signal_handlers();
+    if ( LibStart() ) ow_exit(1) ;
 
 #if (FUSE_MAJOR_VERSION == 1)
     fuse = fuse_new(fuse_fd, 0, &owfs_oper);
@@ -183,31 +186,4 @@ static void ow_exit( int e ) {
         system(umount_cmd);
     }
     exit( e ) ;
-}
-
-void exit_handler(int i) {
-    (void) i ;
-    return ow_exit(1) ;
-}
-
-void set_signal_handlers( void ) {
-    struct sigaction sa;
-
-    sa.sa_handler = exit_handler;
-    sigemptyset(&(sa.sa_mask));
-    sa.sa_flags = 0;
-
-    if (sigaction(SIGHUP, &sa, NULL) == -1
-        || sigaction(SIGINT, &sa, NULL) == -1
-        || sigaction(SIGTERM, &sa, NULL) == -1) {
-        perror("Cannot set exit signal handlers");
-        ow_exit(1);
-    }
-
-    sa.sa_handler = SIG_IGN;
-
-    if(sigaction(SIGPIPE, &sa, NULL) == -1) {
-        perror("Cannot set ignored signals");
-        exit(1);
-    }
 }

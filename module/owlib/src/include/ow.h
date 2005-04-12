@@ -629,6 +629,8 @@ const char *TemperatureScaleName(enum temp_type t) ;
 extern int cacheavailable ; /* is caching available */
 extern int background ; /* operate in background mode */
 
+extern void set_signal_handlers( void (*exit_handler)(int errcode) ) ;
+
 #define DEFAULT_TIMEOUT  (15)
 void Timeout( const char * c ) ;
 struct s_timeout {

@@ -47,11 +47,14 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, const char *data ) ;
-static void ow_exit( int e ) ;
 
-static void handle_exit(int unused) {
-  (void) unused ;
-  ow_exit(0);
+static void ow_exit( int e ) {
+    LibClose() ;
+    exit( e ) ;
+}
+
+static void exit_handler(int i) {
+  return ow_exit( ((i<0) ? 1 : 0) ) ;
 }
 
 /* read from client, free return pointer if not Null */
@@ -425,6 +428,8 @@ int main( int argc , char ** argv ) {
         ow_exit(1);
     }
 
+    set_signal_handlers(exit_handler);
+
     /*
      * Now we drop privledges and become a daemon.
      */
@@ -435,17 +440,8 @@ int main( int argc , char ** argv ) {
      * main7: indevice=0x9d314d0 indevice->busmode==858692 2 */
     //printf("main7: indevice=%p indevice->busmode==%d %d\n", indevice, indevice->busmode, get_busmode(indevice));
 
-    signal(SIGPIPE, SIG_IGN);
-    signal(SIGHUP, handle_exit);
-    signal(SIGINT, handle_exit);
-    signal(SIGTERM, handle_exit);
-
     ServerProcess( Handler, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }
 
-void ow_exit( int e ) {
-    LibClose() ;
-    exit( e ) ;
-}

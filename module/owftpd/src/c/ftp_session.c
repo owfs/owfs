@@ -265,6 +265,14 @@ void ftp_session_run(struct ftp_session_t *f, watched_t *watched)
         goto next_command;
     }
 
+#if 0
+    {
+      int i;
+      printf("cmd.num_arg=%d\n", cmd.num_arg);
+      for(i=0; i<cmd.num_arg;i++) printf("i=%d [%s] \n", i, cmd.arg[i].string);
+    }
+#endif
+
     /* dispatch the command */
     for (i=0; i<NUM_COMMAND_FUNC; i++) {
         if (strcmp(cmd.command, command_func[i].name) == 0) {

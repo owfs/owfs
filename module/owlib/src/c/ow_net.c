@@ -77,14 +77,18 @@ int ServerListen( struct connection_out * out ) {
         return -1 ;
     }
 
+    printf("ServerListen\n");
+
     if ( out->ai_ok == NULL ) out->ai_ok = out->ai ;
     do {
+      printf("ServerListen loop: \n");
         fd = socket(
             out->ai_ok->ai_family,
             out->ai_ok->ai_socktype,
             out->ai_ok->ai_protocol
         ) ;
         if ( fd >= 0 ) {
+      printf("ServerListen loop: [%s]\n", out->ai_ok->ai_addr);
             ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))
                 || bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
                 || listen(fd, 10) ;
@@ -209,11 +213,11 @@ int ClientConnect( struct connection_in * in ) {
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
     struct connection_out * out_last = NULL;
+#ifdef OW_MT
     pthread_t thread ;
 #ifndef __UCLIBC__
     pthread_attr_t attr ;
 #endif
-#ifdef OW_MT
 
     /* embedded function */
     void ToListen( struct connection_out * o ) {

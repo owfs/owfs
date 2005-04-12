@@ -110,13 +110,12 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
     /* advance input past the command */
     input += command_found->len;
 
+    tmp.num_arg = 0;
     if ( *input == ' ' ) {
         no_args = 0 ;
         ++input ;
-        tmp.num_arg = 0;
     } else {
         no_args = 1 ;
-        tmp.num_arg = 1; /* may be higher */
     }
     
     /* now act based on the command */
@@ -129,11 +128,13 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
     case ARG_STRING:
         if (no_args) return 0 ;
         input = copy_string(tmp.arg[0].string, input);
+        if (input != NULL) tmp.num_arg++;
         break;
 
     case ARG_OPTIONAL_STRING:
         if (!no_args) {
             input = copy_string(tmp.arg[0].string, input);
+	    if (input != NULL) tmp.num_arg++;
         }
         break;
 
@@ -142,6 +143,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
             /* parse the host & port information (if any) */
         input = parse_host_port(&tmp.arg[0].host_port, input);
         if (input == NULL) return 0 ;
+        tmp.num_arg++;
         break;
 
     case ARG_HOST_PORT_LONG:
@@ -149,6 +151,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
         /* parse the host & port information (if any) */
         input = parse_host_port_long(&tmp.arg[0].host_port, input);
         if (input == NULL) return 0 ;
+        tmp.num_arg++;
         break;    
 
     case ARG_HOST_PORT_EXT:
@@ -156,6 +159,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
         /* parse the host & port information (if any) */
         input = parse_host_port_ext(&tmp.arg[0].host_port, input);
         if (input == NULL) return 0 ;
+        tmp.num_arg++;
         break;
  
         /* the optional number may also be "ALL" */
@@ -170,6 +174,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
             } else {
                 return 0;
             }
+	    if (input != NULL) tmp.num_arg++;
         }
         break;     
 
@@ -213,6 +218,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
         input++;
         tmp.arg[0].string[0] = c;
         tmp.arg[0].string[1] = '\0';
+        tmp.num_arg++;
         break;
 
     case ARG_MODE:
@@ -222,12 +228,14 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
         input++;
         tmp.arg[0].string[0] = c;
         tmp.arg[0].string[1] = '\0';
+        tmp.num_arg++;
         break;
 
     case ARG_OFFSET:
         if (no_args)  return 0;
         input = parse_offset(&tmp.arg[0].offset, input);
         if (input == NULL) return 0 ;
+        tmp.num_arg++;
         break;
 
     default:

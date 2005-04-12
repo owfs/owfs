@@ -36,12 +36,15 @@ $Id$
  */
 #define DEFAULTPORT    80
 
-static void ow_exit( int e ) ;
 static void Acceptor( int listenfd ) ;
 
-static void handle_exit(int unused) {
-    (void) unused ;
-    ow_exit(0);
+static void ow_exit( int e ) {
+    LibClose() ;
+    exit( e ) ;
+}
+
+static void exit_handler(int i) {
+  return ow_exit( ((i<0) ? 1 : 0) ) ;
 }
 
 int main(int argc, char *argv[]) {
@@ -78,15 +81,12 @@ int main(int argc, char *argv[]) {
         ow_exit(1);
     }
 
+    set_signal_handlers(exit_handler);
+
     /*
      * Now we drop privledges and become a daemon.
      */
     if ( LibStart() ) ow_exit(1) ;
-
-    signal(SIGPIPE, SIG_IGN);
-    signal(SIGHUP, handle_exit);
-    signal(SIGINT, handle_exit);
-    signal(SIGTERM, handle_exit);
 
     ServerProcess( Acceptor, ow_exit ) ;
     ow_exit(0) ;
@@ -99,9 +99,4 @@ static void Acceptor( int listenfd ) {
         handle_socket( fp ) ;
         fflush(fp);
     }
-}
-
-static void ow_exit( int e ) {
-    LibClose() ;
-    exit( e ) ;
 }
