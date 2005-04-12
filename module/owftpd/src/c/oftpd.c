@@ -134,17 +134,20 @@ int main(int argc, char *argv[]) {
       ++optind ;
     }
 
-    if(ServerAddr(outdevice)<0) {
-      printf("ServerAddr() failed\n");
+    /* no port was defined, so listen on port 21 as default */
+    if(!outdevice) {
+      if(OW_ArgServer( "0.0.0.0:21" )) {
+	fprintf(stderr, "Error using default address\n");
+	ow_exit(1);
+      }
+    }
+    if(!outdevice || (ServerAddr(outdevice)<0)) {
+      fprintf(stderr, "ServerAddr() failed\n");
       ow_exit(1);
     }
 
-    //if(!outdevice->host) outdevice->host = strdup("0.0.0.0");
     portnum = atoi(outdevice->service) ;
     address = outdevice->host ;
-
-    //printf("portnum=%d\n", portnum);
-    //printf("address=[%s]\n", address);
 
     set_signal_handlers(exit_handler);
 
@@ -172,7 +175,7 @@ int main(int argc, char *argv[]) {
     /* fix this... quick hack to test ftp-server only. require owfs to
      * to run on the same server */
     if(!find_fusedev(rootdir)) {
-      printf("Couldn't find fuse-dir\n");
+      fprintf(stderr, "Couldn't find fuse-dir\n");
       ow_exit(0);
     }
     chroot(rootdir);

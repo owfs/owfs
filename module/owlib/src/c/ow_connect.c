@@ -134,7 +134,7 @@ void FreeIn( void ) {
             break ;
 #endif /* OW_USB */
         default:
-	    printf("FreeIn: unknown busmode %d on index=%d\n", get_busmode(now), now->index);
+	    //printf("FreeIn: unknown busmode %d on index=%d\n", get_busmode(now), now->index);
             break ;
         }
         if ( now->name) {
