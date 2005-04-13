@@ -50,8 +50,11 @@ static void exit_handler(int i) {
 int main(int argc, char *argv[]) {
     char c ;
 
+    /* grab our executable name */
+    if (argc > 0) progname = strdup(argv[0]);
+
+    /* Set up owlib */
     LibSetup() ;
-    if ( argc>0 ) progname = strdup(argv[0]) ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {

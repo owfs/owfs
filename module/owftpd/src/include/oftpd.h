@@ -6,7 +6,7 @@
 #define OFTPD_H
 
 /* default port FTP server listens on (use 0 to listen on default port) */
-#define DEFAULT_PORTNAME 22
+#define DEFAULT_PORTNAME "0.0.0.0:21"
 
 /* default maximum number of clients */
 #define MAX_CLIENTS 250

@@ -183,8 +183,9 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
         /* Get a char (AEIL), put in args, and process further */
         c = toupper(*input);
         ++input ;
-        tmp.arg[1].string[0] = c;
+        tmp.arg[0].string[0] = c;
         tmp.arg[0].string[1] = '\0';
+	tmp.num_arg = 1;
         
         switch(c) {
         case 'A':

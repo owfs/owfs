@@ -395,7 +395,10 @@ static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const
 int main( int argc , char ** argv ) {
     char c ;
 
-    if ( argc>0 ) progname = strdup(argv[0]) ;
+    /* grab our executable name */
+    if (argc > 0) progname = strdup(argv[0]);
+
+    /* Set up owlib */
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {

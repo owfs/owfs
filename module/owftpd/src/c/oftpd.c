@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     memset(&ftp_listener, 0, sizeof(struct ftp_listener_t));
 
     /* grab our executable name */
-    if (argc > 0) progname = argv[0];
+    if (argc > 0) progname = strdup(argv[0]);
 
     /* Set up owlib */
     LibSetup() ;
@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
             "Usage: %s ttyDevice [options] \n"
             "   or: %s [options] -d ttyDevice \n"
-            "    -p port   -- tcp port for ftp comnmand channel (default 21)\n" ,
-        progname,progname ) ;
+            "    -p port   -- Listen port for ftp server (default %s)\n" ,
+		    progname, progname, DEFAULT_PORTNAME) ;
             break ;
         case 'V':
             fprintf(stderr,
@@ -135,14 +135,14 @@ int main(int argc, char *argv[]) {
     }
 
     /* no port was defined, so listen on port 21 as default */
-    if(!outdevice) {
-      if(OW_ArgServer( "0.0.0.0:21" )) {
+    if(!outdevices) {
+      if(OW_ArgServer( DEFAULT_PORTNAME )) {
 	fprintf(stderr, "Error using default address\n");
 	ow_exit(1);
       }
     }
-    if(!outdevice || (ServerAddr(outdevice)<0)) {
-      fprintf(stderr, "ServerAddr() failed\n");
+    if(ServerAddr(outdevice)<0) {
+      fprintf(stderr, "Failed to initialize port. Use '-p' argument.\n");
       ow_exit(1);
     }
 
@@ -189,8 +189,10 @@ int main(int argc, char *argv[]) {
 			   "/",
                            &err))
     {
-        syslog(LOG_ERR, "error initializing FTP listener on port %d; %s",
-          portnum,error_get_desc(&err));
+        fprintf(stderr, "error initializing FTP listener on port %s:%d; %s\n",
+		address,portnum, error_get_desc(&err));
+        syslog(LOG_ERR, "error initializing FTP listener on port %s:%d; %s",
+	       address, portnum, error_get_desc(&err));
         exit(1);
     }
 

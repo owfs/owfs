@@ -40,9 +40,6 @@ $Id$
 #define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
 
 static void ow_exit( int e ) ;
-#if 0
-static void fuser_mount_wrapper( void ) ;
-#endif
 
 static void exit_handler(int i) {
     (void) i ;
@@ -71,9 +68,11 @@ int main(int argc, char *argv[]) {
     int i = 0 ;
 #endif
 
+    /* grab our executable name */
     if ( argc>0 ) progname = strdup(argv[0]) ;
 
 //    mtrace() ;
+    /* Set up owlib */
     LibSetup() ;
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
@@ -113,7 +112,6 @@ int main(int argc, char *argv[]) {
 
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
-//    fuser_mount_wrapper() ;
 #if FUSE_MAJOR_VERSION == 1
     if ( fuse_opt ) {
         opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
@@ -137,6 +135,9 @@ int main(int argc, char *argv[]) {
 
     set_signal_handlers(exit_handler);
 
+    /*
+     * Now we drop privledges and become a daemon.
+     */
     if ( LibStart() ) ow_exit(1) ;
 
 #if (FUSE_MAJOR_VERSION == 1)
