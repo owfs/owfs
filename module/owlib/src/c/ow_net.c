@@ -81,14 +81,12 @@ int ServerListen( struct connection_out * out ) {
 
     if ( out->ai_ok == NULL ) out->ai_ok = out->ai ;
     do {
-      printf("ServerListen loop: \n");
         fd = socket(
             out->ai_ok->ai_family,
             out->ai_ok->ai_socktype,
             out->ai_ok->ai_protocol
         ) ;
         if ( fd >= 0 ) {
-      printf("ServerListen loop: [%s]\n", out->ai_ok->ai_addr);
             ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))
                 || bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
                 || listen(fd, 10) ;
