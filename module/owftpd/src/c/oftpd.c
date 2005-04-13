@@ -49,37 +49,6 @@ static void exit_handler(int i) {
 }
 
 
-/* just a test function to find fuse mount */
-static int find_fusedev(char *owfs_dir)
-{
-  char tmp[128];
-  char *p = NULL, *p2;
-  FILE *fp;
-  int found = 0;
-  struct stat st;
-
-  if(!(fp = fopen("/proc/mounts", "r"))) return 0;
-  while(!feof(fp)) {
-    if(!(p = fgets(tmp, 80, fp))) {
-      break;
-    }
-    p2 = strtok(p, " ");
-    if(p2) p2 = strtok(NULL, " ");
-    if(p2) {
-      if(owfs_dir) strncpy(owfs_dir, p2, 128);
-      p2 = strtok(NULL, " ");
-    }
-    if(p2 && !strncmp(p2, "fuse", 4)) {
-      found = 1;
-      break;
-    }
-  }
-  fclose(fp);
-
-  return found;
-}
-
-
 int main(int argc, char *argv[]) {
     char c ;
     int max_clients;
@@ -186,14 +155,6 @@ int main(int argc, char *argv[]) {
             ow_exit(1);
         }
     }
-
-    /* fix this... quick hack to test ftp-server only. require owfs to
-     * to run on the same server */
-    if(!find_fusedev(rootdir)) {
-      fprintf(stderr, "Couldn't find fuse-dir\n");
-      ow_exit(0);
-    }
-    chroot(rootdir);
 
     /* create our main listener */
     if (!ftp_listener_init(&ftp_listener,
