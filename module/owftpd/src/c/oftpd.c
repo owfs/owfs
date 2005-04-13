@@ -49,27 +49,17 @@ static void exit_handler(int i) {
 }
 
 
+extern pthread_mutex_t time_lock ;
+extern pthread_mutex_t passive_lock ;
+
 int main(int argc, char *argv[]) {
     char c ;
     int max_clients;
     int log_facility;
-    char rootdir[128];
-    /* hard code the user as "nobody" */
-    const char* username = "nobody";
     char *address;
-    struct passwd *user_info = NULL;
+    //struct passwd *user_info = NULL;
     error_code_t err;
-    sigset_t term_signal;
-    int sig;
-    int portnum ;
-#ifdef OW_MT
-    pthread_t thread ;
-#ifndef __UCLIBC__
-    pthread_attr_t attr ;
-    pthread_attr_init(&attr) ;
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ;
-#endif /* __UCLIBC__ */
-#endif /* OW_MT */
+    int port;
 
     memset(&ftp_listener, 0, sizeof(struct ftp_listener_t));
 
@@ -78,6 +68,11 @@ int main(int argc, char *argv[]) {
 
     /* Set up owlib */
     LibSetup() ;
+
+#ifdef __UCLIBC__
+    pthread_mutex_init(&time_lock, pmattr);
+    pthread_mutex_init(&passive_lock, pmattr);
+#endif
 
     /* verify we're running as root */
     if (geteuid() != 0) {
@@ -114,7 +109,7 @@ int main(int argc, char *argv[]) {
       ++optind ;
     }
 
-    /* no port was defined, so listen on port 21 as default */
+    /* no port was defined, so listen on default port instead */
     if(!outdevices) {
       if(OW_ArgServer( DEFAULT_PORTNAME )) {
 	fprintf(stderr, "Error using default address\n");
@@ -126,7 +121,7 @@ int main(int argc, char *argv[]) {
       ow_exit(1);
     }
 
-    portnum = atoi(outdevice->service) ;
+    port = atoi(outdevice->service) ;
     address = outdevice->host ;
 
     set_signal_handlers(exit_handler);
@@ -144,6 +139,7 @@ int main(int argc, char *argv[]) {
     openlog(NULL, LOG_NDELAY, log_facility);
     syslog(LOG_INFO,"Starting, version %s, as PID %d", VERSION, getpid());
 
+#if 0
     /* set user to be as inoffensive as possible */
     if ( user_info ) {
         if (setgid(user_info->pw_gid) != 0) {
@@ -155,20 +151,20 @@ int main(int argc, char *argv[]) {
             ow_exit(1);
         }
     }
+#endif
 
     /* create our main listener */
     if (!ftp_listener_init(&ftp_listener,
                            address,
-                           portnum,
+                           port,
                            max_clients,
                            INACTIVITY_TIMEOUT,
-                           "/",
                            &err))
     {
         fprintf(stderr, "error initializing FTP listener on port %s:%d; %s\n",
-		address,portnum, error_get_desc(&err));
+		address,port, error_get_desc(&err));
         syslog(LOG_ERR, "error initializing FTP listener on port %s:%d; %s",
-	       address, portnum, error_get_desc(&err));
+	       address, port, error_get_desc(&err));
         exit(1);
     }
 

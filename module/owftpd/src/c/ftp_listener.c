@@ -75,8 +75,7 @@ typedef struct connection_info {
 /* prototypes */
 static int invariant(const struct ftp_listener_t *f);
 void *connection_acceptor(struct ftp_listener_t *f);
-static void addr_to_string(const sockaddr_storage_t *s, char *addr);
-void *connection_handler(connection_info_t *info);
+static void *connection_handler(connection_info_t *info);
 static void connection_handler_cleanup(connection_info_t *info);
 
 /* initialize an FTP listener */
@@ -85,7 +84,6 @@ int ftp_listener_init(struct ftp_listener_t *f,
                       int port, 
                       int max_connections,
                       int inactivity_timeout,
-		      char *rootdir,
                       error_code_t *err)
 {
     sockaddr_storage_t sock_addr;
@@ -103,16 +101,8 @@ int ftp_listener_init(struct ftp_listener_t *f,
     daemon_assert(max_connections > 0);
     daemon_assert(err != NULL);
 
-    if(!rootdir) {
-      /* get our current directory */
-      if (getcwd(dir, sizeof(dir)) == NULL) {
-        error_init(err, errno, "error getting current directory; %s",
-                   strerror(errno));
-        return 0;
-      }
-    } else {
-      strncpy(dir, rootdir, sizeof(dir));
-    }
+    dir[0]  = '/'; /* first dir is always root dir */
+    dir[1]  = '\000';
 
     /* set up our socket address */
     memset(&sock_addr, 0, sizeof(sockaddr_storage_t));
@@ -244,7 +234,6 @@ int ftp_listener_init(struct ftp_listener_t *f,
     f->max_connections = max_connections;
     f->num_connections = 0;
     f->inactivity_timeout = inactivity_timeout;
-
     pthread_mutex_init(&f->mutex, pmattr);
 
     daemon_assert(strlen(dir) < sizeof(f->dir));
@@ -454,8 +443,10 @@ void *connection_acceptor(struct ftp_listener_t *f)
 /* NOT THREADSAFE - wrap with a mutex before calling! */
 static char *addr2string(const sockaddr_storage_t *s)
 {
+#ifdef INET6
     static char addr[IP_ADDRSTRLEN+1];
     int error;
+#endif
     char *ret_val;
 
     daemon_assert(s != NULL);

@@ -14,6 +14,7 @@
 
 #include "owfs_config.h"
 
+#if 0
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -58,14 +59,17 @@ char *alloca ();
 static int is_valid_dir(const char *dir);
 static void fdprintf(int fd, const char *fmt, ...);
 static const char *skip_ls_options(const char *filespec);
+#endif
 
 /* if no localtime_r() is available, provide one */
 #ifndef HAVE_LOCALTIME_R
 #include <pthread.h>
 
-struct tm *localtime_r(const time_t *timep, struct tm *timeptr)  {
-    static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
+/* uClibc on Coldfire need to initiate mutex with pthread_mutex_init() */
+pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
+struct tm *localtime_r(const time_t *timep, struct tm *timeptr)
+{
     pthread_mutex_lock(&time_lock);
     *timeptr = *(localtime(timep));
     pthread_mutex_unlock(&time_lock);
@@ -73,6 +77,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *timeptr)  {
 }
 #endif /* HAVE_LOCALTIME_R */
 
+#if 0
 int file_nlst(int out, const char *cur_dir, const char *filespec)
 {
     unsigned int dir_len;
@@ -147,14 +152,15 @@ typedef struct {
     struct stat stat;
 } file_info_t;
 
-int file_list(int out, const char *cur_dir, const char *filespec) {
+int file_list(int out, const char *cur_dir, const char *filespec)
+{
     unsigned int dir_len;
     char pattern[PATH_MAX+1];
     int glob_ret;
     glob_t glob_buf;
-    unsigned int i;
+    int i;
     file_info_t *file_info;
-    unsigned int num_files;
+    int num_files;
     unsigned long total_blocks;
     char *file_name;
 
@@ -339,7 +345,8 @@ int file_list(int out, const char *cur_dir, const char *filespec) {
     return 1;
 }
 
-static int is_valid_dir(const char *dir) {
+static int is_valid_dir(const char *dir)
+{
     /* directory can not be NULL (of course) */
     if (dir == NULL) {
         return 0;
@@ -359,7 +366,8 @@ static int is_valid_dir(const char *dir) {
     return 1;
 }
 
-static void fdprintf(int fd, const char *fmt, ...) {
+static void fdprintf(int fd, const char *fmt, ...)
+{
     char buf[PATH_MAX+1];
     unsigned int buflen;
     va_list ap;
@@ -393,7 +401,9 @@ static void fdprintf(int fd, const char *fmt, ...) {
   hack workaround clients like Midnight Commander that send:
       LIST -al /dirname 
 */
-const char * skip_ls_options(const char *filespec) {
+const char *
+skip_ls_options(const char *filespec)
+{
     daemon_assert(filespec != NULL);
 
     for (;;) {
@@ -427,4 +437,4 @@ const char * skip_ls_options(const char *filespec) {
 
     return filespec;
 }
-
+#endif

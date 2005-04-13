@@ -34,7 +34,7 @@
 struct command_struct {
     char *name;
     int arg_type;
-    int len ;
+    unsigned int len;
 } ;
 
 /* prototypes */
@@ -55,7 +55,8 @@ static int commandcmp( const void * a , const void * b ) {
     return strncmp( (const char *)a , ((const struct command_struct *)b)->name, ((const struct command_struct *)b)->len ) ;
 }
 
-int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
+int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
+{
     struct ftp_command_t tmp;
     int c;
     const char *optional_number;
@@ -90,7 +91,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
 	{ "SIZE", ARG_STRING          ,4,},
 	{ "MDTM", ARG_STRING          ,4,}
     };
-    static int num_commands = (sizeof(command_def) / sizeof(struct command_struct)) ;
+    static unsigned int num_commands = (sizeof(command_def) / sizeof(struct command_struct)) ;
 
     if ( first_time ) {
 	first_time = 0 ;
@@ -252,7 +253,8 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
 }
 
 /* copy a string terminated with a newline */
-static const char *copy_string(char *dst, const char *src) {
+static const char *copy_string(char *dst, const char *src)
+{
     int i;
 
     daemon_assert(dst != NULL);
@@ -267,7 +269,8 @@ static const char *copy_string(char *dst, const char *src) {
 }
 
 
-static const char *parse_host_port(struct sockaddr_in *addr, const char *s) {
+static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
+{
     int i;
     int octets[6];
     char addr_str[16];
@@ -328,11 +331,12 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s) {
 
 /* note: returns success even for unknown address families */
 /*       this is okay, as long as subsequent uses VERIFY THE FAMILY first */
-static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s) {   
-    int i;
+static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s)
+{
+    unsigned int i;
     int family;
     int tmp;
-    int addr_len;
+    unsigned int addr_len;
     unsigned char addr[255];
     int port_len;
     unsigned char port[255];
@@ -421,11 +425,12 @@ static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s) {
     return s;
 }
 
-static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s) { 
+static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s)
+{
     int delimeter;
     int family;
     char *p;
-    int len;
+    unsigned int len;
     char addr_str[256];
     int port;
 
@@ -524,7 +529,8 @@ static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s) {
 /* scan the string for a number from 0 to max_num */
 /* returns the next non-numberic character */
 /* returns NULL if not at least one digit */
-static const char *parse_number(int *num, const char *s, int max_num) {
+static const char *parse_number(int *num, const char *s, int max_num)
+{
     int tmp;
     int cur_digit;
     

@@ -26,7 +26,6 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
     daemon_assert(err != NULL);
 
     pthread_mutex_init(&w->mutex, pmattr);
-
     w->inactivity_timeout = inactivity_timeout;
     w->oldest = NULL;
     w->newest = NULL;
