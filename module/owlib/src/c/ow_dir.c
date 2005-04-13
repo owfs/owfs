@@ -496,6 +496,24 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
             FS_devicefind( ID, pn2 ) ;
 //printf("DIR adapter=%d, element=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",pn2->in->index,dindex,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7]);
 
+#if 1
+	    /* dicfunc() may need to call FS_fstat() and that will make a
+	       checkpresence and BUS_lock if bus_nr isn't cached here at
+	       once. Deadlock will occour. (owftpd needs it)
+	    */
+	    Cache_Add_Device(pn2->in->index, pn2);
+#else
+	    int bus_nr;
+	    if(Cache_Get_Device(&bus_nr, pn2)) {
+	      //printf("PN Cache_Get_Device didn't find bus_nr\n");
+	      if(bus_nr >= 0) {
+		//printf("PN CheckPresence(%s) found bus_nr %d (add to cache)\n", pn2->path, bus_nr);
+		Cache_Add_Device(bus_nr, pn);
+	      }
+	    } else {
+	      //printf("PN Cache_Get_Device found bus! %d\n", bus_nr);
+	    }
+#endif
             DIRLOCK
                 dirfunc( pn2 ) ;
                 flags[0] |= pn2->dev->flags ;

@@ -21,6 +21,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "ow.h"
+
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -226,7 +228,7 @@ void ftp_session_run(struct ftp_session_t *f, watched_t *watched)
     f->watched = watched;
 
     /* say hello */
-    send_readme(f, 220);
+    //send_readme(f, 220);
     reply(f, 220, "Service ready for new user.");
 
     /* process commands */
@@ -580,7 +582,7 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
 
     /* see if this is a directory we can change into */
     dir_okay = 0;
-    if (stat(target, &stat_buf) == 0) {
+    if (FS_fstat(target, &stat_buf) == 0) {
 #ifndef STAT_MACROS_BROKEN
         if (!S_ISDIR(stat_buf.st_mode)) {
 #else
@@ -612,7 +614,7 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
     /* send a readme unless we changed to our current directory */
     if (strcmp(f->dir, target) != 0) {
         strcpy(f->dir, target);
-            send_readme(f, 250);
+	//send_readme(f, 250);
         } else {
         strcpy(f->dir, target);
     }
@@ -1080,6 +1082,214 @@ static void get_absolute_fname(char *fname,
     }
 }
 
+/* Device entry -- table line for a filetype  -- text mode*/
+static int ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * const pn, int suglen, char *buf ) {
+    int len ;
+    int ret = -1 ;
+    enum ft_format format ;
+    int canwrite = 0 ;
+    //printf("ShowText: basename=%s, fullpath=%s\n",basename,fullpath) ;
+
+    if(!pn->ft) {
+      format = ft_subdir ;      /* it seems to be a subdir */
+    } else {
+      format = pn->ft->format ;
+      canwrite = !readonly && pn->ft->write.v ;
+    }
+
+    /* Special processing for structure -- ascii text, not native format */
+    if ( (pn->type == pn_structure) || ( format==ft_directory || format==ft_subdir ) ) {
+        format = ft_ascii ;
+        canwrite = 0 ;
+    }
+
+    //fprintf( out, "%s ", basename ) ;
+
+    /* buffer for field value */
+    if ( pn->ft && pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
+        if ( pn->ft->read.v ) { /* At least readable */
+            if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+                buf[len] = '\0' ;
+                ret = fprintf( out, "%s",buf ) ;
+            }
+        } else if ( canwrite ) { /* rare write-only */
+	    ret = fprintf( out, "(writeonly)" ) ;
+        }
+    } else {
+        switch( format ) {
+        case ft_directory:
+        case ft_subdir:
+            break ;
+        case ft_yesno:
+            if ( pn->ft->read.v ) { /* at least readable */
+                if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+		    ret = fprintf( out, "%c", buf[0] ) ;
+                }
+            } else if ( canwrite ) { /* rare write-only */
+                ret = fprintf( out, "(writeonly)" ) ;
+            }
+            break ;
+        case ft_binary:
+            if ( pn->ft->read.v ) { /* At least readable */
+                if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+                    int i ;
+		    ret = 0;
+                    for( i=0 ; i<len ; ++i ) {
+                        ret += fprintf( out, "%.2hhX", buf[i] ) ;
+                    }
+                }
+            } else if ( canwrite ) { /* rare write-only */
+                ret = fprintf( out, "(writeonly)" ) ;
+            }
+            break ;
+        default:
+            if ( pn->ft->read.v ) { /* At least readable */
+                if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+                    buf[len] = '\0' ;
+                    ret = fprintf( out, "%s",buf ) ;
+                }
+            } else if ( canwrite ) { /* rare write-only */
+                ret = fprintf( out, "(writeonly)") ;
+            }
+        }
+    }
+    //fprintf( out, "\r\n" ) ;
+    return ret ;
+}
+
+/* Device entry -- table line for a filetype */
+static int Show( FILE * out, const char * const path, const char * const file, const struct parsedname * const pn ) {
+    int len ;
+    struct parsedname pn2 ;
+    struct stateinfo si ;
+    const char * basename ;
+    char fullpath[PATH_MAX+1] ;
+    int suglen = 0 ;
+    char *buf = NULL ;
+    enum ft_format format ;
+    int canwrite = 0 ;
+    int ret = -1;
+
+    //printf("Show: path=%s, file=%s\n",path,file) ;
+
+    if(!pn->ft) {
+      format = ft_subdir ;      /* it seems to be a subdir */
+    } else {
+      format = pn->ft->format ;
+      canwrite = !readonly && pn->ft->write.v ;
+    }
+    //printf("Show path=%s, file=%s, suglen=%d pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,suglen,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
+
+    /* Parse out subdir */
+    basename = strrchr(file,'/') ;
+    if ( basename ) {
+        ++basename ; /* after slash */
+    } else {
+        basename = file ;
+    }
+    strcpy(fullpath, path) ;
+    if ( fullpath[strlen(fullpath)-1] != '/' ) strcat( fullpath, "/" ) ;
+    strcat(fullpath,basename ) ;
+
+    pn2.si = &si;
+    if ( (FS_ParsedName(fullpath, &pn2) == 0) ) {
+      if ((pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote)) {
+	//printf("call FS_size(%s)\n", fullpath);
+	suglen = FS_size(fullpath) ;
+      } else {
+	//printf("call FS_size_postparse\n");
+	suglen = FS_size_postparse(pn) ;
+      }
+    } else {
+      suglen = 0 ;
+      //printf("FAILED parsename %s\n", fullpath);
+    }
+    FS_ParsedName_destroy( &pn2 ) ;
+
+    if(suglen <= 0) {
+      //printf("Show: can't find file-size of %s ???\n", pn->path);
+      suglen = 0 ;
+    }
+    if( ! (buf = malloc((size_t)suglen+1)) ) {
+      return -1 ;
+    }
+    buf[suglen] = '\0' ;
+
+    //printf("Show path=%s, file=%s, suglen=%d pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,suglen,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
+
+    /* Special processing for structure -- ascii text, not native format */
+    if ( pn->type==pn_structure && format!=ft_directory && format!=ft_subdir ) {
+        format = ft_ascii ;
+        canwrite = 0 ;
+    }
+
+//printf("pn->path=%s, pn->path_busless=%s\n",pn->path, pn->path_busless) ;
+//printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
+
+    /* Jump to special text-mode routine */
+    if(1 || pn->state & pn_text) {
+        ret = ShowText( out, basename, fullpath, pn, suglen, buf ) ;
+        free(buf);
+   }
+    return ret ;
+}
+
+
+/* Now show the device */
+static int ShowDevice( FILE * out, const struct parsedname * const pn ) {
+    struct parsedname pncopy ;
+    char * slash;
+    int b ;
+    char * path2;
+    int ret = 0 ;
+    /* Embedded function */
+    void directory( const struct parsedname * const pn2 ) {
+        char *file;
+	if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+	  return;
+	}
+	FS_DirName(file,OW_FULLNAME_MAX,pn2);
+	//printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+	Show( out, path2, file, pn2 ) ;
+	free(file);
+    }
+
+    //printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->bus_nr, pn->dev) ;
+    if(! (path2 = strdup(pn->path)) ) return -1 ;
+    memcpy(&pncopy, pn, sizeof(struct parsedname));
+
+    if ( pn->ft ) { /* single item */
+      //printf("single item path=%s pn->path=%s\n", path2, pn->path);
+        slash = strrchr(path2,'/') ;
+        /* Nested function */
+        if ( slash ) slash[0] = '\0' ; /* pare off device name */
+	//printf("single item path=%s\n", path2);
+#if 0
+        directory(&pncopy) ;
+#else
+	{
+        char *file;
+	if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+	  return -1 ;
+	}
+	FS_DirName(file,OW_FULLNAME_MAX,&pncopy);
+	//printf("ShowDevice: emb: pncopy.ft=%p pncopy.subdir=%p pncopy.dev=%p path2=%s file=%s\n", pncopy.ft, pncopy.subdir, pncopy.dev, path2, file);
+	ret = Show( out, path2, file, &pncopy ) ;
+	free(file);
+	}
+#endif
+    } else { /* whole device */
+      //printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
+        //printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
+      ret = FS_dir( directory, &pncopy ) ;
+    }
+    free(path2) ;
+    return ret ;
+}
+
+
 static void do_retr(struct ftp_session_t *f, const struct ftp_command_t *cmd) 
 {
     const char *file_name;
@@ -1095,11 +1305,14 @@ static void do_retr(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     struct timeval start_timestamp;
     struct timeval end_timestamp;
     struct timeval transfer_time;
-    off_t file_size;
+    off_t file_size = 0;
     off_t offset;
     off_t amt_to_send;
     int sendfile_ret;
     off_t amt_sent;
+    struct parsedname pn ;
+    struct stateinfo si ;
+    int ret ;
 
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
@@ -1113,6 +1326,53 @@ static void do_retr(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     file_name = cmd->arg[0].string;
     get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
 
+#if 1
+    pn.si = &si ;
+    ret = FS_ParsedName( full_path, &pn ) ;
+    // first root always return Bus-list and settings/system/statistics
+    pn.si->sg |= (1<<BUSRET_BIT) ;
+
+    if (ret) {
+        reply(f, 550, "Error opening file; %s.", strerror(errno));
+	goto exit_retr;
+    } else if ( pn.dev == NULL ) { /* directory! */
+        reply(f, 550, "Error, file is a directory.");
+	goto exit_retr;
+    } else {
+        FILE *out ;
+
+	if(f->file_offset > 0) {
+	  /* Don't support offset right now.. */
+	  reply(f, 550, "Error seeking to restart position") ;
+	  goto exit_retr;
+	}
+
+	/* ready to transfer */
+	reply(f, 150, "About to open data connection.");
+	
+	/* mark start time */
+	gettimeofday(&start_timestamp, NULL);
+
+        /* open data path */
+        socket_fd = open_connection(f);
+	if (socket_fd == -1) {
+	    goto exit_retr;
+	}
+	out = fdopen(socket_fd, "w") ;
+	if (out == NULL) {
+	    goto exit_retr;
+	}
+        ret = ShowDevice( out, &pn ) ;
+        watchdog_defer_watched(f->watched);
+	//printf("showdevice returned ret=%d\n", ret);
+	fclose(out);
+	if (ret < 0) {
+	    reply(f, 550, "Error opening file; %s.", strerror(errno));
+	    goto exit_retr;
+	}
+	file_size += ret;
+    }
+#else
     /* open file */
     file_fd = open(full_path, O_RDONLY);
     if (file_fd == -1) {
@@ -1240,6 +1500,7 @@ static void do_retr(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     }
 #endif  /* HAVE_SENDFILE */
     }
+#endif
 
     /* disconnect */
     close(socket_fd);
@@ -1273,6 +1534,7 @@ static void do_retr(struct ftp_session_t *f, const struct ftp_command_t *cmd)
       transfer_time.tv_usec);
 
 exit_retr:
+    FS_ParsedName_destroy( &pn ) ;
     f->file_offset = 0;
     if (socket_fd != -1) {
         close(socket_fd);
@@ -1528,11 +1790,171 @@ exit_nlst:
     daemon_assert(invariant(f));
 }
 
+
+/* Misnamed. Actually all directory */
+static int ShowDir( FILE * out, const struct parsedname * const pn ) {
+    struct parsedname pncopy;
+    int b;
+    int ret ;
+    /* Embedded function */
+    /* Callback function to FS_dir */
+    void directory( const struct parsedname * const pn2 ) {
+        /* Have to allocate all buffers to make it work for Coldfire */
+    unsigned int dir_len;
+    char pattern[PATH_MAX+1];
+    char full_path[PATH_MAX+1+MAX_STRING_LEN];
+    int glob_ret;
+    unsigned int i;
+    //file_info_t *file_info;
+    unsigned int num_files;
+    unsigned long total_blocks;
+    char *file_name;
+
+    mode_t mode;
+    time_t now;
+    struct tm tm_now;
+    double age;
+    char date_buf[13];
+
+    struct stat st;
+	char *extname ;
+	enum ft_format format ;
+	int canwrite = 0;
+        if( !(extname = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+	  return;
+        }
+        FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
+	//fprintf( out, "%s\r\n", extname ) ;
+
+	memset(&st, 0, sizeof(struct stat));
+	get_absolute_fname(full_path, sizeof(full_path), pn->path, extname);
+#if 1
+	// FS_fstat requires BUS_lock ! Deadlock here since FS_parsedname
+	// called checkpresence()! Fixed I think by adding bus_nr to
+	// cache in FS_dir at once!
+	ret = FS_fstat(full_path, &st);
+	if(ret < 0) {
+	  memset(&st, 0, sizeof(struct stat));
+	}
+	mode = st.st_mode ;
+	if ( (pn->type == pn_structure) ) {
+	  mode &= ~0222;
+	  mode |= 0444;
+	}
+#else
+	if(!pn2->ft) {
+	  format = ft_subdir ;      /* it seems to be a subdir */
+	} else {
+	  format = pn2->ft->format ;
+	  canwrite = !readonly && pn2->ft->write.v ;
+	}
+
+	//printf("pn->path=%s type=%d format=%d\n", pn2->path, pn2->type, format);
+	mode = 0;
+
+	/* Special processing for structure -- ascii text, not native format */
+	if ( (pn2->type == pn_structure) || ( format==ft_directory || format==ft_subdir ) ) {
+	  mode |= 0555;
+	  canwrite = 0 ;
+	}
+
+	if(!pn2->ft) {
+	  /* it seems to be a subdir */
+	  mode |= 0555;
+	} else {
+	  //printf("pn2->ft ");
+	  if ( pn2->ft->read.v ) { /* At least readable */
+	    mode |= 0444;
+	  }
+	  if ( canwrite ) {
+	    mode |= 0222;
+	  }
+	}
+	if(( format==ft_directory || format==ft_subdir )) {
+	  mode |= S_IFDIR ;
+	}
+#endif
+
+        /* output file type */
+	switch (mode & S_IFMT) {
+        case S_IFSOCK:  fprintf( out, "s"); break;
+        case S_IFLNK:   fprintf( out, "l"); break;
+        case S_IFBLK:   fprintf( out, "b"); break;
+        case S_IFDIR:   fprintf( out, "d"); break;
+        case S_IFCHR:   fprintf( out, "c"); break;
+        case S_IFIFO:   fprintf( out, "p"); break;
+        default:        fprintf( out, "-"); 
+	}
+
+	/* output permissions */
+	fprintf( out, (mode & S_IRUSR) ? "r" : "-");
+	fprintf( out, (mode & S_IWUSR) ? "w" : "-");
+	if (mode & S_ISUID) { 
+	  fprintf( out, (mode & S_IXUSR) ? "s" : "S");
+	} else {
+	  fprintf( out, (mode & S_IXUSR) ? "x" : "-");
+	}
+	fprintf( out, (mode & S_IRGRP) ? "r" : "-");
+	fprintf( out, (mode & S_IWGRP) ? "w" : "-");
+	if (mode & S_ISGID) { 
+	  fprintf( out, (mode & S_IXGRP) ? "s" : "S");
+	} else {
+	  fprintf( out, (mode & S_IXGRP) ? "x" : "-");
+	}
+	fprintf( out, (mode & S_IROTH) ? "r" : "-");
+	fprintf( out, (mode & S_IWOTH) ? "w" : "-");
+	if (mode & S_ISVTX) {
+	  fprintf( out, (mode & S_IXOTH) ? "t" : "T");
+	} else {
+	  fprintf( out, (mode & S_IXOTH) ? "x" : "-");
+	}
+	
+        /* output link & ownership information */
+	fprintf( out, " %3d %-8d %-8d ", 
+		 st.st_nlink, 
+		 st.st_uid, 
+		 st.st_gid
+		 );
+
+	//fprintf( out, "%8lu ", (unsigned long)file_info[i].stat.st_size);
+	fprintf( out, "%8lu ", (unsigned long)st.st_size);
+        
+        /* output date */
+	localtime_r(&st.st_mtime, &tm_now);
+        age = difftime(now, st.st_mtime);
+	if ((age > 60 * 60 * 24 * 30 * 6) || (age < -(60 * 60 * 24 * 30 * 6))) {
+	  strftime(date_buf, sizeof(date_buf), "%b %e  %Y", &tm_now);
+	} else {
+	  strftime(date_buf, sizeof(date_buf), "%b %e %H:%M", &tm_now);
+	}
+        fprintf( out, "%s ", date_buf);
+	
+	/* output filename */
+	//fprintf( out, "%s", file_info[i].name);
+	fprintf( out, "%s", extname);
+  
+	/* advance to next line */
+	fprintf( out, "\r\n");
+	free(extname);
+    }
+
+    memcpy(&pncopy, pn, sizeof(struct parsedname));
+
+    //printf("ShowDir=%s\n", pn->path) ;
+
+    ret = FS_dir( directory, &pncopy ) ;
+    return ret ;
+}
+
+
 static void do_list(struct ftp_session_t *f, const struct ftp_command_t *cmd) 
 {
     int fd;
     const char *param;
-    int send_ok;
+    int send_ok = 0;
+    struct parsedname pn ;
+    struct stateinfo si ;
+    int ret ;
 
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
@@ -1561,6 +1983,40 @@ static void do_list(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     goto exit_list;
     }
 
+#if 1
+    //printf("do_list\n");
+	
+    pn.si = &si ;
+    ret = FS_ParsedName( f->dir, &pn ) ;
+    // first root always return Bus-list and settings/system/statistics
+    pn.si->sg |= (1<<BUSRET_BIT) ;
+
+    if (ret || pn.ft) {
+        reply(f, 550, "Error reading directory");
+	goto exit_list;
+    } else {
+        FILE *out ;
+	/* ready to transfer */
+	reply(f, 150, "About to open data connection.");
+	
+        /* open data path */
+        fd = open_connection(f);
+	if (fd == -1) {
+            goto exit_list;
+	}
+	out = fdopen(fd, "w") ;
+	if (out == NULL) {
+            goto exit_list;
+	}
+        ret = ShowDir( out, &pn ) ;
+
+	//printf("showdir returned ret=%d\n", ret);
+	fclose(out);
+	if (ret >= 0) {
+	  send_ok = 1 ;
+	}
+    }
+#else
     /* ready to list */
     reply(f, 150, "About to send file list.");
 
@@ -1572,6 +2028,7 @@ static void do_list(struct ftp_session_t *f, const struct ftp_command_t *cmd)
 
     /* send any files */
     send_ok = file_list(fd, f->dir, param);
+#endif
 
     /* strange handshake for Netscape's benefit */
     netscape_hack(fd);
@@ -1653,7 +2110,7 @@ static void do_size(struct ftp_session_t *f, const struct ftp_command_t *cmd)
         get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
 
         /* get the file information */
-        if (stat(full_path, &stat_buf) != 0) {
+        if (FS_fstat(full_path, &stat_buf) != 0) {
             reply(f, 550, "Error getting file status; %s.", strerror(errno));
         } else {
 
@@ -1707,7 +2164,7 @@ static void do_mdtm(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
 
     /* get the file information */
-    if (stat(full_path, &stat_buf) != 0) {
+    if (FS_fstat(full_path, &stat_buf) != 0) {
         reply(f, 550, "Error getting file status; %s.", strerror(errno));
     } else {
         gmtime_r(&stat_buf.st_mtime, &mtime);
@@ -1758,7 +2215,7 @@ static void send_readme(const struct ftp_session_t *f, int code)
     }
 
     /* verify this isn't a directory */
-    if (fstat(fd, &stat_buf) != 0) {
+    if (FS_fstat(file_name, &stat_buf) != 0) {
         goto exit_send_readme;
     }
 #ifndef STATS_MACRO_BROKEN

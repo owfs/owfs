@@ -25,11 +25,22 @@
 void *connection_acceptor(struct ftp_listener_t *f);
 
 struct ftp_listener_t ftp_listener;
+#if OW_MT
+pthread_t main_threadid ;
+#define IS_MAINTHREAD (main_threadid == pthread_self())
+#else
+#define IS_MAINTHREAD 1
+#endif
 
 static void ow_exit( int e ) {
-    syslog(LOG_INFO, "all connections finished, FTP server exiting");
-    LibClose() ;
-    if(ftp_listener.fd) ftp_listener_stop(&ftp_listener);
+    if(IS_MAINTHREAD) {
+      if(ftp_listener.fd) {
+	syslog(LOG_INFO, "Waiting for all connections to finish");
+	ftp_listener_stop(&ftp_listener);
+      }
+      syslog(LOG_INFO, "FTP server exiting, all connections finished");
+      LibClose() ;
+    }
     exit( e ) ;
 }
 
@@ -156,6 +167,10 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
+#if OW_MT
+    main_threadid = pthread_self() ;
+#endif
+
     /* log the start time */
     openlog(NULL, LOG_NDELAY, log_facility);
     syslog(LOG_INFO,"Starting, version %s, as PID %d", VERSION, getpid());
@@ -186,7 +201,7 @@ int main(int argc, char *argv[]) {
                            portnum,
                            max_clients,
                            INACTIVITY_TIMEOUT,
-			   "/",
+                           "/",
                            &err))
     {
         fprintf(stderr, "error initializing FTP listener on port %s:%d; %s\n",

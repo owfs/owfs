@@ -226,7 +226,8 @@ int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) {
         if ( tn ) {
 	    //FS_LoadPath( tn->tk.sn, pn ) ;
 	    memcpy( tn->tk.sn , pn->sn , 8 ) ;
-            tn->tk.p.in = pn->in ;
+	    tn->tk.p.in = NULL ;  // value connected to all in-devices
+            //tn->tk.p.in = pn->in ;
             tn->tk.extension = -1 ;
             tn->expires = duration + time(NULL) ;
             tn->dsize = sizeof(int) ;
@@ -428,17 +429,16 @@ int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const 
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) {
-    int ret ;
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         size_t size = sizeof(int) ;
         struct tree_node tn  ;
         //FS_LoadPath( tn.tk.sn, pn ) ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
-        tn.tk.p.in = pn->in ;
+        tn.tk.p.in = NULL ;  // value connected to all in-devices
+        //tn.tk.p.in = pn->in ;
         tn.tk.extension = -1 ;
-        ret = Get_Stat(&cache_dev, Cache_Get_Common(bus_nr,&size,duration,&tn)) ;
-	return ret;
+        return Get_Stat(&cache_dev, Cache_Get_Common(bus_nr,&size,duration,&tn)) ;
     }
     return 1 ;
 }

@@ -270,7 +270,10 @@ void LibClose( void ) {
     if ( pmattr ) pthread_mutexattr_destroy(pmattr);
 #endif /* OW_MT */
 
-    if ( progname && progname[0] ) free(progname) ;
+    if ( progname && progname[0] ) {
+        free(progname) ;
+        progname = NULL ;
+    }
 }
 
 struct s_timeout timeout = {1,DEFAULT_TIMEOUT,10*DEFAULT_TIMEOUT,5*DEFAULT_TIMEOUT,} ;
