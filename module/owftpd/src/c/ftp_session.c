@@ -1335,7 +1335,7 @@ static void do_retr(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     if (ret) {
         reply(f, 550, "Error opening file; %s.", strerror(errno));
 	goto exit_retr;
-    } else if ( pn.dev == NULL ) { /* directory! */
+    } else if ( (pn.dev == NULL) || (pn.ft == NULL) ) { /* directory! */
         reply(f, 550, "Error, file is a directory.");
 	goto exit_retr;
     } else {
