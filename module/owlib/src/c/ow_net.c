@@ -77,8 +77,6 @@ int ServerListen( struct connection_out * out ) {
         return -1 ;
     }
 
-    printf("ServerListen\n");
-
     if ( out->ai_ok == NULL ) out->ai_ok = out->ai ;
     do {
         fd = socket(
