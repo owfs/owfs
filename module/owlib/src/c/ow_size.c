@@ -143,6 +143,7 @@ static int FS_size_seek( const struct parsedname * const pn ) {
         int eret;
         memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
+	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
         pnnext.in = pn2->in->next ;
         eret = FS_size_seek( &pnnext ) ;

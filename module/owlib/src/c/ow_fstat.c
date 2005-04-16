@@ -15,13 +15,41 @@ $Id$
 #include <sys/stat.h>
 #include <string.h>
 
+//#define CALC_NLINK
+
+#ifdef CALC_NLINK
+int FS_nr_subdirs(struct parsedname * const pn2)
+{
+    unsigned char sn[8] ;
+    int dindex = 0 ;
+
+    FS_LoadPath( sn, pn2 ) ;
+#if 0
+    {
+      char tmp[17];
+      bytes2string(tmp, sn, 8) ;
+      tmp[16] = 0;
+      printf("FS_nr_subdirs: sn=%s pn2->path=%s\n", tmp, pn2->path);
+    }
+#endif
+    if(Cache_Get_Dir(sn,0,pn2 )) {
+      // no entries in directory are cached
+      return 0 ;
+    }
+    do {
+      FS_LoadPath( sn, pn2 ) ;
+      ++dindex;
+    } while ( Cache_Get_Dir( sn, dindex, pn2 )==0 ) ;
+    return dindex ;
+}
+#endif
+
 int FS_fstat(const char *path, struct stat *stbuf) {
     struct parsedname pn ;
     struct stateinfo si ;
     int ret = 0 ;
     pn.si = &si ;
     /* Bad path */
-//printf("FS_fstat\n");
     memset(stbuf, 0, sizeof(struct stat));
     if ( FS_ParsedName( path , &pn ) ) {
 //printf("FS_fstat bad\n");
@@ -31,15 +59,61 @@ int FS_fstat(const char *path, struct stat *stbuf) {
 	 * doesn't do it yet. */
         ret = -ENOENT ;
     } else if ( pn.dev==NULL ) { /* root directory */
+        int nr = 0;
 //printf("FS_fstat root\n");
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 3;
+        stbuf->st_nlink = 2 ;	// plus number of sub-directories
+#ifdef CALC_NLINK
+	nr = FS_nr_subdirs(&pn) ;
+	//printf("FS_fstat: FS_nr_subdirs1 returned %d\n", nr);
+#else
+	nr = 1 ;
+#endif
+	stbuf->st_nlink += nr ;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
-    } else if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* other directory */
-//printf("FS_fstat other dir\n");
+    } else if ( pn.ft==NULL ) {
+        int i, nr = 0 ;
+	//printf("FS_fstat pn.ft == NULL  (1-wire device)\n");
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 3;
+        stbuf->st_nlink = 2 ;	// plus number of sub-directories
+
+#ifdef CALC_NLINK
+	for(i=0; i<pn.dev->nft; i++) {
+	  if((pn.dev->ft[i].format == ft_directory) ||
+	     (pn.dev->ft[i].format == ft_subdir)) {
+	    nr++;
+	  }
+	}
+#else
+	nr = 1 ;
+#endif
+	//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.dev->nft, nr);
+	stbuf->st_nlink += nr ;
+        stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
+        FSTATLOCK
+            stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
+        FSTATUNLOCK
+    } else if ( pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* other directory */
+        int i, nr = 0 ;
+	//printf("FS_fstat other dir inside device\n");
+        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_nlink = 2 ;	// plus number of sub-directories
+#ifdef CALC_NLINK
+#if 0
+	for(i=0; i<pn.ft->nft; i++) {
+	  if((pn.ft[i].format == ft_directory) ||
+	     (pn.ft[i].format == ft_subdir)) {
+	    nr++;
+	  }
+	}
+#endif
+#else
+	nr = 1 ;
+#endif
+	//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.ft));
+	stbuf->st_nlink += nr ;
+
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         FSTATLOCK
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;

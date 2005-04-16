@@ -172,8 +172,9 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
         struct stateinfo si ;
         int ret;
         memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
-        pnnext.in = pn2->in->next ;
+	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
+        pnnext.in = pn2->in->next ;
         ret = FS_write_postparse(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
         return (void *)ret;

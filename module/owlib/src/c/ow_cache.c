@@ -205,7 +205,6 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
         if ( tn ) {
 	    FS_LoadPath( tn->tk.sn, pn ) ;
-	    //memcpy( tn->tk.sn , pn->sn , 8 ) ;
             tn->tk.p.in = pn->in ;
             tn->tk.extension = dindex ;
             tn->expires = duration + time(NULL) ;
@@ -224,7 +223,6 @@ int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) {
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + sizeof(int) ) ;
         if ( tn ) {
-	    //FS_LoadPath( tn->tk.sn, pn ) ;
 	    memcpy( tn->tk.sn , pn->sn , 8 ) ;
 	    tn->tk.p.in = NULL ;  // value connected to all in-devices
             //tn->tk.p.in = pn->in ;
@@ -419,7 +417,6 @@ int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const 
         size_t size = 8 ;
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
-        //memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = pn->in ;
         tn.tk.extension = dindex ;
         return Get_Stat(&cache_dir, Cache_Get_Common(sn,&size,duration,&tn)) ;
@@ -433,7 +430,6 @@ int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) {
     if ( duration > 0 ) {
         size_t size = sizeof(int) ;
         struct tree_node tn  ;
-        //FS_LoadPath( tn.tk.sn, pn ) ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = NULL ;  // value connected to all in-devices
         //tn.tk.p.in = pn->in ;
@@ -555,7 +551,6 @@ int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
     if ( duration > 0 ) {
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
-        //memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = pn->in ;
         tn.tk.extension = dindex ;
         return Del_Stat(&cache_dir, Cache_Del_Common(&tn)) ;
@@ -567,7 +562,6 @@ int Cache_Del_Device( const struct parsedname * const pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
-        //FS_LoadPath( tn.tk.sn, pn ) ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = pn->in ;
         tn.tk.extension = -1 ;

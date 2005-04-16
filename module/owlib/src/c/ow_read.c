@@ -213,6 +213,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         int ret;
         memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
+	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
         pnnext.in = pn2->in->next ;
         ret = FS_read_seek(buf2,size,offset,&pnnext) ;

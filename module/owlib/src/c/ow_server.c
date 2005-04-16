@@ -180,6 +180,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
     int _pathlen ;
+    int dindex = 0 ;
 
     if ( connectfd < 0 ) return -EIO ;
     memset(&cm, 0, sizeof(struct client_msg));
@@ -234,6 +235,34 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 free(path2) ;
                 break ;
             } else {
+	        unsigned char sn[8] ;
+
+		/* we got a device on bus_nr = pn->in->index. Cache it so we
+		   find it quicker next time we want to do read values from the
+		   the actual device
+		*/
+		if(pn2.dev && (pn2.type == pn_real)) {
+		  /* If we get a device then cache the bus_nr */
+		  Cache_Add_Device(pn->in->index, &pn2);
+		}
+
+		if(pn2.dev && (pn2.type == pn_real)) {
+		  /* If we get a device then cache it */
+		  //FS_LoadPath(sn, &pn2);
+		  memcpy(sn, pn2.sn, 8);
+#if 0
+		  {
+		    char tmp[17];
+		    bytes2string(tmp, sn, 8) ;
+		    tmp[16] = 0;
+		    printf("ServerDir: get sn=%s bus_nr=%d index=%d %s\n", tmp, pn->in->index, dindex, pn2.path);
+		  }
+#endif
+		  pn2.in = pn->in ;  // reuse the current pn->in->index
+		  Cache_Add_Dir(sn,dindex,&pn2) ;
+		  ++dindex ;
+		}
+
 		DIRLOCK
 		  dirfunc(&pn2) ;
 		DIRUNLOCK
@@ -241,6 +270,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 FS_ParsedName_destroy( &pn2 ) ;
                 free(path2) ;
             }
+	    Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
         }
         DIRLOCK
             /* flags are sent back in "offset" of final blank entry */
