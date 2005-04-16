@@ -101,12 +101,15 @@ int FS_fstat(const char *path, struct stat *stbuf) {
         stbuf->st_nlink = 2 ;	// plus number of sub-directories
 #ifdef CALC_NLINK
 #if 0
+	/* not working */
 	for(i=0; i<pn.ft->nft; i++) {
 	  if((pn.ft[i].format == ft_directory) ||
 	     (pn.ft[i].format == ft_subdir)) {
 	    nr++;
 	  }
 	}
+#else
+	nr = 1 ;
 #endif
 #else
 	nr = 1 ;
