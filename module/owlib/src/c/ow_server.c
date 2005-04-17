@@ -181,6 +181,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct parsedname pn2 ;
     int _pathlen ;
     int dindex = 0 ;
+    unsigned char got_entry = 0 ;
 
     if ( connectfd < 0 ) return -EIO ;
     memset(&cm, 0, sizeof(struct client_msg));
@@ -222,7 +223,13 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
-        while( (path2=FromServerAlloc( connectfd, &cm))  ) {
+        got_entry = 0 ;
+        while((path2 = FromServerAlloc( connectfd, &cm))) {
+	    if(got_entry) {
+	      // destroy the last parsed name
+	      FS_ParsedName_destroy( &pn2 ) ;
+	    } else
+	      got_entry = 1 ;
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
             pn2.si = pn->si ; /* reuse stateinfo */
 
@@ -267,11 +274,15 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 		  dirfunc(&pn2) ;
 		DIRUNLOCK
 
-                FS_ParsedName_destroy( &pn2 ) ;
                 free(path2) ;
             }
-	    Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
         }
+	if(got_entry) {
+	  // we got at least one entry. FS_ParsedName_destroy() mustn't be
+	  // called before Cache_Del_Dir()
+	  Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
+	  FS_ParsedName_destroy( &pn2 ) ;
+	}
         DIRLOCK
             /* flags are sent back in "offset" of final blank entry */
             flags[0] |= cm.offset ;
