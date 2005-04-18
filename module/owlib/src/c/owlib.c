@@ -43,28 +43,27 @@ void LibSetup( void ) {
     start_time = time(NULL) ;
 }
 
-#ifdef __UCLIBC__
-
-static void catchchild() ;
-static int my_daemon(int nochdir, int noclose) ;
+#if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-static void catchchild() {
+static void catchchild( int sig ) {
     pid_t pid;
     int status;
 
-    /*signal(SIGCHLD, catchchild);*/ /* Unneeded */
-
     pid = wait4(-1, &status, WUNTRACED, 0);
 #if 0
-    if (WIFSTOPPED(status))
+    {
+      char buf[80] ;
+      if (WIFSTOPPED(status))
         sprintf(buf, "owlib: %d: Child %d stopped\n", getpid(), pid);
-    else
+      else
         sprintf(buf, "owlib: %d: Child %d died\n", getpid(), pid);
+      syslog(LOG_ERR, buf);
+    }
 #endif /* 0 */
 }
 
@@ -82,7 +81,6 @@ static int my_daemon(int nochdir, int noclose) {
 
     signal(SIGCHLD, SIG_DFL);
 
-//#if defined(__UCLIBC__) && !defined(__UCLIBC_HAS_MMU__)
 #ifdef __UCLIBC_HAS_MMU__
     pid = fork();
 #else /* __UCLIBC_HAS_MMU__ */
@@ -222,9 +220,9 @@ int LibStart( void ) {
     Asystem.elements = indevices ;
 
 
-    //if(background) printf("Call daemon\n");
     if ( background &&
-#if defined(__UCLIBC__)
+#if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
+#warning "Use my_daemon() since no MMU"
         my_daemon(1, 0)
 #else /* defined(__UCLIBC__) */
         daemon(1, 0)
@@ -233,7 +231,7 @@ int LibStart( void ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
     }
-    //if(background) printf("Call daemon done\n");
+
     /* store the PID */
     pid_num = getpid() ;
 
@@ -284,22 +282,41 @@ void Timeout( const char * c ) {
     timeout.dir = 5*timeout.vol ;
 }
 
+static void segv_handler(int sig) {
+  pid_t pid = getpid() ;
+#if OW_MT
+  pthread_t tid = pthread_self() ;
+  fprintf(stderr, "owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid) ;
+  syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d tid=%ld", pid, tid) ;
+#else
+  fprintf(stderr, "owlib: SIGSEGV received... pid=%d\n", pid) ;
+  syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d", pid) ;
+#endif
+  _exit(1) ;
+}
+
 void set_signal_handlers( void (*exit_handler)(int errcode) ) {
     struct sigaction sa;
 
-    sa.sa_handler = exit_handler;
+    memset(&sa, 0, sizeof(struct sigaction));
     sigemptyset(&(sa.sa_mask));
     sa.sa_flags = 0;
 
-    if (sigaction(SIGHUP, &sa, NULL) == -1
-        || sigaction(SIGINT, &sa, NULL) == -1
-        || sigaction(SIGTERM, &sa, NULL) == -1) {
+    sa.sa_handler = exit_handler;
+    if ((sigaction(SIGHUP,  &sa, NULL) == -1) ||
+	(sigaction(SIGINT,  &sa, NULL) == -1) ||
+	(sigaction(SIGTERM, &sa, NULL) == -1)) {
+        perror("Cannot set exit signal handlers");
+        exit_handler(-1);
+    }
+
+    sa.sa_handler = segv_handler;
+    if (sigaction(SIGSEGV, &sa, NULL) == -1) {
         perror("Cannot set exit signal handlers");
         exit_handler(-1);
     }
 
     sa.sa_handler = SIG_IGN;
-
     if(sigaction(SIGPIPE, &sa, NULL) == -1) {
         perror("Cannot set ignored signals");
         exit_handler(-1);
