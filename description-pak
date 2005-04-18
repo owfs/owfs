@@ -1,0 +1,7 @@
+1-wire filesystem
+A suite of programs to use the Dallas Semiconductor, Inc
+1-wire chips and iButtons from the command line, web interface,
+or several languages (tcl, perl, php, python).
+These chips include temperature, humidity, voltage sensors,
+switches and resistors, memory and logging and encryption.
+Local (serial/usb) and remote (tcp) connections are supported.

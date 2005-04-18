@@ -284,6 +284,26 @@ if test "${ENABLE_OWTCL}" = "true" ; then
 	AC_SUBST(TCL_PACKAGE_PATH)
 fi
 
+#Check ownfsd
+AC_MSG_CHECKING(if ownfsd enabled)
+ENABLE_OWNFSD="false"
+AC_ARG_ENABLE(ownfsd,
+[  --enable-ownfsd       Enable ownfsd module (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWNFSD="true"
+    fi
+],
+[
+    AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(ENABLE_OWNFSD)
+AM_CONDITIONAL(ENABLE_OWNFSD, test "${ENABLE_OWNFSD}" = "true")
+if test "${ENABLE_OWNFSD}" = "true" ; then
+        AC_SEARCH_LIBS(xdr_int, nsl)
+fi
+
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
     AC_CHECK_LIB(fuse,fuse_mount,, [
@@ -458,7 +478,7 @@ AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 # end owftpd section
 
 
-# conditionals for httpd/ftpd
+# conditionals for httpd/ftpd/nfsd
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
 
@@ -514,6 +534,11 @@ AC_CONFIG_FILES([
     module/owhttpd/src/include/Makefile
     module/owhttpd/src/c/Makefile
     module/owhttpd/src/man/Makefile
+    module/ownfsd/Makefile
+    module/ownfsd/src/Makefile
+    module/ownfsd/src/include/Makefile
+    module/ownfsd/src/c/Makefile
+    module/ownfsd/src/man/Makefile
     module/owftpd/Makefile
     module/owftpd/src/Makefile
     module/owftpd/src/include/Makefile
@@ -586,6 +611,11 @@ if test "${ENABLE_OWHTTPD}" = "true"; then
     AC_MSG_RESULT([    owhttpd is enabled])
 else
     AC_MSG_RESULT([    owhttpd is DISABLED])
+fi
+if test "${ENABLE_OWNFSD}" = "true"; then
+    AC_MSG_RESULT([    ownfsd is enabled])
+else
+    AC_MSG_RESULT([    ownfsd is DISABLED])
 fi
 if test "${ENABLE_OWFTPD}" = "true"; then
     AC_MSG_RESULT([    owftpd is enabled])
