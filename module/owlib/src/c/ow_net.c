@@ -247,7 +247,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
             pthread_exit((void *)0);
- #endif /* VALGRIND */
+#endif /* VALGRIND */
             return NULL;
         }
 
@@ -268,6 +268,8 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             pthread_join(thread2, NULL);
  #endif /* VALGRIND */
         }
+	/* won't reach this usless we exit the loop above to shutdown
+	 * in a nice way */
         if(out != out_last) {
             pthread_exit((void *)0);
         }
