@@ -1060,9 +1060,14 @@ void BUS_unlock( const struct parsedname * pn ) ;
 /* tdestroy() is missing in older versions */
 void tdestroy_(void *vroot, void *freefct);
 #define tdestroy(a, b) tdestroy_((a), (b))
-   #define syslog(a,...)	{ /* ignore_syslog */ }
-   #define openlog(a,...)	{ /* ignore_openlog */ }
-   #define closelog()		{ /* ignore_closelog */ }
+/* Since syslog will hang forever with uClibc-0.9.19 if syslogd is not
+ * running, then we don't use it unless we really wants it
+ * WRT45G usually have syslogd running. uClinux-dist might not have it. */
+   #ifndef USE_SYSLOG
+    #define syslog(a,...)	{ /* ignore_syslog */ }
+    #define openlog(a,...)	{ /* ignore_openlog */ }
+    #define closelog()		{ /* ignore_closelog */ }
+   #endif
   #endif    /* __UCLIBC__ */
  #endif   /* __UCLIBC__ */
 #endif  /* __UCLIBC__ */
