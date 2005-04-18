@@ -17,7 +17,6 @@ $Id$
 /* ------- Globals ----------- */
 
 #ifdef OW_MT
-//pthread_mutex_t busstat_mutex = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t stat_mutex    = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t cache_mutex   = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t store_mutex   = PTHREAD_MUTEX_INITIALIZER ;
