@@ -152,6 +152,13 @@ static int my_daemon(int nochdir, int noclose) {
 }
 #endif /* __UCLIBC__ */
 
+#ifdef __UCLIBC__
+#if OW_MT
+extern char *__pthread_initial_thread_bos ;
+void __pthread_initialize(void) ;
+#endif
+#endif
+
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
     struct connection_in * in = indevice ;
@@ -220,16 +227,24 @@ int LibStart( void ) {
     Asystem.elements = indevices ;
 
 
-    if ( background &&
+    if ( background ) {
+      if(
 #if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
-#warning "Use my_daemon() since no MMU"
-        my_daemon(1, 0)
+	 my_daemon(1, 0)
 #else /* defined(__UCLIBC__) */
-        daemon(1, 0)
+	 daemon(1, 0)
 #endif /* defined(__UCLIBC__) */
-    ) {
+	 ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
+      }
+#ifdef __UCLIBC__
+#if OW_MT
+      /* have to re-initialize pthread since the main-process is gone */
+      __pthread_initial_thread_bos = NULL ;
+      __pthread_initialize();
+#endif
+#endif
     }
 
     /* store the PID */
@@ -265,7 +280,10 @@ void LibClose( void ) {
     DeviceDestroy() ;
     
 #ifdef OW_MT
-    if ( pmattr ) pthread_mutexattr_destroy(pmattr);
+    if ( pmattr ) {
+        pthread_mutexattr_destroy(pmattr) ;
+        pmattr = NULL ;
+    }
 #endif /* OW_MT */
 
     if ( progname && progname[0] ) {

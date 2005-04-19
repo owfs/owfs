@@ -42,8 +42,12 @@ $Id$
 static void ow_exit( int e ) ;
 
 static void exit_handler(int i) {
-    (void) i ;
-    return ow_exit( ((i<0) ? 1 : 0) ) ;
+    pid_t pid = getpid() ;
+    if(pid == pid_num) {
+        ow_exit(1);  // only main-process should call ow_exit() on fatal error
+    } else {
+        _exit(0);
+    }
 }
 
 /*
