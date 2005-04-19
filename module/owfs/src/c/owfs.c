@@ -41,13 +41,15 @@ $Id$
 
 static void ow_exit( int e ) ;
 
+#ifdef OW_MT
+pthread_t main_threadid ;
+#define IS_MAINTHREAD (main_threadid == pthread_self())
+#else
+#define IS_MAINTHREAD 1
+#endif
+
 static void exit_handler(int i) {
-    pid_t pid = getpid() ;
-    if(pid == pid_num) {
-        ow_exit(1);  // only main-process should call ow_exit() on fatal error
-    } else {
-        _exit(0);
-    }
+    return ow_exit( ((i<0) ? 1 : 0) ) ;
 }
 
 /*
@@ -144,6 +146,10 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
+#ifdef OW_MT
+    main_threadid = pthread_self() ;
+#endif
+
 #if (FUSE_MAJOR_VERSION == 1)
     fuse = fuse_new(fuse_fd, 0, &owfs_oper);
 #elif (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION < 2)
@@ -164,31 +170,33 @@ int main(int argc, char *argv[]) {
 }
 
 static void ow_exit( int e ) {
-    LibClose() ;
-    if(fuse != NULL) {
-      fuse_exit(fuse);
-    }
+    if(IS_MAINTHREAD) {
+      LibClose() ;
+      if(fuse != NULL) {
+	fuse_exit(fuse);
+      }
     
-    /* Should perhaps only use fuse_teardown() if FUSE 2
-     * It doesn't check for NULL pointers though */
-    // fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
+      /* Should perhaps only use fuse_teardown() if FUSE 2
+       * It doesn't check for NULL pointers though */
+      // fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
 #if (FUSE_MAJOR_VERSION == 2)
-    if(fuse != NULL) {
-      /* this will unlink all inodes.. Could take some time on slow
-       * processors... eg. Coldfire 54MHz */
-      fuse_destroy(fuse);
-    }
+      if(fuse != NULL) {
+	/* this will unlink all inodes.. Could take some time on slow
+	 * processors... eg. Coldfire 54MHz */
+	fuse_destroy(fuse);
+      }
 #endif
-    fuse = NULL;
-    if(fuse_fd != -1) {
-      close(fuse_fd);
-    }
-    if(fuse_mountpoint != NULL) {
+      fuse = NULL;
+      if(fuse_fd != -1) {
+	close(fuse_fd);
+      }
+      if(fuse_mountpoint != NULL) {
         fuse_unmount(fuse_mountpoint);
         free(fuse_mountpoint) ;
         fuse_mountpoint = NULL;
-    } else if(umount_cmd[0] != '\0') {
+      } else if(umount_cmd[0] != '\0') {
         system(umount_cmd);
+      }
     }
     exit( e ) ;
 }

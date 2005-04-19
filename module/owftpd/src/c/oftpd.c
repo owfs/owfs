@@ -25,7 +25,7 @@
 void *connection_acceptor(struct ftp_listener_t *f);
 
 struct ftp_listener_t ftp_listener;
-#if OW_MT
+#ifdef OW_MT
 pthread_t main_threadid ;
 #define IS_MAINTHREAD (main_threadid == pthread_self())
 #else
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
-#if OW_MT
+#ifdef OW_MT
     main_threadid = pthread_self() ;
 #endif
 

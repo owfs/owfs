@@ -48,18 +48,22 @@ static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, con
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, const char *data ) ;
 
+#ifdef OW_MT
+pthread_t main_threadid ;
+#define IS_MAINTHREAD (main_threadid == pthread_self())
+#else
+#define IS_MAINTHREAD 1
+#endif
+
 static void ow_exit( int e ) {
-    LibClose() ;
+    if(IS_MAINTHREAD) {
+        LibClose() ;
+    }
     exit( e ) ;
 }
 
 static void exit_handler(int i) {
-    pid_t pid = getpid() ;
-    if(pid == pid_num) {
-        ow_exit(1);  // only main-process should call ow_exit() on fatal error
-    } else {
-        _exit(0);
-    }
+    return ow_exit( ((i<0) ? 1 : 0) ) ;
 }
 
 /* read from client, free return pointer if not Null */
@@ -442,6 +446,10 @@ int main( int argc , char ** argv ) {
      * Now we drop privledges and become a daemon.
      */
     if ( LibStart() ) ow_exit(1) ;
+
+#ifdef OW_MT
+    main_threadid = pthread_self() ;
+#endif
 
     /* this row will give a very strange output??
      * indevice->busmode is not working for me?

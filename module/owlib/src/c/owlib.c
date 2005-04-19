@@ -153,7 +153,7 @@ static int my_daemon(int nochdir, int noclose) {
 #endif /* __UCLIBC__ */
 
 #ifdef __UCLIBC__
-#if OW_MT
+#ifdef OW_MT
 extern char *__pthread_initial_thread_bos ;
 void __pthread_initialize(void) ;
 #endif
@@ -239,7 +239,7 @@ int LibStart( void ) {
         return 1 ;
       }
 #ifdef __UCLIBC__
-#if OW_MT
+#ifdef OW_MT
       /* have to re-initialize pthread since the main-process is gone */
       __pthread_initial_thread_bos = NULL ;
       __pthread_initialize();
@@ -302,7 +302,7 @@ void Timeout( const char * c ) {
 
 static void segv_handler(int sig) {
   pid_t pid = getpid() ;
-#if OW_MT
+#ifdef OW_MT
   pthread_t tid = pthread_self() ;
   fprintf(stderr, "owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid) ;
   syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d tid=%ld", pid, tid) ;
