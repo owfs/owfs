@@ -13,72 +13,92 @@ $Id$
 #include "ow_devices.h"
 
 /* device display format */
-void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) {
-    const unsigned char * p = pn->sn ;
+void FS_devicename( char * const buffer, const size_t length, const unsigned char * sn, const struct parsedname * pn ) {
     UCLIBCLOCK
 //printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
-    switch (DeviceFormat(pn)) {
-    case fdi:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6]) ;
-        break ;
-    case fi:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6]) ;
-        break ;
-    case fdidc:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X.%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    case fdic:
-        snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    case fidc:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X.%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    case fic:
-        snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7]) ;
-        break ;
-    }
+        switch (DeviceFormat(pn)) {
+        case fdi:
+            snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6]) ;
+            break ;
+        case fi:
+            snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6]) ;
+            break ;
+        case fdidc:
+            snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X.%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+            break ;
+        case fdic:
+            snprintf( buffer , length, "%02X.%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+            break ;
+        case fidc:
+            snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X.%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+            break ;
+        case fic:
+            snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
+            break ;
+        }
     UCLIBCUNLOCK
 }
 
 const char dirname_state_uncached[] = "uncached";
 const char dirname_state_alarm[]    = "alarm";
 const char dirname_state_text[]     = "text";
-const char dirname_state_unknown[]  = "";
 
-char * FS_dirname_state( const struct parsedname * pn ) {
-    char tmp[64];
-    //printf("dirname state on %.2X\n", pn->state);
-    if ( pn->state & pn_alarm   ) return strdup(dirname_state_alarm) ;
+/* copy state into buffer (for constructing path) return number of chars added */
+int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) {
+    const char * p ;
+    int len ;
+//printf("dirname state on %.2X\n", pn->state);
+    if ( pn->state & pn_alarm   ) {
+        p = dirname_state_alarm ;
     //should never return text in a directory list... it's a hidden feature.
-    //if ( pn->state & pn_text    ) return strdup(dirname_state_text) ;
-    if ( pn->state & pn_uncached) return strdup(dirname_state_uncached) ;
-    if ( pn->state & pn_bus ) {
-      sprintf(tmp, "bus.%d", pn->bus_nr) ;
-      return strdup(tmp) ;
+//    } else if ( pn->state & pn_text )
+//        strncpy(buffer, dirname_state_text, length ) ;
+    } else if ( pn->state & pn_uncached) {
+        p = dirname_state_uncached ;
+    } else if ( pn->state & pn_bus ) {
+        UCLIBCLOCK
+            snprintf(buffer, length, "bus.%d", pn->bus_nr) ;
+        UCLIBCUNLOCK
+        return strlen(buffer) ;
+    } else {
+        return 0 ;
     }
-    printf("FS_dirname_state: unknown state %.2X on %s\n", pn->state, pn->path);
-    return strdup(dirname_state_unknown);
+//printf("FS_dirname_state: unknown state %.2X on %s\n", pn->state, pn->path);
+    strncpy( buffer, p, length ) ;
+    len = strlen(p) ;
+    if ( len<length ) return len ;
+    return length ;
 }
 
 const char dirname_type_statistics[] = "statistics";
 const char dirname_type_system[]     = "system";
 const char dirname_type_settings[]   = "settings";
 const char dirname_type_structure[]  = "structure";
-const char dirname_type_unknown[]    = "";
 
-const char * FS_dirname_type( const enum pn_type type ) {
-    switch (type) {
+/* copy type into buffer (for constructing path) return number of chars added */
+int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) {
+    const char * p ;
+    int len ;
+    switch (pn->type) {
     case pn_statistics:
-        return dirname_type_statistics;
+        p= dirname_type_statistics ;
+        break ;
     case pn_system:
-        return dirname_type_system;
+        p = dirname_type_system ;
+        break ;
     case pn_settings:
-        return dirname_type_settings;
+        p = dirname_type_settings ;
+        break ;
     case pn_structure:
-        return dirname_type_structure;
+        p = dirname_type_structure ;
+        break ;
     default:
-        return dirname_type_unknown;
+        return 0 ;
     }
+    strncpy( buffer, p, length ) ;
+    len = strlen(p) ;
+    if ( len<length ) return len ;
+    return length ;
 }
 
 /* name of file from filetype structure -- includes extension */
@@ -131,18 +151,14 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */
         if ( pn->state ) {
-	      char *dname ;
-	      if( (dname = FS_dirname_state(pn)) ) {
-		strncpy( buffer, dname, size );
-		free(dname) ;
-	      }
+            FS_dirname_state(buffer, size, pn) ;
         } else {
-            strncpy( buffer, FS_dirname_type( pn->type ), size ) ;
+            FS_dirname_type( buffer, size, pn ) ;
         }
     } else if ( pn->dev == DeviceSimultaneous ) {
         strncpy( buffer, DeviceSimultaneous->code, size ) ;
     } else if ( pn->type == pn_real ) { /* real device */
-        FS_devicename( buffer, size, pn ) ;
+        FS_devicename( buffer, size, pn->sn, pn ) ;
     } else { /* pseudo device */
         strncpy( buffer, pn->dev->code, size ) ;
     }

@@ -662,20 +662,16 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
         *buffer = '\000';
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
-                strcpy(buffer, FS_dirname_type(pn2->type));
+                FS_dirname_type(buffer,OW_FULLNAME_MAX,pn2) ;
             } else if ( pn2->state ) {
-	      char *dname ;
-	      if( (dname = FS_dirname_state(pn2)) ) {
-                strcpy(buffer, dname);
-		free(dname) ;
-	      }
+                FS_dirname_state(buffer,OW_FULLNAME_MAX,pn2) ;
             }
-	    typ = strdup("directory") ;
+            typ = strdup("directory") ;
         } else if ( pn2->dev == DeviceSimultaneous ) {
             loc = nam = pn2->dev->name ;
             typ = strdup("1-wire chip") ;
         } else if ( pn2->type == pn_real ) {
-            FS_devicename(loc,OW_FULLNAME_MAX,pn2) ;
+            FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn,pn2) ;
             nam = pn2->dev->name ;
             typ = strdup("1-wire chip") ;
         } else {
@@ -711,25 +707,13 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
     HTTPtitle( out , "Directory") ;
 
     if ( pn->type != pn_real ) {
-#if 0
-        HTTPheader( out , FS_dirname_type(pn->type) ) ;
-#else
-	/* return whole path since tree structure could be much deeper now */
-	/* first / is stripped off */
+        /* return whole path since tree structure could be much deeper now */
+        /* first / is stripped off */
         HTTPheader( out , &pn->path[1]) ;
-#endif
     } else if (pn->state) {
-#if 0
-        char *dname ;
-	if( (dname = FS_dirname_state(pn)) ) {
-	  HTTPheader( out , dname) ;
-	  free(dname) ;
-	}
-#else
-	/* return whole path since tree structure could be much deeper now */
-	/* first / is stripped off */
+        /* return whole path since tree structure could be much deeper now */
+        /* first / is stripped off */
         HTTPheader( out , &pn->path[1]) ;
-#endif
     } else {
         HTTPheader( out , "directory" ) ;
     }

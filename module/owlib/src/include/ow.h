@@ -862,11 +862,11 @@ int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;
 int CheckPresence( const struct parsedname * const pn ) ;
 int Check1Presence( const struct parsedname * const pn ) ;
-void FS_devicename( char * const buffer, const size_t length, const struct parsedname * pn ) ;
+void FS_devicename( char * const buffer, const size_t length, const unsigned char * sn, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
-char * FS_dirname_state( const struct parsedname * pn ) ;
-const char * FS_dirname_type( const enum pn_type type ) ;
+int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) ;
+int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) ;
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
 
