@@ -977,6 +977,7 @@ int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const 
 int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
+int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) ;
 
 /* iteration functions for splitting writes to buffers */
 int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
