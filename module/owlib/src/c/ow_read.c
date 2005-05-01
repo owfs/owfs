@@ -197,13 +197,13 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 /* Loop through input devices (busses) */
 static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
+    size_t s ;
 #ifdef OW_MT
     pthread_t thread ;
     int threadbad = 1;
     char *buf2 ;
     void * v ;
     int rt ;
-    size_t s ;
 
     /* Embedded function */
     void * Read2( void * vp ) {

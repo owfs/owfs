@@ -128,9 +128,9 @@ int FS_size_remote( const struct parsedname * const pn ) {
 /* FS_size_seek produces the data that can vary: device lists, etc. */
 static int FS_size_seek( const struct parsedname * const pn ) {
     int ret = 0 ;
+    struct parsedname pncopy ;
 #ifdef OW_MT
     pthread_t thread ;
-    struct parsedname pncopy ;
     int threadbad = 1;
     void * v ;
     int rt ;

@@ -297,9 +297,9 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     int ret = 0 ;
+    struct parsedname pncopy ; /* fix from Jerry Scharf */
 #ifdef OW_MT
     pthread_t thread ;
-    struct parsedname pncopy ;
     int threadbad = 1;
     void * v ;
     int rt ;

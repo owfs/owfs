@@ -10,6 +10,8 @@ $Id$
 */
 
 /* ow_net holds the network utility routines. Many stolen unashamedly from Steven's Book */
+/* Much modification by Christian Magnusson especially for Valgrind and embedded */
+/* non-threaded fixes by Jerry Scharf */
 
 #include "owfs_config.h"
 #include "ow.h"
@@ -150,42 +152,40 @@ int ClientConnect( struct connection_in * in ) {
      * the in-device and loop through the list until it works.
      * Not a perfect solution, but it should work at least.
      */
-    pthread_mutex_lock( &(in->bus_mutex) ) ;
+    INBUSLOCK(in)
     ai = in->ai_ok ;
     if( ai ) {
-      pthread_mutex_unlock( &(in->bus_mutex) ) ;
-      fd = socket(
-		  ai->ai_family,
-		  ai->ai_socktype,
-		  ai->ai_protocol
-		  ) ;
-      if ( fd >= 0 ) {
-	if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
-	  return fd ;
-	}
-	close( fd ) ;
-      }
-      pthread_mutex_lock( &(in->bus_mutex) ) ;
+        INBUSUNLOCK(in)
+        fd = socket(
+            ai->ai_family,
+            ai->ai_socktype,
+            ai->ai_protocol
+            ) ;
+        if ( fd >= 0 ) {
+            if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) return fd ;
+            close( fd ) ;
+        }
+        INBUSLOCK(in)
     }
 
     ai = in->ai ;  // loop from first address info since it failed.
     do {
         fd = socket(
-		    ai->ai_family,
-		    ai->ai_socktype,
-		    ai->ai_protocol
-        ) ;
+            ai->ai_family,
+            ai->ai_socktype,
+            ai->ai_protocol
+            ) ;
         if ( fd >= 0 ) {
             if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
-	        in->ai_ok = ai ;
-		pthread_mutex_unlock( &(in->bus_mutex) ) ;
+                in->ai_ok = ai ;
+                INBUSUNLOCK(in)
                 return fd ;
             }
             close( fd ) ;
         }
     } while ( (ai = ai->ai_next) ) ;
     in->ai_ok = NULL ;
-    pthread_mutex_unlock( &(in->bus_mutex) ) ;
+    INBUSUNLOCK(in)
 
     fprintf(stderr,"ClientConnect: Socket problem [%s]\n", strerror(errno)) ;
     return -1 ;
@@ -208,12 +208,13 @@ int ClientConnect( struct connection_in * in ) {
 //#define VALGRIND 1
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
-    struct connection_out * out_last = NULL;
 #ifdef OW_MT
+    struct connection_out * out_last = NULL;
     pthread_t thread ;
 #ifndef __UCLIBC__
     pthread_attr_t attr ;
-#endif
+#endif /* __UCLIBC__ */
+#endif /* OW_MT */
 
     /* embedded function */
     void ToListen( struct connection_out * o ) {
@@ -231,6 +232,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
     }
 
+#ifdef OW_MT
     /* Embedded function */
     void * ConnectionThread( void * v3 ) {
         struct connection_out * out2 = (struct connection_out *)v3 ;

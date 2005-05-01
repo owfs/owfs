@@ -133,8 +133,10 @@ extern int multithreading ;
     #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  ) ;
     #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    ) ;
     #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    ) ;
- #ifdef __UCLIBC__
-    #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex) ;
+    #define INBUSLOCK(in)     pthread_mutex_lock(   &((in)->bus_mutex)  ) ;
+    #define INBUSUNLOCK(in)   pthread_mutex_unlock( &((in)->bus_mutex)  ) ;
+#ifdef __UCLIBC__
+#define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex) ;
     #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex) ;
  #else /* __UCLIBC__ */
     #define UCLIBCLOCK
@@ -158,6 +160,8 @@ extern int multithreading ;
     #define DIRUNLOCK
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
+    #define INBUSLOCK(in)
+    #define INBUSUNLOCK(in)
 #endif /* OW_MT */
 
 #define BUSLOCK(pn)    BUS_lock(pn) ;
