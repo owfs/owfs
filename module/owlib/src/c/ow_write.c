@@ -89,6 +89,8 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
       ++ write_calls ; /* statistics */
     STATUNLOCK
 
+    /* if readonly exit */
+    if ( readonly ) return -EROFS ;
 
     switch (pn->type) {
     case pn_structure:
