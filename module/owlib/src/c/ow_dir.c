@@ -60,7 +60,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
     
     if ( pn->dev && (pn->type == pn_real)) { /* device directory */
-        /* Device structure is always know for ordinary devices, so don't
+        /* Device structure is always known for ordinary devices, so don't
         * bother calling ServerDir() */
         //printf("FS_dir: call FS_devdir 1\n");
         ret = FS_devdir( dirfunc, &pn2 ) ;
