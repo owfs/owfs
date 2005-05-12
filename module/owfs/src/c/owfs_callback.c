@@ -116,12 +116,8 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     /* Prints this directory element (not the whole path) */
     void directory( const struct parsedname * const pn2 ) {
         char extname[OW_FULLNAME_MAX+1] ;
-        //        if( !(extname = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
-        //    return;
-        //}
         FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
         FILLER(h,extname) ;
-        //free(extname);
     }
 
     //printf("FS_getdir\n");
