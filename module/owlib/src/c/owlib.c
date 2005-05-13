@@ -39,7 +39,7 @@ void LibSetup( void ) {
 
     /* Setup the multithreading synchronizing locks */
     LockSetup();
-    
+
     start_time = time(NULL) ;
 }
 
@@ -197,12 +197,12 @@ int LibStart( void ) {
             } else if ( COM_open(in) ) { /* serial device */
                 ret = -ENODEV ;
             } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
-	        syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
+           syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
                 if ( DS9097_detect(in) ) {
-		    syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
+          syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
                     ret = -ENODEV ;
                 }
-            } 
+            }
         }
             break ;
         case bus_usb:
@@ -212,16 +212,16 @@ int LibStart( void ) {
             fprintf(stderr,"Cannot setup USB port. Support not compiled into %s\n",progname);
             ret = 1 ;
 #endif /* OW_USB */
-	    // in->name should be set to something, even if DS9490_detect fails
-	    if(!in->name) in->name = strdup("-1/-1") ;
+       // in->name should be set to something, even if DS9490_detect fails
+       if(!in->name) in->name = strdup("-1/-1") ;
             break ;
         default:
             ret = 1 ;
             break ;
         }
         if (ret) {
-	  BadAdapter_detect(in) ;
-	}
+     BadAdapter_detect(in) ;
+   }
 
     } while ( (in=in->next) ) ;
     Asystem.elements = indevices ;
@@ -230,11 +230,11 @@ int LibStart( void ) {
     if ( background ) {
       if(
 #if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
-	 my_daemon(1, 0)
+    my_daemon(1, 0)
 #else /* defined(__UCLIBC__) */
-	 daemon(1, 0)
+    daemon(1, 0)
 #endif /* defined(__UCLIBC__) */
-	 ) {
+    ) {
         fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
         return 1 ;
       }
@@ -278,7 +278,7 @@ void LibClose( void ) {
     FreeOut() ;
     closelog() ;
     DeviceDestroy() ;
-    
+
 #ifdef OW_MT
     if ( pmattr ) {
         pthread_mutexattr_destroy(pmattr) ;
@@ -301,7 +301,8 @@ void Timeout( const char * c ) {
 }
 
 static void segv_handler(int sig) {
-  pid_t pid = getpid() ;
+    pid_t pid = getpid() ;
+    (void) sig ;
 #ifdef OW_MT
   pthread_t tid = pthread_self() ;
   fprintf(stderr, "owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid) ;
@@ -322,8 +323,8 @@ void set_signal_handlers( void (*exit_handler)(int errcode) ) {
 
     sa.sa_handler = exit_handler;
     if ((sigaction(SIGHUP,  &sa, NULL) == -1) ||
-	(sigaction(SIGINT,  &sa, NULL) == -1) ||
-	(sigaction(SIGTERM, &sa, NULL) == -1)) {
+   (sigaction(SIGINT,  &sa, NULL) == -1) ||
+   (sigaction(SIGTERM, &sa, NULL) == -1)) {
         perror("Cannot set exit signal handlers");
         exit_handler(-1);
     }
