@@ -139,7 +139,7 @@ void Handler( int fd ) {
 
     memset(&cm, 0, sizeof(struct client_msg));
 
-    switch( (enum msg_type) sm.type ) {
+    switch( (enum msg_classification) sm.type ) {
     case msg_size:
     case msg_read:
     case msg_write:
@@ -148,36 +148,36 @@ void Handler( int fd ) {
         if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
             cm.ret = -EBADMSG ;
         } else {
-	    memset(&si, 0, sizeof(struct stateinfo));
+            memset(&si, 0, sizeof(struct stateinfo));
             pn.si = &si ;
-	    //printf("Handler: path=%s\n",path);
+            //printf("Handler: path=%s\n",path);
             /* Parse the path string */
 
             if ( (cm.ret=FS_ParsedName( path, &pn )) ) {
-	        //printf("Handler: Error parsedname %s\n", path);
-		break ;
-	    }
+                //printf("Handler: Error parsedname %s\n", path);
+                break ;
+            }
 
             /* Use client persistent settings (temp scale, discplay mode ...) */
             si.sg = sm.sg ;
-	    //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
-	    //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
+            //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
+            //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
-            switch( (enum msg_type) sm.type ) {
+            switch( (enum msg_classification) sm.type ) {
             case msg_presence:
-	        if(pn.dev && pn.ft) {
-		  PresenceHandler( &sm, &cm, &pn ) ;
-		  //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
-		} else {
-		  cm.ret = 0;
-		  //printf("msg_presence: cm.ret=%d\n", cm.ret);
-		}
+                if(pn.dev && pn.ft) {
+                    PresenceHandler( &sm, &cm, &pn ) ;
+                    //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
+                } else {
+                    cm.ret = 0;
+                    //printf("msg_presence: cm.ret=%d\n", cm.ret);
+                }
                 break ;
             case msg_size:
-	        if(pn.dev && pn.ft)
-		  SizeHandler( &sm, &cm, &pn ) ;
-		else
-		  cm.ret = 0;
+                if(pn.dev && pn.ft)
+                    SizeHandler( &sm, &cm, &pn ) ;
+                else
+                    cm.ret = 0;
                 break ;
             case msg_read:
                 retbuffer = ReadHandler( &sm , &cm, &pn ) ;

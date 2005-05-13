@@ -646,7 +646,7 @@ struct s_timeout {
 extern struct s_timeout timeout ;
 
 /* Server (Socket-based) interface */
-enum msg_type { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_presence, } ;
+enum msg_classification { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_presence, } ;
 /* message to owserver */
 struct server_msg {
     int32_t version ;
