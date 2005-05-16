@@ -87,7 +87,7 @@ int ServerListen( struct connection_out * out ) {
             out->ai_ok->ai_protocol
         ) ;
         if ( fd >= 0 ) {
-            ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))
+            ret = setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,(char *)&on,sizeof(on))
                 || bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
                 || listen(fd, 10) ;
             if ( ret ) {
