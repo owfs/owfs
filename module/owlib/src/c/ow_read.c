@@ -101,8 +101,8 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
     STATLOCK
-    AVERAGE_IN(&read_avg)
-    AVERAGE_IN(&all_avg)
+        AVERAGE_IN(&read_avg)
+        AVERAGE_IN(&all_avg)
     STATUNLOCK
 
     switch (pn->type) {
@@ -116,75 +116,75 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     case pn_statistics:
         //printf("FS_read_postparse: pid=%ld system/settings/statistics\n", pthread_self());
         if ( pn->state & pn_bus ) {
-	    /* this will either call ServerDir or FS_real_read */
-	    //printf("FS_read_postparse: call read_seek\n");
-	    r = FS_read_seek(buf, size, offset, pn) ;
+            /* this will either call ServerDir or FS_real_read */
+            //printf("FS_read_postparse: call read_seek\n");
+            r = FS_read_seek(buf, size, offset, pn) ;
         } else {
-	    /* Read from local memory */
-	    //printf("FS_read_postparse: call real_read\n");
+            /* Read from local memory */
+            //printf("FS_read_postparse: call real_read\n");
             r = FS_real_read( buf, size, offset, pn ) ;
-	}
+        }
         break;
     default:
       //printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
         /* handle DeviceSimultaneous */
         if(pn->dev == DeviceSimultaneous) {
-	    if(pn->state & pn_bus) {
-	      r = FS_read_seek(buf, size, offset, pn) ;
-	    } else {
-	      struct connection_in *p = indevice ;
-	      while(p) {
-		if(get_busmode(p) == bus_remote) break ;
-		p = p->next;
-	      }
-	      if(p) {
-		/* A remote server exists, and we can't read this value!!
-		 * /simultaneous/temperature is unknown when:
-		 * /bus.0/simultaneous/temperature = 0
-		 * /bus.1/simultaneous/temperature = 1
-		 */
+            if(pn->state & pn_bus) {
+                r = FS_read_seek(buf, size, offset, pn) ;
+            } else {
+                struct connection_in *p = indevice ;
+                while(p) {
+                    if(get_busmode(p) == bus_remote) break ;
+                    p = p->next;
+                }
+                if(p) {
+                /* A remote server exists, and we can't read this value!!
+                * /simultaneous/temperature is unknown when:
+                * /bus.0/simultaneous/temperature = 0
+                * /bus.1/simultaneous/temperature = 1
+                */
 #if 0
-		r = -EINVAL ;
+                r = -EINVAL ;
 #else
-		buf[0] = '0';
-		r = 1;
+                buf[0] = '0';
+                r = 1;
 #endif
-	      } else {
-		r = FS_real_read(buf, size, offset, pn) ;
-	      }
-	    }
-	} else {
-	    /* real data -- go through device chain */
-	    /* this will either call ServerDir or FS_real_read */
-	    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
-	      struct parsedname pn2;
-	      int bus_nr = -1;
-	      if(Cache_Get_Device(&bus_nr, pn)) {
-		//printf("Cache_Get_Device didn't find bus_nr\n");
-		bus_nr = CheckPresence(pn);
-		/* Cache_Add_Device() is called in FS_read_seek() */
-	      }
-	      if(bus_nr >= 0) {
-		memcpy(&pn2, pn, sizeof(struct parsedname));
-		/* fake that we read from only one indevice now! */
-		pn2.in = find_connection_in(bus_nr);
-		pn2.state |= pn_bus ;
-		pn2.bus_nr = bus_nr ;
-		//printf("read only from bus_nr=%d\n", bus_nr);
-		r = FS_read_seek(buf, size, offset, &pn2) ;
-	      } else {
-		//printf("CheckPresence failed, no use to read\n");
-		r = -ENOENT ;
-	      }
-	    } else {
-	      r = FS_read_seek(buf, size, offset, pn) ;
-	    }
-	}
+                } else {
+            r = FS_real_read(buf, size, offset, pn) ;
+                }
+            }
+        } else {
+            /* real data -- go through device chain */
+            /* this will either call ServerDir or FS_real_read */
+            if((pn->type == pn_real) && !(pn->state & pn_bus)) {
+                struct parsedname pn2;
+                int bus_nr = -1;
+                if(Cache_Get_Device(&bus_nr, pn)) {
+                    //printf("Cache_Get_Device didn't find bus_nr\n");
+                    bus_nr = CheckPresence(pn);
+                    /* Cache_Add_Device() is called in FS_read_seek() */
+                }
+                if(bus_nr >= 0) {
+                    memcpy(&pn2, pn, sizeof(struct parsedname));
+                    /* fake that we read from only one indevice now! */
+                    pn2.in = find_connection_in(bus_nr);
+                    pn2.state |= pn_bus ;
+                    pn2.bus_nr = bus_nr ;
+                    //printf("read only from bus_nr=%d\n", bus_nr);
+                    r = FS_read_seek(buf, size, offset, &pn2) ;
+                } else {
+                    //printf("CheckPresence failed, no use to read\n");
+                    r = -ENOENT ;
+                }
+            } else {
+                r = FS_read_seek(buf, size, offset, pn) ;
+            }
+        }
     }
     STATLOCK
         if ( r>=0 ) {
-        ++read_success ; /* statistics */
-        read_bytes += r ; /* statistics */
+            ++read_success ; /* statistics */
+            read_bytes += r ; /* statistics */
         }
         AVERAGE_OUT(&read_avg)
         AVERAGE_OUT(&all_avg)
@@ -207,25 +207,27 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 
     /* Embedded function */
     void * Read2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int ret;
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
+
+        (void) vp ;
+        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
-	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
+        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
+        pnnext.in = pn->in->next ;
         ret = FS_read_seek(buf2,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
-	return (void *)ret;
+        return (void *)ret;
     }
+    
     //printf("READSEEK pid=%ld path=%s index=%d\n",pthread_self(), pn->path,pn->in->index);
     if( !(buf2 = malloc(size)) ) {
-      return -ENOMEM;
+        return -ENOMEM;
     }
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, (void *)pn ) ;
+        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
     }
 #endif /* OW_MT */
 
@@ -253,7 +255,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
                 r = FS_real_read( buf, size, offset, pn ) ;
 //printf("READSEEK2 FS_real_read ret=%d\n", r);
-                if ( r>0 ) Cache_Add( buf, r, pn ) ;
+                if ( r>0 ) Cache_Add( buf, (const size_t)r, pn ) ;
                 LockRelease(pn) ;
             }
 //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
@@ -362,7 +364,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
     return len;
 }
 
-/* read without artificial separation of combination */
+/* read without artificial separation or combination */
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret = 0 ;
 //printf("ParseRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
@@ -389,6 +391,20 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
         return FS_output_float( f , buf , size , pn ) ;
+        }
+    case ft_temperature: {
+        FLOAT f ;
+        if ( offset ) return -EADDRNOTAVAIL ;
+        ret = (pn->ft->read.f)(&f,pn) ;
+        if (ret < 0) return ret ;
+        return FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
+        }
+    case ft_tempgap: {
+        FLOAT f ;
+        if ( offset ) return -EADDRNOTAVAIL ;
+        ret = (pn->ft->read.f)(&f,pn) ;
+        if (ret < 0) return ret ;
+        return FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
         }
     case ft_date: {
         DATE d ;
@@ -462,6 +478,32 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
             FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
+                if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
+            free( f ) ;
+            return ret ;
+        }
+    case ft_temperature:
+        if (offset) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            size_t i ;
+            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+                if ( f==NULL ) return -ENOMEM ;
+                ret = (pn->ft->read.f)(f,pn) ;
+                for ( i=0; i<elements ; ++i ) f[i] = Temperature(f[i],pn) ;
+                if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
+            free( f ) ;
+            return ret ;
+        }
+    case ft_tempgap:
+        if (offset) {
+            return -EADDRNOTAVAIL ;
+        } else {
+            size_t i ;
+            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+                if ( f==NULL ) return -ENOMEM ;
+                ret = (pn->ft->read.f)(f,pn) ;
+                for ( i=0; i<elements ; ++i ) f[i] = TemperatureGap(f[i],pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
             return ret ;
@@ -559,7 +601,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
             -- left ;
 //printf("READALL(%p) comma\n",p) ;
         }
-        if ( (r=FS_parse_read(p,left,0,&pn2)) < 0 ) return r ;
+        if ( (r=FS_parse_read(p,left,(const off_t)0,&pn2)) < 0 ) return r ;
         left -= r ;
         p += r ;
 //printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
@@ -601,6 +643,24 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float( f[pn->extension] , buf , size , pn ) ;
+            free( f ) ;
+            break ;
+        }
+    case ft_temperature:
+        {
+            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+                if ( f==NULL ) return -ENOMEM ;
+                ret = (pn->ft->read.f)(f,pn) ;
+                if (ret >= 0) ret = FS_output_float( Temperature(f[pn->extension],pn) , buf , size , pn ) ;
+            free( f ) ;
+            break ;
+        }
+    case ft_tempgap:
+        {
+            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+                if ( f==NULL ) return -ENOMEM ;
+                ret = (pn->ft->read.f)(f,pn) ;
+                if (ret >= 0) ret = FS_output_float( TemperatureGap(f[pn->extension],pn) , buf , size , pn ) ;
             free( f ) ;
             break ;
         }
@@ -666,7 +726,7 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
     UCLIBCLOCK
         len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
     UCLIBCUNLOCK
-    if ( (len<0) || (len>suglen) ) return -EMSGSIZE ;
+    if ( (len<0) || ((size_t)len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, (size_t)len ) ;
     return len ;
 }
@@ -681,7 +741,7 @@ int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const
     UCLIBCLOCK
         len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
     UCLIBCUNLOCK
-    if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
+    if ((len<0) || ((size_t)len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, (size_t)len ) ;
     return len ;
 }
@@ -696,7 +756,7 @@ int FS_output_float( FLOAT value, char * buf, const size_t size, const struct pa
     UCLIBCLOCK
         len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
     UCLIBCUNLOCK
-    if ((len<0) || (len>suglen) ) return -EMSGSIZE ;
+    if ((len<0) || ((size_t)len>suglen) ) return -EMSGSIZE ;
     memcpy( buf, c, (size_t)len ) ;
     return len ;
 }
@@ -716,7 +776,7 @@ int FS_output_integer_array( int * values, char * buf, const size_t size, const 
     char * first = buf ;
     int i ;
     for ( i=0 ; i < pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (len=FS_output_integer( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+        if ( (len=FS_output_integer( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
         left -= len ;
         first += len ;
         if ( left<1 ) return -EMSGSIZE ;
@@ -724,7 +784,7 @@ int FS_output_integer_array( int * values, char * buf, const size_t size, const 
         ++first ;
         --left ;
     }
-    if ( (len=FS_output_unsigned( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+    if ( (len=FS_output_integer( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
     return size-(left-len) ;
 }
 
@@ -735,7 +795,7 @@ int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t si
     int i ;
     for ( i=0 ; i < pn->ft->ag->elements - 1 ; ++i ) {
 //printf("OUA i=%d left=%d size=%d values=%u,%5u,%6u\n",i,left,size,values[i],values[i],values[i]);
-        if ( (len=FS_output_unsigned( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+        if ( (len=FS_output_unsigned( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
         left -= len ;
         first += len ;
         if ( left<1 ) return -EMSGSIZE ;
@@ -743,7 +803,7 @@ int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t si
         ++first ;
         --left ;
     }
-    if ( (len=FS_output_unsigned( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+    if ( (len=FS_output_unsigned( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
     return size-(left-len) ;
 }
 
@@ -753,7 +813,7 @@ int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const 
     char * first = buf ;
     int i ;
     for ( i=0 ; i < pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (len=FS_output_float( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+        if ( (len=FS_output_float( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
         left -= len ;
         first += len ;
         if ( left<1 ) return -EMSGSIZE ;
@@ -761,7 +821,7 @@ int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const 
         ++first ;
         --left ;
     }
-    if ( (len=FS_output_float( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+    if ( (len=FS_output_float( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
     return size-(left-len) ;
 }
 
@@ -771,7 +831,7 @@ int FS_output_date_array( DATE * values, char * buf, const size_t size, const st
     char * first = buf ;
     int i ;
     for ( i=0 ; i < pn->ft->ag->elements - 1 ; ++i ) {
-        if ( (len=FS_output_date( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+        if ( (len=FS_output_date( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
         left -= len ;
         first += len ;
         if ( left<1 ) return -EMSGSIZE ;
@@ -779,6 +839,6 @@ int FS_output_date_array( DATE * values, char * buf, const size_t size, const st
         ++first ;
         --left ;
     }
-    if ( (len=FS_output_date( values[i], first, left, pn )) < 0 ) return -EMSGSIZE ;
+    if ( (len=FS_output_date( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
     return size-(left-len) ;
 }

@@ -65,23 +65,23 @@ dWRITE_FUNCTION( FS_w_date ) ;
 struct aggregate A2438 = { 8, ag_numbers, ag_separate, } ;
 struct filetype DS2438[] = {
     F_STANDARD          ,
-    {"pages"            ,   0, NULL , ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}        , NULL      , } ,
-    {"pages/page"       ,   8,&A2438, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL      , } ,
-    {"VDD"              ,  12, NULL , ft_float   , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 1, } ,
-    {"VAD"              ,  12, NULL , ft_float   , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 0, } ,
-    {"temperature"      ,  12, NULL , ft_float   , ft_volatile, {f:FS_temp}     , {v:NULL}        , NULL      , } ,
-    {"humidity"         ,  12, NULL , ft_float   , ft_volatile, {f:FS_Humid}    , {v:NULL}        , NULL      , } ,
-    {"current"          ,  12, NULL , ft_integer , ft_volatile, {i:FS_Current}  , {v:NULL}        , NULL      , } ,
-    {"Ienable"          ,  12, NULL , ft_unsigned, ft_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable}, NULL      , } ,
-    {"offset"           ,  12, NULL , ft_unsigned, ft_stable  , {i:FS_r_Offset} , {i:FS_w_Offset} , NULL      , } ,
-    {"udate"            ,  12, NULL , ft_unsigned, ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x08 , } ,
-    {"date"             ,  24, NULL , ft_date    , ft_second  , {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x08 , } ,
-    {"disconnect"       ,   0, NULL , ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}        , NULL      , } ,
-    {"disconnect/udate" ,  12, NULL , ft_unsigned, ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x10 , } ,
-    {"disconnect/date"  ,  24, NULL , ft_date    , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x10 , } ,
-    {"endcharge"        ,   0, NULL , ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}        , NULL      , } ,
-    {"endcharge/udate"  ,  12, NULL , ft_unsigned, ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x14 , } ,
-    {"endcharge/date"   ,  24, NULL , ft_date    , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x14 , } ,
+    {"pages"            ,   0, NULL , ft_subdir    , ft_volatile, {v:NULL}        , {v:NULL}        , NULL      , } ,
+    {"pages/page"       ,   8,&A2438, ft_binary    , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL      , } ,
+    {"VDD"              ,  12, NULL , ft_float     , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 1, } ,
+    {"VAD"              ,  12, NULL , ft_float     , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 0, } ,
+    {"temperature"      ,  12, NULL ,ft_temperature, ft_volatile, {f:FS_temp}     , {v:NULL}        , NULL      , } ,
+    {"humidity"         ,  12, NULL , ft_float     , ft_volatile, {f:FS_Humid}    , {v:NULL}        , NULL      , } ,
+    {"current"          ,  12, NULL , ft_integer   , ft_volatile, {i:FS_Current}  , {v:NULL}        , NULL      , } ,
+    {"Ienable"          ,  12, NULL , ft_unsigned  , ft_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable}, NULL      , } ,
+    {"offset"           ,  12, NULL , ft_unsigned  , ft_stable  , {i:FS_r_Offset} , {i:FS_w_Offset} , NULL      , } ,
+    {"udate"            ,  12, NULL , ft_unsigned  , ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x08 , } ,
+    {"date"             ,  24, NULL , ft_date      , ft_second  , {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x08 , } ,
+    {"disconnect"       ,   0, NULL , ft_subdir    , ft_volatile, {v:NULL}        , {v:NULL}        , NULL      , } ,
+    {"disconnect/udate" ,  12, NULL , ft_unsigned  , ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x10 , } ,
+    {"disconnect/date"  ,  24, NULL , ft_date      , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x10 , } ,
+    {"endcharge"        ,   0, NULL , ft_subdir    , ft_volatile, {v:NULL}        , {v:NULL}        , NULL      , } ,
+    {"endcharge/udate"  ,  12, NULL , ft_unsigned  , ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x14 , } ,
+    {"endcharge/date"   ,  24, NULL , ft_date      , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x14 , } ,
 } ;
 DeviceEntryExtended( 26, DS2438, DEV_temp )
 
@@ -121,7 +121,6 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 
 static int FS_temp(FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
-    *T = Temperature( *T, pn ) ;
     return 0 ;
 }
 

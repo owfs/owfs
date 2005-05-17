@@ -169,20 +169,22 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
 
     /* Embedded function */
     void * Write2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int ret;
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
-	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
+
+        (void) vp ;
+        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
+        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
+        pnnext.in = pn->in->next ;
         ret = FS_write_postparse(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
         return (void *)ret;
     }
+
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
     }
 #endif /* OW_MT */
 
@@ -289,12 +291,24 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
             ret = ret || (pn->ft->write.u)(&U,pn) ;
         }
         break ;
+    case ft_tempgap :
     case ft_float:
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
             FLOAT F ;
             ret = FS_input_float( &F, buf, size ) ;
+            if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
+            ret = ret || (pn->ft->write.f)(&F,pn) ;
+        }
+        break ;
+    case ft_temperature:
+        if ( offset ) {
+            ret = -EADDRNOTAVAIL ;
+        } else {
+            FLOAT F ;
+            ret = FS_input_float( &F, buf, size ) ;
+            F = fromTemperature( F , pn ) ;
             if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.f)(&F,pn) ;
         }
@@ -383,9 +397,10 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
             if ( i==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                ret = FS_input_integer_array( i, buf, size, pn ) ;
-                if ( cbuf && ret==0 ) FS_output_integer_array(i,cbuf,ffl,pn) ; /* post-parse cachable string creation */
-                ret |= (pn->ft->write.i)(i,pn) ;
+                if ( (ret = FS_input_integer_array( i, buf, size, pn ))==0 ) {
+                    if ( cbuf ) FS_output_integer_array(i,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    ret = (pn->ft->write.i)(i,pn) ;
+                }
             free(i) ;
             }
         }
@@ -396,22 +411,41 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
             if ( u==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                ret = FS_input_unsigned_array( u, buf, size, pn ) ;
-                if ( cbuf && ret==0 ) FS_output_unsigned_array(u,cbuf,ffl,pn) ; /* post-parse cachable string creation */
-                ret |= (pn->ft->write.u)(u,pn) ;
+                if ( (ret = FS_input_unsigned_array( u, buf, size, pn )) == 0 ) {
+                    if ( cbuf ) FS_output_unsigned_array(u,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    ret = (pn->ft->write.u)(u,pn) ;
+                }
             free(u) ;
             }
         }
         break ;
+    case ft_tempgap:
     case ft_float:
         {
             FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
             if ( f==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                ret = FS_input_float_array( f, buf, size, pn ) ;
-                if ( cbuf && ret==0 ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
-                ret |= (pn->ft->write.f)(f,pn) ;
+                if ( (ret = FS_input_float_array( f, buf, size, pn ))==0 ) {
+                    if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    ret = (pn->ft->write.f)(f,pn) ;
+                }
+            free(f) ;
+            }
+        }
+        break ;
+    case ft_temperature:
+        {
+            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+            if ( f==NULL ) {
+                ret = -ENOMEM ;
+            } else {
+                if ( (ret = FS_input_float_array( f, buf, size, pn ))==0 ) {
+                    size_t i ;
+                    for ( i=0 ; i<elements ; ++i ) f[i] = fromTemperature(f[i],pn) ;
+                    if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    ret = (pn->ft->write.f)(f,pn) ;
+                }
             free(f) ;
             }
         }
@@ -422,9 +456,10 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
             if ( d==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                ret = FS_input_date_array( d, buf, size, pn ) ;
-                if ( cbuf && ret==0 ) FS_output_date_array(d,cbuf,ffl,pn) ; /* post-parse cachable string creation */
-                ret |= (pn->ft->write.d)(d,pn) ;
+                if ( (ret = FS_input_date_array( d, buf, size, pn )) ==0 ) {
+                    if ( cbuf ) FS_output_date_array(d,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    ret = (pn->ft->write.d)(d,pn) ;
+                }
             free(d) ;
             }
         }
@@ -435,9 +470,10 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
             if ( y==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                ret = FS_input_yesno_array( y, buf, size, pn ) ;
-                if ( cbuf && ret==0 ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
-                ret |= (pn->ft->write.y)(y,pn) ;
+                if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
+                    if ( cbuf ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    ret = (pn->ft->write.y)(y,pn) ;
+                }
             free(y) ;
             }
         }
@@ -450,8 +486,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
             } else {
                 int i ;
                 unsigned int U = 0 ;
-                ret = FS_input_yesno_array( y, buf, size, pn ) ;
-                if ( ret==0 ) {
+                if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
                     for (i=pn->ft->ag->elements-1;i>=0;--i) U = (U<<1) | (y[i]&0x01) ;
                     if ( cbuf ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.u)(&U,pn) ;
@@ -528,7 +563,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
         int suglen = pname.ft->suglen ;
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             if ( (int) left < suglen ) return -ERANGE ;
-            if ( (r=FS_parse_write(p,(size_t) suglen,0,&pname)) ) return r ;
+            if ( (r=FS_parse_write(p,(size_t) suglen,(const off_t)0,&pname)) ) return r ;
             p += suglen ;
             left -= suglen ;
         }
@@ -536,11 +571,11 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             char * c = memchr( p , ',' , left ) ;
             if ( c==NULL ) {
-                if ( (r=FS_parse_write(p,left,0,&pname)) ) return r ;
+                if ( (r=FS_parse_write(p,left,(const off_t)0,&pname)) ) return r ;
                 p = buf + size ;
                 left = 0 ;
             } else {
-                if ( (r=FS_parse_write(p,(size_t)(c-p),0,&pname)) ) return r ;
+                if ( (r=FS_parse_write(p,(size_t)(c-p),(const off_t)0,&pname)) ) return r ;
                 p = c + 1 ;
                 left = size - (buf-p) ;
             }
@@ -555,7 +590,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     size_t elements = pn->ft->ag->elements ;
     int ret = 0;
 
-    int ffl = FullFileLength(pn) ;
+    const size_t ffl = FullFileLength(pn) ;
     char * cbuf = NULL ;
 
 #ifdef OW_CACHE
@@ -628,9 +663,10 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
 //printf("BITFIELD4 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
         }
         break ;
+    case ft_tempgap:
     case ft_float:
-        if ( offset ) {
-            ret = -EADDRNOTAVAIL ;
+            if ( offset ) {
+                ret = -EADDRNOTAVAIL ;
         } else {
             FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
             if ( f==NULL ) {
@@ -639,6 +675,26 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
                 ret = ((pn->ft->read.f)(f,pn)<0) || FS_input_float(&f[pn->extension],buf,size) || (pn->ft->write.f)(f,pn) ;
                 if ( cbuf && ret==0 ) FS_output_float_array(f,cbuf,ffl,pn) ;
             free(f) ;
+            }
+        }
+        break ;
+    case ft_temperature:
+        if ( offset ) {
+            ret = -EADDRNOTAVAIL ;
+        } else {
+            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+            if ( f==NULL ) {
+                ret = -ENOMEM ;
+            } else {
+                if ( (ret=((pn->ft->read.f)(f,pn)<0))==0 ) {
+                    if ( (ret=FS_input_float(&f[pn->extension],buf,size))==0 ) {
+                        f[pn->extension] = fromTemperature(f[pn->extension],pn) ;
+                        if ( (ret=(pn->ft->write.f)(f,pn))==0 ) {
+                            if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ;
+                        }
+                    }
+                }
+                free(f) ;
             }
         }
         break ;
@@ -666,9 +722,9 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             s -= offset ;
             if ( s>size ) s = size ;
             if ( (all = (unsigned char *) malloc( ffl ) ) ) { ;
-                if ( (ret = (pn->ft->read.b)(all,ffl,0,pn))==0 ) {
+                if ( (ret = (pn->ft->read.b)(all,ffl,(const off_t)0,pn))==0 ) {
                     memcpy(&all[suglen*pn->extension+offset],buf,s) ;
-                    ret = (pn->ft->write.b)(all,ffl,0,pn) ;
+                    ret = (pn->ft->write.b)(all,ffl,(const off_t)0,pn) ;
                     if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
                 }
                 free( all ) ;
@@ -687,9 +743,9 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
             size_t s = suglen ;
             if ( s>size ) s = size ;
             if ( (all=(char *) malloc(ffl)) ) {
-                if ((ret = (pn->ft->read.a)(all,ffl,0,pn))==0 ) {
+                if ((ret = (pn->ft->read.a)(all,ffl,(const off_t)0,pn))==0 ) {
                     memcpy(&all[(suglen+1)*pn->extension],buf,s) ;
-                    ret = (pn->ft->write.a)(all,ffl,0,pn) ;
+                    ret = (pn->ft->write.a)(all,ffl,(const off_t)0,pn) ;
                     if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
                 }
                 free( all ) ;
@@ -799,8 +855,8 @@ static int FS_input_yesno_array( int * const results, const char * const buf, co
     for ( i=0 ; i<=last ; ++i ) {
         if ( next <= end ) {
             first = next ;
-            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
-            if ( FS_input_yesno( &results[i], first, next-first ) ) results[i]=0 ;
+            if ( (next=memchr( first, ',' , (size_t)(first-end+1) )) == NULL ) next = end ;
+            if ( FS_input_yesno( &results[i], first, (const size_t)(next-first) ) ) results[i]=0 ;
             ++next ; /* past comma */
         } else { /* assume "no" for absent values */
             results[i] = 0 ;
@@ -819,8 +875,8 @@ static int FS_input_integer_array( int * const results, const char * const buf, 
     for ( i=0 ; i<=last ; ++i ) {
         if ( next <= end ) {
             first = next ;
-            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
-            if ( FS_input_integer( &results[i], first, next-first ) ) results[i]=0 ;
+            if ( (next=memchr( first, ',' , (size_t)(first-end+1) )) == NULL ) next = end ;
+            if ( FS_input_integer( &results[i], first, (const size_t)(next-first) ) ) results[i]=0 ;
             ++next ; /* past comma */
         } else { /* assume 0 for absent values */
             results[i] = 0 ;
@@ -839,8 +895,8 @@ static int FS_input_unsigned_array( unsigned int * const results, const char * c
     for ( i=0 ; i<=last ; ++i ) {
         if ( next <= end ) {
             first = next ;
-            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
-            if ( FS_input_unsigned( &results[i], first, next-first ) ) results[i]=0 ;
+            if ( (next=memchr( first, ',' , (size_t)(first-end+1) )) == NULL ) next = end ;
+            if ( FS_input_unsigned( &results[i], first, (const size_t)(next-first) ) ) results[i]=0 ;
             ++next ; /* past comma */
         } else { /* assume 0 for absent values */
             results[i] = 0 ;
@@ -859,8 +915,8 @@ static int FS_input_float_array( FLOAT * const results, const char * const buf, 
     for ( i=0 ; i<=last ; ++i ) {
         if ( next <= end ) {
             first = next ;
-            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
-            if ( FS_input_float( &results[i], first, next-first ) ) results[i]=0. ;
+            if ( (next=memchr( first, ',' , (size_t)(first-end+1) )) == NULL ) next = end ;
+            if ( FS_input_float( &results[i], first, (const size_t)(next-first) ) ) results[i]=0. ;
             ++next ; /* past comma */
         } else { /* assume 0. for absent values */
             results[i] = 0. ;
@@ -880,8 +936,8 @@ static int FS_input_date_array( DATE * const results, const char * const buf, co
     for ( i=0 ; i<=last ; ++i ) {
         if ( next <= end ) {
             first = next ;
-            if ( (next=memchr( first, ',' , first-end+1 )) == NULL ) next = end ;
-            if ( FS_input_date( &results[i], first, next-first ) ) results[i]=now ;
+            if ( (next=memchr( first, ',' , (size_t)(first-end+1) )) == NULL ) next = end ;
+            if ( FS_input_date( &results[i], first, (const size_t)(next-first) ) ) results[i]=now ;
             ++next ; /* past comma */
         } else { /* assume now for absent values */
             results[i] = now ;

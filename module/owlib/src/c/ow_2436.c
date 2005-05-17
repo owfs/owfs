@@ -55,10 +55,10 @@ bWRITE_FUNCTION( FS_w_page ) ;
 struct aggregate A2436 = { 5, ag_numbers, ag_separate,} ;
 struct filetype DS2436[] = {
     F_STANDARD   ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  &A2436, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"volts"     ,    12,  NULL  , ft_float , ft_volatile, {f:FS_volts}    , {v:NULL},      NULL, } ,
-    {"temperature",    12,  NULL , ft_float , ft_volatile, {f:FS_temp}     , {v:NULL},      NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir     , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"pages/page",    32,  &A2436, ft_binary     , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
+    {"volts"     ,    12,  NULL  , ft_float      , ft_volatile, {f:FS_volts}    , {v:NULL},      NULL, } ,
+    {"temperature",    12,  NULL , ft_temperature, ft_volatile, {f:FS_temp}     , {v:NULL},      NULL, } ,
 } ;
 DeviceEntry( 1B, DS2436 )
 
@@ -85,7 +85,6 @@ static int FS_w_page(const unsigned char *buf, const size_t size, const off_t of
 
 static int FS_temp(FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
-    *T = Temperature( *T , pn ) ;
     return 0 ;
 }
 

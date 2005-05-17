@@ -106,7 +106,7 @@ struct filetype DS1923[] = {
     {"pages/page"           , 32,&A1923p,  ft_binary,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
 
 
-    {"temperature"      ,  12, NULL , ft_float   , ft_volatile, {f:FS_r_temperature}     , {v:NULL}        , NULL      , } ,
+    {"temperature"      ,  12, NULL , ft_temperature   , ft_volatile, {f:FS_r_temperature}     , {v:NULL}        , NULL      , } ,
     {"humidity"         ,  12, NULL , ft_float   , ft_volatile, {f:FS_r_humid}    , {v:NULL}        , NULL      , } ,
 
     {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
@@ -313,7 +313,6 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     }
 
     if ( OW_r_temperature( T, delay, pn ) ) return -EINVAL ;
-    *T = Temperature( *T, pn ) ;
     return 0 ;
 }
 

@@ -118,64 +118,64 @@ struct aggregate A1921h = { 63, ag_numbers, ag_mixed, } ;
 struct aggregate A1921m = { 12, ag_numbers, ag_aggregate, } ;
 struct filetype DS1921[] = {
     F_STANDARD              ,
-    {"memory"               ,512,   NULL,  ft_binary,   ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
+    {"memory"               ,512,   NULL,  ft_binary   ,   ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
     
-    {"pages"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"pages/page"           , 32,&A1921p,  ft_binary,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
+    {"pages"                ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"pages/page"           , 32,&A1921p,  ft_binary   ,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
 
-    {"histogram"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"histogram/counts"     ,  6,&A1921h,ft_unsigned, ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,
-    {"histogram/elements"   ,  9,   NULL,ft_unsigned,   ft_static, {u:FS_r_histoelem}  , {v:NULL}           , NULL, } ,
-    {"histogram/gap"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,
-    {"histogram/temperature",  6,&A1921h,   ft_float,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,
+    {"histogram"            ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"histogram/counts"     ,  6,&A1921h,ft_unsigned   , ft_volatile, {u:FS_r_histogram}  , {v:NULL}           , NULL, } ,
+    {"histogram/elements"   ,  9,   NULL,ft_unsigned   ,   ft_static, {u:FS_r_histoelem}  , {v:NULL}           , NULL, } ,
+    {"histogram/gap"        ,  9,   NULL,  ft_tempgap  ,   ft_static, {f:FS_r_histogap}   , {v:NULL}           , NULL, } ,
+    {"histogram/temperature",  6,&A1921h,ft_temperature,   ft_static, {f:FS_r_histotemp}  , {v:NULL}           , NULL, } ,
 
-    {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
-    {"clock/udate"          , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
-    {"clock/running"        ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , &BitReads[4], } ,
+    {"clock"                ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"clock/date"           , 24,   NULL,    ft_date   ,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
+    {"clock/udate"          , 12,   NULL,ft_unsigned   ,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
+    {"clock/running"        ,  1,   NULL,   ft_yesno   ,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , &BitReads[4], } ,
 
-    {"about"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"about/resolution"     ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,
-    {"about/templow"        ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,
-    {"about/temphigh"       ,  9,   NULL,   ft_float,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
-    {"about/version"        , 11,   NULL,   ft_ascii,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
-    {"about/samples"        , 11,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021D, } ,
-    {"about/measuring"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_rbitread}     , {v:NULL}           , &BitReads[0], } ,
+    {"about"                ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"about/resolution"     ,  9,   NULL, ft_tempgap   ,   ft_static, {f:FS_r_resolution} , {v:NULL}           , NULL, } ,
+    {"about/templow"        ,  9,   NULL,ft_temperature,   ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,
+    {"about/temphigh"       ,  9,   NULL,ft_temperature,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
+    {"about/version"        , 11,   NULL,   ft_ascii   ,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
+    {"about/samples"        , 11,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021D, } ,
+    {"about/measuring"      ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_rbitread}     , {v:NULL}           , &BitReads[0], } ,
 
-    {"temperature"          , 12,   NULL,   ft_float, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
+    {"temperature"          , 12,   NULL,ft_temperature, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
 
-    {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , &BitReads[1], } ,
-    {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
-    {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
-    {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
-    {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
-    {"mission/date"         , 24,   NULL,    ft_date, ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
-    {"mission/udate"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_umdate}       , {v:NULL}           , NULL, } ,
-    {"mission/sampling"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[2], } ,
-    {"mission/easystart"    , 12,   NULL,ft_unsigned,   ft_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
+    {"mission"              ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"mission/running"      ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , &BitReads[1], } ,
+    {"mission/frequency"    ,  1,   NULL,   ft_yesno   , ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
+    {"mission/samples"      , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
+    {"mission/delay"        , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
+    {"mission/rollover"     ,  1,   NULL,   ft_yesno   ,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
+    {"mission/date"         , 24,   NULL,    ft_date   , ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
+    {"mission/udate"        , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_umdate}       , {v:NULL}           , NULL, } ,
+    {"mission/sampling"     ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[2], } ,
+    {"mission/easystart"    , 12,   NULL,ft_unsigned   ,   ft_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
 
-    {"overtemp"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"overtemp/date"         , 24,&A1921m,   ft_date , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/udate"        , 12,&A1921m,ft_unsigned, ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/end"          , 24,&A1921m,   ft_date , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/count"        , 12,&A1921m,ft_unsigned, ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/elements"     , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/temperature"  , 12,   NULL,  ft_float ,   ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , (void *)0x020C, } ,
+    {"overtemp"              ,  0,   NULL,  ft_subdir  , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"overtemp/date"         , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , (void *)0x0250, } ,
+    {"overtemp/udate"        , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , (void *)0x0250, } ,
+    {"overtemp/end"          , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , (void *)0x0250, } ,
+    {"overtemp/count"        , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0250, } ,
+    {"overtemp/elements"     , 12,   NULL,ft_unsigned  , ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , (void *)0x0250, } ,
+    {"overtemp/temperature"  , 12,   NULL,ft_temperature,  ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , (void *)0x020C, } ,
 
-    {"undertemp"             ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"undertemp/date"        , 24,&A1921m,   ft_date , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/udate"       , 12,&A1921m,ft_unsigned, ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/end"         , 24,&A1921m,   ft_date , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/count"       , 12,&A1921m,ft_unsigned, ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/elements"    , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/temperature" , 12,   NULL,  ft_float ,   ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , (void *)0x020C, } ,
+    {"undertemp"             ,  0,   NULL,  ft_subdir  , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"undertemp/date"        , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , (void *)0x0220, } ,
+    {"undertemp/udate"       , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , (void *)0x0220, } ,
+    {"undertemp/end"         , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , (void *)0x0220, } ,
+    {"undertemp/count"       , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0220, } ,
+    {"undertemp/elements"    , 12,   NULL,ft_unsigned  , ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , (void *)0x0220, } ,
+    {"undertemp/temperature" , 12,   NULL,ft_temperature,  ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , (void *)0x020C, } ,
 
-    {"log"                  ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"log/temperature"      ,  5,&A1921l,   ft_float, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,
-    {"log/date"             , 24,&A1921l,   ft_date , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,
-    {"log/udate"            , 12,&A1921l,ft_unsigned, ft_volatile, {u:FS_r_logudate}   , {v:NULL}           , NULL, } ,
-    {"log/elements"         , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_logelements}  , {v:NULL}           , NULL, } ,
+    {"log"                  ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"log/temperature"      ,  5,&A1921l,ft_temperature, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,
+    {"log/date"             , 24,&A1921l,   ft_date    , ft_volatile, {d:FS_r_logdate}    , {v:NULL}           , NULL, } ,
+    {"log/udate"            , 12,&A1921l,ft_unsigned   , ft_volatile, {u:FS_r_logudate}   , {v:NULL}           , NULL, } ,
+    {"log/elements"         , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_logelements}  , {v:NULL}           , NULL, } ,
 
     {"set_alarm"            ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
     {"set_alarm/trigger"    ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,//
@@ -283,9 +283,9 @@ static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
     if ( v==NULL ) return -EINVAL ;
     if ( pn->extension < 0 ) { /* ALL */
         int i ;
-        for ( i=0 ; i<63 ; ++i ) h[i] = Temperature(v->histolow + 4*i*v->resolution,pn) ;
+        for ( i=0 ; i<63 ; ++i ) h[i] = v->histolow + 4*i*v->resolution ;
     } else { /* element */
-        h[0] = Temperature(v->histolow + 4*(pn->extension)*v->resolution,pn) ;
+        h[0] = v->histolow + 4*(pn->extension)*v->resolution ;
     }
     return 0 ;
 }
@@ -293,7 +293,7 @@ static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
 static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *g = TemperatureGap(v->resolution*4,pn) ;
+    *g = v->resolution*4 ;
     return 0 ;
 }
 static int FS_r_histoelem(unsigned int * u , const struct parsedname * pn) {
@@ -314,21 +314,21 @@ static int FS_r_version(char *buf, const size_t size, const off_t offset , const
 static int FS_r_resolution(FLOAT * r , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *r = TemperatureGap(v->resolution,pn) ;
+    r[0] = v->resolution ;
     return 0 ;
 }
 
 static int FS_r_rangelow(FLOAT * rl , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *rl = Temperature(v->rangelow,pn) ;
+    rl[0] = v->rangelow ;
     return 0 ;
 }
 
 static int FS_r_rangehigh(FLOAT * rh , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    *rh = Temperature(v->rangehigh,pn) ;
+    rh[0] = v->rangehigh ;
     return 0 ;
 }
 
@@ -339,7 +339,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     if ( v==NULL ) return -EINVAL ;
     if ( OW_MIP(pn) ) return -EBUSY ; /* Mission in progress */
     if ( OW_temperature( &temp , v->delay, pn ) ) return -EINVAL ;
-    T[0] = Temperature( (FLOAT)temp * v->resolution + v->histolow,pn ) ;
+    T[0] = (FLOAT)temp * v->resolution + v->histolow ;
     return 0 ;
 }
 
@@ -392,7 +392,7 @@ static int FS_r_alarmtemp(FLOAT * T , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_r_mem(data,1,(size_t)(pn->ft->data),pn) ) return -EINVAL ;
-    T[0] = Temperature( (FLOAT)data[0] * v->resolution + v->histolow,pn ) ;
+    T[0] = (FLOAT)data[0] * v->resolution + v->histolow ;
     return 0 ;
 }
 
@@ -402,7 +402,7 @@ static int FS_w_alarmtemp(const FLOAT * T , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_MIP(pn) ) return -EBUSY ;
-    data[0] = ( fromTemperature(T[0],pn) - v->histolow ) / v->resolution ;
+    data[0] = ( T[0] - v->histolow ) / v->resolution ;
     return ( OW_w_mem(data,1,(size_t)(pn->ft->data),pn) ) ? -EINVAL : 0 ;
 }
 

@@ -305,7 +305,20 @@ enum fl_funny { fl_zero, fl_type, fl_store, fl_pidfile } ;
      If properties, they can be integer, text, etc or special directory types.
      There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
 */
-enum ft_format { ft_directory, ft_subdir, ft_integer, ft_unsigned, ft_float, ft_ascii, ft_binary, ft_yesno, ft_date, ft_bitfield, } ;
+enum ft_format {
+    ft_directory,
+    ft_subdir,
+    ft_integer,
+    ft_unsigned,
+    ft_float,
+    ft_ascii,
+    ft_binary,
+    ft_yesno,
+    ft_date,
+    ft_bitfield,
+    ft_temperature,
+    ft_tempgap,
+} ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
 enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, ft_persistent, } ;
 
