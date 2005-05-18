@@ -156,45 +156,47 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
     void * v ;
     /* Embedded function */
     void * Check2( void * vp ) {
-        struct parsedname *pn1 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int eret;
-        memcpy( &pnnext, pn1 , sizeof(struct parsedname) ) ;
-	si.sg = pn1->si->sg ;   // reuse cacheon, tempscale etc
+
+        (void) vp ;
+        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
+        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn1->in->next ;
-	eret = CheckPresence_low(&pnnext) ;
+        pnnext.in = pn->in->next ;
+        eret = CheckPresence_low(&pnnext) ;
         pthread_exit((void *)eret);
-	return (void *)eret;
+        return (void *)eret;
     }
+    
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
+        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, NULL ) ;
     }
 #endif /* OW_MT */
     //printf("CheckPresence_low:\n");
     if(get_busmode(pn->in) == bus_remote) {
-      //printf("CheckPresence_low: call ServerPresence\n");
-      ret = ServerPresence(pn) ;
-      if(ret >= 0) {
-	/* Device was found on this in-device, return it's index */
-	ret = pn->in->index;
-      } else {
-	ret = -1;
-      }
+        //printf("CheckPresence_low: call ServerPresence\n");
+        ret = ServerPresence(pn) ;
+        if(ret >= 0) {
+            /* Device was found on this in-device, return it's index */
+            ret = pn->in->index;
+        } else {
+            ret = -1;
+        }
       //printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
     } else {
-      //printf("CheckPresence_low: call BUS_normalverify\n");
-      /* this can only be done on local busses */
-      BUSLOCK(pn)
-      ret = BUS_normalverify(pn) ;
-      BUSUNLOCK(pn)
-      if(ret == 0) {
-	/* Device was found on this in-device, return it's index */
-	ret = pn->in->index;
-      } else {
-	ret = -1;
-      }
+        //printf("CheckPresence_low: call BUS_normalverify\n");
+        /* this can only be done on local busses */
+        BUSLOCK(pn)
+            ret = BUS_normalverify(pn) ;
+        BUSUNLOCK(pn)
+        if(ret == 0) {
+            /* Device was found on this in-device, return it's index */
+            ret = pn->in->index;
+        } else {
+            ret = -1;
+        }
       //printf("CheckPresence_low: BUS_normalverify(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
     }
     //printf("CheckPresence_low: pn->in->index=%d ret=%d\n", pn->in->index, ret);

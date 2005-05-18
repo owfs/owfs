@@ -15,23 +15,29 @@ $Id$
 #include "ow.h"
 
 const struct option owopts_long[] = {
-    {"device",    required_argument,NULL,'d'},
-    {"usb",       optional_argument,NULL,'u'},
-    {"help",      no_argument,      NULL,'h'},
-    {"port",      required_argument,NULL,'p'},
-    {"server",    required_argument,NULL,'s'},
-    {"readonly",  required_argument,NULL,'r'},
-    {"write",     required_argument,NULL,'w'},
-    {"Celsius",   no_argument,      NULL,'C'},
-    {"Fahrenheit",no_argument,      NULL,'F'},
-    {"Kelvin",    no_argument,      NULL,'K'},
-    {"Rankine",   no_argument,      NULL,'R'},
-    {"version",   no_argument,      NULL,'V'},
-    {"format",    required_argument,NULL,'f'},
-    {"fuse-opt",  required_argument,NULL,260},
-    {"pid-file",  required_argument,NULL,'P'},
-    {"background",no_argument,&background, 1},
-    {"foreground",no_argument,&background, 0},
+    {"device",     required_argument,NULL,'d'},
+    {"usb",        optional_argument,NULL,'u'},
+    {"help",       no_argument,      NULL,'h'},
+    {"port",       required_argument,NULL,'p'},
+    {"server",     required_argument,NULL,'s'},
+    {"readonly",   required_argument,NULL,'r'},
+    {"write",      required_argument,NULL,'w'},
+    {"Celsius",    no_argument,      NULL,'C'},
+    {"Fahrenheit", no_argument,      NULL,'F'},
+    {"Kelvin",     no_argument,      NULL,'K'},
+    {"Rankine",    no_argument,      NULL,'R'},
+    {"version",    no_argument,      NULL,'V'},
+    {"format",     required_argument,NULL,'f'},
+    {"pid-file",   required_argument,NULL,'P'},
+    {"background", no_argument,&background, 1},
+    {"foreground", no_argument,&background, 0},
+    {"fuse-opt",   required_argument,NULL,260}, /* owfs */
+    {"RPC_program",required_argument,NULL,261}, /* ownfsd */
+    {"NFS_version",required_argument,NULL,262}, /* ownfsd */
+    {"tcp_only",   no_argument,      NULL,263}, /* ownfsd */
+    {"udp_only",   no_argument,      NULL,264}, /* ownfsd */
+    {"NFS_port",   required_argument,NULL,265}, /* ownfsd */
+    {"mount_port", required_argument,NULL,266}, /* ownfsd */
     {0,0,0,0},
 } ;
 
@@ -88,16 +94,16 @@ int owopt( const int c , const char * const arg ) {
         readonly = 0 ;
         return 0 ;
     case 'C':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
         return 0 ;
     case 'F':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit) ;
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit) ;
         return 0 ;
     case 'R':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine) ;
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine) ;
         return 0 ;
     case 'K':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin) ;
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin) ;
         return 0 ;
     case 'V':
         printf("libow version:\n\t" VERSION "\n") ;
@@ -121,14 +127,23 @@ int owopt( const int c , const char * const arg ) {
         return 0 ;
     case 'P':
         if ( arg==NULL || strlen(arg)==0 ) {
-              fprintf(stderr,"No PID file specified\n") ;
-              return 1 ;
+            fprintf(stderr,"No PID file specified\n") ;
+            return 1 ;
         } else if ( (pid_file=strdup(arg)) == NULL ) {
             fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
             return 1 ;
         }
         return 0 ;
     case 260: /* fuse-opt */
+    case 261:
+    case 262:
+    case 263:
+    case 264:
+    case 265:
+    case 266:
+    case 267:
+    case 268:
+    case 269:
     case 0:
         return 0 ;
     default:
