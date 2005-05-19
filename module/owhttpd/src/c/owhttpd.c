@@ -57,7 +57,7 @@ static void exit_handler(int i) {
 }
 
 int main(int argc, char *argv[]) {
-    char c ;
+    int c ;
 
     /* grab our executable name */
     if (argc > 0) progname = strdup(argv[0]);

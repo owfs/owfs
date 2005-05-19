@@ -35,8 +35,8 @@ pthread_t main_threadid ;
 static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
       if(ftp_listener.fd) {
-	syslog(LOG_INFO, "Waiting for all connections to finish");
-	ftp_listener_stop(&ftp_listener);
+    syslog(LOG_INFO, "Waiting for all connections to finish");
+    ftp_listener_stop(&ftp_listener);
       }
       syslog(LOG_INFO, "FTP server exiting, all connections finished");
       LibClose() ;
@@ -53,7 +53,7 @@ extern pthread_mutex_t time_lock ;
 extern pthread_mutex_t passive_lock ;
 
 int main(int argc, char *argv[]) {
-    char c ;
+    int c ;
     int max_clients;
     int log_facility;
     char *address;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
             "Usage: %s ttyDevice [options] \n"
             "   or: %s [options] -d ttyDevice \n"
             "    -p port   -- Listen port for ftp server (default %s)\n" ,
-		    progname, progname, DEFAULT_PORTNAME) ;
+            progname, progname, DEFAULT_PORTNAME) ;
             break ;
         case 'V':
             fprintf(stderr,
@@ -112,8 +112,8 @@ int main(int argc, char *argv[]) {
     /* no port was defined, so listen on default port instead */
     if(!outdevices) {
       if(OW_ArgServer( DEFAULT_PORTNAME )) {
-	fprintf(stderr, "Error using default address\n");
-	ow_exit(1);
+    fprintf(stderr, "Error using default address\n");
+    ow_exit(1);
       }
     }
     if(ServerAddr(outdevice)<0) {
@@ -162,9 +162,9 @@ int main(int argc, char *argv[]) {
                            &err))
     {
         fprintf(stderr, "error initializing FTP listener on port %s:%d; %s\n",
-		address,port, error_get_desc(&err));
+        address,port, error_get_desc(&err));
         syslog(LOG_ERR, "error initializing FTP listener on port %s:%d; %s",
-	       address, port, error_get_desc(&err));
+           address, port, error_get_desc(&err));
         exit(1);
     }
 

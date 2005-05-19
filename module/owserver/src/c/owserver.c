@@ -226,7 +226,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
     char * retbuffer = NULL ;
 //printf("ReadHandler:\n");
     if ( ( pn->type != pn_real )   /* stat, sys or set dir */
-	 && ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) )) {
+     && ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) )) {
         //printf("ReadHandler: call ServerSize pn->path=%s\n", pn->path);
         cm->payload = ServerSize(pn->path, pn) ;
     } else {
@@ -374,16 +374,16 @@ static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const
 
     if((pn->type == pn_real) && !(pn->state & pn_bus)) {
       if(Cache_Get_Device(&bus_nr, pn)) {
-	//printf("Cache_Get_Device didn't find bus_nr\n");
-	bus_nr = CheckPresence(pn);
-	if(bus_nr >= 0) {
-	  //printf("PresenceHandler(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
-	  Cache_Add_Device(bus_nr, pn);
-	} else {
-	  //printf("PresenceHandler(%s) didn't find device\n", pn->path);
-	}
+    //printf("Cache_Get_Device didn't find bus_nr\n");
+    bus_nr = CheckPresence(pn);
+    if(bus_nr >= 0) {
+      //printf("PresenceHandler(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
+      Cache_Add_Device(bus_nr, pn);
+    } else {
+      //printf("PresenceHandler(%s) didn't find device\n", pn->path);
+    }
       } else {
-	//printf("Cache_Get_Device found bus! %d\n", bus_nr);
+    //printf("Cache_Get_Device found bus! %d\n", bus_nr);
       }
       cm->ret = bus_nr ;
     } else {
@@ -394,7 +394,7 @@ static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const
 
 
 int main( int argc , char ** argv ) {
-    char c ;
+    int c ;
 
     /* grab our executable name */
     if (argc > 0) progname = strdup(argv[0]);
