@@ -27,7 +27,7 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low
+AM_LDFLAGS = -low $(FUSE_LIBS)
 
 clean-generic:
 
