@@ -48,11 +48,9 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\"
 	
 
-AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) $(TCL_SHLIB_CFLAGS)
+AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) -low
 
-SHLIB_LD = $(TCL_SHLIB_LD)
-
-LIBS = -low
+#SHLIB_LD = $(TCL_SHLIB_LD) -low $(LIBS)
 
 clean-generic:
 

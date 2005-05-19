@@ -78,70 +78,67 @@ owtcl_ObjCmdProc(Owtcl_Connect)
     Tcl_WrongNumArgs(interp,
 		     objc,
 		     objv,
-		     "/dev/ttyS0|usb?N?|u?N?|host:port|socket:/local-socket-path ?options?");
+		     "/dev/ttyS0|usb?N?|u?N?|host:port|socket:/local-socket-path ?...? ?options?");
     tcl_return = TCL_ERROR;
     goto common_exit;
-  }
-
-  for (objix=2; objix<objc; objix++) {
-    arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-    if (!strncasecmp(arg, "-format", 7)) {
-      objix++;
-      arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-      if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
-      else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
-      else if (!strcasecmp(arg,"f.i.c")) set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
-      else if (!strcasecmp(arg,"f.ic"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
-      else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
-      else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
-      else {
-	owtcl_ErrorMsg(interp, "bad format \"%s\": should be one of f.i, fi, f.i.c, f.ic, fi.c or fic\n",arg);
-	tcl_return = TCL_ERROR;
-	goto common_exit;
-      }
-    } else if (!strncasecmp(arg, "-celsius", 8)) {
-      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
-    } else if (!strncasecmp(arg, "-fahrenheit", 11)) {
-      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
-    } else if (!strncasecmp(arg, "-kelvin", 7)) {
-      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
-    } else if (!strncasecmp(arg, "-rankine", 8)) {
-      set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
-    } else if (!strncasecmp(arg, "-cache", 6)) {
-      objix++;
-      Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));
-    } else if (!strncasecmp(arg, "-readonly", 9)) {
-      readonly = 1;
-    } else {
-      owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache or -readonly\n", arg);
-      tcl_return = TCL_ERROR;
-      goto common_exit;
-    }
   }
 
   LibSetup();
   background = 0 ;
   pid_file = 0 ;
-  con_str = Tcl_GetStringFromObj(objv[1], &con_len);
-  //  if ( busmode != bus_unknown ) {
-  //    owtcl_ErrorMsg(interp, "owlib is busy");
-  //    tcl_return = TCL_ERROR;
-  //    goto common_exit;
-  //  } else
-  if (strrchr(con_str,':')) {
-    if (!strncasecmp(con_str, "socket:", 7))
-      OW_ArgNet(&con_str[7]);
-    else
-      OW_ArgNet(con_str);
-  } else if (!strncasecmp(con_str, "usb", 3) || !strncasecmp(con_str, "u", 1)) {
-    char *p = con_str;
-    while (*p != '\0') {
-      if ((*p >= '0') && (*p <= '9')) break;
-      p++;
+
+  for (objix=1; objix<objc; objix++) {
+    arg = Tcl_GetStringFromObj(objv[objix], &con_len);
+    if (!strncasecmp(arg, "-", 1)) {
+      if (!strncasecmp(arg, "-format", 7)) {
+        objix++;
+        arg = Tcl_GetStringFromObj(objv[objix], &con_len);
+        if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+        else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+        else if (!strcasecmp(arg,"f.i.c")) set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+        else if (!strcasecmp(arg,"f.ic"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+        else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+        else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
+        else {
+  	  owtcl_ErrorMsg(interp, "bad format \"%s\": should be one of f.i, fi, f.i.c, f.ic, fi.c or fic\n",arg);
+	  tcl_return = TCL_ERROR;
+	  goto common_exit;
+        }
+      } else if (!strncasecmp(arg, "-celsius", 8)) {
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+      } else if (!strncasecmp(arg, "-fahrenheit", 11)) {
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
+      } else if (!strncasecmp(arg, "-kelvin", 7)) {
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
+      } else if (!strncasecmp(arg, "-rankine", 8)) {
+        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
+      } else if (!strncasecmp(arg, "-cache", 6)) {
+        objix++;
+        Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));
+      } else if (!strncasecmp(arg, "-readonly", 9)) {
+        readonly = 1;
+      } else {
+        owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache or -readonly\n", arg);
+        tcl_return = TCL_ERROR;
+        goto common_exit;
+      }
+    } else {
+      if (strrchr(arg,':')) {
+	if (!strncasecmp(arg, "socket:", 7))
+	  OW_ArgNet(&arg[7]);
+	else
+	  OW_ArgNet(arg);
+      } else if (!strncasecmp(arg, "usb", 3) || !strncasecmp(arg, "u", 1)) {
+	char *p = arg;
+	while (*p != '\0') {
+	  if ((*p >= '0') && (*p <= '9')) break;
+	  p++;
+	}
+	OW_ArgUSB(p);
+      } else {
+	OW_ArgSerial(arg);
+      }
     }
-    OW_ArgUSB(p);
-  } else {
-    OW_ArgSerial(con_str);
   }
 
   if (LibStart()) {

@@ -239,7 +239,7 @@ Owtcl \- OWFS library access commands for Tcl
 .SH SYNOPSIS
 \fBpackage \fBrequire \fBow
 .sp
-\fB::OW::init\fI \fIinterface \fR?\fIoptions\fR?
+\fB::OW::init\fI \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
 .br
 \fB::OW::finish
 .br
@@ -271,7 +271,7 @@ and support for new devices, will progress with those projects.
 .SH LOW-LEVEL COMMANDS
 The following low-level commands are possible:
 .TP
-\fB::OW::init \fIinterface \fR?\fIoptions\fR?
+\fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
 Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR defines a way of
 connection to the 1-wire bus. Possible values:
 .RS
