@@ -31,6 +31,7 @@ const struct option owopts_long[] = {
     {"pid-file",   required_argument,NULL,'P'},
     {"background", no_argument,&background, 1},
     {"foreground", no_argument,&background, 0},
+    {"morehelp",   no_argument,      NULL,259},
     {"fuse-opt",   required_argument,NULL,260}, /* owfs */
     {"RPC_program",required_argument,NULL,261}, /* ownfsd */
     {"NFS_version",required_argument,NULL,262}, /* ownfsd */
@@ -71,6 +72,7 @@ int owopt( const int c , const char * const arg ) {
         "    --foreground --background(default)\n"
         "    -P --pid-file filename     put the PID of this program into filename\n"
         "    -V --version\n"
+        "    --morehelp   another page of less common command line switches\n"
         ) ;
         return 1 ;
         return 0 ;
@@ -134,6 +136,12 @@ int owopt( const int c , const char * const arg ) {
             return 1 ;
         }
         return 0 ;
+    case 259:
+        fprintf(stderr,
+                        "    --help       main help page
+                        "    --morehelp   this page of less common command line switches\n"
+               ) ;
+        return 1 ;
     case 260: /* fuse-opt */
     case 261:
     case 262:
