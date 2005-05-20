@@ -15,11 +15,28 @@
 .SH SYNOPSIS
 .B owfs
 [
-.I \-f
-f[.]i[[.]c]
+.I \-C
+|
+.I \-F
+|
+.I \-K
+|
+.I \-R
 ] [
-.I \-t
-timeout [
+.I \-r
+|
+.I \- w
+]
+.I \-d
+serialport |
+.I \-u
+|
+.I \-s
+host:port
+.I mountpoint
+.br
+.B owfs
+[
 .I \-C
 |
 .I \-F
@@ -32,26 +49,40 @@ timeout [
 |
 .I \- w
 ] [
+.I \-f
+f[.]i[[.]c]
+] [
+.I \-t
+timeout ] [
 .I \-\-background
 |
 .I \-\-foreground
 ] [
 .I \-P \-\-pid-file
 filename
-]
+] [
+.I \-\-error_print
+0|1|2|3
+] [
+.I \-\-error_level
+0|1|2|3 ]
 .I \-d
 serialport |
 .I \-u
 |
 .I \-s
-host:port [
+host:port
 .I mountpoint
 .br
 .B owfs
 .I \-V \-\-version
 .br
 .B owfs
-.I \-h
+.I \-h | \-\-help
+.br
+.B owfs
+.I \-\-morehelp
+
 .SH "DESCRIPTION"
 .B owfs
 is a user-space (virtual) filesystem that shows the Dallas/Maxim 1-Wire bus with all the 1-wire devices that are attached. Devices are main directory entries, and each device is in turn a directory of its properties (like ID, memory, temperature, voltage). These files are generated on the fly whenever a 1-wire device is accessed. 1-wire devices are uniquely labeled at the factory. This unique ID is the directory name for that device. The files for each device vary with the type of device. The names are pretty self-explanatory, and there is extensive documentation.
@@ -62,30 +93,96 @@ hides the details of the low-level 1-wire protocol with a file-system metaphor.
 .PP
 To speed data access,
 .I owfs
-can cache recently accessed data, and device listings. 
-There is optional data caching. Which can speed repeated access to the same 1-wire properties (but is potentially confusing). Use the uncached directory to see immediate values.
+can cache recently accessed data, and device listings.
+There is optional data caching. Which ca.TP
+n speed repeated access to the same 1-wire properties (but is potentially confusing). Use the uncached directory to see immediate values.
 .TP
 The underlying interface to the 1-wire bus is identical to OWHTTPD -- the 1-wire web server. Only the top layer has been modified to serve files instead of web pages. Development here, and support for new devices, will progress with that project.
 .TP
 The 1-wire file system is a modified version of fuse examples by Miklos Szeredi. Th, and serves no files. Security should therefore be good. Only the 1-wire bus is at risk. The fuse library and kernel module is needed. (See http://fuse.sourceforge.net)
 
-.SH OPTIONS
+.SH COMMON OPTIONS
 .SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
 Temperature scale used for data output. Celsius is the default.
+.SS \-r \-\-readonly
+.SS \-w \-\-write
+Do we allow writing to the 1-wire bus (writing memory, setting switches, limits, PIOs)? The
+.I write
+option is available for symetry, it's the default.
 .SS \-d \-\-device "deviceport"
-Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples). 
+Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples).
 .br
-Note: multiple instances of 
+Note: multiple instances of
 .I -d, -u, -s
 are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
+.SS \-s [host:]port
+Connect via tcp (network) to an
+.I owserver
+process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The
+.I owserver
+process can be local, or remote.
+.br
+Note: multiple instances of
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
+.SS \-u \-\-usb
+Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
+.br
+Note: multiple instances of
+.I -d, -u, -s
+are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
+.SH HELP OPTIONS
+.SS \-h \-\-help
+Shows basic summary of options.
+.SS \-\-morehelp
+Show less common options.
+.SS \-V \-\-version
+.I Version
+of this program and related libraries.
+.SH OTHER OPTIONS
+.SS \-\-background | \-\-foreground
+Whether the program releases the console and runs in the
+\.I background
+after evaluating command line options.
+.I background
+is the default.
+.SS \-\-error_print
+.TP
+.I 0
+default mixed destination: stderr foreground / syslog background
+.TP
+.I 1
+syslog only
+.TP
+.I 2
+stderr only
+.TP
+.I 3
+dev/null (supress all).
+.SS \-\-error_level
+.TP
+.I 0
+default errors only
+.TP
+.I 1
+connections/disconnections
+.TP
+.I 2
+all high level calls
+.TP
+.I 3
+data summary for each call
 .SS \-f \-\-format "f[.]i[[.]c]"
-Display format for the 1-wire devices. Each device has a 8byte address, consisting of 1byte
+Display format for the 1-wire devices. Each device has a 8byte address, consisting of:
+.TP
 .I f
-amily code, 6 byte
+family code, 1 byte
+.TP
 .I I
-D number, and 1 byte
+ID number, 6 bytes
+.TP
 .I C
-RC checksum.
+CRC checksum, 1 byte
 .PP
 Possible formats are
 .I f.i
@@ -95,44 +192,24 @@ and
 .I fi.c
 .PP
 All formats are accepted as input, but the output will be in the specified format.
-.SS \-h \-\-help
-Shows this summary of options.
-.SS \-t \-\-timeout "seconds"
-Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default.
-.SS \-s [host:]port
-Connect via tcp (network) to an 
-.I owserver
-process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The 
-.I owserver
-process can be local, or remote.
-.br
-Note: multiple instances of 
-.I -d, -u, -s
-are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
-.SS \-u \-\-usb
-Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
-.br
-Note: multiple instances of 
-.I -d, -u, -s
-are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
-.SS \-\-background | \-\-foreground
-Whether the program releases the console and runs in the
-\.I background
-after evaluating command line options.
-.I background
-is the default.
-.SS \-V \-\-version
-.I Version
-of this program and related libraries.
-.SS \-P \-\-pid-file "filename"
-Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.
 .SS \-\-fuse-opt "options"
 Sends options to the fuse-mount process. Options should be quoted, e.g. "-x" (which allows others to mount this directory).
+.SS \-P \-\-pid-file "filename"
+Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.
+.SS \-t \-\-timeout "seconds"
+Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default.
 .SH EXAMPLE
-owfs -d /dev/ttyS0 /mnt/1wire
 .TP
-owfs /dev/ttyS0 /mnt/1wire
-
+owfs -d /dev/ttyS0 /mnt/1wire
+Adapter on serial port
+.TP
+owfs -F -u /mnt/1wire
+USB adapter, temperatures reported in Fahrenheit
+.TP
+owfs -s 10.0.1.2:3001 /mnt/1wire
+Connect to a OWFS server process (
+.I owserver
+) that was started on another machine at tcp port 3001
 .SH NOTES
 See http://owfs.sourceforge.net for the current version.
 
