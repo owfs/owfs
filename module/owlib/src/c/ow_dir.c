@@ -307,12 +307,12 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         int eret;
         memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
-	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
+        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
         pnnext.in = pn2->in->next ;
         eret = FS_dir_seek(dirfunc,&pnnext,flags) ;
         pthread_exit((void *)eret);
-	return (void *)eret;
+        return (void *)eret;
     }
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
@@ -331,14 +331,14 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         ret = ServerDir(dirfunc,&pncopy,flags) ;
     } else { /* local bus */
         if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-	  //printf("FS_dir_seek: Call FS_alarmdir %s\n", pncopy.path);
+            //printf("FS_dir_seek: Call FS_alarmdir %s\n", pncopy.path);
             ret = FS_alarmdir(dirfunc,&pncopy) ;
         } else {
             if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
-	      //printf("FS_dir_seek: call FS_realdir bus %d\n", pncopy.in->index);
-	        ret = FS_realdir( dirfunc, &pncopy, flags ) ;
+                //printf("FS_dir_seek: call FS_realdir bus %d\n", pncopy.in->index);
+                 ret = FS_realdir( dirfunc, &pncopy, flags ) ;
             } else {
-	      //printf("FS_dir_seek: call FS_cache2real bus %d\n", pncopy.in->index);
+                //printf("FS_dir_seek: call FS_cache2real bus %d\n", pncopy.in->index);
                 ret = FS_cache2real( dirfunc, &pncopy, flags ) ;
             }
         }
@@ -481,12 +481,12 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
         while (ret==0) {
             char ID[] = "XX";
 #if 0
-	    {
-	      char tmp[17];
-	      bytes2string(tmp, sn, 8) ;
-	      tmp[16] = 0;
-	      printf("FS_realdir: add sn=%s to bus=%d\n", tmp, pn2->in->index);
-	    }
+            {
+                char tmp[17];
+                bytes2string(tmp, sn, 8) ;
+                tmp[16] = 0;
+                printf("FS_realdir: add sn=%s to bus=%d\n", tmp, pn2->in->index);
+            }
 #endif
             Cache_Add_Dir(sn,dindex,pn2) ;
             ++dindex ;
@@ -497,11 +497,11 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
             FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
 //printf("DIR adapter=%d, element=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",pn2->in->index,dindex,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7]);
 
-	    /* dirfunc() may need to call FS_fstat() and that will make a
-	       checkpresence and BUS_lock if bus_nr isn't cached here at
-	       once. Deadlock will occour. (owftpd needs it)
-	    */
-	    Cache_Add_Device(pn2->in->index, pn2);
+            /* dirfunc() may need to call FS_fstat() and that will make a
+                checkpresence and BUS_lock if bus_nr isn't cached here at
+                once. Deadlock will occour. (owftpd needs it)
+            */
+            Cache_Add_Device(pn2->in->index, pn2);
 
             DIRLOCK
                 dirfunc( pn2 ) ;

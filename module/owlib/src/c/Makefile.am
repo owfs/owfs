@@ -61,6 +61,7 @@ OWLIB_SOURCE = ow_xxxx.c         \
                ow_locks.c        \
                ow_opt.c          \
                owlib.c           \
+               error.c           \ 
                globals.c
 
 lib_LTLIBRARIES = libow.la

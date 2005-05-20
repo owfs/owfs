@@ -1034,6 +1034,14 @@ int BUS_readin_data(unsigned char * const data , const int len, const struct par
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
+/* error functions */
+void err_ret(const char *fmt, ...) ;
+void err_sys(const char *fmt, ...) ;
+void err_dump(const char *fmt, ...) ;
+void err_msg(const char *fmt, ...) ;
+void err_quit(const char *fmt, ...) ;
+
+
 #define BUS_detect        DS2480_detect
 #define BUS_changebaud    DS2480_changebaud
 #define BUS_reset(pn)                       ((pn)->in->iroutines.reset)(pn)
