@@ -415,7 +415,7 @@ static int DS1410_reset( const struct parsedname * const pn ) {
     c = RESET() ;
     switch(c) {
     case 0:
-        syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
+        LEVEL_CONNECT("1-wire bus short circuit.\n")
         /* fall through */
     case 0xF0:
         if (pn) pn->si->AnyDevices = 0 ;

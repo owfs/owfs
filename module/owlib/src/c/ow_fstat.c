@@ -59,10 +59,11 @@ int FS_fstat(const char *path, struct stat *stbuf) {
     return ret ;
 }
 
-/* Fstat with paserdname already done */
+/* Fstat with parsedname already done */
 int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
     memset(stbuf, 0, sizeof(struct stat));
 
+    LEVEL_CALL("ATTRIBUTES path=%s\n",pn->path)
     if( (pn->state & pn_bus) && !find_connection_in(pn->bus_nr)) {
         /* check for presence of first in-device at least since FS_ParsedName
         * doesn't do it yet. */

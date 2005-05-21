@@ -82,7 +82,7 @@ int owopt( const int c , const char * const arg ) {
 //printf("OPT usb arg=%s\n",arg);
         return OW_ArgUSB( arg ) ;
 #else /* OW_USB */
-        fprintf(stderr,"Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n") ;
+        LEVEL_DEFAULT("Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n")
         return 1 ;
 #endif /* OW_USB */
     case 'd':
@@ -124,13 +124,13 @@ int owopt( const int c , const char * const arg ) {
         else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
         else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
         else {
-             fprintf(stderr,"Unrecognized format type %s\n",arg);
+             LEVEL_DEFAULT("Unrecognized format type %s\n",arg)
              return 1 ;
         }
         return 0 ;
     case 'P':
         if ( arg==NULL || strlen(arg)==0 ) {
-            fprintf(stderr,"No PID file specified\n") ;
+            LEVEL_DEFAULT("No PID file specified\n")
             return 1 ;
         } else if ( (pid_file=strdup(arg)) == NULL ) {
             fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
@@ -170,7 +170,7 @@ int owopt( const int c , const char * const arg ) {
 int OW_ArgNet( const char * arg ) {
     struct connection_in * in = NewIn() ;
     if ( in==NULL ) {
-        fprintf(stderr,"Cannot allocate memory for network struct\n") ;
+        LEVEL_DEFAULT("Cannot allocate memory for network struct\n")
         return 1 ;
     }
     in->name = strdup(arg) ;
@@ -181,7 +181,7 @@ int OW_ArgNet( const char * arg ) {
 int OW_ArgServer( const char * arg ) {
     struct connection_out * out = NewOut() ;
     if ( out==NULL ) {
-        fprintf(stderr,"Cannot allocate memory for server struct\n") ;
+        LEVEL_DEFAULT("Cannot allocate memory for server struct\n")
         return 1 ;
     }
     out->name = strdup(arg) ;
@@ -191,7 +191,7 @@ int OW_ArgServer( const char * arg ) {
 int OW_ArgSerial( const char * arg ) {
     struct connection_in * in = NewIn() ;
     if ( in==NULL ) {
-        fprintf(stderr,"Cannot allocate memory for serial struct\n") ;
+        LEVEL_DEFAULT("Cannot allocate memory for serial struct\n")
         return 1 ;
     }
     in->name = strdup(arg) ;
@@ -202,7 +202,7 @@ int OW_ArgSerial( const char * arg ) {
 int OW_ArgUSB( const char * arg ) {
     struct connection_in * in = NewIn() ;
     if ( in==NULL ) {
-        fprintf(stderr,"Cannot allocate memory for USB struct\n") ;
+        LEVEL_DEFAULT("Cannot allocate memory for USB struct\n")
         return 1 ;
     }
     in->busmode = bus_usb ;
@@ -210,10 +210,10 @@ int OW_ArgUSB( const char * arg ) {
         in->fd = atoi(arg) ;
 //printf("ArgUSB fd=%d\n",in->fd);
         if ( in->fd < 1 ) {
-            fprintf(stderr,"USB option %s implies no USB detection.\n",arg) ;
+            LEVEL_CONNECT("USB option %s implies no USB detection.\n",arg)
             in->fd=0 ;
         } else if ( in->fd>1 ) {
-            syslog(LOG_INFO,"USB adapter %d requested.\n",in->fd) ;
+            LEVEL_CONNECT("USB adapter %d requested.\n",in->fd)
         }
     } else {
         in->fd=1 ;

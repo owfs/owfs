@@ -24,13 +24,12 @@ $Id$
 /* See man page for explanation */
 int error_print = 0 ;
 int error_level = 0 ;
-
+int log_available = 0 ;
 static void    err_doit(int, int, const char *, va_list);
 
 /* Nonfatal error related to system call
  * Print message and return */
-
-void err_ret(const char *fmt, ...) {
+void err_msg(const char *fmt, ...) {
     va_list        ap;
 
     va_start(ap, fmt);
@@ -40,52 +39,23 @@ void err_ret(const char *fmt, ...) {
 }
 
 /* Fatal error related to system call
- * Print message and terminate */
-
-void err_sys(const char *fmt, ...) {
+ * Print message and return */
+void err_bad(const char *fmt, ...) {
     va_list        ap;
 
     va_start(ap, fmt);
     err_doit(1, LOG_ERR, fmt, ap);
     va_end(ap);
-    exit(1);
 }
 
 /* Fatal error related to system call
- * Print message, dump core, and terminate */
-
-void err_dump(const char *fmt, ...) {
-    va_list        ap;
-
-    va_start(ap, fmt);
-    err_doit(1, LOG_ERR, fmt, ap);
-    va_end(ap);
-    abort();        /* dump core and terminate */
-    exit(1);        /* shouldn't get here */
-}
-
-/* Nonfatal error unrelated to system call
  * Print message and return */
-
-void err_msg(const char *fmt, ...) {
+void err_debug(const char *fmt, ...) {
     va_list        ap;
 
     va_start(ap, fmt);
     err_doit(0, LOG_INFO, fmt, ap);
     va_end(ap);
-    return;
-}
-
-/* Fatal error unrelated to system call
- * Print message and terminate */
-
-void err_quit(const char *fmt, ...) {
-    va_list        ap;
-
-    va_start(ap, fmt);
-    err_doit(0, LOG_ERR, fmt, ap);
-    va_end(ap);
-    exit(1);
 }
 
 /* Print message and return to caller
@@ -115,7 +85,7 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap) {
 #ifdef    HAVE_VSNPRINTF
         vsnprintf(buf, MAXLINE, fmt, ap);    /* safe */
 #else
-        vsprintf(buf, fmt, ap);                    /* not safe */
+        vsprintf(buf, fmt, ap);              /* not safe */
 #endif
     UCLIBCUNLOCK
     n = strlen(buf);
@@ -127,10 +97,15 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap) {
 
     strcat(buf, "\n");
 
-    if (sl) {
+    if (sl) {    /* All output to syslog */
+        if ( ! log_available) {
+            openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
+            log_available = 1 ;
+        }
         syslog(level, buf);
     } else {
         fflush(stdout);        /* in case stdout and stderr are the same */
+        fputs((level==LOG_INFO)?"INFO: ":"ERR: ", stderr);
         fputs(buf, stderr);
         fflush(stderr);
     }

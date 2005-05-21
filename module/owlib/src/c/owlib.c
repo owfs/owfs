@@ -17,9 +17,6 @@ int now_background = 0 ;
 
 /* All ow library setup */
 void LibSetup( void ) {
-    /* All output to syslog */
-    openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
-
     /* special resort in case static data (devices and filetypes) not properly sorted */
     DeviceSort() ;
 
@@ -58,14 +55,11 @@ static void catchchild( int sig ) {
 
     pid = wait4(-1, &status, WUNTRACED, 0);
 #if 0
-    {
-      char buf[80] ;
-      if (WIFSTOPPED(status))
-        sprintf(buf, "owlib: %d: Child %d stopped\n", getpid(), pid);
-      else
-        sprintf(buf, "owlib: %d: Child %d died\n", getpid(), pid);
-      syslog(LOG_ERR, buf);
-    }
+    if (WIFSTOPPED(status)) {
+        LEVEL_CONNECT("owlib: %d: Child %d stopped\n", getpid(), pid)
+    } else {
+        LEVEL_CONNECT("owlib: %d: Child %d died\n", getpid(), pid)
+    } 
 #endif /* 0 */
 }
 
@@ -168,7 +162,7 @@ int LibStart( void ) {
     int ret = 0 ;
 
     if ( indevice==NULL ) {
-        fprintf(stderr, "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname);
+        LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname)
         BadAdapter_detect(NewIn()) ;
         return 1;
     }
@@ -181,27 +175,27 @@ int LibStart( void ) {
         {
             /** Actually COM and Parallel */
             if ( (ret=stat( in->name, &s )) ) {
-                syslog( LOG_ERR, "Cannot stat port: %s error=%s\n",in->name,strerror(ret)) ;
+                LEVEL_DEFAULT("Cannot stat port: %s error=%s\n",in->name,strerror(ret))
             } else if ( ! S_ISCHR(s.st_mode) ) {
-                syslog( LOG_INFO , "Not a character device: %s\n",in->name) ;
+                LEVEL_DEFAULT("Not a character device: %s\n",in->name)
                 ret = -EBADF ;
             } else if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
                 ret = errno ;
-                syslog( LOG_ERR,"Cannot open port: %s error=%s\n",in->name,strerror(ret)) ;
+                LEVEL_DEFAULT("Cannot open port: %s error=%s\n",in->name,strerror(ret))
             } else if ( major(s.st_rdev) == 99 ) { /* parport device */
 #ifndef OW_PARPORT
                 ret =  -ENOPROTOOPT ;
 #else /* OW_PARPORT */
                 if ( (ret=DS1410_detect(in)) ) {
-                    syslog(LOG_WARNING, "Cannot detect the DS1410E parallel adapter\n");
+                    LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n")
                 }
 #endif /* OW_PARPORT */
             } else if ( COM_open(in) ) { /* serial device */
                 ret = -ENODEV ;
             } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
-           syslog(LOG_WARNING,"Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
+                LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",in->name)
                 if ( DS9097_detect(in) ) {
-          syslog(LOG_WARNING,"Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
+                    LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n",in->name)
                     ret = -ENODEV ;
                 }
             }
@@ -211,7 +205,7 @@ int LibStart( void ) {
 #ifdef OW_USB
             ret = DS9490_detect(in) ;
 #else /* OW_USB */
-            fprintf(stderr,"Cannot setup USB port. Support not compiled into %s\n",progname);
+            LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname)
             ret = 1 ;
 #endif /* OW_USB */
        // in->name should be set to something, even if DS9490_detect fails
@@ -237,7 +231,7 @@ int LibStart( void ) {
             daemon(1, 0)
 #endif /* defined(__UCLIBC__) */
         ) {
-            fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
+            LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
         now_background = 1;
@@ -257,7 +251,7 @@ int LibStart( void ) {
     if (pid_file) {
         FILE * pid = fopen(  pid_file, "w+" ) ;
         if ( pid == NULL ) {
-            syslog(LOG_WARNING,"Cannot open PID file: %s Error=%s\n",pid_file,strerror(errno) ) ;
+            LEVEL_CONNECT("Cannot open PID file: %s Error=%s\n",pid_file,strerror(errno) )
             free( pid_file ) ;
             pid_file = NULL ;
             return 1 ;
@@ -271,7 +265,7 @@ int LibStart( void ) {
 /* All ow library closeup */
 void LibClose( void ) {
     if ( pid_file ) {
-        if ( unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno)) ;
+        if ( unlink( pid_file ) ) LEVEL_CONNECT("Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno))
         free( pid_file ) ;
         pid_file = NULL ;
     }
@@ -280,7 +274,7 @@ void LibClose( void ) {
 #endif /* OW_CACHE */
     FreeIn() ;
     FreeOut() ;
-    closelog() ;
+    if ( log_available ) closelog() ;
     DeviceDestroy() ;
 
 #ifdef OW_MT
@@ -309,11 +303,9 @@ static void segv_handler(int sig) {
     (void) sig ;
 #ifdef OW_MT
     pthread_t tid = pthread_self() ;
-    fprintf(stderr, "owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid) ;
-    syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d tid=%ld", pid, tid) ;
+    LEVEL_CONNECT("owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid)
 #else /* OW_MT */
-    fprintf(stderr, "owlib: SIGSEGV received... pid=%d\n", pid) ;
-    syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d", pid) ;
+    LEVEL_CONNECT("owlib: SIGSEGV received... pid=%d\n", pid)
 #endif /* OW_MT */
     _exit(1) ;
 }
@@ -329,19 +321,19 @@ void set_signal_handlers( void (*exit_handler)(int errcode) ) {
     if ((sigaction(SIGHUP,  &sa, NULL) == -1) ||
    (sigaction(SIGINT,  &sa, NULL) == -1) ||
    (sigaction(SIGTERM, &sa, NULL) == -1)) {
-        perror("Cannot set exit signal handlers");
+        LEVEL_DEFAULT("Cannot set exit signal handlers")
         exit_handler(-1);
     }
 
     sa.sa_handler = segv_handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1) {
-        perror("Cannot set exit signal handlers");
+        LEVEL_DEFAULT("Cannot set exit signal handlers" )
         exit_handler(-1);
     }
 
     sa.sa_handler = SIG_IGN;
     if(sigaction(SIGPIPE, &sa, NULL) == -1) {
-        perror("Cannot set ignored signals");
+        LEVEL_DEFAULT("Cannot set ignored signals")
         exit_handler(-1);
     }
 }

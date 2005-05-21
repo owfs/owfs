@@ -62,7 +62,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     char * pathnext ;
     int ret ;
 
-    //printf("PARSENAME on %s\n",path);
+    LEVEL_CALL("PARSENAME path=%s\n",path)
+            
     if ( pn == NULL ) return -EINVAL ;
 
     pn->path = NULL ;

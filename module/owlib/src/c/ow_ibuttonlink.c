@@ -28,7 +28,7 @@ int LI_reset( const struct parsedname * const pn )
         break ;
     default:
         pn->si->AnyDevices=0 ;
-        syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
+        LEVEL_CONNECT("1-wire bus short circuit.\n")
     }
     return 0 ;
 }

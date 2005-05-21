@@ -219,7 +219,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     /* embedded function */
     void ToListen( struct connection_out * o ) {
         if ( ServerAddr( o ) || (ServerListen( o )<0) ) {
-            syslog(LOG_WARNING,"Cannot start server = %s\n",o->name);
+            LEVEL_DEFAULT("Cannot start server = %s\n",o->name)
             Exit(1);
         }
     }

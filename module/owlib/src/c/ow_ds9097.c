@@ -153,20 +153,20 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
         } else {
             bits[0] = search_direction ;
             if ( bit_number<64 ) {
-	        /* Send chosen bit path, then check match on next two */
+                /* Send chosen bit path, then check match on next two */
                 if ( (ret=DS9097_sendback_bits(bits,bits,3,pn)) ) {
-		  STATLOCK
-		    DS9097_next_both_errors++;
-		  STATUNLOCK
-		  return ret ;
-		}
+                    STATLOCK
+                        DS9097_next_both_errors++;
+                    STATUNLOCK
+                    return ret ;
+                }
             } else { /* last bit */
                 if ( (ret=DS9097_sendback_bits(bits,bits,1,pn)) ) {
-		  STATLOCK
-		    DS9097_next_both_errors++;
-		  STATUNLOCK
-		  return ret ;
-		}
+                    STATLOCK
+                        DS9097_next_both_errors++;
+                    STATUNLOCK
+                    return ret ;
+                }
                 break ;
             }
         }
@@ -262,21 +262,21 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     cfsetospeed(&term, B9600);
     cfsetispeed(&term, B9600);
     if (tcsetattr(fd, TCSANOW, &term ) < 0 ) {
-      STATLOCK
-      DS9097_reset_tcsetattr_errors++;
-      STATUNLOCK
-      return -EIO ;
+        STATLOCK
+            DS9097_reset_tcsetattr_errors++;
+        STATUNLOCK
+        return -EIO ;
     }
     if ( (ret=BUS_send_and_get(&resetbyte,1,&c,1,pn)) ) {
-      STATLOCK
-      DS9097_reset_errors++;
-      STATUNLOCK
-      return ret ;
+        STATLOCK
+            DS9097_reset_errors++;
+        STATUNLOCK
+        return ret ;
     }
 
     switch(c) {
     case 0:
-        syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
+        LEVEL_CONNECT("1-wire bus short circuit.\n")
         /* fall through */
     case 0xF0:
         if (pn) pn->si->AnyDevices = 0 ;
@@ -303,10 +303,10 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     cfsetospeed(&term, B115200);       /* Set output speed to 115.2k   */
 
     if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
-      STATLOCK
-      DS9097_reset_tcsetattr_errors++;
-      STATUNLOCK
-      return -EFAULT ;
+        STATLOCK
+            DS9097_reset_tcsetattr_errors++;
+        STATUNLOCK
+        return -EFAULT ;
     }
     /* Flush the input and output buffers */
     COM_flush(pn) ;
@@ -326,9 +326,9 @@ static int DS9097_write( const unsigned char * const bytes, const size_t num, co
     for ( i=0;i<num8;++i) pn->in->combuffer[i] = UT_getbit(bytes,i)?OneBit:ZeroBit;
     ret = BUS_send_and_get(pn->in->combuffer,num8,NULL,0,pn) ;
     if(ret) {
-      STATLOCK
-      DS9097_write_errors++;
-      STATUNLOCK
+        STATLOCK
+            DS9097_write_errors++;
+        STATUNLOCK
     }
     return ret;
 }
@@ -346,10 +346,10 @@ static int DS9097_read( unsigned char * const byte, const size_t num, const stru
         return DS9097_read( byte, UART_FIFO_SIZE>>3,pn ) || DS9097_read( &byte[UART_FIFO_SIZE>>3],remain,pn) ;
     }
     if ( (ret=BUS_send_and_get(NULL,0,pn->in->combuffer,num8,pn)) ) {
-      STATLOCK
-      DS9097_read_errors++;
-      STATUNLOCK
-      return ret ;
+        STATLOCK
+            DS9097_read_errors++;
+        STATUNLOCK
+        return ret ;
     }
     for ( i=0 ; i<num8 ; ++i ) UT_setbit(byte,i,pn->in->combuffer[i]&0x01) ;
     return 0 ;
@@ -365,10 +365,10 @@ int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * 
     ||DS9097_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
     for ( i=0 ; i<length ; ++i ) pn->in->combuffer[i] = outbits[i] ? OneBit : ZeroBit ;
     if ( (ret= BUS_send_and_get(pn->in->combuffer,(unsigned)length,inbits,(unsigned)length,pn)) ) {
-      STATLOCK
-      DS9097_sendback_bits_errors++;
-      STATUNLOCK
-      return ret ;
+        STATLOCK
+            DS9097_sendback_bits_errors++;
+        STATUNLOCK
+        return ret ;
     }
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
     return 0 ;
@@ -387,11 +387,11 @@ static int DS9097_sendback_data( const unsigned char * data, unsigned char * con
         int ret ;
         for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? OneBit : ZeroBit ;
         if ( (ret=BUS_send_and_get(pn->in->combuffer,bits,pn->in->combuffer,bits,pn) ) ) {
-	  STATLOCK
-	  DS9097_sendback_data_errors++;
-	  STATUNLOCK
-	  return ret ;
-	}
+            STATLOCK
+                DS9097_sendback_data_errors++;
+            STATUNLOCK
+            return ret ;
+        }
         for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
         return 0 ;
     }

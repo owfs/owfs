@@ -337,7 +337,7 @@ static int DS2480_reset( const struct parsedname * const pn ) {
 
     switch ( buf& RB_RESET_MASK ) {
     case RB_1WIRESHORT:
-        syslog(LOG_INFO,"1-wire bus short circuit.\n") ;
+        LEVEL_CONNECT("1-wire bus short circuit.\n")
         // fall through
     case RB_NOPRESENCE:
         if ( pn->si ) pn->si->AnyDevices = 0 ;
@@ -698,13 +698,13 @@ static int DS2480_ProgramPulse( const struct parsedname * const pn ) {
     unsigned char resp[2] ;
     COM_flush(pn) ;
     if( ((ret=pn->in->ProgramAvailable?0:-EINVAL)
-	 || (ret=DS2480_level(MODE_NORMAL,pn))
-	 || (ret=DS2480_sendback_cmd(cmd,resp,2,pn))
-	 || (ret=DS2480_read(resp,2,pn))
-	 || ((cmd[0]==resp[0])?0:-EIO)
-	 || (ret=((cmd[1]&0xFC)==(resp[1]&0xFC))?0:-EIO)) ) {
+        || (ret=DS2480_level(MODE_NORMAL,pn))
+        || (ret=DS2480_sendback_cmd(cmd,resp,2,pn))
+        || (ret=DS2480_read(resp,2,pn))
+        || ((cmd[0]==resp[0])?0:-EIO)
+        || (ret=((cmd[1]&0xFC)==(resp[1]&0xFC))?0:-EIO)) ) {
       STATLOCK
-      DS2480_ProgramPulse_errors++;
+          DS2480_ProgramPulse_errors++;
       STATUNLOCK
     }
     return ret ;
@@ -719,28 +719,28 @@ static int DS2480_write(const unsigned char *const buf, const size_t size, const
     ssize_t r, sl = size;
 
     while(sl > 0) {
-      if(!pn->in) break;
-      r = write(pn->in->fd,&buf[size-sl],sl) ;
-      if(r < 0) {
-	if(errno == EINTR) {
-	  STATLOCK
-	  DS2480_write_interrupted++;
-	  STATUNLOCK
-	  continue;
-	}
-	break;
-      }
-      sl -= r;
+        if(!pn->in) break;
+        r = write(pn->in->fd,&buf[size-sl],sl) ;
+        if(r < 0) {
+            if(errno == EINTR) {
+                STATLOCK
+                    DS2480_write_interrupted++;
+                STATUNLOCK
+                continue;
+            }
+            break;
+        }
+        sl -= r;
     }
     if(pn->in) {
-      tcdrain(pn->in->fd) ;
-      gettimeofday( &(pn->in->bus_write_time) , NULL );
+        tcdrain(pn->in->fd) ;
+        gettimeofday( &(pn->in->bus_write_time) , NULL );
     }
     if(sl > 0) {
-      STATLOCK
-      DS2480_write_errors++;
-      STATUNLOCK
-      return -EIO;
+        STATLOCK
+        DS2480_write_errors++;
+        STATUNLOCK
+        return -EIO;
     }
     return 0;
 }
@@ -763,87 +763,87 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
 
     while(rl > 0) {
         if(!pn->in) { 
-	  rc = -EIO;
-	  STATLOCK
-	  DS2480_read_null++;
-	  STATUNLOCK
-	  break;
-	}
+            rc = -EIO;
+            STATLOCK
+            DS2480_read_null++;
+            STATUNLOCK
+            break;
+        }
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
         tval.tv_sec = 0;
         tval.tv_usec = 500000;
-	/* This timeout need to be pretty big for some reason.
-	 * Even commands like DS2480_reset() fails with too low
-	 * timeout. I raise it to 0.5 seconds, since it shouldn't
-	 * be any bad experience for any user... Less read and
-	 * timeout errors for users with slow machines. I have seen
-	 * 276ms delay on my Coldfire board.
-	 *
-	 * DS2480_reset()
-	 *   DS2480_sendback_cmd()
-	 *     DS2480_sendout_cmd()
-	 *       DS2480_write()
-	 *         write()
-	 *         tcdrain()   (all data should be written on serial port)
-	 *     DS2480_read()
-	 *       select()      (waiting 40ms should be enough!)
-	 *       read()
-	 * 
-	 */
+        /* This timeout need to be pretty big for some reason.
+        * Even commands like DS2480_reset() fails with too low
+        * timeout. I raise it to 0.5 seconds, since it shouldn't
+        * be any bad experience for any user... Less read and
+        * timeout errors for users with slow machines. I have seen
+        * 276ms delay on my Coldfire board.
+        *
+        * DS2480_reset()
+        *   DS2480_sendback_cmd()
+        *     DS2480_sendout_cmd()
+        *       DS2480_write()
+        *         write()
+        *         tcdrain()   (all data should be written on serial port)
+        *     DS2480_read()
+        *       select()      (waiting 40ms should be enough!)
+        *       read()
+        *
+        */
 
         // if byte available read or return bytes read
         rc = select(pn->in->fd+1,&fdset,NULL,NULL,&tval);
         if (rc > 0) {
-	    if( FD_ISSET( pn->in->fd, &fdset )==0 ) {
-	      rc = -EIO;  /* error */
-	      STATLOCK
-	      DS2480_read_fd_isset++;
-	      STATUNLOCK
-	      break;
-	    }
-	    update_max_delay(pn);
-	    r = read(pn->in->fd,&buf[size-rl],rl);
+            if( FD_ISSET( pn->in->fd, &fdset )==0 ) {
+                rc = -EIO;  /* error */
+                STATLOCK
+                    DS2480_read_fd_isset++;
+                STATUNLOCK
+                break;
+            }
+            update_max_delay(pn);
+            r = read(pn->in->fd,&buf[size-rl],rl);
             if ( r < 0 ) {
-	      if(errno == EINTR) {
-		/* read() was interrupted, try again */
-		STATLOCK
-		DS2480_read_interrupted++;
-		STATUNLOCK
-		continue;
-	      }
-	      rc = -errno;  /* error */
-	      STATLOCK
-	      DS2480_read_read++;
-	      STATUNLOCK
-	      break;
-	    }
-	    rl -= r;
-	} else if(rc < 0) {
-	  if(errno == EINTR) {
-	    /* select() was interrupted, try again */
-	    STATLOCK
-	    DS2480_read_interrupted++;
-	    STATUNLOCK
-	    continue;
-	  }
-	  STATLOCK
-	  DS2480_read_select_errors++;
-	  STATUNLOCK
-	  return -EINTR;
+                if(errno == EINTR) {
+                    /* read() was interrupted, try again */
+                    STATLOCK
+                    DS2480_read_interrupted++;
+                    STATUNLOCK
+                    continue;
+                }
+                rc = -errno;  /* error */
+                STATLOCK
+                DS2480_read_read++;
+                STATUNLOCK
+                break;
+            }
+            rl -= r;
+        } else if(rc < 0) {
+            if(errno == EINTR) {
+                /* select() was interrupted, try again */
+                STATLOCK
+                    DS2480_read_interrupted++;
+                STATUNLOCK
+                continue;
+            }
+            STATLOCK
+                DS2480_read_select_errors++;
+            STATUNLOCK
+            return -EINTR;
         } else {
-	  STATLOCK
-	  DS2480_read_timeout++;
-	  STATUNLOCK
-	  return -EINTR;
+            STATLOCK
+                DS2480_read_timeout++;
+            STATUNLOCK
+            return -EINTR;
+            }
         }
-    }
-    if(rl > 0) {
-        STATLOCK
-	DS2480_read_errors++;
-	STATUNLOCK
-	return rc;  /* error */
+        if(rl > 0) {
+            STATLOCK
+                DS2480_read_errors++;
+            STATUNLOCK
+        return rc;  /* error */
     }
    return 0;
 }
@@ -863,11 +863,11 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const int len, const 
         (ret=DS2480_write( &mc,1,pn )) || (ret= DS2480_write( cmd,(unsigned)len,pn )) ;
     } else {
         ret=DS2480_write(cmd,(unsigned)len,pn ) ;
-	if(ret) {
-	  STATLOCK
-	    DS2480_sendout_cmd_errors++;
-	  STATUNLOCK
-	}
+        if(ret) {
+            STATLOCK
+                DS2480_sendout_cmd_errors++;
+            STATUNLOCK
+        }
     }
     return ret ;
 }
@@ -890,13 +890,13 @@ static int DS2480_send_cmd( const unsigned char * const cmd , const int len, con
         unsigned char resp[16] ;
         if( ((ret=DS2480_sendback_cmd(cmd,resp,len,pn))
           || (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0)) ) {
-             STATLOCK
-	    if(ret == -EIO)
-                DS2480_send_cmd_memcmp_errors++;
-	    else
-	        DS2480_send_cmd_errors++;
+            STATLOCK
+                if(ret == -EIO)
+                    DS2480_send_cmd_memcmp_errors++;
+                else
+                    DS2480_send_cmd_errors++;
             STATUNLOCK
-	}
+        }
     }
     return ret ;
 }
@@ -915,11 +915,11 @@ static int DS2480_sendback_cmd(const unsigned char * const cmd , unsigned char *
         (ret=DS2480_sendback_cmd(cmd,resp,clen,pn)) || (ret=DS2480_sendback_cmd(&cmd[clen],&resp[clen],len>>1,pn)) ;
     } else {
         (ret=DS2480_sendout_cmd(cmd,len,pn)) || (ret=DS2480_read(resp,len,pn)) ;
-	if(ret) {
-	  STATLOCK
-	  DS2480_sendback_cmd_errors++;
-	  STATUNLOCK
-	}
+        if(ret) {
+            STATLOCK
+                DS2480_sendback_cmd_errors++;
+            STATUNLOCK
+        }
     }
     return ret ;
 }
@@ -939,11 +939,11 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
         // change back to command mode
         pn->in->UMode = MODSEL_DATA;
         if ( (ret=DS2480_write( &md,1,pn )) )  {
-	  STATLOCK
-	  DS2480_sendout_data_errors++;
-	  STATUNLOCK
-	  return ret ;
-	}
+            STATLOCK
+                DS2480_sendout_data_errors++;
+            STATUNLOCK
+            return ret ;
+        }
     }
     if ( len>16 ) {
         int dlen = len-(len>>1) ;
@@ -957,11 +957,11 @@ static int DS2480_sendout_data( const unsigned char * const data , const int len
             if ( data[i] == MODE_COMMAND ) data2[j++] = MODE_COMMAND ;
         }
         ret = DS2480_write(data2,j,pn) ;
-	if(ret) {
-	  STATLOCK
-	  DS2480_sendout_data_errors++;
-	  STATUNLOCK
-	}
+        if(ret) {
+            STATLOCK
+                DS2480_sendout_data_errors++;
+            STATUNLOCK
+        }
     }
     return ret ;
 }

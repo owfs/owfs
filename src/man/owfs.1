@@ -32,7 +32,7 @@ serialport |
 .I \-u
 |
 .I \-s
-host:port
+[host:]port
 .I mountpoint
 .br
 .B owfs
@@ -65,13 +65,13 @@ filename
 0|1|2|3
 ] [
 .I \-\-error_level
-0|1|2|3 ]
+0|1|2|3|9 ]
 .I \-d
 serialport |
 .I \-u
 |
 .I \-s
-host:port
+[host:]port
 .I mountpoint
 .br
 .B owfs
@@ -178,10 +178,10 @@ Display format for the 1-wire devices. Each device has a 8byte address, consisti
 .I f
 family code, 1 byte
 .TP
-.I I
+.I i
 ID number, 6 bytes
 .TP
-.I C
+.I c
 CRC checksum, 1 byte
 .PP
 Possible formats are
