@@ -1040,7 +1040,9 @@ void err_sys(const char *fmt, ...) ;
 void err_dump(const char *fmt, ...) ;
 void err_msg(const char *fmt, ...) ;
 void err_quit(const char *fmt, ...) ;
-
+extern int error_print ;
+extern int error_level ;
+extern int now_background ;
 
 #define BUS_detect        DS2480_detect
 #define BUS_changebaud    DS2480_changebaud

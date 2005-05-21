@@ -31,6 +31,8 @@ const struct option owopts_long[] = {
     {"pid-file",   required_argument,NULL,'P'},
     {"background", no_argument,&background, 1},
     {"foreground", no_argument,&background, 0},
+    {"error_print",required_argument,NULL,257},
+    {"error_level",required_argument,NULL,258},
     {"morehelp",   no_argument,      NULL,259},
     {"fuse-opt",   required_argument,NULL,260}, /* owfs */
     {"RPC_program",required_argument,NULL,261}, /* ownfsd */
@@ -57,10 +59,10 @@ int owopt( const int c , const char * const arg ) {
 #ifdef OW_USB
         "    -u[n] --usb      USB adapter. Scans for usb connection to 1-wire bus.\n"
         "                 Optional number for multiple usb adapters\n"
+#endif /* OW_USB */
         "    -s  --server     1-wire server daemon\n"
         "                 port number, server:port or /local-socket-path\n"
         "                 Each adapter chosen will be handled independly\n"
-#endif /* OW_USB */
 #ifdef OW_CACHE
         "    -t    cache timeout (in seconds)\n"
 #endif /* OW_CACHE */
@@ -70,7 +72,6 @@ int owopt( const int c , const char * const arg ) {
         "    --format f[.]i[[.]c] format of device names f_amily i_d c_rc\n"
         "    -C | -F | -K | -R Temperature scale --Celsius(default)|--Fahrenheit|--Kelvin|--Rankine\n"
         "    --foreground --background(default)\n"
-        "    -P --pid-file filename     put the PID of this program into filename\n"
         "    -V --version\n"
         "    --morehelp   another page of less common command line switches\n"
         ) ;
@@ -136,11 +137,18 @@ int owopt( const int c , const char * const arg ) {
             return 1 ;
         }
         return 0 ;
+    case 257:
+        error_print = atoi(arg) ;
+        return 0 ;
+    case 258:
+        error_level = atoi(arg) ;
+        return 0 ;
     case 259:
         fprintf(stderr,
-                        "    --help       main help page
-                        "    --morehelp   this page of less common command line switches\n"
-               ) ;
+            "    -P --pid-file filename     put the PID of this program into filename\n"
+            "    --help       main help page\n"
+            "    --morehelp   this page of less common command line switches\n"
+            ) ;
         return 1 ;
     case 260: /* fuse-opt */
     case 261:

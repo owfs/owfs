@@ -13,6 +13,8 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 
+int now_background = 0 ;
+
 /* All ow library setup */
 void LibSetup( void ) {
     /* All output to syslog */
@@ -228,23 +230,25 @@ int LibStart( void ) {
 
 
     if ( background ) {
-      if(
+        if(
 #if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
-    my_daemon(1, 0)
+            my_daemon(1, 0)
 #else /* defined(__UCLIBC__) */
-    daemon(1, 0)
+            daemon(1, 0)
 #endif /* defined(__UCLIBC__) */
-    ) {
-        fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
-        return 1 ;
-      }
+        ) {
+            fprintf(stderr,"Cannot enter background mode, quitting.\n") ;
+            return 1 ;
+        }
+        now_background = 1;
+
 #ifdef __UCLIBC__
-#ifdef OW_MT
+ #ifdef OW_MT
       /* have to re-initialize pthread since the main-process is gone */
       __pthread_initial_thread_bos = NULL ;
       __pthread_initialize();
-#endif
-#endif
+#endif /* OW_MT */
+#endif /* __UCLIBC__ */
     }
 
     /* store the PID */
@@ -267,9 +271,9 @@ int LibStart( void ) {
 /* All ow library closeup */
 void LibClose( void ) {
     if ( pid_file ) {
-       if ( unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno)) ;
-       free( pid_file ) ;
-       pid_file = NULL ;
+        if ( unlink( pid_file ) ) syslog(LOG_WARNING,"Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno)) ;
+        free( pid_file ) ;
+        pid_file = NULL ;
     }
 #ifdef OW_CACHE
     Cache_Close() ;
@@ -304,14 +308,14 @@ static void segv_handler(int sig) {
     pid_t pid = getpid() ;
     (void) sig ;
 #ifdef OW_MT
-  pthread_t tid = pthread_self() ;
-  fprintf(stderr, "owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid) ;
-  syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d tid=%ld", pid, tid) ;
-#else
-  fprintf(stderr, "owlib: SIGSEGV received... pid=%d\n", pid) ;
-  syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d", pid) ;
-#endif
-  _exit(1) ;
+    pthread_t tid = pthread_self() ;
+    fprintf(stderr, "owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid) ;
+    syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d tid=%ld", pid, tid) ;
+#else /* OW_MT */
+    fprintf(stderr, "owlib: SIGSEGV received... pid=%d\n", pid) ;
+    syslog(LOG_ERR, "owlib: SIGSEGV received... pid=%d", pid) ;
+#endif /* OW_MT */
+    _exit(1) ;
 }
 
 void set_signal_handlers( void (*exit_handler)(int errcode) ) {

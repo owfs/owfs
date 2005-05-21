@@ -21,7 +21,9 @@ $Id$
 #include    <ow.h>
 #include    <stdarg.h>
 
-int        daemon_proc;        /* set nonzero by daemon_init() */
+/* See man page for explanation */
+int error_print = 0 ;
+int error_level = 0 ;
 
 static void    err_doit(int, int, const char *, va_list);
 
@@ -90,10 +92,25 @@ void err_quit(const char *fmt, ...) {
  * Caller specifies "errnoflag" and "level" */
 #define MAXLINE     120
 static void err_doit(int errnoflag, int level, const char *fmt, va_list ap) {
-    int        errno_save, n;
+    int     errno_save = errno ;  /* value caller might want printed */
+    int     n ;
     char    buf[MAXLINE + 1];
+    int     sl ;
 
-    errno_save = errno;        /* value caller might want printed */
+    switch ( error_print ) {
+    case 0 :
+        sl = now_background ;
+        break ;
+    case 1 :
+        sl = 1 ;
+        break ;
+    case 2 :
+        sl = 0 ;
+        break ;
+    case 3 :
+        return ;
+    }
+
     UCLIBCLOCK
 #ifdef    HAVE_VSNPRINTF
         vsnprintf(buf, MAXLINE, fmt, ap);    /* safe */
@@ -110,7 +127,7 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap) {
 
     strcat(buf, "\n");
 
-    if (daemon_proc) {
+    if (sl) {
         syslog(level, buf);
     } else {
         fflush(stdout);        /* in case stdout and stderr are the same */
