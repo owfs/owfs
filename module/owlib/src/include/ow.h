@@ -633,6 +633,17 @@ enum simul_type { simul_temp, simul_volt, } ;
 extern char * progname ; /* argv[0] stored */
 extern int readonly ; /* readonly file system ? */
 
+/* NFS parameters, gathered in a structure to unclutter the namespace */
+struct nfs_params {
+    int RPC_program ;
+    int NFS_version ;
+    int tcp_only ;
+    int udp_only ;
+    int NFS_port ;
+    int mount_port ;
+} ;
+extern struct nfs_params NFS_params ; 
+
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
 /* Gobal temperature scale */

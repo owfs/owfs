@@ -45,5 +45,15 @@ uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8
 uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 ;
 #endif
 
+struct nfs_params NFS_params = {
+    300003, //RPC_program
+    3,      // NFS_version
+    0,      //tcp_only
+    0,      //udp_only
+    0,      //NFS_port
+    0,      //mount_port
+} ;
+
+
 /* Statistics globalsw stored in ow_stats.c */
 
