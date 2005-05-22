@@ -67,19 +67,12 @@ int main(int argc, char *argv[]) {
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
-        case 'h':
-            fprintf(stderr,
-            "Usage: %s ttyDevice -p tcpPort [options] \n"
-            "   or: %s [options] -d ttyDevice -p tcpPort \n"
-            "    -p port   -- tcp port for web serving process (e.g. 3001)\n" ,
-            argv[0],argv[0] ) ;
-            break ;
         case 'V':
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
         }
-        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg,opt_httpd) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
@@ -89,7 +82,7 @@ int main(int argc, char *argv[]) {
     }
 
     if ( outdevices==0 ) {
-        fprintf(stderr, "No TCP port specified (-p)\n%s -h for help\n",argv[0]);
+        LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",argv[0])
         ow_exit(1);
     }
 

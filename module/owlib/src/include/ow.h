@@ -171,12 +171,10 @@ extern int multithreading ;
     #include <usb.h>
 #endif /* OW_USB */
 /*
-    OW -- Onw Wire
+    OW -- One Wire
     Global variables -- each invokation will have it's own data
 */
 
-/* command line options */
-/* These a re the owlib-specific options */
 #include <fcntl.h>
 #ifndef __USE_XOPEN
 #define __USE_XOPEN /* for strptime fuction */
@@ -206,7 +204,8 @@ extern int multithreading ;
 /* These are the owlib-specific options */
 #define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
-int owopt( const int c , const char * const arg ) ;
+enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_nfsd, opt_perl, opt_python, opt_php, opt_tcl, } ;
+int owopt( const int c , const char * const arg, enum opt_program op ) ;
 
 /* PID file nsme */
 extern pid_t pid_num ;

@@ -83,31 +83,24 @@ int main(int argc, char *argv[]) {
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
-        case 'h':
-            fprintf(stderr,
-            "Usage: %s mountpoint -d devicename [options] \n"
-            "   or: %s [options] portname mountpoint \n"
-            "   --fuse-opt=\"-x -f\"  options to send to fuse_mount (must be quoted)\n",
-            argv[0],argv[0] ) ;
-            break ;
         case 'V':
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
         case 260: /* fuse-opt */
             fuse_opt = strdup( optarg ) ;
-            if ( fuse_opt == NULL ) fprintf(stderr,"Insufficient memory to store FUSE options: %s\n",optarg) ;
+            if ( fuse_opt == NULL ) LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
             break ;
         }
-        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg,opt_owfs) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
     if ( optind == argc ) {
-        fprintf(stderr,"No mount point specified.\nTry '%s -h' for help.\n",argv[0]) ;
+        LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n",argv[0])
         ow_exit(1) ;
     } else if ( outdevices ) {
-        fprintf(stderr,"Network output not supported\n");
+        LEVEL_DEFAULT("Network output not supported\n")
         ow_exit(1) ;
     } else {
         while ( optind < argc-1 ) {
@@ -122,7 +115,7 @@ int main(int argc, char *argv[]) {
     if ( fuse_opt ) {
         opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
         if ( opts == NULL ) {
-            fprintf(stderr,"Memory allocation problem\n") ;
+            LEVEL_DEFAULT("Memory allocation problem in fuse options\n")
             ow_exit(1) ;
         }
         tok = strtok(fuse_opt," ") ;

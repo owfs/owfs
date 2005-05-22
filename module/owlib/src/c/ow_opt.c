@@ -28,12 +28,16 @@ const struct option owopts_long[] = {
     {"Rankine",    no_argument,      NULL,'R'},
     {"version",    no_argument,      NULL,'V'},
     {"format",     required_argument,NULL,'f'},
+    {"pid_file",   required_argument,NULL,'P'},
     {"pid-file",   required_argument,NULL,'P'},
     {"background", no_argument,&background, 1},
     {"foreground", no_argument,&background, 0},
     {"error_print",required_argument,NULL,257},
+    {"error-print",required_argument,NULL,257},
     {"error_level",required_argument,NULL,258},
+    {"error-level",required_argument,NULL,258},
     {"morehelp",   no_argument,      NULL,259},
+    {"fuse_opt",   required_argument,NULL,260}, /* owfs */
     {"fuse-opt",   required_argument,NULL,260}, /* owfs */
     {"RPC_program",required_argument,NULL,261}, /* ownfsd */
     {"NFS_version",required_argument,NULL,262}, /* ownfsd */
@@ -49,37 +53,130 @@ char * pid_file = NULL ;
 char * fuse_opt = NULL ;
 unsigned int nr_adapters = 0;
 
+static void ow_help( enum opt_program op ) {
+    printf(
+    "1-wire access programs\n"
+    "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
+    "\n"
+    ) ;
+    switch(op) {
+    case opt_owfs:
+        printf("Syntax: %s [options] device mountpoint\n",progname);
+        break ;
+    case opt_httpd:
+    case opt_ftpd:
+    case opt_nfsd:
+    case opt_server:
+        printf("Syntax: %s [options] device clientport\n",progname);
+        break ;
+    default:
+        printf("Syntax: %s [options] device\n",progname);
+        break ;
+    }
+    printf(
+    "\n"
+    "1-wire side (device):\n"
+    "  -d --device    devicename      |Serial port device name of 1-wire adapter\n"
+    "                                 |  e.g: -d /dev/ttyS0\n"
+#ifdef OW_USB
+    "  -u --usb       [number]        |USB 1-wire adapter. Choose first one unless number specified\n"
+#endif /* OW_USB */
+    "                                 |  e.g: -u -u3  first and third USB 1wire adapters\n"
+    "  -s --server    [host:]port     |owserver program that talks to adapter. Give tcp/ip address.\n"
+    "                                 |  e.g: -s embeddedhost:3030\n"
+    "\n"
+    ) ;
+    switch(op) {
+    case opt_owfs:
+        printf(
+        "\n"
+        "Client side:\n"
+        "  mountpoint                     |Directory the 1-wire filesystem is mounted\n"
+        ) ;
+        break ;
+    case opt_httpd:
+    case opt_ftpd:
+    case opt_nfsd:
+    case opt_server:
+    printf(
+        "\n"
+        "Client side:\n"
+        "  -p --port                      |tcp/ip address that program can be found\n"
+        ) ;
+    break ;
+    default:
+    break ;
+}
+    printf(
+    "\n"
+    "  -h --help                      |This basic help page\n"
+    "     --morehelp                  |Optional items help page\n"
+    ) ;
+}
+
+static void ow_morehelp( enum opt_program op ) {
+    printf(
+    "1-wire access programs\n"
+    "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
+    "\n"
+    ) ;
+    printf(
+    "  -C --Celsius                   |Celsius(default) temperature scale\n"
+    "  -F --Fahrenheit                |Fahrenheit temperature scale\n"
+    "  -K --Kelvin                    |Kelvin temperature scale\n"
+    "  -R --Rankine                   |Rankine temperature scale\n"
+    "  -P --pid_file                  |file where program id (pid) will be stored\n"
+    "     --background                |become a deamon process(default)\n"
+    "     --foreground                |stay in foreground\n"
+    "  -r --readonly                  |no writing to 1-wire bus\n"
+    "  -w --write                     |allow reading and writing to bus(default)\n"
+#ifdef OW_CACHE
+    "  -t                             |cache timeout (in seconds)\n"
+#endif /* OW_CACHE */    
+    "  -f --format                    |format for 1-wire unique serial IDs display\n"
+    "                                 |  f[.]i[[.]c] f-amily i-d c-rc (all in hex)\n"
+    "     --error_print               |Where information/error messages are printed\n"
+    "                                 |  0-mixed(default) 1-syslog 2-stderr 3-suppressed\n"
+    "     --error_level               |What kind of information is printed\n"
+    "                                 |  0-fatal 1-connections 2-calls 3-data\n"
+    "  -V --version                   |Program and library versions\n"
+    ) ;
+    switch(op) {
+    case opt_owfs:
+        printf(
+        "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"
+        "                                 |  e.g: --fuse_mount=\"-x -f\"\n"
+        ) ;
+        break ;
+        case opt_httpd:
+        case opt_ftpd:
+        case opt_nfsd:
+        case opt_server:
+            printf(
+                    "\n"
+                    "Client side:\n"
+                    "  -p --port                      |tcp/ip address that program can be found\n"
+                  ) ;
+            break ;
+        default:
+            break ;
+    }
+    printf(
+            "\n"
+            "  -h --help                      |Basic help page\n"
+            "     --morehelp                  |This optional items help page\n"
+          ) ;
+}
+
 /* Parses one argument */
 /* return 0 if ok */
-int owopt( const int c , const char * const arg ) {
+            int owopt( const int c , const char * const arg, enum opt_program op ) {
     switch (c) {
     case 'h':
-        fprintf(stderr,
-        "    -d    --device   serial adapter. Serial port connecting to 1-wire network (e.g. /dev/ttyS0)\n"
-#ifdef OW_USB
-        "    -u[n] --usb      USB adapter. Scans for usb connection to 1-wire bus.\n"
-        "                 Optional number for multiple usb adapters\n"
-#endif /* OW_USB */
-        "    -s  --server     1-wire server daemon\n"
-        "                 port number, server:port or /local-socket-path\n"
-        "                 Each adapter chosen will be handled independly\n"
-#ifdef OW_CACHE
-        "    -t    cache timeout (in seconds)\n"
-#endif /* OW_CACHE */
-        "    -h    --help     print help\n"
-        "    -r    --readonly Only allow reading of 1-wire devices.\n"
-        "    -w    --write    Allow reading and writing (default).\n"
-        "    --format f[.]i[[.]c] format of device names f_amily i_d c_rc\n"
-        "    -C | -F | -K | -R Temperature scale --Celsius(default)|--Fahrenheit|--Kelvin|--Rankine\n"
-        "    --foreground --background(default)\n"
-        "    -V --version\n"
-        "    --morehelp   another page of less common command line switches\n"
-        ) ;
+        ow_help( op ) ;
         return 1 ;
-        return 0 ;
     case 'u':
 #ifdef OW_USB
-//printf("OPT usb arg=%s\n",arg);
         return OW_ArgUSB( arg ) ;
 #else /* OW_USB */
         LEVEL_DEFAULT("Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n")
@@ -144,11 +241,7 @@ int owopt( const int c , const char * const arg ) {
         error_level = atoi(arg) ;
         return 0 ;
     case 259:
-        fprintf(stderr,
-            "    -P --pid-file filename     put the PID of this program into filename\n"
-            "    --help       main help page\n"
-            "    --morehelp   this page of less common command line switches\n"
-            ) ;
+        ow_morehelp(op) ;
         return 1 ;
     case 260: /* fuse-opt */
     case 261:
