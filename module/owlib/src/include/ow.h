@@ -1053,11 +1053,11 @@ extern int error_print ;
 extern int error_level ;
 extern int now_background ;
 extern int log_available ;
-#define LEVEL_DEFAULT(...)    if (error_level<1) err_bad(__VA_ARGS__) ;
-#define LEVEL_CONNECT(...)    if (error_level<2) err_bad(__VA_ARGS__) ;
-#define LEVEL_CALL(...)       if (error_level<3) err_msg(__VA_ARGS__) ;
-#define LEVEL_DATA(...)       if (error_level<4) err_msg(__VA_ARGS__) ;
-#define LEVEL_DEBUG(...)      if (error_level<10) err_debug(__VA_ARGS__) ;
+#define LEVEL_DEFAULT(...)    if (error_level>0) err_bad(__VA_ARGS__) ;
+#define LEVEL_CONNECT(...)    if (error_level>1) err_bad(__VA_ARGS__) ;
+#define LEVEL_CALL(...)       if (error_level>2) err_msg(__VA_ARGS__) ;
+#define LEVEL_DATA(...)       if (error_level>3) err_msg(__VA_ARGS__) ;
+#define LEVEL_DEBUG(...)      if (error_level>4) err_debug(__VA_ARGS__) ;
 
 #define BUS_detect        DS2480_detect
 #define BUS_changebaud    DS2480_changebaud

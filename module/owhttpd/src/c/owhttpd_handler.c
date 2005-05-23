@@ -77,7 +77,7 @@ int handle_socket(FILE * out) {
     pn.si = &si ;
 
     str = fgets(up.line, PATH_MAX, out);
-    //printf("PreParse line=%s\n",up.line);
+    LEVEL_CALL("PreParse line=%s\n",up.line)
     URLparse( &up ) ; /* Braek up URL */
     //printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
 
@@ -88,7 +88,7 @@ int handle_socket(FILE * out) {
         } while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
     }
 
-//printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
+    LEVEL_CALL("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",up.cmd,up.file,up.request,up.value,up.version)
     /*
      * This is necessary for some stupid *
      * * operating system such as SunOS
