@@ -34,18 +34,18 @@ pthread_t main_threadid ;
 
 static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
-      if(ftp_listener.fd) {
-    syslog(LOG_INFO, "Waiting for all connections to finish");
-    ftp_listener_stop(&ftp_listener);
-      }
-      syslog(LOG_INFO, "FTP server exiting, all connections finished");
-      LibClose() ;
+        if(ftp_listener.fd) {
+            LEVEL_CONNECT("Waiting for all connections to finish")
+            ftp_listener_stop(&ftp_listener);
+        }
+        LEVEL_CONNECT("FTP server exiting, all connections finished")
+        LibClose() ;
     }
     exit( e ) ;
 }
 
 static void exit_handler(int i) {
-  return ow_exit( ((i<0) ? 1 : 0) ) ;
+    return ow_exit( ((i<0) ? 1 : 0) ) ;
 }
 
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     /* verify we're running as root */
     if (geteuid() != 0) {
-        fprintf(stderr, "%s: program needs root permission to run\n", progname);
+        LEVEL_DEFAULT("%s: program needs root permission to run\n", progname)
         ow_exit(1);
     }
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         default:
             break;
         }
-        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg, opt_ftpd) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
@@ -111,13 +111,13 @@ int main(int argc, char *argv[]) {
 
     /* no port was defined, so listen on default port instead */
     if(!outdevices) {
-      if(OW_ArgServer( DEFAULT_PORTNAME )) {
-    fprintf(stderr, "Error using default address\n");
-    ow_exit(1);
-      }
+        if(OW_ArgServer( DEFAULT_PORTNAME )) {
+            LEVEL_DEFAULT("Error using default address (%d)\n",DEFAULT_PORTNAME)
+            ow_exit(1);
+         }
     }
     if(ServerAddr(outdevice)<0) {
-      fprintf(stderr, "Failed to initialize port. Use '-p' argument.\n");
+      LEVEL_DEFAULT("Failed to initialize port. Use '-p' argument.\n")
       ow_exit(1);
     }
 
@@ -136,8 +136,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     /* log the start time */
-    openlog(NULL, LOG_NDELAY, log_facility);
-    syslog(LOG_INFO,"Starting, version %s, as PID %d", VERSION, getpid());
+    LEVEL_CONNECT("Starting %s, version %s, as PID %d", progname, VERSION, getpid())
 
 #if 0
     /* set user to be as inoffensive as possible */
@@ -161,11 +160,8 @@ int main(int argc, char *argv[]) {
                            INACTIVITY_TIMEOUT,
                            &err))
     {
-        fprintf(stderr, "error initializing FTP listener on port %s:%d; %s\n",
-        address,port, error_get_desc(&err));
-        syslog(LOG_ERR, "error initializing FTP listener on port %s:%d; %s",
-           address, port, error_get_desc(&err));
-        exit(1);
+        LEVEL_CONNECT("error initializing FTP listener on port %s:%d; %s\n",address,port, error_get_desc(&err))
+        ow_exit(1);
     }
 
     connection_acceptor( &ftp_listener ) ;

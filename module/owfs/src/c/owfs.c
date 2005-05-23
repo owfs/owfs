@@ -89,7 +89,10 @@ int main(int argc, char *argv[]) {
             break ;
         case 260: /* fuse-opt */
             fuse_opt = strdup( optarg ) ;
-            if ( fuse_opt == NULL ) LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
+            if ( fuse_opt == NULL ) {
+                LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
+                ow_exit(1) ;
+            }
             break ;
         }
         if ( owopt(c,optarg,opt_owfs) ) ow_exit(0) ; /* rest of message */
@@ -166,22 +169,22 @@ static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
       LibClose() ;
       if(fuse != NULL) {
-	fuse_exit(fuse);
+    fuse_exit(fuse);
       }
-    
+
       /* Should perhaps only use fuse_teardown() if FUSE 2
        * It doesn't check for NULL pointers though */
       // fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
 #if (FUSE_MAJOR_VERSION == 2)
       if(fuse != NULL) {
-	/* this will unlink all inodes.. Could take some time on slow
-	 * processors... eg. Coldfire 54MHz */
-	fuse_destroy(fuse);
+    /* this will unlink all inodes.. Could take some time on slow
+     * processors... eg. Coldfire 54MHz */
+    fuse_destroy(fuse);
       }
 #endif
       fuse = NULL;
       if(fuse_fd != -1) {
-	close(fuse_fd);
+    close(fuse_fd);
       }
       if(fuse_mountpoint != NULL) {
         fuse_unmount(fuse_mountpoint);
