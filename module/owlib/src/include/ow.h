@@ -635,12 +635,13 @@ extern int readonly ; /* readonly file system ? */
 
 /* NFS parameters, gathered in a structure to unclutter the namespace */
 struct nfs_params {
-    int RPC_program ;
+    int NFS_program ;
     int NFS_version ;
     int tcp_only ;
     int udp_only ;
     int NFS_port ;
     int mount_port ;
+    int no_portmapper ;
 } ;
 extern struct nfs_params NFS_params ; 
 

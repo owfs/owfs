@@ -39,8 +39,8 @@ const struct option owopts_long[] = {
     {"morehelp",   no_argument,      NULL,259},
     {"fuse_opt",   required_argument,NULL,260}, /* owfs */
     {"fuse-opt",   required_argument,NULL,260}, /* owfs */
-    {"RPC_program",required_argument,NULL,261}, /* ownfsd */
-    {"RPC-program",required_argument,NULL,261}, /* ownfsd */
+    {"NFS_program",required_argument,NULL,261}, /* ownfsd */
+    {"NFS-program",required_argument,NULL,261}, /* ownfsd */
     {"NFS_version",required_argument,NULL,262}, /* ownfsd */
     {"NFS-version",required_argument,NULL,262}, /* ownfsd */
     {"tcp_only",   no_argument,      NULL,263}, /* ownfsd */
@@ -51,6 +51,8 @@ const struct option owopts_long[] = {
     {"NFS-port",   required_argument,NULL,265}, /* ownfsd */
     {"mount_port", required_argument,NULL,266}, /* ownfsd */
     {"mount-port", required_argument,NULL,266}, /* ownfsd */
+    {"no_portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
+    {"no-portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
     {0,0,0,0},
 } ;
 
@@ -165,12 +167,13 @@ static void ow_morehelp( enum opt_program op ) {
             break ;
         case opt_nfsd:
             printf(
-            "     --RPC_program               |NFS: 100003, default OWNFS 300003\n"
+            "     --NFS_program               |NFS: 100003, default OWNFS 300003\n"
             "     --NFS_version               |default 3\n"
             "     --tcp_only                  |no udp transport (overides udp_only)\n"
             "     --udp_only                  |no tcp transport (overides tcp_only)\n"
             "     --NFS_port                  |default 0=auto, 2049 traditional\n"
-            "     --mount_port                |default 0=auto, usually same as NFS_port\n"
+            "     --mount_port                |default 0=auto, usually same as NFS_port.\n"
+            "     --no_portmapper             |Don't use the standard portmapper.\n"
             ) ;
             break ;
         default:
@@ -260,7 +263,7 @@ static void ow_morehelp( enum opt_program op ) {
         return 1 ;
     case 260: /* fuse-opt */
     case 261:
-        NFS_params.RPC_program = atoi(arg) ;
+        NFS_params.NFS_program = atoi(arg) ;
         return 0 ;
     case 262:
         NFS_params.NFS_version = atoi(arg) ;
