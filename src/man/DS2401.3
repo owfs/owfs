@@ -68,8 +68,8 @@ Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
 None.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
-.PP
+.so description
+.SS DS2401
 The
 .B DS2401
 is the most basic of 1-wire devices. It's sole property is it's unique address. It can be used for unique identification.
@@ -113,11 +113,9 @@ Filesystem implementation. User space, using the FUSE kernel module.
 owhttpd
 Web server implementation of the OWFS system.
 .SH SEE ALSO
-owfs(1)
-owhttpd(1)
-DS2502(3)
-DS2409(3)
+.so seealso
 .SH AVAILABILITY
 http://owfs.sourceforge.net
 .SH AUTHOR
 Paul Alfille (palfille@earthlink.net)
+

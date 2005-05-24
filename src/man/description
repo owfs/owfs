@@ -1,0 +1,23 @@
+.SS 1-Wire
+.I 1-wire 
+is a wiring protocol and series of devices designed and manufactured
+by Dallas Semicondictor, Inc. The bus is a low-power low-speed low-connector
+scheme where the data line can also provide power.
+.PP
+Each device is uniquely unalterably numbered during manufacture. There is a wide variety
+of devices, including memory, sensors (humidity, temperature, voltage,
+contact, current), switches, timers, loggers, and more complex devices (like
+thermocouple sensors) can be built wit hte basic devices. There are also
+1-wire devices that have encryption included.
+.PP
+The 1-wire bus is accessed via one of a number of serial, parallel or USB
+adapters.
+.SS OWFS design
+.I OWFS
+is a suite of programs that fundementally make the 1-wire bus and its
+devices easily accessible. The underlying priciple is to create a virtual
+filesystem, with the unique ID being the directory, and the individual
+properties of the device files.
+.PP
+There is optional data caching to improved performance, but possible
+confusion over stale data.

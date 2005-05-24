@@ -343,10 +343,10 @@ Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
 None.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
-.PP
+.so description
+.SS DS1921 Thermochron
 The
-.B DS1921
+.B DS1921 (3)
 is an iButton device with many intriguing functions. Essentially it monitors temperature, giving both a log of readings, and a histogram of temperature ranges. The specification is somewhat complex, but OWFS hides many of the implementation details.
 .PP
 While on a
@@ -359,57 +359,12 @@ battery chip. Current sensing is availble, but not implemented. The major advant
 .B DS2436
 is that two voltages can be read, allowing correcting circuit nmeasurements to supply voltage and temperature.
 .SH ADDRESSING
-All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
-.TP
-.B Family Code
-8 bits
-.TP
-.B Address
-48 bits
-.TP
-.B CRC
-8 bits
-.IP
-.PP
-Addressing under OWFS is in hexidecimal, of form:
-.IP
-.B 01.123456789ABC
-.PP
-where
-.B 01
-is an example 8-bit family code, and
-.B 12345678ABC
-is an example 48 bit address.
-.PP
-The dot is optional, and the CRC code can included. If included, it must be correct.
+.so addressing
 .SH DATASHEET
-.br
 http://pdfserv.maxim-ic.com/en/ds/DS2438.pdf
 http://pdfserv.maxim-ic.com/en/an/humsensor.pdf
-.SH FILES
-.TP
-libow.so
-Library providing most of the OWFS system. Bus master control, data parsing, etc.
-.TP
-owfs
-Filesystem implementation. User space, using the FUSE kernel module.
-.TP
-owhttpd
-Web server implementation of the OWFS system.
 .SH SEE ALSO
-owfs(1)
-owhttpd(1)
-DS18S20(3)
-DS18B20(3)
-DS1822(3)
-DS2502(3)
-DS2401(3)
-DS2409(3)
-DS2436(3)
-DS1992(3)
-DS1993(3)
-DS1995(3)
-DS1996(3)
+.so seealso
 .SH AVAILABILITY
 http://owfs.sourceforge.net
 .SH AUTHOR
