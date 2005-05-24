@@ -71,47 +71,14 @@ None.
 .so description
 .SS DS2401
 The
-.B DS2401
+.B DS2401 (3)
 is the most basic of 1-wire devices. It's sole property is it's unique address. It can be used for unique identification.
 .SH ADDRESSING
-All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
-.TP
-.B Family Code
-8 bits
-.TP
-.B Address
-48 bits
-.TP
-.B CRC
-8 bits
-.IP
-.PP
-Addressing under OWFS is in hexidecimal, of form:
-.IP
-.B 01.123456789ABC
-.PP
-where
-.B 01
-is an example 8-bit family code, and
-.B 12345678ABC
-is an example 48 bit address.
-.PP
-The dot is optional, and the CRC code can included. If included, it must be correct.
+.so addressing
 .SH DATASHEET
-.br
 http://pdfserv.maxim-ic.com/en/ds/DS2401.pdf
 .br
 http://pdfserv.maxim-ic.com/en/ds/DS1990A-F3-DS1990A-F5.pdf
-.SH FILES
-.TP
-libow.so
-Library providing most of the OWFS system. Bus master control, data parsing, etc.
-.TP
-owfs
-Filesystem implementation. User space, using the FUSE kernel module.
-.TP
-owhttpd
-Web server implementation of the OWFS system.
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

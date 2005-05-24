@@ -88,10 +88,10 @@ Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
 None implemented.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
-.PP
+.so description
+.SS DS2405
 The
-.B DS2405
+.B DS2405 (3)
 allows control of other devices, like LEDs and relays. It is an early design and has been superceeded by the
 .B DS2406
 and
@@ -100,42 +100,9 @@ or even
 .B DS2450
 that have more PIO pins, and do not employ an arcane use the the alarm state to signal PIO status.
 .SH ADDRESSING
-All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
-.TP
-.B Family Code
-8 bits
-.TP
-.B Address
-48 bits
-.TP
-.B CRC
-8 bits
-.IP
-.PP
-Addressing under OWFS is in hexidecimal, of form:
-.IP
-.B 01.123456789ABC
-.PP
-where
-.B 01
-is an example 8-bit family code, and
-.B 12345678ABC
-is an example 48 bit address.
-.PP
-The dot is optional, and the CRC code can included. If included, it must be correct.
+.so addressing
 .SH DATASHEET
-.br
 http://pdfserv.maxim-ic.com/en/ds/DS2405.pdf
-.SH FILES
-.TP
-libow.so
-Library providing most of the OWFS system. Bus master control, data parsing, etc.
-.TP
-owfs
-Filesystem implementation. User space, using the FUSE kernel module.
-.TP
-owhttpd
-Web server implementation of the OWFS system.
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

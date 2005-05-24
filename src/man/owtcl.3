@@ -1,0 +1,365 @@
+'\"
+'\" The definitions below are for supplemental macros used in Tcl/Tk
+'\" manual entries.
+'\"
+'\" .AP type name in/out ?indent?
+'\"	Start paragraph describing an argument to a library procedure.
+'\"	type is type of argument (int, etc.), in/out is either "in", "out",
+'\"	or "in/out" to describe whether procedure reads or modifies arg,
+'\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+'\"	needed;  use .AS below instead)
+'\"
+'\" .AS ?type? ?name?
+'\"	Give maximum sizes of arguments for setting tab stops.  Type and
+'\"	name are examples of largest possible arguments that will be passed
+'\"	to .AP later.  If args are omitted, default tab stops are used.
+'\"
+'\" .BS
+'\"	Start box enclosure.  From here until next .BE, everything will be
+'\"	enclosed in one large box.
+'\"
+'\" .BE
+'\"	End of box enclosure.
+'\"
+'\" .CS
+'\"	Begin code excerpt.
+'\"
+'\" .CE
+'\"	End code excerpt.
+'\"
+'\" .VS ?br?
+'\"	Begin vertical sidebar, for use in marking newly-changed parts
+'\"	of man pages.  If an argument is present, then a line break is
+'\"	forced before starting the sidebar.
+'\"
+'\" .VE
+'\"	End of vertical sidebar.
+'\"
+'\" .DS
+'\"	Begin an indented unfilled display.
+'\"
+'\" .DE
+'\"	End of indented unfilled display.
+'\"
+'\" .SO
+'\"	Start of list of standard options for a Tk widget.  The
+'\"	options follow on successive lines, in four columns separated
+'\"	by tabs.
+'\"
+'\" .SE
+'\"	End of list of standard options for a Tk widget.
+'\"
+'\" .OP cmdName dbName dbClass
+'\"	Start of description of a specific option.  cmdName gives the
+'\"	option's name as specified in the class command, dbName gives
+'\"	the option's name in the option database, and dbClass gives
+'\"	the option's class in the option database.
+'\"
+'\" .UL arg1 arg2
+'\"	Print arg1 underlined, then print arg2 normally.
+'\"
+'\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# Start an argument description
+.de AP
+.ie !'\\$4'' .TP \\$4
+.el \{\
+.   ie !'\\$2'' .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ie !'\\$3'' \{\
+.ta \\n()Au \\n()Bu
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !'\\$2'' \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !'\\$1'' .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !'\\$2'' .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !'\\$1'' .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+'\"	# SO - start of list of standard options
+.de SO
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 4c 8c 12c
+.ft B
+..
+'\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\fBoptions\\fR manual entry for details on the standard options.
+..
+'\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
+.TH "Owtcl" TCL "20/January/2005" "Tcl"
+.HS table tk
+.BS
+.SH NAME
+Owtcl \- OWFS library access commands for Tcl
+.SH SYNOPSIS
+\fBpackage \fBrequire \fBow
+.sp
+\fB::OW::init\fI \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
+.br
+\fB::OW::finish
+.br
+\fB::OW::get\fI \fR?\fIpath\fR?
+.br
+\fB::OW::put\fI \fIpath \fR?\fIvalue\fR?
+.br
+\fB::OW::isdirectory\fI \fIpath
+.br
+\fB::OW::isdir\fI \fIpath
+
+.SH DESCRIPTION
+.B owtcl
+is a Tcl extension that provides an interface to OWFS. OWFS is a family
+of programs that manipulate the Dallas/Maxim 1-wire bus -- a low power,
+low speed, system of smart memory chips and sensors. Each item on the bus
+is uniquely numbered and addressable. Bus elements can be added and 
+subtracted at will.
+.PP
+There is optional data caching. Which can speed repeated access to the
+same 1wire properties (but is potentially confusing). Use the uncached
+links to see immediate values.
+.PP
+The underlying interface to the 1-wire bus is identical to \fIowfs\fR
+(filesystem view) and \fIowhttpd\fR web server interface. Only the top
+layer has been modified to return native Tcl data. Development here,
+and support for new devices, will progress with those projects.
+
+.SH LOW-LEVEL COMMANDS
+The following low-level commands are possible:
+.TP
+\fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
+Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR defines a way of
+connection to the 1-wire bus. Possible values:
+.RS
+.TP
+\fBusb \fR| \fBusb\fIN \fR| \fBu \fR| \fBu\fIN
+Direct connection to the 1-wire interface on the USB port -- \fIDS9490\fR.
+\fIN \fR- optional number for multiple usb adapters.
+.TP
+\fB/dev/ttySx
+Direct connection to a 1-wire interface on the serial port -- \fIDS9097U\fR
+or \fIDS9097\fR.
+.TP
+\fB:port\fR | \fBhost:port\fR | \fBsocket:/local/socket/path
+Location of an \fIowserver\fR daemon that connects to the 1-wire bus. Multiple
+\fIowtcl\fR as well as \fIowfs\fR and \fIowhttpd\fR programs can access the
+\fIowserver\fR process simultaneously. In fact, this will probably be the
+prefered mode of access to OWFS for \fIowtcl\fR except in trivial applications.
+.RE
+.sp
+.RS
+\fIoptions\fR allow to set additional parameters of operation with 1-wire bus.
+Possible options:
+.TP
+\fB\-format \fIvalue
+presentation format of names 1-wire devices. Possible formats:
+.RS
+.TP
+\fBf.i
+XX.YYYYYYYYYYYY (default)
+.TP
+\fBfi
+XXYYYYYYYYYYYY
+.TP
+\fBf.i.c
+XX.YYYYYYYYYYYY.ZZ
+.TP
+\fBf.ic
+XX.YYYYYYYYYYYYZZ
+.TP
+\fBfi.c
+XXYYYYYYYYYYYY.ZZ
+.TP
+\fBfic
+XXYYYYYYYYYYYYZZ
+.RE
+.TP
+\fB\-cache \fIvalue
+cache timeout (in seconds)
+.TP
+\fB\-celsius \fR| \fB\-fahrenheit \fR| \fB\-kelvin \fR| \fB\-rankine
+temperature scale. Default Celsius.
+.TP
+\fB\-readonly
+only allow reading of 1-wire devices
+.RE
+
+.TP
+\fB::OW::finish
+Close connection to 1-wire bus or owserver.
+
+.TP
+\fB::OW::get \fR?\fIpath\fR?
+Returns contents of OWFS directory as the list if path contains name OWFS directory.
+If path is name of OWFS file, returns of contents of this file. For files *.ALL
+returns a values list. If path is not defined, contents of root OWFS directory come
+back.
+
+.TP
+\fB::OW::put \fIpath \fR?\fIvalue\fR?
+Puts \fIvalue\fR in OWFS file indicated in \fIpath\fR. For files *.ALL use a value
+list. If /fIvalue\fR is not defined, puts a empty string.
+
+.TP
+\fB::OW::isdirectory \fIpath
+If \fIpath\fR is the directory - return 1. Otherwise return 0.
+
+.TP
+\fB::OW::isdir \fIpath
+Synonym of \fB::OW::isdirectory
+
+.SH SEE ALSO
+.so seealso
+.SH AVAILABILITY
+http://owfs.sourceforge.net
+.SH BUGS
+Simultaneous work of several connections is not supported.
+.sp
+.SH AUTHOR
+Serg Oskin (serg@oskin.ru)
+.sp
+

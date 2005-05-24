@@ -1,5 +1,22 @@
-.B owfs(1) owhttpd(1) owftpd(1) ownfsd(1) owserver(1)
-.br
-.B owtcl(3) owperl(3)
-.br
-.B DS1822(3) DS18B20(3) DS18S20(3) DS1921(3) DSDS1977(3) DS1991(3) DS1992(3) DS1995(3) DS1996(3) DS2401(3) DS2405(3) DS2406(3) DS2408(3) DS2409(3) DS2413(3) DS2415(3) DS2423(3) DS2433(3) DS2436(3) DS2438(3) DS2450(3) DS2502(3) DS2506(3) DS2760(3) DS2804(3) DS2890(3) DS2890(3) LCD(3)
+.SS Programs
+.B owfs (1) owhttpd (1) owftpd (1) ownfsd (1) owserver (1)
+.SS Language bindings
+.B owtcl (3) owperl (3)
+.SS Clocks
+.B DS1904(3) DS2415(3) DS2417(3)
+.SS ID
+.B DS2401 (3)
+.SS Memory
+.B DS1991 (3) DS1992 (3) DS1993 (3) DS1995 (3) DS1996 (3)
+.SS Switches
+.B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3)
+.SS Temperature
+.B DS1822 (3) DS18B20 (3) DS18S20 (3) DS1921 (3) 
+.SS Voltage
+.B DS2450 (3)
+.SS Resistance
+.B DS2890 (3)
+.SS Multifunction
+.B DS2436 (3) DS2438 (3) DS2760 (3) 
+.SS Other
+.B DS1977 (3) DS2413 (3) DS2423 (3) DS2433 (3) DS2502 (3) DS2506 (3) DS2804 (3) LCD (3)

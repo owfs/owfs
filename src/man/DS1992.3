@@ -80,10 +80,11 @@ Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
 None.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
-.PP
+.so description
+.SS
+DS1992
 The
-.B DS1996
+.B DS1992 (3)
 is an iButton with static memory. Data is read/written with error checking (transparent to the user).
 The
 .B DS1992
@@ -97,42 +98,9 @@ differ in their function by the amount of on-board memory they possess. (The int
 .I OWFS
 system handles this automatically.)
 .SH ADDRESSING
-All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
-.TP
-.B Family Code
-8 bits
-.TP
-.B Address
-48 bits
-.TP
-.B CRC
-8 bits
-.IP
-.PP
-Addressing under OWFS is in hexidecimal, of form:
-.IP
-.B 01.123456789ABC
-.PP
-where
-.B 01
-is an example 8-bit family code, and
-.B 12345678ABC
-is an example 48 bit address.
-.PP
-The dot is optional, and the CRC code can included. If included, it must be correct.
+.so addressing
 .SH DATASHEET
-.br
 http://pdfserv.maxim-ic.com/en/ds/DS1992-DS1993.pdf
-.SH FILES
-.TP
-libow.so
-Library providing most of the OWFS system. Bus master control, data parsing, etc.
-.TP
-owfs
-Filesystem implementation. User space, using the FUSE kernel module.
-.TP
-owhttpd
-Web server implementation of the OWFS system.
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY
