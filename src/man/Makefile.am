@@ -2,6 +2,7 @@
 
 man_MANS = owfs.1 \
            owhttpd.1 \
+           owserver.1 \
            DS1822.3 \
            DS18B20.3 \
            DS18S20.3 \
@@ -46,6 +47,7 @@ man_MANS = owfs.1 \
            DS2762.3 \
            DS2804.3 \
            DS2890.3 \
+           Thermachron.3 \
            LCD.3 \
            addressing \
            seealso \

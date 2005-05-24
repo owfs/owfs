@@ -14,7 +14,7 @@
 \- Econo 1-Wire Digital Thermometer
 .SH SYNOPSIS
 Thermometer.
-.HP
+.PP
 .B 22
 [.]XXXXXXXXXXXX[XX][/[
 .B die
@@ -46,7 +46,8 @@ Thermometer.
 .B type
 ]]
 .SH FAMILY CODE
-22
+.PP
+.I 22
 .SH SPECIAL PROPERTIES
 .SS fasttemp
 .I read-only, floating point
@@ -64,7 +65,7 @@ Two character manufacturing die lot. "B6" "B7" or "C2"
 .SS power
 .I read-only,yes-no
 .br
-Is the chip powered externally (1) or from the parasitically from the data bus (0)?
+Is the chip powered externally (=1) or from the parasitically from the data bus (=0)?
 .SS temperature
 .I read-only, floating point
 .br
@@ -96,7 +97,7 @@ Read allowed for all chips. Only B7 chips can written.
 .SS trimblanket
 .I read-write,yes-no
 .br
-Writing non-zero (1) puts a default trim value in the chip. Only applied to the B7
+Writing non-zero (=1) puts a default trim value in the chip. Only applied to the B7
 .I die.
 Reading will be true (non-zero) if trim value is the blanket value. Again, only B7 chips will register true, and since the written trim values cannot be read, this value may have little utility.
 .SS trimvalid
@@ -106,36 +107,7 @@ Is the
 .I trim 
 value in the valid range? Non-zero if true, which includes all non-B7 chips.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 None implemented.
 .SH DESCRIPTION
@@ -144,17 +116,17 @@ None implemented.
 The
 .B DS1822 (3)
 is one of several available 1-wire temperature sensors. Alternatives are the
-.B DS18S20,
-.B DS18B20
+.B DS18S20 (3),
+.B DS18B20 (3)
 as well as temperature/voltage measurements in the
-.B DS2436
+.B DS2436 (3)
 and
-.B DS2438.
+.B DS2438 (3).
 For truly versatile temperature measurements, see the protean
-.B DS1921 Thermachron.
+.B DS1921 (3) Thermachron (3).
 .PP
 Although the
-.B DS1822
+.B DS1822 (3)
 can select between 4 resolutions, this program simplifies the interface by only implementing the fastest/roughest and slowest/best.
 .SH ADDRESSING
 .so addressing

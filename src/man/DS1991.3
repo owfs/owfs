@@ -11,10 +11,10 @@
 .TH DS1991 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .B DS1991
-- 1152bit MultiKey iButton
+\- 1152bit MultiKey iButton
 .SH SYNOPSIS
 Non-volatile memory with password protection.
-.HP
+.PP
 .B 02
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
@@ -46,8 +46,8 @@ Non-volatile memory with password protection.
 .B type
 ]]
 .SH FAMILY CODE
-.TP
-02
+.PP
+.I 02
 .SH SPECIAL PROPERTIES
 .SS memory
 .I read-write, binary
@@ -102,36 +102,7 @@ Memory is split into 3 pages and each page has a unique password (8 bytes).
 .I ALL
 is an aggregate of the ident. Each page is accessed sequentially. Writing to this file will change the password on the page. NOTE: Currently used password have to be set to correct password before changing password. Data in the corresponding page is NOT effected.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION

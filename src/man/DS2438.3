@@ -14,7 +14,7 @@
 - Smart Battery Monitor
 .SH SYNOPSIS
 Temperature Voltages (Humidity) and Memory.
-.HP
+.PP
 .B 26
 [.]XXXXXXXXXXXX[XX][/[
 .B current
@@ -56,8 +56,8 @@ Temperature Voltages (Humidity) and Memory.
 .B type
 ]]
 .SH FAMILY CODE
-.TP
-26
+.PP
+.I 26
 .SH SPECIAL PROPERTIES
 .SS date
 .I read-write, ascii
@@ -115,7 +115,7 @@ for details.
 26 character date representation of the
 .I endcharge/udate
 value. Format is the same as the 
-.date
+.I date
 property.
 .SS endcharge/udate
 .I read-write, unsigned integer
@@ -195,36 +195,7 @@ and setting either will change the other.
 .br
 Voltage read (~10 bits) at the one of the chip's two supply voltages. Range VDD= 2.4V to 10V, VAD=1.5 to 10V.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION

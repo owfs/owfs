@@ -23,7 +23,7 @@
 - UniqueWare iButton (64 kBit)
 .SH SYNOPSIS
 EPROM add-only memory.
-.HP
+.PP
 .B 0F
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
@@ -58,11 +58,11 @@ EPROM add-only memory.
 .B type
 ]]
 .SH FAMILY CODE
-.TP
-0F
+.PP
+.I 0F
 DS2506 DS1986
-.TP
-8F
+.PP
+.I 8F
 DS2506-UNW DS1986U
 .SH SPECIAL PROPERTIES
 .SS memory
@@ -76,36 +76,7 @@ Memory is split into 256 pages of 32 bytes each.
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION

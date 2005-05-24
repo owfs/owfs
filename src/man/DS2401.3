@@ -15,7 +15,7 @@
 .br
 .B DS1990A
 - Serial Number iButton
-.HP
+.PP
 .B 01
 [.]XXXXXXXXXXXX[XX][/[
 .B address
@@ -31,40 +31,12 @@
 .SH SYNOPSIS
 Unique serial number only.
 .SH FAMILY CODE
-01
+.PP
+.I 01
 .SH SPECIAL PROPERTIES
 None.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION
@@ -87,4 +59,3 @@ http://pdfserv.maxim-ic.com/en/ds/DS1990A-F3-DS1990A-F5.pdf
 http://owfs.sourceforge.net
 .SH AUTHOR
 Paul Alfille (palfille@earthlink.net)
-

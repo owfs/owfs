@@ -14,7 +14,7 @@
 - 1-Wire 8 Channel Addressable Switch
 .SH SYNOPSIS
 8 port switch
-.HP
+.PP
 .B 29
 [.]XXXXXXXXXXXX[XX][/[
 .B latch.[0-7|ALL|BYTE]
@@ -42,7 +42,8 @@
 .B type
 ]]
 .SH FAMILY CODE
-29
+.PP
+.I 29
 .SH SPECIAL PROPERTIES
 .SS latch.0 ... latch.7 latch.ALL latch.BYTE
 .I read-write, binary
@@ -167,36 +168,7 @@ Responds on Conditional Search when sensed.7 and sensed.6 are set to 0.
 000000000 (0)
 Never responds to Conditional Search.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 Use the
 .I set_alarm

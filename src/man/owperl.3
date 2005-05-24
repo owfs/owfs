@@ -33,22 +33,17 @@
 .br
 .B OW::finish();
 .SH "DESCRIPTION"
-.B owperl
-is a perl module that provides an interface to OWFS. OWFS is a family of programs that manipulate the Dallas/Maxim 1-wire bus -- a low power, low speed, system of smart memory chips and sensors. Each item on the bus is uniquely numbered and addressable. Bus elements can be added and subtracted at will.
+.so description
+.SS owperl
+.B owperl (3)
+is a perl module that provides an interface to OWFS. The path to each 1-wire device is the same as
+.B owfs (1)
+. Only the top layer has been modified to return native perl strings.
 .PP
-There is optional data caching. Which can speed repeated access to the same 1wire properties (but is potentially confusing). Use the uncached links to see immediate values.
-.PP
-The underlying interface to the 1-wire bus is identical to
-.I owfs 
-(filesystem view) and 
-.I owhttpd
-web server interface. Only the top layer has been modified to return native perl strings. Development here, and support for new devices, will progress with those projects.
-.PP
-.I owperl
+.B owperl (3)
 is created by 
-.I SWIG
-(www.swig.org) which can be easily modified to support other programming languages.
-
+.B swig (1)
+(http://www.swig.org) which can be easily modified to support other programming languages.
 .SH FUNCTIONS
 .SS OW::init( interface )
 .I interface
@@ -122,7 +117,7 @@ is the default.
 .I Version
 of this program and related libraries.
 .SH EXAMPLE
-owhttpd -p 3001 -d /dev/ttyS0
+perl -MOW -e "OW::init('/dev/ttyS1'); printf OW::get('\');"
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

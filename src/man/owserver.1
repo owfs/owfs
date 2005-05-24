@@ -40,37 +40,37 @@ tcp-port
 .B owserver
 .B \-V \-\-version
 .SH "DESCRIPTION"
-.B owserver
+.so description
+.SS owserver
+.B owserver (1)
 is the backend component of the OWFS 1-wire bus control system.
-.I owserver
+.B owserver (1)
 arbitrates access to the bus from multiple client processes. The physical bus is usually connected to a serial or USB port, and other processes connect to
-.I owserver
+.B owserver (1)
 over network sockets (tcp port). Communication can be local or over a network. Secure tunneling can be implemented using standard techniques.
 .PP
 Frontend clients include a filesystem representation:
-.I owfs(1)
+.B owfs (1)
 , and a webserver:
-.I owhttpd(1).
+.B owhttpd (1).
 Direct language bindings are also available, e.g:
-.I owperl(1).
+.B owperl (3).
 Several instances of each client can be initiated.
 .PP
 Each client can also connect directly to the physical bus, skipping
-.I owserver
+.B owserver (1)
 but only one client can connect to the physical bus safely. Simultaneous access is prevented by the operating system for USB ports, but unfortunately not serial ports. The safe way to share access to the 1-wire bus is via
-.I owserver
+.B owserver (1)
 with the clients connecting. Note:
-.I owserver
+.B owserver (1)
 can connect to another
-.I owserver
+.B owserver (1)
 process, though the utility of this technique is limited (perhaps as a
 .I readonly
 buffer?)
 .PP
-.I owserver
+.B owserver (1)
 is by default multithreaded. Optional data caching is in the server, not clients, so all the clients gain efficiency.
-.PP
-The 1-wire protocol is a simple networking system and assiciated devices developed by Dallas Semiconductor (now Maxim). Communication is over a single line, with both power and data being supplied. Each 1-wire device has a unique address, hardwired during manufacture. Devices can be individually discovered and addressed. 1-wire devices include simple IDs, memory, temperature, pressure, voltage, humidity, clock, switches, encryption and more.
 .SH OPTIONS
 .SS \-\-background | \-\-foreground
 Whether the program releases the console and enters daemon mode after evaluating command line options.

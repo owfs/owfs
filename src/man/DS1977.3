@@ -14,7 +14,7 @@
 - Password Protected 32kbit Memory iButton
 .SH SYNOPSIS
 Non-volatile memory.
-.HP
+.PP
 .B 37
 [.]XXXXXXXXXXXX[XX][/[
 .B memory
@@ -50,8 +50,8 @@ Non-volatile memory.
 .B type
 ]]
 .SH FAMILY CODE
-.TP
-37
+.PP
+.I 37
 DS1977
 .SH SPECIAL PROPERTIES
 .SS memory
@@ -103,36 +103,7 @@ are stored in the program and must match the passwords stored in the DS1977. Cha
 .I set_password/xxx
 will change these values as well.
 .SH STANDARD PROPERTIES
-.SS address
-.I read-only, ascii
-.br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
-.SS crc8
-.I read-only, ascii
-.br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceeding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
-.SS family
-.I read-only, ascii
-.br
-The 8-bit family code. Unique to each
-.I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
-.SS id
-.I read-only, ascii
-.br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
-.SS present
-.I read-only, yes-no
-.br
-Is the device currently
-.I present
-on the 1-wire bus?
-.SS type
-.I read-only, ascii
-.br
-Part name assigned by Dallas Semi. E.g.
-.I DS2401
-Alternative packaging (iButton vs chip) will not be distiguished.
+.so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION

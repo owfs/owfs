@@ -84,23 +84,16 @@ serialport |
 .I \-\-morehelp
 
 .SH "DESCRIPTION"
-.B owfs
-is a user-space (virtual) filesystem that shows the Dallas/Maxim 1-Wire bus with all the 1-wire devices that are attached. Devices are main directory entries, and each device is in turn a directory of its properties (like ID, memory, temperature, voltage). These files are generated on the fly whenever a 1-wire device is accessed. 1-wire devices are uniquely labeled at the factory. This unique ID is the directory name for that device. The files for each device vary with the type of device. The names are pretty self-explanatory, and there is extensive documentation.
+.so description
+.SS owfs
+.B owfs (1)
+is the filesystem client of the 
+.I OWFS
+family of programs. It is Linux-specific, and requires the 
+.I fuse
+kernel module and library. (http://fuse.sourceforge.net) which is a user-mode filesystem driver.
 .PP
-1-wire is a protocol developed by Dallas/Maxim to allow communication and power over the same electrical line. Each device can be discovered, and addressed. The system expects intermittent connections, and is well suited to control and monitoring applications. The protocol is a bit-level protocol that clearly has evolved over time.
-.I owfs
-hides the details of the low-level 1-wire protocol with a file-system metaphor.
-.PP
-To speed data access,
-.I owfs
-can cache recently accessed data, and device listings.
-There is optional data caching. Which ca.TP
-n speed repeated access to the same 1-wire properties (but is potentially confusing). Use the uncached directory to see immediate values.
-.TP
-The underlying interface to the 1-wire bus is identical to OWHTTPD -- the 1-wire web server. Only the top layer has been modified to serve files instead of web pages. Development here, and support for new devices, will progress with that project.
-.TP
-The 1-wire file system is a modified version of fuse examples by Miklos Szeredi. Th, and serves no files. Security should therefore be good. Only the 1-wire bus is at risk. The fuse library and kernel module is needed. (See http://fuse.sourceforge.net)
-
+Essentially, the entire 1-wire bus is mounted to a place in your filesystem. All the 1-wire devices are accessible using standard file operations (read, write, directory listing). The system is safe, no actual files are exposed, these files are virtual. Not all operations are supported. Specifically, file creation, deletion, linking and renaming are not allowed. (You can link from outside to a owfs file, but not the other way around).
 .SH COMMON OPTIONS
 .SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
 Temperature scale used for data output. Celsius is the default.

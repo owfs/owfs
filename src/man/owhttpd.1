@@ -84,15 +84,17 @@ tcp-port
 .I \-V \-\-version
 .I mountpoint
 .SH "DESCRIPTION"
-.B owhttpd
+.so description
+.SS owhttpd
+.B owhttpd (1)
 is a small webserver that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main view shows the devices found, You can then navigate to individual devices, and view/alter their properties.
-.TP
-There is optional data caching. Which can speed repeated access to the same 1wire properties (but is potentially confusing). Use the uncached links to see immediate values.
-.TP
-The underlying interface to the 1-wire bus is identical to OWFS -- the 1-wire filesystem for linux. Only the top layer has been modified to serve web pages instead of files. Development here, and support for new devices, will progress with that project.
-.TP
-The web server is a modified version of chttpd by Greg Olszewski. It serves no filesfrom the disk, only virtual files from the 1-wire bus. Security should therefore be good. Only the 1-wire bus is at risk.
-
+.PP
+.B owhttpd (1)
+uses the same naming convention as
+.B owfs (1)
+, where the URL corresponds to the filename.
+.PP
+The web server is a modified version of chttpd by Greg Olszewski. It serves no files from the disk, only virtual files from the 1-wire bus. Security should therefore be good. Only the 1-wire bus is at risk.
 .SH COMMON OPTIONS
 .SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
 Temperature scale used for data output. Celsius is the default.

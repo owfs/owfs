@@ -250,24 +250,17 @@ Owtcl \- OWFS library access commands for Tcl
 \fB::OW::isdirectory\fI \fIpath
 .br
 \fB::OW::isdir\fI \fIpath
-
+\fR
 .SH DESCRIPTION
-.B owtcl
-is a Tcl extension that provides an interface to OWFS. OWFS is a family
-of programs that manipulate the Dallas/Maxim 1-wire bus -- a low power,
-low speed, system of smart memory chips and sensors. Each item on the bus
-is uniquely numbered and addressable. Bus elements can be added and 
-subtracted at will.
-.PP
-There is optional data caching. Which can speed repeated access to the
-same 1wire properties (but is potentially confusing). Use the uncached
-links to see immediate values.
-.PP
-The underlying interface to the 1-wire bus is identical to \fIowfs\fR
-(filesystem view) and \fIowhttpd\fR web server interface. Only the top
-layer has been modified to return native Tcl data. Development here,
-and support for new devices, will progress with those projects.
-
+.so description
+.SS owtcl
+.B owtcl (3)
+is a Tcl extension that provides an interface to OWFS. The underlying interface to the 1-wire bus is identical to 
+.B owfs (1)
+(filesystem view) and 
+.B owhttpd (1) 
+web server interface. Only the top
+layer has been modified to return native Tcl data.
 .SH LOW-LEVEL COMMANDS
 The following low-level commands are possible:
 .TP
