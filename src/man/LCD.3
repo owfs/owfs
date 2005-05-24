@@ -168,10 +168,10 @@ Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
 None implemented.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dallas Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
-.PP
+.so description
+.SS LCD
 The
-.B LCD
+.B LCD (3)
 controller is a microprocessor driven device that simulates the operation of 1-wire devices. It's creator has arbitrarily chosen the
 .I family code
 FF. The controller requires external power. Full details are available from the designer.
@@ -180,42 +180,9 @@ The main draw of the
 .B LCD
 controller is as any easy way to provide output to users.
 .SH ADDRESSING
-All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
-.TP
-.B Family Code
-8 bits
-.TP
-.B Address
-48 bits
-.TP
-.B CRC
-8 bits
-.IP
-.PP
-Addressing under OWFS is in hexidecimal, of form:
-.IP
-.B 01.123456789ABC
-.PP
-where
-.B 01
-is an example 8-bit family code, and
-.B 12345678ABC
-is an example 48 bit address.
-.PP
-The dot is optional, and the CRC code can included. If included, it must be correct.
+.so addressing
 .SH DATASHEET
-.br
 Available from http://www.dreamwater.org/biz/louisswart
-.SH FILES
-.TP
-libow.so
-Library providing most of the OWFS system. Bus master control, data parsing, etc.
-.TP
-owfs
-Filesystem implementation. User space, using the FUSE kernel module.
-.TP
-owhttpd
-Web server implementation of the OWFS system.
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

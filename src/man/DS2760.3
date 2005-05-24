@@ -194,55 +194,29 @@ Alternative packaging (iButton vs chip) will not be distiguished.
 .SH ALARMS
 None.
 .SH DESCRIPTION
-This is a 1-wire bus device. The 1-wire bus is a simple networking system created by Dalla Semiconductor that allows low-cost low-power communication over a single wire (plus ground). Power is often delivered "parasitically" from the same data line. Each device has a unique unalterable ID and can be individually addressed.
-.PP
+.so description
+.SS DS2760 DS2761 DS2762
 The
-.B DS2760
-is a class of battery charging controllers. There are minor difference between the
+.B DS2760 (3)
+is a class of battery charging controllers. There are minor hardware difference between the
 .B DS2760, DS2761
 and
-.B DS2760
-battery chip. Current sensing is availble, but not implemented. The major advantage compared to the
 .B DS2762
-see Dallas Application Note 221.
+battery chip, but they are indistiguishable to the software.
+.PP
+A number of interesting devices can be built with the
+.B DS276x 
+including thermocouples. Support for thermocouples in built into the software, using the embedded thermister as the cold junction temperature.
+.PP
+For an explanatino of the differences between the 
+.B DS276x
+variants, see Dallas Application Note 221.
 .SH ADDRESSING
-All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
-.TP
-.B Family Code
-8 bits
-.TP
-.B Address
-48 bits
-.TP
-.B CRC
-8 bits
-.IP
-.PP
-Addressing under OWFS is in hexidecimal, of form:
-.IP
-.B 01.123456789ABC
-.PP
-where
-.B 01
-is an example 8-bit family code, and
-.B 12345678ABC
-is an example 48 bit address.
-.PP
-The dot is optional, and the CRC code can included. If included, it must be correct.
+.so addressing
 .SH DATASHEET
-.br
 http://pdfserv.maxim-ic.com/en/ds/DS2760.pdf
+.br
 http://pdfserv.maxim-ic.com/en/an/app221.pdf
-.SH FILES
-.TP
-libow.so
-Library providing most of the OWFS system. Bus master control, data parsing, etc.
-.TP
-owfs
-Filesystem implementation. User space, using the FUSE kernel module.
-.TP
-owhttpd
-Web server implementation of the OWFS system.
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY
