@@ -16,24 +16,22 @@ to end.
 
 */
 
-#include "owfs_config.h"
-#include "ow.h"
-#include <features.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <syslog.h>
-#include <stdio.h>
-#include <netdb.h>
-#include <netinet/tcp.h>
-#include <fcntl.h>
+#include <owftpd.h>
+//#include <features.h>
+//#include <sys/types.h>
+//#include <sys/socket.h>
+//#include <netinet/in.h>
+//#include <string.h>
+//#include <errno.h>
+//#include <unistd.h>
+//#include <pthread.h>
+//#include <stdlib.h>
+//#include <limits.h>
+//#include <syslog.h>
+//#include <stdio.h>
+//#include <netdb.h>
+//#include <netinet/tcp.h>
+//#include <fcntl.h>
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -46,12 +44,12 @@ to end.
 # endif
 #endif
 
-#include "daemon_assert.h"
-#include "telnet_session.h"
-#include "ftp_session.h"
-#include "ftp_listener.h"
-#include "watchdog.h"
-#include "af_portability.h"
+//#include "daemon_assert.h"
+//#include "telnet_session.h"
+//#include "ftp_session.h"
+//#include "ftp_listener.h"
+//#include "watchdog.h"
+//#include "af_portability.h"
 
 
 
@@ -74,9 +72,8 @@ typedef struct connection_info {
 
 /* prototypes */
 static int invariant(const struct ftp_listener_t *f);
-void *connection_acceptor(struct ftp_listener_t *f);
-static void *connection_handler(connection_info_t *info);
-static void connection_handler_cleanup(connection_info_t *info);
+static void *connection_handler(void * v);
+static void connection_handler_cleanup(void * v);
 
 /* initialize an FTP listener */
 int ftp_listener_init(struct ftp_listener_t *f, 
@@ -142,8 +139,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
 
         gai_err = getaddrinfo(address, NULL, &hints, &res);
         if (gai_err != 0) {
-            error_init(err, gai_err, "error parsing server socket address; %s", 
-                       gai_strerror(gai_err));
+            error_init(err, gai_err, "error parsing server socket address; %s", gai_strerror(gai_err));
             return 0;
         }
 
@@ -163,14 +159,12 @@ int ftp_listener_init(struct ftp_listener_t *f,
                               buf, 
                               sizeof(buf));
     if (inet_ntop_ret == NULL) {
-        error_init(err, errno, "error converting server address to ASCII; %s", 
-                   strerror(errno));
+        error_init(err, errno, "error converting server address to ASCII; %s", strerror(errno));
         return 0;
     }
     
     /* Put some information in syslog */
-    syslog(LOG_INFO, "Binding interface '%s', port %d, max clients %d\n", buf, 
-        ntohs(SINPORT(&sock_addr)), max_connections);    
+    LEVEL_CONNECT("Binding interface '%s', port %d, max clients %d\n", buf, ntohs(SINPORT(&sock_addr)), max_connections)
     
 
     /* okay, finally do some socket manipulation */
@@ -182,17 +176,14 @@ int ftp_listener_init(struct ftp_listener_t *f,
 
     reuseaddr = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseaddr, 
-                   sizeof(int)) !=0) 
-    {
+                   sizeof(int)) !=0) {
         close(fd);
-        error_init(err, errno, "error setting socket to reuse address; %s", 
-                   strerror(errno));
+        error_init(err, errno, "error setting socket to reuse address; %s", strerror(errno));
         return 0;
     }
 
     if (bind(fd, (struct sockaddr *)&sock_addr, 
-             sizeof(struct sockaddr_in)) != 0) 
-    {
+             sizeof(struct sockaddr_in)) != 0) {
         close(fd);
         error_init(err, errno, "error binding address; %s", strerror(errno));
         return 0;
@@ -200,8 +191,7 @@ int ftp_listener_init(struct ftp_listener_t *f,
 
     if (listen(fd, SOMAXCONN) != 0) {
         close(fd);
-        error_init(err, errno, "error setting socket to listen; %s", 
-                   strerror(errno));
+        error_init(err, errno, "error setting socket to listen; %s", strerror(errno));
         return 0;
     }
 
@@ -209,22 +199,19 @@ int ftp_listener_init(struct ftp_listener_t *f,
     flags = fcntl(fd, F_GETFL);
     if (flags == -1) {
         close(fd);
-        error_init(err, errno, "error getting flags on socket; %s", 
-                   strerror(errno));
+        error_init(err, errno, "error getting flags on socket; %s", strerror(errno));
         return 0;
     }
     if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
         close(fd);
-        error_init(err, errno, "error setting socket to non-blocking; %s", 
-                   strerror(errno));
+        error_init(err, errno, "error setting socket to non-blocking; %s", strerror(errno));
         return 0;
     }
 
     /* create a pipe to wake up our listening thread */
     if (pipe(pipefds) != 0) {
         close(fd);
-        error_init(err, errno, "error creating pipe for internal use; %s", 
-                   strerror(errno));
+        error_init(err, errno, "error creating pipe for internal use; %s", strerror(errno));
         return 0;
     }
 
@@ -258,10 +245,8 @@ int ftp_listener_start(struct ftp_listener_t *f, error_code_t *err)
     daemon_assert(invariant(f));
     daemon_assert(err != NULL);
 
-    error_code = pthread_create(&thread_id, 
-                                NULL, 
-                                (void *(*)())connection_acceptor, 
-                                f);
+//    error_code = pthread_create(&thread_id, NULL, (void *(*)())connection_acceptor, f);
+    error_code = pthread_create(&thread_id, NULL, connection_acceptor, f);
 
     if (error_code == 0) {
         f->listener_running = 1;
@@ -310,8 +295,8 @@ static int invariant(const struct ftp_listener_t *f)
 #endif /* NDEBUG */
 
 /* handle incoming connections */
-void *connection_acceptor(struct ftp_listener_t *f)
-{
+void *connection_acceptor(void * v) {
+    struct ftp_listener_t *f = (struct ftp_listener_t *) v ;
     error_code_t err;
     int num_error;
 
@@ -330,8 +315,7 @@ void *connection_acceptor(struct ftp_listener_t *f)
     daemon_assert(invariant(f));
 
     if (!watchdog_init(&f->watchdog, f->inactivity_timeout, &err)) {
-        syslog(LOG_ERR, "Error initializing watchdog thread; %s", 
-            error_get_desc(&err));
+        LEVEL_CONNECT("Error initializing watchdog thread; %s",error_get_desc(&err));
         return NULL;
     }
 
@@ -347,7 +331,7 @@ void *connection_acceptor(struct ftp_listener_t *f)
          /* if data arrived on our pipe, we've been asked to exit */
          if (FD_ISSET(f->shutdown_request_recv_fd, &readfds)) {
              close(f->fd);
-             syslog(LOG_INFO, "listener no longer accepting connections");
+             LEVEL_CONNECT("listener no longer accepting connections");
              pthread_exit(NULL);
          }
 
@@ -360,9 +344,7 @@ void *connection_acceptor(struct ftp_listener_t *f)
              if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_nodelay,
                  sizeof(int)) != 0)
              {
-                 syslog(LOG_ERR,
-                   "error in setsockopt(), FTP server dropping connection; %s",
-                   strerror(errno));
+                 LEVEL_CONNECT("error in setsockopt(), FTP server dropping connection; %s",strerror(errno));
                  close(fd);
                  continue;
              }
@@ -371,17 +353,14 @@ void *connection_acceptor(struct ftp_listener_t *f)
              if (getsockname(fd, (struct sockaddr *)&server_addr, 
                  &addr_len) == -1) 
              {
-                 syslog(LOG_ERR, 
-                   "error in getsockname(), FTP server dropping connection; %s",
-                   strerror(errno));
+                 LEVEL_CONNECT("error in getsockname(), FTP server dropping connection; %s",strerror(errno));
                  close(fd);
                  continue;
              }
 
              info = (connection_info_t *)malloc(sizeof(connection_info_t));
              if (info == NULL) {
-                 syslog(LOG_CRIT, 
-                     "out of memory, FTP server dropping connection");
+                 LEVEL_DEFAULT("out of memory, FTP server dropping connection");
                  close(fd);
                  continue;
              }
@@ -396,9 +375,7 @@ void *connection_acceptor(struct ftp_listener_t *f)
                                    f->dir, 
                                    &err)) 
              {
-                 syslog(LOG_ERR, 
-                     "error initializing FTP session, FTP server exiting; %s",
-                     error_get_desc(&err));
+                 LEVEL_DEFAULT("error initializing FTP session, FTP server exiting; %s",error_get_desc(&err));
                  close(fd);
                  telnet_session_destroy(&info->telnet_session);
                  free(info);
@@ -406,13 +383,11 @@ void *connection_acceptor(struct ftp_listener_t *f)
              }
 
 
-             error_code = pthread_create(&thread_id, 
-                          NULL, 
-                          (void *(*)())connection_handler, 
-                          info);
+//             error_code = pthread_create(&thread_id, NULL, (void *(*)())connection_handler, info);
+             error_code = pthread_create(&thread_id, NULL, connection_handler, info);
 
              if (error_code != 0) {
-                 syslog(LOG_ERR, "error creating new thread; %d", error_code);
+                 LEVEL_DEFAULT("error creating new thread; %d", error_code);
                  close(fd);
                  telnet_session_destroy(&info->telnet_session);
                  free(info);
@@ -421,18 +396,13 @@ void *connection_acceptor(struct ftp_listener_t *f)
              num_error = 0;
          } else {
              if ((errno == ECONNABORTED) || (errno == ECONNRESET)) {
-                 syslog(LOG_NOTICE, 
-                     "interruption accepting FTP connection; %s", 
-                     strerror(errno));
+                 LEVEL_CONNECT("interruption accepting FTP connection; %s",strerror(errno));
              } else {
-                 syslog(LOG_WARNING, 
-                     "error accepting FTP connection; %s", 
-                     strerror(errno));
+                 LEVEL_CONNECT("error accepting FTP connection; %s",strerror(errno));
                  ++num_error;
              }
              if (num_error >= MAX_ACCEPT_ERROR) {
-                 syslog(LOG_ERR, 
-                   "too many consecutive errors, FTP server exiting");
+                 LEVEL_CONNECT("too many consecutive errors, FTP server exiting");
                  return NULL;
              }
          }
@@ -460,7 +430,7 @@ static char *addr2string(const sockaddr_storage_t *s)
                          0, 
                          NI_NUMERICHOST);
     if (error != 0) {
-        syslog(LOG_WARN, "getnameinfo error; %s", gai_strerror(error));
+        LEVEL_CONNECT("getnameinfo error; %s", gai_strerror(error));
         ret_val = "Unknown IP";
     } else {
         ret_val = addr;
@@ -473,8 +443,8 @@ static char *addr2string(const sockaddr_storage_t *s)
 }
 
 
-static void *connection_handler(connection_info_t *info) 
-{
+static void *connection_handler(void * v) {
+    connection_info_t *info = (connection_info_t *) v ;
     struct ftp_listener_t *f;
     int num_connections;
     char drop_reason[80];
@@ -490,14 +460,12 @@ static void *connection_handler(connection_info_t *info)
     watchdog_add_watched(&f->watchdog, &info->watched);
 
     /* set up our cleanup handler */
-    pthread_cleanup_push((void (*)())connection_handler_cleanup, info);
+    pthread_cleanup_push(connection_handler_cleanup, info);
 
     /* process global data */
     pthread_mutex_lock(&f->mutex);
     num_connections = ++f->num_connections;
-    syslog(LOG_INFO, "%s port %d connection", 
-        addr2string(&info->ftp_session.client_addr), 
-        ntohs(SINPORT(&info->ftp_session.client_addr)));
+    LEVEL_CONNECT("%s port %d connection",addr2string(&info->ftp_session.client_addr),ntohs(SINPORT(&info->ftp_session.client_addr)));
     pthread_mutex_unlock(&f->mutex);
 
     /* handle the session */
@@ -508,18 +476,14 @@ static void *connection_handler(connection_info_t *info)
     } else {
 
         /* too many users */
-        sprintf(drop_reason, 
-          "Too many users logged in, dropping connection (%d logins maximum)", 
-          f->max_connections);
+        UCLIBCLOCK
+            sprintf(drop_reason,"Too many users logged in, dropping connection (%d logins maximum)",f->max_connections);
+        UCLIBCUNLOCK
         ftp_session_drop(&info->ftp_session, drop_reason);
 
         /* log the rejection */
         pthread_mutex_lock(&f->mutex);
-        syslog(LOG_WARNING, 
-          "%s port %d exceeds max users (%d), dropping connection",
-          addr2string(&info->ftp_session.client_addr), 
-          ntohs(SINPORT(&info->ftp_session.client_addr)),
-          num_connections);
+        LEVEL_CONNECT("%s port %d exceeds max users (%d), dropping connection",addr2string(&info->ftp_session.client_addr),ntohs(SINPORT(&info->ftp_session.client_addr)),num_connections);
         pthread_mutex_unlock(&f->mutex);
 
     }
@@ -532,8 +496,8 @@ static void *connection_handler(connection_info_t *info)
 }
 
 /* clean up a connection */
-static void connection_handler_cleanup(connection_info_t *info) 
-{
+static void connection_handler_cleanup(void * v) {
+    connection_info_t *info = (connection_info_t *) v ;
     struct ftp_listener_t *f;
 
     f = info->ftp_listener;
@@ -545,10 +509,7 @@ static void connection_handler_cleanup(connection_info_t *info)
     f->num_connections--;
     pthread_cond_signal(&f->shutdown_cond);
 
-    syslog(LOG_INFO, 
-      "%s port %d disconnected", 
-      addr2string(&info->ftp_session.client_addr),
-      ntohs(SINPORT(&info->ftp_session.client_addr)));
+    LEVEL_CONNECT("%s port %d disconnected",addr2string(&info->ftp_session.client_addr),ntohs(SINPORT(&info->ftp_session.client_addr)));
 
     pthread_mutex_unlock(&f->mutex);
 

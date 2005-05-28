@@ -2,19 +2,21 @@
  * $Id$
  */
 
-#include "owfs_config.h"
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include "ftp_command.h"
-#include "af_portability.h"
-#include "daemon_assert.h"
+#include <owftpd.h>
+  
+//#include "owfs_config.h"
+//#include <string.h>
+//#include <stdlib.h>
+//#include <ctype.h>
+//#include <stdio.h>
+//#include <sys/types.h>
+//#include <sys/socket.h>
+//#include <netinet/in.h>
+//#include <arpa/inet.h>
+//#include <netdb.h>
+//#include "ftp_command.h"
+//#include "af_portability.h"
+//#include "daemon_assert.h"
 
 /* argument types */
 #define ARG_NONE              0
@@ -55,8 +57,7 @@ static int commandcmp( const void * a , const void * b ) {
     return strncmp( (const char *)a , ((const struct command_struct *)b)->name, ((const struct command_struct *)b)->len ) ;
 }
 
-int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
-{
+int ftp_command_parse(const char *input, struct ftp_command_t *cmd) {
     struct ftp_command_t tmp;
     int c;
     const char *optional_number;
@@ -65,45 +66,44 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
 /* our FTP commands */
     struct command_struct * command_found ;
     static struct command_struct command_def[] = {
-	{ "USER", ARG_STRING          ,4,},
-	{ "PASS", ARG_STRING          ,4,},
-	{ "CWD",  ARG_STRING          ,3,},
-	{ "CDUP", ARG_NONE            ,4,},
-	{ "QUIT", ARG_NONE            ,4,},
-	{ "PORT", ARG_HOST_PORT       ,4,},
-	{ "LPRT", ARG_HOST_PORT_LONG  ,4,},
-	{ "EPRT", ARG_HOST_PORT_EXT   ,4,},
-	{ "PASV", ARG_NONE            ,4,},
-	{ "LPSV", ARG_NONE            ,4,},
-	{ "EPSV", ARG_OPTIONAL_NUMBER ,4,},
-	{ "TYPE", ARG_TYPE            ,4,},
-	{ "STRU", ARG_STRUCTURE       ,4,},
-	{ "MODE", ARG_MODE            ,4,},
-	{ "RETR", ARG_STRING          ,4,},
-	{ "STOR", ARG_STRING          ,4,},
-	{ "PWD",  ARG_NONE            ,3,},
-	{ "LIST", ARG_OPTIONAL_STRING ,4,},
-	{ "NLST", ARG_OPTIONAL_STRING ,4,},
-	{ "SYST", ARG_NONE            ,4,},
-	{ "HELP", ARG_OPTIONAL_STRING ,4,},
-	{ "NOOP", ARG_NONE            ,4,},
-	{ "REST", ARG_OFFSET          ,4,},
-	{ "SIZE", ARG_STRING          ,4,},
-	{ "MDTM", ARG_STRING          ,4,}
+        { "USER", ARG_STRING          ,4,},
+        { "PASS", ARG_STRING          ,4,},
+        { "CWD",  ARG_STRING          ,3,},
+        { "CDUP", ARG_NONE            ,4,},
+        { "QUIT", ARG_NONE            ,4,},
+        { "PORT", ARG_HOST_PORT       ,4,},
+        { "LPRT", ARG_HOST_PORT_LONG  ,4,},
+        { "EPRT", ARG_HOST_PORT_EXT   ,4,},
+        { "PASV", ARG_NONE            ,4,},
+        { "LPSV", ARG_NONE            ,4,},
+        { "EPSV", ARG_OPTIONAL_NUMBER ,4,},
+        { "TYPE", ARG_TYPE            ,4,},
+        { "STRU", ARG_STRUCTURE       ,4,},
+        { "MODE", ARG_MODE            ,4,},
+        { "RETR", ARG_STRING          ,4,},
+        { "STOR", ARG_STRING          ,4,},
+        { "PWD",  ARG_NONE            ,3,},
+        { "LIST", ARG_OPTIONAL_STRING ,4,},
+        { "NLST", ARG_OPTIONAL_STRING ,4,},
+        { "SYST", ARG_NONE            ,4,},
+        { "HELP", ARG_OPTIONAL_STRING ,4,},
+        { "NOOP", ARG_NONE            ,4,},
+        { "REST", ARG_OFFSET          ,4,},
+        { "SIZE", ARG_STRING          ,4,},
+        { "MDTM", ARG_STRING          ,4,}
     };
     static unsigned int num_commands = (sizeof(command_def) / sizeof(struct command_struct)) ;
 
     if ( first_time ) {
-	first_time = 0 ;
-	qsort(command_def,num_commands,sizeof(struct command_struct),commandsort);
+        first_time = 0 ;
+        qsort(command_def,num_commands,sizeof(struct command_struct),commandsort);
     }
 
     daemon_assert(input != NULL);
     daemon_assert(cmd != NULL);
 
     /* see if our input starts with a valid command */
-    if ( (command_found=bsearch(input,command_def,num_commands,sizeof(struct command_struct), commandcmp)) == NULL )
-	return 0 ;
+    if ( (command_found=bsearch(input,command_def,num_commands,sizeof(struct command_struct), commandcmp)) == NULL ) return 0 ;
 
     /* copy our command */
     strcpy(tmp.command, command_found->name);
@@ -135,7 +135,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
     case ARG_OPTIONAL_STRING:
         if (!no_args) {
             input = copy_string(tmp.arg[0].string, input);
-	    if (input != NULL) tmp.num_arg++;
+            if (input != NULL) tmp.num_arg++;
         }
         break;
 
@@ -175,7 +175,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
             } else {
                 return 0;
             }
-	    if (input != NULL) tmp.num_arg++;
+            if (input != NULL) tmp.num_arg++;
         }
         break;     
 
@@ -186,7 +186,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
         ++input ;
         tmp.arg[0].string[0] = c;
         tmp.arg[0].string[1] = '\0';
-	tmp.num_arg = 1;
+        tmp.num_arg = 1;
         
         switch(c) {
         case 'A':
@@ -253,8 +253,7 @@ int ftp_command_parse(const char *input, struct ftp_command_t *cmd)
 }
 
 /* copy a string terminated with a newline */
-static const char *copy_string(char *dst, const char *src)
-{
+static const char *copy_string(char *dst, const char *src) {
     int i;
 
     daemon_assert(dst != NULL);
@@ -269,8 +268,7 @@ static const char *copy_string(char *dst, const char *src)
 }
 
 
-static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
-{
+static const char *parse_host_port(struct sockaddr_in *addr, const char *s) {
     int i;
     int octets[6];
     char addr_str[16];
@@ -331,8 +329,7 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
 
 /* note: returns success even for unknown address families */
 /*       this is okay, as long as subsequent uses VERIFY THE FAMILY first */
-static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s)
-{
+static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s) {
     unsigned int i;
     int family;
     int tmp;
@@ -425,8 +422,7 @@ static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s)
     return s;
 }
 
-static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s)
-{
+static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s) {
     int delimeter;
     int family;
     char *p;
@@ -529,8 +525,7 @@ static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s)
 /* scan the string for a number from 0 to max_num */
 /* returns the next non-numberic character */
 /* returns NULL if not at least one digit */
-static const char *parse_number(int *num, const char *s, int max_num)
-{
+static const char *parse_number(int *num, const char *s, int max_num) {
     int tmp;
     int cur_digit;
     
@@ -566,8 +561,7 @@ static const char *parse_number(int *num, const char *s, int max_num)
     return s;
 }
 
-static const char *parse_offset(off_t *ofs, const char *s)
-{
+static const char *parse_offset(off_t *ofs, const char *s) {
     off_t tmp_ofs;
     int cur_digit;
     off_t max_ofs;

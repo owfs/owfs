@@ -2,14 +2,16 @@
  * $Id$
  */
 
-#include "owfs_config.h"
-#include "ow.h"
-#include <features.h>
-#include <unistd.h>
-#include "daemon_assert.h"
-#include "watchdog.h"
+//#include "owfs_config.h"
+//#include "ow.h"
+//#include <features.h>
+//#include <unistd.h>
+//#include "daemon_assert.h"
+//#include "watchdog.h"
 
-#include    <pthread.h>
+//#include    <pthread.h>
+
+#include <owftpd.h>
 
 static int invariant(watchdog_t *w);
 static void insert(watchdog_t *w, watched_t *watched);
@@ -32,8 +34,8 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
 
     error_code = pthread_create(&thread_id, NULL, watcher, w);
     if (error_code != 0) {
-	error_init(err, error_code, "error %d from pthread_create()", 
-	  error_code);
+        error_init(err, error_code, "error %d from pthread_create()",
+            error_code);
         return 0;
     }
     pthread_detach(thread_id);

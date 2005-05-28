@@ -3,26 +3,25 @@
  */
  /* Modified 8/2004 by Paul Alfille for OWFS the 1-Wire Filesystem */
 
-#include "owfs_config.h"
-#include "ow.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-#include <signal.h>
-#include <pwd.h>
-#include <syslog.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include "oftpd.h"
-#include "ftp_listener.h"
-#include "ftp_error.h"
+//#include "owfs_config.h"
+//#include "ow.h"
+//#include <stdio.h>
+//#include <unistd.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <fcntl.h>
+//#include <string.h>
+//#include <errno.h>
+//#include <signal.h>
+//#include <pwd.h>
+//#include <syslog.h>
+//#include <pthread.h>
+//#include <stdlib.h>
+//#include "oftpd.h"
+//#include "ftp_listener.h"
+//#include "ftp_error.h"
 
-
-void *connection_acceptor(struct ftp_listener_t *f);
+#include <owftpd.h>
 
 struct ftp_listener_t ftp_listener;
 #ifdef OW_MT
@@ -32,7 +31,7 @@ pthread_t main_threadid ;
 #define IS_MAINTHREAD 1
 #endif
 
-static void ow_exit( int e ) {
+void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
         if(ftp_listener.fd) {
             LEVEL_CONNECT("Waiting for all connections to finish")
@@ -86,13 +85,6 @@ int main(int argc, char *argv[]) {
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
-        case 'h':
-            fprintf(stderr,
-            "Usage: %s ttyDevice [options] \n"
-            "   or: %s [options] -d ttyDevice \n"
-            "    -p port   -- Listen port for ftp server (default %s)\n" ,
-            progname, progname, DEFAULT_PORTNAME) ;
-            break ;
         case 'V':
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",progname ) ;
@@ -138,20 +130,6 @@ int main(int argc, char *argv[]) {
     /* log the start time */
     LEVEL_CONNECT("Starting %s, version %s, as PID %d", progname, VERSION, getpid())
 
-#if 0
-    /* set user to be as inoffensive as possible */
-    if ( user_info ) {
-        if (setgid(user_info->pw_gid) != 0) {
-            syslog(LOG_ERR, "error changing group; %s", strerror(errno));
-            ow_exit(1);
-        }
-        if (setuid(user_info->pw_uid) != 0) {
-            syslog(LOG_ERR, "error changing group; %s", strerror(errno));
-            ow_exit(1);
-        }
-    }
-#endif
-
     /* create our main listener */
     if (!ftp_listener_init(&ftp_listener,
                            address,
@@ -168,4 +146,3 @@ int main(int argc, char *argv[]) {
 
     ow_exit(0);
 }
-

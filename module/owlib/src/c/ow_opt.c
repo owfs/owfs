@@ -72,11 +72,11 @@ static void ow_help( enum opt_program op ) {
         printf("Syntax: %s [options] device mountpoint\n",progname);
         break ;
     case opt_httpd:
-    case opt_ftpd:
     case opt_server:
         printf("Syntax: %s [options] device clientport\n",progname);
         break ;
     case opt_nfsd:
+    case opt_ftpd:
     default:
         printf("Syntax: %s [options] device\n",progname);
         break ;

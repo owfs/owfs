@@ -1,5 +1,5 @@
 headerdir = ${prefix}/include
-header_DATA = file_list.h ftp_command.h ftp_listener.h ftp_session.h oftpd.h telnet_session.h watchdog.h ftp_error.h af_portability.h daemon_assert.h
+header_DATA = owftpd.h
 
 EXTRA_DIST = ${header_DATA}
 

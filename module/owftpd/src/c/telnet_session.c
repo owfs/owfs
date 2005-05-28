@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "owfs_config.h"
+//#include "owfs_config.h"
+#include <owftpd.h>
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -15,12 +16,12 @@
 # endif
 #endif
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include "daemon_assert.h"
-#include "telnet_session.h"
+//#include <sys/types.h>
+//#include <unistd.h>
+//#include <errno.h>
+//#include <string.h>
+//#include "daemon_assert.h"
+//#include "telnet_session.h"
 
 /* characters to process */
 #define SE         240

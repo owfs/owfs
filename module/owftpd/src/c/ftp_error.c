@@ -10,12 +10,11 @@
  * -Shane
  */
 
-#include "owfs_config.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include "daemon_assert.h"
-#include "ftp_error.h"
+//#include <owfs_config.h>
+//#include <ow.h>
+#include <owftpd.h>
+//#include "daemon_assert.h"
+//#include "ftp_error.h"
 
 static int invariant(const error_code_t *err);
 
