@@ -175,15 +175,13 @@ int ftp_listener_init(struct ftp_listener_t *f,
     }
 
     reuseaddr = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseaddr, 
-                   sizeof(int)) !=0) {
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseaddr, sizeof(int)) !=0) {
         close(fd);
         error_init(err, errno, "error setting socket to reuse address; %s", strerror(errno));
         return 0;
     }
 
-    if (bind(fd, (struct sockaddr *)&sock_addr, 
-             sizeof(struct sockaddr_in)) != 0) {
+    if (bind(fd, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr_in)) != 0) {
         close(fd);
         error_init(err, errno, "error binding address; %s", strerror(errno));
         return 0;
@@ -264,32 +262,28 @@ int ftp_listener_start(struct ftp_listener_t *f, error_code_t *err)
 
 
 #ifndef NDEBUG
-static int invariant(const struct ftp_listener_t *f) 
-{
+static int invariant(const struct ftp_listener_t *f) {
     int dir_len;
 
-    if (f == NULL) {
+    if ( (f == NULL)
+          ||
+       (f->fd < 0)
+          ||
+       (f->max_connections <= 0)
+          ||
+       (f->num_connections < 0)
+          ||
+       (f->num_connections > f->max_connections)
+          ||
+       ((dir_len=strlen(f->dir)) <= 0)
+          ||
+       (dir_len > PATH_MAX)
+          ||
+       (f->shutdown_request_send_fd < 0)
+          ||
+       (f->shutdown_request_recv_fd < 0)
+       ) 
         return 0;
-    }
-    if (f->fd < 0) {
-        return 0;
-    }
-    if (f->max_connections <= 0) {
-        return 0;
-    }
-    if ((f->num_connections < 0) || (f->num_connections > f->max_connections)) {
-        return 0;
-    }
-    dir_len = strlen(f->dir);
-    if ((dir_len <= 0) || (dir_len > PATH_MAX)) {
-        return 0;
-    }
-    if (f->shutdown_request_send_fd < 0) {
-        return 0;
-    }
-    if (f->shutdown_request_recv_fd < 0) {
-        return 0;
-    }
     return 1;
 }
 #endif /* NDEBUG */
@@ -338,74 +332,69 @@ void *connection_acceptor(void * v) {
          /* otherwise accept our pending connection (if any) */
          addr_len = sizeof(sockaddr_storage_t);
          fd = accept(f->fd, (struct sockaddr *)&client_addr, &addr_len);
-         if (fd >= 0) {
-             
-             tcp_nodelay = 1;
-             if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_nodelay,
-                 sizeof(int)) != 0)
-             {
-                 LEVEL_CONNECT("error in setsockopt(), FTP server dropping connection; %s",strerror(errno));
-                 close(fd);
-                 continue;
-             }
-
-             addr_len = sizeof(sockaddr_storage_t);
-             if (getsockname(fd, (struct sockaddr *)&server_addr, 
-                 &addr_len) == -1) 
-             {
-                 LEVEL_CONNECT("error in getsockname(), FTP server dropping connection; %s",strerror(errno));
-                 close(fd);
-                 continue;
-             }
-
-             info = (connection_info_t *)malloc(sizeof(connection_info_t));
-             if (info == NULL) {
-                 LEVEL_DEFAULT("out of memory, FTP server dropping connection");
-                 close(fd);
-                 continue;
-             }
-             info->ftp_listener = f;
-
-             telnet_session_init(&info->telnet_session, fd, fd);
-
-             if (!ftp_session_init(&info->ftp_session, 
-                                   &client_addr, 
-                                   &server_addr, 
-                                   &info->telnet_session,  
-                                   f->dir, 
-                                   &err)) 
-             {
-                 LEVEL_DEFAULT("error initializing FTP session, FTP server exiting; %s",error_get_desc(&err));
-                 close(fd);
-                 telnet_session_destroy(&info->telnet_session);
-                 free(info);
-                 continue;
-             }
+         if (fd >= 0) { // Successful "accept"
+            tcp_nodelay = 1;
+            if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&tcp_nodelay, sizeof(int)) != 0) {
+                LEVEL_CONNECT("error in setsockopt(), FTP server dropping connection; %s",strerror(errno));
+                close(fd);
+                continue;
+            }
+    
+            addr_len = sizeof(sockaddr_storage_t);
+            if (getsockname(fd, (struct sockaddr *)&server_addr, &addr_len) == -1) {
+                LEVEL_CONNECT("error in getsockname(), FTP server dropping connection; %s",strerror(errno));
+                close(fd);
+                continue;
+            }
+    
+            info = (connection_info_t *)malloc(sizeof(connection_info_t));
+            if (info == NULL) {
+                LEVEL_DEFAULT("out of memory, FTP server dropping connection");
+                close(fd);
+                continue;
+            }
+            info->ftp_listener = f;
+    
+            telnet_session_init(&info->telnet_session, fd, fd);
+    
+            if (!ftp_session_init(&info->ftp_session,
+                                &client_addr,
+                                &server_addr,
+                                &info->telnet_session,
+                                f->dir,
+                                &err))
+            {
+                LEVEL_DEFAULT("error initializing FTP session, FTP server exiting; %s",error_get_desc(&err));
+                close(fd);
+                telnet_session_destroy(&info->telnet_session);
+                free(info);
+                continue;
+            }
 
 
 //             error_code = pthread_create(&thread_id, NULL, (void *(*)())connection_handler, info);
-             error_code = pthread_create(&thread_id, NULL, connection_handler, info);
-
-             if (error_code != 0) {
-                 LEVEL_DEFAULT("error creating new thread; %d", error_code);
-                 close(fd);
-                 telnet_session_destroy(&info->telnet_session);
-                 free(info);
-             }
-
-             num_error = 0;
-         } else {
-             if ((errno == ECONNABORTED) || (errno == ECONNRESET)) {
-                 LEVEL_CONNECT("interruption accepting FTP connection; %s",strerror(errno));
-             } else {
-                 LEVEL_CONNECT("error accepting FTP connection; %s",strerror(errno));
-                 ++num_error;
-             }
-             if (num_error >= MAX_ACCEPT_ERROR) {
-                 LEVEL_CONNECT("too many consecutive errors, FTP server exiting");
-                 return NULL;
-             }
-         }
+            error_code = pthread_create(&thread_id, NULL, connection_handler, info);
+    
+            if (error_code != 0) {
+                LEVEL_DEFAULT("error creating new thread; %d", error_code);
+                close(fd);
+                telnet_session_destroy(&info->telnet_session);
+                free(info);
+            }
+    
+            num_error = 0;
+        } else {
+            if ((errno == ECONNABORTED) || (errno == ECONNRESET)) {
+                LEVEL_CONNECT("interruption accepting FTP connection; %s",strerror(errno));
+            } else {
+                LEVEL_CONNECT("error accepting FTP connection; %s",strerror(errno));
+                ++num_error;
+            }
+            if (num_error >= MAX_ACCEPT_ERROR) {
+                LEVEL_CONNECT("too many consecutive errors, FTP server exiting");
+                return NULL;
+            }
+        }
     }
 }
 

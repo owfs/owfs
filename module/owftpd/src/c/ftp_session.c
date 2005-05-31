@@ -98,31 +98,31 @@ static void do_mdtm(struct ftp_session_t *f, const struct ftp_command_t *cmd);
 static struct {
     char *name;
     void (*func)(struct ftp_session_t *f, const struct ftp_command_t *cmd);
-} command_func[] = {
-    { "USER", do_user },
-    { "PASS", do_pass },
-    { "CWD",  do_cwd },
+} command_func[] = { /* keep in sorted order */
     { "CDUP", do_cdup },
-    { "QUIT", do_quit },
-    { "PORT", do_port },
-    { "PASV", do_pasv },
-    { "LPRT", do_lprt },
-    { "LPSV", do_lpsv },
+    { "CWD",  do_cwd },
     { "EPRT", do_eprt },
     { "EPSV", do_epsv },
-    { "TYPE", do_type },
-    { "STRU", do_stru },
+    { "LIST", do_list },
+    { "LPRT", do_lprt },
+    { "LPSV", do_lpsv },
+    { "MDTM", do_mdtm },
     { "MODE", do_mode },
+    { "NLST", do_nlst },
+    { "NOOP", do_noop },
+    { "PASS", do_pass },
+    { "PASV", do_pasv },
+    { "PORT", do_port },
+    { "PWD",  do_pwd },
+    { "QUIT", do_quit },
+    { "REST", do_rest },
     { "RETR", do_retr },
     { "STOR", do_stor },
-    { "PWD",  do_pwd },
-    { "NLST", do_nlst },
-    { "LIST", do_list },
-    { "SYST", do_syst },
-    { "NOOP", do_noop },
-    { "REST", do_rest },
     { "SIZE", do_size },
-    { "MDTM", do_mdtm }
+    { "STRU", do_stru },
+    { "SYST", do_syst },
+    { "TYPE", do_type },
+    { "USER", do_user },
 };
 
 #define NUM_COMMAND_FUNC (sizeof(command_func) / sizeof(command_func[0]))
@@ -367,11 +367,13 @@ static void reply(struct ftp_session_t *f, int code, const char *fmt, ...)
 
     /* add the formatted output of the caller to the buffer */
     va_start(ap, fmt);
-    vsnprintf(buf+4, sizeof(buf)-4, fmt, ap);
+    UCLIBCLOCK
+        vsnprintf(buf+4, sizeof(buf)-4, fmt, ap);
+    UCLIBCUNLOCK
     va_end(ap);
 
     /* log our reply */
-    syslog(LOG_DEBUG, "%s %s", f->client_addr_str, buf);
+    LEVEL_CONNECT("%s %s", f->client_addr_str, buf);
 
     /* send the output to the other side */
     telnet_session_println(f->telnet_session, buf);
@@ -389,11 +391,12 @@ static void do_user(struct ftp_session_t *f, const struct ftp_command_t *cmd)
 
     user = cmd->arg[0].string;
     LEVEL_CONNECT("%s attempted to log in as \"%s\"",f->client_addr_str, user);
-    if (strcasecmp(user, "ftp") && strcasecmp(user, "anonymous")) {
-        reply(f, 530, "Only anonymous FTP supported.");
-    } else {
-        reply(f, 331, "Send e-mail address as password.");
-    }
+    reply(f, 230, "User logged in, proceed.");
+//    if (strcasecmp(user, "ftp") && strcasecmp(user, "anonymous")) {
+//        reply(f, 530, "Only anonymous FTP supported.");
+//    } else {
+//        reply(f, 331, "Send e-mail address as password.");
+//    }
     daemon_assert(invariant(f));
 }
 
@@ -507,13 +510,13 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
     if (*p == '/') {
         /* if this starts with a '/' it is an absolute path */
         strcpy(target, "/");
-    do {
-        p++;
-    } while (*p == '/');
+        do {
+            p++;
+        } while (*p == '/');
     } else {
         /* otherwise it's a relative path */
-    daemon_assert(strlen(f->dir) < sizeof(target));
-    strcpy(target, f->dir);
+        daemon_assert(strlen(f->dir) < sizeof(target));
+        strcpy(target, f->dir);
     }
 
     /* add on each directory, handling "." and ".." */
@@ -521,10 +524,10 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
 
         /* find the end of the next directory (either at '/' or '\0') */
         n = strchr(p, '/');
-    if (n == NULL) {
-        n = strchr(p, '\0');
-    }
-    len = n - p;
+        if (n == NULL) {
+            n = strchr(p, '\0');
+        }
+        len = n - p;
 
         if ((len == 1) && (p[0] == '.')) {
 
@@ -533,7 +536,7 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
     } else if ((len == 2) && (p[0] == '.') && (p[1] == '.')) {
 
         /* change to previous directory with ".." */
-            prev_dir = strrchr(target, '/');
+        prev_dir = strrchr(target, '/');
         daemon_assert(prev_dir != NULL);
         *prev_dir = '\0';
         if (prev_dir == target) {
@@ -545,7 +548,7 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
         /* otherwise add to current directory */
         if ((strlen(target) + 1 + len) > PATH_MAX) {
             reply(f, 550, "Error changing directory; path is too long.");
-        return;
+            return;
         }
 
         /* append a '/' unless we were at the root directory */
@@ -567,8 +570,8 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
 
         /* skip '/' characters */
         while (*p == '/') {
-        p++;
-    }
+            p++;
+        }
     }
 
     /* see if this is a directory we can change into */
@@ -579,36 +582,36 @@ static void change_dir(struct ftp_session_t *f, const char *new_dir)
 #else
         if (S_ISDIR(stat_buf.st_mode)) {
 #endif
-        reply(f, 550,"Directory change failed; target is not a directory.");
-    } else { 
-        if (S_IXOTH & stat_buf.st_mode) {
-            dir_okay = 1;
-        } else if ((stat_buf.st_gid == getegid()) && 
-            (S_IXGRP & stat_buf.st_mode)) 
-        {
-            dir_okay = 1;
-        } else if ((stat_buf.st_uid == geteuid()) && 
-            (S_IXUSR & stat_buf.st_mode)) 
-        {
-            dir_okay = 1;
-        } else {
-            reply(f, 550, "Directory change failed; permission denied.");
+            reply(f, 550,"Directory change failed; target is not a directory.");
+        } else { 
+            if (S_IXOTH & stat_buf.st_mode) {
+                dir_okay = 1;
+            } else if ((stat_buf.st_gid == getegid()) && 
+                (S_IXGRP & stat_buf.st_mode)) 
+            {
+                dir_okay = 1;
+            } else if ((stat_buf.st_uid == geteuid()) && 
+                (S_IXUSR & stat_buf.st_mode)) 
+            {
+                dir_okay = 1;
+            } else {
+                reply(f, 550, "Directory change failed; permission denied.");
+            }
         }
-    }
     } else {
         reply(f, 550, "Directory change failed; directory does not exist.");
     }
 
     /* if everything is okay, change into the directory */
     if (dir_okay) {
-    daemon_assert(strlen(target) < sizeof(f->dir));
-    /* send a readme unless we changed to our current directory */
-    if (strcmp(f->dir, target) != 0) {
-        strcpy(f->dir, target);
-	//send_readme(f, 250);
+        daemon_assert(strlen(target) < sizeof(f->dir));
+        /* send a readme unless we changed to our current directory */
+        if (strcmp(f->dir, target) != 0) {
+            strcpy(f->dir, target);
+        //send_readme(f, 250);
         } else {
-        strcpy(f->dir, target);
-    }
+            strcpy(f->dir, target);
+        }
         reply(f, 250, "Directory change successful.");
     }
 
@@ -642,12 +645,12 @@ static void set_port(struct ftp_session_t *f, const sockaddr_storage_t *host_por
         /* close any outstanding PASSIVE port */
         if (f->data_channel == DATA_PASSIVE) {
             close(f->server_fd);
-        f->server_fd = -1;
+            f->server_fd = -1;
         }
 
         f->data_channel = DATA_PORT;
-    f->data_port = *host_port;
-    reply(f, 200, "Command okay.");
+        f->data_port = *host_port;
+        reply(f, 200, "Command okay.");
     }
 
     daemon_assert(invariant(f));
@@ -729,28 +732,28 @@ static int set_pasv(struct ftp_session_t *f, sockaddr_storage_t *bind_addr)
     socket_fd = socket(SSFAM(bind_addr), SOCK_STREAM, 0);
     if (socket_fd == -1) {
         reply(f, 500, "Error creating server socket; %s.", strerror(errno));
-    return -1;
+        return -1;
     } 
 
     for (;;) {
         port = get_passive_port();
         SINPORT(bind_addr) = htons(port);
-    if (bind(socket_fd, (struct sockaddr *)bind_addr, 
-        sizeof(struct sockaddr)) == 0) 
-    {
-        break;
-    }
-    if (errno != EADDRINUSE) {
+        if (bind(socket_fd, (struct sockaddr *)bind_addr, 
+            sizeof(struct sockaddr)) == 0) 
+        {
+            break;
+        }
+        if (errno != EADDRINUSE) {
             reply(f, 500, "Error binding server port; %s.", strerror(errno));
             close(socket_fd);
             return -1;
-    }
+        }
     }
 
     if (listen(socket_fd, 1) != 0) {
         reply(f, 500, "Error listening on server port; %s.", strerror(errno));
         close(socket_fd);
-    return -1;
+        return -1;
     }
 
     return socket_fd;
@@ -782,11 +785,11 @@ static void do_pasv(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     port = ntohs(f->server_ipv4_addr.sin_port);
     reply(f, 227, "Entering Passive Mode (%d,%d,%d,%d,%d,%d).",
         addr >> 24, 
-    (addr >> 16) & 0xff,
-    (addr >> 8)  & 0xff,
-    addr & 0xff,
+        (addr >> 16) & 0xff,
+        (addr >> 8)  & 0xff,
+        addr & 0xff,
         port >> 8, 
-    port & 0xff);
+        port & 0xff);
 
    /* close any outstanding PASSIVE port */
    if (f->data_channel == DATA_PASSIVE) {
@@ -826,17 +829,21 @@ static void do_lpsv(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     if (SSFAM(&f->server_addr) == AF_INET6) {
         a = (uint8_t *)&SIN6ADDR(&f->server_addr);
         p = (uint8_t *)&SIN6PORT(&f->server_addr);
-    snprintf(addr, sizeof(addr),
-        "(6,16,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,2,%d,%d)",
-        a[0],  a[1],  a[2],  a[3],  a[4],  a[5],  a[6],  a[7],  a[8],
-        a[9], a[10], a[11], a[12], a[13], a[14], a[15],  p[0],  p[1]);
-    } else 
+        UCLIBCLOCK
+            snprintf(addr, sizeof(addr),
+            "(6,16,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,2,%d,%d)",
+            a[0],  a[1],  a[2],  a[3],  a[4],  a[5],  a[6],  a[7],  a[8],
+            a[9], a[10], a[11], a[12], a[13], a[14], a[15],  p[0],  p[1]);
+        UCLIBCUNLOCK
+    } else
 #endif
     {
         a = (uint8_t *)&SIN4ADDR(&f->server_addr);
         p = (uint8_t *)&SIN4PORT(&f->server_addr);
-    snprintf(addr, sizeof(addr), "(4,4,%d,%d,%d,%d,2,%d,%d)",
-        a[0], a[1], a[2], a[3], p[0], p[1]);    
+        UCLIBCLOCK
+            snprintf(addr, sizeof(addr), "(4,4,%d,%d,%d,%d,2,%d,%d)",
+            a[0], a[1], a[2], a[3], p[0], p[1]);
+        UCLIBCUNLOCK
     }
 
     reply(f, 228, "Entering Long Passive Mode %s", addr);
@@ -877,11 +884,11 @@ static void do_epsv(struct ftp_session_t *f, const struct ftp_command_t *cmd)
         goto exit_epsv;
         case 1:
             addr = (sockaddr_storage_t *)&f->server_ipv4_addr;
-        break;
+            break;
 #ifdef INET6
         case 2:
             addr = &f->server_addr;
-        break;
+            break;
         default:
             reply(f, 522, "Only IPv4 and IPv6 supported, use (1,2)");
             goto exit_epsv;
@@ -978,11 +985,11 @@ static void do_type(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     if (type == 'A') {
         if ((cmd->num_arg == 1) || ((cmd->num_arg == 2) && (form == 'N'))) {
             f->data_type = TYPE_ASCII;
-        cmd_okay = 1;
-    }
+            cmd_okay = 1;
+        }
     } else if (type == 'I') {
         f->data_type = TYPE_IMAGE;
-    cmd_okay = 1;
+        cmd_okay = 1;
     }
 
     if (cmd_okay) {
@@ -1054,7 +1061,7 @@ static void get_absolute_fname(char *fname,
 
         /* absolute path, use as input */
         daemon_assert(strlen(file) < fname_len);
-    strcpy(fname, file);
+        strcpy(fname, file);
 
     } else {
 
@@ -1062,14 +1069,13 @@ static void get_absolute_fname(char *fname,
         daemon_assert(strlen(dir) + 1 + strlen(file) < fname_len);
         strcpy(fname, dir);
 
-    /* add a seperating '/' if we're not at the root */
-    if (fname[1] != '\0') {
-            strcat(fname, "/");
-    }
-
+        /* add a seperating '/' if we're not at the root */
+        if (fname[1] != '\0') {
+                strcat(fname, "/");
+        }
+    
         /* and of course the actual file name */
         strcat(fname, file);
-
     }
 }
 
@@ -1105,7 +1111,7 @@ static int ShowText( FILE * out, const char * const basename, const char * const
                 ret = fprintf( out, "%s",buf ) ;
             }
         } else if ( canwrite ) { /* rare write-only */
-	    ret = fprintf( out, "(writeonly)" ) ;
+            ret = fprintf( out, "(writeonly)" ) ;
         }
     } else {
         switch( format ) {
@@ -1115,7 +1121,7 @@ static int ShowText( FILE * out, const char * const basename, const char * const
         case ft_yesno:
             if ( pn->ft->read.v ) { /* at least readable */
                 if ( (len=FS_read(fullpath,buf,suglen,(off_t)0))>0 ) {
-		    ret = fprintf( out, "%c", buf[0] ) ;
+                    ret = fprintf( out, "%c", buf[0] ) ;
                 }
             } else if ( canwrite ) { /* rare write-only */
                 ret = fprintf( out, "(writeonly)" ) ;
@@ -1184,25 +1190,25 @@ static int Show( FILE * out, const char * const path, const char * const file, c
 
     pn2.si = &si;
     if ( (FS_ParsedName(fullpath, &pn2) == 0) ) {
-      if ((pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote)) {
-	//printf("call FS_size(%s)\n", fullpath);
-	suglen = FS_size(fullpath) ;
-      } else {
-	//printf("call FS_size_postparse\n");
-	suglen = FS_size_postparse(pn) ;
-      }
+        if ((pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote)) {
+            //printf("call FS_size(%s)\n", fullpath);
+            suglen = FS_size(fullpath) ;
+        } else {
+            //printf("call FS_size_postparse\n");
+            suglen = FS_size_postparse(pn) ;
+        }
     } else {
-      suglen = 0 ;
-      //printf("FAILED parsename %s\n", fullpath);
+        suglen = 0 ;
+        //printf("FAILED parsename %s\n", fullpath);
     }
     FS_ParsedName_destroy( &pn2 ) ;
 
     if(suglen <= 0) {
-      //printf("Show: can't find file-size of %s ???\n", pn->path);
-      suglen = 0 ;
+        //printf("Show: can't find file-size of %s ???\n", pn->path);
+        suglen = 0 ;
     }
     if( ! (buf = malloc((size_t)suglen+1)) ) {
-      return -1 ;
+        return -1 ;
     }
     buf[suglen] = '\0' ;
 
@@ -1232,14 +1238,14 @@ static int ShowDevice( FILE * out, const struct parsedname * const pn ) {
     /* Embedded function */
     void directory( const struct parsedname * const pn2 ) {
         char *file;
-	if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
-	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
-	  return;
-	}
-	FS_DirName(file,OW_FULLNAME_MAX,pn2);
-	//printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
-	Show( out, path2, file, pn2 ) ;
-	free(file);
+        if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+            //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+            return;
+        }
+        FS_DirName(file,OW_FULLNAME_MAX,pn2);
+        //printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+        Show( out, path2, file, pn2 ) ;
+        free(file);
     }
 
     //printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->bus_nr, pn->dev) ;
@@ -1248,23 +1254,23 @@ static int ShowDevice( FILE * out, const struct parsedname * const pn ) {
 
     if ( pn->ft ) { /* single item */
         char *file;
-	//printf("single item path=%s pn->path=%s\n", path2, pn->path);
+        //printf("single item path=%s pn->path=%s\n", path2, pn->path);
         slash = strrchr(path2,'/') ;
         /* Nested function */
         if ( slash ) slash[0] = '\0' ; /* pare off device name */
-	//printf("single item path=%s\n", path2);
-	if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
-	  //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
-	  return -1 ;
-	}
-	FS_DirName(file,OW_FULLNAME_MAX,&pncopy);
-	//printf("ShowDevice: emb: pncopy.ft=%p pncopy.subdir=%p pncopy.dev=%p path2=%s file=%s\n", pncopy.ft, pncopy.subdir, pncopy.dev, path2, file);
-	ret = Show( out, path2, file, &pncopy ) ;
-	free(file);
+        //printf("single item path=%s\n", path2);
+        if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+            //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+            return -1 ;
+        }
+        FS_DirName(file,OW_FULLNAME_MAX,&pncopy);
+        //printf("ShowDevice: emb: pncopy.ft=%p pncopy.subdir=%p pncopy.dev=%p path2=%s file=%s\n", pncopy.ft, pncopy.subdir, pncopy.dev, path2, file);
+        ret = Show( out, path2, file, &pncopy ) ;
+        free(file);
     } else { /* whole device */
-      //printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
+        //printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
         //printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
-      ret = FS_dir( directory, &pncopy ) ;
+        ret = FS_dir( directory, &pncopy ) ;
     }
     free(path2) ;
     return ret ;
