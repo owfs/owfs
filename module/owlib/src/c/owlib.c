@@ -300,11 +300,12 @@ void Timeout( const char * c ) {
 
 static void segv_handler(int sig) {
     pid_t pid = getpid() ;
-    (void) sig ;
 #ifdef OW_MT
     pthread_t tid = pthread_self() ;
+    (void) sig ;
     LEVEL_CONNECT("owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid)
 #else /* OW_MT */
+    (void) sig ;
     LEVEL_CONNECT("owlib: SIGSEGV received... pid=%d\n", pid)
 #endif /* OW_MT */
     _exit(1) ;
