@@ -178,10 +178,7 @@ static int FS_w_date(const DATE *d , const struct parsedname * pn) {
     int offset = ((uint32_t)(pn->ft->data))&0x07 ;
     unsigned char data[8] ;
     if ( OW_r_page( data, page, pn ) ) return -EINVAL ;
-    data[offset] = d[0]&0xFF ;
-    data[offset+1] = (d[0]>>8)&0xFF ;
-    data[offset+2] = (d[0]>>16)&0xFF ;
-    data[offset+3] = (d[0]>>24)&0xFF ;
+    UT_fromDate( d[0], &data[offset] ) ;
     if ( OW_w_page( data, page, pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -200,10 +197,7 @@ int FS_r_date( DATE * d , const struct parsedname * pn) {
     int offset = ((uint32_t)(pn->ft->data))&0x07 ;
     unsigned char data[8] ;
     if ( OW_r_page( data, page, pn ) ) return -EINVAL ;
-    d[0] = ((uint32_t) data[offset])
-        || ((uint32_t) data[offset+1]<<8)
-        || ((uint32_t) data[offset+2]<<16)
-        || ((uint32_t) data[offset+3]<<24) ;
+    d[0] = UT_toDate( &data[offset] ) ;
     return 0 ;
 }
 

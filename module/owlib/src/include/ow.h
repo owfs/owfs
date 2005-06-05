@@ -916,6 +916,8 @@ int UT_getbit(const unsigned char * buf, const int loc) ;
 int UT_get2bit(const unsigned char * buf, const int loc) ;
 void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
 void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
+void UT_fromDate( const DATE D, unsigned char * data) ;
+DATE UT_toDate( const unsigned char * date ) ;
 
 /* Serial port */
 int COM_open( struct connection_in * in  ) ;

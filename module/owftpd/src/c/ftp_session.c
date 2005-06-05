@@ -4,26 +4,6 @@
 
 #include <owftpd.h> 
  
-//#include "owfs_config.h"
-//#include <features.h>
-//#include <string.h>
-//#include <stdio.h>
-//#include <stdarg.h>
-//#include <sys/stat.h>
-//#include <unistd.h>
-//#include <sys/types.h>
-//#include <fcntl.h>
-//#include <sys/socket.h>
-//#include <errno.h>
-//#include <pthread.h>
-//#include <sys/utsname.h>
-//#include <netdb.h>
-//#include <syslog.h>
-//#include <stdlib.h>
-//#include <netinet/in.h>
-//#include <arpa/inet.h>
-
-//#include "ow.h"
 
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -35,15 +15,6 @@
 #  include <time.h>
 # endif
 #endif
-
-//#include "daemon_assert.h"
-//#include "telnet_session.h"
-//#include "ftp_command.h"
-//#include "file_list.h"
-//#include "ftp_session.h"
-//#include "watchdog.h"
-//#include "oftpd.h"
-//#include "af_portability.h"
 
 /* space requirements */
 #define ADDRPORT_STRLEN 58
@@ -467,20 +438,17 @@ static void get_addr_str(const sockaddr_storage_t *s, char *buf, int bufsiz)
 
 static void do_cwd(struct ftp_session_t *f, const struct ftp_command_t *cmd) 
 {
-    const char *new_dir;
-
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert(cmd->num_arg == 1);
 
-    new_dir = cmd->arg[0].string;
-    change_dir(f, new_dir);
+//    new_dir = cmd->arg[0].string;
+    change_dir(f, cmd->arg[0].string);
 
     daemon_assert(invariant(f));
 }
 
-static void do_cdup(struct ftp_session_t *f, const struct ftp_command_t *cmd) 
-{
+static void do_cdup(struct ftp_session_t *f, const struct ftp_command_t *cmd)  {
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert(cmd->num_arg == 0);
@@ -490,8 +458,7 @@ static void do_cdup(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     daemon_assert(invariant(f));
 }
 
-static void change_dir(struct ftp_session_t *f, const char *new_dir)
-{
+static void change_dir(struct ftp_session_t *f, const char *new_dir) {
     char target[PATH_MAX+1];
     const char *p, *n;
     int len;

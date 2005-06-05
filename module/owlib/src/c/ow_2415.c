@@ -239,7 +239,8 @@ static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
-    d[0] = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
+//    d[0] = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
+    d[0] = UT_toDate( &data[1] ) ;
     return 0 ;
 }
 
@@ -254,10 +255,8 @@ static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
     BUSUNLOCK(pn)
     if ( ret ) return 1 ;
 
-    w[2] = d & 0xFF ;
-    w[3] = (d>>8) & 0xFF ;
-    w[4] = (d>>16) & 0xFF ;
-    w[5] = (d>>24) & 0xFF ;
+    UT_fromDate( d, &w[2] ) ;
+    
     BUSLOCK(pn)
         ret = BUS_select(pn) || BUS_send_data( w, 6,pn ) ;
     BUSUNLOCK(pn)
