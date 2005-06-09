@@ -353,9 +353,6 @@ If \fIpath\fR is the directory - return 1. Otherwise return 0.
 Synonym of \fB::OW::isdirectory
 
 
-.SH BUGS
-Simultaneous work of several connections is not supported.
-.sp
 .SH AUTHOR
 Serg Oskin (serg@oskin.ru)
 .sp
