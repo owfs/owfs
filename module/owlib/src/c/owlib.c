@@ -40,6 +40,7 @@ void LibSetup( void ) {
     LockSetup();
 
     start_time = time(NULL) ;
+    errno = 0 ; /* set error level none */
 }
 
 #if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
