@@ -175,11 +175,9 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct client_msg cm ;
     char * path2 ;
     char *pathnow ;
-    char *fullpath ;
     int ret;
     int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
-    int _pathlen ;
     int dindex = 0 ;
     unsigned char got_entry = 0 ;
 
@@ -204,20 +202,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
       pathnow = pn->path;
     }
 
-    _pathlen = strlen(pathnow) ;
-    if( !(fullpath = (char *)malloc(_pathlen + OW_FULLNAME_MAX + 2)) ) {
-      return -ENOMEM ;
-    }
-    strcpy(fullpath, pathnow);
-
-//printf("DirHandler: DIR preloop [%s]\n",retbuffer);
-    if ( (_pathlen == 0) || (fullpath[_pathlen-1] !='/') ) {
-      fullpath[_pathlen] = '/' ;
-      ++_pathlen ;
-    }
-    fullpath[_pathlen] = '\000' ;
-    /* path always end with an / here */
-    
     //printf("ServerDir path=%s\n", pathnow);
 
     if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
