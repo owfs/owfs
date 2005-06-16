@@ -205,7 +205,6 @@ int ClientConnect( struct connection_in * in ) {
  leaks... The new accept() is not detached just to be able to wait
  for thread to end.
 */
-//#define VALGRIND 1
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
 #ifdef OW_MT

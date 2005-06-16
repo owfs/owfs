@@ -223,7 +223,13 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     }
     
     //printf("READSEEK pid=%ld path=%s index=%d\n",pthread_self(), pn->path,pn->in->index);
-    if( !(buf2 = malloc(size)) ) {
+#ifdef VALGRIND
+    // avoid warnings from VALGRIND
+    if( !(buf2 = (char *)calloc(1, size+1)) )
+#else
+    if( !(buf2 = (char *)malloc(size)) )
+#endif
+    {
         return -ENOMEM;
     }
     if(!(pn->state & pn_bus)) {

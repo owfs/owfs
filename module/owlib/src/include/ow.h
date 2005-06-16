@@ -58,6 +58,11 @@ $Id$
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
 
+// Define this to avoid some VALGRIND warnings... (just for testing)
+// Warning: This will partially remove the multithreaded support since ow_net.c
+// will wait for a thread to complete before executing a new one.
+//#define VALGRIND 1
+
 #define _FILE_OFFSET_BITS   64
 #include <features.h>
 #include <sys/stat.h> /* for stat */

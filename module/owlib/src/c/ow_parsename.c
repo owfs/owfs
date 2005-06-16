@@ -139,7 +139,11 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 	    }
 #endif
             if(pathnext) len += strlen(&path[pathnext-pathcpy]);
+#ifdef VALGRIND
+            if(!(pn->path_busless = calloc(1, len+1))) return -ENOMEM;
+#else
             if(!(pn->path_busless = malloc(len))) return -ENOMEM;
+#endif
             pn->path_busless[0] = '\000';
             if(pn->state & pn_text) {
                 strcat(pn->path_busless, "/text");
@@ -150,15 +154,32 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
             strcat(pn->path_busless, "/");
             if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
 
+#ifdef VALGRIND
+	    {
+	      int len = strlen(path)+1;
+	      if((pn->path = calloc(1, len+1))) memcpy(pn->path, path, len);
+	    }
+#else
             pn->path = strdup(path);
+#endif
+	    if(!(pn->path)) return -ENOMEM ;
 	    //printf("PN set pn->path=%s\n", pn->path);
 	    //printf("PN set pn->path_busless=%s\n", pn->path_busless);
         }
         pathnow = strsep(&pathnext,"/") ;
     }
     if ( !pn->path ) {
-        pn->path = strdup(path);
-        pn->path_busless = strdup(path);
+#ifdef VALGRIND
+	// avoid warnings from VALGRIND
+	int len = strlen(path)+1;
+	if(!(pn->path = calloc(1, len+1))) return -ENOMEM;
+	if(!(pn->path_busless = calloc(1, len+1))) return -ENOMEM;
+	memcpy(pn->path, path, len);
+	memcpy(pn->path_busless, path, len);
+#else
+	if(!(pn->path = strdup(path))) return -ENOMEM ;
+	if(!(pn->path_busless = strdup(path))) return -ENOMEM ;
+#endif
 	//printf("PN set2 pn->path=%s\n", pn->path);
 	//printf("PN set2 pn->path_busless=%s\n", pn->path_busless);
     }

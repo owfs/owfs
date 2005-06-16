@@ -241,7 +241,11 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
     } else if ( cm->payload > MAXBUFFERSIZE ) {
         cm->payload = 0 ;
         cm->ret = -EMSGSIZE ;
+#ifdef VALGRIND
     } else if ( (retbuffer = (char *)calloc(1, (size_t)cm->payload))==NULL ) {
+#else
+    } else if ( (retbuffer = (char *)malloc((size_t)cm->payload))==NULL ) {
+#endif
     /* Allocate return buffer */
 //printf("Handler: Allocating buffer size=%d\n",cm.payload);
         cm->payload = 0 ;
@@ -299,7 +303,11 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
             path = pn->path ;
         }
         _pathlen = strlen(path);
-        if( (retbuffer = (char *)calloc(1, _pathlen + OW_FULLNAME_MAX + 2)) == NULL) return;
+#ifdef VALGRIND
+        if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) return;
+#else
+        if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) return;
+#endif
 
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
