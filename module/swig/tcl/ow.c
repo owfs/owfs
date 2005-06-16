@@ -117,8 +117,16 @@ owtcl_ObjCmdProc(Owtcl_Connect)
         Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));
       } else if (!strncasecmp(arg, "-readonly", 9)) {
         readonly = 1;
+      } else if (!strncasecmp(arg, "-error-print", 12)) {
+        objix++;
+        arg = Tcl_GetStringFromObj(objv[objix], &con_len);
+        error_print = atoi(arg);
+      } else if (!strncasecmp(arg, "-error-level", 12)) {
+        objix++;
+        arg = Tcl_GetStringFromObj(objv[objix], &con_len);
+	error_level = atoi(arg);
       } else {
-        owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache or -readonly\n", arg);
+        owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache -readonly, -error-print or -error-level\n", arg);
         tcl_return = TCL_ERROR;
         goto common_exit;
       }
@@ -191,12 +199,12 @@ owtcl_ObjCmdProc(Owtcl_Put)
   if (objc == 3)
     value = Tcl_GetStringFromObj(objv[2], &value_len);
   else {
-    value = "\0";
+    value = "\n";
     value_len = 1;
   }
 
-  if ((r = FS_write(path, value, (size_t)value_len, (off_t)0))) {
-    owtcl_ErrorMsg(interp, strerror(-r));
+  if ((r = FS_write(path, value, (size_t)value_len, (off_t)0)) < 0) {
+    owtcl_ErrorMsg(interp, strerror(r));
     tcl_return = TCL_ERROR;
     goto common_exit;
   }

@@ -319,6 +319,40 @@ temperature scale. Default Celsius.
 .TP
 \fB\-readonly
 only allow reading of 1-wire devices
+.TP
+\fB\-error-print
+Where information/error messages are printed
+.RS
+.TP
+.I 0
+default mixed destination: stderr foreground / syslog background
+.TP
+.I 1
+syslog only
+.TP
+.I 2
+stderr only
+.TP
+.I 3
+dev/null (supress all).
+.RE
+.TP
+\fB\-error-level
+What kind of information is printed
+.RS
+.TP
+.I 0
+default errors only
+.TP
+.I 1
+connections/disconnections
+.TP
+.I 2
+all high level calls
+.TP
+.I 3
+data summary for each call
+.RE
 .RE
 
 .TP
