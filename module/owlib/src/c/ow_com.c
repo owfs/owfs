@@ -40,9 +40,9 @@ int COM_open( struct connection_in * in ) {
 
     tcgetattr(fd, &oldSerialTio);
     tcgetattr(fd, &newSerialTio);
-    in->speed = B9600 ;
-    cfsetospeed(&newSerialTio, in->speed);
-    cfsetispeed(&newSerialTio, in->speed);
+    in->connin.serial.speed = B9600 ;
+    cfsetospeed(&newSerialTio, in->connin.serial.speed);
+    cfsetispeed(&newSerialTio, in->connin.serial.speed);
 
     // Set to non-canonical mode, and no RTS/CTS handshaking
     newSerialTio.c_iflag = IGNBRK|IGNPAR|IXANY;
@@ -96,6 +96,6 @@ void COM_speed(speed_t new_baud, const struct parsedname * pn) {
          if ( new_baud != B9600 ) COM_speed(B9600,pn) ;
          return ;
      }
-     pn->in->speed = new_baud ;
+     pn->in->connin.serial.speed = new_baud ;
      return ;
 }

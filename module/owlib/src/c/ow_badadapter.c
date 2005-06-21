@@ -28,7 +28,7 @@ static int BadAdapter_sendback_data( const unsigned char * const data , unsigned
 int BadAdapter_detect( struct connection_in * in ) {
     in->fd = -1 ;
 #ifdef OW_USB
-    in->usb = NULL ;
+    in->connin.usb.usb = NULL ;
 #endif
     in->Adapter = adapter_Bad ; /* OWFS assigned value */
     in->iroutines.write         = BadAdapter_write         ;

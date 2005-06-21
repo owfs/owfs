@@ -185,19 +185,19 @@ static int DS9490_setup_adapter(const struct parsedname * const pn) {
 
   //printf("DS9490_setup_adapter\n");
 
-  if((ret = usb_control_msg(pn->in->usb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )) < 0)
+  if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )) < 0)
     return ret ;
 
   // set the strong pullup duration to infinite
-  if((ret = usb_control_msg(pn->in->usb,0x40,COMM_CMD,COMM_SET_DURATION | COMM_IM, 0x0000, NULL, 0, TIMEOUT_USB )) < 0) 
+  if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,COMM_SET_DURATION | COMM_IM, 0x0000, NULL, 0, TIMEOUT_USB )) < 0)
     return ret ;
             
   // set the 12V pullup duration to 512us
-  if((ret = usb_control_msg(pn->in->usb,0x40,COMM_CMD,COMM_SET_DURATION | COMM_IM | COMM_TYPE, 0x0040, NULL, 0, TIMEOUT_USB )) < 0)
+  if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,COMM_SET_DURATION | COMM_IM | COMM_TYPE, 0x0040, NULL, 0, TIMEOUT_USB )) < 0)
     return ret ;
             
 #if 0
-  if((ret = usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_PULSE_EN, ENABLEPULSE_PRGE, NULL, 0, TIMEOUT_USB )) < 0)
+  if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_PULSE_EN, ENABLEPULSE_PRGE, NULL, 0, TIMEOUT_USB )) < 0)
     return ret ;
 #endif
 
@@ -235,12 +235,12 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                     strcpy(pn->in->name,bus->dirname) ;
                     strcat(pn->in->name,"/") ;
                     strcat(pn->in->name,dev->filename) ;
-                    if ( (pn->in->usb=usb_open(dev)) ) {
+                    if ( (pn->in->connin.usb.usb=usb_open(dev)) ) {
 #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
-                        usb_detach_kernel_driver_np(pn->in->usb,0);
+                        usb_detach_kernel_driver_np(pn->in->connin.usb.usb,0);
 #endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-                        if ( usb_set_configuration( pn->in->usb, 1 )==0 && usb_claim_interface( pn->in->usb, 0)==0 ) {
-                            if ( usb_set_altinterface( pn->in->usb, 3)==0 ) {
+                        if ( usb_set_configuration( pn->in->connin.usb.usb, 1 )==0 && usb_claim_interface( pn->in->connin.usb.usb, 0)==0 ) {
+    if ( usb_set_altinterface( pn->in->connin.usb.usb, 3)==0 ) {
                                 LEVEL_CONNECT("Opened USB DS9490 adapter at %s.\n",pn->in->name)
                                 DS9490_setroutines( & pn->in->iroutines ) ;
                                 pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
@@ -252,12 +252,12 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                             } else {
                                 LEVEL_CONNECT("Failed to configure alt interface on USB DS9490 adapter at %s.\n",pn->in->name)
                             }
-                            usb_release_interface( pn->in->usb, 0) ;
+                            usb_release_interface( pn->in->connin.usb.usb, 0) ;
                         } else {
                             LEVEL_CONNECT("Failed to configure/claim interface on USB DS9490 adapter at %s.\n",pn->in->name)
                         }
-                        usb_close( pn->in->usb ) ;
-                        pn->in->usb = 0 ;
+                        usb_close( pn->in->connin.usb.usb ) ;
+                        pn->in->connin.usb.usb = 0 ;
                     } else {
                         LEVEL_CONNECT("Failed to open USB DS9490 adapter at %s.\n",pn->in->name)
                     }
@@ -273,10 +273,10 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
 }
 
 void DS9490_close(struct connection_in * in) {
-    if ( in->usb ) {
-        usb_release_interface( in->usb, 0) ;
-        usb_close( in->usb ) ;
-        in->usb = NULL ;
+    if ( in->connin.usb.usb ) {
+        usb_release_interface( in->connin.usb.usb, 0) ;
+        usb_close( in->connin.usb.usb ) ;
+        in->connin.usb.usb = NULL ;
     }
     LEVEL_CONNECT("Closed USB DS9490 adapter at %s.\n",in->name)
 }
@@ -293,9 +293,9 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
         memset(buffer, 0, 32) ; // should not be needed
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-        if ( (ret=usb_interrupt_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
+        if ( (ret=usb_interrupt_read(pn->in->connin.usb.usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
 #else
-        if ( (ret=usb_bulk_read(pn->in->usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
+        if ( (ret=usb_bulk_read(pn->in->connin.usb.usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
 #endif
 	{
           STATLOCK
@@ -427,7 +427,7 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
 	  //printf("error sending 0x3C\n");
 	  continue ;
 	}
-	ret = usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, speed, NULL, 0, TIMEOUT_USB ) ;
+	ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, speed, NULL, 0, TIMEOUT_USB ) ;
 	if(ret == 0) {
 	  break ;
 	}
@@ -439,7 +439,7 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
     }
     pn->in->USpeed = MODE_OVERDRIVE ;
   } else {
-    ret = usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, speed, NULL, 0, TIMEOUT_USB ) ;
+    ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, speed, NULL, 0, TIMEOUT_USB ) ;
     if(ret < 0) {
       return -EINVAL ;
     }
@@ -468,7 +468,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
       }
     }
 
-    if ( (ret=usb_control_msg(pn->in->usb,0x40,COMM_CMD,
+    if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,
             COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE,
             ((pn->in->USpeed & MODE_OVERDRIVE)?ONEWIREBUSSPEED_OVERDRIVE:ONEWIREBUSSPEED_FLEXIBLE),
             NULL, 0, TIMEOUT_USB ))<0 ) {
@@ -511,7 +511,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
 
 static int DS9490_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn) {
     int ret;
-    usb_dev_handle * usb = pn->in->usb ;
+    usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_read\n");
     if ( (ret=usb_bulk_read(usb,DS2490_EP3,buf,size, TIMEOUT_USB )) > 0 ) {
       return ret ;
@@ -523,7 +523,7 @@ static int DS9490_read( unsigned char * const buf, const size_t size, const stru
 
 static int DS9490_write( const unsigned char * const buf, const size_t size, const struct parsedname * const pn) {
     int ret;
-    usb_dev_handle * usb = pn->in->usb ;
+    usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_write\n");
     if ( (ret=usb_bulk_write(usb,DS2490_EP2,buf,size, TIMEOUT_USB )) > 0 ) {
       return ret ;
@@ -535,7 +535,7 @@ static int DS9490_write( const unsigned char * const buf, const size_t size, con
 
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len,const struct parsedname * const pn ) {
     int ret = 0 ;
-    usb_dev_handle * usb = pn->in->usb ;
+    usb_dev_handle * usb = pn->in->connin.usb.usb ;
     unsigned char buffer[32] ;
 
     if ( len > USB_FIFO_EACH ) {
@@ -574,7 +574,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     unsigned char buffer[32] ;
     unsigned char * cb = pn->in->combuffer ;
-    usb_dev_handle * usb = pn->in->usb ;
+    usb_dev_handle * usb = pn->in->connin.usb.usb ;
     struct stateinfo * si = pn->si ;
     struct timeval tv ;
     struct timezone tz;
@@ -685,7 +685,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,const struct parsedname * const pn) {
     unsigned char buffer[32] ;
     unsigned char resp ;
-    usb_dev_handle * usb = pn->in->usb ;
+    usb_dev_handle * usb = pn->in->connin.usb.usb ;
     unsigned char dly = 1 + ( (unsigned char) (delay>>4) ) ;
     int ret ;
 
@@ -777,11 +777,11 @@ static int DS9490_HaltPulse(const struct parsedname * const pn) {
   endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 300;
 
   do {
-    if ( (ret=usb_control_msg(pn->in->usb,0x40,CONTROL_CMD,CTL_HALT_EXE_IDLE, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
+    if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,CONTROL_CMD,CTL_HALT_EXE_IDLE, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
       //printf("DS9490_HaltPulse: err1\n");
       break ;
     }
-    if ( (ret=usb_control_msg(pn->in->usb,0x40,CONTROL_CMD,CTL_RESUME_EXE, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
+    if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,CONTROL_CMD,CTL_RESUME_EXE, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
       //printf("DS9490_HaltPulse: err2\n");
       break ;
     }
@@ -793,7 +793,7 @@ static int DS9490_HaltPulse(const struct parsedname * const pn) {
     // check the SPU flag
     if(!(buffer[8] & STATUSFLAGS_SPUA)) {
       //printf("DS9490_HaltPulse: SPU not set\n");
-      if ( (ret=usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_PULSE_EN, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
+      if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_PULSE_EN, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
 	//printf("DS9490_HaltPulse: err4\n");
 	break ;
       }
@@ -850,7 +850,7 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     }
 
     // set pullup to strong5 or program
-    if ( (ret=usb_control_msg(pn->in->usb,0x40,MODE_CMD,MOD_PULSE_EN, lev, NULL, 0, TIMEOUT_USB ))<0
+    if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_PULSE_EN, lev, NULL, 0, TIMEOUT_USB ))<0
 	 ) {
       STATLOCK
       DS9490_level_errors++;
@@ -859,7 +859,7 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     }
 
     // set the strong pullup duration to infinite
-    if ( (ret=usb_control_msg(pn->in->usb,0x40,COMM_CMD,COMM_PULSE | COMM_IM, 0, NULL, 0, TIMEOUT_USB ))<0
+    if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,COMM_PULSE | COMM_IM, 0, NULL, 0, TIMEOUT_USB ))<0
 	 ) {
       STATLOCK
       DS9490_level_errors++;

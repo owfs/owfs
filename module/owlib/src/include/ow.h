@@ -357,6 +357,17 @@ struct interface_routines {
 
 } ;
 
+struct connin_serial {
+    speed_t speed;
+    int UMode ;
+} ;
+#ifdef OW_USB
+struct connin_usb {
+    struct usb_device * dev ;
+    usb_dev_handle * usb ;
+} ;
+#endif /* OW_USB */
+
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
@@ -371,9 +382,12 @@ struct connection_in {
     struct addrinfo * ai ;
     struct addrinfo * ai_ok ;
     int fd ;
+    union {
+        struct connin_serial serial ;
 #ifdef OW_USB
-    usb_dev_handle * usb ;
+        struct connin_usb usb ;
 #endif /* OW_USB */
+    } connin ;
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
     pthread_mutex_t dev_mutex ;
@@ -394,9 +408,6 @@ struct connection_in {
     enum adapter_type Adapter ;
     char * adapter_name ;
     int use_overdrive_speed ;
-    /* Globals for DS2480B state */
-    speed_t speed;        /* terminal speed constant */
-    int UMode ;
     int ULevel ;
     int USpeed ;
     int ProgramAvailable ;
@@ -854,12 +865,6 @@ extern unsigned int DS2480_ProgramPulse_errors ;
     #define ACCEPTLOCK(out)
     #define ACCEPTUNLOCK(out)
 #endif /* OW_MT */
-
-/* Globals for DS2480B state */
-//extern int UMode ;
-//extern int ULevel ;
-//extern int USpeed ;
-//extern int ProgramAvailable ;
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)

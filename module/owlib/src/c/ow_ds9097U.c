@@ -213,7 +213,7 @@ int DS2480_detect( struct connection_in * in ) {
         // construct the command to read the baud rate (to test command block)
     setup[3] = CMD_CONFIG | PARMSEL_PARMREAD | (PARMSEL_BAUDRATE >> 3) ;
         // also do 1 bit operation (to test 1-Wire block)
-    setup[4] = CMD_COMM | FUNCTSEL_BIT | DS2480_baud(in->speed,&pn) | BITPOL_ONE ;
+    setup[4] = CMD_COMM | FUNCTSEL_BIT | DS2480_baud(in->connin.serial.speed,&pn) | BITPOL_ONE ;
 
     /* Set up low-level routines */
     DS2480_setroutines( & (in->iroutines) ) ;
@@ -222,7 +222,7 @@ int DS2480_detect( struct connection_in * in ) {
     DS2480_reset(&pn) ;
 
     // reset modes
-    in->UMode = MODSEL_COMMAND;
+    in->connin.serial.UMode = MODSEL_COMMAND;
     in->USpeed = SPEEDSEL_FLEX;
 
     // set the baud rate to 9600
@@ -256,9 +256,9 @@ int DS2480_detect( struct connection_in * in ) {
     // to see if the response makes sense
     if (
         ((setup[3] & 0xF1) == 0x00) &&
-        ((setup[3] & 0x0E) == DS2480_baud(in->speed,&pn)) &&
+        ((setup[3] & 0x0E) == DS2480_baud(in->connin.serial.speed,&pn)) &&
         ((setup[4] & 0xF0) == 0x90) &&
-        ((setup[4] & 0x0C) == DS2480_baud(in->speed,&pn))
+        ((setup[4] & 0x0C) == DS2480_baud(in->connin.serial.speed,&pn))
        ) {
       //printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
         /* Apparently need to reset again to get the version number properly */
@@ -485,9 +485,9 @@ static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * c
       return ret ;
     }
     // check if correct mode
-    if (pn->in->UMode != MODSEL_COMMAND)
+    if (pn->in->connin.serial.UMode != MODSEL_COMMAND)
     {
-       pn->in->UMode = MODSEL_COMMAND;
+       pn->in->connin.serial.UMode = MODSEL_COMMAND;
        sendpacket[sendlen++] = MODE_COMMAND;
     }
 
@@ -857,9 +857,9 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
 static int DS2480_sendout_cmd( const unsigned char * cmd , const int len, const struct parsedname * const pn ) {
     int ret ;
     unsigned char mc = MODE_COMMAND ;
-    if ( pn->in->UMode != MODSEL_COMMAND ) {
+    if ( pn->in->connin.serial.UMode != MODSEL_COMMAND ) {
         // change back to command mode
-        pn->in->UMode = MODSEL_COMMAND;
+        pn->in->connin.serial.UMode = MODSEL_COMMAND;
         (ret=DS2480_write( &mc,1,pn )) || (ret= DS2480_write( cmd,(unsigned)len,pn )) ;
     } else {
         ret=DS2480_write(cmd,(unsigned)len,pn ) ;
@@ -934,10 +934,10 @@ static int DS2480_sendback_cmd(const unsigned char * const cmd , unsigned char *
  */
 static int DS2480_sendout_data( const unsigned char * const data , const int len, const struct parsedname * const pn ) {
     int ret ;
-    if ( pn->in->UMode != MODSEL_DATA ) {
+    if ( pn->in->connin.serial.UMode != MODSEL_DATA ) {
         unsigned char md = MODE_DATA ;
         // change back to command mode
-        pn->in->UMode = MODSEL_DATA;
+        pn->in->connin.serial.UMode = MODSEL_DATA;
         if ( (ret=DS2480_write( &md,1,pn )) )  {
             STATLOCK
                 DS2480_sendout_data_errors++;
