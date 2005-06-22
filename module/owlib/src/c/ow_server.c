@@ -40,8 +40,6 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_size ;
     sm.sg =  SemiGlobal ;
-    //sm.size = 0 ;
-    //sm.offset = 0 ;
 
     if(pn->state & pn_bus) {
       //printf("use path_busless = %s\n", pn->path_busless);
@@ -110,8 +108,6 @@ int ServerPresence( const struct parsedname * pn ) {
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_presence ;
     sm.sg =  SemiGlobal ;
-    //sm.size = 0 ;
-    //sm.offset = 0 ;
 
     if(pn->state & pn_bus) {
       //printf("use path_bussless = %s\n", pn->path_busless);
@@ -192,8 +188,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_dir ;
-    //sm.size = 0 ;
-    //sm.offset = 0 ;
 
     sm.sg = SemiGlobal ;
     if((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {

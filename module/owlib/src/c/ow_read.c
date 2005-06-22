@@ -373,55 +373,83 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
 /* read without artificial separation or combination */
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret = 0 ;
+    int sz ;
 //printf("ParseRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
+
+
+    LEVEL_CALL("FS_parse_read: format=%d s=%d offset=%d\n", (int)pn->ft->format, (int)size, (int)offset )
+
+    /* Mounting fuse with "direct_io" will cause a second read with offset
+     * at end-of-file... Just return 0 if offset == size */
+    switch( pn->ft->format ) {
+    case ft_yesno:
+    case ft_date:
+    case ft_tempgap:
+    case ft_temperature:
+    case ft_float:
+    case ft_bitfield:
+    case ft_unsigned:
+    case ft_integer: {
+      size_t s = FileLength(pn) ;
+      if ( offset > s ) return -ERANGE ;
+      if ( offset == s ) return 0 ;
+      break;
+      }
+    default:
+      break;
+    }
 
     switch( pn->ft->format ) {
     case ft_integer: {
         int i ;
-        if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.i)(&i,pn) ;
         if (ret < 0) return ret ;
-        return FS_output_integer( i , buf , size , pn ) ;
-    }
+        sz = FS_output_integer( i , buf , size , pn ) ;
+	break;
+        }
     case ft_bitfield:
     case ft_unsigned: {
         unsigned int u ;
-        if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.u)(&u,pn) ;
         if (ret < 0) return ret ;
-        return FS_output_unsigned( u , buf , size , pn ) ;
+	//LEVEL_CALL("FS_parse_read: call FS_output_unsigned size=%d\n", (int)size )
+	sz = FS_output_unsigned( u , buf , size , pn ) ;
+	//"size" will be corrupted if FS_output_unsigned define local variable
+	//char c[suglen+2], so I changed it into a malloc.
+	//LEVEL_CALL("FS_parse_read: FS_output_unsigned returned sz=%d size=%d\n", (int)sz, (int)size);
+	break ;
         }
     case ft_float: {
         FLOAT f ;
-        if ( offset ) return -EADDRNOTAVAIL ;
+        //if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
-        return FS_output_float( f , buf , size , pn ) ;
+        sz = FS_output_float( f , buf , size , pn ) ;
+	break ;
         }
     case ft_temperature: {
         FLOAT f ;
-        if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
-        return FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
+        sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
+	break ;
         }
     case ft_tempgap: {
         FLOAT f ;
-        if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
-        return FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
+        sz = FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
+	break ;
         }
     case ft_date: {
         DATE d ;
-        if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.d)(&d,pn) ;
         if (ret < 0) return ret ;
-        return FS_output_date( d , buf , size , pn ) ;
+        sz = FS_output_date( d , buf , size , pn ) ;
+	break;
         }
     case ft_yesno: {
         int y ;
-        if ( offset ) return -EADDRNOTAVAIL ;
         if (size < 1) return -EMSGSIZE ;
         ret = (pn->ft->read.y)(&y,pn) ;
         if (ret < 0) return ret ;
@@ -445,8 +473,15 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
     case ft_directory:
     case ft_subdir:
         return -ENOSYS ;
+    default:
+        return -ENOENT ;
     }
-    return -ENOENT ;
+    /* Return correct buffer according to offset for most data-types here */
+    if((sz > 0) && offset) {
+      memcpy(buf, &buf[offset], (size_t)sz - (size_t)offset);
+      return sz - offset;
+    }
+    return sz ;
 }
 
 /* read an aggregation (returns an array from a single read) */
@@ -724,46 +759,72 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
 
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
-    char c[suglen+2] ;
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
     int len ;
+    char *c;
+    if(!(c = (char *)malloc(suglen+2))) {
+      return -ENOMEM;
+    }
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
         len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
     UCLIBCUNLOCK
-    if ( (len<0) || ((size_t)len>suglen) ) return -EMSGSIZE ;
+    if ( (len<0) || ((size_t)len>suglen) ) {
+      free(c) ;
+      return -EMSGSIZE ;
+    }
     memcpy( buf, c, (size_t)len ) ;
+    free(c) ;
     return len ;
 }
 
 int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
-    char c[suglen+2] ;
+    int len ;
+    /*
+      char c[suglen+2] ;
+      defining this REALLY doesn't work on gcc 3.3.2 either...
+      It will corrupt "const size_t size"! after returning from this function
+    */
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
-    int len ;
+    char *c;
+    if(!(c = (char *)malloc(suglen+2))) {
+      return -ENOMEM;
+    }
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
         len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
     UCLIBCUNLOCK
-    if ((len<0) || ((size_t)len>suglen) ) return -EMSGSIZE ;
+    if ((len<0) || ((size_t)len>suglen) ) {
+      free(c) ;
+      return -EMSGSIZE ;
+    }
     memcpy( buf, c, (size_t)len ) ;
+    free(c) ;
     return len ;
 }
 
 int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
-    char c[suglen+2] ;
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
     int len ;
+    char *c;
+    if(!(c = (char *)malloc(suglen+2))) {
+      return -ENOMEM;
+    }
     if ( suglen>size ) suglen=size ;
     UCLIBCLOCK
         len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
     UCLIBCUNLOCK
-    if ((len<0) || ((size_t)len>suglen) ) return -EMSGSIZE ;
+    if ((len<0) || ((size_t)len>suglen) ) {
+      free(c) ;
+      return -EMSGSIZE ;
+    }
     memcpy( buf, c, (size_t)len ) ;
+    free(c) ;
     return len ;
 }
 
