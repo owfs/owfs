@@ -153,7 +153,7 @@ static void ow_morehelp( enum opt_program op ) {
     case opt_owfs:
         printf(
         "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"
-        "                                 |  e.g: --fuse_mount=\"-x -f\"\n"
+        "                                 |  e.g: --fuse_opt=\"-x -f\"\n"
         ) ;
         break ;
         case opt_httpd:
