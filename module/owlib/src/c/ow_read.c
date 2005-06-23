@@ -348,7 +348,9 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
     int len ;
     struct parsedname pn2 ;
 
-    if ( offset ) return -EADDRNOTAVAIL ;
+    size_t s = FullFileLength(pn) ;
+    if ( offset > s ) return -ERANGE ;
+    if ( offset == s ) return 0 ;
 
     memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pn2.type = pn_real ; /* "real" type to get return length, rather than "structure" length */
@@ -367,6 +369,11 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
             (int)FullFileLength(&pn2)
             ) ;
     UCLIBCUNLOCK
+
+    if((len > 0) && offset) {
+      memcpy(buf, &buf[offset], (size_t)len - (size_t)offset);
+      return len - offset;
+    }
     return len;
 }
 
@@ -374,6 +381,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret = 0 ;
     int sz ;
+    size_t s = 0 ;
 //printf("ParseRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
 
 
@@ -381,23 +389,9 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
-    switch( pn->ft->format ) {
-    case ft_yesno:
-    case ft_date:
-    case ft_tempgap:
-    case ft_temperature:
-    case ft_float:
-    case ft_bitfield:
-    case ft_unsigned:
-    case ft_integer: {
-      size_t s = FileLength(pn) ;
-      if ( offset > s ) return -ERANGE ;
-      if ( offset == s ) return 0 ;
-      break;
-      }
-    default:
-      break;
-    }
+    s = FileLength(pn) ;
+    if ( offset > s ) return -ERANGE ;
+    if ( offset == s ) return 0 ;
 
     switch( pn->ft->format ) {
     case ft_integer: {
@@ -412,16 +406,15 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         unsigned int u ;
         ret = (pn->ft->read.u)(&u,pn) ;
         if (ret < 0) return ret ;
-	//LEVEL_CALL("FS_parse_read: call FS_output_unsigned size=%d\n", (int)size )
+	//LEVEL_DEBUG("FS_parse_read: call FS_output_unsigned size=%d\n", (int)size )
 	sz = FS_output_unsigned( u , buf , size , pn ) ;
-	//"size" will be corrupted if FS_output_unsigned define local variable
+	//"size" will be corrupted if FS_output_unsigned contain local variable
 	//char c[suglen+2], so I changed it into a malloc.
-	//LEVEL_CALL("FS_parse_read: FS_output_unsigned returned sz=%d size=%d\n", (int)sz, (int)size);
+	//LEVEL_DEBUG("FS_parse_read: FS_output_unsigned returned sz=%d size=%d (probably changed)\n", (int)sz, (int)size);
 	break ;
         }
     case ft_float: {
         FLOAT f ;
-        //if ( offset ) return -EADDRNOTAVAIL ;
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
         sz = FS_output_float( f , buf , size , pn ) ;
@@ -457,15 +450,15 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         return 1 ;
         }
     case ft_ascii: {
-        size_t s = FileLength(pn) ;
-        if ( offset > s ) return -ERANGE ;
+        //size_t s = FileLength(pn) ;
+        //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.a)(buf,s,offset,pn) ;
         }
     case ft_binary: {
-        size_t s = FileLength(pn) ;
-        if ( offset > s ) return -ERANGE ;
+        //size_t s = FileLength(pn) ;
+        //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.b)(buf,s,offset,pn) ;
@@ -476,6 +469,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
     default:
         return -ENOENT ;
     }
+
     /* Return correct buffer according to offset for most data-types here */
     if((sz > 0) && offset) {
       memcpy(buf, &buf[offset], (size_t)sz - (size_t)offset);
@@ -488,45 +482,45 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
 static int FS_gamish(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0 ;
+    size_t s = 0 ;
+    
+    /* Mounting fuse with "direct_io" will cause a second read with offset
+     * at end-of-file... Just return 0 if offset == size */
+    s = FullFileLength(pn) ;
+    if ( offset > s ) return -ERANGE ;
+    if ( offset == s ) return 0 ;
 
     switch( pn->ft->format ) {
     case ft_integer:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             int * i = (int *) calloc( elements, sizeof(int) ) ;
                 if ( i==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.i)(i,pn) ;
                 if (ret >= 0) ret = FS_output_integer_array( i , buf , size , pn ) ;
             free( i ) ;
-            return ret ;
+	    break;
         }
     case ft_unsigned:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+	{
             unsigned int * u = (unsigned int *) calloc( elements, sizeof(unsigned int) ) ;
+
                 if ( u==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.u)(u,pn) ;
                 if (ret >= 0) ret = FS_output_unsigned_array( u , buf , size , pn ) ;
             free( u ) ;
-            return ret ;
+	    break;
         }
     case ft_float:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
-            return ret ;
+	    break ;
         }
     case ft_temperature:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             size_t i ;
             FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
@@ -534,12 +528,10 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 for ( i=0; i<elements ; ++i ) f[i] = Temperature(f[i],pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
-            return ret ;
+	    break ;
         }
     case ft_tempgap:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             size_t i ;
             FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
@@ -547,23 +539,19 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 for ( i=0; i<elements ; ++i ) f[i] = TemperatureGap(f[i],pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
-            return ret ;
+	    break ;
         }
     case ft_date:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             DATE * d = (DATE *) calloc( elements, sizeof(DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.d)(d,pn) ;
                 if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
             free( d ) ;
-            return ret ;
+	    break ;
         }
     case ft_yesno:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             int * y = (int *) calloc( elements, sizeof(int) ) ;
                 if ( y==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.y)(y,pn) ;
@@ -576,12 +564,10 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                     ret = elements*2-1 ;
                 }
             free( y ) ;
-            return ret ; ;
+	    break ;
         }
     case ft_bitfield:
-        if (offset) {
-            return -EADDRNOTAVAIL ;
-        } else {
+        {
             unsigned int u ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret >= 0) {
@@ -593,18 +579,18 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 }
                 ret = elements*2-1 ;
             }
-            return ret ;
+	    break ;
         }
     case ft_ascii: {
-        size_t s = FullFileLength(pn) ;
-        if ( offset > s ) return -ERANGE ;
+        //size_t s = FullFileLength(pn) ;
+        //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.a)(buf,s,offset,pn) ;
         }
     case ft_binary: {
-        size_t s = FullFileLength(pn) ;
-        if ( offset > s ) return -ERANGE ;
+        //size_t s = FullFileLength(pn) ;
+        //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.b)(buf,s,offset,pn) ;
@@ -612,8 +598,22 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
     case ft_directory:
     case ft_subdir:
         return -ENOSYS ;
+    default:
+	return -ENOENT ;
     }
-    return -ENOENT ;
+
+    if((size_t)ret != s) {
+      /* Read error since we didn't get all bytes */
+      LEVEL_DEBUG("FS_gamish: error ret=%d s=%d\n", ret, s);
+      return -ENOENT ;
+    }
+
+    /* Return correct buffer according to offset for most data-types here */
+    if((ret > 0) && offset) {
+      memcpy(buf, &buf[offset], (size_t)ret - (size_t)offset);
+      return ret - offset;
+    }
+    return ret ;
 }
 
 /* Read each array element independently, but return as one long string */
@@ -623,11 +623,15 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     char * p = buf ;
     int r ;
     struct parsedname pn2 ;
+    size_t s, sz;
 
     STATLOCK
         ++read_array ; /* statistics */
     STATUNLOCK
-    if ( offset ) return -EADDRNOTAVAIL ;
+
+    s = FullFileLength(pn) ;
+    if ( offset > s ) return -ERANGE ;
+    if ( offset == s ) return 0 ;
 
     /* shallow copy */
     memcpy( &pn2 , pn , sizeof(struct parsedname) ) ;
@@ -648,6 +652,22 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 //printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
     }
 //printf("READALL return %d\n",size-left) ;
+
+    sz = size - left ;
+#if 0
+    // /var/1wire/system/adapter/address.ALL is 512 long
+    // but will only return 10 bytes or something
+    if(sz != s) {
+      LEVEL_DEBUG("FS_r_all: error sz=%d s=%d\n", sz, s);
+      return -ENOENT ;
+    }
+#endif
+
+    LEVEL_DEBUG("FS_r_all: size=%d left=%d sz=%d\n", size, left, sz);
+    if((sz > 0) && offset) {
+      memcpy(buf, &buf[offset], sz - (size_t)offset);
+      return sz - offset;
+    }
     return size - left ;
 }
 
@@ -656,9 +676,14 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0 ;
-    if (offset) {
-        return -EADDRNOTAVAIL ;
-    }
+    size_t s = 0 ;
+    
+    /* Mounting fuse with "direct_io" will cause a second read with offset
+     * at end-of-file... Just return 0 if offset == size */
+    s = FileLength(pn) ;
+    if ( offset > s ) return -ERANGE ;
+    if ( offset == s ) return 0 ;
+
     switch( pn->ft->format ) {
     case ft_integer:
         {
@@ -737,15 +762,17 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
             break ;
         }
     case ft_ascii: {
-        size_t s = FullFileLength(pn) ;
+        s = FullFileLength(pn) ;
         if ( offset > s ) return -ERANGE ;
+        if ( offset == s ) return 0 ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.a)(buf,s,offset,pn) ;
         }
     case ft_binary: {
-        size_t s = FullFileLength(pn) ;
+        s = FullFileLength(pn) ;
         if ( offset > s ) return -ERANGE ;
+        if ( offset == s ) return 0 ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.b)(buf,s,offset,pn) ;
@@ -753,7 +780,22 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
     case ft_directory:
     case ft_subdir:
         return -ENOSYS ;
+    default:
+        return -ENOENT ;
     }
+
+    if((size_t)ret != s) {
+      /* Read error since we didn't get all bytes */
+      LEVEL_DEBUG("FS_r_split: error ret=%d s=%d\n", ret, s);
+      return -ENOENT ;
+    }
+
+    LEVEL_DEBUG("FS_r_split: size=%d sz=%d\n", size, ret);
+    if((ret > 0) && offset) {
+      memcpy(buf, &buf[offset], (size_t)ret - (size_t)offset);
+      return ret - offset;
+    }
+
     return ret ;
 }
 

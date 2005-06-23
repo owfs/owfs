@@ -62,6 +62,10 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     char * pathnext ;
     int ret ;
 
+    // To make the debug output useful it's cleared here.
+    // Even on normal glibc, errno isn't cleared on good system calls
+    errno = 0;
+
     LEVEL_CALL("PARSENAME path=%s\n",path)
             
     if ( pn == NULL ) return -EINVAL ;
@@ -543,11 +547,17 @@ static void my_delay(const unsigned int len) {
             if(errno != EINTR) break ;
             /* was interupted... continue sleeping... */
 //printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
+#ifdef __UCLIBC__
+	    errno = 0;  // clear errno every time in uclibc at least
+#endif
         } else {
             /* completed sleeping */
             break;
         }
     }
+#ifdef __UCLIBC__
+    errno = 0;  // clear errno in uclibc at least
+#endif
 }
 
 //--------------------------------------------------------------------------
