@@ -202,70 +202,70 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("SELECT\n");
 
     if(pn->in->use_overdrive_speed) {
-      if((ret=BUS_testoverdrive(pn)) < 0) {
-	return ret ;
-      } else {
-	//printf("use overdrive speed\n");
-	sent[0] = 0x69 ;
-      }
+        if((ret=BUS_testoverdrive(pn)) < 0) {
+            return ret ;
+        } else {
+            //printf("use overdrive speed\n");
+            sent[0] = 0x69 ;
+        }
     }
 
     // reset the 1-wire
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     if ( (ret=BUS_reset(pn)) ) {
-      //printf("BUS_select_low: BUS_reset failed\n");
-      STATLOCK
-      BUS_select_low_errors++;
-      STATUNLOCK
-      return ret ;
+        //printf("BUS_select_low: BUS_reset failed\n");
+        STATLOCK
+            BUS_select_low_errors++;
+        STATUNLOCK
+        return ret ;
     }
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
-       memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
+        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
        /* Perhaps support overdrive here ? */
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
-          STATLOCK
-	  BUS_select_low_errors++;
-	  STATUNLOCK
-	  return ret ;
-	}
+            STATLOCK
+                BUS_select_low_errors++;
+            STATUNLOCK
+            return ret ;
+        }
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-          STATLOCK
-	  BUS_select_low_errors++;
-	  STATUNLOCK
-	  return ret ;
-	}
+            STATLOCK
+                BUS_select_low_errors++;
+            STATUNLOCK
+            return ret ;
+        }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
-          STATLOCK
-	  BUS_select_low_branch_errors++;
-	  STATUNLOCK
-	  return -EINVAL ;
-	}
+            STATLOCK
+                BUS_select_low_branch_errors++;
+            STATUNLOCK
+            return -EINVAL ;
+        }
     }
     if ( pn->dev ) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
         if ( (ret=BUS_send_data(sent,1,pn)) ) {
-          STATLOCK
-	  BUS_select_low_errors++;
-	  STATUNLOCK
-	  return ret ;
-	}
-	if(sent[0] == 0x69) {
-	  if((ret=BUS_overdrive(MODE_OVERDRIVE, pn))< 0) {
-	    return ret ;
-	  }
-	}
+            STATLOCK
+                BUS_select_low_errors++;
+            STATUNLOCK
+            return ret ;
+        }
+        if(sent[0] == 0x69) {
+            if((ret=BUS_overdrive(MODE_OVERDRIVE, pn))< 0) {
+                return ret ;
+            }
+        }
         if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
-          STATLOCK
-	  BUS_select_low_errors++;
-	  STATUNLOCK
-	  return ret ;
-	}
-	return ret ;
+            STATLOCK
+                BUS_select_low_errors++;
+            STATUNLOCK
+            return ret ;
+        }
+        return ret ;
     }
     return 0 ;
 }

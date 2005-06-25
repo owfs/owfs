@@ -458,14 +458,14 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     memset(buffer, 0, 32); 
  
     if((ret=DS9490_level(MODE_NORMAL, pn)) < 0) {
-      return ret ;
+        return ret ;
     }
 
     // force normal speed if not using overdrive anymore
     if (!pn->in->use_overdrive_speed || (pn->in->USpeed & MODE_OVERDRIVE)) {
-      if((ret=DS9490_overdrive(MODE_NORMAL, pn)) < 0) {
-	return ret ;
-      }
+        if((ret=DS9490_overdrive(MODE_NORMAL, pn)) < 0) {
+            return ret ;
+        }
     }
 
     if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,
@@ -831,19 +831,19 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     switch (new_level) {
     case MODE_NORMAL:
         if(pn->in->ULevel==MODE_STRONG5) {
-	  if(DS9490_HaltPulse(pn)==0) {
-	    pn->in->ULevel = new_level ;
-	    return 0 ;
-	  }
-	}
-	return 0;
+            if(DS9490_HaltPulse(pn)==0) {
+                pn->in->ULevel = new_level ;
+                return 0 ;
+            }
+        }
+        return 0;
     case MODE_STRONG5:
         lev = ENABLEPULSE_SPUE ;
         break ;
     case MODE_PROGRAM:
         //lev = ENABLEPULSE_PRGE ;
         // Don't support Program pulse right now
-	return -EIO ;
+        return -EIO ;
     case MODE_BREAK:
     default:
         return 1 ;
