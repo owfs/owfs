@@ -18,6 +18,7 @@ static int DS9097_PowerByte( const unsigned char byte, const unsigned int delay,
 static int DS9097_ProgramPulse( const struct parsedname * const pn ) ;
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS9097_reset( const struct parsedname * const pn ) ;
+static int DS9097_reconnect( const struct parsedname * const pn ) ;
 static int DS9097_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int DS9097_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
 static int DS9097_level(int new_level, const struct parsedname * const pn) ;
@@ -42,6 +43,7 @@ static void DS9097_setroutines( struct interface_routines * const f ) {
     f->select        = BUS_select_low ;
     f->overdrive = NULL ;
     f->testoverdrive = NULL ;
+    f->reconnect = DS9097_reconnect ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
@@ -114,6 +116,10 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
       STATUNLOCK
     }
     return ret;
+}
+
+static int DS9097_reconnect( const struct parsedname * const pn ) {
+    return 0 ;
 }
 
 static int DS9097_ProgramPulse( const struct parsedname * const pn ) {

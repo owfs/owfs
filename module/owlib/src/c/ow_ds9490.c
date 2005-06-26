@@ -29,6 +29,8 @@ $Id$
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 static int DS9490_reset( const struct parsedname * const pn ) ;
+static int DS9490_open( const struct parsedname * const pn ) ;
+static int DS9490_reconnect( const struct parsedname * const pn ) ;
 static int DS9490_getstatus(unsigned char * const buffer,const struct parsedname * const pn, int readlen, int wait_for_idle ) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len,const struct parsedname * const pn ) ;
@@ -55,6 +57,7 @@ static void DS9490_setroutines( struct interface_routines * const f ) {
     f->select        = BUS_select_low ;
     f->overdrive = DS9490_overdrive ;
     f->testoverdrive = DS9490_testoverdrive ;
+    f->reconnect  =  DS9490_reconnect ;
 }
 
 #define TIMEOUT_USB    5000 /* 5 seconds */
@@ -211,6 +214,47 @@ static int DS9490_setup_adapter(const struct parsedname * const pn) {
   return ret ;
 }
 
+static int DS9490_open( const struct parsedname * const pn ) {
+    int ret ;
+    usb_dev_handle * usb ;
+    if ( (usb=usb_open(pn->in->connin.usb.dev)) ) {
+        pn->in->connin.usb.usb = usb ;
+        #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
+            usb_detach_kernel_driver_np(usb,0);
+        #endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
+        if ( usb_set_configuration( usb, 1 )==0 && usb_claim_interface( usb, 0)==0 ) {
+            if ( usb_set_altinterface( usb, 3)==0 ) {
+                LEVEL_CONNECT("Opened USB DS9490 adapter at %s.\n",pn->in->name)
+                        DS9490_setroutines( & pn->in->iroutines ) ;
+                pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
+                pn->in->adapter_name = "DS9490" ;
+            
+                ret = DS9490_setup_adapter(pn) || DS9490_overdrive(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
+                if(!ret) return 0 ;
+                LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",pn->in->name)
+            } else {
+                    LEVEL_CONNECT("Failed to configure alt interface on USB DS9490 adapter at %s.\n",pn->in->name)
+            }
+            usb_release_interface( usb, 0) ;
+        } else {
+            LEVEL_CONNECT("Failed to configure/claim interface on USB DS9490 adapter at %s.\n",pn->in->name)
+        }
+        usb_close( usb ) ;
+        pn->in->connin.usb.usb = 0 ;
+    } else {
+        LEVEL_CONNECT("Failed to open USB DS9490 adapter at %s.\n",pn->in->name)
+    }
+}
+
+/* When the errors stop the USB device from functioning -- close and reopen */
+static int DS9490_reconnect( const struct parsedname * const pn ) {
+    if ( pn && pn->in && pn->in->connin.usb.dev ) {
+        if ( pn->in->connin.usb.usb && usb_close( pn->in->connin.usb.usb ) == 0 ) pn->in->connin.usb.usb = 0 ;
+        return DS9490_open( pn ) ;
+    }
+    return -EIO ;
+}
+
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static int DS9490_detect_low( const struct parsedname * const pn ) {
     struct usb_bus *bus ;
@@ -235,32 +279,9 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                     strcpy(pn->in->name,bus->dirname) ;
                     strcat(pn->in->name,"/") ;
                     strcat(pn->in->name,dev->filename) ;
-                    if ( (pn->in->connin.usb.usb=usb_open(dev)) ) {
-#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
-                        usb_detach_kernel_driver_np(pn->in->connin.usb.usb,0);
-#endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-                        if ( usb_set_configuration( pn->in->connin.usb.usb, 1 )==0 && usb_claim_interface( pn->in->connin.usb.usb, 0)==0 ) {
-    if ( usb_set_altinterface( pn->in->connin.usb.usb, 3)==0 ) {
-                                LEVEL_CONNECT("Opened USB DS9490 adapter at %s.\n",pn->in->name)
-                                DS9490_setroutines( & pn->in->iroutines ) ;
-                                pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
-                                pn->in->adapter_name = "DS9490" ;
 
-                                ret = DS9490_setup_adapter(pn) || DS9490_overdrive(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
-                                if(!ret) return 0 ;
-                                LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",pn->in->name)
-                            } else {
-                                LEVEL_CONNECT("Failed to configure alt interface on USB DS9490 adapter at %s.\n",pn->in->name)
-                            }
-                            usb_release_interface( pn->in->connin.usb.usb, 0) ;
-                        } else {
-                            LEVEL_CONNECT("Failed to configure/claim interface on USB DS9490 adapter at %s.\n",pn->in->name)
-                        }
-                        usb_close( pn->in->connin.usb.usb ) ;
-                        pn->in->connin.usb.usb = 0 ;
-                    } else {
-                        LEVEL_CONNECT("Failed to open USB DS9490 adapter at %s.\n",pn->in->name)
-                    }
+                    pn->in->connin.usb.dev = dev ;
+                    if ( DS9490_open( pn ) == 0 ) return  0 ;
                     if ( pn->in->name ) free(pn->in->name) ;
                     pn->in->name = NULL ;
                     return -EIO ;

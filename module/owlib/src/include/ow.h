@@ -354,6 +354,8 @@ struct interface_routines {
     int (* sendback_data) (const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * pn ) ;
     /* select a device */
     int (* select) ( const struct parsedname * const pn ) ;
+    /* reconnect with a balky device */
+    int (* reconnect) ( const struct parsedname * const pn ) ;
 
 } ;
 
@@ -1082,6 +1084,7 @@ extern int log_available ;
 #define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
 #define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
 #define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)
+#define BUS_reconnect(pn)                      ((pn)->in->iroutines.reconnect)(pn)
 #define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive) ? (((pn)->in->iroutines.overdrive)(speed,(pn))) : (-ENOTSUP))
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive) ? (((pn)->in->iroutines.testoverdrive)((pn))) : (-ENOTSUP))
 #define BUS_databit       DS2480_databit

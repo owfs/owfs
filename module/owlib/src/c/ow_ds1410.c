@@ -24,6 +24,7 @@ static int DS1410_ProgramPulse( void ) ;
 static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 //int DS1410_detect( void ) ;
 static int DS1410_reset( const struct parsedname * const pn ) ;
+static int DS1410_reconnect( const struct parsedname * const pn ) ;
 static int DS1410_read(unsigned char * const buf, const int size ) ;
 static int DS1410_write( const unsigned char * const bytes, const size_t num ) ;
 static int DS1410_level(int new_level) ;
@@ -407,6 +408,10 @@ int DS1410_detect( void ) {
 //    return DS1410_reset() ;
 }
 
+static int DS1410_reconnect( const struct parsedname * const pn ) {
+    return 0 ;
+}
+
 /* DS1410 Reset -- A little different frolm DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
 static int DS1410_reset( const struct parsedname * const pn ) {
@@ -625,6 +630,7 @@ static void DS1410_setroutines( struct interface_routines * const f ) {
     f->select        = BUS_select_low ;
     f->overdrive = NULL ;
     f->testoverdrive = NULL ;
+    f->reconnect = DS1410_reconnect ;
 }
 
 #endif /* OW_PARPORT */

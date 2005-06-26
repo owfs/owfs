@@ -18,6 +18,7 @@ static int BadAdapter_PowerByte(const unsigned char byte, const unsigned int del
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) ;
 static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 static int BadAdapter_reset( const struct parsedname * const pn ) ;
+static int BadAdapter_reconnect( const struct parsedname * const pn ) ;
 static int BadAdapter_read(unsigned char * const buf, const size_t size, const struct parsedname * pn ) ;
 static int BadAdapter_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
 static int BadAdapter_level(int new_level, const struct parsedname * const pn) ;
@@ -40,6 +41,7 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.ProgramPulse  = BadAdapter_ProgramPulse  ;
     in->iroutines.sendback_data = BadAdapter_sendback_data ;
     in->iroutines.select        = BadAdapter_select        ;
+    in->iroutines.reconnect     = BadAdapter_reconnect     ;
     in->adapter_name="Bad Adapter" ;
     return 0 ;
 }
@@ -82,6 +84,10 @@ static int BadAdapter_level(int new_level, const struct parsedname * const pn) {
     return -ENXIO ;
 }
 static int BadAdapter_select(const struct parsedname * const pn) {
+    (void) pn ;
+    return -ENXIO ;
+}
+static int BadAdapter_reconnect(const struct parsedname * const pn) {
     (void) pn ;
     return -ENXIO ;
 }

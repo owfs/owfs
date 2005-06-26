@@ -181,6 +181,13 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
   return 0 ;
 }
 
+static int BUS_selection_error( const struct parsedname * const pn ) {
+    STATLOCK
+        BUS_select_low_errors++;
+    STATUNLOCK
+    printf( "BUS_select error, attempting reset = %d\n",BUS_reconnect( pn ) ) ;
+}   
+
 //--------------------------------------------------------------------------
 /** Select
    -- selects a 1-wire device to respond to further commands.
@@ -214,10 +221,7 @@ int BUS_select_low(const struct parsedname * const pn) {
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     if ( (ret=BUS_reset(pn)) ) {
-        printf("BUS_select_low(1)=%d: BUS_reset failed\n",ret);
-        STATLOCK
-            BUS_select_low_errors++;
-        STATUNLOCK
+        BUS_selection_error(pn) ;
         return ret ;
     }
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
@@ -225,18 +229,12 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
        /* Perhaps support overdrive here ? */
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
-            printf("BUS_select_low(2)=%d: BUS_send_data failed\n",ret);
-            STATLOCK
-                BUS_select_low_errors++;
-            STATUNLOCK
+            BUS_selection_error(pn) ;
             return ret ;
         }
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-            printf("BUS_select_low(3)=%d: BUS_send_data failed\n",ret);
-            STATLOCK
-                BUS_select_low_errors++;
-            STATUNLOCK
+            BUS_selection_error(pn) ;
             return ret ;
         }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
@@ -251,10 +249,7 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
         if ( (ret=BUS_send_data(sent,1,pn)) ) {
-            printf("BUS_select_low(4)=%d: BUS_send_data failed\n",ret);
-            STATLOCK
-                BUS_select_low_errors++;
-            STATUNLOCK
+            BUS_selection_error(pn) ;
             return ret ;
         }
         if(sent[0] == 0x69) {
@@ -263,10 +258,7 @@ int BUS_select_low(const struct parsedname * const pn) {
             }
         }
         if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
-            printf("BUS_select_low(5)=%d: BUS_send_data failed\n",ret);
-            STATLOCK
-                BUS_select_low_errors++;
-            STATUNLOCK
+            BUS_selection_error(pn) ;
             return ret ;
         }
         return ret ;

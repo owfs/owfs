@@ -18,6 +18,7 @@ $Id$
 static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * const pn) ;
 static int DS2480_reset( const struct parsedname * const pn ) ;
+static int DS2480_reconnect( const struct parsedname * const pn ) ;
 static int DS2480_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int DS2480_write( const unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int DS2480_sendout_data( const unsigned char * const data , const int len, const struct parsedname * const pn ) ;
@@ -42,6 +43,7 @@ static void DS2480_setroutines( struct interface_routines * const f ) {
     f->select        = BUS_select_low ;
     f->overdrive = NULL ;
     f->testoverdrive = NULL ;
+    f->reconnect = DS2480_reconnect ;
 }
 
 /* --------------------------- */
@@ -295,6 +297,10 @@ int DS2480_baud( speed_t baud, const struct parsedname * const pn ) {
     case B115200:  return PARMSET_115200  ;
     }
     return PARMSET_9600 ;
+}
+
+static int DS2480_reconnect( const struct parsedname * const pn ) {
+    return 0 ;
 }
 
 //--------------------------------------------------------------------------
