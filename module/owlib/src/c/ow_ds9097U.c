@@ -300,6 +300,12 @@ int DS2480_baud( speed_t baud, const struct parsedname * const pn ) {
 }
 
 static int DS2480_reconnect( const struct parsedname * const pn ) {
+    STATLOCK
+    BUS_reconnect++;
+    if ( pn && pn->in ) {
+      pn->in->bus_reconnect++;
+    }
+    STATUNLOCK
     return 0 ;
 }
 

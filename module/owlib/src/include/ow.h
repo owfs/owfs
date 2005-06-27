@@ -397,6 +397,8 @@ struct connection_in {
 #endif /* OW_MT */
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
+    unsigned int bus_reconnect ;
+    unsigned int bus_reconnect_errors ;
     unsigned int bus_locks ;
     unsigned int bus_unlocks ;
     struct timeval bus_time ;
@@ -792,6 +794,8 @@ extern unsigned int CRC16_tries ;
 extern unsigned int CRC16_errors ;
 
 // ow_bus.c
+extern unsigned int BUS_reconnect ;         // sum from all adapters
+extern unsigned int BUS_reconnect_errors ;  // sum from all adapters
 extern unsigned int BUS_send_data_errors ;
 extern unsigned int BUS_send_data_memcmp_errors ;
 extern unsigned int BUS_readin_data_errors ;
@@ -1084,7 +1088,7 @@ extern int log_available ;
 #define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
 #define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
 #define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)
-#define BUS_reconnect(pn)                      ((pn)->in->iroutines.reconnect)(pn)
+#define BUS_reconnect(pn)                   ((pn)->in->iroutines.reconnect)(pn)
 #define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive) ? (((pn)->in->iroutines.overdrive)(speed,(pn))) : (-ENOTSUP))
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive) ? (((pn)->in->iroutines.testoverdrive)((pn))) : (-ENOTSUP))
 #define BUS_databit       DS2480_databit

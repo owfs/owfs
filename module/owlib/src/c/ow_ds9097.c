@@ -119,6 +119,12 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
 }
 
 static int DS9097_reconnect( const struct parsedname * const pn ) {
+    STATLOCK
+    BUS_reconnect++;
+    if ( pn && pn->in ) {
+      pn->in->bus_reconnect++;
+    }
+    STATUNLOCK
     return 0 ;
 }
 

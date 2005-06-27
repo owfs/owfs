@@ -229,6 +229,11 @@ static int DS9490_open( const struct parsedname * const pn ) {
                 pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
                 pn->in->adapter_name = "DS9490" ;
             
+		// clear endpoints
+		usb_clear_halt(usb, DS2490_EP3) ;
+		usb_clear_halt(usb, DS2490_EP2) ;
+		usb_clear_halt(usb, DS2490_EP1) ;
+
                 ret = DS9490_setup_adapter(pn) || DS9490_overdrive(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
                 if(!ret) return 0 ;
                 LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",pn->in->name)
@@ -244,13 +249,37 @@ static int DS9490_open( const struct parsedname * const pn ) {
     } else {
         LEVEL_CONNECT("Failed to open USB DS9490 adapter at %s.\n",pn->in->name)
     }
+    return -1 ;
 }
 
 /* When the errors stop the USB device from functioning -- close and reopen */
 static int DS9490_reconnect( const struct parsedname * const pn ) {
-    if ( pn && pn->in && pn->in->connin.usb.dev ) {
-        if ( pn->in->connin.usb.usb && usb_close( pn->in->connin.usb.usb ) == 0 ) pn->in->connin.usb.usb = 0 ;
-        return DS9490_open( pn ) ;
+    int retry = 0 ;
+
+    STATLOCK
+    BUS_reconnect++;
+    STATUNLOCK
+
+    if ( pn && pn->in ) {
+      STATLOCK
+      pn->in->bus_reconnect++;
+      STATUNLOCK
+      if( pn->in->connin.usb.dev ) {
+        if ( pn->in->connin.usb.usb ) {
+	    usb_release_interface( pn->in->connin.usb.usb, 0 ) ;
+	    usb_close( pn->in->connin.usb.usb ) ;
+	    pn->in->connin.usb.usb = 0 ;
+	}
+	while(retry++ < 3) {
+	  if(!DS9490_open( pn )) return 0 ;
+	  STATLOCK
+	    BUS_reconnect_errors++;
+	    pn->in->bus_reconnect_errors++;
+	  STATUNLOCK
+	  LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter, retry %d\n", retry);
+	}
+	LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
+      }
     }
     return -EIO ;
 }
@@ -261,7 +290,6 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
     struct usb_device *dev ;
     int useusb = pn->in->fd ; /* fd holds the number of the adapter */
     int usbnum = 0 ;
-    int ret ;
 
     usb_init() ;
     usb_find_busses() ;

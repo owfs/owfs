@@ -182,10 +182,12 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 }
 
 static int BUS_selection_error( const struct parsedname * const pn ) {
+    int ret ;
     STATLOCK
         BUS_select_low_errors++;
     STATUNLOCK
-    printf( "BUS_select error, attempting reset = %d\n",BUS_reconnect( pn ) ) ;
+    ret = BUS_reconnect( pn ) ;
+    printf( "BUS_select error, attempting reset = %d\n", ret ) ;
 }   
 
 //--------------------------------------------------------------------------

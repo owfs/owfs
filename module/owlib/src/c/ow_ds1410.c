@@ -409,6 +409,12 @@ int DS1410_detect( void ) {
 }
 
 static int DS1410_reconnect( const struct parsedname * const pn ) {
+    STATLOCK
+    BUS_reconnect++;
+    if ( pn && pn->in ) {
+      pn->in->bus_reconnect++;
+    }
+    STATUNLOCK
     return 0 ;
 }
 
