@@ -119,13 +119,33 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
 }
 
 static int DS9097_reconnect( const struct parsedname * const pn ) {
+    int retry = 0 ;
     STATLOCK;
     BUS_reconnect++;
-    if ( pn && pn->in ) {
-      pn->in->bus_reconnect++;
-    }
     STATUNLOCK;
-    return 0 ;
+
+    if ( !pn || !pn->in ) return -EIO;
+    STATLOCK;
+    pn->in->bus_reconnect++;
+    STATUNLOCK;
+
+    COM_close(pn->in);
+    usleep(100000);
+    if(!COM_open(pn->in)) {
+      while(retry++ < 3) {
+	if(!DS9097_detect(pn->in)) {
+	  LEVEL_DEFAULT("DS9097 adapter reconnected\n");
+	  return 0;
+	}
+	STATLOCK;
+	BUS_reconnect_errors++;
+	pn->in->bus_reconnect_errors++;
+	STATUNLOCK;
+	LEVEL_DEFAULT("Failed to reconnect DS9097 adapter, retry %d\n", retry);
+      }
+    }
+    LEVEL_DEFAULT("Failed to reconnect DS9097 adapter!\n");
+    return -EIO ;
 }
 
 static int DS9097_ProgramPulse( const struct parsedname * const pn ) {

@@ -180,9 +180,6 @@ int LibStart( void ) {
             } else if ( ! S_ISCHR(s.st_mode) ) {
                 LEVEL_DEFAULT("Not a character device: %s\n",in->name)
                 ret = -EBADF ;
-            } else if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
-                ret = errno ;
-                LEVEL_DEFAULT("Cannot open port: %s error=%s\n",in->name,strerror(ret))
             } else if ( major(s.st_rdev) == 99 ) { /* parport device */
 #ifndef OW_PARPORT
                 ret =  -ENOPROTOOPT ;

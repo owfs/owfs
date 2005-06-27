@@ -22,7 +22,7 @@ $Id$
 static int DS1410_PowerByte(const unsigned char byte, const unsigned int delay) ;
 static int DS1410_ProgramPulse( void ) ;
 static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-//int DS1410_detect( void ) ;
+int DS1410_detect( struct connection_in * in ) ;
 static int DS1410_reset( const struct parsedname * const pn ) ;
 static int DS1410_reconnect( const struct parsedname * const pn ) ;
 static int DS1410_read(unsigned char * const buf, const int size ) ;
@@ -385,10 +385,18 @@ static int DS1410_level(int new_level) {
 /* _detect is a bit of a misnomer, no detection is actually done */
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
-int DS1410_detect( void ) {
+int DS1410_detect( struct connection_in * in ) {
     int mode = IEEE1284_MODE_COMPAT ;
     struct timeval t = { 1 , 0 } ; /* 1 second */
     int ret ;
+
+    if(!in) return -ENODEV;
+
+    if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
+      LEVEL_DEFAULT("Cannot open port: %s error=%s\n",in->name,strerror(errno));
+      return -ENODEV;
+    }
+
     ret = ioperm( BASE, 3, 1 ) ;
 //printf("IOPERM=%d\n",ret) ;
     CLAIM() ;

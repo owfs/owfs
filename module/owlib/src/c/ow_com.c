@@ -34,12 +34,15 @@ struct termios oldSerialTio;    /*old serial port settings*/
 /* return 0 for success, 1 for failure */
 int COM_open( struct connection_in * in ) {
     struct termios newSerialTio; /*new serial port settings*/
-    int fd ;
     if(!in) return -ENODEV;
-    fd = in->fd ;
 
-    tcgetattr(fd, &oldSerialTio);
-    tcgetattr(fd, &newSerialTio);
+    if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
+      LEVEL_DEFAULT("Cannot open port: %s error=%s\n",in->name,strerror(errno));
+      return -ENODEV;
+    }
+
+    tcgetattr(in->fd, &oldSerialTio);
+    tcgetattr(in->fd, &newSerialTio);
     in->connin.serial.speed = B9600 ;
     cfsetospeed(&newSerialTio, in->connin.serial.speed);
     cfsetispeed(&newSerialTio, in->connin.serial.speed);
@@ -51,9 +54,9 @@ int COM_open( struct connection_in * in ) {
     newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
     newSerialTio.c_cc[VMIN] = 0;
     newSerialTio.c_cc[VTIME] = 3;
-    tcsetattr(fd, TCSAFLUSH, &newSerialTio);
+    tcsetattr(in->fd, TCSAFLUSH, &newSerialTio);
 
-//        fcntl(pn->si->fd, F_SETFL, fcntl(pn->si->fd, F_GETFL, 0) & ~O_NONBLOCK);
+    //fcntl(pn->si->fd, F_SETFL, fcntl(pn->si->fd, F_GETFL, 0) & ~O_NONBLOCK);
     return 0 ;
 }
 

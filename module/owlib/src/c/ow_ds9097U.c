@@ -264,7 +264,11 @@ int DS2480_detect( struct connection_in * in ) {
        ) {
       //printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
         /* Apparently need to reset again to get the version number properly */
-        DS2480_reset(&pn);
+
+        if((ret = DS2480_reset(&pn))) {
+	  LEVEL_DEFAULT("DS2480 reset error\n");
+	  return ret;
+	}
 
         switch (in->Adapter) {
         case adapter_DS9097U2:
@@ -300,13 +304,33 @@ int DS2480_baud( speed_t baud, const struct parsedname * const pn ) {
 }
 
 static int DS2480_reconnect( const struct parsedname * const pn ) {
+    int retry = 0 ;
     STATLOCK;
     BUS_reconnect++;
-    if ( pn && pn->in ) {
-      pn->in->bus_reconnect++;
-    }
     STATUNLOCK;
-    return 0 ;
+
+    if ( !pn || !pn->in ) return -EIO;
+    STATLOCK;
+    pn->in->bus_reconnect++;
+    STATUNLOCK;
+
+    COM_close(pn->in);
+    usleep(100000);
+    if(!COM_open(pn->in)) {
+      while(retry++ < 3) {
+	if(!DS2480_detect(pn->in)) {
+	  LEVEL_DEFAULT("DS2480 adapter reconnected\n");
+	  return 0;
+	}
+	STATLOCK;
+	BUS_reconnect_errors++;
+	pn->in->bus_reconnect_errors++;
+	STATUNLOCK;
+	LEVEL_DEFAULT("Failed to reconnect DS2480 adapter, retry %d\n", retry);
+      }
+    }
+    LEVEL_DEFAULT("Failed to reconnect DS2480 adapter!\n");
+    return -EIO ;
 }
 
 //--------------------------------------------------------------------------

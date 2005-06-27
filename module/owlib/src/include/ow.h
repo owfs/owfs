@@ -1072,8 +1072,6 @@ extern int log_available ;
 #define LEVEL_DATA(...)       if (error_level>3) err_msg(__VA_ARGS__) ;
 #define LEVEL_DEBUG(...)      if (error_level>4) err_debug(__VA_ARGS__) ;
 
-#define BUS_detect        DS2480_detect
-#define BUS_changebaud    DS2480_changebaud
 #define BUS_reset(pn)                       ((pn)->in->iroutines.reset)(pn)
 #define BUS_read(bytes,num,pn)              ((pn)->in->iroutines.read)(bytes,num,pn)
 #define BUS_write(bytes,num,pn)             ((pn)->in->iroutines.write)(bytes,num,pn)
@@ -1086,8 +1084,6 @@ extern int log_available ;
 #define BUS_reconnect(pn)                   ((pn)->in->iroutines.reconnect)(pn)
 #define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive) ? (((pn)->in->iroutines.overdrive)(speed,(pn))) : (-ENOTSUP))
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive) ? (((pn)->in->iroutines.testoverdrive)((pn))) : (-ENOTSUP))
-#define BUS_databit       DS2480_databit
-#define BUS_datablock     DS2480_datablock
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;

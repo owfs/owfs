@@ -260,26 +260,26 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
     BUS_reconnect++;
     STATUNLOCK;
 
-    if ( pn && pn->in ) {
-      STATLOCK;
-      pn->in->bus_reconnect++;
-      STATUNLOCK;
-      if( pn->in->connin.usb.dev ) {
-        if ( pn->in->connin.usb.usb ) {
-	    usb_release_interface( pn->in->connin.usb.usb, 0 ) ;
-	    usb_close( pn->in->connin.usb.usb ) ;
-	    pn->in->connin.usb.usb = 0 ;
-	}
-	while(retry++ < 3) {
-	  if(!DS9490_open( pn )) return 0 ;
-	  STATLOCK;
-	    BUS_reconnect_errors++;
-	    pn->in->bus_reconnect_errors++;
-	  STATUNLOCK;
-	  LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter, retry %d\n", retry);
-	}
-	LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
+    if ( !pn || !pn->in ) return -EIO;
+    STATLOCK;
+    pn->in->bus_reconnect++;
+    STATUNLOCK;
+
+    if( pn->in->connin.usb.dev ) {
+      if ( pn->in->connin.usb.usb ) {
+	usb_release_interface( pn->in->connin.usb.usb, 0 ) ;
+	usb_close( pn->in->connin.usb.usb ) ;
+	pn->in->connin.usb.usb = 0 ;
       }
+      while(retry++ < 3) {
+	if(!DS9490_open( pn )) return 0 ;
+	STATLOCK;
+	BUS_reconnect_errors++;
+	pn->in->bus_reconnect_errors++;
+	STATUNLOCK;
+	LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter, retry %d\n", retry);
+      }
+      LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
     }
     return -EIO ;
 }
@@ -507,6 +507,9 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     memset(buffer, 0, 32); 
  
     if((ret=DS9490_level(MODE_NORMAL, pn)) < 0) {
+        STATLOCK;
+        DS9490_reset_errors++;
+        STATUNLOCK;
         return ret ;
     }
 
