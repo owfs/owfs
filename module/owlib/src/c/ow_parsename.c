@@ -46,9 +46,9 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
     if ( pn->in ) {
         if ( get_busmode(pn->in) != bus_remote ) {
             if ((SemiGlobal & ~BUSRET_MASK) != (pn->si->sg & ~BUSRET_MASK)) {
-                CACHELOCK
+                CACHELOCK;
                 SemiGlobal = (pn->si->sg & ~BUSRET_MASK) ;
-                CACHEUNLOCK
+                CACHEUNLOCK;
             }
         }
     }

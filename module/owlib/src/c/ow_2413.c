@@ -113,9 +113,9 @@ static int OW_read( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[] = { 0xF5, } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
             ret = BUS_select(pn) || BUS_send_data( p , 1,pn ) || BUS_readin_data( data, 1,pn ) || (data[0]&0x0F)+((data[0]>>4)&0x0F)!=0x10 ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 
@@ -125,9 +125,9 @@ static int OW_write( const unsigned char data , const struct parsedname * pn ) {
     unsigned char q[2] ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( q, 2,pn ) || q[0]!=0xAA ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 

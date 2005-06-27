@@ -81,18 +81,18 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap) {
         return ;
     }
 
-    UCLIBCLOCK
+    UCLIBCLOCK;
 #ifdef    HAVE_VSNPRINTF
         vsnprintf(buf, MAXLINE, fmt, ap);    /* safe */
 #else
         vsprintf(buf, fmt, ap);              /* not safe */
 #endif
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
     n = strlen(buf);
     if (errnoflag) {
-        UCLIBCLOCK
+        UCLIBCLOCK;
             snprintf(buf + n, MAXLINE - n, ": %s", strerror(errno_save));
-        UCLIBCUNLOCK
+        UCLIBCUNLOCK;
     }
 
     strcat(buf, "\n");

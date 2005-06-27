@@ -226,18 +226,18 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,size+3,pn) ;
         if ( ret==0 && ((offset+size)&0x2F)==0 ) ret = BUS_readin_data(&p[size+3],2,pn) || CRC16(p,1+2+size+2) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp( &p[4], data, size) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
 #ifdef OW_CACHE
@@ -246,9 +246,9 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x99 ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,4+7,pn) || BUS_PowerByte(p[4+7],10,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     return 0 ;
@@ -269,7 +269,7 @@ static int OW_r_pmem(unsigned char *data, const unsigned char *pwd, const size_t
     int ret ;
     unsigned char p[1+2+64+2] = { 0x69, offset&0xFF , offset>>8, } ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_send_data(pwd,7,pn) || BUS_PowerByte( pwd[7],5,pn) ;
         if ( ret ) {
         } else if ( (offset+size)&0x3F ) { /* not a page boundary */
@@ -277,7 +277,7 @@ static int OW_r_pmem(unsigned char *data, const unsigned char *pwd, const size_t
         } else {
             ret = BUS_readin_data(&p[3],size+2,pn) || CRC16(p,size+5) ;
         }           
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 
     if ( ret ) return ret ;
     memcpy(data,&p[3],size) ;
@@ -289,9 +289,9 @@ static int OW_ver( unsigned int * u, const struct parsedname * pn ) {
     unsigned char p[] = { 0xCC, } ;
     unsigned char b[2] ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(b,2,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 
     if ( ret || b[0]!=b[1] ) return 1 ;
     u[0] = b[0] ;
@@ -302,9 +302,9 @@ static int OW_verify( unsigned char * pwd, const size_t offset, const struct par
     unsigned char p[1+2+8] = { 0xC3, offset&0xFF , offset>>8, } ;
     unsigned char c ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
             ret = BUS_select(pn) || BUS_send_data(p,3+7,pn) || BUS_PowerByte(p[3+7],5,pn) || BUS_readin_data( &c, 1, pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     
     return ( ret || c!=0xFF ) ? 1 : 0 ;
 }
@@ -317,9 +317,9 @@ static int OW_clear( const struct parsedname * pn ) {
     /* Copy to scratchpad */
     bzero( &p[3], 16 ) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,3+16,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 

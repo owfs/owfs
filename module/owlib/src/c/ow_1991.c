@@ -167,24 +167,24 @@ static int OW_w_reset_password( const unsigned char * data , const size_t size ,
     memcpy(passwd, data, MIN(size, 8));
     set_password[1] = pn->extension<<6 ;
     set_password[2] = ~(set_password[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( set_password,3,pn) ||
       BUS_readin_data(ident,8,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
       
     ret = BUS_send_data( ident,8,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     /* Verification is done... now send ident + password
      * Note: ALL saved data in subkey will be deleted during this operation
      */
     ret = BUS_send_data( ident,8,pn) || BUS_send_data( passwd,8,pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
@@ -204,16 +204,16 @@ static int OW_w_subkey( const unsigned char * data , const size_t size , const s
     p[1] = extension<<6 ;
     p[1] |= (0x10 + offset);  // + 0x10 -> 0x3F
     p[2] = ~(p[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( p,3,pn) ||
       BUS_readin_data(ident,8,pn);
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     ret = BUS_send_data( global_passwd[extension],8,pn) ||
       BUS_send_data( &data[0x10], size-0x10, pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
@@ -238,22 +238,22 @@ static int OW_r_subkey( unsigned char * data , const size_t size , const size_t 
     p[1] = extension<<6 ;
     p[1] |= (offset+0x10);
     p[2] = ~(p[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( p,3,pn) ||
       BUS_readin_data(all_data,8,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     ret = BUS_send_data( global_passwd[extension],8,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     memcpy(&all_data[8], global_passwd[extension], 8);
     
     ret = BUS_readin_data( &all_data[0x10+offset], 0x30-offset, pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
@@ -339,10 +339,10 @@ static int OW_w_ident( const unsigned char * data , const size_t size , const si
 
     write_scratch[1] = 0xC0 | offset;
     write_scratch[2] = ~(write_scratch[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( write_scratch,3,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
 
@@ -350,26 +350,26 @@ static int OW_w_ident( const unsigned char * data , const size_t size , const si
     memcpy(all_data, data, MIN(size, 8));
 
     ret = BUS_send_data( all_data,8,pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
 
     copy_scratch[1] = pn->extension<<6;
     copy_scratch[2] = ~(copy_scratch[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( copy_scratch,3,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     ret = BUS_send_data( cp_array[IDENT],8,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     ret = BUS_send_data( global_passwd[pn->extension],8,pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
@@ -386,10 +386,10 @@ static int OW_w_change_password( const unsigned char * data , const size_t size 
 
     write_scratch[1] = 0xC0 | offset;
     write_scratch[2] = ~(write_scratch[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( write_scratch,3,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
 
@@ -397,26 +397,26 @@ static int OW_w_change_password( const unsigned char * data , const size_t size 
     memcpy(&all_data[0x08], data, MIN(size, 8));
 
     ret = BUS_send_data( all_data,0x40,pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
 
     copy_scratch[1] = pn->extension<<6;
     copy_scratch[2] = ~(copy_scratch[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( copy_scratch,3,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     ret = BUS_send_data( cp_array[PASSWORD],8,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     ret = BUS_send_data( global_passwd[pn->extension],8,pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
@@ -454,14 +454,14 @@ static int OW_w_page( const unsigned char * data , const size_t size , const siz
 
     write_scratch[1] = 0xC0; // offset;
     write_scratch[2] = ~(write_scratch[1]) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( write_scratch,3,pn);
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     ret = BUS_send_data( all_data,0x40,pn);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       return 1 ;
     }
@@ -480,19 +480,19 @@ static int OW_w_page( const unsigned char * data , const size_t size , const siz
 
       copy_scratch[1] = (pn->extension<<6);
       copy_scratch[2] = ~(copy_scratch[1]) ;
-      BUSLOCK(pn)
+      BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data( copy_scratch,3,pn);
       if ( ret ) {
-	BUSUNLOCK(pn)
+	BUSUNLOCK(pn);
         return 1 ;
       }
       ret = BUS_send_data( cp_array[DATA+i],8,pn);
       if ( ret ) {
-	BUSUNLOCK(pn)
+	BUSUNLOCK(pn);
         return 1 ;
       }
       ret = BUS_send_data( global_passwd[pn->extension],8,pn);
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       if ( ret ) {
 	return 1 ;
       }

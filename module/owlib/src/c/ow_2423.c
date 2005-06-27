@@ -151,25 +151,25 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,size+3,pn) ;
         if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2,pn) || CRC16(p,1+2+size+2) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp( &p[4], data, size) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x5A ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     UT_delay(32) ;
@@ -192,11 +192,11 @@ static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const si
     /* rest in the remaining length of the 32 byte page */
     size_t rest = 32 - (offset&0x1F) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
         /* Incorporates fix by Fredrik Simonsson */
         ret = BUS_select(pn) || BUS_send_data(data,3,pn) || BUS_readin_data(&data[3],rest+10,pn) || CRC16(data,rest+13) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */

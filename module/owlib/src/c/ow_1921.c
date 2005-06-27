@@ -752,29 +752,29 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
     memcpy( &p[3], data , size ) ;
     if ( (offset+size)&0x1F ) { /* to end of page */
-        BUSLOCK(pn)
+        BUSLOCK(pn);
             ret = BUS_select(pn) || BUS_send_data( p,3+size,pn) ;
-        BUSUNLOCK(pn)
+        BUSUNLOCK(pn);
     } else {
-        BUSLOCK(pn)
+        BUSLOCK(pn);
             ret = BUS_select(pn) || BUS_send_data( p,3+size,pn) || BUS_readin_data(&p[3+size],2,pn) || CRC16(p,3+size+2) ;
-        BUSUNLOCK(pn)
+        BUSUNLOCK(pn);
     }
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note: location of data has now shifted down a byte for E/S register */
     p[0] = 0xAA ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_readin_data( &p[3],1+rest+2,pn) || CRC16(p,4+rest+2) || memcmp(&p[4], data, size) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
             if ( ret ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x55 ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p,4,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     UT_delay(1) ; /* 1 msec >> 2 usec per byte */
@@ -788,9 +788,9 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     int rest = 32 - (offset&0x1F) ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
             ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_readin_data(&p[3],rest+2,pn ) || CRC16(p,3+rest+2) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     memcpy( data , &p[3], size ) ;
     return ret ;
 }
@@ -800,9 +800,9 @@ static int OW_temperature( int * T , const unsigned int delay, const struct pars
     int ret ;
 
     /* Mission not progress, force conversion */
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( &data,1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
     
     /* Thermochron is powered (internally by battery) -- no reason to hold bus */
@@ -823,9 +823,9 @@ static int OW_clearmemory( const struct parsedname * pn) {
 
     /* Clear memory command */
     cr = 0x3C ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( &cr, 1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 
     UT_delay(1) ; /* wait 500 usec */
     return ret ;

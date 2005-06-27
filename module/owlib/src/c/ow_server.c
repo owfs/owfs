@@ -161,9 +161,9 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         ret = cm.ret ;
         if ( SemiGlobal != cm.sg ) {
 	    //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
-            CACHELOCK
+            CACHELOCK;
                 SemiGlobal = cm.sg ;
-            CACHEUNLOCK
+            CACHEUNLOCK;
         }
     }
     close( connectfd ) ;
@@ -251,9 +251,9 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 		  ++dindex ;
 		}
 
-		DIRLOCK
+		DIRLOCK;
 		  dirfunc(&pn2) ;
-		DIRUNLOCK
+		DIRUNLOCK;
 
                 free(path2) ;
             }
@@ -264,10 +264,10 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 	  Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
 	  FS_ParsedName_destroy( &pn2 ) ;
 	}
-        DIRLOCK
+        DIRLOCK;
             /* flags are sent back in "offset" of final blank entry */
             flags[0] |= cm.offset ;
-        DIRUNLOCK
+        DIRUNLOCK;
     }
     close( connectfd ) ;
     return cm.ret ;

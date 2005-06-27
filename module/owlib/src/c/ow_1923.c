@@ -486,13 +486,13 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     memset( &p[3], 0xFF , 32 ) ;
     memcpy( &p[3], data , size ) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( p,3+rest,pn) ;
     if(ret) {
       printf("OW_w_mem: err1\n");
     }
     if ( ret ) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1 ;
     }
     /* Re-read scratchpad and compare */
@@ -502,21 +502,21 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     ret = BUS_select(pn) ;
     if(ret) {
       printf("OW_w_mem: err3\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     p[0] = 0xAA ;
     ret = BUS_send_data( p,1,pn) ;
     if(ret) {
       printf("OW_w_mem: err4\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     // read TAL TAH E/S + rest bytes
     ret = BUS_readin_data( &p[1],3+rest,pn) ;
     if(ret) {
       printf("OW_w_mem: err5\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     ret = CRC16(p,4+rest) ;
@@ -533,13 +533,13 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     }
     if(ret) {
       printf("OW_w_mem: err6\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     ret = memcmp(&p[4], data, size) ;
     if(ret) {
       printf("OW_w_mem: err7\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
 #endif
@@ -549,7 +549,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     ret = BUS_select(pn) ;
     if(ret) {
       printf("OW_w_mem: err8\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     // send 0x99 TAL TAH E/S
@@ -557,25 +557,25 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     ret = BUS_send_data( p,4,pn) ;
     if(ret) {
       printf("OW_w_mem: err9\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
     ret = BUS_send_data( passwd,8,pn) ;
     if(ret) {
       printf("OW_w_mem: err10\n");
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       return 1;
     }
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
 #if 0
     // Loop waiting for completion
     for ( i=0 ; i<10 ; ++i ) {
         UT_delay(1) ;
-        BUSLOCK(pn)
+        BUSLOCK(pn);
             ret = BUS_read(p,1,pn) ;
-        BUSUNLOCK(pn)
+        BUSUNLOCK(pn);
 	  printf("OW_w_mem: get ret=%d and %02X as result\n", ret, p[0]);
         if ( ret ) return 1 ;
         if ( p[0] == 0xAA ) {
@@ -600,21 +600,21 @@ static int OW_clearmemory( const struct parsedname * pn ) {
     memset(&p[1], 0xFF, 8) ;  // password
     p[9] = 0xFF ; // dummy byte
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) ;
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       printf("error1\n");
       return ret;
     }
     ret = BUS_send_data(p,10,pn) ;
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       printf("error2\n");
       return ret;
     }
     UT_delay(1);
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 
 
     ret = OW_r_mem(&r, 1, 0x0215, pn) ;
@@ -633,7 +633,7 @@ static int OW_flush( const struct parsedname * pn, int lock ) {
   int ret ;
   unsigned char p ;
   
-  if(lock) BUSLOCK(pn)
+  if(lock) BUSLOCK(pn);
   do {
     ret = BUS_read(&p,1,pn ) ;
     if(ret) {
@@ -645,7 +645,7 @@ static int OW_flush( const struct parsedname * pn, int lock ) {
       fflush(stdout);
     }
   } while(ret == 0);
-  if(lock) BUSUNLOCK(pn)
+  if(lock) BUSUNLOCK(pn);
   printf("flush: read %d bytes ret=%d\n", i, ret);
   return 0;
 }
@@ -666,33 +666,33 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
 	   p[0], p[1], p[2]);
 
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
 #if 0
     ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_send_data(passwd,8,pn) || BUS_readin_data(&p[3],rest+2,pn ) || CRC16(p,3+rest+2) ;
 #else
 
     ret = BUS_select(pn) ;
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       printf("error1\n");
       return ret;
     }
 
     ret = BUS_send_data(p,3,pn) ;
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       printf("error2\n");
       return ret;
     }
     ret = BUS_send_data(passwd,8,pn) ;
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       printf("error2\n");
       return ret;
     }
     ret = BUS_readin_data(&p[3],rest+2,pn ) ;
     if(ret) {
-      BUSUNLOCK(pn)
+      BUSUNLOCK(pn);
       printf("error4\n");
       return ret;
     }
@@ -709,7 +709,7 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     }
 #endif
 
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 
     if(!ret) memcpy( data , &p[3], size ) ;
     return ret ;
@@ -760,7 +760,7 @@ static int OW_force_conversion( const unsigned int delay, const struct parsednam
     }
 
     /* Mission not progress, force conversion */
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data( t,2,pn ) ;
     if ( ret ) {
       printf("conv: err3\n");
@@ -770,7 +770,7 @@ static int OW_force_conversion( const unsigned int delay, const struct parsednam
       UT_delay(delay) ;
       ret = BUS_reset(pn);
     }
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       printf("conv: err4\n");
       return 1 ;
@@ -822,9 +822,9 @@ static int OW_stopmission( const struct parsedname * pn ) {
     memset(&data[1], 0xFF, 8); // dummy password
     data[9] = 0xFF ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data(data,10,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       printf("stopmission err1\n");
     }
@@ -899,9 +899,9 @@ static int OW_startmission( unsigned long mdelay, const struct parsedname * pn )
     p[0] = 0xCC ;
     memset(&p[1], 0xFF, 8);  // dummy password
     p[9] = 0xFF ; // dummy byte
-    BUSLOCK(pn)
+    BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data(p,10,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) {
       printf("startmission err1\n");
       return ret ;

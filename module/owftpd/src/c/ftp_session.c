@@ -338,9 +338,9 @@ static void reply(struct ftp_session_t *f, int code, const char *fmt, ...)
 
     /* add the formatted output of the caller to the buffer */
     va_start(ap, fmt);
-    UCLIBCLOCK
+    UCLIBCLOCK;
         vsnprintf(buf+4, sizeof(buf)-4, fmt, ap);
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
     va_end(ap);
 
     /* log our reply */
@@ -796,21 +796,21 @@ static void do_lpsv(struct ftp_session_t *f, const struct ftp_command_t *cmd)
     if (SSFAM(&f->server_addr) == AF_INET6) {
         a = (uint8_t *)&SIN6ADDR(&f->server_addr);
         p = (uint8_t *)&SIN6PORT(&f->server_addr);
-        UCLIBCLOCK
+        UCLIBCLOCK;
             snprintf(addr, sizeof(addr),
             "(6,16,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,2,%d,%d)",
             a[0],  a[1],  a[2],  a[3],  a[4],  a[5],  a[6],  a[7],  a[8],
             a[9], a[10], a[11], a[12], a[13], a[14], a[15],  p[0],  p[1]);
-        UCLIBCUNLOCK
+        UCLIBCUNLOCK;
     } else
 #endif
     {
         a = (uint8_t *)&SIN4ADDR(&f->server_addr);
         p = (uint8_t *)&SIN4PORT(&f->server_addr);
-        UCLIBCLOCK
+        UCLIBCLOCK;
             snprintf(addr, sizeof(addr), "(4,4,%d,%d,%d,%d,2,%d,%d)",
             a[0], a[1], a[2], a[3], p[0], p[1]);
-        UCLIBCUNLOCK
+        UCLIBCUNLOCK;
     }
 
     reply(f, 228, "Entering Long Passive Mode %s", addr);

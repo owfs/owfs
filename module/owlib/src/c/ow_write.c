@@ -84,11 +84,11 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r ;
 
-    STATLOCK
+    STATLOCK;
       AVERAGE_IN(&write_avg)
       AVERAGE_IN(&all_avg)
       ++ write_calls ; /* statistics */
-    STATUNLOCK
+    STATUNLOCK;
 
     /* if readonly exit */
     if ( readonly ) return -EROFS ;
@@ -146,7 +146,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 	}
     }
 
-    STATLOCK
+    STATLOCK;
     if ( r == 0 ) {
       ++write_success ; /* statistics */
       write_bytes += size ; /* statistics */
@@ -154,7 +154,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     }
     AVERAGE_OUT(&write_avg)
     AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
 
     return r ;
 }
@@ -247,9 +247,9 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
     }
 
     for(i=0; i<3; i++) {
-      STATLOCK
+      STATLOCK;
       ++write_tries[i] ; /* statitics */
-      STATUNLOCK
+      STATUNLOCK;
       r = FS_parse_write( buf, size, offset, pn ) ;
       if ( r==0 ) break;
     }
@@ -553,9 +553,9 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
     struct parsedname pname ;
 //printf("WRITE_ALL\n");
 
-    STATLOCK
+    STATLOCK;
         ++ write_array ; /* statistics */
-    STATUNLOCK
+    STATUNLOCK;
     memcpy( &pname , pn , sizeof(struct parsedname) ) ; /* shallow copy */
 //printf("WRITEALL(%p) %s\n",p,path) ;
     if ( offset ) return -ERANGE ;

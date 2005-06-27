@@ -226,9 +226,9 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) || BUS_readin_data( data, size,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     return 0 ;
@@ -239,12 +239,12 @@ static int OW_w_scratch( const unsigned char * data , const size_t size , const 
     int ret ;
 
     memcpy( &p[3] , data, size ) ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,3+size,pn) ;
         if ( ret==0 && ((size+offset)&0x1F)==0 ) { /* Check CRC if write is to end of page */
             ret = BUS_readin_data(&p[3+size],2,pn) || CRC16(p,3+size+2) ;
         }
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 
     return ret ;
 }
@@ -256,17 +256,17 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 
     if ( ret ) return ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],1+size+2,pn) || CRC16(p,4+size+2) ;
         if ( ret==0 ) {
             p[0] = 0x55 ;
             ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
         }
     if ( ret ) {
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     } else {
         UT_delay(10) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     }
 
     return ret ;
@@ -277,9 +277,9 @@ static int OW_w_reg( const unsigned char * data, const size_t size, const size_t
     unsigned char p[3] = { 0xCC, offset&0xFF , (offset>>8)&0xFF , } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) ||BUS_send_data( data, size,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 
@@ -288,9 +288,9 @@ static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
     unsigned char p[4] = { 0x5A, data&0xFF, (data&0xFF)^0xFF, } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) || BUS_readin_data( &p[3], 1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if (ret) return ret ;
 
     return p[3] != 0xAA ;
@@ -301,9 +301,9 @@ static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[2] = { 0xC3, } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
          ret =BUS_select(pn) || BUS_send_data( p, 1,pn ) || BUS_readin_data(&p[1],1,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     return p[1]!=0xAA ;

@@ -50,13 +50,13 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
 
     LEVEL_CALL("DIRECTORY path=%s\n",pn->path) ;
     
-    STATLOCK
+    STATLOCK;
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
-    STATUNLOCK
-    FSTATLOCK
+    STATUNLOCK;
+    FSTATLOCK;
         dir_time = time(NULL) ; // protected by mutex
-    FSTATUNLOCK
+    FSTATUNLOCK;
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
@@ -159,10 +159,10 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
         pn2.dev = DeviceSimultaneous ;
         dirfunc( &pn2 ) ;
     }
-    STATLOCK
+    STATLOCK;
         AVERAGE_OUT(&dir_avg)
         AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
     //printf("FS_dir out ret=%d\n", ret);
     return ret ;
 }
@@ -178,13 +178,13 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
     flags[0] = 0 ;
     if ( pn == NULL || pn->in==NULL ) return -ENODEV ;
     
-    STATLOCK
+    STATLOCK;
         AVERAGE_IN(&dir_avg)
         AVERAGE_IN(&all_avg)
-    STATUNLOCK
-    FSTATLOCK
+    STATUNLOCK;
+    FSTATLOCK;
         dir_time = time(NULL) ; // protected by mutex
-    FSTATUNLOCK
+    FSTATUNLOCK;
     //printf("FS_dir_remote pid=%ld path=%s\n",pthread_self(), pn->path);
 
     /* Make a copy (shallow) of pn to modify for directory entries */
@@ -282,10 +282,10 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
 	ret = FS_dir_seek( dirfunc, &pn2, flags ) ;
       }
     }
-    STATLOCK
+    STATLOCK;
         AVERAGE_OUT(&dir_avg)
         AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
 //printf("FS_dir out ret=%d\n", ret);
     return ret ;
 }
@@ -366,9 +366,9 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
     char s[33] ;
     size_t len ;
 
-    STATLOCK
+    STATLOCK;
         ++dir_dev.calls ;
-    STATUNLOCK
+    STATUNLOCK;
     if ( pn2->subdir ) { /* indevice subdir, name prepends */
 //printf("DIR device subdirectory\n");
         strcpy( s , pn2->subdir->name ) ;
@@ -390,16 +390,16 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
         if ( pn2->ft->ag ) {
             for ( pn2->extension=(pn2->ft->format==ft_bitfield)?-2:-1 ; pn2->extension < pn2->ft->ag->elements ; ++pn2->extension ) {
                 dirfunc( pn2 ) ;
-                STATLOCK
+                STATLOCK;
                     ++dir_dev.entries ;
-                STATUNLOCK
+                STATUNLOCK;
             }
         } else {
             pn2->extension = 0 ;
             dirfunc( pn2 ) ;
-            STATLOCK
+            STATLOCK;
                 ++dir_dev.entries ;
-            STATUNLOCK
+            STATUNLOCK;
         }
     }
     return 0 ;
@@ -411,39 +411,39 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     unsigned char sn[8] ;
 
     /* STATISCTICS */
-    STATLOCK
+    STATLOCK;
         ++dir_main.calls ;
-    STATUNLOCK
+    STATUNLOCK;
 //printf("DIR alarm directory\n");
 
-    BUSLOCK(pn2)
+    BUSLOCK(pn2);
     pn2->ft = NULL ; /* just in case not properly set */
     /* Turn off all DS2409s */
     FS_branchoff(pn2) ;
     (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(sn,pn2)) ;
 #if 0
     if(ret == -ENODEV) {
-      BUSUNLOCK(pn2)
+      BUSUNLOCK(pn2);
       return 0;  /* no more alarms is ok? */
     }
 #endif
     while (ret==0) {
         char ID[] = "XX";
-        STATLOCK
+        STATLOCK;
             ++dir_main.entries ;
-        STATUNLOCK
+        STATUNLOCK;
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         num2string( ID, sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
-        DIRLOCK
+        DIRLOCK;
             dirfunc( pn2 ) ;
-        DIRUNLOCK
+        DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next_alarm(sn,pn2)) ;
 //printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret);
     }
-    BUSUNLOCK(pn2)
+    BUSUNLOCK(pn2);
     return ret ;  // always return "error"?
 }
 
@@ -466,13 +466,13 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     int ret ;
 
     /* STATISCTICS */
-    STATLOCK
+    STATLOCK;
         ++dir_main.calls ;
-    STATUNLOCK
+    STATUNLOCK;
 
     flags[0] = 0 ; /* start out with no flags set */
 
-    BUSLOCK(pn2)
+    BUSLOCK(pn2);
         /* Operate at dev level, not filetype */
         pn2->ft = NULL ;
         /* Turn off all DS2409s */
@@ -505,17 +505,17 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
             */
             Cache_Add_Device(pn2->in->index, pn2);
 
-            DIRLOCK
+            DIRLOCK;
                 dirfunc( pn2 ) ;
                 flags[0] |= pn2->dev->flags ;
-            DIRUNLOCK
+            DIRUNLOCK;
 	    pn2->dev = NULL ; /* clear for the rest of directory listing */
             (ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
         }
-    BUSUNLOCK(pn2)
-    STATLOCK
+    BUSUNLOCK(pn2);
+    STATLOCK;
         dir_main.entries += dindex ;
-    STATUNLOCK
+    STATUNLOCK;
     Cache_Del_Dir(dindex,pn2) ;  // end with a null entry
     return 0 ;
 }
@@ -543,9 +543,9 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), str
         return FS_realdir(dirfunc,pn2,flags) ;
     }
     /* STATISCTICS */
-    STATLOCK
+    STATLOCK;
         ++dir_main.calls ;
-    STATUNLOCK
+    STATUNLOCK;
 
     /* Get directory from the cache */
     /* FIXME: First entry was valid in the cache, but after 1ms the 2nd entry might
@@ -556,15 +556,15 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), str
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         num2string( ID, sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
-        DIRLOCK
+        DIRLOCK;
             dirfunc( pn2 ) ;
             flags[0] |= pn2->dev->flags ;
-        DIRUNLOCK
+        DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
     } while ( Cache_Get_Dir( sn, ++dindex, pn2 )==0 ) ;
-    STATLOCK
+    STATLOCK;
         dir_main.entries += dindex ;
-    STATUNLOCK
+    STATUNLOCK;
     return 0 ;
 }
 

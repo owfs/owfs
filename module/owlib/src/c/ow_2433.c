@@ -99,9 +99,9 @@ static int OW_r_mem( unsigned char * p , const size_t size , const size_t offset
     int ret ;
     //printf("reading offset=%d size=%d bytes\n", offset, size);
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( memread, 3,pn ) || BUS_readin_data( p,size,pn );
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1;
 
     return 0 ;
@@ -115,26 +115,26 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,size+3,pn) ;
         if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2,pn) || CRC16(p,1+2+size+2) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp( &p[4], data, size) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     /* Copy Scratchpad to EPROM */
     p[0] = 0x55 ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
         UT_delay(5) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     return 0 ;

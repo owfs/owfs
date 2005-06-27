@@ -57,25 +57,25 @@ int FS_read_3times(char *buf, const size_t size, const off_t offset, const struc
     int i;
     //    if ( pn->in==NULL ) return -ENODEV ;
     /* Normal read. Try three times */
-    STATLOCK
+    STATLOCK;
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
     for(i=0; i<3; i++) {
-        STATLOCK
+        STATLOCK;
             ++read_tries[i] ; /* statitics */
-        STATUNLOCK
+        STATUNLOCK;
         r = FS_read_postparse( buf, size, offset, pn ) ;
         if ( r>=0 ) break;
     }
-    STATLOCK
+    STATLOCK;
         if ( r>=0 ) {
             ++read_success ; /* statistics */
             read_bytes += r ; /* statistics */
         }
         AVERAGE_OUT(&read_avg)
         AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
     return r ;
 }
 
@@ -100,10 +100,10 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     int r = 0;
     //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
-    STATLOCK
+    STATLOCK;
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
 
     switch (pn->type) {
     case pn_structure:
@@ -185,14 +185,14 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
             }
         }
     }
-    STATLOCK
+    STATLOCK;
         if ( r>=0 ) {
             ++read_success ; /* statistics */
             read_bytes += r ; /* statistics */
         }
         AVERAGE_OUT(&read_avg)
         AVERAGE_OUT(&all_avg)
-    STATUNLOCK
+    STATUNLOCK;
 
 //printf("FS_read_postparse: pid=%ld return %d\n", pthread_self(), r);
     return r;
@@ -247,9 +247,9 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
-        STATLOCK
+        STATLOCK;
             ++ read_calls ; /* statistics */
-        STATUNLOCK
+        STATUNLOCK;
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
 //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
@@ -271,10 +271,10 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
         } else {
 //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
-            STATLOCK
+            STATLOCK;
                 ++read_cache ; /* statistics */
                 read_cachebytes += s ; /* statistics */
-            STATUNLOCK
+            STATUNLOCK;
             r = s ;
 //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
         }
@@ -359,7 +359,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
     memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pn2.type = pn_real ; /* "real" type to get return length, rather than "structure" length */
 
-    UCLIBCLOCK
+    UCLIBCLOCK;
         len = snprintf(
             buf,
             size,
@@ -372,7 +372,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
                 ( (pn->ft->write.v) ? "wo" : "oo" ) ,
             (int)FullFileLength(&pn2)
             ) ;
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
 
     if((len > 0) && offset) {
       memcpy(buf, &buf[offset], (size_t)len - (size_t)offset);
@@ -629,9 +629,9 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     struct parsedname pn2 ;
     size_t s, sz;
 
-    STATLOCK
+    STATLOCK;
         ++read_array ; /* statistics */
-    STATUNLOCK
+    STATUNLOCK;
 
     s = FullFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;
@@ -813,9 +813,9 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
       return -ENOMEM;
     }
     if ( suglen>size ) suglen=size ;
-    UCLIBCLOCK
+    UCLIBCLOCK;
         len = snprintf(c,suglen+1,"%*d",(int)suglen,value) ;
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
     if ( (len<0) || ((size_t)len>suglen) ) {
       free(c) ;
       return -EMSGSIZE ;
@@ -840,9 +840,9 @@ int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const
       return -ENOMEM;
     }
     if ( suglen>size ) suglen=size ;
-    UCLIBCLOCK
+    UCLIBCLOCK;
         len = snprintf(c,suglen+1,"%*u",(int)suglen,value) ;
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
     if ((len<0) || ((size_t)len>suglen) ) {
       free(c) ;
       return -EMSGSIZE ;
@@ -862,9 +862,9 @@ int FS_output_float( FLOAT value, char * buf, const size_t size, const struct pa
       return -ENOMEM;
     }
     if ( suglen>size ) suglen=size ;
-    UCLIBCLOCK
+    UCLIBCLOCK;
         len = snprintf(c,suglen+1,"%*G",(int)suglen,value) ;
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
     if ((len<0) || ((size_t)len>suglen) ) {
       free(c) ;
       return -EMSGSIZE ;

@@ -131,16 +131,16 @@ static int OW_discharge( const struct parsedname * const pn ) {
     unsigned char all = 0x66 ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( &dis , 1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if (ret) return ret ;
 
     UT_delay(100) ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(&all ,1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 
@@ -151,9 +151,9 @@ static int OW_w_control( const unsigned int data , const struct parsedname * con
     unsigned char info ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         (ret=BUS_select(pn)) || (ret=BUS_send_data(p,2,pn)) || (ret=BUS_readin_data(&info,1,pn)) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if (ret) return ret ;
     /* Check that Info corresponds */
     return (info&0xC0)==r[data] ? 0 : 1 ;
@@ -163,8 +163,8 @@ static int OW_r_control( unsigned char * const data , const struct parsedname * 
     unsigned char p[] = { 0x5A, 0xFF, } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         (ret=BUS_select(pn)) || (ret=BUS_send_data(p,2,pn)) || (ret=BUS_readin_data(data,1,pn)) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }

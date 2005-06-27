@@ -39,12 +39,12 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
         unsigned char resp[16] ;
         (ret=BUS_sendback_data( data, resp, len,pn )) ||  ((ret=memcmp(data, resp, (size_t) len))?-EIO:0) ;
 	if(ret) {
-	  STATLOCK
+	  STATLOCK;
 	    if(ret == -EIO)
 	      BUS_send_data_memcmp_errors++;
 	    else
 	      BUS_send_data_errors++;
-	  STATUNLOCK
+	  STATUNLOCK;
 	}
     }
     return ret ;
@@ -59,9 +59,9 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
 int BUS_readin_data( unsigned char * const data, const int len, const struct parsedname * pn ) {
   int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
   if(ret) {
-    STATLOCK
+    STATLOCK;
     BUS_readin_data_errors++;
-    STATUNLOCK
+    STATUNLOCK;
   }
   return ret;
 }
@@ -84,9 +84,9 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
       if(r < 0) {
 	if(errno == EINTR) {
 	  /* write() was interrupted, try again */
-	  STATLOCK
+	  STATLOCK;
 	      BUS_send_and_get_interrupted++;
-	  STATUNLOCK
+	  STATUNLOCK;
 	  continue;
 	}
 	break;
@@ -98,9 +98,9 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
       gettimeofday( &(pn->in->bus_write_time) , NULL );
     }
     if(sl > 0) {
-      STATLOCK
+      STATLOCK;
           BUS_send_and_get_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return -EIO;
     }
     //printf("SAG written\n");
@@ -132,9 +132,9 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 	//printf("SAG selected\n");
         /* Is there something to read? */
         if( FD_ISSET( pn->in->fd, &readset )==0 ) {
-	  STATLOCK
+	  STATLOCK;
 	      BUS_send_and_get_errors++;
-	  STATUNLOCK
+	  STATUNLOCK;
 	  return -EIO ; /* error */
 	}
 	update_max_delay(pn);
@@ -143,33 +143,33 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
         if (r < 0) {
 	  if(errno == EINTR) {
 	    /* read() was interrupted, try again */
-	    STATLOCK
+	    STATLOCK;
 	        BUS_send_and_get_interrupted++;
-	    STATUNLOCK
+	    STATUNLOCK;
 	    continue;
 	  }
-	  STATLOCK
+	  STATLOCK;
 	  BUS_send_and_get_errors++;
-	  STATUNLOCK
+	  STATUNLOCK;
 	  return r ;
 	}
         gl -= r ;
       } else if(rc < 0) { /* select error */
 	if(errno == EINTR) {
 	  /* select() was interrupted, try again */
-	  STATLOCK
+	  STATLOCK;
 	  BUS_send_and_get_interrupted++;
-	  STATUNLOCK
+	  STATUNLOCK;
 	  continue;
 	}
-	STATLOCK
+	STATLOCK;
 	BUS_send_and_get_select_errors++;
-	STATUNLOCK
+	STATUNLOCK;
         return -EINTR;
       } else { /* timed out */
-	STATLOCK
+	STATLOCK;
 	BUS_send_and_get_timeout++;
-	STATUNLOCK
+	STATUNLOCK;
         return -EAGAIN;
       }
     }
@@ -183,9 +183,9 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 
 static int BUS_selection_error( const struct parsedname * const pn ) {
     int ret ;
-    STATLOCK
-        BUS_select_low_errors++;
-    STATUNLOCK
+    STATLOCK;
+    BUS_select_low_errors++;
+    STATUNLOCK;
     ret = BUS_reconnect( pn ) ;
     printf( "BUS_select error, attempting reset = %d\n", ret ) ;
 }   
@@ -241,9 +241,9 @@ int BUS_select_low(const struct parsedname * const pn) {
         }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
-            STATLOCK
+            STATLOCK;
                 BUS_select_low_branch_errors++;
-            STATUNLOCK
+            STATUNLOCK;
             return -EINVAL ;
         }
     }

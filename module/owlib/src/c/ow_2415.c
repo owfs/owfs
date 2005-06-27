@@ -222,9 +222,9 @@ static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) {
     unsigned char r = 0x66 ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( cr, 1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 
@@ -234,9 +234,9 @@ static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
     unsigned char data[5] ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( data, 5,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
 //    d[0] = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
@@ -250,16 +250,16 @@ static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
     int ret ;
 
     /* read in existing control byte to preserve bits 4-7 */
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( &w[1], 1,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     UT_fromDate( d, &w[2] ) ;
     
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( w, 6,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 
@@ -268,8 +268,8 @@ static int OW_w_control( const unsigned char cr , const struct parsedname * pn )
     int ret ;
 
     /* read in existing control byte to preserve bits 4-7 */
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }

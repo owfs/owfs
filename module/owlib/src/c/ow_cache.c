@@ -163,9 +163,9 @@ void Cache_Close( void ) {
 
 static int Add_Stat( struct cache * scache, const int result ) {
     if ( result==0 ) {
-        STATLOCK
+        STATLOCK;
             ++scache->adds ;
-        STATUNLOCK
+        STATUNLOCK;
     }
     return result ;
 }
@@ -272,7 +272,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
     struct tree_opaque * opaque ;
     enum { no_add, yes_add, just_update } state = no_add ;
     void * flip = NULL ;
-    CACHELOCK
+    CACHELOCK;
         if  (cache.killed < time(NULL) ) { // old database has timed out
             flip = cache.old_db ;
             /* Flip caches! old = new. New truncated, reset time and counters and flag */
@@ -294,30 +294,30 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
         } else { // nothing found or added?!? free our memory segment
             free(tn) ;
         }
-    CACHEUNLOCK
+    CACHEUNLOCK;
     /* flipped old database is now out of circulation -- can be destroyed without a lock */
     if ( flip ) {
         tdestroy( flip, free ) ;
-        STATLOCK
+        STATLOCK;
             ++ cache_flips ; /* statistics */
         memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
         AVERAGE_CLEAR(&new_avg)
-        STATUNLOCK
+        STATUNLOCK;
 //printf("FLIP points to: %p\n",flip);
     }
     /* Added or updated, update statistics */
     switch (state) {
     case yes_add:
-        STATLOCK
+        STATLOCK;
             AVERAGE_IN(&new_avg)
             ++ cache_adds ; /* statistics */
-        STATUNLOCK
+        STATUNLOCK;
         return 0 ;
     case just_update:
-        STATLOCK
+        STATLOCK;
             AVERAGE_MARK(&new_avg)
                ++ cache_adds ; /* statistics */
-        STATUNLOCK
+        STATUNLOCK;
         return 0 ;
     default:
         return 1 ;
@@ -328,7 +328,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
 void Cache_Clear( void ) {
     void * c_new = NULL ;
     void * c_old = NULL ;
-    CACHELOCK
+    CACHELOCK;
         c_old = cache.old_db ;
         c_new = cache.new_db ;
         cache.old_db = NULL ;
@@ -336,7 +336,7 @@ void Cache_Clear( void ) {
         cache.added = 0 ;
         cache.retired = time(NULL) ;
         cache.killed = cache.retired + cache.lifespan ;
-    CACHEUNLOCK
+    CACHEUNLOCK;
     /* flipped old database is now out of circulation -- can be destroyed without a lock */
     if ( c_new ) tdestroy( c_new, free ) ;
     if ( c_old ) tdestroy( c_old, free ) ;
@@ -348,7 +348,7 @@ void Cache_Clear( void ) {
 static int Cache_Add_Store( struct tree_node * const tn ) {
     struct tree_opaque * opaque ;
     enum { no_add, yes_add, just_update } state = no_add ;
-    STORELOCK
+    STORELOCK;
         if ( (opaque=tsearch(tn,&cache.store,tree_compare)) ) {
 //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
             if ( tn!=opaque->key ) {
@@ -361,17 +361,17 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
         } else { // nothing found or added?!? free our memory segment
             free(tn) ;
         }
-    STOREUNLOCK
+    STOREUNLOCK;
     switch (state) {
     case yes_add:
-        STATLOCK
+        STATLOCK;
             AVERAGE_IN(&store_avg)
-        STATUNLOCK
+        STATUNLOCK;
         return 0 ;
     case just_update:
-        STATLOCK
+        STATLOCK;
             AVERAGE_MARK(&store_avg)
-        STATUNLOCK
+        STATUNLOCK;
         return 0 ;
     default:
         return 1 ;
@@ -379,14 +379,14 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
 }
 
 static int Get_Stat( struct cache * scache, const int result ) {
-    STATLOCK
+    STATLOCK;
         if ( result == 0 ) {
             ++scache->hits ;
         } else if ( result == -ETIMEDOUT ) {
             ++scache->expires ;
         }
         ++scache->tries ;
-    STATUNLOCK
+    STATUNLOCK;
     return result ;
 }
 
@@ -465,7 +465,7 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
     time_t now = time(NULL) ;
     struct tree_opaque * opaque ;
 //printf("CACHE GET 1\n");
-    CACHELOCK
+    CACHELOCK;
         if ( (opaque=tfind(tn,&cache.new_db,tree_compare))
          || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) )
        ) {
@@ -493,7 +493,7 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
         } else {
             ret = -ENOENT ;
         }
-    CACHEUNLOCK
+    CACHEUNLOCK;
     return ret ;
 }
 
@@ -502,7 +502,7 @@ static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const 
     struct tree_opaque * opaque ;
     int ret ;
     (void) duration ;
-    STORELOCK
+    STORELOCK;
         if ( (opaque=tfind(tn,&cache.store,tree_compare)) ) {
             if ( *dsize >= opaque->key->dsize ) {
                     *dsize = opaque->key->dsize ;
@@ -514,15 +514,15 @@ static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const 
         } else {
             ret = -ENOENT ;
         }
-    STOREUNLOCK
+    STOREUNLOCK;
     return ret ;
 }
 
 static int Del_Stat( struct cache * scache, const int result ) {
     if ( result==0 ) {
-        STATLOCK
+        STATLOCK;
             ++scache->deletes ;
-        STATUNLOCK
+        STATUNLOCK;
     }
     return result ;
 }
@@ -593,31 +593,31 @@ static int Cache_Del_Common( const struct tree_node * tn ) {
     struct tree_opaque * opaque ;
     time_t now = time(NULL) ;
     int ret = 1 ;
-    CACHELOCK
+    CACHELOCK;
         if ( (opaque=tfind( tn, &cache.new_db, tree_compare ))
          || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )
        ) {
             opaque->key->expires = now - 1 ;
             ret = 0 ;
           }
-    CACHEUNLOCK
+    CACHEUNLOCK;
     return ret ;
 }
 
 static int Cache_Del_Store( const struct tree_node * tn ) {
     struct tree_opaque * opaque ;
     struct tree_node * tn_found = NULL ;
-    STORELOCK
+    STORELOCK;
         if ( (opaque = tfind( tn , &cache.store, tree_compare )) ) {
         tn_found = opaque->key ;
             tdelete( tn , &cache.store , tree_compare ) ;
         }
-    STOREUNLOCK
+    STOREUNLOCK;
     if ( tn_found ) {
     free(tn_found) ;
-    STATLOCK
+    STATLOCK;
         AVERAGE_OUT(&store_avg)
-    STATUNLOCK
+    STATUNLOCK;
     return 0 ;
     }
     return 1 ;

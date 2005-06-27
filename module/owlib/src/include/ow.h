@@ -111,7 +111,6 @@ extern int multithreading ;
 //    #include "sem.h"
 // #endif /* HAVE_SEMAPHORE_H */
 
-    //extern pthread_mutex_t busstat_mutex ;
     extern pthread_mutex_t stat_mutex ;
     extern pthread_mutex_t cache_mutex ;
     extern pthread_mutex_t store_mutex ;
@@ -124,33 +123,29 @@ extern int multithreading ;
     extern pthread_mutexattr_t mattr;
     extern pthread_mutex_t uclibc_mutex;
  #endif /* __UCLIBC__ */
-//    #define BUSSTATLOCK    pthread_mutex_lock(  &busstat_mutex) ;
-//    #define BUSSTATUNLOCK  pthread_mutex_unlock(&busstat_mutex) ;
-    #define STATLOCK       pthread_mutex_lock(  &stat_mutex   ) ;
-    #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex   ) ;
-    #define CACHELOCK      pthread_mutex_lock(  &cache_mutex  ) ;
-    #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex  ) ;
-    #define STORELOCK      pthread_mutex_lock(  &store_mutex  ) ;
-    #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex  ) ;
-    #define FSTATLOCK      pthread_mutex_lock(  &fstat_mutex  ) ;
-    #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex  ) ;
-    #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex  ) ;
-    #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  ) ;
-    #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    ) ;
-    #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    ) ;
-    #define INBUSLOCK(in)     pthread_mutex_lock(   &((in)->bus_mutex)  ) ;
-    #define INBUSUNLOCK(in)   pthread_mutex_unlock( &((in)->bus_mutex)  ) ;
+    #define STATLOCK       pthread_mutex_lock(  &stat_mutex   )
+    #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex   )
+    #define CACHELOCK      pthread_mutex_lock(  &cache_mutex  )
+    #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex  )
+    #define STORELOCK      pthread_mutex_lock(  &store_mutex  )
+    #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex  )
+    #define FSTATLOCK      pthread_mutex_lock(  &fstat_mutex  )
+    #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex  )
+    #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex  )
+    #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  )
+    #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    )
+    #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    )
+    #define INBUSLOCK(in)     pthread_mutex_lock(   &((in)->bus_mutex)  )
+    #define INBUSUNLOCK(in)   pthread_mutex_unlock( &((in)->bus_mutex)  )
 #ifdef __UCLIBC__
-#define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex) ;
-    #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex) ;
+    #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
+    #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
  #else /* __UCLIBC__ */
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
  #endif /* __UCLIBC__ */
 
 #else /* OW_MT */
-//    #define BUSSTATLOCK
-//    #define BUSSTATUNLOCK
     #define STATLOCK
     #define STATUNLOCK
     #define CACHELOCK
@@ -169,8 +164,8 @@ extern int multithreading ;
     #define INBUSUNLOCK(in)
 #endif /* OW_MT */
 
-#define BUSLOCK(pn)    BUS_lock(pn) ;
-#define BUSUNLOCK(pn)  BUS_unlock(pn) ;
+#define BUSLOCK(pn)    BUS_lock(pn)
+#define BUSUNLOCK(pn)  BUS_unlock(pn)
 
 #ifdef OW_USB
     #include <usb.h>
@@ -861,10 +856,10 @@ extern unsigned int DS2480_ProgramPulse_errors ;
 #define MODE_BREAK                     0x08
 
 #ifdef OW_MT
-    #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) ) ;
-    #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) ) ;
-    #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) ) ;
-    #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) ) ;
+    #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
+    #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
+    #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) )
+    #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) )
 #else /* OW_MT */
     #define DEVLOCK(pn)
     #define DEVUNLOCK(pn)

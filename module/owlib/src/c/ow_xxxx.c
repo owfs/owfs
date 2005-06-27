@@ -77,10 +77,10 @@ void update_max_delay(const struct parsedname * const pn) {
             (last_delay.tv_sec > max_delay.tv_sec)
             || ((last_delay.tv_sec >= max_delay.tv_sec) && (last_delay.tv_usec > max_delay.tv_usec))
            ) {
-            STATLOCK
+            STATLOCK;
                 max_delay.tv_sec =  last_delay.tv_sec;
                 max_delay.tv_usec =  last_delay.tv_usec;
-            STATUNLOCK
+            STATUNLOCK;
         }
     }
     /* BUS_send_and_get() call this function many times, therefor
@@ -188,9 +188,9 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
-        BUSLOCK(pn)
+        BUSLOCK(pn);
             ret = BUS_normalverify(pn) ;
-        BUSUNLOCK(pn)
+        BUSUNLOCK(pn);
         if(ret == 0) {
             /* Device was found on this in-device, return it's index */
             ret = pn->in->index;
@@ -217,9 +217,9 @@ int FS_present(int * y , const struct parsedname * pn) {
     if ( pn->type != pn_real || pn->dev == DeviceSimultaneous ) {
         y[0]=1 ;
     } else {
-        BUSLOCK(pn)
+        BUSLOCK(pn);
 	  y[0] = BUS_normalverify(pn) ? 0 : 1 ;
-        BUSUNLOCK(pn)
+        BUSUNLOCK(pn);
     }
     return 0 ;
 }

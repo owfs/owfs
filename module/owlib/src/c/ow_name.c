@@ -14,7 +14,7 @@ $Id$
 
 /* device display format */
 void FS_devicename( char * const buffer, const size_t length, const unsigned char * sn, const struct parsedname * pn ) {
-    UCLIBCLOCK
+    UCLIBCLOCK;
 //printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
         switch (DeviceFormat(pn)) {
         case fdi:
@@ -36,7 +36,7 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
             snprintf( buffer , length, "%02X%02X%02X%02X%02X%02X%02X%02X",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7]) ;
             break ;
         }
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
 }
 
 const char dirname_state_uncached[] = "uncached";
@@ -56,9 +56,9 @@ int FS_dirname_state( char * const buffer, const size_t length, const struct par
     } else if ( pn->state & pn_uncached) {
         p = dirname_state_uncached ;
     } else if ( pn->state & pn_bus ) {
-        UCLIBCLOCK
+        UCLIBCLOCK;
             snprintf(buffer, length, "bus.%d", pn->bus_nr) ;
-        UCLIBCUNLOCK
+        UCLIBCUNLOCK;
         return strlen(buffer) ;
     } else {
         return 0 ;
@@ -105,7 +105,7 @@ int FS_dirname_type( char * const buffer, const size_t length, const struct pars
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) {
     int s ;
     if ( pn->ft == NULL ) return -ENOENT ;
-    UCLIBCLOCK
+    UCLIBCLOCK;
         if ( pn->ft->ag == NULL ) {
             s = snprintf( name , size, "%s",pn->ft->name) ;
         } else if ( pn->extension == -1 ) {
@@ -117,7 +117,7 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
         } else {
             s = snprintf( name , size, "%s.%-d",pn->ft->name,pn->extension) ;
         }
-    UCLIBCUNLOCK
+    UCLIBCUNLOCK;
     return (s<0) ? -ENOBUFS : 0 ;
 }
 
@@ -134,7 +134,7 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
             pname = pn->ft->name ;
         }
 
-        UCLIBCLOCK
+        UCLIBCLOCK;
             if ( pn->ft->ag == NULL ) {
                 snprintf( buffer , size, "%s",pname) ;
             } else if ( pn->extension == -1 ) {
@@ -146,7 +146,7 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
             } else {
                 snprintf( buffer , size, "%s.%-d",pname,pn->extension) ;
             }
-        UCLIBCUNLOCK
+        UCLIBCUNLOCK;
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */

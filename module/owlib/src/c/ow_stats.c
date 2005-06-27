@@ -377,9 +377,9 @@ static int FS_stat(unsigned int * u , const struct parsedname * pn) {
     if (dindex<0) dindex = 0 ;
     if (pn->ft == NULL) return -ENOENT ;
     if (pn->ft->data == NULL) return -ENOENT ;
-    STATLOCK
+    STATLOCK;
         u[0] =  ((unsigned int *)pn->ft->data)[dindex] ;
-    STATUNLOCK
+    STATUNLOCK;
     return 0 ;
 }
 
@@ -408,9 +408,9 @@ static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
     default:
       return -ENOENT;
     }
-    STATLOCK
+    STATLOCK;
         u[0] =  *ptr;
-    STATUNLOCK
+    STATUNLOCK;
     return 0 ;
 }
 
@@ -431,9 +431,10 @@ static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
     default:
         return -ENOENT;
     }
-    STATLOCK /* to prevent simultaneous changes to bus timing variables */
+    /* to prevent simultaneous changes to bus timing variables */
+    STATLOCK;
         f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
-    STATUNLOCK
+    STATUNLOCK;
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;
     return 0 ;
@@ -448,9 +449,10 @@ static int FS_time(FLOAT *u , const struct parsedname * pn) {
     tv = (struct timeval *) pn->ft->data ;
     if (tv == NULL) return -ENOENT ;
 
-    STATLOCK /* to prevent simultaneous changes to bus timing variables */
+    /* to prevent simultaneous changes to bus timing variables */
+    STATLOCK;
         f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
-    STATUNLOCK
+    STATUNLOCK;
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;
     return 0 ;
@@ -459,8 +461,8 @@ static int FS_time(FLOAT *u , const struct parsedname * pn) {
 static int FS_elapsed(unsigned int * u , const struct parsedname * pn) {
 //printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
     (void) pn ;
-    STATLOCK
+    STATLOCK;
         u[0] = time(NULL)-start_time ;
-    STATUNLOCK
+    STATUNLOCK;
     return 0 ;
 }

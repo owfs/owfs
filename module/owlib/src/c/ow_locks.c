@@ -96,20 +96,20 @@ int LockGet( const struct parsedname * const pn ) {
     if ( (dlock = malloc( sizeof( struct devlock ) ))==NULL ) return -ENOMEM ;
     memcpy( dlock->sn, pn->sn, 8 ) ;
     
-    DEVLOCK(pn)
+    DEVLOCK(pn);
     if ( (opaque=tsearch(dlock,&(pn->in->dev_db),dev_compare))==NULL ) {
-        DEVUNLOCK(pn)
+        DEVUNLOCK(pn);
         free(dlock) ;
         return -ENOMEM ;
     } else if ( dlock==opaque->key ) {
         dlock->users = 1 ;
         pthread_mutex_init(&(dlock->lock), pmattr);
         pthread_mutex_lock(&(dlock->lock) ) ;
-        DEVUNLOCK(pn)
+        DEVUNLOCK(pn);
         pn->si->lock = dlock ;
     } else {
         ++(opaque->key->users) ;
-        DEVUNLOCK(pn) ;
+        DEVUNLOCK(pn);
         free(dlock) ;
         pthread_mutex_lock( &(opaque->key->lock) ) ;
         pn->si->lock = opaque->key ;
@@ -130,15 +130,15 @@ void LockRelease( const struct parsedname * const pn ) {
         if(pn->dev == DeviceSimultaneous) return ;
        
         pthread_mutex_unlock( &(pn->si->lock->lock) ) ;
-        DEVLOCK(pn)
+        DEVLOCK(pn);
         if ( pn->si->lock->users==1 ) {
                 tdelete( pn->si->lock, &(pn->in->dev_db), dev_compare ) ;
-                DEVUNLOCK(pn)
+                DEVUNLOCK(pn);
                 pthread_mutex_destroy(&(pn->si->lock->lock) ) ;
                 free(pn->si->lock) ;
         } else {
                 --pn->si->lock->users;
-                DEVUNLOCK(pn)
+                DEVUNLOCK(pn);
         }
         pn->si->lock = NULL ;
     }
@@ -157,10 +157,10 @@ void BUS_lock( const struct parsedname * pn ) {
     pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */
     gettimeofday( &(pn->in->last_lock) , NULL ) ; /* for statistics */
-    STATLOCK
+    STATLOCK;
         ++ pn->in->bus_locks ; /* statistics */
         ++ total_bus_locks ; /* statistics */
-    STATUNLOCK
+    STATUNLOCK;
 }
 
 void BUS_unlock( const struct parsedname * pn ) {
@@ -171,7 +171,7 @@ void BUS_unlock( const struct parsedname * pn ) {
     gettimeofday( &(pn->in->last_unlock), NULL ) ;
 
     /* avoid update if system-clock have changed */
-    STATLOCK
+    STATLOCK;
         sec = pn->in->last_unlock.tv_sec - pn->in->last_lock.tv_sec;
         if((sec >= 0) && (sec < 60)) {
             usec = pn->in->last_unlock.tv_usec - pn->in->last_lock.tv_usec;
@@ -198,7 +198,7 @@ void BUS_unlock( const struct parsedname * pn ) {
         }
         ++ pn->in->bus_unlocks ; /* statistics */
         ++ total_bus_unlocks ; /* statistics */
-    STATUNLOCK
+    STATUNLOCK;
 #ifdef OW_MT
     pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */

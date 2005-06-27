@@ -144,7 +144,7 @@ static int OW_skiprom( enum simul_type type, const struct parsedname * const pn 
     memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
     pn2.dev = NULL ; /* only branch select done, not actual device */
     /* Make sure pn has bus-mutex initiated and it on local bus, NOT remote */
-    BUSLOCK(pn)
+    BUSLOCK(pn);
 	switch ( type ) {
 	case simul_temp:
             ret = BUS_select(&pn2) || BUS_send_data( cmd_temp,2,pn ) ;
@@ -153,7 +153,7 @@ static int OW_skiprom( enum simul_type type, const struct parsedname * const pn 
             ret = BUS_select(&pn2) || BUS_sendback_data( cmd_volt,data,6,pn ) || memcmp( cmd_volt , data , 4 ) || CRC16(&data[1],5) ;
 	    break ;
 	}
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
     return ret ;
 }
 

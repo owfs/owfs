@@ -256,14 +256,14 @@ static int DS9490_open( const struct parsedname * const pn ) {
 static int DS9490_reconnect( const struct parsedname * const pn ) {
     int retry = 0 ;
 
-    STATLOCK
+    STATLOCK;
     BUS_reconnect++;
-    STATUNLOCK
+    STATUNLOCK;
 
     if ( pn && pn->in ) {
-      STATLOCK
+      STATLOCK;
       pn->in->bus_reconnect++;
-      STATUNLOCK
+      STATUNLOCK;
       if( pn->in->connin.usb.dev ) {
         if ( pn->in->connin.usb.usb ) {
 	    usb_release_interface( pn->in->connin.usb.usb, 0 ) ;
@@ -272,10 +272,10 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
 	}
 	while(retry++ < 3) {
 	  if(!DS9490_open( pn )) return 0 ;
-	  STATLOCK
+	  STATLOCK;
 	    BUS_reconnect_errors++;
 	    pn->in->bus_reconnect_errors++;
-	  STATUNLOCK
+	  STATUNLOCK;
 	  LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter, retry %d\n", retry);
 	}
 	LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
@@ -347,9 +347,9 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
         if ( (ret=usb_bulk_read(pn->in->connin.usb.usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
 #endif
 	{
-          STATLOCK
+          STATLOCK;
           DS9490_wait_errors++;
-          STATUNLOCK
+          STATUNLOCK;
 	  return ret ;
 	}
 	if(!wait_for_idle) break ;
@@ -521,9 +521,9 @@ static int DS9490_reset( const struct parsedname * const pn ) {
             COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE,
             ((pn->in->USpeed & MODE_OVERDRIVE)?ONEWIREBUSSPEED_OVERDRIVE:ONEWIREBUSSPEED_FLEXIBLE),
             NULL, 0, TIMEOUT_USB ))<0 ) {
-        STATLOCK
+        STATLOCK;
         DS9490_reset_errors++;
-        STATUNLOCK
+        STATUNLOCK;
         return ret ;
     }
 
@@ -531,9 +531,9 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     //if(!(pn->in->USpeed & MODE_OVERDRIVE)) UT_delay(5);
 
     if((ret=DS9490_getstatus(buffer,pn,0,0)) < 0) {
-        STATLOCK
+        STATLOCK;
         DS9490_reset_errors++;
-        STATUNLOCK
+        STATUNLOCK;
         return ret ;
     }
 
@@ -595,9 +595,9 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
 
     if ( (ret=DS9490_write(data, len, pn)) < len ) {
 //printf("USBsendback bulk write problem = %d\n",ret);
-        STATLOCK
+        STATLOCK;
         DS9490_sendback_data_errors++;
-        STATUNLOCK
+        STATUNLOCK;
         return -EIO ;
     }
 
@@ -606,17 +606,17 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
         ((ret = DS9490_getstatus(buffer,pn, len,1)) < 0) // wait for len bytes
         ) {
 //printf("USBsendback control problem\n");
-        STATLOCK
+        STATLOCK;
         DS9490_sendback_data_errors++;
-        STATUNLOCK
+        STATUNLOCK;
         return ret ;
     }
 
     if ( DS9490_read(resp, len, pn) > 0 ) return 0 ;
 //printf("USBsendback bulk read problem\n");
-    STATLOCK
+    STATLOCK;
     DS9490_sendback_data_errors++;
-    STATUNLOCK
+    STATUNLOCK;
     return -EIO ;
 }
 
@@ -649,9 +649,9 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 //printf("USBnextboth\n");
     if ( (ret=DS9490_write(cb,8,pn)) < 8 ) {
 //printf("USBnextboth bulk write problem = %d\n",ret);
-	STATLOCK
+	STATLOCK;
 	DS9490_next_both_errors++;
-	STATUNLOCK
+	STATUNLOCK;
         return -EIO ;
     }
 
@@ -661,9 +661,9 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     // 0xF4 + +0x1 + 0x8 + 0x800 + 0x4000 = 0x48FD
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x48FD, 0x0100|search, NULL, 0, TIMEOUT_USB ))<0 ) {
 //printf("USBnextboth control problem\n");
-	STATLOCK
+	STATLOCK;
 	DS9490_next_both_errors++;
-	STATUNLOCK
+	STATUNLOCK;
         return ret ;
     }
 
@@ -706,18 +706,18 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
             }
         }
         if( CRC8(serialnumber,8) || (serialnumber[0] == 0) ) {
-            STATLOCK
+            STATLOCK;
                 DS9490_next_both_errors++;
-            STATUNLOCK
+            STATUNLOCK;
             return -EIO;
         }
         //printf("USBnextboth done\n");
         return 0;
     }
 //printf("USBnextboth bulk read problem error=%d\n",ret);
-    STATLOCK
+    STATLOCK;
     DS9490_next_both_errors++;
-    STATUNLOCK
+    STATUNLOCK;
     return -EIO ;
 }
 
@@ -743,55 +743,55 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
 #if 1
     /* Send the byte */
     if ( (ret=DS9490_sendback_data(&byte, &resp , 1,pn)) ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return ret ;
     }
     //printf("9490 Powerbyte in=%.2X out %.2X\n",byte,resp) ;
     if ( byte != resp ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return -EIO ;
     }
     /** Pulse duration */
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0213, 0x0000|dly, NULL, 0, TIMEOUT_USB ))<0 ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return ret ;
     }
     /** Pulse start */
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0431, 0x0000, NULL, 0, TIMEOUT_USB ))<0 ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return ret ;
     }
     /** Delay */
     UT_delay( delay ) ;
     /** wait */
     if ( ((ret=DS9490_getstatus(buffer,pn,0,1))<0) ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return ret ;
     }
 #else
     // set the strong pullup
     if ( (ret=usb_control_msg(usb,0x40,MODE_CMD,MOD_PULSE_EN, ENABLEPULSE_SPUE, NULL, 0, TIMEOUT_USB ))<0 ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
 	printf("Powerbyte err1\n");
       return ret ;
     }
 
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF, NULL, 0, TIMEOUT_USB ))<0 ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       //printf("Powerbyte err2\n");
       return ret ;
     }
@@ -803,9 +803,9 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
 
     /** wait */
     if ( ((ret=DS9490_getstatus(buffer,pn,0,1))<0) ) {
-      STATLOCK
+      STATLOCK;
       DS9490_PowerByte_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       //printf("Powerbyte err3\n");
       return ret ;
     }
@@ -901,18 +901,18 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     // set pullup to strong5 or program
     if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_PULSE_EN, lev, NULL, 0, TIMEOUT_USB ))<0
 	 ) {
-      STATLOCK
+      STATLOCK;
       DS9490_level_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return ret ;
     }
 
     // set the strong pullup duration to infinite
     if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,COMM_PULSE | COMM_IM, 0, NULL, 0, TIMEOUT_USB ))<0
 	 ) {
-      STATLOCK
+      STATLOCK;
       DS9490_level_errors++;
-      STATUNLOCK
+      STATUNLOCK;
       return ret ;
     }
     pn->in->ULevel = new_level ;

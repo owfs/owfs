@@ -82,9 +82,9 @@ static int FS_w_presencecheck(const int * y , const struct parsedname * pn) {
 
 static int FS_r_enable(int * y , const struct parsedname * pn) {
     (void) pn ; /* to avoid compiler warning about unused parameter */
-    CACHELOCK
+    CACHELOCK;
         y[0] =  IsLocalCacheEnabled(pn) ;
-    CACHEUNLOCK
+    CACHEUNLOCK;
     return 0 ;
 }
 
@@ -97,18 +97,18 @@ static int FS_w_enable(const int * y , const struct parsedname * pn) {
 }
 
 static int FS_r_timeout(int * i , const struct parsedname * pn) {
-    CACHELOCK
+    CACHELOCK;
         i[0] = ((unsigned int *)pn->ft->data)[0] ;
-    CACHEUNLOCK
+    CACHEUNLOCK;
     return 0 ;
 }
 
 static int FS_w_timeout(const int * i , const struct parsedname * pn) {
     int previous ;
-    CACHELOCK
+    CACHELOCK;
         previous = ((unsigned int *)pn->ft->data)[0] ;
         ((unsigned int *)pn->ft->data)[0] = i[0] ;
-    CACHEUNLOCK
+    CACHEUNLOCK;
     if ( previous > i[0] ) Cache_Clear() ;
     return 0 ;
 }

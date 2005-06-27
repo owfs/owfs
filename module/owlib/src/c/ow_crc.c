@@ -53,10 +53,10 @@ unsigned char CRC8( const unsigned char * bytes , const int length ) {
 /* wrap CRC8 calculation in statistics */
 unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) {
     unsigned char r = CRC8compute( bytes, length , seed ) ;
-    STATLOCK
+    STATLOCK;
         ++CRC8_tries ; /* statistics */
         if (r) ++CRC8_errors ; /* statistics */
-    STATUNLOCK
+    STATUNLOCK;
     return r ;
 }
 
@@ -76,7 +76,7 @@ int CRC16seeded( const unsigned char * bytes , const int length , const int seed
         ret ^= ( c<<=6 ) ;
         ret ^= ( c<<1 ) ;
     }
-    STATLOCK
+    STATLOCK;
 	++ CRC16_tries ; /* statistics */
         if ( ret == 0xB001 ) {
 	    ret = 0;  /* good */
@@ -84,7 +84,7 @@ int CRC16seeded( const unsigned char * bytes , const int length , const int seed
 	    ret = -1; /* error */
 	    ++CRC16_errors ; /* statistics */
         }
-    STATUNLOCK
+    STATUNLOCK;
     return ret;
 }
 

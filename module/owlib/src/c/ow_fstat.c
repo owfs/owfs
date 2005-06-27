@@ -101,9 +101,9 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.dev->nft, nr);
         stbuf->st_nlink += nr ;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
-        FSTATLOCK
+        FSTATLOCK;
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
-        FSTATUNLOCK
+        FSTATUNLOCK;
     } else if ( pn->ft->format==ft_directory || pn->ft->format==ft_subdir ) { /* other directory */
         int i, nr = 0 ;
 //printf("FS_fstat other dir inside device\n");
@@ -128,9 +128,9 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
         stbuf->st_nlink += nr ;
 
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
-        FSTATLOCK
+        FSTATLOCK;
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
-        FSTATUNLOCK
+        FSTATUNLOCK;
     } else { /* known 1-wire filetype */
         stbuf->st_mode = S_IFREG ;
         if ( pn->ft->read.v ) stbuf->st_mode |= 0444 ;
@@ -147,9 +147,9 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
             break ;
         case ft_stable:
         case ft_Astable:
-            FSTATLOCK
+            FSTATLOCK;
                 stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
-            FSTATUNLOCK
+            FSTATUNLOCK;
             break ;
         default:
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;

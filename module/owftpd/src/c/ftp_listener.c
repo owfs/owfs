@@ -465,9 +465,9 @@ static void *connection_handler(void * v) {
     } else {
 
         /* too many users */
-        UCLIBCLOCK
+        UCLIBCLOCK;
             sprintf(drop_reason,"Too many users logged in, dropping connection (%d logins maximum)",f->max_connections);
-        UCLIBCUNLOCK
+        UCLIBCUNLOCK;
         ftp_session_drop(&info->ftp_session, drop_reason);
 
         /* log the rejection */

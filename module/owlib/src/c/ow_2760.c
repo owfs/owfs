@@ -368,9 +368,9 @@ static int OW_r_eeprom( const size_t page, const size_t size , const size_t offs
     int ret ;
     if ( offset > page+16 ) return 0 ;
     if ( offset + size <= page ) return 0 ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p, 2,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 //printf("OW_r_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
     return ret ;
 }
@@ -380,9 +380,9 @@ static int OW_r_sram( unsigned char * data , const size_t size , const size_t of
     unsigned char p[] = { 0x69, offset&0xFF , } ;
     int ret ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p, 2,pn ) || BUS_readin_data( data, size,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 //printf("OW_r_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
 
     return ret ;
@@ -400,9 +400,9 @@ static int OW_w_eeprom( const size_t page, const size_t size , const size_t offs
     int ret ;
     if ( offset > page+16 ) return 0 ;
     if ( offset + size <= page ) return 0 ;
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data( p, 2,pn ) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 //printf("OW_w_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
 
     return ret ;
@@ -412,9 +412,9 @@ static int OW_w_sram( const unsigned char * data , const size_t size , const siz
     unsigned char p[] = { 0x6C, offset&0xFF , } ;
     int ret  ;
 
-    BUSLOCK(pn)
+    BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,2,pn) || BUS_send_data(data,size,pn) ;
-    BUSUNLOCK(pn)
+    BUSUNLOCK(pn);
 //printf("OW_w_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
     return ret ;
 }

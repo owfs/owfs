@@ -153,10 +153,10 @@ int ClientConnect( struct connection_in * in ) {
      * the in-device and loop through the list until it works.
      * Not a perfect solution, but it should work at least.
      */
-    INBUSLOCK(in)
+    INBUSLOCK(in);
     ai = in->ai_ok ;
     if( ai ) {
-        INBUSUNLOCK(in)
+        INBUSUNLOCK(in);
         fd = socket(
             ai->ai_family,
             ai->ai_socktype,
@@ -166,7 +166,7 @@ int ClientConnect( struct connection_in * in ) {
             if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) return fd ;
             close( fd ) ;
         }
-        INBUSLOCK(in)
+        INBUSLOCK(in);
     }
 
     ai = in->ai ;  // loop from first address info since it failed.
@@ -179,14 +179,14 @@ int ClientConnect( struct connection_in * in ) {
         if ( fd >= 0 ) {
             if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
                 in->ai_ok = ai ;
-                INBUSUNLOCK(in)
+                INBUSUNLOCK(in);
                 return fd ;
             }
             close( fd ) ;
         }
     } while ( (ai = ai->ai_next) ) ;
     in->ai_ok = NULL ;
-    INBUSUNLOCK(in)
+    INBUSUNLOCK(in);
 
     fprintf(stderr,"ClientConnect: Socket problem [%s]\n", strerror(errno)) ;
     return -1 ;
@@ -244,7 +244,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             //printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
             acceptfd = accept( o2->fd, NULL, NULL ) ;
             //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
-            ACCEPTUNLOCK(o2)
+            ACCEPTUNLOCK(o2);
             //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
             RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
@@ -257,7 +257,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         for(;;) {
  #ifdef VALGRIND
  #endif /* VALGRIND */
-            ACCEPTLOCK(out2)
+	  ACCEPTLOCK(out2);
  #ifdef __UCLIBC__
             if ( pthread_create( &thread2, NULL, AcceptThread, out2 ) ) Exit(1) ;
   #ifndef VALGRIND
