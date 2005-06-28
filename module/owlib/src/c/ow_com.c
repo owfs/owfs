@@ -23,7 +23,6 @@ $Id$
 /* raw COM port interface routines                */
 /* ---------------------------------------------- */
 
-struct termios oldSerialTio;    /*old serial port settings*/
 //
 //open serial port
 // set global pn->si->fd and devport
@@ -41,8 +40,8 @@ int COM_open( struct connection_in * in ) {
       return -ENODEV;
     }
 
-    tcgetattr(in->fd, &oldSerialTio);
-    tcgetattr(in->fd, &newSerialTio);
+    tcgetattr(in->fd, &in->connin.serial.oldSerialTio);
+    memcpy(&newSerialTio, &in->connin.serial.oldSerialTio, sizeof(struct termios));
     in->connin.serial.speed = B9600 ;
     cfsetospeed(&newSerialTio, in->connin.serial.speed);
     cfsetispeed(&newSerialTio, in->connin.serial.speed);
@@ -66,10 +65,10 @@ void COM_close( struct connection_in * in ) {
     fd = in->fd ;
     // restore tty settings
     if ( fd > -1 ) {
-        tcsetattr(fd, TCSAFLUSH, &oldSerialTio);
+        tcsetattr(fd, TCSAFLUSH, &in->connin.serial.oldSerialTio);
         tcflush(fd, TCIOFLUSH);
         close(fd);
-        in->fd=-1 ;
+        in->fd = -1 ;
     }
 }
 

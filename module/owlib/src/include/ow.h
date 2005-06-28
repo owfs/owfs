@@ -357,6 +357,7 @@ struct interface_routines {
 struct connin_serial {
     speed_t speed;
     int UMode ;
+    struct termios oldSerialTio;    /*old serial port settings*/
 } ;
 #ifdef OW_USB
 struct connin_usb {

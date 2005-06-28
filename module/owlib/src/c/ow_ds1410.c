@@ -419,11 +419,21 @@ int DS1410_detect( struct connection_in * in ) {
 static int DS1410_reconnect( const struct parsedname * const pn ) {
     STATLOCK;
     BUS_reconnect++;
-    if ( pn && pn->in ) {
-      pn->in->bus_reconnect++;
-    }
     STATUNLOCK;
-    return 0 ;
+    if ( !pn || !pn->in ) return -EIO;
+
+    STATLOCK;
+    pn->in->bus_reconnect++;
+    STATUNLOCK;
+
+    /* Fixme: Do the reconnect here... */
+
+    STATLOCK;
+    BUS_reconnect_errors++;
+    pn->in->bus_reconnect_errors++;
+    STATUNLOCK;
+    LEVEL_DEFAULT("Failed to reconnect DS1410 adapter!\n");
+    return -EIO ;
 }
 
 /* DS1410 Reset -- A little different frolm DS2480B */
