@@ -58,15 +58,20 @@ struct dev_opaque {
     void * other ;
 } ;
 
+#ifdef OW_MT
+/* compilation error in gcc version 4.0.0 20050519 if dev_compare
+ * is defined as an embedded function
+ */
+static int dev_compare( const void * a , const void * b ) {
+    return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
+}
+#endif
+
 /* Grabs a device slot, either one already matching, or an empty one */
 int LockGet( const struct parsedname * const pn ) {
 #ifdef OW_MT
     struct devlock * dlock ;
     struct dev_opaque * opaque ;
-    /* embedded function */
-    static int dev_compare( const void * a , const void * b ) {
-        return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
-    }
 
     //printf("LockGet() pn->path=%s\n", pn->path);
     if(pn->dev == DeviceSimultaneous) {
@@ -121,10 +126,6 @@ int LockGet( const struct parsedname * const pn ) {
 void LockRelease( const struct parsedname * const pn ) {
 #ifdef OW_MT
     if ( pn->si->lock ) {
-        /* embedded function */
-        static int dev_compare( const void * a , const void * b ) {
-            return memcmp( &((const struct devlock *)a)->sn , &((const struct devlock *)b)->sn , 8 ) ;
-        }
 
         /* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
         if(pn->dev == DeviceSimultaneous) return ;
