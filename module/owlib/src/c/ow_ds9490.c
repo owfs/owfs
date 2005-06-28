@@ -254,8 +254,6 @@ static int DS9490_open( const struct parsedname * const pn ) {
 
 /* When the errors stop the USB device from functioning -- close and reopen */
 static int DS9490_reconnect( const struct parsedname * const pn ) {
-    int retry = 0 ;
-
     STATLOCK;
     BUS_reconnect++;
     STATUNLOCK;
@@ -266,21 +264,17 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
     STATUNLOCK;
 
     if( pn->in->connin.usb.dev ) {
-      if ( pn->in->connin.usb.usb ) {
-	usb_release_interface( pn->in->connin.usb.usb, 0 ) ;
-	usb_close( pn->in->connin.usb.usb ) ;
-	pn->in->connin.usb.usb = 0 ;
+      DS9490_close(pn->in);
+      if(!DS9490_open( pn )) {
+	LEVEL_DEFAULT("USB DS9490 adapter reconnected\n");
+	return 0 ;
       }
-      while(retry++ < 3) {
-	if(!DS9490_open( pn )) return 0 ;
-	STATLOCK;
-	BUS_reconnect_errors++;
-	pn->in->bus_reconnect_errors++;
-	STATUNLOCK;
-	LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter, retry %d\n", retry);
-      }
-      LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
     }
+    STATLOCK;
+    BUS_reconnect_errors++;
+    pn->in->bus_reconnect_errors++;
+    STATUNLOCK;
+    LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
     return -EIO ;
 }
 
@@ -326,8 +320,8 @@ void DS9490_close(struct connection_in * in) {
         usb_release_interface( in->connin.usb.usb, 0) ;
         usb_close( in->connin.usb.usb ) ;
         in->connin.usb.usb = NULL ;
+	LEVEL_CONNECT("Closed USB DS9490 adapter at %s.\n",in->name);
     }
-    LEVEL_CONNECT("Closed USB DS9490 adapter at %s.\n",in->name)
 }
 
 /* DS9490_getstatus()
@@ -488,9 +482,11 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
     }
     pn->in->USpeed = MODE_OVERDRIVE ;
   } else {
-    ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, speed, NULL, 0, TIMEOUT_USB ) ;
-    if(ret < 0) {
-      return -EINVAL ;
+    if(pn->in->connin.usb.usb) {
+      /* Have to make sure usb isn't closed after last reconnect */
+      if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, speed, NULL, 0, TIMEOUT_USB )) < 0) {
+	return -EINVAL ;
+      }
     }
     pn->in->USpeed = MODE_NORMAL ;
   }
@@ -503,6 +499,11 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     unsigned char buffer[32] ;
 //printf("9490RESET\n");
 //printf("DS9490_reset() index=%d pn->in->Adapter=%d %s\n", pn->in->index, pn->in->Adapter, pn->in->adapter_name);
+
+    if(!pn->in->connin.usb.usb) {
+      /* last reconnect probably failed and usb is closed. Try to reconnect */
+      if((ret = DS9490_reconnect(pn))) return ret;
+    }
 
     memset(buffer, 0, 32); 
  
@@ -879,6 +880,9 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     if (new_level == pn->in->ULevel) {     // check if need to change level
         return 0 ;
     }
+
+    if(!pn->in->connin.usb.usb) return -EIO;
+
     //printf("DS9490_level %d (old = %d)\n", new_level, pn->in->ULevel);
     switch (new_level) {
     case MODE_NORMAL:

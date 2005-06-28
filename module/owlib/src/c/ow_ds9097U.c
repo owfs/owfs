@@ -304,7 +304,6 @@ int DS2480_baud( speed_t baud, const struct parsedname * const pn ) {
 }
 
 static int DS2480_reconnect( const struct parsedname * const pn ) {
-    int retry = 0 ;
     STATLOCK;
     BUS_reconnect++;
     STATUNLOCK;
@@ -317,18 +316,15 @@ static int DS2480_reconnect( const struct parsedname * const pn ) {
     COM_close(pn->in);
     usleep(100000);
     if(!COM_open(pn->in)) {
-      while(retry++ < 3) {
-	if(!DS2480_detect(pn->in)) {
-	  LEVEL_DEFAULT("DS2480 adapter reconnected\n");
-	  return 0;
-	}
-	STATLOCK;
-	BUS_reconnect_errors++;
-	pn->in->bus_reconnect_errors++;
-	STATUNLOCK;
-	LEVEL_DEFAULT("Failed to reconnect DS2480 adapter, retry %d\n", retry);
+      if(!DS2480_detect(pn->in)) {
+	LEVEL_DEFAULT("DS2480 adapter reconnected\n");
+	return 0;
       }
     }
+    STATLOCK;
+    BUS_reconnect_errors++;
+    pn->in->bus_reconnect_errors++;
+    STATUNLOCK;
     LEVEL_DEFAULT("Failed to reconnect DS2480 adapter!\n");
     return -EIO ;
 }
