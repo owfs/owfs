@@ -187,7 +187,8 @@ static int BUS_selection_error( const struct parsedname * const pn ) {
     BUS_select_low_errors++;
     STATUNLOCK;
     ret = BUS_reconnect( pn ) ;
-    printf( "BUS_select error, attempting reset = %d\n", ret ) ;
+    if(ret) LEVEL_DEFAULT( "BUS_reconnect, returned error = %d\n", ret ) ;
+    return ret;
 }   
 
 //--------------------------------------------------------------------------
