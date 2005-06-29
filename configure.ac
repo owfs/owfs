@@ -144,7 +144,7 @@ AC_SUBST(ENABLE_OWFTPD)
 AC_MSG_CHECKING(if owserver is enabled)
 ENABLE_OWSERVER="true"
 AC_ARG_ENABLE(owserver,
-[  --enable-owserver       Enable owserver module (default true)],
+[  --enable-owserver     Enable owserver module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -189,7 +189,7 @@ AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
 AC_MSG_CHECKING(if owphp is enabled)
 ENABLE_OWPHP="false"
 AC_ARG_ENABLE(owphp,
-[  --enable-owphp       Enable owphp module (default false)],
+[  --enable-owphp        Enable owphp module (default false)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
@@ -216,7 +216,7 @@ AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
 AC_MSG_CHECKING(if owpython is enabled)
 ENABLE_OWPYTHON="true"
 AC_ARG_ENABLE(owpython,
-[  --enable-owpython       Enable owpython module (default true)],
+[  --enable-owpython     Enable owpython module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -244,7 +244,7 @@ AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 AC_MSG_CHECKING(if owtcl is enabled)
 ENABLE_OWTCL="false"
 AC_ARG_ENABLE(owtcl,
-[  --enable-owtcl       Enable owtcl module (default false)],
+[  --enable-owtcl        Enable owtcl module (default false)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
@@ -330,7 +330,7 @@ AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 AC_MSG_CHECKING(if caching is enabled)
 ENABLE_CACHE="true"
 AC_ARG_ENABLE(cache,
-[  --enable-cache      Enable caching (default true)],
+[  --enable-cache        Enable caching (default true)],
 [
     AC_MSG_RESULT([$enableval])
 
@@ -391,7 +391,7 @@ ENABLE_MT=true
 AC_MSG_CHECKING([if multithreading is enabled])
 
 AC_ARG_ENABLE(mt,
-[  --enable-mt          Enable multithreading support (default true)],
+[  --enable-mt           Enable multithreading support (default true)],
 [
 
     AC_MSG_RESULT([$enableval])
@@ -450,7 +450,7 @@ AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
 AC_MSG_CHECKING(if parport DS1410E is enabled)
 ENABLE_PARPORT="false"
 AC_ARG_ENABLE(parport,
-[  --enable-parport         Enable parport (DS1410E) module (default parport)],
+[  --enable-parport      Enable parport (DS1410E) module (default false)],
 [
 AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
@@ -463,6 +463,24 @@ AC_MSG_RESULT([$enableval])
 AC_SUBST(ENABLE_PARPORT)
 
 AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
+
+#Check for profiling
+AC_MSG_CHECKING(if profiling is enabled)
+ENABLE_PROFILING="false"
+AC_ARG_ENABLE(profiling,
+[  --enable-profiling    Enable profiling (default false)],
+[
+AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_PROFILING=true
+    fi
+],
+[
+    AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(ENABLE_PROFILING)
+
+AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
 # Checks for header files.
 
@@ -600,6 +618,11 @@ if test "${ENABLE_PARPORT}" = "true"; then
     AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
     AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
+fi
+if test "${ENABLE_PROFILING}" = "true"; then
+    AC_MSG_RESULT([    Profiling is enabled])
+else
+    AC_MSG_RESULT([    Profiling is DISABLED])
 fi
 
 AC_MSG_RESULT()

@@ -8,6 +8,10 @@ if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
 
+if ENABLE_PROFILING
+PROFILING_FLAG = -pg
+endif
+
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
          -I/usr/local/include/fuse \
@@ -25,9 +29,10 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${MT_FLAG} \
+         ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low $(FUSE_LIBS)
+AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG}
 
 clean-generic:
 

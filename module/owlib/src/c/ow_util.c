@@ -14,34 +14,10 @@ $Id$
 
 /* hex-digit to number */
 unsigned char char2num( const char * s ) {
-    if ( s == NULL ) return 0 ;
-    switch (*s) {
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-        return (*s) - '0' ;
-    case 'a':
-    case 'b':
-    case 'c':
-    case 'd':
-    case 'e':
-    case 'f':
-        return 10 + (*s) - 'a' ;
-    case 'A':
-    case 'B':
-    case 'C':
-    case 'D':
-    case 'E':
-    case 'F':
-        return 10 + (*s) - 'A' ;
-    }
+    /* This is much faster compared to switch() */
+    if((*s <= '9') && (*s >= '0')) return (*s) - '0' ;
+    if((*s <= 'F') && (*s >= 'A')) return 10 + (*s) - 'A' ;
+    if((*s <= 'f') && (*s >= 'a')) return 10 + (*s) - 'a' ;
     return 0 ;
 }
 

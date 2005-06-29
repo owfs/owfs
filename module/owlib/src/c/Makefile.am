@@ -61,7 +61,7 @@ OWLIB_SOURCE = ow_xxxx.c         \
                ow_locks.c        \
                ow_opt.c          \
                owlib.c           \
-               error.c           \ 
+               error.c           \
                globals.c
 
 lib_LTLIBRARIES = libow.la
@@ -78,6 +78,10 @@ endif
 
 if ENABLE_MT
 MT_FLAG = -DOW_MT
+endif
+
+if ENABLE_PROFILING
+PROFILING_FLAG = -pg
 endif
 
 if ENABLE_PARPORT
@@ -100,6 +104,7 @@ AM_CFLAGS = -I../include \
          ${CACHE_FLAG} \
          ${MT_FLAG} \
          ${PARPORT_FLAG} \
+         ${PROFILING_FLAG} \
          ${USB_FLAG}
 
 clean-generic:

@@ -9,6 +9,10 @@ if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
 
+if ENABLE_PROFILING
+PROFILING_FLAG = -pg
+endif
+
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
          -L../../../owlib/src/c \
@@ -24,9 +28,10 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${MT_FLAG} \
+         ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low
+AM_LDFLAGS = -low ${PROFILING_FLAG}
 
 clean-generic:
 

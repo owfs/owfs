@@ -971,6 +971,7 @@ void LockRelease( const struct parsedname * const pn ) ;
 
 /* 1-wire lowlevel */
 void UT_delay(const unsigned int len) ;
+void UT_delay_us(const unsigned long len) ;
 int LI_reset( const struct parsedname * const pn ) ;
 
 ssize_t readn(int fd, void *vptr, size_t n) ;

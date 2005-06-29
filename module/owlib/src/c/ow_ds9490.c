@@ -328,12 +328,14 @@ void DS9490_close(struct connection_in * in) {
    return -1 on error
    otherwise return number of status bytes in buffer
 */
+
+//static int max_loops = 0;
 static int DS9490_getstatus(unsigned char * const buffer, const struct parsedname * const pn, int readlen, int wait_for_idle) {
     int ret , loops = 0 ;
     int i ;
     //printf("DS9490_getstatus: readlen=%d wfi=%d\n", readlen, wait_for_idle);
+    memset(buffer, 0, 32) ; // should not be needed
     do {
-        memset(buffer, 0, 32) ; // should not be needed
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
         if ( (ret=usb_interrupt_read(pn->in->connin.usb.usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
@@ -360,8 +362,19 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
 
 	if(ret > 16) break ; // we have some status byte to examine
 	if(++loops > 100) return 0 ;  // adapter never got idle
-	UT_delay(1);
+	/* Since result seem to be on the usb bus very quick, I sleep
+	 * sleep 0.1ms or something like that instead... It seems like
+	 * result is there after 0.2-0.3ms
+	 */
+	//UT_delay(1);
+	UT_delay_us(100);
     } while(1);
+#if 0
+    if(loops > max_loops) {
+      max_loops = loops;
+      LEVEL_DEFAULT("max_loop=%d\n", max_loops);
+    }
+#endif
 
 #if 0
 	printf("DS9490_getstatus: read %d bytes\n", ret);
