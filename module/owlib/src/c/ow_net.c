@@ -31,8 +31,13 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 	    if (errno == EINTR) {
 	      errno = 0; // clear errno. We never use it anyway.
 	      nread = 0; /* and call read() again */
-	    } else
+	    } else {
+	      LEVEL_DEFAULT("readn() failed %d [%s]\n", errno, strerror(errno));
+	      STATLOCK;
+	      NET_read_errors++;
+	      STATUNLOCK;
 	      return(-1);
+	    }
         } else if (nread == 0)
             break; /* EOF */
         nleft -= nread ;
@@ -188,7 +193,10 @@ int ClientConnect( struct connection_in * in ) {
     in->ai_ok = NULL ;
     INBUSUNLOCK(in);
 
-    fprintf(stderr,"ClientConnect: Socket problem [%s]\n", strerror(errno)) ;
+    STATLOCK;
+    NET_connection_errors++;
+    STATUNLOCK;
+    //LEVEL_DEFAULT("ClientConnect: Socket problem %d [%s]\n", errno, strerror(errno)) ;
     return -1 ;
 }
 
@@ -241,11 +249,14 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         void * AcceptThread( void * v2 ) {
             int acceptfd ;
             struct connection_out *o2 = (struct connection_out *)v2;
-            //printf("ACCEPT thread=%ld waiting\n",pthread_self()) ;
             acceptfd = accept( o2->fd, NULL, NULL ) ;
-            //printf("ACCEPT thread=%ld accepted fd=%d\n",pthread_self(),acceptfd) ;
             ACCEPTUNLOCK(o2);
-            //printf("ACCEPT thread=%ld unlocked\n",pthread_self()) ;
+	    if(acceptfd < 0) {
+	      STATLOCK;
+	      NET_accept_errors++;
+	      STATUNLOCK;
+	      LEVEL_DEFAULT("accept() error %d [%s]\n", errno, strerror(errno));
+	    }
             RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
             pthread_exit((void *)0);

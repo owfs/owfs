@@ -495,7 +495,8 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
 
 /* Reset adapter and detect devices on the bus */
 static int DS9490_reset( const struct parsedname * const pn ) {
-    int ret ;
+    int i, ret ;
+    unsigned char val ;
     unsigned char buffer[32] ;
 //printf("9490RESET\n");
 //printf("DS9490_reset() index=%d pn->in->Adapter=%d %s\n", pn->in->index, pn->in->Adapter, pn->in->adapter_name);
@@ -531,8 +532,10 @@ static int DS9490_reset( const struct parsedname * const pn ) {
         return ret ;
     }
 
-    // extra delay for alarming DS1994/DS2404 complience
-    //if(!(pn->in->USpeed & MODE_OVERDRIVE)) UT_delay(5);
+    if(ds2404_alarm_compliance && !(pn->in->USpeed & MODE_OVERDRIVE)) {
+      // extra delay for alarming DS1994/DS2404 complience
+      UT_delay(5);
+    }
 
     if((ret=DS9490_getstatus(buffer,pn,0,0)) < 0) {
         STATLOCK;
@@ -542,21 +545,17 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     }
 
 //    USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
-    if ( pn ) {
-        int i ;
-        unsigned char val ;
-        pn->si->AnyDevices = 1;
-        for(i=0; i<ret; i++) {
-            val = buffer[16+i];
-            //printf("Status bytes: %X\n", val);
-            if(val != ONEWIREDEVICEDETECT) {
-                // check for NRS bit (0x01)
-                if(val & COMMCMDERRORRESULT_NRS) {
-                // empty bus detected, no presence pulse detected
-                pn->si->AnyDevices = 0;
-                }
-            }
-        }
+    pn->si->AnyDevices = 1;
+    for(i=0; i<ret; i++) {
+      val = buffer[16+i];
+      //printf("Status bytes: %X\n", val);
+      if(val != ONEWIREDEVICEDETECT) {
+	// check for NRS bit (0x01)
+	if(val & COMMCMDERRORRESULT_NRS) {
+	  // empty bus detected, no presence pulse detected
+	  pn->si->AnyDevices = 0;
+	}
+      }
     }
     //printf("DS9490_reset: ok\n");
     return 0 ;
@@ -715,6 +714,12 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
             STATUNLOCK;
             return -EIO;
         }
+
+	if(*serialnumber == 0x04) {
+	  /* We found a DS1994/DS2404 which require longer delays */
+	  ds2404_alarm_compliance = 1 ;
+	}
+
         //printf("USBnextboth done\n");
         return 0;
     }

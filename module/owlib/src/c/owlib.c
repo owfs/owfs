@@ -14,6 +14,9 @@ $Id$
 #include "ow_devices.h"
 
 int now_background = 0 ;
+/* Support DS1994/DS2404 which require longer delays, and is automatically
+ * turned on in *_next_both() */
+unsigned char ds2404_alarm_compliance = 0 ;
 
 /* All ow library setup */
 void LibSetup( void ) {

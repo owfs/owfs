@@ -777,6 +777,8 @@ extern struct average all_avg ;
 
 extern struct timeval max_delay ;
 
+extern unsigned char ds2404_alarm_compliance ;
+
 // ow_locks.c
 extern struct timeval total_bus_time ;  // total bus_time
 //extern struct timeval bus_pause ; 
@@ -788,6 +790,11 @@ extern unsigned int CRC8_tries ;
 extern unsigned int CRC8_errors ;
 extern unsigned int CRC16_tries ;
 extern unsigned int CRC16_errors ;
+
+// ow_net.c
+extern unsigned int NET_accept_errors ;
+extern unsigned int NET_connection_errors ;
+extern unsigned int NET_read_errors ;
 
 // ow_bus.c
 extern unsigned int BUS_reconnect ;         // sum from all adapters

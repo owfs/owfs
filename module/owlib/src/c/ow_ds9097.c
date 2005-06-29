@@ -184,14 +184,14 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
                 /* Send chosen bit path, then check match on next two */
                 if ( (ret=DS9097_sendback_bits(bits,bits,3,pn)) ) {
                     STATLOCK;
-                        DS9097_next_both_errors++;
+		    DS9097_next_both_errors++;
                     STATUNLOCK;
                     return ret ;
                 }
             } else { /* last bit */
                 if ( (ret=DS9097_sendback_bits(bits,bits,1,pn)) ) {
-                    STATLOCK;
-                        DS9097_next_both_errors++;
+		    STATLOCK;
+		    DS9097_next_both_errors++;
                     STATUNLOCK;
                     return ret ;
                 }
@@ -233,7 +233,11 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
       STATUNLOCK;
       return -EIO ;
     }
-      // if the search was successful then
+    if(*serialnumber == 0x04) {
+      /* We found a DS1994/DS2404 which require longer delays */
+      ds2404_alarm_compliance = 1 ;
+    }
+    // if the search was successful then
 
     si->LastDiscrepancy = last_zero;
     si->LastDevice = (last_zero == 0);
@@ -284,6 +288,8 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     int fd = pn->in->fd ;
     int ret ;
 
+    if(fd < 0) return -1;
+
     /* 8 data bits */
     tcgetattr(fd, &term);
     term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
@@ -291,13 +297,13 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     cfsetispeed(&term, B9600);
     if (tcsetattr(fd, TCSANOW, &term ) < 0 ) {
         STATLOCK;
-            DS9097_reset_tcsetattr_errors++;
-        STATUNLOCK;
+	DS9097_reset_tcsetattr_errors++;
+	STATUNLOCK;
         return -EIO ;
     }
     if ( (ret=BUS_send_and_get(&resetbyte,1,&c,1,pn)) ) {
         STATLOCK;
-            DS9097_reset_errors++;
+	DS9097_reset_errors++;
         STATUNLOCK;
         return ret ;
     }
@@ -307,12 +313,15 @@ static int DS9097_reset( const struct parsedname * const pn ) {
         LEVEL_CONNECT("1-wire bus short circuit.\n")
         /* fall through */
     case 0xF0:
-        if (pn) pn->si->AnyDevices = 0 ;
+        pn->si->AnyDevices = 0 ;
         break ;
     default:
-        if (pn) pn->si->AnyDevices = 1 ;
+        pn->si->AnyDevices = 1 ;
         pn->in->ProgramAvailable = 0 ; /* from digitemp docs */
-        UT_delay(5); //delay for DS1994
+	if(ds2404_alarm_compliance) {
+	  // extra delay for alarming DS1994/DS2404 complience
+	  UT_delay(5);
+	}
     }
 
     /* Reset all settings */
@@ -332,7 +341,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 
     if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
         STATLOCK;
-            DS9097_reset_tcsetattr_errors++;
+	DS9097_reset_tcsetattr_errors++;
         STATUNLOCK;
         return -EFAULT ;
     }

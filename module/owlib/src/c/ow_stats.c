@@ -95,6 +95,11 @@ unsigned int CRC8_errors = 0 ;
 unsigned int CRC16_tries = 0 ;
 unsigned int CRC16_errors = 0 ;
 
+// ow_net.c
+unsigned int NET_accept_errors = 0 ;
+unsigned int NET_connection_errors = 0 ;
+unsigned int NET_read_errors = 0 ;
+
 // ow_bus.c
 unsigned int BUS_reconnect = 0 ;         // sum from all adapters
 unsigned int BUS_reconnect_errors = 0 ;  // sum from all adapters
@@ -298,6 +303,11 @@ struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus } ;
 
 struct filetype stats_errors[] = {
     {"max_delay"        , 12, NULL  , ft_float, ft_statistic, {f:FS_time}, {v:NULL}, & max_delay         , } ,
+
+// ow_net.c
+FS_stat_ROW(NET_accept_errors),
+FS_stat_ROW(NET_read_errors),
+FS_stat_ROW(NET_connection_errors),
 
 // ow_bus.c
 FS_stat_ROW(BUS_reconnect),

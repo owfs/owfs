@@ -73,18 +73,18 @@ void COM_close( struct connection_in * in ) {
 }
 
 void COM_flush( const struct parsedname * pn ) {
-    if(!pn || !pn->in) return;
+    if(!pn || !pn->in || (pn->in->fd < 0)) return;
     tcflush(pn->in->fd, TCIOFLUSH);
 }
 
 void COM_break( const struct parsedname * pn ) {
-    if(!pn || !pn->in) return;
+    if(!pn || !pn->in || (pn->in->fd < 0)) return;
     tcsendbreak(pn->in->fd, 0);
 }
 
 void COM_speed(speed_t new_baud, const struct parsedname * pn) {
      struct termios t;
-    if(!pn || !pn->in) return;
+     if(!pn || !pn->in || (pn->in->fd < 0)) return;
 
      // read the attribute structure
      if (tcgetattr(pn->in->fd, &t) < 0) return;

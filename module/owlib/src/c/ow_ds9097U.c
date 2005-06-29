@@ -379,7 +379,10 @@ static int DS2480_reset( const struct parsedname * const pn ) {
         if( pn->si ) pn->si->AnyDevices = 1 ;
         // check if programming voltage available
         pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
-        UT_delay(5); // delay 5 ms to give DS1994 enough time
+	if(ds2404_alarm_compliance) {
+	  // extra delay for alarming DS1994/DS2404 complience
+	  UT_delay(5);
+	}
         COM_flush(pn);
 	break;
      }
@@ -621,6 +624,11 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     // copy the SerialNum to the buffer
     memcpy(serialnumber,sn,8) ;
 
+    if(*serialnumber == 0x04) {
+      /* We found a DS1994/DS2404 which require longer delays */
+      ds2404_alarm_compliance = 1 ;
+    }
+
     // set the count
     si->LastDiscrepancy = mismatched;
 
@@ -856,24 +864,24 @@ static int DS2480_read(unsigned char * const buf, const size_t size, const struc
             if(errno == EINTR) {
                 /* select() was interrupted, try again */
                 STATLOCK;
-                    DS2480_read_interrupted++;
+		DS2480_read_interrupted++;
                 STATUNLOCK;
                 continue;
             }
             STATLOCK;
-                DS2480_read_select_errors++;
+	    DS2480_read_select_errors++;
             STATUNLOCK;
             return -EINTR;
         } else {
             STATLOCK;
-                DS2480_read_timeout++;
+	    DS2480_read_timeout++;
             STATUNLOCK;
             return -EINTR;
             }
         }
         if(rl > 0) {
             STATLOCK;
-                DS2480_read_errors++;
+	    DS2480_read_errors++;
             STATUNLOCK;
         return rc;  /* error */
     }

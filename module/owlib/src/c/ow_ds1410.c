@@ -347,6 +347,11 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, 
     if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) return -EIO ;
       // if the search was successful then
 
+    if(*serialnumber == 0x04) {
+      /* We found a DS1994/DS2404 which require longer delays */
+      ds2404_alarm_compliance = 1 ;
+    }
+
     si->LastDiscrepancy = last_zero;
     si->LastDevice = (last_zero == 0);
     return 0 ;
@@ -440,22 +445,25 @@ static int DS1410_reconnect( const struct parsedname * const pn ) {
 /* Puts in 9600 baud, sends 11110000 then reads response */
 static int DS1410_reset( const struct parsedname * const pn ) {
     unsigned char c;
-//    int ret ;
+
     c = RESET() ;
     switch(c) {
     case 0:
         LEVEL_CONNECT("1-wire bus short circuit.\n")
         /* fall through */
     case 0xF0:
-        if (pn) pn->si->AnyDevices = 0 ;
+        if (pn && pn->si) pn->si->AnyDevices = 0 ;
         break ;
     default:
-        if (pn) pn->si->AnyDevices = 1 ;
+        if (pn && pn->si) pn->si->AnyDevices = 1 ;
         ProgramAvailable = 0 ; /* from digitemp docs */
-        UT_delay(5); //delay for DS1994
+	if(ds2404_alarm_compliance) {
+	  // extra delay for alarming DS1994/DS2404 complience
+	  UT_delay(5);
+	}
     }
 
-    Adapter = adapter_DS1410 ; /* OWFS assigned choice */
+    if (pn && pn->in) pn->in->Adapter = adapter_DS1410 ; /* OWFS assigned choice */
     return 0 ;
 }
 
