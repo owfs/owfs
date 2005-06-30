@@ -12,48 +12,43 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/*
+ * HEXVALUE() is defined in <readline/chardefs.h>, but since it's more
+ * common with 0-9 I changed compare-order in the define
+ */
+#define _HEXVALUE(c) \
+  (((c) >= '0' && (c) <= '9') \
+        ? (c)-'0' \
+        : (c) >= 'A' && (c) <= 'F' ? (c)-'A'+10 : (c)-'a'+10 )
+
+#if 0
 /* hex-digit to number */
 unsigned char char2num( const char * s ) {
     /* This is much faster compared to switch() */
-    if((*s <= '9') && (*s >= '0')) return (*s) - '0' ;
-    if((*s <= 'F') && (*s >= 'A')) return 10 + (*s) - 'A' ;
-    if((*s <= 'f') && (*s >= 'a')) return 10 + (*s) - 'a' ;
-    return 0 ;
+    return _HEXVALUE(*s);
 }
+#endif
 
-/* 2 hex digits to number */
+/* 2 hex digits to number. This is the most used function in owfs */
 unsigned char string2num( const char * s ) {
     if ( s == NULL ) return 0 ;
-    return char2num(&s[0])<<4 | char2num(&s[1]) ;
+    return (_HEXVALUE(s[0]) << 4) + _HEXVALUE(s[1]);
 }
 
+
+#define _TOHEXCHAR(c) (((c) >= 0 && (c) <= 9) ? '0'+(c) : 'A'+(c)-10 )
+
+#if 0
 /* number to a hex digit */
 char num2char( const unsigned char n ) {
-    switch(n) {
-    case  0: return '0' ;
-    case  1: return '1' ;
-    case  2: return '2' ;
-    case  3: return '3' ;
-    case  4: return '4' ;
-    case  5: return '5' ;
-    case  6: return '6' ;
-    case  7: return '7' ;
-    case  8: return '8' ;
-    case  9: return '9' ;
-    case 10: return 'A' ;
-    case 11: return 'B' ;
-    case 12: return 'C' ;
-    case 13: return 'D' ;
-    case 14: return 'E' ;
-    case 15: return 'F' ;
-    default: return ' ' ;
-    }
+    return _TOHEXCHAR(n);
 }
+#endif
 
 /* number to 2 hex digits */
 void num2string( char * s , const unsigned char n ) {
-    s[0] = num2char((unsigned char)(n>>4)) ;
-    s[1] = num2char((unsigned char)(n&0xF)) ;
+    s[0] = _TOHEXCHAR(n >> 4) ;
+    s[1] = _TOHEXCHAR(n & 0x0F) ;
 }
 
 /* 2x hex digits to x number bytes */

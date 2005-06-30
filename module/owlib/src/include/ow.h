@@ -924,9 +924,9 @@ unsigned char CRC8seeded( const unsigned char * bytes , const int length , const
   unsigned char CRC8compute( const unsigned char * bytes , const int length  ,const int seed ) ;
 int CRC16( const unsigned char * bytes , const int length ) ;
 int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
-unsigned char char2num( const char * s ) ;
+//unsigned char char2num( const char * s ) ;
 unsigned char string2num( const char * s ) ;
-char num2char( const unsigned char n ) ;
+//char num2char( const unsigned char n ) ;
 void num2string( char * s , const unsigned char n ) ;
 void COM_speed(speed_t new_baud, const struct parsedname * pn) ;
 void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
