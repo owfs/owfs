@@ -319,6 +319,7 @@ int OW_ArgSerial( const char * arg ) {
         LEVEL_DEFAULT("Cannot allocate memory for serial struct\n")
         return 1 ;
     }
+    in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
     return 0 ;

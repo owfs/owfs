@@ -37,10 +37,10 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
         (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
     } else {
         unsigned char resp[16] ;
-        (ret=BUS_sendback_data( data, resp, len,pn )) ||  ((ret=memcmp(data, resp, (size_t) len))?-EIO:0) ;
+        (ret=BUS_sendback_data( data, resp, len,pn )) ||  ((ret=memcmp(data, resp, (size_t) len))?-EPROTO:0) ;
 	if(ret) {
 	  STATLOCK;
-	    if(ret == -EIO)
+	    if(ret == -EPROTO)
 	      BUS_send_data_memcmp_errors++;
 	    else
 	      BUS_send_data_errors++;
@@ -181,14 +181,18 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
   return 0 ;
 }
 
-static int BUS_selection_error( const struct parsedname * const pn ) {
-    int ret ;
+static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
+    int rc = ret;
     STATLOCK;
     BUS_select_low_errors++;
     STATUNLOCK;
-    ret = BUS_reconnect( pn ) ;
-    if(ret) LEVEL_DEFAULT( "BUS_reconnect, returned error = %d\n", ret ) ;
-    return ret;
+    
+    if(ret < -1) {
+      /* Shorted 1-wire bus shouldn't cause a reconnect */
+      rc = BUS_reconnect( pn ) ;
+      if(rc) LEVEL_CONNECT("BUS_selection_error: BUS_reconnect, returned error = %d\n", rc ) ;
+    }
+    return rc;
 }   
 
 //--------------------------------------------------------------------------
@@ -213,6 +217,7 @@ int BUS_select_low(const struct parsedname * const pn) {
 
     if(pn->in->use_overdrive_speed) {
         if((ret=BUS_testoverdrive(pn)) < 0) {
+	    BUS_selection_error(pn, ret) ;
             return ret ;
         } else {
             //printf("use overdrive speed\n");
@@ -224,7 +229,7 @@ int BUS_select_low(const struct parsedname * const pn) {
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     if ( (ret=BUS_reset(pn)) ) {
-        BUS_selection_error(pn) ;
+        BUS_selection_error(pn, ret) ;
         return ret ;
     }
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
@@ -232,18 +237,18 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
        /* Perhaps support overdrive here ? */
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
-            BUS_selection_error(pn) ;
+	    BUS_selection_error(pn, ret) ;
             return ret ;
         }
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-            BUS_selection_error(pn) ;
+	    BUS_selection_error(pn, ret) ;
             return ret ;
         }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
             STATLOCK;
-                BUS_select_low_branch_errors++;
+	    BUS_select_low_branch_errors++;
             STATUNLOCK;
             return -EINVAL ;
         }
@@ -252,16 +257,17 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
         if ( (ret=BUS_send_data(sent,1,pn)) ) {
-            BUS_selection_error(pn) ;
+	    BUS_selection_error(pn, ret) ;
             return ret ;
         }
         if(sent[0] == 0x69) {
             if((ret=BUS_overdrive(MODE_OVERDRIVE, pn))< 0) {
+	        BUS_selection_error(pn, ret) ;
                 return ret ;
             }
         }
         if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
-            BUS_selection_error(pn) ;
+	    BUS_selection_error(pn, ret) ;
             return ret ;
         }
         return ret ;
@@ -278,21 +284,33 @@ int BUS_select_low(const struct parsedname * const pn) {
  Returns:   0-device found 1-no dev or error
 */
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn ) {
+    int ret ;
     // reset the search state
     memset(serialnumber,0,8);  // clear the serial number
     pn->si->LastDiscrepancy = -1;
     pn->si->LastFamilyDiscrepancy = -1;
     pn->si->LastDevice = 0 ;
-    return BUS_next(serialnumber,pn) ;
-}
+    ret = BUS_next(serialnumber,pn) ;
+    if(ret == -EPROTO) {
+      int ret2 = BUS_reconnect( pn ) ;
+      if(ret2) LEVEL_CONNECT( "BUS_first: BUS_reconnect, returned error = %d\n", ret2 ) ;
+    }
+    return ret;
+}   
 
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn ) {
+    int ret ;
     // reset the search state
     memset(serialnumber,0,8);  // clear the serial number
     pn->si->LastDiscrepancy = -1 ;
     pn->si->LastFamilyDiscrepancy = -1 ;
     pn->si->LastDevice = 0 ;
-    return BUS_next_alarm(serialnumber,pn) ;
+    ret = BUS_next_alarm(serialnumber,pn) ;
+    if(ret == -EPROTO) {
+      int ret2 = BUS_reconnect( pn ) ;
+      if(ret2) LEVEL_CONNECT( "BUS_first_alarm: BUS_reconnect, returned error = %d\n", ret2 ) ;
+    }
+    return ret;
 }
 
 int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) {

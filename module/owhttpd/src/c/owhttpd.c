@@ -107,5 +107,6 @@ static void Acceptor( int listenfd ) {
     if (fp) {
         handle_socket( fp ) ;
         fflush(fp);
+        fclose(fp);
     }
 }

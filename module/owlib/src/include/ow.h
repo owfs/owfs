@@ -363,6 +363,13 @@ struct connin_serial {
 struct connin_usb {
     struct usb_device * dev ;
     usb_dev_handle * usb ;
+    char ds1420_address[8];
+  /* "Name" of the device, like "8146572300000051"
+   * This is set to the first DS1420 id found on the 1-wire adapter which
+   * exists on the DS9490 adapters. If user only have a DS2490 chip, there
+   * are no such DS1420 device available. It's used to find the 1-wire adapter
+   * if it's disconnected and later reconnected again.
+   */
 } ;
 #endif /* OW_USB */
 
@@ -924,9 +931,9 @@ unsigned char CRC8seeded( const unsigned char * bytes , const int length , const
   unsigned char CRC8compute( const unsigned char * bytes , const int length  ,const int seed ) ;
 int CRC16( const unsigned char * bytes , const int length ) ;
 int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
-//unsigned char char2num( const char * s ) ;
+unsigned char char2num( const char * s ) ;
 unsigned char string2num( const char * s ) ;
-//char num2char( const unsigned char n ) ;
+char num2char( const unsigned char n ) ;
 void num2string( char * s , const unsigned char n ) ;
 void COM_speed(speed_t new_baud, const struct parsedname * pn) ;
 void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
@@ -1075,7 +1082,7 @@ extern int error_print ;
 extern int error_level ;
 extern int now_background ;
 extern int log_available ;
-#define LEVEL_DEFAULT(...)    if (error_level>0) err_bad(__VA_ARGS__) ;
+#define LEVEL_DEFAULT(...)    if (error_level>0) err_msg(__VA_ARGS__) ;
 #define LEVEL_CONNECT(...)    if (error_level>1) err_bad(__VA_ARGS__) ;
 #define LEVEL_CALL(...)       if (error_level>2) err_msg(__VA_ARGS__) ;
 #define LEVEL_DATA(...)       if (error_level>3) err_msg(__VA_ARGS__) ;

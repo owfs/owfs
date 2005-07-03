@@ -421,12 +421,13 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     /* Turn off all DS2409s */
     FS_branchoff(pn2) ;
     (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(sn,pn2)) ;
-#if 0
-    if(ret == -ENODEV) {
+    if(ret) {
+      // a reconnect is eventually made in BUS_select or BUS_first_alarm
+      //BUS_reconnect(pn2) ;
       BUSUNLOCK(pn2);
-      return 0;  /* no more alarms is ok? */
+      if(ret == -ENODEV) return 0; /* no more alarms is ok */
+      return ret ;
     }
-#endif
     while (ret==0) {
         char ID[] = "XX";
         STATLOCK;
@@ -444,7 +445,8 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 //printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret);
     }
     BUSUNLOCK(pn2);
-    return ret ;  // always return "error"?
+    if(ret == -ENODEV) return 0; /* no more alarms is ok */
+    return ret ;
 }
 
 static int FS_branchoff( const struct parsedname * const pn ) {
@@ -473,51 +475,81 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     flags[0] = 0 ; /* start out with no flags set */
 
     BUSLOCK(pn2);
-        /* Operate at dev level, not filetype */
-        pn2->ft = NULL ;
-        /* Turn off all DS2409s */
-        FS_branchoff(pn2) ;
-        /* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
-        /* Actually it's probably stale information in the stateinfo structure */
-        (ret=BUS_select(pn2)) || (ret=BUS_first(sn,pn2)) ;
-        while (ret==0) {
-            char ID[] = "XX";
+    
+    /* Operate at dev level, not filetype */
+    pn2->ft = NULL ;
+    /* Turn off all DS2409s */
+    FS_branchoff(pn2) ;
+    /* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
+    /* Actually it's probably stale information in the stateinfo structure */
+    (ret=BUS_select(pn2)) || (ret=BUS_first(sn,pn2)) ;
+    if(ret) {
+      // a reconnect is eventually made in BUS_select or BUS_first
+      //BUS_reconnect(pn2) ;
+      BUSUNLOCK(pn2);
+      if(ret == -ENODEV) return 0; /* no more devices is ok */
+      return -EIO ;
+    }
+    while (ret==0) {
+        char ID[] = "XX";
 #if 0
-            {
-                char tmp[17];
-                bytes2string(tmp, sn, 8) ;
-                tmp[16] = 0;
-                printf("FS_realdir: add sn=%s to bus=%d\n", tmp, pn2->in->index);
-            }
+	{
+	  char tmp[17];
+	  bytes2string(tmp, sn, 8) ;
+	  tmp[16] = 0;
+	  printf("FS_realdir: add sn=%s to bus=%d\n", tmp, pn2->in->index);
+	}
 #endif
-            Cache_Add_Dir(sn,dindex,pn2) ;
-            ++dindex ;
-
-            memcpy( pn2->sn, sn, 8 ) ;
-            /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-            num2string( ID, sn[0] ) ;
-            FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
-//printf("DIR adapter=%d, element=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",pn2->in->index,dindex,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7]);
-
-            /* dirfunc() may need to call FS_fstat() and that will make a
-                checkpresence and BUS_lock if bus_nr isn't cached here at
-                once. Deadlock will occour. (owftpd needs it)
-            */
-            Cache_Add_Device(pn2->in->index, pn2);
-
-            DIRLOCK;
-                dirfunc( pn2 ) ;
-                flags[0] |= pn2->dev->flags ;
-            DIRUNLOCK;
-	    pn2->dev = NULL ; /* clear for the rest of directory listing */
-            (ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
-        }
+	Cache_Add_Dir(sn,dindex,pn2) ;
+	++dindex ;
+	
+	memcpy( pn2->sn, sn, 8 ) ;
+	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
+	num2string( ID, sn[0] ) ;
+	FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
+	//printf("DIR adapter=%d, element=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",pn2->in->index,dindex,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7]);
+	
+	/* dirfunc() may need to call FS_fstat() and that will make a
+	   checkpresence and BUS_lock if bus_nr isn't cached here at
+	   once. Deadlock will occour. (owftpd needs it)
+	*/
+	Cache_Add_Device(pn2->in->index, pn2);
+	
+	DIRLOCK;
+	dirfunc( pn2 ) ;
+	flags[0] |= pn2->dev->flags ;
+	DIRUNLOCK;
+	pn2->dev = NULL ; /* clear for the rest of directory listing */
+	(ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
+    }
     BUSUNLOCK(pn2);
+
+#ifdef OW_USB
+    if(dindex > 0) {
+      if((pn2->in->busmode == bus_usb) &&
+	 !pn2->in->connin.usb.ds1420_address[0]) {
+	/* No DS1420 found on the 1-wire bus, probably a single DS2480 adapter
+	 * save last found 1-wire device as a unique identifier. It's perhaps
+	 * not correct, but it will only be used if the adapter is disconnected
+	 * from the USB-bus.
+	 */
+#if 1
+	char tmp[17];
+	bytes2string(tmp, sn, 8);
+	tmp[16] = '\000';
+	LEVEL_DEFAULT("Set DS9490 [%s] unique id (no DS1420) to %s\n", pn2->in->name, tmp);
+#endif
+	memcpy(pn2->in->connin.usb.ds1420_address, sn, 8);
+      }
+    }
+#endif
+
     STATLOCK;
-        dir_main.entries += dindex ;
+    dir_main.entries += dindex ;
     STATUNLOCK;
     Cache_Del_Dir(dindex,pn2) ;  // end with a null entry
-    return 0 ;
+    if(ret == -ENODEV) return 0 ; // no more devices is ok */
+    return ret ;
 }
 
 void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn ) {

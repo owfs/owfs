@@ -209,8 +209,14 @@ int LibStart( void ) {
             LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname)
             ret = 1 ;
 #endif /* OW_USB */
-       // in->name should be set to something, even if DS9490_detect fails
-       if(!in->name) in->name = strdup("-1/-1") ;
+	    /* in->connin.usb.address should be set to identify the adapter
+	     * just in case it's disconnected. It's done in the
+	     * DS9490_next_both() if address is null. Perhaps not the best
+	     * way to handle it, but it's a test to fix the reconnected
+	     * adapter.
+	     */
+            // in->name should be set to something, even if DS9490_detect fails
+	    if(!in->name) in->name = strdup("-1/-1") ;
             break ;
         default:
             ret = 1 ;

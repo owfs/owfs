@@ -64,7 +64,6 @@ struct connection_in * NewIn( void ) {
             now->index = 0 ;
         }
         ++ indevices ;
-        now->connin.serial.speed = B9600;
 #ifdef OW_MT
     pthread_mutex_init(&(now->bus_mutex), pmattr);
     pthread_mutex_init(&(now->dev_mutex), pmattr);
