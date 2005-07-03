@@ -842,7 +842,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     if(buffer[13] == 0) {  // (ReadBufferStatus)
       /* Nothing found on the bus. Have to return something != 0 to avoid
        * getting stuck in loop later (which ends when ret!=0) */
-      return -EIO;
+      return -ENODEV;
     }
 
     buflen = 16 ;  // try read 16 bytes
