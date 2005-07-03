@@ -422,8 +422,6 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     FS_branchoff(pn2) ;
     (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(sn,pn2)) ;
     if(ret) {
-      // a reconnect is eventually made in BUS_select or BUS_first_alarm
-      //BUS_reconnect(pn2) ;
       BUSUNLOCK(pn2);
       if(ret == -ENODEV) return 0; /* no more alarms is ok */
       return ret ;
@@ -484,8 +482,6 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     /* Actually it's probably stale information in the stateinfo structure */
     (ret=BUS_select(pn2)) || (ret=BUS_first(sn,pn2)) ;
     if(ret) {
-      // a reconnect is eventually made in BUS_select or BUS_first
-      //BUS_reconnect(pn2) ;
       BUSUNLOCK(pn2);
       if(ret == -ENODEV) return 0; /* no more devices is ok */
       return -EIO ;

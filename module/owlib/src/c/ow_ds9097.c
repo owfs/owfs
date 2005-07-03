@@ -231,6 +231,8 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
       STATLOCK;
       DS9097_next_both_errors++;
       STATUNLOCK;
+      /* A minor "error" and should perhaps only return -1 to avoid
+       * reconnect */
       return -EIO ;
     }
     if(*serialnumber == 0x04) {

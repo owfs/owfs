@@ -615,6 +615,8 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
       STATLOCK;
       DS2480_next_both_errors++;
       STATUNLOCK;
+      /* A minor "error" and should perhaps only return -1 to avoid
+       * reconnect */
       return -EIO ;
     }
     // successful search
@@ -931,10 +933,14 @@ static int DS2480_send_cmd( const unsigned char * const cmd , const int len, con
         if( ((ret=DS2480_sendback_cmd(cmd,resp,len,pn))
           || (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0)) ) {
             STATLOCK;
-                if(ret == -EIO)
-                    DS2480_send_cmd_memcmp_errors++;
-                else
-                    DS2480_send_cmd_errors++;
+	    if(ret == -EIO) {
+	      DS2480_send_cmd_memcmp_errors++;
+	      /* A minor "error" and should perhaps only return -1 to avoid
+	       * reconnect */
+	      //ret = -1;
+	    } else {
+	      DS2480_send_cmd_errors++;
+	    }
             STATUNLOCK;
         }
     }

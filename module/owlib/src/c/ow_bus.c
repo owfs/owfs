@@ -182,17 +182,16 @@ int BUS_send_and_get( const unsigned char * const bussend, const size_t sendleng
 }
 
 static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
-    int rc = ret;
     STATLOCK;
     BUS_select_low_errors++;
     STATUNLOCK;
-    
-    if(ret < -1) {
-      /* Shorted 1-wire bus shouldn't cause a reconnect */
-      rc = BUS_reconnect( pn ) ;
-      if(rc) LEVEL_CONNECT("BUS_selection_error: BUS_reconnect, returned error = %d\n", rc ) ;
-    }
-    return rc;
+
+    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
+    if(ret >= -1) return ret;
+
+    ret = BUS_reconnect( pn ) ;
+    if(ret) LEVEL_CONNECT("BUS_selection_error returned error = %d\n", ret) ;
+    return ret ;
 }   
 
 //--------------------------------------------------------------------------
@@ -291,12 +290,19 @@ int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn )
     pn->si->LastFamilyDiscrepancy = -1;
     pn->si->LastDevice = 0 ;
     ret = BUS_next(serialnumber,pn) ;
-    if(ret == -EPROTO) {
+
+    /* BUS_reconnect() is called in DS9490_next_both().
+     * Should perhaps move up the logic to this place instead. */
+#if 0
+    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
+    if(ret >= -1) return ret;
+    {
       int ret2 = BUS_reconnect( pn ) ;
-      if(ret2) LEVEL_CONNECT( "BUS_first: BUS_reconnect, returned error = %d\n", ret2 ) ;
+      if(ret2) LEVEL_CONNECT("BUS_first returned error = %d\n", ret2) ;
     }
-    return ret;
-}   
+#endif
+    return ret ;
+}
 
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn ) {
     int ret ;
@@ -306,10 +312,17 @@ int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * cons
     pn->si->LastFamilyDiscrepancy = -1 ;
     pn->si->LastDevice = 0 ;
     ret = BUS_next_alarm(serialnumber,pn) ;
-    if(ret == -EPROTO) {
+
+    /* BUS_reconnect() is called in DS9490_next_both().
+     * Should perhaps move up the logic to this place instead. */
+#if 0
+    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
+    if(ret >= -1) return ret;
+    {
       int ret2 = BUS_reconnect( pn ) ;
-      if(ret2) LEVEL_CONNECT( "BUS_first_alarm: BUS_reconnect, returned error = %d\n", ret2 ) ;
+      if(ret2) LEVEL_CONNECT("BUS_first_alarm returned error = %d\n", ret2) ;
     }
+#endif
     return ret;
 }
 
