@@ -204,6 +204,12 @@ static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
    Return 0=good, else
     reset, send_data, sendback_data
  */
+/* Now you might wonder, why the low in BUS_select_low?
+   There is a vague thought that higher level selection -- specifically
+   for the DS9490 with it's intrinsic path commands might be implemented.
+   Obviously not yet.
+   Well, you asked
+*/
 int BUS_select_low(const struct parsedname * const pn) {
     int ret ;
     int ibranch ;
@@ -216,7 +222,7 @@ int BUS_select_low(const struct parsedname * const pn) {
 
     if(pn->in->use_overdrive_speed) {
         if((ret=BUS_testoverdrive(pn)) < 0) {
-	    BUS_selection_error(pn, ret) ;
+            BUS_selection_error(pn, ret) ;
             return ret ;
         } else {
             //printf("use overdrive speed\n");
@@ -236,18 +242,18 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
        /* Perhaps support overdrive here ? */
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
-	    BUS_selection_error(pn, ret) ;
+            BUS_selection_error(pn, ret) ;
             return ret ;
         }
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-	    BUS_selection_error(pn, ret) ;
+            BUS_selection_error(pn, ret) ;
             return ret ;
         }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
             STATLOCK;
-	    BUS_select_low_branch_errors++;
+                BUS_select_low_branch_errors++;
             STATUNLOCK;
             return -EINVAL ;
         }
@@ -256,17 +262,17 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
         if ( (ret=BUS_send_data(sent,1,pn)) ) {
-	    BUS_selection_error(pn, ret) ;
+            BUS_selection_error(pn, ret) ;
             return ret ;
         }
         if(sent[0] == 0x69) {
             if((ret=BUS_overdrive(MODE_OVERDRIVE, pn))< 0) {
-	        BUS_selection_error(pn, ret) ;
+                BUS_selection_error(pn, ret) ;
                 return ret ;
             }
         }
         if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
-	    BUS_selection_error(pn, ret) ;
+            BUS_selection_error(pn, ret) ;
             return ret ;
         }
         return ret ;
