@@ -60,7 +60,7 @@ struct filetype DS2436[] = {
     {"volts"     ,    12,  NULL  , ft_float      , ft_volatile, {f:FS_volts}    , {v:NULL},      NULL, } ,
     {"temperature",    12,  NULL , ft_temperature, ft_volatile, {f:FS_temp}     , {v:NULL},      NULL, } ,
 } ;
-DeviceEntry( 1B, DS2436 )
+DeviceEntry( 1B, DS2436 ) ;
 
 /* ------- Functions ------------ */
 

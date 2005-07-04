@@ -515,6 +515,8 @@ extern void * Tree[6] ;
 #define DEV_resume  0x0001
     /* can trigger an alarm */
 #define DEV_alarm   0x0002
+    /* support OVERDRIVE */
+#define DEV_ovdr    0x0004
     /* responds to simultaneous temperature convert 0x44 */
 #define DEV_temp    0x8000
     /* responds to simultaneous voltage convert 0x3C */
@@ -529,12 +531,12 @@ struct device {
     struct filetype * ft ;
 } ;
 
-#define DeviceHeader( chip )    extern struct device d_##chip ;
+#define DeviceHeader( chip )    extern struct device d_##chip
 //#define DeviceEntry( code , chip )  { #code, #chip, 0, NFT(chip), chip } ;
 /* Entries for struct device */
 /* Cannot set the 3rd element (number of filetypes) at compile time because
    filetype arrays aren;t defined at this point */
-#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  NFT(chip), chip } ;
+#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  NFT(chip), chip }
 #define DeviceEntry( code , chip )  DeviceEntryExtended( code, chip, 0 )
 
 /* Bad bad C library */

@@ -67,7 +67,7 @@ struct filetype DS2404[] = {
     {"udate"     ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
     {"date"      ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
 } ;
-DeviceEntry( 04, DS2404 )
+DeviceEntryExtended( 04, DS2404 , DEV_alarm ) ;
 
 struct filetype DS2404S[] = {
     F_STANDARD   ,
@@ -77,7 +77,7 @@ struct filetype DS2404S[] = {
     {"udate"     ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
     {"date"      ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
 } ;
-DeviceEntry( 84, DS2404S )
+DeviceEntryExtended( 84, DS2404S  , DEV_alarm ) ;
 
 /* ------- Functions ------------ */
 

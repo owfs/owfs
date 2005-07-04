@@ -64,7 +64,7 @@ struct filetype DS2409[] = {
     {"aux"       ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 1, } ,
     {"main"      ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 0, } ,
 } ;
-DeviceEntry( 1F, DS2409 )
+DeviceEntry( 1F, DS2409 ) ;
 
 /* ------- Functions ------------ */
 

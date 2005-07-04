@@ -57,7 +57,7 @@ struct filetype DS2890[] = {
     {"chargepump",     1,  NULL, ft_yesno  , ft_stable  , {y:FS_r_cp}       , {y:FS_w_cp}   , NULL, } ,
     {"wiper"     ,     3,  NULL,ft_unsigned, ft_stable  , {u:FS_r_wiper}    , {u:FS_w_wiper}, NULL, } ,
 } ;
-DeviceEntryExtended( 2C, DS2890, DEV_alarm )
+DeviceEntryExtended( 2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

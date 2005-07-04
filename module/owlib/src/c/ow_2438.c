@@ -83,7 +83,7 @@ struct filetype DS2438[] = {
     {"endcharge/udate"  ,  12, NULL , ft_unsigned  , ft_volatile, {u:FS_r_counter}, {u:FS_w_counter}, (void *) 0x14 , } ,
     {"endcharge/date"   ,  24, NULL , ft_date      , ft_volatile, {d:FS_r_date}   , {d:FS_w_date}   , (void *) 0x14 , } ,
 } ;
-DeviceEntryExtended( 26, DS2438, DEV_temp )
+DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_ovdr) ;
 
 /* ------- Functions ------------ */
 

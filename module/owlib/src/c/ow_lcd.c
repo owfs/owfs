@@ -90,7 +90,7 @@ struct filetype LCD[] = {
     {"line20"    ,    20,  &ALCD_L20, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 20 , } ,
     {"line40"    ,    40,  &ALCD_L40, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 40 , } ,
 } ;
-DeviceEntry( FF, LCD )
+DeviceEntryExtended( FF, LCD , DEV_alarm ) ;
 
 /* ------- Functions ------------ */
 

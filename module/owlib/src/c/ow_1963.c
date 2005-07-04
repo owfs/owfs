@@ -63,7 +63,7 @@ struct filetype DS1963S[] = {
     {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
     {"password"  ,     8,  NULL, ft_binary, ft_stable  ,       {v:NULL} , {b:FS_w_password}, NULL, } ,
 } ;
-DeviceEntryExtended( 18, DS1963S, DEV_resume )
+DeviceEntryExtended( 18, DS1963S, DEV_resume | DEV_ovdr ) ;
 
 struct aggregate A1963L = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS1963L[] = {
@@ -73,7 +73,7 @@ struct filetype DS1963L[] = {
     {"pages/count",   12,  &A1963L, ft_unsigned, ft_volatile  , {u:FS_counter},  {v:NULL}, NULL, } ,
     {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 1A, DS1963L )
+DeviceEntryExtended( 1A, DS1963L , DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

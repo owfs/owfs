@@ -56,7 +56,7 @@ struct filetype DS2405[] = {
     {"PIO"       ,     1,  NULL, ft_yesno , ft_stable  , {y:FS_r_PIO}  , {y:FS_w_PIO} , NULL, } ,
     {"sensed"    ,     1,  NULL, ft_yesno , ft_volatile, {y:FS_r_sense}, {v:NULL}     , NULL, } ,
 } ;
-DeviceEntry( 05, DS2405 )
+DeviceEntryExtended( 05, DS2405 , DEV_alarm ) ;
 
 /* ------- Functions ------------ */
 

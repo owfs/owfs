@@ -62,7 +62,7 @@ struct filetype DS2413[] = {
     {"sensed"    ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
     {"latch"     ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {v:NULL}     , NULL, } ,
 } ;
-DeviceEntryExtended( 3A, DS2413, DEV_resume )
+DeviceEntryExtended( 3A, DS2413, DEV_resume | DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

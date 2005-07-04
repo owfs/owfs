@@ -59,7 +59,7 @@ struct filetype DS2433[] = {
     {"pages/page",   32,  &A2433, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}  , NULL, } ,
     {"memory"    ,  512,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 23, DS2433 )
+DeviceEntryExtended( 23, DS2433 , DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

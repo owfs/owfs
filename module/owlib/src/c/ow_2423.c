@@ -71,7 +71,7 @@ struct filetype DS2423[] = {
 #endif /*OW_CACHE*/
     {"pages/count",   12,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            NULL, } ,
 } ;
-DeviceEntry( 1D, DS2423 )
+DeviceEntryExtended( 1D, DS2423 , DEV_ovdr ) ;
 
 /* Persistent storage */
 static struct internal_prop ip_cum = { "CUM", ft_persistent } ;

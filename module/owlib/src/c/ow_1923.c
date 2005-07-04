@@ -140,7 +140,7 @@ struct filetype DS1923[] = {
 #endif
 
 } ;
-DeviceEntryExtended( 41, DS1923, DEV_temp )
+DeviceEntryExtended( 41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume ) ;
 
 /* ------- Functions ------------ */
 

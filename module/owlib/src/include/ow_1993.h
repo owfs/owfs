@@ -19,10 +19,10 @@ $Id$
 
 /* ------- Structures ----------- */
 
-DeviceHeader( DS1992 )
-DeviceHeader( DS1993 )
-DeviceHeader( DS1995 )
-DeviceHeader( DS1996 )
+DeviceHeader( DS1992 ) ;
+DeviceHeader( DS1993 ) ;
+DeviceHeader( DS1995 ) ;
+DeviceHeader( DS1996 ) ;
 
 #endif
 

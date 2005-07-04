@@ -71,7 +71,7 @@ struct filetype DS2408[] = {
     {"set_alarm" ,     9,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
     {"por"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_por}    , {y:FS_w_por},    NULL, } ,
 } ;
-DeviceEntryExtended( 29, DS2408, DEV_alarm )
+DeviceEntryExtended( 29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

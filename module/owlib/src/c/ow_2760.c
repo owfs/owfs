@@ -205,7 +205,7 @@ struct filetype DS2760[] = {
     {"typeT/range_low"  , 12, NULL,ft_temperature, ft_volatile, {f:FS_rangelow} , {v:NULL}     , & type_t, } ,
     {"typeT/range_high" , 12, NULL,ft_temperature, ft_volatile, {f:FS_rangehigh}, {v:NULL}     , & type_t, } ,
 } ;
-DeviceEntry( 30, DS2760 )
+DeviceEntry( 30, DS2760 ) ;
 
 /* ------- Functions ------------ */
 

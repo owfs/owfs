@@ -69,7 +69,7 @@ struct filetype DS2415[] = {
     {"udate"     ,    12,  NULL, ft_unsigned, ft_second  , {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
     {"date"      ,    24,  NULL, ft_date    , ft_second  , {d:FS_r_date}   , {d:FS_w_date},    NULL, } ,
 } ;
-DeviceEntry( 24, DS2415 )
+DeviceEntry( 24, DS2415 ) ;
 
 struct filetype DS2417[] = {
     F_STANDARD   ,
@@ -80,7 +80,7 @@ struct filetype DS2417[] = {
     {"udate"     ,    12,  NULL, ft_unsigned,ft_second , {u:FS_r_counter}, {u:FS_w_counter},  NULL, } ,
     {"date"      ,    24,  NULL, ft_date  , ft_second  , {d:FS_r_date}   , {d:FS_w_date},     NULL, } ,
 } ;
-DeviceEntry( 27, DS2417 )
+DeviceEntry( 27, DS2417 ) ;
 
 static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, } ;
 

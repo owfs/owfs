@@ -66,7 +66,7 @@ struct filetype simultaneous[] = {
     {"temperature"     ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, (void *)simul_temp , } ,
     {"voltage"         ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, (void *)simul_volt , } ,
 } ;
-DeviceEntry( simultaneous, simultaneous )
+DeviceEntry( simultaneous, simultaneous ) ;
 
 /* ------- Functions ------------ */
 static int OW_skiprom( enum simul_type type, const struct parsedname * const pn );

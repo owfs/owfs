@@ -44,7 +44,6 @@ $Id$
 
 /* ------- Prototypes ----------- */
 
-/* DS2423 counter */
  bREAD_FUNCTION( FS_r_page ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  bREAD_FUNCTION( FS_r_memory ) ;
@@ -59,7 +58,7 @@ struct filetype DS2505[] = {
     {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
     {"pages/page",    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
 } ;
-DeviceEntry( 0B, DS2505 )
+DeviceEntry( 0B, DS2505 ) ;
 
 struct filetype DS1985U[] = {
     F_STANDARD   ,
@@ -67,7 +66,7 @@ struct filetype DS1985U[] = {
     {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
     {"pages/page",    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
 } ;
-DeviceEntry( 8B, DS1985U )
+DeviceEntry( 8B, DS1985U ) ;
 
 struct aggregate A2506 = { 256, ag_numbers, ag_separate, } ;
 struct filetype DS2506[] = {
@@ -76,7 +75,7 @@ struct filetype DS2506[] = {
     {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
     {"pages/page",    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
 } ;
-DeviceEntry( 0F, DS2506 )
+DeviceEntryExtended( 0F, DS2506 , DEV_ovdr ) ;
 
 struct filetype DS1986U[] = {
     F_STANDARD   ,
@@ -84,7 +83,7 @@ struct filetype DS1986U[] = {
     {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
     {"pages/page",    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
 } ;
-DeviceEntry( 8F, DS1986U )
+DeviceEntryExtended( 8F, DS1986U , DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

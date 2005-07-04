@@ -84,7 +84,7 @@ struct filetype DS1977[] = {
     {"use_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , (void*) 8, } ,
 #endif /*OW_CACHE*/
 } ;
-DeviceEntryExtended( 37, DS1977, DEV_resume )
+DeviceEntryExtended( 37, DS1977, DEV_resume | DEV_ovdr ) ; 
 
 /* Persistent storage */
 static struct internal_prop ip_rea = { "REA", ft_persistent } ;

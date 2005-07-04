@@ -59,7 +59,7 @@ struct filetype DS1992[] = {
     {"pages/page",    32,  &A1992, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"memory"    ,   128,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 08, DS1992 )
+DeviceEntry( 08, DS1992 ) ;
 
 struct aggregate A1993 = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS1993[] = {
@@ -68,7 +68,7 @@ struct filetype DS1993[] = {
     {"pages/page",    32,  &A1993, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 06, DS1993 )
+DeviceEntry( 06, DS1993 ) ;
 
 struct aggregate A1995 = { 64, ag_numbers, ag_separate, } ;
 struct filetype DS1995[] = {
@@ -77,7 +77,7 @@ struct filetype DS1995[] = {
     {"pages/page",    32,  &A1995, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"memory"    ,  2048,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 0A, DS1995 )
+DeviceEntryExtended( 0A, DS1995 , DEV_ovdr ) ;
 
 struct aggregate A1996 = { 256, ag_numbers, ag_separate, } ;
 struct filetype DS1996[] = {
@@ -86,7 +86,7 @@ struct filetype DS1996[] = {
     {"pages/page",    32,  &A1996, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
     {"memory"    ,  8192,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 0C, DS1996 )
+DeviceEntryExtended( 0C, DS1996 , DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 

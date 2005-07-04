@@ -192,7 +192,7 @@ struct filetype DS1921[] = {
     {"alarm_dow"      , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x020A, } ,
     {"alarm_trigger"  , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atrig}      , {u:FS_w_atrig}     , NULL, } ,
 } ;
-DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp )
+DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp | DEV_ovdr ) ;
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
 struct Version { unsigned int ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; unsigned int delay ;} ;

@@ -71,7 +71,7 @@ struct filetype DS1991[] = {
     {"pages/ident" ,    8,  &A1991, ft_binary, ft_volatile ,  {b:FS_r_ident} , {b:FS_w_ident}, NULL, } ,
     {"memory" ,       144,  NULL,   ft_binary, ft_volatile , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
 } ;
-DeviceEntry( 02, DS1991 )
+DeviceEntry( 02, DS1991 ) ;
 
 static char global_passwd[3][8] = { "", "", "" };
 

@@ -60,7 +60,7 @@ struct filetype DS2502[] = {
     {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
     {"pages/page",    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
 } ;
-DeviceEntry( 09, DS2502 )
+DeviceEntry( 09, DS2502 ) ;
 
 struct filetype DS1982U[] = {
     F_STANDARD   ,
@@ -71,7 +71,7 @@ struct filetype DS1982U[] = {
     {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
     {"pages/page",    32,  &A2502, ft_binary, ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
 } ;
-DeviceEntry( 89, DS1982U )
+DeviceEntry( 89, DS1982U ) ;
 
 /* ------- Functions ------------ */
 

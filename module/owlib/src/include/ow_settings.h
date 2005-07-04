@@ -18,7 +18,7 @@ $Id$
 #include "ow_xxxx.h"
 
 /* -------- Structures ---------- */
-DeviceHeader( set_cache )
+DeviceHeader( set_cache ) ;
 
 #endif /* OW_SETTINGS_H */
 

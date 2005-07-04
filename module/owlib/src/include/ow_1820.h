@@ -18,9 +18,9 @@ $Id$
 #include "ow_xxxx.h"
 
 /* -------- Structures ---------- */
-DeviceHeader( DS18S20 )
-DeviceHeader( DS18B20 )
-DeviceHeader( DS1822 )
+DeviceHeader( DS18S20 ) ;
+DeviceHeader( DS18B20 ) ;
+DeviceHeader( DS1822 ) ;
 
 #endif
 
