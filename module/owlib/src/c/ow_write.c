@@ -179,7 +179,7 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
         si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
         pnnext.in = pn->in->next ;
-        ret = FS_write_postparse(buf,size,offset,&pnnext) ;
+        ret = FS_write_seek(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
         return (void *)ret;
     }
