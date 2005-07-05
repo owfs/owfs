@@ -2,7 +2,7 @@
 
 bin_PROGRAMS = owftpd
 owftpd_SOURCES = file_list.c ftp_command.c ftp_listener.c ftp_session.c owftpd.c telnet_session.c watchdog.c ftp_error.c daemon_assert.c
-#owhttpd_LDADD = libow.la
+owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 # multithreading -- must be available on the library as well
 if ENABLE_MT
@@ -11,6 +11,10 @@ endif
 
 if HAVE_NEW_SS_FAMILY
 SS_FLAG = -DHAVE_NEW_SS_FAMILY
+endif
+
+if ENABLE_PROFILING
+PROFILING_FLAG = -pg
 endif
 
 AM_CFLAGS = -I../include \
@@ -29,9 +33,10 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          ${MT_FLAG} \
          ${SS_FLAG} \
+         ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low
+AM_LDFLAGS = -low ${PROFILING_FLAG}
 
 clean-generic:
 

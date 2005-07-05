@@ -2,7 +2,7 @@
 
 bin_PROGRAMS = owserver
 owserver_SOURCES = owserver.c
-#owhttpd_LDADD = libow.la
+owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 # multithreading -- must be available on the library as well
 if ENABLE_MT

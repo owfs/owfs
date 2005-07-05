@@ -2,6 +2,7 @@
 
 bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c
+owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 # multithreading -- must be available on the library as well
 if ENABLE_MT
