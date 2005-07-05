@@ -294,7 +294,6 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     int ret = 0 ;
-    struct parsedname pncopy ; /* fix from Jerry Scharf */
 #ifdef OW_MT
     pthread_t thread ;
     int threadbad = 1;
@@ -316,32 +315,27 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         pthread_exit((void *)eret);
         return (void *)eret;
     }
-    /* Make a copy (shallow) of pn to modify for directory entries */
-    memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, (void *)&pncopy ) ;
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, (void *)pn ) ;
     }
-#else
-    /* Make a copy (shallow) of pn to modify for directory entries */
-    memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 #endif /* OW_MT */
 
     /* is this a remote bus? */
-    if ( get_busmode(pncopy.in) == bus_remote ) {
-      //printf("FS_dir_seek: Call ServerDir %s\n", pncopy.path);
-        ret = ServerDir(dirfunc,&pncopy,flags) ;
+    if ( get_busmode(pn->in) == bus_remote ) {
+      //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
+        ret = ServerDir(dirfunc,pn,flags) ;
     } else { /* local bus */
         if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-            //printf("FS_dir_seek: Call FS_alarmdir %s\n", pncopy.path);
-            ret = FS_alarmdir(dirfunc,&pncopy) ;
+            //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
+            ret = FS_alarmdir(dirfunc,pn) ;
         } else {
             if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
-                //printf("FS_dir_seek: call FS_realdir bus %d\n", pncopy.in->index);
-                 ret = FS_realdir( dirfunc, &pncopy, flags ) ;
+                //printf("FS_dir_seek: call FS_realdir bus %d\n", pn->in->index);
+                 ret = FS_realdir( dirfunc, pn, flags ) ;
             } else {
-                //printf("FS_dir_seek: call FS_cache2real bus %d\n", pncopy.in->index);
-                ret = FS_cache2real( dirfunc, &pncopy, flags ) ;
+                //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
+                ret = FS_cache2real( dirfunc, pn, flags ) ;
             }
         }
     }
@@ -522,7 +516,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
 
 #ifdef OW_USB
     if(dindex > 0) {
-      if((pn2->in->busmode == bus_usb) &&
+      if((get_busmode(pn2->in) == bus_usb) &&
 	 !pn2->in->connin.usb.ds1420_address[0]) {
 	/* No DS1420 found on the 1-wire bus, probably a single DS2480 adapter
 	 * save last found 1-wire device as a unique identifier. It's perhaps

@@ -156,24 +156,25 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
     void * v ;
     /* Embedded function */
     void * Check2( void * vp ) {
+        struct parsedname *pn2 = (struct parsedname *)vp;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int eret;
 
-        (void) vp ;
-        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
-        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
+        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
+        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn->in->next ;
+        pnnext.in = pn2->in->next ;
         eret = CheckPresence_low(&pnnext) ;
         pthread_exit((void *)eret);
         return (void *)eret;
     }
-    
+
     if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, NULL ) ;
+        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
     }
 #endif /* OW_MT */
+
     //printf("CheckPresence_low:\n");
     if(get_busmode(pn->in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
@@ -189,7 +190,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
         BUSLOCK(pn);
-            ret = BUS_normalverify(pn) ;
+	ret = BUS_normalverify(pn) ;
         BUSUNLOCK(pn);
         if(ret == 0) {
             /* Device was found on this in-device, return it's index */
@@ -197,9 +198,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         } else {
             ret = -1;
         }
-      //printf("CheckPresence_low: BUS_normalverify(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
     }
-    //printf("CheckPresence_low: pn->in->index=%d ret=%d\n", pn->in->index, ret);
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */

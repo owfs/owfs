@@ -30,17 +30,10 @@ void LibSetup( void ) {
 //printf("CacheOpened\n");
 #endif /* OW_CACHE */
 
-    /* global mutex attribute */
-#ifdef OW_MT
- #ifdef __UCLIBC__
-    pthread_mutexattr_init(&mattr);
-    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-    pmattr = &mattr ;
- #endif /* __UCLIBC__ */
-#endif /* OW_MT */
-
+#ifndef __UCLIBC__
     /* Setup the multithreading synchronizing locks */
     LockSetup();
+#endif /* __UCLIBC__ */
 
     start_time = time(NULL) ;
     errno = 0 ; /* set error level none */
@@ -81,11 +74,11 @@ static int my_daemon(int nochdir, int noclose) {
 
     signal(SIGCHLD, SIG_DFL);
 
-#ifdef __UCLIBC_HAS_MMU__
+#if defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__)
     pid = fork();
-#else /* __UCLIBC_HAS_MMU__ */
+#else /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
     pid = vfork();
-#endif /* __UCLIBC_HAS_MMU__ */
+#endif /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
     switch(pid) {
     case -1:
         memset(&act, 0, sizeof(act));
@@ -110,11 +103,11 @@ static int my_daemon(int nochdir, int noclose) {
 
     /* Make certain we are not a session leader, or else we
      * might reacquire a controlling terminal */
-#ifdef __UCLIBC_HAS_MMU__
+#if defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__)
     pid = fork();
-#else /* __UCLIBC_HAS_MMU__ */
+#else /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
     pid = vfork();
-#endif /* __UCLIBC_HAS_MMU__ */
+#endif /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
     if(pid) {
       //printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
         _exit(0);
@@ -164,6 +157,38 @@ int LibStart( void ) {
     struct connection_in * in = indevice ;
     struct stat s ;
     int ret = 0 ;
+
+#ifdef __UCLIBC__
+    /* First call to pthread should be done after daemon() in uClibc, so
+     * I moved it here to avoid calling __pthread_initialize() */
+    if ( background ) {
+        if(
+#if defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__)
+            daemon(1, 0)
+#else /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+            my_daemon(1, 0)
+#endif /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+        ) {
+            LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+            return 1 ;
+        }
+        now_background = 1;
+    }
+
+    /* have to re-initialize pthread since the main-process is gone */
+    //__pthread_initial_thread_bos = NULL ;
+    //__pthread_initialize();
+
+    /* global mutex attribute */
+#ifdef OW_MT
+    pthread_mutexattr_init(&mattr);
+    pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+    //pmattr = &mattr ;
+#endif /* OW_MT */
+
+    /* Setup the multithreading synchronizing locks */
+    LockSetup();
+#endif /* __UCLIBC__ */
 
     if ( indevice==NULL ) {
         LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname)
@@ -219,35 +244,19 @@ int LibStart( void ) {
             ret = 1 ;
             break ;
         }
-        if (ret) {
-     BadAdapter_detect(in) ;
-   }
-
+        if (ret) BadAdapter_detect(in) ;
     } while ( (in=in->next) ) ;
     Asystem.elements = indevices ;
 
-
+#ifndef __UCLIBC__
     if ( background ) {
-        if(
-#if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
-            my_daemon(1, 0)
-#else /* defined(__UCLIBC__) */
-            daemon(1, 0)
-#endif /* defined(__UCLIBC__) */
-        ) {
+        if(daemon(1, 0)) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
         now_background = 1;
-
-#ifdef __UCLIBC__
- #ifdef OW_MT
-      /* have to re-initialize pthread since the main-process is gone */
-      __pthread_initial_thread_bos = NULL ;
-      __pthread_initialize();
-#endif /* OW_MT */
-#endif /* __UCLIBC__ */
     }
+#endif /* __UCLIBC__ */
 
     /* store the PID */
     pid_num = getpid() ;
@@ -307,10 +316,10 @@ static void segv_handler(int sig) {
 #ifdef OW_MT
     pthread_t tid = pthread_self() ;
     (void) sig ;
-    LEVEL_CONNECT("owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid)
+    LEVEL_DEFAULT("owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid)
 #else /* OW_MT */
     (void) sig ;
-    LEVEL_CONNECT("owlib: SIGSEGV received... pid=%d\n", pid)
+    LEVEL_DEFAULT("owlib: SIGSEGV received... pid=%d\n", pid)
 #endif /* OW_MT */
     _exit(1) ;
 }

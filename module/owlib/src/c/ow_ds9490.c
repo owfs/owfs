@@ -222,69 +222,62 @@ static int DS9490_open( const struct parsedname * const pn, char *name ) {
     int ret ;
     usb_dev_handle * usb ;
 
-    if(!pn->in->connin.usb.dev) {
-      /* Probably because reconnect failed last time */
-      return -ENODEV;
-    }
-
     if(pn->in->connin.usb.usb) {
       LEVEL_DEFAULT("DS9490_open: usb.usb is NOT closed before DS9490_open() ?");
       return -ENODEV;
     }
 
-    if ( (usb=usb_open(pn->in->connin.usb.dev)) ) {
-        pn->in->connin.usb.usb = usb ;
-        #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
-            usb_detach_kernel_driver_np(usb,0);
-        #endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-        if ( usb_set_configuration( usb, 1 )==0 && usb_claim_interface( usb, 0)==0 ) {
-            if ( usb_set_altinterface( usb, 3)==0 ) {
-	        LEVEL_CONNECT("Opened USB DS9490 adapter at %s.\n",name);
-		DS9490_setroutines( & pn->in->iroutines ) ;
-                pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
-                pn->in->adapter_name = "DS9490" ;
-
-		ret = 0;
+    if ( pn->in->connin.usb.dev && (usb=usb_open(pn->in->connin.usb.dev)) ) {
+      pn->in->connin.usb.usb = usb ;
+#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
+      usb_detach_kernel_driver_np(usb,0);
+#endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
+      if ( (ret=usb_set_configuration(usb, 1))==0 ) {
+	if( (ret=usb_claim_interface(usb, 0))==0 ) {
+	  if ( (ret=usb_set_altinterface(usb, 3))==0 ) {
+	    LEVEL_CONNECT("Opened USB DS9490 adapter at %s.\n",name);
+	    DS9490_setroutines( & pn->in->iroutines ) ;
+	    pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
+	    pn->in->adapter_name = "DS9490" ;
+	      
+	    ret = 0;
 #if 1
-		// clear endpoints
-		ret = usb_clear_halt(usb, DS2490_EP3) ||
-		  usb_clear_halt(usb, DS2490_EP2) ||
-		  usb_clear_halt(usb, DS2490_EP1) ;
-		if(ret) {
-		  LEVEL_DEFAULT("DS9490_open: usb_clear_halt failed ret=%d\n", ret);
-		}
+	    // clear endpoints
+	    ret = usb_clear_halt(usb, DS2490_EP3) ||
+	      usb_clear_halt(usb, DS2490_EP2) ||
+	      usb_clear_halt(usb, DS2490_EP1) ;
+	    if(ret) {
+	      LEVEL_DEFAULT("DS9490_open: usb_clear_halt failed ret=%d\n", ret);
+	    }
 #endif
-
-                if(!ret) ret = DS9490_setup_adapter(pn) || DS9490_overdrive(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
-                if(!ret) return 0 ; /* Everything is ok */
-                LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",name)
-            } else {
-		LEVEL_CONNECT("Failed to configure alt interface on USB DS9490 adapter at %s.\n",name);
-            }
-            ret = usb_release_interface( usb, 0) ;
-	    /* It might already be closed? (returning -ENODEV)
-	     * I have seen problem with calling usb_close() twice, so we
-	     * might perhaps skip it if usb_release_interface() fails */
-	    if(!ret)
-	      usb_close( usb ) ;
-        } else {
-	    LEVEL_CONNECT("Failed to configure/claim interface on USB DS9490 adapter at %s.\n",name);
-
-	    usb_close( usb ) ;
-
-	    /* Don't know if we should forget this pointer forever... Perhaps
-	       it's a good idea and then find it again during a bus-serch */
-	    pn->in->connin.usb.dev = NULL;
-        }
-        pn->in->connin.usb.usb = NULL ;
+	    if(!ret) ret = DS9490_setup_adapter(pn) || DS9490_overdrive(MODE_NORMAL, pn) || DS9490_level(MODE_NORMAL, pn) ;
+	    if(!ret) {
+	      return 0 ; /* Everything is ok */
+	    }
+	    LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",name);
+	  } else {
+	    LEVEL_CONNECT("Failed to set alt interface on USB DS9490 adapter at %s.\n",name);
+	  }
+	  ret = usb_release_interface( usb, 0) ;
+	} else {
+	  LEVEL_CONNECT("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n",name, ret);
+	}
+      } else {
+	LEVEL_CONNECT("Failed to set configuration on USB DS9490 adapter at %s.\n",name);
+      }
+      usb_close( usb ) ;
+      pn->in->connin.usb.usb = NULL ;
     } else {
-      LEVEL_DEFAULT("Failed to open USB DS9490 adapter %s\n", name)
     }
+    pn->in->connin.usb.dev = NULL ; // this will force a re-scan next time
+    //LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
     return -ENODEV;
 }
 
-/* When the errors stop the USB device from functioning -- close and reopen */
+/* When the errors stop the USB device from functioning -- close and reopen.
+ * If it fails, re-scan the USB bus and search for the old adapter */
 static int DS9490_reconnect( const struct parsedname * const pn ) {
+    int ret ;
     STATLOCK;
     BUS_reconnect++;
     if ( !pn || !pn->in ) {
@@ -292,15 +285,34 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
       return -EIO;
     }
     pn->in->bus_reconnect++;
+
+    /* Have to protect this function and since it's called in a very low-level
+     * function. When reconnect is in progress, a new reconnect shouldn't
+     * be initiated by the same thread. */
+    if(pn->in->reconnect_in_progress) {
+      STATUNLOCK;
+      return -EIO;
+    }
+    pn->in->reconnect_in_progress = 1 ;
     STATUNLOCK;
+
+    //LEVEL_CONNECT("USB DS9490 adapter reconnect\n", pn->in->name);
+
+    /* Have to protect usb_find_busses() and usb_find_devices() with
+     * a lock since libusb could crash if 2 threads call it at the same time.
+     * It's not called until DS9490_redetect_low(), but I lock here just
+     * to be sure DS9490_close() and DS9490_open() get one try first. */
+    RECONNECTLOCK;
 
     /* close and open if there were any existing USB adapter */
     DS9490_close(pn->in);
     if(!DS9490_open( pn, (pn->in->name ? pn->in->name : "?/?") )) {
+      RECONNECTUNLOCK;
+      pn->in->reconnect_in_progress = 0 ;
       LEVEL_DEFAULT("USB DS9490 adapter at %s reconnected\n", pn->in->name);
       return 0 ;
     }
-    //LEVEL_DEFAULT("Failed to reconnect USB DS9490 adapter!\n");
+    //LEVEL_CONNECT("Failed to reopen USB DS9490 adapter!\n");
     STATLOCK;
     BUS_reconnect_errors++;
     pn->in->bus_reconnect_errors++;
@@ -308,9 +320,13 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
 
     if(!DS9490_redetect_low(pn)) {
       LEVEL_DEFAULT("Found USB DS9490 adapter after USB rescan as [%s]!\n", pn->in->name);
-      return 0;
+      ret = 0;
+    } else {
+      ret = -EIO;
     }
-    return -EIO ;
+    RECONNECTUNLOCK;
+    pn->in->reconnect_in_progress = 0 ;
+    return ret ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
@@ -336,9 +352,9 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
 		    strcat(name, dev->filename) ;
                     pn->in->connin.usb.dev = dev ;
                     if ( !DS9490_open( pn, name ) ) {
-		        if(pn->in->name) free(pn->in->name);
-			pn->in->name = strdup(name);
-			return  0 ;
+		      if(pn->in->name) free(pn->in->name);
+		      pn->in->name = strdup(name);
+		      return  0 ;
 		    }
                     if(pn->in->name) free(pn->in->name) ;
                     pn->in->name = strdup("-1/-1") ;
@@ -353,13 +369,14 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
 }
 
 static int usbdevice_in_use(char *name) {
-  struct connection_in *c = indevice;
-  while(c) {
-    if(c->busmode == bus_usb) {
-      if(c->name && !strcmp(c->name, name))
+  struct connection_in *in = indevice;
+  while(in) {
+    if(in->busmode == bus_usb) {
+      if(in->name && !strcmp(in->name, name)) {
 	return 1; // It seems to be in use already
+      }
     }
-    c = c->next;
+    in = in->next;
   }
   return 0; // not found in the current indevice-list
 }
@@ -373,6 +390,8 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
     int ret;
     char name[16];
 
+    //LEVEL_CONNECT("DS9490_redetect_low: name=%s", pn->in->name);
+
     /*
      * I don't think we need to call usb_init() or usb_find_busses() here.
      * They are already called once in DS9490_detect_low().
@@ -384,7 +403,6 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
     usb_init() ;
     usb_find_busses() ;
     usb_find_devices() ;
-
     for ( bus = usb_busses ; bus ; bus=bus->next ) {
         for ( dev=bus->devices ; dev ; dev=dev->next ) {
             if ( !(dev->descriptor.idVendor==0x04FA && dev->descriptor.idProduct==0x2490) ) continue;
@@ -392,20 +410,19 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 	    strcpy(name,bus->dirname) ;
 	    strcat(name,"/") ;
 	    strcat(name,dev->filename) ;
-	    //LEVEL_DEFAULT("Found %s, searching for %s\n", name, pn->in->name);
+	    //LEVEL_DEFAULT("Found %s, searching for %s\n",name,pn->in->name);
 	    
 	    if(usbdevice_in_use(name)) {
 	      continue;
 	    }
 	    pn->in->connin.usb.dev = dev ;
+
 	    if ( DS9490_open( pn, name ) ) {
 	      LEVEL_DEFAULT("Cant open USB adapter [%s], Find next...\n", name);
 	      pn->in->connin.usb.dev = NULL ;
 	      continue;
 	    }
 	    // pn->in->connin.usb.usb is set in DS9490_open().
-
-
 	    
 	    /* Do a quick directory listing and find the DS1420 id */
 	    (ret=BUS_select(pn)) || (ret=BUS_first(sn,pn)) ;
@@ -427,7 +444,6 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 	      // Yeah... We found the adapter again...
 	      if(pn->in->name) free(pn->in->name);
 	      pn->in->name = strdup(name);
-	      LEVEL_CONNECT("We found the adapter again as [%s]\n", name);
 	      return 0;
 	    }
 	    // Couldn't find correct ds1420 chip on this adapter
@@ -436,22 +452,25 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 	    pn->in->connin.usb.dev = NULL;
         }
     }
-    LEVEL_CONNECT("No available USB DS9490 adapter found\n");
+    //LEVEL_CONNECT("No available USB DS9490 adapter found\n");
     return -ENODEV ;
 }
 
 void DS9490_close(struct connection_in * in) {
     int ret;
     usb_dev_handle * usb = in->connin.usb.usb ;
+
     if ( usb ) {
-        //LEVEL_DEFAULT("DS9490_close() Release interface\n");
         ret = usb_release_interface( usb, 0) ;
-	if(ret) LEVEL_DEFAULT("Release interface failed ret=%d\n", ret);
+	if(ret) in->connin.usb.dev = NULL ; // force a re-scan
+	if(ret) LEVEL_CONNECT("Release interface failed ret=%d\n", ret);
+
 	/* It might already be closed? (returning -ENODEV)
 	 * I have seen problem with calling usb_close() twice, so we
 	 * might perhaps skip it if usb_release_interface() fails */
-        //if(!ret)
 	ret = usb_close( usb ) ;
+	if(ret) in->connin.usb.dev = NULL ; // force a re-scan
+	if(ret) LEVEL_CONNECT("usb_close() failed ret=%d\n", ret);
         in->connin.usb.usb = NULL ;
 	LEVEL_CONNECT("Closed USB DS9490 adapter at %s. ret=%d\n",in->name, ret);
     }
@@ -474,9 +493,9 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
     do {
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-        if ( (ret=usb_interrupt_read(usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
+        if ( (ret=usb_interrupt_read(usb,DS2490_EP1,buffer,(size_t)32,TIMEOUT_USB)) < 0 )
 #else
-        if ( (ret=usb_bulk_read(usb,DS2490_EP1,buffer,32,TIMEOUT_USB)) < 0 )
+	if ( (ret=usb_bulk_read(usb,DS2490_EP1,buffer,(size_t)32,TIMEOUT_USB)) < 0 )
 #endif
 	{
           STATLOCK;
@@ -585,7 +604,7 @@ static int DS9490_testoverdrive(const struct parsedname * const pn) {
 
 static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * const pn ) {
   int ret ;
-  unsigned int speed;
+  int speed;
   unsigned char sp = 0x3C;
   unsigned char resp ;
   int i ;
@@ -712,7 +731,7 @@ static int DS9490_read( unsigned char * const buf, const size_t size, const stru
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_read\n");
-    if ( (ret=usb_bulk_read(usb,DS2490_EP3,buf,size, TIMEOUT_USB )) > 0 ) {
+    if ((ret=usb_bulk_read(usb,DS2490_EP3,buf,(int)size,TIMEOUT_USB )) > 0) {
       return ret ;
     }
     //LEVEL_DEFAULT("DS9490_read error %d\n", ret);
@@ -724,7 +743,7 @@ static int DS9490_write( const unsigned char * const buf, const size_t size, con
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_write\n");
-    if ( (ret=usb_bulk_write(usb,DS2490_EP2,buf,size, TIMEOUT_USB )) > 0 ) {
+    if ((ret=usb_bulk_write(usb,DS2490_EP2,buf,(int)size,TIMEOUT_USB )) > 0) {
       return ret ;
     }
     //LEVEL_DEFAULT("DS9490_write error %d\n", ret);
@@ -743,7 +762,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
             || DS9490_sendback_data(&data[USB_FIFO_EACH],&resp[USB_FIFO_EACH],len-USB_FIFO_EACH,pn) ;
     }
 
-    if ( (ret=DS9490_write(data, len, pn)) < len ) {
+    if ( (ret=DS9490_write(data, (size_t)len, pn)) < len ) {
         //printf("USBsendback bulk write problem ret=%d\n", ret);
         STATLOCK;
         DS9490_sendback_data_errors++;
@@ -762,7 +781,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
         return ret ;
     }
 
-    if ( (ret=DS9490_read(resp, len, pn)) < 0 ) {
+    if ( (ret=DS9490_read(resp, (size_t)len, pn)) < 0 ) {
         //printf("USBsendback bulk read problem ret=%d\n", ret);
         STATLOCK;
 	DS9490_sendback_data_errors++;
@@ -796,7 +815,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     time_t endtime, now ;
     int ret ;
     int i ;
-    int buflen ;
+    size_t buflen ;
 
 //printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",si->AnyDevices, si->LastDevice);
 //printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
@@ -813,7 +832,8 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 //printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
 
 //printf("USBnextboth\n");
-    if ( (ret=DS9490_write(cb,8,pn)) < 8 ) {
+    buflen = 8;
+    if ( (ret=DS9490_write(cb, buflen, pn)) < 8 ) {
       //printf("USBnextboth bulk write problem = %d\n",ret);
         next_both_errors(pn, -EIO);
         return -EIO;

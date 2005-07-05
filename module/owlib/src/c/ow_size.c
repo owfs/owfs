@@ -128,7 +128,6 @@ int FS_size_remote( const struct parsedname * const pn ) {
 /* FS_size_seek produces the data that can vary: device lists, etc. */
 static int FS_size_seek( const struct parsedname * const pn ) {
     int ret = 0 ;
-    struct parsedname pncopy ;
 #ifdef OW_MT
     pthread_t thread ;
     int threadbad = 1;
@@ -155,15 +154,12 @@ static int FS_size_seek( const struct parsedname * const pn ) {
     }
 #endif /* OW_MT */
 
-    /* Make a copy (shallow) of pn to modify for directory entries */
-    memcpy( &pncopy, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-
     /* is this a remote bus? */
-    if ( get_busmode(pncopy.in) == bus_remote ) {
-        //printf("FS_size_seek call ServerSize pncopy.path=%s\n", pncopy.path);
-        ret = ServerSize( pncopy.path, &pncopy ) ;
+    if ( get_busmode(pn->in) == bus_remote ) {
+        //printf("FS_size_seek call ServerSize pn->path=%s\n", pn->path);
+        ret = ServerSize( pn->path, pn ) ;
     } else { /* local bus */
-        ret = FullFileLength( &pncopy ) ;
+        ret = FullFileLength( pn ) ;
     }
 
 #ifdef OW_MT

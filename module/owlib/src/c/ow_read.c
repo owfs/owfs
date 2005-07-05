@@ -211,16 +211,15 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 
     /* Embedded function */
     void * Read2( void * vp ) {
+        struct parsedname *pn2 = (struct parsedname *)vp;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int ret;
-
-        (void) vp ;
-        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
+        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
-        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
+        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn->in->next ;
+        pnnext.in = pn2->in->next ;
         ret = FS_read_seek(buf2,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
         return (void *)ret;
@@ -237,7 +236,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         return -ENOMEM;
     }
     if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, NULL ) ;
+        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, (void *)pn ) ;
     }
 #endif /* OW_MT */
 

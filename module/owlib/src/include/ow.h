@@ -117,6 +117,7 @@ extern int multithreading ;
     extern pthread_mutex_t fstat_mutex ;
     extern pthread_mutex_t simul_mutex ;
     extern pthread_mutex_t dir_mutex ;
+    extern pthread_mutex_t reconnect_mutex ;
     
     extern pthread_mutexattr_t * pmattr;
  #ifdef __UCLIBC__
@@ -135,8 +136,10 @@ extern int multithreading ;
     #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  )
     #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    )
     #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    )
-    #define INBUSLOCK(in)     pthread_mutex_lock(   &((in)->bus_mutex)  )
-    #define INBUSUNLOCK(in)   pthread_mutex_unlock( &((in)->bus_mutex)  )
+    #define RECONNECTLOCK  pthread_mutex_lock(  &reconnect_mutex    )
+    #define RECONNECTUNLOCK pthread_mutex_unlock(&reconnect_mutex    )
+    #define INBUSLOCK(in)  pthread_mutex_lock(   &((in)->bus_mutex)  )
+    #define INBUSUNLOCK(in) pthread_mutex_unlock( &((in)->bus_mutex)  )
 #ifdef __UCLIBC__
     #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
     #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
@@ -398,6 +401,9 @@ struct connection_in {
     pthread_mutex_t dev_mutex ;
     void * dev_db ;
 #endif /* OW_MT */
+    unsigned char reconnect_in_progress ;
+    /* Since reconnect is initiated in a very low-level function I have to
+     * add this to avoid a recursive reconnect attempt. */
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
     unsigned int bus_reconnect ;

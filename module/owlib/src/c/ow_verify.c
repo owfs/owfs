@@ -27,8 +27,7 @@ int BUS_alarmverify(const struct parsedname * const pn) {
     struct parsedname pncopy ;
     memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pncopy.dev = NULL ;
-    ret=BUS_select(&pncopy) ;
-    ret || (ret=BUS_send_data( &ec , 1,pn )) || (ret=BUS_verify(pn)) ;
+    (ret=BUS_select(&pncopy)) || (ret=BUS_send_data( &ec,1,pn )) || (ret=BUS_verify(pn));
     return ret ;
 }
 
@@ -47,9 +46,9 @@ int BUS_normalverify(const struct parsedname * const pn) {
     }
     memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pncopy.dev = NULL ;
-    ret=BUS_select(&pncopy) ;
-    ret || (ret=BUS_send_data( &fo , 1,pn )) || (ret=BUS_verify(pn)) ;
-    //printf("BUS_normalverify ret=%d\n", ret) ;
+
+    (ret=BUS_select(&pncopy)) || (ret=BUS_send_data( &fo,1,pn )) || (ret=BUS_verify(pn));
+    if(ret) LEVEL_DEFAULT("BUS_normalverify err1 ret=%d\n", ret) ;
     return ret ;
 }
 

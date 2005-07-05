@@ -22,6 +22,7 @@ pthread_mutex_t cache_mutex   = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t store_mutex   = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t fstat_mutex   = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t dir_mutex     = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t reconnect_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
@@ -45,6 +46,7 @@ void LockSetup( void ) {
     pthread_mutex_init(&store_mutex, pmattr);
     pthread_mutex_init(&fstat_mutex, pmattr);
     pthread_mutex_init(&dir_mutex, pmattr);
+    pthread_mutex_init(&reconnect_mutex, pmattr);
     pthread_mutex_init(&uclibc_mutex, pmattr);
  #endif /* UCLIBC */
 #endif /* OW_MT */

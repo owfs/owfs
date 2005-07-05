@@ -219,9 +219,8 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 #ifdef OW_MT
     struct connection_out * out_last = NULL;
     pthread_t thread ;
-#ifndef __UCLIBC__
     pthread_attr_t attr ;
-#endif /* __UCLIBC__ */
+    pthread_attr_t *attr_p = NULL ;
 #endif /* OW_MT */
 
     /* embedded function */
@@ -232,14 +231,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
     }
 
-    /* embedded function */
-    void RunAccepted( int rafd ) {
-        if ( rafd>=0 ) {
-            HandlerRoutine( rafd ) ;
-            close( rafd ) ;
-        }
-    }
-
 #ifdef OW_MT
     /* Embedded function */
     void * ConnectionThread( void * v3 ) {
@@ -247,17 +238,18 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         pthread_t thread2 ;
         /* Doubly Embedded function */
         void * AcceptThread( void * v2 ) {
-            int acceptfd ;
             struct connection_out *o2 = (struct connection_out *)v2;
-            acceptfd = accept( o2->fd, NULL, NULL ) ;
+            int acceptfd = accept( o2->fd, NULL, NULL ) ;
             ACCEPTUNLOCK(o2);
 	    if(acceptfd < 0) {
 	      STATLOCK;
 	      NET_accept_errors++;
 	      STATUNLOCK;
-	      LEVEL_DEFAULT("accept() error %d [%s]\n", errno, strerror(errno));
+	      LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+	    } else {
+	      HandlerRoutine(acceptfd) ;
+	      close(acceptfd);
 	    }
-            RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
             pthread_exit((void *)0);
 #endif /* VALGRIND */
@@ -266,20 +258,12 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 
         ToListen( out2 ) ;
         for(;;) {
- #ifdef VALGRIND
- #endif /* VALGRIND */
 	  ACCEPTLOCK(out2);
- #ifdef __UCLIBC__
-            if ( pthread_create( &thread2, NULL, AcceptThread, out2 ) ) Exit(1) ;
-  #ifndef VALGRIND
-	    pthread_detach(thread2);
-  #endif /* VALGRIND */
- #else /* __UCLIBC__ */
-            if ( pthread_create( &thread2, &attr, AcceptThread, out2 ) ) Exit(1) ;
- #endif /* __UCLIBC__ */
- #ifdef VALGRIND
-            pthread_join(thread2, NULL);
- #endif /* VALGRIND */
+	  if ( pthread_create( &thread2, attr_p, AcceptThread, out2 ) ) Exit(1) ;
+	  if(!attr_p) pthread_detach(thread2);
+#ifdef VALGRIND
+	  pthread_join(thread2, NULL);
+#endif /* VALGRIND */
         }
 	/* won't reach this usless we exit the loop above to shutdown
 	 * in a nice way */
@@ -290,13 +274,18 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 	return NULL;
     }
 
-
- #ifndef __UCLIBC__
     pthread_attr_init(&attr) ;
-  #ifndef VALGRIND
+#ifndef VALGRIND
+    /* For some reason we can't detach the threads when using
+     * valgrind. Just create and call pthread_join() at once */
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
-  #endif /* VALGRIND */
- #endif /* __UCLIBC__ */
+#endif /* VALGRIND */
+
+#ifndef __UCLIBC__
+    /* Seem to be some bug in uClibc since it's not possible to
+     * detach the new thread at once. */
+    attr_p = &attr;
+#endif /* __UCLIBC__ */
 
     /* find the last outdevice to make sure embedded function
      * return currect value */
@@ -304,17 +293,24 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     while ( out_last->next ) out_last = out_last->next ;
 
     while ( out->next ) {
- #ifdef __UCLIBC__
-        if ( pthread_create( &thread, NULL, ConnectionThread, out) ) Exit(1) ;
-        pthread_detach(thread);
- #else /* __UCLIBC__ */
-        if ( pthread_create( &thread, &attr, ConnectionThread, out) ) Exit(1) ;
- #endif /* __UCLIBC__ */
+        if ( pthread_create( &thread, attr_p, ConnectionThread, out) ) Exit(1) ;
+        if(!attr_p) pthread_detach(thread);
         out = out->next ;
     }
     ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
-    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
+    for ( ;; ) {
+      int acceptfd = accept(outdevice->fd,NULL,NULL);
+      if(acceptfd < 0) {
+	STATLOCK;
+	NET_accept_errors++;
+	STATUNLOCK;
+	LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+      } else {
+	HandlerRoutine(acceptfd) ;
+	close(acceptfd);
+      }
+    }
 #endif /* OW_MT */
 }
