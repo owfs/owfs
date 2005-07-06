@@ -175,15 +175,17 @@ int LibStart( void ) {
         now_background = 1;
     }
 
+#if 1
     /* have to re-initialize pthread since the main-process is gone */
-    //__pthread_initial_thread_bos = NULL ;
-    //__pthread_initialize();
+    __pthread_initial_thread_bos = NULL ;
+    __pthread_initialize();
+#endif
 
+#if 1
     /* global mutex attribute */
-#ifdef OW_MT
     pthread_mutexattr_init(&mattr);
     pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-    //pmattr = &mattr ;
+    pmattr = &mattr ;
 #endif /* OW_MT */
 
     /* Setup the multithreading synchronizing locks */
