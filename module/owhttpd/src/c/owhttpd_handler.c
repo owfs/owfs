@@ -520,14 +520,11 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
     /* Do command processing and make changes to 1-wire devices */
     if ( pn->dev!=&NoDevice && up->request && up->value && !readonly ) {
         struct parsedname pn2 ;
-#if 0
         struct stateinfo si ;
-	pn2.si = &si;
-#else
+
         memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
-	/* pn->path and pn->path_busless will be allocated and cause
-	 * memory leak here if FS_ParsedName_destroy() isn't called. */
-#endif
+	pn2.si = &si;
+
         strcat( linecopy , up->request ) ; /* add on requested file type */
 	//printf("Change data on %s to %s\n",linecopy,up->value) ;
         if ( FS_ParsedName(linecopy,&pn2)==0 && pn2.ft && pn2.ft->write.v ) {
@@ -551,6 +548,7 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
                 break;
             }
         }
+	FS_ParsedName_destroy(&pn2);
     }
 }
 

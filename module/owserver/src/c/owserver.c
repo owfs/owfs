@@ -154,7 +154,7 @@ void Handler( int fd ) {
             /* Parse the path string */
 
             if ( (cm.ret=FS_ParsedName( path, &pn )) ) {
-                //printf("Handler: Error parsedname %s\n", path);
+	        FS_ParsedName_destroy(&pn) ;
                 break ;
             }
 

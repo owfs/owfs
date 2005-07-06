@@ -206,10 +206,9 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else {
         got_entry = 0 ;
         while((path2 = FromServerAlloc( connectfd, &cm))) {
-	    if(got_entry) {
-	      // destroy the last parsed name
-	      FS_ParsedName_destroy( &pn2 ) ;
-	    } else
+	    if(got_entry)
+	      FS_ParsedName_destroy( &pn2 ) ;  // destroy the last parsed name
+	    else
 	      got_entry = 1 ;
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
             pn2.si = pn->si ; /* reuse stateinfo */

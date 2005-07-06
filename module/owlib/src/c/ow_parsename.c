@@ -43,7 +43,7 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
         free(pn->path_busless);
         pn->path_busless = NULL;
     }
-    if ( pn->in ) {
+    if ( pn->in && pn->si ) {
         if ( get_busmode(pn->in) != bus_remote ) {
             if ((SemiGlobal & ~BUSRET_MASK) != (pn->si->sg & ~BUSRET_MASK)) {
                 CACHELOCK;

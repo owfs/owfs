@@ -48,7 +48,6 @@ int BUS_normalverify(const struct parsedname * const pn) {
     pncopy.dev = NULL ;
 
     (ret=BUS_select(&pncopy)) || (ret=BUS_send_data( &fo,1,pn )) || (ret=BUS_verify(pn));
-    if(ret) LEVEL_DEFAULT("BUS_normalverify err1 ret=%d\n", ret) ;
     return ret ;
 }
 
