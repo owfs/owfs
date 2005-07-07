@@ -335,7 +335,10 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
     struct usb_device *dev ;
     int useusb = pn->in->fd ; /* fd holds the number of the adapter */
     int usbnum = 0 ;
-    char name[16];
+    char name[16] ;
+    unsigned char sn[8] ;
+    char id[17] ;
+    int ret ;
 
     usb_init() ;
     usb_find_busses() ;
@@ -351,15 +354,71 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
 		    strcat(name, "/") ;
 		    strcat(name, dev->filename) ;
                     pn->in->connin.usb.dev = dev ;
-                    if ( !DS9490_open( pn, name ) ) {
-		      if(pn->in->name) free(pn->in->name);
-		      pn->in->name = strdup(name);
-		      return  0 ;
+                    if ( DS9490_open( pn, name ) ) {
+		      if(pn->in->name) free(pn->in->name) ;
+		      pn->in->name = strdup("-1/-1") ;
+		      pn->in->connin.usb.dev = NULL ;
+		      return -EIO ;
 		    }
-                    if(pn->in->name) free(pn->in->name) ;
-                    pn->in->name = strdup("-1/-1") ;
-                    pn->in->connin.usb.dev = NULL ;
-                    return -EIO ;
+
+		    // clear it just in case nothing is found
+                    memset(pn->in->connin.usb.ds1420_address, 0, 8);
+                    memset(sn, 0, 8);
+                    /* Do a quick directory listing and find the DS1420 id */
+#if 0
+                    (ret=BUS_select(pn)) || (ret=BUS_first(sn,pn)) ;
+#else
+                    if(!(ret = BUS_select(pn))) {
+                      if((ret = BUS_first(sn,pn))) {
+                        LEVEL_DATA("BUS_first failed during connect [%s]\n", name);
+                      }
+                    } else {
+                      LEVEL_DATA("BUS_select failed during connect [%s]\n", name);
+                    }
+#endif
+                    while (ret==0) {
+                      if(error_level > 3) {
+                        bytes2string(id, sn, 8) ;
+                        id[16] = 0;
+                        LEVEL_DATA("Found device [%s] on adapter [%s]\n", id, name);
+                      }
+#if 0
+		      /* This test is actually made in DS9490_next_both() */
+                      if((sn[0] == 0x81) || (sn[0] == 0x01)) {
+                        /* accept the first ds1420 here and set as unique id */
+                        memcpy(pn->in->connin.usb.ds1420_address, sn, 8);
+                        break;
+                      }
+#endif
+
+		      /* Unique id is set... no use to loop any more */
+		      if(pn->in->connin.usb.ds1420_address[0]) break;
+
+                      (ret=BUS_select(pn)) || (ret=BUS_next(sn,pn)) ;
+                    }
+                    if(!pn->in->connin.usb.ds1420_address[0]) {
+                      /* There are still no unique id, set it to the last device if the
+                       * search above ended normally.  Eg. with -ENODEV */
+                      if((ret == -ENODEV) && sn[0]) {
+			bytes2string(id, sn, 8);
+			id[16] = '\000';
+                        LEVEL_DATA("No DS1420 found, so use device [%s] on [%s] instead\n", id, name);
+                        memcpy(pn->in->connin.usb.ds1420_address, sn, 8);
+                        ret = 0;
+                      }
+                    }
+		    if(ret == -ENODEV) ret = 0 ;
+
+                    if(ret == 0) {
+		      bytes2string(id, pn->in->connin.usb.ds1420_address, 8);
+		      id[16] = '\000';
+		      LEVEL_DEFAULT("Set DS9490 [%s] unique id to adapter [%s]", id, name);
+		    } else {
+		      LEVEL_CONNECT("Couldn't find ds1420 chip on this adapter [%s]\n", name);
+		    }
+		    if(pn->in->name) free(pn->in->name);
+		    pn->in->name = strdup(name);
+		    return 0;
                 }
             }
         }
@@ -449,13 +508,15 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 		id[16] = 0;
 		LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, name, id2);
 	      }
+#if 0
+	      /* This test is actually made in DS9490_next_both() too */
 	      if(!pn->in->connin.usb.ds1420_address[0] &&
 		 ((sn[0] == 0x81) || (sn[0] == 0x01))) {
-		/* User has never made a full directory search on the adapter,
-		 * so accept the first ds1420 here (if found) */
 		memcpy(pn->in->connin.usb.ds1420_address, sn, 8);
 		break;
 	      }
+#endif
+	      /* Unique id is set and match... no use to loop any more */
 	      if(!memcmp(sn, pn->in->connin.usb.ds1420_address, 8)) break;
 
 	      (ret=BUS_select(pn)) || (ret=BUS_next(sn,pn)) ;
@@ -828,7 +889,7 @@ static int next_both_errors( const struct parsedname * const pn, int ret ) {
     if(ret >= -1) return ret;
 
     ret = BUS_reconnect( pn ) ;
-    if(ret) LEVEL_CONNECT("next_both_erorrs returned error = %d\n", ret) ;
+    if(ret) LEVEL_DATA("next_both_erorrs: reconnect error = %d\n", ret) ;
     return ret ;
 }   
 
@@ -936,11 +997,13 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 	if(((*serialnumber == 0x81) || (*serialnumber == 0x01)) &&
 	   !pn->in->connin.usb.ds1420_address[0]) {
 	  /* We found a DS1420 which could identify the adapter as unique */
+#if 1
 	  char tmp[17];
 	  bytes2string(tmp, serialnumber, 8);
 	  tmp[16] = '\000';
-	  LEVEL_DEFAULT("Set DS9490 [%s] unique id to %s", pn->in->name, tmp);
+	  LEVEL_DEFAULT("Found a DS1420 device [%s]\n", tmp);
 	  memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
+#endif
 	}
 
 	if(*serialnumber == 0x04) {

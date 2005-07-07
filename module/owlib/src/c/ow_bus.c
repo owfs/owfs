@@ -190,7 +190,7 @@ static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
     if(ret >= -1) return ret;
 
     ret = BUS_reconnect( pn ) ;
-    if(ret) LEVEL_CONNECT("BUS_selection_error returned error = %d\n", ret) ;
+    if(ret) { LEVEL_DATA("BUS_selection_error: reconnect error = %d\n", ret) ; }
     return ret ;
 }   
 
