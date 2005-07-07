@@ -301,8 +301,6 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
     pn->in->reconnect_in_progress = 1 ;
     STATUNLOCK;
 
-    //LEVEL_CONNECT("USB DS9490 adapter reconnect\n", pn->in->name);
-
     /* Have to protect usb_find_busses() and usb_find_devices() with
      * a lock since libusb could crash if 2 threads call it at the same time.
      * It's not called until DS9490_redetect_low(), but I lock here just
@@ -599,6 +597,7 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
           STATLOCK;
           DS9490_wait_errors++;
           STATUNLOCK;
+	  LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
 	  return -EIO ;
 	}
 	if(!wait_for_idle) break ;
@@ -615,7 +614,7 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
 
 	if(ret > 16) break ; // we have some status byte to examine
 	if(++loops > 100) {
-	  //LEVEL_DEFAULT("DS9490_getstatus(): never got idle\n");
+	  LEVEL_DATA("DS9490_getstatus(): never got idle\n");
 	  return -ETIMEDOUT ;  // adapter never got idle
 	}
 	/* Since result seem to be on the usb bus very quick, I sleep
@@ -757,6 +756,8 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     if(!pn->in->connin.usb.usb || !pn->in->connin.usb.dev) {
       /* last reconnect probably failed and usb-handle is closed.
        * Try to reconnect again */
+      if(!pn->in->connin.usb.usb) LEVEL_DATA("DS9490_reset: usb.usb is null\n");
+      if(!pn->in->connin.usb.dev) LEVEL_DATA("DS9490_reset: usb.dev is null\n");
       if((ret = DS9490_reconnect(pn))) {
 	//LEVEL_DEFAULT("DS9490_reset: reconnect ret=%d\n", ret);
 	return ret;
@@ -783,10 +784,10 @@ static int DS9490_reset( const struct parsedname * const pn ) {
             COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE,
             ((pn->in->USpeed & MODE_OVERDRIVE)?ONEWIREBUSSPEED_OVERDRIVE:ONEWIREBUSSPEED_FLEXIBLE),
             NULL, 0, TIMEOUT_USB ))<0 ) {
-        //LEVEL_DEFAULT("DS9490_reset: error1 ret=%d\n", ret);
         STATLOCK;
         DS9490_reset_errors++;
         STATUNLOCK;
+	LEVEL_DATA("DS9490_reset: error sending reset ret=%d\n", ret);
         return -EIO ;  // fatal error... probably closed usb-handle
     }
 
@@ -803,8 +804,10 @@ static int DS9490_reset( const struct parsedname * const pn ) {
 	  /* Short detected, but otherwise no bigger "problem"?
 	   * Make sure 1-wires won't be scanned */
 	  pn->si->AnyDevices = 0;
+	  LEVEL_DATA("DS9490_reset: short detected\n", ret);
 	  return 0;
 	}
+	LEVEL_DATA("DS9490_reset: getstatus failed ret=%d\n", ret);
         return ret ;
     }
 
@@ -818,6 +821,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
 	if(val & COMMCMDERRORRESULT_NRS) {
 	  // empty bus detected, no presence pulse detected
 	  pn->si->AnyDevices = 0;
+	  LEVEL_DATA("DS9490_reset: no presense pulse detected\n");
 	}
       }
     }
