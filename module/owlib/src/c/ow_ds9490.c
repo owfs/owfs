@@ -389,6 +389,7 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
     unsigned char sn[8] ;
     int ret;
     char name[16];
+    char id2[17];
 
     //LEVEL_CONNECT("DS9490_redetect_low: name=%s", pn->in->name);
 
@@ -424,21 +425,48 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 	    }
 	    // pn->in->connin.usb.usb is set in DS9490_open().
 	    
+
+	    bytes2string(id2, pn->in->connin.usb.ds1420_address, 8) ;
+	    id2[16] = 0;
+
+	    memset(sn, 0, 8); // clear it just in case nothing is found
 	    /* Do a quick directory listing and find the DS1420 id */
-	    (ret=BUS_select(pn)) || (ret=BUS_first(sn,pn)) ;
-	    while (ret==0) {
 #if 0
-	      char id[17];
-	      char id2[17];
-	      bytes2string(id, sn, 8) ;
-	      id[16] = 0;
-	      bytes2string(id2, pn->in->connin.usb.ds1420_address, 8) ;
-	      id2[16] = 0;
-	      LEVEL_DEFAULT("Found device [%s] on adapter [%s] (want: %s)\n", id, name, id2);
+	    (ret=BUS_select(pn)) || (ret=BUS_first(sn,pn)) ;
+#else
+	    if(!(ret = BUS_select(pn))) {
+	      if((ret = BUS_first(sn,pn))) {
+		LEVEL_DATA("BUS_first failed during reconnect [%s]\n", name);
+	      }
+	    } else {
+	      LEVEL_DATA("BUS_select failed during reconnect [%s]\n", name);
+	    }
 #endif
+	    while (ret==0) {
+	      if(error_level > 3) {
+		char id[17];
+		bytes2string(id, sn, 8) ;
+		id[16] = 0;
+		LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, name, id2);
+	      }
+	      if(!pn->in->connin.usb.ds1420_address[0] &&
+		 ((sn[0] == 0x81) || (sn[0] == 0x01))) {
+		/* User has never made a full directory search on the adapter,
+		 * so accept the first ds1420 here (if found) */
+		memcpy(pn->in->connin.usb.ds1420_address, sn, 8);
+		break;
+	      }
 	      if(!memcmp(sn, pn->in->connin.usb.ds1420_address, 8)) break;
 
 	      (ret=BUS_select(pn)) || (ret=BUS_next(sn,pn)) ;
+	    }
+	    if(!pn->in->connin.usb.ds1420_address[0]) {
+	      /* There are still no unique id, set it to the last device if the
+	       * search above ended normally.  Eg. with -ENODEV */
+	      if((ret == -ENODEV) && sn[0]) {
+		memcpy(pn->in->connin.usb.ds1420_address, sn, 8);
+		ret = 0;
+	      }
 	    }
 	    if(ret == 0) {
 	      // Yeah... We found the adapter again...
@@ -447,7 +475,7 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 	      return 0;
 	    }
 	    // Couldn't find correct ds1420 chip on this adapter
-	    LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s]\n", name);
+	    LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s] (want: %s)\n", name, id2);
 	    DS9490_close(pn->in);
 	    pn->in->connin.usb.dev = NULL;
         }
@@ -805,6 +833,13 @@ static int next_both_errors( const struct parsedname * const pn, int ret ) {
 }   
 
 
+/*
+ * return 0       if success
+ * return -ENODEV if no more devices
+ * return -ENOENT if no devices at all
+ * return -EIO    on errors
+ */
+
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     unsigned char buffer[32] ;
     unsigned char * cb = pn->in->combuffer ;
@@ -872,7 +907,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
       /* Nothing found on the bus. Have to return something != 0 to avoid
        * getting stuck in loop in FS_realdir() and FS_alarmdir()
        * which ends when ret!=0 */
-      return -ENODEV;
+      return -ENOENT;
     }
 
     buflen = 16 ;  // try read 16 bytes
