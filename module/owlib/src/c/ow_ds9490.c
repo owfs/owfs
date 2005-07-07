@@ -178,8 +178,13 @@ int DS9490_detect( struct connection_in * in ) {
     FS_ParsedName(NULL,&pn) ;
     pn.in = in ;
 
+    /* No locking needed for this since it's not multithreaded yet */
+    in->reconnect_in_progress = 1 ;
+
     ret = DS9490_detect_low(&pn) ;
     if (ret==0) in->busmode = bus_usb ;
+
+    in->reconnect_in_progress = 0 ;
     return ret ;
 }
 
@@ -308,7 +313,9 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
     DS9490_close(pn->in);
     if(!DS9490_open( pn, (pn->in->name ? pn->in->name : "?/?") )) {
       RECONNECTUNLOCK;
+      STATLOCK;
       pn->in->reconnect_in_progress = 0 ;
+      STATUNLOCK;
       LEVEL_DEFAULT("USB DS9490 adapter at %s reconnected\n", pn->in->name);
       return 0 ;
     }
@@ -325,7 +332,9 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
       ret = -EIO;
     }
     RECONNECTUNLOCK;
+    STATLOCK;
     pn->in->reconnect_in_progress = 0 ;
+    STATUNLOCK;
     return ret ;
 }
 
