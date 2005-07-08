@@ -341,11 +341,13 @@ void set_signal_handlers( void (*exit_handler)(int errcode) ) {
         exit_handler(-1);
     }
 
+#if 0
     sa.sa_handler = segv_handler;
     if (sigaction(SIGSEGV, &sa, NULL) == -1) {
         LEVEL_DEFAULT("Cannot set exit signal handlers" )
         exit_handler(-1);
     }
+#endif
 
     sa.sa_handler = SIG_IGN;
     if(sigaction(SIGPIPE, &sa, NULL) == -1) {

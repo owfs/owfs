@@ -354,7 +354,6 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
     char id[17] ;
     int ret ;
     struct parsedname pncopy;
-    struct stateinfo si;
 
     usb_init() ;
     usb_find_busses() ;
@@ -384,7 +383,6 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
 		    /* We are looking for devices in the root (not the branch
 		     * pn eventually points to */
 		    memcpy(&pncopy, pn, sizeof(struct parsedname));
-		    pncopy.si = &si;
 		    pncopy.dev = NULL;
 		    pncopy.pathlength = 0;
 		    
@@ -475,7 +473,6 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
     char name[16];
     char id2[17];
     struct parsedname pncopy;
-    struct stateinfo si;
 
     //LEVEL_CONNECT("DS9490_redetect_low: name=%s", pn->in->name);
 
@@ -521,7 +518,6 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
 	    /* We are looking for devices in the root (not the branch
 	     * pn eventually points to */
 	    memcpy(&pncopy, pn, sizeof(struct parsedname));
-	    pncopy.si = &si;
 	    pncopy.dev = NULL;
 	    pncopy.pathlength = 0;
 
