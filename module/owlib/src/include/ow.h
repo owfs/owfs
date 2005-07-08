@@ -616,6 +616,7 @@ struct stateinfo {
     int LastFamilyDiscrepancy ; // for search
     int LastDevice ; // for search
     int AnyDevices ;
+    int ExtraReset ; // DS1994/DS2404 might need an extra reset
     struct devlock * lock ; // need to clear dev lock?
     uint32_t sg ; // more state info, packed for network transmission */
 } ;
