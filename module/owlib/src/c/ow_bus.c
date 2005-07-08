@@ -295,6 +295,7 @@ int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn )
     pn->si->LastDiscrepancy = -1;
     pn->si->LastFamilyDiscrepancy = -1;
     pn->si->LastDevice = 0 ;
+    pn->si->ExtraReset = 0 ;
 
     if ( !pn->si->AnyDevices ) {
       LEVEL_DATA("BUS_first: No data will be returned\n");
