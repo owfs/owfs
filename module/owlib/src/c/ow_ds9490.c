@@ -640,6 +640,7 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
       //printf("status=%X\n", buffer[i]);
       if(buffer[i] & COMMCMDERRORRESULT_SH) { // short detected
         //LEVEL_DEFAULT("Short detected on USB DS9490 adapter at %s.\n",pn->in->name)
+        LEVEL_DATA("DS9490_getstatus(): short detected\n");
         return -1;
       }
     }
@@ -767,6 +768,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     memset(buffer, 0, 32); 
  
     if((ret=DS9490_level(MODE_NORMAL, pn)) < 0) {
+	LEVEL_DATA("DS9490_reset: level failed ret=%d\n", ret);
         STATLOCK;
         DS9490_reset_errors++;
         STATUNLOCK;
@@ -796,8 +798,16 @@ static int DS9490_reset( const struct parsedname * const pn ) {
       UT_delay(5);
     }
 
-    if((ret=DS9490_getstatus(buffer,pn,0,0)) < 0) {
-        STATLOCK;
+    /* Should we wait for adapter to return idle here? */
+#if 0
+    // wait for idle
+    if((ret=DS9490_getstatus(buffer,pn,0,1)) < 0)
+#else
+    // dont wait for idle
+    if((ret=DS9490_getstatus(buffer,pn,0,0)) < 0)
+#endif
+      {
+	STATLOCK;
         DS9490_reset_errors++;
         STATUNLOCK;
 	if(ret == -1) {
@@ -836,7 +846,7 @@ static int DS9490_read( unsigned char * const buf, const size_t size, const stru
     if ((ret=usb_bulk_read(usb,DS2490_EP3,buf,(int)size,TIMEOUT_USB )) > 0) {
       return ret ;
     }
-    //LEVEL_DEFAULT("DS9490_read error %d\n", ret);
+    LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP3) ;
     return ret ;
 }
@@ -848,7 +858,7 @@ static int DS9490_write( const unsigned char * const buf, const size_t size, con
     if ((ret=usb_bulk_write(usb,DS2490_EP2,buf,(int)size,TIMEOUT_USB )) > 0) {
       return ret ;
     }
-    //LEVEL_DEFAULT("DS9490_write error %d\n", ret);
+    LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP2) ;
     return ret ;
 }
@@ -899,10 +909,14 @@ static int next_both_errors( const struct parsedname * const pn, int ret ) {
     STATUNLOCK;
 
     /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-    if(ret >= -1) return ret;
+    if(ret >= -1) {
+      LEVEL_DATA("next_both_erorrs: return %d\n", ret) ;
+      return ret;
+    }
+
 
     ret = BUS_reconnect( pn ) ;
-    if(ret) LEVEL_DATA("next_both_erorrs: reconnect error = %d\n", ret) ;
+    LEVEL_DATA("next_both_erorrs: reconnect = %d\n", ret) ;
     return ret ;
 }   
 
@@ -943,7 +957,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 //printf("USBnextboth\n");
     buflen = 8;
     if ( (ret=DS9490_write(cb, buflen, pn)) < 8 ) {
-      //printf("USBnextboth bulk write problem = %d\n",ret);
+        LEVEL_DATA("USBnextboth bulk write problem = %d\n",ret);
         next_both_errors(pn, -EIO);
         return -EIO;
     }
@@ -953,22 +967,25 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     // COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS
     // 0xF4 + +0x1 + 0x8 + 0x800 + 0x4000 = 0x48FD
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x48FD, 0x0100|search, NULL, 0, TIMEOUT_USB ))<0 ) {
-        //printf("USBnextboth control problem\n");
+        LEVEL_DATA("USBnextboth control problem ret=%d\n", ret);
         next_both_errors(pn, -EIO);
         return -EIO;
     }
 
     /* Wait for status max 200ms */
     if(gettimeofday(&tv, &tz)<0) return -1;
-    endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 200;
+    endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 500;
+    now = 0 ;
     do {
       // just get first status packet without waiting for not idle
       if((ret = DS9490_getstatus(buffer,pn,0,0)) < 0) {
+        LEVEL_DATA("USBnextboth getstatus returned ret=%d\n", ret);
 	break ;
       }
       for(i=0; i<ret; i++) {
 	if(buffer[16+i] != ONEWIREDEVICEDETECT) {
 	  // If other status then ONEWIREDEVICEDETECT we have failed
+	  LEVEL_DATA("USBnextboth status[%d]=%d (!=%d)\n", i, buffer[16+i], ONEWIREDEVICEDETECT);
 	  break;
 	}
       }
@@ -981,6 +998,8 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
       /* Nothing found on the bus. Have to return something != 0 to avoid
        * getting stuck in loop in FS_realdir() and FS_alarmdir()
        * which ends when ret!=0 */
+      if(now >= endtime) { LEVEL_DATA("USBnextboth: now > endtime\n"); }
+      else { LEVEL_DATA("USBnextboth: Bufferstatus == 0\n"); }
       return -ENOENT;
     }
 
@@ -1003,6 +1022,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         }
         if( CRC8(serialnumber,8) || (serialnumber[0] == 0) ) {
 	    /* this should not cause a reconnect, just some "minor" error */
+	    LEVEL_DATA("USBnextboth: CRC error\n");
 	    next_both_errors(pn, 0);
             return -EIO;
         }
@@ -1026,7 +1046,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         return 0;
     }
 
-    //printf("USBnextboth bulk read problem error=%d\n",ret);
+    LEVEL_DATA("USBnextboth: bulk read problem ret=%d\n", ret);
     next_both_errors(pn, -EIO);
     return -EIO ;
 }
