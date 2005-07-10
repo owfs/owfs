@@ -3,6 +3,7 @@
 bin_PROGRAMS = owpython
 
 owpython_SOURCES = ow_wrap.c
+owpython_DEPENDENCIES = ../../owlib/src/c/libow.la
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE

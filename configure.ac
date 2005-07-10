@@ -405,16 +405,16 @@ AC_ARG_ENABLE(mt,
     AC_MSG_RESULT([yes (default)])
 ])
 
+AC_SUBST(THREADS_LIBS)
 AC_SUBST(ENABLE_MT)
-
 if test "${ENABLE_MT}" = "true" ; then
     PTHREADS_CHECK_COMPILE
     AC_CACHE_CHECK(for pthreads, ac_cv_pthreads_flags, [
     ac_cv_pthreads_flags=""
     if test "$pthreads_ok" != "yes"; then
-        for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt; do
+        for flag in kthread pthread pthreads mthreads Kthread threads mt; do
             ac_save="$CFLAGS"
-            CFLAGS="$CFLAGS $flag"
+            CFLAGS="$CFLAGS -$flag"
         PTHREADS_CHECK_COMPILE
         CFLAGS="$ac_save"
 
@@ -427,7 +427,8 @@ if test "${ENABLE_MT}" = "true" ; then
 ])
     if test "$pthreads_ok" = "yes"; then
     ENABLE_MT=true
-    CFLAGS="$CFLAGS $ac_cv_pthreads_cflags"
+    CFLAGS="$CFLAGS -$ac_cv_pthreads_cflags"
+    THREADS_LIBS="-l$ac_cv_pthreads_cflags"
     else
         AC_CHECK_LIB(pthread,pthread_mutex_lock, ,[
             AC_MSG_WARN([libpthread not found, multithreading will be disabled])

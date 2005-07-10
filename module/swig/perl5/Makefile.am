@@ -1,6 +1,7 @@
 # $Id$
 
 bin_PROGRAMS = OW.pm
+OW_pm_DEPENDENCIES = ../../owlib/src/c/libow.la
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
@@ -26,6 +27,7 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
+         -DSKIP_SEARCH_H \
          -D_FILE_OFFSET_BITS=64 \
          ${CACHE_FLAG} \
          ${MT_FLAG} \

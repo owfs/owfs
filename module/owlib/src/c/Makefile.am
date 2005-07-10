@@ -107,6 +107,8 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          ${USB_FLAG}
 
+AM_LDFLAGS = ${PROFILING_FLAG} ${THREADS_LIBS}
+
 clean-generic:
 
 	@RM@ -f *~ .*~

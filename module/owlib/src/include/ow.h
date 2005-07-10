@@ -89,6 +89,10 @@ $Id$
 #include <ctype.h>
 #include <sys/file.h> /* for flock */
 #include <getopt.h> /* for long options */
+
+/* Can't include search.h when compiling owperl on Fedora Core 1. */
+#ifndef SKIP_SEARCH_H
+
 #ifndef __USE_GNU
  #define __USE_GNU
  #include <search.h>
@@ -96,6 +100,8 @@ $Id$
 #else /* __USE_GNU */
  #include <search.h>
 #endif /* __USE_GNU */
+
+#endif /* SKIP_SEARCH_H */
 
 /* Parport enabled uses two flags (one a holdover from the embedded work) */
 #ifdef USE_NO_PARPORT

@@ -31,7 +31,7 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low ${PROFILING_FLAG}
+AM_LDFLAGS = -low ${PROFILING_FLAG} ${THREADS_LIBS}
 
 clean-generic:
 

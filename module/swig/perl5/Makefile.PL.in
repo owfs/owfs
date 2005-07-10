@@ -6,7 +6,7 @@ WriteMakefile(
     'ABSTRACT'	=>	q[Perl interface to the 1-wire filesytem] ,
     'AUTHOR'	=>	q[Paul H Alfille <palfille@earthlink.net>] ,
 #    'VERSION'	=>	q[@VERSION@],
-    'DEFINE'    =>	q[@DEFS@],
+    'DEFINE'    =>	q[-DSKIP_SEARCH_H @DEFS@],
     'INC'       =>	q[-I../../owlib/src/include -I../../../src/include @CPPFLAGS@],
     'LIBS'      =>	q[-L../../owlib/src/c/.libs -low @LIBS@],
     'OBJECT'	=>	'ow_wrap.o',

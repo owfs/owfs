@@ -7,6 +7,7 @@ INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/inc
 lib_LTLIBRARIES = libowphp.la
 libowphp_la_LIBADD = $(top_builddir)/module/owlib/src/c/libow.la
 libowphp_la_LDFLAGS = -shared -shrext .so
+libowphp_la_DEPENDENCIES = ../../owlib/src/c/libow.la
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
