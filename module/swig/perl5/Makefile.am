@@ -33,13 +33,15 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
+AM_LDFLAGS = ${THREADS_LIBS}
+
 #noinst_DATA = .made_mod
 
 #.made_mod: owperl_wrap.c Makefile.perl
 #	$(MAKE) -fMakefile.perl
 #	touch $@
 
-ow_wrap.c: ../ow.i Makefile.perl
+ow_wrap.c: ../ow.i Makefile.perl ${OW_pm_DEPENDENCIES}
 	$(SWIG) -perl5 -o $@ ../ow.i
 
 Makefile.perl: Makefile.PL

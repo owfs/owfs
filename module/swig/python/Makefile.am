@@ -34,13 +34,15 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
+AM_LDFLAGS = ${THREADS_LIBS}
+
 #noinst_DATA = .made_mod
 
 #.made_mod: owperl_wrap.c Makefile.perl
 #	$(MAKE) -fMakefile.perl
 #	touch $@
 
-ow_wrap.c: ../ow.i
+ow_wrap.c: ../ow.i ${owpython_DEPENDENCIES}
 	$(SWIG) -python -o $@ ../ow.i
 
 owpython: ow_wrap.c setup.py

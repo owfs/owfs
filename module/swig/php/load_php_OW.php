@@ -10,7 +10,8 @@
  * interface file instead. 
  * ----------------------------------------------------------------------------- */
 
-$extensionFile = "/usr/lib/php4/20020429/php_OW.so";
+//$extensionFile = "/usr/lib/php4/20020429/php_OW.so";
+$extensionFile = "/usr/lib/php/modules/php_OW.so";
 
 //make sure that we are ABLE to load libraries
 if( !(bool)ini_get( "enable_dl" ) || (bool)ini_get( "safe_mode" ) ) 

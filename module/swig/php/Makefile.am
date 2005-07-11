@@ -5,9 +5,11 @@ INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/inc
 
 #use libtool to build the php extension
 lib_LTLIBRARIES = libowphp.la
-libowphp_la_LIBADD = $(top_builddir)/module/owlib/src/c/libow.la
-libowphp_la_LDFLAGS = -shared -shrext .so
+# libowphp_la_LIBADD = $(top_builddir)/module/owlib/src/c/libow.la
+# libowphp_la_DEPENDENCIES = $(top_builddir)/module/owlib/src/c/libow.la
+libowphp_la_LIBADD = ../../owlib/src/c/libow.la
 libowphp_la_DEPENDENCIES = ../../owlib/src/c/libow.la
+libowphp_la_LDFLAGS = -shared -shrext .so
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
@@ -38,10 +40,16 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
+AM_LDFLAGS = ${THREADS_LIBS}
+
 libowphp_la_SOURCES = ow_wrap.c
 
 ow_wrap.c: ../ow.i
 	$(SWIG) -php4 -o $@ ../ow.i
+
+install:
+	$(INSTALL) -d /usr/lib/php/modules/
+	ln -sf ${exec_prefix}/lib/libowphp.so /usr/lib/php/modules/php_OW.so
 
 CLEANFILES = *~ *.o ow_wrap.c OW.* php_OW.h
 
