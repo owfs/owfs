@@ -34,7 +34,7 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
-AM_LDFLAGS = ${THREADS_LIBS}
+AM_LDFLAGS = ${PTHREAD_LIBS}
 
 #noinst_DATA = .made_mod
 

@@ -40,7 +40,7 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
-AM_LDFLAGS = ${THREADS_LIBS}
+AM_LDFLAGS = ${PTHREAD_LIBS}
 
 libowphp_la_SOURCES = ow_wrap.c
 

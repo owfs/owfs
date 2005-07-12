@@ -20,6 +20,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "owhttpd.h"
+#include <limits.h>
 
 // #include <libgen.h>  /* for dirname() */
 
@@ -79,7 +80,6 @@ int handle_socket(FILE * out) {
     str = fgets(up.line, PATH_MAX, out);
     LEVEL_CALL("PreParse line=%s\n",up.line)
     URLparse( &up ) ; /* Braek up URL */
-    //printf("WLcmd: %s\nfile: %s\nrequest: %s\nvalue: %s\nversion: %s \n",up.cmd,up.file,up.request,up.value,up.version) ;
 
     /* read lines until blank */
     if (up.version) {
@@ -88,7 +88,7 @@ int handle_socket(FILE * out) {
         } while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
     }
 
-    LEVEL_CALL("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",up.cmd,up.file,up.request,up.value,up.version)
+    LEVEL_CALL("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",NULLSTRING(up.cmd),NULLSTRING(up.file),NULLSTRING(up.request),NULLSTRING(up.value),NULLSTRING(up.version))
     /*
      * This is necessary for some stupid *
      * * operating system such as SunOS

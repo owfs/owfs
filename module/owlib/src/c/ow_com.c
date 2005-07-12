@@ -12,7 +12,9 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+#ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
+#endif
 #include <termios.h>
 #include <syslog.h>
 #include <string.h>

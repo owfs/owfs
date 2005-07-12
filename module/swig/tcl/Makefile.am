@@ -59,7 +59,7 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\"
 
 
-AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${THREADS_LIBS}
+AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS}
 
 #SHLIB_LD = $(TCL_SHLIB_LD) -low $(LIBS)
 

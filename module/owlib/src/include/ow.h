@@ -64,15 +64,27 @@ $Id$
 //#define VALGRIND 1
 
 #define _FILE_OFFSET_BITS   64
+#ifdef HAVE_FEATURES_H
 #include <features.h>
+#endif
+#ifdef HAVE_FEATURE_TESTS_H
+#include <feature_tests.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h> /* for stat */
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h> /* for stat */
+#endif
+#include <ctype.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <dirent.h>
 #include <signal.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h> /* for bit twiddling */
+#endif
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -86,9 +98,23 @@ $Id$
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
-#include <ctype.h>
 #include <sys/file.h> /* for flock */
+#ifdef HAVE_GETOPT_H
 #include <getopt.h> /* for long options */
+#endif
+
+#include <sys/uio.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#include <netdb.h> /* addrinfo */
+
+#ifdef HAVE_SYS_MKDEV_H
+#include <sys/mkdev.h> /* for major() */
+#endif
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H
@@ -108,14 +134,12 @@ $Id$
     #undef OW_PARPORT
 #endif /* USE_NO_PARPORT */
 
+/* Include some compatibility functions */
+#include "compat.h"
+
 extern int multithreading ;
 #ifdef OW_MT
     #include <pthread.h>
-// #ifdef HAVE_SEMAPHORE_H
-//    #include <semaphore.h>
-// #else /* HAVE_SEMAPHORE_H */
-//    #include "sem.h"
-// #endif /* HAVE_SEMAPHORE_H */
 
     extern pthread_mutex_t stat_mutex ;
     extern pthread_mutex_t cache_mutex ;
@@ -179,31 +203,12 @@ extern int multithreading ;
 #ifdef OW_USB
     #include <usb.h>
 #endif /* OW_USB */
+
+#define NULLSTRING(x) ((x) ? (x):"")
 /*
     OW -- One Wire
     Global variables -- each invokation will have it's own data
 */
-
-#include <fcntl.h>
-#ifndef __USE_XOPEN
-#define __USE_XOPEN /* for strptime fuction */
-#include <time.h>
-#undef __USE_XOPEN /* for strptime fuction */
-#else
-#include <time.h>
-#endif
-#include <termios.h>
-#include <errno.h>
-#include <syslog.h>
-#include <ctype.h>
-#include <sys/file.h> /* for flock */
-#include <sys/stat.h> /* for stat */
-#include <sys/uio.h>
-#include <sys/types.h> /* for stat */
-#include <sys/socket.h>
-#include <getopt.h> /* for long options */
-#include <netinet/in.h>
-#include <netdb.h> /* addrinfo */
 
 /*
     OW -- Onw Wire
@@ -1137,23 +1142,7 @@ void BUS_unlock( const struct parsedname * pn ) ;
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->si->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
-#include <features.h>
-#ifdef __UCLIBC__
- #if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
-  #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000913
-/* tdestroy() is missing in older versions */
-void tdestroy_(void *vroot, void *freefct);
-#define tdestroy(a, b) tdestroy_((a), (b))
-/* Since syslog will hang forever with uClibc-0.9.19 if syslogd is not
- * running, then we don't use it unless we really wants it
- * WRT45G usually have syslogd running. uClinux-dist might not have it. */
-   #ifndef USE_SYSLOG
-    #define syslog(a,...)	{ /* ignore_syslog */ }
-    #define openlog(a,...)	{ /* ignore_openlog */ }
-    #define closelog()		{ /* ignore_closelog */ }
-   #endif
-  #endif    /* __UCLIBC__ */
- #endif   /* __UCLIBC__ */
-#endif  /* __UCLIBC__ */
+
+
 
 #endif /* OW_H */

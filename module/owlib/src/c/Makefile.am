@@ -1,6 +1,9 @@
 # $Id$
 
-OWLIB_SOURCE = ow_xxxx.c         \
+OWLIB_SOURCE = compat.c          \
+               getopt.c          \
+               getaddrinfo.c     \
+               ow_xxxx.c         \
                ow_none.c         \
                ow_1820.c         \
                ow_1921.c         \
@@ -101,13 +104,14 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
+         -D__EXTENSIONS__ \
          ${CACHE_FLAG} \
          ${MT_FLAG} \
          ${PARPORT_FLAG} \
          ${PROFILING_FLAG} \
          ${USB_FLAG}
 
-AM_LDFLAGS = ${PROFILING_FLAG} ${THREADS_LIBS}
+AM_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS}
 
 clean-generic:
 

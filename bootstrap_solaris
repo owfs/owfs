@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# Just in case you haven't noticed: configure takes a command line tail.
+LDFLAGS="-lsocket -lnsl"
+export LDFLAGS
+rm -rf *cache
+aclocal && autoheader && autoconf && automake && ./configure --disable-owperl --disable-owpython $* 

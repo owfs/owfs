@@ -66,7 +66,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     // Even on normal glibc, errno isn't cleared on good system calls
     errno = 0;
 
-    LEVEL_CALL("PARSENAME path=%s\n",path)
+    LEVEL_CALL("PARSENAME path=%s\n", NULLSTRING(path));
             
     if ( pn == NULL ) return -EINVAL ;
 
@@ -558,6 +558,9 @@ void UT_delay(const unsigned int len) {
       for(i=0; i<30; i++) j += i;
     }
 #else
+
+#ifdef HAVE_NANOSLEEP
+
     struct timespec s;
     struct timespec rem;
 
@@ -584,6 +587,13 @@ void UT_delay(const unsigned int len) {
 #ifdef __UCLIBC__
     errno = 0;  // clear errno in uclibc at least
 #endif
+
+#else  /* HAVE_NANOSLEEP */
+
+    usleep((unsigned long)len);
+
+#endif /* HAVE_NANOSLEEP */
+
 #endif
 }
 
@@ -608,6 +618,10 @@ void UT_delay_us(const unsigned long len) {
       for(i=0; i<10; i++) j += i;
     }
 #else
+
+
+#ifdef HAVE_NANOSLEEP
+
     struct timespec s;
     struct timespec rem;
 
@@ -634,5 +648,12 @@ void UT_delay_us(const unsigned long len) {
 #ifdef __UCLIBC__
     errno = 0;  // clear errno in uclibc at least
 #endif
+
+#else  /* HAVE_NANOSLEEP */
+
+    usleep((unsigned long)len*1000);
+
+#endif /* HAVE_NANOSLEEP */
+
 #endif
 }

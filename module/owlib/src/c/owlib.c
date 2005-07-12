@@ -39,12 +39,20 @@ void LibSetup( void ) {
     errno = 0 ; /* set error level none */
 }
 
-#if defined(__UCLIBC__) && !(defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
+#if defined(__UCLIBC__)
+ #if (defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
+  #define HAVE_DAEMON 1
+ #else
+  #undef HAVE_DAEMON
+ #endif
+#endif /* __UCLIBC__ */
 
+#ifndef HAVE_DAEMON
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 static void catchchild( int sig ) {
     pid_t pid;
@@ -61,24 +69,20 @@ static void catchchild( int sig ) {
 }
 
 /*
-  This is a test to implement daemon() with uClibc and without MMU...
-  I'm not sure it works correctly, so don't use it yet.
+  This is a test to implement daemon()
 */
 static int my_daemon(int nochdir, int noclose) {
     struct sigaction act;
     int pid;
     int fd;
 
-    //printf("owlib: Warning, my_daemon() is used instead of daemon().\n");
-    //printf("owlib: Run application with --foreground instead.\n");
-
     signal(SIGCHLD, SIG_DFL);
 
-#if defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__)
-    pid = fork();
-#else /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+#if defined(__UCLIBC__)
     pid = vfork();
-#endif /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+#else
+    pid = fork();
+#endif
     switch(pid) {
     case -1:
         memset(&act, 0, sizeof(act));
@@ -103,11 +107,11 @@ static int my_daemon(int nochdir, int noclose) {
 
     /* Make certain we are not a session leader, or else we
      * might reacquire a controlling terminal */
-#if defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__)
-    pid = fork();
-#else /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+#if defined(__UCLIBC__)
     pid = vfork();
-#endif /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+#else
+    pid = fork();
+#endif
     if(pid) {
       //printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
         _exit(0);
@@ -143,7 +147,7 @@ static int my_daemon(int nochdir, int noclose) {
 #endif /* 0 */
     return 0;
 }
-#endif /* __UCLIBC__ */
+#endif /* HAVE_DAEMON */
 
 #ifdef __UCLIBC__
 #ifdef OW_MT
@@ -163,11 +167,11 @@ int LibStart( void ) {
      * I moved it here to avoid calling __pthread_initialize() */
     if ( background ) {
         if(
-#if defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__)
+#ifdef HAVE_DAEMON
             daemon(1, 0)
-#else /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+#else
             my_daemon(1, 0)
-#endif /* __UCLIBC_HAS_MMU__ || __ARCH_HAS_MMU__ */
+#endif
         ) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
@@ -252,10 +256,17 @@ int LibStart( void ) {
 
 #ifndef __UCLIBC__
     if ( background ) {
+#ifdef HAVE_DAEMON
         if(daemon(1, 0)) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
+#else
+        if(my_daemon(1, 0)) {
+            LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+            return 1 ;
+        }
+#endif
         now_background = 1;
     }
 #endif /* __UCLIBC__ */

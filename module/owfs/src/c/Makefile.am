@@ -4,6 +4,14 @@ bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c
 owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
+if ENABLE_CACHE
+CACHE_FLAG = -DOW_CACHE
+endif
+
+if ENABLE_USB
+USB_FLAG = -DOW_USB
+endif
+
 # multithreading -- must be available on the library as well
 if ENABLE_MT
 MT_FLAG = -DOW_MT
@@ -29,11 +37,13 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
+         ${CACHE_FLAG} \
          ${MT_FLAG} \
+         ${USB_FLAG} \
          ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${THREADS_LIBS}
+AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS}
 
 clean-generic:
 

@@ -63,6 +63,7 @@ int ServerAddr(  struct connection_out * out ) {
 
     memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_flags = AI_PASSIVE ;
+    hint.ai_flags = 0 ;
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 

@@ -68,28 +68,6 @@ AC_SUBST(CCLD)
  
 
 
-
-# Include libpthread if multithreading is enabled
-#
-# This stream of line noise will hopefully find out the best way to get
-# to a threading kit. Logic came from APR, but this will still cross-compile
-AC_DEFUN([PTHREADS_CHECK_COMPILE], [
-AC_TRY_LINK( [
-#include <pthread.h>
-#include <stddef.h>
-static void *doit(void *ignored) { return ignored; }
-], [
-    pthread_t t;
-    pthread_mutex_t m;
-    pthread_mutex_init(&m, (pthread_mutexattr_t *)NULL);
-    pthread_mutex_lock(&m);
-    pthread_create(&t, (pthread_attr_t *)NULL, doit, NULL);
-], [
-    pthreads_ok="yes"
-], [
-    pthreads_ok="no"
-]) ])
-
 # Check if the modules are enabled
 
 #Check owfs
@@ -405,47 +383,229 @@ AC_ARG_ENABLE(mt,
     AC_MSG_RESULT([yes (default)])
 ])
 
-AC_SUBST(THREADS_LIBS)
+
+
+
+AC_DEFUN([ACX_PTHREAD], [
+AC_REQUIRE([AC_CANONICAL_HOST])
+AC_LANG_SAVE
+AC_LANG_C
+acx_pthread_ok=no
+
+# We used to check for pthread.h first, but this fails if pthread.h
+# requires special compiler flags (e.g. on True64 or Sequent).
+# It gets checked for in the link test anyway.
+
+# First of all, check if the user has set any of the PTHREAD_LIBS,
+# etcetera environment variables, and if threads linking works using
+# them:
+if test x"$PTHREAD_LIBS$PTHREAD_CFLAGS" != x; then
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        AC_MSG_CHECKING([for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS])
+        AC_TRY_LINK_FUNC(pthread_join, acx_pthread_ok=yes)
+        AC_MSG_RESULT($acx_pthread_ok)
+        if test x"$acx_pthread_ok" = xno; then
+                PTHREAD_LIBS=""
+                PTHREAD_CFLAGS=""
+        fi
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+fi
+
+# We must check for the threads library under a number of different
+# names; the ordering is very important because some systems
+# (e.g. DEC) have both -lpthread and -lpthreads, where one of the
+# libraries is broken (non-POSIX).
+
+# Create a list of thread flags to try.  Items starting with a "-" are
+# C compiler flags, and other items are library names, except for "none"
+# which indicates that we try without any flags at all, and "pthread-config"
+# which is a program returning the flags for the Pth emulation library.
+
+acx_pthread_flags="pthreads none -Kthread -kthread lthread -pthread -pthreads -mthreads pthread --thread-safe -mt pthread-config"
+
+# The ordering *is* (sometimes) important.  Some notes on the
+# individual items follow:
+
+# pthreads: AIX (must check this before -lpthread)
+# none: in case threads are in libc; should be tried before -Kthread and
+#       other compiler flags to prevent continual compiler warnings
+# -Kthread: Sequent (threads in libc, but -Kthread needed for pthread.h)
+# -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
+# lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
+# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads)
+# -pthreads: Solaris/gcc
+# -mthreads: Mingw32/gcc, Lynx/gcc
+# -mt: Sun Workshop C (may only link SunOS threads [-lthread], but it
+#      doesn't hurt to check since this sometimes defines pthreads too;
+#      also defines -D_REENTRANT)
+# pthread: Linux, etcetera
+# --thread-safe: KAI C++
+# pthread-config: use pthread-config program (for GNU Pth library)
+
+case "${host_cpu}-${host_os}" in
+        *solaris*)
+
+        # On Solaris (at least, for some versions), libc contains stubbed
+        # (non-functional) versions of the pthreads routines, so link-based
+        # tests will erroneously succeed.  (We need to link with -pthread or
+        # -lpthread.)  (The stubs are missing pthread_cleanup_push, or rather
+        # a function called by this macro, so we could check for that, but
+        # who knows whether they'll stub that too in a future libc.)  So,
+        # we'll just look for -pthreads and -lpthread first:
+
+        acx_pthread_flags="-pthread -pthreads pthread -mt $acx_pthread_flags"
+        ;;
+
+# We always want dependencies to libpthread.so on linux since some old
+# libc doesn't load libow when using perl.
+	*linux*)
+        acx_pthread_flags="-pthread $acx_pthread_flags"
+        PTHREAD_LIBS="-lpthread"
+        ;;
+esac
+
+if test x"$acx_pthread_ok" = xno; then
+for flag in $acx_pthread_flags; do
+
+        case $flag in
+                none)
+                AC_MSG_CHECKING([whether pthreads work without any flags])
+                ;;
+
+                -*)
+                AC_MSG_CHECKING([whether pthreads work with $flag])
+                PTHREAD_CFLAGS="$flag"
+                ;;
+
+		pthread-config)
+		AC_CHECK_PROG(acx_pthread_config, pthread-config, yes, no)
+		if test x"$acx_pthread_config" = xno; then continue; fi
+		PTHREAD_CFLAGS="`pthread-config --cflags`"
+		PTHREAD_LIBS="`pthread-config --ldflags` `pthread-config --libs`"
+		;;
+
+                *)
+                AC_MSG_CHECKING([for the pthreads library -l$flag])
+                PTHREAD_LIBS="-l$flag"
+                ;;
+        esac
+
+        save_LIBS="$LIBS"
+        save_CFLAGS="$CFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+
+        # Check for various functions.  We must include pthread.h,
+        # since some functions may be macros.  (On the Sequent, we
+        # need a special flag -Kthread to make this header compile.)
+        # We check for pthread_join because it is in -lpthread on IRIX
+        # while pthread_create is in libc.  We check for pthread_attr_init
+        # due to DEC craziness with -lpthreads.  We check for
+        # pthread_cleanup_push because it is one of the few pthread
+        # functions on Solaris that doesn't have a non-functional libc stub.
+        # We try pthread_create on general principles.
+        AC_TRY_LINK([#include <pthread.h>],
+                    [pthread_t th; pthread_join(th, 0);
+                     pthread_attr_init(0); pthread_cleanup_push(0, 0);
+                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
+                    [acx_pthread_ok=yes])
+
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+
+        AC_MSG_RESULT($acx_pthread_ok)
+        if test "x$acx_pthread_ok" = xyes; then
+                break;
+        fi
+
+        PTHREAD_LIBS=""
+        PTHREAD_CFLAGS=""
+done
+fi
+
+# Various other checks:
+if test "x$acx_pthread_ok" = xyes; then
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+
+        # Detect AIX lossage: threads are created detached by default
+        # and the JOINABLE attribute has a nonstandard name (UNDETACHED).
+        AC_MSG_CHECKING([for joinable pthread attribute])
+        AC_TRY_LINK([#include <pthread.h>],
+                    [int attr=PTHREAD_CREATE_JOINABLE;],
+                    ok=PTHREAD_CREATE_JOINABLE, ok=unknown)
+        if test x"$ok" = xunknown; then
+                AC_TRY_LINK([#include <pthread.h>],
+                            [int attr=PTHREAD_CREATE_UNDETACHED;],
+                            ok=PTHREAD_CREATE_UNDETACHED, ok=unknown)
+        fi
+        if test x"$ok" != xPTHREAD_CREATE_JOINABLE; then
+                AC_DEFINE(PTHREAD_CREATE_JOINABLE, $ok,
+                          [Define to the necessary symbol if this constant
+                           uses a non-standard name on your system.])
+        fi
+        AC_MSG_RESULT(${ok})
+        if test x"$ok" = xunknown; then
+                AC_MSG_WARN([we do not know how to create joinable pthreads])
+        fi
+
+        AC_MSG_CHECKING([if more special flags are required for pthreads])
+        flag=no
+        case "${host_cpu}-${host_os}" in
+                *-aix* | *-freebsd* | *-darwin*) flag="-D_THREAD_SAFE";;
+                *solaris* | *-osf* | *-hpux*) flag="-D_REENTRANT";;
+        esac
+        AC_MSG_RESULT(${flag})
+        if test "x$flag" != xno; then
+                PTHREAD_CFLAGS="$flag $PTHREAD_CFLAGS"
+        fi
+
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+
+        # More AIX lossage: must compile with cc_r
+        AC_CHECK_PROG(PTHREAD_CC, cc_r, cc_r, ${CC})
+else
+        PTHREAD_CC="$CC"
+fi
+
+AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(PTHREAD_CFLAGS)
+AC_SUBST(PTHREAD_CC)
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x"$acx_pthread_ok" = xyes; then
+        ifelse([$1],,AC_DEFINE(HAVE_PTHREAD,1,[Define if you have POSIX threads libraries and header files.]),[$1])
+        :
+else
+        acx_pthread_ok=no
+        $2
+fi
+AC_LANG_RESTORE
+])dnl ACX_PTHREAD
+
+
+
+
 AC_SUBST(ENABLE_MT)
 if test "${ENABLE_MT}" = "true" ; then
-    PTHREADS_CHECK_COMPILE
-    AC_CACHE_CHECK(for pthreads, ac_cv_pthreads_flags, [
-    ac_cv_pthreads_flags=""
-    if test "$pthreads_ok" != "yes"; then
-        for flag in kthread pthread pthreads mthreads Kthread threads mt; do
-            ac_save="$CFLAGS"
-            CFLAGS="$CFLAGS -$flag"
-        PTHREADS_CHECK_COMPILE
-        CFLAGS="$ac_save"
-
-        if test "$pthreads_ok" = "yes"; then
-            ac_cv_pthreads_cflags="$flag"
-            break
-        fi
-            done
-    fi
-])
-    if test "$pthreads_ok" = "yes"; then
-    ENABLE_MT=true
-    CFLAGS="$CFLAGS -$ac_cv_pthreads_cflags"
-    THREADS_LIBS="-l$ac_cv_pthreads_cflags"
+    ACX_PTHREAD
+    if test "$acx_pthread_ok" = "yes"; then
+	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
     else
-        AC_CHECK_LIB(pthread,pthread_mutex_lock, ,[
-            AC_MSG_WARN([libpthread not found, multithreading will be disabled])
-            ENABLE_MT=false
-            AC_SUBST(ENABLE_MT)
-        ])
-        if test "${ENABLE_MT}" = "true" ; then
-        PTHREADS_CHECK_COMPILE
-        if test "$pthreads_ok" != "yes"; then
-                AC_MSG_WARN([libpthread not found, multithreading will be disabled])
-        ENABLE_MT=false
-        fi
-        fi
+	ENABLE_MT=false
+	AC_SUBST(ENABLE_MT)
     fi
 fi
 
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
+
 
 #Check parallel port
 AC_MSG_CHECKING(if parport DS1410E is enabled)
@@ -483,11 +643,19 @@ AC_SUBST(ENABLE_PROFILING)
 
 AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
+AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
+case "${host_cpu}-${host_os}" in
+	*-aix* | *-freebsd* | *-darwin* | *solaris* | *-osf* | *-hpux*)
+		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
+		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
+	;;
+esac
+
 # Checks for header files.
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/time.h sys/types.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h])
+AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h linux/limits.h bits/netdb.h bits/siginfo.h])
 
 # owftpd section
 AC_SUBST(HAVE_NEW_SS_FAMILY)
@@ -519,14 +687,13 @@ AC_STRUCT_TM
 
 AC_FUNC_FORK
 #AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
 AC_FUNC_MKTIME
 #AC_FUNC_REALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([gettimeofday memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep])
+AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday memchr memset nanosleep select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
 
 # Process config.h.in
 
