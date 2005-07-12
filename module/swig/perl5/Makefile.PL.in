@@ -8,7 +8,7 @@ WriteMakefile(
 #    'VERSION'	=>	q[@VERSION@],
     'DEFINE'    =>	q[-DSKIP_SEARCH_H @DEFS@],
     'INC'       =>	q[-I../../owlib/src/include -I../../../src/include @CPPFLAGS@],
-    'LIBS'      =>	q[-L../../owlib/src/c/.libs -low @THREAD_LIBS@ @LIBS@],
+    'LIBS'      =>	q[-L../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
     'OBJECT'	=>	'ow_wrap.o',
     'NAME'      =>	'OW',
 ) ;
