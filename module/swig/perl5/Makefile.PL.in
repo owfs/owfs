@@ -6,8 +6,12 @@ WriteMakefile(
     'ABSTRACT'	=>	q[Perl interface to the 1-wire filesytem] ,
     'AUTHOR'	=>	q[Paul H Alfille <palfille@earthlink.net>] ,
 #    'VERSION'	=>	q[@VERSION@],
+# Avoid compilation problem for Fedora Core 1
     'DEFINE'    =>	q[-DSKIP_SEARCH_H @DEFS@],
     'INC'       =>	q[-I../../owlib/src/include -I../../../src/include @CPPFLAGS@],
+# Default value for LDDLFLAGS is $Config{lddlflags}="-shared -L/usr/local/lib"
+# but we want rpath to be @libdir@ or @exec_prefix@/lib
+    'LDDLFLAGS' =>      q[-shared -Wl,-L../../owlib/src/c/.libs -Wl,-rpath=@prefix@/lib],
     'LIBS'      =>	q[-L../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
     'OBJECT'	=>	'ow_wrap.o',
     'NAME'      =>	'OW',

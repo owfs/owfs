@@ -33,7 +33,7 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG} \
          ${USB_FLAG}
 
-AM_LDFLAGS = ${PTHREAD_LIBS}
+AM_LDFLAGS = -low ${PTHREAD_LIBS}
 
 #noinst_DATA = .made_mod
 
