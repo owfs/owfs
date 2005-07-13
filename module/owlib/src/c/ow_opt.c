@@ -14,18 +14,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#ifndef HAVE_GETOPT_H
-struct option {
-  char *name;
-  int has_arg;
-  int *flag;
-  int val;
-};
-# define no_argument            0
-# define required_argument      1
-# define optional_argument      2
-#endif
-
 const struct option owopts_long[] = {
     {"device",     required_argument,NULL,'d'},
     {"usb",        optional_argument,NULL,'u'},
