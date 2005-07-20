@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <stdarg.h>
 #include <arpa/inet.h>
-#include <linux/tcp.h>
+#include <netinet/tcp.h>
 
 /* _x_ must be a pointer to a sockaddr structure */
 
