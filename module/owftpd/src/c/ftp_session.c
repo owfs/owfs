@@ -2218,9 +2218,13 @@ static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b)
 {
     daemon_assert(a != NULL);
     daemon_assert(b != NULL);
+#ifdef INET6
     daemon_assert((SSFAM(a) == AF_INET) || (SSFAM(a) == AF_INET6));
     daemon_assert((SSFAM(b) == AF_INET) || (SSFAM(b) == AF_INET6));
-
+#else
+    daemon_assert((SSFAM(a) == AF_INET));
+    daemon_assert((SSFAM(b) == AF_INET));
+#endif
     if (SSFAM(a) != SSFAM(b)) {
         return 0;
     }
