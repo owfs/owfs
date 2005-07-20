@@ -8,6 +8,9 @@
 #include <owfs_config.h>
 #include <ow.h>
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 #include <sys/socket.h>
 #include <stdarg.h>
 #include <arpa/inet.h>
