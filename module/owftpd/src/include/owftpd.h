@@ -182,6 +182,10 @@ void daemon_assert_fail(const char *assertion,
                         int line,
                         const char *function);
 
+#ifndef __STRING
+#define __STRING(x) #x
+#endif
+
 #define daemon_assert(expr)                                                   \
            ((expr) ? 0 :                                                      \
             (daemon_assert_fail(__STRING(expr), __FILE__, __LINE__, __func__)))
