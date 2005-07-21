@@ -84,7 +84,22 @@
 # define __set_h_errno(x) (h_errno = (x))
 #endif
 
+#ifndef __set_errno
+#define __set_errno(x) (errno = (x))
+#endif
 
+#ifndef __set_h_errno
+#define __set_h_errno(x) (h_errno = (x))
+#endif
+
+
+#ifndef HAVE_INET_NTOP
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+#endif
+
+#ifndef HAVE_INET_PTON
+int inet_pton(int af, const char *src, void *dst);
+#endif
 
 #ifndef HAVE_GETADDRINFO
 

@@ -4,4 +4,4 @@
 LDFLAGS="-lsocket -lnsl"
 export LDFLAGS
 rm -rf *cache
-aclocal && autoheader && autoconf && automake && ./configure --disable-owperl --disable-owpython $* 
+aclocal && autoheader && autoconf && automake && ./configure --disable-owperl --disable-owpython --enable-owftpd $* 

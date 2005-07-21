@@ -145,169 +145,6 @@ static const struct addrinfo default_hints =
 { 0, PF_UNSPEC, 0, 0, 0, NULL, NULL, NULL };
 #endif
 
-#ifndef __set_errno
-#define __set_errno(x) (errno = (x))
-#endif
-
-#ifndef __set_h_errno
-#define __set_h_errno(x) (h_errno = (x))
-#endif
-
-
-#ifndef HAVE_INET_NTOP
-/* const char *
- * inet_ntop4(src, dst, size)
- *      format an IPv4 address
- * return:
- *      `dst' (as a const)
- * notes:
- *      (1) uses no statics
- *      (2) takes a u_char* not an in_addr as input
- * author:
- *      Paul Vixie, 1996.
- */
-static const char *
-inet_ntop4(const u_char *src, char *dst, size_t size)
-{
-  char tmp[sizeof ("255.255.255.255") + 1] = "\0";
-  int octet;
-  int i;
-
-  i = 0;
-  for (octet = 0; octet <= 3; octet++) {
-
-    if (src[octet] > 255) {
-      __set_errno (ENOSPC);
-      return (NULL);
-    }
-    tmp[i++] = '0' + src[octet] / 100;
-    if (tmp[i - 1] == '0') {
-      tmp[i - 1] = '0' + (src[octet] / 10 % 10);
-      if (tmp[i - 1] == '0') i--;
-    } else {
-      tmp[i++] = '0' + (src[octet] / 10 % 10);
-    }
-    tmp[i++] = '0' + src[octet] % 10;
-    tmp[i++] = '.';
-  }
-  tmp[i - 1] = '\0';
-
-  if (strlen (tmp) > size) {
-    __set_errno (ENOSPC);
-    return (NULL);
-  }
-
-  return strcpy(dst, tmp);
-}
-
-/* char *
- * inet_ntop(af, src, dst, size)
- *      convert a network format address to presentation format.
- * return:
- *      pointer to presentation format address (`dst'), or NULL (see errno).
- * author:
- *      Paul Vixie, 1996.
- */
-const char *
-inet_ntop(af, src, dst, size)
-     int af;
-     const void *src;
-     char *dst;
-     socklen_t size;
-{
-  switch (af) {
-  case AF_INET:
-    return (inet_ntop4(src, dst, size));
-#if __HAS_IPV6__
-  case AF_INET6:
-    return (inet_ntop6(src, dst, size));
-#endif
-  default:
-    __set_errno (EAFNOSUPPORT);
-    return (NULL);
-  }
-  /* NOTREACHED */
-}
-#endif
-
-#ifndef HAVE_INET_PTON
-/* int
- * inet_pton4(src, dst)
- *      like inet_aton() but without all the hexadecimal and shorthand.
- * return:
- *      1 if `src' is a valid dotted quad, else 0.
- * notice:
- *      does not touch `dst' unless it's returning 1.
- * author:
- *      Paul Vixie, 1996.
- */
-static int
-inet_pton4(const char *src, u_char *dst)
-{
-  int saw_digit, octets, ch;
-  u_char tmp[4], *tp;
-
-  saw_digit = 0;
-  octets = 0;
-  *(tp = tmp) = 0;
-  while ((ch = *src++) != '\0') {
-
-    if (ch >= '0' && ch <= '9') {
-      u_int new = *tp * 10 + (ch - '0');
-
-      if (new > 255)
-	return (0);
-      *tp = new;
-      if (! saw_digit) {
-	if (++octets > 4)
-	  return (0);
-	saw_digit = 1;
-      }
-    } else if (ch == '.' && saw_digit) {
-      if (octets == 4)
-	return (0);
-      *++tp = 0;
-      saw_digit = 0;
-    } else
-      return (0);
-  }
-  if (octets < 4)
-    return (0);
-  memcpy(dst, tmp, 4);
-  return (1);
-}
-
-/* int
- * inet_pton(af, src, dst)
- *      convert from presentation format (which usually means ASCII printable)
- *      to network format (which is usually some kind of binary format).
- * return:
- *      1 if the address was valid for the specified address family
- *      0 if the address wasn't valid (`dst' is untouched in this case)
- *      -1 if some other error occurred (`dst' is untouched in this case, too)
- * author:
- *      Paul Vixie, 1996.
- */
-int
-inet_pton(af, src, dst)
-     int af;
-     const char *src;
-     void *dst;
-{
-  switch (af) {
-  case AF_INET:
-    return (inet_pton4(src, dst));
-#if __HAS_IPV6__
-  case AF_INET6:
-    return (inet_pton6(src, dst));
-#endif
-  default:
-    __set_errno (EAFNOSUPPORT);
-    return (-1);
-  }
-  /* NOTREACHED */
-}
-#endif
 
 static int addrconfig (sa_family_t af)
 {
@@ -1147,4 +984,162 @@ gai_strerror (int code)
 }
 
 #endif /* HAVE_GETADDRINFO */
+
+
+
+#ifndef HAVE_INET_NTOP
+/* const char *
+ * inet_ntop4(src, dst, size)
+ *      format an IPv4 address
+ * return:
+ *      `dst' (as a const)
+ * notes:
+ *      (1) uses no statics
+ *      (2) takes a u_char* not an in_addr as input
+ * author:
+ *      Paul Vixie, 1996.
+ */
+static const char *
+inet_ntop4(const u_char *src, char *dst, size_t size)
+{
+  char tmp[sizeof ("255.255.255.255") + 1] = "\0";
+  int octet;
+  int i;
+
+  i = 0;
+  for (octet = 0; octet <= 3; octet++) {
+
+    if (src[octet] > 255) {
+      __set_errno (ENOSPC);
+      return (NULL);
+    }
+    tmp[i++] = '0' + src[octet] / 100;
+    if (tmp[i - 1] == '0') {
+      tmp[i - 1] = '0' + (src[octet] / 10 % 10);
+      if (tmp[i - 1] == '0') i--;
+    } else {
+      tmp[i++] = '0' + (src[octet] / 10 % 10);
+    }
+    tmp[i++] = '0' + src[octet] % 10;
+    tmp[i++] = '.';
+  }
+  tmp[i - 1] = '\0';
+
+  if (strlen (tmp) > size) {
+    __set_errno (ENOSPC);
+    return (NULL);
+  }
+
+  return strcpy(dst, tmp);
+}
+
+/* char *
+ * inet_ntop(af, src, dst, size)
+ *      convert a network format address to presentation format.
+ * return:
+ *      pointer to presentation format address (`dst'), or NULL (see errno).
+ * author:
+ *      Paul Vixie, 1996.
+ */
+const char *
+inet_ntop(af, src, dst, size)
+     int af;
+     const void *src;
+     char *dst;
+     socklen_t size;
+{
+  switch (af) {
+  case AF_INET:
+    return (inet_ntop4(src, dst, size));
+#if __HAS_IPV6__
+  case AF_INET6:
+    return (inet_ntop6(src, dst, size));
+#endif
+  default:
+    __set_errno (EAFNOSUPPORT);
+    return (NULL);
+  }
+  /* NOTREACHED */
+}
+#endif /* HAVE_INET_NTOP */
+
+
+#ifndef HAVE_INET_PTON
+/* int
+ * inet_pton4(src, dst)
+ *      like inet_aton() but without all the hexadecimal and shorthand.
+ * return:
+ *      1 if `src' is a valid dotted quad, else 0.
+ * notice:
+ *      does not touch `dst' unless it's returning 1.
+ * author:
+ *      Paul Vixie, 1996.
+ */
+static int
+inet_pton4(const char *src, u_char *dst)
+{
+  int saw_digit, octets, ch;
+  u_char tmp[4], *tp;
+
+  saw_digit = 0;
+  octets = 0;
+  *(tp = tmp) = 0;
+  while ((ch = *src++) != '\0') {
+
+    if (ch >= '0' && ch <= '9') {
+      u_int new = *tp * 10 + (ch - '0');
+
+      if (new > 255)
+	return (0);
+      *tp = new;
+      if (! saw_digit) {
+	if (++octets > 4)
+	  return (0);
+	saw_digit = 1;
+      }
+    } else if (ch == '.' && saw_digit) {
+      if (octets == 4)
+	return (0);
+      *++tp = 0;
+      saw_digit = 0;
+    } else
+      return (0);
+  }
+  if (octets < 4)
+    return (0);
+  memcpy(dst, tmp, 4);
+  return (1);
+}
+
+/* int
+ * inet_pton(af, src, dst)
+ *      convert from presentation format (which usually means ASCII printable)
+ *      to network format (which is usually some kind of binary format).
+ * return:
+ *      1 if the address was valid for the specified address family
+ *      0 if the address wasn't valid (`dst' is untouched in this case)
+ *      -1 if some other error occurred (`dst' is untouched in this case, too)
+ * author:
+ *      Paul Vixie, 1996.
+ */
+int
+inet_pton(af, src, dst)
+     int af;
+     const char *src;
+     void *dst;
+{
+  switch (af) {
+  case AF_INET:
+    return (inet_pton4(src, dst));
+#if __HAS_IPV6__
+  case AF_INET6:
+    return (inet_pton6(src, dst));
+#endif
+  default:
+    __set_errno (EAFNOSUPPORT);
+    return (-1);
+  }
+  /* NOTREACHED */
+}
+#endif /* HAVE_INET_PTON */
 

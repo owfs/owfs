@@ -693,7 +693,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday memchr memset nanosleep select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
+AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset nanosleep select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
 
 # Process config.h.in
 
