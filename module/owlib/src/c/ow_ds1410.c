@@ -33,6 +33,7 @@ static int DS1410_sendback_bits( const unsigned char * const outbits , unsigned 
 static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
 static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) ;
 static void DS1410_setroutines( struct interface_routines * const f ) ;
+static int DS1410_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) ;
 
 /* Data */
 #define DS1410_Bit0  (0xFC | 0x02 | 0x00 )
@@ -477,7 +478,7 @@ static int DS1410_write( const unsigned char * const bytes, const size_t num ) {
     int num8 = num<<3 ;
     if ( remain>0 ) return DS1410_write(bytes,UART_FIFO_SIZE>>3) || DS1410_write(&bytes[UART_FIFO_SIZE>>3],remain) ;
     for ( i=0;i<num8;++i) combuffer[i] = UT_getbit(bytes,i)?0xFF:0xC0;
-    return BUS_send_and_get(combuffer,num8,NULL,0) ;
+    return DS1410_send_and_get(combuffer,num8,NULL,0) ;
 }
 
 /* Assymetric */
@@ -492,7 +493,7 @@ static int DS1410_read( unsigned char * const byte, const int num ) {
     if ( remain > 0 ) {
         return DS1410_read( byte , UART_FIFO_SIZE>>3 ) || DS1410_read( &byte[UART_FIFO_SIZE>>3],remain) ;
     }
-    if ( (ret=BUS_send_and_get(NULL,0,combuffer,num8)) ) return ret ;
+    if ( (ret=DS1410_send_and_get(NULL,0,combuffer,num8)) ) return ret ;
     for ( i=0 ; i<num8 ; ++i ) UT_setbit(byte,i,combuffer[i]&0x01) ;
     return 0 ;
 }
@@ -505,7 +506,7 @@ int DS1410_sendback_bits( const unsigned char * const outbits , unsigned char * 
     int i ;
     if ( length > UART_FIFO_SIZE ) return DS1410_sendback_bits(outbits,inbits,UART_FIFO_SIZE)||DS1410_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
     for ( i=0 ; i<length ; ++i ) combuffer[i] = outbits[i] ? 0xFF : 0xC0 ;
-    if ( (ret= BUS_send_and_get(combuffer,length,inbits,length)) ) return ret ;
+    if ( (ret= DS1410_send_and_get(combuffer,length,inbits,length)) ) return ret ;
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
     return 0 ;
 }
@@ -645,7 +646,7 @@ static int DS1410_read_bits( unsigned char * const bits , const int length ) {
     int i, ret ;
     if ( length > UART_FIFO_SIZE ) return DS1410_read_bits(bits,UART_FIFO_SIZE)||DS1410_read_bits(&bits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
     memset( combuffer,0xFF,(size_t)length) ;
-    if ( (ret=BUS_send_and_get(combuffer,length,bits,length)) ) return ret ;
+    if ( (ret=DS1410_send_and_get(combuffer,length,bits,length)) ) return ret ;
     for ( i=0;i<length;++i) bits[i]&=0x01 ;
     return 0 ;
 }
@@ -664,5 +665,125 @@ static void DS1410_setroutines( struct interface_routines * const f ) {
     f->testoverdrive = NULL ;
     f->reconnect = DS1410_reconnect ;
 }
+
+/* Routine to send a string of bits and get another string back */
+/* This seems rather COM-port specific */
+/* Indeed, will move to DS9097 */
+static int DS1410_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
+    size_t gl = getlength ;
+    ssize_t r ;
+    size_t sl = sendlength ;
+    int rc ;
+
+    if ( sl > 0 ) {
+        /* first flush... should this really be done? Perhaps it's a good idea
+        * so read function below doesn't get any other old result */
+        COM_flush(pn);
+    
+        /* send out string, and handle interrupted system call too */
+        while(sl > 0) {
+            if(!pn->in) break;
+            r = write(pn->in->fd, &bussend[sendlength-sl], sl);
+            if(r < 0) {
+                if(errno == EINTR) {
+                    /* write() was interrupted, try again */
+                    STATLOCK;
+                    BUS_send_and_get_interrupted++;
+                    STATUNLOCK;
+                    continue;
+                }
+                break;
+            }
+            sl -= r;
+        }
+        if(pn->in) {
+            tcdrain(pn->in->fd) ; /* make sure everthing is sent */
+            gettimeofday( &(pn->in->bus_write_time) , NULL );
+        }
+        if(sl > 0) {
+            STATLOCK;
+            BUS_send_and_get_errors++;
+            STATUNLOCK;
+            return -EIO;
+        }
+        //printf("SAG written\n");
+    }
+    
+    /* get back string -- with timeout and partial read loop */
+    if ( busget && getlength ) {
+        while ( gl > 0 ) {
+            fd_set readset;
+            struct timeval tv;
+            //printf("SAG readlength=%d\n",gl);
+            if(!pn->in) break;
+#if 1
+                /* I can't imagine that 5 seconds timeout is needed???
+                * Any comments Paul ? */
+                tv.tv_sec = 5;
+                tv.tv_usec = 0;
+#else
+                tv.tv_sec = 0;
+                tv.tv_usec = 500000;  // 500ms
+#endif
+                /* Initialize readset */
+                FD_ZERO(&readset);
+                FD_SET(pn->in->fd, &readset);
+            
+                /* Read if it doesn't timeout first */
+                rc = select( pn->in->fd+1, &readset, NULL, NULL, &tv );
+                if( rc > 0 ) {
+                //printf("SAG selected\n");
+                    /* Is there something to read? */
+                    if( FD_ISSET( pn->in->fd, &readset )==0 ) {
+                        STATLOCK;
+                        BUS_send_and_get_errors++;
+                        STATUNLOCK;
+                        return -EIO ; /* error */
+                    }
+                    update_max_delay(pn);
+                    r = read( pn->in->fd, &busget[getlength-gl], gl ) ; /* get available bytes */
+                    //printf("SAG postread ret=%d\n",r);
+                    if (r < 0) {
+                        if(errno == EINTR) {
+                            /* read() was interrupted, try again */
+                            STATLOCK;
+                            BUS_send_and_get_interrupted++;
+                            STATUNLOCK;
+                            continue;
+                        }
+                        STATLOCK;
+                        BUS_send_and_get_errors++;
+                        STATUNLOCK;
+                        return r ;
+                    }
+                    gl -= r ;
+                } else if(rc < 0) { /* select error */
+                    if(errno == EINTR) {
+                        /* select() was interrupted, try again */
+                        STATLOCK;
+                        BUS_send_and_get_interrupted++;
+                        STATUNLOCK;
+                        continue;
+                    }
+                    STATLOCK;
+                    BUS_send_and_get_select_errors++;
+                    STATUNLOCK;
+                    return -EINTR;
+                } else { /* timed out */
+                    STATLOCK;
+                    BUS_send_and_get_timeout++;
+                    STATUNLOCK;
+                    return -EAGAIN;
+                }
+        }
+    } else {
+        /* I'm not sure about this... Shouldn't flush buffer if
+        user decide not to read any bytes. Any comments Paul ? */
+        //COM_flush(pn) ;
+    }
+    return 0 ;
+}
+
+
 
 #endif /* OW_PARPORT */

@@ -1089,7 +1089,6 @@ int BUS_sendout_cmd(const unsigned char * cmd , const int len, const struct pars
 int BUS_send_cmd(const unsigned char * const cmd , const int len, const struct parsedname * pn  ) ;
 int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const int len, const struct parsedname * pn  ) ;
 int BUS_send_data(const unsigned char * const data , const int len, const struct parsedname * pn  ) ;
-int BUS_send_and_get(const unsigned char * senddata, const size_t sendlength, unsigned char * getdate, const size_t getlength, const struct parsedname * pn ) ;
 int BUS_readin_data(unsigned char * const data , const int len, const struct parsedname * pn ) ;
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;

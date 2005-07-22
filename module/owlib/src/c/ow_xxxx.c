@@ -83,7 +83,7 @@ void update_max_delay(const struct parsedname * const pn) {
             STATUNLOCK;
         }
     }
-    /* BUS_send_and_get() call this function many times, therefor
+    /* DS9097(1410)_send_and_get() call this function many times, therefore
      * I reset bus_write_time after every calls */
     gettimeofday( &(pn->in->bus_write_time) , NULL );
     return;

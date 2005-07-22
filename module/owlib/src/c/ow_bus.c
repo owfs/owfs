@@ -38,14 +38,14 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
     } else {
         unsigned char resp[16] ;
         (ret=BUS_sendback_data( data, resp, len,pn )) ||  ((ret=memcmp(data, resp, (size_t) len))?-EPROTO:0) ;
-	if(ret) {
-	  STATLOCK;
-	    if(ret == -EPROTO)
-	      BUS_send_data_memcmp_errors++;
-	    else
-	      BUS_send_data_errors++;
-	  STATUNLOCK;
-	}
+        if(ret) {
+            STATLOCK;
+            if(ret == -EPROTO)
+                BUS_send_data_memcmp_errors++;
+            else
+                BUS_send_data_errors++;
+            STATUNLOCK;
+        }
     }
     return ret ;
 }
@@ -64,121 +64,6 @@ int BUS_readin_data( unsigned char * const data, const int len, const struct par
     STATUNLOCK;
   }
   return ret;
-}
-
-int BUS_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
-  size_t gl = getlength ;
-  ssize_t r ;
-  size_t sl = sendlength ;
-  int rc ;
-
-  if ( sl > 0 ) {
-    /* first flush... should this really be done? Perhaps it's a good idea
-     * so read function below doesn't get any other old result */
-    COM_flush(pn);
-
-    /* send out string, and handle interrupted system call too */
-    while(sl > 0) {
-      if(!pn->in) break;
-      r = write(pn->in->fd, &bussend[sendlength-sl], sl);
-      if(r < 0) {
-	if(errno == EINTR) {
-	  /* write() was interrupted, try again */
-	  STATLOCK;
-	      BUS_send_and_get_interrupted++;
-	  STATUNLOCK;
-	  continue;
-	}
-	break;
-      }
-      sl -= r;
-    }
-    if(pn->in) {
-      tcdrain(pn->in->fd) ; /* make sure everthing is sent */
-      gettimeofday( &(pn->in->bus_write_time) , NULL );
-    }
-    if(sl > 0) {
-      STATLOCK;
-          BUS_send_and_get_errors++;
-      STATUNLOCK;
-      return -EIO;
-    }
-    //printf("SAG written\n");
-  }
-
-  /* get back string -- with timeout and partial read loop */
-  if ( busget && getlength ) {
-    while ( gl > 0 ) {
-      fd_set readset;
-      struct timeval tv;
-      //printf("SAG readlength=%d\n",gl);
-      if(!pn->in) break;
-#if 1
-      /* I can't imagine that 5 seconds timeout is needed???
-       * Any comments Paul ? */
-      tv.tv_sec = 5;
-      tv.tv_usec = 0;
-#else
-      tv.tv_sec = 0;
-      tv.tv_usec = 500000;  // 500ms
-#endif
-      /* Initialize readset */
-      FD_ZERO(&readset);
-      FD_SET(pn->in->fd, &readset);
-
-      /* Read if it doesn't timeout first */
-      rc = select( pn->in->fd+1, &readset, NULL, NULL, &tv );
-      if( rc > 0 ) {
-	//printf("SAG selected\n");
-        /* Is there something to read? */
-        if( FD_ISSET( pn->in->fd, &readset )==0 ) {
-	  STATLOCK;
-	      BUS_send_and_get_errors++;
-	  STATUNLOCK;
-	  return -EIO ; /* error */
-	}
-	update_max_delay(pn);
-        r = read( pn->in->fd, &busget[getlength-gl], gl ) ; /* get available bytes */
-	//printf("SAG postread ret=%d\n",r);
-        if (r < 0) {
-	  if(errno == EINTR) {
-	    /* read() was interrupted, try again */
-	    STATLOCK;
-	        BUS_send_and_get_interrupted++;
-	    STATUNLOCK;
-	    continue;
-	  }
-	  STATLOCK;
-	  BUS_send_and_get_errors++;
-	  STATUNLOCK;
-	  return r ;
-	}
-        gl -= r ;
-      } else if(rc < 0) { /* select error */
-	if(errno == EINTR) {
-	  /* select() was interrupted, try again */
-	  STATLOCK;
-	  BUS_send_and_get_interrupted++;
-	  STATUNLOCK;
-	  continue;
-	}
-	STATLOCK;
-	BUS_send_and_get_select_errors++;
-	STATUNLOCK;
-        return -EINTR;
-      } else { /* timed out */
-	STATLOCK;
-	BUS_send_and_get_timeout++;
-	STATUNLOCK;
-        return -EAGAIN;
-      }
-    }
-  } else {
-    /* I'm not sure about this... Shouldn't flush buffer if
-       user decide not to read any bytes. Any comments Paul ? */
-    //COM_flush(pn) ;
-  }
-  return 0 ;
 }
 
 static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
