@@ -120,13 +120,13 @@ static int FS_w_page2D(const unsigned char *buf, const size_t size, const off_t 
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
-    unsigned char memread[] = {  0xF0, offset&0xFF, offset>>8, } ;
+static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn) {
+    unsigned char p[] = {  0xF0, offset&0xFF, offset>>8, } ;
     int ret ;
     //printf("reading offset=%d size=%d bytes\n", offset, size);
 
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( memread, 3,pn ) || BUS_readin_data( p,size,pn );
+        ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) || BUS_readin_data( data,size,pn );
     BUSUNLOCK(pn);
     if ( ret ) return 1;
 
