@@ -59,7 +59,7 @@ struct filetype DS2431[] = {
     F_STANDARD   ,
     {"pages"     ,    0,  NULL,   ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}       , NULL, } ,
     {"pages/page",   32,  &A2431, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page2D}, NULL, } ,
-    {"memory"    ,  512,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory2D}, NULL, } ,
+    {"memory"    ,  128,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory2D}, NULL, } ,
 } ;
 DeviceEntryExtended( 2D, DS2431 , DEV_ovdr | DEV_resume ) ;
 
