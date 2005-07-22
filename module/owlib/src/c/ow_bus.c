@@ -23,7 +23,7 @@ $Id$
 #define MODSEL_DATA                    0x00
 #define MODSEL_COMMAND                 0x02
 
-/** DS2480_send_data
+/** BUS_send_data
     Send a data and expect response match
     puts into data mode if needed.
     return 0=good
@@ -37,12 +37,13 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
         (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
     } else {
         unsigned char resp[16] ;
-        (ret=BUS_sendback_data( data, resp, len,pn )) ||  ((ret=memcmp(data, resp, (size_t) len))?-EPROTO:0) ;
-        if(ret) {
+        if ((ret=BUS_sendback_data( data, resp, len,pn ))) {
             STATLOCK;
-            if(ret == -EPROTO)
                 BUS_send_data_memcmp_errors++;
-            else
+            STATUNLOCK;
+        } else if ((ret=memcmp(data, resp, (size_t) len))) {
+            ret = -EPROTO ;
+            STATLOCK;
                 BUS_send_data_errors++;
             STATUNLOCK;
         }
@@ -60,7 +61,7 @@ int BUS_readin_data( unsigned char * const data, const int len, const struct par
   int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
   if(ret) {
     STATLOCK;
-    BUS_readin_data_errors++;
+        BUS_readin_data_errors++;
     STATUNLOCK;
   }
   return ret;
