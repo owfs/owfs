@@ -965,10 +965,8 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 
     /* DS1994/DS2404 might need an extra reset */
     if (si->ExtraReset) {
-      if(DS9490_reset(pn) < 0) {
-	si->LastDevice = 1 ;
-      }
-      si->ExtraReset = 0;
+        if(DS9490_reset(pn) < 0) si->LastDevice = 1 ;
+        si->ExtraReset = 0;
     }
 
     if ( si->LastDevice ) return -ENODEV ;
@@ -1002,52 +1000,52 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     /* Wait for status max 200ms */
     if(gettimeofday(&tv, &tz)<0) return -1;
     endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 500;
-    now = 0 ;
+    //now = 0 ;
     do {
-      // just get first status packet without waiting for not idle
-      if((ret = DS9490_getstatus(buffer,pn,0,0)) < 0) {
-        LEVEL_DATA("USBnextboth getstatus returned ret=%d\n", ret);
-	break ;
-      }
-      for(i=0; i<ret; i++) {
-	unsigned char val = buffer[16+i];
-	//printf("Status bytes: %X\n", val);
-	if(val != ONEWIREDEVICEDETECT) {
-	  // If other status then ONEWIREDEVICEDETECT we have failed
-	  LEVEL_DATA("USBnextboth status[%d]=0x%02X (!=%d) ret=%d\n", i, val, ONEWIREDEVICEDETECT, ret);
-	  // check for NRS bit (0x01)
-	  if(val & COMMCMDERRORRESULT_NRS) {
-	    // empty bus detected, no presence pulse detected
-	    LEVEL_DATA("USBnextboth: no presense pulse detected ??\n");
-	  }
-	  break;
-	}
-      }
+        // just get first status packet without waiting for not idle
+        if((ret = DS9490_getstatus(buffer,pn,0,0)) < 0) {
+            LEVEL_DATA("USBnextboth getstatus returned ret=%d\n", ret);
+            break ;
+        }
+        for(i=0; i<ret; i++) {
+            unsigned char val = buffer[16+i];
+            //printf("Status bytes: %X\n", val);
+            if(val != ONEWIREDEVICEDETECT) {
+                // If other status then ONEWIREDEVICEDETECT we have failed
+                LEVEL_DATA("USBnextboth status[%d]=0x%02X (!=%d) ret=%d\n", i, val, ONEWIREDEVICEDETECT, ret);
+                // check for NRS bit (0x01)
+                if(val & COMMCMDERRORRESULT_NRS) {
+                    // empty bus detected, no presence pulse detected
+                    LEVEL_DATA("USBnextboth: no presense pulse detected ??\n");
+                }
+                break;
+            }
+        }
       
-      if(gettimeofday(&tv, &tz)<0) return -1;
-      now = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 ;
+        if(gettimeofday(&tv, &tz)<0) return -1;
+        now = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 ;
     } while(((buffer[8]&STATUSFLAGS_IDLE) == 0) && (endtime > now));
 
     if((buffer[8]&STATUSFLAGS_IDLE) == 0) {
-      LEVEL_DATA("USBnextboth: still not idle\n") ;
-      next_both_errors(pn, -EIO) ;
-      return -EIO ;
+        LEVEL_DATA("USBnextboth: still not idle\n") ;
+        next_both_errors(pn, -EIO) ;
+        return -EIO ;
     }
 
     if(buffer[13] == 0) {  // (ReadBufferStatus)
-      /* Nothing found on the bus. Have to return something != 0 to avoid
-       * getting stuck in loop in FS_realdir() and FS_alarmdir()
-       * which ends when ret!=0 */
-      LEVEL_DATA("USBnextboth: ReadBufferstatus == 0\n");
-      return -ENOENT;
+        /* Nothing found on the bus. Have to return something != 0 to avoid
+        * getting stuck in loop in FS_realdir() and FS_alarmdir()
+        * which ends when ret!=0 */
+        LEVEL_DATA("USBnextboth: ReadBufferstatus == 0\n");
+        return -ENOENT;
     }
 
     buflen = 16 ;  // try read 16 bytes
     //printf("USBnextboth len=%d (available=%d)\n", buflen, buffer[13]);
     if ( (ret=DS9490_read(cb,buflen,pn)) <= 0 ) {
-      LEVEL_DATA("USBnextboth: bulk read problem ret=%d\n", ret);
-      next_both_errors(pn, -EIO);
-      return -EIO ;
+        LEVEL_DATA("USBnextboth: bulk read problem ret=%d\n", ret);
+        next_both_errors(pn, -EIO);
+        return -EIO ;
     }
     
     memcpy(serialnumber,cb,8) ;
@@ -1058,34 +1056,34 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     //printf("DS9490_next_both lastdevice=%d bytes=%d\n",si->LastDevice,ret) ;
     
     for ( i=63 ; i>=0 ; i-- ) {
-      if ( UT_getbit(cb,i+64) && (UT_getbit(cb,i)==0) ) {
-	si->LastDiscrepancy = i ;
-	//printf("DS9490_next_both lastdiscrepancy=%d\n",si->LastDiscrepancy) ;
-	break ;
-      }
+        if ( UT_getbit(cb,i+64) && (UT_getbit(cb,i)==0) ) {
+            si->LastDiscrepancy = i ;
+            //printf("DS9490_next_both lastdiscrepancy=%d\n",si->LastDiscrepancy) ;
+            break ;
+        }
     }
     if( CRC8(serialnumber,8) || (serialnumber[0] == 0) ) {
-      /* this should not cause a reconnect, just some "minor" error */
-      LEVEL_DATA("USBnextboth: CRC error\n");
-      next_both_errors(pn, 0);
-      return -EIO;
+        /* this should not cause a reconnect, just some "minor" error */
+        LEVEL_DATA("USBnextboth: CRC error\n");
+        next_both_errors(pn, 0);
+        return -EIO;
     }
     
     if(((*serialnumber == 0x81) || (*serialnumber == 0x01)) &&
        !pn->in->connin.usb.ds1420_address[0]) {
       /* We found a DS1420 which could identify the adapter as unique */
 #if 1
-      char tmp[17];
-      bytes2string(tmp, serialnumber, 8);
-      tmp[16] = '\000';
-      LEVEL_DEFAULT("Found a DS1420 device [%s]\n", tmp);
-      memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
+        char tmp[17];
+        bytes2string(tmp, serialnumber, 8);
+        tmp[16] = '\000';
+        LEVEL_DEFAULT("Found a DS1420 device [%s]\n", tmp);
+        memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
 #endif
     }
     
     if(*serialnumber == 0x04) {
-      /* We found a DS1994/DS2404 which require longer delays */
-      ds2404_alarm_compliance = 1 ;
+        /* We found a DS1994/DS2404 which require longer delays */
+        ds2404_alarm_compliance = 1 ;
     }
     return 0;
 }
