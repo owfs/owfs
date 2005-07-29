@@ -861,9 +861,7 @@ static int DS9490_read( unsigned char * const buf, const size_t size, const stru
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_read\n");
-    if ((ret=usb_bulk_read(usb,DS2490_EP3,buf,(int)size,TIMEOUT_USB )) > 0) {
-      return ret ;
-    }
+    if ((ret=usb_bulk_read(usb,DS2490_EP3,buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP3) ;
     return ret ;
@@ -873,9 +871,7 @@ static int DS9490_write( const unsigned char * const buf, const size_t size, con
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_write\n");
-    if ((ret=usb_bulk_write(usb,DS2490_EP2,buf,(int)size,TIMEOUT_USB )) > 0) {
-      return ret ;
-    }
+    if ((ret=usb_bulk_write(usb,DS2490_EP2,buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP2) ;
     return ret ;
@@ -958,8 +954,8 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     int i ;
     size_t buflen ;
 
-//printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",si->AnyDevices, si->LastDevice);
-//printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
+    //printf("DS9490_next_both: Anydevices=%d LastDevice=%d\n",si->AnyDevices, si->LastDevice);
+    //printf("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
 
@@ -974,12 +970,11 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     /** Play LastDescrepancy games with bitstream */
     memcpy( cb,serialnumber,8) ; /* set bufferto zeros */
     if ( si->LastDiscrepancy > -1 ) UT_setbit(cb,si->LastDiscrepancy,1) ;
-    for ( i=si->LastDiscrepancy+1;i<64;i++) {
-        UT_setbit(cb,i,0) ;
-    }
-//printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[0],combuffer[1],combuffer[2],combuffer[3],combuffer[4],combuffer[5],combuffer[6],combuffer[7]) ;
+    /* This could be more efficiently done than bit-setting, but probably wouldnt make a difference */
+    for ( i=si->LastDiscrepancy+1;i<64;i++) UT_setbit(cb,i,0) ;
+    //printf("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",cb[0],cb[1],cb[2],cb[3],cb[4],cb[5],cb[6],cb[7]) ;
 
-//printf("USBnextboth\n");
+    //printf("USBnextboth\n");
     buflen = 8;
     if ( (ret=DS9490_write(cb, buflen, pn)) < 8 ) {
         LEVEL_DATA("USBnextboth bulk write problem = %d\n",ret);
@@ -987,7 +982,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         return -EIO;
     }
 
-//printf("USBnextboth\n");
+    //printf("USBnextboth\n");
 
     // COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS
     // 0xF4 + +0x1 + 0x8 + 0x800 + 0x4000 = 0x48FD
@@ -1031,7 +1026,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         next_both_errors(pn, -EIO) ;
         return -EIO ;
     }
-
+    printf("NEXT: buffer[13]=%d\n",(int)buffer[13]) ;
     if(buffer[13] == 0) {  // (ReadBufferStatus)
         /* Nothing found on the bus. Have to return something != 0 to avoid
         * getting stuck in loop in FS_realdir() and FS_alarmdir()
@@ -1050,8 +1045,6 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     
     memcpy(serialnumber,cb,8) ;
     //printf("DS9490_next_both SN out: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
-    //printf("DS9490_next_both rest: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",combuffer[8],combuffer[9],combuffer[10],combuffer[11],combuffer[12],combuffer[13],combuffer[14],combuffer[15]) ;
-    //        LastDevice = !(combuffer[8]||combuffer[9]||combuffer[10]||combuffer[11]||combuffer[12]||combuffer[13]||combuffer[14]||combuffer[15]) ;
     si->LastDevice = (ret==8) ;
     //printf("DS9490_next_both lastdevice=%d bytes=%d\n",si->LastDevice,ret) ;
     
@@ -1062,30 +1055,38 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
             break ;
         }
     }
-    if( CRC8(serialnumber,8) || (serialnumber[0] == 0) ) {
+
+    /* test for CRC error */
+    if( CRC8(serialnumber,8) ) {
         /* this should not cause a reconnect, just some "minor" error */
         LEVEL_DATA("USBnextboth: CRC error\n");
         next_both_errors(pn, 0);
         return -EIO;
     }
-    
-    if(((*serialnumber == 0x81) || (*serialnumber == 0x01)) &&
-       !pn->in->connin.usb.ds1420_address[0]) {
-      /* We found a DS1420 which could identify the adapter as unique */
-#if 1
-        char tmp[17];
-        bytes2string(tmp, serialnumber, 8);
-        tmp[16] = '\000';
-        LEVEL_DEFAULT("Found a DS1420 device [%s]\n", tmp);
-        memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
-#endif
+
+    /* test for special device families */
+    switch ( serialnumber[0] ) {
+        case 0x00:
+            LEVEL_DATA("USBnextboth: NULL family found\n");
+            next_both_errors(pn, 0);
+            return -EIO;
+        case 0x01:
+        case 0x81:
+            if ( pn->in->connin.usb.ds1420_address[0] == 0 ) {
+                char tmp[17];
+                bytes2string(tmp, serialnumber, 8);
+                tmp[16] = '\000';
+                LEVEL_DEFAULT("Found a DS1420 device [%s]\n", tmp);
+                memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
+            }
+            break ;
+        case 0x40:
+            /* We found a DS1994/DS2404 which require longer delays */
+            ds2404_alarm_compliance = 1 ;
+            break ;
     }
     
-    if(*serialnumber == 0x04) {
-        /* We found a DS1994/DS2404 which require longer delays */
-        ds2404_alarm_compliance = 1 ;
-    }
-    return 0;
+    return 0 ;
 }
 
 //--------------------------------------------------------------------------
