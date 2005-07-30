@@ -38,14 +38,10 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
     } else {
         unsigned char resp[16] ;
         if ((ret=BUS_sendback_data( data, resp, len,pn ))) {
-            STATLOCK;
-                BUS_send_data_memcmp_errors++;
-            STATUNLOCK;
+            STAT_ADD1(BUS_send_data_memcmp_errors);
         } else if ((ret=memcmp(data, resp, (size_t) len))) {
             ret = -EPROTO ;
-            STATLOCK;
-                BUS_send_data_errors++;
-            STATUNLOCK;
+            STAT_ADD1(BUS_send_data_errors);
         }
     }
     return ret ;
@@ -60,17 +56,13 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
 int BUS_readin_data( unsigned char * const data, const int len, const struct parsedname * pn ) {
   int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
   if(ret) {
-    STATLOCK;
-        BUS_readin_data_errors++;
-    STATUNLOCK;
+      STAT_ADD1(BUS_readin_data_errors);
   }
   return ret;
 }
 
 static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
-    STATLOCK;
-    BUS_select_low_errors++;
-    STATUNLOCK;
+    STAT_ADD1(BUS_select_low_errors);
 
     /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
     if(ret >= -1) return ret;
@@ -138,9 +130,7 @@ int BUS_select_low(const struct parsedname * const pn) {
         }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
 //printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
-            STATLOCK;
-                BUS_select_low_branch_errors++;
-            STATUNLOCK;
+            STAT_ADD1(BUS_select_low_branch_errors);
             return -EINVAL ;
         }
     }

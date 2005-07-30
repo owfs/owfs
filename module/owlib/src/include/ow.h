@@ -104,6 +104,7 @@ $Id$
 #endif
 
 #include <sys/uio.h>
+#include <sys/time.h> /* for gettimeofday */
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -901,6 +902,8 @@ extern unsigned int DS2480_ProgramPulse_errors ;
     #define ACCEPTLOCK(out)
     #define ACCEPTUNLOCK(out)
 #endif /* OW_MT */
+
+#define STAT_ADD1(x)    STATLOCK ; ++x ; STATUNLOCK
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)

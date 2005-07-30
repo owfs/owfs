@@ -62,9 +62,7 @@ int FS_read_3times(char *buf, const size_t size, const off_t offset, const struc
         AVERAGE_IN(&all_avg)
     STATUNLOCK;
     for(i=0; i<3; i++) {
-        STATLOCK;
-            ++read_tries[i] ; /* statitics */
-        STATUNLOCK;
+        STAT_ADD1(read_tries[i]) ; /* statitics */
         r = FS_read_postparse( buf, size, offset, pn ) ;
         if ( r>=0 ) break;
     }
@@ -246,9 +244,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
-        STATLOCK;
-            ++ read_calls ; /* statistics */
-        STATUNLOCK;
+        STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
 //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
@@ -628,9 +624,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     struct parsedname pn2 ;
     size_t s, sz;
 
-    STATLOCK;
-        ++read_array ; /* statistics */
-    STATUNLOCK;
+    STAT_ADD1(read_array) ; /* statistics */
 
     s = FullFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;

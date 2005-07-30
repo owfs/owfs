@@ -67,17 +67,13 @@ int DS9097_detect( struct connection_in * in ) {
     in->busmode = bus_serial ;
     
     if ( (ret=FS_ParsedName(NULL,&pn)) ) {
-      STATLOCK;
-      DS9097_detect_errors++;
-      STATUNLOCK;
+        STAT_ADD1(DS9097_detect_errors);
       return ret ;
     }
     pn.in = in ;
 
     if((ret = DS9097_reset(&pn))) {
-      STATLOCK;
-      DS9097_detect_errors++;
-      STATUNLOCK;
+        STAT_ADD1(DS9097_detect_errors);
     }
     return ret;
 }
@@ -100,9 +96,7 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
 
     // send the packet
     if((ret=BUS_send_data(&byte,1,pn))) {
-      STATLOCK;
-      DS9097_PowerByte_errors++;
-      STATUNLOCK;
+        STAT_ADD1(DS9097_PowerByte_errors);
       return ret ;
     }
 // indicate the port is now at power delivery
@@ -112,35 +106,27 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
 
     // return to normal level
     if((ret=BUS_level(MODE_NORMAL,pn))) {
-      STATLOCK;
-      DS9097_PowerByte_errors++;
-      STATUNLOCK;
+        STAT_ADD1(DS9097_PowerByte_errors);
     }
     return ret;
 }
 
 static int DS9097_reconnect( const struct parsedname * const pn ) {
-    STATLOCK;
-    BUS_reconnect++;
-    STATUNLOCK;
+    STAT_ADD1(BUS_reconnect);
 
     if ( !pn || !pn->in ) return -EIO;
-    STATLOCK;
-    pn->in->bus_reconnect++;
-    STATUNLOCK;
+    STAT_ADD1(pn->in->bus_reconnect);
 
     COM_close(pn->in);
     usleep(100000);
     if(!COM_open(pn->in)) {
       if(!DS9097_detect(pn->in)) {
-	LEVEL_DEFAULT("DS9097 adapter reconnected\n");
-	return 0;
+        LEVEL_DEFAULT("DS9097 adapter reconnected\n");
+        return 0;
       }
     }
-    STATLOCK;
-    BUS_reconnect_errors++;
-    pn->in->bus_reconnect_errors++;
-    STATUNLOCK;
+    STAT_ADD1(BUS_reconnect_errors);
+    STAT_ADD1(pn->in->bus_reconnect_errors);
     LEVEL_DEFAULT("Failed to reconnect DS9097 adapter!\n");
     return -EIO ;
 }
@@ -172,28 +158,22 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     for ( bit_number=0 ;; ++bit_number ) {
         bits[1] = bits[2] = 0xFF ;
         if ( bit_number==0 ) { /* First bit */
-	    /* get two bits (AND'ed bit and AND'ed complement) */
+            /* get two bits (AND'ed bit and AND'ed complement) */
             if ( (ret=DS9097_sendback_bits(&bits[1],&bits[1],2,pn)) ) {
-              STATLOCK;
-              DS9097_next_both_errors++;
-              STATUNLOCK;
-              return ret ;
+                STAT_ADD1(DS9097_next_both_errors);
+                return ret ;
             }
         } else {
             bits[0] = search_direction ;
             if ( bit_number<64 ) {
                 /* Send chosen bit path, then check match on next two */
                 if ( (ret=DS9097_sendback_bits(bits,bits,3,pn)) ) {
-                    STATLOCK;
-		    DS9097_next_both_errors++;
-                    STATUNLOCK;
+                    STAT_ADD1(DS9097_next_both_errors);
                     return ret ;
                 }
             } else { /* last bit */
                 if ( (ret=DS9097_sendback_bits(bits,bits,1,pn)) ) {
-		    STATLOCK;
-		    DS9097_next_both_errors++;
-                    STATUNLOCK;
+                    STAT_ADD1(DS9097_next_both_errors);
                     return ret ;
                 }
                 break ;
@@ -229,9 +209,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     } // loop until through serial number bits
 
     if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
-      STATLOCK;
-      DS9097_next_both_errors++;
-      STATUNLOCK;
+        STAT_ADD1(DS9097_next_both_errors);
       /* A minor "error" and should perhaps only return -1 to avoid
        * reconnect */
       return -EIO ;
@@ -271,14 +249,10 @@ static int DS9097_level(int new_level, const struct parsedname * const pn) {
         return 0 ;
     case MODE_PROGRAM:
         pn->in->ULevel = MODE_NORMAL ;
-	STATLOCK;
-	DS9097_level_errors++;
-	STATUNLOCK;
+        STAT_ADD1(DS9097_level_errors);
         return -EIO ;
     }
-    STATLOCK;
-    DS9097_level_errors++;
-    STATUNLOCK;
+    STAT_ADD1(DS9097_level_errors);
     return -EIO ;
 }
 
@@ -299,15 +273,11 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     cfsetospeed(&term, B9600);
     cfsetispeed(&term, B9600);
     if (tcsetattr(fd, TCSANOW, &term ) < 0 ) {
-        STATLOCK;
-            DS9097_reset_tcsetattr_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_reset_tcsetattr_errors);
         return -EIO ;
     }
     if ( (ret=DS9097_send_and_get(&resetbyte,1,&c,1,pn)) ) {
-        STATLOCK;
-            DS9097_reset_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_reset_errors);
         return ret ;
     }
 
@@ -343,9 +313,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     cfsetospeed(&term, B115200);       /* Set output speed to 115.2k   */
 
     if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
-        STATLOCK;
-            DS9097_reset_tcsetattr_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_reset_tcsetattr_errors);
         return -EFAULT ;
     }
     /* Flush the input and output buffers */
@@ -366,9 +334,7 @@ static int DS9097_write( const unsigned char * const bytes, const size_t num, co
     for ( i=0;i<num8;++i) pn->in->combuffer[i] = UT_getbit(bytes,i)?OneBit:ZeroBit;
     ret = DS9097_send_and_get(pn->in->combuffer,num8,NULL,0,pn) ;
     if(ret) {
-        STATLOCK;
-            DS9097_write_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_write_errors);
     }
     return ret;
 }
@@ -386,9 +352,7 @@ static int DS9097_read( unsigned char * const byte, const size_t num, const stru
         return DS9097_read( byte, UART_FIFO_SIZE>>3,pn ) || DS9097_read( &byte[UART_FIFO_SIZE>>3],remain,pn) ;
     }
     if ( (ret=DS9097_send_and_get(NULL,0,pn->in->combuffer,num8,pn)) ) {
-        STATLOCK;
-            DS9097_read_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_read_errors);
         return ret ;
     }
     for ( i=0 ; i<num8 ; ++i ) UT_setbit(byte,i,pn->in->combuffer[i]&0x01) ;
@@ -405,9 +369,7 @@ int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * 
     ||DS9097_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
     for ( i=0 ; i<length ; ++i ) pn->in->combuffer[i] = outbits[i] ? OneBit : ZeroBit ;
     if ( (ret= DS9097_send_and_get(pn->in->combuffer,(unsigned)length,inbits,(unsigned)length,pn)) ) {
-        STATLOCK;
-            DS9097_sendback_bits_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_sendback_bits_errors);
         return ret ;
     }
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
@@ -427,9 +389,7 @@ static int DS9097_sendback_data( const unsigned char * data, unsigned char * con
         int ret ;
         for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? OneBit : ZeroBit ;
         if ( (ret=DS9097_send_and_get(pn->in->combuffer,bits,pn->in->combuffer,bits,pn) ) ) {
-            STATLOCK;
-                DS9097_sendback_data_errors++;
-            STATUNLOCK;
+            STAT_ADD1(DS9097_sendback_data_errors);
             return ret ;
         }
         for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
@@ -444,9 +404,7 @@ static int DS9097_read_bits( unsigned char * const bits , const int length, cons
     if ( length > UART_FIFO_SIZE ) return DS9097_read_bits(bits,UART_FIFO_SIZE,pn)||DS9097_read_bits(&bits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
     memset( pn->in->combuffer,0xFF,(size_t)length) ;
     if ( (ret=DS9097_send_and_get(pn->in->combuffer,(unsigned)length,bits,(unsigned)length,pn)) ) {
-        STATLOCK;
-            DS9097_read_bits_errors++;
-        STATUNLOCK;
+        STAT_ADD1(DS9097_read_bits_errors);
         return ret ;
     }
     for ( i=0;i<length;++i) bits[i]&=0x01 ;
@@ -474,9 +432,7 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
             if(r < 0) {
                 if(errno == EINTR) {
                     /* write() was interrupted, try again */
-                    STATLOCK;
-                        BUS_send_and_get_interrupted++;
-                    STATUNLOCK;
+                    STAT_ADD1(BUS_send_and_get_interrupted);
                     continue;
                 }
                 break;
@@ -488,9 +444,7 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
             gettimeofday( &(pn->in->bus_write_time) , NULL );
         }
         if(sl > 0) {
-            STATLOCK;
-            BUS_send_and_get_errors++;
-            STATUNLOCK;
+            STAT_ADD1(BUS_send_and_get_errors);
             return -EIO;
         }
         //printf("SAG written\n");
@@ -522,9 +476,7 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
                 //printf("SAG selected\n");
                     /* Is there something to read? */
                     if( FD_ISSET( pn->in->fd, &readset )==0 ) {
-                        STATLOCK;
-                        BUS_send_and_get_errors++;
-                        STATUNLOCK;
+                        STAT_ADD1(BUS_send_and_get_errors);
                         return -EIO ; /* error */
                     }
                     update_max_delay(pn);
@@ -533,33 +485,23 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
                     if (r < 0) {
                         if(errno == EINTR) {
                             /* read() was interrupted, try again */
-                            STATLOCK;
-                            BUS_send_and_get_interrupted++;
-                            STATUNLOCK;
+                            STAT_ADD1(BUS_send_and_get_interrupted);
                             continue;
                         }
-                        STATLOCK;
-                        BUS_send_and_get_errors++;
-                        STATUNLOCK;
+                        STAT_ADD1(BUS_send_and_get_errors);
                         return r ;
                     }
                     gl -= r ;
                 } else if(rc < 0) { /* select error */
                     if(errno == EINTR) {
                         /* select() was interrupted, try again */
-                        STATLOCK;
-                        BUS_send_and_get_interrupted++;
-                        STATUNLOCK;
+                        STAT_ADD1(BUS_send_and_get_interrupted);
                         continue;
                     }
-                    STATLOCK;
-                    BUS_send_and_get_select_errors++;
-                    STATUNLOCK;
+                    STAT_ADD1(BUS_send_and_get_select_errors);
                     return -EINTR;
                 } else { /* timed out */
-                    STATLOCK;
-                    BUS_send_and_get_timeout++;
-                    STATUNLOCK;
+                    STAT_ADD1(BUS_send_and_get_timeout);
                     return -EAGAIN;
                 }
         }
@@ -570,4 +512,3 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
     }
     return 0 ;
 }
-

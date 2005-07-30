@@ -360,9 +360,7 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
     char s[33] ;
     size_t len ;
 
-    STATLOCK;
-        ++dir_dev.calls ;
-    STATUNLOCK;
+    STAT_ADD1(dir_dev.calls);
     if ( pn2->subdir ) { /* indevice subdir, name prepends */
 //printf("DIR device subdirectory\n");
         strcpy( s , pn2->subdir->name ) ;
@@ -384,16 +382,12 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
         if ( pn2->ft->ag ) {
             for ( pn2->extension=(pn2->ft->format==ft_bitfield)?-2:-1 ; pn2->extension < pn2->ft->ag->elements ; ++pn2->extension ) {
                 dirfunc( pn2 ) ;
-                STATLOCK;
-                    ++dir_dev.entries ;
-                STATUNLOCK;
+                STAT_ADD1(dir_dev.entries);
             }
         } else {
             pn2->extension = 0 ;
             dirfunc( pn2 ) ;
-            STATLOCK;
-                ++dir_dev.entries ;
-            STATUNLOCK;
+            STAT_ADD1(dir_dev.entries);
         }
     }
     return 0 ;
@@ -405,9 +399,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     unsigned char sn[8] ;
 
     /* STATISCTICS */
-    STATLOCK;
-        ++dir_main.calls ;
-    STATUNLOCK;
+    STAT_ADD1(dir_main.calls);
 //printf("DIR alarm directory\n");
 
     BUSLOCK(pn2);
@@ -422,9 +414,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     }
     while (ret==0) {
         char ID[] = "XX";
-        STATLOCK;
-            ++dir_main.entries ;
-        STATUNLOCK;
+        STAT_ADD1(dir_main.entries);
         memcpy( pn2->sn, sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         num2string( ID, sn[0] ) ;
@@ -460,9 +450,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     int ret ;
 
     /* STATISCTICS */
-    STATLOCK;
-        ++dir_main.calls ;
-    STATUNLOCK;
+    STAT_ADD1(dir_main.calls);
 
     flags[0] = 0 ; /* start out with no flags set */
 
@@ -535,7 +523,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
 #endif
 
     STATLOCK;
-    dir_main.entries += dindex ;
+        dir_main.entries += dindex ;
     STATUNLOCK;
     Cache_Del_Dir(dindex,pn2) ;  // end with a null entry
     if(ret == -ENODEV) return 0 ; // no more devices is ok */
@@ -565,9 +553,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), str
         return FS_realdir(dirfunc,pn2,flags) ;
     }
     /* STATISCTICS */
-    STATLOCK;
-        ++dir_main.calls ;
-    STATUNLOCK;
+    STAT_ADD1(dir_main.calls);
 
     /* Get directory from the cache */
     /* FIXME: First entry was valid in the cache, but after 1ms the 2nd entry might

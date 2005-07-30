@@ -247,11 +247,9 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
     }
 
     for(i=0; i<3; i++) {
-      STATLOCK;
-      ++write_tries[i] ; /* statitics */
-      STATUNLOCK;
-      r = FS_parse_write( buf, size, offset, pn ) ;
-      if ( r==0 ) break;
+        STAT_ADD1(write_tries[i]) ; /* statitics */
+        r = FS_parse_write( buf, size, offset, pn ) ;
+        if ( r==0 ) break;
     }
     if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
@@ -553,9 +551,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
     struct parsedname pname ;
 //printf("WRITE_ALL\n");
 
-    STATLOCK;
-        ++ write_array ; /* statistics */
-    STATUNLOCK;
+    STAT_ADD1(write_array) ; /* statistics */
     memcpy( &pname , pn , sizeof(struct parsedname) ) ; /* shallow copy */
 //printf("WRITEALL(%p) %s\n",p,path) ;
     if ( offset ) return -ERANGE ;

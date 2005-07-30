@@ -163,9 +163,7 @@ void Cache_Close( void ) {
 
 static int Add_Stat( struct cache * scache, const int result ) {
     if ( result==0 ) {
-        STATLOCK;
-            ++scache->adds ;
-        STATUNLOCK;
+        STAT_ADD1(scache->adds);
     }
     return result ;
 }
@@ -300,8 +298,8 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
         tdestroy( flip, free ) ;
         STATLOCK;
             ++ cache_flips ; /* statistics */
-        memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
-        AVERAGE_CLEAR(&new_avg)
+            memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
+            AVERAGE_CLEAR(&new_avg)
         STATUNLOCK;
 //printf("FLIP points to: %p\n",flip);
     }
@@ -316,7 +314,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
     case just_update:
         STATLOCK;
             AVERAGE_MARK(&new_avg)
-               ++ cache_adds ; /* statistics */
+            ++ cache_adds ; /* statistics */
         STATUNLOCK;
         return 0 ;
     default:
@@ -520,9 +518,7 @@ static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const 
 
 static int Del_Stat( struct cache * scache, const int result ) {
     if ( result==0 ) {
-        STATLOCK;
-            ++scache->deletes ;
-        STATUNLOCK;
+        STAT_ADD1(scache->deletes);
     }
     return result ;
 }

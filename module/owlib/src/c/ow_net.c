@@ -28,16 +28,14 @@ ssize_t readn(int fd, void *vptr, size_t n) {
     nleft = n;
     while (nleft > 0) {
         if ( (nread = read(fd, ptr, nleft)) < 0) {
-	    if (errno == EINTR) {
-	      errno = 0; // clear errno. We never use it anyway.
-	      nread = 0; /* and call read() again */
-	    } else {
-	      LEVEL_DEFAULT("readn() failed %d [%s]\n", errno, strerror(errno));
-	      STATLOCK;
-	      NET_read_errors++;
-	      STATUNLOCK;
-	      return(-1);
-	    }
+            if (errno == EINTR) {
+                errno = 0; // clear errno. We never use it anyway.
+                nread = 0; /* and call read() again */
+            } else {
+                LEVEL_DEFAULT("readn() failed %d [%s]\n", errno, strerror(errno));
+                STAT_ADD1(NET_read_errors);
+                return(-1);
+            }
         } else if (nread == 0)
             break; /* EOF */
         nleft -= nread ;
@@ -194,9 +192,7 @@ int ClientConnect( struct connection_in * in ) {
     in->ai_ok = NULL ;
     INBUSUNLOCK(in);
 
-    STATLOCK;
-    NET_connection_errors++;
-    STATUNLOCK;
+    STAT_ADD1(NET_connection_errors);
     //LEVEL_DEFAULT("ClientConnect: Socket problem %d [%s]\n", errno, strerror(errno)) ;
     return -1 ;
 }
@@ -242,15 +238,13 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             struct connection_out *o2 = (struct connection_out *)v2;
             int acceptfd = accept( o2->fd, NULL, NULL ) ;
             ACCEPTUNLOCK(o2);
-	    if(acceptfd < 0) {
-	      STATLOCK;
-	      NET_accept_errors++;
-	      STATUNLOCK;
-	      LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
-	    } else {
-	      HandlerRoutine(acceptfd) ;
-	      close(acceptfd);
-	    }
+            if(acceptfd < 0) {
+                STAT_ADD1(NET_accept_errors);
+                LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+            } else {
+                HandlerRoutine(acceptfd) ;
+                close(acceptfd);
+            }
 #ifndef VALGRIND
             pthread_exit((void *)0);
 #endif /* VALGRIND */
@@ -259,20 +253,20 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 
         ToListen( out2 ) ;
         for(;;) {
-	  ACCEPTLOCK(out2);
-	  if ( pthread_create( &thread2, attr_p, AcceptThread, out2 ) ) Exit(1) ;
-	  if(!attr_p) pthread_detach(thread2);
+            ACCEPTLOCK(out2);
+            if ( pthread_create( &thread2, attr_p, AcceptThread, out2 ) ) Exit(1) ;
+            if(!attr_p) pthread_detach(thread2);
 #ifdef VALGRIND
-	  pthread_join(thread2, NULL);
+            pthread_join(thread2, NULL);
 #endif /* VALGRIND */
         }
-	/* won't reach this usless we exit the loop above to shutdown
-	 * in a nice way */
+        /* won't reach this usless we exit the loop above to shutdown
+            * in a nice way */
         if(out != out_last) {
             pthread_exit((void *)0);
         }
-	/* last connection_out wasn't a separate thread */
-	return NULL;
+        /* last connection_out wasn't a separate thread */
+        return NULL;
     }
 
     pthread_attr_init(&attr) ;
@@ -304,13 +298,11 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     for ( ;; ) {
       int acceptfd = accept(outdevice->fd,NULL,NULL);
       if(acceptfd < 0) {
-	STATLOCK;
-	NET_accept_errors++;
-	STATUNLOCK;
-	LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+        STAT_ADD1(NET_accept_errors);
+        LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
       } else {
-	HandlerRoutine(acceptfd) ;
-	close(acceptfd);
+        HandlerRoutine(acceptfd) ;
+        close(acceptfd);
       }
     }
 #endif /* OW_MT */
