@@ -93,6 +93,11 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
         if ( OW_killcache((enum simul_type) pn->ft->data,pn) ) return -EINVAL ;
         return 0 ;
     }
+    /* Since writing to /simultaneous/temperature is done recursive to all
+     * adapters, we have to fake a successful write even if it's detected
+     * as a bad adapter. */
+    if(pn->in->Adapter == adapter_Bad) return 0;
+
     if ( OW_skiprom(  (enum simul_type) pn->ft->data, pn ) ) return -EINVAL ;
     if ( OW_setcache( (enum simul_type) pn->ft->data, pn ) ) return -EINVAL ;
     return 0 ;
