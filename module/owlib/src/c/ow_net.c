@@ -51,9 +51,10 @@ int ServerAddr(  struct connection_out * out ) {
 
     if ( out->name == NULL ) return -1 ;
     if ( (p=strrchr(out->name,':')) ) { /* : exists */
-        *p = '\0' ; /* Separate tokens in the string */
+        p[0] = '\0' ; /* Separate tokens in the string */
         out->host = strdup(out->name) ;
         out->service = strdup(&p[1]) ;
+        p[0] = ';' ; /* Restore the string */
     } else {
         out->host = NULL ;
         out->service = strdup(out->name) ;
@@ -68,7 +69,7 @@ int ServerAddr(  struct connection_out * out ) {
     //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
     if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
-        fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
+        LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
     }
     return 0 ;
@@ -80,7 +81,7 @@ int ServerListen( struct connection_out * out ) {
     int ret;
 
     if ( out->ai == NULL ) {
-        fprintf(stderr,"Server address not yet parsed\n");
+        LEVEL_CONNECT("Server address not yet parsed\n");
         return -1 ;
     }
 
@@ -96,17 +97,17 @@ int ServerListen( struct connection_out * out ) {
                 || bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
                 || listen(fd, 10) ;
             if ( ret ) {
-                fprintf(stderr, "ServerListen: Socket problem [%s]\n", strerror(errno));
+                LEVEL_CONNECT("ServerListen: Socket problem [%s]\n", strerror(errno));
                 close( fd ) ;
             } else {
                 out->fd = fd ;
                 return fd ;
             }
         } else {
-            fprintf(stderr, "ServerListen: socket() [%s]", strerror(errno));
+            LEVEL_CONNECT("ServerListen: socket() [%s]", strerror(errno));
         }
     } while ( (out->ai_ok=out->ai_ok->ai_next) ) ;
-    fprintf(stderr,"ServerListen: Socket problem [%s]\n", strerror(errno)) ;
+    LEVEL_CONNECT("ServerListen: Socket problem [%s]\n", strerror(errno)) ;
     return -1 ;
 }
 
@@ -117,9 +118,10 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
 
     if ( sname == NULL ) return -1 ;
     if ( (p=strrchr(sname,':')) ) { /* : exists */
-        *p = '\0' ; /* Separate tokens in the string */
+        p[0] = '\0' ; /* Separate tokens in the string */
         in->host = strdup(sname) ;
         in->service = strdup(&p[1]) ;
+        p[0] = ':' ; /* restore name string */
     } else {
         in->host = NULL ;
         in->service = strdup(sname) ;
@@ -132,7 +134,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
 //printf("ClientAddr: [%s] [%s]\n", in->host, in->service);
 
     if ( (ret=getaddrinfo( in->host, in->service, &hint, &in->ai )) ) {
-        fprintf(stderr,"GetAddrInfo error %s\n",gai_strerror(ret));
+        LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
     }
     return 0 ;
@@ -148,7 +150,7 @@ int ClientConnect( struct connection_in * in ) {
     }
 
     if ( in->ai == NULL ) {
-        fprintf(stderr,"Client address not yet parsed\n");
+        LEVEL_CONNECT("Client address not yet parsed\n");
         return -1 ;
     }
 
