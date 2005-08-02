@@ -53,8 +53,8 @@ $Id$
  uREAD_FUNCTION( FS_uint ) ;
  uREAD_FUNCTION( FS_version ) ;
  aREAD_FUNCTION( FS_detail ) ;
- yREAD_FUNCTION( FS_r_overdrive ) ;
-yWRITE_FUNCTION( FS_w_overdrive ) ;
+ uREAD_FUNCTION( FS_r_overdrive ) ;
+uWRITE_FUNCTION( FS_w_overdrive ) ;
 
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
@@ -62,7 +62,7 @@ struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
     {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, NULL , } ,
     {"address"    ,      512, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
-    {"overdrive"  ,        1, &Asystem, ft_yesno,   ft_static, {y:FS_r_overdrive}   , {y:FS_w_overdrive}, NULL , } ,
+    {"overdrive"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_overdrive}   , {u:FS_w_overdrive}, NULL , } ,
     {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
     {"detail"     ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_detail} , {v:NULL}, NULL , } ,
 } ;
@@ -86,7 +86,7 @@ struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_s
 
 
 /* Just some tests to support overdrive */
-static int FS_r_overdrive(int * y , const struct parsedname * pn) {
+static int FS_r_overdrive(unsigned int * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -94,11 +94,11 @@ static int FS_r_overdrive(int * y , const struct parsedname * pn) {
     in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
 
-    *y = in->use_overdrive_speed ;
+    u[0] = in->use_overdrive_speed ;
     return 0 ;
 }
 
-static int FS_w_overdrive(const int * y , const struct parsedname * pn) {
+static int FS_w_overdrive(const unsigned int * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -106,7 +106,20 @@ static int FS_w_overdrive(const int * y , const struct parsedname * pn) {
     in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
 
-    in->use_overdrive_speed = (*y ? 1 : 0) ;
+    switch(u[0]) {
+    case 0:
+      in->use_overdrive_speed = ONEWIREBUSSPEED_REGULAR ;
+      break ;
+    case 1:
+      if(pn->in->Adapter != adapter_DS9490) return -ENOTSUP ;
+      in->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE ;
+      break ;
+    case 2:
+      in->use_overdrive_speed = ONEWIREBUSSPEED_OVERDRIVE ;
+      break ;
+    default:
+      return -ENOTSUP ;
+    }
     return 0 ;
 }
 

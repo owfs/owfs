@@ -34,7 +34,7 @@
 #endif
 
 /* Doesn't exist for Solaris, make a test for it later */
-#undef HAVE_SA_LEN
+/* #undef HAVE_SA_LEN */
 
 #ifndef __HAS_IPV6__
 #define __HAS_IPV6__ 0
@@ -79,10 +79,6 @@
 #define	_PATH_NSSWITCH_CONF	"/etc/nsswitch.conf"
 #define	_PATH_PROTOCOLS		"/etc/protocols"
 #define	_PATH_SERVICES		"/etc/services"
-
-#ifdef _LIBC
-# define __set_h_errno(x) (h_errno = (x))
-#endif
 
 #ifndef __set_errno
 #define __set_errno(x) (errno = (x))

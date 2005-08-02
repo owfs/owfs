@@ -884,12 +884,16 @@ extern unsigned int DS2480_databit_errors ;
 extern unsigned int DS2480_next_both_errors ;
 extern unsigned int DS2480_ProgramPulse_errors ;
 
-/// mode bit flags
+// mode bit flags for level
 #define MODE_NORMAL                    0x00
-#define MODE_OVERDRIVE                 0x01
-#define MODE_STRONG5                   0x02
-#define MODE_PROGRAM                   0x04
-#define MODE_BREAK                     0x08
+#define MODE_STRONG5                   0x01
+#define MODE_PROGRAM                   0x02
+#define MODE_BREAK                     0x04
+
+// 1Wire Bus Speed Setting Constants
+#define ONEWIREBUSSPEED_REGULAR        0x00
+#define ONEWIREBUSSPEED_FLEXIBLE       0x01 /* Only used for USB adapter */
+#define ONEWIREBUSSPEED_OVERDRIVE      0x02
 
 #ifdef OW_MT
     #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )

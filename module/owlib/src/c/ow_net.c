@@ -229,6 +229,17 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
     }
 
+    /* embedded function */
+    void RunAccepted( int rafd ) {
+        if ( rafd>=0 ) {
+            HandlerRoutine( rafd ) ;
+            close( rafd ) ;
+        } else {
+	    STAT_ADD1(NET_accept_errors);
+	    LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+	}
+    }
+
 #ifdef OW_MT
     /* Embedded function */
     void * ConnectionThread( void * v3 ) {
@@ -239,13 +250,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             struct connection_out *o2 = (struct connection_out *)v2;
             int acceptfd = accept( o2->fd, NULL, NULL ) ;
             ACCEPTUNLOCK(o2);
-            if(acceptfd < 0) {
-                STAT_ADD1(NET_accept_errors);
-                LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
-            } else {
-                HandlerRoutine(acceptfd) ;
-                close(acceptfd);
-            }
+	    RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
             pthread_exit((void *)0);
 #endif /* VALGRIND */
@@ -296,15 +301,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
-    for ( ;; ) {
-      int acceptfd = accept(outdevice->fd,NULL,NULL);
-      if(acceptfd < 0) {
-        STAT_ADD1(NET_accept_errors);
-        LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
-      } else {
-        HandlerRoutine(acceptfd) ;
-        close(acceptfd);
-      }
-    }
+    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
 #endif /* OW_MT */
 }

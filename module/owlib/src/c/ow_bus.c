@@ -142,7 +142,7 @@ int BUS_select_low(const struct parsedname * const pn) {
             return ret ;
         }
         if(sent[0] == 0x69) {
-            if((ret=BUS_overdrive(MODE_OVERDRIVE, pn))< 0) {
+            if((ret=BUS_overdrive(ONEWIREBUSSPEED_OVERDRIVE, pn))< 0) {
                 BUS_selection_error(pn, ret) ;
                 return ret ;
             }
