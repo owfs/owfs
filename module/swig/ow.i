@@ -116,3 +116,6 @@ extern int init( const char * dev ) ;
 extern char * get( const char * path ) ;
 extern int put( const char * path, const char * value ) ;
 extern void finish( void ) ;
+
+extern int error_print;
+extern int error_level ;

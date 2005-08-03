@@ -51,7 +51,7 @@ setup(
     description      = '1-wire hardware interface.',
     version          = '@VERSION@',
     author           = 'Peter Kropf',
-    author_email     = 'peterk@bayarea.net',
+    author_email     = 'pkropf@gmail.com',
     url              = 'http://owfs.sourceforge.net/',
     license          = 'GPL',
     platforms        = 'Linux',

@@ -32,7 +32,7 @@ import _OW
 
 
 __author__ = 'Peter Kropf'
-__email__ = 'peterk at bayarea dot net'
+__email__ = 'pkropf@gmail.com'
 __version__ = _OW.version( ) + '-%s' % '$Id$'.split( )[ 2 ]
 
 
@@ -67,6 +67,60 @@ class exNotInitialized( exError ):
 #
 
 initialized = False
+
+
+#
+# Access to the internal owlib error level and print variables
+#
+def error_level(level=None):
+    """
+    Manipulate the internal owlib error logging calls. If no
+    parameter is specified, the current owlib error level is
+    returned. Otherwise, the current owlib error level is set
+    to the value specified.
+
+    Valid level values are:
+        error_level.fatal
+        error_level.default
+        error_level.connect
+        error_level.call
+        error_level.data
+        error_level.debug
+    """
+    if level:
+        _OW.cvar.error_level = level
+    return _OW.cvar.error_level
+
+error_level.fatal   = 0
+error_level.default = 1
+error_level.connect = 2
+error_level.call    = 3
+error_level.data    = 4
+error_level.debug   = 5
+
+
+def error_print(level=None):
+    """
+    Manipulate where the internal owlib error logging facility
+    sends the error messages. If no parameter is specified,
+    the current owlib error print value is returned. Otherwise,
+    the current owlib error print value is set to the parameter.
+
+    Valid print values are:
+        error_print.mixed
+        error_print.syslog
+        error_print.stderr
+        error_print.suppressed
+    """
+    if level:
+        _OW.cvar.error_print = level
+    return _OW.cvar.error_print
+
+error_print.mixed      = 0
+error_print.syslog     = 1
+error_print.stderr     = 2
+error_print.suppressed = 3
+
 
 
 #
