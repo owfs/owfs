@@ -18,22 +18,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "owfs.h"
-
-#include <linux/stddef.h>
-#include <syslog.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <signal.h>
-
 #include <fuse.h>
-
-#include "owfs_config.h"
-#include "ow.h"
-#include "owfs.h"
-//#include <mcheck.h>
 
 /* Stuff from helper.h */
 #define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"

@@ -18,9 +18,6 @@ $Id$
 #include "ow.h"
 #include "owfs.h"
 
-#include <sys/stat.h>
-#include <string.h>
-
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) ;
 static int FS_utime(const char *path, struct utimbuf *buf) ;
 static int FS_truncate(const char *path, const off_t size) ;
