@@ -195,6 +195,7 @@ static int DS9490_setup_adapter(const struct parsedname * const pn) {
   int ret ;
   usb_dev_handle * usb = pn->in->connin.usb.usb ;
 
+  // reset the device e (not the 1-wire bus)
   if((ret = usb_control_msg(usb,0x40,CONTROL_CMD,CTL_RESET_DEVICE, 0x0000, NULL, 0, TIMEOUT_USB )) < 0) {
     LEVEL_DATA("DS9490_setup_adapter: error1 ret=%d\n", ret);
     return -EIO ;

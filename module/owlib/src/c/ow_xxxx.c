@@ -156,22 +156,23 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
     void * v ;
     /* Embedded function */
     void * Check2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int eret;
 
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
-        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
+        (void) vp ;
+
+        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
+        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
+        pnnext.in = pn->in->next ;
         eret = CheckPresence_low(&pnnext) ;
         pthread_exit((void *)eret);
         return (void *)eret;
     }
 
     if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, (void *)pn ) ;
+        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, NULL ) ;
     }
 #endif /* OW_MT */
 

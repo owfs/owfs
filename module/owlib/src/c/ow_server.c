@@ -15,9 +15,9 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) ;
+static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
-static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) ;
+static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
 
 int Server_detect( struct connection_in * in ) {
     if ( in->name == NULL ) return -1 ;
@@ -160,7 +160,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     } else {
         ret = cm.ret ;
         if ( SemiGlobal != cm.sg ) {
-	    //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
+            //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
             CACHELOCK;
                 SemiGlobal = cm.sg ;
             CACHEUNLOCK;
@@ -298,7 +298,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     }
 
     if ( (msg=(char *)malloc((size_t)cm->payload)) ) {
-        ret = readn(fd,msg,cm->payload);
+        ret = readn(fd,msg,(size_t)(cm->payload) );
         if ( ret != cm->payload ) {
 //printf("FromServer couldn't read payload\n");
             cm->payload = 0 ;
@@ -313,10 +313,9 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
 }
 /* Read from server -- return negative on error,
     return 0 or positive giving size of data element */
-static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
-    int rtry ;
-    int d ;
-    int ret;
+static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) {
+    size_t rtry ;
+    size_t ret;
 
     ret = readn(fd, cm, sizeof(struct client_msg) );
     if ( ret != sizeof(struct client_msg) ) {
@@ -335,15 +334,15 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload == 0 ) return cm->payload ;
 
-    d = cm->payload - size ;
-    rtry = d<0 ? cm->payload : size ;
+    rtry = cm->payload<size ? cm->payload : size ;
     ret = readn(fd, msg, rtry );
     if ( ret != rtry ) {
         cm->ret = -EIO ;
         return -EIO ;
     }
 
-    if ( d>0 ) {
+    if ( cm->payload > size ) {
+        size_t d = cm->payload - size ;
         char extra[d] ;
         ret = readn(fd,extra,d);
         if ( ret != d ) {
@@ -355,11 +354,11 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, int size ) {
     return cm->payload ;
 }
 
-static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) {
+// should be const char * data but iovec has problems with const arguments
+//static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) {
+static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) {
     int nio = 1 ;
     int payload = 0 ;
-    int ret;
-    int32_t len = datasize ;
     struct iovec io[] = {
         { sm, sizeof(struct server_msg), } ,
         { path, 0, } ,
@@ -384,6 +383,5 @@ static int ToServer( int fd, struct server_msg * sm, const char * path, const ch
     sm->sg      = htonl(sm->sg)        ;
     sm->offset  = htonl(sm->offset)    ;
 
-    ret = writev( fd, io, nio );
-    return ret != (payload + sizeof(struct server_msg)) ;
+    return writev( fd, io, nio ) != (payload + sizeof(struct server_msg)) ;
 }

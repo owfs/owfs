@@ -83,16 +83,19 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
     } else if ( pn->ft==NULL ) {
-        int i, nr = 0 ;
+        int nr = 0 ;
 //printf("FS_fstat pn.ft == NULL  (1-wire device)\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
 
 #ifdef CALC_NLINK
-        for(i = 0; i < pn->dev->nft; i++) {
-            if((pn->dev->ft[i].format == ft_directory) ||
-                (pn->dev->ft[i].format == ft_subdir)) {
-                nr++;
+        {
+            int i ;
+            for(i = 0; i < pn->dev->nft; i++) {
+                if((pn->dev->ft[i].format == ft_directory) ||
+                    (pn->dev->ft[i].format == ft_subdir)) {
+                    nr++;
+                }
             }
         }
 #else
@@ -105,25 +108,11 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
         FSTATUNLOCK;
     } else if ( pn->ft->format==ft_directory || pn->ft->format==ft_subdir ) { /* other directory */
-        int i, nr = 0 ;
+        int nr = 0 ;
 //printf("FS_fstat other dir inside device\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
-#ifdef CALC_NLINK
-  #if 0
-        /* not working */
-        for(i=0; i<pn->ft->nft; i++) {
-            if((pn->ft[i].format == ft_directory) ||
-                (pn->ft[i].format == ft_subdir)) {
-                nr++;
-            }
-        }
-#else /* 0 */
         nr = 1 ;
-#endif /* 0 */
-#else /* CALC_NLINK */
-        nr = 1 ;
-#endif /* CALC_NLINK */
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.ft));
         stbuf->st_nlink += nr ;
 

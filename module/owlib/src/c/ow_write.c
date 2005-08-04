@@ -170,22 +170,23 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
 
     /* Embedded function */
     void * Write2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int ret;
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
+
+        (void) vp ;
+        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
         /* we need a different state (search state) for a different bus -- subtle error */
-        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
+        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
+        pnnext.in = pn->in->next ;
         ret = FS_write_seek(buf,size,offset,&pnnext) ;
         pthread_exit((void *)ret);
         return (void *)ret;
     }
 
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, (void *)pn ) ;
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
     }
 #endif /* OW_MT */
 

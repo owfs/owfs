@@ -30,7 +30,7 @@ $Id$
     bad return sendback_data
     -EIO if memcpy
  */
-int BUS_send_data( const unsigned char * const data, const int len, const struct parsedname * pn ) {
+int BUS_send_data( const unsigned char * const data, const size_t len, const struct parsedname * pn ) {
     int ret ;
     if ( len>16 ) {
         int dlen = len-(len>>1) ;
@@ -53,7 +53,7 @@ int BUS_send_data( const unsigned char * const data, const int len, const struct
  Returns 0=good
    Bad sendback_data
  */
-int BUS_readin_data( unsigned char * const data, const int len, const struct parsedname * pn ) {
+int BUS_readin_data( unsigned char * const data, const size_t len, const struct parsedname * pn ) {
   int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
   if(ret) {
       STAT_ADD1(BUS_readin_data_errors);

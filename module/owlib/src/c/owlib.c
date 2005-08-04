@@ -282,7 +282,7 @@ int LibStart( void ) {
             pid_file = NULL ;
             return 1 ;
         }
-        fprintf(pid,"%lu",pid_num ) ;
+        fprintf(pid,"%lu",(long unsigned int)pid_num ) ;
         fclose(pid) ;
     }
     return 0 ;
@@ -324,6 +324,7 @@ void Timeout( const char * c ) {
     timeout.dir = 5*timeout.vol ;
 }
 
+#if 0
 static void segv_handler(int sig) {
     pid_t pid = getpid() ;
 #ifdef OW_MT
@@ -336,6 +337,7 @@ static void segv_handler(int sig) {
 #endif /* OW_MT */
     _exit(1) ;
 }
+#endif
 
 void set_signal_handlers( void (*exit_handler)(int errcode) ) {
     struct sigaction sa;

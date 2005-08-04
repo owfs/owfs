@@ -136,21 +136,24 @@ static int FS_size_seek( const struct parsedname * const pn ) {
 
     /* Embedded function */
     void * Size2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp ;
         struct parsedname pnnext ;
         struct stateinfo si ;
         int eret;
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
+
+        (void) vp ;
+        // shallow copy
+        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
+
         /* we need a different state (search state) for a different bus -- subtle error */
-	si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
+        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
         pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
+        pnnext.in = pn->in->next ;
         eret = FS_size_seek( &pnnext ) ;
         pthread_exit((void *)eret);
-	return (void *)eret;
+        return (void *)eret;
     }
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Size2, (void *)pn ) ;
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Size2, NULL ) ;
     }
 #endif /* OW_MT */
 

@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
     if (opts) free( opts ) ;
-#else /* FUSE_MAJOR_VERSION == 1 */
+#else /* FUSE_MAJOR_VERSION != 1 */
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt)) == -1 ) ow_exit(1) ;
 #endif /* FUSE_MAJOR_VERSION == 1 */
 

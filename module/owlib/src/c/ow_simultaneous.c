@@ -136,7 +136,7 @@ static int OW_getcache( enum simul_type type ,const unsigned int msec, const str
     if ( (ret=Cache_Get_Internal(&tv, &dsize, &ipSimul[type],&pn2)) ) return ret ;
     gettimeofday(&now,0) ;
     diff =  1000*(now.tv_sec-tv.tv_sec) + (now.tv_usec-tv.tv_usec)/1000 ;
-    if ( diff<msec ) UT_delay(msec-diff) ;
+    if ( diff<(long int)msec ) UT_delay(msec-diff) ;
     return 0 ;
 }
 

@@ -542,7 +542,7 @@ extern void * Tree[6] ;
 
 
 struct device {
-    char * code ;
+    const char * code ;
     char * name ;
     uint32_t flags ;
     int nft ;
@@ -1092,11 +1092,11 @@ int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * cons
 int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
 int BUS_select_low(const struct parsedname * const pn) ;
-int BUS_sendout_cmd(const unsigned char * cmd , const int len, const struct parsedname * pn  ) ;
-int BUS_send_cmd(const unsigned char * const cmd , const int len, const struct parsedname * pn  ) ;
-int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const int len, const struct parsedname * pn  ) ;
-int BUS_send_data(const unsigned char * const data , const int len, const struct parsedname * pn  ) ;
-int BUS_readin_data(unsigned char * const data , const int len, const struct parsedname * pn ) ;
+int BUS_sendout_cmd(const unsigned char * cmd , const size_t len, const struct parsedname * pn  ) ;
+int BUS_send_cmd(const unsigned char * const cmd , const size_t len, const struct parsedname * pn  ) ;
+int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const size_t len, const struct parsedname * pn  ) ;
+int BUS_send_data(const unsigned char * const data , const size_t len, const struct parsedname * pn  ) ;
+int BUS_readin_data(unsigned char * const data , const size_t len, const struct parsedname * pn ) ;
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
@@ -1130,15 +1130,15 @@ extern int log_available ;
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
 
-#define CACHE_MASK     0x00000001
+#define CACHE_MASK     ( (unsigned int) 0x00000001 )
 #define CACHE_BIT      0
-#define BUSRET_MASK    0x00000002
+#define BUSRET_MASK    ( (unsigned int) 0x00000002 )
 #define BUSRET_BIT     1
-#define PRESENCE_MASK  0x0000FF00
+#define PRESENCE_MASK  ( (unsigned int) 0x0000FF00 )
 #define PRESENCE_BIT   8
-#define TEMPSCALE_MASK 0x00FF0000
+#define TEMPSCALE_MASK ( (unsigned int) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
-#define DEVFORMAT_MASK 0xFF000000
+#define DEVFORMAT_MASK ( (unsigned int) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define IsLocalCacheEnabled(ppn)  ( ((ppn)->si->sg & CACHE_MASK) )
 #define ShouldReturnBusList(ppn)  ( ((ppn)->si->sg & BUSRET_MASK) )
