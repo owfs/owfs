@@ -36,7 +36,7 @@ struct urlparse {
 } ;
 
     /* Utility HTML page display functions */
-static void HTTPstart(FILE * out, const char * status, const int text ) ;
+static void HTTPstart(FILE * out, const char * status, const unsigned int text ) ;
 static void HTTPtitle(FILE * out, const char * title ) ;
 static void HTTPheader(FILE * out, const char * head ) ;
 static void HTTPfoot(FILE * out ) ;
@@ -183,7 +183,7 @@ static void URLparse( struct urlparse * up ) {
     }
 }
 
-static void HTTPstart(FILE * out, const char * status, const int text ) {
+static void HTTPstart(FILE * out, const char * status, const unsigned int text ) {
     char d[44] ;
     time_t t = time(NULL) ;
     size_t l = strftime(d,sizeof(d),"%a, %d %b %Y %T GMT",gmtime(&t)) ;
@@ -297,7 +297,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     /* buffer for field value */
     if ( pn->ft && pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
         if ( pn->ft->read.v ) { /* At least readable */
-            if ( (len=FS_read(fullpath, buf, suglen, 0))>=0 ) {
+            if ( (len=FS_read(fullpath, buf, (size_t)suglen, 0))>=0 ) {
                 buf[len] = '\0' ;
                 if ( canwrite ) { /* read-write */
                     fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
@@ -318,7 +318,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
             break ;
         case ft_yesno:
             if ( pn->ft->read.v ) { /* at least readable */
-                if ( (len=FS_read(fullpath,buf,suglen,0))>=0 ) {
+                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>=0 ) {
                     buf[len]='\0' ;
                     if ( canwrite ) { /* read-write */
                         fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", basename, (buf[0]=='0')?"":"CHECKED", basename ) ;
@@ -341,7 +341,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
             break ;
         case ft_binary:
             if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,suglen,0))>=0 ) {
+                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>=0 ) {
                     if ( canwrite ) { /* read-write */
                         int i = 0 ;
                         fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",basename,len>>5 ) ;
@@ -369,7 +369,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
             break ;
         default:
             if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,suglen,0))>=0 ) {
+                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>=0 ) {
                     buf[len] = '\0' ;
                     if ( canwrite ) { /* read-write */
                         fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
@@ -414,7 +414,7 @@ static void ShowText( FILE * out, const char * const basename, const char * cons
     /* buffer for field value */
     if ( pn->ft && pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
         if ( pn->ft->read.v ) { /* At least readable */
-            if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+            if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
                 buf[len] = '\0' ;
                 fprintf( out, "%s",buf ) ;
             }
@@ -428,7 +428,7 @@ static void ShowText( FILE * out, const char * const basename, const char * cons
             break ;
         case ft_yesno:
             if ( pn->ft->read.v ) { /* at least readable */
-                if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
                     fprintf( out, "%c", buf[0] ) ;
                 }
             } else if ( canwrite ) { /* rare write-only */
@@ -437,7 +437,7 @@ static void ShowText( FILE * out, const char * const basename, const char * cons
             break ;
         case ft_binary:
             if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
                     int i ;
                     for( i=0 ; i<len ; ++i ) {
                         fprintf( out, "%.2hhX", buf[i] ) ;
@@ -449,7 +449,7 @@ static void ShowText( FILE * out, const char * const basename, const char * cons
             break ;
         default:
             if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,suglen,0))>0 ) {
+                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
                     buf[len] = '\0' ;
                     fprintf( out, "%s",buf ) ;
                 }
@@ -534,7 +534,7 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
                 hex_only(up->value) ;
                 if ( (int)strlen(up->value) == (pn2.ft->suglen<<1) ) {
                     hex_convert(up->value) ;
-                    FS_write( linecopy, up->value, pn2.ft->suglen, 0 ) ;
+                    FS_write( linecopy, up->value, (size_t) pn2.ft->suglen, 0 ) ;
                 }
                 break;
             case ft_yesno:
@@ -664,30 +664,33 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
             } else if ( pn2->state ) {
                 FS_dirname_state(buffer,OW_FULLNAME_MAX,pn2) ;
             }
-            typ = strdup("directory") ;
+            //typ = strdup("directory") ;
+            typ = "directory" ;
         } else if ( pn2->dev == DeviceSimultaneous ) {
             loc = nam = pn2->dev->name ;
-            typ = strdup("1-wire chip") ;
+            //typ = strdup("1-wire chip") ;
+            typ = "1-wire chip" ;
         } else if ( pn2->type == pn_real ) {
             FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn,pn2) ;
             nam = pn2->dev->name ;
-            typ = strdup("1-wire chip") ;
+            //typ = strdup("1-wire chip") ;
+            typ = "1-wire chip" ;
         } else {
-            loc = pn2->dev->code ;
-            nam = loc ;
-	    typ = strdup("directory") ;
+            strcpy( loc, pn2->dev->code ) ;
+                nam = loc ;
+                //typ = strdup("directory") ;
+                typ = "directory" ;
         }
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
-	if(typ) {
-	  if (pn->state & pn_text) {
-            fprintf( out, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
-	  } else {
-            fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
-                     (strcmp(pncopy.path,"/")?pncopy.path:""), loc, loc, nam, typ ) ;
-	    /* pncopy is the parent dir */
-	  }
-	  free(typ);
-	}
+        //printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
+//        if(typ) {
+            if (pn->state & pn_text) {
+                fprintf( out, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
+            } else {
+                fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", (strcmp(pncopy.path,"/")?pncopy.path:""), loc, loc, nam, typ ) ;
+            /* pncopy is the parent dir */
+            }
+            //free(typ);
+//        }
         free(buffer);
     }
 
