@@ -46,7 +46,7 @@ static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const s
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
-static int ToClient( int fd, struct client_msg *cm, const char *data ) ;
+static int ToClient( int fd, struct client_msg *cm, char *data ) ;
 
 #ifdef OW_MT
 pthread_t main_threadid ;
@@ -97,7 +97,8 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     return msg ;
 }
 
-static int ToClient( int fd, struct client_msg * cm, const char * data ) {
+static int ToClient( int fd, struct client_msg * cm, char * data ) {
+    // note data should be (const char *) but iovec complains about const arguments 
     int nio = 1 ;
     int ret ;
     struct iovec io[] = {
@@ -195,6 +196,8 @@ void Handler( int fd ) {
                 break ;
             case msg_dir:
                 DirHandler( &sm, &cm, fd, &pn ) ;
+                break ;
+            default: // never reached
                 break ;
             }
             FS_ParsedName_destroy(&pn) ;
