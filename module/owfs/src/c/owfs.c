@@ -146,6 +146,7 @@ int main(int argc, char *argv[]) {
         fuse_loop(fuse) ;
     }
     close(fuse_fd) ;
+    fuse_fd = -1;
     ow_exit(0);
     return 0 ;
 }
@@ -169,7 +170,8 @@ static void ow_exit( int e ) {
 #endif
       fuse = NULL;
       if(fuse_fd != -1) {
-    close(fuse_fd);
+        close(fuse_fd);
+        fuse_fd = -1;
       }
       if(fuse_mountpoint != NULL) {
         fuse_unmount(fuse_mountpoint);
