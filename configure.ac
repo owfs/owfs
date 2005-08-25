@@ -135,6 +135,15 @@ AC_ARG_ENABLE(owserver,
 AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
+#Check swig
+if test -z "$SWIG"  ; then
+     ENABLE_SWIG="false"
+else
+     ENABLE_SWIG="true"
+fi
+AC_SUBST(ENABLE_SWIG)
+AM_CONDITIONAL(ENABLE_SWIG, test "${ENABLE_SWIG}" = "true")
+
 #Check owperl
 AC_MSG_CHECKING(if owperl is enabled)
 ENABLE_OWPERL="true"
