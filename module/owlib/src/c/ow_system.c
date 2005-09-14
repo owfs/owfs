@@ -55,6 +55,8 @@ $Id$
  aREAD_FUNCTION( FS_detail ) ;
  uREAD_FUNCTION( FS_r_overdrive ) ;
 uWRITE_FUNCTION( FS_w_overdrive ) ;
+ uREAD_FUNCTION( FS_r_ds2404_compliance ) ;
+uWRITE_FUNCTION( FS_w_ds2404_compliance ) ;
 
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
@@ -62,6 +64,7 @@ struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
     {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, NULL , } ,
     {"address"    ,      512, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
+    {"ds2404_compliance"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_ds2404_compliance}   , {u:FS_w_ds2404_compliance}, NULL , } ,
     {"overdrive"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_overdrive}   , {u:FS_w_overdrive}, NULL , } ,
     {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
     {"detail"     ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_detail} , {v:NULL}, NULL , } ,
@@ -84,6 +87,31 @@ struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_s
 
 /* ------- Functions ------------ */
 
+
+/* Just some tests to support change of extra delay */
+static int FS_r_ds2404_compliance(unsigned int * u , const struct parsedname * pn) {
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex);
+    if(!in) return -ENOENT ;
+
+    u[0] = in->ds2404_compliance ;
+    return 0 ;
+}
+
+static int FS_w_ds2404_compliance(const unsigned int * u , const struct parsedname * pn) {
+    int dindex = pn->extension ;
+    struct connection_in * in;
+
+    if (dindex<0) dindex = 0 ;
+    in = find_connection_in(dindex);
+    if(!in) return -ENOENT ;
+
+    in->ds2404_compliance = (u[0] ? 1 : 0);
+    return 0 ;
+}
 
 /* Just some tests to support overdrive */
 static int FS_r_overdrive(unsigned int * u , const struct parsedname * pn) {

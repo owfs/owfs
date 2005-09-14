@@ -795,7 +795,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
         return -EIO ;  // fatal error... probably closed usb-handle
     }
 
-    if(ds2404_alarm_compliance && (pn->in->USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
+    if(pn->in->ds2404_compliance && (pn->in->USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
       // extra delay for alarming DS1994/DS2404 complience
       UT_delay(5);
     }
@@ -1053,9 +1053,10 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
                 memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
             }
             break ;
-        case 0x40:
+        case 0x04:
+        case 0x84:
             /* We found a DS1994/DS2404 which require longer delays */
-            ds2404_alarm_compliance = 1 ;
+	    pn->in->ds2404_compliance = 1 ;
             break ;
         default:
 	    break;

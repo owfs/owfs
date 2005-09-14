@@ -322,6 +322,12 @@ int OW_ArgSerial( const char * arg ) {
     in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
+
+    /* Support DS1994/DS2404 which require longer delays, and is automatically
+     * turned on in *_next_both().
+     * Could try to turn this off to get faster reset-sequence though.
+     */
+    in->ds2404_compliance = 1 ;
     return 0 ;
 }
 
@@ -344,6 +350,11 @@ int OW_ArgUSB( const char * arg ) {
     } else {
         in->fd=1 ;
     }
+    /* Support DS1994/DS2404 which require longer delays, and is automatically
+     * turned on in *_next_both().
+     * Could try to turn this off to get faster reset-sequence though.
+     */
+    in->ds2404_compliance = 1 ;
     return 0 ;
 }
 

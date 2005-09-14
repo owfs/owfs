@@ -369,7 +369,7 @@ static int DS2480_reset( const struct parsedname * const pn ) {
         if( pn->si ) pn->si->AnyDevices = 1 ;
         // check if programming voltage available
         pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
-	if(ds2404_alarm_compliance) {
+	if(pn->in->ds2404_compliance) {
 	  // extra delay for alarming DS1994/DS2404 complience
 	  UT_delay(5);
 	}
@@ -600,9 +600,9 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     // copy the SerialNum to the buffer
     memcpy(serialnumber,sn,8) ;
 
-    if(*serialnumber == 0x04) {
+    if((*serialnumber & 0x7F) == 0x04) {
       /* We found a DS1994/DS2404 which require longer delays */
-      ds2404_alarm_compliance = 1 ;
+      pn->in->ds2404_compliance = 1 ;
     }
 
     // set the count

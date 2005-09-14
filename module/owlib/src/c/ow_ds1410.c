@@ -350,7 +350,7 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, 
 
     if(*serialnumber == 0x04) {
       /* We found a DS1994/DS2404 which require longer delays */
-      ds2404_alarm_compliance = 1 ;
+      pn->in->ds2404_compliance = 1 ;
     }
 
     si->LastDiscrepancy = last_zero;
@@ -453,18 +453,18 @@ static int DS1410_reset( const struct parsedname * const pn ) {
         LEVEL_CONNECT("1-wire bus short circuit.\n")
         /* fall through */
     case 0xF0:
-        if (pn && pn->si) pn->si->AnyDevices = 0 ;
+        pn->si->AnyDevices = 0 ;
         break ;
     default:
-        if (pn && pn->si) pn->si->AnyDevices = 1 ;
-        ProgramAvailable = 0 ; /* from digitemp docs */
-	if(ds2404_alarm_compliance) {
+        pn->si->AnyDevices = 1 ;
+        pn->in->ProgramAvailable = 0 ; /* from digitemp docs */
+	if(pn->in->ds2404_compliance) {
 	  // extra delay for alarming DS1994/DS2404 complience
 	  UT_delay(5);
 	}
     }
 
-    if (pn && pn->in) pn->in->Adapter = adapter_DS1410 ; /* OWFS assigned choice */
+    pn->in->Adapter = adapter_DS1410 ; /* OWFS assigned choice */
     return 0 ;
 }
 

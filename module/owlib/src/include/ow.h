@@ -423,7 +423,6 @@ struct connection_in {
     unsigned int bus_locks ;
     unsigned int bus_unlocks ;
     struct timeval bus_time ;
-    //struct timeval bus_pause_time ;
 
     struct timeval bus_read_time ;
     struct timeval bus_write_time ; /* for statistics */
@@ -433,6 +432,7 @@ struct connection_in {
     enum adapter_type Adapter ;
     char * adapter_name ;
     int use_overdrive_speed ;
+    int ds2404_compliance ;
     int ULevel ;
     int USpeed ;
     int ProgramAvailable ;
@@ -804,8 +804,6 @@ extern struct average dir_avg ;
 extern struct average all_avg ;
 
 extern struct timeval max_delay ;
-
-extern unsigned char ds2404_alarm_compliance ;
 
 // ow_locks.c
 extern struct timeval total_bus_time ;  // total bus_time

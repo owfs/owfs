@@ -214,9 +214,9 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
        * reconnect */
       return -EIO ;
     }
-    if(*serialnumber == 0x04) {
+    if((*serialnumber & 0x7F) == 0x04) {
       /* We found a DS1994/DS2404 which require longer delays */
-      ds2404_alarm_compliance = 1 ;
+      pn->in->ds2404_compliance = 1 ;
     }
     // if the search was successful then
 
@@ -291,8 +291,8 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     default:
         pn->si->AnyDevices = 1 ;
         pn->in->ProgramAvailable = 0 ; /* from digitemp docs */
-        if(ds2404_alarm_compliance) {
-            // extra delay for alarming DS1994/DS2404 complience
+        if(pn->in->ds2404_compliance) {
+            // extra delay for alarming DS1994/DS2404 compliance
             UT_delay(5);
         }
     }
