@@ -324,10 +324,10 @@ int OW_ArgSerial( const char * arg ) {
     in->busmode = bus_serial ;
 
     /* Support DS1994/DS2404 which require longer delays, and is automatically
-     * turned on in *_next_both().
-     * Could try to turn this off to get faster reset-sequence though.
+     * turned on in *_next_both(). 
+     * If it's turned off, it will result into a faster reset-sequence.
      */
-    in->ds2404_compliance = 1 ;
+    in->ds2404_compliance = 0 ;
     return 0 ;
 }
 
@@ -352,9 +352,9 @@ int OW_ArgUSB( const char * arg ) {
     }
     /* Support DS1994/DS2404 which require longer delays, and is automatically
      * turned on in *_next_both().
-     * Could try to turn this off to get faster reset-sequence though.
+     * If it's turned off, it will result into a faster reset-sequence.
      */
-    in->ds2404_compliance = 1 ;
+    in->ds2404_compliance = 0 ;
     return 0 ;
 }
 
