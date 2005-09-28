@@ -136,17 +136,36 @@ AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
 #Check swig
+AC_MSG_CHECKING(if swig is enabled)
 if test -z "$SWIG"  ; then
      ENABLE_SWIG="false"
 else
      ENABLE_SWIG="true"
 fi
+AC_ARG_ENABLE(swig,
+[  --enable-swig         Enable swig (default true)],
+[
+    if test ! "$enableval" = "yes"; then
+        ENABLE_SWIG="false"
+        SWIG=""
+	AC_MSG_RESULT([no])
+    else
+	AC_MSG_RESULT([yes (default)])
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
 AC_SUBST(ENABLE_SWIG)
 AM_CONDITIONAL(ENABLE_SWIG, test "${ENABLE_SWIG}" = "true")
 
 #Check owperl
 AC_MSG_CHECKING(if owperl is enabled)
-ENABLE_OWPERL="true"
+if test -z "$SWIG" ; then
+    ENABLE_OWPERL="false"
+else
+    ENABLE_OWPERL="true"
+fi
 AC_ARG_ENABLE(owperl,
 [  --enable-owperl       Enable owperl module (default true)],
 [
@@ -167,14 +186,22 @@ AC_ARG_ENABLE(owperl,
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    if test -z "$SWIG" ; then
+        AC_MSG_RESULT([no (swig disabled)])
+    else
+        AC_MSG_RESULT([yes (default)])
+    fi
 ])
 AC_SUBST(ENABLE_OWPERL)
 AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
 
 #Check owphp
 AC_MSG_CHECKING(if owphp is enabled)
-ENABLE_OWPHP="false"
+if test -z "$SWIG" ; then
+    ENABLE_OWPHP="false"
+else
+    ENABLE_OWPHP="false"
+fi
 AC_ARG_ENABLE(owphp,
 [  --enable-owphp        Enable owphp module (default false)],
 [
@@ -194,14 +221,22 @@ AC_ARG_ENABLE(owphp,
     fi
 ],
 [
-    AC_MSG_RESULT([no (default)])
+    if test -z "$SWIG" ; then
+        AC_MSG_RESULT([no (swig disabled)])
+    else
+        AC_MSG_RESULT([no (default)])
+    fi
 ])
 AC_SUBST(ENABLE_OWPHP)
 AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
 
 #Check owpython
 AC_MSG_CHECKING(if owpython is enabled)
-ENABLE_OWPYTHON="true"
+if test -z "$SWIG" ; then
+    ENABLE_OWPYTHON="false"
+else
+    ENABLE_OWPYTHON="true"
+fi
 AC_ARG_ENABLE(owpython,
 [  --enable-owpython     Enable owpython module (default true)],
 [
@@ -222,14 +257,22 @@ AC_ARG_ENABLE(owpython,
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    if test -z "$SWIG" ; then
+        AC_MSG_RESULT([no (swig disabled)])
+    else
+        AC_MSG_RESULT([yes (default)])
+    fi
 ])
 AC_SUBST(ENABLE_OWPYTHON)
 AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 
 #Check owtcl
 AC_MSG_CHECKING(if owtcl is enabled)
-ENABLE_OWTCL="false"
+if test -z "$SWIG" ; then
+    ENABLE_OWTCL="false"
+else
+    ENABLE_OWTCL="false"
+fi
 AC_ARG_ENABLE(owtcl,
 [  --enable-owtcl        Enable owtcl module (default false)],
 [
@@ -239,7 +282,11 @@ AC_ARG_ENABLE(owtcl,
     fi
 ],
 [
-    AC_MSG_RESULT([no (default)])
+    if test -z "$SWIG" ; then
+        AC_MSG_RESULT([no (swig disabled)])
+    else
+        AC_MSG_RESULT([no (default)])
+    fi
 ])
 AC_SUBST(ENABLE_OWTCL)
 AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
@@ -825,6 +872,16 @@ if test "${ENABLE_OWFTPD}" = "true"; then
 else
     AC_MSG_RESULT([    owftpd is DISABLED])
 fi
+if test "${ENABLE_OWSERVER}" = "true"; then
+    AC_MSG_RESULT([    owserver is enabled])
+else
+    AC_MSG_RESULT([    owserver is DISABLED])
+fi
+if test "${ENABLE_SWIG}" = "true"; then
+    AC_MSG_RESULT([    swig is enabled])
+else
+    AC_MSG_RESULT([    swig is DISABLED])
+fi
 if test "${ENABLE_OWPERL}" = "true"; then
     AC_MSG_RESULT([    owperl is enabled])
 else
@@ -844,10 +901,5 @@ if test "${ENABLE_OWTCL}" = "true"; then
     AC_MSG_RESULT([    owtcl is enabled])
 else
     AC_MSG_RESULT([    owtcl is DISABLED])
-fi
-if test "${ENABLE_OWSERVER}" = "true"; then
-    AC_MSG_RESULT([    owserver is enabled])
-else
-    AC_MSG_RESULT([    owserver is DISABLED])
 fi
 AC_MSG_RESULT()
