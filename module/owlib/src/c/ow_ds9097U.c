@@ -297,8 +297,14 @@ int DS2480_baud( speed_t baud, const struct parsedname * const pn ) {
     switch ( baud ) {
     case B9600:    return PARMSET_9600    ;
     case B19200:   return PARMSET_19200   ;
+#ifdef B57600
+      /* MacOSX support max 38400 in termios.h ? */
     case B57600:   return PARMSET_57600   ;
+#endif
+#ifdef B115200
+      /* MacOSX support max 38400 in termios.h ? */
     case B115200:  return PARMSET_115200  ;
+#endif
     }
     return PARMSET_9600 ;
 }
