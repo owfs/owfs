@@ -114,7 +114,6 @@ static int OW_read( unsigned char * data , const struct parsedname * pn ) {
     int ret ;
 
     BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( p , 1,pn ) || BUS_readin_data( data, 1,pn ) || (data[0]&0x0F)+((data[0]>>4)&0x0F)!=0x10 ;
     BUSUNLOCK(pn);
     return ret ;
 }
