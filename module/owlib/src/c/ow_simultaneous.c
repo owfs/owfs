@@ -114,7 +114,7 @@ static int OW_setcache( enum simul_type type, const struct parsedname * const pn
     struct timeval tv ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
-    gettimeofday(&tv,0) ;
+    gettimeofday(&tv, NULL) ;
     return Cache_Add_Internal(&tv,sizeof(struct timeval),&ipSimul[type],&pn2) ;
 }
 
@@ -134,7 +134,7 @@ static int OW_getcache( enum simul_type type ,const unsigned int msec, const str
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
     if ( (ret=Cache_Get_Internal(&tv, &dsize, &ipSimul[type],&pn2)) ) return ret ;
-    gettimeofday(&now,0) ;
+    gettimeofday(&now, NULL) ;
     diff =  1000*(now.tv_sec-tv.tv_sec) + (now.tv_usec-tv.tv_usec)/1000 ;
     if ( diff<(long int)msec ) UT_delay(msec-diff) ;
     return 0 ;

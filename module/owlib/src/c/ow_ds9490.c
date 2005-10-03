@@ -916,7 +916,6 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     struct stateinfo * si = pn->si ;
     struct timeval tv ;
-    struct timezone tz;
     time_t endtime, now ;
     int ret ;
     int i ;
@@ -959,7 +958,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     /* DS9490_getstatus() should be enough since it time-out after some time */
 #if 0
     /* Wait for status max 500ms */
-    if(gettimeofday(&tv, &tz)<0) return -1;
+    if(gettimeofday(&tv, NULL)<0) return -1;
     endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 500;
     //now = 0 ;
     do {
@@ -984,7 +983,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
             }
         }
       
-        if(gettimeofday(&tv, &tz)<0) return -1;
+        if(gettimeofday(&tv, NULL)<0) return -1;
         now = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 ;
     } while(((buffer[8]&STATUSFLAGS_IDLE) == 0) && (endtime > now));
     if((buffer[8]&STATUSFLAGS_IDLE) == 0) {
@@ -1144,13 +1143,12 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
 static int DS9490_HaltPulse(const struct parsedname * const pn) {
     unsigned char buffer[32] ;
     struct timeval tv ;
-    struct timezone tz;
     time_t endtime, now ;
     int ret ;
     
     LEVEL_DATA("DS9490_HaltPulse\n");
     
-    if(gettimeofday(&tv, &tz)<0) return -1;
+    if(gettimeofday(&tv, NULL)<0) return -1;
     endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 300;
     
     do {
@@ -1177,7 +1175,7 @@ static int DS9490_HaltPulse(const struct parsedname * const pn) {
             //printf("DS9490_HaltPulse: ok\n");
             return 0 ;
         }
-        if(gettimeofday(&tv, &tz)<0) return -1;
+        if(gettimeofday(&tv, NULL)<0) return -1;
         now = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 ;
     } while(endtime > now);
     
