@@ -136,23 +136,25 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
                     p = p->next;
                 }
                 if(p) {
-                /* A remote server exists, and we can't read this value!!
-                * /simultaneous/temperature is unknown when:
-                * /bus.0/simultaneous/temperature = 0
-                * /bus.1/simultaneous/temperature = 1
-                */
-		  if(offset > 1) r = -ERANGE ;
-		  else if(offset == 1) r = 0 ;
-		  else {
+                    /* A remote server exists, and we can't read this value!!
+                    * /simultaneous/temperature is unknown when:
+                    * /bus.0/simultaneous/temperature = 0
+                    * /bus.1/simultaneous/temperature = 1
+                    */
+                    if(offset > 1) {
+                        r = -ERANGE ;
+                    } else if(offset == 1) {
+                        r = 0 ;
+                    } else {
 #if 0
-		    r = -EINVAL ;
+                        r = -EINVAL ;
 #else
-		    buf[0] = '0';
-		    r = 1;
+                        buf[0] = '0';
+                        r = 1;
 #endif
-		  }
+                    }
                 } else {
-            r = FS_real_read(buf, size, offset, pn) ;
+                    r = FS_real_read(buf, size, offset, pn) ;
                 }
             }
         } else {
@@ -312,7 +314,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
 
     /* Array property? Read separately? Read together and manually separate? */
-    if ( pn->ft->ag ) {
+    if ( pn->ft->ag ) { /* array property */
         switch(pn->ft->ag->combined) {
         case ag_separate: /* separate reads, artificially combined into a single array */
             if ( pn->extension==-1 ) return FS_r_all(buf,size,offset,pn) ;
@@ -323,7 +325,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
         case ag_aggregate: /* natively an array */
             /* split apart if a single item requested */
             if ( pn->extension>-1 ) return FS_r_split(buf,size,offset,pn) ;
-            /* return ALL if required */
+            /* return ALL if required   (comma separated)*/
             if ( pn->extension==-1 ) return FS_gamish(buf,size,offset,pn) ;
             break ; /* special bitfield case, extension==-2, read as a single entity */
         }
@@ -398,33 +400,40 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
         ret = (pn->ft->read.i)(&i,pn) ;
         if (ret < 0) return ret ;
         sz = FS_output_integer( i , buf , size , pn ) ;
-	break;
+        break;
         }
-    case ft_bitfield:
+    case ft_bitfield: {
+        unsigned int u ;
+        if (size < 1) return -EMSGSIZE ;
+        ret = (pn->ft->read.u)(&u,pn) ;
+        if (ret < 0) return ret ;
+        buf[0] = UT_getbit((void*)(&u),pn->extension) ? '1' : '0' ;
+        return 1 ;
+    }
     case ft_unsigned: {
         unsigned int u ;
         ret = (pn->ft->read.u)(&u,pn) ;
         if (ret < 0) return ret ;
-	//LEVEL_DEBUG("FS_parse_read: call FS_output_unsigned size=%d\n", (int)size )
-	sz = FS_output_unsigned( u , buf , size , pn ) ;
-	//"size" will be corrupted if FS_output_unsigned contain local variable
-	//char c[suglen+2], so I changed it into a malloc.
-	//LEVEL_DEBUG("FS_parse_read: FS_output_unsigned returned sz=%d size=%d (probably changed)\n", (int)sz, (int)size);
-	break ;
+        LEVEL_DEBUG("FS_parse_read: call FS_output_unsigned size=%d\n", (int)size ) ;
+            sz = FS_output_unsigned( u , buf , size , pn ) ;
+            //"size" will be corrupted if FS_output_unsigned contain local variable
+            //char c[suglen+2], so I changed it into a malloc.
+            LEVEL_DEBUG("FS_parse_read: FS_output_unsigned returned sz=%d size=%d (probably changed)\n", (int)sz, (int)size);
+        break ;
         }
     case ft_float: {
         FLOAT f ;
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
         sz = FS_output_float( f , buf , size , pn ) ;
-	break ;
+        break ;
         }
     case ft_temperature: {
         FLOAT f ;
         ret = (pn->ft->read.f)(&f,pn) ;
         if (ret < 0) return ret ;
         sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
-	break ;
+    break ;
         }
     case ft_tempgap: {
         FLOAT f ;
@@ -500,7 +509,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
 	    break;
         }
     case ft_unsigned:
-	{
+        {
             unsigned int * u = (unsigned int *) calloc( elements, sizeof(unsigned int) ) ;
 
                 if ( u==NULL ) return -ENOMEM ;
@@ -571,12 +580,13 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret >= 0) {
                 size_t i ;
+                size_t j = 0 ;
                 for ( i=0 ; i<elements ; ++i ) {
-                    buf[i*2] = u&0x01 ? '1' : '0' ;
+                    buf[j++] = u&0x01 ? '1' : '0' ;
                     u = u>>1 ;
-                    if ( i<elements-1 ) buf[i*2+1] = ',' ;
+                    if ( i<elements-1 ) buf[j++] = ',' ;
                 }
-                ret = elements*2-1 ;
+                ret = j ;
             }
 	    break ;
         }
@@ -662,8 +672,8 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 
     LEVEL_DEBUG("FS_r_all: size=%d left=%d sz=%d\n", size, left, sz);
     if((sz > 0) && offset) {
-      memcpy(buf, &buf[offset], sz - (size_t)offset);
-      return sz - offset;
+        memcpy(buf, &buf[offset], sz - (size_t)offset);
+        return sz - offset;
     }
     return size - left ;
 }

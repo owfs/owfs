@@ -695,7 +695,8 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;
 FLOAT Temperature( FLOAT C, const struct parsedname * pn) ;
 FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) ;
-FLOAT fromTemperature( FLOAT C, const struct parsedname * pn) ;
+FLOAT fromTemperature( FLOAT T, const struct parsedname * pn) ;
+FLOAT fromTempGap( FLOAT T, const struct parsedname * pn) ;
 const char *TemperatureScaleName(enum temp_type t) ;
 
 extern int cacheavailable ; /* is caching available */

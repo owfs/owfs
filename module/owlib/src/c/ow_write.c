@@ -52,6 +52,20 @@ static int FS_input_date_array( DATE * const results, const char * const buf, co
 /*   outside of this module will not have buffer overflows */
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
+/* Format of input,
+        Depends on "filetype"
+        type     function    format                         Handled as
+        integer  strol      decimal integer                 integer array
+        unsigned strou      decimal integer                 unsigned array
+        bitfield strou      decimal integer                 unsigned array
+        yesno    strcmp     "0" "1" "yes" "no" "on" "off"   unsigned array
+        float    strod      decimal floating point          double array
+        date     strptime   "Jan 01, 1901", etc             date array
+        ascii    strcpy     string without "," or null      comma-separated-strings
+        binary   memcpy     fixed length binary string      binary "string"
+*/
+
+
 /* return size if ok, else negative */
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
@@ -102,48 +116,48 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     case pn_statistics:
         //printf("FS_write_postparse: pid=%ld system/settings/statistics\n", pthread_self());
         if ( pn->state & pn_bus ) {
-	    /* this will either call ServerWrite or FS_real_write */
-	    r = FS_write_seek(buf, size, offset, pn) ;
+            /* this will either call ServerWrite or FS_real_write */
+            r = FS_write_seek(buf, size, offset, pn) ;
         } else {
             r = FS_real_write(buf, size, offset, pn) ;
-	}
+        }
         break;
     default:
 //printf("FS_write_postparse: pid=%ld call fs_write_seek size=%ld\n", pthread_self(), size);
 
         /* handle DeviceSimultaneous */
         if(pn->dev == DeviceSimultaneous) {
-	  /* writing to /simultaneous/temperature will write to ALL
-	   * available bus.?/simultaneous/temperature
-	   * not just /simultaneous/temperature
-	   */
-	  r = FS_write_seek(buf, size, offset, pn) ;
-	} else {
-	  /* real data -- go through device chain */
-	    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
-	      struct parsedname pn2;
-	      int bus_nr = -1;
-	      if(Cache_Get_Device(&bus_nr, pn)) {
-		//printf("Cache_Get_Device didn't find bus_nr\n");
-		bus_nr = CheckPresence(pn);
-		/* Cache_Add_Device() is called in FS_write_seek() */
-	      }
-	      if(bus_nr >= 0) {
-		memcpy(&pn2, pn, sizeof(struct parsedname));
-		/* fake that we write from only one indevice now! */
-		pn2.in = find_connection_in(bus_nr);
-		pn2.state |= pn_bus ;
-		pn2.bus_nr = bus_nr ;
-		//printf("write only to bus_nr=%d\n", bus_nr);
-		r = FS_write_seek(buf, size, offset, &pn2) ;
-	      } else {
-		//printf("CheckPresence failed, no use to write\n");
-		r = -ENOENT ;
-	      }
-	    } else {
-	      r = FS_write_seek(buf, size, offset, pn) ;
-	    }
-	}
+            /* writing to /simultaneous/temperature will write to ALL
+            * available bus.?/simultaneous/temperature
+            * not just /simultaneous/temperature
+            */
+            r = FS_write_seek(buf, size, offset, pn) ;
+        } else {
+            /* real data -- go through device chain */
+            if((pn->type == pn_real) && !(pn->state & pn_bus)) {
+                struct parsedname pn2;
+                int bus_nr = -1;
+                if(Cache_Get_Device(&bus_nr, pn)) {
+                    //printf("Cache_Get_Device didn't find bus_nr\n");
+                    bus_nr = CheckPresence(pn);
+                    /* Cache_Add_Device() is called in FS_write_seek() */
+                }
+                if(bus_nr >= 0) {
+                    memcpy(&pn2, pn, sizeof(struct parsedname));
+                    /* fake that we write from only one indevice now! */
+                    pn2.in = find_connection_in(bus_nr);
+                    pn2.state |= pn_bus ;
+                    pn2.bus_nr = bus_nr ;
+                    //printf("write only to bus_nr=%d\n", bus_nr);
+                    r = FS_write_seek(buf, size, offset, &pn2) ;
+                } else {
+                    //printf("CheckPresence failed, no use to write\n");
+                    r = -ENOENT ;
+                }
+            } else {
+                r = FS_write_seek(buf, size, offset, pn) ;
+            }
+        }
     }
 
     STATLOCK;
@@ -196,9 +210,9 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
         /* if readonly exit */
         if ( readonly ) return -EROFS ;
 
-	if ( (r=LockGet(pn))==0 ) {
-	  r = FS_real_write( buf, size, offset, pn ) ;
-	  LockRelease(pn) ;
+        if ( (r=LockGet(pn))==0 ) {
+            r = FS_real_write( buf, size, offset, pn ) ;
+            LockRelease(pn) ;
         }
     }
     /* If sucessfully writing a device, we know it exists on a specific bus.
@@ -239,14 +253,15 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
         case ag_mixed:
             if ( pn->extension == -1 ) return FS_gamish(buf,size,offset,pn) ;
             /* Does the right thing, aggregate write for ALL and individual for splits */
-            break ; /* fall through for individual write */
+            break ; /* continue for bitfield */
         case ag_separate:
-            /* loop through to fake an atomic array write */
+            /* write all of them, but one at a time */
             if ( pn->extension == -1 ) return FS_w_all(buf,size,offset,pn) ;
             break ; /* fall through for individual writes */
         }
     }
 
+    /* write individual entries */
     for(i=0; i<3; i++) {
         STAT_ADD1(write_tries[i]) ; /* statitics */
         r = FS_parse_write( buf, size, offset, pn ) ;
@@ -293,22 +308,17 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
         break ;
     case ft_tempgap :
     case ft_float:
-        if ( offset ) {
-            ret = -EADDRNOTAVAIL ;
-        } else {
-            FLOAT F ;
-            ret = FS_input_float( &F, buf, size ) ;
-            if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
-            ret = ret || (pn->ft->write.f)(&F,pn) ;
-        }
-        break ;
     case ft_temperature:
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
             FLOAT F ;
             ret = FS_input_float( &F, buf, size ) ;
-            F = fromTemperature( F , pn ) ;
+            if ( pn->ft->format == ft_temperature ) {
+                F = fromTemperature( F , pn ) ;
+            } else if ( pn->ft->format == ft_tempgap ) {
+                F = fromTempGap( F , pn ) ;
+            }
             if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.f)(&F,pn) ;
         }
@@ -421,19 +431,6 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
         break ;
     case ft_tempgap:
     case ft_float:
-        {
-            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
-            if ( f==NULL ) {
-                ret = -ENOMEM ;
-            } else {
-                if ( (ret = FS_input_float_array( f, buf, size, pn ))==0 ) {
-                    if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
-                    ret = (pn->ft->write.f)(f,pn) ;
-                }
-            free(f) ;
-            }
-        }
-        break ;
     case ft_temperature:
         {
             FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
@@ -441,8 +438,13 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
                 ret = -ENOMEM ;
             } else {
                 if ( (ret = FS_input_float_array( f, buf, size, pn ))==0 ) {
-                    size_t i ;
-                    for ( i=0 ; i<elements ; ++i ) f[i] = fromTemperature(f[i],pn) ;
+                    if ( pn->ft->format == ft_temperature ) {
+                        size_t i ;
+                        for ( i=0 ; i<elements ; ++i ) f[i] = fromTemperature(f[i],pn) ;
+                    } else if ( pn->ft->format == ft_tempgap ) {
+                        size_t i ;
+                        for ( i=0 ; i<elements ; ++i ) f[i] = fromTempGap(f[i],pn) ;
+                    }
                     if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.f)(f,pn) ;
                 }
@@ -591,6 +593,9 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
     const size_t ffl = FullFileLength(pn) ;
     char * cbuf = NULL ;
 
+    /* readable at all? cannot write a part if whole can't be read */
+    if ( pn->ft->read.v == NULL ) return -EFAULT ;
+    
 #ifdef OW_CACHE
     cbuf = (char *) malloc( FullFileLength(pn)) ;
 #endif /* OW_CACHE */
@@ -646,19 +651,12 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         } else {
             unsigned int U ;
             int y ;
-            unsigned int f = 1<< pn->extension ;
-//printf("BITFIELD0 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
             ret = ((pn->ft->read.u)(&U,pn)<0) || FS_input_unsigned(&y,buf,size) ;
-//printf("BITFIELD1 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
             if ( ret==0) {
-                U &= ~f ;
-//printf("BITFIELD2 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
-                if (y) U |= f ;
-//printf("BITFIELD3 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
+                UT_setbit((void*)(&U),pn->extension,y) ;
                 ret = (pn->ft->write.u)(&U,pn) ;
             }
             if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,ffl,pn) ;
-//printf("BITFIELD4 U=%X, y=%d f=%X, ffl=%d cbuf=%s\n",U,y,f,ffl,cbuf) ;
         }
         break ;
     case ft_tempgap:

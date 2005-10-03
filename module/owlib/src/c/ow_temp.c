@@ -24,6 +24,8 @@ const char *TemperatureScaleName(enum temp_type t) {
 }
 
 /* Temperture Conversion routines  */
+
+/* convert internal (Centigrade) to external format */
 FLOAT Temperature( FLOAT C, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
@@ -32,30 +34,42 @@ FLOAT Temperature( FLOAT C, const struct parsedname * pn) {
         return C+273.15 ;
     case temp_rankine:
         return 1.8*C+32.+459.67 ;
-    default:
+    default: /* Centigrade */
         return C ;
     }
 }
 
+/* convert internal (Centigrade) to external format */
 FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
     case temp_rankine:
         return 1.8*C ;
-    default:
+    default: /* Centigrade, Kelvin */
         return C ;
     }
 }
 
-FLOAT fromTemperature( FLOAT C, const struct parsedname * pn) {
+/* convert to internal (Centigrade) from external format */
+FLOAT fromTemperature( FLOAT T, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
-        return (C-32.)/1.8 ;
+        return (T-32.)/1.8 ;
     case temp_kelvin:
-        return C-273.15 ;
+        return T-273.15 ;
     case temp_rankine:
-        return 1.8*(C-32.-459.67)/1.8 ;
-    default:
-        return C ;
+        return (T-32.-459.67)/1.8 ;
+    default: /* Centigrade */
+        return T ;
+    }
+}
+/* convert to internal (Centigrade) from external format */
+FLOAT fromTempGap( FLOAT T, const struct parsedname * pn) {
+    switch( TemperatureScale(pn) ) {
+    case temp_fahrenheit:
+    case temp_rankine:
+        return (T)/1.8 ;
+    default: /* Centigrade, Kelvin */
+        return T ;
     }
 }
