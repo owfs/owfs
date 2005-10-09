@@ -1,8 +1,11 @@
 # $Id$
 
-bin_PROGRAMS = owfs
-owfs_SOURCES = owfs.c owfs_callback.c
-owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
+owcapi_SOURCES = owcapi.c
+owcapi_DEPENDENCIES = ../../../owlib/src/c/libow.la
+
+lib_LTLIBRARIES = libowcapi.1a
+
+libowcapi_1a_SOURCES = ${owcapi_SOURCE}
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
@@ -12,19 +15,12 @@ if ENABLE_USB
 USB_FLAG = -DOW_USB
 endif
 
-# multithreading -- must be available on the library as well
-if ENABLE_MT
-MT_FLAG = -DOW_MT
-endif
-
 if ENABLE_PROFILING
 PROFILING_FLAG = -pg
 endif
 
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
-         -I/usr/local/include/fuse \
-         -I/usr/local/include \
          -L../../../owlib/src/c \
          -fexceptions \
          -Wall \
@@ -38,12 +34,12 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${CACHE_FLAG} \
-         ${MT_FLAG} \
          ${USB_FLAG} \
          ${PROFILING_FLAG} \
+         _D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS}
+AM_LDFLAGS = -low ${PROFILING_FLAG}
 
 clean-generic:
 
