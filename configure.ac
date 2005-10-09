@@ -6,7 +6,7 @@ AC_INIT
 AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="2"
-VERSION_MINOR="1"
+VERSION_MINOR="2"
 PATCHLEVEL="0RC"
 
 AC_SUBST(VERSION_MAJOR)dnl
@@ -134,6 +134,22 @@ AC_ARG_ENABLE(owserver,
 ])
 AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
+
+#Check owcapi
+AC_MSG_CHECKING(if owcapi is enabled)
+ENABLE_OWCAPI="false"
+AC_ARG_ENABLE(owcapi,
+[  --enable-owcapi       Enable owcapi module (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWCAPI=true
+    fi
+],
+[
+    AC_MSG_RESULT([false (default)])
+])
+AC_SUBST(ENABLE_OWCAPI)
 
 #Check swig
 AC_MSG_CHECKING(if swig is enabled)
@@ -727,6 +743,7 @@ AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 # conditionals for httpd/ftpd/nfsd
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
+AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -779,6 +796,11 @@ AC_CONFIG_FILES([
     module/owhttpd/src/include/Makefile
     module/owhttpd/src/c/Makefile
     module/owhttpd/src/man/Makefile
+    module/owserver/Makefile
+    module/owserver/src/Makefile
+    module/owserver/src/include/Makefile
+    module/owserver/src/c/Makefile
+    module/owserver/src/man/Makefile
     module/ownfsd/Makefile
     module/ownfsd/src/Makefile
     module/ownfsd/src/include/Makefile
@@ -789,6 +811,11 @@ AC_CONFIG_FILES([
     module/owftpd/src/include/Makefile
     module/owftpd/src/c/Makefile
     module/owftpd/src/man/Makefile
+    module/owcapi/Makefile
+    module/owcapi/src/Makefile
+    module/owcapi/src/include/Makefile
+    module/owcapi/src/c/Makefile
+    module/owcapi/src/man/Makefile
     module/swig/Makefile
     module/swig/perl5/Makefile
     module/swig/perl5/Makefile.PL
@@ -796,11 +823,6 @@ AC_CONFIG_FILES([
     module/swig/python/Makefile
     module/swig/python/setup.py
     module/swig/tcl/Makefile
-    module/owserver/Makefile
-    module/owserver/src/Makefile
-    module/owserver/src/include/Makefile
-    module/owserver/src/c/Makefile
-    module/owserver/src/man/Makefile
     src/Makefile
     src/include/Makefile
     src/man/Makefile
@@ -876,6 +898,11 @@ if test "${ENABLE_OWSERVER}" = "true"; then
     AC_MSG_RESULT([    owserver is enabled])
 else
     AC_MSG_RESULT([    owserver is DISABLED])
+fi
+if test "${ENABLE_OWCAPI}" = "true"; then
+    AC_MSG_RESULT([    owcapi is enabled])
+else
+    AC_MSG_RESULT([    owcapi is DISABLED])
 fi
 if test "${ENABLE_SWIG}" = "true"; then
     AC_MSG_RESULT([    swig is enabled])

@@ -284,7 +284,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
     }
 }
 
-/* Dir, called from Handler with the following caveates: */
+/* Dir, called from Handler with the following caveats: */
 /* path is path, already parsed, and null terminated */
 /* sm has been read, cm has been zeroed */
 /* pn is configured */

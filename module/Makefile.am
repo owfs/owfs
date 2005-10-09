@@ -20,12 +20,16 @@ if ENABLE_OWSERVER
   MAYBE_OWSERVER = owserver
 endif
 
+if ENABLE_OWCAPI
+  MAYBE_OWCAPI = owcapi
+endif
+  
 if ENABLE_SWIG
   MAYBE_SWIG = swig
 endif
 
 # VT: SUBDIRS: In *that* order (owlib first is the critical point)
-SUBDIRS = owlib $(MAYBE_OWFS) $(MAYBE_OWHTTPD) $(MAYBE_OWFTPD) $(MAYBE_OWNFSD) $(MAYBE_OWSERVER) $(MAYBE_SWIG)
+SUBDIRS = owlib $(MAYBE_OWFS) $(MAYBE_OWHTTPD) $(MAYBE_OWFTPD) $(MAYBE_OWNFSD) $(MAYBE_OWSERVER) $(MAYBE_OWCAPI) $(MAYBE_SWIG)
 
 clean-generic:
 
