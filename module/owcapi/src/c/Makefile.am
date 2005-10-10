@@ -1,7 +1,7 @@
 # $Id$
 
 OWCAPI_SOURCE = owcapi.c
-OWCAPI_DEPENDENCIES = ../../../owlib/src/c/libow.la
+opwcapi_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 lib_LTLIBRARIES = libowcapi.la
 
