@@ -89,7 +89,7 @@ int OW_init_params( int argc, char ** argv ) {
 int OW_init( const char * device ) {
     int ret = 0 ;
 
-    if ( device==NULL ) return -ENODEV
+    if ( device==NULL ) return -ENODEV ;
 
     /* Set up owlib */
     LibSetup() ;
@@ -115,7 +115,8 @@ int OW_init( const char * device ) {
 }
 
 int OW_finish( void ) {
-    return LibClose() ;
+    LibClose() ;
+    return 0 ;
 }
 
 /* Allocates and copies path if not NULL terminated string */

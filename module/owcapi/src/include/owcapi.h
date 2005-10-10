@@ -19,16 +19,16 @@ $Id$
 /* initialization, required befopre any other calls. Should be paired with a finish
     OW_init -- simplest, just a device name
               /dev/ttyS0 for serial
-	      u or u# for USB
-	      #### for TCP/IP port (owserver)
+              u or u# for USB
+              #### for TCP/IP port (owserver)
    OW_init_string -- looks just like the command line to owfs or owhttpd
    OW_init_args -- char** array usually from the main() call
 
   return value 0 = ok
          non-zero = error
-	 
+  
   No need to call OW_finish if an error */
-*/
+ 
 int OW_init(        const char * device ) ;
 int OW_init_string( const char * params) ;
 int OW_init_args(   int argc, char ** args ) ;
@@ -48,7 +48,7 @@ int OW_init_args(   int argc, char ** args ) ;
   
   return value 0 = ok
          non-zero = error
-*/	 
+*/
 int OW_get( const char * name, size_t name_length, char * buffer, size_t buffer_length ) ;
 
 /* data write
@@ -63,17 +63,16 @@ int OW_get( const char * name, size_t name_length, char * buffer, size_t buffer_
   
   return value >= 0 length of returned data string
                 < 0 error
-*/	 
+*/ 
 int OW_put( const char * name, size_t name_length, const char * buffer, size_t buffer_length ) ;
 
 /* cleanup
   Clears internal buffer, frees file descriptors
   Notmal process cleanup will work if program ends before OW_finish is called
   But not calling OW_init more than once without an intervening OW_finish will cause a memory leak
-  Return code useful for deciding whether to proceed with another invokation
   
   return value 0 = ok
-         non-zero = error
+         no error return
 */
 int OW_finish( void ) ;
 
