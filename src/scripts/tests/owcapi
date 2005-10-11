@@ -1,0 +1,26 @@
+#include <stdio.h>
+#include <owcapi.h>
+
+int get(char * path) {
+    char Buffer[4096] ;
+    printf(" GET = %d\tPATH=<%s>\n",OW_get(path,Buffer,4096),path ) ;
+    printf("Result<%s>\n\n",Buffer);
+}
+
+int put(char * path, char * b) {
+    printf(" PUT = %d\tPATH=<%s> -> <%s>\n",OW_put(path,b,strlen(b)),path,b ) ;
+    get(path) ;
+}
+
+int main( int argc, char ** argv ) {
+    
+    printf("Init = %d\n",OW_init(argv[1]) ) ;
+    get("") ;
+    get("/") ;
+    get("10.044954000800");
+    get("10.044954000800/temperature") ;
+    get("/05.dd011f000000/PIO") ;
+    put("/05.dd011f000000/PIO","0") ;
+    put("/05.dd011f000000/PIO","1") ;
+    OW_finish();
+}
