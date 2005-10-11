@@ -1,11 +1,11 @@
 # $Id$
 
-OWCAPI_SOURCE = owcapi.c
-opwcapi_DEPENDENCIES = ../../../owlib/src/c/libow.la
+owcapi_SOURCES = owcapi.c
+libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 lib_LTLIBRARIES = libowcapi.la
 
-libowcapi_la_SOURCES = ${OWCAPI_SOURCE}
+libowcapi_la_SOURCES = ${owcapi_SOURCES}
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
