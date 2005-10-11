@@ -1,11 +1,10 @@
 # $Id$
 
-owcapi_SOURCES = owcapi.c
-libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
+owcapi_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 lib_LTLIBRARIES = libowcapi.la
 
-libowcapi_la_SOURCES = ${owcapi_SOURCES}
+libowcapi_la_SOURCES = owcapi.c
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
@@ -39,7 +38,7 @@ AM_CFLAGS = -I../include \
          -D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = ${PROFILING_FLAG}
+AM_LDFLAGS = -low ${PROFILING_FLAG}
 
 clean-generic:
 

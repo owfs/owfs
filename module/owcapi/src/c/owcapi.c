@@ -26,10 +26,6 @@ pthread_t main_threadid ;
 #define IS_MAINTHREAD 1
 #endif
 
-/* Prototypes */
-static int OW_get_validated( const char * path, char * buffer, size_t buffer_length ) ;
-static void CheckName( char * path, const char * name, size_t name_length ) ;
-
 #define MAX_ARGS 20
 int OW_init_string( const char * params ) {
     char * prms = strdup(params) ;
@@ -54,7 +50,7 @@ int OW_init_string( const char * params ) {
     return ret ;
 }
 
-int OW_init_params( int argc, char ** argv ) {
+int OW_init_args( int argc, char ** argv ) {
     int ret = 0 ;
     int c ;
 
@@ -77,7 +73,7 @@ int OW_init_params( int argc, char ** argv ) {
         ++optind ;
     }
 
-    background = 1 ; // Cannot enter background mode, since this is a called library
+    background = 0 ; // Cannot enter background mode, since this is a called library
     if ( ret==0 ) ret = LibStart() ;
 
     if ( ret ) LibClose() ;
@@ -106,7 +102,7 @@ int OW_init( const char * device ) {
         break ;
     }
 
-    background = 1 ; // Cannot enter background mode, since this is a called library
+    background = 0 ; // Cannot enter background mode, since this is a called library
     if ( ret==0 ) ret = LibStart() ;
 
     if ( ret ) LibClose() ;
@@ -114,46 +110,16 @@ int OW_init( const char * device ) {
     return ret ;
 }
 
-int OW_finish( void ) {
-    LibClose() ;
-    return 0 ;
-}
-
-/* Allocates and copies path if not NULL terminated string */
-static void CheckName( char * path, const char * name, size_t name_length ) {
-    if (name==NULL || name_length==0) {
-        path = strdup("/") ;
-    } else if ( name[name_length]=='\0' ) {
-        path = name ;
-    } else {
-        path = malloc(name_length+1) ;
-        if ( path ) {
-            memcpy(path,name,name_length) ;
-            path[name_length] = '\0' ;
-        }
-    }
-}
-
-int OW_put( const char * name, size_t name_length, const char * buffer, size_t buffer_length ) {
-    char * path ;
-    int ret ;
-
-    CheckName(path,name,name_length) ;
-    if ( path==NULL ) return -ENOMEM ;
-
-    ret = FS_write(path,buffer,buffer_length,0) ;  
-  
-    if ( path != name ) free(path) ;
-    return ret ;
-}
-
-static int OW_get_validated( const char * path, char * buffer, size_t buffer_length ) {
+int OW_get( const char * path, char * buffer, size_t buffer_length ) {
     struct parsedname pn ;
     struct stateinfo si ;
+//    int test=0 ;
     int s = 0 ; /* current buffer string length */
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
-        if ( s && s<buffer_length-2) strcpy( &buffer[s++], "," ) ;
+        if ( (s>0) && (s+2)<buffer_length) strcpy( &buffer[s++], "," ) ;
+//        snprintf(&buffer[s],buffer_length-s,"[%d] ",test++);
+//        s=strlen(buffer) ;
         FS_DirName( &buffer[s], buffer_length-s-2, pn2 ) ;
         if (
             pn2->dev ==NULL
@@ -163,6 +129,10 @@ static int OW_get_validated( const char * path, char * buffer, size_t buffer_len
         ) strcat( &buffer[s], "/" );
         s = strlen( buffer ) ;
     }
+
+    /* Check the parameters */
+    if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
+    if ( path==NULL ) path="/" ;
 
     /* Parse the input string */
     pn.si = &si ;
@@ -175,22 +145,18 @@ static int OW_get_validated( const char * path, char * buffer, size_t buffer_len
         s =  FS_read_3times( buffer, buffer_length, 0, &pn ) ;
     }
     FS_ParsedName_destroy(&pn) ;
+    if ( s<0 ) buffer[0] = '\0' ;
     return s ;
 }
 
-int OW_get( const char * name, size_t name_length, char * buffer, size_t buffer_length ) {
-    char * path ;
-    int ret ;
-
+int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
+    /* Check the parameters */
     if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
+    if ( path==NULL ) return -EINVAL ;
 
-    CheckName(path,name,name_length) ;
-    if ( path==NULL ) return -ENOMEM ;
- 
-    ret = OW_get_validated(path,buffer,buffer_length) ;
+    return FS_write(path,buffer,buffer_length,0) ;
+}
 
-    if ( ret<0 ) buffer[0] = '\0' ;
-
-    if ( path != name ) free(path) ;
-    return ret ;
+void OW_finish( void ) {
+    LibClose() ;
 }
