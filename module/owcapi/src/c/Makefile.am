@@ -1,6 +1,6 @@
 # $Id$
 
-owcapi_DEPENDENCIES = ../../../owlib/src/c/libow.la
+libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 lib_LTLIBRARIES = libowcapi.la
 
