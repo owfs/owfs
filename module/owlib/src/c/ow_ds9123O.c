@@ -398,8 +398,14 @@ static int DS9123O_reset( const struct parsedname * const pn ) {
     /* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
     term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
 
+#ifndef B115200
+    /* MacOSX support max 38400 in termios.h ? */
+    cfsetispeed(&term, B38400);       /* Set input speed to 38.4k    */
+    cfsetospeed(&term, B38400);       /* Set output speed to 38.4k   */
+#else
     cfsetispeed(&term, B115200);       /* Set input speed to 115.2k    */
     cfsetospeed(&term, B115200);       /* Set output speed to 115.2k   */
+#endif
 
     if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
         STAT_ADD1(DS9123O_reset_tcsetattr_errors);
