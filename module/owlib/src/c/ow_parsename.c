@@ -60,7 +60,8 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     char * pathcpy ;
     char * pathnow ;
     char * pathnext ;
-    int ret ;
+    size_t len ;
+    int ret = 0 ;
 
     // To make the debug output useful it's cleared here.
     // Even on normal glibc, errno isn't cleared on good system calls
@@ -83,6 +84,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */
+
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
     pn->si->sg = SemiGlobal ;
 //        pn->si->sg.u[0]&0x01 = cacheenabled ;
@@ -120,12 +122,15 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     /* Processing for bus.X directories -- eventually will make this more generic */
     while ( pathnow && strncasecmp(pathnow,"bus.",4)==0 ) {
-        if(!isdigit(pathnow[4])) return -ENOENT ;
+        if(!isdigit(pathnow[4])) {
+	  ret = -ENOENT ;
+	  goto cleanup;
+	}
 	/* Should make a presence check on remote busses here, but
 	 * it's not a major problem if people use bad paths since
 	 * they will just end up with empty direcotry listings. */
         if(!(pn->state & pn_bus)) {
-            size_t len = 1+5+9; // max size of text+uncached
+            len = 1+5+9; // max size of text+uncached
             /* this will only be reached once */
             pn->state |= pn_bus ;
             pn->bus_nr = atoi(&pathnow[4]);
@@ -139,15 +144,21 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 #if 0
 	    if(!pn->in) {
 	      printf("bus_nr %d doesn't exist\n", pn->bus_nr);
-	      return -ENOENT ;
+	      ret = -ENOENT ;
+	      goto cleanup;
 	    }
 #endif
             if(pathnext) len += strlen(&path[pathnext-pathcpy]);
 #ifdef VALGRIND
-            if(!(pn->path_busless = calloc(1, len+1))) return -ENOMEM;
+            pn->path_busless = calloc(1, len+1);
 #else
-            if(!(pn->path_busless = malloc(len))) return -ENOMEM;
+            pn->path_busless = malloc(len);
 #endif
+	    if(!(pn->path_busless)) {
+	      ret = -ENOMEM ;
+	      goto cleanup;
+	    }
+
             pn->path_busless[0] = '\000';
             if(pn->state & pn_text) {
                 strcat(pn->path_busless, "/text");
@@ -159,14 +170,15 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
             if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
 
 #ifdef VALGRIND
-	    {
-	      int len = strlen(path)+1;
-	      if((pn->path = calloc(1, len+1))) memcpy(pn->path, path, len);
-	    }
+	    len = strlen(path)+1;
+	    if((pn->path = calloc(1, len+1))) memcpy(pn->path, path, len);
 #else
             pn->path = strdup(path);
 #endif
-	    if(!(pn->path)) return -ENOMEM ;
+	    if(!(pn->path)) {
+	      ret = -ENOMEM ;
+	      goto cleanup;
+	    }
 	    //printf("PN set pn->path=%s\n", pn->path);
 	    //printf("PN set pn->path_busless=%s\n", pn->path_busless);
         }
@@ -175,21 +187,22 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     if ( !pn->path ) {
 #ifdef VALGRIND
 	// avoid warnings from VALGRIND
-	int len = strlen(path)+1;
-	if(!(pn->path = calloc(1, len+1))) return -ENOMEM;
-	if(!(pn->path_busless = calloc(1, len+1))) return -ENOMEM;
+        len = strlen(path)+1;
+	if(!(pn->path = calloc(1, len+1)) ||
+	   !(pn->path_busless = calloc(1, len+1))) {
+	  ret = -ENOMEM;
+	  goto cleanup ;
+	}
 	memcpy(pn->path, path, len);
 	memcpy(pn->path_busless, path, len);
 #else
-	if(!(pn->path = strdup(path))) return -ENOMEM ;
-	if(!(pn->path_busless = strdup(path))) return -ENOMEM ;
+	if(!(pn->path = strdup(path)) ||
+	   !(pn->path_busless = strdup(path))) {
+	  ret = -ENOMEM;
+	  goto cleanup ;
+	}
 #endif
-	//printf("PN set2 pn->path=%s\n", pn->path);
-	//printf("PN set2 pn->path_busless=%s\n", pn->path_busless);
     }
-    //printf("pn->path=%s\n", pn->path);
-    //printf("pn->path_busless=%s\n", pn->path_busless);
-
 
     //printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
@@ -210,7 +223,20 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     //printf("2pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
     ret = FS_ParsedNameSub( pathnow, pathnext, pn ) ;
-    free(pathcpy) ;
+ cleanup:
+    if(pathcpy) free(pathcpy) ;
+    if(ret) {
+      /* Free the allocated memory, just to avoid calling
+	 FS_ParsedName_destroy() on error */
+      if(pn->path) {
+	free(pn->path) ;
+	pn->path = NULL;
+      }
+      if(pn->path_busless) {
+	free(pn->path_busless) ;
+	pn->path_busless = NULL;
+      }
+    }
     return ret ;
 }
 

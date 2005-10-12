@@ -175,7 +175,7 @@ int DS9490_detect( struct connection_in * in ) {
     int ret ;
 
     pn.si = &si ;
-    FS_ParsedName(NULL,&pn) ;
+    FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 
     /* No locking needed for this since it's not multithreaded yet */

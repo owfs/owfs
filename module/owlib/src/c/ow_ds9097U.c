@@ -200,7 +200,6 @@ int DS2480_detect( struct connection_in * in ) {
     int ret ;
     unsigned char setup[5] ;
 
-    memset(&pn, 0, sizeof(struct parsedname));
     pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;

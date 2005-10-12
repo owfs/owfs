@@ -154,10 +154,7 @@ void Handler( int fd ) {
             //printf("Handler: path=%s\n",path);
             /* Parse the path string */
 
-            if ( (cm.ret=FS_ParsedName( path, &pn )) ) {
-	        FS_ParsedName_destroy(&pn) ;
-                break ;
-            }
+            if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
 
             /* Use client persistent settings (temp scale, discplay mode ...) */
             si.sg = sm.sg ;

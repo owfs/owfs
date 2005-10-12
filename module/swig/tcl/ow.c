@@ -238,6 +238,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
 
   owtcl_ArgObjIncr;
 
+  memset(&pn, 0, sizeof(struct parsedname)); // make sure common_exit could be used for all exits.
   if (OwtclStatePtr->used == 0) {
     Tcl_AppendResult(interp, "owtcl not connected.", NULL);
     tcl_return = TCL_ERROR;
@@ -258,7 +259,6 @@ owtcl_ObjCmdProc(Owtcl_Get)
   }
 
   pn.si = &si;
-//  si.sg.int32 = SemiGlobal.int32;
   if ((r = FS_ParsedName(path, &pn))) {
     owtcl_ErrorMsg(interp, strerror(-r));
     tcl_return = TCL_ERROR;
@@ -267,7 +267,6 @@ owtcl_ObjCmdProc(Owtcl_Get)
   if (pn.dev==NULL || pn.ft == NULL || pn.subdir) { /* A directory of some kind */
     resultPtr = Tcl_NewListObj(0, NULL);
     FS_dir(directory, &pn) ;
-    FS_ParsedName_destroy(&pn) ;
     Tcl_SetObjResult(interp, resultPtr);
   } else { /* A regular file */
     s = FS_size_postparse(&pn) ;
@@ -278,7 +277,6 @@ owtcl_ObjCmdProc(Owtcl_Get)
     }
     if ((buf=(char *) ckalloc((size_t)s+1))) {
       r =  FS_read_3times(buf, (size_t)s, (off_t)0, &pn) ;
-      FS_ParsedName_destroy(&pn) ;
       if ( r<0 ) {
 	owtcl_ErrorMsg(interp, strerror(-r));
 	ckfree(buf);
@@ -304,6 +302,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
   Tcl_SetObjResult(interp, resultPtr);
   
  common_exit:
+  FS_ParsedName_destroy(&pn) ;
   owtcl_ArgObjDecr;
   return tcl_return;
 }

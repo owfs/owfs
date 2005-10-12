@@ -74,7 +74,6 @@ char * get( const char * path ) {
 
     /* Parse the input string */
     pn.si = &si ;
-//    si.sg.int32 = SemiGlobal.int32 ;
     if ( FS_ParsedName( path, &pn ) ) return NULL ;
 //printf("path=%s dev=%p ft=%p subdir=%p format=%d\n",pathcpy,pn.dev,pn.ft,pn.subdir,pn.ft?pn.ft->format:-1) ;
 
@@ -82,23 +81,23 @@ char * get( const char * path ) {
 //printf("Directory\n");
         s=sz=0 ;
         FS_dir( directory, &pn ) ;
-        FS_ParsedName_destroy(&pn) ;
     } else { /* A regular file */
 //printf("File %s\n",path);
 	s = FS_size_postparse(&pn) ;
 //printf("File len=%d, %s\n",s,path);
         if ( (buf=(char *) malloc( s+1 )) ) {
             int r =  FS_read_3times( buf, s, 0, &pn ) ;
-            FS_ParsedName_destroy(&pn) ;
             if ( r<0 ) {
                 free(buf) ;
-                return strdup("") ; // have to return empty string on error
+                buf = NULL;
+            } else {
+                buf[s] = '\0' ;
+//              if (r!=s) printf("Mismatch path=%s read=%d len=%d\n",path,r,s);
             }
-            buf[s] = '\0' ;
- //           if (r!=s) printf("Mismatch path=%s read=%d len=%d\n",path,r,s);
         }
     }
 //printf("End GET\n");
+    FS_ParsedName_destroy(&pn) ;
     if(!buf) return strdup("") ; // have to return empty string on error
     return buf ;
 }

@@ -721,7 +721,30 @@ case "${host_cpu}-${host_os}" in
 		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
+	*)
+		AC_MSG_RESULT([no])
+	;;
 esac
+
+# Check if extra libs are needed. Should perhaps test if they are available too
+# instead of hardcoding the libraries.
+
+AC_MSG_CHECKING([if extra libs are required])
+case "${host_cpu}-${host_os}" in
+	*-darwin*)
+		LD_EXTRALIBS="-framework CoreFoundation -framework IOKit"
+		AC_MSG_RESULT([-framework CoreFoundation -framework IOKit])
+	;;
+	*-solaris*)
+		LD_EXTRALIBS="-lsocket -lnsl"
+		AC_MSG_RESULT([-lsocket -lnsl])
+	;;
+	*)
+		LD_EXTRALIBS=""
+		AC_MSG_RESULT([no])
+	;;
+esac
+AC_SUBST(LD_EXTRALIBS)
 
 # Checks for header files.
 

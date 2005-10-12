@@ -31,7 +31,7 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low ${PROFILING_FLAG} ${PTHREAD_LIBS}
+AM_LDFLAGS = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
 
