@@ -736,6 +736,7 @@ case "${host_cpu}-${host_os}" in
 		AC_MSG_RESULT([-framework CoreFoundation -framework IOKit])
 	;;
 	*-solaris*)
+                LIBS="$LIBS -lsocket -lnsl"
 		LD_EXTRALIBS="-lsocket -lnsl"
 		AC_MSG_RESULT([-lsocket -lnsl])
 	;;
