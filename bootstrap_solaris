@@ -1,7 +1,6 @@
 #! /bin/sh
 
-# Just in case you haven't noticed: configure takes a command line tail.
-LDFLAGS="-lsocket -lnsl"
-export LDFLAGS
+#LDFLAGS="-lsocket -lnsl"
+#export LDFLAGS
 rm -rf *cache
-aclocal && autoheader && autoconf && automake && ./configure --disable-owperl --disable-owpython --enable-owftpd $* 
+aclocal && autoheader && autoconf && automake && echo "Run './configure --disable-swig --enable-owftpd' and 'make' to build owfs"

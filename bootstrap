@@ -1,6 +1,4 @@
 #! /bin/sh
 
-# Just in case you haven't noticed: configure takes a command line tail.
-
 rm -rf *cache
-aclocal && autoheader && autoconf && automake && ./configure $* 
+aclocal && autoheader && autoconf && automake && echo "Run './configure' and 'make' to build owfs"

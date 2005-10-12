@@ -47,7 +47,7 @@ sub PerModule {
   printf "RELEASE -- make distclean\n" ;
   system("make","distclean") ;
   printf "RELEASE -- bootstrapping\n" ;
-  `./bootstrap` ;
+  `./bootstrap ; ./configure` ;
   printf "RELEASE -- make tarball\n" ;
   system("make","dist") ;
   printf "RELEASE -- make rpm\n" ;

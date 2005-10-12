@@ -32,6 +32,7 @@ Your contribution is welcome.
 
 If you pulled from the cvs:
   ./bootstrap
+  ./configure
   make install
   /opt/owfs/bin/owfs -d /dev/ttyS0 /mnt/1wire (for example)
   

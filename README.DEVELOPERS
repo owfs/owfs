@@ -38,7 +38,7 @@ DEVELOPERS can extend OWLIB to cover other devices.
   That's all that's needed, except perhaps updating the documentation in ow_table.html.
 
 OWFS is the filesystem implementation of OWLIB. It uses
-FUSE (http://www.sf.net/projects/afs) to present the
+FUSE (http://www.sf.net/projects/fuse) to present the
 filesystem in user space. You can write prgrams that access
 this filesystem.
 
