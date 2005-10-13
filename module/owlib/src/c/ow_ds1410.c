@@ -9,10 +9,10 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-#ifdef OW_PARPORT
-
 #include "owfs_config.h"
 #include "ow.h"
+
+#ifdef OW_PARPORT
 
 #include <sys/ioctl.h>
 #include <linux/ppdev.h>

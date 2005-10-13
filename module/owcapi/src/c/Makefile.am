@@ -5,13 +5,11 @@ libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
 lib_LTLIBRARIES = libowcapi.la
 
 libowcapi_la_SOURCES = owcapi.c
+#perhaps define this... haven't tried yet
+libowcapi_la_LDFLAGS = -shared -shrext .so
 
-if ENABLE_CACHE
-CACHE_FLAG = -DOW_CACHE
-endif
-
-if ENABLE_USB
-USB_FLAG = -DOW_USB
+if ENABLE_MT
+MT_FLAG = -DOW_MT
 endif
 
 if ENABLE_PROFILING
@@ -32,8 +30,7 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
-         ${CACHE_FLAG} \
-         ${USB_FLAG} \
+         ${MT_FLAG} \
          ${PROFILING_FLAG} \
          -D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64

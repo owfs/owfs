@@ -25,14 +25,6 @@ if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
 
-if ENABLE_CACHE
-CACHE_FLAG = -DOW_CACHE
-endif
-
-if ENABLE_USB
-USB_FLAG = -DOW_USB
-endif
-
 SHLIB_SUFFIX = $(TCL_SHLIB_SUFFIX)
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
@@ -52,8 +44,6 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-Wredundant-decls \
         -D_FILE_OFFSET_BITS=64 \
 	${MT_FLAG} \
-	${MT_FLAG} \
-	${USB_FLAG} \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \
 	$(TCL_INCLUDE_SPEC) \

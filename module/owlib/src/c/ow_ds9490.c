@@ -19,10 +19,11 @@ $Id$
 
 */
 
-#ifdef OW_USB /* conditional inclusion of USB */
-
 #include "owfs_config.h"
 #include "ow.h"
+
+#ifdef OW_USB /* conditional inclusion of USB */
+
 #include <usb.h>
 #include <sys/time.h>
 

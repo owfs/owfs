@@ -4,14 +4,6 @@ bin_PROGRAMS = OW.pm
 OW_pm_SOURCES = 
 OW_pm_DEPENDENCIES = ../../owlib/src/c/libow.la
 
-if ENABLE_CACHE
-CACHE_FLAG = -DOW_CACHE
-endif
-
-if ENABLE_USB
-USB_FLAG = -DOW_USB
-endif
-
 if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
@@ -30,9 +22,7 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          -DSKIP_SEARCH_H \
          -D_FILE_OFFSET_BITS=64 \
-         ${CACHE_FLAG} \
-         ${MT_FLAG} \
-         ${USB_FLAG}
+         ${MT_FLAG}
 
 AM_LDFLAGS = -low ${PTHREAD_LIBS}
 
@@ -55,7 +45,7 @@ install-data-local:
 	$(MAKE) -fMakefile.perl PREFIX=$(prefix) install
 
 #CLEANFILES = *~ .made_mod  owperl.c OW.pm
-CLEANFILES = *~ *.o ow_wrap.c OW.pm *.PL Makefile.in
+CLEANFILES = *~ *.o ow_wrap.c OW.pm *.PL
 
 clean-local:
 	if test -f Makefile.perl; then $(MAKE) -fMakefile.perl realclean; fi

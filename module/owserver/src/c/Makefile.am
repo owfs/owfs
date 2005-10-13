@@ -4,7 +4,6 @@ bin_PROGRAMS = owserver
 owserver_SOURCES = owserver.c
 owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
-# multithreading -- must be available on the library as well
 if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif

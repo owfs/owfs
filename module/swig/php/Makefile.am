@@ -11,14 +11,6 @@ libowphp_la_LIBADD = ../../owlib/src/c/libow.la
 libowphp_la_DEPENDENCIES = ../../owlib/src/c/libow.la
 libowphp_la_LDFLAGS = -shared -shrext .so
 
-if ENABLE_CACHE
-CACHE_FLAG = -DOW_CACHE
-endif
-
-if ENABLE_USB
-USB_FLAG = -DOW_USB
-endif
-
 if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
@@ -36,9 +28,7 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
-         ${CACHE_FLAG} \
-         ${MT_FLAG} \
-         ${USB_FLAG}
+         ${MT_FLAG}
 
 AM_LDFLAGS = ${PTHREAD_LIBS}
 

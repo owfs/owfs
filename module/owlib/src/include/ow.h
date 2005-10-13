@@ -402,12 +402,6 @@ struct connection_in {
     struct addrinfo * ai ;
     struct addrinfo * ai_ok ;
     int fd ;
-    union {
-        struct connin_serial serial ;
-#ifdef OW_USB
-        struct connin_usb usb ;
-#endif /* OW_USB */
-    } connin ;
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
     pthread_mutex_t dev_mutex ;
@@ -440,6 +434,16 @@ struct connection_in {
     /* Since only used during actual transfer to/from the adapter,
         should be protected from contention even when multithreading allowed */
     unsigned char combuffer[MAX_FIFO_SIZE] ;
+    union {
+        struct connin_serial serial ;
+#ifdef OW_USB
+        struct connin_usb usb ;
+        /* Will the sizeof(struct connection_in) differ if OW_USB is defined when
+	 * compiling binaries such as owhttp, owfs etc. (all except libow)?
+	 * Since connin_usb(16 bytes) is smaller than connin_serial(68 bytes) the
+	 * size won't change and OW_USB should only be needed when compiling owlib. */
+#endif /* OW_USB */
+    } connin ;
 } ;
 /* Network connection structure */
 struct connection_out {

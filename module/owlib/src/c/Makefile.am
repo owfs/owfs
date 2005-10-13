@@ -70,6 +70,7 @@ OWLIB_SOURCE = compat.c          \
 lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
+libow_la_LDFLAGS = -shared -shrext .so
 
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
