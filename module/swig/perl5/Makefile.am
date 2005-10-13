@@ -60,6 +60,7 @@ CLEANFILES = *~ *.o ow_wrap.c OW.pm *.PL Makefile.in
 clean-local:
 	if test -f Makefile.perl; then $(MAKE) -fMakefile.perl realclean; fi
 	rm -f Makefile.perl Makefile.perl.old
+	@RM@ -f $(CLEANFILES)
 
 clean-generic:
 
