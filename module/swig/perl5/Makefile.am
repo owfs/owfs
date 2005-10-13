@@ -1,6 +1,7 @@
 # $Id$
 
 bin_PROGRAMS = OW.pm
+OW_pm_SOURCES = 
 OW_pm_DEPENDENCIES = ../../owlib/src/c/libow.la
 
 if ENABLE_CACHE

@@ -1,9 +1,11 @@
 %define build_fs 1
 %define build_httpd 1
 %define build_ftpd 0
+%define build_nfsd 0
 %define build_server 1
 %define build_perl 1
 %define build_python 0
+%define build_php 0
 %define build_tcl 1
 
 %define debug_package   %{nil}
@@ -27,8 +29,8 @@ OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
 %package libs
 Summary: Core library providing base functions to other OWFS modules.
 Group: System Environment/Libraries
-Requires: libusb >= 0.1.6, db4-devel >= 4.0.14
-BuildRequires: db4-devel >= 4.0.14 automake autoconf libtool
+Requires: libusb >= 0.1.6
+BuildRequires: automake autoconf libtool
 
 %description libs
 %{name}-libs is a core library providing base functions to other OWFS modules.
@@ -59,7 +61,7 @@ Group: System Environment/Daemon
 Requires: %{name}-libs = %{version}
 
 %description httpd
-%{name}-httpd is an HTTP daemon on top of %{name} providing access to 1-Wire networks.
+%{name}-httpd is a HTTP daemon on top of %{name} providing access to 1-Wire networks.
 %endif
 
 %if %{build_ftpd}
@@ -69,7 +71,17 @@ Group: System Environment/Daemon
 Requires: %{name}-libs = %{version}
 
 %description ftpd
-%{name}-ftpd is an FTP daemon on top of %{name} providing access to 1-Wire networks.
+%{name}-ftpd is a FTP daemon on top of %{name} providing access to 1-Wire networks.
+%endif
+
+%if %{build_nfsd}
+%package nfsd
+Summary: NFS daemon providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}
+
+%description nfsd
+%{name}-nfsd is a NFS daemon on top of %{name} providing access to 1-Wire networks.
 %endif
 
 %if %{build_server}
@@ -105,6 +117,17 @@ BuildRequires: python-devel >= 2.0
 
 %description python
 %{name}-python is a Python interface for the 1-wire filesystem
+%endif
+
+%if %{build_php}
+%package php
+Summary: %{name}-php is a php interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version} php >= 4.3.0
+BuildRequires: php-devel >= 4.3.0
+
+%description php
+%{name}-php is a php interface for the 1-wire filesystem
 %endif
 
 %if %{build_tcl}
@@ -151,6 +174,11 @@ automake -a -c
 %else
 	--disable-owftpd \
 %endif
+%if %{build_nfsd}
+	--enable-ownfsd \
+%else
+	--disable-ownfsd \
+%endif
 %if %{build_server}
 	--enable-owserver \
 %else
@@ -165,6 +193,11 @@ automake -a -c
 	--enable-owpython \
 %else
 	--disable-owpython \
+%endif
+%if %{build_php}
+	--enable-owphp \
+%else
+	--disable-owphp \
 %endif
 %if %{build_tcl}
 	--enable-owtcl \
@@ -201,6 +234,10 @@ install -D -m 644 src/rpm/owhttpd.init $RPM_BUILD_ROOT/etc/sysconfig/owhttpd
 install -D -m 644 src/rpm/owftpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owftpd
 install -D -m 755 src/rpm/owftpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owftpd
 %endif
+%if %{build_nfsd}
+install -D -m 644 src/rpm/ownfsd.conf $RPM_BUILD_ROOT/etc/sysconfig/ownfsd
+install -D -m 755 src/rpm/ownfsd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/ownfsd
+%endif
 %if %{build_server}
 install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
 install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
@@ -214,6 +251,8 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/lib/perl5/5.*
 rm -f $RPM_BUILD_ROOT%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/.packlist
 %endif
 %if %{build_python}
+%endif
+%if %{build_php}
 %endif
 %if %{build_tcl}
 rm -f $RPM_BUILD_ROOT%{prefix}/lib/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib/owtcl-*/ow.a
@@ -256,6 +295,16 @@ fi
 %postun ftpd
 if [ $1 = 0 ]; then
 	/sbin/chkconfig --del owftpd
+fi
+%endif
+
+%if %{build_nfsd}
+%post nfsd
+/sbin/chkconfig --add ownfsd
+
+%postun nfsd
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del ownfsd
 fi
 %endif
 
@@ -308,6 +357,15 @@ fi
 #%{_mandir}/man1/owftpd.1.gz
 %endif
 
+%if %{build_nfsd}
+%files nfsd
+%defattr(-,root,root)
+/etc/rc.d/init.d/ownfsd
+%config /etc/sysconfig/ownfsd
+%{prefix}/sbin/ownfsd
+#%{_mandir}/man1/ownfsd.1.gz
+%endif
+
 %if %{build_server}
 %files server
 %defattr(-,root,root)
@@ -333,6 +391,13 @@ fi
 %{prefix}/lib/python2.3/site-packages/ow/__init__.py
 %{prefix}/lib/python2.3/site-packages/ow/__init__.pyc
 %{prefix}/lib/python2.3/site-packages/ow/_OW.so
+%endif
+
+%if %{build_php}
+%files php
+%defattr(-,root,root)
+%dir %{prefix}/lib/php/modules
+%{prefix}/lib/php/modules/php_OW.so
 %endif
 
 %if %{build_tcl}

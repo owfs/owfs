@@ -2,6 +2,8 @@
 
 include version.h
 
+EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl
+
 pkglib_LTLIBRARIES = ow.la
 ow_la_SOURCES = ow.c
 ow_la_LDFLAGS = -module -release $(OWTCL_VERSION)

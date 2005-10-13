@@ -1,3 +1,6 @@
+
+EXTRA_DIST = ow.i
+
 if ENABLE_OWPERL
   MAYBE_OWPERL = perl5
 endif

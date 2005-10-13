@@ -1,5 +1,7 @@
 # $Id$
 
+SUBDIRS = ow
+
 bin_PROGRAMS = owpython
 
 owpython_SOURCES = ow_wrap.c
