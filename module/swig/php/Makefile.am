@@ -1,5 +1,7 @@
 # $Id$
 
+EXTRA_DIST = php_OW.h runme.php load_php_OW.php
+
 #include owfs header and php headers
 INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include `php-config --includes`
 

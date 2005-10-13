@@ -2,6 +2,8 @@ SUBDIRS = src module
 RPMMACROS = ${HOME}/.rpmmacros
 RPMDIR = ${HOME}/.rpm
 
+EXTRA_DIST = bootstrap
+
 clean-generic:
 
 	rm -f *~ .*~
@@ -16,7 +18,6 @@ rpm: dist
 	    @ECHO@ "RPMBUILD binary not found, can't build RPM package"; \
 	    exit 1; \
 	fi
-	
 	if @TEST@ ! -f ${RPMMACROS} ; then \
 	    @ECHO@ "%_topdir ${RPMDIR}" > ${RPMMACROS}; \
 	    mkdir -p ${RPMDIR}/SOURCES \
@@ -25,7 +26,6 @@ rpm: dist
 	             ${RPMDIR}/RPMS/i386 \
 	             ${RPMDIR}/SRPMS ; \
 	fi
-	
 	cd src/rpm && ${MAKE} @PACKAGE@.spec
 	@LN_S@ -f `pwd`/src/rpm/@PACKAGE@.spec ${RPMDIR}/SPECS/@PACKAGE@.spec
 	@LN_S@ -f `pwd`/@PACKAGE@-@VERSION@.tar.gz ${RPMDIR}/SOURCES/@PACKAGE@-@VERSION@.tar.gz
