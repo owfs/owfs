@@ -55,6 +55,9 @@ AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS}
 
 #SHLIB_LD = $(TCL_SHLIB_LD) -low $(LIBS)
 
+clean-local:
+	@RM@ -f ow.tcl.h pkgIndex.tcl
+
 clean-generic:
 
 	@RM@ -f *~ .*~
