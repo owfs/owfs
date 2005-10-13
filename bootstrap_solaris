@@ -1,4 +1,0 @@
-#! /bin/sh
-
-rm -rf *cache
-aclocal && autoheader && autoconf && automake && echo "Run 'shrext_cmds=.so ./configure --disable-swig' and 'make' to build owfs"
