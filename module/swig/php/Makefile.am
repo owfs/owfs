@@ -37,9 +37,12 @@ libowphp_la_SOURCES = ow_wrap.c
 ow_wrap.c: ../ow.i
 	$(SWIG) -php4 -o $@ ../ow.i
 
-install:
-	$(INSTALL) -d /usr/lib/php/modules/
-	ln -sf ${exec_prefix}/lib/libowphp.so /usr/lib/php/modules/php_OW.so
+EXTENSION_DIR := $(shell php-config --extension-dir)
+# Something like /usr/lib/php4, /usr/lib/php/modules/ or /usr/lib64/php/modules/
+
+install-data-local:
+	$(INSTALL) -d $(EXTENSION_DIR)
+	ln -sf ${exec_prefix}/lib/libowphp.so $(EXTENSION_DIR)/php_OW.so
 
 CLEANFILES = *~ *.o ow_wrap.c OW.* php_OW.h
 
