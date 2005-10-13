@@ -15,7 +15,8 @@ Version: @VERSION@
 Release: 1
 Summary: 1-Wire Virtual File System
 Source: %{name}-%{version}.tar.gz
-Copyright: GPL
+#Copyright: GPL
+License: GPL
 Group: System Environment/Libraries
 URL: http://sourceforge.net/projects/owfs
 Buildroot: %{_tmppath}/%{name}-root
@@ -213,7 +214,7 @@ case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 make install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-rm -f $RPM_BUILD_ROOT/usr/lib/libowperl.*
+rm -f $RPM_BUILD_ROOT/usr/lib*/libowperl.*
 
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
@@ -246,16 +247,16 @@ install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
 %endif
 %if %{build_perl}
 [ -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm ] && \
-	mv -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm $RPM_BUILD_ROOT%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*
-rm -rf $RPM_BUILD_ROOT%{prefix}/lib/perl5/5.*
-rm -f $RPM_BUILD_ROOT%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/.packlist
+	mv -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*
+rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/perl5/5.*
+rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/.packlist
 %endif
 %if %{build_python}
 %endif
 %if %{build_php}
 %endif
 %if %{build_tcl}
-rm -f $RPM_BUILD_ROOT%{prefix}/lib/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib/owtcl-*/ow.a
+rm -f $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.a
 %endif
 
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
@@ -378,10 +379,10 @@ fi
 %if %{build_perl}
 %files perl
 %defattr(-,root,root)
-%dir %{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW
-%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.bs
-%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.so
-%{prefix}/lib/perl5/site_perl/*/*-linux-thread-*/OW.pm
+%dir %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW
+%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.bs
+%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.so
+%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/OW.pm
 %endif
 
 %if %{build_python}
@@ -403,11 +404,11 @@ fi
 %if %{build_tcl}
 %files tcl
 %defattr(-,root,root)
-%dir %{prefix}/lib/owtcl-*
-%{prefix}/lib/owtcl-*/ow-*.so
-%{prefix}/lib/owtcl-*/ow.so
-%{prefix}/lib/owtcl-*/ow.tcl
-%{prefix}/lib/owtcl-*/pkgIndex.tcl
+%dir %{prefix}/lib*/owtcl-*
+%{prefix}/lib*/owtcl-*/ow-*.so
+%{prefix}/lib*/owtcl-*/ow.so
+%{prefix}/lib*/owtcl-*/ow.tcl
+%{prefix}/lib*/owtcl-*/pkgIndex.tcl
 %{_mandir}/mann/owtcl.n.gz
 %endif
 
