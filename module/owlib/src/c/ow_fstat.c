@@ -77,7 +77,14 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
         nr = FS_nr_subdirs(pn) ;
 //printf("FS_fstat: FS_nr_subdirs1 returned %d\n", nr);
 #else
-        nr = 1 ;
+        nr = -1 ;  // make it 1
+	/*
+	  If calculating NSUB is hard, the filesystem can set st_nlink of
+	  directories to 1, and find will still work.  This is not documented
+	  behavior of find, and it's not clear whether this is intended or just
+	  by accident.  But for example the NTFS filesysem relies on this, so
+	  it's unlikely that this "feature" will go away.
+	 */
 #endif
         stbuf->st_nlink += nr ;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
@@ -99,7 +106,7 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
             }
         }
 #else
-        nr = 1 ;
+        nr = -1 ;  // make it 1
 #endif
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.dev->nft, nr);
         stbuf->st_nlink += nr ;
@@ -112,7 +119,11 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
 //printf("FS_fstat other dir inside device\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
-        nr = 1 ;
+#ifdef CALC_NLINK
+        nr = FS_nr_subdirs(pn) ;
+#else
+        nr = -1 ;  // make it 1
+#endif
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.ft));
         stbuf->st_nlink += nr ;
 
