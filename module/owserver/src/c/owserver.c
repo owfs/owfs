@@ -60,7 +60,7 @@ static void ow_exit( int e ) {
         LibClose() ;
     }
     /* Process never die on WRT54G router with uClibc if exit() is used */
-    exit( e ) ;
+    _exit( e ) ;
 }
 
 static void exit_handler(int i) {
