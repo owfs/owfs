@@ -124,7 +124,6 @@ int main(int argc, char *argv[]) {
       if (opts) free( opts ) ;
     }
 #elif (FUSE_MAJOR_VERSION <= 2) && (FUSE_MINOR_VERSION < 4)
-    printf("fuse_mount: [%s] [%s]\n", fuse_mountpoint, fuse_mnt_opt);
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
 #else /* FUSE >= 2.4 */
     /* Time to cleanup the main-loop and use the fuse-helper functions soon.
