@@ -37,8 +37,8 @@ const struct option owopts_long[] = {
     {"error_level",required_argument,NULL,258},
     {"error-level",required_argument,NULL,258},
     {"morehelp",   no_argument,      NULL,259},
-    {"fuse_opt",   required_argument,NULL,260}, /* owfs */
-    {"fuse-opt",   required_argument,NULL,260}, /* owfs */
+    {"fuse_opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
+    {"fuse-opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
     {"NFS_program",required_argument,NULL,261}, /* ownfsd */
     {"NFS-program",required_argument,NULL,261}, /* ownfsd */
     {"NFS_version",required_argument,NULL,262}, /* ownfsd */
@@ -53,12 +53,15 @@ const struct option owopts_long[] = {
     {"mount-port", required_argument,NULL,266}, /* ownfsd */
     {"no_portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
     {"no-portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
+    {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
+    {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {0,0,0,0},
 } ;
 
 /* Globals */
 char * pid_file = NULL ;
-char * fuse_opt = NULL ;
+char * fuse_mnt_opt = NULL ;
+char * fuse_open_opt = NULL ;
 unsigned int nr_adapters = 0;
 
 static void ow_help( enum opt_program op ) {
@@ -154,6 +157,8 @@ static void ow_morehelp( enum opt_program op ) {
         printf(
         "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"
         "                                 |  e.g: --fuse_opt=\"-x -f\"\n"
+        "     --fuse_open_opt             |Options to send to fuse_open (must be quoted)\n"
+        "                                 |  e.g: --fuse_open_opt=\"direct_io\"\n"
         ) ;
         break ;
         case opt_httpd:
@@ -188,7 +193,7 @@ static void ow_morehelp( enum opt_program op ) {
 
 /* Parses one argument */
 /* return 0 if ok */
-            int owopt( const int c , const char * const arg, enum opt_program op ) {
+int owopt( const int c , const char * const arg, enum opt_program op ) {
     switch (c) {
     case 'h':
         ow_help( op ) ;
@@ -261,7 +266,8 @@ static void ow_morehelp( enum opt_program op ) {
     case 259:
         ow_morehelp(op) ;
         return 1 ;
-    case 260: /* fuse-opt */
+    case 260: /* fuse_opt, handled in owfs.c */
+      return 0 ;
     case 261:
         NFS_params.NFS_program = atoi(arg) ;
         return 0 ;
@@ -282,7 +288,8 @@ static void ow_morehelp( enum opt_program op ) {
     case 266:
         NFS_params.mount_port = atoi(arg) ;
         return 0 ;
-    case 267:
+    case 267: /* fuse_open_opt, handled in owfs.c */
+      return 0 ;
     case 268:
     case 269:
     case 0:

@@ -226,7 +226,8 @@ int owopt( const int c , const char * const arg, enum opt_program op ) ;
 extern pid_t pid_num ;
 extern char * pid_file ;
 /* FUSE options */
-extern char * fuse_opt ;
+extern char * fuse_mnt_opt ;
+extern char * fuse_open_opt ;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before

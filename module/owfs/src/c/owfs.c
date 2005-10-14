@@ -51,18 +51,11 @@ char umount_cmd[1024] = "";
 /* ---------------------------------------------- */
 int main(int argc, char *argv[]) {
     int c ;
-//    int multithreaded = 1;
-
-#if FUSE_MAJOR_VERSION == 1
-    char ** opts = NULL ;
-    char * tok ;
-    int i = 0 ;
-#endif
 
     /* grab our executable name */
     if ( argc>0 ) progname = strdup(argv[0]) ;
 
-//    mtrace() ;
+    //mtrace() ;
     /* Set up owlib */
     LibSetup() ;
 
@@ -72,9 +65,16 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
-        case 260: /* fuse-opt */
-            fuse_opt = strdup( optarg ) ;
-            if ( fuse_opt == NULL ) {
+        case 260: /* fuse_opt */
+            fuse_mnt_opt = strdup( optarg ) ;
+            if ( fuse_mnt_opt == NULL ) {
+                LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
+                ow_exit(1) ;
+            }
+            break ;
+        case 267: /* fuse_open_opt */
+            fuse_open_opt = strdup( optarg ) ;
+            if ( fuse_open_opt == NULL ) {
                 LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
                 ow_exit(1) ;
             }
@@ -99,26 +99,40 @@ int main(int argc, char *argv[]) {
 
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
+
 #if FUSE_MAJOR_VERSION == 1
-    if ( fuse_opt ) {
-        opts = malloc( (1+strlen(fuse_opt)) * sizeof(char *) ) ; // oversized
+    {
+      char ** opts = NULL ;
+      if ( fuse_mnt_opt ) {
+	char * tok ;
+	int i = 0 ;
+
+        opts = malloc( (1+strlen(fuse_mnt_opt)) * sizeof(char *) ) ; // oversized
         if ( opts == NULL ) {
             LEVEL_DEFAULT("Memory allocation problem in fuse options\n")
             ow_exit(1) ;
         }
-        tok = strtok(fuse_opt," ") ;
+        tok = strtok(fuse_mnt_opt," ") ;
         while ( tok ) {
             opts[i++] = tok ;
             tok = strtok(NULL," ") ;
         }
         opts[i] = NULL ;
-    }
+      }
 
-    if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
-    if (opts) free( opts ) ;
-#else /* FUSE_MAJOR_VERSION != 1 */
-    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_opt)) == -1 ) ow_exit(1) ;
-#endif /* FUSE_MAJOR_VERSION == 1 */
+      if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
+      if (opts) free( opts ) ;
+    }
+#elif (FUSE_MAJOR_VERSION <= 2) && (FUSE_MINOR_VERSION < 4)
+    printf("fuse_mount: [%s] [%s]\n", fuse_mountpoint, fuse_mnt_opt);
+    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
+#else /* FUSE >= 2.4 */
+    /* Time to cleanup the main-loop and use the fuse-helper functions soon.
+     * Should perhaps call fuse_setup(), fuse_loop_mt(), fuse_teardown() only.
+     */
+    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
+#endif /* FUSE >= 2.4 */
+
 
     set_signal_handlers(exit_handler);
 
@@ -131,22 +145,34 @@ int main(int argc, char *argv[]) {
     main_threadid = pthread_self() ;
 #endif
 
+
 #if (FUSE_MAJOR_VERSION == 1)
     fuse = fuse_new(fuse_fd, 0, &owfs_oper);
 #elif (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION < 2)
     fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
-#elif (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)
-    fuse = fuse_new(fuse_fd, NULL, &owfs_oper, sizeof(owfs_oper));
-#else
-    fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
-#endif
+#elif /* FUSE >= 2.2 */
+    /* Fuse open options fuse-2.4 is
+     * debug, use_ino, readdir_ino, direct_io, kernel_cache, umask=
+     * uid=, gid=, entry_timeout=, attr_timeout=
+     *
+     * NOTE: direct_io was Fuse mount option in fuse-2.3 */
+    fuse = fuse_new(fuse_fd, fuse_open_opt, &owfs_oper, sizeof(owfs_oper));
+#endif /* FUSE >= 2.2 */
+
     if (multithreading) {
         fuse_loop_mt(fuse) ;
     } else {
         fuse_loop(fuse) ;
     }
+
+#if (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 4)
+    /* fuse_teardown() is called in ow_exit() */
+#else  /* FUSE < 2.4 */
+    /* Seem to be be better to close file-descriptor before calling
+     * fuse_exit() on older fuse versions. */
     close(fuse_fd) ;
     fuse_fd = -1;
+#endif  /* FUSE < 2.4 */
     ow_exit(0);
     return 0 ;
 }
@@ -154,20 +180,24 @@ int main(int argc, char *argv[]) {
 static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
       LibClose() ;
+
+#if (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 4)
       if(fuse != NULL) {
-    fuse_exit(fuse);
+	fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
+      }
+      fuse_fd = -1;
+      fuse_mountpoint = NULL;
+#else /* FUSE < 2.4 */
+      if(fuse != NULL) {
+	fuse_exit(fuse);
       }
 
-      /* Should perhaps only use fuse_teardown() if FUSE 2
-       * It doesn't check for NULL pointers though */
-      // fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
 #if (FUSE_MAJOR_VERSION == 2)
       if(fuse != NULL) {
-    /* this will unlink all inodes.. Could take some time on slow
-     * processors... eg. Coldfire 54MHz */
-    fuse_destroy(fuse);
+	fuse_destroy(fuse);
       }
-#endif
+#endif /* FUSE == 2 */
+
       fuse = NULL;
       if(fuse_fd != -1) {
         close(fuse_fd);
@@ -180,6 +210,7 @@ static void ow_exit( int e ) {
       } else if(umount_cmd[0] != '\0') {
         system(umount_cmd);
       }
+#endif /* FUSE < 2.4*/
     }
     /* Process never die on WRT54G router with uClibc if exit() is used */
     _exit( e ) ;
