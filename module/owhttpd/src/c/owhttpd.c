@@ -49,7 +49,8 @@ static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
         LibClose() ;
     }
-    exit( e ) ;
+    /* Process never die on WRT54G router with uClibc if exit() is used */
+    _exit( e ) ;
 }
 
 static void exit_handler(int i) {

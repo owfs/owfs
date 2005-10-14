@@ -181,5 +181,6 @@ static void ow_exit( int e ) {
         system(umount_cmd);
       }
     }
-    exit( e ) ;
+    /* Process never die on WRT54G router with uClibc if exit() is used */
+    _exit( e ) ;
 }
