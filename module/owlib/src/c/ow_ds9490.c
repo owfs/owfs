@@ -351,7 +351,7 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
     struct usb_device *dev ;
     int useusb = pn->in->fd ; /* fd holds the number of the adapter */
     int usbnum = 0 ;
-    char name[16] ;
+    char name[2*PATH_MAX+2] ;
     unsigned char sn[8] ;
     char id[17] ;
     int ret ;
@@ -367,9 +367,7 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
                 if ( ++usbnum < useusb ) {
                     LEVEL_CONNECT("USB DS9490 adapter at %s/%s passed over.\n",bus->dirname,dev->filename)
                 } else {
-                    strcpy(name, bus->dirname) ;
-                    strcat(name, "/") ;
-                    strcat(name, dev->filename) ;
+		    snprintf(name, 2*PATH_MAX+1, "%s/%s", bus->dirname, dev->filename);
                     pn->in->connin.usb.dev = dev ;
                     if ( DS9490_open( pn, name ) ) {
                         if(pn->in->name) free(pn->in->name) ;
@@ -468,8 +466,8 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
     struct usb_device *dev ;
     unsigned char sn[8] ;
     int ret;
-    char name[16];
-    char id2[17];
+    char name[2*PATH_MAX+2];
+    char old_id[17];
     struct parsedname pncopy;
 
     //LEVEL_CONNECT("DS9490_redetect_low: name=%s", pn->in->name);
@@ -489,9 +487,7 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
         for ( dev=bus->devices ; dev ; dev=dev->next ) {
             if ( !(dev->descriptor.idVendor==0x04FA && dev->descriptor.idProduct==0x2490) ) continue;
 
-            strcpy(name,bus->dirname) ;
-            strcat(name,"/") ;
-            strcat(name,dev->filename) ;
+	    snprintf(name, 2*PATH_MAX+1, "%s/%s", bus->dirname, dev->filename);
             //LEVEL_DEFAULT("Found %s, searching for %s\n",name,pn->in->name);
 
             if(usbdevice_in_use(name)) continue;
@@ -505,8 +501,8 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
             // pn->in->connin.usb.usb is set in DS9490_open().
 
 
-            bytes2string(id2, pn->in->connin.usb.ds1420_address, 8) ;
-            id2[16] = 0;
+            bytes2string(old_id, pn->in->connin.usb.ds1420_address, 8) ;
+            old_id[16] = 0;
 
             memset(sn, 0, 8); // clear it just in case nothing is found
             /* Do a quick directory listing and find the DS1420 id */
@@ -531,7 +527,7 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
                     char id[17];
                     bytes2string(id, sn, 8) ;
                     id[16] = 0;
-                    LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, name, id2);
+                    LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, name, old_id);
                 }
 #if 0
                 /* This test is actually made in DS9490_next_both() */
@@ -562,7 +558,7 @@ static int DS9490_redetect_low( const struct parsedname * const pn ) {
                 return 0;
             }
             // Couldn't find correct ds1420 chip on this adapter
-            LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s] (want: %s)\n", name, id2);
+            LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s] (want: %s)\n", name, old_id);
             DS9490_close(pn->in);
             pn->in->connin.usb.dev = NULL;
         }

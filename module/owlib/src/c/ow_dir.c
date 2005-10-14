@@ -363,9 +363,7 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
     STAT_ADD1(dir_dev.calls);
     if ( pn2->subdir ) { /* indevice subdir, name prepends */
 //printf("DIR device subdirectory\n");
-        strcpy( s , pn2->subdir->name ) ;
-        strcat( s , "/" ) ;
-        len = strlen(s) ;
+        len = snprintf(s, 32, "%s/", pn2->subdir->name );
         firstft = pn2->subdir  + 1 ;
     } else {
 //printf("DIR device directory\n");
