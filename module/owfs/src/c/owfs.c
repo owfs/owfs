@@ -20,6 +20,11 @@ $Id$
 #include "owfs.h"
 #include <fuse.h>
 
+/* Just in case version fuse-1.4 is used.. Use oldest api */
+#ifndef FUSE_USE_VERSION
+#define FUSE_USE_VERSION 11
+#endif
+
 /* Stuff from helper.h */
 #define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
 #define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
@@ -123,14 +128,12 @@ int main(int argc, char *argv[]) {
       if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
       if (opts) free( opts ) ;
     }
-#elif (FUSE_MAJOR_VERSION <= 2) && (FUSE_MINOR_VERSION < 4)
-    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
-#else /* FUSE >= 2.4 */
+#elif (FUSE_USE_VERSION == 21) || (FUSE_USE_VERSION == 22)
     /* Time to cleanup the main-loop and use the fuse-helper functions soon.
      * Should perhaps call fuse_setup(), fuse_loop_mt(), fuse_teardown() only.
      */
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
-#endif /* FUSE >= 2.4 */
+#endif
 
 
     set_signal_handlers(exit_handler);
@@ -147,16 +150,16 @@ int main(int argc, char *argv[]) {
 
 #if (FUSE_MAJOR_VERSION == 1)
     fuse = fuse_new(fuse_fd, 0, &owfs_oper);
-#elif (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION < 2)
-    fuse = fuse_new(fuse_fd, NULL, &owfs_oper);
-#elif /* FUSE >= 2.2 */
+#elif FUSE_USE_VERSION == 21
+    fuse = fuse_new(fuse_fd, fuse_open_opt, &owfs_oper);
+#elif FUSE_USE_VERSION == 22
     /* Fuse open options fuse-2.4 is
      * debug, use_ino, readdir_ino, direct_io, kernel_cache, umask=
      * uid=, gid=, entry_timeout=, attr_timeout=
      *
      * NOTE: direct_io was Fuse mount option in fuse-2.3 */
     fuse = fuse_new(fuse_fd, fuse_open_opt, &owfs_oper, sizeof(owfs_oper));
-#endif /* FUSE >= 2.2 */
+#endif
 
     if (multithreading) {
         fuse_loop_mt(fuse) ;

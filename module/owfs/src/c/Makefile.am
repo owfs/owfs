@@ -32,6 +32,9 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
+#         -DFUSE_USE_VERSION=22
+#should perhaps use the newer fuse-api soon...
+
 AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
