@@ -49,7 +49,7 @@ char * get( const char * path ) {
     struct stateinfo si ;
     char * buf = NULL ;
     int sz ; /* current buffer size */
-    int s = strlen(path) ; /* current string length */
+    int s ; /* current string length */
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
         int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
@@ -83,7 +83,7 @@ char * get( const char * path ) {
         FS_dir( directory, &pn ) ;
     } else { /* A regular file */
 //printf("File %s\n",path);
-	s = FS_size_postparse(&pn) ;
+        s = FS_size_postparse(&pn) ;
 //printf("File len=%d, %s\n",s,path);
         if ( (buf=(char *) malloc( s+1 )) ) {
             int r =  FS_read_3times( buf, s, 0, &pn ) ;

@@ -110,42 +110,66 @@ int OW_init( const char * device ) {
     return ret ;
 }
 
-int OW_get( const char * path, char * buffer, size_t buffer_length ) {
+int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     struct parsedname pn ;
     struct stateinfo si ;
-//    int test=0 ;
+    char * buf = NULL ;
+    int sz ; /* current buffer size */
     int s = 0 ; /* current buffer string length */
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
-        if ( (s>0) && (s+2)<buffer_length) strcpy( &buffer[s++], "," ) ;
-//        snprintf(&buffer[s],buffer_length-s,"[%d] ",test++);
-//        s=strlen(buffer) ;
-        FS_DirName( &buffer[s], buffer_length-s-2, pn2 ) ;
-        if (
-            pn2->dev ==NULL
-            || pn2->ft ==NULL
-            || pn2->ft->format ==ft_subdir
-            || pn2->ft->format ==ft_directory
-        ) strcat( &buffer[s], "/" );
-        s = strlen( buffer ) ;
+        int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
+        if ( sz<sn ) {
+            sz = sn ;
+            buf = realloc( buf, sn ) ;
+        }
+        if ( buf ) {
+            if ( s ) strcpy( &buf[s++], "," ) ; // add a comma
+            FS_DirName( &buf[s], OW_FULLNAME_MAX, pn2 ) ;
+            if (
+                pn2->dev ==NULL
+                || pn2->ft ==NULL
+                || pn2->ft->format ==ft_subdir
+                || pn2->ft->format ==ft_directory
+               ) strcat( &buf[s], "/" );
+            s = strlen( buf ) ;
+//printf("buf=%s len=%d\n",buf,s);
+        }
     }
 
     /* Check the parameters */
-    if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
+    if ( buffer==NULL ) return -EINVAL ;
     if ( path==NULL ) path="/" ;
+    if ( strlen(path) > PATH_MAX ) return -EINVAL ;
 
     /* Parse the input string */
     pn.si = &si ;
     if ( FS_ParsedName( path, &pn ) ) return -ENOENT ;
 
     if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
-        buffer[buffer_length-1] = '\0' ; /* protect end of buffer */
+        s=sz=0 ;
         FS_dir( directory, &pn ) ;
     } else { /* A regular file */
-        s =  FS_read_3times( buffer, buffer_length, 0, &pn ) ;
+        s = FS_size_postparse(&pn) ;
+        if ( (buf=(char *) malloc( s+1 )) ) {
+            int r =  FS_read_3times( buf, s, 0, &pn ) ;
+            if ( r<0 ) {
+                free(buf) ;
+                s = r ;
+            } else {
+                buf[s] = '\0' ;
+            }
+        }
     }
     FS_ParsedName_destroy(&pn) ;
-    if ( s<0 ) buffer[0] = '\0' ;
+    if ( s<0 ) {
+        if ( buf ) free(buf) ;
+        buf = NULL ;
+        if ( buffer_length ) *buffer_length = 0 ;
+    } else {
+        if ( buffer_length ) *buffer_length = s ;
+    }
+    buffer[0] = buf ;
     return s ;
 }
 
@@ -153,6 +177,7 @@ int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
     /* Check the parameters */
     if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
     if ( path==NULL ) return -EINVAL ;
+    if ( strlen(path) > PATH_MAX ) return -EINVAL ;
 
     return FS_write(path,buffer,buffer_length,0) ;
 }
