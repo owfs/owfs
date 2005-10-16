@@ -249,7 +249,7 @@ static int DS9490_open( const struct parsedname * const pn, char *name ) {
       if ( (ret=usb_set_configuration(usb, 1))==0 ) {
         if( (ret=usb_claim_interface(usb, 0))==0 ) {
             if ( (ret=usb_set_altinterface(usb, 3))==0 ) {
-            LEVEL_CONNECT("Opened USB DS9490 adapter at %s.\n",name);
+            LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n",name);
             DS9490_setroutines( & pn->in->iroutines ) ;
             pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
             pn->in->adapter_name = "DS9490" ;
