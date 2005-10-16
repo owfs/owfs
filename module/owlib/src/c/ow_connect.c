@@ -108,7 +108,7 @@ void FreeIn( void ) {
         next = now->next ;
 #ifdef OW_MT
         pthread_mutex_destroy(&(now->bus_mutex)) ;
-	pthread_mutex_destroy(&(now->dev_mutex));
+        pthread_mutex_destroy(&(now->dev_mutex));
 #endif /* OW_MT */
         switch (get_busmode(now)) {
         case bus_remote:

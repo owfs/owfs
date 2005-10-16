@@ -20,11 +20,19 @@ $Id$
 #include "owcapi.h"
 
 #ifdef OW_MT
-pthread_t main_threadid ;
-#define IS_MAINTHREAD (main_threadid == pthread_self())
-#else
-#define IS_MAINTHREAD 1
-#endif
+    pthread_t main_threadid ;
+    #define IS_MAINTHREAD (main_threadid == pthread_self())
+
+    extern pthread_mutex_t capi_mutex ;
+    #define CAPILOCK       pthread_mutex_lock(  &capi_mutex   )
+    #define CAPIUNLOCK     pthread_mutex_unlock(  &capi_mutex   )
+#else /* OW_MT */
+    #define IS_MAINTHREAD 1
+    
+#define CAPIINITLOCK
+    #define CAPILOCK
+    #define CAPIUNLOCK
+#endif /* OW_MT */
 
 #define MAX_ARGS 20
 int OW_init_string( const char * params ) {
@@ -54,6 +62,14 @@ int OW_init_args( int argc, char ** argv ) {
     int ret = 0 ;
     int c ;
 
+    CAPILOCK ; /* For simultaneous init's */
+    if ( indevices ) { /* already init-ed */
+        CAPIUNLOCK ;
+            return -EALREADY ;
+    }
+
+    /* Proceed with init while lock held */
+    
     /* grab our executable name */
     if (argc > 0) progname = strdup(argv[0]);
 
@@ -78,6 +94,8 @@ int OW_init_args( int argc, char ** argv ) {
 
     if ( ret ) LibClose() ;
 
+    CAPIUNLOCK ;
+    
     return ret ;
 }
 
@@ -86,6 +104,14 @@ int OW_init( const char * device ) {
     int ret = 0 ;
 
     if ( device==NULL ) return -ENODEV ;
+
+    CAPILOCK ; /* For simultaneous init's */
+    if ( indevices ) { /* already init-ed */
+        CAPIUNLOCK ;
+        return -EALREADY ;
+    }
+
+    /* Proceed with init while lock held */
 
     /* Set up owlib */
     LibSetup() ;
@@ -107,6 +133,8 @@ int OW_init( const char * device ) {
 
     if ( ret ) LibClose() ;
 
+    CAPIUNLOCK ;
+
     return ret ;
 }
 
@@ -116,6 +144,7 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     char * buf = NULL ;
     int sz ; /* current buffer size */
     int s = 0 ; /* current buffer string length */
+    int indev ;
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
         int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
@@ -136,6 +165,12 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
 //printf("buf=%s len=%d\n",buf,s);
         }
     }
+
+    /* Check for prior init */
+    CAPILOCK ;
+        indev = indevices ;
+    CAPIUNLOCK ;
+    if ( indev==0 ) return -ENETDOWN ;
 
     /* Check the parameters */
     if ( buffer==NULL ) return -EINVAL ;
@@ -174,6 +209,13 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
 }
 
 int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
+    int indev ;
+    /* Check for prior init */
+    CAPILOCK ;
+        indev = indevices ;
+    CAPIUNLOCK ;
+    if ( indev==0 ) return -ENETDOWN ;
+    
     /* Check the parameters */
     if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
     if ( path==NULL ) return -EINVAL ;
@@ -183,5 +225,7 @@ int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
 }
 
 void OW_finish( void ) {
-    LibClose() ;
+    CAPILOCK ;
+        LibClose() ;
+    CAPIUNLOCK ;
 }
