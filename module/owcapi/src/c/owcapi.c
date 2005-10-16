@@ -23,7 +23,7 @@ $Id$
     pthread_t main_threadid ;
     #define IS_MAINTHREAD (main_threadid == pthread_self())
 
-    extern pthread_mutex_t capi_mutex ;
+    pthread_mutex_t capi_mutex ;
     #define CAPILOCK       pthread_mutex_lock(  &capi_mutex   )
     #define CAPIUNLOCK     pthread_mutex_unlock(  &capi_mutex   )
 #else /* OW_MT */
