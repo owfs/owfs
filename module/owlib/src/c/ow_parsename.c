@@ -161,10 +161,10 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
             pn->path_busless[0] = '\000';
             if(pn->state & pn_text) {
-                strcpy(pn->path_busless, "/text");
+                strcat(pn->path_busless, "/text");
             }
             if(pn->state & pn_uncached) {
-                strcpy(pn->path_busless, "/uncached");
+                strcat(pn->path_busless, "/uncached");
             }
             strcat(pn->path_busless, "/");
             if(pathnext) strcat(pn->path_busless, &path[pathnext-pathcpy]);
