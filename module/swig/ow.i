@@ -15,6 +15,20 @@ LibSetup() ;
 #include "owfs_config.h"
 #include "ow.h"
 
+#ifdef OW_MT
+    pthread_t main_threadid ;
+#define IS_MAINTHREAD (main_threadid == pthread_self())
+
+    pthread_mutex_t capi_mutex ;
+#define CAPILOCK       pthread_mutex_lock(  &capi_mutex   )
+#define CAPIUNLOCK     pthread_mutex_unlock(  &capi_mutex   )
+#else /* OW_MT */
+#define IS_MAINTHREAD 1
+    
+#define CAPIINITLOCK
+#define CAPILOCK
+#define CAPIUNLOCK
+#endif /* OW_MT */
 
 char *version( ) {
     return VERSION;
@@ -32,11 +46,17 @@ int init( const char * dev ) {
     }
     if ( LibStart() ) return 0 ;
 //printf("Libstart good\n");
-    return 1 ;
+    return 1 ; /* Good initialization */
 }
 
 int put( const char * path, const char * value ) {
     int s ;
+    int indev ;
+    /* Check for prior init */
+    CAPILOCK ;
+        indev = indevices ;
+    CAPIUNLOCK ;
+    if ( indev==0 ) return 0 ;
     /* Overall flag for valid setup */
     if ( value==NULL) return 0 ;
     s = strlen(value) ;
@@ -50,6 +70,7 @@ char * get( const char * path ) {
     char * buf = NULL ;
     int sz ; /* current buffer size */
     int s ; /* current string length */
+    int indev ;
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
         int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
@@ -71,6 +92,11 @@ char * get( const char * path ) {
 //printf("buf=%s len=%d\n",buf,s);
         }
     }
+    /* Check for prior init */
+    CAPILOCK ;
+        indev = indevices ;
+    CAPIUNLOCK ;
+    if ( indev==0 ) return NULL ;
 
     /* Parse the input string */
     pn.si = &si ;
