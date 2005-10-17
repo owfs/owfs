@@ -398,7 +398,7 @@ static int OW_convert( const struct parsedname * const pn ) {
 	return 0;
       } else { /* power line for conversion */
 	ret = BUS_PowerByte( 0x04, 6,pn) ;
-	LEVEL_DEFALT("OW_convert: Failed to send powerbyte ret=%d\n", ret);
+	LEVEL_DEFAULT("OW_convert: Failed to send powerbyte ret=%d\n", ret);
       }
     }
     BUSUNLOCK(pn);
