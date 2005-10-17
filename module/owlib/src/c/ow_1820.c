@@ -338,8 +338,15 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
     size_t s = sizeof(oldres) ;
     int ret = 0 ;
 
+    //LEVEL_DATA("OW_22temp\n");
+
+#if 1
     /* powered? */
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
+#else
+    // Just a test to force powerbyte be used...
+    pow = 0;
+#endif
 
     /* Resolution */
     if ( Cache_Get_Internal(&oldres,&s,&ip_resolution,pn) || oldres!=resolution ) {

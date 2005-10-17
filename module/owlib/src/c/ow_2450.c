@@ -312,10 +312,16 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
         if ( OW_w_mem( control, 8, 1<<3, pn) ) return 1 ;
 
     // Start A/D process if needed
-    if ( OW_convert( pn ) ) return 1 ;
+    if ( OW_convert( pn ) ) {
+      LEVEL_DEFAULT("OW_volts: Failed to start conversion\n");
+      return 1 ;
+    }
 
     // read data
-    if ( OW_r_mem( data, 8, 0<<3, pn) ) return 1 ;
+    if ( OW_r_mem( data, 8, 0<<3, pn) ) {
+      LEVEL_DEFAULT("OW_volts: OW_r_mem Failed\n");
+      return 1 ;
+    }
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
@@ -351,10 +357,16 @@ static int OW_1_volts( FLOAT * const f , const int element, const int resolution
         if ( OW_w_mem( control, 2, (1<<3)+(element<<1), pn) ) return 1 ;
 
     // Start A/D process
-    if ( OW_convert( pn ) ) return 1 ;
+    if ( OW_convert( pn ) ) {
+      LEVEL_DEFAULT("OW_1_volts: Failed to start conversion\n");
+      return 1 ;
+    }
 
     // read data
-    if ( OW_r_mem( data, 2, (0<<3)+(element<<1), pn) ) return 1 ;
+    if ( OW_r_mem( data, 2, (0<<3)+(element<<1), pn) ) {
+      LEVEL_DEFAULT("OW_volts: OW_r_mem failed\n");
+      return 1 ;
+    }
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
@@ -370,7 +382,7 @@ static int OW_convert( const struct parsedname * const pn ) {
     int ret ;
 
     /* get power flag -- to see if pullup can be avoided */
-    if ( OW_r_mem(&power,1,0x1C,pn) ) return 1 ;
+    if ( OW_r_mem(&power,1,0x1C,pn) ) power = 0; /* assume unpowered if cannot tell */
 
     /* See if a conversion was globally triggered */
     if ( power==0x40 && Simul_Test( simul_volt, 6, pn )==0 ) return 0 ;
@@ -378,18 +390,18 @@ static int OW_convert( const struct parsedname * const pn ) {
     // Start conversion
     // 6 msec for 16bytex4channel (5.2)
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5,pn ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
-        if ( ret==0 ) {
-            if (power==0x40) {
+    ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5,pn ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
+    if ( ret==0 ) {
+      if (power==0x40) {
+	BUSUNLOCK(pn);
+	UT_delay(6) ; /* don't need to hold line for conversion! */
+	return 0;
+      } else { /* power line for conversion */
+	ret = BUS_PowerByte( 0x04, 6,pn) ;
+	LEVEL_DEFALT("OW_convert: Failed to send powerbyte ret=%d\n", ret);
+      }
+    }
     BUSUNLOCK(pn);
-                UT_delay(6) ; /* don't need to hold line for conversion! */
-            } else { /* power line for conversion */
-                ret = BUS_PowerByte( 0x04, 6,pn) ;
-    BUSUNLOCK(pn);
-            }
-        } else {
-    BUSUNLOCK(pn);
-	}
     return ret ;
 }
 

@@ -95,9 +95,8 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap) {
         UCLIBCUNLOCK;
     }
 
-    strcat(buf, "\n");
-
     if (sl) {    /* All output to syslog */
+        strcat(buf, "\n");
         if ( ! log_available) {
             openlog( "OWFS" , LOG_PID , LOG_DAEMON ) ;
             log_available = 1 ;
