@@ -62,7 +62,7 @@ OWLIB_SOURCE = compat.c          \
                ow_tree.c         \
                ow_fstat.c        \
                ow_locks.c        \
-               ow_api.c          \ 
+               ow_api.c          \
                ow_opt.c          \
                owlib.c           \
                error.c           \
