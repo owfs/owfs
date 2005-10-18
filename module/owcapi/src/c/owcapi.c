@@ -22,16 +22,8 @@ $Id$
 #ifdef OW_MT
     pthread_t main_threadid ;
     #define IS_MAINTHREAD (main_threadid == pthread_self())
-
-    pthread_mutex_t capi_mutex ;
-    #define CAPILOCK       pthread_mutex_lock(  &capi_mutex   )
-    #define CAPIUNLOCK     pthread_mutex_unlock(  &capi_mutex   )
 #else /* OW_MT */
     #define IS_MAINTHREAD 1
-    
-#define CAPIINITLOCK
-    #define CAPILOCK
-    #define CAPIUNLOCK
 #endif /* OW_MT */
 
 #define MAX_ARGS 20
@@ -62,14 +54,12 @@ int OW_init_args( int argc, char ** argv ) {
     int ret = 0 ;
     int c ;
 
-    CAPILOCK ; /* For simultaneous init's */
-    if ( indevices ) { /* already init-ed */
-        CAPIUNLOCK ;
-            return -EALREADY ;
+    if ( OWLIB_can_init_start() ) {
+        OWLIB_can_init_end() ;
+        return -EALREADY ;
     }
-
-    /* Proceed with init while lock held */
     
+    /* Proceed with init while lock held */    
     /* grab our executable name */
     if (argc > 0) progname = strdup(argv[0]);
 
@@ -94,8 +84,7 @@ int OW_init_args( int argc, char ** argv ) {
 
     if ( ret ) LibClose() ;
 
-    CAPIUNLOCK ;
-    
+    OWLIB_can_init_end() ;    
     return ret ;
 }
 
@@ -105,12 +94,11 @@ int OW_init( const char * device ) {
 
     if ( device==NULL ) return -ENODEV ;
 
-    CAPILOCK ; /* For simultaneous init's */
-    if ( indevices ) { /* already init-ed */
-        CAPIUNLOCK ;
+    if ( OWLIB_can_init_start() ) {
+        OWLIB_can_init_end() ;
         return -EALREADY ;
     }
-
+    
     /* Proceed with init while lock held */
 
     /* Set up owlib */
@@ -133,8 +121,7 @@ int OW_init( const char * device ) {
 
     if ( ret ) LibClose() ;
 
-    CAPIUNLOCK ;
-
+    OWLIB_can_init_end() ;
     return ret ;
 }
 
@@ -144,7 +131,6 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     char * buf = NULL ;
     int sz ; /* current buffer size */
     int s = 0 ; /* current buffer string length */
-    int indev ;
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
         int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
@@ -166,66 +152,67 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
         }
     }
 
-    /* Check for prior init */
-    CAPILOCK ;
-        indev = indevices ;
-    CAPIUNLOCK ;
-    if ( indev==0 ) return -ENETDOWN ;
-
     /* Check the parameters */
     if ( buffer==NULL ) return -EINVAL ;
     if ( path==NULL ) path="/" ;
     if ( strlen(path) > PATH_MAX ) return -EINVAL ;
-
-    /* Parse the input string */
+    
     pn.si = &si ;
-    if ( FS_ParsedName( path, &pn ) ) return -ENOENT ;
 
-    if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
-        s=sz=0 ;
-        FS_dir( directory, &pn ) ;
-    } else { /* A regular file */
-        s = FS_size_postparse(&pn) ;
-        if ( (buf=(char *) malloc( s+1 )) ) {
-            int r =  FS_read_3times( buf, s, 0, &pn ) ;
-            if ( r<0 ) {
-                free(buf) ;
-                s = r ;
-            } else {
-                buf[s] = '\0' ;
+    if ( OWLIB_can_access_start() ) { /* Check for prior init */
+        s = -ENETDOWN ;
+    } else if ( FS_ParsedName( path, &pn ) ) { /* Can we parse the input string */
+        s = -ENOENT ;
+    } else {
+        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
+            s=sz=0 ;
+            FS_dir( directory, &pn ) ;
+        } else { /* A regular file */
+            s = FS_size_postparse(&pn) ;
+            if ( (buf=(char *) malloc( s+1 )) ) {
+                int r =  FS_read_3times( buf, s, 0, &pn ) ;
+                if ( r<0 ) {
+                    free(buf) ;
+                    s = r ;
+                } else {
+                    buf[s] = '\0' ;
+                }
             }
         }
+        FS_ParsedName_destroy(&pn) ;
+        if ( s<0 ) {
+            if ( buf ) free(buf) ;
+            buf = NULL ;
+            if ( buffer_length ) *buffer_length = 0 ;
+        } else {
+            if ( buffer_length ) *buffer_length = s ;
+        }
+        buffer[0] = buf ;
     }
-    FS_ParsedName_destroy(&pn) ;
-    if ( s<0 ) {
-        if ( buf ) free(buf) ;
-        buf = NULL ;
-        if ( buffer_length ) *buffer_length = 0 ;
-    } else {
-        if ( buffer_length ) *buffer_length = s ;
-    }
-    buffer[0] = buf ;
+    OWLIB_can_access_end() ;
     return s ;
 }
 
 int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
-    int indev ;
-    /* Check for prior init */
-    CAPILOCK ;
-        indev = indevices ;
-    CAPIUNLOCK ;
-    if ( indev==0 ) return -ENETDOWN ;
-    
+    int ret ;
+        
     /* Check the parameters */
     if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
     if ( path==NULL ) return -EINVAL ;
     if ( strlen(path) > PATH_MAX ) return -EINVAL ;
 
-    return FS_write(path,buffer,buffer_length,0) ;
+    /* Check for prior init */
+    if ( OWLIB_can_access_start() ) {
+        ret = -ENETDOWN ;
+    } else {
+        ret = FS_write(path,buffer,buffer_length,0) ;
+    }
+    OWLIB_can_access_end() ;
+    return ret ;
 }
 
 void OW_finish( void ) {
-    CAPILOCK ;
+    OWLIB_can_finish_start() ;
         LibClose() ;
-    CAPIUNLOCK ;
+    OWLIB_can_finish_end() ;
 }

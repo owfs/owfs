@@ -1003,9 +1003,18 @@ void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn2 ) ;
 int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
+// ow_locks.c
 void LockSetup( void ) ;
 int LockGet( const struct parsedname * const pn ) ;
 void LockRelease( const struct parsedname * const pn ) ;
+
+// ow_api.c
+int  OWLIB_can_init_start( void ) ;
+void OWLIB_can_init_end(   void ) ;
+int  OWLIB_can_access_start( void ) ;
+void OWLIB_can_access_end(   void ) ;
+int  OWLIB_can_finish_start( void ) ;
+void OWLIB_can_finish_end(   void ) ;
 
 /* 1-wire lowlevel */
 void UT_delay(const unsigned int len) ;
