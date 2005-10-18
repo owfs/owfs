@@ -30,10 +30,8 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          ${MT_FLAG} \
          ${PROFILING_FLAG} \
-         -D_FILE_OFFSET_BITS=64
-
-#         -DFUSE_USE_VERSION=22
-#should perhaps use the newer fuse-api soon...
+         -D_FILE_OFFSET_BITS=64 \
+	 ${FUSE_FLAGS}
 
 AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
