@@ -317,14 +317,15 @@ AC_ARG_ENABLE(owfs,
 [  --enable-owfs         Enable owfs module (default auto)],
 [
     AC_MSG_RESULT([$enableval])
-    if test "$enableval" != "yes" ; then
-        ENABLE_OWFS="false"
-    else
+    if test "$enableval" = "yes" ; then
         ENABLE_OWFS="true"
+    fi
+    if test "$enableval" = "no" ; then
+        ENABLE_OWFS="false"
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    AC_MSG_RESULT([auto (default)])
 ])
 AC_SUBST(ENABLE_OWFS)
 
@@ -634,7 +635,7 @@ AM_CONDITIONAL(ENABLE_FUSETEST, test "${ENABLE_FUSETEST}" = "true")
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
-  if test "${ENABLE_FUSETEST}" == "false" ; then
+  if test "${ENABLE_FUSETEST}" = "false" ; then
     FUSE_FLAGS=""
     AC_CHECK_LIB(fuse,fuse_mount, [
 	FUSE_LIBS=-lfuse
@@ -642,7 +643,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
     if test "${ENABLE_OWFS}" = "true"; then
         AC_MSG_ERROR([You have to install libfuse first - download it from http://fuse.sourceforge.net/])
     else
-        AC_MSG_WARN([[OWFS is disabled because libfuse is not installed.]])
+        AC_MSG_WARN([OWFS is disabled because libfuse is not installed.])
             ENABLE_OWFS="false"
     fi
     ])
@@ -654,20 +655,37 @@ if test "${ENABLE_OWFS}" != "false" ; then
     save_CPPFLAGS="$CPPFLAGS"
     CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
 
-    AC_CHECK_HEADER(fuse.h,,
-         [AC_MSG_ERROR([
-		 Can't find fuse.h - add the search path to CPPFLAGS and
-		 rerun configure, eg:
-		 export CPPFLAGS=-I/usr/local/include ])])
-    AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="-lfuse"],
-         [AC_MSG_ERROR([
-		 Can't find libfuse.a - add the search path to LDFLAGS
-		 and rerun configure, eg:
-		 export LDFLAGS=-L/usr/local/lib ])],)
+    AC_CHECK_HEADER(fuse.h,,[
+	if test "${ENABLE_OWFS}" = "auto"; then
+	    AC_MSG_WARN([OWFS is disabled because fuse.h is not installed.])
+	    ENABLE_OWFS="false"
+	else
+	    AC_MSG_ERROR([
+	Can't find fuse.h - add the search path to CPPFLAGS and
+	rerun configure, eg:
+	export CPPFLAGS=-I/usr/local/include ])
+	fi
+	])
+	if test "${ENABLE_OWFS}" != "false"; then
+	    AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="-lfuse"],[
+		AC_MSG_WARN([
+	Can't find libfuse.a - add the search path to LDFLAGS
+	and rerun configure, eg:
+	export LDFLAGS=-L/usr/local/lib ])
+		AC_MSG_WARN(["ldconfig -a" might also solve the problem, otherwise re-install fuse.])
+	    	if test "${ENABLE_OWFS}" = "auto"; then
+			AC_MSG_WARN([OWFS is disabled because libfuse.a is not found.])
+			ENABLE_OWFS="false"
+		else
+			AC_MSG_ERROR([Can't enable OWFS])
+		fi
+	    ],)
+	fi
 
-    # check for a supported FUSE_MAJOR_VERSION.
-    AC_MSG_CHECKING([For supported FUSE API version])
-	AC_COMPILE_IFELSE([
+	if test "${ENABLE_OWFS}" != "false"; then
+	    # check for a supported FUSE_MAJOR_VERSION.
+	    AC_MSG_CHECKING([For supported FUSE API version])
+	    AC_COMPILE_IFELSE([
 	    AC_LANG_PROGRAM([[#include "fuse.h"]],
 	    [[
 	    #ifndef FUSE_MAJOR_VERSION
@@ -681,15 +699,15 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	    ]])],
 	    [AC_MSG_RESULT([yes])],
 	    [
+		AC_MSG_RESULT([no])
 	        if test "${ENABLE_OWFS}" = "true"; then
 		   AC_MSG_ERROR([You have to install fuse-2.2 or later first - download it from http://fuse.sourceforge.net/])
 		else
 		   AC_MSG_WARN([OWFS is disabled because your installed libfuse is too old.])
 		   ENABLE_OWFS="false"
 		fi
-		AC_MSG_RESULT([no])
-	    ]
-	)
+	    ])
+	fi
     CPPFLAGS="$save_CPPFLAGS"
   fi
   if test "${ENABLE_OWFS}" != "false"; then
