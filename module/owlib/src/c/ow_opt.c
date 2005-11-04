@@ -88,11 +88,11 @@ static void ow_help( enum opt_program op ) {
     "\n"
     "1-wire side (device):\n"
     "  -d --device    devicename      |Serial port device name of 1-wire adapter\n"
-    "                                 |  e.g: -d /dev/ttyS0\n"
+    "                                 |  e.g: -d /dev/ttyS0\n");
 #ifdef OW_USB
-    "  -u --usb       [number]        |USB 1-wire adapter. Choose first one unless number specified\n"
+    printf("  -u --usb       [number]        |USB 1-wire adapter. Choose first one unless number specified\n");
 #endif /* OW_USB */
-    "                                 |  e.g: -u -u3  first and third USB 1wire adapters\n"
+    printf("                                 |  e.g: -u -u3  first and third USB 1wire adapters\n"
     "  -s --server    [host:]port     |owserver program that talks to adapter. Give tcp/ip address.\n"
     "                                 |  e.g: -s embeddedhost:3030\n"
     "\n"
@@ -140,11 +140,11 @@ static void ow_morehelp( enum opt_program op ) {
     "     --background                |become a deamon process(default)\n"
     "     --foreground                |stay in foreground\n"
     "  -r --readonly                  |no writing to 1-wire bus\n"
-    "  -w --write                     |allow reading and writing to bus(default)\n"
+    "  -w --write                     |allow reading and writing to bus(default)\n");
 #ifdef OW_CACHE
-    "  -t                             |cache timeout (in seconds)\n"
+    printf("  -t                             |cache timeout (in seconds)\n");
 #endif /* OW_CACHE */    
-    "  -f --format                    |format for 1-wire unique serial IDs display\n"
+    printf("  -f --format                    |format for 1-wire unique serial IDs display\n"
     "                                 |  f[.]i[[.]c] f-amily i-d c-rc (all in hex)\n"
     "     --error_print               |Where information/error messages are printed\n"
     "                                 |  0-mixed(default) 1-syslog 2-stderr 3-suppressed\n"
