@@ -613,57 +613,27 @@ if test "${ENABLE_OWNFSD}" = "true" ; then
         AC_SEARCH_LIBS(xdr_int, nsl)
 fi
 
-
-#disable FUSE version test (This option will be removed later, but will make it possible
-#  to compile it for fuse-1.4 and fuse-2.1 for example)
-AC_MSG_CHECKING(if FUSE version is checked)
-ENABLE_FUSETEST="true"
-AC_ARG_ENABLE(fusetest,
-[  --enable-fusetest     Enable FUSE version test (default true)],
-[
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "no" ; then
-        ENABLE_FUSETEST="false"
-    fi
-],
-[
-    AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_FUSETEST)
-AM_CONDITIONAL(ENABLE_FUSETEST, test "${ENABLE_FUSETEST}" = "true")
-
-
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
-  if test "${ENABLE_FUSETEST}" = "false" ; then
+
     FUSE_FLAGS=""
-    AC_CHECK_LIB(fuse,fuse_mount, [
-	FUSE_LIBS=-lfuse
-    ], [
-    if test "${ENABLE_OWFS}" = "true"; then
-        AC_MSG_ERROR([You have to install libfuse first - download it from http://fuse.sourceforge.net/])
-    else
-        AC_MSG_WARN([OWFS is disabled because libfuse is not installed.])
-            ENABLE_OWFS="false"
-    fi
-    ])
-    if test "${ENABLE_OWFS}" != "false"; then
-        ENABLE_OWFS="true"
-    fi
-  else
-    FUSE_FLAGS="-DFUSE_USE_VERSION=22"
+    FUSE_LIBS=""
     save_CPPFLAGS="$CPPFLAGS"
-    CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
+    CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64"
 
     AC_CHECK_HEADER(fuse.h,,[
-	if test "${ENABLE_OWFS}" = "auto"; then
-	    AC_MSG_WARN([OWFS is disabled because fuse.h is not installed.])
-	    ENABLE_OWFS="false"
-	else
-	    AC_MSG_ERROR([
+	AC_MSG_WARN([
 	Can't find fuse.h - add the search path to CPPFLAGS and
 	rerun configure, eg:
 	export CPPFLAGS=-I/usr/local/include ])
+
+	AC_MSG_WARN([Install FUSE-2.2 or later to enable owfs - download it from http://fuse.sourceforge.net/])
+
+	if test "${ENABLE_OWFS}" = "auto"; then
+	    AC_MSG_WARN([OWFS is disabled because fuse.h is not found.])
+	    ENABLE_OWFS="false"
+	else
+	    AC_MSG_ERROR([Configure without --enable-owfs to detect fuse automatically.])
 	fi
 	])
 	if test "${ENABLE_OWFS}" != "false"; then
@@ -672,7 +642,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	Can't find libfuse.a - add the search path to LDFLAGS
 	and rerun configure, eg:
 	export LDFLAGS=-L/usr/local/lib ])
-		AC_MSG_WARN(["ldconfig -a" might also solve the problem, otherwise re-install fuse.])
+		AC_MSG_WARN([Running ldconfig or adding "/usr/local/lib" to /etc/ld.so.conf might also solve the problem, otherwise re-install fuse.])
 	    	if test "${ENABLE_OWFS}" = "auto"; then
 			AC_MSG_WARN([OWFS is disabled because libfuse.a is not found.])
 			ENABLE_OWFS="false"
@@ -681,6 +651,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 		fi
 	    ],)
 	fi
+
 
 	if test "${ENABLE_OWFS}" != "false"; then
 	    # check for a supported FUSE_MAJOR_VERSION.
@@ -691,25 +662,41 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	    #ifndef FUSE_MAJOR_VERSION
 		#error "FUSE_MAJOR_VERSION not defined"
 	    #endif
+	    ]])],
+	    [AC_MSG_RESULT([yes])],
+	    [AC_MSG_RESULT([no])
+		AC_MSG_WARN([OWFS is disabled since fuse.h is too old])
+	        if test "${ENABLE_OWFS}" = "true"; then
+		   AC_MSG_ERROR([You have to install fuse first (fuse-2.2 or later recommended) - download it from http://fuse.sourceforge.net/])
+		else
+		   ENABLE_OWFS="false"
+		fi
+	    ])
+	fi
+
+
+	# Use newest FUSE API if version is newer than 2.2
+	if test "${ENABLE_OWFS}" != "false"; then
+	    # check for a supported FUSE_MAJOR_VERSION.
+	    AC_MSG_CHECKING([For FUSE version ])
+	    AC_COMPILE_IFELSE([
+	    AC_LANG_PROGRAM([[#include "fuse.h"]],
+	    [[
 	    #if (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)
 		/* Fuse > 2.2 is ok */
 	    #else
 		#error "Fuse < 2.2"
 	    #endif
 	    ]])],
-	    [AC_MSG_RESULT([yes])],
-	    [
-		AC_MSG_RESULT([no])
-	        if test "${ENABLE_OWFS}" = "true"; then
-		   AC_MSG_ERROR([You have to install fuse-2.2 or later first - download it from http://fuse.sourceforge.net/])
-		else
-		   AC_MSG_WARN([OWFS is disabled because your installed libfuse is too old.])
-		   ENABLE_OWFS="false"
-		fi
+	    [AC_MSG_RESULT([2.2 or later])
+	    FUSE_FLAGS="-DFUSE_USE_VERSION=22"
+	    ],
+	    [AC_MSG_RESULT([<2.2])
 	    ])
 	fi
-    CPPFLAGS="$save_CPPFLAGS"
-  fi
+
+  CPPFLAGS="$save_CPPFLAGS"
+
   if test "${ENABLE_OWFS}" != "false"; then
       ENABLE_OWFS="true"
   fi
@@ -831,19 +818,23 @@ esac
 # instead of hardcoding the libraries.
 
 AC_MSG_CHECKING([if extra libs are required])
+LD_EXTRALIBS=""
 case "${host_cpu}-${host_os}" in
 	*-darwin*)
 		LD_EXTRALIBS="-framework CoreFoundation -framework IOKit"
-		AC_MSG_RESULT([-framework CoreFoundation -framework IOKit])
+#Don't know if rpath is missing when compiling for MacOS X
+		LD_EXTRALIBS="$LD_EXTRALIBS -Wl,--rpath -Wl,$libdir -Wl,--rpath -Wl,/usr/local/lib"
+		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*-solaris*)
                 LIBS="$LIBS -lsocket -lnsl"
 		LD_EXTRALIBS="-lsocket -lnsl"
-		AC_MSG_RESULT([-lsocket -lnsl])
+		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*)
-		LD_EXTRALIBS=""
-		AC_MSG_RESULT([no])
+		LD_EXTRALIBS="$LD_EXTRALIBS -Wl,--rpath -Wl,$libdir -Wl,--rpath -Wl,/usr/local/lib"
+#		AC_MSG_RESULT([no])
+		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 esac
 AC_SUBST(LD_EXTRALIBS)
