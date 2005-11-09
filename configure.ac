@@ -822,8 +822,6 @@ LD_EXTRALIBS=""
 case "${host_cpu}-${host_os}" in
 	*-darwin*)
 		LD_EXTRALIBS="-framework CoreFoundation -framework IOKit"
-#Don't know if rpath is missing when compiling for MacOS X
-		LD_EXTRALIBS="$LD_EXTRALIBS -Wl,--rpath -Wl,$libdir -Wl,--rpath -Wl,/usr/local/lib"
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*-solaris*)
