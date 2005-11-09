@@ -38,9 +38,6 @@ header_DATA = compat_getopt.h \
         ow_system.h \
         ow_xxxx.h
 
-#        sem.h
-
-
 EXTRA_DIST = ${header_DATA}
 
 clean-generic:
