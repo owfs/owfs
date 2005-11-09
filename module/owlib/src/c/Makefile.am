@@ -73,6 +73,16 @@ lib_LTLIBRARIES = libow.la
 libow_la_SOURCES = ${OWLIB_SOURCE}
 libow_la_LDFLAGS = -shared -shrext .so
 
+# Maybe need this for MacOS X
+#if DARWIN_API
+#LDADDS = -framework IOKit -framework CoreFoundation
+#endif
+#libow_la_LDFLAGS = -shared -shrext .so \
+#	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
+#	-release $(LT_RELEASE) \
+#	-export-dynamic \
+#	$(LDADDS)
+
 if ENABLE_CACHE
 CACHE_FLAG = -DOW_CACHE
 endif
