@@ -616,10 +616,10 @@ fi
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
 
-    FUSE_FLAGS=""
+    FUSE_FLAGS="-DFUSE_USE_VERSION=22"
     FUSE_LIBS=""
     save_CPPFLAGS="$CPPFLAGS"
-    CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64"
+    CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
 
     AC_CHECK_HEADER(fuse.h,,[
 	AC_MSG_WARN([
@@ -682,16 +682,16 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	    AC_COMPILE_IFELSE([
 	    AC_LANG_PROGRAM([[#include "fuse.h"]],
 	    [[
-	    #if (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)
+	    #if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2))
 		/* Fuse > 2.2 is ok */
 	    #else
 		#error "Fuse < 2.2"
 	    #endif
 	    ]])],
 	    [AC_MSG_RESULT([2.2 or later])
-	    FUSE_FLAGS="-DFUSE_USE_VERSION=22"
 	    ],
 	    [AC_MSG_RESULT([<2.2])
+	    FUSE_FLAGS=""
 	    ])
 	fi
 

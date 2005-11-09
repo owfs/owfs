@@ -6,3 +6,4 @@ EXTRA_DIST = ${header_DATA}
 clean-generic:
 
 	rm -f *~ .*~ stamp-h1
+
