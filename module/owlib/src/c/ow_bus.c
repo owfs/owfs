@@ -134,7 +134,7 @@ int BUS_select_low(const struct parsedname * const pn) {
             return -EINVAL ;
         }
     }
-    if ( pn->dev ) {
+    if ( pn->dev && (pn->dev != DeviceThermostat) ) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
         if ( (ret=BUS_send_data(sent,1,pn)) ) {

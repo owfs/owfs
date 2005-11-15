@@ -1,0 +1,75 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS1821 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B DS1821
+\- Programmable Digital Thermostat and Thermometer
+.SH SYNOPSIS
+Thermostat.
+.PP
+.B thermostat
+[/[
+.B temperature
+|
+.B temphigh
+|
+.B templow
+|
+.B polarity
+]]
+.SH FAMILY CODE
+.PP
+.I none
+.SH SPECIAL PROPERTIES
+.SS temperature
+.I read-only, floating point
+.br
+9-bit resolution temperature. Units are selected from the invoking command line. See
+.B owfs(1)
+or
+.B owhttpd(1)
+for choices. Default is Celsius.
+Conversion takes 1 second.
+.SS temphigh templow
+.I read-write. floating point
+.br
+Temperature limits for alarms. Units are selected from the invoking command line. See
+.B owfs(1)
+or
+.B owhttpd(1)
+for choices. Default is Celsius.
+.br
+Note that alarms are not implemented.
+.SH STANDARD PROPERTIES
+.SS type
+.I read-only, ascii
+.br
+Chip type: DS1821
+.SH ALARMS
+None implemented.
+.SH DESCRIPTION
+.so description
+.SS DS1821
+The
+.B DS1821 (3)
+is a unique 1-wire device. It is unaddressable, and can be put in inaccessible mode.
+.SH ADDRESSING
+Unlike all other 1-wire chips, the DS2821 (3) has no unique address. It is addressed as
+.B thermostat
+and will not announce itself in device discovery (directory listing).
+.SH DATASHEET
+http://pdfserv.maxim-ic.com/en/ds/DS1821.pdf
+.SH SEE ALSO
+.so seealso
+.SH AVAILABILITY
+http://owfs.sourceforge.net
+.SH AUTHOR
+Paul Alfille (palfille@earthlink.net)

@@ -18,6 +18,7 @@ static int file_compare( const void * a , const void * b ) ;
 static void Device2Tree( const struct device * d, enum pn_type type ) ;
 
 struct device * DeviceSimultaneous ;
+struct device * DeviceThermostat ;
 
 static int device_compare( const void * a , const void * b ) {
     return strcmp( ((const struct device *)a)->code , ((const struct device *)b)->code ) ;
@@ -67,6 +68,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_DS1420 ,       pn_real ) ;
     Device2Tree( & d_DS18S20 ,      pn_real ) ;
     Device2Tree( & d_DS18B20 ,      pn_real ) ;
+    Device2Tree( & d_DS1821 ,       pn_real ) ;
     Device2Tree( & d_DS1822 ,       pn_real ) ;
     Device2Tree( & d_DS1921 ,       pn_real ) ;
     Device2Tree( & d_DS1923 ,       pn_real ) ;
@@ -122,6 +124,13 @@ void DeviceSort( void ) {
         pn.type = pn_real ;
         FS_devicefind( "simultaneous", &pn ) ;
         DeviceSimultaneous = pn.dev ;
+    }
+    /* Match thermostat for special processing */
+    {
+        struct parsedname pn ;
+        pn.type = pn_real ;
+        FS_devicefind( "thermostat", &pn ) ;
+        DeviceThermostat = pn.dev ;
     }
 
     /* structure uses same tree as real */

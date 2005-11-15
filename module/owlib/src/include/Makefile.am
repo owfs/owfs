@@ -3,6 +3,7 @@ header_DATA = compat_getopt.h \
         compat.h \
         compat_netdb.h \
         ow_1820.h \
+        ow_1821.h \
         ow_1921.h \
         ow_1923.h \
         ow_1963.h \

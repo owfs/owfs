@@ -21,6 +21,7 @@ $Id$
 #include "ow_none.h" // Non-existent devices
 #include "ow_2401.h" // Simple ID and base defines
 #include "ow_1820.h" // thermometer
+#include "ow_1821.h" // thermostat
 #include "ow_1921.h" // thermometer
 #include "ow_1923.h" // thermometer / humidity
 #include "ow_1977.h" // password memory

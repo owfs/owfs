@@ -575,6 +575,7 @@ struct device_opaque {
 //extern size_t nDevices ;
 extern struct device NoDevice ;
 extern struct device * DeviceSimultaneous ;
+extern struct device * DeviceThermostat ;
 
 /* ---- end device --------------------- */
 /* ------------------------------------- */

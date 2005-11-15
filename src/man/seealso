@@ -11,7 +11,9 @@
 .SS Switches
 .B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3) DS2413 (3)
 .SS Temperature
-.B DS1822 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) 
+.B DS1822 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3)
+.SS Humidity
+.B DS1922 (3)
 .SS Voltage
 .B DS2450 (3)
 .SS Resistance

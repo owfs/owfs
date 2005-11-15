@@ -6,6 +6,7 @@ OWLIB_SOURCE = compat.c          \
                ow_xxxx.c         \
                ow_none.c         \
                ow_1820.c         \
+               ow_1821.c         \
                ow_1921.c         \
                ow_1923.c         \
                ow_1977.c         \

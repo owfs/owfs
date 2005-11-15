@@ -296,6 +296,8 @@ static int FS_ParsedNameSub( char * pathnow, char * pathnext, struct parsedname 
         }
         if ( strcasecmp( pathnow, "simultaneous" ) == 0 ) {
             pn->dev = DeviceSimultaneous ;
+        } else if ( strcasecmp( pathnow, "thermostat" ) == 0 ) {
+                pn->dev = DeviceThermostat ;
         } else if ( (ret=DevicePart( pathnow, pn )) ) { // search for valid 1-wire sn
 //printf("PN DevicePart failed for %s %s\n", pathnow, pn->path);
             return ret ;
