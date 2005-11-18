@@ -79,11 +79,11 @@ struct filetype sys_process[] = {
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
 /* special entry -- picked off by parsing before filetypes tried */
-struct filetype sys_structure[] = {
+struct filetype sys_connections[] = {
     {"indevices"  ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &indevices , } ,
     {"outdevices" ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &outdevices , } ,
 } ;
-struct device d_sys_structure = { "structure", "structure", pn_system, NFT(sys_structure), sys_structure } ;
+struct device d_sys_structure = { "connections", "connections", pn_system, NFT(sys_connections), sys_connections } ;
 
 /* ------- Functions ------------ */
 
