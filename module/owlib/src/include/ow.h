@@ -639,27 +639,13 @@ struct stateinfo {
     uint32_t sg ; // more state info, packed for network transmission */
 } ;
 
-enum pn_desc {
-    desc_error,
-    desc_rootdir,
-    desc_device,
-    desc_nondevice,
-    desc_subdir,
-    desc_simuldir,
-    desc_alarmdir,
-    desc_branchdir,
-    desc_file,
-} ;
-
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
 struct parsedname {
     char * path ; // text-more device name
-    char * path_busless ; // text-more device name
     int    bus_nr ;
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch
-    enum pn_desc desc ; // description of parsed path
     unsigned char sn[8] ; // 64-bit serial number
     struct device * dev ; // 1-wire device
     struct filetype * ft ; // device property
@@ -976,6 +962,7 @@ void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
 void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
 void UT_fromDate( const DATE D, unsigned char * data) ;
 DATE UT_toDate( const unsigned char * date ) ;
+int FS_busless( char * path ) ;
 
 /* Serial port */
 int COM_open( struct connection_in * in  ) ;

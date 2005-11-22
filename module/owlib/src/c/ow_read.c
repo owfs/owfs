@@ -35,7 +35,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     int r ;
 
     pn.si = &si ;
-    LEVEL_CALL("FS_read: path=%s size=%d offset=%d\n", path, (int)size, (int)offset )
+    LEVEL_CALL("READ path=%s size=%d offset=%d\n", NULLSTRING(path), (int)size, (int)offset )
 
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;

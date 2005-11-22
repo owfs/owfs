@@ -59,32 +59,38 @@ struct fuse_operations owfs_oper = {
 /* ---------------------------------------------- */
 /* Needed for "SETATTR" */
 static int FS_utime(const char *path, struct utimbuf *buf) {
-    (void) path ; (void) buf ; return 0;
+    LEVEL_CALL("UTIME path=%s\n", NULLSTRING(path));
+    (void) buf ; return 0;
 }
 
 /* Needed for "SETATTR" */
 static int FS_chmod(const char *path, mode_t mode) {
-    (void) path ; (void) mode ; return 0;
+    LEVEL_CALL("CHMODE path=%s\n", NULLSTRING(path));
+    (void) mode ; return 0;
 }
 
 /* Needed for "SETATTR" */
 static int FS_chown(const char *path, uid_t uid, gid_t gid ) {
-    (void) path ; (void) uid ; (void) gid ; return 0;
+    LEVEL_CALL("CHOWN path=%s\n", NULLSTRING(path));
+    (void) uid ; (void) gid ; return 0;
 }
 
 /* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
 static int FS_open(const char *path, int flags) {
-    (void) flags ; (void) path ; return 0 ;
+    LEVEL_CALL("OPEN path=%s\n", NULLSTRING(path));
+    (void) flags ; return 0 ;
 }
 
 /* In theory, should handle file closing, but OWFS doesn't care. Device opened/closed with every read/write */
 static int FS_release(const char *path, int flags) {
-    (void) flags ; (void) path ; return 0 ;
+    LEVEL_CALL("RELEASE path=%s\n", NULLSTRING(path));
+    (void) flags ; return 0 ;
 }
 
 /* dummy truncation (empty) function */
 static int FS_truncate(const char *path, const off_t size) {
-    (void) path ; (void) size ; return 0 ;
+    LEVEL_CALL("TRUNCATE path=%s\n", NULLSTRING(path));
+    (void) size ; return 0 ;
 }
 
 
@@ -117,21 +123,21 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         FILLER(h,extname) ;
     }
 
-    //printf("FS_getdir\n");
+    LEVEL_CALL("GETDIR path=%s\n", NULLSTRING(path));
 
     pn.si = &si ;
-    ret = FS_ParsedName( path, &pn ) ;
+    if ( (ret=FS_ParsedName( path, &pn )) ) return ret ;
+    //printf("FS_getdir parse=%d\n",ret);
     // first root always return Bus-list and settings/system/statistics
     pn.si->sg |= (1<<BUSRET_BIT) ;
 
-    if ( ret || pn.ft ) {
+    if ( pn.ft ) {
         ret = -ENOENT;
     } else { /* Good pn */
         /* Call directory spanning function */
         FS_dir( directory, &pn ) ;
         FILLER(h,".") ;
         FILLER(h,"..") ;
-        ret = 0 ;
     }
 
     /* Clean up */
@@ -142,6 +148,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
 /* Change in statfs definition for newer FUSE versions */
 #if !defined(FUSE_MAJOR_VERSION) || !(FUSE_MAJOR_VERSION > 1)
 int FS_statfs(struct fuse_statfs *fst) {
+    LEVEL_CALL("STATFS\n");
     memset( fst, 0, sizeof(struct fuse_statfs) ) ;
     return 0 ;
 }

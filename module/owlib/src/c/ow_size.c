@@ -73,6 +73,7 @@ int FS_size( const char *path ) {
     int r ;
 
     //printf("FS_size: pid=%ld path=%s\n", pthread_self(), path);
+    LEVEL_CALL("SIZE path=%s\n", NULLSTRING(path));
 
     pn.si = &si ;
     if ( FS_ParsedName( path , &pn ) ) {

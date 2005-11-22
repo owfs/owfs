@@ -33,7 +33,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
     struct client_msg cm ;
     char *pathnow ;
     int connectfd = ClientConnect( pn->in ) ;
-    int ret ;
+    int ret = 0 ;
     (void) path;  // not used anymore
 
     if ( connectfd < 0 ) return -EIO ;
@@ -42,21 +42,27 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
     sm.sg =  SemiGlobal ;
 
     if(pn->state & pn_bus) {
-      //printf("use path_busless = %s\n", pn->path_busless);
-      pathnow = pn->path_busless;
+        if ( (pathnow=strdup(pn->path)) ) {
+            FS_busless(pathnow) ;
+        } else {
+            ret = -ENOMEM ;
+        }
     } else {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
     //printf("ServerSize pathnow=%s (path=%s)\n",pathnow, path);
+    LEVEL_CALL("SERVERSIZE path=%s\n", NULLSTRING(pathnow));
 
-    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if ( ret ) {
+    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
     } else {
         ret = cm.ret ;
     }
+    if ( pathnow && pathnow != pn->path ) free(pathnow) ; /* free busless copy */
     close( connectfd ) ;
     return ret ;
 }
@@ -66,7 +72,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     struct client_msg cm ;
     char *pathnow ;
     int connectfd = ClientConnect( pn->in ) ;
-    int ret ;
+    int ret = 0 ;
 
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
@@ -77,21 +83,27 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     sm.offset = offset ;
 
     if(pn->state & pn_bus) {
-      //printf("use path_bussless = %s\n", pn->path_busless);
-      pathnow = pn->path_busless;
+        if ( (pathnow=strdup(pn->path)) ) {
+            FS_busless(pathnow) ;
+        } else {
+            ret = -ENOMEM ;
+        }
     } else {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
+    LEVEL_CALL("SERVERREAD path=%s\n", NULLSTRING(pathnow));
 
-    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if ( ret ) {
+    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, buf, size ) < 0 ) {
         ret = -EIO ;
     } else {
         ret = cm.ret ;
     }
+    if ( pathnow && pathnow != pn->path ) free(pathnow) ; /* free busless copy */
     close( connectfd ) ;
     return ret ;
 }
@@ -101,7 +113,7 @@ int ServerPresence( const struct parsedname * pn ) {
     struct client_msg cm ;
     char *pathnow ;
     int connectfd = ClientConnect( pn->in ) ;
-    int ret ;
+    int ret = 0 ;
 
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerPresence pn->path=%s\n",pn->path);
@@ -110,21 +122,27 @@ int ServerPresence( const struct parsedname * pn ) {
     sm.sg =  SemiGlobal ;
 
     if(pn->state & pn_bus) {
-      //printf("use path_bussless = %s\n", pn->path_busless);
-      pathnow = pn->path_busless;
+        if ( (pathnow=strdup(pn->path)) ) {
+            FS_busless(pathnow) ;
+        } else {
+            ret = -ENOMEM ;
+        }
     } else {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
     //printf("ServerPresence path=%s\n", pathnow);
+    LEVEL_CALL("SERVERPRESENCE path=%s\n", NULLSTRING(pathnow));
 
-    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if ( ret ) {
+    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
     } else {
         ret = cm.ret ;
     }
+    if ( pathnow && pathnow != pn->path ) free(pathnow) ; /* free busless copy */
     close( connectfd ) ;
     return ret ;
 }
@@ -132,9 +150,9 @@ int ServerPresence( const struct parsedname * pn ) {
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    char *pathnow ;
+    char *pathnow = NULL ;
     int connectfd = ClientConnect( pn->in ) ;
-    int ret ;
+    int ret = 0 ;
 
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
@@ -145,15 +163,21 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     sm.offset = offset ;
 
     if(pn->state & pn_bus) {
-      //printf("use path_bussless = %s\n", pn->path_busless);
-      pathnow = pn->path_busless;
+        //printf("use path_bussless = %s\n", pn->path_busless);
+        if ( (pathnow=strdup(pn->path)) ) {
+            FS_busless(pathnow) ;
+        } else {
+            ret = -ENOMEM ;
+        }
     } else {
-      //printf("use path = %s\n", pn->path);
-      pathnow = pn->path;
+        //printf("use path = %s\n", pn->path);
+        pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
+    LEVEL_CALL("SERVERWRITE path=%s\n", NULLSTRING(pathnow));
 
-    if ( ToServer( connectfd, &sm, pathnow, buf, size) ) {
+    if ( ret ) {
+    } else if ( ToServer( connectfd, &sm, pathnow, buf, size) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
@@ -166,6 +190,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
             CACHEUNLOCK;
         }
     }
+    if ( pathnow && pathnow != pn->path ) free(pathnow) ; /* free busless copy */
     close( connectfd ) ;
     return ret ;
 }
@@ -174,8 +199,8 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct server_msg sm ;
     struct client_msg cm ;
     char * path2 ;
-    char *pathnow ;
-    int ret;
+    char *pathnow = NULL ;
+    int ret = 0 ;
     int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
     int dindex = 0 ;
@@ -192,82 +217,88 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.sg = SemiGlobal ;
     if((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
       sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
-      //printf("use path_bussless = %s\n", pn->path_busless);
-      pathnow = pn->path_busless;
+      if ( (pathnow=strdup(pn->path)) ) {
+          FS_busless(pathnow) ;
+      } else {
+          ret = -ENOMEM ;
+      }
     } else {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
 
     //printf("ServerDir path=%s\n", pathnow);
+    LEVEL_CALL("SERVERDIR path=%s\n", NULLSTRING(pathnow));
 
-    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if (ret) {
+        cm.ret = ret ;
+    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
         got_entry = 0 ;
         while((path2 = FromServerAlloc( connectfd, &cm))) {
-	    if(got_entry)
-	      FS_ParsedName_destroy( &pn2 ) ;  // destroy the last parsed name
-	    else
-	      got_entry = 1 ;
+            if(got_entry)
+                FS_ParsedName_destroy( &pn2 ) ;  // destroy the last parsed name
+            else
+                got_entry = 1 ;
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
             pn2.si = pn->si ; /* reuse stateinfo */
 
-	    //printf("ServerDir: got %s\n",path2) ;
-	    ret = FS_ParsedName( path2, &pn2 ) ;
+            //printf("ServerDir: got %s\n",path2) ;
+            ret = FS_ParsedName( path2, &pn2 ) ;
 
-	    if ( ret ) {
-	        cm.ret = -EINVAL ;
-		//printf("ServerDir: error parsing %s\n", path2);
+            if ( ret ) {
+                cm.ret = -EINVAL ;
+                //printf("ServerDir: error parsing %s\n", path2);
                 free(path2) ;
                 break ;
             } else {
-	        unsigned char sn[8] ;
+                unsigned char sn[8] ;
+                /* we got a device on bus_nr = pn->in->index. Cache it so we
+                    find it quicker next time we want to do read values from the
+                    the actual device
+                */
+                if(pn2.dev && (pn2.type == pn_real)) {
+                    /* If we get a device then cache the bus_nr */
+                    Cache_Add_Device(pn->in->index, &pn2);
+                }
 
-		/* we got a device on bus_nr = pn->in->index. Cache it so we
-		   find it quicker next time we want to do read values from the
-		   the actual device
-		*/
-		if(pn2.dev && (pn2.type == pn_real)) {
-		  /* If we get a device then cache the bus_nr */
-		  Cache_Add_Device(pn->in->index, &pn2);
-		}
-
-		if(pn2.dev && (pn2.type == pn_real)) {
-		  /* If we get a device then cache it */
-		  //FS_LoadPath(sn, &pn2);
-		  memcpy(sn, pn2.sn, 8);
+                if(pn2.dev && (pn2.type == pn_real)) {
+                    /* If we get a device then cache it */
+                    //FS_LoadPath(sn, &pn2);
+                    memcpy(sn, pn2.sn, 8);
 #if 0
-		  {
-		    char tmp[17];
-		    bytes2string(tmp, sn, 8) ;
-		    tmp[16] = 0;
-		    printf("ServerDir: get sn=%s bus_nr=%d index=%d %s\n", tmp, pn->in->index, dindex, pn2.path);
-		  }
+                    {
+                    char tmp[17];
+                    bytes2string(tmp, sn, 8) ;
+                    tmp[16] = 0;
+                    printf("ServerDir: get sn=%s bus_nr=%d index=%d %s\n", tmp, pn->in->index, dindex, pn2.path);
+                    }
 #endif
-		  pn2.in = pn->in ;  // reuse the current pn->in->index
-		  Cache_Add_Dir(sn,dindex,&pn2) ;
-		  ++dindex ;
-		}
+                    pn2.in = pn->in ;  // reuse the current pn->in->index
+                    Cache_Add_Dir(sn,dindex,&pn2) ;
+                    ++dindex ;
+                }
 
-		DIRLOCK;
-		  dirfunc(&pn2) ;
-		DIRUNLOCK;
+                DIRLOCK;
+                    dirfunc(&pn2) ;
+                DIRUNLOCK;
 
                 free(path2) ;
             }
         }
-	if(got_entry) {
-	  // we got at least one entry. FS_ParsedName_destroy() mustn't be
-	  // called before Cache_Del_Dir()
-	  Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
-	  FS_ParsedName_destroy( &pn2 ) ;
-	}
+        if(got_entry) {
+            // we got at least one entry. FS_ParsedName_destroy() mustn't be
+            // called before Cache_Del_Dir()
+            Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
+            FS_ParsedName_destroy( &pn2 ) ;
+        }
         DIRLOCK;
             /* flags are sent back in "offset" of final blank entry */
             flags[0] |= cm.offset ;
         DIRUNLOCK;
     }
+    if ( pathnow && pathnow != pn->path ) free(pathnow) ; /* free busless copy */
     close( connectfd ) ;
     return cm.ret ;
 }

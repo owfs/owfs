@@ -49,6 +49,9 @@ int FS_fstat(const char *path, struct stat *stbuf) {
     struct stateinfo si ;
     int ret = 0 ;
     pn.si = &si ;
+    
+    LEVEL_CALL("FSTAT path=%s\n", NULLSTRING(path));
+
     /* Bad path */
     if ( FS_ParsedName( path , &pn ) ) {
         ret = -ENOENT ;

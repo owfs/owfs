@@ -299,17 +299,21 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         char *path ;
 
         if ((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
-            path = pn->path_busless ;
+            if ( (path=strdup(pn->path))==NULL ) return ;
+            FS_busless(path) ;
         } else {
             path = pn->path ;
         }
         _pathlen = strlen(path);
 #ifdef VALGRIND
-        if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) return;
+        if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) {
 #else
-        if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) return;
+        if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) {
 #endif
-
+            if ( path != pn->path ) free(path) ;
+            return ; 
+        } 
+        
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
                 //printf("DirHandler: call FS_dirname_type\n");
@@ -335,6 +339,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         cm->ret = 0 ;
         ToClient(fd, cm, retbuffer) ;
         free(retbuffer);
+        if ( path &&  path != pn->path ) free(path) ;
     }
 
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;

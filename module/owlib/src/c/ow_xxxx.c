@@ -128,9 +128,8 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence( const struct parsedname * const pn ) {
-    if ( pn->type == pn_real ) {
-        if ( pn->dev != DeviceSimultaneous )
-	  return CheckPresence_low(pn) ;
+    if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) { 
+            return CheckPresence_low(pn) ;
     }
     return 0 ;
 }
@@ -214,7 +213,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
 }
 
 int FS_present(int * y , const struct parsedname * pn) {
-    if ( pn->type != pn_real || pn->dev == DeviceSimultaneous ) {
+    if ( pn->type != pn_real || pn->dev == DeviceSimultaneous || pn->dev == DeviceThermostat ) {
         y[0]=1 ;
     } else {
         BUSLOCK(pn);
