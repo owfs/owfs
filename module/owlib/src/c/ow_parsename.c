@@ -27,7 +27,7 @@ static enum parse_enum Parse_NonReal( char * pathnow, struct parsedname * pn ) ;
 static enum parse_enum Parse_RealDevice( char * filename, struct parsedname * pn ) ;
 static enum parse_enum Parse_NonRealDevice( char * filename, struct parsedname * pn ) ;
 static enum parse_enum Parse_Property( char * filename, struct parsedname * pn ) ;
-    static int Parse_Bus( char * pathnow, struct parsedname * pn ) ;
+static int Parse_Bus( char * pathnow, struct parsedname * pn ) ;
 
 #define BRANCH_INCR (9)
 
@@ -116,6 +116,9 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     //printf("parse_nonreal=%d\n",parse_nonreal) ;
     //printf("parse_prop=%d\n",parse_prop) ;
     //printf("parse_subprop=%d\n",parse_subprop) ;
+
+    /* Have to save pn->path at once */
+    if( !pn->path && !(pn->path = strdup(path)) ) pe = parse_error;
 
     while(1) {
         switch( pe ) {
@@ -252,19 +255,11 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
         pn->state |= pn_bus ;
         pn->bus_nr = atoi(&pathnow[4]);
         /* Since we are going to use a specific in-device now, set
-        * pn->in to point at that device at once. */
+	 * pn->in to point at that device at once. */
         pn->in = find_connection_in(pn->bus_nr) ;
-        //printf("parse bus.=%d\n", pn->bus_nr);
         /* We have to allow any bus-number here right now. We receive
-        * paths like /bus.4 from a remote owserver, and we have to trust
-        * this result. */
-#if 0
-        if(!pn->in) {
-            printf("bus_nr %d doesn't exist\n", pn->bus_nr);
-            ret = -ENOENT ;
-            goto cleanup;
-        }
-#endif
+	 * paths like /bus.4 from a remote owserver, and we have to trust
+	 * this result. */
     }
     return 0 ;
 }
@@ -399,7 +394,7 @@ static enum parse_enum Parse_Property( char * filename, struct parsedname * pn )
                     //printf("PN BranchAdd failed for %s\n", pn->path);
                     return parse_error ;
                 }
-                /* STATISCTICS */
+                /* STATISTICS */
                 STATLOCK ;
                 if ( pn->pathlength > dir_depth ) dir_depth = pn->pathlength ;
                 STATUNLOCK ;

@@ -338,7 +338,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     //    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
     //    ++read_tries[2] ; /* statitics */
     //    r = FS_parse_read( buf, size, offset, pn ) ;
-    //    if (r<0) LEVEL_DATA("Read error on %s (size=%d)\n",pn->path,(int)size)
+    //    if (r<0) LEVEL_DATA("Read error on %s (size=%d)\n",NULLSTRING(pn->path),(int)size)
     return r;
 }
 

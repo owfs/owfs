@@ -217,11 +217,13 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.sg = SemiGlobal ;
     if((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
       sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
+      LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, NULLSTRING(pn->path))
       if ( (pathnow=strdup(pn->path)) ) {
           FS_busless(pathnow) ;
       } else {
           ret = -ENOMEM ;
       }
+      LEVEL_DEBUG("ServerDir: pathnow=[%s]\n", pathnow);
     } else {
       //printf("use path = %s\n", pn->path);
       pathnow = pn->path;

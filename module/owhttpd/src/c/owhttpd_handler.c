@@ -638,6 +638,9 @@ static void ShowDevice( FILE * out, const struct parsedname * const pn ) {
     free(path2) ;
 }
 
+static const char name_directory[]    = "directory" ;
+static const char name_onewire_chip[] = "1-wire chip" ;
+
 /* Misnamed. Actually all directory */
 static void ShowDir( FILE * out, const struct parsedname * const pn ) {
     struct parsedname pncopy;
@@ -651,7 +654,7 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
         char *buffer ;
         char * loc ;
         char * nam ;
-        char * typ = NULL ;
+        const char * typ = NULL ;
         if( !(buffer = malloc(OW_FULLNAME_MAX+1) ) ) { /* buffer for name */
 //printf("ShowDir: error malloc %d bytes\n", OW_FULLNAME_MAX+1);
             return ;
@@ -664,33 +667,26 @@ static void ShowDir( FILE * out, const struct parsedname * const pn ) {
             } else if ( pn2->state ) {
                 FS_dirname_state(buffer,OW_FULLNAME_MAX,pn2) ;
             }
-            //typ = strdup("directory") ;
-            typ = "directory" ;
+            typ = name_directory ;
         } else if ( pn2->dev == DeviceSimultaneous ) {
             loc = nam = pn2->dev->name ;
-            //typ = strdup("1-wire chip") ;
-            typ = "1-wire chip" ;
+            typ = name_onewire_chip ;
         } else if ( pn2->type == pn_real ) {
             FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn,pn2) ;
             nam = pn2->dev->name ;
-            //typ = strdup("1-wire chip") ;
-            typ = "1-wire chip" ;
+            typ = name_onewire_chip ;
         } else {
             strcpy( loc, pn2->dev->code ) ;
-                nam = loc ;
-                //typ = strdup("directory") ;
-                typ = "directory" ;
+	    nam = loc ;
+	    typ = name_directory ;
         }
         //printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
-//        if(typ) {
-            if (pn->state & pn_text) {
-                fprintf( out, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
-            } else {
-                fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", (strcmp(pncopy.path,"/")?pncopy.path:""), loc, loc, nam, typ ) ;
-            /* pncopy is the parent dir */
-            }
-            //free(typ);
-//        }
+	if (pn->state & pn_text) {
+	  fprintf( out, "%s %s \"%s\"\r\n", loc, nam, typ ) ;
+	} else {
+	  fprintf( out, "<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", (strcmp(pncopy.path,"/")?pncopy.path:""), loc, loc, nam, typ ) ;
+	  /* pncopy is the parent dir */
+	}
         free(buffer);
     }
 

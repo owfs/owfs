@@ -39,9 +39,9 @@ void FS_devicename( char * const buffer, const size_t length, const unsigned cha
     UCLIBCUNLOCK;
 }
 
-const char dirname_state_uncached[] = "uncached";
-const char dirname_state_alarm[]    = "alarm";
-const char dirname_state_text[]     = "text";
+static const char dirname_state_uncached[] = "uncached";
+static const char dirname_state_alarm[]    = "alarm";
+static const char dirname_state_text[]     = "text";
 
 /* copy state into buffer (for constructing path) return number of chars added */
 int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) {
@@ -50,16 +50,19 @@ int FS_dirname_state( char * const buffer, const size_t length, const struct par
 //printf("dirname state on %.2X\n", pn->state);
     if ( pn->state & pn_alarm   ) {
         p = dirname_state_alarm ;
-    //should never return text in a directory list... it's a hidden feature.
-//    } else if ( pn->state & pn_text )
-//        strncpy(buffer, dirname_state_text, length ) ;
+#if 0
+    } else if ( pn->state & pn_text ) {
+        /* should never return text in a directory listing, since it's a
+	 * hidden feature. Uncached should perhaps be the same... */
+        strncpy(buffer, dirname_state_text, length ) ;
+#endif
     } else if ( pn->state & pn_uncached) {
         p = dirname_state_uncached ;
     } else if ( pn->state & pn_bus ) {
         UCLIBCLOCK;
-            snprintf(buffer, length, "bus.%d", pn->bus_nr) ;
+	len = snprintf(buffer, length, "bus.%d", pn->bus_nr) ;
         UCLIBCUNLOCK;
-        return strlen(buffer) ;
+        return len;
     } else {
         return 0 ;
     }
@@ -70,10 +73,10 @@ int FS_dirname_state( char * const buffer, const size_t length, const struct par
     return length ;
 }
 
-const char dirname_type_statistics[] = "statistics";
-const char dirname_type_system[]     = "system";
-const char dirname_type_settings[]   = "settings";
-const char dirname_type_structure[]  = "structure";
+static const char dirname_type_statistics[] = "statistics";
+static const char dirname_type_system[]     = "system";
+static const char dirname_type_settings[]   = "settings";
+static const char dirname_type_structure[]  = "structure";
 
 /* copy type into buffer (for constructing path) return number of chars added */
 int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) {
@@ -81,7 +84,7 @@ int FS_dirname_type( char * const buffer, const size_t length, const struct pars
     int len ;
     switch (pn->type) {
     case pn_statistics:
-        p= dirname_type_statistics ;
+        p = dirname_type_statistics ;
         break ;
     case pn_system:
         p = dirname_type_system ;
@@ -150,11 +153,20 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * con
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */
-        if ( pn->state ) {
+#if 1
+        if ( pn->type != pn_real ) {
+            FS_dirname_type( buffer, size, pn ) ;
+        } else {
+            FS_dirname_state(buffer, size, pn) ;
+        }
+#else
+	/* All bits except pn_text */
+        if ( pn->state & ~pn_text) {
             FS_dirname_state(buffer, size, pn) ;
         } else {
             FS_dirname_type( buffer, size, pn ) ;
         }
+#endif
     } else if ( pn->dev == DeviceSimultaneous ) {
         strncpy( buffer, DeviceSimultaneous->code, size ) ;
     } else if ( pn->type == pn_real ) { /* real device */
