@@ -3,7 +3,7 @@
 man_MANS = owfs.1 \
            owhttpd.1 \
            owserver.1 \
-           DS1821.3 \ 
+           DS1821.3 \
            DS1822.3 \
            DS18B20.3 \
            DS18S20.3 \
