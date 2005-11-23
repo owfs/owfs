@@ -122,7 +122,7 @@ struct die_limits {
     unsigned char C2[6] ;
 } ;
 
-enum eDie { eB6, eB7, eC2 } ;
+enum eDie { eB6, eB7, eC2, eC3, } ;
 
 // ID ranges for the different chip dies
 struct die_limits DIE[] = {
@@ -197,17 +197,20 @@ static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
 static int FS_r_die(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     const char * d ;
     switch ( OW_die(pn) ) {
-    case eB6:
-        d = "B6" ;
-        break ;
-    case eB7:
-        d = "B7" ;
-        break ;
-    case eC2:
-        d = "C2" ;
-        break ;
-    default:
-        return -EINVAL ;
+        case eB6:
+            d = "B6" ;
+            break ;
+        case eB7:
+            d = "B7" ;
+            break ;
+        case eC2:
+            d = "C2" ;
+            break ;
+        case eC3:
+            d = "C3" ;
+            break ;
+        default:
+            return -EINVAL ;
     }
     memcpy(buf,&d[offset],size) ;
     return 2 ;
@@ -223,21 +226,29 @@ static int FS_r_trim(unsigned int * const trim , const struct parsedname * pn) {
 
 static int FS_w_trim(const unsigned int * const trim , const struct parsedname * pn) {
     unsigned char t[2] ;
-    if ( OW_die(pn) != eB7 ) return -EINVAL ;
-    t[0] = trim[0] && 0xFF ;
-    t[1] = (trim[0]>>8) && 0xFF ;
-    if ( OW_w_trim( t , pn ) ) return - EINVAL ;
-    return 0 ;
+    switch( OW_die(pn) ) {
+        case eB7:
+        case eC2:
+            t[0] = trim[0] && 0xFF ;
+            t[1] = (trim[0]>>8) && 0xFF ;
+            if ( OW_w_trim( t , pn ) ) return - EINVAL ;
+            return 0 ;
+        default:
+            return -EINVAL ;
+    }
 }
 
 /* Are the trim values valid-looking? */
 static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
-    if ( OW_die(pn) == eB7 ) {
-        unsigned char trim[2] ;
-        if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
-        y[0] = ( ((trim[0]&0x07)==0x05) || ((trim[0]&0x07)==0x03)) && (trim[1]==0xBB);
-    } else {
-        y[0] = 1 ; /* Assume true */
+    unsigned char trim[2] ;
+    switch( OW_die(pn) ) {
+        case eB7:
+        case eC2:
+            if ( OW_r_trim( trim , pn ) ) return -EINVAL ;
+            y[0] = ( ((trim[0]&0x07)==0x05) || ((trim[0]&0x07)==0x03)) && (trim[1]==0xBB);
+            break ;
+        default:
+            y[0] = 1 ; /* Assume true */
     }
     return 0 ;
 }
@@ -246,20 +257,30 @@ static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
 static int FS_r_blanket(int * y , const struct parsedname * pn) {
     unsigned char trim[2] ;
     unsigned char blanket[] = { 0x9D, 0xBB } ;
-    if ( OW_die(pn) != eB7 ) return -EINVAL ;
-    if ( OW_r_trim( trim , pn ) ) return - EINVAL ;
-    y[0] = ( memcmp(trim, blanket, 2) == 0 ) ;
-    return 0 ;
+    switch( OW_die(pn) ) {
+        case eB7:
+        case eC2:
+            if ( OW_r_trim( trim , pn ) ) return - EINVAL ;
+            y[0] = ( memcmp(trim, blanket, 2) == 0 ) ;
+            return 0 ;
+        default:
+            return -EINVAL ;
+    }
 }
 
 /* Put in a black trim value if non-zero */
 static int FS_w_blanket(const int * y , const struct parsedname * pn) {
     unsigned char blanket[] = { 0x9D, 0xBB } ;
-    if ( OW_die(pn) != eB7 ) return -EINVAL ;
-    if ( y[0] ) {
-        if ( OW_w_trim( blanket , pn ) ) return -EINVAL ;
+    switch( OW_die(pn) ) {
+        case eB7:
+        case eC2:
+            if ( y[0] ) {
+                if ( OW_w_trim( blanket , pn ) ) return -EINVAL ;
+            }
+            return 0 ;
+        default:
+            return -EINVAL ;
     }
-    return 0 ;
 }
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
