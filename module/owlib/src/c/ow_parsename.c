@@ -102,7 +102,11 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->state = pn_normal ;
     pn->type = pn_real ;
 
-    if ( (pathcpy=strdup( path )) == NULL ) return -ENOMEM ;
+    /* Have to save pn->path initially */
+    if ( (pn->path=strdup( path )) == NULL ) return -ENOMEM ;
+    /* make a copy for destructive parsing */
+    if ( (pathcpy =strdup( path )) == NULL ) return -ENOMEM ;
+    /* pointer to rest of path after current token peeled off */
     pathnext = pathcpy ;
 
     /* remove initial "/" */
@@ -116,9 +120,6 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     //printf("parse_nonreal=%d\n",parse_nonreal) ;
     //printf("parse_prop=%d\n",parse_prop) ;
     //printf("parse_subprop=%d\n",parse_subprop) ;
-
-    /* Have to save pn->path at once */
-    if( !pn->path && !(pn->path = strdup(path)) ) pe = parse_error;
 
     while(1) {
         switch( pe ) {
@@ -247,19 +248,19 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
     if(!isdigit(pathnow[4])) return 1 ;
         
     /* Should make a presence check on remote busses here, but
-    * it's not a major problem if people use bad paths since
-    * they will just end up with empty direcotry listings. */
+     * it's not a major problem if people use bad paths since
+     * they will just end up with empty directory listings. */
 
     if(!(pn->state & pn_bus)) {
         /* this will only be reached once */
         pn->state |= pn_bus ;
         pn->bus_nr = atoi(&pathnow[4]);
         /* Since we are going to use a specific in-device now, set
-	 * pn->in to point at that device at once. */
+         * pn->in to point at that device at once. */
         pn->in = find_connection_in(pn->bus_nr) ;
         /* We have to allow any bus-number here right now. We receive
-	 * paths like /bus.4 from a remote owserver, and we have to trust
-	 * this result. */
+         * paths like /bus.4 from a remote owserver, and we have to trust
+         * this result. */
     }
     return 0 ;
 }
