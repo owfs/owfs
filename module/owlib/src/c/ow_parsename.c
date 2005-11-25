@@ -108,7 +108,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     /* Have to save pn->path at once */
     if(!(pn->path = strdup(path))) {
-      err = -ENOMEM;
+      ret = -ENOMEM;
       goto end;
     }
 
