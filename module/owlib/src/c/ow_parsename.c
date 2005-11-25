@@ -54,7 +54,6 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
             }
         }
     }
-    //printf("PN_destroy post\n");
 }
 
 
@@ -102,12 +101,16 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     pn->state = pn_normal ;
     pn->type = pn_real ;
 
-    /* Have to save pn->path initially */
-    if ( (pn->path=strdup( path )) == NULL ) return -ENOMEM ;
     /* make a copy for destructive parsing */
     if ( (pathcpy =strdup( path )) == NULL ) return -ENOMEM ;
     /* pointer to rest of path after current token peeled off */
     pathnext = pathcpy ;
+
+    /* Have to save pn->path at once */
+    if(!(pn->path = strdup(path))) {
+      err = -ENOMEM;
+      goto end;
+    }
 
     /* remove initial "/" */
     if ( pathnext[0]=='/' ) ++pathnext ;
