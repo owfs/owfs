@@ -372,13 +372,30 @@ struct interface_routines {
 
 struct connin_serial {
     speed_t speed;
+    int USpeed ;
+    int ULevel ;
     int UMode ;
     struct termios oldSerialTio;    /*old serial port settings*/
 } ;
-#ifdef OW_USB
+struct connin_link {
+    speed_t speed;
+    int USpeed ;
+    int ULevel ;
+    int UMode ;
+    struct termios oldSerialTio;    /*old serial port settings*/
+} ;
+struct connin_server {
+    char * host ;
+    char * service ;
+    struct addrinfo * ai ;
+    struct addrinfo * ai_ok ;
+} ;
 struct connin_usb {
     struct usb_device * dev ;
-    usb_dev_handle * usb ;
+    struct usb_dev_handle * usb ;
+    int USpeed ;
+    int ULevel ;
+    int UMode ;
     char ds1420_address[8];
   /* "Name" of the device, like "8146572300000051"
    * This is set to the first DS1420 id found on the 1-wire adapter which
@@ -387,7 +404,6 @@ struct connin_usb {
    * if it's disconnected and later reconnected again.
    */
 } ;
-#endif /* OW_USB */
 
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
@@ -398,10 +414,10 @@ struct connection_in {
     struct connection_in * next ;
     int index ;
     char * name ;
-    char * host ;
-    char * service ;
-    struct addrinfo * ai ;
-    struct addrinfo * ai_ok ;
+    //char * host ;
+    //char * service ;
+    //struct addrinfo * ai ;
+    //struct addrinfo * ai_ok ;
     int fd ;
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
@@ -428,8 +444,8 @@ struct connection_in {
     char * adapter_name ;
     int use_overdrive_speed ;
     int ds2404_compliance ;
-    int ULevel ;
-    int USpeed ;
+    //int ULevel ;
+    //int USpeed ;
     int ProgramAvailable ;
     /* Static buffer for serial conmmunications */
     /* Since only used during actual transfer to/from the adapter,
@@ -437,13 +453,9 @@ struct connection_in {
     unsigned char combuffer[MAX_FIFO_SIZE] ;
     union {
         struct connin_serial serial ;
-#ifdef OW_USB
-        struct connin_usb usb ;
-        /* Will the sizeof(struct connection_in) differ if OW_USB is defined when
-	 * compiling binaries such as owhttp, owfs etc. (all except libow)?
-	 * Since connin_usb(16 bytes) is smaller than connin_serial(68 bytes) the
-	 * size won't change and OW_USB should only be needed when compiling owlib. */
-#endif /* OW_USB */
+        struct connin_link   link   ;
+        struct connin_server server ;
+        struct connin_usb    usb    ;
     } connin ;
 } ;
 /* Network connection structure */

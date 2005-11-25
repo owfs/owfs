@@ -118,21 +118,21 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
     if ( sname == NULL ) return -1 ;
     if ( (p=strrchr(sname,':')) ) { /* : exists */
         p[0] = '\0' ; /* Separate tokens in the string */
-        in->host = strdup(sname) ;
-        in->service = strdup(&p[1]) ;
+        in->connin.server.host = strdup(sname) ;
+        in->connin.server.service = strdup(&p[1]) ;
         p[0] = ':' ; /* restore name string */
     } else {
-        in->host = NULL ;
-        in->service = strdup(sname) ;
+        in->connin.server.host = NULL ;
+        in->connin.server.service = strdup(sname) ;
     }
     
     memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_socktype = SOCK_STREAM ;
     hint.ai_family = AF_UNSPEC ;
 
-//printf("ClientAddr: [%s] [%s]\n", in->host, in->service);
+//printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
 
-    if ( (ret=getaddrinfo( in->host, in->service, &hint, &in->ai )) ) {
+    if ( (ret=getaddrinfo( in->connin.server.host, in->connin.server.service, &hint, &in->connin.server.ai )) ) {
         LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
     }
@@ -148,7 +148,7 @@ int ClientConnect( struct connection_in * in ) {
       return -1 ;
     }
 
-    if ( in->ai == NULL ) {
+    if ( in->connin.server.ai == NULL ) {
         LEVEL_CONNECT("Client address not yet parsed\n");
         return -1 ;
     }
@@ -159,7 +159,7 @@ int ClientConnect( struct connection_in * in ) {
      * Not a perfect solution, but it should work at least.
      */
     INBUSLOCK(in);
-    ai = in->ai_ok ;
+    ai = in->connin.server.ai_ok ;
     if( ai ) {
         INBUSUNLOCK(in);
         fd = socket(
@@ -174,7 +174,7 @@ int ClientConnect( struct connection_in * in ) {
         INBUSLOCK(in);
     }
 
-    ai = in->ai ;  // loop from first address info since it failed.
+    ai = in->connin.server.ai ;  // loop from first address info since it failed.
     do {
         fd = socket(
             ai->ai_family,
@@ -183,14 +183,14 @@ int ClientConnect( struct connection_in * in ) {
             ) ;
         if ( fd >= 0 ) {
             if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
-                in->ai_ok = ai ;
+                in->connin.server.ai_ok = ai ;
                 INBUSUNLOCK(in);
                 return fd ;
             }
             close( fd ) ;
         }
     } while ( (ai = ai->ai_next) ) ;
-    in->ai_ok = NULL ;
+    in->connin.server.ai_ok = NULL ;
     INBUSUNLOCK(in);
 
     STAT_ADD1(NET_connection_errors);

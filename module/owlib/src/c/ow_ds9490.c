@@ -222,7 +222,7 @@ static int DS9490_setup_adapter(const struct parsedname * const pn) {
   }
 #endif
 
-  pn->in->ULevel = MODE_NORMAL ;
+  pn->in->connin.usb.ULevel = MODE_NORMAL ;
 
   if((ret=DS9490_getstatus(buffer,pn,0)) < 0) {
     LEVEL_DATA("DS9490_setup_adapter: getstatus failed ret=%d\n", ret);
@@ -726,7 +726,7 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
         //printf("set overdrive speed\n");
         
         if(pn->in->use_overdrive_speed != ONEWIREBUSSPEED_OVERDRIVE) return 0 ; // adapter doesn't use overdrive
-        if(pn->in->USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
+        if(pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
             // we need to change speed to overdrive
             for(i=0; i<3; i++) {
                 if ((ret=DS9490_reset(pn)) < 0) continue ;
@@ -741,21 +741,21 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
                 return -EINVAL ;
             }
         }
-        pn->in->USpeed = ONEWIREBUSSPEED_OVERDRIVE ;
+        pn->in->connin.usb.USpeed = ONEWIREBUSSPEED_OVERDRIVE ;
 	break ;
     case ONEWIREBUSSPEED_FLEXIBLE:
         if(pn->in->connin.usb.usb) {
             /* Have to make sure usb isn't closed after last reconnect */
             if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, ONEWIREBUSSPEED_FLEXIBLE, NULL, 0, TIMEOUT_USB )) < 0) return ret ;
         }
-        pn->in->USpeed = ONEWIREBUSSPEED_FLEXIBLE ;
+        pn->in->connin.usb.USpeed = ONEWIREBUSSPEED_FLEXIBLE ;
 	break ;
     default:
         if(pn->in->connin.usb.usb) {
             /* Have to make sure usb isn't closed after last reconnect */
             if((ret = usb_control_msg(pn->in->connin.usb.usb,0x40,MODE_CMD,MOD_1WIRE_SPEED, ONEWIREBUSSPEED_REGULAR, NULL, 0, TIMEOUT_USB )) < 0) return ret ;
         }
-        pn->in->USpeed = ONEWIREBUSSPEED_REGULAR ;
+        pn->in->connin.usb.USpeed = ONEWIREBUSSPEED_REGULAR ;
 	break;
     }
     return 0 ;
@@ -792,21 +792,21 @@ static int DS9490_reset( const struct parsedname * const pn ) {
 
     // force normal speed if not using overdrive anymore
     if ((pn->in->use_overdrive_speed == ONEWIREBUSSPEED_REGULAR) &&
-	(pn->in->USpeed != ONEWIREBUSSPEED_REGULAR)) {
+         (pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_REGULAR)) {
         if((ret=DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn)) < 0) return ret ;
     }
 
     
     if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,
             COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE,
-	    pn->in->USpeed,
+            pn->in->connin.usb.USpeed,
             NULL, 0, TIMEOUT_USB ))<0 ) {
         STAT_ADD1(DS9490_reset_errors);
         LEVEL_DATA("DS9490_reset: error sending reset ret=%d\n", ret);
         return -EIO ;  // fatal error... probably closed usb-handle
     }
 
-    if(pn->in->ds2404_compliance && (pn->in->USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
+    if(pn->in->ds2404_compliance && (pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
       // extra delay for alarming DS1994/DS2404 complience
       UT_delay(5);
     }
@@ -1133,7 +1133,7 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
 
     /* This is more likely to be the correct way to handle powerbytes */
 
-    if(pn->in->ULevel == MODE_STRONG5) {
+    if(pn->in->connin.usb.ULevel == MODE_STRONG5) {
       DS9490_level(MODE_NORMAL, pn) ;
     }
 
@@ -1151,7 +1151,7 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     }
 
     /* strong pullup is now enabled */
-    pn->in->ULevel = MODE_STRONG5;
+    pn->in->connin.usb.ULevel = MODE_STRONG5;
     
     /* Read back the result (should be the same as "byte") */
     if((ret = DS9490_read(&resp, 1, pn)) < 0) {
@@ -1245,19 +1245,19 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
     int lev ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
 
-    if (new_level == pn->in->ULevel) {     // check if need to change level
+    if (new_level == pn->in->connin.usb.ULevel) {     // check if need to change level
         return 0 ;
     }
 
     if(!usb) return -EIO;
 
-    LEVEL_DATA("DS9490_level %d (old = %d)\n", new_level, pn->in->ULevel);
+    LEVEL_DATA("DS9490_level %d (old = %d)\n", new_level, pn->in->connin.usb.ULevel);
 
     switch (new_level) {
     case MODE_NORMAL:
-        if(pn->in->ULevel==MODE_STRONG5) {
+        if(pn->in->connin.usb.ULevel==MODE_STRONG5) {
             if(DS9490_HaltPulse(pn)==0) {
-                pn->in->ULevel = MODE_NORMAL ;
+                pn->in->connin.usb.ULevel = MODE_NORMAL ;
                 return 0 ;
             }
         }
@@ -1285,7 +1285,7 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
         STAT_ADD1(DS9490_level_errors);
         return ret ;
     }
-    pn->in->ULevel = new_level ;
+    pn->in->connin.usb.ULevel = new_level ;
     return 0 ;
 }
 

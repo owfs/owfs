@@ -112,17 +112,17 @@ void FreeIn( void ) {
 #endif /* OW_MT */
         switch (get_busmode(now)) {
         case bus_remote:
-            if ( now->host ) {
-                free(now->host) ;
-                now->host = NULL ;
+            if ( now->connin.server.host ) {
+                free(now->connin.server.host) ;
+                now->connin.server.host = NULL ;
             }
-            if ( now->service ) {
-                free(now->service) ;
-                now->service = NULL ;
+            if ( now->connin.server.service ) {
+                free(now->connin.server.service) ;
+                now->connin.server.service = NULL ;
             }
-            if ( now->ai ) {
-                freeaddrinfo(now->ai) ;
-                now->ai = NULL ;
+            if ( now->connin.server.ai ) {
+                freeaddrinfo(now->connin.server.ai) ;
+                now->connin.server.ai = NULL ;
             }
             break ;
         case bus_serial:
@@ -134,7 +134,7 @@ void FreeIn( void ) {
             break ;
 #endif /* OW_USB */
         default:
-	    //printf("FreeIn: unknown busmode %d on index=%d\n", get_busmode(now), now->index);
+            //printf("FreeIn: unknown busmode %d on index=%d\n", get_busmode(now), now->index);
             break ;
         }
         if ( now->name) {

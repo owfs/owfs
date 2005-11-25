@@ -96,7 +96,7 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
       return ret ;
     }
 // indicate the port is now at power delivery
-    pn->in->ULevel = MODE_STRONG5;
+    pn->in->connin.serial.ULevel = MODE_STRONG5;
     // delay
     UT_delay( delay ) ;
 
@@ -235,16 +235,16 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
   -EIO not supported
  */
 static int DS9097_level(int new_level, const struct parsedname * const pn) {
-    if (new_level == pn->in->ULevel) {     // check if need to change level
+    if (new_level == pn->in->connin.serial.ULevel) {     // check if need to change level
         return 0 ;
     }
     switch (new_level) {
     case MODE_NORMAL:
     case MODE_STRONG5:
-        pn->in->ULevel = new_level ;
+        pn->in->connin.serial.ULevel = new_level ;
         return 0 ;
     case MODE_PROGRAM:
-        pn->in->ULevel = MODE_NORMAL ;
+        pn->in->connin.serial.ULevel = MODE_NORMAL ;
         STAT_ADD1(DS9097_level_errors);
         return -EIO ;
     }
