@@ -42,7 +42,7 @@ OWLIB_SOURCE = compat.c          \
                ow_dir.c          \
                ow_com.c          \
                ow_verify.c       \
-               ow_ibuttonlink.c  \
+               ow_link.c         \
                ow_bus.c          \
                ow_badadapter.c   \
                ow_ds9097.c       \

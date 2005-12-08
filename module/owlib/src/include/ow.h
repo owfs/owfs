@@ -55,7 +55,7 @@ $Id$
 #define OW_H
 
 #ifndef OWFS_CONFIG_H
-#error Please make sure owfs_config.h is included *before* this header file
+ #error Please make sure owfs_config.h is included *before* this header file
 #endif
 
 // Define this to avoid some VALGRIND warnings... (just for testing)
@@ -65,16 +65,16 @@ $Id$
 
 #define _FILE_OFFSET_BITS   64
 #ifdef HAVE_FEATURES_H
-#include <features.h>
+ #include <features.h>
 #endif
 #ifdef HAVE_FEATURE_TESTS_H
-#include <feature_tests.h>
+ #include <feature_tests.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h> /* for stat */
+ #include <sys/stat.h> /* for stat */
 #endif
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h> /* for stat */
+ #include <sys/types.h> /* for stat */
 #endif
 #include <ctype.h>
 #include <stdlib.h>
@@ -83,51 +83,49 @@ $Id$
 #include <dirent.h>
 #include <signal.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h> /* for bit twiddling */
+ #include <stdint.h> /* for bit twiddling */
 #endif
 
 #include <unistd.h>
 #include <fcntl.h>
 #ifndef __USE_XOPEN
-#define __USE_XOPEN /* for strptime fuction */
-#include <time.h>
-#undef __USE_XOPEN /* for strptime fuction */
+ #define __USE_XOPEN /* for strptime fuction */
+ #include <time.h>
+ #undef __USE_XOPEN /* for strptime fuction */
 #else
-#include <time.h>
+ #include <time.h>
 #endif
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
 #include <sys/file.h> /* for flock */
 #ifdef HAVE_GETOPT_H
-#include <getopt.h> /* for long options */
+ #include <getopt.h> /* for long options */
 #endif
 
 #include <sys/uio.h>
 #include <sys/time.h> /* for gettimeofday */
 #ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
+ #include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
+ #include <netinet/in.h>
 #endif
 #include <netdb.h> /* addrinfo */
 
 #ifdef HAVE_SYS_MKDEV_H
-#include <sys/mkdev.h> /* for major() */
+ #include <sys/mkdev.h> /* for major() */
 #endif
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H
-
-#ifndef __USE_GNU
- #define __USE_GNU
- #include <search.h>
- #undef __USE_GNU
-#else /* __USE_GNU */
- #include <search.h>
-#endif /* __USE_GNU */
-
+ #ifndef __USE_GNU
+  #define __USE_GNU
+  #include <search.h>
+  #undef __USE_GNU
+ #else /* __USE_GNU */
+  #include <search.h>
+ #endif /* __USE_GNU */
 #endif /* SKIP_SEARCH_H */
 
 /* Parport enabled uses two flags (one a holdover from the embedded work) */
@@ -211,10 +209,6 @@ extern int multithreading ;
     Global variables -- each invokation will have it's own data
 */
 
-/*
-    OW -- Onw Wire
-    Global variables -- each invokation will have it's own data#define OWLIB_OPT "f:p:hu::d:t:CFRKVP:"CMD_ENV     "_FUSE_UNMOUNT_CMD"
-*/
 /* command line options */
 /* These are the owlib-specific options */
 #define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
@@ -351,8 +345,6 @@ struct interface_routines {
     int (* reset ) (const struct parsedname * const pn ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */
     int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-    /* Set the electrical level of the 1-wire bus */
-    int (* level) (int new_level, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
     int (* overdrive) (const unsigned int overdrive, const struct parsedname * const pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
@@ -409,15 +401,25 @@ struct connin_usb {
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
 enum bus_mode { bus_unknown=0, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
-enum adapter_type { adapter_DS9097=0, adapter_DS1410=1, adapter_DS9097U2=2, adapter_DS9097U=3, adapter_LINK_Multi=6, adapter_LINK=7, adapter_DS9490=8, adapter_tcp=9, adapter_Bad=10, } ;
+enum adapter_type {
+    adapter_DS9097=0,
+    adapter_DS1410=1,
+    adapter_DS9097U2=2,
+    adapter_DS9097U=3,
+    adapter_LINK_Multi=6,
+    adapter_LINK=7,
+    adapter_DS9490=8,
+    adapter_tcp=9,
+    adapter_Bad=10,
+    adapter_LINK_10,
+    adapter_LINK_11,
+    adapter_LINK_12,
+} ;
+extern int LINK_mode ; /* flag to use LINKs in ascii mode */
 struct connection_in {
     struct connection_in * next ;
     int index ;
     char * name ;
-    //char * host ;
-    //char * service ;
-    //struct addrinfo * ai ;
-    //struct addrinfo * ai_ok ;
     int fd ;
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
@@ -444,8 +446,6 @@ struct connection_in {
     char * adapter_name ;
     int use_overdrive_speed ;
     int ds2404_compliance ;
-    //int ULevel ;
-    //int USpeed ;
     int ProgramAvailable ;
     /* Static buffer for serial conmmunications */
     /* Since only used during actual transfer to/from the adapter,
@@ -1019,7 +1019,6 @@ void OWLIB_can_finish_end(   void ) ;
 /* 1-wire lowlevel */
 void UT_delay(const unsigned int len) ;
 void UT_delay_us(const unsigned long len) ;
-int LI_reset( const struct parsedname * const pn ) ;
 
 ssize_t readn(int fd, void *vptr, size_t n) ;
 int ClientAddr(  char * sname, struct connection_in * in ) ;
@@ -1093,6 +1092,7 @@ int DS2480_detect( struct connection_in * in ) ;
 int DS1410_detect( struct connection_in * in ) ;
 #endif /* OW_PARPORT */
 int DS9097_detect( struct connection_in * in ) ;
+int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
 #ifdef OW_USB
     int DS9490_detect( struct connection_in * in ) ;
@@ -1132,7 +1132,6 @@ extern int log_available ;
 #define BUS_write(bytes,num,pn)             ((pn)->in->iroutines.write)(bytes,num,pn)
 #define BUS_sendback_data(data,resp,len,pn) ((pn)->in->iroutines.sendback_data)(data,resp,len,pn)
 #define BUS_next_both(sn,search,pn)         ((pn)->in->iroutines.next_both)(sn,search,pn)
-#define BUS_level(lev,pn)                   ((pn)->in->iroutines.level)(lev,pn)
 #define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
 #define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
 #define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)

@@ -67,7 +67,6 @@ struct filetype sys_adapter[] = {
     {"ds2404_compliance"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_ds2404_compliance}   , {u:FS_w_ds2404_compliance}, NULL , } ,
     {"overdrive"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_overdrive}   , {u:FS_w_overdrive}, NULL , } ,
     {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
-    {"detail"     ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_detail} , {v:NULL}, NULL , } ,
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
@@ -204,36 +203,4 @@ static int FS_uint(unsigned int * u, const struct parsedname * pn) {
     u[0] = ((unsigned int *) pn->ft->data)[0] ;
     //printf("FS_uint: pid=%ld nr=%d\n", pthread_self(), u[0]);
     return 0 ;
-}
-
-static int FS_detail(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    char tmp[16] = "(none)";
-    int dindex = pn->extension ;
-    struct connection_in * in;
-
-    if (dindex<0) dindex = 0 ;
-    in = find_connection_in(dindex);
-    if(!in) return -ENOENT ;
-    
-    switch(in->Adapter) {
-    case adapter_LINK:
-    case adapter_LINK_Multi:
-    {
-        struct parsedname pn2 ;
-	memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
-        pn2.in = in ; /* so correct bus is querried */
-        if ( LI_reset(&pn2) || BUS_write(" ",1,&pn2) ) {
-            return -ENODEV ;
-        } else {
-             memset(tmp,0,size) ;
-             BUS_read(tmp,size,&pn2) ; // ignore return value -- will time out, probably
-             COM_flush(&pn2) ;
-	     strncpy(buf,&tmp[offset],size) ;
-        }
-    }
-    default:
-        if ( offset>strlen(tmp) ) return 0 ;
-	strncpy(buf,&tmp[offset],size) ;
-    }
-    return buf[size-1]?size:strlen(buf) ;
 }

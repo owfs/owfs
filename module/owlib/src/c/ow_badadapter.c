@@ -21,7 +21,6 @@ static int BadAdapter_reset( const struct parsedname * const pn ) ;
 static int BadAdapter_reconnect( const struct parsedname * const pn ) ;
 static int BadAdapter_read(unsigned char * const buf, const size_t size, const struct parsedname * pn ) ;
 static int BadAdapter_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
-static int BadAdapter_level(int new_level, const struct parsedname * const pn) ;
 static int BadAdapter_select(const struct parsedname * const pn) ;
 static int BadAdapter_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
 
@@ -36,7 +35,6 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.read          = BadAdapter_read          ;
     in->iroutines.reset         = BadAdapter_reset         ;
     in->iroutines.next_both     = BadAdapter_next_both     ;
-    in->iroutines.level         = BadAdapter_level         ;
     in->iroutines.PowerByte     = BadAdapter_PowerByte     ;
     in->iroutines.ProgramPulse  = BadAdapter_ProgramPulse  ;
     in->iroutines.sendback_data = BadAdapter_sendback_data ;
@@ -76,11 +74,6 @@ static int BadAdapter_write( const unsigned char * const bytes, const size_t num
     (void) pn ;
     (void) bytes ;
     (void) num ;
-    return -ENXIO ;
-}
-static int BadAdapter_level(int new_level, const struct parsedname * const pn) {
-    (void) pn ;
-    (void) new_level ;
     return -ENXIO ;
 }
 static int BadAdapter_select(const struct parsedname * const pn) {

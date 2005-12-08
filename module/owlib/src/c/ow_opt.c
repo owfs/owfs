@@ -55,6 +55,10 @@ const struct option owopts_long[] = {
     {"no-portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
     {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
+    {"link", no_argument,   &LINK_mode,1}, /* link in ascii mode */
+    {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
+    {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
+    {"NOLINK", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
     {0,0,0,0},
 } ;
 
@@ -140,7 +144,8 @@ static void ow_morehelp( enum opt_program op ) {
     "     --background                |become a deamon process(default)\n"
     "     --foreground                |stay in foreground\n"
     "  -r --readonly                  |no writing to 1-wire bus\n"
-    "  -w --write                     |allow reading and writing to bus(default)\n");
+    "  -w --write                     |allow reading and writing to bus(default)\n"
+    "     --link | --nolink           |LINK adapters in ascii|emulation mode (emulation)\n");
 #ifdef OW_CACHE
     printf("  -t                             |cache timeout (in seconds)\n");
 #endif /* OW_CACHE */    

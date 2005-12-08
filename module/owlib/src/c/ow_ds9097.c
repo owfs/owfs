@@ -21,7 +21,6 @@ static int DS9097_reset( const struct parsedname * const pn ) ;
 static int DS9097_reconnect( const struct parsedname * const pn ) ;
 static int DS9097_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int DS9097_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
-static int DS9097_level(int new_level, const struct parsedname * const pn) ;
 static int DS9097_read_bits( unsigned char * const bits , const int length, const struct parsedname * const pn ) ;
 static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) ;
 static int DS9097_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
@@ -37,7 +36,6 @@ static void DS9097_setroutines( struct interface_routines * const f ) {
     f->read  = DS9097_read ;
     f->reset = DS9097_reset ;
     f->next_both = DS9097_next_both ;
-    f->level = DS9097_level ;
     f->PowerByte = DS9097_PowerByte ;
     f->ProgramPulse = DS9097_ProgramPulse ;
     f->sendback_data = DS9097_sendback_data ;
@@ -101,9 +99,7 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
     UT_delay( delay ) ;
 
     // return to normal level
-    if((ret=BUS_level(MODE_NORMAL,pn))) {
-        STAT_ADD1(DS9097_PowerByte_errors);
-    }
+    pn->in->connin.serial.ULevel = MODE_NORMAL;
     return ret;
 }
 
@@ -219,37 +215,6 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     si->LastDiscrepancy = last_zero;
     si->LastDevice = (last_zero == 0);
     return 0 ;
-}
-
-/* Set the 1-Wire Net line level.  The values for new_level are
-// 'new_level' - new level defined as
-//                MODE_NORMAL     0x00
-//                MODE_STRONG5    0x02
-//                MODE_PROGRAM    0x04
-//                MODE_BREAK      0x08 (not supported)
-//
-// Returns:    0 GOOD, !0 Error
-   Actually very simple for passive adapter
-*/
-/* return 0=good
-  -EIO not supported
- */
-static int DS9097_level(int new_level, const struct parsedname * const pn) {
-    if (new_level == pn->in->connin.serial.ULevel) {     // check if need to change level
-        return 0 ;
-    }
-    switch (new_level) {
-    case MODE_NORMAL:
-    case MODE_STRONG5:
-        pn->in->connin.serial.ULevel = new_level ;
-        return 0 ;
-    case MODE_PROGRAM:
-        pn->in->connin.serial.ULevel = MODE_NORMAL ;
-        STAT_ADD1(DS9097_level_errors);
-        return -EIO ;
-    }
-    STAT_ADD1(DS9097_level_errors);
-    return -EIO ;
 }
 
 /* DS9097 Reset -- A little different frolm DS2480B */

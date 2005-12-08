@@ -36,7 +36,6 @@ static void DS2480_setroutines( struct interface_routines * const f ) {
     f->read  = DS2480_read ;
     f->reset = DS2480_reset ;
     f->next_both = DS2480_next_both ;
-    f->level = DS2480_level ;
     f->PowerByte = DS2480_PowerByte ;
     f->ProgramPulse = DS2480_ProgramPulse ;
     f->sendback_data = DS2480_sendback_data ;
@@ -264,25 +263,32 @@ int DS2480_detect( struct connection_in * in ) {
       //printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
         /* Apparently need to reset again to get the version number properly */
 
-        if((ret = DS2480_reset(&pn))) {
-	  LEVEL_DEFAULT("DS2480 reset error\n");
-	  return ret;
-	}
+        if((ret = DS2480_reset(&pn))) { /* Note, reset sets Adapter from aadapter response to initialization */
+            LEVEL_DEFAULT("DS2480 reset error\n");
+            return ret;
+        }
+        in->busmode = bus_serial ;
 
         switch (in->Adapter) {
-        case adapter_DS9097U2:
-        case adapter_DS9097U:
-            in->adapter_name = "DS9097U" ;
-            break;
-        case adapter_LINK:
-            in->adapter_name = "LINK" ;
-            break;
-        case adapter_LINK_Multi:
-            in->adapter_name = "MultiLINK" ;
-            break;
+            case adapter_DS9097U2:
+            case adapter_DS9097U:
+                in->adapter_name = "DS9097U" ;
+                break;
+            case adapter_LINK:
+            case adapter_LINK_10:
+            case adapter_LINK_11:
+            case adapter_LINK_12:
+                in->adapter_name = "LINK" ;
+                if ( LINK_mode ) return LINK_detect(in) ;
+                break;
+            case adapter_LINK_Multi:
+                in->adapter_name = "MultiLINK" ;
+                if ( LINK_mode ) return LINK_detect(in) ;
+                break;
+            default:
+                return BadAdapter_detect(in) ;
         }
-	//printf("2480Detect version=%d\n",in->Adapter) ;
-        in->busmode = bus_serial ;
+        //printf("2480Detect version=%d\n",in->Adapter) ;
         return 0 ;
     }
     //printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);

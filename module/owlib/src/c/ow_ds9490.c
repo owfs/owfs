@@ -52,7 +52,6 @@ static void DS9490_setroutines( struct interface_routines * const f ) {
     f->read = DS9490_read ;
     f->reset = DS9490_reset ;
     f->next_both = DS9490_next_both ;
-    f->level = DS9490_level ;
     f->PowerByte = DS9490_PowerByte ;
     f->ProgramPulse = DS9490_ProgramPulse ;
     f->sendback_data = DS9490_sendback_data ;

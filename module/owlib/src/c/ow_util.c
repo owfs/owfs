@@ -21,15 +21,7 @@ $Id$
         ? (c)-'0' \
         : (c) >= 'A' && (c) <= 'F' ? (c)-'A'+10 : (c)-'a'+10 )
 
-#if 0
-/* hex-digit to number */
-unsigned char char2num( const char * s ) {
-    /* This is much faster compared to switch() */
-    return _HEXVALUE(*s);
-}
-#endif
-
-/* 2 hex digits to number. This is the most used function in owfs */
+/* 2 hex digits to number. This is the most used function in owfs for the LINK */
 unsigned char string2num( const char * s ) {
     if ( s == NULL ) return 0 ;
     return (_HEXVALUE(s[0]) << 4) + _HEXVALUE(s[1]);

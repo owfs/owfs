@@ -164,11 +164,11 @@ int LibStart( void ) {
      * I moved it here to avoid calling __pthread_initialize() */
     if ( background ) {
         if(
-#ifdef HAVE_DAEMON
+ #ifdef HAVE_DAEMON
             daemon(1, 0)
-#else
+ #else
             my_daemon(1, 0)
-#endif
+ #endif
         ) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
@@ -176,18 +176,14 @@ int LibStart( void ) {
         now_background = 1;
     }
 
-#if 1
     /* have to re-initialize pthread since the main-process is gone */
     __pthread_initial_thread_bos = NULL ;
     __pthread_initialize();
-#endif
 
-#if 1
     /* global mutex attribute */
     pthread_mutexattr_init(&mattr);
     pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
     pmattr = &mattr ;
-#endif /* OW_MT */
 
     /* Setup the multithreading synchronizing locks */
     LockSetup();
@@ -204,7 +200,6 @@ int LibStart( void ) {
             ret = Server_detect(in) ;
             break ;
         case bus_serial:
-        {
             /** Actually COM and Parallel */
             if ( (ret=stat( in->name, &s )) ) {
                 LEVEL_DEFAULT("Cannot stat port: %s error=%s\n",in->name,strerror(ret))
@@ -228,7 +223,6 @@ int LibStart( void ) {
                     ret = -ENODEV ;
                 }
             }
-        }
             break ;
         case bus_usb:
 #ifdef OW_USB
@@ -237,11 +231,11 @@ int LibStart( void ) {
             LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname)
             ret = 1 ;
 #endif /* OW_USB */
-	    /* in->connin.usb.ds1420_address should be set to identify the
-	     * adapter just in case it's disconnected. It's done in the
-	     * DS9490_next_both() if not set. */
+            /* in->connin.usb.ds1420_address should be set to identify the
+                * adapter just in case it's disconnected. It's done in the
+                * DS9490_next_both() if not set. */
             // in->name should be set to something, even if DS9490_detect fails
-	    if(!in->name) in->name = strdup("-1/-1") ;
+            if(!in->name) in->name = strdup("-1/-1") ;
             break ;
         default:
             ret = 1 ;
@@ -253,17 +247,17 @@ int LibStart( void ) {
 
 #ifndef __UCLIBC__
     if ( background ) {
-#ifdef HAVE_DAEMON
+ #ifdef HAVE_DAEMON
         if(daemon(1, 0)) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
-#else
+#else /* HAVE_DAEMON */
         if(my_daemon(1, 0)) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
-#endif
+#endif /* HAVE_DAEMON */
         now_background = 1;
     }
 #endif /* __UCLIBC__ */
