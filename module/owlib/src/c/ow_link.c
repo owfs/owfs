@@ -21,6 +21,7 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) ;
 static int LINK_ProgramPulse( const struct parsedname * const pn ) ;
 static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int len, const struct parsedname * const pn ) ;
+static int LINK_select(const struct parsedname * const pn) ;
 static int LINK_send_back(unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) ;
 static int LINK_reconnect( const struct parsedname * const pn ) ;
 
@@ -32,7 +33,7 @@ static void LINK_setroutines( struct interface_routines * const f ) {
     f->PowerByte = LINK_PowerByte ;
     f->ProgramPulse = LINK_ProgramPulse ;
     f->sendback_data = LINK_sendback_data ;
-    f->select        = BUS_select_low ;
+    f->select        = LINK_select ;
     f->overdrive = NULL ;
     f->testoverdrive = NULL ;
     f->reconnect = LINK_reconnect ;
@@ -381,3 +382,12 @@ static int LINK_reconnect( const struct parsedname * const pn ) {
     LEVEL_DEFAULT("Failed to reconnect LINK adapter!\n");
     return -EIO ;
 }
+
+static int LINK_select(const struct parsedname * const pn) {
+    if ( pn->pathlength > 0 ) {
+        LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) with the ascii-mode LINK\n") ;
+        return -ENOTSUP ; /* cannot do branching with LINK ascii */
+    }
+    return BUS_select_low(pn) ;
+}
+

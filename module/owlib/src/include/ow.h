@@ -406,7 +406,6 @@ enum adapter_type {
     adapter_DS1410=1,
     adapter_DS9097U2=2,
     adapter_DS9097U=3,
-    adapter_LINK_Multi=6,
     adapter_LINK=7,
     adapter_DS9490=8,
     adapter_tcp=9,

@@ -281,10 +281,6 @@ int DS2480_detect( struct connection_in * in ) {
                 in->adapter_name = "LINK" ;
                 if ( LINK_mode ) return LINK_detect(in) ;
                 break;
-            case adapter_LINK_Multi:
-                in->adapter_name = "MultiLINK" ;
-                if ( LINK_mode ) return LINK_detect(in) ;
-                break;
             default:
                 return BadAdapter_detect(in) ;
         }
