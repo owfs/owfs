@@ -22,7 +22,7 @@ static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, co
 static int LINK_ProgramPulse( const struct parsedname * const pn ) ;
 static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int len, const struct parsedname * const pn ) ;
 static int LINK_select(const struct parsedname * const pn) ;
-static int LINK_send_back(unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) ;
+static int LINK_send_back(const unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) ;
 static int LINK_reconnect( const struct parsedname * const pn ) ;
 
 static void LINK_setroutines( struct interface_routines * const f ) {
@@ -71,12 +71,9 @@ int LINK_detect( struct connection_in * in ) {
                     in->adapter_name = "LINK v1.1" ;
                     break ;
                 case '2':
-                    in->Adapter = adapter_LINK_12 ;
-                    in->adapter_name = "LINK v1.2" ;
-                    break ;
                 default:
                     in->Adapter = adapter_LINK_12 ;
-                    in->adapter_name = "LINK v1.2+" ;
+                    in->adapter_name = "LINK v1.2" ;
                     break ;
             }
             /* Set up low-level routines */
@@ -111,6 +108,7 @@ static int LINK_reset( const struct parsedname * const pn ) {
 static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     struct stateinfo * si = pn->si ;
     char resp[20] ;
+    int ret ;
 
 //printf("NEXT\n");
     (void) search ;
@@ -119,15 +117,26 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
 
     COM_flush(pn) ;
     if ( si->LastDiscrepancy == -1 ) {
-        if ( BUS_write("f",1,pn) ) return -errno ;
+        if ( (ret=BUS_write("f",1,pn)) ) return ret ;
         si->LastDiscrepancy = 0 ;
     } else {
-        if ( BUS_write("n",1,pn) ) return -errno ;
+        if ( (ret=BUS_write("n",1,pn)) ) return ret ;
     }
     
-    if ( BUS_read(resp,20,pn) ) return -errno ;
+    if ( (ret=BUS_read(resp,20,pn)) ) return ret ;
 
-    if ( resp[0] == '-' ) si->LastDevice = 1 ;
+    switch ( resp[0] ) {
+        case '-':
+            si->LastDevice = 1 ;
+        case '+':
+            break ;
+        case 'N' :
+            si->AnyDevices = 0 ;
+            return -ENODEV ;
+        case 'X':
+        default :
+            return -EIO ;
+    }
 
     serialnumber[7] = string2num(&resp[2]) ;
     serialnumber[6] = string2num(&resp[4]) ;
@@ -154,39 +163,40 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
 }
 
 /* Basic LINK communication -- send a HEX bytes(in ascii) and get them back */
-static int LINK_send_back(unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) {
+static int LINK_send_back(const unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) {
     if ( size > UART_FIFO_SIZE - 2 ) {
         size_t hsize = size >> 1 ;
         return LINK_send_back(out,in,hsize,startbytemode,0,pn) || LINK_send_back(&out[hsize],&in[hsize],size-hsize,0,endbytemode,pn) ;
     } else {
-        char * start = pn->in->combuffer ;
-        char * pointer = start ;
-        int inlength = size*2 ;
+        char * ascii_start = pn->in->combuffer ;
+        char * ascii_pointer = ascii_start ;
+        int ascii_inlength = size*2 ;
 
         /* Add the beginning "b" to start byte mode (not echoed) */
         if ( startbytemode ) {
-            pointer[0] = 'b' ;
-            ++pointer ;
+            ascii_pointer[0] = 'b' ;
+            ++ascii_pointer ;
         }
-        bytes2string( pointer, out, size ) ;
-        pointer += size*2 ;
+        bytes2string( ascii_pointer, out, size ) ;
+        ascii_pointer += ascii_inlength ;
         
         /* Add final \n to end byte mode (echoed as \r\n) */
         if ( endbytemode ) {
-            pointer[0] = '\n' ;
-            ++pointer ;
-            inlength += 2 ;
+            ascii_pointer[0] = '\n' ;
+            ++ascii_pointer ;
+            // ascii_inlength ++ ;
         }
             
-        if ( BUS_write(start,start-pointer,pn) ) {
+        if ( BUS_write(ascii_start,ascii_pointer-ascii_start,pn) ) {
             LEVEL_DATA("Trouble sending data to LINK\n");
             return -EIO ;
         }
-        if ( BUS_read( start, inlength, pn ) ) {
+        if ( BUS_read( ascii_start, ascii_inlength, pn ) ) {
+            printf("LINKread -- Attempting to read %d bytes, got string back: %s\n",ascii_inlength,ascii_start);
             LEVEL_DATA("Trouble sending data to LINK\n");
             return -EIO ;
         }
-        string2bytes( start, in, size) ;
+        string2bytes( ascii_start, in, size) ;
     }
     return 0;
 }
@@ -247,6 +257,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
             }
             update_max_delay(pn);
             r = read(pn->in->fd,&buf[size-inlength],inlength);
+            printf("LINK_read bytes=%d of %d, <%s>\n",r,inlength,buf);
             if ( r < 0 ) {
                 if(errno == EINTR) {
                     /* read() was interrupted, try again */
@@ -259,6 +270,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
             }
             inlength -= r;
         } else if(ret < 0) {
+            printf("LINK_read select=%d\n",ret);
             if(errno == EINTR) {
                 /* select() was interrupted, try again */
                 STAT_ADD1(DS2480_read_interrupted);
@@ -267,6 +279,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
             STAT_ADD1(DS2480_read_select_errors);
             return -EINTR;
         } else {
+            printf("LINK_read select=%d\n",ret);
             STAT_ADD1(DS2480_read_timeout);
             return -EINTR;
         }
