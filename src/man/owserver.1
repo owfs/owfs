@@ -15,23 +15,35 @@
 .SH SYNOPSIS
 .B owserver
 [
-.B \-r \-\-readonly
+.I \-r \-\-readonly
 |
-.B \-w \-\-write
+.I \-w \-\-write
 ] [
-.B \-t
+.I \-t
 timeout ] [
-.B \-\-background
+.I \-\-background
 |
-.B \-\-foreground
-]
-.B \-p
+.I \-\-foreground
+] [
+.I \-\-link
+|
+.I \-\-nolink
+] [
+.I \-P \-\-pid-file
+filename
+] [
+.I \-\-error_print
+0|1|2|3
+] [
+.I \-\-error_level
+0|1|2|3|9 ]
+.I \-p
 tcp-port
-.B \-d
+.I \-d
 serialport |
-.B \-u
+.I \-u
 |
-.B \-s
+.I \-s
 tcp-port
 .br
 .B owserver
@@ -116,6 +128,34 @@ Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... sp
 Note: multiple instances of 
 .I -d, -u, -s
 are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
+.SS \-\-link | \-\-nolink
+All serial adapters manufactured by iButtonLink should be used in their ascii mode rather than the (default) DS9097U emulation. This allows some extended features, but interfears with DS2409 (3) hubs. 
+.SS \-\-error_print
+.TP
+.I 0
+default mixed destination: stderr foreground / syslog background
+.TP
+.I 1
+syslog only
+.TP
+.I 2
+stderr only
+.TP
+.I 3
+dev/null (supress all).
+.SS \-\-error_level
+.TP
+.I 0
+default errors only
+.TP
+.I 1
+connections/disconnections
+.TP
+.I 2
+all high level calls
+.TP
+.I 3
+data summary for each call
 .SS \-V \-\-version
 .I Version
 of this program and related libraries.

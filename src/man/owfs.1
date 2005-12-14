@@ -58,6 +58,10 @@ timeout ] [
 |
 .I \-\-foreground
 ] [
+.I \-\-link
+|
+.I \-\-nolink
+] [
 .I \-P \-\-pid-file
 filename
 ] [
@@ -139,6 +143,8 @@ Whether the program releases the console and runs in the
 after evaluating command line options.
 .I background
 is the default.
+.SS \-\-link | \-\-nolink
+All serial adapters manufactured by iButtonLink should be used in their ascii mode rather than the (default)DS9097U emulation. This allows some extended features, but interfears with DS2409 (3) hubs. 
 .SS \-\-error_print
 .TP
 .I 0
