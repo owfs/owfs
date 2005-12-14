@@ -14,6 +14,7 @@ $Id$
 
 int LINK_mode ; /* flag to use LINKs in ascii mode */
 
+//static void byteprint( const unsigned char * b, int size ) ;
 static int LINK_write(const unsigned char *const buf, const size_t size, const struct parsedname * const pn ) ;
 static int LINK_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
 static int LINK_reset( const struct parsedname * const pn ) ;
@@ -22,8 +23,9 @@ static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, co
 static int LINK_ProgramPulse( const struct parsedname * const pn ) ;
 static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int len, const struct parsedname * const pn ) ;
 static int LINK_select(const struct parsedname * const pn) ;
-static int LINK_send_back(const unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) ;
 static int LINK_reconnect( const struct parsedname * const pn ) ;
+static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) ;
+static int LINK_CR( const struct parsedname * pn ) ;
 
 static void LINK_setroutines( struct interface_routines * const f ) {
     f->write = LINK_write ;
@@ -88,10 +90,10 @@ int LINK_detect( struct connection_in * in ) {
 static int LINK_reset( const struct parsedname * const pn ) {
     char resp[3] ;
     COM_flush(pn) ;
-    if ( BUS_write("r",1,pn) ) return -errno ;
-    sleep(1) ;
-    if ( BUS_read(resp,3,pn) ) return -errno ;
-    switch( resp[0] ) {
+    if ( BUS_write("\rr",2,pn) ) return -errno ;
+//    sleep(1) ;
+    if ( BUS_read(resp,4,pn) ) return -errno ;
+    switch( resp[1] ) {
         case 'P':
             pn->si->AnyDevices=1 ;
             break ;
@@ -110,7 +112,6 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
     char resp[20] ;
     int ret ;
 
-//printf("NEXT\n");
     (void) search ;
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
     if ( si->LastDevice ) return -ENODEV ;
@@ -162,45 +163,6 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
     return 0 ;
 }
 
-/* Basic LINK communication -- send a HEX bytes(in ascii) and get them back */
-static int LINK_send_back(const unsigned char * out, unsigned char * in, size_t size, int startbytemode, int endbytemode, const struct parsedname * pn ) {
-    if ( size > UART_FIFO_SIZE - 2 ) {
-        size_t hsize = size >> 1 ;
-        return LINK_send_back(out,in,hsize,startbytemode,0,pn) || LINK_send_back(&out[hsize],&in[hsize],size-hsize,0,endbytemode,pn) ;
-    } else {
-        char * ascii_start = pn->in->combuffer ;
-        char * ascii_pointer = ascii_start ;
-        int ascii_inlength = size*2 ;
-
-        /* Add the beginning "b" to start byte mode (not echoed) */
-        if ( startbytemode ) {
-            ascii_pointer[0] = 'b' ;
-            ++ascii_pointer ;
-        }
-        bytes2string( ascii_pointer, out, size ) ;
-        ascii_pointer += ascii_inlength ;
-        
-        /* Add final \n to end byte mode (echoed as \r\n) */
-        if ( endbytemode ) {
-            ascii_pointer[0] = '\n' ;
-            ++ascii_pointer ;
-            // ascii_inlength ++ ;
-        }
-            
-        if ( BUS_write(ascii_start,ascii_pointer-ascii_start,pn) ) {
-            LEVEL_DATA("Trouble sending data to LINK\n");
-            return -EIO ;
-        }
-        if ( BUS_read( ascii_start, ascii_inlength, pn ) ) {
-            printf("LINKread -- Attempting to read %d bytes, got string back: %s\n",ascii_inlength,ascii_start);
-            LEVEL_DATA("Trouble sending data to LINK\n");
-            return -EIO ;
-        }
-        string2bytes( ascii_start, in, size) ;
-    }
-    return 0;
-}
-
 /* Assymetric */
 /* Read from LINK with timeout on each character */
 // NOTE: from PDkit, reead 1-byte at a time
@@ -227,7 +189,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
         tval.tv_sec = 0;
-        tval.tv_usec = 500000;
+        tval.tv_usec = 5000000;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't
@@ -255,9 +217,8 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
                 STAT_ADD1(DS2480_read_fd_isset);
                 break;
             }
-            update_max_delay(pn);
+//            update_max_delay(pn);
             r = read(pn->in->fd,&buf[size-inlength],inlength);
-            printf("LINK_read bytes=%d of %d, <%s>\n",r,inlength,buf);
             if ( r < 0 ) {
                 if(errno == EINTR) {
                     /* read() was interrupted, try again */
@@ -270,7 +231,6 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
             }
             inlength -= r;
         } else if(ret < 0) {
-            printf("LINK_read select=%d\n",ret);
             if(errno == EINTR) {
                 /* select() was interrupted, try again */
                 STAT_ADD1(DS2480_read_interrupted);
@@ -279,7 +239,6 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
             STAT_ADD1(DS2480_read_select_errors);
             return -EINTR;
         } else {
-            printf("LINK_read select=%d\n",ret);
             STAT_ADD1(DS2480_read_timeout);
             return -EINTR;
         }
@@ -299,6 +258,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
 static int LINK_write(const unsigned char *const buf, const size_t size, const struct parsedname * const pn ) {
     ssize_t r, sl = size;
 
+    COM_flush(pn) ;
     while(sl > 0) {
         if(!pn->in) break;
         r = write(pn->in->fd,&buf[size-sl],sl) ;
@@ -333,25 +293,16 @@ static int LINK_write(const unsigned char *const buf, const size_t size, const s
    bad = -EIO
  */
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) {
-    char pow[] = "pXX" ;
-    char cr[] = "\n" ; 
-    int ret ;
+    char pow ;
     
-    num2string( &pow[1], byte ) ;
-    ret = BUS_write(pow,3,pn) ; /* send the data */
-    if ( (BUS_read( pow, 2, pn ) < 2) || ret ) ret = -EIO ; /* read echoed data */
+    if ( LINK_write("p",1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) return -EIO ; // send just the <CR>
     
     // delay
     UT_delay( delay ) ;
 
     // flush the buffers
-    COM_flush(pn);
-
-    pow[0] = '\n' ;
-    if ( BUS_write(cr,1,pn) || ret ) ret = -EIO ; /* send a CR */
-    if ( (BUS_read( pow, 2, pn ) < 2) || ret ) ret = -EIO ; /* read echoed data */
-    
-    return ret ;
+    // COM_flush(pn);
+    return LINK_CR( pn ) ; // send just the <CR>
 }
 
 /* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */
@@ -372,8 +323,15 @@ static int LINK_ProgramPulse( const struct parsedname * const pn ) {
 /* return 0=good
    sendout_data, readin
  */
-static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int len, const struct parsedname * const pn ) {
-    return LINK_send_back(data, resp, len, 1, 1, pn ) ;
+static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int size, const struct parsedname * const pn ) {    
+    size_t i ;
+    int ret ;
+
+    if ( size == 0 ) return 0 ;
+    ret = BUS_write("b",1,pn) ;
+    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
+    if ( ret==0 ) ret = LINK_CR(pn) ;
+    return ret ; 
 }
 
 static int LINK_reconnect( const struct parsedname * const pn ) {
@@ -404,3 +362,25 @@ static int LINK_select(const struct parsedname * const pn) {
     return BUS_select_low(pn) ;
 }
 
+/*
+static void byteprint( const unsigned char * b, int size ) {
+    int i ;
+    for ( i=0; i<size; ++i ) printf( "%.2X ",b[i] ) ;
+    if ( size ) printf("\n") ;
+}
+*/
+
+static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) {
+    char byte[2] ;
+
+    num2string( byte, out[0] ) ;
+    if ( BUS_write( byte, 2, pn ) || BUS_read( byte, 2, pn ) ) return -EIO ;
+    in[0] = string2num( byte ) ;
+    return 0 ;
+}
+
+static int LINK_CR( const struct parsedname * pn ) {
+    char byte[2] ;
+    if ( BUS_write( "\r", 1, pn ) || BUS_read( byte, 2, pn ) ) return -EIO ;
+    return 0 ;
+}
