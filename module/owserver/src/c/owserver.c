@@ -452,7 +452,10 @@ int main( int argc , char ** argv ) {
 
     /* this row will give a very strange output??
      * indevice->busmode is not working for me?
-     * main7: indevice=0x9d314d0 indevice->busmode==858692 2 */
+     * main7: indevice=0x9d314d0 indevice->busmode==858692 2
+     *
+     * This old bug/workaround might be fixed?, and get_busmode() could perhaps
+     * be removed. */
     //printf("main7: indevice=%p indevice->busmode==%d %d\n", indevice, indevice->busmode, get_busmode(indevice));
 
     ServerProcess( Handler, ow_exit ) ;

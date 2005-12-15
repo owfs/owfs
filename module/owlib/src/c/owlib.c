@@ -176,7 +176,11 @@ int LibStart( void ) {
         now_background = 1;
     }
 
-    /* have to re-initialize pthread since the main-process is gone */
+    /* Have to re-initialize pthread since the main-process is gone.
+     *
+     * This workaround will probably be fixed in uClibc-0.9.28
+     * Other uClibc developers have noticed similar problems which are
+     * trigged when pthread functions are used in shared libraries. */
     __pthread_initial_thread_bos = NULL ;
     __pthread_initialize();
 

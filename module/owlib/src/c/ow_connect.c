@@ -35,16 +35,6 @@ enum bus_mode get_busmode(struct connection_in *c) {
   return c->busmode;
 }
 
-enum bus_mode get_busmode_inx(int iindex) {
-  struct connection_in *c = indevice;
-  while(c) {
-    if(c->index == iindex) break;
-    c = c->next;
-  }
-  if(!c) return bus_unknown;
-  return c->busmode;
-}
-
 struct connection_in * NewIn( void ) {
     size_t len = sizeof(struct connection_in) ;
     struct connection_in * last = NULL ;
@@ -134,7 +124,6 @@ void FreeIn( void ) {
             break ;
 #endif /* OW_USB */
         default:
-            //printf("FreeIn: unknown busmode %d on index=%d\n", get_busmode(now), now->index);
             break ;
         }
         if ( now->name) {

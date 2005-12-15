@@ -475,10 +475,14 @@ extern struct connection_in * indevice ;
 extern int outdevices ;
 extern int indevices ;
 
-
+#if 1
+/* This bug-fix/workaround function seem to be fixed now... At least on
+ * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
+ * returned very strange result on c->busmode before... but not anymore */
 enum bus_mode get_busmode(struct connection_in *c);
-enum bus_mode get_busmode_inx(int iindex);
-
+#else
+#define get_busmode(x) (c->busmode)
+#endif
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)

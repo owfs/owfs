@@ -146,12 +146,8 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
                     } else if(offset == 1) {
                         r = 0 ;
                     } else {
-#if 0
-                        r = -EINVAL ;
-#else
                         buf[0] = '0';
                         r = 1;
-#endif
                     }
                 } else {
                     r = FS_real_read(buf, size, offset, pn) ;
