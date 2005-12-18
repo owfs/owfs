@@ -258,7 +258,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
 static int LINK_write(const unsigned char *const buf, const size_t size, const struct parsedname * const pn ) {
     ssize_t r, sl = size;
 
-    COM_flush(pn) ;
+//    COM_flush(pn) ;
     while(sl > 0) {
         if(!pn->in) break;
         r = write(pn->in->fd,&buf[size-sl],sl) ;
@@ -325,13 +325,22 @@ static int LINK_ProgramPulse( const struct parsedname * const pn ) {
  */
 static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int size, const struct parsedname * const pn ) {    
     size_t i ;
-    int ret ;
+    size_t left ;
+    unsigned char * buf = pn->in->combuffer ;
 
     if ( size == 0 ) return 0 ;
-    ret = BUS_write("b",1,pn) ;
-    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
-    if ( ret==0 ) ret = LINK_CR(pn) ;
-    return ret ; 
+    if ( BUS_write("b",1,pn) ) return -EIO ;
+//    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
+    for ( left=size; left ; ) {
+        i = (left>16)?16:left ;
+//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
+        bytes2string( buf, &data[size-left], i ) ;
+        if ( LINK_write( buf, i<<1, pn ) || LINK_read( buf, i<<1, pn ) ) return -EIO ;
+        string2bytes( buf, &resp[size-left], i ) ;
+        left -= i ;
+    }
+        
+    return LINK_CR(pn) ;
 }
 
 static int LINK_reconnect( const struct parsedname * const pn ) {
@@ -384,3 +393,6 @@ static int LINK_CR( const struct parsedname * pn ) {
     if ( BUS_write( "\r", 1, pn ) || BUS_read( byte, 2, pn ) ) return -EIO ;
     return 0 ;
 }
+
+
+  
