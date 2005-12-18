@@ -180,8 +180,8 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
         } else {
             if ( bits[2] ) { /* 0,1 */
                 search_direction = 0;  // bit write value for search
-            } else  if (bit_number < si->LastDiscrepancy) {
-                // if this discrepancy if before the Last Discrepancy
+            } else  if (bit_number < si->LastDiscrepancy) { /* 0,0 */
+                // if this discrepancy is before the Last Discrepancy
                 // on a previous next then pick the same as last time
                 search_direction = UT_getbit(serialnumber,bit_number) ;
             } else if (bit_number == si->LastDiscrepancy) {
@@ -206,7 +206,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
        * reconnect */
       return -EIO ;
     }
-    if((*serialnumber & 0x7F) == 0x04) {
+    if((serialnumber[0] & 0x7F) == 0x04) {
       /* We found a DS1994/DS2404 which require longer delays */
       pn->in->ds2404_compliance = 1 ;
     }
@@ -217,7 +217,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     return 0 ;
 }
 
-/* DS9097 Reset -- A little different frolm DS2480B */
+/* DS9097 Reset -- A little different from DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
 static int DS9097_reset( const struct parsedname * const pn ) {
     unsigned char resetbyte = 0xF0 ;
