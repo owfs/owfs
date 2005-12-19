@@ -82,7 +82,7 @@ struct filetype sys_connections[] = {
     {"indevices"  ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &indevices , } ,
     {"outdevices" ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &outdevices , } ,
 } ;
-struct device d_sys_structure = { "connections", "connections", pn_system, NFT(sys_connections), sys_connections } ;
+struct device d_sys_connections = { "connections", "connections", pn_system, NFT(sys_connections), sys_connections } ;
 
 /* ------- Functions ------------ */
 

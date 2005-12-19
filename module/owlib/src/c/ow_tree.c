@@ -116,7 +116,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_set_cache ,    pn_settings ) ;
     Device2Tree( & d_sys_adapter ,  pn_system ) ;
     Device2Tree( & d_sys_process ,  pn_system ) ;
-    Device2Tree( & d_sys_structure, pn_system ) ;
+    Device2Tree( & d_sys_connections, pn_system ) ;
     Device2Tree( & d_simultaneous , pn_real ) ;
     /* Match simultaneous for special processing */
     {

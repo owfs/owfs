@@ -597,18 +597,18 @@ int FS_busless( char * path ) {
     char * rest = path ;
     while ( (p = strsep(&rest,"/")) ) {
         if (rest) rest[-1]='/' ; /* restore delimiter */
-	LEVEL_DEBUG("p=[%s]\n", p);
+	//LEVEL_DEBUG("p=[%s]\n", p);
         if ( strncasecmp( p, "bus.", 4 )==NULL ) {
 	  if((del = strchr(p, '/'))) {
 	    memmove( p, del+1, strlen(del+1)+1 );
 	  } else {
 	    *p = '\000';
 	  }
-	  LEVEL_DEBUG("path=[%s] (bus removed)\n", path);
+	  //LEVEL_DEBUG("path=[%s] (bus removed)\n", path);
 	  return 0 ;
         }
     }
-    LEVEL_DEBUG("path=[%s] (bus not removed)\n", path);
+    //LEVEL_DEBUG("path=[%s] (bus not removed)\n", path);
     return 1 ; /* no bus found */
 }
  

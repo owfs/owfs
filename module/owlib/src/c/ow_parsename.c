@@ -70,7 +70,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     // Even on normal glibc, errno isn't cleared on good system calls
     errno = 0;
 
-    LEVEL_CALL("PARSENAME path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("PARSENAME path=[%s]\n", NULLSTRING(path));
 
     if ( pn == NULL ) return -EINVAL ;
 
@@ -108,6 +108,7 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
 
     /* Have to save pn->path at once */
     if(!(pn->path = strdup(path))) {
+      //LEVEL_DEBUG("PARSENAME strdup failed\n");
       ret = -ENOMEM;
       goto end;
     }
@@ -116,48 +117,41 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
     if ( pathnext[0]=='/' ) ++pathnext ;
 
     //printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
-    //printf("parse_first=%d\n",parse_first) ;
-    //printf("parse_done=%d\n",parse_done) ;
-    //printf("parse_error=%d\n",parse_error) ;
-    //printf("parse_real=%d\n",parse_real) ;
-    //printf("parse_nonreal=%d\n",parse_nonreal) ;
-    //printf("parse_prop=%d\n",parse_prop) ;
-    //printf("parse_subprop=%d\n",parse_subprop) ;
 
     while(1) {
         switch( pe ) {
             case parse_done:
-                //printf("PARSENAME parse_done\n") ;
+	        //printf("PARSENAME parse_done\n") ;
                 goto end ;
             case parse_error:
-                //printf("PARSENAME parse_error\n") ;
+	        //printf("PARSENAME parse_error\n") ;
                 ret = -ENOENT ;
                 goto end ;
             default: break ;
         }
         pathnow = strsep(&pathnext,"/") ;
-        //printf("PARSENAME pathnow=%s rest=%s\n",pathnow,pathnext) ;
+        //LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
         if ( pathnow==NULL || pathnow[0]== '\0' ) goto end ;
         switch( pe ) {
             case parse_first:
-                //printf("PARSENAME parse_first\n") ;
+	        //printf("PARSENAME parse_first\n") ;
                 pe = Parse_Unspecified( pathnow, pn ) ;
                 break ;
             case parse_real:
-                //printf("PARSENAME parse_real\n") ;
+	        //printf("PARSENAME parse_real\n") ;
                 pe = Parse_Real( pathnow, pn ) ;
                 break ;
             case parse_nonreal:
-                //printf("PARSENAME parse_nonreal\n") ;
+	        //printf("PARSENAME parse_nonreal\n") ;
                 pe = Parse_NonReal( pathnow, pn ) ;
                 break ;
             case parse_prop:
-                //printf("PARSENAME parse_prop\n") ;
+	        //printf("PARSENAME parse_prop\n") ;
                 pathlast = pathnow ; /* Save for concatination if subdirectory later wanted */
                 pe = Parse_Property( pathnow, pn ) ;
                 break ;
             case parse_subprop:
-                //printf("PARSENAME parse_subprop\n") ;
+	        //printf("PARSENAME parse_subprop\n") ;
                 pathnow[-1] = '/' ;
                 pe = Parse_Property( pathlast, pn ) ;
                 break ;
@@ -339,6 +333,7 @@ static enum parse_enum Parse_RealDevice( char * filename, struct parsedname * pn
    return 0 if good
 */
 static enum parse_enum Parse_NonRealDevice( char * filename, struct parsedname * pn ) {   
+    //printf("Parse_NonRealDevice: [%s] [%s]\n", filename, pn->path);
     FS_devicefind( filename, pn ) ;
     return ( pn->dev == &NoDevice ) ? parse_error : parse_prop ;
 }

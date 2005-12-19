@@ -217,19 +217,16 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.sg = SemiGlobal ;
     if((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
       sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
-      LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, NULLSTRING(pn->path))
+      //LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, NULLSTRING(pn->path))
       if ( (pathnow=strdup(pn->path)) ) {
           FS_busless(pathnow) ;
       } else {
           ret = -ENOMEM ;
       }
-      LEVEL_DEBUG("ServerDir: pathnow=[%s]\n", pathnow);
     } else {
-      //printf("use path = %s\n", pn->path);
       pathnow = pn->path;
     }
 
-    //printf("ServerDir path=%s\n", pathnow);
     LEVEL_CALL("SERVERDIR path=%s\n", NULLSTRING(pathnow));
 
     if (ret) {
@@ -246,12 +243,12 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
             pn2.si = pn->si ; /* reuse stateinfo */
 
-            //printf("ServerDir: got %s\n",path2) ;
+	    //LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
             ret = FS_ParsedName( path2, &pn2 ) ;
 
             if ( ret ) {
                 cm.ret = -EINVAL ;
-                //printf("ServerDir: error parsing %s\n", path2);
+		//LEVEL_DEBUG("ServerDir: error parsing [%s] ret=%d\n", path2, ret);
                 free(path2) ;
                 break ;
             } else {
