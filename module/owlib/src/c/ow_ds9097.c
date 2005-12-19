@@ -131,15 +131,14 @@ static int DS9097_ProgramPulse( const struct parsedname * const pn ) {
 
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
     struct stateinfo * si = pn->si ;
-    unsigned char search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
-    unsigned char bit_number ;
-    unsigned char last_zero ;
+    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
+    int bit_number ;
+    int last_zero = -1 ;
     unsigned char bits[3] ;
     int ret ;
 
     // initialize for search
-    last_zero = 0;
-
+    printf("Pre, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     // if the last call was not the last one
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
     if ( si->LastDevice ) return -ENODEV ;
@@ -177,23 +176,25 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
             } else { /* 1,0 */
                 search_direction = 1;  // bit write value for search
             }
-        } else {
-            if ( bits[2] ) { /* 0,1 */
-                search_direction = 0;  // bit write value for search
-            } else  if (bit_number < si->LastDiscrepancy) { /* 0,0 */
-                // if this discrepancy is before the Last Discrepancy
-                // on a previous next then pick the same as last time
-                search_direction = UT_getbit(serialnumber,bit_number) ;
-            } else if (bit_number == si->LastDiscrepancy) {
-                search_direction = 1 ; // if equal to last pick 1, if not then pick 0
-            } else {
-                search_direction = 0 ;
-                // if 0 was picked then record its position in LastZero
-                last_zero = bit_number;
-                // check for Last discrepancy in family
-                if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
-            }
+        } else if ( bits[2] ) { /* 0,1 */
+            search_direction = 0;  // bit write value for search
+        } else if (bit_number > si->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
+            // Past branch, select zeros for now
+            search_direction = 0 ;
+            last_zero = bit_number;
+        } else if (bit_number == si->LastDiscrepancy) {  /* 0,0 -- new branch */
+            // at branch (again), select 1 this time
+            search_direction = 1 ; // if equal to last pick 1, if not then pick 0
+        } else  if (UT_getbit(serialnumber,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 1 ;
+        } else {  /* 0,0 -- old news, use previous "0" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 0 ;
+            last_zero = bit_number;
         }
+        // check for Last discrepancy in family
+        //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
         UT_setbit(serialnumber,bit_number,search_direction) ;
 
         // serial number search direction write bit
@@ -213,7 +214,8 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     // if the search was successful then
 
     si->LastDiscrepancy = last_zero;
-    si->LastDevice = (last_zero == 0);
+    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+    si->LastDevice = (last_zero < 0);
     return 0 ;
 }
 
