@@ -138,7 +138,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     int ret ;
 
     // initialize for search
-    printf("Pre, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+//    printf("Pre, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     // if the last call was not the last one
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
     if ( si->LastDevice ) return -ENODEV ;
@@ -214,7 +214,7 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     // if the search was successful then
 
     si->LastDiscrepancy = last_zero;
-    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     si->LastDevice = (last_zero < 0);
     return 0 ;
 }
