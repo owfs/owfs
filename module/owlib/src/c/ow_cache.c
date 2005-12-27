@@ -13,6 +13,7 @@ $Id$
 // 8/20/2004 -- changed everything, specifically no longer using db, tsearch instead!
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_counters.h"
 
 #ifdef OW_CACHE
 #include <limits.h>

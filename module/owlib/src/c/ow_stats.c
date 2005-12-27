@@ -44,6 +44,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow_stats.h"
+#include "ow_counters.h"
 
 /* ----------------- */
 /* ---- Globals ---- */
@@ -133,6 +134,19 @@ unsigned int DS9097_read_errors = 0 ;
 unsigned int DS9097_write_errors = 0 ;
 unsigned int DS9097_reset_errors = 0 ;
 unsigned int DS9097_reset_tcsetattr_errors = 0 ;
+
+// ow_ds1410.c
+unsigned int DS1410_detect_errors = 0 ;
+unsigned int DS1410_PowerByte_errors = 0 ;
+unsigned int DS1410_level_errors = 0 ;
+unsigned int DS1410_next_both_errors = 0 ;
+unsigned int DS1410_read_bits_errors = 0 ;
+unsigned int DS1410_sendback_data_errors = 0 ;
+unsigned int DS1410_sendback_bits_errors = 0 ;
+unsigned int DS1410_read_errors = 0 ;
+unsigned int DS1410_write_errors = 0 ;
+unsigned int DS1410_reset_errors = 0 ;
+unsigned int DS1410_reset_tcsetattr_errors = 0 ;
 
 // ow_ds9097U.c
 unsigned int DS2480_reset_errors = 0 ;
@@ -342,6 +356,19 @@ FS_stat_ROW(DS9097_read_errors),
 FS_stat_ROW(DS9097_write_errors),
 FS_stat_ROW(DS9097_reset_errors),
 FS_stat_ROW(DS9097_reset_tcsetattr_errors),
+
+// ow_ds9097.c
+FS_stat_ROW(DS1410_detect_errors),
+FS_stat_ROW(DS1410_PowerByte_errors),
+FS_stat_ROW(DS1410_level_errors),
+FS_stat_ROW(DS1410_next_both_errors),
+FS_stat_ROW(DS1410_read_bits_errors),
+FS_stat_ROW(DS1410_sendback_data_errors),
+FS_stat_ROW(DS1410_sendback_bits_errors),
+FS_stat_ROW(DS1410_read_errors),
+FS_stat_ROW(DS1410_write_errors),
+FS_stat_ROW(DS1410_reset_errors),
+FS_stat_ROW(DS1410_reset_tcsetattr_errors),
 
 // ow_ds9097U.c
 FS_stat_ROW(DS2480_reset_errors),

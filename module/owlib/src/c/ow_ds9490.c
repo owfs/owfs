@@ -21,6 +21,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_counters.h"
 
 #ifdef OW_USB /* conditional inclusion of USB */
 

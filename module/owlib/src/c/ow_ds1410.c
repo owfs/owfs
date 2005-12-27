@@ -11,237 +11,78 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_counters.h"
 
 #ifdef OW_PARPORT
 
-#include <sys/ioctl.h>
 #include <linux/ppdev.h>
-#include <linux/parport.h>
-#include <sys/io.h>
+#include <sys/ioctl.h>
 
-static int DS1410_PowerByte(const unsigned char byte, const unsigned int delay) ;
-static int DS1410_ProgramPulse( void ) ;
+#define WRITE0 0xFE
+#define WRITE1 0xFF
+
+struct timespec usec2   = { 0,   2000 };
+struct timespec usec4   = { 0,   4000 };
+struct timespec usec12  = { 0,  12000 };
+struct timespec usec400 = { 0, 400000 };
+
+
+/* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
+static int DS1410databyte( const unsigned char d, int fd ) ;
+static int DS1410cmdbyte( const unsigned char c, int fd ) ;
+static int DS1410status( int * result, int fd ) ;
+static int DS1410wait( int fd ) ;
+static int DS1410bit( int * bit, int fd ) ;
+static int DS1410_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) ;
+static int DS1410_ProgramPulse( const struct parsedname * const pn ) ;
 static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-int DS1410_detect( struct connection_in * in ) ;
 static int DS1410_reset( const struct parsedname * const pn ) ;
 static int DS1410_reconnect( const struct parsedname * const pn ) ;
-static int DS1410_read(unsigned char * const buf, const int size ) ;
-static int DS1410_write( const unsigned char * const bytes, const size_t num ) ;
-static int DS1410_level(int new_level) ;
-static int DS1410_read_bits( unsigned char * const bits , const int length ) ;
-static int DS1410_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) ;
-static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len ) ;
-static int DS1410_send_bit( const unsigned char data, unsigned char * const resp ) ;
+static int DS1410_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
+static int DS1410_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
+static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
 static void DS1410_setroutines( struct interface_routines * const f ) ;
-static int DS1410_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) ;
 
-/* Data */
-#define DS1410_Bit0  (0xFC | 0x02 | 0x00 )
-#define DS1410_Bit1  (0xFC | 0x02 | 0x01 )
-#define DS1410_Reset (0xFC | 0x00 | 0x01 )
-/* Control */
-#define DS1410_ENI PARPORT_CONTROL_AUTOFD /* inverted */
-/* Status */
-#define DS1410_O1BSY PARPORT_STATUS_BUSY /* inverted */
-#define DS1410_O2BSY PARPORT_STATUS_SELECT
-
-#define PIN2  0x01
-#define PIN3  0x02
-#define PIN14 DS1410_ENI
-#define PIN11 DS1410_O1BSY
-#define PIN13 DS1410_O2BSY
-
-unsigned char bit_on = 0xFC | PIN2 | PIN3 ;
-unsigned char bit_off = 0xFC | PIN3 ;
-unsigned char bit_reset = 0xFC | PIN2 ;
-unsigned char bit_od = 0xFC ;
-unsigned char ctl_high = 0x02 ;
-unsigned char ctl_low  = 0x00 ;
-#define DATA_BIT_ON  ioctl( devfd, PPWDATA, &bit_on )
-#define DATA_BIT_OFF ioctl( devfd, PPWDATA, &bit_off )
-#define DATA_RESET   ioctl( devfd, PPWDATA, &bit_reset )
-#define DATA_OD      ioctl( devfd, PPWDATA, &bit_od )
-#define CONTROL_HIGH ioctl( devfd, PPWCONTROL, &ctl_high )
-#define CONTROL_LOW  ioctl( devfd, PPWCONTROL, &ctl_low )
-
-#define BASE 0x378
-#define DATAout(x)    outb((x),BASE)
-#define BUSYraw  ((inb(BASE+1)^0x80)&0x90)
-#define CONTROLin ((inb(BASE+2)|0x04)&0x1C)
-#define CONTROLout(x) outb((x),BASE+2)
-
-
-static void CLAIM( void ) {
-    int ret = ioctl( devfd, PPCLAIM ) ;
-if ( ret ) printf("CLAIM=%d\n",ret) ;
+/* Device-specific functions */
+static void DS1410_setroutines( struct interface_routines * const f ) {
+    f->write = DS1410_write ;
+    f->read  = DS1410_read ;
+    f->reset = DS1410_reset ;
+    f->next_both = DS1410_next_both ;
+    f->PowerByte = DS1410_PowerByte ;
+    f->ProgramPulse = DS1410_ProgramPulse ;
+    f->sendback_data = DS1410_sendback_data ;
+    f->select        = BUS_select_low ;
+    f->overdrive = NULL ;
+    f->testoverdrive = NULL ;
+    f->reconnect = DS1410_reconnect ;
 }
 
-static void RELEASE( void ) {
-    int ret = ioctl( devfd, PPRELEASE ) ;
-if ( ret ) printf("RELEASE=%d\n",ret) ;
-}
-
-static int BUSY( void ) {
-    unsigned char s ;
-    int ret = ioctl( devfd, PPRSTATUS, &s ) ;
-//printf( "BUSY=%d, status=%.2X, result=%d\n",ret,s,( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ) ;
-    return ( (s ^ DS1410_O1BSY) & (DS1410_O1BSY|DS1410_O2BSY) ) ;
-}
-
-static void CONTROL( const unsigned char mask, const unsigned char val ) {
-    struct ppdev_frob_struct frob = { mask, val, } ;
-    int ret = ioctl( devfd, PPFCONTROL, &frob ) ;
-//printf( "CONTROL=%d frob={%.2X,%.2X}\n",ret,mask,val) ;
-}
-
-static void DATA( const unsigned char data ) {
-    unsigned char d = data ;
-    int z = 0 ;
-    int ret = ioctl( devfd, PPDATADIR, &z) || ioctl( devfd, PPWDATA, &d ) ;
-//printf("DATA=%d val=%.2X\n",ret,d) ;
-}
-
-static unsigned char READ( void ) {
-    unsigned char data ;
-    int ret = ioctl( devfd, PPRDATA, &data ) ;
-//printf("READ=%d val = %.2X\n",ret,data) ;
-    return data ;
-}
-
-static int RESET( void ) {
+/* Open a DS1410 after an unsucessful DS2480_detect attempt */
+/* _detect is a bit of a misnomer, no detection is actually done */
+/* Note, devfd alread allocated */
+/* Note, terminal settings already saved */
+int DS1410_detect( struct connection_in * in ) {
+    struct stateinfo si ;
+    struct parsedname pn ;
     int ret ;
-//printf("RESET\n") ;
-//    return DS1410_send_bit( 0xFD , NULL ) ;
-    ret = DS1410_send_bit( 0xFD , NULL ) ;
-//printf("Reset=%d\n",ret);
-    return ret ;
-}
+    
+    /* Set up low-level routines */
+    DS1410_setroutines( & (in->iroutines) ) ;
 
-static int toggleOD( void ) {
-    int result ;
-/*
-    CLAIM() ;
-    DATA( 0xEC ) ;
-    usleep(2) ;
-    DATA( 0xFC ) ;
-    usleep(2) ;
-    CONTROL( 0xE3, 0x06 ) ;
-    usleep(8) ;
-    result = BUSY() ? 1 : 0 ;
-    usleep(8) ;
-    CONTROL( 0xE3, 0x04 ) ;
-    DATA( 0xCF ) ;
-    usleep(8) ;
-    RELEASE() ;
-*/
-    unsigned char cont ;
-    DATAout( 0xEC ) ;
-    usleep(2);
-    DATAout(0xFC );
-    cont = CONTROLin ;
-    CONTROLout( cont|0x02 );
-    usleep(8);
-    result = BUSYraw ? 1 : 0 ;
-    usleep(8);
-    CONTROLout( cont&0xFD ) ;
-    DATAout( 0xCF );
-    usleep(8);
-//printf("toggleOD=%d\n",result) ;
-    return result ;
-}
+    /* Reset the bus */
+    in->Adapter = adapter_DS1410 ; /* OWFS assigned value */
+    in->adapter_name = "DS1410" ;
+    in->busmode = bus_parallel ;
+    
+    pn.si = &si ;
+    FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
+    pn.in = in ;
 
-static int checkOD( void ) {
-/*
-    int result ;
-    int i ;
-    CLAIM() ;
-    DATA( 0xEC ) ;
-    usleep(2) ;
-    DATA( 0xFF ) ;
-    usleep(2) ;
-    CONTROL( 0xE3, 0x06 ) ;
-    usleep(16) ;
-    result = BUSY() ? 1 : 0 ;
-    DATA( 0xFF ) ;
-    for( i=0 ; i<100 ;  ++i ) {
-        usleep(4);
-        if ( BUSY() ) break ;
+    if((ret = DS1410_reset(&pn))) {
+        STAT_ADD1(DS1410_detect_errors);
     }
-    DATA( 0xFE ) ;
-    BUSY() ;
-    CONTROL( 0xE3, 0x04 ) ;
-    DATA( 0xCF ) ;
-    usleep(5) ;
-    RELEASE() ;
-printf("checkOD=%d\n",result) ;
-    return result ;
-*/
-    unsigned char cont ;
-    unsigned char retval ;
-    int i ;
-    DATAout(0xEC);
-    usleep(2);
-    DATAout(0xFF);
-    cont = CONTROLin;
-    CONTROLout( cont|0x02 );
-    usleep(16);
-    retval = BUSYraw ? 1 : 0 ;
-    DATAout(0xFF) ;
-    i=0 ;
-    while(BUSYraw==0 && ( i++ < 2000 ) ) usleep(4) ;
-    DATAout( 0xFE ) ;
-    usleep(4);
-    inb( BASE+1 ) ;
-    CONTROLout( cont&0xFD ) ;
-    DATAout( 0xCF ) ;
-    usleep(5) ;
-//printf("CheckOD=%d\n",retval);
-    return retval ;
-}
-
-static void togglePASS( void ) {
-    toggleOD() ;
-    toggleOD() ;
-    toggleOD() ;
-    toggleOD() ;
-    usleep(20000) ;
-}
-
-static int PRESENT( void ) {
-    RESET() ;
-//    if ( DS1410_send_bit( 0xFF , NULL ) ) return timeout==0 ;
-    return 0 ;
-}
-
-static int NOPASS( void ){
-    togglePASS() ;
-    if ( PRESENT() ) return 1 ;
-    togglePASS() ;
-    if ( PRESENT() ) return 1 ;
-    togglePASS() ;
-    if ( PRESENT() ) return 1 ;
-    togglePASS() ;
-    if ( PRESENT() ) return 1 ;
-    return 0 ;
-}
-
-static int PASSTHRU( void ){
-    togglePASS() ;
-    if ( !PRESENT() ) return 1 ;
-    togglePASS() ;
-    if ( !PRESENT() ) return 1 ;
-    togglePASS() ;
-    if ( !PRESENT() ) return 1 ;
-    togglePASS() ;
-    if ( !PRESENT() ) return 1 ;
-    return 0 ;
-}
-
-static int START( void ) {
-//printf("START\n");
-    NOPASS() ;
-    if ( checkOD() && toggleOD() ) toggleOD() ;
-    return 1 ;
+    return ret;
 }
 
 //--------------------------------------------------------------------------
@@ -254,536 +95,260 @@ static int START( void ) {
 /* Returns 0=good
    bad = -EIO
  */
-static int DS1410_PowerByte(unsigned char byte, unsigned int delay) {
+static int DS1410_PowerByte(unsigned char byte, unsigned int delay, const struct parsedname * const pn) {
     int ret ;
-
-    // flush the buffers
-    COM_flush();
+    unsigned char resp ;
 
     // send the packet
-    BUSLOCK(pn);
-        ret=BUS_send_data(&byte,1) ;
-    BUSUNLOCK(pn);
-    if (ret) return ret ;
-
-// indicate the port is now at power delivery
-    ULevel = MODE_STRONG5;
-
+    if((ret=BUS_sendback_data(&byte,&resp,1,pn))) {
+        STAT_ADD1(DS1410_PowerByte_errors);
+        return ret ;
+    }
     // delay
     UT_delay( delay ) ;
-
-    // return to normal level
-    BUSLOCK(pn);
-        ret=BUS_level(MODE_NORMAL) ;
-    BUSUNLOCK(pn);
-
-    return ret ;
+    return ret;
 }
 
-static int DS1410_ProgramPulse( void ) {
+static int DS1410_reconnect( const struct parsedname * const pn ) {
+    STAT_ADD1(BUS_reconnect);
+
+    if ( !pn || !pn->in ) return -EIO;
+    STAT_ADD1(pn->in->bus_reconnect);
+
+    COM_close(pn->in);
+    usleep(100000);
+    if(!COM_open(pn->in)) {
+        if(!DS1410_detect(pn->in)) {
+            LEVEL_DEFAULT("DS1410 adapter reconnected\n");
+            return 0;
+        }
+    }
+    STAT_ADD1(BUS_reconnect_errors);
+    STAT_ADD1(pn->in->bus_reconnect_errors);
+    LEVEL_DEFAULT("Failed to reconnect DS1410 adapter!\n");
+    return -EIO ;
+}
+
+static int DS1410_ProgramPulse( const struct parsedname * const pn ) {
+    (void) pn ;
     return -EIO; /* not available */
 }
 
 
 static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
-    unsigned char search_direction = 0 ; /* initilization just to forestall incorrect compiler warning */
-    unsigned char bit_number ;
     struct stateinfo * si = pn->si ;
-    unsigned char last_zero ;
-    unsigned char bits[3] ;
+    int fd = pn->in->fd ;
+    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
+    int bit_number ;
+    int last_zero = -1 ;
+    int bits[3] ;
     int ret ;
 
     // initialize for search
-    last_zero = 0;
-
+//    printf("Pre, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     // if the last call was not the last one
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
     if ( si->LastDevice ) return -ENODEV ;
 
     /* Appropriate search command */
-    if ( (ret=BUS_send_data(&search,1)) ) return ret ;
+    if ( (ret=BUS_send_data(&search,1,pn)) ) return ret ;
       // loop to do the search
-    for ( bit_number=0; 1 ; ++bit_number ) {
-        bits[1] = bits[2] = 0xFF ;
-        if ( bit_number==0 ) {
-            if ( (ret=DS1410_sendback_bits(&bits[1],&bits[1],2)) ) return ret ;
+    for ( bit_number=0 ;; ++bit_number ) {
+        bits[1] = bits[2] = 1 ;
+        if ( bit_number==0 ) { /* First bit */
+            /* get two bits (AND'ed bit and AND'ed complement) */
+            if ( DS1410bit(&bits[1],fd) || DS1410bit(&bits[2],fd) ) return -EIO ;
         } else {
             bits[0] = search_direction ;
             if ( bit_number<64 ) {
-                if ( (ret=DS1410_sendback_bits(bits,bits,3)) ) return ret ;
-            } else {
-                if ( (ret=DS1410_sendback_bits(bits,bits,1)) ) return ret ;
+                /* Send chosen bit path, then check match on next two */
+                if ( DS1410bit(&bits[0],fd) || DS1410bit(&bits[1],fd) || DS1410bit(&bits[2],fd) ) return -EIO ;
+            } else { /* last bit */
+                if ( DS1410bit(&bits[0],fd) ) return -EIO ;
                 break ;
             }
         }
         if ( bits[1] ) {
-            if ( bits[2] ) {
+            if ( bits[2] ) { /* 1,1 */
                 break ; /* No devices respond */
-            } else {
+            } else { /* 1,0 */
                 search_direction = 1;  // bit write value for search
             }
-        } else {
-            if ( bits[2] ) {
-                search_direction = 0;  // bit write value for search
-            } else  if (bit_number < si->LastDiscrepancy) {
-                // if this discrepancy if before the Last Discrepancy
-                // on a previous next then pick the same as last time
-                search_direction = UT_getbit(serialnumber,bit_number) ;
-            } else if (bit_number == si->LastDiscrepancy) {
-                search_direction = 1 ; // if equal to last pick 1, if not then pick 0
-            } else {
-                search_direction = 0 ;
-                // if 0 was picked then record its position in LastZero
-                last_zero = bit_number;
-                // check for Last discrepancy in family
-                if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
-            }
+        } else if ( bits[2] ) { /* 0,1 */
+            search_direction = 0;  // bit write value for search
+        } else if (bit_number > si->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
+            // Past branch, select zeros for now
+            search_direction = 0 ;
+            last_zero = bit_number;
+        } else if (bit_number == si->LastDiscrepancy) {  /* 0,0 -- new branch */
+            // at branch (again), select 1 this time
+            search_direction = 1 ; // if equal to last pick 1, if not then pick 0
+        } else  if (UT_getbit(serialnumber,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 1 ;
+        } else {  /* 0,0 -- old news, use previous "0" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 0 ;
+            last_zero = bit_number;
         }
+        // check for Last discrepancy in family
+        //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
         UT_setbit(serialnumber,bit_number,search_direction) ;
 
         // serial number search direction write bit
         //if ( (ret=DS1410_sendback_bits(&search_direction,bits,1)) ) return ret ;
     } // loop until through serial number bits
 
-    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) return -EIO ;
-      // if the search was successful then
-
-    if(*serialnumber == 0x04) {
-      /* We found a DS1994/DS2404 which require longer delays */
-      pn->in->ds2404_compliance = 1 ;
-    }
-
-    si->LastDiscrepancy = last_zero;
-    si->LastDevice = (last_zero == 0);
-    return 0 ;
-}
-
-/* Set the 1-Wire Net line level.  The values for new_level are
-// 'new_level' - new level defined as
-//                MODE_NORMAL     0x00
-//                MODE_STRONG5    0x02
-//                MODE_PROGRAM    0x04
-//                MODE_BREAK      0x08 (not supported)
-//
-// Returns:    0 GOOD, !0 Error
-   Actually very simple for passive adapter
-*/
-/* return 0=good
-  -EIO not supported
- */
-static int DS1410_level(int new_level) {
-    if (new_level == ULevel) {     // check if need to change level
-        return 0 ;
-    }
-    switch (new_level) {
-    case MODE_NORMAL:
-    case MODE_STRONG5:
-        ULevel = new_level ;
-        return 0 ;
-    case MODE_PROGRAM:
-        ULevel = MODE_NORMAL ;
+    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
+        STAT_ADD1(DS1410_next_both_errors);
+      /* A minor "error" and should perhaps only return -1 to avoid
+      * reconnect */
         return -EIO ;
     }
-    return -EIO ;
-}
-
-/* Open a DS1410 after an unsucessful DS2480_detect attempt */
-/* _detect is a bit of a misnomer, no detection is actually done */
-/* Note, devfd alread allocated */
-/* Note, terminal settings already saved */
-int DS1410_detect( struct connection_in * in ) {
-    int mode = IEEE1284_MODE_COMPAT ;
-    struct timeval t = { 1 , 0 } ; /* 1 second */
-    int ret ;
-
-    if(!in) return -ENODEV;
-
-    if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
-      LEVEL_DEFAULT("Cannot open port: %s error=%s\n",in->name,strerror(errno));
-      return -ENODEV;
+    if((serialnumber[0] & 0x7F) == 0x04) {
+        /* We found a DS1994/DS2404 which require longer delays */
+        pn->in->ds2404_compliance = 1 ;
     }
+    // if the search was successful then
 
-    ret = ioperm( BASE, 3, 1 ) ;
-//printf("IOPERM=%d\n",ret) ;
-    CLAIM() ;
-
-    ret = ioctl( devfd, PPNEGOT, &mode) ;
-//printf("NEGOT=%d\n",ret);
-    ret = ioctl( devfd, PPSETTIME, &t) ;
-//printf("SETTIME=%d\n",ret);
-    RELEASE () ;
-    START() ;
-    /* Set up low-level routines */
-    DS1410_setroutines( & iroutines ) ;
-    /* Reset the bus */
-    ret =  DS1410_reset(NULL) ;
-//printf("Detect=%d\n",ret);
-    return ret ;
-//    return DS1410_reset() ;
-}
-
-static int DS1410_reconnect( const struct parsedname * const pn ) {
-    STATLOCK;
-    BUS_reconnect++;
-    STATUNLOCK;
-    if ( !pn || !pn->in ) return -EIO;
-
-    STATLOCK;
-    pn->in->bus_reconnect++;
-    STATUNLOCK;
-
-    /* Fixme: Do the reconnect here... */
-
-    STATLOCK;
-    BUS_reconnect_errors++;
-    pn->in->bus_reconnect_errors++;
-    STATUNLOCK;
-    LEVEL_DEFAULT("Failed to reconnect DS1410 adapter!\n");
-    return -EIO ;
-}
-
-/* DS1410 Reset -- A little different frolm DS2480B */
-/* Puts in 9600 baud, sends 11110000 then reads response */
-static int DS1410_reset( const struct parsedname * const pn ) {
-    unsigned char c;
-
-    c = RESET() ;
-    switch(c) {
-    case 0:
-        LEVEL_CONNECT("1-wire bus short circuit.\n")
-        /* fall through */
-    case 0xF0:
-        pn->si->AnyDevices = 0 ;
-        break ;
-    default:
-        pn->si->AnyDevices = 1 ;
-        pn->in->ProgramAvailable = 0 ; /* from digitemp docs */
-	if(pn->in->ds2404_compliance) {
-	  // extra delay for alarming DS1994/DS2404 complience
-	  UT_delay(5);
-	}
-    }
-
-    pn->in->Adapter = adapter_DS1410 ; /* OWFS assigned choice */
+    si->LastDiscrepancy = last_zero;
+//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+    si->LastDevice = (last_zero < 0);
     return 0 ;
 }
 
 /* Assymetric */
-/* Send a byte to the 1410 passive adapter */
+/* Send a byte to the 9097 passive adapter */
 /* return 0 valid, else <0 error */
 /* no matching read */
-static int DS1410_write( const unsigned char * const bytes, const size_t num ) {
+static int DS1410_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) {
+    unsigned char FF ;
     int i ;
-    int remain = num - (UART_FIFO_SIZE>>3) ;
-    int num8 = num<<3 ;
-    if ( remain>0 ) return DS1410_write(bytes,UART_FIFO_SIZE>>3) || DS1410_write(&bytes[UART_FIFO_SIZE>>3],remain) ;
-    for ( i=0;i<num8;++i) combuffer[i] = UT_getbit(bytes,i)?0xFF:0xC0;
-    return DS1410_send_and_get(combuffer,num8,NULL,0) ;
+    for ( i=0 ; i<num ; ++i )
+        if ( DS1410_sendback_data(&bytes[i],&FF,1,pn) )
+            return -EIO ;
+    return 0 ;
 }
 
 /* Assymetric */
-/* Read bytes from the 1410 passive adapter */
+/* Read bytes from the 9097 passive adapter */
 /* Time out on each byte */
 /* return 0 valid, else <0 error */
 /* No matching read */
-static int DS1410_read( unsigned char * const byte, const int num ) {
-    int i,ret ;
-    int remain = num-(UART_FIFO_SIZE>>3) ;
-    int num8 = num<<3 ;
-    if ( remain > 0 ) {
-        return DS1410_read( byte , UART_FIFO_SIZE>>3 ) || DS1410_read( &byte[UART_FIFO_SIZE>>3],remain) ;
-    }
-    if ( (ret=DS1410_send_and_get(NULL,0,combuffer,num8)) ) return ret ;
-    for ( i=0 ; i<num8 ; ++i ) UT_setbit(byte,i,combuffer[i]&0x01) ;
-    return 0 ;
-}
-
-/* Symmetric */
-/* send bits -- read bits */
-/* Actually uses bit zero of each byte */
-int DS1410_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length ) {
-    int ret ;
+static int DS1410_read( unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) {
+    unsigned char FF = 0xFF ;
     int i ;
-    if ( length > UART_FIFO_SIZE ) return DS1410_sendback_bits(outbits,inbits,UART_FIFO_SIZE)||DS1410_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
-    for ( i=0 ; i<length ; ++i ) combuffer[i] = outbits[i] ? 0xFF : 0xC0 ;
-    if ( (ret= DS1410_send_and_get(combuffer,length,inbits,length)) ) return ret ;
-    for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
+    for ( i=0 ; i<num ; ++i )
+        if ( DS1410_sendback_data(&FF,&bytes[i],1,pn) )
+            return -EIO ;
     return 0 ;
 }
 
 /* Symmetric */
 /* send a bit -- read a bit */
-static int DS1410_sendback_data( const unsigned char * data, unsigned char * const resp , const int len ) {
+static int DS1410_sendback_data( const unsigned char * data, unsigned char * const resp , const int len, const struct parsedname * const pn ) {
+    int i ;
     int bits = len<<3 ;
-    int i, ret = 0 ;
-    CLAIM() ;
+    int fd = pn->in->fd ;
     for ( i=0 ; i<bits ; ++i ) {
-        unsigned char out ;
-        if ( (ret=DS1410_send_bit( UT_getbit( data, i ), &out )) ) break ;
-        UT_setbit( resp, i , out ) ;
+        int b = UT_getbit( data, i ) ;
+        if ( DS1410bit( &b, fd ) ) return -EIO ;
+        UT_setbit( resp, i, b ) ;
     }
-    RELEASE() ;
+    return 0 ;
+}
+
+/* Data byte */
+static int DS1410databyte( const unsigned char d, int fd ) {
+    unsigned char data = d ;
+    return -ioctl( fd, PPWDATA, &data ) ;
+}
+
+/* Command byte */
+static int DS1410cmdbyte( const unsigned char c, int fd ) {
+    unsigned char cmd = c ;
+    return -ioctl( fd, PPWCONTROL, &cmd ) ;
+}
+
+/* wait on status */
+static int DS1410wait( int fd ) {
+    int count = 0 ;
+    int result ;
+    int ret ;
+
+    do {
+        ret = DS1410status( &result, fd ) ;
+        if ( ++count > 1000 ) return -ETIME ;
+        if ( nanosleep( &usec4, NULL ) ) return -errno ;
+    } while ( ! (ret || result) ) ;
     return ret ;
 }
-
-/* Symmetric */
-/* send a bit -- read a bit */
-static int DS1410_send_bit( const unsigned char data, unsigned char * const rsp ) {
-/*
-    unsigned char save, result ;
-    int i ;
-
-    CLAIM () ;
-    save = READ() ;
-    DATA( data ) ;
-    CONTROL( DS1410_ENI, 0x00 ) ;
-    CONTROL( DS1410_ENI, DS1410_ENI ) ;
-
-    i = 0 ;
-    do {
-        usleep(4) ;
-    } while( BUSY()!=0 && ++i < 10) ;
-
-    DATA( 0xFF ) ;
-
-    i = 0 ;
-    do {
-        usleep(4) ;
-    } while( BUSY()==0 && ++i < 10 ) ;
-
-    DATA( 0xFE ) ;
-    usleep(2) ;
-    result = BUSY() ? 1 : 0  ;
-    DATA( 0xFF ) ;
-
-    CONTROL( DS1410_ENI, 0x00 ) ;
-    DATA( save ) ;
-
-    RELEASE() ;
-    *resp = result ;
-    return result ;
-}
-*/
-/*
-    unsigned char save, result ;
-    int i ;
-
-    CLAIM () ;
-    DATA( 0xEC ) ;
-    usleep(2);
-    DATA( data ) ;
-    CONTROL( 0xE3 , 0x06 ) ;
-
-    i = 0 ;
-    do {
-        usleep(4) ;
-    } while( BUSY()!=0 && ++i < 100) ;
-
-    usleep(4) ;
-
-    DATA( 0xFF ) ;
-
-    do {
-        usleep(4) ;
-    } while( BUSY()==0 && ++i < 100 ) ;
-
-    DATA( 0xFE ) ;
-    usleep(4) ;
-    result = BUSY() ? 1 : 0  ;
-    if ( result && data==0xFD ) {
-        usleep(400) ;
-        DATA( 0xFF ) ;
-        usleep(4) ;
-        DATA( 0xFE ) ;
-        usleep(4) ;
-        result = BUSY() ? 1 : 0 ;
-    }
-    CONTROL( 0xE3 , 0x04 ) ;
-    DATA( 0xCF ) ;
-    usleep(12) ;
-    RELEASE() ;
-    timeout = (i>99)?1:0 ;
-printf("timeout=%d\n",timeout) ;
-    if ( resp ) *resp = result ;
-    return result ;
-*/
-    unsigned char cont ;
-    unsigned char retval ;
-    int i ;
-//    DATAout(0xEC);
-//    usleep(2);
-    DATAout(data);
-    cont = CONTROLin;
-    CONTROLout( cont|0x02 );
-    i=0 ;
-    while(BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
-    usleep(8);
-//    DATAout( 0xFF ) ;
-//    while(!BUSYraw && ( i++ < 2000 ) ) usleep(4) ;
-    DATAout( 0xFE ) ;
-    usleep(8);
-    retval = BUSYraw ? 1 : 0 ;
-    if ( retval && data==0xFD ) {
-        usleep(400);
-	DATAout(0xFF);
-	usleep(4);
-	DATAout(0xFE);
-	usleep(4);
-        retval = BUSYraw ? 1 : 0 ;
-    }
-    CONTROLout( cont&0xFD ) ;
-    DATAout( 0xCF ) ;
-    usleep(12) ;
-//    timeout = (i<2000) ? 0 : 1;
-//    rsp[0] = retval ;
-//printf("Send Bit=%d, data=%.2X timeout=%d\n",retval,data,timeout);
-    return retval ;
+    
+/* read the parallel port status and do a test */
+static int DS1410status( int * result, int fd ) {
+    unsigned char st ;
+    int ret = ioctl( fd, PPRSTATUS, &st ) ;
+    result[0] = ( st ^ 0x80 ) & 0x90 ? 1 : 0 ;
+    return -ret ;
 }
 
-/* Symetric */
-/* gets specified number of bits, one per return byte */
-static int DS1410_read_bits( unsigned char * const bits , const int length ) {
-    int i, ret ;
-    if ( length > UART_FIFO_SIZE ) return DS1410_read_bits(bits,UART_FIFO_SIZE)||DS1410_read_bits(&bits[UART_FIFO_SIZE],length-UART_FIFO_SIZE) ;
-    memset( combuffer,0xFF,(size_t)length) ;
-    if ( (ret=DS1410_send_and_get(combuffer,length,bits,length)) ) return ret ;
-    for ( i=0;i<length;++i) bits[i]&=0x01 ;
+static int DS1410bit( int * bit, int fd ) {
+    unsigned char control ;
+    if (
+        DS1410databyte( 0xEC, fd )
+        ||nanosleep( &usec2, NULL )
+        ||ioctl( fd, PPRCONTROL, &control )
+        ||DS1410databyte( bit[0]?WRITE1:WRITE0, fd )
+       ) return 1 ;
+    control = ( ( control | 0x04 ) & 0x1C ) ;
+    if (
+        DS1410cmdbyte( control|0x02, fd )
+        ||DS1410wait( fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410databyte( 0xFF, fd )
+        ||DS1410wait( fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410databyte( 0xFE, fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410status( bit, fd )
+        ||DS1410cmdbyte( control&0xFD, fd )
+        ||DS1410databyte( 0xCF,fd)
+        ||nanosleep( &usec12,NULL)
+       ) return 1 ;
     return 0 ;
 }
 
-static void DS1410_setroutines( struct interface_routines * const f ) {
-    f->write = DS1410_write ;
-    f->read  = DS1410_read ;
-    f->reset = DS1410_reset ;
-    f->next_both = DS1410_next_both ;
-    f->level = DS1410_level ;
-    f->PowerByte = DS1410_PowerByte ;
-    f->ProgramPulse = DS1410_ProgramPulse ;
-    f->sendback_data = DS1410_sendback_data ;
-    f->select        = BUS_select_low ;
-    f->overdrive = NULL ;
-    f->testoverdrive = NULL ;
-    f->reconnect = DS1410_reconnect ;
-}
-
-/* Routine to send a string of bits and get another string back */
-/* This seems rather COM-port specific */
-/* Indeed, will move to DS9097 */
-static int DS1410_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
-    size_t gl = getlength ;
-    ssize_t r ;
-    size_t sl = sendlength ;
-    int rc ;
-
-    if ( sl > 0 ) {
-        /* first flush... should this really be done? Perhaps it's a good idea
-        * so read function below doesn't get any other old result */
-        COM_flush(pn);
-    
-        /* send out string, and handle interrupted system call too */
-        while(sl > 0) {
-            if(!pn->in) break;
-            r = write(pn->in->fd, &bussend[sendlength-sl], sl);
-            if(r < 0) {
-                if(errno == EINTR) {
-                    /* write() was interrupted, try again */
-                    STATLOCK;
-                    BUS_send_and_get_interrupted++;
-                    STATUNLOCK;
-                    continue;
-                }
-                break;
-            }
-            sl -= r;
-        }
-        if(pn->in) {
-            tcdrain(pn->in->fd) ; /* make sure everthing is sent */
-            gettimeofday( &(pn->in->bus_write_time) , NULL );
-        }
-        if(sl > 0) {
-            STATLOCK;
-            BUS_send_and_get_errors++;
-            STATUNLOCK;
-            return -EIO;
-        }
-        //printf("SAG written\n");
-    }
-    
-    /* get back string -- with timeout and partial read loop */
-    if ( busget && getlength ) {
-        while ( gl > 0 ) {
-            fd_set readset;
-            struct timeval tv;
-            //printf("SAG readlength=%d\n",gl);
-            if(!pn->in) break;
-#if 1
-                /* I can't imagine that 5 seconds timeout is needed???
-                * Any comments Paul ? */
-                tv.tv_sec = 5;
-                tv.tv_usec = 0;
-#else
-                tv.tv_sec = 0;
-                tv.tv_usec = 500000;  // 500ms
-#endif
-                /* Initialize readset */
-                FD_ZERO(&readset);
-                FD_SET(pn->in->fd, &readset);
-            
-                /* Read if it doesn't timeout first */
-                rc = select( pn->in->fd+1, &readset, NULL, NULL, &tv );
-                if( rc > 0 ) {
-                //printf("SAG selected\n");
-                    /* Is there something to read? */
-                    if( FD_ISSET( pn->in->fd, &readset )==0 ) {
-                        STATLOCK;
-                        BUS_send_and_get_errors++;
-                        STATUNLOCK;
-                        return -EIO ; /* error */
-                    }
-                    update_max_delay(pn);
-                    r = read( pn->in->fd, &busget[getlength-gl], gl ) ; /* get available bytes */
-                    //printf("SAG postread ret=%d\n",r);
-                    if (r < 0) {
-                        if(errno == EINTR) {
-                            /* read() was interrupted, try again */
-                            STATLOCK;
-                            BUS_send_and_get_interrupted++;
-                            STATUNLOCK;
-                            continue;
-                        }
-                        STATLOCK;
-                        BUS_send_and_get_errors++;
-                        STATUNLOCK;
-                        return r ;
-                    }
-                    gl -= r ;
-                } else if(rc < 0) { /* select error */
-                    if(errno == EINTR) {
-                        /* select() was interrupted, try again */
-                        STATLOCK;
-                        BUS_send_and_get_interrupted++;
-                        STATUNLOCK;
-                        continue;
-                    }
-                    STATLOCK;
-                    BUS_send_and_get_select_errors++;
-                    STATUNLOCK;
-                    return -EINTR;
-                } else { /* timed out */
-                    STATLOCK;
-                    BUS_send_and_get_timeout++;
-                    STATUNLOCK;
-                    return -EAGAIN;
-                }
-        }
-    } else {
-        /* I'm not sure about this... Shouldn't flush buffer if
-        user decide not to read any bytes. Any comments Paul ? */
-        //COM_flush(pn) ;
-    }
+static int DS1410_reset( const struct parsedname * pn ) {
+    int fd = pn->in->fd ;
+    unsigned char control ;
+    if (
+        DS1410databyte( 0xEC, fd )
+        ||nanosleep( &usec2, NULL )
+        ||ioctl( fd, PPRCONTROL, &control )
+        ||DS1410databyte( 0xFD, fd )
+       ) return 1 ;
+    control = ( ( control | 0x04 ) & 0x1C ) ;
+    if (
+        DS1410cmdbyte( control|0x02, fd )
+        ||DS1410wait( fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410databyte( 0xFF, fd )
+        ||DS1410wait( fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410databyte( 0xFE, fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410status( &(pn->si->AnyDevices), fd )
+        ||nanosleep( &usec400, NULL )
+        ||DS1410databyte( 0xFF, fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410databyte( 0xFE, fd )
+        ||nanosleep( &usec4, NULL )
+        ||DS1410status( &(pn->si->AnyDevices), fd )
+        ||DS1410cmdbyte( control&0xFD, fd )
+        ||DS1410databyte( 0xCF,fd)
+        ||nanosleep( &usec12,NULL)
+       ) return 1 ;
     return 0 ;
 }
-
-
 
 #endif /* OW_PARPORT */

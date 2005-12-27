@@ -766,22 +766,43 @@ fi
 
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
+# Check for Parallel port enabled
+ENABLE_PARPORT=auto
+AC_MSG_CHECKING([if parallel port support is enabled])
 
-#Check parallel port
-AC_MSG_CHECKING(if parport DS1410E is enabled)
-ENABLE_PARPORT="false"
 AC_ARG_ENABLE(parport,
-[  --enable-parport      Enable parport (DS1410E) module (default false)],
+[  --enable-parport          Enable 1-Wire parallel port DS1410E support (default auto)],
 [
-AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_PARPORT=true
+    AC_MSG_RESULT([$enableval])
+
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_PARPORT=false
     fi
 ],
 [
-    AC_MSG_RESULT([no (default)])
+    AC_MSG_RESULT([yes (default)])
 ])
+
 AC_SUBST(ENABLE_PARPORT)
+
+# Include ppdev.h if the parallel port is enabled
+
+if test "${ENABLE_PARPORT}" != "false" ; then
+
+    AC_CHECK_HEADER(ppdev.h,pin_init_user, ,[
+    if test "${ENABLE_PARPORT}" = "true" ; then
+        AC_MSG_ERROR([ppdev.h must be installed to use parallel port adapter])
+    else
+            AC_MSG_WARN([ppdev.h not found, parallel port will be disabled])
+            ENABLE_PARPORT=false
+            AC_SUBST(ENABLE_PARPORT)
+    fi
+    ])
+    if test "${ENABLE_PARPORT}" != "false" ; then
+        ENABLE_PARPORT=true
+        AC_SUBST(ENABLE_PARPORT)
+    fi
+fi
 
 AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 

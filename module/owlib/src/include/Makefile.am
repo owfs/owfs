@@ -30,6 +30,7 @@ header_DATA = compat_getopt.h \
         ow_2890.h \
         ow_devices.h \
         ow.h \
+        ow_counters.h \ 
         ow_lcd.h \
         ow_none.h \
         ow_settings.h \

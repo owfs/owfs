@@ -15,7 +15,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
-//#include <sys/uio.h>
+#include "ow_counters.h"
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */

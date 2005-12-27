@@ -11,6 +11,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow_devices.h"
+#include "ow_counters.h"
 
 #include <stdlib.h>
 #include <string.h>

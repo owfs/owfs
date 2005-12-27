@@ -11,8 +11,9 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_counters.h"
 
-#include "ow_xxxx.h"
+/* #include "ow_xxxx.h" */
 #include <sys/time.h>
 
 static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;

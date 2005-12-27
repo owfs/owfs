@@ -11,6 +11,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_counters.h"
 
 int LINK_mode ; /* flag to use LINKs in ascii mode */
 

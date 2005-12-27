@@ -11,6 +11,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_counters.h"
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 

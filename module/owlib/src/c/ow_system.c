@@ -52,7 +52,6 @@ $Id$
  aREAD_FUNCTION( FS_pidfile ) ;
  uREAD_FUNCTION( FS_uint ) ;
  uREAD_FUNCTION( FS_version ) ;
- aREAD_FUNCTION( FS_detail ) ;
  uREAD_FUNCTION( FS_r_overdrive ) ;
 uWRITE_FUNCTION( FS_w_overdrive ) ;
  uREAD_FUNCTION( FS_r_ds2404_compliance ) ;

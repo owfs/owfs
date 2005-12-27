@@ -11,6 +11,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow_devices.h"
+#include "ow_counters.h"
 
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) ;
 static int FS_branchoff( const struct parsedname * const pn) ;

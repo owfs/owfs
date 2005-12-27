@@ -41,6 +41,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow_xxxx.h"
+#include "ow_counters.h"
 
 #include <sys/time.h>
 
