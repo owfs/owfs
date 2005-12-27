@@ -227,7 +227,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
     char * retbuffer = NULL ;
 //printf("ReadHandler:\n");
     if ( ( pn->type != pn_real )   /* stat, sys or set dir */
-     && ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) )) {
+           && ( (pn->state & pn_bus) && FS_RemoteBus(pn) )) {
         //printf("ReadHandler: call ServerSize pn->path=%s\n", pn->path);
         cm->payload = ServerSize(pn->path, pn) ;
     } else {
@@ -298,7 +298,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         size_t _pathlen ;
         char *path ;
 
-        if ((pn->state & pn_bus) && (get_busmode(pn->in)==bus_remote)) {
+        if ((pn->state & pn_bus) && FS_RemoteBus(pn)) {
             if ( (path=strdup(pn->path))==NULL ) return ;
             FS_busless(path) ;
         } else {

@@ -104,17 +104,7 @@ int OW_init( const char * device ) {
     /* Set up owlib */
     LibSetup() ;
     
-    switch( device[0] ) {
-    case 0:
-        ret = -ENODEV ;
-        break ;
-    case 'u':
-        ret = OW_ArgUSB(&device[1]) ;
-        break ;
-    default:
-        ret = OW_ArgGeneric(device) ;
-        break ;
-    }
+    ret = OW_ArgGeneric(device) ;
 
     background = 0 ; // Cannot enter background mode, since this is a called library
     if ( ret==0 ) ret = LibStart() ;

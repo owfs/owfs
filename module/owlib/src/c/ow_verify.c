@@ -11,6 +11,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
 static int BUS_verify(const struct parsedname * const pn) ;

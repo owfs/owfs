@@ -16,6 +16,7 @@ $Id$
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
 #include "ow.h"
+#include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
 int FS_type(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;

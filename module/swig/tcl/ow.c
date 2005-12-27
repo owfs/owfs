@@ -144,7 +144,7 @@ owtcl_ObjCmdProc(Owtcl_Connect)
 	}
 	OW_ArgUSB(p);
       } else {
-	OW_ArgSerial(arg);
+	OW_ArgDevice(arg);
       }
     }
   }

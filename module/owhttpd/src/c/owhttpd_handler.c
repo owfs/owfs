@@ -207,7 +207,7 @@ static void HTTPtitle(FILE * out, const char * title ) {
 }
 
 static void HTTPheader(FILE * out, const char * head ) {
-    fprintf(out, "<BODY "BODYCOLOR"><TABLE "TOPTABLE"><TR><TD>OWFS on %s</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://owfs.sourceforge.net'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n", indevice&&indevice->name?indevice[0].name:"");
+    fprintf(out, "<BODY "BODYCOLOR"><TABLE "TOPTABLE"><TR><TD>OWFS on %s</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://owfs.sourceforge.net'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n", SimpleBusName);
     fprintf(out, "<H1>%s</H1><HR>\n", head);
 }
 
@@ -251,7 +251,7 @@ static void Show( FILE * out, const char * const path, const char * const file, 
 
     pn2.si = &si;
     if ( (FS_ParsedName(fullpath, &pn2) == 0) ) {
-      if ((pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote)) {
+        if ((pn2.state & pn_bus) && FS_RemoteBus(&pn2)) {
 	//printf("call FS_size(%s)\n", fullpath);
 	suglen = FS_size(fullpath) ;
       } else {

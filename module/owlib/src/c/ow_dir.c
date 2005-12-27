@@ -12,6 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 #include "ow_counters.h"
+#include "ow_connection.h"
 
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) ;
 static int FS_branchoff( const struct parsedname * const pn) ;
@@ -598,15 +599,15 @@ int FS_busless( char * path ) {
     char * rest = path ;
     while ( (p = strsep(&rest,"/")) ) {
         if (rest) rest[-1]='/' ; /* restore delimiter */
-	//LEVEL_DEBUG("p=[%s]\n", p);
-        if ( strncasecmp( p, "bus.", 4 )==NULL ) {
-	  if((del = strchr(p, '/'))) {
-	    memmove( p, del+1, strlen(del+1)+1 );
-	  } else {
-	    *p = '\000';
-	  }
-	  //LEVEL_DEBUG("path=[%s] (bus removed)\n", path);
-	  return 0 ;
+            //LEVEL_DEBUG("p=[%s]\n", p);
+        if ( strncasecmp( p, "bus.", 4 )==0 ) {
+            if((del = strchr(p, '/'))) {
+                memmove( p, del+1, strlen(del+1)+1 );
+            } else {
+                *p = '\000';
+            }
+            //LEVEL_DEBUG("path=[%s] (bus removed)\n", path);
+            return 0 ;
         }
     }
     //LEVEL_DEBUG("path=[%s] (bus not removed)\n", path);

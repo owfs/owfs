@@ -11,6 +11,7 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_connection.h"
 
 /* Routines for handling a linked list of connections in and out */
 /* typical connection in would be gthe serial port or USB */
@@ -165,3 +166,9 @@ void FreeOut( void ) {
         free(now) ;
     }
 }
+
+int FS_RemoteBus( const struct parsedname * pn ) {
+    return pn->in == bus_remote ;
+}
+
+

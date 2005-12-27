@@ -235,24 +235,7 @@ extern char * fuse_open_opt ;
  * Note: Each bit sent to the 1-wire net requeires 1 byte to be sent to
  *       the uart.
  */
-#define UART_FIFO_SIZE 160
-//extern unsigned char combuffer[] ;
-
-/** USB bulk endpoint FIFO size
-  Need one for each for read and write
-  This is for alt setting "3" -- 64 bytes, 1msec polling
-*/
-#define USB_FIFO_EACH 64
-#define USB_FIFO_READ 0
-#define USB_FIFO_WRITE USB_FIFO_EACH
-#define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
-
-#if USB_FIFO_SIZE > UART_FIFO_SIZE
-    #define MAX_FIFO_SIZE USB_FIFO_SIZE
-#else
-    #define MAX_FIFO_SIZE UART_FIFO_SIZE
-#endif
-
+#
 /* Floating point */
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */
@@ -334,155 +317,14 @@ enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft
 /* Predeclare parsedname */
 struct parsedname ;
 
-/* -------------------------------------------- */
-/* Interface-specific routines ---------------- */
-struct interface_routines {
-    /* assymetric read (only input, no slots emitted */
-    int (* read) ( unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
-    /* assymetric write (only output, no response obtained */
-    int (* write) (const unsigned char * const bytes , const size_t num, const struct parsedname * pn ) ;
-    /* reset the interface -- actually the 1-wire bus */
-    int (* reset ) (const struct parsedname * const pn ) ;
-    /* Bulk of search routine, after set ups for first or alarm or family */
-    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-    /* Change speed between overdrive and normal on the 1-wire bus */
-    int (* overdrive) (const unsigned int overdrive, const struct parsedname * const pn) ;
-    /* Change speed between overdrive and normal on the 1-wire bus */
-    int (* testoverdrive) (const struct parsedname * const pn) ;
-    /* Send a byte with bus power to follow */
-    int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
-    /* Send a 12V 480msec oulse to program EEPROM */
-    int (* ProgramPulse) (const struct parsedname * pn) ;
-    /* send and recieve data*/
-    int (* sendback_data) (const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * pn ) ;
-    /* select a device */
-    int (* select) ( const struct parsedname * const pn ) ;
-    /* reconnect with a balky device */
-    int (* reconnect) ( const struct parsedname * const pn ) ;
+/* predeclare connection_in/out */
+struct connection_in ;
+struct connection_out ;
 
-} ;
-
-struct connin_serial {
-    speed_t speed;
-    int USpeed ;
-    int ULevel ;
-    int UMode ;
-    struct termios oldSerialTio;    /*old serial port settings*/
-} ;
-struct connin_link {
-    speed_t speed;
-    int USpeed ;
-    int ULevel ;
-    int UMode ;
-    struct termios oldSerialTio;    /*old serial port settings*/
-} ;
-struct connin_server {
-    char * host ;
-    char * service ;
-    struct addrinfo * ai ;
-    struct addrinfo * ai_ok ;
-} ;
-struct connin_usb {
-    struct usb_device * dev ;
-    struct usb_dev_handle * usb ;
-    int USpeed ;
-    int ULevel ;
-    int UMode ;
-    char ds1420_address[8];
-  /* "Name" of the device, like "8146572300000051"
-   * This is set to the first DS1420 id found on the 1-wire adapter which
-   * exists on the DS9490 adapters. If user only have a DS2490 chip, there
-   * are no such DS1420 device available. It's used to find the 1-wire adapter
-   * if it's disconnected and later reconnected again.
-   */
-} ;
-
-
-//enum server_type { srv_unknown, srv_direct, srv_client, src_
-/* Network connection structure */
-enum bus_mode { bus_unknown=0, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
-enum adapter_type {
-    adapter_DS9097=0,
-    adapter_DS1410=1,
-    adapter_DS9097U2=2,
-    adapter_DS9097U=3,
-    adapter_LINK=7,
-    adapter_DS9490=8,
-    adapter_tcp=9,
-    adapter_Bad=10,
-    adapter_LINK_10,
-    adapter_LINK_11,
-    adapter_LINK_12,
-} ;
-extern int LINK_mode ; /* flag to use LINKs in ascii mode */
-struct connection_in {
-    struct connection_in * next ;
-    int index ;
-    char * name ;
-    int fd ;
-#ifdef OW_MT
-    pthread_mutex_t bus_mutex ;
-    pthread_mutex_t dev_mutex ;
-    void * dev_db ;
-#endif /* OW_MT */
-    unsigned char reconnect_in_progress ;
-    /* Since reconnect is initiated in a very low-level function I have to
-     * add this to avoid a recursive reconnect attempt. */
-    struct timeval last_lock ; /* statistics */
-    struct timeval last_unlock ;
-    unsigned int bus_reconnect ;
-    unsigned int bus_reconnect_errors ;
-    unsigned int bus_locks ;
-    unsigned int bus_unlocks ;
-    struct timeval bus_time ;
-
-    struct timeval bus_read_time ;
-    struct timeval bus_write_time ; /* for statistics */
-  
-    enum bus_mode busmode ;
-    struct interface_routines iroutines ;
-    enum adapter_type Adapter ;
-    char * adapter_name ;
-    int use_overdrive_speed ;
-    int ds2404_compliance ;
-    int ProgramAvailable ;
-    /* Static buffer for serial conmmunications */
-    /* Since only used during actual transfer to/from the adapter,
-        should be protected from contention even when multithreading allowed */
-    unsigned char combuffer[MAX_FIFO_SIZE] ;
-    union {
-        struct connin_serial serial ;
-        struct connin_link   link   ;
-        struct connin_server server ;
-        struct connin_usb    usb    ;
-    } connin ;
-} ;
-/* Network connection structure */
-struct connection_out {
-    struct connection_out * next ;
-    char * name ;
-    char * host ;
-    char * service ;
-    struct addrinfo * ai ;
-    struct addrinfo * ai_ok ;
-    int fd ;
-#ifdef OW_MT
-    pthread_mutex_t accept_mutex ;
-#endif /* OW_MT */
-} ;
-extern struct connection_out * outdevice ;
-extern struct connection_in * indevice ;
+/* Exposed connection info */
 extern int outdevices ;
 extern int indevices ;
-
-#if 1
-/* This bug-fix/workaround function seem to be fixed now... At least on
- * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
- * returned very strange result on c->busmode before... but not anymore */
-enum bus_mode get_busmode(struct connection_in *c);
-#else
-#define get_busmode(x) (c->busmode)
-#endif
+extern char * SimpleBusName ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -749,18 +591,6 @@ struct client_msg {
 extern time_t start_time ;
 extern time_t dir_time ; /* time of last directory scan */
 
-
-// mode bit flags for level
-#define MODE_NORMAL                    0x00
-#define MODE_STRONG5                   0x01
-#define MODE_PROGRAM                   0x02
-#define MODE_BREAK                     0x04
-
-// 1Wire Bus Speed Setting Constants
-#define ONEWIREBUSSPEED_REGULAR        0x00
-#define ONEWIREBUSSPEED_FLEXIBLE       0x01 /* Only used for USB adapter */
-#define ONEWIREBUSSPEED_OVERDRIVE      0x02
-
 #ifdef OW_MT
     #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
     #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
@@ -815,6 +645,7 @@ int FS_dirname_type( char * const buffer, const size_t length, const struct pars
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
 
+int FS_RemoteBus( const struct parsedname * pn ) ;
 
 /* Utility functions */
 unsigned char CRC8( const unsigned char * bytes , const int length ) ;
@@ -826,7 +657,6 @@ unsigned char char2num( const char * s ) ;
 unsigned char string2num( const char * s ) ;
 char num2char( const unsigned char n ) ;
 void num2string( char * s , const unsigned char n ) ;
-void COM_speed(speed_t new_baud, const struct parsedname * pn) ;
 void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
 void bytes2string( char * str , const unsigned char * b , const int bytes ) ;
 int UT_getbit(const unsigned char * buf, const int loc) ;
@@ -836,12 +666,6 @@ void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
 void UT_fromDate( const DATE D, unsigned char * data) ;
 DATE UT_toDate( const unsigned char * date ) ;
 int FS_busless( char * path ) ;
-
-/* Serial port */
-int COM_open( struct connection_in * in  ) ;
-void COM_flush( const struct parsedname * pn  ) ;
-void COM_close( struct connection_in * in  );
-void COM_break( const struct parsedname * pn  ) ;
 
 /* Cache  and Storage functions */
 void Cache_Open( void ) ;
@@ -887,16 +711,11 @@ int ServerAddr(  struct connection_out * out ) ;
 int ClientConnect( struct connection_in * in ) ;
 int ServerListen( struct connection_out * out ) ;
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
-void FreeIn( void ) ;
-void FreeOut( void ) ;
-struct connection_in * NewIn( void ) ;
-struct connection_out * NewOut( void ) ;
-struct connection_in *find_connection_in(int nr);
 
 int OW_ArgNet( const char * arg ) ;
 int OW_ArgServer( const char * arg ) ;
 int OW_ArgUSB( const char * arg ) ;
-int OW_ArgSerial( const char * arg ) ;
+int OW_ArgDevice( const char * arg ) ;
 int OW_ArgGeneric( const char * arg ) ;
 
 void update_max_delay( const struct parsedname * const pn ) ;
@@ -942,38 +761,6 @@ int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct p
 int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
     size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
 
-/* Low-level functions
-    slowly being abstracted and separated from individual
-    interface type details
-*/
-int DS2480_baud( speed_t baud, const struct parsedname * const pn );
-
-int DS2480_detect( struct connection_in * in ) ;
-#ifdef OW_PARPORT
-int DS1410_detect( struct connection_in * in ) ;
-#endif /* OW_PARPORT */
-int DS9097_detect( struct connection_in * in ) ;
-int LINK_detect( struct connection_in * in ) ;
-int BadAdapter_detect( struct connection_in * in ) ;
-#ifdef OW_USB
-    int DS9490_detect( struct connection_in * in ) ;
-    void DS9490_close( struct connection_in * in ) ;
-#endif /* OW_USB */
-
-int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
-int BUS_select_low(const struct parsedname * const pn) ;
-int BUS_sendout_cmd(const unsigned char * cmd , const size_t len, const struct parsedname * pn  ) ;
-int BUS_send_cmd(const unsigned char * const cmd , const size_t len, const struct parsedname * pn  ) ;
-int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const size_t len, const struct parsedname * pn  ) ;
-int BUS_send_data(const unsigned char * const data , const size_t len, const struct parsedname * pn  ) ;
-int BUS_readin_data(unsigned char * const data , const size_t len, const struct parsedname * pn ) ;
-int BUS_alarmverify(const struct parsedname * const pn) ;
-int BUS_normalverify(const struct parsedname * const pn) ;
-
 /* error functions */
 void err_msg(const char *fmt, ...) ;
 void err_bad(const char *fmt, ...) ;
@@ -987,18 +774,6 @@ extern int log_available ;
 #define LEVEL_CALL(...)       if (error_level>2) err_msg(__VA_ARGS__) ;
 #define LEVEL_DATA(...)       if (error_level>3) err_msg(__VA_ARGS__) ;
 #define LEVEL_DEBUG(...)      if (error_level>4) err_debug(__VA_ARGS__) ;
-
-#define BUS_reset(pn)                       ((pn)->in->iroutines.reset)(pn)
-#define BUS_read(bytes,num,pn)              ((pn)->in->iroutines.read)(bytes,num,pn)
-#define BUS_write(bytes,num,pn)             ((pn)->in->iroutines.write)(bytes,num,pn)
-#define BUS_sendback_data(data,resp,len,pn) ((pn)->in->iroutines.sendback_data)(data,resp,len,pn)
-#define BUS_next_both(sn,search,pn)         ((pn)->in->iroutines.next_both)(sn,search,pn)
-#define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
-#define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
-#define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)
-#define BUS_reconnect(pn)                   ((pn)->in->iroutines.reconnect)(pn)
-#define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive) ? (((pn)->in->iroutines.overdrive)(speed,(pn))) : (-ENOTSUP))
-#define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive) ? (((pn)->in->iroutines.testoverdrive)((pn))) : (-ENOTSUP))
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
@@ -1020,8 +795,5 @@ void BUS_unlock( const struct parsedname * pn ) ;
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->si->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
-
-
-
 
 #endif /* OW_H */

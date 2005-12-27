@@ -30,18 +30,9 @@ char *version( ) {
 int init( const char * dev ) {
     int ret = 1 ; /* Good initialization */
     //    LibSetup() ; /* Done in %init section */
-    if ( OWLIB_can_init_start() ) {
-        ret = 0 ;
-    } else {
-        background = 0 ;
-        pid_file = 0 ;
-        if ( !strcmp(dev,"u") ) {
-            OW_ArgUSB(NULL) ;
-        } else {
-            OW_ArgGeneric( dev ) ;
-        }
-        if ( LibStart() ) ret = 0 ;
-    }
+    background = 0 ;
+    pid_file = 0 ;
+    if ( OWLIB_can_init_start() || OW_ArgGeneric(dev) || LibStart() ) ret = 0 ;
     OWLIB_can_init_end() ;
     return ret ; 
 }

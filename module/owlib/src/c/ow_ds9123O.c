@@ -12,6 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_counters.h"
+#include "ow_connection.h"
 
 /* DS9123O support
    PIC (Actually PICBrick) based

@@ -14,6 +14,7 @@ $Id$
 #include "ow_devices.h"
 
 int now_background = 0 ;
+char * SimpleBusName = "None" ;
 
 /* All ow library setup */
 void LibSetup( void ) {
@@ -156,7 +157,6 @@ void __pthread_initialize(void) ;
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
     struct connection_in * in = indevice ;
-    struct stat s ;
     int ret = 0 ;
 
 #ifdef __UCLIBC__
@@ -200,17 +200,21 @@ int LibStart( void ) {
     }
     do {
         switch( get_busmode(in) ) {
-        case bus_remote:
-            ret = Server_detect(in) ;
-            break ;
-        case bus_serial:
-            /** Actually COM and Parallel */
-            if ( (ret=stat( in->name, &s )) ) {
-                LEVEL_DEFAULT("Cannot stat port: %s error=%s\n",in->name,strerror(ret))
-            } else if ( ! S_ISCHR(s.st_mode) ) {
-                LEVEL_DEFAULT("Not a character device: %s\n",in->name)
-                ret = -EBADF ;
-            } else if ( major(s.st_rdev) == 99 ) { /* parport device */
+            case bus_remote:
+                ret = Server_detect(in) ;
+                break ;
+            case bus_serial:
+                if ( COM_open(in) ) { /* serial device */
+                    ret = -ENODEV ;
+                } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
+                    LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",in->name)
+                    if ( DS9097_detect(in) ) {
+                        LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n",in->name)
+                        ret = -ENODEV ;
+                    }
+                }
+                break ;
+            case bus_parallel:
 #ifndef OW_PARPORT
                 ret =  -ENOPROTOOPT ;
 #else /* OW_PARPORT */
@@ -218,32 +222,23 @@ int LibStart( void ) {
                     LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n")
                 }
 #endif /* OW_PARPORT */
-            } else if ( COM_open(in) ) { /* serial device */
-                ret = -ENODEV ;
-            } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
-                LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",in->name)
-                if ( DS9097_detect(in) ) {
-                    LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n",in->name)
-                    ret = -ENODEV ;
-                }
-            }
-            break ;
-        case bus_usb:
-#ifdef OW_USB
-            ret = DS9490_detect(in) ;
-#else /* OW_USB */
-            LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname)
-            ret = 1 ;
-#endif /* OW_USB */
-            /* in->connin.usb.ds1420_address should be set to identify the
-                * adapter just in case it's disconnected. It's done in the
-                * DS9490_next_both() if not set. */
-            // in->name should be set to something, even if DS9490_detect fails
-            if(!in->name) in->name = strdup("-1/-1") ;
-            break ;
-        default:
-            ret = 1 ;
-            break ;
+                break ;
+            case bus_usb:
+    #ifdef OW_USB
+                ret = DS9490_detect(in) ;
+    #else /* OW_USB */
+                LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname)
+                ret = 1 ;
+    #endif /* OW_USB */
+                /* in->connin.usb.ds1420_address should be set to identify the
+                    * adapter just in case it's disconnected. It's done in the
+                    * DS9490_next_both() if not set. */
+                // in->name should be set to something, even if DS9490_detect fails
+                if(!in->name) in->name = strdup("-1/-1") ;
+                break ;
+            default:
+                ret = 1 ;
+                break ;
         }
         if (ret) BadAdapter_detect(in) ;
     } while ( (in=in->next) ) ;
@@ -280,6 +275,10 @@ int LibStart( void ) {
         fprintf(pid,"%lu",(long unsigned int)pid_num ) ;
         fclose(pid) ;
     }
+
+    /* Use first bus for http bus name */
+    SimpleBusName = indevice->name ;
+    
     return 0 ;
 }
 

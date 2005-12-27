@@ -13,6 +13,14 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_connection.h"
+
+#ifdef OW_PARPORT
+ #include <linux/fs.h> /* for MAJOR() */
+#endif /* OW_PARPORT */
+
+static int OW_ArgSerial( const char * arg ) ;
+static int OW_ArgParallel( const char * arg ) ;
 
 const struct option owopts_long[] = {
     {"device",     required_argument,NULL,'d'},
@@ -325,20 +333,53 @@ int OW_ArgServer( const char * arg ) {
     return 0 ;
 }
 
-int OW_ArgSerial( const char * arg ) {
+int OW_ArgDevice( const char * arg ) {
+    struct stat sbuf ;
+    if ( stat( arg, &sbuf ) ) {
+        LEVEL_DEFAULT("Cannot access device %s\n",arg) ;
+        return 1 ;
+    }
+    if ( ! S_ISCHR( sbuf.st_mode ) ) {
+        LEVEL_DEFAULT("Not a \"character\" device %s\n",arg) ;
+        return 1 ;
+    }
+#ifdef OW_PARPORT
+    if ( MAJOR(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
+#endif /* OW_PARPORT */
+    return OW_ArgSerial(arg) ;
+} 
+
+static int OW_ArgSerial( const char * arg ) {
     struct connection_in * in = NewIn() ;
     if ( in==NULL ) {
         LEVEL_DEFAULT("Cannot allocate memory for serial struct\n")
-        return 1 ;
+                return 1 ;
     }
     in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
 
     /* Support DS1994/DS2404 which require longer delays, and is automatically
-     * turned on in *_next_both(). 
-     * If it's turned off, it will result into a faster reset-sequence.
-     */
+    * turned on in *_next_both().
+    * If it's turned off, it will result into a faster reset-sequence.
+    */
+    in->ds2404_compliance = 0 ;
+    return 0 ;
+}
+
+static int OW_ArgParallel( const char * arg ) {
+    struct connection_in * in = NewIn() ;
+    if ( in==NULL ) {
+        LEVEL_DEFAULT("Cannot allocate memory for parallel struct\n")
+                return 1 ;
+    }
+    in->name = strdup(arg) ;
+    in->busmode = bus_parallel ;
+
+    /* Support DS1994/DS2404 which require longer delays, and is automatically
+    * turned on in *_next_both().
+    * If it's turned off, it will result into a faster reset-sequence.
+    */
     in->ds2404_compliance = 0 ;
     return 0 ;
 }
@@ -372,7 +413,15 @@ int OW_ArgUSB( const char * arg ) {
 
 int OW_ArgGeneric( const char * arg ) {
     if ( arg && arg[0] ) {
-        return arg[0]=='/' ? OW_ArgSerial(arg) : OW_ArgNet(arg) ;
+        switch (arg[0]) {
+            case '/':
+                return OW_ArgDevice(arg) ;
+            case 'u':
+            case 'U':
+                return OW_ArgUSB(&arg[1]) ;
+            default:
+                return OW_ArgNet(arg) ;
+        }
     }
     return 1 ;
 }
