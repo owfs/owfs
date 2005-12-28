@@ -39,15 +39,14 @@ static int DS1410_ProgramPulse( const struct parsedname * const pn ) ;
 static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS1410_reset( const struct parsedname * const pn ) ;
 static int DS1410_reconnect( const struct parsedname * const pn ) ;
-static int DS1410_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int DS1410_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
 static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
 static void DS1410_setroutines( struct interface_routines * const f ) ;
+static int DS1410_open( struct connection_in * in ) ;
+static void DS1410_close( struct connection_in * in ) ;
+
 
 /* Device-specific functions */
 static void DS1410_setroutines( struct interface_routines * const f ) {
-    f->write = DS1410_write ;
-    f->read  = DS1410_read ;
     f->reset = DS1410_reset ;
     f->next_both = DS1410_next_both ;
     f->PowerByte = DS1410_PowerByte ;
@@ -68,6 +67,7 @@ int DS1410_detect( struct connection_in * in ) {
     struct parsedname pn ;
     int ret ;
     
+    if ( DS1410_open(in) ) return -EIO ;
     /* Set up low-level routines */
     DS1410_setroutines( & (in->iroutines) ) ;
 
@@ -116,18 +116,16 @@ static int DS1410_reconnect( const struct parsedname * const pn ) {
     if ( !pn || !pn->in ) return -EIO;
     STAT_ADD1(pn->in->bus_reconnect);
 
-    COM_close(pn->in);
+    DS1410_close(pn->in);
     usleep(100000);
-    if(!COM_open(pn->in)) {
-        if(!DS1410_detect(pn->in)) {
-            LEVEL_DEFAULT("DS1410 adapter reconnected\n");
-            return 0;
-        }
+    if( DS1410_detect(pn->in) ) {
+        STAT_ADD1(BUS_reconnect_errors);
+        STAT_ADD1(pn->in->bus_reconnect_errors);
+        LEVEL_DEFAULT("Failed to reconnect DS1410 adapter!\n");
+        return -EIO ;
     }
-    STAT_ADD1(BUS_reconnect_errors);
-    STAT_ADD1(pn->in->bus_reconnect_errors);
-    LEVEL_DEFAULT("Failed to reconnect DS1410 adapter!\n");
-    return -EIO ;
+    LEVEL_DEFAULT("DS1410 adapter reconnected\n");
+    return 0;
 }
 
 static int DS1410_ProgramPulse( const struct parsedname * const pn ) {
@@ -215,33 +213,6 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, 
     si->LastDiscrepancy = last_zero;
 //    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     si->LastDevice = (last_zero < 0);
-    return 0 ;
-}
-
-/* Assymetric */
-/* Send a byte to the 9097 passive adapter */
-/* return 0 valid, else <0 error */
-/* no matching read */
-static int DS1410_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) {
-    unsigned char FF ;
-    int i ;
-    for ( i=0 ; i<num ; ++i )
-        if ( DS1410_sendback_data(&bytes[i],&FF,1,pn) )
-            return -EIO ;
-    return 0 ;
-}
-
-/* Assymetric */
-/* Read bytes from the 9097 passive adapter */
-/* Time out on each byte */
-/* return 0 valid, else <0 error */
-/* No matching read */
-static int DS1410_read( unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) {
-    unsigned char FF = 0xFF ;
-    int i ;
-    for ( i=0 ; i<num ; ++i )
-        if ( DS1410_sendback_data(&FF,&bytes[i],1,pn) )
-            return -EIO ;
     return 0 ;
 }
 
@@ -351,5 +322,27 @@ static int DS1410_reset( const struct parsedname * pn ) {
        ) return 1 ;
     return 0 ;
 }
+
+static int DS1410_open( struct connection_in * in ) {
+    if ( (in->fd = open(in->name, O_RDWR)) >= 0 ) {
+        if ( ioctl(in->fd,PPCLAIM ) == 0 ) return 0 ;
+        LEVEL_CONNECT("Cannot claim DS1410E at %s\n",in->name) ;
+        close( in->fd ) ;
+    } else {
+        int e = errno ;
+        LEVEL_CONNECT("Cannot open DS1410E at %s\n",in->name) ;
+    }
+    in->fd = -1 ;
+    return -EIO ;
+}
+
+static void DS1410_close( struct connection_in * in ) {
+    if ( in->fd >= 0 ) {
+        ioctl(in->fd, PPRELEASE ) ;
+        close( in->fd ) ;
+    }
+    in->fd = -1 ;
+}
+
 
 #endif /* OW_PARPORT */

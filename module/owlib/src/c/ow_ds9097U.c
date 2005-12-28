@@ -34,8 +34,6 @@ static int DS2480_sendback_data( const unsigned char * const data , unsigned cha
 static void DS2480_setroutines( struct interface_routines * const f ) ;
 
 static void DS2480_setroutines( struct interface_routines * const f ) {
-    f->write = DS2480_write ;
-    f->read  = DS2480_read ;
     f->reset = DS2480_reset ;
     f->next_both = DS2480_next_both ;
     f->PowerByte = DS2480_PowerByte ;

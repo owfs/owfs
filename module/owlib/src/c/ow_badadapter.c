@@ -20,8 +20,6 @@ static int BadAdapter_ProgramPulse( const struct parsedname * pn ) ;
 static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 static int BadAdapter_reset( const struct parsedname * const pn ) ;
 static int BadAdapter_reconnect( const struct parsedname * const pn ) ;
-static int BadAdapter_read(unsigned char * const buf, const size_t size, const struct parsedname * pn ) ;
-static int BadAdapter_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
 static int BadAdapter_select(const struct parsedname * const pn) ;
 static int BadAdapter_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
 
@@ -32,8 +30,6 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->connin.usb.usb = NULL ;
 #endif
     in->Adapter = adapter_Bad ; /* OWFS assigned value */
-    in->iroutines.write         = BadAdapter_write         ;
-    in->iroutines.read          = BadAdapter_read          ;
     in->iroutines.reset         = BadAdapter_reset         ;
     in->iroutines.next_both     = BadAdapter_next_both     ;
     in->iroutines.PowerByte     = BadAdapter_PowerByte     ;
@@ -63,18 +59,6 @@ static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char sear
 }
 static int BadAdapter_reset( const struct parsedname * const pn ) {
     (void) pn ;
-    return -ENXIO ;
-}
-static int BadAdapter_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
-    (void) pn ;
-    (void) buf ;
-    (void) size ;
-    return -ENXIO ;
-}
-static int BadAdapter_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) {
-    (void) pn ;
-    (void) bytes ;
-    (void) num ;
     return -ENXIO ;
 }
 static int BadAdapter_select(const struct parsedname * const pn) {

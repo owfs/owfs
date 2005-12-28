@@ -30,8 +30,6 @@ static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, cons
 static int LINK_CR( const struct parsedname * pn ) ;
 
 static void LINK_setroutines( struct interface_routines * const f ) {
-    f->write = LINK_write ;
-    f->read  = LINK_read ;
     f->reset = LINK_reset ;
     f->next_both = LINK_next_both ;
     f->PowerByte = LINK_PowerByte ;
@@ -54,12 +52,12 @@ int LINK_detect( struct connection_in * in ) {
 
     // set the baud rate to 9600
     COM_speed(B9600,&pn);
-    if ( LINK_reset(&pn)==0 && BUS_write(" ",1,&pn)==0 ) {
+    if ( LINK_reset(&pn)==0 && LINK_write(" ",1,&pn)==0 ) {
         char tmp[36] = "(none)";
         char * stringp = tmp ;
         /* read the version string */
         memset(tmp,0,36) ;
-        BUS_read(tmp,36,&pn) ; // ignore return value -- will time out, probably
+        LINK_read(tmp,36,&pn) ; // ignore return value -- will time out, probably
         COM_flush(&pn) ;
 
         /* Now find the dot for the version parsing */
@@ -92,9 +90,9 @@ int LINK_detect( struct connection_in * in ) {
 static int LINK_reset( const struct parsedname * const pn ) {
     char resp[3] ;
     COM_flush(pn) ;
-    if ( BUS_write("\rr",2,pn) ) return -errno ;
+    if ( LINK_write("\rr",2,pn) ) return -errno ;
 //    sleep(1) ;
-    if ( BUS_read(resp,4,pn) ) return -errno ;
+    if ( LINK_read(resp,4,pn) ) return -errno ;
     switch( resp[1] ) {
         case 'P':
             pn->si->AnyDevices=1 ;
@@ -120,13 +118,13 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
 
     COM_flush(pn) ;
     if ( si->LastDiscrepancy == -1 ) {
-        if ( (ret=BUS_write("f",1,pn)) ) return ret ;
+        if ( (ret=LINK_write("f",1,pn)) ) return ret ;
         si->LastDiscrepancy = 0 ;
     } else {
-        if ( (ret=BUS_write("n",1,pn)) ) return ret ;
+        if ( (ret=LINK_write("n",1,pn)) ) return ret ;
     }
     
-    if ( (ret=BUS_read(resp,20,pn)) ) return ret ;
+    if ( (ret=LINK_read(resp,20,pn)) ) return ret ;
 
     switch ( resp[0] ) {
         case '-':
@@ -331,7 +329,7 @@ static int LINK_sendback_data( const unsigned char * const data, unsigned char *
     unsigned char * buf = pn->in->combuffer ;
 
     if ( size == 0 ) return 0 ;
-    if ( BUS_write("b",1,pn) ) return -EIO ;
+    if ( LINK_write("b",1,pn) ) return -EIO ;
 //    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
     for ( left=size; left ; ) {
         i = (left>16)?16:left ;
@@ -385,14 +383,14 @@ static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, cons
     char byte[2] ;
 
     num2string( byte, out[0] ) ;
-    if ( BUS_write( byte, 2, pn ) || BUS_read( byte, 2, pn ) ) return -EIO ;
+    if ( LINK_write( byte, 2, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
     in[0] = string2num( byte ) ;
     return 0 ;
 }
 
 static int LINK_CR( const struct parsedname * pn ) {
     char byte[2] ;
-    if ( BUS_write( "\r", 1, pn ) || BUS_read( byte, 2, pn ) ) return -EIO ;
+    if ( LINK_write( "\r", 1, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
     return 0 ;
 }
 

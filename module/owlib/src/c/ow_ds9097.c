@@ -21,8 +21,6 @@ static int DS9097_ProgramPulse( const struct parsedname * const pn ) ;
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS9097_reset( const struct parsedname * const pn ) ;
 static int DS9097_reconnect( const struct parsedname * const pn ) ;
-static int DS9097_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int DS9097_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) ;
 static int DS9097_read_bits( unsigned char * const bits , const int length, const struct parsedname * const pn ) ;
 static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) ;
 static int DS9097_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
@@ -34,8 +32,6 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
 
 /* Device-specific functions */
 static void DS9097_setroutines( struct interface_routines * const f ) {
-    f->write = DS9097_write ;
-    f->read  = DS9097_read ;
     f->reset = DS9097_reset ;
     f->next_both = DS9097_next_both ;
     f->PowerByte = DS9097_PowerByte ;
@@ -289,44 +285,6 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     }
     /* Flush the input and output buffers */
     COM_flush(pn) ;
-    return 0 ;
-}
-
-/* Assymetric */
-/* Send a byte to the 9097 passive adapter */
-/* return 0 valid, else <0 error */
-/* no matching read */
-static int DS9097_write( const unsigned char * const bytes, const size_t num, const struct parsedname * const pn ) {
-    int ret;
-    unsigned int i ;
-    int remain = num - (UART_FIFO_SIZE>>3) ;
-    unsigned int num8 = num<<3 ;
-    if ( remain>0 ) return DS9097_write(bytes,UART_FIFO_SIZE>>3,pn) || DS9097_write(&bytes[UART_FIFO_SIZE>>3],(unsigned)remain,pn) ;
-    for ( i=0;i<num8;++i) pn->in->combuffer[i] = UT_getbit(bytes,i)?OneBit:ZeroBit;
-    ret = DS9097_send_and_get(pn->in->combuffer,num8,NULL,0,pn) ;
-    if(ret) {
-        STAT_ADD1(DS9097_write_errors);
-    }
-    return ret;
-}
-
-/* Assymetric */
-/* Read bytes from the 9097 passive adapter */
-/* Time out on each byte */
-/* return 0 valid, else <0 error */
-/* No matching read */
-static int DS9097_read( unsigned char * const byte, const size_t num, const struct parsedname * const pn ) {
-    int ret ;
-    int remain = (int)num-(UART_FIFO_SIZE>>3) ;
-    unsigned int i, num8 = num<<3 ;
-    if ( remain > 0 ) {
-        return DS9097_read( byte, UART_FIFO_SIZE>>3,pn ) || DS9097_read( &byte[UART_FIFO_SIZE>>3],remain,pn) ;
-    }
-    if ( (ret=DS9097_send_and_get(NULL,0,pn->in->combuffer,num8,pn)) ) {
-        STAT_ADD1(DS9097_read_errors);
-        return ret ;
-    }
-    for ( i=0 ; i<num8 ; ++i ) UT_setbit(byte,i,pn->in->combuffer[i]&0x01) ;
     return 0 ;
 }
 

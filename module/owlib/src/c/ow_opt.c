@@ -15,10 +15,6 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-#ifdef OW_PARPORT
- #include <linux/fs.h> /* for MAJOR() */
-#endif /* OW_PARPORT */
-
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
 
@@ -344,7 +340,7 @@ int OW_ArgDevice( const char * arg ) {
         return 1 ;
     }
 #ifdef OW_PARPORT
-    if ( MAJOR(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
+    if ( major(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
 #endif /* OW_PARPORT */
     return OW_ArgSerial(arg) ;
 } 
