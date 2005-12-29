@@ -574,7 +574,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     for ( i=0 ; i<10 ; ++i ) {
         UT_delay(1) ;
         BUSLOCK(pn);
-            ret = BUS_read(p,1,pn) ;
+ //           ret = BUS_read(p,1,pn) ;
         BUSUNLOCK(pn);
 	  printf("OW_w_mem: get ret=%d and %02X as result\n", ret, p[0]);
         if ( ret ) return 1 ;
@@ -635,7 +635,7 @@ static int OW_flush( const struct parsedname * pn, int lock ) {
   
   if(lock) BUSLOCK(pn);
   do {
-    ret = BUS_read(&p,1,pn ) ;
+//    ret = BUS_read(&p,1,pn ) ;
     if(ret) {
       break;
     }
