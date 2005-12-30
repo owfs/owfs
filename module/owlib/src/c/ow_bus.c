@@ -68,7 +68,7 @@ static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
 
     /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
     if(ret >= -1) return ret;
-
+    LEVEL_CONNECT("SELECTION ERROR\n");
     ret = BUS_reconnect( pn ) ;
     if(ret) { LEVEL_DATA("BUS_selection_error: reconnect error = %d\n", ret) ; }
     return ret ;

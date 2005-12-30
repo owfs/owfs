@@ -629,26 +629,26 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
  */
 static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) {
     int ret ;
-    unsigned char bits = CMD_COMM | FUNCTSEL_BIT | pn->in->connin.serial.USpeed | PRIME5V_FALSE ;
+    unsigned char bits = CMD_COMM | FUNCTSEL_BIT | pn->in->connin.serial.USpeed ;
     unsigned char cmd[] = {
         // set the SPUD time value
         CMD_CONFIG | PARMSEL_5VPULSE | PARMSET_infinite ,
         // bit 1
-        ((byte & 0x01) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x01) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 2
-        ((byte & 0x02) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x02) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 3
-        ((byte & 0x04) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x04) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 4
-        ((byte & 0x08) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x08) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 5
-        ((byte & 0x10) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x10) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 6
-        ((byte & 0x20) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x20) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 7
-        ((byte & 0x40) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x40) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE ,
         // bit 8
-        ((byte & 0x80) ? BITPOL_ONE : BITPOL_ZERO) | bits ,
+        ((byte & 0x80) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_TRUE ,
     } ;
     unsigned char resp[9] ;
 
@@ -659,42 +659,23 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
     // read back the 9 byte response from setting time limit
     if ( (ret=DS2480_sendback_cmd(cmd,resp,9,pn)) || (ret=(resp[0]&0x81)?-EIO:0) ) {
         STAT_ADD1(DS2480_PowerByte_1_errors);
-        /* Make sure it's set back to normal mode since the command might be sent
-        * correctly, but response is received with errors. Otherwise it will be
-        * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
-        * Just hope the command will return ok and ignore return value.
-        * Other read/write/dir functions will try to set it back to MODE_NORMAL
-        * if it fails the first time here.
-        */
-        pn->in->connin.serial.ULevel = MODE_STRONG5;
-        DS2480_level(MODE_NORMAL,pn) ;
-        return ret ;
-    }
-//printf("Sendback byte=%.2X Resp=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X Cmd=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X \n",byte,resp[1],resp[2],resp[3],resp[4],resp[5],resp[6],resp[7],resp[8],cmd[1],cmd[2],cmd[3],cmd[4],cmd[5],cmd[6],cmd[7],cmd[8]) ;
-//printf("All=%.2X\n",((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) );
-
-    // check the response bit
-    ret = byte ^ ( ((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) ) ;
-
-    if ( ret ) {
+    } else if ( (ret= byte ^
+                 ( ((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) )
+                ) ) {
         STAT_ADD1(DS2480_PowerByte_2_errors);
-        /* Make sure it's set back to normal mode since the command might be sent
-        * correctly, but response is received with errors. Otherwise it will be
-        * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
-        * Just hope the command will return ok and ignore return value.
-        * Other read/write/dir functions will try to set it back to MODE_NORMAL
-        * if it fails the first time here.
-        */
-        pn->in->connin.serial.ULevel = MODE_STRONG5;
-        DS2480_level(MODE_NORMAL,pn) ;
-        return ret ;
+    } else {
+        UT_delay( delay ) ;
     }
+    /* Make sure it's set back to normal mode since the command might be sent
+    * correctly, but response is received with errors. Otherwise it will be
+    * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
+    * Just hope the command will return ok and ignore return value.
+    * Other read/write/dir functions will try to set it back to MODE_NORMAL
+    * if it fails the first time here.
+    */
 
-// indicate the port is now at power delivery
+    // indicate the port is now at power delivery
     pn->in->connin.serial.ULevel = MODE_STRONG5;
-
-    // delay
-    UT_delay( delay ) ;
 
     // return to normal level
     ret = DS2480_level(MODE_NORMAL,pn) ;
