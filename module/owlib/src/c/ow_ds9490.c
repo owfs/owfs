@@ -31,25 +31,25 @@ $Id$
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
-static int DS9490_reset( const struct parsedname * const pn ) ;
-static int DS9490_open( const struct parsedname * const pn ) ;
-static int DS9490_reconnect( const struct parsedname * const pn ) ;
-static int DS9490_getstatus(unsigned char * const buffer,const struct parsedname * const pn, int readlen ) ;
-static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len,const struct parsedname * const pn ) ;
-static int DS9490_level(int new_level,const struct parsedname * const pn) ;
-static void DS9490_setroutines( struct interface_routines * const f ) ;
-static int DS9490_detect_low( const struct parsedname * const pn ) ;
-static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,const struct parsedname * const pn) ;
-static int DS9490_ProgramPulse( const struct parsedname * const pn) ;
-static int DS9490_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn) ;
-static int DS9490_write( const unsigned char * const buf, const size_t size, const struct parsedname * const pn) ;
-static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * const pn ) ;
-static int DS9490_testoverdrive(const struct parsedname * const pn) ;
-static int DS9490_redetect_low( const struct parsedname * const pn ) ;
+static int DS9490_reset( const struct parsedname * pn ) ;
+static int DS9490_open( const struct parsedname * pn ) ;
+static int DS9490_reconnect( const struct parsedname * pn ) ;
+static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct parsedname * pn ) ;
+static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int DS9490_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+static int DS9490_level(int new_level, const struct parsedname * pn) ;
+static void DS9490_setroutines( struct interface_routines * f ) ;
+static int DS9490_detect_low( const struct parsedname * pn ) ;
+static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+static int DS9490_ProgramPulse( const struct parsedname * pn) ;
+static int DS9490_read( unsigned char * buf, const size_t size, const struct parsedname * pn) ;
+static int DS9490_write( const unsigned char * buf, const size_t size, const struct parsedname * pn) ;
+static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) ;
+static int DS9490_testoverdrive(const struct parsedname * pn) ;
+static int DS9490_redetect_low( const struct parsedname * pn ) ;
 
 /* Device-specific routines */
-static void DS9490_setroutines( struct interface_routines * const f ) {
+static void DS9490_setroutines( struct interface_routines * f ) {
     f->reset = DS9490_reset ;
     f->next_both = DS9490_next_both ;
     f->PowerByte = DS9490_PowerByte ;
@@ -190,7 +190,7 @@ int DS9490_detect( struct connection_in * in ) {
 
 
 
-static int DS9490_setup_adapter(const struct parsedname * const pn) {
+static int DS9490_setup_adapter(const struct parsedname * pn) {
   unsigned char buffer[32];
   int ret ;
   usb_dev_handle * usb = pn->in->connin.usb.usb ;
@@ -223,7 +223,7 @@ static int DS9490_setup_adapter(const struct parsedname * const pn) {
 
   pn->in->connin.usb.ULevel = MODE_NORMAL ;
 
-  if((ret=DS9490_getstatus(buffer,pn,0)) < 0) {
+  if((ret=DS9490_getstatus(buffer,0,pn)) < 0) {
     LEVEL_DATA("DS9490_setup_adapter: getstatus failed ret=%d\n", ret);
     return ret ;
   }
@@ -232,7 +232,7 @@ static int DS9490_setup_adapter(const struct parsedname * const pn) {
   return 0 ;
 }
 
-static int DS9490_open( const struct parsedname * const pn ) {
+static int DS9490_open( const struct parsedname * pn ) {
     int ret ;
     usb_dev_handle * usb ;
 
@@ -290,7 +290,7 @@ static int DS9490_open( const struct parsedname * const pn ) {
 
 /* When the errors stop the USB device from functioning -- close and reopen.
  * If it fails, re-scan the USB bus and search for the old adapter */
-static int DS9490_reconnect( const struct parsedname * const pn ) {
+static int DS9490_reconnect( const struct parsedname * pn ) {
     int ret ;
     STATLOCK;
     BUS_reconnect++;
@@ -348,7 +348,7 @@ static int DS9490_reconnect( const struct parsedname * const pn ) {
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static int DS9490_detect_low( const struct parsedname * const pn ) {
+static int DS9490_detect_low( const struct parsedname * pn ) {
     struct usb_bus *bus ;
     struct usb_device *dev ;
     int useusb = pn->in->fd ; /* fd holds the number of the adapter */
@@ -436,7 +436,7 @@ static int DS9490_detect_low( const struct parsedname * const pn ) {
     return -ENODEV ;
 }
 
-static int usbdevice_in_use(char *name) {
+static int usbdevice_in_use(char * name) {
     struct connection_in *in = indevice;
     while(in) {
         if ( (in->busmode == bus_usb) && (in->name) && (!strcmp(in->name, name)) ) return 1; // It seems to be in use already
@@ -446,7 +446,7 @@ static int usbdevice_in_use(char *name) {
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static int DS9490_redetect_low( const struct parsedname * const pn ) {
+static int DS9490_redetect_low( const struct parsedname * pn ) {
     struct usb_bus *bus ;
     struct usb_device *dev ;
     unsigned char sn[8] ;
@@ -580,7 +580,7 @@ void DS9490_close(struct connection_in * in) {
    otherwise return number of status bytes in buffer
 */
 
-static int DS9490_getstatus(unsigned char * const buffer, const struct parsedname * const pn, int readlen) {
+static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct parsedname * pn ) {
     int ret , loops = 0 ;
     int i ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
@@ -651,7 +651,7 @@ static int DS9490_getstatus(unsigned char * const buffer, const struct parsednam
     return (ret - 16) ;  // return number of status bytes in buffer
 }
 
-static int DS9490_testoverdrive(const struct parsedname * const pn) {
+static int DS9490_testoverdrive(const struct parsedname * pn) {
     unsigned char buffer[32] ;
     unsigned char r[8] ;
     unsigned char p = 0x69 ;
@@ -681,7 +681,7 @@ static int DS9490_testoverdrive(const struct parsedname * const pn) {
                     if(r[i] != pn->sn[i]) break ;
                 }
                 if(i==8) {
-                    if((i = DS9490_getstatus(buffer,pn,0)) < 0) {
+                    if((i = DS9490_getstatus(buffer,0,pn)) < 0) {
                         //printf("DS9490_testoverdrive: failed to get status\n");
                     } else {
                         //printf("DS9490_testoverdrive: i=%d status=%X\n", i, (i>0 ? buffer[16] : 0));
@@ -696,7 +696,7 @@ static int DS9490_testoverdrive(const struct parsedname * const pn) {
     return -EINVAL ;
 }
 
-static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * const pn ) {
+static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) {
     int ret ;
     unsigned char sp = 0x3C;
     unsigned char resp ;
@@ -745,7 +745,7 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
 }
 
 /* Reset adapter and detect devices on the bus */
-static int DS9490_reset( const struct parsedname * const pn ) {
+static int DS9490_reset( const struct parsedname * pn ) {
     int i, ret ;
     unsigned char val ;
     unsigned char buffer[32] ;
@@ -794,7 +794,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
       UT_delay(5);
     }
 
-    if((ret=DS9490_getstatus(buffer,pn,0)) < 0) {
+    if((ret=DS9490_getstatus(buffer,0,pn)) < 0) {
         STAT_ADD1(DS9490_reset_errors);
         if(ret == -1) {
             /* Short detected, but otherwise no bigger "problem"?
@@ -826,7 +826,7 @@ static int DS9490_reset( const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int DS9490_read( unsigned char * const buf, const size_t size, const struct parsedname * const pn) {
+static int DS9490_read( unsigned char * buf, const size_t size, const struct parsedname * pn) {
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_read\n");
@@ -836,7 +836,7 @@ static int DS9490_read( unsigned char * const buf, const size_t size, const stru
     return ret ;
 }
 
-static int DS9490_write( const unsigned char * const buf, const size_t size, const struct parsedname * const pn) {
+static int DS9490_write( const unsigned char * buf, const size_t size, const struct parsedname * pn) {
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_write\n");
@@ -846,7 +846,7 @@ static int DS9490_write( const unsigned char * const buf, const size_t size, con
     return ret ;
 }
 
-static int DS9490_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len,const struct parsedname * const pn ) {
+static int DS9490_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) {
     int ret = 0 ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     unsigned char buffer[32] ;
@@ -866,7 +866,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
     // COMM_BLOCK_IO | COMM_IM | COMM_F == 0x0075
     if ( ((ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_BLOCK_IO | COMM_IM | COMM_F, len, NULL, 0, TIMEOUT_USB )) < 0)
         ||
-        ((ret = DS9490_getstatus(buffer,pn,len)) < 0) // wait for len bytes
+        ((ret = DS9490_getstatus(buffer,len,pn)) < 0) // wait for len bytes
         ) {
       LEVEL_DATA("USBsendback control problem ret=%d\n", ret);
         STAT_ADD1(DS9490_sendback_data_errors);
@@ -881,7 +881,7 @@ static int DS9490_sendback_data( const unsigned char * const data , unsigned cha
     return 0 ;
 }
 
-static int next_both_errors( const struct parsedname * const pn, int ret ) {
+static int next_both_errors( const struct parsedname * pn, int ret ) {
     STAT_ADD1(DS9490_next_both_errors);
 
     /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
@@ -904,7 +904,7 @@ static int next_both_errors( const struct parsedname * const pn, int ret ) {
  * return -EIO    on errors
  */
 
-static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
+static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     unsigned char buffer[32] ;
     unsigned char * cb = pn->in->combuffer ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
@@ -986,7 +986,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         return -EIO ;
     }
 #else
-    if((ret = DS9490_getstatus(buffer,pn,0)) < 0) {
+    if((ret = DS9490_getstatus(buffer,0,pn)) < 0) {
         LEVEL_DATA("USBnextboth: getstatus error\n") ;
         next_both_errors(pn, -EIO) ;
         return -EIO ;
@@ -1068,7 +1068,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 /* Returns 0=good
    bad = -EIO
  */
-static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,const struct parsedname * const pn) {
+static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,const struct parsedname * pn) {
     unsigned char buffer[32] ;
     unsigned char resp ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
@@ -1162,7 +1162,7 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     return 0 ;
 }
 
-static int DS9490_HaltPulse(const struct parsedname * const pn) {
+static int DS9490_HaltPulse(const struct parsedname * pn) {
     unsigned char buffer[32] ;
     struct timeval tv ;
     time_t endtime, now ;
@@ -1186,7 +1186,7 @@ static int DS9490_HaltPulse(const struct parsedname * const pn) {
         }
 
 	/* Can't wait for STATUSFLAGS_IDLE... just get first availalbe status flag */
-        if((ret=DS9490_getstatus(buffer,pn,-1)) < 0) {
+        if((ret=DS9490_getstatus(buffer,-1,pn)) < 0) {
 	  LEVEL_DEFAULT("DS9490_HaltPulse: err3 ret=%d\n", ret);
 	  break;
         }
@@ -1223,7 +1223,7 @@ static int DS9490_HaltPulse(const struct parsedname * const pn) {
 /* return 0=good
   -EIO not supported
  */
-static int DS9490_level(int new_level,const struct parsedname * const pn) {
+static int DS9490_level(int new_level, const struct parsedname * pn) {
     int ret ;
     int lev ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
@@ -1273,7 +1273,7 @@ static int DS9490_level(int new_level,const struct parsedname * const pn) {
 }
 
 /* The USB device can't actually deliver the EPROM programming voltage */
-static int DS9490_ProgramPulse( const struct parsedname * const pn ) {
+static int DS9490_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
     return -ENOPROTOOPT ;
 }

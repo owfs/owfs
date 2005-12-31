@@ -34,19 +34,19 @@ static int DS1410cmdbyte( const unsigned char c, int fd ) ;
 static int DS1410status( int * result, int fd ) ;
 static int DS1410wait( int fd ) ;
 static int DS1410bit( int * bit, int fd ) ;
-static int DS1410_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) ;
-static int DS1410_ProgramPulse( const struct parsedname * const pn ) ;
-static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-static int DS1410_reset( const struct parsedname * const pn ) ;
-static int DS1410_reconnect( const struct parsedname * const pn ) ;
-static int DS1410_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
-static void DS1410_setroutines( struct interface_routines * const f ) ;
+static int DS1410_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+static int DS1410_ProgramPulse( const struct parsedname * pn ) ;
+static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int DS1410_reset( const struct parsedname * pn ) ;
+static int DS1410_reconnect( const struct parsedname * pn ) ;
+static int DS1410_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+static void DS1410_setroutines( struct interface_routines * f ) ;
 static int DS1410_open( struct connection_in * in ) ;
 static void DS1410_close( struct connection_in * in ) ;
 
 
 /* Device-specific functions */
-static void DS1410_setroutines( struct interface_routines * const f ) {
+static void DS1410_setroutines( struct interface_routines * f ) {
     f->reset = DS1410_reset ;
     f->next_both = DS1410_next_both ;
     f->PowerByte = DS1410_PowerByte ;
@@ -96,7 +96,7 @@ int DS1410_detect( struct connection_in * in ) {
 /* Returns 0=good
    bad = -EIO
  */
-static int DS1410_PowerByte(unsigned char byte, unsigned int delay, const struct parsedname * const pn) {
+static int DS1410_PowerByte(unsigned char byte, unsigned int delay, const struct parsedname * pn) {
     int ret ;
     unsigned char resp ;
 
@@ -110,7 +110,7 @@ static int DS1410_PowerByte(unsigned char byte, unsigned int delay, const struct
     return ret;
 }
 
-static int DS1410_reconnect( const struct parsedname * const pn ) {
+static int DS1410_reconnect( const struct parsedname * pn ) {
     STAT_ADD1(BUS_reconnect);
 
     if ( !pn || !pn->in ) return -EIO;
@@ -128,13 +128,13 @@ static int DS1410_reconnect( const struct parsedname * const pn ) {
     return 0;
 }
 
-static int DS1410_ProgramPulse( const struct parsedname * const pn ) {
+static int DS1410_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
     return -EIO; /* not available */
 }
 
 
-static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
+static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     struct stateinfo * si = pn->si ;
     int fd = pn->in->fd ;
     int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
@@ -218,7 +218,7 @@ static int DS1410_next_both(unsigned char * serialnumber, unsigned char search, 
 
 /* Symmetric */
 /* send a bit -- read a bit */
-static int DS1410_sendback_data( const unsigned char * data, unsigned char * const resp , const int len, const struct parsedname * const pn ) {
+static int DS1410_sendback_data( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
     int i ;
     int bits = len<<3 ;
     int fd = pn->in->fd ;
@@ -329,7 +329,6 @@ static int DS1410_open( struct connection_in * in ) {
         LEVEL_CONNECT("Cannot claim DS1410E at %s\n",in->name) ;
         close( in->fd ) ;
     } else {
-        int e = errno ;
         LEVEL_CONNECT("Cannot open DS1410E at %s\n",in->name) ;
     }
     in->fd = -1 ;

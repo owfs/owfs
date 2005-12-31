@@ -30,17 +30,17 @@ $Id$
 
 /* All the rest of the program sees is the DS9123O_detect and the entry in iroutines */
 
-static int DS9123O_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) ;
+static int DS9123O_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
 static int DS9123O_ProgramPulse( const struct parsedname * const pn ) ;
-static int DS9123O_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-static int DS9123O_reset( const struct parsedname * const pn ) ;
-static int DS9123O_reconnect( const struct parsedname * const pn ) ;
-static int DS9123O_level(int new_level, const struct parsedname * const pn) ;
-static int DS9123O_read_bits( unsigned char * const bits , const int length, const struct parsedname * const pn ) ;
-static int DS9123O_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) ;
-static int DS9123O_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
-static void DS9123O_setroutines( struct interface_routines * const f ) ;
-static int DS9123O_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) ;
+static int DS9123O_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int DS9123O_reset( const struct parsedname * pn ) ;
+static int DS9123O_reconnect( const struct parsedname * pn ) ;
+static int DS9123O_level(int new_level, const struct parsedname * pn) ;
+static int DS9123O_read_bits( unsigned char * bits , const size_t length, const struct parsedname * pn ) ;
+static int DS9123O_sendback_bits( const unsigned char * outbits , unsigned char * inbits, const size_t length, const struct parsedname * pn ) ;
+static int DS9123O_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+static void DS9123O_setroutines( struct interface_routines * f ) ;
+static int DS9123O_send_and_get( const unsigned char * bussend, const size_t sendlength, unsigned char * busget, const size_t getlength, const struct parsedname * pn ) ;
 
 #define	OneBit	0xFF
 #define ZeroBit 0xC0
@@ -121,7 +121,7 @@ DS9123OwithOther.frm:7090:            WriteToPIC doowrx8, nullcmd, nullcmd, null
 
 
 /* Device-specific functions */
-static void DS9123O_setroutines( struct interface_routines * const f ) {
+static void DS9123O_setroutines( struct interface_routines * f ) {
     f->reset = DS9123O_reset ;
     f->next_both = DS9123O_next_both ;
     f->level = DS9123O_level ;
@@ -175,7 +175,7 @@ int DS9123O_detect( struct connection_in * in ) {
 /* Returns 0=good
    bad = -EIO
  */
-static int DS9123O_PowerByte(unsigned char byte, unsigned int delay, const struct parsedname * const pn) {
+static int DS9123O_PowerByte(unsigned char byte, unsigned int delay, const struct parsedname * pn) {
     int ret ;
 
     // flush the buffers
@@ -198,7 +198,7 @@ static int DS9123O_PowerByte(unsigned char byte, unsigned int delay, const struc
     return ret;
 }
 
-static int DS9123O_reconnect( const struct parsedname * const pn ) {
+static int DS9123O_reconnect( const struct parsedname * pn ) {
     STAT_ADD1(BUS_reconnect);
 
     if ( !pn || !pn->in ) return -EIO;
@@ -218,13 +218,13 @@ static int DS9123O_reconnect( const struct parsedname * const pn ) {
     return -EIO ;
 }
 
-static int DS9123O_ProgramPulse( const struct parsedname * const pn ) {
+static int DS9123O_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
     return -EIO; /* not available */
 }
 
 
-static int DS9123O_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
+static int DS9123O_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     struct stateinfo * si = pn->si ;
     unsigned char search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
     unsigned char bit_number ;
@@ -325,7 +325,7 @@ static int DS9123O_next_both(unsigned char * serialnumber, unsigned char search,
 /* return 0=good
   -EIO not supported
  */
-static int DS9123O_level(int new_level, const struct parsedname * const pn) {
+static int DS9123O_level(int new_level, const struct parsedname * pn) {
     if (new_level == pn->in->ULevel) {     // check if need to change level
         return 0 ;
     }
@@ -345,7 +345,7 @@ static int DS9123O_level(int new_level, const struct parsedname * const pn) {
 
 /* DS9123O Reset -- A little different frolm DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
-static int DS9123O_reset( const struct parsedname * const pn ) {
+static int DS9123O_reset( const struct parsedname * pn ) {
     unsigned char resetbyte = 0xF0 ;
     unsigned char c;
     struct termios term;
@@ -417,7 +417,7 @@ static int DS9123O_reset( const struct parsedname * const pn ) {
 /* Symmetric */
 /* send bits -- read bits */
 /* Actually uses bit zero of each byte */
-int DS9123O_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) {
+int DS9123O_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) {
     int ret ;
     int i ;
     if ( length > UART_FIFO_SIZE ) return DS9123O_sendback_bits(outbits,inbits,UART_FIFO_SIZE,pn)
@@ -433,7 +433,7 @@ int DS9123O_sendback_bits( const unsigned char * const outbits , unsigned char *
 
 /* Symmetric */
 /* send a bit -- read a bit */
-static int DS9123O_sendback_data( const unsigned char * data, unsigned char * const resp , const int len, const struct parsedname * const pn ) {
+static int DS9123O_sendback_data( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
     int remain = len - (UART_FIFO_SIZE>>3) ;
 //printf("sendback len=%d, U>>3=%d, remain=%d\n",len,(UART_FIFO_SIZE>>3),remain);
     if ( remain>0 ) {
@@ -454,7 +454,7 @@ static int DS9123O_sendback_data( const unsigned char * data, unsigned char * co
 
 /* Symetric */
 /* gets specified number of bits, one per return byte */
-static int DS9123O_read_bits( unsigned char * const bits , const int length, const struct parsedname * const pn ) {
+static int DS9123O_read_bits( unsigned char * bits , const size_t length, const struct parsedname * pn ) {
     int i, ret ;
     if ( length > UART_FIFO_SIZE ) return DS9123O_read_bits(bits,UART_FIFO_SIZE,pn)||DS9123O_read_bits(&bits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
     memset( pn->in->combuffer,0xFF,(size_t)length) ;
@@ -469,7 +469,7 @@ static int DS9123O_read_bits( unsigned char * const bits , const int length, con
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9123O */
-static int DS9123O_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
+static int DS9123O_send_and_get( const unsigned char * bussend, const size_t sendlength, unsigned char * busget, const size_t getlength, const struct parsedname * pn ) {
     size_t gl = getlength ;
     ssize_t r ;
     size_t sl = sendlength ;

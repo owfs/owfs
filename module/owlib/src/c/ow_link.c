@@ -17,19 +17,19 @@ $Id$
 int LINK_mode ; /* flag to use LINKs in ascii mode */
 
 //static void byteprint( const unsigned char * b, int size ) ;
-static int LINK_write(const unsigned char *const buf, const size_t size, const struct parsedname * const pn ) ;
-static int LINK_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int LINK_reset( const struct parsedname * const pn ) ;
-static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) ;
-static int LINK_ProgramPulse( const struct parsedname * const pn ) ;
-static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int len, const struct parsedname * const pn ) ;
-static int LINK_select(const struct parsedname * const pn) ;
-static int LINK_reconnect( const struct parsedname * const pn ) ;
+static int LINK_write(const unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
+static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
+static int LINK_reset( const struct parsedname * pn ) ;
+static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+static int LINK_ProgramPulse( const struct parsedname * pn ) ;
+static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
+static int LINK_select(const struct parsedname * pn) ;
+static int LINK_reconnect( const struct parsedname * pn ) ;
 static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) ;
 static int LINK_CR( const struct parsedname * pn ) ;
 
-static void LINK_setroutines( struct interface_routines * const f ) {
+static void LINK_setroutines( struct interface_routines * f ) {
     f->reset = LINK_reset ;
     f->next_both = LINK_next_both ;
     f->PowerByte = LINK_PowerByte ;
@@ -87,7 +87,7 @@ int LINK_detect( struct connection_in * in ) {
     return 0  ;
 }
 
-static int LINK_reset( const struct parsedname * const pn ) {
+static int LINK_reset( const struct parsedname * pn ) {
     char resp[3] ;
     COM_flush(pn) ;
     if ( LINK_write("\rr",2,pn) ) return -errno ;
@@ -107,7 +107,7 @@ static int LINK_reset( const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
+static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     struct stateinfo * si = pn->si ;
     char resp[20] ;
     int ret ;
@@ -172,7 +172,7 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
           -errno = read error
           -EINTR = timeout
  */
-static int LINK_read(unsigned char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn ) {
     size_t inlength = size ;
     fd_set fdset;
     ssize_t r ;
@@ -255,7 +255,7 @@ static int LINK_read(unsigned char * const buf, const size_t size, const struct 
 /* return 0=good,
           -EIO = error
  */
-static int LINK_write(const unsigned char *const buf, const size_t size, const struct parsedname * const pn ) {
+static int LINK_write(const unsigned char * buf, const size_t size, const struct parsedname * pn ) {
     ssize_t r, sl = size;
 
 //    COM_flush(pn) ;
@@ -292,7 +292,7 @@ static int LINK_write(const unsigned char *const buf, const size_t size, const s
 /* Returns 0=good
    bad = -EIO
  */
-static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) {
+static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) {
     char pow ;
     
     if ( LINK_write("p",1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) return -EIO ; // send just the <CR>
@@ -311,7 +311,7 @@ static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, co
     -EINVAL if not program pulse available
     -EIO on error
  */
-static int LINK_ProgramPulse( const struct parsedname * const pn ) {
+static int LINK_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
     return -EINVAL ;
 }
@@ -323,7 +323,7 @@ static int LINK_ProgramPulse( const struct parsedname * const pn ) {
 /* return 0=good
    sendout_data, readin
  */
-static int LINK_sendback_data( const unsigned char * const data, unsigned char * const resp, const int size, const struct parsedname * const pn ) {    
+static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t size, const struct parsedname * pn ) {
     size_t i ;
     size_t left ;
     unsigned char * buf = pn->in->combuffer ;
@@ -343,7 +343,7 @@ static int LINK_sendback_data( const unsigned char * const data, unsigned char *
     return LINK_CR(pn) ;
 }
 
-static int LINK_reconnect( const struct parsedname * const pn ) {
+static int LINK_reconnect( const struct parsedname * pn ) {
     STAT_ADD1(BUS_reconnect);
 
     if ( !pn || !pn->in ) return -EIO;
@@ -363,7 +363,7 @@ static int LINK_reconnect( const struct parsedname * const pn ) {
     return -EIO ;
 }
 
-static int LINK_select(const struct parsedname * const pn) {
+static int LINK_select(const struct parsedname * pn) {
     if ( pn->pathlength > 0 ) {
         LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) with the ascii-mode LINK\n") ;
         return -ENOTSUP ; /* cannot do branching with LINK ascii */
@@ -393,6 +393,3 @@ static int LINK_CR( const struct parsedname * pn ) {
     if ( LINK_write( "\r", 1, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
     return 0 ;
 }
-
-
-  

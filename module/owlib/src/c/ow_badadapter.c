@@ -18,10 +18,10 @@ $Id$
 static int BadAdapter_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) ;
 static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
-static int BadAdapter_reset( const struct parsedname * const pn ) ;
-static int BadAdapter_reconnect( const struct parsedname * const pn ) ;
-static int BadAdapter_select(const struct parsedname * const pn) ;
-static int BadAdapter_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
+static int BadAdapter_reset( const struct parsedname * pn ) ;
+static int BadAdapter_reconnect( const struct parsedname * pn ) ;
+static int BadAdapter_select(const struct parsedname * pn) ;
+static int BadAdapter_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
 
 /* Device-specific functions */
 int BadAdapter_detect( struct connection_in * in ) {
@@ -41,35 +41,35 @@ int BadAdapter_detect( struct connection_in * in ) {
     return 0 ;
 }
 
-static int BadAdapter_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) {
+static int BadAdapter_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) {
     (void) pn ;
     (void) byte ;
     (void) delay ;
     return -ENXIO ;
 }
-static int BadAdapter_ProgramPulse( const struct parsedname * const pn ) {
+static int BadAdapter_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
     return -ENXIO ;
 }
-static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
+static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     (void) serialnumber ;
     (void) search ;
     (void) pn ;
     return -ENXIO ;
 }
-static int BadAdapter_reset( const struct parsedname * const pn ) {
+static int BadAdapter_reset( const struct parsedname * pn ) {
     (void) pn ;
     return -ENXIO ;
 }
-static int BadAdapter_select(const struct parsedname * const pn) {
+static int BadAdapter_select(const struct parsedname * pn) {
     (void) pn ;
     return -ENXIO ;
 }
-static int BadAdapter_reconnect(const struct parsedname * const pn) {
+static int BadAdapter_reconnect(const struct parsedname * pn) {
     (void) pn ;
     return -ENXIO ;
 }
-static int BadAdapter_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) {
+static int BadAdapter_sendback_data( const unsigned char * data , unsigned char * resp, const size_t len, const struct parsedname * pn ){
     (void) pn ;
     (void) data ;
     (void) resp ;

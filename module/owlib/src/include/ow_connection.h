@@ -92,23 +92,23 @@ $Id$
 /* Interface-specific routines ---------------- */
 struct interface_routines {
     /* reset the interface -- actually the 1-wire bus */
-    int (* reset ) (const struct parsedname * const pn ) ;
+    int (* reset ) (const struct parsedname * pn ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */
-    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
+    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
-    int (* overdrive) (const unsigned int overdrive, const struct parsedname * const pn) ;
+    int (* overdrive) (const unsigned int overdrive, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
-    int (* testoverdrive) (const struct parsedname * const pn) ;
+    int (* testoverdrive) (const struct parsedname * pn) ;
     /* Send a byte with bus power to follow */
     int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
     int (* ProgramPulse) (const struct parsedname * pn) ;
     /* send and recieve data*/
-    int (* sendback_data) (const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * pn ) ;
+    int (* sendback_data) (const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
     /* select a device */
-    int (* select) ( const struct parsedname * const pn ) ;
+    int (* select) ( const struct parsedname * pn ) ;
     /* reconnect with a balky device */
-    int (* reconnect) ( const struct parsedname * const pn ) ;
+    int (* reconnect) ( const struct parsedname * pn ) ;
 
 } ;
 #define BUS_reset(pn)                       ((pn)->in->iroutines.reset)(pn)

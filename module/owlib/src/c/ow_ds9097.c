@@ -21,11 +21,10 @@ static int DS9097_ProgramPulse( const struct parsedname * const pn ) ;
 static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
 static int DS9097_reset( const struct parsedname * const pn ) ;
 static int DS9097_reconnect( const struct parsedname * const pn ) ;
-static int DS9097_read_bits( unsigned char * const bits , const int length, const struct parsedname * const pn ) ;
 static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) ;
-static int DS9097_sendback_data( const unsigned char * const data , unsigned char * const resp , const int len, const struct parsedname * const pn ) ;
+static int DS9097_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 static void DS9097_setroutines( struct interface_routines * const f ) ;
-static int DS9097_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) ;
+static int DS9097_send_and_get( const unsigned char * const bussend, unsigned char * const busget, const size_t length, const struct parsedname * pn ) ;
 
 #define	OneBit	0xFF
 #define ZeroBit 0xC0
@@ -91,13 +90,9 @@ static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct
         STAT_ADD1(DS9097_PowerByte_errors);
       return ret ;
     }
-// indicate the port is now at power delivery
-    pn->in->connin.serial.ULevel = MODE_STRONG5;
     // delay
     UT_delay( delay ) ;
 
-    // return to normal level
-    pn->in->connin.serial.ULevel = MODE_NORMAL;
     return ret;
 }
 
@@ -136,7 +131,6 @@ static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, 
     int ret ;
 
     // initialize for search
-//    printf("Pre, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     // if the last call was not the last one
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
     if ( si->LastDevice ) return -ENODEV ;
@@ -237,7 +231,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
         STAT_ADD1(DS9097_reset_tcsetattr_errors);
         return -EIO ;
     }
-    if ( (ret=DS9097_send_and_get(&resetbyte,1,&c,1,pn)) ) {
+    if ( (ret=DS9097_send_and_get(&resetbyte,&c,1,pn)) ) {
         STAT_ADD1(DS9097_reset_errors);
         return ret ;
     }
@@ -294,59 +288,59 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) {
     int ret ;
     int i ;
+
+    /* Split into smaller packets? */
     if ( length > UART_FIFO_SIZE ) return DS9097_sendback_bits(outbits,inbits,UART_FIFO_SIZE,pn)
     ||DS9097_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
+
+    /* Encode bits */
     for ( i=0 ; i<length ; ++i ) pn->in->combuffer[i] = outbits[i] ? OneBit : ZeroBit ;
-    if ( (ret= DS9097_send_and_get(pn->in->combuffer,(unsigned)length,inbits,(unsigned)length,pn)) ) {
+
+    /* Communication with DS9097 routine */
+    if ( (ret= DS9097_send_and_get(pn->in->combuffer,inbits,(unsigned)length,pn)) ) {
         STAT_ADD1(DS9097_sendback_bits_errors);
         return ret ;
     }
+
+    /* Decode Bits */
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
+
     return 0 ;
 }
 
 /* Symmetric */
-/* send a bit -- read a bit */
-static int DS9097_sendback_data( const unsigned char * data, unsigned char * const resp , const int len, const struct parsedname * const pn ) {
+/* send bytes, and read back -- calls lower level bit routine */
+static int DS9097_sendback_data( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
+    unsigned int i, bits = len<<3 ;
+    int ret ;
     int remain = len - (UART_FIFO_SIZE>>3) ;
-//printf("sendback len=%d, U>>3=%d, remain=%d\n",len,(UART_FIFO_SIZE>>3),remain);
-    if ( remain>0 ) {
-        return DS9097_sendback_data( data,resp,UART_FIFO_SIZE>>3,pn)
-        || DS9097_sendback_data( &data[UART_FIFO_SIZE>>3],&resp[UART_FIFO_SIZE>>3],remain,pn) ;
-    } else {
-        unsigned int i, bits = len<<3 ;
-        int ret ;
-        for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? OneBit : ZeroBit ;
-        if ( (ret=DS9097_send_and_get(pn->in->combuffer,bits,pn->in->combuffer,bits,pn) ) ) {
-            STAT_ADD1(DS9097_sendback_data_errors);
-            return ret ;
-        }
-        for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
-        return 0 ;
-    }
-}
 
-/* Symetric */
-/* gets specified number of bits, one per return byte */
-static int DS9097_read_bits( unsigned char * const bits , const int length, const struct parsedname * const pn ) {
-    int i, ret ;
-    if ( length > UART_FIFO_SIZE ) return DS9097_read_bits(bits,UART_FIFO_SIZE,pn)||DS9097_read_bits(&bits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
-    memset( pn->in->combuffer,0xFF,(size_t)length) ;
-    if ( (ret=DS9097_send_and_get(pn->in->combuffer,(unsigned)length,bits,(unsigned)length,pn)) ) {
-        STAT_ADD1(DS9097_read_bits_errors);
+    /* Split into smaller packets? */
+    if ( remain>0 ) return DS9097_sendback_data( data,resp,UART_FIFO_SIZE>>3,pn)
+        || DS9097_sendback_data( &data[UART_FIFO_SIZE>>3],&resp[UART_FIFO_SIZE>>3],remain,pn) ;
+
+    /* Encode bits */
+    for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? OneBit : ZeroBit ;
+    
+    /* Communication with DS9097 routine */
+    if ( (ret=DS9097_send_and_get(pn->in->combuffer,pn->in->combuffer,bits,pn) ) ) {
+        STAT_ADD1(DS9097_sendback_data_errors);
         return ret ;
     }
-    for ( i=0;i<length;++i) bits[i]&=0x01 ;
+
+    /* Decode Bits */
+    for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
+
     return 0 ;
 }
 
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9097 */
-static int DS9097_send_and_get( const unsigned char * const bussend, const size_t sendlength, unsigned char * const busget, const size_t getlength, const struct parsedname * pn ) {
-    size_t gl = getlength ;
+static int DS9097_send_and_get( const unsigned char * const bussend, unsigned char * const busget, const size_t length, const struct parsedname * pn ) {
+    size_t gl = length ;
     ssize_t r ;
-    size_t sl = sendlength ;
+    size_t sl = length ;
     int rc ;
 
     if ( sl > 0 ) {
@@ -357,7 +351,7 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
         /* send out string, and handle interrupted system call too */
         while(sl > 0) {
             if(!pn->in) break;
-            r = write(pn->in->fd, &bussend[sendlength-sl], sl);
+            r = write(pn->in->fd, &bussend[length-sl], sl);
             if(r < 0) {
                 if(errno == EINTR) {
                     /* write() was interrupted, try again */
@@ -380,7 +374,7 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
     }
     
     /* get back string -- with timeout and partial read loop */
-    if ( busget && getlength ) {
+    if ( busget && length ) {
         while ( gl > 0 ) {
             fd_set readset;
             struct timeval tv;
@@ -409,7 +403,7 @@ static int DS9097_send_and_get( const unsigned char * const bussend, const size_
                         return -EIO ; /* error */
                     }
                     update_max_delay(pn);
-                    r = read( pn->in->fd, &busget[getlength-gl], gl ) ; /* get available bytes */
+                    r = read( pn->in->fd, &busget[length-gl], gl ) ; /* get available bytes */
                     //printf("SAG postread ret=%d\n",r);
                     if (r < 0) {
                         if(errno == EINTR) {
