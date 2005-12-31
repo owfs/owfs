@@ -19,8 +19,17 @@ $Id$
 #include <linux/ppdev.h>
 #include <sys/ioctl.h>
 
+#if 0
+/* DOS driver */
 #define WRITE0 0xFE
 #define WRITE1 0xFF
+#define RESET  0xFD
+#else
+/* WIN driver */
+#define WRITE0 0xDE
+#define WRITE1 0xDF
+#define RESET  0xDD
+#endif
 
 struct timespec usec2   = { 0,   2000 };
 struct timespec usec4   = { 0,   4000 };
@@ -264,6 +273,7 @@ static int DS1410status( int * result, int fd ) {
     return -ret ;
 }
 
+/* Basic design from DOS driver, WWW entries from win driver */
 static int DS1410bit( int * bit, int fd ) {
     unsigned char control ;
     if (
@@ -297,7 +307,7 @@ static int DS1410_reset( const struct parsedname * pn ) {
         DS1410databyte( 0xEC, fd )
         ||nanosleep( &usec2, NULL )
         ||ioctl( fd, PPRCONTROL, &control )
-        ||DS1410databyte( 0xFD, fd )
+        ||DS1410databyte( RESET, fd )
        ) return 1 ;
     control = ( ( control | 0x04 ) & 0x1C ) ;
     if (

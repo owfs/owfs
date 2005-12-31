@@ -188,8 +188,6 @@ int DS9490_detect( struct connection_in * in ) {
     return ret ;
 }
 
-
-
 static int DS9490_setup_adapter(const struct parsedname * pn) {
   unsigned char buffer[32];
   int ret ;
@@ -237,48 +235,40 @@ static int DS9490_open( const struct parsedname * pn ) {
     usb_dev_handle * usb ;
 
     if(pn->in->connin.usb.usb) {
-        LEVEL_DEFAULT("DS9490_open: usb.usb is NOT closed before DS9490_open() ?\n");
-        return -ENODEV;
-    }
-
-    if ( pn->in->connin.usb.dev && (usb=usb_open(pn->in->connin.usb.dev)) ) {
+        LEVEL_DEFAULT("DS9490_open: usb.usb was NOT closed before DS9490_open() ?\n");
+    } else if ( pn->in->connin.usb.dev && (usb=usb_open(pn->in->connin.usb.dev)) ) {
         pn->in->connin.usb.usb = usb ;
 #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
         usb_detach_kernel_driver_np(usb,0);
 #endif /* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-        if ( (ret=usb_set_configuration(usb, 1))==0 ) {
-            if( (ret=usb_claim_interface(usb, 0))==0 ) {
-                if ( (ret=usb_set_altinterface(usb, 3))==0 ) {
-                    LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n",pn->in->name);
-                    DS9490_setroutines( & pn->in->iroutines ) ;
-                    pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
-                    pn->in->adapter_name = "DS9490" ;
-            
-                    ret = 0;
-            
-                    // clear endpoints
-                    ret = usb_clear_halt(usb, DS2490_EP3) ||
-                        usb_clear_halt(usb, DS2490_EP2) ||
-                        usb_clear_halt(usb, DS2490_EP1) ;
-                    if(ret) {
-                        LEVEL_DEFAULT("DS9490_open: usb_clear_halt failed ret=%d\n", ret);
-                    }
-    
-                    if(!ret)
-                        ret = DS9490_setup_adapter(pn) || DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn) || DS9490_level(MODE_NORMAL, pn);
-                    if(!ret) {
-                        return 0 ; /* Everything is ok */
-                    }
-                    LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",pn->in->name);
-                } else {
-                    LEVEL_CONNECT("Failed to set alt interface on USB DS9490 adapter at %s.\n",pn->in->name);
-                }
-                ret = usb_release_interface( usb, 0) ;
-            } else {
-                LEVEL_CONNECT("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n",pn->in->name, ret);
-            }
-        } else {
+        if ( usb_set_configuration(usb, 1) ) {
             LEVEL_CONNECT("Failed to set configuration on USB DS9490 adapter at %s.\n",pn->in->name);
+        } else if( (ret=usb_claim_interface(usb, 0)) ) {
+                LEVEL_CONNECT("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n",pn->in->name, ret);
+        } else {
+            if ( usb_set_altinterface(usb, 3) ) {
+                LEVEL_CONNECT("Failed to set alt interface on USB DS9490 adapter at %s.\n",pn->in->name);
+            } else {
+                LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n",pn->in->name);
+                DS9490_setroutines( & pn->in->iroutines ) ;
+                pn->in->Adapter = adapter_DS9490 ; /* OWFS assigned value */
+                pn->in->adapter_name = "DS9490" ;
+
+                // clear endpoints
+                if ( (ret =
+                        usb_clear_halt(usb, DS2490_EP3) ||
+                        usb_clear_halt(usb, DS2490_EP2) ||
+                        usb_clear_halt(usb, DS2490_EP1) ) ) {
+                    LEVEL_DEFAULT("DS9490_open: usb_clear_halt failed ret=%d\n", ret);
+                } else if ( DS9490_setup_adapter(pn) ||
+                            DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn) ||
+                            DS9490_level(MODE_NORMAL, pn) ) {
+                    LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",pn->in->name);
+                            } else { /* All GOOD */
+                    return 0 ;
+                }
+            }
+            ret = usb_release_interface( usb, 0) ;
         }
         usb_close( usb ) ;
         pn->in->connin.usb.usb = NULL ;
@@ -598,32 +588,32 @@ static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct pa
             return -EIO ;
         }
         if(ret > 16) {
-	  for(i=16; i<ret; i++) {
-	    unsigned char val = buffer[i];
-	    if(val != ONEWIREDEVICEDETECT) {
-	      LEVEL_DATA("DS9490_getstatus: Status byte[%X]: %X\n", i-16, val);
-	    }
-	    if(val & COMMCMDERRORRESULT_SH) { // short detected
-	      LEVEL_DATA("DS9490_getstatus(): short detected\n");
-	      return -1;
-	    }
-	  }
-	}
+            for(i=16; i<ret; i++) {
+                unsigned char val = buffer[i];
+                if(val != ONEWIREDEVICEDETECT) {
+                    LEVEL_DATA("DS9490_getstatus: Status byte[%X]: %X\n", i-16, val);
+                }
+                if(val & COMMCMDERRORRESULT_SH) { // short detected
+                    LEVEL_DATA("DS9490_getstatus(): short detected\n");
+                    return -1;
+                }
+            }
+        }
 
-	if (readlen < 0) break;  /* Don't wait for STATUSFLAGS_IDLE if length==-1 */
+        if (readlen < 0) break;  /* Don't wait for STATUSFLAGS_IDLE if length==-1 */
 
-	if ( buffer[8]&STATUSFLAGS_IDLE ) {
-	  if (readlen > 0) {
-	    // we have enough bytes to read now!
-	    // buffer[13] == (ReadBufferStatus)
-            if (buffer[13] >= readlen) break ;
-	  } else
-	    break ;
-	}
+        if ( buffer[8]&STATUSFLAGS_IDLE ) {
+            if (readlen > 0) {
+                // we have enough bytes to read now!
+                // buffer[13] == (ReadBufferStatus)
+                if (buffer[13] >= readlen) break ;
+            } else
+            break ;
+        }
 
-	// this value might be decreased later...
+        // this value might be decreased later...
         if(++loops > 100) {
-	    //LEVEL_DATA("DS9490_getstatus(): never got idle\n");
+            //LEVEL_DATA("DS9490_getstatus(): never got idle\n");
             LEVEL_DATA("DS9490_getstatus(): never got idle  StatusFlags=%X read=%X\n", buffer[8], buffer[13]);
             return -ETIMEDOUT ;  // adapter never got idle
         }
@@ -645,8 +635,8 @@ static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct pa
 #endif
 
     if(ret < 16) {
-      LEVEL_DATA("incomplete packet ret=%d\n", ret);
-      return -EIO ;   // incomplete packet??
+        LEVEL_DATA("incomplete packet ret=%d\n", ret);
+        return -EIO ;   // incomplete packet??
     }
     return (ret - 16) ;  // return number of status bytes in buffer
 }
