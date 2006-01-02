@@ -41,7 +41,8 @@ struct timespec usec400 = { 0, 400000 };
 static int DS1410databyte( const unsigned char d, int fd ) ;
 static int DS1410cmdbyte( const unsigned char c, int fd ) ;
 static int DS1410status( int * result, int fd ) ;
-static int DS1410wait( int fd ) ;
+static int DS1410wait_hi( int fd ) ;
+static int DS1410wait_lo( int fd ) ;
 static int DS1410bit( int * bit, int fd ) ;
 static int DS1410_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
 static int DS1410_ProgramPulse( const struct parsedname * pn ) ;
@@ -252,16 +253,30 @@ static int DS1410cmdbyte( const unsigned char c, int fd ) {
 }
 
 /* wait on status */
-static int DS1410wait( int fd ) {
+static int DS1410wait_hi( int fd ) {
     int count = 0 ;
     int result ;
     int ret ;
 
     do {
-        ret = DS1410status( &result, fd ) ;
-        if ( ++count > 1000 ) return -ETIME ;
+        if ( (ret=DS1410status( &result, fd )) ) return ret ;
+        if ( ++count > 100 ) return -ETIME ;
         if ( nanosleep( &usec4, NULL ) ) return -errno ;
-    } while ( ! (ret || result) ) ;
+    } while ( result != 1 ) ;
+    return ret ;
+}
+    
+/* wait on status */
+static int DS1410wait_lo( int fd ) {
+    int count = 0 ;
+    int result ;
+    int ret ;
+
+    do {
+        if ( (ret=DS1410status( &result, fd )) ) return ret ;
+        if ( ++count > 100 ) return -ETIME ;
+        if ( nanosleep( &usec4, NULL ) ) return -errno ;
+    } while ( result != 0 ) ;
     return ret ;
 }
     
@@ -285,10 +300,10 @@ static int DS1410bit( int * bit, int fd ) {
     control = ( ( control | 0x04 ) & 0x1C ) ;
     if (
         DS1410cmdbyte( control|0x02, fd )
-        ||DS1410wait( fd )
+        ||DS1410wait_lo( fd )
         ||nanosleep( &usec4, NULL )
         ||DS1410databyte( 0xFF, fd )
-        ||DS1410wait( fd )
+        ||DS1410wait_hi( fd )
         ||nanosleep( &usec4, NULL )
         ||DS1410databyte( 0xFE, fd )
         ||nanosleep( &usec4, NULL )
@@ -312,10 +327,10 @@ static int DS1410_reset( const struct parsedname * pn ) {
     control = ( ( control | 0x04 ) & 0x1C ) ;
     if (
         DS1410cmdbyte( control|0x02, fd )
-        ||DS1410wait( fd )
+        ||DS1410wait_lo( fd )
         ||nanosleep( &usec4, NULL )
         ||DS1410databyte( 0xFF, fd )
-        ||DS1410wait( fd )
+        ||DS1410wait_hi( fd )
         ||nanosleep( &usec4, NULL )
         ||DS1410databyte( 0xFE, fd )
         ||nanosleep( &usec4, NULL )
