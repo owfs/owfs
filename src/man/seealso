@@ -3,7 +3,7 @@
 .SS Language bindings
 .B owtcl (3) owperl (3)
 .SS Clocks
-.B DS1904(3) DS2415(3) DS2417(3)
+.B DS1427 (3) DS1904(3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
 .SS ID
 .B DS2401 (3) DS1990A (3)
 .SS Memory
