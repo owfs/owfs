@@ -49,8 +49,10 @@ $Id$
 bWRITE_FUNCTION( FS_w_page ) ;
  bREAD_FUNCTION( FS_r_memory ) ;
 bWRITE_FUNCTION( FS_w_memory ) ;
- uREAD_FUNCTION( FS_r_counter ) ;
-uWRITE_FUNCTION( FS_w_counter ) ;
+ uREAD_FUNCTION( FS_r_counter4 ) ;
+uWRITE_FUNCTION( FS_w_counter4 ) ;
+ uREAD_FUNCTION( FS_r_counter5 ) ;
+uWRITE_FUNCTION( FS_w_counter5 ) ;
  dREAD_FUNCTION( FS_r_date ) ;
 dWRITE_FUNCTION( FS_w_date ) ;
  yREAD_FUNCTION( FS_r_flag ) ;
@@ -65,8 +67,14 @@ struct filetype DS2404[] = {
     {"pages/page"       ,    32,  &A2404, ft_binary  , ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
     {"memory"           ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"          ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x10, } ,
-    {"udate"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
+    {"udate"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x202 , } ,
+    {"uinterval"        ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x207 , } ,
+    {"cycle"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x20C , } ,
     {"date"             ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
+    {"set_alarm"        ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"set_alarm/udate"  ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x210 , } ,
+    {"set_alarm/uinterval",  12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x215 , } ,
+    {"set_alarm/cycle"  ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x21A , } ,
     {"readonly"         ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
     {"readonly/memory"  ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x08, } ,
     {"readonly/cycle"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x04, } ,
@@ -82,14 +90,19 @@ struct filetype DS2404S[] = {
     {"pages/page"       ,    32,  &A2404, ft_binary  , ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
     {"memory"           ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"          ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x10, } ,
-    {"udate"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter}, {u:FS_w_counter}, NULL, } ,
+    {"udate"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x202 , } ,
+    {"uinterval"        ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x207 , } ,
+    {"cycle"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x20C , } ,
     {"date"             ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
+    {"set_alarm"        ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"set_alarm/udate"  ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x210 , } ,
+    {"set_alarm/uinterval",  12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x215 , } ,
+    {"set_alarm/cycle"  ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x21A , } ,
     {"readonly"         ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
     {"readonly/memory"  ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x08, } ,
     {"readonly/cycle"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x04, } ,
     {"readonly/interval",     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x02, } ,
     {"readonly/clock"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x01, } ,
-
 } ;
 DeviceEntryExtended( 84, DS2404S  , DEV_alarm ) ;
 
@@ -98,6 +111,8 @@ DeviceEntryExtended( 84, DS2404S  , DEV_alarm ) ;
 /* DS1902 */
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_ulong( unsigned long int * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
+static int OW_w_ulong( const unsigned long int * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 
 /* 1902 */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -147,23 +162,30 @@ static int FS_r_date( DATE * d , const struct parsedname * pn) {
 }
 
 /* set clock */
-static int FS_w_counter(const unsigned int *u, const struct parsedname * pn) {
-    unsigned char data[5] ;
+static int FS_w_counter5(const unsigned int *u, const struct parsedname * pn) {
+    unsigned long int L = ( (unsigned long int) u[0] ) << 8 ;
+    return OW_w_ulong( &L, 5, (size_t) pn->ft->data, pn ) ;
+}
 
-    data[0] = 0 ;
-    data[1] = (u[0]>>0) & 0xFF ;
-    data[2] = (u[0]>>8) & 0xFF ;
-    data[3] = (u[0]>>16) & 0xFF ;
-    data[4] = (u[0]>>24) & 0xFF ;
-    if ( OW_w_mem( data, 5, 0x0202, pn) ) return -EFAULT ;
+/* set clock */
+static int FS_w_counter4(const unsigned int *u, const struct parsedname * pn) {
+    unsigned long int L = ( (unsigned long int) u[0] ) ;
+    return OW_w_ulong( &L, 4, (size_t) pn->ft->data, pn ) ;
+}
+
+/* read clock */
+static int FS_r_counter5(unsigned int *u, const struct parsedname * pn) {
+    unsigned long int L ;
+    if ( OW_r_ulong( &L, 5, (size_t) pn->ft->data, pn ) ) return -EINVAL ;
+    u[0] = L>>8 ;
     return 0 ;
 }
+
 /* read clock */
-static int FS_r_counter(unsigned int *u, const struct parsedname * pn) {
-    unsigned char data[5] ;
-    if ( OW_r_mem(data,5,0x0202,pn) ) return -EINVAL ;
-    u[0] = ((unsigned int) data[1]) || ((unsigned int) data[2])<<8 || ((unsigned int) data[3])<<16 || ((unsigned int) data[4])<<24 ;
-    if ( data[0] & 0x80 ) ++u[0] ;
+static int FS_r_counter4(unsigned int *u, const struct parsedname * pn) {
+    unsigned long int L ;
+    if ( OW_r_ulong( &L, 4, (size_t) pn->ft->data, pn ) ) return -EINVAL ;
+    u[0] = L ;
     return 0 ;
 }
 
@@ -230,3 +252,26 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
     return ret ;
 
 }
+
+/* read 4 or 5 byte number */
+static int OW_r_ulong( unsigned long int * L, const size_t size, const size_t offset , const struct parsedname * pn ) {
+    unsigned char data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
+    if ( size > 5 ) return -ERANGE ;
+    if ( OW_r_mem( data, size, offset, pn ) ) return -EINVAL ;
+    L[0] = (unsigned long int) data[0] + data[1]<<8 + data[2]<<16 + data[3]<<24 + data[4]<<32 ;
+    return 0 ;
+}
+
+/* write 4 or 5 byte number */
+static int OW_w_ulong( const unsigned long int * L, const size_t size, const size_t offset , const struct parsedname * pn ) {
+    unsigned char data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
+    if ( size > 5 ) return -ERANGE ;
+    data[0] = L[0] & 0xFF ;
+    data[1] = (L[0]>>8) & 0xFF ;
+    data[2] = (L[0]>>16) & 0xFF ;
+    data[3] = (L[0]>>24) & 0xFF ;
+    data[4] = (L[0]>>32) & 0xFF ;
+    if ( OW_w_mem( data, size, offset, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+

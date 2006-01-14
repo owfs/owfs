@@ -161,7 +161,7 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     unsigned char d2 = 0xD2 ;
     unsigned char b2[] = { 0xB2 , 0x60, } ;
     unsigned char t[3] ;
-    int timewait = 2
+    int timewait = 2 ;
     int ret ;
 
     // initiate conversion
@@ -180,7 +180,7 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
             ret = BUS_send_data( b2, 2,pn ) || BUS_readin_data( t, 3,pn ) ;
         BUSUNLOCK(pn);
 
-        if ( (t[2] & 0x01 ) continue ; // no success yet
+        if ( t[2] & 0x01 ) continue ; // no success yet
         // success
 	*T = ((int)((signed char)t[1])) + .00390625*t[0] ;
 	return 0 ;
@@ -193,7 +193,7 @@ static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
     unsigned char status[] = { 0xB2 , 0x62, } ;
     unsigned char volts[] = { 0xB2 , 0x77, } ;
     unsigned char s,v[2] ;
-    int timewait = 6
+    int timewait = 6 ;
     int ret ;
 
     // initiate conversion
