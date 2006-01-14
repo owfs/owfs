@@ -24,11 +24,17 @@
 .SH SYNOPSIS
 Real time clock, 4kbit memory. 3-wire interface, too.
 .PP
-.B 24
+.B 04
 [.]XXXXXXXXXXXX[XX][/[
 .B date
 |
 .B flags
+|
+.B memory
+|
+.B pages/page.[0-15|ALL]
+|
+.B readonly/[memory|clock|cycle|interval]
 |
 .B running
 |
@@ -45,7 +51,7 @@ Real time clock, 4kbit memory. 3-wire interface, too.
 .B type
 ]]
 .HP
-.B 27
+.B 84
 [.]XXXXXXXXXXXX[XX][/[
 .B date
 |
@@ -81,9 +87,15 @@ DS1427 DS2404S
 .I read-write, ascii
 .br
 26 character date representation of the
-.I counter
+.I udate
 value. Increments once per second while
 .I running
+.br
+Actual internal representation has higher precision.
+.br
+Cannot be altered if
+.I readonly/clock
+is set.
 .br
 Setting
 .I date
@@ -126,10 +138,44 @@ chosen.
 .I read-write, unsigned integer
 .br
 General use data. 4 bits (0-15 accepted values).
+.SS readonly/[memory|clock|interval|cycle]
+.I read-write, yes-no
+.br
+Permanently protect part of the chip's function from alteration.
+.TP
+.I readonly/memory
+.I page.X
+and
+. I memory
+.TP
+.I readonly/clock
+.I date
+and
+.I udate
+.TP
+.I readonly/interval
+.I interval
+.TP
+.I readonly/cycle
+.I cycle
 .SS running
 .I read-write, yes-no
 .br
 State of the clock. 0=off 1=running.
+.SS memory
+.I read-write, binary
+.br
+512 bytes of memory. The
+.I readonly/memory
+flag prevents further change.
+.SS pages/page.0 ... pages/page.15 pages/page.ALL
+.I read-write, yes-no
+.br
+Memory is split into 16 pages of 32 bytes each. The
+.I readonly/memory
+flag prevents further change.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
 .SS udate
 .I read-write, unsigned integer
 .br

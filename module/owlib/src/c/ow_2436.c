@@ -161,6 +161,7 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     unsigned char d2 = 0xD2 ;
     unsigned char b2[] = { 0xB2 , 0x60, } ;
     unsigned char t[3] ;
+    int timewait = 2
     int ret ;
 
     // initiate conversion
@@ -169,24 +170,22 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
-    UT_delay(6) ;
+    UT_delay(timewait) ; // 3 msec minimum conversion delay
 
     /* Is it done? */
-    BUSLOCK(pn);
-        ret = BUS_send_data( b2, 2,pn ) || BUS_readin_data( t, 3,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    /* Is it done, now? */
-    if ( t[2] & 0x01 ) {
-        UT_delay(5) ;
+    while (timewait<10) {
+        UT_delay(2) ;
+        timewait += 2 ;
         BUSLOCK(pn);
-            ret = BUS_send_data( b2, 2,pn ) || BUS_readin_data( t , 3,pn ) || (t[2]&0x01) ;
+            ret = BUS_send_data( b2, 2,pn ) || BUS_readin_data( t, 3,pn ) ;
         BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
+
+        if ( (t[2] & 0x01 ) continue ; // no success yet
+        // success
+	*T = ((int)((signed char)t[1])) + .00390625*t[0] ;
+	return 0 ;
     }
-    *T = ((int)((signed char)t[1])) + .00390625*t[0] ;
-    return 0 ;
+    return -ETIMEDOUT ;
 }
 
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
@@ -194,6 +193,7 @@ static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
     unsigned char status[] = { 0xB2 , 0x62, } ;
     unsigned char volts[] = { 0xB2 , 0x77, } ;
     unsigned char s,v[2] ;
+    int timewait = 6
     int ret ;
 
     // initiate conversion
@@ -202,29 +202,26 @@ static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
-    UT_delay(10) ;
+    UT_delay(timewait) ;
 
     /* Is it done? */
-    BUSLOCK(pn);
-        ret = BUS_send_data( status, 2,pn ) || BUS_readin_data( &s , 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    /* Is it done, now? */
-    if ( s & 0x08 ) {
-        UT_delay(10) ;
+    while (timewait<10) {
+        UT_delay(2) ;
+        timewait += 2 ;
         BUSLOCK(pn);
-            ret = BUS_send_data( status, 2,pn ) || BUS_readin_data( &s , 1,pn ) || (s&0x08) ;
+        ret = BUS_send_data( status, 2,pn ) || BUS_readin_data( &s , 1,pn ) ;
         BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
+
+        if ( s & 0x08 ) continue ; // no success yet
+        // success
+	/* Read it in */
+	BUSLOCK(pn);
+		ret = BUS_send_data( volts , 2,pn ) || BUS_readin_data( v , 2,pn ) ;
+	BUSUNLOCK(pn);
+	if ( ret ) return 1 ;
+
+	*V = .01 * (FLOAT)( ( ((int)v[1]) <<8 )|v[0] ) ;
+	return 0 ;
     }
-
-    /* Read it in */
-    BUSLOCK(pn);
-        ret = BUS_send_data( volts , 2,pn ) || BUS_readin_data( v , 2,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    *V = .01 * (FLOAT)( ( ((int)v[1]) <<8 )|v[0] ) ;
-    return 0 ;
+    return -ETIMEDOUT ;
 }
