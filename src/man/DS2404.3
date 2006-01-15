@@ -23,12 +23,20 @@
 - Time iButton
 .SH SYNOPSIS
 Real time clock, 4kbit memory. 3-wire interface, too.
-.PP
+.HP
 .B 04
 [.]XXXXXXXXXXXX[XX][/[
+.B alarm
+|
+.B auto
+|
+.B cycle
+|
 .B date
 |
-.B flags
+.B delay
+|
+.B interval
 |
 .B memory
 |
@@ -38,7 +46,15 @@ Real time clock, 4kbit memory. 3-wire interface, too.
 |
 .B running
 |
+.B set_alarm
+|
+.B start
+|
+.B trigger/[cycle,date,interval,udate,uinterval]
+|
 .B udate
+|
+.B uinterval
 |
 .B address
 |
@@ -53,17 +69,35 @@ Real time clock, 4kbit memory. 3-wire interface, too.
 .HP
 .B 84
 [.]XXXXXXXXXXXX[XX][/[
+.B alarm
+|
+.B auto
+|
+.B cycle
+|
 .B date
 |
-.B enable
+.B delay
 |
 .B interval
 |
-.B itime
+.B memory
+|
+.B pages/page.[0-15|ALL]
+|
+.B readonly/[memory|clock|cycle|interval]
 |
 .B running
 |
+.B set_alarm
+|
+.B start
+|
+.B trigger/[cycle,date,interval,udate,uinterval]
+|
 .B udate
+|
+.B uinterval
 |
 .B address
 |
@@ -83,6 +117,56 @@ DS2404 DS1994
 .I 84
 DS1427 DS2404S
 .SH SPECIAL PROPERTIES
+.SS alarm
+.I read-write, unsigned integer (0-111)
+.br
+.I Alarm
+state of the
+.I DS2404 (3)
+triggered by time or counter events. Reading the alarm state clears the alarm.
+.br
+The 
+.I alarm
+value is of the form CIR, where:
+.TP
+C
+.I cycle 
+counter alarm
+.br
+.I 0
+no
+.br
+.I 1
+yes
+.TP
+I
+.I interval
+timer alarm
+.br
+.I 0
+no
+.br
+.I 1
+yes
+.TP
+R
+real-time clock alarm
+.br
+.I 0
+no
+.br
+.I 1
+yes
+.SS auto
+.I read-write, yes-no
+.br
+Flag for mode of 
+.I interval
+counter operation. 0=manual 1=auto
+.br
+See the 
+.I datasheet
+for details.
 .SS date
 .I read-write, ascii
 .br
@@ -110,34 +194,38 @@ Accepted date formats are:
   3/23/04 23:34:57
 .br
   current locale setting (your system's format)
-.SS enable
+.SS delay
 .I read-write, yes-no
 .br
-State of the timer interrupt. 0=off 1=running.
+Flag for adding a delay to
+.I cycle
+counter. 0=short 1-long
+.br
+See the 
+.I datasheet
+under "IDEL" for details.
 .SS interval
-.I read-write, unsigned integer
+.I read-write, date
 .br
-Interval between timer interrupts. Values: 0-7. See table under
-.I DESCRIPTION
-for interpretation.
-.I itime
-will reflect the
-.I interval
-chosen.
-.SS itime
-.I read-write, unsigned integer
+Interval timer value, represented as a 
+.I date
+string. More typically will be used as
+.I uinterval
+to read the actual elapsed seconds.
+.SS memory
+.I read-write, binary
 .br
-Interval between timer interrupts. Value in seconds. See table under
-.I DESCRIPTION
-for interpretation and acceptable values.
-.I interval
-will reflect the
-.I itime
-chosen.
-.SS flags
-.I read-write, unsigned integer
+512 bytes of memory. The
+.I readonly/memory
+flag prevents further change.
+.SS pages/page.0 ... pages/page.15 pages/page.ALL
+.I read-write, yes-no
 .br
-General use data. 4 bits (0-15 accepted values).
+Memory is split into 16 pages of 32 bytes each. The
+.I readonly/memory
+flag prevents further change.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
 .SS readonly/[memory|clock|interval|cycle]
 .I read-write, yes-no
 .br
@@ -162,20 +250,74 @@ and
 .I read-write, yes-no
 .br
 State of the clock. 0=off 1=running.
-.SS memory
-.I read-write, binary
+.SS set_alarm
+.I read-write, unsigned integer (0-111)
 .br
-512 bytes of memory. The
-.I readonly/memory
-flag prevents further change.
-.SS pages/page.0 ... pages/page.15 pages/page.ALL
+Which of the
+.I alarm
+triggers are enabled in the
+.I DS2404 (3)
+.br
+The 
+.I set_alarm
+value is of the form CIR, where:
+.TP
+C
+.I cycle 
+counter alarm
+.br
+.I 0
+no
+.br
+.I 1
+yes
+.TP
+I
+.I interval
+timer alarm
+.br
+.I 0
+no
+.br
+.I 1
+yes
+.TP
+R
+real-time clock alarm
+.br
+.I 0
+no
+.br
+.I 1
+yes
+.SS start
 .I read-write, yes-no
 .br
-Memory is split into 16 pages of 32 bytes each. The
-.I readonly/memory
-flag prevents further change.
-.I ALL
-is an aggregate of the pages. Each page is accessed sequentially.
+Flag for starting the 
+.I interval
+counter operation if not in 
+.I auto
+mode. 0=stop 1=start
+.br
+See the 
+.I datasheet
+for details.
+.SS trigger/[cycle,date,interval,udate,uinterval]
+.I read-write,varies
+.br
+Target value that will
+.I trigger
+the 
+.I alarm
+if the corresponding
+.I set_alarm
+field is set.
+.br
+The format is the same as the similarly named field (i.e.
+.I date
+for
+.I trigger/date
+)
 .SS udate
 .I read-write, unsigned integer
 .br
@@ -190,6 +332,14 @@ Usually set to unix time standard: number of seconds since Jan 1, 1970. The
 field will be the unix representation of
 .I udate
 and setting either will change the other.
+.SS uinterval
+.I read-write, unsigned interval
+.br
+Similar to the 
+.I udate
+field, except corresponds to the
+.I interval
+value.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
@@ -220,32 +370,16 @@ Both the
 and
 .B DS1994
 offer the memory, alarms, and clock function in iButton format. Because the iButton is a complete sealed package, battery and crystal are internal. Everything is access via the 1-wire interface.
-
-has the same clock function, but also includes a programmable interval interrupt. Values Allowed are:
-.br
-0 1sec
-.br
-1 4sec
-.br
-2 32s = .5m
-.br
-3 6 = 1m
-.br
-4 2048s = .5h
-.br
-5 4096s = 1h
-.br
-6 65536s = 18h
-.br
-7 131072s = 36h
 .SH ADDRESSING
 .so addressing
 .SH DATASHEET
-http://pdfserv.maxim-ic.com/en/ds/DS2415.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2404.pdf
 .br
-http://pdfserv.maxim-ic.com/en/ds/DS1904.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2404S-C01.pdf
 .br
-http://pdfserv.maxim-ic.com/en/ds/DS2417.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS1994.pdf
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS1427.pdf
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

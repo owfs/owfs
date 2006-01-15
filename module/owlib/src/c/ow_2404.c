@@ -49,6 +49,9 @@ $Id$
 bWRITE_FUNCTION( FS_w_page ) ;
  bREAD_FUNCTION( FS_r_memory ) ;
 bWRITE_FUNCTION( FS_w_memory ) ;
+ uREAD_FUNCTION( FS_r_alarm ) ;
+ uREAD_FUNCTION( FS_r_set_alarm ) ;
+uWRITE_FUNCTION( FS_w_set_alarm ) ;
  uREAD_FUNCTION( FS_r_counter4 ) ;
 uWRITE_FUNCTION( FS_w_counter4 ) ;
  uREAD_FUNCTION( FS_r_counter5 ) ;
@@ -63,18 +66,26 @@ yWRITE_FUNCTION( FS_w_flag ) ;
 struct aggregate A2404 = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS2404[] = {
     F_STANDARD          ,
+    {"alarm"            ,     4,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_alarm} , {v:NULL} , NULL , } ,
+    {"set_alarm"        ,     4,  NULL,   ft_unsigned, ft_stable,   {u:FS_r_set_alarm} , {u:FS_w_set_alarm} , NULL , } ,
     {"pages"            ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
     {"pages/page"       ,    32,  &A2404, ft_binary  , ft_stable  , {b:FS_r_page}  , {b:FS_w_page}  , NULL, } ,
     {"memory"           ,   512,  NULL,   ft_binary  , ft_stable, {b:FS_r_memory} , {b:FS_w_memory} , NULL, } ,
     {"running"          ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x10, } ,
+    {"auto"             ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x20, } ,
+    {"start"            ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x40, } ,
+    {"delay"            ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x80, } ,
+    {"date"             ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}     , (void *) (size_t) 0x202, } ,
     {"udate"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x202 , } ,
+    {"interval"         ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}     , (void *) (size_t) 0x207, } ,
     {"uinterval"        ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x207 , } ,
     {"cycle"            ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x20C , } ,
-    {"date"             ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , NULL, } ,
-    {"set_alarm"        ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
-    {"set_alarm/udate"  ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x210 , } ,
-    {"set_alarm/uinterval",  12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x215 , } ,
-    {"set_alarm/cycle"  ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x21A , } ,
+    {"trigger"          ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
+    {"trigger/date"     ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , (void *) (size_t) 0x210, } ,
+    {"trigger/udate"    ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x210 , } ,
+    {"trigger/interval" ,    24,  NULL,   ft_date    , ft_second, {d:FS_r_date}   , {d:FS_w_date}   , (void *) (size_t) 0x215, } ,
+    {"trigger/uinterval",    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter5}, {u:FS_w_counter5}, (void *) (size_t) 0x215 , } ,
+    {"trigger/cycle"    ,    12,  NULL,   ft_unsigned, ft_second, {u:FS_r_counter4}, {u:FS_w_counter4}, (void *) (size_t) 0x21A , } ,
     {"readonly"         ,     0,  NULL,   ft_subdir  , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
     {"readonly/memory"  ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x08, } ,
     {"readonly/cycle"   ,     1,  NULL,   ft_yesno   , ft_stable, {y:FS_r_flag}    , {y:FS_w_flag}  , (void *) (unsigned char) 0x04, } ,
@@ -114,6 +125,8 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
 static int OW_r_ulong( unsigned long int * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 static int OW_w_ulong( const unsigned long int * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 
+static unsigned int Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, } ;
+
 /* 1902 */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_r_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
@@ -140,24 +153,15 @@ static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t
 
 /* set clock */
 static int FS_w_date(const DATE * d , const struct parsedname * pn) {
-    unsigned char data[5] ;
-
-    data[0] = 0x00 ;
-    data[1] = d[0] & 0xFF ;
-    data[2] = (d[0]>>8) & 0xFF ;
-    data[3] = (d[0]>>16) & 0xFF ;
-    data[4] = (d[0]>>24) & 0xFF ;
-    if ( OW_w_mem( data, 5, 0x0202, pn) ) return -EFAULT ;
-    return 0 ;
+    const unsigned int D = (unsigned int) d[0] ;
+    return FS_w_counter5( &D, pn ) ;
 }
 
 /* read clock */
 static int FS_r_date( DATE * d , const struct parsedname * pn) {
-    unsigned char data[5] ;
-
-    if ( OW_r_mem(data,5,0x0202,pn) ) return -EINVAL ;
-    d[0] = ((unsigned int) data[1]) || ((unsigned int) data[2])<<8 || ((unsigned int) data[3])<<16 || ((unsigned int) data[4])<<24 ;
-    if ( data[0] & 0x80 ) ++d[0] ;
+    unsigned int D ;
+    if ( FS_r_counter5(&D,pn) ) return -EINVAL ;
+    d[0] = (DATE) D ;
     return 0 ;
 }
 
@@ -186,6 +190,38 @@ static int FS_r_counter4(unsigned int *u, const struct parsedname * pn) {
     unsigned long int L ;
     if ( OW_r_ulong( &L, 4, (size_t) pn->ft->data, pn ) ) return -EINVAL ;
     u[0] = L ;
+    return 0 ;
+}
+
+/* alarm */
+static int FS_w_set_alarm(const unsigned int *u, const struct parsedname * pn) {
+    unsigned char c ;
+    switch ( u[0] ) {
+    case   0:   c=0<<3 ;   break ;
+    case   1:   c=1<<3 ;   break ;
+    case  10:   c=2<<3 ;   break ;
+    case  11:   c=3<<3 ;   break ;
+    case 100:   c=4<<3 ;   break ;
+    case 101:   c=5<<3 ;   break ;
+    case 110:   c=6<<3 ;   break ;
+    case 111:   c=7<<3 ;   break ;
+    default: return -ERANGE ;
+    }
+    if ( OW_w_mem( &c, 1, 0x200, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+static int FS_r_alarm( unsigned int * u, const struct parsedname * pn ) {
+    unsigned char c ;
+    if ( OW_r_mem(&c,1,0x200,pn) ) return -EINVAL ;
+    u[0] = Avals[c&0x07] ;
+    return 0 ;
+}
+
+static int FS_r_set_alarm( unsigned int * u, const struct parsedname * pn ) {
+    unsigned char c ;
+    if ( OW_r_mem(&c,1,0x200,pn) ) return -EINVAL ;
+    u[0] = Avals[(c>>3)&0x07] ;
     return 0 ;
 }
 
@@ -258,7 +294,11 @@ static int OW_r_ulong( unsigned long int * L, const size_t size, const size_t of
     unsigned char data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
     if ( size > 5 ) return -ERANGE ;
     if ( OW_r_mem( data, size, offset, pn ) ) return -EINVAL ;
-    L[0] = (unsigned long int) data[0] + data[1]<<8 + data[2]<<16 + data[3]<<24 + data[4]<<32 ;
+    L[0] = ((unsigned long int) data[0]) 
+         + (((unsigned long int) data[1])<<8) 
+         + (((unsigned long int) data[2])<<16) 
+         + (((unsigned long int) data[3])<<24) 
+         + (((unsigned long int) data[4])<<32) ;
     return 0 ;
 }
 
