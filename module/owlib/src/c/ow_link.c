@@ -22,7 +22,6 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
 static int LINK_reset( const struct parsedname * pn ) ;
 static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
-static int LINK_ProgramPulse( const struct parsedname * pn ) ;
 static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
 static int LINK_select(const struct parsedname * pn) ;
 static int LINK_reconnect( const struct parsedname * pn ) ;
@@ -32,14 +31,17 @@ static int LINK_CR( const struct parsedname * pn ) ;
 static void LINK_setroutines( struct interface_routines * f ) {
     f->reset = LINK_reset ;
     f->next_both = LINK_next_both ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
     f->PowerByte = LINK_PowerByte ;
-    f->ProgramPulse = LINK_ProgramPulse ;
+//    f->ProgramPulse = ;
     f->sendback_data = LINK_sendback_data ;
+//    f->sendback_bits = ;
     f->select        = LINK_select ;
-    f->overdrive = NULL ;
-    f->testoverdrive = NULL ;
     f->reconnect = LINK_reconnect ;
 }
+
+#define LINK_string(x)  ((unsigned char *)(x))
 
 /* Called from DS2480_detect, and is set up to DS9097U emulation by default */
 int LINK_detect( struct connection_in * in ) {
@@ -52,9 +54,9 @@ int LINK_detect( struct connection_in * in ) {
 
     // set the baud rate to 9600
     COM_speed(B9600,&pn);
-    if ( LINK_reset(&pn)==0 && LINK_write(" ",1,&pn)==0 ) {
-        char tmp[36] = "(none)";
-        char * stringp = tmp ;
+    if ( LINK_reset(&pn)==0 && LINK_write(LINK_string(" "),1,&pn)==0 ) {
+        unsigned char tmp[36] = "(none)";
+        char * stringp = (char *) tmp ;
         /* read the version string */
         memset(tmp,0,36) ;
         LINK_read(tmp,36,&pn) ; // ignore return value -- will time out, probably
@@ -88,9 +90,9 @@ int LINK_detect( struct connection_in * in ) {
 }
 
 static int LINK_reset( const struct parsedname * pn ) {
-    char resp[3] ;
+    unsigned char resp[3] ;
     COM_flush(pn) ;
-    if ( LINK_write("\rr",2,pn) ) return -errno ;
+    if ( LINK_write(LINK_string("\rr"),2,pn) ) return -errno ;
 //    sleep(1) ;
     if ( LINK_read(resp,4,pn) ) return -errno ;
     switch( resp[1] ) {
@@ -118,13 +120,13 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
 
     COM_flush(pn) ;
     if ( si->LastDiscrepancy == -1 ) {
-        if ( (ret=LINK_write("f",1,pn)) ) return ret ;
+        if ( (ret=LINK_write(LINK_string("f"),1,pn)) ) return ret ;
         si->LastDiscrepancy = 0 ;
     } else {
-        if ( (ret=LINK_write("n",1,pn)) ) return ret ;
+        if ( (ret=LINK_write(LINK_string("n"),1,pn)) ) return ret ;
     }
     
-    if ( (ret=LINK_read(resp,20,pn)) ) return ret ;
+    if ( (ret=LINK_read(LINK_string(resp),20,pn)) ) return ret ;
 
     switch ( resp[0] ) {
         case '-':
@@ -282,41 +284,18 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
     return 0;
 }
 
-//--------------------------------------------------------------------------
-// Send 8 bits of communication to the 1-Wire Net and verify that the
-// 8 bits read from the 1-Wire Net is the same (write operation).
-// The parameter 'byte' least significant 8 bits are used.  After the
-// 8 bits are sent change the level of the 1-Wire net.
-// Delay delay msec and return to normal
-//
-/* Returns 0=good
-   bad = -EIO
- */
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) {
-    char pow ;
+    unsigned char pow ;
     
-    if ( LINK_write("p",1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) return -EIO ; // send just the <CR>
+    if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) return -EIO ; // send just the <CR>
     
     // delay
     UT_delay( delay ) ;
 
     // flush the buffers
-    // COM_flush(pn);
     return LINK_CR( pn ) ; // send just the <CR>
 }
 
-/* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */
-/* Note, DS2480_reset must have been called at once in the past for ProgramAvailable setting */
-/* returns 0 if good
-    -EINVAL if not program pulse available
-    -EIO on error
- */
-static int LINK_ProgramPulse( const struct parsedname * pn ) {
-    (void) pn ;
-    return -EINVAL ;
-}
-
-//
 // DS2480_sendback_data
 //  Send data and return response block
 //  puts into data mode if needed.
@@ -329,14 +308,14 @@ static int LINK_sendback_data( const unsigned char * data, unsigned char * resp,
     unsigned char * buf = pn->in->combuffer ;
 
     if ( size == 0 ) return 0 ;
-    if ( LINK_write("b",1,pn) ) return -EIO ;
+    if ( LINK_write(LINK_string("b"),1,pn) ) return -EIO ;
 //    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
     for ( left=size; left ; ) {
         i = (left>16)?16:left ;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
-        bytes2string( buf, &data[size-left], i ) ;
+        bytes2string( (char *)buf, &data[size-left], i ) ;
         if ( LINK_write( buf, i<<1, pn ) || LINK_read( buf, i<<1, pn ) ) return -EIO ;
-        string2bytes( buf, &resp[size-left], i ) ;
+        string2bytes( (char *)buf, &resp[size-left], i ) ;
         left -= i ;
     }
         
@@ -380,16 +359,16 @@ static void byteprint( const unsigned char * b, int size ) {
 */
 
 static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) {
-    char byte[2] ;
+    unsigned char byte[2] ;
 
-    num2string( byte, out[0] ) ;
+    num2string( (char *)byte, out[0] ) ;
     if ( LINK_write( byte, 2, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
-    in[0] = string2num( byte ) ;
+    in[0] = string2num( (char *)byte ) ;
     return 0 ;
 }
 
 static int LINK_CR( const struct parsedname * pn ) {
-    char byte[2] ;
-    if ( LINK_write( "\r", 1, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
+    unsigned char byte[2] ;
+    if ( LINK_write( LINK_string("\r"), 1, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
     return 0 ;
 }

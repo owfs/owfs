@@ -29,13 +29,13 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
 static void DS9097_setroutines( struct interface_routines * const f ) {
     f->reset = DS9097_reset ;
     f->next_both = BUS_next_both_low ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
     f->PowerByte = BUS_PowerByte_low ;
-//    f->ProgramPulse = DS9097_ProgramPulse ;
+//    f->ProgramPulse = ;
     f->sendback_data = BUS_sendback_data_low ;
     f->sendback_bits = DS9097_sendback_bits ;
     f->select        = BUS_select_low ;
-//    f->overdrive = NULL ;
-//    f->testoverdrive = NULL ;
     f->reconnect = DS9097_reconnect ;
     f->close = COM_close ;
 }

@@ -36,12 +36,13 @@ static void DS2480_setroutines( struct interface_routines * f ) ;
 static void DS2480_setroutines( struct interface_routines * f ) {
     f->reset = DS2480_reset ;
     f->next_both = DS2480_next_both ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
     f->PowerByte = DS2480_PowerByte ;
     f->ProgramPulse = DS2480_ProgramPulse ;
     f->sendback_data = DS2480_sendback_data ;
+//    f->sendback_bits = ;
     f->select        = BUS_select_low ;
-    f->overdrive = NULL ;
-    f->testoverdrive = NULL ;
     f->reconnect = DS2480_reconnect ;
     f->close = COM_close ;
 }

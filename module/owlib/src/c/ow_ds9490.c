@@ -41,7 +41,6 @@ static int DS9490_level(int new_level, const struct parsedname * pn) ;
 static void DS9490_setroutines( struct interface_routines * f ) ;
 static int DS9490_detect_low( const struct parsedname * pn ) ;
 static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
-static int DS9490_ProgramPulse( const struct parsedname * pn) ;
 static int DS9490_read( unsigned char * buf, const size_t size, const struct parsedname * pn) ;
 static int DS9490_write( const unsigned char * buf, const size_t size, const struct parsedname * pn) ;
 static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) ;
@@ -52,12 +51,13 @@ static int DS9490_redetect_low( const struct parsedname * pn ) ;
 static void DS9490_setroutines( struct interface_routines * f ) {
     f->reset = DS9490_reset ;
     f->next_both = DS9490_next_both ;
-    f->PowerByte = DS9490_PowerByte ;
-    f->ProgramPulse = DS9490_ProgramPulse ;
-    f->sendback_data = DS9490_sendback_data ;
-    f->select        = BUS_select_low ;
     f->overdrive = DS9490_overdrive ;
     f->testoverdrive = DS9490_testoverdrive ;
+    f->PowerByte = DS9490_PowerByte ;
+//    f->ProgramPulse = ;
+    f->sendback_data = DS9490_sendback_data ;
+//    f->sendback_bits = ;
+    f->select        = BUS_select_low ;
     f->reconnect  =  DS9490_reconnect ;
 }
 
@@ -1260,12 +1260,6 @@ static int DS9490_level(int new_level, const struct parsedname * pn) {
     }
     pn->in->connin.usb.ULevel = new_level ;
     return 0 ;
-}
-
-/* The USB device can't actually deliver the EPROM programming voltage */
-static int DS9490_ProgramPulse( const struct parsedname * pn ) {
-    (void) pn ;
-    return -ENOPROTOOPT ;
 }
 
 #endif /* OW_USB */
