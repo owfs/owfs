@@ -104,8 +104,10 @@ struct interface_routines {
     int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
     int (* ProgramPulse) (const struct parsedname * pn) ;
-    /* send and recieve data*/
+    /* send and recieve data -- byte at a time */
     int (* sendback_data) (const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+    /* send and recieve data -- bit at a time */
+    int (* sendback_bits) (const unsigned char * databits , unsigned char * respbits , const size_t len, const struct parsedname * pn ) ;
     /* select a device */
     int (* select) ( const struct parsedname * pn ) ;
     /* reconnect with a balky device */
@@ -115,6 +117,7 @@ struct interface_routines {
 } ;
 #define BUS_reset(pn)                       (((pn)->in->iroutines.reset)(pn))
 #define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
+#define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
 #define BUS_next_both(sn,search,pn)         (((pn)->in->iroutines.next_both)((sn),(search),(pn)))
 #define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
 #define BUS_PowerByte(byte,delay,pn)        (((pn)->in->iroutines.PowerByte)((byte),(delay),(pn)))
@@ -301,5 +304,7 @@ int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
 int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
+int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 
 #endif /* OW_CONNECTION_H */

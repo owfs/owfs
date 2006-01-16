@@ -252,6 +252,32 @@ int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const
 // ----------------------------------------------------------------
 // Low level default routines, often superceded by more capable adapters
 
+/* Symmetric */
+/* send bytes, and read back -- calls lower level bit routine */
+int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
+    unsigned int i, bits = len<<3 ;
+    int ret ;
+    int remain = len - (UART_FIFO_SIZE>>3) ;
+
+    /* Split into smaller packets? */
+    if ( remain>0 ) return BUS_sendback_data( data,resp,UART_FIFO_SIZE>>3,pn)
+                || BUS_sendback_data( &data[UART_FIFO_SIZE>>3],&resp[UART_FIFO_SIZE>>3],remain,pn) ;
+
+    /* Encode bits */
+    for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? 0xFF : 0x00 ;
+    
+    /* Communication with DS9097 routine */
+    if ( (ret=BUS_sendback_bits(pn->in->combuffer,pn->in->combuffer,bits,pn) ) ) {
+        STAT_ADD1(DS9097_sendback_data_errors);
+        return ret ;
+    }
+
+    /* Decode Bits */
+    for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
+
+    return 0 ;
+}
+
 // Send 8 bits of communication to the 1-Wire Net
 // Delay delay msec and return to normal
 //
@@ -272,3 +298,95 @@ int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parse
 
     return ret;
 }
+
+/* Low level search routines -- bit banging */
+/* Not used by more advanced adapters */
+int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
+    struct stateinfo * si = pn->si ;
+    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
+    int bit_number ;
+    int last_zero = -1 ;
+    unsigned char bits[3] ;
+    int ret ;
+
+    // initialize for search
+    // if the last call was not the last one
+    if ( !si->AnyDevices ) si->LastDevice = 1 ;
+    if ( si->LastDevice ) return -ENODEV ;
+
+    /* Appropriate search command */
+    if ( (ret=BUS_send_data(&search,1,pn)) ) return ret ;
+      // loop to do the search
+    for ( bit_number=0 ;; ++bit_number ) {
+        bits[1] = bits[2] = 0xFF ;
+        if ( bit_number==0 ) { /* First bit */
+            /* get two bits (AND'ed bit and AND'ed complement) */
+            if ( (ret=BUS_sendback_bits(&bits[1],&bits[1],2,pn)) ) {
+                STAT_ADD1(DS9097_next_both_errors);
+                return ret ;
+            }
+        } else {
+            bits[0] = search_direction ;
+            if ( bit_number<64 ) {
+                /* Send chosen bit path, then check match on next two */
+                if ( (ret=BUS_sendback_bits(bits,bits,3,pn)) ) {
+                    STAT_ADD1(DS9097_next_both_errors);
+                    return ret ;
+                }
+            } else { /* last bit */
+                if ( (ret=BUS_sendback_bits(bits,bits,1,pn)) ) {
+                    STAT_ADD1(DS9097_next_both_errors);
+                    return ret ;
+                }
+                break ;
+            }
+        }
+        if ( bits[1] ) {
+            if ( bits[2] ) { /* 1,1 */
+                break ; /* No devices respond */
+            } else { /* 1,0 */
+                search_direction = 1;  // bit write value for search
+            }
+        } else if ( bits[2] ) { /* 0,1 */
+            search_direction = 0;  // bit write value for search
+        } else if (bit_number > si->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
+            // Past branch, select zeros for now
+            search_direction = 0 ;
+            last_zero = bit_number;
+        } else if (bit_number == si->LastDiscrepancy) {  /* 0,0 -- new branch */
+            // at branch (again), select 1 this time
+            search_direction = 1 ; // if equal to last pick 1, if not then pick 0
+        } else  if (UT_getbit(serialnumber,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 1 ;
+        } else {  /* 0,0 -- old news, use previous "0" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 0 ;
+            last_zero = bit_number;
+        }
+        // check for Last discrepancy in family
+        //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
+        UT_setbit(serialnumber,bit_number,search_direction) ;
+
+        // serial number search direction write bit
+        //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
+    } // loop until through serial number bits
+
+    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
+        STAT_ADD1(DS9097_next_both_errors);
+      /* A minor "error" and should perhaps only return -1 to avoid
+      * reconnect */
+        return -EIO ;
+    }
+    if((serialnumber[0] & 0x7F) == 0x04) {
+        /* We found a DS1994/DS2404 which require longer delays */
+        pn->in->ds2404_compliance = 1 ;
+    }
+    // if the search was successful then
+
+    si->LastDiscrepancy = last_zero;
+//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+    si->LastDevice = (last_zero < 0);
+    return 0 ;
+}
+

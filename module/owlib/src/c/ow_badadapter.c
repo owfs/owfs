@@ -22,6 +22,7 @@ static int BadAdapter_reset( const struct parsedname * pn ) ;
 static int BadAdapter_reconnect( const struct parsedname * pn ) ;
 static int BadAdapter_select(const struct parsedname * pn) ;
 static int BadAdapter_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
+static int BadAdapter_sendback_bits( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
 static void BadAdapter_close( struct connection_in * in ) ;
 
 /* Device-specific functions */
@@ -36,6 +37,7 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.PowerByte     = BadAdapter_PowerByte     ;
     in->iroutines.ProgramPulse  = BadAdapter_ProgramPulse  ;
     in->iroutines.sendback_data = BadAdapter_sendback_data ;
+    in->iroutines.sendback_bits = BadAdapter_sendback_bits ;
     in->iroutines.select        = BadAdapter_select        ;
     in->iroutines.reconnect     = BadAdapter_reconnect     ;
     in->iroutines.close         = BadAdapter_close         ;
@@ -78,7 +80,13 @@ static int BadAdapter_sendback_data( const unsigned char * data , unsigned char 
     (void) len ;
     return -ENOTSUP ;
 }
-
+static int BadAdapter_sendback_bits( const unsigned char * data , unsigned char * resp, const size_t len, const struct parsedname * pn ){
+    (void) pn ;
+    (void) data ;
+    (void) resp ;
+    (void) len ;
+    return -ENOTSUP ;
+}
 static void BadAdapter_close( struct connection_in * in ) {
     (void) in ;
 }

@@ -16,15 +16,13 @@ $Id$
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
-static int DS9097_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * const pn) ;
-static int DS9097_ProgramPulse( const struct parsedname * const pn ) ;
-static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) ;
-static int DS9097_reset( const struct parsedname * const pn ) ;
-static int DS9097_reconnect( const struct parsedname * const pn ) ;
-static int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) ;
+static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int DS9097_reset( const struct parsedname * pn ) ;
+static int DS9097_reconnect( const struct parsedname * pn ) ;
+static int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
 static int DS9097_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
-static void DS9097_setroutines( struct interface_routines * const f ) ;
-static int DS9097_send_and_get( const unsigned char * const bussend, unsigned char * const busget, const size_t length, const struct parsedname * pn ) ;
+static void DS9097_setroutines( struct interface_routines * f ) ;
+static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
 
 #define	OneBit	0xFF
 #define ZeroBit 0xC0
@@ -32,10 +30,11 @@ static int DS9097_send_and_get( const unsigned char * const bussend, unsigned ch
 /* Device-specific functions */
 static void DS9097_setroutines( struct interface_routines * const f ) {
     f->reset = DS9097_reset ;
-    f->next_both = DS9097_next_both ;
+    f->next_both = BUS_next_both_low ;
     f->PowerByte = BUS_PowerByte_low ;
-    f->ProgramPulse = DS9097_ProgramPulse ;
-    f->sendback_data = DS9097_sendback_data ;
+//    f->ProgramPulse = DS9097_ProgramPulse ;
+    f->sendback_data = BUS_sendback_data_low ;
+    f->sendback_bits - DS9097_sendback_bits ;
     f->select        = BUS_select_low ;
 //    f->overdrive = NULL ;
 //    f->testoverdrive = NULL ;
@@ -70,34 +69,7 @@ int DS9097_detect( struct connection_in * in ) {
     return ret;
 }
 
-//--------------------------------------------------------------------------
-// Send 8 bits of communication to the 1-Wire Net and verify that the
-// 8 bits read from the 1-Wire Net is the same (write operation).
-// The parameter 'byte' least significant 8 bits are used.  After the
-// 8 bits are sent change the level of the 1-Wire net.
-// Delay delay msec and return to normal
-//
-/* Returns 0=good
-   bad = -EIO
- */
-static int DS9097_PowerByte(unsigned char byte, unsigned int delay, const struct parsedname * const pn) {
-    int ret ;
-
-    // flush the buffers
-    COM_flush(pn);
-
-    // send the packet
-    if((ret=BUS_send_data(&byte,1,pn))) {
-        STAT_ADD1(DS9097_PowerByte_errors);
-      return ret ;
-    }
-    // delay
-    UT_delay( delay ) ;
-
-    return ret;
-}
-
-static int DS9097_reconnect( const struct parsedname * const pn ) {
+static int DS9097_reconnect( const struct parsedname * pn ) {
     STAT_ADD1(BUS_reconnect);
 
     if ( !pn || !pn->in ) return -EIO;
@@ -115,101 +87,6 @@ static int DS9097_reconnect( const struct parsedname * const pn ) {
     STAT_ADD1(pn->in->bus_reconnect_errors);
     LEVEL_DEFAULT("Failed to reconnect DS9097 adapter!\n");
     return -EIO ;
-}
-
-static int DS9097_ProgramPulse( const struct parsedname * const pn ) {
-    (void) pn ;
-    return -EIO; /* not available */
-}
-
-
-static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * const pn) {
-    struct stateinfo * si = pn->si ;
-    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
-    int bit_number ;
-    int last_zero = -1 ;
-    unsigned char bits[3] ;
-    int ret ;
-
-    // initialize for search
-    // if the last call was not the last one
-    if ( !si->AnyDevices ) si->LastDevice = 1 ;
-    if ( si->LastDevice ) return -ENODEV ;
-
-    /* Appropriate search command */
-    if ( (ret=BUS_send_data(&search,1,pn)) ) return ret ;
-      // loop to do the search
-    for ( bit_number=0 ;; ++bit_number ) {
-        bits[1] = bits[2] = 0xFF ;
-        if ( bit_number==0 ) { /* First bit */
-            /* get two bits (AND'ed bit and AND'ed complement) */
-            if ( (ret=DS9097_sendback_bits(&bits[1],&bits[1],2,pn)) ) {
-                STAT_ADD1(DS9097_next_both_errors);
-                return ret ;
-            }
-        } else {
-            bits[0] = search_direction ;
-            if ( bit_number<64 ) {
-                /* Send chosen bit path, then check match on next two */
-                if ( (ret=DS9097_sendback_bits(bits,bits,3,pn)) ) {
-                    STAT_ADD1(DS9097_next_both_errors);
-                    return ret ;
-                }
-            } else { /* last bit */
-                if ( (ret=DS9097_sendback_bits(bits,bits,1,pn)) ) {
-                    STAT_ADD1(DS9097_next_both_errors);
-                    return ret ;
-                }
-                break ;
-            }
-        }
-        if ( bits[1] ) {
-            if ( bits[2] ) { /* 1,1 */
-                break ; /* No devices respond */
-            } else { /* 1,0 */
-                search_direction = 1;  // bit write value for search
-            }
-        } else if ( bits[2] ) { /* 0,1 */
-            search_direction = 0;  // bit write value for search
-        } else if (bit_number > si->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
-            // Past branch, select zeros for now
-            search_direction = 0 ;
-            last_zero = bit_number;
-        } else if (bit_number == si->LastDiscrepancy) {  /* 0,0 -- new branch */
-            // at branch (again), select 1 this time
-            search_direction = 1 ; // if equal to last pick 1, if not then pick 0
-        } else  if (UT_getbit(serialnumber,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
-            // this discrepancy is before the Last Discrepancy
-            search_direction = 1 ;
-        } else {  /* 0,0 -- old news, use previous "0" bit */
-            // this discrepancy is before the Last Discrepancy
-            search_direction = 0 ;
-            last_zero = bit_number;
-        }
-        // check for Last discrepancy in family
-        //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
-        UT_setbit(serialnumber,bit_number,search_direction) ;
-
-        // serial number search direction write bit
-        //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
-    } // loop until through serial number bits
-
-    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
-        STAT_ADD1(DS9097_next_both_errors);
-      /* A minor "error" and should perhaps only return -1 to avoid
-       * reconnect */
-      return -EIO ;
-    }
-    if((serialnumber[0] & 0x7F) == 0x04) {
-      /* We found a DS1994/DS2404 which require longer delays */
-      pn->in->ds2404_compliance = 1 ;
-    }
-    // if the search was successful then
-
-    si->LastDiscrepancy = last_zero;
-//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
-    si->LastDevice = (last_zero < 0);
-    return 0 ;
 }
 
 /* DS9097 Reset -- A little different from DS2480B */
@@ -286,23 +163,29 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 /* Symmetric */
 /* send bits -- read bits */
 /* Actually uses bit zero of each byte */
-int DS9097_sendback_bits( const unsigned char * const outbits , unsigned char * const inbits , const int length, const struct parsedname * const pn ) {
+/* Dispatches 16 "bits" at a time */
+int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) {
     int ret ;
-    int i ;
+    unsigned char d[16] ;
+    int rest = length ;
+    size_t l=0 ;
+    int i=0 ;
+
+    if ( length==0 ) return 0 ;
 
     /* Split into smaller packets? */
-    if ( length > UART_FIFO_SIZE ) return DS9097_sendback_bits(outbits,inbits,UART_FIFO_SIZE,pn)
-    ||DS9097_sendback_bits(&outbits[UART_FIFO_SIZE],&inbits[UART_FIFO_SIZE],length-UART_FIFO_SIZE,pn) ;
-
-    /* Encode bits */
-    for ( i=0 ; i<length ; ++i ) pn->in->combuffer[i] = outbits[i] ? OneBit : ZeroBit ;
-
-    /* Communication with DS9097 routine */
-    if ( (ret= DS9097_send_and_get(pn->in->combuffer,inbits,(unsigned)length,pn)) ) {
-        STAT_ADD1(DS9097_sendback_bits_errors);
-        return ret ;
-    }
-
+    do {
+        d[l++] = outbits[i++] ? OneBit : ZeroBit ;
+        if ( l==16 || i==length ) {
+            /* Communication with DS9097 routine */
+            if ( (ret= DS9097_send_and_get(d,inbits,l,pn)) ) {
+                STAT_ADD1(DS9097_sendback_bits_errors);
+                return ret ;
+            }
+            l = 0 ;
+        }
+    } while ( i<length ) ;
+            
     /* Decode Bits */
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
 
@@ -338,7 +221,7 @@ static int DS9097_sendback_data( const unsigned char * data, unsigned char * res
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9097 */
-static int DS9097_send_and_get( const unsigned char * const bussend, unsigned char * const busget, const size_t length, const struct parsedname * pn ) {
+static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) {
     size_t gl = length ;
     ssize_t r ;
     size_t sl = length ;
