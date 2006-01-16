@@ -16,11 +16,9 @@ $Id$
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
-static int DS9097_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 static int DS9097_reset( const struct parsedname * pn ) ;
 static int DS9097_reconnect( const struct parsedname * pn ) ;
 static int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
-static int DS9097_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 static void DS9097_setroutines( struct interface_routines * f ) ;
 static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
 
@@ -34,7 +32,7 @@ static void DS9097_setroutines( struct interface_routines * const f ) {
     f->PowerByte = BUS_PowerByte_low ;
 //    f->ProgramPulse = DS9097_ProgramPulse ;
     f->sendback_data = BUS_sendback_data_low ;
-    f->sendback_bits - DS9097_sendback_bits ;
+    f->sendback_bits = DS9097_sendback_bits ;
     f->select        = BUS_select_low ;
 //    f->overdrive = NULL ;
 //    f->testoverdrive = NULL ;
@@ -163,57 +161,33 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 /* Symmetric */
 /* send bits -- read bits */
 /* Actually uses bit zero of each byte */
-/* Dispatches 16 "bits" at a time */
+/* Dispatches DS9097_MAX_BITS "bits" at a time */
+#define DS9097_MAX_BITS 24
 int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) {
     int ret ;
-    unsigned char d[16] ;
-    int rest = length ;
+    unsigned char d[DS9097_MAX_BITS] ;
     size_t l=0 ;
-    int i=0 ;
+    size_t i=0 ;
+    size_t start = 0 ;
 
     if ( length==0 ) return 0 ;
 
     /* Split into smaller packets? */
     do {
         d[l++] = outbits[i++] ? OneBit : ZeroBit ;
-        if ( l==16 || i==length ) {
+        if ( l==DS9097_MAX_BITS || i==length ) {
             /* Communication with DS9097 routine */
-            if ( (ret= DS9097_send_and_get(d,inbits,l,pn)) ) {
+            if ( (ret= DS9097_send_and_get(d,&inbits[start],l,pn)) ) {
                 STAT_ADD1(DS9097_sendback_bits_errors);
                 return ret ;
             }
             l = 0 ;
+            start = i ;
         }
     } while ( i<length ) ;
             
     /* Decode Bits */
     for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
-
-    return 0 ;
-}
-
-/* Symmetric */
-/* send bytes, and read back -- calls lower level bit routine */
-static int DS9097_sendback_data( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
-    unsigned int i, bits = len<<3 ;
-    int ret ;
-    int remain = len - (UART_FIFO_SIZE>>3) ;
-
-    /* Split into smaller packets? */
-    if ( remain>0 ) return DS9097_sendback_data( data,resp,UART_FIFO_SIZE>>3,pn)
-        || DS9097_sendback_data( &data[UART_FIFO_SIZE>>3],&resp[UART_FIFO_SIZE>>3],remain,pn) ;
-
-    /* Encode bits */
-    for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? OneBit : ZeroBit ;
-    
-    /* Communication with DS9097 routine */
-    if ( (ret=DS9097_send_and_get(pn->in->combuffer,pn->in->combuffer,bits,pn) ) ) {
-        STAT_ADD1(DS9097_sendback_data_errors);
-        return ret ;
-    }
-
-    /* Decode Bits */
-    for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
 
     return 0 ;
 }
