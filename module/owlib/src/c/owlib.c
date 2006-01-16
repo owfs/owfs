@@ -199,6 +199,7 @@ int LibStart( void ) {
         return 1;
     }
     do {
+        BadAdapter_detect(in) ; /* default "NOTSUP" calls */
         switch( get_busmode(in) ) {
             case bus_remote:
                 ret = Server_detect(in) ;
@@ -237,10 +238,12 @@ int LibStart( void ) {
                 if(!in->name) in->name = strdup("-1/-1") ;
                 break ;
             default:
-                ret = 1 ;
                 break ;
         }
-        if (ret) BadAdapter_detect(in) ;
+        if ( ret ) { /* flag that that the adapter initiation was unsuccessful */
+            BUS_close(in) ; /* can use adapter's close */
+            BadAdapter_detect(in) ; /* Set to default null assignments */
+        }
     } while ( (in=in->next) ) ;
     Asystem.elements = indevices ;
 

@@ -248,3 +248,27 @@ int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) {
 int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) {
     return BUS_next_both( serialnumber, 0xEC, pn ) ;
 }
+
+// ----------------------------------------------------------------
+// Low level default routines, often superceded by more capable adapters
+
+// Send 8 bits of communication to the 1-Wire Net
+// Delay delay msec and return to normal
+//
+// Power is supplied by normal pull-up resistor, nothing special
+//
+/* Returns 0=good
+   bad = -EIO
+ */
+int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parsedname * const pn) {
+    int ret ;
+    // send the packet
+    if((ret=BUS_send_data(&byte,1,pn))) {
+        STAT_ADD1(DS9097_PowerByte_errors);
+        return ret ;
+    }
+    // delay
+    UT_delay( delay ) ;
+
+    return ret;
+}

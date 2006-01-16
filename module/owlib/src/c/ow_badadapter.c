@@ -22,6 +22,7 @@ static int BadAdapter_reset( const struct parsedname * pn ) ;
 static int BadAdapter_reconnect( const struct parsedname * pn ) ;
 static int BadAdapter_select(const struct parsedname * pn) ;
 static int BadAdapter_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
+static void BadAdapter_close( struct connection_in * in ) ;
 
 /* Device-specific functions */
 int BadAdapter_detect( struct connection_in * in ) {
@@ -37,6 +38,7 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.sendback_data = BadAdapter_sendback_data ;
     in->iroutines.select        = BadAdapter_select        ;
     in->iroutines.reconnect     = BadAdapter_reconnect     ;
+    in->iroutines.close         = BadAdapter_close         ;
     in->adapter_name="Bad Adapter" ;
     return 0 ;
 }
@@ -45,34 +47,39 @@ static int BadAdapter_PowerByte(const unsigned char byte, const unsigned int del
     (void) pn ;
     (void) byte ;
     (void) delay ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
 static int BadAdapter_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     (void) serialnumber ;
     (void) search ;
     (void) pn ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
 static int BadAdapter_reset( const struct parsedname * pn ) {
     (void) pn ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
 static int BadAdapter_select(const struct parsedname * pn) {
     (void) pn ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
 static int BadAdapter_reconnect(const struct parsedname * pn) {
     (void) pn ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
 static int BadAdapter_sendback_data( const unsigned char * data , unsigned char * resp, const size_t len, const struct parsedname * pn ){
     (void) pn ;
     (void) data ;
     (void) resp ;
     (void) len ;
-    return -ENXIO ;
+    return -ENOTSUP ;
 }
+
+static void BadAdapter_close( struct connection_in * in ) {
+    (void) in ;
+}
+

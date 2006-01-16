@@ -58,6 +58,7 @@ static void DS1410_setroutines( struct interface_routines * f ) {
     f->overdrive = NULL ;
     f->testoverdrive = NULL ;
     f->reconnect = DS1410_reconnect ;
+    f->close = DS1410_close ;
 }
 
 /* Open a DS1410 after an unsucessful DS2480_detect attempt */
@@ -118,7 +119,7 @@ static int DS1410_reconnect( const struct parsedname * pn ) {
     if ( !pn || !pn->in ) return -EIO;
     STAT_ADD1(pn->in->bus_reconnect);
 
-    DS1410_close(pn->in);
+    BUS_close(pn->in);
     usleep(100000);
     if( DS1410_detect(pn->in) ) {
         STAT_ADD1(BUS_reconnect_errors);

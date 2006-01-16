@@ -70,6 +70,8 @@ static int OW_w_page( const unsigned char * p , const size_t size , const size_t
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) ;
 
+static size_t Asize[] = { 24, 8, 8, } ;
+
 /* 2436 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( pn->extension > 2 ) return -ERANGE ;
@@ -96,15 +98,20 @@ static int FS_volts(FLOAT * V , const struct parsedname * pn) {
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
 static int OW_r_page( unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
-    unsigned char data[33] ;
+    unsigned char data[32] ;
+    int page = offset>>5 ;
+    size_t s = size ;
+    size_t off = offset & 0x1F ;
     static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
-    unsigned char scratchpad[] = { copyin[offset>>5], 0x11 , offset, } ;
-    size_t rest = 32-(offset&0x1F) ;
+    unsigned char scratchpad[] = { copyin[page], 0x11 , offset, } ;
     int ret ;
+
+    memset( data, 0xFF, size ) ;
+    if ( s+off > Asize[page] ) s = Asize[page] - off ;
 
     // read to scratch, then in
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchpad, 3,pn ) || BUS_readin_data( data,rest+1,pn ) || CRC8( data,rest+1) ;
+        ret = BUS_select(pn) || BUS_send_data( scratchpad, 3,pn ) || BUS_readin_data( data,s,pn ) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
@@ -116,24 +123,21 @@ static int OW_r_page( unsigned char * p , const size_t size , const size_t offse
 /* only called for a single page, and that page is 0,1,2 only*/
 static int OW_w_page( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
     size_t rest = 32-(offset&0x1F) ;
+    int page = offset >> 5 ;
+    size_t off = offset & 0x1F ;
+    size_t s = size ;
     unsigned char scratchin[] = {0x11 , offset, } ;
     unsigned char scratchout[] = {0x17 , offset, } ;
     unsigned char data[33] ;
     static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
     static unsigned char copyout[] = {0x22, 0x25, 0x27, } ;
+    static unsigned int plength[] = { 24, 8, 8, } ;
     int ret ;
 
     // read scratchpad (sets it, too)
-    if ( size != rest ) { /* partial page write (doesn't go to end of page) */
-        if ( OW_r_page(&data[size],offset+size,rest-size,pn) ) return 1 ;
-    } else { /* just copy in NVram to make sure scratchpad is set */
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( &copyin[offset>>5], 1,pn ) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
-    }
-
-    memcpy( data , p , size ) ;
+    if ( OW_r_page( data, 32, page<<5, pn ) ) return 1 ;
+    if ( s+off > Asize[page] ) s = Asize[page] - off ;
+    memcpy( &data[off] , p , s ) ;
 
     // write to scratchpad
     BUSLOCK(pn);

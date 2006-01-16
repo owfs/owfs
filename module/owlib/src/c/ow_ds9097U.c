@@ -43,6 +43,7 @@ static void DS2480_setroutines( struct interface_routines * f ) {
     f->overdrive = NULL ;
     f->testoverdrive = NULL ;
     f->reconnect = DS2480_reconnect ;
+    f->close = COM_close ;
 }
 
 /* --------------------------- */
@@ -316,7 +317,7 @@ static int DS2480_reconnect( const struct parsedname * pn ) {
     if ( !pn || !pn->in ) return -EIO;
     STAT_ADD1(pn->in->bus_reconnect);
 
-    COM_close(pn->in);
+    BUS_close(pn->in);
     usleep(100000);
     if(!COM_open(pn->in)) {
       if(!DS2480_detect(pn->in)) {

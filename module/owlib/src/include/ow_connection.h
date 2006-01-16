@@ -87,6 +87,7 @@ $Id$
     #define MAX_FIFO_SIZE UART_FIFO_SIZE
 #endif
 
+struct connection_in ;
 
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */
@@ -109,17 +110,19 @@ struct interface_routines {
     int (* select) ( const struct parsedname * pn ) ;
     /* reconnect with a balky device */
     int (* reconnect) ( const struct parsedname * pn ) ;
-
+    /* Close the connection (port) */
+    void (* close) ( struct connection_in * in ) ;
 } ;
-#define BUS_reset(pn)                       ((pn)->in->iroutines.reset)(pn)
-#define BUS_sendback_data(data,resp,len,pn) ((pn)->in->iroutines.sendback_data)(data,resp,len,pn)
-#define BUS_next_both(sn,search,pn)         ((pn)->in->iroutines.next_both)(sn,search,pn)
-#define BUS_ProgramPulse(pn)                ((pn)->in->iroutines.ProgramPulse)(pn)
-#define BUS_PowerByte(byte,delay,pn)        ((pn)->in->iroutines.PowerByte)(byte,delay,pn)
-#define BUS_select(pn)                      ((pn)->in->iroutines.select)(pn)
-#define BUS_reconnect(pn)                   ((pn)->in->iroutines.reconnect)(pn)
-#define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive) ? (((pn)->in->iroutines.overdrive)(speed,(pn))) : (-ENOTSUP))
-#define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive) ? (((pn)->in->iroutines.testoverdrive)((pn))) : (-ENOTSUP))
+#define BUS_reset(pn)                       (((pn)->in->iroutines.reset)(pn))
+#define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
+#define BUS_next_both(sn,search,pn)         (((pn)->in->iroutines.next_both)((sn),(search),(pn)))
+#define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
+#define BUS_PowerByte(byte,delay,pn)        (((pn)->in->iroutines.PowerByte)((byte),(delay),(pn)))
+#define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
+#define BUS_reconnect(pn)                   (((pn)->in->iroutines.reconnect)(pn))
+#define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive)((speed),(pn)))
+#define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
+#define BUS_close(in)                       (((in)->iroutines.close(in)))
 
 struct connin_serial {
     speed_t speed;
@@ -297,5 +300,6 @@ int BUS_readin_data(unsigned char * const data , const size_t len, const struct 
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
+int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
 
 #endif /* OW_CONNECTION_H */

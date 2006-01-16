@@ -33,13 +33,14 @@ static int DS9097_send_and_get( const unsigned char * const bussend, unsigned ch
 static void DS9097_setroutines( struct interface_routines * const f ) {
     f->reset = DS9097_reset ;
     f->next_both = DS9097_next_both ;
-    f->PowerByte = DS9097_PowerByte ;
+    f->PowerByte = BUS_PowerByte_low ;
     f->ProgramPulse = DS9097_ProgramPulse ;
     f->sendback_data = DS9097_sendback_data ;
     f->select        = BUS_select_low ;
-    f->overdrive = NULL ;
-    f->testoverdrive = NULL ;
+//    f->overdrive = NULL ;
+//    f->testoverdrive = NULL ;
     f->reconnect = DS9097_reconnect ;
+    f->close = COM_close ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
@@ -102,7 +103,7 @@ static int DS9097_reconnect( const struct parsedname * const pn ) {
     if ( !pn || !pn->in ) return -EIO;
     STAT_ADD1(pn->in->bus_reconnect);
 
-    COM_close(pn->in);
+    BUS_close(pn->in);
     usleep(100000);
     if(!COM_open(pn->in)) {
       if(!DS9097_detect(pn->in)) {
