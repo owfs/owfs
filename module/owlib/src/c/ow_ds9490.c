@@ -899,8 +899,6 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
     unsigned char * cb = pn->in->combuffer ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     struct stateinfo * si = pn->si ;
-    struct timeval tv ;
-    time_t endtime, now ;
     int ret ;
     int i ;
     size_t buflen ;
@@ -939,49 +937,11 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         return -EIO;
     }
 
-    /* DS9490_getstatus() should be enough since it time-out after some time */
-#if 0
-    /* Wait for status max 300ms */
-    if(gettimeofday(&tv, NULL)<0) return -1;
-    endtime = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 + 300;
-    //now = 0 ;
-    do {
-        // just get first status packet without waiting for not idle
-        if((ret = DS9490_getstatus(buffer,pn,-1)) < 0) {
-            LEVEL_DATA("USBnextboth getstatus returned ret=%d\n", ret);
-            break ;
-        }
-
-        for(i=0; i<ret; i++) {
-            unsigned char val = buffer[16+i];
-            //printf("Status bytes: %X\n", val);
-            if(val != ONEWIREDEVICEDETECT) {
-                // If other status then ONEWIREDEVICEDETECT we have failed
-                LEVEL_DATA("USBnextboth status[%d]=0x%02X (!=%d) ret=%d\n", i, val, ONEWIREDEVICEDETECT, ret);
-                // check for NRS bit (0x01)
-                if(val & COMMCMDERRORRESULT_NRS) {
-                    // empty bus detected, no presence pulse detected
-                    LEVEL_DATA("USBnextboth: no presense pulse detected ??\n");
-                }
-                break;
-            }
-        }
-      
-        if(gettimeofday(&tv, NULL)<0) return -1;
-        now = (tv.tv_sec&0xFFFF)*1000 + tv.tv_usec/1000 ;
-    } while(((buffer[8]&STATUSFLAGS_IDLE) == 0) && (endtime > now));
-    if((buffer[8]&STATUSFLAGS_IDLE) == 0) {
-        LEVEL_DATA("USBnextboth: still not idle\n") ;
-        next_both_errors(pn, -EIO) ;
-        return -EIO ;
-    }
-#else
     if((ret = DS9490_getstatus(buffer,0,pn)) < 0) {
         LEVEL_DATA("USBnextboth: getstatus error\n") ;
         next_both_errors(pn, -EIO) ;
         return -EIO ;
     }
-#endif
 
     if(buffer[13] == 0) {  // (ReadBufferStatus)
         /* Nothing found on the bus. Have to return something != 0 to avoid
@@ -1039,10 +999,10 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         case 0x04:
         case 0x84:
             /* We found a DS1994/DS2404 which require longer delays */
-	    pn->in->ds2404_compliance = 1 ;
+            pn->in->ds2404_compliance = 1 ;
             break ;
         default:
-	    break;
+            break;
     }
     
     return 0 ;
@@ -1059,53 +1019,14 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
    bad = -EIO
  */
 static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,const struct parsedname * pn) {
-    unsigned char buffer[32] ;
     unsigned char resp ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
-    unsigned char dly = 1 + ( (unsigned char) (delay>>4) ) ;
     int ret ;
 
     LEVEL_DATA("DS9490_Powerbyte\n") ;
 
-#if 0
-    /* Send the byte */
-    if ( (ret=DS9490_sendback_data(&byte, &resp , 1,pn)) ) {
-        STAT_ADD1( DS9490_PowerByte_errors ) ;
-	LEVEL_DATA("DS9490_Powerbyte: Error DS9490_sendback_data\n") ;
-        return ret ;
-    }
-    //printf("9490 Powerbyte in=%.2X out %.2X\n",byte,resp) ;
-    if ( byte != resp ) {
-        STAT_ADD1( DS9490_PowerByte_errors );
-	LEVEL_DATA("DS9490_Powerbyte: Error byte != resp\n") ;
-        return -EIO ;
-    }
-    /** Pulse duration  */
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0213, 0x0000|dly, NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1( DS9490_PowerByte_errors );
-	LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 1\n") ;
-        return ret ;
-    }
-    /** Pulse start */
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x0431, 0x0000, NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1( DS9490_PowerByte_errors );
-	LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 2\n") ;
-        return ret ;
-    }
-
-    /** Delay */
-    UT_delay( delay ) ;
-
-    /** wait */
-    if ( ((ret=DS9490_getstatus(buffer,pn,0)) < 0) ) {
-        STAT_ADD1(DS9490_PowerByte_errors);
-	LEVEL_DATA("DS9490_Powerbyte: Error DS9490_getstatus\n") ;
-        return ret ;
-    }
-#else
 
     /* This is more likely to be the correct way to handle powerbytes */
-
     if(pn->in->connin.usb.ULevel == MODE_STRONG5) {
       DS9490_level(MODE_NORMAL, pn) ;
     }
@@ -1113,13 +1034,13 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     // set the strong pullup
     if ( (ret=usb_control_msg(usb,0x40,MODE_CMD,MOD_PULSE_EN, ENABLEPULSE_SPUE, NULL, 0, TIMEOUT_USB ))<0 ) {
         STAT_ADD1(DS9490_PowerByte_errors);
-	LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 3\n") ;
+        LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 3\n") ;
         return ret ;
     }
 
     if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF, NULL, 0, TIMEOUT_USB ))<0 ) {
         STAT_ADD1(DS9490_PowerByte_errors);
-	LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n") ;
+        LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n") ;
         return ret ;
     }
 
@@ -1129,13 +1050,13 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     /* Read back the result (should be the same as "byte") */
     if((ret = DS9490_read(&resp, 1, pn)) < 0) {
         STAT_ADD1(DS9490_PowerByte_errors);
-	LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n", ret) ;
+        LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n", ret) ;
         return ret ;
     }
 
     if(resp != byte) {
         STAT_ADD1(DS9490_PowerByte_errors);
-	LEVEL_DATA("DS9490_Powerbyte: Error resp(%d) != byte(%d)\n", resp, byte) ;
+        LEVEL_DATA("DS9490_Powerbyte: Error resp(%d) != byte(%d)\n", resp, byte) ;
         return ret ;
     }
 
@@ -1145,10 +1066,9 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
     /* Turn off strong pullup */
     if((ret = DS9490_level(MODE_NORMAL, pn)) < 0) {
         STAT_ADD1(DS9490_PowerByte_errors);
-	LEVEL_DATA("DS9490_Powerbyte: DS9490_level, ret=%d\n", ret) ;
+        LEVEL_DATA("DS9490_Powerbyte: DS9490_level, ret=%d\n", ret) ;
         return ret ;
     }
-#endif
     return 0 ;
 }
 

@@ -133,6 +133,11 @@ int main(int argc, char *argv[]) {
      * Should perhaps call fuse_setup(), fuse_loop_mt(), fuse_teardown() only.
      */
     if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
+#else 
+    /* Time to cleanup the main-loop and use the fuse-helper functions soon.
+     * Should perhaps call fuse_setup(), fuse_loop_mt(), fuse_teardown() only.
+    */
+    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
 #endif
 
 

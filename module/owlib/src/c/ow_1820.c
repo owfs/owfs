@@ -287,7 +287,7 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
 static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     unsigned char data[8] ;
     unsigned char convert = 0x44 ;
-    int delay = (int) pn->ft->data ;
+    unsigned int delay = (unsigned int) pn->ft->data ;
     unsigned char pow ;
     int ret = 0 ;
 
@@ -354,7 +354,7 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
     unsigned char convert = 0x44 ;
     unsigned char pow ;
     int res = Resolutions[resolution-9].config ;
-    int delay = Resolutions[resolution-9].delay ;
+    unsigned int delay = Resolutions[resolution-9].delay ;
     int oldres ;
     size_t s = sizeof(oldres) ;
     int ret = 0 ;
@@ -449,7 +449,7 @@ static int OW_r_scratchpad(unsigned char * const data, const struct parsedname *
 static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) {
     /* data is 3 bytes ng */
     unsigned char d[4] = { 0x4E, data[0], data[1], data[2], } ;
-    int bytes = 2 ;
+    unsigned int bytes = 2 ;
     int ret ;
 
     /* different processing for DS18S20 and both DS19B20 and DS1822 */

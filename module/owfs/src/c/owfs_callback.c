@@ -18,18 +18,48 @@ $Id$
 #include "ow.h"
 #include "owfs.h"
 
+/* There was a major change in the function prototypes at FUSE 2.2, we'll make a flag */
+#undef FUSE22PLUS
+#undef FUSE1X
+
+#ifdef FUSE_MAJOR_VERSION
+    #if FUSE_MAJOR_VERSION > 2
+        #define FUSE22PLUS
+    #elif FUSE_MAJOR_VERSION < 2
+        #define FUSE1X
+    #elif FUSE_MINOR_VERSION > 1
+        #define FUSE22PLUS
+    #endif /* FUSE > 2.1 */
+#else /* no FUSE_MAJOR_VERSION */
+    #define FUSE1X
+#endif /* FUSE_MAJOR_VERSION */
+
+#ifdef FUSE22PLUS 
+    #define FUSEFLAG struct fuse_file_info *
+#else /* FUSE < 2.2 */
+    #define FUSEFLAG int
+#endif /* FUSE_MAJOR_VERSION */
+
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) ;
 static int FS_utime(const char *path, struct utimbuf *buf) ;
 static int FS_truncate(const char *path, const off_t size) ;
-static int FS_open(const char *path, int flags) ;
-static int FS_release(const char *path, int flags) ;
 static int FS_chmod(const char *path, mode_t mode) ;
 static int FS_chown(const char *path, uid_t uid, gid_t gid ) ;
-/* Change in statfs definition for newer FUSE versions */
-#if defined(FUSE_MAJOR_VERSION) && FUSE_MAJOR_VERSION > 1
-    #define FS_statfs   NULL
-#else /* FUSE_MAJOR_VERSION */
+static int FS_open(const char *path, FUSEFLAG flags) ;
+static int FS_release(const char *path, FUSEFLAG flags) ;
+#ifdef FUSE22PLUS
+    static int CB_read( const char * path, char * buffer, size_t size, off_t offset, struct fuse_file_info * flags ) ;
+    static int CB_write( const char * path, const char * buffer, size_t size, off_t offset, struct fuse_file_info * flags ) ;
+#else /* fuse < 2.2 */
+    #define CB_read FS_read
+    #define CB_write FS_write
+#endif
+
+    /* Change in statfs definition for newer FUSE versions */
+#ifdef FUSE1X
     static int FS_statfs(struct fuse_statfs *fst) ;
+#else /* FUSE_MAJOR_VERSION */
+    #define FS_statfs   NULL
 #endif /* FUSE_MAJOR_VERSION */
 
 struct fuse_operations owfs_oper = {
@@ -48,8 +78,8 @@ struct fuse_operations owfs_oper = {
     truncate: FS_truncate,
     utime:    FS_utime,
     open:     FS_open,
-    read:     FS_read,
-    write:    FS_write,
+    read:     CB_read,
+    write:    CB_write,
     statfs:   FS_statfs,
     release:  FS_release,
 };
@@ -76,13 +106,13 @@ static int FS_chown(const char *path, uid_t uid, gid_t gid ) {
 }
 
 /* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
-static int FS_open(const char *path, int flags) {
+static int FS_open(const char *path, FUSEFLAG flags) {
     LEVEL_CALL("OPEN path=%s\n", NULLSTRING(path));
     (void) flags ; return 0 ;
 }
 
 /* In theory, should handle file closing, but OWFS doesn't care. Device opened/closed with every read/write */
-static int FS_release(const char *path, int flags) {
+static int FS_release(const char *path, FUSEFLAG flags) {
     LEVEL_CALL("RELEASE path=%s\n", NULLSTRING(path));
     (void) flags ; return 0 ;
 }
@@ -93,23 +123,11 @@ static int FS_truncate(const char *path, const off_t size) {
     (void) size ; return 0 ;
 }
 
-
-
-#ifdef FUSE_MAJOR_VERSION
-    #if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2)) || \
-     (FUSE_MAJOR_VERSION >= 3)
-        /* Newer fuse versions (2.2 and later) have an inode argument */
-        #define FILLER(handle,name) filler( handle, name, DT_DIR, 0 ) ;
-    #else
-        /* Probably fuse-version 1.0 to 2.1 */
-        #define FILLER(handle,name) filler( handle, name, DT_DIR ) ;
-    #endif
-#else /* FUSE_MAJOR_VERSION */
-        /* Probably really old fuse-version */
-        #define FILLER(handle,name) filler( handle, name, DT_DIR ) ;
-#endif /* FUSE_MAJOR_VERSION */
-
-
+#ifdef FUSE22PLUS
+    #define FILLER(handle,name) filler(handle,name,DT_DIR,(ino_t)0)
+#else /* FUSE22PLUS */
+    #define FILLER(handle,name) filler(handle,name,DT_DIR)
+#endif /* FUSE22PLUS */
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
     struct stateinfo si ;
@@ -145,12 +163,23 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     return ret ;
 }
 
+#ifdef FUSE22PLUS
+static int CB_read( const char * path, char * buffer, size_t size, off_t offset, struct fuse_file_info * flags ) {
+    (void) flags ;
+    return FS_read( path, buffer, size, offset ) ;
+}
+static int CB_write( const char * path, const char * buffer, size_t size, off_t offset, struct fuse_file_info * flags ) {
+    (void) flags ;
+    return FS_write( path, buffer, size, offset ) ;
+}
+#endif /* FUSE22PLUS */
+            
 /* Change in statfs definition for newer FUSE versions */
-#if !defined(FUSE_MAJOR_VERSION) || !(FUSE_MAJOR_VERSION > 1)
+#ifdef FUSE1X
 int FS_statfs(struct fuse_statfs *fst) {
     LEVEL_CALL("STATFS\n");
     memset( fst, 0, sizeof(struct fuse_statfs) ) ;
     return 0 ;
 }
-#endif /* FUSE_MAJOR_VERSION */
+#endif /* FUSE1X */
 
