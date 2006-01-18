@@ -303,7 +303,7 @@ int BUS_readin_data(unsigned char * const data , const size_t len, const struct 
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
-int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
+int BUS_PowerByte_low(const unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
 int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 
