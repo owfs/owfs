@@ -79,9 +79,9 @@ int DS1410_detect( struct connection_in * in ) {
     unsigned char od ;
     int ret ;
     
-    if ( DS1410_open(in) ) return -EIO ;
     /* Set up low-level routines */
     DS1410_setroutines( & (in->iroutines) ) ;
+    if ( DS1410_open(in) ) return -EIO ; // Also exits "Passthru mode"
 
     /* Reset the bus */
     in->Adapter = adapter_DS1410 ; /* OWFS assigned value */
@@ -92,15 +92,13 @@ int DS1410_detect( struct connection_in * in ) {
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 
-    if((ret = DS1410_reset(&pn))) {
-        STAT_ADD1(DS1410_detect_errors);
-    } else if ( DS1410_PToff(in->fd) ) {
-        STAT_ADD1(DS1410_detect_errors);
-        ret = -EIO ;
-    } else if ( DS1410_ODcheck(&od,in->fd) ) {
-        ret = -EIO ;
+    if ( DS1410_ODcheck(&od,in->fd) ) {
+        LEVEL_CONNECT("Cannot check Overdrive mode on DS1410E at %s\n",in->name) ;
     } else if ( od ) {
         DS1410_ODoff(&pn) ;
+    }
+    if((ret = DS1410_reset(&pn))) {
+        STAT_ADD1(DS1410_detect_errors);
     }
     return ret;
 }
@@ -134,18 +132,21 @@ static int DS1410_reset( const struct parsedname * pn ) {
 }
 
 static int DS1410_open( struct connection_in * in ) {
-    if ( (in->fd = open(in->name, O_RDWR)) >= 0 ) {
-        if ( ioctl(in->fd,PPCLAIM ) == 0 ) return 0 ;
-        LEVEL_CONNECT("Cannot claim DS1410E at %s\n",in->name) ;
-        close( in->fd ) ;
-    } else {
+    LEVEL_CONNECT("Opening port %s\n",NULLSTRING(in->name)) ;
+    if ( (in->fd = open(in->name, O_RDWR)) < 0 ) {
         LEVEL_CONNECT("Cannot open DS1410E at %s\n",in->name) ;
+    } else if ( ioctl(in->fd,PPCLAIM ) ) {
+        LEVEL_CONNECT("Cannot claim DS1410E at %s\n",in->name) ;
+    } else if ( DS1410_PToff(in->fd) ) {
+        LEVEL_CONNECT("Cannot exit PassThru mode for DS1410E at %s\nIs there really an adapter there?\n",in->name) ;
+    } else {
+        return 0 ;
     }
-    in->fd = -1 ;
     return -EIO ;
 }
 
 static void DS1410_close( struct connection_in * in ) {
+    LEVEL_CONNECT("Closing port %s\n",NULLSTRING(in->name)) ;
     if ( in->fd >= 0 ) {
         DS1410_PTon(in->fd) ;
         ioctl(in->fd, PPRELEASE ) ;
@@ -170,17 +171,21 @@ static int DS1410databyte( const unsigned char d, int fd ) {
     return -ioctl( fd, PPWDATA, &data ) ;
 }
 
+static char statusdebug[101] ;
+
 /* wait on status */
 static int DS1410wait( int target, int fd ) {
     int count = 0 ;
     unsigned char result ;
     int ret ;
-    printf("Wait High\n") ;
+    strcpy( statusdebug, "" ) ;
+    printf("Wait for %d\n",target) ;
 
     do {
         if ( (ret=DS1410status( &result, fd )) ) return ret ;
-        if ( ++count > 100 ) {printf ("timeout\n");return -ETIME ;}
+        if ( ++count > 100 ) {printf ("timeout found=<%s> target=%d\n",statusdebug,target);return -ETIME ;}
         if ( nanosleep( &usec4, NULL ) ) return -errno ;
+//        printf("Result=%d target=%d\n",result,target) ;
     } while ( result != target ) ;
     return ret ;
 }
@@ -190,13 +195,14 @@ static int DS1410status( unsigned char * result, int fd ) {
     unsigned char st ;
     int ret = ioctl( fd, PPRSTATUS, &st ) ;
     result[0] = ( st ^ 0x80 ) & 0x90 ? 1 : 0 ;
-printf("Status read=%.2X, interp=%d, error=%d\n",(int)st,(int)result[0],(int)ret);
+    strcat(statusdebug,result[0]?"1":"0");
+    //printf("Status read=%.2X, interp=%d, error=%d\n",(int)st,(int)result[0],(int)ret);
     return -ret ;
 }
 
 /* Basic design from DOS driver, WWW entries from win driver */
 static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
-    printf("DS1410E bit try\n");
+    printf("DS1410E bit try (%.2X)\n",(int)out);
     if (
         DS1410databyte( 0xEC, fd )
         ||nanosleep( &usec2, NULL )
@@ -296,6 +302,7 @@ static int DS1410_ODoff( const struct parsedname * pn ) {
 /* passthru */
 static int DS1410_PTtoggle( int fd ) {
     unsigned char od ;
+    printf("DS1410 Passthrough toggle\n");
     if (
         DS1410_ODtoggle( &od, fd )
         ||DS1410_ODtoggle( &od, fd )
@@ -303,6 +310,7 @@ static int DS1410_PTtoggle( int fd ) {
         ||DS1410_ODtoggle( &od, fd )
        ) return 1 ;
     UT_delay( 20 ) ; /* 20 msec!! */
+    printf("DS1410 Passthrough success\n");
     return 0 ;
 }
 
@@ -310,6 +318,7 @@ static int DS1410_PTtoggle( int fd ) {
 /* Return 0 if successful */
 static int DS1410_PTon( int fd ) {
     unsigned char p ;
+    LEVEL_CONNECT("Attempting to switch DS1410E in to PassThru mode\n") ;
     DS1410_PTtoggle( fd ) ;
     DS1410Present(&p,fd) ;
     if ( p==0 ) return 0 ;
@@ -325,6 +334,7 @@ static int DS1410_PTon( int fd ) {
 /* Return 0 if successful */
 static int DS1410_PToff( int fd ) {
     unsigned char p ;
+    LEVEL_CONNECT("Attempting to switch DS1410E out of PassThru mode\n") ;
     DS1410_PTtoggle( fd ) ;
     DS1410Present(&p,fd) ;
     if ( p ) return 0 ;
@@ -340,8 +350,8 @@ static int DS1410Present( unsigned char * p, int fd ) {
     unsigned char x ;
     printf("DS1410 present?\n") ;
     p[0] = 0 ;
-    DS1410bit(&x,RESET,fd) ; // bad return allowed
-    if (  DS1410bit(p,0xFF,fd) ) return 1 ;
+    DS1410bit(RESET,&x,fd) ; // bad return allowed
+    if (  DS1410bit(0xFF,p,fd) ) return 1 ;
     printf("DS1410 present=%d\n",p[0]==1) ;
     return p[0]==1 ;
 }
