@@ -6,6 +6,7 @@ bin_PROGRAMS = owpython
 
 owpython_SOURCES = ow_wrap.c
 owpython_DEPENDENCIES = ../../owlib/src/c/libow.la
+owpython_LDFLAGS = -shared -shrext .so
 
 if ENABLE_MT
 MT_FLAG = -DOW_MT
@@ -26,7 +27,8 @@ AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          ${MT_FLAG}
 
-AM_LDFLAGS = ${PTHREAD_LIBS}
+#AM_LDFLAGS = ${PTHREAD_LIBS}
+AM_LDFLAGS = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 #noinst_DATA = .made_mod
 
