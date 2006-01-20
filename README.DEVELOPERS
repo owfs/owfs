@@ -74,7 +74,7 @@ and code. We follow standard unix design with
 
   Source
 Standard: xxx.tar.gz
-  ./bootstrap ; make ; make install
+  ./bootstrap ; ./configure ; make ; make install
 
 or
 
