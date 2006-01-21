@@ -140,28 +140,27 @@ extern unsigned int BUS_reconnect_errors ;  // sum from all adapters
 extern unsigned int BUS_send_data_errors ;
 extern unsigned int BUS_send_data_memcmp_errors ;
 extern unsigned int BUS_readin_data_errors ;
-extern unsigned int BUS_send_and_get_timeout ;
-extern unsigned int BUS_send_and_get_select_errors ;
-extern unsigned int BUS_send_and_get_errors ;
-extern unsigned int BUS_send_and_get_interrupted ;
 extern unsigned int BUS_select_low_errors ;
 extern unsigned int BUS_select_low_branch_errors ;
+extern unsigned int BUS_level_errors ;
+extern unsigned int BUS_write_errors ;
+extern unsigned int BUS_write_interrupt_errors ;
+extern unsigned int BUS_read_errors ;
+extern unsigned int BUS_read_interrupt_errors ;
+extern unsigned int BUS_read_select_errors ;
+extern unsigned int BUS_read_timeout_errors ;
+extern unsigned int BUS_next_errors ;
+extern unsigned int BUS_next_alarm_errors ;
 
 // ow_ds9490.c
 extern unsigned int DS9490_wait_errors ;
 extern unsigned int DS9490_reset_errors ;
 extern unsigned int DS9490_sendback_data_errors ;
-extern unsigned int DS9490_next_both_errors ;
-extern unsigned int DS9490_level_errors ;
 
 // ow_ds9097.c
-extern unsigned int DS9097_level_errors ;
-extern unsigned int DS9097_next_both_errors ;
 extern unsigned int DS9097_read_bits_errors ;
 extern unsigned int DS9097_sendback_data_errors ;
 extern unsigned int DS9097_sendback_bits_errors ;
-extern unsigned int DS9097_read_errors ;
-extern unsigned int DS9097_write_errors ;
 extern unsigned int DS9097_reset_errors ;
 extern unsigned int DS9097_reset_tcsetattr_errors ;
 
@@ -169,13 +168,9 @@ extern unsigned int DS9097_reset_tcsetattr_errors ;
 extern unsigned int BUS_detect_errors ;
 extern unsigned int BUS_open_errors ;
 extern unsigned int BUS_PowerByte_errors ;
-extern unsigned int DS1410_level_errors ;
-extern unsigned int DS1410_next_both_errors ;
 extern unsigned int DS1410_read_bits_errors ;
 extern unsigned int DS1410_sendback_data_errors ;
 extern unsigned int DS1410_sendback_bits_errors ;
-extern unsigned int DS1410_read_errors ;
-extern unsigned int DS1410_write_errors ;
 extern unsigned int DS1410_reset_errors ;
 extern unsigned int DS1410_reset_tcsetattr_errors ;
 
@@ -187,19 +182,12 @@ extern unsigned int DS2480_sendout_data_errors ;
 extern unsigned int DS2480_sendout_cmd_errors ;
 extern unsigned int DS2480_sendback_data_errors ;
 extern unsigned int DS2480_sendback_cmd_errors ;
-extern unsigned int DS2480_write_errors ;
 extern unsigned int DS2480_write_interrupted ;
-extern unsigned int DS2480_read_errors ;
 extern unsigned int DS2480_read_fd_isset ;
-extern unsigned int DS2480_read_interrupted ;
 extern unsigned int DS2480_read_null ;
 extern unsigned int DS2480_read_read ;
-extern unsigned int DS2480_read_select_errors ;
-extern unsigned int DS2480_read_timeout ;
-extern unsigned int DS2480_level_errors ;
 extern unsigned int DS2480_level_docheck_errors ;
 extern unsigned int DS2480_databit_errors ;
-extern unsigned int DS2480_next_both_errors ;
 extern unsigned int DS2480_ProgramPulse_errors ;
 
 #define STAT_ADD1(x)    STATLOCK ; ++x ; STATUNLOCK

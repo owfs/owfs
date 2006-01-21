@@ -873,8 +873,6 @@ static int DS9490_sendback_data( const unsigned char * data , unsigned char * re
 }
 
 static int next_both_errors( const struct parsedname * pn, int ret ) {
-    STAT_ADD1(DS9490_next_both_errors);
-
     /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
     if(ret >= -1) {
       LEVEL_DATA("next_both_erorrs: return %d\n", ret) ;
@@ -1158,14 +1156,12 @@ static int DS9490_level(int new_level, const struct parsedname * pn) {
     }
 
     // set pullup to strong5 or program
-    if ( (ret=usb_control_msg(usb,0x40,MODE_CMD,MOD_PULSE_EN, lev, NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1(DS9490_level_errors);
-        return ret ;
-    }
-
     // set the strong pullup duration to infinite
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_PULSE | COMM_IM, 0, NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1(DS9490_level_errors);
+    if (
+        ((ret=usb_control_msg(usb,0x40,MODE_CMD,MOD_PULSE_EN,lev,NULL,0,TIMEOUT_USB))<0 )
+        ||
+        ((ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_PULSE|COMM_IM,0,NULL,0,TIMEOUT_USB))<0) ) {
+        STAT_ADD1_BUS(BUS_level_errors,pn->in);
         return ret ;
     }
     pn->in->connin.usb.ULevel = new_level ;

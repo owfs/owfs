@@ -152,7 +152,6 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
     
     // CRC check
     if ( CRC8(serialnumber,8) || (serialnumber[0] == 0)) {
-        STAT_ADD1(DS2480_next_both_errors);
         /* A minor "error" and should perhaps only return -1 to avoid reconnect */
         return -EIO ;
     }
@@ -224,7 +223,7 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
             if ( r < 0 ) {
                 if(errno == EINTR) {
                     /* read() was interrupted, try again */
-                    STAT_ADD1(DS2480_read_interrupted);
+                    STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                     continue;
                 }
                 ret = -errno;  /* error */
@@ -235,18 +234,18 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
         } else if(ret < 0) {
             if(errno == EINTR) {
                 /* select() was interrupted, try again */
-                STAT_ADD1(DS2480_read_interrupted);
+                STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                 continue;
             }
-            STAT_ADD1(DS2480_read_select_errors);
+            STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
             return -EINTR;
         } else {
-            STAT_ADD1(DS2480_read_timeout);
+            STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
             return -EINTR;
         }
     }
     if(inlength > 0) { /* signal that an error was encountered */
-        STAT_ADD1(DS2480_read_errors);
+        STAT_ADD1_BUS(BUS_read_errors,pn->in);
         return ret;  /* error */
     }
     return 0;
@@ -266,7 +265,7 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
         r = write(pn->in->fd,&buf[size-sl],sl) ;
         if(r < 0) {
             if(errno == EINTR) {
-                STAT_ADD1(DS2480_write_interrupted);
+                STAT_ADD1_BUS(BUS_write_interrupt_errors,pn->in);
                 continue;
             }
             break;
@@ -278,7 +277,7 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
         gettimeofday( &(pn->in->bus_write_time) , NULL );
     }
     if(sl > 0) {
-        STAT_ADD1(DS2480_write_errors);
+        STAT_ADD1_BUS(BUS_write_errors,pn->in);
         return -EIO;
     }
     return 0;
@@ -287,7 +286,10 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) {
     unsigned char pow ;
     
-    if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) return -EIO ; // send just the <CR>
+    if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) {
+        STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;
+        return -EIO ; // send just the <CR>
+    }
     
     // delay
     UT_delay( delay ) ;

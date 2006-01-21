@@ -242,11 +242,15 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber, c
  Sets LastDevice=1 if no more
 */
 int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) {
-    return BUS_next_both( serialnumber, 0xF0, pn ) ;
+    int ret = BUS_next_both( serialnumber, 0xF0, pn ) ;
+    if (ret) { STAT_ADD1_BUS(BUS_next_errors,pn->in) ; }
+    return ret ;
 }
 
 int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) {
-    return BUS_next_both( serialnumber, 0xEC, pn ) ;
+    int ret = BUS_next_both( serialnumber, 0xEC, pn ) ;
+    if ( ret ) { STAT_ADD1_BUS(BUS_next_alarm_errors,pn->in) ; }
+    return ret ;
 }
 
 // ----------------------------------------------------------------
@@ -321,23 +325,14 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
         bits[1] = bits[2] = 0xFF ;
         if ( bit_number==0 ) { /* First bit */
             /* get two bits (AND'ed bit and AND'ed complement) */
-            if ( (ret=BUS_sendback_bits(&bits[1],&bits[1],2,pn)) ) {
-                STAT_ADD1(DS9097_next_both_errors);
-                return ret ;
-            }
+            if ( (ret=BUS_sendback_bits(&bits[1],&bits[1],2,pn)) ) return ret ;
         } else {
             bits[0] = search_direction ;
             if ( bit_number<64 ) {
                 /* Send chosen bit path, then check match on next two */
-                if ( (ret=BUS_sendback_bits(bits,bits,3,pn)) ) {
-                    STAT_ADD1(DS9097_next_both_errors);
-                    return ret ;
-                }
+                if ( (ret=BUS_sendback_bits(bits,bits,3,pn)) ) return ret ;
             } else { /* last bit */
-                if ( (ret=BUS_sendback_bits(bits,bits,1,pn)) ) {
-                    STAT_ADD1(DS9097_next_both_errors);
-                    return ret ;
-                }
+                if ( (ret=BUS_sendback_bits(bits,bits,1,pn)) ) return ret ;
                 break ;
             }
         }
@@ -373,7 +368,6 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
     } // loop until through serial number bits
 
     if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
-        STAT_ADD1(DS9097_next_both_errors);
       /* A minor "error" and should perhaps only return -1 to avoid
       * reconnect */
         return -EIO ;

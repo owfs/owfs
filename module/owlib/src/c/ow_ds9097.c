@@ -208,7 +208,7 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
             if(r < 0) {
                 if(errno == EINTR) {
                     /* write() was interrupted, try again */
-                    STAT_ADD1(BUS_send_and_get_interrupted);
+                    STAT_ADD1_BUS(BUS_write_interrupt_errors,pn->in);
                     continue;
                 }
                 break;
@@ -220,7 +220,7 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
             gettimeofday( &(pn->in->bus_write_time) , NULL );
         }
         if(sl > 0) {
-            STAT_ADD1(BUS_send_and_get_errors);
+            STAT_ADD1_BUS(BUS_write_errors,pn->in);
             return -EIO;
         }
         //printf("SAG written\n");
@@ -252,7 +252,7 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
                 //printf("SAG selected\n");
                     /* Is there something to read? */
                     if( FD_ISSET( pn->in->fd, &readset )==0 ) {
-                        STAT_ADD1(BUS_send_and_get_errors);
+                        STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
                         return -EIO ; /* error */
                     }
                     update_max_delay(pn);
@@ -261,23 +261,23 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
                     if (r < 0) {
                         if(errno == EINTR) {
                             /* read() was interrupted, try again */
-                            STAT_ADD1(BUS_send_and_get_interrupted);
+                            STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                             continue;
                         }
-                        STAT_ADD1(BUS_send_and_get_errors);
+                        STAT_ADD1_BUS(BUS_read_errors,pn->in);
                         return r ;
                     }
                     gl -= r ;
                 } else if(rc < 0) { /* select error */
                     if(errno == EINTR) {
                         /* select() was interrupted, try again */
-                        STAT_ADD1(BUS_send_and_get_interrupted);
+                        STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                         continue;
                     }
-                    STAT_ADD1(BUS_send_and_get_select_errors);
+                    STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
                     return -EINTR;
                 } else { /* timed out */
-                    STAT_ADD1(BUS_send_and_get_timeout);
+                    STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
                     return -EAGAIN;
                 }
         }
