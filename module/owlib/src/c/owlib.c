@@ -194,7 +194,7 @@ int LibStart( void ) {
 #endif /* __UCLIBC__ */
 
     if ( indevice==NULL ) {
-        LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname)
+    LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname) ;
         BadAdapter_detect(NewIn()) ;
         return 1;
     }
@@ -205,12 +205,12 @@ int LibStart( void ) {
                 ret = Server_detect(in) ;
                 break ;
             case bus_serial:
-                if ( COM_open(in) ) { /* serial device */
-                    ret = -ENODEV ;
-                } else if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
-                    LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",in->name)
+                if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */
+                    LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",in->name) ;
+                    BUS_close( in ) ;
+                    BadAdapter_detect(in) ; /* reset the methods */
                     if ( DS9097_detect(in) ) {
-                        LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n",in->name)
+                        LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n",in->name) ;
                         ret = -ENODEV ;
                     }
                 }
@@ -220,7 +220,7 @@ int LibStart( void ) {
                 ret =  -ENOPROTOOPT ;
 #else /* OW_PARPORT */
                 if ( (ret=DS1410_detect(in)) ) {
-                    LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n")
+                    LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n") ;
                 }
 #endif /* OW_PARPORT */
                 break ;
@@ -228,7 +228,7 @@ int LibStart( void ) {
     #ifdef OW_USB
                 ret = DS9490_detect(in) ;
     #else /* OW_USB */
-                LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname)
+                LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname) ;
                 ret = 1 ;
     #endif /* OW_USB */
                 /* in->connin.usb.ds1420_address should be set to identify the
@@ -241,6 +241,7 @@ int LibStart( void ) {
                 break ;
         }
         if ( ret ) { /* flag that that the adapter initiation was unsuccessful */
+            STAT_ADD1_BUS(BUS_detect_errors,in) ;
             BUS_close(in) ; /* can use adapter's close */
             BadAdapter_detect(in) ; /* Set to default null assignments */
         }

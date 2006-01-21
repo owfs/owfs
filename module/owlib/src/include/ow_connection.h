@@ -55,6 +55,7 @@ $Id$
 #define OW_CONNECTION_H
 
 #include "ow.h"
+#include "ow_counters.h"
 
 
 /* com port fifo info */
@@ -201,6 +202,7 @@ struct connection_in {
     unsigned int bus_reconnect_errors ;
     unsigned int bus_locks ;
     unsigned int bus_unlocks ;
+    unsigned int bus_errors ;
     struct timeval bus_time ;
 
     struct timeval bus_read_time ;
@@ -306,5 +308,7 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 int BUS_PowerByte_low(const unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
 int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+
+#define STAT_ADD1_BUS( err, in )     STATLOCK; ++err; ++(in->bus_errors) ; STATUNLOCK ;
 
 #endif /* OW_CONNECTION_H */

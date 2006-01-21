@@ -290,7 +290,7 @@ int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parse
     int ret ;
     // send the packet
     if((ret=BUS_send_data(&byte,1,pn))) {
-        STAT_ADD1(DS9097_PowerByte_errors);
+        STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in);
         return ret ;
     }
     // delay

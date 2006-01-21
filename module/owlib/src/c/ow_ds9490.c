@@ -275,6 +275,7 @@ static int DS9490_open( const struct parsedname * pn ) {
     }
     pn->in->connin.usb.dev = NULL ; // this will force a re-scan next time
     //LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
+    STAT_ADD1_BUS(BUS_open_errors,pn->in) ;
     return -ENODEV;
 }
 
@@ -1025,51 +1026,40 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
 
     LEVEL_DATA("DS9490_Powerbyte\n") ;
 
-
     /* This is more likely to be the correct way to handle powerbytes */
     if(pn->in->connin.usb.ULevel == MODE_STRONG5) {
-      DS9490_level(MODE_NORMAL, pn) ;
+        DS9490_level(MODE_NORMAL, pn) ;
     }
 
     // set the strong pullup
     if ( (ret=usb_control_msg(usb,0x40,MODE_CMD,MOD_PULSE_EN, ENABLEPULSE_SPUE, NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1(DS9490_PowerByte_errors);
         LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 3\n") ;
-        return ret ;
-    }
-
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF, NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1(DS9490_PowerByte_errors);
+    } else if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF, NULL, 0, TIMEOUT_USB ))<0 ) {
         LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n") ;
-        return ret ;
-    }
-
-    /* strong pullup is now enabled */
-    pn->in->connin.usb.ULevel = MODE_STRONG5;
+    } else {
+        /* strong pullup is now enabled */
+        pn->in->connin.usb.ULevel = MODE_STRONG5;
     
-    /* Read back the result (should be the same as "byte") */
-    if((ret = DS9490_read(&resp, 1, pn)) < 0) {
-        STAT_ADD1(DS9490_PowerByte_errors);
-        LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n", ret) ;
-        return ret ;
-    }
+        /* Read back the result (should be the same as "byte") */
+        if((ret = DS9490_read(&resp, 1, pn)) < 0) {
+            LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n", ret) ;
+        } else if(resp != byte) {
+            LEVEL_DATA("DS9490_Powerbyte: Error resp(%d) != byte(%d)\n", resp, byte) ;
+        } else {
+            /* Delay with strong pullup */
+            UT_delay( delay ) ;
 
-    if(resp != byte) {
-        STAT_ADD1(DS9490_PowerByte_errors);
-        LEVEL_DATA("DS9490_Powerbyte: Error resp(%d) != byte(%d)\n", resp, byte) ;
-        return ret ;
+            /* Turn off strong pullup */
+            if((ret = DS9490_level(MODE_NORMAL, pn)) < 0) {
+                LEVEL_DATA("DS9490_Powerbyte: DS9490_level, ret=%d\n", ret) ;
+                return ret ;
+            } else {
+                return 0 ;
+            }
+        }
     }
-
-    /* Delay with strong pullup */
-    UT_delay( delay ) ;
-
-    /* Turn off strong pullup */
-    if((ret = DS9490_level(MODE_NORMAL, pn)) < 0) {
-        STAT_ADD1(DS9490_PowerByte_errors);
-        LEVEL_DATA("DS9490_Powerbyte: DS9490_level, ret=%d\n", ret) ;
-        return ret ;
-    }
-    return 0 ;
+    STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;
+    return ret ;
 }
 
 static int DS9490_HaltPulse(const struct parsedname * pn) {

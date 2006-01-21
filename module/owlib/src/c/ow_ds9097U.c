@@ -220,6 +220,9 @@ int DS2480_detect( struct connection_in * in ) {
     /* Set up low-level routines */
     DS2480_setroutines( & (in->iroutines) ) ;
 
+    /* Open the com port */
+    if ( COM_open(in) ) return -ENODEV ;
+
     /* Reset the bus and adapter */
     DS2480_reset(&pn) ;
 
@@ -284,7 +287,7 @@ int DS2480_detect( struct connection_in * in ) {
                 if ( LINK_mode ) return LINK_detect(in) ;
                 break;
             default:
-                return BadAdapter_detect(in) ;
+                return -ENODEV ; ;
         }
         //printf("2480Detect version=%d\n",in->Adapter) ;
         return 0 ;
@@ -659,15 +662,13 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
 
     // send the packet
     // read back the 9 byte response from setting time limit
-    if ( (ret=DS2480_sendback_cmd(cmd,resp,9,pn)) || (ret=(resp[0]&0x81)?-EIO:0) ) {
-        STAT_ADD1(DS2480_PowerByte_1_errors);
-    } else if ( (ret= byte ^
+    if ( (ret=DS2480_sendback_cmd(cmd,resp,9,pn)) == 0
+          && (ret=(resp[0]&0x81)?-EIO:0)           == 0
+          && (ret= byte ^
                  ( ((resp[8]&1)<<7) | ((resp[7]&1)<<6) | ((resp[6]&1)<<5) | ((resp[5]&1)<<4) | ((resp[4]&1)<<3) | ((resp[3]&1)<<2) | ((resp[2]&1)<<1) | (resp[1]&1) )
-                ) ) {
-        STAT_ADD1(DS2480_PowerByte_2_errors);
-    } else {
-        UT_delay( delay ) ;
-    }
+                )                                 == 0
+       ) UT_delay( delay ) ;
+    
     /* Make sure it's set back to normal mode since the command might be sent
     * correctly, but response is received with errors. Otherwise it will be
     * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
@@ -681,8 +682,9 @@ static int DS2480_PowerByte(const unsigned char byte, const unsigned int delay, 
 
     // return to normal level
     ret = DS2480_level(MODE_NORMAL,pn) ;
+
     if(ret) {
-        STAT_ADD1(DS2480_PowerByte_errors);
+        STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in);
     }
     return ret;
 }

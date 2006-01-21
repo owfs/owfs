@@ -42,13 +42,13 @@ static void DS9097_setroutines( struct interface_routines * const f ) {
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
-/* Note, devfd alread allocated */
-/* Note, terminal settings already saved */
 int DS9097_detect( struct connection_in * in ) {
     struct stateinfo si ;
     struct parsedname pn ;
-    int ret ;
     
+    /* open the COM port */
+    if ( COM_open( in ) ) return -ENODEV ;
+
     /* Set up low-level routines */
     DS9097_setroutines( & (in->iroutines) ) ;
 
@@ -61,10 +61,7 @@ int DS9097_detect( struct connection_in * in ) {
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 
-    if((ret = DS9097_reset(&pn))) {
-        STAT_ADD1(DS9097_detect_errors);
-    }
-    return ret;
+    return DS9097_reset(&pn) ;
 }
 
 static int DS9097_reconnect( const struct parsedname * pn ) {
@@ -75,11 +72,9 @@ static int DS9097_reconnect( const struct parsedname * pn ) {
 
     BUS_close(pn->in);
     usleep(100000);
-    if(!COM_open(pn->in)) {
-      if(!DS9097_detect(pn->in)) {
+    if(!DS9097_detect(pn->in)) {
         LEVEL_DEFAULT("DS9097 adapter reconnected\n");
         return 0;
-      }
     }
     STAT_ADD1(BUS_reconnect_errors);
     STAT_ADD1(pn->in->bus_reconnect_errors);

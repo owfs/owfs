@@ -37,7 +37,8 @@ struct ppdev_frob_struct ENIlow  = { (unsigned char)~0x1C, 0x06 } ;
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 static int DS1410databyte( const unsigned char d, int fd ) ;
 static int DS1410status( unsigned char * result, int fd ) ;
-static int DS1410wait( int target, int fd ) ;
+static int DS1410wait1( int fd ) ;
+static int DS1410wait2( int fd ) ;
 static int DS1410bit( unsigned char out, unsigned char * in, int fd ) ;
 static int DS1410_reset( const struct parsedname * pn ) ;
 static int DS1410_reconnect( const struct parsedname * pn ) ;
@@ -77,7 +78,6 @@ int DS1410_detect( struct connection_in * in ) {
     struct stateinfo si ;
     struct parsedname pn ;
     unsigned char od ;
-    int ret ;
     
     /* Set up low-level routines */
     DS1410_setroutines( & (in->iroutines) ) ;
@@ -97,10 +97,7 @@ int DS1410_detect( struct connection_in * in ) {
     } else if ( od ) {
         DS1410_ODoff(&pn) ;
     }
-    if((ret = DS1410_reset(&pn))) {
-        STAT_ADD1(DS1410_detect_errors);
-    }
-    return ret;
+    return DS1410_reset(&pn) ;
 }
 
 static int DS1410_reconnect( const struct parsedname * pn ) {
@@ -142,6 +139,7 @@ static int DS1410_open( struct connection_in * in ) {
     } else {
         return 0 ;
     }
+    STAT_ADD1_BUS(BUS_open_errors,in) ;
     return -EIO ;
 }
 
@@ -173,20 +171,41 @@ static int DS1410databyte( const unsigned char d, int fd ) {
 
 static char statusdebug[101] ;
 
-/* wait on status */
-static int DS1410wait( int target, int fd ) {
+/* 1st wait */
+static int DS1410wait1( int fd ) {
     int count = 0 ;
     unsigned char result ;
+    unsigned char st ;
     int ret ;
     strcpy( statusdebug, "" ) ;
-    printf("Wait for %d\n",target) ;
+    printf("1st Wait\n") ;
 
     do {
-        if ( (ret=DS1410status( &result, fd )) ) return ret ;
-        if ( ++count > 100 ) {printf ("timeout found=<%s> target=%d\n",statusdebug,target);return -ETIME ;}
+        if ( (ret=ioctl( fd, PPRSTATUS, &st )) ) return -ret ;
+        if ( ++count > 100 ) {printf ("timeout found=<%s>\n",statusdebug);return -ETIME ;}
         if ( nanosleep( &usec4, NULL ) ) return -errno ;
-//        printf("Result=%d target=%d\n",result,target) ;
-    } while ( result != target ) ;
+        result = (st ^ 0x80 ) & 0x90 == 0x90 ;
+        strcat(statusdebug,result?"1":"0");
+    } while ( result ) ;
+    return ret ;
+}
+
+/* 2nd wait */
+static int DS1410wait2( int fd ) {
+    int count = 0 ;
+    unsigned char result ;
+    unsigned char st ;
+    int ret ;
+    strcpy( statusdebug, "" ) ;
+    printf("2nd Wait\n") ;
+
+    do {
+        if ( (ret=ioctl( fd, PPRSTATUS, &st )) ) return -ret ;
+        if ( ++count > 100 ) {printf ("timeout found=<%s>\n",statusdebug);return -ETIME ;}
+        if ( nanosleep( &usec4, NULL ) ) return -errno ;
+        result = (st ^ 0x10 ) & 0x90 == 0x90 ;
+        strcat(statusdebug,result?"1":"0");
+    } while ( result ) ;
     return ret ;
 }
     
@@ -195,7 +214,6 @@ static int DS1410status( unsigned char * result, int fd ) {
     unsigned char st ;
     int ret = ioctl( fd, PPRSTATUS, &st ) ;
     result[0] = ( st ^ 0x80 ) & 0x90 ? 1 : 0 ;
-    strcat(statusdebug,result[0]?"1":"0");
     //printf("Status read=%.2X, interp=%d, error=%d\n",(int)st,(int)result[0],(int)ret);
     return -ret ;
 }
@@ -209,10 +227,10 @@ static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
         ||DS1410databyte( out, fd )
         ||ioctl( fd, PPFCONTROL, &ENIhigh)
         ||ioctl( fd, PPFCONTROL, &ENIlow )
-        ||DS1410wait( 0, fd ) // wait for 11 and 13 low
+        ||DS1410wait1( fd ) // wait for 11 and 13 low
         ||nanosleep( &usec4, NULL )
         ||DS1410databyte( 0xFF, fd )
-        ||DS1410wait( 1, fd ) // wait for 11 or 13 high
+        ||DS1410wait2( fd ) // wait for 11 or 13 high
         ||DS1410databyte( 0xFE, fd )
         ||nanosleep( &usec4, NULL )
         ||DS1410status( in, fd ) // read result in pin 11 and 13
@@ -250,7 +268,7 @@ static int DS1410_ODcheck( unsigned char * od, int fd ) {
         ||nanosleep( &usec4, NULL )
         ||DS1410status( od, fd ) // read result in pin 11 and 13
         ||DS1410databyte( 0xFF, fd )
-        ||DS1410wait( 1, fd ) // wait for 11 and 13 low
+        ||DS1410wait2( fd ) // wait for 11 and 13 low
         ||DS1410databyte( 0xFE, fd )
         ||nanosleep( &usec4, NULL )
         ||DS1410status( &x, fd ) // read result in pin 11 and 13

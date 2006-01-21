@@ -40,6 +40,7 @@ int COM_open( struct connection_in * in ) {
 
     if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
       LEVEL_DEFAULT("Cannot open port: %s error=%s\n",in->name,strerror(errno));
+      STAT_ADD1_BUS(BUS_open_errors,in) ;
       return -ENODEV;
     }
 

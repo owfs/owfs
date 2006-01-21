@@ -152,12 +152,9 @@ extern unsigned int DS9490_wait_errors ;
 extern unsigned int DS9490_reset_errors ;
 extern unsigned int DS9490_sendback_data_errors ;
 extern unsigned int DS9490_next_both_errors ;
-extern unsigned int DS9490_PowerByte_errors ;
 extern unsigned int DS9490_level_errors ;
 
 // ow_ds9097.c
-extern unsigned int DS9097_detect_errors ;
-extern unsigned int DS9097_PowerByte_errors ;
 extern unsigned int DS9097_level_errors ;
 extern unsigned int DS9097_next_both_errors ;
 extern unsigned int DS9097_read_bits_errors ;
@@ -169,8 +166,9 @@ extern unsigned int DS9097_reset_errors ;
 extern unsigned int DS9097_reset_tcsetattr_errors ;
 
 // ow_ds1410.c
-extern unsigned int DS1410_detect_errors ;
-extern unsigned int DS1410_PowerByte_errors ;
+extern unsigned int BUS_detect_errors ;
+extern unsigned int BUS_open_errors ;
+extern unsigned int BUS_PowerByte_errors ;
 extern unsigned int DS1410_level_errors ;
 extern unsigned int DS1410_next_both_errors ;
 extern unsigned int DS1410_read_bits_errors ;
@@ -198,9 +196,6 @@ extern unsigned int DS2480_read_null ;
 extern unsigned int DS2480_read_read ;
 extern unsigned int DS2480_read_select_errors ;
 extern unsigned int DS2480_read_timeout ;
-extern unsigned int DS2480_PowerByte_1_errors ;
-extern unsigned int DS2480_PowerByte_2_errors ;
-extern unsigned int DS2480_PowerByte_errors ;
 extern unsigned int DS2480_level_errors ;
 extern unsigned int DS2480_level_docheck_errors ;
 extern unsigned int DS2480_databit_errors ;

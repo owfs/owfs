@@ -113,18 +113,18 @@ unsigned int BUS_send_and_get_errors = 0 ;
 unsigned int BUS_send_and_get_interrupted = 0 ;
 unsigned int BUS_select_low_errors = 0 ;
 unsigned int BUS_select_low_branch_errors = 0 ;
+unsigned int BUS_detect_errors = 0 ;
+unsigned int BUS_open_errors = 0 ;
+unsigned int BUS_PowerByte_errors = 0 ;
 
 // ow_ds9490.c
 unsigned int DS9490_wait_errors = 0 ;
 unsigned int DS9490_reset_errors = 0 ;
 unsigned int DS9490_sendback_data_errors = 0 ;
 unsigned int DS9490_next_both_errors = 0 ;
-unsigned int DS9490_PowerByte_errors = 0 ;
 unsigned int DS9490_level_errors = 0 ;
 
 // ow_ds9097.c
-unsigned int DS9097_detect_errors = 0 ;
-unsigned int DS9097_PowerByte_errors = 0 ;
 unsigned int DS9097_level_errors = 0 ;
 unsigned int DS9097_next_both_errors = 0 ;
 unsigned int DS9097_read_bits_errors = 0 ;
@@ -136,8 +136,6 @@ unsigned int DS9097_reset_errors = 0 ;
 unsigned int DS9097_reset_tcsetattr_errors = 0 ;
 
 // ow_ds1410.c
-unsigned int DS1410_detect_errors = 0 ;
-unsigned int DS1410_PowerByte_errors = 0 ;
 unsigned int DS1410_level_errors = 0 ;
 unsigned int DS1410_next_both_errors = 0 ;
 unsigned int DS1410_read_bits_errors = 0 ;
@@ -165,9 +163,6 @@ unsigned int DS2480_read_null = 0 ;
 unsigned int DS2480_read_read = 0 ;
 unsigned int DS2480_read_select_errors = 0 ;
 unsigned int DS2480_read_timeout = 0 ;
-unsigned int DS2480_PowerByte_1_errors = 0 ;
-unsigned int DS2480_PowerByte_2_errors = 0 ;
-unsigned int DS2480_PowerByte_errors = 0 ;
 unsigned int DS2480_level_errors = 0 ;
 unsigned int DS2480_level_docheck_errors = 0 ;
 unsigned int DS2480_databit_errors = 0 ;
@@ -295,18 +290,11 @@ struct device d_stats_thread = { "threads", "threads", 0, NFT(stats_thread), sta
 struct filetype stats_bus[] = {
     {"elapsed_time"    , 15, NULL    , ft_unsigned, ft_statistic, {u:FS_elapsed},{v:NULL}, NULL          , } ,
     {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {f:FS_time_p}, {v:NULL}, (void *)0  , } ,
-    /* bus_idle_time should be the same is elapsed_time - bus_time
-     * Not any big idea to implement it */
-  //{"bus_idle_time"   , 12, &Asystem, ft_float,    ft_statistic, {u:FS_time_p}, {v:NULL}, bus_idle_time , } ,
     {"bus_locks"       , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)0  , } ,
     {"bus_unlocks"     , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)1  , } ,
     {"reconnect"       , 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)2 , } ,
     {"reconnect_errors", 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)3 , } ,
-
-
-    /* bus_pause_time is not very useful... Look at bus_time to see if the bus
-     * has been used much instead */
-  //{"bus_pause_time"  , 12, NULL , ft_float,    ft_statistic, {f:FS_time}, {v:NULL}, & bus_pause        , } ,
+    {"other_errors"    , 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)4 , } ,
     {"total_bus_time"  , 12, NULL , ft_float,    ft_statistic, {f:FS_time}, {v:NULL}, & total_bus_time   , } ,
     {"total_bus_unlocks",15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & total_bus_unlocks, } ,
     {"total_bus_locks" , 15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & total_bus_locks  , } ,
@@ -335,18 +323,19 @@ FS_stat_ROW(BUS_send_and_get_errors),
 FS_stat_ROW(BUS_send_and_get_interrupted),
 FS_stat_ROW(BUS_select_low_errors),
 FS_stat_ROW(BUS_select_low_branch_errors),
+FS_stat_ROW(BUS_open_errors),
+FS_stat_ROW(BUS_detect_errors),
+FS_stat_ROW(BUS_PowerByte_errors),
+
 
 // ow_ds9490.c
 FS_stat_ROW(DS9490_wait_errors),
 FS_stat_ROW(DS9490_reset_errors),
 FS_stat_ROW(DS9490_sendback_data_errors),
 FS_stat_ROW(DS9490_next_both_errors),
-FS_stat_ROW(DS9490_PowerByte_errors),
 FS_stat_ROW(DS9490_level_errors),
 
 // ow_ds9097.c
-FS_stat_ROW(DS9097_detect_errors),
-FS_stat_ROW(DS9097_PowerByte_errors),
 FS_stat_ROW(DS9097_level_errors),
 FS_stat_ROW(DS9097_next_both_errors),
 FS_stat_ROW(DS9097_read_bits_errors),
@@ -358,8 +347,6 @@ FS_stat_ROW(DS9097_reset_errors),
 FS_stat_ROW(DS9097_reset_tcsetattr_errors),
 
 // ow_ds9097.c
-FS_stat_ROW(DS1410_detect_errors),
-FS_stat_ROW(DS1410_PowerByte_errors),
 FS_stat_ROW(DS1410_level_errors),
 FS_stat_ROW(DS1410_next_both_errors),
 FS_stat_ROW(DS1410_read_bits_errors),
@@ -387,9 +374,6 @@ FS_stat_ROW(DS2480_read_null),
 FS_stat_ROW(DS2480_read_read),
 FS_stat_ROW(DS2480_read_select_errors),
 FS_stat_ROW(DS2480_read_timeout),
-FS_stat_ROW(DS2480_PowerByte_1_errors),
-FS_stat_ROW(DS2480_PowerByte_2_errors),
-FS_stat_ROW(DS2480_PowerByte_errors),
 FS_stat_ROW(DS2480_level_errors),
 FS_stat_ROW(DS2480_level_docheck_errors),
 FS_stat_ROW(DS2480_databit_errors),
