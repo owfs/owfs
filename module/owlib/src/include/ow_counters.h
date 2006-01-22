@@ -162,17 +162,8 @@ extern unsigned int BUS_echo_errors ;
 extern unsigned int BUS_ProgramPulse_errors ;
 extern unsigned int BUS_Overdrive_errors ;
 extern unsigned int BUS_TestOverdrive_errors ;
-
-// ow_ds9490.c
-extern unsigned int DS9490_wait_errors ;
-
-// ow_ds9097.c
-extern unsigned int DS9097_read_bits_errors ;
-extern unsigned int DS9097_reset_tcsetattr_errors ;
-
-// ow_ds1410.c
-extern unsigned int DS1410_read_bits_errors ;
-extern unsigned int DS1410_reset_tcsetattr_errors ;
+extern unsigned int BUS_tcsetattr_errors ;
+extern unsigned int BUS_status_errors ;
 
 // ow_ds9097U.c
 extern unsigned int DS2480_send_cmd_errors ;

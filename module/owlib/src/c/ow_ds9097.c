@@ -99,7 +99,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     cfsetospeed(&term, B9600);
     cfsetispeed(&term, B9600);
     if (tcsetattr(fd, TCSANOW, &term ) < 0 ) {
-        STAT_ADD1(DS9097_reset_tcsetattr_errors);
+        STAT_ADD1_BUS(BUS_tcsetattr_errors,pn->in);
         return -EIO ;
     }
     if ( (ret=DS9097_send_and_get(&resetbyte,&c,1,pn)) ) return ret ;
@@ -143,7 +143,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 #endif
 
     if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
-        STAT_ADD1(DS9097_reset_tcsetattr_errors);
+        STAT_ADD1_BUS(BUS_tcsetattr_errors,pn->in);
         return -EFAULT ;
     }
     /* Flush the input and output buffers */

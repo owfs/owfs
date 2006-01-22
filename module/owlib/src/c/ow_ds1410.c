@@ -225,7 +225,8 @@ static int DS1410status( unsigned char * result, int fd ) {
 static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
     printf("DS1410E bit try (%.2X)\n",(int)out);
     if (
-        DS1410databyte( 0xEC, fd )
+        0
+        ||DS1410databyte( 0xEC, fd )
         ||nanosleep( &usec2, NULL )
         ||DS1410databyte( out, fd )
         ||ioctl( fd, PPFCONTROL, &ENIhigh)
@@ -240,7 +241,8 @@ static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
        ) return 1 ;
     if ( (out == RESET) &&
           (
-          nanosleep( &usec400, NULL )
+          0
+          ||nanosleep( &usec400, NULL )
           ||DS1410databyte( 0xFF, fd )
           ||nanosleep( &usec4, NULL )
           ||DS1410databyte( 0xFE, fd )
@@ -248,7 +250,8 @@ static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
           ||DS1410status( in, fd ) // read result in pin 11 and 13
           ) ) return 1 ;
     if (
-        ioctl( fd, PPFCONTROL, &ENIhigh)
+        0
+        ||ioctl( fd, PPFCONTROL, &ENIhigh)
         ||DS1410databyte( 0xCF, fd )
         ||nanosleep( &usec12, NULL )
        ) return 1 ;
@@ -261,7 +264,8 @@ static int DS1410_ODcheck( unsigned char * od, int fd ) {
     unsigned char x ;
     printf("DS1410E check OD\n");
     if (
-        DS1410databyte( 0xEC, fd )
+        0
+        ||DS1410databyte( 0xEC, fd )
         ||nanosleep( &usec2, NULL )
         ||DS1410databyte( 0xFF, fd )
         ||nanosleep( &usec2, NULL )
@@ -287,7 +291,8 @@ static int DS1410_ODcheck( unsigned char * od, int fd ) {
 static int DS1410_ODtoggle( unsigned char * od, int fd ) {
     printf("DS1410E OD toggle\n");
     if (
-        DS1410databyte( 0xEC, fd )
+        0
+        ||DS1410databyte( 0xEC, fd )
         ||nanosleep( &usec2, NULL )
         ||DS1410databyte( 0xFC, fd )
         ||ioctl( fd, PPFCONTROL, &ENIhigh)
@@ -325,7 +330,8 @@ static int DS1410_PTtoggle( int fd ) {
     unsigned char od ;
     printf("DS1410 Passthrough toggle\n");
     if (
-        DS1410_ODtoggle( &od, fd )
+        0
+        ||DS1410_ODtoggle( &od, fd )
         ||DS1410_ODtoggle( &od, fd )
         ||DS1410_ODtoggle( &od, fd )
         ||DS1410_ODtoggle( &od, fd )
@@ -339,7 +345,7 @@ static int DS1410_PTtoggle( int fd ) {
 /* Return 0 if successful */
 static int DS1410_PTon( int fd ) {
     unsigned char p ;
-    LEVEL_CONNECT("Attempting to switch DS1410E in to PassThru mode\n") ;
+    LEVEL_CONNECT("Attempting to switch DS1410E into PassThru mode\n") ;
     DS1410_PTtoggle( fd ) ;
     DS1410Present(&p,fd) ;
     if ( p==0 ) return 0 ;

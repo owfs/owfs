@@ -57,7 +57,11 @@ int COM_open( struct connection_in * in ) {
     newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
     newSerialTio.c_cc[VMIN] = 0;
     newSerialTio.c_cc[VTIME] = 3;
-    tcsetattr(in->fd, TCSAFLUSH, &newSerialTio);
+    if (tcsetattr(in->fd, TCSAFLUSH, &newSerialTio)) {
+        LEVEL_CONNECT("Cannot set port attributes: %s error=%s\n",in->name,strerror(errno));
+        STAT_ADD1_BUS(BUS_tcsetattr_errors,in) ;
+        return -EIO ;
+    }
 
     //fcntl(pn->si->fd, F_SETFL, fcntl(pn->si->fd, F_GETFL, 0) & ~O_NONBLOCK);
     return 0 ;
@@ -69,7 +73,10 @@ void COM_close( struct connection_in * in ) {
     fd = in->fd ;
     // restore tty settings
     if ( fd > -1 ) {
-        tcsetattr(fd, TCSAFLUSH, &in->connin.serial.oldSerialTio);
+        if (tcsetattr(fd, TCSAFLUSH, &in->connin.serial.oldSerialTio)) {
+            LEVEL_CONNECT("Cannot restore port attributes: %s error=%s\n",in->name,strerror(errno));
+            STAT_ADD1_BUS(BUS_tcsetattr_errors,in) ;
+        }
         tcflush(fd, TCIOFLUSH);
         close(fd);
         in->fd = -1 ;

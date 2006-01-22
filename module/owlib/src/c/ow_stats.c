@@ -129,17 +129,8 @@ unsigned int BUS_echo_errors = 0 ;
 unsigned int BUS_ProgramPulse_errors = 0 ;
 unsigned int BUS_Overdrive_errors = 0 ;
 unsigned int BUS_TestOverdrive_errors = 0 ;
-
-// ow_ds9490.c
-unsigned int DS9490_wait_errors = 0 ;
-
-// ow_ds9097.c
-unsigned int DS9097_read_bits_errors = 0 ;
-unsigned int DS9097_reset_tcsetattr_errors = 0 ;
-
-// ow_ds1410.c
-unsigned int DS1410_read_bits_errors = 0 ;
-unsigned int DS1410_reset_tcsetattr_errors = 0 ;
+unsigned int BUS_tcsetattr_errors = 0 ;
+unsigned int BUS_status_errors = 0 ;
 
 // ow_ds9097U.c
 unsigned int DS2480_send_cmd_errors = 0 ;
@@ -323,18 +314,8 @@ FS_stat_ROW(BUS_echo_errors),
 FS_stat_ROW(BUS_ProgramPulse_errors),
 FS_stat_ROW(BUS_Overdrive_errors),
 FS_stat_ROW(BUS_TestOverdrive_errors),
-
-
-// ow_ds9490.c
-FS_stat_ROW(DS9490_wait_errors),
-
-// ow_ds9097.c
-FS_stat_ROW(DS9097_read_bits_errors),
-FS_stat_ROW(DS9097_reset_tcsetattr_errors),
-
-// ow_ds9097.c
-FS_stat_ROW(DS1410_read_bits_errors),
-FS_stat_ROW(DS1410_reset_tcsetattr_errors),
+FS_stat_ROW(BUS_tcsetattr_errors),
+FS_stat_ROW(BUS_status_errors),
 
 // ow_ds9097U.c
 FS_stat_ROW(DS2480_send_cmd_errors),
