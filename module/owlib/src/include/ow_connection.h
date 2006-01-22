@@ -116,7 +116,6 @@ struct interface_routines {
     /* Close the connection (port) */
     void (* close) ( struct connection_in * in ) ;
 } ;
-#define BUS_reset(pn)                       (((pn)->in->iroutines.reset)(pn))
 #define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
 #define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
 #define BUS_next_both(sn,search,pn)         (((pn)->in->iroutines.next_both)((sn),(search),(pn)))
@@ -291,6 +290,7 @@ int BadAdapter_detect( struct connection_in * in ) ;
     void DS9490_close( struct connection_in * in ) ;
 #endif /* OW_USB */
 
+int BUS_reset(const struct parsedname * pn) ;
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;

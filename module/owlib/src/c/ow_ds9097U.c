@@ -29,7 +29,6 @@ static int DS2480_level_low( int new_level, const struct parsedname * pn) ;
 static int DS2480_PowerByte( const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
 static int DS2480_ProgramPulse( const struct parsedname * pn ) ;
 static int DS2480_sendout_cmd( const unsigned char * cmd , const size_t len, const struct parsedname * pn ) ;
-static int DS2480_send_cmd( const unsigned char * cmd , const size_t len, const struct parsedname * pn ) ;
 static int DS2480_sendback_cmd( const unsigned char * cmd , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 static int DS2480_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 static void DS2480_setroutines( struct interface_routines * f ) ;
@@ -255,7 +254,7 @@ int DS2480_detect( struct connection_in * in ) {
     // send the packet
     // read back the response
     if ( (ret=DS2480_sendback_cmd(setup,setup,5,&pn)) ) {
-      return ret ;
+        return ret ;
     }
 
     // look at the baud rate and bit operation
@@ -352,19 +351,13 @@ static int DS2480_reset( const struct parsedname * pn ) {
 
     //printf("DS2480_reset\n");
     // make sure normal level
-    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) {
-        STAT_ADD1(DS2480_reset_errors);
-      return ret ;
-    }
+    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) return ret ;
     // flush the buffers
     COM_flush(pn);
 
     // send the packet
     // read back the 1 byte response
-    if ( (ret=DS2480_sendback_cmd(&buf,&buf,1,pn)) ) {
-        STAT_ADD1(DS2480_reset_errors);
-        return ret ;
-    }
+    if ( (ret=DS2480_sendback_cmd(&buf,&buf,1,pn)) ) return ret ;
     /* The adapter type is encode in this response byte */
     /* The known values coorespond to the types in enum adapter_type */
     /* Other values are assigned for adapters that don't have this hardcoded value */
@@ -372,6 +365,7 @@ static int DS2480_reset( const struct parsedname * pn ) {
 
     switch ( buf& RB_RESET_MASK ) {
     case RB_1WIRESHORT:
+        STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
         LEVEL_CONNECT("1-wire bus short circuit.\n")
         // fall through
     case RB_NOPRESENCE:
@@ -382,12 +376,12 @@ static int DS2480_reset( const struct parsedname * pn ) {
         if( pn->si ) pn->si->AnyDevices = 1 ;
         // check if programming voltage available
         pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
-	if(pn->in->ds2404_compliance) {
-	  // extra delay for alarming DS1994/DS2404 complience
-	  UT_delay(5);
-	}
+        if(pn->in->ds2404_compliance) {
+            // extra delay for alarming DS1994/DS2404 complience
+            UT_delay(5);
+        }
         COM_flush(pn);
-	break;
+        break;
      }
      return 0 ;
 }
@@ -842,37 +836,6 @@ static int DS2480_sendout_cmd( const unsigned char * cmd , const size_t len, con
         ret=DS2480_write(cmd,(unsigned)len,pn ) ;
         if(ret) {
             STAT_ADD1(DS2480_sendout_cmd_errors);
-        }
-    }
-    return ret ;
-}
-
-
-//
-// DS2480_send_cmd
-//  Send a command and expect response match
-//  puts into command mode if needed.
-/* return 0=good
-   send_cmd,sendout_cmd,readin
-   -EIO if no match
- */
-static int DS2480_send_cmd( const unsigned char * cmd , const size_t len, const struct parsedname * pn ) {
-    int ret ;
-    if ( len>16 ) {
-        int clen = len-(len>>1) ;
-        (ret=DS2480_send_cmd(cmd,clen,pn)) || (ret=DS2480_send_cmd(&cmd[clen],len>>1,pn)) ;
-    } else {
-        unsigned char resp[16] ;
-        if( ((ret=DS2480_sendback_cmd(cmd,resp,len,pn))
-          || (ret=memcmp(cmd,resp,(size_t)len)?-EIO:0)) ) {
-            if(ret == -EIO) {
-                STAT_ADD1(DS2480_send_cmd_memcmp_errors);
-                /* A minor "error" and should perhaps only return -1 to avoid
-                * reconnect */
-                //ret = -1;
-            } else {
-                STAT_ADD1(DS2480_send_cmd_errors);
-            }
         }
     }
     return ret ;

@@ -121,28 +121,26 @@ unsigned int BUS_read_select_errors = 0 ;
 unsigned int BUS_read_timeout_errors = 0 ;
 unsigned int BUS_next_errors = 0 ;
 unsigned int BUS_next_alarm_errors = 0 ;
+unsigned int BUS_reset_errors = 0 ;
+unsigned int BUS_short_errors = 0 ;
 
 // ow_ds9490.c
 unsigned int DS9490_wait_errors = 0 ;
-unsigned int DS9490_reset_errors = 0 ;
 unsigned int DS9490_sendback_data_errors = 0 ;
 
 // ow_ds9097.c
 unsigned int DS9097_read_bits_errors = 0 ;
 unsigned int DS9097_sendback_data_errors = 0 ;
 unsigned int DS9097_sendback_bits_errors = 0 ;
-unsigned int DS9097_reset_errors = 0 ;
 unsigned int DS9097_reset_tcsetattr_errors = 0 ;
 
 // ow_ds1410.c
 unsigned int DS1410_read_bits_errors = 0 ;
 unsigned int DS1410_sendback_data_errors = 0 ;
 unsigned int DS1410_sendback_bits_errors = 0 ;
-unsigned int DS1410_reset_errors = 0 ;
 unsigned int DS1410_reset_tcsetattr_errors = 0 ;
 
 // ow_ds9097U.c
-unsigned int DS2480_reset_errors = 0 ;
 unsigned int DS2480_send_cmd_errors = 0 ;
 unsigned int DS2480_send_cmd_memcmp_errors = 0 ;
 unsigned int DS2480_sendout_data_errors = 0 ;
@@ -319,29 +317,27 @@ FS_stat_ROW(BUS_read_select_errors),
 FS_stat_ROW(BUS_read_timeout_errors),
 FS_stat_ROW(BUS_next_errors),
 FS_stat_ROW(BUS_next_alarm_errors),
+FS_stat_ROW(BUS_reset_errors),
+FS_stat_ROW(BUS_short_errors),
 
 
 // ow_ds9490.c
 FS_stat_ROW(DS9490_wait_errors),
-FS_stat_ROW(DS9490_reset_errors),
 FS_stat_ROW(DS9490_sendback_data_errors),
 
 // ow_ds9097.c
 FS_stat_ROW(DS9097_read_bits_errors),
 FS_stat_ROW(DS9097_sendback_data_errors),
 FS_stat_ROW(DS9097_sendback_bits_errors),
-FS_stat_ROW(DS9097_reset_errors),
 FS_stat_ROW(DS9097_reset_tcsetattr_errors),
 
 // ow_ds9097.c
 FS_stat_ROW(DS1410_read_bits_errors),
 FS_stat_ROW(DS1410_sendback_data_errors),
 FS_stat_ROW(DS1410_sendback_bits_errors),
-FS_stat_ROW(DS1410_reset_errors),
 FS_stat_ROW(DS1410_reset_tcsetattr_errors),
 
 // ow_ds9097U.c
-FS_stat_ROW(DS2480_reset_errors),
 FS_stat_ROW(DS2480_send_cmd_errors),
 FS_stat_ROW(DS2480_send_cmd_memcmp_errors),
 FS_stat_ROW(DS2480_sendout_data_errors),

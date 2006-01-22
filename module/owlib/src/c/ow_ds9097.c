@@ -102,13 +102,11 @@ static int DS9097_reset( const struct parsedname * const pn ) {
         STAT_ADD1(DS9097_reset_tcsetattr_errors);
         return -EIO ;
     }
-    if ( (ret=DS9097_send_and_get(&resetbyte,&c,1,pn)) ) {
-        STAT_ADD1(DS9097_reset_errors);
-        return ret ;
-    }
+    if ( (ret=DS9097_send_and_get(&resetbyte,&c,1,pn)) ) return ret ;
 
     switch(c) {
     case 0:
+        STAT_ADD1_BUS( BUS_short_errors, pn->in ) ;
         LEVEL_CONNECT("1-wire bus short circuit.\n")
         /* fall through */
     case 0xF0:

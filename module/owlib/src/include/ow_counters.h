@@ -151,31 +151,29 @@ extern unsigned int BUS_read_select_errors ;
 extern unsigned int BUS_read_timeout_errors ;
 extern unsigned int BUS_next_errors ;
 extern unsigned int BUS_next_alarm_errors ;
+extern unsigned int BUS_detect_errors ;
+extern unsigned int BUS_open_errors ;
+extern unsigned int BUS_PowerByte_errors ;
+extern unsigned int BUS_reset_errors ;
+extern unsigned int BUS_short_errors ;
 
 // ow_ds9490.c
 extern unsigned int DS9490_wait_errors ;
-extern unsigned int DS9490_reset_errors ;
 extern unsigned int DS9490_sendback_data_errors ;
 
 // ow_ds9097.c
 extern unsigned int DS9097_read_bits_errors ;
 extern unsigned int DS9097_sendback_data_errors ;
 extern unsigned int DS9097_sendback_bits_errors ;
-extern unsigned int DS9097_reset_errors ;
 extern unsigned int DS9097_reset_tcsetattr_errors ;
 
 // ow_ds1410.c
-extern unsigned int BUS_detect_errors ;
-extern unsigned int BUS_open_errors ;
-extern unsigned int BUS_PowerByte_errors ;
 extern unsigned int DS1410_read_bits_errors ;
 extern unsigned int DS1410_sendback_data_errors ;
 extern unsigned int DS1410_sendback_bits_errors ;
-extern unsigned int DS1410_reset_errors ;
 extern unsigned int DS1410_reset_tcsetattr_errors ;
 
 // ow_ds9097U.c
-extern unsigned int DS2480_reset_errors ;
 extern unsigned int DS2480_send_cmd_errors ;
 extern unsigned int DS2480_send_cmd_memcmp_errors ;
 extern unsigned int DS2480_sendout_data_errors ;

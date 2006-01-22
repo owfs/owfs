@@ -656,7 +656,7 @@ static int DS9490_testoverdrive(const struct parsedname * pn) {
     // force to normal communication speed
     if((ret = DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn)) < 0) return ret ;
     
-    if((ret = DS9490_reset(pn)) < 0) return ret ;
+    if((ret = BUS_reset(pn)) < 0) return ret ;
     
     if (!DS9490_sendback_data(&p,buffer,1, pn) && (p==buffer[0])) {  // match command 0x69
         if(!DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn)) {
@@ -703,7 +703,7 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
         if(pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
             // we need to change speed to overdrive
             for(i=0; i<3; i++) {
-                if ((ret=DS9490_reset(pn)) < 0) continue ;
+                if ((ret=BUS_reset(pn)) < 0) continue ;
                 if ((DS9490_sendback_data(&sp,&resp,1, pn)<0) || (sp!=resp)) {
                     //printf("error sending 0x3C\n");
                     continue ;
@@ -751,7 +751,7 @@ static int DS9490_reset( const struct parsedname * pn ) {
         //if(!pn->in->connin.usb.usb) { LEVEL_DATA("DS9490_reset: usb.usb is null\n"); }
         //if(!pn->in->connin.usb.dev) { LEVEL_DATA("DS9490_reset: usb.dev is null\n"); }
         if((ret = DS9490_reconnect(pn))) {
-	    LEVEL_DATA("DS9490_reset: reconnect ret=%d\n", ret);
+            LEVEL_DATA("DS9490_reset: reconnect ret=%d\n", ret);
             return ret;
         }
     }
@@ -760,8 +760,7 @@ static int DS9490_reset( const struct parsedname * pn ) {
  
     if((ret=DS9490_level(MODE_NORMAL, pn)) < 0) {
         LEVEL_DATA("DS9490_reset: level failed ret=%d\n", ret);
-        STAT_ADD1(DS9490_reset_errors);
-        return ret ;
+       return ret ;
     }
 
     // force normal speed if not using overdrive anymore
@@ -772,10 +771,9 @@ static int DS9490_reset( const struct parsedname * pn ) {
 
     
     if ( (ret=usb_control_msg(pn->in->connin.usb.usb,0x40,COMM_CMD,
-            COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE,
-            pn->in->connin.usb.USpeed,
-            NULL, 0, TIMEOUT_USB ))<0 ) {
-        STAT_ADD1(DS9490_reset_errors);
+        COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE,
+        pn->in->connin.usb.USpeed,
+        NULL, 0, TIMEOUT_USB ))<0 ) {
         LEVEL_DATA("DS9490_reset: error sending reset ret=%d\n", ret);
         return -EIO ;  // fatal error... probably closed usb-handle
     }
@@ -786,11 +784,11 @@ static int DS9490_reset( const struct parsedname * pn ) {
     }
 
     if((ret=DS9490_getstatus(buffer,0,pn)) < 0) {
-        STAT_ADD1(DS9490_reset_errors);
         if(ret == -1) {
             /* Short detected, but otherwise no bigger "problem"?
             * Make sure 1-wires won't be scanned */
             pn->si->AnyDevices = 0;
+            STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
             LEVEL_DATA("DS9490_reset: short detected\n", ret);
             return 0;
         }
@@ -908,7 +906,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 
     /* DS1994/DS2404 might need an extra reset */
     if (si->ExtraReset) {
-        if(DS9490_reset(pn) < 0) si->LastDevice = 1 ;
+        if(BUS_reset(pn) < 0) si->LastDevice = 1 ;
         si->ExtraReset = 0;
     }
 

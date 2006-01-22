@@ -384,3 +384,12 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
     return 0 ;
 }
 
+int BUS_reset(const struct parsedname * pn) {
+    int ret = (pn->in->iroutines.reset)(pn) ;
+    if ( ret ) {
+        STAT_ADD1_BUS(BUS_reset_errors, pn->in ) ;
+    }
+    return ret ;
+}
+
+

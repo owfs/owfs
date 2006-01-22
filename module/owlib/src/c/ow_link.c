@@ -92,9 +92,10 @@ int LINK_detect( struct connection_in * in ) {
 static int LINK_reset( const struct parsedname * pn ) {
     unsigned char resp[3] ;
     COM_flush(pn) ;
-    if ( LINK_write(LINK_string("\rr"),2,pn) ) return -errno ;
-//    sleep(1) ;
-    if ( LINK_read(resp,4,pn) ) return -errno ;
+    if ( LINK_write(LINK_string("\rr"),2,pn) || LINK_read(resp,4,pn) ) {
+        STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
+        return -errno ;
+    }
     switch( resp[1] ) {
         case 'P':
             pn->si->AnyDevices=1 ;
@@ -104,6 +105,7 @@ static int LINK_reset( const struct parsedname * pn ) {
             break ;
         default:
             pn->si->AnyDevices=0 ;
+            STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
             LEVEL_CONNECT("1-wire bus short circuit.\n")
     }
     return 0 ;
@@ -197,17 +199,6 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
         * be any bad experience for any user... Less read and
         * timeout errors for users with slow machines. I have seen
         * 276ms delay on my Coldfire board.
-        *
-        * DS2480_reset()
-        *   DS2480_sendback_cmd()
-        *     DS2480_sendout_cmd()
-        *       DS2480_write()
-        *         write()
-        *         tcdrain()   (all data should be written on serial port)
-        *     DS2480_read()
-        *       select()      (waiting 40ms should be enough!)
-        *       read()
-        *
         */
 
         // if byte available read or return bytes read
