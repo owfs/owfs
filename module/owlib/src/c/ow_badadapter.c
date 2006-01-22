@@ -54,14 +54,17 @@ static int BadAdapter_reset( const struct parsedname * pn ) {
 static int BadAdapter_overdrive( const unsigned int ov, const struct parsedname * pn ) {
     (void) ov ;
     (void) pn ;
+    STAT_ADD1_BUS(BUS_Overdrive_errors,pn->in) ;
     return -ENOTSUP ;
 }
 static int BadAdapter_testoverdrive( const struct parsedname * pn ) {
     (void) pn ;
+    STAT_ADD1_BUS(BUS_TestOverdrive_errors,pn->in) ;
     return -ENOTSUP ;
 }
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) {
     (void) pn ;
+    STAT_ADD1_BUS(BUS_ProgramPulse_errors,pn->in) ;
     return -ENOTSUP ;
 }
 static int BadAdapter_sendback_bits( const unsigned char * data , unsigned char * resp, const size_t len, const struct parsedname * pn ){

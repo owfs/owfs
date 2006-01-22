@@ -171,7 +171,7 @@ int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits
         if ( l==DS9097_MAX_BITS || i==length ) {
             /* Communication with DS9097 routine */
             if ( (ret= DS9097_send_and_get(d,&inbits[start],l,pn)) ) {
-                STAT_ADD1(DS9097_sendback_bits_errors);
+                STAT_ADD1_BUS( BUS_bit_errors, pn->in ) ;
                 return ret ;
             }
             l = 0 ;

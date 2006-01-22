@@ -123,21 +123,22 @@ unsigned int BUS_next_errors = 0 ;
 unsigned int BUS_next_alarm_errors = 0 ;
 unsigned int BUS_reset_errors = 0 ;
 unsigned int BUS_short_errors = 0 ;
+unsigned int BUS_bit_errors = 0 ;
+unsigned int BUS_byte_errors = 0 ;
+unsigned int BUS_echo_errors = 0 ;
+unsigned int BUS_ProgramPulse_errors = 0 ;
+unsigned int BUS_Overdrive_errors = 0 ;
+unsigned int BUS_TestOverdrive_errors = 0 ;
 
 // ow_ds9490.c
 unsigned int DS9490_wait_errors = 0 ;
-unsigned int DS9490_sendback_data_errors = 0 ;
 
 // ow_ds9097.c
 unsigned int DS9097_read_bits_errors = 0 ;
-unsigned int DS9097_sendback_data_errors = 0 ;
-unsigned int DS9097_sendback_bits_errors = 0 ;
 unsigned int DS9097_reset_tcsetattr_errors = 0 ;
 
 // ow_ds1410.c
 unsigned int DS1410_read_bits_errors = 0 ;
-unsigned int DS1410_sendback_data_errors = 0 ;
-unsigned int DS1410_sendback_bits_errors = 0 ;
 unsigned int DS1410_reset_tcsetattr_errors = 0 ;
 
 // ow_ds9097U.c
@@ -145,15 +146,12 @@ unsigned int DS2480_send_cmd_errors = 0 ;
 unsigned int DS2480_send_cmd_memcmp_errors = 0 ;
 unsigned int DS2480_sendout_data_errors = 0 ;
 unsigned int DS2480_sendout_cmd_errors = 0 ;
-unsigned int DS2480_sendback_data_errors = 0 ;
 unsigned int DS2480_sendback_cmd_errors = 0 ;
 unsigned int DS2480_write_interrupted = 0 ;
 unsigned int DS2480_read_fd_isset = 0 ;
 unsigned int DS2480_read_null = 0 ;
 unsigned int DS2480_read_read = 0 ;
 unsigned int DS2480_level_docheck_errors = 0 ;
-unsigned int DS2480_databit_errors = 0 ;
-unsigned int DS2480_ProgramPulse_errors = 0 ;
 
 
 struct average all_avg = {0L,0L,0L,0L,} ;
@@ -319,22 +317,23 @@ FS_stat_ROW(BUS_next_errors),
 FS_stat_ROW(BUS_next_alarm_errors),
 FS_stat_ROW(BUS_reset_errors),
 FS_stat_ROW(BUS_short_errors),
+FS_stat_ROW(BUS_bit_errors),
+FS_stat_ROW(BUS_byte_errors),
+FS_stat_ROW(BUS_echo_errors),
+FS_stat_ROW(BUS_ProgramPulse_errors),
+FS_stat_ROW(BUS_Overdrive_errors),
+FS_stat_ROW(BUS_TestOverdrive_errors),
 
 
 // ow_ds9490.c
 FS_stat_ROW(DS9490_wait_errors),
-FS_stat_ROW(DS9490_sendback_data_errors),
 
 // ow_ds9097.c
 FS_stat_ROW(DS9097_read_bits_errors),
-FS_stat_ROW(DS9097_sendback_data_errors),
-FS_stat_ROW(DS9097_sendback_bits_errors),
 FS_stat_ROW(DS9097_reset_tcsetattr_errors),
 
 // ow_ds9097.c
 FS_stat_ROW(DS1410_read_bits_errors),
-FS_stat_ROW(DS1410_sendback_data_errors),
-FS_stat_ROW(DS1410_sendback_bits_errors),
 FS_stat_ROW(DS1410_reset_tcsetattr_errors),
 
 // ow_ds9097U.c
@@ -342,15 +341,12 @@ FS_stat_ROW(DS2480_send_cmd_errors),
 FS_stat_ROW(DS2480_send_cmd_memcmp_errors),
 FS_stat_ROW(DS2480_sendout_data_errors),
 FS_stat_ROW(DS2480_sendout_cmd_errors),
-FS_stat_ROW(DS2480_sendback_data_errors),
 FS_stat_ROW(DS2480_sendback_cmd_errors),
 FS_stat_ROW(DS2480_write_interrupted),
 FS_stat_ROW(DS2480_read_fd_isset),
 FS_stat_ROW(DS2480_read_null),
 FS_stat_ROW(DS2480_read_read),
 FS_stat_ROW(DS2480_level_docheck_errors),
-FS_stat_ROW(DS2480_databit_errors),
-FS_stat_ROW(DS2480_ProgramPulse_errors),
 
 FS_stat_ROW(CRC8_errors),
 FS_stat_ROW(CRC8_tries),

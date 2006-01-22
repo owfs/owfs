@@ -156,21 +156,22 @@ extern unsigned int BUS_open_errors ;
 extern unsigned int BUS_PowerByte_errors ;
 extern unsigned int BUS_reset_errors ;
 extern unsigned int BUS_short_errors ;
+extern unsigned int BUS_bit_errors ;
+extern unsigned int BUS_byte_errors ;
+extern unsigned int BUS_echo_errors ;
+extern unsigned int BUS_ProgramPulse_errors ;
+extern unsigned int BUS_Overdrive_errors ;
+extern unsigned int BUS_TestOverdrive_errors ;
 
 // ow_ds9490.c
 extern unsigned int DS9490_wait_errors ;
-extern unsigned int DS9490_sendback_data_errors ;
 
 // ow_ds9097.c
 extern unsigned int DS9097_read_bits_errors ;
-extern unsigned int DS9097_sendback_data_errors ;
-extern unsigned int DS9097_sendback_bits_errors ;
 extern unsigned int DS9097_reset_tcsetattr_errors ;
 
 // ow_ds1410.c
 extern unsigned int DS1410_read_bits_errors ;
-extern unsigned int DS1410_sendback_data_errors ;
-extern unsigned int DS1410_sendback_bits_errors ;
 extern unsigned int DS1410_reset_tcsetattr_errors ;
 
 // ow_ds9097U.c
@@ -178,7 +179,6 @@ extern unsigned int DS2480_send_cmd_errors ;
 extern unsigned int DS2480_send_cmd_memcmp_errors ;
 extern unsigned int DS2480_sendout_data_errors ;
 extern unsigned int DS2480_sendout_cmd_errors ;
-extern unsigned int DS2480_sendback_data_errors ;
 extern unsigned int DS2480_sendback_cmd_errors ;
 extern unsigned int DS2480_write_interrupted ;
 extern unsigned int DS2480_read_fd_isset ;
@@ -186,7 +186,6 @@ extern unsigned int DS2480_read_null ;
 extern unsigned int DS2480_read_read ;
 extern unsigned int DS2480_level_docheck_errors ;
 extern unsigned int DS2480_databit_errors ;
-extern unsigned int DS2480_ProgramPulse_errors ;
 
 #define STAT_ADD1(x)    STATLOCK ; ++x ; STATUNLOCK
 

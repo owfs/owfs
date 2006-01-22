@@ -822,6 +822,7 @@ static int DS9490_read( unsigned char * buf, const size_t size, const struct par
     if ((ret=usb_bulk_read(usb,DS2490_EP3,buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP3) ;
+    STAT_ADD1_BUS(BUS_read_errors,pn->in) ;
     return ret ;
 }
 
@@ -832,6 +833,7 @@ static int DS9490_write( const unsigned char * buf, const size_t size, const str
     if ((ret=usb_bulk_write(usb,DS2490_EP2,buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP2) ;
+    STAT_ADD1_BUS(BUS_write_errors,pn->in) ;
     return ret ;
 }
 
@@ -847,8 +849,7 @@ static int DS9490_sendback_data( const unsigned char * data , unsigned char * re
     }
 
     if ( (ret=DS9490_write(data, (size_t)len, pn)) < len ) {
-        //printf("USBsendback bulk write problem ret=%d\n", ret);
-        STAT_ADD1(DS9490_sendback_data_errors);
+        LEVEL_DATA("USBsendback bulk write problem ret=%d\n", ret);
         return ret ;
     }
 
@@ -857,14 +858,13 @@ static int DS9490_sendback_data( const unsigned char * data , unsigned char * re
         ||
         ((ret = DS9490_getstatus(buffer,len,pn)) < 0) // wait for len bytes
         ) {
-      LEVEL_DATA("USBsendback control problem ret=%d\n", ret);
-        STAT_ADD1(DS9490_sendback_data_errors);
+        LEVEL_DATA("USBsendback control problem ret=%d\n", ret);
+        STAT_ADD1_BUS(BUS_byte_errors,pn->in) ;
         return ret ;
     }
 
     if ( (ret=DS9490_read(resp, (size_t)len, pn)) < 0 ) {
-      LEVEL_DATA("USBsendback bulk read problem ret=%d\n", ret);
-        STAT_ADD1(DS9490_sendback_data_errors);
+        LEVEL_DATA("USBsendback bulk read problem ret=%d\n", ret);
         return ret ;
     }
     return 0 ;

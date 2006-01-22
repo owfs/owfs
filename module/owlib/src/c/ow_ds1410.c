@@ -158,7 +158,10 @@ static void DS1410_close( struct connection_in * in ) {
 static int DS1410_sendback_bits( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
     int i ;
     for ( i=0 ; i<len ; ++i ) {
-        if ( DS1410bit( data[i]?WRITE1:WRITE0, &resp[i], pn->in->fd ) ) return -EIO ;
+        if ( DS1410bit( data[i]?WRITE1:WRITE0, &resp[i], pn->in->fd ) ) {
+            STAT_ADD1_BUS( BUS_bit_errors , pn->in ) ;
+            return -EIO ;
+        }
     }
     return 0 ;
 }

@@ -496,10 +496,8 @@ static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * p
 
     // make sure normal level
     if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) {
-      STATLOCK;
-      DS2480_databit_errors++;
-      STATUNLOCK;
-      return ret ;
+        STAT_ADD1_BUS( BUS_bit_errors, pn->in ) ;
+        return ret ;
     }
     // check if correct mode
     if (pn->in->connin.serial.UMode != MODSEL_COMMAND)
@@ -517,7 +515,7 @@ static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * p
 
     // send the packet
     if ( (ret=DS2480_write(sendpacket,sendlen,pn)) || (ret=DS2480_read(readbuffer,1,pn)) ) {
-        STAT_ADD1(DS2480_databit_errors);
+        STAT_ADD1_BUS( BUS_bit_errors, pn->in ) ;
         return ret ;
     }
     // interpret the response
@@ -696,7 +694,7 @@ static int DS2480_ProgramPulse( const struct parsedname * pn ) {
         || (ret=DS2480_read(resp,2,pn))
         || ((cmd[0]==resp[0])?0:-EIO)
         || (ret=((cmd[1]&0xFC)==(resp[1]&0xFC))?0:-EIO)) ) {
-        STAT_ADD1(DS2480_ProgramPulse_errors);
+        STAT_ADD1_BUS(BUS_ProgramPulse_errors,pn->in);
     }
     return ret ;
 }
@@ -911,7 +909,7 @@ static int DS2480_sendback_data( const unsigned char * data, unsigned char * res
     int ret ;
     (ret=DS2480_sendout_data( data,len,pn )) || (ret=DS2480_read( resp,len,pn )) ;
     if(ret) {
-        STAT_ADD1(DS2480_sendback_data_errors);
+        STAT_ADD1_BUS(BUS_byte_errors,pn->in);
     }
     return ret ;
 }

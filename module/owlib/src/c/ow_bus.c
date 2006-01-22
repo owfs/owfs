@@ -39,11 +39,11 @@ int BUS_send_data( const unsigned char * const data, const size_t len, const str
         (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
     } else {
         unsigned char resp[16] ;
-        if ((ret=BUS_sendback_data( data, resp, len,pn ))) {
-            STAT_ADD1(BUS_send_data_memcmp_errors);
-        } else if ((ret=memcmp(data, resp, (size_t) len))) {
-            ret = -EPROTO ;
-            STAT_ADD1(BUS_send_data_errors);
+        if ((ret=BUS_sendback_data( data, resp, len,pn ))==0) {
+            if ((ret=memcmp(data, resp, (size_t) len))) {
+                ret = -EPROTO ;
+                STAT_ADD1_BUS(BUS_echo_errors,pn->in);
+            }
         }
     }
     return ret ;
@@ -272,7 +272,7 @@ int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , co
     
     /* Communication with DS9097 routine */
     if ( (ret=BUS_sendback_bits(pn->in->combuffer,pn->in->combuffer,bits,pn) ) ) {
-        STAT_ADD1(DS9097_sendback_data_errors);
+        STAT_ADD1_BUS(BUS_byte_errors,pn->in);
         return ret ;
     }
 
