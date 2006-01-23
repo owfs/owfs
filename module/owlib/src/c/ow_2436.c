@@ -52,7 +52,7 @@ bWRITE_FUNCTION( FS_w_page ) ;
 
 /* ------- Structures ----------- */
 
-struct aggregate A2436 = { 5, ag_numbers, ag_separate,} ;
+struct aggregate A2436 = { 3, ag_numbers, ag_separate,} ;
 struct filetype DS2436[] = {
     F_STANDARD   ,
     {"pages"     ,     0,  NULL,   ft_subdir     , ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
@@ -100,64 +100,69 @@ static int FS_volts(FLOAT * V , const struct parsedname * pn) {
 static int OW_r_page( unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
     unsigned char data[32] ;
     int page = offset>>5 ;
-    size_t s = size ;
-    size_t off = offset & 0x1F ;
+    size_t s ;
+    unsigned char scratchin[] = {0x11 , offset, } ;
     static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
-    unsigned char scratchpad[] = { copyin[page], 0x11 , offset, } ;
     int ret ;
 
-    memset( data, 0xFF, size ) ;
-    if ( s+off > Asize[page] ) s = Asize[page] - off ;
+    s = Asize[page] - (offset & 0x1F) ;
+    if ( s > size ) s = size ;
 
-    // read to scratch, then in
+    memset( p, 0xFF, size ) ;
+
+    // send perment memory to scratchpad
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchpad, 3,pn ) || BUS_readin_data( data,s,pn ) ;
+        ret = BUS_select(pn) || BUS_send_data( &copyin[page],1,pn) ;
+    BUSUNLOCK(pn);
+    if ( ret ) return 1 ;
+
+    UT_delay(10) ;
+    
+    // re-read scratchpad and compare
+    BUSLOCK(pn);
+        ret = BUS_select(pn) || BUS_send_data( scratchin, 2,pn ) || BUS_readin_data( data,s,pn ) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     // copy to buffer
     memcpy( p , data , size ) ;
+    
     return 0 ;
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
 static int OW_w_page( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
-    size_t rest = 32-(offset&0x1F) ;
     int page = offset >> 5 ;
-    size_t off = offset & 0x1F ;
-    size_t s = size ;
+    size_t s ;
     unsigned char scratchin[] = {0x11 , offset, } ;
     unsigned char scratchout[] = {0x17 , offset, } ;
-    unsigned char data[33] ;
-    static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
+    unsigned char data[32] ;
     static unsigned char copyout[] = {0x22, 0x25, 0x27, } ;
-    static unsigned int plength[] = { 24, 8, 8, } ;
     int ret ;
 
-    // read scratchpad (sets it, too)
-    if ( OW_r_page( data, 32, page<<5, pn ) ) return 1 ;
-    if ( s+off > Asize[page] ) s = Asize[page] - off ;
-    memcpy( &data[off] , p , s ) ;
+    s = Asize[page] - (offset & 0x1F) ;
+    if ( s > size ) s = size ;
 
     // write to scratchpad
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchout, 2,pn ) || BUS_send_data( data,rest,pn ) ;
+        ret = BUS_select(pn) || BUS_send_data( scratchout, 2,pn ) || BUS_send_data( data,s,pn ) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     // re-read scratchpad and compare
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchin, 2,pn ) || BUS_readin_data( data,rest+1,pn ) || CRC8( data,rest+1 ) || memcmp(data,p,size) ;
+        ret = BUS_select(pn) || BUS_send_data( scratchin, 2,pn ) || BUS_readin_data( data,s,pn ) || memcpy( data,p,s ) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     // send scratchpad to perment memory
     BUSLOCK(pn);
-        ret = BUS_send_data( &copyout[offset>>5],1,pn) ;
+        ret = BUS_send_data( &copyout[page],1,pn) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
-    // Could recheck with a read, but no point
+    UT_delay(10) ;
+    
     return 0 ;
 }
 
@@ -181,13 +186,15 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
         UT_delay(2) ;
         timewait += 2 ;
         BUSLOCK(pn);
-            ret = BUS_send_data( b2, 2,pn ) || BUS_readin_data( t, 3,pn ) ;
+        ret = BUS_select(pn) || BUS_send_data( b2, 2,pn ) || BUS_readin_data( t, 3,pn ) ;
         BUSUNLOCK(pn);
+        if ( ret ) return 1 ;
 
-        if ( t[2] & 0x01 ) continue ; // no success yet
-        // success
-	*T = ((int)((signed char)t[1])) + .00390625*t[0] ;
-	return 0 ;
+        if ( (t[2] & 0x01)==0 ) {
+            // success
+            T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
+            return 0 ;
+        }
     }
     return -ETIMEDOUT ;
 }
@@ -213,19 +220,20 @@ static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
         UT_delay(2) ;
         timewait += 2 ;
         BUSLOCK(pn);
-        ret = BUS_send_data( status, 2,pn ) || BUS_readin_data( &s , 1,pn ) ;
+        ret = BUS_select(pn) || BUS_send_data( status, 2,pn ) || BUS_readin_data( &s , 1,pn ) ;
         BUSUNLOCK(pn);
 
-        if ( s & 0x08 ) continue ; // no success yet
-        // success
-	/* Read it in */
-	BUSLOCK(pn);
-		ret = BUS_send_data( volts , 2,pn ) || BUS_readin_data( v , 2,pn ) ;
-	BUSUNLOCK(pn);
-	if ( ret ) return 1 ;
+        if ( (s&0x08)==0 ) {
+            // success
+            /* Read it in */
+            BUSLOCK(pn);
+                ret = BUS_select(pn) || BUS_send_data( volts , 2,pn ) || BUS_readin_data( v , 2,pn ) ;
+            BUSUNLOCK(pn);
+            if ( ret ) return 1 ;
 
-	*V = .01 * (FLOAT)( ( ((int)v[1]) <<8 )|v[0] ) ;
-	return 0 ;
+            *V = .01 * (FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
+            return 0 ;
+        }
     }
     return -ETIMEDOUT ;
 }
