@@ -77,7 +77,6 @@ int DS1410_detect( struct connection_in * in ) {
     
     /* Set up low-level routines */
     DS1410_setroutines( & (in->iroutines) ) ;
-    if ( DS1410_open(in) ) return -EIO ; // Also exits "Passthru mode"
 
     /* Reset the bus */
     in->Adapter = adapter_DS1410 ; /* OWFS assigned value */
@@ -87,6 +86,8 @@ int DS1410_detect( struct connection_in * in ) {
     pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
+
+    if ( DS1410_open(in) ) return -EIO ; // Also exits "Passthru mode"
 
     if ( DS1410_ODcheck(&od,in->fd) ) {
         LEVEL_CONNECT("Cannot check Overdrive mode on DS1410E at %s\n",in->name) ;
@@ -130,6 +131,8 @@ static int DS1410_open( struct connection_in * in ) {
         LEVEL_CONNECT("Cannot open DS1410E at %s\n",in->name) ;
     } else if ( ioctl(in->fd,PPCLAIM ) ) {
         LEVEL_CONNECT("Cannot claim DS1410E at %s\n",in->name) ;
+        close( in->fd ) ;
+        in->fd = -1 ;
     } else if ( DS1410_PToff(in->fd) ) {
         LEVEL_CONNECT("Cannot exit PassThru mode for DS1410E at %s\nIs there really an adapter there?\n",in->name) ;
     } else {
