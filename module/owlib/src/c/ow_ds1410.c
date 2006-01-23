@@ -35,10 +35,6 @@ struct ppdev_frob_struct ENIhigh = { (unsigned char)~0x1C, 0x04 } ;
 struct ppdev_frob_struct ENIlow  = { (unsigned char)~0x1C, 0x06 } ;
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
-static int DS1410databyte( const unsigned char d, int fd ) ;
-static int DS1410status( unsigned char * result, int fd ) ;
-static int DS1410wait1( int fd ) ;
-static int DS1410wait2( int fd ) ;
 static int DS1410bit( unsigned char out, unsigned char * in, int fd ) ;
 static int DS1410_reset( const struct parsedname * pn ) ;
 static int DS1410_reconnect( const struct parsedname * pn ) ;
@@ -166,93 +162,59 @@ static int DS1410_sendback_bits( const unsigned char * data, unsigned char * res
     return 0 ;
 }
 
-/* Data byte */
-static int DS1410databyte( const unsigned char d, int fd ) {
-    unsigned char data = d ;
-    return -ioctl( fd, PPWDATA, &data ) ;
-}
-
-static char statusdebug[101] ;
-
-/* 1st wait */
-static int DS1410wait1( int fd ) {
-    int count = 0 ;
-    unsigned char result ;
-    unsigned char st ;
-    int ret ;
-    strcpy( statusdebug, "" ) ;
-    printf("1st Wait\n") ;
-
-    do {
-        if ( (ret=ioctl( fd, PPRSTATUS, &st )) ) return -ret ;
-        if ( ++count > 100 ) {printf ("timeout found=<%s>\n",statusdebug);return -ETIME ;}
-        if ( nanosleep( &usec4, NULL ) ) return -errno ;
-        result = (st ^ 0x80 ) & 0x90 == 0x90 ;
-        strcat(statusdebug,result?"1":"0");
-    } while ( result ) ;
-    return ret ;
-}
-
-/* 2nd wait */
-static int DS1410wait2( int fd ) {
-    int count = 0 ;
-    unsigned char result ;
-    unsigned char st ;
-    int ret ;
-    strcpy( statusdebug, "" ) ;
-    printf("2nd Wait\n") ;
-
-    do {
-        if ( (ret=ioctl( fd, PPRSTATUS, &st )) ) return -ret ;
-        if ( ++count > 100 ) {printf ("timeout found=<%s>\n",statusdebug);return -ETIME ;}
-        if ( nanosleep( &usec4, NULL ) ) return -errno ;
-        result = (st ^ 0x10 ) & 0x90 == 0x90 ;
-        strcat(statusdebug,result?"1":"0");
-    } while ( result ) ;
-    return ret ;
-}
-    
-/* read the parallel port status and do a test */
-static int DS1410status( unsigned char * result, int fd ) {
-    unsigned char st ;
-    int ret = ioctl( fd, PPRSTATUS, &st ) ;
-    result[0] = ( st ^ 0x80 ) & 0x90 ? 1 : 0 ;
-    //printf("Status read=%.2X, interp=%d, error=%d\n",(int)st,(int)result[0],(int)ret);
-    return -ret ;
-}
-
-/* Basic design from DOS driver, WWW entries from win driver */
+/* Basic design from Assembly driver */
 static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
+    unsigned char CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
+    unsigned char st, cl, cl2 ;
+    int i = 0 ;
     printf("DS1410E bit try (%.2X)\n",(int)out);
     if (
         0
-        ||DS1410databyte( 0xEC, fd )
-        ||nanosleep( &usec2, NULL )
-        ||DS1410databyte( out, fd )
-        ||ioctl( fd, PPFCONTROL, &ENIhigh)
-        ||ioctl( fd, PPFCONTROL, &ENIlow )
-        ||DS1410wait1( fd ) // wait for 11 and 13 low
+        ||ioctl( fd, PPWDATA, &EC )
         ||nanosleep( &usec4, NULL )
-        ||DS1410databyte( 0xFF, fd )
-        ||DS1410wait2( fd ) // wait for 11 or 13 high
-        ||DS1410databyte( 0xFE, fd )
-        ||nanosleep( &usec4, NULL )
-        ||DS1410status( in, fd ) // read result in pin 11 and 13
+        ||ioctl( fd, PPWDATA, &out )
+        ||ioctl( fd, PPRCONTROL, &cl)
        ) return 1 ;
-    if ( (out == RESET) &&
-          (
-          0
-          ||nanosleep( &usec400, NULL )
-          ||DS1410databyte( 0xFF, fd )
-          ||nanosleep( &usec4, NULL )
-          ||DS1410databyte( 0xFE, fd )
-          ||nanosleep( &usec4, NULL )
-          ||DS1410status( in, fd ) // read result in pin 11 and 13
-          ) ) return 1 ;
+    cl = ( cl&0x1C) | 0x06 ;
+    cl2 = cl & 0xFD ;
     if (
         0
-        ||ioctl( fd, PPFCONTROL, &ENIhigh)
-        ||DS1410databyte( 0xCF, fd )
+        ||ioctl( fd, PPWCONTROL, &cl)
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPRSTATUS, &st )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPWDATA, &FF )
+       ) return 1 ;
+    do {
+        if (
+            0
+            ||nanosleep( &usec4, NULL )
+            ||ioctl( fd, PPRSTATUS, &st )
+            ||(++i>100)
+           ) return 1 ;
+    } while ( !((st ^ 0x80) & 0x90) ) ;
+    if (
+        0
+        ||ioctl( fd, PPWDATA, &FE )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPRSTATUS, &st )
+       ) return 1 ;
+    if ( ( (st ^ 0x80) & 0x90 ) && ( out == RESET ) ) {
+        if (
+            0
+            ||nanosleep( &usec400, NULL )
+            ||ioctl( fd, PPWDATA, &FF )
+            ||nanosleep( &usec4, NULL )
+            ||ioctl( fd, PPWDATA, &FE )
+            ||nanosleep( &usec4, NULL )
+            ||ioctl( fd, PPRSTATUS, &st )
+           ) return 1 ;
+    }
+    in[0] = ( (st ^ 0x80) & 0x90 ) ? 1 : 0 ;
+    if (
+        0
+        ||ioctl( fd, PPWCONTROL, &cl2)
+        ||ioctl( fd, PPWDATA, &CF )
         ||nanosleep( &usec12, NULL )
        ) return 1 ;
     printf("DS1410 bit success %d->%d\n",(int)out,(int)in[0]);
@@ -261,27 +223,45 @@ static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
 
 /* Basic design from DOS driver, WWW entries from win driver */
 static int DS1410_ODcheck( unsigned char * od, int fd ) {
-    unsigned char x ;
+    unsigned char CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
+    unsigned char st, cl, cl2 ;
+    int i = 0 ;
     printf("DS1410E check OD\n");
     if (
         0
-        ||DS1410databyte( 0xEC, fd )
-        ||nanosleep( &usec2, NULL )
-        ||DS1410databyte( 0xFF, fd )
-        ||nanosleep( &usec2, NULL )
-        ||ioctl( fd, PPFCONTROL, &ENIhigh)
-        ||ioctl( fd, PPFCONTROL, &ENIlow )
-        ||nanosleep( &usec12, NULL )
+        ||ioctl( fd, PPWDATA, &EC )
         ||nanosleep( &usec4, NULL )
-        ||DS1410status( od, fd ) // read result in pin 11 and 13
-        ||DS1410databyte( 0xFF, fd )
-        ||DS1410wait2( fd ) // wait for 11 and 13 low
-        ||DS1410databyte( 0xFE, fd )
+        ||ioctl( fd, PPWDATA, &FF )
         ||nanosleep( &usec4, NULL )
-        ||DS1410status( &x, fd ) // read result in pin 11 and 13
-        ||ioctl( fd, PPFCONTROL, &ENIhigh)
-        ||DS1410databyte( 0xCF, fd )
-        ||nanosleep( &usec12, NULL )
+        ||ioctl( fd, PPRCONTROL, &cl)
+       ) return 1 ;
+    cl = ( cl&0x1C) | 0x06 ;
+    cl2 = cl & 0xFD ;
+    if (
+        0
+        ||ioctl( fd, PPWCONTROL, &cl)
+        ||nanosleep( &usec8, NULL )
+        ||nanosleep( &usec8, NULL )
+        ||ioctl( fd, PPRSTATUS, &st )
+        ||ioctl( fd, PPWDATA, &FF )
+       ) return 1 ;
+    od[0] = ( ( st ^ 0x80 ) & 0x90 ) ? 1 : 0 ;
+    do {
+        if (
+            0
+            ||nanosleep( &usec4, NULL )
+            ||ioctl( fd, PPRSTATUS, &st )
+            ||(++i>200)
+           ) return 1 ;
+    } while ( !((st ^ 0x80) & 0x90) ) ;
+    if (
+        0
+        ||ioctl( fd, PPWDATA, &FE )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPRSTATUS, &st )
+        ||ioctl( fd, PPWCONTROL, &cl2)
+        ||ioctl( fd, PPWDATA, &CF )
+        ||nanosleep( &usec4, NULL )
        ) return 1 ;
     printf("DS1410 OD status %d\n",(int)od[0]);
     return 0 ;
@@ -289,25 +269,33 @@ static int DS1410_ODcheck( unsigned char * od, int fd ) {
 
 /* Basic design from DOS driver */
 static int DS1410_ODtoggle( unsigned char * od, int fd ) {
+    unsigned char CF=0xCF, EC=0xEC, FC=0xFC, FD=0xFD, FE=0xFE, FF=0xFF;
+    unsigned char st, cl, cl2 ;
     printf("DS1410E OD toggle\n");
     if (
         0
-        ||DS1410databyte( 0xEC, fd )
-        ||nanosleep( &usec2, NULL )
-        ||DS1410databyte( 0xFC, fd )
-        ||ioctl( fd, PPFCONTROL, &ENIhigh)
-        ||ioctl( fd, PPFCONTROL, &ENIlow )
+        ||ioctl( fd, PPWDATA, &EC )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPWDATA, &FC )
+        ||ioctl( fd, PPRCONTROL, &cl)
+       ) return 1 ;
+    cl = ( cl|0x04) & 0x1C ;
+    cl2 = cl | 0x02 ;
+    cl &= 0xFD ;
+    if (
+        0
+        ||ioctl( fd, PPWCONTROL, &cl2)
         ||nanosleep( &usec8, NULL )
-        ||DS1410status( od, fd ) // read result in pin 11 and 13
+        ||ioctl( fd, PPRSTATUS, &st )
         ||nanosleep( &usec8, NULL )
-        ||ioctl( fd, PPFCONTROL, &ENIhigh )
-        ||DS1410databyte( 0xCF, fd )
+        ||ioctl( fd, PPWCONTROL, &cl)
+        ||ioctl( fd, PPWDATA, &CF )
         ||nanosleep( &usec8, NULL )
        ) return 1 ;
+    od[0] = ( ( st ^ 0x80 ) & 0x90 ) ? 1 : 0 ;
     printf("DS1410 OD toggle success %d\n",(int)od[0]);
     return 0 ;
 }
-
 static int DS1410_ODon( const struct parsedname * pn ) {
     int fd = pn->in->fd ;
     unsigned char od ;
@@ -374,13 +362,59 @@ static int DS1410_PToff( int fd ) {
 }
 
 static int DS1410Present( unsigned char * p, int fd ) {
-    unsigned char x ;
+    unsigned char CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
+    unsigned char st, cl, cl2 ;
+    int pass = 0 ;
+    int i = 0 ;
     printf("DS1410 present?\n") ;
-    p[0] = 0 ;
-    DS1410bit(RESET,&x,fd) ; // bad return allowed
-    if (  DS1410bit(0xFF,p,fd) ) return 1 ;
-    printf("DS1410 present=%d\n",p[0]==1) ;
-    return p[0]==1 ;
+    if (
+        0
+        ||ioctl( fd, PPWDATA, &EC )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPWDATA, &FF )
+        ||ioctl( fd, PPRCONTROL, &cl)
+       ) return 1 ;
+    cl = ( cl&0x1C) | 0x06 ;
+    cl2 = cl & 0xFD ;
+    if (
+        0
+        ||ioctl( fd, PPWCONTROL, &cl)
+        ||nanosleep( &usec8, NULL )
+        ||ioctl( fd, PPRSTATUS, &st )
+        ||ioctl( fd, PPWDATA, &FF )
+       ) return 1 ;
+    while ( 1 ) {
+        if (
+            0
+            ||ioctl( fd, PPRSTATUS, &st )
+           ) return 1 ;
+        if ( (pass==0) && ((st^0x80)&0x90)==0 ) {
+            pass = 1 ;
+        } else if ( (pass==1) && ((st^0x80)&0x90)!=0 ) {
+            p[0] = 1 ;
+            break ;
+        }
+        if (
+            0
+            ||nanosleep( &usec4, NULL )
+           ) return 1 ;
+        if (++i>100) {
+            p[0] = 0 ;
+            break ;
+        }
+    }
+    if (
+        0
+        ||ioctl( fd, PPWDATA, &FE )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPRSTATUS, &st )
+        ||nanosleep( &usec4, NULL )
+        ||ioctl( fd, PPWCONTROL, &cl2)
+        ||ioctl( fd, PPWDATA, &CF )
+        ||nanosleep( &usec12, NULL )
+       ) return 1 ;
+    printf("DS1410 present success %d\n",(int)p[0]);
+    return 0 ;
 }
 
 #endif /* OW_PARPORT */
