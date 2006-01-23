@@ -269,7 +269,7 @@ struct filetype stats_bus[] = {
     {"bus_unlocks"     , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)1  , } ,
     {"reconnect"       , 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)2 , } ,
     {"reconnect_errors", 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)3 , } ,
-    {"other_errors"    , 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)4 , } ,
+    {"other_bus_errors", 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, (void *)4 , } ,
     {"total_bus_time"  , 12, NULL , ft_float,    ft_statistic, {f:FS_time}, {v:NULL}, & total_bus_time   , } ,
     {"total_bus_unlocks",15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & total_bus_unlocks, } ,
     {"total_bus_locks" , 15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, & total_bus_locks  , } ,
@@ -363,19 +363,22 @@ static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
 
     if (pn->ft == NULL) return -ENOENT ;
     switch((unsigned int)pn->ft->data) {
-    case 0:
-      ptr = &c->bus_locks;
-      break;
-    case 1:
-      ptr = &c->bus_unlocks;
-      break;
-    case 2:
-      ptr = &c->bus_reconnect;
-      break;
-    case 3:
-      ptr = &c->bus_reconnect_errors;
-      break;
-    default:
+        case 0:
+            ptr = &c->bus_locks;
+            break;
+        case 1:
+            ptr = &c->bus_unlocks;
+            break;
+        case 2:
+            ptr = &c->bus_reconnect;
+            break;
+        case 3:
+            ptr = &c->bus_reconnect_errors;
+            break;
+        case 4:
+            ptr = &c->bus_errors;
+            break;
+        default:
       return -ENOENT;
     }
     STATLOCK;
