@@ -548,7 +548,6 @@ AC_ARG_ENABLE(owtcl,
     fi
 ])
 
-
 # Make sure tclConfig.sh is found under /usr/lib64/
 # Should perhaps support cross-compiling to other cpu-type too?
 LIBPOSTFIX=
@@ -613,19 +612,30 @@ if test "${ENABLE_OWNFSD}" = "true" ; then
         AC_SEARCH_LIBS(xdr_int, nsl)
 fi
 
+LD_EXTRALIBS=""
+
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
 
-    FUSE_FLAGS="-DFUSE_USE_VERSION=22"
-    FUSE_LIBS=""
     save_CPPFLAGS="$CPPFLAGS"
-    CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
+    save_LDFLAGS="$LDFLAGS"
+    FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I/usr/local/include"
+    FUSE_LIBS="-L/usr/local/lib"
+    LD_EXTRALIBS="-Wl,--rpath -Wl,/usr/local/lib"
+    CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
+    LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
     AC_CHECK_HEADER(fuse.h,,[
 	AC_MSG_WARN([
-	Can't find fuse.h - add the search path to CPPFLAGS and
-	rerun configure, eg:
+	Can't find fuse.h - Add the search path to CPPFLAGS
+	and rerun configure, eg:
 	export CPPFLAGS=-I/usr/local/include ])
+
+	FUSE_FLAGS=""
+	FUSE_LIBS=""
+	LD_EXTRALIBS=""
+	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
+	LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
 	AC_MSG_WARN([Install FUSE-2.2 or later to enable owfs - download it from http://fuse.sourceforge.net/])
 
@@ -635,10 +645,11 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	else
 	    AC_MSG_ERROR([Configure without --enable-owfs to detect fuse automatically.])
 	fi
-	])
-	if test "${ENABLE_OWFS}" != "false"; then
-	    AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="-lfuse"],[
-		AC_MSG_WARN([
+    ])
+
+    if test "${ENABLE_OWFS}" != "false"; then
+	AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="$FUSE_LIBS -lfuse"],[
+	    AC_MSG_WARN([
 	Can't find libfuse.a - add the search path to LDFLAGS
 	and rerun configure, eg:
 	export LDFLAGS=-L/usr/local/lib ])
@@ -650,10 +661,10 @@ if test "${ENABLE_OWFS}" != "false" ; then
 			AC_MSG_ERROR([Can't enable OWFS])
 		fi
 	    ],)
-	fi
+    fi
 
 
-	if test "${ENABLE_OWFS}" != "false"; then
+    if test "${ENABLE_OWFS}" != "false"; then
 	    # check for a supported FUSE_MAJOR_VERSION.
 	    AC_MSG_CHECKING([For supported FUSE API version])
 	    AC_COMPILE_IFELSE([
@@ -672,11 +683,11 @@ if test "${ENABLE_OWFS}" != "false" ; then
 		   ENABLE_OWFS="false"
 		fi
 	    ])
-	fi
+    fi
 
 
 	# Use newest FUSE API if version is newer than 2.2
-	if test "${ENABLE_OWFS}" != "false"; then
+    if test "${ENABLE_OWFS}" != "false"; then
 	    # check for a supported FUSE_MAJOR_VERSION.
 	    AC_MSG_CHECKING([For FUSE version ])
 	    AC_COMPILE_IFELSE([
@@ -693,13 +704,14 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	    [AC_MSG_RESULT([<2.2])
 	    FUSE_FLAGS=""
 	    ])
-	fi
+    fi
 
-  CPPFLAGS="$save_CPPFLAGS"
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
 
-  if test "${ENABLE_OWFS}" != "false"; then
-      ENABLE_OWFS="true"
-  fi
+    if test "${ENABLE_OWFS}" != "false"; then
+        ENABLE_OWFS="true"
+    fi
 else
     ENABLE_OWFS="false"
 fi
@@ -839,7 +851,6 @@ esac
 # instead of hardcoding the libraries.
 
 AC_MSG_CHECKING([if extra libs are required])
-LD_EXTRALIBS=""
 case "${host_cpu}-${host_os}" in
 	*-darwin*)
 		LD_EXTRALIBS="-framework CoreFoundation -framework IOKit"
@@ -851,8 +862,7 @@ case "${host_cpu}-${host_os}" in
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*)
-		LD_EXTRALIBS="$LD_EXTRALIBS -Wl,--rpath -Wl,$libdir -Wl,--rpath -Wl,/usr/local/lib"
-#		AC_MSG_RESULT([no])
+		LD_EXTRALIBS="$LD_EXTRALIBS -Wl,--rpath -Wl,$libdir"
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 esac

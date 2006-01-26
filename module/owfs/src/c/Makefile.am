@@ -13,9 +13,9 @@ PROFILING_FLAG = -pg
 endif
 
 AM_CFLAGS = -I../include \
+         -D_FILE_OFFSET_BITS=64 \
+         ${FUSE_FLAGS} \
          -I../../../owlib/src/include \
-         -I/usr/local/include/fuse \
-         -I/usr/local/include \
          -L../../../owlib/src/c \
          -fexceptions \
          -Wall \
@@ -29,9 +29,8 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${MT_FLAG} \
-         ${PROFILING_FLAG} \
-         -D_FILE_OFFSET_BITS=64 \
-	 ${FUSE_FLAGS}
+         ${PROFILING_FLAG}
+
 
 AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
