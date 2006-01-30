@@ -52,4 +52,3 @@ $Id$
 #include "ow_system.h" // system pseudo-device
 
 #endif
-

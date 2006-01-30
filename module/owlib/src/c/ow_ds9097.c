@@ -17,7 +17,6 @@ $Id$
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
 static int DS9097_reset( const struct parsedname * pn ) ;
-static int DS9097_reconnect( const struct parsedname * pn ) ;
 static int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
 static void DS9097_setroutines( struct interface_routines * f ) ;
 static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
@@ -27,17 +26,18 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
 
 /* Device-specific functions */
 static void DS9097_setroutines( struct interface_routines * const f ) {
-    f->reset = DS9097_reset ;
-    f->next_both = BUS_next_both_low ;
+    f->detect        = DS9097_detect ;
+    f->reset         = DS9097_reset ;
+    f->next_both     = BUS_next_both_low ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte = BUS_PowerByte_low ;
+    f->PowerByte     = BUS_PowerByte_low ;
 //    f->ProgramPulse = ;
     f->sendback_data = BUS_sendback_data_low ;
     f->sendback_bits = DS9097_sendback_bits ;
     f->select        = BUS_select_low ;
-    f->reconnect = DS9097_reconnect ;
-    f->close = COM_close ;
+    f->reconnect     = BUS_reconnect_low ;
+    f->close         = COM_close ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
@@ -62,24 +62,6 @@ int DS9097_detect( struct connection_in * in ) {
     pn.in = in ;
 
     return DS9097_reset(&pn) ;
-}
-
-static int DS9097_reconnect( const struct parsedname * pn ) {
-    STAT_ADD1(BUS_reconnect);
-
-    if ( !pn || !pn->in ) return -EIO;
-    STAT_ADD1(pn->in->bus_reconnect);
-
-    BUS_close(pn->in);
-    usleep(100000);
-    if(!DS9097_detect(pn->in)) {
-        LEVEL_DEFAULT("DS9097 adapter reconnected\n");
-        return 0;
-    }
-    STAT_ADD1(BUS_reconnect_errors);
-    STAT_ADD1(pn->in->bus_reconnect_errors);
-    LEVEL_DEFAULT("Failed to reconnect DS9097 adapter!\n");
-    return -EIO ;
 }
 
 /* DS9097 Reset -- A little different from DS2480B */

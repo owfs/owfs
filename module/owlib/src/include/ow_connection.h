@@ -93,6 +93,8 @@ struct connection_in ;
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */
 struct interface_routines {
+    /* Detect if adapter is present, and open -- usually called outside of this routine */
+    int (* detect) ( struct connection_in * in ) ;
     /* reset the interface -- actually the 1-wire bus */
     int (* reset ) (const struct parsedname * pn ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */
@@ -116,6 +118,7 @@ struct interface_routines {
     /* Close the connection (port) */
     void (* close) ( struct connection_in * in ) ;
 } ;
+#define BUS_detect(in)                      (((in)->iroutines.detect(in)))
 #define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
 #define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
 #define BUS_next_both(sn,search,pn)         (((pn)->in->iroutines.next_both)((sn),(search),(pn)))
@@ -165,7 +168,8 @@ struct connin_usb {
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
-enum bus_mode { bus_unknown=0, bus_remote, bus_serial, bus_usb, bus_parallel, } ;
+/* bus_remote is owserver and bus_tcp is Link-E */
+enum bus_mode { bus_unknown=0, bus_remote, bus_serial, bus_usb, bus_parallel, bus_tcp, } ;
 enum adapter_type {
     adapter_DS9097=0,
     adapter_DS1410=1,
@@ -178,6 +182,7 @@ enum adapter_type {
     adapter_LINK_10,
     adapter_LINK_11,
     adapter_LINK_12,
+    adapter_LINK_E,
 } ;
 
 extern int LINK_mode ; /* flag to use LINKs in ascii mode */
@@ -266,6 +271,7 @@ void COM_break( const struct parsedname * pn  ) ;
 
 void FreeIn( void ) ;
 void FreeOut( void ) ;
+void DelIn( struct connection_in * in ) ;
 
 struct connection_in * NewIn( void ) ;
 struct connection_out * NewOut( void ) ;
@@ -278,6 +284,7 @@ struct connection_in *find_connection_in(int nr);
 */
 int DS2480_baud( speed_t baud, const struct parsedname * const pn );
 
+int Server_detect( struct connection_in * in  ) ;
 int DS2480_detect( struct connection_in * in ) ;
 #ifdef OW_PARPORT
 int DS1410_detect( struct connection_in * in ) ;
@@ -285,6 +292,7 @@ int DS1410_detect( struct connection_in * in ) ;
 int DS9097_detect( struct connection_in * in ) ;
 int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
+int LINKE_detect( struct connection_in * in ) ;
 #ifdef OW_USB
     int DS9490_detect( struct connection_in * in ) ;
     void DS9490_close( struct connection_in * in ) ;
@@ -308,6 +316,7 @@ int BUS_normalverify(const struct parsedname * const pn) ;
 int BUS_PowerByte_low(const unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
 int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+int BUS_reconnect_low(const struct parsedname * const pn) ;
 
 #define STAT_ADD1_BUS( err, in )     STATLOCK; ++err; ++(in->bus_errors) ; STATUNLOCK ;
 

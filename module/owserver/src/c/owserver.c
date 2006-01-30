@@ -36,7 +36,6 @@ $Id$
 */
 
 #include "owserver.h"
-#include <pthread.h>
 
 /* --- Prototypes ------------ */
 static void Handler( int fd ) ;
@@ -71,7 +70,7 @@ static void exit_handler(int i) {
 static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
 //printf("FromClientAlloc\n");
-    if ( readn(fd, sm, sizeof(struct server_msg) ) != sizeof(struct server_msg) ) {
+    if ( readn(fd, sm, sizeof(struct server_msg), &tv ) != sizeof(struct server_msg) ) {
         sm->type = msg_error ;
         return NULL ;
     }
@@ -89,7 +88,7 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
         sm->type = msg_error ;
         msg = NULL ;
     } else if ( (msg = (char *)malloc((size_t)sm->payload)) ) {
-        if ( readn(fd,msg, (size_t)sm->payload) != sm->payload ) {
+        if ( readn( fd, msg, (size_t)sm->payload, &tv ) != sm->payload ) {
             sm->type = msg_error ;
             free(msg);
             msg = NULL ;
@@ -131,7 +130,11 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
     return ret ;
 }
 
-void Handler( int fd ) {
+/*
+ * Main routine for actually handling a request
+ * deals with a conncection
+ */
+static void Handler( int fd ) {
     char * retbuffer = NULL ;
     struct server_msg sm ;
     struct client_msg cm ;

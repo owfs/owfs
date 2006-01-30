@@ -16,26 +16,11 @@ $Id$
 
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_connection.h"
 
 #include <netinet/in.h> // ntohl ...
 #include <netdb.h> // addrinfo 
-
-
-/*
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netdb.h>
-
-#include <netinet/in.h>
-#include <signal.h> // signal
-#include <stdlib.h> // exit
-#include <unistd.h> // chdir
-#include <stdio.h> // perror
-#include <fcntl.h> // open
-#include <pwd.h> // getpwuid
-#include <grp.h> // initgroups
-#include <syslog.h>
-*/
+#include <pthread.h>
 
 struct active_sock {
     int             socket;
@@ -43,12 +28,8 @@ struct active_sock {
     struct in_addr  peer_addr;
 };
 
+struct timeval tv = { 10, 0, } ;
 
-/*
- * Main routine for actually handling a request
- * deals with a conncection
- */
-int handle_socket(struct active_sock * const a_sock);
 #define MAXBUFFERSIZE  65000
 
 #endif /* OWSERVER_H */

@@ -392,4 +392,22 @@ int BUS_reset(const struct parsedname * pn) {
     return ret ;
 }
 
-
+int BUS_reconnect_low( const struct parsedname * pn ) {
+    int ret ;
+    STAT_ADD1(BUS_reconnect);
+    if ( !pn || !pn->in ) return -EIO;
+    STAT_ADD1(pn->in->bus_reconnect);
+    if ( LockGet(pn) ) return -EBUSY ;
+    BUS_close(pn->in) ;
+    UT_delay(100000) ;
+    ret = BUS_detect(pn->in) ;
+    LockRelease(pn) ;
+    if(ret) {
+        STAT_ADD1(BUS_reconnect_errors);
+        STAT_ADD1(pn->in->bus_reconnect_errors);
+        LEVEL_DEFAULT("Failed to reconnect %s adapter!\n",pn->in->adapter_name);
+    } else {
+        LEVEL_DEFAULT("%s adapter reconnected\n",pn->in->adapter_name);
+    }
+    return ret ;
+}

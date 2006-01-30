@@ -49,16 +49,17 @@ static int DS9490_redetect_low( const struct parsedname * pn ) ;
 
 /* Device-specific routines */
 static void DS9490_setroutines( struct interface_routines * f ) {
-    f->reset = DS9490_reset ;
-    f->next_both = DS9490_next_both ;
-    f->overdrive = DS9490_overdrive ;
+    f->detect        = DS9490_detect ;
+    f->reset         = DS9490_reset ;
+    f->next_both     = DS9490_next_both ;
+    f->overdrive     = DS9490_overdrive ;
     f->testoverdrive = DS9490_testoverdrive ;
-    f->PowerByte = DS9490_PowerByte ;
+    f->PowerByte     = DS9490_PowerByte ;
 //    f->ProgramPulse = ;
     f->sendback_data = DS9490_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = BUS_select_low ;
-    f->reconnect  =  DS9490_reconnect ;
+    f->reconnect     =  DS9490_reconnect ;
 }
 
 #define TIMEOUT_USB    5000 /* 5 seconds */

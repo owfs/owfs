@@ -14,31 +14,55 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+static struct timeval tvlong = { 1, 0, } ;
+static struct timeval tvshort = { 0, 1000, } ;
+
 int LINK_mode ; /* flag to use LINKs in ascii mode */
 
 //static void byteprint( const unsigned char * b, int size ) ;
 static int LINK_write(const unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
 static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
+static int LINKE_read(unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
 static int LINK_reset( const struct parsedname * pn ) ;
 static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
 static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
 static int LINK_select(const struct parsedname * pn) ;
-static int LINK_reconnect( const struct parsedname * pn ) ;
 static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) ;
 static int LINK_CR( const struct parsedname * pn ) ;
+static void LINK_setroutines( struct interface_routines * f ) ;
+static void LINKE_setroutines( struct interface_routines * f ) ;
+static int LINKE_preamble( const struct parsedname * pn ) ;
+static void LINKE_close( struct connection_in * in ) ;
 
 static void LINK_setroutines( struct interface_routines * f ) {
-    f->reset = LINK_reset ;
-    f->next_both = LINK_next_both ;
+    f->detect        = LINK_detect ;
+    f->reset         = LINK_reset ;
+    f->next_both     = LINK_next_both ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte = LINK_PowerByte ;
+    f->PowerByte     = LINK_PowerByte ;
 //    f->ProgramPulse = ;
     f->sendback_data = LINK_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = LINK_select ;
-    f->reconnect = LINK_reconnect ;
+    f->reconnect     = BUS_reconnect_low ;
+    f->close         = COM_close ;
+}
+
+static void LINKE_setroutines( struct interface_routines * f ) {
+    f->detect        = LINKE_detect ;
+    f->reset         = LINK_reset ;
+    f->next_both     = LINK_next_both ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
+    f->PowerByte     = LINK_PowerByte ;
+//    f->ProgramPulse = ;
+    f->sendback_data = LINK_sendback_data ;
+//    f->sendback_bits = ;
+    f->select        = LINK_select ;
+    f->reconnect     = BUS_reconnect_low ;
+    f->close         = LINKE_close ;
 }
 
 #define LINK_string(x)  ((unsigned char *)(x))
@@ -51,6 +75,12 @@ int LINK_detect( struct connection_in * in ) {
     pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
+
+    /* Set up low-level routines */
+    LINK_setroutines( & (in->iroutines) ) ;
+
+    /* Open the com port */
+    if ( COM_open(in) ) return -ENODEV ;
 
     // set the baud rate to 9600
     COM_speed(B9600,&pn);
@@ -80,21 +110,50 @@ int LINK_detect( struct connection_in * in ) {
                     in->adapter_name = "LINK v1.2" ;
                     break ;
             }
-            /* Set up low-level routines */
-            LINK_setroutines( & (in->iroutines) ) ;
             return 0 ;
         }
     }
     LEVEL_DEFAULT("LINK detection error -- back to emulation mode\n");
-    return 0  ;
+    return 1  ;
+}
+
+int LINKE_detect( struct connection_in * in ) {
+    struct parsedname pn ;
+    struct stateinfo si ;
+
+    pn.si = &si ;
+    FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
+    pn.in = in ;
+
+    /* Set up low-level routines */
+    LINKE_setroutines( & (in->iroutines) ) ;
+
+    if ( in->name == NULL ) return -1 ;
+    if ( ClientAddr( in->name, in ) ) return -1 ;
+    if ( (pn.in->fd=ClientConnect(in)) < 0 ) return -EIO ; 
+
+    if ( LINK_write(LINK_string(" "),1,&pn)==0 ) {
+        char buf[18] ;
+        if ( LINKE_preamble( &pn ) || LINKE_read( buf, 18, &pn ) || strncmp( buf, "Link", 4 ) ) return -ENODEV ;
+        in->Adapter = adapter_LINK_E ;
+        in->adapter_name = "Link-Hub-E" ;
+        in->busmode = bus_tcp ;
+        return 0 ;
+    }
+    return -EIO ;
 }
 
 static int LINK_reset( const struct parsedname * pn ) {
-    unsigned char resp[3] ;
+    unsigned char resp[5] ;
     COM_flush(pn) ;
-    if ( LINK_write(LINK_string("\rr"),2,pn) || LINK_read(resp,4,pn) ) {
+    if ( 
+         LINK_write(LINK_string("\rr"),2,pn) 
+         || ( pn->in->Adapter==adapter_LINK_E 
+              ? LINKE_preamble(pn) || LINKE_read( resp,5,pn)
+              : LINK_read(resp,4,pn) ) 
+        ) {
         STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
-        return -errno ;
+        return -EIO ;
     }
     switch( resp[1] ) {
         case 'P':
@@ -113,22 +172,30 @@ static int LINK_reset( const struct parsedname * pn ) {
 
 static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
     struct stateinfo * si = pn->si ;
-    char resp[20] ;
+    char resp[21] ;
     int ret ;
 
     (void) search ;
     if ( !si->AnyDevices ) si->LastDevice = 1 ;
     if ( si->LastDevice ) return -ENODEV ;
 
-    COM_flush(pn) ;
+    if ( pn->in->Adapter!=adapter_LINK_E ) COM_flush(pn) ;
     if ( si->LastDiscrepancy == -1 ) {
-        if ( (ret=LINK_write(LINK_string("f"),1,pn)) ) return ret ;
+        if ( (ret=LINK_write(LINK_string("f"),1,pn)) 
+                  || ( pn->in->Adapter==adapter_LINK_E && LINKE_preamble(pn) )
+            ) return ret ;
         si->LastDiscrepancy = 0 ;
     } else {
-        if ( (ret=LINK_write(LINK_string("n"),1,pn)) ) return ret ;
+        if ( (ret=LINK_write(LINK_string("n"),1,pn)) 
+                  || ( pn->in->Adapter==adapter_LINK_E && LINKE_preamble(pn) )
+            ) return ret ;
     }
     
-    if ( (ret=LINK_read(LINK_string(resp),20,pn)) ) return ret ;
+    if ( pn->in->Adapter==adapter_LINK_E ) {
+        if ( LINKE_preamble(pn) || LINKE_read( LINK_string(resp),21,pn ) ) return -EINVAL ;
+    } else if ( (ret=LINK_read(LINK_string(resp),20,pn)) ) {
+        return ret ;
+    }
 
     switch ( resp[0] ) {
         case '-':
@@ -242,6 +309,9 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
     return 0;
 }
 
+static int LINKE_read(unsigned char * buf, const size_t size, const struct parsedname * pn ) {
+    return readn( pn->in->fd, buf, size, &tvshort ) ;
+}
 //
 // Write a string to the serial port
 /* return 0=good,
@@ -277,7 +347,10 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
 static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) {
     unsigned char pow ;
     
-    if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) {
+    if ( LINK_write(LINK_string("p"),1,pn) 
+          || ( pn->in->Adapter==adapter_LINK_E && LINKE_preamble(pn) )
+          || LINK_byte_bounce(&byte,&pow,pn) 
+        ) {
         STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;
         return -EIO ; // send just the <CR>
     }
@@ -301,38 +374,23 @@ static int LINK_sendback_data( const unsigned char * data, unsigned char * resp,
     unsigned char * buf = pn->in->combuffer ;
 
     if ( size == 0 ) return 0 ;
-    if ( LINK_write(LINK_string("b"),1,pn) ) return -EIO ;
+    if ( LINK_write(LINK_string("b"),1,pn)
+         || ( pn->in->Adapter==adapter_LINK_E && LINKE_preamble(pn) )
+        ) return -EIO ;
 //    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
     for ( left=size; left ; ) {
         i = (left>16)?16:left ;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
         bytes2string( (char *)buf, &data[size-left], i ) ;
-        if ( LINK_write( buf, i<<1, pn ) || LINK_read( buf, i<<1, pn ) ) return -EIO ;
+        if ( LINK_write( buf, i<<1, pn )
+              || ( (pn->in->Adapter==adapter_LINK_E)
+                    ? LINKE_read( buf, i<<1, pn )
+                    : LINK_read( buf, i<<1, pn ) ) 
+            ) return -EIO ;
         string2bytes( (char *)buf, &resp[size-left], i ) ;
         left -= i ;
     }
-        
     return LINK_CR(pn) ;
-}
-
-static int LINK_reconnect( const struct parsedname * pn ) {
-    STAT_ADD1(BUS_reconnect);
-
-    if ( !pn || !pn->in ) return -EIO;
-    STAT_ADD1(pn->in->bus_reconnect);
-
-    COM_close(pn->in);
-    usleep(100000);
-    if(!COM_open(pn->in)) {
-        if(!DS2480_detect(pn->in)) {
-            LEVEL_DEFAULT("LINK adapter reconnected\n");
-            return 0;
-        }
-    }
-    STAT_ADD1(BUS_reconnect_errors);
-    STAT_ADD1(pn->in->bus_reconnect_errors);
-    LEVEL_DEFAULT("Failed to reconnect LINK adapter!\n");
-    return -EIO ;
 }
 
 static int LINK_select(const struct parsedname * pn) {
@@ -355,13 +413,38 @@ static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, cons
     unsigned char byte[2] ;
 
     num2string( (char *)byte, out[0] ) ;
-    if ( LINK_write( byte, 2, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
+    if ( 
+          LINK_write( byte, 2, pn ) 
+          || ( (pn->in->Adapter==adapter_LINK_E)
+                ? LINKE_read( byte, 2, pn )
+                : LINK_read( byte, 2, pn ) ) 
+        ) return -EIO ;
     in[0] = string2num( (char *)byte ) ;
     return 0 ;
 }
 
 static int LINK_CR( const struct parsedname * pn ) {
-    unsigned char byte[2] ;
-    if ( LINK_write( LINK_string("\r"), 1, pn ) || LINK_read( byte, 2, pn ) ) return -EIO ;
+    unsigned char byte[3] ;
+    if ( 
+          LINK_write( LINK_string("\r"), 1, pn )
+          || ( (pn->in->Adapter==adapter_LINK_E)
+                ? LINKE_read( byte, 3, pn )
+                : LINK_read( byte, 2, pn ) ) 
+        ) return -EIO ;
     return 0 ;
+}
+
+/* read the telnet-formatted start of a response line from the Link-Hub-E */
+static int LINKE_preamble( const struct parsedname * pn ) {
+    unsigned char byte[6] ;
+    if ( readn( pn->in->fd, byte, 6, &tvlong )  ) return -EIO ;
+    return 0 ;
+}
+
+static void LINKE_close( struct connection_in * in ) {
+    if ( in->fd >= 0 ) {
+        close( in->fd ) ;
+        in->fd = -1 ;
+    }
+    FreeClientAddr( in ) ;
 }

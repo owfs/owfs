@@ -628,8 +628,7 @@ void LibClose( void ) ;
 /* Initial sorting or the device and filetype lists */
 void DeviceSort( void ) ;
 void DeviceDestroy( void ) ;
-//  int filecmp(const void * name , const void * ex ) ;
-
+//  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
@@ -705,12 +704,13 @@ void OWLIB_can_finish_end(   void ) ;
 void UT_delay(const unsigned int len) ;
 void UT_delay_us(const unsigned long len) ;
 
-ssize_t readn(int fd, void *vptr, size_t n) ;
+ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) ;
 int ClientAddr(  char * sname, struct connection_in * in ) ;
 int ServerAddr(  struct connection_out * out ) ;
 int ClientConnect( struct connection_in * in ) ;
 int ServerListen( struct connection_out * out ) ;
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
+void FreeClientAddr(  struct connection_in * in ) ;
 
 int OW_ArgNet( const char * arg ) ;
 int OW_ArgServer( const char * arg ) ;
@@ -720,7 +720,6 @@ int OW_ArgGeneric( const char * arg ) ;
 
 void update_max_delay( const struct parsedname * const pn ) ;
 
-int Server_detect( struct connection_in * in  ) ;
 int ServerSize( const char * path, const struct parsedname * pn ) ;
 int ServerPresence( const struct parsedname * pn ) ;
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;

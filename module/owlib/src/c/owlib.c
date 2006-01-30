@@ -201,8 +201,13 @@ int LibStart( void ) {
     do {
         BadAdapter_detect(in) ; /* default "NOTSUP" calls */
         switch( get_busmode(in) ) {
+            case bus_tcp:
             case bus_remote:
-                ret = Server_detect(in) ;
+                if ( LINKE_detect(in) ) {
+                    BUS_close( in ) ;
+                    BadAdapter_detect(in) ; /* reset the methods */
+                    ret = Server_detect(in) ;
+                }
                 break ;
             case bus_serial:
                 if ( DS2480_detect(in) ) { /* Set up DS2480/LINK interface */

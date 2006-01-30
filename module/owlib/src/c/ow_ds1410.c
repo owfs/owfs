@@ -38,7 +38,6 @@ struct ppdev_frob_struct ENIlow  = { (unsigned char)~0x1C, 0x06 } ;
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 static int DS1410bit( unsigned char out, unsigned char * in, int fd ) ;
 static int DS1410_reset( const struct parsedname * pn ) ;
-static int DS1410_reconnect( const struct parsedname * pn ) ;
 static int DS1410_sendback_bits( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 static void DS1410_setroutines( struct interface_routines * f ) ;
 static int DS1410_open( const struct parsedname * pn ) ;
@@ -54,17 +53,18 @@ static int DS1410Present( unsigned char * p, int fd ) ;
 
 /* Device-specific functions */
 static void DS1410_setroutines( struct interface_routines * f ) {
-    f->reset = DS1410_reset ;
-    f->next_both = BUS_next_both_low ;
+    f->detect        = DS1410_detect ;
+    f->reset         = DS1410_reset ;
+    f->next_both     = BUS_next_both_low ;
 //    f->overdrive = ;
  //   f->testoverdrive = ;
-    f->PowerByte = BUS_PowerByte_low ; ;
+    f->PowerByte     = BUS_PowerByte_low ; ;
 //    f->ProgramPulse = ;
     f->sendback_data = BUS_sendback_data_low ;
     f->sendback_bits = DS1410_sendback_bits ;
     f->select        = BUS_select_low ;
-    f->reconnect = DS1410_reconnect ;
-    f->close = DS1410_close ;
+    f->reconnect     = BUS_reconnect_low ;
+    f->close         = DS1410_close ;
 }
 
 /* Open a DS1410 after an unsucessful DS2480_detect attempt */
@@ -96,24 +96,6 @@ int DS1410_detect( struct connection_in * in ) {
         DS1410_ODoff(&pn) ;
     }
     return DS1410_reset(&pn) ;
-}
-
-static int DS1410_reconnect( const struct parsedname * pn ) {
-    STAT_ADD1(BUS_reconnect);
-
-    if ( !pn || !pn->in ) return -EIO;
-    STAT_ADD1(pn->in->bus_reconnect);
-
-    BUS_close(pn->in);
-    usleep(100000);
-    if( DS1410_detect(pn->in) ) {
-        STAT_ADD1(BUS_reconnect_errors);
-        STAT_ADD1(pn->in->bus_reconnect_errors);
-        LEVEL_DEFAULT("Failed to reconnect DS1410 adapter!\n");
-        return -EIO ;
-    }
-    LEVEL_DEFAULT("DS1410 adapter reconnected\n");
-    return 0;
 }
 
 static int DS1410_reset( const struct parsedname * pn ) {

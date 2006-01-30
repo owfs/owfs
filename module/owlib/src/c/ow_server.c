@@ -19,6 +19,27 @@ $Id$
 static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
+static int ConnectionError( const struct parsedname * pn ) ;
+static void Server_setroutines( struct interface_routines * f ) ;
+static void Server_close( struct connection_in * in ) ;
+static void testLink( struct connection_in * in ) ;
+
+struct timeval tv = { 1, 0, } ;
+
+static void Server_setroutines( struct interface_routines * f ) {
+    f->detect        = Server_detect ;
+//    f->reset         =;
+//    f->next_both  ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
+//    f->PowerByte     = ;
+//    f->ProgramPulse = ;
+//    f->sendback_data = ;
+//    f->sendback_bits = ;
+//    f->select        = ;
+    f->reconnect     = BUS_reconnect_low ;
+    f->close         = Server_close ;
+}
 
 int Server_detect( struct connection_in * in ) {
     if ( in->name == NULL ) return -1 ;
@@ -26,7 +47,13 @@ int Server_detect( struct connection_in * in ) {
     in->Adapter = adapter_tcp ;
     in->adapter_name = "tcp" ;
     in->busmode = bus_remote ;
+    Server_setroutines( & (in->iroutines) ) ;
+//	testLink( in ) ;
     return 0 ;
+}
+
+static void Server_close( struct connection_in * in ) {
+    FreeClientAddr( in ) ;
 }
 
 int ServerSize( const char * path, const struct parsedname * pn ) {
@@ -37,7 +64,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
     int ret = 0 ;
     (void) path;  // not used anymore
 
-    if ( connectfd < 0 ) return -EIO ;
+    if ( connectfd < 0 ) return ConnectionError(pn) ;
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_size ;
     sm.sg =  SemiGlobal ;
@@ -75,7 +102,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
-    if ( connectfd < 0 ) return -EIO ;
+    if ( connectfd < 0 ) return ConnectionError(pn) ;
     //printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_read ;
@@ -116,7 +143,7 @@ int ServerPresence( const struct parsedname * pn ) {
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
-    if ( connectfd < 0 ) return -EIO ;
+    if ( connectfd < 0 ) return ConnectionError(pn) ;
     //printf("ServerPresence pn->path=%s\n",pn->path);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_presence ;
@@ -155,7 +182,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
-    if ( connectfd < 0 ) return -EIO ;
+    if ( connectfd < 0 ) return ConnectionError(pn) ;
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_write ;
@@ -207,7 +234,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     int dindex = 0 ;
     unsigned char got_entry = 0 ;
 
-    if ( connectfd < 0 ) return -EIO ;
+    if ( connectfd < 0 ) return ConnectionError(pn) ;
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
@@ -307,7 +334,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     char * msg ;
     int ret;
-    ret = readn(fd, cm, sizeof(struct client_msg) );
+    ret = readn(fd, cm, sizeof(struct client_msg), &tv );
     if ( ret != sizeof(struct client_msg) ) {
         memset(cm, 0, sizeof(struct client_msg)) ;
         cm->ret = -EIO ;
@@ -329,7 +356,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     }
 
     if ( (msg=(char *)malloc((size_t)cm->payload)) ) {
-        ret = readn(fd,msg,(size_t)(cm->payload) );
+        ret = readn(fd,msg,(size_t)(cm->payload), &tv );
         if ( ret != cm->payload ) {
 //printf("FromServer couldn't read payload\n");
             cm->payload = 0 ;
@@ -348,7 +375,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     size_t rtry ;
     size_t ret;
 
-    ret = readn(fd, cm, sizeof(struct client_msg) );
+    ret = readn(fd, cm, sizeof(struct client_msg), &tv );
     if ( ret != sizeof(struct client_msg) ) {
         cm->size = 0 ;
         cm->ret = -EIO ;
@@ -366,7 +393,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     if ( cm->payload == 0 ) return cm->payload ;
 
     rtry = cm->payload<size ? cm->payload : size ;
-    ret = readn(fd, msg, rtry );
+    ret = readn(fd, msg, rtry, &tv );
     if ( ret != rtry ) {
         cm->ret = -EIO ;
         return -EIO ;
@@ -375,7 +402,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     if ( cm->payload > size ) {
         size_t d = cm->payload - size ;
         char extra[d] ;
-        ret = readn(fd,extra,d);
+        ret = readn(fd,extra,d,&tv);
         if ( ret != d ) {
             cm->ret = -EIO ;
             return -EIO ;
@@ -415,4 +442,52 @@ static int ToServer( int fd, struct server_msg * sm, char * path, char * data, s
     sm->offset  = htonl(sm->offset)    ;
 
     return writev( fd, io, nio ) != (payload + sizeof(struct server_msg)) ;
+}
+
+static int ConnectionError( const struct parsedname * pn ) {
+    (void) pn ;
+    LEVEL_CONNECT("Unable to open socket\n") ;
+    return -EIO ;
+}
+
+static void testLink( struct connection_in * in ) {
+    int connectfd = ClientConnect( in ) ;
+    char ret[120] = "" ;
+    char * w = "r";
+    printf("LINKtest connectfd=%d\n", connectfd ) ;
+    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
+    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
+    {
+        int i ;
+        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
+        printf("\n") ;
+    }
+    w = "bFF\r";
+    printf("LINKtest connectfd=%d\n", connectfd ) ;
+    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
+    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
+    {
+        int i ;
+        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
+        printf("\n") ;
+    }
+    w = "h";
+    printf("LINKtest connectfd=%d\n", connectfd ) ;
+    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
+    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
+    {
+        int i ;
+        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
+        printf("\n") ;
+    }
+    w = "r";
+    printf("LINKtest connectfd=%d\n", connectfd ) ;
+    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
+    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
+    {
+        int i ;
+        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
+        printf("\n") ;
+    }
+    close( connectfd ) ;
 }

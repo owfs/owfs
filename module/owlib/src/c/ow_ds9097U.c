@@ -20,7 +20,6 @@ $Id$
 static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * pn) ;
 static int DS2480_reset( const struct parsedname * pn ) ;
-static int DS2480_reconnect( const struct parsedname * pn ) ;
 static int DS2480_read( unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
 static int DS2480_write( const unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
 static int DS2480_sendout_data( const unsigned char * data , const size_t len, const struct parsedname * pn ) ;
@@ -34,17 +33,18 @@ static int DS2480_sendback_data( const unsigned char * data , unsigned char * re
 static void DS2480_setroutines( struct interface_routines * f ) ;
 
 static void DS2480_setroutines( struct interface_routines * f ) {
-    f->reset = DS2480_reset ;
-    f->next_both = DS2480_next_both ;
+    f->detect        = DS2480_detect ;
+    f->reset         = DS2480_reset ;
+    f->next_both     = DS2480_next_both ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte = DS2480_PowerByte ;
-    f->ProgramPulse = DS2480_ProgramPulse ;
+    f->PowerByte     = DS2480_PowerByte ;
+    f->ProgramPulse  = DS2480_ProgramPulse ;
     f->sendback_data = DS2480_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = BUS_select_low ;
-    f->reconnect = DS2480_reconnect ;
-    f->close = COM_close ;
+    f->reconnect     = BUS_reconnect_low ;
+    f->close         = COM_close ;
 }
 
 /* --------------------------- */
@@ -284,7 +284,10 @@ int DS2480_detect( struct connection_in * in ) {
             case adapter_LINK_11:
             case adapter_LINK_12:
                 in->adapter_name = "LINK" ;
-                if ( LINK_mode ) return LINK_detect(in) ;
+                if ( LINK_mode ) {
+                    BUS_close(in) ;
+                    return LINK_detect(in) ;
+                }
                 break;
             default:
                 return -ENODEV ; ;
@@ -313,26 +316,6 @@ int DS2480_baud( speed_t baud, const struct parsedname * pn ) {
 #endif
     }
     return PARMSET_9600 ;
-}
-
-static int DS2480_reconnect( const struct parsedname * pn ) {
-    STAT_ADD1(BUS_reconnect);
-
-    if ( !pn || !pn->in ) return -EIO;
-    STAT_ADD1(pn->in->bus_reconnect);
-
-    BUS_close(pn->in);
-    usleep(100000);
-    if(!COM_open(pn->in)) {
-      if(!DS2480_detect(pn->in)) {
-        LEVEL_DEFAULT("DS2480 adapter reconnected\n");
-        return 0;
-      }
-    }
-    STAT_ADD1(BUS_reconnect_errors);
-    STAT_ADD1(pn->in->bus_reconnect_errors);
-    LEVEL_DEFAULT("Failed to reconnect DS2480 adapter!\n");
-    return -EIO ;
 }
 
 //--------------------------------------------------------------------------

@@ -20,7 +20,6 @@ static int BadAdapter_overdrive( const unsigned int ov, const struct parsedname 
 static int BadAdapter_testoverdrive( const struct parsedname * pn ) ;
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) ;
 static int BadAdapter_sendback_bits( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
-static int BadAdapter_reconnect( const struct parsedname * pn ) ;
 static void BadAdapter_close( struct connection_in * in ) ;
 
 /* Device-specific functions */
@@ -31,6 +30,7 @@ int BadAdapter_detect( struct connection_in * in ) {
 #ifdef OW_USB
     in->connin.usb.usb = NULL ;
 #endif
+    in->iroutines.detect        = BadAdapter_detect ;
     in->Adapter = adapter_Bad ; /* OWFS assigned value */
     in->iroutines.reset         = BadAdapter_reset         ;
     in->iroutines.next_both     = BUS_next_both_low        ;
@@ -41,7 +41,7 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.sendback_data = BUS_sendback_data_low    ;
     in->iroutines.sendback_bits = BadAdapter_sendback_bits ;
     in->iroutines.select        = BUS_select_low           ;
-    in->iroutines.reconnect     = BadAdapter_reconnect     ;
+    in->iroutines.reconnect     = BUS_reconnect_low     ;
     in->iroutines.close         = BadAdapter_close         ;
     in->adapter_name="Bad Adapter" ;
     return 0 ;
@@ -72,10 +72,6 @@ static int BadAdapter_sendback_bits( const unsigned char * data , unsigned char 
     (void) data ;
     (void) resp ;
     (void) len ;
-    return -ENOTSUP ;
-}
-static int BadAdapter_reconnect(const struct parsedname * pn) {
-    (void) pn ;
     return -ENOTSUP ;
 }
 static void BadAdapter_close( struct connection_in * in ) {
