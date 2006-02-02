@@ -24,7 +24,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
     size_t	nleft;
     ssize_t	nread;
     char	*ptr;
-
+//    printf("NetRead attempt %d bytes\n",n) ;
     ptr = vptr;
     nleft = n;
     while (nleft > 0) {
@@ -55,8 +55,10 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
                     STAT_ADD1(NET_read_errors);
                     return(-1);
                 }
-            } else if (nread == 0)
+            } else if (nread == 0) {
                 break; /* EOF */
+            }
+//            { int i ; for ( i=0 ; i<nread ; ++i ) printf("%.2X ",ptr[i]) ; printf("\n") ; }
             nleft -= nread ;
             ptr   += nread;
         } else if(rc < 0) { /* select error */
@@ -68,7 +70,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
 //            STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
             return -EINTR;
         } else { /* timed out */
-printf("TIMEOUT after %d bytes\n",n-nleft);
+            LEVEL_CONNECT("TIMEOUT after %d bytes\n",n-nleft);
 //            STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
             return -EAGAIN;
         }

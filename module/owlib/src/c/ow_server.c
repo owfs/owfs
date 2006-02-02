@@ -22,7 +22,6 @@ static int ToServer( int fd, struct server_msg * sm, char * path, char * data, s
 static int ConnectionError( const struct parsedname * pn ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
-static void testLink( struct connection_in * in ) ;
 
 struct timeval tv = { 1, 0, } ;
 
@@ -48,7 +47,6 @@ int Server_detect( struct connection_in * in ) {
     in->adapter_name = "tcp" ;
     in->busmode = bus_remote ;
     Server_setroutines( & (in->iroutines) ) ;
-//	testLink( in ) ;
     return 0 ;
 }
 
@@ -448,46 +446,4 @@ static int ConnectionError( const struct parsedname * pn ) {
     (void) pn ;
     LEVEL_CONNECT("Unable to open socket\n") ;
     return -EIO ;
-}
-
-static void testLink( struct connection_in * in ) {
-    int connectfd = ClientConnect( in ) ;
-    char ret[120] = "" ;
-    char * w = "r";
-    printf("LINKtest connectfd=%d\n", connectfd ) ;
-    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
-    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
-    {
-        int i ;
-        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
-        printf("\n") ;
-    }
-    w = "bFF\r";
-    printf("LINKtest connectfd=%d\n", connectfd ) ;
-    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
-    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
-    {
-        int i ;
-        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
-        printf("\n") ;
-    }
-    w = "h";
-    printf("LINKtest connectfd=%d\n", connectfd ) ;
-    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
-    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
-    {
-        int i ;
-        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
-        printf("\n") ;
-    }
-    w = "r";
-    printf("LINKtest connectfd=%d\n", connectfd ) ;
-    printf("LINKtest write<%s>=%d\n", w,write(connectfd,w,strlen(w)) ) ;
-    printf("LINKtest read=%d <%s>\n", readn( connectfd, ret, 30, &tv ),ret ) ;
-    {
-        int i ;
-        for (i=0 ; i<30 ; ++i ) printf("%.2X ",ret[i]) ;
-        printf("\n") ;
-    }
-    close( connectfd ) ;
 }
