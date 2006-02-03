@@ -57,6 +57,8 @@ uWRITE_FUNCTION( FS_w_overdrive ) ;
  uREAD_FUNCTION( FS_r_ds2404_compliance ) ;
 uWRITE_FUNCTION( FS_w_ds2404_compliance ) ;
 
+static int FS_nullstring( char * buf ) ;
+
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
 struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
@@ -158,7 +160,7 @@ static int FS_name(char *buf, const size_t size, const off_t offset , const stru
     in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
     
-    if ( in->adapter_name == NULL ) return -EINVAL ;
+    if ( in->adapter_name == NULL ) return FS_nullstring(buf) ;
     strncpy(buf,&(in->adapter_name[offset]),size);
     return buf[size-1]?size:strlen(buf) ;
 }
@@ -191,9 +193,11 @@ static int FS_version(unsigned int * u, const struct parsedname * pn) {
 
 static int FS_pidfile(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     (void) pn ;
-    if( pid_file == NULL ) return -ENODEV ;
-    strncpy( buf,&pid_file[offset],size ) ;
-    return buf[size-1]?size:strlen(buf) ;
+    if( pid_file ) {
+        strncpy( buf,&pid_file[offset],size ) ;
+        return buf[size-1]?size:strlen(buf) ;
+    }
+    return FS_nullstring(buf) ;
 }
 
 static int FS_uint(unsigned int * u, const struct parsedname * pn) {
@@ -201,5 +205,10 @@ static int FS_uint(unsigned int * u, const struct parsedname * pn) {
     if(!pn->ft->data) return -ENODEV ;
     u[0] = ((unsigned int *) pn->ft->data)[0] ;
     //printf("FS_uint: pid=%ld nr=%d\n", pthread_self(), u[0]);
+    return 0 ;
+}
+
+static int FS_nullstring( char * buf ) {
+    buf[0] = '\0' ;
     return 0 ;
 }
