@@ -1,0 +1,9 @@
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B present
+|
+.B type
