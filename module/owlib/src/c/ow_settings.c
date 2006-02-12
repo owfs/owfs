@@ -57,11 +57,11 @@ yWRITE_FUNCTION( FS_w_presencecheck ) ;
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-    {"presencecheck"   ,  1, NULL  , ft_yesno,    ft_static, {y:FS_r_presencecheck},  {y:FS_w_presencecheck},    NULL          , } ,
-    {"enabled"         ,  1, NULL  , ft_yesno,    ft_static, {y:FS_r_enable},  {y:FS_w_enable},    NULL          , } ,
-    {"volatile"        , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, & timeout.vol   , } ,
-    {"stable"          , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, & timeout.stable, } ,
-    {"directory"       , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, & timeout.dir   , } ,
+    {"presencecheck"   ,  1, NULL  , ft_yesno,    ft_static, {y:FS_r_presencecheck},  {y:FS_w_presencecheck},    {v: NULL}          , } ,
+    {"enabled"         ,  1, NULL  , ft_yesno,    ft_static, {y:FS_r_enable},  {y:FS_w_enable},    {v: NULL}          , } ,
+    {"volatile"        , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.vol}   , } ,
+    {"stable"          , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.stable}, } ,
+    {"directory"       , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.dir}   , } ,
 }
  ;
 struct device d_set_cache = { "cache", "cache", pn_settings, NFT(set_cache), set_cache } ;
@@ -98,7 +98,7 @@ static int FS_w_enable(const int * y , const struct parsedname * pn) {
 
 static int FS_r_timeout(int * i , const struct parsedname * pn) {
     CACHELOCK;
-        i[0] = ((unsigned int *)pn->ft->data)[0] ;
+        i[0] = ((unsigned int *)pn->ft->data.v)[0] ;
     CACHEUNLOCK;
     return 0 ;
 }
@@ -106,8 +106,8 @@ static int FS_r_timeout(int * i , const struct parsedname * pn) {
 static int FS_w_timeout(const int * i , const struct parsedname * pn) {
     int previous ;
     CACHELOCK;
-        previous = ((unsigned int *)pn->ft->data)[0] ;
-        ((unsigned int *)pn->ft->data)[0] = i[0] ;
+        previous = ((unsigned int *)pn->ft->data.v)[0] ;
+        ((unsigned int *)pn->ft->data.v)[0] = i[0] ;
     CACHEUNLOCK;
     if ( previous > i[0] ) Cache_Clear() ;
     return 0 ;

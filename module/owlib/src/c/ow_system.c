@@ -63,25 +63,25 @@ static int FS_nullstring( char * buf ) ;
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
 struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
-    {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, NULL , } ,
-    {"address"    ,      512, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, NULL , } ,
-    {"ds2404_compliance"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_ds2404_compliance}   , {u:FS_w_ds2404_compliance}, NULL , } ,
-    {"overdrive"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_overdrive}   , {u:FS_w_overdrive}, NULL , } ,
-    {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, NULL , } ,
+    {"name"       ,       16, &Asystem, ft_ascii,   ft_static, {a:FS_name}   , {v:NULL}, {v: NULL }, } ,
+    {"address"    ,      512, &Asystem, ft_ascii,   ft_static, {a:FS_port}   , {v:NULL}, {v: NULL }, } ,
+    {"ds2404_compliance"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_ds2404_compliance}   , {u:FS_w_ds2404_compliance}, {v: NULL }, } ,
+    {"overdrive"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_overdrive}   , {u:FS_w_overdrive}, {v: NULL }, } ,
+    {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, {v: NULL }, } ,
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
-  //    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
-    {"pidfile"    ,      128, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, NULL , } ,
-    {"pid"        ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &pid_num , } ,
+  //    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
+    {"pidfile"    ,      128, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
+    {"pid"        ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, {v: &pid_num} , } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_connections[] = {
-    {"indevices"  ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &indevices , } ,
-    {"outdevices" ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, &outdevices , } ,
+    {"indevices"  ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, {v: &indevices} , } ,
+    {"outdevices" ,       12, NULL    , ft_unsigned,ft_static, {u:FS_uint}   , {v:NULL}, {v: &outdevices} , } ,
 } ;
 struct device d_sys_connections = { "connections", "connections", pn_system, NFT(sys_connections), sys_connections } ;
 
@@ -202,8 +202,8 @@ static int FS_pidfile(char *buf, const size_t size, const off_t offset , const s
 
 static int FS_uint(unsigned int * u, const struct parsedname * pn) {
     if(!pn->ft) return -ENODEV ;
-    if(!pn->ft->data) return -ENODEV ;
-    u[0] = ((unsigned int *) pn->ft->data)[0] ;
+    if(!pn->ft->data.v) return -ENODEV ;
+    u[0] = ((unsigned int *) pn->ft->data.i)[0] ;
     //printf("FS_uint: pid=%ld nr=%d\n", pthread_self(), u[0]);
     return 0 ;
 }

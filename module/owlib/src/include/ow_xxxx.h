@@ -29,17 +29,17 @@ int FS_present(int *, const struct parsedname * pn) ;
 /* ------- Structures ----------- */
 
 #define F_address  \
-    {"address"   ,  16,  NULL, ft_ascii , ft_static  , {a:FS_address}      , {v:NULL}, NULL, }
+    {"address"   ,  16,  NULL, ft_ascii , ft_static  , {a:FS_address}      , {v:NULL}, {v:NULL}, }
 #define F_crc8     \
-    {"crc8"      ,   2,  NULL, ft_ascii , ft_static  , {a:FS_crc8}         , {v:NULL}, NULL, }
+    {"crc8"      ,   2,  NULL, ft_ascii , ft_static  , {a:FS_crc8}         , {v:NULL}, {v:NULL}, }
 #define F_id       \
-    {"id"        ,  12,  NULL, ft_ascii , ft_static  , {a:FS_ID}           , {v:NULL}, NULL, }
+    {"id"        ,  12,  NULL, ft_ascii , ft_static  , {a:FS_ID}           , {v:NULL}, {v:NULL}, }
 #define F_code     \
-    {"family"    ,   2,  NULL, ft_ascii , ft_static  , {a:FS_code}         , {v:NULL}, NULL, }
+    {"family"    ,   2,  NULL, ft_ascii , ft_static  , {a:FS_code}         , {v:NULL}, {v:NULL}, }
 #define F_present  \
-    {"present"   ,   1,  NULL, ft_yesno , ft_volatile, {y:FS_present}      , {v:NULL}, NULL, }
+    {"present"   ,   1,  NULL, ft_yesno , ft_volatile, {y:FS_present}      , {v:NULL}, {v:NULL}, }
 #define F_type     \
-    {"type"      ,-fl_type,  NULL, ft_ascii , ft_static  , {a:FS_type}  , {v:NULL}, NULL, }
+    {"type"      ,-fl_type,  NULL, ft_ascii , ft_static  , {a:FS_type}  , {v:NULL}, {v:NULL}, }
 
 #define F_STANDARD          F_address,F_code,F_crc8,F_id,F_present,F_type
 

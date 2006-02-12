@@ -359,7 +359,13 @@ struct filetype {
         int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
     } write ; // write callback function
-    void * data ; // extra data pointer (used for separating similar but differently name functions)
+    union {
+        void * v ;
+        int    i ;
+        FLOAT  f ;
+        size_t s ;
+        unsigned char c ;
+    } data ; // extra data pointer (used for separating similar but differently name functions)
 } ;
 #define NFT(ft) ((int)(sizeof(ft)/sizeof(struct filetype)))
 

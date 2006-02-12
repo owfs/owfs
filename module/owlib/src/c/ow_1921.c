@@ -119,7 +119,7 @@ struct aggregate A1921m = { 12, ag_numbers, ag_aggregate, } ;
 struct filetype DS1921[] = {
     F_STANDARD              ,
     {"memory"               ,512,   NULL,  ft_binary   ,   ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
-    
+
     {"pages"                ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"pages/page"           , 32,&A1921p,  ft_binary   ,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
 
@@ -139,37 +139,37 @@ struct filetype DS1921[] = {
     {"about/templow"        ,  9,   NULL,ft_temperature,   ft_static, {f:FS_r_rangelow}   , {v:NULL}           , NULL, } ,
     {"about/temphigh"       ,  9,   NULL,ft_temperature,   ft_static, {f:FS_r_rangehigh}  , {v:NULL}           , NULL, } ,
     {"about/version"        , 11,   NULL,   ft_ascii   ,   ft_stable, {a:FS_r_version}    , {v:NULL}           , NULL, } ,
-    {"about/samples"        , 11,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021D, } ,
-    {"about/measuring"      ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_rbitread}     , {v:NULL}           , &BitReads[0], } ,
+    {"about/samples"        , 11,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , {s:0x021D}, } ,
+    {"about/measuring"      ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_rbitread}     , {v:NULL}           , {v:&BitReads[0]}, } ,
 
     {"temperature"          , 12,   NULL,ft_temperature, ft_volatile, {f:FS_r_temperature}, {v:NULL}           , NULL, } ,
 
     {"mission"              ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , &BitReads[1], } ,
+    {"mission/running"      ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , {v:&BitReads[1]}, } ,
     {"mission/frequency"    ,  1,   NULL,   ft_yesno   , ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
-    {"mission/samples"      , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
+    {"mission/samples"      , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , {s:0x021A}, } ,
     {"mission/delay"        , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
-    {"mission/rollover"     ,  1,   NULL,   ft_yesno   ,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[3], } ,
+    {"mission/rollover"     ,  1,   NULL,   ft_yesno   ,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , {v:&BitReads[3]}, } ,
     {"mission/date"         , 24,   NULL,    ft_date   , ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
     {"mission/udate"        , 12,   NULL,ft_unsigned   , ft_volatile, {u:FS_umdate}       , {v:NULL}           , NULL, } ,
-    {"mission/sampling"     ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[2], } ,
+    {"mission/sampling"     ,  1,   NULL,   ft_yesno   , ft_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[2]}, } ,
     {"mission/easystart"    , 12,   NULL,ft_unsigned   ,   ft_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
 
     {"overtemp"              ,  0,   NULL,  ft_subdir  , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"overtemp/date"         , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/udate"        , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/end"          , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/count"        , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/elements"     , 12,   NULL,ft_unsigned  , ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , (void *)0x0250, } ,
-    {"overtemp/temperature"  , 12,   NULL,ft_temperature,  ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , (void *)0x020C, } ,
+    {"overtemp/date"         , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , {s:0x0250}, } ,
+    {"overtemp/udate"        , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , {s:0x0250}, } ,
+    {"overtemp/end"          , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , {s:0x0250}, } ,
+    {"overtemp/count"        , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , {s:0x0250}, } ,
+    {"overtemp/elements"     , 12,   NULL,ft_unsigned  , ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , {s:0x0250}, } ,
+    {"overtemp/temperature"  , 12,   NULL,ft_temperature,  ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , {s:0x020C}, } ,
 
     {"undertemp"             ,  0,   NULL,  ft_subdir  , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"undertemp/date"        , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/udate"       , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/end"         , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/count"       , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/elements"    , 12,   NULL,ft_unsigned  , ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , (void *)0x0220, } ,
-    {"undertemp/temperature" , 12,   NULL,ft_temperature,  ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , (void *)0x020C, } ,
+    {"undertemp/date"        , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmstart}   , {v:NULL}           , {s:0x0220}, } ,
+    {"undertemp/udate"       , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmudate}   , {v:NULL}           , {s:0x0220}, } ,
+    {"undertemp/end"         , 24,&A1921m,   ft_date   , ft_volatile, {d:FS_alarmend}     , {v:NULL}           , {s:0x0220}, } ,
+    {"undertemp/count"       , 12,&A1921m,ft_unsigned  , ft_volatile, {u:FS_alarmcnt}     , {v:NULL}           , {s:0x0220}, } ,
+    {"undertemp/elements"    , 12,   NULL,ft_unsigned  , ft_volatile, {u:FS_alarmelems}   , {v:NULL}           , {s:0x0220}, } ,
+    {"undertemp/temperature" , 12,   NULL,ft_temperature,  ft_stable, {f:FS_r_alarmtemp}  , {f:FS_w_alarmtemp} , {s:0x020C}, } ,
 
     {"log"                  ,  0,   NULL,  ft_subdir   , ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"log/temperature"      ,  5,&A1921l,ft_temperature, ft_volatile, {f:FS_r_logtemp}    , {v:NULL}           , NULL, } ,
@@ -186,10 +186,10 @@ struct filetype DS1921[] = {
     {"alarm_state"          ,  5,   NULL,ft_unsigned,   ft_stable, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,//
 
     {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
-    {"alarm_second"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0207, } ,
-    {"alarm_minute"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0208, } ,
-    {"alarm_hour"     , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x0209, } ,
-    {"alarm_dow"      , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , (void *)0x020A, } ,
+    {"alarm_second"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , {s:0x0207}, } ,
+    {"alarm_minute"   , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , {s:0x0208}, } ,
+    {"alarm_hour"     , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , {s:0x0209}, } ,
+    {"alarm_dow"      , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atime}      , {u:FS_w_atime}     , {s:0x020A}, } ,
     {"alarm_trigger"  , 12,   NULL, ft_unsigned,  ft_stable, {u:FS_r_atrig}      , {u:FS_w_atrig}     , NULL, } ,
 } ;
 DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp | DEV_ovdr ) ;
@@ -232,8 +232,8 @@ static int OW_startmission( unsigned int freq, const struct parsedname * pn ) ;
 static int FS_bitread( int * y , const struct parsedname * pn ) {
     unsigned char d ;
     struct BitRead * br ;
-    if (pn->ft->data==NULL) return -EINVAL ;
-    br = ((struct BitRead *)(pn->ft->data)) ;
+    if (pn->ft->data.v==NULL) return -EINVAL ;
+    br = ((struct BitRead *)(pn->ft->data.v)) ;
     if ( OW_r_mem(&d,1,br->location,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&d,br->bit ) ;
     return 0 ;
@@ -242,8 +242,8 @@ static int FS_bitread( int * y , const struct parsedname * pn ) {
 static int FS_bitwrite( const int * y , const struct parsedname * pn ) {
     unsigned char d ;
     struct BitRead * br ;
-    if (pn->ft->data==NULL) return -EINVAL ;
-    br = ((struct BitRead *)(pn->ft->data)) ;
+    if (pn->ft->data.v==NULL) return -EINVAL ;
+    br = ((struct BitRead *)(pn->ft->data.v)) ;
     if ( OW_r_mem(&d,1,br->location,pn) ) return -EINVAL ;
     UT_setbit(&d,br->bit,y[0] ) ;
     if ( OW_w_mem(&d,1,br->location,pn) ) return -EINVAL ;
@@ -346,7 +346,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
 /* read counter */
 /* Save a function by shoving address in data field */
 static int FS_r_3byte(unsigned int * u , const struct parsedname * pn) {
-    size_t addr = (size_t) pn->ft->data ;
+    size_t addr = pn->ft->data.s ;
     unsigned char data[3] ;
     if ( OW_r_mem(data,3,addr,pn) ) return -EINVAL ;
     u[0] = (((((unsigned int)data[2])<<8)|data[1])<<8)|data[0] ;
@@ -380,7 +380,7 @@ static int FS_alarmelems(unsigned int * u , const struct parsedname * pn) {
     int i ;
 
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
-    if ( OW_alarmlog(t,c,(size_t)(pn->ft->data),pn ) ) return -EINVAL ;
+    if ( OW_alarmlog(t,c,pn->ft->data.s,pn ) ) return -EINVAL ;
     for ( i=0 ; i<12 ; ++i ) if ( c[i]==0 ) break ;
     u[0] = i ;
     return 0 ;
@@ -391,7 +391,7 @@ static int FS_r_alarmtemp(FLOAT * T , const struct parsedname * pn) {
     unsigned char data[1] ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
-    if ( OW_r_mem(data,1,(size_t)(pn->ft->data),pn) ) return -EINVAL ;
+    if ( OW_r_mem(data,1,pn->ft->data.s,pn) ) return -EINVAL ;
     T[0] = (FLOAT)data[0] * v->resolution + v->histolow ;
     return 0 ;
 }
@@ -403,7 +403,7 @@ static int FS_w_alarmtemp(const FLOAT * T , const struct parsedname * pn) {
     if ( v==NULL ) return -EINVAL ;
     if ( OW_MIP(pn) ) return -EBUSY ;
     data[0] = ( T[0] - v->histolow ) / v->resolution ;
-    return ( OW_w_mem(data,1,(size_t)(pn->ft->data),pn) ) ? -EINVAL : 0 ;
+    return ( OW_w_mem(data,1,pn->ft->data.s,pn) ) ? -EINVAL : 0 ;
 }
 
 static int FS_alarmudate(unsigned int * u , const struct parsedname * pn) {
@@ -413,7 +413,7 @@ static int FS_alarmudate(unsigned int * u , const struct parsedname * pn) {
     int i ;
 
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
-    if ( OW_alarmlog(t,c,(size_t)(pn->ft->data),pn ) ) return -EINVAL ;
+    if ( OW_alarmlog(t,c,pn->ft->data.s,pn ) ) return -EINVAL ;
     for ( i=0 ; i<12 ; ++i ) u[i] = mission.start + t[i]*mission.interval ;
     return 0 ;
 }
@@ -425,7 +425,7 @@ static int FS_alarmstart(DATE * d , const struct parsedname * pn) {
     int i ;
 
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
-    if ( OW_alarmlog(t,c,(size_t)(pn->ft->data),pn ) ) return -EINVAL ;
+    if ( OW_alarmlog(t,c,pn->ft->data.s,pn ) ) return -EINVAL ;
     for ( i=0 ; i<12 ; ++i ) d[i] = mission.start + t[i]*mission.interval ;
     return 0 ;
 }
@@ -437,7 +437,7 @@ static int FS_alarmend(DATE * d , const struct parsedname * pn) {
     int i ;
 
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
-    if ( OW_alarmlog(t,c,(size_t)(pn->ft->data),pn ) ) return -EINVAL ;
+    if ( OW_alarmlog(t,c,pn->ft->data.s,pn ) ) return -EINVAL ;
     for ( i=0 ; i<12 ; ++i ) d[i] = mission.start + (t[i]+c[i])*mission.interval ;
     return 0 ;
 }
@@ -447,7 +447,7 @@ static int FS_alarmcnt(unsigned int * u , const struct parsedname * pn) {
     int c[12] ;
     int i ;
 
-    if ( OW_alarmlog(t,c,(size_t)(pn->ft->data),pn ) ) return -EINVAL ;
+    if ( OW_alarmlog(t,c,pn->ft->data.s,pn ) ) return -EINVAL ;
     for ( i=0 ; i<12 ; ++i ) u[i] = c[i] ;
     return 0 ;
 }
@@ -547,7 +547,7 @@ static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn
 /* read the alarm time field (not bit 7, though) */
 static int FS_r_atime(unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
-    if ( OW_r_mem(&data,1,(size_t) pn->ft->data,pn) ) return -EFAULT ;
+    if ( OW_r_mem(&data,1,pn->ft->data.s,pn) ) return -EFAULT ;
     *u = data & 0x7F ;
     return 0 ;
 }
@@ -557,9 +557,9 @@ static int FS_r_atime(unsigned int * u , const struct parsedname * pn) {
 static int FS_w_atime(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data ;
 
-    if ( OW_r_mem(&data,1,(size_t) pn->ft->data,pn) ) return -EFAULT ;
+    if ( OW_r_mem(&data,1,pn->ft->data.s,pn) ) return -EFAULT ;
     data = ( (unsigned char) u[0] ) | (data&0x80) ; /* EM on */
-    if ( OW_w_mem(&data,1,(size_t) pn->ft->data,pn) ) return -EFAULT ;
+    if ( OW_w_mem(&data,1,pn->ft->data.s,pn) ) return -EFAULT ;
     return 0 ;
 }
 

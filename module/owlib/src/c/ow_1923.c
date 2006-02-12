@@ -112,7 +112,7 @@ struct filetype DS1923[] = {
     {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
     {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
     {"clock/udate"          , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
-    {"clock/running"        ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , &BitReads[2], } ,
+    {"clock/running"        ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , {v:&BitReads[2]}, } ,
 
 #if 0
     /* Just test functions */
@@ -124,16 +124,16 @@ struct filetype DS1923[] = {
 #endif
 
     {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , &BitReads[0], } ,
-    {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , &BitReads[1], } ,
+    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , {v:&BitReads[0]}, } ,
+    {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , {v:&BitReads[1]}, } ,
     {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
-    {"mission/samplingtemp"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[3], } ,
-    {"mission/samplinghumidity"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , &BitReads[4], } ,
+    {"mission/samplingtemp"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[3]}, } ,
+    {"mission/samplinghumidity"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[4]}, } ,
 
 
 #if 0
     {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
-    {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , (void *)0x021A, } ,
+    {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , {s:0x021A}, } ,
     {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
     {"mission/date"         , 24,   NULL,    ft_date, ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
     {"mission/easystart"    , 12,   NULL,ft_unsigned,   ft_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
@@ -269,8 +269,8 @@ static int FS_w_mip(const int * y, const struct parsedname * pn) {
 static int FS_bitread( int * y , const struct parsedname * pn ) {
     unsigned char d ;
     struct BitRead * br ;
-    if (pn->ft->data==NULL) return -EINVAL ;
-    br = ((struct BitRead *)(pn->ft->data)) ;
+    if (pn->ft->data.v==NULL) return -EINVAL ;
+    br = ((struct BitRead *)(pn->ft->data.v)) ;
     if ( OW_r_mem(&d,1,br->location,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&d,br->bit ) ;
     return 0 ;
@@ -279,8 +279,8 @@ static int FS_bitread( int * y , const struct parsedname * pn ) {
 static int FS_bitwrite( const int * y , const struct parsedname * pn ) {
     unsigned char d ;
     struct BitRead * br ;
-    if (pn->ft->data==NULL) return -EINVAL ;
-    br = ((struct BitRead *)(pn->ft->data)) ;
+    if (pn->ft->data.v==NULL) return -EINVAL ;
+    br = ((struct BitRead *)(pn->ft->data.v)) ;
     if ( OW_r_mem(&d,1,br->location,pn) ) return -EINVAL ;
     UT_setbit(&d,br->bit,y[0] ) ;
     if ( OW_w_mem(&d,1,br->location,pn) ) return -EINVAL ;

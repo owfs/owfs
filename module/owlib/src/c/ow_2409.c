@@ -56,13 +56,13 @@ uWRITE_FUNCTION( FS_w_control ) ;
 struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, } ;
 struct filetype DS2409[] = {
     F_STANDARD   ,
-    {"discharge" ,     1,  NULL,    ft_yesno , ft_stable  , {v:NULL}        , {y:FS_discharge}, NULL,       } ,
-    {"control"   ,     1,  NULL, ft_unsigned , ft_stable  , {u:FS_r_control}, {u:FS_w_control}, NULL,       } ,
-    {"sensed"    ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_sensed} , {v:NULL}        , NULL,       } ,
-    {"branch"    ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_branch} , {v:NULL}        , NULL,       } ,
-    {"event"     ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_event}  , {v:NULL}        , NULL,       } ,
-    {"aux"       ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 1, } ,
-    {"main"      ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , (void *) 0, } ,
+    {"discharge" ,     1,  NULL,    ft_yesno , ft_stable  , {v:NULL}        , {y:FS_discharge}, {v:NULL},       } ,
+    {"control"   ,     1,  NULL, ft_unsigned , ft_stable  , {u:FS_r_control}, {u:FS_w_control}, {v:NULL},       } ,
+    {"sensed"    ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_sensed} , {v:NULL}        , {v:NULL},       } ,
+    {"branch"    ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_branch} , {v:NULL}        , {v:NULL},       } ,
+    {"event"     ,     1,&A2409, ft_bitfield , ft_volatile, {u:FS_r_event}  , {v:NULL}        , {v:NULL},       } ,
+    {"aux"       ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , {i: 1}, } ,
+    {"main"      ,     0,  NULL, ft_directory, ft_volatile, {v:NULL}        , {v:NULL}        , {i: 0}, } ,
 } ;
 DeviceEntry( 1F, DS2409 ) ;
 

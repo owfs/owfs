@@ -68,20 +68,20 @@ struct filetype DS1977[] = {
     {"pages"     ,          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
     {"pages/page",         64,  &A1977,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       NULL, } ,
     {"set_password",        0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
-    {"set_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , (void*) 0, } ,
-    {"set_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , (void*) 8, } ,
+    {"set_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , {i: 0}, } ,
+    {"set_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , {i: 8}, } ,
     {"set_password/enabled",1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_pwd}    , {y:FS_w_pwd}       , NULL, } ,
     {"set_number",          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
-    {"set_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , (void*) 0, } ,
-    {"set_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , (void*) 8, } ,
+    {"set_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , {i: 0}, } ,
+    {"set_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , {i: 8}, } ,
     {"version"   ,         12,  NULL,    ft_unsigned, ft_stable  , {u:FS_ver}      , {v:NULL}           , NULL, } ,
 #ifdef OW_CACHE
     {"use_password",        0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
-    {"use_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , (void*) 0, } ,
-    {"use_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , (void*) 8, } ,
+    {"use_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , {i: 0}, } ,
+    {"use_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , {i: 8}, } ,
     {"use_number",          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , NULL, } ,
-    {"use_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , (void*) 0, } ,
-    {"use_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , (void*) 8, } ,
+    {"use_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , {i: 0}, } ,
+    {"use_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , {i: 8}, } ,
 #endif /*OW_CACHE*/
 } ;
 DeviceEntryExtended( 37, DS1977, DEV_resume | DEV_ovdr ) ; 
@@ -158,7 +158,7 @@ static int FS_set( const unsigned char *buf, const size_t size, const off_t offs
     int ret;
     unsigned char p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     int oldy, y =0 ;
-    size_t off = 0x7FC0 + (int)(pn->ft->data) ;
+    size_t off = 0x7FC0 + pn->ft->data.i ;
     size_t s = size ;
     if (s>8) s=8 ;
     memcpy(p,buf,s) ;
@@ -213,7 +213,7 @@ static int FS_use( const unsigned char *buf, const size_t size, const off_t offs
 
     (void) offset ;
 
-    if ( Cache_Add_Internal( p,s,(int)(pn->ft->data) ? &ip_ful : &ip_rea , pn ) ) return -EINVAL ;
+    if ( Cache_Add_Internal( p,s,pn->ft->data.i ? &ip_ful : &ip_rea , pn ) ) return -EINVAL ;
     return 0 ;
 }
 #endif /* OW_CACHE */

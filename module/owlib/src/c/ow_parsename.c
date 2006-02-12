@@ -417,7 +417,7 @@ static int BranchAdd( struct parsedname * const pn ) {
         if ( (pn->bp=realloc( pn->bp, (BRANCH_INCR+pn->pathlength) * sizeof( struct buspath ) ))==NULL ) return -ENOMEM ;
     }
     memcpy( pn->bp[pn->pathlength].sn, pn->sn , 8 ) ; /* copy over DS2409 name */
-    pn->bp[pn->pathlength].branch = (int)(pn->ft->data) ;
+    pn->bp[pn->pathlength].branch = pn->ft->data.i ;
     ++pn->pathlength ;
     pn->ft = NULL ;
     pn->dev = NULL ;

@@ -74,20 +74,20 @@ struct filetype DS2450[] = {
     {"pages/page"         ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
     {"power"              ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_power}  , {y:FS_w_power}  , NULL, } ,
     {"memory"             ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}    , NULL, } ,
-    {"PIO"                ,     1,  &A2450m, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO}    , (void *) 0, } ,
-    {"volt"               ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 1, } ,
-    {"volt2"              ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , (void *) 0, } ,
+    {"PIO"                ,     1,  &A2450m, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO}    , {i: 0}, } ,
+    {"volt"               ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , {i: 1}, } ,
+    {"volt2"              ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , {i: 0}, } ,
     {"set_alarm"          ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
-    {"set_alarm/volthigh" ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, (void *) 3, } ,
-    {"set_alarm/volt2high",    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, (void *) 2, } ,
-    {"set_alarm/voltlow"  ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, (void *) 1, } ,
-    {"set_alarm/volt2low" ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, (void *) 0, } ,
-    {"set_alarm/high"     ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_high}   , {y:FS_w_high}   , (void *) 1, } ,
-    {"set_alarm/low"      ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_high}   , {y:FS_w_high}   , (void *) 0, } ,
+    {"set_alarm/volthigh" ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 3}, } ,
+    {"set_alarm/volt2high",    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 2}, } ,
+    {"set_alarm/voltlow"  ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 1}, } ,
+    {"set_alarm/volt2low" ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 0}, } ,
+    {"set_alarm/high"     ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_high}   , {y:FS_w_high}   , {i: 1}, } ,
+    {"set_alarm/low"      ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_high}   , {y:FS_w_high}   , {i: 0}, } ,
     {"set_alarm/unset"    ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_por}    , {y:FS_w_por}    , NULL, } ,
     {"alarm"              ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
-    {"alarm/high"         ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , (void *) 1, } ,
-    {"alarm/low"          ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , (void *) 0, } ,
+    {"alarm/high"         ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , {i: 1}, } ,
+    {"alarm/low"          ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , {i: 0}, } ,
 } ;
 DeviceEntryExtended( 20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr ) ;
 
@@ -155,25 +155,25 @@ static int FS_w_por(const int *y, const struct parsedname * pn) {
 
 /* read high/low voltage enable alarm flags */
 static int FS_r_high(int *y, const struct parsedname * pn) {
-    if ( OW_r_high(y,((int) pn->ft->data)&0x01,pn) ) return -EINVAL ;
+    if ( OW_r_high(y,pn->ft->data.i&0x01,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write high/low voltage enable alarm flags */
 static int FS_w_high(const int *y, const struct parsedname * pn) {
-    if ( OW_w_high(y,((int) pn->ft->data)&0x01,pn) ) return -EINVAL ;
+    if ( OW_w_high(y,pn->ft->data.i&0x01,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* read high/low voltage triggered state alarm flags */
 static int FS_r_flag(int *y, const struct parsedname * pn) {
-    if ( OW_r_flag(y,((int) pn->ft->data)&0x01,pn) ) return -EINVAL ;
+    if ( OW_r_flag(y,pn->ft->data.i&0x01,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write high/low voltage triggered state alarm flags */
 static int FS_w_flag(const int *y, const struct parsedname * pn) {
-    if ( OW_w_flag(y,((int) pn->ft->data)&0x01,pn) ) return -EINVAL ;
+    if ( OW_w_flag(y,pn->ft->data.i&0x01,pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -207,17 +207,17 @@ static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t off
 /* 2450 A/D */
 static int FS_volts(FLOAT * V , const struct parsedname * pn) {
     int element = pn->extension ;
-    if ( (element<0)?OW_volts( V, (int) pn->ft->data, pn ):OW_1_volts( V, element, (int) pn->ft->data, pn ) ) return -EINVAL ;
+    if ( (element<0)?OW_volts( V, pn->ft->data.i, pn ):OW_1_volts( V, element, pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_r_setvolt( FLOAT * const V, const struct parsedname * const pn ) {
-    if ( OW_r_vset( V , ( (int) pn->ft->data ) >>1 , ( (int) pn->ft->data ) & 0x01 , pn ) ) return -EINVAL ;
+    if ( OW_r_vset( V , ( pn->ft->data.i ) >>1 , ( pn->ft->data.i ) & 0x01 , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_w_setvolt( const FLOAT * const V, const struct parsedname * const pn ) {
-    if ( OW_w_vset( V , ( (int) pn->ft->data ) >>1 , ( (int) pn->ft->data ) & 0x01 , pn ) ) return -EINVAL ;
+    if ( OW_w_vset( V , ( pn->ft->data.i ) >>1 , ( pn->ft->data.i ) & 0x01 , pn ) ) return -EINVAL ;
     return 0 ;
 }
 

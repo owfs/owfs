@@ -72,23 +72,23 @@ struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, } ;
 struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, } ;
 struct filetype LCD[] = {
     F_STANDARD   ,
-    {"LCDon"     ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_on}       , NULL, } ,
-    {"backlight" ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_backlight}, NULL, } ,
-    {"version"   ,    16,  NULL,      ft_ascii, ft_stable  , {a:FS_r_version} , {v:NULL}          , NULL, } ,
-    {"gpio"      ,     1,  &ALCD,     ft_yesno, ft_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , NULL, } ,
-    {"register"  ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , NULL, } ,
-    {"data"      ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , NULL, } ,
-    {"counters"  ,    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , NULL, } ,
+    {"LCDon"     ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_on}       , {v:NULL}, } ,
+    {"backlight" ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_backlight}, {v:NULL}, } ,
+    {"version"   ,    16,  NULL,      ft_ascii, ft_stable  , {a:FS_r_version} , {v:NULL}          , {v:NULL}, } ,
+    {"gpio"      ,     1,  &ALCD,     ft_yesno, ft_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , {v:NULL}, } ,
+    {"register"  ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , {v:NULL}, } ,
+    {"data"      ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , {v:NULL}, } ,
+    {"counters"  ,    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , {v:NULL}, } ,
 #ifdef OW_CACHE
-    {"cumulative",    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , NULL, } ,
+    {"cumulative",    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , {v:NULL}, } ,
 #endif /*OW_CACHE*/
-    {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , NULL , } ,
-    {"screen16"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 16 , } ,
-    {"screen20"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 20 , } ,
-    {"screen40"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , (void *) 40 , } ,
-    {"line16"    ,    16,  &ALCD_L16, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 16 , } ,
-    {"line20"    ,    20,  &ALCD_L20, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 20 , } ,
-    {"line40"    ,    40,  &ALCD_L40, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , (void *) 40 , } ,
+    {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , {v:NULL} , } ,
+    {"screen16"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 16} , } ,
+    {"screen20"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 20} , } ,
+    {"screen40"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 40} , } ,
+    {"line16"    ,    16,  &ALCD_L16, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 16} , } ,
+    {"line20"    ,    20,  &ALCD_L20, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 20} , } ,
+    {"line40"    ,    40,  &ALCD_L40, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 40} , } ,
 } ;
 DeviceEntryExtended( FF, LCD , DEV_alarm ) ;
 
@@ -200,7 +200,7 @@ static int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
 #endif /*OW_CACHE*/
 
 static int FS_w_lineX(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    int width = (int) pn->ft->data ;
+    int width = pn->ft->data.i ;
     unsigned char loc[] = { 0x00, 0x40, 0x00+width, 0x40+width } ;
     char line[width] ;
 
@@ -212,7 +212,7 @@ static int FS_w_lineX(const char *buf, const size_t size, const off_t offset , c
 }
 
 static int FS_w_screenX(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
-    int width = (int) pn->ft->data ;
+    int width = pn->ft->data.i ;
     int rows = (width==40)?2:4 ; /* max number of rows */
     struct parsedname pn2 ;
     const char * nl ;

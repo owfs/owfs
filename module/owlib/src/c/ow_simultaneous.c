@@ -63,8 +63,8 @@ yWRITE_FUNCTION( FS_w_convert ) ;
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-    {"temperature"     ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, (void *)simul_temp , } ,
-    {"voltage"         ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, (void *)simul_volt , } ,
+    {"temperature"     ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_temp} , } ,
+    {"voltage"         ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_volt} , } ,
 } ;
 DeviceEntry( simultaneous, simultaneous ) ;
 
@@ -90,7 +90,7 @@ int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) {
 
 static int FS_w_convert(const int * y , const struct parsedname * pn) {
     if ( y[0]==0 ) {
-        if ( OW_killcache((enum simul_type) pn->ft->data,pn) ) return -EINVAL ;
+        if ( OW_killcache((enum simul_type) pn->ft->data.i,pn) ) return -EINVAL ;
         return 0 ;
     }
     /* Since writing to /simultaneous/temperature is done recursive to all
@@ -98,14 +98,14 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
      * as a bad adapter. */
     if(pn->in->Adapter == adapter_Bad) return 0;
 
-    if ( OW_skiprom(  (enum simul_type) pn->ft->data, pn ) ) return -EINVAL ;
-    if ( OW_setcache( (enum simul_type) pn->ft->data, pn ) ) return -EINVAL ;
+    if ( OW_skiprom(  (enum simul_type) pn->ft->data.i, pn ) ) return -EINVAL ;
+    if ( OW_setcache( (enum simul_type) pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_r_convert(int * y , const struct parsedname * pn) {
     y[0] = 1 ;
-    if ( OW_getcache((enum simul_type) pn->ft->data,0,pn) ) y[0] = 0 ;
+    if ( OW_getcache((enum simul_type) pn->ft->data.i,0,pn) ) y[0] = 0 ;
     return 0 ;
 }
 
