@@ -23,7 +23,7 @@ static int ConnectionError( const struct parsedname * pn ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
 
-struct timeval tv = { 1, 0, } ;
+struct timeval tv = { 2, 0, } ;
 
 static void Server_setroutines( struct interface_routines * f ) {
     f->detect        = Server_detect ;
