@@ -219,9 +219,6 @@ int owopt( const int c , const char * const arg, enum opt_program op ) ;
 /* PID file nsme */
 extern pid_t pid_num ;
 extern char * pid_file ;
-/* FUSE options */
-extern char * fuse_mnt_opt ;
-extern char * fuse_open_opt ;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
@@ -653,11 +650,11 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
 int FS_RemoteBus( const struct parsedname * pn ) ;
 
 /* Utility functions */
-unsigned char CRC8( const unsigned char * bytes , const int length ) ;
-unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) ;
-  unsigned char CRC8compute( const unsigned char * bytes , const int length  ,const int seed ) ;
-int CRC16( const unsigned char * bytes , const int length ) ;
-int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) ;
+unsigned char CRC8( const unsigned char * bytes , const size_t length ) ;
+unsigned char CRC8seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) ;
+  unsigned char CRC8compute( const unsigned char * bytes , const size_t length  , const unsigned int seed ) ;
+int CRC16( const unsigned char * bytes , const size_t length ) ;
+int CRC16seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) ;
 unsigned char char2num( const char * s ) ;
 unsigned char string2num( const char * s ) ;
 char num2char( const unsigned char n ) ;

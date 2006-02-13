@@ -58,9 +58,9 @@ uWRITE_FUNCTION( FS_w_pio ) ;
 struct aggregate A2413 = { 2, ag_letters, ag_aggregate, } ;
 struct filetype DS2413[] = {
     F_STANDARD   ,
-    {"PIO"       ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
-    {"sensed"    ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
-    {"latch"     ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {v:NULL}     , NULL, } ,
+    {"PIO"       ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_r_pio}    , {u:FS_w_pio} , {v:NULL}, } ,
+    {"sensed"    ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , {v:NULL}, } ,
+    {"latch"     ,     1,  &A2413,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {v:NULL}     , {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 3A, DS2413, DEV_resume | DEV_ovdr ) ;
 

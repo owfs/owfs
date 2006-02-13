@@ -68,15 +68,15 @@ struct aggregate A2406 = { 2, ag_letters, ag_aggregate, } ;
 struct aggregate A2406p = { 4, ag_numbers, ag_separate, } ;
 struct filetype DS2406[] = {
     F_STANDARD   ,
-    {"memory"    ,   128,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
-    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
-    {"pages/page",    32,  &A2406p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
-    {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL}     , NULL, } ,
-    {"PIO"       ,     1,  &A2406,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
-    {"sensed"    ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
-    {"latch"     ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,
-    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
+    {"memory"    ,   128,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"pages/page",    32,  &A2406p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, {v:NULL}, } ,
+    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , {v:NULL}, } ,
+    {"channels"  ,     1,  NULL,    ft_unsigned, ft_stable  , {u:FS_channel}  , {v:NULL}     , {v:NULL}, } ,
+    {"PIO"       ,     1,  &A2406,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , {v:NULL}, } ,
+    {"sensed"    ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , {v:NULL}, } ,
+    {"latch"     ,     1,  &A2406,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},{v:NULL}, } ,
+    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
 } ;
 DeviceEntryExtended( 12, DS2406, DEV_alarm ) ;
 

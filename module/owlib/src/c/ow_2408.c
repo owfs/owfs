@@ -63,13 +63,13 @@ yWRITE_FUNCTION( FS_w_por ) ;
 struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, } ;
 struct filetype DS2408[] = {
     F_STANDARD   ,
-    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL},        NULL, } ,
-    {"PIO"       ,     1,  &A2408,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio},    NULL, } ,
-    {"sensed"    ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL},        NULL, } ,
-    {"latch"     ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},  NULL, } ,
-    {"strobe"    ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, NULL, } ,
-    {"set_alarm" ,     9,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
-    {"por"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_por}    , {y:FS_w_por},    NULL, } ,
+    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL},        {v:NULL}, } ,
+    {"PIO"       ,     1,  &A2408,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio},    {v:NULL}, } ,
+    {"sensed"    ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL},        {v:NULL}, } ,
+    {"latch"     ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},  {v:NULL}, } ,
+    {"strobe"    ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, {v:NULL}, } ,
+    {"set_alarm" ,     9,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
+    {"por"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_por}    , {y:FS_w_por},    {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 

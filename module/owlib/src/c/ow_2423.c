@@ -62,14 +62,14 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate,} ;
 struct aggregate A2423c = { 2, ag_letters, ag_separate,} ;
 struct filetype DS2423[] = {
     F_STANDARD   ,
-    {"memory"    ,   512,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem},        NULL, } ,
-    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}           , NULL, } ,
-    {"pages/page",    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       NULL, } ,
-    {"counters"  ,    12,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},            NULL, } ,
+    {"memory"    ,   512,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem},        {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
+    {"pages/page",    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       {v:NULL}, } ,
+    {"counters"  ,    12,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},            {v:NULL}, } ,
 #ifdef OW_CACHE
-    {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount}, NULL, } ,
+    {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount}, {v:NULL}, } ,
 #endif /*OW_CACHE*/
-    {"pages/count",   12,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            NULL, } ,
+    {"pages/count",   12,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 1D, DS2423 , DEV_ovdr ) ;
 

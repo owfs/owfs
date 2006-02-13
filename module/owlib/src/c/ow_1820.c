@@ -63,11 +63,11 @@ struct filetype DS18S20[] = {
     {"temperature",   12,  NULL, ft_temperature, ft_volatile, {f:FS_10temp}     , {v:NULL}          , {i: 1000}, } ,
     {"templow",       12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},   } ,
     {"temphigh",      12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},   } ,
-    {"trim",          12,  NULL, ft_unsigned   , ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , NULL,         } ,
+    {"trim",          12,  NULL, ft_unsigned   , ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , {v:NULL},         } ,
     {"die",            2,  NULL, ft_ascii      , ft_static  , {a:FS_r_die}      , {v:NULL}          , {i: 1},   } ,
-    {"trimvalid",      1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,         } ,
-    {"trimblanket",    1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,         } ,
-    {"power"     ,     1,  NULL, ft_yesno      , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,         } ,
+    {"trimvalid",      1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , {v:NULL},         } ,
+    {"trimblanket",    1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , {v:NULL},         } ,
+    {"power"     ,     1,  NULL, ft_yesno      , ft_volatile, {y:FS_power}      , {v:NULL}          , {v:NULL},         } ,
 }
  ;
 DeviceEntryExtended( 10, DS18S20, DEV_temp | DEV_alarm ) ;
@@ -79,11 +79,11 @@ struct filetype DS18B20[] = {
     {"fasttemp"  ,    12,  NULL, ft_temperature, ft_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
     {"templow",       12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
     {"temphigh",      12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
-    {"trim",          12,  NULL, ft_unsigned   , ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , NULL,        } ,
+    {"trim",          12,  NULL, ft_unsigned   , ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , {v:NULL},        } ,
     {"die",            2,  NULL, ft_ascii      , ft_static  , {a:FS_r_die}      , {v:NULL}          , {i: 2},  } ,
-    {"trimvalid",      1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
-    {"trimblanket",    1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
-    {"power"     ,     1,  NULL, ft_yesno      , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
+    {"trimvalid",      1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , {v:NULL},        } ,
+    {"trimblanket",    1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , {v:NULL},        } ,
+    {"power"     ,     1,  NULL, ft_yesno      , ft_volatile, {y:FS_power}      , {v:NULL}          , {v:NULL},        } ,
 } ;
 DeviceEntryExtended( 28, DS18B20, DEV_temp | DEV_alarm ) ;
 
@@ -94,11 +94,11 @@ struct filetype DS1822[] = {
     {"fasttemp"  ,    12,  NULL, ft_temperature, ft_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
     {"templow",       12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
     {"temphigh",      12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
-    {"trim",          12,  NULL, ft_unsigned   , ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , NULL,        } ,
+    {"trim",          12,  NULL, ft_unsigned   , ft_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , {v:NULL},        } ,
     {"die",            2,  NULL, ft_ascii      , ft_static  , {a:FS_r_die}      , {v:NULL}          , {i: 0},  } ,
-    {"trimvalid",      1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , NULL,        } ,
-    {"trimblanket",    1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , NULL,        } ,
-    {"power"     ,     1,  NULL, ft_yesno      , ft_volatile, {y:FS_power}      , {v:NULL}          , NULL,        } ,
+    {"trimvalid",      1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_trimvalid}, {v:NULL}          , {v:NULL},        } ,
+    {"trimblanket",    1,  NULL, ft_yesno      , ft_volatile, {y:FS_r_blanket}  , {y:FS_w_blanket}  , {v:NULL},        } ,
+    {"power"     ,     1,  NULL, ft_yesno      , ft_volatile, {y:FS_power}      , {v:NULL}          , {v:NULL},        } ,
 } ;
 DeviceEntryExtended( 22, DS1822, DEV_temp | DEV_alarm ) ;
 

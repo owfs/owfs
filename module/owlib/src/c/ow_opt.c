@@ -68,8 +68,6 @@ const struct option owopts_long[] = {
 
 /* Globals */
 char * pid_file = NULL ;
-char * fuse_mnt_opt = NULL ;
-char * fuse_open_opt = NULL ;
 unsigned int nr_adapters = 0;
 
 static void ow_help( enum opt_program op ) {

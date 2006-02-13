@@ -56,22 +56,22 @@ bWRITE_FUNCTION( FS_w_password ) ;
 struct aggregate A1963S = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS1963S[] = {
     F_STANDARD   ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  &A1963S, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"pages/count",   12,  &A1963S, ft_unsigned, ft_volatile  , {u:FS_counter},  {v:NULL}, NULL, } ,
-    {"pages/password", 8,  NULL, ft_binary, ft_stable  ,       {v:NULL} , {b:FS_w_password}, NULL, } ,
-    {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
-    {"password"  ,     8,  NULL, ft_binary, ft_stable  ,       {v:NULL} , {b:FS_w_password}, NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  &A1963S, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, {v:NULL}, } ,
+    {"pages/count",   12,  &A1963S, ft_unsigned, ft_volatile  , {u:FS_counter},  {v:NULL}, {v:NULL}, } ,
+    {"pages/password", 8,  NULL, ft_binary, ft_stable  ,       {v:NULL} , {b:FS_w_password}, {v:NULL}, } ,
+    {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, {v:NULL}, } ,
+    {"password"  ,     8,  NULL, ft_binary, ft_stable  ,       {v:NULL} , {b:FS_w_password}, {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 18, DS1963S, DEV_resume | DEV_ovdr ) ;
 
 struct aggregate A1963L = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS1963L[] = {
     F_STANDARD   ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  &A1963L, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"pages/count",   12,  &A1963L, ft_unsigned, ft_volatile  , {u:FS_counter},  {v:NULL}, NULL, } ,
-    {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, NULL, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}       , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  &A1963L, ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, {v:NULL}, } ,
+    {"pages/count",   12,  &A1963L, ft_unsigned, ft_volatile  , {u:FS_counter},  {v:NULL}, {v:NULL}, } ,
+    {"memory"    ,   512,  NULL, ft_binary, ft_stable  , {b:FS_r_memory} , {b:FS_w_memory}, {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 1A, DS1963L , DEV_ovdr ) ;
 

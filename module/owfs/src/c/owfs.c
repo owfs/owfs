@@ -50,6 +50,8 @@ struct fuse *fuse;
 char *fuse_mountpoint = NULL;
 int fuse_fd = -1 ;
 char umount_cmd[1024] = "";
+char * fuse_mnt_opt = NULL ;
+char * fuse_open_opt = NULL ;
 
 /* ---------------------------------------------- */
 /* Command line parsing and mount handler to FUSE */
@@ -109,8 +111,8 @@ int main(int argc, char *argv[]) {
     {
       char ** opts = NULL ;
       if ( fuse_mnt_opt ) {
-	char * tok ;
-	int i = 0 ;
+        char * tok ;
+        int i = 0 ;
 
         opts = malloc( (1+strlen(fuse_mnt_opt)) * sizeof(char *) ) ; // oversized
         if ( opts == NULL ) {

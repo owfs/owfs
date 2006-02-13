@@ -54,34 +54,34 @@ bWRITE_FUNCTION( FS_w_memory ) ;
 struct aggregate A2505 = { 64, ag_numbers, ag_separate, } ;
 struct filetype DS2505[] = {
     F_STANDARD   ,
-    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
+    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , {v:NULL}, } ,
 } ;
 DeviceEntry( 0B, DS2505 ) ;
 
 struct filetype DS1985U[] = {
     F_STANDARD   ,
-    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
+    {"memory"    ,  2048,  NULL,   ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  &A2505, ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , {v:NULL}, } ,
 } ;
 DeviceEntry( 8B, DS1985U ) ;
 
 struct aggregate A2506 = { 256, ag_numbers, ag_separate, } ;
 struct filetype DS2506[] = {
     F_STANDARD   ,
-    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
+    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 0F, DS2506 , DEV_ovdr ) ;
 
 struct filetype DS1986U[] = {
     F_STANDARD   ,
-    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, NULL, } ,
-    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , NULL, } ,
-    {"pages/page",    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , NULL, } ,
+    {"memory"    ,  8192,  &A2506, ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}, {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir, ft_volatile, {v:NULL}         , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  NULL,   ft_binary, ft_stable  , {b:FS_r_page}    , {b:FS_w_page}  , {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 8F, DS1986U , DEV_ovdr ) ;
 
@@ -143,7 +143,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size, const size_
 static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset , const struct parsedname * pn ) {
     unsigned char p[6] = { 0xA5, offset&0xFF , offset>>8, } ;
     unsigned char d[34] ;
-    int rest = 32 - (offset & 0x1F) ;
+    size_t rest = 32 - (offset & 0x1F) ;
     int ret ;
 
     BUSLOCK(pn);

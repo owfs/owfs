@@ -119,11 +119,11 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     struct parsedname pn ;
     struct stateinfo si ;
     char * buf = NULL ;
-    int sz ; /* current buffer size */
+    size_t sz ; /* current buffer size */
     int s = 0 ; /* current buffer string length */
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
-        int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
+        size_t sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
         if ( sz<sn ) {
             sz = sn ;
             buf = realloc( buf, sn ) ;

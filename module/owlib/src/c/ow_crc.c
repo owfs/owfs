@@ -37,9 +37,9 @@ static unsigned char crc8_table[] = {
 
 static unsigned int crc16_table[16] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
-unsigned char CRC8compute( const unsigned char * bytes , const int length , const int seed ) {
+unsigned char CRC8compute( const unsigned char * bytes , const size_t length , const unsigned int seed ) {
     unsigned char crc = seed ;
-    int i = 0 ;
+    size_t i = 0 ;
     while ( i<length ) {
         crc = crc8_table[crc ^ bytes[i++] ] ;
     }
@@ -47,12 +47,12 @@ unsigned char CRC8compute( const unsigned char * bytes , const int length , cons
 }
 
 /* wrap CRC8 calculation in statistics */
-unsigned char CRC8( const unsigned char * bytes , const int length ) {
+unsigned char CRC8( const unsigned char * bytes , const size_t length ) {
     return CRC8seeded( bytes, length, 0 ) ;
 }
 
 /* wrap CRC8 calculation in statistics */
-unsigned char CRC8seeded( const unsigned char * bytes , const int length , const int seed ) {
+unsigned char CRC8seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) {
     unsigned char r = CRC8compute( bytes, length , seed ) ;
     STATLOCK;
         ++CRC8_tries ; /* statistics */
@@ -63,27 +63,28 @@ unsigned char CRC8seeded( const unsigned char * bytes , const int length , const
 
 /* Returns 0 for good match */
 /* Standard -- seed = 0 */
-int CRC16( const unsigned char * bytes , const int length ) {
+int CRC16( const unsigned char * bytes , const size_t length ) {
     return CRC16seeded( bytes, length, 0 ) ;
 }
 /* Returns 0 for good match */
-int CRC16seeded( const unsigned char * bytes , const int length , const int seed ) {
-    unsigned int ret = seed ;
-    int i ;
+int CRC16seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) {
+    unsigned int sd = seed ;
+    int ret ;
+    size_t i ;
     for ( i=0 ; i<length ; ++i ) {
-        unsigned int c = ( bytes[i] ^ ( ret & 0xFF ) ) & 0xFF ;
+        unsigned int c = ( bytes[i] ^ ( sd & 0xFF ) ) & 0xFF ;
         ret >>= 8 ;
-        if ( crc16_table[c&0x0F] ^ crc16_table[c>>4] ) ret ^= 0xC001 ;
-        ret ^= ( c<<=6 ) ;
-        ret ^= ( c<<1 ) ;
+        if ( crc16_table[c&0x0F] ^ crc16_table[c>>4] ) sd ^= 0xC001 ;
+        sd ^= ( c<<=6 ) ;
+        sd ^= ( c<<1 ) ;
     }
     STATLOCK;
-	++ CRC16_tries ; /* statistics */
-        if ( ret == 0xB001 ) {
-	    ret = 0;  /* good */
+        ++ CRC16_tries ; /* statistics */
+        if ( sd == 0xB001 ) {
+            ret = 0;  /* good */
         } else {
-	    ret = -1; /* error */
-	    ++CRC16_errors ; /* statistics */
+            ret = -1; /* error */
+            ++CRC16_errors ; /* statistics */
         }
     STATUNLOCK;
     return ret;

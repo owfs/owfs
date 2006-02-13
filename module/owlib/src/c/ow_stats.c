@@ -210,7 +210,7 @@ struct filetype stats_read[] = {
     {"cachebytes"      , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & read_cachebytes}  , } ,
     {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & read_success}     , } ,
     {"bytes"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & read_bytes}       , } ,
-    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, read_tries         , } ,
+    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & read_tries}       , } ,
 }
  ;
 struct device d_stats_read = { "read", "read", 0, NFT(stats_read), stats_read } ;
@@ -219,7 +219,7 @@ struct filetype stats_write[] = {
     {"calls"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & write_calls}      , } ,
     {"success"         , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & write_success}    , } ,
     {"bytes"           , 15, NULL  , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & write_bytes}      , } ,
-    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, write_tries        , } ,
+    {"tries"           , 15, &Aread, ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & write_tries}      , } ,
 }
  ;
 struct device d_stats_write = { "write", "write", 0, NFT(stats_write), stats_write } ;
@@ -267,12 +267,12 @@ struct filetype stats_bus[] = {
     {"bus_time"        , 12, &Asystem, ft_float,    ft_statistic, {f:FS_time_p}, {v:NULL}, {i: 0}  , } ,
     {"bus_locks"       , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 0}  , } ,
     {"bus_unlocks"     , 15, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 1}  , } ,
-    {"reconnect"       , 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 2} , } ,
-    {"reconnect_errors", 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 3} , } ,
-    {"other_bus_errors", 12, &Asystem, ft_unsigned,ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 4} , } ,
-    {"total_bus_time"  , 12, NULL , ft_float,    ft_statistic, {f:FS_time}, {v:NULL}, {v: & total_bus_time}   , } ,
-    {"total_bus_unlocks",15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & total_bus_unlocks,} } ,
-    {"total_bus_locks" , 15, NULL , ft_unsigned, ft_statistic, {u:FS_stat}, {v:NULL}, {v: & total_bus_locks}  , } ,
+    {"reconnect"       , 12, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 2} , } ,
+    {"reconnect_errors", 12, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 3} , } ,
+    {"other_bus_errors", 12, &Asystem, ft_unsigned, ft_statistic, {u:FS_stat_p}, {v:NULL}, {i: 4} , } ,
+    {"total_bus_time"  , 12, NULL    , ft_float,    ft_statistic, {f:FS_time},   {v:NULL}, {v: & total_bus_time}   , } ,
+    {"total_bus_unlocks",15, NULL    , ft_unsigned, ft_statistic, {u:FS_stat},   {v:NULL}, {v: & total_bus_unlocks,} } ,
+    {"total_bus_locks" , 15, NULL    , ft_unsigned, ft_statistic, {u:FS_stat},   {v:NULL}, {v: & total_bus_locks}  , } ,
 };
 struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus } ;
 

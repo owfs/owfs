@@ -70,22 +70,22 @@ struct aggregate A2450m = { 4, ag_letters, ag_mixed, } ;
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, } ;
 struct filetype DS2450[] = {
     F_STANDARD            ,
-    {"pages"              ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
-    {"pages/page"         ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , NULL, } ,
-    {"power"              ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_power}  , {y:FS_w_power}  , NULL, } ,
-    {"memory"             ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}    , NULL, } ,
+    {"pages"              ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , {v:NULL}, } ,
+    {"pages/page"         ,     8,  &A2450,  ft_binary, ft_stable  , {b:FS_r_page}   , {b:FS_w_page}   , {v:NULL}, } ,
+    {"power"              ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_power}  , {y:FS_w_power}  , {v:NULL}, } ,
+    {"memory"             ,    32,  NULL,    ft_binary, ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem}    , {v:NULL}, } ,
     {"PIO"                ,     1,  &A2450m, ft_yesno , ft_stable  , {y:FS_r_PIO}    , {y:FS_w_PIO}    , {i: 0}, } ,
     {"volt"               ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , {i: 1}, } ,
     {"volt2"              ,    12,  &A2450m, ft_float , ft_volatile, {f:FS_volts}    , {v:NULL}        , {i: 0}, } ,
-    {"set_alarm"          ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
+    {"set_alarm"          ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , {v:NULL}, } ,
     {"set_alarm/volthigh" ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 3}, } ,
     {"set_alarm/volt2high",    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 2}, } ,
     {"set_alarm/voltlow"  ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 1}, } ,
     {"set_alarm/volt2low" ,    12,  &A2450v, ft_float , ft_stable  , {f:FS_r_setvolt}, {f:FS_w_setvolt}, {i: 0}, } ,
     {"set_alarm/high"     ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_high}   , {y:FS_w_high}   , {i: 1}, } ,
     {"set_alarm/low"      ,     1,  &A2450v, ft_yesno , ft_stable  , {y:FS_r_high}   , {y:FS_w_high}   , {i: 0}, } ,
-    {"set_alarm/unset"    ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_por}    , {y:FS_w_por}    , NULL, } ,
-    {"alarm"              ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , NULL, } ,
+    {"set_alarm/unset"    ,     1,  NULL,    ft_yesno , ft_stable  , {y:FS_r_por}    , {y:FS_w_por}    , {v:NULL}, } ,
+    {"alarm"              ,     0,  NULL,    ft_subdir, ft_volatile, {v:NULL}        , {v:NULL}        , {v:NULL}, } ,
     {"alarm/high"         ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , {i: 1}, } ,
     {"alarm/low"          ,     1,  &A2450v, ft_yesno , ft_volatile, {y:FS_r_flag}   , {y:FS_w_flag}   , {i: 0}, } ,
 } ;
@@ -224,8 +224,8 @@ static int FS_w_setvolt( const FLOAT * const V, const struct parsedname * const 
 /* read page from 2450 */
 static int OW_r_mem( unsigned char * const p , const unsigned int size, const int location , const struct parsedname * const pn) {
     unsigned char buf[3+8+2] = {0xAA, location&0xFF,(location>>8)&0xFF, } ;
-    int thispage = 8-(location&0x07);
-    int s = size ;
+    size_t thispage = 8-(location&0x07);
+    size_t s = size ;
     int ret ;
 //printf("2450 R mem data=%d size=%d location=%d\n",*p,size,location) ;
 
@@ -237,7 +237,7 @@ static int OW_r_mem( unsigned char * const p , const unsigned int size, const in
 //printf("2450 R mem 1\n") ;
 
     if (s>thispage) s=thispage ;
-    memcpy( p , &buf[3] , (size_t) s ) ;
+    memcpy( p , &buf[3] , s ) ;
 
     /* cycle through additional pages */
     for ( s=size-thispage; s>0; s-=thispage ) {
@@ -247,7 +247,7 @@ static int OW_r_mem( unsigned char * const p , const unsigned int size, const in
         if ( ret ) return 1 ;
 
         thispage = (s>8) ? 8 : s ;
-        memcpy( &p[size-s] , &buf[3] , (size_t) thispage ) ;
+        memcpy( &p[size-s] , &buf[3] , thispage ) ;
     }
     return 0 ;
 }

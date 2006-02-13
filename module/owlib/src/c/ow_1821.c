@@ -54,8 +54,8 @@ fWRITE_FUNCTION( FS_w_templimit ) ;
 /* -------- Structures ---------- */
 struct filetype DS1821[] = {
     F_type,
-    {"temperature",   12,  NULL, ft_temperature, ft_volatile, {f:FS_temperature}, {v:NULL}          , NULL,         } ,
-    {"polarity",       1,  NULL, ft_yesno      , ft_stable,   {y:FS_r_polarity} , {y:FS_w_polarity} , NULL,         } ,
+    {"temperature",   12,  NULL, ft_temperature, ft_volatile, {f:FS_temperature}, {v:NULL}          , {v:NULL},         } ,
+    {"polarity",       1,  NULL, ft_yesno      , ft_stable,   {y:FS_r_polarity} , {y:FS_w_polarity} , {v:NULL},         } ,
     {"templow",       12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},   } ,
     {"temphigh",      12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},   } ,
 }

@@ -46,23 +46,24 @@ static const char dirname_state_text[]     = "text";
 /* copy state into buffer (for constructing path) return number of chars added */
 int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) {
     const char * p ;
-    int len ;
+    size_t len ;
 //printf("dirname state on %.2X\n", pn->state);
     if ( pn->state & pn_alarm   ) {
         p = dirname_state_alarm ;
 #if 0
     } else if ( pn->state & pn_text ) {
         /* should never return text in a directory listing, since it's a
-	 * hidden feature. Uncached should perhaps be the same... */
+         * hidden feature. Uncached should perhaps be the same... */
         strncpy(buffer, dirname_state_text, length ) ;
 #endif
     } else if ( pn->state & pn_uncached) {
         p = dirname_state_uncached ;
     } else if ( pn->state & pn_bus ) {
+        int ret ;
         UCLIBCLOCK;
-	len = snprintf(buffer, length, "bus.%d", pn->bus_nr) ;
+            ret = snprintf(buffer, length, "bus.%d", pn->bus_nr) ;
         UCLIBCUNLOCK;
-        return len;
+        return ret;
     } else {
         return 0 ;
     }
@@ -81,7 +82,7 @@ static const char dirname_type_structure[]  = "structure";
 /* copy type into buffer (for constructing path) return number of chars added */
 int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) {
     const char * p ;
-    int len ;
+    size_t len ;
     switch (pn->type) {
     case pn_statistics:
         p = dirname_type_statistics ;

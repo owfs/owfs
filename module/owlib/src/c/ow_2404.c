@@ -66,11 +66,11 @@ yWRITE_FUNCTION( FS_w_flag ) ;
 struct aggregate A2404 = { 16, ag_numbers, ag_separate, } ;
 struct filetype DS2404[] = {
     F_STANDARD          ,
-    {"alarm"            ,   4, NULL,  ft_unsigned,ft_volatile,{u:FS_r_alarm},    {v:NULL},          NULL, } ,
-    {"set_alarm"        ,   4, NULL,  ft_unsigned,ft_stable,  {u:FS_r_set_alarm},{u:FS_w_set_alarm},NULL, } ,
-    {"pages"            ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          NULL, } ,
-    {"pages/page"       ,  32, &A2404,ft_binary  ,ft_stable,  {b:FS_r_page},     {b:FS_w_page},     NULL, } ,
-    {"memory"           , 512, NULL,  ft_binary  ,ft_stable,  {b:FS_r_memory},   {b:FS_w_memory},   NULL, } ,
+    {"alarm"            ,   4, NULL,  ft_unsigned,ft_volatile,{u:FS_r_alarm},    {v:NULL},          {v:NULL}, } ,
+    {"set_alarm"        ,   4, NULL,  ft_unsigned,ft_stable,  {u:FS_r_set_alarm},{u:FS_w_set_alarm},{v:NULL}, } ,
+    {"pages"            ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          {v:NULL}, } ,
+    {"pages/page"       ,  32, &A2404,ft_binary  ,ft_stable,  {b:FS_r_page},     {b:FS_w_page},     {v:NULL}, } ,
+    {"memory"           , 512, NULL,  ft_binary  ,ft_stable,  {b:FS_r_memory},   {b:FS_w_memory},   {v:NULL}, } ,
     {"running"          ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x10}, } ,
     {"auto"             ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x20}, } ,
     {"start"            ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x40}, } ,
@@ -80,13 +80,13 @@ struct filetype DS2404[] = {
     {"interval"         ,  24, NULL,  ft_date    ,ft_second,  {d:FS_r_date},     {d:FS_w_date},     {s: 0x207}, } ,
     {"uinterval"        ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter5}, {u:FS_w_counter5}, {s: 0x207}, } ,
     {"cycle"            ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter4}, {u:FS_w_counter4}, {s: 0x20C}, } ,
-    {"trigger"          ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          NULL, },
+    {"trigger"          ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          {v:NULL}, },
     {"trigger/date"     ,  24, NULL,  ft_date    ,ft_second,  {d:FS_r_date},     {d:FS_w_date},     {s: 0x210}, } ,
     {"trigger/udate"    ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter5}, {u:FS_w_counter5}, {s: 0x210}, } ,
     {"trigger/interval" ,  24, NULL,  ft_date    ,ft_second,  {d:FS_r_date},     {d:FS_w_date},     {s: 0x215}, } ,
     {"trigger/uinterval",  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter5}, {u:FS_w_counter5}, {s: 0x215}, } ,
     {"trigger/cycle"    ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter4}, {u:FS_w_counter4}, {s: 0x21A}, } ,
-    {"readonly"         ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          NULL, } ,
+    {"readonly"         ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          {v:NULL}, } ,
     {"readonly/memory"  ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x08}, } ,
     {"readonly/cycle"   ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x04}, } ,
     {"readonly/interval",   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x02}, } ,
@@ -96,11 +96,11 @@ DeviceEntryExtended( 04, DS2404 , DEV_alarm ) ;
 
 struct filetype DS2404S[] = {
     F_STANDARD          ,
-    {"alarm"            ,   4, NULL,  ft_unsigned,ft_volatile,{u:FS_r_alarm},    {v:NULL},          NULL, } ,
-    {"set_alarm"        ,   4, NULL,  ft_unsigned,ft_stable,  {u:FS_r_set_alarm},{u:FS_w_set_alarm},NULL, } ,
-    {"pages"            ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          NULL, } ,
-    {"pages/page"       ,  32, &A2404,ft_binary  ,ft_stable,  {b:FS_r_page},     {b:FS_w_page},     NULL, } ,
-    {"memory"           , 512, NULL,  ft_binary  ,ft_stable,  {b:FS_r_memory},   {b:FS_w_memory},   NULL, } ,
+    {"alarm"            ,   4, NULL,  ft_unsigned,ft_volatile,{u:FS_r_alarm},    {v:NULL},          {v:NULL}, } ,
+    {"set_alarm"        ,   4, NULL,  ft_unsigned,ft_stable,  {u:FS_r_set_alarm},{u:FS_w_set_alarm},{v:NULL}, } ,
+    {"pages"            ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          {v:NULL}, } ,
+    {"pages/page"       ,  32, &A2404,ft_binary  ,ft_stable,  {b:FS_r_page},     {b:FS_w_page},     {v:NULL}, } ,
+    {"memory"           , 512, NULL,  ft_binary  ,ft_stable,  {b:FS_r_memory},   {b:FS_w_memory},   {v:NULL}, } ,
     {"running"          ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x10}, } ,
     {"auto"             ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x20}, } ,
     {"start"            ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x40}, } ,
@@ -110,13 +110,13 @@ struct filetype DS2404S[] = {
     {"interval"         ,  24, NULL,  ft_date    ,ft_second,  {d:FS_r_date},     {d:FS_w_date},     {s: 0x207}, } ,
     {"uinterval"        ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter5}, {u:FS_w_counter5}, {s: 0x207}, } ,
     {"cycle"            ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter4}, {u:FS_w_counter4}, {s: 0x20C}, } ,
-    {"trigger"          ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          NULL, },
+    {"trigger"          ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          {v:NULL}, },
     {"trigger/date"     ,  24, NULL,  ft_date    ,ft_second,  {d:FS_r_date},     {d:FS_w_date},     {s: 0x210}, } ,
     {"trigger/udate"    ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter5}, {u:FS_w_counter5}, {s: 0x210}, } ,
     {"trigger/interval" ,  24, NULL,  ft_date    ,ft_second,  {d:FS_r_date},     {d:FS_w_date},     {s: 0x215}, } ,
     {"trigger/uinterval",  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter5}, {u:FS_w_counter5}, {s: 0x215}, } ,
     {"trigger/cycle"    ,  12, NULL,  ft_unsigned,ft_second,  {u:FS_r_counter4}, {u:FS_w_counter4}, {s: 0x21A}, } ,
-    {"readonly"         ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          NULL, } ,
+    {"readonly"         ,   0, NULL,  ft_subdir  ,ft_volatile,{v:NULL},          {v:NULL},          {v:NULL}, } ,
     {"readonly/memory"  ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x08}, } ,
     {"readonly/cycle"   ,   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x04}, } ,
     {"readonly/interval",   1, NULL,  ft_yesno   ,ft_stable,  {y:FS_r_flag},     {y:FS_w_flag},     {c: 0x02}, } ,
@@ -290,7 +290,7 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
     int ret ;
 
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p, 3,pn) || BUS_readin_data(data, (int) size,pn) ;
+        ret = BUS_select(pn) || BUS_send_data(p, 3,pn) || BUS_readin_data(data, size,pn) ;
     BUSUNLOCK(pn);
     return ret ;
 

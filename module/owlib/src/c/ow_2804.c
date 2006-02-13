@@ -70,16 +70,16 @@ struct aggregate A2804 = { 2, ag_numbers, ag_aggregate, } ;
 struct aggregate A2804p = { 17, ag_numbers, ag_separate, } ;
 struct filetype DS28E04[] = {
     F_STANDARD   ,
-    {"memory"    ,   550,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , NULL, } ,
-    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , NULL, } ,
-    {"pages/page",    32,  &A2804p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, NULL, } ,
-    {"polarity"  ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_polarity} , {v:NULL}     , NULL, } ,
-    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , NULL, } ,
-    {"por"       ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_r_por}    , {y:FS_w_por} , NULL, } ,
-    {"PIO"       ,     1,  &A2804,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , NULL, } ,
-    {"sensed"    ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , NULL, } ,
-    {"latch"     ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},NULL, } ,
-    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},NULL, } ,
+    {"memory"    ,   550,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem} , {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"pages/page",    32,  &A2804p, ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, {v:NULL}, } ,
+    {"polarity"  ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_polarity} , {v:NULL}     , {v:NULL}, } ,
+    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL}     , {v:NULL}, } ,
+    {"por"       ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_r_por}    , {y:FS_w_por} , {v:NULL}, } ,
+    {"PIO"       ,     1,  &A2804,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio} , {v:NULL}, } ,
+    {"sensed"    ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL}     , {v:NULL}, } ,
+    {"latch"     ,     1,  &A2804,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},{v:NULL}, } ,
+    {"set_alarm" ,     3,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
 } ;
 DeviceEntryExtended( 1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 
