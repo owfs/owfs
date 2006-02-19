@@ -48,6 +48,7 @@ $Id$
   #define TOCLIENTUNLOCK(hd)
 #endif /* OW_MT */
 
+// this structure holds the data needed for the handler function called in a separate thread by the ping wrapper
 struct handlerdata {
     int fd ;
 #ifdef OW_MT
@@ -58,8 +59,8 @@ struct handlerdata {
 
 
 /* --- Prototypes ------------ */
-static void Handler( int fd ) ;
-static void * RealHandler( void * v ) ;
+static void Handler( int fd ) ; // Each new interaction from client
+static void * RealHandler( void * v ) ; // Called from ping wrapper
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
@@ -67,6 +68,8 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, char *data ) ;
+static void ow_exit( int e ) ;
+static void exit_handler(int i) ;
 
 
 static void ow_exit( int e ) {
@@ -84,7 +87,7 @@ static void exit_handler(int i) {
 /* read from client, free return pointer if not Null */
 static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     char * msg ;
-//printf("FromClientAlloc\n");
+    //printf("FromClientAlloc\n");
     if ( readn(fd, sm, sizeof(struct server_msg), &tv ) != sizeof(struct server_msg) ) {
         sm->type = msg_error ;
         return NULL ;
@@ -95,8 +98,8 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->type    = ntohl(sm->type)    ;
     sm->sg      = ntohl(sm->sg)      ;
     sm->offset  = ntohl(sm->offset)  ;
-//printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
-//printf("<%.4d|%.4d\n",sm->type,sm->payload);
+    //printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
+    //printf("<%.4d|%.4d\n",sm->type,sm->payload);
     if ( sm->payload == 0 ) {
          msg = NULL ;
     } else if ( (sm->payload<0) || (sm->payload>MAXBUFFERSIZE) ) {
@@ -127,8 +130,8 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
     if ( data && cm->payload>0 ) {
         ++nio ;
     }
-//printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
-//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+    //printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
+    //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 
     cm->payload = htonl(cm->payload) ;
@@ -163,44 +166,50 @@ static void Handler( int fd ) {
     } ;
 
 #ifdef OW_MT
-    struct timespec nano = {0, 100000000} ; // .1 seconds
-    struct timeval now ;
-    struct timeval delta = { 1, 500000 } ; // 1.5 seconds
-    struct timeval result ;
-    int loop = 1 ;
-    pthread_t thread ;
+    struct timespec nano = {0, 100000000} ; // .1 seconds (Note second element NANOsec)
+    struct timeval now ; // timer calculation
+    struct timeval delta = { 1, 500000 } ; // 1.5 seconds ping interval
+    struct timeval result ; // timer calculation
+    pthread_attr_t attr ; // for "detached" state
+    pthread_t thread ; // hanler thread id (not used)
+    int loop = 1 ; // ping loop flap
 
-    memset(&cm, 0, sizeof(struct client_msg));
-    cm.payload = -1 ; /* flag for delay message */
+    memset(&ping_cm, 0, sizeof(struct client_msg));
+    ping_cm.payload = -1 ; /* flag for delay message */
     gettimeofday( &(hd.tv), NULL ) ;
 
     //printf("OWSERVER pre-create\n");
-    if ( pthread_create( &thread, NULL, RealHandler, &hd ) ) {
+    pthread_attr_init( &attr ) ;
+    pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ;
+    if ( pthread_create( &thread, &attr, RealHandler, &hd ) ) {
         //printf("OWSERVER can't create\n");
         // Can't start thread, so no pinging
         RealHandler( &hd ) ;
-        return ;
+    } else {
+        //printf("OWSERVER create\n");
+        do { // ping loop
+            nanosleep( &nano, NULL ) ;
+            TOCLIENTLOCK( &hd ) ;
+                if ( ! timerisset( &(hd.tv) ) ) { // flag that the other thread is done
+                        loop = 0 ;
+                } else { // check timing -- ping if expired
+                    gettimeofday( &now, NULL ) ; // current time
+                    timersub( &now, &delta, &result ) ; // less delay
+                    if ( timercmp( &(hd.tv), &result, < ) ) { // test against last message time
+                        char * c = NULL ; // dummy argument
+                        ToClient( hd.fd, &ping_cm, c ) ; // send the ping
+                        //printf("OWSERVER ping\n") ;
+                        gettimeofday( &(hd.tv), NULL ) ; // reset timer
+                    }
+                }                
+            TOCLIENTUNLOCK( &hd ) ;
+        } while ( loop ) ;
     }
-    //printf("OWSERVER create\n");
-    do {
-        nanosleep( &nano, NULL ) ;
-        gettimeofday( &now, NULL ) ;
-        timersub( &now, &delta, &result ) ;
-        TOCLIENTLOCK( &hd ) ;
-            if ( ! timerisset( &(hd.tv) ) ) {
-                loop = 0 ;
-            } else if ( timercmp( &(hd.tv), &result, < ) ) {
-                char * c = NULL ;
-                ToClient( hd.fd, &cm, c ) ;
-                //printf("OWSERVER ping\n") ;
-                gettimeofday( &(hd.tv), NULL ) ;
-            }                
-        TOCLIENTUNLOCK( &hd ) ;
-    } while ( loop ) ;
+    pthread_attr_destroy( &attr ) ;
 #else /* OW_MT */
     RealHandler( &hd ) ;
 #endif /* OW_MT */
-//    printf("OWSERVER handler done\n" ) ;
+    //printf("OWSERVER handler done\n" ) ;
 }
 
 /*
@@ -219,37 +228,37 @@ static void * RealHandler( void * v ) {
     //printf("OWSERVER message type = %d\n",sm.type ) ;
     memset(&cm, 0, sizeof(struct client_msg));
 
-    switch( (enum msg_classification) sm.type ) {
-        case msg_size:
-        case msg_read:
-        case msg_write:
-        case msg_dir:
-        case msg_presence:
+    switch( (enum msg_classification) sm.type ) { // outer switch
+        case msg_size: // good message
+        case msg_read: // good message
+        case msg_write: // good message
+        case msg_dir: // good message
+        case msg_presence: // good message
             if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
                 cm.ret = -EBADMSG ;
             } else {
                 memset(&si, 0, sizeof(struct stateinfo));
                 pn.si = &si ;
-            //printf("Handler: path=%s\n",path);
+                //printf("Handler: path=%s\n",path);
                 /* Parse the path string */
 
                 LEVEL_CALL("owserver: parse path=%s\n",path);
                 if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
 
-                /* Use client persistent settings (temp scale, discplay mode ...) */
+                /* Use client persistent settings (temp scale, display mode ...) */
                 si.sg = sm.sg ;
-            //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
-            //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
+                //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
+                //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
                 switch( (enum msg_classification) sm.type ) {
                     case msg_presence:
                         LEVEL_CALL("Presence message\n") ;
                         if(pn.dev && pn.ft) {
                             PresenceHandler( &sm, &cm, &pn ) ;
-                    //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
+                           //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
                         } else {
                             cm.ret = 0;
-                    //printf("msg_presence: cm.ret=%d\n", cm.ret);
+                           //printf("msg_presence: cm.ret=%d\n", cm.ret);
                         }
                         break ;
                     case msg_size:
@@ -263,7 +272,7 @@ static void * RealHandler( void * v ) {
                         LEVEL_CALL("Read message\n") ;
                         retbuffer = ReadHandler( &sm , &cm, &pn ) ;
                         break ;
-                        case msg_write: {
+                    case msg_write: {
                             int pathlen = strlen( path ) + 1 ; /* include trailing null */
                             int datasize = sm.payload - pathlen ;
                             LEVEL_CALL("Write message\n") ;
@@ -277,19 +286,19 @@ static void * RealHandler( void * v ) {
                         break ;
                     case msg_dir:
                         LEVEL_CALL("Directory message\n") ;
-                DirHandler( &sm, &cm, hd, &pn ) ;
-                break ;
-            default: // never reached
-                break ;
+                        DirHandler( &sm, &cm, hd, &pn ) ;
+                        break ;
+                    default: // never reached
+                        break ;
                 }
                 FS_ParsedName_destroy(&pn) ;
             }
             break ;
-        case msg_nop:
+        case msg_nop: // "bad" message
             LEVEL_CALL("NOP message\n") ;
             cm.ret = 0 ;
             break ;
-        default:
+        default: // "bad" message
             LEVEL_CALL("No message\n") ;
             cm.ret = -EIO ;
             break ;
@@ -316,7 +325,7 @@ static void * RealHandler( void * v ) {
 /* cm.ret is also set to an error <0 or the read length */
 static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     char * retbuffer = NULL ;
-//printf("ReadHandler:\n");
+    //printf("ReadHandler:\n");
     if ( ( pn->type != pn_real )   /* stat, sys or set dir */
            && ( (pn->state & pn_bus) && FS_RemoteBus(pn) )) {
         //printf("ReadHandler: call ServerSize pn->path=%s\n", pn->path);
@@ -338,8 +347,8 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
 #else
     } else if ( (retbuffer = (char *)malloc((size_t)cm->payload))==NULL ) {
 #endif
-    /* Allocate return buffer */
-//printf("Handler: Allocating buffer size=%d\n",cm.payload);
+        /* Allocate return buffer */
+        //printf("Handler: Allocating buffer size=%d\n",cm.payload);
         cm->payload = 0 ;
         cm->ret = -ENOBUFS ;
     } else if ( (cm->ret = FS_read_postparse(retbuffer,(size_t)cm->payload,(off_t)cm->offset,pn)) <= 0 ) {
@@ -348,7 +357,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
         retbuffer = NULL ;
     } else {
         cm->size = cm->ret ;
-//printf("Handler: READ done string = %s\n",retbuffer);
+        //printf("Handler: READ done string = %s\n",retbuffer);
     }
     return retbuffer ;
 }
@@ -363,7 +372,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
 /* cm.ret is also set to an error <0 or the written length */
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) {
     int ret = FS_write_postparse(data,(size_t)sm->size,(off_t)sm->offset,pn) ;
-//printf("Handler: WRITE done\n");
+    //printf("Handler: WRITE done\n");
     if ( ret<0 ) {
         cm->size = 0 ;
         cm->sg = sm->sg ;
@@ -414,7 +423,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
                 //printf("DirHandler: call FS_dirname_state\n");
             }
         } else {
-//printf("DirHandler: call FS_DirName pn2->dev=%p  Nodevice=%p\n", pn2->dev, NoDevice);
+            //printf("DirHandler: call FS_DirName pn2->dev=%p  Nodevice=%p\n", pn2->dev, NoDevice);
             strcpy(retbuffer, path);
             if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
                 retbuffer[_pathlen] = '/' ;
@@ -426,26 +435,30 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
         }
 
         cm->size = strlen(retbuffer) ;
-//printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
+        //printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
         cm->ret = 0 ;
         TOCLIENTLOCK(hd) ;
-            ToClient(hd->fd, cm, retbuffer) ;
-            gettimeofday( &(hd->tv), NULL ) ;
+            ToClient(hd->fd, cm, retbuffer) ; // send this directory element
+            gettimeofday( &(hd->tv), NULL ) ; // reset timer
         TOCLIENTUNLOCK(hd) ;
         free(retbuffer);
         if ( path &&  path != pn->path ) free(path) ;
     }
 
+    //printf("DirHandler: pn->path=%s\n", pn->path);
+    
+    // Settings for all directory elements
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
 
-    //printf("DirHandler: pn->path=%s\n", pn->path);
-
+    // Now generate the directory (using the embedded callback function above for each element
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
+
+    // Finished -- send some flags and set up for a null element to tell client we're done
     cm->offset = flags ; /* send the flags in the offset slot */
-    //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
-    /* Now null entry to show end of directy listing */
+    /* Now null entry to show end of directory listing */
     cm->payload = cm->size = 0 ;
+    //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
 }
 
 /* Size, called from Handler with the following caveates: */
@@ -470,9 +483,7 @@ static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const str
 /* Presence, called from Handler with the following caveates: */
 /* sm has been read, cm has been zeroed */
 /* pn is configured */
-/* Presence, will return: */
-/* cm fully constructed for error message or null marker (end of directory elements */
-/* cm.ret is also set to an error or 0 */
+/* cm.ret is set to bus_nr or -1 */
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     int bus_nr = -1;
     cm->payload = 0 ;
@@ -481,21 +492,21 @@ static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const
     //printf("PresenceHandler: pn->path=[%s] state=%d bus_nr=%d\n", pn->path, pn->state, pn->bus_nr);
 
     if((pn->type == pn_real) && !(pn->state & pn_bus)) {
-      if(Cache_Get_Device(&bus_nr, pn)) {
-    //printf("Cache_Get_Device didn't find bus_nr\n");
-    bus_nr = CheckPresence(pn);
-    if(bus_nr >= 0) {
-      //printf("PresenceHandler(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
-      Cache_Add_Device(bus_nr, pn);
+        if(Cache_Get_Device(&bus_nr, pn)) {
+            //printf("Cache_Get_Device didn't find bus_nr\n");
+            bus_nr = CheckPresence(pn);
+            if(bus_nr >= 0) {
+                //printf("PresenceHandler(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
+                Cache_Add_Device(bus_nr, pn);
+            } else {
+                //printf("PresenceHandler(%s) didn't find device\n", pn->path);
+            }
+        } else {
+            //printf("Cache_Get_Device found bus! %d\n", bus_nr);
+        }
+        cm->ret = bus_nr ;
     } else {
-      //printf("PresenceHandler(%s) didn't find device\n", pn->path);
-    }
-      } else {
-    //printf("Cache_Get_Device found bus! %d\n", bus_nr);
-      }
-      cm->ret = bus_nr ;
-    } else {
-      cm->ret = pn->bus_nr ;
+        cm->ret = pn->bus_nr ;
     }
     cm->payload = cm->size = 0 ;
 }
