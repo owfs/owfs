@@ -396,22 +396,15 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
         size_t _pathlen ;
-        char *path ;
+        char *path = ((pn->state & pn_bus) && FS_RemoteBus(pn)) ? pn->path_busless : pn->path ;
 
-        if ((pn->state & pn_bus) && FS_RemoteBus(pn)) {
-            if ( (path=strdup(pn->path))==NULL ) return ;
-            FS_busless(path) ;
-        } else {
-            path = pn->path ;
-        }
         _pathlen = strlen(path);
 #ifdef VALGRIND
         if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) {
 #else
         if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) {
 #endif
-            if ( path != pn->path ) free(path) ;
-            return ; 
+            return ;
         } 
         
         if ( pn2->dev==NULL ) {
@@ -442,7 +435,6 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
             gettimeofday( &(hd->tv), NULL ) ; // reset timer
         TOCLIENTUNLOCK(hd) ;
         free(retbuffer);
-        if ( path &&  path != pn->path ) free(path) ;
     }
 
     //printf("DirHandler: pn->path=%s\n", pn->path);

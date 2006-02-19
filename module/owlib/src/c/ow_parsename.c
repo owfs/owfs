@@ -281,7 +281,7 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
         } else {
             pn->path_busless[length] = '\0' ;
         }
-        printf("PARSENAME test path=%s, path_bussless=%s\n",pn->path, pn->path_busless ) ;
+        //printf("PARSENAME test path=%s, path_bussless=%s\n",pn->path, pn->path_busless ) ;
     }
     return 0 ;
 }

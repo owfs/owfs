@@ -168,7 +168,7 @@ void FreeOut( void ) {
 }
 
 int FS_RemoteBus( const struct parsedname * pn ) {
-    return pn->in->busmode == bus_remote ;
+    return (pn->in->busmode == bus_remote) && (pn->path_busless!=NULL) ;
 }
 
 
