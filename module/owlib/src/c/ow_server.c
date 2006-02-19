@@ -325,7 +325,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     int ret;
 
     do { /* loop until non delay message (payload>=0) */
-        printf("OW_SERVER loop1\n");
+        //printf("OW_SERVER loop1\n");
         ret = readn(fd, cm, sizeof(struct client_msg), &tv );
         if ( ret != sizeof(struct client_msg) ) {
             memset(cm, 0, sizeof(struct client_msg)) ;
@@ -338,7 +338,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
         cm->sg = ntohl(cm->sg) ;
         cm->offset = ntohl(cm->offset) ;
     } while ( cm->payload < 0 ) ;
-    printf("OW_SERVER loop1 done\n");
+    //printf("OW_SERVER loop1 done\n");
 
 //printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
@@ -370,10 +370,10 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     size_t ret;
 
     do { // read regular header, or delay (delay when payload<0)
-        printf("OW_SERVER loop2\n");
+        //printf("OW_SERVER loop2\n");
         ret = readn(fd, cm, sizeof(struct client_msg), &tv );
         if ( ret != sizeof(struct client_msg) ) {
-            printf("OW_SERVER loop2 bad\n");
+            //printf("OW_SERVER loop2 bad\n");
             cm->size = 0 ;
             cm->ret = -EIO ;
             return -EIO ;
@@ -385,7 +385,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
         cm->sg = ntohl(cm->sg) ;
         cm->offset = ntohl(cm->offset) ;
     } while ( cm->payload < 0 ) ; // flag to show a delay message
-    printf("OW_SERVER loop2 done\n");
+    //printf("OW_SERVER loop2 done\n");
 
 //printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);

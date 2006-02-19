@@ -503,6 +503,7 @@ enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } 
 enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
 struct parsedname {
     char * path ; // text-more device name
+    char * path_busless ; // pointer to path without first bus
     int    bus_nr ;
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch

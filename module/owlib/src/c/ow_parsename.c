@@ -83,7 +83,7 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
 
     if ( pn == NULL ) return -EINVAL ;
 
-    pn->path = NULL ;
+    pn->path = pn->path_busless = NULL ;
     pn->in = indevice ;
     pn->pathlength = 0 ; /* No branches yet */
     pn->bp = NULL ; /* No list of branches */
@@ -116,11 +116,12 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     pathnext = pathcpy ;
 
     /* Have to save pn->path at once */
-    if(!(pn->path = strdup(path))) {
+    if( ! (pn->path = (char *) malloc(2 * strlen(path)+ 2)) ) {
       //LEVEL_DEBUG("PARSENAME strdup failed\n");
       ret = -ENOMEM;
       goto end;
     }
+    strcpy( pn->path, path ) ;
 
     /* remove initial "/" */
     if ( pathnext[0]=='/' ) ++pathnext ;
@@ -130,10 +131,10 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     while(1) {
         switch( pe ) {
             case parse_done:
-	        //printf("PARSENAME parse_done\n") ;
+                //printf("PARSENAME parse_done\n") ;
                 goto end ;
             case parse_error:
-	        //printf("PARSENAME parse_error\n") ;
+                //printf("PARSENAME parse_error\n") ;
                 ret = -ENOENT ;
                 goto end ;
             default: break ;
@@ -143,24 +144,24 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
         if ( pathnow==NULL || pathnow[0]== '\0' ) goto end ;
         switch( pe ) {
             case parse_first:
-	        //printf("PARSENAME parse_first\n") ;
+                //printf("PARSENAME parse_first\n") ;
                 pe = Parse_Unspecified( pathnow, remote, pn ) ;
                 break ;
             case parse_real:
-	        //printf("PARSENAME parse_real\n") ;
+                //printf("PARSENAME parse_real\n") ;
                 pe = Parse_Real( pathnow, remote, pn ) ;
                 break ;
             case parse_nonreal:
-	        //printf("PARSENAME parse_nonreal\n") ;
+                //printf("PARSENAME parse_nonreal\n") ;
                 pe = Parse_NonReal( pathnow, pn ) ;
                 break ;
             case parse_prop:
-	        //printf("PARSENAME parse_prop\n") ;
+                //printf("PARSENAME parse_prop\n") ;
                 pathlast = pathnow ; /* Save for concatination if subdirectory later wanted */
                 pe = Parse_Property( pathnow, pn ) ;
                 break ;
             case parse_subprop:
-	        //printf("PARSENAME parse_subprop\n") ;
+                //printf("PARSENAME parse_subprop\n") ;
                 pathnow[-1] = '/' ;
                 pe = Parse_Property( pathlast, pn ) ;
                 break ;
@@ -170,7 +171,7 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     } 
 end:
     //printf("PARSENAME end ret=%d\n",ret) ;
-    if(pathcpy) free(pathcpy) ;
+    free(pathcpy) ;
     if (ret) FS_ParsedName_destroy(pn) ;
     return ret ;
 }
@@ -258,6 +259,8 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
      * they will just end up with empty directory listings. */
 
     if(!(pn->state & pn_bus)) {
+        char * found ;
+        int length = 0 ;
         /* this will only be reached once */
         pn->state |= pn_bus ;
         pn->bus_nr = atoi(&pathnow[4]);
@@ -267,6 +270,18 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
         /* We have to allow any bus-number here right now. We receive
          * paths like /bus.4 from a remote owserver, and we have to trust
          * this result. */
+
+        // Let's copy the busless path now.
+        pn->path_busless = pn->path + strlen(pn->path) + 1 ;
+        if ( (found = strstr(pn->path, "/bus.")) ) found = pn->path ;
+        length = found - pn->path ;
+        strncpy( pn->path_busless, pn->path, length ) ;
+        if ( (found = strchr( found, '/' )) ) {
+            strcpy( &(pn->path_busless[length]), found ) ;
+        } else {
+            pn->path_busless[length] = '\0' ;
+        }
+        printf("PARSENAME test path=%s, path_bussless=%s\n",pn->path, pn->path_busless ) ;
     }
     return 0 ;
 }
