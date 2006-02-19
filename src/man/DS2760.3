@@ -17,19 +17,23 @@ Temperature Voltage and Current.
 .PP
 .B 30
 [.]XXXXXXXXXXXX[XX][/[
-.B accumulator
+.B amphours
 |
 .B current
 |
-.B ext_sense
+.B lock.[0-1|ALL]
+|
+.B memory
 |
 .B offset
 |
-.B pages/page.[0-16|ALL]
+.B pages/page.[0-1|ALL]
 |
 .B PIO
 |
 .B sensed
+|
+.B sleep
 |
 .B temperature
 |
@@ -39,7 +43,11 @@ Temperature Voltage and Current.
 |
 .B typeX/temperature
 |
+.B vis
+
 .B volt
+|
+.B volthours
 |
 .so standard_mini
 ]]
@@ -47,32 +55,38 @@ Temperature Voltage and Current.
 .PP
 .I 30
 .SH SPECIAL PROPERTIES
-.SS accumulator
-.I read-only, floating point
+.SS amphours
+.I read-write, floating point
 .br
 Accumulated amperage read by current sensor. Units are in
 .B Amp-hr
-(Assumes internal resistor).
+(Assumes internal 25mOhm resistor). Derived from
+.I volthours
+/ Rinternal.
 .SS current
 .I read-only, floating point
 .br
 Current reading. Units are in
 .B Amp
-(Assumes internal resistor).
-.SS offset
-.I read-write, floating point
+(Assumes internal 25 mOhm resistor). Derived from
+.I vis
+/ Rinternal.
+.SS lock.[0-1|ALL]
+.I read-write, yes-no
 .br
-Correction for
-.I current
-readings. Units are in
-.B Amp
-and can range from -.08 to +.08
-.SS ext_sense
-.I read-only, floating point
+Lock either of the two eprom pages to prevent further writes. Apparently setting
+.I lock
+is permanent.
+.SS memory
+.I read-write, binary
 .br
-External resistor current sensor reading. Units are in
-.B Volts
-(Assumes external resistor).
+Access to the full 256 byte memory range. Much of this space is reserved or special use. User space is the
+.I page
+area.
+.br
+See the
+.I DATASHEET
+for a full memory map.
 .SS offset
 .I read-write, floating point
 .br
@@ -90,6 +104,19 @@ Some portions of memory are EEPROM backed. Recall from, and writing to EEPROM wi
 .br
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
+.SS pages/pages.[0-1|ALL]
+.I read-write, binary
+Two 16 byte areas of memory for user application. The
+.I lock
+property can prevent further alteration.
+.br
+NOTE that the
+.I page
+property is different from the common 
+.I OWFS
+implementation in that all of
+.I memory
+is not accessible.
 .SS PIO
 .I write-only, yes-no
 .br
@@ -114,6 +141,12 @@ The logical voltage at the PIO pin. Useful only if the
 property is set to "0" (non-conducting).
 .br
 Value will be 0 or 1 depending on the voltage threshold.
+.SS sleep
+.I read-write, yes-no
+.br
+Status of the sleep-enable bit. See the
+.I DATASHEET
+for the full implementaqtion of sleep mode.
 .SS typeX/
 .I directory
 .br
@@ -145,13 +178,41 @@ or
 for choices. Default is Celsius.
 .br
 Conversion is continuous.
+.SS vis
+.I read-only, floating point
+.br
+Current sensor reading (unknown external resistor). Measures the voltage gradient between the Vis pins. Units are in
+.B Volts
+.br
+The
+.I vis
+readings are integrated over time to provide the
+.I volthours
+property.
+.br
+The
+.I current
+reading is derived from
+.I vis
+assuming the internal 25 mOhm resistor is employed. There is no way to know this through software.
 .SS volt
 .I read-only, floating point
 .br
-Voltage read between pins Vin and Vss. Units are in
-.B Volt
+Voltage read at the voltage sensor;. This is separate from the
+.I vis
+voltage that is used for
+.I current
+measurement. Units are
+.B Volts
 .br
 Range is between 0 and 4.75V
+.SS volthours
+.I read-write, floating point
+.br
+Integral of
+.I vis
+over time. Units are in
+.B volthours
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
