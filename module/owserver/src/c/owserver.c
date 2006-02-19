@@ -156,7 +156,6 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
  * deals with a connection
  */
 static void Handler( int fd ) {
-    struct client_msg cm ;
     struct handlerdata hd = {
         fd,
 #ifdef OW_MT
@@ -166,6 +165,7 @@ static void Handler( int fd ) {
     } ;
 
 #ifdef OW_MT
+    struct client_msg ping_cm ;
     struct timespec nano = {0, 100000000} ; // .1 seconds (Note second element NANOsec)
     struct timeval now ; // timer calculation
     struct timeval delta = { 1, 500000 } ; // 1.5 seconds ping interval
