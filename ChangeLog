@@ -1,6 +1,10 @@
 $Id$
-
-
+For 2.2p1
+2/19/2006
+Fixed problem with network timeouts. owserver will ping back every 1.5 seconds.
+Added support for more of the DS27xx chips
+For 2.2p0
+Support for Link-Hub-E
 For release 2:
 
 More chip support (just about everything except the encryption, java, and thermocrons)
