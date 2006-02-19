@@ -37,22 +37,37 @@ $Id$
 
 #include "owserver.h"
 
+#ifdef OW_MT
+  pthread_t main_threadid ;
+  #define IS_MAINTHREAD (main_threadid == pthread_self())
+  #define TOCLIENTLOCK(hd) pthread_mutex_lock( &((hd)->to_client) )
+  #define TOCLIENTUNLOCK(hd) pthread_mutex_unlock( &((hd)->to_client) )
+#else /* OW_MT */
+  #define IS_MAINTHREAD 1
+  #define TOCLIENTLOCK(hd)
+  #define TOCLIENTUNLOCK(hd)
+#endif /* OW_MT */
+
+struct handlerdata {
+    int fd ;
+#ifdef OW_MT
+    pthread_mutex_t to_client ;
+#endif /* OW_MT */
+    struct timeval tv ;
+} ;
+
+
 /* --- Prototypes ------------ */
 static void Handler( int fd ) ;
+static void * RealHandler( void * v ) ;
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
-static void DirHandler(struct server_msg *sm, struct client_msg *cm, int fd, const struct parsedname * pn ) ;
+static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, char *data ) ;
 
-#ifdef OW_MT
-pthread_t main_threadid ;
-#define IS_MAINTHREAD (main_threadid == pthread_self())
-#else
-#define IS_MAINTHREAD 1
-#endif
 
 static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
@@ -106,7 +121,10 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
         { data, cm->payload, } ,
     } ;
 
-    if ( data && cm->payload ) {
+    /* If payload==0, no extra data
+       If payload <0, flag to show a delay message, again no data
+    */
+    if ( data && cm->payload>0 ) {
         ++nio ;
     }
 //printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
@@ -132,88 +150,158 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
 
 /*
  * Main routine for actually handling a request
- * deals with a conncection
+ * deals with a connection
  */
 static void Handler( int fd ) {
+    struct client_msg cm ;
+    struct handlerdata hd = {
+        fd,
+#ifdef OW_MT
+        PTHREAD_MUTEX_INITIALIZER ,
+#endif /* OW_MT */
+        {0,0},
+    } ;
+
+#ifdef OW_MT
+    struct timespec nano = {0, 100000000} ; // .1 seconds
+    struct timeval now ;
+    struct timeval delta = { 1, 500000 } ; // 1.5 seconds
+    struct timeval result ;
+    int loop = 1 ;
+    pthread_t thread ;
+
+    memset(&cm, 0, sizeof(struct client_msg));
+    cm.payload = -1 ; /* flag for delay message */
+    gettimeofday( &(hd.tv), NULL ) ;
+
+    //printf("OWSERVER pre-create\n");
+    if ( pthread_create( &thread, NULL, RealHandler, &hd ) ) {
+        //printf("OWSERVER can't create\n");
+        // Can't start thread, so no pinging
+        RealHandler( &hd ) ;
+        return ;
+    }
+    //printf("OWSERVER create\n");
+    do {
+        nanosleep( &nano, NULL ) ;
+        gettimeofday( &now, NULL ) ;
+        timersub( &now, &delta, &result ) ;
+        TOCLIENTLOCK( &hd ) ;
+            if ( ! timerisset( &(hd.tv) ) ) {
+                loop = 0 ;
+            } else if ( timercmp( &(hd.tv), &result, < ) ) {
+                char * c = NULL ;
+                ToClient( hd.fd, &cm, c ) ;
+                //printf("OWSERVER ping\n") ;
+                gettimeofday( &(hd.tv), NULL ) ;
+            }                
+        TOCLIENTUNLOCK( &hd ) ;
+    } while ( loop ) ;
+#else /* OW_MT */
+    RealHandler( &hd ) ;
+#endif /* OW_MT */
+//    printf("OWSERVER handler done\n" ) ;
+}
+
+/*
+ * Main routine for actually handling a request
+ * deals with a conncection
+ */
+static void * RealHandler( void * v ) {
+    struct handlerdata * hd = (struct handlerdata *) v ;
     char * retbuffer = NULL ;
     struct server_msg sm ;
     struct client_msg cm ;
     struct parsedname pn ;
     struct stateinfo si ;
-    char * path = FromClientAlloc( fd, &sm ) ;
+    char * path = FromClientAlloc( hd->fd, &sm ) ;
 
+    //printf("OWSERVER message type = %d\n",sm.type ) ;
     memset(&cm, 0, sizeof(struct client_msg));
 
     switch( (enum msg_classification) sm.type ) {
-    case msg_size:
-    case msg_read:
-    case msg_write:
-    case msg_dir:
-    case msg_presence:
-        if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
-            cm.ret = -EBADMSG ;
-        } else {
-            memset(&si, 0, sizeof(struct stateinfo));
-            pn.si = &si ;
+        case msg_size:
+        case msg_read:
+        case msg_write:
+        case msg_dir:
+        case msg_presence:
+            if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
+                cm.ret = -EBADMSG ;
+            } else {
+                memset(&si, 0, sizeof(struct stateinfo));
+                pn.si = &si ;
             //printf("Handler: path=%s\n",path);
-            /* Parse the path string */
+                /* Parse the path string */
 
-            if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
+                LEVEL_CALL("owserver: parse path=%s\n",path);
+                if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
 
-            /* Use client persistent settings (temp scale, discplay mode ...) */
-            si.sg = sm.sg ;
+                /* Use client persistent settings (temp scale, discplay mode ...) */
+                si.sg = sm.sg ;
             //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
             //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
-            switch( (enum msg_classification) sm.type ) {
-            case msg_presence:
-                if(pn.dev && pn.ft) {
-                    PresenceHandler( &sm, &cm, &pn ) ;
+                switch( (enum msg_classification) sm.type ) {
+                    case msg_presence:
+                        LEVEL_CALL("Presence message\n") ;
+                        if(pn.dev && pn.ft) {
+                            PresenceHandler( &sm, &cm, &pn ) ;
                     //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
-                } else {
-                    cm.ret = 0;
+                        } else {
+                            cm.ret = 0;
                     //printf("msg_presence: cm.ret=%d\n", cm.ret);
-                }
-                break ;
-            case msg_size:
-                if(pn.dev && pn.ft)
-                    SizeHandler( &sm, &cm, &pn ) ;
-                else
-                    cm.ret = 0;
-                break ;
-            case msg_read:
-                retbuffer = ReadHandler( &sm , &cm, &pn ) ;
-                break ;
-            case msg_write: {
-                    int pathlen = strlen( path ) + 1 ; /* include trailing null */
-                    int datasize = sm.payload - pathlen ;
-                    if ( (datasize<=0) || (datasize<sm.size) ) {
-                        cm.ret = -EMSGSIZE ;
-                    } else {
-                        unsigned char * data = &path[pathlen] ;
-                        WriteHandler( &sm, &cm, data, &pn ) ;
-                    }
-                }
-                break ;
-            case msg_dir:
-                DirHandler( &sm, &cm, fd, &pn ) ;
+                        }
+                        break ;
+                    case msg_size:
+                        LEVEL_CALL("Size message\n") ;
+                        if(pn.dev && pn.ft)
+                            SizeHandler( &sm, &cm, &pn ) ;
+                        else
+                            cm.ret = 0;
+                        break ;
+                    case msg_read:
+                        LEVEL_CALL("Read message\n") ;
+                        retbuffer = ReadHandler( &sm , &cm, &pn ) ;
+                        break ;
+                        case msg_write: {
+                            int pathlen = strlen( path ) + 1 ; /* include trailing null */
+                            int datasize = sm.payload - pathlen ;
+                            LEVEL_CALL("Write message\n") ;
+                            if ( (datasize<=0) || (datasize<sm.size) ) {
+                                cm.ret = -EMSGSIZE ;
+                            } else {
+                                unsigned char * data = &path[pathlen] ;
+                                WriteHandler( &sm, &cm, data, &pn ) ;
+                            }
+                        }
+                        break ;
+                    case msg_dir:
+                        LEVEL_CALL("Directory message\n") ;
+                DirHandler( &sm, &cm, hd, &pn ) ;
                 break ;
             default: // never reached
                 break ;
+                }
+                FS_ParsedName_destroy(&pn) ;
             }
-            FS_ParsedName_destroy(&pn) ;
-        }
-        /* Fall through */
-    case msg_nop:
-        break ;
-    default:
-        cm.ret = -EIO ;
-        break ;
+            break ;
+        case msg_nop:
+            LEVEL_CALL("NOP message\n") ;
+            cm.ret = 0 ;
+            break ;
+        default:
+            LEVEL_CALL("No message\n") ;
+            cm.ret = -EIO ;
+            break ;
     }
 
     if (path) free(path) ;
-    ToClient( fd, &cm, retbuffer ) ;
+    TOCLIENTLOCK(hd) ;
+    if ( cm.ret != -EIO ) ToClient( hd->fd, &cm, retbuffer ) ;
+    timerclear(&(hd->tv)) ;
+    TOCLIENTUNLOCK(hd) ;
     if ( retbuffer ) free(retbuffer) ;
+    return NULL ;
 }
 
 /* Read, called from Handler with the following caveates: */
@@ -292,7 +380,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
 /* Dir, will return: */
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
-static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, const struct parsedname * pn ) {
+static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) {
     uint32_t flags = 0 ;
     /* embedded function -- callback for directory entries */
     /* return the full path length, including current entry */
@@ -340,7 +428,10 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, int fd, co
         cm->size = strlen(retbuffer) ;
 //printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
         cm->ret = 0 ;
-        ToClient(fd, cm, retbuffer) ;
+        TOCLIENTLOCK(hd) ;
+            ToClient(hd->fd, cm, retbuffer) ;
+            gettimeofday( &(hd->tv), NULL ) ;
+        TOCLIENTUNLOCK(hd) ;
         free(retbuffer);
         if ( path &&  path != pn->path ) free(path) ;
     }

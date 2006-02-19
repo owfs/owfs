@@ -22,13 +22,14 @@ static int filecmp(const void * name , const void * ex ) ;
 
 enum  parse_enum {parse_first, parse_done, parse_error, parse_real, parse_nonreal, parse_prop, parse_subprop } ;
 
-static enum parse_enum Parse_Unspecified( char * pathnow, struct parsedname * pn ) ;
-static enum parse_enum Parse_Real( char * pathnow, struct parsedname * pn ) ;
+static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct parsedname * pn ) ;
+static enum parse_enum Parse_Real( char * pathnow, int remote, struct parsedname * pn ) ;
 static enum parse_enum Parse_NonReal( char * pathnow, struct parsedname * pn ) ;
-static enum parse_enum Parse_RealDevice( char * filename, struct parsedname * pn ) ;
+static enum parse_enum Parse_RealDevice( char * filename, int remote, struct parsedname * pn ) ;
 static enum parse_enum Parse_NonRealDevice( char * filename, struct parsedname * pn ) ;
 static enum parse_enum Parse_Property( char * filename, struct parsedname * pn ) ;
 static int Parse_Bus( char * pathnow, struct parsedname * pn ) ;
+static int FS_ParsedName_anywhere( const char * const path , int remote, struct parsedname * const pn ) ;
 
 #define BRANCH_INCR (9)
 
@@ -57,9 +58,16 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
     }
 }
 
+int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
+    return FS_ParsedName_anywhere( path, 0, pn ) ;
+}
+
+int FS_ParsedName_Remote( const char * const path , struct parsedname * const pn ) {
+    return FS_ParsedName_anywhere( path, 1, pn ) ;
+}
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
-int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
+static int FS_ParsedName_anywhere( const char * const path , int remote, struct parsedname * const pn ) {
     char * pathcpy ;
     char * pathnow ;
     char * pathnext ;
@@ -136,11 +144,11 @@ int FS_ParsedName( const char * const path , struct parsedname * const pn ) {
         switch( pe ) {
             case parse_first:
 	        //printf("PARSENAME parse_first\n") ;
-                pe = Parse_Unspecified( pathnow, pn ) ;
+                pe = Parse_Unspecified( pathnow, remote, pn ) ;
                 break ;
             case parse_real:
 	        //printf("PARSENAME parse_real\n") ;
-                pe = Parse_Real( pathnow, pn ) ;
+                pe = Parse_Real( pathnow, remote, pn ) ;
                 break ;
             case parse_nonreal:
 	        //printf("PARSENAME parse_nonreal\n") ;
@@ -167,7 +175,7 @@ end:
     return ret ;
 }
 
-static enum parse_enum Parse_Unspecified( char * pathnow, struct parsedname * pn ) {
+static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct parsedname * pn ) {
     if ( strcasecmp( pathnow, "alarm" )==0 ) {
         pn->state |= pn_alarm ;
         return parse_real ;
@@ -198,11 +206,11 @@ static enum parse_enum Parse_Unspecified( char * pathnow, struct parsedname * pn
         pn->state |= pn_uncached ;
         return parse_first ;
     } else {
-        return Parse_RealDevice( pathnow, pn ) ;
+        return Parse_RealDevice( pathnow, remote, pn ) ;
     }
 }
 
-static enum parse_enum Parse_Real( char * pathnow, struct parsedname * pn ) {
+static enum parse_enum Parse_Real( char * pathnow, int remote, struct parsedname * pn ) {
     if ( strcasecmp( pathnow, "alarm" )==0 ) {
         pn->state |= pn_alarm ;
         return parse_real ;
@@ -221,7 +229,7 @@ static enum parse_enum Parse_Real( char * pathnow, struct parsedname * pn ) {
         pn->state |= pn_uncached ;
         return parse_real ;
     } else {
-        return Parse_RealDevice( pathnow, pn ) ;
+        return Parse_RealDevice( pathnow, remote, pn ) ;
     }
     return parse_error ;
 }
@@ -268,7 +276,7 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
    return 0 if good
    *next points to next statement, of NULL if not filetype
  */
-static enum parse_enum Parse_RealDevice( char * filename, struct parsedname * pn ) {
+static enum parse_enum Parse_RealDevice( char * filename, int remote, struct parsedname * pn ) {
     //printf("DevicePart: %s %s\n", filename, pn->path);
     
     if ( !isxdigit(filename[0]) || !isxdigit(filename[1]) ) {
@@ -307,7 +315,7 @@ static enum parse_enum Parse_RealDevice( char * filename, struct parsedname * pn
         }
     }
     //printf("NP2\n");
-    if( !(pn->state & pn_bus) ) { /* Check the presence, and cache the proper bus number for better performance */
+    if( !remote && !(pn->state & pn_bus) ) { /* Check the presence, and cache the proper bus number for better performance */
         int bus_nr = -1;
         if(Cache_Get_Device(&bus_nr, pn)) {
             //printf("PN Cache_Get_Device didn't find bus_nr\n");

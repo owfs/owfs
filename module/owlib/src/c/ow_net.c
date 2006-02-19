@@ -24,7 +24,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
     size_t	nleft;
     ssize_t	nread;
     char	*ptr;
-//    printf("NetRead attempt %d bytes\n",n) ;
+    //printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",n,ptv->tv_sec,ptv->tv_usec ) ;
     ptr = vptr;
     nleft = n;
     while (nleft > 0) {
@@ -51,14 +51,14 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
                     errno = 0; // clear errno. We never use it anyway.
                     nread = 0; /* and call read() again */
                 } else {
-                    LEVEL_DEFAULT("readn() failed %d [%s]\n", errno, strerror(errno));
+                    //LEVEL_DEFAULT("readn() failed %d [%s]\n", errno, strerror(errno));
                     STAT_ADD1(NET_read_errors);
                     return(-1);
                 }
             } else if (nread == 0) {
                 break; /* EOF */
             }
-//            { int i ; for ( i=0 ; i<nread ; ++i ) printf("%.2X ",ptr[i]) ; printf("\n") ; }
+            //{ int i ; for ( i=0 ; i<nread ; ++i ) printf("%.2X ",ptr[i]) ; printf("\n") ; }
             nleft -= nread ;
             ptr   += nread;
         } else if(rc < 0) { /* select error */

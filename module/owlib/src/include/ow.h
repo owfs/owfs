@@ -496,7 +496,7 @@ struct stateinfo {
     int AnyDevices ;
     int ExtraReset ; // DS1994/DS2404 might need an extra reset
     struct devlock * lock ; // need to clear dev lock?
-    uint32_t sg ; // more state info, packed for network transmission */
+    uint32_t sg ; // more state info, packed for network transmission
 } ;
 
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
@@ -634,6 +634,7 @@ void DeviceDestroy( void ) ;
 //  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
+int FS_ParsedName_Remote( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;
   size_t FileLength( const struct parsedname * const pn ) ;
   size_t FullFileLength( const struct parsedname * const pn ) ;

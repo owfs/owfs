@@ -203,7 +203,7 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
         if ( tn ) {
-	    FS_LoadPath( tn->tk.sn, pn ) ;
+            FS_LoadPath( tn->tk.sn, pn ) ;
             tn->tk.p.in = pn->in ;
             tn->tk.extension = dindex ;
             tn->expires = duration + time(NULL) ;
@@ -222,8 +222,8 @@ int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) {
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + sizeof(int) ) ;
         if ( tn ) {
-	    memcpy( tn->tk.sn , pn->sn , 8 ) ;
-	    tn->tk.p.in = NULL ;  // value connected to all in-devices
+            memcpy( tn->tk.sn , pn->sn , 8 ) ;
+            tn->tk.p.in = NULL ;  // value connected to all in-devices
             //tn->tk.p.in = pn->in ;
             tn->tk.extension = -1 ;
             tn->expires = duration + time(NULL) ;

@@ -230,7 +230,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     int connectfd = ClientConnect( pn->in ) ;
     struct parsedname pn2 ;
     int dindex = 0 ;
-    unsigned char got_entry = 0 ;
 
     if ( connectfd < 0 ) return ConnectionError(pn) ;
 
@@ -260,7 +259,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
-        got_entry = 0 ;
+        int got_entry = 0 ;
         while((path2 = FromServerAlloc( connectfd, &cm))) {
             if(got_entry)
                 FS_ParsedName_destroy( &pn2 ) ;  // destroy the last parsed name
@@ -269,12 +268,12 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
             pn2.si = pn->si ; /* reuse stateinfo */
 
-	    //LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
-            ret = FS_ParsedName( path2, &pn2 ) ;
+            LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
+            ret = FS_ParsedName_Remote( path2, &pn2 ) ;
 
             if ( ret ) {
                 cm.ret = -EINVAL ;
-		//LEVEL_DEBUG("ServerDir: error parsing [%s] ret=%d\n", path2, ret);
+                //LEVEL_DEBUG("ServerDir: error parsing [%s] ret=%d\n", path2, ret);
                 free(path2) ;
                 break ;
             } else {
@@ -292,14 +291,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                     /* If we get a device then cache it */
                     //FS_LoadPath(sn, &pn2);
                     memcpy(sn, pn2.sn, 8);
-#if 0
-                    {
-                    char tmp[17];
-                    bytes2string(tmp, sn, 8) ;
-                    tmp[16] = 0;
-                    printf("ServerDir: get sn=%s bus_nr=%d index=%d %s\n", tmp, pn->in->index, dindex, pn2.path);
-                    }
-#endif
                     pn2.in = pn->in ;  // reuse the current pn->in->index
                     Cache_Add_Dir(sn,dindex,&pn2) ;
                     ++dindex ;
@@ -332,17 +323,22 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     char * msg ;
     int ret;
-    ret = readn(fd, cm, sizeof(struct client_msg), &tv );
-    if ( ret != sizeof(struct client_msg) ) {
-        memset(cm, 0, sizeof(struct client_msg)) ;
-        cm->ret = -EIO ;
-        return NULL ;
-    }
-    cm->payload = ntohl(cm->payload) ;
-    cm->size = ntohl(cm->size) ;
-    cm->ret = ntohl(cm->ret) ;
-    cm->sg = ntohl(cm->sg) ;
-    cm->offset = ntohl(cm->offset) ;
+
+    do { /* loop until non delay message (payload>=0) */
+        printf("OW_SERVER loop1\n");
+        ret = readn(fd, cm, sizeof(struct client_msg), &tv );
+        if ( ret != sizeof(struct client_msg) ) {
+            memset(cm, 0, sizeof(struct client_msg)) ;
+            cm->ret = -EIO ;
+            return NULL ;
+        }
+        cm->payload = ntohl(cm->payload) ;
+        cm->size = ntohl(cm->size) ;
+        cm->ret = ntohl(cm->ret) ;
+        cm->sg = ntohl(cm->sg) ;
+        cm->offset = ntohl(cm->offset) ;
+    } while ( cm->payload < 0 ) ;
+    printf("OW_SERVER loop1 done\n");
 
 //printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
@@ -373,31 +369,36 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     size_t rtry ;
     size_t ret;
 
-    ret = readn(fd, cm, sizeof(struct client_msg), &tv );
-    if ( ret != sizeof(struct client_msg) ) {
-        cm->size = 0 ;
-        cm->ret = -EIO ;
-        return -EIO ;
-    }
+    do { // read regular header, or delay (delay when payload<0)
+        printf("OW_SERVER loop2\n");
+        ret = readn(fd, cm, sizeof(struct client_msg), &tv );
+        if ( ret != sizeof(struct client_msg) ) {
+            printf("OW_SERVER loop2 bad\n");
+            cm->size = 0 ;
+            cm->ret = -EIO ;
+            return -EIO ;
+        }
 
-    cm->payload = ntohl(cm->payload) ;
-    cm->size = ntohl(cm->size) ;
-    cm->ret = ntohl(cm->ret) ;
-    cm->sg = ntohl(cm->sg) ;
-    cm->offset = ntohl(cm->offset) ;
+        cm->payload = ntohl(cm->payload) ;
+        cm->size = ntohl(cm->size) ;
+        cm->ret = ntohl(cm->ret) ;
+        cm->sg = ntohl(cm->sg) ;
+        cm->offset = ntohl(cm->offset) ;
+    } while ( cm->payload < 0 ) ; // flag to show a delay message
+    printf("OW_SERVER loop2 done\n");
 
 //printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-    if ( cm->payload == 0 ) return cm->payload ;
+    if ( cm->payload==0 ) return 0 ; // No payload, done.
 
     rtry = cm->payload<size ? cm->payload : size ;
-    ret = readn(fd, msg, rtry, &tv );
+    ret = readn(fd, msg, rtry, &tv ); // read expected payload now.
     if ( ret != rtry ) {
         cm->ret = -EIO ;
         return -EIO ;
     }
 
-    if ( cm->payload > size ) {
+    if ( cm->payload > size ) { // Uh oh. payload bigger than expected. read it in and discard
         size_t d = cm->payload - size ;
         char extra[d] ;
         ret = readn(fd,extra,d,&tv);
