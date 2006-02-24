@@ -21,19 +21,17 @@ Temperature Voltage and Current.
 |
 .B current
 |
+.B currentbias
+|
 .B lock.[0-1|ALL]
 |
 .B memory
-|
-.B offset
 |
 .B pages/page.[0-1|ALL]
 |
 .B PIO
 |
 .B sensed
-|
-.B sleep
 |
 .B temperature
 |
@@ -43,12 +41,44 @@ Temperature Voltage and Current.
 |
 .B typeX/temperature
 |
+.B vbias
+|
 .B vis
-
+|
 .B volt
 |
 .B volthours
 |
+.br
+.B cc
+|
+.B ce
+|
+.B coc
+|
+.B defaultpmod
+|
+.B defaultswen
+|
+.B dc
+|
+.B de
+|
+.B doc
+|
+. B mstr
+|
+.B ov
+|
+.B ps
+|
+.B pmod
+|
+.B swen
+|
+.B uv
+|
+.br
 .so standard_mini
 ]]
 .SH FAMILY CODE
@@ -63,6 +93,12 @@ Accumulated amperage read by current sensor. Units are in
 (Assumes internal 25mOhm resistor). Derived from
 .I volthours
 / Rinternal.
+.br
+Formally 
+.I amphours
+is the integral of
+.I current - currentbias
+over time.
 .SS current
 .I read-only, floating point
 .br
@@ -70,6 +106,20 @@ Current reading. Units are in
 .B Amp
 (Assumes internal 25 mOhm resistor). Derived from
 .I vis
+/ Rinternal.
+.SS currentbias
+.I read-write, floating point
+.br
+Fixed offset applied to each 
+.I current
+measurement. Used in the
+.I amphours
+value. Assumes internal 25mOhm resistor. Units are 
+.B Amp
+and range from -.08A to .08A.
+.br
+Derived from
+.I vbias
 / Rinternal.
 .SS lock.[0-1|ALL]
 .I read-write, yes-no
@@ -87,14 +137,6 @@ area.
 See the
 .I DATASHEET
 for a full memory map.
-.SS offset
-.I read-write, floating point
-.br
-Correction for
-.I current
-readings. Units are in
-.B Amp
-and can range from -.08 to +.08
 .SS pages/page.0 ... pages/page.16 pages/page.ALL
 .I read-write, binary
 .br
@@ -141,12 +183,17 @@ The logical voltage at the PIO pin. Useful only if the
 property is set to "0" (non-conducting).
 .br
 Value will be 0 or 1 depending on the voltage threshold.
-.SS sleep
-.I read-write, yes-no
+.SS temperature
+.I read-only, floating point
 .br
-Status of the sleep-enable bit. See the
-.I DATASHEET
-for the full implementaqtion of sleep mode.
+.I Temperature
+read by the chip at high resolution (~13 bits). Units are selected from the invoking command line. See
+.B owfs(1)
+or
+.B owhttpd(1)
+for choices. Default is Celsius.
+.br
+Conversion is continuous.
 .SS typeX/
 .I directory
 .br
@@ -167,17 +214,17 @@ Note: there are two types of temperature measurements possible. The
 value in the main device directory is the reference temperature read at the chip. The
 .I typeX/temperature
 value is at the thermocouple junction, probably remote from the chip.
-.SS temperature
-.I read-only, floating point
+.SS vbias
+.I read-write, floating point
 .br
-.I Temperature
-read by the chip at high resolution (~13 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
+Fixed offset applied to each
+.I vis
+measurement. Used for the
+.I volthours
+value. Units are in
+.B Volts.
 .br
-Conversion is continuous.
+Range -2.0mV to 2.0mV
 .SS vis
 .I read-only, floating point
 .br
@@ -210,9 +257,22 @@ Range is between 0 and 4.75V
 .I read-write, floating point
 .br
 Integral of
-.I vis
+.I vis - vbias
 over time. Units are in
 .B volthours
+.SH OBSCURE PROPERTIES
+.SS cc ce coc dc de doc mstr ov pmod swen uv
+.I varies, yes-no
+.br
+Bit flags corresponding to various battery management functions of the chip. See the 
+.I DATASHEET
+for details of the identically named entries.
+.br
+In general, writing "0" corresponds to a 0 bit value, and non-zero corresponds to a 1 bit value.
+.SS defaultpmod defaultswen
+.I read-write, yes-no
+.br
+Default power-on state for the corresponding properties.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS

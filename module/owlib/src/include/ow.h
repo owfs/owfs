@@ -359,6 +359,7 @@ struct filetype {
     union {
         void * v ;
         int    i ;
+        unsigned int u ;
         FLOAT  f ;
         size_t s ;
         unsigned char c ;

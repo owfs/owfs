@@ -474,7 +474,7 @@ void UT_delay(const unsigned int len) {
         if ( diff>=len ) break;
         for(i=0; i<30; i++) j += i;
     }
-#else
+#else /* DELAY_BUSY_WHILE */
 
 #ifdef HAVE_NANOSLEEP
 
@@ -495,7 +495,7 @@ void UT_delay(const unsigned int len) {
             //printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
 #ifdef __UCLIBC__
             errno = 0;  // clear errno every time in uclibc at least
-#endif
+#endif /* __UCLIBC__ */
         } else {
     /* completed sleeping */
     break;
@@ -503,7 +503,7 @@ void UT_delay(const unsigned int len) {
     }
 #ifdef __UCLIBC__
     errno = 0;  // clear errno in uclibc at least
-#endif
+#endif /* __UCLIBC__ */
 
 #else  /* HAVE_NANOSLEEP */
 
@@ -511,7 +511,7 @@ void UT_delay(const unsigned int len) {
 
 #endif /* HAVE_NANOSLEEP */
 
-#endif
+#endif /* DELAY_BUSY_WHILE */
 }
 
 //--------------------------------------------------------------------------
@@ -534,7 +534,7 @@ void UT_delay_us(const unsigned long len) {
         if ( diff >= len ) break;
         for(i=0; i<10; i++) j += i;
     }
-#else
+#else /* DELAY_BUSY_WHILE */
 
 
 #ifdef HAVE_NANOSLEEP
@@ -556,7 +556,7 @@ void UT_delay_us(const unsigned long len) {
             //printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
 #ifdef __UCLIBC__
             errno = 0;  // clear errno every time in uclibc at least
-#endif
+#endif /* __UCLIBC__ */
         } else {
     /* completed sleeping */
     break;
@@ -564,7 +564,7 @@ void UT_delay_us(const unsigned long len) {
     }
 #ifdef __UCLIBC__
     errno = 0;  // clear errno in uclibc at least
-#endif
+#endif /* __UCLIBC__ */
 
 #else  /* HAVE_NANOSLEEP */
 
@@ -572,5 +572,5 @@ void UT_delay_us(const unsigned long len) {
 
 #endif /* HAVE_NANOSLEEP */
 
-#endif
+#endif /* DELAY_BUSY_WHILE */
 }
