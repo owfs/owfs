@@ -10,19 +10,13 @@
 '\"
 .TH DS2760 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B DS2760 DS2761 DS2762
-- High-Precision Li+ Battery Monitor
+.B DS2780
+- Statnd-alone Fuel Guage IC
 .SH SYNOPSIS
-Temperature Voltage and Current.
+Temperature Voltage Current Memory and Switch.
 .PP
-.B 30
+.B 32
 [.]XXXXXXXXXXXX[XX][/[
-.B amphours
-|
-.B current
-|
-.B currentbias
-|
 .B lock.[0-1|ALL]
 |
 .B memory
@@ -50,77 +44,29 @@ Temperature Voltage and Current.
 .B volthours
 |
 .br
-.B cc
+.B aef
 |
-.B ce
+.B chgtf
 |
-.B coc
-|
-.B defaultpmod
-|
-.B defaultswen
-|
-.B dc
-|
-.B de
-|
-.B doc
-|
-. B mstr
-|
-.B ov
-|
-.B ps
+.B learnf
 |
 .B pmod
 |
-.B swen
+.B porf
 |
-.B uv
+.B sef
+|
+.B uven
+|
+.B uvf
 |
 .br
 .so standard_mini
 ]]
 .SH FAMILY CODE
 .PP
-.I 30
+.I 32
 .SH SPECIAL PROPERTIES
-.SS amphours
-.I read-write, floating point
-.br
-Accumulated amperage read by current sensor. Units are in
-.B Amp-hr
-(Assumes internal 25mOhm resistor). Derived from
-.I volthours
-/ Rinternal.
-.br
-Formally 
-.I amphours
-is the integral of
-.I current - currentbias
-over time.
-.SS current
-.I read-only, floating point
-.br
-Current reading. Units are in
-.B Amp
-(Assumes internal 25 mOhm resistor). Derived from
-.I vis
-/ Rinternal.
-.SS currentbias
-.I read-write, floating point
-.br
-Fixed offset applied to each 
-.I current
-measurement. Used in the
-.I amphours
-value. Assumes internal 25mOhm resistor. Units are 
-.B Amp
-and range from -.08A to .08A.
-.br
-Derived from
-.I vbias
-/ Rinternal.
 .SS lock.[0-1|ALL]
 .I read-write, yes-no
 .br
@@ -164,7 +110,7 @@ property. This will reflect the current voltage at the pin, not the value sent t
 Note also that
 .I PIO
 will also be altered by the power-status of the
-.I DS2670
+.I DS2680
 See the datasheet for details.
 .SS sensed
 .I read-only, yes-no
@@ -189,7 +135,7 @@ Conversion is continuous.
 .I directory
 .br
 Thermocouple circuit using the
-.I  DS2760
+.I  DS2780
 to read the Seebeck voltage and the reference temperature. Since the type interpretation of the values read depends on the type of thermocouple, the correct directory must be chosen. Supported thermocouple types include types B, E, J, K, N, R, S and T.
 .SS typeX/range_low typeX/ranges_high
 .I read-only, flaoting point
@@ -252,7 +198,7 @@ Integral of
 over time. Units are in
 .B volthours
 .SH OBSCURE PROPERTIES
-.SS cc ce coc dc de doc mstr ov pmod swen uv
+.SS aef chgtf learnf pmod porf sef uven uvf
 .I varies, yes-no
 .br
 Bit flags corresponding to various battery management functions of the chip. See the 
@@ -260,38 +206,24 @@ Bit flags corresponding to various battery management functions of the chip. See
 for details of the identically named entries.
 .br
 In general, writing "0" corresponds to a 0 bit value, and non-zero corresponds to a 1 bit value.
-.SS defaultpmod defaultswen
-.I read-write, yes-no
-.br
-Default power-on state for the corresponding properties.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION
 .so description
-.SS DS2760 DS2761 DS2762
+.SS DS2780
 The
-.B DS2760 (3)
-is a class of battery charging controllers. There are minor hardware difference between the
-.B DS2760, DS2761
-and
-.B DS2762
-battery chip, but they are indistiguishable to the software.
+.B DS2780 (3)
+is a battery charging controller. It has elaborate algorithms for estimating battery capacity.
 .PP
 A number of interesting devices can be built with the
-.B DS276x 
+.B DS2780 
 including thermocouples. Support for thermocouples in built into the software, using the embedded thermister as the cold junction temperature.
-.PP
-For an explanatino of the differences between the 
-.B DS276x
-variants, see Dallas Application Note 221.
 .SH ADDRESSING
 .so addressing
 .SH DATASHEET
-http://pdfserv.maxim-ic.com/en/ds/DS2760.pdf
-.br
-http://pdfserv.maxim-ic.com/en/an/app221.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2780.pdf
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

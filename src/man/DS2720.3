@@ -11,7 +11,7 @@
 .TH DS2720 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .B DS2720
-- Efficient addressable single-cell rechargeable lithium protection IC 
+- Efficient Addressable Single-cell Rechargeable Lithium Protection IC
 .SH SYNOPSIS
 Memory and warnings.
 .PP
@@ -65,18 +65,9 @@ area.
 See the
 .I DATASHEET
 for a full memory map.
-.SS pages/page.0 ... pages/page.16 pages/page.ALL
-.I read-write, binary
-.br
-Memory is split into 16 pages of 16 bytes each. Only some of that is available. See the datasheet for details.
-.br
-Some portions of memory are EEPROM backed. Recall from, and writing to EEPROM will be done transparently.
-.br
-.I ALL
-is an aggregate of the pages. Each page is accessed sequentially.
 .SS pages/pages.[0-1|ALL]
 .I read-write, binary
-Two 16 byte areas of memory for user application. The
+Two 8 byte areas of memory for user application. The
 .I lock
 property can prevent further alteration.
 .br

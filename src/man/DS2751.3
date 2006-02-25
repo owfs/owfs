@@ -8,14 +8,14 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS2760 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS2751 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B DS2760 DS2761 DS2762
-- High-Precision Li+ Battery Monitor
+.B DS2751
+- Multichemistry Battery Fuel Gauge
 .SH SYNOPSIS
-Temperature Voltage and Current.
+Temperature Voltage, Current, Memory, and Switch.
 .PP
-.B 30
+.B 51
 [.]XXXXXXXXXXXX[XX][/[
 .B amphours
 |
@@ -50,40 +50,20 @@ Temperature Voltage and Current.
 .B volthours
 |
 .br
-.B cc
-|
-.B ce
-|
-.B coc
-|
 .B defaultpmod
-|
-.B defaultswen
-|
-.B dc
-|
-.B de
-|
-.B doc
-|
-. B mstr
-|
-.B ov
-|
-.B ps
 |
 .B pmod
 |
-.B swen
+.B por
 |
-.B uv
+.B uven
 |
 .br
 .so standard_mini
 ]]
 .SH FAMILY CODE
 .PP
-.I 30
+.I 51
 .SH SPECIAL PROPERTIES
 .SS amphours
 .I read-write, floating point
@@ -252,7 +232,7 @@ Integral of
 over time. Units are in
 .B volthours
 .SH OBSCURE PROPERTIES
-.SS cc ce coc dc de doc mstr ov pmod swen uv
+.SS pmod por uven
 .I varies, yes-no
 .br
 Bit flags corresponding to various battery management functions of the chip. See the 
@@ -260,7 +240,7 @@ Bit flags corresponding to various battery management functions of the chip. See
 for details of the identically named entries.
 .br
 In general, writing "0" corresponds to a 0 bit value, and non-zero corresponds to a 1 bit value.
-.SS defaultpmod defaultswen
+.SS defaultpmod
 .I read-write, yes-no
 .br
 Default power-on state for the corresponding properties.
@@ -270,28 +250,19 @@ Default power-on state for the corresponding properties.
 None.
 .SH DESCRIPTION
 .so description
-.SS DS2760 DS2761 DS2762
+.SS DS2751
 The
-.B DS2760 (3)
-is a class of battery charging controllers. There are minor hardware difference between the
-.B DS2760, DS2761
-and
-.B DS2762
-battery chip, but they are indistiguishable to the software.
+.B DS2751 (3)
+is battery charging controllers similar to the
+.DS2760 (3)
 .PP
 A number of interesting devices can be built with the
-.B DS276x 
+.B DS2751 (3) 
 including thermocouples. Support for thermocouples in built into the software, using the embedded thermister as the cold junction temperature.
-.PP
-For an explanatino of the differences between the 
-.B DS276x
-variants, see Dallas Application Note 221.
 .SH ADDRESSING
 .so addressing
 .SH DATASHEET
-http://pdfserv.maxim-ic.com/en/ds/DS2760.pdf
-.br
-http://pdfserv.maxim-ic.com/en/an/app221.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2751.pdf
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

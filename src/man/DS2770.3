@@ -8,14 +8,14 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS2760 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS2770 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B DS2760 DS2761 DS2762
-- High-Precision Li+ Battery Monitor
+.B DS2770
+- Battery Monitor and Charge Controller
 .SH SYNOPSIS
-Temperature Voltage and Current.
+Temperature Voltage Current Memory and Switch.
 .PP
-.B 30
+.B 2E
 [.]XXXXXXXXXXXX[XX][/[
 .B amphours
 |
@@ -23,11 +23,11 @@ Temperature Voltage and Current.
 |
 .B currentbias
 |
-.B lock.[0-1|ALL]
+.B lock.[0-2|ALL]
 |
 .B memory
 |
-.B pages/page.[0-1|ALL]
+.B pages/page.[0-2|ALL]
 |
 .B PIO
 |
@@ -50,40 +50,30 @@ Temperature Voltage and Current.
 .B volthours
 |
 .br
-.B cc
+.B charge
 |
-.B ce
+.B cini
 |
-.B coc
+.B cstat0
+|
+.B cstat1
+|
+.B ctype
 |
 .B defaultpmod
 |
-.B defaultswen
-|
-.B dc
-|
-.B de
-|
-.B doc
-|
-. B mstr
-|
-.B ov
-|
-.B ps
-|
 .B pmod
 |
-.B swen
+.B refresh
 |
-.B uv
+.B timer
 |
 .br
 .so standard_mini
 ]]
 .SH FAMILY CODE
 .PP
-.I 30
+.I 2E
 .SH SPECIAL PROPERTIES
 .SS amphours
 .I read-write, floating point
@@ -121,10 +111,10 @@ and range from -.08A to .08A.
 Derived from
 .I vbias
 / Rinternal.
-.SS lock.[0-1|ALL]
+.SS lock.[0-2|ALL]
 .I read-write, yes-no
 .br
-Lock either of the two eprom pages to prevent further writes. Apparently setting
+Lock either of the three eprom pages to prevent further writes. Apparently setting
 .I lock
 is permanent.
 .SS memory
@@ -137,9 +127,9 @@ area.
 See the
 .I DATASHEET
 for a full memory map.
-.SS pages/pages.[0-1|ALL]
+.SS pages/pages.[0-2|ALL]
 .I read-write, binary
-Two 16 byte areas of memory for user application. The
+Two 16 byte  and one 8 byte areas of memory for user application. The
 .I lock
 property can prevent further alteration.
 .br
@@ -189,7 +179,7 @@ Conversion is continuous.
 .I directory
 .br
 Thermocouple circuit using the
-.I  DS2760
+.B  DS2770 (3)
 to read the Seebeck voltage and the reference temperature. Since the type interpretation of the values read depends on the type of thermocouple, the correct directory must be chosen. Supported thermocouple types include types B, E, J, K, N, R, S and T.
 .SS typeX/range_low typeX/ranges_high
 .I read-only, flaoting point
@@ -252,7 +242,13 @@ Integral of
 over time. Units are in
 .B volthours
 .SH OBSCURE PROPERTIES
-.SS cc ce coc dc de doc mstr ov pmod swen uv
+.SS charge
+.I write-only, yes-no
+.br
+Trigger the start (1) or stop(0) of charging. see the
+.I DATASHEET
+for details.
+.SS cini cstat0 cstat1 ctype pmod
 .I varies, yes-no
 .br
 Bit flags corresponding to various battery management functions of the chip. See the 
@@ -260,38 +256,40 @@ Bit flags corresponding to various battery management functions of the chip. See
 for details of the identically named entries.
 .br
 In general, writing "0" corresponds to a 0 bit value, and non-zero corresponds to a 1 bit value.
-.SS defaultpmod defaultswen
+.SS defaultpmod
 .I read-write, yes-no
 .br
 Default power-on state for the corresponding properties.
+.SS refresh
+.I write-only, yes-no
+.br
+Writing anything to this file causes a refresh of parameters. See the
+.SS timer
+.I read-write, floating point
+.br
+A charge timer in units of
+.B hours.
+See the
+.I DATASHEET
+for details.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
 None.
 .SH DESCRIPTION
 .so description
-.SS DS2760 DS2761 DS2762
+.SS DS2770
 The
-.B DS2760 (3)
-is a class of battery charging controllers. There are minor hardware difference between the
-.B DS2760, DS2761
-and
-.B DS2762
-battery chip, but they are indistiguishable to the software.
+.B DS2770 (3)
+is a battery charging controller. It has elaborate charge estimation algorithms built in.
 .PP
 A number of interesting devices can be built with the
-.B DS276x 
+.B DS2770 
 including thermocouples. Support for thermocouples in built into the software, using the embedded thermister as the cold junction temperature.
-.PP
-For an explanatino of the differences between the 
-.B DS276x
-variants, see Dallas Application Note 221.
 .SH ADDRESSING
 .so addressing
 .SH DATASHEET
-http://pdfserv.maxim-ic.com/en/ds/DS2760.pdf
-.br
-http://pdfserv.maxim-ic.com/en/an/app221.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2770.pdf
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY
