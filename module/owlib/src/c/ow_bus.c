@@ -411,3 +411,51 @@ int BUS_reconnect_low( const struct parsedname * pn ) {
     }
     return ret ;
 }
+
+/* Bus transaction */
+/* Encapsulates communication with a device, including locking the bus, reset and selection */
+/* Then a series of bytes is sent and returned, including sending data and reading the return data */
+int BUS_transaction( const struct transaction_log * tl, const struct parsedname * pn ) {
+    const struct transaction_log * t = tl ;
+    int ret ;
+    
+    BUSLOCK(pn) ;
+        ret = BUS_select(pn) ;
+        //printf("Transaction select = %d\n",ret) ;
+
+        while ( ret==0 ) {
+            switch (t->type) {
+                case trxn_match:
+                    ret = BUS_send_data( t->out, t->size, pn ) ;
+                    //printf("Transaction send = %d\n",ret) ;
+                    break ;
+                case trxn_read:
+                    if ( t->out ) {
+                        ret = BUS_sendback_data( t->out, t->in, t->size, pn ) ;
+                        //printf("Transaction sendback = %d\n",ret) ;
+                    } else {
+                        ret = BUS_readin_data( t->in, t->size, pn ) ;
+                        //printf("Transaction readin = %d\n",ret) ;
+                    }
+                    break ;
+                case trxn_power:
+                    ret = BUS_PowerByte( t->out[0], t->size, pn ) ;
+                    //printf("Transaction power = %d\n",ret) ;
+                    break ;
+                case trxn_program:
+                    ret = BUS_ProgramPulse(pn) ;
+                    break ;
+                case trxn_reset:
+                    ret = BUS_reset(pn) ;
+                    // fall through
+                case trxn_end:
+                    t = NULL ;
+                    break ;
+            }
+            if ( t==NULL ) break ;
+            ++ t ;
+        }        
+    BUSUNLOCK(pn) ;
+
+    return ret ;
+}

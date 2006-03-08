@@ -148,16 +148,16 @@ struct die_limits DIE[] = {
 /* ------- Functions ------------ */
 
 /* DS1820&2*/
-static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) ;
-static int OW_22temp(FLOAT * const temp , const int resolution, const struct parsedname * const pn) ;
-static int OW_power(unsigned char * const data, const struct parsedname * const pn) ;
-static int OW_r_templimit( FLOAT * const T, const int Tindex, const struct parsedname * const pn) ;
-static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * const pn) ;
-static int OW_r_scratchpad(unsigned char * const data, const struct parsedname * const pn) ;
-static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) ;
-static int OW_r_trim(unsigned char * const trim, const struct parsedname * const pn) ;
-static int OW_w_trim(const unsigned char * const trim, const struct parsedname * const pn) ;
-static enum eDie OW_die( const struct parsedname * const pn ) ;
+static int OW_10temp(FLOAT * temp , const struct parsedname * pn) ;
+static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) ;
+static int OW_power(unsigned char * data, const struct parsedname * pn) ;
+static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) ;
+static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) ;
+static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) ;
+static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) ;
+static int OW_r_trim(unsigned char * trim, const struct parsedname * pn) ;
+static int OW_w_trim(const unsigned char * trim, const struct parsedname * pn) ;
+static enum eDie OW_die( const struct parsedname * pn ) ;
 
 static int FS_10temp(FLOAT *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
@@ -194,7 +194,7 @@ static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_die(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_die(char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     const char * d ;
     switch ( OW_die(pn) ) {
         case eB6:
@@ -216,7 +216,7 @@ static int FS_r_die(char *buf, const size_t size, const off_t offset , const str
     return 2 ;
 }
 
-static int FS_r_trim(unsigned int * const trim , const struct parsedname * pn) {
+static int FS_r_trim(unsigned int * trim , const struct parsedname * pn) {
     unsigned char t[2] ;
     if ( OW_r_trim( t , pn ) ) return - EINVAL ;
     trim[0] = (t[1]<<8) | t[0] ;
@@ -224,7 +224,7 @@ static int FS_r_trim(unsigned int * const trim , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_w_trim(const unsigned int * const trim , const struct parsedname * pn) {
+static int FS_w_trim(const unsigned int * trim , const struct parsedname * pn) {
     unsigned char t[2] ;
     switch( OW_die(pn) ) {
         case eB7:
@@ -284,26 +284,27 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
 }
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
-static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
+static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     unsigned char data[8] ;
-    unsigned char convert = 0x44 ;
+    unsigned char convert[] = { 0x44, } ;
     unsigned int delay = pn->ft->data.i ;
     unsigned char pow ;
-    int ret = 0 ;
+    struct transaction_log tconvert[] = {
+        { convert, NULL, 1, trxn_power },
+        TRXN_END,
+    } ;
 
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
+    
     /* Select particular device and start conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
-        BUSUNLOCK(pn);
+        tconvert->size = delay ;
+        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
-        BUSUNLOCK(pn);
+        tconvert->type = trxn_match ;
+        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         UT_delay( delay ) ;
     }
-    if ( ret ) return 1 ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
 
@@ -311,16 +312,14 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
         /* repeat the conversion (only once) */
         if ( pow ) { // powered, so release bus immediately after issuing convert
-            BUSLOCK(pn);
-                ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
-            BUSUNLOCK(pn);
+            tconvert->type = trxn_match ;
+            if ( BUS_transaction( tconvert, pn ) ) return 1 ;
             UT_delay( delay ) ;
         } else { // unpowered, deliver power, no communication allowed
-            BUSLOCK(pn);
-                ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
-            BUSUNLOCK(pn);
+            tconvert->size = delay ;
+            if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         }
-        if ( ret || OW_r_scratchpad( data , pn ) ) return 1 ;
+        if ( OW_r_scratchpad( data , pn ) ) return 1 ;
     }
 
     // Correction thanks to Nathan D. Holmes
@@ -334,30 +333,34 @@ static int OW_10temp(FLOAT * const temp , const struct parsedname * const pn) {
     return 0 ;
 }
 
-static int OW_power( unsigned char * const data, const struct parsedname * const pn) {
-    unsigned char b4 = 0xB4;
-    int ret = 0 ;
+static int OW_power( unsigned char * data, const struct parsedname * pn) {
+    unsigned char b4[] = { 0xB4, } ;
+    struct transaction_log tpower[] = {
+        { b4, NULL, 1, trxn_match },
+        { NULL, data, 1, trxn_read },
+        TRXN_END,
+    } ;
     size_t s = sizeof(unsigned char) ;
 
     if ( (pn->state & pn_uncached) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( &b4,1,pn ) || BUS_readin_data( data,1,pn ) ;
-//printf("Uncached power = %d\n",data[0]) ;
-        BUSUNLOCK(pn);
-	if(!ret) Cache_Add_Internal(data,s,&ip_power,pn) ;
+        if ( BUS_transaction( tpower, pn ) ) return 1 ;
+        Cache_Add_Internal(data,s,&ip_power,pn) ;
     }
-    return ret ;
+    return 0 ;
 }
 
-static int OW_22temp(FLOAT * const temp , const int resolution, const struct parsedname * const pn) {
+static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) {
     unsigned char data[8] ;
-    unsigned char convert = 0x44 ;
+    unsigned char convert[] = { 0x44, } ;
     unsigned char pow ;
     int res = Resolutions[resolution-9].config ;
     unsigned int delay = Resolutions[resolution-9].delay ;
     int oldres ;
     size_t s = sizeof(oldres) ;
-    int ret = 0 ;
+    struct transaction_log tconvert[] = {
+        { convert, NULL, 1, trxn_power },
+        TRXN_END,
+    } ;
 
     //LEVEL_DATA("OW_22temp\n");
 
@@ -383,16 +386,13 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
 
     /* Conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_PowerByte( convert,delay,pn ) ;
-        BUSUNLOCK(pn);
+        tconvert->size = delay ;
+        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( &convert,1,pn ) ;
-        BUSUNLOCK(pn);
+        tconvert->type = trxn_match ;
+        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         UT_delay( delay ) ;
     }
-    if ( ret ) return 1 ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
 
@@ -402,26 +402,25 @@ static int OW_22temp(FLOAT * const temp , const int resolution, const struct par
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit( FLOAT * const T, const int Tindex, const struct parsedname * const pn) {
+static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
     unsigned char data[8] ;
-    unsigned char recall = 0xB4 ;
-    int ret ;
+    unsigned char recall[] = { 0xB4, } ;
+    struct transaction_log trecall[] = {
+        { recall, NULL, 1, trxn_match },
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &recall,1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( trecall, pn ) ) return 1 ;
 
     UT_delay(10) ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
-//    *T = (char) data[2+Tindex] ;
     T[0] = (FLOAT) ((int8_t)data[2+Tindex]) ;
     return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * const pn) {
+static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) {
     unsigned char data[8] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
@@ -430,64 +429,88 @@ static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedn
 }
 
 /* read 8 bytes, includes CRC8 which is checked */
-static int OW_r_scratchpad(unsigned char * const data, const struct parsedname * const pn) {
+static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) {
     /* data is 8 bytes long */
-    unsigned char be = 0xBE ;
+    unsigned char be[] = { 0xBE, } ;
     unsigned char td[9] ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &be,1,pn ) || BUS_readin_data( td,9,pn ) || CRC8(td,9) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    struct transaction_log tread[] = {
+        { be, NULL, 1, trxn_match },
+        { NULL, td, 9, trxn_read },
+        TRXN_END,
+    } ;
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
+    if ( CRC8( td,9 ) ) return 1 ;
 
     memcpy( data , td , 8 ) ;
     return 0 ;
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
-static int OW_w_scratchpad(const unsigned char * const data, const struct parsedname * const pn) {
+static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) {
     /* data is 3 bytes ng */
     unsigned char d[4] = { 0x4E, data[0], data[1], data[2], } ;
-    unsigned int bytes = 2 ;
-    int ret ;
+    unsigned char pow[] = { 0x48, } ;
+    struct transaction_log twrite[] = {
+        { d, NULL, 3, trxn_match },
+        TRXN_END,
+    } ;
+    struct transaction_log tpower[] = {
+        { pow, NULL, 10, trxn_power },
+        TRXN_END,
+    } ;
 
     /* different processing for DS18S20 and both DS19B20 and DS1822 */
-    if ( strncmp( "10", pn->dev->code, 2 ) ) bytes = 3 ;
+    if ( pn->sn[0]==0x10 ) twrite->size = 4 ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( d,bytes+1,pn ) || BUS_select(pn) || BUS_PowerByte( 0x48,10,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( twrite, pn ) ) return 1 ;
+    
+    return BUS_transaction( tpower, pn ) ;
 }
 
 /* Trim values -- undocumented except in AN247.pdf */
-static int OW_r_trim(unsigned char * const trim, const struct parsedname * const pn) {
-    unsigned char cmd[] = { 0x93, 0x68, } ;
-    int ret ;
+static int OW_r_trim(unsigned char * trim, const struct parsedname * pn) {
+    unsigned char cmd0[] = { 0x93, } ;
+    unsigned char cmd1[] = { 0x68, } ;
+    struct transaction_log t0[] = {
+        { cmd0, NULL, 1, trxn_match },
+        { NULL, &trim[0], 1, trxn_read },
+        TRXN_END,
+    } ;
+    struct transaction_log t1[] = {
+        { cmd1, NULL, 1, trxn_match },
+        { NULL, &trim[1], 1, trxn_read },
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret =    BUS_select(pn) || BUS_send_data( &cmd[0],1,pn ) || BUS_readin_data( &trim[0],1,pn )
-              || BUS_select(pn) || BUS_send_data( &cmd[1],1,pn ) || BUS_readin_data( &trim[1],1,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( t0, pn ) ) return 1 ;
+    
+    return BUS_transaction( t1, pn ) ;
 }
 
-static int OW_w_trim(const unsigned char * const trim, const struct parsedname * const pn) {
-    unsigned char cmd[] = { 0x95, trim[0], 0x63, trim[1], 0x94, 0x64, } ;
-    int ret ;
+static int OW_w_trim(const unsigned char * trim, const struct parsedname * pn) {
+    unsigned char cmd0[] = { 0x95, trim[0], } ;
+    unsigned char cmd1[] = { 0x63, trim[1], } ;
+    unsigned char cmd2[] = { 0x94, } ;
+    unsigned char cmd3[] = { 0x64, } ;
+    struct transaction_log tt[] = {
+        { cmd0, NULL, 2, trxn_match },
+        TRXN_END,
+    } ;
+    struct transaction_log t[] = {
+        { cmd2, NULL, 1, trxn_match },
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret =    BUS_select(pn) || BUS_send_data( &cmd[0],2,pn )
-              || BUS_select(pn) || BUS_send_data( &cmd[2],2,pn )
-              || BUS_select(pn) || BUS_send_data( &cmd[4],1,pn )
-              || BUS_select(pn) || BUS_send_data( &cmd[5],1,pn ) ;
-    BUSUNLOCK(pn);
-
-    return ret ;
+    if ( BUS_transaction( tt, pn ) ) return 1 ;
+    tt->out = cmd1 ;
+    if ( BUS_transaction( tt, pn ) ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+    
+    t->out = cmd3 ;
+    return BUS_transaction( t, pn ) ;
 }
 
-static enum eDie OW_die( const struct parsedname * const pn ) {
+static enum eDie OW_die( const struct parsedname * pn ) {
     unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
     // data gives index into die matrix
     if ( memcmp(die, DIE[pn->ft->data.i].C2 , 6 ) > 0 ) return eC2 ;

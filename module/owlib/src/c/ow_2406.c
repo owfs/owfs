@@ -201,12 +201,13 @@ static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
 
 static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[3+128+2] = { 0xF0, offset&0xFF , offset>>8, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        { p, NULL, 3, trxn_match } ,
+        { NULL, &p[3], 128+2-offset, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p , 3,pn ) || BUS_readin_data( &p[3], 128+2-offset,pn ) || CRC16(p,3+128+2-offset) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( t, pn ) || CRC16(p,3+128+2-offset) ) return 1 ;
 
     memcpy( data , &p[3], size ) ;
     return 0 ;
@@ -216,21 +217,27 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     unsigned char p[6] = { 0x0F, offset&0xFF , offset>>8, data[0], } ;
     unsigned char resp ;
     size_t i ;
-    int ret ;
+    struct transaction_log tfirst[] = {
+        { p, NULL, 4, trxn_match } ,
+        { NULL, &p[4], 2, trxn_read } ,
+        { NULL, NULL, 0, trxn_program } ,
+        { NULL, &resp, 1, trxn_read } ,
+        TRXN_END,
+    } ;
+    struct transaction_log trest[] = {
+        { &p[1], NULL, 3, trxn_match } ,
+        { NULL, &p[4], 2, trxn_read } ,
+        { NULL, NULL, 0, trxn_program } ,
+        { NULL, &resp, 1, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = (size==0) || BUS_select(pn) || BUS_send_data(p,4,pn) || BUS_readin_data(&p[4],2,pn) || CRC16(p,6)
-        || BUS_ProgramPulse(pn) || BUS_readin_data(&resp,1,pn) || (resp&~data[0]) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( (size==0) || BUS_transaction( tfirst, pn ) || CRC16(p,6) || (resp&~data[0]) ) return 1 ;
 
     for ( i=1 ; i<size ; ++i ) {
         p[3] = data[i] ;
         if ( (++p[1])==0x00 ) ++p[2] ;
-        BUSLOCK(pn);
-            ret = BUS_send_data(&p[1],3,pn) || BUS_readin_data(&p[4],2,pn) || CRC16(&p[1],5) || BUS_ProgramPulse(pn) || BUS_readin_data(&resp,1,pn) || (resp&~data[i]) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
+        if ( BUS_transaction( trest, pn ) || CRC16(&p[1],5) || (resp&~data[i]) ) return 1 ;
     }
     return 0 ;
 }
@@ -238,12 +245,14 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 /* read status byte */
 static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0xAA, 0x07 , 0x00, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        { p, NULL, 3, trxn_match } ,
+        { NULL, &p[3], 1+2, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 1+2,pn ) || CRC16(p,3+1+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( CRC16(p,3+1+2) ) return 1 ;
 
     *data = p[3] ;
     return 0 ;
@@ -252,12 +261,16 @@ static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
 /* write status byte */
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0x55, 0x07 , 0x00, data, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        { p, NULL, 4, trxn_match } ,
+        { NULL, &p[4], 2, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p , 4,pn ) || BUS_readin_data( &p[4], 2,pn ) || CRC16(p,6) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( CRC16(p,6) ) return 1 ;
+
+    return 0 ;
 }
 
 /* write alarm settings */
@@ -278,12 +291,14 @@ static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
 
 static int OW_access( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        { p, NULL, 3, trxn_match } ,
+        { NULL, &p[3], 2+2, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret =BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 2+2,pn ) || CRC16(p,3+2+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( CRC16(p,3+2+2) ) return 1 ;
 
     *data = p[3] ;
     return 0 ;
@@ -292,12 +307,14 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
 /* Clear latches */
 static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        { p, NULL, 3, trxn_match } ,
+        { NULL, &p[3], 2+2, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-         ret =BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 2+2,pn ) || CRC16(p,3+2+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( CRC16(p,3+2+2) ) return 1 ;
 
     return 0 ;
 }

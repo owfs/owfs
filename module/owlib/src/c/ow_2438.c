@@ -88,16 +88,16 @@ DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_ovdr) ;
 /* ------- Functions ------------ */
 
 /* DS2438 */
-static int OW_r_page( unsigned char * const p , const int page , const struct parsedname * const pn) ;
-static int OW_w_page( const unsigned char * const p , const int page , const struct parsedname * const pn ) ;
-static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) ;
-static int OW_volts( FLOAT * const V , const int src, const struct parsedname * const pn ) ;
-static int OW_current( int * const I , const struct parsedname * const pn ) ;
-static int OW_r_Ienable( unsigned * const u , const struct parsedname * const pn ) ;
-static int OW_w_Ienable( const unsigned u , const struct parsedname * const pn ) ;
-static int OW_r_int( int * const I , const unsigned int address, const struct parsedname * const pn ) ;
-static int OW_w_int( const int I , const unsigned int address, const struct parsedname * const pn ) ;
-static int OW_w_offset( const int I , const struct parsedname * const pn ) ;
+static int OW_r_page( unsigned char * p , const int page , const struct parsedname * pn) ;
+static int OW_w_page( const unsigned char * p , const int page , const struct parsedname * pn ) ;
+static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
+static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) ;
+static int OW_current( int * I , const struct parsedname * pn ) ;
+static int OW_r_Ienable( unsigned * u , const struct parsedname * pn ) ;
+static int OW_w_Ienable( const unsigned u , const struct parsedname * pn ) ;
+static int OW_r_int( int * I , const unsigned int address, const struct parsedname * pn ) ;
+static int OW_w_int( const int I , const unsigned int address, const struct parsedname * pn ) ;
+static int OW_w_offset( const int I , const struct parsedname * pn ) ;
 
 /* 2438 A/D */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -202,27 +202,26 @@ int FS_r_date( DATE * d , const struct parsedname * pn) {
 }
 
 /* DS2438 fancy battery */
-static int OW_r_page( unsigned char * const p , const int page , const struct parsedname * const pn) {
+static int OW_r_page( unsigned char * p , const int page , const struct parsedname * pn) {
     unsigned char data[9] ;
     unsigned char recall[] = {0xB8, page, } ;
     unsigned char r[] = {0xBE , page, } ;
-    int ret ;
+    struct transaction_log trecall[] = {
+        { recall, NULL, 2, trxn_match } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tread[] = {
+        { r, NULL, 2, trxn_match } ,
+        { NULL, data, 9, trxn_read } ,
+        TRXN_END,
+    } ;
 
-//printf("page: %d %.2X %.2X %.2X %.2X \n",page,cmd[0],cmd[1],cmd[2],cmd[3]) ;
-//(printf("Data: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8])<0)||
-//printf("Data: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]) ;
-//printf("Data: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8]) ;
     // read to scratch, then in
+    if ( BUS_transaction( trecall, pn ) ) return 1 ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(recall,2,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( r, 2,pn ) || BUS_readin_data( data,9,pn ) || CRC8( data,9 ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    // read back to compare
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
+    if ( CRC8( data,9 ) ) return 1 ;
 
     // copy to buffer
     memcpy( p , data , 8 ) ;
@@ -230,62 +229,71 @@ static int OW_r_page( unsigned char * const p , const int page , const struct pa
 }
 
 /* write 8 bytes */
-static int OW_w_page( const unsigned char * const p , const int page , const struct parsedname * const pn ) {
+static int OW_w_page( const unsigned char * p , const int page , const struct parsedname * pn ) {
     unsigned char data[9] ;
     unsigned char w[] = {0x4E, page, } ;
     unsigned char r[] = {0xBE, page, } ;
     unsigned char eeprom[] = {0x48, page, } ;
     int i ;
-    int ret ;
+    struct transaction_log twrite[] = {
+        { w, NULL, 2, trxn_match } ,
+        { p, NULL, 8, trxn_match } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tread[] = {
+        { r, NULL, 2, trxn_match } ,
+        { NULL, data, 9, trxn_read } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tsave[] = {
+        { eeprom, NULL, 2, trxn_match } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tdone[] = {
+        { NULL, data, 1, trxn_match } ,
+        TRXN_END,
+    } ;
 
     // write then read to scratch, then into EEPROM if scratch matches
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) || BUS_send_data( p, 8,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( twrite, pn ) ) return 1 ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( r, 2,pn ) || BUS_readin_data( data,9,pn ) || CRC8( data,9 ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    // read back to compare
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
+    if ( CRC8( data,9 ) ) return 1 ;
     if ( page && memcmp( p, data, 8 ) ) return 1 ; /* page 0 has readonly fields that won't compare */
 
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data(eeprom,2,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    // commit to eeprom
+    if ( BUS_transaction( tsave, pn ) ) return 1 ;
 
     // Loop waiting for completion
     for ( i=0 ; i<10 ; ++i ) {
         UT_delay(1) ;
-        BUSLOCK(pn);
-            ret = BUS_readin_data(data,1,pn) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
+        if ( BUS_transaction( tdone, pn ) ) return 1 ;
         if ( data[0] ) return 0 ;
     }
     return 1 ; // timeout
 }
 
-static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) {
+static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     unsigned char data[9] ;
-    static unsigned char t = 0x44 ;
+    static unsigned char t[] = {0x44, } ;
     int i ;
-    int ret = 0 ;
+    struct transaction_log tconvert[] = {
+        { t, NULL, 1, trxn_match } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tdone[] = {
+        { NULL, data, 1, trxn_match } ,
+        TRXN_END,
+    } ;
 
     // write conversion command
     if ( Simul_Test( simul_temp, 10, pn ) != 0 ){
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data(&t, 1,pn ) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
+        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         // Loop waiting for completion
         for ( i=0 ; i<10 ; ++i ) {
             UT_delay(1) ;
-            BUSLOCK(pn);
-                ret = BUS_readin_data(data,1,pn) ;
-            BUSUNLOCK(pn);
-            if ( ret ) return 1 ;
+            if ( BUS_transaction( tdone, pn ) ) return 1 ;
             if ( data[0] ) break ;
         }
     }
@@ -296,30 +304,32 @@ static int OW_temp( FLOAT * const T , const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int OW_volts( FLOAT * const V , const int src, const struct parsedname * const pn ) {
+static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
     // src deserves some explanation:
     //   1 -- VDD (battery) measured
     //   0 -- VAD (other) measured
     unsigned char data[9] ;
-    static unsigned char v = 0xB4 ;
+    static unsigned char v[] = {0xB4, } ;
     static unsigned char w[] = {0x4E, 0x00, } ;
     int i ;
     int ret ;
+    struct transaction_log tsource[] = {
+        { w, NULL, 2, trxn_match } ,
+        { data, NULL, 8, trxn_match } ,
+        TRXN_END ,
+    } ;
+    struct transaction_log tconvert[] = {
+        { v, NULL, 1, trxn_match } ,
+        TRXN_END ,
+    } ;
 
     // set voltage source command
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
     UT_setbit( data , 3 , src ) ; // AD bit in status register
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) || BUS_send_data( data, 8,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tsource, pn ) ) return 1 ;
 
     // write conversion command
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &v, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tconvert, pn ) ) return 1 ;
 
     // Loop waiting for completion
     for ( i=0 ; i<10 ; ++i ) {
@@ -337,7 +347,7 @@ static int OW_volts( FLOAT * const V , const int src, const struct parsedname * 
     return 0 ;
 }
 
-static int OW_current( int * const I , const struct parsedname * const pn ) {
+static int OW_current( int * I , const struct parsedname * pn ) {
     unsigned char data[8] ;
     int enabled ;
 
@@ -360,7 +370,7 @@ static int OW_current( int * const I , const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int OW_w_offset( const int I , const struct parsedname * const pn ) {
+static int OW_w_offset( const int I , const struct parsedname * pn ) {
     unsigned char data[8] ;
     int enabled ;
 
@@ -383,7 +393,7 @@ static int OW_w_offset( const int I , const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int OW_r_Ienable( unsigned * const u , const struct parsedname * const pn ) {
+static int OW_r_Ienable( unsigned * u , const struct parsedname * pn ) {
     unsigned char data[8] ;
 
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
@@ -403,7 +413,7 @@ static int OW_r_Ienable( unsigned * const u , const struct parsedname * const pn
     return 0 ;
 }
 
-static int OW_w_Ienable( const unsigned u , const struct parsedname * const pn ) {
+static int OW_w_Ienable( const unsigned u , const struct parsedname * pn ) {
     unsigned char data[8] ;
     static unsigned char iad[] = { 0x00, 0x01, 0x3, 0x7, } ;
 
@@ -416,7 +426,7 @@ static int OW_w_Ienable( const unsigned u , const struct parsedname * const pn )
 }
 
 
-static int OW_r_int( int * const I , const unsigned int address, const struct parsedname * const pn ) {
+static int OW_r_int( int * I , const unsigned int address, const struct parsedname * pn ) {
     unsigned char data[8] ;
 
     // read back registers
@@ -425,7 +435,7 @@ static int OW_r_int( int * const I , const unsigned int address, const struct pa
     return 0 ;
 }
 
-static int OW_w_int( const int I , const unsigned int address, const struct parsedname * const pn ) {
+static int OW_w_int( const int I , const unsigned int address, const struct parsedname * pn ) {
     unsigned char data[8] ;
 
     // read back registers

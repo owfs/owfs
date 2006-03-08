@@ -277,7 +277,14 @@ struct connection_in * NewIn( void ) ;
 struct connection_out * NewOut( void ) ;
 struct connection_in *find_connection_in(int nr);
 
-
+enum transaction_type { trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
+struct transaction_log {
+    const unsigned char * out ;
+    unsigned char * in ;
+    size_t  size ;
+    enum transaction_type type ;
+} ;
+#define TRXN_END    { NULL, NULL, 0, trxn_end }
 /* Low-level functions
     slowly being abstracted and separated from individual
     interface type details
@@ -317,6 +324,8 @@ int BUS_PowerByte_low(const unsigned char byte, unsigned int delay, const struct
 int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 int BUS_reconnect_low(const struct parsedname * const pn) ;
+
+int BUS_transaction( const struct transaction_log * tl, const struct parsedname * pn ) ;
 
 #define STAT_ADD1_BUS( err, in )     STATLOCK; ++err; ++(in->bus_errors) ; STATUNLOCK ;
 
