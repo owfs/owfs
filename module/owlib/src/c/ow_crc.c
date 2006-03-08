@@ -71,9 +71,10 @@ int CRC16seeded( const unsigned char * bytes , const size_t length , const unsig
     unsigned int sd = seed ;
     int ret ;
     size_t i ;
+    
     for ( i=0 ; i<length ; ++i ) {
         unsigned int c = ( bytes[i] ^ ( sd & 0xFF ) ) & 0xFF ;
-        ret >>= 8 ;
+        sd >>= 8 ;
         if ( crc16_table[c&0x0F] ^ crc16_table[c>>4] ) sd ^= 0xC001 ;
         sd ^= ( c<<=6 ) ;
         sd ^= ( c<<1 ) ;

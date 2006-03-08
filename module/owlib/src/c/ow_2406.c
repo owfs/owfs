@@ -281,12 +281,11 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
     int ret ;
 
     BUSLOCK(pn);
-         ret =BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 2+2,pn ) || CRC16(p,3+2+2) ;
+        ret =BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 2+2,pn ) || CRC16(p,3+2+2) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
     *data = p[3] ;
-//printf("ACCESS %.2X %.2X\n",p[3],p[4]);
     return 0 ;
 }
 
