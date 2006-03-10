@@ -247,7 +247,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     /* Copy Scratchpad to SRAM */
     p[0] = 0x99 ;
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,4+7,pn) || BUS_PowerByte(p[4+7],10,pn) ;
+    ret = BUS_select(pn) || BUS_send_data(p,4+7,pn) || BUS_PowerByte(p[4+7],&p[4+7],10,pn) ;
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
@@ -270,7 +270,7 @@ static int OW_r_pmem(unsigned char *data, const unsigned char *pwd, const size_t
     unsigned char p[1+2+64+2] = { 0x69, offset&0xFF , offset>>8, } ;
 
     BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_send_data(pwd,7,pn) || BUS_PowerByte( pwd[7],5,pn) ;
+    ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_send_data(pwd,7,pn) || BUS_PowerByte( pwd[7],&pwd[7],5,pn) ;
         if ( ret ) {
         } else if ( (offset+size)&0x3F ) { /* not a page boundary */
             ret = BUS_readin_data(&p[3],size,pn) ;
@@ -303,7 +303,7 @@ static int OW_verify( unsigned char * pwd, const size_t offset, const struct par
     unsigned char c ;
 
     BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data(p,3+7,pn) || BUS_PowerByte(p[3+7],5,pn) || BUS_readin_data( &c, 1, pn ) ;
+    ret = BUS_select(pn) || BUS_send_data(p,3+7,pn) || BUS_PowerByte(p[3+7],&p[3+7],5,pn) || BUS_readin_data( &c, 1, pn ) ;
     BUSUNLOCK(pn);
     
     return ( ret || c!=0xFF ) ? 1 : 0 ;

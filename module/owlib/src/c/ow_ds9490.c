@@ -40,7 +40,7 @@ static int DS9490_sendback_data( const unsigned char * data , unsigned char * re
 static int DS9490_level(int new_level, const struct parsedname * pn) ;
 static void DS9490_setroutines( struct interface_routines * f ) ;
 static int DS9490_detect_low( const struct parsedname * pn ) ;
-static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+static int DS9490_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) ;
 static int DS9490_read( unsigned char * buf, const size_t size, const struct parsedname * pn) ;
 static int DS9490_write( const unsigned char * buf, const size_t size, const struct parsedname * pn) ;
 static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) ;
@@ -1016,8 +1016,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 /* Returns 0=good
    bad = -EIO
  */
-static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,const struct parsedname * pn) {
-    unsigned char resp ;
+static int DS9490_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay,const struct parsedname * pn) {
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     int ret ;
 
@@ -1038,10 +1037,8 @@ static int DS9490_PowerByte(const unsigned char byte, const unsigned int delay,c
         pn->in->connin.usb.ULevel = MODE_STRONG5;
     
         /* Read back the result (should be the same as "byte") */
-        if((ret = DS9490_read(&resp, 1, pn)) < 0) {
+        if((ret = DS9490_read(resp, 1, pn)) < 0) {
             LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n", ret) ;
-        } else if(resp != byte) {
-            LEVEL_DATA("DS9490_Powerbyte: Error resp(%d) != byte(%d)\n", resp, byte) ;
         } else {
             /* Delay with strong pullup */
             UT_delay( delay ) ;

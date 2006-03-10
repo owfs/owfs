@@ -287,10 +287,12 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
 static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     unsigned char data[8] ;
     unsigned char convert[] = { 0x44, } ;
+    unsigned char dummy ;
     unsigned int delay = pn->ft->data.i ;
     unsigned char pow ;
     struct transaction_log tconvert[] = {
-        { convert, NULL, 1, trxn_power },
+        TRXN_START ,
+        { convert, &dummy, 1, trxn_power },
         TRXN_END,
     } ;
 
@@ -298,10 +300,10 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     
     /* Select particular device and start conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        tconvert->size = delay ;
+        tconvert[1].size = delay ;
         if ( BUS_transaction( tconvert, pn ) ) return 1 ;
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        tconvert->type = trxn_match ;
+        tconvert[1].type = trxn_match ;
         if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         UT_delay( delay ) ;
     }
@@ -312,11 +314,11 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
         /* repeat the conversion (only once) */
         if ( pow ) { // powered, so release bus immediately after issuing convert
-            tconvert->type = trxn_match ;
+            tconvert[1].type = trxn_match ;
             if ( BUS_transaction( tconvert, pn ) ) return 1 ;
             UT_delay( delay ) ;
         } else { // unpowered, deliver power, no communication allowed
-            tconvert->size = delay ;
+            tconvert[1].size = delay ;
             if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         }
         if ( OW_r_scratchpad( data , pn ) ) return 1 ;
@@ -336,6 +338,7 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
 static int OW_power( unsigned char * data, const struct parsedname * pn) {
     unsigned char b4[] = { 0xB4, } ;
     struct transaction_log tpower[] = {
+        TRXN_START ,
         { b4, NULL, 1, trxn_match },
         { NULL, data, 1, trxn_read },
         TRXN_END,
@@ -358,7 +361,8 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
     int oldres ;
     size_t s = sizeof(oldres) ;
     struct transaction_log tconvert[] = {
-        { convert, NULL, 1, trxn_power },
+        TRXN_START ,
+        { convert, convert, 1, trxn_power },
         TRXN_END,
     } ;
 
@@ -386,10 +390,10 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
 
     /* Conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        tconvert->size = delay ;
+        tconvert[1].size = delay ;
         if ( BUS_transaction( tconvert, pn ) ) return 1 ;
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        tconvert->type = trxn_match ;
+        tconvert[1].type = trxn_match ;
         if ( BUS_transaction( tconvert, pn ) ) return 1 ;
         UT_delay( delay ) ;
     }
@@ -406,6 +410,7 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
     unsigned char data[8] ;
     unsigned char recall[] = { 0xB4, } ;
     struct transaction_log trecall[] = {
+        TRXN_START ,
         { recall, NULL, 1, trxn_match },
         TRXN_END,
     } ;
@@ -434,6 +439,7 @@ static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) {
     unsigned char be[] = { 0xBE, } ;
     unsigned char td[9] ;
     struct transaction_log tread[] = {
+        TRXN_START ,
         { be, NULL, 1, trxn_match },
         { NULL, td, 9, trxn_read },
         TRXN_END,
@@ -451,11 +457,13 @@ static int OW_w_scratchpad(const unsigned char * data, const struct parsedname *
     unsigned char d[4] = { 0x4E, data[0], data[1], data[2], } ;
     unsigned char pow[] = { 0x48, } ;
     struct transaction_log twrite[] = {
+        TRXN_START ,
         { d, NULL, 3, trxn_match },
         TRXN_END,
     } ;
     struct transaction_log tpower[] = {
-        { pow, NULL, 10, trxn_power },
+        TRXN_START ,
+        { pow, pow, 10, trxn_power },
         TRXN_END,
     } ;
 
@@ -472,11 +480,13 @@ static int OW_r_trim(unsigned char * trim, const struct parsedname * pn) {
     unsigned char cmd0[] = { 0x93, } ;
     unsigned char cmd1[] = { 0x68, } ;
     struct transaction_log t0[] = {
+        TRXN_START ,
         { cmd0, NULL, 1, trxn_match },
         { NULL, &trim[0], 1, trxn_read },
         TRXN_END,
     } ;
     struct transaction_log t1[] = {
+        TRXN_START ,
         { cmd1, NULL, 1, trxn_match },
         { NULL, &trim[1], 1, trxn_read },
         TRXN_END,
@@ -493,20 +503,22 @@ static int OW_w_trim(const unsigned char * trim, const struct parsedname * pn) {
     unsigned char cmd2[] = { 0x94, } ;
     unsigned char cmd3[] = { 0x64, } ;
     struct transaction_log tt[] = {
+        TRXN_START ,
         { cmd0, NULL, 2, trxn_match },
         TRXN_END,
     } ;
     struct transaction_log t[] = {
+        TRXN_START ,
         { cmd2, NULL, 1, trxn_match },
         TRXN_END,
     } ;
 
     if ( BUS_transaction( tt, pn ) ) return 1 ;
-    tt->out = cmd1 ;
+    tt[1].out = cmd1 ;
     if ( BUS_transaction( tt, pn ) ) return 1 ;
     if ( BUS_transaction( t, pn ) ) return 1 ;
     
-    t->out = cmd3 ;
+    t[1].out = cmd3 ;
     return BUS_transaction( t, pn ) ;
 }
 

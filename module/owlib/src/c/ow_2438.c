@@ -207,10 +207,12 @@ static int OW_r_page( unsigned char * p , const int page , const struct parsedna
     unsigned char recall[] = {0xB8, page, } ;
     unsigned char r[] = {0xBE , page, } ;
     struct transaction_log trecall[] = {
+        TRXN_START ,
         { recall, NULL, 2, trxn_match } ,
         TRXN_END,
     } ;
     struct transaction_log tread[] = {
+        TRXN_START ,
         { r, NULL, 2, trxn_match } ,
         { NULL, data, 9, trxn_read } ,
         TRXN_END,
@@ -236,20 +238,24 @@ static int OW_w_page( const unsigned char * p , const int page , const struct pa
     unsigned char eeprom[] = {0x48, page, } ;
     int i ;
     struct transaction_log twrite[] = {
+        TRXN_START ,
         { w, NULL, 2, trxn_match } ,
         { p, NULL, 8, trxn_match } ,
         TRXN_END,
     } ;
     struct transaction_log tread[] = {
+        TRXN_START ,
         { r, NULL, 2, trxn_match } ,
         { NULL, data, 9, trxn_read } ,
         TRXN_END,
     } ;
     struct transaction_log tsave[] = {
+        TRXN_START ,
         { eeprom, NULL, 2, trxn_match } ,
         TRXN_END,
     } ;
     struct transaction_log tdone[] = {
+        TRXN_START ,
         { NULL, data, 1, trxn_match } ,
         TRXN_END,
     } ;
@@ -279,10 +285,12 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     static unsigned char t[] = {0x44, } ;
     int i ;
     struct transaction_log tconvert[] = {
+        TRXN_START ,
         { t, NULL, 1, trxn_match } ,
         TRXN_END,
     } ;
     struct transaction_log tdone[] = {
+        TRXN_START ,
         { NULL, data, 1, trxn_match } ,
         TRXN_END,
     } ;
@@ -314,11 +322,13 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
     int i ;
     int ret ;
     struct transaction_log tsource[] = {
+        TRXN_START ,
         { w, NULL, 2, trxn_match } ,
         { data, NULL, 8, trxn_match } ,
         TRXN_END ,
     } ;
     struct transaction_log tconvert[] = {
+        TRXN_START ,
         { v, NULL, 1, trxn_match } ,
         TRXN_END ,
     } ;

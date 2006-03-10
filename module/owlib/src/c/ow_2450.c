@@ -94,23 +94,23 @@ DeviceEntryExtended( 20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2450 */
-static int OW_r_mem( unsigned char * const p , const unsigned int size, const int location , const struct parsedname * const pn) ;
-static int OW_w_mem( const unsigned char * p , const unsigned int size , const int location , const struct parsedname * const pn) ;
-static int OW_volts( FLOAT * const f , const int resolution , const struct parsedname * const pn ) ;
-static int OW_1_volts( FLOAT * const f , const int element, const int resolution , const struct parsedname * const pn ) ;
-static int OW_convert( const struct parsedname * const pn ) ;
-static int OW_r_pio( int * const pio , const struct parsedname * const pn ) ;
-static int OW_r_1_pio( int * const pio , const int element , const struct parsedname * const pn ) ;
-static int OW_w_pio( const int * const pio , const struct parsedname * const pn ) ;
-static int OW_w_1_pio( const int pio , const int element , const struct parsedname * const pn ) ;
-static int OW_r_vset( FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) ;
-static int OW_w_vset( const FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) ;
-static int OW_r_high( unsigned int * const y , const int high, const struct parsedname * const pn ) ;
-static int OW_w_high( const unsigned int * const y , const int high, const struct parsedname * const pn ) ;
-static int OW_r_flag( unsigned int * const y , const int high, const struct parsedname * const pn ) ;
-static int OW_w_flag( const unsigned int * const y , const int high, const struct parsedname * const pn ) ;
-static int OW_r_por( unsigned int * const y , const struct parsedname * const pn ) ;
-static int OW_w_por( const int por , const struct parsedname * const pn ) ;
+static int OW_r_mem( unsigned char * p , const size_t size, const size_t offset , const struct parsedname * pn) ;
+static int OW_w_mem( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn) ;
+static int OW_volts( FLOAT * f , const int resolution , const struct parsedname * pn ) ;
+static int OW_1_volts( FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) ;
+static int OW_convert( const struct parsedname * pn ) ;
+static int OW_r_pio( int * pio , const struct parsedname * pn ) ;
+static int OW_r_1_pio( int * pio , const int element , const struct parsedname * pn ) ;
+static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
+static int OW_w_1_pio( const int pio , const int element , const struct parsedname * pn ) ;
+static int OW_r_vset( FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
+static int OW_w_vset( const FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
+static int OW_r_high( unsigned int * y , const int high, const struct parsedname * pn ) ;
+static int OW_w_high( const unsigned int * y , const int high, const struct parsedname * pn ) ;
+static int OW_r_flag( unsigned int * y , const int high, const struct parsedname * pn ) ;
+static int OW_w_flag( const unsigned int * y , const int high, const struct parsedname * pn ) ;
+static int OW_r_por( unsigned int * y , const struct parsedname * pn ) ;
+static int OW_w_por( const int por , const struct parsedname * pn ) ;
 
 /* read a page of memory (8 bytes) */
 static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -194,7 +194,7 @@ static int FS_w_PIO(const int *y, const struct parsedname * pn) {
 
 /* 2450 A/D */
 static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem(buf,size,(int)offset,pn) ) return -EINVAL ;
+    if ( OW_read_paged( buf, size, offset, pn, 8, OW_r_mem) ) return -EINVAL ;
     return size ;
 }
 
@@ -221,64 +221,52 @@ static int FS_w_setvolt( const FLOAT * const V, const struct parsedname * const 
     return 0 ;
 }
 
-/* read page from 2450 */
-static int OW_r_mem( unsigned char * const p , const unsigned int size, const int location , const struct parsedname * const pn) {
-    unsigned char buf[3+8+2] = {0xAA, location&0xFF,(location>>8)&0xFF, } ;
-    size_t thispage = 8-(location&0x07);
-    size_t s = size ;
-    int ret ;
-//printf("2450 R mem data=%d size=%d location=%d\n",*p,size,location) ;
+/* read up to 1 page from 2450 */
+/* cannot span page boundary */
+static int OW_r_mem( unsigned char * p , const size_t size, const size_t offset , const struct parsedname * pn) {
+    unsigned char buf[3+8+2] = {0xAA, offset&0xFF,(offset>>8)&0xFF, } ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { buf, NULL, 3, trxn_match } ,
+        { NULL, &buf[3], size, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    /* First page */
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(buf,3,pn) || BUS_readin_data(&buf[3],thispage+2,pn) || CRC16(buf,thispage+5) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-//printf("2450 R mem 1\n") ;
+    if ( ((offset+size)&0x07) == 0 ) t[2].size += 2 ; // to end of page
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+    if ( ((offset+size)&0x07) == 0 && CRC16(buf,size+5) ) {printf("READ PROB\n");return 1 ; }// to end of page
+    
+    memcpy( p , &buf[3] , size ) ;
 
-    if (s>thispage) s=thispage ;
-    memcpy( p , &buf[3] , s ) ;
-
-    /* cycle through additional pages */
-    for ( s=size-thispage; s>0; s-=thispage ) {
-        BUSLOCK(pn);
-            ret = BUS_readin_data(&buf[3],8+2,pn) || CRC16(&buf[3],8+2) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
-
-        thispage = (s>8) ? 8 : s ;
-        memcpy( &p[size-s] , &buf[3] , thispage ) ;
-    }
     return 0 ;
 }
 
 /* write to 2450 */
-static int OW_w_mem( const unsigned char * const p , const unsigned int size , const int location, const struct parsedname * const pn) {
+static int OW_w_mem( const unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
     // command, address(2) , data , crc(2), databack
-    unsigned char buf[] = {0x55, location&0xFF,(location>>8)&0xFF, p[0], 0xFF,0xFF, 0xFF, } ;
-    unsigned int i ;
-    int ret ;
+    unsigned char buf[7] = {0x55, offset&0xFF,(offset>>8)&0xFF, p[0], } ;
+    size_t i ;
+    struct transaction_log tfirst[] = {
+        TRXN_START ,
+        { buf, NULL, 4, trxn_match } ,
+        { NULL, &buf[4], 3, trxn_read },
+        TRXN_END,
+    } ;
+    struct transaction_log trest[] = { // note no TRXN_START
+        { buf, NULL, 1, trxn_match } ,
+        { NULL, &buf[1], 3, trxn_read },
+        TRXN_END,
+    } ;
 //printf("2450 W mem size=%d location=%d\n",size,location) ;
 
     if ( size == 0 ) return 0 ;
 
     /* Send the first byte (handled differently) */
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_sendback_data(buf,buf,7,pn) || CRC16(buf,6) || (buf[6]!=p[0]) ;
-    BUSUNLOCK(pn);
-//printf("2450 byte %d return=%d\n",0,ret );
-    if ( ret ) return 1 ;
-
+    if ( BUS_transaction( tfirst, pn ) || CRC16(buf,6) || (buf[6]!=p[0]) ) return 1 ;
     /* rest of the bytes */
     for ( i=1 ; i<size ; ++i ) {
         buf[0] = p[i] ;
-        buf[1] = buf[2] = buf[3] = 0xFF ;
-        BUSLOCK(pn);
-            ret =BUS_sendback_data(buf,buf,4,pn) || CRC16seeded(buf,3, location+i) || (buf[3]!=p[i]) ;
-        BUSUNLOCK(pn);
-//printf("2450 byte %d return=%d\n",i,ret );
-
-        if ( ret ) return 1 ;
+        if ( BUS_transaction( trest, pn ) || CRC16seeded(buf,3,offset+i) || (buf[3]!=p[i]) ) return 1 ;
     }
     return 0 ;
 }
@@ -286,15 +274,15 @@ static int OW_w_mem( const unsigned char * const p , const unsigned int size , c
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution and all 4 channels */
 /* resolution is 1->5.10V 0->2.55V */
-static int OW_volts( FLOAT * const f , const int resolution, const struct parsedname * const pn ) {
+static int OW_volts( FLOAT * f , const int resolution, const struct parsedname * pn ) {
     unsigned char control[8] ;
     unsigned char data[8] ;
     int i ;
     int writeback = 0 ; /* write control back? */
-
+    //printf("Volts res=%d\n",resolution);
     // Get control registers and set to A/D 16 bits
     if ( OW_r_mem( control , 8, 1<<3, pn ) ) return 1 ;
-//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
+    //printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
     for ( i=0; i<8 ; i++ ){ // warning, counter in incremented in loop, too
         if ( control[i]&0x0F ) {
             control[i] &= 0xF0 ; // 16bit, A/D
@@ -305,12 +293,12 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
             writeback = 1 ;
         }
     }
-//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
+    //printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
 
     // Set control registers
     if ( writeback )
         if ( OW_w_mem( control, 8, 1<<3, pn) ) return 1 ;
-
+    //printf("writeback=%d\n",writeback);
     // Start A/D process if needed
     if ( OW_convert( pn ) ) {
       LEVEL_DEFAULT("OW_volts: Failed to start conversion\n");
@@ -322,7 +310,7 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
       LEVEL_DEFAULT("OW_volts: OW_r_mem Failed\n");
       return 1 ;
     }
-//printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
+    //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
     f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;
@@ -336,7 +324,7 @@ static int OW_volts( FLOAT * const f , const int resolution, const struct parsed
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution on a single channel */
 /* resolution is 1->5.10V 0->2.55V */
-static int OW_1_volts( FLOAT * const f , const int element, const int resolution , const struct parsedname * const pn ) {
+static int OW_1_volts( FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) {
     unsigned char control[2] ;
     unsigned char data[2] ;
     int writeback = 0 ; /* write control back? */
@@ -375,38 +363,42 @@ static int OW_1_volts( FLOAT * const f , const int element, const int resolution
 }
 
 /* send A/D conversion command */
-static int OW_convert( const struct parsedname * const pn ) {
+static int OW_convert( const struct parsedname * pn ) {
     unsigned char convert[] = { 0x3C , 0x0F , 0x00, 0xFF, 0xFF, } ;
-    unsigned char data[5] ;
     unsigned char power ;
-    int ret ;
-
+    struct transaction_log tpower[] = {
+        TRXN_START ,
+        { convert, NULL, 3, trxn_match } ,
+        { NULL, &convert[3], 2, trxn_read } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tdead[] = {
+        TRXN_START ,
+        { convert, NULL, 3, trxn_match } ,
+        { NULL, &convert[3], 1, trxn_read } ,
+        { &convert[4], &convert[4], 6, trxn_power } ,
+        TRXN_END,
+    } ;
+    
     /* get power flag -- to see if pullup can be avoided */
-    if ( OW_r_mem(&power,1,0x1C,pn) ) power = 0; /* assume unpowered if cannot tell */
-
+    if ( OW_r_mem(&power,1,0x1C,pn) ) return 1 ;
+    
     /* See if a conversion was globally triggered */
     if ( power==0x40 && Simul_Test( simul_volt, 6, pn )==0 ) return 0 ;
 
     // Start conversion
     // 6 msec for 16bytex4channel (5.2)
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_sendback_data( convert , data , 5,pn ) || memcmp( convert , data , 3 ) || CRC16(data,5) ;
-    if ( ret==0 ) {
-      if (power==0x40) {
-	BUSUNLOCK(pn);
-	UT_delay(6) ; /* don't need to hold line for conversion! */
-	return 0;
-      } else { /* power line for conversion */
-	ret = BUS_PowerByte( 0x04, 6,pn) ;
-	LEVEL_DEFAULT("OW_convert: Failed to send powerbyte ret=%d\n", ret);
-      }
+    if (power==0x40) { //powered
+        if ( BUS_transaction( tpower, pn ) || CRC16(convert,5) ) return 1 ;
+        UT_delay(6) ; /* don't need to hold line for conversion! */
+    } else {
+        if ( BUS_transaction( tdead, pn ) || CRC16(convert,5) ) return 1 ;
     }
-    BUSUNLOCK(pn);
-    return ret ;
+    return 0 ;
 }
 
 /* read all the pio registers */
-static int OW_r_pio( int * const pio , const struct parsedname * const pn ) {
+static int OW_r_pio( int * pio , const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     pio[0] = ((p[0]&0xC0)!=0x80) ;
@@ -417,7 +409,7 @@ static int OW_r_pio( int * const pio , const struct parsedname * const pn ) {
 }
 
 /* read one pio register */
-static int OW_r_1_pio( int * const pio , const int element , const struct parsedname * const pn ) {
+static int OW_r_1_pio( int * pio , const int element , const struct parsedname * pn ) {
     unsigned char p[2] ;
     if ( OW_r_mem(p,2,(1<<3)+(element<<1),pn) ) return 1;
     pio[0] = ((p[0]&0xC0)!=0x80) ;
@@ -425,7 +417,7 @@ static int OW_r_1_pio( int * const pio , const int element , const struct parsed
 }
 
 /* Write all the pio registers */
-static int OW_w_pio( const int * const pio , const struct parsedname * const pn ) {
+static int OW_w_pio( const int * pio , const struct parsedname * pn ) {
     unsigned char p[8] ;
     int i ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
@@ -436,7 +428,7 @@ static int OW_w_pio( const int * const pio , const struct parsedname * const pn 
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 /* write just one pio register */
-static int OW_w_1_pio( const int pio , const int element, const struct parsedname * const pn ) {
+static int OW_w_1_pio( const int pio , const int element, const struct parsedname * pn ) {
     unsigned char p[2] ;
     if ( OW_r_mem(p,2,(1<<3)+(element<<1),pn) ) return 1;
     p[0] &= 0x3F ;
@@ -444,7 +436,7 @@ static int OW_w_1_pio( const int pio , const int element, const struct parsednam
     return OW_w_mem(p,2,(1<<3)+(element<<1),pn) ;
 }
 
-static int OW_r_vset( FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) {
+static int OW_r_vset( FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,2<<3,pn) ) return 1;
     V[0] = (resolution?.02:.01) * p[0+high] ;
@@ -454,7 +446,7 @@ static int OW_r_vset( FLOAT * const V , const int high, const int resolution, co
     return 0 ;
 }
 
-static int OW_w_vset( const FLOAT * const V , const int high, const int resolution, const struct parsedname * const pn ) {
+static int OW_w_vset( const FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,2<<3,pn) ) return 1;
     p[0+high] = V[0] * (resolution?50.:100.) ;
@@ -471,7 +463,7 @@ static int OW_w_vset( const FLOAT * const V , const int high, const int resoluti
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_high( unsigned int * const y , const int high, const struct parsedname * const pn ) {
+static int OW_r_high( unsigned int * y , const int high, const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p, 8+2+high) ;
@@ -481,7 +473,7 @@ static int OW_r_high( unsigned int * const y , const int high, const struct pars
     return 0 ;
 }
 
-static int OW_w_high( const unsigned int * const y , const int high, const struct parsedname * const pn ) {
+static int OW_w_high( const unsigned int * y , const int high, const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     UT_setbit(p, 8+2+high,(int)y[0]&0x01) ;
@@ -496,7 +488,7 @@ static int OW_w_high( const unsigned int * const y , const int high, const struc
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_flag( unsigned int * const y , const int high, const struct parsedname * const pn ) {
+static int OW_r_flag( unsigned int * y , const int high, const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p, 8+4+high) ;
@@ -506,7 +498,7 @@ static int OW_r_flag( unsigned int * const y , const int high, const struct pars
     return 0 ;
 }
 
-static int OW_w_flag( const unsigned int * const y , const int high, const struct parsedname * const pn ) {
+static int OW_w_flag( const unsigned int * y , const int high, const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     UT_setbit(p, 8+4+high,(int)y[0]&0x01) ;
@@ -516,14 +508,14 @@ static int OW_w_flag( const unsigned int * const y , const int high, const struc
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_por( unsigned int * const y , const struct parsedname * const pn ) {
+static int OW_r_por( unsigned int * y , const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p,15) || UT_getbit(p,31) || UT_getbit(p,47) || UT_getbit(p,63);
     return 0 ;
 }
 
-static int OW_w_por( const int por , const struct parsedname * const pn ) {
+static int OW_w_por( const int por , const struct parsedname * pn ) {
     unsigned char p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     UT_setbit(p,15,por) ;

@@ -104,7 +104,7 @@ struct interface_routines {
     /* Change speed between overdrive and normal on the 1-wire bus */
     int (* testoverdrive) (const struct parsedname * pn) ;
     /* Send a byte with bus power to follow */
-    int (* PowerByte) (const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+    int (* PowerByte) (const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
     int (* ProgramPulse) (const struct parsedname * pn) ;
     /* send and recieve data -- byte at a time */
@@ -123,7 +123,7 @@ struct interface_routines {
 #define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
 #define BUS_next_both(sn,search,pn)         (((pn)->in->iroutines.next_both)((sn),(search),(pn)))
 #define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
-#define BUS_PowerByte(byte,delay,pn)        (((pn)->in->iroutines.PowerByte)((byte),(delay),(pn)))
+#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
 #define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
 #define BUS_reconnect(pn)                   (((pn)->in->iroutines.reconnect)(pn))
 #define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive)((speed),(pn)))
@@ -277,13 +277,14 @@ struct connection_in * NewIn( void ) ;
 struct connection_out * NewOut( void ) ;
 struct connection_in *find_connection_in(int nr);
 
-enum transaction_type { trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
+enum transaction_type { trxn_select, trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
 struct transaction_log {
     const unsigned char * out ;
     unsigned char * in ;
     size_t  size ;
     enum transaction_type type ;
 } ;
+#define TRXN_START  { NULL, NULL, 0, trxn_select }
 #define TRXN_END    { NULL, NULL, 0, trxn_end }
 /* Low-level functions
     slowly being abstracted and separated from individual
@@ -320,7 +321,7 @@ int BUS_readin_data(unsigned char * const data , const size_t len, const struct 
 int BUS_alarmverify(const struct parsedname * const pn) ;
 int BUS_normalverify(const struct parsedname * const pn) ;
 
-int BUS_PowerByte_low(const unsigned char byte, unsigned int delay, const struct parsedname * const pn) ;
+int BUS_PowerByte_low(const unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * const pn) ;
 int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 int BUS_reconnect_low(const struct parsedname * const pn) ;

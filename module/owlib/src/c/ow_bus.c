@@ -290,10 +290,10 @@ int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , co
 /* Returns 0=good
    bad = -EIO
  */
-int BUS_PowerByte_low(unsigned char byte, unsigned int delay, const struct parsedname * const pn) {
+int BUS_PowerByte_low(unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * const pn) {
     int ret ;
     // send the packet
-    if((ret=BUS_send_data(&byte,1,pn))) {
+    if((ret=BUS_sendback_data(&byte,resp,1,pn))) {
         STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in);
         return ret ;
     }
@@ -420,11 +420,12 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
     int ret ;
     
     BUSLOCK(pn) ;
-        ret = BUS_select(pn) ;
-        //printf("Transaction select = %d\n",ret) ;
-
-        while ( ret==0 ) {
+        do {
             switch (t->type) {
+                case trxn_select:
+                    ret = BUS_select(pn) ;
+                    //printf("Transaction select = %d\n",ret) ;
+                    break ;
                 case trxn_match:
                     ret = BUS_send_data( t->out, t->size, pn ) ;
                     //printf("Transaction send = %d\n",ret) ;
@@ -439,7 +440,7 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
                     }
                     break ;
                 case trxn_power:
-                    ret = BUS_PowerByte( t->out[0], t->size, pn ) ;
+                    ret = BUS_PowerByte( t->out[0], t->in, t->size, pn ) ;
                     //printf("Transaction power = %d\n",ret) ;
                     break ;
                 case trxn_program:
@@ -454,7 +455,7 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
             }
             if ( t==NULL ) break ;
             ++ t ;
-        }        
+        } while ( ret==0) ;
     BUSUNLOCK(pn) ;
 
     return ret ;

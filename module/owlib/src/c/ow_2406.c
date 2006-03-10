@@ -202,6 +202,7 @@ static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
 static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[3+128+2] = { 0xF0, offset&0xFF , offset>>8, } ;
     struct transaction_log t[] = {
+        TRXN_START ,
         { p, NULL, 3, trxn_match } ,
         { NULL, &p[3], 128+2-offset, trxn_read } ,
         TRXN_END,
@@ -218,6 +219,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     unsigned char resp ;
     size_t i ;
     struct transaction_log tfirst[] = {
+        TRXN_START ,
         { p, NULL, 4, trxn_match } ,
         { NULL, &p[4], 2, trxn_read } ,
         { NULL, NULL, 0, trxn_program } ,
@@ -225,6 +227,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
         TRXN_END,
     } ;
     struct transaction_log trest[] = {
+        TRXN_START ,
         { &p[1], NULL, 3, trxn_match } ,
         { NULL, &p[4], 2, trxn_read } ,
         { NULL, NULL, 0, trxn_program } ,
@@ -246,6 +249,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0xAA, 0x07 , 0x00, } ;
     struct transaction_log t[] = {
+        TRXN_START ,
         { p, NULL, 3, trxn_match } ,
         { NULL, &p[3], 1+2, trxn_read } ,
         TRXN_END,
@@ -262,6 +266,7 @@ static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
     unsigned char p[3+1+2] = { 0x55, 0x07 , 0x00, data, } ;
     struct transaction_log t[] = {
+        TRXN_START ,
         { p, NULL, 4, trxn_match } ,
         { NULL, &p[4], 2, trxn_read } ,
         TRXN_END,
@@ -292,6 +297,7 @@ static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
 static int OW_access( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
     struct transaction_log t[] = {
+        TRXN_START ,
         { p, NULL, 3, trxn_match } ,
         { NULL, &p[3], 2+2, trxn_read } ,
         TRXN_END,
@@ -308,6 +314,7 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
 static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
     struct transaction_log t[] = {
+        TRXN_START ,
         { p, NULL, 3, trxn_match } ,
         { NULL, &p[3], 2+2, trxn_read } ,
         TRXN_END,
