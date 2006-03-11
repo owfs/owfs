@@ -424,24 +424,24 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
             switch (t->type) {
                 case trxn_select:
                     ret = BUS_select(pn) ;
-                    //printf("Transaction select = %d\n",ret) ;
+                    //printf("  Transaction select = %d\n",ret) ;
                     break ;
                 case trxn_match:
                     ret = BUS_send_data( t->out, t->size, pn ) ;
-                    //printf("Transaction send = %d\n",ret) ;
+                    //printf("  Transaction send = %d\n",ret) ;
                     break ;
                 case trxn_read:
                     if ( t->out ) {
                         ret = BUS_sendback_data( t->out, t->in, t->size, pn ) ;
-                        //printf("Transaction sendback = %d\n",ret) ;
+                        //printf("  Transaction sendback = %d\n",ret) ;
                     } else {
                         ret = BUS_readin_data( t->in, t->size, pn ) ;
-                        //printf("Transaction readin = %d\n",ret) ;
+                        //printf("  Transaction readin = %d\n",ret) ;
                     }
                     break ;
                 case trxn_power:
                     ret = BUS_PowerByte( t->out[0], t->in, t->size, pn ) ;
-                    //printf("Transaction power = %d\n",ret) ;
+                    //printf("  Transaction power = %d\n",ret) ;
                     break ;
                 case trxn_program:
                     ret = BUS_ProgramPulse(pn) ;

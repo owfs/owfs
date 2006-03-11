@@ -283,27 +283,15 @@ static int OW_w_page( const unsigned char * p , const int page , const struct pa
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     unsigned char data[9] ;
     static unsigned char t[] = {0x44, } ;
-    int i ;
     struct transaction_log tconvert[] = {
         TRXN_START ,
         { t, NULL, 1, trxn_match } ,
         TRXN_END,
     } ;
-    struct transaction_log tdone[] = {
-        TRXN_START ,
-        { NULL, data, 1, trxn_match } ,
-        TRXN_END,
-    } ;
-
     // write conversion command
     if ( Simul_Test( simul_temp, 10, pn ) != 0 ){
         if ( BUS_transaction( tconvert, pn ) ) return 1 ;
-        // Loop waiting for completion
-        for ( i=0 ; i<10 ; ++i ) {
-            UT_delay(1) ;
-            if ( BUS_transaction( tdone, pn ) ) return 1 ;
-            if ( data[0] ) break ;
-        }
+        UT_delay(10) ;
     }
 
     // read back registers
@@ -319,8 +307,6 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
     unsigned char data[9] ;
     static unsigned char v[] = {0xB4, } ;
     static unsigned char w[] = {0x4E, 0x00, } ;
-    int i ;
-    int ret ;
     struct transaction_log tsource[] = {
         TRXN_START ,
         { w, NULL, 2, trxn_match } ,
@@ -340,16 +326,7 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
 
     // write conversion command
     if ( BUS_transaction( tconvert, pn ) ) return 1 ;
-
-    // Loop waiting for completion
-    for ( i=0 ; i<10 ; ++i ) {
-        UT_delay(1) ;
-        BUSLOCK(pn);
-            ret = BUS_readin_data(data,1,pn) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
-        if ( data[0] ) break ;
-    }
+    UT_delay(10) ;
 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
