@@ -44,6 +44,7 @@ OWLIB_SOURCE = compat.c          \
                ow_verify.c       \
                ow_link.c         \
                ow_bus.c          \
+               ow_transaction.c  \
                ow_badadapter.c   \
                ow_ds9097.c       \
                ow_ds1410.c       \

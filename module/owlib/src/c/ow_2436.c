@@ -167,73 +167,61 @@ static int OW_w_page( const unsigned char * p , const size_t size , const size_t
 }
 
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
-    unsigned char d2 = 0xD2 ;
+    unsigned char d2[] = { 0xD2, } ;
     unsigned char b2[] = { 0xB2 , 0x60, } ;
-    unsigned char t[3] ;
-    int timewait = 2 ;
-    int ret ;
+    unsigned char t[2] ;
+    struct transaction_log tconvert[] = {
+        TRXN_START,
+        { d2, NULL, 1, trxn_match } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tdata[] = {
+        TRXN_START,
+        { b2, NULL, 2, trxn_match } ,
+        { NULL, t, 3, trxn_read } ,
+        TRXN_END,
+    } ;
 
     // initiate conversion
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &d2, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tconvert, pn ) ) return 1 ;
+    UT_delay(10) ;
+    
 
-    UT_delay(timewait) ; // 3 msec minimum conversion delay
+    /* Get data */
+    if ( BUS_transaction( tdata, pn ) ) return 1 ;
 
-    /* Is it done? */
-    while (timewait<10) {
-        UT_delay(2) ;
-        timewait += 2 ;
-        BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( b2, 2,pn ) || BUS_readin_data( t, 3,pn ) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
-
-        if ( (t[2] & 0x01)==0 ) {
-            // success
-            T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
-            return 0 ;
-        }
-    }
-    return -ETIMEDOUT ;
+    // success
+    printf("Temp bytes %0.2X %0.2X\n",t[0],t[1]);
+    printf("temp int=%d\n",((int)((int8_t)t[1])));
+    
+    T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
+    return 0 ;
 }
 
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
-    unsigned char b4 = 0xB4 ;
-    unsigned char status[] = { 0xB2 , 0x62, } ;
-    unsigned char volts[] = { 0xB2 , 0x77, } ;
-    unsigned char s,v[2] ;
-    int timewait = 6 ;
-    int ret ;
+    unsigned char b4[] = { 0xB4, } ;
+    unsigned char b2[] = { 0xB2 , 0x77, } ;
+    unsigned char v[2] ;
+    struct transaction_log tconvert[] = {
+        TRXN_START,
+        { b4, NULL, 1, trxn_match } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tdata[] = {
+        TRXN_START,
+        { b2, NULL, 2, trxn_match } ,
+        { NULL, v, 2, trxn_read } ,
+        TRXN_END,
+    } ;
 
     // initiate conversion
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &b4 , 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tconvert, pn ) ) return 1 ;
+    UT_delay(10) ;
+    
+    /* Get data */
+    if ( BUS_transaction( tdata, pn ) ) return 1 ;
 
-    UT_delay(timewait) ;
-
-    /* Is it done? */
-    while (timewait<10) {
-        UT_delay(2) ;
-        timewait += 2 ;
-        BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( status, 2,pn ) || BUS_readin_data( &s , 1,pn ) ;
-        BUSUNLOCK(pn);
-
-        if ( (s&0x08)==0 ) {
-            // success
-            /* Read it in */
-            BUSLOCK(pn);
-                ret = BUS_select(pn) || BUS_send_data( volts , 2,pn ) || BUS_readin_data( v , 2,pn ) ;
-            BUSUNLOCK(pn);
-            if ( ret ) return 1 ;
-
-            *V = .01 * (FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
-            return 0 ;
-        }
-    }
-    return -ETIMEDOUT ;
+    // success
+    V[0] = .01 * (FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
+    return 0 ;
 }

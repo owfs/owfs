@@ -16,15 +16,6 @@ $Id$
 
 #include <sys/time.h>
 
-// Mode Commands
-#define MODE_DATA                      0xE1
-#define MODE_COMMAND                   0xE3
-#define MODE_STOP_PULSE                0xF1
-
-// Data/Command mode select bits
-#define MODSEL_DATA                    0x00
-#define MODSEL_COMMAND                 0x02
-
 /** BUS_send_data
     Send a data and expect response match
     puts into data mode if needed.
@@ -409,54 +400,5 @@ int BUS_reconnect_low( const struct parsedname * pn ) {
     } else {
         LEVEL_DEFAULT("%s adapter reconnected\n",pn->in->adapter_name);
     }
-    return ret ;
-}
-
-/* Bus transaction */
-/* Encapsulates communication with a device, including locking the bus, reset and selection */
-/* Then a series of bytes is sent and returned, including sending data and reading the return data */
-int BUS_transaction( const struct transaction_log * tl, const struct parsedname * pn ) {
-    const struct transaction_log * t = tl ;
-    int ret ;
-    
-    BUSLOCK(pn) ;
-        do {
-            switch (t->type) {
-                case trxn_select:
-                    ret = BUS_select(pn) ;
-                    //printf("  Transaction select = %d\n",ret) ;
-                    break ;
-                case trxn_match:
-                    ret = BUS_send_data( t->out, t->size, pn ) ;
-                    //printf("  Transaction send = %d\n",ret) ;
-                    break ;
-                case trxn_read:
-                    if ( t->out ) {
-                        ret = BUS_sendback_data( t->out, t->in, t->size, pn ) ;
-                        //printf("  Transaction sendback = %d\n",ret) ;
-                    } else {
-                        ret = BUS_readin_data( t->in, t->size, pn ) ;
-                        //printf("  Transaction readin = %d\n",ret) ;
-                    }
-                    break ;
-                case trxn_power:
-                    ret = BUS_PowerByte( t->out[0], t->in, t->size, pn ) ;
-                    //printf("  Transaction power = %d\n",ret) ;
-                    break ;
-                case trxn_program:
-                    ret = BUS_ProgramPulse(pn) ;
-                    break ;
-                case trxn_reset:
-                    ret = BUS_reset(pn) ;
-                    // fall through
-                case trxn_end:
-                    t = NULL ;
-                    break ;
-            }
-            if ( t==NULL ) break ;
-            ++ t ;
-        } while ( ret==0) ;
-    BUSUNLOCK(pn) ;
-
     return ret ;
 }
