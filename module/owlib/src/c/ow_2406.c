@@ -235,12 +235,15 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
         TRXN_END,
     } ;
 
-    if ( (size==0) || BUS_transaction( tfirst, pn ) || CRC16(p,6) || (resp&~data[0]) ) return 1 ;
+    if ( size==0 ) return 0 ;
+    if ( BUS_transaction( tfirst, pn ) ) return 1 ;
+    if ( CRC16(p,6) || (resp&~data[0]) ) return 1 ;
 
     for ( i=1 ; i<size ; ++i ) {
         p[3] = data[i] ;
         if ( (++p[1])==0x00 ) ++p[2] ;
-        if ( BUS_transaction( trest, pn ) || CRC16(&p[1],5) || (resp&~data[i]) ) return 1 ;
+        if ( BUS_transaction( trest, pn ) ) return 1 ;
+        if ( CRC16(&p[1],5) || (resp&~data[i]) ) return 1 ;
     }
     return 0 ;
 }
@@ -255,7 +258,7 @@ static int OW_r_control( unsigned char * data , const struct parsedname * pn ) {
         TRXN_END,
     } ;
 
-    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
     if ( CRC16(p,3+1+2) ) return 1 ;
 
     *data = p[3] ;
@@ -272,7 +275,7 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
         TRXN_END,
     } ;
 
-    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
     if ( CRC16(p,6) ) return 1 ;
 
     return 0 ;
@@ -303,7 +306,7 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
         TRXN_END,
     } ;
 
-    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
     if ( CRC16(p,3+2+2) ) return 1 ;
 
     *data = p[3] ;
@@ -314,13 +317,13 @@ static int OW_access( unsigned char * data , const struct parsedname * pn ) {
 static int OW_clear( const struct parsedname * pn ) {
     unsigned char p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
     struct transaction_log t[] = {
-        TRXN_START ,
+        TRXN_START,
         { p, NULL, 3, trxn_match } ,
         { NULL, &p[3], 2+2, trxn_read } ,
         TRXN_END,
     } ;
 
-    if ( BUS_transaction(t,pn) ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
     if ( CRC16(p,3+2+2) ) return 1 ;
 
     return 0 ;
