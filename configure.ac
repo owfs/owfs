@@ -55,7 +55,7 @@ AC_PATH_PROG([PYTHON],[python],,$PATH)dnl
 AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
 AC_SUBST(CCMALLLOC)
 AC_ARG_ENABLE(ccmalloc, 
-[--enable-ccmalloc        ccmalloc memory checking],
+[  --enable-ccmalloc       ccmalloc memory checking],
 [ AC_MSG_RESULT(["$enableval"])
  if test "$enableval" = yes; then
    CCLD="$CCMALLOC --no-wrapper $CC"
@@ -304,9 +304,6 @@ if test "${ENABLE_MT}" = "true" ; then
     fi
 fi
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
-
-
-
 
 # Check if the modules are enabled
 
@@ -614,22 +611,34 @@ fi
 
 LD_EXTRALIBS=""
 
+
+AC_ARG_WITH(fuseinclude,
+            [  --with-fuseinclude=DIR  FUSE-include from @<:@/usr/local/include@:>@],
+            [fuse_include_path=$withval],
+            [fuse_include_path='/usr/local/include'])
+AC_SUBST(fuse_include_path)
+
+AC_ARG_WITH(fuselib,
+            [  --with-fuselib=DIR      FUSE-lib from @<:@/usr/local/lib@:>@],
+            [fuse_lib_path=$withval],
+            [fuse_lib_path='/usr/local/lib'])
+AC_SUBST(fuse_lib_path)
+
+
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
 
     save_CPPFLAGS="$CPPFLAGS"
     save_LDFLAGS="$LDFLAGS"
-    FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I/usr/local/include"
-    FUSE_LIBS="-L/usr/local/lib"
-    LD_EXTRALIBS="-Wl,--rpath -Wl,/usr/local/lib"
+    FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I${fuse_include_path}"
+    FUSE_LIBS="-L${fuse_lib_path}"
+    LD_EXTRALIBS="-Wl,--rpath -Wl,${fuse_lib_path}"
     CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
     LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
     AC_CHECK_HEADER(fuse.h,,[
 	AC_MSG_WARN([
-	Can't find fuse.h - Add the search path to CPPFLAGS
-	and rerun configure, eg:
-	export CPPFLAGS=-I/usr/local/include ])
+	Can't find fuse.h - Add the search path with --with-fuseinclude])
 
 	FUSE_FLAGS=""
 	FUSE_LIBS=""
@@ -650,9 +659,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
     if test "${ENABLE_OWFS}" != "false"; then
 	AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="$FUSE_LIBS -lfuse"],[
 	    AC_MSG_WARN([
-	Can't find libfuse.a - add the search path to LDFLAGS
-	and rerun configure, eg:
-	export LDFLAGS=-L/usr/local/lib ])
+	Can't find libfuse.a - add the search path with --with-fuselib])
 		AC_MSG_WARN([Running ldconfig or adding "/usr/local/lib" to /etc/ld.so.conf might also solve the problem, otherwise re-install fuse.])
 	    	if test "${ENABLE_OWFS}" = "auto"; then
 			AC_MSG_WARN([OWFS is disabled because libfuse.a is not found.])
@@ -783,7 +790,7 @@ ENABLE_PARPORT=auto
 AC_MSG_CHECKING([if parallel port support is enabled])
 
 AC_ARG_ENABLE(parport,
-[  --enable-parport          Enable 1-Wire parallel port DS1410E support (default auto)],
+[  --enable-parport      Enable 1-Wire parallel port DS1410E support (default auto)],
 [
     AC_MSG_RESULT([$enableval])
 
