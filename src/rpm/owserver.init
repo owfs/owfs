@@ -31,31 +31,13 @@ start() {
 		interface=${INTERFACE[$i]}
 		options=${OPTIONS[$i]}
 		if [ "$port" != "" ]; then
-			if [ "$interface" != "" ]; then
-				case $interface in
-				[uU][sS][bB][0-9]*)
-					/sbin/modprobe -rq ds9490r
-					$owserver -u -p $port $options >/dev/null
-					;;
-				[uU][sS][bB])
-					/sbin/modprobe -rq ds9490r
-					$owserver -u`echo $interface | sed -e 's/usb//i'` -p $port $options >/dev/null
-					;;
-				/*)
-					$owserver -d $interface -p $port $options >/dev/null
-					;;
-				*)
-					echo "ERROR: Bad interface \"$interface\""
-					/bin/false
-					;;
-				esac
-				RETVAL=$?
-				[ $RETVAL = 0 ] || {
-					echo_failure
-					echo
-					return $RETVAL
-				}
-			fi
+			$owserver -p $port $options >/dev/null
+			RETVAL=$?
+			[ $RETVAL = 0 ] || {
+				echo_failure
+				echo
+				return $RETVAL
+			}
 			n=`expr $n + 1`
 		fi
 		i=`expr $i + 1`

@@ -28,41 +28,15 @@ start() {
 	i=0; n=0
 	while [ $n -lt $numfs ]; do
 		port=${PORT[$i]}
-		interface=${INTERFACE[$i]}
 		options=${OPTIONS[$i]}
 		if [ "$port" != "" ]; then
-			if [ "$interface" != "" ]; then
-				case $interface in
-				[uU][sS][bB][0-9]*)
-					/sbin/modprobe -rq ds9490r
-					$owftpd -u`echo $interface | sed -e 's/usb//i'` -p $port $options >/dev/null
-					;;
-				[uU][sS][bB])
-					/sbin/modprobe -rq ds9490r
-					$owftpd -u -p $port $options >/dev/null
-					;;
-				/*)
-					$owftpd -d $interface -p $port $options >/dev/null
-					;;
-				[sS][oO][cC][kK][eE][tT]:*)
-					socket=`echo $interface | sed -e 's/^socket://i'`
-					$owftpd -s $socket -p $port $options >/dev/null
-					;;
-				*:*)
-					$owftpd -s $interface -p $port $options >/dev/null
-					;;
-				*)
-					echo "ERROR: Bad interface \"$interface\""
-					/bin/false
-					;;
-				esac
-				RETVAL=$?
-				[ $RETVAL = 0 ] || {
-					echo_failure
-					echo
-					return $RETVAL
-				}
-			fi
+			$owftpd -p $port $options >/dev/null
+			RETVAL=$?
+			[ $RETVAL = 0 ] || {
+				echo_failure
+				echo
+				return $RETVAL
+			}
 			n=`expr $n + 1`
 		fi
 		i=`expr $i + 1`

@@ -21,7 +21,7 @@ Group: System Environment/Libraries
 URL: http://sourceforge.net/projects/owfs
 Buildroot: %{_tmppath}/%{name}-root
 Prefix: /usr
-Packager: Serg Oskin <oskin@macomnet.ru>
+Packager: Serg Oskin <serg@oskin.ru>
 Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
 
 %description
