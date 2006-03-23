@@ -25,6 +25,7 @@ RETVAL=0
 
 start() {
         echo -n $"Mounting One Wire file system: "
+	/sbin/modprobe -q fuse
 	i=0; n=0
 	while [ $n -lt $numfs ]; do
 		mountpoint=${MOUNTPOINT[$i]}
