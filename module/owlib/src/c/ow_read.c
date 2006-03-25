@@ -227,9 +227,9 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 #ifdef VALGRIND
     // avoid warnings from VALGRIND
     if( !(buf2 = (char *)calloc(1, size+1)) )
-#else
+#else /* VALGRIND */
     if( !(buf2 = (char *)malloc(size)) )
-#endif
+#endif /* VALGRIND */
     {
         return -ENOMEM;
     }
@@ -238,46 +238,48 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     }
 #endif /* OW_MT */
 
-    if ( (get_busmode(pn->in) == bus_remote) ) {
-//printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
+    if ( TestConnection(pn) ) {
+        r = -ECONNABORTED ; // Cannot "reconnect" this bus currently
+    } else if ( (get_busmode(pn->in) == bus_remote) ) {
+        //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
-//printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
+        //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         s = size ;
         STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
-//printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
+            //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 r = FS_real_read(buf, size, offset, pn ) ;
-//printf("READSEEK1 FS_real_read ret=%d\n", r);
+                //printf("READSEEK1 FS_real_read ret=%d\n", r);
                 LockRelease(pn) ;
             }
-//printf("READSEEK1 pid=%d = %d\n",getpid(), r);
+            //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
-//printf("READSEEK2 pid=%d not found in cache\n",getpid());
+            //printf("READSEEK2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
-//printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
+                //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
                 r = FS_real_read( buf, size, offset, pn ) ;
-//printf("READSEEK2 FS_real_read ret=%d\n", r);
+                //printf("READSEEK2 FS_real_read ret=%d\n", r);
                 if ( r>0 ) Cache_Add( buf, (const size_t)r, pn ) ;
                 LockRelease(pn) ;
             }
-//printf("READSEEK2 pid=%d = %d\n",getpid(), r);
+            //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
         } else {
-//printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
+            //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             STATLOCK;
                 ++read_cache ; /* statistics */
                 read_cachebytes += s ; /* statistics */
             STATUNLOCK;
             r = s ;
-//printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
+            //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
         }
     }
     /* If sucessfully reading a device, we know it exists on a specific bus.
-     * Update the cache content */
+    * Update the cache content */
     if((pn->type == pn_real) && (r >= 0)) {
-      Cache_Add_Device(pn->in->index, pn);
+        Cache_Add_Device(pn->in->index, pn);
     }
 
 #ifdef OW_MT

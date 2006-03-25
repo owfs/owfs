@@ -53,24 +53,25 @@ static int DS1410Present( unsigned char * p, int fd ) ;
 
 /* Device-specific functions */
 static void DS1410_setroutines( struct interface_routines * f ) {
-    f->detect        = DS1410_detect ;
-    f->reset         = DS1410_reset ;
-    f->next_both     = BUS_next_both_low ;
+    f->detect        = DS1410_detect         ;
+    f->reset         = DS1410_reset          ;
+    f->next_both     = BUS_next_both_low     ;
 //    f->overdrive = ;
  //   f->testoverdrive = ;
-    f->PowerByte     = BUS_PowerByte_low ; ;
+    f->PowerByte     = BUS_PowerByte_low     ;
 //    f->ProgramPulse = ;
     f->sendback_data = BUS_sendback_data_low ;
-    f->sendback_bits = DS1410_sendback_bits ;
-    f->select        = BUS_select_low ;
-    f->reconnect     = BUS_reconnect_low ;
-    f->close         = DS1410_close ;
+    f->sendback_bits = DS1410_sendback_bits  ;
+    f->select        = BUS_select_low        ;
+    f->reconnect     = NULL                  ;
+    f->close         = DS1410_close          ;
 }
 
 /* Open a DS1410 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
+// NOT called with bus locked! 
 int DS1410_detect( struct connection_in * in ) {
     struct stateinfo si ;
     struct parsedname pn ;
@@ -98,6 +99,7 @@ int DS1410_detect( struct connection_in * in ) {
     return DS1410_reset(&pn) ;
 }
 
+// return 1 if shorted, 0 ok, else <0
 static int DS1410_reset( const struct parsedname * pn ) {
     int fd = pn->in->fd ;
     unsigned char ad ;

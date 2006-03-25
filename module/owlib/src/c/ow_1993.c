@@ -121,27 +121,36 @@ static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t
 /* paged, and pre-screened */
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
-    int ret ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { data, NULL, size, trxn_match} ,
+        TRXN_END,
+    } ;
+    struct transaction_log tread[] = {
+        TRXN_START,
+        { p, NULL, 1, trxn_match } ,
+        { NULL, &p[1], size+3, trxn_read } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tsram[] = {
+        TRXN_START,
+        { p, NULL, 4, trxn_match } ,
+        TRXN_END,
+    } ;
 
     /* Copy to scratchpad */
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_send_data(data,size,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tcopy, pn ) ) return 1 ;
+
 
     /* Re-read scratchpad and compare */
     p[0] = 0xAA ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp(&p[4], data, (size_t) size) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
+    if ( memcmp(&p[4], data, (size_t) size) ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x55 ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tsram, pn ) ) return 1 ;
 
     UT_delay(32) ;
     return 0 ;
@@ -149,11 +158,14 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 
 static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
     unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { NULL, data, size, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 3,pn) || BUS_readin_data( data, (int) size,pn) ;
-    BUSUNLOCK(pn);
-    return ret ;
-    
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+
+    return 0 ;
 }

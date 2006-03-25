@@ -85,21 +85,21 @@ static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * p
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
 static int FS_power(int * y , const struct parsedname * pn) {
-    unsigned char data[8] ;
+    unsigned char data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],7) ;
     return 0 ;
 }
 
 static int FS_r_strobe(int * y , const struct parsedname * pn) {
-    unsigned char data[8] ;
+    unsigned char data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],2) ;
     return 0 ;
 }
 
 static int FS_w_strobe(const int * y, const struct parsedname * pn) {
-    unsigned char data[8] ;
+    unsigned char data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     UT_setbit( &data[5], 2, y[0] ) ;
     return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
@@ -162,27 +162,32 @@ static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2408 alarm settings*/
+/* First digit source and logic data[2] */
+/* next 8 channels */
+/* data[1] polarity */
+/* data[0] selection  */
 static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
     unsigned char data[3];
-    int i, p ;
+    int i ;
+    unsigned int p ;
     for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) {
-        UT_setbit(&data[0],i,(int)(u[0] / p % 10) & 0x01) ;
-        UT_setbit(&data[1],i,((int)(u[0] / p % 10) & 0x02) >> 1) ;
+        UT_setbit(&data[1],i,((int)(u[0] / p) % 10) & 0x01) ;
+        UT_setbit(&data[0],i,(((int)(u[0] / p) % 10) & 0x02) >> 1) ;
     }
-    data[2] = (u[0] / 100000000 % 10) & 0x03 ;
+    data[2] = ((u[0] / 100000000) % 10) & 0x03 ;
     if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_r_por(int * y , const struct parsedname * pn) {
-    unsigned char data[8] ;
+    unsigned char data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],3) ;
     return 0 ;
 }
 
 static int FS_w_por(const int * y, const struct parsedname * pn) {
-    unsigned char data[8] ;
+    unsigned char data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     UT_setbit( &data[5], 3, y[0] ) ;
     return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
@@ -199,49 +204,76 @@ static int FS_w_por(const int * y, const struct parsedname * pn) {
 */
 static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[3+8+2] = { 0xF0, 0x88 , 0x00, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { NULL, &p[3], 8+2, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( &p[3], 8+2,pn ) || CRC16(p,3+8+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+printf( "R_REG read attempt\n");
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+printf( "R_REG read ok\n");
+    if ( CRC16(p,3+8+2) ) return 1 ;
+printf( "R_REG CRC16 ok\n");
 
     memcpy( data , &p[3], 6 ) ;
     return 0 ;
 }
 
 static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
-    unsigned char p[] = { 0x5A, data , ~data, 0xFF, 0xFF, } ;
-    int ret ;
-//printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_sendback_data(p,p,5,pn) || p[3]!=0xAA ;
-    BUSUNLOCK(pn);
-//printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],p[3],p[4]) ;
-    /* Ignore byte 5 p[4] the PIO status byte */
-    return ret ;
+    unsigned char p[] = { 0x5A, data , ~data, } ;
+    unsigned char r[2] ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { NULL, r, 2, trxn_read } ,
+        TRXN_END,
+    } ;
+
+printf( "W_PIO attempt\n");
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+printf( "W_PIO attempt\n");
+printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],r[0],r[1]) ;
+    if ( r[0]!=0xAA ) return 1 ;
+printf( "W_PIO 0xAA ok\n");
+    /* Ignore byte 5 r[1] the PIO status byte */
+    return 0 ;
 }
 
 /* Reset activity latch */
 static int OW_c_latch(const struct parsedname * pn) {
-    unsigned char p[] = { 0xC3, 0xFF, } ;
-    int ret ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_sendback_data( p , p , 2,pn ) || p[1]!=0xAA ;
-    BUSUNLOCK(pn);
-    return ret ;
+    unsigned char p[] = { 0xC3, } ;
+    unsigned char r ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 1, trxn_match } ,
+        { NULL, &r, 1, trxn_read } ,
+        TRXN_END,
+    } ;
+
+printf( "C_LATCH attempt\n");
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+printf( "C_LATCH transact\n");
+    if ( r!=0xAA ) return 1 ;
+printf( "C_LATCH 0xAA ok\n");
+
+    return 0 ;
 }
 
 /* Write control/status */
 static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
     unsigned char d[6] ; /* register read */
     unsigned char p[] = { 0xCC, 0x8D, 0x00, data, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 4, trxn_match } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p , 4,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return -EINVAL ;
+printf( "W_CONTROL attempt\n");
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+printf( "W_CONTROL ok, now check\n");
 
     /* Read registers */
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
@@ -252,20 +284,27 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
 /* write alarm settings */
 static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) {
     unsigned char d[6], cr ;
-    unsigned char c[] = { 0xCC, 0x8D, 0x00, 0x00, } ;
-    unsigned char s[] = { 0xCC, 0x8B, 0x00, data[0], data[1], } ;
-    int ret ;
+    unsigned char a[] = { 0xCC, 0x8D, 0x00, } ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { a, NULL, 3, trxn_match } ,
+        { data, NULL, 2, trxn_match } ,
+        { &cr, NULL, 1, trxn_match } ,
+        TRXN_END,
+    } ;
 
+    // get the existing register contents
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
-    c[3] = cr = (data[2] & 0x03) | (d[5] & 0x0C) ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( s , 5,pn ) || BUS_send_data( c , 4,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
 
-    /* Read registers */
+printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
+    cr = (data[2] & 0x03) | (d[5] & 0x0C) ;
+printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
+
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+
+    /* Re-Read registers */
     if ( OW_r_reg(d,pn) ) return 1 ;
+printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
     return  ( data[0] != d[3] ) || ( data[1] != d[4] ) || ( cr != (d[5] & 0x0F) ) ;
 }
-

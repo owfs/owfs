@@ -118,31 +118,43 @@ static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t
 /* paged, and pre-screened */
 static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     unsigned char p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
-    int ret ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { p, NULL, size+3, trxn_match } ,
+        { data, NULL, size, trxn_match} ,
+        { NULL, &p[size+3], 2, trxn_read } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tread[] = {
+        TRXN_START,
+        { p, NULL, 1, trxn_match } ,
+        { NULL, &p[1], size+3, trxn_read } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tsram[] = {
+        TRXN_START,
+        { p, NULL, 4, trxn_match } ,
+        TRXN_END,
+    } ;
 
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,size+3,pn) ;
-        if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2,pn) || CRC16(p,1+2+size+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( ( (offset+size)&0x1F)!=0 ) tcopy[3].type = trxn_end ; // not at page boundary at end
+    if ( BUS_transaction( tcopy, pn ) ) return 1 ;
+    if ( ( (offset+size)&0x1F)==0 && CRC16(p,1+2+size+2) ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp( &p[4], data, size) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
+    if ( memcmp( &p[4], data, size) ) return 1 ;
 
     /* Copy Scratchpad to SRAM */
     p[0] = 0x5A ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( tsram, pn ) ) return 1 ;
+
+    return 0 ;
 }
 
 static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
@@ -153,15 +165,19 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
 /* Nathan Holmes help troubleshoot this one! */
 static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
     unsigned char data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
-    int ret ;
     /* rest in the remaining length of the 32 byte page */
     size_t rest = 32 - (offset&0x1F) ;
+    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { data, NULL, 3, trxn_match } ,
+        { NULL, &data[3], rest+10, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
       /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-      ret = BUS_select(pn) || BUS_send_data(data,3,pn) || BUS_readin_data(&data[3],rest+10,pn) || CRC16(data,rest+13) || data[rest+7]!=0x55 || data[rest+8]!=0x55 || data[rest+9]!=0x55 || data[rest+10]!=0x55 ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+    if ( CRC16(data,rest+13) || data[rest+7]!=0x55 || data[rest+8]!=0x55 || data[rest+9]!=0x55 || data[rest+10]!=0x55 ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */
     if ( counter ) 

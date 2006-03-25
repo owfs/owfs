@@ -102,7 +102,7 @@ unsigned int NET_connection_errors = 0 ;
 unsigned int NET_read_errors = 0 ;
 
 // ow_bus.c
-unsigned int BUS_reconnect = 0 ;         // sum from all adapters
+unsigned int BUS_reconnects = 0 ;         // sum from all adapters
 unsigned int BUS_reconnect_errors = 0 ;  // sum from all adapters
 unsigned int BUS_send_data_errors = 0 ;
 unsigned int BUS_send_data_memcmp_errors = 0 ;
@@ -287,7 +287,7 @@ FS_stat_ROW(NET_read_errors),
 FS_stat_ROW(NET_connection_errors),
 
 // ow_bus.c
-FS_stat_ROW(BUS_reconnect),
+FS_stat_ROW(BUS_reconnects),
 FS_stat_ROW(BUS_reconnect_errors),
 FS_stat_ROW(BUS_send_data_errors),
 FS_stat_ROW(BUS_send_data_memcmp_errors),

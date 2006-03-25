@@ -17,10 +17,10 @@ $Id$
 #include <string.h>
 
 //#define CALC_NLINK
+static int FS_nr_subdirs(struct parsedname * const pn2) ;
 
 #ifdef CALC_NLINK
-int FS_nr_subdirs(struct parsedname * const pn2)
-{
+static int FS_nr_subdirs(struct parsedname * const pn2) {
     unsigned char sn[8] ;
     int dindex = 0 ;
 
@@ -80,7 +80,7 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
 #ifdef CALC_NLINK
         nr = FS_nr_subdirs(pn) ;
 //printf("FS_fstat: FS_nr_subdirs1 returned %d\n", nr);
-#else
+#else /* CALC_NLINK */
         nr = -1 ;  // make it 1
 	/*
 	  If calculating NSUB is hard, the filesystem can set st_nlink of
@@ -89,7 +89,7 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
 	  by accident.  But for example the NTFS filesysem relies on this, so
 	  it's unlikely that this "feature" will go away.
 	 */
-#endif
+#endif /* CALC_NLINK */
         stbuf->st_nlink += nr ;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
@@ -109,9 +109,9 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
                 }
             }
         }
-#else
+#else  /* CALC_NLINK */
         nr = -1 ;  // make it 1
-#endif
+#endif  /* CALC_NLINK */
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.dev->nft, nr);
         stbuf->st_nlink += nr ;
         stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
@@ -125,9 +125,9 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
 #ifdef CALC_NLINK
         nr = FS_nr_subdirs(pn) ;
-#else
+#else   /* CALC_NLINK */
         nr = -1 ;  // make it 1
-#endif
+#endif  /* CALC_NLINK */
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.ft));
         stbuf->st_nlink += nr ;
 

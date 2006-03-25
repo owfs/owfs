@@ -293,7 +293,7 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
  */
 static enum parse_enum Parse_RealDevice( char * filename, int remote, struct parsedname * pn ) {
     //printf("DevicePart: %s %s\n", filename, pn->path);
-    
+
     if ( !isxdigit(filename[0]) || !isxdigit(filename[1]) ) {
         //printf("devicepart2: not xdigit\n");
         return parse_error ; /* starts with 2 hex digits ? */

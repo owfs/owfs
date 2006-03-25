@@ -54,14 +54,9 @@ int BUS_readin_data( unsigned char * const data, const size_t len, const struct 
   return ret;
 }
 
-static int BUS_selection_error( const struct parsedname * const pn, int ret ) {
+static int BUS_selection_error( int ret ) {
     STAT_ADD1(BUS_select_low_errors);
-
-    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-    if(ret >= -1) return ret;
     LEVEL_CONNECT("SELECTION ERROR\n");
-    ret = BUS_reconnect( pn ) ;
-    if(ret) { LEVEL_DATA("BUS_selection_error: reconnect error = %d\n", ret) ; }
     return ret ;
 }   
 
@@ -93,7 +88,7 @@ int BUS_select_low(const struct parsedname * const pn) {
 
     if(pn->in->use_overdrive_speed) {
         if((ret=BUS_testoverdrive(pn)) < 0) {
-            BUS_selection_error(pn, ret) ;
+            BUS_selection_error(ret) ;
             return ret ;
         } else {
             //printf("use overdrive speed\n");
@@ -105,7 +100,7 @@ int BUS_select_low(const struct parsedname * const pn) {
     // send/recieve the transfer buffer
     // verify that the echo of the writes was correct
     if ( (ret=BUS_reset(pn)) ) {
-        BUS_selection_error(pn, ret) ;
+        BUS_selection_error(ret) ;
         return ret ;
     }
     for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
@@ -113,12 +108,12 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
        /* Perhaps support overdrive here ? */
         if ( (ret=BUS_send_data(sent,9,pn)) ) {
-            BUS_selection_error(pn, ret) ;
+            BUS_selection_error(ret) ;
             return ret ;
         }
 //printf("select2 branch=%d\n",pn->bp[ibranch].branch);
         if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-            BUS_selection_error(pn, ret) ;
+            BUS_selection_error(ret) ;
             return ret ;
         }
         if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
@@ -131,17 +126,17 @@ int BUS_select_low(const struct parsedname * const pn) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
         if ( (ret=BUS_send_data(sent,1,pn)) ) {
-            BUS_selection_error(pn, ret) ;
+            BUS_selection_error(ret) ;
             return ret ;
         }
         if(sent[0] == 0x69) {
             if((ret=BUS_overdrive(ONEWIREBUSSPEED_OVERDRIVE, pn))< 0) {
-                BUS_selection_error(pn, ret) ;
+                BUS_selection_error(ret) ;
                 return ret ;
             }
         }
         if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
-            BUS_selection_error(pn, ret) ;
+            BUS_selection_error(ret) ;
             return ret ;
         }
         return ret ;
@@ -158,7 +153,6 @@ int BUS_select_low(const struct parsedname * const pn) {
  Returns:   0-device found 1-no dev or error
 */
 int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn ) {
-    int ret ;
     // reset the search state
     memset(serialnumber,0,8);  // clear the serial number
     pn->si->LastDiscrepancy = -1;
@@ -170,41 +164,18 @@ int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn )
       LEVEL_DATA("BUS_first: No data will be returned\n");
     }
 
-    ret = BUS_next(serialnumber,pn) ;
+    return BUS_next(serialnumber,pn) ;
 
-    /* BUS_reconnect() is called in DS9490_next_both().
-     * Should perhaps move up the logic to this place instead. */
-#if 0
-    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-    if(ret >= -1) return ret;
-    {
-      int ret2 = BUS_reconnect( pn ) ;
-      if(ret2) LEVEL_CONNECT("BUS_first returned error = %d\n", ret2) ;
-    }
-#endif
-    return ret ;
 }
 
 int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn ) {
-    int ret ;
     // reset the search state
     memset(serialnumber,0,8);  // clear the serial number
     pn->si->LastDiscrepancy = -1 ;
     pn->si->LastFamilyDiscrepancy = -1 ;
     pn->si->LastDevice = 0 ;
-    ret = BUS_next_alarm(serialnumber,pn) ;
 
-    /* BUS_reconnect() is called in DS9490_next_both().
-     * Should perhaps move up the logic to this place instead. */
-#if 0
-    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-    if(ret >= -1) return ret;
-    {
-      int ret2 = BUS_reconnect( pn ) ;
-      if(ret2) LEVEL_CONNECT("BUS_first_alarm returned error = %d\n", ret2) ;
-    }
-#endif
-    return ret;
+    return BUS_next_alarm(serialnumber,pn) ;
 }
 
 int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) {
@@ -220,6 +191,7 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber, c
     pn->si->LastDiscrepancy = 63;
     pn->si->LastFamilyDiscrepancy = -1 ;
     pn->si->LastDevice = 0 ;
+
     return BUS_next(serialnumber,pn) ;
 }
 
@@ -375,30 +347,18 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
     return 0 ;
 }
 
+// RESET called with bus locked
 int BUS_reset(const struct parsedname * pn) {
     int ret = (pn->in->iroutines.reset)(pn) ;
-    if ( ret ) {
+    /* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
+    if ( ret==1 ) {
+        return 1 ;
+    } else if (ret) {
+        pn->in->reconnect_state ++ ; // Flag for eventual reconnection
         STAT_ADD1_BUS(BUS_reset_errors, pn->in ) ;
-    }
-    return ret ;
-}
-
-int BUS_reconnect_low( const struct parsedname * pn ) {
-    int ret ;
-    STAT_ADD1(BUS_reconnect);
-    if ( !pn || !pn->in ) return -EIO;
-    STAT_ADD1(pn->in->bus_reconnect);
-    if ( LockGet(pn) ) return -EBUSY ;
-    BUS_close(pn->in) ;
-    UT_delay(100000) ;
-    ret = BUS_detect(pn->in) ;
-    LockRelease(pn) ;
-    if(ret) {
-        STAT_ADD1(BUS_reconnect_errors);
-        STAT_ADD1(pn->in->bus_reconnect_errors);
-        LEVEL_DEFAULT("Failed to reconnect %s adapter!\n",pn->in->adapter_name);
     } else {
-        LEVEL_DEFAULT("%s adapter reconnected\n",pn->in->adapter_name);
+        pn->in->reconnect_state = reconnect_ok ; // Flag as good!
     }
+
     return ret ;
 }

@@ -135,7 +135,7 @@ extern unsigned int NET_connection_errors ;
 extern unsigned int NET_read_errors ;
 
 // ow_bus.c
-extern unsigned int BUS_reconnect ;         // sum from all adapters
+extern unsigned int BUS_reconnects ;         // sum from all adapters
 extern unsigned int BUS_reconnect_errors ;  // sum from all adapters
 extern unsigned int BUS_send_data_errors ;
 extern unsigned int BUS_send_data_memcmp_errors ;

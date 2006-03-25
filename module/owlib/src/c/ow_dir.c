@@ -318,8 +318,9 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
     }
 #endif /* OW_MT */
 
-    /* is this a remote bus? */
-    if ( get_busmode(pn->in) == bus_remote ) {
+    if ( TestConnection(pn) ) { // reconnect ok?
+        ret = -ECONNABORTED ;
+    } else if ( get_busmode(pn->in) == bus_remote ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,pn,flags) ;
     } else { /* local bus */

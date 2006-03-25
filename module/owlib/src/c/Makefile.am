@@ -31,37 +31,38 @@ OWLIB_SOURCE = compat.c          \
                ow_2505.c         \
                ow_2760.c         \
                ow_2804.c         \
-               ow_cache.c        \
-               ow_connect.c      \
-               ow_lcd.c          \
-               ow_parsename.c    \
-               ow_name.c         \
-               ow_filelength.c   \
-               ow_read.c         \
-               ow_write.c        \
-               ow_dir.c          \
-               ow_com.c          \
-               ow_verify.c       \
-               ow_link.c         \
-               ow_bus.c          \
-               ow_transaction.c  \
                ow_badadapter.c   \
+               ow_bus.c          \
+               ow_cache.c        \
+               ow_com.c          \
+               ow_connect.c      \
+               ow_crc.c          \
+               ow_dir.c          \
                ow_ds9097.c       \
                ow_ds1410.c       \
                ow_ds9097U.c      \
                ow_ds9490.c       \
-               ow_crc.c          \
-               ow_util.c         \
+               ow_filelength.c   \
                ow_iterate.c      \
-               ow_temp.c         \
+               ow_lcd.c          \
+               ow_parsename.c    \
+               ow_name.c         \
+               ow_read.c         \
+               ow_reconnect.c    \
                ow_stats.c        \
                ow_size.c         \
                ow_server.c       \
-               ow_net.c          \
                ow_settings.c     \
                ow_simultaneous.c \
                ow_system.c       \
+               ow_temp.c         \
                ow_tree.c         \
+               ow_transaction.c  \
+               ow_write.c        \
+               ow_verify.c       \
+               ow_link.c         \
+               ow_util.c         \
+               ow_net.c          \
                ow_fstat.c        \
                ow_locks.c        \
                ow_api.c          \

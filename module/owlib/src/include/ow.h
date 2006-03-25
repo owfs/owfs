@@ -146,7 +146,7 @@ extern int multithreading ;
     extern pthread_mutex_t fstat_mutex ;
     extern pthread_mutex_t simul_mutex ;
     extern pthread_mutex_t dir_mutex ;
-    extern pthread_mutex_t reconnect_mutex ;
+    extern pthread_mutex_t libusb_mutex ;
     
     extern pthread_mutexattr_t * pmattr;
  #ifdef __UCLIBC__
@@ -165,8 +165,8 @@ extern int multithreading ;
     #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  )
     #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    )
     #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    )
-    #define RECONNECTLOCK  pthread_mutex_lock(  &reconnect_mutex    )
-    #define RECONNECTUNLOCK pthread_mutex_unlock(&reconnect_mutex    )
+    #define LIBUSBLOCK     pthread_mutex_lock(  &libusb_mutex    )
+    #define LIBUSBUNLOCK   pthread_mutex_unlock(&libusb_mutex    )
     #define INBUSLOCK(in)  pthread_mutex_lock(   &((in)->bus_mutex)  )
     #define INBUSUNLOCK(in) pthread_mutex_unlock( &((in)->bus_mutex)  )
 #ifdef __UCLIBC__
@@ -192,6 +192,8 @@ extern int multithreading ;
     #define DIRUNLOCK
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
+    #define LIBUSBLOCK
+    #define LIBUSBUNLOCK
     #define INBUSLOCK(in)
     #define INBUSUNLOCK(in)
 #endif /* OW_MT */

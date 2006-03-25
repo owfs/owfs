@@ -141,6 +141,7 @@ static int FS_r_ident(unsigned char *buf, const size_t size, const off_t offset 
 }
 
 static int FS_w_ident(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    if (offset) return -EINVAL ;
   if ( OW_w_ident( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return 0;
 }
@@ -159,7 +160,16 @@ static int OW_w_reset_password( const unsigned char * data , const size_t size ,
     unsigned char set_password[3] = { 0x5A, 0x00, 0x00} ;
     char passwd[8];
     char ident[8];
-    int ret ;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { set_password, NULL, 3, trxn_match } ,
+        { NULL, ident, 8, trxn_read } ,
+        { ident, NULL, 8, trxn_match } ,
+        { ident, NULL, 8, trxn_match } ,
+        { passwd, NULL, 8, trxn_match } ,
+        TRXN_END,
+    } ;
+
 
     if(offset) return -EINVAL;
 
@@ -167,27 +177,11 @@ static int OW_w_reset_password( const unsigned char * data , const size_t size ,
     memcpy(passwd, data, MIN(size, 8));
     set_password[1] = pn->extension<<6 ;
     set_password[2] = ~(set_password[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( set_password,3,pn) ||
-      BUS_readin_data(ident,8,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-      
-    ret = BUS_send_data( ident,8,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
+    if ( BUS_transaction( tscratch, pn ) ) return 1 ;
     /* Verification is done... now send ident + password
      * Note: ALL saved data in subkey will be deleted during this operation
      */
-    ret = BUS_send_data( ident,8,pn) || BUS_send_data( passwd,8,pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+
     memcpy(global_passwd[pn->extension], passwd, 8);
     return 0 ;
 }
@@ -195,7 +189,14 @@ static int OW_w_reset_password( const unsigned char * data , const size_t size ,
 static int OW_w_subkey( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension ) {
     unsigned char p[4] = { 0x99, 0x00, 0x00, 0x00} ; // write subkey
     char ident[8];
-    int ret ;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { NULL, ident, 8, trxn_read } ,
+        { global_passwd[extension], NULL, 8, trxn_match } ,
+        { &data[0x10], NULL, size-0x10, trxn_match } ,
+        TRXN_END,
+    } ;
 
     if((size <= 0x10) || (size > 0x40)) {
       return 1;
@@ -204,30 +205,26 @@ static int OW_w_subkey( const unsigned char * data , const size_t size , const s
     p[1] = extension<<6 ;
     p[1] |= (0x10 + offset);  // + 0x10 -> 0x3F
     p[2] = ~(p[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( p,3,pn) ||
-      BUS_readin_data(ident,8,pn);
-    if(ret) {
-      BUSUNLOCK(pn);
-      return 1;
-    }
-    ret = BUS_send_data( global_passwd[extension],8,pn) ||
-      BUS_send_data( &data[0x10], size-0x10, pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+
+    if ( BUS_transaction( tscratch, pn ) ) return 1 ;
     return 0 ;
 }
 
 static int OW_r_subkey( unsigned char * data , const size_t size , const size_t offset, const struct parsedname *pn, const int extension ) {
     unsigned char p[3] = { 0x66, 0x00, 0x00} ; // read subkey
-    char all_data[0x40];
-    int ret ;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { NULL, data, 8, trxn_read } ,
+        { global_passwd[extension], NULL, 8, trxn_match } ,
+        { NULL, &data[0x10+offset], 0x30-offset, trxn_read } ,
+        TRXN_END,
+    } ;
 
     //printf("OW_r_subkey\n");
 
-    memset(all_data, 0, 0x40);
+    memset(data, 0, 0x40);
+    memcpy(&data[8], global_passwd[extension], 8);
     if(offset >= 0x30) return -EINVAL;
 
     if(size != 0x40) {
@@ -238,26 +235,9 @@ static int OW_r_subkey( unsigned char * data , const size_t size , const size_t 
     p[1] = extension<<6 ;
     p[1] |= (offset+0x10);
     p[2] = ~(p[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( p,3,pn) ||
-      BUS_readin_data(all_data,8,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    ret = BUS_send_data( global_passwd[extension],8,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    memcpy(&all_data[8], global_passwd[extension], 8);
-    
-    ret = BUS_readin_data( &all_data[0x10+offset], 0x30-offset, pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
-    memcpy(data, all_data, 0x40);
+
+    if ( BUS_transaction( tscratch, pn ) ) return 1 ;
+
     return 0 ;
 }
 
@@ -311,19 +291,14 @@ static int OW_w_memory( const unsigned char * data , const size_t size , const s
   return 0 ;
 }
 
+// size and offset already bounds checked
 static int OW_r_ident( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     char all_data[0x40];
-    int ret ;
-
     //printf("OW_r_ident\n");
 
-    if(offset) return -EINVAL;
+    if ( OW_r_subkey(all_data, 0x40, 0, pn, pn->extension) ) return 1 ;
 
-    ret = OW_r_subkey(all_data, 0x40, 0, pn, pn->extension);
-    if(ret) {
-      return 1 ;
-    }
-    memcpy(data, all_data, 8);
+    memcpy(data, &all_data[offset], size);
     return 0 ;
 }
 
@@ -331,7 +306,19 @@ static int OW_w_ident( const unsigned char * data , const size_t size , const si
     unsigned char write_scratch[3] = { 0x96, 0x00, 0x00 } ;
     unsigned char copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
     char all_data[0x40];
-    int ret ;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { write_scratch, NULL, 3, trxn_match } ,
+        { all_data, NULL, 0x40, trxn_match },
+        TRXN_END,
+    } ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { copy_scratch, NULL, 3, trxn_match } ,
+        { cp_array[IDENT], NULL, 8, trxn_match },
+        { global_passwd[pn->extension], NULL, 8, trxn_match },
+        TRXN_END,
+    } ;
 
     //printf("OW_w_ident\n");
 
@@ -339,40 +326,14 @@ static int OW_w_ident( const unsigned char * data , const size_t size , const si
 
     write_scratch[1] = 0xC0 | offset;
     write_scratch[2] = ~(write_scratch[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( write_scratch,3,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-
     memset(all_data, 0, 0x40);
     memcpy(all_data, data, MIN(size, 8));
-
-    ret = BUS_send_data( all_data,8,pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+    if ( BUS_transaction( tscratch, pn  ) ) return 1 ;
 
     copy_scratch[1] = pn->extension<<6;
     copy_scratch[2] = ~(copy_scratch[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( copy_scratch,3,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    ret = BUS_send_data( cp_array[IDENT],8,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    ret = BUS_send_data( global_passwd[pn->extension],8,pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+    if ( BUS_transaction( tcopy, pn  ) ) return 1 ;
+
     return 0 ;
 }
 
@@ -380,47 +341,34 @@ static int OW_w_change_password( const unsigned char * data , const size_t size 
     unsigned char write_scratch[3] = { 0x96, 0x00, 0x00 } ;
     unsigned char copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
     char all_data[0x40];
-    int ret ;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { write_scratch, NULL, 3, trxn_match } ,
+        { all_data, NULL, 0x40, trxn_match },
+        TRXN_END,
+    } ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { copy_scratch, NULL, 3, trxn_match } ,
+        { cp_array[PASSWORD], NULL, 8, trxn_match },
+        { global_passwd[pn->extension], NULL, 8, trxn_match },
+        TRXN_END,
+    } ;
 
     if(offset) return -EINVAL;
 
     write_scratch[1] = 0xC0 | offset;
     write_scratch[2] = ~(write_scratch[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( write_scratch,3,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-
     memset(all_data, 0, 0x40);
     memcpy(&all_data[0x08], data, MIN(size, 8));
-
-    ret = BUS_send_data( all_data,0x40,pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+    if ( BUS_transaction( tscratch, pn  ) ) return 1 ;
 
     copy_scratch[1] = pn->extension<<6;
     copy_scratch[2] = ~(copy_scratch[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( copy_scratch,3,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    ret = BUS_send_data( cp_array[PASSWORD],8,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    ret = BUS_send_data( global_passwd[pn->extension],8,pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+
+    if ( BUS_transaction( tcopy, pn  ) ) return 1 ;
     memcpy(global_passwd[pn->extension], &all_data[0x08], 8);
+
     return 0 ;
 }
 
@@ -432,39 +380,41 @@ static int OW_r_page( unsigned char * data , const size_t size , const size_t of
 
     ret = OW_r_subkey(all_data, 0x40, 0, pn, pn->extension);
     if(ret) {
-      return 1 ;
+        return 1 ;
     }
     memcpy(data, &all_data[0x10+offset], size);
     return 0 ;
 }
 
 static int OW_w_page( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char write_scratch[3] = { 0x96, 0x00, 0x00 } ;
+    unsigned char write_scratch[3] = { 0x96, 0xC0, ~(0xC0) } ;
     unsigned char copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
     unsigned char all_data[0x40];
-    int ret, i, nr_bytes ;
+    int i, nr_bytes ;
     size_t left = size;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { write_scratch, NULL, 3, trxn_match } ,
+        { all_data, NULL, 0x40, trxn_match },
+        TRXN_END,
+    } ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { copy_scratch, NULL, 3, trxn_match } ,
+        { NULL, NULL, 8, trxn_match },
+        { global_passwd[pn->extension], NULL, 8, trxn_match },
+        TRXN_END,
+    } ;
+
 
     if(size > 0x30) {
-      //printf("size > 0x30\n");
-      return 1;
+        //printf("size > 0x30\n");
+        return 1;
     }
     memset(all_data, 0, 0x40);
     memcpy(&all_data[0x10], data, size);
 
-    write_scratch[1] = 0xC0; // offset;
-    write_scratch[2] = ~(write_scratch[1]) ;
-    BUSLOCK(pn);
-    ret = BUS_select(pn) || BUS_send_data( write_scratch,3,pn);
-    if ( ret ) {
-      BUSUNLOCK(pn);
-      return 1 ;
-    }
-    ret = BUS_send_data( all_data,0x40,pn);
-    BUSUNLOCK(pn);
-    if ( ret ) {
-      return 1 ;
-    }
+    if ( BUS_transaction( tscratch, pn  ) ) return 1 ;
 
     /*
      * There are two possibilities to write memory.
@@ -476,28 +426,13 @@ static int OW_w_page( const unsigned char * data , const size_t size , const siz
      *   write block (8 bytes)
      */
     for(i=0; (i<8) && (left>0); i++) {
-      nr_bytes = MIN(left, 8);
+        nr_bytes = MIN(left, 8);
 
-      copy_scratch[1] = (pn->extension<<6);
-      copy_scratch[2] = ~(copy_scratch[1]) ;
-      BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data( copy_scratch,3,pn);
-      if ( ret ) {
-	BUSUNLOCK(pn);
-        return 1 ;
-      }
-      ret = BUS_send_data( cp_array[DATA+i],8,pn);
-      if ( ret ) {
-	BUSUNLOCK(pn);
-        return 1 ;
-      }
-      ret = BUS_send_data( global_passwd[pn->extension],8,pn);
-      BUSUNLOCK(pn);
-      if ( ret ) {
-	return 1 ;
-      }
-      left -= nr_bytes;
+        copy_scratch[1] = (pn->extension<<6);
+        copy_scratch[2] = ~(copy_scratch[1]) ;
+        tcopy[2].out = cp_array[DATA+i] ;
+        if ( BUS_transaction( tcopy, pn  ) ) return 1 ;
+        left -= nr_bytes;
     }
     return 0 ;
 }
-

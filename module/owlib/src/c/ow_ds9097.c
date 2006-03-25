@@ -26,25 +26,27 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
 
 /* Device-specific functions */
 static void DS9097_setroutines( struct interface_routines * const f ) {
-    f->detect        = DS9097_detect ;
-    f->reset         = DS9097_reset ;
-    f->next_both     = BUS_next_both_low ;
+    f->detect        = DS9097_detect         ;
+    f->reset         = DS9097_reset          ;
+    f->next_both     = BUS_next_both_low     ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = BUS_PowerByte_low ;
+    f->PowerByte     = BUS_PowerByte_low     ;
 //    f->ProgramPulse = ;
     f->sendback_data = BUS_sendback_data_low ;
-    f->sendback_bits = DS9097_sendback_bits ;
-    f->select        = BUS_select_low ;
-    f->reconnect     = BUS_reconnect_low ;
-    f->close         = COM_close ;
+    f->sendback_bits = DS9097_sendback_bits  ;
+    f->select        = BUS_select_low        ;
+    f->reconnect     = NULL                  ;
+    f->close         = COM_close             ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
+// no bus locking here (higher up)
 int DS9097_detect( struct connection_in * in ) {
     struct stateinfo si ;
     struct parsedname pn ;
+    int ret = 0 ;
     
     /* open the COM port */
     if ( COM_open( in ) ) return -ENODEV ;
@@ -66,6 +68,7 @@ int DS9097_detect( struct connection_in * in ) {
 
 /* DS9097 Reset -- A little different from DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
+// return 1 shorted, 0 ok, <0 error
 static int DS9097_reset( const struct parsedname * const pn ) {
     unsigned char resetbyte = 0xF0 ;
     unsigned char c;
@@ -90,6 +93,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     case 0:
         STAT_ADD1_BUS( BUS_short_errors, pn->in ) ;
         LEVEL_CONNECT("1-wire bus short circuit.\n")
+        ret = 1 ; // short circuit
         /* fall through */
     case 0xF0:
         pn->si->AnyDevices = 0 ;
@@ -130,7 +134,7 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     }
     /* Flush the input and output buffers */
     COM_flush(pn) ;
-    return 0 ;
+    return ret ;
 }
 
 /* Symmetric */

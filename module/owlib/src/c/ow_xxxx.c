@@ -131,7 +131,7 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence( const struct parsedname * const pn ) {
     if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) { 
-            return CheckPresence_low(pn) ;
+        return CheckPresence_low(pn) ;
     }
     return 0 ;
 }
@@ -178,7 +178,9 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
 #endif /* OW_MT */
 
     //printf("CheckPresence_low:\n");
-    if(get_busmode(pn->in) == bus_remote) {
+    if ( TestConnection(pn) ) { // reconnect successful?
+        ret = -ECONNABORTED ;
+    } else if(get_busmode(pn->in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
         ret = ServerPresence(pn) ;
         if(ret >= 0) {
@@ -192,7 +194,7 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
         BUSLOCK(pn);
-	ret = BUS_normalverify(pn) ;
+            ret = BUS_normalverify(pn) ;
         BUSUNLOCK(pn);
         if(ret == 0) {
             /* Device was found on this in-device, return it's index */
@@ -204,11 +206,11 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
-	if((int)v >= 0) {
-	  //printf("child returned ok %d\n", (int)v);
-	  return (int)v ;
-	}
-	return ret ;
+        if((int)v >= 0) {
+            //printf("child returned ok %d\n", (int)v);
+            return (int)v ;
+        }
+        return ret ;
     }
 #endif /* OW_MT */
     return ret ;
@@ -219,7 +221,7 @@ int FS_present(int * y , const struct parsedname * pn) {
         y[0]=1 ;
     } else {
         BUSLOCK(pn);
-	  y[0] = BUS_normalverify(pn) ? 0 : 1 ;
+            y[0] = BUS_normalverify(pn) ? 0 : 1 ;
         BUSUNLOCK(pn);
     }
     return 0 ;

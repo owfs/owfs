@@ -25,7 +25,7 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
 static int LINK_read_low(unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
 static int LINK_reset( const struct parsedname * pn ) ;
 static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
-static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) ;
+static int LINK_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) ;
 static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
 static int LINK_select(const struct parsedname * pn) ;
 static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) ;
@@ -36,38 +36,39 @@ static int LINKE_preamble( const struct parsedname * pn ) ;
 static void LINKE_close( struct connection_in * in ) ;
 
 static void LINK_setroutines( struct interface_routines * f ) {
-    f->detect        = LINK_detect ;
-    f->reset         = LINK_reset ;
-    f->next_both     = LINK_next_both ;
+    f->detect        = LINK_detect        ;
+    f->reset         = LINK_reset         ;
+    f->next_both     = LINK_next_both     ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = LINK_PowerByte ;
+    f->PowerByte     = LINK_PowerByte     ;
 //    f->ProgramPulse = ;
     f->sendback_data = LINK_sendback_data ;
 //    f->sendback_bits = ;
-    f->select        = LINK_select ;
-    f->reconnect     = BUS_reconnect_low ;
-    f->close         = COM_close ;
+    f->select        = LINK_select        ;
+    f->reconnect     = NULL               ;
+    f->close         = COM_close          ;
 }
 
 static void LINKE_setroutines( struct interface_routines * f ) {
-    f->detect        = LINKE_detect ;
-    f->reset         = LINK_reset ;
-    f->next_both     = LINK_next_both ;
+    f->detect        = LINKE_detect       ;
+    f->reset         = LINK_reset         ;
+    f->next_both     = LINK_next_both     ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = LINK_PowerByte ;
+    f->PowerByte     = LINK_PowerByte     ;
 //    f->ProgramPulse = ;
     f->sendback_data = LINK_sendback_data ;
 //    f->sendback_bits = ;
-    f->select        = LINK_select ;
-    f->reconnect     = BUS_reconnect_low ;
-    f->close         = LINKE_close ;
+    f->select        = LINK_select        ;
+    f->reconnect     = NULL               ;
+    f->close         = LINKE_close        ;
 }
 
 #define LINK_string(x)  ((unsigned char *)(x))
 
 /* Called from DS2480_detect, and is set up to DS9097U emulation by default */
+// bus locking done at a higher level
 int LINK_detect( struct connection_in * in ) {
     struct parsedname pn ;
     struct stateinfo si ;
@@ -114,7 +115,7 @@ int LINK_detect( struct connection_in * in ) {
         }
     }
     LEVEL_DEFAULT("LINK detection error -- back to emulation mode\n");
-    return 1  ;
+    return -ENODEV  ;
 }
 
 int LINKE_detect( struct connection_in * in ) {
@@ -146,6 +147,7 @@ int LINKE_detect( struct connection_in * in ) {
 
 static int LINK_reset( const struct parsedname * pn ) {
     unsigned char resp[5] ;
+    int ret = 0 ;
     
     if ( pn->in->Adapter!=adapter_LINK_E ) COM_flush(pn) ;
     if ( LINK_write(LINK_string("\rr"),2,pn) || LINK_read( resp,4,pn,1) ) {
@@ -160,6 +162,7 @@ static int LINK_reset( const struct parsedname * pn ) {
             pn->si->AnyDevices=0 ;
             break ;
         default:
+            ret = 1 ; // marker for shorted bus
             pn->si->AnyDevices=0 ;
             STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
             LEVEL_CONNECT("1-wire bus short circuit.\n")
@@ -348,10 +351,9 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
     return 0;
 }
 
-static int LINK_PowerByte(const unsigned char byte, const unsigned int delay, const struct parsedname * pn) {
-    unsigned char pow ;
+static int LINK_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) {
     
-    if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,&pow,pn) ) {
+    if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,resp,pn) ) {
         STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;
         return -EIO ; // send just the <CR>
     }

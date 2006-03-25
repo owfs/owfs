@@ -109,12 +109,17 @@ static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
 /* read status byte */
 static int OW_read( unsigned char * data , const struct parsedname * pn ) {
     unsigned char p[] = { 0xF5, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 1, trxn_match, } ,
+        { NULL, data, 1, trxn_read, } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( p , 1,pn ) || BUS_readin_data( data, 1,pn ) || (data[0]&0x0F)+((data[0]>>4)&0x0F)!=0x0F ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+    if ( (data[0]&0x0F)+((data[0]>>4)&0x0F)!=0x0F ) return 1 ;
+
+    return 0 ;
 }
 
 /* write status byte */
@@ -122,11 +127,16 @@ static int OW_read( unsigned char * data , const struct parsedname * pn ) {
 static int OW_write( const unsigned char data , const struct parsedname * pn ) {
     unsigned char p[] = { 0x5A, data|0xFC , (~data)&0x03, } ;
     unsigned char q[2] ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match, } ,
+        { NULL, q, 2, trxn_read, } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p , 3,pn ) || BUS_readin_data( q, 2,pn ) || q[0]!=0xAA ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+    if ( q[0]!=0xAA ) return 1 ;
+
+    return 0 ;
 }
 

@@ -43,7 +43,7 @@ static void DS2480_setroutines( struct interface_routines * f ) {
     f->sendback_data = DS2480_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = BUS_select_low ;
-    f->reconnect     = BUS_reconnect_low ;
+    f->reconnect     = NULL ; // use "detect"
     f->close         = COM_close ;
 }
 
@@ -194,6 +194,7 @@ static void DS2480_setroutines( struct interface_routines * f ) {
    COM_write error
    -EINVAL baudrate error
    If no detection, try a DS9097 passive port */
+// bus locking at a higher level
 int DS2480_detect( struct connection_in * in ) {
     struct parsedname pn ;
     struct stateinfo si ;
@@ -243,7 +244,7 @@ int DS2480_detect( struct connection_in * in ) {
     COM_flush(&pn);
 
     // send the timing byte
-    if ((ret=DS2480_write(&timing,1,&pn))) return ret ;
+    if ( DS2480_write(&timing,1,&pn) ) return -EIO ;
 
     // delay to let line settle
     UT_delay(4);
@@ -253,9 +254,7 @@ int DS2480_detect( struct connection_in * in ) {
 
     // send the packet
     // read back the response
-    if ( (ret=DS2480_sendback_cmd(setup,setup,5,&pn)) ) {
-        return ret ;
-    }
+    if ( DS2480_sendback_cmd(setup,setup,5,&pn) ) return -EIO ;
 
     // look at the baud rate and bit operation
     // to see if the response makes sense
@@ -326,21 +325,22 @@ int DS2480_baud( speed_t baud, const struct parsedname * pn ) {
 //          Alarm reset types of the DS1994/DS1427/DS2404 with
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
 /* return 0=good
-   bad = _level, sendback_cmd
+          1=short
+          <0 error
  */
 static int DS2480_reset( const struct parsedname * pn ) {
-    int ret ;
+    int ret = 0 ;
     unsigned char buf = (unsigned char)(CMD_COMM | FUNCTSEL_RESET | pn->in->connin.serial.USpeed) ;
 
     //printf("DS2480_reset\n");
     // make sure normal level
-    if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) return ret ;
+    if ( DS2480_level(MODE_NORMAL,pn) ) return -EIO ;
     // flush the buffers
     COM_flush(pn);
 
     // send the packet
     // read back the 1 byte response
-    if ( (ret=DS2480_sendback_cmd(&buf,&buf,1,pn)) ) return ret ;
+    if ( DS2480_sendback_cmd(&buf,&buf,1,pn) ) return -EIO ;
     /* The adapter type is encode in this response byte */
     /* The known values coorespond to the types in enum adapter_type */
     /* Other values are assigned for adapters that don't have this hardcoded value */
@@ -349,7 +349,8 @@ static int DS2480_reset( const struct parsedname * pn ) {
     switch ( buf& RB_RESET_MASK ) {
     case RB_1WIRESHORT:
         STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
-        LEVEL_CONNECT("1-wire bus short circuit.\n")
+        LEVEL_CONNECT("1-wire bus short circuit.\n") ;
+        ret = 1 ;
         // fall through
     case RB_NOPRESENCE:
         if ( pn->si ) pn->si->AnyDevices = 0 ;
@@ -366,7 +367,7 @@ static int DS2480_reset( const struct parsedname * pn ) {
         COM_flush(pn);
         break;
      }
-     return 0 ;
+     return ret ;
 }
 
 //--------------------------------------------------------------------------
@@ -571,11 +572,8 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     }
 
     // CRC check
-    if ( CRC8(sn,8) || (si->LastDiscrepancy == 63) || (sn[0] == 0)) {
-        /* A minor "error" and should perhaps only return -1 to avoid
-        * reconnect */
-        return -EIO ;
-    }
+    if ( CRC8(sn,8) || (si->LastDiscrepancy == 63) || (sn[0] == 0)) return -EIO ;
+
     // successful search
     // check for last one
     if ((mismatched == si->LastDiscrepancy) || (mismatched == -1)) si->LastDevice = 1 ;

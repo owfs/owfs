@@ -206,7 +206,9 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
     }
 #endif /* OW_MT */
 
-    if ( (get_busmode(pn->in) == bus_remote) ) {
+    if ( TestConnection(pn) ) {
+        r = -ECONNABORTED ;
+    } else if ( (get_busmode(pn->in) == bus_remote) ) {
         r = ServerWrite( buf, size, offset, pn ) ;
     } else {
         /* if readonly exit */

@@ -219,25 +219,31 @@ int FS_r_date( DATE * d , const struct parsedname * pn) {
 
 /* 1904 clock-in-a-can */
 static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) {
-    unsigned char r = 0x66 ;
-    int ret ;
+    unsigned char r[] = { 0x66, } ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { r, NULL, 1, trxn_match, } ,
+        { NULL, cr, 1, trxn_read, } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( cr, 1,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+
+    return 0 ;
 }
 
 /* 1904 clock-in-a-can */
 static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
-    unsigned char r = 0x66 ;
+    unsigned char r[] = { 0x66, } ;
     unsigned char data[5] ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { r, NULL, 1, trxn_match, } ,
+        { NULL, data, 5, trxn_read, } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( data, 5,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
 
 //    d[0] = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
     d[0] = UT_toDate( &data[1] ) ;
@@ -245,31 +251,39 @@ static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
 }
 
 static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
-    unsigned char r = 0x66 ;
+    unsigned char r[] = { 0x66, } ;
     unsigned char w[6] = { 0x99, } ;
-    int ret ;
+    struct transaction_log tread[] = {
+        TRXN_START,
+        { r, NULL, 1, trxn_match, } ,
+        { NULL, &w[1], 1, trxn_read, } ,
+        TRXN_END,
+    } ;
+    struct transaction_log twrite[] = {
+        TRXN_START,
+        { w, NULL, 6, trxn_match, } ,
+        TRXN_END,
+    } ;
 
     /* read in existing control byte to preserve bits 4-7 */
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( &w[1], 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
 
     UT_fromDate( d, &w[2] ) ;
     
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 6,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( twrite, pn ) ) return 1 ;
+    return 0 ;
 }
 
 static int OW_w_control( const unsigned char cr , const struct parsedname * pn ) {
     unsigned char w[2] = { 0x99, cr, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { w, NULL, 2, trxn_match, } ,
+        TRXN_END,
+    } ;
 
     /* read in existing control byte to preserve bits 4-7 */
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+
+    return 0 ;
 }

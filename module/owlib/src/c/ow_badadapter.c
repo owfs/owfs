@@ -41,7 +41,7 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.sendback_data = BUS_sendback_data_low    ;
     in->iroutines.sendback_bits = BadAdapter_sendback_bits ;
     in->iroutines.select        = BUS_select_low           ;
-    in->iroutines.reconnect     = BUS_reconnect_low     ;
+    in->iroutines.reconnect     = NULL                     ;
     in->iroutines.close         = BadAdapter_close         ;
     in->adapter_name="Bad Adapter" ;
     return 0 ;

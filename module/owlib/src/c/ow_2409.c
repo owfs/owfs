@@ -127,21 +127,21 @@ static int FS_w_control(const unsigned int * u , const struct parsedname * pn) {
 }
 
 static int OW_discharge( const struct parsedname * const pn ) {
-    unsigned char dis = 0xCC ;
-    unsigned char all = 0x66 ;
-    int ret ;
+    unsigned char dis[] = { 0xCC, } ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { dis, NULL, 1, trxn_match } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &dis , 1,pn ) ;
-    BUSUNLOCK(pn);
-    if (ret) return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
 
     UT_delay(100) ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(&all ,1,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    dis[0] = 0x66 ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+
+    return 0 ;
 }
 
 static int OW_w_control( const unsigned int data , const struct parsedname * const pn ) {
@@ -149,22 +149,28 @@ static int OW_w_control( const unsigned int data , const struct parsedname * con
     unsigned char p[] = { 0x5A, d[data], } ;
     const unsigned char r[] = { 0x80, 0xC0, 0x00, 0x40, } ;
     unsigned char info ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 2, trxn_match } ,
+        { NULL, &info, 1, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        (ret=BUS_select(pn)) || (ret=BUS_send_data(p,2,pn)) || (ret=BUS_readin_data(&info,1,pn)) ;
-    BUSUNLOCK(pn);
-    if (ret) return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+
     /* Check that Info corresponds */
     return (info&0xC0)==r[data] ? 0 : 1 ;
 }
 
 static int OW_r_control( unsigned char * const data , const struct parsedname * const pn ) {
     unsigned char p[] = { 0x5A, 0xFF, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 2, trxn_match } ,
+        { NULL, data, 1, trxn_read } ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn);
-        (ret=BUS_select(pn)) || (ret=BUS_send_data(p,2,pn)) || (ret=BUS_readin_data(data,1,pn)) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    if ( BUS_transaction( t, pn ) ) return 1 ;
+    return 0 ;
 }

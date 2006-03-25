@@ -125,7 +125,6 @@ struct interface_routines {
 #define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
 #define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
 #define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
-#define BUS_reconnect(pn)                   (((pn)->in->iroutines.reconnect)(pn))
 #define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive)((speed),(pn)))
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
@@ -186,6 +185,10 @@ enum adapter_type {
 } ;
 
 extern int LINK_mode ; /* flag to use LINKs in ascii mode */
+enum e_reconnect {
+    reconnect_ok = 0 ,
+    reconnect_error = 5 ,
+} ;
 
 struct connection_in {
     struct connection_in * next ;
@@ -197,9 +200,7 @@ struct connection_in {
     pthread_mutex_t dev_mutex ;
     void * dev_db ;
 #endif /* OW_MT */
-    unsigned char reconnect_in_progress ;
-    /* Since reconnect is initiated in a very low-level function I have to
-     * add this to avoid a recursive reconnect attempt. */
+    enum e_reconnect reconnect_state ;
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
     unsigned int bus_reconnect ;
@@ -307,24 +308,25 @@ int LINKE_detect( struct connection_in * in ) ;
 #endif /* OW_USB */
 
 int BUS_reset(const struct parsedname * pn) ;
-int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) ;
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) ;
+int BUS_first(unsigned char * serialnumber, const struct parsedname * pn) ;
+int BUS_next(unsigned char * serialnumber, const struct parsedname * pn) ;
+int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * pn) ;
+int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * pn) ;
+int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * pn ) ;
 int BUS_select_low(const struct parsedname * const pn) ;
 int BUS_sendout_cmd(const unsigned char * cmd , const size_t len, const struct parsedname * pn  ) ;
 int BUS_send_cmd(const unsigned char * const cmd , const size_t len, const struct parsedname * pn  ) ;
 int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const size_t len, const struct parsedname * pn  ) ;
 int BUS_send_data(const unsigned char * const data , const size_t len, const struct parsedname * pn  ) ;
 int BUS_readin_data(unsigned char * const data , const size_t len, const struct parsedname * pn ) ;
-int BUS_alarmverify(const struct parsedname * const pn) ;
-int BUS_normalverify(const struct parsedname * const pn) ;
+int BUS_alarmverify(const struct parsedname * pn) ;
+int BUS_normalverify(const struct parsedname * pn) ;
 
-int BUS_PowerByte_low(const unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * const pn) ;
+int BUS_PowerByte_low(const unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * pn) ;
 int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
-int BUS_reconnect_low(const struct parsedname * const pn) ;
+
+int TestConnection( const struct parsedname * pn ) ;
 
 int BUS_transaction( const struct transaction_log * tl, const struct parsedname * pn ) ;
 

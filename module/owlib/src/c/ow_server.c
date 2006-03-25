@@ -36,8 +36,8 @@ static void Server_setroutines( struct interface_routines * f ) {
 //    f->sendback_data = ;
 //    f->sendback_bits = ;
 //    f->select        = ;
-    f->reconnect     = BUS_reconnect_low ;
-    f->close         = Server_close ;
+    f->reconnect     = NULL          ;
+    f->close         = Server_close  ;
 }
 
 int Server_detect( struct connection_in * in ) {
