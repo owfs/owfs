@@ -122,6 +122,7 @@ void FreeIn( void ) {
 #ifdef OW_USB
         case bus_usb:
             DS9490_close(now) ;
+            now->name = NULL ; // rather than a static data string;
             break ;
 #endif /* OW_USB */
         default:
@@ -170,5 +171,3 @@ void FreeOut( void ) {
 int FS_RemoteBus( const struct parsedname * pn ) {
     return (pn->in->busmode == bus_remote) && (pn->path_busless!=NULL) ;
 }
-
-

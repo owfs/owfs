@@ -260,6 +260,9 @@ int ClientConnect( struct connection_in * in ) {
  so I added this define just to temporary be able to search for memory
  leaks... The new accept() is not detached just to be able to wait
  for thread to end.
+
+ OK OK -- bad practice.
+ We'll put the locks in the same thread.
 */
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
@@ -284,9 +287,9 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             HandlerRoutine( rafd ) ;
             close( rafd ) ;
         } else {
-	    STAT_ADD1(NET_accept_errors);
-	    LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
-	}
+            STAT_ADD1(NET_accept_errors);
+            LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+        }
     }
 
 #ifdef OW_MT
@@ -299,7 +302,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
             struct connection_out *o2 = (struct connection_out *)v2;
             int acceptfd = accept( o2->fd, NULL, NULL ) ;
             ACCEPTUNLOCK(o2);
-	    RunAccepted( acceptfd ) ;
+            RunAccepted( acceptfd ) ;
 #ifndef VALGRIND
             pthread_exit((void *)0);
 #endif /* VALGRIND */

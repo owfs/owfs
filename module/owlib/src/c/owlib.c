@@ -239,8 +239,6 @@ int LibStart( void ) {
                 /* in->connin.usb.ds1420_address should be set to identify the
                     * adapter just in case it's disconnected. It's done in the
                     * DS9490_next_both() if not set. */
-                // in->name should be set to something, even if DS9490_detect fails
-                if(!in->name) in->name = strdup("-1/-1") ;
                 break ;
             default:
                 break ;
@@ -293,15 +291,19 @@ int LibStart( void ) {
 
 /* All ow library closeup */
 void LibClose( void ) {
+    LEVEL_CALL("Starting Library cleanup\n");
     if ( pid_file ) {
         if ( unlink( pid_file ) ) LEVEL_CONNECT("Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno))
         free( pid_file ) ;
         pid_file = NULL ;
     }
 #ifdef OW_CACHE
+    LEVEL_CALL("Closing Cache\n");
     Cache_Close() ;
 #endif /* OW_CACHE */
+    LEVEL_CALL("Closing input devices\n");
     FreeIn() ;
+    LEVEL_CALL("Closing outout devices\n");
     FreeOut() ;
     if ( log_available ) closelog() ;
     DeviceDestroy() ;
@@ -317,6 +319,7 @@ void LibClose( void ) {
         free(progname) ;
         progname = NULL ;
     }
+    LEVEL_CALL("Finished Library cleanup\n");
 }
 
 struct s_timeout timeout = {1,DEFAULT_TIMEOUT,10*DEFAULT_TIMEOUT,5*DEFAULT_TIMEOUT,} ;

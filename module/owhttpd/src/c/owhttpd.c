@@ -93,7 +93,6 @@ int main(int argc, char *argv[]) {
      * Now we drop privledges and become a daemon.
      */
     if ( LibStart() ) ow_exit(1) ;
-
 #ifdef OW_MT
     main_threadid = pthread_self() ;
 #endif

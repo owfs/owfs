@@ -20,11 +20,6 @@ $Id$
 #include "owfs.h"
 #include <fuse.h>
 
-/* Just in case version fuse-1.4 is used.. Use oldest api */
-#ifndef FUSE_USE_VERSION
-#define FUSE_USE_VERSION 11
-#endif
-
 /* Stuff from helper.h */
 #define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
 #define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
@@ -38,12 +33,44 @@ pthread_t main_threadid ;
 #define IS_MAINTHREAD 1
 #endif
 
+struct Fuse_option {
+    int max_options ;
+    char ** argv ;
+    int argc ;
+} ;
+
+static int Fuse_setup( size_t num, struct Fuse_option * fo ) {
+    int i ;
+    fo->max_options = num ;
+    fo->argc = 0 ;
+    fo->argv = (char**) calloc( num+1, sizeof( char * ) ) ;
+    if ( fo->argv == NULL ) return -ENOMEM ;
+    for ( i=0 ; i<=num ; ++i ) { printf("%d\n",i);fo->argv[i] = NULL ;}
+    return 0 ;
+}
+
+static void Fuse_cleanup( struct Fuse_option * fo ) {
+    int i ;
+    if ( fo->argv ) {
+        for ( i=0 ; i<fo->max_options ; ++i ) if ( fo->argv[i] ) free(fo->argv[i]) ;
+        free( fo->argv ) ;
+    }
+}
+
+static int Fuse_add( char * opt, struct Fuse_option * fo ) {
+    //printf("Adding option %s\n",opt);
+    if ( fo->argc >= fo->max_options ) return 1 ;
+    fo->argv[fo->argc++] = strdup(opt) ;
+    //printf("Added option %d %s\n",fo->argc-1,fo->argv[fo->argc-1]);
+    return 0 ;
+}
+
 static void exit_handler(int i) {
     return ow_exit( ((i<0) ? 1 : 0) ) ;
 }
 
 /*
-    OW -- Onw Wire
+    OW -- One Wire
     Global variables -- each invokation will have it's own data
 */
 struct fuse *fuse;
@@ -58,6 +85,7 @@ char * fuse_open_opt = NULL ;
 /* ---------------------------------------------- */
 int main(int argc, char *argv[]) {
     int c ;
+    struct Fuse_option fuse_options ;
 
     /* grab our executable name */
     if ( argc>0 ) progname = strdup(argv[0]) ;
@@ -106,121 +134,47 @@ int main(int argc, char *argv[]) {
 
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
-
-#if FUSE_MAJOR_VERSION == 1
-    {
-      char ** opts = NULL ;
-      if ( fuse_mnt_opt ) {
-        char * tok ;
-        int i = 0 ;
-
-        opts = malloc( (1+strlen(fuse_mnt_opt)) * sizeof(char *) ) ; // oversized
-        if ( opts == NULL ) {
-            LEVEL_DEFAULT("Memory allocation problem in fuse options\n")
-            ow_exit(1) ;
-        }
-        tok = strtok(fuse_mnt_opt," ") ;
-        while ( tok ) {
-            opts[i++] = tok ;
-            tok = strtok(NULL," ") ;
-        }
-        opts[i] = NULL ;
-      }
-
-      if ( (fuse_fd = fuse_mount(fuse_mountpoint, opts)) == -1 ) ow_exit(1) ;
-      if (opts) free( opts ) ;
-    }
-#elif (FUSE_USE_VERSION == 21) || (FUSE_USE_VERSION == 22)
-    /* Time to cleanup the main-loop and use the fuse-helper functions soon.
-     * Should perhaps call fuse_setup(), fuse_loop_mt(), fuse_teardown() only.
-     */
-    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
-#else 
-    /* Time to cleanup the main-loop and use the fuse-helper functions soon.
-     * Should perhaps call fuse_setup(), fuse_loop_mt(), fuse_teardown() only.
-    */
-    if ( (fuse_fd = fuse_mount(fuse_mountpoint, fuse_mnt_opt)) == -1 ) ow_exit(1) ;
-#endif
-
-
+    LEVEL_CONNECT("fuse mount point: %s\n",fuse_mountpoint) ;
     set_signal_handlers(exit_handler);
 
-    /*
-     * Now we drop privledges and become a daemon.
-     */
+   /* Now we drop privledges and become a daemon. */
     if ( LibStart() ) ow_exit(1) ;
-
+    //printf("Lib started\n");
 #ifdef OW_MT
     main_threadid = pthread_self() ;
 #endif
 
-
-#if (FUSE_MAJOR_VERSION == 1)
-    fuse = fuse_new(fuse_fd, 0, &owfs_oper);
-#elif FUSE_USE_VERSION == 21
-    fuse = fuse_new(fuse_fd, fuse_open_opt, &owfs_oper);
-#elif FUSE_USE_VERSION == 22
-    /* Fuse open options fuse-2.4 is
-     * debug, use_ino, readdir_ino, direct_io, kernel_cache, umask=
-     * uid=, gid=, entry_timeout=, attr_timeout=
-     *
-     * NOTE: direct_io was Fuse mount option in fuse-2.3 */
-    fuse = fuse_new(fuse_fd, fuse_open_opt, &owfs_oper, sizeof(owfs_oper));
+#if FUSE_VERSION >= 20
+    /* Aet up "command line" for main fuse routines */
+    Fuse_setup( 10, &fuse_options ) ; // up to 10 words on the command line
+    Fuse_add("OWFS" , &fuse_options) ; // NAME of file system
+    Fuse_add(fuse_mountpoint , &fuse_options) ; // mount point
+    Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
+    Fuse_add("direct_io" , &fuse_options) ;
+    if ( !background ) {
+        Fuse_add("-f", &fuse_options) ; // foreground for fuse too
+        if ( error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
+    }
+ #ifdef OW_MT
+    Fuse_add("-s" , &fuse_options) ; // single threaded
+ #endif /* OW_MT */
+ #if FUSE_VERSION >= 26 // requires extra parameter
+    printf("fuse_main=%d\n",fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL )) ;
+ #else
+    fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;
+ #endif
+    Fuse_cleanup( &fuse_options ) ;
+   ow_exit(0) ;
 #endif
 
-    if (multithreading) {
-        fuse_loop_mt(fuse) ;
-    } else {
-        fuse_loop(fuse) ;
-    }
-
-#if (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 4)
-    /* fuse_teardown() is called in ow_exit() */
-#else  /* FUSE < 2.4 */
-    /* Seem to be be better to close file-descriptor before calling
-     * fuse_exit() on older fuse versions. */
-    close(fuse_fd) ;
-    fuse_fd = -1;
-#endif  /* FUSE < 2.4 */
-    ow_exit(0);
     return 0 ;
 }
 
 static void ow_exit( int e ) {
     if(IS_MAINTHREAD) {
-      LibClose() ;
-
-#if (FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 4)
-      if(fuse != NULL) {
-	fuse_teardown(fuse, fuse_fd, fuse_mountpoint);
-      }
-      fuse_fd = -1;
-      fuse_mountpoint = NULL;
-#else /* FUSE < 2.4 */
-      if(fuse != NULL) {
-	fuse_exit(fuse);
-      }
-
-#if (FUSE_MAJOR_VERSION == 2)
-      if(fuse != NULL) {
-	fuse_destroy(fuse);
-      }
-#endif /* FUSE == 2 */
-
-      fuse = NULL;
-      if(fuse_fd != -1) {
-        close(fuse_fd);
-        fuse_fd = -1;
-      }
-      if(fuse_mountpoint != NULL) {
-        fuse_unmount(fuse_mountpoint);
-        free(fuse_mountpoint) ;
-        fuse_mountpoint = NULL;
-      } else if(umount_cmd[0] != '\0') {
-        system(umount_cmd);
-      }
-#endif /* FUSE < 2.4*/
+        LibClose() ;
     }
     /* Process never die on WRT54G router with uClibc if exit() is used */
     _exit( e ) ;
 }
+

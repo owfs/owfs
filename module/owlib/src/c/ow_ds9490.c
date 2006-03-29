@@ -39,7 +39,7 @@ struct usb_list {
 static int USB_init( struct usb_list * ul ) ;
 static int USB_next( struct usb_list * ul ) ;
 static int DS9490_reset( const struct parsedname * pn ) ;
-static int DS9490_open( const struct parsedname * pn ) ;
+static int DS9490_open( struct usb_list * ul, const struct parsedname * pn ) ;
 static int DS9490_reconnect( const struct parsedname * pn ) ;
 static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct parsedname * pn ) ;
 static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
@@ -53,6 +53,7 @@ static int DS9490_write( const unsigned char * buf, const size_t size, const str
 static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) ;
 static int DS9490_testoverdrive(const struct parsedname * pn) ;
 static int DS9490_redetect_low( const struct parsedname * pn ) ;
+static char * DS9490_device_name( const struct usb_list * ul ) ;
 
 /* Device-specific routines */
 static void DS9490_setroutines( struct interface_routines * f ) {
@@ -178,10 +179,15 @@ static void DS9490_setroutines( struct interface_routines * f ) {
 /** EP3 -- bulk read */
 #define DS2490_EP3              0x83
 
+char badUSBname[] = "-1/-1" ;
+
 int DS9490_detect( struct connection_in * in ) {
     struct parsedname pn ;
     struct stateinfo si ;
     int ret ;
+
+    DS9490_setroutines( & in->iroutines ) ; // set up close, reconnect, reset, ...
+    in->name = badUSBname ; // initialized
 
     pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
@@ -189,7 +195,6 @@ int DS9490_detect( struct connection_in * in ) {
 
     ret = DS9490_detect_low(&pn) ;
     if (ret==0) in->busmode = bus_usb ;
-
     return ret ;
 }
 
@@ -235,11 +240,24 @@ static int DS9490_setup_adapter(const struct parsedname * pn) {
   return 0 ;
 }
 
-static int DS9490_open( const struct parsedname * pn ) {
-    int ret ;
+
+/* Open usb device,
+   unload ds9490r kernel module if it is interfering
+   set all the interface magic
+   set callback routines and adapter entries
+*/
+static int DS9490_open( struct usb_list * ul, const struct parsedname * pn ) {
+    int ret = ENODEV ;
     usb_dev_handle * usb ;
 
-    if(pn->in->connin.usb.usb) {
+    if ( pn->in->name != badUSBname ) free(pn->in->name) ;
+    pn->in->name = DS9490_device_name( ul ) ;
+
+    pn->in->connin.usb.dev = ul->dev ;
+
+    if ( pn->in->name==badUSBname ) {
+        ret =  -ENOMEM ;
+    } else if(pn->in->connin.usb.usb) {
         LEVEL_DEFAULT("DS9490_open: usb.usb was NOT closed before DS9490_open() ?\n");
     } else if ( pn->in->connin.usb.dev && (usb=usb_open(pn->in->connin.usb.dev)) ) {
         pn->in->connin.usb.usb = usb ;
@@ -278,10 +296,14 @@ static int DS9490_open( const struct parsedname * pn ) {
         usb_close( usb ) ;
         pn->in->connin.usb.usb = NULL ;
     }
+
+    if ( pn->in->name != badUSBname ) free(pn->in->name) ;
+    pn->in->name = badUSBname ;
+
     pn->in->connin.usb.dev = NULL ; // this will force a re-scan next time
     //LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
     STAT_ADD1_BUS(BUS_open_errors,pn->in) ;
-    return -ENODEV;
+    return ret ;
 }
 
 /* When the errors stop the USB device from functioning -- close and reopen.
@@ -322,7 +344,9 @@ static int USB_next( struct usb_list * ul ) {
             ul->dev = ul->dev->next ;
         }
         if ( ul->dev ) { // device found
-            if ( ul->dev->descriptor.idVendor==0x04FA && ul->dev->descriptor.idProduct==0x2490 ) return 0 ;
+            if ( ul->dev->descriptor.idVendor!=0x04FA || ul->dev->descriptor.idProduct!=0x2490 ) continue ; // not DS9490
+            LEVEL_CONNECT("Adapter found: %s/%s\n", ul->bus->dirname, ul->dev->filename);
+            return 0 ;
         } else {
             ul->bus = ul->bus->next ;
             ul->dev = NULL ;
@@ -342,20 +366,12 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
     USB_init( &ul ) ;
     while ( !USB_next(&ul) ) {
         if ( ++usbnum < useusb ) {
-            LEVEL_CONNECT("USB DS9490 adapter at %s/%s passed over.\n",ul.bus->dirname,ul.dev->filename)
+            LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)\n",usbnum,useusb)
         } else {
             unsigned char sn[8] ;
             char id[17] ;
-            char name[2*PATH_MAX+2] ;
-            snprintf(name, 2*PATH_MAX+1, "%s/%s", ul.bus->dirname, ul.dev->filename);
-            pn->in->name = strdup(name) ;
-            pn->in->connin.usb.dev = ul.dev ;
-            if ( DS9490_open( pn ) ) {
-                if(pn->in->name) free(pn->in->name) ;
-                pn->in->name = strdup("-1/-1") ;
-                pn->in->connin.usb.dev = NULL ;
-                return -EIO ;
-            }
+
+            if ( DS9490_open( &ul, pn ) ) return -EIO ;
 
             // clear it just in case nothing is found
             memset(pn->in->connin.usb.ds1420_address, 0, 8);
@@ -399,8 +415,8 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
             return 0;
         }
     }
-    if ( pn->in->name ) free(pn->in->name) ;
-    //LEVEL_DEFAULT("No available USB DS9490 adapter found\n")
+
+    LEVEL_CONNECT("No available USB DS9490 adapter found\n")
     return -ENODEV ;
 }
 
@@ -413,12 +429,24 @@ static int usbdevice_in_use(char * name) {
     return 0; // not found in the current indevice-list
 }
 
+/* Construct the device name */
+static char * DS9490_device_name( const struct usb_list * ul ) {
+    size_t len = 2*PATH_MAX+1 ;
+    char name[len+1];
+    char * ret = NULL ;
+    if ( snprintf(name, len, "%s/%s", ul->bus->dirname, ul->dev->filename) >0 ) {
+        name[len] = '\0' ; // make sufre there is a trailing null
+        ret = strdup(name) ;
+    }
+    if ( ret==NULL ) return badUSBname ;
+    return ret ;
+}
+
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static int DS9490_redetect_low( const struct parsedname * pn ) {
     struct usb_list ul ;
     unsigned char sn[8] ;
     int ret;
-    char name[2*PATH_MAX+2];
     char old_id[17];
     struct parsedname pncopy;
 
@@ -434,20 +462,21 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
      */
     USB_init(&ul) ;
     while ( !USB_next(&ul) ) {
-        snprintf(name, 2*PATH_MAX+1, "%s/%s", ul.bus->dirname, ul.dev->filename);
-        //LEVEL_DEFAULT("Found %s, searching for %s\n",name,pn->in->name);
+        char * name = DS9490_device_name(&ul) ;
+        if ( name == badUSBname ) return -ENOMEM ;
 
-        if(usbdevice_in_use(name)) continue;
-        pn->in->connin.usb.dev = ul.dev ;
-
-        pn->in->name = strdup(name) ;
-        if ( DS9490_open( pn ) ) {
-            LEVEL_DEFAULT("Cant open USB adapter [%s], Find next...\n", name);
-            pn->in->connin.usb.dev = NULL ;
+        if(usbdevice_in_use(name)) {
+            free(name) ;
             continue;
         }
-        // pn->in->connin.usb.usb is set in DS9490_open().
 
+        if ( DS9490_open( &ul, pn ) ) {
+            LEVEL_DEFAULT("Cant open USB adapter [%s], Find next...\n", name);
+            free(name)  ;
+            continue;
+        }
+
+        free( name ) ; // use pn->in->name created in DS990_open instead
 
         bytes2string(old_id, pn->in->connin.usb.ds1420_address, 8) ;
         old_id[16] = 0;
@@ -462,16 +491,16 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
         pncopy.pathlength = 0;
 
         if( (ret = BUS_select(&pncopy)) ) {
-            LEVEL_DATA("BUS_select failed during reconnect [%s]\n", name);
+            LEVEL_DATA("BUS_select failed during reconnect [%s]\n", pn->in->name);
         } else if ( (ret = BUS_first(sn,&pncopy)) ) {
-            LEVEL_DATA("BUS_first failed during reconnect [%s]\n", name);
+            LEVEL_DATA("BUS_first failed during reconnect [%s]\n", pn->in->name);
         }
         while (ret==0) {
             if(error_level > 3) {
                 char id[17];
                 bytes2string(id, sn, 8) ;
                 id[16] = 0;
-                LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, name, old_id);
+                LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, pn->in->name, old_id);
             }
             /* Unique id is set and match... no use to loop any more */
             if(!memcmp(sn, pn->in->connin.usb.ds1420_address, 8)) break;
@@ -489,25 +518,21 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
         }
         if(ret == 0) {
             // Yeah... We found the adapter again...
-            if(pn->in->name) free(pn->in->name);
-            pn->in->name = strdup(name);
             return 0;
         }
         // Couldn't find correct ds1420 chip on this adapter
-        LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s] (want: %s)\n", name, old_id);
+        LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s] (want: %s)\n", pn->in->name, old_id);
         DS9490_close(pn->in);
-        pn->in->connin.usb.dev = NULL;
     }
     //LEVEL_CONNECT("No available USB DS9490 adapter found\n");
     return -ENODEV ;
 }
 
 void DS9490_close(struct connection_in * in) {
-    int ret;
     usb_dev_handle * usb = in->connin.usb.usb ;
 
     if ( usb ) {
-        ret = usb_release_interface( usb, 0) ;
+        int ret = usb_release_interface( usb, 0) ;
         if(ret) in->connin.usb.dev = NULL ; // force a re-scan
         if(ret) { LEVEL_CONNECT("Release interface failed ret=%d\n", ret); }
         
@@ -517,9 +542,12 @@ void DS9490_close(struct connection_in * in) {
         ret = usb_close( usb ) ;
         if(ret) in->connin.usb.dev = NULL ; // force a re-scan
         if(ret) { LEVEL_CONNECT("usb_close() failed ret=%d\n", ret); }
-        in->connin.usb.usb = NULL ;
         LEVEL_CONNECT("Closed USB DS9490 adapter at %s. ret=%d\n",in->name, ret);
     }
+    in->connin.usb.usb = NULL ;
+    in->connin.usb.dev = NULL ;
+    if ( in->name && in->name!=badUSBname ) free(in->name) ;
+    in->name = badUSBname ;
 }
 
 /* DS9490_getstatus()
@@ -528,7 +556,6 @@ void DS9490_close(struct connection_in * in) {
    return -EIO        on read errors (will require DS9490_close())
    otherwise return number of status bytes in buffer
 */
-
 static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct parsedname * pn ) {
     int ret , loops = 0 ;
     int i ;
@@ -698,7 +725,6 @@ static int DS9490_overdrive( const unsigned int overdrive, const struct parsedna
 /* return 1=short, 0 good <0 error */
 static int DS9490_reset( const struct parsedname * pn ) {
     int i, ret ;
-    unsigned char val ;
     unsigned char buffer[32] ;
     //printf("9490RESET\n");
     //printf("DS9490_reset() index=%d pn->in->Adapter=%d %s\n", pn->in->index, pn->in->Adapter, pn->in->adapter_name);
@@ -749,7 +775,7 @@ static int DS9490_reset( const struct parsedname * pn ) {
 //    USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
     pn->si->AnyDevices = 1;
     for(i=0; i<ret; i++) {
-        val = buffer[16+i];
+        unsigned char val = buffer[16+i];
         //LEVEL_DATA("Status bytes[%d]: %X\n", i, val);
         if(val != ONEWIREDEVICEDETECT) {
             // check for NRS bit (0x01)
