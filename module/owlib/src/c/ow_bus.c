@@ -16,6 +16,8 @@ $Id$
 
 #include <sys/time.h>
 
+static int BUS_select_raw(int depth, const struct parsedname * const pn) ;
+
 /** BUS_send_data
     Send a data and expect response match
     puts into data mode if needed.
@@ -78,50 +80,53 @@ static int BUS_selection_error( int ret ) {
 */
 int BUS_select_low(const struct parsedname * const pn) {
     int ret ;
-    int ibranch ;
     // match Serial Number command 0x55
     unsigned char sent[9] = { 0x55, } ;
-    unsigned char branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
-    unsigned char resp[3] ;
-
+    unsigned char alo[] = { 0xCC, 0x66, } ;
+    int pl = pn->pathlength ;
 //printf("SELECT\n");
 
-    if(pn->in->use_overdrive_speed) {
-        if((ret=BUS_testoverdrive(pn)) < 0) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        } else {
-            //printf("use overdrive speed\n");
-            sent[0] = 0x69 ;
+
+    /* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
+    if ( pl == 0 ) { /* no branches, overdrive possible */
+        if ( pn->in->branch.sn[0] ) { // need to root branch */
+            LEVEL_DEBUG("Clearing root branch\n") ;
+            if ( BUS_select_raw(0,pn) || BUS_send_data(alo,2,pn) ) return 1 ;
         }
+        pn->in->branch.sn[0] = 0x00 ; // flag as no branches turned on
+        if(pn->in->use_overdrive_speed) { // overdrive?
+            if((ret=BUS_testoverdrive(pn)) < 0) {
+                BUS_selection_error(ret) ;
+                return ret ;
+            } else {
+                //printf("use overdrive speed\n");
+                sent[0] = 0x69 ;
+            }
+        }
+    } else if ( memcmp( pn->in->branch.sn, pn->bp[pl-1].sn, 8 ) ) { /* different path */
+        int iclear ;
+        LEVEL_DEBUG("Clearing all branches to level %d\n",pl) ;
+        for ( iclear = 0 ; iclear <= pl ; ++iclear ) {
+            // All lines off
+            if ( BUS_select_raw(iclear,pn) || BUS_send_data( alo,2,pn) ) return 1 ;
+        }
+        memcpy( pn->in->branch.sn, pn->bp[pl-1].sn, 8 ) ;
+        pn->in->branch.branch =  pn->bp[pl-1].branch ;
+    } else if ( pn->in->branch.branch != pn->bp[pl-1].branch ) { /* different branch */
+        LEVEL_DEBUG("Clearing last branches (level %d)\n",pl) ;
+        if ( BUS_select_raw(pl,pn) || BUS_send_data( alo,2,pn) ) return 1 ; // clear just last level
+        pn->in->branch.branch =  pn->bp[pl-1].branch ;
     }
 
-    // reset the 1-wire
-    // send/recieve the transfer buffer
-    // verify that the echo of the writes was correct
-    if ( (ret=BUS_reset(pn)) ) {
-        BUS_selection_error(ret) ;
-        return ret ;
+    /* Now select */
+    if ( BUS_select_raw(pn->pathlength,pn) ) return 1 ;
+
+    if ( pn->pathlength ) {
+        memcpy( pn->in->branch.sn, pn->bp[pn->pathlength-1].sn,8 ) ;
+    } else {
+        pn->in->branch.sn[0] = 0x00 ;
     }
-    for ( ibranch=0 ; ibranch < pn->pathlength ; ++ibranch ) {
-        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
-//printf("select ibranch=%d %.2X %.2X.%.2X%.2X%.2X%.2X%.2X%.2X %.2X\n",ibranch,send[0],send[1],send[2],send[3],send[4],send[5],send[6],send[7],send[8]);
-       /* Perhaps support overdrive here ? */
-        if ( (ret=BUS_send_data(sent,9,pn)) ) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        }
-//printf("select2 branch=%d\n",pn->bp[ibranch].branch);
-        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        }
-        if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
-//printf("select3=%d resp=%.2X %.2X %.2X\n",ret,resp[0],resp[1],resp[2]);
-            STAT_ADD1(BUS_select_low_branch_errors);
-            return -EINVAL ;
-        }
-    }
+
     if ( pn->dev && (pn->dev != DeviceThermostat) ) {
 //printf("Really select %s\n",pn->dev->code);
         memcpy( &sent[1], pn->sn, 8 ) ;
@@ -144,6 +149,42 @@ int BUS_select_low(const struct parsedname * const pn) {
     return 0 ;
 }
 
+/* Select without worring about branch turn-offs */
+static int BUS_select_raw(int depth, const struct parsedname * const pn) {
+    int ret ;
+    int ibranch ;
+    // match Serial Number command 0x55
+    unsigned char sent[9] = { 0x55, } ;
+    unsigned char branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
+    unsigned char resp[3] ;
+
+    
+    // reset the 1-wire
+    // send/recieve the transfer buffer
+    // verify that the echo of the writes was correct
+    if ( (ret=BUS_reset(pn)) ) {
+        BUS_selection_error(ret) ;
+        return ret ;
+    }
+    for ( ibranch=0 ; ibranch < depth ; ++ibranch ) {
+        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
+       /* Perhaps support overdrive here ? */
+        if ( (ret=BUS_send_data(sent,9,pn)) ) {
+            BUS_selection_error(ret) ;
+            return ret ;
+        }
+        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
+            BUS_selection_error(ret) ;
+            return ret ;
+        }
+        if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
+            STAT_ADD1(BUS_select_low_branch_errors);
+            return -EINVAL ;
+        }
+    }
+    return 0 ;
+}
+
 //--------------------------------------------------------------------------
 /** The 'owFirst' doesn't find the first device on the 1-Wire Net.
  instead, it sets up for DS2480_next interator.
@@ -152,48 +193,74 @@ int BUS_select_low(const struct parsedname * const pn) {
 
  Returns:   0-device found 1-no dev or error
 */
-int BUS_first(unsigned char * serialnumber, const struct parsedname * const pn ) {
+int BUS_first(struct device_search * ds, const struct parsedname * const pn ) {
     // reset the search state
-    memset(serialnumber,0,8);  // clear the serial number
-    pn->si->LastDiscrepancy = -1;
-    pn->si->LastFamilyDiscrepancy = -1;
-    pn->si->LastDevice = 0 ;
-    pn->si->ExtraReset = 0 ;
+    memset(ds->sn,0,8);  // clear the serial number
+    ds->LastDiscrepancy = -1;
+    ds->LastFamilyDiscrepancy = -1;
+    ds->LastDevice = 0 ;
+    pn->in->ExtraReset = 0 ;
+    ds->search = 0xF0 ;
 
-    if ( !pn->si->AnyDevices ) {
+    if ( !pn->in->AnyDevices ) {
       LEVEL_DATA("BUS_first: No data will be returned\n");
     }
 
-    return BUS_next(serialnumber,pn) ;
+    return BUS_next(ds,pn) ;
 
 }
 
-int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * const pn ) {
+int BUS_first_alarm(struct device_search * ds, const struct parsedname * const pn ) {
     // reset the search state
-    memset(serialnumber,0,8);  // clear the serial number
-    pn->si->LastDiscrepancy = -1 ;
-    pn->si->LastFamilyDiscrepancy = -1 ;
-    pn->si->LastDevice = 0 ;
+    memset(ds->sn,0,8);  // clear the serial number
+    ds->LastDiscrepancy = -1;
+    ds->LastFamilyDiscrepancy = -1;
+    ds->LastDevice = 0 ;
+    ds->search = 0xEC ;
 
-    return BUS_next_alarm(serialnumber,pn) ;
+    return BUS_next(ds,pn) ;
 }
 
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * const pn ) {
+int BUS_first_family(const unsigned char family, struct device_search * ds, const struct parsedname * const pn ) {
     // reset the search state
-    serialnumber[0] = family ;
-    serialnumber[1] = 0x00 ;
-    serialnumber[2] = 0x00 ;
-    serialnumber[3] = 0x00 ;
-    serialnumber[4] = 0x00 ;
-    serialnumber[5] = 0x00 ;
-    serialnumber[6] = 0x00 ;
-    serialnumber[7] = 0x00 ;
-    pn->si->LastDiscrepancy = 63;
-    pn->si->LastFamilyDiscrepancy = -1 ;
-    pn->si->LastDevice = 0 ;
+    memset(ds->sn,0,8);  // clear the serial number
+    ds->sn[0] = family ;
+    ds->LastDiscrepancy = 63;
+    ds->LastFamilyDiscrepancy = -1;
+    ds->LastDevice = 0 ;
+    ds->search = 0xF0 ;
 
-    return BUS_next(serialnumber,pn) ;
+    return BUS_next(ds,pn) ;
 }
+
+
+static int BUS_next_redoable( const struct device_search * ds, struct device_search * ds2, const struct parsedname * pn ) {
+    memcpy( ds2, ds, sizeof(struct device_search) ) ;
+    if ( BUS_select(pn) ) {
+        printf("Couldn't select\n");
+        return -EINVAL ;
+    }
+    return BUS_next_both( &ds2, pn ) ;
+}
+
+static int BUS_next_anal( struct device_search * ds, const struct parsedname * const pn) {
+    struct device_search ds1, ds2 ;
+    int i ;
+    int ret ;
+    BUS_next_redoable( ds, &ds2, pn ) ;
+    for( i=0 ; i<5 ; ++i ) {
+        memcpy( &ds1, &ds2 , sizeof(struct device_search) ) ;
+        ret = BUS_next_redoable( ds, &ds2, pn ) ;
+        if ( memcmp( &ds1, &ds2 , sizeof(struct device_search) ) == 0 ) {
+            memcpy( ds, &ds2 , sizeof(struct device_search) ) ;
+            printf("ANAL success i=%d\n",i) ;
+            return ret ;
+        }
+    }
+    printf("ANAL failure\n");
+    return -EIO ;
+}
+
 
 //--------------------------------------------------------------------------
 /** The DS2480_next function does a general search.  This function
@@ -204,15 +271,12 @@ int BUS_first_family(const unsigned char family, unsigned char * serialnumber, c
 
  Sets LastDevice=1 if no more
 */
-int BUS_next(unsigned char * serialnumber, const struct parsedname * const pn) {
-    int ret = BUS_next_both( serialnumber, 0xF0, pn ) ;
+int BUS_next( struct device_search * ds, const struct parsedname * const pn) {
+    int ret ;
+    //ret = pn->pathlength ? BUS_next_anal(ds,pn) : BUS_next_both( ds, pn ) ;
+    if ( pn->pathlength ) BUS_select(pn) ;
+    ret = BUS_next_both( ds, pn ) ;
     if (ret) { STAT_ADD1_BUS(BUS_next_errors,pn->in) ; }
-    return ret ;
-}
-
-int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * const pn) {
-    int ret = BUS_next_both( serialnumber, 0xEC, pn ) ;
-    if ( ret ) { STAT_ADD1_BUS(BUS_next_alarm_errors,pn->in) ; }
     return ret ;
 }
 
@@ -268,8 +332,7 @@ int BUS_PowerByte_low(unsigned char byte, unsigned char * resp, unsigned int del
 
 /* Low level search routines -- bit banging */
 /* Not used by more advanced adapters */
-int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
-    struct stateinfo * si = pn->si ;
+int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) {
     int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
     int bit_number ;
     int last_zero = -1 ;
@@ -278,11 +341,11 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
 
     // initialize for search
     // if the last call was not the last one
-    if ( !si->AnyDevices ) si->LastDevice = 1 ;
-    if ( si->LastDevice ) return -ENODEV ;
+    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( ds->LastDevice ) return -ENODEV ;
 
     /* Appropriate search command */
-    if ( (ret=BUS_send_data(&search,1,pn)) ) return ret ;
+    if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
       // loop to do the search
     for ( bit_number=0 ;; ++bit_number ) {
         bits[1] = bits[2] = 0xFF ;
@@ -307,14 +370,14 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
             }
         } else if ( bits[2] ) { /* 0,1 */
             search_direction = 0;  // bit write value for search
-        } else if (bit_number > si->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
+        } else if (bit_number > ds->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
             // Past branch, select zeros for now
             search_direction = 0 ;
             last_zero = bit_number;
-        } else if (bit_number == si->LastDiscrepancy) {  /* 0,0 -- new branch */
+        } else if (bit_number == ds->LastDiscrepancy) {  /* 0,0 -- new branch */
             // at branch (again), select 1 this time
             search_direction = 1 ; // if equal to last pick 1, if not then pick 0
-        } else  if (UT_getbit(serialnumber,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
+        } else  if (UT_getbit(ds->sn,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
             // this discrepancy is before the Last Discrepancy
             search_direction = 1 ;
         } else {  /* 0,0 -- old news, use previous "0" bit */
@@ -324,26 +387,27 @@ int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const 
         }
         // check for Last discrepancy in family
         //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
-        UT_setbit(serialnumber,bit_number,search_direction) ;
+        UT_setbit(ds->sn,bit_number,search_direction) ;
 
         // serial number search direction write bit
         //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
     } // loop until through serial number bits
 
-    if ( CRC8(serialnumber,8) || (bit_number<64) || (serialnumber[0] == 0)) {
+    if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
       /* A minor "error" and should perhaps only return -1 to avoid
       * reconnect */
         return -EIO ;
     }
-    if((serialnumber[0] & 0x7F) == 0x04) {
+    if((ds->sn[0] & 0x7F) == 0x04) {
         /* We found a DS1994/DS2404 which require longer delays */
         pn->in->ds2404_compliance = 1 ;
     }
     // if the search was successful then
 
-    si->LastDiscrepancy = last_zero;
+    ds->LastDiscrepancy = last_zero;
 //    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
-    si->LastDevice = (last_zero < 0);
+    ds->LastDevice = (last_zero < 0);
+    LEVEL_DEBUG("Generic_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
     return 0 ;
 }
 

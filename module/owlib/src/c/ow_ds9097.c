@@ -96,10 +96,10 @@ static int DS9097_reset( const struct parsedname * const pn ) {
         ret = 1 ; // short circuit
         /* fall through */
     case 0xF0:
-        pn->si->AnyDevices = 0 ;
+        pn->in->AnyDevices = 0 ;
         break ;
     default:
-        pn->si->AnyDevices = 1 ;
+        pn->in->AnyDevices = 1 ;
         pn->in->ProgramAvailable = 0 ; /* from digitemp docs */
         if(pn->in->ds2404_compliance) {
             // extra delay for alarming DS1994/DS2404 compliance

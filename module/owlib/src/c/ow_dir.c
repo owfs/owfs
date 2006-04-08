@@ -15,7 +15,6 @@ $Id$
 #include "ow_connection.h"
 
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) ;
-static int FS_branchoff( const struct parsedname * const pn) ;
 static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
@@ -392,7 +391,7 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
 static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
     int ret ;
-    unsigned char sn[8] ;
+    struct device_search ds ; // holds search state
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
@@ -400,9 +399,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 
     BUSLOCK(pn2);
     pn2->ft = NULL ; /* just in case not properly set */
-    /* Turn off all DS2409s */
-    FS_branchoff(pn2) ;
-    (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(sn,pn2)) ;
+    (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(&ds,pn2)) ;
     if(ret) {
         BUSUNLOCK(pn2);
         if(ret == -ENODEV) return 0; /* no more alarms is ok */
@@ -411,28 +408,19 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
     while (ret==0) {
         char ID[] = "XX";
         STAT_ADD1(dir_main.entries);
-        memcpy( pn2->sn, sn, 8 ) ;
+        memcpy( pn2->sn, ds.sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, sn[0] ) ;
+        num2string( ID, ds.sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
         DIRLOCK;
             dirfunc( pn2 ) ;
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        (ret=BUS_select(pn2)) || (ret=BUS_next_alarm(sn,pn2)) ;
+        (ret=BUS_select(pn2)) || (ret=BUS_next(&ds,pn2)) ;
 //printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret);
     }
     BUSUNLOCK(pn2);
     if(ret == -ENODEV) return 0; /* no more alarms is ok */
-    return ret ;
-}
-
-static int FS_branchoff( const struct parsedname * const pn ) {
-    int ret ;
-    unsigned char cmd[] = { 0xCC, 0x66, } ;
-
-    /* Turn off all DS2409s */
-    if ( (ret=BUS_reset(pn)) || (ret=BUS_send_data(cmd,2,pn)) ) return ret ;
     return ret ;
 }
 
@@ -441,7 +429,7 @@ static int FS_branchoff( const struct parsedname * const pn ) {
 /* Also, adapters and stats handled elsewhere */
 /* Scan the directory from the BUS and add to cache */
 static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags ) {
-    unsigned char sn[8] ;
+    struct device_search ds ;
     int dindex = 0 ;
     int ret ;
 
@@ -454,11 +442,9 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     
     /* Operate at dev level, not filetype */
     pn2->ft = NULL ;
-    /* Turn off all DS2409s */
-    FS_branchoff(pn2) ;
     /* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
     /* Actually it's probably stale information in the stateinfo structure */
-    (ret=BUS_select(pn2)) || (ret=BUS_first(sn,pn2)) ;
+    (ret=BUS_select(pn2)) || (ret=BUS_first(&ds,pn2)) ;
     if(ret) {
         BUSUNLOCK(pn2);
         if(ret == -ENODEV) return 0; /* no more devices is ok */
@@ -469,17 +455,17 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
 #if 0
         {
             char tmp[17];
-            bytes2string(tmp, sn, 8) ;
+            bytes2string(tmp, ds.sn, 8) ;
             tmp[16] = 0;
             printf("FS_realdir: add sn=%s to bus=%d\n", tmp, pn2->in->index);
         }
 #endif
-        Cache_Add_Dir(sn,dindex,pn2) ;
+        Cache_Add_Dir(ds.sn,dindex,pn2) ;
         ++dindex ;
         
-        memcpy( pn2->sn, sn, 8 ) ;
+        memcpy( pn2->sn, ds.sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, sn[0] ) ;
+        num2string( ID, ds.sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
         //printf("DIR adapter=%d, element=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",pn2->in->index,dindex,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7]);
         
@@ -494,7 +480,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
         flags[0] |= pn2->dev->flags ;
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        (ret=BUS_select(pn2)) || (ret=BUS_next(sn,pn2)) ;
+        (ret=BUS_select(pn2)) || (ret=BUS_next(&ds,pn2)) ;
     }
     BUSUNLOCK(pn2);
 
@@ -509,11 +495,11 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
             */
 #if 1
             char tmp[17];
-            bytes2string(tmp, sn, 8);
+            bytes2string(tmp, ds.sn, 8);
             tmp[16] = '\000';
             LEVEL_DEFAULT("Set DS9490 [%s] unique id (no DS1420) to %s\n", pn2->in->name, tmp);
 #endif
-            memcpy(pn2->in->connin.usb.ds1420_address, sn, 8);
+            memcpy(pn2->in->connin.usb.ds1420_address, ds.sn, 8);
         }
     }
 #endif

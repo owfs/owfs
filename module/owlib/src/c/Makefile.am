@@ -37,6 +37,7 @@ OWLIB_SOURCE = compat.c          \
                ow_com.c          \
                ow_connect.c      \
                ow_crc.c          \
+               ow_delay.c        \
                ow_dir.c          \
                ow_ds9097.c       \
                ow_ds1410.c       \

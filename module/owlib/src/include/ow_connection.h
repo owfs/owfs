@@ -89,7 +89,7 @@ $Id$
 #endif
 
 struct connection_in ;
-
+struct device_search ;
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */
 struct interface_routines {
@@ -98,7 +98,7 @@ struct interface_routines {
     /* reset the interface -- actually the 1-wire bus */
     int (* reset ) (const struct parsedname * pn ) ;
     /* Bulk of search routine, after set ups for first or alarm or family */
-    int (* next_both) (unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+    int (* next_both) (struct device_search * ds, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
     int (* overdrive) (const unsigned int overdrive, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
@@ -121,7 +121,7 @@ struct interface_routines {
 #define BUS_detect(in)                      (((in)->iroutines.detect(in)))
 #define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
 #define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
-#define BUS_next_both(sn,search,pn)         (((pn)->in->iroutines.next_both)((sn),(search),(pn)))
+#define BUS_next_both(ds,pn)                (((pn)->in->iroutines.next_both)((ds),(pn)))
 #define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
 #define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
 #define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
@@ -190,6 +190,14 @@ enum e_reconnect {
     reconnect_error = 5 ,
 } ;
 
+struct device_search {
+    int LastDiscrepancy ; // for search
+    int LastFamilyDiscrepancy ; // for search
+    int LastDevice ; // for search
+    unsigned char sn[8] ;
+    unsigned char search ;
+} ;
+
 struct connection_in {
     struct connection_in * next ;
     int index ;
@@ -217,9 +225,16 @@ struct connection_in {
     struct interface_routines iroutines ;
     enum adapter_type Adapter ;
     char * adapter_name ;
+    int AnyDevices ;
+    int ExtraReset ; // DS1994/DS2404 might need an extra reset
     int use_overdrive_speed ;
     int ds2404_compliance ;
     int ProgramAvailable ;
+    struct {
+        unsigned char sn[8] ;
+        unsigned char branch ;
+    } branch ; /* Last branch selected */
+
     /* Static buffer for serial conmmunications */
     /* Since only used during actual transfer to/from the adapter,
         should be protected from contention even when multithreading allowed */
@@ -308,11 +323,10 @@ int LINKE_detect( struct connection_in * in ) ;
 #endif /* OW_USB */
 
 int BUS_reset(const struct parsedname * pn) ;
-int BUS_first(unsigned char * serialnumber, const struct parsedname * pn) ;
-int BUS_next(unsigned char * serialnumber, const struct parsedname * pn) ;
-int BUS_first_alarm(unsigned char * serialnumber, const struct parsedname * pn) ;
-int BUS_next_alarm(unsigned char * serialnumber, const struct parsedname * pn) ;
-int BUS_first_family(const unsigned char family, unsigned char * serialnumber, const struct parsedname * pn ) ;
+int BUS_first(struct device_search * ds, const struct parsedname * pn) ;
+int BUS_next(struct device_search * ds, const struct parsedname * pn) ;
+int BUS_first_alarm(struct device_search * ds, const struct parsedname * pn) ;
+int BUS_first_family(const unsigned char family, struct device_search * ds, const struct parsedname * pn ) ;
 int BUS_select_low(const struct parsedname * const pn) ;
 int BUS_sendout_cmd(const unsigned char * cmd , const size_t len, const struct parsedname * pn  ) ;
 int BUS_send_cmd(const unsigned char * const cmd , const size_t len, const struct parsedname * pn  ) ;
@@ -323,7 +337,7 @@ int BUS_alarmverify(const struct parsedname * pn) ;
 int BUS_normalverify(const struct parsedname * pn) ;
 
 int BUS_PowerByte_low(const unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * pn) ;
-int BUS_next_both_low(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 
 int TestConnection( const struct parsedname * pn ) ;

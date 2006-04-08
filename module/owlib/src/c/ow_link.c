@@ -24,7 +24,7 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
 static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) ;
 static int LINK_read_low(unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
 static int LINK_reset( const struct parsedname * pn ) ;
-static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int LINK_next_both(struct device_search * ds, const struct parsedname * pn) ;
 static int LINK_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) ;
 static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
 static int LINK_select(const struct parsedname * pn) ;
@@ -156,33 +156,31 @@ static int LINK_reset( const struct parsedname * pn ) {
     }
     switch( resp[1] ) {
         case 'P':
-            pn->si->AnyDevices=1 ;
+            pn->in->AnyDevices=1 ;
             break ;
         case 'N':
-            pn->si->AnyDevices=0 ;
+            pn->in->AnyDevices=0 ;
             break ;
         default:
             ret = 1 ; // marker for shorted bus
-            pn->si->AnyDevices=0 ;
+            pn->in->AnyDevices=0 ;
             STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
             LEVEL_CONNECT("1-wire bus short circuit.\n")
     }
     return 0 ;
 }
 
-static int LINK_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
-    struct stateinfo * si = pn->si ;
+static int LINK_next_both(struct device_search * ds, const struct parsedname * pn) {
     char resp[21] ;
     int ret ;
 
-    (void) search ;
-    if ( !si->AnyDevices ) si->LastDevice = 1 ;
-    if ( si->LastDevice ) return -ENODEV ;
+    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( ds->LastDevice ) return -ENODEV ;
 
     if ( pn->in->Adapter!=adapter_LINK_E ) COM_flush(pn) ;
-    if ( si->LastDiscrepancy == -1 ) {
+    if ( ds->LastDiscrepancy == -1 ) {
         if ( (ret=LINK_write(LINK_string("f"),1,pn)) ) return ret ;
-        si->LastDiscrepancy = 0 ;
+        ds->LastDiscrepancy = 0 ;
     } else {
         if ( (ret=LINK_write(LINK_string("n"),1,pn)) ) return ret ;
     }
@@ -193,37 +191,38 @@ static int LINK_next_both(unsigned char * serialnumber, unsigned char search, co
 
     switch ( resp[0] ) {
         case '-':
-            si->LastDevice = 1 ;
+            ds->LastDevice = 1 ;
         case '+':
             break ;
         case 'N' :
-            si->AnyDevices = 0 ;
+            pn->in->AnyDevices = 0 ;
             return -ENODEV ;
         case 'X':
         default :
             return -EIO ;
     }
 
-    serialnumber[7] = string2num(&resp[2]) ;
-    serialnumber[6] = string2num(&resp[4]) ;
-    serialnumber[5] = string2num(&resp[6]) ;
-    serialnumber[4] = string2num(&resp[8]) ;
-    serialnumber[3] = string2num(&resp[10]) ;
-    serialnumber[2] = string2num(&resp[12]) ;
-    serialnumber[1] = string2num(&resp[14]) ;
-    serialnumber[0] = string2num(&resp[16]) ;
+    ds->sn[7] = string2num(&resp[2]) ;
+    ds->sn[6] = string2num(&resp[4]) ;
+    ds->sn[5] = string2num(&resp[6]) ;
+    ds->sn[4] = string2num(&resp[8]) ;
+    ds->sn[3] = string2num(&resp[10]) ;
+    ds->sn[2] = string2num(&resp[12]) ;
+    ds->sn[1] = string2num(&resp[14]) ;
+    ds->sn[0] = string2num(&resp[16]) ;
     
     // CRC check
-    if ( CRC8(serialnumber,8) || (serialnumber[0] == 0)) {
+    if ( CRC8(ds->sn,8) || (ds->sn[0] == 0)) {
         /* A minor "error" and should perhaps only return -1 to avoid reconnect */
         return -EIO ;
     }
 
-    if((serialnumber[0] & 0x7F) == 0x04) {
+    if((ds->sn[0] & 0x7F) == 0x04) {
         /* We found a DS1994/DS2404 which require longer delays */
         pn->in->ds2404_compliance = 1 ;
     }
 
+    LEVEL_DEBUG("LINK_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
     return 0 ;
 }
 

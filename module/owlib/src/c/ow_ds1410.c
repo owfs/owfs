@@ -105,8 +105,8 @@ static int DS1410_reset( const struct parsedname * pn ) {
     unsigned char ad ;
     printf("DS1410E reset try\n");
     if ( DS1410bit( RESET, &ad, fd ) ) return -EIO ;
-    pn->si->AnyDevices = ad ;
-    printf("DS1410 reset success, AnyDevices=%d\n",pn->si->AnyDevices);
+    pn->in->AnyDevices = ad ;
+    printf("DS1410 reset success, AnyDevices=%d\n",pn->in->AnyDevices);
     return 0 ;
 }
 

@@ -17,7 +17,7 @@ $Id$
 /* #include "ow_xxxx.h" */
 #include <sys/time.h>
 
-static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int DS2480_next_both( struct device_search * ds, const struct parsedname * pn) ;
 static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * pn) ;
 static int DS2480_reset( const struct parsedname * pn ) ;
 static int DS2480_read( unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
@@ -353,11 +353,11 @@ static int DS2480_reset( const struct parsedname * pn ) {
         ret = 1 ;
         // fall through
     case RB_NOPRESENCE:
-        if ( pn->si ) pn->si->AnyDevices = 0 ;
+        if ( pn->si ) pn->in->AnyDevices = 0 ;
         break ;
     case RB_PRESENCE:
     case RB_ALARMPRESENCE:
-        if( pn->si ) pn->si->AnyDevices = 1 ;
+        if( pn->si ) pn->in->AnyDevices = 1 ;
         // check if programming voltage available
         pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
         if(pn->in->ds2404_compliance) {
@@ -509,10 +509,9 @@ static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * p
 }
 
 /* search = 0xF0 normal 0xEC alarm */
-static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
+static int DS2480_next_both(struct device_search * ds, const struct parsedname * pn) {
     int ret ;
     int mismatched;
-    struct stateinfo * si = pn->si ;
     unsigned char sn[8];
     unsigned char bitpairs[16];
     unsigned char searchon  = (unsigned char)(CMD_COMM | FUNCTSEL_SEARCHON  | pn->in->connin.serial.USpeed);
@@ -520,8 +519,8 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     int i ;
 
 //printf("NEXT\n");
-    if ( !si->AnyDevices ) si->LastDevice = 1 ;
-    if ( si->LastDevice ) return -ENODEV ;
+    if ( pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( ds->LastDevice ) return -ENODEV ;
 
     // build the command stream
     // call a function that may add the change mode command to the buff
@@ -538,12 +537,12 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     memset( bitpairs,0,16) ;
 
     // set the bits in the added buffer
-    for (i = 0; i < si->LastDiscrepancy; i++) {
+    for (i = 0; i < ds->LastDiscrepancy; i++) {
         // before last discrepancy
-        UT_set2bit( bitpairs,i,UT_getbit(serialnumber,i)<<1 ) ;
+        UT_set2bit( bitpairs,i,UT_getbit(ds->sn,i)<<1 ) ;
     }
     // at last discrepancy
-    if (si->LastDiscrepancy > -1 ) UT_set2bit( bitpairs,si->LastDiscrepancy,1<<1 ) ;
+    if (ds->LastDiscrepancy > -1 ) UT_set2bit( bitpairs,ds->LastDiscrepancy,1<<1 ) ;
     // after last discrepancy so leave zeros
 
     // flush the buffers
@@ -553,7 +552,7 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
     // change back to command mode
     // send the packet
     // search OFF
-    if ( (ret=BUS_send_data( &search,1,pn ))
+    if ( (ret=BUS_send_data( &(ds->search),1,pn ))
           || (ret=DS2480_sendout_cmd( &searchon,1,pn ))
           || (ret=BUS_sendback_data( bitpairs,bitpairs,16,pn ))
           || (ret=DS2480_sendout_cmd( &searchoff,1,pn ))
@@ -567,28 +566,29 @@ static int DS2480_next_both(unsigned char * serialnumber, unsigned char search, 
         if ( UT_get2bit(bitpairs,i)==0x1 ) {
             mismatched = i ;
             // check LastFamilyDiscrepancy
-            if (i < 8) si->LastFamilyDiscrepancy = i ;
+            if (i < 8) ds->LastFamilyDiscrepancy = i ;
         }
     }
 
     // CRC check
-    if ( CRC8(sn,8) || (si->LastDiscrepancy == 63) || (sn[0] == 0)) return -EIO ;
+    if ( CRC8(sn,8) || (ds->LastDiscrepancy == 63) || (sn[0] == 0)) return -EIO ;
 
     // successful search
     // check for last one
-    if ((mismatched == si->LastDiscrepancy) || (mismatched == -1)) si->LastDevice = 1 ;
+    if ((mismatched == ds->LastDiscrepancy) || (mismatched == -1)) ds->LastDevice = 1 ;
 
     // copy the SerialNum to the buffer
-    memcpy(serialnumber,sn,8) ;
+    memcpy(ds->sn,sn,8) ;
 
-    if((*serialnumber & 0x7F) == 0x04) {
+    if((sn[0] & 0x7F) == 0x04) {
       /* We found a DS1994/DS2404 which require longer delays */
       pn->in->ds2404_compliance = 1 ;
     }
 
     // set the count
-    si->LastDiscrepancy = mismatched;
+    ds->LastDiscrepancy = mismatched;
 
+    LEVEL_DEBUG("DS9097U_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
    return 0 ;
 }
 //--------------------------------------------------------------------------

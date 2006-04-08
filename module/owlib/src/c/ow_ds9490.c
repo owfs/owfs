@@ -42,7 +42,7 @@ static int DS9490_reset( const struct parsedname * pn ) ;
 static int DS9490_open( struct usb_list * ul, const struct parsedname * pn ) ;
 static int DS9490_reconnect( const struct parsedname * pn ) ;
 static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct parsedname * pn ) ;
-static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) ;
+static int DS9490_next_both(struct device_search * ds, const struct parsedname * pn) ;
 static int DS9490_sendback_data( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
 static int DS9490_level(int new_level, const struct parsedname * pn) ;
 static void DS9490_setroutines( struct interface_routines * f ) ;
@@ -368,14 +368,13 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
         if ( ++usbnum < useusb ) {
             LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)\n",usbnum,useusb)
         } else {
-            unsigned char sn[8] ;
+            struct device_search ds ;
             char id[17] ;
 
             if ( DS9490_open( &ul, pn ) ) return -EIO ;
 
             // clear it just in case nothing is found
             memset(pn->in->connin.usb.ds1420_address, 0, 8);
-            memset(sn, 0, 8);
 
             /* We are looking for devices in the root (not the branch
                 * pn eventually points to */
@@ -386,21 +385,21 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
             /* Do a quick directory listing and find the DS1420 id */
             if( (ret = BUS_select(&pncopy)) ) {
                 LEVEL_DATA("BUS_select failed during connect [%s]\n", pn->in->name);
-            } else if((ret = BUS_first(sn,&pncopy))) {
+            } else if((ret = BUS_first(&ds,&pncopy))) {
                 LEVEL_DATA("BUS_first failed during connect [%s]\n", pn->in->name);
             } else {
                 unsigned char sn2[8] ;
-                memcpy(sn2, sn, 8); /* default ID unless better one found */
+                memcpy(sn2, ds.sn, 8); /* default ID unless better one found */
                 do {
                     if(error_level > 3) {
-                        bytes2string(id, sn, 8) ;
+                        bytes2string(id, ds.sn, 8) ;
                         id[16] = 0;
                         LEVEL_DATA("Found device [%s] on adapter [%s]\n", id, pn->in->name);
                     }
                     /* Unique id is set... no use to loop any more */
                     if(pn->in->connin.usb.ds1420_address[0]) break;
 
-                } while ( (ret=BUS_select(&pncopy)) || (ret=BUS_next(sn,&pncopy)) ) ;
+                } while ( (ret=BUS_select(&pncopy)) || (ret=BUS_next(&ds,&pncopy)) ) ;
                 if(pn->in->connin.usb.ds1420_address[0]) {
                     bytes2string(id, pn->in->connin.usb.ds1420_address, 8);
                     id[16] = '\000';
@@ -445,9 +444,7 @@ static char * DS9490_device_name( const struct usb_list * ul ) {
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static int DS9490_redetect_low( const struct parsedname * pn ) {
     struct usb_list ul ;
-    unsigned char sn[8] ;
     int ret;
-    char old_id[17];
     struct parsedname pncopy;
 
     //LEVEL_CONNECT("DS9490_redetect_low: name=%s\n", pn->in->name);
@@ -463,6 +460,9 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
     USB_init(&ul) ;
     while ( !USB_next(&ul) ) {
         char * name = DS9490_device_name(&ul) ;
+        struct device_search ds ;
+        char old_id[17];
+
         if ( name == badUSBname ) return -ENOMEM ;
 
         if(usbdevice_in_use(name)) {
@@ -481,9 +481,6 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
         bytes2string(old_id, pn->in->connin.usb.ds1420_address, 8) ;
         old_id[16] = 0;
 
-        memset(sn, 0, 8); // clear it just in case nothing is found
-        /* Do a quick directory listing and find the DS1420 id */
-
         /* We are looking for devices in the root (not the branch
             * pn eventually points to */
         memcpy(&pncopy, pn, sizeof(struct parsedname));
@@ -492,27 +489,27 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
 
         if( (ret = BUS_select(&pncopy)) ) {
             LEVEL_DATA("BUS_select failed during reconnect [%s]\n", pn->in->name);
-        } else if ( (ret = BUS_first(sn,&pncopy)) ) {
+        } else if ( (ret = BUS_first(&ds,&pncopy)) ) {
             LEVEL_DATA("BUS_first failed during reconnect [%s]\n", pn->in->name);
         }
         while (ret==0) {
             if(error_level > 3) {
                 char id[17];
-                bytes2string(id, sn, 8) ;
+                bytes2string(id, ds.sn, 8) ;
                 id[16] = 0;
                 LEVEL_DATA("Found device [%s] on adapter [%s] (want: %s)\n", id, pn->in->name, old_id);
             }
             /* Unique id is set and match... no use to loop any more */
-            if(!memcmp(sn, pn->in->connin.usb.ds1420_address, 8)) break;
+            if(!memcmp(ds.sn, pn->in->connin.usb.ds1420_address, 8)) break;
 
-            (ret=BUS_select(&pncopy)) || (ret=BUS_next(sn,&pncopy)) ;
+            (ret=BUS_select(&pncopy)) || (ret=BUS_next(&ds,&pncopy)) ;
         }
 
         if(!pn->in->connin.usb.ds1420_address[0]) {
             /* There are still no unique id, set it to the last device if the
             * search above ended normally.  Eg. with -ENODEV */
-            if((ret == -ENODEV) && sn[0]) {
-                memcpy(pn->in->connin.usb.ds1420_address, sn, 8);
+            if((ret == -ENODEV) && ds.sn[0]) {
+                memcpy(pn->in->connin.usb.ds1420_address, ds.sn, 8);
                 ret = 0;
             }
         }
@@ -763,7 +760,7 @@ static int DS9490_reset( const struct parsedname * pn ) {
         if(ret == -1) {
             /* Short detected, but otherwise no bigger "problem"?
             * Make sure 1-wires won't be scanned */
-            pn->si->AnyDevices = 0;
+            pn->in->AnyDevices = 0;
             STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
             LEVEL_DATA("DS9490_reset: short detected\n", ret);
             return 1;
@@ -773,7 +770,7 @@ static int DS9490_reset( const struct parsedname * pn ) {
     }
 
 //    USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
-    pn->si->AnyDevices = 1;
+    pn->in->AnyDevices = 1;
     for(i=0; i<ret; i++) {
         unsigned char val = buffer[16+i];
         //LEVEL_DATA("Status bytes[%d]: %X\n", i, val);
@@ -781,7 +778,7 @@ static int DS9490_reset( const struct parsedname * pn ) {
             // check for NRS bit (0x01)
             if(val & COMMCMDERRORRESULT_NRS) {
                 // empty bus detected, no presence pulse detected
-                pn->si->AnyDevices = 0;
+                pn->in->AnyDevices = 0;
                 LEVEL_DATA("DS9490_reset: no presense pulse detected\n");
             }
         }
@@ -853,32 +850,31 @@ static int DS9490_sendback_data( const unsigned char * data , unsigned char * re
  * return -EIO    on errors
  */
 
-static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, const struct parsedname * pn) {
+static int DS9490_next_both(struct device_search * ds, const struct parsedname * pn) {
     unsigned char buffer[32] ;
     unsigned char * cb = pn->in->combuffer ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
-    struct stateinfo * si = pn->si ;
     int ret ;
     int i ;
     size_t buflen ;
 
     //LEVEL_DATA("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
     // if the last call was not the last one
-    if ( !si->AnyDevices ) si->LastDevice = 1 ;
+    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
 
     /* DS1994/DS2404 might need an extra reset */
-    if (si->ExtraReset) {
-        if(BUS_reset(pn) < 0) si->LastDevice = 1 ;
-        si->ExtraReset = 0;
+    if (pn->in->ExtraReset) {
+        if(BUS_reset(pn) < 0) ds->LastDevice = 1 ;
+        pn->in->ExtraReset = 0;
     }
 
-    if ( si->LastDevice ) return -ENODEV ;
+    if ( ds->LastDevice ) return -ENODEV ;
 
     /** Play LastDescrepancy games with bitstream */
-    memcpy( cb,serialnumber,8) ; /* set bufferto zeros */
-    if ( si->LastDiscrepancy > -1 ) UT_setbit(cb,si->LastDiscrepancy,1) ;
+    memcpy( cb,ds->sn,8) ; /* set bufferto zeros */
+    if ( ds->LastDiscrepancy > -1 ) UT_setbit(cb,ds->LastDiscrepancy,1) ;
     /* This could be more efficiently done than bit-setting, but probably wouldnt make a difference */
-    for ( i=si->LastDiscrepancy+1;i<64;i++) UT_setbit(cb,i,0) ;
+    for ( i=ds->LastDiscrepancy+1;i<64;i++) UT_setbit(cb,i,0) ;
     //LEVEL_DATA("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",cb[0],cb[1],cb[2],cb[3],cb[4],cb[5],cb[6],cb[7]) ;
 
     buflen = 8;
@@ -889,7 +885,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
 
     // COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS
     // 0xF4 + +0x1 + 0x8 + 0x800 + 0x4000 = 0x48FD
-    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x48FD, 0x0100|search, NULL, 0, TIMEOUT_USB ))<0 ) {
+    if ( (ret=usb_control_msg(usb,0x40,COMM_CMD,0x48FD, 0x0100|(ds->search), NULL, 0, TIMEOUT_USB ))<0 ) {
         LEVEL_DATA("USBnextboth control problem ret=%d\n", ret);
         return -EIO;
     }
@@ -915,26 +911,26 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         return -EIO ;
     }
     
-    memcpy(serialnumber,cb,8) ;
+    memcpy(ds->sn,cb,8) ;
     //LEVEL_DATA("DS9490_next_both SN out: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
-    si->LastDevice = (ret==8) ;
+    ds->LastDevice = (ret==8) ;
     
     for ( i=63 ; i>=0 ; i-- ) {
         if ( UT_getbit(cb,i+64) && (UT_getbit(cb,i)==0) ) {
-            si->LastDiscrepancy = i ;
+            ds->LastDiscrepancy = i ;
             //printf("DS9490_next_both lastdiscrepancy=%d\n",si->LastDiscrepancy) ;
             break ;
         }
     }
 
     /* test for CRC error */
-    if( CRC8(serialnumber,8) ) {
+    if( CRC8(ds->sn,8) ) {
         LEVEL_DATA("USBnextboth: CRC error\n");
         return -EIO;
     }
 
     /* test for special device families */
-    switch ( serialnumber[0] ) {
+    switch ( ds->sn[0] ) {
         case 0x00:
             LEVEL_DATA("USBnextboth: NULL family found\n");
             return -EIO;
@@ -942,10 +938,10 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         case 0x81:
             if ( pn->in->connin.usb.ds1420_address[0] == 0 ) {
                 char tmp[17];
-                bytes2string(tmp, serialnumber, 8);
+                bytes2string(tmp, ds->sn, 8);
                 tmp[16] = '\000';
                 LEVEL_DEFAULT("Found a DS1420 device [%s]\n", tmp);
-                memcpy(pn->in->connin.usb.ds1420_address, serialnumber, 8);
+                memcpy(pn->in->connin.usb.ds1420_address, ds->sn, 8);
             }
             break ;
         case 0x04:
@@ -956,7 +952,7 @@ static int DS9490_next_both(unsigned char * serialnumber, unsigned char search, 
         default:
             break;
     }
-    
+    LEVEL_DEBUG("DS9490_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
     return 0 ;
 }
 
