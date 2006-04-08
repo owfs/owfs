@@ -1,7 +1,7 @@
 # $Id$
 
 bin_PROGRAMS = owfs
-owfs_SOURCES = owfs.c owfs_callback.c
+owfs_SOURCES = owfs.c owfs_callback.c fuse_line.c
 owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 if ENABLE_MT

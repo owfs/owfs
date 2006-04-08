@@ -38,4 +38,14 @@ $Id$
 
 extern struct fuse_operations owfs_oper;
 
-#endif
+struct Fuse_option {
+    int max_options ;
+    char ** argv ;
+    int argc ;
+} ;
+
+int Fuse_setup( struct Fuse_option * fo ) ;
+void Fuse_cleanup( struct Fuse_option * fo ) ;
+int Fuse_add( char * opt, struct Fuse_option * fo ) ;
+
+#endif /* OWFS_H */

@@ -18,7 +18,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "owfs.h"
-#include <fuse.h>
 
 /* Stuff from helper.h */
 #define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
@@ -32,38 +31,6 @@ pthread_t main_threadid ;
 #else
 #define IS_MAINTHREAD 1
 #endif
-
-struct Fuse_option {
-    int max_options ;
-    char ** argv ;
-    int argc ;
-} ;
-
-static int Fuse_setup( size_t num, struct Fuse_option * fo ) {
-    int i ;
-    fo->max_options = num ;
-    fo->argc = 0 ;
-    fo->argv = (char**) calloc( num+1, sizeof( char * ) ) ;
-    if ( fo->argv == NULL ) return -ENOMEM ;
-    for ( i=0 ; i<=num ; ++i ) { printf("%d\n",i);fo->argv[i] = NULL ;}
-    return 0 ;
-}
-
-static void Fuse_cleanup( struct Fuse_option * fo ) {
-    int i ;
-    if ( fo->argv ) {
-        for ( i=0 ; i<fo->max_options ; ++i ) if ( fo->argv[i] ) free(fo->argv[i]) ;
-        free( fo->argv ) ;
-    }
-}
-
-static int Fuse_add( char * opt, struct Fuse_option * fo ) {
-    //printf("Adding option %s\n",opt);
-    if ( fo->argc >= fo->max_options ) return 1 ;
-    fo->argv[fo->argc++] = strdup(opt) ;
-    //printf("Added option %d %s\n",fo->argc-1,fo->argv[fo->argc-1]);
-    return 0 ;
-}
 
 static void exit_handler(int i) {
     return ow_exit( ((i<0) ? 1 : 0) ) ;
@@ -145,9 +112,8 @@ int main(int argc, char *argv[]) {
 #endif
 
 #if FUSE_VERSION >= 20
-    /* Aet up "command line" for main fuse routines */
-    Fuse_setup( 10, &fuse_options ) ; // up to 10 words on the command line
-    Fuse_add("OWFS" , &fuse_options) ; // NAME of file system
+    /* Set up "command line" for main fuse routines */
+    Fuse_setup( &fuse_options ) ; // command line setup
     Fuse_add(fuse_mountpoint , &fuse_options) ; // mount point
     Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
     Fuse_add("direct_io" , &fuse_options) ;
