@@ -42,11 +42,10 @@ int BUS_send_data( const unsigned char * const data, const size_t len, const str
     return ret ;
 }
 
-/** DS2480_readin_data
+/** readin_data
   Send 0xFFs and return response block
-  puts into data mode if needed.
- Returns 0=good
-   Bad sendback_data
+  Returns 0=good
+  Bad sendback_data
  */
 int BUS_readin_data( unsigned char * const data, const size_t len, const struct parsedname * pn ) {
   int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
@@ -84,8 +83,8 @@ int BUS_select_low(const struct parsedname * const pn) {
     unsigned char sent[9] = { 0x55, } ;
     unsigned char alo[] = { 0xCC, 0x66, } ;
     int pl = pn->pathlength ;
-//printf("SELECT\n");
 
+    LEVEL_DEBUG("Selecting a path (and device) path=%s SN="SNformat"\n",pn->path,SNvar(pn->sn));
 
     /* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
     if ( pl == 0 ) { /* no branches, overdrive possible */

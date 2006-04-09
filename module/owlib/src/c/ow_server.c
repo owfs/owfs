@@ -74,7 +74,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
         pathnow = pn->path;
     }
     //printf("ServerSize pathnow=%s (path=%s)\n",pathnow, path);
-    LEVEL_CALL("SERVERSIZE path=%s\n", NULLSTRING(pathnow));
+    LEVEL_CALL("SERVERSIZE path=%s\n", SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -110,7 +110,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
         pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
-    LEVEL_CALL("SERVERREAD path=%s\n", NULLSTRING(pathnow));
+    LEVEL_CALL("SERVERREAD path=%s\n", SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -144,7 +144,7 @@ int ServerPresence( const struct parsedname * pn ) {
         pathnow = pn->path;
     }
     //printf("ServerPresence path=%s\n", pathnow);
-    LEVEL_CALL("SERVERPRESENCE path=%s\n", NULLSTRING(pathnow));
+    LEVEL_CALL("SERVERPRESENCE path=%s\n", SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -181,7 +181,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
-    LEVEL_CALL("SERVERWRITE path=%s\n", NULLSTRING(pathnow));
+    LEVEL_CALL("SERVERWRITE path=%s\n", SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, buf, size) ) {
@@ -222,13 +222,13 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.sg = SemiGlobal ;
     if((pn->state & pn_bus) && FS_RemoteBus(pn)) {
         sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
-        //LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, NULLSTRING(pn->path))
+        //LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, SAFESTRING(pn->path))
         pathnow = pn->path_busless ;
     } else {
         pathnow = pn->path;
     }
 
-    LEVEL_CALL("SERVERDIR path=%s\n", NULLSTRING(pathnow));
+    LEVEL_CALL("SERVERDIR path=%s\n", SAFESTRING(pathnow));
 
     if (ret) {
         cm.ret = ret ;

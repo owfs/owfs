@@ -88,7 +88,7 @@ int handle_socket(FILE * out) {
         } while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
     }
 
-    LEVEL_CALL("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",NULLSTRING(up.cmd),NULLSTRING(up.file),NULLSTRING(up.request),NULLSTRING(up.value),NULLSTRING(up.version))
+    LEVEL_CALL("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",SAFESTRING(up.cmd),SAFESTRING(up.file),SAFESTRING(up.request),SAFESTRING(up.value),SAFESTRING(up.version))
     /*
      * This is necessary for some stupid *
      * * operating system such as SunOS

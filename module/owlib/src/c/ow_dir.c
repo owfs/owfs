@@ -49,7 +49,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
 
     if ( pn == NULL || pn->in==NULL ) return -ENODEV ;
 
-    LEVEL_CALL("DIRECTORY path=%s\n",NULLSTRING(pn->path)) ;
+    LEVEL_CALL("DIRECTORY path=%s\n",SAFESTRING(pn->path)) ;
     
     STATLOCK;
         AVERAGE_IN(&dir_avg)

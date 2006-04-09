@@ -51,7 +51,7 @@ int FS_fstat(const char *path, struct stat *stbuf) {
     int ret = 0 ;
     pn.si = &si ;
     
-    LEVEL_CALL("FSTAT path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("FSTAT path=%s\n", SAFESTRING(path));
 
     /* Bad path */
     if ( FS_ParsedName( path , &pn ) ) {
@@ -67,7 +67,7 @@ int FS_fstat(const char *path, struct stat *stbuf) {
 int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
     memset(stbuf, 0, sizeof(struct stat));
 
-    LEVEL_CALL("ATTRIBUTES path=%s\n", NULLSTRING(pn->path)) ;
+    LEVEL_CALL("ATTRIBUTES path=%s\n", SAFESTRING(pn->path)) ;
     if( (pn->state & pn_bus) && !find_connection_in(pn->bus_nr)) {
         /* check for presence of first in-device at least since FS_ParsedName
         * doesn't do it yet. */

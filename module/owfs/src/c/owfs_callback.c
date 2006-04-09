@@ -89,37 +89,37 @@ struct fuse_operations owfs_oper = {
 /* ---------------------------------------------- */
 /* Needed for "SETATTR" */
 static int FS_utime(const char *path, struct utimbuf *buf) {
-    LEVEL_CALL("UTIME path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("UTIME path=%s\n", SAFESTRING(path));
     (void) buf ; return 0;
 }
 
 /* Needed for "SETATTR" */
 static int FS_chmod(const char *path, mode_t mode) {
-    LEVEL_CALL("CHMODE path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("CHMODE path=%s\n", SAFESTRING(path));
     (void) mode ; return 0;
 }
 
 /* Needed for "SETATTR" */
 static int FS_chown(const char *path, uid_t uid, gid_t gid ) {
-    LEVEL_CALL("CHOWN path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("CHOWN path=%s\n", SAFESTRING(path));
     (void) uid ; (void) gid ; return 0;
 }
 
 /* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
 static int FS_open(const char *path, FUSEFLAG flags) {
-    LEVEL_CALL("OPEN path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("OPEN path=%s\n", SAFESTRING(path));
     (void) flags ; return 0 ;
 }
 
 /* In theory, should handle file closing, but OWFS doesn't care. Device opened/closed with every read/write */
 static int FS_release(const char *path, FUSEFLAG flags) {
-    LEVEL_CALL("RELEASE path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("RELEASE path=%s\n", SAFESTRING(path));
     (void) flags ; return 0 ;
 }
 
 /* dummy truncation (empty) function */
 static int FS_truncate(const char *path, const off_t size) {
-    LEVEL_CALL("TRUNCATE path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("TRUNCATE path=%s\n", SAFESTRING(path));
     (void) size ; return 0 ;
 }
 
@@ -141,7 +141,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         FILLER(h,extname) ;
     }
 
-    LEVEL_CALL("GETDIR path=%s\n", NULLSTRING(path));
+    LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
 
     pn.si = &si ;
     if ( (ret=FS_ParsedName( path, &pn )) ) return ret ;

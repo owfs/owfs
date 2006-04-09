@@ -32,6 +32,7 @@ header_DATA = compat_getopt.h \
         ow.h \
         ow_counters.h \
         ow_connection.h \
+        ow_debug.h \
         ow_lcd.h \
         ow_none.h \
         ow_settings.h \

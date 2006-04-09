@@ -111,7 +111,7 @@ static int DS1410_reset( const struct parsedname * pn ) {
 }
 
 static int DS1410_open(  const struct parsedname * pn ) {
-    LEVEL_CONNECT("Opening port %s\n",NULLSTRING(pn->in->name)) ;
+    LEVEL_CONNECT("Opening port %s\n",SAFESTRING(pn->in->name)) ;
     if ( (pn->in->fd = open(pn->in->name, O_RDWR)) < 0 ) {
         LEVEL_CONNECT("Cannot open DS1410E at %s\n",pn->in->name) ;
     } else if ( ioctl(pn->in->fd,PPCLAIM ) ) {
@@ -128,7 +128,7 @@ static int DS1410_open(  const struct parsedname * pn ) {
 }
 
 static void DS1410_close( struct connection_in * in ) {
-    LEVEL_CONNECT("Closing port %s\n",NULLSTRING(in->name)) ;
+    LEVEL_CONNECT("Closing port %s\n",SAFESTRING(in->name)) ;
     if ( in->fd >= 0 ) {
         DS1410_PTon(in->fd) ;
         ioctl(in->fd, PPRELEASE ) ;

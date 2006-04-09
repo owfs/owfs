@@ -136,6 +136,9 @@ $Id$
 /* Include some compatibility functions */
 #include "compat.h"
 
+/* Debugging and error messages separated out for readability */
+#include "ow_debug.h"
+
 extern int multithreading ;
 #ifdef OW_MT
     #include <pthread.h>
@@ -205,7 +208,6 @@ extern int multithreading ;
     #include <usb.h>
 #endif /* OW_USB */
 
-#define NULLSTRING(x) ((x) ? (x):"")
 /*
     OW -- One Wire
     Global variables -- each invokation will have it's own data
@@ -762,20 +764,6 @@ int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct p
     size_t pagelen, int (*readfunc)(unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
 int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
     size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
-
-/* error functions */
-void err_msg(const char *fmt, ...) ;
-void err_bad(const char *fmt, ...) ;
-void err_debug(const char *fmt, ...) ;
-extern int error_print ;
-extern int error_level ;
-extern int now_background ;
-extern int log_available ;
-#define LEVEL_DEFAULT(...)    if (error_level>0) err_msg(__VA_ARGS__) ;
-#define LEVEL_CONNECT(...)    if (error_level>1) err_bad(__VA_ARGS__) ;
-#define LEVEL_CALL(...)       if (error_level>2) err_msg(__VA_ARGS__) ;
-#define LEVEL_DATA(...)       if (error_level>3) err_msg(__VA_ARGS__) ;
-#define LEVEL_DEBUG(...)      if (error_level>4) err_debug(__VA_ARGS__) ;
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;

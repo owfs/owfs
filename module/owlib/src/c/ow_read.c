@@ -37,7 +37,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
     int r ;
 
     pn.si = &si ;
-    LEVEL_CALL("READ path=%s size=%d offset=%d\n", NULLSTRING(path), (int)size, (int)offset )
+    LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path), (int)size, (int)offset )
 
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
@@ -338,7 +338,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     //    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
     //    ++read_tries[2] ; /* statitics */
     //    r = FS_parse_read( buf, size, offset, pn ) ;
-    //    if (r<0) LEVEL_DATA("Read error on %s (size=%d)\n",NULLSTRING(pn->path),(int)size)
+    //    if (r<0) LEVEL_DATA("Read error on %s (size=%d)\n",SAFESTRING(pn->path),(int)size)
     return r;
 }
 

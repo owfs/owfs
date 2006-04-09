@@ -79,7 +79,7 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     // Even on normal glibc, errno isn't cleared on good system calls
     errno = 0;
 
-    LEVEL_CALL("PARSENAME path=[%s]\n", NULLSTRING(path));
+    LEVEL_CALL("PARSENAME path=[%s]\n", SAFESTRING(path));
 
     if ( pn == NULL ) return -EINVAL ;
 
