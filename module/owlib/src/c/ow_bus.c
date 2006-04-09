@@ -194,6 +194,7 @@ static int BUS_select_raw(int depth, const struct parsedname * const pn) {
 */
 int BUS_first(struct device_search * ds, const struct parsedname * const pn ) {
     // reset the search state
+    LEVEL_DEBUG("Start of directory path=%s device="SNformat"\n",SAFESTRING(pn->path),SNvar(pn->sn)) ;
     memset(ds->sn,0,8);  // clear the serial number
     ds->LastDiscrepancy = -1;
     ds->LastFamilyDiscrepancy = -1;
@@ -202,11 +203,10 @@ int BUS_first(struct device_search * ds, const struct parsedname * const pn ) {
     ds->search = 0xF0 ;
 
     if ( !pn->in->AnyDevices ) {
-      LEVEL_DATA("BUS_first: No data will be returned\n");
+        LEVEL_DATA("BUS_first: No data will be returned\n");
     }
 
     return BUS_next(ds,pn) ;
-
 }
 
 int BUS_first_alarm(struct device_search * ds, const struct parsedname * const pn ) {
@@ -232,8 +232,8 @@ int BUS_first_family(const unsigned char family, struct device_search * ds, cons
     return BUS_next(ds,pn) ;
 }
 
-
 static int BUS_next_redoable( const struct device_search * ds, struct device_search * ds2, const struct parsedname * pn ) {
+    LEVEL_DEBUG("Next directory path=%s device="SNformat"\n",SAFESTRING(pn->path),SNvar(pn->sn)) ;
     memcpy( ds2, ds, sizeof(struct device_search) ) ;
     if ( BUS_select(pn) ) {
         printf("Couldn't select\n");
@@ -260,7 +260,6 @@ static int BUS_next_anal( struct device_search * ds, const struct parsedname * c
     return -EIO ;
 }
 
-
 //--------------------------------------------------------------------------
 /** The DS2480_next function does a general search.  This function
  continues from the previous search state. The search state
@@ -275,6 +274,7 @@ int BUS_next( struct device_search * ds, const struct parsedname * const pn) {
     //ret = pn->pathlength ? BUS_next_anal(ds,pn) : BUS_next_both( ds, pn ) ;
     if ( pn->pathlength ) BUS_select(pn) ;
     ret = BUS_next_both( ds, pn ) ;
+    //printf("BUS_next return = %d\n",ret) ;
     if (ret) { STAT_ADD1_BUS(BUS_next_errors,pn->in) ; }
     return ret ;
 }

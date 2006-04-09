@@ -519,7 +519,7 @@ static int DS2480_next_both(struct device_search * ds, const struct parsedname *
     int i ;
 
 //printf("NEXT\n");
-    if ( pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( !(pn->in->AnyDevices) ) ds->LastDevice = 1 ;
     if ( ds->LastDevice ) return -ENODEV ;
 
     // build the command stream
@@ -588,7 +588,7 @@ static int DS2480_next_both(struct device_search * ds, const struct parsedname *
     // set the count
     ds->LastDiscrepancy = mismatched;
 
-    LEVEL_DEBUG("DS9097U_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
+    LEVEL_DEBUG("DS9097U_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
    return 0 ;
 }
 //--------------------------------------------------------------------------
