@@ -67,19 +67,15 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
-        case 260: /* fuse_opt */
-            fuse_mnt_opt = strdup( optarg ) ;
-            if ( fuse_mnt_opt == NULL ) {
-                LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
-                ow_exit(1) ;
-            }
+        case 260: /* fuse_mnt_opt */
+            if ( fuse_mnt_opt ) free(fuse_mnt_opt ) ;
+            fuse_mnt_opt = Fuse_arg(optarg,"FUSE mount options") ;
+            if ( fuse_mnt_opt == NULL ) ow_exit(0) ;
             break ;
         case 267: /* fuse_open_opt */
-            fuse_open_opt = strdup( optarg ) ;
-            if ( fuse_open_opt == NULL ) {
-                LEVEL_DEFAULT("Insufficient memory to store FUSE options: %s\n",optarg)
-                ow_exit(1) ;
-            }
+            if ( fuse_open_opt ) free(fuse_open_opt ) ;
+            fuse_open_opt = Fuse_arg(optarg,"FUSE open options") ;
+            if ( fuse_open_opt == NULL ) ow_exit(0) ;
             break ;
         }
         if ( owopt(c,optarg,opt_owfs) ) ow_exit(0) ; /* rest of message */
@@ -121,6 +117,8 @@ int main(int argc, char *argv[]) {
         Fuse_add("-f", &fuse_options) ; // foreground for fuse too
         if ( error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
     }
+    Fuse_parse(fuse_mnt_opt, &fuse_options) ;
+    Fuse_parse(fuse_open_opt, &fuse_options) ;
  #ifdef OW_MT
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */

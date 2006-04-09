@@ -44,8 +44,10 @@ struct Fuse_option {
     int argc ;
 } ;
 
-int Fuse_setup( struct Fuse_option * fo ) ;
+int  Fuse_setup( struct Fuse_option * fo ) ;
 void Fuse_cleanup( struct Fuse_option * fo ) ;
-int Fuse_add( char * opt, struct Fuse_option * fo ) ;
+int  Fuse_parse( char * opts, struct Fuse_option * fo ) ;
+int  Fuse_add( char * opt, struct Fuse_option * fo ) ;
+char * Fuse_arg( char * opt_arg, char * entryname ) ;
 
 #endif /* OWFS_H */
