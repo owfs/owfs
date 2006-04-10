@@ -194,7 +194,11 @@ int DS9490_detect( struct connection_in * in ) {
     pn.in = in ;
 
     ret = DS9490_detect_low(&pn) ;
-    if (ret==0) in->busmode = bus_usb ;
+    if ( ret ) {
+        fprintf( stderr, "Could not open the USB adapter. Is there a problem with permissions?\n" ) ;
+    } else {
+        in->busmode = bus_usb ;
+    }
     return ret ;
 }
 
