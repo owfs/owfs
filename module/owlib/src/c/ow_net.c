@@ -18,6 +18,16 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+/* structures */
+struct AcceptThread_data {
+    struct connection_out *o2;
+    void (*HandlerRoutine)(int fd);
+} ;
+
+/* Prototypes */
+static void RunAccepted( int rafd, void (*HandlerRoutine)(int fd) ) ;
+static void * AcceptThread( void * v2 ) ;
+
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
@@ -249,9 +259,6 @@ int ClientConnect( struct connection_in * in ) {
 
 
 /*
- Heap big magic!
- Doubly embedded function.
- Who says programming can't be fun.
  Loops through outdevices, starting a detached thread for each except the last
  Each loop spawn threads for accepting connections
  Uses my non-patented "pre-threaded technique"
@@ -267,7 +274,6 @@ int ClientConnect( struct connection_in * in ) {
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
 #ifdef OW_MT
-    struct connection_out * out_last = NULL;
     pthread_t thread ;
     pthread_attr_t attr ;
     pthread_attr_t *attr_p = NULL ;
@@ -281,38 +287,23 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
     }
 
-    /* embedded function */
-    void RunAccepted( int rafd ) {
-        if ( rafd>=0 ) {
-            HandlerRoutine( rafd ) ;
-            close( rafd ) ;
-        } else {
-            STAT_ADD1(NET_accept_errors);
-            LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
-        }
-    }
-
 #ifdef OW_MT
     /* Embedded function */
     void * ConnectionThread( void * v3 ) {
         struct connection_out * out2 = (struct connection_out *)v3 ;
         pthread_t thread2 ;
-        /* Doubly Embedded function */
-        void * AcceptThread( void * v2 ) {
-            struct connection_out *o2 = (struct connection_out *)v2;
-            int acceptfd = accept( o2->fd, NULL, NULL ) ;
-            ACCEPTUNLOCK(o2);
-            RunAccepted( acceptfd ) ;
-#ifndef VALGRIND
-            pthread_exit((void *)0);
-#endif /* VALGRIND */
-            return NULL;
-        }
 
         ToListen( out2 ) ;
         for(;;) {
+            struct AcceptThread_data * data ;
             ACCEPTLOCK(out2);
-            if ( pthread_create( &thread2, attr_p, AcceptThread, out2 ) ) Exit(1) ;
+            //if ( pthread_create( &thread2, attr_p, AcceptThread, out2 ) ) Exit(1) ;
+            /* Start a thread running AcceptThread(), all necessary parameters are passed
+               using a struct AcceptThread_data */
+            if ( (data=malloc(sizeof(struct AcceptThread_data))) == NULL ) Exit(1) ;
+            data->o2 = out2;
+            data->HandlerRoutine = HandlerRoutine;
+            if ( pthread_create( &thread2, attr_p, AcceptThread, data ) ) Exit(1) ;
             if(!attr_p) pthread_detach(thread2);
 #ifdef VALGRIND
             pthread_join(thread2, NULL);
@@ -320,10 +311,10 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         }
         /* won't reach this usless we exit the loop above to shutdown
             * in a nice way */
-        if(out != out_last) {
+        /* last connection_out wasn't a separate thread */
+        if(out2->next) {
             pthread_exit((void *)0);
         }
-        /* last connection_out wasn't a separate thread */
         return NULL;
     }
 
@@ -340,11 +331,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     attr_p = &attr;
 #endif /* __UCLIBC__ */
 
-    /* find the last outdevice to make sure embedded function
-     * return currect value */
-    out_last = outdevice;
-    while ( out_last->next ) out_last = out_last->next ;
-
     while ( out->next ) {
         if ( pthread_create( &thread, attr_p, ConnectionThread, out) ) Exit(1) ;
         if(!attr_p) pthread_detach(thread);
@@ -353,6 +339,27 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     ConnectionThread( out ) ;
 #else /* OW_MT */
     ToListen( out ) ;
-    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL) ) ;
+    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL),HandlerRoutine ) ;
 #endif /* OW_MT */
+}
+
+static void RunAccepted( int rafd, void (*HandlerRoutine)(int fd) ) {
+    if ( rafd>=0 ) {
+        HandlerRoutine( rafd ) ;
+        close( rafd ) ;
+    } else {
+        STAT_ADD1(NET_accept_errors);
+        LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+    }
+}
+static void * AcceptThread( void * v2 ) {
+    struct AcceptThread_data * data = (struct AcceptThread_data *)v2;
+    int acceptfd = accept( data->o2->fd, NULL, NULL ) ;
+    ACCEPTUNLOCK(data->o2);
+    RunAccepted( acceptfd, data->HandlerRoutine ) ;
+    free(data);
+#ifndef VALGRIND
+    pthread_exit((void *)0);
+#endif /* VALGRIND */
+    return NULL;
 }
