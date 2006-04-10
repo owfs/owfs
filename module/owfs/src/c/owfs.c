@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
     /* Set up owlib */
     LibSetup() ;
 
+    /* process command line arguments */
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
         case 'V':
@@ -100,9 +101,15 @@ int main(int argc, char *argv[]) {
     LEVEL_CONNECT("fuse mount point: %s\n",fuse_mountpoint) ;
     set_signal_handlers(exit_handler);
 
-   /* Now we drop privledges and become a daemon. */
-    if ( LibStart() ) ow_exit(1) ;
+   /* Set up adapters */
+    {
+        int temp_background = background ; /* store "background" temporarily */
+        background = 0 ; /* call LibStart in foreground, fuse_main will put in backgound */
+        if ( LibStart() ) ow_exit(1) ;
+        background = temp_background ; /* restore "background" state */
+    }
     //printf("Lib started\n");
+
 #ifdef OW_MT
     main_threadid = pthread_self() ;
 #endif
@@ -125,6 +132,7 @@ int main(int argc, char *argv[]) {
  #if FUSE_VERSION >= 26 // requires extra parameter
     printf("fuse_main=%d\n",fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL )) ;
  #else
+    now_background = background ; // tell "error" that we are background
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;
  #endif
     Fuse_cleanup( &fuse_options ) ;
