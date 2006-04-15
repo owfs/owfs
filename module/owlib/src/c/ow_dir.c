@@ -286,34 +286,41 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
     return ret ;
 }
 
+struct dir_seek_struct {
+    struct parsedname * pn ;
+    void (* dirfunc)(const struct parsedname *) ;
+    uint32_t * flags ;
+    } ;
+
+/* Embedded function */
+static void * FS_dir_seek_callback( void * vp ) {
+    struct dir_seek_struct * dss = (struct parsedname *)vp ;
+    struct parsedname pnnext ;
+    struct stateinfo si ;
+    int eret;
+    memcpy( &pnnext, dss->pn , sizeof(struct parsedname) ) ;
+    /* we need a different state (search state) for a different bus -- subtle error */
+    si.sg = dss->pn->si->sg ;   // reuse cacheon, tempscale etc
+    pnnext.si = &si ;
+    pnnext.in = dss->pn->in->next ;
+    eret = FS_dir_seek(dss->dirfunc,&pnnext,dss->flags) ;
+    pthread_exit((void *)eret);
+    return (void *)eret;
+}
+
 /* path is the path which "pn" parses */
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     int ret = 0 ;
 #ifdef OW_MT
+    struct dir_seek_struct dss = {pn,dirfunc,flags} ;
     pthread_t thread ;
     int threadbad = 1;
     void * v ;
     int rt ;
 
-    /* Embedded function */
-    void * Dir2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp ;
-        struct parsedname pnnext ;
-        struct stateinfo si ;
-        int eret;
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
-        /* we need a different state (search state) for a different bus -- subtle error */
-        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
-        pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
-        eret = FS_dir_seek(dirfunc,&pnnext,flags) ;
-        pthread_exit((void *)eret);
-        return (void *)eret;
-    }
-
     if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Dir2, (void *)pn ) ;
+        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, FS_dir_seek_callback, (void *)(&dss) ) ;
     }
 #endif /* OW_MT */
 
@@ -417,7 +424,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
         (ret=BUS_select(pn2)) || (ret=BUS_next(&ds,pn2)) ;
-//printf("ALARM sn: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X ret=%d\n",sn[0],sn[1],sn[2],sn[3],sn[4],sn[5],sn[6],sn[7],ret);
+//printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
     }
     BUSUNLOCK(pn2);
     if(ret == -ENODEV) return 0; /* no more alarms is ok */
@@ -467,7 +474,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         num2string( ID, ds.sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
-        //printf("DIR adapter=%d, element=%d, sn=%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",pn2->in->index,dindex,pn2->sn[0],pn2->sn[1],pn2->sn[2],pn2->sn[3],pn2->sn[4],pn2->sn[5],pn2->sn[6],pn2->sn[7]);
+        //printf("DIR adapter=%d, element=%d, sn="SNformat"\n",pn2->in->index,dindex,SNarg(pn2->sn));
         
         /* dirfunc() may need to call FS_fstat() and that will make a
             checkpresence and BUS_lock if bus_nr isn't cached here at
@@ -577,6 +584,3 @@ static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct
     pn2->dev = NULL ;
     return 0 ;
 }
-
-    
-    

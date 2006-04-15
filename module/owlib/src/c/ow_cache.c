@@ -103,35 +103,21 @@ static void tree_show( const void *node, const VISIT which, const int depth ) {
         case leaf:
         case postorder:
         if ( tn->tk.extension == -2 ) {
-                printf("Node %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X name=%s length=%d start=%p data=%p expires=%s",
-            tn->tk.sn[0] ,
-                tn->tk.sn[1] ,
-            tn->tk.sn[2] ,
-            tn->tk.sn[3] ,
-            tn->tk.sn[4] ,
-            tn->tk.sn[5] ,
-            tn->tk.sn[6] ,
-            tn->tk.sn[7] ,
-            tn->tk.p.nm ,
-            tn->dsize ,
-        tn,TREE_DATA(tn),
-            ctime_r(&tn->expires,b)
-            ) ;
+            printf("Node "SNformat" name=%s length=%d start=%p data=%p expires=%s",
+                SNvar(tn->tk.sn),
+                tn->tk.p.nm ,
+                tn->dsize ,
+                tn,TREE_DATA(tn),
+                ctime_r(&tn->expires,b)
+                ) ;
         } else {
-                printf("Node %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X name=%s length=%d start=%p data=%p expires=%s",
-            tn->tk.sn[0] ,
-                tn->tk.sn[1] ,
-            tn->tk.sn[2] ,
-            tn->tk.sn[3] ,
-            tn->tk.sn[4] ,
-            tn->tk.sn[5] ,
-            tn->tk.sn[6] ,
-            tn->tk.sn[7] ,
-            tn->tk.p.ft->name ,
-            tn->dsize ,
-        tn,TREE_DATA(tn),
-            ctime_r(&tn->expires,b)
-            ) ;
+            printf("Node "SNformat" name=%s length=%d start=%p data=%p expires=%s",
+                SNvar(tn->tk.sn),
+                tn->tk.p.ft->name ,
+                tn->dsize ,
+                tn,TREE_DATA(tn),
+                ctime_r(&tn->expires,b)
+                ) ;
         }
         // fall through
         default:
@@ -249,8 +235,8 @@ int Cache_Add_Internal( const void * data, const size_t datasize, const struct i
                 tn->expires = duration + time(NULL) ;
                 tn->dsize = datasize ;
                 memcpy( TREE_DATA(tn) , data , datasize ) ;
-//printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
-//printf("  ADD INTERNAL data[0]=%d size=%d \n",((unsigned char *)data)[0],datasize);
+                //printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
+                //printf("  ADD INTERNAL data[0]=%d size=%d \n",((unsigned char *)data)[0],datasize);
                 switch (ip->change) {
                 case ft_persistent:
                     return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
@@ -282,7 +268,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
             cache.killed = cache.retired + cache.lifespan ;
         }
         if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
-//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
+            //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
             if ( tn!=opaque->key ) {
                 free(opaque->key);
                 opaque->key = tn ;
@@ -302,7 +288,7 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
             memcpy(&old_avg,&new_avg,sizeof(struct average)) ;
             AVERAGE_CLEAR(&new_avg)
         STATUNLOCK;
-//printf("FLIP points to: %p\n",flip);
+        //printf("FLIP points to: %p\n",flip);
     }
     /* Added or updated, update statistics */
     switch (state) {
@@ -349,7 +335,7 @@ static int Cache_Add_Store( struct tree_node * const tn ) {
     enum { no_add, yes_add, just_update } state = no_add ;
     STORELOCK;
         if ( (opaque=tsearch(tn,&cache.store,tree_compare)) ) {
-//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
+            //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
             if ( tn!=opaque->key ) {
                 free(opaque->key);
                 opaque->key = tn ;
@@ -463,30 +449,30 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
     int ret ;
     time_t now = time(NULL) ;
     struct tree_opaque * opaque ;
-//printf("CACHE GET 1\n");
+    //printf("CACHE GET 1\n");
     CACHELOCK;
         if ( (opaque=tfind(tn,&cache.new_db,tree_compare))
          || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) )
        ) {
-//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
+            //printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
             if ( opaque->key->expires >= now ) {
-//printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
-                if ( *dsize >= opaque->key->dsize ) {
-//printf("CACHE GET 4\n");
-                        *dsize = opaque->key->dsize ;
-//tree_show(opaque,leaf,0);
-//printf("CACHE GET 5 size=%d\n",*dsize);
-                        memcpy( data , TREE_DATA(opaque->key) , *dsize ) ;
-                        ret = 0 ;
-//printf("CACHE GOT\n");
-//twalk(cache.new_db,tree_show) ;
+                //printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
+                if ( dsize[0] >= opaque->key->dsize ) {
+                    //printf("CACHE GET 4\n");
+                    dsize[0] = opaque->key->dsize ;
+                    //tree_show(opaque,leaf,0);
+                    //printf("CACHE GET 5 size=%d\n",*dsize);
+                    memcpy( data , TREE_DATA(opaque->key) , *dsize ) ;
+                    ret = 0 ;
+                    //printf("CACHE GOT\n");
+                    //twalk(cache.new_db,tree_show) ;
                 } else {
                     ret = -EMSGSIZE ;
                 }
             } else {
-//char b[26];
-//printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
-//printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
+                //char b[26];
+                //printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
+                //printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
                 ret = -ETIMEDOUT ;
             }
         } else {
@@ -504,9 +490,9 @@ static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const 
     STORELOCK;
         if ( (opaque=tfind(tn,&cache.store,tree_compare)) ) {
             if ( *dsize >= opaque->key->dsize ) {
-                    *dsize = opaque->key->dsize ;
-                    memcpy( data, TREE_DATA(opaque->key), *dsize ) ;
-                    ret = 0 ;
+                *dsize = opaque->key->dsize ;
+                memcpy( data, TREE_DATA(opaque->key), *dsize ) ;
+                ret = 0 ;
             } else {
                 ret = -EMSGSIZE ;
             }
@@ -606,16 +592,16 @@ static int Cache_Del_Store( const struct tree_node * tn ) {
     struct tree_node * tn_found = NULL ;
     STORELOCK;
         if ( (opaque = tfind( tn , &cache.store, tree_compare )) ) {
-        tn_found = opaque->key ;
+            tn_found = opaque->key ;
             tdelete( tn , &cache.store , tree_compare ) ;
         }
     STOREUNLOCK;
     if ( tn_found ) {
-    free(tn_found) ;
-    STATLOCK;
-        AVERAGE_OUT(&store_avg)
-    STATUNLOCK;
-    return 0 ;
+        free(tn_found) ;
+        STATLOCK;
+            AVERAGE_OUT(&store_avg)
+        STATUNLOCK;
+        return 0 ;
     }
     return 1 ;
 }

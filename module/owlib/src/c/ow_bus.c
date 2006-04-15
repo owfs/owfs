@@ -16,8 +16,6 @@ $Id$
 
 #include <sys/time.h>
 
-static int BUS_select_raw(int depth, const struct parsedname * const pn) ;
-
 /** BUS_send_data
     Send a data and expect response match
     puts into data mode if needed.
@@ -55,135 +53,6 @@ int BUS_readin_data( unsigned char * const data, const size_t len, const struct 
   return ret;
 }
 
-static int BUS_selection_error( int ret ) {
-    STAT_ADD1(BUS_select_low_errors);
-    LEVEL_CONNECT("SELECTION ERROR\n");
-    return ret ;
-}   
-
-//--------------------------------------------------------------------------
-/** Select
-   -- selects a 1-wire device to respond to further commands.
-   First resets, then climbs down the branching tree,
-    finally 'selects' the device.
-   If no device is listed in the parsedname structure,
-    only the reset and branching is done. This allows selective listing.
-   Return 0=good, else
-    reset, send_data, sendback_data
- */
-/* Now you might wonder, why the low in BUS_select_low?
-   There is a vague thought that higher level selection -- specifically
-   for the DS9490 with it's intrinsic path commands might be implemented.
-   Obviously not yet.
-   Well, you asked
-*/
-int BUS_select_low(const struct parsedname * const pn) {
-    int ret ;
-    // match Serial Number command 0x55
-    unsigned char sent[9] = { 0x55, } ;
-    unsigned char alo[] = { 0xCC, 0x66, } ;
-    int pl = pn->pathlength ;
-
-    LEVEL_DEBUG("Selecting a path (and device) path=%s SN="SNformat"\n",pn->path,SNvar(pn->sn));
-
-    /* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
-    if ( pl == 0 ) { /* no branches, overdrive possible */
-        if ( pn->in->branch.sn[0] ) { // need to root branch */
-            LEVEL_DEBUG("Clearing root branch\n") ;
-            if ( BUS_select_raw(0,pn) || BUS_send_data(alo,2,pn) ) return 1 ;
-        }
-        pn->in->branch.sn[0] = 0x00 ; // flag as no branches turned on
-        if(pn->in->use_overdrive_speed) { // overdrive?
-            if((ret=BUS_testoverdrive(pn)) < 0) {
-                BUS_selection_error(ret) ;
-                return ret ;
-            } else {
-                //printf("use overdrive speed\n");
-                sent[0] = 0x69 ;
-            }
-        }
-    } else if ( memcmp( pn->in->branch.sn, pn->bp[pl-1].sn, 8 ) ) { /* different path */
-        int iclear ;
-        LEVEL_DEBUG("Clearing all branches to level %d\n",pl) ;
-        for ( iclear = 0 ; iclear <= pl ; ++iclear ) {
-            // All lines off
-            if ( BUS_select_raw(iclear,pn) || BUS_send_data( alo,2,pn) ) return 1 ;
-        }
-        memcpy( pn->in->branch.sn, pn->bp[pl-1].sn, 8 ) ;
-        pn->in->branch.branch =  pn->bp[pl-1].branch ;
-    } else if ( pn->in->branch.branch != pn->bp[pl-1].branch ) { /* different branch */
-        LEVEL_DEBUG("Clearing last branches (level %d)\n",pl) ;
-        if ( BUS_select_raw(pl,pn) || BUS_send_data( alo,2,pn) ) return 1 ; // clear just last level
-        pn->in->branch.branch =  pn->bp[pl-1].branch ;
-    }
-
-    /* Now select */
-    if ( BUS_select_raw(pn->pathlength,pn) ) return 1 ;
-
-    if ( pn->pathlength ) {
-        memcpy( pn->in->branch.sn, pn->bp[pn->pathlength-1].sn,8 ) ;
-    } else {
-        pn->in->branch.sn[0] = 0x00 ;
-    }
-
-    if ( pn->dev && (pn->dev != DeviceThermostat) ) {
-//printf("Really select %s\n",pn->dev->code);
-        memcpy( &sent[1], pn->sn, 8 ) ;
-        if ( (ret=BUS_send_data(sent,1,pn)) ) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        }
-        if(sent[0] == 0x69) {
-            if((ret=BUS_overdrive(ONEWIREBUSSPEED_OVERDRIVE, pn))< 0) {
-                BUS_selection_error(ret) ;
-                return ret ;
-            }
-        }
-        if ( (ret=BUS_send_data(&sent[1],8,pn)) ) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        }
-        return ret ;
-    }
-    return 0 ;
-}
-
-/* Select without worring about branch turn-offs */
-static int BUS_select_raw(int depth, const struct parsedname * const pn) {
-    int ret ;
-    int ibranch ;
-    // match Serial Number command 0x55
-    unsigned char sent[9] = { 0x55, } ;
-    unsigned char branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
-    unsigned char resp[3] ;
-
-    
-    // reset the 1-wire
-    // send/recieve the transfer buffer
-    // verify that the echo of the writes was correct
-    if ( (ret=BUS_reset(pn)) ) {
-        BUS_selection_error(ret) ;
-        return ret ;
-    }
-    for ( ibranch=0 ; ibranch < depth ; ++ibranch ) {
-        memcpy( &sent[1], pn->bp[ibranch].sn, 8 ) ;
-       /* Perhaps support overdrive here ? */
-        if ( (ret=BUS_send_data(sent,9,pn)) ) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        }
-        if ( (ret=BUS_send_data(&branch[pn->bp[ibranch].branch],1,pn)) || (ret=BUS_readin_data(resp,3,pn)) ) {
-            BUS_selection_error(ret) ;
-            return ret ;
-        }
-        if ( resp[2] != branch[pn->bp[ibranch].branch] ) {
-            STAT_ADD1(BUS_select_low_branch_errors);
-            return -EINVAL ;
-        }
-    }
-    return 0 ;
-}
-
 //--------------------------------------------------------------------------
 /** The 'owFirst' doesn't find the first device on the 1-Wire Net.
  instead, it sets up for DS2480_next interator.
@@ -197,7 +66,6 @@ int BUS_first(struct device_search * ds, const struct parsedname * const pn ) {
     LEVEL_DEBUG("Start of directory path=%s device="SNformat"\n",SAFESTRING(pn->path),SNvar(pn->sn)) ;
     memset(ds->sn,0,8);  // clear the serial number
     ds->LastDiscrepancy = -1;
-    ds->LastFamilyDiscrepancy = -1;
     ds->LastDevice = 0 ;
     pn->in->ExtraReset = 0 ;
     ds->search = 0xF0 ;
@@ -213,10 +81,9 @@ int BUS_first_alarm(struct device_search * ds, const struct parsedname * const p
     // reset the search state
     memset(ds->sn,0,8);  // clear the serial number
     ds->LastDiscrepancy = -1;
-    ds->LastFamilyDiscrepancy = -1;
     ds->LastDevice = 0 ;
     ds->search = 0xEC ;
-
+    BUS_reset(pn) ;
     return BUS_next(ds,pn) ;
 }
 
@@ -224,40 +91,11 @@ int BUS_first_family(const unsigned char family, struct device_search * ds, cons
     // reset the search state
     memset(ds->sn,0,8);  // clear the serial number
     ds->sn[0] = family ;
-    ds->LastDiscrepancy = 63;
-    ds->LastFamilyDiscrepancy = -1;
+    ds->LastDiscrepancy = 7;
     ds->LastDevice = 0 ;
     ds->search = 0xF0 ;
 
     return BUS_next(ds,pn) ;
-}
-
-static int BUS_next_redoable( const struct device_search * ds, struct device_search * ds2, const struct parsedname * pn ) {
-    LEVEL_DEBUG("Next directory path=%s device="SNformat"\n",SAFESTRING(pn->path),SNvar(pn->sn)) ;
-    memcpy( ds2, ds, sizeof(struct device_search) ) ;
-    if ( BUS_select(pn) ) {
-        printf("Couldn't select\n");
-        return -EINVAL ;
-    }
-    return BUS_next_both( &ds2, pn ) ;
-}
-
-static int BUS_next_anal( struct device_search * ds, const struct parsedname * const pn) {
-    struct device_search ds1, ds2 ;
-    int i ;
-    int ret ;
-    BUS_next_redoable( ds, &ds2, pn ) ;
-    for( i=0 ; i<5 ; ++i ) {
-        memcpy( &ds1, &ds2 , sizeof(struct device_search) ) ;
-        ret = BUS_next_redoable( ds, &ds2, pn ) ;
-        if ( memcmp( &ds1, &ds2 , sizeof(struct device_search) ) == 0 ) {
-            memcpy( ds, &ds2 , sizeof(struct device_search) ) ;
-            printf("ANAL success i=%d\n",i) ;
-            return ret ;
-        }
-    }
-    printf("ANAL failure\n");
-    return -EIO ;
 }
 
 //--------------------------------------------------------------------------
@@ -271,11 +109,13 @@ static int BUS_next_anal( struct device_search * ds, const struct parsedname * c
 */
 int BUS_next( struct device_search * ds, const struct parsedname * const pn) {
     int ret ;
-    //ret = pn->pathlength ? BUS_next_anal(ds,pn) : BUS_next_both( ds, pn ) ;
-    if ( pn->pathlength ) BUS_select(pn) ;
+
+    if ( BUS_select_branch( pn ) ) return 1 ;
     ret = BUS_next_both( ds, pn ) ;
-    //printf("BUS_next return = %d\n",ret) ;
-    if (ret) { STAT_ADD1_BUS(BUS_next_errors,pn->in) ; }
+    LEVEL_DEBUG("BUS_next return = %d "SNformat"\n",ret,SNvar(ds->sn)) ;
+    if (ret && ret!=-ENODEV) { 
+        STAT_ADD1_BUS(BUS_next_errors,pn->in) ; 
+    }
     return ret ;
 }
 

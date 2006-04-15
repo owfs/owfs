@@ -6,8 +6,8 @@ AC_INIT
 AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="2"
-VERSION_MINOR="2"
-PATCHLEVEL="3cvs"
+VERSION_MINOR="3"
+PATCHLEVEL="0"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -65,10 +65,6 @@ AC_ARG_ENABLE(ccmalloc,
    CCLD=$CC
 )
 AC_SUBST(CCLD)
- 
-
-
-
 
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
@@ -630,7 +626,8 @@ if test "${ENABLE_OWFS}" != "false" ; then
 
     save_CPPFLAGS="$CPPFLAGS"
     save_LDFLAGS="$LDFLAGS"
-    FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I${fuse_include_path}"
+    #FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I${fuse_include_path}"
+    FUSE_FLAGS="-I${fuse_include_path}"
     FUSE_LIBS="-L${fuse_lib_path}"
     LD_EXTRALIBS="-Wl,--rpath -Wl,${fuse_lib_path}"
     CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"

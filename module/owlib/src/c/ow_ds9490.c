@@ -611,15 +611,9 @@ static int DS9490_getstatus(unsigned char * buffer, int readlen, const struct pa
         UT_delay_us(100);
     } while(1);
 
-#if 0
-    printf("DS9490_getstatus: read %d bytes\n", ret);
-    printf("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-            buffer[0], buffer[1], buffer[2], buffer[3],
-            buffer[4], buffer[5], buffer[6], buffer[7],
-            buffer[8], buffer[9], buffer[10], buffer[11],
-            buffer[12], buffer[13], buffer[14], buffer[15]
-            );
-#endif
+    //printf("DS9490_getstatus: read %d bytes\n", ret);
+    //printf("  "SNformat"\n",SNvar(&(buffer[ 0])));
+    //printf("  "SNformat"\n",SNvar(&(buffer[ 8])));
 
     if(ret < 16) {
         LEVEL_DATA("incomplete packet ret=%d\n", ret);
@@ -647,12 +641,7 @@ static int DS9490_testoverdrive(const struct parsedname * pn) {
     if (!DS9490_sendback_data(&p,buffer,1, pn) && (p==buffer[0])) {  // match command 0x69
         if(!DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn)) {
             for (i=0; i<8; i++) buffer[i] = pn->sn[i] ;
-#if 0
-            for (i=0; i<8; i++) {
-                printf(" %02X", pn->sn[i]);
-            }
-            printf("\n");
-#endif
+            //printf("Test overdrive "SNformat"\n",SNvar(pn->sn));
             if (!DS9490_sendback_data(buffer, r, 8, pn)) {
                 for(i=0; i<8; i++) {
                     if(r[i] != pn->sn[i]) break ;

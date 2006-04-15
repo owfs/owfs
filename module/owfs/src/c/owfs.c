@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */
  #if FUSE_VERSION >= 26 // requires extra parameter
-    printf("fuse_main=%d\n",fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL )) ;
+    //printf("fuse_main=%d\n",fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL )) ;
  #else
     now_background = background ; // tell "error" that we are background
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;

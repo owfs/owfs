@@ -17,6 +17,7 @@ $Id$
 
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
+static int OW_ArgI2C( const char * arg ) ;
 
 const struct option owopts_long[] = {
     {"device",     required_argument,NULL,'d'},
@@ -340,41 +341,44 @@ int OW_ArgDevice( const char * arg ) {
 #ifdef OW_PARPORT
     if ( major(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
 #endif /* OW_PARPORT */
+    if ( major(sbuf.st_rdev)==89 ) return OW_ArgI2C(arg) ;
     return OW_ArgSerial(arg) ;
 } 
 
 static int OW_ArgSerial( const char * arg ) {
     struct connection_in * in = NewIn() ;
     if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for serial struct\n")
+        LEVEL_DEFAULT("Cannot allocate memory for serial adapter\n")
                 return 1 ;
     }
     in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
 
-    /* Support DS1994/DS2404 which require longer delays, and is automatically
-    * turned on in *_next_both().
-    * If it's turned off, it will result into a faster reset-sequence.
-    */
-    in->ds2404_compliance = 0 ;
     return 0 ;
 }
 
 static int OW_ArgParallel( const char * arg ) {
     struct connection_in * in = NewIn() ;
     if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for parallel struct\n")
+        LEVEL_DEFAULT("Cannot allocate memory for parallel adapter\n")
                 return 1 ;
     }
     in->name = strdup(arg) ;
     in->busmode = bus_parallel ;
 
-    /* Support DS1994/DS2404 which require longer delays, and is automatically
-    * turned on in *_next_both().
-    * If it's turned off, it will result into a faster reset-sequence.
-    */
-    in->ds2404_compliance = 0 ;
+    return 0 ;
+}
+
+static int OW_ArgI2C( const char * arg ) {
+    struct connection_in * in = NewIn() ;
+    if ( in==NULL ) {
+        LEVEL_DEFAULT("Cannot allocate memory for i2c adapter\n")
+                return 1 ;
+    }
+    in->name = strdup(arg) ;
+    in->busmode = bus_i2c ;
+
     return 0 ;
 }
 
@@ -397,11 +401,6 @@ int OW_ArgUSB( const char * arg ) {
     } else {
         in->fd=1 ;
     }
-    /* Support DS1994/DS2404 which require longer delays, and is automatically
-     * turned on in *_next_both().
-     * If it's turned off, it will result into a faster reset-sequence.
-     */
-    in->ds2404_compliance = 0 ;
     return 0 ;
 }
 

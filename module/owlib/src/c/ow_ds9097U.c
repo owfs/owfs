@@ -207,6 +207,7 @@ int DS2480_detect( struct connection_in * in ) {
     pn.in = in ;
 
         // set the FLEX configuration parameters
+        // copied shamelessly from Brian Lane's Digitemp
         // default PDSRC = 1.37Vus
     setup[0] = CMD_CONFIG | PARMSEL_SLEW | PARMSET_Slew1p37Vus ;
         // default W1LT = 10us
@@ -565,8 +566,6 @@ static int DS2480_next_both(struct device_search * ds, const struct parsedname *
         // check LastDiscrepancy
         if ( UT_get2bit(bitpairs,i)==0x1 ) {
             mismatched = i ;
-            // check LastFamilyDiscrepancy
-            if (i < 8) ds->LastFamilyDiscrepancy = i ;
         }
     }
 

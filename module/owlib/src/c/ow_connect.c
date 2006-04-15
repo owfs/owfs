@@ -60,6 +60,13 @@ struct connection_in * NewIn( void ) {
     pthread_mutex_init(&(now->dev_mutex), pmattr);
     now->dev_db = NULL ;
 #endif /* OW_MT */
+        /* Support DS1994/DS2404 which require longer delays, and is automatically
+        * turned on in *_next_both().
+        * If it's turned off, it will result into a faster reset-sequence.
+        */
+        now->ds2404_compliance = 0 ;
+        /* Flag first pass as need to clear all branches if DS2409 present */
+        now->branch.sn[0] = 1 ; // will never match a real hub
     }
     return now ;
 }

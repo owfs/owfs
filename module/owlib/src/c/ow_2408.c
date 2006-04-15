@@ -211,11 +211,11 @@ static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
         TRXN_END,
     } ;
 
-printf( "R_REG read attempt\n");
+    //printf( "R_REG read attempt\n");
     if ( BUS_transaction( t, pn ) ) return 1 ;
-printf( "R_REG read ok\n");
+    //printf( "R_REG read ok\n");
     if ( CRC16(p,3+8+2) ) return 1 ;
-printf( "R_REG CRC16 ok\n");
+    //printf( "R_REG CRC16 ok\n");
 
     memcpy( data , &p[3], 6 ) ;
     return 0 ;
@@ -231,12 +231,12 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
         TRXN_END,
     } ;
 
-printf( "W_PIO attempt\n");
+    //printf( "W_PIO attempt\n");
     if ( BUS_transaction( t, pn ) ) return 1 ;
-printf( "W_PIO attempt\n");
-printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],r[0],r[1]) ;
+    //printf( "W_PIO attempt\n");
+    //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],r[0],r[1]) ;
     if ( r[0]!=0xAA ) return 1 ;
-printf( "W_PIO 0xAA ok\n");
+    //printf( "W_PIO 0xAA ok\n");
     /* Ignore byte 5 r[1] the PIO status byte */
     return 0 ;
 }
@@ -252,11 +252,11 @@ static int OW_c_latch(const struct parsedname * pn) {
         TRXN_END,
     } ;
 
-printf( "C_LATCH attempt\n");
+    //printf( "C_LATCH attempt\n");
     if ( BUS_transaction( t, pn ) ) return 1 ;
-printf( "C_LATCH transact\n");
+    //printf( "C_LATCH transact\n");
     if ( r!=0xAA ) return 1 ;
-printf( "C_LATCH 0xAA ok\n");
+    //printf( "C_LATCH 0xAA ok\n");
 
     return 0 ;
 }
@@ -271,9 +271,9 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
         TRXN_END,
     } ;
 
-printf( "W_CONTROL attempt\n");
+    //printf( "W_CONTROL attempt\n");
     if ( BUS_transaction( t, pn ) ) return 1 ;
-printf( "W_CONTROL ok, now check\n");
+    //printf( "W_CONTROL ok, now check\n");
 
     /* Read registers */
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
@@ -296,15 +296,15 @@ static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * p
     // get the existing register contents
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
 
-printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
+    //printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
     cr = (data[2] & 0x03) | (d[5] & 0x0C) ;
-printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
+    //printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
 
     if ( BUS_transaction( t, pn ) ) return 1 ;
 
     /* Re-Read registers */
     if ( OW_r_reg(d,pn) ) return 1 ;
-printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
+    //printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
     return  ( data[0] != d[3] ) || ( data[1] != d[4] ) || ( cr != (d[5] & 0x0F) ) ;
 }

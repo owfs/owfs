@@ -168,20 +168,30 @@ struct connin_usb {
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
 /* bus_remote is owserver and bus_tcp is Link-E */
-enum bus_mode { bus_unknown=0, bus_remote, bus_serial, bus_usb, bus_parallel, bus_tcp, } ;
+enum bus_mode { 
+    bus_unknown=0, 
+    bus_remote, 
+    bus_serial, 
+    bus_usb, 
+    bus_parallel, 
+    bus_tcp, 
+    bus_i2c, 
+} ;
+
 enum adapter_type {
-    adapter_DS9097=0,
-    adapter_DS1410=1,
-    adapter_DS9097U2=2,
-    adapter_DS9097U=3,
-    adapter_LINK=7,
-    adapter_DS9490=8,
-    adapter_tcp=9,
-    adapter_Bad=10,
-    adapter_LINK_10,
-    adapter_LINK_11,
-    adapter_LINK_12,
-    adapter_LINK_E,
+    adapter_DS9097   =  0 ,
+    adapter_DS1410   =  1 ,
+    adapter_DS9097U2 =  2 ,
+    adapter_DS9097U  =  3 ,
+    adapter_LINK     =  7 ,
+    adapter_DS9490   =  8 ,
+    adapter_tcp      =  9 ,
+    adapter_Bad      = 10 ,
+    adapter_LINK_10       ,
+    adapter_LINK_11       ,
+    adapter_LINK_12       ,
+    adapter_LINK_E        ,
+    adapter_i2c           ,
 } ;
 
 extern int LINK_mode ; /* flag to use LINKs in ascii mode */
@@ -192,7 +202,6 @@ enum e_reconnect {
 
 struct device_search {
     int LastDiscrepancy ; // for search
-    int LastFamilyDiscrepancy ; // for search
     int LastDevice ; // for search
     unsigned char sn[8] ;
     unsigned char search ;
@@ -230,10 +239,7 @@ struct connection_in {
     int use_overdrive_speed ;
     int ds2404_compliance ;
     int ProgramAvailable ;
-    struct {
-        unsigned char sn[8] ;
-        unsigned char branch ;
-    } branch ; /* Last branch selected */
+    struct buspath branch ;
 
     /* Static buffer for serial conmmunications */
     /* Since only used during actual transfer to/from the adapter,
@@ -327,7 +333,10 @@ int BUS_first(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_next(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_first_alarm(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_first_family(const unsigned char family, struct device_search * ds, const struct parsedname * pn ) ;
+
 int BUS_select_low(const struct parsedname * const pn) ;
+int BUS_select_branch( const struct parsedname * pn) ;
+
 int BUS_sendout_cmd(const unsigned char * cmd , const size_t len, const struct parsedname * pn  ) ;
 int BUS_send_cmd(const unsigned char * const cmd , const size_t len, const struct parsedname * pn  ) ;
 int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const size_t len, const struct parsedname * pn  ) ;
