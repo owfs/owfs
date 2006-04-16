@@ -406,7 +406,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 
     BUSLOCK(pn2);
     pn2->ft = NULL ; /* just in case not properly set */
-    (ret=BUS_select(pn2)) || (ret=BUS_first_alarm(&ds,pn2)) ;
+    BUS_first_alarm(&ds,pn2) ;
     if(ret) {
         BUSUNLOCK(pn2);
         if(ret == -ENODEV) return 0; /* no more alarms is ok */
@@ -423,7 +423,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
             dirfunc( pn2 ) ;
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        (ret=BUS_select(pn2)) || (ret=BUS_next(&ds,pn2)) ;
+        ret=BUS_next(&ds,pn2) ;
 //printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
     }
     BUSUNLOCK(pn2);
@@ -451,7 +451,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     pn2->ft = NULL ;
     /* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
     /* Actually it's probably stale information in the stateinfo structure */
-    (ret=BUS_select(pn2)) || (ret=BUS_first(&ds,pn2)) ;
+    ret=BUS_first(&ds,pn2) ;
     if(ret) {
         BUSUNLOCK(pn2);
         if(ret == -ENODEV) return 0; /* no more devices is ok */
@@ -459,14 +459,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     }
     while (ret==0) {
         char ID[] = "XX";
-#if 0
-        {
-            char tmp[17];
-            bytes2string(tmp, ds.sn, 8) ;
-            tmp[16] = 0;
-            printf("FS_realdir: add sn=%s to bus=%d\n", tmp, pn2->in->index);
-        }
-#endif
+        //printf("FS_realdir: add sn="SNformat" to bus=%d\n", SNvar(ds.sn), pn2->in->index);
         Cache_Add_Dir(ds.sn,dindex,pn2) ;
         ++dindex ;
         
@@ -487,7 +480,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
         flags[0] |= pn2->dev->flags ;
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        (ret=BUS_select(pn2)) || (ret=BUS_next(&ds,pn2)) ;
+        ret=BUS_next(&ds,pn2) ;
     }
     BUSUNLOCK(pn2);
 

@@ -387,9 +387,7 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
             pncopy.pathlength = 0;
             
             /* Do a quick directory listing and find the DS1420 id */
-            if( (ret = BUS_select(&pncopy)) ) {
-                LEVEL_DATA("BUS_select failed during connect [%s]\n", pn->in->name);
-            } else if((ret = BUS_first(&ds,&pncopy))) {
+            if((ret = BUS_first(&ds,&pncopy))) {
                 LEVEL_DATA("BUS_first failed during connect [%s]\n", pn->in->name);
             } else {
                 unsigned char sn2[8] ;
@@ -403,7 +401,7 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
                     /* Unique id is set... no use to loop any more */
                     if(pn->in->connin.usb.ds1420_address[0]) break;
 
-                } while ( (ret=BUS_select(&pncopy)) || (ret=BUS_next(&ds,&pncopy)) ) ;
+                } while ( (ret=BUS_next(&ds,&pncopy)) ) ;
                 if(pn->in->connin.usb.ds1420_address[0]) {
                     bytes2string(id, pn->in->connin.usb.ds1420_address, 8);
                     id[16] = '\000';
@@ -491,9 +489,7 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
         pncopy.dev = NULL;
         pncopy.pathlength = 0;
 
-        if( (ret = BUS_select(&pncopy)) ) {
-            LEVEL_DATA("BUS_select failed during reconnect [%s]\n", pn->in->name);
-        } else if ( (ret = BUS_first(&ds,&pncopy)) ) {
+        if ( (ret = BUS_first(&ds,&pncopy)) ) {
             LEVEL_DATA("BUS_first failed during reconnect [%s]\n", pn->in->name);
         }
         while (ret==0) {
@@ -506,7 +502,7 @@ static int DS9490_redetect_low( const struct parsedname * pn ) {
             /* Unique id is set and match... no use to loop any more */
             if(!memcmp(ds.sn, pn->in->connin.usb.ds1420_address, 8)) break;
 
-            (ret=BUS_select(&pncopy)) || (ret=BUS_next(&ds,&pncopy)) ;
+            ret=BUS_next(&ds,&pncopy) ;
         }
 
         if(!pn->in->connin.usb.ds1420_address[0]) {

@@ -99,9 +99,9 @@ int BUS_first_family(const unsigned char family, struct device_search * ds, cons
 }
 
 //--------------------------------------------------------------------------
-/** The DS2480_next function does a general search.  This function
- continues from the previous search state. The search state
- can be reset by using the DS2480_first function.
+/** The BUS_next function does a general search.  This function
+ continues from the previous search state (held in struct device_search). The search state
+ can be reset by using the BUS_first function.
 
  Returns:  0=No problems, 1=Problems
 
@@ -110,7 +110,7 @@ int BUS_first_family(const unsigned char family, struct device_search * ds, cons
 int BUS_next( struct device_search * ds, const struct parsedname * const pn) {
     int ret ;
 
-    if ( BUS_select_branch( pn ) ) return 1 ;
+    if ( BUS_select(pn) || BUS_select_branch( pn ) ) return 1 ;
     ret = BUS_next_both( ds, pn ) ;
     LEVEL_DEBUG("BUS_next return = %d "SNformat"\n",ret,SNvar(ds->sn)) ;
     if (ret && ret!=-ENODEV) { 
