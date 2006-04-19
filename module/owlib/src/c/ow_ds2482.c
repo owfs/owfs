@@ -34,6 +34,10 @@ $Id$
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
+ *
+ * MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
+ * MODULE_DESCRIPTION("DS2482 driver");
+ * MODULE_LICENSE("GPL");
  */
 
 #include <linux/i2c.h>
@@ -570,6 +574,7 @@ static void __exit sensors_ds2482_exit(void)
 {
    i2c_del_driver(&ds2482_driver);
 }
+
 
 MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
 MODULE_DESCRIPTION("DS2482 driver");
