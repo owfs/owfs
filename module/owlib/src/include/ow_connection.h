@@ -152,6 +152,7 @@ struct connin_server {
 struct connin_usb {
     struct usb_device * dev ;
     struct usb_dev_handle * usb ;
+    int usb_nr ;
     int USpeed ;
     int ULevel ;
     int UMode ;
@@ -215,7 +216,7 @@ struct connection_in {
 #ifdef OW_MT
     pthread_mutex_t bus_mutex ;
     pthread_mutex_t dev_mutex ;
-    void * dev_db ;
+    void * dev_db ; // dev-lock tree
 #endif /* OW_MT */
     enum e_reconnect reconnect_state ;
     struct timeval last_lock ; /* statistics */
@@ -239,7 +240,7 @@ struct connection_in {
     int use_overdrive_speed ;
     int ds2404_compliance ;
     int ProgramAvailable ;
-    struct buspath branch ;
+    struct buspath branch ; // Branch currently selected
 
     /* Static buffer for serial conmmunications */
     /* Since only used during actual transfer to/from the adapter,
@@ -316,16 +317,20 @@ int DS2480_baud( speed_t baud, const struct parsedname * const pn );
 
 int Server_detect( struct connection_in * in  ) ;
 int DS2480_detect( struct connection_in * in ) ;
+
 #ifdef OW_PARPORT
 int DS1410_detect( struct connection_in * in ) ;
 #endif /* OW_PARPORT */
+
 int DS9097_detect( struct connection_in * in ) ;
 int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
 int LINKE_detect( struct connection_in * in ) ;
+
 #ifdef OW_USB
-    int DS9490_detect( struct connection_in * in ) ;
-    void DS9490_close( struct connection_in * in ) ;
+int DS9490_enumerate( void ) ;
+int DS9490_detect( struct connection_in * in ) ;
+void DS9490_close( struct connection_in * in ) ;
 #endif /* OW_USB */
 
 int BUS_reset(const struct parsedname * pn) ;

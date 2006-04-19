@@ -97,7 +97,7 @@ static void ow_help( enum opt_program op ) {
     "  -d --device    devicename      |Serial port device name of 1-wire adapter\n"
     "                                 |  e.g: -d /dev/ttyS0\n");
 #ifdef OW_USB
-    printf("  -u --usb       [number]        |USB 1-wire adapter. Choose first one unless number specified\n");
+    printf("  -u --usb       [number]|all    |USB 1-wire adapter. Choose first one unless number specified\n");
 #endif /* OW_USB */
     printf("                                 |  e.g: -u -u3  first and third USB 1wire adapters\n"
     "  -s --server    [host:]port     |owserver program that talks to adapter. Give tcp/ip address.\n"
@@ -309,10 +309,7 @@ int owopt( const int c , const char * const arg, enum opt_program op ) {
 
 int OW_ArgNet( const char * arg ) {
     struct connection_in * in = NewIn() ;
-    if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for network struct\n")
-        return 1 ;
-    }
+    if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_remote ;
     return 0 ;
@@ -320,10 +317,7 @@ int OW_ArgNet( const char * arg ) {
 
 int OW_ArgServer( const char * arg ) {
     struct connection_out * out = NewOut() ;
-    if ( out==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for server struct\n")
-        return 1 ;
-    }
+    if ( out==NULL ) return 1 ;
     out->name = strdup(arg) ;
     return 0 ;
 }
@@ -347,10 +341,7 @@ int OW_ArgDevice( const char * arg ) {
 
 static int OW_ArgSerial( const char * arg ) {
     struct connection_in * in = NewIn() ;
-    if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for serial adapter\n")
-                return 1 ;
-    }
+    if ( in==NULL ) return 1 ;
     in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
@@ -360,10 +351,7 @@ static int OW_ArgSerial( const char * arg ) {
 
 static int OW_ArgParallel( const char * arg ) {
     struct connection_in * in = NewIn() ;
-    if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for parallel adapter\n")
-                return 1 ;
-    }
+    if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_parallel ;
 
@@ -372,10 +360,7 @@ static int OW_ArgParallel( const char * arg ) {
 
 static int OW_ArgI2C( const char * arg ) {
     struct connection_in * in = NewIn() ;
-    if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for i2c adapter\n")
-                return 1 ;
-    }
+    if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_i2c ;
 
@@ -384,22 +369,33 @@ static int OW_ArgI2C( const char * arg ) {
 
 int OW_ArgUSB( const char * arg ) {
     struct connection_in * in = NewIn() ;
-    if ( in==NULL ) {
-        LEVEL_DEFAULT("Cannot allocate memory for USB struct\n")
-        return 1 ;
-    }
+    if ( in==NULL ) return 1 ;
     in->busmode = bus_usb ;
-    if ( arg ) {
-        in->fd = atoi(arg) ;
-//printf("ArgUSB fd=%d\n",in->fd);
-        if ( in->fd < 1 ) {
-            LEVEL_CONNECT("USB option %s implies no USB detection.\n",arg)
-            in->fd=0 ;
-        } else if ( in->fd>1 ) {
-            LEVEL_CONNECT("USB adapter %d requested.\n",in->fd)
+    if ( arg == NULL ) {
+        in->connin.usb.usb_nr = 1 ;
+    } else if ( strcasecmp(arg,"all") == 0 ) {
+        int n = DS9490_enumerate() ;
+        LEVEL_CONNECT("All USB adapters requested, %d found.\n",n) ;
+        if ( n > 1 ) {
+            int i ;
+            for ( i=2 ; i<=n ; ++i ) {
+                struct connection_in * in2 = NewIn() ;
+                if ( in2==NULL ) return 1 ;
+                in2->busmode = bus_usb ;
+                in2->connin.usb.usb_nr = i ;
+            }
         }
-    } else {
-        in->fd=1 ;
+        // first one
+        in->connin.usb.usb_nr = 1 ;
+    } else { 
+        in->connin.usb.usb_nr = atoi(arg) ;
+        //printf("ArgUSB fd=%d\n",in->fd);
+        if ( in->connin.usb.usb_nr < 1 ) {
+            LEVEL_CONNECT("USB option %s implies no USB detection.\n",arg) ;
+            in->connin.usb.usb_nr = 0 ;
+        } else if ( in->connin.usb.usb_nr > 1 ) {
+            LEVEL_CONNECT("USB adapter %d requested.\n",in->connin.usb.usb_nr) ;
+        }
     }
     return 0 ;
 }

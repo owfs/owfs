@@ -175,64 +175,79 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     return r ;
 }
 
-/* return 0 if ok, else negative */
-static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    int r ;
 #ifdef OW_MT
+struct write_seek_struct {
+    const char * buf ;
+    size_t size ;
+    off_t offset ;
+    const struct parsedname * pn ;
+    int ret ;
+} ;
+ 
+static void * FS_write_seek_callback( void * vp ) {
+    struct write_seek_struct * wss = (struct write_seek_struct *) vp ;
+    struct parsedname pnnext ;
+    struct stateinfo si ;
+
+    memcpy( &pnnext, wss->pn , sizeof(struct parsedname) ) ;
+    /* we need a different state (search state) for a different bus -- subtle error */
+    si.sg = wss->pn->si->sg ;   // reuse cacheon, tempscale etc
+    pnnext.si = &si ;
+    pnnext.in = wss->pn->in->next ;
+    wss->ret = FS_write_seek(wss->buf,wss->size,wss->offset,&pnnext) ;
+    pthread_exit(NULL);
+    return NULL ;
+}
+#endif /* OW_MT */
+
+/* return 0 if ok, else negative */
+/* Strategy is to go through all "connection_in" adapters
+ * return the first successful one
+ */
+static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+    int ret ;
+#ifdef OW_MT
+    struct write_seek_struct wss = { buf, size, offset, pn, 0 } ;
     pthread_t thread ;
     int threadbad = 1;
-    void * v ;
-    int rt ;
-
-    /* Embedded function */
-    void * Write2( void * vp ) {
-        struct parsedname pnnext ;
-        struct stateinfo si ;
-        int ret;
-
-        (void) vp ;
-        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
-        /* we need a different state (search state) for a different bus -- subtle error */
-        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
-        pnnext.si = &si ;
-        pnnext.in = pn->in->next ;
-        ret = FS_write_seek(buf,size,offset,&pnnext) ;
-        pthread_exit((void *)ret);
-        return (void *)ret;
-    }
 
     if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Write2, NULL ) ;
+      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, FS_write_seek_callback, &wss ) ;
     }
 #endif /* OW_MT */
 
     if ( TestConnection(pn) ) {
-        r = -ECONNABORTED ;
+        ret = -ECONNABORTED ;
     } else if ( (get_busmode(pn->in) == bus_remote) ) {
-        r = ServerWrite( buf, size, offset, pn ) ;
+        ret = ServerWrite( buf, size, offset, pn ) ;
     } else {
         /* if readonly exit */
         if ( readonly ) return -EROFS ;
 
-        if ( (r=LockGet(pn))==0 ) {
-            r = FS_real_write( buf, size, offset, pn ) ;
+        if ( (ret=LockGet(pn))==0 ) {
+            ret = FS_real_write( buf, size, offset, pn ) ;
             LockRelease(pn) ;
         }
     }
     /* If sucessfully writing a device, we know it exists on a specific bus.
      * Update the cache content */
-    if( (pn->type==pn_real) && (r == 0) ) {
+    if( (pn->type==pn_real) && (ret == 0) ) {
         Cache_Add_Device(pn->in->index, pn);
     }
 
 #ifdef OW_MT
     if ( threadbad == 0 ) { /* was a thread created? */
-        if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
-        rt = (int) v ;
-        if ( rt > 0 ) return rt ; /* is it an error return? Then return this one */
+        void * v ;
+        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
+        if ( wss.ret == 0 ) return 0 ; /* is it an error return? Then return this one */
+    }
+#else /* OW_MT */
+    if ( ret && pn->in->next ) {
+        pn->in = pn->in->next ;
+        return FS_write_seek(buf,size,offset,pn) ;
     }
 #endif /* OW_MT */
-    return r ;
+    return ret ;
 }
 
 /* return 0 if ok */

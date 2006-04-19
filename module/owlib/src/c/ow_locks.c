@@ -107,17 +107,18 @@ int LockGet( const struct parsedname * const pn ) {
     memcpy( dlock->sn, pn->sn, 8 ) ;
     
     DEVLOCK(pn);
-    if ( (opaque=tsearch(dlock,&(pn->in->dev_db),dev_compare))==NULL ) {
+    /* in->dev_db points to the root of a tree of devices that are using this device */
+    if ( (opaque=tsearch(dlock,&(pn->in->dev_db),dev_compare))==NULL ) { // unfound and uncreatable
         DEVUNLOCK(pn);
         free(dlock) ;
         return -ENOMEM ;
-    } else if ( dlock==opaque->key ) {
+    } else if ( dlock==opaque->key ) { // new device slot
         dlock->users = 1 ;
-        pthread_mutex_init(&(dlock->lock), pmattr);
-        pthread_mutex_lock(&(dlock->lock) ) ;
+        pthread_mutex_init(&(dlock->lock), pmattr); // create a mutex
+        pthread_mutex_lock(&(dlock->lock) ) ; // and set it
         DEVUNLOCK(pn);
         pn->si->lock = dlock ;
-    } else {
+    } else { // existing device slot
         ++(opaque->key->users) ;
         DEVUNLOCK(pn);
         free(dlock) ;

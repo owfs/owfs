@@ -67,6 +67,8 @@ struct connection_in * NewIn( void ) {
         now->ds2404_compliance = 0 ;
         /* Flag first pass as need to clear all branches if DS2409 present */
         now->branch.sn[0] = 1 ; // will never match a real hub
+    } else {
+        LEVEL_DEFAULT("Cannot allocate memory for adapter structure,\n") ;
     }
     return now ;
 }
@@ -91,6 +93,8 @@ struct connection_out * NewOut( void ) {
 #ifdef OW_MT
         pthread_mutex_init(&(now->accept_mutex), pmattr);
 #endif /* OW_MT */
+    } else {
+        LEVEL_DEFAULT("Cannot allocate memory for server structure,\n") ;
     }
     return now ;
 }
