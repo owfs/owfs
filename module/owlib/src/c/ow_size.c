@@ -12,7 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-static int FS_size_seek( const struct parsedname * const pn ) ;
+static int FS_size_seek( struct connection_in * in, const struct parsedname * const pn ) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -47,9 +47,9 @@ int FS_size_postparse( const struct parsedname * const pn ) {
     /* Those are stolen from FullFileLength just to avoid ServerSize()
      * beeing called */
     if (( pn2.type == pn_structure ) ||
-	( pn2.ft && ((pn2.ft->format==ft_directory ) ||
-		     ( pn2.ft->format==ft_subdir ) ||
-		     ( pn2.ft->format==ft_bitfield &&  pn2.extension==-2 )))) {
+        ( pn2.ft && ((pn2.ft->format==ft_directory ) ||
+        ( pn2.ft->format==ft_subdir ) ||
+        ( pn2.ft->format==ft_bitfield &&  pn2.extension==-2 )))) {
       return FullFileLength(pn) ;
     }
 
@@ -69,13 +69,11 @@ int FS_size_postparse( const struct parsedname * const pn ) {
    FS_size_seek the variable part */
 int FS_size( const char *path ) {
     struct parsedname pn ;
-    struct stateinfo si ;
     int r ;
 
     //printf("FS_size: pid=%ld path=%s\n", pthread_self(), path);
     LEVEL_CALL("SIZE path=%s\n", SAFESTRING(path));
 
-    pn.si = &si ;
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
@@ -106,9 +104,9 @@ int FS_size_remote( const struct parsedname * const pn ) {
     /* Those are stolen from FullFileLength just to avoid ServerSize()
      * beeing called */
     if (( pn2.type == pn_structure ) ||
-	( pn2.ft && ((pn2.ft->format==ft_directory ) ||
-		     ( pn2.ft->format==ft_subdir ) ||
-		     ( pn2.ft->format==ft_bitfield &&  pn2.extension==-2 )))) {
+        ( pn2.ft && ((pn2.ft->format==ft_directory ) ||
+        ( pn2.ft->format==ft_subdir ) ||
+        ( pn2.ft->format==ft_bitfield &&  pn2.extension==-2 )))) {
       return FullFileLength(pn) ;
     }
 
@@ -124,61 +122,3 @@ int FS_size_remote( const struct parsedname * const pn ) {
     //printf("FS_size_remote ret=%d\n", ret);
     return ret ;
 }
-
-/* path is the path which "pn" parses */
-/* FS_size_seek produces the data that can vary: device lists, etc. */
-static int FS_size_seek( const struct parsedname * const pn ) {
-    int ret = 0 ;
-#ifdef OW_MT
-    pthread_t thread ;
-    int threadbad = 1;
-    void * v ;
-    int rt ;
-
-    /* Embedded function */
-    void * Size2( void * vp ) {
-        struct parsedname pnnext ;
-        struct stateinfo si ;
-        int eret;
-
-        (void) vp ;
-        // shallow copy
-        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
-
-        /* we need a different state (search state) for a different bus -- subtle error */
-        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
-        pnnext.si = &si ;
-        pnnext.in = pn->in->next ;
-        eret = FS_size_seek( &pnnext ) ;
-        pthread_exit((void *)eret);
-        return (void *)eret;
-    }
-    if(!(pn->state & pn_bus)) {
-      threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Size2, NULL ) ;
-    }
-#endif /* OW_MT */
-
-    /* is this a remote bus? */
-    if ( get_busmode(pn->in) == bus_remote ) {
-        //printf("FS_size_seek call ServerSize pn->path=%s\n", pn->path);
-        ret = ServerSize( pn->path, pn ) ;
-    } else { /* local bus */
-        ret = FullFileLength( pn ) ;
-    }
-
-#ifdef OW_MT
-    /* See if next bus was also queried */
-    if ( threadbad == 0 ) { /* was a thread created? */
-        //printf("call pthread_join %ld\n", thread);
-        if ( pthread_join( thread, &v ) ) {
-//printf("pthread_join returned error\n");
-            return ret ; /* wait for it (or return only this result) */
-        }
-//printf("pthread_join returned ok\n");
-        rt = (int) v ;
-        if ( rt >= 0 ) return rt ; /* is it an error return? Then return this one */
-    }
-#endif /* OW_MT */
-    return ret ;
-}
-

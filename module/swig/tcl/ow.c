@@ -220,7 +220,6 @@ owtcl_ObjCmdProc(Owtcl_Get)
   char *path;
   int s;
   struct parsedname pn;
-  struct stateinfo si;
   char * buf = NULL, *p, *d ;
   int tcl_return = TCL_OK, r;
   Tcl_Obj *resultPtr;
@@ -258,7 +257,6 @@ owtcl_ObjCmdProc(Owtcl_Get)
     goto common_exit;
   }
 
-  pn.si = &si;
   if ((r = FS_ParsedName(path, &pn))) {
     owtcl_ErrorMsg(interp, strerror(-r));
     tcl_return = TCL_ERROR;
@@ -313,7 +311,6 @@ owtcl_ObjCmdProc(Owtcl_IsDir)
   char *path;
   int s, r;
   struct parsedname pn;
-  struct stateinfo si;
   int tcl_return = TCL_OK;
   Tcl_Obj *resultPtr;
 
@@ -336,7 +333,6 @@ owtcl_ObjCmdProc(Owtcl_IsDir)
 
   path = Tcl_GetStringFromObj(objv[1], &s);
 
-  pn.si = &si;
   if ((r = FS_ParsedName(path, &pn))) {
     owtcl_ErrorMsg(interp, strerror(-r));
     tcl_return = TCL_ERROR;

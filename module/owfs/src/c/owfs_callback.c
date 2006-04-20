@@ -130,7 +130,6 @@ static int FS_truncate(const char *path, const off_t size) {
 #endif /* FUSE22PLUS */
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
-    struct stateinfo si ;
     int ret ;
     /* Embedded function */
     /* Callback function to FS_dir */
@@ -143,11 +142,10 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
 
     LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
 
-    pn.si = &si ;
     if ( (ret=FS_ParsedName( path, &pn )) ) return ret ;
     //printf("FS_getdir parse=%d\n",ret);
     // first root always return Bus-list and settings/system/statistics
-    pn.si->sg |= (1<<BUSRET_BIT) ;
+    pn.sg |= (1<<BUSRET_BIT) ;
 
     if ( pn.ft ) {
         ret = -ENOENT;

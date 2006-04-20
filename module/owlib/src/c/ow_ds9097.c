@@ -44,9 +44,7 @@ static void DS9097_setroutines( struct interface_routines * const f ) {
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
 int DS9097_detect( struct connection_in * in ) {
-    struct stateinfo si ;
     struct parsedname pn ;
-    int ret = 0 ;
     
     /* open the COM port */
     if ( COM_open( in ) ) return -ENODEV ;
@@ -59,7 +57,6 @@ int DS9097_detect( struct connection_in * in ) {
     in->adapter_name = "DS9097" ;
     in->busmode = bus_serial ;
     
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 

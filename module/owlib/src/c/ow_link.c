@@ -71,9 +71,7 @@ static void LINKE_setroutines( struct interface_routines * f ) {
 // bus locking done at a higher level
 int LINK_detect( struct connection_in * in ) {
     struct parsedname pn ;
-    struct stateinfo si ;
 
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 
@@ -120,9 +118,7 @@ int LINK_detect( struct connection_in * in ) {
 
 int LINKE_detect( struct connection_in * in ) {
     struct parsedname pn ;
-    struct stateinfo si ;
 
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
     LEVEL_CONNECT("LinkE detect\n") ;

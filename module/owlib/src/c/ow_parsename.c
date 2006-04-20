@@ -47,11 +47,11 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
         free(pn->path);
         pn->path = NULL;
     }
-    if ( pn->in && pn->si ) {
+    if ( pn->in ) {
         if ( get_busmode(pn->in) != bus_remote ) {
-            if ((SemiGlobal & ~BUSRET_MASK) != (pn->si->sg & ~BUSRET_MASK)) {
+            if ((SemiGlobal & ~BUSRET_MASK) != (pn->sg & ~BUSRET_MASK)) {
                 CACHELOCK;
-                SemiGlobal = (pn->si->sg & ~BUSRET_MASK) ;
+                    SemiGlobal = (pn->sg & ~BUSRET_MASK) ;
                 CACHEUNLOCK;
             }
         }
@@ -93,10 +93,8 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     pn->bus_nr = 0 ;
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
-    if ( pn->si == NULL ) return -EINVAL ; /* Haven't set the stateinfo buffer */
-
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
-    pn->si->sg = SemiGlobal ;
+    pn->sg = SemiGlobal ;
 //        pn->si->sg.u[0]&0x01 = cacheenabled ;
 //        pn->si->sg.u[0]&0x02 = return bus-list from owserver
 //        pn->si->sg.u[1]      = presencecheck ;

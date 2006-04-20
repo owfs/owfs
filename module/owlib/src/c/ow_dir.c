@@ -14,7 +14,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) ;
+static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) ;
 static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
@@ -78,10 +78,11 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
             //printf("FS_dir: call FS_devdir 2 pn->path=%s\n", pn->path);
             ret = FS_devdir( dirfunc, &pn2 ) ;
         }
-    } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
-        ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
-    } else if ( pn->state & pn_uncached ) {  /* root or branch directory -- uncached */
-        ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
+    } else if (
+            ( pn->state & pn_alarm ) /* root or branch directory -- alarm state */
+            || ( pn->state & pn_uncached ) /* root or branch directory -- uncached */
+        ) {
+        ret = FS_dir_seek( dirfunc, pn2.in, &pn2, &flags ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         /* there are some files with variable sizes, and /system/adapter have variable
         * number of entries and we have to call ServerDir() */
@@ -142,7 +143,7 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
             ret = ServerDir(dirfunc, &pn2, &flags) ;
         } else {
             //printf("FS_dir: Call FS_dir_seek\n");
-            ret = FS_dir_seek( dirfunc, &pn2, &flags ) ;
+            ret = FS_dir_seek( dirfunc, pn2.in, &pn2, &flags ) ;
         }
     }
     
@@ -208,12 +209,12 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
             //printf("FS_dir_remote: call FS_devdir 2 pn->path=%s\n", pn->path);
             ret = FS_devdir( dirfunc, &pn2 ) ;
         }
-    } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+    } else if (
+        ( pn->state & pn_alarm )  /* root or branch directory -- alarm state */
+        || ( pn->state & pn_uncached ) /* root or branch directory -- uncached */
+              ) {
       //printf("FS_dir_remote pid=%ld path=%s call dir_seek alarm\n",pthread_self(), pn2.path);
-      ret = FS_dir_seek( dirfunc, &pn2, flags ) ;
-    } else if ( pn->state & pn_uncached ) {  /* root or branch directory -- uncached */
-      //printf("FS_dir_remote pid=%ld path=%s call dir_seek uncached\n",pthread_self(), pn->path);
-      ret = FS_dir_seek( dirfunc, &pn2, flags ) ;
+        ret = FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         /* there are some files with variable sizes, and /system/adapter have variable
         * number of entries and we have to call ServerDir() */
@@ -275,7 +276,7 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
             ret = ServerDir(dirfunc, &pn2, flags) ;
         } else {
             //printf("FS_dir_remote: call FS_dir_seek\n");
-            ret = FS_dir_seek( dirfunc, &pn2, flags ) ;
+            ret = FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
         }
     }
     STATLOCK;
@@ -286,46 +287,78 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
     return ret ;
 }
 
+/* path is the path which "pn" parses */
+/* FS_dir_seek produces the data that can vary: device lists, etc. */
+#ifdef OW_MT
 struct dir_seek_struct {
-    struct parsedname * pn ;
+    struct connection_in * in ;
+    const struct parsedname * pn ;
     void (* dirfunc)(const struct parsedname *) ;
     uint32_t * flags ;
-    } ;
+    int ret ;
+} ;
 
 /* Embedded function */
 static void * FS_dir_seek_callback( void * vp ) {
-    struct dir_seek_struct * dss = (struct parsedname *)vp ;
-    struct parsedname pnnext ;
-    struct stateinfo si ;
-    int eret;
-    memcpy( &pnnext, dss->pn , sizeof(struct parsedname) ) ;
-    /* we need a different state (search state) for a different bus -- subtle error */
-    si.sg = dss->pn->si->sg ;   // reuse cacheon, tempscale etc
-    pnnext.si = &si ;
-    pnnext.in = dss->pn->in->next ;
-    eret = FS_dir_seek(dss->dirfunc,&pnnext,dss->flags) ;
-    pthread_exit((void *)eret);
-    return (void *)eret;
+    struct dir_seek_struct * dss = (struct dir_seek_struct *)vp ;
+    dss->ret = FS_dir_seek(dss->dirfunc,dss->in,dss->pn,dss->flags) ;
+    pthread_exit(NULL);
+    return NULL;
 }
+
+static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) {
+    int ret = 0 ;
+    struct dir_seek_struct dss = {in->next,pn,dirfunc,flags,0} ;
+    struct parsedname pn2 ;
+    pthread_t thread ;
+    int threadbad = 1;
+
+    if(!(pn->state & pn_bus)) {
+        threadbad = in->next==NULL || pthread_create( &thread, NULL, FS_dir_seek_callback, (void *)(&dss) ) ;
+    }
+    
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+    pn2.in = in ;
+    
+    if ( TestConnection(&pn2) ) { // reconnect ok?
+    ret = -ECONNABORTED ;
+    } else if ( get_busmode(in) == bus_remote ) { /* is this a remote bus? */
+        //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
+        ret = ServerDir(dirfunc,&pn2,flags) ;
+    } else { /* local bus */
+        if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+            //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
+            ret = FS_alarmdir(dirfunc,&pn2) ;
+        } else {
+            if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(&pn2) || timeout.dir==0 ) {
+                //printf("FS_dir_seek: call FS_realdir bus %d\n", pn->in->index);
+                ret = FS_realdir( dirfunc, &pn2, flags ) ;
+            } else {
+                //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
+                ret = FS_cache2real( dirfunc, &pn2, flags ) ;
+            }
+        }
+    }
+    //printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
+    /* See if next bus was also queried */
+    if ( threadbad == 0 ) { /* was a thread created? */
+        void * v ;
+        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
+        if ( dss.ret >= 0 ) return dss.ret ; /* is it an error return? Then return this one */
+    }
+    return ret ;
+}
+
+#else /* OW_MT */
 
 /* path is the path which "pn" parses */
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
-static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
+static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) {
     int ret = 0 ;
-#ifdef OW_MT
-    struct dir_seek_struct dss = {pn,dirfunc,flags} ;
-    pthread_t thread ;
-    int threadbad = 1;
-    void * v ;
-    int rt ;
 
-    if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, FS_dir_seek_callback, (void *)(&dss) ) ;
-    }
-#endif /* OW_MT */
-
+    pn->in = in ;
     if ( TestConnection(pn) ) { // reconnect ok?
-        ret = -ECONNABORTED ;
+    ret = -ECONNABORTED ;
     } else if ( get_busmode(pn->in) == bus_remote ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,pn,flags) ;
@@ -336,7 +369,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         } else {
             if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
                 //printf("FS_dir_seek: call FS_realdir bus %d\n", pn->in->index);
-                 ret = FS_realdir( dirfunc, pn, flags ) ;
+                ret = FS_realdir( dirfunc, pn, flags ) ;
             } else {
                 //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
                 ret = FS_cache2real( dirfunc, pn, flags ) ;
@@ -344,18 +377,10 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), const
         }
     }
     //printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
-#ifdef OW_MT
-    /* See if next bus was also queried */
-    if ( threadbad == 0 ) { /* was a thread created? */
-        if ( pthread_join( thread, &v ) ) {
-            return ret ; /* wait for it (or return only this result) */
-        }
-        rt = (int) v ;
-        if ( rt >= 0 ) return rt ; /* is it an error return? Then return this one */
-    }
-#endif /* OW_MT */
+    if ( in->next && ret<=0 ) return FS_dir_seek( dirfunc, in->next, pn, flags ) ;
     return ret ;
 }
+#endif /* OW_MT */
 
 /* Device directory -- all from memory */
 static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
@@ -406,7 +431,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 
     BUSLOCK(pn2);
     pn2->ft = NULL ; /* just in case not properly set */
-    BUS_first_alarm(&ds,pn2) ;
+    ret = BUS_first_alarm(&ds,pn2) ;
     if(ret) {
         BUSUNLOCK(pn2);
         if(ret == -ENODEV) return 0; /* no more alarms is ok */
@@ -423,7 +448,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
             dirfunc( pn2 ) ;
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        ret=BUS_next(&ds,pn2) ;
+        ret = BUS_next(&ds,pn2) ;
 //printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
     }
     BUSUNLOCK(pn2);

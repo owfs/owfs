@@ -74,8 +74,6 @@ int handle_socket(FILE * out) {
     int ret ;
     struct urlparse up ;
     struct parsedname pn ;
-    struct stateinfo si ;
-    pn.si = &si ;
 
     str = fgets(up.line, PATH_MAX, out);
     LEVEL_CALL("PreParse line=%s\n",up.line)
@@ -105,8 +103,8 @@ int handle_socket(FILE * out) {
     } else {
         //printf("PreParse up.file=%s\n", up.file);
         ret = FS_ParsedName( up.file , &pn ) ;
-	// first root always return Bus-list and settings/system/statistics
-	pn.si->sg |= (1<<BUSRET_BIT) ;
+        // first root always return Bus-list and settings/system/statistics
+        pn.sg |= (1<<BUSRET_BIT) ;
 
         if ( ret ) {
         /* Can't understand the file name = URL */
@@ -220,7 +218,6 @@ static void HTTPfoot(FILE * out ) {
 static void Show( FILE * out, const char * const path, const char * const file, const struct parsedname * const pn ) {
     int len ;
     struct parsedname pn2 ;
-    struct stateinfo si ;
     const char * basename ;
     char fullpath[PATH_MAX+1] ;
     int suglen = 0 ;
@@ -249,28 +246,25 @@ static void Show( FILE * out, const char * const path, const char * const file, 
     if ( fullpath[strlen(fullpath)-1] != '/' ) strcat( fullpath, "/" ) ;
     strcat(fullpath,basename ) ;
 
-    pn2.si = &si;
     if ( (FS_ParsedName(fullpath, &pn2) == 0) ) {
         if ((pn2.state & pn_bus) && FS_RemoteBus(&pn2)) {
-	//printf("call FS_size(%s)\n", fullpath);
-	suglen = FS_size(fullpath) ;
-      } else {
-	//printf("call FS_size_postparse\n");
-	suglen = FS_size_postparse(pn) ;
-      }
+            //printf("call FS_size(%s)\n", fullpath);
+            suglen = FS_size(fullpath) ;
+        } else {
+            //printf("call FS_size_postparse\n");
+            suglen = FS_size_postparse(pn) ;
+        }
     } else {
-      suglen = 0;
-      //printf("FAILED parsename %s\n", fullpath);
+        suglen = 0;
+        //printf("FAILED parsename %s\n", fullpath);
     }
     FS_ParsedName_destroy( &pn2 ) ;
 
     if(suglen <= 0) {
-      //printf("Show: can't find file-size of %s ???\n", pn->path);
-      suglen = 0 ;
+        //printf("Show: can't find file-size of %s ???\n", pn->path);
+        suglen = 0 ;
     }
-    if( ! (buf = malloc((size_t)suglen+1)) ) {
-      return;
-    }
+    if( ! (buf = malloc((size_t)suglen+1)) ) return;
     buf[suglen] = '\0' ;
 
     //printf("Show path=%s, file=%s, suglen=%d pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,suglen,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
@@ -281,10 +275,10 @@ static void Show( FILE * out, const char * const path, const char * const file, 
         canwrite = 0 ;
     }
 
-//    if ( snprintf(fullpath,PATH_MAX,path[strlen(path)-1]=='/'?"%s%s":"%s/%s",path,basename)<0 ) return ;
+    //if ( snprintf(fullpath,PATH_MAX,path[strlen(path)-1]=='/'?"%s%s":"%s/%s",path,basename)<0 ) return ;
 
-//printf("pn->path=%s, pn->path_busless=%s\n",pn->path, pn->path_busless) ;
-//printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
+    //printf("pn->path=%s, pn->path_busless=%s\n",pn->path, pn->path_busless) ;
+    //printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
 
     /* Jump to special text-mode routine */
     if(pn->state & pn_text) {
@@ -520,13 +514,11 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
     /* Do command processing and make changes to 1-wire devices */
     if ( pn->dev!=&NoDevice && up->request && up->value && !readonly ) {
         struct parsedname pn2 ;
-        struct stateinfo si ;
 
         memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
-	pn2.si = &si;
 
         strcat( linecopy , up->request ) ; /* add on requested file type */
-	//printf("Change data on %s to %s\n",linecopy,up->value) ;
+        //printf("Change data on %s to %s\n",linecopy,up->value) ;
         if ( FS_ParsedName(linecopy,&pn2)==0 && pn2.ft && pn2.ft->write.v ) {
             switch ( pn2.ft->format ) {
             case ft_binary:
@@ -548,7 +540,7 @@ static void ChangeData( struct urlparse * up, const struct parsedname * pn ) {
                 break;
             }
         }
-	FS_ParsedName_destroy(&pn2);
+    FS_ParsedName_destroy(&pn2);
     }
 }
 

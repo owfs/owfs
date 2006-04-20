@@ -158,14 +158,11 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
     /* Embedded function */
     void * Check2( void * vp ) {
         struct parsedname pnnext ;
-        struct stateinfo si ;
         int eret;
 
         (void) vp ;
 
         memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
-        si.sg = pn->si->sg ;   // reuse cacheon, tempscale etc
-        pnnext.si = &si ;
         pnnext.in = pn->in->next ;
         eret = CheckPresence_low(&pnnext) ;
         pthread_exit((void *)eret);

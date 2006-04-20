@@ -191,13 +191,11 @@ int DS9490_enumerate( void ) {
 
 int DS9490_detect( struct connection_in * in ) {
     struct parsedname pn ;
-    struct stateinfo si ;
     int ret ;
 
     DS9490_setroutines( & in->iroutines ) ; // set up close, reconnect, reset, ...
     in->name = badUSBname ; // initialized
 
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 

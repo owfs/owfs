@@ -208,6 +208,12 @@ struct device_search {
     unsigned char search ;
 } ;
 
+struct devlock {
+    unsigned char sn[8] ;
+    unsigned int users ;
+    pthread_mutex_t lock ;
+} ;
+
 struct connection_in {
     struct connection_in * next ;
     int index ;
@@ -217,6 +223,7 @@ struct connection_in {
     pthread_mutex_t bus_mutex ;
     pthread_mutex_t dev_mutex ;
     void * dev_db ; // dev-lock tree
+    struct devlock * lock ; // need to clear dev lock?
 #endif /* OW_MT */
     enum e_reconnect reconnect_state ;
     struct timeval last_lock ; /* statistics */

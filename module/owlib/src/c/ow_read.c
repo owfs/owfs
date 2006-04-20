@@ -19,7 +19,7 @@ $ID: $
 #include <string.h>
 
 /* ------- Prototypes ----------- */
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn ) ;
 static int FS_real_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
@@ -33,10 +33,8 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) {
     struct parsedname pn ;
-    struct stateinfo si ;
     int r ;
 
-    pn.si = &si ;
     LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path), (int)size, (int)offset )
 
     if ( FS_ParsedName( path , &pn ) ) {
@@ -118,7 +116,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         if ( pn->state & pn_bus ) {
             /* this will either call ServerDir or FS_real_read */
             //printf("FS_read_postparse: call read_seek\n");
-            r = FS_read_seek(buf, size, offset, pn) ;
+            r = FS_read_seek(buf, size, offset, pn->in, pn) ;
         } else {
             /* Read from local memory */
             //printf("FS_read_postparse: call real_read\n");
@@ -130,7 +128,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
         /* handle DeviceSimultaneous */
         if(pn->dev == DeviceSimultaneous) {
             if(pn->state & pn_bus) {
-                r = FS_read_seek(buf, size, offset, pn) ;
+                r = FS_read_seek(buf, size, offset, pn->in, pn) ;
             } else {
                 struct connection_in *p = indevice ;
                 while(p) {
@@ -173,13 +171,13 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
                     pn2.state |= pn_bus ;
                     pn2.bus_nr = bus_nr ;
                     //printf("read only from bus_nr=%d\n", bus_nr);
-                    r = FS_read_seek(buf, size, offset, &pn2) ;
+                    r = FS_read_seek(buf, size, offset, pn2.in, &pn2) ;
                 } else {
                     //printf("CheckPresence failed, no use to read\n");
                     r = -ENOENT ;
                 }
             } else {
-                r = FS_read_seek(buf, size, offset, pn) ;
+                r = FS_read_seek(buf, size, offset, pn->in, pn) ;
             }
         }
     }
@@ -197,55 +195,107 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 }
 
 /* Loop through input devices (busses) */
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    int r = 0;
-    size_t s ;
 #ifdef OW_MT
+struct read_seek_struct {
+    char * buf ;
+    size_t size ;
+    off_t offset ;
+    struct connection_in * in ;
+    const struct parsedname * pn ;
+    int r ;
+} ;
+
+static void * FS_read_seek_callback( void * vp ) {
+    struct read_seek_struct * rss = (struct read_seek_struct *) vp ;
+    rss->r = FS_read_seek( rss->buf, rss->size, rss->offset, rss->in, rss->pn ) ;
+    pthread_exit(NULL);
+    return NULL;
+}
+
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn ) {
+    int r = 0;
     pthread_t thread ;
     int threadbad = 1;
-    char *buf2 ;
-    void * v ;
-    int rt ;
+    struct read_seek_struct rss = { buf, size, offset, in->next, pn, 0 } ;
+    struct parsedname pn2 ;
 
-    /* Embedded function */
-    void * Read2( void * vp ) {
-        struct parsedname *pn2 = (struct parsedname *)vp;
-        struct parsedname pnnext ;
-        struct stateinfo si ;
-        int ret;
-        memcpy( &pnnext, pn2 , sizeof(struct parsedname) ) ;
-        /* we need a different state (search state) for a different bus -- subtle error */
-        si.sg = pn2->si->sg ;   // reuse cacheon, tempscale etc
-        pnnext.si = &si ;
-        pnnext.in = pn2->in->next ;
-        ret = FS_read_seek(buf2,size,offset,&pnnext) ;
-        pthread_exit((void *)ret);
-        return (void *)ret;
-    }
-    
-    //printf("READSEEK pid=%ld path=%s index=%d\n",pthread_self(), pn->path,pn->in->index);
-#ifdef VALGRIND
-    // avoid warnings from VALGRIND
-    if( !(buf2 = (char *)calloc(1, size+1)) )
-#else /* VALGRIND */
-    if( !(buf2 = (char *)malloc(size)) )
-#endif /* VALGRIND */
-    {
-        return -ENOMEM;
-    }
     if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Read2, (void *)pn ) ;
+        threadbad = in->next==NULL || pthread_create( &thread, NULL, FS_read_seek_callback, (void *) &rss ) ;
     }
-#endif /* OW_MT */
 
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+    pn2.in = in ;
+
+    if ( TestConnection(&pn2) ) {
+        r = -ECONNABORTED ; // Cannot "reconnect" this bus currently
+    } else if ( (get_busmode(in) == bus_remote) ) {
+        //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
+        r = ServerRead(buf,size,offset,&pn2) ;
+        //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
+    } else {
+        size_t s = size ;
+        STAT_ADD1(read_calls) ; /* statistics */
+        /* Check the cache (if not pn_uncached) */
+        if ( offset!=0 || IsLocalCacheEnabled(&pn2)==0 ) {
+            //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
+            if ( (r=LockGet(&pn2))==0 ) {
+                r = FS_real_read(buf, size, offset, &pn2 ) ;
+                //printf("READSEEK1 FS_real_read ret=%d\n", r);
+                LockRelease(&pn2) ;
+            }
+            //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
+        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, &pn2 ) ) {
+            //printf("READSEEK2 pid=%d not found in cache\n",getpid());
+            if ( (r=LockGet(&pn2))==0 ) {
+                //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
+                r = FS_real_read( buf, size, offset, &pn2 ) ;
+                //printf("READSEEK2 FS_real_read ret=%d\n", r);
+                if ( r>0 ) Cache_Add( buf, (const size_t)r, &pn2 ) ;
+                LockRelease(&pn2) ;
+            }
+            //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
+        } else {
+            //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
+            STATLOCK;
+                ++read_cache ; /* statistics */
+                read_cachebytes += s ; /* statistics */
+            STATUNLOCK;
+            r = s ;
+            //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
+        }
+    }
+    /* If sucessfully reading a device, we know it exists on a specific bus.
+    * Update the cache content */
+    if((pn->type == pn_real) && (r >= 0)) {
+        Cache_Add_Device(in->index, pn);
+    }
+
+    if ( threadbad == 0 ) { /* was a thread created? */
+        void * v ;
+        //printf("READ call pthread_join\n");
+        if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
+        //printf("READ 1st=%d 2nd=%d\n",r,rt);
+        if ( rss.r > r ) return rss.r ; /* return better solution */
+        //printf("READ from 1st adapter\n") ;
+    }
+    return r ;
+}
+
+#else /* OW_MT */
+
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn ) {
+    int r = 0;
+
+    pn->in = in ;
+    
     if ( TestConnection(pn) ) {
         r = -ECONNABORTED ; // Cannot "reconnect" this bus currently
-    } else if ( (get_busmode(pn->in) == bus_remote) ) {
+    } else if ( (get_busmode(in) == bus_remote) ) {
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
         //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
-        s = size ;
+        size_t s = size ;
         STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
@@ -269,8 +319,8 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         } else {
             //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             STATLOCK;
-                ++read_cache ; /* statistics */
-                read_cachebytes += s ; /* statistics */
+            ++read_cache ; /* statistics */
+            read_cachebytes += s ; /* statistics */
             STATUNLOCK;
             r = s ;
             //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
@@ -279,31 +329,13 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     /* If sucessfully reading a device, we know it exists on a specific bus.
     * Update the cache content */
     if((pn->type == pn_real) && (r >= 0)) {
-        Cache_Add_Device(pn->in->index, pn);
+        Cache_Add_Device(in->index, pn);
     }
 
-#ifdef OW_MT
-    if ( threadbad == 0 ) { /* was a thread created? */
-        //printf("READ call pthread_join\n");
-        if ( pthread_join( thread, &v ) ) {
-            free(buf2);
-            return r ; /* wait for it (or return only this result) */
-        }
-        rt = (int) v ;
-//printf("READ 1st=%d 2nd=%d\n",r,rt);
-        if ( (rt >= 0) && (rt > r) ) { /* is it an error return? Then return this one */
-//printf("READ from 2nd adapter\n") ;
-            memcpy( buf, buf2, (size_t) rt ) ; /* Use the thread's result */
-            free(buf2);
-            return rt ;
-        }
-//printf("READ from 1st adapter\n") ;
-    }
-    free(buf2);
-#endif /* OW_MT */
+    if ( r<0 && in->next ) return FS_read_seek( buf,size,offset,in->next,pn) ;
     return r ;
 }
-
+#endif /* OW_MT */
 /* Real read -- called from read
    Integrates with cache -- read not called if cached value already set
 */

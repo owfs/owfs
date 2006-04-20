@@ -47,9 +47,7 @@ static int FS_nr_subdirs(struct parsedname * const pn2) {
 
 int FS_fstat(const char *path, struct stat *stbuf) {
     struct parsedname pn ;
-    struct stateinfo si ;
     int ret = 0 ;
-    pn.si = &si ;
     
     LEVEL_CALL("FSTAT path=%s\n", SAFESTRING(path));
 

@@ -73,6 +73,7 @@ static int dev_compare( const void * a , const void * b ) {
 #endif
 
 /* Grabs a device slot, either one already matching, or an empty one */
+/* called per-adapter */
 int LockGet( const struct parsedname * const pn ) {
 #ifdef OW_MT
     struct devlock * dlock ;
@@ -84,7 +85,7 @@ int LockGet( const struct parsedname * const pn ) {
       return 0 ;
     }
 
-    pn->si->lock = NULL ;
+    pn->in->lock = NULL ;
     /* Need locking? */
     switch( pn->ft->format ) {
     case ft_directory:
@@ -117,13 +118,13 @@ int LockGet( const struct parsedname * const pn ) {
         pthread_mutex_init(&(dlock->lock), pmattr); // create a mutex
         pthread_mutex_lock(&(dlock->lock) ) ; // and set it
         DEVUNLOCK(pn);
-        pn->si->lock = dlock ;
+        pn->in->lock = dlock ;
     } else { // existing device slot
         ++(opaque->key->users) ;
         DEVUNLOCK(pn);
         free(dlock) ;
         pthread_mutex_lock( &(opaque->key->lock) ) ;
-        pn->si->lock = opaque->key ;
+        pn->in->lock = opaque->key ;
     }
 #endif /* OW_MT */
     return 0 ;
@@ -131,23 +132,23 @@ int LockGet( const struct parsedname * const pn ) {
 
 void LockRelease( const struct parsedname * const pn ) {
 #ifdef OW_MT
-    if ( pn->si->lock ) {
+    if ( pn->in->lock ) {
 
         /* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
         if(pn->dev == DeviceSimultaneous) return ;
        
-        pthread_mutex_unlock( &(pn->si->lock->lock) ) ;
+        pthread_mutex_unlock( &(pn->in->lock->lock) ) ;
         DEVLOCK(pn);
-        if ( pn->si->lock->users==1 ) {
-                tdelete( pn->si->lock, &(pn->in->dev_db), dev_compare ) ;
+        if ( pn->in->lock->users==1 ) {
+                tdelete( pn->in->lock, &(pn->in->dev_db), dev_compare ) ;
                 DEVUNLOCK(pn);
-                pthread_mutex_destroy(&(pn->si->lock->lock) ) ;
-                free(pn->si->lock) ;
+                pthread_mutex_destroy(&(pn->in->lock->lock) ) ;
+                free(pn->in->lock) ;
         } else {
-                --pn->si->lock->users;
+                --pn->in->lock->users;
                 DEVUNLOCK(pn);
         }
-        pn->si->lock = NULL ;
+        pn->in->lock = NULL ;
     }
 #endif /* OW_MT */
 }

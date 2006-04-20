@@ -222,7 +222,6 @@ static void * RealHandler( void * v ) {
     struct server_msg sm ;
     struct client_msg cm ;
     struct parsedname pn ;
-    struct stateinfo si ;
     char * path = FromClientAlloc( hd->fd, &sm ) ;
 
     //printf("OWSERVER message type = %d\n",sm.type ) ;
@@ -237,8 +236,6 @@ static void * RealHandler( void * v ) {
             if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
                 cm.ret = -EBADMSG ;
             } else {
-                memset(&si, 0, sizeof(struct stateinfo));
-                pn.si = &si ;
                 //printf("Handler: path=%s\n",path);
                 /* Parse the path string */
 
@@ -246,7 +243,7 @@ static void * RealHandler( void * v ) {
                 if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
 
                 /* Use client persistent settings (temp scale, display mode ...) */
-                si.sg = sm.sg ;
+                pn.sg = sm.sg ;
                 //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
                 //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
@@ -378,7 +375,7 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const uns
         cm->sg = sm->sg ;
     } else {
         cm->size = ret ;
-        cm->sg = pn->si->sg ;
+        cm->sg = pn->sg ;
     }
 }
 

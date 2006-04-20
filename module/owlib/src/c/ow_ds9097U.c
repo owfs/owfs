@@ -197,12 +197,10 @@ static void DS2480_setroutines( struct interface_routines * f ) {
 // bus locking at a higher level
 int DS2480_detect( struct connection_in * in ) {
     struct parsedname pn ;
-    struct stateinfo si ;
     unsigned char timing = 0xC1 ;
     int ret ;
     unsigned char setup[5] ;
 
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 

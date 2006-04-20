@@ -54,7 +54,6 @@ int put( const char * path, const char * value ) {
 
 char * get( const char * path ) {
     struct parsedname pn ;
-    struct stateinfo si ;
     char * buf = NULL ;
     int sz ; /* current buffer size */
     int s ; /* current string length */
@@ -80,7 +79,6 @@ char * get( const char * path ) {
         }
     }
     
-    pn.si = &si ;
     if ( OWLIB_can_access_start() ) { /* Prior init */
         // buf = NULL ;
     } else if ( FS_ParsedName( path, &pn ) ) { /* Parse the input string */

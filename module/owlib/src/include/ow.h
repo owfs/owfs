@@ -313,7 +313,7 @@ enum ft_format {
     ft_tempgap,
 } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
-enum ft_change { ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, ft_persistent, } ;
+enum ft_change { ft_local, ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, ft_persistent, } ;
 
 /* Predeclare parsedname */
 struct parsedname ;
@@ -487,18 +487,6 @@ struct buspath {
     unsigned char branch ;
 } ;
 
-struct devlock {
-    unsigned char sn[8] ;
-    unsigned int users ;
-    pthread_mutex_t lock ;
-} ;
-
-/* data per transaction */
-struct stateinfo {
-    struct devlock * lock ; // need to clear dev lock?
-    uint32_t sg ; // more state info, packed for network transmission
-} ;
-
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
 struct parsedname {
@@ -516,6 +504,7 @@ struct parsedname {
     struct buspath * bp ; // DS2409 branching route
     struct stateinfo * si ;
     struct connection_in * in ;
+    uint32_t sg ; // more state info, packed for network transmission
 } ;
 
 enum simul_type { simul_temp, simul_volt, } ;
@@ -778,12 +767,12 @@ void BUS_unlock( const struct parsedname * pn ) ;
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (unsigned int) 0xFF000000 )
 #define DEVFORMAT_BIT  24
-#define IsLocalCacheEnabled(ppn)  ( ((ppn)->si->sg & CACHE_MASK) )
-#define ShouldReturnBusList(ppn)  ( ((ppn)->si->sg & BUSRET_MASK) )
-#define ShouldCheckPresence(ppn)  ( ((ppn)->si->sg & PRESENCE_MASK) ) 
-#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->si->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
+#define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg & CACHE_MASK) )
+#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
+#define ShouldCheckPresence(ppn)  ( ((ppn)->sg & PRESENCE_MASK) )
+#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->si->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
+#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
 #endif /* OW_H */

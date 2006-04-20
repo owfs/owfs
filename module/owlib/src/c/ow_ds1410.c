@@ -73,7 +73,6 @@ static void DS1410_setroutines( struct interface_routines * f ) {
 /* Note, terminal settings already saved */
 // NOT called with bus locked! 
 int DS1410_detect( struct connection_in * in ) {
-    struct stateinfo si ;
     struct parsedname pn ;
     unsigned char od ;
     
@@ -85,7 +84,6 @@ int DS1410_detect( struct connection_in * in ) {
     in->adapter_name = "DS1410" ;
     in->busmode = bus_parallel ;
     
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 
