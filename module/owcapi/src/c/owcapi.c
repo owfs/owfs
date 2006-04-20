@@ -117,7 +117,6 @@ int OW_init( const char * device ) {
 
 int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     struct parsedname pn ;
-    struct stateinfo si ;
     char * buf = NULL ;
     size_t sz ; /* current buffer size */
     int s = 0 ; /* current buffer string length */
@@ -146,8 +145,6 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     if ( buffer==NULL ) return -EINVAL ;
     if ( path==NULL ) path="/" ;
     if ( strlen(path) > PATH_MAX ) return -EINVAL ;
-    
-    pn.si = &si ;
 
     if ( OWLIB_can_access_start() ) { /* Check for prior init */
         s = -ENETDOWN ;
