@@ -129,6 +129,13 @@ struct interface_routines {
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
+struct DS2482_chip {
+#ifdef OW_MT
+    pthread_mutex_t i2c_mutex ;
+#endif /* OW_MT */
+    int current ;
+} ;
+
 struct connin_serial {
     speed_t speed;
     int USpeed ;
@@ -164,7 +171,11 @@ struct connin_usb {
    * if it's disconnected and later reconnected again.
    */
 } ;
-
+struct connin_i2c {
+    int channels ;
+    int index ;
+    struct DS2482_chip * chip ;
+} ;
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
@@ -258,6 +269,7 @@ struct connection_in {
         struct connin_link   link   ;
         struct connin_server server ;
         struct connin_usb    usb    ;
+        struct connin_i2c    i2c    ;
     } connin ;
 } ;
 /* Network connection structure */

@@ -47,7 +47,7 @@ $Id$
 #include <sys/time.h>
 
 /* ------- Prototypes ------------ */
-static int CheckPresence_low( const struct parsedname * const pn ) ;
+static int CheckPresence_low( struct connection_in * in, const struct parsedname * const pn ) ;
 
 /* ------- Functions ------------ */
 
@@ -131,7 +131,7 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence( const struct parsedname * const pn ) {
     if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) { 
-        return CheckPresence_low(pn) ;
+        return CheckPresence_low(pn->in,pn) ;
     }
     return 0 ;
 }
@@ -149,34 +149,78 @@ int Check1Presence( const struct parsedname * const pn ) {
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
 /* lower level, cycle through the devices */
-static int CheckPresence_low( const struct parsedname * const pn ) {
-    int ret = 0 ;
 #ifdef OW_MT
+
+struct checkpresence_struct {
+    struct connection_in * in ;
+    const struct parsedname * pn ;
+    int ret ;
+} ;
+
+static void * CheckPresence_callback( void * vp ) {
+    struct checkpresence_struct * cps = (struct checkpresence_struct *) vp ;
+    cps->ret = CheckPresence_low( cps->in, cps->pn ) ;
+    pthread_exit(NULL) ;
+    return NULL ;
+}
+
+static int CheckPresence_low( struct connection_in * in, const struct parsedname * const pn ) {
+    int ret = 0 ;
     pthread_t thread ;
     int threadbad = 1 ;
-    void * v ;
-    /* Embedded function */
-    void * Check2( void * vp ) {
-        struct parsedname pnnext ;
-        int eret;
-
-        (void) vp ;
-
-        memcpy( &pnnext, pn , sizeof(struct parsedname) ) ;
-        pnnext.in = pn->in->next ;
-        eret = CheckPresence_low(&pnnext) ;
-        pthread_exit((void *)eret);
-        return (void *)eret;
-    }
+    struct parsedname pn2 ;
+    struct checkpresence_struct cps = { in->next, pn, 0 } ;
 
     if(!(pn->state & pn_bus)) {
-        threadbad = pn->in==NULL || pn->in->next==NULL || pthread_create( &thread, NULL, Check2, NULL ) ;
+        threadbad = in->next==NULL || pthread_create( &thread, NULL, CheckPresence_callback, (void *)(&cps) ) ;
     }
-#endif /* OW_MT */
+
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+    pn2.in = in ;
+    
+    //printf("CheckPresence_low:\n");
+    if ( TestConnection(&pn2) ) { // reconnect successful?
+    ret = -ECONNABORTED ;
+    } else if(get_busmode(in) == bus_remote) {
+        //printf("CheckPresence_low: call ServerPresence\n");
+        ret = ServerPresence(&pn2) ;
+        if(ret >= 0) {
+            /* Device was found on this in-device, return it's index */
+            ret = in->index;
+        } else {
+            ret = -1;
+        }
+      //printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
+    } else {
+        //printf("CheckPresence_low: call BUS_normalverify\n");
+        /* this can only be done on local busses */
+        BUSLOCK(&pn2);
+            ret = BUS_normalverify(&pn2) ;
+        BUSUNLOCK(&pn2);
+        if(ret == 0) {
+            /* Device was found on this in-device, return it's index */
+            ret = in->index;
+        } else {
+            ret = -1;
+        }
+    }
+    if ( threadbad == 0 ) { /* was a thread created? */
+        void * v ;
+        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
+        if ( cps.ret >= 0 ) return cps.in->index ;
+    }
+    return ret ;
+}
+
+#else /* OW_MT */
+
+static int CheckPresence_low( struct connection_in * in, const struct parsedname * const pn ) {
+    int ret = 0 ;
 
     //printf("CheckPresence_low:\n");
+    pn->in = in ;
     if ( TestConnection(pn) ) { // reconnect successful?
-        ret = -ECONNABORTED ;
+    ret = -ECONNABORTED ;
     } else if(get_busmode(pn->in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
         ret = ServerPresence(pn) ;
@@ -200,18 +244,11 @@ static int CheckPresence_low( const struct parsedname * const pn ) {
             ret = -1;
         }
     }
-#ifdef OW_MT
-    if ( threadbad == 0 ) { /* was a thread created? */
-        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
-        if((int)v >= 0) {
-            //printf("child returned ok %d\n", (int)v);
-            return (int)v ;
-        }
-        return ret ;
-    }
-#endif /* OW_MT */
+
+    if ( ret < 0 && in->next ) return CheckPresence_low( in->next, pn ) ;
     return ret ;
 }
+#endif /* OW_MT */
 
 int FS_present(int * y , const struct parsedname * pn) {
     if ( pn->type != pn_real || pn->dev == DeviceSimultaneous || pn->dev == DeviceThermostat ) {
