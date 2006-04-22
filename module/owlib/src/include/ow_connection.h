@@ -129,13 +129,6 @@ struct interface_routines {
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
-struct DS2482_chip {
-#ifdef OW_MT
-    pthread_mutex_t i2c_mutex ;
-#endif /* OW_MT */
-    int current ;
-} ;
-
 struct connin_serial {
     speed_t speed;
     int USpeed ;
@@ -174,7 +167,13 @@ struct connin_usb {
 struct connin_i2c {
     int channels ;
     int index ;
-    struct DS2482_chip * chip ;
+    /* only one per chip, the bus entries for the other 7 channels point to the firt one */
+#ifdef OW_MT
+    pthread_mutex_t i2c_mutex ; // second level mutex for the entire chip */
+#endif /* OW_MT */
+    int current ;
+    int fd ;
+    struct connection_in * head ;
 } ;
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
@@ -203,7 +202,8 @@ enum adapter_type {
     adapter_LINK_11       ,
     adapter_LINK_12       ,
     adapter_LINK_E        ,
-    adapter_i2c           ,
+    adapter_DS2482_100    ,
+    adapter_DS2482_800    ,
 } ;
 
 extern int LINK_mode ; /* flag to use LINKs in ascii mode */
@@ -345,6 +345,7 @@ int DS9097_detect( struct connection_in * in ) ;
 int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
 int LINKE_detect( struct connection_in * in ) ;
+int DS2482_detect( struct connection_in * in ) ;
 
 #ifdef OW_USB
 int DS9490_enumerate( void ) ;

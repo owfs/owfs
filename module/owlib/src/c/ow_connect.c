@@ -136,7 +136,13 @@ void FreeIn( void ) {
             now->name = NULL ; // rather than a static data string;
             break ;
 #endif /* OW_USB */
-        default:
+        case bus_i2c:
+#ifdef OW_MT
+            if ( now->connin.i2c.index==0 ) {
+                pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex)) ;
+            }
+#endif /* OW_MT */
+            default:
             break ;
         }
         if ( now->name) {

@@ -163,6 +163,9 @@ void BUS_lock( const struct parsedname * pn ) {
     if(!pn || !pn->in) return ;
 #ifdef OW_MT
     pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
+    if ( pn->in->busmode == bus_i2c && pn->in->connin.i2c.channels > 1 ) {
+        pthread_mutex_lock( &(pn->in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
+    }
 #endif /* OW_MT */
     gettimeofday( &(pn->in->last_lock) , NULL ) ; /* for statistics */
     STATLOCK;
@@ -208,6 +211,9 @@ void BUS_unlock( const struct parsedname * pn ) {
         ++ total_bus_unlocks ; /* statistics */
     STATUNLOCK;
 #ifdef OW_MT
+    if ( pn->in->busmode == bus_i2c && pn->in->connin.i2c.channels > 1 ) {
+        pthread_mutex_unlock( &(pn->in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
+    }
     pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;
 #endif /* OW_MT */
 }

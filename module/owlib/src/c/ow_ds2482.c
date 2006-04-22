@@ -8,14 +8,21 @@ $Id$
     See the header file: ow.h for full attribution
     1wire/iButton system from Dallas Semiconductor
 */
+//#include <linux/i2c.h>
+//#include <linux/i2c-dev.h>
+/* Fake define */
+#define I2C_SLAVE 0
 
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <i2c.h>
-#include <i2c-dev.h>
+// #include <linux/i2c.h>
+#include <sys/ioctl.h>
+
+static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
+
 
 /* i2c support for the DS2482-100 and DS2482-800 1-wire host adapters */
 /* Stolen shamelessly from Ben Gardners kernel module */
@@ -592,6 +599,7 @@ static int DS2482_reset( const struct parsedname * pn ) ;
 static int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
 static void DS2482_setroutines( struct interface_routines * f ) ;
 static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
+static int CreateChannels( int num, struct connection_in * in ) ;
 
 #define	OneBit	0xFF
 #define ZeroBit 0xC0
@@ -600,7 +608,7 @@ static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * b
 static void DS2482_setroutines( struct interface_routines * const f ) {
     f->detect        = DS2482_detect         ;
     f->reset         = DS2482_reset          ;
-    f->next_both     = BUS_next_both_low     ;
+    f->next_both     = DS2482_next_both      ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
     f->PowerByte     = BUS_PowerByte_low     ;
@@ -616,30 +624,44 @@ static void DS2482_setroutines( struct interface_routines * const f ) {
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
 int DS2482_detect( struct connection_in * in ) {
-    struct stateinfo si ;
     struct parsedname pn ;
     int ret = 0 ;
+    int test_address[4] = { 0x18, 0x19, 0x1a, 0x1b } ;
+    int i ;
     
     /* open the COM port */
-    if ( COM_open( in ) ) return -ENODEV ;
+    in->connin.i2c.fd = open(in->name,O_RDWR) ;
+    if ( in->connin.i2c.fd < 0 ) {
+        ERROR_CONNECT("Could not open i2c device %s\n",in->name) ;
+        return -ENODEV ;
+    }
 
-    /* Set up low-level routines */
+    /* clycle though the possible addresses */
+    for ( i=0 ; i<4 ; ++i ) {
+        /* set the candidate address */
+        if ( ioctl(in->connin.i2c.fd,I2C_SLAVE,test_address[i]) < 0 ) {
+            ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ;
+            return -ENODEV ;
+        }
+    }
+    /* fellthough, no device found */
+    return -ENODEV ;
+}
+#if 0    
+if (!i2c_check_functionality(adapter,
+         I2C_FUNC_SMBUS_WRITE_BYTE_DATA |
+                 I2C_FUNC_SMBUS_BYTE))
+        /* Set up low-level routines */
     DS2482_setroutines( & (in->iroutines) ) ;
 
-    /* Reset the bus */
-    in->Adapter = adapter_DS2482 ; /* OWFS assigned value */
-    in->adapter_name = "DS2482" ;
-    in->busmode = bus_serial ;
     
-    pn.si = &si ;
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
 
     return DS2482_reset(&pn) ;
 }
-
+#endif
 /* DS2482 Reset -- A little different from DS2480B */
-/* Puts in 9600 baud, sends 11110000 then reads response */
 // return 1 shorted, 0 ok, <0 error
 static int DS2482_reset( const struct parsedname * const pn ) {
     unsigned char resetbyte = 0xF0 ;
@@ -844,3 +866,114 @@ static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * b
     }
     return 0 ;
 }
+
+/* create more channels,
+   inserts in connection_in chain
+   "in" points to  first (head) channel
+   called even if n==1
+ */
+static int CreateChannels( int num, struct connection_in * in ) {
+    int i ;
+    char * name[2] = { "DS2482-100", "DS2482-800", } ;
+    in->connin.i2c.head = in ;
+    in->connin.i2c.index = 0 ;
+    in->connin.i2c.channels = num ;
+    in->connin.i2c.current = num ; // out-of-bounds value to force setting */
+    in->Adapter = num==1 ? adapter_DS2482_100 : adapter_DS2482_800 ; /* OWFS assigned value */
+    in->adapter_name = num==1 ? name[0]:name[1] ;
+    in->busmode = bus_i2c ;
+#ifdef OW_MT
+    pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
+#endif /* OW_MT */
+    for ( i=1 ; i<num ; ++i ) {
+        struct connection_in * added = NewIn() ;
+        if ( added==NULL ) return -ENOMEM ;
+        added->connin.i2c.head = in ;
+        added->connin.i2c.index = i ;
+        added->connin.i2c.channels = num ;
+        added->Adapter = adapter_DS2482_800 ; /* OWFS assigned value */
+        added->adapter_name = name[1] ;
+        added->busmode = bus_i2c ;
+    }
+    return 0 ;
+}
+
+static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) {
+    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
+    int bit_number ;
+    int last_zero = -1 ;
+    unsigned char bits[3] ;
+    int ret ;
+
+    // initialize for search
+    // if the last call was not the last one
+    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( ds->LastDevice ) return -ENODEV ;
+
+    /* Appropriate search command */
+    if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
+      // loop to do the search
+    for ( bit_number=0 ;; ++bit_number ) {
+        bits[1] = bits[2] = 0xFF ;
+        if ( bit_number==0 ) { /* First bit */
+            /* get two bits (AND'ed bit and AND'ed complement) */
+            if ( (ret=BUS_sendback_bits(&bits[1],&bits[1],2,pn)) ) return ret ;
+        } else {
+            bits[0] = search_direction ;
+            if ( bit_number<64 ) {
+                /* Send chosen bit path, then check match on next two */
+                if ( (ret=BUS_sendback_bits(bits,bits,3,pn)) ) return ret ;
+            } else { /* last bit */
+                if ( (ret=BUS_sendback_bits(bits,bits,1,pn)) ) return ret ;
+                break ;
+            }
+        }
+        if ( bits[1] ) {
+            if ( bits[2] ) { /* 1,1 */
+                break ; /* No devices respond */
+            } else { /* 1,0 */
+                search_direction = 1;  // bit write value for search
+            }
+        } else if ( bits[2] ) { /* 0,1 */
+            search_direction = 0;  // bit write value for search
+        } else if (bit_number > ds->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
+            // Past branch, select zeros for now
+            search_direction = 0 ;
+            last_zero = bit_number;
+        } else if (bit_number == ds->LastDiscrepancy) {  /* 0,0 -- new branch */
+            // at branch (again), select 1 this time
+            search_direction = 1 ; // if equal to last pick 1, if not then pick 0
+        } else  if (UT_getbit(ds->sn,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 1 ;
+        } else {  /* 0,0 -- old news, use previous "0" bit */
+            // this discrepancy is before the Last Discrepancy
+            search_direction = 0 ;
+            last_zero = bit_number;
+        }
+        // check for Last discrepancy in family
+        //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
+        UT_setbit(ds->sn,bit_number,search_direction) ;
+
+        // serial number search direction write bit
+        //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
+    } // loop until through serial number bits
+
+    if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
+      /* A minor "error" and should perhaps only return -1 to avoid
+      * reconnect */
+        return -EIO ;
+    }
+    if((ds->sn[0] & 0x7F) == 0x04) {
+        /* We found a DS1994/DS2404 which require longer delays */
+        pn->in->ds2404_compliance = 1 ;
+    }
+    // if the search was successful then
+
+    ds->LastDiscrepancy = last_zero;
+//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+    ds->LastDevice = (last_zero < 0);
+    LEVEL_DEBUG("Generic_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
+    return 0 ;
+}
+

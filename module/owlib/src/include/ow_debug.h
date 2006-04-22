@@ -14,18 +14,26 @@
 #define OW_DEBUG_H
 
 /* error functions */
-void err_msg(const char *fmt, ...) ;
-void err_bad(const char *fmt, ...) ;
-void err_debug(const char *fmt, ...) ;
+void err_msg(int errnoflag, int level, const char *fmt, ...) ;
+
 extern int error_print ;
 extern int error_level ;
 extern int now_background ;
 extern int log_available ;
-#define LEVEL_DEFAULT(...)    if (error_level>0) err_msg(__VA_ARGS__) ;
-#define LEVEL_CONNECT(...)    if (error_level>1) err_bad(__VA_ARGS__) ;
-#define LEVEL_CALL(...)       if (error_level>2) err_msg(__VA_ARGS__) ;
-#define LEVEL_DATA(...)       if (error_level>3) err_msg(__VA_ARGS__) ;
-#define LEVEL_DEBUG(...)      if (error_level>4) err_debug(__VA_ARGS__) ;
+
+#define LEVEL_DEFAULT(...)    if (error_level>0) err_msg(0,0,__VA_ARGS__) ;
+#define LEVEL_CONNECT(...)    if (error_level>1) err_msg(0,1,__VA_ARGS__) ;
+#define LEVEL_CALL(...)       if (error_level>2) err_msg(0,2,__VA_ARGS__) ;
+#define LEVEL_DATA(...)       if (error_level>3) err_msg(0,3,__VA_ARGS__) ;
+#define LEVEL_DETAIL(...)     if (error_level>4) err_msg(0,4,__VA_ARGS__) ;
+#define LEVEL_DEBUG(...)      if (error_level>5) err_msg(0,5,__VA_ARGS__) ;
+
+#define ERROR_DEFAULT(...)    if (error_level>5) err_msg(1,0,__VA_ARGS__) ;
+#define ERROR_CONNECT(...)    if (error_level>5) err_msg(1,1,__VA_ARGS__) ;
+#define ERROR_CALL(...)       if (error_level>5) err_msg(1,2,__VA_ARGS__) ;
+#define ERROR_DATA(...)       if (error_level>5) err_msg(1,3,__VA_ARGS__) ;
+#define ERROR_DETAIL(...)     if (error_level>5) err_msg(1,4,__VA_ARGS__) ;
+#define ERROR_DEBUG(...)      if (error_level>5) err_msg(1,5,__VA_ARGS__) ;
 
 /* Make sure strings are safe for printf */
 #define SAFESTRING(x) ((x) ? (x):"")
