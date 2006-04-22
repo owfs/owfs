@@ -78,9 +78,11 @@ static int DS9097_reset( const struct parsedname * const pn ) {
     /* 8 data bits */
     tcgetattr(fd, &term);
     term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
-    cfsetospeed(&term, B9600);
-    cfsetispeed(&term, B9600);
+    if ( cfsetospeed(&term, B9600)<0 || cfsetispeed(&term, B9600)<0 ) {
+        ERROR_CONNECT("Cannot set speed (9600): %s\n",SAFESTRING(pn->in->name)) ;
+    }
     if (tcsetattr(fd, TCSANOW, &term ) < 0 ) {
+        ERROR_CONNECT("Cannot set attributes: %s\n",SAFESTRING(pn->in->name)) ;
         STAT_ADD1_BUS(BUS_tcsetattr_errors,pn->in);
         return -EIO ;
     }
@@ -118,14 +120,17 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 
 #ifndef B115200
     /* MacOSX support max 38400 in termios.h ? */
-    cfsetispeed(&term, B38400);       /* Set input speed to 38.4k    */
-    cfsetospeed(&term, B38400);       /* Set output speed to 38.4k   */
+    if ( cfsetospeed(&term, B38400)<0 || cfsetispeed(&term, B38400)<0 ) {
+        ERROR_CONNECT("Cannot set speed (38400): %s\n",SAFESTRING(pn->in->name)) ;
+    }
 #else
-    cfsetispeed(&term, B115200);       /* Set input speed to 115.2k    */
-    cfsetospeed(&term, B115200);       /* Set output speed to 115.2k   */
+    if ( cfsetospeed(&term, B115200)<0 || cfsetispeed(&term, B115200)<0 ) {
+        ERROR_CONNECT("Cannot set speed (115200): %s\n",SAFESTRING(pn->in->name)) ;
+    }
 #endif
 
     if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
+        ERROR_CONNECT("Cannot set attributes: %s\n",SAFESTRING(pn->in->name)) ;
         STAT_ADD1_BUS(BUS_tcsetattr_errors,pn->in);
         return -EFAULT ;
     }

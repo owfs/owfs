@@ -61,7 +61,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
                     errno = 0; // clear errno. We never use it anyway.
                     nread = 0; /* and call read() again */
                 } else {
-                    //LEVEL_DEFAULT("readn() failed %d [%s]\n", errno, strerror(errno));
+                    ERROR_DATA("Network data read error\n") ;
                     STAT_ADD1(NET_read_errors);
                     return(-1);
                 }
@@ -77,6 +77,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
 //                STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                 continue;
             }
+            ERROR_DATA("Selection error (network)\n") ;
 //            STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
             return -EINTR;
         } else { /* timed out */

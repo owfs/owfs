@@ -218,7 +218,7 @@ static int LINK_next_both(struct device_search * ds, const struct parsedname * p
         pn->in->ds2404_compliance = 1 ;
     }
 
-    LEVEL_DEBUG("LINK_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
+    LEVEL_DEBUG("LINK_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
     return 0 ;
 }
 
@@ -273,6 +273,7 @@ static int LINK_read_low(unsigned char * buf, const size_t size, const struct pa
                     STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                     continue;
                 }
+                ERROR_CONNECT("LINK read error: %s\n",SAFESTRING(pn->in->name)) ;
                 ret = -errno;  /* error */
                 STAT_ADD1(DS2480_read_read);
                 break;
@@ -284,6 +285,7 @@ static int LINK_read_low(unsigned char * buf, const size_t size, const struct pa
                 STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                 continue;
             }
+            ERROR_CONNECT("LINK select error: %s\n",SAFESTRING(pn->in->name)) ;
             STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
             return -EINTR;
         } else {
@@ -331,6 +333,7 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
                 STAT_ADD1_BUS(BUS_write_interrupt_errors,pn->in);
                 continue;
             }
+            ERROR_CONNECT("Trouble writing data to LINK: %s\n",SAFESTRING(pn->in->name)) ;
             break;
         }
         sl -= r;

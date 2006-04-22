@@ -8,10 +8,6 @@ $Id$
     See the header file: ow.h for full attribution
     1wire/iButton system from Dallas Semiconductor
 */
-//#include <linux/i2c.h>
-//#include <linux/i2c-dev.h>
-/* Fake define */
-#define I2C_SLAVE 0
 
 #include "owfs_config.h"
 #include "ow.h"
@@ -20,6 +16,7 @@ $Id$
 
 // #include <linux/i2c.h>
 #include <sys/ioctl.h>
+#include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
 
