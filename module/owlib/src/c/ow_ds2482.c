@@ -14,8 +14,9 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-// #include <linux/i2c.h>
+// Special for i2c work
 #include <sys/ioctl.h>
+// Header taken from lm-sensors code
 #include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
@@ -623,7 +624,7 @@ static void DS2482_setroutines( struct interface_routines * const f ) {
 int DS2482_detect( struct connection_in * in ) {
     struct parsedname pn ;
     int ret = 0 ;
-    int test_address[4] = { 0x18, 0x19, 0x1a, 0x1b } ;
+    int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 01d, 0x1e, 0x1f, } ; // the last 4 are -800 only
     int i ;
     
     /* open the COM port */
@@ -634,7 +635,7 @@ int DS2482_detect( struct connection_in * in ) {
     }
 
     /* clycle though the possible addresses */
-    for ( i=0 ; i<4 ; ++i ) {
+    for ( i=0 ; i<8 ; ++i ) {
         /* set the candidate address */
         if ( ioctl(in->connin.i2c.fd,I2C_SLAVE,test_address[i]) < 0 ) {
             ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ;
@@ -970,7 +971,7 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     ds->LastDiscrepancy = last_zero;
 //    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     ds->LastDevice = (last_zero < 0);
-    LEVEL_DEBUG("Generic_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
+    LEVEL_DEBUG("DS2482_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
     return 0 ;
 }
 

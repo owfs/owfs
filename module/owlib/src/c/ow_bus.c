@@ -246,7 +246,7 @@ int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) {
     ds->LastDiscrepancy = last_zero;
 //    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
     ds->LastDevice = (last_zero < 0);
-    LEVEL_DEBUG("Generic_next_both SN found: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",ds->sn[0],ds->sn[1],ds->sn[2],ds->sn[3],ds->sn[4],ds->sn[5],ds->sn[6],ds->sn[7]) ;
+    LEVEL_DEBUG("Generic_next_both SN found: ""SNformat"\n",SNvar(ds->sn)) ;
     return 0 ;
 }
 

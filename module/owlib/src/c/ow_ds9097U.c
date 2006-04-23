@@ -739,8 +739,8 @@ static int DS2480_read(unsigned char * buf, const size_t size, const struct pars
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
-        tval.tv_sec = 0;
-        tval.tv_usec = 500000;
+        tval.tv_sec = 1;
+        tval.tv_usec = 0;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't
@@ -759,6 +759,9 @@ static int DS2480_read(unsigned char * buf, const size_t size, const struct pars
         *       read()
         *
         */
+         /* Hehehe. Even .5 sec wasn't long enough for a MIPS embedded
+        * system with USB-serial converter
+         */
 
         // if byte available read or return bytes read
         rc = select(pn->in->fd+1,&fdset,NULL,NULL,&tval);
