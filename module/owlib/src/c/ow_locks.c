@@ -49,7 +49,6 @@ void LockSetup( void ) {
     pthread_mutex_init(&store_mutex, pmattr);
     pthread_mutex_init(&fstat_mutex, pmattr);
     pthread_mutex_init(&dir_mutex, pmattr);
-    pthread_mutex_init(&reconnect_mutex, pmattr);
     pthread_mutex_init(&uclibc_mutex, pmattr);
  #endif /* UCLIBC */
 #endif /* OW_MT */

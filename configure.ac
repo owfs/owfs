@@ -759,10 +759,7 @@ AC_ARG_ENABLE(usb,
     AC_MSG_RESULT([yes (default)])
 ])
 
-AC_SUBST(ENABLE_USB)
-
 # Include libusb if the usb is enabled
-
 if test "${ENABLE_USB}" != "false" ; then
 
     AC_CHECK_LIB(usb,usb_open, ,[
@@ -771,15 +768,14 @@ if test "${ENABLE_USB}" != "false" ; then
     else
             AC_MSG_WARN([libusb not found, usb will be disabled])
             ENABLE_USB=false
-            AC_SUBST(ENABLE_USB)
     fi
     ])
     if test "${ENABLE_USB}" != "false" ; then
         ENABLE_USB=true
-        AC_SUBST(ENABLE_USB)
     fi
 fi
 
+AC_SUBST(ENABLE_USB)
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
 # Check for Parallel port enabled
@@ -799,27 +795,23 @@ AC_ARG_ENABLE(parport,
     AC_MSG_RESULT([yes (default)])
 ])
 
-AC_SUBST(ENABLE_PARPORT)
-
-# Include ppdev.h if the parallel port is enabled
-
+# Include linux/ppdev.h if the parallel port is enabled
 if test "${ENABLE_PARPORT}" != "false" ; then
 
-    AC_CHECK_HEADER(ppdev.h,pin_init_user, ,[
+    AC_CHECK_HEADER(linux/ppdev.h,,[
     if test "${ENABLE_PARPORT}" = "true" ; then
         AC_MSG_ERROR([ppdev.h must be installed to use parallel port adapter])
     else
             AC_MSG_WARN([ppdev.h not found, parallel port will be disabled])
             ENABLE_PARPORT=false
-            AC_SUBST(ENABLE_PARPORT)
     fi
     ])
     if test "${ENABLE_PARPORT}" != "false" ; then
         ENABLE_PARPORT=true
-        AC_SUBST(ENABLE_PARPORT)
     fi
 fi
 
+AC_SUBST(ENABLE_PARPORT)
 AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 
 #Check for profiling
@@ -837,7 +829,6 @@ AC_MSG_RESULT([$enableval])
     AC_MSG_RESULT([no (default)])
 ])
 AC_SUBST(ENABLE_PROFILING)
-
 AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
 AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
