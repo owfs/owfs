@@ -247,8 +247,8 @@ static int LINK_read_low(unsigned char * buf, const size_t size, const struct pa
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
-        tval.tv_sec = 0;
-        tval.tv_usec = 5000000;
+        tval.tv_sec = 1;
+        tval.tv_usec = 0;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't
