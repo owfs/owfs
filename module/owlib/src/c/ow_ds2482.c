@@ -624,7 +624,7 @@ static void DS2482_setroutines( struct interface_routines * const f ) {
 int DS2482_detect( struct connection_in * in ) {
     struct parsedname pn ;
     int ret = 0 ;
-    int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 01d, 0x1e, 0x1f, } ; // the last 4 are -800 only
+    int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, } ; // the last 4 are -800 only
     int i ;
     
     /* open the COM port */
@@ -869,10 +869,11 @@ static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * b
    inserts in connection_in chain
    "in" points to  first (head) channel
    called even if n==1
+   NOTE: coded assuming num = 1 or 8 only
  */
 static int CreateChannels( int num, struct connection_in * in ) {
     int i ;
-    char * name[2] = { "DS2482-100", "DS2482-800", } ;
+    char * name[] = { "DS2482-100", "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)", "DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)", "DS2482-800(7)", } ;
     in->connin.i2c.head = in ;
     in->connin.i2c.index = 0 ;
     in->connin.i2c.channels = num ;
@@ -890,7 +891,7 @@ static int CreateChannels( int num, struct connection_in * in ) {
         added->connin.i2c.index = i ;
         added->connin.i2c.channels = num ;
         added->Adapter = adapter_DS2482_800 ; /* OWFS assigned value */
-        added->adapter_name = name[1] ;
+        added->adapter_name = name[i+1] ;
         added->busmode = bus_i2c ;
     }
     return 0 ;
