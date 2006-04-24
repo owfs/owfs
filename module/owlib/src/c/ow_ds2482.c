@@ -16,6 +16,9 @@ $Id$
 
 // Special for i2c work
 #include <sys/ioctl.h>
+// Header taken from lm-sensors code
+// specifically lm-sensors-2.10.0
+#include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
 
