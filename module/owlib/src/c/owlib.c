@@ -195,7 +195,7 @@ int LibStart( void ) {
 
     if ( indevice==NULL ) {
     LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname) ;
-        BadAdapter_detect(NewIn()) ;
+        BadAdapter_detect(NewIn(NULL)) ;
         return 1;
     }
     do {

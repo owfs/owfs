@@ -308,7 +308,7 @@ int owopt( const int c , const char * const arg, enum opt_program op ) {
 }
 
 int OW_ArgNet( const char * arg ) {
-    struct connection_in * in = NewIn() ;
+    struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_remote ;
@@ -340,7 +340,7 @@ int OW_ArgDevice( const char * arg ) {
 } 
 
 static int OW_ArgSerial( const char * arg ) {
-    struct connection_in * in = NewIn() ;
+    struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
@@ -350,7 +350,7 @@ static int OW_ArgSerial( const char * arg ) {
 }
 
 static int OW_ArgParallel( const char * arg ) {
-    struct connection_in * in = NewIn() ;
+    struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_parallel ;
@@ -359,7 +359,7 @@ static int OW_ArgParallel( const char * arg ) {
 }
 
 static int OW_ArgI2C( const char * arg ) {
-    struct connection_in * in = NewIn() ;
+    struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_i2c ;
@@ -368,7 +368,7 @@ static int OW_ArgI2C( const char * arg ) {
 }
 
 int OW_ArgUSB( const char * arg ) {
-    struct connection_in * in = NewIn() ;
+    struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->busmode = bus_usb ;
     if ( arg == NULL ) {
@@ -379,7 +379,7 @@ int OW_ArgUSB( const char * arg ) {
         if ( n > 1 ) {
             int i ;
             for ( i=2 ; i<=n ; ++i ) {
-                struct connection_in * in2 = NewIn() ;
+                struct connection_in * in2 = NewIn(NULL) ;
                 if ( in2==NULL ) return 1 ;
                 in2->busmode = bus_usb ;
                 in2->connin.usb.usb_nr = i ;

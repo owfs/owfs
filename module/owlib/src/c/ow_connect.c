@@ -36,7 +36,9 @@ enum bus_mode get_busmode(struct connection_in *c) {
   return c->busmode;
 }
 
-struct connection_in * NewIn( void ) {
+/* Make a new indevice, and place it in the chain */
+/* Based on a shallow copy of "in" if not NULL */
+struct connection_in * NewIn( const struct connection_in * in ) {
     size_t len = sizeof(struct connection_in) ;
     struct connection_in * last = NULL ;
     struct connection_in * now = indevice ;
@@ -46,7 +48,11 @@ struct connection_in * NewIn( void ) {
     }
     now = (struct connection_in *)malloc( len ) ;
     if (now) {
-        memset(now,0,len) ;
+        if ( in ) { /* make a shallow copy */
+            memcpy( now, in, sizeof(struct connection_in ) ) ;
+        } else {
+            memset(now,0,len) ;
+        }
         if ( indevice ) {
             last->next = now ;
             now->index = last->index+1 ;

@@ -1,7 +1,7 @@
 headerdir = ${prefix}/include
 header_DATA = compat_getopt.h \
         compat.h \
-        i2c-dev.c \
+        i2c-dev.h \
         compat_netdb.h \
         ow_1820.h \
         ow_1821.h \

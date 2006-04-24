@@ -21,47 +21,13 @@ $Id$
 #include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
-
-
-/* i2c support for the DS2482-100 and DS2482-800 1-wire host adapters */
-/* Stolen shamelessly from Ben Gardners kernel module */
-
-#if 0
-// Header taken from lm-sensors code
-#include "i2c-dev.h"
-/**
- * ds2482.c - provides i2c to w1-master bridge(s)
- * Copyright (C) 2005  Ben Gardner <bgardner@wabtec.com>
- *
- * The DS2482 is a sensor chip made by Dallas Semiconductor (Maxim).
- * It is a I2C to 1-wire bridge.
- * There are two variations: -100 and -800, which have 1 or 8 1-wire ports.
- * The complete datasheet can be obtained from MAXIM's website at:
- *   http://www.maxim-ic.com/quick_view2.cfm/qv_pk/4382
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
- * MODULE_DESCRIPTION("DS2482 driver");
- * MODULE_LICENSE("GPL");
- */
-
-#include <linux/i2c.h>
-
-/**
- * Address is selected using 2 pins, resulting in 4 possible addresses.
- *  0x18, 0x19, 0x1a, 0x1b
- * However, the chip cannot be detected without doing an i2c write,
- * so use the force module parameter.
- */
-static unsigned short normal_i2c[] = {I2C_CLIENT_END};
-
-/**
- * Insmod parameters
- */
-I2C_CLIENT_INSMOD_1(ds2482);
+static int DS2482_triple( unsigned char * bits, int direction, const struct parsedname * pn ) ;
+static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
+static int DS2482_reset( const struct parsedname * pn ) ;
+static int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
+static void DS2482_setroutines( struct interface_routines * f ) ;
+static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
+static int CreateChannels( int num, struct connection_in * in ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -102,10 +68,10 @@ I2C_CLIENT_INSMOD_1(ds2482);
  * To set the channel, write the value at the index of the channel.
  * Read and compare against the corresponding value to verify the change.
  */
-static const u8 ds2482_chan_wr[8] =
-   { 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
-static const u8 ds2482_chan_rd[8] =
-   { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
+static const unsigned char ds2482_chan_wr[8] =
+{ 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
+static const unsigned char ds2482_chan_rd[8] =
+{ 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
 
 /**
@@ -119,6 +85,115 @@ static const u8 ds2482_chan_rd[8] =
 #define DS2482_REG_STS_SD      0x04
 #define DS2482_REG_STS_PPD     0x02
 #define DS2482_REG_STS_1WB     0x01
+
+/* Device-specific functions */
+static void DS2482_setroutines( struct interface_routines * const f ) {
+    f->detect        = DS2482_detect         ;
+    f->reset         = DS2482_reset          ;
+    f->next_both     = DS2482_next_both      ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
+    f->PowerByte     = BUS_PowerByte_low     ;
+//    f->ProgramPulse = ;
+    f->sendback_data = BUS_sendback_data_low ;
+    f->sendback_bits = DS2482_sendback_bits  ;
+    f->select        = BUS_select_low        ;
+    f->reconnect     = NULL                  ;
+    f->close         = COM_close             ;
+}
+
+/* uses the "Triple" primative for faster search */
+static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) {
+    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
+    int bit_number ;
+    int last_zero = -1 ;
+    unsigned char bits[3] ;
+    int ret ;
+
+    // initialize for search
+    // if the last call was not the last one
+    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( ds->LastDevice ) return -ENODEV ;
+
+    /* Appropriate search command */
+    if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
+      // loop to do the search
+    for ( bit_number=0 ; bit_number<64 ; ++bit_number ) {
+        /* Set the direction bit */
+        if ( bit_number < ds->LastDiscrepancy ) {
+            search_direction = UT_getbit(ds->sn,bit_number);
+        } else {
+            search_direction = (bit_number==ds->LastDiscrepancy) ? 1 : 0 ;
+        }
+        /* Appropriate search command */
+        if ( (ret=DS2482_triple(bits, search_direction, pn)) ) return ret ;
+        if ( bits[0] || bits[1] || bits[2] ) {
+            if ( bits[0] && bits[1] ) { /* 1,1 */
+                break ; /* No devices respond */
+            }
+        } else { /* 0,0,0 */
+            last_zero = bit_number ;
+        }
+        UT_setbit(ds->sn,bit_number,bits[2]) ;
+    } // loop until through serial number bits
+
+    if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
+      /* A minor "error" and should perhaps only return -1 to avoid
+      * reconnect */
+        return -EIO ;
+    }
+    if((ds->sn[0] & 0x7F) == 0x04) {
+        /* We found a DS1994/DS2404 which require longer delays */
+        pn->in->ds2404_compliance = 1 ;
+    }
+    // if the search was successful then
+
+    ds->LastDiscrepancy = last_zero;
+//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+    ds->LastDevice = (last_zero < 0);
+    LEVEL_DEBUG("DS2482_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
+    return 0 ;
+}
+
+/* i2c support for the DS2482-100 and DS2482-800 1-wire host adapters */
+/* Stolen shamelessly from Ben Gardners kernel module */
+
+#if 0
+// Header taken from lm-sensors code
+#include "i2c-dev.h"
+/**
+ * ds2482.c - provides i2c to w1-master bridge(s)
+ * Copyright (C) 2005  Ben Gardner <bgardner@wabtec.com>
+ *
+ * The DS2482 is a sensor chip made by Dallas Semiconductor (Maxim).
+ * It is a I2C to 1-wire bridge.
+ * There are two variations: -100 and -800, which have 1 or 8 1-wire ports.
+ * The complete datasheet can be obtained from MAXIM's website at:
+ *   http://www.maxim-ic.com/quick_view2.cfm/qv_pk/4382
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
+ * MODULE_DESCRIPTION("DS2482 driver");
+ * MODULE_LICENSE("GPL");
+ */
+
+#include <linux/i2c.h>
+
+/**
+ * Address is selected using 2 pins, resulting in 4 possible addresses.
+ *  0x18, 0x19, 0x1a, 0x1b
+ * However, the chip cannot be detected without doing an i2c write,
+ * so use the force module parameter.
+ */
+static unsigned short normal_i2c[] = {I2C_CLIENT_END};
+
+/**
+ * Insmod parameters
+ */
+I2C_CLIENT_INSMOD_1(ds2482);
 
 
 static int ds2482_attach_adapter(struct i2c_adapter *adapter);
@@ -442,15 +517,6 @@ static u8 ds2482_w1_reset_bus(void *data)
 }
 
 
-/**
- * Called to see if the device exists on an i2c bus.
- */
-static int ds2482_attach_adapter(struct i2c_adapter *adapter)
-{
-   return i2c_probe(adapter, &addr_data, ds2482_detect);
-}
-
-
 /*
  * The following function does more than just detection. If detection
  * succeeds, it also registers the new chip.
@@ -537,89 +603,9 @@ static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind)
 
    return 0;
 
-exit_w1_remove:
-   i2c_detach_client(new_client);
-
-   for (idx = 0; idx < data->w1_count; idx++) {
-       if (data->w1_ch[idx].pdev != NULL)
-           w1_remove_master_device(&data->w1_ch[idx].w1_bm);
-   }
-exit_free:
-   kfree(data);
-exit:
-   return err;
-}
-
-static int ds2482_detach_client(struct i2c_client *client)
-{
-   struct ds2482_data   *data = i2c_get_clientdata(client);
-   int err, idx;
-
-   /* Unregister the 1-wire bridge(s) */
-   for (idx = 0; idx < data->w1_count; idx++) {
-       if (data->w1_ch[idx].pdev != NULL)
-           w1_remove_master_device(&data->w1_ch[idx].w1_bm);
-   }
-
-   /* Detach the i2c device */
-   if ((err = i2c_detach_client(client))) {
-       dev_err(&client->dev,
-           "Deregistration failed, client not detached.\n");
-       return err;
-   }
-
-   /* Free the memory */
-   kfree(data);
-   return 0;
-}
-
-static int __init sensors_ds2482_init(void)
-{
-   return i2c_add_driver(&ds2482_driver);
-}
-
-static void __exit sensors_ds2482_exit(void)
-{
-   i2c_del_driver(&ds2482_driver);
-}
-
-
-MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
-MODULE_DESCRIPTION("DS2482 driver");
-MODULE_LICENSE("GPL");
-
-module_init(sensors_ds2482_init);
-module_exit(sensors_ds2482_exit);
-                    --
-                            1
-#endif
+#endif /* 0 */
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
-
-static int DS2482_reset( const struct parsedname * pn ) ;
-static int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
-static void DS2482_setroutines( struct interface_routines * f ) ;
-static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
-static int CreateChannels( int num, struct connection_in * in ) ;
-
-#define	OneBit	0xFF
-#define ZeroBit 0xC0
-
-/* Device-specific functions */
-static void DS2482_setroutines( struct interface_routines * const f ) {
-    f->detect        = DS2482_detect         ;
-    f->reset         = DS2482_reset          ;
-    f->next_both     = DS2482_next_both      ;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
-    f->PowerByte     = BUS_PowerByte_low     ;
-//    f->ProgramPulse = ;
-    f->sendback_data = BUS_sendback_data_low ;
-    f->sendback_bits = DS2482_sendback_bits  ;
-    f->select        = BUS_select_low        ;
-    f->reconnect     = NULL                  ;
-    f->close         = COM_close             ;
-}
 
 /* Open a DS2482 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
@@ -640,13 +626,9 @@ int DS2482_detect( struct connection_in * in ) {
     /* clycle though the possible addresses */
     for ( i=0 ; i<8 ; ++i ) {
         /* set the candidate address */
-#ifdef I2C_SLAVE
         if ( ioctl(in->connin.i2c.fd,I2C_SLAVE,test_address[i]) < 0 ) {
-            ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ; 
-	}
-#else
-	return -ENODEV ;
-#endif
+            ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ;
+        }
     }
     /* fellthough, no device found */
     return -ENODEV ;
@@ -671,22 +653,17 @@ static int DS2482_reset( const struct parsedname * const pn ) {
     unsigned char resetbyte = 0xF0 ;
     unsigned char c;
     struct termios term;
-    int fd = pn->in->fd ;
+    int fd = pn->in->connin.i2c.fd ;
     int ret ;
 
-    if(fd < 0) return -1;
+    if( fd < 0 ) return -1;
 
-    /* 8 data bits */
-    tcgetattr(fd, &term);
-    term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
-    cfsetospeed(&term, B9600);
-    cfsetispeed(&term, B9600);
-    if (tcsetattr(fd, TCSANOW, &term ) < 0 ) {
-        STAT_ADD1_BUS(BUS_tcsetattr_errors,pn->in);
-        return -EIO ;
-    }
+    if( i2c_smbus_write_byte( fd,  DS2482_CMD_1WIRE_RESET ) ) return -1 ;
+    
     if ( (ret=DS2482_send_and_get(&resetbyte,&c,1,pn)) ) return ret ;
 
+    UT_delay_us(1250) ; // rstl+rsth+.25 usec
+    
     switch(c) {
     case 0:
         STAT_ADD1_BUS( BUS_short_errors, pn->in ) ;
@@ -746,25 +723,6 @@ int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits
     size_t l=0 ;
     size_t i=0 ;
     size_t start = 0 ;
-
-    if ( length==0 ) return 0 ;
-
-    /* Split into smaller packets? */
-    do {
-        d[l++] = outbits[i++] ? OneBit : ZeroBit ;
-        if ( l==DS2482_MAX_BITS || i==length ) {
-            /* Communication with DS2482 routine */
-            if ( (ret= DS2482_send_and_get(d,&inbits[start],l,pn)) ) {
-                STAT_ADD1_BUS( BUS_bit_errors, pn->in ) ;
-                return ret ;
-            }
-            l = 0 ;
-            start = i ;
-        }
-    } while ( i<length ) ;
-            
-    /* Decode Bits */
-    for ( i=0 ; i<length ; ++i ) inbits[i] &= 0x01 ;
 
     return 0 ;
 }
@@ -891,94 +849,20 @@ static int CreateChannels( int num, struct connection_in * in ) {
     pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
 #endif /* OW_MT */
     for ( i=1 ; i<num ; ++i ) {
-        struct connection_in * added = NewIn() ;
+        struct connection_in * added = NewIn(in) ;
         if ( added==NULL ) return -ENOMEM ;
         added->connin.i2c.head = in ;
         added->connin.i2c.index = i ;
-        added->connin.i2c.channels = num ;
-        added->Adapter = adapter_DS2482_800 ; /* OWFS assigned value */
         added->adapter_name = name[i+1] ;
-        added->busmode = bus_i2c ;
     }
     return 0 ;
 }
 
-static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) {
-    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
-    int bit_number ;
-    int last_zero = -1 ;
-    unsigned char bits[3] ;
-    int ret ;
-
-    // initialize for search
-    // if the last call was not the last one
-    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
-    if ( ds->LastDevice ) return -ENODEV ;
-
-    /* Appropriate search command */
-    if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
-      // loop to do the search
-    for ( bit_number=0 ;; ++bit_number ) {
-        bits[1] = bits[2] = 0xFF ;
-        if ( bit_number==0 ) { /* First bit */
-            /* get two bits (AND'ed bit and AND'ed complement) */
-            if ( (ret=BUS_sendback_bits(&bits[1],&bits[1],2,pn)) ) return ret ;
-        } else {
-            bits[0] = search_direction ;
-            if ( bit_number<64 ) {
-                /* Send chosen bit path, then check match on next two */
-                if ( (ret=BUS_sendback_bits(bits,bits,3,pn)) ) return ret ;
-            } else { /* last bit */
-                if ( (ret=BUS_sendback_bits(bits,bits,1,pn)) ) return ret ;
-                break ;
-            }
-        }
-        if ( bits[1] ) {
-            if ( bits[2] ) { /* 1,1 */
-                break ; /* No devices respond */
-            } else { /* 1,0 */
-                search_direction = 1;  // bit write value for search
-            }
-        } else if ( bits[2] ) { /* 0,1 */
-            search_direction = 0;  // bit write value for search
-        } else if (bit_number > ds->LastDiscrepancy) {  /* 0,0 looking for last discrepancy in this new branch */
-            // Past branch, select zeros for now
-            search_direction = 0 ;
-            last_zero = bit_number;
-        } else if (bit_number == ds->LastDiscrepancy) {  /* 0,0 -- new branch */
-            // at branch (again), select 1 this time
-            search_direction = 1 ; // if equal to last pick 1, if not then pick 0
-        } else  if (UT_getbit(ds->sn,bit_number)) { /* 0,0 -- old news, use previous "1" bit */
-            // this discrepancy is before the Last Discrepancy
-            search_direction = 1 ;
-        } else {  /* 0,0 -- old news, use previous "0" bit */
-            // this discrepancy is before the Last Discrepancy
-            search_direction = 0 ;
-            last_zero = bit_number;
-        }
-        // check for Last discrepancy in family
-        //if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
-        UT_setbit(ds->sn,bit_number,search_direction) ;
-
-        // serial number search direction write bit
-        //if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
-    } // loop until through serial number bits
-
-    if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
-      /* A minor "error" and should perhaps only return -1 to avoid
-      * reconnect */
-        return -EIO ;
-    }
-    if((ds->sn[0] & 0x7F) == 0x04) {
-        /* We found a DS1994/DS2404 which require longer delays */
-        pn->in->ds2404_compliance = 1 ;
-    }
-    // if the search was successful then
-
-    ds->LastDiscrepancy = last_zero;
-//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
-    ds->LastDevice = (last_zero < 0);
-    LEVEL_DEBUG("DS2482_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
+static int DS2482_triple( unsigned char * bits, int direction, const struct parsedname * pn ) {
+    /* 3 bits in bits */
+    (void) bits ;
+    (void) pn ;
+    UT_delay_us(225) ; // 250usec = 3*Tslot
     return 0 ;
 }
 

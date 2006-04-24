@@ -315,7 +315,7 @@ void FreeIn( void ) ;
 void FreeOut( void ) ;
 void DelIn( struct connection_in * in ) ;
 
-struct connection_in * NewIn( void ) ;
+struct connection_in * NewIn( const struct connection_in * in ) ;
 struct connection_out * NewOut( void ) ;
 struct connection_in *find_connection_in(int nr);
 
