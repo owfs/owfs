@@ -28,6 +28,10 @@ static int DS2482_sendback_bits( const unsigned char * outbits , unsigned char *
 static void DS2482_setroutines( struct interface_routines * f ) ;
 static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
 static int CreateChannels( int num, struct connection_in * in ) ;
+static int DS2482_channel_select( int num, const struct parsedname * pn ) ;
+
+#define I2C(pn)     ((pn)->in->connin.i2c)
+#define SELECT_CHANNEL(pn)  if ( I2C(pn).channels>1 && I2C(I2C((pn)).head).current!=I2C(pn).index) DS2482_channel_select(I2C(pn).index,pn) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -866,3 +870,8 @@ static int DS2482_triple( unsigned char * bits, int direction, const struct pars
     return 0 ;
 }
 
+
+static int DS2482_channel_select( int num, const struct parsedname * pn ) {
+
+    return 0 ;
+}

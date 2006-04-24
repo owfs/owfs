@@ -239,25 +239,27 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
 
 static int FS_write_seek(const char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn) {
     int ret ;
+    struct parsedname pn2 ;
 
-    pn->in = in ;
-    if ( TestConnection(pn) ) {
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
+    pn2.in = in ;
+    if ( TestConnection(&pn2) ) {
     ret = -ECONNABORTED ;
-    } else if ( (get_busmode(pn->in) == bus_remote) ) {
-        ret = ServerWrite( buf, size, offset, pn ) ;
+    } else if ( (get_busmode(in) == bus_remote) ) {
+        ret = ServerWrite( buf, size, offset, &pn2 ) ;
     } else {
         /* if readonly exit */
         if ( readonly ) return -EROFS ;
 
-        if ( (ret=LockGet(pn))==0 ) {
-            ret = FS_real_write( buf, size, offset, pn ) ;
-            LockRelease(pn) ;
+        if ( (ret=LockGet(&pn2))==0 ) {
+            ret = FS_real_write( buf, size, offset, &pn2 ) ;
+            LockRelease(&pn2) ;
         }
     }
     /* If sucessfully writing a device, we know it exists on a specific bus.
     * Update the cache content */
-    if( (pn->type==pn_real) && (ret == 0) ) {
-        Cache_Add_Device(pn->in->index, pn);
+    if( (pn2.type==pn_real) && (ret == 0) ) {
+        Cache_Add_Device(in->index, &pn2);
     }
 
     if ( ret && in->next ) return FS_write_seek(buf,size,offset,in->next,pn) ;

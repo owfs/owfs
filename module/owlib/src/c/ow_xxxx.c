@@ -47,7 +47,7 @@ $Id$
 #include <sys/time.h>
 
 /* ------- Prototypes ------------ */
-static int CheckPresence_low( struct connection_in * in, const struct parsedname * const pn ) ;
+static int CheckPresence_low( struct connection_in * in, const struct parsedname * pn ) ;
 
 /* ------- Functions ------------ */
 
@@ -214,19 +214,21 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
 
 #else /* OW_MT */
 
-static int CheckPresence_low( struct connection_in * in, const struct parsedname * const pn ) {
+static int CheckPresence_low( struct connection_in * in, const struct parsedname * pn ) {
     int ret = 0 ;
+    struct parsedname pn2 ;
 
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
     //printf("CheckPresence_low:\n");
-    pn->in = in ;
-    if ( TestConnection(pn) ) { // reconnect successful?
+    pn2.in = in ;
+    if ( TestConnection(&pn2) ) { // reconnect successful?
     ret = -ECONNABORTED ;
-    } else if(get_busmode(pn->in) == bus_remote) {
+    } else if(get_busmode(in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
-        ret = ServerPresence(pn) ;
+        ret = ServerPresence(&pn2) ;
         if(ret >= 0) {
             /* Device was found on this in-device, return it's index */
-            ret = pn->in->index;
+            ret = in->index;
         } else {
             ret = -1;
         }
@@ -234,12 +236,12 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
-        BUSLOCK(pn);
-            ret = BUS_normalverify(pn) ;
-        BUSUNLOCK(pn);
+        BUSLOCK(&pn2);
+            ret = BUS_normalverify(&pn2) ;
+        BUSUNLOCK(&pn2);
         if(ret == 0) {
             /* Device was found on this in-device, return it's index */
-            ret = pn->in->index;
+            ret = in->index;
         } else {
             ret = -1;
         }

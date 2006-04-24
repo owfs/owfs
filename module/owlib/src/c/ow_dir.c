@@ -355,24 +355,26 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struc
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) {
     int ret = 0 ;
+    struct parsedname pn2 ;
 
-    pn->in = in ;
-    if ( TestConnection(pn) ) { // reconnect ok?
+    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
+    pn2.in = in ;
+    if ( TestConnection(&pn2) ) { // reconnect ok?
     ret = -ECONNABORTED ;
-    } else if ( get_busmode(pn->in) == bus_remote ) { /* is this a remote bus? */
+    } else if ( get_busmode(in) == bus_remote ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
-        ret = ServerDir(dirfunc,pn,flags) ;
+        ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */
-        if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+        if ( pn2.state & pn_alarm ) {  /* root or branch directory -- alarm state */
             //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
-            ret = FS_alarmdir(dirfunc,pn) ;
+            ret = FS_alarmdir(dirfunc,&pn2) ;
         } else {
-            if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(pn) || timeout.dir==0 ) {
+            if ( (pn2.state&pn_uncached) || !IsLocalCacheEnabled(&pn2) || timeout.dir==0 ) {
                 //printf("FS_dir_seek: call FS_realdir bus %d\n", pn->in->index);
-                ret = FS_realdir( dirfunc, pn, flags ) ;
+                ret = FS_realdir( dirfunc, &pn2, flags ) ;
             } else {
                 //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
-                ret = FS_cache2real( dirfunc, pn, flags ) ;
+                ret = FS_cache2real( dirfunc, &pn2, flags ) ;
             }
         }
     }
