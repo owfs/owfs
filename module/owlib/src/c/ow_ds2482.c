@@ -637,10 +637,13 @@ int DS2482_detect( struct connection_in * in ) {
     /* clycle though the possible addresses */
     for ( i=0 ; i<8 ; ++i ) {
         /* set the candidate address */
+#ifdef I2C_SLAVE
         if ( ioctl(in->connin.i2c.fd,I2C_SLAVE,test_address[i]) < 0 ) {
-            ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ;
-            return -ENODEV ;
-        }
+            ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ; 
+	}
+#else
+	return -ENODEV ;
+#endif
     }
     /* fellthough, no device found */
     return -ENODEV ;

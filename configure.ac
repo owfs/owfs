@@ -626,8 +626,8 @@ if test "${ENABLE_OWFS}" != "false" ; then
 
     save_CPPFLAGS="$CPPFLAGS"
     save_LDFLAGS="$LDFLAGS"
-    #FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I${fuse_include_path}"
-    FUSE_FLAGS="-I${fuse_include_path}"
+#    FUSE_FLAGS="-I${fuse_include_path}"
+    FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I${fuse_include_path}"
     FUSE_LIBS="-L${fuse_lib_path}"
     LD_EXTRALIBS="-Wl,--rpath -Wl,${fuse_lib_path}"
     CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
@@ -672,7 +672,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	    # check for a supported FUSE_MAJOR_VERSION.
 	    AC_MSG_CHECKING([For supported FUSE API version])
 	    AC_COMPILE_IFELSE([
-	    AC_LANG_PROGRAM([[#include "fuse.h"]],
+	    AC_LANG_PROGRAM([[#include <fuse.h>]],
 	    [[
 	    #ifndef FUSE_MAJOR_VERSION
 		#error "FUSE_MAJOR_VERSION not defined"
@@ -690,12 +690,12 @@ if test "${ENABLE_OWFS}" != "false" ; then
     fi
 
 
-	# Use newest FUSE API if version is newer than 2.2
+    # Use newest FUSE API if version is newer than 2.2
     if test "${ENABLE_OWFS}" != "false"; then
 	    # check for a supported FUSE_MAJOR_VERSION.
 	    AC_MSG_CHECKING([For FUSE version ])
 	    AC_COMPILE_IFELSE([
-	    AC_LANG_PROGRAM([[#include "fuse.h"]],
+	    AC_LANG_PROGRAM([[#include <fuse.h>]],
 	    [[
 	    #if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2))
 		/* Fuse > 2.2 is ok */
