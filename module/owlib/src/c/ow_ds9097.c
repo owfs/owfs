@@ -222,11 +222,12 @@ static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * b
 #if 1
                 /* I can't imagine that 5 seconds timeout is needed???
                 * Any comments Paul ? */
-                tv.tv_sec = 5;
-                tv.tv_usec = 0;
+                /* We make it 10 * standard since 10 bytes required for 1 bit */
+                tv.tv_sec = usec_read / 100000 ;
+                tv.tv_usec = usec_read % 100000;
 #else
-                tv.tv_sec = 0;
-                tv.tv_usec = 500000;  // 500ms
+                tv.tv_sec = usec_read / 1000000 ;
+                tv.tv_usec = usec_read % 1000000 ;
 #endif
                 /* Initialize readset */
                 FD_ZERO(&readset);

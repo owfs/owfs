@@ -739,8 +739,8 @@ static int DS2480_read(unsigned char * buf, const size_t size, const struct pars
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
-        tval.tv_sec = 1;
-        tval.tv_usec = 0;
+        tval.tv_sec = usec_read / 1000000 ;
+        tval.tv_usec = usec_read % 1000000 ;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't

@@ -206,6 +206,9 @@ enum adapter_type {
     adapter_DS2482_800    ,
 } ;
 
+extern unsigned long int usec_read ; /* how long to waait for serial reads */
+
+
 extern int LINK_mode ; /* flag to use LINKs in ascii mode */
 enum e_reconnect {
     reconnect_ok = 0 ,

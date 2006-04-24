@@ -60,6 +60,8 @@ const struct option owopts_long[] = {
     {"no-portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
     {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
+    {"msec_read",  required_argument,NULL,268}, /* Time out for serial reads */
+    {"msec-read",  required_argument,NULL,268}, /* Time out for serial reads */
     {"link", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
@@ -70,7 +72,7 @@ const struct option owopts_long[] = {
 /* Globals */
 char * pid_file = NULL ;
 unsigned int nr_adapters = 0;
-
+unsigned long int usec_read = 500000 ;
 static void ow_help( enum opt_program op ) {
     printf(
     "1-wire access programs\n"
@@ -157,7 +159,8 @@ static void ow_morehelp( enum opt_program op ) {
     "     --error_print               |Where information/error messages are printed\n"
     "                                 |  0-mixed(default) 1-syslog 2-stderr 3-suppressed\n"
     "     --error_level               |What kind of information is printed\n"
-    "                                 |  0-fatal 1-connections 2-calls 3-data\n"
+    "                                 |  0-fatal 1-connections 2-calls 3-data 4-detail\n"    
+    "     --msec_read                 | millisecond timeout for reads on bus (serial and i2c)\n"
     "  -V --version                   |Program and library versions\n"
     ) ;
     switch(op) {
@@ -299,6 +302,9 @@ int owopt( const int c , const char * const arg, enum opt_program op ) {
     case 267: /* fuse_open_opt, handled in owfs.c */
       return 0 ;
     case 268:
+        usec_read = atol(arg)*1000 ; /* entered in msec, stored as usec */
+        if (usec_read < 500000) usec_read = 500000 ;
+        return 0 ;
     case 269:
     case 0:
         return 0 ;

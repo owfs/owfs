@@ -14,8 +14,8 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static struct timeval tvlong = { 1, 0, } ;
-static struct timeval tvshort = { 0, 1000000, } ;
+static struct timeval tvnetfirst = { 1, 0, } ;
+static struct timeval tvnet = { 0, 100000, } ;
 
 int LINK_mode ; /* flag to use LINKs in ascii mode */
 
@@ -247,8 +247,8 @@ static int LINK_read_low(unsigned char * buf, const size_t size, const struct pa
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
-        tval.tv_sec = 1;
-        tval.tv_usec = 0;
+        tval.tv_sec = usec_read / 1000000 ;
+        tval.tv_usec = usec_read % 1000000 ;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't
@@ -305,16 +305,13 @@ static int LINK_read_low(unsigned char * buf, const size_t size, const struct pa
    Note that buffer length should 1 exta char long for ethernet reads
 */
 static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) {
-//    return readn( pn->in->fd, buf, size, &tvshort ) ;
     if ( pn->in->Adapter !=adapter_LINK_E ) {
         return LINK_read_low( buf, size, pn ) ;
-    } else if ( readn( pn->in->fd, buf, size+ExtraEbyte, &tvshort ) != size+ExtraEbyte ) { /* NOTE NOTE extra byte length for buffer */
+    } else if ( readn( pn->in->fd, buf, size+ExtraEbyte, &tvnet ) != size+ExtraEbyte ) { /* NOTE NOTE extra byte length for buffer */
         LEVEL_CONNECT("LINK_read (ethernet) error\n") ;
         return -EIO ;
-    } else {
-//        printf("LINK_read %.*s\n",size,buf) ;
-        return 0 ;
     }
+    return 0 ;
 }
 //
 // Write a string to the serial port
@@ -422,7 +419,7 @@ static int LINK_CR( const struct parsedname * pn ) {
 /* read the telnet-formatted start of a response line from the Link-Hub-E */
 static int LINKE_preamble( const struct parsedname * pn ) {
     unsigned char byte[6] ;
-    if ( readn( pn->in->fd, byte, 6, &tvlong )!=6  ) return -EIO ;
+    if ( readn( pn->in->fd, byte, 6, &tvnetfirst )!=6  ) return -EIO ;
     LEVEL_CONNECT("Good preamble\n") ;
     return 0 ;
 }
