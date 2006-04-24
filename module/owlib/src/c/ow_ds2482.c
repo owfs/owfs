@@ -16,8 +16,6 @@ $Id$
 
 // Special for i2c work
 #include <sys/ioctl.h>
-// Header taken from lm-sensors code
-#include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
 
@@ -26,6 +24,8 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
 /* Stolen shamelessly from Ben Gardners kernel module */
 
 #if 0
+// Header taken from lm-sensors code
+#include "i2c-dev.h"
 /**
  * ds2482.c - provides i2c to w1-master bridge(s)
  * Copyright (C) 2005  Ben Gardner <bgardner@wabtec.com>
