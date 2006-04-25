@@ -220,10 +220,6 @@ extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_nfsd, opt_perl, opt_python, opt_php, opt_tcl, } ;
 int owopt( const int c , const char * const arg, enum opt_program op ) ;
 
-/* PID file nsme */
-extern pid_t pid_num ;
-extern char * pid_file ;
-
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
  * reading the reply. Any positive value should work and 16 is probably low
@@ -542,6 +538,7 @@ FLOAT fromTempGap( FLOAT T, const struct parsedname * pn) ;
 const char *TemperatureScaleName(enum temp_type t) ;
 
 extern int cacheavailable ; /* is caching available */
+extern int delay_background ;  // special flag for owfs-- fuse does the backgrounding
 extern int background ; /* operate in background mode */
 
 extern void set_signal_handlers( void (*exit_handler)(int errcode) ) ;

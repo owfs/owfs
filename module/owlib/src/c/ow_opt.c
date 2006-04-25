@@ -14,6 +14,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_pid.h"
 
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
@@ -70,8 +71,6 @@ const struct option owopts_long[] = {
 } ;
 
 /* Globals */
-char * pid_file = NULL ;
-unsigned int nr_adapters = 0;
 unsigned long int usec_read = 500000 ;
 static void ow_help( enum opt_program op ) {
     printf(

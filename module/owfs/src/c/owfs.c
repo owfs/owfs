@@ -101,14 +101,11 @@ int main(int argc, char *argv[]) {
     LEVEL_CONNECT("fuse mount point: %s\n",fuse_mountpoint) ;
     set_signal_handlers(exit_handler);
 
-   /* Set up adapters */
-    {
-        int temp_background = background ; /* store "background" temporarily */
-        background = 0 ; /* call LibStart in foreground, fuse_main will put in backgound */
-        if ( LibStart() ) ow_exit(1) ;
-        background = temp_background ; /* restore "background" state */
-    }
-    //printf("Lib started\n");
+    /* Backgrounding done in fuse, not LibStart */
+    delay_background = 1 ;
+    
+    /* Set up adapters */
+    if ( LibStart() ) ow_exit(1) ;
 
 #ifdef OW_MT
     main_threadid = pthread_self() ;

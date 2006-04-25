@@ -84,8 +84,7 @@ owtcl_ObjCmdProc(Owtcl_Connect)
   }
 
   LibSetup();
-  background = 0 ;
-  pid_file = 0 ;
+  delay_background = 1 ;
 
   for (objix=1; objix<objc; objix++) {
     arg = Tcl_GetStringFromObj(objv[objix], &con_len);

@@ -17,6 +17,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "owfs.h"
+#include "ow_pid.h"
 
 /* There was a major change in the function prototypes at FUSE 2.2, we'll make a flag */
 #undef FUSE22PLUS
@@ -54,7 +55,9 @@ static int FS_release(const char *path, FUSEFLAG flags) ;
     #define CB_read FS_read
     #define CB_write FS_write
 #endif
-
+#if FUSE_VERSION > 22
+static void * FS_init( void ) ;
+#endif /* FUSE_VERSION > 22 */
     /* Change in statfs definition for newer FUSE versions */
 #ifdef FUSE1X
     static int FS_statfs(struct fuse_statfs *fst) ;
@@ -82,6 +85,9 @@ struct fuse_operations owfs_oper = {
     write:    CB_write,
     statfs:   FS_statfs,
     release:  FS_release,
+#if FUSE_VERSION > 22
+    init:     FS_init,
+#endif /* FUSE_VERSION > 22 */
 };
 
 /* ---------------------------------------------- */
@@ -107,6 +113,9 @@ static int FS_chown(const char *path, uid_t uid, gid_t gid ) {
 
 /* In theory, should handle file opening, but OWFS doesn't care. Device opened/closed with every read/write */
 static int FS_open(const char *path, FUSEFLAG flags) {
+#if FUSE_VERSION < 23
+    if ( !pid_created ) PIDstart() ;
+#endif /* FUSE_VERSION < 23 */
     LEVEL_CALL("OPEN path=%s\n", SAFESTRING(path));
     (void) flags ; return 0 ;
 }
@@ -180,4 +189,11 @@ int FS_statfs(struct fuse_statfs *fst) {
     return 0 ;
 }
 #endif /* FUSE1X */
+
+#if FUSE_VERSION > 22
+static void * FS_init( void ) {
+    PIDstart() ;
+    return NULL ;
+}
+#endif /* FUSE_VERSION > 22 */
 

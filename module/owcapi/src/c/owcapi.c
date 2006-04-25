@@ -79,7 +79,7 @@ int OW_init_args( int argc, char ** argv ) {
         ++optind ;
     }
 
-    background = 0 ; // Cannot enter background mode, since this is a called library
+    delay_background = 1 ; // Cannot enter background mode, since this is a called library
     if ( ret==0 ) ret = LibStart() ;
 
     if ( ret ) LibClose() ;

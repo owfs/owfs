@@ -30,8 +30,7 @@ char *version( ) {
 int init( const char * dev ) {
     int ret = 1 ; /* Good initialization */
     //    LibSetup() ; /* Done in %init section */
-    background = 0 ;
-    pid_file = 0 ;
+    delay_background = 1 ; // No backgrounding done
     if ( OWLIB_can_init_start() || OW_ArgGeneric(dev) || LibStart() ) ret = 0 ;
     OWLIB_can_init_end() ;
     return ret ; 

@@ -48,6 +48,7 @@ OWLIB_SOURCE = compat.c          \
                ow_iterate.c      \
                ow_lcd.c          \
                ow_parsename.c    \
+               ow_pid.c          \
                ow_name.c         \
                ow_read.c         \
                ow_reconnect.c    \

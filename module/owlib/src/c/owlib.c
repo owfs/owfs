@@ -12,8 +12,10 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_devices.h"
+#include "ow_pid.h"
 
 int now_background = 0 ;
+int delay_background = 0 ; // special flag set by owfs -- fuse backgrounds for us
 char * SimpleBusName = "None" ;
 
 /* All ow library setup */
@@ -124,15 +126,6 @@ static int my_daemon(int nochdir, int noclose) {
         chdir("/");
     }
 
-#if 0
-    if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        if (fd > 2)
-            close(fd);
-    }
-#else /* 0 */
     if(!noclose) {
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
@@ -142,17 +135,16 @@ static int my_daemon(int nochdir, int noclose) {
             return -1;
         }
     }
-#endif /* 0 */
     return 0;
 }
 #endif /* HAVE_DAEMON */
 
 #ifdef __UCLIBC__
-#ifdef OW_MT
+ #ifdef OW_MT
 extern char *__pthread_initial_thread_bos ;
 void __pthread_initialize(void) ;
-#endif
-#endif
+ #endif /* OW_MT */
+#endif /* __UCLIBC */
 
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart( void ) {
@@ -162,13 +154,13 @@ int LibStart( void ) {
 #ifdef __UCLIBC__
     /* First call to pthread should be done after daemon() in uClibc, so
      * I moved it here to avoid calling __pthread_initialize() */
-    if ( background ) {
+    if ( background && !delay_background ) {
         if(
  #ifdef HAVE_DAEMON
             daemon(1, 0)
- #else
+ #else /* HAVE_DAEMON */
             my_daemon(1, 0)
- #endif
+ #endif /* HAVE_DAEMON */
         ) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
@@ -194,7 +186,7 @@ int LibStart( void ) {
 #endif /* __UCLIBC__ */
 
     if ( indevice==NULL ) {
-    LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname) ;
+        LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname) ;
         BadAdapter_detect(NewIn(NULL)) ;
         return 1;
     }
@@ -252,36 +244,24 @@ int LibStart( void ) {
     Asystem.elements = indevices ;
 
 #ifndef __UCLIBC__
-    if ( background ) {
+    if ( background && !delay_background ) {
  #ifdef HAVE_DAEMON
         if(daemon(1, 0)) {
-            LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+            ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
-#else /* HAVE_DAEMON */
+ #else /* HAVE_DAEMON */
         if(my_daemon(1, 0)) {
             LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
             return 1 ;
         }
-#endif /* HAVE_DAEMON */
+ #endif /* HAVE_DAEMON */
         now_background = 1;
     }
 #endif /* __UCLIBC__ */
 
     /* store the PID */
-    pid_num = getpid() ;
-
-    if (pid_file) {
-        FILE * pid = fopen(  pid_file, "w+" ) ;
-        if ( pid == NULL ) {
-            LEVEL_CONNECT("Cannot open PID file: %s Error=%s\n",pid_file,strerror(errno) )
-            free( pid_file ) ;
-            pid_file = NULL ;
-            return 1 ;
-        }
-        fprintf(pid,"%lu",(long unsigned int)pid_num ) ;
-        fclose(pid) ;
-    }
+    if ( !delay_background ) PIDstart() ;
 
     /* Use first bus for http bus name */
     SimpleBusName = indevice->name ;
@@ -292,11 +272,7 @@ int LibStart( void ) {
 /* All ow library closeup */
 void LibClose( void ) {
     LEVEL_CALL("Starting Library cleanup\n");
-    if ( pid_file ) {
-        if ( unlink( pid_file ) ) LEVEL_CONNECT("Cannot remove PID file: %s error=%s\n",pid_file,strerror(errno))
-        free( pid_file ) ;
-        pid_file = NULL ;
-    }
+    PIDstop() ;
 #ifdef OW_CACHE
     LEVEL_CALL("Closing Cache\n");
     Cache_Close() ;
