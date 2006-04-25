@@ -1,0 +1,42 @@
+[
+.I \-C
+|
+.I \-F
+|
+.I \-K
+|
+.I \-R
+] [
+.I \-r
+|
+.I \- w
+] [
+.I \-f
+f[.]i[[.]c]
+] [
+.I \-t
+timeout ] [
+.I \-\-background
+|
+.I \-\-foreground
+] [
+.I \-\-link
+|
+.I \-\-nolink
+] [
+.I \-P \-\-pid-file
+filename
+] [
+.I \-\-error_print
+0|1|2|3
+] [
+.I \-\-error_level
+0|1|2|3|9 ] [
+.I \-\-msec_read
+milliseconds
+.I \-d
+serialport |
+.I \-u
+|
+.I \-s
+[host:]port

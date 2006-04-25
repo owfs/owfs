@@ -1,7 +1,7 @@
 .SS address
 .I read-only, ascii
 .br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
+The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
 .SS crc8
 .I read-only, ascii
 .br
@@ -15,7 +15,7 @@ of device. Given as upper case hexidecimal digits (0-9A-F).
 .SS id
 .I read-only, ascii
 .br
-The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
 .SS present
 .I read-only, yes-no
 .br

@@ -1,0 +1,19 @@
+[
+.I \-C
+|
+.I \-F
+|
+.I \-K
+|
+.I \-R
+] [
+.I \-r
+|
+.I \- w
+]
+.I \-d
+serialport |
+.I \-u
+|
+.I \-s
+[host:]port
