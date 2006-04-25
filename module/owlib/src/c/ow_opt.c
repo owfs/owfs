@@ -380,7 +380,12 @@ int OW_ArgUSB( const char * arg ) {
     if ( arg == NULL ) {
         in->connin.usb.usb_nr = 1 ;
     } else if ( strcasecmp(arg,"all") == 0 ) {
-        int n = DS9490_enumerate() ;
+        int n ;
+#ifdef OW_USB
+        n = DS9490_enumerate() ;
+#else
+        n = 0 ;
+#endif /* OW_USB */
         LEVEL_CONNECT("All USB adapters requested, %d found.\n",n) ;
         if ( n > 1 ) {
             int i ;
