@@ -268,7 +268,7 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
         /* We have to allow any bus-number here right now. We receive
          * paths like /bus.4 from a remote owserver, and we have to trust
          * this result. */
-
+#if 0
         // Let's copy the busless path now.
         pn->path_busless = pn->path + strlen(pn->path) + 1 ;
         if ( (found = strstr(pn->path, "/bus.")) ) found = pn->path ;
@@ -279,7 +279,23 @@ static int Parse_Bus( char * pathnow, struct parsedname * pn ) {
         } else {
             pn->path_busless[length] = '\0' ;
         }
-        //printf("PARSENAME test path=%s, path_bussless=%s\n",pn->path, pn->path_busless ) ;
+#else
+	pn->path_busless = pn->path + strlen(pn->path) + 1 ;
+
+	if ( !(found = strstr(pn->path, "/bus.")) ) {
+	  length = pn->path_busless - pn->path - 1;
+	  strncpy( pn->path_busless, pn->path, length ) ;
+	} else {
+	  length = found - pn->path ;
+	  strncpy( pn->path_busless, pn->path, length ) ;
+	  if ( (found = strchr( found+1, '/' )) ) {
+	    strcpy( &(pn->path_busless[length]), found ) ;
+	  } else {
+	    pn->path_busless[length] = '\0' ;
+	  }
+	}
+#endif
+        LEVEL_DEBUG("PARSENAME test path=%s, path_bussless=%s\n",pn->path, pn->path_busless ) ;
     }
     return 0 ;
 }

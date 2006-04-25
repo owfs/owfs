@@ -174,7 +174,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     sm.offset = offset ;
 
     if( (pn->state & pn_bus) && pn->path_busless ) {
-        //printf("use path_bussless = %s\n", pn->path_busless);
+        //printf("use path_busless = %s\n", pn->path_busless);
         pathnow = pn->path_busless ;
     } else {
         //printf("use path = %s\n", pn->path);
@@ -220,11 +220,14 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.type = msg_dir ;
 
     sm.sg = SemiGlobal ;
-    if((pn->state & pn_bus) && FS_RemoteBus(pn)) {
+    //if((pn->state & pn_bus) && FS_RemoteBus(pn)) {
+    if((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote)) {
         sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
-        //LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, SAFESTRING(pn->path))
+        LEVEL_DEBUG("ServerDir: path_busless=%p [%s]\n", pn->path_busless, SAFESTRING(pn->path_busless))
+	// if pn_bus is set, then path_busless is automatically set too in Parse_Bus().
         pathnow = pn->path_busless ;
     } else {
+        LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, SAFESTRING(pn->path))
         pathnow = pn->path;
     }
 
