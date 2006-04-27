@@ -45,6 +45,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_system.h"
 #include "ow_pid.h"
+#include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
@@ -204,16 +205,19 @@ static int FS_pidfile(char *buf, const size_t size, const off_t offset , const s
 }
 
 static int FS_pid(unsigned int * u, const struct parsedname * pn) {
+    (void) pn ;
     u[0] = getpid() ;
     return 0 ;
 }
 
 static int FS_in(unsigned int * u, const struct parsedname * pn) {
+    (void) pn ;
     u[0] = indevices ;
     return 0 ;
 }
 
 static int FS_out(unsigned int * u, const struct parsedname * pn) {
+    (void) pn ;
     u[0] = outdevices ;
     return 0 ;
 }
