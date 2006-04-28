@@ -26,12 +26,9 @@ static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * b
 static int DS2482_reset( const struct parsedname * pn ) ;
 static int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
 static void DS2482_setroutines( struct interface_routines * f ) ;
-static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
-static int CreateChannels( int num, struct connection_in * in ) ;
-static int DS2482_channel_select( int num, const struct parsedname * pn ) ;
-
-#define I2C(pn)     ((pn)->in->connin.i2c)
-#define SELECT_CHANNEL(pn)  if ( I2C(pn).channels>1 && I2C(I2C((pn)).head).current!=I2C(pn).index) DS2482_channel_select(I2C(pn).index,pn) ;
+static int HeadChannel( struct connection_in * in ) ;
+static int CreateChannels( struct connection_in * in ) ;
+static int DS2482_channel_select( const struct parsedname * pn ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -65,18 +62,6 @@ static int DS2482_channel_select( int num, const struct parsedname * pn ) ;
 #define DS2482_REG_CFG_SPU     0x04
 #define DS2482_REG_CFG_PPM     0x02
 #define DS2482_REG_CFG_APU     0x01
-
-
-/**
- * Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
- * To set the channel, write the value at the index of the channel.
- * Read and compare against the corresponding value to verify the change.
- */
-static const unsigned char ds2482_chan_wr[8] =
-{ 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
-static const unsigned char ds2482_chan_rd[8] =
-{ 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
-
 
 /**
  * Status Register bit definitions (read only)
@@ -654,66 +639,28 @@ if (!i2c_check_functionality(adapter,
 /* DS2482 Reset -- A little different from DS2480B */
 // return 1 shorted, 0 ok, <0 error
 static int DS2482_reset( const struct parsedname * const pn ) {
-    unsigned char resetbyte = 0xF0 ;
     unsigned char c;
-    struct termios term;
     int fd = pn->in->connin.i2c.fd ;
-    int ret ;
 
     if( fd < 0 ) return -1;
 
+    /* write the RESET code */
     if( i2c_smbus_write_byte( fd,  DS2482_CMD_1WIRE_RESET ) ) return -1 ;
     
-    if ( (ret=DS2482_send_and_get(&resetbyte,&c,1,pn)) ) return ret ;
-
+    /* wait */
     UT_delay_us(1250) ; // rstl+rsth+.25 usec
+    /* read status */
+    c = (unsigned char) i2c_smbus_read_byte( fd ) ;
+
+    /* test if we waited long enough */
+    if ( c & 0x01 ) {
+        UT_delay_us(250) ; // rstl+rsth+.25 usec
+        c = (unsigned char) i2c_smbus_read_byte( fd ) ;
+    }
+
+    pn->in->AnyDevices = UT_getbit(c,1) ;
     
-    switch(c) {
-    case 0:
-        STAT_ADD1_BUS( BUS_short_errors, pn->in ) ;
-        LEVEL_CONNECT("1-wire bus short circuit.\n")
-        ret = 1 ; // short circuit
-        /* fall through */
-    case 0xF0:
-        pn->in->AnyDevices = 0 ;
-        break ;
-    default:
-        pn->in->AnyDevices = 1 ;
-        pn->in->ProgramAvailable = 0 ; /* from digitemp docs */
-        if(pn->in->ds2404_compliance) {
-            // extra delay for alarming DS1994/DS2404 compliance
-            UT_delay(5);
-        }
-    }
-
-    /* Reset all settings */
-    term.c_lflag = 0;
-    term.c_iflag = 0;
-    term.c_oflag = 0;
-
-    /* 1 byte at a time, no timer */
-    term.c_cc[VMIN] = 1;
-    term.c_cc[VTIME] = 0;
-
-    /* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-    term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
-
-#ifndef B115200
-    /* MacOSX support max 38400 in termios.h ? */
-    cfsetispeed(&term, B38400);       /* Set input speed to 38.4k    */
-    cfsetospeed(&term, B38400);       /* Set output speed to 38.4k   */
-#else
-    cfsetispeed(&term, B115200);       /* Set input speed to 115.2k    */
-    cfsetospeed(&term, B115200);       /* Set output speed to 115.2k   */
-#endif
-
-    if(tcsetattr(fd, TCSANOW, &term) < 0 ) {
-        STAT_ADD1_BUS(BUS_tcsetattr_errors,pn->in);
-        return -EFAULT ;
-    }
-    /* Flush the input and output buffers */
-    COM_flush(pn) ;
-    return ret ;
+    return 0 ;
 }
 
 /* Symmetric */
@@ -833,31 +780,46 @@ static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * b
     return 0 ;
 }
 
-/* create more channels,
-   inserts in connection_in chain
-   "in" points to  first (head) channel
-   called even if n==1
-   NOTE: coded assuming num = 1 or 8 only
- */
-static int CreateChannels( int num, struct connection_in * in ) {
-    int i ;
-    char * name[] = { "DS2482-100", "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)", "DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)", "DS2482-800(7)", } ;
+static int HeadChannel( struct connection_in * in ) {
+    struct parsedname pn ;
+    in->connin.i2c.channels = 1 ;
+    in->connin.i2c.current = 0 ;
     in->connin.i2c.head = in ;
-    in->connin.i2c.index = 0 ;
-    in->connin.i2c.channels = num ;
-    in->connin.i2c.current = num ; // out-of-bounds value to force setting */
-    in->Adapter = num==1 ? adapter_DS2482_100 : adapter_DS2482_800 ; /* OWFS assigned value */
-    in->adapter_name = num==1 ? name[0]:name[1] ;
-    in->busmode = bus_i2c ;
+    in->adapter_name = "DS2482-100" ;
+    DS2482_setroutines( & (in->iroutines) ) ;
 #ifdef OW_MT
     pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
 #endif /* OW_MT */
-    for ( i=1 ; i<num ; ++i ) {
+    in->busmode = bus_i2c ;
+    in->Adapter = adapter_DS2482_100 ;
+
+    /* Not intentionally put the wrong index */
+    in->connin.i2c.index = 1 ;
+    pn.in = in ;
+    if ( DS2482_channel_select(&pn) ) { /* Couldn't switch */
+        in->connin.i2c.index = 0 ; /* restore correct value */
+        return 0 ; /* happy as DS2482-100 */
+    }
+    /* Must be a DS2482-800 */
+    in->connin.i2c.channels = 8 ;
+    in->Adapter = adapter_DS2482_800 ;
+    return CreateChannels(in) ;
+}
+        
+/* create more channels,
+   inserts in connection_in chain
+   "in" points to  first (head) channel
+   called only for DS12482-800
+   NOTE: coded assuming num = 1 or 8 only
+ */
+static int CreateChannels( struct connection_in * in ) {
+    int i ;
+    char * name[] = { "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)", "DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)", "DS2482-800(7)", } ;
+    for ( i=0 ; i<8 ; ++i ) {
         struct connection_in * added = NewIn(in) ;
         if ( added==NULL ) return -ENOMEM ;
-        added->connin.i2c.head = in ;
         added->connin.i2c.index = i ;
-        added->adapter_name = name[i+1] ;
+        added->adapter_name = name[i] ;
     }
     return 0 ;
 }
@@ -870,8 +832,26 @@ static int DS2482_triple( unsigned char * bits, int direction, const struct pars
     return 0 ;
 }
 
+static int DS2482_channel_select( const struct parsedname * pn ) {
+    struct connection_in * head = pn->in->connin.i2c.head ;
+    int chan = pn->in->connin.i2c.index ;
+    int fd = pn->in->connin.i2c.fd ;
+    /**
+     * Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
+     * To set the channel, write the value at the index of the channel.
+     * Read and compare against the corresponding value to verify the change.
+     */
+    static const unsigned char W_chan[8] =
+    { 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
+    static const unsigned char R_chan[8] =
+    { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
-static int DS2482_channel_select( int num, const struct parsedname * pn ) {
+    if ( chan == head->connin.i2c.current ) return 0 ;
 
+    if (i2c_smbus_write_byte_data(fd, DS2482_CMD_CHANNEL_SELECT, W_chan[chan] ) < 0 ) return -EIO ; 
+    
+    if (i2c_smbus_read_byte(fd) != R_chan[chan]) return -ENODEV ;
+
+    head->connin.i2c.current = pn->in->connin.i2c.index ;
     return 0 ;
 }

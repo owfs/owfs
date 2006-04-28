@@ -16,6 +16,7 @@ $Id$
 
 #include <sys/time.h>
 
+
 /* Tests whether this bus (pn->in) has too many consecutive reset errors */
 /* If so, the bus is closed and "reconnected" */
 /* Reconnection usually just means reopening (detect) with the same initial name like ttyS0 */
@@ -33,6 +34,8 @@ int TestConnection( const struct parsedname * pn ) {
             // Add Statistics
             STAT_ADD1(BUS_reconnects);
             STAT_ADD1(pn->in->bus_reconnect);
+
+            if ( pn->in == indevice ) SimpleBusName = "Reconnecting..." ;
     
             // Close the bus (should leave enough reconnection information available)
             BUS_close(pn->in) ; // cannot lock anything
@@ -52,6 +55,7 @@ int TestConnection( const struct parsedname * pn ) {
             } else {
                 LEVEL_DEFAULT("%s adapter reconnected\n",pn->in->adapter_name);
                 pn->in->reconnect_state = reconnect_ok ;
+                if ( pn->in == indevice ) SimpleBusName = indevice->name ;
             }
         }
     BUSUNLOCK(pn) ;

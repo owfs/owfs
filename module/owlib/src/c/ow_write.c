@@ -139,8 +139,8 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
                 int bus_nr = -1;
                 if(Cache_Get_Device(&bus_nr, pn)) {
                     //printf("Cache_Get_Device didn't find bus_nr\n");
-                    bus_nr = CheckPresence(pn);
                     /* Cache_Add_Device() is called in FS_write_seek() */
+                    bus_nr = CheckPresence(pn);
                 }
                 if(bus_nr >= 0) {
                     memcpy(&pn2, pn, sizeof(struct parsedname));

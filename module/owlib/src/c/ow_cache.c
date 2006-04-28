@@ -417,7 +417,6 @@ int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) {
         struct tree_node tn  ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
         tn.tk.p.in = NULL ;  // value connected to all in-devices
-        //tn.tk.p.in = pn->in ;
         tn.tk.extension = -1 ;
         return Get_Stat(&cache_dev, Cache_Get_Common(bus_nr,&size,duration,&tn)) ;
     }
