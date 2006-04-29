@@ -26,8 +26,6 @@ $Id$
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "owfs_config.h"
-#include "ow.h" // for libow
 #include "owhttpd.h" // httpd-specific
 
 /*
