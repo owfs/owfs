@@ -41,11 +41,14 @@ void FS_ParsedName_destroy( struct parsedname * const pn ) {
     if ( pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
-        /* Reset persistent states from "local" stateinfo */
     }
     if ( pn->path ) {
         free(pn->path);
         pn->path = NULL;
+    }
+    if ( pn->lock ) {
+        free(pn->lock) ;
+        pn->lock = NULL ;
     }
     if ( pn->in ) {
         if ( get_busmode(pn->in) != bus_remote ) {
@@ -91,6 +94,7 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     pn->ft = NULL ; /* No filetypes */
     pn->subdir = NULL ; /* Not subdirectory */
     pn->bus_nr = 0 ;
+    pn->lock = NULL ; /* device lock array */
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
@@ -109,16 +113,21 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
     pn->type = pn_real ;
 
     /* make a copy for destructive parsing */
-    if ( (pathcpy =strdup( path )) == NULL ) return -ENOMEM ;
+    pathcpy = strdup( path ) ;
+    pn->path = (char *) malloc(2 * strlen(path)+ 2) ;
+    pn->lock = calloc( indevices, sizeof(struct devlock *) ) ;
+
+    if ( pathcpy==NULL || pn->path==NULL || pn->lock==NULL ) {
+        if (pathcpy) free(pathcpy) ;
+        if (pn->path) free(pn->path) ;
+        if (pn->lock) free(pn->lock) ;
+        return -ENOMEM ;
+    }
+    
     /* pointer to rest of path after current token peeled off */
     pathnext = pathcpy ;
 
     /* Have to save pn->path at once */
-    if( ! (pn->path = (char *) malloc(2 * strlen(path)+ 2)) ) {
-      //LEVEL_DEBUG("PARSENAME strdup failed\n");
-      ret = -ENOMEM;
-      goto end;
-    }
     strcpy( pn->path, path ) ;
 
     /* remove initial "/" */
@@ -168,7 +177,7 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
         //printf("PARSENAME pe=%d\n",pe) ;
     } 
 end:
-    printf("PARSENAME end ret=%d\n",ret) ;
+    //printf("PARSENAME end ret=%d\n",ret) ;
     free(pathcpy) ;
     if (ret) FS_ParsedName_destroy(pn) ;
     return ret ;

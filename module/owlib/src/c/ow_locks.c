@@ -77,6 +77,7 @@ int LockGet( const struct parsedname * const pn ) {
 #ifdef OW_MT
     struct devlock * dlock ;
     struct dev_opaque * opaque ;
+    int inindex = pn->in->index ;
 
     //printf("LockGet() pn->path=%s\n", pn->path);
     if(pn->dev == DeviceSimultaneous) {
@@ -84,7 +85,7 @@ int LockGet( const struct parsedname * const pn ) {
       return 0 ;
     }
 
-    pn->in->lock = NULL ;
+    pn->lock[inindex] = NULL ;
     /* Need locking? */
     switch( pn->ft->format ) {
     case ft_directory:
@@ -117,13 +118,13 @@ int LockGet( const struct parsedname * const pn ) {
         pthread_mutex_init(&(dlock->lock), pmattr); // create a mutex
         pthread_mutex_lock(&(dlock->lock) ) ; // and set it
         DEVUNLOCK(pn);
-        pn->in->lock = dlock ;
+        pn->lock[inindex] = dlock ;
     } else { // existing device slot
         ++(opaque->key->users) ;
         DEVUNLOCK(pn);
         free(dlock) ;
         pthread_mutex_lock( &(opaque->key->lock) ) ;
-        pn->in->lock = opaque->key ;
+        pn->lock[inindex] = opaque->key ;
     }
 #endif /* OW_MT */
     return 0 ;
@@ -131,23 +132,24 @@ int LockGet( const struct parsedname * const pn ) {
 
 void LockRelease( const struct parsedname * const pn ) {
 #ifdef OW_MT
-    if ( pn->in->lock ) {
+    int inindex = pn->in->index ;
+    if ( pn->lock[inindex] ) {
 
         /* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
         if(pn->dev == DeviceSimultaneous) return ;
        
-        pthread_mutex_unlock( &(pn->in->lock->lock) ) ;
+        pthread_mutex_unlock( &(pn->lock[inindex]->lock) ) ;
         DEVLOCK(pn);
-        if ( pn->in->lock->users==1 ) {
-                tdelete( pn->in->lock, &(pn->in->dev_db), dev_compare ) ;
+        if ( pn->lock[inindex]->users==1 ) {
+                tdelete( pn->lock[inindex], &(pn->in->dev_db), dev_compare ) ;
                 DEVUNLOCK(pn);
-                pthread_mutex_destroy(&(pn->in->lock->lock) ) ;
-                free(pn->in->lock) ;
+                pthread_mutex_destroy(&(pn->lock[inindex]->lock) ) ;
+                free(pn->lock[inindex]) ;
         } else {
-                --pn->in->lock->users;
+                --pn->lock[inindex]->users;
                 DEVUNLOCK(pn);
         }
-        pn->in->lock = NULL ;
+        pn->lock[inindex] = NULL ;
     }
 #endif /* OW_MT */
 }

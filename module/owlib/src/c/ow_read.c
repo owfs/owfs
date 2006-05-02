@@ -98,6 +98,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     int r = 0;
     //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
+    LEVEL_DEBUG("READ_POSTPARSE %s\n",pn->path) ;
     STATLOCK;
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
@@ -218,7 +219,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct
     int threadbad = 1;
     struct read_seek_struct rss = { buf, size, offset, in->next, pn, 0 } ;
     struct parsedname pn2 ;
-
+    //printf("READSEEK\n");
     if(!(pn->state & pn_bus)) {
         threadbad = in->next==NULL || pthread_create( &thread, NULL, FS_read_seek_callback, (void *) &rss ) ;
     }
@@ -227,6 +228,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct
     pn2.in = in ;
 
     if ( TestConnection(&pn2) ) {
+        //printf("READSEEK testconnection\n") ;
         r = -ECONNABORTED ; // Cannot "reconnect" this bus currently
     } else if ( (get_busmode(in) == bus_remote) ) {
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());

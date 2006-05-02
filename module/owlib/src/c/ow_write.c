@@ -303,7 +303,7 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
         r = FS_parse_write( buf, size, offset, pn ) ;
         if ( r==0 ) break;
     }
-    if (r) syslog(LOG_INFO,"Write error on %s (size=%d)\n",pn->path,(int)size) ;
+    LEVEL_DATA("Write error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 

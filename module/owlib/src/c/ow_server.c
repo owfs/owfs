@@ -224,7 +224,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     if((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote)) {
         sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
         LEVEL_DEBUG("ServerDir: path_busless=%p [%s]\n", pn->path_busless, SAFESTRING(pn->path_busless))
-	// if pn_bus is set, then path_busless is automatically set too in Parse_Bus().
+        // if pn_bus is set, then path_busless is automatically set too in Parse_Bus().
         pathnow = pn->path_busless ;
     } else {
         LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, SAFESTRING(pn->path))
@@ -245,7 +245,6 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
             else
                 got_entry = 1 ;
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-            pn2.si = pn->si ; /* reuse stateinfo */
 
             LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
             ret = FS_ParsedName_Remote( path2, &pn2 ) ;

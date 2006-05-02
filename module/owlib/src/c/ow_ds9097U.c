@@ -352,11 +352,11 @@ static int DS2480_reset( const struct parsedname * pn ) {
         ret = 1 ;
         // fall through
     case RB_NOPRESENCE:
-        if ( pn->si ) pn->in->AnyDevices = 0 ;
+        pn->in->AnyDevices = 0 ;
         break ;
     case RB_PRESENCE:
     case RB_ALARMPRESENCE:
-        if( pn->si ) pn->in->AnyDevices = 1 ;
+        pn->in->AnyDevices = 1 ;
         // check if programming voltage available
         pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
         if(pn->in->ds2404_compliance) {

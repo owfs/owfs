@@ -483,6 +483,12 @@ struct buspath {
     unsigned char branch ;
 } ;
 
+struct devlock {
+    unsigned char sn[8] ;
+    unsigned int users ;
+    pthread_mutex_t lock ;
+} ;
+
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
 enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
 struct parsedname {
@@ -498,9 +504,9 @@ struct parsedname {
     struct filetype * subdir ; // in-device grouping
     int pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
-    struct stateinfo * si ;
     struct connection_in * in ;
     uint32_t sg ; // more state info, packed for network transmission
+    struct devlock ** lock ; // need to clear dev lock?
 } ;
 
 enum simul_type { simul_temp, simul_volt, } ;
