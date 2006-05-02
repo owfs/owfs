@@ -234,7 +234,7 @@ static int OW_r_mem( unsigned char * p , const size_t size, const size_t offset 
 
     if ( ((offset+size)&0x07) == 0 ) t[2].size += 2 ; // to end of page
     if ( BUS_transaction( t, pn ) ) return 1 ;
-    if ( ((offset+size)&0x07) == 0 && CRC16(buf,size+5) ) {printf("READ PROB\n");return 1 ; }// to end of page
+    if ( ((offset+size)&0x07) == 0 && CRC16(buf,size+5) ) return 1 ; // to end of page
     
     memcpy( p , &buf[3] , size ) ;
 

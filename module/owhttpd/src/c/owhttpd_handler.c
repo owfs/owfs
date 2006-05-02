@@ -16,6 +16,14 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
 
 /* ------------ Protoypes ---------------- */
+struct urlparse {
+    char line[PATH_MAX+1];
+    char * cmd ;
+    char * file ;
+    char * version ;
+    char * request ;
+    char * value ;
+} ;
 
     /* Error page functions */
 static void Bad400( FILE * out ) ;
@@ -60,24 +68,28 @@ int handle_socket(FILE * out) {
     /* Can't understand the file name = URL */
     } else if ( up.file == NULL ) {
         Bad404( out ) ;
-    } else {
-        //printf("PreParse up.file=%s\n", up.file);
-        ret = FS_ParsedName( up.file , &pn ) ;
-        // first root always return Bus-list and settings/system/statistics
-        pn.sg |= (1<<BUSRET_BIT) ;
-
-        if ( ret ) {
+    } else if ( FS_ParsedName( up.file , &pn ) ) {
         /* Can't understand the file name = URL */
-            Bad404( out ) ;
+        Bad404( out ) ;
+    } else {
         /* Root directory -- show the bus */
-        } else if ( pn.dev == NULL ) { /* directory! */
-            ShowDir( out,& pn ) ;
-        /* Single device, show it's properties */
-        } else {
-//printf("PreChange\n");
-            ChangeData( &up, &pn ) ;
-//printf("PreShow\n");
+        if ( pn.dev == NULL ) { /* directory! */
+            // first root always return Bus-list and settings/system/statistics
+            pn.sg |= (1<<BUSRET_BIT) ;
+            ShowDir( out, &pn ) ;
+        } else if ( up.request==NULL ) {
             ShowDevice( out, &pn ) ;
+        } else { /* First write new values, then show */
+            struct parsedname pn2 ;
+    
+            if ( FS_ParsedNamePlus( up.file , up.request, &pn2 ) ) {
+                Bad404( out ) ;
+            } else {
+                /* Single device, show it's properties */
+                ChangeData( up.value, &pn2 ) ;
+                FS_ParsedName_destroy( &pn2 ) ;
+                ShowDevice( out, &pn ) ;
+            }
         }
         FS_ParsedName_destroy( &pn ) ;
     }
@@ -139,6 +151,7 @@ static void URLparse( struct urlparse * up ) {
             }
         }
     }
+    LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n",SAFESTRING(up->file),SAFESTRING(up->request),SAFESTRING(up->value));
 }
 
 

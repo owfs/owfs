@@ -191,8 +191,8 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     if ( BUS_transaction( tdata, pn ) ) return 1 ;
 
     // success
-    printf("Temp bytes %0.2X %0.2X\n",t[0],t[1]);
-    printf("temp int=%d\n",((int)((int8_t)t[1])));
+    //printf("Temp bytes %0.2X %0.2X\n",t[0],t[1]);
+    //printf("temp int=%d\n",((int)((int8_t)t[1])));
     
     T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
     return 0 ;

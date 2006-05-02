@@ -62,7 +62,7 @@ char * get( const char * path ) {
         if ( sz<sn ) {
             sz = sn ;
             buf = realloc( buf, sn ) ;
-//printf("Realloc buf pointer=%p,%p\n",buf,&buf);
+            //printf("Realloc buf pointer=%p,%p\n",buf,&buf);
         }
         if ( buf ) {
             if ( s ) strcpy( &buf[s++], "," ) ;
@@ -74,7 +74,7 @@ char * get( const char * path ) {
                 || pn2->ft->format ==ft_directory
             ) strcat( &buf[s], "/" );
             s = strlen( buf ) ;
-//printf("buf=%s len=%d\n",buf,s);
+            //printf("buf=%s len=%d\n",buf,s);
         }
     }
     

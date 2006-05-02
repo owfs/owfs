@@ -28,7 +28,7 @@ int log_available = 0 ;
 
 /* Print message and return to caller
  * Caller specifies "errnoflag" and "level" */
-#define MAXLINE     120
+#define MAXLINE     1023
 void err_msg(int errnoflag, int level, const char *fmt, ...) {
     int     errno_save = errno ;  /* value caller might want printed */
     int     n ;

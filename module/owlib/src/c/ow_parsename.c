@@ -168,7 +168,7 @@ static int FS_ParsedName_anywhere( const char * const path , int remote, struct 
         //printf("PARSENAME pe=%d\n",pe) ;
     } 
 end:
-    //printf("PARSENAME end ret=%d\n",ret) ;
+    printf("PARSENAME end ret=%d\n",ret) ;
     free(pathcpy) ;
     if (ret) FS_ParsedName_destroy(pn) ;
     return ret ;
@@ -465,3 +465,25 @@ static int filecmp(const void * name , const void * ex ) {
     return strcmp( (const char *) name , ((const struct filetype *) ex)->name ) ;
 }
 
+/* Parse a path/file combination */
+int FS_ParsedNamePlus( const char * path, const char * file, struct parsedname * pn ) {
+    if ( path==NULL || path[0]=='\0' ) {
+        return FS_ParsedName( file, pn ) ;
+    } else if ( file==NULL || file[0]=='\0' ) {
+        return FS_ParsedName( path, pn ) ;
+    } else {
+        int ret = 0 ; 
+        char * fullpath ;
+        fullpath = malloc( strlen(file) + strlen(path) + 2 ) ;
+        if ( fullpath == NULL ) return -ENOMEM ;
+        strcpy( fullpath, path ) ;
+        if ( fullpath[strlen(fullpath)-1] != '/' ) strcat( fullpath, "/" ) ;
+        strcat( fullpath, file ) ;
+        //printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
+        ret = FS_ParsedName( fullpath, pn ) ;
+        //printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
+        free( fullpath ) ;
+        //printf("PARSENAMEPLUS free\n") ;
+        return ret ;
+    }
+}

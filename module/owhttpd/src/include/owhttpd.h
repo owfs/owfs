@@ -36,15 +36,6 @@ $Id$
 #define DEVTABLE "BGCOLOR='#DDDDDD' BORDER='1'"
 #define VALTABLE "BGCOLOR='#DDDDDD' BORDER='1'"
 
-struct urlparse {
-    char line[PATH_MAX+1];
-    char * cmd ;
-    char * file ;
-    char * version ;
-    char * request ;
-    char * value ;
-} ;
-
 /*
  * Main routine for actually handling a request
  * deals with a conncection
@@ -57,13 +48,9 @@ void HTTPstart(FILE * out, const char * status, const unsigned int text ) ;
 void HTTPtitle(FILE * out, const char * title ) ;
 void HTTPheader(FILE * out, const char * head ) ;
 void HTTPfoot(FILE * out ) ;
-    /* string format functions */
-void hex_convert( char * str ) ;
-void hex_only( char * str ) ;
-int httpunescape(unsigned char *httpstr) ;
 
 /* in owhttpd_write.c */
-void ChangeData( struct urlparse * up , const struct parsedname * pn ) ;
+void ChangeData( char * value , const struct parsedname * pn ) ;
 
 /* in owhttpd_read.c */
 void ShowDevice( FILE * out, const struct parsedname * const pn ) ;

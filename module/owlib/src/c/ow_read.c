@@ -349,22 +349,23 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
 
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) { /* array property */
-        switch(pn->ft->ag->combined) {
-        case ag_separate: /* separate reads, artificially combined into a single array */
-            if ( pn->extension==-1 ) return FS_r_all(buf,size,offset,pn) ;
-            break ; /* fall through to normal read */
-        case ag_mixed: /* mixed mode, ALL read handled differently */
-            if ( pn->extension==-1 ) return FS_gamish(buf,size,offset,pn) ;
-            break ; /* fall through to normal read */
-        case ag_aggregate: /* natively an array */
+        if ( pn->extension==-1) {
+            switch(pn->ft->ag->combined) {
+                case ag_separate: /* separate reads, artificially combined into a single array */
+                    return FS_r_all(buf,size,offset,pn) ;
+                case ag_mixed: /* mixed mode, ALL read handled differently */
+                    return FS_gamish(buf,size,offset,pn) ;
+                case ag_aggregate: /* natively an array */
+                    /* return ALL if required   (comma separated)*/
+                    return FS_gamish(buf,size,offset,pn) ;
+            }
+        } else if ( pn->extension>-1 && pn->ft->ag->combined==ag_aggregate ) {
             /* split apart if a single item requested */
-            if ( pn->extension>-1 ) return FS_r_split(buf,size,offset,pn) ;
-            /* return ALL if required   (comma separated)*/
-            if ( pn->extension==-1 ) return FS_gamish(buf,size,offset,pn) ;
-            break ; /* special bitfield case, extension==-2, read as a single entity */
+            return FS_r_split(buf,size,offset,pn) ;
         }
     }
-       /* Normal read. Try three times */
+     
+    /* Normal read. Try three times */
     ++read_tries[0] ; /* statitics */
     r = FS_parse_read( buf, size, offset, pn ) ;
     //printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d result=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index,r) ;
@@ -417,8 +418,8 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
     int ret = 0 ;
     int sz ;
     size_t s = 0 ;
+    enum ft_format format = pn->ft->format ;
 //printf("ParseRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
-
 
     LEVEL_CALL("FS_parse_read: format=%d s=%d offset=%d\n", (int)pn->ft->format, (int)size, (int)offset )
 
@@ -428,88 +429,95 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
     if ( offset > s ) return -ERANGE ;
     if ( offset == s ) return 0 ;
 
-    switch( pn->ft->format ) {
-    case ft_integer: {
-        int i ;
-        ret = (pn->ft->read.i)(&i,pn) ;
-        if (ret < 0) return ret ;
-        sz = FS_output_integer( i , buf , size , pn ) ;
-        break;
-        }
-    case ft_bitfield: {
-        unsigned int u ;
-        if (size < 1) return -EMSGSIZE ;
-        ret = (pn->ft->read.u)(&u,pn) ;
-        if (ret < 0) return ret ;
-        buf[0] = UT_getbit((void*)(&u),pn->extension) ? '1' : '0' ;
-        return 1 ;
-    }
-    case ft_unsigned: {
-        unsigned int u ;
-        ret = (pn->ft->read.u)(&u,pn) ;
-        if (ret < 0) return ret ;
-        LEVEL_DEBUG("FS_parse_read: call FS_output_unsigned size=%d\n", (int)size ) ;
+    /* Special for *.BYTE -- treat as a single value */
+    if ( format==ft_bitfield && pn->extension==-2 ) format = ft_unsigned ;
+    
+    switch( format ) {
+        case ft_integer: {
+            int i ;
+            ret = (pn->ft->read.i)(&i,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (integer) %d\n", i ) ;
+            sz = FS_output_integer( i , buf , size , pn ) ;
+            break;
+            }
+        case ft_bitfield: {
+            unsigned int u ;
+            if (size < 1) return -EMSGSIZE ;
+            ret = (pn->ft->read.u)(&u,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (bitfield) %u\n", u ) ;
+            buf[0] = UT_getbit((void*)(&u),pn->extension) ? '1' : '0' ;
+            return 1 ;
+            }
+        case ft_unsigned: {
+            unsigned int u ;
+            ret = (pn->ft->read.u)(&u,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (unsigned) %u\n", u ) ;
             sz = FS_output_unsigned( u , buf , size , pn ) ;
-            //"size" will be corrupted if FS_output_unsigned contain local variable
-            //char c[suglen+2], so I changed it into a malloc.
-            LEVEL_DEBUG("FS_parse_read: FS_output_unsigned returned sz=%d size=%d (probably changed)\n", (int)sz, (int)size);
-        break ;
-        }
-    case ft_float: {
-        FLOAT f ;
-        ret = (pn->ft->read.f)(&f,pn) ;
-        if (ret < 0) return ret ;
-        sz = FS_output_float( f , buf , size , pn ) ;
-        break ;
-        }
-    case ft_temperature: {
-        FLOAT f ;
-        ret = (pn->ft->read.f)(&f,pn) ;
-        if (ret < 0) return ret ;
-        sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
-    break ;
-        }
-    case ft_tempgap: {
-        FLOAT f ;
-        ret = (pn->ft->read.f)(&f,pn) ;
-        if (ret < 0) return ret ;
-        sz = FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
-	break ;
-        }
-    case ft_date: {
-        DATE d ;
-        ret = (pn->ft->read.d)(&d,pn) ;
-        if (ret < 0) return ret ;
-        sz = FS_output_date( d , buf , size , pn ) ;
-	break;
-        }
-    case ft_yesno: {
-        int y ;
-        if (size < 1) return -EMSGSIZE ;
-        ret = (pn->ft->read.y)(&y,pn) ;
-        if (ret < 0) return ret ;
-        buf[0] = y ? '1' : '0' ;
-        return 1 ;
-        }
-    case ft_ascii: {
-        //size_t s = FileLength(pn) ;
-        //if ( offset > s ) return -ERANGE ;
-        s -= offset ;
-        if ( s > size ) s = size ;
-        return (pn->ft->read.a)(buf,s,offset,pn) ;
-        }
-    case ft_binary: {
-        //size_t s = FileLength(pn) ;
-        //if ( offset > s ) return -ERANGE ;
-        s -= offset ;
-        if ( s > size ) s = size ;
-        return (pn->ft->read.b)(buf,s,offset,pn) ;
-        }
-    case ft_directory:
-    case ft_subdir:
-        return -ENOSYS ;
-    default:
-        return -ENOENT ;
+            break ;
+            }
+        case ft_float: {
+            FLOAT f ;
+            ret = (pn->ft->read.f)(&f,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (float) %G\n", f ) ;
+            sz = FS_output_float( f , buf , size , pn ) ;
+            break ;
+            }
+        case ft_temperature: {
+            FLOAT f ;
+            ret = (pn->ft->read.f)(&f,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (temperature) %G\n", f ) ;
+            sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
+            break ;
+            }
+        case ft_tempgap: {
+            FLOAT f ;
+            ret = (pn->ft->read.f)(&f,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (tempgap) %G\n", f ) ;
+            sz = FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
+            break ;
+            }
+        case ft_date: {
+            DATE d ;
+            ret = (pn->ft->read.d)(&d,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (date) %lu\n", (long unsigned int) d ) ;
+            sz = FS_output_date( d , buf , size , pn ) ;
+            break;
+            }
+        case ft_yesno: {
+            int y ;
+            if (size < 1) return -EMSGSIZE ;
+            ret = (pn->ft->read.y)(&y,pn) ;
+            if (ret < 0) return ret ;
+            LEVEL_DEBUG("FS_parse_read: (yesno) %d\n", y ) ;
+            buf[0] = y ? '1' : '0' ;
+            return 1 ;
+            }
+        case ft_ascii: {
+            //size_t s = FileLength(pn) ;
+            //if ( offset > s ) return -ERANGE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+            return (pn->ft->read.a)(buf,s,offset,pn) ;
+            }
+        case ft_binary: {
+            //size_t s = FileLength(pn) ;
+            //if ( offset > s ) return -ERANGE ;
+            s -= offset ;
+            if ( s > size ) s = size ;
+            return (pn->ft->read.b)(buf,s,offset,pn) ;
+            }
+        case ft_directory:
+        case ft_subdir:
+            return -ENOSYS ;
+        default:
+            return -ENOENT ;
     }
 
     /* Return correct buffer according to offset for most data-types here */
@@ -540,7 +548,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 ret = (pn->ft->read.i)(i,pn) ;
                 if (ret >= 0) ret = FS_output_integer_array( i , buf , size , pn ) ;
             free( i ) ;
-	    break;
+            break;
         }
     case ft_unsigned:
         {
@@ -550,7 +558,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 ret = (pn->ft->read.u)(u,pn) ;
                 if (ret >= 0) ret = FS_output_unsigned_array( u , buf , size , pn ) ;
             free( u ) ;
-	    break;
+            break;
         }
     case ft_float:
         {
@@ -559,7 +567,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
-	    break ;
+            break ;
         }
     case ft_temperature:
         {
@@ -570,7 +578,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 for ( i=0; i<elements ; ++i ) f[i] = Temperature(f[i],pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
-	    break ;
+            break ;
         }
     case ft_tempgap:
         {
@@ -581,7 +589,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 for ( i=0; i<elements ; ++i ) f[i] = TemperatureGap(f[i],pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
             free( f ) ;
-	    break ;
+            break ;
         }
     case ft_date:
         {
@@ -590,7 +598,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 ret = (pn->ft->read.d)(d,pn) ;
                 if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
             free( d ) ;
-	    break ;
+            break ;
         }
     case ft_yesno:
         {
@@ -606,7 +614,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                     ret = elements*2-1 ;
                 }
             free( y ) ;
-	    break ;
+            break ;
         }
     case ft_bitfield:
         {
@@ -622,7 +630,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
                 }
                 ret = j ;
             }
-	    break ;
+            break ;
         }
     case ft_ascii: {
         //size_t s = FullFileLength(pn) ;
@@ -676,7 +684,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 
     /* shallow copy */
     memcpy( &pn2 , pn , sizeof(struct parsedname) ) ;
-//printf("READALL(%p) %s size=%d\n",p,path,size) ;
+    //printf("READALL(%p) %s size=%d\n",p,path,size) ;
 
     for ( pn2.extension=0 ; pn2.extension<pn2.ft->ag->elements ; ++pn2.extension ) {
         /* Add a separating comma if not the first element */
@@ -685,14 +693,14 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
             *p = ',' ;
             ++ p ;
             -- left ;
-//printf("READALL(%p) comma\n",p) ;
+            //printf("READALL(%p) comma\n",p) ;
         }
         if ( (r=FS_parse_read(p,left,(const off_t)0,&pn2)) < 0 ) return r ;
         left -= r ;
         p += r ;
-//printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
+        //printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
     }
-//printf("READALL return %d\n",size-left) ;
+    //printf("READALL return %d\n",size-left) ;
 
     sz = size - left ;
 #if 0

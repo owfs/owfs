@@ -477,7 +477,6 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
     /* Operate at dev level, not filetype */
     pn2->ft = NULL ;
     /* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
-    /* Actually it's probably stale information in the stateinfo structure */
     ret=BUS_first(&ds,pn2) ;
     if(ret) {
         BUSUNLOCK(pn2);
@@ -510,26 +509,6 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct
         ret=BUS_next(&ds,pn2) ;
     }
     BUSUNLOCK(pn2);
-
-#ifdef OW_USB
-    if(dindex > 0) {
-        if((get_busmode(pn2->in) == bus_usb) &&
-            !pn2->in->connin.usb.ds1420_address[0]) {
-            /* No DS1420 found on the 1-wire bus, probably a single DS2480 adapter
-            * save last found 1-wire device as a unique identifier. It's perhaps
-            * not correct, but it will only be used if the adapter is disconnected
-            * from the USB-bus.
-            */
-#if 1
-            char tmp[17];
-            bytes2string(tmp, ds.sn, 8);
-            tmp[16] = '\000';
-            LEVEL_DEFAULT("Set DS9490 [%s] unique id (no DS1420) to %s\n", pn2->in->name, tmp);
-#endif
-            memcpy(pn2->in->connin.usb.ds1420_address, ds.sn, 8);
-        }
-    }
-#endif
 
     STATLOCK;
         dir_main.entries += dindex ;

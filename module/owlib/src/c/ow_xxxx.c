@@ -130,7 +130,8 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence( const struct parsedname * const pn ) {
-    if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) { 
+    if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) {
+        LEVEL_DETAIL("Checking presence of %s\n",SAFESTRING(pn->path) ) ;
         return CheckPresence_low(pn->in,pn) ;
     }
     return 0 ;
@@ -180,7 +181,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     
     //printf("CheckPresence_low:\n");
     if ( TestConnection(&pn2) ) { // reconnect successful?
-    ret = -ECONNABORTED ;
+        ret = -ECONNABORTED ;
     } else if(get_busmode(in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
         ret = ServerPresence(&pn2) ;
@@ -209,6 +210,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
         if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
         if ( cps.ret >= 0 ) return cps.in->index ;
     }
+    //printf("Presence return = %d\n",ret) ;
     return ret ;
 }
 

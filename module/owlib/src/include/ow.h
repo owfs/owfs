@@ -620,6 +620,7 @@ void DeviceSort( void ) ;
 void DeviceDestroy( void ) ;
 //  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
+int FS_ParsedNamePlus( const char * path, const char * file, struct parsedname * pn ) ;
 int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
 int FS_ParsedName_Remote( const char * const fn , struct parsedname * const pn ) ;
   void FS_ParsedName_destroy( struct parsedname * const pn ) ;

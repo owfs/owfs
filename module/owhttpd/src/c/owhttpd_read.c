@@ -16,251 +16,189 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
 
 /* --------------- Prototypes---------------- */
-static void Show( FILE * out, const char * const path, const char * const file, const struct parsedname * const pn ) ;
-static void ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * const pn, int suglen, char *buf ) ;
+static void Show( FILE * out, const char * const path, const char * const file ) ;
+static void ShowText( FILE * out, const char * path, const char * file ) ;
 
 /* --------------- Functions ---------------- */
 
 /* Device entry -- table line for a filetype */
-static void Show( FILE * out, const char * const path, const char * const file, const struct parsedname * const pn ) {
-    int len ;
-    struct parsedname pn2 ;
-    const char * basename ;
-    char fullpath[PATH_MAX+1] ;
-    int suglen = 0 ;
-    char *buf = NULL ;
-    enum ft_format format ;
-    int canwrite = 0 ;
+static void Show( FILE * out, const char * path, const char * file ) {
+    struct parsedname pn ;
 
     //printf("Show: path=%s, file=%s\n",path,file) ;
-
-    if(!pn->ft) {
-      format = ft_subdir ;      /* it seems to be a subdir */
-    } else {
-      format = pn->ft->format ;
-      canwrite = !readonly && pn->ft->write.v ;
+    if ( FS_ParsedNamePlus( path, file, &pn ) ) {
+        fprintf( out, "<TR><TD><B>%s</B></TD><TD>", file ) ;
+        fprintf( out, "<B>Unparsable name</B></TD></TR>" ) ;
+        return ;
     }
-    //printf("Show path=%s, file=%s, suglen=%d pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,suglen,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
 
-    /* Parse out subdir */
-    basename = strrchr(file,'/') ;
-    if ( basename ) {
-        ++basename ; /* after slash */
+    /* Left column */
+    fprintf( out, "<TR><TD><B>%s</B></TD><TD>", file ) ;
+    
+    if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* Directory jump */
+        fprintf( out, "<A HREF='%s'>%s</A>",pn.path,file);
     } else {
-        basename = file ;
-    }
-    strcpy(fullpath, path) ;
-    if ( fullpath[strlen(fullpath)-1] != '/' ) strcat( fullpath, "/" ) ;
-    strcat(fullpath,basename ) ;
+        int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
+        int canread = ( pn.ft->read.v != NULL ) ;
+        int suglen = 0 ;
+        int len ;
+        char *buf = NULL ;
 
-    if ( (FS_ParsedName(fullpath, &pn2) == 0) ) {
-        if ((pn2.state & pn_bus) && FS_RemoteBus(&pn2)) {
-            //printf("call FS_size(%s)\n", fullpath);
-            suglen = FS_size(fullpath) ;
-        } else {
-            //printf("call FS_size_postparse\n");
-            suglen = FS_size_postparse(pn) ;
+        if ( (suglen=FS_size_postparse(&pn)) < 0 ) {
+            //printf("Show: can't find file-size of %s ???\n", pn->path);
+            suglen = 0 ;
         }
-    } else {
-        suglen = 0;
-        //printf("FAILED parsename %s\n", fullpath);
-    }
-    FS_ParsedName_destroy( &pn2 ) ;
 
-    if(suglen <= 0) {
-        //printf("Show: can't find file-size of %s ???\n", pn->path);
-        suglen = 0 ;
-    }
-    if( ! (buf = malloc((size_t)suglen+1)) ) return;
-    buf[suglen] = '\0' ;
-
-    //printf("Show path=%s, file=%s, suglen=%d pn_struct?%d, ft_directory?%d, ft_subdir?%d\n",path,file,suglen,pn->type == pn_structure,format==ft_directory,format==ft_subdir);
-
-    /* Special processing for structure -- ascii text, not native format */
-    if ( pn->type==pn_structure && format!=ft_directory && format!=ft_subdir ) {
-        format = ft_ascii ;
-        canwrite = 0 ;
-    }
-
-    //if ( snprintf(fullpath,PATH_MAX,path[strlen(path)-1]=='/'?"%s%s":"%s/%s",path,basename)<0 ) return ;
-
-    //printf("pn->path=%s, pn->path_busless=%s\n",pn->path, pn->path_busless) ;
-    //printf("path=%s, file=%s, fullpath=%s\n",path,file, fullpath) ;
-
-    /* Jump to special text-mode routine */
-    if(pn->state & pn_text) {
-        ShowText( out, basename, fullpath, pn, suglen, buf ) ;
-        free(buf);
-        return;
-   }
-    fprintf( out, "<TR><TD><B>%s</B></TD><TD>", basename ) ;
-
-    /* buffer for field value */
-    if ( pn->ft && pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
-        if ( pn->ft->read.v ) { /* At least readable */
-            if ( (len=FS_read(fullpath, buf, (size_t)suglen, 0))>=0 ) {
-                buf[len] = '\0' ;
-                if ( canwrite ) { /* read-write */
-                    fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
-                } else { /* read only */
-                    fprintf( out, "%s", buf ) ;
-                }
-            } else {
-                fprintf(out,"Error: %s",strerror(-len)) ;
-            }
-        } else if ( canwrite ) { /* rare write-only */
-            fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename );
-        }
-    } else {
-        switch( format ) {
-        case ft_directory:
-        case ft_subdir:
-            fprintf( out, "<A HREF='%s'>%s</A>",fullpath,file);
-            break ;
-        case ft_yesno:
-            if ( pn->ft->read.v ) { /* at least readable */
-                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>=0 ) {
-                    buf[len]='\0' ;
-                    if ( canwrite ) { /* read-write */
-                        fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", basename, (buf[0]=='0')?"":"CHECKED", basename ) ;
-                    } else { /* read-only */
-                        switch( buf[0] ) {
-                        case '0':
-                            fprintf( out, "NO" ) ;
-                            break;
-                        case '1':
-                            fprintf( out, "YES" ) ;
-                            break;
-                        }
-                    }
-                } else {
-                    fprintf(out,"Error: %s",strerror(-len)) ;
-                }
-            } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",basename,basename ) ;
-            }
-            break ;
-        case ft_binary:
-            if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>=0 ) {
-                    if ( canwrite ) { /* read-write */
-                        int i = 0 ;
-                        fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",basename,len>>5 ) ;
-                        while (i<len) {
-                            fprintf( out, "%.2hhX", buf[i] ) ;
-                            if ( ((++i)<len) && (i&0x1F)==0 ) fprintf( out, "\r\n" ) ;
-                        }
-                        fprintf( out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>" ) ;
-                    } else { /* read only */
-                        int i = 0 ;
-                        fprintf( out, "<PRE>" ) ;
-                        while (i<len) {
-                            fprintf( out, "%.2hhX", buf[i] ) ;
-                            if ( ((++i)<len) && (i&0x1F)==0 ) fprintf( out, "\r\n" ) ;
-                        }
-                        fprintf( out, "</PRE>" ) ;
-                    }
-                } else {
-		    //printf("Error read %s %d\n", fullpath, suglen);
-                    fprintf(out,"Error: %s",strerror(-len)) ;
-                }
-            } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",basename,(pn->ft->suglen)>>5 ) ;
-            }
-            break ;
-        default:
-            if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>=0 ) {
+        /* buffer for field value */
+        if( (buf = malloc((size_t)suglen+1)) ) {
+            buf[suglen] = '\0' ;
+        
+            if ( canread ) { /* At least readable */
+                if ( (len=FS_read_3times(buf, (size_t)suglen, 0, &pn))>=0 ) {
                     buf[len] = '\0' ;
-                    if ( canwrite ) { /* read-write */
-                        fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename,buf ) ;
-                    } else { /* read only */
-                        fprintf( out, "%s", buf ) ;
-                    }
-                } else {
-                    fprintf(out,"Error: %s",strerror(-len)) ;
+                    //printf("SHOW read of %s len = %d, value=%s\n",pn.path,len,SAFESTRING(buf)) ;
                 }
-            } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",basename ) ;
             }
+        
+            if ( pn.ft->format == ft_binary ) { /* bianry uses HEX mode */
+                if ( canread ) { /* At least readable */
+                    if ( len>=0 ) {
+                        if ( canwrite ) { /* read-write */
+                            int i = 0 ;
+                            fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",file,len>>5 ) ;
+                            while (i<len) {
+                                fprintf( out, "%.2hhX", buf[i] ) ;
+                                if ( ((++i)<len) && (i&0x1F)==0 ) fprintf( out, "\r\n" ) ;
+                            }
+                            fprintf( out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>" ) ;
+                        } else { /* read only */
+                            int i = 0 ;
+                            fprintf( out, "<PRE>" ) ;
+                            while (i<len) {
+                                fprintf( out, "%.2hhX", buf[i] ) ;
+                                if ( ((++i)<len) && (i&0x1F)==0 ) fprintf( out, "\r\n" ) ;
+                            }
+                            fprintf( out, "</PRE>" ) ;
+                        }
+                    } else {
+                    //printf("Error read %s %d\n", fullpath, suglen);
+                        fprintf(out,"Error: %s",strerror(-len)) ;
+                    }
+                } else if ( canwrite ) { /* rare write-only */
+                    fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",file,(pn.ft->suglen)>>5 ) ;
+                }
+            } else if ( pn.extension>=0 && (pn.ft->format==ft_yesno||pn.ft->format==ft_bitfield) ) {
+                if ( canread ) { /* at least readable */
+                    if ( len>=0 ) {
+                        if ( canwrite ) { /* read-write */
+                            fprintf( out, "<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>", file, (buf[0]=='0')?"":"CHECKED", file ) ;
+                        } else { /* read-only */
+                            switch( buf[0] ) {
+                                case '0':
+                                    fprintf( out, "NO" ) ;
+                                    break;
+                                case '1':
+                                    fprintf( out, "YES" ) ;
+                                    break;
+                            }
+                        }
+                    } else {
+                        fprintf(out,"Error: %s",strerror(-len)) ;
+                    }
+                } else if ( canwrite ) { /* rare write-only */
+                    fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>",file,file ) ;
+                }
+            } else{
+                if ( canread ) { /* At least readable */
+                    if ( len>=0 ) {
+                        if ( canwrite ) { /* read-write */
+                            fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file,buf ) ;
+                        } else { /* read only */
+                            fprintf( out, "%s", buf ) ;
+                        }
+                    } else {
+                        fprintf(out,"Error: %s",strerror(-len)) ;
+                    }
+                } else if ( canwrite ) { /* rare write-only */
+                    fprintf( out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",file );
+                }
+            }
+            free(buf);
         }
     }
     fprintf( out, "</TD></TR>\r\n" ) ;
-    free(buf);
+    FS_ParsedName_destroy( &pn ) ;
 }
 
-/* Device entry -- table line for a filetype  -- text mode*/
-static void ShowText( FILE * out, const char * const basename, const char * const fullpath, const struct parsedname * const pn, int suglen, char *buf ) {
-    int len ;
-    enum ft_format format ;
-    int canwrite = 0 ;
+/* Device entry -- table line for a filetype */
+static void ShowText( FILE * out, const char * path, const char * file ) {
+    struct parsedname pn ;
 
-    //printf("ShowText: basename=%s, fullpath=%s\n",basename,fullpath) ;
+    //printf("Show: path=%s, file=%s\n",path,file) ;
+    if ( FS_ParsedNamePlus( path, file, &pn ) ) {
+        return ;
+    }
 
-    if(!pn->ft) {
-        format = ft_subdir ;      /* it seems to be a subdir */
+    /* Left column */
+    fprintf( out, "%s ", file ) ;
+    
+    if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* Directory jump */
     } else {
-        format = pn->ft->format ;
-        canwrite = !readonly && pn->ft->write.v ;
-    }
+        int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
+        int canread = ( pn.ft->read.v != NULL ) ;
+        int suglen = 0 ;
+        int len ;
+        char *buf = NULL ;
 
-    /* Special processing for structure -- ascii text, not native format */
-    if ( pn->type == pn_structure && ( format==ft_directory || format==ft_subdir ) ) {
-        format = ft_ascii ;
-        canwrite = 0 ;
-    }
-
-    fprintf( out, "%s ", basename ) ;
-
-    /* buffer for field value */
-    if ( pn->ft && pn->ft->ag && format!=ft_binary && pn->extension==-1 ) {
-        if ( pn->ft->read.v ) { /* At least readable */
-            if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
-                buf[len] = '\0' ;
-                fprintf( out, "%s",buf ) ;
-            }
-        } else if ( canwrite ) { /* rare write-only */
-            fprintf( out, "(writeonly)" ) ;
+        if ( (suglen=FS_size_postparse(&pn)) < 0 ) {
+            //printf("Show: can't find file-size of %s ???\n", pn->path);
+            suglen = 0 ;
         }
-    } else {
-        switch( format ) {
-        case ft_directory:
-        case ft_subdir:
-             break ;
-        case ft_yesno:
-             if ( pn->ft->read.v ) { /* at least readable */
-                 if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
-                     fprintf( out, "%c", buf[0] ) ;
-                 }
-            } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "(writeonly)" ) ;
-            }
-            break ;
-        case ft_binary:
-            if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
-                    int i ;
-                    for( i=0 ; i<len ; ++i ) {
-                        fprintf( out, "%.2hhX", buf[i] ) ;
-                    }
-                }
-            } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "(writeonly)" ) ;
-            }
-            break ;
-        default:
-            if ( pn->ft->read.v ) { /* At least readable */
-                if ( (len=FS_read(fullpath,buf,(size_t)suglen,0))>0 ) {
+
+        /* buffer for field value */
+        if( (buf = malloc((size_t)suglen+1)) ) {
+            buf[suglen] = '\0' ;
+        
+            if ( canread ) { /* At least readable */
+                if ( (len=FS_read_3times(buf, (size_t)suglen, 0, &pn))>=0 ) {
                     buf[len] = '\0' ;
-                    fprintf( out, "%s",buf ) ;
+                    //printf("SHOW read of %s len = %d, value=%s\n",pn.path,len,SAFESTRING(buf)) ;
                 }
-            } else if ( canwrite ) { /* rare write-only */
-                fprintf( out, "(writeonly)") ;
             }
+        
+            if ( pn.ft->format == ft_binary ) { /* bianry uses HEX mode */
+                if ( canread ) { /* At least readable */
+                    if ( len>=0 ) {
+                        int i ;
+                        for( i=0 ; i<len ; ++i ) {
+                            fprintf( out, "%.2hhX", buf[i] ) ;
+                        }
+                    }
+                } else if ( canwrite ) { /* rare write-only */
+                    fprintf( out, "(writeonly)") ;
+                }
+            } else if ( pn.extension>=0 && (pn.ft->format==ft_yesno||pn.ft->format==ft_bitfield) ) {
+                if ( canread ) { /* at least readable */
+                    if ( len>=0 ) {
+                        fprintf( out, "%c", buf[0] ) ;
+                    }
+                } else if ( canwrite ) { /* rare write-only */
+                    fprintf( out, "(writeonly)") ;
+                }
+            } else{
+                if ( canread ) { /* At least readable */
+                    if ( len>=0 ) {
+                        fprintf( out, "%s", buf ) ;
+                    }
+                } else if ( canwrite ) { /* rare write-only */
+                    fprintf( out, "(writeonly)") ;
+                }
+            }
+            free(buf);
         }
     }
     fprintf( out, "\r\n" ) ;
-    return;
+    FS_ParsedName_destroy( &pn ) ;
 }
 
 /* Now show the device */
@@ -269,16 +207,17 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) {
     char * slash;
     int b ;
     char * path2;
+    
     /* Embedded function */
     void directory( const struct parsedname * const pn2 ) {
         char *file;
-    if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
-        //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
-        return;
-    }
-    FS_DirName(file,OW_FULLNAME_MAX,pn2);
-    //printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
-        Show( out, path2, file, pn2 ) ;
+        if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+            //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+            return;
+        }
+        FS_DirName(file,OW_FULLNAME_MAX,pn2);
+        //printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+        pn2->state & pn_text ? ShowText( out, path2, file ) : Show( out, path2, file ) ;
         free(file);
     }
 
@@ -288,12 +227,13 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) {
 
     HTTPstart( out , "200 OK", (pn->state & pn_text) ) ;
     if(!(pn->state & pn_text)) {
-      b = Backup(pn->path) ;
-      HTTPtitle( out , &pn->path[1] ) ;
-      HTTPheader( out , &pn->path[1] ) ;
-      if ( IsLocalCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real) fprintf( out , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
-      fprintf( out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
-      fprintf( out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, pn->path ) ;
+        b = Backup(pn->path) ;
+        HTTPtitle( out , &pn->path[1] ) ;
+        HTTPheader( out , &pn->path[1] ) ;
+        if ( IsLocalCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real)
+            fprintf( out , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
+        fprintf( out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
+        fprintf( out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, pn->path ) ;
     }
 
 

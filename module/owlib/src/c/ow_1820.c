@@ -344,11 +344,15 @@ static int OW_power( unsigned char * data, const struct parsedname * pn) {
         TRXN_END,
     } ;
     size_t s = sizeof(unsigned char) ;
-
+    //printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
     if ( (pn->state & pn_uncached) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
+        //printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
         if ( BUS_transaction( tpower, pn ) ) return 1 ;
+        //printf("POWER "SNformat", asked\n",SNvar(pn->sn)) ;
         Cache_Add_Internal(data,s,&ip_power,pn) ;
+        //printf("POWER "SNformat", cached\n",SNvar(pn->sn)) ;
     }
+    //printf("POWER "SNformat", done\n",SNvar(pn->sn)) ;
     return 0 ;
 }
 
