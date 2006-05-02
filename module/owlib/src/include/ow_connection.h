@@ -129,6 +129,18 @@ struct interface_routines {
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
+#ifdef OW_MT
+#define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
+#define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
+#define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) )
+#define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) )
+#else /* OW_MT */
+#define DEVLOCK(pn)
+#define DEVUNLOCK(pn)
+#define ACCEPTLOCK(out)
+#define ACCEPTUNLOCK(out)
+#endif /* OW_MT */
+
 struct connin_serial {
     speed_t speed;
     int USpeed ;
@@ -274,6 +286,7 @@ struct connection_out {
     char * name ;
     char * host ;
     char * service ;
+    int index ;
     struct addrinfo * ai ;
     struct addrinfo * ai_ok ;
     int fd ;

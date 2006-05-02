@@ -156,23 +156,25 @@ extern int multithreading ;
     extern pthread_mutexattr_t mattr;
     extern pthread_mutex_t uclibc_mutex;
  #endif /* __UCLIBC__ */
-    #define STATLOCK       pthread_mutex_lock(  &stat_mutex   )
-    #define STATUNLOCK     pthread_mutex_unlock(&stat_mutex   )
-    #define CACHELOCK      pthread_mutex_lock(  &cache_mutex  )
-    #define CACHEUNLOCK    pthread_mutex_unlock(&cache_mutex  )
-    #define STORELOCK      pthread_mutex_lock(  &store_mutex  )
-    #define STOREUNLOCK    pthread_mutex_unlock(&store_mutex  )
-    #define FSTATLOCK      pthread_mutex_lock(  &fstat_mutex  )
-    #define FSTATUNLOCK    pthread_mutex_unlock(&fstat_mutex  )
-    #define SIMULLOCK      pthread_mutex_lock(  &simul_mutex  )
-    #define SIMULUNLOCK    pthread_mutex_unlock(&simul_mutex  )
-    #define DIRLOCK        pthread_mutex_lock(  &dir_mutex    )
-    #define DIRUNLOCK      pthread_mutex_unlock(&dir_mutex    )
-    #define LIBUSBLOCK     pthread_mutex_lock(  &libusb_mutex    )
-    #define LIBUSBUNLOCK   pthread_mutex_unlock(&libusb_mutex    )
-    #define INBUSLOCK(in)  pthread_mutex_lock(   &((in)->bus_mutex)  )
-    #define INBUSUNLOCK(in) pthread_mutex_unlock( &((in)->bus_mutex)  )
-#ifdef __UCLIBC__
+    #define STATLOCK          pthread_mutex_lock(  &stat_mutex   )
+    #define STATUNLOCK        pthread_mutex_unlock(&stat_mutex   )
+    #define CACHELOCK         pthread_mutex_lock(  &cache_mutex  )
+    #define CACHEUNLOCK       pthread_mutex_unlock(&cache_mutex  )
+    #define STORELOCK         pthread_mutex_lock(  &store_mutex  )
+    #define STOREUNLOCK       pthread_mutex_unlock(&store_mutex  )
+    #define FSTATLOCK         pthread_mutex_lock(  &fstat_mutex  )
+    #define FSTATUNLOCK       pthread_mutex_unlock(&fstat_mutex  )
+    #define SIMULLOCK         pthread_mutex_lock(  &simul_mutex  )
+    #define SIMULUNLOCK       pthread_mutex_unlock(&simul_mutex  )
+    #define DIRLOCK           pthread_mutex_lock(  &dir_mutex    )
+    #define DIRUNLOCK         pthread_mutex_unlock(&dir_mutex    )
+    #define LIBUSBLOCK        pthread_mutex_lock(  &libusb_mutex    )
+    #define LIBUSBUNLOCK      pthread_mutex_unlock(&libusb_mutex    )
+    #define INBUSLOCK(in)     pthread_mutex_lock(   &((in)->bus_mutex)  )
+    #define INBUSUNLOCK(in)   pthread_mutex_unlock( &((in)->bus_mutex)  )
+    #define BUSLOCK(pn)       BUS_lock(pn)
+    #define BUSUNLOCK(pn)     BUS_unlock(pn)
+ #ifdef __UCLIBC__
     #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
     #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
  #else /* __UCLIBC__ */
@@ -199,10 +201,11 @@ extern int multithreading ;
     #define LIBUSBUNLOCK
     #define INBUSLOCK(in)
     #define INBUSUNLOCK(in)
+    #define UCLIBCLOCK
+    #define UCLIBCUNLOCK
+    #define BUSLOCK(pn)
+    #define BUSUNLOCK(pn)
 #endif /* OW_MT */
-
-#define BUSLOCK(pn)    BUS_lock(pn)
-#define BUSUNLOCK(pn)  BUS_unlock(pn)
 
 #ifdef OW_USB
     #include <usb.h>
@@ -587,18 +590,6 @@ struct client_msg {
 extern time_t start_time ;
 extern time_t dir_time ; /* time of last directory scan */
 
-#ifdef OW_MT
-    #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
-    #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
-    #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) )
-    #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) )
-#else /* OW_MT */
-    #define DEVLOCK(pn)
-    #define DEVUNLOCK(pn)
-    #define ACCEPTLOCK(out)
-    #define ACCEPTUNLOCK(out)
-#endif /* OW_MT */
-
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
 #define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
@@ -704,9 +695,7 @@ void UT_delay_us(const unsigned long len) ;
 
 ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) ;
 int ClientAddr(  char * sname, struct connection_in * in ) ;
-int ServerAddr(  struct connection_out * out ) ;
 int ClientConnect( struct connection_in * in ) ;
-int ServerListen( struct connection_out * out ) ;
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
 void FreeClientAddr(  struct connection_in * in ) ;
 

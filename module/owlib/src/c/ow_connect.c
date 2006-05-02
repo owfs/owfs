@@ -55,12 +55,10 @@ struct connection_in * NewIn( const struct connection_in * in ) {
         }
         if ( indevice ) {
             last->next = now ;
-            now->index = last->index+1 ;
         } else {
             indevice = now ;
-            now->index = 0 ;
         }
-        ++ indevices ;
+        now->index = indevices++ ;
 #ifdef OW_MT
     pthread_mutex_init(&(now->bus_mutex), pmattr);
     pthread_mutex_init(&(now->dev_mutex), pmattr);
@@ -95,7 +93,7 @@ struct connection_out * NewOut( void ) {
         } else {
             outdevice = now ;
         }
-        ++ outdevices ;
+        now->index = outdevices ++ ;
 #ifdef OW_MT
         pthread_mutex_init(&(now->accept_mutex), pmattr);
 #endif /* OW_MT */

@@ -25,8 +25,8 @@ struct AcceptThread_data {
 } ;
 
 /* Prototypes */
-static void RunAccepted( int rafd, void (*HandlerRoutine)(int fd) ) ;
-static void * AcceptThread( void * v2 ) ;
+static int ServerAddr(  struct connection_out * out ) ;
+static int ServerListen( struct connection_out * out ) ;
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
@@ -89,7 +89,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
     return(n - nleft); /* return >= 0 */
 }
 
-int ServerAddr(  struct connection_out * out ) {
+static int ServerAddr(  struct connection_out * out ) {
     struct addrinfo hint ;
     int ret ;
     char * p ;
@@ -99,7 +99,7 @@ int ServerAddr(  struct connection_out * out ) {
         p[0] = '\0' ; /* Separate tokens in the string */
         out->host = strdup(out->name) ;
         out->service = strdup(&p[1]) ;
-        p[0] = ';' ; /* Restore the string */
+        p[0] = ':' ; /* Restore the string */
     } else {
         out->host = NULL ;
         out->service = strdup(out->name) ;
@@ -113,19 +113,19 @@ int ServerAddr(  struct connection_out * out ) {
     //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
     if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
-        LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
+        ERROR_CONNECT("GetAddrInfo error [%s]\n",SAFESTRING(out->name));
         return -1 ;
     }
     return 0 ;
 }
 
-int ServerListen( struct connection_out * out ) {
+static int ServerListen( struct connection_out * out ) {
     int fd ;
     int on = 1 ;
     int ret;
 
     if ( out->ai == NULL ) {
-        LEVEL_CONNECT("Server address not yet parsed\n");
+        LEVEL_CONNECT("Server address not yet parsed [%s]\n",SAFESTRING(out->name));
         return -1 ;
     }
 
@@ -141,17 +141,17 @@ int ServerListen( struct connection_out * out ) {
                 || bind( fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen )
                 || listen(fd, 10) ;
             if ( ret ) {
-                LEVEL_CONNECT("ServerListen: Socket problem [%s]\n", strerror(errno));
+                ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
                 close( fd ) ;
             } else {
                 out->fd = fd ;
                 return fd ;
             }
         } else {
-            LEVEL_CONNECT("ServerListen: socket() [%s]", strerror(errno));
+            ERROR_CONNECT("ServerListen: socket() [%s]", SAFESTRING(out->name));
         }
     } while ( (out->ai_ok=out->ai_ok->ai_next) ) ;
-    LEVEL_CONNECT("ServerListen: Socket problem [%s]\n", strerror(errno)) ;
+    ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name)) ;
     return -1 ;
 }
 
@@ -260,107 +260,123 @@ int ClientConnect( struct connection_in * in ) {
 
 
 /*
- Loops through outdevices, starting a detached thread for each except the last
+ Loops through outdevices, starting a detached thread for each 
  Each loop spawn threads for accepting connections
  Uses my non-patented "pre-threaded technique"
- 
- VALGRIND's mutexes doesn't handle locks/unlocks in different processes
- so I added this define just to temporary be able to search for memory
- leaks... The new accept() is not detached just to be able to wait
- for thread to end.
+ */
 
- OK OK -- bad practice.
- We'll put the locks in the same thread.
-*/
-void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
-    struct connection_out * out = outdevice ;
+/* Server Process run for each out device, and each */
 #ifdef OW_MT
+struct serverprocessstruct {
+    struct connection_out * out ;
+    void (*HandlerRoutine)(int fd) ;
+    void (*Exit)(int errcode) ;
+} ;
+
+static void * ServerProcessAccept( void * vp ) {
+    struct serverprocessstruct * sps = (struct serverprocessstruct *) vp ;
     pthread_t thread ;
-    pthread_attr_t attr ;
-    pthread_attr_t *attr_p = NULL ;
-#endif /* OW_MT */
+    int acceptfd ;
+    int ret ;
+    
+    pthread_detach( pthread_self() ) ;
 
-    /* embedded function */
-    void ToListen( struct connection_out * o ) {
-        if ( ServerAddr( o ) || (ServerListen( o )<0) ) {
-            LEVEL_DEFAULT("Cannot start server = %s\n",o->name)
-            Exit(1);
-        }
-    }
-
-#ifdef OW_MT
-    /* Embedded function */
-    void * ConnectionThread( void * v3 ) {
-        struct connection_out * out2 = (struct connection_out *)v3 ;
-        pthread_t thread2 ;
-
-        ToListen( out2 ) ;
-        for(;;) {
-            struct AcceptThread_data * data ;
-            ACCEPTLOCK(out2);
-            //if ( pthread_create( &thread2, attr_p, AcceptThread, out2 ) ) Exit(1) ;
-            /* Start a thread running AcceptThread(), all necessary parameters are passed
-               using a struct AcceptThread_data */
-            if ( (data=malloc(sizeof(struct AcceptThread_data))) == NULL ) Exit(1) ;
-            data->o2 = out2;
-            data->HandlerRoutine = HandlerRoutine;
-            if ( pthread_create( &thread2, attr_p, AcceptThread, data ) ) Exit(1) ;
-            if(!attr_p) pthread_detach(thread2);
-#ifdef VALGRIND
-            pthread_join(thread2, NULL);
-#endif /* VALGRIND */
-        }
-        /* won't reach this usless we exit the loop above to shutdown
-            * in a nice way */
-        /* last connection_out wasn't a separate thread */
-        if(out2->next) {
-            pthread_exit((void *)0);
-        }
-        return NULL;
-    }
-
-    pthread_attr_init(&attr) ;
-#ifndef VALGRIND
-    /* For some reason we can't detach the threads when using
-     * valgrind. Just create and call pthread_join() at once */
-    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) ;
-#endif /* VALGRIND */
-
-#ifndef __UCLIBC__
-    /* Seem to be some bug in uClibc since it's not possible to
-     * detach the new thread at once. */
-    attr_p = &attr;
-#endif /* __UCLIBC__ */
-
-    while ( out->next ) {
-        if ( pthread_create( &thread, attr_p, ConnectionThread, out) ) Exit(1) ;
-        if(!attr_p) pthread_detach(thread);
-        out = out->next ;
-    }
-    ConnectionThread( out ) ;
-#else /* OW_MT */
-    ToListen( out ) ;
-    for ( ;; ) RunAccepted( accept(outdevice->fd,NULL,NULL),HandlerRoutine ) ;
-#endif /* OW_MT */
-}
-
-static void RunAccepted( int rafd, void (*HandlerRoutine)(int fd) ) {
-    if ( rafd>=0 ) {
-        HandlerRoutine( rafd ) ;
-        close( rafd ) ;
+badthread:
+        //LEVEL_DEBUG("ACCEPT %s[%lu] start %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    ACCEPTLOCK(sps->out) ;
+    //LEVEL_DEBUG("ACCEPT %s[%lu] locked %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    ret = pthread_create( &thread, NULL, ServerProcessAccept, vp ) ;
+    //LEVEL_DEBUG("ACCEPT %s[%lu] create %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    acceptfd = accept( sps->out->fd, NULL, NULL ) ;
+    //LEVEL_DEBUG("ACCEPT %s[%lu] accept %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    ACCEPTUNLOCK(sps->out) ;
+    //LEVEL_DEBUG("ACCEPT %s[%lu] unlock %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    
+    if ( acceptfd < 0 ) {
+        ERROR_CONNECT("Trouble with accept on listen socket %d [%s](%d)\n",sps->out->fd, sps->out->name, sps->out->index ) ;
     } else {
-        STAT_ADD1(NET_accept_errors);
-        LEVEL_CONNECT("accept() error %d [%s]\n", errno, strerror(errno));
+        (sps->HandlerRoutine)(acceptfd) ;
+        close(acceptfd) ;
+    }
+    //LEVEL_DEBUG("ACCEPT  <%p> <%p>\n",sps,sps->out);
+    //LEVEL_DEBUG("ACCEPT %s[%lu] handled %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    /* only loop if another thread couldn't be created */
+    if ( ret ) goto badthread ;
+    return NULL ;
+}
+    
+static void * ServerProcessOut( void * vp ) {
+    struct serverprocessstruct * sps = (struct serverprocessstruct *) vp ;
+
+    pthread_detach( pthread_self() ) ;
+
+    if ( ServerAddr( sps->out ) || (ServerListen( sps->out )<0) ) {
+        LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(sps->out->name),sps->out->index) ;
+        (sps->Exit)(1) ;
+    }
+
+    ServerProcessAccept( vp ) ;
+    return NULL ;
+}
+
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
+    struct serverprocessstruct * sps ;
+    struct connection_out * out = outdevice ;
+    int i ;
+
+    if ( outdevices==0 ) {
+        LEVEL_CALL("No output devices defined\n") ;
+        Exit(1) ;
+    }
+
+    /* Create a memory buffer for each device */
+    sps = (struct serverprocessstruct *) calloc(outdevices, sizeof(struct serverprocessstruct)) ;
+    if ( sps==NULL ) {
+        LEVEL_CALL("Cannot allocate space for out device structures\n") ;
+        Exit(1) ;
+    }
+
+    /* Start the head of a thread chain for each outdevice */
+    for ( i=0 ; i<outdevices ; ++i,out=out->next ) {
+        pthread_t thread ;
+        sps[i].out = out ;
+        sps[i].HandlerRoutine = HandlerRoutine ;
+        sps[i].Exit = Exit ;
+        if ( pthread_create(&thread, NULL, ServerProcessOut, (void *)(&(sps[i])) ) ) {
+            ERROR_CONNECT("Could not create a thread for %s\n",SAFESTRING(sps[i].out->name)) ;
+            Exit(1) ;
+        }
+    }
+
+    /* Wait for the end */
+    pause() ;
+
+    /* Cleanup that may never be reached */
+    free(sps) ;
+}
+
+#else /* OW_MT */
+
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
+    if ( indevices==0 ) {
+        LEVEL_CONNECT("Not output device (port) specified. Exiting.\n") ;
+        Exit(1) ;
+    } else if ( indevices>1 ) {
+        LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n",indevices) ;
+        Exit(1) ;
+    } else if ( ServerAddr( outdevice ) || (ServerListen( outdevice )<0) ) {
+        LEVEL_CONNECT("Cannot set up outdevice [%s] -- will exit\n",SAFESTRING(outdevice->name)) ;
+        Exit(1) ;
+    } else {
+        while (1) {
+            int acceptfd=accept(outdevice->fd,NULL,NULL)) ;
+            if ( acceptfd < 0 ) {
+                ERROR_CONNECT("Trouble with accept, will reloop\n") ;
+            } else {
+                HandlerRoutine(acceptfd) ;
+                close(acceptfd) ;
+            }
+        }
     }
 }
-static void * AcceptThread( void * v2 ) {
-    struct AcceptThread_data * data = (struct AcceptThread_data *)v2;
-    int acceptfd = accept( data->o2->fd, NULL, NULL ) ;
-    ACCEPTUNLOCK(data->o2);
-    RunAccepted( acceptfd, data->HandlerRoutine ) ;
-    free(data);
-#ifndef VALGRIND
-    pthread_exit((void *)0);
-#endif /* VALGRIND */
-    return NULL;
-}
+#endif /* OW_MT */
