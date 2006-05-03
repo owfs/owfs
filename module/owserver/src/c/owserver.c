@@ -249,14 +249,16 @@ static void * RealHandler( void * v ) {
 
                 switch( (enum msg_classification) sm.type ) {
                     case msg_presence:
-                        LEVEL_CALL("Presence message\n") ;
-                        if(pn.dev && pn.ft) {
-                            PresenceHandler( &sm, &cm, &pn ) ;
+                        LEVEL_CALL("Presence message on %s bus_nr=%d\n",SAFESTRING(pn.path),pn.bus_nr) ;
+                        //if(pn.dev && pn.ft) {
+                            //PresenceHandler( &sm, &cm, &pn ) ;
                            //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
-                        } else {
-                            cm.ret = 0;
+                        //} else {
+                            //cm.ret = 0;
                            //printf("msg_presence: cm.ret=%d\n", cm.ret);
-                        }
+                        //}
+                        cm.size = cm.payload = 0 ;
+                        cm.ret = pn.bus_nr ;
                         break ;
                     case msg_size:
                         LEVEL_CALL("Size message\n") ;
@@ -402,8 +404,8 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
         if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) {
 #endif
             return ;
-        } 
-        
+        }
+        LEVEL_DEBUG("owserver dir path = %s\n",SAFESTRING(pn2->path)) ;
         if ( pn2->dev==NULL ) {
             if ( pn2->type != pn_real ) {
                 //printf("DirHandler: call FS_dirname_type\n");
@@ -441,7 +443,9 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     cm->sg = sm->sg ;
 
     // Now generate the directory (using the embedded callback function above for each element
+    LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
+    LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;
 
     // Finished -- send some flags and set up for a null element to tell client we're done
     cm->offset = flags ; /* send the flags in the offset slot */
@@ -469,7 +473,7 @@ static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const str
     cm->payload = cm->size = 0 ;
 }
 
-/* Presence, called from Handler with the following caveates: */
+/* Presence, called from Handler with the following caveats: */
 /* sm has been read, cm has been zeroed */
 /* pn is configured */
 /* cm.ret is set to bus_nr or -1 */
@@ -477,7 +481,7 @@ static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const
     int bus_nr = -1;
     cm->payload = 0 ;
     cm->sg = sm->sg ;
-
+#if 0
     //printf("PresenceHandler: pn->path=[%s] state=%d bus_nr=%d\n", pn->path, pn->state, pn->bus_nr);
 
     if((pn->type == pn_real) && !(pn->state & pn_bus)) {
@@ -497,6 +501,8 @@ static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const
     } else {
         cm->ret = pn->bus_nr ;
     }
+#endif /* 0 */
+    cm->ret = pn->bus_nr ;
     cm->payload = cm->size = 0 ;
 }
 

@@ -187,7 +187,7 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
     FSTATLOCK;
         dir_time = time(NULL) ; // protected by mutex
     FSTATUNLOCK;
-    //printf("FS_dir_remote pid=%ld path=%s\n",pthread_self(), pn->path);
+    LEVEL_DEBUG("FS_dir_remote path=%s\n", pn->path);
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
