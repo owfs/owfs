@@ -27,11 +27,11 @@ void PIDstart( void ) {
             ERROR_CONNECT("Cannot open PID file: %s\n",pid_file ) ;
             free( pid_file ) ;
             pid_file = NULL ;
-            return 1 ;
+        } else {
+            fprintf(pid,"%lu",(long unsigned int)pid_num ) ;
+            fclose(pid) ;
+            pid_created = 1 ;
         }
-        fprintf(pid,"%lu",(long unsigned int)pid_num ) ;
-        fclose(pid) ;
-        pid_created = 1 ;
     }
 }
 
