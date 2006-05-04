@@ -44,7 +44,8 @@ $Id$
 int handle_socket(FILE * out);
 
 /* in owhttpd_present */
-void HTTPstart(FILE * out, const char * status, const unsigned int text ) ;
+enum content_type { ct_text, ct_html, ct_icon } ;
+void HTTPstart(FILE * out, const char * status, const enum content_type ct ) ;
 void HTTPtitle(FILE * out, const char * title ) ;
 void HTTPheader(FILE * out, const char * head ) ;
 void HTTPfoot(FILE * out ) ;
@@ -58,5 +59,8 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) ;
 /* in owhttpd_dir.c */
 void ShowDir( FILE * out, const struct parsedname * const pn ) ;
 int Backup( const char * path ) ;
+
+/* in ow_favicon.c */
+void Favicon( FILE * out ) ;
 
 #endif /* OWHTTPD_H */

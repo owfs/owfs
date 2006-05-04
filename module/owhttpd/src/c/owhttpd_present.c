@@ -17,7 +17,7 @@ $Id$
 /* ------------ Protoypes ---------------- */
 
     /* Utility HTML page display functions */
-void HTTPstart(FILE * out, const char * status, const unsigned int text ) {
+void HTTPstart(FILE * out, const char * status, const enum content_type ct ) {
     char d[44] ;
     time_t t = time(NULL) ;
     size_t l = strftime(d,sizeof(d),"%a, %d %b %Y %T GMT",gmtime(&t)) ;
@@ -29,10 +29,17 @@ void HTTPstart(FILE * out, const char * status, const unsigned int text ) {
     /*
      * fprintf( out, "MIME-version: 1.0\r\n" );
      */
-    if(text)
-      fprintf(out, "Content-Type: text/plain\r\n");
-    else
-      fprintf(out, "Content-Type: text/html\r\n");
+    switch(ct) {
+        case ct_html:
+            fprintf(out, "Content-Type: text/html\r\n");
+            break ;
+        case ct_icon:
+            fprintf(out, "Content-Length: 894\r\n");
+            fprintf(out, "Connection: close\r\n");
+            /* fall through */
+        case ct_text:
+            fprintf(out, "Content-Type: text/plain\r\n");
+    }
     fprintf(out, "\r\n");
 }
 

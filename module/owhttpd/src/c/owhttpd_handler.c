@@ -68,6 +68,8 @@ int handle_socket(FILE * out) {
     /* Can't understand the file name = URL */
     } else if ( up.file == NULL ) {
         Bad404( out ) ;
+    } else if ( strcasecmp(up.file, "/favicon.ico" )==0 ) {
+        Favicon( out ) ;
     } else if ( FS_ParsedName( up.file , &pn ) ) {
         /* Can't understand the file name = URL */
         Bad404( out ) ;
@@ -156,7 +158,7 @@ static void URLparse( struct urlparse * up ) {
 
 
 static void Bad400( FILE * out ) {
-    HTTPstart( out , "400 Bad Request", 0 ) ;
+    HTTPstart( out , "400 Bad Request", ct_html ) ;
     HTTPtitle( out , "Error 400 -- Bad request" ) ;
     HTTPheader( out , "Unrecognized Request" ) ;
     fprintf( out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>" ) ;
@@ -165,7 +167,7 @@ static void Bad400( FILE * out ) {
 }
 
 static void Bad404( FILE * out ) {
-    HTTPstart( out , "404 File not found", 0 ) ;
+    HTTPstart( out , "404 File not found", ct_html ) ;
     HTTPtitle( out , "Error 400 -- Item doesn't exist" ) ;
     HTTPheader( out , "Non-existent Device" ) ;
     fprintf( out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>" ) ;

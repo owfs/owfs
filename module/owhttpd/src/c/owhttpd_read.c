@@ -225,7 +225,7 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) {
     if(! (path2 = strdup(pn->path)) ) return ;
     memcpy(&pncopy, pn, sizeof(struct parsedname));
 
-    HTTPstart( out , "200 OK", (pn->state & pn_text) ) ;
+    HTTPstart( out , "200 OK", (pn->state & pn_text)?ct_text:ct_html ) ;
     if(!(pn->state & pn_text)) {
         b = Backup(pn->path) ;
         HTTPtitle( out , &pn->path[1] ) ;

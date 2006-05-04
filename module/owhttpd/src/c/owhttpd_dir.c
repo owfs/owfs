@@ -86,7 +86,7 @@ void ShowDir( FILE * out, const struct parsedname * const pn ) {
 
     memcpy(&pncopy, pn, sizeof(struct parsedname));
 
-    HTTPstart( out , "200 OK", (pn->state & pn_text) ) ;
+    HTTPstart( out , "200 OK", (pn->state & pn_text)?ct_text:ct_html ) ;
 
     //printf("ShowDir=%s\n", pn->path) ;
 

@@ -20,6 +20,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
 static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags ) ;
 static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags  ) ;
+static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags, int local_flag ) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -43,12 +44,25 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), str
 /* FS_dir produces the "invariant" portion of the directory, passing on to
    FS_dir_seek the variable part */
 int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
+    uint32_t flags ;
+
+    return FS_dir_both( dirfunc, pn, &flags, 1 ) ;
+}
+
+/* path is the path which "pn" parses */
+/* FS_dir_remote is the entry into FS_dir_seek from ServerDir */
+/* More checking is done, and the flags are returned */
+int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
+    return FS_dir_both( dirfunc, pn, flags, 0 ) ;
+}
+
+static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags, int local_flag ) {
     int ret = 0 ;
     struct parsedname pn2 ;
-    uint32_t flags = 0 ;
 
+    /* initialize flags */
+    flags[0] = 0 ;
     if ( pn == NULL || pn->in==NULL ) return -ENODEV ;
-
     LEVEL_CALL("DIRECTORY path=%s\n",SAFESTRING(pn->path)) ;
     
     STATLOCK;
@@ -58,136 +72,6 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
     FSTATLOCK;
         dir_time = time(NULL) ; // protected by mutex
     FSTATUNLOCK;
-
-    /* Make a copy (shallow) of pn to modify for directory entries */
-    memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
-    
-    if ( pn->dev && (pn->type == pn_real)) { /* device directory */
-        /* Device structure is always known for ordinary devices, so don't
-        * bother calling ServerDir() */
-        //printf("FS_dir: call FS_devdir 1\n");
-        ret = FS_devdir( dirfunc, &pn2 ) ;
-    } else if ( pn->dev ) { /* device directory */
-        /* this one seem to be called when browsing
-        * /bus.0/bus.0/system/adapter . Therefor we have to call ServerDir()
-        * to find the content */
-        if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-            //printf("FS_dir: call ServerDir 2 pn->path=%s\n", pn->path);
-            ret = ServerDir(dirfunc, &pn2, &flags) ;
-        } else {
-            //printf("FS_dir: call FS_devdir 2 pn->path=%s\n", pn->path);
-            ret = FS_devdir( dirfunc, &pn2 ) ;
-        }
-    } else if (
-            ( pn->state & pn_alarm ) /* root or branch directory -- alarm state */
-            || ( pn->state & pn_uncached ) /* root or branch directory -- uncached */
-        ) {
-        ret = FS_dir_seek( dirfunc, pn2.in, &pn2, &flags ) ;
-    } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
-        /* there are some files with variable sizes, and /system/adapter have variable
-        * number of entries and we have to call ServerDir() */
-        if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-            //printf("FS_dir: pn->type != pn_real Call ServerDir pn->path=%s\n", pn->path);
-            ret = ServerDir(dirfunc, &pn2, &flags) ;
-        } else {
-            //printf("FS_dir: pn->type != pn_real Call FS_typedir pn->path=%s\n", pn->path);
-            ret = FS_typedir( dirfunc, &pn2 ) ;
-        }
-    } else {
-    //printf("FS_dir pid=%ld path=%s call dir_seek\n",pthread_self(), pn->path);
-        //printf("FS_dir: pn->si->sg=%X  pn2.pathlength=%d pn2.state=%d pn->state=%X\n", pn->si->sg, pn2.pathlength, pn2.state, pn->state);
-    
-        if(ShouldReturnBusList(pn)) {
-            if ( pn2.pathlength == 0 ) { /* true root */
-                if ( !(pn2.state & (pn_bus | pn_alarm | pn_uncached)) ) {
-                    struct connection_in *ci ;
-    
-                    /* restore state */
-                    pn2.type = pn_real ;
-                    if ( IsLocalCacheEnabled(pn) ) { /* cached */
-                        pn2.state = (pn_uncached | (pn->state & pn_text)) ;
-                        //printf("state set to %d at uncached\n", pn2.state);
-                        dirfunc( &pn2 ) ;
-                        /* restore state */
-                        pn2.state = pn->state ;
-                    }
-    
-                    ci = indevice ;
-                    while(ci) {
-                        pn2.state = (pn_bus | (pn->state & pn_text )) ;
-                        pn2.bus_nr = ci->index ;
-                        dirfunc( &pn2 ) ;
-                        ci = ci->next ;
-                    }
-                    pn2.state = pn->state ;
-                    pn2.bus_nr = pn->bus_nr ;
-                
-                    pn2.state = (pn_normal | (pn->state & pn_text )) ;
-                    pn2.type = pn_settings ;
-                    dirfunc( &pn2 ) ;
-                    pn2.type = pn_system ;
-                    dirfunc( &pn2 ) ;
-                    pn2.type = pn_statistics ;
-                    dirfunc( &pn2 ) ;
-                    pn2.type = pn_structure ;
-                    dirfunc( &pn2 ) ;
-                    
-                    pn2.type = pn->type;
-                    pn2.state = pn->state;
-                }
-            }
-        }
-        
-        if ( (pn2.state & pn_bus) && (get_busmode(pn2.in) == bus_remote) ) {
-            //printf("FS_dir: Call ServerDir\n");
-            ret = ServerDir(dirfunc, &pn2, &flags) ;
-        } else {
-            //printf("FS_dir: Call FS_dir_seek\n");
-            ret = FS_dir_seek( dirfunc, pn2.in, &pn2, &flags ) ;
-        }
-    }
-    
-    if(!(pn->state & pn_alarm)) {
-        /* don't show alarm directory in alarm directory */
-        /* alarm directory */
-        if ( flags & DEV_alarm ) {
-                pn2.state = (pn_alarm | (pn->state & pn_text)) ;
-                dirfunc( &pn2 ) ;
-                pn2.state = pn->state ;
-        }
-    }
-    /* simultaneous directory */
-    if ( flags & (DEV_temp|DEV_volt) ) {
-        pn2.dev = DeviceSimultaneous ;
-        dirfunc( &pn2 ) ;
-    }
-    STATLOCK;
-        AVERAGE_OUT(&dir_avg)
-        AVERAGE_OUT(&all_avg)
-    STATUNLOCK;
-    //printf("FS_dir out ret=%d\n", ret);
-    return ret ;
-}
-
-/* path is the path which "pn" parses */
-/* FS_dir_remote is the entry into FS_dir_seek from ServerDir */
-/* More checking is done, and the flags are returned */
-int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
-    int ret = 0 ;
-    struct parsedname pn2 ;
-
-    /* initialize flags */
-    flags[0] = 0 ;
-    if ( pn == NULL || pn->in==NULL ) return -ENODEV ;
-    
-    STATLOCK;
-        AVERAGE_IN(&dir_avg)
-        AVERAGE_IN(&all_avg)
-    STATUNLOCK;
-    FSTATLOCK;
-        dir_time = time(NULL) ; // protected by mutex
-    FSTATUNLOCK;
-    LEVEL_DEBUG("FS_dir_remote path=%s\n", pn->path);
 
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
@@ -277,6 +161,22 @@ int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const stru
         } else {
             //printf("FS_dir_remote: call FS_dir_seek\n");
             ret = FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
+        }
+    }
+    if ( local_flag ) {
+        if(!(pn->state & pn_alarm)) {
+            /* don't show alarm directory in alarm directory */
+            /* alarm directory */
+            if ( flags[0] & DEV_alarm ) {
+                pn2.state = (pn_alarm | (pn->state & pn_text)) ;
+                dirfunc( &pn2 ) ;
+                pn2.state = pn->state ;
+            }
+        }
+        /* simultaneous directory */
+        if ( flags[0] & (DEV_temp|DEV_volt) ) {
+            pn2.dev = DeviceSimultaneous ;
+            dirfunc( &pn2 ) ;
         }
     }
     STATLOCK;
