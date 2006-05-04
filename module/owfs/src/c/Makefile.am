@@ -15,6 +15,7 @@ endif
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          ${FUSE_FLAGS} \
+         ${FUSE_INCLUDES} \
          -I../../../owlib/src/include \
          -L../../../owlib/src/c \
          -fexceptions \

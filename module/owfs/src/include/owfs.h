@@ -21,7 +21,8 @@ $Id$
 /* Include FUSE -- http://fuse.sf.net */
 /* Lot's of version-specific code */
 
-#define FUSE_USE_VERSION 26
+//#define FUSE_USE_VERSION 26
+// FUSE_USE_VERSION is set from configure script
 #include <fuse.h>
 #ifndef FUSE_VERSION
  #ifndef FUSE_MAJOR_VERSION

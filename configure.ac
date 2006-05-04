@@ -626,11 +626,11 @@ if test "${ENABLE_OWFS}" != "false" ; then
 
     save_CPPFLAGS="$CPPFLAGS"
     save_LDFLAGS="$LDFLAGS"
-#    FUSE_FLAGS="-I${fuse_include_path}"
-    FUSE_FLAGS="-DFUSE_USE_VERSION=22 -I${fuse_include_path}"
+    FUSE_FLAGS="-DFUSE_USE_VERSION=26"
+    FUSE_INCLUDES="-I${fuse_include_path}"
     FUSE_LIBS="-L${fuse_lib_path}"
     LD_EXTRALIBS="-Wl,--rpath -Wl,${fuse_lib_path}"
-    CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
+    CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
     LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
     AC_CHECK_HEADER(fuse.h,,[
@@ -638,9 +638,10 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	Can't find fuse.h - Add the search path with --with-fuseinclude])
 
 	FUSE_FLAGS=""
+	FUSE_INCLUDES=""
 	FUSE_LIBS=""
 	LD_EXTRALIBS=""
-	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS"
+	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
 	LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
 	AC_MSG_WARN([Install FUSE-2.2 or later to enable owfs - download it from http://fuse.sourceforge.net/])
@@ -697,7 +698,16 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	    AC_COMPILE_IFELSE([
 	    AC_LANG_PROGRAM([[#include <fuse.h>]],
 	    [[
-	    #if ((FUSE_MAJOR_VERSION == 2) && (FUSE_MINOR_VERSION >= 2))
+	    #ifndef FUSE_VERSION
+	     #ifndef FUSE_MAJOR_VERSION
+	       #define FUSE_VERSION 11
+	     #else /* FUSE_MAJOR_VERSION */
+	       #undef FUSE_MAKE_VERSION
+	     #define FUSE_MAKE_VERSION(maj,min)  ((maj) * 10 + (min))
+	     #define FUSE_VERSION FUSE_MAKE_VERSION(FUSE_MAJOR_VERSION,FUSE_MINOR_VERSION)
+	     #endif /* FUSE_MAJOR_VERSION */
+	    #endif /* FUSE_VERSION */
+	    #if (FUSE_VERSION >= 22)
 		/* Fuse > 2.2 is ok */
 	    #else
 		#error "Fuse < 2.2"
@@ -721,6 +731,7 @@ else
 fi
 AC_SUBST(FUSE_LIBS)
 AC_SUBST(FUSE_FLAGS)
+AC_SUBST(FUSE_INCLUDES)
 
 AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 
