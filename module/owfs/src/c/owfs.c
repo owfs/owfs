@@ -123,17 +123,18 @@ int main(int argc, char *argv[]) {
     }
     Fuse_parse(fuse_mnt_opt, &fuse_options) ;
     Fuse_parse(fuse_open_opt, &fuse_options) ;
- #ifdef OW_MT
+ #ifndef OW_MT
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */
  #if FUSE_VERSION >= 26 // requires extra parameter
-    //printf("fuse_main=%d\n",fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL )) ;
+    c = fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper) ;
+    //printf("fuse_main=%d\n",c);
  #else
     now_background = background ; // tell "error" that we are background
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;
  #endif
     Fuse_cleanup( &fuse_options ) ;
-   ow_exit(0) ;
+    ow_exit(0) ;
 #endif
 
     return 0 ;
