@@ -76,30 +76,30 @@ DeviceEntryExtended( 29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2408 */
-static int OW_w_control( const unsigned char data , const struct parsedname * pn ) ;
+static int OW_w_control( const BYTE data , const struct parsedname * pn ) ;
 static int OW_c_latch( const struct parsedname * pn ) ;
-static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) ;
-static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) ;
-static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) ;
+static int OW_w_pio( const BYTE data,  const struct parsedname * pn ) ;
+static int OW_r_reg( BYTE * data , const struct parsedname * pn ) ;
+static int OW_w_s_alarm( const BYTE *data , const struct parsedname * pn ) ;
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
 static int FS_power(int * y , const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],7) ;
     return 0 ;
 }
 
 static int FS_r_strobe(int * y , const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],2) ;
     return 0 ;
 }
 
 static int FS_w_strobe(const int * y, const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     UT_setbit( &data[5], 2, y[0] ) ;
     return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
@@ -108,7 +108,7 @@ static int FS_w_strobe(const int * y, const struct parsedname * pn) {
 /* 2408 switch PIO sensed*/
 /* From register 0x88 */
 static int FS_sense(unsigned int * u, const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     u[0] = data[0] ;
     return 0 ;
@@ -117,7 +117,7 @@ static int FS_sense(unsigned int * u, const struct parsedname * pn) {
 /* 2408 switch PIO set*/
 /* From register 0x89 */
 static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     u[0] = data[1] ^ 0xFF ; /* reverse bits */
     return 0 ;
@@ -133,7 +133,7 @@ static int FS_w_pio(const unsigned int * u , const struct parsedname * pn) {
 /* 2408 read activity latch */
 /* From register 0x8A */
 static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     u[0] = data[2] ;
     return 0 ;
@@ -150,7 +150,7 @@ static int FS_w_latch(const unsigned int * u, const struct parsedname * pn) {
 /* 2408 alarm settings*/
 /* From registers 0x8B-0x8D */
 static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
-    unsigned char d[6] ;
+    BYTE d[6] ;
     int i, p ;
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
     /* register 0x8D */
@@ -167,7 +167,7 @@ static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
 /* data[1] polarity */
 /* data[0] selection  */
 static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char data[3];
+    BYTE data[3];
     int i ;
     unsigned int p ;
     for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) {
@@ -180,14 +180,14 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
 }
 
 static int FS_r_por(int * y , const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     *y = UT_getbit(&data[5],3) ;
     return 0 ;
 }
 
 static int FS_w_por(const int * y, const struct parsedname * pn) {
-    unsigned char data[6] ;
+    BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     UT_setbit( &data[5], 3, y[0] ) ;
     return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
@@ -202,8 +202,8 @@ static int FS_w_por(const int * y, const struct parsedname * pn) {
    0x8D Control/Status
    plus 2 more bytes to get to the end of the page and qualify for a CRC16 checksum
 */
-static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char p[3+8+2] = { 0xF0, 0x88 , 0x00, } ;
+static int OW_r_reg( BYTE * data , const struct parsedname * pn ) {
+    BYTE p[3+8+2] = { 0xF0, 0x88 , 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -221,9 +221,9 @@ static int OW_r_reg( unsigned char * data , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
-    unsigned char p[] = { 0x5A, data , ~data, } ;
-    unsigned char r[2] ;
+static int OW_w_pio( const BYTE data,  const struct parsedname * pn ) {
+    BYTE p[] = { 0x5A, data , ~data, } ;
+    BYTE r[2] ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -243,8 +243,8 @@ static int OW_w_pio( const unsigned char data,  const struct parsedname * pn ) {
 
 /* Reset activity latch */
 static int OW_c_latch(const struct parsedname * pn) {
-    unsigned char p[] = { 0xC3, } ;
-    unsigned char r ;
+    BYTE p[] = { 0xC3, } ;
+    BYTE r ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 1, trxn_match } ,
@@ -262,9 +262,9 @@ static int OW_c_latch(const struct parsedname * pn) {
 }
 
 /* Write control/status */
-static int OW_w_control( const unsigned char data , const struct parsedname * pn ) {
-    unsigned char d[6] ; /* register read */
-    unsigned char p[] = { 0xCC, 0x8D, 0x00, data, } ;
+static int OW_w_control( const BYTE data , const struct parsedname * pn ) {
+    BYTE d[6] ; /* register read */
+    BYTE p[] = { 0xCC, 0x8D, 0x00, data, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 4, trxn_match } ,
@@ -282,9 +282,9 @@ static int OW_w_control( const unsigned char data , const struct parsedname * pn
 }
 
 /* write alarm settings */
-static int OW_w_s_alarm( const unsigned char *data , const struct parsedname * pn ) {
-    unsigned char d[6], cr ;
-    unsigned char a[] = { 0xCC, 0x8D, 0x00, } ;
+static int OW_w_s_alarm( const BYTE *data , const struct parsedname * pn ) {
+    BYTE d[6], cr ;
+    BYTE a[] = { 0xCC, 0x8D, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { a, NULL, 3, trxn_match } ,

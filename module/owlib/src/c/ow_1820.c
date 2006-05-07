@@ -107,7 +107,7 @@ static struct internal_prop ip_resolution = {"RES",ft_stable} ;
 static struct internal_prop ip_power = {"POW",ft_stable} ;
 
 struct tempresolution {
-    unsigned char config ;
+    BYTE config ;
     unsigned int delay ;
 } ;
 struct tempresolution Resolutions[] = {
@@ -118,8 +118,8 @@ struct tempresolution Resolutions[] = {
 } ;
 
 struct die_limits {
-    unsigned char B7[6] ;
-    unsigned char C2[6] ;
+    BYTE B7[6] ;
+    BYTE C2[6] ;
 } ;
 
 enum eDie { eB6, eB7, eC2, eC3, } ;
@@ -150,13 +150,13 @@ struct die_limits DIE[] = {
 /* DS1820&2*/
 static int OW_10temp(FLOAT * temp , const struct parsedname * pn) ;
 static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) ;
-static int OW_power(unsigned char * data, const struct parsedname * pn) ;
+static int OW_power(BYTE * data, const struct parsedname * pn) ;
 static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) ;
 static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) ;
-static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) ;
-static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) ;
-static int OW_r_trim(unsigned char * trim, const struct parsedname * pn) ;
-static int OW_w_trim(const unsigned char * trim, const struct parsedname * pn) ;
+static int OW_r_scratchpad(BYTE * data, const struct parsedname * pn) ;
+static int OW_w_scratchpad(const BYTE * data, const struct parsedname * pn) ;
+static int OW_r_trim(BYTE * trim, const struct parsedname * pn) ;
+static int OW_w_trim(const BYTE * trim, const struct parsedname * pn) ;
 static enum eDie OW_die( const struct parsedname * pn ) ;
 
 static int FS_10temp(FLOAT *T , const struct parsedname * pn) {
@@ -178,7 +178,7 @@ static int FS_22temp(FLOAT *T , const struct parsedname * pn) {
 }
 
 static int FS_power(int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_power( &data , pn ) ) return -EINVAL ;
     y[0] = data!=0x00 ;
     return 0 ;
@@ -217,7 +217,7 @@ static int FS_r_die(char * buf, const size_t size, const off_t offset , const st
 }
 
 static int FS_r_trim(unsigned int * trim , const struct parsedname * pn) {
-    unsigned char t[2] ;
+    BYTE t[2] ;
     if ( OW_r_trim( t , pn ) ) return - EINVAL ;
     trim[0] = (t[1]<<8) | t[0] ;
 //printf("TRIM t:%.2X %.2X trim:%u \n",t[0],t[1],trim[0]) ;
@@ -225,7 +225,7 @@ static int FS_r_trim(unsigned int * trim , const struct parsedname * pn) {
 }
 
 static int FS_w_trim(const unsigned int * trim , const struct parsedname * pn) {
-    unsigned char t[2] ;
+    BYTE t[2] ;
     switch( OW_die(pn) ) {
         case eB7:
         case eC2:
@@ -240,7 +240,7 @@ static int FS_w_trim(const unsigned int * trim , const struct parsedname * pn) {
 
 /* Are the trim values valid-looking? */
 static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
-    unsigned char trim[2] ;
+    BYTE trim[2] ;
     switch( OW_die(pn) ) {
         case eB7:
         case eC2:
@@ -255,8 +255,8 @@ static int FS_r_trimvalid(int * y , const struct parsedname * pn) {
 
 /* Put in a black trim value if non-zero */
 static int FS_r_blanket(int * y , const struct parsedname * pn) {
-    unsigned char trim[2] ;
-    unsigned char blanket[] = { 0x9D, 0xBB } ;
+    BYTE trim[2] ;
+    BYTE blanket[] = { 0x9D, 0xBB } ;
     switch( OW_die(pn) ) {
         case eB7:
         case eC2:
@@ -270,7 +270,7 @@ static int FS_r_blanket(int * y , const struct parsedname * pn) {
 
 /* Put in a black trim value if non-zero */
 static int FS_w_blanket(const int * y , const struct parsedname * pn) {
-    unsigned char blanket[] = { 0x9D, 0xBB } ;
+    BYTE blanket[] = { 0x9D, 0xBB } ;
     switch( OW_die(pn) ) {
         case eB7:
         case eC2:
@@ -285,11 +285,11 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
 static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
-    unsigned char data[8] ;
-    unsigned char convert[] = { 0x44, } ;
-    unsigned char dummy ;
+    BYTE data[8] ;
+    BYTE convert[] = { 0x44, } ;
+    BYTE dummy ;
     unsigned int delay = pn->ft->data.i ;
-    unsigned char pow ;
+    BYTE pow ;
     struct transaction_log tconvert[] = {
         TRXN_START ,
         { convert, &dummy, 1, trxn_power },
@@ -335,15 +335,15 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_power( unsigned char * data, const struct parsedname * pn) {
-    unsigned char b4[] = { 0xB4, } ;
+static int OW_power( BYTE * data, const struct parsedname * pn) {
+    BYTE b4[] = { 0xB4, } ;
     struct transaction_log tpower[] = {
         TRXN_START ,
         { b4, NULL, 1, trxn_match },
         { NULL, data, 1, trxn_read },
         TRXN_END,
     } ;
-    size_t s = sizeof(unsigned char) ;
+    size_t s = sizeof(BYTE) ;
     //printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
     if ( (pn->state & pn_uncached) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
         //printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
@@ -357,9 +357,9 @@ static int OW_power( unsigned char * data, const struct parsedname * pn) {
 }
 
 static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) {
-    unsigned char data[8] ;
-    unsigned char convert[] = { 0x44, } ;
-    unsigned char pow ;
+    BYTE data[8] ;
+    BYTE convert[] = { 0x44, } ;
+    BYTE pow ;
     int res = Resolutions[resolution-9].config ;
     unsigned int delay = Resolutions[resolution-9].delay ;
     int oldres ;
@@ -411,8 +411,8 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
 
 /* Limits Tindex=0 high 1=low */
 static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
-    unsigned char data[8] ;
-    unsigned char recall[] = { 0xB4, } ;
+    BYTE data[8] ;
+    BYTE recall[] = { 0xB4, } ;
     struct transaction_log trecall[] = {
         TRXN_START ,
         { recall, NULL, 1, trxn_match },
@@ -430,7 +430,7 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
 
 /* Limits Tindex=0 high 1=low */
 static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) {
-    unsigned char data[8] ;
+    BYTE data[8] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
     data[2+Tindex] = (uint8_t) T ;
@@ -438,10 +438,10 @@ static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedn
 }
 
 /* read 8 bytes, includes CRC8 which is checked */
-static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) {
+static int OW_r_scratchpad(BYTE * data, const struct parsedname * pn) {
     /* data is 8 bytes long */
-    unsigned char be[] = { 0xBE, } ;
-    unsigned char td[9] ;
+    BYTE be[] = { 0xBE, } ;
+    BYTE td[9] ;
     struct transaction_log tread[] = {
         TRXN_START ,
         { be, NULL, 1, trxn_match },
@@ -456,10 +456,10 @@ static int OW_r_scratchpad(unsigned char * data, const struct parsedname * pn) {
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
-static int OW_w_scratchpad(const unsigned char * data, const struct parsedname * pn) {
+static int OW_w_scratchpad(const BYTE * data, const struct parsedname * pn) {
     /* data is 3 bytes ng */
-    unsigned char d[4] = { 0x4E, data[0], data[1], data[2], } ;
-    unsigned char pow[] = { 0x48, } ;
+    BYTE d[4] = { 0x4E, data[0], data[1], data[2], } ;
+    BYTE pow[] = { 0x48, } ;
     struct transaction_log twrite[] = {
         TRXN_START ,
         { d, NULL, 3, trxn_match },
@@ -480,9 +480,9 @@ static int OW_w_scratchpad(const unsigned char * data, const struct parsedname *
 }
 
 /* Trim values -- undocumented except in AN247.pdf */
-static int OW_r_trim(unsigned char * trim, const struct parsedname * pn) {
-    unsigned char cmd0[] = { 0x93, } ;
-    unsigned char cmd1[] = { 0x68, } ;
+static int OW_r_trim(BYTE * trim, const struct parsedname * pn) {
+    BYTE cmd0[] = { 0x93, } ;
+    BYTE cmd1[] = { 0x68, } ;
     struct transaction_log t0[] = {
         TRXN_START ,
         { cmd0, NULL, 1, trxn_match },
@@ -501,11 +501,11 @@ static int OW_r_trim(unsigned char * trim, const struct parsedname * pn) {
     return BUS_transaction( t1, pn ) ;
 }
 
-static int OW_w_trim(const unsigned char * trim, const struct parsedname * pn) {
-    unsigned char cmd0[] = { 0x95, trim[0], } ;
-    unsigned char cmd1[] = { 0x63, trim[1], } ;
-    unsigned char cmd2[] = { 0x94, } ;
-    unsigned char cmd3[] = { 0x64, } ;
+static int OW_w_trim(const BYTE * trim, const struct parsedname * pn) {
+    BYTE cmd0[] = { 0x95, trim[0], } ;
+    BYTE cmd1[] = { 0x63, trim[1], } ;
+    BYTE cmd2[] = { 0x94, } ;
+    BYTE cmd3[] = { 0x64, } ;
     struct transaction_log tt[] = {
         TRXN_START ,
         { cmd0, NULL, 2, trxn_match },
@@ -527,7 +527,7 @@ static int OW_w_trim(const unsigned char * trim, const struct parsedname * pn) {
 }
 
 static enum eDie OW_die( const struct parsedname * pn ) {
-    unsigned char die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
+    BYTE die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1], } ;
     // data gives index into die matrix
     if ( memcmp(die, DIE[pn->ft->data.i].C2 , 6 ) > 0 ) return eC2 ;
     if ( memcmp(die, DIE[pn->ft->data.i].B7 , 6 ) > 0 ) return eB7 ;

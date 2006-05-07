@@ -36,10 +36,10 @@ static int BUS_select_subbranch( const struct buspath * bp, const struct parsedn
    Obviously not yet.
    Well, you asked
 */
-int BUS_select_low(const struct parsedname * const pn) {
+int BUS_select_low(const struct parsedname * pn) {
     int ret ;
     // match Serial Number command 0x55
-    unsigned char sent[9] = { 0x55, } ;
+    BYTE sent[9] = { 0x55, } ;
     int pl = pn->pathlength ;
 
     LEVEL_DEBUG("Selecting a path (and device) path=%s SN="SNformat" last path="SNformat"\n",SAFESTRING(pn->path),SNvar(pn->sn),SNvar(pn->in->branch.sn));
@@ -113,9 +113,9 @@ int BUS_select_branch( const struct parsedname * pn ) {
 
 /* Select the specific branch */
 static int BUS_select_subbranch( const struct buspath * bp, const struct parsedname * pn) {
-    unsigned char sent[10] = { 0x55, } ;
-    unsigned char branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
-    unsigned char resp[3] ;
+    BYTE sent[10] = { 0x55, } ;
+    BYTE branch[2] = { 0xCC, 0x33, } ; /* Main, Aux */
+    BYTE resp[3] ;
     int ret ;
 
     memcpy( &sent[1], bp->sn, 8 ) ;
@@ -141,7 +141,7 @@ static int BUS_select_subbranch( const struct buspath * bp, const struct parsedn
 
 /* find every DS2409 (family code 1F) and switch off, at this depth */
 static int Turnoff( int depth, const struct parsedname * pn ) {
-    unsigned char sent[2] = { 0xCC, 0x66,} ;
+    BYTE sent[2] = { 0xCC, 0x66,} ;
     int ret ;
 
     //printf("TURNOFF entry depth=%d\n",depth) ;

@@ -78,20 +78,20 @@ static char global_passwd[3][8] = { "", "", "" };
 /* ------- Functions ------------ */
 
 
-static int OW_r_ident( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn );
-static int OW_w_ident( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn );
-static int OW_w_reset_password( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn );
-static int OW_w_change_password( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn );
-static int OW_r_page( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_page( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_memory( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn );
-static int OW_w_memory( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn );
-static int OW_r_subkey( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension );
-static int OW_w_subkey( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension );
+static int OW_r_ident( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn );
+static int OW_w_ident( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn );
+static int OW_w_reset_password( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn );
+static int OW_w_change_password( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn );
+static int OW_r_page( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_page( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_memory( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn );
+static int OW_w_memory( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn );
+static int OW_r_subkey( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension );
+static int OW_w_subkey( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension );
 
 /* array with magic bytes representing the Copy Scratch operations */
 enum block { ALL=0, IDENT, PASSWORD, DATA };
-static const unsigned char cp_array[9][8] = {
+static const BYTE cp_array[9][8] = {
   { 0x56, 0x56, 0x7F, 0x51, 0x57, 0x5D, 0x5A, 0x7F} , // 00-3F
   { 0x9A, 0x9A, 0xB3, 0x9D, 0x64, 0x6E, 0x69, 0x4C} , // ident
   { 0x9A, 0x9A, 0x4C, 0x62, 0x9B, 0x91, 0x69, 0x4C} , // passwd
@@ -107,7 +107,7 @@ static const unsigned char cp_array[9][8] = {
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-static int FS_w_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_password(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     (void) offset ;
   memset(global_passwd[pn->extension], 0, 8);
   memcpy(global_passwd[pn->extension], buf, MIN(size,8));
@@ -115,49 +115,49 @@ static int FS_w_password(const unsigned char *buf, const size_t size, const off_
   return 0;
 }
 
-static int FS_w_reset_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_reset_password(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_w_reset_password( buf, size, (size_t) offset, pn) ) return -EINVAL ;
   return 0;
 }
 
-static int FS_w_change_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_change_password(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_w_change_password( buf, size, (size_t) offset, pn) ) return -EINVAL ;
   return 0;
 }
 
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_r_page( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_w_page( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return 0 ;
 }
 
-static int FS_r_ident(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_ident(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_r_ident( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return size;
 }
 
-static int FS_w_ident(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_ident(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if (offset) return -EINVAL ;
   if ( OW_w_ident( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return 0;
 }
 
-static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_r_memory( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return size;
 }
 
-static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_w_memory( buf, size, (size_t)offset, pn) ) return -EINVAL ;
   return 0;
 }
 
-static int OW_w_reset_password( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char set_password[3] = { 0x5A, 0x00, 0x00} ;
+static int OW_w_reset_password( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE set_password[3] = { 0x5A, 0x00, 0x00} ;
     char passwd[8];
     char ident[8];
     struct transaction_log tscratch[] = {
@@ -186,8 +186,8 @@ static int OW_w_reset_password( const unsigned char * data , const size_t size ,
     return 0 ;
 }
 
-static int OW_w_subkey( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension ) {
-    unsigned char p[4] = { 0x99, 0x00, 0x00, 0x00} ; // write subkey
+static int OW_w_subkey( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn, const int extension ) {
+    BYTE p[4] = { 0x99, 0x00, 0x00, 0x00} ; // write subkey
     char ident[8];
     struct transaction_log tscratch[] = {
         TRXN_START,
@@ -210,8 +210,8 @@ static int OW_w_subkey( const unsigned char * data , const size_t size , const s
     return 0 ;
 }
 
-static int OW_r_subkey( unsigned char * data , const size_t size , const size_t offset, const struct parsedname *pn, const int extension ) {
-    unsigned char p[3] = { 0x66, 0x00, 0x00} ; // read subkey
+static int OW_r_subkey( BYTE * data , const size_t size , const size_t offset, const struct parsedname *pn, const int extension ) {
+    BYTE p[3] = { 0x66, 0x00, 0x00} ; // read subkey
     struct transaction_log tscratch[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -241,7 +241,7 @@ static int OW_r_subkey( unsigned char * data , const size_t size , const size_t 
     return 0 ;
 }
 
-static int OW_r_memory( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_memory( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
   char all_data[0x40];
   int i, ret, nr_bytes;
   size_t left = size;
@@ -263,7 +263,7 @@ static int OW_r_memory( unsigned char * data , const size_t size , const size_t 
   return 0 ;
 }
 
-static int OW_w_memory( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_memory( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
   char all_data[0x40];
   int i, ret, nr_bytes;
   size_t left = size;
@@ -292,7 +292,7 @@ static int OW_w_memory( const unsigned char * data , const size_t size , const s
 }
 
 // size and offset already bounds checked
-static int OW_r_ident( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_ident( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     char all_data[0x40];
     //printf("OW_r_ident\n");
 
@@ -302,9 +302,9 @@ static int OW_r_ident( unsigned char * data , const size_t size , const size_t o
     return 0 ;
 }
 
-static int OW_w_ident( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char write_scratch[3] = { 0x96, 0x00, 0x00 } ;
-    unsigned char copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
+static int OW_w_ident( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE write_scratch[3] = { 0x96, 0x00, 0x00 } ;
+    BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
     char all_data[0x40];
     struct transaction_log tscratch[] = {
         TRXN_START,
@@ -337,9 +337,9 @@ static int OW_w_ident( const unsigned char * data , const size_t size , const si
     return 0 ;
 }
 
-static int OW_w_change_password( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char write_scratch[3] = { 0x96, 0x00, 0x00 } ;
-    unsigned char copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
+static int OW_w_change_password( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE write_scratch[3] = { 0x96, 0x00, 0x00 } ;
+    BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
     char all_data[0x40];
     struct transaction_log tscratch[] = {
         TRXN_START,
@@ -372,7 +372,7 @@ static int OW_w_change_password( const unsigned char * data , const size_t size 
     return 0 ;
 }
 
-static int OW_r_page( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_page( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     char all_data[0x40];
     int ret ;
 
@@ -386,10 +386,10 @@ static int OW_r_page( unsigned char * data , const size_t size , const size_t of
     return 0 ;
 }
 
-static int OW_w_page( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char write_scratch[3] = { 0x96, 0xC0, ~(0xC0) } ;
-    unsigned char copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
-    unsigned char all_data[0x40];
+static int OW_w_page( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE write_scratch[3] = { 0x96, 0xC0, ~(0xC0) } ;
+    BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
+    BYTE all_data[0x40];
     int i, nr_bytes ;
     size_t left = size;
     struct transaction_log tscratch[] = {

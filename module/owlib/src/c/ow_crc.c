@@ -17,7 +17,7 @@ $Id$
 /* CRC and Hex utility functions                  */
 /* ---------------------------------------------- */
 /* CRC stuff from PDKit */
-static unsigned char crc8_table[] = {
+static BYTE crc8_table[] = {
     0x00, 0x5E, 0xBC, 0xE2, 0x61, 0x3F, 0xDD, 0x83, 0xC2, 0x9C, 0x7E, 0x20, 0xA3, 0xFD, 0x1F, 0x41,
     0x9D, 0xC3, 0x21, 0x7F, 0xFC, 0xA2, 0x40, 0x1E, 0x5F, 0x01, 0xE3, 0xBD, 0x3E, 0x60, 0x82, 0xDC,
     0x23, 0x7D, 0x9F, 0xC1, 0x42, 0x1C, 0xFE, 0xA0, 0xE1, 0xBF, 0x5D, 0x03, 0x80, 0xDE, 0x3C, 0x62,
@@ -37,8 +37,8 @@ static unsigned char crc8_table[] = {
 
 static unsigned int crc16_table[16] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
-unsigned char CRC8compute( const unsigned char * bytes , const size_t length , const unsigned int seed ) {
-    unsigned char crc = seed ;
+BYTE CRC8compute( const BYTE * bytes , const size_t length , const unsigned int seed ) {
+    BYTE crc = seed ;
     size_t i = 0 ;
     while ( i<length ) {
         crc = crc8_table[crc ^ bytes[i++] ] ;
@@ -47,13 +47,13 @@ unsigned char CRC8compute( const unsigned char * bytes , const size_t length , c
 }
 
 /* wrap CRC8 calculation in statistics */
-unsigned char CRC8( const unsigned char * bytes , const size_t length ) {
+BYTE CRC8( const BYTE * bytes , const size_t length ) {
     return CRC8seeded( bytes, length, 0 ) ;
 }
 
 /* wrap CRC8 calculation in statistics */
-unsigned char CRC8seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) {
-    unsigned char r = CRC8compute( bytes, length , seed ) ;
+BYTE CRC8seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) {
+    BYTE r = CRC8compute( bytes, length , seed ) ;
     STATLOCK;
         ++CRC8_tries ; /* statistics */
         if (r) ++CRC8_errors ; /* statistics */
@@ -63,11 +63,11 @@ unsigned char CRC8seeded( const unsigned char * bytes , const size_t length , co
 
 /* Returns 0 for good match */
 /* Standard -- seed = 0 */
-int CRC16( const unsigned char * bytes , const size_t length ) {
+int CRC16( const BYTE * bytes , const size_t length ) {
     return CRC16seeded( bytes, length, 0 ) ;
 }
 /* Returns 0 for good match */
-int CRC16seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) {
+int CRC16seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) {
     unsigned int sd = seed ;
     int ret ;
     size_t i ;

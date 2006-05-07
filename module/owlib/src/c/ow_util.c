@@ -22,7 +22,7 @@ $Id$
         : (c) >= 'A' && (c) <= 'F' ? (c)-'A'+10 : (c)-'a'+10 )
 
 /* 2 hex digits to number. This is the most used function in owfs for the LINK */
-unsigned char string2num( const char * s ) {
+BYTE string2num( const char * s ) {
     if ( s == NULL ) return 0 ;
     return (_HEXVALUE(s[0]) << 4) + _HEXVALUE(s[1]);
 }
@@ -32,44 +32,44 @@ unsigned char string2num( const char * s ) {
 
 #if 0
 /* number to a hex digit */
-char num2char( const unsigned char n ) {
+char num2char( const BYTE n ) {
     return _TOHEXCHAR(n);
 }
 #endif
 
 /* number to 2 hex digits */
-void num2string( char * s , const unsigned char n ) {
+void num2string( char * s , const BYTE n ) {
     s[0] = _TOHEXCHAR(n >> 4) ;
     s[1] = _TOHEXCHAR(n & 0x0F) ;
 }
 
 /* 2x hex digits to x number bytes */
-void string2bytes( const char * str , unsigned char * b , const int bytes ) {
+void string2bytes( const char * str , BYTE * b , const int bytes ) {
     int i ;
     for ( i=0 ; i<bytes ; ++i ) b[i]=string2num(&str[i<<1]) ;
 }
 /* number(x bytes) to 2x hex digits */
-void bytes2string( char * str , const unsigned char * b , const int bytes ) {
+void bytes2string( char * str , const BYTE * b , const int bytes ) {
     int i ;
     for ( i=0 ; i<bytes ; ++i ) num2string(&str[i<<1],b[i]) ;
 }
 
 // #define UT_getbit(buf, loc)	( ( (buf)[(loc)>>3]>>((loc)&0x7) ) &0x01 )
-int UT_getbit(const unsigned char * buf, const int loc) {
+int UT_getbit(const BYTE * buf, const int loc) {
     return ( ( (buf[loc>>3]) >> (loc&0x7) ) & 0x01 ) ;
 }
-int UT_get2bit(const unsigned char * buf, const int loc) {
+int UT_get2bit(const BYTE * buf, const int loc) {
     return ( ( (buf[loc>>2]) >> ((loc&0x3)<<1) ) & 0x03 ) ;
 }
-void UT_setbit( unsigned char * buf, const int loc , const int bit ) {
+void UT_setbit( BYTE * buf, const int loc , const int bit ) {
     if (bit) {
         buf[loc>>3] |= 0x01 << (loc&0x7) ;
     } else {
         buf[loc>>3] &= ~( 0x01 << (loc&0x7) ) ;
     }
 }
-void UT_set2bit( unsigned char * buf, const int loc , const int bits ) {
-    unsigned char * p = &buf[loc>>2] ;
+void UT_set2bit( BYTE * buf, const int loc , const int bits ) {
+    BYTE * p = &buf[loc>>2] ;
     switch (loc&3) {
     case 0 :
         *p = (*p & 0xFC) | bits ;
@@ -86,14 +86,14 @@ void UT_set2bit( unsigned char * buf, const int loc , const int bits ) {
     }
 }
 
-void UT_fromDate( const DATE d, unsigned char * data) {
+void UT_fromDate( const DATE d, BYTE * data) {
     data[0] = d & 0xFF ;
     data[1] = (d>>8) & 0xFF ;
     data[2] = (d>>16) & 0xFF ;
     data[3] = (d>>24) & 0xFF ;
 }
 
-DATE UT_toDate( const unsigned char * data ) {
+DATE UT_toDate( const BYTE * data ) {
     return (((((((unsigned int) data[3])<<8)|data[2])<<8)|data[1])<<8)|data[0] ;
 }
 

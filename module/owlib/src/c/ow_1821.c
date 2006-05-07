@@ -67,10 +67,10 @@ DeviceEntry( thermostat, DS1821 ) ;
 /* DS1821*/
 static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) ;
 static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn ) ;
-static int OW_r_status( unsigned char * data, const struct parsedname * const pn) ;
-static int OW_w_status( unsigned char * data, const struct parsedname * const pn) ;
-static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * const pn) ;
-static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * const pn) ;
+static int OW_r_status( BYTE * data, const struct parsedname * pn) ;
+static int OW_w_status( BYTE * data, const struct parsedname * pn) ;
+static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) ;
+static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) ;
 
 /* Internal properties */
 static struct internal_prop ip_continuous = {"CON",ft_stable} ;
@@ -81,7 +81,7 @@ static int FS_temperature(FLOAT *T , const struct parsedname * pn) {
 }
 
 static int FS_r_polarity( int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
 
     if ( OW_r_status( &data, pn ) ) return -EINVAL ;
     y[0] = (data & 0x02)>>1 ;
@@ -89,7 +89,7 @@ static int FS_r_polarity( int * y , const struct parsedname * pn) {
 }
 
 static int FS_w_polarity( const int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
 
     if ( OW_r_status( &data, pn ) ) return -EINVAL ;
     UT_setbit(&data,1,y[0]) ;
@@ -108,8 +108,8 @@ static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_r_status( unsigned char * data, const struct parsedname * const pn) {
-    unsigned char p[] = { 0xAC, } ;
+static int OW_r_status( BYTE * data, const struct parsedname * pn) {
+    BYTE p[] = { 0xAC, } ;
     int ret ;
     BUSLOCK(pn) ;
         ret = BUS_select(pn) || BUS_send_data( p,1,pn ) || BUS_readin_data( data,1,pn ) ;
@@ -117,8 +117,8 @@ static int OW_r_status( unsigned char * data, const struct parsedname * const pn
     return ret ;
 }
 
-static int OW_w_status( unsigned char * data, const struct parsedname * const pn) {
-    unsigned char p[] = { 0x0C, data[0] } ;
+static int OW_w_status( BYTE * data, const struct parsedname * pn) {
+    BYTE p[] = { 0x0C, data[0] } ;
     int ret ;
     BUSLOCK(pn) ;
         ret = BUS_select(pn) || BUS_send_data( p,2,pn ) ;
@@ -127,8 +127,8 @@ static int OW_w_status( unsigned char * data, const struct parsedname * const pn
 }
 
 static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) {
-    unsigned char c[] = { 0xEE, } ;
-    unsigned char status ;
+    BYTE c[] = { 0xEE, } ;
+    BYTE status ;
     int continuous ;
     int need_to_trigger = 0 ;
     size_t s = sizeof(continuous) ;
@@ -159,12 +159,12 @@ static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) {
 }
 
 static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn ) {
-    unsigned char rt[] = { 0xAA, } ;
-    unsigned char rc[] = { 0xA0, } ;
-    unsigned char lc[] = { 0x41, } ;
-    unsigned char temp_read ;
-    unsigned char count_per_c ;
-    unsigned char count_remain ;
+    BYTE rt[] = { 0xAA, } ;
+    BYTE rc[] = { 0xA0, } ;
+    BYTE lc[] = { 0x41, } ;
+    BYTE temp_read ;
+    BYTE count_per_c ;
+    BYTE count_remain ;
     int ret ;
 
     BUSLOCK(pn) ;
@@ -185,9 +185,9 @@ static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn )
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * const pn) {
-    unsigned char p[] = { 0xA1, 0xA2, } ;
-    unsigned char data ;
+static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
+    BYTE p[] = { 0xA1, 0xA2, } ;
+    BYTE data ;
     int ret ;
 
     BUSLOCK(pn) ;
@@ -198,8 +198,8 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * const pn) {
-    unsigned char p[] = { 0x01, 0x02, } ;
+static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) {
+    BYTE p[] = { 0x01, 0x02, } ;
     signed char data = (int) (T[0]+.49);
     int ret ;
 

@@ -73,7 +73,7 @@ static int dev_compare( const void * a , const void * b ) {
 
 /* Grabs a device slot, either one already matching, or an empty one */
 /* called per-adapter */
-int LockGet( const struct parsedname * const pn ) {
+int LockGet( const struct parsedname * pn ) {
 #ifdef OW_MT
     struct devlock * dlock ;
     struct dev_opaque * opaque ;
@@ -130,7 +130,7 @@ int LockGet( const struct parsedname * const pn ) {
     return 0 ;
 }
 
-void LockRelease( const struct parsedname * const pn ) {
+void LockRelease( const struct parsedname * pn ) {
 #ifdef OW_MT
     int inindex = pn->in->index ;
     if ( pn->lock[inindex] ) {

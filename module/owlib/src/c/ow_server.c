@@ -201,7 +201,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     return ret ;
 }
 
-int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
+int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
     int connectfd = ClientConnect( pn->in ) ;
@@ -222,7 +222,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
         cm.ret = -EIO ;
     } else {
         char * path2 ;
-        unsigned char * snlist = NULL ;
+        BYTE * snlist = NULL ;
         size_t devices = 0 ;
         size_t allocated = 0 ;
         struct parsedname pn2 ;
@@ -235,7 +235,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 BUSUNLOCK(pn) ;
             }
             allocated += 10 ; /* add space for additional devices */
-            snlist = (unsigned char *) malloc(allocated+2) ;
+            snlist = (BYTE *) malloc(allocated+2) ;
         }
 
         while((path2 = FromServerAlloc( connectfd, &cm))) {
@@ -263,7 +263,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 if ( devices >= allocated ) {
                     BYTE * temp = snlist ;
                     allocated += 10 ;
-                    snlist = (unsigned char*) realloc( temp, allocated+2 ) ;
+                    snlist = (BYTE*) realloc( temp, allocated+2 ) ;
                     if ( snlist==NULL ) free(temp) ;
                 }
                 if ( snlist ) { /* test again, after realloc */

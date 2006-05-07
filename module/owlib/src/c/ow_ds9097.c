@@ -17,15 +17,15 @@ $Id$
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
 static int DS9097_reset( const struct parsedname * pn ) ;
-static int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
+static int DS9097_sendback_bits( const BYTE * outbits , BYTE * inbits , const size_t length, const struct parsedname * pn ) ;
 static void DS9097_setroutines( struct interface_routines * f ) ;
-static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
+static int DS9097_send_and_get( const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname * pn ) ;
 
 #define	OneBit	0xFF
 #define ZeroBit 0xC0
 
 /* Device-specific functions */
-static void DS9097_setroutines( struct interface_routines * const f ) {
+static void DS9097_setroutines( struct interface_routines * f ) {
     f->detect        = DS9097_detect         ;
     f->reset         = DS9097_reset          ;
     f->next_both     = BUS_next_both_low     ;
@@ -66,9 +66,9 @@ int DS9097_detect( struct connection_in * in ) {
 /* DS9097 Reset -- A little different from DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
 // return 1 shorted, 0 ok, <0 error
-static int DS9097_reset( const struct parsedname * const pn ) {
-    unsigned char resetbyte = 0xF0 ;
-    unsigned char c;
+static int DS9097_reset( const struct parsedname * pn ) {
+    BYTE resetbyte = 0xF0 ;
+    BYTE c;
     struct termios term;
     int fd = pn->in->fd ;
     int ret ;
@@ -144,9 +144,9 @@ static int DS9097_reset( const struct parsedname * const pn ) {
 /* Actually uses bit zero of each byte */
 /* Dispatches DS9097_MAX_BITS "bits" at a time */
 #define DS9097_MAX_BITS 24
-int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) {
+int DS9097_sendback_bits( const BYTE * outbits , BYTE * inbits , const size_t length, const struct parsedname * pn ) {
     int ret ;
-    unsigned char d[DS9097_MAX_BITS] ;
+    BYTE d[DS9097_MAX_BITS] ;
     size_t l=0 ;
     size_t i=0 ;
     size_t start = 0 ;
@@ -176,7 +176,7 @@ int DS9097_sendback_bits( const unsigned char * outbits , unsigned char * inbits
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9097 */
-static int DS9097_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) {
+static int DS9097_send_and_get( const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname * pn ) {
     size_t gl = length ;
     ssize_t r ;
     size_t sl = length ;

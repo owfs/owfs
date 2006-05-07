@@ -56,7 +56,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
  * command to the bus, and reading the answer.
  * This will probably not work with simultanious reading...
  */
-void update_max_delay(const struct parsedname * const pn) {
+void update_max_delay(const struct parsedname * pn) {
     long sec, usec;
     struct timeval *r, *w;
     struct timeval last_delay;
@@ -129,7 +129,7 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
 }
 
 /* Check if device exists -- >=0 yes, -1 no */
-int CheckPresence( const struct parsedname * const pn ) {
+int CheckPresence( const struct parsedname * pn ) {
     if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) {
         LEVEL_DETAIL("Checking presence of %s\n",SAFESTRING(pn->path) ) ;
         return CheckPresence_low(pn->in,pn) ;
@@ -138,7 +138,7 @@ int CheckPresence( const struct parsedname * const pn ) {
 }
 
 /* Check if device exists -- 0 yes, 1 no */
-int Check1Presence( const struct parsedname * const pn ) {
+int Check1Presence( const struct parsedname * pn ) {
     int y ;
     //printf("Check1Presence type=%d\n", pn->type);
     if ( pn->type == pn_real ) {
@@ -165,7 +165,7 @@ static void * CheckPresence_callback( void * vp ) {
     return NULL ;
 }
 
-static int CheckPresence_low( struct connection_in * in, const struct parsedname * const pn ) {
+static int CheckPresence_low( struct connection_in * in, const struct parsedname * pn ) {
     int ret = 0 ;
     pthread_t thread ;
     int threadbad = 1 ;

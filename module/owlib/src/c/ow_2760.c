@@ -493,40 +493,40 @@ DeviceEntry( 32, DS2780 ) ;
 /* ------- Functions ------------ */
 
 /* DS2406 */
-static int OW_r_sram( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_sram( const unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_sram( BYTE * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_sram( const BYTE * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static FLOAT polycomp( FLOAT x , FLOAT * coef ) ;
 static int OW_lock( const struct parsedname * pn ) ;
 static int OW_r_int(int * I, size_t offset, const struct parsedname * pn) ;
 static int OW_w_int(const int * I, size_t offset, const struct parsedname * pn) ;
-static int OW_cmd( const unsigned char cmd , const struct parsedname * pn ) ;
+static int OW_cmd( const BYTE cmd , const struct parsedname * pn ) ;
 
 /* 2406 memory read */
-static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_mem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not a "paged" endeavor, the CRC comes after a full read */
     if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return size ;
 }
 
 /* 2406 memory write */
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
     if ( OW_r_mem( buf, size, offset+((struct LockPage *) pn->ft->data.v)->offset[pn->extension], pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, offset+((struct LockPage *) pn->ft->data.v)->offset[pn->extension], pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2406 memory write */
 static int FS_r_lock(int *y, const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem( &data, 1, ((struct LockPage *) pn->ft->data.v)->reg, pn) ) return -EINVAL ;
     y[0] = UT_getbit( &data, pn->extension ) ;
     return 0 ;
@@ -539,7 +539,7 @@ static int FS_w_lock(const int *y, const struct parsedname * pn) {
 }
 
 /* Note, it's EPROM -- write once */
-static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* write is "byte at a time" -- not paged */
     if ( OW_w_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return 0 ;
@@ -681,7 +681,7 @@ static int FS_r_current(FLOAT * A , const struct parsedname * pn) {
 
 static int FS_r_vbias(FLOAT * V , const struct parsedname * pn) {
     int I ;
-    unsigned char c ;
+    BYTE c ;
     switch ( pn->sn[0] ) {
         case 0x51: //DS2751
         case 0x30: //DS2760
@@ -704,7 +704,7 @@ static int FS_r_vbias(FLOAT * V , const struct parsedname * pn) {
 
 static int FS_w_vbias(const FLOAT * V , const struct parsedname * pn) {
     int I ;
-    unsigned char c ;
+    BYTE c ;
     int ret = 0 ; // assign unnecessarily to avoid compiler warning
     switch ( pn->sn[0] ) {
         case 0x51: //DS2751
@@ -755,7 +755,7 @@ static int FS_r_temp(FLOAT * T , const struct parsedname * pn) {
 static int FS_r_bit( int * y , const struct parsedname * pn ) {
     int bit = pn->ft->data.u & 0xFF ;
     size_t location = pn->ft->data.u >> 8 ;
-    unsigned char c[1] ;
+    BYTE c[1] ;
     if ( FS_r_mem( c, 1, location, pn ) ) return -EINVAL ;
     y[0] = UT_getbit(c,bit) ;
     return 0 ;
@@ -764,7 +764,7 @@ static int FS_r_bit( int * y , const struct parsedname * pn ) {
 static int FS_w_bit( const int * y , const struct parsedname * pn ) {
     int bit = pn->ft->data.u & 0xFF ;
     size_t location = pn->ft->data.u >> 8 ;
-    unsigned char c[1] ;
+    BYTE c[1] ;
     if ( FS_r_mem( c, 1, location, pn ) ) return -EINVAL ;
     UT_setbit( c, bit, y[0]!=0 ) ;
     return FS_w_mem(c,1,location,pn) ? -EINVAL : 0 ;
@@ -796,7 +796,7 @@ static int FS_w_pio(const int * y, const struct parsedname * pn) {
 }
 
 static int OW_r_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[] = { 0xB8, page&0xFF, } ;
+    BYTE p[] = { 0xB8, page&0xFF, } ;
     int ret ;
     if ( offset > page+16 ) return 0 ;
     if ( offset + size <= page ) return 0 ;
@@ -808,8 +808,8 @@ static int OW_r_eeprom( const size_t page, const size_t size , const size_t offs
 }
 
 /* just read the sram -- eeprom may need to be recalled if you want it */
-static int OW_r_sram( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[] = { 0x69, offset&0xFF , } ;
+static int OW_r_sram( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[] = { 0x69, offset&0xFF , } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -820,7 +820,7 @@ static int OW_r_sram( unsigned char * data , const size_t size , const size_t of
     return ret ;
 }
 
-static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     return OW_r_eeprom(0x20,size,offset,pn)
         || OW_r_eeprom(0x30,size,offset,pn)
         || OW_r_sram(data,size,offset,pn) ;
@@ -828,7 +828,7 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
 
 /* Special processing for eeprom -- page is the address of a 16 byte page (e.g. 0x20) */
 static int OW_w_eeprom( const size_t page, const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[] = { 0x48, page&0xFF, } ;
+    BYTE p[] = { 0x48, page&0xFF, } ;
     int ret ;
     if ( offset > page+16 ) return 0 ;
     if ( offset + size <= page ) return 0 ;
@@ -840,8 +840,8 @@ static int OW_w_eeprom( const size_t page, const size_t size , const size_t offs
     return ret ;
 }
 
-static int OW_w_sram( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[] = { 0x6C, offset&0xFF , } ;
+static int OW_w_sram( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[] = { 0x6C, offset&0xFF , } ;
     int ret  ;
 
     BUSLOCK(pn);
@@ -851,7 +851,7 @@ static int OW_w_sram( const unsigned char * data , const size_t size , const siz
     return ret ;
 }
 
-static int OW_cmd( const unsigned char cmd , const struct parsedname * pn ) {
+static int OW_cmd( const BYTE cmd , const struct parsedname * pn ) {
     int ret  ;
 
     BUSLOCK(pn);
@@ -861,7 +861,7 @@ static int OW_cmd( const unsigned char cmd , const struct parsedname * pn ) {
     return ret ;
 }
 
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
     return OW_r_eeprom(0x20,size,offset,pn)
         || OW_r_eeprom(0x30,size,offset,pn)
         || OW_w_sram(  data,size,offset,pn)
@@ -870,7 +870,7 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 }
 
 static int OW_r_int(int * I, size_t offset, const struct parsedname * pn) {
-    unsigned char i[2] ;
+    BYTE i[2] ;
     int ret = OW_r_sram(i,2,offset,pn) ;
     if (ret) return ret ;
     I[0] = (((int)((int8_t)i[0])<<8) + ((uint8_t)i[1]) ) ;
@@ -878,7 +878,7 @@ static int OW_r_int(int * I, size_t offset, const struct parsedname * pn) {
 }
 
 static int OW_w_int(const int * I, size_t offset, const struct parsedname * pn) {
-    unsigned char i[2] = { (I[0]>>8)&0xFF, I[0]&0xFF, } ;
+    BYTE i[2] = { (I[0]>>8)&0xFF, I[0]&0xFF, } ;
     return OW_w_sram(i,2,offset,pn) ;
 }
 
@@ -891,7 +891,7 @@ static FLOAT polycomp( FLOAT x , FLOAT * coef ) {
 }
 
 static int OW_lock( const struct parsedname * pn ) {
-    unsigned char lock[] = { 0x6C, 0x07, 0x40, 0x6A, 0x00 } ;
+    BYTE lock[] = { 0x6C, 0x07, 0x40, 0x6A, 0x00 } ;
     int ret  ;
     
     UT_setbit( &lock[2], pn->extension, 1 ) ;

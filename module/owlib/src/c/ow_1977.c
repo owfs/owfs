@@ -93,30 +93,30 @@ static struct internal_prop ip_ful = { "FUL", ft_persistent } ;
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_pmem(unsigned char *data, const unsigned char *pwd, const size_t size, const size_t offset, const struct parsedname *pn);
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const size_t offset, const struct parsedname *pn);
 static int OW_ver( unsigned int * u, const struct parsedname * pn ) ;
-static int OW_verify( unsigned char * pwd, const size_t offset, const struct parsedname * pn ) ;
+static int OW_verify( BYTE * pwd, const size_t offset, const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
 
 /* 1977 password */
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_r_mem( buf, size, offset+((pn->extension)<<6), pn) ) return -EACCES ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, offset+((pn->extension)<<6), pn) ) return -EACCES ;
     return 0 ;
 }
 
-static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_mem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_read_paged( buf, size, offset, pn, 64, OW_r_mem ) ) return -EACCES ;
     return size ;
 }
 
-static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_write_paged( buf, size, offset, pn, 64, OW_w_mem ) ) return -EACCES ;
     return 0 ;
 }
@@ -126,14 +126,14 @@ static int FS_ver( unsigned int * u , const struct parsedname * pn ) {
 }
 
 static int FS_r_pwd( int * y , const struct parsedname * pn ) {
-    unsigned char p ;
+    BYTE p ;
     if ( OW_r_mem( &p, 1, 0x7FD0, pn ) ) return -EACCES ;
     y[0] = (p==0xAA) ;
     return 0 ;
 }
 
 static int FS_w_pwd( const int * y , const struct parsedname * pn ) {
-    unsigned char p = y[0] ? 0x00 : 0xAA ;
+    BYTE p = y[0] ? 0x00 : 0xAA ;
     if ( OW_w_mem( &p, 1, 0x7FD0, pn ) ) return -EACCES ;
     return 0 ;
 }
@@ -142,7 +142,7 @@ static int FS_nset( const char *buf, const size_t size, const off_t offset , con
     char a[48] ;
     char * end ;
     union {
-        unsigned char b[8] ;
+        BYTE b[8] ;
         long long int i ;
     } xfer ;
 
@@ -154,9 +154,9 @@ static int FS_nset( const char *buf, const size_t size, const off_t offset , con
     return FS_set( xfer.b, 8, 0, pn ) ;
 }
 
-static int FS_set( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_set( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret;
-    unsigned char p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
+    BYTE p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     int oldy, y =0 ;
     size_t off = 0x7FC0 + pn->ft->data.i ;
     size_t s = size ;
@@ -193,7 +193,7 @@ static int FS_nuse( const char *buf, const size_t size, const off_t offset , con
     char a[48] ;
     char * end ;
     union {
-        unsigned char b[8] ;
+        BYTE b[8] ;
         long long int i ;
     } xfer ;
 
@@ -205,8 +205,8 @@ static int FS_nuse( const char *buf, const size_t size, const off_t offset , con
     return FS_use( xfer.b, 8, 0, pn ) ;
 }
 
-static int FS_use( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    unsigned char p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
+static int FS_use( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    BYTE p[] = { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     size_t s = size ;
     if (s>8) s=8 ;
     memcpy(p,buf,s) ;
@@ -218,8 +218,8 @@ static int FS_use( const unsigned char *buf, const size_t size, const off_t offs
 }
 #endif /* OW_CACHE */
 
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[1+2+64+2] = { 0x0F, offset&0xFF , offset>>8, } ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[1+2+64+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     size_t s = 8 ;
     int ret ;
 
@@ -254,8 +254,8 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char pwd[8] = {0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
+static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE pwd[8] = {0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     size_t s = sizeof(pwd) ;
 
 #ifdef OW_CACHE
@@ -265,9 +265,9 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     return OW_r_pmem(data,pwd,size,offset,pn) ;
 }
 
-static int OW_r_pmem(unsigned char *data, const unsigned char *pwd, const size_t size, const size_t offset, const struct parsedname *pn){
+static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const size_t offset, const struct parsedname *pn){
     int ret ;
-    unsigned char p[1+2+64+2] = { 0x69, offset&0xFF , offset>>8, } ;
+    BYTE p[1+2+64+2] = { 0x69, offset&0xFF , offset>>8, } ;
 
     BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_send_data(pwd,7,pn) || BUS_PowerByte( pwd[7],&pwd[7],5,pn) ;
@@ -286,8 +286,8 @@ static int OW_r_pmem(unsigned char *data, const unsigned char *pwd, const size_t
 
 static int OW_ver( unsigned int * u, const struct parsedname * pn ) {
     int ret ;
-    unsigned char p[] = { 0xCC, } ;
-    unsigned char b[2] ;
+    BYTE p[] = { 0xCC, } ;
+    BYTE b[2] ;
 
     BUSLOCK(pn);
         ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(b,2,pn) ;
@@ -297,10 +297,10 @@ static int OW_ver( unsigned int * u, const struct parsedname * pn ) {
     u[0] = b[0] ;
 }
 
-static int OW_verify( unsigned char * pwd, const size_t offset, const struct parsedname * pn ) {
+static int OW_verify( BYTE * pwd, const size_t offset, const struct parsedname * pn ) {
     int ret ;
-    unsigned char p[1+2+8] = { 0xC3, offset&0xFF , offset>>8, } ;
-    unsigned char c ;
+    BYTE p[1+2+8] = { 0xC3, offset&0xFF , offset>>8, } ;
+    BYTE c ;
 
     BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data(p,3+7,pn) || BUS_PowerByte(p[3+7],&p[3+7],5,pn) || BUS_readin_data( &c, 1, pn ) ;
@@ -311,7 +311,7 @@ static int OW_verify( unsigned char * pwd, const size_t offset, const struct par
 
 /* Clear first 16 bytes of scratchpad after password setting */
 static int OW_clear( const struct parsedname * pn ) {
-    unsigned char p[1+2+16] = { 0x0F, 0x00 , 0x00, } ;
+    BYTE p[1+2+16] = { 0x0F, 0x00 , 0x00, } ;
     int ret;
 
     /* Copy to scratchpad */

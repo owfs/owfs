@@ -69,10 +69,10 @@ DeviceEntry( 1F, DS2409 ) ;
 /* ------- Functions ------------ */
 
 /* DS2409 */
-static int OW_r_control( unsigned char * const data, const struct parsedname * const pn ) ;
+static int OW_r_control( BYTE * data, const struct parsedname * pn ) ;
 
-static int OW_discharge( const struct parsedname * const pn ) ;
-static int OW_w_control( const unsigned int data , const struct parsedname * const pn ) ;
+static int OW_discharge( const struct parsedname * pn ) ;
+static int OW_w_control( const unsigned int data , const struct parsedname * pn ) ;
 
 /* discharge 2409 lines */
 static int FS_discharge(const int * y, const struct parsedname * pn) {
@@ -82,7 +82,7 @@ static int FS_discharge(const int * y, const struct parsedname * pn) {
 
 /* 2409 switch -- branch pin voltage */
 static int FS_r_sensed(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
 //    y[0] = data&0x02 ? 1 : 0 ;
 //    y[1] = data&0x08 ? 1 : 0 ;
@@ -92,7 +92,7 @@ static int FS_r_sensed(unsigned int * u , const struct parsedname * pn) {
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
 static int FS_r_branch(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
 //    y[0] = data&0x01 ? 0 : 1 ;
 //    y[1] = data&0x04 ? 0 : 1 ;
@@ -102,7 +102,7 @@ static int FS_r_branch(unsigned int * u , const struct parsedname * pn) {
 
 /* 2409 switch -- event status */
 static int FS_r_event(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
 //    y[0] = data&0x10 ? 1 : 0 ;
 //    y[1] = data&0x20 ? 1 : 0 ;
@@ -112,7 +112,7 @@ static int FS_r_event(unsigned int * u , const struct parsedname * pn) {
 
 /* 2409 switch -- control pin state */
 static int FS_r_control(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     unsigned int control[] = { 2, 3, 0, 1, } ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
     *u = control[data>>6] ;
@@ -126,8 +126,8 @@ static int FS_w_control(const unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_discharge( const struct parsedname * const pn ) {
-    unsigned char dis[] = { 0xCC, } ;
+static int OW_discharge( const struct parsedname * pn ) {
+    BYTE dis[] = { 0xCC, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { dis, NULL, 1, trxn_match } ,
@@ -144,11 +144,11 @@ static int OW_discharge( const struct parsedname * const pn ) {
     return 0 ;
 }
 
-static int OW_w_control( const unsigned int data , const struct parsedname * const pn ) {
-    const unsigned char d[] = { 0x20, 0xA0, 0x00, 0x40, } ;
-    unsigned char p[] = { 0x5A, d[data], } ;
-    const unsigned char r[] = { 0x80, 0xC0, 0x00, 0x40, } ;
-    unsigned char info ;
+static int OW_w_control( const unsigned int data , const struct parsedname * pn ) {
+    const BYTE d[] = { 0x20, 0xA0, 0x00, 0x40, } ;
+    BYTE p[] = { 0x5A, d[data], } ;
+    const BYTE r[] = { 0x80, 0xC0, 0x00, 0x40, } ;
+    BYTE info ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 2, trxn_match } ,
@@ -162,8 +162,8 @@ static int OW_w_control( const unsigned int data , const struct parsedname * con
     return (info&0xC0)==r[data] ? 0 : 1 ;
 }
 
-static int OW_r_control( unsigned char * const data , const struct parsedname * const pn ) {
-    unsigned char p[] = { 0x5A, 0xFF, } ;
+static int OW_r_control( BYTE * data , const struct parsedname * pn ) {
+    BYTE p[] = { 0x5A, 0xFF, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 2, trxn_match } ,

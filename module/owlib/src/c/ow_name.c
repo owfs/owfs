@@ -13,7 +13,7 @@ $Id$
 #include "ow_devices.h"
 
 /* device display format */
-void FS_devicename( char * const buffer, const size_t length, const unsigned char * sn, const struct parsedname * pn ) {
+void FS_devicename( char * buffer, const size_t length, const BYTE * sn, const struct parsedname * pn ) {
     UCLIBCLOCK;
 //printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
         switch (DeviceFormat(pn)) {
@@ -44,7 +44,7 @@ static const char dirname_state_alarm[]    = "alarm";
 static const char dirname_state_text[]     = "text";
 
 /* copy state into buffer (for constructing path) return number of chars added */
-int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) {
+int FS_dirname_state( char * buffer, const size_t length, const struct parsedname * pn ) {
     const char * p ;
     size_t len ;
 //printf("dirname state on %.2X\n", pn->state);
@@ -80,7 +80,7 @@ static const char dirname_type_settings[]   = "settings";
 static const char dirname_type_structure[]  = "structure";
 
 /* copy type into buffer (for constructing path) return number of chars added */
-int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) {
+int FS_dirname_type( char * buffer, const size_t length, const struct parsedname * pn ) {
     const char * p ;
     size_t len ;
     switch (pn->type) {
@@ -129,7 +129,7 @@ int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) 
 /* This can be a device, directory, subdiirectory, if property file */
 /* Prints this directory element (not the whole path) */
 /* Suggest that size = OW_FULLNAME_MAX */
-void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) {
+void FS_DirName( char * buffer, const size_t size, const struct parsedname * pn ) {
     if ( pn->ft ) { /* A real file! */
         char * pname = strchr(pn->ft->name,'/') ; // for subdirectories
         if ( pname ) {

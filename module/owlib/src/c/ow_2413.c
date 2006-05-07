@@ -67,14 +67,14 @@ DeviceEntryExtended( 3A, DS2413, DEV_resume | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2413 */
-static int OW_write( const unsigned char data , const struct parsedname * pn ) ;
-static int OW_read( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_write( const BYTE data , const struct parsedname * pn ) ;
+static int OW_read( BYTE * data , const struct parsedname * pn ) ;
 
 /* 2413 switch */
 /* bits 0 and 2 */
 static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
-    unsigned char uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, } ;
+    BYTE data ;
+    BYTE uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, } ;
     if ( OW_read(&data,pn) ) return -EINVAL ;
     u[0] = uu[data&0x07] ; /* look up reversed bits */
     return 0 ;
@@ -91,8 +91,8 @@ static int FS_sense(unsigned int * u , const struct parsedname * pn) {
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
 static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
-    unsigned char uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, } ;
+    BYTE data ;
+    BYTE uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, } ;
     if ( OW_read(&data,pn) ) return -EINVAL ;
     u[0] = uu[(data>>1)&0x07] ;
     return 0 ;
@@ -101,14 +101,14 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 /* write 2413 switch -- 2 values*/
 static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
     /* reverse bits */
-    unsigned char data = ~(u[0]&0xFF);
+    BYTE data = ~(u[0]&0xFF);
     if ( OW_write(data,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* read status byte */
-static int OW_read( unsigned char * data , const struct parsedname * pn ) {
-    unsigned char p[] = { 0xF5, } ;
+static int OW_read( BYTE * data , const struct parsedname * pn ) {
+    BYTE p[] = { 0xF5, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 1, trxn_match, } ,
@@ -124,9 +124,9 @@ static int OW_read( unsigned char * data , const struct parsedname * pn ) {
 
 /* write status byte */
 /* top 6 bits are set to 1, complement then sent */
-static int OW_write( const unsigned char data , const struct parsedname * pn ) {
-    unsigned char p[] = { 0x5A, data|0xFC , (~data)&0x03, } ;
-    unsigned char q[2] ;
+static int OW_write( const BYTE data , const struct parsedname * pn ) {
+    BYTE p[] = { 0x5A, data|0xFC , (~data)&0x03, } ;
+    BYTE q[2] ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match, } ,

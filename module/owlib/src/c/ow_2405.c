@@ -88,7 +88,7 @@ static int FS_w_PIO(const int * y, const struct parsedname * pn) {
 
 /* read the sense of the DS2405 switch */
 static int OW_r_sense( int * val , const struct parsedname * pn) {
-    unsigned char inp ;
+    BYTE inp ;
     int ret ;
 
     BUSLOCK(pn);

@@ -17,11 +17,11 @@ $Id$
 #include <string.h>
 
 //#define CALC_NLINK
-static int FS_nr_subdirs(struct parsedname * const pn2) ;
+static int FS_nr_subdirs(struct parsedname * pn2) ;
 
 #ifdef CALC_NLINK
-static int FS_nr_subdirs(struct parsedname * const pn2) {
-    unsigned char sn[8] ;
+static int FS_nr_subdirs(struct parsedname * pn2) {
+    BYTE sn[8] ;
     int dindex = 0 ;
 
     FS_LoadPath( sn, pn2 ) ;

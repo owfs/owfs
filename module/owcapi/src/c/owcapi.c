@@ -124,8 +124,10 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     void directory( const struct parsedname * const pn2 ) {
         size_t sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
         if ( sz<sn ) {
+            void * temp = buf ;
             sz = sn ;
-            buf = realloc( buf, sn ) ;
+            buf = realloc( temp, sn ) ;
+            if ( buf==NULL && temp ) free(temp) ;
         }
         if ( buf ) {
             if ( s ) strcpy( &buf[s++], "," ) ; // add a comma

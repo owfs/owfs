@@ -65,21 +65,21 @@ DeviceEntry( 1B, DS2436 ) ;
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_page( unsigned char * p , const size_t size, const size_t offset , const struct parsedname * pn) ;
-static int OW_w_page( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) ;
+static int OW_r_page( BYTE * p , const size_t size, const size_t offset , const struct parsedname * pn) ;
+static int OW_w_page( const BYTE * p , const size_t size , const size_t offset , const struct parsedname * pn ) ;
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) ;
 
 static size_t Asize[] = { 24, 8, 8, } ;
 
 /* 2436 A/D */
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( pn->extension > 2 ) return -ERANGE ;
     if ( OW_r_page( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( pn->extension > 2 ) return -ERANGE ;
     if ( OW_w_page(buf,size,offset+((pn->extension)<<5),pn) ) return -EINVAL ;
     return 0 ;
@@ -97,12 +97,12 @@ static int FS_volts(FLOAT * V , const struct parsedname * pn) {
 
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_r_page( unsigned char * p , const size_t size , const size_t offset, const struct parsedname * pn) {
-    unsigned char data[32] ;
+static int OW_r_page( BYTE * p , const size_t size , const size_t offset, const struct parsedname * pn) {
+    BYTE data[32] ;
     int page = offset>>5 ;
     size_t s ;
-    unsigned char scratchin[] = {0x11 , offset, } ;
-    static unsigned char copyin[] = {0x71, 0x77, 0x7A, } ;
+    BYTE scratchin[] = {0x11 , offset, } ;
+    static BYTE copyin[] = {0x71, 0x77, 0x7A, } ;
     int ret ;
 
     s = Asize[page] - (offset & 0x1F) ;
@@ -131,13 +131,13 @@ static int OW_r_page( unsigned char * p , const size_t size , const size_t offse
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_w_page( const unsigned char * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
+static int OW_w_page( const BYTE * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
     int page = offset >> 5 ;
     size_t s ;
-    unsigned char scratchin[] = {0x11 , offset, } ;
-    unsigned char scratchout[] = {0x17 , offset, } ;
-    unsigned char data[32] ;
-    static unsigned char copyout[] = {0x22, 0x25, 0x27, } ;
+    BYTE scratchin[] = {0x11 , offset, } ;
+    BYTE scratchout[] = {0x17 , offset, } ;
+    BYTE data[32] ;
+    static BYTE copyout[] = {0x22, 0x25, 0x27, } ;
     int ret ;
 
     s = Asize[page] - (offset & 0x1F) ;
@@ -167,9 +167,9 @@ static int OW_w_page( const unsigned char * p , const size_t size , const size_t
 }
 
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
-    unsigned char d2[] = { 0xD2, } ;
-    unsigned char b2[] = { 0xB2 , 0x60, } ;
-    unsigned char t[2] ;
+    BYTE d2[] = { 0xD2, } ;
+    BYTE b2[] = { 0xB2 , 0x60, } ;
+    BYTE t[2] ;
     struct transaction_log tconvert[] = {
         TRXN_START,
         { d2, NULL, 1, trxn_match } ,
@@ -199,9 +199,9 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
 }
 
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
-    unsigned char b4[] = { 0xB4, } ;
-    unsigned char b2[] = { 0xB2 , 0x77, } ;
-    unsigned char v[2] ;
+    BYTE b4[] = { 0xB4, } ;
+    BYTE b2[] = { 0xB2 , 0x77, } ;
+    BYTE v[2] ;
     struct transaction_log tconvert[] = {
         TRXN_START,
         { b4, NULL, 1, trxn_match } ,

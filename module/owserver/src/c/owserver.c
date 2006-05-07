@@ -64,7 +64,7 @@ static void * RealHandler( void * v ) ; // Called from ping wrapper
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
-static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) ;
+static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
 static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
 static int ToClient( int fd, struct client_msg *cm, char *data ) ;
@@ -278,7 +278,7 @@ static void * RealHandler( void * v ) {
                             if ( (datasize<=0) || (datasize<sm.size) ) {
                                 cm.ret = -EMSGSIZE ;
                             } else {
-                                unsigned char * data = &path[pathlen] ;
+                                BYTE * data = &path[pathlen] ;
                                 WriteHandler( &sm, &cm, data, &pn ) ;
                             }
                         }
@@ -369,7 +369,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
 /* Read, will return: */
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
-static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const unsigned char *data, const struct parsedname *pn ) {
+static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) {
     int ret = FS_write_postparse(data,(size_t)sm->size,(off_t)sm->offset,pn) ;
     //printf("Handler: WRITE done\n");
     if ( ret<0 ) {

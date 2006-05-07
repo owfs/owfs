@@ -91,27 +91,27 @@ DeviceEntryExtended( 0C, DS1996 , DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 /* 1902 */
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_r_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
     if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EFAULT ;
     return 0 ;
 }
 
-static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* paged access */
 //    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
     if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem) ) return -EFAULT ;
@@ -119,8 +119,8 @@ static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
     struct transaction_log tcopy[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -156,8 +156,8 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,

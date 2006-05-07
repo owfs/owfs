@@ -23,13 +23,13 @@ $Id$
     bad return sendback_data
     -EIO if memcpy
  */
-int BUS_send_data( const unsigned char * const data, const size_t len, const struct parsedname * pn ) {
+int BUS_send_data( const BYTE * data, const size_t len, const struct parsedname * pn ) {
     int ret ;
     if ( len>16 ) {
         int dlen = len-(len>>1) ;
         (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
     } else {
-        unsigned char resp[16] ;
+        BYTE resp[16] ;
         if ((ret=BUS_sendback_data( data, resp, len,pn ))==0) {
             if ((ret=memcmp(data, resp, (size_t) len))) {
                 ret = -EPROTO ;
@@ -45,7 +45,7 @@ int BUS_send_data( const unsigned char * const data, const size_t len, const str
   Returns 0=good
   Bad sendback_data
  */
-int BUS_readin_data( unsigned char * const data, const size_t len, const struct parsedname * pn ) {
+int BUS_readin_data( BYTE * data, const size_t len, const struct parsedname * pn ) {
   int ret = BUS_sendback_data( memset(data, 0xFF, (size_t) len),data,len,pn) ;
   if(ret) {
       STAT_ADD1(BUS_readin_data_errors);
@@ -61,7 +61,7 @@ int BUS_readin_data( unsigned char * const data, const size_t len, const struct 
 
  Returns:   0-device found 1-no dev or error
 */
-int BUS_first(struct device_search * ds, const struct parsedname * const pn ) {
+int BUS_first(struct device_search * ds, const struct parsedname * pn ) {
     // reset the search state
     LEVEL_DEBUG("Start of directory path=%s device="SNformat"\n",SAFESTRING(pn->path),SNvar(pn->sn)) ;
     memset(ds->sn,0,8);  // clear the serial number
@@ -77,7 +77,7 @@ int BUS_first(struct device_search * ds, const struct parsedname * const pn ) {
     return BUS_next(ds,pn) ;
 }
 
-int BUS_first_alarm(struct device_search * ds, const struct parsedname * const pn ) {
+int BUS_first_alarm(struct device_search * ds, const struct parsedname * pn ) {
     // reset the search state
     memset(ds->sn,0,8);  // clear the serial number
     ds->LastDiscrepancy = -1;
@@ -87,7 +87,7 @@ int BUS_first_alarm(struct device_search * ds, const struct parsedname * const p
     return BUS_next(ds,pn) ;
 }
 
-int BUS_first_family(const unsigned char family, struct device_search * ds, const struct parsedname * const pn ) {
+int BUS_first_family(const BYTE family, struct device_search * ds, const struct parsedname * pn ) {
     // reset the search state
     memset(ds->sn,0,8);  // clear the serial number
     ds->sn[0] = family ;
@@ -107,7 +107,7 @@ int BUS_first_family(const unsigned char family, struct device_search * ds, cons
 
  Sets LastDevice=1 if no more
 */
-int BUS_next( struct device_search * ds, const struct parsedname * const pn) {
+int BUS_next( struct device_search * ds, const struct parsedname * pn) {
     int ret ;
 
     if ( BUS_select(pn) || BUS_select_branch( pn ) ) return 1 ;
@@ -124,7 +124,7 @@ int BUS_next( struct device_search * ds, const struct parsedname * const pn) {
 
 /* Symmetric */
 /* send bytes, and read back -- calls lower level bit routine */
-int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
+int BUS_sendback_data_low( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) {
     unsigned int i, bits = len<<3 ;
     int ret ;
     int remain = len - (UART_FIFO_SIZE>>3) ;
@@ -156,7 +156,7 @@ int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , co
 /* Returns 0=good
    bad = -EIO
  */
-int BUS_PowerByte_low(unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * const pn) {
+int BUS_PowerByte_low(BYTE byte, BYTE * resp, unsigned int delay, const struct parsedname * pn) {
     int ret ;
     // send the packet
     if((ret=BUS_sendback_data(&byte,resp,1,pn))) {
@@ -175,7 +175,7 @@ int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) {
     int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
     int bit_number ;
     int last_zero = -1 ;
-    unsigned char bits[3] ;
+    BYTE bits[3] ;
     int ret ;
 
     // initialize for search

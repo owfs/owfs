@@ -19,23 +19,23 @@ $Id$
 
 /* ------- Prototypes ----------- */
 static int FS_write_seek(const char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn) ;
-static int FS_real_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_gamish(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
-static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
-static int FS_w_split(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
-static int FS_parse_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) ;
+static int FS_real_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_gamish(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_split(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_parse_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 
-static int FS_input_yesno( int * const result, const char * const buf, const size_t size ) ;
-static int FS_input_integer( int * const result, const char * const buf, const size_t size ) ;
-static int FS_input_unsigned( unsigned int * const result, const char * const buf, const size_t size ) ;
-static int FS_input_float( FLOAT * const result, const char * const buf, const size_t size ) ;
-static int FS_input_date( DATE * const result, const char * const buf, const size_t size ) ;
+static int FS_input_yesno( int * result, const char * buf, const size_t size ) ;
+static int FS_input_integer( int * result, const char * buf, const size_t size ) ;
+static int FS_input_unsigned( unsigned int * result, const char * buf, const size_t size ) ;
+static int FS_input_float( FLOAT * result, const char * buf, const size_t size ) ;
+static int FS_input_date( DATE * result, const char * buf, const size_t size ) ;
 
-static int FS_input_yesno_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int FS_input_unsigned_array( unsigned int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int FS_input_integer_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int FS_input_float_array( FLOAT * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
-static int FS_input_date_array( DATE * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) ;
+static int FS_input_yesno_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_unsigned_array( unsigned int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_integer_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_float_array( FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_date_array( DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -268,7 +268,7 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
 #endif /* OW_MT */
 
 /* return 0 if ok */
-static int FS_real_write(const char * const buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+static int FS_real_write(const char * buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int i, r = 0;
     //printf("FS_real_write\n");
 
@@ -309,7 +309,7 @@ static int FS_real_write(const char * const buf, const size_t size, const off_t 
 
 /* return 0 if ok */
 /* write a single element */
-static int FS_parse_write(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
+static int FS_parse_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t fl = FileLength(pn) ;
     int ret ;
     char * cbuf = NULL ;
@@ -423,7 +423,7 @@ static int FS_parse_write(const char * const buf, const size_t size, const off_t
 
 /* return 0 if ok */
 /* write aggregate all */
-static int FS_gamish(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
+static int FS_gamish(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     size_t ffl = FullFileLength(pn);
     int ret ;
@@ -583,7 +583,7 @@ static int FS_gamish(const char * const buf, const size_t size, const off_t offs
 
 /* Non-combined input  field, so treat  as several separate transactions */
 /* return 0 if ok */
-static int FS_w_all(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
+static int FS_w_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t left = size ;
     const char * p = buf ;
     int r ;
@@ -622,7 +622,7 @@ static int FS_w_all(const char * const buf, const size_t size, const off_t offse
 
 /* Combined field, so read all, change the relevant field, and write back */
 /* return 0 if ok */
-static int FS_w_split(const char * const buf, const size_t size, const off_t offset , const struct parsedname * const pn) {
+static int FS_w_split(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0;
 
@@ -745,7 +745,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         }
         break ;
     case ft_binary: {
-        unsigned char * all ;
+        BYTE * all ;
         int suglen = pn->ft->suglen ;
         size_t s = suglen ;
         if ( offset > suglen ) {
@@ -753,7 +753,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
         } else {
             s -= offset ;
             if ( s>size ) s = size ;
-            if ( (all = (unsigned char *) malloc( ffl ) ) ) { ;
+            if ( (all = (BYTE *) malloc( ffl ) ) ) { ;
                 if ( (ret = (pn->ft->read.b)(all,ffl,(const off_t)0,pn))==0 ) {
                     memcpy(&all[suglen*pn->extension+offset],buf,s) ;
                     ret = (pn->ft->write.b)(all,ffl,(const off_t)0,pn) ;
@@ -805,7 +805,7 @@ static int FS_w_split(const char * const buf, const size_t size, const off_t off
 }
 
 /* return 0 if ok */
-static int FS_input_yesno( int * const result, const char * const buf, const size_t size ) {
+static int FS_input_yesno( int * result, const char * buf, const size_t size ) {
 //printf("yesno size=%d, buf=%s\n",size,buf);
     if ( size ) {
         if ( buf[0]=='1' || strncasecmp("on",buf,2)==0 || strncasecmp("yes",buf,2)==0 ) {
@@ -823,7 +823,7 @@ static int FS_input_yesno( int * const result, const char * const buf, const siz
 }
 
 /* return 0 if ok */
-static int FS_input_integer( int * const result, const char * const buf, const size_t size ) {
+static int FS_input_integer( int * result, const char * buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
 
@@ -835,7 +835,7 @@ static int FS_input_integer( int * const result, const char * const buf, const s
 }
 
 /* return 0 if ok */
-static int FS_input_unsigned( unsigned int * const result, const char * const buf, const size_t size ) {
+static int FS_input_unsigned( unsigned int * result, const char * buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
 
@@ -848,7 +848,7 @@ static int FS_input_unsigned( unsigned int * const result, const char * const bu
 }
 
 /* return 0 if ok */
-static int FS_input_float( FLOAT * const result, const char * const buf, const size_t size ) {
+static int FS_input_float( FLOAT * result, const char * buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
 
@@ -860,7 +860,7 @@ static int FS_input_float( FLOAT * const result, const char * const buf, const s
 }
 
 /* return 0 if ok */
-static int FS_input_date( DATE * const result, const char * const buf, const size_t size ) {
+static int FS_input_date( DATE * result, const char * buf, const size_t size ) {
     struct tm tm ;
     if ( size<2 || buf[0]=='\0' || buf[0]=='\n' ) {
         *result = time(NULL) ;
@@ -878,7 +878,7 @@ static int FS_input_date( DATE * const result, const char * const buf, const siz
 }
 
 /* returns 0 if ok */
-static int FS_input_yesno_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int FS_input_yesno_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;
@@ -898,7 +898,7 @@ static int FS_input_yesno_array( int * const results, const char * const buf, co
 }
 
 /* returns number of valid integers, or negative for error */
-static int FS_input_integer_array( int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int FS_input_integer_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;
@@ -918,7 +918,7 @@ static int FS_input_integer_array( int * const results, const char * const buf, 
 }
 
 /* returns 0, or negative for error */
-static int FS_input_unsigned_array( unsigned int * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int FS_input_unsigned_array( unsigned int * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;
@@ -938,7 +938,7 @@ static int FS_input_unsigned_array( unsigned int * const results, const char * c
 }
 
 /* returns 0, or negative for error */
-static int FS_input_float_array( FLOAT * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int FS_input_float_array( FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;
@@ -958,7 +958,7 @@ static int FS_input_float_array( FLOAT * const results, const char * const buf, 
 }
 
 /* returns 0, or negative for error */
-static int FS_input_date_array( DATE * const results, const char * const buf, const size_t size, const struct parsedname * const pn ) {
+static int FS_input_date_array( DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;

@@ -21,10 +21,10 @@ $Id$
 #include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static int DS2482_triple( unsigned char * bits, int direction, const struct parsedname * pn ) ;
-static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) ;
+static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) ;
+static int DS2482_send_and_get( const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname * pn ) ;
 static int DS2482_reset( const struct parsedname * pn ) ;
-static int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) ;
+static int DS2482_sendback_bits( const BYTE * outbits , BYTE * inbits , const size_t length, const struct parsedname * pn ) ;
 static void DS2482_setroutines( struct interface_routines * f ) ;
 static int HeadChannel( struct connection_in * in ) ;
 static int CreateChannels( struct connection_in * in ) ;
@@ -76,7 +76,7 @@ static int DS2482_channel_select( const struct parsedname * pn ) ;
 #define DS2482_REG_STS_1WB     0x01
 
 /* Device-specific functions */
-static void DS2482_setroutines( struct interface_routines * const f ) {
+static void DS2482_setroutines( struct interface_routines * f ) {
     f->detect        = DS2482_detect         ;
     f->reset         = DS2482_reset          ;
     f->next_both     = DS2482_next_both      ;
@@ -96,7 +96,7 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
     int bit_number ;
     int last_zero = -1 ;
-    unsigned char bits[3] ;
+    BYTE bits[3] ;
     int ret ;
 
     // initialize for search
@@ -638,8 +638,8 @@ if (!i2c_check_functionality(adapter,
 #endif
 /* DS2482 Reset -- A little different from DS2480B */
 // return 1 shorted, 0 ok, <0 error
-static int DS2482_reset( const struct parsedname * const pn ) {
-    unsigned char c;
+static int DS2482_reset( const struct parsedname * pn ) {
+    BYTE c;
     int fd = pn->in->connin.i2c.fd ;
 
     if( fd < 0 ) return -1;
@@ -650,12 +650,12 @@ static int DS2482_reset( const struct parsedname * const pn ) {
     /* wait */
     UT_delay_us(1250) ; // rstl+rsth+.25 usec
     /* read status */
-    c = (unsigned char) i2c_smbus_read_byte( fd ) ;
+    c = (BYTE) i2c_smbus_read_byte( fd ) ;
 
     /* test if we waited long enough */
     if ( c & 0x01 ) {
         UT_delay_us(250) ; // rstl+rsth+.25 usec
-        c = (unsigned char) i2c_smbus_read_byte( fd ) ;
+        c = (BYTE) i2c_smbus_read_byte( fd ) ;
     }
 
     pn->in->AnyDevices = UT_getbit(c,1) ;
@@ -668,9 +668,9 @@ static int DS2482_reset( const struct parsedname * const pn ) {
 /* Actually uses bit zero of each byte */
 /* Dispatches DS2482_MAX_BITS "bits" at a time */
 #define DS2482_MAX_BITS 24
-int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits , const size_t length, const struct parsedname * pn ) {
+int DS2482_sendback_bits( const BYTE * outbits , BYTE * inbits , const size_t length, const struct parsedname * pn ) {
     int ret ;
-    unsigned char d[DS2482_MAX_BITS] ;
+    BYTE d[DS2482_MAX_BITS] ;
     size_t l=0 ;
     size_t i=0 ;
     size_t start = 0 ;
@@ -681,7 +681,7 @@ int DS2482_sendback_bits( const unsigned char * outbits , unsigned char * inbits
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS2482 */
-static int DS2482_send_and_get( const unsigned char * bussend, unsigned char * busget, const size_t length, const struct parsedname * pn ) {
+static int DS2482_send_and_get( const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname * pn ) {
     size_t gl = length ;
     ssize_t r ;
     size_t sl = length ;
@@ -824,7 +824,7 @@ static int CreateChannels( struct connection_in * in ) {
     return 0 ;
 }
 
-static int DS2482_triple( unsigned char * bits, int direction, const struct parsedname * pn ) {
+static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) {
     /* 3 bits in bits */
     (void) bits ;
     (void) pn ;
@@ -841,9 +841,9 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
      * To set the channel, write the value at the index of the channel.
      * Read and compare against the corresponding value to verify the change.
      */
-    static const unsigned char W_chan[8] =
+    static const BYTE W_chan[8] =
     { 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
-    static const unsigned char R_chan[8] =
+    static const BYTE R_chan[8] =
     { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
     if ( chan == head->connin.i2c.current ) return 0 ;

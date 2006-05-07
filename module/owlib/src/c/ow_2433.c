@@ -76,52 +76,52 @@ DeviceEntryExtended( 23, DS2433 , DEV_ovdr ) ;
 
 /* DS2433 */
 
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem2D( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem2D( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 
-static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
     if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* paged access */
     if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem) ) return -EFAULT ;
     return 0 ;
 }
 
 /* Although externally it's 32 byte pages, internally it acts as 8 byte pages */
-static int FS_w_memory2D( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory2D( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* paged access */
     if ( OW_write_paged( buf, size, offset, pn, 8, OW_w_mem2D) ) return -EFAULT ;
     return 0 ;
 }
 
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //    if ( pn->extension > 15 ) return -ERANGE ;
     if ( OW_r_mem( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //    if ( pn->extension > 15 ) return -ERANGE ;
     //printf("FS_w_page: size=%d offset=%d pn->extension=%d (%d)\n", size, offset, pn->extension, (pn->extension)<<5);
     if ( OW_w_mem(buf,size,offset+((pn->extension)<<5),pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_w_page2D(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page2D(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //    if ( pn->extension > 15 ) return -ERANGE ;
     //printf("FS_w_page: size=%d offset=%d pn->extension=%d (%d)\n", size, offset, pn->extension, (pn->extension)<<5);
     if ( OW_w_mem2D(buf,size,offset+((pn->extension)<<5),pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn) {
-    unsigned char p[] = {  0xF0, offset&0xFF, offset>>8, } ;
+static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn) {
+    BYTE p[] = {  0xF0, offset&0xFF, offset>>8, } ;
     int ret ;
     //printf("reading offset=%d size=%d bytes\n", offset, size);
 
@@ -134,8 +134,8 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
 
     /* Copy to scratchpad */
@@ -166,8 +166,8 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return 0 ;
 }
 /* paged, and pre-screened */
-static int OW_w_mem2D( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3+8+3] = { 0x0F, offset&0xFF , offset>>8, } ;
+static int OW_w_mem2D( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3+8+3] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret = 0 ;
     size_t start = offset & 0x07 ; /* place within EPROM row */
 

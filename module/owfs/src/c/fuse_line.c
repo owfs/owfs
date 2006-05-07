@@ -57,9 +57,13 @@ int Fuse_add( char * opt, struct Fuse_option * fo ) {
     //printf("Adding option %s\n",opt);
     if ( fo->argc >= fo->max_options ) { // need to allocate more space
         int i = fo->max_options ;
+        void * temp = fo->argv ;
         fo->max_options += 10 ;
-        fo->argv = (char**) realloc( fo->argv, (fo->max_options+1)*sizeof( char * ) ) ;
-        if ( fo->argv == NULL ) return -ENOMEM ; // allocated ok?
+        fo->argv = (char**) realloc( temp, (fo->max_options+1)*sizeof( char * ) ) ;
+        if ( fo->argv == NULL ) {
+            if (temp) free(temp) ;
+            return -ENOMEM ; // allocated ok?
+        }
         for ( ; i<=fo->max_options ; ++i ) fo->argv[i] = NULL ; // now clear the new pointers
     }
     fo->argv[fo->argc++] = strdup(opt) ;

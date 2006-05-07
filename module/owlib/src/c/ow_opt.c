@@ -203,7 +203,7 @@ static void ow_morehelp( enum opt_program op ) {
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt( const int c , const char * const arg, enum opt_program op ) {
+int owopt( const int c , const char * arg, enum opt_program op ) {
     switch (c) {
     case 'h':
         ow_help( op ) ;

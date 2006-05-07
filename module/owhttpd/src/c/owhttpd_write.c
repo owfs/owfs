@@ -16,7 +16,7 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
     /* string format functions */
 static void hex_convert( char * str ) ;
-static int httpunescape(unsigned char *httpstr) ;
+static int httpunescape(BYTE *httpstr) ;
 static void hex_only( char * str ) ;
 
 /* --------------- Functions ---------------- */
@@ -50,9 +50,9 @@ void ChangeData( char * value, const struct parsedname * pn ) {
 }
 
 /* Change web-escaped string back to straight ascii */
-static int httpunescape(unsigned char *httpstr) {
-    unsigned char *in = httpstr ;          /* input string pointer */
-    unsigned char *out = httpstr ;          /* output string pointer */
+static int httpunescape(BYTE *httpstr) {
+    BYTE *in = httpstr ;          /* input string pointer */
+    BYTE *out = httpstr ;          /* output string pointer */
 
     while(*in)
     {
@@ -93,6 +93,6 @@ static void hex_only( char * str ) {
 /* reads an as ascii hex string, strips out non-hex, converts in place */
 static void hex_convert( char * str ) {
     char * uc = str ;
-    unsigned char * hx = str ;
+    BYTE * hx = str ;
     for( ; *uc ; uc+=2 ) *hx++ = string2num( uc ) ;
 }

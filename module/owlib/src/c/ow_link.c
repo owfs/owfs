@@ -19,16 +19,16 @@ static struct timeval tvnet = { 0, 100000, } ;
 
 int LINK_mode ; /* flag to use LINKs in ascii mode */
 
-//static void byteprint( const unsigned char * b, int size ) ;
-static int LINK_write(const unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
-static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) ;
-static int LINK_read_low(unsigned char * buf, const size_t size, const struct parsedname * pn ) ;
+//static void byteprint( const BYTE * b, int size ) ;
+static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname * pn ) ;
+static int LINK_read(BYTE * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) ;
+static int LINK_read_low(BYTE * buf, const size_t size, const struct parsedname * pn ) ;
 static int LINK_reset( const struct parsedname * pn ) ;
 static int LINK_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static int LINK_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) ;
-static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
+static int LINK_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) ;
+static int LINK_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static int LINK_select(const struct parsedname * pn) ;
-static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) ;
+static int LINK_byte_bounce( const BYTE * out, BYTE * in, const struct parsedname * pn ) ;
 static int LINK_CR( const struct parsedname * pn ) ;
 static void LINK_setroutines( struct interface_routines * f ) ;
 static void LINKE_setroutines( struct interface_routines * f ) ;
@@ -65,7 +65,7 @@ static void LINKE_setroutines( struct interface_routines * f ) {
     f->close         = LINKE_close        ;
 }
 
-#define LINK_string(x)  ((unsigned char *)(x))
+#define LINK_string(x)  ((BYTE *)(x))
 
 /* Called from DS2480_detect, and is set up to DS9097U emulation by default */
 // bus locking done at a higher level
@@ -84,7 +84,7 @@ int LINK_detect( struct connection_in * in ) {
     // set the baud rate to 9600
     COM_speed(B9600,&pn);
     if ( LINK_reset(&pn)==0 && LINK_write(LINK_string(" "),1,&pn)==0 ) {
-        unsigned char tmp[36] = "(none)";
+        BYTE tmp[36] = "(none)";
         char * stringp = (char *) tmp ;
         /* read the version string */
         memset(tmp,0,36) ;
@@ -142,7 +142,7 @@ int LINKE_detect( struct connection_in * in ) {
 }
 
 static int LINK_reset( const struct parsedname * pn ) {
-    unsigned char resp[5] ;
+    BYTE resp[5] ;
     int ret = 0 ;
     
     if ( pn->in->Adapter!=adapter_LINK_E ) COM_flush(pn) ;
@@ -231,7 +231,7 @@ static int LINK_next_both(struct device_search * ds, const struct parsedname * p
           -errno = read error
           -EINTR = timeout
  */
-static int LINK_read_low(unsigned char * buf, const size_t size, const struct parsedname * pn ) {
+static int LINK_read_low(BYTE * buf, const size_t size, const struct parsedname * pn ) {
     size_t inlength = size ;
     fd_set fdset;
     ssize_t r ;
@@ -304,7 +304,7 @@ static int LINK_read_low(unsigned char * buf, const size_t size, const struct pa
    0=good else bad
    Note that buffer length should 1 exta char long for ethernet reads
 */
-static int LINK_read(unsigned char * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) {
+static int LINK_read(BYTE * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) {
     if ( pn->in->Adapter !=adapter_LINK_E ) {
         return LINK_read_low( buf, size, pn ) ;
     } else if ( readn( pn->in->fd, buf, size+ExtraEbyte, &tvnet ) != size+ExtraEbyte ) { /* NOTE NOTE extra byte length for buffer */
@@ -318,7 +318,7 @@ static int LINK_read(unsigned char * buf, const size_t size, const struct parsed
 /* return 0=good,
           -EIO = error
  */
-static int LINK_write(const unsigned char * buf, const size_t size, const struct parsedname * pn ) {
+static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname * pn ) {
     ssize_t r, sl = size;
 //    printf("LINK_write %.*s\n",size,buf) ;
 //    COM_flush(pn) ;
@@ -346,7 +346,7 @@ static int LINK_write(const unsigned char * buf, const size_t size, const struct
     return 0;
 }
 
-static int LINK_PowerByte(const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) {
+static int LINK_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) {
     
     if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,resp,pn) ) {
         STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;
@@ -366,10 +366,10 @@ static int LINK_PowerByte(const unsigned char byte, unsigned char * resp, const 
 /* return 0=good
    sendout_data, readin
  */
-static int LINK_sendback_data( const unsigned char * data, unsigned char * resp, const size_t size, const struct parsedname * pn ) {
+static int LINK_sendback_data( const BYTE * data, BYTE * resp, const size_t size, const struct parsedname * pn ) {
     size_t i ;
     size_t left ;
-    unsigned char * buf = pn->in->combuffer ;
+    BYTE * buf = pn->in->combuffer ;
 
     if ( size == 0 ) return 0 ;
     if ( LINK_write(LINK_string("b"),1,pn) ) return -EIO ;
@@ -394,15 +394,15 @@ static int LINK_select(const struct parsedname * pn) {
 }
 
 /*
-static void byteprint( const unsigned char * b, int size ) {
+static void byteprint( const BYTE * b, int size ) {
     int i ;
     for ( i=0; i<size; ++i ) printf( "%.2X ",b[i] ) ;
     if ( size ) printf("\n") ;
 }
 */
 
-static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, const struct parsedname * pn ) {
-    unsigned char byte[2] ;
+static int LINK_byte_bounce( const BYTE * out, BYTE * in, const struct parsedname * pn ) {
+    BYTE byte[2] ;
 
     num2string( (char *)byte, out[0] ) ;
     if ( LINK_write( byte, 2, pn ) || LINK_read( byte, 2, pn, 0 ) ) return -EIO ;
@@ -411,14 +411,14 @@ static int LINK_byte_bounce( const unsigned char * out, unsigned char * in, cons
 }
 
 static int LINK_CR( const struct parsedname * pn ) {
-    unsigned char byte[3] ;
+    BYTE byte[3] ;
     if ( LINK_write( LINK_string("\r"), 1, pn ) || LINK_read( byte, 2, pn, 1 ) ) return -EIO ;
     return 0 ;
 }
 
 /* read the telnet-formatted start of a response line from the Link-Hub-E */
 static int LINKE_preamble( const struct parsedname * pn ) {
-    unsigned char byte[6] ;
+    BYTE byte[6] ;
     if ( readn( pn->in->fd, byte, 6, &tvnetfirst )!=6  ) return -EIO ;
     LEVEL_CONNECT("Good preamble\n") ;
     return 0 ;

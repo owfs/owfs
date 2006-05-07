@@ -16,7 +16,7 @@ $Id$
 #include <stdlib.h>
 
 /* Length of file based on filetype alone */
-size_t FileLength( const struct parsedname * const pn ) {
+size_t FileLength( const struct parsedname * pn ) {
     /* structure ? */
     if ( pn->type == pn_structure ) return 30 ; /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
     /* directory ? */
@@ -43,7 +43,7 @@ size_t FileLength( const struct parsedname * const pn ) {
 }
 
 /* Length of file based on filetype and extension */
-size_t FullFileLength( const struct parsedname * const pn ) {
+size_t FullFileLength( const struct parsedname * pn ) {
     int ret ;
     if ( pn->type == pn_structure ) return 30 ;
     /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */

@@ -14,7 +14,7 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int BUS_verify(const struct parsedname * const pn) ;
+static int BUS_verify(const struct parsedname * pn) ;
 
 /* ------- Functions ------------ */
 
@@ -22,8 +22,8 @@ static int BUS_verify(const struct parsedname * const pn) ;
 //   tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-int BUS_alarmverify(const struct parsedname * const pn) {
-    unsigned char ec = 0xEC ;
+int BUS_alarmverify(const struct parsedname * pn) {
+    BYTE ec = 0xEC ;
     int ret ;
     struct parsedname pncopy ;
     memcpy( &pncopy, pn, sizeof(struct parsedname) ) ; /* shallow copy */
@@ -36,8 +36,8 @@ int BUS_alarmverify(const struct parsedname * const pn) {
 //   tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-int BUS_normalverify(const struct parsedname * const pn) {
-    unsigned char fo = 0xF0 ;
+int BUS_normalverify(const struct parsedname * pn) {
+    BYTE fo = 0xF0 ;
     int ret ;
     struct parsedname pncopy ;
 
@@ -56,8 +56,8 @@ int BUS_normalverify(const struct parsedname * const pn) {
 //   tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-static int BUS_verify(const struct parsedname * const pn) {
-   unsigned char buffer[24] ;
+static int BUS_verify(const struct parsedname * pn) {
+   BYTE buffer[24] ;
    int i, goodbits=0 ;
    // set all bits at first
    memset( buffer , 0xFF , 24 ) ;

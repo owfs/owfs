@@ -77,11 +77,11 @@ DeviceEntryExtended( 1A, DS1963L , DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem_counter( BYTE * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
-static int FS_w_password(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_password(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     (void) buf ;
     (void) size ;
     (void) offset ;
@@ -89,12 +89,12 @@ static int FS_w_password(const unsigned char *buf, const size_t size, const off_
   return -EINVAL;
 }
 
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_r_mem_counter(buf,NULL,size,offset+((pn->extension)<<5),pn) ) return -EINVAL;
     return size ;
 }
 
-static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
     if ( OW_read_paged( buf, size, offset, pn, 32, OW_r_mem ) ) return -EINVAL;
     return size ;
@@ -105,19 +105,19 @@ static int FS_counter( unsigned int * u, const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
   if ( OW_w_mem( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
   return 0 ;
 }
 
-static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     struct transaction_log tcopy[] = {
         TRXN_START,
         { p, NULL, size+3, trxn_match } ,
@@ -157,14 +157,14 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
     return OW_r_mem_counter(data,NULL,size,((pn->extension)<<5)+offset,pn) ;
 }
 
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
-static int OW_r_mem_counter( unsigned char * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
-    unsigned char data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
+static int OW_r_mem_counter( BYTE * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     /* rest in the remaining length of the 32 byte page */
     size_t rest = 32 - (offset&0x1F) ;
     int ret ;

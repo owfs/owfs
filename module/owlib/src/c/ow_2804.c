@@ -86,43 +86,43 @@ DeviceEntryExtended( 1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2804 */
-static int OW_r_mem( unsigned char * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_scratch( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) ;
-//static int OW_access( unsigned char * data , const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_scratch( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_pio( const BYTE data , const struct parsedname * pn ) ;
+//static int OW_access( BYTE * data , const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
-static int OW_w_reg( const unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_reg( const BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 /* 2804 memory read */
-static int FS_r_mem(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_mem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not a "paged" endeavor, the CRC comes after a full read */
     if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
     return size ;
 }
 
 /* Note, it's EPROM -- write once */
-static int FS_w_mem(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* write is "byte at a time" -- not paged */
     if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2406 memory write */
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
     if ( OW_r_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2406 switch */
 static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem(&data,1,0x0221,pn) ) return -EINVAL ;
     u[0] = ( data^0xFF ) & 0x03 ; /* reverse bits */
     return 0 ;
@@ -130,7 +130,7 @@ static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
 
 /* write 2406 switch -- 2 values*/
 static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
-    unsigned char data = 0;
+    BYTE data = 0;
     /* reverse bits */
     data = ( u[0] ^ 0xFF ) | 0xFC ; /* Set bits 2-7 to "1" */
     if ( OW_w_pio(data,pn) ) return -EINVAL ;
@@ -139,7 +139,7 @@ static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
 
 /* 2406 switch -- is Vcc powered?*/
 static int FS_power(int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&data,7) ;
     return 0 ;
@@ -147,7 +147,7 @@ static int FS_power(int * y , const struct parsedname * pn) {
 
 /* 2406 switch -- power-on status of polrity pin */
 static int FS_polarity(int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&data,6) ;
     return 0 ;
@@ -155,7 +155,7 @@ static int FS_polarity(int * y , const struct parsedname * pn) {
 
 /* 2406 switch -- power-on status of polrity pin */
 static int FS_r_por(int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&data,3) ;
     return 0 ;
@@ -163,7 +163,7 @@ static int FS_r_por(int * y , const struct parsedname * pn) {
 
 /* 2406 switch -- power-on status of polrity pin */
 static int FS_w_por(const int * y , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     (void) y ;
     if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ; /* get current register */
     if ( UT_getbit(&data,3) ) { /* needs resetting? bit3==1 */
@@ -178,7 +178,7 @@ static int FS_w_por(const int * y , const struct parsedname * pn) {
 
 /* 2406 switch PIO sensed*/
 static int FS_sense(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem(&data,1,0x0220,pn) ) return -EINVAL ;
     u[0] = ( data ) & 0x03 ;
     return 0 ;
@@ -186,7 +186,7 @@ static int FS_sense(unsigned int * u , const struct parsedname * pn) {
 
 /* 2406 switch activity latch*/
 static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_mem(&data,1,0x0222,pn) ) return -EINVAL ;
     u[0] = data & 0x03 ;
     return 0 ;
@@ -201,7 +201,7 @@ static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
 
 /* 2804 alarm settings*/
 static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
-    unsigned char data[3] ;
+    BYTE data[3] ;
     if ( OW_r_mem(data,3,0x0223,pn) ) return -EINVAL ;
     u[0] = ( data[2] & 0x03 ) * 100 ;
     u[0] += UT_getbit(&data[1],0) | ( UT_getbit(&data[0],0) << 1 ) ;
@@ -211,7 +211,7 @@ static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
 
 /* 2804 alarm settings*/
 static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char data[3] = { 0, 0, 0, } ;
+    BYTE data[3] = { 0, 0, 0, } ;
     if ( OW_r_mem(&data[2],1,0x0225,pn) ) return -EINVAL ;
     data[2] |= (u[0] / 100 % 10) & 0x03 ;
     UT_setbit(&data[1],0,(int)(u[0] % 10) & 0x01) ;
@@ -222,8 +222,8 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
+static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -234,8 +234,8 @@ static int OW_r_mem( unsigned char * data , const size_t size , const size_t off
     return 0 ;
 }
 
-static int OW_w_scratch( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
+static int OW_w_scratch( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     int ret ;
 
     memcpy( &p[3] , data, size ) ;
@@ -250,8 +250,8 @@ static int OW_w_scratch( const unsigned char * data , const size_t size , const 
 }
 
 /* pre-paged */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[4+32+2] = { 0xAA, offset&0xFF , (offset>>8)&0xFF, } ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[4+32+2] = { 0xAA, offset&0xFF , (offset>>8)&0xFF, } ;
     int ret = OW_w_scratch(data,size,offset,pn) ;
 
     if ( ret ) return ret ;
@@ -273,8 +273,8 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
 }
 
 //* write status byte */
-static int OW_w_reg( const unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3] = { 0xCC, offset&0xFF , (offset>>8)&0xFF , } ;
+static int OW_w_reg( const BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3] = { 0xCC, offset&0xFF , (offset>>8)&0xFF , } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -284,8 +284,8 @@ static int OW_w_reg( const unsigned char * data, const size_t size, const size_t
 }
 
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
-static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
-    unsigned char p[4] = { 0x5A, data&0xFF, (data&0xFF)^0xFF, } ;
+static int OW_w_pio( const BYTE data , const struct parsedname * pn ) {
+    BYTE p[4] = { 0x5A, data&0xFF, (data&0xFF)^0xFF, } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -298,7 +298,7 @@ static int OW_w_pio( const unsigned char data , const struct parsedname * pn ) {
 
 /* Clear latches */
 static int OW_clear( const struct parsedname * pn ) {
-    unsigned char p[2] = { 0xC3, } ;
+    BYTE p[2] = { 0xC3, } ;
     int ret ;
 
     BUSLOCK(pn);

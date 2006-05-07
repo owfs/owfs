@@ -988,7 +988,7 @@ gai_strerror (int code)
 
 
 #ifndef HAVE_INET_NTOP
-/* const char *
+/* char *
  * inet_ntop4(src, dst, size)
  *      format an IPv4 address
  * return:

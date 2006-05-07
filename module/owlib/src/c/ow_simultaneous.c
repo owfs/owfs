@@ -69,10 +69,10 @@ struct filetype simultaneous[] = {
 DeviceEntry( simultaneous, simultaneous ) ;
 
 /* ------- Functions ------------ */
-static int OW_skiprom( enum simul_type type, const struct parsedname * const pn );
-static int OW_setcache( enum simul_type type, const struct parsedname * const pn ) ;
-static int OW_getcache( enum simul_type type, const unsigned int msec, const struct parsedname * const pn ) ;
-static int OW_killcache( enum simul_type type, const struct parsedname * const pn ) ;
+static int OW_skiprom( enum simul_type type, const struct parsedname * pn );
+static int OW_setcache( enum simul_type type, const struct parsedname * pn ) ;
+static int OW_getcache( enum simul_type type, const unsigned int msec, const struct parsedname * pn ) ;
+static int OW_killcache( enum simul_type type, const struct parsedname * pn ) ;
 
 struct internal_prop ipSimul[] = {
     {"temperature",ft_volatile},
@@ -109,7 +109,7 @@ static int FS_r_convert(int * y , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_setcache( enum simul_type type, const struct parsedname * const pn ) {
+static int OW_setcache( enum simul_type type, const struct parsedname * pn ) {
     struct parsedname pn2 ;
     struct timeval tv ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
@@ -118,14 +118,14 @@ static int OW_setcache( enum simul_type type, const struct parsedname * const pn
     return Cache_Add_Internal(&tv,sizeof(struct timeval),&ipSimul[type],&pn2) ;
 }
 
-static int OW_killcache( enum simul_type type, const struct parsedname * const pn ) {
+static int OW_killcache( enum simul_type type, const struct parsedname * pn ) {
     struct parsedname pn2 ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
     return Cache_Del_Internal(&ipSimul[type],&pn2) ;
 }
 
-static int OW_getcache( enum simul_type type ,const unsigned int msec, const struct parsedname * const pn ) {
+static int OW_getcache( enum simul_type type ,const unsigned int msec, const struct parsedname * pn ) {
     struct parsedname pn2 ;
     struct timeval tv,now ;
     long int diff ;
@@ -140,10 +140,10 @@ static int OW_getcache( enum simul_type type ,const unsigned int msec, const str
     return 0 ;
 }
 
-static int OW_skiprom( enum simul_type type, const struct parsedname * const pn ) {
-    const unsigned char cmd_temp[] = { 0xCC, 0x44 } ;
-    const unsigned char cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF } ;
-    unsigned char data[6];
+static int OW_skiprom( enum simul_type type, const struct parsedname * pn ) {
+    const BYTE cmd_temp[] = { 0xCC, 0x44 } ;
+    const BYTE cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF } ;
+    BYTE data[6];
     int ret = 0;
     struct parsedname pn2 ;
     memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */

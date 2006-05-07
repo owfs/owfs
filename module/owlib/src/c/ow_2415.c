@@ -89,9 +89,9 @@ static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, } ;
 
 /* DS1904 */
 static int OW_r_clock( DATE * d , const struct parsedname * pn ) ;
-static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) ;
+static int OW_r_control( BYTE * cr , const struct parsedname * pn ) ;
 static int OW_w_clock( const DATE d , const struct parsedname * pn ) ;
-static int OW_w_control( const unsigned char cr , const struct parsedname * pn ) ;
+static int OW_w_control( const BYTE cr , const struct parsedname * pn ) ;
 
 /* set clock */
 static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
@@ -107,38 +107,38 @@ static int FS_w_date(const DATE *d , const struct parsedname * pn) {
 
 /* write running */
 static int FS_w_run(const int * y , const struct parsedname * pn) {
-    unsigned char cr ;
-    if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) (y[0]?cr|0x0C:cr&0xF3), pn) ) return -EINVAL ;
+    BYTE cr ;
+    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) (y[0]?cr|0x0C:cr&0xF3), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write running */
 static int FS_w_enable(const int * y , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
 
-    if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) (y[0]?cr|0x80:cr&0x7F), pn) ) return -EINVAL ;
+    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) (y[0]?cr|0x80:cr&0x7F), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write flags */
 static int FS_w_flags(const unsigned int * u , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
 
-    if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) ((cr&0x0F)|((((unsigned int)u[0])&0x0F)<<4)), pn) ) return -EINVAL ;
+    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) ((cr&0x0F)|((((unsigned int)u[0])&0x0F)<<4)), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write flags */
 static int FS_w_interval(const int * i , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
 
-    if ( OW_r_control( &cr, pn) || OW_w_control( (unsigned char) ((cr&0x8F)|((((unsigned int)i[0])&0x07)<<4)), pn) ) return -EINVAL ;
+    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) ((cr&0x8F)|((((unsigned int)i[0])&0x07)<<4)), pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* write flags */
 static int FS_w_itime(const int * i , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
 
     if ( OW_r_control( &cr, pn) ) return -EINVAL ;
 
@@ -168,7 +168,7 @@ static int FS_w_itime(const int * i , const struct parsedname * pn) {
 
 /* read flags */
 int FS_r_flags(unsigned int * u , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
     if ( OW_r_control(&cr,pn) ) return -EINVAL ;
     * u = cr>>4 ;
     return 0 ;
@@ -176,7 +176,7 @@ int FS_r_flags(unsigned int * u , const struct parsedname * pn) {
 
 /* read flags */
 int FS_r_interval(int * i , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
     if ( OW_r_control(&cr,pn) ) return -EINVAL ;
     * i = (cr>>4)&0x07 ;
     return 0 ;
@@ -184,7 +184,7 @@ int FS_r_interval(int * i , const struct parsedname * pn) {
 
 /* read flags */
 int FS_r_itime(int * i , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
     if ( OW_r_control(&cr,pn) ) return -EINVAL ;
     * i = itimes[(cr>>4)&0x07] ;
     return 0 ;
@@ -192,7 +192,7 @@ int FS_r_itime(int * i , const struct parsedname * pn) {
 
 /* read running */
 int FS_r_run(int * y , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
     if ( OW_r_control(&cr,pn) ) return -EINVAL ;
     * y = ((cr&0x08)!=0) ;
     return 0 ;
@@ -200,7 +200,7 @@ int FS_r_run(int * y , const struct parsedname * pn) {
 
 /* read running */
 int FS_r_enable(int * y , const struct parsedname * pn) {
-    unsigned char cr ;
+    BYTE cr ;
     if ( OW_r_control(&cr,pn) ) return -EINVAL ;
     * y = ((cr&0x80)!=0) ;
     return 0 ;
@@ -218,8 +218,8 @@ int FS_r_date( DATE * d , const struct parsedname * pn) {
 }
 
 /* 1904 clock-in-a-can */
-static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) {
-    unsigned char r[] = { 0x66, } ;
+static int OW_r_control( BYTE * cr , const struct parsedname * pn ) {
+    BYTE r[] = { 0x66, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { r, NULL, 1, trxn_match, } ,
@@ -234,8 +234,8 @@ static int OW_r_control( unsigned char * cr , const struct parsedname * pn ) {
 
 /* 1904 clock-in-a-can */
 static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
-    unsigned char r[] = { 0x66, } ;
-    unsigned char data[5] ;
+    BYTE r[] = { 0x66, } ;
+    BYTE data[5] ;
     struct transaction_log t[] = {
         TRXN_START,
         { r, NULL, 1, trxn_match, } ,
@@ -251,8 +251,8 @@ static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
 }
 
 static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
-    unsigned char r[] = { 0x66, } ;
-    unsigned char w[6] = { 0x99, } ;
+    BYTE r[] = { 0x66, } ;
+    BYTE w[6] = { 0x99, } ;
     struct transaction_log tread[] = {
         TRXN_START,
         { r, NULL, 1, trxn_match, } ,
@@ -274,8 +274,8 @@ static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_w_control( const unsigned char cr , const struct parsedname * pn ) {
-    unsigned char w[2] = { 0x99, cr, } ;
+static int OW_w_control( const BYTE cr , const struct parsedname * pn ) {
+    BYTE w[2] = { 0x99, cr, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { w, NULL, 2, trxn_match, } ,

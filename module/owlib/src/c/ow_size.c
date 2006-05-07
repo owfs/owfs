@@ -12,7 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-static int FS_size_seek( struct connection_in * in, const struct parsedname * const pn ) ;
+static int FS_size_seek( struct connection_in * in, const struct parsedname * pn ) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -33,7 +33,7 @@ static int FS_size_seek( struct connection_in * in, const struct parsedname * co
     pn->ft loops through
 */
 
-int FS_size_postparse( const struct parsedname * const pn ) {
+int FS_size_postparse( const struct parsedname * pn ) {
     int ret = 0 ;
     struct parsedname pn2 ;
 
@@ -90,7 +90,7 @@ int FS_size( const char *path ) {
 
 /* path is the path which "pn" parses */
 /* FS_size_remote is the entry into FS_size_seek from ServerSize */
-int FS_size_remote( const struct parsedname * const pn ) {
+int FS_size_remote( const struct parsedname * pn ) {
     int ret = 0 ;
     struct parsedname pn2 ;
     

@@ -19,7 +19,7 @@ static int BadAdapter_reset( const struct parsedname * pn ) ;
 static int BadAdapter_overdrive( const unsigned int ov, const struct parsedname * pn ) ;
 static int BadAdapter_testoverdrive( const struct parsedname * pn ) ;
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) ;
-static int BadAdapter_sendback_bits( const unsigned char * data, unsigned char * resp, const size_t len, const struct parsedname * pn ) ;
+static int BadAdapter_sendback_bits( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static void BadAdapter_close( struct connection_in * in ) ;
 
 /* Device-specific functions */
@@ -67,7 +67,7 @@ static int BadAdapter_ProgramPulse( const struct parsedname * pn ) {
     STAT_ADD1_BUS(BUS_ProgramPulse_errors,pn->in) ;
     return -ENOTSUP ;
 }
-static int BadAdapter_sendback_bits( const unsigned char * data , unsigned char * resp, const size_t len, const struct parsedname * pn ){
+static int BadAdapter_sendback_bits( const BYTE * data , BYTE * resp, const size_t len, const struct parsedname * pn ){
     (void) pn ;
     (void) data ;
     (void) resp ;

@@ -127,31 +127,31 @@ DeviceEntryExtended( 84, DS2404S  , DEV_alarm ) ;
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 static int OW_w_ulong( const uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 
 static unsigned int Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, } ;
 
 /* 1902 */
-static int FS_r_page(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_r_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is consecutive, unchecked. No paging */
     if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
     return size ;
 }
 
-static int FS_w_page(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     if ( OW_w_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EFAULT ;
     return 0 ;
 }
 
-static int FS_w_memory( const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* paged write */
 //    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
     if ( OW_write_paged( buf, size, (size_t) offset, pn, 32, OW_w_mem ) ) return -EFAULT ;
@@ -202,7 +202,7 @@ static int FS_r_counter4(unsigned int *u, const struct parsedname * pn) {
 
 /* alarm */
 static int FS_w_set_alarm(const unsigned int *u, const struct parsedname * pn) {
-    unsigned char c ;
+    BYTE c ;
     switch ( u[0] ) {
     case   0:   c=0<<3 ;   break ;
     case   1:   c=1<<3 ;   break ;
@@ -219,14 +219,14 @@ static int FS_w_set_alarm(const unsigned int *u, const struct parsedname * pn) {
 }
 
 static int FS_r_alarm( unsigned int * u, const struct parsedname * pn ) {
-    unsigned char c ;
+    BYTE c ;
     if ( OW_r_mem(&c,1,0x200,pn) ) return -EINVAL ;
     u[0] = Avals[c&0x07] ;
     return 0 ;
 }
 
 static int FS_r_set_alarm( unsigned int * u, const struct parsedname * pn ) {
-    unsigned char c ;
+    BYTE c ;
     if ( OW_r_mem(&c,1,0x200,pn) ) return -EINVAL ;
     u[0] = Avals[(c>>3)&0x07] ;
     return 0 ;
@@ -234,8 +234,8 @@ static int FS_r_set_alarm( unsigned int * u, const struct parsedname * pn ) {
 
 /* write flag */
 static int FS_w_flag(const int * y , const struct parsedname * pn) {
-    unsigned char cr ;
-    unsigned char fl = pn->ft->data.c ;
+    BYTE cr ;
+    BYTE fl = pn->ft->data.c ;
     if ( OW_r_mem( &cr, 1, 0x0201, pn) ) return -EINVAL ;
     if ( y[0] ) {
         if ( cr & fl ) return 0 ;
@@ -249,16 +249,16 @@ static int FS_w_flag(const int * y , const struct parsedname * pn) {
 
 /* read flag */
 static int FS_r_flag(int * y , const struct parsedname * pn) {
-    unsigned char cr ;
-    unsigned char fl = pn->ft->data.c ;
+    BYTE cr ;
+    BYTE fl = pn->ft->data.c ;
     if ( OW_r_mem( &cr, 1, 0x0201, pn) ) return -EINVAL ;
     y[0] = (cr&fl)?1:0 ;
     return 0 ;
 }
 
 /* PAged access -- pre-screened */
-static int OW_w_mem( const unsigned char * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
+static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+    BYTE p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
     struct transaction_log tcopy[] = {
         TRXN_START,
@@ -294,8 +294,8 @@ static int OW_w_mem( const unsigned char * data , const size_t size , const size
     return 0 ;
 }
 
-static int OW_r_mem( unsigned char * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
-    unsigned char p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
+static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+    BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -310,7 +310,7 @@ static int OW_r_mem( unsigned char * data, const size_t size, const size_t offse
 
 /* read 4 or 5 byte number */
 static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) {
-    unsigned char data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
+    BYTE data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
     if ( size > 5 ) return -ERANGE ;
     if ( OW_r_mem( data, size, offset, pn ) ) return -EINVAL ;
     L[0] = ((uint64_t) data[0])
@@ -323,7 +323,7 @@ static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , co
 
 /* write 4 or 5 byte number */
 static int OW_w_ulong( const uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) {
-    unsigned char data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
+    BYTE data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
     if ( size > 5 ) return -ERANGE ;
     data[0] = L[0] & 0xFF ;
     data[1] = (L[0]>>8) & 0xFF ;

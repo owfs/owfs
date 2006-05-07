@@ -95,22 +95,22 @@ DeviceEntryExtended( FF, LCD , DEV_alarm ) ;
 /* ------- Functions ------------ */
 
 /* LCD by L. Swart */
-static int OW_r_scratch( unsigned char * data , const int length , const struct parsedname* pn ) ;
-static int OW_w_scratch( const unsigned char * data , const int length , const struct parsedname* pn ) ;
+static int OW_r_scratch( BYTE * data , const int length , const struct parsedname* pn ) ;
+static int OW_w_scratch( const BYTE * data , const int length , const struct parsedname* pn ) ;
 static int OW_w_on( const int state , const struct parsedname* pn ) ;
 static int OW_w_backlight( const int state , const struct parsedname* pn ) ;
-static int OW_w_register( const unsigned char data , const struct parsedname* pn ) ;
-static int OW_r_register( unsigned char * data , const struct parsedname* pn ) ;
-static int OW_w_data( const unsigned char data , const struct parsedname* pn ) ;
-static int OW_r_data( unsigned char * data , const struct parsedname* pn ) ;
-static int OW_w_gpio( const unsigned char data , const struct parsedname* pn ) ;
-static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) ;
-static int OW_r_version( unsigned char * data , const struct parsedname* pn ) ;
+static int OW_w_register( const BYTE data , const struct parsedname* pn ) ;
+static int OW_r_register( BYTE * data , const struct parsedname* pn ) ;
+static int OW_w_data( const BYTE data , const struct parsedname* pn ) ;
+static int OW_r_data( BYTE * data , const struct parsedname* pn ) ;
+static int OW_w_gpio( const BYTE data , const struct parsedname* pn ) ;
+static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) ;
+static int OW_r_version( BYTE * data , const struct parsedname* pn ) ;
 static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) ;
-static int OW_r_memory( unsigned char * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
-static int OW_w_memory( const unsigned char * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
+static int OW_r_memory( BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
+static int OW_w_memory( const BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
 static int OW_clear( const struct parsedname* pn ) ;
-static int OW_w_screen( const unsigned char loc , const char * text , const int size, const struct parsedname* pn ) ;
+static int OW_w_screen( const BYTE loc , const char * text , const int size, const struct parsedname* pn ) ;
 
 /* Internal files */
 static struct internal_prop ip_cum = { "CUM", ft_persistent } ;
@@ -136,7 +136,7 @@ static int FS_w_backlight(const int * y , const struct parsedname * pn ) {
 }
 
 static int FS_r_gpio(int * y , const struct parsedname * pn ) {
-    unsigned char data ;
+    BYTE data ;
     int i ;
     if ( OW_r_gpio(&data,pn) ) return -EINVAL ;
     for ( i=0 ; i<4 ; ++i ) y[i] = ~ UT_getbit(&data , i ) ;
@@ -146,7 +146,7 @@ static int FS_r_gpio(int * y , const struct parsedname * pn ) {
 /* 4 value array */
 static int FS_w_gpio(const int * y , const struct parsedname * pn ) {
     int i ;
-    unsigned char data ;
+    BYTE data ;
 
 //    /* First get current states */
     if ( OW_r_gpio(&data,pn) ) return -EINVAL ;
@@ -157,26 +157,26 @@ static int FS_w_gpio(const int * y , const struct parsedname * pn ) {
 }
 
 static int FS_r_register(unsigned int * u , const struct parsedname * pn ) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_register(&data,pn) ) return -EINVAL ;
     u[0] = data ;
     return 0 ;
 }
 
 static int FS_w_register(const unsigned int * u , const struct parsedname * pn ) {
-    if ( OW_w_register(((unsigned char)(u[0]&0xFF)),pn) ) return -EINVAL ;
+    if ( OW_w_register(((BYTE)(u[0]&0xFF)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
 static int FS_r_data(unsigned int * u , const struct parsedname * pn ) {
-    unsigned char data ;
+    BYTE data ;
     if ( OW_r_data(&data,pn) ) return -EINVAL ;
     u[0] = data ;
     return 0 ;
 }
 
 static int FS_w_data(const unsigned int * u , const struct parsedname * pn ) {
-    if ( OW_w_data(((unsigned char)(u[0]&0xFF)),pn) ) return -EINVAL ;
+    if ( OW_w_data(((BYTE)(u[0]&0xFF)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -201,7 +201,7 @@ static int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
 
 static int FS_w_lineX(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     int width = pn->ft->data.i ;
-    unsigned char loc[] = { 0x00, 0x40, 0x00+width, 0x40+width } ;
+    BYTE loc[] = { 0x00, 0x40, 0x00+width, 0x40+width } ;
     char line[width] ;
 
     if ( offset ) return -EADDRNOTAVAIL ;
@@ -241,20 +241,20 @@ static int FS_w_screenX(const char *buf, const size_t size, const off_t offset ,
     return 0 ;
 }
 
-static int FS_r_memory(unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
 //    if ( OW_r_memory(buf,size,offset,pn) ) return -EFAULT ;
     if ( OW_read_paged(buf,size,offset,pn, 16,OW_r_memory) ) return -EFAULT ;
     return size ;
 }
 
-static int FS_w_memory(const unsigned char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+static int FS_w_memory(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
 //    if ( OW_w_memory(buf,size,offset,pn) ) return -EFAULT ;
     if ( OW_write_paged(buf,size,offset,pn, 16, OW_w_memory) ) return -EFAULT ;
     return 0 ;
 }
 
-static int OW_w_scratch( const unsigned char * data , const int length , const struct parsedname* pn ) {
-    unsigned char w = 0x4E ;
+static int OW_w_scratch( const BYTE * data , const int length , const struct parsedname* pn ) {
+    BYTE w = 0x4E ;
     int ret ;
 
     BUSLOCK(pn);
@@ -263,8 +263,8 @@ static int OW_w_scratch( const unsigned char * data , const int length , const s
     return ret ;
 }
 
-static int OW_r_scratch( unsigned char * data , const int length , const struct parsedname* pn ) {
-    unsigned char r = 0xBE ;
+static int OW_r_scratch( BYTE * data , const int length , const struct parsedname* pn ) {
+    BYTE r = 0xBE ;
     int ret ;
 
     BUSLOCK(pn);
@@ -274,7 +274,7 @@ static int OW_r_scratch( unsigned char * data , const int length , const struct 
 }
 
 static int OW_w_on( const int state , const struct parsedname* pn ) {
-    unsigned char w[] = { 0x03, 0x05, } ; /* on off */
+    BYTE w[] = { 0x03, 0x05, } ; /* on off */
     int ret ;
 
     BUSLOCK(pn);
@@ -284,7 +284,7 @@ static int OW_w_on( const int state , const struct parsedname* pn ) {
 }
 
 static int OW_w_backlight( const int state , const struct parsedname* pn ) {
-    unsigned char w[] = { 0x08, 0x07, } ; /* on off */
+    BYTE w[] = { 0x08, 0x07, } ; /* on off */
     int ret ;
 
     BUSLOCK(pn);
@@ -293,8 +293,8 @@ static int OW_w_backlight( const int state , const struct parsedname* pn ) {
     return ret ;
 }
 
-static int OW_w_register( const unsigned char data , const struct parsedname* pn ) {
-    unsigned char w[] = { 0x10, data, } ;
+static int OW_w_register( const BYTE data , const struct parsedname* pn ) {
+    BYTE w[] = { 0x10, data, } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -306,8 +306,8 @@ static int OW_w_register( const unsigned char data , const struct parsedname* pn
     return 0 ;
 }
 
-static int OW_r_register( unsigned char * data , const struct parsedname* pn ) {
-    unsigned char w = 0x11 ;
+static int OW_r_register( BYTE * data , const struct parsedname* pn ) {
+    BYTE w = 0x11 ;
     int ret ;
 
     BUSLOCK(pn);
@@ -319,8 +319,8 @@ static int OW_r_register( unsigned char * data , const struct parsedname* pn ) {
     return OW_r_scratch( data, 1, pn ) ;
 }
 
-static int OW_w_data( const unsigned char data , const struct parsedname* pn ) {
-    unsigned char w[] = { 0x12, data, } ;
+static int OW_w_data( const BYTE data , const struct parsedname* pn ) {
+    BYTE w[] = { 0x12, data, } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -332,8 +332,8 @@ static int OW_w_data( const unsigned char data , const struct parsedname* pn ) {
     return 0 ;
 }
 
-static int OW_r_data( unsigned char * data , const struct parsedname* pn ) {
-    unsigned char w = 0x13 ;
+static int OW_r_data( BYTE * data , const struct parsedname* pn ) {
+    BYTE w = 0x13 ;
     int ret ;
 
     BUSLOCK(pn);
@@ -345,11 +345,11 @@ static int OW_r_data( unsigned char * data , const struct parsedname* pn ) {
     return OW_r_scratch( data, 1, pn ) ;
 }
 
-static int OW_w_gpio( const unsigned char data , const struct parsedname* pn ) {
+static int OW_w_gpio( const BYTE data , const struct parsedname* pn ) {
     /* Note, it would be nice to control separately, nut
        we can't know the set state of the pin, i.e. sensed and set
        are confused */
-    unsigned char w[] = { 0x21, data, } ;
+    BYTE w[] = { 0x21, data, } ;
     int ret ;
 
     BUSLOCK(pn);
@@ -361,8 +361,8 @@ static int OW_w_gpio( const unsigned char data , const struct parsedname* pn ) {
     return 0 ;
 }
 
-static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) {
-    unsigned char w = 0x22 ;
+static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) {
+    BYTE w = 0x22 ;
     int ret ;
 
     BUSLOCK(pn);
@@ -375,8 +375,8 @@ static int OW_r_gpio( unsigned char * data , const struct parsedname* pn ) {
 }
 
 static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
-    unsigned char w = 0x23 ;
-    unsigned char d[8] ;
+    BYTE w = 0x23 ;
+    BYTE d[8] ;
     unsigned int cum[4] ;
     size_t s = sizeof(cum);
     int ret ;
@@ -414,9 +414,9 @@ static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_r_memory( unsigned char * data , const size_t size, const size_t offset , const struct parsedname* pn ) {
-    unsigned char buf[2] = { offset&0xFF , size&0xFF, } ;
-    unsigned char w = 0x37 ;
+static int OW_r_memory( BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) {
+    BYTE buf[2] = { offset&0xFF , size&0xFF, } ;
+    BYTE w = 0x37 ;
     int ret ;
 
     if ( buf[1] == 0 ) return 0 ;
@@ -437,9 +437,9 @@ static int OW_r_memory( unsigned char * data , const size_t size, const size_t o
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_w_memory( const unsigned char * data , const size_t size, const size_t offset , const struct parsedname* pn ) {
-    unsigned char buf[17] = { offset&0xFF , } ;
-    unsigned char w = 0x39 ;
+static int OW_w_memory( const BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) {
+    BYTE buf[17] = { offset&0xFF , } ;
+    BYTE w = 0x39 ;
     int ret ;
 
     if ( size == 0 ) return 0 ;
@@ -457,8 +457,8 @@ static int OW_w_memory( const unsigned char * data , const size_t size, const si
 }
 
 /* data is 16 bytes */
-static int OW_r_version( unsigned char * data , const struct parsedname* pn ) {
-    unsigned char w = 0x41 ;
+static int OW_r_version( BYTE * data , const struct parsedname* pn ) {
+    BYTE w = 0x41 ;
     int ret ;
 
     BUSLOCK(pn);
@@ -470,9 +470,9 @@ static int OW_r_version( unsigned char * data , const struct parsedname* pn ) {
     return OW_r_scratch( data, 16, pn ) ;
 }
 
-static int OW_w_screen( const unsigned char loc , const char * text , const int size, const struct parsedname* pn ) {
-    unsigned char t[17] = { loc, } ;
-    unsigned char w = 0x48 ;
+static int OW_w_screen( const BYTE loc , const char * text , const int size, const struct parsedname* pn ) {
+    BYTE t[17] = { loc, } ;
+    BYTE w = 0x48 ;
     int s ;
     int l ;
     int ret ;
@@ -496,7 +496,7 @@ static int OW_w_screen( const unsigned char loc , const char * text , const int 
 }
 
 static int OW_clear( const struct parsedname* pn ) {
-    unsigned char c = 0x49 ; /* clear */
+    BYTE c = 0x49 ; /* clear */
     int ret ;
 
     BUSLOCK(pn);

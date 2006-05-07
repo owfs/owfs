@@ -221,7 +221,7 @@ extern int multithreading ;
 #define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_nfsd, opt_perl, opt_python, opt_php, opt_tcl, } ;
-int owopt( const int c , const char * const arg, enum opt_program op ) ;
+int owopt( const int c , const char * arg, enum opt_program op ) ;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
@@ -245,6 +245,9 @@ int owopt( const int c , const char * const arg, enum opt_program op ) ;
 typedef double          FLOAT ;
 typedef time_t          DATE ;
 typedef unsigned char   BYTE ;
+typedef char            ASCII ;
+typedef unsigned int    UINT ;
+typedef int             INT ;
 
 /* Several different structures:
   device -- one for each type of 1-wire device
@@ -496,7 +499,7 @@ struct devlock {
 } ;
 
 enum pn_type { pn_real=0, pn_statistics, pn_system, pn_settings, pn_structure } ;
-enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8} ;
+enum pn_state { pn_normal=0, pn_uncached=1, pn_alarm=2, pn_text=4, pn_bus=8, pn_buspath = 16, } ;
 struct parsedname {
     char * path ; // text-more device name
     char * path_busless ; // pointer to path without first bus
@@ -621,18 +624,18 @@ void DeviceDestroy( void ) ;
 //  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedNamePlus( const char * path, const char * file, struct parsedname * pn ) ;
-int FS_ParsedName( const char * const fn , struct parsedname * pn ) ;
-int FS_ParsedName_Remote( const char * const fn , struct parsedname * pn ) ;
+int FS_ParsedName( const char * fn , struct parsedname * pn ) ;
+int FS_ParsedName_Remote( const char * fn , struct parsedname * pn ) ;
   void FS_ParsedName_destroy( struct parsedname * pn ) ;
   size_t FileLength( const struct parsedname * pn ) ;
   size_t FullFileLength( const struct parsedname * pn ) ;
 int CheckPresence( const struct parsedname * pn ) ;
 int Check1Presence( const struct parsedname * pn ) ;
-void FS_devicename( char * const buffer, const size_t length, const BYTE * sn, const struct parsedname * pn ) ;
+void FS_devicename( char * buffer, const size_t length, const BYTE * sn, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
-int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) ;
-int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) ;
+int FS_dirname_state( char * buffer, const size_t length, const struct parsedname * pn ) ;
+int FS_dirname_type( char * buffer, const size_t length, const struct parsedname * pn ) ;
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
 

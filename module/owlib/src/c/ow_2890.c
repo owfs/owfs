@@ -96,9 +96,9 @@ static int FS_r_cp(int * y , const struct parsedname * pn) {
 
 /* write Wiper */
 static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) {
-    unsigned char resp ;
-    unsigned char cmd[] = { 0x0F , (unsigned char) val, } ;
-    unsigned char ninesix = 0x96 ;
+    BYTE resp ;
+    BYTE cmd[] = { 0x0F , (BYTE) val, } ;
+    BYTE ninesix = 0x96 ;
     int ret ;
 
     BUSLOCK(pn);
@@ -109,8 +109,8 @@ static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) {
 
 /* read Wiper */
 static int OW_r_wiper(unsigned int *val, const struct parsedname * pn) {
-    unsigned char fo=0xF0 ;
-    unsigned char resp[2] ;
+    BYTE fo=0xF0 ;
+    BYTE resp[2] ;
     int ret ;
 
     BUSLOCK(pn);
@@ -124,9 +124,9 @@ static int OW_r_wiper(unsigned int *val, const struct parsedname * pn) {
 
 /* write Charge Pump */
 static int OW_w_cp(const int val, const struct parsedname * pn) {
-    unsigned char resp ;
-    unsigned char cmd[] = { 0x55 , (val)?0x4C:0x0C } ;
-    unsigned char ninesix = 0x96 ;
+    BYTE resp ;
+    BYTE cmd[] = { 0x55 , (val)?0x4C:0x0C } ;
+    BYTE ninesix = 0x96 ;
     int ret ;
 
     BUSLOCK(pn);
@@ -137,8 +137,8 @@ static int OW_w_cp(const int val, const struct parsedname * pn) {
 
 /* read Charge Pump */
 static int OW_r_cp(int * val , const struct parsedname * pn) {
-    unsigned char aa=0xAA ;
-    unsigned char resp[2] ;
+    BYTE aa=0xAA ;
+    BYTE resp[2] ;
     int ret ;
 
     BUSLOCK(pn);

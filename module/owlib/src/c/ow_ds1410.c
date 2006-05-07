@@ -20,9 +20,9 @@ $Id$
 #include <sys/ioctl.h>
 
 /* DOS driver */
-#define WRITE0 ((unsigned char)0xFE)
-#define WRITE1 ((unsigned char)0xFF)
-#define RESET  ((unsigned char)0xFD)
+#define WRITE0 ((BYTE)0xFE)
+#define WRITE1 ((BYTE)0xFF)
+#define RESET  ((BYTE)0xFD)
 
 struct timespec usec2   = { 0,    2000 };
 struct timespec usec4   = { 0,    4000 };
@@ -32,24 +32,24 @@ struct timespec usec20  = { 0,   20000 };
 struct timespec usec400 = { 0,  500000 };
 struct timespec msec16  = { 0,16000000 };
 
-struct ppdev_frob_struct ENIhigh = { (unsigned char)~0x1C, 0x04 } ;
-struct ppdev_frob_struct ENIlow  = { (unsigned char)~0x1C, 0x06 } ;
+struct ppdev_frob_struct ENIhigh = { (BYTE)~0x1C, 0x04 } ;
+struct ppdev_frob_struct ENIlow  = { (BYTE)~0x1C, 0x06 } ;
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
-static int DS1410bit( unsigned char out, unsigned char * in, int fd ) ;
+static int DS1410bit( BYTE out, BYTE * in, int fd ) ;
 static int DS1410_reset( const struct parsedname * pn ) ;
-static int DS1410_sendback_bits( const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+static int DS1410_sendback_bits( const BYTE * data , BYTE * resp , const size_t len, const struct parsedname * pn ) ;
 static void DS1410_setroutines( struct interface_routines * f ) ;
 static int DS1410_open( const struct parsedname * pn ) ;
 static void DS1410_close( struct connection_in * in ) ;
-static int DS1410_ODtoggle( unsigned char * od, int fd ) ;
+static int DS1410_ODtoggle( BYTE * od, int fd ) ;
 static int DS1410_ODoff( const struct parsedname * pn ) ;
 static int DS1410_ODon( const struct parsedname * pn ) ;
-static int DS1410_ODcheck( unsigned char * od, int fd ) ;
+static int DS1410_ODcheck( BYTE * od, int fd ) ;
 static int DS1410_PTtoggle( int fd ) ;
 static int DS1410_PTon( int fd ) ;
 static int DS1410_PToff(  const struct parsedname * pn ) ;
-static int DS1410Present( unsigned char * p, int fd ) ;
+static int DS1410Present( BYTE * p, int fd ) ;
 
 /* Device-specific functions */
 static void DS1410_setroutines( struct interface_routines * f ) {
@@ -74,7 +74,7 @@ static void DS1410_setroutines( struct interface_routines * f ) {
 // NOT called with bus locked! 
 int DS1410_detect( struct connection_in * in ) {
     struct parsedname pn ;
-    unsigned char od ;
+    BYTE od ;
     
     /* Set up low-level routines */
     DS1410_setroutines( & (in->iroutines) ) ;
@@ -100,7 +100,7 @@ int DS1410_detect( struct connection_in * in ) {
 // return 1 if shorted, 0 ok, else <0
 static int DS1410_reset( const struct parsedname * pn ) {
     int fd = pn->in->fd ;
-    unsigned char ad ;
+    BYTE ad ;
     printf("DS1410E reset try\n");
     if ( DS1410bit( RESET, &ad, fd ) ) return -EIO ;
     pn->in->AnyDevices = ad ;
@@ -137,7 +137,7 @@ static void DS1410_close( struct connection_in * in ) {
 
 /* Symmetric */
 /* send a bit -- read a bit */
-static int DS1410_sendback_bits( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) {
+static int DS1410_sendback_bits( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) {
     int i ;
     for ( i=0 ; i<len ; ++i ) {
         if ( DS1410bit( data[i]?WRITE1:WRITE0, &resp[i], pn->in->fd ) ) {
@@ -149,9 +149,9 @@ static int DS1410_sendback_bits( const unsigned char * data, unsigned char * res
 }
 
 /* Basic design from Assembly driver */
-static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
-    unsigned char CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
-    unsigned char st, cl, cl2 ;
+static int DS1410bit( BYTE out, BYTE * in, int fd ) {
+    BYTE CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
+    BYTE st, cl, cl2 ;
     int i = 0 ;
     printf("DS1410E bit try (%.2X)\n",(int)out);
     if (
@@ -208,9 +208,9 @@ static int DS1410bit( unsigned char out, unsigned char * in, int fd ) {
 }
 
 /* Basic design from DOS driver, WWW entries from win driver */
-static int DS1410_ODcheck( unsigned char * od, int fd ) {
-    unsigned char CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
-    unsigned char st, cl, cl2 ;
+static int DS1410_ODcheck( BYTE * od, int fd ) {
+    BYTE CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
+    BYTE st, cl, cl2 ;
     int i = 0 ;
     printf("DS1410E check OD\n");
     if (
@@ -254,9 +254,9 @@ static int DS1410_ODcheck( unsigned char * od, int fd ) {
 }
 
 /* Basic design from DOS driver */
-static int DS1410_ODtoggle( unsigned char * od, int fd ) {
-    unsigned char CF=0xCF, EC=0xEC, FC=0xFC, FD=0xFD, FE=0xFE, FF=0xFF;
-    unsigned char st, cl, cl2 ;
+static int DS1410_ODtoggle( BYTE * od, int fd ) {
+    BYTE CF=0xCF, EC=0xEC, FC=0xFC, FD=0xFD, FE=0xFE, FF=0xFF;
+    BYTE st, cl, cl2 ;
     if (
         0
         ||ioctl( fd, PPWDATA, &EC )
@@ -283,7 +283,7 @@ static int DS1410_ODtoggle( unsigned char * od, int fd ) {
 }
 static int DS1410_ODon( const struct parsedname * pn ) {
     int fd = pn->in->fd ;
-    unsigned char od ;
+    BYTE od ;
     if ( DS1410_ODtoggle( &od, fd ) ) return 1 ;
     if ( od && DS1410_ODtoggle( &od, fd ) ) return 1 ;
     return 0 ;
@@ -291,7 +291,7 @@ static int DS1410_ODon( const struct parsedname * pn ) {
 
 static int DS1410_ODoff( const struct parsedname * pn ) {
     int fd = pn->in->fd ;
-    unsigned char od, cmd[] = { 0x3C, } ;
+    BYTE od, cmd[] = { 0x3C, } ;
     if ( BUS_reset( pn ) || BUS_send_data( cmd, 1, pn ) || DS1410_ODtoggle( &od, fd ) ) return 1 ;
     if ( od ) return 0 ;
     if ( DS1410_ODtoggle( &od, fd ) ) return 1 ;
@@ -300,7 +300,7 @@ static int DS1410_ODoff( const struct parsedname * pn ) {
 
 /* passthru */
 static int DS1410_PTtoggle( int fd ) {
-    unsigned char od[4] ;
+    BYTE od[4] ;
     char tog[]="ABCD" ;
     printf("DS1410 Passthrough toggle\n");
     if (
@@ -322,7 +322,7 @@ static int DS1410_PTtoggle( int fd ) {
 /* passthru */
 /* Return 0 if successful */
 static int DS1410_PTon( int fd ) {
-    unsigned char p ;
+    BYTE p ;
     LEVEL_CONNECT("Attempting to switch DS1410E into PassThru mode\n") ;
     DS1410_PTtoggle( fd ) ;
     DS1410Present(&p,fd) ;
@@ -339,7 +339,7 @@ static int DS1410_PTon( int fd ) {
 /* Return 0 if successful */
 static int DS1410_PToff(  const struct parsedname * pn ) {
     int fd = pn->in->fd ;
-    unsigned char p ;
+    BYTE p ;
     int ret = 1 ;
     LEVEL_CONNECT("Attempting to switch DS1410E out of PassThru mode\n") ;
     
@@ -362,9 +362,9 @@ static int DS1410_PToff(  const struct parsedname * pn ) {
     return ret ;
 }
 
-static int DS1410Present( unsigned char * p, int fd ) {
-    unsigned char CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
-    unsigned char st, cl, cl2 ;
+static int DS1410Present( BYTE * p, int fd ) {
+    BYTE CF=0xCF, EC=0xEC, FD=0xFD, FE=0xFE, FF=0xFF;
+    BYTE st, cl, cl2 ;
     int pass = 0 ;
     int i = 0 ;
     printf("DS1410 present?\n") ;

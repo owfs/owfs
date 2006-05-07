@@ -14,13 +14,13 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) ;
-static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
-static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
-static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) ;
-static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags ) ;
-static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags  ) ;
-static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags, int local_flag ) ;
+static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * pn, uint32_t * flags ) ;
+static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2 ) ;
+static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2 ) ;
+static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2 ) ;
+static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2, uint32_t * flags ) ;
+static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2, uint32_t * flags  ) ;
+static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const struct parsedname * pn, uint32_t * flags, int local_flag ) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -445,7 +445,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
     return ret ;
 }
 
-void FS_LoadPath( unsigned char * sn, const struct parsedname * pn ) {
+void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) {
     if ( pn->pathlength==0 ) {
         memset(sn,0,8) ;
     } else {
@@ -459,7 +459,7 @@ void FS_LoadPath( unsigned char * sn, const struct parsedname * pn ) {
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else can directory from bus (and add to cache) */
 static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2, uint32_t * flags ) {
-    unsigned char * snlist = NULL;
+    BYTE * snlist = NULL;
     size_t dindex, devices ;
 
     /* Test to see whether we should get the directory "directly" */

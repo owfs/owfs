@@ -15,8 +15,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
-    size_t pagelen, int (*readfunc)(unsigned char *,const size_t,const size_t,const struct parsedname * const) ) {
+int OW_read_paged( BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
+    size_t pagelen, int (*readfunc)(BYTE *,const size_t,const size_t,const struct parsedname * const) ) {
 
     size_t pageoff = offset % pagelen ;
     if ( size==0 ) return 0 ;
@@ -45,8 +45,8 @@ int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct p
     return 0 ;
 }
 
-int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
-    size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) {
+int OW_write_paged( const BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
+    size_t pagelen, int (*writefunc)(const BYTE *,const size_t,const size_t,const struct parsedname * const) ) {
 
 
     size_t pageoff = offset % pagelen ;

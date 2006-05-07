@@ -71,7 +71,7 @@ $Id$
  *       the uart.
  */
 #define UART_FIFO_SIZE 160
-//extern unsigned char combuffer[] ;
+//extern BYTE combuffer[] ;
 
 /** USB bulk endpoint FIFO size
   Need one for each for read and write
@@ -104,13 +104,13 @@ struct interface_routines {
     /* Change speed between overdrive and normal on the 1-wire bus */
     int (* testoverdrive) (const struct parsedname * pn) ;
     /* Send a byte with bus power to follow */
-    int (* PowerByte) (const unsigned char byte, unsigned char * resp, const unsigned int delay, const struct parsedname * pn) ;
+    int (* PowerByte) (const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
     int (* ProgramPulse) (const struct parsedname * pn) ;
     /* send and recieve data -- byte at a time */
-    int (* sendback_data) (const unsigned char * data , unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+    int (* sendback_data) (const BYTE * data , BYTE * resp , const size_t len, const struct parsedname * pn ) ;
     /* send and recieve data -- bit at a time */
-    int (* sendback_bits) (const unsigned char * databits , unsigned char * respbits , const size_t len, const struct parsedname * pn ) ;
+    int (* sendback_bits) (const BYTE * databits , BYTE * respbits , const size_t len, const struct parsedname * pn ) ;
     /* select a device */
     int (* select) ( const struct parsedname * pn ) ;
     /* reconnect with a balky device */
@@ -230,8 +230,8 @@ enum e_reconnect {
 struct device_search {
     int LastDiscrepancy ; // for search
     int LastDevice ; // for search
-    unsigned char sn[8] ;
-    unsigned char search ;
+    BYTE sn[8] ;
+    BYTE search ;
 } ;
 
 struct connection_in {
@@ -272,7 +272,7 @@ struct connection_in {
     /* Static buffer for serial conmmunications */
     /* Since only used during actual transfer to/from the adapter,
         should be protected from contention even when multithreading allowed */
-    unsigned char combuffer[MAX_FIFO_SIZE] ;
+    BYTE combuffer[MAX_FIFO_SIZE] ;
     union {
         struct connin_serial serial ;
         struct connin_link   link   ;
@@ -331,8 +331,8 @@ struct connection_in *find_connection_in(int nr);
 
 enum transaction_type { trxn_select, trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
 struct transaction_log {
-    const unsigned char * out ;
-    unsigned char * in ;
+    const BYTE * out ;
+    BYTE * in ;
     size_t  size ;
     enum transaction_type type ;
 } ;
@@ -342,7 +342,7 @@ struct transaction_log {
     slowly being abstracted and separated from individual
     interface type details
 */
-int DS2480_baud( speed_t baud, const struct parsedname * const pn );
+int DS2480_baud( speed_t baud, const struct parsedname * pn );
 
 int Server_detect( struct connection_in * in  ) ;
 int DS2480_detect( struct connection_in * in ) ;
@@ -367,22 +367,22 @@ int BUS_reset(const struct parsedname * pn) ;
 int BUS_first(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_next(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_first_alarm(struct device_search * ds, const struct parsedname * pn) ;
-int BUS_first_family(const unsigned char family, struct device_search * ds, const struct parsedname * pn ) ;
+int BUS_first_family(const BYTE family, struct device_search * ds, const struct parsedname * pn ) ;
 
-int BUS_select_low(const struct parsedname * const pn) ;
+int BUS_select_low(const struct parsedname * pn) ;
 int BUS_select_branch( const struct parsedname * pn) ;
 
-int BUS_sendout_cmd(const unsigned char * cmd , const size_t len, const struct parsedname * pn  ) ;
-int BUS_send_cmd(const unsigned char * const cmd , const size_t len, const struct parsedname * pn  ) ;
-int BUS_sendback_cmd(const unsigned char * const cmd , unsigned char * const resp , const size_t len, const struct parsedname * pn  ) ;
-int BUS_send_data(const unsigned char * const data , const size_t len, const struct parsedname * pn  ) ;
-int BUS_readin_data(unsigned char * const data , const size_t len, const struct parsedname * pn ) ;
+int BUS_sendout_cmd(const BYTE * cmd , const size_t len, const struct parsedname * pn  ) ;
+int BUS_send_cmd(const BYTE * cmd , const size_t len, const struct parsedname * pn  ) ;
+int BUS_sendback_cmd(const BYTE * cmd , BYTE * resp , const size_t len, const struct parsedname * pn  ) ;
+int BUS_send_data(const BYTE * data , const size_t len, const struct parsedname * pn  ) ;
+int BUS_readin_data(BYTE * data , const size_t len, const struct parsedname * pn ) ;
 int BUS_alarmverify(const struct parsedname * pn) ;
 int BUS_normalverify(const struct parsedname * pn) ;
 
-int BUS_PowerByte_low(const unsigned char byte, unsigned char * resp, unsigned int delay, const struct parsedname * pn) ;
+int BUS_PowerByte_low(const BYTE byte, BYTE * resp, unsigned int delay, const struct parsedname * pn) ;
 int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) ;
-int BUS_sendback_data_low( const unsigned char * data, unsigned char * resp , const size_t len, const struct parsedname * pn ) ;
+int BUS_sendback_data_low( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) ;
 
 int TestConnection( const struct parsedname * pn ) ;
 

@@ -60,9 +60,11 @@ char * get( const char * path ) {
     void directory( const struct parsedname * const pn2 ) {
         int sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
         if ( sz<sn ) {
+            void * temp = buf ;
             sz = sn ;
-            buf = realloc( buf, sn ) ;
+            buf = realloc( temp, sn ) ;
             //printf("Realloc buf pointer=%p,%p\n",buf,&buf);
+            if ( buf==NULL && temp ) free(temp) ;
         }
         if ( buf ) {
             if ( s ) strcpy( &buf[s++], "," ) ;
