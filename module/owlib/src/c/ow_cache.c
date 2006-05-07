@@ -57,10 +57,11 @@ struct tree_opaque {
 
 #define TREE_DATA(tn)    ( (unsigned char *)(tn) + sizeof(struct tree_node) )
 
-static int Cache_Add_Common( struct tree_node * const tn ) ;
-static int Cache_Add_Store( struct tree_node * const tn ) ;
-static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) ;
-static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) ;
+static int Cache_Add_Common( struct tree_node * tn ) ;
+static int Cache_Add_Store( struct tree_node * tn ) ;
+static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * tn ) ;
+static int Cache_Get_Common_Dir( unsigned char ** snlist, size_t * devices, time_t duration, const struct tree_node * tn ) ;
+static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * tn ) ;
 static int Cache_Del_Common( const struct tree_node * tn ) ;
 static int Cache_Del_Store( const struct tree_node * tn ) ;
 static int Add_Stat( struct cache * scache, const int result ) ;
@@ -184,17 +185,19 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
 
 /* Add a directory entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) {
+int Cache_Add_Dir( const unsigned char * snlist, const size_t devices, const struct parsedname * pn ) {
     time_t duration = TimeOut( ft_directory ) ;
+    size_t size = devices * 8 ;
     if ( duration > 0 ) { /* in case timeout set to 0 */
-        struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + 8 ) ;
+        struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + size ) ;
+        //printf("AddDir tn=%p\n",tn) ;
         if ( tn ) {
             FS_LoadPath( tn->tk.sn, pn ) ;
             tn->tk.p.in = pn->in ;
-            tn->tk.extension = dindex ;
+            tn->tk.extension = 0 ;
             tn->expires = duration + time(NULL) ;
-            tn->dsize = 8 ;
-            memcpy( TREE_DATA(tn) , sn , 8 ) ;
+            tn->dsize = size ;
+            memcpy( TREE_DATA(tn) , snlist , size ) ;
             return Add_Stat(&cache_dir, Cache_Add_Common( tn )) ;
         }
     }
@@ -203,7 +206,7 @@ int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * 
 
 /* Add a device entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) {
+int Cache_Add_Device( const int bus_nr, const struct parsedname * pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + sizeof(int) ) ;
@@ -223,7 +226,7 @@ int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) {
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) {
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * pn ) {
     if ( pn ) { // do check here to avoid needless processing
         time_t duration = TimeOut( ip->change ) ;
         if ( duration > 0 ) {
@@ -253,10 +256,11 @@ int Cache_Add_Internal( const void * data, const size_t datasize, const struct i
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
-static int Cache_Add_Common( struct tree_node * const tn ) {
+static int Cache_Add_Common( struct tree_node * tn ) {
     struct tree_opaque * opaque ;
     enum { no_add, yes_add, just_update } state = no_add ;
     void * flip = NULL ;
+    LEVEL_DEBUG("Add to cache sn "SNformat" in=%p index=%d size=%d\n",SNvar(tn->tk.sn),tn->tk.p.in,tn->tk.extension,tn->dsize) ;
     CACHELOCK;
         if  (cache.killed < time(NULL) ) { // old database has timed out
             flip = cache.old_db ;
@@ -268,7 +272,6 @@ static int Cache_Add_Common( struct tree_node * const tn ) {
             cache.killed = cache.retired + cache.lifespan ;
         }
         if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
-            //printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
             if ( tn!=opaque->key ) {
                 free(opaque->key);
                 opaque->key = tn ;
@@ -330,7 +333,7 @@ void Cache_Clear( void ) {
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
-static int Cache_Add_Store( struct tree_node * const tn ) {
+static int Cache_Add_Store( struct tree_node * tn ) {
     struct tree_opaque * opaque ;
     enum { no_add, yes_add, just_update } state = no_add ;
     STORELOCK;
@@ -376,7 +379,7 @@ static int Get_Stat( struct cache * scache, const int result ) {
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get( void * data, size_t * dsize, const struct parsedname * const pn ) {
+int Cache_Get( void * data, size_t * dsize, const struct parsedname * pn ) {
     if ( pn ) { // do check here to avoid needless processing
         time_t duration = TimeOut( pn->ft->change ) ;
         if ( duration > 0 ) {
@@ -396,21 +399,58 @@ int Cache_Get( void * data, size_t * dsize, const struct parsedname * const pn )
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn ) {
+int Cache_Get_Dir( unsigned char ** snlist, size_t * devices, const struct parsedname * pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
-        size_t size = 8 ;
         struct tree_node tn  ;
+        //printf("GetDir tn=%p\n",tn) ;
         FS_LoadPath( tn.tk.sn, pn ) ;
         tn.tk.p.in = pn->in ;
-        tn.tk.extension = dindex ;
-        return Get_Stat(&cache_dir, Cache_Get_Common(sn,&size,duration,&tn)) ;
+        tn.tk.extension = 0 ;
+        return Get_Stat(&cache_dir, Cache_Get_Common_Dir(snlist,devices,duration,&tn)) ;
     }
     return 1 ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) {
+static int Cache_Get_Common_Dir( unsigned char ** snlist, size_t * devices, time_t duration, const struct tree_node * tn ) {
+    int ret ;
+    time_t now = time(NULL) ;
+    size_t size ;
+    struct tree_opaque * opaque ;
+    LEVEL_DEBUG("Get from cache sn "SNformat" in=%p index=%d\n",SNvar(tn->tk.sn),tn->tk.p.in,tn->tk.extension) ;
+    CACHELOCK;
+    if ( (opaque=tfind(tn,&cache.new_db,tree_compare))
+          || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) )
+       ) {
+        LEVEL_DEBUG("Found in cache\n") ;
+        if ( opaque->key->expires >= now ) {
+            size = opaque->key->dsize ;
+            if ( (*snlist = (unsigned char *) malloc(size)) ) {
+                memcpy( *snlist , TREE_DATA(opaque->key) , size ) ;
+                devices[0] = size/8 ;
+                //printf("Cache: snlist=%p, devices=%lu, size=%lu\n",*snlist,devices[0],size) ;
+                ret = 0 ;
+            } else {
+                ret = -ENOMEM ;
+            }
+        } else {
+                //char b[26];
+                //printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
+                //printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
+            LEVEL_DEBUG("Expired in cache\n") ;
+            ret = -ETIMEDOUT ;
+        }
+    } else {
+        LEVEL_DEBUG("Found in cache\n") ;
+        ret = -ENOENT ;
+    }
+    CACHEUNLOCK;
+    return ret ;
+}
+
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         size_t size = sizeof(int) ;
@@ -424,7 +464,7 @@ int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) {
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) {
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn ) {
     if ( pn ) { // do check here to avoid needless processing
         time_t duration = TimeOut( ip->change ) ;
         if ( duration > 0 ) {
@@ -444,45 +484,49 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) {
+static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * tn ) {
     int ret ;
     time_t now = time(NULL) ;
     struct tree_opaque * opaque ;
     //printf("CACHE GET 1\n");
+    LEVEL_DEBUG("Get from cache sn "SNformat" in=%p index=%d size=%d\n",SNvar(tn->tk.sn),tn->tk.p.in,tn->tk.extension,tn->dsize) ;
     CACHELOCK;
-        if ( (opaque=tfind(tn,&cache.new_db,tree_compare))
-         || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) )
-       ) {
-            //printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
-            if ( opaque->key->expires >= now ) {
-                //printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
-                if ( dsize[0] >= opaque->key->dsize ) {
-                    //printf("CACHE GET 4\n");
-                    dsize[0] = opaque->key->dsize ;
-                    //tree_show(opaque,leaf,0);
-                    //printf("CACHE GET 5 size=%d\n",*dsize);
-                    memcpy( data , TREE_DATA(opaque->key) , *dsize ) ;
-                    ret = 0 ;
-                    //printf("CACHE GOT\n");
-                    //twalk(cache.new_db,tree_show) ;
-                } else {
-                    ret = -EMSGSIZE ;
-                }
+    if ( (opaque=tfind(tn,&cache.new_db,tree_compare))
+        || ( (cache.retired+duration>now) && (opaque=tfind(tn,&cache.old_db,tree_compare)) )
+    ) {
+        //printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
+        LEVEL_DEBUG("Found in cache\n") ;
+        if ( opaque->key->expires >= now ) {
+            //printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
+            if ( dsize[0] >= opaque->key->dsize ) {
+                //printf("CACHE GET 4\n");
+                dsize[0] = opaque->key->dsize ;
+                //tree_show(opaque,leaf,0);
+                //printf("CACHE GET 5 size=%d\n",*dsize);
+                memcpy( data , TREE_DATA(opaque->key) , *dsize ) ;
+                ret = 0 ;
+                //printf("CACHE GOT\n");
+                //twalk(cache.new_db,tree_show) ;
             } else {
-                //char b[26];
-                //printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
-                //printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
-                ret = -ETIMEDOUT ;
+                ret = -EMSGSIZE ;
             }
         } else {
-            ret = -ENOENT ;
+            //char b[26];
+            //printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
+            //printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
+            LEVEL_DEBUG("Expired in cache\n") ;
+            ret = -ETIMEDOUT ;
         }
+    } else {
+        LEVEL_DEBUG("Not found in cache\n") ;
+        ret = -ENOENT ;
+    }
     CACHEUNLOCK;
     return ret ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * const tn ) {
+static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * tn ) {
     struct tree_opaque * opaque ;
     int ret ;
     (void) duration ;
@@ -509,7 +553,7 @@ static int Del_Stat( struct cache * scache, const int result ) {
     return result ;
 }
 
-int Cache_Del( const struct parsedname * const pn ) {
+int Cache_Del( const struct parsedname * pn ) {
     if ( pn ) { // do check here to avoid needless processing
         time_t duration = TimeOut( pn->ft->change ) ;
         if ( duration > 0 ) {
@@ -528,19 +572,19 @@ int Cache_Del( const struct parsedname * const pn ) {
     return 1 ;
 }
 
-int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) {
+int Cache_Del_Dir( const struct parsedname * pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
         tn.tk.p.in = pn->in ;
-        tn.tk.extension = dindex ;
+        tn.tk.extension = 0 ;
         return Del_Stat(&cache_dir, Cache_Del_Common(&tn)) ;
     }
     return 1 ;
 }
 
-int Cache_Del_Device( const struct parsedname * const pn ) {
+int Cache_Del_Device( const struct parsedname * pn ) {
     time_t duration = TimeOut( ft_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
@@ -552,7 +596,7 @@ int Cache_Del_Device( const struct parsedname * const pn ) {
     return 1 ;
 }
 
-int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) {
+int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn ) {
     if ( pn ) { // do check here to avoid needless processing
         time_t duration = TimeOut( ip->change ) ;
         if ( duration > 0 ) {
@@ -615,28 +659,28 @@ void Cache_Close( void )
     {}
 void Cache_Clear( void )
     {}
-int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn )
+int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * pn )
     { return 1; }
-int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn )
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * pn )
     { return 1; }
-int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn )
+int Cache_Get(          void * data, size_t * dsize, const struct parsedname * pn )
     { return 1; }
-int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn )
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn )
     { return 1; }
 int Cache_Del(          const struct parsedname * const pn                                                                   )
     { return 1; }
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn )
     { return 1; }
-int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn )
+int Cache_Add_Dir( const unsigned char * snlist, const size_t devices, const struct parsedname * pn ) {
     { return 1; }
-int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn )
+int Cache_Add_Device( const int bus_nr, const struct parsedname * pn )
     { return 1; }
-int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn )
+int Cache_Get_Dir( unsigned char ** snlist, size_t * devices, const struct parsedname * pn )
     { return 1; }
-int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn )
+int Cache_Get_Device( void * bus_nr, const struct parsedname * pn )
     { return 1; }
-int Cache_Del_Dir( const int dindex, const struct parsedname * const pn )
+int Cache_Del_Dir( const struct parsedname * pn )
     { return 1; }
-int Cache_Del_Device( const struct parsedname * const pn )
+int Cache_Del_Device( const struct parsedname * pn )
     { return 1; }
 #endif /* OW_CACHE */

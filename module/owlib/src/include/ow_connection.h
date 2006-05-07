@@ -266,6 +266,7 @@ struct connection_in {
     int use_overdrive_speed ;
     int ds2404_compliance ;
     int ProgramAvailable ;
+    size_t last_root_devs ;
     struct buspath branch ; // Branch currently selected
 
     /* Static buffer for serial conmmunications */

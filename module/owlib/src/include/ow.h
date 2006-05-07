@@ -240,8 +240,11 @@ int owopt( const int c , const char * const arg, enum opt_program op ) ;
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */
 /* 1-wire really is low precision -- float is more than enough */
-#define FLOAT   double
-#define DATE    time_t
+//#define FLOAT   double
+//#define DATE    time_t
+typedef double          FLOAT ;
+typedef time_t          DATE ;
+typedef unsigned char   BYTE ;
 
 /* Several different structures:
   device -- one for each type of 1-wire device
@@ -347,7 +350,7 @@ struct filetype {
         int (*y) (int *, const struct parsedname *);
         int (*d) (DATE *, const struct parsedname *);
         int (*a) (char *, const size_t, const off_t, const struct parsedname *);
-        int (*b) (unsigned char *, const size_t, const off_t, const struct parsedname *);
+        int (*b) (BYTE *, const size_t, const off_t, const struct parsedname *);
     } read ; // read callback function
     union {
         void * v ;
@@ -357,7 +360,7 @@ struct filetype {
         int (*y) (const int *, const struct parsedname *);
         int (*d) (const DATE *, const struct parsedname *);
         int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
-        int (*b) (const unsigned char *, const size_t, const off_t, const struct parsedname *);
+        int (*b) (const BYTE *, const size_t, const off_t, const struct parsedname *);
     } write ; // write callback function
     union {
         void * v ;
@@ -365,7 +368,7 @@ struct filetype {
         unsigned int u ;
         FLOAT  f ;
         size_t s ;
-        unsigned char c ;
+        BYTE c ;
     } data ; // extra data pointer (used for separating similar but differently name functions)
 } ;
 #define NFT(ft) ((int)(sizeof(ft)/sizeof(struct filetype)))
@@ -447,7 +450,7 @@ extern struct device * DeviceThermostat ;
 
 /* ------------------------}
 struct devlock {
-    unsigned char sn[8] ;
+    BYTE sn[8] ;
     pthread_mutex_t lock ;
     int users ;
 } ;
@@ -482,12 +485,12 @@ subdir points to in-device groupings
 extern uint32_t SemiGlobal ;
 
 struct buspath {
-    unsigned char sn[8] ;
-    unsigned char branch ;
+    BYTE sn[8] ;
+    BYTE branch ;
 } ;
 
 struct devlock {
-    unsigned char sn[8] ;
+    BYTE sn[8] ;
     unsigned int users ;
     pthread_mutex_t lock ;
 } ;
@@ -500,7 +503,7 @@ struct parsedname {
     int    bus_nr ;
     enum pn_type type ; // global branch
     enum pn_state state ; // global branch
-    unsigned char sn[8] ; // 64-bit serial number
+    BYTE sn[8] ; // 64-bit serial number
     struct device * dev ; // 1-wire device
     struct filetype * ft ; // device property
     int    extension ; // numerical extension (for array values) or -1
@@ -597,7 +600,7 @@ extern time_t dir_time ; /* time of last directory scan */
 #define dREAD_FUNCTION( fname )  static int fname(DATE *, const struct parsedname * pn)
 #define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
 #define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bREAD_FUNCTION( fname )  static int fname(unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define bREAD_FUNCTION( fname )  static int fname(BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 #define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
@@ -605,7 +608,7 @@ extern time_t dir_time ; /* time of last directory scan */
 #define dWRITE_FUNCTION( fname )  static int fname(const DATE *, const struct parsedname * pn)
 #define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bWRITE_FUNCTION( fname )  static int fname(const unsigned char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+#define bWRITE_FUNCTION( fname )  static int fname(const BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup( void ) ;
@@ -618,68 +621,68 @@ void DeviceDestroy( void ) ;
 //  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
 int FS_ParsedNamePlus( const char * path, const char * file, struct parsedname * pn ) ;
-int FS_ParsedName( const char * const fn , struct parsedname * const pn ) ;
-int FS_ParsedName_Remote( const char * const fn , struct parsedname * const pn ) ;
-  void FS_ParsedName_destroy( struct parsedname * const pn ) ;
-  size_t FileLength( const struct parsedname * const pn ) ;
-  size_t FullFileLength( const struct parsedname * const pn ) ;
-int CheckPresence( const struct parsedname * const pn ) ;
-int Check1Presence( const struct parsedname * const pn ) ;
-void FS_devicename( char * const buffer, const size_t length, const unsigned char * sn, const struct parsedname * pn ) ;
+int FS_ParsedName( const char * const fn , struct parsedname * pn ) ;
+int FS_ParsedName_Remote( const char * const fn , struct parsedname * pn ) ;
+  void FS_ParsedName_destroy( struct parsedname * pn ) ;
+  size_t FileLength( const struct parsedname * pn ) ;
+  size_t FullFileLength( const struct parsedname * pn ) ;
+int CheckPresence( const struct parsedname * pn ) ;
+int Check1Presence( const struct parsedname * pn ) ;
+void FS_devicename( char * const buffer, const size_t length, const BYTE * sn, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
 int FS_dirname_state( char * const buffer, const size_t length, const struct parsedname * pn ) ;
 int FS_dirname_type( char * const buffer, const size_t length, const struct parsedname * pn ) ;
-void FS_DirName( char * buffer, const size_t size, const struct parsedname * const pn ) ;
+void FS_DirName( char * buffer, const size_t size, const struct parsedname * pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
 
 int FS_RemoteBus( const struct parsedname * pn ) ;
 
 /* Utility functions */
-unsigned char CRC8( const unsigned char * bytes , const size_t length ) ;
-unsigned char CRC8seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) ;
-  unsigned char CRC8compute( const unsigned char * bytes , const size_t length  , const unsigned int seed ) ;
-int CRC16( const unsigned char * bytes , const size_t length ) ;
-int CRC16seeded( const unsigned char * bytes , const size_t length , const unsigned int seed ) ;
-unsigned char char2num( const char * s ) ;
-unsigned char string2num( const char * s ) ;
-char num2char( const unsigned char n ) ;
-void num2string( char * s , const unsigned char n ) ;
-void string2bytes( const char * str , unsigned char * b , const int bytes ) ;
-void bytes2string( char * str , const unsigned char * b , const int bytes ) ;
-int UT_getbit(const unsigned char * buf, const int loc) ;
-int UT_get2bit(const unsigned char * buf, const int loc) ;
-void UT_setbit( unsigned char * buf, const int loc , const int bit ) ;
-void UT_set2bit( unsigned char * buf, const int loc , const int bits ) ;
-void UT_fromDate( const DATE D, unsigned char * data) ;
-DATE UT_toDate( const unsigned char * date ) ;
+BYTE CRC8( const BYTE * bytes , const size_t length ) ;
+BYTE CRC8seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) ;
+  BYTE CRC8compute( const BYTE * bytes , const size_t length  , const unsigned int seed ) ;
+int CRC16( const BYTE * bytes , const size_t length ) ;
+int CRC16seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) ;
+BYTE char2num( const char * s ) ;
+BYTE string2num( const char * s ) ;
+char num2char( const BYTE n ) ;
+void num2string( char * s , const BYTE n ) ;
+void string2bytes( const char * str , BYTE * b , const int bytes ) ;
+void bytes2string( char * str , const BYTE * b , const int bytes ) ;
+int UT_getbit(const BYTE * buf, const int loc) ;
+int UT_get2bit(const BYTE * buf, const int loc) ;
+void UT_setbit( BYTE * buf, const int loc , const int bit ) ;
+void UT_set2bit( BYTE * buf, const int loc , const int bits ) ;
+void UT_fromDate( const DATE D, BYTE * data) ;
+DATE UT_toDate( const BYTE * date ) ;
 int FS_busless( char * path ) ;
 
 /* Cache  and Storage functions */
 void Cache_Open( void ) ;
 void Cache_Close( void ) ;
 void Cache_Clear( void ) ;
-int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * const pn ) ;
-int Cache_Add_Dir( const void * sn, const int dindex, const struct parsedname * const pn ) ;
-int Cache_Add_Device( const int bus_nr, const struct parsedname * const pn ) ;
-int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
-int Cache_Get(          void * data, size_t * dsize, const struct parsedname * const pn ) ;
-int Cache_Get_Dir( void * sn, const int dindex, const struct parsedname * const pn ) ;
-int Cache_Get_Device( void * bus_nr, const struct parsedname * const pn ) ;
-int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * const pn ) ;
-int Cache_Del(          const struct parsedname * const pn                                                                   ) ;
-int Cache_Del_Dir( const int dindex, const struct parsedname * const pn ) ;
-int Cache_Del_Device( const struct parsedname * const pn ) ;
-int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * const pn ) ;
-void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn2 ) ;
+int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * pn ) ;
+int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn ) ;
+int Cache_Add_Device( const int bus_nr, const struct parsedname * pn ) ;
+int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * pn ) ;
+int Cache_Get(          void * data, size_t * dsize, const struct parsedname * pn ) ;
+int Cache_Get_Dir( BYTE ** snlist, size_t * devices, const struct parsedname * pn ) ;
+int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) ;
+int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn ) ;
+int Cache_Del(          const struct parsedname * pn                                                                   ) ;
+int Cache_Del_Dir( const struct parsedname * pn ) ;
+int Cache_Del_Device( const struct parsedname * pn ) ;
+int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn ) ;
+void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) ;
 
 int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
 // ow_locks.c
 void LockSetup( void ) ;
-int LockGet( const struct parsedname * const pn ) ;
-void LockRelease( const struct parsedname * const pn ) ;
+int LockGet( const struct parsedname * pn ) ;
+void LockRelease( const struct parsedname * pn ) ;
 
 // ow_api.c
 int  OWLIB_can_init_start( void ) ;
@@ -705,17 +708,17 @@ int OW_ArgUSB( const char * arg ) ;
 int OW_ArgDevice( const char * arg ) ;
 int OW_ArgGeneric( const char * arg ) ;
 
-void update_max_delay( const struct parsedname * const pn ) ;
+void update_max_delay( const struct parsedname * pn ) ;
 
 int ServerSize( const char * path, const struct parsedname * pn ) ;
 int ServerPresence( const struct parsedname * pn ) ;
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
-int ServerDir( void (* dirfunc)(const struct parsedname * const),const struct parsedname * const pn, uint32_t * flags ) ;
+int ServerDir( void (* dirfunc)(const struct parsedname *),const struct parsedname * pn, uint32_t * flags ) ;
 
 /* High-level callback functions */
-int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) ;
-int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) ;
+int FS_dir( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn ) ;
+int FS_dir_remote( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags ) ;
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset) ;
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
@@ -724,8 +727,8 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
-int FS_size_remote( const struct parsedname * const pn ) ;
-int FS_size_postparse( const struct parsedname * const pn ) ;
+int FS_size_remote( const struct parsedname * pn ) ;
+int FS_size_postparse( const struct parsedname * pn ) ;
 int FS_size( const char *path ) ;
 
 int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
@@ -742,10 +745,10 @@ int FS_fstat(const char *path, struct stat *stbuf) ;
 int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) ;
 
 /* iteration functions for splitting writes to buffers */
-int OW_read_paged( unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
-    size_t pagelen, int (*readfunc)(unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
-int OW_write_paged( const unsigned char * p, size_t size, size_t offset, const struct parsedname * const pn,
-    size_t pagelen, int (*writefunc)(const unsigned char *,const size_t,const size_t,const struct parsedname * const) ) ;
+int OW_read_paged( BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
+    size_t pagelen, int (*readfunc)(BYTE *,const size_t,const size_t,const struct parsedname *) ) ;
+int OW_write_paged( const BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
+    size_t pagelen, int (*writefunc)(const BYTE *,const size_t,const size_t,const struct parsedname *) ) ;
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;

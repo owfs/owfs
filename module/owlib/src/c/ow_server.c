@@ -204,89 +204,92 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    char * path2 ;
-    char *pathnow = NULL ;
-    int ret = 0 ;
     int connectfd = ClientConnect( pn->in ) ;
-    struct parsedname pn2 ;
-    int dindex = 0 ;
 
     if ( connectfd < 0 ) return ConnectionError(pn) ;
-
-    /* Make a copy (shallow) of pn to modify for directory entries */
-    memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_dir ;
 
     sm.sg = SemiGlobal ;
-    //if((pn->state & pn_bus) && FS_RemoteBus(pn)) {
     if((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote)) {
         sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
-        LEVEL_DEBUG("ServerDir: path_busless=%p [%s]\n", pn->path_busless, SAFESTRING(pn->path_busless))
-        // if pn_bus is set, then path_busless is automatically set too in Parse_Bus().
-        pathnow = pn->path_busless ;
-    } else {
-        LEVEL_DEBUG("ServerDir: path=%p [%s]\n", pn->path, SAFESTRING(pn->path))
-        pathnow = pn->path;
     }
 
-    LEVEL_CALL("SERVERDIR path=%s\n", SAFESTRING(pathnow));
+    LEVEL_CALL("SERVERDIR path=%s\n", SAFESTRING(pn->path_busless));
 
-    if (ret) {
-        cm.ret = ret ;
-    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, pn->path_busless, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
-        int got_entry = 0 ;
+        char * path2 ;
+        unsigned char * snlist = NULL ;
+        size_t devices = 0 ;
+        size_t allocated = 0 ;
+        struct parsedname pn2 ;
+
+        /* If cacheable, try to allocate a blob for storage */
+        if ( (pn->type==pn_real) && (pn->state & pn_alarm) ) {
+            if ( pn2.pathlength == 0 ) {
+                BUSLOCK(pn) ;
+                    allocated = pn->in->last_root_devs ; // root dir estimated length
+                BUSUNLOCK(pn) ;
+            }
+            allocated += 10 ; /* add space for additional devices */
+            snlist = (unsigned char *) malloc(allocated+2) ;
+        }
+
         while((path2 = FromServerAlloc( connectfd, &cm))) {
-            if(got_entry)
-                FS_ParsedName_destroy( &pn2 ) ;  // destroy the last parsed name
-            else
-                got_entry = 1 ;
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-
             LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
-            ret = FS_ParsedName_Remote( path2, &pn2 ) ;
 
-            if ( ret ) {
+            if ( FS_ParsedName_Remote( path2, &pn2 ) ) {
                 cm.ret = -EINVAL ;
-                //LEVEL_DEBUG("ServerDir: error parsing [%s] ret=%d\n", path2, ret);
                 free(path2) ;
                 break ;
-            } else {
-                unsigned char sn[8] ;
-                /* we got a device on bus_nr = pn->in->index. Cache it so we
-                    find it quicker next time we want to do read values from the
-                    the actual device
-                */
-                if(pn2.dev && (pn2.type == pn_real)) {
-                    /* If we get a device then cache the bus_nr */
-                    Cache_Add_Device(pn->in->index, &pn2);
+            }
+            pn2.in = pn->in ; //use parent connection_in
+            
+            /* we got a device on bus_nr = pn->in->index. Cache it so we
+                find it quicker next time we want to do read values from the
+                the actual device
+            */
+            if(pn2.dev && (pn2.type == pn_real)) {
+                /* If we get a device then cache the bus_nr */
+                Cache_Add_Device(pn->in->index, &pn2);
+            }
+
+            /* Add to cache Blob -- snlist is also a flag for cachable */
+            if ( snlist ) { /* only add if there is a blob allocated successfully */
+                if ( devices >= allocated ) {
+                    BYTE * temp = snlist ;
+                    allocated += 10 ;
+                    snlist = (unsigned char*) realloc( temp, allocated+2 ) ;
+                    if ( snlist==NULL ) free(temp) ;
                 }
-
-                if(pn2.dev && (pn2.type == pn_real)) {
-                    /* If we get a device then cache it */
-                    //FS_LoadPath(sn, &pn2);
-                    memcpy(sn, pn2.sn, 8);
-                    pn2.in = pn->in ;  // reuse the current pn->in->index
-                    Cache_Add_Dir(sn,dindex,&pn2) ;
-                    ++dindex ;
+                if ( snlist ) { /* test again, after realloc */
+                    memcpy( snlist + 8*devices, pn2.sn, 8 ) ;
                 }
+            }
+            ++devices ;
 
-                DIRLOCK;
-                    dirfunc(&pn2) ;
-                DIRUNLOCK;
+            DIRLOCK;
+                dirfunc(&pn2) ;
+            DIRUNLOCK;
 
-                free(path2) ;
+            FS_ParsedName_destroy( &pn2 ) ;  // destroy the last parsed name
+            free(path2) ;
+        }
+        /* Add to the cache (full list as a single element */
+        if ( snlist ) {
+            Cache_Add_Dir(snlist,devices,pn) ;  // end with a null entry
+            free(snlist) ;
+            if ( pn2.pathlength == 0 ) {
+                BUSLOCK(pn) ;
+                    pn->in->last_root_devs = devices ; // root dir estimated length
+                BUSUNLOCK(pn) ;
             }
         }
-        if(got_entry) {
-            // we got at least one entry. FS_ParsedName_destroy() mustn't be
-            // called before Cache_Del_Dir()
-            Cache_Del_Dir(dindex,&pn2) ;  // end with a null entry
-            FS_ParsedName_destroy( &pn2 ) ;
-        }
+
         DIRLOCK;
             /* flags are sent back in "offset" of final blank entry */
             flags[0] |= cm.offset ;

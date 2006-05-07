@@ -43,7 +43,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const
 /* path is the path which "pn" parses */
 /* FS_dir produces the "invariant" portion of the directory, passing on to
    FS_dir_seek the variable part */
-int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn ) {
+int FS_dir( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn ) {
     uint32_t flags ;
 
     return FS_dir_both( dirfunc, pn, &flags, 1 ) ;
@@ -52,11 +52,11 @@ int FS_dir( void (* dirfunc)(const struct parsedname * const), const struct pars
 /* path is the path which "pn" parses */
 /* FS_dir_remote is the entry into FS_dir_seek from ServerDir */
 /* More checking is done, and the flags are returned */
-int FS_dir_remote( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags ) {
+int FS_dir_remote( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags ) {
     return FS_dir_both( dirfunc, pn, flags, 0 ) ;
 }
 
-static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const struct parsedname * const pn, uint32_t * flags, int local_flag ) {
+static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags, int local_flag ) {
     int ret = 0 ;
     struct parsedname pn2 ;
 
@@ -77,9 +77,9 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
     if ( pn->dev && (pn->type == pn_real)) { /* device directory */
-        /* Device structure is always know for ordinary devices, so don't
+        /* Device structure is always known for ordinary devices, so don't
         * bother calling ServerDir() */
-        //printf("FS_dir_remote: call FS_devdir 1 pn->path=%s\n", pn->path);
+        //printf("FS_dir_both: call FS_devdir 1 pn->path=%s\n", pn->path);
         ret = FS_devdir( dirfunc, &pn2 ) ;
     } else if ( pn->dev ) { /* device directory */
         /* this one seem to be called when browsing
@@ -206,7 +206,7 @@ static void * FS_dir_seek_callback( void * vp ) {
     return NULL;
 }
 
-static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) {
+static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct connection_in * in, const struct parsedname * pn, uint32_t * flags ) {
     int ret = 0 ;
     struct dir_seek_struct dss = {in->next,pn,dirfunc,flags,0} ;
     struct parsedname pn2 ;
@@ -230,13 +230,8 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struc
             //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
             ret = FS_alarmdir(dirfunc,&pn2) ;
         } else {
-            if ( (pn->state&pn_uncached) || !IsLocalCacheEnabled(&pn2) || timeout.dir==0 ) {
-                //printf("FS_dir_seek: call FS_realdir bus %d\n", pn->in->index);
-                ret = FS_realdir( dirfunc, &pn2, flags ) ;
-            } else {
-                //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
-                ret = FS_cache2real( dirfunc, &pn2, flags ) ;
-            }
+            //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
+            ret = FS_cache2real( dirfunc, &pn2, flags ) ;
         }
     }
     //printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
@@ -253,7 +248,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struc
 
 /* path is the path which "pn" parses */
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
-static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * const pn, uint32_t * flags ) {
+static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct connection_in * in, const struct parsedname * pn, uint32_t * flags ) {
     int ret = 0 ;
     struct parsedname pn2 ;
 
@@ -269,13 +264,8 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struc
             //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
             ret = FS_alarmdir(dirfunc,&pn2) ;
         } else {
-            if ( (pn2.state&pn_uncached) || !IsLocalCacheEnabled(&pn2) || timeout.dir==0 ) {
-                //printf("FS_dir_seek: call FS_realdir bus %d\n", pn->in->index);
-                ret = FS_realdir( dirfunc, &pn2, flags ) ;
-            } else {
-                //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
-                ret = FS_cache2real( dirfunc, &pn2, flags ) ;
-            }
+            //printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
+            ret = FS_cache2real( dirfunc, &pn2, flags ) ;
         }
     }
     //printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
@@ -285,7 +275,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struc
 #endif /* OW_MT */
 
 /* Device directory -- all from memory */
-static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
+static int FS_devdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
     struct filetype * lastft = & (pn2->dev->ft[pn2->dev->nft]) ; /* last filetype struct */
     struct filetype * firstft ; /* first filetype struct */
     char s[33] ;
@@ -323,9 +313,13 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct 
 }
 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
-static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
+static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
     int ret ;
+    int flags ;
     struct device_search ds ; // holds search state
+
+    /* cache from Server if this is a remote bus */
+    if ( get_busmode(pn2->in) == bus_remote ) return ServerDir( dirfunc, pn2, &flags ) ;
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
@@ -362,63 +356,96 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struc
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Scan the directory from the BUS and add to cache */
-static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags ) {
+static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2, uint32_t * flags ) {
     struct device_search ds ;
-    int dindex = 0 ;
+    void * snlist ;
+    size_t devices = 0 ;
+    size_t allocated = 0 ;
     int ret ;
+
+    /* cache from Server if this is a remote bus */
+    if ( get_busmode(pn2->in) == bus_remote ) return ServerDir( dirfunc, pn2, flags ) ;
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
 
+    /* Operate at dev level, not filetype */
+    pn2->ft = NULL ;
     flags[0] = 0 ; /* start out with no flags set */
 
     BUSLOCK(pn2);
     
-    /* Operate at dev level, not filetype */
-    pn2->ft = NULL ;
     /* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
-    ret=BUS_first(&ds,pn2) ;
-    if(ret) {
+    if( (ret=BUS_first(&ds,pn2)) ) {
         BUSUNLOCK(pn2);
-        if(ret == -ENODEV) return 0; /* no more devices is ok */
+        if(ret == -ENODEV) {
+            if ( pn2->pathlength == 0 ) pn2->in->last_root_devs = 0 ; // root dir estimated length
+            return 0; /* no more devices is ok */
+        }
         return -EIO ;
     }
-    while (ret==0) {
+    /* BUS still locked */
+    if ( pn2->pathlength == 0 ) allocated = pn2->in->last_root_devs ; // root dir estimated length
+    allocated += 10 ; /* add space for additional devices */
+    /* allocate space for cache list -- if fails, will simply not cache */
+    //printf("Allocate %lu devs=%lu\n",allocated*8+8,allocated) ;
+    snlist = malloc(allocated*8+8) ; /* no test is intentional! */
+    do {
         char ID[] = "XX";
-        //printf("FS_realdir: add sn="SNformat" to bus=%d\n", SNvar(ds.sn), pn2->in->index);
-        Cache_Add_Dir(ds.sn,dindex,pn2) ;
-        ++dindex ;
+        BUSUNLOCK(pn2);
+        if ( snlist ) { /* only add if there is a blob allocated successfully */
+            //printf("Devices=%lu snlist=%p loc=%p\n",devices,snlist,&(snlist[8*devices])) ;
+            if ( devices >= allocated ) {
+                BYTE * temp = snlist ;
+                //printf("About to reallocate allocated = %d %d\n",(int)allocated,(int)(allocated) ) ;
+                allocated += 10 ;
+                //printf("About to reallocate allocated = %d %d\n",(int)allocated,(int)(allocated) ) ;
+                snlist = (BYTE *) realloc( temp, allocated*8+8 ) ;
+                if ( snlist==NULL ) free(temp ) ;
+                //printf("Reallocated\n") ;
+            }
+            if ( snlist ) { /* test again, after realloc */
+                //printf( "Copy to %p\n", snlist + 8*devices ) ;
+                memcpy( snlist + 8*devices, ds.sn, 8 ) ;
+            }
+        }
+        ++devices ;
         
         memcpy( pn2->sn, ds.sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         num2string( ID, ds.sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
-        //printf("DIR adapter=%d, element=%d, sn="SNformat"\n",pn2->in->index,dindex,SNarg(pn2->sn));
-        
-        /* dirfunc() may need to call FS_fstat() and that will make a
-            checkpresence and BUS_lock if bus_nr isn't cached here at
-            once. Deadlock will occour. (owftpd needs it)
-        */
-        Cache_Add_Device(pn2->in->index, pn2);
         
         DIRLOCK;
-        dirfunc( pn2 ) ;
-        flags[0] |= pn2->dev->flags ;
+            dirfunc( pn2 ) ;
+            flags[0] |= pn2->dev->flags ;
         DIRUNLOCK;
         pn2->dev = NULL ; /* clear for the rest of directory listing */
-        ret=BUS_next(&ds,pn2) ;
-    }
+
+        BUSLOCK(pn2);
+    } while ( (ret=BUS_next(&ds,pn2))==0 ) ;
+    /* BUS still locked */
+    if ( pn2->pathlength == 0 ) pn2->in->last_root_devs = devices ; // root dir estimated length
     BUSUNLOCK(pn2);
 
+    /* Add to the cache (full list as a single element */
+    if ( snlist ) {
+        //printf("About to cache\n") ;
+        //printf("About to cache snlist=%p, devices=%lu pn=%p\n",snlist,devices,pn2);
+        Cache_Add_Dir(snlist,devices,pn2) ;  // end with a null entry
+        //printf("About to free %p\n",snlist) ;
+        free(snlist) ;
+        //printf("freed\n");
+    }
+
     STATLOCK;
-        dir_main.entries += dindex ;
+        dir_main.entries += devices ;
     STATUNLOCK;
-    Cache_Del_Dir(dindex,pn2) ;  // end with a null entry
     if(ret == -ENODEV) return 0 ; // no more devices is ok */
     return ret ;
 }
 
-void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn ) {
+void FS_LoadPath( unsigned char * sn, const struct parsedname * pn ) {
     if ( pn->pathlength==0 ) {
         memset(sn,0,8) ;
     } else {
@@ -431,42 +458,45 @@ void FS_LoadPath( unsigned char * sn, const struct parsedname * const pn ) {
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else can directory from bus (and add to cache) */
-static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2, uint32_t * flags ) {
-    unsigned char sn[8] ;
-    int dindex = 0 ;
+static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2, uint32_t * flags ) {
+    unsigned char * snlist = NULL;
+    size_t dindex, devices ;
 
     /* Test to see whether we should get the directory "directly" */
-    if ( (pn2->state & pn_uncached) || Cache_Get_Dir(sn,0,pn2 ) ) {
+    //printf("Pre test cache for dir\n") ;
+    if ( (pn2->state & pn_uncached) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
         //printf("FS_cache2real: didn't find anything at bus %d\n", pn2->in->index);
         return FS_realdir(dirfunc,pn2,flags) ;
     }
+    //printf("Post test cache for dir, snlist=%p, devices=%lu\n",snlist,devices) ;
+    /* We have a cached list in snlist. Note that we have to free this memory */
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
 
     /* Get directory from the cache */
-    /* FIXME: First entry was valid in the cache, but after 1ms the 2nd entry might
-     * be old and invalidated. This would result into a incomplete directory listing. */
-    do {
+    for ( dindex = 0 ; dindex < devices ; ++dindex )  {
+        size_t loc = dindex * 8 ;
         char ID[] = "XX";
-        memcpy( pn2->sn, sn, 8 ) ;
+        memcpy( pn2->sn, &snlist[loc], 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, sn[0] ) ;
+        num2string( ID, snlist[loc] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
         DIRLOCK;
             dirfunc( pn2 ) ;
             flags[0] |= pn2->dev->flags ;
         DIRUNLOCK;
-        pn2->dev = NULL ; /* clear for the rest of directory listing */
-    } while ( Cache_Get_Dir( sn, ++dindex, pn2 )==0 ) ;
+    }
+    free( snlist ) ; /* allocated in Cache_Get_Dir */
+    pn2->dev = NULL ; /* clear for the rest of directory listing */
     STATLOCK;
-        dir_main.entries += dindex ;
+        dir_main.entries += devices ;
     STATUNLOCK;
     return 0 ;
 }
 
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
-static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * const pn2 ) {
+static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
     void action( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
 //printf("Action\n") ;
