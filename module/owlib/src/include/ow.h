@@ -223,25 +223,10 @@ extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_nfsd, opt_perl, opt_python, opt_php, opt_tcl, } ;
 int owopt( const int c , const char * arg, enum opt_program op ) ;
 
-/* com port fifo info */
-/* The UART_FIFO_SIZE defines the amount of bytes that are written before
- * reading the reply. Any positive value should work and 16 is probably low
- * enough to avoid losing bytes in even most extreme situations on all modern
- * UARTs, and values bigger than that will probably work on almost any
- * system... The value affects readout performance asymptotically, value of 1
- * should give equivalent performance with the old implementation.
- *   -- Jari Kirma
- *
- * Note: Each bit sent to the 1-wire net requeires 1 byte to be sent to
- *       the uart.
- */
-#
 /* Floating point */
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */
 /* 1-wire really is low precision -- float is more than enough */
-//#define FLOAT   double
-//#define DATE    time_t
 typedef double          FLOAT ;
 typedef time_t          DATE ;
 typedef unsigned char   BYTE ;
@@ -348,7 +333,7 @@ struct filetype {
     union {
         void * v ;
         int (*i) (int *, const struct parsedname *);
-        int (*u) (unsigned int *, const struct parsedname *);
+        int (*u) (UINT *, const struct parsedname *);
         int (*f) (FLOAT *, const struct parsedname *);
         int (*y) (int *, const struct parsedname *);
         int (*d) (DATE *, const struct parsedname *);
@@ -358,7 +343,7 @@ struct filetype {
     union {
         void * v ;
         int (*i) (const int *, const struct parsedname *);
-        int (*u) (const unsigned int *, const struct parsedname *);
+        int (*u) (const UINT *, const struct parsedname *);
         int (*f) (const FLOAT *, const struct parsedname *);
         int (*y) (const int *, const struct parsedname *);
         int (*d) (const DATE *, const struct parsedname *);
@@ -368,7 +353,7 @@ struct filetype {
     union {
         void * v ;
         int    i ;
-        unsigned int u ;
+        UINT u ;
         FLOAT  f ;
         size_t s ;
         BYTE c ;
@@ -494,7 +479,7 @@ struct buspath {
 
 struct devlock {
     BYTE sn[8] ;
-    unsigned int users ;
+    UINT users ;
     pthread_mutex_t lock ;
 } ;
 
@@ -598,7 +583,7 @@ extern time_t dir_time ; /* time of last directory scan */
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
-#define uREAD_FUNCTION( fname )  static int fname(unsigned int *, const struct parsedname * pn)
+#define uREAD_FUNCTION( fname )  static int fname(UINT *, const struct parsedname * pn)
 #define fREAD_FUNCTION( fname )  static int fname(FLOAT *, const struct parsedname * pn)
 #define dREAD_FUNCTION( fname )  static int fname(DATE *, const struct parsedname * pn)
 #define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
@@ -606,7 +591,7 @@ extern time_t dir_time ; /* time of last directory scan */
 #define bREAD_FUNCTION( fname )  static int fname(BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 #define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
-#define uWRITE_FUNCTION( fname )  static int fname(const unsigned int *, const struct parsedname * pn)
+#define uWRITE_FUNCTION( fname )  static int fname(const UINT *, const struct parsedname * pn)
 #define fWRITE_FUNCTION( fname )  static int fname(const FLOAT *, const struct parsedname * pn)
 #define dWRITE_FUNCTION( fname )  static int fname(const DATE *, const struct parsedname * pn)
 #define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
@@ -643,10 +628,10 @@ int FS_RemoteBus( const struct parsedname * pn ) ;
 
 /* Utility functions */
 BYTE CRC8( const BYTE * bytes , const size_t length ) ;
-BYTE CRC8seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) ;
-  BYTE CRC8compute( const BYTE * bytes , const size_t length  , const unsigned int seed ) ;
+BYTE CRC8seeded( const BYTE * bytes , const size_t length , const UINT seed ) ;
+  BYTE CRC8compute( const BYTE * bytes , const size_t length  , const UINT seed ) ;
 int CRC16( const BYTE * bytes , const size_t length ) ;
-int CRC16seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) ;
+int CRC16seeded( const BYTE * bytes , const size_t length , const UINT seed ) ;
 BYTE char2num( const char * s ) ;
 BYTE string2num( const char * s ) ;
 char num2char( const BYTE n ) ;
@@ -679,7 +664,7 @@ int Cache_Del_Device( const struct parsedname * pn ) ;
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn ) ;
 void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) ;
 
-int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) ;
+int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
 // ow_locks.c
@@ -696,7 +681,7 @@ int  OWLIB_can_finish_start( void ) ;
 void OWLIB_can_finish_end(   void ) ;
 
 /* 1-wire lowlevel */
-void UT_delay(const unsigned int len) ;
+void UT_delay(const UINT len) ;
 void UT_delay_us(const unsigned long len) ;
 
 ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) ;
@@ -734,12 +719,12 @@ int FS_size_remote( const struct parsedname * pn ) ;
 int FS_size_postparse( const struct parsedname * pn ) ;
 int FS_size( const char *path ) ;
 
-int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
 
-int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
@@ -756,15 +741,15 @@ int OW_write_paged( const BYTE * p, size_t size, size_t offset, const struct par
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
 
-#define CACHE_MASK     ( (unsigned int) 0x00000001 )
+#define CACHE_MASK     ( (UINT) 0x00000001 )
 #define CACHE_BIT      0
-#define BUSRET_MASK    ( (unsigned int) 0x00000002 )
+#define BUSRET_MASK    ( (UINT) 0x00000002 )
 #define BUSRET_BIT     1
-#define PRESENCE_MASK  ( (unsigned int) 0x0000FF00 )
+#define PRESENCE_MASK  ( (UINT) 0x0000FF00 )
 #define PRESENCE_BIT   8
-#define TEMPSCALE_MASK ( (unsigned int) 0x00FF0000 )
+#define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
-#define DEVFORMAT_MASK ( (unsigned int) 0xFF000000 )
+#define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg & CACHE_MASK) )
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
