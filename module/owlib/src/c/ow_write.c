@@ -27,12 +27,12 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
 
 static int FS_input_yesno( int * result, const char * buf, const size_t size ) ;
 static int FS_input_integer( int * result, const char * buf, const size_t size ) ;
-static int FS_input_unsigned( unsigned int * result, const char * buf, const size_t size ) ;
+static int FS_input_unsigned( UINT * result, const char * buf, const size_t size ) ;
 static int FS_input_float( FLOAT * result, const char * buf, const size_t size ) ;
 static int FS_input_date( DATE * result, const char * buf, const size_t size ) ;
 
 static int FS_input_yesno_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_input_unsigned_array( unsigned int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_unsigned_array( UINT * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_input_integer_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_input_float_array( FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_input_date_array( DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
@@ -336,7 +336,7 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            unsigned int U ;
+            UINT U ;
             ret = FS_input_unsigned( &U, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.u)(&U,pn) ;
@@ -453,7 +453,7 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
         break ;
     case ft_unsigned:
         {
-            unsigned int * u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
+            UINT * u = (UINT *) calloc( elements , sizeof(UINT) ) ;
             if ( u==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -523,7 +523,7 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
                 ret = -ENOMEM ;
             } else {
                 int i ;
-                unsigned int U = 0 ;
+                UINT U = 0 ;
                 if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
                     for (i=pn->ft->ag->elements-1;i>=0;--i) U = (U<<1) | (y[i]&0x01) ;
                     if ( cbuf ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
@@ -671,7 +671,7 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            unsigned int * u = (unsigned int *) calloc( elements , sizeof(unsigned int) ) ;
+            UINT * u = (UINT *) calloc( elements , sizeof(UINT) ) ;
             if ( u==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -685,7 +685,7 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            unsigned int U ;
+            UINT U ;
             int y ;
             ret = ((pn->ft->read.u)(&U,pn)<0) || FS_input_unsigned(&y,buf,size) ;
             if ( ret==0) {
@@ -835,7 +835,7 @@ static int FS_input_integer( int * result, const char * buf, const size_t size )
 }
 
 /* return 0 if ok */
-static int FS_input_unsigned( unsigned int * result, const char * buf, const size_t size ) {
+static int FS_input_unsigned( UINT * result, const char * buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
 
@@ -918,7 +918,7 @@ static int FS_input_integer_array( int * results, const char * buf, const size_t
 }
 
 /* returns 0, or negative for error */
-static int FS_input_unsigned_array( unsigned int * results, const char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_input_unsigned_array( UINT * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;

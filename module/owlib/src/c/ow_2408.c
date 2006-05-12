@@ -39,6 +39,24 @@ $Id$
       whether the elements are stored together and split, or separately and joined
 */
 
+/* LCD drivers, two designs
+   Maxim / AAG uses 7 PIO pins
+   based on Public domain code from Application Note 3286
+
+   Hobby-Boards by Eric Vickery
+   Paul,
+
+Go right ahead and use it for whatever you want. I just provide it as an
+example for people who are using the LCD Driver.
+
+It originally came from an application that I was working on (and may
+again) but that particular code is in the public domain now.
+
+Let me know if you have any other questions.
+
+Eric
+*/
+
 #include "owfs_config.h"
 #include "ow_2408.h"
 
@@ -56,7 +74,15 @@ uWRITE_FUNCTION( FS_w_latch ) ;
  uREAD_FUNCTION( FS_r_s_alarm ) ;
 uWRITE_FUNCTION( FS_w_s_alarm ) ;
  yREAD_FUNCTION( FS_r_por ) ;
-yWRITE_FUNCTION( FS_w_por ) ;
+ yWRITE_FUNCTION( FS_w_por ) ;
+ yWRITE_FUNCTION( FS_Mclear ) ;
+ yWRITE_FUNCTION( FS_Mhome ) ;
+ aWRITE_FUNCTION( FS_Mscreen ) ;
+ aWRITE_FUNCTION( FS_Mmessage ) ;
+ yWRITE_FUNCTION( FS_Hclear ) ;
+ yWRITE_FUNCTION( FS_Hhome ) ;
+ aWRITE_FUNCTION( FS_Hscreen ) ;
+ aWRITE_FUNCTION( FS_Hmessage ) ;
 
 /* ------- Structures ----------- */
 
@@ -70,8 +96,21 @@ struct filetype DS2408[] = {
     {"strobe"    ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, {v:NULL}, } ,
     {"set_alarm" ,     9,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
     {"por"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_por}    , {y:FS_w_por},    {v:NULL}, } ,
+    {"LCD_M"     ,     0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}    ,    {v:NULL}, } ,
+    {"LCD_M/clear",    1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Mclear},   {v:NULL}, } ,
+    {"LCD_M/home",     1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Mhome},    {v:NULL}, } ,
+    {"LCD_M/screen", 128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Mscreen},  {v:NULL}, } ,
+    {"LCD_M/message",128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Mmessage}, {v:NULL}, } ,
+    {"LCD_H"     ,     0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}    ,    {v:NULL}, } ,
+    {"LCD_H/clear",    1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Hclear},   {v:NULL}, } ,
+    {"LCD_H/home",     1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Hhome},    {v:NULL}, } ,
+    {"LCD_H/screen", 128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Hscreen},  {v:NULL}, } ,
+    {"LCD_H/message",128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Hmessage}, {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr ) ;
+
+/* Internal properties */
+static struct internal_prop ip_init = {"INI",ft_stable} ;
 
 /* ------- Functions ------------ */
 
@@ -81,6 +120,7 @@ static int OW_c_latch( const struct parsedname * pn ) ;
 static int OW_w_pio( const BYTE data,  const struct parsedname * pn ) ;
 static int OW_r_reg( BYTE * data , const struct parsedname * pn ) ;
 static int OW_w_s_alarm( const BYTE *data , const struct parsedname * pn ) ;
+static int OW_w_pios( const BYTE * data, const size_t size, const struct parsedname * pn ) ;
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
@@ -105,9 +145,57 @@ static int FS_w_strobe(const int * y, const struct parsedname * pn) {
     return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
 }
 
+static int FS_Mclear(const int * y, const struct parsedname * pn) {
+    int init = 1 ;
+    size_t s = sizeof(init) ;
+
+    if ( Cache_Get_Internal(&init,&s,&ip_init,pn) ) {
+        int one = 1 ;
+        if ( FS_r_strobe(&one,pn)  // set reset pin to strobe mode
+            || OW_w_pio(0x30,pn) ) return -EINVAL ;
+        UT_delay(100) ;
+        // init
+        if ( OW_w_pio(0x38,pn) ) return -EINVAL ;
+        UT_delay(10) ;
+        // Enable Display, Cursor, and Blinking
+         // Entry-mode: auto-increment, no shift
+        if ( OW_w_pio(0x0F,pn) || OW_w_pio(0x06,pn) ) return -EINVAL ;
+        Cache_Add_Internal(&init,sizeof(init),&ip_init,pn) ;
+    }
+    // clear
+    if ( OW_w_pio(0x01,pn) ) return -EINVAL ;
+    UT_delay(2) ;
+    return FS_Mhome(y,pn) ;
+}
+
+static int FS_Mhome(const int * y, const struct parsedname * pn) {
+    // home
+    (void) y ;
+    if ( OW_w_pio(0x02,pn) ) return -EINVAL ;
+    UT_delay(2) ;
+    return 0 ;
+}
+
+static int FS_Mscreen(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+    BYTE data[size] ;
+    size_t i ;
+    (void) offset ;
+    for ( i = 0 ; i < size ; ++i ) {
+        if ( buf[i] & 0x80 ) return -EINVAL ;
+        data[i] = buf[i] | 0x80 ;
+    }
+    return OW_w_pios( data, size, pn ) ;
+}
+
+static int FS_Mmessage(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+    int y = 1 ;
+    if ( FS_Mclear(&y,pn) ) return -EINVAL ;
+    return FS_Mscreen(buf,size,offset,pn) ;
+}
+
 /* 2408 switch PIO sensed*/
 /* From register 0x88 */
-static int FS_sense(unsigned int * u, const struct parsedname * pn) {
+static int FS_sense(UINT * u, const struct parsedname * pn) {
     BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     u[0] = data[0] ;
@@ -116,7 +204,7 @@ static int FS_sense(unsigned int * u, const struct parsedname * pn) {
 
 /* 2408 switch PIO set*/
 /* From register 0x89 */
-static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_pio(UINT * u , const struct parsedname * pn) {
     BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     u[0] = data[1] ^ 0xFF ; /* reverse bits */
@@ -124,7 +212,7 @@ static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2408 switch PIO change*/
-static int FS_w_pio(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_pio(const UINT * u , const struct parsedname * pn) {
     /* reverse bits */
     if ( OW_w_pio((u[0]&0xFF)^0xFF,pn) ) return -EINVAL ;
     return 0 ;
@@ -132,7 +220,7 @@ static int FS_w_pio(const unsigned int * u , const struct parsedname * pn) {
 
 /* 2408 read activity latch */
 /* From register 0x8A */
-static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_latch(UINT * u , const struct parsedname * pn) {
     BYTE data[6] ;
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     u[0] = data[2] ;
@@ -141,7 +229,7 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 
 /* 2408 write activity latch */
 /* Actually resets them all */
-static int FS_w_latch(const unsigned int * u, const struct parsedname * pn) {
+static int FS_w_latch(const UINT * u, const struct parsedname * pn) {
     (void) u ;
     if ( OW_c_latch(pn) ) return -EINVAL ;
     return 0 ;
@@ -149,7 +237,7 @@ static int FS_w_latch(const unsigned int * u, const struct parsedname * pn) {
 
 /* 2408 alarm settings*/
 /* From registers 0x8B-0x8D */
-static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_s_alarm(UINT * u , const struct parsedname * pn) {
     BYTE d[6] ;
     int i, p ;
     if ( OW_r_reg(d,pn) ) return -EINVAL ;
@@ -166,10 +254,10 @@ static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
 /* next 8 channels */
 /* data[1] polarity */
 /* data[0] selection  */
-static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_s_alarm(const UINT * u , const struct parsedname * pn) {
     BYTE data[3];
     int i ;
-    unsigned int p ;
+    UINT p ;
     for ( i=0, p=1 ; i<8 ; ++i, p*=10 ) {
         UT_setbit(&data[1],i,((int)(u[0] / p) % 10) & 0x01) ;
         UT_setbit(&data[0],i,(((int)(u[0] / p) % 10) & 0x02) >> 1) ;
@@ -191,6 +279,54 @@ static int FS_w_por(const int * y, const struct parsedname * pn) {
     if ( OW_r_reg(data,pn) ) return -EINVAL ;
     UT_setbit( &data[5], 3, y[0] ) ;
     return OW_w_control( data[5] , pn ) ? -EINVAL : 0 ;
+}
+
+static int FS_Hclear(const int * y, const struct parsedname * pn) {
+    int init = 1 ;
+    size_t s = sizeof(init) ;
+    (void) y ;
+    // clear, display on, mode
+    BYTE clear[] = { 0x00, 0x10, 0x00, 0xC0, 0x00, 0x60 } ; 
+
+    if ( Cache_Get_Internal(&init,&s,&ip_init,pn) ) {
+        BYTE data[6] ;
+        BYTE setup[] = { 0x30, 0x30, 0x20, 0x20, 0x80 } ;
+        if (
+            OW_w_control( 0x04 , pn ) // strobe
+        || OW_r_reg(data,pn) 
+        || ( data[5] != 0x84 )       // not powered
+        || OW_c_latch(pn)            // clear PIOs
+        || OW_w_pio( 0x30, pn )
+        ) return -EINVAL ;
+        UT_delay(5) ;
+        if ( OW_w_pios(setup, 5, pn ) ) return -EINVAL ;
+        Cache_Add_Internal(&init,sizeof(init),&ip_init,pn) ;
+    }
+    return OW_w_pios( clear, 6 , pn ) ? -EINVAL : 0 ;
+}
+
+static int FS_Hhome(const int * y, const struct parsedname * pn) {
+    BYTE home[] = { 0x80, 0x00 } ;
+    // home
+    (void) y ;
+    if ( OW_w_pios(home,2,pn) ) return -EINVAL ;
+    return 0 ;
+}
+
+static int FS_Hscreen(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+    BYTE data[2*size] ;
+    size_t i, j = 0 ;
+    (void) offset ;
+    for ( i = 0 ; i < size ; ++i ) {
+        data[j++] = ( buf[i] & 0xF0 ) | 0x08 ;
+        data[j++] = ( (buf[i]<<4) & 0xF0 ) | 0x08 ;
+    }
+    return OW_w_pios( data, j , pn ) ? -EINVAL : 0 ;
+}
+
+static int FS_Hmessage(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
+    int y = 1 ;
+    if ( FS_Hclear(&y,pn) || FS_Hhome(&y,pn) || FS_Hscreen(buf,size,offset,pn) ) return -EINVAL ;
 }
 
 /* Read 6 bytes --
@@ -238,6 +374,31 @@ static int OW_w_pio( const BYTE data,  const struct parsedname * pn ) {
     if ( r[0]!=0xAA ) return 1 ;
     //printf( "W_PIO 0xAA ok\n");
     /* Ignore byte 5 r[1] the PIO status byte */
+    return 0 ;
+}
+
+static int OW_w_pios( const BYTE * data, const size_t size, const struct parsedname * pn ) {
+    BYTE p[] = { 0x5A, 0 , 0, } ;
+    BYTE r[2] ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 3, trxn_match } ,
+        { NULL, r, 2, trxn_read } ,
+        TRXN_END,
+    } ;
+    size_t i ;
+
+    for ( i = 0 ; i < size ; ++i ) {
+        p[1] = data[i] ;
+        p[2] = ~p[1] ;
+        //printf( "W_PIO attempt\n");
+        if ( BUS_transaction( &t[i<1], pn ) ) return 1 ;
+        //printf( "W_PIO attempt\n");
+        //printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],r[0],r[1]) ;
+        if ( r[0]!=0xAA ) return 1 ;
+        //printf( "W_PIO 0xAA ok\n");
+        /* Ignore byte 5 r[1] the PIO status byte */
+    }
     return 0 ;
 }
 

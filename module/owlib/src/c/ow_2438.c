@@ -95,8 +95,8 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) ;
 static int OW_current( int * I , const struct parsedname * pn ) ;
 static int OW_r_Ienable( unsigned * u , const struct parsedname * pn ) ;
 static int OW_w_Ienable( const unsigned u , const struct parsedname * pn ) ;
-static int OW_r_int( int * I , const unsigned int address, const struct parsedname * pn ) ;
-static int OW_w_int( const int I , const unsigned int address, const struct parsedname * pn ) ;
+static int OW_r_int( int * I , const UINT address, const struct parsedname * pn ) ;
+static int OW_w_int( const int I , const UINT address, const struct parsedname * pn ) ;
 static int OW_w_offset( const int I , const struct parsedname * pn ) ;
 
 /* 2438 A/D */
@@ -167,7 +167,7 @@ static int FS_w_Offset(const int * i , const struct parsedname * pn) {
 }
 
 /* set clock */
-static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
     DATE d = (DATE) u[0] ;
     return FS_w_date(&d,pn) ;
 }
@@ -184,10 +184,10 @@ static int FS_w_date(const DATE *d , const struct parsedname * pn) {
 }
 
 /* read clock */
-int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
+int FS_r_counter(UINT * u , const struct parsedname * pn) {
     DATE d ;
     int ret = FS_r_date( &d, pn ) ;
-    u[0] = (unsigned int) d ;
+    u[0] = (UINT) d ;
     return ret ;
 }
 
@@ -413,7 +413,7 @@ static int OW_w_Ienable( const unsigned u , const struct parsedname * pn ) {
 }
 
 
-static int OW_r_int( int * I , const unsigned int address, const struct parsedname * pn ) {
+static int OW_r_int( int * I , const UINT address, const struct parsedname * pn ) {
     BYTE data[8] ;
 
     // read back registers
@@ -422,7 +422,7 @@ static int OW_r_int( int * I , const unsigned int address, const struct parsedna
     return 0 ;
 }
 
-static int OW_w_int( const int I , const unsigned int address, const struct parsedname * pn ) {
+static int OW_w_int( const int I , const UINT address, const struct parsedname * pn ) {
     BYTE data[8] ;
 
     // read back registers

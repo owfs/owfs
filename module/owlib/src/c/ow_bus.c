@@ -125,7 +125,7 @@ int BUS_next( struct device_search * ds, const struct parsedname * pn) {
 /* Symmetric */
 /* send bytes, and read back -- calls lower level bit routine */
 int BUS_sendback_data_low( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) {
-    unsigned int i, bits = len<<3 ;
+    UINT i, bits = len<<3 ;
     int ret ;
     int remain = len - (UART_FIFO_SIZE>>3) ;
 
@@ -156,7 +156,7 @@ int BUS_sendback_data_low( const BYTE * data, BYTE * resp , const size_t len, co
 /* Returns 0=good
    bad = -EIO
  */
-int BUS_PowerByte_low(BYTE byte, BYTE * resp, unsigned int delay, const struct parsedname * pn) {
+int BUS_PowerByte_low(BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) {
     int ret ;
     // send the packet
     if((ret=BUS_sendback_data(&byte,resp,1,pn))) {

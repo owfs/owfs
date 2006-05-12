@@ -94,7 +94,7 @@ static int OW_w_clock( const DATE d , const struct parsedname * pn ) ;
 static int OW_w_control( const BYTE cr , const struct parsedname * pn ) ;
 
 /* set clock */
-static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
     if ( OW_w_clock( (DATE) u[0] , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -121,10 +121,10 @@ static int FS_w_enable(const int * y , const struct parsedname * pn) {
 }
 
 /* write flags */
-static int FS_w_flags(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_flags(const UINT * u , const struct parsedname * pn) {
     BYTE cr ;
 
-    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) ((cr&0x0F)|((((unsigned int)u[0])&0x0F)<<4)), pn) ) return -EINVAL ;
+    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) ((cr&0x0F)|((((UINT)u[0])&0x0F)<<4)), pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -132,7 +132,7 @@ static int FS_w_flags(const unsigned int * u , const struct parsedname * pn) {
 static int FS_w_interval(const int * i , const struct parsedname * pn) {
     BYTE cr ;
 
-    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) ((cr&0x8F)|((((unsigned int)i[0])&0x07)<<4)), pn) ) return -EINVAL ;
+    if ( OW_r_control( &cr, pn) || OW_w_control( (BYTE) ((cr&0x8F)|((((UINT)i[0])&0x07)<<4)), pn) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -167,7 +167,7 @@ static int FS_w_itime(const int * i , const struct parsedname * pn) {
 }
 
 /* read flags */
-int FS_r_flags(unsigned int * u , const struct parsedname * pn) {
+int FS_r_flags(UINT * u , const struct parsedname * pn) {
     BYTE cr ;
     if ( OW_r_control(&cr,pn) ) return -EINVAL ;
     * u = cr>>4 ;
@@ -207,7 +207,7 @@ int FS_r_enable(int * y , const struct parsedname * pn) {
 }
 
 /* read clock */
-int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
+int FS_r_counter(UINT * u , const struct parsedname * pn) {
     return OW_r_clock( (DATE *) u, pn) ? -EINVAL : 0 ;
 }
 
@@ -245,7 +245,7 @@ static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
 
     if ( BUS_transaction( t, pn ) ) return 1 ;
 
-//    d[0] = (((((((unsigned int) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
+//    d[0] = (((((((UINT) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
     d[0] = UT_toDate( &data[1] ) ;
     return 0 ;
 }

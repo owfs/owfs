@@ -132,7 +132,7 @@ static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const 
 static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 static int OW_w_ulong( const uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
 
-static unsigned int Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, } ;
+static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, } ;
 
 /* 1902 */
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -160,32 +160,32 @@ static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset ,
 
 /* set clock */
 static int FS_w_date(const DATE * d , const struct parsedname * pn) {
-    const unsigned int D = (unsigned int) d[0] ;
+    const UINT D = (UINT) d[0] ;
     return FS_w_counter5( &D, pn ) ;
 }
 
 /* read clock */
 static int FS_r_date( DATE * d , const struct parsedname * pn) {
-    unsigned int D ;
+    UINT D ;
     if ( FS_r_counter5(&D,pn) ) return -EINVAL ;
     d[0] = (DATE) D ;
     return 0 ;
 }
 
 /* set clock */
-static int FS_w_counter5(const unsigned int *u, const struct parsedname * pn) {
+static int FS_w_counter5(const UINT *u, const struct parsedname * pn) {
     uint64_t L = ( (uint64_t) u[0] ) << 8 ;
     return OW_w_ulong( &L, 5, pn->ft->data.s, pn ) ;
 }
 
 /* set clock */
-static int FS_w_counter4(const unsigned int *u, const struct parsedname * pn) {
+static int FS_w_counter4(const UINT *u, const struct parsedname * pn) {
     uint64_t L = ( (uint64_t) u[0] ) ;
     return OW_w_ulong( &L, 4, pn->ft->data.s, pn ) ;
 }
 
 /* read clock */
-static int FS_r_counter5(unsigned int *u, const struct parsedname * pn) {
+static int FS_r_counter5(UINT *u, const struct parsedname * pn) {
     uint64_t L ;
     if ( OW_r_ulong( &L, 5, pn->ft->data.s, pn ) ) return -EINVAL ;
     u[0] = L>>8 ;
@@ -193,7 +193,7 @@ static int FS_r_counter5(unsigned int *u, const struct parsedname * pn) {
 }
 
 /* read clock */
-static int FS_r_counter4(unsigned int *u, const struct parsedname * pn) {
+static int FS_r_counter4(UINT *u, const struct parsedname * pn) {
     uint64_t L ;
     if ( OW_r_ulong( &L, 4, pn->ft->data.s, pn ) ) return -EINVAL ;
     u[0] = L ;
@@ -201,7 +201,7 @@ static int FS_r_counter4(unsigned int *u, const struct parsedname * pn) {
 }
 
 /* alarm */
-static int FS_w_set_alarm(const unsigned int *u, const struct parsedname * pn) {
+static int FS_w_set_alarm(const UINT *u, const struct parsedname * pn) {
     BYTE c ;
     switch ( u[0] ) {
     case   0:   c=0<<3 ;   break ;
@@ -218,14 +218,14 @@ static int FS_w_set_alarm(const unsigned int *u, const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_alarm( unsigned int * u, const struct parsedname * pn ) {
+static int FS_r_alarm( UINT * u, const struct parsedname * pn ) {
     BYTE c ;
     if ( OW_r_mem(&c,1,0x200,pn) ) return -EINVAL ;
     u[0] = Avals[c&0x07] ;
     return 0 ;
 }
 
-static int FS_r_set_alarm( unsigned int * u, const struct parsedname * pn ) {
+static int FS_r_set_alarm( UINT * u, const struct parsedname * pn ) {
     BYTE c ;
     if ( OW_r_mem(&c,1,0x200,pn) ) return -EINVAL ;
     u[0] = Avals[(c>>3)&0x07] ;

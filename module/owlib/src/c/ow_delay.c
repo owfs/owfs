@@ -20,7 +20,7 @@ $Id$
 //  Description:
 //     Delay for at least 'len' ms
 //
-void UT_delay(const unsigned int len) {
+void UT_delay(const UINT len) {
 #ifdef DELAY_BUSY_WHILE
     /* Just a test to create a busy-while-loop and trace wait time. */
     struct timeval tv, now ;

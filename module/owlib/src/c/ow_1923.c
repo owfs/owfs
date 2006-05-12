@@ -147,13 +147,13 @@ DeviceEntryExtended( 41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume ) 
 /* DS1923 */
 static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_temperature( FLOAT * T , const unsigned int delay, const struct parsedname * pn ) ;
-static int OW_r_humid( FLOAT * H , const unsigned int delay, const struct parsedname * pn ) ;
+static int OW_r_temperature( FLOAT * T , const UINT delay, const struct parsedname * pn ) ;
+static int OW_r_humid( FLOAT * H , const UINT delay, const struct parsedname * pn ) ;
 static int OW_startmission( unsigned long mdelay, const struct parsedname * pn ) ;
 static int OW_stopmission( const struct parsedname * pn ) ;
 static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_clearmemory( const struct parsedname * pn ) ;
-static int OW_force_conversion( const unsigned int delay, const struct parsedname * pn ) ;
+static int OW_force_conversion( const UINT delay, const struct parsedname * pn ) ;
 static int OW_2date(DATE * d, const BYTE * data) ;
 static int OW_oscillator(const int on, const struct parsedname * pn) ;
 static void OW_date(const DATE * d , BYTE * data) ;
@@ -182,17 +182,17 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
 
 
 /* mission delay */
-static int FS_r_delay( unsigned int * u , const struct parsedname * pn) {
+static int FS_r_delay( UINT * u , const struct parsedname * pn) {
     BYTE data[3] ;
     if ( OW_r_mem( data, 3, 0x0216, pn ) ) return -EINVAL ;
     // should be 3 bytes!
-    //u[0] = (((unsigned int)data[2])<<16) | (((unsigned int)data[1])<<8) | data[0] ;
-    u[0] = (((unsigned int)data[1])<<8) | data[0] ;
+    //u[0] = (((UINT)data[2])<<16) | (((UINT)data[1])<<8) | data[0] ;
+    u[0] = (((UINT)data[1])<<8) | data[0] ;
     return 0 ;
 }
     
 /* mission delay */
-static int FS_w_delay( const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_delay( const UINT * u , const struct parsedname * pn) {
     BYTE data[3] = { u[0]&0xFF, (u[0]>>8)&0xFF, (u[0]>>16)&0xFF } ;
     if ( OW_MIP(pn) ) return -EBUSY ;
     if ( OW_w_mem( data, 3, 0x0216, pn ) ) return -EINVAL ;
@@ -300,7 +300,7 @@ static int FS_rbitwrite( const int * y , const struct parsedname * pn ) {
 
 /* Temperature -- force if not in progress */
 static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
-    unsigned int delay = 666;
+    UINT delay = 666;
     int ret;
     if ( (ret=OW_MIP(pn)) ) {
       printf("FS_r_temperature: mip error\n");
@@ -317,7 +317,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
 }
 
 static int FS_r_humid(FLOAT * H , const struct parsedname * pn) {
-    unsigned int delay = 666;
+    UINT delay = 666;
     int ret;
     if ( (ret=OW_MIP(pn)) ) {
       printf("FS_r_humid: mip error\n");
@@ -422,7 +422,7 @@ int FS_r_date( DATE * d , const struct parsedname * pn) {
 }
 
 /* read clock */
-static int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_counter(UINT * u , const struct parsedname * pn) {
     BYTE data[6] ;
     DATE d ;
     int ret ;
@@ -430,7 +430,7 @@ static int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
     /* Get date from chip */
     if ( OW_r_mem(data,6,0x0200,pn) ) return -EINVAL ;
     if ( (ret=OW_2date(&d,data)) ) return ret ;
-    u[0]  = (unsigned int) d ;
+    u[0]  = (UINT) d ;
     return 0 ;
 }
 
@@ -456,7 +456,7 @@ static int FS_w_date(const DATE * d , const struct parsedname * pn) {
     return FS_w_run(&y,pn) ;
 }
 
-static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
     BYTE data[6] ;
     DATE d = (DATE) u[0] ;
     int ret;
@@ -749,7 +749,7 @@ static void OW_date(const DATE * d , BYTE * data) {
 //printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
 
-static int OW_force_conversion( const unsigned int delay, const struct parsedname * pn ) {
+static int OW_force_conversion( const UINT delay, const struct parsedname * pn ) {
     BYTE t[2] = { 0x55, 0xFF } ;
     BYTE cr ;
     int ret = 0 ;
@@ -778,7 +778,7 @@ static int OW_force_conversion( const unsigned int delay, const struct parsednam
     return 0;
 }
 
-static int OW_r_temperature( FLOAT * T, const unsigned int delay, const struct parsedname * pn ) {
+static int OW_r_temperature( FLOAT * T, const UINT delay, const struct parsedname * pn ) {
     BYTE data[32] ;
     (void) delay;
 
@@ -795,7 +795,7 @@ static int OW_r_temperature( FLOAT * T, const unsigned int delay, const struct p
 }
 
 
-static int OW_r_humid( FLOAT * H , const unsigned int delay, const struct parsedname * pn ) {
+static int OW_r_humid( FLOAT * H , const UINT delay, const struct parsedname * pn ) {
     FLOAT ADVAL, IVAL;
     BYTE data[32] ;
     (void) delay;

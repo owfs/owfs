@@ -106,7 +106,7 @@ static int OW_r_data( BYTE * data , const struct parsedname* pn ) ;
 static int OW_w_gpio( const BYTE data , const struct parsedname* pn ) ;
 static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) ;
 static int OW_r_version( BYTE * data , const struct parsedname* pn ) ;
-static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) ;
+static int OW_r_counters( UINT * data , const struct parsedname* pn ) ;
 static int OW_r_memory( BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
 static int OW_w_memory( const BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
 static int OW_clear( const struct parsedname* pn ) ;
@@ -156,46 +156,46 @@ static int FS_w_gpio(const int * y , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int FS_r_register(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_register(UINT * u , const struct parsedname * pn ) {
     BYTE data ;
     if ( OW_r_register(&data,pn) ) return -EINVAL ;
     u[0] = data ;
     return 0 ;
 }
 
-static int FS_w_register(const unsigned int * u , const struct parsedname * pn ) {
+static int FS_w_register(const UINT * u , const struct parsedname * pn ) {
     if ( OW_w_register(((BYTE)(u[0]&0xFF)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_r_data(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_data(UINT * u , const struct parsedname * pn ) {
     BYTE data ;
     if ( OW_r_data(&data,pn) ) return -EINVAL ;
     u[0] = data ;
     return 0 ;
 }
 
-static int FS_w_data(const unsigned int * u , const struct parsedname * pn ) {
+static int FS_w_data(const UINT * u , const struct parsedname * pn ) {
     if ( OW_w_data(((BYTE)(u[0]&0xFF)),pn) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_r_counters(unsigned int * u , const struct parsedname * pn ) {
+static int FS_r_counters(UINT * u , const struct parsedname * pn ) {
     if ( OW_r_counters(u,pn) ) return -EINVAL ;
     return 0 ;
 }
 
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
-static int FS_r_cum(unsigned int * u , const struct parsedname * pn ) {
-    size_t s = 4*sizeof(unsigned int) ;
+static int FS_r_cum(UINT * u , const struct parsedname * pn ) {
+    size_t s = 4*sizeof(UINT) ;
 
     if ( OW_r_counters(u,pn) ) return -EINVAL ; /* just to prime the "CUM" data */
     if ( Cache_Get_Internal( (void *) u, &s, &ip_cum, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_w_cum(const unsigned int * u , const struct parsedname * pn ) {
-    return Cache_Add_Internal( (const void *) u, 4*sizeof(unsigned int), &ip_cum, pn ) ? -EINVAL  : 0 ;
+static int FS_w_cum(const UINT * u , const struct parsedname * pn ) {
+    return Cache_Add_Internal( (const void *) u, 4*sizeof(UINT), &ip_cum, pn ) ? -EINVAL  : 0 ;
 }
 #endif /*OW_CACHE*/
 
@@ -374,10 +374,10 @@ static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) {
     return OW_r_scratch( data, 1, pn ) ;
 }
 
-static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
+static int OW_r_counters( UINT * data , const struct parsedname* pn ) {
     BYTE w = 0x23 ;
     BYTE d[8] ;
-    unsigned int cum[4] ;
+    UINT cum[4] ;
     size_t s = sizeof(cum);
     int ret ;
 
@@ -388,10 +388,10 @@ static int OW_r_counters( unsigned int * data , const struct parsedname* pn ) {
 
     UT_delay(1) ; // 80uS
     if ( OW_r_scratch( d, 8, pn ) ) return 1 ;
-    data[0] = ((unsigned int) d[1])<<8 | d[0] ;
-    data[1] = ((unsigned int) d[3])<<8 | d[2] ;
-    data[2] = ((unsigned int) d[5])<<8 | d[4] ;
-    data[3] = ((unsigned int) d[7])<<8 | d[6] ;
+    data[0] = ((UINT) d[1])<<8 | d[0] ;
+    data[1] = ((UINT) d[3])<<8 | d[2] ;
+    data[2] = ((UINT) d[5])<<8 | d[4] ;
+    data[3] = ((UINT) d[7])<<8 | d[6] ;
 
 //printf("OW_COUNTER key=%s\n",key);
     if ( Cache_Get_Internal( (void *) cum, &s, &ip_cum, pn ) ) { /* First pass at cumulative */

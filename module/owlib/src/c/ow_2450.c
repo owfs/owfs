@@ -105,11 +105,11 @@ static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
 static int OW_w_1_pio( const int pio , const int element , const struct parsedname * pn ) ;
 static int OW_r_vset( FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
 static int OW_w_vset( const FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
-static int OW_r_high( unsigned int * y , const int high, const struct parsedname * pn ) ;
-static int OW_w_high( const unsigned int * y , const int high, const struct parsedname * pn ) ;
-static int OW_r_flag( unsigned int * y , const int high, const struct parsedname * pn ) ;
-static int OW_w_flag( const unsigned int * y , const int high, const struct parsedname * pn ) ;
-static int OW_r_por( unsigned int * y , const struct parsedname * pn ) ;
+static int OW_r_high( UINT * y , const int high, const struct parsedname * pn ) ;
+static int OW_w_high( const UINT * y , const int high, const struct parsedname * pn ) ;
+static int OW_r_flag( UINT * y , const int high, const struct parsedname * pn ) ;
+static int OW_w_flag( const UINT * y , const int high, const struct parsedname * pn ) ;
+static int OW_r_por( UINT * y , const struct parsedname * pn ) ;
 static int OW_w_por( const int por , const struct parsedname * pn ) ;
 
 /* read a page of memory (8 bytes) */
@@ -313,10 +313,10 @@ static int OW_volts( FLOAT * f , const int resolution, const struct parsedname *
     //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
-    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;
-    f[1] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[3])<<8)|data[2]) ;
-    f[2] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[5])<<8)|data[4]) ;
-    f[3] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[7])<<8)|data[6]) ;
+    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[1])<<8)|data[0]) ;
+    f[1] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[3])<<8)|data[2]) ;
+    f[2] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[5])<<8)|data[4]) ;
+    f[3] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[7])<<8)|data[6]) ;
     return 0 ;
 }
 
@@ -358,7 +358,7 @@ static int OW_1_volts( FLOAT * f , const int element, const int resolution , con
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
-    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((unsigned int)data[1])<<8)|data[0]) ;
+    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[1])<<8)|data[0]) ;
     return 0 ;
 }
 
@@ -463,7 +463,7 @@ static int OW_w_vset( const FLOAT * V , const int high, const int resolution, co
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_high( unsigned int * y , const int high, const struct parsedname * pn ) {
+static int OW_r_high( UINT * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p, 8+2+high) ;
@@ -473,7 +473,7 @@ static int OW_r_high( unsigned int * y , const int high, const struct parsedname
     return 0 ;
 }
 
-static int OW_w_high( const unsigned int * y , const int high, const struct parsedname * pn ) {
+static int OW_w_high( const UINT * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     UT_setbit(p, 8+2+high,(int)y[0]&0x01) ;
@@ -488,7 +488,7 @@ static int OW_w_high( const unsigned int * y , const int high, const struct pars
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_flag( unsigned int * y , const int high, const struct parsedname * pn ) {
+static int OW_r_flag( UINT * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p, 8+4+high) ;
@@ -498,7 +498,7 @@ static int OW_r_flag( unsigned int * y , const int high, const struct parsedname
     return 0 ;
 }
 
-static int OW_w_flag( const unsigned int * y , const int high, const struct parsedname * pn ) {
+static int OW_w_flag( const UINT * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     UT_setbit(p, 8+4+high,(int)y[0]&0x01) ;
@@ -508,7 +508,7 @@ static int OW_w_flag( const unsigned int * y , const int high, const struct pars
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_por( unsigned int * y , const struct parsedname * pn ) {
+static int OW_r_por( UINT * y , const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p,15) || UT_getbit(p,31) || UT_getbit(p,47) || UT_getbit(p,63);

@@ -96,7 +96,7 @@ static struct internal_prop ip_ful = { "FUL", ft_persistent } ;
 static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const size_t offset, const struct parsedname *pn);
-static int OW_ver( unsigned int * u, const struct parsedname * pn ) ;
+static int OW_ver( UINT * u, const struct parsedname * pn ) ;
 static int OW_verify( BYTE * pwd, const size_t offset, const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
 
@@ -121,7 +121,7 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
     return 0 ;
 }
 
-static int FS_ver( unsigned int * u , const struct parsedname * pn ) {
+static int FS_ver( UINT * u , const struct parsedname * pn ) {
     return OW_ver(u,pn) ? -EINVAL : 0 ;
 }
 
@@ -284,7 +284,7 @@ static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const size_
     return 0 ;
 }
 
-static int OW_ver( unsigned int * u, const struct parsedname * pn ) {
+static int OW_ver( UINT * u, const struct parsedname * pn ) {
     int ret ;
     BYTE p[] = { 0xCC, } ;
     BYTE b[2] ;

@@ -444,7 +444,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             break;
             }
         case ft_bitfield: {
-            unsigned int u ;
+            UINT u ;
             if (size < 1) return -EMSGSIZE ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret < 0) return ret ;
@@ -453,7 +453,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             return 1 ;
             }
         case ft_unsigned: {
-            unsigned int u ;
+            UINT u ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret < 0) return ret ;
             LEVEL_DEBUG("FS_parse_read: (unsigned) %u\n", u ) ;
@@ -488,7 +488,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             DATE d ;
             ret = (pn->ft->read.d)(&d,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (date) %lu\n", (long unsigned int) d ) ;
+            LEVEL_DEBUG("FS_parse_read: (date) %lu\n", (unsigned long int) d ) ;
             sz = FS_output_date( d , buf , size , pn ) ;
             break;
             }
@@ -554,7 +554,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
         }
     case ft_unsigned:
         {
-            unsigned int * u = (unsigned int *) calloc( elements, sizeof(unsigned int) ) ;
+            UINT * u = (UINT *) calloc( elements, sizeof(UINT) ) ;
 
                 if ( u==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.u)(u,pn) ;
@@ -620,7 +620,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
         }
     case ft_bitfield:
         {
-            unsigned int u ;
+            UINT u ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret >= 0) {
                 size_t i ;
@@ -747,7 +747,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         }
     case ft_unsigned:
         {
-            unsigned int * u = (unsigned int *) calloc( elements, sizeof(unsigned int) ) ;
+            UINT * u = (UINT *) calloc( elements, sizeof(UINT) ) ;
                 if ( u==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.u)(u,pn) ;
                 if (ret >= 0) ret = FS_output_unsigned( u[pn->extension] , buf , size , pn ) ;
@@ -804,7 +804,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         }
     case ft_bitfield:
         {
-            unsigned int u ;
+            UINT u ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret >= 0) {
                 buf[0] = u & (1<<pn->extension) ? '1' : '0' ;
@@ -872,7 +872,7 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
     return len ;
 }
 
-int FS_output_unsigned( unsigned int value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = FileLength(pn) ;
     int len ;
     /*
@@ -948,7 +948,7 @@ int FS_output_integer_array( int * values, char * buf, const size_t size, const 
     return size-(left-len) ;
 }
 
-int FS_output_unsigned_array( unsigned int * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;

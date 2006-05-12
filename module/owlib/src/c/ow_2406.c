@@ -120,7 +120,7 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
 }
 
 /* 2406 switch */
-static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_pio(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
     u[0] = ( data^0xFF ) & 0x03 ; /* reverse bits */
@@ -136,7 +136,7 @@ static int FS_power(int * y , const struct parsedname * pn) {
 }
 
 /* 2406 switch -- number of channels (actually, if Vcc powered)*/
-static int FS_channel(unsigned int * u , const struct parsedname * pn) {
+static int FS_channel(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
     *u = (data&0x40)?2:1 ;
@@ -145,7 +145,7 @@ static int FS_channel(unsigned int * u , const struct parsedname * pn) {
 
 /* 2406 switch PIO sensed*/
 /* bits 2 and 3 */
-static int FS_sense(unsigned int * u , const struct parsedname * pn) {
+static int FS_sense(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
     u[0] = ( data>>2 ) & 0x03 ;
@@ -156,7 +156,7 @@ static int FS_sense(unsigned int * u , const struct parsedname * pn) {
 
 /* 2406 switch activity latch*/
 /* bites 4 and 5 */
-static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_latch(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_access(&data,pn) ) return -EINVAL ;
     u[0] = ( data >> 4 ) & 0x03 ;
@@ -166,14 +166,14 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2406 switch activity latch*/
-static int FS_w_latch(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_latch(const UINT * u , const struct parsedname * pn) {
     (void) u ;
     if ( OW_clear(pn) ) return -EINVAL ;
     return 0 ;
 }
 
 /* 2406 alarm settings*/
-static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_s_alarm(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
     u[0] = (data & 0x01) + ((data & 0x06) >> 1) * 10 + ((data & 0x18) >> 3) * 100;
@@ -181,7 +181,7 @@ static int FS_r_s_alarm(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2406 alarm settings*/
-static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_s_alarm(const UINT * u , const struct parsedname * pn) {
     BYTE data;
     data = ((u[0] % 10) & 0x01) | (((u[0] / 10 % 10) & 0x03) << 1) | (((u[0] / 100 % 10) & 0x03) << 3);
     if ( OW_w_s_alarm(data,pn) ) return -EINVAL ;
@@ -189,7 +189,7 @@ static int FS_w_s_alarm(const unsigned int * u , const struct parsedname * pn) {
 }
 
 /* write 2406 switch -- 2 values*/
-static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
+static int FS_w_pio(const UINT * u, const struct parsedname * pn) {
     BYTE data = 0;
     /* reverse bits */
     data = ( u[0] ^ 0xFF ) & 0x03 ;

@@ -93,7 +93,7 @@ struct device d_sys_connections = { "connections", "connections", pn_system, NFT
 
 
 /* Just some tests to support change of extra delay */
-static int FS_r_ds2404_compliance(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_ds2404_compliance(UINT * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -105,7 +105,7 @@ static int FS_r_ds2404_compliance(unsigned int * u , const struct parsedname * p
     return 0 ;
 }
 
-static int FS_w_ds2404_compliance(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_ds2404_compliance(const UINT * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -118,7 +118,7 @@ static int FS_w_ds2404_compliance(const unsigned int * u , const struct parsedna
 }
 
 /* Just some tests to support overdrive */
-static int FS_r_overdrive(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_overdrive(UINT * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -130,7 +130,7 @@ static int FS_r_overdrive(unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_w_overdrive(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_overdrive(const UINT * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -183,7 +183,7 @@ static int FS_port(char *buf, const size_t size, const off_t offset , const stru
 }
 
 /* special check, -remote file length won't match local sizes */
-static int FS_version(unsigned int * u, const struct parsedname * pn) {
+static int FS_version(UINT * u, const struct parsedname * pn) {
     int dindex = pn->extension ;
     struct connection_in * in;
 
@@ -204,19 +204,19 @@ static int FS_pidfile(char *buf, const size_t size, const off_t offset , const s
     return FS_nullstring(buf) ;
 }
 
-static int FS_pid(unsigned int * u, const struct parsedname * pn) {
+static int FS_pid(UINT * u, const struct parsedname * pn) {
     (void) pn ;
     u[0] = getpid() ;
     return 0 ;
 }
 
-static int FS_in(unsigned int * u, const struct parsedname * pn) {
+static int FS_in(UINT * u, const struct parsedname * pn) {
     (void) pn ;
     u[0] = indevices ;
     return 0 ;
 }
 
-static int FS_out(unsigned int * u, const struct parsedname * pn) {
+static int FS_out(UINT * u, const struct parsedname * pn) {
     (void) pn ;
     u[0] = outdevices ;
     return 0 ;

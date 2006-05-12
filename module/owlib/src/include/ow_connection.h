@@ -100,11 +100,11 @@ struct interface_routines {
     /* Bulk of search routine, after set ups for first or alarm or family */
     int (* next_both) (struct device_search * ds, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
-    int (* overdrive) (const unsigned int overdrive, const struct parsedname * pn) ;
+    int (* overdrive) (const UINT overdrive, const struct parsedname * pn) ;
     /* Change speed between overdrive and normal on the 1-wire bus */
     int (* testoverdrive) (const struct parsedname * pn) ;
     /* Send a byte with bus power to follow */
-    int (* PowerByte) (const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) ;
+    int (* PowerByte) (const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
     int (* ProgramPulse) (const struct parsedname * pn) ;
     /* send and recieve data -- byte at a time */
@@ -247,11 +247,11 @@ struct connection_in {
     enum e_reconnect reconnect_state ;
     struct timeval last_lock ; /* statistics */
     struct timeval last_unlock ;
-    unsigned int bus_reconnect ;
-    unsigned int bus_reconnect_errors ;
-    unsigned int bus_locks ;
-    unsigned int bus_unlocks ;
-    unsigned int bus_errors ;
+    UINT bus_reconnect ;
+    UINT bus_reconnect_errors ;
+    UINT bus_locks ;
+    UINT bus_unlocks ;
+    UINT bus_errors ;
     struct timeval bus_time ;
 
     struct timeval bus_read_time ;
@@ -380,7 +380,7 @@ int BUS_readin_data(BYTE * data , const size_t len, const struct parsedname * pn
 int BUS_alarmverify(const struct parsedname * pn) ;
 int BUS_normalverify(const struct parsedname * pn) ;
 
-int BUS_PowerByte_low(const BYTE byte, BYTE * resp, unsigned int delay, const struct parsedname * pn) ;
+int BUS_PowerByte_low(const BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) ;
 int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_sendback_data_low( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) ;
 

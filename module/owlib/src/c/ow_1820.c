@@ -108,7 +108,7 @@ static struct internal_prop ip_power = {"POW",ft_stable} ;
 
 struct tempresolution {
     BYTE config ;
-    unsigned int delay ;
+    UINT delay ;
 } ;
 struct tempresolution Resolutions[] = {
     { 0x1F, 110, } , /*  9 bit */
@@ -216,7 +216,7 @@ static int FS_r_die(char * buf, const size_t size, const off_t offset , const st
     return 2 ;
 }
 
-static int FS_r_trim(unsigned int * trim , const struct parsedname * pn) {
+static int FS_r_trim(UINT * trim , const struct parsedname * pn) {
     BYTE t[2] ;
     if ( OW_r_trim( t , pn ) ) return - EINVAL ;
     trim[0] = (t[1]<<8) | t[0] ;
@@ -224,7 +224,7 @@ static int FS_r_trim(unsigned int * trim , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_w_trim(const unsigned int * trim , const struct parsedname * pn) {
+static int FS_w_trim(const UINT * trim , const struct parsedname * pn) {
     BYTE t[2] ;
     switch( OW_die(pn) ) {
         case eB7:
@@ -288,7 +288,7 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     BYTE data[8] ;
     BYTE convert[] = { 0x44, } ;
     BYTE dummy ;
-    unsigned int delay = pn->ft->data.i ;
+    UINT delay = pn->ft->data.i ;
     BYTE pow ;
     struct transaction_log tconvert[] = {
         TRXN_START ,
@@ -361,7 +361,7 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
     BYTE convert[] = { 0x44, } ;
     BYTE pow ;
     int res = Resolutions[resolution-9].config ;
-    unsigned int delay = Resolutions[resolution-9].delay ;
+    UINT delay = Resolutions[resolution-9].delay ;
     int oldres ;
     size_t s = sizeof(oldres) ;
     struct transaction_log tconvert[] = {

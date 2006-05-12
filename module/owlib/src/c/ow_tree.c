@@ -51,7 +51,7 @@ static void free_node(void *nodep) {
 }
 
 void DeviceDestroy( void ) {
-    unsigned int i;
+    UINT i;
     for(i=0; i < (sizeof(Tree)/sizeof(void *)); i++) {
         if(Tree[i]) {
           /* pn_structure is just a duplicate of pn_real */

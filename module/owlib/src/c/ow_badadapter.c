@@ -16,7 +16,7 @@ $Id$
 /* All the rest of the program sees is the BadAdapter_detect and the entry in iroutines */
 
 static int BadAdapter_reset( const struct parsedname * pn ) ;
-static int BadAdapter_overdrive( const unsigned int ov, const struct parsedname * pn ) ;
+static int BadAdapter_overdrive( const UINT ov, const struct parsedname * pn ) ;
 static int BadAdapter_testoverdrive( const struct parsedname * pn ) ;
 static int BadAdapter_ProgramPulse( const struct parsedname * pn ) ;
 static int BadAdapter_sendback_bits( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
@@ -51,7 +51,7 @@ static int BadAdapter_reset( const struct parsedname * pn ) {
     (void) pn ;
     return -ENOTSUP ;
 }
-static int BadAdapter_overdrive( const unsigned int ov, const struct parsedname * pn ) {
+static int BadAdapter_overdrive( const UINT ov, const struct parsedname * pn ) {
     (void) ov ;
     (void) pn ;
     STAT_ADD1_BUS(BUS_Overdrive_errors,pn->in) ;

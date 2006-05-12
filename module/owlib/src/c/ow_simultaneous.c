@@ -71,7 +71,7 @@ DeviceEntry( simultaneous, simultaneous ) ;
 /* ------- Functions ------------ */
 static int OW_skiprom( enum simul_type type, const struct parsedname * pn );
 static int OW_setcache( enum simul_type type, const struct parsedname * pn ) ;
-static int OW_getcache( enum simul_type type, const unsigned int msec, const struct parsedname * pn ) ;
+static int OW_getcache( enum simul_type type, const UINT msec, const struct parsedname * pn ) ;
 static int OW_killcache( enum simul_type type, const struct parsedname * pn ) ;
 
 struct internal_prop ipSimul[] = {
@@ -80,7 +80,7 @@ struct internal_prop ipSimul[] = {
     };
 
 /* returns 0 if valid conversion exists */
-int Simul_Test( const enum simul_type type, unsigned int msec, const struct parsedname * pn ) {
+int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) {
     return OW_getcache(type,msec,pn) ;
 }
 
@@ -125,7 +125,7 @@ static int OW_killcache( enum simul_type type, const struct parsedname * pn ) {
     return Cache_Del_Internal(&ipSimul[type],&pn2) ;
 }
 
-static int OW_getcache( enum simul_type type ,const unsigned int msec, const struct parsedname * pn ) {
+static int OW_getcache( enum simul_type type ,const UINT msec, const struct parsedname * pn ) {
     struct parsedname pn2 ;
     struct timeval tv,now ;
     long int diff ;

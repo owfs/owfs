@@ -195,7 +195,7 @@ struct filetype DS1921[] = {
 DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp | DEV_ovdr ) ;
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
-struct Version { unsigned int ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; unsigned int delay ;} ;
+struct Version { UINT ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; UINT delay ;} ;
 static struct Version Versions[] =
     {
         { 0x000, "DS1921G-F5" , -40.0, 0.500, -40., +85.,  90, } ,
@@ -210,7 +210,7 @@ static struct Version Versions[] =
 const int ampm[8] = {0,10,20,30,0,10,12,22} ;
 #define VersionElements ( sizeof(Versions) / sizeof(struct Version) )
 static int VersionCmp( const void * pn , const void * version ) {
-    return ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((unsigned int)((const struct parsedname *)pn)->sn[6])<<4) ) - ((const struct Version *)version)->ID ;
+    return ( ((((const struct parsedname *)pn)->sn[5])>>4) |  (((UINT)((const struct parsedname *)pn)->sn[6])<<4) ) - ((const struct Version *)version)->ID ;
 }
 
 /* ------- Functions ------------ */
@@ -218,7 +218,7 @@ static int VersionCmp( const void * pn , const void * version ) {
 /* DS1921 */
 static int OW_w_mem( const BYTE * data , const size_t length , const size_t location, const struct parsedname * pn ) ;
 static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_temperature( int * T , const unsigned int delay, const struct parsedname * pn ) ;
+static int OW_temperature( int * T , const UINT delay, const struct parsedname * pn ) ;
 static int OW_clearmemory( const struct parsedname * pn) ;
 static int OW_2date(DATE * d, const BYTE * data) ;
 static int OW_2mdate(DATE * d, const BYTE * data) ;
@@ -227,7 +227,7 @@ static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_FillMission( struct Mission * m , const struct parsedname * pn ) ;
 static int OW_alarmlog( int * t, int * c, const size_t offset, const struct parsedname * pn ) ;
 static int OW_stopmission( const struct parsedname * pn ) ;
-static int OW_startmission( unsigned int freq, const struct parsedname * pn ) ;
+static int OW_startmission( UINT freq, const struct parsedname * pn ) ;
 
 static int FS_bitread( int * y , const struct parsedname * pn ) {
     BYTE d ;
@@ -262,18 +262,18 @@ static int FS_rbitwrite( const int * y , const struct parsedname * pn ) {
 }
 
 /* histogram counts */
-static int FS_r_histogram(unsigned int * h , const struct parsedname * pn) {
+static int FS_r_histogram(UINT * h , const struct parsedname * pn) {
     if ( pn->extension < 0 ) { /* ALL */
         int i ;
         BYTE data[63*2] ;
         if ( OW_read_paged(data,sizeof(data),0x800,pn,32,OW_r_mem) ) return -EINVAL ;
         for ( i=0 ; i<63 ; ++i ) {
-            h[i] = (((unsigned int)data[(i<<1)+1])<<8)|data[i<<1] ;
+            h[i] = (((UINT)data[(i<<1)+1])<<8)|data[i<<1] ;
         }
     } else { /* single element */
         BYTE data[2] ;
         if ( OW_r_mem(data,2,(size_t)0x800+((pn->extension)<<1),pn) ) return -EINVAL ;
-        h[0] = (((unsigned int)data[1])<<8)|data[0] ;
+        h[0] = (((UINT)data[1])<<8)|data[0] ;
     }
     return 0 ;
 }
@@ -296,7 +296,7 @@ static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
     *g = v->resolution*4 ;
     return 0 ;
 }
-static int FS_r_histoelem(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_histoelem(UINT * u , const struct parsedname * pn) {
     (void) pn ;
     u[0] = 63 ;
     return 0 ;
@@ -345,11 +345,11 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
 
 /* read counter */
 /* Save a function by shoving address in data field */
-static int FS_r_3byte(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_3byte(UINT * u , const struct parsedname * pn) {
     size_t addr = pn->ft->data.s ;
     BYTE data[3] ;
     if ( OW_r_mem(data,3,addr,pn) ) return -EINVAL ;
-    u[0] = (((((unsigned int)data[2])<<8)|data[1])<<8)|data[0] ;
+    u[0] = (((((UINT)data[2])<<8)|data[1])<<8)|data[0] ;
     return 0 ;
 }
 
@@ -364,7 +364,7 @@ static int FS_mdate(DATE * d , const struct parsedname * pn) {
 }
 
 /* mission start date */
-static int FS_umdate(unsigned int * u , const struct parsedname * pn) {
+static int FS_umdate(UINT * u , const struct parsedname * pn) {
     struct Mission mission ;
 
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
@@ -373,7 +373,7 @@ static int FS_umdate(unsigned int * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_alarmelems(unsigned int * u , const struct parsedname * pn) {
+static int FS_alarmelems(UINT * u , const struct parsedname * pn) {
     struct Mission mission ;
     int t[12] ;
     int c[12] ;
@@ -406,7 +406,7 @@ static int FS_w_alarmtemp(const FLOAT * T , const struct parsedname * pn) {
     return ( OW_w_mem(data,1,pn->ft->data.s,pn) ) ? -EINVAL : 0 ;
 }
 
-static int FS_alarmudate(unsigned int * u , const struct parsedname * pn) {
+static int FS_alarmudate(UINT * u , const struct parsedname * pn) {
     struct Mission mission ;
     int t[12] ;
     int c[12] ;
@@ -442,7 +442,7 @@ static int FS_alarmend(DATE * d , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_alarmcnt(unsigned int * u , const struct parsedname * pn) {
+static int FS_alarmcnt(UINT * u , const struct parsedname * pn) {
     int t[12] ;
     int c[12] ;
     int i ;
@@ -462,7 +462,7 @@ static int FS_r_date(DATE * d , const struct parsedname * pn) {
 }
 
 /* read clock */
-static int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_counter(UINT * u , const struct parsedname * pn) {
     BYTE data[7] ;
     DATE d ;
     int ret ;
@@ -470,7 +470,7 @@ static int FS_r_counter(unsigned int * u , const struct parsedname * pn) {
     /* Get date from chip */
     if ( OW_r_mem(data,7,0x0200,pn) ) return -EINVAL ;
     if ( (ret=OW_2date(&d,data)) ) return ret ;
-    u[0]  = (unsigned int) d ;
+    u[0]  = (UINT) d ;
     return 0 ;
 }
 
@@ -487,7 +487,7 @@ static int FS_w_date(const DATE * d , const struct parsedname * pn) {
     return FS_w_run(&y,pn) ;
 }
 
-static int FS_w_counter(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
     BYTE data[7] ;
     DATE d = (DATE) u[0] ;
 
@@ -521,14 +521,14 @@ static int FS_w_mip(const int * y, const struct parsedname * pn) {
     if ( y[0] ) { /* start a mission! */
         BYTE data ;
         if ( OW_r_mem(&data, 1, 0x020D,pn) ) return -EINVAL ;
-        return OW_startmission( (unsigned int) data, pn ) ;
+        return OW_startmission( (UINT) data, pn ) ;
     } else {
         return OW_stopmission(pn ) ;
     }
 }
 
 /* read the interval between samples during a mission */
-static int FS_r_samplerate(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_samplerate(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_r_mem(&data,1,0x020D,pn) ) return -EINVAL ;
     *u = data ;
@@ -536,7 +536,7 @@ static int FS_r_samplerate(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* write the interval between samples during a mission */
-static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_samplerate(const UINT * u , const struct parsedname * pn) {
     if ( u[0] ) {
         return OW_startmission( u[0], pn ) ;
     } else {
@@ -545,7 +545,7 @@ static int FS_w_samplerate(const unsigned int * u , const struct parsedname * pn
 }
 
 /* read the alarm time field (not bit 7, though) */
-static int FS_r_atime(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_atime(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_r_mem(&data,1,pn->ft->data.s,pn) ) return -EFAULT ;
     *u = data & 0x7F ;
@@ -554,7 +554,7 @@ static int FS_r_atime(unsigned int * u , const struct parsedname * pn) {
 
 /* write one of the alarm fields */
 /* NOTE: keep first bit */
-static int FS_w_atime(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_atime(const UINT * u , const struct parsedname * pn) {
     BYTE data ;
 
     if ( OW_r_mem(&data,1,pn->ft->data.s,pn) ) return -EFAULT ;
@@ -564,7 +564,7 @@ static int FS_w_atime(const unsigned int * u , const struct parsedname * pn) {
 }
 
 /* read the alarm time field (not bit 7, though) */
-static int FS_r_atrig(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_atrig(UINT * u , const struct parsedname * pn) {
     BYTE data[4] ;
     if ( OW_r_mem(data,4,0x0207,pn) ) return -EFAULT ;
     if ( data[3] & 0x80 ) {
@@ -591,7 +591,7 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
     return 0 ;
 }
 
-static int FS_w_atrig(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_atrig(const UINT * u , const struct parsedname * pn) {
     BYTE data[4] ;
     if ( OW_r_mem(data,4,0x0207,pn) ) return -EFAULT ;
     data[0] &= 0x7F ;
@@ -623,7 +623,7 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
 }
 
 /* temperature log */
-static int FS_logelements( unsigned int * u , const struct parsedname * pn) {
+static int FS_logelements( UINT * u , const struct parsedname * pn) {
     struct Mission mission ;
 
     if ( OW_FillMission( &mission , pn ) ) return -EINVAL ;
@@ -658,15 +658,15 @@ static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
 }
 
 /* mission delay */
-static int FS_r_delay( unsigned int * u , const struct parsedname * pn) {
+static int FS_r_delay( UINT * u , const struct parsedname * pn) {
     BYTE data[2] ;
     if ( OW_r_mem( data, 2, (size_t)0x0212, pn ) ) return -EINVAL ;
-    u[0] = (((unsigned int)data[1])<<8) | data[0] ;
+    u[0] = (((UINT)data[1])<<8) | data[0] ;
     return 0 ;
 }
     
 /* mission delay */
-static int FS_w_delay( const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_delay( const UINT * u , const struct parsedname * pn) {
     BYTE data[] = { u[0]&0xFF, (u[0]>>8)&0xFF, } ;
     if ( OW_MIP(pn) ) return -EBUSY ;
     if ( OW_w_mem( data, 2, (size_t)0x0212, pn ) ) return -EINVAL ;
@@ -674,7 +674,7 @@ static int FS_w_delay( const unsigned int * u , const struct parsedname * pn) {
 }
     
 /* temperature log */
-static int FS_r_logudate( unsigned int * u , const struct parsedname * pn) {
+static int FS_r_logudate( UINT * u , const struct parsedname * pn) {
     struct Mission mission ;
     int pass=0 ;
 
@@ -734,7 +734,7 @@ static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_easystart( const unsigned int * u, const struct parsedname * pn ) {
+static int FS_easystart( const UINT * u, const struct parsedname * pn ) {
     /* write 0x020E -- 0x0214 */
     BYTE data[] = { 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, } ;
     
@@ -795,7 +795,7 @@ static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, cons
     return ret ;
 }
 
-static int OW_temperature( int * T , const unsigned int delay, const struct parsedname * pn ) {
+static int OW_temperature( int * T , const UINT delay, const struct parsedname * pn ) {
     BYTE data = 0x44 ;
     int ret ;
 
@@ -921,7 +921,7 @@ static int OW_FillMission( struct Mission * mission , const struct parsedname * 
 //printf("FILL data= %.2x %.2X %.2X %.2x  %.2x %.2X %.2X %.2x  %.2x %.2X %.2X %.2x  %.2x %.2X %.2X %.2x\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15]);
     mission->interval = 60 * (int)data[0] ;
     mission->rollover = UT_getbit(&data[1],3) ;
-    mission->samples = (((((unsigned int)data[15])<<8)|data[14])<<8)|data[13] ;
+    mission->samples = (((((UINT)data[15])<<8)|data[14])<<8)|data[13] ;
     return OW_2mdate(&(mission->start),&data[8]) ;
 }
 
@@ -932,7 +932,7 @@ static int OW_alarmlog( int * t, int * c, const size_t offset, const struct pars
     if ( OW_read_paged( data, 48, offset, pn, 32 , OW_r_mem ) ) return -EINVAL ;
 
     for ( i=0 ; i<12 ; ++i ) {
-        t[i] = (((((unsigned int)data[j+2])<<8)|data[j+1])<<8)|data[j] ;
+        t[i] = (((((UINT)data[j+2])<<8)|data[j+1])<<8)|data[j] ;
         c[i] = data[j+3] ;
         j += 4 ;
     }
@@ -944,7 +944,7 @@ static int OW_stopmission( const struct parsedname * pn ) {
     return OW_r_mem( &data, 1, 0x0210, pn ) ;
 }
 
-static int OW_startmission( unsigned int freq, const struct parsedname * pn ) {
+static int OW_startmission( UINT freq, const struct parsedname * pn ) {
     BYTE data ;
    
     /* stop the mission */

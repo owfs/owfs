@@ -98,7 +98,7 @@ static int FS_w_enable(const int * y , const struct parsedname * pn) {
 
 static int FS_r_timeout(int * i , const struct parsedname * pn) {
     CACHELOCK;
-        i[0] = ((unsigned int *)pn->ft->data.v)[0] ;
+        i[0] = ((UINT *)pn->ft->data.v)[0] ;
     CACHEUNLOCK;
     return 0 ;
 }
@@ -106,8 +106,8 @@ static int FS_r_timeout(int * i , const struct parsedname * pn) {
 static int FS_w_timeout(const int * i , const struct parsedname * pn) {
     int previous ;
     CACHELOCK;
-        previous = ((unsigned int *)pn->ft->data.v)[0] ;
-        ((unsigned int *)pn->ft->data.v)[0] = i[0] ;
+        previous = ((UINT *)pn->ft->data.v)[0] ;
+        ((UINT *)pn->ft->data.v)[0] = i[0] ;
     CACHEUNLOCK;
     if ( previous > i[0] ) Cache_Clear() ;
     return 0 ;

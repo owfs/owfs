@@ -81,8 +81,8 @@ static struct internal_prop ip_cum = { "CUM", ft_persistent } ;
 /* DS2423 */
 static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
 static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_counter( unsigned int * counter , const int page, const struct parsedname * pn ) ;
-static int OW_r_mem_counter( BYTE * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_counter( UINT * counter , const int page, const struct parsedname * pn ) ;
+static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
 
 /* 2423A/D Counter */
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -105,28 +105,28 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
     return 0 ;
 }
 
-static int FS_counter(unsigned int * u , const struct parsedname * pn) {
+static int FS_counter(UINT * u , const struct parsedname * pn) {
     if ( OW_counter( u , (pn->extension)+14,  pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_pagecount(unsigned int * u , const struct parsedname * pn) {
+static int FS_pagecount(UINT * u , const struct parsedname * pn) {
     if ( OW_counter( u , pn->extension,  pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 #ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
-static int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
-    size_t s = 3*sizeof(unsigned int) ;
-    unsigned int st[3], ct[2] ; // stored and current counter values
+static int FS_r_mincount(UINT * u , const struct parsedname * pn ) {
+    size_t s = 3*sizeof(UINT) ;
+    UINT st[3], ct[2] ; // stored and current counter values
 
     if ( OW_counter( &ct[0] , 0,  pn ) || OW_counter( &ct[1] , 1,  pn ) ) return -EINVAL ; // current counters
     if ( Cache_Get_Internal( (void *) st, &s, &ip_cum, pn ) ) { // record doesn't (yet) exist
         st[2] = ct[0]<ct[1] ? ct[0] : ct[1] ;
     } else {
-        unsigned int d0 = ct[0] - st[0] ; //delta counter.A
-        unsigned int d1 = ct[1] - st[1] ; // delta counter.B
+        UINT d0 = ct[0] - st[0] ; //delta counter.A
+        UINT d1 = ct[1] - st[1] ; // delta counter.B
         st[2] += d0<d1 ? d0 : d1 ; // add minimum delta
     }
     st[0] = ct[0] ;
@@ -135,12 +135,12 @@ static int FS_r_mincount(unsigned int * u , const struct parsedname * pn ) {
     return Cache_Add_Internal( (void *) st, s, &ip_cum, pn ) ? -EINVAL  : 0 ;
 }
 
-static int FS_w_mincount(const unsigned int * u , const struct parsedname * pn ) {
-    unsigned int st[3] ; // stored and current counter values
+static int FS_w_mincount(const UINT * u , const struct parsedname * pn ) {
+    UINT st[3] ; // stored and current counter values
 
     if ( OW_counter( &st[0] , 0,  pn ) || OW_counter( &st[1] , 1,  pn ) ) return -EINVAL ;
     st[2] = u[0] ;
-    return Cache_Add_Internal( (void *) st, 3*sizeof(unsigned int), &ip_cum, pn ) ? -EINVAL  : 0 ;
+    return Cache_Add_Internal( (void *) st, 3*sizeof(UINT), &ip_cum, pn ) ? -EINVAL  : 0 ;
 }
 #endif /*OW_CACHE*/
 
@@ -180,13 +180,13 @@ static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, cons
     return OW_r_mem_counter(data,NULL,size,offset,pn) ;
 }
 
-static int OW_counter( unsigned int * counter , const int page, const struct parsedname * pn ) {
+static int OW_counter( UINT * counter , const int page, const struct parsedname * pn ) {
     return OW_r_mem_counter(NULL,counter,1,(page<<5)+31,pn) ;
 }
 
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
-static int OW_r_mem_counter( BYTE * p, unsigned int * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
     BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     int ret ;
     /* rest in the remaining length of the 32 byte page */
@@ -200,7 +200,7 @@ static int OW_r_mem_counter( BYTE * p, unsigned int * counter, const size_t size
     if ( ret ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */
-    if ( counter ) *counter = (((((((unsigned int) data[rest+6])<<8)|data[rest+5])<<8)|data[rest+4])<<8)|data[rest+3] ;
+    if ( counter ) *counter = (((((((UINT) data[rest+6])<<8)|data[rest+5])<<8)|data[rest+4])<<8)|data[rest+3] ;
     /* memory contents after the command and location */
     if ( p ) memcpy(p,&data[3],size) ;
 

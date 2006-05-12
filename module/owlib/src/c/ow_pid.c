@@ -28,7 +28,7 @@ void PIDstart( void ) {
             free( pid_file ) ;
             pid_file = NULL ;
         } else {
-            fprintf(pid,"%lu",(long unsigned int)pid_num ) ;
+            fprintf(pid,"%lu",(unsigned long int)pid_num ) ;
             fclose(pid) ;
             pid_created = 1 ;
         }

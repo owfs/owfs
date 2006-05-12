@@ -25,7 +25,7 @@ static int DS2480_write( const BYTE * buf, const size_t size, const struct parse
 static int DS2480_sendout_data( const BYTE * data , const size_t len, const struct parsedname * pn ) ;
 static int DS2480_level( int new_level, const struct parsedname * pn) ;
 static int DS2480_level_low( int new_level, const struct parsedname * pn) ;
-static int DS2480_PowerByte( const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) ;
+static int DS2480_PowerByte( const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 static int DS2480_ProgramPulse( const struct parsedname * pn ) ;
 static int DS2480_sendout_cmd( const BYTE * cmd , const size_t len, const struct parsedname * pn ) ;
 static int DS2480_sendback_cmd( const BYTE * cmd , BYTE * resp , const size_t len, const struct parsedname * pn ) ;
@@ -475,7 +475,7 @@ static int DS2480_level_low(int new_level, const struct parsedname * pn) {
 static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * pn) {
     BYTE readbuffer[10],sendpacket[10];
     int ret ;
-    unsigned int sendlen=0;
+    UINT sendlen=0;
 
     // make sure normal level
     if ( (ret=DS2480_level(MODE_NORMAL,pn)) ) {
@@ -598,7 +598,7 @@ static int DS2480_next_both(struct device_search * ds, const struct parsedname *
 /* Returns 0=good
    bad = -EIO
  */
-static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) {
+static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) {
     int ret ;
     BYTE bits = CMD_COMM | FUNCTSEL_BIT | pn->in->connin.serial.USpeed ;
     BYTE cmd[] = {
@@ -872,7 +872,7 @@ static int DS2480_sendout_data( const BYTE * data , const size_t len, const stru
     } else {
         BYTE data2[32] ;
         int i ;
-        unsigned int j=0 ;
+        UINT j=0 ;
         for ( i=0 ; i<len ; ++i ) {
             data2[j++]=data[i] ;
             if ( data[i] == MODE_COMMAND ) data2[j++] = MODE_COMMAND ;

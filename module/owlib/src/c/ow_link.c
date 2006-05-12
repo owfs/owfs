@@ -25,7 +25,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname * pn
 static int LINK_read_low(BYTE * buf, const size_t size, const struct parsedname * pn ) ;
 static int LINK_reset( const struct parsedname * pn ) ;
 static int LINK_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static int LINK_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) ;
+static int LINK_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 static int LINK_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static int LINK_select(const struct parsedname * pn) ;
 static int LINK_byte_bounce( const BYTE * out, BYTE * in, const struct parsedname * pn ) ;
@@ -346,7 +346,7 @@ static int LINK_write(const BYTE * buf, const size_t size, const struct parsedna
     return 0;
 }
 
-static int LINK_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) {
+static int LINK_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) {
     
     if ( LINK_write(LINK_string("p"),1,pn) || LINK_byte_bounce(&byte,resp,pn) ) {
         STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;

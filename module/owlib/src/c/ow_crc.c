@@ -35,9 +35,9 @@ static BYTE crc8_table[] = {
     0xE9, 0xB7, 0x55, 0x0B, 0x88, 0xD6, 0x34, 0x6A, 0x2B, 0x75, 0x97, 0xC9, 0x4A, 0x14, 0xF6, 0xA8,
     0x74, 0x2A, 0xC8, 0x96, 0x15, 0x4B, 0xA9, 0xF7, 0xB6, 0xE8, 0x0A, 0x54, 0xD7, 0x89, 0x6B, 0x35 } ;
 
-static unsigned int crc16_table[16] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
+static UINT crc16_table[16] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
-BYTE CRC8compute( const BYTE * bytes , const size_t length , const unsigned int seed ) {
+BYTE CRC8compute( const BYTE * bytes , const size_t length , const UINT seed ) {
     BYTE crc = seed ;
     size_t i = 0 ;
     while ( i<length ) {
@@ -52,7 +52,7 @@ BYTE CRC8( const BYTE * bytes , const size_t length ) {
 }
 
 /* wrap CRC8 calculation in statistics */
-BYTE CRC8seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) {
+BYTE CRC8seeded( const BYTE * bytes , const size_t length , const UINT seed ) {
     BYTE r = CRC8compute( bytes, length , seed ) ;
     STATLOCK;
         ++CRC8_tries ; /* statistics */
@@ -67,13 +67,13 @@ int CRC16( const BYTE * bytes , const size_t length ) {
     return CRC16seeded( bytes, length, 0 ) ;
 }
 /* Returns 0 for good match */
-int CRC16seeded( const BYTE * bytes , const size_t length , const unsigned int seed ) {
-    unsigned int sd = seed ;
+int CRC16seeded( const BYTE * bytes , const size_t length , const UINT seed ) {
+    UINT sd = seed ;
     int ret ;
     size_t i ;
     
     for ( i=0 ; i<length ; ++i ) {
-        unsigned int c = ( bytes[i] ^ ( sd & 0xFF ) ) & 0xFF ;
+        UINT c = ( bytes[i] ^ ( sd & 0xFF ) ) & 0xFF ;
         sd >>= 8 ;
         if ( crc16_table[c&0x0F] ^ crc16_table[c>>4] ) sd ^= 0xC001 ;
         sd ^= ( c<<=6 ) ;

@@ -72,7 +72,7 @@ DeviceEntry( 1F, DS2409 ) ;
 static int OW_r_control( BYTE * data, const struct parsedname * pn ) ;
 
 static int OW_discharge( const struct parsedname * pn ) ;
-static int OW_w_control( const unsigned int data , const struct parsedname * pn ) ;
+static int OW_w_control( const UINT data , const struct parsedname * pn ) ;
 
 /* discharge 2409 lines */
 static int FS_discharge(const int * y, const struct parsedname * pn) {
@@ -81,7 +81,7 @@ static int FS_discharge(const int * y, const struct parsedname * pn) {
 }
 
 /* 2409 switch -- branch pin voltage */
-static int FS_r_sensed(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_sensed(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
 //    y[0] = data&0x02 ? 1 : 0 ;
@@ -91,7 +91,7 @@ static int FS_r_sensed(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
-static int FS_r_branch(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_branch(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
 //    y[0] = data&0x01 ? 0 : 1 ;
@@ -101,7 +101,7 @@ static int FS_r_branch(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2409 switch -- event status */
-static int FS_r_event(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_event(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
 //    y[0] = data&0x10 ? 1 : 0 ;
@@ -111,16 +111,16 @@ static int FS_r_event(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* 2409 switch -- control pin state */
-static int FS_r_control(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_control(UINT * u , const struct parsedname * pn) {
     BYTE data ;
-    unsigned int control[] = { 2, 3, 0, 1, } ;
+    UINT control[] = { 2, 3, 0, 1, } ;
     if ( OW_r_control(&data,pn) ) return -EINVAL ;
     *u = control[data>>6] ;
     return 0 ;
 }
 
 /* 2409 switch -- control pin state */
-static int FS_w_control(const unsigned int * u , const struct parsedname * pn) {
+static int FS_w_control(const UINT * u , const struct parsedname * pn) {
     if ( *u > 3 ) return -EINVAL ;
     if ( OW_w_control(*u,pn) ) return -EINVAL ;
     return 0 ;
@@ -144,7 +144,7 @@ static int OW_discharge( const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_w_control( const unsigned int data , const struct parsedname * pn ) {
+static int OW_w_control( const UINT data , const struct parsedname * pn ) {
     const BYTE d[] = { 0x20, 0xA0, 0x00, 0x40, } ;
     BYTE p[] = { 0x5A, d[data], } ;
     const BYTE r[] = { 0x80, 0xC0, 0x00, 0x40, } ;

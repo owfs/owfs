@@ -47,10 +47,10 @@ static int DS9490_sendback_data( const BYTE * data , BYTE * resp , const size_t 
 static int DS9490_level(int new_level, const struct parsedname * pn) ;
 static void DS9490_setroutines( struct interface_routines * f ) ;
 static int DS9490_detect_low( const struct parsedname * pn ) ;
-static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay, const struct parsedname * pn) ;
+static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 static int DS9490_read( BYTE * buf, const size_t size, const struct parsedname * pn) ;
 static int DS9490_write( const BYTE * buf, const size_t size, const struct parsedname * pn) ;
-static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) ;
+static int DS9490_overdrive( const UINT overdrive, const struct parsedname * pn ) ;
 static int DS9490_testoverdrive(const struct parsedname * pn) ;
 static int DS9490_redetect_low( const struct parsedname * pn ) ;
 static char * DS9490_device_name( const struct usb_list * ul ) ;
@@ -636,7 +636,7 @@ static int DS9490_testoverdrive(const struct parsedname * pn) {
     return -EINVAL ;
 }
 
-static int DS9490_overdrive( const unsigned int overdrive, const struct parsedname * pn ) {
+static int DS9490_overdrive( const UINT overdrive, const struct parsedname * pn ) {
     int ret ;
     BYTE sp = 0x3C;
     BYTE resp ;
@@ -923,7 +923,7 @@ static int DS9490_next_both(struct device_search * ds, const struct parsedname *
 /* Returns 0=good
    bad = -EIO
  */
-static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const unsigned int delay,const struct parsedname * pn) {
+static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,const struct parsedname * pn) {
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     int ret ;
 

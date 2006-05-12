@@ -72,7 +72,7 @@ static int OW_read( BYTE * data , const struct parsedname * pn ) ;
 
 /* 2413 switch */
 /* bits 0 and 2 */
-static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_pio(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     BYTE uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, } ;
     if ( OW_read(&data,pn) ) return -EINVAL ;
@@ -82,7 +82,7 @@ static int FS_r_pio(unsigned int * u , const struct parsedname * pn) {
 
 /* 2413 switch PIO sensed*/
 /* bits 0 and 2 */
-static int FS_sense(unsigned int * u , const struct parsedname * pn) {
+static int FS_sense(UINT * u , const struct parsedname * pn) {
     if ( FS_r_pio(u,pn) ) return -EINVAL ;
     u[0] ^= 0x03 ;
     return 0 ;
@@ -90,7 +90,7 @@ static int FS_sense(unsigned int * u , const struct parsedname * pn) {
 
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
-static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
+static int FS_r_latch(UINT * u , const struct parsedname * pn) {
     BYTE data ;
     BYTE uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, } ;
     if ( OW_read(&data,pn) ) return -EINVAL ;
@@ -99,7 +99,7 @@ static int FS_r_latch(unsigned int * u , const struct parsedname * pn) {
 }
 
 /* write 2413 switch -- 2 values*/
-static int FS_w_pio(const unsigned int * u, const struct parsedname * pn) {
+static int FS_w_pio(const UINT * u, const struct parsedname * pn) {
     /* reverse bits */
     BYTE data = ~(u[0]&0xFF);
     if ( OW_write(data,pn) ) return -EINVAL ;

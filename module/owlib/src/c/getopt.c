@@ -445,8 +445,8 @@ int _getopt_internal (int argc, char *const *argv, const char *optstring,
 	for (p = longopts, option_index = 0; p->name; p++, option_index++)
 	    if (!strncmp (p->name, nextchar, nameend - nextchar))
 	    {
-		if ((unsigned int) (nameend - nextchar)
-			== (unsigned int) strlen (p->name))
+		if ((UINT) (nameend - nextchar)
+			== (UINT) strlen (p->name))
 		{
 		    /* Exact match found.  */
 		    pfound = p;
@@ -649,7 +649,7 @@ int _getopt_internal (int argc, char *const *argv, const char *optstring,
 	    for (p = longopts, option_index = 0; p->name; p++, option_index++)
 		if (!strncmp (p->name, nextchar, nameend - nextchar))
 		{
-		    if ((unsigned int) (nameend - nextchar) == strlen (p->name))
+		    if ((UINT) (nameend - nextchar) == strlen (p->name))
 		    {
 			/* Exact match found.  */
 			pfound = p;

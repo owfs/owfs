@@ -49,8 +49,8 @@ $Id$
 /* ----------------- */
 /* ---- Globals ---- */
 /* ----------------- */
-unsigned int cache_flips = 0 ;
-unsigned int cache_adds = 0 ;
+UINT cache_flips = 0 ;
+UINT cache_adds = 0 ;
 struct average old_avg = {0L,0L,0L,0L,} ;
 struct average new_avg = {0L,0L,0L,0L,} ;
 struct average store_avg = {0L,0L,0L,0L,} ;
@@ -60,25 +60,25 @@ struct cache cache_dir = {0L,0L,0L,0L,0L,} ;
 struct cache cache_sto = {0L,0L,0L,0L,0L,} ;
 struct cache cache_dev = {0L,0L,0L,0L,0L,} ;
 
-unsigned int read_calls = 0 ;
-unsigned int read_cache = 0 ;
-unsigned int read_bytes = 0 ;
-unsigned int read_cachebytes = 0 ;
-unsigned int read_array = 0 ;
-unsigned int read_tries[3] = {0,0,0,} ;
-unsigned int read_success = 0 ;
+UINT read_calls = 0 ;
+UINT read_cache = 0 ;
+UINT read_bytes = 0 ;
+UINT read_cachebytes = 0 ;
+UINT read_array = 0 ;
+UINT read_tries[3] = {0,0,0,} ;
+UINT read_success = 0 ;
 struct average read_avg = {0L,0L,0L,0L,} ;
 
-unsigned int write_calls = 0 ;
-unsigned int write_bytes = 0 ;
-unsigned int write_array = 0 ;
-unsigned int write_tries[3] = {0,0,0,} ;
-unsigned int write_success = 0 ;
+UINT write_calls = 0 ;
+UINT write_bytes = 0 ;
+UINT write_array = 0 ;
+UINT write_tries[3] = {0,0,0,} ;
+UINT write_success = 0 ;
 struct average write_avg = {0L,0L,0L,0L,} ;
 
 struct directory dir_main = { 0L, 0L, } ;
 struct directory dir_dev = { 0L, 0L, } ;
-unsigned int dir_depth = 0 ;
+UINT dir_depth = 0 ;
 struct average dir_avg = {0L,0L,0L,0L,} ;
 
 /* max delay between a write and when reading first char */
@@ -87,62 +87,62 @@ struct timeval max_delay = {0, 0, } ;
 // ow_locks.c
 //struct timeval bus_pause = {0, 0, } ;
 struct timeval total_bus_time = {0, 0, } ;
-unsigned int total_bus_locks = 0 ;
-unsigned int total_bus_unlocks = 0 ;
+UINT total_bus_locks = 0 ;
+UINT total_bus_unlocks = 0 ;
 
 // ow_crc.c
-unsigned int CRC8_tries = 0 ;
-unsigned int CRC8_errors = 0 ;
-unsigned int CRC16_tries = 0 ;
-unsigned int CRC16_errors = 0 ;
+UINT CRC8_tries = 0 ;
+UINT CRC8_errors = 0 ;
+UINT CRC16_tries = 0 ;
+UINT CRC16_errors = 0 ;
 
 // ow_net.c
-unsigned int NET_accept_errors = 0 ;
-unsigned int NET_connection_errors = 0 ;
-unsigned int NET_read_errors = 0 ;
+UINT NET_accept_errors = 0 ;
+UINT NET_connection_errors = 0 ;
+UINT NET_read_errors = 0 ;
 
 // ow_bus.c
-unsigned int BUS_reconnects = 0 ;         // sum from all adapters
-unsigned int BUS_reconnect_errors = 0 ;  // sum from all adapters
-unsigned int BUS_send_data_errors = 0 ;
-unsigned int BUS_send_data_memcmp_errors = 0 ;
-unsigned int BUS_readin_data_errors = 0 ;
-unsigned int BUS_select_low_errors = 0 ;
-unsigned int BUS_select_low_branch_errors = 0 ;
-unsigned int BUS_detect_errors = 0 ;
-unsigned int BUS_open_errors = 0 ;
-unsigned int BUS_PowerByte_errors = 0 ;
-unsigned int BUS_level_errors = 0 ;
-unsigned int BUS_write_errors = 0 ;
-unsigned int BUS_write_interrupt_errors = 0 ;
-unsigned int BUS_read_errors = 0 ;
-unsigned int BUS_read_interrupt_errors = 0 ;
-unsigned int BUS_read_select_errors = 0 ;
-unsigned int BUS_read_timeout_errors = 0 ;
-unsigned int BUS_next_errors = 0 ;
-unsigned int BUS_next_alarm_errors = 0 ;
-unsigned int BUS_reset_errors = 0 ;
-unsigned int BUS_short_errors = 0 ;
-unsigned int BUS_bit_errors = 0 ;
-unsigned int BUS_byte_errors = 0 ;
-unsigned int BUS_echo_errors = 0 ;
-unsigned int BUS_ProgramPulse_errors = 0 ;
-unsigned int BUS_Overdrive_errors = 0 ;
-unsigned int BUS_TestOverdrive_errors = 0 ;
-unsigned int BUS_tcsetattr_errors = 0 ;
-unsigned int BUS_status_errors = 0 ;
+UINT BUS_reconnects = 0 ;         // sum from all adapters
+UINT BUS_reconnect_errors = 0 ;  // sum from all adapters
+UINT BUS_send_data_errors = 0 ;
+UINT BUS_send_data_memcmp_errors = 0 ;
+UINT BUS_readin_data_errors = 0 ;
+UINT BUS_select_low_errors = 0 ;
+UINT BUS_select_low_branch_errors = 0 ;
+UINT BUS_detect_errors = 0 ;
+UINT BUS_open_errors = 0 ;
+UINT BUS_PowerByte_errors = 0 ;
+UINT BUS_level_errors = 0 ;
+UINT BUS_write_errors = 0 ;
+UINT BUS_write_interrupt_errors = 0 ;
+UINT BUS_read_errors = 0 ;
+UINT BUS_read_interrupt_errors = 0 ;
+UINT BUS_read_select_errors = 0 ;
+UINT BUS_read_timeout_errors = 0 ;
+UINT BUS_next_errors = 0 ;
+UINT BUS_next_alarm_errors = 0 ;
+UINT BUS_reset_errors = 0 ;
+UINT BUS_short_errors = 0 ;
+UINT BUS_bit_errors = 0 ;
+UINT BUS_byte_errors = 0 ;
+UINT BUS_echo_errors = 0 ;
+UINT BUS_ProgramPulse_errors = 0 ;
+UINT BUS_Overdrive_errors = 0 ;
+UINT BUS_TestOverdrive_errors = 0 ;
+UINT BUS_tcsetattr_errors = 0 ;
+UINT BUS_status_errors = 0 ;
 
 // ow_ds9097U.c
-unsigned int DS2480_send_cmd_errors = 0 ;
-unsigned int DS2480_send_cmd_memcmp_errors = 0 ;
-unsigned int DS2480_sendout_data_errors = 0 ;
-unsigned int DS2480_sendout_cmd_errors = 0 ;
-unsigned int DS2480_sendback_cmd_errors = 0 ;
-unsigned int DS2480_write_interrupted = 0 ;
-unsigned int DS2480_read_fd_isset = 0 ;
-unsigned int DS2480_read_null = 0 ;
-unsigned int DS2480_read_read = 0 ;
-unsigned int DS2480_level_docheck_errors = 0 ;
+UINT DS2480_send_cmd_errors = 0 ;
+UINT DS2480_send_cmd_memcmp_errors = 0 ;
+UINT DS2480_sendout_data_errors = 0 ;
+UINT DS2480_sendout_cmd_errors = 0 ;
+UINT DS2480_sendback_cmd_errors = 0 ;
+UINT DS2480_write_interrupted = 0 ;
+UINT DS2480_read_fd_isset = 0 ;
+UINT DS2480_read_null = 0 ;
+UINT DS2480_read_read = 0 ;
+UINT DS2480_level_docheck_errors = 0 ;
 
 
 struct average all_avg = {0L,0L,0L,0L,} ;
@@ -342,20 +342,20 @@ struct device d_stats_errors = { "errors", "errors", 0, NFT(stats_errors), stats
 
 /* ------- Functions ------------ */
 
-static int FS_stat(unsigned int * u , const struct parsedname * pn) {
+static int FS_stat(UINT * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
     if (dindex<0) dindex = 0 ;
     if (pn->ft == NULL) return -ENOENT ;
     if (pn->ft->data.v == NULL) return -ENOENT ;
     STATLOCK;
-        u[0] =  ((unsigned int *)pn->ft->data.v)[dindex] ;
+        u[0] =  ((UINT *)pn->ft->data.v)[dindex] ;
     STATUNLOCK;
     return 0 ;
 }
 
-static int FS_stat_p(unsigned int * u , const struct parsedname * pn) {
+static int FS_stat_p(UINT * u , const struct parsedname * pn) {
     int dindex = pn->extension ;
-    unsigned int *ptr;
+    UINT *ptr;
     struct connection_in *c;
     if (dindex<0) dindex = 0 ;
     c = find_connection_in(dindex);
@@ -431,7 +431,7 @@ static int FS_time(FLOAT *u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_elapsed(unsigned int * u , const struct parsedname * pn) {
+static int FS_elapsed(UINT * u , const struct parsedname * pn) {
 //printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
     (void) pn ;
     STATLOCK;

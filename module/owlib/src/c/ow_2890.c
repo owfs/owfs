@@ -62,14 +62,14 @@ DeviceEntryExtended( 2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2890 */
-static int OW_r_wiper(unsigned int *val, const struct parsedname * pn) ;
-static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) ;
+static int OW_r_wiper(UINT *val, const struct parsedname * pn) ;
+static int OW_w_wiper(const UINT val, const struct parsedname * pn) ;
 static int OW_r_cp(int * val , const struct parsedname * pn) ;
 static int OW_w_cp(const int val, const struct parsedname * pn) ;
 
 /* Wiper */
-static int FS_w_wiper(const unsigned int * i , const struct parsedname * pn) {
-    unsigned int num=i[0] ;
+static int FS_w_wiper(const UINT * i , const struct parsedname * pn) {
+    UINT num=i[0] ;
     if ( num>255 ) num=255 ;
 
     if ( OW_w_wiper(num,pn) ) return -EINVAL ;
@@ -83,7 +83,7 @@ static int FS_w_cp(const int * y , const struct parsedname * pn) {
 }
 
 /* read Wiper */
-static int FS_r_wiper(unsigned int * w , const struct parsedname * pn) {
+static int FS_r_wiper(UINT * w , const struct parsedname * pn) {
     if ( OW_r_wiper( w , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -95,7 +95,7 @@ static int FS_r_cp(int * y , const struct parsedname * pn) {
 }
 
 /* write Wiper */
-static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) {
+static int OW_w_wiper(const UINT val, const struct parsedname * pn) {
     BYTE resp ;
     BYTE cmd[] = { 0x0F , (BYTE) val, } ;
     BYTE ninesix = 0x96 ;
@@ -108,7 +108,7 @@ static int OW_w_wiper(const unsigned int val, const struct parsedname * pn) {
 }
 
 /* read Wiper */
-static int OW_r_wiper(unsigned int *val, const struct parsedname * pn) {
+static int OW_r_wiper(UINT *val, const struct parsedname * pn) {
     BYTE fo=0xF0 ;
     BYTE resp[2] ;
     int ret ;
