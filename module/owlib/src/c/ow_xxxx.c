@@ -108,10 +108,19 @@ int FS_code(char *buf, const size_t size, const off_t offset , const struct pars
 }
 
 int FS_ID(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( offset ) return -EFAULT ;
-    if ( size < 12 ) return -EMSGSIZE ;
-    bytes2string( buf , &(pn->sn[1]) , 6 ) ;
-    return 12 ;
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[i+off+1] ) ;
+    return size ;
+}
+
+int FS_r_ID(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[6-i-off] ) ;
+    return size ;
 }
 
 int FS_crc8(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -122,10 +131,19 @@ int FS_crc8(char *buf, const size_t size, const off_t offset , const struct pars
 }
 
 int FS_address(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( offset ) return -EFAULT ;
-    if ( size < 16 ) return -EMSGSIZE ;
-    bytes2string( buf , pn->sn , 8 ) ;
-    return 16 ;
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[i+off] ) ;
+    return size ;
+}
+
+int FS_r_address(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[7-i-off] ) ;
+    return size ;
 }
 
 /* Check if device exists -- >=0 yes, -1 no */

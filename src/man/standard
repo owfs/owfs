@@ -22,6 +22,24 @@ The 48-bit middle portion of the unique ID number. Does not include the family c
 Is the device currently
 .I present
 on the 1-wire bus?
+.SS r_address
+.I read-only, ascii
+.br
+.I address
+in reverse order, which is often used in other applications and labeling.
+.I crc8
+comes first and
+.I family
+last.
+.br
+Note, this means that each hex byte (2 characters) is reversed, not the text string.
+.SS r_id
+.I read-only, ascii
+.br
+.I id
+in reverse order, which is often used in other applications and labeling.
+.br
+Note, this means that each hex byte (2 characters) is reversed, not the text string.
 .SS type
 .I read-only, ascii
 .br
