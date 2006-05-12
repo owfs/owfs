@@ -22,6 +22,7 @@ static int ToServer( int fd, struct server_msg * sm, char * path, char * data, s
 static int ConnectionError( const struct parsedname * pn ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
+static uint32_t SetupSemi( const struct parsedname * pn ) ;
 
 struct timeval tv = { 2, 0, } ;
 
@@ -100,7 +101,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_read ;
     sm.size = size ;
-    sm.sg =  SemiGlobal ;
+    sm.sg =  SetupSemi(pn) ;
     sm.offset = offset ;
 
     if( (pn->state & pn_bus) && pn->path_busless ) {
@@ -135,7 +136,7 @@ int ServerPresence( const struct parsedname * pn ) {
     //printf("ServerPresence pn->path=%s\n",pn->path);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_presence ;
-    sm.sg =  SemiGlobal ;
+    sm.sg =  SetupSemi(pn) ;
 
     if( (pn->state & pn_bus) && pn->path_busless ) {
         pathnow = pn->path_busless ;
@@ -170,7 +171,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_write ;
     sm.size = size ;
-    sm.sg =  SemiGlobal ;
+    sm.sg =  SetupSemi(pn) ;
     sm.offset = offset ;
 
     if( (pn->state & pn_bus) && pn->path_busless ) {
@@ -193,7 +194,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         if ( SemiGlobal != cm.sg ) {
             //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
             CACHELOCK;
-                SemiGlobal = cm.sg ;
+                SemiGlobal = cm.sg & (~BUSRET_MASK) ;
             CACHEUNLOCK;
         }
     }
@@ -211,8 +212,8 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_dir ;
 
-    sm.sg = SemiGlobal ;
-    if((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote)) {
+    sm.sg =  SetupSemi(pn) ;
+    if( pn->state & pn_buspath ) {
         sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
     }
 
@@ -427,4 +428,13 @@ static int ConnectionError( const struct parsedname * pn ) {
     (void) pn ;
     LEVEL_CONNECT("Unable to open socket\n") ;
     return -EIO ;
+}
+
+/* flag the sg for "virtual root" -- the remote bus was specifically requested */
+static uint32_t SetupSemi( const struct parsedname * pn ) {
+    uint32_t sg = pn->sg & (~BUSRET_MASK) ;
+    if ( pn->state & pn_buspath ) {
+        sg |= (1<<BUSRET_BIT) ;
+    }
+    return sg ;
 }

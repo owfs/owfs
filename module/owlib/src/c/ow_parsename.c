@@ -50,15 +50,6 @@ void FS_ParsedName_destroy( struct parsedname * pn ) {
         free(pn->lock) ;
         pn->lock = NULL ;
     }
-    if ( pn->in ) {
-        if ( get_busmode(pn->in) != bus_remote ) {
-            if ((SemiGlobal & ~BUSRET_MASK) != (pn->sg & ~BUSRET_MASK)) {
-                CACHELOCK;
-                    SemiGlobal = (pn->sg & ~BUSRET_MASK) ;
-                CACHEUNLOCK;
-            }
-        }
-    }
 }
 
 /* Parse a path to check it's validity and attach to the propery data structures */
@@ -206,6 +197,10 @@ static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct par
         pn->type = pn_structure ;
         return parse_nonreal ;
     } else if ( strcasecmp( pathnow, "system" )==0 ) {
+        if ( pn->state & pn_buspath ) { /* already specified a "bus." */
+            /* structure only for root (remote tested remotely) */
+            if ( pn->in->busmode != bus_remote ) return parse_error ;
+        }
         pn->type = pn_system ;
         return parse_nonreal ;
     } else if ( strcasecmp( pathnow, "text" )==0 ) {

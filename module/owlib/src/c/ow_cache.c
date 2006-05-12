@@ -28,7 +28,7 @@ static struct {
     time_t retired ; // start time of older
     time_t killed ; // deathtime of older
     time_t lifespan ; // lifetime of older
-    unsigned int added ; // items added
+    UINT added ; // items added
 } cache ;
 
 struct tree_key {
