@@ -19,6 +19,10 @@
 [.]XXXXXXXXXXXX[XX][/[
 .B latch.[0-7|ALL|BYTE]
 |
+.B LCD_M/[clear|home|screen|message]
+|
+.B LCD_H/[clear|home|screen|message]
+|
 .B PIO.[0-7|ALL|BYTE]
 |
 .B power
@@ -57,6 +61,93 @@ states, accessed simultaneously, comma separated.
 .br
 .I BYTE
 references all channels simultaneously as a single byte. Channel 0 is bit 0.
+.SS LCD_H/clear LCD_M/clear
+.I write-only, yes-no
+.br
+Clears an LCD screen controlled by a
+.I DS2408
+using published designs.
+.br
+.I clear
+will initialize and clear the screen.
+.br
+.I LCD_H
+uses the Hobby-Boards design of Erik Vickery (see
+.I DATASHEET
+)
+.br
+.I LCD_M
+uses the Maxim public domain design (see
+.I DATASHEET
+)
+.SS LCD_H/home LCD_M/home
+.I write-only, yes-no
+.br
+Positions the cursor of an LCD screen controlled by a
+.I DS2408
+using published designs. The screen must have been initialized with the
+.I clear
+or
+.I message
+command first.
+.br
+.I home
+will set the cursor to the upper left position, but leave the current text intact.
+.br
+.I LCD_H
+uses the Hobby-Boards design of Erik Vickery (see
+.I DATASHEET
+)
+.br
+.I LCD_M
+uses the Maxim public domain design (see
+.I DATASHEET
+)
+.SS LCD_H/screen LCD_M/screen
+.I write-only, ascii text
+.br
+Writes to an LCD screen controlled by a
+.I DS2408
+using published designs. The screen must have been initialized with the
+.I clear
+or
+.I message
+command first.
+.br
+Text will appear starting at the current location.
+.br
+.I LCD_H
+uses the Hobby-Boards design of Erik Vickery (see
+.I DATASHEET
+)
+.br
+.I LCD_M
+uses the Maxim public domain design (see
+.I DATASHEET
+)
+.SS LCD_H/message LCD_M/message
+.I write-only, ascii text
+.br
+Writes to an LCD screen controlled by a
+.I DS2408
+using published designs.
+.br
+.I message
+combines the actions of
+.I clear, home
+and
+.I screen
+so is the easiest way to display a message.
+.br
+.I LCD_H
+uses the Hobby-Boards design of Erik Vickery (see
+.I DATASHEET
+)
+.br
+.I LCD_M
+uses the Maxim public domain design (see
+.I DATASHEET
+)
 .SS PIO.0 ...  PIO.7 PIO.ALL PIO.BYTE
 .I read-write, yes-no
 .br
@@ -182,6 +273,10 @@ and even
 .so addressing
 .SH DATASHEET
 http://pdfserv.maxim-ic.com/en/ds/DS2408.pdf
+.br
+http://www.hobby-boards.com/catalog/howto_lcd_driver.php
+.br
+http://www.maxim-ic.com/appnotes.cfm/appnote_number/3286
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

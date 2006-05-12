@@ -23,6 +23,6 @@
 .SS Counter
 .B DS2423 (3)
 .SS LCD Screen
-.B LCD (3)
+.B LCD (3) DS2408 (3)
 .SS Crypto
 .B DS1977 (3)
