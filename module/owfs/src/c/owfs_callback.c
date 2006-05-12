@@ -152,9 +152,6 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
 
     if ( (ret=FS_ParsedName( path, &pn )) ) return ret ;
-    //printf("FS_getdir parse=%d\n",ret);
-    // first root always return Bus-list and settings/system/statistics
-    pn.sg |= (1<<BUSRET_BIT) ;
 
     if ( pn.ft ) {
         ret = -ENOENT;
