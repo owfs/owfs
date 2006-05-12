@@ -31,7 +31,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
         fprintf( out, "<B>Unparsable name</B></TD></TR>" ) ;
         return ;
     }
-
+    
     /* Left column */
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", file ) ;
     
@@ -41,14 +41,21 @@ static void Show( FILE * out, const char * path, const char * file ) {
         int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
         int canread = ( pn.ft->read.v != NULL ) ;
         int suglen = 0 ;
+        enum ft_format format = pn.ft->format ;
         int len ;
         char *buf = NULL ;
 
+        if ( pn.type==pn_structure ) {
+            format = ft_ascii ;
+            canread = 1 ;
+            canwrite = 0 ;
+        }
+        
         if ( (suglen=FS_size_postparse(&pn)) < 0 ) {
             //printf("Show: can't find file-size of %s ???\n", pn->path);
             suglen = 0 ;
         }
-
+        
         /* buffer for field value */
         if( (buf = malloc((size_t)suglen+1)) ) {
             buf[suglen] = '\0' ;
@@ -60,7 +67,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
                 }
             }
         
-            if ( pn.ft->format == ft_binary ) { /* bianry uses HEX mode */
+            if ( format == ft_binary ) { /* bianry uses HEX mode */
                 if ( canread ) { /* At least readable */
                     if ( len>=0 ) {
                         if ( canwrite ) { /* read-write */
@@ -87,7 +94,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
                 } else if ( canwrite ) { /* rare write-only */
                     fprintf( out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",file,(pn.ft->suglen)>>5 ) ;
                 }
-            } else if ( pn.extension>=0 && (pn.ft->format==ft_yesno||pn.ft->format==ft_bitfield) ) {
+            } else if ( pn.extension>=0 && (format==ft_yesno||format==ft_bitfield) ) {
                 if ( canread ) { /* at least readable */
                     if ( len>=0 ) {
                         if ( canwrite ) { /* read-write */
@@ -147,9 +154,16 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
         int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
         int canread = ( pn.ft->read.v != NULL ) ;
         int suglen = 0 ;
+        enum ft_format format = pn.ft->format ;
         int len ;
         char *buf = NULL ;
 
+        if ( pn.type==pn_structure ) {
+            format = ft_ascii ;
+            canread = 1 ;
+            canwrite = 0 ;
+        }
+        
         if ( (suglen=FS_size_postparse(&pn)) < 0 ) {
             //printf("Show: can't find file-size of %s ???\n", pn->path);
             suglen = 0 ;
@@ -166,7 +180,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
                 }
             }
         
-            if ( pn.ft->format == ft_binary ) { /* bianry uses HEX mode */
+            if ( format == ft_binary ) { /* bianry uses HEX mode */
                 if ( canread ) { /* At least readable */
                     if ( len>=0 ) {
                         int i ;
@@ -177,7 +191,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
                 } else if ( canwrite ) { /* rare write-only */
                     fprintf( out, "(writeonly)") ;
                 }
-            } else if ( pn.extension>=0 && (pn.ft->format==ft_yesno||pn.ft->format==ft_bitfield) ) {
+            } else if ( pn.extension>=0 && (format==ft_yesno||format==ft_bitfield) ) {
                 if ( canread ) { /* at least readable */
                     if ( len>=0 ) {
                         fprintf( out, "%c", buf[0] ) ;

@@ -39,7 +39,6 @@ static void URLparse( struct urlparse * up ) ;
 int handle_socket(FILE * out) {
     char linecopy[PATH_MAX+1];
     char * str;
-    int ret ;
     struct urlparse up ;
     struct parsedname pn ;
 
@@ -76,8 +75,6 @@ int handle_socket(FILE * out) {
     } else {
         /* Root directory -- show the bus */
         if ( pn.dev == NULL ) { /* directory! */
-            // first root always return Bus-list and settings/system/statistics
-            pn.sg |= (1<<BUSRET_BIT) ;
             ShowDir( out, &pn ) ;
         } else if ( up.request==NULL ) {
             ShowDevice( out, &pn ) ;
