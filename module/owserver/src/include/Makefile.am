@@ -1,7 +1,4 @@
-headerdir = ${prefix}/include
-header_DATA = owserver.h
-
-EXTRA_DIST = ${header_DATA}
+EXTRA_DIST = owserver.h
 
 clean-generic:
 

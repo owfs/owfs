@@ -1,7 +1,4 @@
-headerdir = ${prefix}/include
-header_DATA = owfs.h
-
-EXTRA_DIST = ${header_DATA}
+EXTRA_DIST = owfs.h
 
 clean-generic:
 

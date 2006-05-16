@@ -1,5 +1,5 @@
-headerdir = ${prefix}/include
-header_DATA = compat_getopt.h \
+EXTRA_DIST = \
+	compat_getopt.h \
         compat.h \
         i2c-dev.h \
         compat_netdb.h \
@@ -43,8 +43,6 @@ header_DATA = compat_getopt.h \
         ow_stub.h \
         ow_system.h \
         ow_xxxx.h
-
-EXTRA_DIST = ${header_DATA}
 
 clean-generic:
 
