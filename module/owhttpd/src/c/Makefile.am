@@ -11,6 +11,7 @@ owhttpd_SOURCES = owhttpd.c          \
 
 owhttpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
+# multithreading -- must be available on the library as well
 if ENABLE_MT
 MT_FLAG = -DOW_MT
 endif
@@ -41,4 +42,4 @@ AM_LDFLAGS = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

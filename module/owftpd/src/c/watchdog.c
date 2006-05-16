@@ -2,23 +2,15 @@
  * $Id$
  */
 
-//#include "owfs_config.h"
-//#include "ow.h"
-//#include <features.h>
-//#include <unistd.h>
-//#include "daemon_assert.h"
-//#include "watchdog.h"
+#include "owftpd.h"
+#include <unistd.h>
 
-//#include    <pthread.h>
-
-#include <owftpd.h>
-
-static int invariant(watchdog_t *w);
-static void insert(watchdog_t *w, watched_t *watched);
-static void delete(watchdog_t *w, watched_t *watched);
+static int invariant(struct watchdog_s *w);
+static void insert(struct watchdog_s *w, struct watched_s *watched);
+static void delete(struct watchdog_s *w, struct watched_s *watched);
 static void *watcher(void *void_w);
 
-int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
+int watchdog_init(struct watchdog_s *w, int inactivity_timeout, struct error_code_s *err)
 {
     pthread_t thread_id;
     int error_code;
@@ -27,15 +19,15 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
     daemon_assert(inactivity_timeout > 0);
     daemon_assert(err != NULL);
 
-    pthread_mutex_init(&w->mutex, pmattr);
+    pthread_mutex_init(&w->mutex, NULL);
     w->inactivity_timeout = inactivity_timeout;
     w->oldest = NULL;
     w->newest = NULL;
 
     error_code = pthread_create(&thread_id, NULL, watcher, w);
     if (error_code != 0) {
-        error_init(err, error_code, "error %d from pthread_create()",
-            error_code);
+	error_init(err, error_code, "error %d from pthread_create()", 
+	  error_code);
         return 0;
     }
     pthread_detach(thread_id);
@@ -45,7 +37,7 @@ int watchdog_init(watchdog_t *w, int inactivity_timeout, error_code_t *err)
     return 1;
 }
 
-void watchdog_add_watched(watchdog_t *w, watched_t *watched)
+void watchdog_add_watched(struct watchdog_s *w, struct watched_s *watched)
 {
     daemon_assert(invariant(w));
 
@@ -60,9 +52,9 @@ void watchdog_add_watched(watchdog_t *w, watched_t *watched)
     daemon_assert(invariant(w));
 }
 
-void watchdog_defer_watched(watched_t *watched)
+void watchdog_defer_watched(struct watched_s *watched)
 {
-    watchdog_t *w;
+    struct watchdog_s *w;
 
     daemon_assert(invariant(watched->watchdog));
 
@@ -76,9 +68,9 @@ void watchdog_defer_watched(watched_t *watched)
     daemon_assert(invariant(w));
 }
 
-void watchdog_remove_watched(watched_t *watched)
+void watchdog_remove_watched(struct watched_s *watched)
 {
-    watchdog_t *w;
+    struct watchdog_s *w;
 
     daemon_assert(invariant(watched->watchdog));
 
@@ -91,7 +83,7 @@ void watchdog_remove_watched(watched_t *watched)
     daemon_assert(invariant(w));
 }
 
-static void insert(watchdog_t *w, watched_t *watched)
+static void insert(struct watchdog_s *w, struct watched_s *watched)
 {
    /*********************************************************************
     Set alarm to current time + timeout duration.  Note that this is not 
@@ -127,7 +119,7 @@ static void insert(watchdog_t *w, watched_t *watched)
     watched->in_list = 1;
 }
 
-static void delete(watchdog_t *w, watched_t *watched)
+static void delete(struct watchdog_s *w, struct watched_s *watched)
 {
     if (!watched->in_list) {
         return;
@@ -162,12 +154,12 @@ static void delete(watchdog_t *w, watched_t *watched)
 
 static void *watcher(void *void_w)
 {
-    watchdog_t *w;
+    struct watchdog_s *w;
     struct timeval tv;
     time_t now;
-    watched_t *watched;
+    struct watched_s *watched;
 
-    w = (watchdog_t *)void_w;
+    w = (struct watchdog_s *)void_w;
     for (;;) {
         tv.tv_sec = 1;
 	tv.tv_usec = 0;
@@ -183,7 +175,7 @@ static void *watcher(void *void_w)
 
             /*******************************************************
 	     This might seem like a memory leak, but in oftpd the 
-	     watched_t structure is held in the thread itself, so 
+	     struct watched_s structure is held in the thread itself, so
 	     canceling the thread effectively frees the memory.  I'm
 	     not sure whether this is elegant or a hack.  :)
              *******************************************************/
@@ -196,11 +188,11 @@ static void *watcher(void *void_w)
 }
 
 #ifndef NDEBUG
-static int invariant(watchdog_t *w)
+static int invariant(struct watchdog_s *w)
 {
     int ret_val;
 
-    watched_t *ptr;
+    struct watched_s *ptr;
     int old_to_new_count;
     int new_to_old_count;
 

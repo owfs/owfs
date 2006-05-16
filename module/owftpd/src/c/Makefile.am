@@ -1,7 +1,15 @@
 # $Id$
 
 bin_PROGRAMS = owftpd
-owftpd_SOURCES = file_list.c ftp_command.c ftp_listener.c ftp_session.c owftpd.c telnet_session.c watchdog.c ftp_error.c daemon_assert.c
+owftpd_SOURCES = file_list.c \
+                 ftp_command.c \
+                 ftp_listener.c \
+                 ftp_session.c \
+                 owftpd.c \
+                 telnet_session.c \
+                 watchdog.c \
+                 error.c \
+                 daemon_assert.c
 owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 # multithreading -- must be available on the library as well
@@ -40,4 +48,4 @@ AM_LDFLAGS = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~
