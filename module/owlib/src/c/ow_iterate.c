@@ -17,27 +17,11 @@ $Id$
 
 int OW_read_paged( BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
     size_t pagelen, int (*readfunc)(BYTE *,const size_t,const size_t,const struct parsedname * const) ) {
-
-    size_t pageoff = offset % pagelen ;
-    if ( size==0 ) return 0 ;
-    /* first page -- may be partial and start within page */
-    if ( size+pageoff>pagelen ) {
-        int ret ;
-        size_t thispage = pagelen - pageoff ;
-        if ( thispage > size ) thispage = size ;
-        ret = readfunc(p,thispage,offset,pn) ;
-        if (ret) return ret ;
-        p += thispage ;
-        size -= thispage ;
-        offset += thispage ;
-    }
     /* successive pages, will start at page start */
     while (size>0) {
-        int ret ;
-        size_t thispage = pagelen ;
+        size_t thispage = pagelen - (offset % pagelen) ;
         if ( thispage > size ) thispage = size ;
-        ret = readfunc(p,thispage,offset,pn) ;
-        if (ret) return ret ;
+        if (readfunc(p,thispage,offset,pn)) return 1 ;
         p += thispage ;
         size -= thispage ;
         offset += thispage ;
@@ -47,28 +31,11 @@ int OW_read_paged( BYTE * p, size_t size, size_t offset, const struct parsedname
 
 int OW_write_paged( const BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
     size_t pagelen, int (*writefunc)(const BYTE *,const size_t,const size_t,const struct parsedname * const) ) {
-
-
-    size_t pageoff = offset % pagelen ;
-    if ( size==0 ) return 0 ;
-    /* first page -- may be partial and start within page */
-    if ( size+pageoff>pagelen ) {
-        int ret ;
-        size_t thispage = pagelen - pageoff ;
-        if ( thispage > size ) thispage = size ;
-        ret = writefunc(p,thispage,offset,pn) ;
-        if (ret) return ret ;
-        p += thispage ;
-        size -= thispage ;
-        offset += thispage ;
-    }
     /* successive pages, will start at page start */
     while (size>0) {
-        int ret ;
-        size_t thispage = pagelen ;
+        size_t thispage = pagelen - (offset % pagelen) ;
         if ( thispage > size ) thispage = size ;
-        ret = writefunc(p,thispage,offset,pn) ;
-        if (ret) return ret ;
+        if (writefunc(p,thispage,offset,pn)) return 1 ;
         p += thispage ;
         size -= thispage ;
         offset += thispage ;

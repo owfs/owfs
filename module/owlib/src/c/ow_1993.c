@@ -120,7 +120,7 @@ static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset ,
 
 /* paged, and pre-screened */
 static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
-    BYTE p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
+    BYTE p[4+32] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     struct transaction_log tcopy[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
