@@ -66,7 +66,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
     if ( connectfd < 0 ) return ConnectionError(pn) ;
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_size ;
-    sm.sg =  SemiGlobal ;
+    sm.sg = SetupSemi(pn) ;
 
     if( (pn->state & pn_bus) && pn->path_busless ) {
         pathnow = pn->path_busless ;
@@ -101,7 +101,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_read ;
     sm.size = size ;
-    sm.sg =  SetupSemi(pn) ;
+    sm.sg = SetupSemi(pn) ;
     sm.offset = offset ;
 
     if( (pn->state & pn_bus) && pn->path_busless ) {
@@ -213,7 +213,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     sm.type = msg_dir ;
 
     sm.sg =  SetupSemi(pn) ;
-    if( pn->state & pn_buspath ) {
+    if( SpecifiedBus(pn) ) {
         sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
     }
 
@@ -433,8 +433,6 @@ static int ConnectionError( const struct parsedname * pn ) {
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
 static uint32_t SetupSemi( const struct parsedname * pn ) {
     uint32_t sg = pn->sg & (~BUSRET_MASK) ;
-    if ( pn->state & pn_buspath ) {
-        sg |= (1<<BUSRET_BIT) ;
-    }
+    if ( SpecifiedBus(pn) ) sg |= (1<<BUSRET_BIT) ;
     return sg ;
 }

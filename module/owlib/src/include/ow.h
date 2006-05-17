@@ -504,6 +504,7 @@ struct parsedname {
 } ;
 
 enum simul_type { simul_temp, simul_volt, } ;
+#define SpecifiedBus(pn)  ((((pn)->state) & pn_buspath) != 0 )
 
 /* ---- end Parsedname ----------------- */
 /* ------------------------------------- */

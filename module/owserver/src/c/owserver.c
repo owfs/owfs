@@ -443,6 +443,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     cm->sg = sm->sg ;
 
     // Now generate the directory (using the embedded callback function above for each element
+    printf("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
     LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;

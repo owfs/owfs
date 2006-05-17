@@ -81,27 +81,27 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         /* Device structure is always known for ordinary devices, so don't
         * bother calling ServerDir() */
             ret = FS_devdir( dirfunc, &pn2 ) ;
-        } else if ( (pn->state & pn_buspath) && (get_busmode(pn->in)==bus_remote) ) {
+        } else if ( SpecifiedBus(pn) && (get_busmode(pn->in)==bus_remote) ) {
             ret = ServerDir(dirfunc, &pn2, flags) ;
         } else {
             ret = FS_devdir( dirfunc, &pn2 ) ;
         }
     } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
         //printf("ALARM\n");
-        ret = (pn->state&pn_buspath) ? FS_alarmdir(dirfunc, &pn2) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
+        ret = SpecifiedBus(pn) ? FS_alarmdir(dirfunc, &pn2) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
         /* there are some files with variable sizes, and /system/adapter have variable
         * number of entries and we have to call ServerDir() */
-        ret = ((pn->state&pn_buspath) && (get_busmode(pn->in)==bus_remote))
+        ret = (SpecifiedBus(pn) && (get_busmode(pn->in)==bus_remote))
                 ? ServerDir(dirfunc, &pn2, flags)
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else if ( pn->pathlength == 0 ) { /* root directory */
-        if ( local_flag && ((pn->state&pn_buspath)==0) ) { /* structure only in true root */
+        if ( local_flag && !SpecifiedBus(pn) ) { /* structure only in true root */
             pn2.type = pn_structure ;
             dirfunc( &pn2 ) ;
             pn2.type = pn_real ;
         }
-        if( ShouldReturnBusList(pn) || (local_flag && ((pn->state&pn_buspath)==0)) ) {
+        if( !SpecifiedBus(pn) && ShouldReturnBusList(pn) ) {
             /* restore state */
             pn2.type = pn_real ;
             if ( IsLocalCacheEnabled(pn) && (pn->state&pn_uncached)==0 ) { /* cached */
@@ -110,7 +110,6 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 pn2.state = pn->state ;
             }
             FS_busdir(dirfunc, pn ) ;
-
             pn2.type = pn_settings ;
             dirfunc( &pn2 ) ;
             pn2.type = pn_system ;
@@ -120,12 +119,12 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
             pn2.type = pn->type;
         }
         /* Now get the actual devices */
-        ret = (pn->state&pn_buspath) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
+        ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     } else { /* not main directory */
         /* If the specified listed path is remote, then we have
         * to call ServerDir(). Otherwise call FS_dir_seek to search all
         * local in-devices. */
-        ret = (pn->state&pn_buspath) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
+        ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     }
     if ( local_flag ) {
         if(!(pn->state & pn_alarm)) {

@@ -91,7 +91,7 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
-    pn->sg = SemiGlobal ;
+    pn->sg = SemiGlobal | (1<<BUSRET_BIT) ; // initial flag as the bus-returning level, will change if a bus is specified
 //        pn->si->sg.u[0]&0x01 = cacheenabled ;
 //        pn->si->sg.u[0]&0x02 = return bus-list from owserver
 //        pn->si->sg.u[1]      = presencecheck ;
@@ -197,7 +197,7 @@ static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct par
         pn->type = pn_structure ;
         return parse_nonreal ;
     } else if ( strcasecmp( pathnow, "system" )==0 ) {
-        if ( pn->state & pn_buspath ) { /* already specified a "bus." */
+        if ( SpecifiedBus(pn) ) { /* already specified a "bus." */
             /* structure only for root (remote tested remotely) */
             if ( pn->in->busmode != bus_remote ) return parse_error ;
         }
@@ -263,7 +263,7 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
     /* Should make a presence check on remote busses here, but
      * it's not a major problem if people use bad paths since
      * they will just end up with empty directory listings. */
-    if ( pn->state & pn_buspath ) { /* already specified a "bus." */
+    if ( SpecifiedBus(pn) ) { /* already specified a "bus." */
         /* too many levels of bus for a non-remote adapter */
         if ( pn->in->busmode != bus_remote ) return parse_error ;
     } else {
@@ -272,6 +272,7 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
         /* this will only be reached once */
         pn->state |= pn_bus ;
         pn->state |= pn_buspath ; /* specified a bus */
+        pn->sg &= (~BUSRET_MASK) ;
         pn->bus_nr = atoi(&pathnow[4]);
         if ( pn->bus_nr < 0 || pn->bus_nr >= indevices ) return parse_error ;
         /* Since we are going to use a specific in-device now, set
