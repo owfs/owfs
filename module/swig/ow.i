@@ -6,12 +6,14 @@
 %include "typemaps.i"
 
 %init %{
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 LibSetup() ;
 %}
 
 %{
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 

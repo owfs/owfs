@@ -17,9 +17,10 @@ $Id$
   http://www.unpbook.com
 */ 
 
-#include    <owfs_config.h>
-#include    <ow.h>
-#include    <stdarg.h>
+#include <config.h>
+#include <owfs_config.h>
+#include <ow.h>
+#include <stdarg.h>
 
 /* See man page for explanation */
 int error_print = 0 ;
