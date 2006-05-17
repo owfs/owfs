@@ -42,6 +42,7 @@ $Id$
     7/2004 Extensive improvements based on input from Serg Oskin
 */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow_2760.h"
 

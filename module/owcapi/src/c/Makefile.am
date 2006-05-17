@@ -39,4 +39,4 @@ AM_LDFLAGS = -low ${PROFILING_FLAG}
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

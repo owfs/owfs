@@ -63,5 +63,5 @@ EXTRA_DIST = ${man_MANS}
 
 clean-generic:
 
-	rm -rf *~
+	@RM@ -f *~ .*~
 

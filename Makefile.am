@@ -6,11 +6,11 @@ EXTRA_DIST = bootstrap
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~
 
 distclean-generic:
 
-	rm -rf auto*cache
+	@RM@ -rf auto*cache
 
 rpm: dist
 

@@ -6,6 +6,7 @@
 // $Id$
 //
 
+#include <config.h>
 #include "owfs_config.h"
 #ifdef HAVE_VASPRINTF
 #define _GNU_SOURCE

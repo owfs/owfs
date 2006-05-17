@@ -921,13 +921,13 @@ AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettim
 
 # Process config.h.in
 
-AH_TOP([
-#ifndef OWFS_CONFIG_H
-#define OWFS_CONFIG_H
-])
-AH_BOTTOM([#endif])
+#AH_TOP([
+##ifndef OWFS_CONFIG_H
+##define OWFS_CONFIG_H
+#])
+#AH_BOTTOM([#endif])
 
-AM_CONFIG_HEADER([src/include/owfs_config.h:src/include/owfs_config.h.in])
+AM_CONFIG_HEADER(src/include/config.h)
 
 AC_CONFIG_FILES([
     Makefile

@@ -23,6 +23,7 @@
 #ifndef	_COMPAT_NETDB_H
 #define	_COMPAT_NETDB_H	1
 
+#include <config.h>
 #include "owfs_config.h"
 
 #ifdef HAVE_FEATURES_H

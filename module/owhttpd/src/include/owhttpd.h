@@ -14,8 +14,9 @@ $Id$
 #ifndef OWHTTPD_H
 #define OWHTTPD_H
 
+#include <config.h>
 #include "owfs_config.h"
-#include "ow.h" // for libow
+#include "ow.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>

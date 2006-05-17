@@ -13,6 +13,7 @@ $Id$
 /* Much modification by Christian Magnusson especially for Valgrind and embedded */
 /* non-threaded fixes by Jerry Scharf */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_counters.h"

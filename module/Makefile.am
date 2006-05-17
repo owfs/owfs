@@ -33,4 +33,4 @@ SUBDIRS = owlib $(MAYBE_OWFS) $(MAYBE_OWHTTPD) $(MAYBE_OWFTPD) $(MAYBE_OWNFSD) $
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

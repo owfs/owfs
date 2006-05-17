@@ -37,4 +37,4 @@ AM_LDFLAGS = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

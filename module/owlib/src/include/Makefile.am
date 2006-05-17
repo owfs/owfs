@@ -1,4 +1,4 @@
-EXTRA_DIST = \
+noinst_HEADERS = \
 	compat_getopt.h \
         compat.h \
         i2c-dev.h \
@@ -46,5 +46,5 @@ EXTRA_DIST = \
 
 clean-generic:
 
-	@RM@ -rf *~
+	@RM@ -f *~ .*~
 

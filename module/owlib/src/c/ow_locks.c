@@ -11,6 +11,7 @@ $Id$
 
 /* locks are to handle multithreading */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_counters.h"

@@ -1,6 +1,6 @@
-EXTRA_DIST = owhttpd.h
+noinst_HEADERS = owhttpd.h
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~
 

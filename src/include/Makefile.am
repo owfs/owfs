@@ -1,9 +1,7 @@
-headerdir = ${prefix}/include
-header_DATA = owfs_config.h
-
-EXTRA_DIST = ${header_DATA}
+owfsincludedir = ${prefix}/include
+owfsinclude_HEADERS = owfs_config.h
 
 clean-generic:
 
-	rm -f *~ .*~ stamp-h1
+	@RM@ -f *~ .*~ stamp-h1
 

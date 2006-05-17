@@ -11,6 +11,7 @@ $Id$
 
 // 8/18/2004 -- applied Serg Oskin's correction
 // 8/20/2004 -- changed everything, specifically no longer using db, tsearch instead!
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_counters.h"

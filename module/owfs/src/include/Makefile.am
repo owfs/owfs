@@ -1,5 +1,5 @@
-EXTRA_DIST = owfs.h
+noinst_HEADERS = owfs.h
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

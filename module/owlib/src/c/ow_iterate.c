@@ -12,6 +12,7 @@ $Id$
 /* ow_interate.c */
 /* routines to split reads and writes if longer than page */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 

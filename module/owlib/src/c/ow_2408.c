@@ -57,6 +57,7 @@ Let me know if you have any other questions.
 Eric
 */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow_2408.h"
 

@@ -35,7 +35,17 @@ $Id$
                  e.g. 3001 or 10.183.180.101:3001 or /tmp/1wire
 */
 
+#include <config.h>
+#include "owfs_config.h"
+#include "ow.h"
+#include "ow_connection.h"
 #include "owserver.h"
+
+#include <netinet/in.h> // ntohl ...
+#include <netdb.h> // addrinfo 
+#include <pthread.h>
+
+struct timeval tv = { 10, 0, } ;
 
 #ifdef OW_MT
   pthread_t main_threadid ;

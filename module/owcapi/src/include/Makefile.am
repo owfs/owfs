@@ -5,4 +5,4 @@ EXTRA_DIST = ${header_DATA}
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

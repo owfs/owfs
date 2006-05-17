@@ -46,6 +46,7 @@ $Id$
 
     /* All from ow_xxxx.c file */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow_2401.h"
 

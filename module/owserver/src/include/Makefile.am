@@ -1,6 +1,6 @@
-EXTRA_DIST = owserver.h
+noinst_HEADERS = owserver.h
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~
 

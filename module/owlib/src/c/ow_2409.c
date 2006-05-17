@@ -38,6 +38,7 @@ $Id$
 	  whether the elements are stored together and split, or separately and joined
 */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow_2409.h"
 

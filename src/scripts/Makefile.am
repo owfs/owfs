@@ -1,3 +1,3 @@
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

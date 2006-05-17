@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* This software is Copyright 1996 by Craig Metz, All Rights Reserved.  */
 
+#include <config.h>
 #include "owfs_config.h"
 
 #ifndef HAVE_GETADDRINFO

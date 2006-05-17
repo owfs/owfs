@@ -14,6 +14,7 @@ $Id$
 /* Second is paired with a condition variable to prevent "finish" when a "get" or "put" is in progress */
 /* Thanks to Geo Carncross for the implementation */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 

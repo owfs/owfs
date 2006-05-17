@@ -12,6 +12,7 @@ $Id$
 /* ow_server talks to the server, sending and recieving messages */
 /* this is an alternative to direct bus communication */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"

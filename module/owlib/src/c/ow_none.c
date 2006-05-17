@@ -52,6 +52,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow_none.h"
 

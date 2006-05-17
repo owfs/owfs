@@ -26,6 +26,7 @@
  * Modified once again for uClibc by Erik Andersen 8/7/02
  */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "compat_getopt.h"
 

@@ -21,4 +21,4 @@ SUBDIRS = $(MAYBE_OWPERL) $(MAYBE_OWPYTHON) $(MAYBE_OWTCL) $(MAYBE_OWPHP)
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

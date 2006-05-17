@@ -1,5 +1,5 @@
-EXTRA_DIST = owftpd.h
+noinst_HEADERS = owftpd.h
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~

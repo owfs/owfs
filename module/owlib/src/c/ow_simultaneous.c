@@ -41,6 +41,7 @@ $Id$
 
 /* Simultaneous is a trigger to do a mass conversion on all the devices in the specified path */
 
+#include <config.h>
 #include "owfs_config.h"
 #include "ow_simultaneous.h"
 #include    <sys/time.h> /* for gettimeofday */

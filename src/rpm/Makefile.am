@@ -6,5 +6,5 @@ EXTRA_DIST = owfs.conf owfs.init owserver.conf owserver.init \
 
 clean-generic:
 
-	rm -f *~ .*~
+	@RM@ -f *~ .*~
 

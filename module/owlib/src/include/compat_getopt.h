@@ -17,6 +17,7 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#include <config.h>
 #include "owfs_config.h"
 
 #ifndef _COMP_GETOPT_H

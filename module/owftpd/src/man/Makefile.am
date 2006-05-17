@@ -1,4 +1,4 @@
 clean-generic:
 
-	rm -rf *~
+	@RM@ -f *~ .*~
 

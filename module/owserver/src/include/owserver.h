@@ -14,21 +14,6 @@ $Id$
 #ifndef OWSERVER_H
 #define OWSERVER_H
 
-#include "owfs_config.h"
-#include "ow.h"
-#include "ow_connection.h"
-
-#include <netinet/in.h> // ntohl ...
-#include <netdb.h> // addrinfo 
-#include <pthread.h>
-
-struct active_sock {
-    int             socket;
-    FILE           *io;
-    struct in_addr  peer_addr;
-};
-
-struct timeval tv = { 10, 0, } ;
 
 #define MAXBUFFERSIZE  65000
 
