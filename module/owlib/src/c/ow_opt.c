@@ -17,6 +17,9 @@ $Id$
 #include "ow_connection.h"
 #include "ow_pid.h"
 
+int max_clients ;
+int ftp_timeout ;
+
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
 static int OW_ArgI2C( const char * arg ) ;
@@ -64,6 +67,8 @@ const struct option owopts_long[] = {
     {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"msec_read",  required_argument,NULL,268}, /* Time out for serial reads */
     {"msec-read",  required_argument,NULL,268}, /* Time out for serial reads */
+    {"max_clients", required_argument, NULL, 269}, /* ftp max connections */
+    {"ftp_timeout", required_argument, NULL, 270}, /* ftp max connections */
     {"link", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
@@ -172,28 +177,36 @@ static void ow_morehelp( enum opt_program op ) {
         "                                 |  e.g: --fuse_open_opt=\"direct_io\"\n"
         ) ;
         break ;
-        case opt_httpd:
-        case opt_ftpd:
-        case opt_server:
-            printf(
-            "\n"
-            "Client side:\n"
-            "  -p --port                      |tcp/ip address that program can be found\n"
+    case opt_httpd:
+    case opt_server:
+        printf(
+        "\n"
+        "Client side:\n"
+        "  -p --port                      |tcp/ip address that program can be found\n"
+        ) ;
+        break ;
+    case opt_ftpd:
+        printf(
+        "\n"
+        "Client side:\n"
+        "  -p --port                      |tcp/ip address that program can be found\n"
+        "  --ftp_timeout                  |logoff time (sec) for inactive client\n"
+        "  --max_clients                  |maximum simultaneous clients (1-300)\n"
             ) ;
-            break ;
-        case opt_nfsd:
-            printf(
-            "     --NFS_program               |NFS: 100003, default OWNFS 300003\n"
-            "     --NFS_version               |default 3\n"
-            "     --tcp_only                  |no udp transport (overides udp_only)\n"
-            "     --udp_only                  |no tcp transport (overides tcp_only)\n"
-            "     --NFS_port                  |default 0=auto, 2049 traditional\n"
-            "     --mount_port                |default 0=auto, usually same as NFS_port.\n"
-            "     --no_portmapper             |Don't use the standard portmapper.\n"
-            ) ;
-            break ;
-        default:
-            break ;
+        break ;
+    case opt_nfsd:
+        printf(
+        "     --NFS_program               |NFS: 100003, default OWNFS 300003\n"
+        "     --NFS_version               |default 3\n"
+        "     --tcp_only                  |no udp transport (overides udp_only)\n"
+        "     --udp_only                  |no tcp transport (overides tcp_only)\n"
+        "     --NFS_port                  |default 0=auto, 2049 traditional\n"
+        "     --mount_port                |default 0=auto, usually same as NFS_port.\n"
+        "     --no_portmapper             |Don't use the standard portmapper.\n"
+        ) ;
+        break ;
+    default:
+        break ;
     }
     printf(
     "\n"
@@ -306,6 +319,11 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
         if (usec_read < 500000) usec_read = 500000 ;
         return 0 ;
     case 269:
+        max_clients = atoi(arg) ;
+        break ;
+    case 270:
+        ftp_timeout = atoi(arg) ;
+        break ;
     case 0:
         return 0 ;
     default:

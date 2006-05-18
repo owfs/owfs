@@ -69,169 +69,43 @@ static void *connection_handler(void * v);
 static void connection_handler_cleanup(void * v);
 
 /* initialize an FTP listener */
+/* ftp uses 0 as an error return */
 int ftp_listener_init(struct ftp_listener_s *f,
-                      char *address, 
-                      int port, 
-                      int max_connections,
-                      int inactivity_timeout,
                       struct error_code_s *err)
 {
-    sockaddr_storage_t sock_addr;
-    int fd;
     int flags;
     int pipefds[2];
-    int reuseaddr;
-    char dir[PATH_MAX+1];
-    char buf[ADDR_BUF_LEN+1];
-    const char *inet_ntop_ret;
 
     daemon_assert(f != NULL);
-    daemon_assert(port >= 0);
-    daemon_assert(port < 65536);
-    daemon_assert(max_connections > 0);
-    daemon_assert(err != NULL);
 
-    /* get our current directory */
-    if (getcwd(dir, sizeof(dir)) == NULL) {
-        error_init(err, errno, "error getting current directory; %s",
-                   strerror(errno));
-        return 0;
-    }
-
-    /* set up our socket address */
-    memset(&sock_addr, 0, sizeof(sockaddr_storage_t));
-
-    if (address == NULL) {
-#ifdef INET6
-        SAFAM(&sock_addr) = AF_INET6;
-        memcpy(&SIN6ADDR(&sock_addr), &in6addr_any, sizeof(struct in6_addr));
-#else
-        SAFAM(&sock_addr) = AF_INET;
-        sock_addr.sin_addr.s_addr = INADDR_ANY;
-#endif
-    } else {
-        int gai_err;
-        struct addrinfo hints;
-        struct addrinfo *res;
-
-        memset(&hints, 0, sizeof(hints));
-
-/* - This code should be able to parse both IPv4 and IPv6 internet
- * addresses and put them in the sock_addr variable.
- * - Much neater now.
- * - Bug: Can't handle hostnames, only IP addresses.  Not sure
- * exactly why.  But then again, I'm not sure exactly why
- * there is a man page for getipnodebyname (which getaddrinfo
- * says it uses) but no corresponding function in libc.
- * -- Matthew Danish [3/20/2001]
- */
-
-#ifdef INET6
-        hints.ai_family = AF_INET6;
-#else
-        hints.ai_family = AF_INET;
-#endif
-
-        hints.ai_flags  = AI_PASSIVE;
-
-        gai_err = getaddrinfo(address, NULL, &hints, &res);
-        if (gai_err != 0) {
-            error_init(err, gai_err, "error parsing server socket address; %s", 
-                       gai_strerror(gai_err));
-            return 0;
-        }
-
-        memcpy(&sock_addr, res->ai_addr, res->ai_addrlen);
-        freeaddrinfo(res);
-    } 
-
-    if (port == 0) {
-        SINPORT(&sock_addr) = htons(DEFAULT_FTP_PORT);
-    } else {
-        SINPORT(&sock_addr) = htons(port);
-    }
-
-
-    inet_ntop_ret = inet_ntop(SAFAM(&sock_addr), 
-                              (void *)&SINADDR(&sock_addr), 
-                              buf, 
-                              sizeof(buf));
-    if (inet_ntop_ret == NULL) {
-        error_init(err, errno, "error converting server address to ASCII; %s", 
-                   strerror(errno));
-        return 0;
-    }
-    
-    /* Put some information in syslog */
-    syslog(LOG_INFO, "Binding interface '%s', port %d, max clients %d\n", buf, 
-        ntohs(SINPORT(&sock_addr)), max_connections);    
-    
-
-    /* okay, finally do some socket manipulation */
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
-        error_init(err, errno, "error creating socket; %s", strerror(errno));
-        return 0;
-    }
-
-    reuseaddr = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseaddr, 
-                   sizeof(int)) !=0) 
-    {
-        close(fd);
-        error_init(err, errno, "error setting socket to reuse address; %s", 
-                   strerror(errno));
-        return 0;
-    }
-
-    if (bind(fd, (struct sockaddr *)&sock_addr, 
-             sizeof(struct sockaddr_in)) != 0) 
-    {
-        close(fd);
-        error_init(err, errno, "error binding address; %s", strerror(errno));
-        return 0;
-    }
-
-    if (listen(fd, SOMAXCONN) != 0) {
-        close(fd);
-        error_init(err, errno, "error setting socket to listen; %s", 
-                   strerror(errno));
-        return 0;
-    }
+    if ( ServerOutSetup( outdevice ) ) return 0 ;
 
     /* prevent socket from blocking on accept() */
-    flags = fcntl(fd, F_GETFL);
+    flags = fcntl(outdevice->fd, F_GETFL);
     if (flags == -1) {
-        close(fd);
-        error_init(err, errno, "error getting flags on socket; %s", 
-                   strerror(errno));
+        ERROR_CONNECT("Error getting flags on socket\n") ;
         return 0;
     }
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
-        close(fd);
-        error_init(err, errno, "error setting socket to non-blocking; %s", 
-                   strerror(errno));
+    if (fcntl(outdevice->fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        ERROR_CONNECT("Error setting socket to non-blocking\n") ;
         return 0;
     }
 
     /* create a pipe to wake up our listening thread */
     if (pipe(pipefds) != 0) {
-        close(fd);
-        error_init(err, errno, "error creating pipe for internal use; %s", 
-                   strerror(errno));
+        ERROR_CONNECT("Error creating pipe for internal use\n") ;
         return 0;
     }
 
     /* now load the values into the structure, since we can't fail from
        here */
-    f->fd = fd;
-    f->max_connections = max_connections;
+    f->fd = outdevice->fd;
+    f->max_connections = max_clients ;
     f->num_connections = 0;
-    f->inactivity_timeout = inactivity_timeout;
+    f->inactivity_timeout = ftp_timeout ;
     pthread_mutex_init(&f->mutex, NULL);
 
-    daemon_assert(strlen(dir) < sizeof(f->dir));
-    strcpy(f->dir, dir);
+    strcpy(f->dir, "/");
     f->listener_running = 0;
 
     f->shutdown_request_send_fd = pipefds[1];

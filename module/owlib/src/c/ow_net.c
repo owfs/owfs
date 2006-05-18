@@ -254,6 +254,9 @@ int ClientConnect( struct connection_in * in ) {
     return -1 ;
 }
 
+int ServerOutSetup( struct connection_out * out ) {
+    return ServerAddr( out ) || (ServerListen( out )<0) ;
+}
 
 /*
  Loops through outdevices, starting a detached thread for each 
@@ -306,7 +309,7 @@ static void * ServerProcessOut( void * vp ) {
 
     pthread_detach( pthread_self() ) ;
 
-    if ( ServerAddr( sps->out ) || (ServerListen( sps->out )<0) ) {
+    if ( ServerOutSetup( sps->out ) ) {
         LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(sps->out->name),sps->out->index) ;
         (sps->Exit)(1) ;
     }
@@ -354,10 +357,10 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 #else /* OW_MT */
 
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
-    if ( indevices==0 ) {
+    if ( outdevices==0 ) {
         LEVEL_CONNECT("Not output device (port) specified. Exiting.\n") ;
         Exit(1) ;
-    } else if ( indevices>1 ) {
+    } else if ( outdevices>1 ) {
         LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n",indevices) ;
         Exit(1) ;
     } else if ( ServerAddr( outdevice ) || (ServerListen( outdevice )<0) ) {

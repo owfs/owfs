@@ -166,8 +166,6 @@ struct telnet_session_s {
     int out_buflen;
 } ;
 
-void ow_exit( int e ) ;
-
 #ifdef NDEBUG
 
  #define daemon_assert(expr)
@@ -282,7 +280,7 @@ struct ftp_listener_s {
     pthread_mutex_t mutex;
 
     /* starting directory */
-    char dir[PATH_MAX+1];
+    char dir[3] ; // only root directory for OWFS
 
     /* boolean defining whether listener is running or not */
     int listener_running;
@@ -301,8 +299,7 @@ struct ftp_listener_s {
 
 } ;
 
-int ftp_listener_init(struct ftp_listener_s *f, char *address, int port,
-    int max_connections, int inactivity_timeout, struct error_code_s *err);
+int ftp_listener_init(struct ftp_listener_s *f, struct error_code_s *err);
 int ftp_listener_start(struct ftp_listener_s *f, struct error_code_s *err);
 void ftp_listener_stop(struct ftp_listener_s *f);
 

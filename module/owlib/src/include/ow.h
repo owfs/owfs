@@ -316,6 +316,8 @@ struct connection_out ;
 extern int outdevices ;
 extern int indevices ;
 extern char * SimpleBusName ;
+extern int max_clients ;
+extern int ftp_timeout ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -690,6 +692,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) ;
 int ClientConnect( struct connection_in * in ) ;
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
 void FreeClientAddr(  struct connection_in * in ) ;
+int ServerOutSetup( struct connection_out * out ) ;
 
 int OW_ArgNet( const char * arg ) ;
 int OW_ArgServer( const char * arg ) ;
