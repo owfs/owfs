@@ -204,11 +204,6 @@ int ClientConnect( struct connection_in * in ) {
     int fd ;
     struct addrinfo *ai ;
 
-    if(!in) {
-      //printf("ClientConnect: in is NULL\n");
-      return -1 ;
-    }
-
     if ( in->connin.server.ai == NULL ) {
         LEVEL_CONNECT("Client address not yet parsed\n");
         return -1 ;
@@ -254,8 +249,8 @@ int ClientConnect( struct connection_in * in ) {
     in->connin.server.ai_ok = NULL ;
     INBUSUNLOCK(in);
 
+    ERROR_CONNECT("ClientConnect: Socket problem\n") ;
     STAT_ADD1(NET_connection_errors);
-    //LEVEL_DEFAULT("ClientConnect: Socket problem %d [%s]\n", errno, strerror(errno)) ;
     return -1 ;
 }
 

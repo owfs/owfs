@@ -20,7 +20,6 @@ $Id$
 static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
-static int ConnectionError( const struct parsedname * pn ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
 static uint32_t SetupSemi( const struct parsedname * pn ) ;
@@ -64,7 +63,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
     int ret = 0 ;
     (void) path;  // not used anymore
 
-    if ( connectfd < 0 ) return ConnectionError(pn) ;
+    if ( connectfd < 0 ) -EIO ;
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_size ;
     sm.sg = SetupSemi(pn) ;
@@ -76,7 +75,7 @@ int ServerSize( const char * path, const struct parsedname * pn ) {
         pathnow = pn->path;
     }
     //printf("ServerSize pathnow=%s (path=%s)\n",pathnow, path);
-    LEVEL_CALL("SERVERSIZE path=%s\n", SAFESTRING(pathnow));
+    LEVEL_CALL("SERVER(%d)SIZE path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -97,7 +96,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
-    if ( connectfd < 0 ) return ConnectionError(pn) ;
+    if ( connectfd < 0 ) return -EIO ;
     //printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_read ;
@@ -112,7 +111,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
         pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
-    LEVEL_CALL("SERVERREAD path=%s\n", SAFESTRING(pathnow));
+    LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -133,7 +132,7 @@ int ServerPresence( const struct parsedname * pn ) {
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
-    if ( connectfd < 0 ) return ConnectionError(pn) ;
+    if ( connectfd < 0 ) return -EIO ;
     //printf("ServerPresence pn->path=%s\n",pn->path);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_presence ;
@@ -146,7 +145,7 @@ int ServerPresence( const struct parsedname * pn ) {
         pathnow = pn->path;
     }
     //printf("ServerPresence path=%s\n", pathnow);
-    LEVEL_CALL("SERVERPRESENCE path=%s\n", SAFESTRING(pathnow));
+    LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
@@ -167,7 +166,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
-    if ( connectfd < 0 ) return ConnectionError(pn) ;
+    if ( connectfd < 0 ) return -EIO ;
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_write ;
@@ -183,7 +182,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
-    LEVEL_CALL("SERVERWRITE path=%s\n", SAFESTRING(pathnow));
+    LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
     if ( ret ) {
     } else if ( ToServer( connectfd, &sm, pathnow, buf, size) ) {
@@ -208,18 +207,14 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct client_msg cm ;
     int connectfd = ClientConnect( pn->in ) ;
 
-    if ( connectfd < 0 ) return ConnectionError(pn) ;
+    if ( connectfd < 0 ) return -EIO ;
 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_dir ;
 
     sm.sg =  SetupSemi(pn) ;
-    if( SpecifiedBus(pn) ) {
-        sm.sg |= (1<<BUSRET_BIT) ; // make sure it returns bus-list
-    }
 
-    LEVEL_CALL("SERVERDIR path=%s\n", SAFESTRING(pn->path_busless));
-
+    LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
     if ( ToServer( connectfd, &sm, pn->path_busless, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
@@ -423,12 +418,6 @@ static int ToServer( int fd, struct server_msg * sm, char * path, char * data, s
     sm->offset  = htonl(sm->offset)    ;
 
     return writev( fd, io, nio ) != (payload + sizeof(struct server_msg)) ;
-}
-
-static int ConnectionError( const struct parsedname * pn ) {
-    (void) pn ;
-    LEVEL_CONNECT("Unable to open socket\n") ;
-    return -EIO ;
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
