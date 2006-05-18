@@ -128,8 +128,7 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     } // loop until through serial number bits
 
     if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
-      /* A minor "error" and should perhaps only return -1 to avoid
-      * reconnect */
+      /* Unsuccessful search or error -- possibly a device suddenly added */
         return -EIO ;
     }
     if((ds->sn[0] & 0x7F) == 0x04) {
@@ -637,6 +636,28 @@ if (!i2c_check_functionality(adapter,
     return DS2482_reset(&pn) ;
 }
 #endif
+
+/* read status register */
+/* should already be set to read from there */
+/* will read at min time, avg time, max time, and another 50% */
+/* returns 0 good, 1 bad */
+/* tests to make sure bus not busy */
+static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) {
+    unsigned long int delta_usec = (max_usec-min_usec)/2 ;
+    int i ;
+    UT_delay_us( min_usec ) ; // at least get minimum out of the way
+    do {
+        int ret = i2c_smbus_read_byte( fd ) ;
+        if ( ret < 0 ) return 1 ;
+        if ( ( ret & DS2482_REG_STS_1WB ) == 0x00 ) {
+            c[0] = (BYTE) ret ;
+            return 0 ;
+        }
+        if ( i++ == 3 ) return 1 ;
+       UT_delay_us( delta_usec ) ; // increment up to three times
+    } while ( 1 ) ;
+}
+
 /* DS2482 Reset -- A little different from DS2480B */
 // return 1 shorted, 0 ok, <0 error
 static int DS2482_reset( const struct parsedname * pn ) {
@@ -647,19 +668,14 @@ static int DS2482_reset( const struct parsedname * pn ) {
 
     /* write the RESET code */
     if( i2c_smbus_write_byte( fd,  DS2482_CMD_1WIRE_RESET ) ) return -1 ;
-    
+
     /* wait */
-    UT_delay_us(1250) ; // rstl+rsth+.25 usec
+    // rstl+rsth+.25 usec
+
     /* read status */
-    c = (BYTE) i2c_smbus_read_byte( fd ) ;
+    if ( DS2482_readstatus( &c, fd, 1125, 1250 ) ) return -1 ;
 
-    /* test if we waited long enough */
-    if ( c & 0x01 ) {
-        UT_delay_us(250) ; // rstl+rsth+.25 usec
-        c = (BYTE) i2c_smbus_read_byte( fd ) ;
-    }
-
-    pn->in->AnyDevices = UT_getbit(c,1) ;
+    pn->in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0 ;
     
     return 0 ;
 }
