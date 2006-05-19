@@ -114,7 +114,7 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
 
 static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* paged access */
-//    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
+    //if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
     if ( OW_write_paged( buf, size, offset, pn, 32, OW_w_mem) ) return -EFAULT ;
     return 0 ;
 }
@@ -143,7 +143,6 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
     /* Copy to scratchpad */
     if ( BUS_transaction( tcopy, pn ) ) return 1 ;
 
-
     /* Re-read scratchpad and compare */
     p[0] = 0xAA ;
     if ( BUS_transaction( tread, pn ) ) return 1 ;
@@ -158,7 +157,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
 }
 
 static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
-    BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
+    BYTE p[3] = { 0xF0, offset&0xFF , (offset>>8)&0xFF, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -167,6 +166,5 @@ static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const 
     } ;
 
     if ( BUS_transaction( t, pn ) ) return 1 ;
-
     return 0 ;
 }

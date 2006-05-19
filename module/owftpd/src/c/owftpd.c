@@ -21,7 +21,6 @@ static void ow_exit( int e ) ;
 
 int main(int argc, char *argv[]) {
     int c;
-    struct error_code_s err;
     struct ftp_listener_s ftp_listener;
     sigset_t term_signal;
     int sig;
@@ -74,14 +73,14 @@ int main(int argc, char *argv[]) {
     signal(SIGPIPE, SIG_IGN);         
 
     /* create our main listener */
-    if (!ftp_listener_init(&ftp_listener, &err) ) {
+    if (!ftp_listener_init(&ftp_listener) ) {
         LEVEL_CONNECT("Problem initializing FTP listener\n") ;
         ow_exit(1);
     }
 
     /* start our listener */
-    if (ftp_listener_start(&ftp_listener, &err) == 0) {
-        LEVEL_CONNECT("Problem starting FTP service; %s", error_get_desc(&err));
+    if (ftp_listener_start(&ftp_listener) == 0) {
+        LEVEL_CONNECT("Problem starting FTP service\n");
         ow_exit(1);
     }
 
@@ -99,6 +98,7 @@ int main(int argc, char *argv[]) {
     ftp_listener_stop(&ftp_listener);
     LEVEL_CONNECT("All connections finished, FTP server exiting");
     ow_exit(0);
+    return 0 ;
 }
 
 static void ow_exit( int e ) {

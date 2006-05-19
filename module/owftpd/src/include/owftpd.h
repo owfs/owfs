@@ -136,7 +136,7 @@ struct watchdog_s {
     struct watched_s *newest;
 } ;
 
-int watchdog_init(struct watchdog_s *w, int inactivity_timeout, struct error_code_s *err);
+int watchdog_init(struct watchdog_s *w, int inactivity_timeout);
 void watchdog_add_watched(struct watchdog_s *w, struct watched_s *watched);
 void watchdog_defer_watched( struct watched_s *watched);
 void watchdog_remove_watched(struct watched_s *watched);
@@ -252,8 +252,7 @@ int ftp_session_init(struct ftp_session_s *f,
                      const sockaddr_storage_t *client_addr,
                      const sockaddr_storage_t *server_addr,
                      struct telnet_session_s *t,
-                     const char *dir,
-                     struct error_code_s *err);
+                     const char *dir);
 void ftp_session_drop(struct ftp_session_s *f, const char *reason);
 void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched);
 void ftp_session_destroy(struct ftp_session_s *f);
@@ -299,8 +298,8 @@ struct ftp_listener_s {
 
 } ;
 
-int ftp_listener_init(struct ftp_listener_s *f, struct error_code_s *err);
-int ftp_listener_start(struct ftp_listener_s *f, struct error_code_s *err);
+int ftp_listener_init(struct ftp_listener_s *f);
+int ftp_listener_start(struct ftp_listener_s *f);
 void ftp_listener_stop(struct ftp_listener_s *f);
 
 /* special macro for handling EPSV ALL requests */

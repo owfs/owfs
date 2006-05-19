@@ -10,14 +10,12 @@ static void insert(struct watchdog_s *w, struct watched_s *watched);
 static void delete(struct watchdog_s *w, struct watched_s *watched);
 static void *watcher(void *void_w);
 
-int watchdog_init(struct watchdog_s *w, int inactivity_timeout, struct error_code_s *err)
-{
+int watchdog_init(struct watchdog_s *w, int inactivity_timeout) {
     pthread_t thread_id;
     int error_code;
 
     daemon_assert(w != NULL);
     daemon_assert(inactivity_timeout > 0);
-    daemon_assert(err != NULL);
 
     pthread_mutex_init(&w->mutex, NULL);
     w->inactivity_timeout = inactivity_timeout;
@@ -26,8 +24,8 @@ int watchdog_init(struct watchdog_s *w, int inactivity_timeout, struct error_cod
 
     error_code = pthread_create(&thread_id, NULL, watcher, w);
     if (error_code != 0) {
-	error_init(err, error_code, "error %d from pthread_create()", 
-	  error_code);
+        errno = error_code ;
+        ERROR_CONNECT("Watchdog thread create problem\n") ;
         return 0;
     }
     pthread_detach(thread_id);

@@ -386,6 +386,11 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
             s -= offset ;
             if ( s > size ) s = size ;
             ret = (pn->ft->write.a)(buf,s,offset,pn) ;
+            /* Special code to exclude partial data from cache */
+            if ( s < fl ) {
+                if ( cbuf ) free(cbuf) ;
+                cbuf = NULL ;
+            }
             if ( cbuf && ret==0 ) strncpy(cbuf,buf,s) ; /* post-parse cachable string creation */
         }
         break ;
@@ -395,6 +400,11 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
             s -= offset ;
             if ( s > size ) s = size ;
             ret = (pn->ft->write.b)(buf,s,offset,pn) ;
+            /* Special code to exclude partial data from cache */
+            if ( s < fl ) {
+                if ( cbuf ) free(cbuf) ;
+                cbuf = NULL ;
+            }
             if ( cbuf && ret==0 ) memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
         }
         break ;
@@ -543,6 +553,11 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
                 s -= offset ;
                 if ( s > size ) s = size ;
                 ret = (pn->ft->write.a)(buf,s,offset,pn) ;
+                /* Special code to exclude partial data from cache */
+                if ( s < ffl ) {
+                    if ( cbuf ) free(cbuf) ;
+                    cbuf = NULL ;
+                }
                 if ( cbuf && ret==0 ) strncpy(cbuf,buf,s) ; /* post-parse cachable string creation */
             }
         }
@@ -556,6 +571,11 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
                 s -= offset ;
                 if ( s > size ) s = size ;
                 ret = (pn->ft->write.b)(buf,s,offset,pn) ;
+                /* Special code to exclude partial data from cache */
+                if ( s < ffl ) {
+                    if ( cbuf ) free(cbuf) ;
+                    cbuf = NULL ;
+                }
                 if ( cbuf && ret==0 ) memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
             }
         }
@@ -758,6 +778,11 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
                 if ( (ret = (pn->ft->read.b)(all,ffl,(const off_t)0,pn))==0 ) {
                     memcpy(&all[suglen*pn->extension+offset],buf,s) ;
                     ret = (pn->ft->write.b)(all,ffl,(const off_t)0,pn) ;
+                    /* Special code to exclude partial data from cache */
+                    if ( s < ffl ) {
+                        if ( cbuf ) free(cbuf) ;
+                        cbuf = NULL ;
+                    }
                     if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
                 }
                 free( all ) ;
@@ -779,6 +804,11 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
                 if ((ret = (pn->ft->read.a)(all,ffl,(const off_t)0,pn))==0 ) {
                     memcpy(&all[(suglen+1)*pn->extension],buf,s) ;
                     ret = (pn->ft->write.a)(all,ffl,(const off_t)0,pn) ;
+                    /* Special code to exclude partial data from cache */
+                    if ( s < ffl ) {
+                        if ( cbuf ) free(cbuf) ;
+                        cbuf = NULL ;
+                    }
                     if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
                 }
                 free( all ) ;
