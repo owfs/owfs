@@ -624,12 +624,14 @@ int DS2482_detect( struct connection_in * in ) {
         } else {
             struct parsedname pn ;
             int ret ;
+            LEVEL_CONNECT("Found an i2c device at %s address %d\n",in->name, test_address[i]) ;
             FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
             pn.in = in ;
             in->connin.i2c.i2c_address = test_address[i] ;
             ret = DS2482_reset(&pn) ;
             FS_ParsedName_destroy(&pn) ; // minimal parsename -- no destroy needed
-            if (ret) return -ENODEV ;
+            if (ret) continue ;
+            LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n",in->name, test_address[i]) ;
             return HeadChannel(in) ;
         }
     }
