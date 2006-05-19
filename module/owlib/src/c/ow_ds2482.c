@@ -23,9 +23,9 @@ $Id$
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
 static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) ;
-static int DS2482_send_and_get( const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname * pn ) ;
+static int DS2482_send_and_get( int fd, const BYTE * wr, BYTE * rd ) ;
 static int DS2482_reset( const struct parsedname * pn ) ;
-static int DS2482_sendback_bits( const BYTE * outbits , BYTE * inbits , const size_t length, const struct parsedname * pn ) ;
+static int DS2482_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static void DS2482_setroutines( struct interface_routines * f ) ;
 static int HeadChannel( struct connection_in * in ) ;
 static int CreateChannels( struct connection_in * in ) ;
@@ -85,8 +85,8 @@ static void DS2482_setroutines( struct interface_routines * f ) {
 //    f->testoverdrive = ;
     f->PowerByte     = BUS_PowerByte_low     ;
 //    f->ProgramPulse = ;
-    f->sendback_data = BUS_sendback_data_low ;
-    f->sendback_bits = DS2482_sendback_bits  ;
+    f->sendback_data = DS2482_sendback_data  ;
+    f->sendback_bits = NULL                  ;
     f->select        = BUS_select_low        ;
     f->reconnect     = NULL                  ;
     f->close         = COM_close             ;
@@ -104,6 +104,9 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     // if the last call was not the last one
     if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
     if ( ds->LastDevice ) return -ENODEV ;
+
+    /* Make sure we're using the correct channel */
+    if ( DS2482_channel_select(pn) ) return -EIO ;
 
     /* Appropriate search command */
     if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
@@ -600,8 +603,6 @@ static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind)
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
 int DS2482_detect( struct connection_in * in ) {
-    struct parsedname pn ;
-    int ret = 0 ;
     int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, } ; // the last 4 are -800 only
     int i ;
     
@@ -612,30 +613,29 @@ int DS2482_detect( struct connection_in * in ) {
         return -ENODEV ;
     }
 
-    /* clycle though the possible addresses */
+    /* Set up low-level routines */
+    DS2482_setroutines( & (in->iroutines) ) ;
+
+    /* cycle though the possible addresses */
     for ( i=0 ; i<8 ; ++i ) {
         /* set the candidate address */
         if ( ioctl(in->connin.i2c.fd,I2C_SLAVE,test_address[i]) < 0 ) {
             ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ;
+        } else {
+            struct parsedname pn ;
+            int ret ;
+            FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
+            pn.in = in ;
+            in->connin.i2c.i2c_address = test_address[i] ;
+            ret = DS2482_reset(&pn) ;
+            FS_ParsedName_destroy(&pn) ; // minimal parsename -- no destroy needed
+            if (ret) return -ENODEV ;
+            return HeadChannel(in) ;
         }
     }
     /* fellthough, no device found */
     return -ENODEV ;
 }
-#if 0    
-if (!i2c_check_functionality(adapter,
-         I2C_FUNC_SMBUS_WRITE_BYTE_DATA |
-                 I2C_FUNC_SMBUS_BYTE))
-        /* Set up low-level routines */
-    DS2482_setroutines( & (in->iroutines) ) ;
-
-    
-    FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
-    pn.in = in ;
-
-    return DS2482_reset(&pn) ;
-}
-#endif
 
 /* read status register */
 /* should already be set to read from there */
@@ -666,6 +666,9 @@ static int DS2482_reset( const struct parsedname * pn ) {
 
     if( fd < 0 ) return -1;
 
+    /* Make sure we're using the correct channel */
+    if ( DS2482_channel_select(pn) ) return -1 ;
+
     /* write the RESET code */
     if( i2c_smbus_write_byte( fd,  DS2482_CMD_1WIRE_RESET ) ) return -1 ;
 
@@ -673,127 +676,47 @@ static int DS2482_reset( const struct parsedname * pn ) {
     // rstl+rsth+.25 usec
 
     /* read status */
-    if ( DS2482_readstatus( &c, fd, 1125, 1250 ) ) return -1 ;
+    if ( DS2482_readstatus( &c, fd, 1125, 1250 ) ) return -1 ; // 8 * Tslot
 
     pn->in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0 ;
     
     return 0 ;
 }
 
-/* Symmetric */
-/* send bits -- read bits */
-/* Actually uses bit zero of each byte */
-/* Dispatches DS2482_MAX_BITS "bits" at a time */
-#define DS2482_MAX_BITS 24
-int DS2482_sendback_bits( const BYTE * outbits , BYTE * inbits , const size_t length, const struct parsedname * pn ) {
-    int ret ;
-    BYTE d[DS2482_MAX_BITS] ;
-    size_t l=0 ;
-    size_t i=0 ;
-    size_t start = 0 ;
+static int DS2482_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) {
+    int fd = pn->in->connin.i2c.fd ;
+    size_t i ;
 
+    /* Make sure we're using the correct channel */
+    if ( DS2482_channel_select(pn) ) return -1 ;
+
+    for ( i = 0 ; i < len ; ++i ) {
+        if ( DS2482_send_and_get( fd, data[i], &resp[i] ) ) return 1 ;
+    }
     return 0 ;
 }
 
-/* Routine to send a string of bits and get another string back */
-/* This seems rather COM-port specific */
-/* Indeed, will move to DS2482 */
-static int DS2482_send_and_get( const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname * pn ) {
-    size_t gl = length ;
-    ssize_t r ;
-    size_t sl = length ;
-    int rc ;
+/* Single byte -- assumes channel selection already done */
+static int DS2482_send_and_get( int fd, const BYTE * wr, BYTE * rd ) {
+    int read_back ;
+    BYTE c ;
 
-    if ( sl > 0 ) {
-        /* first flush... should this really be done? Perhaps it's a good idea
-        * so read function below doesn't get any other old result */
-        COM_flush(pn);
-    
-        /* send out string, and handle interrupted system call too */
-        while(sl > 0) {
-            if(!pn->in) break;
-            r = write(pn->in->fd, &bussend[length-sl], sl);
-            if(r < 0) {
-                if(errno == EINTR) {
-                    /* write() was interrupted, try again */
-                    STAT_ADD1_BUS(BUS_write_interrupt_errors,pn->in);
-                    continue;
-                }
-                break;
-            }
-            sl -= r;
-        }
-        if(pn->in) {
-            tcdrain(pn->in->fd) ; /* make sure everthing is sent */
-            gettimeofday( &(pn->in->bus_write_time) , NULL );
-        }
-        if(sl > 0) {
-            STAT_ADD1_BUS(BUS_write_errors,pn->in);
-            return -EIO;
-        }
-        //printf("SAG written\n");
-    }
-    
-    /* get back string -- with timeout and partial read loop */
-    if ( busget && length ) {
-        while ( gl > 0 ) {
-            fd_set readset;
-            struct timeval tv;
-            //printf("SAG readlength=%d\n",gl);
-            if(!pn->in) break;
-#if 1
-                /* I can't imagine that 5 seconds timeout is needed???
-                * Any comments Paul ? */
-                tv.tv_sec = 5;
-                tv.tv_usec = 0;
-#else
-                tv.tv_sec = 0;
-                tv.tv_usec = 500000;  // 500ms
-#endif
-                /* Initialize readset */
-                FD_ZERO(&readset);
-                FD_SET(pn->in->fd, &readset);
-            
-                /* Read if it doesn't timeout first */
-                rc = select( pn->in->fd+1, &readset, NULL, NULL, &tv );
-                if( rc > 0 ) {
-                //printf("SAG selected\n");
-                    /* Is there something to read? */
-                    if( FD_ISSET( pn->in->fd, &readset )==0 ) {
-                        STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
-                        return -EIO ; /* error */
-                    }
-                    update_max_delay(pn);
-                    r = read( pn->in->fd, &busget[length-gl], gl ) ; /* get available bytes */
-                    //printf("SAG postread ret=%d\n",r);
-                    if (r < 0) {
-                        if(errno == EINTR) {
-                            /* read() was interrupted, try again */
-                            STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
-                            continue;
-                        }
-                        STAT_ADD1_BUS(BUS_read_errors,pn->in);
-                        return r ;
-                    }
-                    gl -= r ;
-                } else if(rc < 0) { /* select error */
-                    if(errno == EINTR) {
-                        /* select() was interrupted, try again */
-                        STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
-                        continue;
-                    }
-                    STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
-                    return -EINTR;
-                } else { /* timed out */
-                    STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
-                    return -EAGAIN;
-                }
-        }
-    } else {
-        /* I'm not sure about this... Shouldn't flush buffer if
-        user decide not to read any bytes. Any comments Paul ? */
-        //COM_flush(pn) ;
-    }
+    /* Write TRIPLE command */
+    if (i2c_smbus_write_byte_data(fd, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0)
+       return 1;
+
+    /* read status */
+    if ( DS2482_readstatus( &c, fd, 530, 585 ) ) return -1 ;
+
+    /* Select the data register */
+    if (i2c_smbus_write_byte_data(fd,DS2482_CMD_SET_READ_PTR,DS2482_PTR_CODE_DATA)<0) return 1 ;
+
+    /* Read the data byte */
+    read_back = i2c_smbus_read_byte(fd);
+
+    if ( read_back < 0 ) return 1 ;
+    rd[0] = (BYTE) read_back ;
+
     return 0 ;
 }
 
@@ -843,9 +766,20 @@ static int CreateChannels( struct connection_in * in ) {
 
 static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) {
     /* 3 bits in bits */
-    (void) bits ;
-    (void) pn ;
-    UT_delay_us(225) ; // 250usec = 3*Tslot
+    int fd = pn->in->connin.i2c.fd ;
+    BYTE c ;
+
+    /* Write TRIPLE command */
+    if (i2c_smbus_write_byte_data(fd, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0)
+       return 1;
+
+    /* read status */
+    if ( DS2482_readstatus( &c, fd, 198, 219 ) ) return -1 ; // 250usec = 3*Tslot
+
+    bits[0] = (c & DS2482_REG_STS_SBR ) != 0 ;
+    bits[1] = (c & DS2482_REG_STS_TSB ) != 0 ;
+    bits[2] = (c & DS2482_REG_STS_DIR ) != 0 ;
+
     return 0 ;
 }
 
@@ -853,6 +787,7 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
     struct connection_in * head = pn->in->connin.i2c.head ;
     int chan = pn->in->connin.i2c.index ;
     int fd = pn->in->connin.i2c.fd ;
+    int read_back ;
     /**
      * Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
      * To set the channel, write the value at the index of the channel.
@@ -863,12 +798,19 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
     static const BYTE R_chan[8] =
     { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
+    /* Already properly selected? */
+    /* All `100 (1 channel) will be caught here */
     if ( chan == head->connin.i2c.current ) return 0 ;
 
+    /* Select command */
     if (i2c_smbus_write_byte_data(fd, DS2482_CMD_CHANNEL_SELECT, W_chan[chan] ) < 0 ) return -EIO ; 
     
-    if (i2c_smbus_read_byte(fd) != R_chan[chan]) return -ENODEV ;
+    /* Read back and confirm */
+    read_back = i2c_smbus_read_byte(fd) ;
+    if ( read_back < 0 ) return -ENODEV ;
+    if ( ((BYTE)read_back) != R_chan[chan]) return -ENODEV ;
 
+    /* Set the channel in head */
     head->connin.i2c.current = pn->in->connin.i2c.index ;
     return 0 ;
 }
