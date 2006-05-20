@@ -30,6 +30,7 @@ static void DS2482_setroutines( struct interface_routines * f ) ;
 static int HeadChannel( struct connection_in * in ) ;
 static int CreateChannels( struct connection_in * in ) ;
 static int DS2482_channel_select( const struct parsedname * pn ) ;
+static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -348,36 +349,6 @@ static int ds2482_set_channel(struct ds2482_data *pdev, u8 channel)
 
 
 /**
- * Performs the touch-bit function, which writes a 0 or 1 and reads the level.
- *
- * @param data The ds2482 channel pointer
- * @param bit  The level to write: 0 or non-zero
- * @return The level read: 0 or 1
- */
-static u8 ds2482_w1_touch_bit(void *data, u8 bit)
-{
-   struct ds2482_w1_chan *pchan = data;
-   struct ds2482_data    *pdev = pchan->pdev;
-   int status = -1;
-
-   down(&pdev->access_lock);
-
-   /* Select the channel */
-   ds2482_wait_1wire_idle(pdev);
-   if (pdev->w1_count > 1)
-       ds2482_set_channel(pdev, pchan->channel);
-
-   /* Send the touch command, wait until 1WB == 0, return the status */
-   if (!ds2482_send_cmd_data(pdev, DS2482_CMD_1WIRE_SINGLE_BIT,
-                 bit ? 0xFF : 0))
-       status = ds2482_wait_1wire_idle(pdev);
-
-   up(&pdev->access_lock);
-
-   return (status & DS2482_REG_STS_SBR) ? 1 : 0;
-}
-
-/**
  * Performs the triplet function, which reads two bits and writes a bit.
  * The bit written is determined by the two reads:
  *   00 => dbit, 01 => 0, 10 => 1
@@ -605,10 +576,11 @@ static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind) {
 int DS2482_detect( struct connection_in * in ) {
     int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, } ; // the last 4 are -800 only
     int i ;
+    int fd ;
     
     /* open the COM port */
-    in->connin.i2c.fd = open(in->name,O_RDWR) ;
-    if ( in->connin.i2c.fd < 0 ) {
+    fd = open(in->name,O_RDWR) ;
+    if ( fd < 0 ) {
         ERROR_CONNECT("Could not open i2c device %s\n",in->name) ;
         return -ENODEV ;
     }
@@ -619,13 +591,13 @@ int DS2482_detect( struct connection_in * in ) {
     /* cycle though the possible addresses */
     for ( i=0 ; i<8 ; ++i ) {
         /* set the candidate address */
-        if ( ioctl(in->connin.i2c.fd,I2C_SLAVE,test_address[i]) < 0 ) {
+        if ( ioctl(fd,I2C_SLAVE,test_address[i]) < 0 ) {
             ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",test_address[i]) ;
         } else {
-            struct parsedname pn ;
-            int ret ;
+            BYTE c ;
             LEVEL_CONNECT("Found an i2c device at %s address %d\n",in->name, test_address[i]) ;
             /* Provisional setup as a DS2482-100 ( 1 channel ) */
+            in->connin.i2c.fd = fd ;
             in->connin.i2c.index = 0 ;
             in->connin.i2c.channels = 1 ;
             in->connin.i2c.current = 0 ;
@@ -633,12 +605,15 @@ int DS2482_detect( struct connection_in * in ) {
             in->adapter_name = "DS2482-100" ;
             in->connin.i2c.i2c_address = test_address[i] ;
 
-            /* Test if a reset is possible -- evidence of a real DS2482 */
-            FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
-            pn.in = in ;
-            ret = DS2482_reset(&pn) ;
-            FS_ParsedName_destroy(&pn) ; // minimal parsename -- no destroy needed
-            if (ret) continue ;
+            /* write the RESET code */
+            if (
+               i2c_smbus_write_byte( fd,  DS2482_CMD_RESET )  // reset
+               || DS2482_readstatus(&c,fd,1,2) // pause .5 usec then read status
+               || ( c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST) ) // make sure status is properly set
+              ) {
+                LEVEL_CONNECT("i2c device at %s address %d cannot be reset\n",in->name, test_address[i]) ;
+                continue ; ;
+            }
             LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n",in->name, test_address[i]) ;
 
             /* Now see if DS2482-100 or DS2482-800 */
@@ -655,8 +630,8 @@ int DS2482_detect( struct connection_in * in ) {
 /* returns 0 good, 1 bad */
 /* tests to make sure bus not busy */
 static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) {
-    unsigned long int delta_usec = (max_usec-min_usec)/2 ;
-    int i ;
+    unsigned long int delta_usec = (max_usec-min_usec+1)/2 ;
+    int i = 0 ;
     UT_delay_us( min_usec ) ; // at least get minimum out of the way
     do {
         int ret = i2c_smbus_read_byte( fd ) ;
