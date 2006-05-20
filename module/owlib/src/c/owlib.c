@@ -213,6 +213,12 @@ int LibStart( void ) {
                     }
                 }
                 break ;
+            case bus_i2c:
+                if ( DS2482_detect(in) ) {
+                    LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n",in->name) ;
+                    ret = -ENODEV ;
+                }
+                break ;
             case bus_parallel:
 #ifndef OW_PARPORT
                 ret =  -ENOPROTOOPT ;

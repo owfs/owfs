@@ -112,6 +112,7 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
       // loop to do the search
     for ( bit_number=0 ; bit_number<64 ; ++bit_number ) {
+        LEVEL_DEBUG("DS2482 search bit number %d\n",bit_number);
         /* Set the direction bit */
         if ( bit_number < ds->LastDiscrepancy ) {
             search_direction = UT_getbit(ds->sn,bit_number);
@@ -513,8 +514,7 @@ static u8 ds2482_w1_reset_bus(void *data)
  * The following function does more than just detection. If detection
  * succeeds, it also registers the new chip.
  */
-static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind)
-{
+static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind) {
    struct ds2482_data *data;
    struct i2c_client  *new_client;
    int err = 0;
@@ -625,13 +625,23 @@ int DS2482_detect( struct connection_in * in ) {
             struct parsedname pn ;
             int ret ;
             LEVEL_CONNECT("Found an i2c device at %s address %d\n",in->name, test_address[i]) ;
+            /* Provisional setup as a DS2482-100 ( 1 channel ) */
+            in->connin.i2c.index = 0 ;
+            in->connin.i2c.channels = 1 ;
+            in->connin.i2c.current = 0 ;
+            in->connin.i2c.head = in ;
+            in->adapter_name = "DS2482-100" ;
+            in->connin.i2c.i2c_address = test_address[i] ;
+
+            /* Test if a reset is possible -- evidence of a real DS2482 */
             FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
             pn.in = in ;
-            in->connin.i2c.i2c_address = test_address[i] ;
             ret = DS2482_reset(&pn) ;
             FS_ParsedName_destroy(&pn) ; // minimal parsename -- no destroy needed
             if (ret) continue ;
             LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n",in->name, test_address[i]) ;
+
+            /* Now see if DS2482-100 or DS2482-800 */
             return HeadChannel(in) ;
         }
     }
@@ -653,9 +663,13 @@ static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsi
         if ( ret < 0 ) return 1 ;
         if ( ( ret & DS2482_REG_STS_1WB ) == 0x00 ) {
             c[0] = (BYTE) ret ;
+            LEVEL_DEBUG("DS2482 read status ok\n") ;
             return 0 ;
         }
-        if ( i++ == 3 ) return 1 ;
+        if ( i++ == 3 ) {
+            LEVEL_DEBUG("DS2482 read status fail\n") ;
+            return 1 ;
+        }
        UT_delay_us( delta_usec ) ; // increment up to three times
     } while ( 1 ) ;
 }
@@ -681,7 +695,7 @@ static int DS2482_reset( const struct parsedname * pn ) {
     if ( DS2482_readstatus( &c, fd, 1125, 1250 ) ) return -1 ; // 8 * Tslot
 
     pn->in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0 ;
-    
+    LEVEL_DEBUG("DS2482 Reset\n");
     return 0 ;
 }
 
@@ -724,11 +738,6 @@ static int DS2482_send_and_get( int fd, const BYTE * wr, BYTE * rd ) {
 
 static int HeadChannel( struct connection_in * in ) {
     struct parsedname pn ;
-    in->connin.i2c.channels = 1 ;
-    in->connin.i2c.current = 0 ;
-    in->connin.i2c.head = in ;
-    in->adapter_name = "DS2482-100" ;
-    DS2482_setroutines( & (in->iroutines) ) ;
 #ifdef OW_MT
     pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
 #endif /* OW_MT */
@@ -771,6 +780,7 @@ static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * 
     int fd = pn->in->connin.i2c.fd ;
     BYTE c ;
 
+    LEVEL_DEBUG("-> TRIPLET attempt direction %d\n",direction);
     /* Write TRIPLE command */
     if (i2c_smbus_write_byte_data(fd, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0)
        return 1;
@@ -781,7 +791,7 @@ static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * 
     bits[0] = (c & DS2482_REG_STS_SBR ) != 0 ;
     bits[1] = (c & DS2482_REG_STS_TSB ) != 0 ;
     bits[2] = (c & DS2482_REG_STS_DIR ) != 0 ;
-
+    LEVEL_DEBUG("<- TRIPLET %d %d %d\n",bits[0],bits[1],bits[2]);
     return 0 ;
 }
 
