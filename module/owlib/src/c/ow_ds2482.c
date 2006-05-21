@@ -22,7 +22,7 @@ $Id$
 #include "i2c-dev.h"
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) ;
+static int DS2482_triple( BYTE * bits, int direction, int fd ) ;
 static int DS2482_send_and_get( int fd, const BYTE wr, BYTE * rd ) ;
 static int DS2482_reset( const struct parsedname * pn ) ;
 static int DS2482_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
@@ -32,6 +32,7 @@ static int CreateChannels( struct connection_in * in ) ;
 static int DS2482_channel_select( const struct parsedname * pn ) ;
 static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) ;
 static int SetConfiguration( BYTE c, struct connection_in * in ) ;
+static void DS2482_close( struct connection_in * in ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -91,7 +92,7 @@ static void DS2482_setroutines( struct interface_routines * f ) {
     f->sendback_bits = NULL                  ;
     f->select        = BUS_select_low        ;
     f->reconnect     = NULL                  ;
-    f->close         = COM_close             ;
+    f->close         = DS2482_close             ;
 }
 
 /* uses the "Triple" primative for faster search */
@@ -99,6 +100,7 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
     int bit_number ;
     int last_zero = -1 ;
+    int fd = pn->in->connin.i2c.head->connin.i2c.fd ;
     BYTE bits[3] ;
     int ret ;
 
@@ -121,7 +123,7 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
             search_direction = (bit_number==ds->LastDiscrepancy) ? 1 : 0 ;
         }
         /* Appropriate search command */
-        if ( (ret=DS2482_triple(bits, search_direction, pn)) ) return ret ;
+        if ( (ret=DS2482_triple(bits, search_direction, fd)) ) return ret ;
         if ( bits[0] || bits[1] || bits[2] ) {
             if ( bits[0] && bits[1] ) { /* 1,1 */
                 break ; /* No devices respond */
@@ -660,9 +662,7 @@ static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsi
 // return 1 shorted, 0 ok, <0 error
 static int DS2482_reset( const struct parsedname * pn ) {
     BYTE c;
-    int fd = pn->in->connin.i2c.fd ;
-
-    if( fd < 0 ) return -1;
+    int fd = pn->in->connin.i2c.head->connin.i2c.fd ;
 
     /* Make sure we're using the correct channel */
     if ( DS2482_channel_select(pn) ) return -1 ;
@@ -682,7 +682,7 @@ static int DS2482_reset( const struct parsedname * pn ) {
 }
 
 static int DS2482_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) {
-    int fd = pn->in->connin.i2c.fd ;
+    int fd = pn->in->connin.i2c.head->connin.i2c.fd ;
     size_t i ;
 
     /* Make sure we're using the correct channel */
@@ -752,9 +752,8 @@ static int CreateChannels( struct connection_in * in ) {
     return 0 ;
 }
 
-static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) {
+static int DS2482_triple( BYTE * bits, int direction, int fd ) {
     /* 3 bits in bits */
-    int fd = pn->in->connin.i2c.fd ;
     BYTE c ;
 
     LEVEL_DEBUG("-> TRIPLET attempt direction %d\n",direction);
@@ -775,7 +774,7 @@ static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * 
 static int DS2482_channel_select( const struct parsedname * pn ) {
     struct connection_in * head = pn->in->connin.i2c.head ;
     int chan = pn->in->connin.i2c.index ;
-    int fd = pn->in->connin.i2c.fd ;
+    int fd = head->connin.i2c.fd ;
     BYTE config = pn->in->connin.i2c.configreg ;
     int read_back ;
     /**
@@ -787,6 +786,11 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
     { 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
     static const BYTE R_chan[8] =
     { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
+
+    if ( fd < 0 ) {
+        LEVEL_CONNECT("Calling a closed i2c channel (%d)\n",chan) ;
+        return -EINVAL ;
+    }
 
     /* Already properly selected? */
     /* All `100 (1 channel) will be caught here */
@@ -814,7 +818,7 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
 /* Note, config is stored as only the lower nibble */
 static int SetConfiguration( BYTE c, struct connection_in * in ) {
     struct connection_in * head = in->connin.i2c.head ;
-    int fd = in->connin.i2c.fd ;
+    int fd = head->connin.i2c.fd ;
     int read_back ;
 
     /* Write, readback, and compare configuration register */
@@ -829,4 +833,13 @@ static int SetConfiguration( BYTE c, struct connection_in * in ) {
     in->connin.i2c.configreg = c ;
     head->connin.i2c.configchip = c ;
     return 0 ;
+}
+
+static void DS2482_close( struct connection_in * in ) {
+    struct connection_in * head ;
+    if ( in == NULL ) return ;
+    head = in->connin.i2c.head ;
+    if ( head->connin.i2c.fd < 0 ) return ;
+    close( head->connin.i2c.fd ) ;
+    head->connin.i2c.fd = -1 ;
 }
