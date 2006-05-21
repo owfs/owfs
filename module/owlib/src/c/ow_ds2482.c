@@ -23,7 +23,7 @@ $Id$
 
 static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) ;
 static int DS2482_triple( BYTE * bits, int direction, const struct parsedname * pn ) ;
-static int DS2482_send_and_get( int fd, const BYTE * wr, BYTE * rd ) ;
+static int DS2482_send_and_get( int fd, const BYTE wr, BYTE * rd ) ;
 static int DS2482_reset( const struct parsedname * pn ) ;
 static int DS2482_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static void DS2482_setroutines( struct interface_routines * f ) ;
@@ -31,6 +31,7 @@ static int HeadChannel( struct connection_in * in ) ;
 static int CreateChannels( struct connection_in * in ) ;
 static int DS2482_channel_select( const struct parsedname * pn ) ;
 static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) ;
+static int SetConfiguration( BYTE c, struct connection_in * in ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -38,22 +39,22 @@ static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsi
  *
  * To read the data, issue a register read for any address
  */
-#define DS2482_CMD_RESET       0xF0    /* No param */
+#define DS2482_CMD_RESET               0xF0    /* No param */
 #define DS2482_CMD_SET_READ_PTR        0xE1    /* Param: DS2482_PTR_CODE_xxx */
-#define DS2482_CMD_CHANNEL_SELECT  0xC3    /* Param: Channel byte - DS2482-800 only */
+#define DS2482_CMD_CHANNEL_SELECT      0xC3    /* Param: Channel byte - DS2482-800 only */
 #define DS2482_CMD_WRITE_CONFIG        0xD2    /* Param: Config byte */
-#define DS2482_CMD_1WIRE_RESET     0xB4    /* Param: None */
+#define DS2482_CMD_1WIRE_RESET         0xB4    /* Param: None */
 #define DS2482_CMD_1WIRE_SINGLE_BIT    0x87    /* Param: Bit byte (bit7) */
 #define DS2482_CMD_1WIRE_WRITE_BYTE    0xA5    /* Param: Data byte */
-#define DS2482_CMD_1WIRE_READ_BYTE 0x96    /* Param: None */
+#define DS2482_CMD_1WIRE_READ_BYTE     0x96    /* Param: None */
 /* Note to read the byte, Set the ReadPtr to Data then read (any addr) */
-#define DS2482_CMD_1WIRE_TRIPLET   0x78    /* Param: Dir byte (bit7) */
+#define DS2482_CMD_1WIRE_TRIPLET       0x78    /* Param: Dir byte (bit7) */
 
 /* Values for DS2482_CMD_SET_READ_PTR */
-#define DS2482_PTR_CODE_STATUS     0xF0
-#define DS2482_PTR_CODE_DATA       0xE1
+#define DS2482_PTR_CODE_STATUS         0xF0
+#define DS2482_PTR_CODE_DATA           0xE1
 #define DS2482_PTR_CODE_CHANNEL        0xD2    /* DS2482-800 only */
-#define DS2482_PTR_CODE_CONFIG     0xC3
+#define DS2482_PTR_CODE_CONFIG         0xC3
 
 /**
  * Configure Register bit definitions
@@ -107,10 +108,9 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
     if ( ds->LastDevice ) return -ENODEV ;
 
     /* Make sure we're using the correct channel */
-    if ( DS2482_channel_select(pn) ) return -EIO ;
-
     /* Appropriate search command */
     if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
+
       // loop to do the search
     for ( bit_number=0 ; bit_number<64 ; ++bit_number ) {
         LEVEL_DEBUG("DS2482 search bit number %d\n",bit_number);
@@ -604,6 +604,11 @@ int DS2482_detect( struct connection_in * in ) {
             in->connin.i2c.head = in ;
             in->adapter_name = "DS2482-100" ;
             in->connin.i2c.i2c_address = test_address[i] ;
+#ifdef OW_MT
+            pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
+#endif /* OW_MT */
+            in->busmode = bus_i2c ;
+            in->Adapter = adapter_DS2482_100 ;
 
             /* write the RESET code */
             if (
@@ -615,6 +620,8 @@ int DS2482_detect( struct connection_in * in ) {
                 continue ; ;
             }
             LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n",in->name, test_address[i]) ;
+            in->connin.i2c.configreg = 0x00 ; // default configuration register after RESET
+            // Note, only the lower nibble of the device config stored
 
             /* Now see if DS2482-100 or DS2482-800 */
             return HeadChannel(in) ;
@@ -688,7 +695,7 @@ static int DS2482_sendback_data( const BYTE * data, BYTE * resp, const size_t le
 }
 
 /* Single byte -- assumes channel selection already done */
-static int DS2482_send_and_get( int fd, const BYTE * wr, BYTE * rd ) {
+static int DS2482_send_and_get( int fd, const BYTE wr, BYTE * rd ) {
     int read_back ;
     BYTE c ;
 
@@ -713,13 +720,8 @@ static int DS2482_send_and_get( int fd, const BYTE * wr, BYTE * rd ) {
 
 static int HeadChannel( struct connection_in * in ) {
     struct parsedname pn ;
-#ifdef OW_MT
-    pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
-#endif /* OW_MT */
-    in->busmode = bus_i2c ;
-    in->Adapter = adapter_DS2482_100 ;
 
-    /* Not intentionally put the wrong index */
+    /* Intentionally put the wrong index */
     in->connin.i2c.index = 1 ;
     pn.in = in ;
     if ( DS2482_channel_select(&pn) ) { /* Couldn't switch */
@@ -774,6 +776,7 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
     struct connection_in * head = pn->in->connin.i2c.head ;
     int chan = pn->in->connin.i2c.index ;
     int fd = pn->in->connin.i2c.fd ;
+    BYTE config = pn->in->connin.i2c.configreg ;
     int read_back ;
     /**
      * Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
@@ -799,5 +802,31 @@ static int DS2482_channel_select( const struct parsedname * pn ) {
 
     /* Set the channel in head */
     head->connin.i2c.current = pn->in->connin.i2c.index ;
+
+    /* Now check the configuration register */
+    /* This is since configuration is per chip, not just channel */
+    if ( config != head->connin.i2c.configchip ) return SetConfiguration( config, pn->in ) ;
+
+    return 0 ;
+}
+
+/* Set the configuration register, both for this channel, and for head global data */
+/* Note, config is stored as only the lower nibble */
+static int SetConfiguration( BYTE c, struct connection_in * in ) {
+    struct connection_in * head = in->connin.i2c.head ;
+    int fd = in->connin.i2c.fd ;
+    int read_back ;
+
+    /* Write, readback, and compare configuration register */
+    if ( i2c_smbus_write_byte_data( fd, DS2482_CMD_WRITE_CONFIG, c|(~(c<<4)) )
+        || (read_back=i2c_smbus_read_byte(fd))<0
+        || ((BYTE)read_back != c )
+    ) {
+        head->connin.i2c.configchip = 0xFF ; // bad value to trigger retry
+        LEVEL_CONNECT("Trouble changing DS2482 configuration register\n") ;
+        return -EINVAL ;
+    }
+    in->connin.i2c.configreg = c ;
+    head->connin.i2c.configchip = c ;
     return 0 ;
 }
