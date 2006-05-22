@@ -1355,18 +1355,18 @@ static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd)
     } else {
         daemon_assert(cmd->num_arg == 1);
 
-	/* ignore attempts to send options to "ls" by silently dropping */
-	if (cmd->arg[0].string[0] == '-') {
+        /* ignore attempts to send options to "ls" by silently dropping */
+        if (cmd->arg[0].string[0] == '-') {
             param = "*";
-	} else {
+        } else {
             param = cmd->arg[0].string;
-	}
+        }
     }
 
     /* check spec passed */
     if (!filespec_is_legal(param)) {
         reply(f, 550, "Illegal filename passed.");
-	goto exit_nlst;
+        goto exit_nlst;
     }
 
     /* ready to list */
