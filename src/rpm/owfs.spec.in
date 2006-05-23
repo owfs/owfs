@@ -228,8 +228,8 @@ install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
 install -D -m 755 src/rpm/owfs.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owfs
 %endif
 %if %{build_httpd}
-install -D -m 755 src/rpm/owhttpd.conf $RPM_BUILD_ROOT/etc/rc.d/init.d/owhttpd
-install -D -m 644 src/rpm/owhttpd.init $RPM_BUILD_ROOT/etc/sysconfig/owhttpd
+install -D -m 644 src/rpm/owhttpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owhttpd
+install -D -m 755 src/rpm/owhttpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owhttpd
 %endif
 %if %{build_ftpd}
 install -D -m 644 src/rpm/owftpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owftpd
