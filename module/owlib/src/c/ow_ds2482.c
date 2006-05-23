@@ -483,91 +483,6 @@ static u8 ds2482_w1_reset_bus(void *data)
 }
 
 
-/*
- * The following function does more than just detection. If detection
- * succeeds, it also registers the new chip.
- */
-static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind) {
-   struct ds2482_data *data;
-   struct i2c_client  *new_client;
-   int err = 0;
-   int temp1;
-   int idx;
-
-   if (!i2c_check_functionality(adapter,
-                    I2C_FUNC_SMBUS_WRITE_BYTE_DATA |
-                    I2C_FUNC_SMBUS_BYTE))
-       goto exit;
-
-   if (!(data = kzalloc(sizeof(struct ds2482_data), GFP_KERNEL))) {
-       err = -ENOMEM;
-       goto exit;
-   }
-
-   new_client = &data->client;
-   i2c_set_clientdata(new_client, data);
-   new_client->addr = address;
-   new_client->driver = &ds2482_driver;
-   new_client->adapter = adapter;
-
-   /* Reset the device (sets the read_ptr to status) */
-   if (ds2482_send_cmd(data, DS2482_CMD_RESET) < 0) {
-       dev_dbg(&adapter->dev, "DS2482 reset failed at 0x%02x.\n",
-           address);
-       goto exit_free;
-   }
-
-   /* Sleep at least 525ns to allow the reset to complete */
-   ndelay(525);
-
-   /* Read the status byte - only reset bit and line should be set */
-   temp1 = i2c_smbus_read_byte(new_client);
-   if (temp1 != (DS2482_REG_STS_LL | DS2482_REG_STS_RST)) {
-       dev_dbg(&adapter->dev, "DS2482 (0x%02x) reset status "
-           "0x%02X - not a DS2482\n", address, temp1);
-       goto exit_free;
-   }
-
-   /* Detect the 8-port version */
-   data->w1_count = 1;
-   if (ds2482_set_channel(data, 7) == 0)
-       data->w1_count = 8;
-
-   /* Set all config items to 0 (off) */
-   ds2482_send_cmd_data(data, DS2482_CMD_WRITE_CONFIG, 0xF0);
-
-   /* We can fill in the remaining client fields */
-   snprintf(new_client->name, sizeof(new_client->name), "ds2482-%d00",
-        data->w1_count);
-
-   init_MUTEX(&data->access_lock);
-
-   /* Tell the I2C layer a new client has arrived */
-   if ((err = i2c_attach_client(new_client)))
-       goto exit_free;
-
-   /* Register 1-wire interface(s) */
-   for (idx = 0; idx < data->w1_count; idx++) {
-       data->w1_ch[idx].pdev = data;
-       data->w1_ch[idx].channel = idx;
-
-       /* Populate all the w1 bus master stuff */
-       data->w1_ch[idx].w1_bm.data       = &data->w1_ch[idx];
-       data->w1_ch[idx].w1_bm.read_byte  = ds2482_w1_read_byte;
-       data->w1_ch[idx].w1_bm.write_byte = ds2482_w1_write_byte;
-       data->w1_ch[idx].w1_bm.touch_bit  = ds2482_w1_touch_bit;
-       data->w1_ch[idx].w1_bm.triplet    = ds2482_w1_triplet;
-       data->w1_ch[idx].w1_bm.reset_bus  = ds2482_w1_reset_bus;
-
-       err = w1_add_master_device(&data->w1_ch[idx].w1_bm);
-       if (err) {
-           data->w1_ch[idx].pdev = NULL;
-           goto exit_w1_remove;
-       }
-   }
-
-   return 0;
-
 #endif /* 0 */
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
@@ -618,7 +533,7 @@ int DS2482_detect( struct connection_in * in ) {
                || DS2482_readstatus(&c,fd,1,2) // pause .5 usec then read status
                || ( c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST) ) // make sure status is properly set
               ) {
-                LEVEL_CONNECT("i2c device at %s address %d cannot be reset\n",in->name, test_address[i]) ;
+                LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n",in->name, test_address[i]) ;
                 continue ; ;
             }
             LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n",in->name, test_address[i]) ;
@@ -644,14 +559,17 @@ static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsi
     UT_delay_us( min_usec ) ; // at least get minimum out of the way
     do {
         int ret = i2c_smbus_read_byte( fd ) ;
-        if ( ret < 0 ) return 1 ;
+        if ( ret < 0 ) {
+            LEVEL_DEBUG("Reading DS2482 status problem min=%lu max=%lu i=%d ret=%d\n",min_usec,max_usec,i,ret) ;
+            return 1 ;
+        }
         if ( ( ret & DS2482_REG_STS_1WB ) == 0x00 ) {
             c[0] = (BYTE) ret ;
             LEVEL_DEBUG("DS2482 read status ok\n") ;
             return 0 ;
         }
         if ( i++ == 3 ) {
-            LEVEL_DEBUG("DS2482 read status fail\n") ;
+            LEVEL_DEBUG("Reading DS2482 status still busy min=%lu max=%lu i=%d ret=%d\n",min_usec,max_usec,i,ret) ;
             return 1 ;
         }
        UT_delay_us( delta_usec ) ; // increment up to three times
@@ -726,8 +644,10 @@ static int HeadChannel( struct connection_in * in ) {
     pn.in = in ;
     if ( DS2482_channel_select(&pn) ) { /* Couldn't switch */
         in->connin.i2c.index = 0 ; /* restore correct value */
+        LEVEL_CONNECT("DS2482-100 (Single channel).");
         return 0 ; /* happy as DS2482-100 */
     }
+    LEVEL_CONNECT("DS2482-800 (Eight channels).");
     /* Must be a DS2482-800 */
     in->connin.i2c.channels = 8 ;
     in->Adapter = adapter_DS2482_800 ;
