@@ -389,11 +389,11 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
         BUSLOCK(pn2);
     } while ( (ret=BUS_next(&ds,pn2))==0 ) ;
     /* BUS still locked */
-    if ( pn2->pathlength == 0 ) pn2->in->last_root_devs = devices ; // root dir estimated length
+    if ( pn2->pathlength==0 && ret==-ENODEV ) pn2->in->last_root_devs = devices ; // root dir estimated length
     BUSUNLOCK(pn2);
 
     /* Add to the cache (full list as a single element */
-    if ( snlist ) {
+    if ( snlist && ret==-ENODEV ) {
         //printf("About to cache\n") ;
         //printf("About to cache snlist=%p, devices=%lu pn=%p\n",snlist,devices,pn2);
         Cache_Add_Dir(snlist,devices,pn2) ;  // end with a null entry
