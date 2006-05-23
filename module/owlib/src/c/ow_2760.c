@@ -556,7 +556,7 @@ static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
             break ;
         case 0x51: //DS2751
         case 0x30: //DS2760
-            f = 15.625E-6 ;
+            f = 15.625E-6 / 8 ; // Jan Bertelsen's correction
             break ;
         case 0x28: //DS2770
             f = 1.56E-6 ;
