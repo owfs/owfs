@@ -1460,8 +1460,7 @@ exit_list:
     daemon_assert(invariant(f));
 }
 
-static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd)
-{
+static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert(cmd->num_arg == 0);
@@ -1472,8 +1471,7 @@ static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 }
 
 
-static void do_noop(struct ftp_session_s *f, const struct ftp_command_s *cmd)
-{
+static void do_noop(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert(cmd->num_arg == 0);
@@ -1483,8 +1481,7 @@ static void do_noop(struct ftp_session_s *f, const struct ftp_command_s *cmd)
     daemon_assert(invariant(f));
 }
 
-static void do_rest(struct ftp_session_s *f, const struct ftp_command_s *cmd)
-{
+static void do_rest(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert(cmd->num_arg == 1);
@@ -1502,11 +1499,9 @@ static void do_rest(struct ftp_session_s *f, const struct ftp_command_s *cmd)
     daemon_assert(invariant(f));
 }
 
-static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd)
-{
-    const char *file_name;
-    char full_path[PATH_MAX+1+MAX_STRING_LEN];
-    struct stat stat_buf;
+static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
+    off_t filesize ;
+    struct parsedname pn ;
     
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
@@ -1518,32 +1513,26 @@ static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd)
         reply(f, 550, "Size cannot be determined with FILE structure.");
     } else {
 
-        /* create an absolute name for our file */
-        file_name = cmd->arg[0].string;
-        get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
-
         /* get the file information */
-        if (stat(full_path, &stat_buf) != 0) {
-            reply(f, 550, "Error getting file status; %s.", strerror(errno));
+        if ( FS_ParsedNamePlus( f->dir, cmd->arg[0].string, &pn ) ) {
+            reply(f, 550, "Bad file specification");
         } else {
 
             /* verify that the file is not a directory */
-            if (S_ISDIR(stat_buf.st_mode)) {
+            if (pn.dev==NULL || pn.ft==NULL) {
                 reply(f, 550, "File is a directory, SIZE command not valid.");
             } else {
-
+                filesize = FullFileLength(&pn) ;
                 /* output the size */
                 if (sizeof(off_t) == 8) {
-                    reply(f, 213, "%llu", stat_buf.st_size);
+                    reply(f, 213, "%llu", filesize);
                 } else {
-                    reply(f, 213, "%lu", stat_buf.st_size);
+                    reply(f, 213, "%lu", filesize);
                 }
             }
-
+            FS_ParsedName_destroy(&pn) ;
         }
-
     }
-
     daemon_assert(invariant(f));
 }
 
@@ -1589,99 +1578,28 @@ static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 }
 
 
-static void send_readme(const struct ftp_session_s *f, int code)
-{
-    char file_name[PATH_MAX+1];
-    int dir_len;
-    struct stat stat_buf;
-    int fd;
-    int read_ret;
-    char buf[4096];
-    char code_str[8];
-    char *p;
-    int len;
-    char *nl;
-    int line_len;
-
+static void send_readme(const struct ftp_session_s *f, int code) {
+    char code_str[8] ;
+    
     daemon_assert(invariant(f));
     daemon_assert(code >= 100);
     daemon_assert(code <= 559);
 
-    /* set up for early exit */
-    fd = -1;
-
-    /* verify our README wouldn't be too long */
-    dir_len = strlen(f->dir);
-    if ((dir_len + 1 + sizeof(README_FILE_NAME)) > sizeof(file_name)) {
-        goto exit_send_readme;
-    }
-
-    /* create a README file name */
-    strcpy(file_name, f->dir);
-    strcat(file_name, "/");
-    strcat(file_name, README_FILE_NAME);
-
-    /* open our file */
-    fd = open(file_name, O_RDONLY);
-    if (fd == -1) {
-        goto exit_send_readme;
-    }
-
-    /* verify this isn't a directory */
-    if (fstat(fd, &stat_buf) != 0) {
-        goto exit_send_readme;
-    }
-#ifndef STATS_MACRO_BROKEN
-    if (S_ISDIR(stat_buf.st_mode)) {
-#else
-    if (!S_ISDIR(stat_buf.st_mode)) {
-#endif
-	goto exit_send_readme;
-    }
 
     /* convert our code to a buffer */
     daemon_assert(code >= 100);
     daemon_assert(code <= 999);
     sprintf(code_str, "%03d-", code);
 
-    /* read and send */
-    read_ret = read(fd, buf, sizeof(buf));
-    if (read_ret > 0) {
-        telnet_session_print(f->telnet_session, code_str);
-        while (read_ret > 0) {
-            p = buf;
-	    len = read_ret;
-            nl = memchr(p, '\n', len);
-	    while ((len > 0) && (nl != NULL)) {
-	        *nl = '\0';
-	        telnet_session_println(f->telnet_session, p);
-	        line_len = nl - p;
-	        len -= line_len + 1;
-	        if (len > 0) {
-	            telnet_session_print(f->telnet_session, code_str);
-                }
-		p = nl+1;
-                nl = memchr(p, '\n', len);
-	    }
-	    if (len > 0) {
-	        telnet_session_print(f->telnet_session, p);
-	    }
-
-            read_ret = read(fd, buf, sizeof(buf));
-        }
-    }
-
-    /* cleanup and exit */
-exit_send_readme:
-    if (fd != -1) {
-        close(fd);
-    }
-    daemon_assert(invariant(f));
+    telnet_session_print(f->telnet_session, code_str);
+    telnet_session_println(f->telnet_session, "owftpd 1-wire ftp server -- Paul H Alfille") ;
+    telnet_session_print(f->telnet_session, code_str);
+    telnet_session_println(f->telnet_session, "Version: "VERSION" see http://www.owfs.org" );
+    
 }
 
 /* hack which prevents Netscape error in file list */
-static void netscape_hack(int fd)
-{
+static void netscape_hack(int fd) {
     fd_set readfds;
     struct timeval ns_timeout;
     int select_ret;
