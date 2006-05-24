@@ -370,17 +370,17 @@ AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
 #Check owcapi
 AC_MSG_CHECKING(if owcapi is enabled)
-ENABLE_OWCAPI="false"
+ENABLE_OWCAPI="true"
 AC_ARG_ENABLE(owcapi,
-[  --enable-owcapi       Enable owcapi module (default false)],
+[  --enable-owcapi       Enable owcapi module (default true)],
 [
     AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWCAPI=true
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWCAPI="false"
     fi
 ],
 [
-    AC_MSG_RESULT([false (default)])
+    AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWCAPI)
 

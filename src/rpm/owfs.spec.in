@@ -1,7 +1,6 @@
 %define build_fs 1
 %define build_httpd 1
 %define build_capi 1
-%define build_devel 1
 %define build_ftpd 0
 %define build_nfsd 0
 %define build_server 1
@@ -38,22 +37,11 @@ BuildRequires: automake autoconf libtool
 %description libs
 %{name}-libs is a core library providing base functions to other OWFS modules.
 
-%if %{build_devel}
-%package devel
-Summary: Files for development of OWFS applications.
-Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}
-
-%description devel
-This package contains the libraries and header files that are needed for
-developing OWFS applications.
-%endif
-
 %if %{build_capi}
 %package capi
 Summary: C-API to develop third-part applications which access 1-Wire networks.
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, %{name}-devel = %{version}
+Requires: %{name}-libs = %{version}
 
 %description capi
 %{name}-capi library on top of libow providing an easy API to develop third-part applications to access to 1-Wire networks.
@@ -288,9 +276,6 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/bin
 %postun libs
 /sbin/ldconfig
 
-%if %{build_devel}
-%endif
-
 %if %{build_capi}
 %post capi
 /sbin/ldconfig
@@ -352,16 +337,11 @@ fi
 %files libs
 %defattr(-,root,root)
 %doc README NEWS INSTALL ChangeLog AUTHORS COPYING
-%{prefix}/lib/libow.so*
-%{_mandir}/man3/*.3.gz
-
-%if %{build_devel}
-%files devel
-%defattr(-,root,root)
 %{prefix}/include/owfs/owfs_config.h
+%{prefix}/lib/libow.so*
 %{prefix}/lib/libow.la
 %{prefix}/lib/libow.a
-%endif
+%{_mandir}/man3/*.3.gz
 
 %if %{build_capi}
 %files capi

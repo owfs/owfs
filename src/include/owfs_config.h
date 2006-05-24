@@ -55,4 +55,15 @@ $Id$
  * such as version, enabled features etc.
  */
 
+#define OWFS_VERSION	"2.3p7"
+#define OWFS_MAJOR	"2"
+#define OWFS_MINOR	"3"
+#define OWFS_PATCHLEVEL	"7"
+
+#define ENABLE_MT		true
+#define ENABLE_CACHE		true
+#define ENABLE_USB		true
+#define ENABLE_PARPORT		false
+#define ENABLE_PROFILING	true
+
 #endif /* OWFS_CONFIG_H */
