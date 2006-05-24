@@ -272,34 +272,31 @@ AC_LANG_RESTORE
 
 
 # Check for multithreading
-ENABLE_MT=true
+ENABLE_MT="true"
 AC_MSG_CHECKING([if multithreading is enabled])
 AC_ARG_ENABLE(mt,
 [  --enable-mt           Enable multithreading support (default true)],
 [
-
     AC_MSG_RESULT([$enableval])
-
     if ! test "$enableval" = "yes" ; then
-
-        ENABLE_MT=false
+        ENABLE_MT="false"
     fi
 ],
 [
     AC_MSG_RESULT([yes (default)])
 ])
 
-AC_SUBST(ENABLE_MT)
 if test "${ENABLE_MT}" = "true" ; then
     ACX_PTHREAD
     if test "$acx_pthread_ok" = "yes"; then
 	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
     else
-	ENABLE_MT=false
-	AC_SUBST(ENABLE_MT)
+	ENABLE_MT="false"
     fi
 fi
+AC_SUBST(ENABLE_MT)
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
+
 
 # Check if the modules are enabled
 
@@ -842,6 +839,7 @@ AC_MSG_RESULT([$enableval])
 AC_SUBST(ENABLE_PROFILING)
 AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
+
 AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
 case "${host_cpu}-${host_os}" in
 	*-aix* | *-freebsd* | *-darwin* | *solaris* | *-osf* | *-hpux*)
@@ -896,6 +894,26 @@ AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 
+if test "${ENABLE_MT}" = "true" ; then
+   MT_FLAG=-DOW_MT
+fi
+AC_SUBST(MT_FLAG)
+if test "${ENABLE_CACHE}" = "true" ; then
+   CACHE_FLAG=-DOW_CACHE
+fi
+AC_SUBST(CACHE_FLAG)
+if test "${ENABLE_USB}" = "true" ; then
+   USB_FLAG=-DOW_USB
+fi
+AC_SUBST(USB_FLAG)
+if test "${ENABLE_PROFILING}" = "true" ; then
+    PROFILING_FLAG=-pg
+fi
+AC_SUBST(PROFILING_FLAG)
+if test "${ENABLE_PARPORT}" = "true" ; then
+   PARPORT_FLAG = -DOW_PARPORT
+fi
+AC_SUBST(PARPORT_FLAG)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -919,14 +937,15 @@ AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset nanosleep select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
 
+AC_SUBST(MODULE_SUBDIRS)
+AC_SUBST(SWIG_SUBDIRS)
+
 # Process config.h.in
-
-#AH_TOP([
-##ifndef OWFS_CONFIG_H
-##define OWFS_CONFIG_H
-#])
-#AH_BOTTOM([#endif])
-
+AH_TOP([
+#ifndef OWCONFIG_H
+#define OWCONFIG_H
+])
+AH_BOTTOM([#endif])
 AM_CONFIG_HEADER(src/include/config.h)
 
 AC_CONFIG_FILES([
@@ -981,6 +1000,7 @@ AC_CONFIG_FILES([
     src/rpm/Makefile
     src/rpm/owfs.spec
     src/scripts/Makefile
+    src/include/owfs_config.h
 ])
 AC_OUTPUT
 

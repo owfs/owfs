@@ -15,6 +15,8 @@ $Id$
 #ifndef OWCAPI_H
 #define OWCAPI_H
 
+#include <owfs_config.h>
+
 /* initialization, required before any other calls. Should be paired with a finish
     OW_init -- simplest, just a device name
               /dev/ttyS0 for serial

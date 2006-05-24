@@ -2,52 +2,37 @@
 
 SUBDIRS = ow
 
-bin_PROGRAMS = owpython
+bin_PROGRAMS = OW.py
+OW_py_SOURCES = 
+OW_py_DEPENDENCIES = ../../owlib/src/c/libow.la
 
-owpython_SOURCES = ow_wrap.c
-owpython_DEPENDENCIES = ../../owlib/src/c/libow.la
-owpython_LDFLAGS = -shared -shrext .so
-
-if ENABLE_MT
-MT_FLAG = -DOW_MT
-endif
+#owpython_SOURCES = ow_wrap.c
+#owpython_DEPENDENCIES = ../../owlib/src/c/libow.la
+#owpython_LDFLAGS = -shared -shrext .so
 
 AM_CFLAGS = -I../include \
          -fexceptions \
-         -Wall \
-         -W \
-         -Wundef \
-         -Wshadow \
-         -Wpointer-arith \
-         -Wcast-qual \
-         -Wcast-align \
-         -Wconversion \
-         -Wstrict-prototypes \
-         -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
          ${MT_FLAG}
 
-#AM_LDFLAGS = ${PTHREAD_LIBS}
-AM_LDFLAGS = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+# ../../owlib/src/c
 
 #noinst_DATA = .made_mod
 
-#.made_mod: owperl_wrap.c Makefile.perl
-#	$(MAKE) -fMakefile.perl
-#	touch $@
-
-ow_wrap.c: ../ow.i ${owpython_DEPENDENCIES}
+ow_wrap.c: ../ow.i ${OW_py_DEPENDENCIES}
 	$(SWIG) -python -o $@ ../ow.i
 
-owpython: ow_wrap.c setup.py
+OW.py: ow_wrap.c setup.py
 	$(PYTHON) setup.py build
 
 install-data-local:
 	$(PYTHON) setup.py install --root="/$(DESTDIR)"
 
-CLEANFILES = *~ *.o
+CLEANFILES = *~ .*~ *.o
 
 clean-local:
+	@RM@ -f $(CLEANFILES)
 	@RM@ -rf build OW.py ow_wrap.c
 
 clean-generic:

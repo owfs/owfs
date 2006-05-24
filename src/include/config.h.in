@@ -1,5 +1,10 @@
 /* src/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
+
+#ifndef OWCONFIG_H
+#define OWCONFIG_H
+
+
 /* Define to 1 if you have the `accept' function. */
 #undef HAVE_ACCEPT
 
@@ -273,3 +278,5 @@
 
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork
+
+#endif

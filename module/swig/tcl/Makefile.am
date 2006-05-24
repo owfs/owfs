@@ -8,7 +8,7 @@ pkglib_LTLIBRARIES = ow.la
 ow_la_SOURCES = ow.c
 ow_la_LDFLAGS = -module -release $(OWTCL_VERSION)
 ow_la_DEPENDENCIES = ../../owlib/src/c/libow.la
-nodist_ow_la_SOURCES = owtclInitScript.h ow.tcl.h version.h
+#nodist_ow_la_SOURCES = owtclInitScript.h ow.tcl.h version.h
 ow.lo: owtclInitScript.h ow.tcl.h version.h
 
 data_DATA = ow.tcl pkgIndex.tcl
@@ -20,10 +20,6 @@ MINOR_VERSION = $(OWTCL_MINOR_VERSION)
 
 pkglibdir = $(TCL_BIN_DIR)/owtcl-$(OWTCL_VERSION)
 datadir = $(pkglibdir)
-
-if ENABLE_MT
-MT_FLAG = -DOW_MT
-endif
 
 SHLIB_SUFFIX = $(TCL_SHLIB_SUFFIX)
 
@@ -51,7 +47,7 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\"
 
 
-AM_LDFLAGS = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 #SHLIB_LD = $(TCL_SHLIB_LD) -low $(LIBS)
 

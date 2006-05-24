@@ -78,7 +78,7 @@ OWLIB_SOURCE = compat.c          \
 lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
-libow_la_LDFLAGS = -shared -shrext .so
+libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
 
 # Maybe need this for MacOS X
 #if DARWIN_API
@@ -89,26 +89,6 @@ libow_la_LDFLAGS = -shared -shrext .so
 #	-release $(LT_RELEASE) \
 #	-export-dynamic \
 #	$(LDADDS)
-
-if ENABLE_CACHE
-CACHE_FLAG = -DOW_CACHE
-endif
-
-if ENABLE_USB
-USB_FLAG = -DOW_USB
-endif
-
-if ENABLE_MT
-MT_FLAG = -DOW_MT
-endif
-
-if ENABLE_PROFILING
-PROFILING_FLAG = -pg
-endif
-
-if ENABLE_PARPORT
-PARPORT_FLAG = -DOW_PARPORT
-endif
 
 AM_CFLAGS = -I../include \
          -fexceptions \
@@ -130,7 +110,7 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          ${USB_FLAG}
 
-AM_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS}
+#LDADD = ${PROFILING_FLAG} ${PTHREAD_LIBS}
 
 clean-generic:
 

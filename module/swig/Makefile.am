@@ -2,22 +2,22 @@
 EXTRA_DIST = ow.i
 
 if ENABLE_OWPERL
-  MAYBE_OWPERL = perl5
+  SWIG_SUBDIRS += perl5
 endif
 
 if ENABLE_OWPYTHON
-  MAYBE_OWPYTHON = python
+  SWIG_SUBDIRS += python
 endif
 
 if ENABLE_OWTCL
-  MAYBE_OWTCL = tcl
+  SWIG_SUBDIRS += tcl
 endif
 
 if ENABLE_OWPHP
-  MAYBE_OWPHP = php
+  SWIG_SUBDIRS += php
 endif
 
-SUBDIRS = $(MAYBE_OWPERL) $(MAYBE_OWPYTHON) $(MAYBE_OWTCL) $(MAYBE_OWPHP)
+SUBDIRS = $(SWIG_SUBDIRS)
 
 clean-generic:
 

@@ -1,35 +1,34 @@
 ## $Id$
 
-if ENABLE_OWFS
-  MAYBE_OWFS = owfs
-endif
-
 if ENABLE_OWHTTPD
-  MAYBE_OWHTTPD = owhttpd
-endif
-
-if ENABLE_OWFTPD
-  MAYBE_OWFTPD = owftpd
-endif
-
-if ENABLE_OWNFSD
-  MAYBE_OWNFSD = ownfsd
+  MODULE_SUBDIRS += owhttpd
 endif
 
 if ENABLE_OWSERVER
-  MAYBE_OWSERVER = owserver
+  MODULE_SUBDIRS += owserver
+endif
+
+if ENABLE_OWFS
+  MODULE_SUBDIRS += owfs
+endif
+
+if ENABLE_OWFTPD
+  MODULE_SUBDIRS += owftpd
+endif
+
+if ENABLE_OWNFSD
+  MODULE_SUBDIRS += ownfsd
 endif
 
 if ENABLE_OWCAPI
-  MAYBE_OWCAPI = owcapi
+  MODULE_SUBDIRS += owcapi
 endif
   
 if ENABLE_SWIG
-  MAYBE_SWIG = swig
+  MODULE_SUBDIRS += swig
 endif
 
-# VT: SUBDIRS: In *that* order (owlib first is the critical point)
-SUBDIRS = owlib $(MAYBE_OWFS) $(MAYBE_OWHTTPD) $(MAYBE_OWFTPD) $(MAYBE_OWNFSD) $(MAYBE_OWSERVER) $(MAYBE_OWCAPI) $(MAYBE_SWIG)
+SUBDIRS = owlib $(MODULE_SUBDIRS)
 
 clean-generic:
 

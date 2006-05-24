@@ -3,5 +3,5 @@ owfsinclude_HEADERS = owfs_config.h
 
 clean-generic:
 
-	@RM@ -f *~ .*~ stamp-h1
+	@RM@ -f *~ .*~ stamp-*
 

@@ -11,30 +11,16 @@ libowphp_la_LIBADD = ../../owlib/src/c/libow.la
 libowphp_la_DEPENDENCIES = ../../owlib/src/c/libow.la
 libowphp_la_LDFLAGS = -shared -shrext .so
 
-if ENABLE_MT
-MT_FLAG = -DOW_MT
-endif
-
 # Older php4 installations doesn't handle owfs_config.h filename, and tries
 # to include non-existing config.h if HAVE_CONFIG_H is defined.
-DEFS+= -UHAVE_CONFIG_H
+#DEFS+= -UHAVE_CONFIG_H
 
 AM_CFLAGS = -I../include \
 	-fexceptions \
-	-Wall \
-	-W \
-	-Wundef \
-	-Wshadow \
-	-Wpointer-arith \
-	-Wcast-qual \
-	-Wcast-align \
-	-Wconversion \
-	-Wstrict-prototypes \
-	-Wredundant-decls \
 	-D_FILE_OFFSET_BITS=64 \
 	${MT_FLAG}
 
-AM_LDFLAGS = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 libowphp_la_SOURCES = ow_wrap.c
 

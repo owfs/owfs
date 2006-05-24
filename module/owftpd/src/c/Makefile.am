@@ -12,17 +12,8 @@ owftpd_SOURCES = file_list.c \
                  daemon_assert.c
 owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
-# multithreading -- must be available on the library as well
-if ENABLE_MT
-MT_FLAG = -DOW_MT
-endif
-
 if HAVE_NEW_SS_FAMILY
 SS_FLAG = -DHAVE_NEW_SS_FAMILY
-endif
-
-if ENABLE_PROFILING
-PROFILING_FLAG = -pg
 endif
 
 AM_CFLAGS = -I../include \
@@ -39,12 +30,12 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
+         ${PROFILING_FLAG} \
          ${MT_FLAG} \
          ${SS_FLAG} \
-         ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-AM_LDFLAGS = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
 

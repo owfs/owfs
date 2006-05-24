@@ -1,12 +1,12 @@
 # $Id$
 
-bin_PROGRAMS = owserver
-owserver_SOURCES = owserver.c
-owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
+bin_PROGRAMS = owdir
+owdir_SOURCES = owdir.c
+owdir_DEPENDENCIES = ../c/libowcapi.la
 
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
-         -L../../../owlib/src/c \
+         -L../c \
          -fexceptions \
          -Wall \
          -W \
@@ -19,10 +19,9 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
-         ${MT_FLAG} \
-         -D_FILE_OFFSET_BITS=64
+         ${MT_FLAG}
 
-LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -lowcapi ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
 clean-generic:
 
