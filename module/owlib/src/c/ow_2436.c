@@ -66,8 +66,8 @@ DeviceEntry( 1B, DS2436 ) ;
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_page( BYTE * p , const size_t size, const size_t offset , const struct parsedname * pn) ;
-static int OW_w_page( const BYTE * p , const size_t size , const size_t offset , const struct parsedname * pn ) ;
+static int OW_r_page( BYTE * p , const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int OW_w_page( const BYTE * p , const size_t size , const off_t offset , const struct parsedname * pn ) ;
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
 static int OW_volts( FLOAT * V , const struct parsedname * pn ) ;
 
@@ -98,7 +98,7 @@ static int FS_volts(FLOAT * V , const struct parsedname * pn) {
 
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_r_page( BYTE * p , const size_t size , const size_t offset, const struct parsedname * pn) {
+static int OW_r_page( BYTE * p , const size_t size , const off_t offset, const struct parsedname * pn) {
     BYTE data[32] ;
     int page = offset>>5 ;
     size_t s ;
@@ -132,7 +132,7 @@ static int OW_r_page( BYTE * p , const size_t size , const size_t offset, const 
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_w_page( const BYTE * p , const size_t size , const size_t offset , const struct parsedname * pn ) {
+static int OW_w_page( const BYTE * p , const size_t size , const off_t offset , const struct parsedname * pn ) {
     int page = offset >> 5 ;
     size_t s ;
     BYTE scratchin[] = {0x11 , offset, } ;

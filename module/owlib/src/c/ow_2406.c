@@ -84,8 +84,8 @@ DeviceEntryExtended( 12, DS2406, DEV_alarm ) ;
 /* ------- Functions ------------ */
 
 /* DS2406 */
-static int OW_r_mem( BYTE * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size, const off_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 //static int OW_r_s_alarm( BYTE * data , const struct parsedname * pn ) ;
 static int OW_w_s_alarm( const BYTE data , const struct parsedname * pn ) ;
 static int OW_r_control( BYTE * data , const struct parsedname * pn ) ;
@@ -200,7 +200,7 @@ static int FS_w_pio(const UINT * u, const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+128+2] = { 0xF0, offset&0xFF , offset>>8, } ;
     struct transaction_log t[] = {
         TRXN_START ,
@@ -215,7 +215,7 @@ static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, cons
     return 0 ;
 }
 
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[6] = { 0x0F, offset&0xFF , offset>>8, data[0], } ;
     BYTE resp ;
     size_t i ;

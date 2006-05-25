@@ -80,10 +80,10 @@ static struct internal_prop ip_cum = { "CUM", ft_persistent } ;
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_counter( UINT * counter , const int page, const struct parsedname * pn ) ;
-static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 /* 2423A/D Counter */
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -145,7 +145,7 @@ static int FS_w_mincount(const UINT * u , const struct parsedname * pn ) {
 }
 #endif /*OW_CACHE*/
 
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
 
@@ -177,7 +177,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     return OW_r_mem_counter(data,NULL,size,offset,pn) ;
 }
 
@@ -187,7 +187,7 @@ static int OW_counter( UINT * counter , const int page, const struct parsedname 
 
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
-static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const off_t offset, const struct parsedname * pn ) {
     BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     int ret ;
     /* rest in the remaining length of the 32 byte page */

@@ -77,9 +77,9 @@ DeviceEntryExtended( 23, DS2433 , DEV_ovdr ) ;
 
 /* DS2433 */
 
-static int OW_w_23page( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_2Dpage( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_23page( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_w_2Dpage( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
@@ -115,7 +115,7 @@ static int FS_w_page2D(const BYTE *buf, const size_t size, const off_t offset , 
     return FS_w_memory2D(buf,size,offset+32*(pn->extension),pn ) ;
 }
 
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn) {
     BYTE p[] = {  0xF0, offset&0xFF, (offset>>8)&0xFF, } ;
     int ret ;
     //printf("reading offset=%d size=%d bytes\n", offset, size);
@@ -129,7 +129,7 @@ static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, cons
 }
 
 /* paged, and pre-screened */
-static int OW_w_23page( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_23page( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
 
@@ -163,7 +163,7 @@ static int OW_w_23page( const BYTE * data , const size_t size , const size_t off
 
 /* paged, and pre-screened */
 /* read REAL DS2431 pages -- 8 bytes. */
-static int OW_w_2Dpage( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_2Dpage( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     off_t pageoff = offset & 0x07 ;
     BYTE p[4+8+2] = { 0x0F, (offset-pageoff)&0xFF , ((offset-pageoff)>>8)&0xFF, } ;
     struct transaction_log tcopy[] = {

@@ -63,7 +63,7 @@ $Id$
 #define ENABLE_MT		true
 #define ENABLE_CACHE		true
 #define ENABLE_USB		true
-#define ENABLE_PARPORT		false
-#define ENABLE_PROFILING	true
+#define ENABLE_PARPORT		true
+#define ENABLE_PROFILING	false
 
 #endif /* OWFS_CONFIG_H */

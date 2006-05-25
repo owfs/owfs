@@ -217,8 +217,8 @@ static int VersionCmp( const void * pn , const void * version ) {
 /* ------- Functions ------------ */
 
 /* DS1921 */
-static int OW_w_mem( const BYTE * data , const size_t length , const size_t location, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t length , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_temperature( int * T , const UINT delay, const struct parsedname * pn ) ;
 static int OW_clearmemory( const struct parsedname * pn) ;
 static int OW_2date(DATE * d, const BYTE * data) ;
@@ -226,7 +226,7 @@ static int OW_2mdate(DATE * d, const BYTE * data) ;
 static void OW_date(const DATE * d , BYTE * data) ;
 static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_FillMission( struct Mission * m , const struct parsedname * pn ) ;
-static int OW_alarmlog( int * t, int * c, const size_t offset, const struct parsedname * pn ) ;
+static int OW_alarmlog( int * t, int * c, const off_t offset, const struct parsedname * pn ) ;
 static int OW_stopmission( const struct parsedname * pn ) ;
 static int OW_startmission( UINT freq, const struct parsedname * pn ) ;
 
@@ -745,7 +745,7 @@ static int FS_easystart( const UINT * u, const struct parsedname * pn ) {
     return OW_startmission( u[0], pn ) ;
 }
 
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+1+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     size_t rest = 32 - (offset&0x1F) ;
     int ret ;
@@ -784,7 +784,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
 
 /* Pre-paged */
 /* read memory as "pages" with CRC16 check */
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+32+2] = { 0xA5, offset&0xFF , (offset>>8)&0xFF, } ;
     size_t rest = 32 - (offset&0x1F) ;
     int ret ;
@@ -926,7 +926,7 @@ static int OW_FillMission( struct Mission * mission , const struct parsedname * 
     return OW_2mdate(&(mission->start),&data[8]) ;
 }
 
-static int OW_alarmlog( int * t, int * c, const size_t offset, const struct parsedname * pn ) {
+static int OW_alarmlog( int * t, int * c, const off_t offset, const struct parsedname * pn ) {
     BYTE data[48] ;
     int i,j=0 ;
     

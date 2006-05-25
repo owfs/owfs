@@ -146,8 +146,8 @@ DeviceEntryExtended( 41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume ) 
 /* ------- Functions ------------ */
 
 /* DS1923 */
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_r_temperature( FLOAT * T , const UINT delay, const struct parsedname * pn ) ;
 static int OW_r_humid( FLOAT * H , const UINT delay, const struct parsedname * pn ) ;
 static int OW_startmission( unsigned long mdelay, const struct parsedname * pn ) ;
@@ -473,7 +473,7 @@ static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
 }
 
 
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+1+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     BYTE passwd[8] ;
     int rest = 32 - (offset&0x1F) ;
@@ -652,7 +652,7 @@ static int OW_flush( const struct parsedname * pn, int lock ) {
 }
 
 
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+8+32+2] = { 0x69, offset&0xFF , (offset>>8)&0xFF, } ;
     //BYTE r[3+8+32+2] = { 0xAA, } ;
     int rest = 32 - (offset&0x1F) ;

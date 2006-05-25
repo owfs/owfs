@@ -94,11 +94,11 @@ static struct internal_prop ip_ful = { "FUL", ft_persistent } ;
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const size_t offset, const struct parsedname *pn);
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const off_t offset, const struct parsedname *pn);
 static int OW_ver( UINT * u, const struct parsedname * pn ) ;
-static int OW_verify( BYTE * pwd, const size_t offset, const struct parsedname * pn ) ;
+static int OW_verify( BYTE * pwd, const off_t offset, const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
 
 /* 1977 password */
@@ -219,7 +219,7 @@ static int FS_use( const BYTE *buf, const size_t size, const off_t offset , cons
 }
 #endif /* OW_CACHE */
 
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[1+2+64+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     size_t s = 8 ;
     int ret ;
@@ -255,7 +255,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE pwd[8] = {0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     size_t s = sizeof(pwd) ;
 
@@ -266,7 +266,7 @@ static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, cons
     return OW_r_pmem(data,pwd,size,offset,pn) ;
 }
 
-static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const size_t offset, const struct parsedname *pn){
+static int OW_r_pmem(BYTE *data, const BYTE *pwd, const size_t size, const off_t offset, const struct parsedname *pn){
     int ret ;
     BYTE p[1+2+64+2] = { 0x69, offset&0xFF , offset>>8, } ;
 
@@ -298,7 +298,7 @@ static int OW_ver( UINT * u, const struct parsedname * pn ) {
     u[0] = b[0] ;
 }
 
-static int OW_verify( BYTE * pwd, const size_t offset, const struct parsedname * pn ) {
+static int OW_verify( BYTE * pwd, const off_t offset, const struct parsedname * pn ) {
     int ret ;
     BYTE p[1+2+8] = { 0xC3, offset&0xFF , offset>>8, } ;
     BYTE c ;

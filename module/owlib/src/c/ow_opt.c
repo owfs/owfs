@@ -23,6 +23,7 @@ int ftp_timeout ;
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
 static int OW_ArgI2C( const char * arg ) ;
+static int OW_ArgHA7( const char * arg ) ;
 
 const struct option owopts_long[] = {
     {"device",     required_argument,NULL,'d'},
@@ -69,6 +70,8 @@ const struct option owopts_long[] = {
     {"msec-read",  required_argument,NULL,268}, /* Time out for serial reads */
     {"max_clients", required_argument, NULL, 269}, /* ftp max connections */
     {"ftp_timeout", required_argument, NULL, 270}, /* ftp max connections */
+    {"HA7", required_argument, NULL, 271}, /* HA7Net */
+    {"ha7", required_argument, NULL, 271}, /* HA7Net */
     {"link", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
@@ -324,6 +327,8 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
     case 270:
         ftp_timeout = atoi(arg) ;
         break ;
+    case 271:
+        return OW_ArgHA7( arg ) ;
     case 0:
         return 0 ;
     default:
@@ -336,6 +341,14 @@ int OW_ArgNet( const char * arg ) {
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_remote ;
+    return 0 ;
+}
+
+static int OW_ArgHA7( const char * arg ) {
+    struct connection_in * in = NewIn(NULL) ;
+    if ( in==NULL ) return 1 ;
+    in->name = strdup(arg) ;
+    in->busmode = bus_ha7 ;
     return 0 ;
 }
 

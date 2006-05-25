@@ -89,8 +89,8 @@ DeviceEntryExtended( 8F, DS1986U , DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2505 */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 
 /* 2505 memory */
 static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -114,7 +114,7 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
     return 0 ;
 }
 
-static int OW_w_mem( const BYTE * data , const size_t size, const size_t offset , const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE p[6] = { 0x0F, offset&0xFF , offset>>8, data[0] } ;
     size_t i ;
     int ret ;
@@ -141,7 +141,7 @@ static int OW_w_mem( const BYTE * data , const size_t size, const size_t offset 
 }
 
 /* page oriented read -- call will not span pages */
-static int OW_r_mem( BYTE * data , const size_t size, const size_t offset , const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE p[6] = { 0xA5, offset&0xFF , offset>>8, } ;
     BYTE d[34] ;
     size_t rest = 32 - (offset & 0x1F) ;

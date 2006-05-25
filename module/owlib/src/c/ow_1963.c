@@ -78,9 +78,9 @@ DeviceEntryExtended( 1A, DS1963L , DEV_ovdr ) ;
 
 /* ------- Functions ------------ */
 
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 static int FS_w_password(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     (void) buf ;
@@ -117,7 +117,7 @@ static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset ,
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
     struct transaction_log tcopy[] = {
         TRXN_START,
@@ -158,13 +158,13 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
     return OW_r_mem_counter(data,NULL,size,((pn->extension)<<5)+offset,pn) ;
 }
 
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
-static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const off_t offset, const struct parsedname * pn ) {
     BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     /* rest in the remaining length of the 32 byte page */
     size_t rest = 32 - (offset&0x1F) ;

@@ -108,8 +108,8 @@ static int OW_w_gpio( const BYTE data , const struct parsedname* pn ) ;
 static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) ;
 static int OW_r_version( BYTE * data , const struct parsedname* pn ) ;
 static int OW_r_counters( UINT * data , const struct parsedname* pn ) ;
-static int OW_r_memory( BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
-static int OW_w_memory( const BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) ;
+static int OW_r_memory( BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) ;
+static int OW_w_memory( const BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) ;
 static int OW_clear( const struct parsedname* pn ) ;
 static int OW_w_screen( const BYTE loc , const char * text , const int size, const struct parsedname* pn ) ;
 
@@ -415,7 +415,7 @@ static int OW_r_counters( UINT * data , const struct parsedname* pn ) {
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_r_memory( BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) {
+static int OW_r_memory( BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) {
     BYTE buf[2] = { offset&0xFF , size&0xFF, } ;
     BYTE w = 0x37 ;
     int ret ;
@@ -438,7 +438,7 @@ static int OW_r_memory( BYTE * data , const size_t size, const size_t offset , c
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_w_memory( const BYTE * data , const size_t size, const size_t offset , const struct parsedname* pn ) {
+static int OW_w_memory( const BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) {
     BYTE buf[17] = { offset&0xFF , } ;
     BYTE w = 0x39 ;
     int ret ;

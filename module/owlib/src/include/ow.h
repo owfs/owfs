@@ -737,10 +737,10 @@ int FS_fstat(const char *path, struct stat *stbuf) ;
 int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) ;
 
 /* iteration functions for splitting writes to buffers */
-int OW_read_paged( BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
-    size_t pagelen, int (*readfunc)(BYTE *,const size_t,const size_t,const struct parsedname *) ) ;
-int OW_write_paged( const BYTE * p, size_t size, size_t offset, const struct parsedname * pn,
-    size_t pagelen, int (*writefunc)(const BYTE *,const size_t,const size_t,const struct parsedname *) ) ;
+int OW_read_paged( BYTE * p, size_t size, off_t offset, const struct parsedname * pn,
+    size_t pagelen, int (*readfunc)(BYTE *,const size_t,const off_t,const struct parsedname *) ) ;
+int OW_write_paged( const BYTE * p, size_t size, off_t offset, const struct parsedname * pn,
+    size_t pagelen, int (*writefunc)(const BYTE *,const size_t,const off_t,const struct parsedname *) ) ;
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;

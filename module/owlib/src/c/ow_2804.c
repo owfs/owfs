@@ -87,13 +87,13 @@ DeviceEntryExtended( 1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2804 */
-static int OW_r_mem( BYTE * data , const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_w_scratch( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size, const off_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_w_scratch( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_pio( const BYTE data , const struct parsedname * pn ) ;
 //static int OW_access( BYTE * data , const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
-static int OW_w_reg( const BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_reg( const BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 /* 2804 memory read */
 static int FS_r_mem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -223,7 +223,7 @@ static int FS_w_s_alarm(const UINT * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     int ret ;
 
@@ -235,7 +235,7 @@ static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, cons
     return 0 ;
 }
 
-static int OW_w_scratch( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_scratch( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     int ret ;
 
@@ -251,7 +251,7 @@ static int OW_w_scratch( const BYTE * data , const size_t size , const size_t of
 }
 
 /* pre-paged */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[4+32+2] = { 0xAA, offset&0xFF , (offset>>8)&0xFF, } ;
     int ret = OW_w_scratch(data,size,offset,pn) ;
 
@@ -274,7 +274,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
 }
 
 //* write status byte */
-static int OW_w_reg( const BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_w_reg( const BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
     BYTE p[3] = { 0xCC, offset&0xFF , (offset>>8)&0xFF , } ;
     int ret ;
 

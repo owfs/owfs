@@ -128,10 +128,10 @@ DeviceEntryExtended( 84, DS2404S  , DEV_alarm ) ;
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
-static int OW_w_ulong( const uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_ulong( uint64_t * L, const size_t size, const off_t offset , const struct parsedname * pn ) ;
+static int OW_w_ulong( const uint64_t * L, const size_t size, const off_t offset , const struct parsedname * pn ) ;
 
 static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, } ;
 
@@ -258,7 +258,7 @@ static int FS_r_flag(int * y , const struct parsedname * pn) {
 }
 
 /* PAged access -- pre-screened */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
     int ret ;
     struct transaction_log tcopy[] = {
@@ -295,7 +295,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
     BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
     struct transaction_log t[] = {
         TRXN_START,
@@ -310,7 +310,7 @@ static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const 
 }
 
 /* read 4 or 5 byte number */
-static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) {
+static int OW_r_ulong( uint64_t * L, const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
     if ( size > 5 ) return -ERANGE ;
     if ( OW_r_mem( data, size, offset, pn ) ) return -EINVAL ;
@@ -323,7 +323,7 @@ static int OW_r_ulong( uint64_t * L, const size_t size, const size_t offset , co
 }
 
 /* write 4 or 5 byte number */
-static int OW_w_ulong( const uint64_t * L, const size_t size, const size_t offset , const struct parsedname * pn ) {
+static int OW_w_ulong( const uint64_t * L, const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE data[5] = {0x00, 0x00, 0x00, 0x00, 0x00, } ;
     if ( size > 5 ) return -ERANGE ;
     data[0] = L[0] & 0xFF ;

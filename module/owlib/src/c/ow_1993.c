@@ -92,8 +92,8 @@ DeviceEntryExtended( 0C, DS1996 , DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 /* 1902 */
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -120,7 +120,7 @@ static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset ,
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[4+32] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
     struct transaction_log tcopy[] = {
         TRXN_START,
@@ -156,7 +156,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset
     return 0 ;
 }
 
-static int OW_r_mem( BYTE * data, const size_t size, const size_t offset, const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
     BYTE p[3] = { 0xF0, offset&0xFF , (offset>>8)&0xFF, } ;
     struct transaction_log t[] = {
         TRXN_START,

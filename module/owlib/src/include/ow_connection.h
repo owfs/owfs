@@ -201,7 +201,8 @@ enum bus_mode {
     bus_usb, 
     bus_parallel, 
     bus_tcp, 
-    bus_i2c, 
+    bus_i2c,
+    bus_ha7 ,
 } ;
 
 enum adapter_type {
@@ -219,6 +220,7 @@ enum adapter_type {
     adapter_LINK_E        ,
     adapter_DS2482_100    ,
     adapter_DS2482_800    ,
+    adapter_HA7           ,
 } ;
 
 extern unsigned long int usec_read ; /* how long to waait for serial reads */

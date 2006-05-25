@@ -77,8 +77,8 @@ DeviceEntry( 89, DS1982U ) ;
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static int OW_w_mem( const BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data , const size_t size , const size_t offset, const struct parsedname * pn ) ;
+static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
+static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_r_data( BYTE * data , const struct parsedname * pn ) ;
 
 /* 2502 memory */
@@ -111,7 +111,7 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
 }
 
 /* Byte-oriented write */
-static int OW_w_mem( const BYTE * data , const size_t size, const size_t offset , const struct parsedname * pn ) {
+static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE p[5] = { 0x0F, offset&0xFF , offset>>8, data[0] } ;
     size_t i ;
     int ret ;
@@ -138,7 +138,7 @@ static int OW_w_mem( const BYTE * data , const size_t size, const size_t offset 
 }
 
 /* page-oriented read -- call will not span page boundaries */
-static int OW_r_mem( BYTE * data , const size_t size, const size_t offset , const struct parsedname * pn ) {
+static int OW_r_mem( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE p[33] = { 0xC3, offset&0xFF , offset>>8, } ;
     int rest = 32 - (offset & 0x1F) ;
     int ret ;

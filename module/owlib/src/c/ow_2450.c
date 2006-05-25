@@ -95,8 +95,8 @@ DeviceEntryExtended( 20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2450 */
-static int OW_r_mem( BYTE * p , const size_t size, const size_t offset , const struct parsedname * pn) ;
-static int OW_w_mem( const BYTE * p , const size_t size , const size_t offset , const struct parsedname * pn) ;
+static int OW_r_mem( BYTE * p , const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int OW_w_mem( const BYTE * p , const size_t size , const off_t offset , const struct parsedname * pn) ;
 static int OW_volts( FLOAT * f , const int resolution , const struct parsedname * pn ) ;
 static int OW_1_volts( FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) ;
 static int OW_convert( const struct parsedname * pn ) ;
@@ -224,7 +224,7 @@ static int FS_w_setvolt( const FLOAT * V, const struct parsedname * pn ) {
 
 /* read up to 1 page from 2450 */
 /* cannot span page boundary */
-static int OW_r_mem( BYTE * p , const size_t size, const size_t offset , const struct parsedname * pn) {
+static int OW_r_mem( BYTE * p , const size_t size, const off_t offset , const struct parsedname * pn) {
     BYTE buf[3+8+2] = {0xAA, offset&0xFF,(offset>>8)&0xFF, } ;
     struct transaction_log t[] = {
         TRXN_START ,
@@ -243,7 +243,7 @@ static int OW_r_mem( BYTE * p , const size_t size, const size_t offset , const s
 }
 
 /* write to 2450 */
-static int OW_w_mem( const BYTE * p , const size_t size , const size_t offset, const struct parsedname * pn) {
+static int OW_w_mem( const BYTE * p , const size_t size , const off_t offset, const struct parsedname * pn) {
     // command, address(2) , data , crc(2), databack
     BYTE buf[7] = {0x55, offset&0xFF,(offset>>8)&0xFF, p[0], } ;
     size_t i ;
