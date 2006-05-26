@@ -30,9 +30,8 @@ $Id$
   
   No need to call OW_finish if an error
 */ 
-int OW_init(        const char * device ) ;
-int OW_init_string( const char * params) ;
-int OW_init_args(   int argc, char ** args ) ;
+ssize_t OW_init(        const char * params ) ;
+ssize_t OW_init_args(   int argc, char ** args ) ;
 
 /* OW_get -- data read or directory read
   path is OWFS style name,
@@ -53,7 +52,7 @@ int OW_init_args(   int argc, char ** args ) ;
   return value >=0 ok, length of information returned (in bytes)
                 <0 error
 */
-int OW_get( const char * path, char ** buffer, size_t * buffer_length ) ;
+ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) ;
 
 /* OW_put -- data write
   path is OWFS style name,
@@ -68,7 +67,31 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) ;
   return value  = 0 ok
                 < 0 error
 */ 
-int OW_put( const char * path, const char * buffer, size_t buffer_length ) ;
+ssize_t OW_put( const char * path, const char * buffer, size_t buffer_length ) ;
+
+/*  OW_lread -- read data with offset
+  path is OWFS style name,
+    "05.468ACE13579B/PIO.A for a specific device property
+  buffer holds the value
+    ascii, possibly comma delimitted
+
+    buffer must be size long
+    offset is from start of value
+    only ascii and binary data appropriate
+*/
+ssize_t OW_lread( const char * path, unsigned char * buf, const size_t size, const off_t offset ) ;
+
+/*  OW_lwrite -- write data with offset
+  path is OWFS style name,
+    "05.468ACE13579B/PIO.A for a specific device property
+  buffer holds the value
+    ascii, possibly comma delimitted
+
+    buffer must be size long
+    offset is from start of value
+    only ascii and binary data appropriate
+*/
+ssize_t OW_lwrite( const char * path, const unsigned char * buf, const size_t size, const off_t offset ) ;
 
 /* cleanup
   Clears internal buffer, frees file descriptors

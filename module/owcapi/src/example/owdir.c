@@ -7,8 +7,8 @@ const char DEFAULT_ARGV[] = "-u";
 
 int main(int argc, char **argv)
 {
-  int rc;
-  int ret = 0;
+  ssize_t rc;
+  ssize_t ret = 0;
   size_t len;
   char *buffer = NULL;
 
@@ -17,20 +17,20 @@ int main(int argc, char **argv)
     printf("Starting with parameter \"%s\" as default\n", DEFAULT_ARGV);
 
     if((rc = OW_init(DEFAULT_ARGV)) < 0) {
-      printf("OW_init failed.\n");
+      perror("OW_init failed.\n");
       ret = rc;
       goto cleanup;
     }
   } else {
     if((rc = OW_init_args(argc, argv)) < 0) {
-      printf("OW_init_args failed.\n");
+      perror("OW_init_args failed.\n");
       ret = rc;
       goto cleanup;
     }
   }
 
   if((rc = OW_get( "/", &buffer, &len)) < 0) {
-    printf("OW_get failed.\n");
+    perror("OW_get failed.\n");
     ret = rc;
     goto cleanup;
   }
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     goto cleanup;
   }
 
-  printf("OW_get() returned rc=%d, len=%d\n", rc, len);
+  printf("OW_get() returned rc=%d, len=%d\n", (int)rc, (int)len);
   buffer[len] = 0;
   printf("------- buffer content -------\n");
   printf("%s\n", buffer);

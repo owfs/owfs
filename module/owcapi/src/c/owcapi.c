@@ -28,31 +28,52 @@ $Id$
 #endif /* OW_MT */
 
 #define MAX_ARGS 20
-int OW_init_string( const char * params ) {
+
+static ssize_t internal_OW_init_args( int argc, char ** argv ) ;
+
+static ssize_t ReturnAndErrno( ssize_t ret ) {
+    if ( ret == 0 ) return 0 ;
+    errno = -ret ;
+    return -1 ;
+}
+
+ssize_t OW_init( const char * params ) {
     char * prms = strdup(params) ;
     char * p = prms ;
     int argc = 0 ;
-    int ret ;
+    ssize_t ret = 0 ;
     char * argv[MAX_ARGS+1] ;
-    while ( argc < MAX_ARGS ) {
-        argv[argc] = strdup(strsep(&p," ")) ;
-        if ( argv[argc] == NULL ) break ;
-        ++argc ;
-    }
-    argv[argc+1]=NULL ;
 
-    ret = OW_init_args( argc, argv ) ;
+    if ( prms ) {
+        while ( argc < MAX_ARGS ) {
+            argv[argc] = strdup(strsep(&p," ")) ;
+            if ( argv[argc] == NULL ) {
+                ret = -ENOMEM ;
+                break ;
+            }
+            ++argc ;
+        }
+        argv[argc+1]=NULL ;
+    } else {
+        ret = -ENOMEM ;
+    }
+
+    if ( ret == 0 ) ret = internal_OW_init_args( argc, argv ) ;
 
     while(argc>=0) {
         if(argv[argc]) free(argv[argc]) ;
         argc-- ;
     }
     if ( prms ) free( prms ) ;
-    return ret ;
+    return ReturnAndErrno(ret) ;
 }
 
-int OW_init_args( int argc, char ** argv ) {
-    int ret = 0 ;
+ssize_t OW_init_args( int argc, char ** argv ) {
+    return ReturnAndErrno(internal_OW_init_args(argc,argv)) ;
+}
+
+static ssize_t internal_OW_init_args( int argc, char ** argv ) {
+    ssize_t ret = 0 ;
     int c ;
 
     if ( OWLIB_can_init_start() ) {
@@ -81,42 +102,16 @@ int OW_init_args( int argc, char ** argv ) {
     }
 
     delay_background = 1 ; // Cannot enter background mode, since this is a called library
-    if ( ret==0 ) ret = LibStart() ;
 
-    if ( ret ) LibClose() ;
+    if ( ret || (ret=LibStart()) ) {
+        LibClose() ;
+    }
 
     OWLIB_can_init_end() ;    
     return ret ;
 }
 
-/* Code */
-int OW_init( const char * device ) {
-    int ret = 0 ;
-
-    if ( device==NULL ) return -ENODEV ;
-
-    if ( OWLIB_can_init_start() ) {
-        OWLIB_can_init_end() ;
-        return -EALREADY ;
-    }
-    
-    /* Proceed with init while lock held */
-
-    /* Set up owlib */
-    LibSetup() ;
-    
-    ret = OW_ArgGeneric(device) ;
-
-    background = 0 ; // Cannot enter background mode, since this is a called library
-    if ( ret==0 ) ret = LibStart() ;
-
-    if ( ret ) LibClose() ;
-
-    OWLIB_can_init_end() ;
-    return ret ;
-}
-
-int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
+ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     struct parsedname pn ;
     char * buf = NULL ;
     size_t sz ; /* current buffer size */
@@ -145,9 +140,9 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     }
 
     /* Check the parameters */
-    if ( buffer==NULL ) return -EINVAL ;
+    if ( buffer==NULL ) return ReturnAndErrno(-EINVAL) ;
     if ( path==NULL ) path="/" ;
-    if ( strlen(path) > PATH_MAX ) return -EINVAL ;
+    if ( strlen(path) > PATH_MAX ) return ReturnAndErrno(-EINVAL) ;
 
     if ( OWLIB_can_access_start() ) { /* Check for prior init */
         s = -ENETDOWN ;
@@ -180,16 +175,24 @@ int OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
         buffer[0] = buf ;
     }
     OWLIB_can_access_end() ;
-    return s ;
+    return ReturnAndErrno(s) ;
 }
 
-int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
-    int ret ;
+ssize_t OW_lread( const char * path, unsigned char * buf, const size_t size, const off_t offset ) {
+    ReturnAndErrno( FS_read( path, buf, size, offset ) ) ;
+}
+
+ssize_t OW_lwrite( const char * path, const unsigned char * buf, const size_t size, const off_t offset ) {
+    ReturnAndErrno( FS_write( path, buf, size, offset ) ) ;
+}
+
+ssize_t OW_put( const char * path, const char * buffer, size_t buffer_length ) {
+    ssize_t ret ;
         
     /* Check the parameters */
-    if ( buffer==NULL || buffer_length==0 ) return -EINVAL ;
-    if ( path==NULL ) return -EINVAL ;
-    if ( strlen(path) > PATH_MAX ) return -EINVAL ;
+    if ( buffer==NULL || buffer_length==0 ) return ReturnAndErrno(-EINVAL) ;
+    if ( path==NULL ) return ReturnAndErrno(-EINVAL) ;
+    if ( strlen(path) > PATH_MAX ) return ReturnAndErrno(-EINVAL) ;
 
     /* Check for prior init */
     if ( OWLIB_can_access_start() ) {
@@ -198,7 +201,7 @@ int OW_put( const char * path, const char * buffer, size_t buffer_length ) {
         ret = FS_write(path,buffer,buffer_length,0) ;
     }
     OWLIB_can_access_end() ;
-    return ret ;
+    return ReturnAndErrno(ret) ;
 }
 
 void OW_finish( void ) {
