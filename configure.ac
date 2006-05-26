@@ -907,11 +907,11 @@ if test "${ENABLE_USB}" = "true" ; then
 fi
 AC_SUBST(USB_FLAG)
 if test "${ENABLE_PROFILING}" = "true" ; then
-    PROFILING_FLAG=-pg
+   PROFILING_FLAG=-pg
 fi
 AC_SUBST(PROFILING_FLAG)
 if test "${ENABLE_PARPORT}" = "true" ; then
-   PARPORT_FLAG = -DOW_PARPORT
+   PARPORT_FLAG=-DOW_PARPORT
 fi
 AC_SUBST(PARPORT_FLAG)
 
