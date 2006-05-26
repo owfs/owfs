@@ -368,7 +368,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         Exit(1) ;
     } else {
         while (1) {
-            int acceptfd=accept(outdevice->fd,NULL,NULL)) ;
+            int acceptfd=accept(outdevice->fd,NULL,NULL) ;
             if ( acceptfd < 0 ) {
                 ERROR_CONNECT("Trouble with accept, will reloop\n") ;
             } else {
