@@ -32,9 +32,8 @@ $Id$
 static ssize_t internal_OW_init_args( int argc, char ** argv ) ;
 
 static ssize_t ReturnAndErrno( ssize_t ret ) {
-    if ( ret == 0 ) return 0 ;
     errno = -ret ;
-    return -1 ;
+    return ((ret == 0) ? 0 : -1) ;
 }
 
 ssize_t OW_init( const char * params ) {
@@ -43,20 +42,25 @@ ssize_t OW_init( const char * params ) {
     int argc = 0 ;
     ssize_t ret = 0 ;
     char * argv[MAX_ARGS+1] ;
+    
+    if (!prms) return ReturnAndErrno(-ENOMEM) ;
+    argv[argc++] = strdup("owdir") ;
 
-    if ( prms ) {
-        while ( argc < MAX_ARGS ) {
-            argv[argc] = strdup(strsep(&p," ")) ;
-            if ( argv[argc] == NULL ) {
-                ret = -ENOMEM ;
-                break ;
-            }
-            ++argc ;
-        }
-        argv[argc+1]=NULL ;
-    } else {
-        ret = -ENOMEM ;
+    while ( argc < MAX_ARGS ) {
+        char * tok = strsep(&p," ");
+	if ( (tok == NULL) ) {
+	    argv[argc] = NULL ;
+	    break ;
+	} else {
+	    argv[argc] = strdup(tok) ;
+	    if ( argv[argc] == NULL ) {
+	        ret = -ENOMEM ;
+		break ;
+	    }
+	}
+	++argc ;
     }
+    argv[argc+1]=NULL ;
 
     if ( ret == 0 ) ret = internal_OW_init_args( argc, argv ) ;
 
