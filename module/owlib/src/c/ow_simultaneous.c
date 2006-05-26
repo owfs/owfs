@@ -44,7 +44,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_simultaneous.h"
-#include    <sys/time.h> /* for gettimeofday */
+#include <sys/time.h> /* for gettimeofday */
 
 
 /* Not currently implemented -- cannot do simultaneous without a cache */
@@ -78,7 +78,7 @@ static int OW_killcache( enum simul_type type, const struct parsedname * pn ) ;
 struct internal_prop ipSimul[] = {
     {"temperature",ft_volatile},
     {"voltage",ft_volatile},
-    };
+};
 
 /* returns 0 if valid conversion exists */
 int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) {
@@ -151,14 +151,14 @@ static int OW_skiprom( enum simul_type type, const struct parsedname * pn ) {
     pn2.dev = NULL ; /* only branch select done, not actual device */
     /* Make sure pn has bus-mutex initiated and it on local bus, NOT remote */
     BUSLOCK(pn);
-	switch ( type ) {
-	case simul_temp:
+        switch ( type ) {
+        case simul_temp:
             ret = BUS_select(&pn2) || BUS_send_data( cmd_temp,2,pn ) ;
-	    break ;
-	case simul_volt:
+            break ;
+        case simul_volt:
             ret = BUS_select(&pn2) || BUS_sendback_data( cmd_volt,data,6,pn ) || memcmp( cmd_volt , data , 4 ) || CRC16(&data[1],5) ;
-	    break ;
-	}
+            break ;
+        }
     BUSUNLOCK(pn);
     return ret ;
 }

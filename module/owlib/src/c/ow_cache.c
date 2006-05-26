@@ -672,8 +672,8 @@ int Cache_Del(          const struct parsedname * pn                            
     { return 1; }
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn )
     { return 1; }
-int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn ) {
-    { return 1; }
+int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn )
+{ return 1; } // fix from Vincent Fleming
 int Cache_Add_Device( const int bus_nr, const struct parsedname * pn )
     { return 1; }
 int Cache_Get_Dir( BYTE ** snlist, size_t * devices, const struct parsedname * pn )
