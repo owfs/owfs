@@ -44,7 +44,7 @@ ssize_t OW_init( const char * params ) {
     char * argv[MAX_ARGS+1] ;
     
     if (!prms) return ReturnAndErrno(-ENOMEM) ;
-    argv[argc++] = strdup("owdir") ;
+    argv[argc++] = strdup("owcapi") ;
 
     while ( argc < MAX_ARGS ) {
         char * tok = strsep(&p," ");
