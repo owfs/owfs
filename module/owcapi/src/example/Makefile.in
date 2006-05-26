@@ -1,0 +1,14 @@
+
+LDFLAGS = -L@prefix@/lib -Wl,--rpath -Wl,@prefix@/lib -lowcapi
+CFLAGS = -g -I@prefix@/include
+
+OBJS = owdir.o
+
+owdir: $(OBJS)
+	@CC@ $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+
+%.o: %.c
+	@CC@ $(CFLAGS) -c -o $@ $<
+
+clean:
+	$(RM) -f owdir *.o *~ .~

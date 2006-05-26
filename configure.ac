@@ -992,6 +992,7 @@ AC_CONFIG_FILES([
     module/owcapi/src/include/Makefile
     module/owcapi/src/c/Makefile
     module/owcapi/src/man/Makefile
+    module/owcapi/src/example/Makefile
     module/swig/Makefile
     module/swig/perl5/Makefile
     module/swig/perl5/Makefile.PL
