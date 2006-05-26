@@ -6,7 +6,7 @@ WriteMakefile(
     'CC'	=>	'@CC@',
     'ABSTRACT'	=>	q[Perl interface to the 1-wire filesytem] ,
     'AUTHOR'	=>	q[Paul H Alfille <palfille@earthlink.net>] ,
-#    'VERSION'	=>	q[@VERSION@],
+    'VERSION'	=>	q[@VERSION@],
 # Avoid compilation problem for Fedora Core 1 and Slackware 10.2
     'DEFINE'    =>	q[-DSKIP_SEARCH_H @DEFS@],
     'INC'       =>	q[-I../../../src/include -I../../owlib/src/include @CPPFLAGS@],
