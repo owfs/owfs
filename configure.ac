@@ -529,6 +529,12 @@ AC_ARG_ENABLE(owtcl,
     if test "$enableval" = "yes" ; then
         ENABLE_OWTCL="true"
     fi
+
+    if test -z "$SWIG"  ; then
+        AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+        AC_MSG_WARN([OWTCL is disabled because swig is not found])
+        ENABLE_OWTCL="false"
+    fi
 ],
 [
     if test -z "$SWIG" ; then
