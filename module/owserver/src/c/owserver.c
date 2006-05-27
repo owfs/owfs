@@ -453,7 +453,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     cm->sg = sm->sg ;
 
     // Now generate the directory (using the embedded callback function above for each element
-    printf("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
+    LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
     LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
     cm->ret = FS_dir_remote( directory, pn, &flags ) ;
     LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;
@@ -489,10 +489,10 @@ static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const str
 /* pn is configured */
 /* cm.ret is set to bus_nr or -1 */
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
-    int bus_nr = -1;
     cm->payload = 0 ;
     cm->sg = sm->sg ;
 #if 0
+    int bus_nr = -1;
     //printf("PresenceHandler: pn->path=[%s] state=%d bus_nr=%d\n", pn->path, pn->state, pn->bus_nr);
 
     if((pn->type == pn_real) && !(pn->state & pn_bus)) {
