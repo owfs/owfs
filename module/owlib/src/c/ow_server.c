@@ -191,14 +191,15 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
         struct parsedname pn2 ;
 
         /* If cacheable, try to allocate a blob for storage */
-        if ( (pn->type==pn_real) && (pn->state & pn_alarm) ) {
-            if ( pn2.pathlength == 0 ) {
+        /* only for "read devices" and not alarm */
+        if ( (pn->type==pn_real) && (pn->state&pn_alarm)==0 ) {
+            if ( pn2.pathlength == 0 ) { /* root dir */
                 BUSLOCK(pn) ;
                     allocated = pn->in->last_root_devs ; // root dir estimated length
                 BUSUNLOCK(pn) ;
             }
             allocated += 10 ; /* add space for additional devices */
-            snlist = (BYTE *) malloc(allocated+2) ;
+            snlist = (BYTE *) malloc(allocated*8+2) ; /* NULL ok, its well handled later */
         }
 
         while((path2 = FromServerAlloc( connectfd, &cm))) {
@@ -220,13 +221,12 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 /* If we get a device then cache the bus_nr */
                 Cache_Add_Device(pn->in->index, &pn2);
             }
-
             /* Add to cache Blob -- snlist is also a flag for cachable */
             if ( snlist ) { /* only add if there is a blob allocated successfully */
                 if ( devices >= allocated ) {
-                    BYTE * temp = snlist ;
+                    void * temp = snlist ;
                     allocated += 10 ;
-                    snlist = (BYTE*) realloc( temp, allocated+2 ) ;
+                    snlist = (BYTE*) realloc( temp, allocated*8+2 ) ;
                     if ( snlist==NULL ) free(temp) ;
                 }
                 if ( snlist ) { /* test again, after realloc */
