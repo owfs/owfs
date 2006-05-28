@@ -44,7 +44,6 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_simultaneous.h"
-#include <sys/time.h> /* for gettimeofday */
 
 
 /* Not currently implemented -- cannot do simultaneous without a cache */

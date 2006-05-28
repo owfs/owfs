@@ -77,6 +77,7 @@ $Id$
  #include <sys/types.h> /* for stat */
 #endif
 #include <ctype.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

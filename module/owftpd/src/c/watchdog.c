@@ -3,7 +3,6 @@
  */
 
 #include "owftpd.h"
-#include <unistd.h>
 
 static int invariant(struct watchdog_s *w);
 static void insert(struct watchdog_s *w, struct watched_s *watched);

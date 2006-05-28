@@ -17,32 +17,8 @@ to end.
 */
 
 #include "owftpd.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <stdlib.h>
 #include <limits.h>
-#include <syslog.h>
-#include <stdio.h>
-#include <netdb.h>
-#include <netinet/tcp.h>
-#include <fcntl.h>
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 
 /* maximum number of consecutive errors in accept()
    before we terminate listener                     */

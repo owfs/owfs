@@ -45,8 +45,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <sys/time.h>
-
 /* ------- Prototypes ------------ */
 static int CheckPresence_low( struct connection_in * in, const struct parsedname * pn ) ;
 

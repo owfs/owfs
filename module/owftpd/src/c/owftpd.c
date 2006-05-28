@@ -3,18 +3,7 @@
  */
 
 #include "owftpd.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-#include <signal.h>
 #include <pwd.h>
-#include <syslog.h>
-#include <pthread.h>
-#include <stdlib.h>
 
 /* put our executable name here where everybody can see it */
 static void ow_exit( int e ) ;

@@ -11,8 +11,6 @@
  */
 
 #include "owftpd.h"
-#include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
 
 static int invariant(const struct error_code_s *err);

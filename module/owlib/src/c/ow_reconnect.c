@@ -15,9 +15,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <sys/time.h>
-
-
 /* Tests whether this bus (pn->in) has too many consecutive reset errors */
 /* If so, the bus is closed and "reconnected" */
 /* Reconnection usually just means reopening (detect) with the same initial name like ttyS0 */

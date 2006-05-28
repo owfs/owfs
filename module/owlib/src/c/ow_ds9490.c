@@ -28,7 +28,6 @@ $Id$
 #ifdef OW_USB /* conditional inclusion of USB */
 
 #include <usb.h>
-#include <sys/time.h>
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 

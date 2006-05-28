@@ -15,8 +15,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <sys/time.h>
-
 static int Turnoff( int depth, const struct parsedname * pn ) ;
 static int BUS_selection_error( int ret ) ;
 static int BUS_select_subbranch( const struct buspath * bp, const struct parsedname * pn) ;

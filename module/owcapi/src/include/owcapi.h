@@ -16,6 +16,7 @@ $Id$
 #define OWCAPI_H
 
 #include <owfs_config.h>
+#include <stdlib.h>  // for malloc
 
 /* initialization, required before any other calls. Should be paired with a finish
     OW_init -- simplest, just a device name

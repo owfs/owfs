@@ -15,9 +15,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <sys/stat.h>
-#include <string.h>
-
 /* ------- Prototypes ----------- */
 static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 static int FS_real_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;

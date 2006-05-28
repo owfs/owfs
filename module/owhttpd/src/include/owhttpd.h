@@ -18,17 +18,9 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <signal.h> // signal
-#include <stdlib.h> // exit
-#include <unistd.h> // chdir
-#include <stdio.h> // perror
-#include <fcntl.h> // open
 #include <pwd.h> // getpwuid
 #include <grp.h> // initgroups
-#include <syslog.h>
+#include <limits.h>
 
 #define SVERSION "owhttpd"
 

@@ -11,7 +11,6 @@ $Id$
  */
 
 #include "owhttpd.h"
-#include <limits.h>
 
 // #include <libgen.h>  /* for dirname() */
 

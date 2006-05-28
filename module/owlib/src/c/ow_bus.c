@@ -15,8 +15,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <sys/time.h>
-
 /** BUS_send_data
     Send a data and expect response match
     puts into data mode if needed.

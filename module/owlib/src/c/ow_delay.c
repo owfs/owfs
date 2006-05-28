@@ -13,10 +13,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-//#include <stdlib.h>
-//#include <string.h>
-
-
 //--------------------------------------------------------------------------
 //  Description:
 //     Delay for at least 'len' ms

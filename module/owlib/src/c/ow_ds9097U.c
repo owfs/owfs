@@ -15,9 +15,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-/* #include "ow_xxxx.h" */
-#include <sys/time.h>
-
 static int DS2480_next_both( struct device_search * ds, const struct parsedname * pn) ;
 static int DS2480_databit(int sendbit, int * getbit, const struct parsedname * pn) ;
 static int DS2480_reset( const struct parsedname * pn ) ;

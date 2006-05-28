@@ -15,9 +15,6 @@ $Id$
     Written 2003 Paul H Alfille
 */
 
-#include <config.h>
-#include "owfs_config.h"
-#include "ow.h"
 #include "owfs.h"
 
 /* Stuff from helper.h */

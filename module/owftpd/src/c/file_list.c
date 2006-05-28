@@ -3,26 +3,10 @@
  */
 
 #include "owftpd.h"
-#include <stdio.h>
 #include <limits.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <glob.h>
-#include <stdlib.h>
 #include <stdarg.h>
-#include <ctype.h>
 
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 
 /* AIX requires this to be the first thing in the file.  */
 #ifndef __GNUC__

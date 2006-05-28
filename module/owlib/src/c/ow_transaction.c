@@ -15,9 +15,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#include <sys/time.h>
-
-
 /* Bus transaction */
 /* Encapsulates communication with a device, including locking the bus, reset and selection */
 /* Then a series of bytes is sent and returned, including sending data and reading the return data */

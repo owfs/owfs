@@ -52,24 +52,14 @@ void LibSetup( void ) {
 #endif /* __UCLIBC__ */
 
 #ifndef HAVE_DAEMON
-#include <sys/types.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
-#include <signal.h>
 
 static void catchchild( int sig ) {
     pid_t pid;
     int status;
 
     pid = wait4(-1, &status, WUNTRACED, 0);
-#if 0
-    if (WIFSTOPPED(status)) {
-        LEVEL_CONNECT("owlib: %d: Child %d stopped\n", getpid(), pid)
-    } else {
-        LEVEL_CONNECT("owlib: %d: Child %d died\n", getpid(), pid)
-    } 
-#endif /* 0 */
 }
 
 /*
@@ -316,21 +306,6 @@ void Timeout( const char * c ) {
     timeout.dir = 5*timeout.vol ;
 }
 
-#if 0
-static void segv_handler(int sig) {
-    pid_t pid = getpid() ;
-#ifdef OW_MT
-    pthread_t tid = pthread_self() ;
-    (void) sig ;
-    LEVEL_DEFAULT("owlib: SIGSEGV received... pid=%d tid=%ld\n", pid, tid)
-#else /* OW_MT */
-    (void) sig ;
-    LEVEL_DEFAULT("owlib: SIGSEGV received... pid=%d\n", pid)
-#endif /* OW_MT */
-    _exit(1) ;
-}
-#endif
-
 void set_signal_handlers( void (*exit_handler)(int errcode) ) {
     struct sigaction sa;
 
@@ -345,14 +320,6 @@ void set_signal_handlers( void (*exit_handler)(int errcode) ) {
         LEVEL_DEFAULT("Cannot set exit signal handlers")
         exit_handler(-1);
     }
-
-#if 0
-    sa.sa_handler = segv_handler;
-    if (sigaction(SIGSEGV, &sa, NULL) == -1) {
-        LEVEL_DEFAULT("Cannot set exit signal handlers" )
-        exit_handler(-1);
-    }
-#endif
 
     sa.sa_handler = SIG_IGN;
     if(sigaction(SIGPIPE, &sa, NULL) == -1) {

@@ -15,11 +15,7 @@ $Id$
     Written 2003 Paul H Alfille
 */
 
-#include <config.h>
-#include "owfs_config.h"
-#include "ow.h"
 #include "owfs.h"
-#include <fuse.h>
 
 /* Fuse_main is called with a standard C-style argc / argv parameters */
 

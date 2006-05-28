@@ -1,7 +1,4 @@
 #include "owftpd.h"
-#include <pthread.h>
-#include <syslog.h>
-#include <stdio.h>
 
 #ifndef NDEBUG
 void daemon_assert_fail(const char *assertion,

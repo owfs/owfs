@@ -14,9 +14,9 @@ $Id$
 #ifndef OWFS_H
 #define OWFS_H
 
-#ifndef OWFS_CONFIG_H
-#error Please make sure owfs_config.h is included *before* this header file
-#endif
+#include <config.h>
+#include "owfs_config.h"
+#include "ow.h"
 
 /* Include FUSE -- http://fuse.sf.net */
 /* Lot's of version-specific code */
@@ -33,9 +33,6 @@ $Id$
   #define FUSE_VERSION FUSE_MAKE_VERSION(FUSE_MAJOR_VERSION,FUSE_MINOR_VERSION)
  #endif /* FUSE_MAJOR_VERSION */
 #endif /* FUSE_VERSION */
-
-
-#include <stdlib.h>
 
 extern struct fuse_operations owfs_oper;
 

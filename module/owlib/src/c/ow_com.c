@@ -17,11 +17,6 @@ $Id$
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
 #endif
-#include <termios.h>
-#include <syslog.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
 
 /* ---------------------------------------------- */
 /* raw COM port interface routines                */
