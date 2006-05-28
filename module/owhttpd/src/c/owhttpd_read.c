@@ -51,7 +51,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
             canwrite = 0 ;
         }
         
-        if ( (suglen=FS_size_postparse(&pn)) < 0 ) {
+        if ( (suglen=FullFileLength(&pn)) < 0 ) {
             //printf("Show: can't find file-size of %s ???\n", pn->path);
             suglen = 0 ;
         }
@@ -61,7 +61,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
             buf[suglen] = '\0' ;
         
             if ( canread ) { /* At least readable */
-                if ( (len=FS_read_3times(buf, (size_t)suglen, 0, &pn))>=0 ) {
+                if ( (len=FS_read_postparse(buf, (size_t)suglen, 0, &pn))>=0 ) {
                     buf[len] = '\0' ;
                     //printf("SHOW read of %s len = %d, value=%s\n",pn.path,len,SAFESTRING(buf)) ;
                 }
@@ -164,7 +164,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
             canwrite = 0 ;
         }
         
-        if ( (suglen=FS_size_postparse(&pn)) < 0 ) {
+        if ( (suglen=FullFileLength(&pn)) < 0 ) {
             //printf("Show: can't find file-size of %s ???\n", pn->path);
             suglen = 0 ;
         }
@@ -174,7 +174,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
             buf[suglen] = '\0' ;
         
             if ( canread ) { /* At least readable */
-                if ( (len=FS_read_3times(buf, (size_t)suglen, 0, &pn))>=0 ) {
+                if ( (len=FS_read_postparse(buf, (size_t)suglen, 0, &pn))>=0 ) {
                     buf[len] = '\0' ;
                     //printf("SHOW read of %s len = %d, value=%s\n",pn.path,len,SAFESTRING(buf)) ;
                 }

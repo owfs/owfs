@@ -157,9 +157,9 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
             s=sz=0 ;
             FS_dir( directory, &pn ) ;
         } else { /* A regular file */
-            s = FS_size_postparse(&pn) ;
+            s = FullFileLength(&pn) ;
             if ( (buf=(char *) malloc( s+1 )) ) {
-                int r =  FS_read_3times( buf, s, 0, &pn ) ;
+                int r =  FS_read_postparse( buf, s, 0, &pn ) ;
                 if ( r<0 ) {
                     free(buf) ;
                     s = r ;

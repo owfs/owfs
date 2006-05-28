@@ -20,13 +20,24 @@ $ID: $
 #include <string.h>
 
 /* ------- Prototypes ----------- */
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn ) ;
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 static int FS_real_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_gamish(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+
+/*
+Change in strategy 6/2006:
+Now use CheckPresence as primary method of finding correct bus
+Can break down cases into:
+1. bad ParsedName -- no read possible
+2. structure -- read from 1st bus (local)
+3. specified bus (picked up in ParsedName) -- use that
+4. statistics, settings, Simultaneous, Thermostat -- use first or specified
+5. real -- use caced, if error, delete cache entry and try twice more.
+*/
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -53,20 +64,59 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 }
 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
-int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    int r = 0 ;
-    int i;
+int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+    struct parsedname pn2 ;
+    ssize_t r = 0 ;
     //    if ( pn->in==NULL ) return -ENODEV ;
     /* Normal read. Try three times */
     STATLOCK;
         AVERAGE_IN(&read_avg)
         AVERAGE_IN(&all_avg)
     STATUNLOCK;
-    for(i=0; i<3; i++) {
-        STAT_ADD1(read_tries[i]) ; /* statitics */
-        r = FS_read_postparse( buf, size, offset, pn ) ;
-        if ( r>=0 ) break;
+
+    /* First try */
+    /* in and bus_nr already set */
+    STAT_ADD1(read_tries[0]) ;
+    r = FS_read_postpostparse( buf, size, offset, pn ) ;
+
+    /* Second Try */
+    /* if not a specified bus, relook for chip location */
+    if ( r < 0 ) {
+        memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+        STAT_ADD1(read_tries[1]) ;
+        if ( server_mode ) {
+            Cache_Del_Device( pn ) ;
+        } else if ( pn->state & pn_buspath ) {
+            r = TestConnection(pn) ? -ECONNABORTED : FS_read_postpostparse( buf, size, offset, pn ) ;
+        } else if ( (r = CheckPresence( pn )) >= 0 ) {
+            pn2.in = find_connection_in(r);
+            pn2.state |= pn_bus ;
+            pn2.bus_nr = r ;
+            Cache_Add_Device( r, pn ) ;
+            r = FS_read_postpostparse( buf, size, offset, &pn2 ) ;
+        } else {
+            r = -ENOENT ;
+        }
     }
+
+    /* Third try */
+    /* if not a specified bus, relook for chip location */
+    if ( !server_mode && (r < 0) ) {
+        STAT_ADD1(read_tries[2]) ;
+        if ( pn->state & pn_buspath ) {
+            r = TestConnection(pn) ? -ECONNABORTED : FS_read_postpostparse( buf, size, offset, pn ) ;
+        } else if ( (r = CheckPresence( pn )) >= 0 ) {
+            pn2.in = find_connection_in(r);
+            pn2.state |= pn_bus ;
+            pn2.bus_nr = r ;
+            Cache_Add_Device( r, pn ) ;
+            r = FS_read_postpostparse( buf, size, offset, &pn2 ) ;
+        } else {
+            Cache_Del_Device(pn) ;
+            r = -ENOENT ;
+        }
+    }
+        
     STATLOCK;
         if ( r>=0 ) {
             ++read_success ; /* statistics */
@@ -95,7 +145,7 @@ int FS_read_3times(char *buf, const size_t size, const off_t offset, const struc
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
 /* After parsing, choose special read based on path type */
-int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
     //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
@@ -106,82 +156,14 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     STATUNLOCK;
 
     switch (pn->type) {
-    case pn_structure:
-        /* Get structure data from local memory */
-        //printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
-        r = FS_structure(buf,size,offset,pn) ;
-        break;
-    case pn_system:
-    case pn_settings:
-    case pn_statistics:
-        //printf("FS_read_postparse: pid=%ld system/settings/statistics\n", pthread_self());
-        if ( pn->state & pn_bus ) {
-            /* this will either call ServerDir or FS_real_read */
-            //printf("FS_read_postparse: call read_seek\n");
-            r = FS_read_seek(buf, size, offset, pn->in, pn) ;
-        } else {
-            /* Read from local memory */
-            //printf("FS_read_postparse: call real_read\n");
-            r = FS_real_read( buf, size, offset, pn ) ;
-        }
-        break;
-    default:
-      //printf("FS_read_postparse: pid=%ld call fs_read_seek size=%ld\n", pthread_self(), size);
-        /* handle DeviceSimultaneous */
-        if(pn->dev == DeviceSimultaneous) {
-            if(pn->state & pn_bus) {
-                r = FS_read_seek(buf, size, offset, pn->in, pn) ;
-            } else {
-                struct connection_in *p = indevice ;
-                while(p) {
-                    if(get_busmode(p) == bus_remote) break ;
-                    p = p->next;
-                }
-                if(p) {
-                    /* A remote server exists, and we can't read this value!!
-                    * /simultaneous/temperature is unknown when:
-                    * /bus.0/simultaneous/temperature = 0
-                    * /bus.1/simultaneous/temperature = 1
-                    */
-                    if(offset > 1) {
-                        r = -ERANGE ;
-                    } else if(offset == 1) {
-                        r = 0 ;
-                    } else {
-                        buf[0] = '0';
-                        r = 1;
-                    }
-                } else {
-                    r = FS_real_read(buf, size, offset, pn) ;
-                }
-            }
-        } else {
-            /* real data -- go through device chain */
-            /* this will either call ServerDir or FS_real_read */
-            if((pn->type == pn_real) && !(pn->state & pn_bus)) {
-                struct parsedname pn2;
-                int bus_nr = -1;
-                if(Cache_Get_Device(&bus_nr, pn)) {
-                    //printf("Cache_Get_Device didn't find bus_nr\n");
-                    bus_nr = CheckPresence(pn);
-                    /* Cache_Add_Device() is called in FS_read_seek() */
-                }
-                if(bus_nr >= 0) {
-                    memcpy(&pn2, pn, sizeof(struct parsedname));
-                    /* fake that we read from only one indevice now! */
-                    pn2.in = find_connection_in(bus_nr);
-                    pn2.state |= pn_bus ;
-                    pn2.bus_nr = bus_nr ;
-                    //printf("read only from bus_nr=%d\n", bus_nr);
-                    r = FS_read_seek(buf, size, offset, pn2.in, &pn2) ;
-                } else {
-                    //printf("CheckPresence failed, no use to read\n");
-                    r = -ENOENT ;
-                }
-            } else {
-                r = FS_read_seek(buf, size, offset, pn->in, pn) ;
-            }
-        }
+        case pn_structure:
+            /* Get structure data from local memory */
+            //printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
+            r = FS_structure(buf,size,offset,pn) ;
+            break;
+        default:
+            r = FS_read_seek( buf, size, offset, pn ) ;
+            break;
     }
     STATLOCK;
         if ( r>=0 ) {
@@ -196,65 +178,34 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     return r;
 }
 
-/* Loop through input devices (busses) */
-#ifdef OW_MT
-struct read_seek_struct {
-    char * buf ;
-    size_t size ;
-    off_t offset ;
-    struct connection_in * in ;
-    const struct parsedname * pn ;
-    int r ;
-} ;
-
-static void * FS_read_seek_callback( void * vp ) {
-    struct read_seek_struct * rss = (struct read_seek_struct *) vp ;
-    rss->r = FS_read_seek( rss->buf, rss->size, rss->offset, rss->in, rss->pn ) ;
-    pthread_exit(NULL);
-    return NULL;
-}
-
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn ) {
+static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
-    pthread_t thread ;
-    int threadbad = 1;
-    struct read_seek_struct rss = { buf, size, offset, in->next, pn, 0 } ;
-    struct parsedname pn2 ;
     //printf("READSEEK\n");
-    if(!(pn->state & pn_bus)) {
-        threadbad = in->next==NULL || pthread_create( &thread, NULL, FS_read_seek_callback, (void *) &rss ) ;
-    }
 
-    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
-    pn2.in = in ;
-
-    if ( TestConnection(&pn2) ) {
-        //printf("READSEEK testconnection\n") ;
-        r = -ECONNABORTED ; // Cannot "reconnect" this bus currently
-    } else if ( (get_busmode(in) == bus_remote) ) {
+    if ( (get_busmode(pn->in) == bus_remote) ) {
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
-        r = ServerRead(buf,size,offset,&pn2) ;
+        r = ServerRead(buf,size,offset,pn) ;
         //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
         size_t s = size ;
         STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || IsLocalCacheEnabled(&pn2)==0 ) {
+        if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
             //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
-            if ( (r=LockGet(&pn2))==0 ) {
-                r = FS_real_read(buf, size, offset, &pn2 ) ;
+            if ( (r=LockGet(pn))==0 ) {
+                r = FS_real_read(buf, size, offset, pn ) ;
                 //printf("READSEEK1 FS_real_read ret=%d\n", r);
-                LockRelease(&pn2) ;
+                LockRelease(pn) ;
             }
             //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
-        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, &pn2 ) ) {
+        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
             //printf("READSEEK2 pid=%d not found in cache\n",getpid());
-            if ( (r=LockGet(&pn2))==0 ) {
+            if ( (r=LockGet(pn))==0 ) {
                 //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
-                r = FS_real_read( buf, size, offset, &pn2 ) ;
+                r = FS_real_read( buf, size, offset, pn ) ;
                 //printf("READSEEK2 FS_real_read ret=%d\n", r);
-                if ( r>0 ) Cache_Add( buf, (const size_t)r, &pn2 ) ;
-                LockRelease(&pn2) ;
+                if ( r>0 ) Cache_Add( buf, (const size_t)r, pn ) ;
+                LockRelease(pn) ;
             }
             //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
         } else {
@@ -267,80 +218,9 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct
             //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
         }
     }
-    /* If sucessfully reading a device, we know it exists on a specific bus.
-    * Update the cache content */
-    if((pn->type == pn_real) && (r >= 0)) {
-        Cache_Add_Device(in->index, pn);
-    }
-
-    if ( threadbad == 0 ) { /* was a thread created? */
-        void * v ;
-        //printf("READ call pthread_join\n");
-        if ( pthread_join( thread, &v ) ) return r ; /* wait for it (or return only this result) */
-        //printf("READ 1st=%d 2nd=%d\n",r,rt);
-        if ( rss.r > r ) return rss.r ; /* return better solution */
-        //printf("READ from 1st adapter\n") ;
-    }
     return r ;
 }
 
-#else /* OW_MT */
-
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn ) {
-    int r = 0;
-    struct parsedname pn2 ;
-
-    memcpy( &pn2, pn, sizeof(struct parsedname) ) ;
-    pn2.in = in ;
-    
-    if ( TestConnection(&pn2) ) {
-        r = -ECONNABORTED ; // Cannot "reconnect" this bus currently
-    } else if ( (get_busmode(in) == bus_remote) ) {
-        //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
-        r = ServerRead(buf,size,offset,&pn2) ;
-        //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
-    } else {
-        size_t s = size ;
-        STAT_ADD1(read_calls) ; /* statistics */
-        /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || IsLocalCacheEnabled(&pn2)==0 ) {
-            //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
-            if ( (r=LockGet(&pn2))==0 ) {
-                r = FS_real_read(buf, size, offset, &pn2 ) ;
-                //printf("READSEEK1 FS_real_read ret=%d\n", r);
-                LockRelease(&pn2) ;
-            }
-            //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
-        } else if ( (pn2.state & pn_uncached) || Cache_Get( buf, &s, &pn2 ) ) {
-            //printf("READSEEK2 pid=%d not found in cache\n",getpid());
-            if ( (r=LockGet(&pn2))==0 ) {
-                //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
-                r = FS_real_read( buf, size, offset, &pn2 ) ;
-                //printf("READSEEK2 FS_real_read ret=%d\n", r);
-                if ( r>0 ) Cache_Add( buf, (const size_t)r, &pn2 ) ;
-                LockRelease(&pn2) ;
-            }
-            //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
-        } else {
-            //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
-            STATLOCK;
-            ++read_cache ; /* statistics */
-            read_cachebytes += s ; /* statistics */
-            STATUNLOCK;
-            r = s ;
-            //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
-        }
-    }
-    /* If sucessfully reading a device, we know it exists on a specific bus.
-    * Update the cache content */
-    if((pn2.type == pn_real) && (r >= 0)) {
-        Cache_Add_Device(in->index, &pn2);
-    }
-
-    if ( r<0 && in->next ) return FS_read_seek( buf,size,offset,in->next,pn) ;
-    return r ;
-}
-#endif /* OW_MT */
 /* Real read -- called from read
    Integrates with cache -- read not called if cached value already set
 */
@@ -368,8 +248,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
         }
     }
      
-    /* Normal read. Try three times */
-    ++read_tries[0] ; /* statitics */
+    /* Normal read. */
     r = FS_parse_read( buf, size, offset, pn ) ;
     //printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d result=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index,r) ;
     //    ++read_tries[1] ; /* statitics */
@@ -387,7 +266,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
     int len ;
     struct parsedname pn2 ;
 
-    size_t s = FullFileLength(pn) ;
+    size_t s = SimpleFullFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;
     if ( offset == s ) return 0 ;
 
@@ -405,7 +284,7 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
             (pn->ft->read.v) ?
                 ( (pn->ft->write.v) ? "rw" : "ro" ) :
                 ( (pn->ft->write.v) ? "wo" : "oo" ) ,
-            (int)FullFileLength(&pn2)
+            (int)SimpleFullFileLength(&pn2)
             ) ;
     UCLIBCUNLOCK;
 
@@ -428,7 +307,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
-    s = FileLength(pn) ;
+    s = SimpleFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;
     if ( offset == s ) return 0 ;
 
@@ -502,15 +381,16 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             buf[0] = y ? '1' : '0' ;
             return 1 ;
             }
+        case ft_vascii:
         case ft_ascii: {
-            //size_t s = FileLength(pn) ;
+            //size_t s = SimpleFileLength(pn) ;
             //if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
             return (pn->ft->read.a)(buf,s,offset,pn) ;
             }
         case ft_binary: {
-            //size_t s = FileLength(pn) ;
+            //size_t s = SimpleFileLength(pn) ;
             //if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
@@ -539,7 +419,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
     
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
-    s = FullFileLength(pn) ;
+    s = SimpleFullFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;
     if ( offset == s ) return 0 ;
 
@@ -635,15 +515,16 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
             }
             break ;
         }
+    case ft_vascii:
     case ft_ascii: {
-        //size_t s = FullFileLength(pn) ;
+        //size_t s = SimpleFullFileLength(pn) ;
         //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
         return (pn->ft->read.a)(buf,s,offset,pn) ;
         }
     case ft_binary: {
-        //size_t s = FullFileLength(pn) ;
+        //size_t s = SimpleFullFileLength(pn) ;
         //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
@@ -681,7 +562,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 
     STAT_ADD1(read_array) ; /* statistics */
 
-    s = FullFileLength(pn) ;
+    s = SimpleFullFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;
     if ( offset == s ) return 0 ;
 
@@ -732,7 +613,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
     
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
-    s = FileLength(pn) ;
+    s = SimpleFileLength(pn) ;
     if ( offset > s ) return -ERANGE ;
     if ( offset == s ) return 0 ;
 
@@ -813,8 +694,9 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
             }
             break ;
         }
+    case ft_vascii:
     case ft_ascii: {
-        s = FullFileLength(pn) ;
+        s = SimpleFullFileLength(pn) ;
         if ( offset > s ) return -ERANGE ;
         if ( offset == s ) return 0 ;
         s -= offset ;
@@ -822,7 +704,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         return (pn->ft->read.a)(buf,s,offset,pn) ;
         }
     case ft_binary: {
-        s = FullFileLength(pn) ;
+        s = SimpleFullFileLength(pn) ;
         if ( offset > s ) return -ERANGE ;
         if ( offset == s ) return 0 ;
         s -= offset ;
@@ -852,7 +734,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
 }
 
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) {
-    size_t suglen = FileLength(pn) ;
+    size_t suglen = SimpleFileLength(pn) ;
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
     int len ;
@@ -874,7 +756,7 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
 }
 
 int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct parsedname * pn ) {
-    size_t suglen = FileLength(pn) ;
+    size_t suglen = SimpleFileLength(pn) ;
     int len ;
     /*
       char c[suglen+2] ;
@@ -901,7 +783,7 @@ int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct 
 }
 
 int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
-    size_t suglen = FileLength(pn) ;
+    size_t suglen = SimpleFileLength(pn) ;
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
     int len ;

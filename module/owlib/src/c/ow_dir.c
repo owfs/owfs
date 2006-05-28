@@ -15,13 +15,13 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags ) ;
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * pn, uint32_t * flags ) ;
 static int FS_devdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2 ) ;
 static int FS_alarmdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2 ) ;
 static int FS_typedir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2 ) ;
 static int FS_realdir( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2, uint32_t * flags ) ;
 static int FS_cache2real( void (* dirfunc)(const struct parsedname * const), struct parsedname * pn2, uint32_t * flags  ) ;
-static int FS_dir_both( void (* dirfunc)(const struct parsedname * const), const struct parsedname * pn, uint32_t * flags, int local_flag ) ;
 static int FS_busdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn ) ;
 
 /* Calls dirfunc() for each element in directory */
@@ -48,19 +48,20 @@ static int FS_busdir( void (* dirfunc)(const struct parsedname *), struct parsed
 int FS_dir( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn ) {
     uint32_t flags ;
 
-    return FS_dir_both( dirfunc, pn, &flags, 1 ) ;
+    return FS_dir_both( dirfunc, pn, &flags ) ;
 }
 
 /* path is the path which "pn" parses */
 /* FS_dir_remote is the entry into FS_dir_seek from ServerDir */
 /* More checking is done, and the flags are returned */
 int FS_dir_remote( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags ) {
-    return FS_dir_both( dirfunc, pn, flags, 0 ) ;
+    return FS_dir_both( dirfunc, pn, flags ) ;
 }
 
-static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags, int local_flag ) {
+static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags ) {
     int ret = 0 ;
     struct parsedname pn2 ;
+
     /* initialize flags */
     flags[0] = 0 ;
     if ( pn == NULL || pn->in==NULL ) return -ENODEV ;
@@ -97,7 +98,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 ? ServerDir(dirfunc, &pn2, flags)
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else if ( pn->pathlength == 0 ) { /* root directory */
-        if ( local_flag && !SpecifiedBus(pn) ) { /* structure only in true root */
+        if ( !server_mode && !SpecifiedBus(pn) ) { /* structure only in true root */
             pn2.type = pn_structure ;
             dirfunc( &pn2 ) ;
             pn2.type = pn_real ;
@@ -127,7 +128,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         * local in-devices. */
         ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     }
-    if ( local_flag ) {
+    if ( ! server_mode ) {
         if(!(pn->state & pn_alarm)) {
             /* don't show alarm directory in alarm directory */
             /* alarm directory */

@@ -14,9 +14,6 @@ $Id$
 #include "ow_devices.h"
 #include "ow_counters.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 static int BranchAdd( struct parsedname * pn ) ;
 
 static int filecmp(const void * name , const void * ex ) ;
@@ -114,13 +111,13 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     if ( pathcpy==NULL || pn->path==NULL || pn->lock==NULL ) {
         if (pathcpy) free(pathcpy) ;
         if (pn->path) {
-	  free(pn->path) ;
-	  pn->path = NULL;
-	}
+            free(pn->path) ;
+            pn->path = NULL;
+        }
         if (pn->lock) {
-	  free(pn->lock) ;
-	  pn->lock = NULL;
-	}
+            free(pn->lock) ;
+            pn->lock = NULL;
+        }
         return -ENOMEM ;
     }
     

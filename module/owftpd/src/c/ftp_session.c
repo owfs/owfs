@@ -1054,7 +1054,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     } else if ( (buf=(BYTE*)malloc(size=FullFileLength(&pn)-offset)) == NULL ) {
         reply(f, 550, "Error, file too large.");
         goto exit_retr;
-    } else if ( (r=FS_read_3times( buf, size, offset, &pn )) < 0 ) {
+    } else if ( (r=FS_read_postparse( buf, size, offset, &pn )) < 0 ) {
         reply(f, 550, "Error reading from file; %s.", strerror(errno));
         goto exit_retr;
     } else if (f->data_type==TYPE_IMAGE) {

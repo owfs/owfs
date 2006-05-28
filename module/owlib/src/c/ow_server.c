@@ -55,40 +55,6 @@ static void Server_close( struct connection_in * in ) {
     FreeClientAddr( in ) ;
 }
 
-int ServerSize( const char * path, const struct parsedname * pn ) {
-    struct server_msg sm ;
-    struct client_msg cm ;
-    char *pathnow ;
-    int connectfd = ClientConnect( pn->in ) ;
-    int ret = 0 ;
-    (void) path;  // not used anymore
-
-    if ( connectfd < 0 ) -EIO ;
-    memset(&sm, 0, sizeof(struct server_msg));
-    sm.type = msg_size ;
-    sm.sg = SetupSemi(pn) ;
-
-    if( (pn->state & pn_bus) && pn->path_busless ) {
-        pathnow = pn->path_busless ;
-    } else {
-        //printf("use path = %s\n", pn->path);
-        pathnow = pn->path;
-    }
-    //printf("ServerSize pathnow=%s (path=%s)\n",pathnow, path);
-    LEVEL_CALL("SERVER(%d)SIZE path=%s\n", pn->in->index, SAFESTRING(pathnow));
-
-    if ( ret ) {
-    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
-        ret = -EIO ;
-    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
-        ret = -EIO ;
-    } else {
-        ret = cm.ret ;
-    }
-    close( connectfd ) ;
-    return ret ;
-}
-
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;

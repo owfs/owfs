@@ -53,7 +53,6 @@ OWLIB_SOURCE = compat.c          \
                ow_read.c         \
                ow_reconnect.c    \
                ow_stats.c        \
-               ow_size.c         \
                ow_server.c       \
                ow_select.c       \
                ow_settings.c     \

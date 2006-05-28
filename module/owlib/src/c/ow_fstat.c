@@ -14,9 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-#include <sys/stat.h>
-#include <string.h>
-
 //#define CALC_NLINK
 static int FS_nr_subdirs(struct parsedname * pn2) ;
 
@@ -26,21 +23,14 @@ static int FS_nr_subdirs(struct parsedname * pn2) {
     int dindex = 0 ;
 
     FS_LoadPath( sn, pn2 ) ;
-#if 0
-    {
-      char tmp[17];
-      bytes2string(tmp, sn, 8) ;
-      tmp[16] = 0;
-      printf("FS_nr_subdirs: sn=%s pn2->path=%s\n", tmp, pn2->path);
-    }
-#endif
+    //printf("FS_nr_subdirs: sn="SNformat" pn2->path=%s\n", SNarg(sn), pn2->path);
     if(Cache_Get_Dir(sn,0,pn2 )) {
-      // no entries in directory are cached
-      return 0 ;
+        // no entries in directory are cached
+        return 0 ;
     }
     do {
-      FS_LoadPath( sn, pn2 ) ;
-      ++dindex;
+        FS_LoadPath( sn, pn2 ) ;
+        ++dindex;
     } while ( Cache_Get_Dir( sn, dindex, pn2 )==0 ) ;
     return dindex ;
 }
@@ -73,28 +63,27 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
         return -ENOENT ;
     } else if ( pn->dev==NULL ) { /* root directory */
         int nr = 0;
-//printf("FS_fstat root\n");
+        //printf("FS_fstat root\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
 #ifdef CALC_NLINK
         nr = FS_nr_subdirs(pn) ;
-//printf("FS_fstat: FS_nr_subdirs1 returned %d\n", nr);
+        //printf("FS_fstat: FS_nr_subdirs1 returned %d\n", nr);
 #else /* CALC_NLINK */
         nr = -1 ;  // make it 1
-	/*
-	  If calculating NSUB is hard, the filesystem can set st_nlink of
-	  directories to 1, and find will still work.  This is not documented
-	  behavior of find, and it's not clear whether this is intended or just
-	  by accident.  But for example the NTFS filesysem relies on this, so
-	  it's unlikely that this "feature" will go away.
-	 */
+        /*
+        If calculating NSUB is hard, the filesystem can set st_nlink of
+        directories to 1, and find will still work.  This is not documented
+        behavior of find, and it's not clear whether this is intended or just
+        by accident.  But for example the NTFS filesysem relies on this, so
+        it's unlikely that this "feature" will go away.
+      */
 #endif /* CALC_NLINK */
         stbuf->st_nlink += nr ;
-        stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
     } else if ( pn->ft==NULL ) {
         int nr = 0 ;
-//printf("FS_fstat pn.ft == NULL  (1-wire device)\n");
+        //printf("FS_fstat pn.ft == NULL  (1-wire device)\n");
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
 
@@ -113,7 +102,6 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
 #endif  /* CALC_NLINK */
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.dev->nft, nr);
         stbuf->st_nlink += nr ;
-        stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         FSTATLOCK;
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
         FSTATUNLOCK;
@@ -130,7 +118,6 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
 //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.ft));
         stbuf->st_nlink += nr ;
 
-        stbuf->st_size = 1 ; /* Arbitrary non-zero for "find" and "tree" */
         FSTATLOCK;
             stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
         FSTATUNLOCK;
@@ -139,26 +126,27 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
         if ( pn->ft->read.v ) stbuf->st_mode |= 0444 ;
         if ( !readonly && pn->ft->write.v ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
-        stbuf->st_size = FS_size_postparse(pn) ;
 
         switch ( pn->ft->change ) {
-        case ft_volatile:
-        case ft_Avolatile:
-        case ft_second:
-        case ft_statistic:
-            stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = time(NULL) ;
-            break ;
-        case ft_stable:
-        case ft_Astable:
-            FSTATLOCK;
-                stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
-            FSTATUNLOCK;
-            break ;
-        default:
-            stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
+            case ft_volatile:
+            case ft_Avolatile:
+            case ft_second:
+            case ft_statistic:
+                stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = time(NULL) ;
+                break ;
+            case ft_stable:
+            case ft_Astable:
+                FSTATLOCK;
+                    stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
+                FSTATUNLOCK;
+                break ;
+            default:
+                stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time ;
+                break ;
         }
 //printf("FS_fstat file\n");
     }
+    stbuf->st_size = FullFileLength(pn) ;
     return 0 ;
 }
 
