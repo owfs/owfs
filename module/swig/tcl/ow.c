@@ -267,14 +267,14 @@ owtcl_ObjCmdProc(Owtcl_Get)
     FS_dir(directory, &pn) ;
     Tcl_SetObjResult(interp, resultPtr);
   } else { /* A regular file */
-    s = FS_size_postparse(&pn) ;
+    s = FullFileLength(&pn) ;
     if (s < 0) {
 	owtcl_ErrorMsg(interp, strerror(-s));
 	tcl_return = TCL_ERROR;
 	goto common_exit;
     }
     if ((buf=(char *) ckalloc((size_t)s+1))) {
-      r =  FS_read_3times(buf, (size_t)s, (off_t)0, &pn) ;
+      r =  FS_read_postparse(buf, (size_t)s, (off_t)0, &pn) ;
       if ( r<0 ) {
 	owtcl_ErrorMsg(interp, strerror(-r));
 	ckfree(buf);

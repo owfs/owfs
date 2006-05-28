@@ -18,6 +18,9 @@ $Id$
 int now_background = 0 ;
 int delay_background = 0 ; // special flag set by owfs -- fuse backgrounds for us
 char * SimpleBusName = "None" ;
+/* Flag for server access to the library */
+int server_mode = 0 ; // set in owserver to 1
+
 
 /* All ow library setup */
 void LibSetup( void ) {

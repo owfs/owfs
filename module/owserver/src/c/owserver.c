@@ -35,15 +35,7 @@ $Id$
                  e.g. 3001 or 10.183.180.101:3001 or /tmp/1wire
 */
 
-#include <config.h>
-#include "owfs_config.h"
-#include "ow.h"
-#include "ow_connection.h"
 #include "owserver.h"
-
-#include <netinet/in.h> // ntohl ...
-#include <netdb.h> // addrinfo 
-#include <pthread.h>
 
 struct timeval tv = { 10, 0, } ;
 
@@ -72,7 +64,6 @@ struct handlerdata {
 static void Handler( int fd ) ; // Each new interaction from client
 static void * RealHandler( void * v ) ; // Called from ping wrapper
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
-static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
@@ -238,7 +229,6 @@ static void * RealHandler( void * v ) {
     memset(&cm, 0, sizeof(struct client_msg));
 
     switch( (enum msg_classification) sm.type ) { // outer switch
-        case msg_size: // good message
         case msg_read: // good message
         case msg_write: // good message
         case msg_dir: // good message
@@ -270,13 +260,6 @@ static void * RealHandler( void * v ) {
                         cm.size = cm.payload = 0 ;
                         cm.ret = pn.bus_nr ;
                         break ;
-                    case msg_size:
-                        LEVEL_CALL("Size message\n") ;
-                        if(pn.dev && pn.ft)
-                            SizeHandler( &sm, &cm, &pn ) ;
-                        else
-                            cm.ret = 0;
-                        break ;
                     case msg_read:
                         LEVEL_CALL("Read message\n") ;
                         retbuffer = ReadHandler( &sm , &cm, &pn ) ;
@@ -307,6 +290,7 @@ static void * RealHandler( void * v ) {
             LEVEL_CALL("NOP message\n") ;
             cm.ret = 0 ;
             break ;
+        case msg_size: // no longer used
         default: // "bad" message
             LEVEL_CALL("No message\n") ;
             cm.ret = -EIO ;
@@ -334,39 +318,30 @@ static void * RealHandler( void * v ) {
 /* cm.ret is also set to an error <0 or the read length */
 static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     char * retbuffer = NULL ;
+    ssize_t ret ;
     //printf("ReadHandler:\n");
-    if ( ( pn->type != pn_real )   /* stat, sys or set dir */
-           && ( (pn->state & pn_bus) && FS_RemoteBus(pn) )) {
-        //printf("ReadHandler: call ServerSize pn->path=%s\n", pn->path);
-        cm->payload = ServerSize(pn->path, pn) ;
-    } else {
-        cm->payload = FullFileLength( pn ) ;
-    }
-    if ( cm->payload > sm->size ) cm->payload = sm->size ;
-    cm->offset = sm->offset ;
 
-    if ( cm->payload <= 0 ) {
-        cm->payload = 0 ;
-        cm->ret = 0 ;
-    } else if ( cm->payload > MAXBUFFERSIZE ) {
-        cm->payload = 0 ;
+    cm->size = 0 ;
+    cm->payload = 0 ;
+    cm->offset = 0 ;
+
+    if ( ( sm->size <= 0 ) || ( sm->size > MAXBUFFERSIZE ) ) {
         cm->ret = -EMSGSIZE ;
 #ifdef VALGRIND
-    } else if ( (retbuffer = (char *)calloc(1, (size_t)cm->payload))==NULL ) {
+    } else if ( (retbuffer = (char *)calloc(1, (size_t)cm->payload))==NULL ) { // allocate return buffer
 #else
-    } else if ( (retbuffer = (char *)malloc((size_t)cm->payload))==NULL ) {
+    } else if ( (retbuffer = (char *)malloc((size_t)cm->payload))==NULL ) { // allocate return buffer
 #endif
-        /* Allocate return buffer */
-        //printf("Handler: Allocating buffer size=%d\n",cm.payload);
-        cm->payload = 0 ;
         cm->ret = -ENOBUFS ;
-    } else if ( (cm->ret = FS_read_postparse(retbuffer,(size_t)cm->payload,(off_t)cm->offset,pn)) <= 0 ) {
-        cm->payload = 0 ;
+    } else if ( (ret = FS_read_postparse(retbuffer,(size_t)sm->size,(off_t)sm->offset,pn)) <= 0 ) {
         free(retbuffer) ;
         retbuffer = NULL ;
+        cm->ret = ret ;
     } else {
-        cm->size = cm->ret ;
-        //printf("Handler: READ done string = %s\n",retbuffer);
+        cm->payload = sm->size ;
+        cm->offset = sm->offset ;
+        cm->size = ret ;
+        cm->ret = ret ;
     }
     return retbuffer ;
 }
@@ -465,29 +440,6 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
 }
 
-/* Size, called from Handler with the following caveates: */
-/* sm has been read, cm has been zeroed */
-/* pn is configured */
-/* Size, will return: */
-/* cm fully constructed for error message or null marker (end of directory elements */
-/* cm.ret is also set to an error or 0 */
-static void SizeHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
-
-    cm->payload = 0 ;
-    cm->sg = sm->sg ;
-
-    //printf("SizeHandler: pn->path=[%s] bus=%d\n", pn->path, pn->bus_nr);
-
-    cm->ret = FS_size_remote( pn ) ;
-    //printf("Handler: SIZE done ret=%d flags=%ul\n", cm->ret, flags);
-
-    cm->payload = cm->size = 0 ;
-}
-
-/* Presence, called from Handler with the following caveats: */
-/* sm has been read, cm has been zeroed */
-/* pn is configured */
-/* cm.ret is set to bus_nr or -1 */
 static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     cm->payload = 0 ;
     cm->sg = sm->sg ;
@@ -523,6 +475,9 @@ int main( int argc , char ** argv ) {
 
     /* grab our executable name */
     if (argc > 0) progname = strdup(argv[0]);
+
+    /* Flag for server access to the library */
+    int server_mode = 1 ; // set in owserver to 1
 
     /* Set up owlib */
     LibSetup() ;

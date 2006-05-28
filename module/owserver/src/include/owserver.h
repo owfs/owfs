@@ -14,6 +14,10 @@ $Id$
 #ifndef OWSERVER_H
 #define OWSERVER_H
 
+#include <config.h>
+#include "owfs_config.h"
+#include "ow.h"
+#include "ow_connection.h"
 
 #define MAXBUFFERSIZE  65000
 

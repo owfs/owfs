@@ -95,10 +95,10 @@ char * get( const char * path ) {
             FS_dir( directory, &pn ) ;
         } else { /* A regular file */
             //printf("File %s\n",path);
-            s = FS_size_postparse(&pn) ;
+            s = FullFileLength(&pn) ;
             //printf("File len=%d, %s\n",s,path);
             if ( (buf=(char *) malloc( s+1 )) ) {
-                int r =  FS_read_3times( buf, s, 0, &pn ) ;
+                int r =  FS_read_postparse( buf, s, 0, &pn ) ;
                 if ( r<0 ) {
                     free(buf) ;
                     buf = NULL;

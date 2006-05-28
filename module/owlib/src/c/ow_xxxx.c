@@ -125,8 +125,6 @@ int FS_r_ID(char *buf, const size_t size, const off_t offset , const struct pars
 }
 
 int FS_crc8(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( offset ) return -EFAULT ;
-    if ( size < 2 ) return -EMSGSIZE ;
     num2string(buf,pn->sn[7]) ;
     return 2 ;
 }
@@ -151,18 +149,7 @@ int FS_r_address(char *buf, const size_t size, const off_t offset , const struct
 int CheckPresence( const struct parsedname * pn ) {
     if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) {
         LEVEL_DETAIL("Checking presence of %s\n",SAFESTRING(pn->path) ) ;
-        return CheckPresence_low(pn->in,pn) ;
-    }
-    return 0 ;
-}
-
-/* Check if device exists -- 0 yes, 1 no */
-int Check1Presence( const struct parsedname * pn ) {
-    int y ;
-    //printf("Check1Presence type=%d\n", pn->type);
-    if ( pn->type == pn_real ) {
-        //printf("Check1Presence pn->dev=%p DS=%p\n", pn->dev, DeviceSimultaneous);
-        if ( pn->dev != DeviceSimultaneous ) return FS_present(&y,pn) || y==0 ;
+        return CheckPresence_low(indevice,pn) ;
     }
     return 0 ;
 }

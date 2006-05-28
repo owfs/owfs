@@ -275,10 +275,6 @@ struct aggregate {
 } ;
 extern struct aggregate Asystem ; /* for remote directories */
 
-/* file lengths that need special processing */
-/* stored (as negative enum) in ft.suglen */
-enum fl_funny { fl_zero, fl_type, fl_store, fl_pidfile } ;
-
     /* property format, controls web display */
 /* Some explanation of ft_format:
      Each file type is either a device (physical 1-wire chip or virtual statistics container).
@@ -295,6 +291,7 @@ enum ft_format {
     ft_unsigned,
     ft_float,
     ft_ascii,
+    ft_vascii, // variable length ascii -- must be read and measured.
     ft_binary,
     ft_yesno,
     ft_date,
@@ -318,6 +315,9 @@ extern int indevices ;
 extern char * SimpleBusName ;
 extern int max_clients ;
 extern int ftp_timeout ;
+
+/* Flag for server access to the library */
+extern int server_mode ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -557,7 +557,15 @@ struct s_timeout {
 extern struct s_timeout timeout ;
 
 /* Server (Socket-based) interface */
-enum msg_classification { msg_error, msg_nop, msg_read, msg_write, msg_dir, msg_size, msg_presence, } ;
+enum msg_classification {
+    msg_error,
+    msg_nop,
+    msg_read,
+    msg_write,
+    msg_dir,
+    msg_size, // No longer used, leave here to compatibility
+    msg_presence,
+} ;
 /* message to owserver */
 struct server_msg {
     int32_t version ;
@@ -614,11 +622,12 @@ void DeviceDestroy( void ) ;
 int FS_ParsedNamePlus( const char * path, const char * file, struct parsedname * pn ) ;
 int FS_ParsedName( const char * fn , struct parsedname * pn ) ;
 int FS_ParsedName_Remote( const char * fn , struct parsedname * pn ) ;
-  void FS_ParsedName_destroy( struct parsedname * pn ) ;
-  size_t FileLength( const struct parsedname * pn ) ;
-  size_t FullFileLength( const struct parsedname * pn ) ;
+void FS_ParsedName_destroy( struct parsedname * pn ) ;
+size_t FileLength( const struct parsedname * pn ) ;
+size_t FullFileLength( const struct parsedname * pn ) ;
+size_t SimpleFileLength( const struct parsedname * pn ) ;
+size_t SimpleFullFileLength( const struct parsedname * pn ) ;
 int CheckPresence( const struct parsedname * pn ) ;
-int Check1Presence( const struct parsedname * pn ) ;
 void FS_devicename( char * buffer, const size_t length, const BYTE * sn, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
 
@@ -702,7 +711,6 @@ int OW_ArgGeneric( const char * arg ) ;
 
 void update_max_delay( const struct parsedname * pn ) ;
 
-int ServerSize( const char * path, const struct parsedname * pn ) ;
 int ServerPresence( const struct parsedname * pn ) ;
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
@@ -716,12 +724,8 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset) ;
-int FS_read_3times(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
-
-int FS_size_remote( const struct parsedname * pn ) ;
-int FS_size_postparse( const struct parsedname * pn ) ;
-int FS_size( const char *path ) ;
+int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;

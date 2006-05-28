@@ -19,8 +19,9 @@ $Id$
 #include <string.h>
 
 /* ------- Prototypes ----------- */
-static int FS_write_seek(const char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn) ;
+static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 static int FS_real_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_allwrite(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 static int FS_gamish(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_w_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_w_split(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
@@ -97,7 +98,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 
 /* return size if ok, else negative */
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    int r ;
+    ssize_t r ;
 
     STATLOCK;
       AVERAGE_IN(&write_avg)
@@ -110,18 +111,16 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 
     switch (pn->type) {
     case pn_structure:
+    case pn_statistics:
+    case pn_system:
         r = -ENOTSUP ;
         break;
-    case pn_system:
     case pn_settings:
-    case pn_statistics:
         //printf("FS_write_postparse: pid=%ld system/settings/statistics\n", pthread_self());
-        if ( pn->state & pn_bus ) {
-            /* this will either call ServerWrite or FS_real_write */
-            r = FS_write_seek(buf, size, offset, pn->in, pn) ;
-        } else {
-            r = FS_real_write(buf, size, offset, pn) ;
-        }
+        /* if readonly exit */
+        if ( readonly ) return -EROFS ;
+
+        r = FS_write_seek(buf, size, offset, pn) ;
         break;
     default: // pn_real
 //printf("FS_write_postparse: pid=%ld call fs_write_seek size=%ld\n", pthread_self(), size);
@@ -132,40 +131,62 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             * available bus.?/simultaneous/temperature
             * not just /simultaneous/temperature
             */
-            r = FS_write_seek(buf, size, offset, pn->in, pn) ;
+            r = FS_allwrite(buf, size, offset, pn) ;
+        } else if ( readonly ) {
+            return -EROFS ;
         } else {
-            /* real data -- go through device chain */
-            if( !(pn->state & pn_bus)) {
-                struct parsedname pn2;
-                int bus_nr = -1;
-                if(Cache_Get_Device(&bus_nr, pn)) {
-                    //printf("Cache_Get_Device didn't find bus_nr\n");
-                    /* Cache_Add_Device() is called in FS_write_seek() */
-                    bus_nr = CheckPresence(pn);
-                }
-                if(bus_nr >= 0) {
-                    memcpy(&pn2, pn, sizeof(struct parsedname));
-                    /* fake that we write from only one indevice now! */
-                    pn2.in = find_connection_in(bus_nr);
+            struct parsedname pn2 ;
+
+            /* First try */
+            /* in and bus_nr already set */
+            STAT_ADD1(write_tries[0]) ;
+            r = FS_write_seek( buf, size, offset, pn ) ;
+
+            /* Second Try */
+            /* if not a specified bus, relook for chip location */
+            if ( r < 0 ) {
+                memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+                STAT_ADD1(write_tries[1]) ;
+                if ( server_mode ) {
+                    Cache_Del_Device( pn ) ;
+                } else if ( pn->state & pn_buspath ) {
+                    r = TestConnection(pn) ? -ECONNABORTED : FS_write_seek( buf, size, offset, pn ) ;
+                } else if ( (r = CheckPresence( pn )) >= 0 ) {
+                    pn2.in = find_connection_in(r);
                     pn2.state |= pn_bus ;
-                    pn2.bus_nr = bus_nr ;
-                    //printf("write only to bus_nr=%d\n", bus_nr);
-                    r = FS_write_seek(buf, size, offset, pn2.in, &pn2) ;
+                    pn2.bus_nr = r ;
+                    Cache_Add_Device( r, pn ) ;
+                    r = FS_write_seek( buf, size, offset, &pn2 ) ;
                 } else {
-                    //printf("CheckPresence failed, no use to write\n");
                     r = -ENOENT ;
                 }
-            } else {
-                r = FS_write_seek(buf, size, offset, pn->in, pn) ;
+            }
+
+            /* Third try */
+            /* if not a specified bus, relook for chip location */
+            if ( !server_mode && (r < 0) ) {
+                STAT_ADD1(write_tries[2]) ;
+                if ( pn->state & pn_buspath ) {
+                    r = TestConnection(pn) ? -ECONNABORTED : FS_write_seek( buf, size, offset, pn ) ;
+                } else if ( (r = CheckPresence( pn )) >= 0 ) {
+                    pn2.in = find_connection_in(r);
+                    pn2.state |= pn_bus ;
+                    pn2.bus_nr = r ;
+                    Cache_Add_Device( r, pn ) ;
+                    r = FS_write_seek( buf, size, offset, &pn2 ) ;
+                } else {
+                    Cache_Del_Device(pn) ;
+                    r = -ENOENT ;
+                }
             }
         }
     }
 
     STATLOCK;
     if ( r == 0 ) {
-      ++write_success ; /* statistics */
-      write_bytes += size ; /* statistics */
-      r = size ; /* here's where the size is used! */
+        ++write_success ; /* statistics */
+        write_bytes += size ; /* statistics */
+        r = size ; /* here's where the size is used! */
     }
     AVERAGE_OUT(&write_avg)
     AVERAGE_OUT(&all_avg)
@@ -174,103 +195,42 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     return r ;
 }
 
+/* This function is only used by "Simultaneous" */
+/* It certainly could use pthreads, but might be overkill */
+static int FS_allwrite(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+    if ( pn->state & pn_bus ) {
+        return FS_write_seek(buf,size,offset,pn) ;
+    } else {
+        struct parsedname pn2 ;
+        memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+        pn2.state |= pn_bus ;
+        pn2.bus_nr = -1 ;
+        for ( pn2.in = indevice ; pn2.in ; pn2.in = pn2.in->next ) {
+            ++pn2.bus_nr ;
+            FS_write_seek(buf,size,offset,&pn2) ;
+        }
+        return 0 ;
+    }
+}
+
 /* return 0 if ok, else negative */
-/* Strategy is to go through all "connection_in" adapters
- * return the first successful one
- */
-#ifdef OW_MT
-struct write_seek_struct {
-    const char * buf ;
-    size_t size ;
-    off_t offset ;
-    struct connection_in * in ;
-    const struct parsedname * pn ;
-    int ret ;
-} ;
- 
-static void * FS_write_seek_callback( void * vp ) {
-    struct write_seek_struct * wss = (struct write_seek_struct *) vp ;
-    wss->ret = FS_write_seek(wss->buf,wss->size,wss->offset,wss->in,wss->pn) ;
-    pthread_exit(NULL);
-    return NULL ;
-}
+static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+    ssize_t ret ;
 
-static int FS_write_seek(const char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn) {
-    int ret ;
-    struct parsedname pn2 ;
-    struct write_seek_struct wss = { buf, size, offset, in->next, pn, 0 } ;
-    pthread_t thread ;
-    int threadbad = 1;
-
-    if(!(pn->state & pn_bus)) {
-        threadbad = in->next==NULL || pthread_create( &thread, NULL, FS_write_seek_callback, &wss ) ;
-    }
-
-    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
-    pn2.in = in ;
-    
-    if ( TestConnection(&pn2) ) {
+    if ( TestConnection(pn) ) {
         ret = -ECONNABORTED ;
-    } else if ( (get_busmode(in) == bus_remote) ) {
-        ret = ServerWrite( buf, size, offset, &pn2 ) ;
-    } else {
-        /* if readonly exit */
-        if ( readonly ) return -EROFS ;
-
-        if ( (ret=LockGet(&pn2))==0 ) {
-            ret = FS_real_write( buf, size, offset, &pn2 ) ;
-            LockRelease(&pn2) ;
-        }
-    }
-    /* If sucessfully writing a device, we know it exists on a specific bus.
-    * Update the cache content */
-    if( (pn->type==pn_real) && (ret == 0) ) {
-        Cache_Add_Device(in->index, pn);
-    }
-
-    if ( threadbad == 0 ) { /* was a thread created? */
-        void * v ;
-        if ( pthread_join( thread, &v ) ) return ret ; /* wait for it (or return only this result) */
-        if ( wss.ret == 0 ) return 0 ; /* is it an error return? Then return this one */
+    } else if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
+        ret = ServerWrite( buf, size, offset, pn ) ;
+    } else if ( (ret=LockGet(pn))==0 ) {
+            ret = FS_real_write( buf, size, offset, pn ) ;
+            LockRelease(pn) ;
     }
     return ret ;
 }
-
-#else /* OW_MT */
-
-static int FS_write_seek(const char *buf, const size_t size, const off_t offset, struct connection_in * in, const struct parsedname * pn) {
-    int ret ;
-    struct parsedname pn2 ;
-
-    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
-    pn2.in = in ;
-    if ( TestConnection(&pn2) ) {
-    ret = -ECONNABORTED ;
-    } else if ( (get_busmode(in) == bus_remote) ) {
-        ret = ServerWrite( buf, size, offset, &pn2 ) ;
-    } else {
-        /* if readonly exit */
-        if ( readonly ) return -EROFS ;
-
-        if ( (ret=LockGet(&pn2))==0 ) {
-            ret = FS_real_write( buf, size, offset, &pn2 ) ;
-            LockRelease(&pn2) ;
-        }
-    }
-    /* If sucessfully writing a device, we know it exists on a specific bus.
-    * Update the cache content */
-    if( (pn2.type==pn_real) && (ret == 0) ) {
-        Cache_Add_Device(in->index, &pn2);
-    }
-
-    if ( ret && in->next ) return FS_write_seek(buf,size,offset,in->next,pn) ;
-    return ret ;
-}
-#endif /* OW_MT */
 
 /* return 0 if ok */
 static int FS_real_write(const char * buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    int i, r = 0;
+    int r = 0;
     //printf("FS_real_write\n");
 
     /* Writable? */
@@ -299,12 +259,8 @@ static int FS_real_write(const char * buf, const size_t size, const off_t offset
     }
 
     /* write individual entries */
-    for(i=0; i<3; i++) {
-        STAT_ADD1(write_tries[i]) ; /* statitics */
-        r = FS_parse_write( buf, size, offset, pn ) ;
-        if ( r==0 ) break;
-    }
-    LEVEL_DATA("Write error on %s (size=%d)\n",pn->path,(int)size) ;
+    r = FS_parse_write( buf, size, offset, pn ) ;
+    if ( r<0 ) LEVEL_DATA("Write error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 
@@ -380,6 +336,7 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
             ret = ret || (pn->ft->write.y)(&Y,pn) ;
         }
         break ;
+    case ft_vascii:
     case ft_ascii:
         {
             size_t s = fl ;
@@ -544,6 +501,7 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
             }
         }
         break ;
+    case ft_vascii:
     case ft_ascii:
         {
             size_t s = ffl ;
@@ -792,6 +750,7 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
         }
         }
         break ;
+    case ft_vascii:
     case ft_ascii:
         if ( offset ) {
             return -EADDRNOTAVAIL ;
