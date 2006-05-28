@@ -663,7 +663,7 @@ static int HeadChannel( struct connection_in * in ) {
 static int CreateChannels( struct connection_in * in ) {
     int i ;
     char * name[] = { "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)", "DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)", "DS2482-800(7)", } ;
-    for ( i=0 ; i<8 ; ++i ) {
+    for ( i=1 ; i<8 ; ++i ) {
         struct connection_in * added = NewIn(in) ;
         if ( added==NULL ) return -ENOMEM ;
         added->connin.i2c.index = i ;
