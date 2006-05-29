@@ -882,7 +882,8 @@ AC_SUBST(LD_EXTRALIBS)
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h linux/limits.h bits/netdb.h bits/siginfo.h])
+AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h])
+AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h])
 
 # owftpd section
 AC_SUBST(HAVE_NEW_SS_FAMILY)
@@ -941,7 +942,9 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset nanosleep select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
+AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
+
+AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 
 AC_SUBST(MODULE_SUBDIRS)
 AC_SUBST(SWIG_SUBDIRS)

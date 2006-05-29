@@ -19,6 +19,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "owcapi.h"
+#include <limits.h>
 
 #ifdef OW_MT
     pthread_t main_threadid ;

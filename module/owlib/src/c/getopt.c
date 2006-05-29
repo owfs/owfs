@@ -29,6 +29,7 @@
 #include <config.h>
 #include "owfs_config.h"
 #include "compat_getopt.h"
+#include "ow.h"  // only for UINT
 
 #ifndef HAVE_GETOPT_LONG
 

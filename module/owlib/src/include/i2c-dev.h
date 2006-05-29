@@ -24,9 +24,20 @@
 #ifndef LIB_I2CDEV_H
 #define LIB_I2CDEV_H
 
+#ifdef HAVE_LINUX_TYPES_H
 #include <linux/types.h>
+#endif
 #include <sys/ioctl.h>
 
+#ifndef __u8
+typedef unsigned char __u8 ;
+#endif
+#ifndef __u16
+typedef unsigned int __u16 ;
+#endif
+#ifndef __s32
+typedef signed long __s32 ;
+#endif
 
 /* -- i2c.h -- */
 

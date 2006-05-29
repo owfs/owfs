@@ -285,9 +285,9 @@ static int FS_w_por(const int * y, const struct parsedname * pn) {
 static int FS_Hclear(const int * y, const struct parsedname * pn) {
     int init = 1 ;
     size_t s = sizeof(init) ;
-    (void) y ;
     // clear, display on, mode
-    BYTE clear[] = { 0x00, 0x10, 0x00, 0xC0, 0x00, 0x60 } ; 
+    BYTE clear[6] = { 0x00, 0x10, 0x00, 0xC0, 0x00, 0x60 } ; 
+    (void) y ;
 
     if ( Cache_Get_Internal(&init,&s,&ip_init,pn) ) {
         BYTE data[6] ;

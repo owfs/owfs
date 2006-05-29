@@ -75,6 +75,9 @@
 /* Define to 1 if you have the <linux/limits.h> header file. */
 #undef HAVE_LINUX_LIMITS_H
 
+/* Define to 1 if you have the <linux/types.h> header file. */
+#undef HAVE_LINUX_TYPES_H
+
 /* Define to 1 if you have the `memchr' function. */
 #undef HAVE_MEMCHR
 
@@ -84,7 +87,7 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
-/* Define to 1 if you have the `nanosleep' function. */
+/* Define if you have nanosleep */
 #undef HAVE_NANOSLEEP
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
