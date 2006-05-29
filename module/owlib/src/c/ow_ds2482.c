@@ -33,6 +33,7 @@ static int DS2482_channel_select( const struct parsedname * pn ) ;
 static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) ;
 static int SetConfiguration( BYTE c, struct connection_in * in ) ;
 static void DS2482_close( struct connection_in * in ) ;
+static int DS2482_redetect( struct parsedname * pn ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -91,8 +92,8 @@ static void DS2482_setroutines( struct interface_routines * f ) {
     f->sendback_data = DS2482_sendback_data  ;
     f->sendback_bits = NULL                  ;
     f->select        = BUS_select_low        ;
-    f->reconnect     = NULL                  ;
-    f->close         = DS2482_close             ;
+    f->reconnect     = DS2482_redetect       ;
+    f->close         = DS2482_close          ;
 }
 
 /* uses the "Triple" primative for faster search */
@@ -349,40 +350,6 @@ static int ds2482_set_channel(struct ds2482_data *pdev, u8 channel)
    return -1;
 }
 
-
-/**
- * Performs the triplet function, which reads two bits and writes a bit.
- * The bit written is determined by the two reads:
- *   00 => dbit, 01 => 0, 10 => 1
- *
- * @param data The ds2482 channel pointer
- * @param dbit The direction to choose if both branches are valid
- * @return b0=read1 b1=read2 b3=bit written
- */
-static u8 ds2482_w1_triplet(void *data, u8 dbit)
-{
-   struct ds2482_w1_chan *pchan = data;
-   struct ds2482_data    *pdev = pchan->pdev;
-   int status = (3 << 5);
-
-   down(&pdev->access_lock);
-
-   /* Select the channel */
-   ds2482_wait_1wire_idle(pdev);
-   if (pdev->w1_count > 1)
-       ds2482_set_channel(pdev, pchan->channel);
-
-   /* Send the triplet command, wait until 1WB == 0, return the status */
-   if (!ds2482_send_cmd_data(pdev, DS2482_CMD_1WIRE_TRIPLET,
-                 dbit ? 0xFF : 0))
-       status = ds2482_wait_1wire_idle(pdev);
-
-   up(&pdev->access_lock);
-
-   /* Decode the status */
-   return (status >> 5);
-}
-
 /**
  * Performs the write byte function.
  *
@@ -407,95 +374,18 @@ static void ds2482_w1_write_byte(void *data, u8 byte)
    up(&pdev->access_lock);
 }
 
-/**
- * Performs the read byte function.
- *
- * @param data The ds2482 channel pointer
- * @return The value read
- */
-static u8 ds2482_w1_read_byte(void *data)
-{
-   struct ds2482_w1_chan *pchan = data;
-   struct ds2482_data    *pdev = pchan->pdev;
-   int result;
-
-   down(&pdev->access_lock);
-
-   /* Select the channel */
-   ds2482_wait_1wire_idle(pdev);
-   if (pdev->w1_count > 1)
-       ds2482_set_channel(pdev, pchan->channel);
-
-   /* Send the read byte command */
-   ds2482_send_cmd(pdev, DS2482_CMD_1WIRE_READ_BYTE);
-
-   /* Wait until 1WB == 0 */
-   ds2482_wait_1wire_idle(pdev);
-
-   /* Select the data register */
-   ds2482_select_register(pdev, DS2482_PTR_CODE_DATA);
-
-   /* Read the data byte */
-   result = i2c_smbus_read_byte(&pdev->client);
-
-   up(&pdev->access_lock);
-
-   return result;
-}
-
-
-/**
- * Sends a reset on the 1-wire interface
- *
- * @param data The ds2482 channel pointer
- * @return 0=Device present, 1=No device present or error
- */
-static u8 ds2482_w1_reset_bus(void *data)
-{
-   struct ds2482_w1_chan *pchan = data;
-   struct ds2482_data    *pdev = pchan->pdev;
-   int err;
-   u8 retval = 1;
-
-   down(&pdev->access_lock);
-
-   /* Select the channel */
-   ds2482_wait_1wire_idle(pdev);
-   if (pdev->w1_count > 1)
-       ds2482_set_channel(pdev, pchan->channel);
-
-   /* Send the reset command */
-   err = ds2482_send_cmd(pdev, DS2482_CMD_1WIRE_RESET);
-   if (err >= 0) {
-       /* Wait until the reset is complete */
-       err = ds2482_wait_1wire_idle(pdev);
-       retval = !(err & DS2482_REG_STS_PPD);
-
-       /* If the chip did reset since detect, re-config it */
-       if (err & DS2482_REG_STS_RST)
-           ds2482_send_cmd_data(pdev, DS2482_CMD_WRITE_CONFIG,
-                        0xF0);
-   }
-
-   up(&pdev->access_lock);
-
-   return retval;
-}
-
-
 #endif /* 0 */
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
-/* Open a DS2482 after an unsucessful DS2480_detect attempt */
-/* _detect is a bit of a misnomer, no detection is actually done */
-// no bus locking here (higher up)
+/* Open a DS2482 */
+/* Try to see if there is a DS2482 device on the specified i2c bus */
 int DS2482_detect( struct connection_in * in ) {
     int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, } ; // the last 4 are -800 only
     int i ;
     int fd ;
     
-    /* open the COM port */
+    /* open the i2c port */
     fd = open(in->name,O_RDWR) ;
     if ( fd < 0 ) {
         ERROR_CONNECT("Could not open i2c device %s\n",in->name) ;
@@ -521,6 +411,7 @@ int DS2482_detect( struct connection_in * in ) {
             in->connin.i2c.head = in ;
             in->adapter_name = "DS2482-100" ;
             in->connin.i2c.i2c_address = test_address[i] ;
+            in->connin.i2c.configreg = 0x00 ; // default configuration setting
 #ifdef OW_MT
             pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
 #endif /* OW_MT */
@@ -537,7 +428,7 @@ int DS2482_detect( struct connection_in * in ) {
                 continue ; ;
             }
             LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n",in->name, test_address[i]) ;
-            in->connin.i2c.configreg = 0x00 ; // default configuration register after RESET
+            in->connin.i2c.configchip = 0x00 ; // default configuration register after RESET
             // Note, only the lower nibble of the device config stored
 
             /* Now see if DS2482-100 or DS2482-800 */
@@ -545,6 +436,45 @@ int DS2482_detect( struct connection_in * in ) {
         }
     }
     /* fellthough, no device found */
+    close(fd)
+    in->connin.i2c.fd = -1 ;
+    return -ENODEV ;
+}
+
+/* Re-open a DS2482 */
+static int DS2482_redetect( struct parsedname * pn ) {
+    struct connection_in * head = pn->in->connin.i2c.head ;
+    int fd ;
+    
+    /* open the i2c port */
+    fd = open(head->name,O_RDWR) ;
+    if ( fd < 0 ) {
+        ERROR_CONNECT("Could not open i2c device %s\n",head->name) ;
+        return -ENODEV ;
+    }
+
+    /* address is known */
+    if ( ioctl(fd,I2C_SLAVE,head->connin.i2c.i2c_address) < 0 ) {
+        ERROR_CONNECT("Cound not set i2c address to %.2X\n",head->connin.i2c.i2c_address) ;
+    } else {
+        BYTE c ;
+        /* write the RESET code */
+        if (
+           i2c_smbus_write_byte( fd,  DS2482_CMD_RESET )  // reset
+           || DS2482_readstatus(&c,fd,1,2) // pause .5 usec then read status
+           || ( c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST) ) // make sure status is properly set
+          ) {
+            LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n",in->name, test_address[i]) ;
+        } else {
+            head->connin.i2c.current = 0 ;
+            head->connin.i2c.fd = fd ;
+            head->connin.i2c.configchip = 0x00 ; // default configuration register after RESET
+            LEVEL_CONNECT("i2c device at %s address %d reset successfully\n",in->name, test_address[i]) ;
+            return 0 ;
+        }
+    }
+    /* fellthough, no device found */
+    close(fd)
     return -ENODEV ;
 }
 
@@ -663,6 +593,8 @@ static int HeadChannel( struct connection_in * in ) {
 static int CreateChannels( struct connection_in * in ) {
     int i ;
     char * name[] = { "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)", "DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)", "DS2482-800(7)", } ;
+    in->connin.i2c.index = 0 ;
+    in->adapter_name = name[0] ;
     for ( i=1 ; i<8 ; ++i ) {
         struct connection_in * added = NewIn(in) ;
         if ( added==NULL ) return -ENOMEM ;
