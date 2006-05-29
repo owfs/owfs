@@ -47,7 +47,6 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
-AC_PATH_PROG([PERL],[perl],,$PATH)dnl
 AC_PATH_PROG([PHP_CONFIG],[php-config],,$PATH)dnl
 
 # ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
@@ -426,11 +425,6 @@ AC_ARG_ENABLE(owperl,
             AC_MSG_WARN([OWPERL is disabled because swig is not found])
             ENABLE_OWPERL="false"
         fi
-        if test -z "$PERL"  ; then
-            AC_MSG_WARN([Cannot find perl program. Look for it at http://www.perl.org])
-            AC_MSG_WARN([OWPERL is disabled because perl is not found])
-            ENABLE_OWPERL="false"
-        fi
     fi
 ],
 [
@@ -442,6 +436,27 @@ AC_ARG_ENABLE(owperl,
 ])
 AC_SUBST(ENABLE_OWPERL)
 AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
+if test "${ENABLE_OWPERL}" = "true" ; then
+    m4_include(module/swig/perl5/perl5.m4)
+    AC_MSG_RESULT(Looking for location of Perl executable)
+    SC_PATH_PERL5
+    AC_SUBST(PERL)
+    AC_SUBST(PERL5EXT)
+    AC_SUBST(PERL5DYNAMICLINKING)
+    AC_SUBST(PERL5LIB)
+    AC_SUBST(PERL5CCFLAGS)
+    if test -z "${PERL}" ; then
+        AC_MSG_WARN([Cannot find perl binary.])
+        AC_MSG_WARN([OWPERL is disabled because perl binary is not found])
+        ENABLE_OWPERL="false"
+    else
+	if test -z "${PERL5LIB}" ; then
+	    AC_MSG_WARN([Cannot find perl library. Install perl-devel package.])
+            AC_MSG_WARN([OWPERL is disabled because perl library is not found])
+            ENABLE_OWPERL="false"
+	fi
+    fi
+fi
 
 #Check owphp
 AC_MSG_CHECKING(if owphp is enabled)
@@ -486,7 +501,7 @@ else
     ENABLE_OWPYTHON="true"
 fi
 AC_ARG_ENABLE(owpython,
-[  --enable-owpython     Enable owpython module (default auto)],
+[  --enable-owpython     Enable owpython module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
@@ -512,7 +527,7 @@ AC_SUBST(ENABLE_OWPYTHON)
 AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 if test "${ENABLE_OWPYTHON}" = "true" ; then
     m4_include(module/swig/python/python.m4)
-    AC_MSG_RESULT(Looking location of Python executable)
+    AC_MSG_RESULT(Looking for location of Python executable)
     SC_PATH_PYTHON
     AC_SUBST(PYINCLUDE)
     AC_SUBST(PYLIB)
