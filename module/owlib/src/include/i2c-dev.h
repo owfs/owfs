@@ -26,9 +26,7 @@
 
 #ifdef HAVE_LINUX_TYPES_H
 #include <linux/types.h>
-#endif
-#include <sys/ioctl.h>
-
+#else
 #ifndef __u8
 typedef unsigned char __u8 ;
 #endif
@@ -38,6 +36,9 @@ typedef unsigned int __u16 ;
 #ifndef __s32
 typedef signed long __s32 ;
 #endif
+#endif
+#include <sys/ioctl.h>
+
 
 /* -- i2c.h -- */
 

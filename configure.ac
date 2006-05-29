@@ -49,7 +49,6 @@ AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
 AC_PATH_PROG([PERL],[perl],,$PATH)dnl
 AC_PATH_PROG([PHP_CONFIG],[php-config],,$PATH)dnl
-AC_PATH_PROG([PYTHON],[python],,$PATH)dnl
 
 # ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
 AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
@@ -487,22 +486,19 @@ else
     ENABLE_OWPYTHON="true"
 fi
 AC_ARG_ENABLE(owpython,
-[  --enable-owpython     Enable owpython module (default true)],
+[  --enable-owpython     Enable owpython module (default auto)],
 [
     AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWPYTHON="false"
-    else
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWPYTHON="true"
         if test -z "$SWIG"  ; then
             AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
             AC_MSG_WARN([OWPYTHON is disabled because swig is not found])
             ENABLE_OWPYTHON="false"
         fi
-        if test -z "$PYTHON"  ; then
-            AC_MSG_WARN([Cannot find python program. Look for it at http://www.python.org])
-            AC_MSG_WARN([OWPYTHON is disabled because python is not found])
-            ENABLE_OWPYTHON="false"
-        fi
+    fi
+    if test "$enableval" = "no" ; then
+        ENABLE_OWPYTHON="no"
     fi
 ],
 [
@@ -514,6 +510,27 @@ AC_ARG_ENABLE(owpython,
 ])
 AC_SUBST(ENABLE_OWPYTHON)
 AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
+if test "${ENABLE_OWPYTHON}" = "true" ; then
+    m4_include(module/swig/python/python.m4)
+    AC_MSG_RESULT(Looking location of Python executable)
+    SC_PATH_PYTHON
+    AC_SUBST(PYINCLUDE)
+    AC_SUBST(PYLIB)
+    AC_SUBST(PYLINK)
+    AC_SUBST(PYTHONDYNAMICLINKING)
+    if test -z "${PYLIB}" ; then
+        AC_MSG_WARN([Cannot find python library. Install python-devel package.])
+        AC_MSG_WARN([OWPYTHON is disabled because python library is not found])
+        ENABLE_OWPYTHON="false"
+    else
+	if test -z "${PYINCLUDE}" ; then
+	    AC_MSG_WARN([Cannot find python include-file. Install python-devel package.])
+            AC_MSG_WARN([OWPYTHON is disabled because python include-file is not found])
+            ENABLE_OWPYTHON="false"
+	fi
+    fi
+fi
+
 
 #Check owtcl
 AC_MSG_CHECKING(if owtcl is enabled)
