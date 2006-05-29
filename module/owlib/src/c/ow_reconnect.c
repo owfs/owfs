@@ -36,7 +36,7 @@ int TestConnection( const struct parsedname * pn ) {
             if ( pn->in == indevice ) SimpleBusName = "Reconnecting..." ;
     
             // Close the bus (should leave enough reconnection information available)
-            BUS_close(pn->in) ; // cannot lock anything
+            BUS_close(pn->in) ; // already locked
     
             // Call reconnection
             if ( (pn->in->iroutines.reconnect)

@@ -471,6 +471,14 @@ static int DS2482_redetect( const struct parsedname * pn ) {
             head->connin.i2c.fd = fd ;
             head->connin.i2c.configchip = 0x00 ; // default configuration register after RESET
             LEVEL_CONNECT("i2c device at %s address %d reset successfully\n",head->name, address) ;
+            if ( head->connin.i2c.channels > 1 ) { // need to reset other 8 channels?
+                /* loop through devices, matching those that have the same "head" */
+                /* BUSLOCK also locks the sister channels for this */
+                struct connection_in * in ;
+                for ( in=indevice ; in ; in=in->next ) {
+                    if ( in==head ) in->reconnect_state = reconnect_ok ;
+                }
+            }
             return 0 ;
         }
     }
