@@ -1,9 +1,10 @@
 # $Id$
 
-EXTRA_DIST = php_OW.h runme.php load_php_OW.php
+EXTRA_DIST = php4.m4 example/runme.php example/load_php_OW.php.in example/load_php_OW.php
 
 #include owfs header and php headers
-INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include $(shell $(PHP_CONFIG) --includes)
+#INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include $(shell $(PHP_CONFIG) --includes)
+INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include @PHP4INC@
 
 #use libtool to build the php extension
 lib_LTLIBRARIES = libowphp.la
@@ -27,7 +28,8 @@ libowphp_la_SOURCES = ow_wrap.c
 ow_wrap.c: ../ow.i
 	$(SWIG) -php4 -o $@ ../ow.i
 
-EXTENSION_DIR := $(shell $(PHP_CONFIG) --extension-dir)
+#EXTENSION_DIR := $(shell $(PHP_CONFIG) --extension-dir)
+EXTENSION_DIR := @PHP4LIBDIR@
 # Something like /usr/lib/php4, /usr/lib/php/modules/ or /usr/lib64/php/modules/
 
 install-data-local:

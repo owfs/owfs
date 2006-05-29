@@ -47,7 +47,7 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
-AC_PATH_PROG([PHP_CONFIG],[php-config],,$PATH)dnl
+#AC_PATH_PROG([PHP_CONFIG],[php-config],,$PATH)dnl
 
 # ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
 AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
@@ -463,12 +463,15 @@ AC_MSG_CHECKING(if owphp is enabled)
 if test -z "$SWIG" ; then
     ENABLE_OWPHP="false"
 else
-    ENABLE_OWPHP="false"
+    ENABLE_OWPHP="true"
 fi
 AC_ARG_ENABLE(owphp,
-[  --enable-owphp        Enable owphp module (default false)],
+[  --enable-owphp        Enable owphp module (default true)],
 [
     AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "no" ; then
+        ENABLE_OWPHP="false"
+    fi
     if test "$enableval" = "yes" ; then
         ENABLE_OWPHP="true"
     fi
@@ -477,21 +480,43 @@ AC_ARG_ENABLE(owphp,
         AC_MSG_WARN([OWPHP is disabled because swig is not found])
         ENABLE_OWPHP="false"
     fi
-    if test -z "$PHP_CONFIG"  ; then
-        AC_MSG_WARN([Cannot find php-config program. Look for it at http://www.php.net])
-        AC_MSG_WARN([OWPHP is disabled because php-config is not found])
-        ENABLE_OWPHP="false"
-    fi
+#    if test -z "$PHP_CONFIG"  ; then
+#        AC_MSG_WARN([Cannot find php-config program. Look for it at http://www.php.net])
+#        AC_MSG_WARN([OWPHP is disabled because php-config is not found])
+#        ENABLE_OWPHP="false"
+#    fi
 ],
 [
     if test -z "$SWIG" ; then
         AC_MSG_RESULT([no (swig disabled)])
     else
-        AC_MSG_RESULT([no (default)])
+        AC_MSG_RESULT([yes (default)])
     fi
 ])
 AC_SUBST(ENABLE_OWPHP)
 AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
+if test "${ENABLE_OWPHP}" = "true" ; then
+    m4_include(module/swig/php/php4.m4)
+    AC_MSG_RESULT(Looking for location of Php executable)
+    SC_PATH_PHP4
+    AC_SUBST(PHP4)
+    AC_SUBST(PHP4INC)
+    AC_SUBST(PHP4EXT)
+    AC_SUBST(PHP4LIBDIR)
+    if test -z "${PHP4INC}" ; then
+	AC_MSG_WARN([Cannot find php include-file.])
+        AC_MSG_WARN([OWPHP is disabled because php include-file is not found])
+        ENABLE_OWPHP="false"
+    else
+	if test -z "${PHP4LIBDIR}" ; then
+	    AC_MSG_WARN([Cannot find php extension-dir.])
+            AC_MSG_WARN([OWPHP is disabled because php extension-dir is not found])
+            ENABLE_OWPHP="false"
+	fi
+    fi
+fi
+
+
 
 #Check owpython
 AC_MSG_CHECKING(if owpython is enabled)
@@ -504,6 +529,9 @@ AC_ARG_ENABLE(owpython,
 [  --enable-owpython     Enable owpython module (default true)],
 [
     AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "no" ; then
+        ENABLE_OWPYTHON="false"
+    fi
     if test "$enableval" = "yes" ; then
         ENABLE_OWPYTHON="true"
         if test -z "$SWIG"  ; then
@@ -511,9 +539,6 @@ AC_ARG_ENABLE(owpython,
             AC_MSG_WARN([OWPYTHON is disabled because swig is not found])
             ENABLE_OWPYTHON="false"
         fi
-    fi
-    if test "$enableval" = "no" ; then
-        ENABLE_OWPYTHON="no"
     fi
 ],
 [
@@ -1032,6 +1057,7 @@ AC_CONFIG_FILES([
     module/swig/perl5/Makefile
     module/swig/perl5/Makefile.PL
     module/swig/php/Makefile
+    module/swig/php/example/load_php_OW.php
     module/swig/python/Makefile
     module/swig/python/ow/Makefile
     module/swig/python/setup.py
