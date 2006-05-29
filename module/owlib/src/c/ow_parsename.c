@@ -92,7 +92,6 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     pn->sg = SemiGlobal | (1<<BUSRET_BIT) ; // initial flag as the bus-returning level, will change if a bus is specified
 //        pn->si->sg.u[0]&0x01 = cacheenabled ;
 //        pn->si->sg.u[0]&0x02 = return bus-list from owserver
-//        pn->si->sg.u[1]      = presencecheck ;
 //        pn->si->sg.u[2]      = tempscale ;
 //        pn->si->sg.u[3]      = devform ;
 

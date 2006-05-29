@@ -52,13 +52,10 @@ $Id$
 yWRITE_FUNCTION( FS_w_enable ) ;
  iREAD_FUNCTION( FS_r_timeout ) ;
 iWRITE_FUNCTION( FS_w_timeout ) ;
- yREAD_FUNCTION( FS_r_presencecheck ) ;
-yWRITE_FUNCTION( FS_w_presencecheck ) ;
 
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-    {"presencecheck"   ,  1, NULL  , ft_yesno,    ft_local, {y:FS_r_presencecheck},  {y:FS_w_presencecheck},    {v: NULL}          , } ,
     {"enabled"         ,  1, NULL  , ft_yesno,    ft_local, {y:FS_r_enable},  {y:FS_w_enable},    {v: NULL}          , } ,
     {"volatile"        , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.vol}   , } ,
     {"stable"          , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.stable}, } ,
@@ -68,18 +65,6 @@ struct filetype set_cache[] = {
 struct device d_set_cache = { "cache", "cache", pn_settings, NFT(set_cache), set_cache } ;
 
 /* ------- Functions ------------ */
-
-static int FS_r_presencecheck(int * y , const struct parsedname * pn) {
-    (void) pn ; /* to avoid compiler warning about unused parameter */
-    y[0] =  ShouldCheckPresence(pn) ;
-    return 0 ;
-}
-
-static int FS_w_presencecheck(const int * y , const struct parsedname * pn) {
-    (void) pn ; /* to avoid compiler warning about unused parameter */
-    set_semiglobal(&SemiGlobal, PRESENCE_MASK, PRESENCE_BIT, (1 && y[0]));
-    return 0 ;
-}
 
 static int FS_r_enable(int * y , const struct parsedname * pn) {
     (void) pn ; /* to avoid compiler warning about unused parameter */
