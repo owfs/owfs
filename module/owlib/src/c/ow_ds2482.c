@@ -33,7 +33,7 @@ static int DS2482_channel_select( const struct parsedname * pn ) ;
 static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsigned long int max_usec ) ;
 static int SetConfiguration( BYTE c, struct connection_in * in ) ;
 static void DS2482_close( struct connection_in * in ) ;
-static int DS2482_redetect( struct parsedname * pn ) ;
+static int DS2482_redetect( const struct parsedname * pn ) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -436,14 +436,15 @@ int DS2482_detect( struct connection_in * in ) {
         }
     }
     /* fellthough, no device found */
-    close(fd)
+    close(fd) ;
     in->connin.i2c.fd = -1 ;
     return -ENODEV ;
 }
 
 /* Re-open a DS2482 */
-static int DS2482_redetect( struct parsedname * pn ) {
+static int DS2482_redetect( const struct parsedname * pn ) {
     struct connection_in * head = pn->in->connin.i2c.head ;
+    int address = head->connin.i2c.i2c_address ;
     int fd ;
     
     /* open the i2c port */
@@ -455,7 +456,7 @@ static int DS2482_redetect( struct parsedname * pn ) {
 
     /* address is known */
     if ( ioctl(fd,I2C_SLAVE,head->connin.i2c.i2c_address) < 0 ) {
-        ERROR_CONNECT("Cound not set i2c address to %.2X\n",head->connin.i2c.i2c_address) ;
+        ERROR_CONNECT("Cound not set i2c address to %.2X\n",address) ;
     } else {
         BYTE c ;
         /* write the RESET code */
@@ -464,17 +465,17 @@ static int DS2482_redetect( struct parsedname * pn ) {
            || DS2482_readstatus(&c,fd,1,2) // pause .5 usec then read status
            || ( c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST) ) // make sure status is properly set
           ) {
-            LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n",in->name, test_address[i]) ;
+            LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n",head->name, address) ;
         } else {
             head->connin.i2c.current = 0 ;
             head->connin.i2c.fd = fd ;
             head->connin.i2c.configchip = 0x00 ; // default configuration register after RESET
-            LEVEL_CONNECT("i2c device at %s address %d reset successfully\n",in->name, test_address[i]) ;
+            LEVEL_CONNECT("i2c device at %s address %d reset successfully\n",head->name, address) ;
             return 0 ;
         }
     }
     /* fellthough, no device found */
-    close(fd)
+    close(fd) ;
     return -ENODEV ;
 }
 
