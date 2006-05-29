@@ -1,5 +1,7 @@
 # $Id$
 
+EXTRA_DIST = perl5.m4
+
 bin_PROGRAMS = OW.pm
 OW_pm_SOURCES = 
 OW_pm_DEPENDENCIES = ../../owlib/src/c/libow.la

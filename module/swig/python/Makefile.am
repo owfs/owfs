@@ -1,6 +1,7 @@
 # $Id$
 
 SUBDIRS = ow
+EXTRA_DIST = python.m4
 
 bin_PROGRAMS = OW.py
 OW_py_SOURCES = 
