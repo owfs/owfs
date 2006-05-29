@@ -477,7 +477,7 @@ int main( int argc , char ** argv ) {
     if (argc > 0) progname = strdup(argv[0]);
 
     /* Flag for server access to the library */
-    int server_mode = 1 ; // set in owserver to 1
+    server_mode = 1 ; // set in owserver to 1
 
     /* Set up owlib */
     LibSetup() ;
