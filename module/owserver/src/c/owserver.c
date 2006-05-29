@@ -63,7 +63,6 @@ struct handlerdata {
 /* --- Prototypes ------------ */
 static void Handler( int fd ) ; // Each new interaction from client
 static void * RealHandler( void * v ) ; // Called from ping wrapper
-static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
@@ -250,15 +249,9 @@ static void * RealHandler( void * v ) {
                 switch( (enum msg_classification) sm.type ) {
                     case msg_presence:
                         LEVEL_CALL("Presence message on %s bus_nr=%d\n",SAFESTRING(pn.path),pn.bus_nr) ;
-                        //if(pn.dev && pn.ft) {
-                            //PresenceHandler( &sm, &cm, &pn ) ;
-                           //printf("msg_presence: PresenceHandler returned cm.ret=%d\n", cm.ret);
-                        //} else {
-                            //cm.ret = 0;
-                           //printf("msg_presence: cm.ret=%d\n", cm.ret);
-                        //}
+                        // Basically, if we were able to ParsedName it's here!
                         cm.size = cm.payload = 0 ;
-                        cm.ret = pn.bus_nr ;
+                        cm.ret = pn.dev ? pn.bus_nr : 0 ;
                         break ;
                     case msg_read:
                         LEVEL_CALL("Read message\n") ;
@@ -439,37 +432,6 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     cm->payload = cm->size = 0 ;
     //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
 }
-
-static void PresenceHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
-    cm->payload = 0 ;
-    cm->sg = sm->sg ;
-#if 0
-    int bus_nr = -1;
-    //printf("PresenceHandler: pn->path=[%s] state=%d bus_nr=%d\n", pn->path, pn->state, pn->bus_nr);
-
-    if((pn->type == pn_real) && !(pn->state & pn_bus)) {
-        if(Cache_Get_Device(&bus_nr, pn)) {
-            //printf("Cache_Get_Device didn't find bus_nr\n");
-            bus_nr = CheckPresence(pn);
-            if(bus_nr >= 0) {
-                //printf("PresenceHandler(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
-                Cache_Add_Device(bus_nr, pn);
-            } else {
-                //printf("PresenceHandler(%s) didn't find device\n", pn->path);
-            }
-        } else {
-            //printf("Cache_Get_Device found bus! %d\n", bus_nr);
-        }
-        cm->ret = bus_nr ;
-    } else {
-        cm->ret = pn->bus_nr ;
-    }
-#endif /* 0 */
-    cm->ret = pn->bus_nr ;
-    cm->payload = cm->size = 0 ;
-}
-
-
 int main( int argc , char ** argv ) {
     int c ;
 
