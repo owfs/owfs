@@ -382,6 +382,22 @@ AC_ARG_ENABLE(owcapi,
 ])
 AC_SUBST(ENABLE_OWCAPI)
 
+
+# Make sure tclConfig.sh is found under /usr/lib64/
+# Should perhaps support cross-compiling to other cpu-type too?
+LIBPOSTFIX=
+case "${host_os}" in
+  *linux* )
+    case "${host_cpu}" in
+      powerpc64 | s390x | x86_64 )
+        LIBPOSTFIX="64"
+        ;;
+    esac
+    ;;
+esac
+AC_SUBST(LIBPOSTFIX)
+
+
 #Check swig
 AC_MSG_CHECKING(if swig is enabled)
 if test -z "$SWIG"  ; then
@@ -600,20 +616,6 @@ AC_ARG_ENABLE(owtcl,
         AC_MSG_RESULT([no (default)])
     fi
 ])
-
-# Make sure tclConfig.sh is found under /usr/lib64/
-# Should perhaps support cross-compiling to other cpu-type too?
-LIBPOSTFIX=
-case "${host_os}" in
-  *linux* )
-    case "${host_cpu}" in
-      powerpc64 | s390x | x86_64 )
-        LIBPOSTFIX="64"
-        ;;
-    esac
-    ;;
-esac
-AC_SUBST(LIBPOSTFIX)
 
 AC_SUBST(ENABLE_OWTCL)
 AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")

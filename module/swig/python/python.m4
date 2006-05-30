@@ -70,7 +70,7 @@ if test -n "$PYTHON"; then
     PYLIBDIR=`($PYTHON -c "import sys; print sys.lib") 2>/dev/null`
     if test -z "$PYLIBDIR"; then
       # older versions don't have sys.lib  so the best we can do is assume lib
-      PYLIBDIR="lib" 
+      PYLIBDIR="lib$LIBPOSTFIX"
     fi
     AC_MSG_RESULT($PYLIBDIR)
     
