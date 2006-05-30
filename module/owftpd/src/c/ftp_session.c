@@ -1480,8 +1480,7 @@ static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 
 /* if no gmtime_r() is available, provide one */
 #ifndef HAVE_GMTIME_R
-struct tm *gmtime_r(const time_t *timep, struct tm *timeptr) 
-{
+struct tm *gmtime_r(const time_t *timep, struct tm *timeptr) {
     static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
     pthread_mutex_lock(&time_lock);
@@ -1491,8 +1490,7 @@ struct tm *gmtime_r(const time_t *timep, struct tm *timeptr)
 }
 #endif /* HAVE_GMTIME_R */
 
-static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd)
-{
+static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     const char *file_name;
     char full_path[PATH_MAX+1+MAX_STRING_LEN];
     struct stat stat_buf;
@@ -1508,7 +1506,7 @@ static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd)
     get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
 
     /* get the file information */
-    if (stat(full_path, &stat_buf) != 0) {
+    if (FS_fstat(full_path,&stbuf)) {
         reply(f, 550, "Error getting file status; %s.", strerror(errno));
     } else {
         gmtime_r(&stat_buf.st_mtime, &mtime);
