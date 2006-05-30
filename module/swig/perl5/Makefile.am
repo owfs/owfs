@@ -1,10 +1,9 @@
 # $Id$
 
-EXTRA_DIST = perl5.m4
 
-bin_PROGRAMS = OW.pm
-OW_pm_SOURCES = 
-OW_pm_DEPENDENCIES = ../../owlib/src/c/libow.la
+EXTRA_DIST = perl5.m4
+noinst_DATA = OW.pm
+LIBOW = ../../owlib/src/c/libow.la
 
 AM_CFLAGS = -I../include \
          -fexceptions \
@@ -24,17 +23,11 @@ AM_CFLAGS = -I../include \
 
 LDADD = -low ${PTHREAD_LIBS}
 
-#noinst_DATA = .made_mod
-
-#.made_mod: owperl_wrap.c Makefile.perl
-#	$(MAKE) -fMakefile.perl
-#	touch $@
-
-ow_wrap.c: ../ow.i Makefile.perl ${OW_pm_DEPENDENCIES}
-	$(SWIG) -perl5 -o $@ ../ow.i
-
 Makefile.perl: Makefile.PL
 	$(PERL) $< MAKEFILE=$@
+
+ow_wrap.c: ../ow.i Makefile.perl ${LIBOW}
+	$(SWIG) -perl5 -o $@ ../ow.i
 
 OW.pm: ow_wrap.c
 	$(MAKE) -fMakefile.perl

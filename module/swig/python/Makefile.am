@@ -2,13 +2,9 @@
 
 SUBDIRS = ow
 EXTRA_DIST = python.m4
+noinst_DATA = OW.py
+LIBOW = ../../owlib/src/c/libow.la
 
-bin_PROGRAMS = OW.py
-OW_py_SOURCES = 
-OW_py_DEPENDENCIES = ../../owlib/src/c/libow.la
-
-#owpython_SOURCES = ow_wrap.c
-#owpython_DEPENDENCIES = ../../owlib/src/c/libow.la
 #owpython_LDFLAGS = -shared -shrext .so
 
 AM_CFLAGS = -I../include \
@@ -17,11 +13,8 @@ AM_CFLAGS = -I../include \
          ${MT_FLAG}
 
 LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
-# ../../owlib/src/c
 
-#noinst_DATA = .made_mod
-
-ow_wrap.c: ../ow.i ${OW_py_DEPENDENCIES}
+ow_wrap.c: ../ow.i ${LIBOW}
 	$(SWIG) -python -o $@ ../ow.i
 
 OW.py: ow_wrap.c setup.py
