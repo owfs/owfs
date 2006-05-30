@@ -8,7 +8,6 @@ owftpd_SOURCES = file_list.c \
                  owftpd.c \
                  telnet_session.c \
                  watchdog.c \
-                 error.c \
                  daemon_assert.c
 owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 

@@ -13,8 +13,6 @@
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
-#include <sys/socket.h>
-#include <stdarg.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 
@@ -88,24 +86,6 @@ typedef struct sockaddr_in sockaddr_storage_t;
 
 /* README file name (sent automatically as a response to users) */
 #define README_FILE_NAME "README"
-
-struct error_code_s {
-    int error_code;
-    char desc[128];
-} ;
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-//#include "ftp_error.h"
 
 /* each watched thread gets one of these structures */
 struct watched_s {
@@ -323,9 +303,6 @@ struct ftp_command_s {
 } ;
 
 /* methods */
-void error_init(struct error_code_s *err, int error_code, const char *desc_fmt, ...);
-int error_get_error_code(const struct error_code_s *err);
-const char *error_get_desc(const struct error_code_s *err);
 int file_nlst(int out, const char *cur_dir, const char *filespec);
 int file_list(int out, const char *cur_dir, const char *filespec);
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd);

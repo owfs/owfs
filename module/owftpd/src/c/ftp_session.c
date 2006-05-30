@@ -5,6 +5,7 @@
 #include "owftpd.h"
 #include <sys/utsname.h>
 #include <arpa/inet.h>
+#include <stdarg.h>
 
 /* space requirements */
 #define ADDRPORT_STRLEN 58
