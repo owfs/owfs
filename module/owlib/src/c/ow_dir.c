@@ -184,7 +184,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct conn
     
     if ( TestConnection(&pn2) ) { // reconnect ok?
     ret = -ECONNABORTED ;
-    } else if ( get_busmode(in) == bus_remote ) { /* is this a remote bus? */
+    } else if ( (pn->state & pn_bus) && (get_busmode(in) == bus_remote) ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */
@@ -218,7 +218,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct conn
     pn2.in = in ;
     if ( TestConnection(&pn2) ) { // reconnect ok?
     ret = -ECONNABORTED ;
-    } else if ( get_busmode(in) == bus_remote ) { /* is this a remote bus? */
+    } else if ( (pn->state & pn_bus) && (get_busmode(in) == bus_remote) ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */

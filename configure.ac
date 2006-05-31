@@ -345,7 +345,7 @@ AC_ARG_ENABLE(owftpd,
     fi
 ],
 [
-    AC_MSG_RESULT([false (default)])
+    AC_MSG_RESULT([no (default)])
 ])
 AC_SUBST(ENABLE_OWFTPD)
 
@@ -365,6 +365,26 @@ AC_ARG_ENABLE(owserver,
 ])
 AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
+
+#Check owfake
+AC_MSG_CHECKING(if owfake is enabled)
+ENABLE_OWFAKE="false"
+AC_ARG_ENABLE(owfake,
+[  --enable-owfake       Enable owfake module (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWFAKE="true"
+    fi
+    if test "$enableval" = "no" ; then
+        ENABLE_OWFAKE="false"
+    fi
+],
+[
+    AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(ENABLE_OWFAKE)
+AM_CONDITIONAL(ENABLE_OWFAKE, test "${ENABLE_OWFAKE}" = "true")
 
 #Check owcapi
 AC_MSG_CHECKING(if owcapi is enabled)
@@ -1039,6 +1059,11 @@ AC_CONFIG_FILES([
     module/owserver/src/include/Makefile
     module/owserver/src/c/Makefile
     module/owserver/src/man/Makefile
+    module/owfake/Makefile
+    module/owfake/src/Makefile
+    module/owfake/src/include/Makefile
+    module/owfake/src/c/Makefile
+    module/owfake/src/man/Makefile
     module/ownfsd/Makefile
     module/ownfsd/src/Makefile
     module/ownfsd/src/include/Makefile
@@ -1140,6 +1165,11 @@ if test "${ENABLE_OWSERVER}" = "true"; then
     AC_MSG_RESULT([    owserver is enabled])
 else
     AC_MSG_RESULT([    owserver is DISABLED])
+fi
+if test "${ENABLE_OWFAKE}" = "true"; then
+    AC_MSG_RESULT([    owfake is enabled])
+else
+    AC_MSG_RESULT([    owfake is DISABLED])
 fi
 if test "${ENABLE_OWCAPI}" = "true"; then
     AC_MSG_RESULT([    owcapi is enabled])
