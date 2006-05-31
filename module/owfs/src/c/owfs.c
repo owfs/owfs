@@ -17,12 +17,6 @@ $Id$
 
 #include "owfs.h"
 
-/* Stuff from helper.h */
-#define FUSE_MOUNTED_ENV        "_FUSE_MOUNTED"
-#define FUSE_UMOUNT_CMD_ENV     "_FUSE_UNMOUNT_CMD"
-
-static void ow_exit( int e ) ;
-
 #ifdef OW_MT
 pthread_t main_threadid ;
 #define IS_MAINTHREAD (main_threadid == pthread_self())
@@ -30,8 +24,15 @@ pthread_t main_threadid ;
 #define IS_MAINTHREAD 1
 #endif
 
-static void exit_handler(int i) {
-    return ow_exit( ((i<0) ? 1 : 0) ) ;
+static void ow_exit( int e ) {
+    LEVEL_DEBUG("owfs: ow_exit(%d)\n", e);
+    if(IS_MAINTHREAD) {
+        LEVEL_DEBUG("owfs: LibClose()\n");
+        LibClose() ;
+    }
+    LEVEL_DEBUG("owfs: call _exit(%d)\n", e);
+    /* Process never die on WRT54G router with uClibc if exit() is used */
+    _exit( e ) ;
 }
 
 /*
@@ -97,7 +98,9 @@ int main(int argc, char *argv[]) {
     // FUSE directory mounting
     fuse_mountpoint = strdup(argv[optind]);
     LEVEL_CONNECT("fuse mount point: %s\n",fuse_mountpoint) ;
-    set_signal_handlers(exit_handler);
+
+    // Signal handler is set in fuse library
+    //set_signal_handlers(exit_handler);
 
     /* Backgrounding done in fuse, not LibStart */
     delay_background = 1 ;
@@ -113,31 +116,33 @@ int main(int argc, char *argv[]) {
     /* Set up "command line" for main fuse routines */
     Fuse_setup( &fuse_options ) ; // command line setup
     Fuse_add(fuse_mountpoint , &fuse_options) ; // mount point
+#if FUSE_VERSION >= 22
     Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
     Fuse_add("direct_io" , &fuse_options) ;
+#endif
     if ( !background ) {
         Fuse_add("-f", &fuse_options) ; // foreground for fuse too
         if ( error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
     }
     Fuse_parse(fuse_mnt_opt, &fuse_options) ;
+    LEVEL_DEBUG("fuse_mnt_opt=[%s]\n", fuse_mnt_opt);
     Fuse_parse(fuse_open_opt, &fuse_options) ;
+    LEVEL_DEBUG("fuse_open_opt=[%s]\n", fuse_open_opt);
  #ifndef OW_MT
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */
     now_background = background ; // tell "error" that we are background
+#if 0
+    {
+      int i;
+      for(i=0; i<fuse_options.argc; i++) {
+	LEVEL_DEBUG("fuse_options.argv[%d]=[%s]\n", i, fuse_options.argv[i]);
+      }
+    }
+#endif
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;
     Fuse_cleanup( &fuse_options ) ;
-    ow_exit(0) ;
 #endif
-
-    return 0 ;
+    ow_exit(0) ;
+    return 0;
 }
-
-static void ow_exit( int e ) {
-    if(IS_MAINTHREAD) {
-        LibClose() ;
-    }
-    /* Process never die on WRT54G router with uClibc if exit() is used */
-    _exit( e ) ;
-}
-

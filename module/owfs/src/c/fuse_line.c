@@ -51,7 +51,7 @@ int Fuse_parse( char * opts, struct Fuse_option * fo ) {
 }
 
 int Fuse_add( char * opt, struct Fuse_option * fo ) {
-    //printf("Adding option %s\n",opt);
+    //LEVEL_DEBUG("Adding option %s\n",opt);
     if ( fo->argc >= fo->max_options ) { // need to allocate more space
         int i = fo->max_options ;
         void * temp = fo->argv ;
@@ -64,7 +64,7 @@ int Fuse_add( char * opt, struct Fuse_option * fo ) {
         for ( ; i<=fo->max_options ; ++i ) fo->argv[i] = NULL ; // now clear the new pointers
     }
     fo->argv[fo->argc++] = strdup(opt) ;
-    //printf("Added option %d %s\n",fo->argc-1,fo->argv[fo->argc-1]);
+    //LEVEL_DEBUG("Added option %d %s\n",fo->argc-1,fo->argv[fo->argc-1]);
     return 0 ;
 }
 
