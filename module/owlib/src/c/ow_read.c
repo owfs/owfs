@@ -179,7 +179,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     int r = 0;
     //printf("READSEEK\n");
 
-    if ( (get_busmode(pn->in) == bus_remote) ) {
+    if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
         //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
