@@ -84,7 +84,7 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
     } else if ( pn->ft==NULL ) {
         int nr = 0 ;
         //printf("FS_fstat pn.ft == NULL  (1-wire device)\n");
-        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_mode = S_IFDIR | 0777;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
 
 #ifdef CALC_NLINK
@@ -108,7 +108,7 @@ int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
     } else if ( pn->ft->format==ft_directory || pn->ft->format==ft_subdir ) { /* other directory */
         int nr = 0 ;
 //printf("FS_fstat other dir inside device\n");
-        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_mode = S_IFDIR | 0777;
         stbuf->st_nlink = 2 ;   // plus number of sub-directories
 #ifdef CALC_NLINK
         nr = FS_nr_subdirs(pn) ;
