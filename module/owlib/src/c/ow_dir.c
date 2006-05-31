@@ -97,35 +97,32 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         ret = (SpecifiedBus(pn) && (get_busmode(pn->in)==bus_remote))
                 ? ServerDir(dirfunc, &pn2, flags)
                 : FS_typedir( dirfunc, &pn2 ) ;
-    } else if ( pn->pathlength == 0 ) { /* root directory */
-        if ( !server_mode && !SpecifiedBus(pn) ) { /* structure only in true root */
-            pn2.type = pn_structure ;
-            dirfunc( &pn2 ) ;
-            pn2.type = pn_real ;
-        }
-        if( !SpecifiedBus(pn) && ShouldReturnBusList(pn) ) {
-            /* restore state */
-            pn2.type = pn_real ;
-            if ( IsLocalCacheEnabled(pn) && (pn->state&pn_uncached)==0 ) { /* cached */
-                pn2.state = pn->state | pn_uncached ;
+    } else { /* Directory of some kind */
+        if ( pn->pathlength == 0 ) { /* root directory */
+            if ( !server_mode && !SpecifiedBus(pn) ) { /* structure only in true root */
+                pn2.type = pn_structure ;
                 dirfunc( &pn2 ) ;
-                pn2.state = pn->state ;
+                pn2.type = pn_real ;
             }
-            FS_busdir(dirfunc, pn ) ;
-            pn2.type = pn_settings ;
-            dirfunc( &pn2 ) ;
-            pn2.type = pn_system ;
-            dirfunc( &pn2 ) ;
-            pn2.type = pn_statistics ;
-            dirfunc( &pn2 ) ;
-            pn2.type = pn->type;
+            if( !SpecifiedBus(pn) && ShouldReturnBusList(pn) ) {
+                /* restore state */
+                pn2.type = pn_real ;
+                if ( IsLocalCacheEnabled(pn) && (pn->state&pn_uncached)==0 ) { /* cached */
+                    pn2.state = pn->state | pn_uncached ;
+                    dirfunc( &pn2 ) ;
+                    pn2.state = pn->state ;
+                }
+                FS_busdir(dirfunc, pn ) ;
+                pn2.type = pn_settings ;
+                dirfunc( &pn2 ) ;
+                pn2.type = pn_system ;
+                dirfunc( &pn2 ) ;
+                pn2.type = pn_statistics ;
+                dirfunc( &pn2 ) ;
+                pn2.type = pn->type;
+            }
         }
         /* Now get the actual devices */
-        ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
-    } else { /* not main directory */
-        /* If the specified listed path is remote, then we have
-        * to call ServerDir(). Otherwise call FS_dir_seek to search all
-        * local in-devices. */
         ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     }
     if ( ! server_mode ) {
