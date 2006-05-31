@@ -49,17 +49,20 @@ static void List_show( enum file_list fl, int out, const struct parsedname * pn 
     double age;
     char date_buf[13];
     ASCII * fil = strrchr( pn->path, '/' ) ;
-
+    ASCII perms[] = {
+        "---------",
+        "--x--x--x",
+        "-w--w--w-",
+        "-wx-wx-wx",
+        "r--r--r--",
+        "r-xr-xr-x",
+        "rw-rw-rw-",
+        "rwxrwxrwx",
+    } ;
     switch( fl ) {
         case flist_list:
             FS_fstat_postparse(&stbuf,pn) ;
-            fdprintf(out, stbuf.st_mode&S_IFDIR ? "d" : "-" ) ;
-            fdprintf(out, pn->ft->read.v ? "r" : "-" ) ;
-            fdprintf(out, pn->ft->write.v ? "w-" : "--" ) ;
-            fdprintf(out, pn->ft->read.v ? "r" : "-" ) ;
-            fdprintf(out, pn->ft->write.v ? "w-" : "--" ) ;
-            fdprintf(out, pn->ft->read.v ? "r" : "-" ) ;
-            fdprintf(out, pn->ft->write.v ? "w-" : "--" ) ;
+            fdprintf(out, "%s%s",stbuf.st_mode&S_IFDIR ? "d" : "-",perms[stbuf.st_mode&0x07] ) ;
             /* output link & ownership information */
             fdprintf(out, " %3d %-8d %-8d %8lu ",
                      stbuf.st_nlink,
@@ -67,8 +70,9 @@ static void List_show( enum file_list fl, int out, const struct parsedname * pn 
                      stbuf.st_gid,
                      (unsigned long)stbuf.st_size);
             /* output date */
+            time(&now);
             localtime_r(&stbuf.st_mtime, &tm_now);
-            age = difftime(&tm_now, stbuf.st_mtime);
+            age = difftime(now, stbuf.st_mtime);
             if ((age > 60 * 60 * 24 * 30 * 6) || (age < -(60 * 60 * 24 * 30 * 6))) {
                 strftime(date_buf, sizeof(date_buf), "%b %e  %Y", &tm_now);
             } else {
