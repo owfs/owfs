@@ -33,7 +33,7 @@ static void get_absolute_fname(char *fname,
 /* command handlers */
 static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_pass(struct ftp_session_s *f, const struct ftp_command_s *cmd);
-static void do_cwd(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_cwd( struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_quit(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_port(struct ftp_session_s *f, const struct ftp_command_s *cmd);
@@ -43,7 +43,7 @@ static void do_stru(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_mode(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd);
-static void do_pwd(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_pwd( struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd);
@@ -1506,7 +1506,7 @@ static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
 
     /* get the file information */
-    if (FS_fstat(full_path,&stbuf)) {
+    if (FS_fstat(full_path,&stat_buf)) {
         reply(f, 550, "Error getting file status; %s.", strerror(errno));
     } else {
         gmtime_r(&stat_buf.st_mtime, &mtime);

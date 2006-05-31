@@ -133,12 +133,7 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
         if ( buf ) {
             if ( s ) strcpy( &buf[s++], "," ) ; // add a comma
             FS_DirName( &buf[s], OW_FULLNAME_MAX, pn2 ) ;
-            if (
-                pn2->dev ==NULL
-                || pn2->ft ==NULL
-                || pn2->ft->format ==ft_subdir
-                || pn2->ft->format ==ft_directory
-               ) strcat( &buf[s], "/" );
+            if ( IsDir(pn2) ) strcat( &buf[s], "/" );
             s = strlen( buf ) ;
 //printf("buf=%s len=%d\n",buf,s);
         }

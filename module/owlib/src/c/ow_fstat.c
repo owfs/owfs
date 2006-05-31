@@ -46,14 +46,14 @@ int FS_fstat(const char *path, struct stat *stbuf) {
     if ( FS_ParsedName( path , &pn ) ) {
         ret = -ENOENT ;
     } else {
-        ret = FS_fstat_low(stbuf,&pn) ;
+        ret = FS_fstat_postparse(stbuf,&pn) ;
     }
     FS_ParsedName_destroy(&pn) ;
     return ret ;
 }
 
 /* Fstat with parsedname already done */
-int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) {
+int FS_fstat_postparse(struct stat *stbuf, const struct parsedname * pn ) {
     memset(stbuf, 0, sizeof(struct stat));
 
     LEVEL_CALL("ATTRIBUTES path=%s\n", SAFESTRING(pn->path)) ;

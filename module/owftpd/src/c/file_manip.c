@@ -36,73 +36,131 @@ enum file_list {
     flist_nlst ;
 }
 
-int FileLexParse( ASCII * CurBuffer, ASCII * rest, enum fil_sta filsta, enum file_list fl, int out ) {
-    struct
-    internal_recurse:
-    switch( filesta ) {
-        case filesta_init:
-            if ( CurBuffer[strlen(CurBuffer)-1]!='/' ) strcat( CurBuffer, "/" ) ;
-            if ( rest==NULL || rest[0]=='\0' ) {
-                filsta = filsta_tame ;
-            } else if ( rest[0] == '/' ) {
-                strcpy( CurBuffer, "/" ) ;
-                rest = &rest[1] ;
-                filsta = filesta_init2 ;
-            }
-            goto internal_recurse ;
-        case filesta_init:
-            if ( index( rest, "*") || index( rest, "[") || index( rest, "?" ) ) {
-                 filesta = filsta_back ;
+static void List_show( enum file_list fl, int out, const struct parsedname * pn ) {
+    struct stat stbuf ;
+    mode_t mode;
+    time_t now;
+    struct tm tm_now;
+    double age;
+    char date_buf[13];
+    ASCII * fil = strrchr( pn->path, "/" ) ;
+
+    switch( fl ) {
+        case flist_list:
+            FS_fstat_postparse(&stbuf,pn) ;
+            fdprintf(out, stbuf.st_mode&S_IFDIR ? "d" : "-" ) ;
+            fdprintf(out, pn->ft->read.v ? "r" : "-" ) ;
+            fdprintf(out, pn->ft->write.v ? "w-" : "--" ) ;
+            fdprintf(out, pn->ft->read.v ? "r" : "-" ) ;
+            fdprintf(out, pn->ft->write.v ? "w-" : "--" ) ;
+            fdprintf(out, pn->ft->read.v ? "r" : "-" ) ;
+            fdprintf(out, pn->ft->write.v ? "w-" : "--" ) ;
+            /* output link & ownership information */
+            fdprintf(out, " %3d %-8d %-8d %8lu ",
+                     stbuf.st_nlink,
+                     stbuf.st_uid,
+                     stbuf.st_gid,
+                     (unsigned long)stbuf.st_size);
+            /* output date */
+            localtime_r(&stbuf.st_mtime, &tm_now);
+            age = difftime(now, stbuf.st_mtime);
+            if ((age > 60 * 60 * 24 * 30 * 6) || (age < -(60 * 60 * 24 * 30 * 6))) {
+                strftime(date_buf, sizeof(date_buf), "%b %e  %Y", &tm_now);
             } else {
-                 filesta = filesta_tame ;
+                strftime(date_buf, sizeof(date_buf), "%b %e %H:%M", &tm_now);
             }
-            goto internal_recurse ;
-        case filsta_back:
-            if ( rest[0]=='.' && rest[1]=='.' ) {
-                // Move back
-                ASCII * back = strrchr( CurBuffer, '/' ) ;
-                if ( back && (back[1]=='\0') ) {
-                    back[0] = '\0' ;
-                    back = strrchr( CurBuffer, '/' ) ;
-                }
-                if ( back ) {
-                    back[1] = '\0' ;
-                } else {
-                    strcpy( CurBuffer, "/" ) ;
-                }
-                // look for next file part
-                if ( rest[2]=='\0' || rest[2]== '/' ) {
-                    filsta = filsta_next ;
-                    rest = &rest[3] ;
-                } else {
-                    return -ENOENT ;
-                }
-            } else {
-                filsta = filsta_next ; // off the double dot trail
-            }
-            goto internal_recurse ;
-        case filsta_next:
-            if ( rest==NULL ) {
-                filsta = filsta_last ;
-            } else {
-                ASCII * oldrest = strsep( &rest, "/" ) ;
-                if ( index( oldrest, "*") || index( oldrest, "[") || index( oldrest, "?" ) ) {
-                    return WildLexParse( CurBuffer, oldrest, rest, filsta, fl, out ) ;
-                } else {
-                    strcat( CurBuffer, oldrest ) ;
-                    if ( rest ) strcat( CurBuffer, "/" ) ;
-                    filsta = filsta_next ;
-                }
-            }
-            goto internal_recurse ;
-        case filesta_tame:
-        {
-            struct
-        case filsta_last:
+            fdprintf(out, "%s ", date_buf);
+            /* Fall Through */
+        case flist_nlst:
+            /* output filename */
+            fdprintf(out, "%s\r\n", &fil[1]);
     }
 }
 
-int WildLexParse( ASCII * CurBuffer, ASCII * match, ASCII * rest, enum fil_sta filsta, enum file_list fl, int out ) {
+int FileLexParse( ASCII * CurBuffer, ASCII * rest, enum fil_sta filsta, enum file_list fl, int out ) {
+    struct parsedname pn ;
+    while ( 1 ) {
+        switch( filesta ) {
+            case filesta_init:
+                if ( CurBuffer[strlen(CurBuffer)-1]!='/' ) strcat( CurBuffer, "/" ) ;
+                if ( rest==NULL || rest[0]=='\0' ) {
+                    filsta = filsta_tame ;
+                } else if ( rest[0] == '/' ) {
+                    strcpy( CurBuffer, "/" ) ;
+                    rest = &rest[1] ;
+                    filsta = filesta_init2 ;
+                }
+                break ;
+            case filesta_init:
+                if ( index( rest, "*") || index( rest, "[") || index( rest, "?" ) ) {
+                    filesta = filsta_back ;
+                } else {
+                    filesta = filesta_tame ;
+                }
+                break ;
+            case filsta_back:
+                if ( rest[0]=='.' && rest[1]=='.' ) {
+                    // Move back
+                    ASCII * back = strrchr( CurBuffer, '/' ) ;
+                    if ( back && (back[1]=='\0') ) {
+                        back[0] = '\0' ;
+                        back = strrchr( CurBuffer, '/' ) ;
+                    }
+                    if ( back ) {
+                        back[1] = '\0' ;
+                    } else {
+                        strcpy( CurBuffer, "/" ) ;
+                    }
+                    // look for next file part
+                    if ( rest[2]=='\0' || rest[2]== '/' ) {
+                        filsta = filsta_next ;
+                        rest = &rest[3] ;
+                    } else {
+                        return -ENOENT ;
+                    }
+                } else {
+                    filsta = filsta_next ; // off the double dot trail
+                }
+                break ;
+            case filsta_next:
+                if ( rest==NULL ) {
+                    filsta = filsta_last ;
+                } else {
+                    ASCII * oldrest = strsep( &rest, "/" ) ;
+                    if ( index( oldrest, "*") || index( oldrest, "[") || index( oldrest, "?" ) ) {
+                        return WildLexParse( CurBuffer, oldrest, rest, fl, out ) ;
+                    } else {
+                        strcat( CurBuffer, oldrest ) ;
+                        if ( rest ) strcat( CurBuffer, "/" ) ;
+                        filsta = filsta_next ;
+                    }
+                }
+                break ;
+            case filesta_tame:
+                strcpy( CurBuffer, rest ) ;
+                if ( CurBuffer[strlen(CurBuffer)-1]=='/' )
+                    return WildLexParse( CurBuffer, "*", NULL, fl, out ) ;
+                if ( FS_ParsedName( CurBuffer, &pn ) ) {
+                    if ( IsDir(&pn) ) {
+                        strcat( CurBuffer, "/" ) ;
+                        WildLexParse( CurBuffer, "*", NULL, fl, out ) ;
+                    } else {
+                        List_show( fl, out, &pn ) ;
+                    }
+                    FS_ParsedName_destroy( &pn ) ;
+                }
+                return 0 ;
+            case filsta_last:
+                if ( FS_ParsedNamePlus( CurBuffer, rest, &pn ) ) {
+                    List_show( fl, out, &pn ) ;
+                    FS_ParsedName_destroy( &pn ) ;
+                }
+                return 0 ;
+        }
+    }
+}
+
+int WildLexParse( ASCII * CurBuffer, ASCII * match, ASCII * rest, enum file_list fl, int out ) {
     ASCII * end = &CurBuffer[strlen(CurBuffer)] ;
     int ret ;
     struct parsedname pn ;

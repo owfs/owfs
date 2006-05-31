@@ -739,7 +739,7 @@ int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const 
 int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
-int FS_fstat_low(struct stat *stbuf, const struct parsedname * pn ) ;
+int FS_fstat_postparse(struct stat *stbuf, const struct parsedname * pn ) ;
 
 /* iteration functions for splitting writes to buffers */
 int OW_read_paged( BYTE * p, size_t size, off_t offset, const struct parsedname * pn,
@@ -766,5 +766,10 @@ void BUS_unlock( const struct parsedname * pn ) ;
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
+
+#define IsDir( pn )    ( ((pn)->dev)==NULL \
+                      || ((pn)->ft)==NULL  \
+                      || ((pn)->ft)->format==ft_directory \
+                      || ((pn)->ft)->format==ft_directory )
 
 #endif /* OW_H */

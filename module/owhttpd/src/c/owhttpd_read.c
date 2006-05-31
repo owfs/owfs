@@ -34,7 +34,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
     /* Left column */
     fprintf( out, "<TR><TD><B>%s</B></TD><TD>", file ) ;
     
-    if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* Directory jump */
+    if ( IsDir(&pn) ) { /* Directory jump */
         fprintf( out, "<A HREF='%s'>%s</A>",pn.path,file);
     } else {
         int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
@@ -148,7 +148,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
     /* Left column */
     fprintf( out, "%s ", file ) ;
     
-    if ( pn.ft==NULL || pn.ft->format==ft_directory || pn.ft->format==ft_subdir ) { /* Directory jump */
+    if ( IsDir(&pn) ) { /* Directory jump */
     } else {
         int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
         int canread = ( pn.ft->read.v != NULL ) ;
