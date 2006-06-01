@@ -57,6 +57,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 
+extern int fakes ;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
@@ -154,7 +155,7 @@ struct connin_fake {
     int ULevel ;
     int UMode ;
     int devices ;
-    struct buspath * device ; 
+    BYTE * device ;
 } ;
 struct connin_link {
     speed_t speed;
@@ -294,6 +295,7 @@ struct connection_in {
         struct connin_server server ;
         struct connin_usb    usb    ;
         struct connin_i2c    i2c    ;
+        struct connin_fake   fake   ;
     } connin ;
 } ;
 /* Network connection structure */
@@ -371,6 +373,7 @@ int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
 int LINKE_detect( struct connection_in * in ) ;
 int DS2482_detect( struct connection_in * in ) ;
+int Fake_detect( struct connection_in * in ) ;
 
 #ifdef OW_USB
 int DS9490_enumerate( void ) ;

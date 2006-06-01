@@ -196,6 +196,15 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
             ret = -1;
         }
       //printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
+    } else if(get_busmode(in) == bus_fake) {
+        int i = in->connin.fake.devices - 1 ;
+        ret = -1 ;
+        for ( ; i > -1 ; --i ) {
+            if ( memcmp(pn2.sn, &(in->connin.fake.device[8*i]), 8 ) ) {
+                ret = in->index ;
+                break ;
+            }
+        }
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
@@ -261,6 +270,8 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
 int FS_present(int * y , const struct parsedname * pn) {
     if ( pn->type != pn_real || pn->dev == DeviceSimultaneous || pn->dev == DeviceThermostat ) {
         y[0]=1 ;
+    } else if(get_busmode(pn->in) == bus_fake) {
+        y[0] = 1 ;
     } else {
         BUSLOCK(pn);
             y[0] = BUS_normalverify(pn) ? 0 : 1 ;

@@ -232,6 +232,9 @@ int LibStart( void ) {
                     * adapter just in case it's disconnected. It's done in the
                     * DS9490_next_both() if not set. */
                 break ;
+            case bus_fake:
+                Fake_detect(in) ; // never fails
+                break ;
             default:
                 break ;
         }
