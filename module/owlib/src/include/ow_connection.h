@@ -148,6 +148,14 @@ struct connin_serial {
     int UMode ;
     struct termios oldSerialTio;    /*old serial port settings*/
 } ;
+struct connin_fake {
+    speed_t speed;
+    int USpeed ;
+    int ULevel ;
+    int UMode ;
+    int devices ;
+    struct buspath * device ; 
+} ;
 struct connin_link {
     speed_t speed;
     int USpeed ;
@@ -203,6 +211,7 @@ enum bus_mode {
     bus_tcp, 
     bus_i2c,
     bus_ha7 ,
+    bus_fake ,
 } ;
 
 enum adapter_type {
@@ -221,6 +230,7 @@ enum adapter_type {
     adapter_DS2482_100    ,
     adapter_DS2482_800    ,
     adapter_HA7           ,
+    adapter_fake          ,
 } ;
 
 extern unsigned long int usec_read ; /* how long to waait for serial reads */

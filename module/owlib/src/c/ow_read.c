@@ -227,6 +227,9 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     /* Readable? */
     if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
 
+    /* Special case for "fake" adapter */
+    if ( pn->in->Adapter==adapter_fake && pn->ft->change!=ft_static ) return FS_read_fake( buf, size, offset, pn ) ;
+
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) { /* array property */
         if ( pn->extension==-1) {
