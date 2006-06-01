@@ -129,8 +129,11 @@ static void Fake_close( struct connection_in * in ) {
 }
 
 static int Fake_next_both(struct device_search * ds, const struct parsedname * pn) {
-    if ( ++ds->LastDiscrepancy >= pn->in->connin.fake.devices ) ds->LastDevice = 0 ;
-    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
+printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->LastDiscrepancy,pn->in->connin.fake.devices,ds->LastDevice,pn->in->AnyDevices);
+    if ( ++ds->LastDiscrepancy >= pn->in->connin.fake.devices 
+        ||        
+         ! pn->in->AnyDevices 
+        ) ds->LastDevice = 1 ;
     if ( ds->LastDevice ) return -ENODEV ;
     memcpy( ds->sn, &(pn->in->connin.fake.device[8*ds->LastDiscrepancy]), 8 ) ;
     return 0 ;

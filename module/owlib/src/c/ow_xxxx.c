@@ -199,11 +199,12 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     } else if(get_busmode(in) == bus_fake) {
         int i = in->connin.fake.devices - 1 ;
         ret = -1 ;
+        //printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
         for ( ; i > -1 ; --i ) {
-            if ( memcmp(pn2.sn, &(in->connin.fake.device[8*i]), 8 ) ) {
-                ret = in->index ;
-                break ;
-            }
+            //printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
+            if ( memcmp(pn2.sn, &(in->connin.fake.device[8*i]), 8 ) ) continue ;
+            ret = in->index ;
+            break ;
         }
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");

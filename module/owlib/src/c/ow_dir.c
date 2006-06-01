@@ -374,6 +374,8 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
         ++devices ;
         
         memcpy( pn2->sn, ds.sn, 8 ) ;
+        /* Add to Device location cache */
+        Cache_Add_Device(pn2->in->index, pn2 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
         num2string( ID, ds.sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev

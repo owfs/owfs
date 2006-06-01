@@ -75,6 +75,7 @@ const struct option owopts_long[] = {
     {"ha7", required_argument, NULL, 271}, /* HA7Net */
     {"FAKE", required_argument, NULL, 272}, /* Fake */
     {"Fake", required_argument, NULL, 272}, /* Fake */
+    {"fake", required_argument, NULL, 272}, /* Fake */
     {"link", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
@@ -161,6 +162,7 @@ static void ow_morehelp( enum opt_program op ) {
     "     --foreground                |stay in foreground\n"
     "  -r --readonly                  |no writing to 1-wire bus\n"
     "  -w --write                     |allow reading and writing to bus(default)\n"
+    "     --fake                      |with list of emulated device family codes\n"
     "     --link | --nolink           |LINK adapters in ascii|emulation mode (emulation)\n");
 #ifdef OW_CACHE
     printf("  -t                             |cache timeout (in seconds)\n");
