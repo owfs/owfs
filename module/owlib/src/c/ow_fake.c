@@ -25,7 +25,7 @@ static int Fake_ProgramPulse( const struct parsedname * pn ) ;
 static int Fake_sendback_bits( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static void Fake_close( struct connection_in * in ) ;
 static int Fake_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static const char * namefind( char * name ) ;
+static const ASCII * namefind( char * name ) ;
 
 /* Device-specific functions */
 /* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
@@ -67,11 +67,7 @@ int Fake_detect( struct connection_in * in ) {
             for ( dev=strsep( &rest, " ," ) ; dev[0] ; ++dev ) {
                 if ( dev[0]!=' ' && dev[0]!=',' ) break ;
             }
-            if (
-                (isxdigit(dev[0]) && isxdigit(dev[1]))
-                ||
-                (dev=namefind(dev))
-            ) {
+            if ( (dev=namefind(dev)) ) {
                 sn[0] = string2num(dev) ;
                 sn[1] = rand()&0xFF ;
                 sn[2] = rand()&0xFF ;
@@ -129,7 +125,7 @@ static void Fake_close( struct connection_in * in ) {
 }
 
 static int Fake_next_both(struct device_search * ds, const struct parsedname * pn) {
-printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->LastDiscrepancy,pn->in->connin.fake.devices,ds->LastDevice,pn->in->AnyDevices);
+    //printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->LastDiscrepancy,pn->in->connin.fake.devices,ds->LastDevice,pn->in->AnyDevices);
     if ( ++ds->LastDiscrepancy >= pn->in->connin.fake.devices 
         ||        
          ! pn->in->AnyDevices 
@@ -139,17 +135,25 @@ printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=
     return 0 ;
 }
 
-static const char * namefind( char * name ) {
-    const struct device d = { NULL, name, 0,0,NULL } ;
-    struct device_opaque * p ;
+static const ASCII * namefind( char * name ) {
+    const ASCII * ret = NULL ;
     /* Embedded function */
-    int device_compare( const void * a , const void * b ) {
-        return strcasecmp( ((const struct device *)a)->name , ((const struct device *)b)->name ) ;
+    void action(const void *nodep, const VISIT which, const int depth) {
+        const struct device * p = *(const struct device **) nodep ; 
+        (void) depth ;
+        //printf("Comparing %s|%s with %s\n",p->name ,p->code , name ) ;
+        switch(which) {
+        case leaf:
+        case postorder:
+            if ( strcasecmp(p->name,name)==0 || strcasecmp(p->code,name)==0 ) {
+                ret = p->code ;
+            }
+        case preorder:
+        case endorder:
+            break;
+        }
     }
 
-    p = tfind( &d, & Tree[pn_real], device_compare ) ;
-    if (p) {
-        return ((struct device *)p->key)->code ;
-    }
-    return NULL ;
+    twalk( Tree[pn_real], action ) ;
+    return ret ;
 }
