@@ -47,7 +47,6 @@ AC_SUBST(LIBTOOL_DEPS)
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
-#AC_PATH_PROG([PHP_CONFIG],[php-config],,$PATH)dnl
 
 # ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
 AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
@@ -516,11 +515,6 @@ AC_ARG_ENABLE(owphp,
         AC_MSG_WARN([OWPHP is disabled because swig is not found])
         ENABLE_OWPHP="false"
     fi
-#    if test -z "$PHP_CONFIG"  ; then
-#        AC_MSG_WARN([Cannot find php-config program. Look for it at http://www.php.net])
-#        AC_MSG_WARN([OWPHP is disabled because php-config is not found])
-#        ENABLE_OWPHP="false"
-#    fi
 ],
 [
     if test -z "$SWIG" ; then
@@ -536,19 +530,30 @@ if test "${ENABLE_OWPHP}" = "true" ; then
     AC_MSG_RESULT(Looking for location of Php executable)
     SC_PATH_PHP
     AC_SUBST(PHP)
+    AC_SUBST(PHPCONFIG)
     AC_SUBST(PHPINC)
     AC_SUBST(PHPEXT)
     AC_SUBST(PHPLIBDIR)
-    if test -z "${PHPINC}" ; then
-	AC_MSG_WARN([Cannot find php include-file.])
-        AC_MSG_WARN([OWPHP is disabled because php include-file is not found])
+    if test -z "${PHP}" ; then
+        AC_MSG_WARN([Cannot find php binary. Install php or php5 package])
+        AC_MSG_WARN([OWPHP is disabled because php binary is not found])
         ENABLE_OWPHP="false"
     else
-	if test -z "${PHPLIBDIR}" ; then
-	    AC_MSG_WARN([Cannot find php extension-dir.])
-            AC_MSG_WARN([OWPHP is disabled because php extension-dir is not found])
+        if test -z "${PHPCONFIG}" ; then
+            AC_MSG_WARN([Cannot find php-config binary. Install php-devel or php5-dev package])
+            AC_MSG_WARN([include and library paths will be guessed])
+        fi
+        if test -z "${PHPINC}" ; then
+            AC_MSG_WARN([Cannot find php include-file. Install php-devel or php5-dev package])
+            AC_MSG_WARN([OWPHP is disabled because php include-file is not found])
             ENABLE_OWPHP="false"
-	fi
+        else
+            if test -z "${PHPLIBDIR}" ; then
+                AC_MSG_WARN([Cannot find php extension-dir. Install php-devel or php5-dev package])
+                AC_MSG_WARN([OWPHP is disabled because php extension-dir is not found])
+                ENABLE_OWPHP="false"
+            fi
+        fi
     fi
 fi
 
@@ -595,16 +600,22 @@ if test "${ENABLE_OWPYTHON}" = "true" ; then
     AC_SUBST(PYLIB)
     AC_SUBST(PYLINK)
     AC_SUBST(PYTHONDYNAMICLINKING)
-    if test -z "${PYLIB}" ; then
-        AC_MSG_WARN([Cannot find python library. Install python-devel package.])
-        AC_MSG_WARN([OWPYTHON is disabled because python library is not found])
+    if test -z "${PYTHON}" ; then
+        AC_MSG_WARN([Cannot find python binary. Install python package.])
+        AC_MSG_WARN([OWPYTHON is disabled because python binary is not found])
         ENABLE_OWPYTHON="false"
     else
-	if test -z "${PYINCLUDE}" ; then
-	    AC_MSG_WARN([Cannot find python include-file. Install python-devel package.])
-            AC_MSG_WARN([OWPYTHON is disabled because python include-file is not found])
+        if test -z "${PYLIB}" ; then
+            AC_MSG_WARN([Cannot find python library. Install python-devel package.])
+            AC_MSG_WARN([OWPYTHON is disabled because python library is not found])
             ENABLE_OWPYTHON="false"
-	fi
+        else
+            if test -z "${PYINCLUDE}" ; then
+                AC_MSG_WARN([Cannot find python include-file. Install python-devel package.])
+                AC_MSG_WARN([OWPYTHON is disabled because python include-file is not found])
+                ENABLE_OWPYTHON="false"
+             fi
+        fi
     fi
 fi
 
