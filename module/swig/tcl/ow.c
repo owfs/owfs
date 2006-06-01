@@ -305,6 +305,18 @@ owtcl_ObjCmdProc(Owtcl_Get)
   return tcl_return;
 }
 
+
+owtcl_ObjCmdProc(Owtcl_Version)
+{
+  OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
+  char buf[128];
+  Tcl_Obj *resultPtr;
+  sprintf(buf, "owtcl:\t%s\nlibow:\t%s", OWTCL_VERSION, VERSION);
+  resultPtr = Tcl_NewStringObj(buf, -1);
+  Tcl_SetObjResult(interp, resultPtr);
+  return TCL_OK;
+}
+
 owtcl_ObjCmdProc(Owtcl_IsDir)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
@@ -366,6 +378,7 @@ struct CmdListType {
   {"::OW::init", Owtcl_Connect},
   {"::OW::put", Owtcl_Put},
   {"::OW::get", Owtcl_Get},
+  {"::OW::version", Owtcl_Version},
   {"::OW::finish", Owtcl_Delete},
   {"::OW::isdirectory", Owtcl_IsDir},
   {"::OW::isdir", Owtcl_IsDir},

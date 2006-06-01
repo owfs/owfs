@@ -5,13 +5,10 @@
 #
 # $Id$
 #
-proc ::ow {interface args} {
-    if {$args == ""} {
-	::OW::init $interface
-    } else {
-	::OW::init $interface $args
-    }
-}
 
 namespace eval ::OW {
 }
+
+proc ::OW {args} {
+}
+
