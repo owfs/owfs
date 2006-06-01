@@ -532,19 +532,19 @@ AC_ARG_ENABLE(owphp,
 AC_SUBST(ENABLE_OWPHP)
 AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
 if test "${ENABLE_OWPHP}" = "true" ; then
-    m4_include(module/swig/php/php4.m4)
+    m4_include(module/swig/php/php.m4)
     AC_MSG_RESULT(Looking for location of Php executable)
-    SC_PATH_PHP4
-    AC_SUBST(PHP4)
-    AC_SUBST(PHP4INC)
-    AC_SUBST(PHP4EXT)
-    AC_SUBST(PHP4LIBDIR)
-    if test -z "${PHP4INC}" ; then
+    SC_PATH_PHP
+    AC_SUBST(PHP)
+    AC_SUBST(PHPINC)
+    AC_SUBST(PHPEXT)
+    AC_SUBST(PHPLIBDIR)
+    if test -z "${PHPINC}" ; then
 	AC_MSG_WARN([Cannot find php include-file.])
         AC_MSG_WARN([OWPHP is disabled because php include-file is not found])
         ENABLE_OWPHP="false"
     else
-	if test -z "${PHP4LIBDIR}" ; then
+	if test -z "${PHPLIBDIR}" ; then
 	    AC_MSG_WARN([Cannot find php extension-dir.])
             AC_MSG_WARN([OWPHP is disabled because php extension-dir is not found])
             ENABLE_OWPHP="false"
@@ -590,6 +590,7 @@ if test "${ENABLE_OWPYTHON}" = "true" ; then
     m4_include(module/swig/python/python.m4)
     AC_MSG_RESULT(Looking for location of Python executable)
     SC_PATH_PYTHON
+    AC_SUBST(PYTHON)
     AC_SUBST(PYINCLUDE)
     AC_SUBST(PYLIB)
     AC_SUBST(PYLINK)
