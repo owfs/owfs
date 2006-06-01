@@ -11,10 +11,12 @@ die (
      "OWFS 1-wire tree perl program\n"
     ."  by Paul Alfille 2004 see http://owfs.sourceforge.net\n"
     ."Syntax:\n"
-    ."\t$0 1wire-port\n"
-    ."  1wire-port (required):\n"
+    ."\t$0 1wire-adapter\n"
+    ."  1wire-adapter (required):\n"
     ."\t'u' for USB -or-\n"
-    ."\t/dev/ttyS0 (or whatever) serial port\n"
+    ."\t/dev/ttyS0 (or whatever) serial port -or-\n"
+    ."\t1234 for remote-server at port 1234\n"
+    ."\t192.168.1.1:1234 for remote-server at 192.168.1.1:1234\n"
     ) if ( $#ARGV != 0 ) ;
 
 OW::init($ARGV[0]) or die "Cannot open 1wire port $ARGV[0]" ;

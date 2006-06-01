@@ -1,7 +1,7 @@
 # $Id$
 
 
-EXTRA_DIST = perl5.m4
+EXTRA_DIST = perl5.m4 example/test.pl
 noinst_DATA = OW.pm
 LIBOW = ../../owlib/src/c/libow.la
 
@@ -33,7 +33,7 @@ OW.pm: ow_wrap.c
 	$(MAKE) -fMakefile.perl
 
 install-data-local:
-	$(MAKE) -fMakefile.perl PREFIX=$(prefix) install
+	$(MAKE) -fMakefile.perl install
 
 clean-local:
 	if test -f Makefile.perl; then $(MAKE) -fMakefile.perl realclean; fi
