@@ -3,6 +3,9 @@
 man_MANS = owfs.1 \
            owhttpd.1 \
            owserver.1 \
+           owcapi.1 \
+           libowcapi.1 \
+           DS1427.3 \
            DS1821.3 \
            DS1822.3 \
            DS18B20.3 \
@@ -21,9 +24,12 @@ man_MANS = owfs.1 \
            DS1991.3 \
            DS1992.3 \
            DS1993.3 \
+           DS1994.3 \
            DS1995.3 \
            DS1996.3 \
            DS2401.3 \
+           DS2404.3 \
+           DS2404S.3 \
            DS2405.3 \
            DS2406.3 \
            DS2407.3 \
@@ -33,6 +39,7 @@ man_MANS = owfs.1 \
            DS2415.3 \
            DS2417.3 \
            DS2423.3 \
+           DS2431.3 \
            DS2433.3 \
            DS2436.3 \
            DS2438.3 \
@@ -44,16 +51,26 @@ man_MANS = owfs.1 \
            DS2505-UNW.3 \
            DS2506.3 \
            DS2506-UNW.3 \
+           DS2720.3 \
+           DS2740.3 \
+           DS2751.3 \
            DS2760.3 \
            DS2761.3 \
            DS2762.3 \
+           DS2770.3 \
+           DS2780.3 \
            DS2804.3 \
            DS2890.3 \
            Thermachron.3 \
            LCD.3 \
            addressing \
-           seealso \
+           cmdline \
+           cmdline_mini \
+           cmdline2_mini \
            description \
+           seealso \
+           standard \
+           standard_mini \
            owperl.3 \
            owtcl.3 \
            owtcl.n
