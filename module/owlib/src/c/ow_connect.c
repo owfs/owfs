@@ -119,10 +119,12 @@ void FreeIn( void ) {
         case bus_serial:
             COM_close(now) ;
             break ;
+#ifdef OW_USB
         case bus_usb:
             DS9490_close(now) ;
             now->name = NULL ; // rather than a static data string;
             break ;
+#endif
         case bus_fake:
             if ( now->connin.fake.device ) free(now->connin.fake.device) ;
             now->connin.fake.device = NULL ;
