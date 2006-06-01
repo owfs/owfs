@@ -49,7 +49,7 @@ static void List_show( enum file_list fl, int out, const struct parsedname * pn 
     double age;
     char date_buf[13];
     ASCII * fil = strrchr( pn->path, '/' ) ;
-    ASCII perms[] = {
+    ASCII *perms[] = {
         "---------",
         "--x--x--x",
         "-w--w--w-",
@@ -186,9 +186,10 @@ static int WildLexParse( ASCII * CurBuffer, ASCII * match, ASCII * rest, enum fi
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
         FS_DirName( end, OW_FULLNAME_MAX, pn2 ) ;
-        fdprintf(out,"Try %s\r\n",end) ;
+        fdprintf(out,"Try %s vs %s\r\n",end,match) ;
         //if ( fnmatch( match, end, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
         if ( fnmatch( match, end, FNM_PATHNAME ) ) return ;
+        fdprintf(out,"Match! %s\r\n",end) ;
         FileLexParse( CurBuffer, rest, filsta_next, fl, out ) ;
     }
 
@@ -201,6 +202,7 @@ static int WildLexParse( ASCII * CurBuffer, ASCII * match, ASCII * rest, enum fi
         } else {
             FS_dir( directory, &pn ) ;
             end = '\0' ; // restore CurBuffer
+            ret = 0 ;
         }
         FS_ParsedName_destroy( &pn ) ;
     }
@@ -234,11 +236,15 @@ int file_nlst(int out, const char *cur_dir, const char *filespec) {
 
 int file_list(int out, const char *cur_dir, const char *filespec) {
     char pattern[PATH_MAX+1];
+    int ret ;
     
     strcpy( pattern, "/" ) ;
     if ( cur_dir ) strcpy( pattern, cur_dir ) ;
-    LEVEL_DEBUG("NLST dir=%s, file=%s\n",SAFESTRING(pattern),SAFESTRING(filespec)) ;
-    return FileLexParse( pattern, filespec, filsta_init, flist_list, out )==0 ;
+    LEVEL_DEBUG("LIST dir=%s, file=%s\n",SAFESTRING(pattern),SAFESTRING(filespec)) ;
+//    return FileLexParse( pattern, filespec, filsta_init, flist_list, out )==0 ;
+    ret = FileLexParse( pattern, filespec, filsta_init, flist_list, out ) ;
+    printf("file_list gets %d\n",ret) ;
+    return ret ;
 }
 /* write with care for max length and incomplete outout */
 static void fdprintf(int fd, const char *fmt, ...) {

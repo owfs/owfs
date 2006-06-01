@@ -225,7 +225,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     int r;
     //printf("RealRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n", pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
     /* Readable? */
-    if ( (pn->ft->read.v) == NULL ) return -ENOENT ;
+    if ( (pn->ft->read.v) == NULL ) return -ENOTSUP ;
 
     /* Special case for "fake" adapter */
     if ( pn->in->Adapter==adapter_fake && pn->ft->change!=ft_static ) return FS_read_fake( buf, size, offset, pn ) ;

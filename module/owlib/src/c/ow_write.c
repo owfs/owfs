@@ -233,9 +233,8 @@ static int FS_real_write(const char * buf, const size_t size, const off_t offset
     /* Writable? */
     if ( (pn->ft->write.v) == NULL ) return -ENOTSUP ;
 
-    /* Do we exist? Only test static cases */
-    /* Already parsed -- presence  check done there! on non-static */
-    //if ( ShouldCheckPresence(pn) && pn->ft->change==ft_static && Check1Presence(pn) ) return -ENOENT ;
+    /* Special case for "fake" adapter */
+    if ( pn->in->Adapter==adapter_fake ) return 0 ;
 
     /* Array properties? Write all together if aggregate */
     if ( pn->ft->ag ) {

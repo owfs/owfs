@@ -1323,7 +1323,7 @@ static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 
     /* send any files */
     send_ok = file_nlst(fd, f->dir, param);
-
+    printf("send_ok=%d\n",send_ok) ;
     /* strange handshake for Netscape's benefit */
     netscape_hack(fd);
 
@@ -1384,6 +1384,7 @@ static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 
     /* send any files */
     send_ok = file_list(fd, f->dir, param);
+    printf("send_ok=%d\n",send_ok) ;
 
     /* strange handshake for Netscape's benefit */
     netscape_hack(fd);
