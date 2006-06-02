@@ -209,7 +209,7 @@ static void Handler( int fd ) {
     struct timeval now ; // timer calculation
     struct timeval delta = { 1, 500000 } ; // 1.5 seconds ping interval
     struct timeval result ; // timer calculation
-    pthread_attr_t attr ; // for "detached" state
+    //pthread_attr_t attr ; // for "detached" state
     pthread_t thread ; // hanler thread id (not used)
     int loop = 1 ; // ping loop flap
 
@@ -218,9 +218,13 @@ static void Handler( int fd ) {
     gettimeofday( &(hd.tv), NULL ) ;
 
     //printf("OWSERVER pre-create\n");
-    pthread_attr_init( &attr ) ;
-    pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ;
-    if ( pthread_create( &thread, &attr, RealHandler, &hd ) ) {
+    // PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
+    //pthread_attr_init( &attr ) ;
+    //pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ;
+    //if ( pthread_create( &thread, &attr, RealHandler, &hd ) )
+    if ( pthread_create( &thread, NULL, RealHandler, &hd ) )
+      {
+	LEVEL_DEBUG("OWSERVER can't create new thread\n");
         //printf("OWSERVER can't create\n");
         // Can't start thread, so no pinging
         RealHandler( &hd ) ;
@@ -249,7 +253,7 @@ static void Handler( int fd ) {
             TOCLIENTUNLOCK( &hd ) ;
         } while ( loop ) ;
     }
-    pthread_attr_destroy( &attr ) ;
+    //pthread_attr_destroy( &attr ) ;
 #else /* OW_MT */
     RealHandler( &hd ) ;
 #endif /* OW_MT */
@@ -267,6 +271,10 @@ static void * RealHandler( void * v ) {
     struct client_msg cm ;
     struct parsedname pn ;
     char * path = FromClientAlloc( hd->fd, &sm ) ;
+
+#ifdef OW_MT
+    pthread_detach( pthread_self() );
+#endif
 
     //printf("OWSERVER message type = %d\n",sm.type ) ;
     memset(&cm, 0, sizeof(struct client_msg));
@@ -300,6 +308,7 @@ static void * RealHandler( void * v ) {
                     case msg_read:
                         LEVEL_CALL("Read message\n") ;
                         retbuffer = ReadHandler( &sm , &cm, &pn ) ;
+                        LEVEL_DEBUG("Read message done retbuffer=%p\n", retbuffer) ;
                         break ;
                     case msg_write: {
                             int pathlen = strlen( path ) + 1 ; /* include trailing null */
@@ -320,7 +329,9 @@ static void * RealHandler( void * v ) {
                     default: // never reached
                         break ;
                 }
+		LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy\n");
                 FS_ParsedName_destroy(&pn) ;
+		LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy done\n");
             }
             break ;
         case msg_nop: // "bad" message
@@ -333,6 +344,7 @@ static void * RealHandler( void * v ) {
             cm.ret = -EIO ;
             break ;
     }
+    LEVEL_DEBUG("RealHandler: cm.ret=%d\n", cm.ret);
 
     if (path) free(path) ;
     TOCLIENTLOCK(hd) ;
@@ -340,6 +352,7 @@ static void * RealHandler( void * v ) {
     timerclear(&(hd->tv)) ;
     TOCLIENTUNLOCK(hd) ;
     if ( retbuffer ) free(retbuffer) ;
+    LEVEL_DEBUG("RealHandler: done\n");
     return NULL ;
 }
 
@@ -356,8 +369,10 @@ static void * RealHandler( void * v ) {
 static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) {
     char * retbuffer = NULL ;
     ssize_t ret ;
-    //printf("ReadHandler:\n");
 
+    //printf("ReadHandler:\n");
+    LEVEL_DEBUG("ReadHandler: cm->payload=%d cm->size=%d cm->offset=%d\n", cm->payload, cm->size, cm->offset);
+    LEVEL_DEBUG("ReadHandler: sm->payload=%d sm->size=%d sm->offset=%d\n", sm->payload, sm->size, sm->offset);
     cm->size = 0 ;
     cm->payload = 0 ;
     cm->offset = 0 ;
@@ -365,9 +380,9 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
     if ( ( sm->size <= 0 ) || ( sm->size > MAXBUFFERSIZE ) ) {
         cm->ret = -EMSGSIZE ;
 #ifdef VALGRIND
-    } else if ( (retbuffer = (char *)calloc(1, (size_t)cm->payload))==NULL ) { // allocate return buffer
+    } else if ( (retbuffer = (char *)calloc(1, (size_t)sm->size))==NULL ) { // allocate return buffer
 #else
-    } else if ( (retbuffer = (char *)malloc((size_t)cm->payload))==NULL ) { // allocate return buffer
+    } else if ( (retbuffer = (char *)malloc((size_t)sm->size))==NULL ) { // allocate return buffer
 #endif
         cm->ret = -ENOBUFS ;
     } else if ( (ret = FS_read_postparse(retbuffer,(size_t)sm->size,(off_t)sm->offset,pn)) <= 0 ) {
@@ -417,7 +432,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
         size_t _pathlen ;
-        char *path = ((pn->state & pn_bus) && FS_RemoteBus(pn)) ? pn->path_busless : pn->path ;
+        char *path = ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote)) ? pn->path_busless : pn->path ;
 
         _pathlen = strlen(path);
 #ifdef VALGRIND

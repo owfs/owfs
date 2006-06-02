@@ -58,7 +58,7 @@ static void Server_close( struct connection_in * in ) {
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    char *pathnow ;
+    char *pathnow = NULL ;
     int connectfd = ClientConnect( pn->in ) ;
     int ret = 0 ;
 
@@ -70,17 +70,15 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     sm.sg = SetupSemi(pn) ;
     sm.offset = offset ;
 
-    if( (pn->state & pn_bus) && pn->path_busless ) {
+    if( pn->state & pn_bus ) {
         pathnow = pn->path_busless ;
     } else {
-        //printf("use path = %s\n", pn->path);
         pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
     LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
-    if ( ret ) {
-    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, buf, size ) < 0 ) {
         ret = -EIO ;
@@ -102,19 +100,19 @@ int ServerPresence( const struct parsedname * pn ) {
     //printf("ServerPresence pn->path=%s\n",pn->path);
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_presence ;
+
     sm.sg =  SetupSemi(pn) ;
 
-    if( (pn->state & pn_bus) && pn->path_busless ) {
+    /* Always use the path_busless path when contacting a remote-server */
+    if( pn->state & pn_bus ) {
         pathnow = pn->path_busless ;
     } else {
-        //printf("use path = %s\n", pn->path);
         pathnow = pn->path;
     }
     //printf("ServerPresence path=%s\n", pathnow);
     LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
-    if ( ret ) {
-    } else if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
@@ -140,18 +138,16 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     sm.sg =  SetupSemi(pn) ;
     sm.offset = offset ;
 
-    if( (pn->state & pn_bus) && pn->path_busless ) {
-        //printf("use path_busless = %s\n", pn->path_busless);
+    /* Always use the path_busless path when contacting a remote-server */
+    if( pn->state & pn_bus ) {
         pathnow = pn->path_busless ;
     } else {
-        //printf("use path = %s\n", pn->path);
         pathnow = pn->path;
     }
     //printf("ServerRead path=%s\n", pathnow);
     LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index, SAFESTRING(pathnow));
 
-    if ( ret ) {
-    } else if ( ToServer( connectfd, &sm, pathnow, buf, size) ) {
+    if ( ToServer( connectfd, &sm, pathnow, buf, size) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
@@ -171,6 +167,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    char *pathnow = NULL ;
     int connectfd = ClientConnect( pn->in ) ;
 
     if ( connectfd < 0 ) return -EIO ;
@@ -180,8 +177,16 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 
     sm.sg =  SetupSemi(pn) ;
 
-    LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
-    if ( ToServer( connectfd, &sm, pn->path_busless, NULL, 0) ) {
+    /* Always use the path_busless path when contacting a remote-server */
+    if( pn->state & pn_bus ) {
+        pathnow = pn->path_busless ;
+    } else {
+        pathnow = pn->path;
+    }
+
+    LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index, SAFESTRING(pathnow));
+
+    if ( ToServer( connectfd, &sm, pathnow, NULL, 0) ) {
         cm.ret = -EIO ;
     } else {
         char * path2 ;

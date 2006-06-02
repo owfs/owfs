@@ -66,9 +66,11 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     ssize_t r = 0 ;
     //    if ( pn->in==NULL ) return -ENODEV ;
     /* Normal read. Try three times */
+
+    LEVEL_DEBUG("READ_POSTPARSE %s\n", pn->path);
     STATLOCK;
-        AVERAGE_IN(&read_avg)
-        AVERAGE_IN(&all_avg)
+    AVERAGE_IN(&read_avg);
+    AVERAGE_IN(&all_avg);
     STATUNLOCK;
 
     /* First try */
@@ -113,15 +115,15 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
             r = -ENOENT ;
         }
     }
-        
     STATLOCK;
-        if ( r>=0 ) {
-            ++read_success ; /* statistics */
-            read_bytes += r ; /* statistics */
-        }
-        AVERAGE_OUT(&read_avg)
-        AVERAGE_OUT(&all_avg)
+    if ( r>=0 ) {
+      ++read_success ; /* statistics */
+      read_bytes += r ; /* statistics */
+    }
+    AVERAGE_OUT(&read_avg);
+    AVERAGE_OUT(&all_avg);
     STATUNLOCK;
+    LEVEL_DEBUG("READ_POSTPARSE %s return %d\n", pn->path, r);
     return r ;
 }
 
@@ -146,16 +148,16 @@ int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, cons
     int r = 0;
     //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
-    LEVEL_DEBUG("READ_POSTPARSE %s\n",pn->path) ;
+    LEVEL_DEBUG("READ_POSTPOSTPARSE %s\n",pn->path) ;
     STATLOCK;
-        AVERAGE_IN(&read_avg)
-        AVERAGE_IN(&all_avg)
+    AVERAGE_IN(&read_avg);
+    AVERAGE_IN(&all_avg);
     STATUNLOCK;
 
     switch (pn->type) {
         case pn_structure:
             /* Get structure data from local memory */
-            //printf("FS_read_postparse: pid=%ld call fs_structure\n", pthread_self());
+            //printf("FS_read_postpostparse: pid=%ld call fs_structure\n", pthread_self());
             r = FS_structure(buf,size,offset,pn) ;
             break;
         default:
@@ -167,19 +169,22 @@ int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, cons
             ++read_success ; /* statistics */
             read_bytes += r ; /* statistics */
         }
-        AVERAGE_OUT(&read_avg)
-        AVERAGE_OUT(&all_avg)
+        AVERAGE_OUT(&read_avg);
+        AVERAGE_OUT(&all_avg);
     STATUNLOCK;
 
-//printf("FS_read_postparse: pid=%ld return %d\n", pthread_self(), r);
+LEVEL_DEBUG("READ_POSTPOSTPARSE: %s return %d\n", pn->path, r);
+//printf("FS_read_postpostparse: pid=%ld return %d\n", pthread_self(), r);
     return r;
 }
 
 static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
     //printf("READSEEK\n");
+    LEVEL_DEBUG("READSEEK\n");
 
     if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
+        LEVEL_DEBUG("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;
         //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
@@ -188,6 +193,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
+	    LEVEL_DEBUG("READSEEK1 pid=%d call FS_real_read\n",getpid());
             //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 r = FS_real_read(buf, size, offset, pn ) ;
@@ -196,6 +202,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             }
             //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
         } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
+            LEVEL_DEBUG("READSEEK2 pid=%d not found in cache\n",getpid());
             //printf("READSEEK2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
@@ -206,6 +213,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             }
             //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
         } else {
+	    LEVEL_DEBUG("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             STATLOCK;
                 ++read_cache ; /* statistics */

@@ -281,7 +281,10 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct pars
     struct device_search ds ; // holds search state
 
     /* cache from Server if this is a remote bus */
-    if ( get_busmode(pn2->in) == bus_remote ) return ServerDir( dirfunc, pn2, &flags ) ;
+    if (
+	/* (pn2->state & pn_bus) && */
+	(get_busmode(pn2->in) == bus_remote) )
+      return ServerDir( dirfunc, pn2, &flags ) ;
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
@@ -326,7 +329,10 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
     int ret ;
 
     /* cache from Server if this is a remote bus */
-    if ( get_busmode(pn2->in) == bus_remote ) return ServerDir( dirfunc, pn2, flags ) ;
+    if (
+	/* (pn2->state & pn_bus) && */
+	(get_busmode(pn2->in) == bus_remote) )
+      return ServerDir( dirfunc, pn2, flags ) ;
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);

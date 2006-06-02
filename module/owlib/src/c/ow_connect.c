@@ -32,9 +32,9 @@ struct connection_in *find_connection_in(int iindex) {
   return c;
 }
 
-enum bus_mode get_busmode(struct connection_in *c) {
-  if(!c) return bus_unknown;
-  return c->busmode;
+enum bus_mode get_busmode(struct connection_in *in) {
+  if(!in) return bus_unknown;
+  return in->busmode;
 }
 
 /* Make a new indevice, and place it in the chain */
@@ -179,5 +179,5 @@ void FreeOut( void ) {
 }
 
 int FS_RemoteBus( const struct parsedname * pn ) {
-    return (pn->in->busmode == bus_remote) && (pn->path_busless!=NULL) ;
+    return (get_busmode(pn->in) == bus_remote);
 }

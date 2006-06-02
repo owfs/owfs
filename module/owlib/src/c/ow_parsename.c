@@ -91,7 +91,7 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
     pn->sg = SemiGlobal | (1<<BUSRET_BIT) ; // initial flag as the bus-returning level, will change if a bus is specified
 //        pn->si->sg.u[0]&0x01 = cacheenabled ;
-//        pn->si->sg.u[0]&0x02 = return bus-list from owserver
+//        pn->si->sg.u[0]&0x02 = request a bus-list from a remote-server
 //        pn->si->sg.u[2]      = tempscale ;
 //        pn->si->sg.u[3]      = devform ;
 
@@ -275,12 +275,15 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
         /* this will only be reached once */
         pn->state |= pn_bus ;
         pn->state |= pn_buspath ; /* specified a bus */
-        pn->sg &= (~BUSRET_MASK) ;
         pn->bus_nr = atoi(&pathnow[4]);
         if ( pn->bus_nr < 0 || pn->bus_nr >= indevices ) return parse_error ;
         /* Since we are going to use a specific in-device now, set
          * pn->in to point at that device at once. */
         pn->in = find_connection_in(pn->bus_nr) ;
+	if(pn->in->busmode != bus_remote) {
+	  /* don't return bus-list for local paths. */
+	  pn->sg &= (~BUSRET_MASK) ;
+	}
         /* We have to allow any bus-number here right now. We receive
          * paths like /bus.4 from a remote owserver, and we have to trust
          * this result. */
