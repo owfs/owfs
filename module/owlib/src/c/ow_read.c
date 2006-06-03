@@ -201,7 +201,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
                 LockRelease(pn) ;
             }
             //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
-        } else if ( (pn->state & pn_uncached) || Cache_Get( buf, &s, pn ) ) {
+        } else if ( IsUncached(pn) || Cache_Get( buf, &s, pn ) ) {
             LEVEL_DEBUG("READSEEK2 pid=%d not found in cache\n",getpid());
             //printf("READSEEK2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {

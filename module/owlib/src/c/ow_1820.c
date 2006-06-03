@@ -346,7 +346,7 @@ static int OW_power( BYTE * data, const struct parsedname * pn) {
     } ;
     size_t s = sizeof(BYTE) ;
     //printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
-    if ( (pn->state & pn_uncached) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
+    if ( IsUncached(pn) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
         //printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
         if ( BUS_transaction( tpower, pn ) ) return 1 ;
         //printf("POWER "SNformat", asked\n",SNvar(pn->sn)) ;

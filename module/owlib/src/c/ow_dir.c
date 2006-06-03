@@ -99,7 +99,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else { /* Directory of some kind */
         if ( pn->pathlength == 0 ) { /* root directory */
-            if ( !server_mode && !SpecifiedBus(pn) && IsCached(pn) ) { /* structure only in true root */
+            if ( !server_mode && !SpecifiedBus(pn) && NotUncached(pn) ) { /* structure only in true root */
                 pn2.type = pn_structure ;
                 dirfunc( &pn2 ) ;
                 pn2.type = pn_real ;
@@ -108,7 +108,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 /* restore state */
                 pn2.type = pn_real ;
                 FS_busdir(dirfunc, pn ) ;
-                if ( IsCached(pn) ) {
+                if ( NotUncached(pn) ) {
                     if ( IsLocalCacheEnabled(pn) ) { /* cached */
                         pn2.state = pn->state | pn_uncached ;
                         dirfunc( &pn2 ) ;
@@ -436,7 +436,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
 
     /* Test to see whether we should get the directory "directly" */
     //printf("Pre test cache for dir\n") ;
-    if ( (pn2->state & pn_uncached) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
+    if ( !NotUncached(pn2) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
         //printf("FS_cache2real: didn't find anything at bus %d\n", pn2->in->index);
         return FS_realdir(dirfunc,pn2,flags) ;
     }

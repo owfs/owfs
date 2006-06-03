@@ -57,7 +57,7 @@ int FS_dirname_state( char * buffer, const size_t length, const struct parsednam
          * hidden feature. Uncached should perhaps be the same... */
         strncpy(buffer, dirname_state_text, length ) ;
 #endif
-    } else if ( pn->state & pn_uncached) {
+    } else if ( IsUncached(pn) ) {
         p = dirname_state_uncached ;
     } else if ( pn->state & pn_bus ) {
         int ret ;

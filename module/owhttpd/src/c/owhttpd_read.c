@@ -243,7 +243,7 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) {
         b = Backup(pn->path) ;
         HTTPtitle( out , &pn->path[1] ) ;
         HTTPheader( out , &pn->path[1] ) ;
-        if ( IsLocalCacheEnabled(pn) && !(pn->state & pn_uncached) && pn->type==pn_real)
+        if ( IsLocalCacheEnabled(pn) && NotUncached(pn) && pn->type==pn_real)
             fprintf( out , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
         fprintf( out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
         fprintf( out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, pn->path ) ;
