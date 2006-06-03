@@ -93,8 +93,23 @@ enum parse_status_e {
     parse_status_tame, // no wildcard at all
 } ;
 
+enum file_list_e {
+    file_list_list ,
+    file_list_nlst ,
+} ;
+
+struct file_parse_s {
+    ASCII buffer[PATH_MAX+1] ;
+    ASCII * rest ;
+    enum parse_status_e pse ;
+    enum file_list_e fle ;
+    int out ;
+    int ret ;
+    int start ;
+} ;
+
 struct cd_parse_s {
-    ASCII * buffer ;
+    ASCII buffer[PATH_MAX+1] ;
     ASCII * rest ;
     enum parse_status_e pse ;
     int ret ;
@@ -102,6 +117,7 @@ struct cd_parse_s {
     ASCII * dir ;
 } ;
 
+void FileLexParse( struct file_parse_s * fps ) ;
 void FileLexCD( struct cd_parse_s * cps ) ;
 
 /* each watched thread gets one of these structures */
@@ -320,8 +336,6 @@ struct ftp_command_s {
 } ;
 
 /* methods */
-int file_nlst(int out, const char *cur_dir, const char *filespec);
-int file_list(int out, const char *cur_dir, const char *filespec);
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd);
 
 /* functions */

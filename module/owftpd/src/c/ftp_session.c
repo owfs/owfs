@@ -29,6 +29,9 @@ static void get_absolute_fname(char *fname,
                                int fname_len,
                                const char *dir,
                                const char *file);
+static void both_list(struct ftp_session_s *f,
+                      const struct ftp_command_s *cmd,
+                      enum file_list_e fle ) ;
 
 /* command handlers */
 static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd);
@@ -438,11 +441,12 @@ static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 }
 
 static void change_dir(struct ftp_session_s *f, const char *new_dir) {
-    char target[PATH_MAX+1];
-    struct cd_parse_s cps =
-    { target, new_dir, parse_status_init, 0, 0, NULL, } ;
+    struct cd_parse_s cps ;
 
-    strcpy( target, f->dir ) ;
+    strcpy( cps.buffer, f->dir ) ;
+    cps.rest = new_dir ;
+    cps.pse = parse_status_init ;
+    
     LEVEL_DEBUG("CD dir=%s, file=%s\n",SAFESTRING(cps.buffer),SAFESTRING(new_dir)) ;
     FileLexCD( &cps ) ;
 
@@ -1139,41 +1143,31 @@ static void do_pwd(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     daemon_assert(invariant(f));
 }
 
-#if 0
-/* 
-  because oftpd uses glob(), it is possible for users to launch a 
-  denial-of-service attack by sending certain wildcard expressions that
-  create extremely large lists of files, e.g. "*/../*/../*/../*/../*/../*"
+static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, enum file_list_e fle ) {
+    struct file_parse_s fps ;
 
-  in order to prevent this, a user may pass wildcards, or paths, but not
-  both as arguments to LIST or NLST - at most all the files from a single 
-  directory will be returned
-*/
-#endif
+    strcpy( fps.buffer, f->dir ) ;
+    fps.rest = NULL ;
+    fps.pse = parse_status_init ;
+    fps.fle = fle ;
+    fps.out = -1 ;
 
-static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
-    int fd;
-    const char *param;
-    int send_ok;
 
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert((cmd->num_arg == 0) || (cmd->num_arg == 1));
 
-    /* set up for exit */
-    fd = -1;
-
     /* figure out what parameters to use */
     if (cmd->num_arg == 0) {
-        param = "*";
+        fps.rest = "*";
     } else {
         daemon_assert(cmd->num_arg == 1);
 
         /* ignore attempts to send options to "ls" by silently dropping */
         if (cmd->arg[0].string[0] == '-') {
-            param = "*";
+            fps.rest = "*";
         } else {
-            param = cmd->arg[0].string;
+            fps.rest = cmd->arg[0].string;
         }
     }
 
@@ -1181,84 +1175,37 @@ static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     reply(f, 150, "About to send name list.");
 
     /* open our data connection */
-    fd = open_connection(f);
-    if (fd == -1) {
-        goto exit_nlst;
+    fps.out = open_connection(f);
+    if (fps.out == -1) {
+        goto exit_blst;
     }
 
     /* send any files */
-    send_ok = file_nlst(fd, f->dir, param);
+    FileLexParse( &fps ) ;
     
     /* strange handshake for Netscape's benefit */
-    netscape_hack(fd);
+    netscape_hack(fps.out);
 
-    if (send_ok) {
+    if (fps.ret==0) {
         reply(f, 226, "Transfer complete.");
     } else {
-        reply(f, 451, "Error sending name list.");
+        reply(f, 451, "Error sending name list. %s",strerror(-fps.ret));
     }
 
     /* clean up and exit */
-exit_nlst:
-    if (fd != -1) {
-        close(fd);
-    }
-    daemon_assert(invariant(f));
+exit_blst:
+        if (fps.out != -1) {
+    close(fps.out);
+        }
+        daemon_assert(invariant(f));
+}
+
+static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
+    both_list( f, cmd, file_list_nlst ) ;
 }
 
 static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
-    int fd;
-    const char *param;
-    int send_ok;
-
-    daemon_assert(invariant(f));
-    daemon_assert(cmd != NULL);
-    daemon_assert((cmd->num_arg == 0) || (cmd->num_arg == 1));
-
-    /* set up for exit */
-    fd = -1;
-
-    /* figure out what parameters to use */
-    if (cmd->num_arg == 0) {
-        param = "*";
-    } else {
-        daemon_assert(cmd->num_arg == 1);
-
-        /* ignore attempts to send options to "ls" by silently dropping */
-        if (cmd->arg[0].string[0] == '-') {
-            param = "*";
-        } else {
-            param = cmd->arg[0].string;
-        }
-    }
-
-    /* ready to list */
-    reply(f, 150, "About to send file list.");
-
-    /* open our data connection */
-    fd = open_connection(f);
-    if (fd == -1) {
-        goto exit_list;
-    }
-
-    /* send any files */
-    send_ok = file_list(fd, f->dir, param);
-
-    /* strange handshake for Netscape's benefit */
-    netscape_hack(fd);
-
-    if (send_ok) {
-        reply(f, 226, "Transfer complete.");
-    } else {
-        reply(f, 451, "Error sending file list.");
-    }
-
-    /* clean up and exit */
-exit_list:
-    if (fd != -1) {
-        close(fd);
-    }
-    daemon_assert(invariant(f));
+    both_list( f, cmd, file_list_list ) ;
 }
 
 static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {

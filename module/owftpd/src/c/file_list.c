@@ -22,24 +22,9 @@ char *alloca ();
 # endif
 #endif
 
-enum file_list_e {
-    file_list_list ,
-    file_list_nlst ,
-} ;
-
-struct file_parse_s {
-    ASCII * buffer ;
-    ASCII * rest ;
-    enum parse_status_e pse ;
-    enum file_list_e fle ;
-    int out ;
-    int ret ;
-    int start ;
-} ;
-
 static void fdprintf(int fd, const char *fmt, ...);
 static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) ;
-static void FileLexParse( struct file_parse_s * fps ) ;
+void FileLexParse( struct file_parse_s * fps ) ;
 static void WildLexParse( struct file_parse_s * fps, ASCII * match ) ;
 static const char * skip_ls_options(const char *filespec) ;
 
@@ -87,14 +72,15 @@ static void List_show( struct file_parse_s * fps, const struct parsedname * pn )
     }
 }
 
-static void FileLexParse( struct file_parse_s * fps ) {
+void FileLexParse( struct file_parse_s * fps ) {
     struct parsedname pn ;
     while ( 1 ) {
         switch( fps->pse ) {
             case parse_status_init:
-                LEVEL_DEBUG("FTP parse_status_init Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                LEVEL_DEBUG("FTP parse_status_init Path<%s> File <%s>\n",fps->buffer,fps->rest);
                 /* fps->buffer is absolute */
                 /* trailing / only at root */
+                fps->ret = 0 ;
                 fps->start = strlen(fps->buffer) ;
                 if ( fps->start > 1 ) ++fps->start ;
                 fps->rest = skip_ls_options(fps->rest) ;
@@ -110,7 +96,7 @@ static void FileLexParse( struct file_parse_s * fps ) {
                 }
                 break ;
             case parse_status_init2:
-                LEVEL_DEBUG("FTP parse_status_init2 Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                LEVEL_DEBUG("FTP parse_status_init2 Path<%s> File <%s>\n",fps->buffer,fps->rest);
                 /* fps->buffer is absolute */
                 /* trailing / only at root */
                 if ( (fps->rest[0]=='.'&&fps->rest[1]=='.') || strpbrk( fps->rest, "*[?" ) ) {
@@ -120,7 +106,7 @@ static void FileLexParse( struct file_parse_s * fps ) {
                 }
                 break ;
             case parse_status_back:
-                LEVEL_DEBUG("FTP parse_status_back Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                LEVEL_DEBUG("FTP parse_status_back Path<%s> File <%s>\n",fps->buffer,fps->rest);
                 /* fps->buffer is absolute */
                 /* trailing / only at root */
                 if ( fps->rest[0]=='.' && fps->rest[1]=='.' ) {
@@ -144,7 +130,7 @@ static void FileLexParse( struct file_parse_s * fps ) {
                 }
                 break ;
             case parse_status_next:
-                LEVEL_DEBUG("FTP parse_status_next Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                LEVEL_DEBUG("FTP parse_status_next Path<%s> File <%s>\n",fps->buffer,fps->rest);
                 /* fps->buffer is absolute */
                 /* trailing / only at root */
                 if ( fps->rest==NULL || fps->rest[0]=='\0' ) {
@@ -155,6 +141,10 @@ static void FileLexParse( struct file_parse_s * fps ) {
                         WildLexParse( fps, oldrest ) ;
                         return ;
                     } else {
+                        if ( oldrest && ( strlen(fps->buffer) + strlen(oldrest) + 4 > PATH_MAX )) {
+                            fps->ret = -ENAMETOOLONG ;
+                            return ;
+                        }
                         if ( fps->buffer[1] ) strcat( fps->buffer, "/" ) ;
                         strcat( fps->buffer, oldrest ) ;
                         fps->pse = parse_status_next ;
@@ -162,9 +152,13 @@ static void FileLexParse( struct file_parse_s * fps ) {
                 }
                 break ;
             case parse_status_tame:
-                LEVEL_DEBUG("FTP parse_status_tame Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                LEVEL_DEBUG("FTP parse_status_tame Path<%s> File <%s>\n",fps->buffer,fps->rest);
                 /* fps->buffer is absolute */
                 /* trailing / only at root */
+                if ( fps->rest && ( strlen(fps->buffer) + strlen(fps->rest) + 4 > PATH_MAX )) {
+                    fps->ret = -ENAMETOOLONG ;
+                    return ;
+                }
                 if ( fps->buffer[1] )strcat( fps->buffer, "/" ) ;
                 strcat( fps->buffer, fps->rest ) ;
                 if ( FS_ParsedName( fps->buffer, &pn )==0 ) {
@@ -187,9 +181,13 @@ static void FileLexParse( struct file_parse_s * fps ) {
                 }
                 return ;
             case parse_status_last:
-                LEVEL_DEBUG("FTP parse_status_last Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                LEVEL_DEBUG("FTP parse_status_last Path<%s> File <%s>\n",fps->buffer,fps->rest);
                 /* fps->buffer is absolute */
                 /* trailing / only at root */
+                if ( fps->rest && ( strlen(fps->buffer) + strlen(fps->rest) + 4 > PATH_MAX )) {
+                    fps->ret = -ENAMETOOLONG ;
+                    return ;
+                }
                 if ( FS_ParsedNamePlus( fps->buffer, fps->rest, &pn )==0 ) {
                     List_show( fps, &pn ) ;
                     FS_ParsedName_destroy( &pn ) ;
@@ -216,7 +214,14 @@ static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
         fps->rest = rest ;
     }
 
-    LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, rest=%s\n",SAFESTRING(fps->buffer),SAFESTRING(match),SAFESTRING(fps->rest));
+    LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, File=%s\n",SAFESTRING(fps->buffer),SAFESTRING(match),SAFESTRING(fps->rest));
+
+    /* Check potential length */
+    if ( strlen(fps->buffer)+OW_FULLNAME_MAX+2 > PATH_MAX ) {
+        fps->ret = -ENAMETOOLONG ;
+        return ;
+    }
+    
     if ( fps->rest ) rest = strdup(fps->rest ) ;
 
     if ( FS_ParsedName( fps->buffer, &pn ) ) {
@@ -249,30 +254,6 @@ struct tm *localtime_r(const time_t *timep, struct tm *timeptr) {
     return timeptr;
 }
 #endif /* HAVE_LOCALTIME_R */
-
-/* cur_dir is absolute */
-int file_nlst(int out, const char *cur_dir, const char *filespec) {
-    char pattern[PATH_MAX+1];
-    struct file_parse_s fps = 
-        { pattern, filespec, parse_status_init, file_list_nlst, out, 0, 0, } ;
-
-    strcpy( fps.buffer, cur_dir ) ;
-    LEVEL_DEBUG("NLST dir=%s, file=%s\n",SAFESTRING(fps.buffer),SAFESTRING(filespec)) ;
-    FileLexParse( &fps ) ;
-    return fps.ret==0 ;
-}
-
-/* cur_dir is absolute */
-int file_list(int out, const char *cur_dir, const char *filespec) {
-    char pattern[PATH_MAX+1];
-    struct file_parse_s fps = 
-    { pattern, filespec, parse_status_init, file_list_list, out, 0, 0, } ;
-
-    strcpy( fps.buffer, cur_dir ) ;
-    LEVEL_DEBUG("LIST dir=%s, file=%s\n",SAFESTRING(fps.buffer),SAFESTRING(filespec)) ;
-    FileLexParse( &fps ) ;
-    return fps.ret==0 ;
-}
 
 /* write with care for max length and incomplete outout */
 static void fdprintf(int fd, const char *fmt, ...) {
