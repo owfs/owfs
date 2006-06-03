@@ -54,6 +54,7 @@ int Fake_detect( struct connection_in * in ) {
     in->adapter_name = "Simulated" ;
     in->Adapter = adapter_fake ;
     in->AnyDevices = 0 ;
+    LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n",fakes) ;
     if ( (newname=(ASCII *)malloc(20)) ) {
         const ASCII * dev ;
         ASCII * rest = in->name ;
@@ -67,7 +68,7 @@ int Fake_detect( struct connection_in * in ) {
             for ( dev=strsep( &rest, " ," ) ; dev[0] ; ++dev ) {
                 if ( dev[0]!=' ' && dev[0]!=',' ) break ;
             }
-            if ( (dev=namefind(dev)) ) {
+            if ( (isxdigit(dev[0])&&isxdigit(dev[1])) || (dev=namefind(dev)) ) {
                 sn[0] = string2num(dev) ;
                 sn[1] = rand()&0xFF ;
                 sn[2] = rand()&0xFF ;
