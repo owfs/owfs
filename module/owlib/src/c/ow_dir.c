@@ -99,7 +99,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else { /* Directory of some kind */
         if ( pn->pathlength == 0 ) { /* root directory */
-            if ( !server_mode && !SpecifiedBus(pn) ) { /* structure only in true root */
+            if ( !server_mode && !SpecifiedBus(pn) && IsCached(pn) ) { /* structure only in true root */
                 pn2.type = pn_structure ;
                 dirfunc( &pn2 ) ;
                 pn2.type = pn_real ;
@@ -107,18 +107,20 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
             if( !SpecifiedBus(pn) && ShouldReturnBusList(pn) ) {
                 /* restore state */
                 pn2.type = pn_real ;
-                if ( IsLocalCacheEnabled(pn) && (pn->state&pn_uncached)==0 ) { /* cached */
-                    pn2.state = pn->state | pn_uncached ;
-                    dirfunc( &pn2 ) ;
-                    pn2.state = pn->state ;
-                }
                 FS_busdir(dirfunc, pn ) ;
-                pn2.type = pn_settings ;
-                dirfunc( &pn2 ) ;
-                pn2.type = pn_system ;
-                dirfunc( &pn2 ) ;
-                pn2.type = pn_statistics ;
-                dirfunc( &pn2 ) ;
+                if ( IsCached(pn) ) {
+                    if ( IsLocalCacheEnabled(pn) ) { /* cached */
+                        pn2.state = pn->state | pn_uncached ;
+                        dirfunc( &pn2 ) ;
+                        pn2.state = pn->state ;
+                    }
+                    pn2.type = pn_settings ;
+                    dirfunc( &pn2 ) ;
+                    pn2.type = pn_system ;
+                    dirfunc( &pn2 ) ;
+                    pn2.type = pn_statistics ;
+                    dirfunc( &pn2 ) ;
+                }
                 pn2.type = pn->type;
             }
         }

@@ -772,5 +772,5 @@ void BUS_unlock( const struct parsedname * pn ) ;
                       || ((pn)->ft)==NULL  \
                       || ((pn)->ft)->format==ft_directory \
                       || ((pn)->ft)->format==ft_directory )
-
+#define IsCached(pn)    ( (((pn)->state)&pn_uncached) == 0 )
 #endif /* OW_H */
