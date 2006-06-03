@@ -84,8 +84,25 @@ typedef struct sockaddr_in sockaddr_storage_t;
 /* timeout (in seconds) before dropping inactive clients */
 #define INACTIVITY_TIMEOUT (15 * 60)
 
-/* README file name (sent automatically as a response to users) */
-#define README_FILE_NAME "README"
+enum parse_status_e {
+    parse_status_init, // need to test for initial /
+    parse_status_init2,// need to test for virginity (no wildness)
+    parse_status_back, // .. still allowed
+    parse_status_next, // figure out this level
+    parse_status_last, // last level
+    parse_status_tame, // no wildcard at all
+} ;
+
+struct cd_parse_s {
+    ASCII * buffer ;
+    ASCII * rest ;
+    enum parse_status_e pse ;
+    int ret ;
+    int solutions ;
+    ASCII * dir ;
+} ;
+
+void FileLexCD( struct cd_parse_s * cps ) ;
 
 /* each watched thread gets one of these structures */
 struct watched_s {

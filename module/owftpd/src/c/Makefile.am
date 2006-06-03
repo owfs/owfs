@@ -2,12 +2,13 @@
 
 bin_PROGRAMS = owftpd
 owftpd_SOURCES = file_list.c \
+                 file_cd.c    \
                  ftp_command.c \
                  ftp_listener.c \
-                 ftp_session.c \
-                 owftpd.c \
-                 telnet_session.c \
-                 watchdog.c \
+                 ftp_session.c   \
+                 owftpd.c         \
+                 telnet_session.c  \
+                 watchdog.c         \
                  daemon_assert.c
 owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 

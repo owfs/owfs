@@ -22,33 +22,33 @@ char *alloca ();
 # endif
 #endif
 
-enum fil_sta {
-    filsta_init, // need to test for initial /
-    filsta_init2,// need to test for virginity (no wildness)
-    filsta_back, // .. still allowed
-    filsta_next, // figure out this level
-    filsta_last, // last level
-    filsta_tame, // no wildcard at all
+enum file_list_e {
+    file_list_list ,
+    file_list_nlst ,
 } ;
 
-enum file_list {
-    flist_list ,
-    flist_nlst ,
+struct file_parse_s {
+    ASCII * buffer ;
+    ASCII * rest ;
+    enum parse_status_e pse ;
+    enum file_list_e fle ;
+    int out ;
+    int ret ;
+    int start ;
 } ;
 
 static void fdprintf(int fd, const char *fmt, ...);
-static void List_show( enum file_list fl, int out, const struct parsedname * pn ) ;
-static int FileLexParse( ASCII * CurBuffer, ASCII * rest, enum fil_sta filsta, enum file_list fl, int out ) ;
-static int WildLexParse( ASCII * CurBuffer, ASCII * match, ASCII * rest, enum file_list fl, int out ) ;
+static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) ;
+static void FileLexParse( struct file_parse_s * fps ) ;
+static void WildLexParse( struct file_parse_s * fps, ASCII * match ) ;
 static const char * skip_ls_options(const char *filespec) ;
 
-static void List_show( enum file_list fl, int out, const struct parsedname * pn ) {
+static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) {
     struct stat stbuf ;
     time_t now;
     struct tm tm_now;
     double age;
     char date_buf[13];
-    ASCII * fil = strrchr( pn->path, '/' ) ;
     ASCII *perms[] = {
         "---------",
         "--x--x--x",
@@ -59,17 +59,18 @@ static void List_show( enum file_list fl, int out, const struct parsedname * pn 
         "rw-rw-rw-",
         "rwxrwxrwx",
     } ;
-    switch( fl ) {
-        case flist_list:
+    printf("List_show %s\n",pn->path);
+    switch( fps->fle ) {
+        case file_list_list:
             FS_fstat_postparse(&stbuf,pn) ;
-            fdprintf(out, "%s%s",stbuf.st_mode&S_IFDIR ? "d" : "-",perms[stbuf.st_mode&0x07] ) ;
-            /* output link & ownership information */
-            fdprintf(out, " %3d %-8d %-8d %8lu ",
+            fdprintf(fps->out, "%s%s",stbuf.st_mode&S_IFDIR ? "d" : "-",perms[stbuf.st_mode&0x07] ) ;
+            /* fps->output link & ownership information */
+            fdprintf(fps->out, " %3d %-8d %-8d %8lu ",
                      stbuf.st_nlink,
                      stbuf.st_uid,
                      stbuf.st_gid,
                      (unsigned long)stbuf.st_size);
-            /* output date */
+            /* fps->output date */
             time(&now);
             localtime_r(&stbuf.st_mtime, &tm_now);
             age = difftime(now, stbuf.st_mtime);
@@ -78,138 +79,162 @@ static void List_show( enum file_list fl, int out, const struct parsedname * pn 
             } else {
                 strftime(date_buf, sizeof(date_buf), "%b %e %H:%M", &tm_now);
             }
-            fdprintf(out, "%s ", date_buf);
+            fdprintf(fps->out, "%s ", date_buf);
             /* Fall Through */
-        case flist_nlst:
-            /* output filename */
-            fdprintf(out, "%s\r\n", &fil[1]);
+        case file_list_nlst:
+            /* fps->output filename */
+            fdprintf(fps->out, "%s\r\n", &pn->path[fps->start]);
     }
 }
 
-static int FileLexParse( ASCII * CurBuffer, ASCII * rest, enum fil_sta filsta, enum file_list fl, int out ) {
+static void FileLexParse( struct file_parse_s * fps ) {
     struct parsedname pn ;
     while ( 1 ) {
-        LEVEL_DEBUG("FileLexParse Path=%s, rest=%s\n",SAFESTRING(CurBuffer),SAFESTRING(rest));
-        switch( filsta ) {
-            case filsta_init:
-                printf("filsta_init\n");
-                rest = skip_ls_options(rest) ;
-                if ( CurBuffer[strlen(CurBuffer)-1]!='/' ) strcat( CurBuffer, "/" ) ;
-                if ( rest==NULL || rest[0]=='\0' ) {
-                    filsta = filsta_tame ;
-                } else if ( rest[0] == '/' ) {
-                    strcpy( CurBuffer, "/" ) ;
-                    rest = &rest[1] ;
-                    filsta = filsta_init2 ;
-                } else {
-                    filsta = filsta_init2 ;
+        switch( fps->pse ) {
+            case parse_status_init:
+                LEVEL_DEBUG("FTP parse_status_init Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                /* fps->buffer is absolute */
+                /* trailing / only at root */
+                fps->start = strlen(fps->buffer) ;
+                if ( fps->start > 1 ) ++fps->start ;
+                fps->rest = skip_ls_options(fps->rest) ;
+                if ( fps->rest==NULL || fps->rest[0]=='\0' ) {
+                    fps->pse = parse_status_tame ;
+                } else{
+                    if ( fps->rest[0]=='/' ) { // root specification
+                        fps->buffer[1] = '\0' ;
+                        fps->start = 0 ;
+                        ++fps->rest ;
+                    }
+                    fps->pse = parse_status_init2 ;
                 }
                 break ;
-            case filsta_init2:
-                printf("filsta_init2\n");
-                if ( index( rest, '*') || index( rest, '[') || index( rest, '?' ) ) {
-                    filsta = filsta_back ;
+            case parse_status_init2:
+                LEVEL_DEBUG("FTP parse_status_init2 Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                /* fps->buffer is absolute */
+                /* trailing / only at root */
+                if ( (fps->rest[0]=='.'&&fps->rest[1]=='.') || strpbrk( fps->rest, "*[?" ) ) {
+                    fps->pse = parse_status_back ;
                 } else {
-                    filsta = filsta_tame ;
+                    fps->pse = parse_status_tame ;
                 }
                 break ;
-            case filsta_back:
-                printf("filsta_back\n");
-                if ( rest[0]=='.' && rest[1]=='.' ) {
+            case parse_status_back:
+                LEVEL_DEBUG("FTP parse_status_back Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                /* fps->buffer is absolute */
+                /* trailing / only at root */
+                if ( fps->rest[0]=='.' && fps->rest[1]=='.' ) {
                     // Move back
-                    ASCII * back = strrchr( CurBuffer, '/' ) ;
-                    if ( back && (back[1]=='\0') ) {
-                        back[0] = '\0' ;
-                        back = strrchr( CurBuffer, '/' ) ;
-                    }
-                    if ( back ) {
-                        back[1] = '\0' ;
-                    } else {
-                        strcpy( CurBuffer, "/" ) ;
-                    }
+                    ASCII * back = strrchr( fps->buffer, '/' ) ;
+                    back[1] = '\0' ;
+                    fps->start = strlen(fps->buffer) ;
                     // look for next file part
-                    if ( rest[2]=='\0' || rest[2]== '/' ) {
-                        filsta = filsta_next ;
-                        rest = &rest[3] ;
+                    if ( fps->rest[2]=='\0' ) {
+                        fps->pse = parse_status_last ;
+                        fps->rest = NULL ;
+                    } else if ( fps->rest[2]== '/' ) {
+                        fps->pse = parse_status_next ;
+                        fps->rest = &fps->rest[3] ;
                     } else {
-                        return -ENOENT ;
+                        fps->ret = -ENOENT ;
+                        return ;
                     }
                 } else {
-                    filsta = filsta_next ; // off the double dot trail
+                    fps->pse = parse_status_next ; // off the double dot trail
                 }
                 break ;
-            case filsta_next:
-                printf("filsta_next\n");
-                if ( rest==NULL ) {
-                    filsta = filsta_last ;
+            case parse_status_next:
+                LEVEL_DEBUG("FTP parse_status_next Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                /* fps->buffer is absolute */
+                /* trailing / only at root */
+                if ( fps->rest==NULL || fps->rest[0]=='\0' ) {
+                    fps->pse = parse_status_last ;
                 } else {
-                    ASCII * oldrest = strsep( &rest, "/" ) ;
-                    if ( index( oldrest, '*') || index( oldrest, '[') || index( oldrest, '?' ) ) {
-                        return WildLexParse( CurBuffer, oldrest, rest, fl, out ) ;
+                    ASCII * oldrest = strsep( &fps->rest, "/" ) ;
+                    if ( strpbrk( oldrest, "*[?" ) ) {
+                        WildLexParse( fps, oldrest ) ;
+                        return ;
                     } else {
-                        strcat( CurBuffer, oldrest ) ;
-                        if ( rest ) strcat( CurBuffer, "/" ) ;
-                        filsta = filsta_next ;
+                        if ( fps->buffer[1] ) strcat( fps->buffer, "/" ) ;
+                        strcat( fps->buffer, oldrest ) ;
+                        fps->pse = parse_status_next ;
                     }
                 }
                 break ;
-            case filsta_tame:
-                printf("filsta_tame\n");
-                strcpy( CurBuffer, rest ) ;
-                if ( CurBuffer[strlen(CurBuffer)-1]=='/' )
-                    return WildLexParse( CurBuffer, "*", NULL, fl, out ) ;
-                if ( FS_ParsedName( CurBuffer, &pn ) ) {
+            case parse_status_tame:
+                LEVEL_DEBUG("FTP parse_status_tame Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                /* fps->buffer is absolute */
+                /* trailing / only at root */
+                if ( fps->buffer[1] )strcat( fps->buffer, "/" ) ;
+                strcat( fps->buffer, fps->rest ) ;
+                if ( FS_ParsedName( fps->buffer, &pn )==0 ) {
                     if ( IsDir(&pn) ) {
-                        strcat( CurBuffer, "/" ) ;
-                        WildLexParse( CurBuffer, "*", NULL, fl, out ) ;
+                        fps->start = strlen(fps->buffer)+1 ;
+                        if ( fps->start == 2 ) {
+                            fps->start = 1 ;
+                        } else if ( fps->buffer[fps->start-2] == '/' ) {
+                            --fps->start ;
+                            fps->buffer[fps->start-1] = '\0' ;
+                        }
+                        fps->rest = NULL ;
+                        WildLexParse( fps, "*" ) ;
                     } else {
-                        List_show( fl, out, &pn ) ;
+                        List_show( fps, &pn ) ;
                     }
                     FS_ParsedName_destroy( &pn ) ;
+                } else {
+                    fps->ret = -ENOENT ;
                 }
-                return 0 ;
-            case filsta_last:
-                printf("filsta_last\n");
-                if ( FS_ParsedNamePlus( CurBuffer, rest, &pn ) ) {
-                    List_show( fl, out, &pn ) ;
+                return ;
+            case parse_status_last:
+                LEVEL_DEBUG("FTP parse_status_last Path<%s> Path <%s>\n",fps->buffer,fps->rest);
+                /* fps->buffer is absolute */
+                /* trailing / only at root */
+                if ( FS_ParsedNamePlus( fps->buffer, fps->rest, &pn )==0 ) {
+                    List_show( fps, &pn ) ;
                     FS_ParsedName_destroy( &pn ) ;
                 }
-                return 0 ;
+                return ;
         }
     }
 }
 
-static int WildLexParse( ASCII * CurBuffer, ASCII * match, ASCII * rest, enum file_list fl, int out ) {
-    ASCII * end = &CurBuffer[strlen(CurBuffer)] ;
-    int ret ;
+static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
+    ASCII * end = &fps->buffer[strlen(fps->buffer)] ;
+    ASCII * rest = NULL ;
+    int root = (fps->buffer[1]=='\0') ;
     struct parsedname pn ;
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
-        FS_DirName( end, OW_FULLNAME_MAX, pn2 ) ;
-        fdprintf(out,"Try %s vs %s\r\n",end,match) ;
+        FS_DirName( &end[1], OW_FULLNAME_MAX, pn2 ) ;
+        printf("Try %s vs %s  rest %s->%s\n",&end[1],match,fps->rest,rest) ;
         //if ( fnmatch( match, end, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
-        if ( fnmatch( match, end, FNM_PATHNAME ) ) return ;
-        fdprintf(out,"Match! %s\r\n",end) ;
-        FileLexParse( CurBuffer, rest, filsta_next, fl, out ) ;
+        if ( fnmatch( match, &end[1], FNM_PATHNAME ) ) return ;
+        //printf("Match! %s\n",end) ;
+        fps->pse = parse_status_next ;
+        FileLexParse( fps ) ;
+        fps->rest = rest ;
     }
 
-    LEVEL_DEBUG("Wildcard patern matching. Path=%s, Pattern=%s, rest=%s\n",SAFESTRING(CurBuffer),SAFESTRING(match),SAFESTRING(rest));
-    if ( FS_ParsedName( CurBuffer, &pn ) ) {
-        ret = -ENOENT ;
+    LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, rest=%s\n",SAFESTRING(fps->buffer),SAFESTRING(match),SAFESTRING(fps->rest));
+    if ( fps->rest ) rest = strdup(fps->rest ) ;
+
+    if ( FS_ParsedName( fps->buffer, &pn ) ) {
+        fps->ret = -ENOENT ;
     } else {
         if ( pn.ft ) {
-        ret = -ENOTDIR ;
+            fps->ret = -ENOTDIR ;
         } else {
+            if ( root ) --end ;
+            end[0] = '/' ;
             FS_dir( directory, &pn ) ;
-            end = '\0' ; // restore CurBuffer
-            ret = 0 ;
+            if ( root ) ++end ;
+            end[0] = '\0' ; // restore fps->buffer
         }
         FS_ParsedName_destroy( &pn ) ;
     }
-    return ret ;
+    if ( rest ) free( rest ) ;
 }
-                                                
-            
 
 /* if no localtime_r() is available, provide one */
 #ifndef HAVE_LOCALTIME_R
@@ -225,27 +250,30 @@ struct tm *localtime_r(const time_t *timep, struct tm *timeptr) {
 }
 #endif /* HAVE_LOCALTIME_R */
 
+/* cur_dir is absolute */
 int file_nlst(int out, const char *cur_dir, const char *filespec) {
     char pattern[PATH_MAX+1];
+    struct file_parse_s fps = 
+        { pattern, filespec, parse_status_init, file_list_nlst, out, 0, 0, } ;
 
-    strcpy( pattern, "/" ) ;
-    if ( cur_dir ) strcpy( pattern, cur_dir ) ;
-    LEVEL_DEBUG("NLST dir=%s, file=%s\n",SAFESTRING(pattern),SAFESTRING(filespec)) ;
-    return FileLexParse( pattern, filespec, filsta_init, flist_nlst, out )==0 ;
+    strcpy( fps.buffer, cur_dir ) ;
+    LEVEL_DEBUG("NLST dir=%s, file=%s\n",SAFESTRING(fps.buffer),SAFESTRING(filespec)) ;
+    FileLexParse( &fps ) ;
+    return fps.ret==0 ;
 }
 
+/* cur_dir is absolute */
 int file_list(int out, const char *cur_dir, const char *filespec) {
     char pattern[PATH_MAX+1];
-    int ret ;
-    
-    strcpy( pattern, "/" ) ;
-    if ( cur_dir ) strcpy( pattern, cur_dir ) ;
-    LEVEL_DEBUG("LIST dir=%s, file=%s\n",SAFESTRING(pattern),SAFESTRING(filespec)) ;
-//    return FileLexParse( pattern, filespec, filsta_init, flist_list, out )==0 ;
-    ret = FileLexParse( pattern, filespec, filsta_init, flist_list, out ) ;
-    printf("file_list gets %d\n",ret) ;
-    return ret ;
+    struct file_parse_s fps = 
+    { pattern, filespec, parse_status_init, file_list_list, out, 0, 0, } ;
+
+    strcpy( fps.buffer, cur_dir ) ;
+    LEVEL_DEBUG("LIST dir=%s, file=%s\n",SAFESTRING(fps.buffer),SAFESTRING(filespec)) ;
+    FileLexParse( &fps ) ;
+    return fps.ret==0 ;
 }
+
 /* write with care for max length and incomplete outout */
 static void fdprintf(int fd, const char *fmt, ...) {
     char buf[PATH_MAX+1];

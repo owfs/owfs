@@ -438,114 +438,34 @@ static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 }
 
 static void change_dir(struct ftp_session_s *f, const char *new_dir) {
-    struct parsedname pn ;
     char target[PATH_MAX+1];
-    const char *p, *n;
-    int len;
-    char *prev_dir;
-    char *target_end;
+    struct cd_parse_s cps =
+    { target, new_dir, parse_status_init, 0, 0, NULL, } ;
 
-    int dir_okay;
+    strcpy( target, f->dir ) ;
+    LEVEL_DEBUG("CD dir=%s, file=%s\n",SAFESTRING(cps.buffer),SAFESTRING(new_dir)) ;
+    FileLexCD( &cps ) ;
 
-    daemon_assert(invariant(f));
-    daemon_assert(new_dir != NULL);
-    daemon_assert(strlen(new_dir) <= PATH_MAX);
+    switch ( cps.solutions ) {
+        case 0:
+            cps.ret = -ENOENT ;
+        case 1:
+            break ;
+        default:
+            cps.ret = -EFAULT ;
+    }
+    if ( cps.dir == NULL ) cps.ret = -ENOMEM ;
 
-    /* set up our "base" directory that we build from */
-    p = new_dir;
-    if (*p == '/') {
-        /* if this starts with a '/' it is an absolute path */
-        strcpy(target, "/");
-        do {
-            p++;
-        } while (*p == '/');
+    if ( cps.ret ) {
+        reply(f, 550, "Error changing directory. %s", strerror(-cps.ret) ) ;
     } else {
-        /* otherwise it's a relative path */
-        daemon_assert(strlen(f->dir) < sizeof(target));
-        strcpy(target, f->dir);
-    }
-
-    /* add on each directory, handling "." and ".." */
-    while (*p != '\0') {
-
-        /* find the end of the next directory (either at '/' or '\0') */
-        n = strchr(p, '/');
-        if (n == NULL) {
-            n = strchr(p, '\0');
-        }
-        len = n - p;
-
-        if ((len == 1) && (p[0] == '.')) {
-
-        /* do nothing with "." */
-
-        } else if ((len == 2) && (p[0] == '.') && (p[1] == '.')) {
-
-            /* change to previous directory with ".." */
-            prev_dir = strrchr(target, '/');
-            daemon_assert(prev_dir != NULL);
-            *prev_dir = '\0';
-            if (prev_dir == target) {
-                strcpy(target, "/");
-            }
-
-        } else {
-
-            /* otherwise add to current directory */
-            if ((strlen(target) + 1 + len) > PATH_MAX) {
-                reply(f, 550, "Error changing directory; path is too long.");
-                return;
-            }
-
-            /* append a '/' unless we were at the root directory */
-            target_end = strchr(target, '\0');
-            if (target_end != target+1) {
-                *target_end++ = '/';
-            }
-
-            /* add the directory itself */
-            while (p != n) {
-                *target_end++ = *p++;
-            }
-            *target_end = '\0';
-        }
-
-        /* advance to next directory to check */
-        p = n;
-
-        /* skip '/' characters */
-        while (*p == '/') {
-            p++;
+        if ( strcasecmp(f->dir,cps.dir) ) {
+            reply(f, 250, "Directory change successful.");
+            strcpy( f->dir, cps.dir ) ;
         }
     }
 
-    /* see if this is a directory we can change into */
-    dir_okay = 0;
-    if ( FS_ParsedName( target, &pn ) ) {
-        reply(f, 550, "Directory change failed; directory does not exist.");
-    } else {
-        if( pn.dev!=NULL && pn.ft==NULL )  {
-            reply(f, 550,"Directory change failed; target is not a directory.");
-        } else {
-            dir_okay = 1;
-        }
-        FS_ParsedName_destroy(&pn) ;
-    }
-
-    /* if everything is okay, change into the directory */
-    if (dir_okay) {
-        daemon_assert(strlen(target) < sizeof(f->dir));
-        /* send a readme unless we changed to our current directory */
-        if (strcmp(f->dir, target) != 0) {
-            strcpy(f->dir, target);
-            send_readme(f, 250);
-        } else {
-            strcpy(f->dir, target);
-        }
-        reply(f, 250, "Directory change successful.");
-    }
-
-    daemon_assert(invariant(f));
+    if ( cps.dir ) free( cps.dir) ;
 }
 
 static void do_quit(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
@@ -1231,55 +1151,6 @@ static void do_pwd(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 */
 #endif
 
-/* check if a filespec has a wildcard in it */
-static int filespec_has_wildcard(const char *filespec) {
-    daemon_assert(filespec != NULL);
-
-    /* check each character for wildcard */
-    while (*filespec != '\0') {
-        switch (*filespec) {
-            /* wildcards */
-            case '*':
-            case '?':
-            case '[':
-                return 1;
-
-            /* backslash escapes next character unless at end of string */
-            case '\\':
-                if (*(filespec+1) != '\0') {
-                    filespec++;
-                }
-                break;
-        }
-        filespec++;
-    }
-    return 0;
-}
-
-/* filespec includes path separator, i.e. '/' */
-static int filespec_has_path_separator(const char *filespec) {
-    daemon_assert(filespec != NULL);
-
-    /* check each character for path separator */
-    if (strchr(filespec, '/') != NULL) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-/* returns whether filespec is legal or not */
-static int filespec_is_legal(const char *filespec) {
-    daemon_assert(filespec != NULL);
-
-    if (filespec_has_wildcard(filespec)) {
-        if (filespec_has_path_separator(filespec)) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     int fd;
     const char *param;
@@ -1306,12 +1177,6 @@ static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
         }
     }
 
-    /* check spec passed */
-    if (!filespec_is_legal(param)) {
-        reply(f, 550, "Illegal filename passed.");
-        goto exit_nlst;
-    }
-
     /* ready to list */
     reply(f, 150, "About to send name list.");
 
@@ -1323,7 +1188,7 @@ static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 
     /* send any files */
     send_ok = file_nlst(fd, f->dir, param);
-    printf("send_ok=%d\n",send_ok) ;
+    
     /* strange handshake for Netscape's benefit */
     netscape_hack(fd);
 
@@ -1367,12 +1232,6 @@ static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
         }
     }
 
-    /* check spec passed */
-    if (!filespec_is_legal(param)) {
-        reply(f, 550, "Illegal filename passed.");
-        goto exit_list;
-    }
-
     /* ready to list */
     reply(f, 150, "About to send file list.");
 
@@ -1384,7 +1243,6 @@ static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 
     /* send any files */
     send_ok = file_list(fd, f->dir, param);
-    printf("send_ok=%d\n",send_ok) ;
 
     /* strange handshake for Netscape's benefit */
     netscape_hack(fd);
