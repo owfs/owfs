@@ -64,6 +64,8 @@ struct filetype NoDev[] = {
     F_crc8       ,
     F_id         ,
     F_present    ,
+    F_r_address   ,
+    F_r_id        ,
 } ;
 struct device NoDevice = { "XX", "generic", pn_real, NFT(NoDev), NoDev } ;
 
