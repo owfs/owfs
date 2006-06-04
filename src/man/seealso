@@ -1,5 +1,5 @@
 .SS Programs
-.B owfs (1) owhttpd (1) owftpd (1) ownfsd (1) owserver (1)
+.B owfs (1) owhttpd (1) owftpd (1) owserver (1)
 .SS Language bindings
 .B owtcl (3) owperl (3)
 .SS Clocks
