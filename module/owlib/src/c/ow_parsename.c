@@ -36,6 +36,7 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
 /* ---------------------------------------------- */
 void FS_ParsedName_destroy( struct parsedname * pn ) {
     if(!pn) return ;
+    LEVEL_DEBUG("ParsedName_destroy %s\n",SAFESTRING(pn->path)) ;
     if ( pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;

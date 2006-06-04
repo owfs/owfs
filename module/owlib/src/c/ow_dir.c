@@ -331,10 +331,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
     int ret ;
 
     /* cache from Server if this is a remote bus */
-    if (
-	/* (pn2->state & pn_bus) && */
-	(get_busmode(pn2->in) == bus_remote) )
-      return ServerDir( dirfunc, pn2, flags ) ;
+    if ( (get_busmode(pn2->in) == bus_remote) ) return ServerDir( dirfunc, pn2, flags ) ;
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
@@ -436,7 +433,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
 
     /* Test to see whether we should get the directory "directly" */
     //printf("Pre test cache for dir\n") ;
-    if ( !NotUncached(pn2) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
+    if ( SpecifiedBus(pn2) || !NotUncached(pn2) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
         //printf("FS_cache2real: didn't find anything at bus %d\n", pn2->in->index);
         return FS_realdir(dirfunc,pn2,flags) ;
     }
