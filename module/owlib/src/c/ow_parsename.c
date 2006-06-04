@@ -416,18 +416,18 @@ static enum parse_enum Parse_Property( char * filename, struct parsedname * pn )
                 if ( (p==dot) || ((pn->extension == 0) && (errno==-EINVAL)) ) return parse_error ; /* Bad number */
             }
             //printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
-            if (pn->type!=pn_real) {
-                /*
-                * We have to agree any extension from remote bus
-                * otherwise /system/adapter/address.4 and
-                * /statistics/bus/bus_locks.4 wouldn't be accepted
-                * Should not be needed on known devices...
-                */
-            } else
+            /*
+        * We have to agree any extension from remote bus
+        * otherwise /system/adapter/address.4 and
+        * /statistics/bus/bus_locks.4 wouldn't be accepted
+        * Should not be needed on known devices...
+        */
+            if ( IsRealDir(pn) ) {
                 if ( (pn->extension < 0) || (pn->extension >= pn->ft->ag->elements) ) {
                     //printf("FP Extension out of range %d %d %s\n", pn->extension, pn->ft->ag->elements, pn->path);
                     return parse_error ; /* Extension out of range */
                 }
+            }
                 //printf("FP in range\n") ;
         }
         //printf("FP Good\n") ;

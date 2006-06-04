@@ -145,7 +145,7 @@ int FS_r_address(char *buf, const size_t size, const off_t offset , const struct
 
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence( const struct parsedname * pn ) {
-    if ( pn->type == pn_real && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) {
+    if ( IsRealDir(pn) && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) {
         LEVEL_DETAIL("Checking presence of %s\n",SAFESTRING(pn->path) ) ;
         return CheckPresence_low(indevice,pn) ;
     }
@@ -269,7 +269,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
 #endif /* OW_MT */
 
 int FS_present(int * y , const struct parsedname * pn) {
-    if ( pn->type != pn_real || pn->dev == DeviceSimultaneous || pn->dev == DeviceThermostat ) {
+    if ( NotRealDir(pn) || pn->dev == DeviceSimultaneous || pn->dev == DeviceThermostat ) {
         y[0]=1 ;
     } else if(get_busmode(pn->in) == bus_fake) {
         y[0] = 1 ;

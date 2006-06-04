@@ -55,7 +55,7 @@ void ShowDir( FILE * out, const struct parsedname * const pn ) {
         loc = nam = buffer ;
         *buffer = '\000';
         if ( pn2->dev==NULL ) {
-            if ( pn2->type != pn_real ) {
+            if ( NotRealDir(pn2) ) {
                 FS_dirname_type(buffer,OW_FULLNAME_MAX,pn2) ;
             } else if ( pn2->state ) {
                 FS_dirname_state(buffer,OW_FULLNAME_MAX,pn2) ;
@@ -64,7 +64,7 @@ void ShowDir( FILE * out, const struct parsedname * const pn ) {
         } else if ( pn2->dev == DeviceSimultaneous ) {
             loc = nam = pn2->dev->name ;
             typ = name_onewire_chip ;
-        } else if ( pn2->type == pn_real ) {
+        } else if ( IsRealDir(pn2) ) {
             FS_devicename(loc,OW_FULLNAME_MAX,pn2->sn,pn2) ;
             nam = pn2->dev->name ;
             typ = name_onewire_chip ;
@@ -96,7 +96,7 @@ void ShowDir( FILE * out, const struct parsedname * const pn ) {
 
     HTTPtitle( out , "Directory") ;
 
-    if ( pn->type != pn_real ) {
+    if ( NotRealDir(pn) ) {
         /* return whole path since tree structure could be much deeper now */
         /* first / is stripped off */
         HTTPheader( out , &pn->path[1]) ;

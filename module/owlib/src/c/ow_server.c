@@ -170,7 +170,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 
         /* If cacheable, try to allocate a blob for storage */
         /* only for "read devices" and not alarm */
-        if ( (pn->type==pn_real) && NotAlarm(pn) && !SpecifiedBus(pn) && pn->dev==NULL ) {
+        if ( IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn) && pn->dev==NULL ) {
             if ( pn2.pathlength == 0 ) { /* root dir */
                 BUSLOCK(pn) ;
                     allocated = pn->in->last_root_devs ; // root dir estimated length
@@ -195,7 +195,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 find it quicker next time we want to do read values from the
                 the actual device
             */
-            if(pn2.dev && (pn2.type == pn_real)) {
+            if( pn2.dev && IsRealDir(&pn2) ) {
                 /* If we get a device then cache the bus_nr */
                 Cache_Add_Device(pn->in->index, &pn2);
             }

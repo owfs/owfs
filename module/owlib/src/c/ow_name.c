@@ -49,7 +49,7 @@ int FS_dirname_state( char * buffer, const size_t length, const struct parsednam
     const char * p ;
     size_t len ;
 //printf("dirname state on %.2X\n", pn->state);
-    if ( pn->state & pn_alarm   ) {
+    if ( IsAlarmDir(pn) ) {
         p = dirname_state_alarm ;
 #if 0
     } else if ( pn->state & pn_text ) {
@@ -57,7 +57,7 @@ int FS_dirname_state( char * buffer, const size_t length, const struct parsednam
          * hidden feature. Uncached should perhaps be the same... */
         strncpy(buffer, dirname_state_text, length ) ;
 #endif
-    } else if ( IsUncached(pn) ) {
+    } else if ( IsUncachedDir(pn) ) {
         p = dirname_state_uncached ;
     } else if ( pn->state & pn_bus ) {
         int ret ;
@@ -155,23 +155,14 @@ void FS_DirName( char * buffer, const size_t size, const struct parsedname * pn 
     } else if ( pn->subdir ) { /* in-device subdirectory */
         strncpy( buffer, pn->subdir->name, size) ;
     } else if (pn->dev == NULL ) { /* root-type directory */
-#if 1
-        if ( pn->type != pn_real ) {
+        if ( NotRealDir(pn) ) {
             FS_dirname_type( buffer, size, pn ) ;
         } else {
             FS_dirname_state(buffer, size, pn) ;
         }
-#else
-	/* All bits except pn_text */
-        if ( pn->state & ~pn_text) {
-            FS_dirname_state(buffer, size, pn) ;
-        } else {
-            FS_dirname_type( buffer, size, pn ) ;
-        }
-#endif
     } else if ( pn->dev == DeviceSimultaneous ) {
         strncpy( buffer, DeviceSimultaneous->code, size ) ;
-    } else if ( pn->type == pn_real ) { /* real device */
+    } else if ( IsRealDir(pn) ) { /* real device */
         FS_devicename( buffer, size, pn->sn, pn ) ;
     } else { /* pseudo device */
         strncpy( buffer, pn->dev->code, size ) ;

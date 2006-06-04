@@ -88,10 +88,10 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         } else {
             ret = FS_devdir( dirfunc, &pn2 ) ;
         }
-    } else if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+    } else if ( IsAlarmDir(pn) ) {  /* root or branch directory -- alarm state */
         //printf("ALARM\n");
         ret = SpecifiedBus(pn) ? FS_alarmdir(dirfunc, &pn2) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
-    } else if ( pn->type != pn_real ) {  /* stat, sys or set dir */
+    } else if ( NotRealDir(pn) ) {  /* stat, sys or set dir */
         /* there are some files with variable sizes, and /system/adapter have variable
         * number of entries and we have to call ServerDir() */
         ret = (SpecifiedBus(pn) && (get_busmode(pn->in)==bus_remote))
@@ -99,7 +99,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else { /* Directory of some kind */
         if ( pn->pathlength == 0 ) { /* root directory */
-            if ( !server_mode && !SpecifiedBus(pn) && NotUncached(pn) ) { /* structure only in true root */
+            if ( !server_mode && !SpecifiedBus(pn) && NotUncachedDir(pn) ) { /* structure only in true root */
                 pn2.type = pn_structure ;
                 dirfunc( &pn2 ) ;
                 pn2.type = pn_real ;
@@ -108,7 +108,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 /* restore state */
                 pn2.type = pn_real ;
                 FS_busdir(dirfunc, pn ) ;
-                if ( NotUncached(pn) ) {
+                if ( NotUncachedDir(pn) ) {
                     if ( IsLocalCacheEnabled(pn) ) { /* cached */
                         pn2.state = pn->state | pn_uncached ;
                         dirfunc( &pn2 ) ;
@@ -128,7 +128,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     }
     if ( ! server_mode ) {
-        if(!(pn->state & pn_alarm)) {
+        if( NotAlarmDir(pn) ) {
             /* don't show alarm directory in alarm directory */
             /* alarm directory */
             if ( flags[0] & DEV_alarm ) {
@@ -190,7 +190,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct conn
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */
-        if ( pn->state & pn_alarm ) {  /* root or branch directory -- alarm state */
+        if ( IsAlarmDir(pn) ) {  /* root or branch directory -- alarm state */
             //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
             ret = FS_alarmdir(dirfunc,&pn2) ;
         } else {
@@ -224,7 +224,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct conn
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */
-        if ( pn2.state & pn_alarm ) {  /* root or branch directory -- alarm state */
+        if ( IsAlarmDir(&pn2) ) {  /* root or branch directory -- alarm state */
             //printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
             ret = FS_alarmdir(dirfunc,&pn2) ;
         } else {
@@ -433,7 +433,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
 
     /* Test to see whether we should get the directory "directly" */
     //printf("Pre test cache for dir\n") ;
-    if ( SpecifiedBus(pn2) || !NotUncached(pn2) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
+    if ( SpecifiedBus(pn2) || IsUncachedDir(pn2) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
         //printf("FS_cache2real: didn't find anything at bus %d\n", pn2->in->index);
         return FS_realdir(dirfunc,pn2,flags) ;
     }

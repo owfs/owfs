@@ -444,7 +444,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
         }
         LEVEL_DEBUG("owserver dir path = %s\n",SAFESTRING(pn2->path)) ;
         if ( pn2->dev==NULL ) {
-            if ( pn2->type != pn_real ) {
+            if ( NotRealDir(pn2) ) {
                 //printf("DirHandler: call FS_dirname_type\n");
                 FS_dirname_type(retbuffer,OW_FULLNAME_MAX,pn2);
             } else if ( pn2->state ) {
