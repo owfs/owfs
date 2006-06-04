@@ -1033,7 +1033,7 @@ if test "${ENABLE_DEBUG}" = "true" ; then
 else
    DEBUG=0
 fi
-AC_SUBST(DEBUG_FLAG)
+AC_SUBST(DEBUG)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
