@@ -7,7 +7,32 @@ $Id$
     Released under the GPL
     See the header file: ow.h for full attribution
     1wire/iButton system from Dallas Semiconductor
-*/
+ */
+/* i2c support for the DS2482-100 and DS2482-800 1-wire host adapters */
+/* Stolen shamelessly from Ben Gardners kernel module */
+/* Actually, Dallas datasheet has the information, 
+   the module code showed a nice implementation,
+   the eventual format is owfs-specific (using similar primatives, data structures)
+   Testing by Jan Kandziora and Daniel Höper.
+ */
+/**
+ * ds2482.c - provides i2c to w1-master bridge(s)
+ * Copyright (C) 2005  Ben Gardner <bgardner@wabtec.com>
+ *
+ * The DS2482 is a sensor chip made by Dallas Semiconductor (Maxim).
+ * It is a I2C to 1-wire bridge.
+ * There are two variations: -100 and -800, which have 1 or 8 1-wire ports.
+ * The complete datasheet can be obtained from MAXIM's website at:
+ *   http://www.maxim-ic.com/quick_view2.cfm/qv_pk/4382
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
+ * MODULE_DESCRIPTION("DS2482 driver");
+ * MODULE_LICENSE("GPL");
+ */
 
 #include <config.h>
 #include "owfs_config.h"
@@ -34,6 +59,7 @@ static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsi
 static int SetConfiguration( BYTE c, struct connection_in * in ) ;
 static void DS2482_close( struct connection_in * in ) ;
 static int DS2482_redetect( const struct parsedname * pn ) ;
+static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -87,7 +113,7 @@ static void DS2482_setroutines( struct interface_routines * f ) {
     f->next_both     = DS2482_next_both      ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = BUS_PowerByte_low     ;
+    f->PowerByte     = DS2482_PowerByte      ;
 //    f->ProgramPulse = ;
     f->sendback_data = DS2482_sendback_data  ;
     f->sendback_bits = NULL                  ;
@@ -96,288 +122,7 @@ static void DS2482_setroutines( struct interface_routines * f ) {
     f->close         = DS2482_close          ;
 }
 
-/* uses the "Triple" primative for faster search */
-static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) {
-    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
-    int bit_number ;
-    int last_zero = -1 ;
-    int fd = pn->in->connin.i2c.head->connin.i2c.fd ;
-    BYTE bits[3] ;
-    int ret ;
-
-    // initialize for search
-    // if the last call was not the last one
-    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
-    if ( ds->LastDevice ) return -ENODEV ;
-
-    /* Make sure we're using the correct channel */
-    /* Appropriate search command */
-    if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
-
-      // loop to do the search
-    for ( bit_number=0 ; bit_number<64 ; ++bit_number ) {
-        LEVEL_DEBUG("DS2482 search bit number %d\n",bit_number);
-        /* Set the direction bit */
-        if ( bit_number < ds->LastDiscrepancy ) {
-            search_direction = UT_getbit(ds->sn,bit_number);
-        } else {
-            search_direction = (bit_number==ds->LastDiscrepancy) ? 1 : 0 ;
-        }
-        /* Appropriate search command */
-        if ( (ret=DS2482_triple(bits, search_direction, fd)) ) return ret ;
-        if ( bits[0] || bits[1] || bits[2] ) {
-            if ( bits[0] && bits[1] ) { /* 1,1 */
-                break ; /* No devices respond */
-            }
-        } else { /* 0,0,0 */
-            last_zero = bit_number ;
-        }
-        UT_setbit(ds->sn,bit_number,bits[2]) ;
-    } // loop until through serial number bits
-
-    if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
-      /* Unsuccessful search or error -- possibly a device suddenly added */
-        return -EIO ;
-    }
-    if((ds->sn[0] & 0x7F) == 0x04) {
-        /* We found a DS1994/DS2404 which require longer delays */
-        pn->in->ds2404_compliance = 1 ;
-    }
-    // if the search was successful then
-
-    ds->LastDiscrepancy = last_zero;
-//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
-    ds->LastDevice = (last_zero < 0);
-    LEVEL_DEBUG("DS2482_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
-    return 0 ;
-}
-
-/* i2c support for the DS2482-100 and DS2482-800 1-wire host adapters */
-/* Stolen shamelessly from Ben Gardners kernel module */
-
-#if 0
-// Header taken from lm-sensors code
-#include "i2c-dev.h"
-/**
- * ds2482.c - provides i2c to w1-master bridge(s)
- * Copyright (C) 2005  Ben Gardner <bgardner@wabtec.com>
- *
- * The DS2482 is a sensor chip made by Dallas Semiconductor (Maxim).
- * It is a I2C to 1-wire bridge.
- * There are two variations: -100 and -800, which have 1 or 8 1-wire ports.
- * The complete datasheet can be obtained from MAXIM's website at:
- *   http://www.maxim-ic.com/quick_view2.cfm/qv_pk/4382
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * MODULE_AUTHOR("Ben Gardner <bgardner@wabtec.com>");
- * MODULE_DESCRIPTION("DS2482 driver");
- * MODULE_LICENSE("GPL");
- */
-
-#include <linux/i2c.h>
-
-/**
- * Address is selected using 2 pins, resulting in 4 possible addresses.
- *  0x18, 0x19, 0x1a, 0x1b
- * However, the chip cannot be detected without doing an i2c write,
- * so use the force module parameter.
- */
-static unsigned short normal_i2c[] = {I2C_CLIENT_END};
-
-/**
- * Insmod parameters
- */
-I2C_CLIENT_INSMOD_1(ds2482);
-
-
-static int ds2482_attach_adapter(struct i2c_adapter *adapter);
-static int ds2482_detect(struct i2c_adapter *adapter, int address, int kind);
-static int ds2482_detach_client(struct i2c_client *client);
-
-
-/**
- * Driver data (common to all clients)
- */
-static struct i2c_driver ds2482_driver = {
-   .driver = {
-       .owner  = THIS_MODULE,
-       .name   = "ds2482",
-   },
-   .attach_adapter = ds2482_attach_adapter,
-   .detach_client  = ds2482_detach_client,
-};
-
-/*
- * Client data (each client gets its own)
- */
-
-struct ds2482_data;
-
-struct ds2482_w1_chan {
-   struct ds2482_data  *pdev;
-   u8          channel;
-   struct w1_bus_master    w1_bm;
-};
-
-struct ds2482_data {
-   struct i2c_client   client;
-   struct semaphore    access_lock;
-
-   /* 1-wire interface(s) */
-   int         w1_count;   /* 1 or 8 */
-   struct ds2482_w1_chan   w1_ch[8];
-
-   /* per-device values */
-   u8          channel;
-   u8          read_prt;   /* see DS2482_PTR_CODE_xxx */
-   u8          reg_config;
-};
-
-
-/**
- * Sets the read pointer.
- * @param pdev     The ds2482 client pointer
- * @param read_ptr see DS2482_PTR_CODE_xxx above
- * @return -1 on failure, 0 on success
- */
-static inline int ds2482_select_register(struct ds2482_data *pdev, u8 read_ptr)
-{
-   if (pdev->read_prt != read_ptr) {
-       if (i2c_smbus_write_byte_data(&pdev->client,
-                         DS2482_CMD_SET_READ_PTR,
-                         read_ptr) < 0)
-           return -1;
-
-       pdev->read_prt = read_ptr;
-   }
-   return 0;
-}
-
-/**
- * Sends a command without a parameter
- * @param pdev The ds2482 client pointer
- * @param cmd  DS2482_CMD_RESET,
- *     DS2482_CMD_1WIRE_RESET,
- *     DS2482_CMD_1WIRE_READ_BYTE
- * @return -1 on failure, 0 on success
- */
-static inline int ds2482_send_cmd(struct ds2482_data *pdev, u8 cmd)
-{
-   if (i2c_smbus_write_byte(&pdev->client, cmd) < 0)
-       return -1;
-
-   pdev->read_prt = DS2482_PTR_CODE_STATUS;
-   return 0;
-}
-
-/**
- * Sends a command with a parameter
- * @param pdev The ds2482 client pointer
- * @param cmd  DS2482_CMD_WRITE_CONFIG,
- *     DS2482_CMD_1WIRE_SINGLE_BIT,
- *     DS2482_CMD_1WIRE_WRITE_BYTE,
- *     DS2482_CMD_1WIRE_TRIPLET
- * @param byte The data to send
- * @return -1 on failure, 0 on success
- */
-static inline int ds2482_send_cmd_data(struct ds2482_data *pdev,
-                      u8 cmd, u8 byte)
-{
-   if (i2c_smbus_write_byte_data(&pdev->client, cmd, byte) < 0)
-       return -1;
-
-   /* all cmds leave in STATUS, except CONFIG */
-   pdev->read_prt = (cmd != DS2482_CMD_WRITE_CONFIG) ?
-            DS2482_PTR_CODE_STATUS : DS2482_PTR_CODE_CONFIG;
-   return 0;
-}
-
-
-/*
- * 1-Wire interface code
- */
-
-#define DS2482_WAIT_IDLE_TIMEOUT   100
-
-/**
- * Waits until the 1-wire interface is idle (not busy)
- *
- * @param pdev Pointer to the device structure
- * @return the last value read from status or -1 (failure)
- */
-static int ds2482_wait_1wire_idle(struct ds2482_data *pdev)
-{
-   int temp = -1;
-   int retries = 0;
-
-   if (!ds2482_select_register(pdev, DS2482_PTR_CODE_STATUS)) {
-       do {
-           temp = i2c_smbus_read_byte(&pdev->client);
-       } while ((temp >= 0) && (temp & DS2482_REG_STS_1WB) &&
-            (++retries > DS2482_WAIT_IDLE_TIMEOUT));
-   }
-
-   if (retries > DS2482_WAIT_IDLE_TIMEOUT)
-       printk(KERN_ERR "%s: timeout on channel %d\n",
-              __func__, pdev->channel);
-
-   return temp;
-}
-
-/**
- * Selects a w1 channel.
- * The 1-wire interface must be idle before calling this function.
- *
- * @param pdev     The ds2482 client pointer
- * @param channel  0-7
- * @return     -1 (failure) or 0 (success)
- */
-static int ds2482_set_channel(struct ds2482_data *pdev, u8 channel)
-{
-   if (i2c_smbus_write_byte_data(&pdev->client, DS2482_CMD_CHANNEL_SELECT,
-                     ds2482_chan_wr[channel]) < 0)
-       return -1;
-
-   pdev->read_prt = DS2482_PTR_CODE_CHANNEL;
-   pdev->channel = -1;
-   if (i2c_smbus_read_byte(&pdev->client) == ds2482_chan_rd[channel]) {
-       pdev->channel = channel;
-       return 0;
-   }
-   return -1;
-}
-
-/**
- * Performs the write byte function.
- *
- * @param data The ds2482 channel pointer
- * @param byte The value to write
- */
-static void ds2482_w1_write_byte(void *data, u8 byte)
-{
-   struct ds2482_w1_chan *pchan = data;
-   struct ds2482_data    *pdev = pchan->pdev;
-
-   down(&pdev->access_lock);
-
-   /* Select the channel */
-   ds2482_wait_1wire_idle(pdev);
-   if (pdev->w1_count > 1)
-       ds2482_set_channel(pdev, pchan->channel);
-
-   /* Send the write byte command */
-   ds2482_send_cmd_data(pdev, DS2482_CMD_1WIRE_WRITE_BYTE, byte);
-
-   up(&pdev->access_lock);
-}
-
-#endif /* 0 */
-
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
-
 /* Open a DS2482 */
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 int DS2482_detect( struct connection_in * in ) {
@@ -515,6 +260,62 @@ static int DS2482_readstatus( BYTE * c, int fd, unsigned long int min_usec, unsi
     } while ( 1 ) ;
 }
 
+/* uses the "Triple" primative for faster search */
+static int DS2482_next_both(struct device_search * ds, const struct parsedname * pn) {
+    int search_direction = 0 ; /* initialization just to forestall incorrect compiler warning */
+    int bit_number ;
+    int last_zero = -1 ;
+    int fd = pn->in->connin.i2c.head->connin.i2c.fd ;
+    BYTE bits[3] ;
+    int ret ;
+
+    // initialize for search
+    // if the last call was not the last one
+    if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
+    if ( ds->LastDevice ) return -ENODEV ;
+
+    /* Make sure we're using the correct channel */
+    /* Appropriate search command */
+    if ( (ret=BUS_send_data(&(ds->search),1,pn)) ) return ret ;
+
+      // loop to do the search
+    for ( bit_number=0 ; bit_number<64 ; ++bit_number ) {
+        LEVEL_DEBUG("DS2482 search bit number %d\n",bit_number);
+        /* Set the direction bit */
+        if ( bit_number < ds->LastDiscrepancy ) {
+            search_direction = UT_getbit(ds->sn,bit_number);
+        } else {
+            search_direction = (bit_number==ds->LastDiscrepancy) ? 1 : 0 ;
+        }
+        /* Appropriate search command */
+        if ( (ret=DS2482_triple(bits, search_direction, fd)) ) return ret ;
+        if ( bits[0] || bits[1] || bits[2] ) {
+            if ( bits[0] && bits[1] ) { /* 1,1 */
+                break ; /* No devices respond */
+            }
+        } else { /* 0,0,0 */
+            last_zero = bit_number ;
+        }
+        UT_setbit(ds->sn,bit_number,bits[2]) ;
+    } // loop until through serial number bits
+
+    if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
+      /* Unsuccessful search or error -- possibly a device suddenly added */
+        return -EIO ;
+    }
+    if((ds->sn[0] & 0x7F) == 0x04) {
+        /* We found a DS1994/DS2404 which require longer delays */
+        pn->in->ds2404_compliance = 1 ;
+    }
+    // if the search was successful then
+
+    ds->LastDiscrepancy = last_zero;
+//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
+    ds->LastDevice = (last_zero < 0);
+    LEVEL_DEBUG("DS2482_next_both SN found: "SNformat"\n",SNvar(ds->sn)) ;
+    return 0 ;
+}
+
 /* DS2482 Reset -- A little different from DS2480B */
 // return 1 shorted, 0 ok, <0 error
 static int DS2482_reset( const struct parsedname * pn ) {
@@ -556,11 +357,11 @@ static int DS2482_send_and_get( int fd, const BYTE wr, BYTE * rd ) {
     int read_back ;
     BYTE c ;
 
-    /* Write TRIPLE command */
+    /* Write data byte */
     if (i2c_smbus_write_byte_data(fd, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0)
        return 1;
 
-    /* read status */
+    /* read status for done */
     if ( DS2482_readstatus( &c, fd, 530, 585 ) ) return -1 ;
 
     /* Select the data register */
@@ -691,8 +492,23 @@ static int SetConfiguration( BYTE c, struct connection_in * in ) {
         LEVEL_CONNECT("Trouble changing DS2482 configuration register\n") ;
         return -EINVAL ;
     }
-    in->connin.i2c.configreg = c ;
-    head->connin.i2c.configchip = c ;
+    /* Clear the strong pull-up power bit(register is automatically cleared by reset) */
+    in->connin.i2c.configreg = head->connin.i2c.configchip = c & ~DS2482_REG_CFG_SPU ;
+    return 0 ;
+}
+
+static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) {
+    /* Make sure we're using the correct channel */
+    if ( DS2482_channel_select(pn) ) return -1 ;
+
+    /* Set the power (bit is automatically cleared by reset) */
+    if ( SetConfiguration( pn->in->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->in ) ) return -1 ; 
+
+    /* send and get byte (and trigger strong pull-up */
+    if ( DS2482_send_and_get( pn->in->connin.i2c.head->connin.i2c.fd, byte, resp ) ) return -1 ;
+
+    UT_delay( delay ) ;
+
     return 0 ;
 }
 
