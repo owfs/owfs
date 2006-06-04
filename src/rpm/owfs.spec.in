@@ -1,7 +1,7 @@
 %define build_fs 1
 %define build_httpd 1
 %define build_capi 1
-%define build_ftpd 0
+%define build_ftpd 1
 %define build_nfsd 0
 %define build_server 1
 %define build_perl 1
@@ -348,6 +348,7 @@ fi
 %defattr(-,root,root)
 %{prefix}/include/owfs/owcapi.h
 %{prefix}/lib/libowcapi.*
+%{_mandir}/man1/*owcapi.1.gz
 %endif
 
 %if %{build_fs}

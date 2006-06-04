@@ -32,8 +32,13 @@ ow_wrap.c: ../ow.i Makefile.perl ${LIBOW}
 OW.pm: ow_wrap.c
 	$(MAKE) -fMakefile.perl
 
+PERLSITEDIR = $(wildcard ${DESTDIR}/usr/lib*/perl5/site_perl/*/*-linux-thread-*/auto/ )
+
 install-data-local:
-	$(MAKE) -fMakefile.perl install
+	$(MAKE) -fMakefile.perl PREFIX=$(prefix) install
+	@INSTALL@ -d ${DESTDIR}${prefix}/bin/
+	@INSTALL@ OW.pm ${DESTDIR}${prefix}/bin/
+	if test -d "${PERLSITEDIR}"; then @INSTALL@ OW.pm "${PERLSITEDIR}/../"; fi
 
 clean-local:
 	if test -f Makefile.perl; then $(MAKE) -fMakefile.perl realclean; fi

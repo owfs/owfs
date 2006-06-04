@@ -324,7 +324,7 @@ AC_ARG_ENABLE(owhttpd,
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
-        ENABLE_OWHTTPD=false
+        ENABLE_OWHTTPD="false"
     fi
 ],
 [
@@ -334,17 +334,17 @@ AC_SUBST(ENABLE_OWHTTPD)
 
 #Check owftpd
 AC_MSG_CHECKING(if owftpd is enabled)
-ENABLE_OWFTPD="false"
+ENABLE_OWFTPD="true"
 AC_ARG_ENABLE(owftpd,
 [  --enable-owftpd       Enable owftpd module (default false)],
 [
     AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWFTPD=true
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWFTPD="false"
     fi
 ],
 [
-    AC_MSG_RESULT([no (default)])
+    AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWFTPD)
 
