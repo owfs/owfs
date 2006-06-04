@@ -267,6 +267,21 @@ fi
 AC_LANG_RESTORE
 ])dnl ACX_PTHREAD
 
+ENABLE_DEBUG="true"
+AC_MSG_CHECKING([if debug-output is enabled])
+AC_ARG_ENABLE(debug,
+[  --enable-debug        Enable debug-output (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_DEBUG="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_DEBUG)
+AM_CONDITIONAL(ENABLE_DEBUG, test "${ENABLE_DEBUG}" = "true")
 
 # Check for multithreading
 ENABLE_MT="true"
@@ -1013,6 +1028,12 @@ if test "${ENABLE_PARPORT}" = "true" ; then
    PARPORT_FLAG=-DOW_PARPORT
 fi
 AC_SUBST(PARPORT_FLAG)
+if test "${ENABLE_DEBUG}" = "true" ; then
+   DEBUG=1
+else
+   DEBUG=0
+fi
+AC_SUBST(DEBUG_FLAG)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -1144,6 +1165,11 @@ if test "${ENABLE_PARPORT}" = "true"; then
     AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
     AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
+fi
+if test "${ENABLE_DEBUG}" = "true"; then
+    AC_MSG_RESULT([    Debug-output is enabled])
+else
+    AC_MSG_RESULT([    Debug-output is DISABLED])
 fi
 if test "${ENABLE_PROFILING}" = "true"; then
     AC_MSG_RESULT([    Profiling is enabled])
