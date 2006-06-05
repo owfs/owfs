@@ -20,10 +20,6 @@ if ENABLE_OWFTPD
   MODULE_SUBDIRS += owftpd
 endif
 
-if ENABLE_OWNFSD
-  MODULE_SUBDIRS += ownfsd
-endif
-
 if ENABLE_OWCAPI
   MODULE_SUBDIRS += owcapi
 endif
