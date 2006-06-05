@@ -3,6 +3,7 @@
 man_MANS = owfs.1 \
            owhttpd.1 \
            owserver.1 \
+           owftpd.1 \
            owcapi.1 \
            libowcapi.1 \
            DS1427.3 \

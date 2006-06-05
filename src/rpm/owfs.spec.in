@@ -249,8 +249,8 @@ install -D -m 755 src/rpm/ownfsd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/ownfsd
 %if %{build_server}
 install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
 install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
-[ -f $RPM_BUILD_ROOT%{prefix}/man/man1/owserver.1 ] || \
-	install -D -m 644 src/man/owserver.1 $RPM_BUILD_ROOT%{_mandir}/man1/owserver.1
+#[ -f $RPM_BUILD_ROOT%{prefix}/man/man1/owserver.1 ] || \
+#	install -D -m 644 src/man/owserver.1 $RPM_BUILD_ROOT%{_mandir}/man1/owserver.1
 %endif
 %if %{build_perl}
 [ -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm ] && \
@@ -375,7 +375,7 @@ fi
 /etc/rc.d/init.d/owftpd
 %config /etc/sysconfig/owftpd
 %{prefix}/sbin/owftpd
-#%{_mandir}/man1/owftpd.1.gz
+%{_mandir}/man1/owftpd.1.gz
 %endif
 
 %if %{build_nfsd}
