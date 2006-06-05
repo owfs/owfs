@@ -16,6 +16,11 @@ libowphp_la_LDFLAGS = -shared -shrext .so
 # to include non-existing config.h if HAVE_CONFIG_H is defined.
 #DEFS+= -UHAVE_CONFIG_H
 
+EXTENSION_DIR := @PHPLIBDIR@
+# Something like /usr/lib/php4, /usr/lib/php5/20041030, /usr/lib/php/modules/ or /usr/lib64/php/modules/
+
+libdir = $(EXTENSION_DIR)
+
 AM_CFLAGS = -I../include \
 	-fexceptions \
 	-D_FILE_OFFSET_BITS=64 \
@@ -23,22 +28,19 @@ AM_CFLAGS = -I../include \
 
 LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
-libowphp_la_SOURCES = ow_wrap.c
+libowphp_la_SOURCES = ow_wrap.c php_OW.h 
 
 ow_wrap.c: ../ow.i
 	$(SWIG) -php4 -o $@ ../ow.i
 
-EXTENSION_DIR := @PHPLIBDIR@
-# Something like /usr/lib/php4, /usr/lib/php5/20041030, /usr/lib/php/modules/ or /usr/lib64/php/modules/
-
-install-data-local:
-	$(INSTALL) -d $(DESTDIR)$(EXTENSION_DIR)
-	ln -sf ${exec_prefix}/lib/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/php_OW.so
-
-CLEANFILES = *~ *.o ow_wrap.c OW.* php_OW.h
+#install-data-local:
+#	$(INSTALL) -d $(DESTDIR)$(EXTENSION_DIR)
+#	@INSTALL@ $(DESTDIR)${libdir}/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/
+#	ln -sf ${exec_prefix}/lib/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/libowphp.so
+#	ln -sf ../../../lib/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/php_OW.so
 
 clean-local:
-	@RM@ -f $(CLEANFILES)
+	@RM@ -f *~ .*~ *.o OW.* ow_wrap.c php_OW.h
 
 clean-generic:
 

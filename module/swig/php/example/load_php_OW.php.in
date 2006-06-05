@@ -1,6 +1,6 @@
 <?php
 
-$extensionFile = "@PHP4LIBDIR@/php_OW.so";
+$extensionFile = "@PHPLIBDIR@/libowphp.so";
 
 //make sure that we are ABLE to load libraries
 if( !(bool)ini_get( "enable_dl" ) || (bool)ini_get( "safe_mode" ) ) 
@@ -24,13 +24,13 @@ if( !is_executable( $extensionFile ) )
 }
 
 
-global $PHP_OW_LOADED__;
-if ($PHP_OW_LOADED__) return;
-$PHP_OW_LOADED__ = true;
+global $OWPHP_LOADED__;
+if ($OWPHP_LOADED__) return;
+$OWPHP_LOADED__ = true;
 
 /* if our extension has not been loaded, do what we can */
-if (!extension_loaded("php_OW")) {
-	if (!dl("php_OW.so")) return;
+if (!extension_loaded("libowphp")) {
+	if (!dl("libowphp.so")) return;
 }
 
 

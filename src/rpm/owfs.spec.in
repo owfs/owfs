@@ -5,8 +5,8 @@
 %define build_nfsd 0
 %define build_server 1
 %define build_perl 1
-%define build_python 0
-%define build_php 0
+%define build_python 1
+%define build_php 1
 %define build_tcl 1
 
 %define debug_package   %{nil}
@@ -261,6 +261,8 @@ rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/.
 %if %{build_python}
 %endif
 %if %{build_php}
+#rm -f $RPM_BUILD_ROOT%{prefix}/lib*/libowphp.la $RPM_BUILD_ROOT%{prefix}/lib*/libowphp.a
+rm -f $RPM_BUILD_ROOT%{prefix}/lib*/php/modules/libowphp.la $RPM_BUILD_ROOT%{prefix}/lib*/php/modules/libowphp.a
 %endif
 %if %{build_tcl}
 rm -f $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.a
@@ -408,17 +410,18 @@ fi
 %if %{build_python}
 %files python
 %defattr(-,root,root)
-%dir %{prefix}/lib/python*/site-packages/ow
-%{prefix}/lib/python2.3/site-packages/ow/__init__.py
-%{prefix}/lib/python2.3/site-packages/ow/__init__.pyc
-%{prefix}/lib/python2.3/site-packages/ow/_OW.so
+%dir %{prefix}/lib*/python*/site-packages/ow
+%{prefix}/lib*/python*/site-packages/ow/__init__.py
+%{prefix}/lib*/python*/site-packages/ow/__init__.pyc
+%{prefix}/lib*/python*/site-packages/ow/_OW.so
 %endif
 
 %if %{build_php}
 %files php
 %defattr(-,root,root)
-%dir %{prefix}/lib/php/modules
-%{prefix}/lib/php/modules/php_OW.so
+#%{prefix}/lib*/libowphp.so*
+%dir %{prefix}/lib*/php/modules
+%{prefix}/lib*/php/modules/libowphp.so*
 %endif
 
 %if %{build_tcl}
