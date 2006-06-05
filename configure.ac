@@ -380,26 +380,6 @@ AC_ARG_ENABLE(owserver,
 AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
-#Check owfake
-AC_MSG_CHECKING(if owfake is enabled)
-ENABLE_OWFAKE="false"
-AC_ARG_ENABLE(owfake,
-[  --enable-owfake       Enable owfake module (default false)],
-[
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWFAKE="true"
-    fi
-    if test "$enableval" = "no" ; then
-        ENABLE_OWFAKE="false"
-    fi
-],
-[
-    AC_MSG_RESULT([no (default)])
-])
-AC_SUBST(ENABLE_OWFAKE)
-AM_CONDITIONAL(ENABLE_OWFAKE, test "${ENABLE_OWFAKE}" = "true")
-
 #Check owcapi
 AC_MSG_CHECKING(if owcapi is enabled)
 ENABLE_OWCAPI="true"
@@ -640,27 +620,29 @@ AC_MSG_CHECKING(if owtcl is enabled)
 if test -z "$SWIG" ; then
     ENABLE_OWTCL="false"
 else
-    ENABLE_OWTCL="false"
+    ENABLE_OWTCL="true"
 fi
 AC_ARG_ENABLE(owtcl,
-[  --enable-owtcl        Enable owtcl module (default false)],
+[  --enable-owtcl        Enable owtcl module (default true)],
 [
     AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "no" ; then
+        ENABLE_OWTCL="false"
+    fi
     if test "$enableval" = "yes" ; then
         ENABLE_OWTCL="true"
-    fi
-
-    if test -z "$SWIG"  ; then
-        AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
-        AC_MSG_WARN([OWTCL is disabled because swig is not found])
-        ENABLE_OWTCL="false"
+        if test -z "$SWIG"  ; then
+            AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+            AC_MSG_WARN([OWTCL is disabled because swig is not found])
+            ENABLE_OWTCL="false"
+        fi
     fi
 ],
 [
     if test -z "$SWIG" ; then
         AC_MSG_RESULT([no (swig disabled)])
     else
-        AC_MSG_RESULT([no (default)])
+        AC_MSG_RESULT([yes (default)])
     fi
 ])
 
@@ -990,30 +972,55 @@ AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 
 if test "${ENABLE_MT}" = "true" ; then
    MT_FLAG=-DOW_MT
+   OW_MT_ENABLED=1
+else
+   OW_MT_ENABLED=0
 fi
 AC_SUBST(MT_FLAG)
+AC_SUBST(OW_MT_ENABLED)
+
 if test "${ENABLE_CACHE}" = "true" ; then
    CACHE_FLAG=-DOW_CACHE
+   OW_CACHE_ENABLED=1
+else
+   OW_CACHE_ENABLED=0
 fi
 AC_SUBST(CACHE_FLAG)
+AC_SUBST(OW_CACHE_ENABLED)
+
 if test "${ENABLE_USB}" = "true" ; then
    USB_FLAG=-DOW_USB
+   OW_USB_ENABLED=1
+else
+   OW_USB_ENABLED=0
 fi
 AC_SUBST(USB_FLAG)
+AC_SUBST(OW_USB_ENABLED)
+
 if test "${ENABLE_PROFILING}" = "true" ; then
    PROFILING_FLAG=-pg
+   OW_PROFILING_ENABLED=1
+else
+   OW_PROFILING_ENABLED=0
 fi
 AC_SUBST(PROFILING_FLAG)
+AC_SUBST(OW_PROFILING_ENABLED)
+
 if test "${ENABLE_PARPORT}" = "true" ; then
    PARPORT_FLAG=-DOW_PARPORT
+   OW_PARPORT_ENABLED=1
+else
+   OW_PARPORT_ENABLED=0
 fi
 AC_SUBST(PARPORT_FLAG)
+AC_SUBST(OW_PARPORT_ENABLED)
+
 if test "${ENABLE_DEBUG}" = "true" ; then
-   DEBUG=1
+   OW_DEBUG_ENABLED=1
 else
-   DEBUG=0
+   OW_DEBUG_ENABLED=0
 fi
-AC_SUBST(DEBUG)
+AC_SUBST(OW_DEBUG_ENABLED)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -1073,11 +1080,6 @@ AC_CONFIG_FILES([
     module/owserver/src/include/Makefile
     module/owserver/src/c/Makefile
     module/owserver/src/man/Makefile
-    module/owfake/Makefile
-    module/owfake/src/Makefile
-    module/owfake/src/include/Makefile
-    module/owfake/src/c/Makefile
-    module/owfake/src/man/Makefile
     module/owftpd/Makefile
     module/owftpd/src/Makefile
     module/owftpd/src/include/Makefile
@@ -1174,11 +1176,6 @@ if test "${ENABLE_OWSERVER}" = "true"; then
     AC_MSG_RESULT([    owserver is enabled])
 else
     AC_MSG_RESULT([    owserver is DISABLED])
-fi
-if test "${ENABLE_OWFAKE}" = "true"; then
-    AC_MSG_RESULT([    owfake is enabled])
-else
-    AC_MSG_RESULT([    owfake is DISABLED])
 fi
 if test "${ENABLE_OWCAPI}" = "true"; then
     AC_MSG_RESULT([    owcapi is enabled])

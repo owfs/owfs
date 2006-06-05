@@ -8,10 +8,6 @@ if ENABLE_OWSERVER
   MODULE_SUBDIRS += owserver
 endif
 
-if ENABLE_OWFAKE
-  MODULE_SUBDIRS += owfake
-endif
-
 if ENABLE_OWFS
   MODULE_SUBDIRS += owfs
 endif
