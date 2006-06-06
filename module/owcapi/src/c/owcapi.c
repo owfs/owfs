@@ -33,8 +33,13 @@ $Id$
 static ssize_t internal_OW_init_args( int argc, char ** argv ) ;
 
 static ssize_t ReturnAndErrno( ssize_t ret ) {
-    errno = -ret ;
-    return ((ret == 0) ? 0 : -1) ;
+    if ( ret < 0 ) {
+        errno = -ret ;
+        return -1 ;
+    } else {
+        errno = 0 ;
+        return ret ;
+    }
 }
 
 ssize_t OW_init( const char * params ) {
