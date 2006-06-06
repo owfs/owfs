@@ -105,11 +105,7 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
          -D__EXTENSIONS__ \
-         ${CACHE_FLAG} \
-         ${MT_FLAG} \
-         ${PARPORT_FLAG} \
-         ${PROFILING_FLAG} \
-         ${USB_FLAG}
+         ${PROFILING_FLAG}
 
 #LDADD = ${PROFILING_FLAG} ${PTHREAD_LIBS}
 

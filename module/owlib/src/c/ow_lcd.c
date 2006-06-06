@@ -58,7 +58,7 @@ uWRITE_FUNCTION( FS_w_data ) ;
 bWRITE_FUNCTION( FS_w_memory ) ;
  uREAD_FUNCTION( FS_r_register ) ;
 uWRITE_FUNCTION( FS_w_register ) ;
-#ifdef OW_CACHE
+#if OW_CACHE
  uREAD_FUNCTION( FS_r_cum ) ;
 uWRITE_FUNCTION( FS_w_cum ) ;
 #endif /* OW_CACHE */
@@ -80,7 +80,7 @@ struct filetype LCD[] = {
     {"register"  ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , {v:NULL}, } ,
     {"data"      ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , {v:NULL}, } ,
     {"counters"  ,    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , {v:NULL}, } ,
-#ifdef OW_CACHE
+#if OW_CACHE
     {"cumulative",    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , {v:NULL}, } ,
 #endif /*OW_CACHE*/
     {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , {v:NULL} , } ,
@@ -186,7 +186,7 @@ static int FS_r_counters(UINT * u , const struct parsedname * pn ) {
     return 0 ;
 }
 
-#ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
+#if OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 static int FS_r_cum(UINT * u , const struct parsedname * pn ) {
     size_t s = 4*sizeof(UINT) ;
 

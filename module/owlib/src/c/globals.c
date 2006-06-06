@@ -20,7 +20,7 @@ char * progname = "" ;
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * indevices ...         */
 
-#ifdef OW_MT
+#if OW_MT
 /* mutex attribute -- needed for uClibc programming */
 /* we create at start, and destroy at end */
 pthread_mutexattr_t * pmattr = NULL ;
@@ -40,7 +40,7 @@ int readonly = 0 ; /* readonly file system */
 
 /* State informatoin, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
-#ifdef OW_CACHE
+#if OW_CACHE
 uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 | ((uint8_t)1) ;
 #else
 uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 ;

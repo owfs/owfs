@@ -19,7 +19,7 @@ $Id$
 #include "ow.h"
 
 /* ------- Globals ----------- */
-#ifdef OW_MT
+#if OW_MT
     pthread_mutex_t init_mutex    = PTHREAD_MUTEX_INITIALIZER ;
     pthread_mutex_t access_mutex  = PTHREAD_MUTEX_INITIALIZER ;
     pthread_cond_t  access_cond   = PTHREAD_COND_INITIALIZER  ;
@@ -43,7 +43,7 @@ int  access_num = 0 ;
 /* Returns 0 if ok, else 1 */
 /* MUST BE PAIRED with OWLIB_can_init_end() */
 int OWLIB_can_init_start( void ) {
-#ifdef OW_MT
+#if OW_MT
   #ifdef __UCLIBC__
     if ( INITLOCK == EINVAL ) { /* Not initialized */
         pthread_mutex_init(&init_mutex, pmattr);

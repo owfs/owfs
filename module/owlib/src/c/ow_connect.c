@@ -51,7 +51,7 @@ struct connection_in * NewIn( const struct connection_in * in ) {
         now->next = indevice ; /* put in linked list at start */
         indevice = now ;
         now->index = indevices++ ;
-    #ifdef OW_MT
+    #if OW_MT
         pthread_mutex_init(&(now->bus_mutex), pmattr);
         pthread_mutex_init(&(now->dev_mutex), pmattr);
         now->dev_db = NULL ;
@@ -79,7 +79,7 @@ struct connection_out * NewOut( void ) {
         now->next = outdevice ;
         outdevice = now ;
         now->index = outdevices ++ ;
-#ifdef OW_MT
+#if OW_MT
         pthread_mutex_init(&(now->accept_mutex), pmattr);
 #endif /* OW_MT */
     } else {
@@ -97,7 +97,7 @@ void FreeIn( void ) {
     while ( next ) {
         now = next ;
         next = now->next ;
-#ifdef OW_MT
+#if OW_MT
         pthread_mutex_destroy(&(now->bus_mutex)) ;
         pthread_mutex_destroy(&(now->dev_mutex));
 #endif /* OW_MT */
@@ -119,7 +119,7 @@ void FreeIn( void ) {
         case bus_serial:
             COM_close(now) ;
             break ;
-#ifdef OW_USB
+#if OW_USB
         case bus_usb:
             DS9490_close(now) ;
             now->name = NULL ; // rather than a static data string;
@@ -130,7 +130,7 @@ void FreeIn( void ) {
             now->connin.fake.device = NULL ;
             break ;
         case bus_i2c:
-#ifdef OW_MT
+#if OW_MT
             if ( now->connin.i2c.index==0 ) {
                 pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex)) ;
             }
@@ -171,7 +171,7 @@ void FreeOut( void ) {
             freeaddrinfo(now->ai) ;
             now->ai = NULL ;
         }
-#ifdef OW_MT
+#if OW_MT
         pthread_mutex_destroy(&(now->accept_mutex)) ;
 #endif /* OW_MT */
         free(now) ;

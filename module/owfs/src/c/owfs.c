@@ -17,7 +17,7 @@ $Id$
 
 #include "owfs.h"
 
-#ifdef OW_MT
+#if OW_MT
 pthread_t main_threadid ;
 #define IS_MAINTHREAD (main_threadid == pthread_self())
 #else
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     /* Set up adapters */
     if ( LibStart() ) ow_exit(1) ;
 
-#ifdef OW_MT
+#if OW_MT
     main_threadid = pthread_self() ;
 #endif
 

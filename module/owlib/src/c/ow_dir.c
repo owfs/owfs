@@ -153,7 +153,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
 
 /* path is the path which "pn" parses */
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
-#ifdef OW_MT
+#if OW_MT
 struct dir_seek_struct {
     struct connection_in * in ;
     const struct parsedname * pn ;

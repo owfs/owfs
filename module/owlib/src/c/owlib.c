@@ -28,7 +28,7 @@ void LibSetup( void ) {
     DeviceSort() ;
 
     /* DB cache code */
-#ifdef OW_CACHE
+#if OW_CACHE
 //printf("CacheOpen\n");
     Cache_Open() ;
 //printf("CacheOpened\n");
@@ -134,7 +134,7 @@ static int my_daemon(int nochdir, int noclose) {
 #endif /* HAVE_DAEMON */
 
 #ifdef __UCLIBC__
- #ifdef OW_MT
+ #if OW_MT
 extern char *__pthread_initial_thread_bos ;
 void __pthread_initialize(void) ;
  #endif /* OW_MT */
@@ -222,7 +222,7 @@ int LibStart( void ) {
 #endif /* OW_PARPORT */
                 break ;
             case bus_usb:
-    #ifdef OW_USB
+    #if OW_USB
                 ret = DS9490_detect(in) ;
     #else /* OW_USB */
                 LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname) ;
@@ -276,7 +276,7 @@ int LibStart( void ) {
 void LibClose( void ) {
     LEVEL_CALL("Starting Library cleanup\n");
     PIDstop() ;
-#ifdef OW_CACHE
+#if OW_CACHE
     LEVEL_CALL("Closing Cache\n");
     Cache_Close() ;
 #endif /* OW_CACHE */
@@ -287,7 +287,7 @@ void LibClose( void ) {
     if ( log_available ) closelog() ;
     DeviceDestroy() ;
 
-#ifdef OW_MT
+#if OW_MT
     if ( pmattr ) {
         pthread_mutexattr_destroy(pmattr) ;
         pmattr = NULL ;

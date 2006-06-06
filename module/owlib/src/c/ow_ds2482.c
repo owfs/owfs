@@ -157,7 +157,7 @@ int DS2482_detect( struct connection_in * in ) {
             in->adapter_name = "DS2482-100" ;
             in->connin.i2c.i2c_address = test_address[i] ;
             in->connin.i2c.configreg = 0x00 ; // default configuration setting
-#ifdef OW_MT
+#if OW_MT
             pthread_mutex_init(&(in->connin.i2c.i2c_mutex), pmattr);
 #endif /* OW_MT */
             in->busmode = bus_i2c ;

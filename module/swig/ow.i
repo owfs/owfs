@@ -17,7 +17,7 @@ LibSetup() ;
 #include "owfs_config.h"
 #include "ow.h"
 
-#ifdef OW_MT
+#if OW_MT
     pthread_t main_threadid ;
     #define IS_MAINTHREAD (main_threadid == pthread_self())
 #else /* OW_MT */

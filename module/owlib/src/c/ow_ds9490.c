@@ -25,7 +25,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#ifdef OW_USB /* conditional inclusion of USB */
+#if OW_USB /* conditional inclusion of USB */
 
 #include <usb.h>
 

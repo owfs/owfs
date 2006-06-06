@@ -130,7 +130,7 @@ struct interface_routines {
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
-#ifdef OW_MT
+#if OW_MT
 #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
 #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
 #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) )
@@ -192,7 +192,7 @@ struct connin_i2c {
     BYTE configreg ;
     BYTE configchip ;
     /* only one per chip, the bus entries for the other 7 channels point to the firt one */
-#ifdef OW_MT
+#if OW_MT
     pthread_mutex_t i2c_mutex ; // second level mutex for the entire chip */
 #endif /* OW_MT */
     int current ;
@@ -255,7 +255,7 @@ struct connection_in {
     int index ;
     char * name ;
     int fd ;
-#ifdef OW_MT
+#if OW_MT
     pthread_mutex_t bus_mutex ;
     pthread_mutex_t dev_mutex ;
     void * dev_db ; // dev-lock tree
@@ -308,7 +308,7 @@ struct connection_out {
     struct addrinfo * ai ;
     struct addrinfo * ai_ok ;
     int fd ;
-#ifdef OW_MT
+#if OW_MT
     pthread_mutex_t accept_mutex ;
 #endif /* OW_MT */
 } ;
@@ -364,7 +364,7 @@ int DS2480_baud( speed_t baud, const struct parsedname * pn );
 int Server_detect( struct connection_in * in  ) ;
 int DS2480_detect( struct connection_in * in ) ;
 
-#ifdef OW_PARPORT
+#if OW_PARPORT
 int DS1410_detect( struct connection_in * in ) ;
 #endif /* OW_PARPORT */
 
@@ -375,7 +375,7 @@ int LINKE_detect( struct connection_in * in ) ;
 int DS2482_detect( struct connection_in * in ) ;
 int Fake_detect( struct connection_in * in ) ;
 
-#ifdef OW_USB
+#if OW_USB
 int DS9490_enumerate( void ) ;
 int DS9490_detect( struct connection_in * in ) ;
 void DS9490_close( struct connection_in * in ) ;

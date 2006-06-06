@@ -18,8 +18,7 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          -DSKIP_SEARCH_H \
-         -D_FILE_OFFSET_BITS=64 \
-         ${MT_FLAG}
+         -D_FILE_OFFSET_BITS=64
 
 LDADD = -low ${PTHREAD_LIBS}
 

@@ -23,8 +23,7 @@ libdir = $(EXTENSION_DIR)
 
 AM_CFLAGS = -I../include \
 	-fexceptions \
-	-D_FILE_OFFSET_BITS=64 \
-	${MT_FLAG}
+	-D_FILE_OFFSET_BITS=64
 
 LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 

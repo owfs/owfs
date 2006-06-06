@@ -24,7 +24,7 @@ extern int error_level ;
 extern int now_background ;
 extern int log_available ;
 
-#if OW_DEBUG_ENABLED
+#if OW_DEBUG
 #define LEVEL_DEFAULT(...)    if (error_level>0) err_msg(0,0,__VA_ARGS__) ;
 #define LEVEL_CONNECT(...)    if (error_level>1) err_msg(0,1,__VA_ARGS__) ;
 #define LEVEL_CALL(...)       if (error_level>2) err_msg(0,2,__VA_ARGS__) ;

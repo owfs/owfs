@@ -31,7 +31,6 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
-         ${MT_FLAG} \
          ${SS_FLAG} \
          -D_FILE_OFFSET_BITS=64
 

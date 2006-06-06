@@ -16,7 +16,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 
-#ifdef OW_CACHE
+#if OW_CACHE
 #include <limits.h>
 
 int cacheavailable = 1 ; /* is caching available */

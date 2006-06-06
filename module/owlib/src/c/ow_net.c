@@ -265,7 +265,7 @@ int ServerOutSetup( struct connection_out * out ) {
  */
 
 /* Server Process run for each out device, and each */
-#ifdef OW_MT
+#if OW_MT
 struct serverprocessstruct {
     struct connection_out * out ;
     void (*HandlerRoutine)(int fd) ;

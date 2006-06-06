@@ -154,7 +154,7 @@ int CheckPresence( const struct parsedname * pn ) {
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
 /* lower level, cycle through the devices */
-#ifdef OW_MT
+#if OW_MT
 
 struct checkpresence_struct {
     struct connection_in * in ;

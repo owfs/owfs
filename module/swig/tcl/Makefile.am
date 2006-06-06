@@ -39,7 +39,6 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
         -D_FILE_OFFSET_BITS=64 \
-	${MT_FLAG} \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \
 	$(TCL_INCLUDE_SPEC) \

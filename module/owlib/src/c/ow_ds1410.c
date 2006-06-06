@@ -15,7 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#ifdef OW_PARPORT
+#if OW_PARPORT
 
 #include <linux/ppdev.h>
 #include <sys/ioctl.h>

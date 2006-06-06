@@ -79,7 +79,7 @@ struct timeval tv = { 10, 0, } ;
 #endif
 
 
-#ifdef OW_MT
+#if OW_MT
   pthread_t main_threadid ;
   #define IS_MAINTHREAD (main_threadid == pthread_self())
   #define TOCLIENTLOCK(hd) pthread_mutex_lock( &((hd)->to_client) )
@@ -93,7 +93,7 @@ struct timeval tv = { 10, 0, } ;
 // this structure holds the data needed for the handler function called in a separate thread by the ping wrapper
 struct handlerdata {
     int fd ;
-#ifdef OW_MT
+#if OW_MT
     pthread_mutex_t to_client ;
 #endif /* OW_MT */
     struct timeval tv ;
@@ -198,13 +198,13 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
 static void Handler( int fd ) {
     struct handlerdata hd = {
         fd,
-#ifdef OW_MT
+#if OW_MT
         PTHREAD_MUTEX_INITIALIZER ,
 #endif /* OW_MT */
         {0,0},
     } ;
 
-#ifdef OW_MT
+#if OW_MT
     struct client_msg ping_cm ;
     struct timeval now ; // timer calculation
     struct timeval delta = { 1, 500000 } ; // 1.5 seconds ping interval
@@ -272,7 +272,7 @@ static void * RealHandler( void * v ) {
     struct parsedname pn ;
     char * path = FromClientAlloc( hd->fd, &sm ) ;
 
-#ifdef OW_MT
+#if OW_MT
     pthread_detach( pthread_self() );
 #endif
 
@@ -533,7 +533,7 @@ int main( int argc , char ** argv ) {
      */
     if ( LibStart() ) ow_exit(1) ;
 
-#ifdef OW_MT
+#if OW_MT
     main_threadid = pthread_self() ;
 #endif
 

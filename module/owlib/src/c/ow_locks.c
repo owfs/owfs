@@ -19,7 +19,7 @@ $Id$
 
 /* ------- Globals ----------- */
 
-#ifdef OW_MT
+#if OW_MT
 pthread_mutex_t stat_mutex    = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t cache_mutex   = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t store_mutex   = PTHREAD_MUTEX_INITIALIZER ;
@@ -34,7 +34,7 @@ pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #endif /* OW_MT */
 
 /* maxslots and multithreading are ints to allow address-of */
-#ifdef OW_MT
+#if OW_MT
     int multithreading = 1 ;
 #else /* OW_MT */
     int multithreading = 0 ;
@@ -42,7 +42,7 @@ pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
 /* Essentially sets up semaphore for device slots */
 void LockSetup( void ) {
-#ifdef OW_MT
+#if OW_MT
  #ifdef __UCLIBC__
     pthread_mutex_init(&stat_mutex, pmattr);
     pthread_mutex_init(&cache_mutex, pmattr);
@@ -62,7 +62,7 @@ struct dev_opaque {
     void * other ;
 } ;
 
-#ifdef OW_MT
+#if OW_MT
 /* compilation error in gcc version 4.0.0 20050519 if dev_compare
  * is defined as an embedded function
  */
@@ -74,7 +74,7 @@ static int dev_compare( const void * a , const void * b ) {
 /* Grabs a device slot, either one already matching, or an empty one */
 /* called per-adapter */
 int LockGet( const struct parsedname * pn ) {
-#ifdef OW_MT
+#if OW_MT
     struct devlock * dlock ;
     struct dev_opaque * opaque ;
     int inindex = pn->in->index ;
@@ -131,7 +131,7 @@ int LockGet( const struct parsedname * pn ) {
 }
 
 void LockRelease( const struct parsedname * pn ) {
-#ifdef OW_MT
+#if OW_MT
     int inindex = pn->in->index ;
     if ( pn->lock[inindex] ) {
 
@@ -162,7 +162,7 @@ void LockRelease( const struct parsedname * pn ) {
 
 void BUS_lock( const struct parsedname * pn ) {
     if(!pn || !pn->in) return ;
-#ifdef OW_MT
+#if OW_MT
     pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
     if ( pn->in->busmode == bus_i2c && pn->in->connin.i2c.channels > 1 ) {
         pthread_mutex_lock( &(pn->in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
@@ -211,7 +211,7 @@ void BUS_unlock( const struct parsedname * pn ) {
         ++ pn->in->bus_unlocks ; /* statistics */
         ++ total_bus_unlocks ; /* statistics */
     STATUNLOCK;
-#ifdef OW_MT
+#if OW_MT
     if ( pn->in->busmode == bus_i2c && pn->in->connin.i2c.channels > 1 ) {
         pthread_mutex_unlock( &(pn->in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
     }

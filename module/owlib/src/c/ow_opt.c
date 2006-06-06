@@ -110,7 +110,7 @@ static void ow_help( enum opt_program op ) {
     "1-wire side (device):\n"
     "  -d --device    devicename      |Serial port device name of 1-wire adapter\n"
     "                                 |  e.g: -d /dev/ttyS0\n");
-#ifdef OW_USB
+#if OW_USB
     printf("  -u --usb       [number]|all    |USB 1-wire adapter. Choose first one unless number specified\n");
 #endif /* OW_USB */
     printf("                                 |  e.g: -u -u3  first and third USB 1wire adapters\n"
@@ -164,7 +164,7 @@ static void ow_morehelp( enum opt_program op ) {
     "  -w --write                     |allow reading and writing to bus(default)\n"
     "     --fake                      |with list of emulated device family codes\n"
     "     --link | --nolink           |LINK adapters in ascii|emulation mode (emulation)\n");
-#ifdef OW_CACHE
+#if OW_CACHE
     printf("  -t                             |cache timeout (in seconds)\n");
 #endif /* OW_CACHE */    
     printf("  -f --format                    |format for 1-wire unique serial IDs display\n"
@@ -231,7 +231,7 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
         ow_help( op ) ;
         return 1 ;
     case 'u':
-#ifdef OW_USB
+#if OW_USB
         return OW_ArgUSB( arg ) ;
 #else /* OW_USB */
         LEVEL_DEFAULT("Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n")
@@ -384,7 +384,7 @@ int OW_ArgDevice( const char * arg ) {
         LEVEL_DEFAULT("Not a \"character\" device %s\n",arg) ;
         return 1 ;
     }
-#ifdef OW_PARPORT
+#if OW_PARPORT
     if ( major(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
 #endif /* OW_PARPORT */
     if ( major(sbuf.st_rdev)==89 ) return OW_ArgI2C(arg) ;
@@ -427,7 +427,7 @@ int OW_ArgUSB( const char * arg ) {
         in->connin.usb.usb_nr = 1 ;
     } else if ( strcasecmp(arg,"all") == 0 ) {
         int n ;
-#ifdef OW_USB
+#if OW_USB
         n = DS9490_enumerate() ;
 #else
         n = 0 ;

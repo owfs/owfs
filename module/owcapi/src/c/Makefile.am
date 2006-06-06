@@ -22,7 +22,6 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
-         ${MT_FLAG} \
          ${PROFILING_FLAG} \
          -D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64

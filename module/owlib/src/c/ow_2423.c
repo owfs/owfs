@@ -52,7 +52,7 @@ bWRITE_FUNCTION( FS_w_mem ) ;
 bWRITE_FUNCTION( FS_w_page ) ;
  uREAD_FUNCTION( FS_counter ) ;
  uREAD_FUNCTION( FS_pagecount ) ;
-#ifdef OW_CACHE
+#if OW_CACHE
  uREAD_FUNCTION( FS_r_mincount ) ;
 uWRITE_FUNCTION( FS_w_mincount ) ;
 #endif /* OW_CACHE */
@@ -67,7 +67,7 @@ struct filetype DS2423[] = {
     {"pages"     ,     0,  NULL,    ft_subdir  , ft_volatile, {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
     {"pages/page",    32,  &A2423,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       {v:NULL}, } ,
     {"counters"  ,    12,  &A2423c, ft_unsigned, ft_volatile, {u:FS_counter}  , {v:NULL},            {v:NULL}, } ,
-#ifdef OW_CACHE
+#if OW_CACHE
     {"mincount"  ,    12,  NULL,    ft_unsigned, ft_volatile, {u:FS_r_mincount} , {u:FS_w_mincount}, {v:NULL}, } ,
 #endif /*OW_CACHE*/
     {"pages/count",   12,  &A2423,  ft_unsigned, ft_volatile, {u:FS_pagecount}, {v:NULL},            {v:NULL}, } ,
@@ -116,7 +116,7 @@ static int FS_pagecount(UINT * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-#ifdef OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
+#if OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
 static int FS_r_mincount(UINT * u , const struct parsedname * pn ) {
     size_t s = 3*sizeof(UINT) ;

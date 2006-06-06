@@ -141,7 +141,7 @@ $Id$
 #include "ow_debug.h"
 
 extern int multithreading ;
-#ifdef OW_MT
+#if OW_MT
     #include <pthread.h>
 
     extern pthread_mutex_t stat_mutex ;
@@ -208,7 +208,7 @@ extern int multithreading ;
     #define BUSUNLOCK(pn)
 #endif /* OW_MT */
 
-#ifdef OW_USB
+#if OW_USB
     #include <usb.h>
 #endif /* OW_USB */
 

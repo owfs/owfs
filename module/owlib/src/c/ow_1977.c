@@ -55,7 +55,7 @@ bWRITE_FUNCTION( FS_w_page ) ;
 yWRITE_FUNCTION( FS_w_pwd ) ;
 bWRITE_FUNCTION( FS_set ) ;
 aWRITE_FUNCTION( FS_nset ) ;
-#ifdef OW_CACHE
+#if OW_CACHE
 bWRITE_FUNCTION( FS_use ) ;
 aWRITE_FUNCTION( FS_nuse ) ;
 #endif /* OW_CACHE */
@@ -76,7 +76,7 @@ struct filetype DS1977[] = {
     {"set_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , {i: 0}, } ,
     {"set_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , {i: 8}, } ,
     {"version"   ,         12,  NULL,    ft_unsigned, ft_stable  , {u:FS_ver}      , {v:NULL}           , {v:NULL}, } ,
-#ifdef OW_CACHE
+#if OW_CACHE
     {"use_password",        0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
     {"use_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , {i: 0}, } ,
     {"use_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , {i: 8}, } ,
@@ -178,7 +178,7 @@ static int FS_set( const BYTE *buf, const size_t size, const off_t offset , cons
     /* Verify */
     if ( OW_verify(p,off,pn) ) return -EINVAL ;
 
-#ifdef OW_CACHE
+#if OW_CACHE
     /* set cache */
     FS_use(p,8,0,pn) ;
 #endif /* OW_CACHE */
@@ -189,7 +189,7 @@ static int FS_set( const BYTE *buf, const size_t size, const off_t offset , cons
     return 0 ; 
 }
 
-#ifdef OW_CACHE
+#if OW_CACHE
 static int FS_nuse( const char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     char a[48] ;
     char * end ;
@@ -241,7 +241,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
     BUSUNLOCK(pn);
     if ( ret ) return 1 ;
 
-#ifdef OW_CACHE
+#if OW_CACHE
     Cache_Get_Internal( (void *)(&p[4]), &s, &ip_ful, pn ) ;
 #endif /* OW_CACHE */
 
@@ -259,7 +259,7 @@ static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const
     BYTE pwd[8] = {0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
     size_t s = sizeof(pwd) ;
 
-#ifdef OW_CACHE
+#if OW_CACHE
     if ( Cache_Get_Internal( (void *)pwd, &s, &ip_ful, pn ) || OW_r_pmem( data,pwd,size,offset,pn) ) return 0 ;
     Cache_Get_Internal( (void *)pwd, &s, &ip_rea, pn ) ;
 #endif /* OW_CACHE */

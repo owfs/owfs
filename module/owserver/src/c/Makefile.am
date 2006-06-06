@@ -19,7 +19,6 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
-         ${MT_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
 LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}

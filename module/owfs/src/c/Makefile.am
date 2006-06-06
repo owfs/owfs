@@ -21,8 +21,7 @@ AM_CFLAGS = -I../include \
          -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
-         ${PROFILING_FLAG} \
-         ${MT_FLAG}
+         ${PROFILING_FLAG}
 
 LDADD = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 

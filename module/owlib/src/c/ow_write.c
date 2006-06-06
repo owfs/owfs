@@ -268,7 +268,7 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
     char * cbuf = NULL ;
 //printf("FS_parse_write\n");
 
-#ifdef OW_CACHE
+#if OW_CACHE
     /* buffer for storing parsed data to cache */
     if ( IsLocalCacheEnabled(pn) ) cbuf = (char *) malloc( fl ) ;
 #endif /* OW_CACHE */
@@ -393,7 +393,7 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
     int ret ;
     char * cbuf = NULL ;
 
-#ifdef OW_CACHE
+#if OW_CACHE
     /* buffer for storing parsed data to cache */
     if ( IsLocalCacheEnabled(pn) ) cbuf = (char *) malloc( ffl ) ;
 #endif /* OW_CACHE */
@@ -607,7 +607,7 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
     /* readable at all? cannot write a part if whole can't be read */
     if ( pn->ft->read.v == NULL ) return -EFAULT ;
     
-#ifdef OW_CACHE
+#if OW_CACHE
     cbuf = (char *) malloc( FullFileLength(pn)) ;
 #endif /* OW_CACHE */
 
