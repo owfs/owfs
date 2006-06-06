@@ -146,7 +146,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
 /* After parsing, choose special read based on path type */
 int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
-    //printf("FS_read_postparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
+    //printf("FS_read_postpostparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
     LEVEL_DEBUG("READ_POSTPOSTPARSE %s\n",pn->path) ;
     STATLOCK;

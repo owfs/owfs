@@ -124,7 +124,7 @@ static ssize_t internal_OW_init_args( int argc, char ** argv ) {
 ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     struct parsedname pn ;
     char * buf = NULL ;
-    size_t sz ; /* current buffer size */
+    size_t sz = 0 ; /* current buffer size */
     int s = 0 ; /* current buffer string length */
     /* Embedded callback function */
     void directory( const struct parsedname * const pn2 ) {
@@ -139,8 +139,8 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
             if ( s ) strcpy( &buf[s++], "," ) ; // add a comma
             FS_DirName( &buf[s], OW_FULLNAME_MAX, pn2 ) ;
             if ( IsDir(pn2) ) strcat( &buf[s], "/" );
-            s = strlen( buf ) ;
-//printf("buf=%s len=%d\n",buf,s);
+            s += strlen( &buf[s] ) ;
+	    //LEVEL_DEBUG("buf=[%s] len=%d\n", buf, s);
         }
     }
 
@@ -155,13 +155,16 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
         s = -ENOENT ;
     } else {
         if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
-            s=sz=0 ;
-            FS_dir( directory, &pn ) ;
+            int ret = FS_dir( directory, &pn ) ;
+	    if(ret < 0) s = ret;
+	    //LEVEL_DEBUG("OW_get(): FS_dir returned %d\n", ret);
         } else { /* A regular file */
             s = FullFileLength(&pn) ;
-            if ( (buf=(char *) malloc( s+1 )) ) {
+	    //LEVEL_DEBUG("OW_get(): size=%d\n", s);
+            if ( (s>=0) && (buf=(char *) malloc( s+1 )) ) {
                 int r =  FS_read_postparse( buf, s, 0, &pn ) ;
                 if ( r<0 ) {
+		    LEVEL_DEBUG("OW_get(): failed after FS_read_postparse %d\n", r);
                     free(buf) ;
                     s = r ;
                 } else {
@@ -184,11 +187,11 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
 }
 
 ssize_t OW_lread( const char * path, unsigned char * buf, const size_t size, const off_t offset ) {
-    ReturnAndErrno( FS_read( path, buf, size, offset ) ) ;
+    return ReturnAndErrno( FS_read( path, buf, size, offset ) ) ;
 }
 
 ssize_t OW_lwrite( const char * path, const unsigned char * buf, const size_t size, const off_t offset ) {
-    ReturnAndErrno( FS_write( path, buf, size, offset ) ) ;
+    return ReturnAndErrno( FS_write( path, buf, size, offset ) ) ;
 }
 
 ssize_t OW_put( const char * path, const char * buffer, size_t buffer_length ) {
