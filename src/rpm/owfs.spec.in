@@ -126,8 +126,8 @@ BuildRequires: python-devel >= 2.0
 %package php
 Summary: %{name}-php is a php interface for the 1-wire filesystem
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, php >= 4.3.0
-BuildRequires: php-devel >= 4.3.0
+#Requires: %{name}-libs = %{version}, php >= 4.3.0
+#BuildRequires: php-devel >= 4.3.0
 
 %description php
 %{name}-php is a php interface for the 1-wire filesystem
