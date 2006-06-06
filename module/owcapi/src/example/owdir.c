@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   const char *path = DEFAULT_PATH;
 
   /* steal first argument and treat it as a path (if not beginning with '-') */
-  if(argv[1][0] != '-') {
+  if((argc > 1) && (argv[1][0] != '-')) {
     path = argv[1];
     argv = &argv[1];
     argc--;
