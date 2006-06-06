@@ -18,18 +18,18 @@ SetAddress 1032140080FF00E7
 proc AlarmCheck {varName index op} {
     global chip
     set alarm false
-    puts "Reached"
     if { $chip("hightemp") < $chip("temperature") } {
-    puts "testing"
         set alarm true
-    }
-    if { $chip("lowtemp") > $chip("temperature") } {
-    puts "testing"
+    } elseif { $chip("lowtemp") > $chip("temperature") } {
         set alarm true
     }
     if { $chip("alarm") != $alarm } {
-        set $chip("alarm") $alarm
-#        .g.valarm configure -text "True"
+        set chip("alarm") $alarm
+        if { $alarm } {
+            .alarm config -bg red
+        } else {
+            .alarm config -bg green
+        }
     }
 }
 
@@ -48,12 +48,10 @@ foreach g { type family address id crc8 r_address r_id present } {
     grid .g.l$g -sticky e
     grid .g.v$g -sticky w
 }
-set g alarm
-label .g.l$g -text $g
-label .g.v$g -text $chip("$g") -bg white
-grid .g.l$g .g.v$g
-grid .g.l$g -sticky e
-grid .g.v$g -sticky w
+labelframe .alarm -text ALARM -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg green
+pack .alarm -side top -fill x
+label .alarm.state -textvariable chip("alarm") -bg white
+pack .alarm.state
     
 set color("hightemp")    #CC3300
 set color("temperature") #666666
@@ -62,9 +60,15 @@ set color("lowtemp")     #6666FF
 foreach f {hightemp temperature lowtemp} {
     labelframe .$f -text $f -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66
     pack .$f -side top -fill x
-    spinbox .$f.spin -textvariable chip("$f") -width 5 -from -40 -to 125
-    pack .$f.spin -side right
-    scale .$f.scale -variable chip("$f") -orient horizontal -from -40 -to 125 -fg white -bg $color("$f")
+    scale .$f.scale -variable chip("$f") -orient horizontal -from -40 -to 125 -fg white -bg $color("$f") -state disabled
     pack .$f.scale -side right -fill x -expand true
+    spinbox .$f.spin -textvariable chip("$f") -width 5 -from -40 -to 125 -state disabled
+    pack .$f.spin -side right
     trace variable chip("$f") w AlarmCheck
+}
+.temperature.scale config -state normal
+.temperature.spin config -state normal
+
+if {[catch {wm iconbitmap . @"/home/owfs/owfs.ico"}] } {
+    puts $errorInfo
 }
