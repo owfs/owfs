@@ -64,7 +64,6 @@ $Id$
 #define OW_CACHE	@OW_CACHE@
 #define OW_USB		@OW_USB@
 #define OW_PARPORT	@OW_PARPORT@
-#define OW_PROFILING_ENABLED	@OW_PROFILING_ENABLED@
 #define OW_DEBUG	@OW_DEBUG@
 
 #endif /* OWFS_CONFIG_H */
