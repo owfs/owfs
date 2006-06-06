@@ -4,11 +4,7 @@
 
 #include <owcapi.h>
 
-#if OW_USB
-const char DEFAULT_ARGV[] = "-u";
-#else
-const char DEFAULT_ARGV[] = "-s 127.0.0.1:1234";
-#endif
+const char DEFAULT_ARGV[] = "--fake 10,28";
 
 const char DEFAULT_PATH[] = "/";
 
@@ -20,9 +16,15 @@ int main(int argc, char **argv)
   char *buffer = NULL;
   const char *path = DEFAULT_PATH;
 
+  /* steal first argument and treat it as a path (if not beginning with '-') */
+  if(argv[1][0] != '-') {
+    path = argv[1];
+    argv = &argv[1];
+    argc--;
+  }
+
   if(argc < 2) {
-    printf("%s started without any arguments.\n", argv[0]);
-    printf("Starting with parameter \"%s\" as default\n", DEFAULT_ARGV);
+    printf("Starting with extra parameter \"%s\" as default\n", DEFAULT_ARGV);
 
     if((rc = OW_init(DEFAULT_ARGV)) < 0) {
       perror("OW_init failed.\n");
@@ -30,13 +32,6 @@ int main(int argc, char **argv)
       goto cleanup;
     }
   } else {
-
-    /* steal first argument and treat it as a path (if not beginning with '-') */
-    if(argv[1][0] != '-') {
-      path = argv[1];
-      argv = &argv[1];
-      argc--;
-    }
 
     if((rc = OW_init_args(argc, argv)) < 0) {
       printf("OW_init_args failed with rd=%d\n", rc);
