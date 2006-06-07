@@ -213,12 +213,12 @@ int LibStart( void ) {
                 }
                 break ;
             case bus_parallel:
-#ifndef OW_PARPORT
-                ret =  -ENOPROTOOPT ;
-#else /* OW_PARPORT */
+#if OW_PARPORT
                 if ( (ret=DS1410_detect(in)) ) {
                     LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n") ;
                 }
+#else /* OW_PARPORT */
+                ret =  -ENOPROTOOPT ;
 #endif /* OW_PARPORT */
                 break ;
             case bus_usb:

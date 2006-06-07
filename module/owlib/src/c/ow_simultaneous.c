@@ -48,7 +48,7 @@ $Id$
 
 /* Not currently implemented -- cannot do simultaneous without a cache */
 /* Some day will be able to store one path */
-#ifndef OW_CACHE
+#if OW_CACHE == 0
     struct buspath simulpath[2] ;
     int simulpathlength ;
     time_t simulexpire ;

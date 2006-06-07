@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     LEVEL_DEBUG("fuse_mnt_opt=[%s]\n", fuse_mnt_opt);
     Fuse_parse(fuse_open_opt, &fuse_options) ;
     LEVEL_DEBUG("fuse_open_opt=[%s]\n", fuse_open_opt);
- #ifndef OW_MT
+ #if OW_MT == 0
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */
     now_background = background ; // tell "error" that we are background

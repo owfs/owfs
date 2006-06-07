@@ -50,8 +50,8 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_COUNTERS  /* tedious wrapper */
-#define OW_COUNTERS
+#ifndef OW_COUNTERS_H  /* tedious wrapper */
+#define OW_COUNTERS_H
 
 /* ----------------- */
 /* -- Statistics --- */
@@ -180,4 +180,4 @@ extern UINT DS2480_databit_errors ;
 
 #define STAT_ADD1(x)    STATLOCK ; ++x ; STATUNLOCK
 
-#endif /* OW_COUNTERS */
+#endif /* OW_COUNTERS_H */
