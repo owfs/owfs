@@ -57,7 +57,12 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 
+/* Number of "fake" adapters */
 extern int fakes ;
+
+/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
+extern int altUSB ;
+
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before

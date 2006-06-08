@@ -29,6 +29,9 @@ $Id$
 
 #include <usb.h>
 
+/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
+int altUSB = 0 ;
+
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 struct usb_list {
@@ -170,7 +173,32 @@ static void DS9490_setroutines( struct interface_routines * f ) {
 #define STATUSFLAGS_HALT                       0x10  // if set the DS2490 is currently halted
 #define STATUSFLAGS_IDLE                       0x20  // if set the DS2490 is currently idle
 
+#define PARMSET_Slew15Vus   0x0
+#define PARMSET_Slew2p20Vus 0x1
+#define PARMSET_Slew1p65Vus 0x2
+#define PARMSET_Slew1p37Vus 0x3
+#define PARMSET_Slew1p10Vus 0x4
+#define PARMSET_Slew0p83Vus 0x5
+#define PARMSET_Slew0p70Vus 0x6
+#define PARMSET_Slew0p55Vus 0x7
 
+#define PARMSET_W1L_08us 0x0
+#define PARMSET_W1L_09us 0x1
+#define PARMSET_W1L_10us 0x2
+#define PARMSET_W1L_11us 0x3
+#define PARMSET_W1L_12us 0x4
+#define PARMSET_W1L_13us 0x5
+#define PARMSET_W1L_14us 0x6
+#define PARMSET_W1L_15us 0x7
+
+#define PARMSET_DS0_W0R_3us 0x0
+#define PARMSET_DS0_W0R_4us 0x1
+#define PARMSET_DS0_W0R_5us 0x2
+#define PARMSET_DS0_W0R_6us 0x3
+#define PARMSET_DS0_W0R_7us 0x6
+#define PARMSET_DS0_W0R_8us 0x5
+#define PARMSET_DS0_W0R_9us 0x6
+#define PARMSET_DS0_W0R_10us 0x7
 
 /** EP1 -- control read */
 #define DS2490_EP1              0x81
@@ -292,6 +320,26 @@ static int DS9490_setup_adapter(const struct parsedname * pn) {
         return ret ;
     }
     
+    /* Willy Robison's tweaks */
+    if ( altUSB ) {
+        /* Slew Rate */
+        if((ret = usb_control_msg(usb,0x40,MODE_CMD,MOD_PULLDOWN_SLEWRATE, PARMSET_Slew1p37Vus, NULL, 0, TIMEOUT_USB )) < 0) {
+            LEVEL_DATA("DS9490_BusParm: Error MOD_PULLDOWN_SLEWRATE\n") ;
+            return -EIO ;
+        }
+        /* Low Time */
+        if((ret = usb_control_msg(usb,0x40,MODE_CMD,MOD_WRITE1_LOWTIME, PARMSET_W1L_10us, NULL, 0, TIMEOUT_USB )) < 0) {
+            LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n") ;
+            return -EIO ;
+        }
+        /* DS0 Low */
+        if((ret = usb_control_msg(usb,0x40,MODE_CMD,MOD_DSOW0_TREC, PARMSET_DS0_W0R_8us, NULL, 0, TIMEOUT_USB )) < 0) {
+            LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n") ;
+            return -EIO ;
+        }
+    }
+
+
     LEVEL_DATA("DS9490_setup_adapter: done (ret=%d)\n", ret);
     return 0 ;
 }
