@@ -265,12 +265,13 @@ static int DS9490_detect_low( const struct parsedname * pn ) {
                 memset(pn->in->connin.usb.ds1420_address, 0, 8);
                 LEVEL_DATA("BUS_first failed during connect [%s]\n", pn->in->name);
             } else {
-                do {
+                while ( ret == 0 ) {
                     if ( (ds.sn[0]&0x7F)==0x01 ) {
                         LEVEL_CONNECT("Good DS1421 tag found for %s\n",SAFESTRING(pn->in->name)) ;
                         break ; // good tag
                     }
-                } while ( (ret=BUS_next(&ds,&pncopy)) ) ;
+                    ret = BUS_next(&ds,&pncopy) ;
+                }
                 memcpy(pn->in->connin.usb.ds1420_address, ds.sn, 8);
                 LEVEL_DEFAULT("Set DS9490 %s unique id to "SNformat"\n", SAFESTRING(pn->in->name),SNvar(pn->in->connin.usb.ds1420_address));
             }
