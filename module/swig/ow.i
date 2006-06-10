@@ -84,7 +84,8 @@ char * get( const char * path ) {
     } else {
         //printf("path=%s dev=%p ft=%p subdir=%p format=%d\n",pathcpy,pn.dev,pn.ft,pn.subdir,pn.ft?pn.ft->format:-1) ;
 
-        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
+//        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
+        if ( IsDir(&pn) ) { /* A directory of some kind */
             //printf("Directory\n");
             s=sz=0 ;
             FS_dir( directory, &pn ) ;

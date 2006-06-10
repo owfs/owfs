@@ -770,7 +770,7 @@ void BUS_unlock( const struct parsedname * pn ) ;
 
 #define IsDir( pn )    ( ((pn)->dev)==NULL \
                       || ((pn)->ft)==NULL  \
-                      || ((pn)->ft)->format==ft_directory \
+                      || ((pn)->ft)->format==ft_subdir \
                       || ((pn)->ft)->format==ft_directory )
 #define NotUncachedDir(pn)    ( (((pn)->state)&pn_uncached) == 0 )
 #define  IsUncachedDir(pn)    ( ! NotUncachedDir(pn) )
