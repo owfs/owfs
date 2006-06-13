@@ -25,10 +25,17 @@ proc Crc8 { snlist } {
     return $crc
 }
 
-proc SetAddress {family} {
+# input a text hex pair (family code)
+# generate a random seial number and return it
+# fill fields in devlist, devname and chip
+# set family-specific stuff 
+proc SetAddress {famcode} {
     global chip
     global devlist
     global devname
+    
+    # convert code to integer
+    scan $famcode "%2x" family
     # Set random serial number with crc8
     set sn [Snlist $family]
     lappend sn [Crc8 $sn]
@@ -50,10 +57,10 @@ proc SetAddress {family} {
     # backref
     set chip($chip($addr.name)) $addr
     # set family-specific -- type and function
-    switch $family {
-        0x10     { set chip($addr.type) DS18B20 ; set chip($addr.process) Setup10 }
-        0x01     { set chip($addr.type) DS2401  ; set chip($addr.process) Setup01 }
-        default  { set chip($addr.type) generic ; set chip($addr.process) Setup01 }
+    switch $famcode {
+        10      { set chip($addr.type) DS18B20 ; set chip($addr.process) Setup10 }
+        01      { set chip($addr.type) DS2401  ; set chip($addr.process) Setup01 }
+        default { set chip($addr.type) generic ; set chip($addr.process) Setup01 }
     }
     lappend devlist $addr
     lappend devname $chip($addr.name)
