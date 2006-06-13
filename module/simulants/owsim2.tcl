@@ -1,10 +1,5 @@
 #!/usr/bin/wish
 
-option add *highlightThickness 0
-tk_setPalette gray60
-
-source rnotebook.tcl
-
 ###########################################################
 ###########################################################
 ########## Enough of notebook, lets do Simulant! ##########
@@ -24,17 +19,13 @@ wm geometry . 500x400
 
 CommandLineParsing
 
-foreach d $dlist {
-    SetAddress $d
-}
-
 set pan [frame .p -bg cyan]
 pack $pan -fill both -expand 1
 
-set status [StatusFrame $pan]
+StatusFrame $pan
 set pane [panedwindow $pan.pane]
 pack $pane -side top -expand yes -fill both
 
 SetupPanels $pane
 
-$status insert end "Hello\nthere"
+SetupServer

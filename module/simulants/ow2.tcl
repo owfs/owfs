@@ -10,13 +10,17 @@
 
 proc StatusFrame { fram } {
     global serve
-    set ret [labelframe $fram.f -text "OWSERVER Simulator $serve(port)" -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #996633 -fg white]
-    pack $ret -side top -fill x
-    text $ret.text -relief ridge -yscrollcommand "$ret.scroll set" -state normal -wrap char -takefocus 0 -setgrid 1 -height 4 -bg #330000
-    scrollbar $ret.scroll -command "$ret.text yview"
-    pack $ret.scroll -side right -fill y
-    pack $ret.text -side left -fill both -expand 1
-    return $ret.text
+    set serve(frame) [labelframe $fram.f -text "OWSERVER Simulator $serve(port)" -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #996633 -fg white]
+    pack $serve(frame) -side top -fill x
+    set serve(text) [text $serve(frame).text -relief ridge -yscrollcommand "$serve(frame).scroll set" -state normal -wrap char -takefocus 0 -setgrid 1 -height 4 -bg #330000]
+    scrollbar $serve(frame).scroll -command "$serve(frame).text yview"
+    pack $serve(frame).scroll -side right -fill y
+    pack $serve(frame).text -side left -fill both -expand 1
+    # tags
+    $serve(text) tag configure listen -foreground black -background yellow
+    $serve(text) tag configure accept -foreground blue -background yellow
+    $serve(text) tag configure read -foreground white
+    $serve(text) tag configure write -foreground gray25
 }
 
 ###########################################################
