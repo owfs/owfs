@@ -20,7 +20,7 @@ proc StatusFrame { fram } {
     $serve(text) tag configure listen -foreground black -background yellow
     $serve(text) tag configure accept -foreground blue -background yellow
     $serve(text) tag configure read -foreground white
-    $serve(text) tag configure write -foreground gray25
+    $serve(text) tag configure write -foreground yellow
 }
 
 ###########################################################

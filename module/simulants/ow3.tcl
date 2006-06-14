@@ -14,7 +14,6 @@ proc CommandLineParsing { } {
     
     set serve(port) 0
     foreach a $argv {
-        puts $a
         if { [regexp {^[0-9a-fA-F]{2}$} $a] == 1 } {
             SetAddress $a
         } elseif { [regexp {[0-9]{3,}} $a] == 1 } {
