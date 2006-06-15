@@ -1,10 +1,5 @@
 #!/usr/bin/wish
 
-option add *highlightThickness 0
-tk_setPalette gray60
-
-source rnotebook.tcl
-
 ###########################################################
 ###########################################################
 ########## Enough of notebook, lets do Simulant! ##########
@@ -12,6 +7,9 @@ source rnotebook.tcl
 ###########################################################
 
 source ow.tcl
+source ow2.tcl
+source ow3.tcl
+source ow4.tcl
 
 if {[catch {wm iconbitmap . @"/home/owfs/owfs.ico"}] } {
     puts $errorInfo
@@ -19,21 +17,15 @@ if {[catch {wm iconbitmap . @"/home/owfs/owfs.ico"}] } {
 
 wm geometry . 500x400
 
-set dlist [list 0x10 0x10 0x10 0x01 0x20]
-foreach d $dlist {
-    lappend devlist [SetAddress $d]
-}
+CommandLineParsing
 
-foreach d $devlist {
-    lappend devname $chip($d.name)
-}
+set pan [frame .p -bg cyan]
+pack $pan -fill both -expand 1
 
-Rnotebook:create .n -tabs $devname -borderwidth 2
+StatusFrame $pan
+set pane [panedwindow $pan.pane]
+pack $pane -side top -expand yes -fill both
 
-set i 0
-foreach d $devlist {
-    set w [Rnotebook:frame .n [incr i] ]
-    $chip($d.process) $d $w
-}
+SetupPanels $pane
 
-pack .n -fill both -expand 1 -padx 10 -pady 10
+SetupServer

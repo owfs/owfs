@@ -28,7 +28,6 @@ proc SetupServer { } {
 proc ServerAccept { sock addr port } {
     global serve
     $serve(text) insert end " Accept $sock from $addr port $port\n" accept
-    puts "Accept $sock from $addr port $port\n"
     fconfigure $sock -buffering full -encoding binary -blocking 0
     set serve($sock.string) ""
     set serve($sock.payload) 0
@@ -56,7 +55,6 @@ proc ServerProcess { sock } {
     # read what's waiting
     append serve($sock.string) [read $sock]
     set len [string length $serve($sock.string)]
-    puts $len
     if { $len < 24 } {
         #do nothing -- reloop
         return
@@ -129,7 +127,6 @@ proc ServerProcess { sock } {
     $serve(text) insert end "   Respond ret=$ret val=$val\n" write
     puts -nonewline $sock  [binary format IIIIIIa* $serve($sock.version) [string length $val] $ret $serve($sock.sg) $size $offset $val]
     flush $sock
-    puts Done!
     CloseSock $sock
 }
 
@@ -170,20 +167,18 @@ proc ServerWrite { sock } {
     global serve
     global chip
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end-[expr $serve($sock.size) + 1]] $sock] {break}
-    puts "0 $ret $typ $dev $fil"
     # parse
     if { $ret != 0 } { return [list $ret 0 0 ""] }
-    puts "1 $ret $typ $dev $fil"
     # is file?
     if { ![string equal $typ f] } { return [list $serve(EISDIR) 0 0 ""] }
     set addr $chip($dev)
-    puts "2 $addr $fil $chip($addr.$fil)"
     # make sure variable defined
     if { ![info exist chip($addr.$fil)] } { return [list $serve(ENOENT) 0 0 ""] }
-    set v  [string trim [string range $serve($sock.string) end-[expr $serve($sock.size)] end ]]
-    puts "3 $addr $fil $chip($addr.$fil) $v"
-    set chip($addr.$fil)  $v
-    puts "4 $addr $fil $chip($addr.$fil) $v"
+    set v  [string range $serve($sock.string) end-[expr $serve($sock.size) - 1 ] end ]
+    if { [catch {set chip($addr.$fil) $v}] } {
+        set v [string trim $v \00 ]
+        set chip($addr.$fil) $v
+    }
     return [list  [string length $v] [string length $v] 0 ""]
 }
 
@@ -236,14 +231,10 @@ proc DevDir { dev sock } {
     global serve
     global chip
     foreach t [list "" $chip($chip($dev).family)] {
-        puts "t=$t"
         foreach x [list $t.read $t.write] {
-            puts "x=$x"
             if { [info exist chip($x)] } {
                 foreach y $chip($x) {
-                    puts "y=$y"
                     lappend d [lindex [split $y "/"] 0]
-                    puts $d
                 }
             }
         }
