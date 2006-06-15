@@ -80,7 +80,9 @@ const struct option owopts_long[] = {
     {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
     {"NOLINK", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
+#ifdef OW_USB
     {"altUSB", no_argument, &altUSB, 1}, /* Willy Robison's tweaks */
+#endif /* OW_USB */
     {0,0,0,0},
 } ;
 

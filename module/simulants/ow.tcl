@@ -55,7 +55,18 @@ proc SetAddress {famcode} {
     # directory-style name
     set chip($addr.name)      [ format {%s.%s} $chip($addr.family) $chip($addr.id) ]
     # backref
-    set chip($chip($addr.name)) $addr
+    #  f.i
+    set chip($chip($addr.family).$chip($addr.id)) $addr
+    #  fi
+    set chip($chip($addr.family)$chip($addr.id)) $addr
+    #  f.i.c
+    set chip($chip($addr.family).$chip($addr.id).$chip($addr.crc8)) $addr
+    #  fi.c
+    set chip($chip($addr.family)$chip($addr.id).$chip($addr.crc8)) $addr
+    #  f.ic
+    set chip($chip($addr.family).$chip($addr.id)$chip($addr.crc8)) $addr
+    #  fic
+    set chip($chip($addr.family)$chip($addr.id)$chip($addr.crc8)) $addr
     # set family-specific -- type and function
     switch $famcode {
         10      { set chip($addr.type) DS18B20 ; set chip($addr.process) Setup10 }
@@ -69,9 +80,9 @@ proc SetAddress {famcode} {
 }
 
 # Globals
-set color("hightemp")    #CC3300
+set color("temphigh")    #CC3300
 set color("temperature") #666666
-set color("lowtemp")     #6666FF
+set color("templow")     #6666FF
 
 # Globals
 set crc8table [list \
@@ -93,30 +104,77 @@ set crc8table [list \
     116 42 200 150 21 75 169 247 182 232 10 84 215 137 107 53 \
 ]
 
+set chip(.read)  [list type family address id crc8 r_address r_id present]
+set chip(.write) {}
+
+###########################################################
+########## Simulant! Standard options (all devices ########
+###########################################################
+
 proc Standard { addr fram } {
     global chip
     set fstand [frame $fram.s -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66]
     pack $fstand -side top -fill x
-    foreach g { type family address id crc8 r_address r_id present } {
+    foreach g $chip(.read) {
         label $fstand.l$g -text $g
-        label $fstand.v$g -text $chip($addr.$g) -bg white
+        switch $g {
+            present {checkbutton $fstand.v$g -variable chip($addr.$g) -bg white}
+            default {label $fstand.v$g -text $chip($addr.$g) -bg white}
+        }
         grid $fstand.l$g $fstand.v$g
         grid $fstand.l$g -sticky e
         grid $fstand.v$g -sticky w
     }
+    set chip($addr.fstand) $fstand
 }
 
 ###########################################################
 ########## Simulant! Temperature-specific functions #######
 ###########################################################
 
+set chip(10.read) [list temperature temphigh templow trim trimvalid trimblanket power die]
+set chip(10.write) [list temphigh templow trimblanket]
+
+proc Setup10 { addr fmain } {
+    global chip
+
+    set chip($addr.temphigh) 60
+    set chip($addr.temperature) 16
+    set chip($addr.templow) 0
+    set chip($addr.alarm) false
+
+    set chip($addr.die) B2
+    set chip($addr.power) 0
+    set chip($addr.trim) 0xB2
+    set chip($addr.trimblanket) 0xB2B2
+    set chip($addr.trimvalid) 1
+
+    Standard $addr $fmain
+
+    #add power
+    set fstand $chip($addr.fstand)
+    foreach g {power} {
+        label $fstand.l$g -text $g
+        switch $g {
+            power   {checkbutton $fstand.v$g -variable chip($addr.$g) -bg white}
+            default {label $fstand.v$g -text $chip($addr.$g) -bg white}
+        }
+        grid $fstand.l$g $fstand.v$g
+        grid $fstand.l$g -sticky e
+        grid $fstand.v$g -sticky w
+    }
+
+    Alarm10 $addr $fmain
+    Temperatures $addr $fmain
+}
+
 proc AlarmCheck10 {varName index op} {
     global chip
     regexp {(.*?)\.(.*?)} $index match addr temp
     set alarm false
-    if { $chip($addr.hightemp) < $chip($addr.temperature) } {
+    if { $chip($addr.temphigh) < $chip($addr.temperature) } {
         set alarm true
-    } elseif { $chip($addr.lowtemp) > $chip($addr.temperature) } {
+    } elseif { $chip($addr.templow) > $chip($addr.temperature) } {
         set alarm true
     }
     if { $chip($addr.alarm) != $alarm } {
@@ -141,7 +199,7 @@ proc Temperatures { addr fram } {
     global chip
     global color
 
-    foreach f {hightemp temperature lowtemp} {
+    foreach f {temphigh temperature templow} {
         labelframe $fram.$f -text $f -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66
         pack $fram.$f -side top -fill x
         scale $fram.$f.scale -variable chip($addr.$f) -orient horizontal -from -40 -to 125 -fg white -bg $color("$f") -state disabled
@@ -152,19 +210,6 @@ proc Temperatures { addr fram } {
     }
     $fram.temperature.scale config -state normal
     $fram.temperature.spin config -state normal
-}
-
-proc Setup10 { addr fmain } {
-    global chip
-
-    set chip($addr.hightemp) 60
-    set chip($addr.temperature) 16
-    set chip($addr.lowtemp) 0
-    set chip($addr.alarm) false
-
-    Standard $addr $fmain
-    Alarm10 $addr $fmain
-    Temperatures $addr $fmain
 }
 
 ###########################################################

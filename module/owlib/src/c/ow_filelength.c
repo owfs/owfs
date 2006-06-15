@@ -34,10 +34,10 @@ size_t FileLength( const struct parsedname * pn ) {
             if ( buf ) {
                 ssize_t ret =  FS_read_postpostparse(buf,pn->ft->suglen,0,pn) ;
                 free(buf) ;
-                if ( ret >= 0 ) return ret ;
+                if ( ret > 0 ) return ret ;
             }
-            return 0 ;
         }
+        /* fall through is ok */
         default:
             break ;
     }

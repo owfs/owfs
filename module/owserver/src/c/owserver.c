@@ -303,7 +303,7 @@ static void * RealHandler( void * v ) {
                         LEVEL_CALL("Presence message on %s bus_nr=%d\n",SAFESTRING(pn.path),pn.bus_nr) ;
                         // Basically, if we were able to ParsedName it's here!
                         cm.size = cm.payload = 0 ;
-                        cm.ret = pn.dev ? pn.bus_nr : 0 ;
+                        cm.ret = 0 ; // good answer
                         break ;
                     case msg_read:
                         LEVEL_CALL("Read message\n") ;
@@ -329,9 +329,8 @@ static void * RealHandler( void * v ) {
                     default: // never reached
                         break ;
                 }
-		LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy\n");
                 FS_ParsedName_destroy(&pn) ;
-		LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy done\n");
+                LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy done\n");
             }
             break ;
         case msg_nop: // "bad" message
