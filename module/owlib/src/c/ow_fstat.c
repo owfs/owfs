@@ -128,14 +128,14 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname * pn ) {
         stbuf->st_nlink = 1;
 
         switch ( pn->ft->change ) {
-            case ft_volatile:
-            case ft_Avolatile:
-            case ft_second:
-            case ft_statistic:
+            case fc_volatile:
+            case fc_Avolatile:
+            case fc_second:
+            case fc_statistic:
                 stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = time(NULL) ;
                 break ;
-            case ft_stable:
-            case ft_Astable:
+            case fc_stable:
+            case fc_Astable:
                 FSTATLOCK;
                     stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time ;
                 FSTATUNLOCK;

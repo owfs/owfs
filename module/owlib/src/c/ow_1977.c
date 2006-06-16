@@ -65,31 +65,31 @@ aWRITE_FUNCTION( FS_nuse ) ;
 struct aggregate A1977 = { 511, ag_numbers, ag_separate,} ;
 struct filetype DS1977[] = {
     F_STANDARD   ,
-    {"memory"    ,      32704,  NULL,    ft_binary  , ft_stable  , {b:FS_r_mem}    , {b:FS_w_mem},        {v:NULL}, } ,
-    {"pages"     ,          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
-    {"pages/page",         64,  &A1977,  ft_binary  , ft_stable  , {b:FS_r_page}   , {b:FS_w_page},       {v:NULL}, } ,
-    {"set_password",        0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
-    {"set_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , {i: 0}, } ,
-    {"set_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_set}         , {i: 8}, } ,
-    {"set_password/enabled",1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_pwd}    , {y:FS_w_pwd}       , {v:NULL}, } ,
-    {"set_number",          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
-    {"set_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , {i: 0}, } ,
-    {"set_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nset}        , {i: 8}, } ,
-    {"version"   ,         12,  NULL,    ft_unsigned, ft_stable  , {u:FS_ver}      , {v:NULL}           , {v:NULL}, } ,
+    {"memory"    ,      32704,  NULL,    ft_binary  , fc_stable  , {b:FS_r_mem}    , {b:FS_w_mem},        {v:NULL}, } ,
+    {"pages"     ,          0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
+    {"pages/page",         64,  &A1977,  ft_binary  , fc_stable  , {b:FS_r_page}   , {b:FS_w_page},       {v:NULL}, } ,
+    {"set_password",        0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
+    {"set_password/read",   8,  NULL,    ft_binary  , fc_stable  , {v:NULL}        , {b:FS_set}         , {i: 0}, } ,
+    {"set_password/full",   8,  NULL,    ft_binary  , fc_stable  , {v:NULL}        , {b:FS_set}         , {i: 8}, } ,
+    {"set_password/enabled",1,  NULL,    ft_yesno   , fc_stable  , {y:FS_r_pwd}    , {y:FS_w_pwd}       , {v:NULL}, } ,
+    {"set_number",          0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
+    {"set_number/read",    47,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_nset}        , {i: 0}, } ,
+    {"set_number/full",    47,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_nset}        , {i: 8}, } ,
+    {"version"   ,         12,  NULL,    ft_unsigned, fc_stable  , {u:FS_ver}      , {v:NULL}           , {v:NULL}, } ,
 #if OW_CACHE
-    {"use_password",        0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
-    {"use_password/read",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , {i: 0}, } ,
-    {"use_password/full",   8,  NULL,    ft_binary  , ft_stable  , {v:NULL}        , {b:FS_use}         , {i: 8}, } ,
-    {"use_number",          0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
-    {"use_number/read",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , {i: 0}, } ,
-    {"use_number/full",    47,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_nuse}        , {i: 8}, } ,
+    {"use_password",        0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
+    {"use_password/read",   8,  NULL,    ft_binary  , fc_stable  , {v:NULL}        , {b:FS_use}         , {i: 0}, } ,
+    {"use_password/full",   8,  NULL,    ft_binary  , fc_stable  , {v:NULL}        , {b:FS_use}         , {i: 8}, } ,
+    {"use_number",          0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}           , {v:NULL}, } ,
+    {"use_number/read",    47,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_nuse}        , {i: 0}, } ,
+    {"use_number/full",    47,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_nuse}        , {i: 8}, } ,
 #endif /*OW_CACHE*/
 } ;
 DeviceEntryExtended( 37, DS1977, DEV_resume | DEV_ovdr ) ; 
 
 /* Persistent storage */
-static struct internal_prop ip_rea = { "REA", ft_persistent } ;
-static struct internal_prop ip_ful = { "FUL", ft_persistent } ;
+static struct internal_prop ip_rea = { "REA", fc_persistent } ;
+static struct internal_prop ip_ful = { "FUL", fc_persistent } ;
 
 /* ------- Functions ------------ */
 

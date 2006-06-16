@@ -69,24 +69,24 @@ static int Add_Stat( struct cache * scache, const int result ) ;
 static int Get_Stat( struct cache * scache, const int result ) ;
 static int Del_Stat( struct cache * scache, const int result ) ;
 static int tree_compare( const void * a , const void * b ) ;
-static time_t TimeOut( const enum ft_change change ) ;
+static time_t TimeOut( const enum fc_change change ) ;
 
 static int tree_compare( const void * a , const void * b ) {
     return memcmp( &((const struct tree_node *)a)->tk , &((const struct tree_node *)b)->tk , sizeof(struct tree_key) ) ;
 }
 
-static time_t TimeOut( const enum ft_change change ) {
+static time_t TimeOut( const enum fc_change change ) {
     switch( change ) {
-    case ft_second:
-    case ft_persistent : /* arbitrary non-zero */
+    case fc_second:
+    case fc_persistent : /* arbitrary non-zero */
         return 1 ;
-    case ft_volatile:
-    case ft_Avolatile:
+    case fc_volatile:
+    case fc_Avolatile:
         return timeout.vol ;
-    case ft_stable:
-    case ft_Astable:
+    case fc_stable:
+    case fc_Astable:
         return timeout.stable;
-    case ft_directory:
+    case fc_directory:
         return timeout.dir ;
     default: /* static or statistic */
         return 0 ;
@@ -137,7 +137,7 @@ void Cache_Open( void ) {
     cache.new_db = NULL ;
     cache.old_db = NULL ;
     cache.store  = NULL ;
-    cache.lifespan = TimeOut( ft_stable ) ;
+    cache.lifespan = TimeOut( fc_stable ) ;
     if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
     cache.retired = time(NULL) ;
     cache.killed = cache.retired+cache.lifespan ;
@@ -172,7 +172,7 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
                 tn->dsize = datasize ;
                 memcpy( TREE_DATA(tn) , data , datasize ) ;
                 switch (pn->ft->change) {
-                case ft_persistent:
+                case fc_persistent:
                     return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
                 default:
                     return Add_Stat(&cache_ext, Cache_Add_Common( tn )) ;
@@ -187,7 +187,7 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
 /* Add a directory entry to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn ) {
-    time_t duration = TimeOut( ft_directory ) ;
+    time_t duration = TimeOut( fc_directory ) ;
     size_t size = devices * 8 ;
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + size ) ;
@@ -208,7 +208,7 @@ int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parse
 /* Add a device entry to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add_Device( const int bus_nr, const struct parsedname * pn ) {
-    time_t duration = TimeOut( ft_directory ) ;
+    time_t duration = TimeOut( fc_directory ) ;
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + sizeof(int) ) ;
         if ( tn ) {
@@ -242,7 +242,7 @@ int Cache_Add_Internal( const void * data, const size_t datasize, const struct i
                 //printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
                 //printf("  ADD INTERNAL data[0]=%d size=%d \n",((BYTE *)data)[0],datasize);
                 switch (ip->change) {
-                case ft_persistent:
+                case fc_persistent:
                     return Add_Stat(&cache_sto, Cache_Add_Store( tn )) ;
                 default:
                     return Add_Stat(&cache_int, Cache_Add_Common( tn )) ;
@@ -389,7 +389,7 @@ int Cache_Get( void * data, size_t * dsize, const struct parsedname * pn ) {
             tn.tk.p.ft = pn->ft ;
             tn.tk.extension = pn->extension ;
             switch(pn->ft->change) {
-            case ft_persistent:
+            case fc_persistent:
                 return Get_Stat(&cache_sto, Cache_Get_Store(data,dsize,duration,&tn)) ;
             default:
                 return Get_Stat(&cache_ext, Cache_Get_Common(data,dsize,duration,&tn)) ;
@@ -401,7 +401,7 @@ int Cache_Get( void * data, size_t * dsize, const struct parsedname * pn ) {
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Dir( BYTE ** snlist, size_t * devices, const struct parsedname * pn ) {
-    time_t duration = TimeOut( ft_directory ) ;
+    time_t duration = TimeOut( fc_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         //printf("GetDir tn=%p\n",tn) ;
@@ -452,7 +452,7 @@ static int Cache_Get_Common_Dir( BYTE ** snlist, size_t * devices, time_t durati
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) {
-    time_t duration = TimeOut( ft_directory ) ;
+    time_t duration = TimeOut( fc_directory ) ;
     if ( duration > 0 ) {
         size_t size = sizeof(int) ;
         struct tree_node tn  ;
@@ -474,7 +474,7 @@ int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop 
             tn.tk.p.nm = ip->name ;
             tn.tk.extension = -2 ;
             switch(ip->change) {
-            case ft_persistent:
+            case fc_persistent:
                 return Get_Stat(&cache_sto, Cache_Get_Store(data,dsize,duration,&tn)) ;
             default:
                 return Get_Stat(&cache_int, Cache_Get_Common(data,dsize,duration,&tn)) ;
@@ -563,7 +563,7 @@ int Cache_Del( const struct parsedname * pn ) {
             tn.tk.p.ft = pn->ft ;
             tn.tk.extension = pn->extension ;
             switch(pn->ft->change) {
-            case ft_persistent:
+            case fc_persistent:
                 return Del_Stat(&cache_sto, Cache_Del_Store(&tn)) ;
             default:
                 return Del_Stat(&cache_ext, Cache_Del_Common(&tn)) ;
@@ -574,7 +574,7 @@ int Cache_Del( const struct parsedname * pn ) {
 }
 
 int Cache_Del_Dir( const struct parsedname * pn ) {
-    time_t duration = TimeOut( ft_directory ) ;
+    time_t duration = TimeOut( fc_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         FS_LoadPath( tn.tk.sn, pn ) ;
@@ -586,7 +586,7 @@ int Cache_Del_Dir( const struct parsedname * pn ) {
 }
 
 int Cache_Del_Device( const struct parsedname * pn ) {
-    time_t duration = TimeOut( ft_directory ) ;
+    time_t duration = TimeOut( fc_directory ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;
@@ -606,7 +606,7 @@ int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname
             tn.tk.p.nm = ip->name ;
             tn.tk.extension = 0 ;
             switch(ip->change) {
-            case ft_persistent:
+            case fc_persistent:
                 return Del_Stat(&cache_sto, Cache_Del_Store(&tn)) ;
             default:
                 return Del_Stat(&cache_int, Cache_Del_Common(&tn)) ;

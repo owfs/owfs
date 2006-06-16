@@ -90,28 +90,28 @@ uWRITE_FUNCTION( FS_w_s_alarm ) ;
 struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, } ;
 struct filetype DS2408[] = {
     F_STANDARD   ,
-    {"power"     ,     1,  NULL,    ft_yesno   , ft_volatile, {y:FS_power}    , {v:NULL},        {v:NULL}, } ,
-    {"PIO"       ,     1,  &A2408,  ft_bitfield, ft_stable  , {u:FS_r_pio}    , {u:FS_w_pio},    {v:NULL}, } ,
-    {"sensed"    ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_sense}    , {v:NULL},        {v:NULL}, } ,
-    {"latch"     ,     1,  &A2408,  ft_bitfield, ft_volatile, {u:FS_r_latch}  , {u:FS_w_latch},  {v:NULL}, } ,
-    {"strobe"    ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, {v:NULL}, } ,
-    {"set_alarm" ,     9,  NULL,    ft_unsigned, ft_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
-    {"por"       ,     1,  NULL,    ft_yesno   , ft_stable  , {y:FS_r_por}    , {y:FS_w_por},    {v:NULL}, } ,
-    {"LCD_M"     ,     0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}    ,    {v:NULL}, } ,
-    {"LCD_M/clear",    1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Mclear},   {v:NULL}, } ,
-    {"LCD_M/home",     1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Mhome},    {v:NULL}, } ,
-    {"LCD_M/screen", 128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Mscreen},  {v:NULL}, } ,
-    {"LCD_M/message",128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Mmessage}, {v:NULL}, } ,
-    {"LCD_H"     ,     0,  NULL,    ft_subdir  , ft_stable  , {v:NULL}        , {v:NULL}    ,    {v:NULL}, } ,
-    {"LCD_H/clear",    1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Hclear},   {v:NULL}, } ,
-    {"LCD_H/home",     1,  NULL,    ft_yesno   , ft_stable  , {v:NULL}        , {y:FS_Hhome},    {v:NULL}, } ,
-    {"LCD_H/screen", 128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Hscreen},  {v:NULL}, } ,
-    {"LCD_H/message",128,  NULL,    ft_ascii   , ft_stable  , {v:NULL}        , {a:FS_Hmessage}, {v:NULL}, } ,
+    {"power"     ,     1,  NULL,    ft_yesno   , fc_volatile, {y:FS_power}    , {v:NULL},        {v:NULL}, } ,
+    {"PIO"       ,     1,  &A2408,  ft_bitfield, fc_stable  , {u:FS_r_pio}    , {u:FS_w_pio},    {v:NULL}, } ,
+    {"sensed"    ,     1,  &A2408,  ft_bitfield, fc_volatile, {u:FS_sense}    , {v:NULL},        {v:NULL}, } ,
+    {"latch"     ,     1,  &A2408,  ft_bitfield, fc_volatile, {u:FS_r_latch}  , {u:FS_w_latch},  {v:NULL}, } ,
+    {"strobe"    ,     1,  NULL,    ft_yesno   , fc_stable  , {y:FS_r_strobe} , {y:FS_w_strobe}, {v:NULL}, } ,
+    {"set_alarm" ,     9,  NULL,    ft_unsigned, fc_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
+    {"por"       ,     1,  NULL,    ft_yesno   , fc_stable  , {y:FS_r_por}    , {y:FS_w_por},    {v:NULL}, } ,
+    {"LCD_M"     ,     0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}    ,    {v:NULL}, } ,
+    {"LCD_M/clear",    1,  NULL,    ft_yesno   , fc_stable  , {v:NULL}        , {y:FS_Mclear},   {v:NULL}, } ,
+    {"LCD_M/home",     1,  NULL,    ft_yesno   , fc_stable  , {v:NULL}        , {y:FS_Mhome},    {v:NULL}, } ,
+    {"LCD_M/screen", 128,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_Mscreen},  {v:NULL}, } ,
+    {"LCD_M/message",128,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_Mmessage}, {v:NULL}, } ,
+    {"LCD_H"     ,     0,  NULL,    ft_subdir  , fc_stable  , {v:NULL}        , {v:NULL}    ,    {v:NULL}, } ,
+    {"LCD_H/clear",    1,  NULL,    ft_yesno   , fc_stable  , {v:NULL}        , {y:FS_Hclear},   {v:NULL}, } ,
+    {"LCD_H/home",     1,  NULL,    ft_yesno   , fc_stable  , {v:NULL}        , {y:FS_Hhome},    {v:NULL}, } ,
+    {"LCD_H/screen", 128,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_Hscreen},  {v:NULL}, } ,
+    {"LCD_H/message",128,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {a:FS_Hmessage}, {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 
 /* Internal properties */
-static struct internal_prop ip_init = {"INI",ft_stable} ;
+static struct internal_prop ip_init = {"INI",fc_stable} ;
 
 /* ------- Functions ------------ */
 

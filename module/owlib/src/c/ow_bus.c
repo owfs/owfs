@@ -232,8 +232,7 @@ int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) {
     } // loop until through serial number bits
 
     if ( CRC8(ds->sn,8) || (bit_number<64) || (ds->sn[0] == 0)) {
-      /* A minor "error" and should perhaps only return -1 to avoid
-      * reconnect */
+      /* A minor "error" */
         return -EIO ;
     }
     if((ds->sn[0] & 0x7F) == 0x04) {

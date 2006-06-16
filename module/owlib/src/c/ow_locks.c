@@ -95,10 +95,10 @@ int LockGet( const struct parsedname * pn ) {
         break ;
     }
     switch( pn->ft->change ) {
-    case ft_static:
-    case ft_Astable:
-    case ft_Avolatile:
-    case ft_statistic:
+    case fc_static:
+    case fc_Astable:
+    case fc_Avolatile:
+    case fc_statistic:
         return 0 ;
     default:
         break ;

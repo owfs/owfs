@@ -68,25 +68,25 @@ static int FS_nullstring( char * buf ) ;
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
 struct aggregate Asystem = { 1, ag_numbers, ag_separate, } ;
 struct filetype sys_adapter[] = {
-    {"name"       ,      128, &Asystem, ft_vascii,  ft_static, {a:FS_name}   , {v:NULL}, {v: NULL }, } , // variable length
-    {"address"    ,      512, &Asystem, ft_vascii,  ft_static, {a:FS_port}   , {v:NULL}, {v: NULL }, } , // variable length
-    {"ds2404_compliance",  1, &Asystem, ft_unsigned,ft_static, {u:FS_r_ds2404_compliance}   , {u:FS_w_ds2404_compliance}, {v: NULL }, } ,
-    {"overdrive"  ,        1, &Asystem, ft_unsigned,ft_static, {u:FS_r_overdrive},{u:FS_w_overdrive}, {v: NULL }, } ,
-    {"version"    ,       12, &Asystem, ft_unsigned,ft_static, {u:FS_version}, {v:NULL}, {v: NULL }, } ,
+    {"name"       ,      128, &Asystem, ft_vascii,  fc_static, {a:FS_name}   , {v:NULL}, {v: NULL }, } , // variable length
+    {"address"    ,      512, &Asystem, ft_vascii,  fc_static, {a:FS_port}   , {v:NULL}, {v: NULL }, } , // variable length
+    {"ds2404_compliance",  1, &Asystem, ft_unsigned,fc_static, {u:FS_r_ds2404_compliance}   , {u:FS_w_ds2404_compliance}, {v: NULL }, } ,
+    {"overdrive"  ,        1, &Asystem, ft_unsigned,fc_static, {u:FS_r_overdrive},{u:FS_w_overdrive}, {v: NULL }, } ,
+    {"version"    ,       12, &Asystem, ft_unsigned,fc_static, {u:FS_version}, {v:NULL}, {v: NULL }, } ,
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
 struct filetype sys_process[] = {
-  //    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   ft_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
-    {"pidfile"    ,      128, NULL    , ft_vascii,   ft_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } , // variable length
-    {"pid"        ,       12, NULL    , ft_unsigned,ft_static, {u:FS_pid}    , {v:NULL}, {v: NULL }, } ,
+  //    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   fc_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
+    {"pidfile"    ,      128, NULL    , ft_vascii,   fc_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } , // variable length
+    {"pid"        ,       12, NULL    , ft_unsigned,fc_static, {u:FS_pid}    , {v:NULL}, {v: NULL }, } ,
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_connections[] = {
-    {"indevices"  ,       12, NULL    , ft_unsigned,ft_static, {u:FS_in}    , {v:NULL}, {v: NULL } , } ,
-    {"outdevices" ,       12, NULL    , ft_unsigned,ft_static, {u:FS_out}   , {v:NULL}, {v: NULL } , } ,
+    {"indevices"  ,       12, NULL    , ft_unsigned,fc_static, {u:FS_in}    , {v:NULL}, {v: NULL } , } ,
+    {"outdevices" ,       12, NULL    , ft_unsigned,fc_static, {u:FS_out}   , {v:NULL}, {v: NULL } , } ,
 } ;
 struct device d_sys_connections = { "connections", "connections", pn_system, NFT(sys_connections), sys_connections } ;
 

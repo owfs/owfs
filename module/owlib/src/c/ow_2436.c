@@ -56,10 +56,10 @@ bWRITE_FUNCTION( FS_w_page ) ;
 struct aggregate A2436 = { 3, ag_numbers, ag_separate,} ;
 struct filetype DS2436[] = {
     F_STANDARD   ,
-    {"pages"     ,     0,  NULL,   ft_subdir     , ft_volatile, {v:NULL}       , {v:NULL}       , {v:NULL}, } ,
-    {"pages/page",    32,  &A2436, ft_binary     , ft_stable  , {b:FS_r_page}   , {b:FS_w_page}, {v:NULL}, } ,
-    {"volts"     ,    12,  NULL  , ft_float      , ft_volatile, {f:FS_volts}    , {v:NULL},      {v:NULL}, } ,
-    {"temperature",    12,  NULL , ft_temperature, ft_volatile, {f:FS_temp}     , {v:NULL},      {v:NULL}, } ,
+    {"pages"     ,     0,  NULL,   ft_subdir     , fc_volatile, {v:NULL}       , {v:NULL}       , {v:NULL}, } ,
+    {"pages/page",    32,  &A2436, ft_binary     , fc_stable  , {b:FS_r_page}   , {b:FS_w_page}, {v:NULL}, } ,
+    {"volts"     ,    12,  NULL  , ft_float      , fc_volatile, {f:FS_volts}    , {v:NULL},      {v:NULL}, } ,
+    {"temperature",    12,  NULL , ft_temperature, fc_volatile, {f:FS_temp}     , {v:NULL},      {v:NULL}, } ,
 } ;
 DeviceEntry( 1B, DS2436 ) ;
 

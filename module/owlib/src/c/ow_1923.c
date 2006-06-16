@@ -103,41 +103,41 @@ struct aggregate A1923h = { 63, ag_numbers, ag_mixed, } ;
 struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, } ;
 struct filetype DS1923[] = {
     F_STANDARD          ,
-    {"pages"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"pages/page"           , 32,&A1923p,  ft_binary,   ft_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
+    {"pages"                ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"pages/page"           , 32,&A1923p,  ft_binary,   fc_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
 
 
-    {"temperature"      ,  12, NULL , ft_temperature   , ft_volatile, {f:FS_r_temperature}     , {v:NULL}        , NULL      , } ,
-    {"humidity"         ,  12, NULL , ft_float   , ft_volatile, {f:FS_r_humid}    , {v:NULL}        , NULL      , } ,
+    {"temperature"      ,  12, NULL , ft_temperature   , fc_volatile, {f:FS_r_temperature}     , {v:NULL}        , NULL      , } ,
+    {"humidity"         ,  12, NULL , ft_float   , fc_volatile, {f:FS_r_humid}    , {v:NULL}        , NULL      , } ,
 
-    {"clock"                ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"clock/date"           , 24,   NULL,    ft_date,   ft_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
-    {"clock/udate"          , 12,   NULL,ft_unsigned,   ft_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
-    {"clock/running"        ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , {v:&BitReads[2]}, } ,
+    {"clock"                ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"clock/date"           , 24,   NULL,    ft_date,   fc_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
+    {"clock/udate"          , 12,   NULL,ft_unsigned,   fc_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
+    {"clock/running"        ,  1,   NULL,   ft_yesno,   fc_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , {v:&BitReads[2]}, } ,
 
 #if 0
     /* Just test functions */
-    {"running"        ,  1,   NULL,    ft_yesno,  ft_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
-    {"memory"               ,512,   NULL,  ft_binary,   ft_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
-    {"clearmem"             ,1,   NULL,  ft_binary,   ft_stable, {b:FS_clearmem}        , {v:NULL}  , NULL, } ,
-    {"enableosc"             ,1,   NULL,  ft_binary,   ft_stable, {b:FS_enable_osc}        , {v:NULL}  , NULL, } ,
+    {"running"        ,  1,   NULL,    ft_yesno,  fc_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
+    {"memory"               ,512,   NULL,  ft_binary,   fc_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
+    {"clearmem"             ,1,   NULL,  ft_binary,   fc_stable, {b:FS_clearmem}        , {v:NULL}  , NULL, } ,
+    {"enableosc"             ,1,   NULL,  ft_binary,   fc_stable, {b:FS_enable_osc}        , {v:NULL}  , NULL, } ,
     
 #endif
 
-    {"mission"              ,  0,   NULL,  ft_subdir, ft_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"mission/running"      ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , {v:&BitReads[0]}, } ,
-    {"mission/rollover"     ,  1,   NULL,   ft_yesno,   ft_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , {v:&BitReads[1]}, } ,
-    {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
-    {"mission/samplingtemp"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[3]}, } ,
-    {"mission/samplinghumidity"     ,  1,   NULL,   ft_yesno, ft_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[4]}, } ,
+    {"mission"              ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"mission/running"      ,  1,   NULL,   ft_yesno, fc_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , {v:&BitReads[0]}, } ,
+    {"mission/rollover"     ,  1,   NULL,   ft_yesno,   fc_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , {v:&BitReads[1]}, } ,
+    {"mission/delay"        , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
+    {"mission/samplingtemp"     ,  1,   NULL,   ft_yesno, fc_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[3]}, } ,
+    {"mission/samplinghumidity"     ,  1,   NULL,   ft_yesno, fc_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[4]}, } ,
 
 
 #if 0
-    {"mission/frequency"    ,  1,   NULL,   ft_yesno, ft_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
-    {"mission/samples"      , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_3byte}      , {v:NULL}           , {s:0x021A}, } ,
-    {"mission/delay"        , 12,   NULL,ft_unsigned, ft_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
-    {"mission/date"         , 24,   NULL,    ft_date, ft_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
-    {"mission/easystart"    , 12,   NULL,ft_unsigned,   ft_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
+    {"mission/frequency"    ,  1,   NULL,   ft_yesno, fc_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
+    {"mission/samples"      , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_3byte}      , {v:NULL}           , {s:0x021A}, } ,
+    {"mission/delay"        , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
+    {"mission/date"         , 24,   NULL,    ft_date, fc_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
+    {"mission/easystart"    , 12,   NULL,ft_unsigned,   fc_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
 #endif
 
 } ;

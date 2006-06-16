@@ -63,8 +63,8 @@ yWRITE_FUNCTION( FS_w_convert ) ;
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-    {"temperature"     ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_temp} , } ,
-    {"voltage"         ,  1, NULL  , ft_yesno, ft_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_volt} , } ,
+    {"temperature"     ,  1, NULL  , ft_yesno, fc_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_temp} , } ,
+    {"voltage"         ,  1, NULL  , ft_yesno, fc_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_volt} , } ,
 } ;
 DeviceEntry( simultaneous, simultaneous ) ;
 
@@ -75,8 +75,8 @@ static int OW_getcache( enum simul_type type, const UINT msec, const struct pars
 static int OW_killcache( enum simul_type type, const struct parsedname * pn ) ;
 
 struct internal_prop ipSimul[] = {
-    {"temperature",ft_volatile},
-    {"voltage",ft_volatile},
+    {"temperature",fc_volatile},
+    {"voltage",fc_volatile},
 };
 
 /* returns 0 if valid conversion exists */

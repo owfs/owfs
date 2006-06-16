@@ -73,23 +73,23 @@ struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, } ;
 struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, } ;
 struct filetype LCD[] = {
     F_STANDARD   ,
-    {"LCDon"     ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_on}       , {v:NULL}, } ,
-    {"backlight" ,     1,  NULL,      ft_yesno, ft_stable  , {v:NULL}         , {y:FS_w_backlight}, {v:NULL}, } ,
-    {"version"   ,    16,  NULL,      ft_ascii, ft_stable  , {a:FS_r_version} , {v:NULL}          , {v:NULL}, } ,
-    {"gpio"      ,     1,  &ALCD,     ft_yesno, ft_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , {v:NULL}, } ,
-    {"register"  ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_register}, {u:FS_w_register} , {v:NULL}, } ,
-    {"data"      ,    12,  NULL,   ft_unsigned, ft_volatile, {u:FS_r_data}    , {u:FS_w_data}     , {v:NULL}, } ,
-    {"counters"  ,    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_counters}, {v:NULL}          , {v:NULL}, } ,
+    {"LCDon"     ,     1,  NULL,      ft_yesno, fc_stable  , {v:NULL}         , {y:FS_w_on}       , {v:NULL}, } ,
+    {"backlight" ,     1,  NULL,      ft_yesno, fc_stable  , {v:NULL}         , {y:FS_w_backlight}, {v:NULL}, } ,
+    {"version"   ,    16,  NULL,      ft_ascii, fc_stable  , {a:FS_r_version} , {v:NULL}          , {v:NULL}, } ,
+    {"gpio"      ,     1,  &ALCD,     ft_yesno, fc_volatile, {y:FS_r_gpio}    , {y:FS_w_gpio}     , {v:NULL}, } ,
+    {"register"  ,    12,  NULL,   ft_unsigned, fc_volatile, {u:FS_r_register}, {u:FS_w_register} , {v:NULL}, } ,
+    {"data"      ,    12,  NULL,   ft_unsigned, fc_volatile, {u:FS_r_data}    , {u:FS_w_data}     , {v:NULL}, } ,
+    {"counters"  ,    12,  &ALCD , ft_unsigned, fc_volatile, {u:FS_r_counters}, {v:NULL}          , {v:NULL}, } ,
 #if OW_CACHE
-    {"cumulative",    12,  &ALCD , ft_unsigned, ft_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , {v:NULL}, } ,
+    {"cumulative",    12,  &ALCD , ft_unsigned, fc_volatile, {u:FS_r_cum}     , {u:FS_w_cum}      , {v:NULL}, } ,
 #endif /*OW_CACHE*/
-    {"memory"    ,   112,  NULL,     ft_binary, ft_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , {v:NULL} , } ,
-    {"screen16"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 16} , } ,
-    {"screen20"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 20} , } ,
-    {"screen40"  ,   128,  NULL,      ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 40} , } ,
-    {"line16"    ,    16,  &ALCD_L16, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 16} , } ,
-    {"line20"    ,    20,  &ALCD_L20, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 20} , } ,
-    {"line40"    ,    40,  &ALCD_L40, ft_ascii, ft_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 40} , } ,
+    {"memory"    ,   112,  NULL,     ft_binary, fc_stable  , {b:FS_r_memory}  , {b:FS_w_memory}   , {v:NULL} , } ,
+    {"screen16"  ,   128,  NULL,      ft_ascii, fc_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 16} , } ,
+    {"screen20"  ,   128,  NULL,      ft_ascii, fc_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 20} , } ,
+    {"screen40"  ,   128,  NULL,      ft_ascii, fc_stable  , {v:NULL}         , {a:FS_w_screenX}  , {i: 40} , } ,
+    {"line16"    ,    16,  &ALCD_L16, ft_ascii, fc_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 16} , } ,
+    {"line20"    ,    20,  &ALCD_L20, ft_ascii, fc_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 20} , } ,
+    {"line40"    ,    40,  &ALCD_L40, ft_ascii, fc_stable  , {v:NULL}         , {a:FS_w_lineX}    , {i: 40} , } ,
 } ;
 DeviceEntryExtended( FF, LCD , DEV_alarm ) ;
 
@@ -114,7 +114,7 @@ static int OW_clear( const struct parsedname* pn ) ;
 static int OW_w_screen( const BYTE loc , const char * text , const int size, const struct parsedname* pn ) ;
 
 /* Internal files */
-static struct internal_prop ip_cum = { "CUM", ft_persistent } ;
+static struct internal_prop ip_cum = { "CUM", fc_persistent } ;
 
 /* LCD */
 static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {

@@ -60,17 +60,17 @@ bWRITE_FUNCTION( FS_w_change_password ) ;
 struct aggregate A1991 = { 3, ag_numbers, ag_separate, } ;
 struct filetype DS1991[] = {
     F_STANDARD ,
-    {"settings" ,       0,  NULL,   ft_subdir, ft_volatile, {v:NULL}, {v:NULL}, {v:NULL}, } ,
-    {"settings/reset_password",  8, &A1991, ft_binary, ft_stable ,  {v:NULL} , {b:FS_w_reset_password}, {v:NULL}, } ,
-    {"settings/change_password", 8, &A1991, ft_binary, ft_stable ,  {v:NULL} , {b:FS_w_change_password}, {v:NULL}, } ,
-    {"settings/password", 8, &A1991,ft_binary, ft_stable ,          {v:NULL} , {b:FS_w_password}, {v:NULL}, } ,
-    {"settings/ident",  8,  &A1991, ft_binary, ft_volatile ,  {b:FS_r_ident} , {b:FS_w_ident}, {v:NULL}, } ,
-    {"settings/page",  48,  &A1991, ft_binary, ft_volatile ,   {b:FS_r_page} , {b:FS_w_page}, {v:NULL}, } ,
-    {"pages" ,          0,  NULL,   ft_subdir, ft_volatile,         {v:NULL} , {v:NULL}, {v:NULL}, } ,
-    {"pages/page" ,    48,  &A1991, ft_binary, ft_volatile ,   {b:FS_r_page} , {b:FS_w_page}, {v:NULL}, } ,
-    {"pages/password" , 8,  &A1991, ft_binary, ft_stable ,          {v:NULL} , {b:FS_w_password}, {v:NULL}, } ,
-    {"pages/ident" ,    8,  &A1991, ft_binary, ft_volatile ,  {b:FS_r_ident} , {b:FS_w_ident}, {v:NULL}, } ,
-    {"memory" ,       144,  NULL,   ft_binary, ft_volatile , {b:FS_r_memory} , {b:FS_w_memory}, {v:NULL}, } ,
+    {"settings" ,       0,  NULL,   ft_subdir, fc_volatile, {v:NULL}, {v:NULL}, {v:NULL}, } ,
+    {"settings/reset_password",  8, &A1991, ft_binary, fc_stable ,  {v:NULL} , {b:FS_w_reset_password}, {v:NULL}, } ,
+    {"settings/change_password", 8, &A1991, ft_binary, fc_stable ,  {v:NULL} , {b:FS_w_change_password}, {v:NULL}, } ,
+    {"settings/password", 8, &A1991,ft_binary, fc_stable ,          {v:NULL} , {b:FS_w_password}, {v:NULL}, } ,
+    {"settings/ident",  8,  &A1991, ft_binary, fc_volatile ,  {b:FS_r_ident} , {b:FS_w_ident}, {v:NULL}, } ,
+    {"settings/page",  48,  &A1991, ft_binary, fc_volatile ,   {b:FS_r_page} , {b:FS_w_page}, {v:NULL}, } ,
+    {"pages" ,          0,  NULL,   ft_subdir, fc_volatile,         {v:NULL} , {v:NULL}, {v:NULL}, } ,
+    {"pages/page" ,    48,  &A1991, ft_binary, fc_volatile ,   {b:FS_r_page} , {b:FS_w_page}, {v:NULL}, } ,
+    {"pages/password" , 8,  &A1991, ft_binary, fc_stable ,          {v:NULL} , {b:FS_w_password}, {v:NULL}, } ,
+    {"pages/ident" ,    8,  &A1991, ft_binary, fc_volatile ,  {b:FS_r_ident} , {b:FS_w_ident}, {v:NULL}, } ,
+    {"memory" ,       144,  NULL,   ft_binary, fc_volatile , {b:FS_r_memory} , {b:FS_w_memory}, {v:NULL}, } ,
 } ;
 DeviceEntry( 02, DS1991 ) ;
 

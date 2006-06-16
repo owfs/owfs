@@ -236,7 +236,7 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
     if ( (pn->ft->read.v) == NULL ) return -ENOTSUP ;
 
     /* Special case for "fake" adapter */
-    if ( pn->in->Adapter==adapter_fake && pn->ft->change!=ft_static ) return FS_read_fake( buf, size, offset, pn ) ;
+    if ( pn->in->Adapter==adapter_fake && pn->ft->change!=fc_static ) return FS_read_fake( buf, size, offset, pn ) ;
 
     /* Array property? Read separately? Read together and manually separate? */
     if ( pn->ft->ag ) { /* array property */

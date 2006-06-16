@@ -90,7 +90,7 @@ void update_max_delay(const struct parsedname * pn) {
     return;
 }
 
-int FS_type(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_type(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t len = strlen(pn->dev->name) ;
 //printf("TYPE len=%d, size=%d\n",len,size);
     if ( offset ) return -EFAULT ;
@@ -99,14 +99,14 @@ int FS_type(char *buf, const size_t size, const off_t offset , const struct pars
     return len ;
 }
 
-int FS_code(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_code(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     if ( offset ) return -EFAULT ;
     if ( size < 2 ) return -EMSGSIZE ;
     num2string( buf , pn->sn[0] ) ;
     return 2 ;
 }
 
-int FS_ID(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_ID(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t i ;
     size_t siz = size>>1 ;
     size_t off = offset>>1 ;
@@ -114,7 +114,7 @@ int FS_ID(char *buf, const size_t size, const off_t offset , const struct parsed
     return size ;
 }
 
-int FS_r_ID(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_ID(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t i ;
     size_t siz = size>>1 ;
     size_t off = offset>>1 ;
@@ -122,12 +122,14 @@ int FS_r_ID(char *buf, const size_t size, const off_t offset , const struct pars
     return size ;
 }
 
-int FS_crc8(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_crc8(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
+    (void) size ;
+    (void) offset ;
     num2string(buf,pn->sn[7]) ;
     return 2 ;
 }
 
-int FS_address(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_address(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t i ;
     size_t siz = size>>1 ;
     size_t off = offset>>1 ;
@@ -135,7 +137,7 @@ int FS_address(char *buf, const size_t size, const off_t offset , const struct p
     return size ;
 }
 
-int FS_r_address(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+int FS_r_address(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t i ;
     size_t siz = size>>1 ;
     size_t off = offset>>1 ;
@@ -279,4 +281,36 @@ int FS_present(int * y , const struct parsedname * pn) {
         BUSUNLOCK(pn);
     }
     return 0 ;
+}
+
+int FS_locator(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
+    BYTE loc[10] =  { 0x00,0xFF, 0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF, } ; // key and 8 byte default
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    if(get_busmode(pn->in) != bus_fake) {
+        int ret ;
+        BUSLOCK(pn);
+            ret = BUS_normalverify(pn) || BUS_sendback_data( loc, loc, 10, pn ) ;
+        BUSUNLOCK(pn);
+        if ( ret ) return -ENOENT ;
+    }
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, loc[i+off+2] ) ;
+    return size ;
+}
+
+int FS_r_locator(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
+    BYTE loc[10] =  { 0x00,0xFF, 0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF, } ; // key and 8 byte default
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    if(get_busmode(pn->in) != bus_fake) {
+        int ret ;
+        BUSLOCK(pn);
+            ret = BUS_normalverify(pn) || BUS_sendback_data( loc, loc, 10, pn ) ;
+        BUSUNLOCK(pn);
+        if ( ret ) return -ENOENT ;
+    }
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, loc[9-i-off] ) ;
+    return size ;
 }

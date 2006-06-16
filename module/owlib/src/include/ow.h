@@ -301,7 +301,7 @@ enum ft_format {
     ft_tempgap,
 } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
-enum ft_change { ft_local, ft_static, ft_stable, ft_Astable, ft_volatile, ft_Avolatile, ft_second, ft_statistic, ft_persistent, } ;
+enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile, fc_Avolatile, fc_second, fc_statistic, fc_persistent, fc_directory, } ;
 
 /* Predeclare parsedname */
 struct parsedname ;
@@ -332,7 +332,7 @@ struct filetype {
     int suglen ; // length of field
     struct aggregate * ag ; // struct pointer for aggregate
     enum ft_format format ; // type of data
-    enum ft_change change ; // volatility
+    enum fc_change change ; // volatility
     union {
         void * v ;
         int (*i) (int *, const struct parsedname *);
@@ -371,7 +371,7 @@ struct filetype {
 /* in passing to store state information        */
 struct internal_prop {
     char * name ;
-    enum ft_change change ;
+    enum fc_change change ;
 } ;
 
 /* -------------------------------- */

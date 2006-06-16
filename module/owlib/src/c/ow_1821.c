@@ -55,10 +55,10 @@ fWRITE_FUNCTION( FS_w_templimit ) ;
 /* -------- Structures ---------- */
 struct filetype DS1821[] = {
     F_type,
-    {"temperature",   12,  NULL, ft_temperature, ft_volatile, {f:FS_temperature}, {v:NULL}          , {v:NULL},         } ,
-    {"polarity",       1,  NULL, ft_yesno      , ft_stable,   {y:FS_r_polarity} , {y:FS_w_polarity} , {v:NULL},         } ,
-    {"templow",       12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},   } ,
-    {"temphigh",      12,  NULL, ft_temperature, ft_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},   } ,
+    {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_temperature}, {v:NULL}          , {v:NULL},         } ,
+    {"polarity",       1,  NULL, ft_yesno      , fc_stable,   {y:FS_r_polarity} , {y:FS_w_polarity} , {v:NULL},         } ,
+    {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},   } ,
+    {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},   } ,
 }
  ;
 DeviceEntry( thermostat, DS1821 ) ;
@@ -74,7 +74,7 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
 static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) ;
 
 /* Internal properties */
-static struct internal_prop ip_continuous = {"CON",ft_stable} ;
+static struct internal_prop ip_continuous = {"CON",fc_stable} ;
 
 static int FS_temperature(FLOAT *T , const struct parsedname * pn) {
     if ( OW_temperature( T , pn ) ) return -EINVAL ;

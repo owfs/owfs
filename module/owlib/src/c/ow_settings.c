@@ -56,10 +56,10 @@ iWRITE_FUNCTION( FS_w_timeout ) ;
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-    {"enabled"         ,  1, NULL  , ft_yesno,    ft_local, {y:FS_r_enable},  {y:FS_w_enable},    {v: NULL}          , } ,
-    {"volatile"        , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.vol}   , } ,
-    {"stable"          , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.stable}, } ,
-    {"directory"       , 15, NULL  , ft_unsigned, ft_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.dir}   , } ,
+    {"enabled"         ,  1, NULL  , ft_yesno,    fc_local, {y:FS_r_enable},  {y:FS_w_enable},    {v: NULL}          , } ,
+    {"volatile"        , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.vol}   , } ,
+    {"stable"          , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.stable}, } ,
+    {"directory"       , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.dir}   , } ,
 }
  ;
 struct device d_set_cache = { "cache", "cache", pn_settings, NFT(set_cache), set_cache } ;
