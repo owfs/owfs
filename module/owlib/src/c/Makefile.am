@@ -100,13 +100,14 @@ AM_CFLAGS = -I../include \
          -Wpointer-arith \
          -Wcast-qual \
          -Wcast-align \
-         -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
          -D__EXTENSIONS__ \
          ${PROFILING_FLAG}
 
+#         -Wconversion \
+#
 #LDADD = ${PROFILING_FLAG} ${PTHREAD_LIBS}
 
 clean-generic:

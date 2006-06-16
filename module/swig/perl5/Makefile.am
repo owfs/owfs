@@ -14,11 +14,13 @@ AM_CFLAGS = -I../include \
          -Wpointer-arith \
          -Wcast-qual \
          -Wcast-align \
-         -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
          -DSKIP_SEARCH_H \
          -D_FILE_OFFSET_BITS=64
+
+#         -Wconversion \
+#
 
 LDADD = -low ${PTHREAD_LIBS}
 

@@ -22,8 +22,10 @@
 
 #ifdef HAVE_NEW_SS_FAMILY
 #define SSFAM(_x_)  (((struct sockaddr_storage *)(_x_))->ss_family)
+#define cSSFAM(_x_)  (((const struct sockaddr_storage *)(_x_))->ss_family)
 #else
 #define SSFAM(_x_)  (((struct sockaddr_storage *)(_x_))->__ss_family)
+#define cSSFAM(_x_)  (((const struct sockaddr_storage *)(_x_))->__ss_family)
 #endif
 
 #define SIN4ADDR(_x_)   (((struct sockaddr_in *)(_x_))->sin_addr)

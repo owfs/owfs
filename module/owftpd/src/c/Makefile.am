@@ -27,12 +27,14 @@ AM_CFLAGS = -I../include \
          -Wpointer-arith \
          -Wcast-qual \
          -Wcast-align \
-         -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
          ${SS_FLAG} \
          -D_FILE_OFFSET_BITS=64
+
+#         -Wconversion \
+#
 
 LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 

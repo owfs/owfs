@@ -80,7 +80,7 @@ ssize_t OW_put( const char * path, const char * buffer, size_t buffer_length ) ;
     offset is from start of value
     only ascii and binary data appropriate
 */
-ssize_t OW_lread( const char * path, unsigned char * buf, const size_t size, const off_t offset ) ;
+ssize_t OW_lread( const char * path, char * buf, const size_t size, const off_t offset ) ;
 
 /*  OW_lwrite -- write data with offset
   path is OWFS style name,
@@ -92,7 +92,7 @@ ssize_t OW_lread( const char * path, unsigned char * buf, const size_t size, con
     offset is from start of value
     only ascii and binary data appropriate
 */
-ssize_t OW_lwrite( const char * path, const unsigned char * buf, const size_t size, const off_t offset ) ;
+ssize_t OW_lwrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
 
 /* cleanup
   Clears internal buffer, frees file descriptors

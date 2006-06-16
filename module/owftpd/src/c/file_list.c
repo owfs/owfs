@@ -26,7 +26,7 @@ static void fdprintf(int fd, const char *fmt, ...);
 static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) ;
 void FileLexParse( struct file_parse_s * fps ) ;
 static void WildLexParse( struct file_parse_s * fps, ASCII * match ) ;
-static const char * skip_ls_options(const char *filespec) ;
+static char * skip_ls_options(char *filespec) ;
 
 static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) {
     struct stat stbuf ;
@@ -258,7 +258,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *timeptr) {
 /* write with care for max length and incomplete outout */
 static void fdprintf(int fd, const char *fmt, ...) {
     char buf[PATH_MAX+1];
-    int buflen;
+    ssize_t buflen;
     va_list ap;
     int amt_written;
     int write_ret;
@@ -272,7 +272,7 @@ static void fdprintf(int fd, const char *fmt, ...) {
     if (buflen <= 0) {
         return;
     }
-    if (buflen >= sizeof(buf)) {
+    if ((size_t)buflen >= sizeof(buf)) {
         buflen = sizeof(buf)-1;
     }
 
@@ -290,7 +290,7 @@ static void fdprintf(int fd, const char *fmt, ...) {
   hack workaround clients like Midnight Commander that send:
       LIST -al /dirname 
 */
-static const char * skip_ls_options(const char *filespec) {
+static char * skip_ls_options(char *filespec) {
     daemon_assert(filespec != NULL);
 
     for (;;) {

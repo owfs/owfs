@@ -278,27 +278,28 @@ static void *connection_acceptor(void * v) {
 
 /* convert an address to a printable string */
 /* NOT THREADSAFE - wrap with a mutex before calling! */
-static char *addr2string(const sockaddr_storage_t *s)
-{
-    static char addr[IP_ADDRSTRLEN+1];
-    int error;
+static char *addr2string(const sockaddr_storage_t *s) {
     char *ret_val;
 
     daemon_assert(s != NULL);
 
 #ifdef INET6
-    error = getnameinfo((struct sockaddr *)s, 
-                         sizeof(sockaddr_storage_t),
-                         addr, 
-                         sizeof(addr), 
-                         NULL,
-                         0, 
-                         NI_NUMERICHOST);
-    if (error != 0) {
-        LEVEL_CONNECT("getnameinfo error; %s\n", gai_strerror(error));
-        ret_val = "Unknown IP";
-    } else {
-        ret_val = addr;
+    {
+        static char addr[IP_ADDRSTRLEN+1];
+        int error;
+        error = getnameinfo((struct sockaddr *)s,
+                            sizeof(sockaddr_storage_t),
+                            addr,
+                            sizeof(addr),
+                            NULL,
+                            0,
+                            NI_NUMERICHOST);
+        if (error != 0) {
+            LEVEL_CONNECT("getnameinfo error; %s\n", gai_strerror(error));
+            ret_val = "Unknown IP";
+        } else {
+            ret_val = addr;
+        }
     }
 #else
     ret_val = inet_ntoa(s->sin_addr);
@@ -308,8 +309,7 @@ static char *addr2string(const sockaddr_storage_t *s)
 }
 
 
-static void *connection_handler(void * v)
-{
+static void *connection_handler(void * v) {
     struct connection_info_s *info = (struct connection_info_s *) v ;
     struct ftp_listener_s *f;
     int num_connections;

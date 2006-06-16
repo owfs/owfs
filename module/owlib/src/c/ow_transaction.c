@@ -15,6 +15,9 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+// static int BUS_transaction_length( const struct transaction_log * tl, const struct parsedname * pn ) ;
+
+
 /* Bus transaction */
 /* Encapsulates communication with a device, including locking the bus, reset and selection */
 /* Then a series of bytes is sent and returned, including sending data and reading the return data */
@@ -63,13 +66,14 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
 
     return ret ;
 }
-
+#if 0   /* not yet needed */
 /* Bus transaction */
 /* length of send/receive buffer
    return length (>=0) */
 static int BUS_transaction_length( const struct transaction_log * tl, const struct parsedname * pn ) {
     const struct transaction_log * t = tl ;
     size_t size = 0 ;
+    (void) pn ;
     
     while (1) {
         switch (t->type) {
@@ -92,4 +96,4 @@ static int BUS_transaction_length( const struct transaction_log * tl, const stru
         ++ t ;
     }
 }
-
+#endif /* 0 */

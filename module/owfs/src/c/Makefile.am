@@ -18,10 +18,12 @@ AM_CFLAGS = -I../include \
          -Wpointer-arith \
          -Wcast-qual \
          -Wcast-align \
-         -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG}
+
+#         -Wconversion \
+#
 
 LDADD = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 

@@ -19,12 +19,14 @@ AM_CFLAGS = -I../include \
          -Wpointer-arith \
          -Wcast-qual \
          -Wcast-align \
-         -Wconversion \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
          -D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64
+
+#         -Wconversion \
+#
 
 #LDADD = -lowxx ${PROFILING_FLAG}
 

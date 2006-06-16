@@ -186,11 +186,11 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     return ReturnAndErrno(s) ;
 }
 
-ssize_t OW_lread( const char * path, unsigned char * buf, const size_t size, const off_t offset ) {
+ssize_t OW_lread( const char * path, char * buf, const size_t size, const off_t offset ) {
     return ReturnAndErrno( FS_read( path, buf, size, offset ) ) ;
 }
 
-ssize_t OW_lwrite( const char * path, const unsigned char * buf, const size_t size, const off_t offset ) {
+ssize_t OW_lwrite( const char * path, const char * buf, const size_t size, const off_t offset ) {
     return ReturnAndErrno( FS_write( path, buf, size, offset ) ) ;
 }
 

@@ -24,14 +24,10 @@ static void send_readme(const struct ftp_session_s *f, int code);
 static void netscape_hack(int fd);
 static void set_port(struct ftp_session_s *f, const sockaddr_storage_t *host_port);
 static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t *host_port);
-static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b);
-static void get_absolute_fname(char *fname, 
-                               int fname_len,
-                               const char *dir,
-                               const char *file);
-static void both_list(struct ftp_session_s *f,
-                      const struct ftp_command_s *cmd,
-                      enum file_list_e fle ) ;
+//static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b);
+static int ip_equal(sockaddr_storage_t *a, sockaddr_storage_t *b);
+static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, const char *file);
+static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, enum file_list_e fle ) ;
 
 /* command handlers */
 static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd);
@@ -536,11 +532,11 @@ static void do_lprt(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     host_port = &cmd->arg[0].host_port;
 
 #ifdef INET6
-    if ((SSFAM(host_port) != AF_INET) && (SSFAM(host_port) != AF_INET6)) {
+    if ((cSSFAM(host_port) != AF_INET) && (cSSFAM(host_port) != AF_INET6)) {
         reply(f, 521, "Only IPv4 and IPv6 supported, address families (4,6)");
     }
 #else
-    if (SSFAM(host_port) != AF_INET) {
+    if (cSSFAM(host_port) != AF_INET) {
         reply(f, 521, "Only IPv4 supported, address family (4)");
     }
 #endif
@@ -557,11 +553,9 @@ static void do_lprt(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 /* that is the only mode of transfer we support, we reject all EPRT  */
 /* requests.                                                         */
 static void do_eprt(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
-    const sockaddr_storage_t *host_port;
-
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
-    daemon_assert(cmd->num_arg == 1);                                   
+    daemon_assert(cmd->num_arg == 1);
 
     reply(f, 500, "EPRT not supported, use EPSV.");
 
@@ -874,11 +868,7 @@ static void do_mode(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 }
 
 /* convert the user-entered file name into a full path on our local drive */
-static void get_absolute_fname(char *fname, 
-                               int fname_len,
-                               const char *dir,
-                               const char *file)
-{
+static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, const char *file) {
     daemon_assert(fname != NULL);
     daemon_assert(dir != NULL);
     daemon_assert(file != NULL);
@@ -910,9 +900,9 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     const char *file_name;
     int file_fd;
     int socket_fd;
-    BYTE * buf = NULL ;
-    BYTE * buf2 = NULL ;
-    BYTE * bufwrite ;
+    ASCII * buf = NULL ;
+    ASCII * buf2 = NULL ;
+    ASCII * bufwrite ;
     struct timeval start_timestamp;
     struct timeval end_timestamp;
     struct timeval transfer_time;
@@ -951,7 +941,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     } else if ( (pn.ft->format==ft_binary) && (f->data_type==TYPE_ASCII) ) {
         reply(f, 550, "Error, binary file (type ascii).");
         goto exit_retr;
-    } else if ( (buf=(BYTE*)malloc(size=FullFileLength(&pn)-offset)) == NULL ) {
+    } else if ( (buf=(ASCII*)malloc(size=FullFileLength(&pn)-offset)) == NULL ) {
         reply(f, 550, "Error, file too large.");
         goto exit_retr;
     } else if ( (r=FS_read_postparse( buf, size, offset, &pn )) < 0 ) {
@@ -960,7 +950,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     } else if (f->data_type==TYPE_IMAGE) {
         bufwrite = buf ;
         size_write = size ;
-    } else if ( (buf2=(BYTE*)malloc(2*size)) == NULL ) {
+    } else if ( (buf2=(ASCII*)malloc(2*size)) == NULL ) {
         reply(f, 550, "Error, file too large.");
         goto exit_retr;
     } else { // TYPE_ASCII
@@ -1159,15 +1149,15 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
 
     /* figure out what parameters to use */
     if (cmd->num_arg == 0) {
-        fps.rest = "*";
+        fps.rest = strdup("*");
     } else {
         daemon_assert(cmd->num_arg == 1);
 
         /* ignore attempts to send options to "ls" by silently dropping */
         if (cmd->arg[0].string[0] == '-') {
-            fps.rest = "*";
+            fps.rest = strdup("*");
         } else {
-            fps.rest = cmd->arg[0].string;
+            fps.rest = strdup(cmd->arg[0].string) ;
         }
     }
 
@@ -1194,10 +1184,9 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
 
     /* clean up and exit */
 exit_blst:
-        if (fps.out != -1) {
-    close(fps.out);
-        }
-        daemon_assert(invariant(f));
+    if (fps.out != -1) close(fps.out) ;
+    if (fps.rest) free(fps.rest) ;
+    daemon_assert(invariant(f));
 }
 
 static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
@@ -1365,8 +1354,8 @@ static void netscape_hack(int fd) {
 }
 
 /* compare two addresses to see if they contain the same IP address */
-static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b)
-{
+//static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b) {
+static int ip_equal(sockaddr_storage_t *a, sockaddr_storage_t *b) {
     daemon_assert(a != NULL);
     daemon_assert(b != NULL);
     daemon_assert((SSFAM(a) == AF_INET) || (SSFAM(a) == AF_INET6));

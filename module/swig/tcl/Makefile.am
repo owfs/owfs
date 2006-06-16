@@ -35,7 +35,6 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-Wpointer-arith \
 	-Wcast-qual \
 	-Wcast-align \
-	-Wconversion \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
         -D_FILE_OFFSET_BITS=64 \
@@ -45,6 +44,8 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-DTCL_PACKAGE_PATH=\"'$(TCL_PACKAGE_PATH)'\" \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\"
 
+#	-Wconversion \
+#
 
 LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 #SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
