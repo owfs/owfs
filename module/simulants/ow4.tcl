@@ -28,6 +28,7 @@ proc SetupServer { } {
 proc ServerAccept { sock addr port } {
     global serve
     $serve(text) insert end " Accept $sock from $addr port $port\n" accept
+    $serve(text) see end
     fconfigure $sock -buffering full -encoding binary -blocking 0
     set serve($sock.string) ""
     set serve($sock.payload) 0
@@ -43,6 +44,7 @@ proc CloseSock { sock } {
         }
     }
     $serve(text) insert end " Accept $sock closed\n" accept
+    $serve(text) see end
 }
 
 proc ServerProcess { sock } {
@@ -125,6 +127,7 @@ proc ServerProcess { sock } {
     }
     foreach {ret size offset val} $resp {break} 
     $serve(text) insert end "   Respond ret=$ret val=$val\n" write
+    $serve(text) see end
     puts -nonewline $sock  [binary format IIIIIIa* $serve($sock.version) [string length $val] $ret $serve($sock.sg) $size $offset $val]
     flush $sock
     CloseSock $sock
@@ -222,6 +225,7 @@ proc RootDir { alarm sock } {
         }
         set e $d\00
         $serve(text) insert end "   Respond $d\n" write
+        $serve(text) see end
         puts -nonewline $sock  [binary format {IIIIIIa*} $serve($sock.version) [string length $e] 0 $serve($sock.sg) [string length $e] 0 $e]
     }
     return [list 0 0 $flags ""]
@@ -242,6 +246,7 @@ proc DevDir { dev sock } {
     foreach x [lsort -dictionary -unique $d] {
         set e $dev/$x\00
         $serve(text) insert end "   Respond $dev/$x\n" write
+        $serve(text) see end
         puts -nonewline $sock  [binary format {IIIIIIa*} $serve($sock.version) [string length $e] 0 $serve($sock.sg) [string length $e] 0 $e]
     }
     return [list 0 0 0 ""]

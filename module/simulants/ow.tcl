@@ -69,7 +69,9 @@ proc SetAddress {famcode} {
     set chip($chip($addr.family)$chip($addr.id)$chip($addr.crc8)) $addr
     # set family-specific -- type and function
     switch $famcode {
-        10      { set chip($addr.type) DS18B20 ; set chip($addr.process) Setup10 }
+        10      { set chip($addr.type) DS18S20 ; set chip($addr.process) Setup10 }
+        22      { set chip($addr.type) DS1822  ; set chip($addr.process) Setup28 }
+        28      { set chip($addr.type) DS18S20 ; set chip($addr.process) Setup28 }
         01      { set chip($addr.type) DS2401  ; set chip($addr.process) Setup01 }
         default { set chip($addr.type) generic ; set chip($addr.process) Setup01 }
     }
@@ -82,6 +84,7 @@ proc SetAddress {famcode} {
 # Globals
 set color("temphigh")    #CC3300
 set color("temperature") #666666
+set color("fasttemp")    #777777
 set color("templow")     #6666FF
 
 # Globals
@@ -132,8 +135,17 @@ proc Standard { addr fram } {
 ########## Simulant! Temperature-specific functions #######
 ###########################################################
 
+# DS18S20
 set chip(10.read) [list temperature temphigh templow trim trimvalid trimblanket power die]
 set chip(10.write) [list temphigh templow trimblanket]
+
+# DE18B20
+set chip(28.read) [concat $chip(10.read) [list fasttemp]]
+set chip(28.write) $chip(10.write)
+
+# DS 1922
+set chip(22.read} $chip(28.read)
+set chip(22.write) $chip(28.write)
 
 proc Setup10 { addr fmain } {
     global chip
@@ -145,8 +157,8 @@ proc Setup10 { addr fmain } {
 
     set chip($addr.die) B2
     set chip($addr.power) 0
-    set chip($addr.trim) 0xB2
-    set chip($addr.trimblanket) 0xB2B2
+    set chip($addr.trim) B2
+    set chip($addr.trimblanket) B2B2
     set chip($addr.trimvalid) 1
 
     Standard $addr $fmain
@@ -168,10 +180,19 @@ proc Setup10 { addr fmain } {
     Temperatures $addr $fmain
 }
 
+proc Setup28 { addr fmain } {
+    global chip
+    # the only difference (externally) is fasttemp, which we'll make indentical
+    set chip($addr.fasttemp) 0
+    Setup10 $addr $fmain
+    set chip($addr.fasttemp) $chip($addr.temperature)
+}
+
 proc AlarmCheck10 {varName index op} {
     global chip
     regexp {(.*?)\.(.*?)} $index match addr temp
     set alarm false
+    if { [info exist chip($addr.fasttemp)] } { set chip($addr.fasttemp) $chip($addr.temperature) }
     if { $chip($addr.temphigh) < $chip($addr.temperature) } {
         set alarm true
     } elseif { $chip($addr.templow) > $chip($addr.temperature) } {
@@ -199,17 +220,28 @@ proc Temperatures { addr fram } {
     global chip
     global color
 
-    foreach f {temphigh temperature templow} {
+    set vars [list temphigh temperature templow]
+    if { [info exist chip($addr.fasttemp)] } { lappend vars fasttemp }
+
+    foreach f $vars {
+        switch $f {
+            temphigh    -
+            templow     { set stat "disabled" }
+            default     { set stat "normal" }
+        }
+
         labelframe $fram.$f -text $f -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66
         pack $fram.$f -side top -fill x
-        scale $fram.$f.scale -variable chip($addr.$f) -orient horizontal -from -40 -to 125 -fg white -bg $color("$f") -state disabled
+        scale $fram.$f.scale -variable chip($addr.$f) -orient horizontal -from -40 -to 125 -fg white -bg $color("$f") -state $stat
         pack $fram.$f.scale -side left -fill x -expand true
-        spinbox $fram.$f.spin -textvariable chip($addr.$f) -width 3 -from -40 -to 125 -state disabled
+        spinbox $fram.$f.spin -textvariable chip($addr.$f) -width 3 -from -40 -to 125 -state $stat
         pack $fram.$f.spin -side right
         trace variable chip($addr.$f) w AlarmCheck10
     }
-    $fram.temperature.scale config -state normal
-    $fram.temperature.spin config -state normal
+    if { [info exist chip($addr.fasttemp)] } {
+        $fram.fasttemp.scale configure -variable chip($addr.temperature)
+        $fram.fasttemp.spin configure -textvariable chip($addr.temperature)
+    }
 }
 
 ###########################################################
