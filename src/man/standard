@@ -1,7 +1,18 @@
 .SS address
+.SS r_address
 .I read-only, ascii
 .br
 The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
+.br
+.I address
+starts with the
+.I family
+code
+.br
+.I r address
+is the
+.I address
+in reverse order, which is often used in other applications and labeling.
 .SS crc8
 .I read-only, ascii
 .br
@@ -13,31 +24,40 @@ The 8-bit family code. Unique to each
 .I type
 of device. Given as upper case hexidecimal digits (0-9A-F).
 .SS id
+.SS r_id
 .I read-only, ascii
 .br
 The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
+.br
+.I r id
+is the
+.I id
+in reverse order, which is often used in other applications and labeling.
+.SS locator
+.SS r_locator
+.I read-only, ascii
+.br
+Uses an extension of the 1-wire design from iButtonLink company that associated 1-wire physical connections with a unique 1-wire code. If the connection is behind a
+.B Link Locator
+the
+.I locator will show a unique 8-byte number (16 character hexidecimal) starting with family code FE.
+.br
+If no
+.B Link Locator
+is between the device and the master, the
+.I locator
+field will be all FF.
+.br
+.I r locator
+is the
+.I locator
+in reverse order.
 .SS present
 .I read-only, yes-no
 .br
 Is the device currently
 .I present
 on the 1-wire bus?
-.SS r_address
-.I read-only, ascii
-.br
-.I address
-in reverse order, which is often used in other applications and labeling.
-.I crc8
-comes first and
-.I family
-last.
-.br
-Note, this means that each hex byte (2 characters) is reversed, not the text string.
-.SS r_id
-.I read-only, ascii
-.br
-.I id
-in reverse order, which is often used in other applications and labeling.
 .br
 Note, this means that each hex byte (2 characters) is reversed, not the text string.
 .SS type

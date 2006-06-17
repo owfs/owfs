@@ -4,10 +4,14 @@
 |
 .B id
 |
+.B locator
+|
 .B present
 |
 .B r_address
 |
 .B r_id
+|
+.B r_locator
 |
 .B type
