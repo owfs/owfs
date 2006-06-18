@@ -1,15 +1,18 @@
 #!/usr/bin/wish
-
+# $Id$
 ###########################################################
 ###########################################################
 ########## Enough of notebook, lets do Simulant! ##########
 ###########################################################
 ###########################################################
 
-source ow.tcl
-source ow2.tcl
-source ow3.tcl
-source ow4.tcl
+source owaddress.tcl
+source ow2401.tcl
+source ow18xx.tcl
+source owcmdlin.tcl
+source owdisplay.tcl
+source ownet.tcl
+source owhandler.tcl
 
 if {[catch {wm iconbitmap . @"/home/owfs/owfs.ico"}] } {
     puts $errorInfo
