@@ -79,10 +79,11 @@ proc ServerRead { sock } {
     global serve
     global chip
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end] $sock] {break}
+    #puts "ret=$ret typ=$typ alarm=$alarm dev=$dev fil=$fil ext=$ext"
     # parse
     if { $ret != 0 } { return [list $ret 0 0 ""] }
     # is file?
-    if { ![string equal $typ f] } { return [list $serve(EISDIR) 0 0 ""] }
+    if { $typ ne f } { return [list $serve(EISDIR) 0 0 ""] }
     set addr $chip($dev)
     # make sure variable defined
     if { ![info exist chip($addr.$fil)] } { return [list $serve(ENOENT) 0 0 ""] }
@@ -98,6 +99,7 @@ proc ServerWrite { sock } {
     global serve
     global chip
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end-[expr $serve($sock.size) + 1]] $sock] {break}
+    #puts "ret=$ret typ=$typ alarm=$alarm dev=$dev fil=$fil ext=$ext"
     # parse
     if { $ret != 0 } { return [list $ret 0 0 ""] }
     # is file?
@@ -122,6 +124,7 @@ proc ServerWrite { sock } {
 proc ServerDir { sock } {
     global serve
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end] $sock] {break}
+    #puts "ret=$ret typ=$typ alarm=$alarm dev=$dev fil=$fil ext=$ext"
     if { $ret != 0 } { return [list $ret 0 0 ""] }
     switch $typ {
         r       { return [RootDir $alarm $sock] }
@@ -199,12 +202,12 @@ proc ParsePath { path sock } {
     global chip
     set path [string trimright $path \00]
     # remove uncached
-    regsub -all -nocase {\</uncached\>} $path "/" path
+    regsub -all -nocase "/uncached" $path "/" path
     # remove "bus.0"
-    regsub -nocase {\</bus.0\>} $path "/" path
+    regsub -nocase {/bus\.0} $path "/" path
     # flag and remove alarm
-    set alarm [regexp -nocase {\</alarm\>} $path]
-    regsub -all -nocase {\</alarm\>} $path "/" path
+    set alarm [regexp -nocase {/alarm} $path]
+    regsub -all -nocase "/alarm" $path "/" path
     # remove leading "/" and check for root directory
     set path [string range $path 1 end]
     if { [string length $path] == 0 } {return [list 0 r $alarm "" "" 0]}
