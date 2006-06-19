@@ -193,7 +193,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
-	    LEVEL_DEBUG("READSEEK1 pid=%d call FS_real_read\n",getpid());
+            LEVEL_DEBUG("READSEEK1 pid=%d call FS_real_read\n",getpid());
             //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 r = FS_real_read(buf, size, offset, pn ) ;
@@ -213,7 +213,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             }
             //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
         } else {
-	    LEVEL_DEBUG("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
+            LEVEL_DEBUG("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
             STATLOCK;
                 ++read_cache ; /* statistics */

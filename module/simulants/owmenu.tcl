@@ -11,14 +11,22 @@ proc SetupMenu { } {
     set serve(menu) [menu .menu]
     . config -menu $serve(menu)
 #    toplevel $serve(menu) -menu
-    foreach m { File Device Help } {
-        menu $serve(menu).m$m
-        $serve(menu) add cascade -label $m -menu $serve(menu).m$m  -underline 0
-    }
-    $serve(menu).mFile add command -label "Save Log" -underline 0 -command SaveLog
-    $serve(menu).mFile add command -label "Save Log As..." -underline 10 -command SaveAsLog
-    $serve(menu).mFile add separator
-    $serve(menu).mFile add command -label Quit -underline 0 -command exit
+    menu $serve(menu).file -tearoff 0
+    $serve(menu) add cascade -label File -menu $serve(menu).file  -underline 0
+        $serve(menu).file add command -label "Save Log" -underline 0 -command SaveLog
+        $serve(menu).file add command -label "Save Log As..." -underline 9 -command SaveAsLog
+        $serve(menu).file add separator
+        $serve(menu).file add command -label Quit -underline 0 -command exit
+
+    menu $serve(menu).device -tearoff 1
+    $serve(menu) add cascade -label Devices -menu $serve(menu).device  -underline 0
+        $serve(menu).device add command -label "Save Log" -underline 0 -command SaveLog
+        $serve(menu).device add command -label "Save Log As..." -underline 9 -command SaveAsLog
+        $serve(menu).device add separator
+        $serve(menu).device add command -label Quit -underline 0 -command exit
+
+    menu $serve(menu).help -tearoff 0
+    $serve(menu) add cascade -label Help -menu $serve(menu).help  -underline 0
 }
 
 proc SaveAsLog { } {

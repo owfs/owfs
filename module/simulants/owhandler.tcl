@@ -212,8 +212,11 @@ proc ParsePath { path sock } {
     set pathlist [split $path "/"]
     # check if exists
     if { ![info exist chip([lindex $pathlist 0])] } {return [list $serve(ENOENT) d $alarm [lindex $pathlist 0] "" 0]}
-    # check if present
+    # real name
     set dev $chip([lindex $pathlist 0])
+    # flip screen
+    set serve(selected) $dev
+    # check if present
     if { !$chip($dev.present) } {return [list $serve(ENOENT) d $alarm [lindex $pathlist 0] "" 0]}
     # just a device?
     if { [llength $pathlist] == 1 } {return [list 0 d $alarm $dev "" 0]}

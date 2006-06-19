@@ -24,7 +24,7 @@ proc SetupServer { } {
     set serve(socket) [socket -server ServerAccept $serve(port)]
     $serve(text) insert end "Listen as requested: portname=$serve(port)\n" listen
     $serve(text) insert end [eval {format "As implemented: address=%s hostname=%s portname=%s\n"} [fconfigure $serve(socket) -sockname]] listen
-    $serve(frame) configure -text "OWSERVER simulator -- port [lindex [fconfigure $serve(socket) -sockname] 2]"
+    wm title . "OWSERVER simulator -- port [lindex [fconfigure $serve(socket) -sockname] 2]"
 }
 
 proc ServerAccept { sock addr port } {

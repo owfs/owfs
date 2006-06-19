@@ -23,14 +23,10 @@ wm geometry . 500x400
 
 CommandLineParsing
 
-set pan [frame .p -bg cyan]
+set pan [frame .p -bg #996633]
 pack $pan -fill both -expand 1
+SetupDisplay $pan
 
-StatusFrame $pan
-set pane [panedwindow $pan.pane]
-pack $pane -side top -expand yes -fill both
-
-SetupPanels $pane
 SetupMenu
 
 SetupServer
