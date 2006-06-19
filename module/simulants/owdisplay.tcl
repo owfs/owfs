@@ -29,35 +29,40 @@ proc StatusFrame { fram } {
 ###########################################################
 
 proc SetupPanels { pane } {
-    global paner
     global chip
-    global selected_device
     global devname
     
-    set panel [frame $pane.left]
-    pack $panel -fill both
-    set paner [frame $pane.right -bg #996633]
-    pack $paner -fill both
+    set chip(panel) [frame $pane.left]
+    pack $chip(panel) -fill both
+    set chip(paner) [frame $pane.right -bg #996633]
+    pack $chip(paner) -fill both
+    $pane add $chip(panel) $chip(paner)
 
-    scrollbar $panel.scroll -command "$pane.left.listbox yview"
-    set chosen [listbox $panel.listbox -yscroll "$pane.left.scroll set"  -listvariable devname -setgrid 1 -height 12 -bg #FFFF99]
-    pack $panel.scroll -side right -fill y
-    pack $panel.listbox -side left -expand 1 -fill both
+    foreach dev $devname {
+        set addr $chip($dev)
+        radiobutton $chip(panel).$addr -variable chip(selected) -text $dev -value $addr
+        pack $chip(panel).$addr -side top -fill x
+    }
 
-    bind $chosen <<ListboxSelect>> {Rside  %W}
-    $pane add $panel $paner
-    set selected_device $chip([lindex $devname 0])
-    $chip($selected_device.process) $selected_device $paner
+    trace add variable chip(selected) {write} Raise
+
+    # Now set to first
+    set chip(selected) $chip([lindex $devname 0])
+
+#    scrollbar $panel.scroll -command "$pane.left.listbox yview"
+#    set chosen [listbox $panel.listbox -yscroll "$pane.left.scroll set"  -listvariable devname -setgrid 1 -height 12 -bg #FFFF99]
+ #   pack $panel.scroll -side right -fill y
+ #   pack $panel.listbox -side left -expand 1 -fill both
+
+#    bind $chosen <<ListboxSelect>> {Rside  %W}
+#    $pane add $panel $paner
+#    set selected_device $chip([lindex $devname 0])
+#    $chip($selected_device.process) $selected_device $paner
 }
 
-proc Rside {src} {
-    global paner
+proc Raise {ar in op} {
     global chip
-    global selected_device
-    set d $chip([$src get [$src curselection]])
-    if { [string compare $d $selected_device] != 0 } {
-        eval destroy [winfo children $paner]
-        $chip($d.process) $d $paner
-        set selected_device $d
-    }
+    eval destroy [winfo children $chip(paner)]
+    set addr $chip(selected)
+    $chip($addr.process) $addr $chip(paner)
 }

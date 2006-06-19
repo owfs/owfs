@@ -11,6 +11,7 @@ source ow2401.tcl
 source ow18xx.tcl
 source owcmdlin.tcl
 source owdisplay.tcl
+source owmenu.tcl
 source ownet.tcl
 source owhandler.tcl
 
@@ -30,5 +31,6 @@ set pane [panedwindow $pan.pane]
 pack $pane -side top -expand yes -fill both
 
 SetupPanels $pane
+SetupMenu
 
 SetupServer
