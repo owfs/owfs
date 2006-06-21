@@ -57,24 +57,24 @@ proc SetupPanels { pane } {
 
     foreach dev $devname {
         set addr $chip($dev)
-        radiobutton $serve(panel).$addr -variable chip(selected) -text $dev -value $addr -anchor nw
+        radiobutton $serve(panel).$addr -variable serve(selected) -text $dev -value $addr -anchor nw
         pack $serve(panel).$addr -side top -fill x
     }
 
-    trace add variable chip(selected) {write} Raise
+    trace add variable serve(selected) {write} Raise
 
     # Now set to first
-    set chip(lastselected) ""
-    set chip(selected) $chip([lindex $devname 0])
+    set serve(lastselected) ""
+    set serve(selected) $chip([lindex $devname 0])
 }
 
 proc Raise {ar in op} {
     global chip
     global serve
-    if { $chip(selected) eq $chip(lastselected) } {return}
+    if { $serve(selected) eq $serve(lastselected) } {return}
     eval destroy [winfo children $serve(paner)]
-    set addr $chip(selected)
+    set addr $serve(selected)
     $serve(paner) configure -text $chip($addr.name)
-    $chip($addr.process) $addr $serve(paner)
-    set chip(lastselected) $chip(selected)
+    $chip($addr.display) $addr $serve(paner)
+    set serve(lastselected) $serve(selected)
 }

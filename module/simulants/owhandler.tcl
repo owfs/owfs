@@ -79,7 +79,7 @@ proc ServerRead { sock } {
     global serve
     global chip
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end] $sock] {break}
-    #puts "ret=$ret typ=$typ alarm=$alarm dev=$dev fil=$fil ext=$ext"
+    puts "ret=<$ret> typ=<$typ> alarm=<$alarm> dev=<$dev> fil=<$fil> ext=<$ext>"
     # parse
     if { $ret != 0 } { return [list $ret 0 0 ""] }
     # is file?
@@ -124,7 +124,7 @@ proc ServerWrite { sock } {
 proc ServerDir { sock } {
     global serve
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end] $sock] {break}
-    #puts "ret=$ret typ=$typ alarm=$alarm dev=$dev fil=$fil ext=$ext"
+    #puts "ret=<$ret> typ=<$typ> alarm=<$alarm> dev=<$dev> fil=<$fil> ext=<$ext>"
     if { $ret != 0 } { return [list $ret 0 0 ""] }
     switch $typ {
         r       { return [RootDir $alarm $sock] }
@@ -224,17 +224,18 @@ proc ParsePath { path sock } {
     # just a device?
     if { [llength $pathlist] == 1 } {return [list 0 d $alarm $dev "" 0]}
     # tease out file and extension (extension=0 of none)
-    foreach {file ext} [split [join [lrange $pathlist 1 end] "/"].0 "."] {break}
+    foreach {file ext} [split [join [lrange $pathlist 1 end] "/"]. "."] {break}
     # make sure file exists in read or write lists
     foreach x [list "" $chip($dev.family)] {
         foreach y [list $x.read $x.write] {
             if { [info exist chip($y)] } {
+                #puts "Find $file in ($y)<[join $chip($y)]>"
                 if { [lsearch $chip($y) $file] > -1 } {
                     return [list 0 f $alarm $dev $file $ext]
                 }
             }
         }
     }
-    # found vald file
+    # found no valid file
     return [list $serve(ENOENT) f $alarm $dev $file $ext]
 }

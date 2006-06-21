@@ -7,11 +7,14 @@
 ###########################################################
 
 source owaddress.tcl
+source owaggregate.tcl
 source ow2401.tcl
 source ow18xx.tcl
 source owcmdlin.tcl
 source owdisplay.tcl
 source owmenu.tcl
+source owabout.tcl
+source owhelp.tcl
 source ownet.tcl
 source owhandler.tcl
 

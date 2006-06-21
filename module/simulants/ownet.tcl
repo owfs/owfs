@@ -74,10 +74,10 @@ proc ServerProcess { sock } {
         #    int32_t offset ;
         #} ;
         binary scan $serve($sock.string) {IIIIII} serve($sock.version) serve($sock.payload) serve($sock.type) serve($sock.sg) serve($sock.size) serve($sock.offset)
-        puts "Got $serve($sock.version) len=$len"
-        foreach x {version payload type sg size offset} {
-            puts "\t$x = $serve($sock.$x)"
-        }
+        #puts "Got $serve($sock.version) len=$len"
+        #foreach x {version payload type sg size offset} {
+        #    puts "\t$x = $serve($sock.$x)"
+        #}
     }
     #already in payload portion
     if { $len < [expr $serve($sock.payload) + 24 ] } {

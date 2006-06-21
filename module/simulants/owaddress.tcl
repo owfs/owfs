@@ -70,11 +70,11 @@ proc SetAddress {famcode} {
     set chip($chip($addr.family)$chip($addr.id)$chip($addr.crc8)) $addr
     # set family-specific -- type and function
     switch $famcode {
-        10      { set chip($addr.type) DS18S20 ; set chip($addr.process) Setup10 }
-        22      { set chip($addr.type) DS1822  ; set chip($addr.process) Setup28 }
-        28      { set chip($addr.type) DS18S20 ; set chip($addr.process) Setup28 }
-        01      { set chip($addr.type) DS2401  ; set chip($addr.process) Setup01 }
-        default { set chip($addr.type) generic ; set chip($addr.process) Setup01 }
+        10  { Setup10 $addr DS18S20}
+        22  { Setup28 $addr DS1822 }
+        28  { Setup28 $addr DS18B20}
+        01  { Setup01 $addr DS2401 }
+        default { Setup01 $addr "unknown" }
     }
     lappend devlist $addr
     lappend devname $chip($addr.name)
@@ -115,7 +115,7 @@ set chip(.write) {}
 ########## Simulant! Standard options (all devices ########
 ###########################################################
 
-proc Standard { addr fram } {
+proc DisplayStandard { addr fram } {
     global chip
     set fstand [frame $fram.s -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66]
     pack $fstand -side top -fill x

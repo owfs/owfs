@@ -27,6 +27,8 @@ proc SetupMenu { } {
 
     menu $serve(menu).help -tearoff 0
     $serve(menu) add cascade -label Help -menu $serve(menu).help  -underline 0
+        $serve(menu).help add command -label "About OWSIM" -underline 0 -command About
+        $serve(menu).help add command -label "Help with command line" -underline 0 -command Help
 }
 
 proc SaveAsLog { } {
