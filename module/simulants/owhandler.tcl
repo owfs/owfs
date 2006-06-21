@@ -216,26 +216,21 @@ proc ParsePath { path sock } {
     # check if exists
     if { ![info exist chip([lindex $pathlist 0])] } {return [list $serve(ENOENT) d $alarm [lindex $pathlist 0] "" 0]}
     # real name
-    set dev $chip([lindex $pathlist 0])
+    set addr $chip([lindex $pathlist 0])
     # flip screen
-    set serve(selected) $dev
+    set serve(selected) $addr
     # check if present
-    if { !$chip($dev.present) } {return [list $serve(ENOENT) d $alarm [lindex $pathlist 0] "" 0]}
+    if { !$chip($addr.present) } {return [list $serve(ENOENT) d $alarm [lindex $pathlist 0] "" 0]}
     # just a device?
-    if { [llength $pathlist] == 1 } {return [list 0 d $alarm $dev "" 0]}
+    if { [llength $pathlist] == 1 } {return [list 0 d $alarm $addr "" 0]}
     # tease out file and extension (extension=0 of none)
     foreach {file ext} [split [join [lrange $pathlist 1 end] "/"]. "."] {break}
     # make sure file exists in read or write lists
-    foreach x [list "" $chip($dev.family)] {
-        foreach y [list $x.read $x.write] {
-            if { [info exist chip($y)] } {
-                #puts "Find $file in ($y)<[join $chip($y)]>"
-                if { [lsearch $chip($y) $file] > -1 } {
-                    return [list 0 f $alarm $dev $file $ext]
-                }
-            }
+    foreach x [list $addr.read $addr.write] {
+        if { [lsearch $chip($x) $file] > -1 } {
+                return [list 0 f $alarm $addr $file $ext]
         }
     }
     # found no valid file
-    return [list $serve(ENOENT) f $alarm $dev $file $ext]
+    return [list $serve(ENOENT) f $alarm $addr $file $ext]
 }

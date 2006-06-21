@@ -18,7 +18,7 @@ proc Setup01 { addr type } {
     foreach x { 0 1 2 } {
         set chip($addr.page.$x) $x
     }
-    puts ReadALL( $addr.page )
+    puts [ReadALL $addr.page]
 }
 
 proc Display01 { addr fmain } {

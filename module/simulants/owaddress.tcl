@@ -26,6 +26,8 @@ proc Crc8 { snlist } {
     return $crc
 }
 
+set standardProps { address crc8 family id locator present r_address r_id r_locator type }
+
 # input a text hex pair (family code)
 # generate a random seial number and return it
 # fill fields in devlist, devname and chip
@@ -34,6 +36,7 @@ proc SetAddress {famcode} {
     global chip
     global devlist
     global devname
+    global standardProps
     
     # convert code to integer
     scan $famcode "%2x" family
@@ -53,6 +56,9 @@ proc SetAddress {famcode} {
     set chip($addr.r_address) $chip($addr.crc8)$chip($addr.r_id)$chip($addr.family)
     #default present
     set chip($addr.present)   1
+    # locator
+    set chip($addr.locator) FFFFFFFFFFFFFFFF
+    set chip($addr.r_locator) FFFFFFFFFFFFFFFF
     # directory-style name
     set chip($addr.name)      [ format {%s.%s} $chip($addr.family) $chip($addr.id) ]
     # backref
@@ -68,6 +74,9 @@ proc SetAddress {famcode} {
     set chip($chip($addr.family).$chip($addr.id)$chip($addr.crc8)) $addr
     #  fic
     set chip($chip($addr.family)$chip($addr.id)$chip($addr.crc8)) $addr
+    # read and write properties
+    set chip($addr.read)  $standardProps
+    set chip($addr.write) {}
     # set family-specific -- type and function
     switch $famcode {
         10  { Setup10 $addr DS18S20}
@@ -108,18 +117,17 @@ set crc8table [list \
     116 42 200 150 21 75 169 247 182 232 10 84 215 137 107 53 \
 ]
 
-set chip(.read)  [list type family address id crc8 r_address r_id present]
-set chip(.write) {}
-
 ###########################################################
 ########## Simulant! Standard options (all devices ########
 ###########################################################
 
 proc DisplayStandard { addr fram } {
     global chip
-    set fstand [frame $fram.s -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66]
-    pack $fstand -side top -fill x
-    foreach g $chip(.read) {
+    global standardProps
+    set fstand [frame $fram.s -relief ridge -borderwidth 3 -padx 2 -pady 2 -bg #CCCC66]
+    set chip($addr.fstand) $fstand
+    pack $fstand -side left -fill y
+    foreach g $standardProps {
         label $fstand.l$g -text $g
         switch $g {
             present {checkbutton $fstand.v$g -variable chip($addr.$g) -bg white}
@@ -129,6 +137,9 @@ proc DisplayStandard { addr fram } {
         grid $fstand.l$g -sticky e
         grid $fstand.v$g -sticky w
     }
-    set chip($addr.fstand) $fstand
+
+    set fextra [frame $fram.e -relief ridge -borderwidth 3 -padx 2 -pady 2 -bg #CCCC66]
+    set chip($addr.fextra) $fextra
+    pack $fextra -side left -fill both -expand true
 }
 

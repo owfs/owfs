@@ -9,18 +9,6 @@
 ########## Simulant! Temperature-specific functions #######
 ###########################################################
 
-# DS18S20
-set chip(10.read) [list temperature temphigh templow trim trimvalid trimblanket power die]
-set chip(10.write) [list temphigh templow trimblanket]
-
-# DE18B20
-set chip(28.read) [concat $chip(10.read) [list fasttemp]]
-set chip(28.write) $chip(10.write)
-
-# DS1822
-set chip(22.read) $chip(28.read)
-set chip(22.write) $chip(28.write)
-
 proc Display10 { addr fmain } {
     global chip
 
@@ -39,14 +27,16 @@ proc Display10 { addr fmain } {
         grid $fstand.v$g -sticky w
     }
 
-    Alarm10 $addr $fmain
-    Temperatures $addr $fmain
+    Alarm10 $addr $chip($addr.fextra)
+    Temperatures $addr $chip($addr.fextra)
 }
 
 proc Setup10 { addr type } {
     global chip
     set chip($addr.display) Display10
     set chip($addr.type) $type
+    lappend chip($addr.read) temperature temphigh templow trim trimvalid trimblanket power die
+    lappend chip($addr.write) temphigh templow trimblanket
     
     set chip($addr.temphigh) 60
     set chip($addr.temperature) 16
@@ -70,6 +60,7 @@ proc Setup28 { addr type } {
     Setup10 $addr $type
     # the only difference (externally) is fasttemp, which we'll make indentical
     set chip($addr.fasttemp) $chip($addr.temperature)
+    lappend chip($addr.read) fasttemp
     trace variable chip($addr.fasttemp) w AlarmCheck10
 }
 
