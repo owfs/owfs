@@ -1,4 +1,6 @@
-#!/usr/bin/wish owsim.tcl $@
+#!/bin/sh
+# the next line restarts using tclsh \
+exec wish owsim.tcl "$@"
 # $Id$
 ###########################################################
 ###########################################################
