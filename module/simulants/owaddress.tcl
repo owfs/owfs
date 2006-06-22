@@ -129,7 +129,7 @@ proc DisplayStandard { addr fram } {
     global standardProps
     set fstand [frame $fram.s -relief ridge -borderwidth 3 -padx 2 -pady 2 -bg #CCCC66]
     set chip($addr.fstand) $fstand
-    pack $fstand -side left -fill y
+    pack $fstand -side left -fill y -anchor n
     foreach g $standardProps {
         label $fstand.l$g -text $g
         switch $g {
@@ -137,8 +137,8 @@ proc DisplayStandard { addr fram } {
             default {label $fstand.v$g -text $chip($addr.$g) -bg white}
         }
         grid $fstand.l$g $fstand.v$g
-        grid $fstand.l$g -sticky e
-        grid $fstand.v$g -sticky w
+        grid $fstand.l$g -sticky ne
+        grid $fstand.v$g -sticky nw
     }
 
     set fextra [frame $fram.e -relief ridge -borderwidth 3 -padx 2 -pady 2 -bg #CCCC66]

@@ -25,35 +25,35 @@ proc Handler { sock } {
     global serve
     switch $serve($sock.type) {
         0   { 
-                $serve(text) insert end "  Error\n" read 
+                AddLog "  Error\n" read 
                 set resp [ServerNone $sock]
             }
         1   { 
-                $serve(text) insert end "  NOP\n" read
+                AddLog "  NOP\n" read
                 set resp [ServerNone $sock]
             }
         2   { 
-                $serve(text) insert end "  Read [string range $serve($sock.string) 24 end-1]\n" read
+                AddLog "  Read [string range $serve($sock.string) 24 end-1]\n" read
                 set resp [ServerRead $sock]
             }
         3   { 
-                $serve(text) insert end "  Write [string range $serve($sock.string) 24 [expr $len - $serve($sock.size) - 1] ]\n" read
+                AddLog "  Write [string range $serve($sock.string) 24 [expr [string length $serve($sock.string)] - $serve($sock.size) - 1] ]\n" read
                 set resp [ServerWrite $sock]
             }
         4   { 
-                $serve(text) insert end "  Dir [string range $serve($sock.string) 24 end-1]\n" read
+                AddLog "  Dir [string range $serve($sock.string) 24 end-1]\n" read
                 set resp [ServerDir $sock]
             }
         5   { 
-                $serve(text) insert end "  Size\n" read
+                AddLog "  Size\n" read
                 set resp [ServerNone $sock]
             }
         6   { 
-                $serve(text) insert end "  Present [string range $serve($sock.string) 24 end-1]\n" read
+                AddLog "  Present [string range $serve($sock.string) 24 end-1]\n" read
                 set resp [ServerPresent $sock]
             }
         default   { 
-                $serve(text) insert end "  Unrecognized\n" read
+                AddLog "  Unrecognized\n" read
                 set resp [ServerNone $sock]
             }
     }
@@ -227,7 +227,7 @@ proc ParsePath { path sock } {
     # make sure file exists in read or write lists
     foreach x [list $addr.read $addr.write] {
         if { [lsearch $chip($x) $file] > -1 } {
-                return [list 0 f $alarm $addr $file $ext]
+            return [list 0 f $alarm $addr $file $ext]
         }
     }
     # found no valid file
