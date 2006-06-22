@@ -147,6 +147,13 @@ struct interface_routines {
 #define ACCEPTUNLOCK(out)
 #endif /* OW_MT */
 
+struct connin_ha7 {
+    ASCII lock[10] ;
+    int USpeed ;
+    int ULevel ;
+    int UMode ;
+    struct termios oldSerialTio;    /*old serial port settings*/
+} ;
 struct connin_serial {
     speed_t speed;
     int USpeed ;
