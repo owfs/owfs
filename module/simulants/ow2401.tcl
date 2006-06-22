@@ -17,11 +17,6 @@ proc Setup01 { addr type } {
     set chip($addr.type) $type
     set chip($addr.display) Display01
     
-    set chip($addr.page.aggregate) [list ALL numbers 3 ","]
-    foreach x { 0 1 2 } {
-        set chip($addr.page.$x) $x
-    }
-    puts [ReadALL $addr.page]
 }
 
 proc Display01 { addr fmain } {
@@ -33,3 +28,12 @@ proc Display01 { addr fmain } {
 ###########################################################
 ########## Simulant! Do it  ###############################
 ###########################################################
+#    set chip($addr.page.aggregate) [list ALL letters 3 ""]
+ #   foreach x { A B C } {
+  #      set chip($addr.page.$x) $x$x
+#    }
+ #   puts [ReadALL $addr page]
+  #  WriteALL $addr page
+#    foreach x { A B C } {
+ #       puts $chip($addr.page.$x)
+  #  }

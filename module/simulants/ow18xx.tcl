@@ -109,16 +109,13 @@ proc Temperatures { addr fram } {
             default     { set stat "normal" }
         }
 
-        labelframe $fram.$f -text $f -labelanchor n -relief ridge -borderwidth 3 -padx 5 -pady 5 -bg #CCCC66
+        labelframe $fram.$f -text $f -labelanchor n -relief ridge -borderwidth 3 -padx 1 -pady 1 -bg #CCCC66
         pack $fram.$f -side top -fill x
         scale $fram.$f.scale -variable chip($addr.$f) -orient horizontal -from -40 -to 125 -fg white -bg $color("$f") -state $stat
         pack $fram.$f.scale -side left -fill x -expand true
-        spinbox $fram.$f.spin -textvariable chip($addr.$f) -width 3 -from -40 -to 125 -state $stat
-        pack $fram.$f.spin -side right
     }
     if { [info exist chip($addr.fasttemp)] } {
         $fram.fasttemp.scale configure -variable chip($addr.temperature)
-        $fram.fasttemp.spin configure -textvariable chip($addr.temperature)
     }
 }
 

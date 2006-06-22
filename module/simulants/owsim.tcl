@@ -15,6 +15,7 @@ source ow18xx.tcl
 source owcmdlin.tcl
 source owdisplay.tcl
 source owmenu.tcl
+source owlog.tcl
 source owabout.tcl
 source owhelp.tcl
 source ownet.tcl

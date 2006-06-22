@@ -24,15 +24,14 @@ set serve(EMSGSIZE) -90
 proc SetupServer { } {
     global serve
     set serve(socket) [socket -server ServerAccept $serve(port)]
-    $serve(text) insert end "Listen as requested: portname=$serve(port)\n" listen
-    $serve(text) insert end [eval {format "As implemented: address=%s hostname=%s portname=%s\n"} [fconfigure $serve(socket) -sockname]] listen
+    AddLog "Listen as requested: portname=$serve(port)\n" listen
+    AddLog [eval {format "As implemented: address=%s hostname=%s portname=%s\n"} [fconfigure $serve(socket) -sockname]] listen
     wm title . "OWSERVER simulator -- port [lindex [fconfigure $serve(socket) -sockname] 2]"
 }
 
 proc ServerAccept { sock addr port } {
     global serve
-    $serve(text) insert end " Accept $sock from $addr port $port\n" accept
-    $serve(text) see end
+    AddLog " Accept $sock from $addr port $port\n" accept
     fconfigure $sock -buffering full -encoding binary -blocking 0
     set serve($sock.string) ""
     set serve($sock.payload) 0
@@ -47,8 +46,7 @@ proc CloseSock { sock } {
             unset serve($sock.$x)
         }
     }
-    $serve(text) insert end " Accept $sock closed\n" accept
-    $serve(text) see end
+    AddLog " Accept $sock closed\n" accept
 }
 
 proc ServerProcess { sock } {
@@ -90,4 +88,3 @@ proc ServerProcess { sock } {
     flush $sock
     CloseSock $sock
 }
-

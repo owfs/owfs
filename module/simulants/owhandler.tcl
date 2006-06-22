@@ -58,8 +58,7 @@ proc Handler { sock } {
             }
     }
     foreach {ret size offset val} $resp {break} 
-    $serve(text) insert end "   Respond ret=$ret val=$val\n" write
-    $serve(text) see end
+    AddLog "   Respond ret=$ret val=$val\n" write
     puts -nonewline $sock  [binary format IIIIIIa* $serve($sock.version) [string length $val] $ret $serve($sock.sg) $size $offset $val]
 }
 
@@ -81,7 +80,7 @@ proc ServerRead { sock } {
     global serve
     global chip
     foreach {ret typ alarm dev fil ext} [ParsePath [string range $serve($sock.string) 24 end] $sock] {break}
-    puts "ret=<$ret> typ=<$typ> alarm=<$alarm> dev=<$dev> fil=<$fil> ext=<$ext>"
+    #puts "ret=<$ret> typ=<$typ> alarm=<$alarm> dev=<$dev> fil=<$fil> ext=<$ext>"
     # parse
     if { $ret != 0 } { return [list $ret 0 0 ""] }
     # is file?
@@ -157,8 +156,7 @@ proc RootDir { alarm sock } {
             set flags [expr $flags | $chip($chip($addr.family).flags)]
         }
         set e $d\00
-        $serve(text) insert end "   Respond $d\n" write
-        $serve(text) see end
+        AddLog "   Respond $d\n" write
         puts -nonewline $sock  [binary format {IIIIIIa*} $serve($sock.version) [string length $e] 0 $serve($sock.sg) [string length $e] 0 $e]
     }
     return [list 0 0 $flags ""]
@@ -178,8 +176,7 @@ proc DevDir { dev sock } {
     }
     foreach x [lsort -dictionary -unique $d] {
         set e $dev/$x\00
-        $serve(text) insert end "   Respond $dev/$x\n" write
-        $serve(text) see end
+        AddLog "   Respond $dev/$x\n" write
         puts -nonewline $sock  [binary format {IIIIIIa*} $serve($sock.version) [string length $e] 0 $serve($sock.sg) [string length $e] 0 $e]
     }
     return [list 0 0 0 ""]

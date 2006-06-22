@@ -32,27 +32,3 @@ proc SetupMenu { } {
         $serve(menu).help add command -label "About OWSIM" -underline 0 -command About
         $serve(menu).help add command -label "Help with command line" -underline 0 -command Help
 }
-
-proc SaveAsLog { } {
-    global serve
-    set f [tk_getSaveFile -defaultextension ".txt" -initialfile owsim[clock seconds].txt ]
-    if { [string equal $f ""] } {return}
-    set serve(logfile) $f
-    SaveLog
-}
-
-proc SaveLog { } {
-    global serve
-    if { ![info exist serve(logfile)] } {
-        return [SaveAsLog]
-    }
-    if {[catch {open $serve(logfile) {WRONLY CREAT TRUNC}} f ]}  {
-        tk_messageBox -icon error -title "Save Logfile" -message "Cannot open file $serve(logfile) to write data.\n$f" -type ok
-        return
-    }
-    if [catch [puts -nonewline $f [$serve(text) get 1.0 end] ] x ] {
-        tk_messageBox -icon error -title "Save Logfile" -message "Cannot write data to $serve(logfile).\n$x" -type ok
-        return
-    }
-    close $f
-}
