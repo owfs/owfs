@@ -110,12 +110,13 @@ static struct internal_prop ip_power = {"POW",fc_stable} ;
 struct tempresolution {
     BYTE config ;
     UINT delay ;
+    BYTE mask ;
 } ;
 struct tempresolution Resolutions[] = {
-    { 0x1F, 110, } , /*  9 bit */
-    { 0x3F, 200, } , /* 10 bit */
-    { 0x5F, 400, } , /* 11 bit */
-    { 0x7F,1000, } , /* 12 bit */
+    { 0x1F, 110, 0xF8 } , /*  9 bit */
+    { 0x3F, 200, 0xFC } , /* 10 bit */
+    { 0x5F, 400, 0xFE } , /* 11 bit */
+    { 0x7F,1000, 0xFF } , /* 12 bit */
 } ;
 
 struct die_limits {
@@ -286,7 +287,7 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
 static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
-    BYTE data[8] ;
+    BYTE data[9] ;
     BYTE convert[] = { 0x44, } ;
     BYTE dummy ;
     UINT delay = pn->ft->data.i ;
@@ -358,11 +359,12 @@ static int OW_power( BYTE * data, const struct parsedname * pn) {
 }
 
 static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) {
-    BYTE data[8] ;
+    BYTE data[9] ;
     BYTE convert[] = { 0x44, } ;
     BYTE pow ;
     int res = Resolutions[resolution-9].config ;
     UINT delay = Resolutions[resolution-9].delay ;
+    BYTE mask = Resolutions[resolution-9].mask ;
     int oldres ;
     size_t s = sizeof(oldres) ;
     struct transaction_log tconvert[] = {
@@ -372,14 +374,8 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
     } ;
 
     //LEVEL_DATA("OW_22temp\n");
-
-#if 1
     /* powered? */
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
-#else
-    // Just a test to force powerbyte be used...
-    pow = 0;
-#endif
 
     /* Resolution */
     if ( Cache_Get_Internal(&oldres,&s,&ip_resolution,pn) || oldres!=resolution ) {
@@ -405,14 +401,15 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
 
-//    *temp = .0625*(((char)data[1])<<8|data[0]) ;
-    temp[0] = (FLOAT) ((int16_t)(data[1]<<8|data[0])) * .0625 ;
+    //*temp = .0625*(((char)data[1])<<8|data[0]) ;
+    // Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
+    temp[0] = (FLOAT) ((int16_t)((data[1]<<8)|data[0]|mask)) * .0625 ;
     return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
 static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
-    BYTE data[8] ;
+    BYTE data[9] ;
     BYTE recall[] = { 0xB4, } ;
     struct transaction_log trecall[] = {
         TRXN_START ,
@@ -431,7 +428,7 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
 
 /* Limits Tindex=0 high 1=low */
 static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) {
-    BYTE data[8] ;
+    BYTE data[9] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
     data[2+Tindex] = (uint8_t) T ;
@@ -442,28 +439,24 @@ static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedn
 static int OW_r_scratchpad(BYTE * data, const struct parsedname * pn) {
     /* data is 8 bytes long */
     BYTE be[] = { 0xBE, } ;
-    BYTE td[9] ;
     struct transaction_log tread[] = {
         TRXN_START ,
         { be, NULL, 1, trxn_match },
-        { NULL, td, 9, trxn_read },
+        { NULL, data, 9, trxn_read },
         TRXN_END,
     } ;
     if ( BUS_transaction( tread, pn ) ) return 1 ;
-    if ( CRC8( td,9 ) ) return 1 ;
-
-    memcpy( data , td , 8 ) ;
-    return 0 ;
+    return CRC8( data,9 ) ;
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
 static int OW_w_scratchpad(const BYTE * data, const struct parsedname * pn) {
-    /* data is 3 bytes ng */
+    /* data is 3 bytes long */
     BYTE d[4] = { 0x4E, data[0], data[1], data[2], } ;
     BYTE pow[] = { 0x48, } ;
     struct transaction_log twrite[] = {
         TRXN_START ,
-        { d, NULL, 3, trxn_match },
+        { d, NULL, 4, trxn_match },
         TRXN_END,
     } ;
     struct transaction_log tpower[] = {
