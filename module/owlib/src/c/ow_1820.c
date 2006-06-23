@@ -403,7 +403,7 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
 
     //*temp = .0625*(((char)data[1])<<8|data[0]) ;
     // Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
-    temp[0] = (FLOAT) ((int16_t)((data[1]<<8)|data[0]|mask)) * .0625 ;
+    temp[0] = (FLOAT) ((int16_t)((data[1]<<8)|(data[0]&mask))) * .0625 ;
     return 0 ;
 }
 
