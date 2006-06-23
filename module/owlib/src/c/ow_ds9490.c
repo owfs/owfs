@@ -589,9 +589,9 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
     do {
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-        if ( (ret=usb_interrupt_read(usb,DS2490_EP1,buffer,(size_t)32,TIMEOUT_USB)) < 0 ) {
+        if ( (ret=usb_interrupt_read(usb,DS2490_EP1,(ASCII *)buffer,(size_t)32,TIMEOUT_USB)) < 0 ) {
 #else
-        if ( (ret=usb_bulk_read(usb,DS2490_EP1,buffer,(size_t)32,TIMEOUT_USB)) < 0 ) { 
+        if ( (ret=usb_bulk_read(usb,DS2490_EP1,(ASCII *)buffer,(size_t)32,TIMEOUT_USB)) < 0 ) { 
 #endif
             STAT_ADD1_BUS(BUS_status_errors,pn->in);
             LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
@@ -808,7 +808,7 @@ static int DS9490_read( BYTE * buf, const size_t size, const struct parsedname *
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_read\n");
-    if ((ret=usb_bulk_read(usb,DS2490_EP3,buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
+    if ((ret=usb_bulk_read(usb,DS2490_EP3,(ASCII*)buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP3) ;
     STAT_ADD1_BUS(BUS_read_errors,pn->in) ;
@@ -819,7 +819,7 @@ static int DS9490_write( const BYTE * buf, const size_t size, const struct parse
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_write\n");
-    if ((ret=usb_bulk_write(usb,DS2490_EP2,buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
+    if ((ret=usb_bulk_write(usb,DS2490_EP2,(const ASCII *)buf,(const int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
     usb_clear_halt(usb,DS2490_EP2) ;
     STAT_ADD1_BUS(BUS_write_errors,pn->in) ;
@@ -837,7 +837,7 @@ static int DS9490_sendback_data( const BYTE * data , BYTE * resp , const size_t 
             || DS9490_sendback_data(&data[USB_FIFO_EACH],&resp[USB_FIFO_EACH],len-USB_FIFO_EACH,pn) ;
     }
 
-    if ( (ret=DS9490_write(data, (size_t)len, pn)) < len ) {
+    if ( (ret=DS9490_write(data, (size_t)len, pn)) < (int)len ) {
         LEVEL_DATA("USBsendback bulk write problem ret=%d\n", ret);
         return ret ;
     }
@@ -894,7 +894,7 @@ static int DS9490_next_both(struct device_search * ds, const struct parsedname *
     //LEVEL_DATA("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",cb[0],cb[1],cb[2],cb[3],cb[4],cb[5],cb[6],cb[7]) ;
 
     buflen = 8;
-    if ( (ret=DS9490_write(cb, buflen, pn)) < buflen ) {
+    if ( (ret=DS9490_write(cb, buflen, pn)) < (int)buflen ) {
         LEVEL_DATA("USBnextboth bulk write problem = %d\n",ret);
         return -EIO;
     }

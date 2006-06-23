@@ -279,7 +279,7 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname *), struct parsed
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
 static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
     int ret ;
-    int flags ;
+    UINT flags ;
     struct device_search ds ; // holds search state
 
     /* cache from Server if this is a remote bus */

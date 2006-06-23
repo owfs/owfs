@@ -25,7 +25,7 @@ static int Fake_ProgramPulse( const struct parsedname * pn ) ;
 static int Fake_sendback_bits( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static void Fake_close( struct connection_in * in ) ;
 static int Fake_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static const ASCII * namefind( char * name ) ;
+static const ASCII * namefind( const char * name ) ;
 
 /* Device-specific functions */
 /* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
@@ -136,7 +136,7 @@ static int Fake_next_both(struct device_search * ds, const struct parsedname * p
     return 0 ;
 }
 
-static const ASCII * namefind( char * name ) {
+static const ASCII * namefind( const char * name ) {
     const ASCII * ret = NULL ;
     /* Embedded function */
     void action(const void *nodep, const VISIT which, const int depth) {

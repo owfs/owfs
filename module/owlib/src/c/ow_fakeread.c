@@ -115,7 +115,7 @@ static int FS_read_fake_single( char *buf, const size_t size, const off_t offset
             s -= offset ;
             if ( s > size ) s = size ;
             {
-                int i ;
+                size_t i ;
                 for ( i=0 ; i<s ; ++i ) buf[i] = Random_a ;
             }
             return (pn->ft->read.a)(buf,s,offset,pn) ;
@@ -126,10 +126,10 @@ static int FS_read_fake_single( char *buf, const size_t size, const off_t offset
             s -= offset ;
             if ( s > size ) s = size ;
             {
-                int i ;
+                size_t i ;
                 for ( i=0 ; i<s ; ++i ) buf[i] = Random_b ;
             }
-            return (pn->ft->read.b)(buf,s,offset,pn) ;
+            return (pn->ft->read.b)((BYTE*)buf,s,offset,pn) ;
             }
         case ft_directory:
         case ft_subdir:

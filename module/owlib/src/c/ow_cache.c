@@ -499,7 +499,7 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
         LEVEL_DEBUG("Found in cache\n") ;
         if ( opaque->key->expires >= now ) {
             //printf("CACHE GET 3 buffer size=%d stored size=%d\n",*dsize,opaque->key->dsize);
-            if ( dsize[0] >= opaque->key->dsize ) {
+            if ( (ssize_t)dsize[0] >= opaque->key->dsize ) {
                 //printf("CACHE GET 4\n");
                 dsize[0] = opaque->key->dsize ;
                 //tree_show(opaque,leaf,0);
@@ -533,8 +533,8 @@ static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const 
     (void) duration ;
     STORELOCK;
         if ( (opaque=tfind(tn,&cache.store,tree_compare)) ) {
-            if ( *dsize >= opaque->key->dsize ) {
-                *dsize = opaque->key->dsize ;
+            if ( (ssize_t)dsize[0] >= opaque->key->dsize ) {
+                dsize[0] = opaque->key->dsize ;
                 memcpy( data, TREE_DATA(opaque->key), *dsize ) ;
                 ret = 0 ;
             } else {

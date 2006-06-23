@@ -499,7 +499,7 @@ struct parsedname {
     struct filetype * ft ; // device property
     int    extension ; // numerical extension (for array values) or -1
     struct filetype * subdir ; // in-device grouping
-    int pathlength ; // DS2409 branching depth
+    UINT pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
     struct connection_in * in ;
     uint32_t sg ; // more state info, packed for network transmission

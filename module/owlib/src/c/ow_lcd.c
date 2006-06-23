@@ -117,12 +117,12 @@ static int OW_w_screen( const BYTE loc , const char * text , const int size, con
 static struct internal_prop ip_cum = { "CUM", fc_persistent } ;
 
 /* LCD */
-static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_version(ASCII *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* Not sure if this is valid, but won't allow offset != 0 at first */
     /* otherwise need a buffer */
-    char v[16] ;
+    BYTE v[16] ;
     if ( OW_r_version( v, pn ) ) return -EINVAL ;
-    memcpy( buf, &v[offset], size ) ;
+    memcpy( buf, (ASCII *)(&v[offset]), size ) ;
     return size ;
 }
 

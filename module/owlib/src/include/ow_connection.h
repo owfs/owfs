@@ -149,10 +149,9 @@ struct interface_routines {
 
 struct connin_ha7 {
     ASCII lock[10] ;
-    int USpeed ;
-    int ULevel ;
-    int UMode ;
-    struct termios oldSerialTio;    /*old serial port settings*/
+    int locked ;
+    int found ;
+    BYTE * snlist ; /* list from the last directory */
 } ;
 struct connin_serial {
     speed_t speed;
@@ -308,6 +307,7 @@ struct connection_in {
         struct connin_usb    usb    ;
         struct connin_i2c    i2c    ;
         struct connin_fake   fake   ;
+        struct connin_ha7    ha7    ;
     } connin ;
 } ;
 /* Network connection structure */
@@ -384,6 +384,7 @@ int DS9097_detect( struct connection_in * in ) ;
 int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
 int LINKE_detect( struct connection_in * in ) ;
+int HA7_detect( struct connection_in * in ) ;
 int DS2482_detect( struct connection_in * in ) ;
 int Fake_detect( struct connection_in * in ) ;
 

@@ -66,7 +66,7 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     char * pathcpy ;
     char * pathnow ;
     char * pathnext ;
-    char * pathlast ;
+    char * pathlast = NULL ;
     int ret = 0 ;
     enum parse_enum pe = parse_first ;
 
@@ -318,7 +318,7 @@ static enum parse_enum Parse_RealDevice( char * filename, int remote, struct par
         //printf("devicepart2: not xdigit\n");
         return parse_error ; /* starts with 2 hex digits ? */
     } else {
-        BYTE ID[14] = { filename[0], filename[1], 0x00, } ;
+        ASCII ID[14] = { filename[0], filename[1], 0x00, } ;
         int i ;
         //printf("NP hex = %s\n",filename ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
