@@ -3,9 +3,6 @@
 
 EXTRA_DIST = php.m4 example/runme.php example/load_php_OW.php.in example/load_php_OW.php
 
-#include owfs header and php headers
-INCLUDES = -I.. -I$(top_srcdir)/src/include -I$(top_srcdir)/module/owlib/src/include @PHPINC@
-
 #use libtool to build the php extension
 lib_LTLIBRARIES = libowphp.la
 libowphp_la_LIBADD = ../../owlib/src/c/libow.la
@@ -21,9 +18,12 @@ EXTENSION_DIR := @PHPLIBDIR@
 
 libdir = $(EXTENSION_DIR)
 
-AM_CFLAGS = -I../include \
-	-fexceptions \
-	-D_FILE_OFFSET_BITS=64
+AM_CFLAGS = -fexceptions \
+	-I.. \
+	-I$(top_srcdir)/src/include \
+	-I$(top_srcdir)/module/owlib/src/include \
+	-D_FILE_OFFSET_BITS=64 \
+	@PHPINC@
 
 LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 
