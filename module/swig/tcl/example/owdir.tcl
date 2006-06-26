@@ -14,4 +14,4 @@ if {$argv == ""} {
 } else {
      puts [ ::OW::get $argv ]
 }
-#::OW::finish()
+::OW::finish
