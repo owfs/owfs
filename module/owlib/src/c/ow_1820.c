@@ -104,7 +104,7 @@ struct filetype DS1822[] = {
 } ;
 DeviceEntryExtended( 22, DS1822, DEV_temp | DEV_alarm ) ;
 
-struct filetype DS1822[] = {
+struct filetype DS1825[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
     {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
@@ -112,7 +112,7 @@ struct filetype DS1822[] = {
     {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
     {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
     {"power"     ,     1,  NULL, ft_yesno      , fc_volatile, {y:FS_power}      , {v:NULL}          , {v:NULL},        } ,
-    {"prog_addr" ,    12,  NULL, ft_unsigned   , fc_statble , {u:FS_r_add}      , {v:NULL}          , {v:NULL},        } ,
+    {"prog_addr" ,    12,  NULL, ft_unsigned   , fc_stable  , {u:FS_r_ad}       , {v:NULL}          , {v:NULL},        } ,
 } ;
 DeviceEntryExtended( 3B, DS1825, DEV_temp | DEV_alarm ) ;
 
