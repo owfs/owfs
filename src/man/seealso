@@ -1,7 +1,7 @@
 .SS Programs
 .B owfs (1) owhttpd (1) owftpd (1) owserver (1)
 .SS Language bindings
-.B owtcl (3) owperl (3)
+.B owtcl (3) owperl (3) owcapi (3)
 .SS Clocks
 .B DS1427 (3) DS1904(3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
 .SS ID
@@ -11,15 +11,15 @@
 .SS Switches
 .B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3) DS2413 (3)
 .SS Temperature
-.B DS1822 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3)
+.B DS1822 (3) DS1825 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3)
 .SS Humidity
 .B DS1922 (3)
 .SS Voltage
 .B DS2450 (3)
 .SS Resistance
 .B DS2890 (3)
-.SS Multifunction
-.B DS2436 (3) DS2438 (3) DS2760 (3) 
+.SS Multifunction (current, voltage, temperature)
+.B DS2436 (3) DS2438 (3) DS2751 (3) DS2760 (3) DS2770 (3) DS2780 (3) 
 .SS Counter
 .B DS2423 (3)
 .SS LCD Screen
