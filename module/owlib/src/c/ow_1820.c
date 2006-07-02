@@ -57,6 +57,7 @@ uWRITE_FUNCTION( FS_w_trim ) ;
  yREAD_FUNCTION( FS_r_trimvalid ) ;
  yREAD_FUNCTION( FS_r_blanket ) ;
 yWRITE_FUNCTION( FS_w_blanket ) ;
+ uREAD_FUNCTION( FS_r_ad ) ;
 
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
@@ -102,6 +103,18 @@ struct filetype DS1822[] = {
     {"power"     ,     1,  NULL, ft_yesno      , fc_volatile, {y:FS_power}      , {v:NULL}          , {v:NULL},        } ,
 } ;
 DeviceEntryExtended( 22, DS1822, DEV_temp | DEV_alarm ) ;
+
+struct filetype DS1822[] = {
+    F_STANDARD   ,
+//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
+    {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
+    {"fasttemp"  ,    12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
+    {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
+    {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
+    {"power"     ,     1,  NULL, ft_yesno      , fc_volatile, {y:FS_power}      , {v:NULL}          , {v:NULL},        } ,
+    {"prog_addr" ,    12,  NULL, ft_unsigned   , fc_statble , {u:FS_r_add}      , {v:NULL}          , {v:NULL},        } ,
+} ;
+DeviceEntryExtended( 3B, DS1825, DEV_temp | DEV_alarm ) ;
 
 /* Internal properties */
 static struct internal_prop ip_resolution = {"RES",fc_stable} ;
@@ -188,6 +201,14 @@ static int FS_power(int * y , const struct parsedname * pn) {
 
 static int FS_r_templimit(FLOAT * T , const struct parsedname * pn) {
     if ( OW_r_templimit( T , pn->ft->data.i, pn ) ) return -EINVAL ;
+    return 0 ;
+}
+
+/* DS1825 hardware proigrammable address */
+static int FS_r_ad(UINT * u , const struct parsedname * pn) {
+    BYTE data[9] ;
+    if ( OW_r_scratchpad(data,pn) ) return -EINVAL ;
+    u[0] = data[4] & 0x0F ;
     return 0 ;
 }
 
@@ -382,8 +403,8 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
         /* Get existing settings */
         if ( OW_r_scratchpad(data , pn ) ) return 1 ;
             /* Put in new settings */
-            if ( data[4] != res ) {
-                data[4] = res ;
+            if ( (data[4]|0x0F) != res ) { // ignore lower nibble
+                data[4] = ( res & 0xF0 ) | ( data[4] & 0x0F ) ;
             if ( OW_w_scratchpad(&data[2] , pn ) ) return 1 ;
             Cache_Add_Internal(&resolution,sizeof(int),&ip_resolution,pn) ;
         }
@@ -435,9 +456,9 @@ static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedn
     return OW_w_scratchpad( &data[2], pn ) ;
 }
 
-/* read 8 bytes, includes CRC8 which is checked */
+/* read 9 bytes, includes CRC8 which is checked */
 static int OW_r_scratchpad(BYTE * data, const struct parsedname * pn) {
-    /* data is 8 bytes long */
+    /* data is 9 bytes long */
     BYTE be[] = { 0xBE, } ;
     struct transaction_log tread[] = {
         TRXN_START ,
