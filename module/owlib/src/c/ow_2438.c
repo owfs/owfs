@@ -63,6 +63,28 @@ dWRITE_FUNCTION( FS_w_date ) ;
 
 /* ------- Structures ----------- */
 
+struct aggregate A2437 = { 8, ag_numbers, ag_separate, } ;
+struct filetype DS2437[] = {
+    F_STANDARD          ,
+    {"pages"            ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
+    {"pages/page"       ,   8,&A2437, ft_binary    , fc_stable  , {b:FS_r_page}   , {b:FS_w_page}   ,{v:NULL}, } ,
+    {"VDD"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_volts}    , {v:NULL}        , {i: 1}, } ,
+    {"VAD"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_volts}    , {v:NULL}        , {i: 0}, } ,
+    {"temperature"      ,  12, NULL ,ft_temperature, fc_volatile, {f:FS_temp}     , {v:NULL}        ,{v:NULL}, } ,
+    {"current"          ,  12, NULL , ft_integer   , fc_volatile, {i:FS_Current}  , {v:NULL}        ,{v:NULL}, } ,
+    {"Ienable"          ,  12, NULL , ft_unsigned  , fc_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable},{v:NULL}, } ,
+    {"udate"            ,  12, NULL , ft_unsigned  , fc_second  , {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x08} , } ,
+    {"date"             ,  24, NULL , ft_date      , fc_second  , {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x08} , } ,
+    {"disconnect"       ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
+    {"disconnect/udate" ,  12, NULL , ft_unsigned  , fc_volatile, {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x10} , } ,
+    {"disconnect/date"  ,  24, NULL , ft_date      , fc_volatile, {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x10} , } ,
+    {"endcharge"        ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
+    {"endcharge/udate"  ,  12, NULL , ft_unsigned  , fc_volatile, {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x14} , } ,
+    {"endcharge/date"   ,  24, NULL , ft_date      , fc_volatile, {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x14} , } ,
+} ;
+DeviceEntryExtended( 1E, DS2437, DEV_temp | DEV_volt ) ;
+
+
 struct aggregate A2438 = { 8, ag_numbers, ag_separate, } ;
 struct filetype DS2438[] = {
     F_STANDARD          ,
@@ -84,7 +106,7 @@ struct filetype DS2438[] = {
     {"endcharge/udate"  ,  12, NULL , ft_unsigned  , fc_volatile, {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x14} , } ,
     {"endcharge/date"   ,  24, NULL , ft_date      , fc_volatile, {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x14} , } ,
 } ;
-DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_ovdr) ;
+DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_volt ) ;
 
 /* ------- Functions ------------ */
 
