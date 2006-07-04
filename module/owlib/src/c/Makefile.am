@@ -18,6 +18,7 @@ OWLIB_SOURCE = compat.c          \
                ow_2408.c         \
                ow_2409.c         \
                ow_2413.c         \
+               ow_2430.c         \
                ow_2450.c         \
                ow_2433.c         \
                ow_2436.c         \

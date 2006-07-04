@@ -38,6 +38,7 @@ $Id$
 #include "ow_2438.h" // Battery
 #include "ow_2415.h" // Clock
 #include "ow_2423.h" // Counter
+#include "ow_2430.h" // Old EEPROM
 #include "ow_1963.h" // ibutton SHA memory
 #include "ow_1991.h" // ibutton Multikey memory
 #include "ow_1993.h" // ibutton memory

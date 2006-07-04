@@ -1,0 +1,68 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS2430A 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B DS2430A
+- Quad A/D Converter
+.SH SYNOPSIS
+EEPROM
+.PP
+.B 14
+[.]XXXXXXXXXXXX[XX][/[
+.B application
+|
+.B lock
+|
+.B memory
+|
+.so standard_mini
+]]
+.SH FAMILY CODE
+.PP
+.I 14
+.SH SPECIAL PROPERTIES
+.SS application
+.I read-write, binary
+.br
+8 bytes of data. Write once, then
+.I lock
+is true and further writing is impossible.
+.SS lock
+.I read-only, yes-no
+.br
+Is the
+.I application
+area locked?
+.SS memory
+.I read-write, binary
+.br
+16 bytes of data.
+.SH STANDARD PROPERTIES
+.so standard
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so description
+.SS DS2430A
+The
+.B DS2430A (3)
+is a memory 1-wire chip. It ios considered obsoloete and newer designs are supposed to use the
+.B DS2431 (3)
+.SH ADDRESSING
+.so addressing
+.SH DATASHEET
+http://pdfserv.maxim-ic.com/en/ds/DS2430A-DS2430AP.pdf
+.SH SEE ALSO
+.so seealso
+.SH AVAILABILITY
+http://owfs.sourceforge.net
+.SH AUTHOR
+Paul Alfille (palfille@earthlink.net)
