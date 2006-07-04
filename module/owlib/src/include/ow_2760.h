@@ -19,7 +19,13 @@ $Id$
 
 /* ------- Structures ----------- */
 
+DeviceHeader( DS2720 ) ;
+DeviceHeader( DS2740 ) ;
+DeviceHeader( DS2751 ) ;
+DeviceHeader( DS2755 ) ;
 DeviceHeader( DS2760 ) ;
+DeviceHeader( DS2770 ) ;
+DeviceHeader( DS2780 ) ;
 
 #endif /* OW_2760_H */
 
