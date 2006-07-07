@@ -8,22 +8,20 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH DS2755 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH DS2760 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B DS2755 DS2756
-- Multichemistry Battery Fuel Gauge
+.B DS2781
+- Statnd-alone Fuel Guage IC
 .SH SYNOPSIS
-Temperature Voltage, Current, Memory, and Switch.
+Temperature Voltage Current Memory and Switch.
 .PP
-.B 35
+.B 3D
 [.]XXXXXXXXXXXX[XX][/[
-.B alarm_set/[volthigh|voltlow|temphigh|templow]
-|
-.B lock.[0-2|ALL]
+.B lock.[0-1|ALL]
 |
 .B memory
 |
-.B pages/page.[0-2|ALL]
+.B pages/page.[0-1|ALL]
 |
 .B PIO
 |
@@ -41,52 +39,42 @@ Temperature Voltage, Current, Memory, and Switch.
 |
 .B vis
 |
+.B vis_avg
+|
+.B vis_offset
+|
 .B volt
 |
 .B volthours
 |
 .br
-.B defaultpmod
+.B aef
 |
-.B pie0
+.B chgtf
 |
-.B pie1
-|
-.B rnaop
-|
-.B ios
-|
-.B uben
-|
-.B ovd
+.B learnf
 |
 .B pmod
 |
-.B por
+.B porf
+|
+.B sef
 |
 .B uven
+|
+.B uvf
 |
 .br
 .so standard_mini
 ]]
 .SH FAMILY CODE
 .PP
-.I 35
+.I 3D
 .SH SPECIAL PROPERTIES
-.SS alarm_set/templow alarm_set/temphigh
-.I read-write, integer
-.br
-High and low alarm settings for
-.I temperature
-.SS alarm_set/voltlow alarm_set/volthigh
-.I read-write, floating point
-.br
-High and low alarm settings for
-.I volts
-.SS lock.[0-2|ALL]
+.SS lock.[0-1|ALL]
 .I read-write, yes-no
 .br
-Lock any of the three eprom pages to prevent further writes. Apparently setting
+Lock either of the two eprom pages to prevent further writes. Apparently setting
 .I lock
 is permanent.
 .SS memory
@@ -99,9 +87,9 @@ area.
 See the
 .I DATASHEET
 for a full memory map.
-.SS pages/pages.[0-2|ALL]
+.SS pages/pages.[0-1|ALL]
 .I read-write, binary
-Three 32 byte areas of memory for user application. The
+Two 16 byte areas of memory for user application. The
 .I lock
 property can prevent further alteration.
 .br
@@ -126,7 +114,7 @@ property. This will reflect the current voltage at the pin, not the value sent t
 Note also that
 .I PIO
 will also be altered by the power-status of the
-.I DS2670
+.I DS2680
 See the datasheet for details.
 .SS sensed
 .I read-only, yes-no
@@ -151,7 +139,7 @@ Conversion is continuous.
 .I directory
 .br
 Thermocouple circuit using the
-.I  DS2755
+.I  DS2781
 to read the Seebeck voltage and the reference temperature. Since the type interpretation of the values read depends on the type of thermocouple, the correct directory must be chosen. Supported thermocouple types include types B, E, J, K, N, R, S and T.
 .SS typeX/range_low typeX/ranges_high
 .I read-only, flaoting point
@@ -195,6 +183,18 @@ The
 reading is derived from
 .I vis
 assuming the internal 25 mOhm resistor is employed. There is no way to know this through software.
+.SS vis_avg
+.I read-only, floating point
+.br
+Average current sensor reading (unknown external resistor). Measures the voltage gradient between the Vis pins. Units are in
+.B Volts
+.SS vis_offset
+.I read-write, floating point
+.br
+Offset to
+.I vis
+for current sensor reading (unknown external resistor). Units are in
+.B Volts
 .SS volt
 .I read-only, floating point
 .br
@@ -214,7 +214,7 @@ Integral of
 over time. Units are in
 .B volthours
 .SH OBSCURE PROPERTIES
-.SS pmod por uven pie0 pie1 ios uben ovd rnaop
+.SS aef chgtf learnf pmod porf sef uven uvf
 .I varies, yes-no
 .br
 Bit flags corresponding to various battery management functions of the chip. See the 
@@ -222,43 +222,24 @@ Bit flags corresponding to various battery management functions of the chip. See
 for details of the identically named entries.
 .br
 In general, writing "0" corresponds to a 0 bit value, and non-zero corresponds to a 1 bit value.
-.SS defaultpmod
-.I read-write, yes-no
-.br
-Default power-on state for the corresponding properties.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
-Temperature and voltage.
+None.
 .SH DESCRIPTION
 .so description
-.SS DS2755 DS2756
+.SS DS2781
 The
-.B DS2755 (3)
-and
-.B DS2756 (3)
-are battery charging controllers similar to the
-.B DS2751 (3)
-except no internal resistor option and a larger EEPROM memory.
-.PP
-The
-.B DS2756 (3)
-adds suspend modes (
-.I pie0 pie1
-) to the
-.B DS2755 (3)
+.B DS2781 (3)
+is a battery charging controller. It has elaborate algorithms for estimating battery capacity.
 .PP
 A number of interesting devices can be built with the
-.B DS2755 (3)
-and
-.B DS2756 (3)
+.B DS2781
 including thermocouples. Support for thermocouples in built into the software, using the embedded thermister as the cold junction temperature.
 .SH ADDRESSING
 .so addressing
 .SH DATASHEET
-http://pdfserv.maxim-ic.com/en/ds/DS2755.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS2756.pdf
+http://pdfserv.maxim-ic.com/en/ds/DS2781.pdf
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

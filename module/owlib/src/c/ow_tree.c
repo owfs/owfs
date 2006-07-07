@@ -67,6 +67,7 @@ void DeviceSort( void ) {
     qsort( NoDevice.ft,(size_t) NoDevice.nft,sizeof(struct filetype),file_compare) ;
 
     Device2Tree( & d_DS1420 ,       pn_real ) ;
+    Device2Tree( & d_DS1425 ,       pn_real ) ;
     Device2Tree( & d_DS18S20 ,      pn_real ) ;
     Device2Tree( & d_DS18B20 ,      pn_real ) ;
     Device2Tree( & d_DS1821 ,       pn_real ) ;
@@ -112,6 +113,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_DS2760 ,       pn_real ) ;
     Device2Tree( & d_DS2770 ,       pn_real ) ;
     Device2Tree( & d_DS2780 ,       pn_real ) ;
+    Device2Tree( & d_DS2781 ,       pn_real ) ;
     Device2Tree( & d_DS2890 ,       pn_real ) ;
     Device2Tree( & d_DS28E04 ,       pn_real ) ;
     Device2Tree( & d_LCD ,          pn_real ) ;

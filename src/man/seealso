@@ -11,7 +11,7 @@
 .SS Switches
 .B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3) DS2413 (3)
 .SS Temperature
-.B DS1822 (3) DS1825 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3)
+.B DS1822 (3) DS1825 (3) DS1820 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3)
 .SS Humidity
 .B DS1922 (3)
 .SS Voltage
@@ -19,7 +19,7 @@
 .SS Resistance
 .B DS2890 (3)
 .SS Multifunction (current, voltage, temperature)
-.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2760 (3) DS2770 (3) DS2780 (3)
+.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2756 (3) DS2760 (3) DS2770 (3) DS2780 (3) DS2781 (3)
 .SS Counter
 .B DS2423 (3)
 .SS LCD Screen

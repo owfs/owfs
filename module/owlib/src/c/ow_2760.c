@@ -67,6 +67,8 @@ yWRITE_FUNCTION( FS_w_lock ) ;
 yWRITE_FUNCTION( FS_w_pio ) ;
  fREAD_FUNCTION( FS_r_vh ) ;
 fWRITE_FUNCTION( FS_w_vh ) ;
+ fREAD_FUNCTION( FS_r_vis_off ) ;
+fWRITE_FUNCTION( FS_w_vis_off ) ;
  fREAD_FUNCTION( FS_r_ah ) ;
 fWRITE_FUNCTION( FS_w_ah ) ;
  fREAD_FUNCTION( FS_r_abias ) ;
@@ -165,30 +167,76 @@ struct thermocouple type_t =
         { -1.1498e-22,7.18468e-21,5.31691e-18,-2.88407e-16,-9.51445e-14,4.02711e-12,8.60657e-10,-5.74685e-08,4.17544e-05,0.0386747,-0.000253129,},
 };
 
+#define F_thermocouple  \
+{"typeB"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeB/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_b}, } , \
+{"typeB/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_b}, } , \
+{"typeB/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_b}, } , \
+    \
+{"typeE"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeE/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_e}, } , \
+{"typeE/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_e}, } , \
+{"typeE/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_e}, } , \
+    \
+{"typeJ"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeJ/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_j}, } , \
+{"typeJ/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_j}, } , \
+{"typeJ/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_j}, } , \
+    \
+{"typeK"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeK/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_k}, } , \
+{"typeK/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_k}, } , \
+{"typeK/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_k}, } , \
+    \
+{"typeN"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeN/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_n}, } , \
+{"typeN/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_n}, } , \
+{"typeN/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_n}, } , \
+    \
+{"typeR"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeR/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_r}, } , \
+{"typeR/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_r}, } , \
+{"typeR/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_r}, } , \
+    \
+{"typeS"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeS/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_s}, } , \
+{"typeS/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_s}, } , \
+{"typeS/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_s}, } , \
+    \
+{"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
+{"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } , \
+{"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } , \
+{"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } 
+
+
 struct LockPage {
     int	   pages ;
     size_t reg ;
     size_t size ;
     off_t offset[3] ;
 } ;
-#define Pages2720	2
+
+#define Pages2720   2
 #define Pages2751   2
 #define Pages2755   3
 #define Pages2760	2
 #define Pages2770	3
 #define Pages2780	2
+
 #define Size2720	4
 #define Size2751       16
 #define Size2755       32
 #define Size2760       16
 #define Size2770       16
 #define Size2780       16
+
 struct LockPage P2720 = { Pages2720, 0x07, Size2720, {0x20, 0x30, 0x00,}, } ;
 struct LockPage P2751 = { Pages2751, 0x07, Size2751, {0x20, 0x30, 0x00,}, } ;
 struct LockPage P2755 = { Pages2755, 0x07, Size2755, {0x20, 0x40, 0x60,}, } ;
 struct LockPage P2760 = { Pages2760, 0x07, Size2760, {0x20, 0x30, 0x00,}, } ;
 struct LockPage P2770 = { Pages2770, 0x07, Size2770, {0x20, 0x30, 0x40,}, } ;
 struct LockPage P2780 = { Pages2780, 0x1F, Size2780, {0x20, 0x60, 0x00,}, } ;
+
 struct aggregate L2720 = { Pages2720, ag_numbers, ag_separate } ;
 struct aggregate L2751 = { Pages2751, ag_numbers, ag_separate } ;
 struct aggregate L2755 = { Pages2755, ag_numbers, ag_separate } ;
@@ -248,46 +296,8 @@ struct filetype DS2751[] = {
     {"pmod"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x05}, } ,
     {"por"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x08<<8)|0x00}, } ,
     {"uven"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x03}, } ,
-    
-    {"typeB"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeB/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_b}, } ,
-    {"typeB/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_b}, } ,
-    {"typeB/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_b}, } ,
-    
-    {"typeE"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeE/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_e}, } ,
-    {"typeE/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_e}, } ,
-    {"typeE/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_e}, } ,
-    
-    {"typeJ"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeJ/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_j}, } ,
-    {"typeJ/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_j}, } ,
-    {"typeJ/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_j}, } ,
-    
-    {"typeK"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeK/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_k}, } ,
-    {"typeK/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_k}, } ,
-    {"typeK/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_k}, } ,
-    
-    {"typeN"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeN/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_n}, } ,
-    {"typeN/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_n}, } ,
-    {"typeN/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_n}, } ,
-    
-    {"typeR"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeR/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_r}, } ,
-    {"typeR/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_r}, } ,
-    {"typeR/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_r}, } ,
-    
-    {"typeS"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeS/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_s}, } ,
-    {"typeS/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_s}, } ,
-    {"typeS/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_s}, } ,
-    
-    {"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } ,
-    {"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } ,
-    {"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } ,
+
+    F_thermocouple ,
 } ;
 DeviceEntry( 51, DS2751 ) ;
 
@@ -313,49 +323,17 @@ struct filetype DS2755[] = {
     {"alarm_set/templow" , 12, NULL, ft_temperature, fc_volatile, {f:FS_r_templim}, {f:FS_w_templim}, {u:0x85}, } ,
 
     {"defaultpmod" ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x31<<8)|0x05}, } ,
+    {"pie1"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x07}, } ,
+    {"pie0"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x06}, } ,
     {"pmod"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x05}, } ,
-    {"por"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x08<<8)|0x00}, } ,
+    {"rnaop"       ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x04}, } ,
     {"uven"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x03}, } ,
-    
-    {"typeB"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeB/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_b}, } ,
-    {"typeB/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_b}, } ,
-    {"typeB/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_b}, } ,
-    
-    {"typeE"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeE/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_e}, } ,
-    {"typeE/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_e}, } ,
-    {"typeE/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_e}, } ,
-    
-    {"typeJ"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeJ/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_j}, } ,
-    {"typeJ/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_j}, } ,
-    {"typeJ/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_j}, } ,
-    
-    {"typeK"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeK/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_k}, } ,
-    {"typeK/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_k}, } ,
-    {"typeK/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_k}, } ,
-    
-    {"typeN"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeN/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_n}, } ,
-    {"typeN/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_n}, } ,
-    {"typeN/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_n}, } ,
-    
-    {"typeR"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeR/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_r}, } ,
-    {"typeR/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_r}, } ,
-    {"typeR/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_r}, } ,
-    
-    {"typeS"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeS/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_s}, } ,
-    {"typeS/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_s}, } ,
-    {"typeS/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_s}, } ,
-    
-    {"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } ,
-    {"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } ,
-    {"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } ,
+    {"ios"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x02}, } ,
+    {"uben"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x01}, } ,
+    {"ovd"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x00}, } ,
+    {"por"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x08<<8)|0x00}, } ,
+
+    F_thermocouple ,
 } ;
 DeviceEntryExtended( 35, DS2755, DEV_alarm ) ;
 
@@ -390,46 +368,8 @@ struct filetype DS2760[] = {
     {"pmod"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x05}, } ,
     {"swen"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x03}, } ,
     {"uv"  ,             1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x00<<8)|0x06}, },
-    
-    {"typeB"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeB/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_b}, } ,
-    {"typeB/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_b}, } ,
-    {"typeB/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_b}, } ,
-    
-    {"typeE"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeE/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_e}, } ,
-    {"typeE/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_e}, } ,
-    {"typeE/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_e}, } ,
-    
-    {"typeJ"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeJ/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_j}, } ,
-    {"typeJ/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_j}, } ,
-    {"typeJ/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_j}, } ,
-    
-    {"typeK"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeK/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_k}, } ,
-    {"typeK/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_k}, } ,
-    {"typeK/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_k}, } ,
-    
-    {"typeN"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeN/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_n}, } ,
-    {"typeN/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_n}, } ,
-    {"typeN/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_n}, } ,
-    
-    {"typeR"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeR/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_r}, } ,
-    {"typeR/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_r}, } ,
-    {"typeR/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_r}, } ,
-    
-    {"typeS"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeS/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_s}, } ,
-    {"typeS/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_s}, } ,
-    {"typeS/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_s}, } ,
-    
-    {"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } ,
-    {"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } ,
-    {"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } ,
+
+    F_thermocouple ,
 } ;
 DeviceEntry( 30, DS2760 ) ;
 
@@ -457,46 +397,8 @@ struct filetype DS2770[] = {
     {"pmod"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x05}, } ,
     {"refresh"     ,     1,   NULL,  ft_yesno   , fc_stable  , {v:NULL}        , {y:FS_refresh},{v:NULL}, } ,
     {"timer"       ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_timer}  , {f:FS_w_timer},{v:NULL}, } ,
-    
-    {"typeB"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeB/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_b}, } ,
-    {"typeB/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_b}, } ,
-    {"typeB/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_b}, } ,
-    
-    {"typeE"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeE/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_e}, } ,
-    {"typeE/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_e}, } ,
-    {"typeE/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_e}, } ,
-    
-    {"typeJ"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeJ/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_j}, } ,
-    {"typeJ/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_j}, } ,
-    {"typeJ/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_j}, } ,
-    
-    {"typeK"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeK/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_k}, } ,
-    {"typeK/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_k}, } ,
-    {"typeK/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_k}, } ,
-    
-    {"typeN"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeN/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_n}, } ,
-    {"typeN/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_n}, } ,
-    {"typeN/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_n}, } ,
-    
-    {"typeR"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeR/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_r}, } ,
-    {"typeR/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_r}, } ,
-    {"typeR/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_r}, } ,
-    
-    {"typeS"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeS/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_s}, } ,
-    {"typeS/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_s}, } ,
-    {"typeS/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_s}, } ,
-    
-    {"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } ,
-    {"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } ,
-    {"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } ,
+
+    F_thermocouple ,
 } ;
 DeviceEntry( 2E, DS2770 ) ;
 
@@ -523,49 +425,39 @@ struct filetype DS2780[] = {
     {"sef"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x05}, },
     {"uven"        ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x60<<8)|0x06}, },
     {"uvf"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x02}, },
-    
-    {"typeB"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeB/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_b}, } ,
-    {"typeB/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_b}, } ,
-    {"typeB/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_b}, } ,
-    
-    {"typeE"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeE/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_e}, } ,
-    {"typeE/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_e}, } ,
-    {"typeE/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_e}, } ,
-    
-    {"typeJ"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeJ/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_j}, } ,
-    {"typeJ/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_j}, } ,
-    {"typeJ/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_j}, } ,
-    
-    {"typeK"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeK/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_k}, } ,
-    {"typeK/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_k}, } ,
-    {"typeK/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_k}, } ,
-    
-    {"typeN"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeN/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_n}, } ,
-    {"typeN/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_n}, } ,
-    {"typeN/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_n}, } ,
-    
-    {"typeR"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeR/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_r}, } ,
-    {"typeR/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_r}, } ,
-    {"typeR/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_r}, } ,
-    
-    {"typeS"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeS/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_s}, } ,
-    {"typeS/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_s}, } ,
-    {"typeS/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_s}, } ,
-    
-    {"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } ,
-    {"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } ,
-    {"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } ,
+
+    F_thermocouple ,
 } ;
 DeviceEntry( 32, DS2780 ) ;
 
+struct filetype DS2781[] = {
+    F_STANDARD     ,
+    {"lock"        ,     1, &L2780,  ft_yesno   , fc_stable  , {y:FS_r_lock}   , {y:FS_w_lock}, {v:&P2780}, } ,
+    {"memory"      ,   256,   NULL,  ft_binary  , fc_volatile, {b:FS_r_mem}    , {b:FS_w_mem} , {v:NULL}, } ,
+    {"pages"       ,     0,   NULL,  ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"pages/page"  ,Size2780, &L2780,  ft_binary, fc_volatile, {b:FS_r_page}   , {b:FS_w_page}, {v:&P2780}, } ,
+    {"PIO"         ,     1,   NULL,  ft_yesno   , fc_volatile, {v:NULL}        , {y:FS_w_pio} , {u:(0x15<<8)|0x00}, } ,
+    {"sensed"      ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {v:NULL}     , {u:(0x15<<8)|0x00}, },
+    {"temperature" ,    12,   NULL,ft_temperature,fc_volatile, {f:FS_r_temp}   , {v:NULL}     , {v:NULL}, } ,
+    {"vbias"       ,    12,   NULL,  ft_float   , fc_stable  , {f:FS_r_vbias}  , {f:FS_w_vbias},{v:NULL}, } ,
+    {"vis"         ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_vis}    , {v:NULL}     , {v:NULL}, } ,
+    {"vis_offset"  ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_vis_off}, {f:FS_w_vis_off}, {v:NULL}, } ,
+    {"vis_avg"     ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_vis_avg}, {v:NULL}     , {v:NULL}, } ,
+    {"volt"        ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_volt}   , {v:NULL}     , {s:0x0C}, } ,
+    {"volthours"   ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_vh}     , {f:FS_w_vh}  , {v:NULL}, } ,
+    
+    {"aef"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x06}, },
+    {"chgtf"       ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x07}, },
+    {"learnf"      ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x04}, },
+    {"pmod"        ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x60<<8)|0x05}, },
+    {"porf"        ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x01}, },
+    {"sef"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x05}, },
+    {"uven"        ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x60<<8)|0x06}, },
+    {"uvf"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x02}, },
+
+    F_thermocouple ,
+} ;
+DeviceEntry( 3D, DS2781 ) ;
 
 /* ------- Functions ------------ */
 
@@ -580,6 +472,8 @@ static FLOAT polycomp( FLOAT x , FLOAT * coef ) ;
 static int OW_lock( const struct parsedname * pn ) ;
 static int OW_r_int(int * I, off_t offset, const struct parsedname * pn) ;
 static int OW_w_int(const int * I, off_t offset, const struct parsedname * pn) ;
+static int OW_r_int8(int * I, off_t offset, const struct parsedname * pn) ;
+static int OW_w_int8(const int * I, off_t offset, const struct parsedname * pn) ;
 static int OW_cmd( const BYTE cmd , const struct parsedname * pn ) ;
 
 /* 2406 memory read */
@@ -624,8 +518,8 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
 
 static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
     int I ;
-    int ret = OW_r_int(&I,0x0E,pn) ;
     FLOAT f = 0. ;
+    if ( OW_r_int(&I,0x0E,pn) ) return -EINVAL ;
     switch ( pn->sn[0] ) {
         case 0x36: //DS2740
             f = 6.25E-6 ;
@@ -639,12 +533,13 @@ static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
             f = 1.56E-6 ;
             break ;
         case 0x32: //DS2780
+        case 0x3D: //DS2781
             f = 1.5625E-6 ;
             break ;
     }
     if ( pn->ft->data.v ) f = pn->ft->data.f ; // for DS2740BU
     V[0] = f * I ;
-    return ret?-EINVAL:0 ;
+    return 0 ;
 }
 
 // Volt-hours
@@ -653,6 +548,7 @@ static int FS_r_vis_avg(FLOAT *V , const struct parsedname * pn) {
     int ret = 1 ;
     switch (pn->sn[0]) {
         case 0x32: //DS2780
+        case 0x3D: //DS2781
             ret = OW_r_int(&I,0x08,pn) ;
             V[0] = .0000015625 * I ;
             break ;
@@ -667,9 +563,9 @@ static int FS_r_vis_avg(FLOAT *V , const struct parsedname * pn) {
 // Volt-hours
 static int FS_r_vh(FLOAT *V , const struct parsedname * pn) {
     int I ;
-    int ret = OW_r_int(&I,0x10,pn) ;
+    if ( OW_r_int(&I,0x10,pn) ) return -EINVAL ;
     V[0] = .00000625 * I ;
-    return ret?-EINVAL:0 ;
+    return 0 ;
 }
 
 // Volt-hours
@@ -681,9 +577,9 @@ static int FS_w_vh(const FLOAT *V , const struct parsedname * pn) {
 // Volt-limits
 static int FS_r_voltlim(FLOAT *V , const struct parsedname * pn) {
     int I ;
-    int ret = OW_r_int(&I,pn->ft->data.u,pn) ;
+    if ( OW_r_int(&I,pn->ft->data.u,pn) ) return -EINVAL ;
     V[0] = .00000625 * I ;
-    return ret?-EINVAL:0 ;
+    return 0 ;
 }
 
 // Volt-limits
@@ -694,27 +590,26 @@ static int FS_w_voltlim(const FLOAT *V , const struct parsedname * pn) {
 
 // Volt-limits
 static int FS_r_templim(FLOAT *T , const struct parsedname * pn) {
-    BYTE c ;
-    if (OW_r_mem( &c , 1, pn->ft->data.u, pn )) return -EINVAL ;
-    T[0] = (int8_t) c ;
+    int I ;
+    if (OW_r_int8( &I , pn->ft->data.u, pn )) return -EINVAL ;
+    T[0] = I ;
     return 0 ;
 }
             
 // Volt-limits
 static int FS_w_templim(const FLOAT *T , const struct parsedname * pn) {
     int I = T[0] ;
-    BYTE c = I & 0xFF ;
     if ( I < -128 ) return -ERANGE ;
     if ( I > 127 ) return -ERANGE ;
-    return OW_w_mem(&c,1,pn->ft->data.u,pn)?-EINVAL:0 ;
+    return OW_w_int8(&I,pn->ft->data.u,pn)?-EINVAL:0 ;
 }
 
 // timer
 static int FS_r_timer(FLOAT *F , const struct parsedname * pn) {
     int I ;
-    int ret = OW_r_int(&I,0x02,pn) ;
+    if ( OW_r_int(&I,0x02,pn) ) return -EINVAL ;
     F[0] = .015625 * I ;
-    return ret?-EINVAL:0 ;
+    return 0 ;
 }
 
 // timer
@@ -726,15 +621,31 @@ static int FS_w_timer(const FLOAT *F , const struct parsedname * pn) {
 // Amp-hours -- using 25mOhm internal resistor
 static int FS_r_ah(FLOAT *A , const struct parsedname * pn) {
     FLOAT V ;
-    int ret = FS_r_vh(&V, pn ) ;
+    if ( FS_r_vh(&V, pn ) ) return -EINVAL ;
     A[0] = V / .025 ;
-    return ret?-EINVAL:0 ;
+    return 0 ;
 }
 
 // Amp-hours -- using 25mOhm internal resistor
 static int FS_w_ah(const FLOAT *A , const struct parsedname * pn) {
     FLOAT V = A[0] * .025 ;
     return FS_w_vh(&V,pn) ;
+}
+
+// current offset
+static int FS_r_vis_off(FLOAT *V , const struct parsedname * pn) {
+    int I ;
+    if ( OW_r_int8(&I, 0x7B, pn ) ) return -EINVAL ;
+    V[0] = 1.56E-6 * I ;
+    return 0 ;
+}
+
+// current offset
+static int FS_w_vis_off(const FLOAT *V , const struct parsedname * pn) {
+    int I = V[0] / 1.56E-6 ;
+    if ( I < -128 ) return -ERANGE ;
+    if ( I >  127 ) return -ERANGE ;
+    return OW_w_int8(&I, 0x7B, pn) ? -EINVAL : 0 ;
 }
 
 // Current bias -- using 25mOhm internal resistor
@@ -798,26 +709,24 @@ static int FS_r_current(FLOAT * A , const struct parsedname * pn) {
 
 static int FS_r_vbias(FLOAT * V , const struct parsedname * pn) {
     int I ;
-    BYTE c ;
     switch ( pn->sn[0] ) {
         case 0x51: //DS2751
         case 0x30: //DS2760
-            if (OW_r_mem( &c , 1, 0x33, pn )) return -EINVAL ;
-            I = (int8_t) c ;
+            if (OW_r_int8( &I , 0x33, pn )) return -EINVAL ;
             V[0] = 15.625E-6 * I ;
             break ;
         case 0x35: //DS2755
-            if (OW_r_mem( &c , 1, 0x33, pn )) return -EINVAL ;
-            I = (int8_t) c ;
+            if (OW_r_int8( &I , 0x33, pn )) return -EINVAL ;
             V[0] = 1.95E-6 * I ;
             break ;
         case 0x28: //DS2770
+            // really a 2byte value!
             if (OW_r_int( &I, 0x32, pn )) return -EINVAL ;
             V[0] = 1.5625E-6 * I ;
             break ;
         case 0x32: //DS2780
-            if (OW_r_mem( &c , 1, 0x61, pn )) return -EINVAL ;
-            I = (int8_t) c ;
+        case 0x3D: //DS2780
+            if (OW_r_int8( &I, 0x61, pn )) return -EINVAL ;
             V[0] = 1.5625E-6 * I ;
             break ;
     }
@@ -826,7 +735,6 @@ static int FS_r_vbias(FLOAT * V , const struct parsedname * pn) {
 
 static int FS_w_vbias(const FLOAT * V , const struct parsedname * pn) {
     int I ;
-    BYTE c ;
     int ret = 0 ; // assign unnecessarily to avoid compiler warning
     switch ( pn->sn[0] ) {
         case 0x51: //DS2751
@@ -834,28 +742,26 @@ static int FS_w_vbias(const FLOAT * V , const struct parsedname * pn) {
             I = V[0] / 15.625E-6 ;
             if ( I < -128 ) return -ERANGE ;
             if ( I > 127 ) return -ERANGE ;
-            c = I & 0xFF ;
-            ret = OW_w_mem(&c,1,0x33,pn) ;
+            ret = OW_w_int8(&I,0x33,pn) ;
             break ;
         case 0x35: //DS2755
             I = V[0] / 1.95E-6 ;
             if ( I < -128 ) return -ERANGE ;
             if ( I > 127 ) return -ERANGE ;
-            c = I & 0xFF ;
-            ret = OW_w_mem(&c,1,0x33,pn) ;
+            ret = OW_w_int8(&I,0x33,pn) ;
             break ;
         case 0x28: //DS2770
             I = V[0] / 1.5625E-6 ;
             if ( I < -32768 ) return -ERANGE ;
             if ( I > 32767 ) return -ERANGE ;
+            // really 2 bytes
             ret = OW_w_int(&I,0x32,pn) ;
             break ;
         case 0x32: //DS2780
             I = V[0] / 1.5625E-6 ;
             if ( I < -128 ) return -ERANGE ;
             if ( I > 127 ) return -ERANGE ;
-            c = I & 0xFF ;
-            ret = OW_w_mem(&c,1,0x61,pn) ;
+            ret = OW_w_int8(&I,0x61,pn) ;
             break ;
     }
     return ret ? -EINVAL : 0 ;
@@ -864,7 +770,14 @@ static int FS_w_vbias(const FLOAT * V , const struct parsedname * pn) {
 static int FS_r_volt(FLOAT * V , const struct parsedname * pn) {
     int I ;
     if (OW_r_int( &I , 0x0C, pn )) return -EINVAL ;
-    V[0] = (I>>5) * .00488 ;
+    switch (pn->sn[0]) {
+        case 0x3D: //DS2781
+            V[0] = ( I / 32 ) * .00976 ;
+            break ;
+        default:
+            V[0] = ( I / 32 ) * .00488 ;
+            break ;
+    }
     return 0 ;
 }
 
@@ -872,14 +785,15 @@ static int FS_r_temp(FLOAT * T , const struct parsedname * pn) {
     int I ;
     size_t off ;
     switch ( pn->sn[0] ) {
-        case 0x32 : // ds2780
+        case 0x32: //DS2780
+        case 0x3D: //DS2781
             off = 0x0A ;
             break ;
         default:
             off = 0x18 ;
     }
     if (OW_r_int( &I , off, pn )) return -EINVAL ;
-    T[0] = (I>>5) * .125 ;
+    T[0] = (I / 32) * .125 ;
     return 0 ;
 }
 
@@ -1011,6 +925,19 @@ static int OW_r_int(int * I, off_t offset, const struct parsedname * pn) {
 static int OW_w_int(const int * I, off_t offset, const struct parsedname * pn) {
     BYTE i[2] = { (I[0]>>8)&0xFF, I[0]&0xFF, } ;
     return OW_w_sram(i,2,offset,pn) ;
+}
+
+static int OW_r_int8(int * I, off_t offset, const struct parsedname * pn) {
+    BYTE i[1] ;
+    int ret = OW_r_sram(i,1,offset,pn) ;
+    if (ret) return ret ;
+    I[0] = ((int)((int8_t)i[0]) ) ;
+    return 0 ;
+}
+
+static int OW_w_int8(const int * I, off_t offset, const struct parsedname * pn) {
+    BYTE i[1] = { I[0]&0xFF, } ;
+    return OW_w_sram(i,1,offset,pn) ;
 }
 
 /* Compute a 10th order polynomial with cooef being a10, a9, ... a0 */
