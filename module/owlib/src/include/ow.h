@@ -140,6 +140,21 @@ $Id$
 /* Debugging and error messages separated out for readability */
 #include "ow_debug.h"
 
+
+/* Floating point */
+/* I hate to do this, making everything a double */
+/* The compiler complains mercilessly, however */
+/* 1-wire really is low precision -- float is more than enough */
+typedef double          FLOAT ;
+typedef time_t          DATE ;
+typedef unsigned char   BYTE ;
+typedef char            ASCII ;
+typedef unsigned int    UINT ;
+typedef int             INT ;
+
+/* Directory blob separated out for readability */
+#include "ow_dirblob.h"
+
 extern int multithreading ;
 #if OW_MT
     #include <pthread.h>
@@ -223,17 +238,6 @@ extern int multithreading ;
 extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_nfsd, opt_perl, opt_python, opt_php, opt_tcl, } ;
 int owopt( const int c , const char * arg, enum opt_program op ) ;
-
-/* Floating point */
-/* I hate to do this, making everything a double */
-/* The compiler complains mercilessly, however */
-/* 1-wire really is low precision -- float is more than enough */
-typedef double          FLOAT ;
-typedef time_t          DATE ;
-typedef unsigned char   BYTE ;
-typedef char            ASCII ;
-typedef unsigned int    UINT ;
-typedef int             INT ;
 
 /* Several different structures:
   device -- one for each type of 1-wire device
@@ -664,11 +668,11 @@ void Cache_Open( void ) ;
 void Cache_Close( void ) ;
 void Cache_Clear( void ) ;
 int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * pn ) ;
-int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn ) ;
+int Cache_Add_Dir( const struct dirblob * db, const struct parsedname * pn ) ;
 int Cache_Add_Device( const int bus_nr, const struct parsedname * pn ) ;
 int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * pn ) ;
 int Cache_Get(          void * data, size_t * dsize, const struct parsedname * pn ) ;
-int Cache_Get_Dir( BYTE ** snlist, size_t * devices, const struct parsedname * pn ) ;
+int Cache_Get_Dir( struct dirblob * db, const struct parsedname * pn ) ;
 int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) ;
 int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn ) ;
 int Cache_Del(          const struct parsedname * pn                                                                   ) ;

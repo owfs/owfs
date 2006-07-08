@@ -51,50 +51,20 @@ $Id$
     2006 dirblob
 */
 
-#include <config.h>
-#include "owfs_config.h"
-#include "ow.h"
+#ifndef OW_DIRBLOB_H  /* tedious wrapper */
+#define OW_DIRBLOB_H
 
-void DirblobClear( struct dirblob * db ) {
-    if ( db->snlist ) {
-        free(db->snlist) ;
-        db->snlist = NULL ;
-    }
-    db->allocated = db->devices ;
-    db->devices = 0 ;
-}
+struct dirblob {
+    int troubled ;
+    int allocated ;
+    int devices ;
+    BYTE * snlist ;
+} ;
 
-void DirblobInit( struct dirblob * db ) {
-    db->devices = 0 ;
-    db->allocated = 0 ;
-    db->snlist = 0 ;
-    db->troubled = 0 ;
-}
+void DirblobClear( struct dirblob * db ) ;
+void DirblobInit( struct dirblob * db ) ;
+int DirblobPure( struct dirblob * db ) ;
+int DirblobAdd( BYTE * sn, struct dirblob * db ) ;
+int DirblobGet( int dev, BYTE * sn, struct dirblob * db ) ;
 
-int DirblobPure( struct dirblob * db ) {
-    return ! db->troubled ;
-}
-
-int DirblobAdd( BYTE * sn, struct dirblob * db ) {
-    // make more room? -- blocks of 10 devices (80byte)
-    if ( db->devices >= db->allocated ) {
-        BYTE * temp = realloc( db->snlist, 8*((db->allocated)+10) ) ;
-        if ( temp ) {
-            db->allocated += 10 ;
-            db->snlist = temp ;
-        } else { // allocation failed -- keep old
-            db->troubled = 1 ;
-            return -ENOMEM ;
-        }
-    }
-    // add the device and increment the counter
-    memcpy( &(db->snlist[8*db->devices]),sn,8) ;
-    ++ db->devices ;
-    return 0 ;
-}
-
-int DirblobGet( int dev, BYTE * sn, struct dirblob * db ) {
-    if ( dev >= db->devices ) return -ENODEV ;
-    memcpy( sn, &(db->snlist[8*dev-8]), 8  ) ;
-    return 0 ;
-}
+#endif /* OW_DIRBLOB_H */

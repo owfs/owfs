@@ -3,6 +3,7 @@ noinst_HEADERS = \
         compat.h \
         i2c-dev.h \
         compat_netdb.h \
+        ow.h \
         ow_1820.h \
         ow_1821.h \
         ow_1921.h \
@@ -20,6 +21,7 @@ noinst_HEADERS = \
         ow_2413.h \
         ow_2415.h \
         ow_2423.h \
+        ow_2430.h \
         ow_2433.h \
         ow_2436.h \
         ow_2438.h \
@@ -29,14 +31,14 @@ noinst_HEADERS = \
         ow_2760.h \
         ow_2804.h \
         ow_2890.h \
-        ow_devices.h \
-        ow_pid.h     \
-        ow.h \
         ow_counters.h \
         ow_connection.h \
         ow_debug.h \
+        ow_devices.h \
+        ow_dirblob.h \
         ow_lcd.h \
         ow_none.h \
+        ow_pid.h     \
         ow_settings.h \
         ow_simultaneous.h \
         ow_stats.h \
