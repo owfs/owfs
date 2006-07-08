@@ -14,6 +14,7 @@ $Id$
 #include "ow_devices.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_dirblob.h"
 
 static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struct parsedname * pn, uint32_t * flags ) ;
 static int FS_dir_seek( void (* dirfunc)(const struct parsedname * const), struct connection_in * in, const struct parsedname * pn, uint32_t * flags ) ;
@@ -325,17 +326,18 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct pars
 /* Scan the directory from the BUS and add to cache */
 static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2, uint32_t * flags ) {
     struct device_search ds ;
-    BYTE * snlist ;
     size_t devices = 0 ;
-    size_t allocated = 0 ;
+    struct dirblob db ;
     int ret ;
 
     /* cache from Server if this is a remote bus */
     if ( (get_busmode(pn2->in) == bus_remote) ) return ServerDir( dirfunc, pn2, flags ) ;
 
-    /* STATISCTICS */
+    /* STATISTICS */
     STAT_ADD1(dir_main.calls);
 
+    DirblobInit( &db ) ; // set up a fresh dirblob
+    
     /* Operate at dev level, not filetype */
     pn2->ft = NULL ;
     flags[0] = 0 ; /* start out with no flags set */
@@ -352,29 +354,12 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
         return -EIO ;
     }
     /* BUS still locked */
-    if ( pn2->pathlength == 0 ) allocated = pn2->in->last_root_devs ; // root dir estimated length
-    allocated += 10 ; /* add space for additional devices */
-    /* allocate space for cache list -- if fails, will simply not cache */
-    //printf("Allocate %lu devs=%lu\n",allocated*8+8,allocated) ;
-    snlist = malloc(allocated*8+8) ; /* no test is intentional! */
+    if ( pn2->pathlength == 0 ) db.allocated = pn2->in->last_root_devs ; // root dir estimated length
     do {
         char ID[] = "XX";
         BUSUNLOCK(pn2);
-        if ( snlist ) { /* only add if there is a blob allocated successfully */
-            //printf("Devices=%lu snlist=%p loc=%p\n",devices,snlist,&(snlist[8*devices])) ;
-            if ( devices >= allocated ) {
-                void * temp = snlist ;
-                //printf("About to reallocate allocated = %d %d\n",(int)allocated,(int)(allocated) ) ;
-                allocated += 10 ;
-                //printf("About to reallocate allocated = %d %d\n",(int)allocated,(int)(allocated) ) ;
-                snlist = (BYTE *) realloc( temp, allocated*8+8 ) ;
-                if ( snlist==NULL ) free(temp ) ;
-                //printf("Reallocated\n") ;
-            }
-            if ( snlist ) { /* test again, after realloc */
-                //printf( "Copy to %p\n", snlist + 8*devices ) ;
-                memcpy( snlist + 8*devices, ds.sn, 8 ) ;
-            }
+        if ( DirblobPure( &db ) ) { /* only add if there is a blob allocated successfully */
+            DirblobAdd( ds.sn, &db ) ;
         }
         ++devices ;
         
@@ -398,14 +383,10 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
     BUSUNLOCK(pn2);
 
     /* Add to the cache (full list as a single element */
-    if ( snlist && ret==-ENODEV ) {
-        //printf("About to cache\n") ;
-        //printf("About to cache snlist=%p, devices=%lu pn=%p\n",snlist,devices,pn2);
-        Cache_Add_Dir(snlist,devices,pn2) ;  // end with a null entry
-        //printf("About to free %p\n",snlist) ;
-        free(snlist) ;
-        //printf("freed\n");
+    if ( DirblobPure(&db) && ret==-ENODEV ) {
+        Cache_Add_Dir(&db,pn2) ;  // end with a null entry
     }
+    DirblobClear(&db) ;
 
     STATLOCK;
         dir_main.entries += devices ;
@@ -428,12 +409,12 @@ void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) {
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else can directory from bus (and add to cache) */
 static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2, uint32_t * flags ) {
-    BYTE * snlist = NULL;
-    size_t dindex, devices ;
+    size_t dindex ;
+    struct dirblob db ;
 
     /* Test to see whether we should get the directory "directly" */
     //printf("Pre test cache for dir\n") ;
-    if ( SpecifiedBus(pn2) || IsUncachedDir(pn2) || Cache_Get_Dir(&snlist,&devices,pn2 ) ) {
+    if ( SpecifiedBus(pn2) || IsUncachedDir(pn2) || Cache_Get_Dir(&db,pn2 ) ) {
         //printf("FS_cache2real: didn't find anything at bus %d\n", pn2->in->index);
         return FS_realdir(dirfunc,pn2,flags) ;
     }
@@ -443,22 +424,20 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
     STAT_ADD1(dir_main.calls);
 
     /* Get directory from the cache */
-    for ( dindex = 0 ; dindex < devices ; ++dindex )  {
-        size_t loc = dindex * 8 ;
+    for ( dindex = 0 ; DirblobGet(dindex,pn2->sn,&db)==0 ; ++dindex )  {
         char ID[] = "XX";
-        memcpy( pn2->sn, &snlist[loc], 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, snlist[loc] ) ;
+        num2string( ID, pn2->sn ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
         DIRLOCK;
             dirfunc( pn2 ) ;
             flags[0] |= pn2->dev->flags ;
         DIRUNLOCK;
     }
-    free( snlist ) ; /* allocated in Cache_Get_Dir */
+    DirblobClear(&db) ; /* allocated in Cache_Get_Dir */
     pn2->dev = NULL ; /* clear for the rest of directory listing */
     STATLOCK;
-        dir_main.entries += devices ;
+        dir_main.entries += dindex ;
     STATUNLOCK;
     return 0 ;
 }

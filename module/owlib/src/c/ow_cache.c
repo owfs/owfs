@@ -61,7 +61,7 @@ struct tree_opaque {
 static int Cache_Add_Common( struct tree_node * tn ) ;
 static int Cache_Add_Store( struct tree_node * tn ) ;
 static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const struct tree_node * tn ) ;
-static int Cache_Get_Common_Dir( BYTE ** snlist, size_t * devices, time_t duration, const struct tree_node * tn ) ;
+static int Cache_Get_Common_Dir( struct dirblob * db, time_t duration, const struct tree_node * tn ) ;
 static int Cache_Get_Store( void * data, size_t * dsize, time_t duration, const struct tree_node * tn ) ;
 static int Cache_Del_Common( const struct tree_node * tn ) ;
 static int Cache_Del_Store( const struct tree_node * tn ) ;
@@ -186,9 +186,9 @@ int Cache_Add( const void * data, const size_t datasize, const struct parsedname
 
 /* Add a directory entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn ) {
+int Cache_Add_Dir( const struct dirblob * db, const struct parsedname * pn ) {
     time_t duration = TimeOut( fc_directory ) ;
-    size_t size = devices * 8 ;
+    size_t size = db->devices * 8 ;
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + size ) ;
         //printf("AddDir tn=%p\n",tn) ;
@@ -198,7 +198,7 @@ int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parse
             tn->tk.extension = 0 ;
             tn->expires = duration + time(NULL) ;
             tn->dsize = size ;
-            memcpy( TREE_DATA(tn) , snlist , size ) ;
+            memcpy( TREE_DATA(tn) , db->snlist , size ) ;
             return Add_Stat(&cache_dir, Cache_Add_Common( tn )) ;
         }
     }
@@ -400,21 +400,22 @@ int Cache_Get( void * data, size_t * dsize, const struct parsedname * pn ) {
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Dir( BYTE ** snlist, size_t * devices, const struct parsedname * pn ) {
+int Cache_Get_Dir( struct dirblob * db, const struct parsedname * pn ) {
     time_t duration = TimeOut( fc_directory ) ;
+    DirblobInit(db) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         //printf("GetDir tn=%p\n",tn) ;
         FS_LoadPath( tn.tk.sn, pn ) ;
         tn.tk.p.in = pn->in ;
         tn.tk.extension = 0 ;
-        return Get_Stat(&cache_dir, Cache_Get_Common_Dir(snlist,devices,duration,&tn)) ;
+        return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db,duration,&tn)) ;
     }
     return 1 ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Common_Dir( BYTE ** snlist, size_t * devices, time_t duration, const struct tree_node * tn ) {
+static int Cache_Get_Common_Dir( struct dirblob * db, time_t duration, const struct tree_node * tn ) {
     int ret ;
     time_t now = time(NULL) ;
     size_t size ;
@@ -427,9 +428,9 @@ static int Cache_Get_Common_Dir( BYTE ** snlist, size_t * devices, time_t durati
         LEVEL_DEBUG("Found in cache\n") ;
         if ( opaque->key->expires >= now ) {
             size = opaque->key->dsize ;
-            if ( (*snlist = (BYTE *) malloc(size)) ) {
-                memcpy( *snlist , TREE_DATA(opaque->key) , size ) ;
-                devices[0] = size/8 ;
+            if ( (db->snlist = (BYTE *) malloc(size)) ) {
+                memcpy( db->snlist , TREE_DATA(opaque->key) , size ) ;
+                db->allocated = db->devices = size/8 ;
                 //printf("Cache: snlist=%p, devices=%lu, size=%lu\n",*snlist,devices[0],size) ;
                 ret = 0 ;
             } else {
@@ -672,11 +673,11 @@ int Cache_Del(          const struct parsedname * pn                            
     { return 1; }
 int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn )
     { return 1; }
-int Cache_Add_Dir( const BYTE * snlist, const size_t devices, const struct parsedname * pn )
+int Cache_Add_Dir( const struct dirblob * db, const struct parsedname * pn )
 { return 1; } // fix from Vincent Fleming
 int Cache_Add_Device( const int bus_nr, const struct parsedname * pn )
     { return 1; }
-int Cache_Get_Dir( BYTE ** snlist, size_t * devices, const struct parsedname * pn )
+int Cache_Get_Dir( struct dirblob * db, const struct parsedname * pn )
     { return 1; }
 int Cache_Get_Device( void * bus_nr, const struct parsedname * pn )
     { return 1; }

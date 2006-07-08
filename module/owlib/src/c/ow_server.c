@@ -148,7 +148,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct server_msg sm ;
     struct client_msg cm ;
     int connectfd = ClientConnect( pn->in ) ;
-
+    
     if ( connectfd < 0 ) return -EIO ;
 
     memset(&sm, 0, sizeof(struct server_msg));
@@ -163,21 +163,21 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
         cm.ret = -EIO ;
     } else {
         char * path2 ;
-        BYTE * snlist = NULL ;
         size_t devices = 0 ;
-        size_t allocated = 0 ;
         struct parsedname pn2 ;
+        struct dirblob db ;
 
         /* If cacheable, try to allocate a blob for storage */
         /* only for "read devices" and not alarm */
+        DirblobInit(&db) ;
         if ( IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn) && pn->dev==NULL ) {
             if ( pn2.pathlength == 0 ) { /* root dir */
                 BUSLOCK(pn) ;
-                    allocated = pn->in->last_root_devs ; // root dir estimated length
+                    db.allocated = pn->in->last_root_devs ; // root dir estimated length
                 BUSUNLOCK(pn) ;
             }
-            allocated += 10 ; /* add space for additional devices */
-            snlist = (BYTE *) malloc(allocated*8+2) ; /* NULL ok, its well handled later */
+        } else {
+            db.troubled = 1 ; // no dirblob cache
         }
 
         while((path2 = FromServerAlloc( connectfd, &cm))) {
@@ -200,16 +200,8 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
                 Cache_Add_Device(pn->in->index, &pn2);
             }
             /* Add to cache Blob -- snlist is also a flag for cachable */
-            if ( snlist ) { /* only add if there is a blob allocated successfully */
-                if ( devices >= allocated ) {
-                    void * temp = snlist ;
-                    allocated += 10 ;
-                    snlist = (BYTE*) realloc( temp, allocated*8+2 ) ;
-                    if ( snlist==NULL ) free(temp) ;
-                }
-                if ( snlist ) { /* test again, after realloc */
-                    memcpy( snlist + 8*devices, pn2.sn, 8 ) ;
-                }
+            if ( DirblobPure(&db) ) { /* only add if there is a blob allocated successfully */
+                DirblobAdd( pn2.sn, &db ) ;
             }
             ++devices ;
 
@@ -221,15 +213,15 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
             free(path2) ;
         }
         /* Add to the cache (full list as a single element */
-        if ( snlist ) {
-            Cache_Add_Dir(snlist,devices,pn) ;  // end with a null entry
-            free(snlist) ;
+        if ( DirblobPure(&db) ) {
+            Cache_Add_Dir(&db,pn) ;  // end with a null entry
             if ( pn2.pathlength == 0 ) {
                 BUSLOCK(pn) ;
-                    pn->in->last_root_devs = devices ; // root dir estimated length
+                    pn->in->last_root_devs = db.devices ; // root dir estimated length
                 BUSUNLOCK(pn) ;
             }
         }
+        DirblobClear(&db) ;
 
         DIRLOCK;
             /* flags are sent back in "offset" of final blank entry */

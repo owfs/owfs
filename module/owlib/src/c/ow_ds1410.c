@@ -1,3 +1,4 @@
+#if 0
 /*
 $Id$
     OWFS -- One-Wire filesystem
@@ -421,3 +422,9 @@ static int DS1410Present( BYTE * p, int fd ) {
 }
 
 #endif /* OW_PARPORT */
+#else /* 0 */
+int DS1410_detect( struct connection_in * in ) {
+    (void) in ;
+    return 0 ;
+}
+#endif /* 0 */

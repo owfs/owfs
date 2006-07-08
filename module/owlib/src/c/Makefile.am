@@ -9,8 +9,10 @@ OWLIB_SOURCE = compat.c          \
                ow_1821.c         \
                ow_1921.c         \
                ow_1923.c         \
+               ow_1963.c         \
                ow_1977.c         \
-               ow_2890.c         \
+               ow_1991.c         \
+               ow_1993.c         \
                ow_2401.c         \
                ow_2404.c         \
                ow_2405.c         \
@@ -18,20 +20,19 @@ OWLIB_SOURCE = compat.c          \
                ow_2408.c         \
                ow_2409.c         \
                ow_2413.c         \
+               ow_2415.c         \
+               ow_2423.c         \
                ow_2430.c         \
-               ow_2450.c         \
                ow_2433.c         \
                ow_2436.c         \
                ow_2438.c         \
-               ow_2415.c         \
-               ow_2423.c         \
-               ow_1991.c         \
-               ow_1963.c         \
-               ow_1993.c         \
+               ow_2450.c         \
                ow_2502.c         \
                ow_2505.c         \
                ow_2760.c         \
                ow_2804.c         \
+               ow_2890.c         \
+               ow_api.c          \
                ow_badadapter.c   \
                ow_bus.c          \
                ow_cache.c        \
@@ -40,6 +41,7 @@ OWLIB_SOURCE = compat.c          \
                ow_crc.c          \
                ow_delay.c        \
                ow_dir.c          \
+               ow_dirblob.c      \
                ow_ds2482.c       \
                ow_ds9097.c       \
                ow_ds1410.c       \
@@ -49,11 +51,16 @@ OWLIB_SOURCE = compat.c          \
                ow_fake.c         \
                ow_fakeread.c     \
                ow_filelength.c   \
+               ow_fstat.c        \
                ow_iterate.c      \
                ow_lcd.c          \
+               ow_link.c         \
+               ow_locks.c        \
                ow_parsename.c    \
                ow_pid.c          \
                ow_name.c         \
+               ow_net.c          \
+               ow_opt.c          \
                ow_read.c         \
                ow_reconnect.c    \
                ow_stats.c        \
@@ -65,15 +72,9 @@ OWLIB_SOURCE = compat.c          \
                ow_temp.c         \
                ow_tree.c         \
                ow_transaction.c  \
-               ow_write.c        \
-               ow_verify.c       \
-               ow_link.c         \
                ow_util.c         \
-               ow_net.c          \
-               ow_fstat.c        \
-               ow_locks.c        \
-               ow_api.c          \
-               ow_opt.c          \
+               ow_verify.c       \
+               ow_write.c        \
                owlib.c           \
                error.c           \
                globals.c
