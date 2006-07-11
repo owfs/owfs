@@ -200,6 +200,7 @@ void FreeClientAddr(  struct connection_in * in ) {
     }
 }
 
+/* Usually called with BUS locked, to protect ai settings */
 int ClientConnect( struct connection_in * in ) {
     int fd ;
     struct addrinfo *ai ;
@@ -214,10 +215,8 @@ int ClientConnect( struct connection_in * in ) {
      * the in-device and loop through the list until it works.
      * Not a perfect solution, but it should work at least.
      */
-    INBUSLOCK(in);
     ai = in->connin.server.ai_ok ;
     if( ai ) {
-        INBUSUNLOCK(in);
         fd = socket(
             ai->ai_family,
             ai->ai_socktype,
@@ -227,7 +226,6 @@ int ClientConnect( struct connection_in * in ) {
             if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) return fd ;
             close( fd ) ;
         }
-        INBUSLOCK(in);
     }
 
     ai = in->connin.server.ai ;  // loop from first address info since it failed.
@@ -240,14 +238,12 @@ int ClientConnect( struct connection_in * in ) {
         if ( fd >= 0 ) {
             if ( connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 ) {
                 in->connin.server.ai_ok = ai ;
-                INBUSUNLOCK(in);
                 return fd ;
             }
             close( fd ) ;
         }
     } while ( (ai = ai->ai_next) ) ;
     in->connin.server.ai_ok = NULL ;
-    INBUSUNLOCK(in);
 
     ERROR_CONNECT("ClientConnect: Socket problem\n") ;
     STAT_ADD1(NET_connection_errors);

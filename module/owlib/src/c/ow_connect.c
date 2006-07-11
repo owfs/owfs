@@ -125,6 +125,9 @@ void FreeIn( void ) {
             now->name = NULL ; // rather than a static data string;
             break ;
 #endif
+        case bus_ha7:
+            BUS_close(now) ;
+            break ;
         case bus_fake:
             if ( now->connin.fake.device ) free(now->connin.fake.device) ;
             now->connin.fake.device = NULL ;

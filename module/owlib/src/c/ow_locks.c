@@ -154,12 +154,6 @@ void LockRelease( const struct parsedname * pn ) {
 #endif /* OW_MT */
 }
 
-/* Special note on locking:
-     The bus lock is universal -- only one thread can hold it
-     Therefore, we don't need a STATLOCK for bus_locks and bus_unlocks or bus_time
-     Actually, the new design has several busses, so a separate lock
-*/
-
 void BUS_lock( const struct parsedname * pn ) {
     if(!pn || !pn->in) return ;
 #if OW_MT

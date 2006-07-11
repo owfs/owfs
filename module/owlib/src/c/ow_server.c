@@ -58,9 +58,13 @@ static void Server_close( struct connection_in * in ) {
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( pn->in ) ;
+    int connectfd ;
     int ret = 0 ;
 
+    BUSLOCK(pn) ;
+        connectfd = ClientConnect( pn->in ) ;
+    BUSUNLOCK(pn) ;
+    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -86,9 +90,13 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
 int ServerPresence( const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( pn->in ) ;
+    int connectfd ;
     int ret = 0 ;
 
+    BUSLOCK(pn) ;
+        connectfd = ClientConnect( pn->in ) ;
+    BUSUNLOCK(pn) ;
+    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerPresence pn->path=%s\n",pn->path);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -113,9 +121,13 @@ int ServerPresence( const struct parsedname * pn ) {
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( pn->in ) ;
+    int connectfd ;
     int ret = 0 ;
 
+    BUSLOCK(pn) ;
+        connectfd = ClientConnect( pn->in ) ;
+    BUSUNLOCK(pn) ;
+    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -147,7 +159,11 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int connectfd = ClientConnect( pn->in ) ;
+    int connectfd ;
+    
+    BUSLOCK(pn) ;
+        connectfd = ClientConnect( pn->in ) ;
+    BUSUNLOCK(pn) ;
     
     if ( connectfd < 0 ) return -EIO ;
 

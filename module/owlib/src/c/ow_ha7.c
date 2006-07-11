@@ -33,6 +33,7 @@ static int HA7_sendback_data( const BYTE * data, BYTE * resp, const size_t len, 
 static int HA7_select(const struct parsedname * pn) ;
 static void HA7_setroutines( struct interface_routines * f ) ;
 static void HA7_close( struct connection_in * in ) ;
+static int HA7_directory( BYTE search, struct dirblob * db, const struct parsedname * pn ) ;
 
 static void HA7_setroutines( struct interface_routines * f ) {
     f->detect        = HA7_detect       ;
@@ -61,145 +62,186 @@ int HA7_detect( struct connection_in * in ) {
     /* Set up low-level routines */
     HA7_setroutines( & (in->iroutines) ) ;
     in->connin.ha7.locked = 0 ;
-    in->connin.ha7.snlist = NULL;
+    /* Initialize dir-at-once structures */
+    DirblobInit( &(in->connin.ha7.main) ) ;
+    DirblobInit( &(in->connin.ha7.alarm) ) ;
 
     if ( in->name == NULL ) return -1 ;
+    /* Add the port if it isn't there already */
+    if ( strchr(in->name,':')==NULL ) {
+        ASCII * temp = realloc( in->name, strlen(in->name)+3 ) ;
+        if ( temp==NULL ) return -ENOMEM ;
+        in->name = temp ;
+        strcat( in->name, ":80" ) ;
+    }
     if ( ClientAddr( in->name, in ) ) return -1 ;
     if ( (fd=ClientConnect(in)) < 0 ) return -EIO ; 
-
+printf("HA7 detext Open = %d\n",fd);
     in->Adapter = adapter_HA7 ;
     if ( HA7_toHA7(fd,"ReleaseLock.html",in)==0 ) {
         ASCII * buf ;
-        HA7_read( fd, &buf ) ;
-        in->adapter_name = "HA7Net" ;
-        in->busmode = bus_ha7 ;
-        return 0 ;
+        if ( HA7_read( fd, &buf )==0 ) {
+            in->adapter_name = "HA7Net" ;
+            in->busmode = bus_ha7 ;
+            in->AnyDevices = 1 ;
+            free(buf) ;
+            close(fd) ;
+printf("HA7 detext Close = %d\n",fd);
+            return 0 ;
+        }
     }
     close(fd) ;
+printf("HA7 detext Close = %d\n",fd);
     return -EIO ;
 }
 
 static int HA7_reset( const struct parsedname * pn ) {
-    ASCII * resp ;
+    ASCII * resp = NULL ;
     int fd=ClientConnect(pn->in) ;
     int ret = 0 ;
+printf("HA7 reset Open = %d\n",fd);
     
-    if ( fd < 0 ) return -EIO ;
-    if ( HA7_toHA7(fd,"Reset.html",pn->in) || HA7_read( fd, &resp) ) {
+    if ( fd < 0 ) {
         STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
         return -EIO ;
     }
-    switch( resp[1] ) {
-        case 'P':
-            pn->in->AnyDevices=1 ;
-            break ;
-        case 'N':
-            pn->in->AnyDevices=0 ;
-            break ;
-        default:
-            ret = 1 ; // marker for shorted bus
-            pn->in->AnyDevices=0 ;
-            STAT_ADD1_BUS(BUS_short_errors,pn->in) ;
-            LEVEL_CONNECT("1-wire bus short circuit.\n")
+    if ( HA7_toHA7(fd,"Reset.html",pn->in) ) {
+        STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
+        ret = -EIO ;
+    } else if ( HA7_read( fd, &resp) ) {
+        STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
+        ret = -EIO ;
     }
+    if ( resp ) free( resp ) ;
     close( fd ) ;
+printf("HA7 reset Close = %d\n",fd);
     return 0 ;
 }
 
+static int HA7_directory( BYTE search, struct dirblob * db, const struct parsedname * pn ) {
+    int fd ;
+    int ret = 0 ;
+    ASCII * s = (search==0xEC) ? "Search.html?Conditional=1" : "Search.html" ; 
+    ASCII * resp =  NULL ;
+
+    DirblobClear( db ) ;
+printf("HA7 cleared path=%s\n",pn->path) ;
+    if ( (fd=ClientConnect(pn->in)) < 0 ) {
+printf("HA7 dir Open = %d\n",fd);
+printf("HA7 can't open %d\n",fd) ;
+        db->troubled = 1 ;
+        return -EIO ;
+    }
+printf("HA7 fd=%d\n",fd) ;
+    if ( HA7_toHA7( fd, s, pn->in ) ) {
+        ret = -EIO ;
+    } else if (HA7_read( fd,&resp ) ) {
+        BYTE sn[8] ;
+        ASCII * p = "AA00BB00CC00DD01" ;
+//        while ( p ) {            
+            sn[7] = string2num(&p[0]) ;
+            sn[6] = string2num(&p[2]) ;
+            sn[5] = string2num(&p[4]) ;
+            sn[4] = string2num(&p[6]) ;
+            sn[3] = string2num(&p[8]) ;
+            sn[2] = string2num(&p[10]) ;
+            sn[1] = string2num(&p[12]) ;
+            sn[0] = string2num(&p[14]) ;
+            DirblobAdd( sn, db ) ;
+            p += 16 ;
+//        }
+        free( resp ) ;
+    }
+    close( fd ) ;
+printf("HA7 dir Close = %d\n",fd);
+    return ret ;
+} 
+
 static int HA7_next_both(struct device_search * ds, const struct parsedname * pn) {
-    ASCII * resp ;
+    struct dirblob * db = (ds->search == 0xEC) ?
+                            &(pn->in->connin.ha7.alarm) :
+                            &(pn->in->connin.ha7.main)  ;
     int ret = 0 ;
 
+printf("NextBoth %s\n",pn->path) ;
     if ( !pn->in->AnyDevices ) ds->LastDevice = 1 ;
     if ( ds->LastDevice ) return -ENODEV ;
 
-    ++(ds->LastDiscrepancy) ;
-    if ( ds->LastDiscrepancy == 0 || pn->in->connin.ha7.snlist == NULL ) {
-        int fd ;
-        if ( pn->in->connin.ha7.snlist ) free(pn->in->connin.ha7.snlist) ;
-        pn->in->connin.ha7.found = 0 ;
-        fd = ClientConnect(pn->in) ;
-        if ( fd < 0 ) {
-            if ( HA7_getlock( fd, pn->in ) ) {
-                if ( HA7_toHA7( fd, "Search.html", pn->in ) || HA7_read( fd,&resp ) ) {
-                    int allocated = pn->in->last_root_devs +10; // root dir estimated length
-                    ASCII * p = resp ;
-                    BYTE * s ;
-                    pn->in->connin.ha7.snlist = malloc(allocated*8+8) ;
-                    if ( pn->in->connin.ha7.snlist ) {
-                        do {
-                            /* search for a device */
-                            if ( 0 ) { /* found a device */
-                                if ( pn->in->connin.ha7.found >= allocated ) {
-                                    void * temp = pn->in->connin.ha7.snlist ;
-                                    //printf("About to reallocate allocated = %d %d\n",(int)allocated,(int)(allocated) ) ;
-                                    allocated += 10 ;
-                                    //printf("About to reallocate allocated = %d %d\n",(int)allocated,(int)(allocated) ) ;
-                                    pn->in->connin.ha7.snlist = (BYTE *) realloc( temp, allocated*8+8 ) ;
-                                    if ( pn->in->connin.ha7.snlist==NULL ) free(temp ) ;
-                                    //printf("Reallocated\n") ;
-                                }
-                                if ( pn->in->connin.ha7.snlist == NULL) {
-                                    pn->in->connin.ha7.found = 0 ;
-                                    ret = -ENOMEM ;
-                                }
-                                s = &(pn->in->connin.ha7.snlist[8*pn->in->connin.ha7.found]) ;
-                                s[7] = string2num(&p[0]) ;
-                                s[6] = string2num(&p[2]) ;
-                                s[5] = string2num(&p[4]) ;
-                                s[4] = string2num(&p[6]) ;
-                                s[3] = string2num(&p[8]) ;
-                                s[2] = string2num(&p[10]) ;
-                                s[1] = string2num(&p[12]) ;
-                                s[0] = string2num(&p[14]) ;
-                                ++ pn->in->connin.ha7.found ;
-                            }
-                        } while ( 0 ) ;
-                    } else {
-                        ret = -ENOMEM ;
-                    }
-                }
-                HA7_releaselock( fd, pn->in ) ;
+    if ( ++(ds->LastDiscrepancy) == 0 ) {
+        if ( HA7_directory( ds->search, db, pn ) ) return -EIO ;
+    }
+printf("LastDiscrepancy = %d\n",ds->LastDiscrepancy ) ;
+    ret = DirblobGet( ds->LastDiscrepancy, ds->sn, db ) ;
+    switch (ret ) {
+        case 0:
+            if((ds->sn[0] & 0x7F) == 0x04) {
+                /* We found a DS1994/DS2404 which require longer delays */
+                pn->in->ds2404_compliance = 1 ;
             }
-            close( fd ) ;
-        }
+            break ;
+        case -ENODEV:
+            ds->LastDevice = 1 ;
+            break ;
     }
-    if ( ret ) {
-        return ret ;
-    } else if ( ds->LastDiscrepancy >= pn->in->connin.ha7.found ) {
-        ds->LastDevice = 1 ;
-        return -ENODEV ;
-    } else {
-        memcpy( ds->sn, &(pn->in->connin.ha7.snlist[8*ds->LastDiscrepancy]), 8 );
-    }
-    // CRC check
-    if ( CRC8(ds->sn,8) || (ds->sn[0] == 0)) {
-        /* A minor "error" and should perhaps only return -1 to avoid reconnect */
-        return -EIO ;
-    }
-
-    if((ds->sn[0] & 0x7F) == 0x04) {
-        /* We found a DS1994/DS2404 which require longer delays */
-        pn->in->ds2404_compliance = 1 ;
-    }
-    return 0 ;
+    return ret ;
 }
-
 
 /* Read from Link or Link-E
    0=good else bad
    Note that buffer length should 1 exta char long for ethernet reads
 */
 static int HA7_read(int fd, ASCII ** buffer ) {
-    ASCII buf[4096] ;
-    ssize_t r ;
-    if ( (r=readn( fd, buf, 4096, &tvnet )) != 4096 ) { 
-        LEVEL_CONNECT("HA7_read (ethernet) error\n") ;
+    ASCII buf[4097] ;
+    ASCII * start ;
+    int ret = 0 ;
+    ssize_t r,s ;
+    
+    *buffer = NULL ;
+    buf[4096] = '\0' ; // just in case
+    if ( (r=readn( fd, buf, 4096, &tvnetfirst )) < 0 ) { 
+        LEVEL_CONNECT("HA7_read (ethernet) error = %d\n",r) ;
         write( 1, buf, r) ;
-        return -EIO ;
+        ret = -EIO ;
+    } else if ( strncmp("HTTP/1.1 200 OK",buf,15) ) { //Bad HTTP return code
+        LEVEL_DATA("HA7 response problem:%32s\n",&buf[15]) ;
+        ret = -EIO ;
+    } else if ( (start=strstr( buf, "<body>" ))== NULL ) { 
+        LEVEL_DATA("HA7 response no HTTP body to parse\n") ;
+        ret = -EIO ;
+    } else {
+    // HTML body found, dump header
+        s = buf + r - start ;
+        write( 1, start, s) ;
+        if ( (*buffer = malloc( s )) == NULL ) {
+            ret = -ENOMEM ;
+        } else {
+            memcpy( *buffer, start, s ) ;
+            while ( r == 4096 ) {
+                if ( (r=readn( fd, buf, 4096, &tvnet )) < 0 ) {
+                    LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n",r) ;
+                    ret = -EIO ;
+                    break ;
+                } else {
+                    ASCII * temp = realloc( *buffer, s+r ) ;
+                    if ( temp ) {
+                        *buffer = temp ;
+                        memcpy( &((*buffer)[s]), buf, r ) ;
+                        s += r ;
+                    } else {
+                        ret = -ENOMEM ;
+                        break ;
+                    }
+                }
+            }
+        }
     }
-    return 0 ;
+    if ( ret ) {
+        if ( *buffer ) free( *buffer ) ;
+        *buffer = NULL ;
+    }
+    return ret ;
 }
+
 static int HA7_write( int fd, const ASCII * msg, struct connection_in * in ) {
     ssize_t r, sl = strlen(msg);
     ssize_t size = sl ;
@@ -225,6 +267,7 @@ static int HA7_write( int fd, const ASCII * msg, struct connection_in * in ) {
 
 static int HA7_toHA7( int fd, const ASCII * msg, struct connection_in * in ) {
     int ret ; 
+printf("HA7 send to webserver: %s\n",msg) ;
     ret = HA7_write(fd, "GET /1Wire/", in ) ;
     if ( ret ) return ret ;
     ret = HA7_write(fd, msg, in ) ;
@@ -279,11 +322,31 @@ static int HA7_select(const struct parsedname * pn) {
         LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) with the ascii-mode HA7\n") ;
         return -ENOTSUP ; /* cannot do branching with HA7 ascii */
     }
-    return BUS_select_low(pn) ;
+    if ( pn->dev ) {
+        int fd ;
+        ASCII addrdev[] = "AddressDevice.html?Address=001122334455667788" ;
+        if ( (fd=ClientConnect(pn->in)) < 0 ) return -EIO ;
+printf("HA7 select Open = %d\n",fd);
+        num2string( &addrdev[27], pn->sn[7] ) ;
+        num2string( &addrdev[29], pn->sn[6] ) ;
+        num2string( &addrdev[31], pn->sn[5] ) ;
+        num2string( &addrdev[33], pn->sn[4] ) ;
+        num2string( &addrdev[35], pn->sn[3] ) ;
+        num2string( &addrdev[37], pn->sn[2] ) ;
+        num2string( &addrdev[39], pn->sn[1] ) ;
+        num2string( &addrdev[41], pn->sn[0] ) ;
+        if ( HA7_toHA7(fd,addrdev,pn->in)==0 ) {
+            ASCII * buf ;
+            if ( HA7_read( fd, &buf ) ) return -EIO ;
+            free(buf) ;
+        }
+    }
+    return 0 ;
 }
 
 static void HA7_close( struct connection_in * in ) {
-    if ( in->connin.ha7.snlist ) free( in->connin.ha7.snlist ) ;
+    DirblobClear( &(in->connin.ha7.main) ) ;
+    DirblobClear( &(in->connin.ha7.alarm) ) ;
     FreeClientAddr( in ) ;
 }
 

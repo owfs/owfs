@@ -212,6 +212,12 @@ int LibStart( void ) {
                     ret = -ENODEV ;
                 }
                 break ;
+            case bus_ha7:
+                if ( HA7_detect(in) ) {
+                    LEVEL_CONNECT("Cannot detect an HA7net server on %s\n",in->name) ;
+                    ret = -ENODEV ;
+                }
+                break ;
             case bus_parallel:
 #if OW_PARPORT
                 if ( (ret=DS1410_detect(in)) ) {

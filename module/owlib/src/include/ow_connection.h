@@ -147,12 +147,6 @@ struct interface_routines {
 #define ACCEPTUNLOCK(out)
 #endif /* OW_MT */
 
-struct connin_ha7 {
-    ASCII lock[10] ;
-    int locked ;
-    int found ;
-    BYTE * snlist ; /* list from the last directory */
-} ;
 struct connin_serial {
     speed_t speed;
     int USpeed ;
@@ -167,19 +161,6 @@ struct connin_fake {
     int UMode ;
     int devices ;
     BYTE * device ;
-} ;
-struct connin_link {
-    speed_t speed;
-    int USpeed ;
-    int ULevel ;
-    int UMode ;
-    struct termios oldSerialTio;    /*old serial port settings*/
-} ;
-struct connin_server {
-    char * host ;
-    char * service ;
-    struct addrinfo * ai ;
-    struct addrinfo * ai_ok ;
 } ;
 struct connin_usb {
     struct usb_device * dev ;
@@ -209,6 +190,28 @@ struct connin_i2c {
     int current ;
     int fd ;
     struct connection_in * head ;
+} ;
+struct connin_server {
+    char * host ;
+    char * service ;
+    struct addrinfo * ai ;
+    struct addrinfo * ai_ok ;
+} ;
+struct connin_ha7 {
+    struct connin_server server; // mirror connin.server
+    ASCII lock[10] ;
+    int locked ;
+    int found ;
+    struct dirblob main ; /* main directory */
+    struct dirblob alarm ; /* alarm directory */
+} ;
+struct connin_link {
+    struct connin_server server; // mirror connin.server
+    speed_t speed;
+    int USpeed ;
+    int ULevel ;
+    int UMode ;
+    struct termios oldSerialTio;    /*old serial port settings*/
 } ;
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
