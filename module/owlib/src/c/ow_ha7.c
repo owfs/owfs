@@ -136,9 +136,16 @@ printf("HA7 fd=%d\n",fd) ;
     if ( HA7_toHA7( fd, s, pn->in ) ) {
         ret = -EIO ;
     } else if (HA7_read( fd,&resp ) ) {
+        ret = -EIO ;
+    } else {
         BYTE sn[8] ;
-        ASCII * p = "AA00BB00CC00DD01" ;
-//        while ( p ) {            
+        ASCII * p = resp ;
+        while ( (p=strstr(p,"<INPUT CLASS=\"HA7Value\" NAME=\"Address_")) && (p=strstr(p,"VALUE=\"")) ) {
+            p += 7 ;
+            if ( strspn(p,"0123456789ABCDEF") < 16 ) {
+                ret = -EIO ;
+                break ;
+            }
             sn[7] = string2num(&p[0]) ;
             sn[6] = string2num(&p[2]) ;
             sn[5] = string2num(&p[4]) ;
@@ -147,15 +154,19 @@ printf("HA7 fd=%d\n",fd) ;
             sn[2] = string2num(&p[10]) ;
             sn[1] = string2num(&p[12]) ;
             sn[0] = string2num(&p[14]) ;
+printf("HA7 found "SNformat"\n",SNvar(sn)) ;
+            if ( CRC8(sn,8) ) {
+                ret = -EIO ;
+                break ;
+            }
             DirblobAdd( sn, db ) ;
-            p += 16 ;
-//        }
+        }
         free( resp ) ;
     }
     close( fd ) ;
 printf("HA7 dir Close = %d\n",fd);
     return ret ;
-} 
+}
 
 static int HA7_next_both(struct device_search * ds, const struct parsedname * pn) {
     struct dirblob * db = (ds->search == 0xEC) ?
@@ -172,6 +183,7 @@ printf("NextBoth %s\n",pn->path) ;
     }
 printf("LastDiscrepancy = %d\n",ds->LastDiscrepancy ) ;
     ret = DirblobGet( ds->LastDiscrepancy, ds->sn, db ) ;
+printf("DirblobGet=%d <"SNformat">\n",ret,SNvar(ds->sn)) ;
     switch (ret ) {
         case 0:
             if((ds->sn[0] & 0x7F) == 0x04) {
@@ -239,6 +251,7 @@ static int HA7_read(int fd, ASCII ** buffer ) {
         if ( *buffer ) free( *buffer ) ;
         *buffer = NULL ;
     }
+printf("HA7_read return value=%d\n",ret);
     return ret ;
 }
 
@@ -276,6 +289,7 @@ printf("HA7 send to webserver: %s\n",msg) ;
 }
 
 static int HA7_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) {
+printf("HA7 powerbyte\n");
 #if 0
     
     if ( HA7_write(HA7_string("p"),1,pn) || HA7_byte_bounce(&byte,resp,pn) ) {
@@ -301,6 +315,7 @@ static int HA7_sendback_data( const BYTE * data, BYTE * resp, const size_t size,
     size_t i ;
     size_t left ;
     BYTE * buf = pn->in->combuffer ;
+printf("HA7 sendback data\n");
 #if 0
     if ( size == 0 ) return 0 ;
     if ( HA7_write() ) return -EIO ;

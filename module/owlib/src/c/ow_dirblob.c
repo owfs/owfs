@@ -55,6 +55,15 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/*
+    A "dirblob" is a structure holding a list of 1-wire serial numbers
+    (8 bytes each) with some housekeeping information
+    
+    It is used for directory caches, and some "all at once" adapters types
+
+    Most interesting, it allocates memory dynamically.
+*/
+
 void DirblobClear( struct dirblob * db ) {
     if ( db->snlist ) {
         free(db->snlist) ;
@@ -77,15 +86,17 @@ int DirblobPure( struct dirblob * db ) {
 
 int DirblobAdd( BYTE * sn, struct dirblob * db ) {
     // make more room? -- blocks of 10 devices (80byte)
-    if ( db->devices >= db->allocated ) {
-        BYTE * temp = realloc( db->snlist, 8*((db->allocated)+10) ) ;
+    if ( (db->devices >= db->allocated) || ( db->snlist == NULL ) ) {
+        int newalloc = db->allocated + 10 ;
+        BYTE * temp = realloc( db->snlist, 8*newalloc ) ;
         if ( temp ) {
-            db->allocated += 10 ;
+            db->allocated = newalloc ;
             db->snlist = temp ;
         } else { // allocation failed -- keep old
             db->troubled = 1 ;
             return -ENOMEM ;
         }
+    } else {
     }
     // add the device and increment the counter
     memcpy( &(db->snlist[8*db->devices]),sn,8) ;
@@ -95,6 +106,6 @@ int DirblobAdd( BYTE * sn, struct dirblob * db ) {
 
 int DirblobGet( int dev, BYTE * sn, struct dirblob * db ) {
     if ( dev >= db->devices ) return -ENODEV ;
-    memcpy( sn, &(db->snlist[8*dev-8]), 8  ) ;
+    memcpy( sn, &(db->snlist[8*dev]), 8  ) ;
     return 0 ;
 }

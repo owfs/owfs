@@ -427,7 +427,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
     for ( dindex = 0 ; DirblobGet(dindex,pn2->sn,&db)==0 ; ++dindex )  {
         char ID[] = "XX";
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, pn2->sn ) ;
+        num2string( ID, pn2->sn[0] ) ;
         FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
         DIRLOCK;
             dirfunc( pn2 ) ;
