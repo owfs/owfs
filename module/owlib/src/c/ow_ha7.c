@@ -18,17 +18,24 @@ $Id$
 static struct timeval tvnetfirst = { 1, 0, } ;
 static struct timeval tvnet = { 0, 100000, } ;
 
-int HA7_mode ; /* flag to use HA7s in ascii mode */
-
+struct toHA7 {
+    ASCII * command ;
+    ASCII * lock ;
+    ASCII * conditional ;
+    ASCII * address ;
+    ASCII * data ;
+    size_t length ;
+} ;
+    
 //static void byteprint( const BYTE * b, int size ) ;
-static int HA7_write( int fd, const ASCII * msg, struct connection_in * in ) ;
-static int HA7_toHA7( int fd, const ASCII * msg, struct connection_in * in ) ;
+static int HA7_write( int fd, const ASCII * msg, size_t size, struct connection_in * in ) ;
+static void toHA7init( struct toHA7 * ha7 ) ;
+static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * in ) ;
 static int HA7_getlock( int fd, struct connection_in * in ) ;
 static int HA7_releaselock( int fd, struct connection_in * in ) ;
 static int HA7_read(int fd, ASCII ** buffer ) ;
 static int HA7_reset( const struct parsedname * pn ) ;
 static int HA7_next_both(struct device_search * ds, const struct parsedname * pn) ;
-static int HA7_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 static int HA7_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
 static int HA7_select(const struct parsedname * pn) ;
 static void HA7_setroutines( struct interface_routines * f ) ;
@@ -36,25 +43,24 @@ static void HA7_close( struct connection_in * in ) ;
 static int HA7_directory( BYTE search, struct dirblob * db, const struct parsedname * pn ) ;
 
 static void HA7_setroutines( struct interface_routines * f ) {
-    f->detect        = HA7_detect       ;
+    f->detect        = HA7_detect        ;
     f->reset         = HA7_reset         ;
     f->next_both     = HA7_next_both     ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = HA7_PowerByte     ;
+    f->PowerByte     = BUS_PowerByte_low ;
 //    f->ProgramPulse = ;
     f->sendback_data = HA7_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = HA7_select        ;
-    f->reconnect     = NULL               ;
-    f->close         = HA7_close        ;
+    f->reconnect     = NULL              ;
+    f->close         = HA7_close         ;
 }
-
-#define HA7_string(x)  ((BYTE *)(x))
 
 int HA7_detect( struct connection_in * in ) {
     struct parsedname pn ;
     int fd ;
+    struct toHA7 ha7 ;
 
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;
@@ -76,9 +82,11 @@ int HA7_detect( struct connection_in * in ) {
     }
     if ( ClientAddr( in->name, in ) ) return -1 ;
     if ( (fd=ClientConnect(in)) < 0 ) return -EIO ; 
-printf("HA7 detext Open = %d\n",fd);
     in->Adapter = adapter_HA7 ;
-    if ( HA7_toHA7(fd,"ReleaseLock.html",in)==0 ) {
+    
+    toHA7init( &ha7 ) ;
+    ha7.command = "ReleaseLock" ;
+    if ( HA7_toHA7(fd,&ha7,in)==0 ) {
         ASCII * buf ;
         if ( HA7_read( fd, &buf )==0 ) {
             in->adapter_name = "HA7Net" ;
@@ -86,12 +94,10 @@ printf("HA7 detext Open = %d\n",fd);
             in->AnyDevices = 1 ;
             free(buf) ;
             close(fd) ;
-printf("HA7 detext Close = %d\n",fd);
             return 0 ;
         }
     }
     close(fd) ;
-printf("HA7 detext Close = %d\n",fd);
     return -EIO ;
 }
 
@@ -99,13 +105,17 @@ static int HA7_reset( const struct parsedname * pn ) {
     ASCII * resp = NULL ;
     int fd=ClientConnect(pn->in) ;
     int ret = 0 ;
+    struct toHA7 ha7 ;
 printf("HA7 reset Open = %d\n",fd);
     
     if ( fd < 0 ) {
         STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
         return -EIO ;
     }
-    if ( HA7_toHA7(fd,"Reset.html",pn->in) ) {
+    
+    toHA7init( &ha7 ) ;
+    ha7.command = "Reset" ;
+    if ( HA7_toHA7(fd,&ha7,pn->in) ) {
         STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
         ret = -EIO ;
     } else if ( HA7_read( fd, &resp) ) {
@@ -115,25 +125,25 @@ printf("HA7 reset Open = %d\n",fd);
     if ( resp ) free( resp ) ;
     close( fd ) ;
 printf("HA7 reset Close = %d\n",fd);
-    return 0 ;
+    return ret ;
 }
 
 static int HA7_directory( BYTE search, struct dirblob * db, const struct parsedname * pn ) {
     int fd ;
     int ret = 0 ;
-    ASCII * s = (search==0xEC) ? "Search.html?Conditional=1" : "Search.html" ; 
+    struct toHA7 ha7 ;
     ASCII * resp =  NULL ;
 
     DirblobClear( db ) ;
-printf("HA7 cleared path=%s\n",pn->path) ;
     if ( (fd=ClientConnect(pn->in)) < 0 ) {
-printf("HA7 dir Open = %d\n",fd);
-printf("HA7 can't open %d\n",fd) ;
         db->troubled = 1 ;
         return -EIO ;
     }
-printf("HA7 fd=%d\n",fd) ;
-    if ( HA7_toHA7( fd, s, pn->in ) ) {
+
+    toHA7init( &ha7 ) ;
+    ha7.command = "Search" ;
+    if ( search == 0xEC ) ha7.conditional = "1" ;
+    if ( HA7_toHA7( fd, &ha7, pn->in ) ) {
         ret = -EIO ;
     } else if (HA7_read( fd,&resp ) ) {
         ret = -EIO ;
@@ -154,7 +164,6 @@ printf("HA7 fd=%d\n",fd) ;
             sn[2] = string2num(&p[10]) ;
             sn[1] = string2num(&p[12]) ;
             sn[0] = string2num(&p[14]) ;
-printf("HA7 found "SNformat"\n",SNvar(sn)) ;
             if ( CRC8(sn,8) ) {
                 ret = -EIO ;
                 break ;
@@ -164,7 +173,6 @@ printf("HA7 found "SNformat"\n",SNvar(sn)) ;
         free( resp ) ;
     }
     close( fd ) ;
-printf("HA7 dir Close = %d\n",fd);
     return ret ;
 }
 
@@ -181,9 +189,7 @@ printf("NextBoth %s\n",pn->path) ;
     if ( ++(ds->LastDiscrepancy) == 0 ) {
         if ( HA7_directory( ds->search, db, pn ) ) return -EIO ;
     }
-printf("LastDiscrepancy = %d\n",ds->LastDiscrepancy ) ;
     ret = DirblobGet( ds->LastDiscrepancy, ds->sn, db ) ;
-printf("DirblobGet=%d <"SNformat">\n",ret,SNvar(ds->sn)) ;
     switch (ret ) {
         case 0:
             if((ds->sn[0] & 0x7F) == 0x04) {
@@ -223,7 +229,7 @@ static int HA7_read(int fd, ASCII ** buffer ) {
     } else {
     // HTML body found, dump header
         s = buf + r - start ;
-        write( 1, start, s) ;
+        //write( 1, start, s) ;
         if ( (*buffer = malloc( s )) == NULL ) {
             ret = -ENOMEM ;
         } else {
@@ -255,8 +261,8 @@ printf("HA7_read return value=%d\n",ret);
     return ret ;
 }
 
-static int HA7_write( int fd, const ASCII * msg, struct connection_in * in ) {
-    ssize_t r, sl = strlen(msg);
+static int HA7_write( int fd, const ASCII * msg, size_t length, struct connection_in * in ) {
+    ssize_t r, sl = length;
     ssize_t size = sl ;
     while(sl > 0) {
         r = write(fd,&msg[size-sl],sl) ;
@@ -278,31 +284,51 @@ static int HA7_write( int fd, const ASCII * msg, struct connection_in * in ) {
     return 0;
 }
 
-static int HA7_toHA7( int fd, const ASCII * msg, struct connection_in * in ) {
-    int ret ; 
-printf("HA7 send to webserver: %s\n",msg) ;
-    ret = HA7_write(fd, "GET /1Wire/", in ) ;
-    if ( ret ) return ret ;
-    ret = HA7_write(fd, msg, in ) ;
-    if ( ret ) return ret ;
-    return HA7_write(fd, " HTTP/1.0\n\n", in ) ;
-}
+static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * in ) {
+    int first = 1 ;
 
-static int HA7_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) {
-printf("HA7 powerbyte\n");
-#if 0
-    
-    if ( HA7_write(HA7_string("p"),1,pn) || HA7_byte_bounce(&byte,resp,pn) ) {
-        STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in) ;
-        return -EIO ; // send just the <CR>
+    LEVEL_DEBUG("To HA7 command=%s address=%.16s data=%.*s conditional=%.1s lock=%.10s\n",
+        SAFESTRING(ha7->command),
+        SAFESTRING(ha7->address),
+        ha7->length,SAFESTRING(ha7->data),
+        SAFESTRING(ha7->conditional),
+        SAFESTRING(ha7->lock) ) ;
+    if ( ha7->command == NULL ) return -EINVAL ;
+
+    if ( HA7_write(fd, "GET /1Wire/", 11, in ) ) return -EIO ;
+
+    if ( HA7_write(fd, ha7->command, strlen(ha7->command), in ) ) return -EIO ;
+    if ( HA7_write(fd, ".html", 5, in ) ) return -EIO ;
+
+    if ( ha7->address ) {
+        if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
+        first = 0 ;
+        if ( HA7_write(fd, "Address=", 8, in ) ) return -EIO ;
+        if ( HA7_write(fd, ha7->address, 16, in ) ) return -EIO ;
     }
     
-    // delay
-    UT_delay( delay ) ;
-
-    // flush the buffers
-#endif /* 0 */
-    return 0 ;
+    if ( ha7->conditional ) {
+        if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
+        first = 0 ;
+        if ( HA7_write(fd, "Conditional=", 12, in ) ) return -EIO ;
+        if ( HA7_write(fd, ha7->conditional, 1, in ) ) return -EIO ;
+    }
+    
+    if ( ha7->data ) {
+        if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
+        first = 0 ;
+        if ( HA7_write(fd, "Data=", 5, in ) ) return -EIO ;
+        if ( HA7_write(fd, ha7->data, ha7->length, in ) ) return -EIO ;
+    }
+    
+    if ( ha7->lock ) {
+        if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
+        first = 0 ;
+        if ( HA7_write(fd, "LockID=", 7, in ) ) return -EIO ;
+        if ( HA7_write(fd, ha7->lock, 10, in ) ) return -EIO ;
+    }
+    
+    return HA7_write(fd, " HTTP/1.0\n\n", 11, in ) ;
 }
 
 // DS2480_sendback_data
@@ -312,51 +338,86 @@ printf("HA7 powerbyte\n");
    sendout_data, readin
  */
 static int HA7_sendback_data( const BYTE * data, BYTE * resp, const size_t size, const struct parsedname * pn ) {
-    size_t i ;
-    size_t left ;
-    BYTE * buf = pn->in->combuffer ;
-printf("HA7 sendback data\n");
-#if 0
-    if ( size == 0 ) return 0 ;
-    if ( HA7_write() ) return -EIO ;
-//    for ( i=0; ret==0 && i<size ; ++i ) ret = HA7_byte_bounce( &data[i], &resp[i], pn ) ;
-    for ( left=size; left ; ) {
-        i = (left>16)?16:left ;
-//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
-        bytes2string( (char *)buf, &data[size-left], i ) ;
-        if ( HA7_write( buf, i<<1, pn ) || HA7_read( buf, i<<1, pn, 0 ) ) return -EIO ;
-        string2bytes( (char *)buf, &resp[size-left], i ) ;
-        left -= i ;
+    int fd ;
+    ASCII * r ;
+    struct toHA7 ha7 ;
+    int ret = -EIO ;
+    
+printf("HA7 sendback data 0\n");
+    if ( (MAX_FIFO_SIZE>>1) < size ) {
+        size_t half = size>>1 ;
+        if ( HA7_sendback_data( data, resp, half, pn ) ) return -EIO ;
+        return HA7_sendback_data( &data[half], &resp[half], size-half, pn ) ;
     }
-#endif /* 0 */
-    return 0 ;
+printf("HA7 sendback data 1\n");
+
+    if ( (fd = ClientConnect( pn->in )) < 0 ) return -EIO ;
+    bytes2string( (ASCII *) pn->in->combuffer, data, size ) ;
+printf("HA7 sendback data 2\n");
+
+    toHA7init(&ha7) ;
+    ha7.command = "WriteBlock" ;
+    ha7.data = (ASCII *) pn->in->combuffer ;
+    ha7.length = 2*size ;
+    if ( HA7_toHA7( fd, &ha7, pn->in )==0 && HA7_read( fd,&r )==0 ) {
+        ASCII * p = r ;
+printf("HA7 sendback data 3\n");
+        if ( (p=strstr(p,"<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\"")) && (p=strstr(p,"VALUE=\"")) ) {
+            p += 7 ;
+printf("HA7 sendback data 4\n");
+printf("HA7 sendback data %.*s\n",size*2,p);
+            if ( strspn(p,"0123456789ABCDEF") >= size<<1 ) {
+printf("HA7 sendback data 5\n");
+                string2bytes( p, resp, size ) ;
+                ret = 0 ;
+            }
+printf("HA7 sendback data 6\n");
+        }
+        free(r) ;
+    }
+    close(fd) ;
+    return ret ;
 }
 
 static int HA7_select(const struct parsedname * pn) {
+    int ret = -EIO ;
+
     if ( pn->pathlength > 0 ) {
         LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) with the ascii-mode HA7\n") ;
-        return -ENOTSUP ; /* cannot do branching with HA7 ascii */
-    }
-    if ( pn->dev ) {
-        int fd ;
-        ASCII addrdev[] = "AddressDevice.html?Address=001122334455667788" ;
-        if ( (fd=ClientConnect(pn->in)) < 0 ) return -EIO ;
+        ret = -ENOTSUP ; /* cannot do branching with HA7 ascii */
+    } else if ( pn->dev ) {
+        int fd = ClientConnect(pn->in) ;
+
+        if ( fd >= 0 ) {
+            struct toHA7 ha7 ;
+            ASCII s[17] ;
 printf("HA7 select Open = %d\n",fd);
-        num2string( &addrdev[27], pn->sn[7] ) ;
-        num2string( &addrdev[29], pn->sn[6] ) ;
-        num2string( &addrdev[31], pn->sn[5] ) ;
-        num2string( &addrdev[33], pn->sn[4] ) ;
-        num2string( &addrdev[35], pn->sn[3] ) ;
-        num2string( &addrdev[37], pn->sn[2] ) ;
-        num2string( &addrdev[39], pn->sn[1] ) ;
-        num2string( &addrdev[41], pn->sn[0] ) ;
-        if ( HA7_toHA7(fd,addrdev,pn->in)==0 ) {
-            ASCII * buf ;
-            if ( HA7_read( fd, &buf ) ) return -EIO ;
-            free(buf) ;
+            num2string( &s[ 0], pn->sn[7] ) ;
+            num2string( &s[ 2], pn->sn[6] ) ;
+            num2string( &s[ 4], pn->sn[5] ) ;
+            num2string( &s[ 6], pn->sn[4] ) ;
+            num2string( &s[ 8], pn->sn[3] ) ;
+            num2string( &s[10], pn->sn[2] ) ;
+            num2string( &s[12], pn->sn[1] ) ;
+            num2string( &s[14], pn->sn[0] ) ;
+            s[16] = '\0' ;
+            
+            toHA7init( &ha7 ) ;
+            ha7.command = "AddressDevice" ;
+            ha7.address = s ;
+            if ( HA7_toHA7(fd,&ha7,pn->in)==0 ) {
+                ASCII * buf ;
+                if ( HA7_read( fd, &buf )==0 ) {
+                    free(buf) ;
+                    ret = 0 ;
+                }
+            }
+            close(fd) ;
         }
+    } else {
+        ret = 0 ;
     }
-    return 0 ;
+    return ret ;
 }
 
 static void HA7_close( struct connection_in * in ) {
@@ -373,4 +434,14 @@ static int HA7_getlock( int fd, struct connection_in * in ) {
 static int HA7_releaselock( int fd, struct connection_in * in ) {
     (void) fd ;
     (void) in ;
+}
+
+static void toHA7init( struct toHA7 * ha7 ) {
+    ha7->command =
+    ha7->lock =
+    ha7->address =
+    ha7->data =
+    ha7->conditional =
+    NULL ;
+    ha7->length = 0 ;
 }
