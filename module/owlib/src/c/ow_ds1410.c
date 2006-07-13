@@ -57,16 +57,17 @@ static int DS1410Present( BYTE * p, int fd ) ;
 static void DS1410_setroutines( struct interface_routines * f ) {
     f->detect        = DS1410_detect         ;
     f->reset         = DS1410_reset          ;
-    f->next_both     = BUS_next_both_low     ;
+    f->next_both     = NULL                  ;
 //    f->overdrive = ;
  //   f->testoverdrive = ;
-    f->PowerByte     = BUS_PowerByte_low     ;
+    f->PowerByte     = NULL                  ;
 //    f->ProgramPulse = ;
-    f->sendback_data = BUS_sendback_data_low ;
+    f->sendback_data = NULL                  ;
     f->sendback_bits = DS1410_sendback_bits  ;
-    f->select        = BUS_select_low        ;
+    f->select        = NULL                  ;
     f->reconnect     = NULL                  ;
     f->close         = DS1410_close          ;
+    f->flags         = ADAP_FLAG_overdrive   ;
 }
 
 /* Open a DS1410 after an unsucessful DS2480_detect attempt */

@@ -31,18 +31,19 @@ static int DS2480_sendback_data( const BYTE * data , BYTE * resp , const size_t 
 static void DS2480_setroutines( struct interface_routines * f ) ;
 
 static void DS2480_setroutines( struct interface_routines * f ) {
-    f->detect        = DS2480_detect ;
-    f->reset         = DS2480_reset ;
-    f->next_both     = DS2480_next_both ;
+    f->detect        = DS2480_detect        ;
+    f->reset         = DS2480_reset         ;
+    f->next_both     = DS2480_next_both     ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = DS2480_PowerByte ;
-    f->ProgramPulse  = DS2480_ProgramPulse ;
+    f->PowerByte     = DS2480_PowerByte     ;
+    f->ProgramPulse  = DS2480_ProgramPulse  ;
     f->sendback_data = DS2480_sendback_data ;
 //    f->sendback_bits = ;
-    f->select        = BUS_select_low ;
+    f->select        = NULL                 ;
     f->reconnect     = NULL ; // use "detect"
-    f->close         = COM_close ;
+    f->close         = COM_close            ;
+    f->flags         = 0                    ;
 }
 
 /* --------------------------- */
@@ -869,7 +870,7 @@ static int DS2480_sendout_data( const BYTE * data , const size_t len, const stru
         (ret=DS2480_sendout_data(data,dlen,pn)) || (ret=DS2480_sendout_data(&data[dlen],len>>1,pn)) ;
     } else {
         BYTE data2[32] ;
-        int i ;
+        size_t i ;
         UINT j=0 ;
         for ( i=0 ; i<len ; ++i ) {
             data2[j++]=data[i] ;

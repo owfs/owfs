@@ -117,9 +117,10 @@ static void DS2482_setroutines( struct interface_routines * f ) {
 //    f->ProgramPulse = ;
     f->sendback_data = DS2482_sendback_data  ;
     f->sendback_bits = NULL                  ;
-    f->select        = BUS_select_low        ;
+    f->select        = NULL                  ;
     f->reconnect     = DS2482_redetect       ;
     f->close         = DS2482_close          ;
+    f->flags         = ADAP_FLAG_overdrive   ;
 }
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */

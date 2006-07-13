@@ -48,13 +48,14 @@ static void HA7_setroutines( struct interface_routines * f ) {
     f->next_both     = HA7_next_both     ;
 //    f->overdrive = ;
 //    f->testoverdrive = ;
-    f->PowerByte     = BUS_PowerByte_low ;
+    f->PowerByte     = NULL              ;
 //    f->ProgramPulse = ;
     f->sendback_data = HA7_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = HA7_select        ;
     f->reconnect     = NULL              ;
     f->close         = HA7_close         ;
+    f->flags         = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path ;
 }
 
 int HA7_detect( struct connection_in * in ) {
@@ -106,7 +107,6 @@ static int HA7_reset( const struct parsedname * pn ) {
     int fd=ClientConnect(pn->in) ;
     int ret = 0 ;
     struct toHA7 ha7 ;
-printf("HA7 reset Open = %d\n",fd);
     
     if ( fd < 0 ) {
         STAT_ADD1_BUS(BUS_reset_errors,pn->in) ;
@@ -124,7 +124,6 @@ printf("HA7 reset Open = %d\n",fd);
     }
     if ( resp ) free( resp ) ;
     close( fd ) ;
-printf("HA7 reset Close = %d\n",fd);
     return ret ;
 }
 
@@ -257,7 +256,6 @@ static int HA7_read(int fd, ASCII ** buffer ) {
         if ( *buffer ) free( *buffer ) ;
         *buffer = NULL ;
     }
-printf("HA7_read return value=%d\n",ret);
     return ret ;
 }
 
@@ -287,10 +285,10 @@ static int HA7_write( int fd, const ASCII * msg, size_t length, struct connectio
 static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * in ) {
     int first = 1 ;
 
-    LEVEL_DEBUG("To HA7 command=%s address=%.16s data=%.*s conditional=%.1s lock=%.10s\n",
+    LEVEL_DEBUG("To HA7 command=%s address=%.16s dat(%d)a=%.*s conditional=%.1s lock=%.10s\n",
         SAFESTRING(ha7->command),
         SAFESTRING(ha7->address),
-        ha7->length,SAFESTRING(ha7->data),
+        ha7->length,ha7->length,SAFESTRING(ha7->data),
         SAFESTRING(ha7->conditional),
         SAFESTRING(ha7->lock) ) ;
     if ( ha7->command == NULL ) return -EINVAL ;
@@ -343,17 +341,14 @@ static int HA7_sendback_data( const BYTE * data, BYTE * resp, const size_t size,
     struct toHA7 ha7 ;
     int ret = -EIO ;
     
-printf("HA7 sendback data 0\n");
     if ( (MAX_FIFO_SIZE>>1) < size ) {
         size_t half = size>>1 ;
         if ( HA7_sendback_data( data, resp, half, pn ) ) return -EIO ;
         return HA7_sendback_data( &data[half], &resp[half], size-half, pn ) ;
     }
-printf("HA7 sendback data 1\n");
 
     if ( (fd = ClientConnect( pn->in )) < 0 ) return -EIO ;
     bytes2string( (ASCII *) pn->in->combuffer, data, size ) ;
-printf("HA7 sendback data 2\n");
 
     toHA7init(&ha7) ;
     ha7.command = "WriteBlock" ;
@@ -361,17 +356,13 @@ printf("HA7 sendback data 2\n");
     ha7.length = 2*size ;
     if ( HA7_toHA7( fd, &ha7, pn->in )==0 && HA7_read( fd,&r )==0 ) {
         ASCII * p = r ;
-printf("HA7 sendback data 3\n");
         if ( (p=strstr(p,"<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\"")) && (p=strstr(p,"VALUE=\"")) ) {
             p += 7 ;
-printf("HA7 sendback data 4\n");
-printf("HA7 sendback data %.*s\n",size*2,p);
+            LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n",size*2,size*2,p);
             if ( strspn(p,"0123456789ABCDEF") >= size<<1 ) {
-printf("HA7 sendback data 5\n");
                 string2bytes( p, resp, size ) ;
                 ret = 0 ;
             }
-printf("HA7 sendback data 6\n");
         }
         free(r) ;
     }
@@ -382,16 +373,12 @@ printf("HA7 sendback data 6\n");
 static int HA7_select(const struct parsedname * pn) {
     int ret = -EIO ;
 
-    if ( pn->pathlength > 0 ) {
-        LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) with the ascii-mode HA7\n") ;
-        ret = -ENOTSUP ; /* cannot do branching with HA7 ascii */
-    } else if ( pn->dev ) {
+    if ( pn->dev ) {
         int fd = ClientConnect(pn->in) ;
 
         if ( fd >= 0 ) {
             struct toHA7 ha7 ;
             ASCII s[17] ;
-printf("HA7 select Open = %d\n",fd);
             num2string( &s[ 0], pn->sn[7] ) ;
             num2string( &s[ 2], pn->sn[6] ) ;
             num2string( &s[ 4], pn->sn[5] ) ;
@@ -415,7 +402,7 @@ printf("HA7 select Open = %d\n",fd);
             close(fd) ;
         }
     } else {
-        ret = 0 ;
+        return HA7_reset( pn ) ;
     }
     return ret ;
 }

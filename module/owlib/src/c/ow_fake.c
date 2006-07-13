@@ -41,13 +41,14 @@ int Fake_detect( struct connection_in * in ) {
     in->iroutines.next_both     = Fake_next_both     ;
     in->iroutines.overdrive     = Fake_overdrive     ;
     in->iroutines.testoverdrive = Fake_testoverdrive ;
-    in->iroutines.PowerByte     = BUS_PowerByte_low  ;
+    in->iroutines.PowerByte     = NULL               ;
     in->iroutines.ProgramPulse  = Fake_ProgramPulse  ;
-    in->iroutines.sendback_data = BUS_sendback_data_low    ;
+    in->iroutines.sendback_data = NULL               ;
     in->iroutines.sendback_bits = Fake_sendback_bits ;
-    in->iroutines.select        = BUS_select_low     ;
+    in->iroutines.select        = NULL               ;
     in->iroutines.reconnect     = NULL               ;
     in->iroutines.close         = Fake_close         ;
+    in->iroutines.flags         = ADAP_FLAG_2409path ;
 
     in->connin.fake.devices=0 ;
     in->connin.fake.device=NULL ;

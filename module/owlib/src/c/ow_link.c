@@ -28,7 +28,6 @@ static int LINK_reset( const struct parsedname * pn ) ;
 static int LINK_next_both(struct device_search * ds, const struct parsedname * pn) ;
 static int LINK_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 static int LINK_sendback_data( const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn ) ;
-static int LINK_select(const struct parsedname * pn) ;
 static int LINK_byte_bounce( const BYTE * out, BYTE * in, const struct parsedname * pn ) ;
 static int LINK_CR( const struct parsedname * pn ) ;
 static void LINK_setroutines( struct interface_routines * f ) ;
@@ -46,9 +45,10 @@ static void LINK_setroutines( struct interface_routines * f ) {
 //    f->ProgramPulse = ;
     f->sendback_data = LINK_sendback_data ;
 //    f->sendback_bits = ;
-    f->select        = LINK_select        ;
+    f->select        = NULL               ;
     f->reconnect     = NULL               ;
     f->close         = COM_close          ;
+    f->flags         = ADAP_FLAG_2409path ;
 }
 
 static void LINKE_setroutines( struct interface_routines * f ) {
@@ -61,9 +61,10 @@ static void LINKE_setroutines( struct interface_routines * f ) {
 //    f->ProgramPulse = ;
     f->sendback_data = LINK_sendback_data ;
 //    f->sendback_bits = ;
-    f->select        = LINK_select        ;
+    f->select        = NULL               ;
     f->reconnect     = NULL               ;
     f->close         = LINKE_close        ;
+    f->flags         = ADAP_FLAG_2409path ;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
@@ -384,14 +385,6 @@ static int LINK_sendback_data( const BYTE * data, BYTE * resp, const size_t size
         left -= i ;
     }
     return LINK_CR(pn) ;
-}
-
-static int LINK_select(const struct parsedname * pn) {
-    if ( pn->pathlength > 0 ) {
-        LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) with the ascii-mode LINK\n") ;
-        return -ENOTSUP ; /* cannot do branching with LINK ascii */
-    }
-    return BUS_select_low(pn) ;
 }
 
 /*

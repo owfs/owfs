@@ -34,16 +34,17 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.detect        = BadAdapter_detect ;
     in->Adapter = adapter_Bad ; /* OWFS assigned value */
     in->iroutines.reset         = BadAdapter_reset         ;
-    in->iroutines.next_both     = BUS_next_both_low        ;
+    in->iroutines.next_both     = NULL                     ;
     in->iroutines.overdrive     = BadAdapter_overdrive     ;
     in->iroutines.testoverdrive = BadAdapter_testoverdrive ;
-    in->iroutines.PowerByte     = BUS_PowerByte_low        ;
+    in->iroutines.PowerByte     = NULL                     ;
     in->iroutines.ProgramPulse  = BadAdapter_ProgramPulse  ;
-    in->iroutines.sendback_data = BUS_sendback_data_low    ;
+    in->iroutines.sendback_data = NULL                     ;
     in->iroutines.sendback_bits = BadAdapter_sendback_bits ;
-    in->iroutines.select        = BUS_select_low           ;
+    in->iroutines.select        = NULL                     ;
     in->iroutines.reconnect     = NULL                     ;
     in->iroutines.close         = BadAdapter_close         ;
+    in->iroutines.flags         = 0                        ;
     in->adapter_name="Bad Adapter" ;
     return 0 ;
 }

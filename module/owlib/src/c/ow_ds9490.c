@@ -60,18 +60,19 @@ static char * DS9490_device_name( const struct usb_list * ul ) ;
 
 /* Device-specific routines */
 static void DS9490_setroutines( struct interface_routines * f ) {
-    f->detect        = DS9490_detect ;
-    f->reset         = DS9490_reset ;
-    f->next_both     = DS9490_next_both ;
-    f->overdrive     = DS9490_overdrive ;
+    f->detect        = DS9490_detect        ;
+    f->reset         = DS9490_reset         ;
+    f->next_both     = DS9490_next_both     ;
+    f->overdrive     = DS9490_overdrive     ;
     f->testoverdrive = DS9490_testoverdrive ;
-    f->PowerByte     = DS9490_PowerByte ;
+    f->PowerByte     = DS9490_PowerByte     ;
 //    f->ProgramPulse = ;
     f->sendback_data = DS9490_sendback_data ;
 //    f->sendback_bits = ;
-    f->select        = BUS_select_low ;
-    f->reconnect     =  DS9490_reconnect ;
-    f->close         = DS9490_close ;
+    f->select        = NULL                 ;
+    f->reconnect     = DS9490_reconnect     ;
+    f->close         = DS9490_close         ;
+    f->flags         = 0                    ;
 }
 
 #define TIMEOUT_USB    5000 /* 5 seconds */

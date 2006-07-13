@@ -123,17 +123,24 @@ struct interface_routines {
     int (* reconnect) ( const struct parsedname * pn ) ;
     /* Close the connection (port) */
     void (* close) ( struct connection_in * in ) ;
+    /* capabilities flags */
+    UINT flags ;
 } ;
 #define BUS_detect(in)                      (((in)->iroutines.detect(in)))
-#define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
+//#define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
 #define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
-#define BUS_next_both(ds,pn)                (((pn)->in->iroutines.next_both)((ds),(pn)))
+//#define BUS_next_both(ds,pn)                (((pn)->in->iroutines.next_both)((ds),(pn)))
 #define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
-#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
-#define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
+//#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
+//#define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
 #define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive)((speed),(pn)))
 #define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
+
+/* placed in iroutines.flags */
+#define ADAP_FLAG_overdrive     0x00000001
+#define ADAP_FLAG_2409path      0x00000010
+#define ADAP_FLAG_dirgulp       0x00000100
 
 #if OW_MT
 #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
@@ -403,7 +410,7 @@ int BUS_next(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_first_alarm(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_first_family(const BYTE family, struct device_search * ds, const struct parsedname * pn ) ;
 
-int BUS_select_low(const struct parsedname * pn) ;
+int BUS_select(const struct parsedname * pn) ;
 int BUS_select_branch( const struct parsedname * pn) ;
 
 int BUS_sendout_cmd(const BYTE * cmd , const size_t len, const struct parsedname * pn  ) ;
@@ -414,9 +421,9 @@ int BUS_readin_data(BYTE * data , const size_t len, const struct parsedname * pn
 int BUS_alarmverify(const struct parsedname * pn) ;
 int BUS_normalverify(const struct parsedname * pn) ;
 
-int BUS_PowerByte_low(const BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) ;
-int BUS_next_both_low(struct device_search * ds, const struct parsedname * pn) ;
-int BUS_sendback_data_low( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) ;
+int BUS_PowerByte(const BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) ;
+int BUS_next_both(struct device_search * ds, const struct parsedname * pn) ;
+int BUS_sendback_data( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) ;
 
 int TestConnection( const struct parsedname * pn ) ;
 
