@@ -120,6 +120,7 @@ static void DS2482_setroutines( struct interface_routines * f ) {
     f->select        = NULL                  ;
     f->reconnect     = DS2482_redetect       ;
     f->close         = DS2482_close          ;
+    f->transaction   = NULL                  ;
     f->flags         = ADAP_FLAG_overdrive   ;
 }
 

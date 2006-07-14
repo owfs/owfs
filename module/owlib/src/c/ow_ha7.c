@@ -55,6 +55,7 @@ static void HA7_setroutines( struct interface_routines * f ) {
     f->select        = HA7_select        ;
     f->reconnect     = NULL              ;
     f->close         = HA7_close         ;
+    f->transaction   = NULL              ;
     f->flags         = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path ;
 }
 

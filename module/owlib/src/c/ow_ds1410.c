@@ -67,6 +67,7 @@ static void DS1410_setroutines( struct interface_routines * f ) {
     f->select        = NULL                  ;
     f->reconnect     = NULL                  ;
     f->close         = DS1410_close          ;
+    f->transaction   = NULL                  ;
     f->flags         = ADAP_FLAG_overdrive   ;
 }
 

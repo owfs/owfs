@@ -48,6 +48,7 @@ static void LINK_setroutines( struct interface_routines * f ) {
     f->select        = NULL               ;
     f->reconnect     = NULL               ;
     f->close         = COM_close          ;
+    f->transaction   = NULL               ;
     f->flags         = ADAP_FLAG_2409path ;
 }
 
@@ -64,6 +65,7 @@ static void LINKE_setroutines( struct interface_routines * f ) {
     f->select        = NULL               ;
     f->reconnect     = NULL               ;
     f->close         = LINKE_close        ;
+    f->transaction   = NULL               ;
     f->flags         = ADAP_FLAG_2409path ;
 }
 

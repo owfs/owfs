@@ -41,8 +41,9 @@ static void DS2480_setroutines( struct interface_routines * f ) {
     f->sendback_data = DS2480_sendback_data ;
 //    f->sendback_bits = ;
     f->select        = NULL                 ;
-    f->reconnect     = NULL ; // use "detect"
+    f->reconnect     = NULL                 ; // use "detect"
     f->close         = COM_close            ;
+    f->transaction   = NULL                 ;
     f->flags         = 0                    ;
 }
 

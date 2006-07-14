@@ -48,6 +48,7 @@ int Fake_detect( struct connection_in * in ) {
     in->iroutines.select        = NULL               ;
     in->iroutines.reconnect     = NULL               ;
     in->iroutines.close         = Fake_close         ;
+    in->iroutines.transaction   = NULL               ;
     in->iroutines.flags         = ADAP_FLAG_2409path ;
 
     in->connin.fake.devices=0 ;

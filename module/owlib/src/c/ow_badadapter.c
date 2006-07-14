@@ -44,6 +44,7 @@ int BadAdapter_detect( struct connection_in * in ) {
     in->iroutines.select        = NULL                     ;
     in->iroutines.reconnect     = NULL                     ;
     in->iroutines.close         = BadAdapter_close         ;
+    in->iroutines.transaction   = NULL                     ;
     in->iroutines.flags         = 0                        ;
     in->adapter_name="Bad Adapter" ;
     return 0 ;

@@ -94,6 +94,17 @@ extern int altUSB ;
     #define MAX_FIFO_SIZE UART_FIFO_SIZE
 #endif
 
+enum transaction_type { trxn_select, trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
+struct transaction_log {
+    const BYTE * out ;
+    BYTE * in ;
+    size_t  size ;
+    enum transaction_type type ;
+} ;
+#define TRXN_START  { NULL, NULL, 0, trxn_select }
+#define TRXN_END    { NULL, NULL, 0, trxn_end }
+#define TRXN_RESET  { NULL, NULL, 0, trxn_reset }
+
 struct connection_in ;
 struct device_search ;
 /* -------------------------------------------- */
@@ -123,6 +134,8 @@ struct interface_routines {
     int (* reconnect) ( const struct parsedname * pn ) ;
     /* Close the connection (port) */
     void (* close) ( struct connection_in * in ) ;
+    /* transaction */
+    int (* transaction)( const struct transaction_log * tl, const struct parsedname * pn ) ;
     /* capabilities flags */
     UINT flags ;
 } ;
@@ -368,15 +381,6 @@ struct connection_in * NewIn( const struct connection_in * in ) ;
 struct connection_out * NewOut( void ) ;
 struct connection_in *find_connection_in(int nr);
 
-enum transaction_type { trxn_select, trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
-struct transaction_log {
-    const BYTE * out ;
-    BYTE * in ;
-    size_t  size ;
-    enum transaction_type type ;
-} ;
-#define TRXN_START  { NULL, NULL, 0, trxn_select }
-#define TRXN_END    { NULL, NULL, 0, trxn_end }
 /* Low-level functions
     slowly being abstracted and separated from individual
     interface type details

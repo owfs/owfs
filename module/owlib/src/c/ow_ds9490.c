@@ -72,6 +72,7 @@ static void DS9490_setroutines( struct interface_routines * f ) {
     f->select        = NULL                 ;
     f->reconnect     = DS9490_reconnect     ;
     f->close         = DS9490_close         ;
+    f->transaction   = NULL                 ;
     f->flags         = 0                    ;
 }
 

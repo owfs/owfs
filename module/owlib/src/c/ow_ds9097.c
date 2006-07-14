@@ -39,6 +39,7 @@ static void DS9097_setroutines( struct interface_routines * f ) {
     f->select        = NULL                  ;
     f->reconnect     = NULL                  ;
     f->close         = COM_close             ;
+    f->transaction   = NULL                  ;
     f->flags         = ADAP_FLAG_overdrive   ;
 }
 
