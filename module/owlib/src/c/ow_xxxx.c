@@ -190,8 +190,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
         ret = -ECONNABORTED ;
     } else if(get_busmode(in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
-        ret = ServerPresence(&pn2) ;
-        if(ret >= 0) {
+        if(ServerPresence(&pn2) >= 0) {
             /* Device was found on this in-device, return it's index */
             ret = in->index;
         } else {
@@ -211,14 +210,11 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
-        BUSLOCK(&pn2);
-            ret = BUS_normalverify(&pn2) ;
-        BUSUNLOCK(&pn2);
-        if(ret == 0) {
+        if(BUS_normalverify(&pn2) == 0) {
+            ret = -1;
+        } else {
             /* Device was found on this in-device, return it's index */
             ret = in->index;
-        } else {
-            ret = -1;
         }
     }
     if ( threadbad == 0 ) { /* was a thread created? */
@@ -240,28 +236,34 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     //printf("CheckPresence_low:\n");
     pn2.in = in ;
     if ( TestConnection(&pn2) ) { // reconnect successful?
-    ret = -ECONNABORTED ;
+        ret = -ECONNABORTED ;
     } else if(get_busmode(in) == bus_remote) {
         //printf("CheckPresence_low: call ServerPresence\n");
-        ret = ServerPresence(&pn2) ;
-        if(ret >= 0) {
+        if( ServerPresence(&pn2) >= 0) {
             /* Device was found on this in-device, return it's index */
             ret = in->index;
         } else {
             ret = -1;
         }
       //printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
+    } else if(get_busmode(in) == bus_fake) {
+        int i = in->connin.fake.devices - 1 ;
+        ret = -1 ;
+        //printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
+        for ( ; i > -1 ; --i ) {
+            //printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
+            if ( memcmp(pn2.sn, &(in->connin.fake.device[8*i]), 8 ) ) continue ;
+            ret = in->index ;
+            break ;
+        }
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
-        BUSLOCK(&pn2);
-            ret = BUS_normalverify(&pn2) ;
-        BUSUNLOCK(&pn2);
-        if(ret == 0) {
+        if( BUS_normalverify(&pn2) ) {
+            ret = -1;
+        } else {
             /* Device was found on this in-device, return it's index */
             ret = in->index;
-        } else {
-            ret = -1;
         }
     }
 
@@ -276,41 +278,8 @@ int FS_present(int * y , const struct parsedname * pn) {
     } else if(get_busmode(pn->in) == bus_fake) {
         y[0] = 1 ;
     } else {
-        BUSLOCK(pn);
-            y[0] = BUS_normalverify(pn) ? 0 : 1 ;
-        BUSUNLOCK(pn);
+        y[0] = BUS_normalverify(pn) ? 0 : 1 ;
     }
     return 0 ;
 }
 
-int FS_locator(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    BYTE loc[10] =  { 0x00,0xFF, 0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF, } ; // key and 8 byte default
-    size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
-    if(get_busmode(pn->in) != bus_fake) {
-        int ret ;
-        BUSLOCK(pn);
-            ret = BUS_normalverify(pn) || BUS_sendback_data( loc, loc, 10, pn ) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return -ENOENT ;
-    }
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, loc[i+off+2] ) ;
-    return size ;
-}
-
-int FS_r_locator(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    BYTE loc[10] =  { 0x00,0xFF, 0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF, } ; // key and 8 byte default
-    size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
-    if(get_busmode(pn->in) != bus_fake) {
-        int ret ;
-        BUSLOCK(pn);
-            ret = BUS_normalverify(pn) || BUS_sendback_data( loc, loc, 10, pn ) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return -ENOENT ;
-    }
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, loc[9-i-off] ) ;
-    return size ;
-}

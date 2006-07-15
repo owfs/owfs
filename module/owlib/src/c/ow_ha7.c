@@ -20,9 +20,9 @@ static struct timeval tvnet = { 0, 100000, } ;
 
 struct toHA7 {
     ASCII * command ;
-    ASCII * lock ;
-    ASCII * conditional ;
-    ASCII * address ;
+    ASCII lock[10] ;
+    ASCII conditional[1] ;
+    ASCII address[16] ;
     ASCII * data ;
     size_t length ;
 } ;
@@ -30,6 +30,7 @@ struct toHA7 {
 //static void byteprint( const BYTE * b, int size ) ;
 static int HA7_write( int fd, const ASCII * msg, size_t size, struct connection_in * in ) ;
 static void toHA7init( struct toHA7 * ha7 ) ;
+static void setHA7address( struct toHA7 * ha7, BYTE * sn ) ;
 static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * in ) ;
 static int HA7_getlock( int fd, struct connection_in * in ) ;
 static int HA7_releaselock( int fd, struct connection_in * in ) ;
@@ -142,7 +143,7 @@ static int HA7_directory( BYTE search, struct dirblob * db, const struct parsedn
 
     toHA7init( &ha7 ) ;
     ha7.command = "Search" ;
-    if ( search == 0xEC ) ha7.conditional = "1" ;
+    if ( search == 0xEC ) ha7.conditional[0] = '1' ;
     if ( HA7_toHA7( fd, &ha7, pn->in ) ) {
         ret = -EIO ;
     } else if (HA7_read( fd,&resp ) ) {
@@ -221,7 +222,9 @@ static int HA7_read(int fd, ASCII ** buffer ) {
         write( 1, buf, r) ;
         ret = -EIO ;
     } else if ( strncmp("HTTP/1.1 200 OK",buf,15) ) { //Bad HTTP return code
-        LEVEL_DATA("HA7 response problem:%32s\n",&buf[15]) ;
+        ASCII * p = strchr(&buf[15],'\n') ;
+        if ( p==NULL ) p=&buf[15+32] ;
+        LEVEL_DATA("HA7 response problem:%.*s\n",p-buf-15,&buf[15]) ;
         ret = -EIO ;
     } else if ( (start=strstr( buf, "<body>" ))== NULL ) { 
         LEVEL_DATA("HA7 response no HTTP body to parse\n") ;
@@ -286,7 +289,7 @@ static int HA7_write( int fd, const ASCII * msg, size_t length, struct connectio
 static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * in ) {
     int first = 1 ;
 
-    LEVEL_DEBUG("To HA7 command=%s address=%.16s dat(%d)a=%.*s conditional=%.1s lock=%.10s\n",
+    LEVEL_DEBUG("To HA7 command=%s address=%.16s data(%d)=%.*s conditional=%.1s lock=%.10s\n",
         SAFESTRING(ha7->command),
         SAFESTRING(ha7->address),
         ha7->length,ha7->length,SAFESTRING(ha7->data),
@@ -299,14 +302,14 @@ static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * i
     if ( HA7_write(fd, ha7->command, strlen(ha7->command), in ) ) return -EIO ;
     if ( HA7_write(fd, ".html", 5, in ) ) return -EIO ;
 
-    if ( ha7->address ) {
+    if ( ha7->address[0] ) {
         if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
         first = 0 ;
         if ( HA7_write(fd, "Address=", 8, in ) ) return -EIO ;
         if ( HA7_write(fd, ha7->address, 16, in ) ) return -EIO ;
     }
     
-    if ( ha7->conditional ) {
+    if ( ha7->conditional[0] ) {
         if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
         first = 0 ;
         if ( HA7_write(fd, "Conditional=", 12, in ) ) return -EIO ;
@@ -320,7 +323,7 @@ static int HA7_toHA7( int fd, const struct toHA7 * ha7, struct connection_in * i
         if ( HA7_write(fd, ha7->data, ha7->length, in ) ) return -EIO ;
     }
     
-    if ( ha7->lock ) {
+    if ( ha7->lock[0] ) {
         if ( HA7_write(fd, first?"?":"&", 1, in ) ) return -EIO ;
         first = 0 ;
         if ( HA7_write(fd, "LockID=", 7, in ) ) return -EIO ;
@@ -371,6 +374,17 @@ static int HA7_sendback_data( const BYTE * data, BYTE * resp, const size_t size,
     return ret ;
 }
 
+static void setHA7address( struct toHA7 * ha7, BYTE * sn ) {
+    num2string( &(ha7->address[ 0]), sn[7] ) ;
+    num2string( &(ha7->address[ 2]), sn[6] ) ;
+    num2string( &(ha7->address[ 4]), sn[5] ) ;
+    num2string( &(ha7->address[ 6]), sn[4] ) ;
+    num2string( &(ha7->address[ 8]), sn[3] ) ;
+    num2string( &(ha7->address[10]), sn[2] ) ;
+    num2string( &(ha7->address[12]), sn[1] ) ;
+    num2string( &(ha7->address[14]), sn[0] ) ;
+}
+
 static int HA7_select(const struct parsedname * pn) {
     int ret = -EIO ;
 
@@ -379,20 +393,9 @@ static int HA7_select(const struct parsedname * pn) {
 
         if ( fd >= 0 ) {
             struct toHA7 ha7 ;
-            ASCII s[17] ;
-            num2string( &s[ 0], pn->sn[7] ) ;
-            num2string( &s[ 2], pn->sn[6] ) ;
-            num2string( &s[ 4], pn->sn[5] ) ;
-            num2string( &s[ 6], pn->sn[4] ) ;
-            num2string( &s[ 8], pn->sn[3] ) ;
-            num2string( &s[10], pn->sn[2] ) ;
-            num2string( &s[12], pn->sn[1] ) ;
-            num2string( &s[14], pn->sn[0] ) ;
-            s[16] = '\0' ;
-            
             toHA7init( &ha7 ) ;
             ha7.command = "AddressDevice" ;
-            ha7.address = s ;
+            setHA7address( &ha7, pn->sn ) ;
             if ( HA7_toHA7(fd,&ha7,pn->in)==0 ) {
                 ASCII * buf ;
                 if ( HA7_read( fd, &buf )==0 ) {
@@ -426,10 +429,10 @@ static int HA7_releaselock( int fd, struct connection_in * in ) {
 
 static void toHA7init( struct toHA7 * ha7 ) {
     ha7->command =
-    ha7->lock =
-    ha7->address =
     ha7->data =
-    ha7->conditional =
     NULL ;
     ha7->length = 0 ;
+    ha7->conditional[0] =
+    ha7->lock[0] =
+    ha7->address[0] = '\0' ;
 }

@@ -27,6 +27,7 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
     
     BUSLOCK(pn) ;
         do {
+            //printf("Transact type=%d\n",t->type) ;
             switch (t->type) {
                 case trxn_select:
                     ret = BUS_select(pn) ;
