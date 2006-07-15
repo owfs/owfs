@@ -210,7 +210,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     } else {
         //printf("CheckPresence_low: call BUS_normalverify\n");
         /* this can only be done on local busses */
-        if(BUS_normalverify(&pn2) == 0) {
+        if( BUS_normalverify(&pn2) ) {
             ret = -1;
         } else {
             /* Device was found on this in-device, return it's index */
