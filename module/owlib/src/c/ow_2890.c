@@ -97,27 +97,32 @@ static int FS_r_cp(int * y , const struct parsedname * pn) {
 
 /* write Wiper */
 static int OW_w_wiper(const UINT val, const struct parsedname * pn) {
-    BYTE resp ;
+    BYTE resp[0] ;
     BYTE cmd[] = { 0x0F , (BYTE) val, } ;
-    BYTE ninesix = 0x96 ;
-    int ret ;
+    BYTE ns[] = { 0x96, } ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { cmd, NULL, 2, trxn_match, } ,
+        { NULL, resp, 1, trxn_read, } ,
+        { ns, NULL, 1, trxn_match, } ,
+        TRXN_END
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(cmd,2,pn) || BUS_readin_data(&resp,1,pn) || (resp!=val) || BUS_sendback_data(&ninesix,&resp,1,pn) || (resp!=ninesix) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return BUS_transaction(t,pn) || resp[0]!=val ;
 }
 
 /* read Wiper */
 static int OW_r_wiper(UINT *val, const struct parsedname * pn) {
-    BYTE fo=0xF0 ;
+    BYTE fo[]={0xF0,} ;
     BYTE resp[2] ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { fo, NULL, 1, trxn_match, } ,
+        { NULL, resp, 2, trxn_read, } ,
+        TRXN_END
+    } ;
 
-    BUSLOCK(pn);
-        ret =BUS_select(pn) || BUS_send_data(&fo,1,pn) || BUS_readin_data(resp,2,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
 
     *val = resp[1] ;
     return 0 ;
@@ -125,27 +130,32 @@ static int OW_r_wiper(UINT *val, const struct parsedname * pn) {
 
 /* write Charge Pump */
 static int OW_w_cp(const int val, const struct parsedname * pn) {
-    BYTE resp ;
+    BYTE resp[1] ;
     BYTE cmd[] = { 0x55 , (val)?0x4C:0x0C } ;
-    BYTE ninesix = 0x96 ;
-    int ret ;
+    BYTE ns[] = { 0x96, } ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { cmd, NULL, 2, trxn_match, } ,
+        { NULL, resp, 1, trxn_read, } ,
+        { ns, NULL, 1, trxn_match, } ,
+        TRXN_END
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(cmd,2,pn) || BUS_readin_data(&resp,1,pn) || (resp!=cmd[1]) || BUS_sendback_data(&ninesix,&resp,1,pn) || (resp!=ninesix) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return BUS_transaction(t,pn) || resp[0]!=cmd[1] ;
 }
 
 /* read Charge Pump */
 static int OW_r_cp(int * val , const struct parsedname * pn) {
-    BYTE aa=0xAA ;
+    BYTE aa[] = { 0xAA, } ;
     BYTE resp[2] ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { aa, NULL, 1, trxn_match, } ,
+        { NULL, resp, 2, trxn_read, } ,
+        TRXN_END
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(&aa,1,pn) || BUS_readin_data(resp,2,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
 
     *val = resp[1] & 0x40 ;
     return 0 ;
