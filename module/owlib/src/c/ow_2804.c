@@ -225,87 +225,97 @@ static int FS_w_s_alarm(const UINT * u , const struct parsedname * pn) {
 
 static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 3, trxn_match, } ,
+        { NULL, data, size, trxn_read, } ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) || BUS_readin_data( data, size,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    return 0 ;
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_w_scratch( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[3+32+2] = { 0x0F, offset&0xFF , (offset>>8)&0xFF, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 3+size, trxn_match, } ,
+        TRXN_END ,
+    } ;
+    struct transaction_log tcrc[] = {
+        TRXN_START ,
+        { p, NULL, 3+size, trxn_match, } ,
+        { &p[3+size], NULL, 2, trxn_read, } ,
+        TRXN_END ,
+    } ;
 
     memcpy( &p[3] , data, size ) ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,3+size,pn) ;
-        if ( ret==0 && ((size+offset)&0x1F)==0 ) { /* Check CRC if write is to end of page */
-            ret = BUS_readin_data(&p[3+size],2,pn) || CRC16(p,3+size+2) ;
-        }
-    BUSUNLOCK(pn);
-
-    return ret ;
+    if ( ((size+offset)&0x1F)==0 ) { /* Check CRC if write is to end of page */
+        return BUS_transaction(tcrc,pn) || CRC16(p,3+size+2) ;
+    } else {
+        return BUS_transaction(t,pn) ;
+    }
 }
 
 /* pre-paged */
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[4+32+2] = { 0xAA, offset&0xFF , (offset>>8)&0xFF, } ;
-    int ret = OW_w_scratch(data,size,offset,pn) ;
+    struct transaction_log tread[] = {
+        TRXN_START ,
+        { p, NULL, 1, trxn_match, } ,
+        { &p[1], NULL, 1+size+2, trxn_read, } ,
+        TRXN_END ,
+    } ;
+    struct transaction_log tcopy[] = {
+        TRXN_START ,
+        { p, NULL, 3, trxn_match, } ,
+        { &p[3], &p[3], 10, trxn_power, } ,
+        TRXN_END ,
+    } ;
 
-    if ( ret ) return ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],1+size+2,pn) || CRC16(p,4+size+2) ;
-        if ( ret==0 ) {
-            p[0] = 0x55 ;
-            ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
-        }
-    if ( ret ) {
-    BUSUNLOCK(pn);
-    } else {
-        UT_delay(10) ;
-    BUSUNLOCK(pn);
-    }
-
-    return ret ;
+    if (  OW_w_scratch(data,size,offset,pn)
+            || BUS_transaction(tread,pn)
+            || CRC16(p,4+size+2)
+            || memcmp(data,&p[4],size)
+        ) return 1 ;
+    p[0] = 0x55 ;
+    return BUS_transaction(tcopy,pn) ;
 }
 
 //* write status byte */
 static int OW_w_reg( const BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    BYTE p[3] = { 0xCC, offset&0xFF , (offset>>8)&0xFF , } ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) ||BUS_send_data( data, size,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    BYTE p[3] = { 0xCC, offset&0xFF, (offset>>8)&0xFF, } ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 3, trxn_match, } ,
+        { data, NULL, size, trxn_match, } ,
+        TRXN_END ,
+    } ;
+    return BUS_transaction(t,pn) ;
 }
 
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
 static int OW_w_pio( const BYTE data , const struct parsedname * pn ) {
-    BYTE p[4] = { 0x5A, data&0xFF, (data&0xFF)^0xFF, } ;
-    int ret ;
+    BYTE p[3] = { 0x5A, data&0xFF, (data&0xFF)^0xFF, } ;
+    BYTE resp[1] ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 3, trxn_match, } ,
+        { NULL, resp, 1, trxn_read, } ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) || BUS_readin_data( &p[3], 1,pn ) ;
-    BUSUNLOCK(pn);
-    if (ret) return ret ;
-
-    return p[3] != 0xAA ;
+    return BUS_transaction(t,pn) || resp[0]!=0xAA ;
 }
 
 /* Clear latches */
 static int OW_clear( const struct parsedname * pn ) {
-    BYTE p[2] = { 0xC3, } ;
-    int ret ;
+    BYTE p[2] = { 0xC3, 0xFF } ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, p, 2, trxn_read, } ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-         ret =BUS_select(pn) || BUS_send_data( p, 1,pn ) || BUS_readin_data(&p[1],1,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    return p[1]!=0xAA ;
+    return BUS_transaction(t,pn) || p[0]!=0xC3 || p[1]!=0xAA ;
 }

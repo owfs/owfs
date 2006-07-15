@@ -112,6 +112,8 @@ static int OW_r_memory( BYTE * data , const size_t size, const off_t offset , co
 static int OW_w_memory( const BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) ;
 static int OW_clear( const struct parsedname* pn ) ;
 static int OW_w_screen( const BYTE loc , const char * text , const int size, const struct parsedname* pn ) ;
+static int LCD_byte( BYTE byte, int delay, const struct parsedname * pn ) ;
+static int LCD_2byte( BYTE * byte, int delay, const struct parsedname * pn ) ;
 
 /* Internal files */
 static struct internal_prop ip_cum = { "CUM", fc_persistent } ;
@@ -256,94 +258,58 @@ static int FS_w_memory(const BYTE *buf, const size_t size, const off_t offset , 
 
 static int OW_w_scratch( const BYTE * data , const int length , const struct parsedname* pn ) {
     BYTE w = 0x4E ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { &w, NULL, 1, trxn_match, } ,
+        { data, NULL, length, trxn_match, } ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) || BUS_send_data( data, length,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_r_scratch( BYTE * data , const int length , const struct parsedname* pn ) {
     BYTE r = 0xBE ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { &r, NULL, 1, trxn_match, } ,
+        { NULL, data, length, trxn_read, } ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &r, 1,pn ) || BUS_readin_data( data, length,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_w_on( const int state , const struct parsedname* pn ) {
     BYTE w[] = { 0x03, 0x05, } ; /* on off */
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w[!state], 1,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return LCD_byte(w[!state],0,pn) ;
 }
 
 static int OW_w_backlight( const int state , const struct parsedname* pn ) {
     BYTE w[] = { 0x08, 0x07, } ; /* on off */
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w[!state], 1,pn ) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return LCD_byte(w[!state],0,pn) ;
 }
 
 static int OW_w_register( const BYTE data , const struct parsedname* pn ) {
     BYTE w[] = { 0x10, data, } ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 100uS
-    return 0 ;
+    // 100uS
+    return LCD_2byte(w,1,pn) ;
 }
 
 static int OW_r_register( BYTE * data , const struct parsedname* pn ) {
-    BYTE w = 0x11 ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 150uS
-    return OW_r_scratch( data, 1, pn ) ;
+    // 150uS
+    return LCD_byte(0x11,1,pn) || OW_r_scratch( data, 1, pn ) ;
 }
 
 static int OW_w_data( const BYTE data , const struct parsedname* pn ) {
     BYTE w[] = { 0x12, data, } ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 100uS
-    return 0 ;
+    // 100uS
+    return LCD_2byte(w,1,pn) ;
 }
 
 static int OW_r_data( BYTE * data , const struct parsedname* pn ) {
-    BYTE w = 0x13 ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 150uS
-    return OW_r_scratch( data, 1, pn ) ;
+    // 150uS
+    return LCD_byte(0x13,1,pn) || OW_r_scratch( data, 1, pn ) ;
 }
 
 static int OW_w_gpio( const BYTE data , const struct parsedname* pn ) {
@@ -351,44 +317,22 @@ static int OW_w_gpio( const BYTE data , const struct parsedname* pn ) {
        we can't know the set state of the pin, i.e. sensed and set
        are confused */
     BYTE w[] = { 0x21, data, } ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( w, 2,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 20uS
-    return 0 ;
+    // 20uS
+    return LCD_2byte(w,1,pn) ;
 }
 
 static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) {
-    BYTE w = 0x22 ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 70uS
-    return OW_r_scratch( data, 1, pn ) ;
+    // 70uS
+    return LCD_byte(0x22,1,pn) || OW_r_scratch( data, 1, pn ) ;
 }
 
 static int OW_r_counters( UINT * data , const struct parsedname* pn ) {
-    BYTE w = 0x23 ;
     BYTE d[8] ;
     UINT cum[4] ;
     size_t s = sizeof(cum);
-    int ret ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( LCD_byte(0x23,1,pn) ||  OW_r_scratch(d,8,pn) ) return 1 ; // 80uS
 
-    UT_delay(1) ; // 80uS
-    if ( OW_r_scratch( d, 8, pn ) ) return 1 ;
     data[0] = ((UINT) d[1])<<8 | d[0] ;
     data[1] = ((UINT) d[3])<<8 | d[2] ;
     data[2] = ((UINT) d[5])<<8 | d[4] ;
@@ -417,20 +361,11 @@ static int OW_r_counters( UINT * data , const struct parsedname* pn ) {
 /* Call will not span "page" */
 static int OW_r_memory( BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) {
     BYTE buf[2] = { offset&0xFF , size&0xFF, } ;
-    BYTE w = 0x37 ;
-    int ret ;
 
     if ( buf[1] == 0 ) return 0 ;
 
-    if ( OW_w_scratch(buf,2,pn) ) return 1 ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(&w,1,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 500uS
-    return OW_r_scratch(data,buf[1],pn) ;
+    // 500uS
+    return OW_w_scratch(buf,2,pn) || LCD_byte(0x37,1,pn) || OW_r_scratch(data,buf[1],pn) ;
 }
 
 /* memory is 112 bytes */
@@ -440,56 +375,30 @@ static int OW_r_memory( BYTE * data , const size_t size, const off_t offset , co
 /* Call will not span "page" */
 static int OW_w_memory( const BYTE * data , const size_t size, const off_t offset , const struct parsedname* pn ) {
     BYTE buf[17] = { offset&0xFF , } ;
-    BYTE w = 0x39 ;
-    int ret ;
 
     if ( size == 0 ) return 0 ;
     memcpy( &buf[1], data, size ) ;
 
-    if ( OW_w_scratch(buf,size+1,pn) ) return 1 ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(&w,1,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(4*size) ; // 4mS/byte
-    return 0 ;
+    return OW_w_scratch(buf,size+1,pn) || LCD_byte(0x39,4*size,pn) ;
+    // 4mS/byte
 }
 
 /* data is 16 bytes */
 static int OW_r_version( BYTE * data , const struct parsedname* pn ) {
-    BYTE w = 0x41 ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &w, 1,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    UT_delay(1) ; // 500uS
-    return OW_r_scratch( data, 16, pn ) ;
+    // 500uS
+    return LCD_byte(0x41,1,pn) || OW_r_scratch( data, 16, pn ) ;
 }
 
 static int OW_w_screen( const BYTE loc , const char * text , const int size, const struct parsedname* pn ) {
     BYTE t[17] = { loc, } ;
-    BYTE w = 0x48 ;
     int s ;
     int l ;
-    int ret ;
 
     for ( s=size ; s>0 ; s -= l ) {
         l = s ;
         if (l>16) l=16 ;
         memcpy( &t[1], &text[size-s] , (size_t) l ) ;
-
-        if ( OW_w_scratch(t,l+1,pn) ) return 1 ;
-
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data( &w , 1,pn ) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
-
+        if ( OW_w_scratch(t,l+1,pn) || LCD_byte(0x48,0,pn) ) return 1 ;
         t[0]+=l ;
     }
     UT_delay(2) ; // 120uS/byte (max 1.92mS)
@@ -497,12 +406,31 @@ static int OW_w_screen( const BYTE loc , const char * text , const int size, con
 }
 
 static int OW_clear( const struct parsedname* pn ) {
-    BYTE c = 0x49 ; /* clear */
-    int ret ;
+    /* clear */
+    return LCD_byte( 0x49, 3, pn ) ;
+    // 2.5mS
+}
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &c, 1,pn) ;
-    BUSUNLOCK(pn);
-    UT_delay(3) ; // 2.5mS
-    return ret ;
+static int LCD_byte( BYTE byte, int delay, const struct parsedname * pn ) {
+    struct transaction_log t[] = {
+        TRXN_START,
+        { &byte, NULL, 1, trxn_match, } ,
+        TRXN_END,
+    } ;
+
+    if ( BUS_transaction(t,pn) ) return 1 ;
+    UT_delay(delay) ; // mS
+    return 0 ;
+}
+
+static int LCD_2byte( BYTE * byte, int delay, const struct parsedname * pn ) {
+    struct transaction_log t[] = {
+        TRXN_START,
+        { byte, NULL, 2, trxn_match, } ,
+        TRXN_END,
+    } ;
+
+    if ( BUS_transaction(t,pn) ) return 1 ;
+    UT_delay(delay) ; // mS
+    return 0 ;
 }

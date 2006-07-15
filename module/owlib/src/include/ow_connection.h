@@ -94,7 +94,17 @@ extern int altUSB ;
     #define MAX_FIFO_SIZE UART_FIFO_SIZE
 #endif
 
-enum transaction_type { trxn_select, trxn_match, trxn_read, trxn_power, trxn_program, trxn_reset, trxn_end, } ;
+enum transaction_type { 
+    trxn_select, 
+    trxn_match, 
+    trxn_read, 
+    trxn_power, 
+    trxn_program, 
+    trxn_reset, 
+    trxn_end, 
+    trxn_normalverify ,
+    trxn_alarmverify ,
+} ;
 struct transaction_log {
     const BYTE * out ;
     BYTE * in ;
