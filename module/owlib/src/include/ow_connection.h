@@ -102,8 +102,7 @@ enum transaction_type {
     trxn_program, 
     trxn_reset, 
     trxn_end, 
-    trxn_normalverify ,
-    trxn_alarmverify ,
+    trxn_verify ,
 } ;
 struct transaction_log {
     const BYTE * out ;
@@ -111,9 +110,11 @@ struct transaction_log {
     size_t  size ;
     enum transaction_type type ;
 } ;
-#define TRXN_START  { NULL, NULL, 0, trxn_select }
-#define TRXN_END    { NULL, NULL, 0, trxn_end }
-#define TRXN_RESET  { NULL, NULL, 0, trxn_reset }
+#define TRXN_NVERIFY { NULL, NULL, 0xF0, trxn_verify }
+#define TRXN_AVERIFY { NULL, NULL, 0xEC, trxn_verify }
+#define TRXN_START   { NULL, NULL, 0, trxn_select }
+#define TRXN_END     { NULL, NULL, 0, trxn_end }
+#define TRXN_RESET   { NULL, NULL, 0, trxn_reset }
 
 struct connection_in ;
 struct device_search ;
@@ -432,8 +433,7 @@ int BUS_send_cmd(const BYTE * cmd , const size_t len, const struct parsedname * 
 int BUS_sendback_cmd(const BYTE * cmd , BYTE * resp , const size_t len, const struct parsedname * pn  ) ;
 int BUS_send_data(const BYTE * data , const size_t len, const struct parsedname * pn  ) ;
 int BUS_readin_data(BYTE * data , const size_t len, const struct parsedname * pn ) ;
-int BUS_alarmverify(const struct parsedname * pn) ;
-int BUS_normalverify(const struct parsedname * pn) ;
+int BUS_verify(BYTE search, const struct parsedname * pn) ;
 
 int BUS_PowerByte(const BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) ;
 int BUS_next_both(struct device_search * ds, const struct parsedname * pn) ;

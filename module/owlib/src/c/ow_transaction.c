@@ -59,6 +59,14 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
                 case trxn_end:
                     t = NULL ;
                     break ;
+                case trxn_verify:
+                    {
+                        struct parsedname pn2 ;
+                        memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
+                        pn2.dev = NULL ;
+                        ret = BUS_select(&pn2) || BUS_verify(t->size,pn) ;
+                    }
+                    break ;
             }
             if ( t==NULL ) break ;
             ++ t ;

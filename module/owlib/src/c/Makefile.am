@@ -55,6 +55,7 @@ OWLIB_SOURCE = compat.c          \
                ow_iterate.c      \
                ow_lcd.c          \
                ow_link.c         \
+               ow_locator.c      \
                ow_locks.c        \
                ow_parsename.c    \
                ow_pid.c          \

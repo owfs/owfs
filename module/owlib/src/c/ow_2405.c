@@ -90,32 +90,34 @@ static int FS_w_PIO(const int * y, const struct parsedname * pn) {
 /* read the sense of the DS2405 switch */
 static int OW_r_sense( int * val , const struct parsedname * pn) {
     BYTE inp ;
-    int ret ;
+    struct transaction_log r[] = {
+        TRXN_NVERIFY,
+        { NULL, &inp, 1, trxn_read, } ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_normalverify(pn) || BUS_readin_data(&inp,1,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(r,pn) ) return 1 ;
 
-     *val = (inp!=0) ;
+    val[0] = (inp!=0) ;
     return 0 ;
 }
 
 /* read the state of the DS2405 switch */
 static int OW_r_PIO( int * val , const struct parsedname * pn) {
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_alarmverify(pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) {
-        BUSLOCK(pn);
-            ret = BUS_normalverify(pn) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return -ENOENT ;
-         *val = 0 ;
+    struct transaction_log a[] = {
+        TRXN_AVERIFY,
+        TRXN_END ,
+    } ;
+    
+    if ( BUS_transaction(a,pn) ) {
+        struct transaction_log n[] = {
+            TRXN_NVERIFY,
+            TRXN_END ,
+        } ;
+        if ( BUS_transaction(n,pn) ) return -ENOENT ;
+        val[0] = 0 ;
     } else {
-        *val = 1 ;
+        val[0] = 1 ;
     }
     return 0 ;
 }
@@ -123,16 +125,16 @@ static int OW_r_PIO( int * val , const struct parsedname * pn) {
 /* write (set) the state of the DS2405 switch */
 static int OW_w_PIO( const int val , const struct parsedname * pn) {
     int current ;
-    int ret = 0 ;
 
     if ( OW_r_PIO(&current,pn) ) return 1 ;
 
-    BUSLOCK(pn);
     if ( current != val ) {
-        ret = BUS_select(pn) ;
+        struct transaction_log n[] = {
+            TRXN_START,
+            TRXN_END ,
+        } ;
+        if ( BUS_transaction(n,pn) ) return 1 ;
     }
-    ret |= BUS_reset(pn) ;
- //printf("2405write current=%d new=%d\n",current,val) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    //printf("2405write current=%d new=%d\n",current,val) ;
+    return 0 ;
 }
