@@ -710,6 +710,9 @@ int OW_ArgUSB( const char * arg ) ;
 int OW_ArgDevice( const char * arg ) ;
 int OW_ArgGeneric( const char * arg ) ;
 
+void ow_help( enum opt_program op ) ;
+void ow_morehelp( enum opt_program op ) ;
+
 void update_max_delay( const struct parsedname * pn ) ;
 
 int ServerPresence( const struct parsedname * pn ) ;

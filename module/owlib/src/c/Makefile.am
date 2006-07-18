@@ -52,6 +52,7 @@ OWLIB_SOURCE = compat.c          \
                ow_fakeread.c     \
                ow_filelength.c   \
                ow_fstat.c        \
+               ow_help.c         \
                ow_iterate.c      \
                ow_lcd.c          \
                ow_link.c         \
