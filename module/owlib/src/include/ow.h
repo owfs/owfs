@@ -99,7 +99,7 @@ $Id$
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
-#include <sys/file.h> /* for flock */
+//#include <sys/file.h> /* for flock */
 #ifdef HAVE_GETOPT_H
  #include <getopt.h> /* for long options */
 #endif
