@@ -53,7 +53,9 @@ static int FS_release(const char *path, FUSEFLAG flags) ;
     #define CB_read FS_read
     #define CB_write FS_write
 #endif
-#if FUSE_VERSION > 22
+#if FUSE_VERSION > 25
+static void * FS_init( struct fuse_conn_info * ) ;
+#elif FUSE_VERSION > 22
 static void * FS_init( void ) ;
 #endif /* FUSE_VERSION > 22 */
     /* Change in statfs definition for newer FUSE versions */
@@ -186,7 +188,12 @@ int FS_statfs(struct fuse_statfs *fst) {
 #endif /* FUSE1X */
 
 #if FUSE_VERSION > 22
+ #if FUSE_VERSION > 25
+static void * FS_init( struct fuse_conn_info * conn ) {
+    (void) conn ;
+ #else
 static void * FS_init( void ) {
+ #endif
     PIDstart() ;
     return NULL ;
 }

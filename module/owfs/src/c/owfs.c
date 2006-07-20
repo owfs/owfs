@@ -116,10 +116,10 @@ int main(int argc, char *argv[]) {
     /* Set up "command line" for main fuse routines */
     Fuse_setup( &fuse_options ) ; // command line setup
     Fuse_add(fuse_mountpoint , &fuse_options) ; // mount point
-#if FUSE_VERSION >= 22
+ #if FUSE_VERSION >= 22
     Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
     Fuse_add("direct_io" , &fuse_options) ;
-#endif
+ #endif
     if ( !background ) {
         Fuse_add("-f", &fuse_options) ; // foreground for fuse too
         if ( error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
@@ -132,15 +132,19 @@ int main(int argc, char *argv[]) {
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */
     now_background = background ; // tell "error" that we are background
-#if 0
+ #if 0
     {
       int i;
       for(i=0; i<fuse_options.argc; i++) {
 	LEVEL_DEBUG("fuse_options.argv[%d]=[%s]\n", i, fuse_options.argv[i]);
       }
     }
-#endif
+ #endif
+ #if FUSE_VERSION > 25
+    fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL ) ;
+ #else /* FUSE_VERSION <= 25 */
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;
+ #endif
     Fuse_cleanup( &fuse_options ) ;
 #endif
     ow_exit(0) ;
