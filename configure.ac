@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="2"
 VERSION_MINOR="4"
-PATCHLEVEL="4"
+PATCHLEVEL="5"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -922,11 +922,11 @@ AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
 AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
 case "${host_cpu}-${host_os}" in
-	*-aix* | *-freebsd* | *-darwin* | *solaris* | *-osf* | *-hpux*)
+	*-aix* | *-darwin* | *solaris* | *-osf* | *-hpux*)
 		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
-	*)
+	*-freebsd* | *)
 		AC_MSG_RESULT([no])
 	;;
 esac
