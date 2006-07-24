@@ -78,6 +78,11 @@ struct filetype DS2406[] = {
     {"sensed"    ,     1,  &A2406,  ft_bitfield, fc_volatile, {u:FS_sense}    , {v:NULL}     , {v:NULL}, } ,
     {"latch"     ,     1,  &A2406,  ft_bitfield, fc_volatile, {u:FS_r_latch}  , {u:FS_w_latch},{v:NULL}, } ,
     {"set_alarm" ,     3,  NULL,    ft_unsigned, fc_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
+    {"TAI8570"   ,     0,  NULL,    ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"TAI8570/temperature", 12,  NULL, ft_temperature, fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"TAI8570/pressure"   , 12,  NULL,    ft_float   , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"TAI8570/calibration",  8,  NULL,    ft_binary  , fc_stable  , {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"TAI8570/mate"       , 16,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
 } ;
 DeviceEntryExtended( 12, DS2406, DEV_alarm ) ;
 
@@ -93,6 +98,7 @@ static int OW_w_control( const BYTE data , const struct parsedname * pn ) ;
 static int OW_w_pio( const BYTE data , const struct parsedname * pn ) ;
 static int OW_access( BYTE * data , const struct parsedname * pn ) ;
 static int OW_clear( const struct parsedname * pn ) ;
+static int OW_full_access( BYTE * data , const struct parsedname * pn ) ;
 
 /* 2406 memory read */
 static int FS_r_mem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -299,7 +305,21 @@ static int OW_w_pio( const BYTE data , const struct parsedname * pn ) {
 }
 
 static int OW_access( BYTE * data , const struct parsedname * pn ) {
-    BYTE p[3+2+2] = { 0xF5, 0x55 , 0xFF, } ;
+    BYTE d[2] = { 0x55, 0xFF, } ;
+    if ( OW_full_access( d, pn ) ) return 1 ;
+    data[0] = d[0] ;
+    return 0 ;
+}
+
+/* Clear latches */
+static int OW_clear( const struct parsedname * pn ) {
+    BYTE data[2] = { 0xD5, 0xFF, } ;
+    return OW_full_access(data, pn ) ; ;
+}
+
+// write both control bytes, and read both back
+static int OW_full_access( BYTE * data , const struct parsedname * pn ) {
+    BYTE p[3+2+2] = { 0xF5, data[0] , data[1], } ;
     struct transaction_log t[] = {
         TRXN_START ,
         { p, NULL, 3, trxn_match } ,
@@ -310,22 +330,7 @@ static int OW_access( BYTE * data , const struct parsedname * pn ) {
     if ( BUS_transaction( t, pn ) ) return 1 ;
     if ( CRC16(p,3+2+2) ) return 1 ;
 
-    *data = p[3] ;
-    return 0 ;
-}
-
-/* Clear latches */
-static int OW_clear( const struct parsedname * pn ) {
-    BYTE p[3+2+2] = { 0xF5, 0xD5 , 0xFF, } ;
-    struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 3, trxn_match } ,
-        { NULL, &p[3], 2+2, trxn_read } ,
-        TRXN_END,
-    } ;
-
-    if ( BUS_transaction( t, pn ) ) return 1 ;
-    if ( CRC16(p,3+2+2) ) return 1 ;
-
+    data[0] = p[3] ;
+    data[1] = p[4] ;
     return 0 ;
 }

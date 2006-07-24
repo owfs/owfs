@@ -109,7 +109,11 @@ static int ServerAddr(  struct connection_out * out ) {
     memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_flags = AI_PASSIVE ;
     hint.ai_socktype = SOCK_STREAM ;
+#ifdef __FreeBSD__
+    hint.ai_family = AF_INET ; // FreeBSD will bind IP6 preferentially
+#else /* __FreeBSD__ */
     hint.ai_family = AF_UNSPEC ;
+#endif /* __FreeBSD__ */
 
     //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 

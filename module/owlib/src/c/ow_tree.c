@@ -32,9 +32,25 @@ static int file_compare( const void * a , const void * b ) {
 void * Tree[] = {NULL, NULL, NULL, NULL, NULL, };
 
 
+// FreeBSD fix from Robert Nilsson
+/*  In order for DeviceDestroy to work on FreeBSD we must copy the keys.
+    Otherwise, tdestroy will attempt to free implicitly allocated structures.
+*/
 static void Device2Tree( const struct device * d, enum pn_type type ) {
+#ifdef __FreeBSD__
+    struct device *d_copy;
+
+    if ( (d_copy = (struct device *)malloc(sizeof(struct device))) ) {
+        memmove(d_copy, d, sizeof(struct device));
+        tsearch( d_copy, &Tree[type], device_compare ) ;
+        if (d_copy->ft) qsort( d_copy->ft,(size_t) d_copy->nft,sizeof(struct filetype),file_compare ) ;
+    } else {
+        LEVEL_DATA("Device2Tree:  Could not allocate memory for device %s\n",d->name);
+    }
+#else /* __FreeBSD__ */
     tsearch( d, &Tree[type], device_compare ) ;
     if (d->ft) qsort( d->ft,(size_t) d->nft,sizeof(struct filetype),file_compare ) ;
+#endif /* __FreeBSD__ */
 /*
 {
 int i ;

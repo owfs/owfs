@@ -19,6 +19,8 @@ $Id$
 
 */
 
+/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -211,6 +213,27 @@ static void DS9490_setroutines( struct interface_routines * f ) {
 
 char badUSBname[] = "-1/-1" ;
 
+#ifdef __FreeBSD__
+// This is in here until the libusb on FreeBSD supports the usb_clear_halt function
+int BSD_usb_clear_halt(usb_dev_handle *dev, unsigned int ep) {
+    int ret;
+    struct usb_ctl_request ctl_req;
+
+    ctl_req.ucr_addr = 0; // Not used for this type of request
+    ctl_req.ucr_request.bmRequestType = UT_WRITE_ENDPOINT;
+    ctl_req.ucr_request.bRequest = UR_CLEAR_FEATURE;
+    USETW(ctl_req.ucr_request.wValue, UF_ENDPOINT_HALT);
+    USETW(ctl_req.ucr_request.wIndex, ep);
+    USETW(ctl_req.ucr_request.wLength, 0);
+    ctl_req.ucr_flags = 0;
+
+    if ((ret = ioctl(dev->fd, USB_DO_REQUEST, &ctl_req)) < 0)
+        LEVEL_DATA("DS9490_clear_halt:  failed for %d", ep);
+
+    return ret;
+}
+#endif /* __FreeBSD__ */
+
 int DS9490_enumerate( void ) {
     struct usb_list ul ;
     int ret = 0 ;
@@ -386,10 +409,10 @@ static int DS9490_open( struct usb_list * ul, const struct parsedname * pn ) {
 
                 // clear endpoints
                 if ( (ret =
-                        usb_clear_halt(usb, DS2490_EP3) ||
-                        usb_clear_halt(usb, DS2490_EP2) ||
-                        usb_clear_halt(usb, DS2490_EP1) ) ) {
-                    LEVEL_DEFAULT("DS9490_open: usb_clear_halt failed ret=%d\n", ret);
+                    USB_CLEAR_HALT(usb, DS2490_EP3) ||
+                    USB_CLEAR_HALT(usb, DS2490_EP2) ||
+                    USB_CLEAR_HALT(usb, DS2490_EP1) ) ) {
+                    LEVEL_DEFAULT("DS9490_open: USB_CLEAR_HALT failed ret=%d\n", ret);
                 } else if ( DS9490_setup_adapter(pn) ||
                             DS9490_overdrive(ONEWIREBUSSPEED_REGULAR, pn) ||
                             DS9490_level(MODE_NORMAL, pn) ) {
@@ -586,9 +609,24 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
     int ret , loops = 0 ;
     int i ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
+#ifdef OW_DEBUG
+    char s[97], t[4] ; // For my fancy display in the log
+#endif /* OW_DEBUG */
 
     memset(buffer, 0, 32) ; // should not be needed
-    do {
+    LEVEL_DETAIL("DS9490_getstatus: readlen=%d\n", readlen);
+
+#ifdef __FreeBSD__ // Clear the Interrupt read buffer before trying to get status
+    {
+        char junk[1500] ;
+        if ( (ret=usb_bulk_read(usb,DS2490_EP1,(ASCII *)junk,(size_t)1500,TIMEOUT_USB)) < 0 ) {
+            STAT_ADD1_BUS(BUS_status_errors,pn->in);
+            LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
+            return -EIO ;
+        }
+    }
+#endif // __FreeBSD__
+            do {
 #ifdef HAVE_USB_INTERRUPT_READ
         // Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
         if ( (ret=usb_interrupt_read(usb,DS2490_EP1,(ASCII *)buffer,(size_t)32,TIMEOUT_USB)) < 0 ) {
@@ -599,7 +637,24 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
             LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
             return -EIO ;
         }
+#ifdef OW_DEBUG
+        if (error_level>4) { // LEVEL_DETAIL
+            s[0] = '\0';
+            for (i = 0; i < ret; i++) {
+                sprintf(t,"-%02x",buffer[i]);
+                strcat(s,t);
+            }
+            LEVEL_DETAIL("DS9490_getstatus: Bytes%s\n", s);
+        }
+#endif /* OW_DEBIG */
         if(ret > 16) {
+            if (ret == 32) { // FreeBSD buffers the input, so this could just be two readings
+                if (!memcmp(buffer, &buffer[16], 6)) {
+                    memmove(buffer, &buffer[16],16);
+                    ret = 16;
+                    LEVEL_DATA("DS9490_getstatus: Corrected buffer 32 byte read\n", s);
+                }
+            }
             for(i=16; i<ret; i++) {
                 BYTE val = buffer[i];
                 if(val != ONEWIREDEVICEDETECT) {
@@ -812,7 +867,7 @@ static int DS9490_read( BYTE * buf, const size_t size, const struct parsedname *
     //printf("DS9490_read\n");
     if ((ret=usb_bulk_read(usb,DS2490_EP3,(ASCII*)buf,(int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
-    usb_clear_halt(usb,DS2490_EP3) ;
+    USB_CLEAR_HALT(usb,DS2490_EP3) ;
     STAT_ADD1_BUS(BUS_read_errors,pn->in) ;
     return ret ;
 }
@@ -823,7 +878,7 @@ static int DS9490_write( const BYTE * buf, const size_t size, const struct parse
     //printf("DS9490_write\n");
     if ((ret=usb_bulk_write(usb,DS2490_EP2,(const ASCII *)buf,(const int)size,TIMEOUT_USB )) > 0) return ret ;
     LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
-    usb_clear_halt(usb,DS2490_EP2) ;
+    USB_CLEAR_HALT(usb,DS2490_EP2) ;
     STAT_ADD1_BUS(BUS_write_errors,pn->in) ;
     return ret ;
 }
