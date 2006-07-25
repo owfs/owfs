@@ -19,8 +19,6 @@ $Id$
 
 */
 
-/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
-
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -28,6 +26,25 @@ $Id$
 #include "ow_connection.h"
 
 #if OW_USB /* conditional inclusion of USB */
+
+/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
+#ifdef __FreeBSD__
+    // Add a few definitions we need
+    #undef HAVE_USB_INTERRUPT_READ // This call in libusb is unneeded for FreeBSD (and it's broken)
+    #include <dev/usb/usb.h>
+    struct usb_dev_handle {
+        int fd;
+        struct usb_bus *bus;
+        struct usb_device *device;
+        int config;
+        int interface;
+        int altsetting;
+        void *impl_info;
+    };
+    #define USB_CLEAR_HALT BSD_usb_clear_halt
+#else
+    #define USB_CLEAR_HALT usb_clear_halt
+#endif
 
 #include <usb.h>
 

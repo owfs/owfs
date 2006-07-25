@@ -75,13 +75,6 @@ $Id$
 #endif
 #ifdef HAVE_SYS_TYPES_H
     #include <sys/types.h> /* for stat */
-#ifdef __FreeBSD__ // Fix to compile under FreeBSD
-    #define major(x)        ((int)(((unsigned int)(x) >> 8)&0xff)) /* major number */
-    #define minor(x)        ((int)((x)&0xffff00ff))         /* minor number */
-    #define IPPORT_RESERVED         1024
-    #include <sys/select.h>
-#endif
-
 #endif
 #include <ctype.h>
 #include <sys/types.h>
@@ -225,27 +218,6 @@ extern int multithreading ;
     #define BUSLOCK(pn)
     #define BUSUNLOCK(pn)
 #endif /* OW_MT */
-
-#if OW_USB
-    #ifdef __FreeBSD__
-        // Add a few definitions we need
-        #undef HAVE_USB_INTERRUPT_READ // This call in libusb is unneeded for FreeBSD (and it's broken)
-        #include <dev/usb/usb.h>
-        struct usb_dev_handle {
-            int fd;
-            struct usb_bus *bus;
-            struct usb_device *device;
-            int config;
-            int interface;
-            int altsetting;
-            void *impl_info;
-        };
-        #define USB_CLEAR_HALT BSD_usb_clear_halt
-    #else /* __FreeBSD__ */
-        #define USB_CLEAR_HALT usb_clear_halt
-    #endif /* __FreeBSD__ */
-    #include <usb.h>
-#endif /* OW_USB */
 
 /*
     OW -- One Wire
