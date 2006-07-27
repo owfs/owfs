@@ -26,3 +26,5 @@
 .B LCD (3) DS2408 (3)
 .SS Crypto
 .B DS1977 (3)
+.SS Pressure
+.B DS2406 (3) -- TAI8570

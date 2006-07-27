@@ -64,6 +64,11 @@ uWRITE_FUNCTION( FS_w_latch ) ;
 uWRITE_FUNCTION( FS_w_s_alarm ) ;
  yREAD_FUNCTION( FS_power ) ;
  uREAD_FUNCTION( FS_channel ) ;
+#ifdef TAI8570
+ aREAD_FUNCTION( FS_sibling ) ;
+ fREAD_FUNCTION( FS_temp ) ;
+ fREAD_FUNCTION( FS_pressure ) ;
+#endif /* TAI8570 */
 
 /* ------- Structures ----------- */
 
@@ -81,42 +86,13 @@ struct filetype DS2406[] = {
     {"latch"     ,     1,  &A2406,  ft_bitfield, fc_volatile, {u:FS_r_latch}  , {u:FS_w_latch},{v:NULL}, } ,
     {"set_alarm" ,     3,  NULL,    ft_unsigned, fc_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
 #ifdef TAI8570
-    {"TAI8570"   ,     0,  NULL,    ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"TAI8570/temperature", 12,  NULL, ft_temperature, fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"TAI8570/pressure"   , 12,  NULL,    ft_float   , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"TAI8570/calibration",  8,  NULL,    ft_binary  , fc_stable  , {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
-    {"TAI8570/mate"       , 16,  NULL,    ft_ascii   , fc_stable  , {v:NULL}        , {v:NULL}     , {v:NULL}, } ,
+    {"TAI8570"            ,  0,  NULL,    ft_subdir  , fc_volatile, {v:NULL}       , {v:NULL}, {v:NULL}, } ,
+    {"TAI8570/temperature", 12,  NULL, ft_temperature, fc_volatile, {f:FS_temp}    , {v:NULL}, {v:NULL}, } ,
+    {"TAI8570/pressure"   , 12,  NULL,    ft_float   , fc_volatile, {f:FS_pressure}, {v:NULL}, {v:NULL}, } ,
+    {"TAI8570/sibling"    , 16,  NULL,    ft_ascii   , fc_stable  , {a:FS_sibling} , {v:NULL}, {v:NULL}, } ,
 #endif /* TAI8570 */
 } ;
 DeviceEntryExtended( 12, DS2406, DEV_alarm ) ;
-
-
-#ifdef TAI8570
-struct s_TAI8570 {
-    BYTE reader[8] ;
-    BYTE writer[8] ;
-    UINT C[6] ;
-} ;
-/* Internal files */
-static struct internal_prop ip_bar = { "BAR", fc_persistent } ;
-
-// Updated by Simon Melhuish, with ref. to AAG C++ code
-static BYTE SEC_READW4[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
-
-static BYTE SEC_READW2[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
-static BYTE SEC_READW1[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x00 } ;
-static BYTE SEC_READW3[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x00 } ;
-
-static BYTE SEC_READD1[] = { 0x0E, 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
-static BYTE SEC_READD2[] = { 0x0E, 0x0E, 0x0E, 0x0E, 0x04, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
-static BYTE SEC_RESET[]  = { 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
-
-static BYTE CFG_READ = 0xEC; // '11101100'   Configuraci� de lectura para DS2407
-static BYTE CFG_WRITE = 0x8C;    // '10001100'  Configuraci� de Escritura para DS2407
-static BYTE CFG_READPULSE = 0xC8;    // '11001000'  Configuraci� de lectura de Pulso de conversion para DS2407
-
-#endif /* TAI8570 */
-
 
 /* ------- Functions ------------ */
 
@@ -360,24 +336,87 @@ static int OW_full_access( BYTE * data , const struct parsedname * pn ) {
     } ;
 
     if ( BUS_transaction( t, pn ) ) return 1 ;
+    //printf("DS2406 access %.2X %.2X -> %.2X %.2X \n",data[0],data[1],p[3],p[4]);
     if ( CRC16(p,3+2+2) ) return 1 ;
-
+    //printf("DS2406 CRC ok\n");
     data[0] = p[3] ;
     data[1] = p[4] ;
     return 0 ;
 }
 
+#ifdef TAI8570
+struct s_TAI8570 {
+    BYTE sibling[8] ;
+    BYTE reader[8] ;
+    BYTE writer[8] ;
+    UINT C[6] ;
+} ;
+/* Internal files */
+static struct internal_prop ip_bar = { "BAR", fc_persistent } ;
+
+// Updated by Simon Melhuish, with ref. to AAG C++ code
+static BYTE SEC_READW4[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
+
+static BYTE SEC_READW2[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
+static BYTE SEC_READW1[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x00 } ;
+static BYTE SEC_READW3[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x00 } ;
+
+static BYTE SEC_READD1[] = { 0x0E, 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
+static BYTE SEC_READD2[] = { 0x0E, 0x0E, 0x0E, 0x0E, 0x04, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
+static BYTE SEC_RESET[]  = { 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00 } ;
+
+static BYTE CFG_READ = 0xEC; // '11101100'   Configuraci� de lectura para DS2407
+static BYTE CFG_WRITE = 0x8C;    // '10001100'  Configuraci� de Escritura para DS2407
+static BYTE CFG_READPULSE = 0xC8;    // '11001000'  Configuraci� de lectura de Pulso de conversion para DS2407
+
 static int ReadTmexPage( BYTE * data, size_t size, int page, const struct parsedname * pn ) ;
 static int TAI8570_Calibration (UINT * cal, const struct s_TAI8570 * tai, const struct parsedname * pn) ;
 static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) ;
 static int TAI8570_Write( BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
-static int TAI8570_Read( UINT * u, const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
-static int TAI8570_Reset( const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
+static int TAI8570_Read(  UINT * u,   const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
+static int TAI8570_Reset(             const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
+static int TAI8570_Check(             const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
 static int TAI8570_ClockPulse( const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
-static int TAI8570_DataPulse( const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
-static int TAI8570_CalValue (UINT * cal, BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn) ;
+static int TAI8570_DataPulse(  const struct s_TAI8570 * tai, const struct parsedname * pn ) ;
+static int TAI8570_CalValue (  UINT * cal, BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn) ;
+static int TAI8570_SenseValue (UINT * val, BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn) ;
 static int TAI8570_A( const struct parsedname * pn ) ;
 static int TAI8570_B( const struct parsedname * pn ) ;
+
+int FS_sibling(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
+    size_t i ;
+    size_t siz = size>>1 ;
+    size_t off = offset>>1 ;
+    struct s_TAI8570 tai ;
+    if ( testTAI8570( &tai, pn ) ) return -ENOENT ;
+    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, tai.sibling[i+off] ) ;
+    return size ;
+}
+
+int FS_temp( FLOAT * T, const struct parsedname * pn ) {
+    UINT D2 ;
+    struct s_TAI8570 tai ;
+    
+    if ( testTAI8570( &tai, pn ) ) return -ENOENT ;
+    if ( TAI8570_SenseValue( &D2, SEC_READD2, &tai, pn ) ) return -EINVAL ;
+    T[0] = 20. + (D2 - 8*tai.C[4] - 20224)*(tai.C[5]+50.)/10240. ;
+    return 0 ;
+}
+
+int FS_pressure( FLOAT * P, const struct parsedname * pn ) {
+    UINT D1, D2 ;
+    FLOAT dT, OFF, SENS, X ;
+    struct s_TAI8570 tai ;
+    if ( testTAI8570( &tai, pn ) ) return -ENOENT ;
+    if ( TAI8570_SenseValue( &D1, SEC_READD1, &tai, pn ) ) return -EINVAL ;
+    if ( TAI8570_SenseValue( &D2, SEC_READD2, &tai, pn ) ) return -EINVAL ;
+    dT = D2 - 8.*tai.C[4] - 20224. ;
+    OFF = 4.*tai.C[1] + ((tai.C[3]-512.)*dT)/4096. ;
+    SENS = 24576. + tai.C[0] + (tai.C[2]*dT)/1024. ;
+    X = (SENS*(D1-7168.))/16384. - OFF ;
+    P[0] = 250. + X/32. ;
+    return 0 ;
+}
 
 // Read a page and confirm its a valid tmax page
 static int ReadTmexPage( BYTE * data, size_t size, int page, const struct parsedname * pn ) {
@@ -387,11 +426,16 @@ static int ReadTmexPage( BYTE * data, size_t size, int page, const struct parsed
 }
 
 static int TAI8570_config( BYTE cfg, BYTE * sn, const struct parsedname * pn ) {
-    BYTE data[] = { cfg, 0xFF, } ;
+    BYTE data[] = { 0xF5, cfg, 0xFF, 0xFF } ;
     struct parsedname pn2 ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { data, data, 4, trxn_read, } ,
+        TRXN_END ,
+    } ;
     memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
     memcpy( pn2.sn, sn, 8 ) ;
-    return OW_full_access( data, &pn2 ) ;
+    return BUS_transaction( t, &pn2 ) ;
 }
 
 static int TAI8570_A( const struct parsedname * pn ) {
@@ -438,7 +482,9 @@ static int TAI8570_DataPulse( const struct s_TAI8570 * tai, const struct parsedn
 
 static int TAI8570_Reset( const struct s_TAI8570 * tai, const struct parsedname * pn ) {
     if ( TAI8570_ClockPulse( tai, pn ) ) return 1 ;
+    //printf("TAI8570 Clock ok\n") ;
     if ( TAI8570_config( CFG_WRITE, tai->writer, pn ) ) return 1 ; // config write
+    //printf("TAI8570 config (reset) ok\n") ;
     return TAI8570_Write( SEC_RESET, tai, pn ) ;
 }
 
@@ -446,11 +492,12 @@ static int TAI8570_Write( BYTE * cmd, const struct s_TAI8570 * tai, const struct
     size_t len = strlen( cmd ) ;
     BYTE zero = 0x04 ;
     struct transaction_log t[] = {
-        { cmd, NULL, len, trxn_match, } ,
-        { &zero, NULL, 1, trxn_match, } ,
+        { cmd, NULL, len, trxn_read, } ,
+        { &zero, NULL, 1, trxn_read, } ,
         TRXN_END ,
     } ;
-    if ( TAI8570_config( CFG_READ, tai->reader, pn ) ) return 1 ; // config write
+    if ( TAI8570_config( CFG_WRITE, tai->writer, pn ) ) return 1 ; // config write
+    //printf("TAI8570 config (write) ok\n") ;
     return BUS_transaction( t, pn ) ;
 }
 
@@ -462,7 +509,8 @@ static int TAI8570_Read( UINT * u, const struct s_TAI8570 * tai, const struct pa
         { data, data, 32, trxn_read, } ,
         TRXN_END ,
     } ;
-    if ( TAI8570_config( CFG_WRITE, tai->writer, pn ) ) return 1 ; // config write
+    if ( TAI8570_config( CFG_READ, tai->reader, pn ) ) return 1 ; // config write
+    //printf("TAI8570 read ") ;
     for ( i=j=0 ; i<16; ++i ) {
         data[j++] = 0xFF ;
         data[j++] = 0xFA ;
@@ -471,9 +519,44 @@ static int TAI8570_Read( UINT * u, const struct s_TAI8570 * tai, const struct pa
     for ( j=0 ; j<32; j += 2 ) {
         U = U << 1 ;
         if ( data[j]&0x80 ) ++U ;
+        //printf("%.2X%.2X ",data[j],data[j+1]) ;
     }
+    //printf("\n") ;
     u[0] = U ;
     return 0 ;
+}
+
+static int TAI8570_Check( const struct s_TAI8570 * tai, const struct parsedname * pn ) {
+    size_t i ;
+    BYTE data[1] ;
+    int ret = 1 ;
+    struct transaction_log t[] = {
+        { NULL, data, 1, trxn_read, } ,
+        TRXN_END ,
+    } ;
+    UT_delay(30) ; // conversion time in msec
+    if ( TAI8570_config( CFG_READPULSE, tai->reader, pn ) ) return 1 ; // config write
+    //printf("TAI8570 check ") ;
+    for ( i=0 ; i<100; ++i ) {
+        if ( BUS_transaction( t, pn ) ) return 1 ;
+        //printf("%.2X ",data[0]) ;
+        if ( data[0] != 0xFF ) {
+            ret = 0 ;
+            break ;
+        }
+    }
+    //printf("TAI8570 conversion poll = %d\n",i) ;
+    //printf("\n") ;
+    return 0 ;
+}
+
+static int TAI8570_SenseValue (UINT * val, BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn) {
+    if (TAI8570_Reset(tai,pn)) return 1 ;
+    if ( TAI8570_Write( cmd, tai, pn ) ) return 1 ;
+    if ( TAI8570_Check( tai, pn ) ) return 1 ;
+    if ( TAI8570_ClockPulse(tai,pn) ) return 1 ;
+    if ( TAI8570_Read( val, tai, pn ) ) return 1 ;
+    return TAI8570_DataPulse(tai,pn) ;
 }
 
 static int TAI8570_CalValue (UINT * cal, BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn) {
@@ -494,13 +577,17 @@ static int TAI8570_Calibration (UINT * cal, const struct s_TAI8570 * tai, const 
     for ( rep=0 ; rep<5 ; ++rep ) {
         if (TAI8570_Reset(tai,pn)) return 1 ;
         TAI8570_CalValue(&cal[0], SEC_READW1, tai, pn);
+        //printf("TAI8570 SIBLING cal[0]=%u ok\n",cal[0]);
         TAI8570_CalValue(&cal[1], SEC_READW2, tai, pn);
+        //printf("TAI8570 SIBLING cal[1]=%u ok\n",cal[1]);
         TAI8570_CalValue(&cal[2], SEC_READW3, tai, pn);
+        //printf("TAI8570 SIBLING cal[2]=%u ok\n",cal[2]);
         TAI8570_CalValue(&cal[3], SEC_READW4, tai, pn);
-        if ( memcmp(cal, oldcal, sizeof(oldcal) )==0 ) break ;
+        //printf("TAI8570 SIBLING cal[3]=%u ok\n",cal[3]);
+        if ( memcmp(cal, oldcal, sizeof(oldcal) )==0 ) return 0 ;
         memcpy(oldcal,cal,sizeof(oldcal) ) ;
     }
-    return rep >= 5 ; // couldn't get the same answer twice in a row
+    return 1 ; // couldn't get the same answer twice in a row
 }
 
 static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
@@ -517,6 +604,7 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
     if ( ReadTmexPage(data,32,1,pn) ) return 1 ; // read page
     // see which DS2406 is powered
     if ( FS_power( &pow, pn) ) return 1 ;
+    memcpy( tai->sibling, &data[1], 8 ) ;
     if ( pow ) {
         memcpy( tai->writer, pn->sn  , 8 ) ;
         memcpy( tai->reader, &data[1], 8 ) ;
@@ -524,14 +612,17 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
         memcpy( tai->reader, pn->sn  , 8 ) ;
         memcpy( tai->reader, &data[1], 8 ) ;
     }
-
+    LEVEL_DETAIL("TAI8570 reader="SNformat" writer="SNformat"\n",SNvar(tai->reader),SNvar(tai->writer)) ;
     if ( TAI8570_Calibration(cal,tai,pn) ) return 1 ;
-    tai->C[0] = (((unsigned int)cal[1])<<8)     +  (((unsigned int) cal[0])>>1) ;
-    tai->C[1] = (((unsigned int)cal[5]) & 0x3F) + ((((unsigned int) cal[7]) & 0x3F)<<6) ;
-    tai->C[2] = (((unsigned int)cal[7])<<8)     +  (((unsigned int) cal[6])>>6) ;
-    tai->C[3] = (((unsigned int)cal[5])<<8)     +  (((unsigned int) cal[4])>>6) ;
-    tai->C[4] = (((unsigned int)cal[3])<<8)     +  (((unsigned int) cal[2])>>6) + ((((unsigned int) cal[0])&0x01)<<10) ;
-    tai->C[5] = (((unsigned int)cal[3]) & 0x3F) ;
+    tai->C[0] = ((cal[0])>>1) ;
+    tai->C[1] = ((cal[3])&0x3F) | (((cal[2])&0x3F)<<6) ;
+    tai->C[2] = ((cal[3])>>6) ;
+    tai->C[3] = ((cal[2])>>6) ;
+    tai->C[4] = ((cal[1])>>6) | (((cal[0])&0x01)<<10) ;
+    tai->C[5] = ((cal[1])&0x3F) ;
     
+    LEVEL_DETAIL("TAI8570 C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u\n",tai->C[0],tai->C[1],tai->C[2],tai->C[3],tai->C[4],tai->C[5]);
     return Cache_Add_Internal( (const void *) tai, s, &ip_bar, pn ) ;
 }
+
+#endif /* TAI8570 */

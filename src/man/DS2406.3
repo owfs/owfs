@@ -33,6 +33,7 @@ Dual Switch, Write-once Memory
 |
 .B set_alarm
 |
+.B TAI8570/[sibling|temperature|pressure]
 .so standard_mini
 ]]
 .SH FAMILY CODE
@@ -161,6 +162,40 @@ Responds on Conditional Search when either latch.A or latch.B (or both) are set 
 .TP
 <100
 Never responds to Conditional Search.
+.SS TAI8570/
+.I subdirectory
+.br
+Properties when the
+.I DS2406 (3)
+is built into a
+.I TAI8570.
+.br
+If the
+.I DS2406 (3)
+is not part of a
+.I TAI8570
+or is not the controlling switch, attempts to read will result in an error.
+.SS TAI8570/pressure
+.I read-only, floating point
+.br
+Barometric
+.I pressure
+in millibar.
+.SS TAI8570/sibling
+.I read-only, ascii
+.br
+Hex address of the
+.I DS2406 (3)
+paired with this chip in a
+.I TAI8570.
+.SS TAI8570/temperature
+.I read-only, floating-point
+.br
+Ambient
+.I temperature
+measured by the
+.I TAI8570
+in prevailing temperature units (Centigrade is the default).
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
@@ -189,12 +224,42 @@ except for a strange
 .I hidden
 mode. It is supported just like the
 .B DS2406
+.SS TAI8570
+The
+.I TAI-8570 Pressure Sensor
+is based on a 1-wire composite device by
+.I AAG Electronica.
+The
+.I TAI8570
+uses 2
+.I DS2406 (3)
+chips, paired as a reader and writer to synthesize 3-wire communication. Only 1 of the
+.I DS2406 (3)
+will allow
+.I temperature
+or
+.I pressure
+readings. It's mate's address can be shown as
+.I sibling.
+.PP
+The
+.I TAI8570
+uses the
+.I Intersema MS5534a
+pressure sensor, and stores calibration and temperature compensation values internally.
+.PP
+Design and code examples are available from AAG Electronica http://aag.com.mx
+, specific permission to use code in a GPL product was given by Mr. Aitor Arrieta of AAG and Dr. Simon Melhuish of OWW.
 .SH ADDRESSING
 .so addressing
 .SH DATASHEET
 http://pdfserv.maxim-ic.com/en/ds/DS2406.pdf
 .br
 http://pdfserv.maxim-ic.com/en/ds/DS2407.pdf
+.br
+http://www.aagelectronica.com/PDF%20Docs/(TAI8570)%20Pressure%20Sensor.pdf
+.br
+http://oww.sourceforge.net/hardware.html#bp
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

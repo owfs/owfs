@@ -133,7 +133,7 @@ int BUS_sendback_data( const BYTE * data, BYTE * resp , const size_t len, const 
     
         /* Split into smaller packets? */
         if ( remain>0 ) return BUS_sendback_data( data,resp,UART_FIFO_SIZE>>3,pn)
-                    || BUS_sendback_data( &data[UART_FIFO_SIZE>>3],&resp[UART_FIFO_SIZE>>3],remain,pn) ;
+                    || BUS_sendback_data( &data[UART_FIFO_SIZE>>3],resp?(&resp[UART_FIFO_SIZE>>3]):NULL,remain,pn) ;
     
         /* Encode bits */
         for ( i=0 ; i<bits ; ++i ) pn->in->combuffer[i] = UT_getbit(data,i) ? 0xFF : 0x00 ;
@@ -145,7 +145,9 @@ int BUS_sendback_data( const BYTE * data, BYTE * resp , const size_t len, const 
         }
     
         /* Decode Bits */
-        for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
+        if ( resp ) {
+            for ( i=0 ; i<bits ; ++i ) UT_setbit(resp,i,pn->in->combuffer[i]&0x01) ;
+        }
     
         return 0 ;
     }

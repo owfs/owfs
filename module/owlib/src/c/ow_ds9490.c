@@ -631,7 +631,7 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
 #endif /* OW_DEBUG */
 
     memset(buffer, 0, 32) ; // should not be needed
-    LEVEL_DETAIL("DS9490_getstatus: readlen=%d\n", readlen);
+    //LEVEL_DETAIL("DS9490_getstatus: readlen=%d\n", readlen);
 
 #ifdef __FreeBSD__ // Clear the Interrupt read buffer before trying to get status
     {
@@ -654,6 +654,7 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
             LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
             return -EIO ;
         }
+#if 0
 #ifdef OW_DEBUG
         if (error_level>4) { // LEVEL_DETAIL
             s[0] = '\0';
@@ -664,7 +665,8 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
             LEVEL_DETAIL("DS9490_getstatus: Bytes%s\n", s);
         }
 #endif /* OW_DEBIG */
-        if(ret > 16) {
+#endif /* 0 */        
+if(ret > 16) {
             if (ret == 32) { // FreeBSD buffers the input, so this could just be two readings
                 if (!memcmp(buffer, &buffer[16], 6)) {
                     memmove(buffer, &buffer[16],16);

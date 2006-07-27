@@ -23,7 +23,7 @@ $Id$
 /* Then a series of bytes is sent and returned, including sending data and reading the return data */
 int BUS_transaction( const struct transaction_log * tl, const struct parsedname * pn ) {
     const struct transaction_log * t = tl ;
-    int ret ;
+    int ret = 0 ;
     
     BUSLOCK(pn) ;
         do {
@@ -31,30 +31,42 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
             switch (t->type) {
                 case trxn_select:
                     ret = BUS_select(pn) ;
-                    //printf("  Transaction select = %d\n",ret) ;
+                    LEVEL_DEBUG("  Transaction select = %d\n",ret) ;
                     break ;
                 case trxn_match:
                     ret = BUS_send_data( t->out, t->size, pn ) ;
-                    //printf("  Transaction send = %d\n",ret) ;
+                    LEVEL_DEBUG("  Transaction send = %d\n",ret) ;
                     break ;
                 case trxn_read:
-                    if ( t->out ) {
-                        ret = BUS_sendback_data( t->out, t->in, t->size, pn ) ;
-                        //printf("  Transaction sendback = %d\n",ret) ;
-                    } else {
+                    if ( t->out == NULL ) {
                         ret = BUS_readin_data( t->in, t->size, pn ) ;
-                        //printf("  Transaction readin = %d\n",ret) ;
+                        LEVEL_DEBUG("  Transaction readin = %d\n",ret) ;
+                    } else if ( t->in == NULL ) {
+                        BYTE dummy[64] ;
+                        size_t s = t->size ;
+                        while ( s > 0 ) {
+                            size_t ss = (s>64) ? 64 : s ;
+                            s -= ss ;
+                            ret = BUS_sendback_data( t->out, dummy, ss, pn ) ;
+                            LEVEL_DEBUG("  Transaction null sendback (%lu of %lu)= %d\n",ss,t->size,ret) ;
+                            if ( ret ) break ;
+                        }
+                    } else {
+                        ret = BUS_sendback_data( t->out, t->in, t->size, pn ) ;
+                        LEVEL_DEBUG("  Transaction sendback = %d\n",ret) ;
                     }
                     break ;
                 case trxn_power:
                     ret = BUS_PowerByte( t->out[0], t->in, t->size, pn ) ;
-                    //printf("  Transaction power = %d\n",ret) ;
+                    LEVEL_DEBUG("  Transaction power = %d\n",ret) ;
                     break ;
                 case trxn_program:
                     ret = BUS_ProgramPulse(pn) ;
+                    LEVEL_DEBUG("  Transaction program pulse = %d\n",ret) ;
                     break ;
                 case trxn_reset:
                     ret = BUS_reset(pn) ;
+                    LEVEL_DEBUG("  Transaction reset = %d\n",ret) ;
                     // fall through
                 case trxn_end:
                     t = NULL ;
@@ -65,6 +77,7 @@ int BUS_transaction( const struct transaction_log * tl, const struct parsedname 
                         memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
                         pn2.dev = NULL ;
                         ret = BUS_select(&pn2) || BUS_verify(t->size,pn) ;
+                        LEVEL_DEBUG("  Transaction verify = %d\n",ret) ;
                     }
                     break ;
             }

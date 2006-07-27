@@ -34,7 +34,7 @@ int BUS_verify(BYTE search, const struct parsedname * pn) {
     for (i = 0; i < 64; i++) UT_setbit(buffer,3*i+10,UT_getbit(pn->sn,i)) ;
 
     // send/recieve the transfer buffer
-    if ( BUS_sendback_data(buffer,buffer,25,pn) ) { printf("Bad transaction\n"); return 1 ; }
+    if ( BUS_sendback_data(buffer,buffer,25,pn) ) return 1 ;
     if ( buffer[0] != search ) return 1 ;
     for ( i=0 ; (i<64) && (goodbits<64) ; i++ )
     {
@@ -51,7 +51,6 @@ int BUS_verify(BYTE search, const struct parsedname * pn) {
             return 1 ;
         }
     }
-printf("Verify end result = %d\n",goodbits<8) ;
     // check to see if there were enough good bits to be successful
     // remember 1 is bad!
     return goodbits<8 ;
