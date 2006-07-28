@@ -228,7 +228,7 @@ extern int multithreading ;
 /* These are the owlib-specific options */
 #define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
-enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_nfsd, opt_perl, opt_python, opt_php, opt_tcl, } ;
+enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_perl, opt_python, opt_php, opt_tcl, } ;
 int owopt( const int c , const char * arg, enum opt_program op ) ;
 
 /* Several different structures:
@@ -514,18 +514,6 @@ enum simul_type { simul_temp, simul_volt, } ;
 /* Globals */
 extern char * progname ; /* argv[0] stored */
 extern int readonly ; /* readonly file system ? */
-
-/* NFS parameters, gathered in a structure to unclutter the namespace */
-struct nfs_params {
-    int NFS_program ;
-    int NFS_version ;
-    int tcp_only ;
-    int udp_only ;
-    int NFS_port ;
-    int mount_port ;
-    int no_portmapper ;
-} ;
-extern struct nfs_params NFS_params ; 
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;

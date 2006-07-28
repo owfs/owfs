@@ -60,9 +60,6 @@ yWRITE_FUNCTION( FS_w_lock ) ;
  fREAD_FUNCTION( FS_r_current ) ;
  fREAD_FUNCTION( FS_r_vis ) ;
  fREAD_FUNCTION( FS_r_vis_avg ) ;
- fREAD_FUNCTION( FS_thermocouple ) ;
- fREAD_FUNCTION( FS_rangelow ) ;
- fREAD_FUNCTION( FS_rangehigh ) ;
  yREAD_FUNCTION( FS_r_pio ) ;
 yWRITE_FUNCTION( FS_w_pio ) ;
  fREAD_FUNCTION( FS_r_vh ) ;
@@ -85,7 +82,13 @@ fWRITE_FUNCTION( FS_w_timer ) ;
 yWRITE_FUNCTION( FS_w_bit ) ;
 yWRITE_FUNCTION( FS_charge ) ;
 yWRITE_FUNCTION( FS_refresh ) ;
-/* ------- Structures ----------- */
+ 
+#if OW_THERMOCOUPLE
+ fREAD_FUNCTION( FS_thermocouple ) ;
+ fREAD_FUNCTION( FS_rangelow ) ;
+ fREAD_FUNCTION( FS_rangehigh ) ;
+ /* ------- Structures ----------- */
+
 struct thermocouple {
     FLOAT v1, v2 ;
     FLOAT rangeLow, rangeHigh ;
@@ -206,8 +209,11 @@ struct thermocouple type_t =
 {"typeT"            ,  0, NULL, ft_subdir  , fc_volatile, {v:NULL}        , {v:NULL}     , {v:NULL}, } ,      \
 {"typeT/temperature", 12, NULL,ft_temperature, fc_volatile, {f:FS_thermocouple}, {v:NULL}  , {v:&type_t}, } , \
 {"typeT/range_low"  , 12, NULL,ft_temperature, fc_static  , {f:FS_rangelow} , {v:NULL}     , {v:&type_t}, } , \
-{"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } 
+{"typeT/range_high" , 12, NULL,ft_temperature, fc_static  , {f:FS_rangehigh}, {v:NULL}     , {v:&type_t}, } ,
 
+#else /* OW_THERMOCOUPLE */
+#define F_thermocouple
+#endif /* OW_THERMOCOUPLE */
 
 struct LockPage {
     int	   pages ;
@@ -297,7 +303,7 @@ struct filetype DS2751[] = {
     {"por"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x08<<8)|0x00}, } ,
     {"uven"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x03}, } ,
 
-    F_thermocouple ,
+    F_thermocouple
 } ;
 DeviceEntry( 51, DS2751 ) ;
 
@@ -333,7 +339,7 @@ struct filetype DS2755[] = {
     {"ovd"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x00}, } ,
     {"por"         ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x08<<8)|0x00}, } ,
 
-    F_thermocouple ,
+    F_thermocouple
 } ;
 DeviceEntryExtended( 35, DS2755, DEV_alarm ) ;
 
@@ -369,7 +375,7 @@ struct filetype DS2760[] = {
     {"swen"        ,     1,   NULL,  ft_yesno   , fc_stable  , {y:FS_r_bit}    , {v:NULL}     , {u:(0x01<<8)|0x03}, } ,
     {"uv"  ,             1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x00<<8)|0x06}, },
 
-    F_thermocouple ,
+    F_thermocouple
 } ;
 DeviceEntry( 30, DS2760 ) ;
 
@@ -398,7 +404,7 @@ struct filetype DS2770[] = {
     {"refresh"     ,     1,   NULL,  ft_yesno   , fc_stable  , {v:NULL}        , {y:FS_refresh},{v:NULL}, } ,
     {"timer"       ,    12,   NULL,  ft_float   , fc_volatile, {f:FS_r_timer}  , {f:FS_w_timer},{v:NULL}, } ,
 
-    F_thermocouple ,
+    F_thermocouple
 } ;
 DeviceEntry( 2E, DS2770 ) ;
 
@@ -426,7 +432,7 @@ struct filetype DS2780[] = {
     {"uven"        ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x60<<8)|0x06}, },
     {"uvf"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x02}, },
 
-    F_thermocouple ,
+    F_thermocouple
 } ;
 DeviceEntry( 32, DS2780 ) ;
 
@@ -455,7 +461,7 @@ struct filetype DS2781[] = {
     {"uven"        ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x60<<8)|0x06}, },
     {"uvf"         ,     1,   NULL,  ft_yesno   , fc_volatile, {y:FS_r_bit}    , {y:FS_w_bit} , {u:(0x01<<8)|0x02}, },
 
-    F_thermocouple ,
+    F_thermocouple
 } ;
 DeviceEntry( 3D, DS2781 ) ;
 
@@ -468,7 +474,6 @@ static int OW_r_mem( BYTE * data , const size_t size, const off_t offset, const 
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_r_eeprom( const size_t page, const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_eeprom( const size_t page, const size_t size , const off_t offset, const struct parsedname * pn ) ;
-static FLOAT polycomp( FLOAT x , FLOAT * coef ) ;
 static int OW_lock( const struct parsedname * pn ) ;
 static int OW_r_int(int * I, off_t offset, const struct parsedname * pn) ;
 static int OW_w_int(const int * I, off_t offset, const struct parsedname * pn) ;
@@ -660,43 +665,6 @@ static int FS_r_abias(FLOAT *A , const struct parsedname * pn) {
 static int FS_w_abias(const FLOAT *A , const struct parsedname * pn) {
     FLOAT V = A[0] * .025 ;
     return FS_w_vbias(&V,pn) ;
-}
-
-static int FS_rangelow(FLOAT *F , const struct parsedname * pn) {
-    F[0] = ((struct thermocouple *) pn->ft->data.v)->rangeLow ;
-    return 0 ;
-}
-
-static int FS_rangehigh(FLOAT *F , const struct parsedname * pn) {
-    F[0] = ((struct thermocouple *) pn->ft->data.v)->rangeHigh ;
-    return 0 ;
-}
-
-static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
-    FLOAT T, V;
-    int ret ;
-    struct thermocouple * thermo = (struct thermocouple *) pn->ft->data.v ;
-
-    /* Get reference temperature */
-    if ((ret=FS_r_temp(&T,pn))) return ret ; /* in C */
-
-    /* Get measured voltage */
-    if ((ret=FS_r_vis(&V,pn))) return ret ;
-    V *= 1000 ; /* convert Volts to mVolts */
-
-    /* Correct voltage by adding reference temperature voltage */
-    V += polycomp(T,thermo->mV) ;
-
-    /* Find right range, them compute temparature from voltage */
-    if ( V < thermo->v1 ) {
-        F[0] = polycomp(V,thermo->low) ;
-    } else if ( V < thermo->v2 ) {
-        F[0] = polycomp(V,thermo->mid) ;
-    } else {
-        F[0] = polycomp(V,thermo->high) ;
-    }
-    
-    return 0 ;
 }
 
 // Read current using internal 25mOhm resistor and Vis
@@ -940,14 +908,6 @@ static int OW_w_int8(const int * I, off_t offset, const struct parsedname * pn) 
     return OW_w_sram(i,1,offset,pn) ;
 }
 
-/* Compute a 10th order polynomial with cooef being a10, a9, ... a0 */
-static FLOAT polycomp( FLOAT x , FLOAT * coef ) {
-    FLOAT r = coef[0] ;
-    int i ;
-    for ( i=1; i<=10; ++i ) r = x*r + coef[i] ;
-    return r ;
-}
-
 static int OW_lock( const struct parsedname * pn ) {
     BYTE lock[] = { 0x6C, 0x07, 0x40, 0x6A, 0x00 } ;
     int ret  ;
@@ -960,3 +920,52 @@ static int OW_lock( const struct parsedname * pn ) {
     BUSUNLOCK(pn);
     return ret ;
 }
+
+#if OW_THERMOCOUPLE
+static FLOAT polycomp( FLOAT x , FLOAT * coef ) ;
+
+static int FS_rangelow(FLOAT *F , const struct parsedname * pn) {
+    F[0] = ((struct thermocouple *) pn->ft->data.v)->rangeLow ;
+    return 0 ;
+}
+
+static int FS_rangehigh(FLOAT *F , const struct parsedname * pn) {
+    F[0] = ((struct thermocouple *) pn->ft->data.v)->rangeHigh ;
+    return 0 ;
+}
+
+static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
+    FLOAT T, V;
+    int ret ;
+    struct thermocouple * thermo = (struct thermocouple *) pn->ft->data.v ;
+
+    /* Get reference temperature */
+    if ((ret=FS_r_temp(&T,pn))) return ret ; /* in C */
+
+    /* Get measured voltage */
+    if ((ret=FS_r_vis(&V,pn))) return ret ;
+    V *= 1000 ; /* convert Volts to mVolts */
+
+    /* Correct voltage by adding reference temperature voltage */
+    V += polycomp(T,thermo->mV) ;
+
+    /* Find right range, them compute temparature from voltage */
+    if ( V < thermo->v1 ) {
+        F[0] = polycomp(V,thermo->low) ;
+    } else if ( V < thermo->v2 ) {
+        F[0] = polycomp(V,thermo->mid) ;
+    } else {
+        F[0] = polycomp(V,thermo->high) ;
+    }
+    
+    return 0 ;
+}
+
+/* Compute a 10th order polynomial with cooef being a10, a9, ... a0 */
+static FLOAT polycomp( FLOAT x , FLOAT * coef ) {
+    FLOAT r = coef[0] ;
+    int i ;
+    for ( i=1; i<=10; ++i ) r = x*r + coef[i] ;
+    return r ;
+}
+#endif /* OW_THERMOCOUPLE */

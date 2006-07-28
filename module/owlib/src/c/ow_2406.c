@@ -64,11 +64,11 @@ uWRITE_FUNCTION( FS_w_latch ) ;
 uWRITE_FUNCTION( FS_w_s_alarm ) ;
  yREAD_FUNCTION( FS_power ) ;
  uREAD_FUNCTION( FS_channel ) ;
-#ifdef TAI8570
+#if OW_TAI8570
  aREAD_FUNCTION( FS_sibling ) ;
  fREAD_FUNCTION( FS_temp ) ;
  fREAD_FUNCTION( FS_pressure ) ;
-#endif /* TAI8570 */
+#endif /* OW_TAI8570 */
 
 /* ------- Structures ----------- */
 
@@ -85,12 +85,12 @@ struct filetype DS2406[] = {
     {"sensed"    ,     1,  &A2406,  ft_bitfield, fc_volatile, {u:FS_sense}    , {v:NULL}     , {v:NULL}, } ,
     {"latch"     ,     1,  &A2406,  ft_bitfield, fc_volatile, {u:FS_r_latch}  , {u:FS_w_latch},{v:NULL}, } ,
     {"set_alarm" ,     3,  NULL,    ft_unsigned, fc_stable  , {u:FS_r_s_alarm}, {u:FS_w_s_alarm},{v:NULL}, } ,
-#ifdef TAI8570
+#if OW_TAI8570
     {"TAI8570"            ,  0,  NULL,    ft_subdir  , fc_volatile, {v:NULL}       , {v:NULL}, {v:NULL}, } ,
     {"TAI8570/temperature", 12,  NULL, ft_temperature, fc_volatile, {f:FS_temp}    , {v:NULL}, {v:NULL}, } ,
     {"TAI8570/pressure"   , 12,  NULL,    ft_float   , fc_volatile, {f:FS_pressure}, {v:NULL}, {v:NULL}, } ,
     {"TAI8570/sibling"    , 16,  NULL,    ft_ascii   , fc_stable  , {a:FS_sibling} , {v:NULL}, {v:NULL}, } ,
-#endif /* TAI8570 */
+#endif /* OW_TAI8570 */
 } ;
 DeviceEntryExtended( 12, DS2406, DEV_alarm ) ;
 
@@ -344,7 +344,7 @@ static int OW_full_access( BYTE * data , const struct parsedname * pn ) {
     return 0 ;
 }
 
-#ifdef TAI8570
+#if OW_TAI8570
 struct s_TAI8570 {
     BYTE sibling[8] ;
     BYTE reader[8] ;
@@ -625,4 +625,4 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
     return Cache_Add_Internal( (const void *) tai, s, &ip_bar, pn ) ;
 }
 
-#endif /* TAI8570 */
+#endif /* OW_TAI8570 */

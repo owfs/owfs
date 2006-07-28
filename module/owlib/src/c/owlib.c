@@ -207,16 +207,20 @@ int LibStart( void ) {
                 }
                 break ;
             case bus_i2c:
+#if OW_I2C
                 if ( DS2482_detect(in) ) {
                     LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n",in->name) ;
                     ret = -ENODEV ;
                 }
+#endif /* OW_I2C */
                 break ;
             case bus_ha7:
+#if OW_HA7
                 if ( HA7_detect(in) ) {
                     LEVEL_CONNECT("Cannot detect an HA7net server on %s\n",in->name) ;
                     ret = -ENODEV ;
                 }
+#endif /* OW_HA7 */
                 break ;
             case bus_parallel:
 #if OW_PARPORT
@@ -228,15 +232,12 @@ int LibStart( void ) {
 #endif /* OW_PARPORT */
                 break ;
             case bus_usb:
-    #if OW_USB
-                ret = DS9490_detect(in) ;
-    #else /* OW_USB */
-                LEVEL_DEFAULT("Cannot setup USB port. Support not compiled into %s\n",progname) ;
-                ret = 1 ;
-    #endif /* OW_USB */
+#if OW_USB
                 /* in->connin.usb.ds1420_address should be set to identify the
                     * adapter just in case it's disconnected. It's done in the
-                    * DS9490_next_both() if not set. */
+                * DS9490_next_both() if not set. */
+                ret = DS9490_detect(in) ;
+#endif /* OW_USB */
                 break ;
             case bus_fake:
                 Fake_detect(in) ; // never fails

@@ -29,7 +29,6 @@ void ow_help( enum opt_program op ) {
     case opt_server:
         printf("Syntax: %s [options] device clientport\n",progname);
         break ;
-    case opt_nfsd:
     case opt_ftpd:
     default:
         printf("Syntax: %s [options] device\n",progname);
@@ -58,7 +57,6 @@ void ow_help( enum opt_program op ) {
         break ;
     case opt_httpd:
     case opt_ftpd:
-    case opt_nfsd:
     case opt_server:
     printf(
         "\n"
@@ -131,17 +129,6 @@ void ow_morehelp( enum opt_program op ) {
         "  --ftp_timeout                  |logoff time (sec) for inactive client\n"
         "  --max_clients                  |maximum simultaneous clients (1-300)\n"
             ) ;
-        break ;
-    case opt_nfsd:
-        printf(
-        "     --NFS_program               |NFS: 100003, default OWNFS 300003\n"
-        "     --NFS_version               |default 3\n"
-        "     --tcp_only                  |no udp transport (overides udp_only)\n"
-        "     --udp_only                  |no tcp transport (overides tcp_only)\n"
-        "     --NFS_port                  |default 0=auto, 2049 traditional\n"
-        "     --mount_port                |default 0=auto, usually same as NFS_port.\n"
-        "     --no_portmapper             |Don't use the standard portmapper.\n"
-        ) ;
         break ;
     default:
         break ;

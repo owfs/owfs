@@ -40,6 +40,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+#if OW_I2C
 // Special for i2c work
 #include <sys/ioctl.h>
 // Header taken from lm-sensors code
@@ -522,3 +523,4 @@ static void DS2482_close( struct connection_in * in ) {
     close( head->connin.i2c.fd ) ;
     head->connin.i2c.fd = -1 ;
 }
+#endif /* OW_I2C */

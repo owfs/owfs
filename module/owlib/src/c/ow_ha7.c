@@ -15,6 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+#if OW_HA7
 static struct timeval tvnetfirst = { 1, 0, } ;
 static struct timeval tvnet = { 0, 100000, } ;
 
@@ -436,3 +437,4 @@ static void toHA7init( struct toHA7 * ha7 ) {
     ha7->lock[0] =
     ha7->address[0] = '\0' ;
 }
+#endif /* OW_HA7 */

@@ -25,6 +25,9 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
+int altUSB = 0 ;
+
 #if OW_USB /* conditional inclusion of USB */
 
 /* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
@@ -47,9 +50,6 @@ $Id$
 #endif
 
 #include <usb.h>
-
-/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
-int altUSB = 0 ;
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
@@ -627,7 +627,7 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
     int i ;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
 #ifdef OW_DEBUG
-    char s[97], t[4] ; // For my fancy display in the log
+    char s[97] ; // For my fancy display in the log
 #endif /* OW_DEBUG */
 
     memset(buffer, 0, 32) ; // should not be needed
@@ -666,7 +666,7 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
         }
 #endif /* OW_DEBIG */
 #endif /* 0 */        
-if(ret > 16) {
+        if(ret > 16) {
             if (ret == 32) { // FreeBSD buffers the input, so this could just be two readings
                 if (!memcmp(buffer, &buffer[16], 6)) {
                     memmove(buffer, &buffer[16],16);
@@ -746,7 +746,8 @@ static int DS9490_testoverdrive(const struct parsedname * pn) {
                     if(r[i] != pn->sn[i]) break ;
                 }
                 if(i==8) {
-                    if((i = DS9490_getstatus(buffer,0,pn)) < 0) {
+                    if((i = DS9490_getstatus
+                        (buffer,0,pn)) < 0) {
                         //printf("DS9490_testoverdrive: failed to get status\n");
                     } else {
                         //printf("DS9490_testoverdrive: i=%d status=%X\n", i, (i>0 ? buffer[16] : 0));

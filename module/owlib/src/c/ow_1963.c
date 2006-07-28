@@ -168,7 +168,6 @@ static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const 
     BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
     /* rest in the remaining length of the 32 byte page */
     size_t rest = 32 - (offset&0x1F) ;
-    int ret ;
     struct transaction_log t[] = {
         TRXN_START,
         { data, NULL, 3, trxn_match } ,

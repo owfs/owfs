@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="2"
 VERSION_MINOR="4"
-PATCHLEVEL="6"
+PATCHLEVEL="7"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -267,6 +267,7 @@ fi
 AC_LANG_RESTORE
 ])dnl ACX_PTHREAD
 
+# Test if debugging out enabled
 ENABLE_DEBUG="true"
 AC_MSG_CHECKING([if debug-output is enabled])
 AC_ARG_ENABLE(debug,
@@ -282,6 +283,40 @@ AC_ARG_ENABLE(debug,
 ])
 AC_SUBST(ENABLE_DEBUG)
 AM_CONDITIONAL(ENABLE_DEBUG, test "${ENABLE_DEBUG}" = "true")
+
+# Test if TAI8570 barometer should be supported
+ENABLE_TAI8570="true"
+AC_MSG_CHECKING([if TAI8570 barometer support is enabled])
+AC_ARG_ENABLE(tai8570,
+[  --enable-tai8570        Enable tai8570 barometer support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_TAI8570="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_TAI8570)
+AM_CONDITIONAL(ENABLE_TAI8570, test "${ENABLE_TAI8570}" = "true")
+
+# Test if thermocouples should be supported
+ENABLE_THERMOCOUPLE="true"
+AC_MSG_CHECKING([if thermocouple support is enabled])
+AC_ARG_ENABLE(thermocouple,
+[  --enable-thermocouple        Enable thermocouple support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_THERMOCOUPLE="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_THERMOCOUPLE)
+AM_CONDITIONAL(ENABLE_THERMOCOUPLE, test "${ENABLE_THERMOCOUPLE}" = "true")
 
 # Check for multithreading
 ENABLE_MT="true"
@@ -308,6 +343,60 @@ if test "${ENABLE_MT}" = "true" ; then
 fi
 AC_SUBST(ENABLE_MT)
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
+
+
+# Check for i2c support
+ENABLE_I2C="true"
+AC_MSG_CHECKING([if i2c(DS2482-x00) is enabled])
+AC_ARG_ENABLE(i2c,
+[  --enable-i2c           Enable i2c (DS2482-x00) support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_I2C="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+if test "${ENABLE_I2C}" = "true" ; then
+    ACX_PTHREAD
+    if test "$acx_pthread_ok" = "yes"; then
+    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+    else
+    ENABLE_I2C="false"
+    fi
+fi
+AC_SUBST(ENABLE_I2C)
+AM_CONDITIONAL(ENABLE_I2C, test "${ENABLE_I2C}" = "true")
+
+
+# Check for HA7Net
+ENABLE_HA7="true"
+AC_MSG_CHECKING([if HA7Net is enabled])
+AC_ARG_ENABLE(ha7,
+[  --enable-ha7           Enable ha7 support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_HA7="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+if test "${ENABLE_HA7}" = "true" ; then
+    ACX_PTHREAD
+    if test "$acx_pthread_ok" = "yes"; then
+    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+    else
+    ENABLE_HA7="false"
+    fi
+fi
+AC_SUBST(ENABLE_HA7)
+AM_CONDITIONAL(ENABLE_HA7, test "${ENABLE_HA7}" = "true")
 
 
 # Check if the modules are enabled
@@ -982,6 +1071,20 @@ else
 fi
 AC_SUBST(OW_MT)
 
+if test "${ENABLE_I2C}" = "true" ; then
+   OW_I2C=1
+else
+   OW_I2C=0
+fi
+AC_SUBST(OW_I2C)
+
+if test "${ENABLE_HA7}" = "true" ; then
+   OW_HA7=1
+else
+   OW_HA7=0
+fi
+AC_SUBST(OW_HA7)
+
 if test "${ENABLE_CACHE}" = "true" ; then
    OW_CACHE=1
 else
@@ -1014,6 +1117,20 @@ else
    OW_DEBUG=0
 fi
 AC_SUBST(OW_DEBUG)
+
+if test "${ENABLE_TAI8570}" = "true" ; then
+   OW_TAI8570=1
+else
+   OW_TAI8570=0
+fi
+AC_SUBST(OW_TAI8570)
+
+if test "${ENABLE_THERMOCOUPLE}" = "true" ; then
+   OW_THERMOCOUPLE=1
+else
+   OW_THERMOCOUPLE=0
+fi
+AC_SUBST(OW_THERMOCOUPLE)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -1126,6 +1243,16 @@ if test "${ENABLE_USB}" = "true"; then
 else
     AC_MSG_RESULT([    USB is DISABLED])
 fi
+if test "${ENABLE_I2C}" = "true"; then
+    AC_MSG_RESULT([    i2c is enabled])
+else
+    AC_MSG_RESULT([    i2c is DISABLED])
+fi
+if test "${ENABLE_HA7}" = "true"; then
+    AC_MSG_RESULT([    HA7Net is enabled])
+else
+    AC_MSG_RESULT([    HA7Net is DISABLED])
+fi
 if test "${ENABLE_MT}" = "true"; then
     AC_MSG_RESULT([    Multithreading is enabled])
 else
@@ -1135,6 +1262,16 @@ if test "${ENABLE_PARPORT}" = "true"; then
     AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
     AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
+fi
+if test "${ENABLE_TAI8570}" = "true"; then
+    AC_MSG_RESULT([    TAI8570 barometer is enabled])
+else
+    AC_MSG_RESULT([    TAI8570 barometer is DISABLED])
+fi
+if test "${ENABLE_THERMOCOUPLE}" = "true"; then
+    AC_MSG_RESULT([    Thermocouples are enabled])
+else
+    AC_MSG_RESULT([    Thermocouples are DISABLED])
 fi
 if test "${ENABLE_DEBUG}" = "true"; then
     AC_MSG_RESULT([    Debug-output is enabled])

@@ -51,20 +51,6 @@ const struct option owopts_long[] = {
     {"morehelp",   no_argument,      NULL,259},
     {"fuse_opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
     {"fuse-opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
-    {"NFS_program",required_argument,NULL,261}, /* ownfsd */
-    {"NFS-program",required_argument,NULL,261}, /* ownfsd */
-    {"NFS_version",required_argument,NULL,262}, /* ownfsd */
-    {"NFS-version",required_argument,NULL,262}, /* ownfsd */
-    {"tcp_only",   no_argument,      NULL,263}, /* ownfsd */
-    {"tcp-only",   no_argument,      NULL,263}, /* ownfsd */
-    {"udp_only",   no_argument,      NULL,264}, /* ownfsd */
-    {"udp-only",   no_argument,      NULL,264}, /* ownfsd */
-    {"NFS_port",   required_argument,NULL,265}, /* ownfsd */
-    {"NFS-port",   required_argument,NULL,265}, /* ownfsd */
-    {"mount_port", required_argument,NULL,266}, /* ownfsd */
-    {"mount-port", required_argument,NULL,266}, /* ownfsd */
-    {"no_portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
-    {"no-portmapper", no_argument,   &(NFS_params.no_portmapper),1}, /* ownfsd */
     {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"msec_read",  required_argument,NULL,268}, /* Time out for serial reads */
@@ -80,9 +66,7 @@ const struct option owopts_long[] = {
     {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
     {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
     {"NOLINK", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
-#ifdef OW_USB
     {"altUSB", no_argument, &altUSB, 1}, /* Willy Robison's tweaks */
-#endif /* OW_USB */
     {0,0,0,0},
 } ;
 
@@ -97,35 +81,30 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
         ow_help( op ) ;
         return 1 ;
     case 'u':
-#if OW_USB
         return OW_ArgUSB( arg ) ;
-#else /* OW_USB */
-        LEVEL_DEFAULT("Attempt to use USB adapter with no USB support in libow. Recompile libow with libusb support.\n")
-        return 1 ;
-#endif /* OW_USB */
     case 'd':
         return OW_ArgSerial( arg ) ;
     case 't':
         Timeout(arg) ;
-        return 0 ;
+        break ;
     case 'r':
         readonly = 1 ;
-        return 0 ;
+        break ;
     case 'w':
         readonly = 0 ;
-        return 0 ;
+        break ;
     case 'C':
         set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
-        return 0 ;
+        break ;
     case 'F':
         set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit) ;
-        return 0 ;
+        break ;
     case 'R':
         set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine) ;
-        return 0 ;
+        break ;
     case 'K':
         set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin) ;
-        return 0 ;
+        break ;
     case 'V':
         printf("libow version:\n\t" VERSION "\n") ;
         return 1 ;
@@ -145,7 +124,7 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
              LEVEL_DEFAULT("Unrecognized format type %s\n",arg)
              return 1 ;
         }
-        return 0 ;
+        break ;
     case 'P':
         if ( arg==NULL || strlen(arg)==0 ) {
             LEVEL_DEFAULT("No PID file specified\n")
@@ -154,44 +133,24 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
             fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
             return 1 ;
         }
-        return 0 ;
+        break ;
     case 257:
         error_print = atoi(arg) ;
-        return 0 ;
+        break ;
     case 258:
         error_level = atoi(arg) ;
-        return 0 ;
+        break ;
     case 259:
         ow_morehelp(op) ;
         return 1 ;
     case 260: /* fuse_opt, handled in owfs.c */
-      return 0 ;
-    case 261:
-        NFS_params.NFS_program = atoi(arg) ;
-        return 0 ;
-    case 262:
-        NFS_params.NFS_version = atoi(arg) ;
-        return 0 ;
-    case 263:
-        NFS_params.tcp_only = 1 ;
-        NFS_params.udp_only = 0 ;
-        return 0 ;
-    case 264:
-        NFS_params.tcp_only = 0 ;
-        NFS_params.udp_only = 1 ;
-        return 0 ;
-    case 265:
-        NFS_params.NFS_port = atoi(arg) ;
-        return 0 ;
-    case 266:
-        NFS_params.mount_port = atoi(arg) ;
-        return 0 ;
+        break ;
     case 267: /* fuse_open_opt, handled in owfs.c */
-      return 0 ;
+        break ;
     case 268:
         usec_read = atol(arg)*1000 ; /* entered in msec, stored as usec */
         if (usec_read < 500000) usec_read = 500000 ;
-        return 0 ;
+        break ;
     case 269:
         max_clients = atoi(arg) ;
         break ;
@@ -203,10 +162,11 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
     case 272:
         return OW_ArgFake( arg ) ;
     case 0:
-        return 0 ;
+        break ;
     default:
         return 1 ;
     }
+    return 0 ;
 }
 
 int OW_ArgNet( const char * arg ) {
@@ -218,11 +178,20 @@ int OW_ArgNet( const char * arg ) {
 }
 
 static int OW_ArgHA7( const char * arg ) {
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_ha7 ;
-    return 0 ;
+#if OW_HA7
+    if ( arg ) {
+        struct connection_in * in = NewIn(NULL) ;
+        if ( in==NULL ) return 1 ;
+        in->name = strdup(arg) ;
+        in->busmode = bus_ha7 ;
+        return 0 ;
+    } else { // Try multicast discovery
+        return FS_FindHA7() ;
+    }
+#else /* OW_HA7 */
+    LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+    return 1 ;
+#endif /* OW_HA7 */
 }
 
 static int OW_ArgFake( const char * arg ) {
@@ -250,9 +219,7 @@ int OW_ArgDevice( const char * arg ) {
         LEVEL_DEFAULT("Not a \"character\" device %s\n",arg) ;
         return 1 ;
     }
-#if OW_PARPORT
     if ( major(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
-#endif /* OW_PARPORT */
     if ( major(sbuf.st_rdev)==89 ) return OW_ArgI2C(arg) ;
     return OW_ArgSerial(arg) ;
 } 
@@ -268,24 +235,33 @@ static int OW_ArgSerial( const char * arg ) {
 }
 
 static int OW_ArgParallel( const char * arg ) {
+#if OW_PARPORT
     struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_parallel ;
-
     return 0 ;
+#else /* OW_PARPORT */
+    LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n") ;
+    return 1 ;
+#endif /* OW_PARPORT */
 }
 
 static int OW_ArgI2C( const char * arg ) {
+#if OW_I2C
     struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_i2c ;
-
     return 0 ;
+#else /* OW_I2C */
+    LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+    return 1 ;
+#endif /* OW_I2C */
 }
 
 int OW_ArgUSB( const char * arg ) {
+#if OW_USB
     struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->busmode = bus_usb ;
@@ -293,11 +269,7 @@ int OW_ArgUSB( const char * arg ) {
         in->connin.usb.usb_nr = 1 ;
     } else if ( strcasecmp(arg,"all") == 0 ) {
         int n ;
-#if OW_USB
         n = DS9490_enumerate() ;
-#else
-        n = 0 ;
-#endif /* OW_USB */
         LEVEL_CONNECT("All USB adapters requested, %d found.\n",n) ;
         if ( n > 1 ) {
             int i ;
@@ -321,6 +293,10 @@ int OW_ArgUSB( const char * arg ) {
         }
     }
     return 0 ;
+#else /* OW_USB */
+    LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
+    return 1 ;
+#endif /* OW_USB */
 }
 
 int OW_ArgGeneric( const char * arg ) {

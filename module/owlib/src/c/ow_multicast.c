@@ -20,10 +20,11 @@ $Id$
 #include "ow_connection.h"
 #include <arpa/inet.h>
 
+#if OW_HA7
 /* Multicast to discover HA7 servers */
 /* Wait 10 seconds for responses */
 /* returns number found (>=0) or <0 on error */
-int FS_FindHA7( int all ) {
+int FS_FindHA7( void ) {
     struct addrinfo * ai ;
     struct addrinfo hint ;
     struct addrinfo * now ;
@@ -64,7 +65,7 @@ int FS_FindHA7( int all ) {
             ASCII name[64] ;
             struct connection_in * in ;
  
-           if ( recvfrom( fd, buffer, HA7_response_len, 0, &from, &len ) != HA7_response_len ) {
+            if ( recvfrom( fd, buffer, HA7_response_len, 0, (struct sockaddr *)(&(from)), &len ) != HA7_response_len ) {
                 LEVEL_CONNECT( "HA7 response bad length\n" ) ;
                 continue ;
             }
@@ -78,7 +79,6 @@ int FS_FindHA7( int all ) {
             snprintf(&name[64-strlen(name)],64-strlen(name),":%d",(buffer[2]<<8)+buffer[3]);
             in->name = strdup(name) ;
             in->busmode = bus_ha7 ;
-            if ( ! all ) break ;
         } else {
             LEVEL_CONNECT( "HA7 broadcast timeout\n") ;
         }
@@ -86,3 +86,4 @@ int FS_FindHA7( int all ) {
     freeaddrinfo( ai ) ;
     return ret ;
 }
+#endif /* OW_HA7 */

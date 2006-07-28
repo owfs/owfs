@@ -317,7 +317,7 @@ static void * RealHandler( void * v ) {
                             if ( (datasize<=0) || (datasize<sm.size) ) {
                                 cm.ret = -EMSGSIZE ;
                             } else {
-                                BYTE * data = &path[pathlen] ;
+                                BYTE * data = (BYTE *) (&path[pathlen]) ;
                                 WriteHandler( &sm, &cm, data, &pn ) ;
                             }
                         }
@@ -406,7 +406,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) {
-    int ret = FS_write_postparse(data,(size_t)sm->size,(off_t)sm->offset,pn) ;
+    int ret = FS_write_postparse((const ASCII *)data,(size_t)sm->size,(off_t)sm->offset,pn) ;
     //printf("Handler: WRITE done\n");
     if ( ret<0 ) {
         cm->size = 0 ;

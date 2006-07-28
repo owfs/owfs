@@ -409,9 +409,16 @@ int DS9097_detect( struct connection_in * in ) ;
 int LINK_detect( struct connection_in * in ) ;
 int BadAdapter_detect( struct connection_in * in ) ;
 int LINKE_detect( struct connection_in * in ) ;
-int HA7_detect( struct connection_in * in ) ;
-int DS2482_detect( struct connection_in * in ) ;
 int Fake_detect( struct connection_in * in ) ;
+
+#if OW_HA7
+int HA7_detect( struct connection_in * in ) ;
+int FS_FindHA7( void ) ;
+#endif /* OW_HA7 */
+
+#if OW_I2C
+int DS2482_detect( struct connection_in * in ) ;
+#endif /* OW_I2C */
 
 #if OW_USB
 int DS9490_enumerate( void ) ;

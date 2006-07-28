@@ -260,7 +260,6 @@ static int FS_r_flag(int * y , const struct parsedname * pn) {
 /* PAged access -- pre-screened */
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[4+32] = { 0x0F, offset&0xFF , offset>>8, } ;
-    int ret ;
     struct transaction_log tcopy[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
