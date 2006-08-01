@@ -112,14 +112,14 @@ int main(int argc, char *argv[]) {
     main_threadid = pthread_self() ;
 #endif
 
-#if FUSE_VERSION >= 20
+#if FUSE_VERSION >= 14
     /* Set up "command line" for main fuse routines */
     Fuse_setup( &fuse_options ) ; // command line setup
     Fuse_add(fuse_mountpoint , &fuse_options) ; // mount point
  #if FUSE_VERSION >= 22
     Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
     Fuse_add("direct_io" , &fuse_options) ;
- #endif
+ #endif /* FUSE_VERSION >= 22 */
     if ( !background ) {
         Fuse_add("-f", &fuse_options) ; // foreground for fuse too
         if ( error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL ) ;
  #else /* FUSE_VERSION <= 25 */
     fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper ) ;
- #endif
+ #endif /* FUSE_VERSION <= 25 */
     Fuse_cleanup( &fuse_options ) ;
 #endif
     ow_exit(0) ;

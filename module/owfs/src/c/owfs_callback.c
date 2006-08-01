@@ -191,11 +191,10 @@ int FS_statfs(struct fuse_statfs *fst) {
  #if FUSE_VERSION > 25
 static void * FS_init( struct fuse_conn_info * conn ) {
     (void) conn ;
- #else
+ #else /* FUSE_VERSION > 25 */
 static void * FS_init( void ) {
- #endif
+ #endif /* FUSE_VERSION > 25 */
     PIDstart() ;
     return NULL ;
 }
 #endif /* FUSE_VERSION > 22 */
-
