@@ -188,22 +188,12 @@ static int OW_counter( UINT * counter , const int page, const struct parsedname 
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
 static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
-    int ret ;
-    /* rest in the remaining length of the 32 byte page */
-    size_t rest = 32 - (offset&0x1F) ;
-
-    BUSLOCK(pn);
-        /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-        /* Incorporates fix by Fredrik Simonsson */
-        ret = BUS_select(pn) || BUS_send_data(data,3,pn) || BUS_readin_data(&data[3],rest+10,pn) || CRC16(data,rest+13) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    
+    BYTE extra[8] ;
+    if ( OW_r_mem_p8_crc16(p,size,offset,pn,32,extra) ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */
-    if ( counter ) *counter = (((((((UINT) data[rest+6])<<8)|data[rest+5])<<8)|data[rest+4])<<8)|data[rest+3] ;
-    /* memory contents after the command and location */
-    if ( p ) memcpy(p,&data[3],size) ;
+    if ( counter ) *counter = (((((((UINT) extra[3])<<8) | extra[2])<<8) | extra[1])<<8) | extra[0] ;
 
     return 0 ;
 }

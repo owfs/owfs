@@ -79,11 +79,10 @@ DeviceEntryExtended( 23, DS2433 , DEV_ovdr ) ;
 
 static int OW_w_23page( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_2Dpage( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
-    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, (size_t) offset, pn) ) return -EINVAL ;
     return size ;
 }
 
@@ -101,7 +100,7 @@ static int FS_w_memory2D( const BYTE *buf, const size_t size, const off_t offset
 }
 
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, offset+((pn->extension)<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
@@ -113,19 +112,6 @@ static int FS_w_page2D(const BYTE *buf, const size_t size, const off_t offset , 
 //    if ( pn->extension > 15 ) return -ERANGE ;
     //printf("FS_w_page: size=%d offset=%d pn->extension=%d (%d)\n", size, offset, pn->extension, (pn->extension)<<5);
     return FS_w_memory2D(buf,size,offset+32*(pn->extension),pn ) ;
-}
-
-static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn) {
-    BYTE p[] = {  0xF0, offset&0xFF, (offset>>8)&0xFF, } ;
-    int ret ;
-    //printf("reading offset=%d size=%d bytes\n", offset, size);
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 3,pn ) || BUS_readin_data( data,size,pn );
-    BUSUNLOCK(pn);
-    if ( ret ) return 1;
-
-    return 0 ;
 }
 
 /* paged, and pre-screened */
@@ -184,7 +170,7 @@ static int OW_w_2Dpage( const BYTE * data , const size_t size , const off_t offs
     } ;
 
     if ( size!=8 )
-        if ( OW_r_mem( &p[3], 8, (offset-pageoff), pn ) )
+        if ( OW_r_mem_simple( &p[3], 8, (offset-pageoff), pn ) )
             return 1 ;
 
     memcpy( &p[3+pageoff], data, size ) ;

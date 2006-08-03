@@ -142,16 +142,5 @@ static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset ,
 
 /* page oriented read -- call will not span pages */
 static int OW_r_mem( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
-    BYTE p[6] = { 0xA5, offset&0xFF , offset>>8, } ;
-    BYTE d[34] ;
-    size_t rest = 32 - (offset & 0x1F) ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret =BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_readin_data(&p[3],3,pn) || CRC16(p,6) || BUS_readin_data(d,rest+2,pn) || CRC16(d,rest+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    memcpy( data, d, size ) ;
-    return 0 ;
+    return OW_r_mem_crc16( data, size, offset, pn, 32 ) ;
 }

@@ -93,17 +93,16 @@ DeviceEntryExtended( 0C, DS1996 , DEV_ovdr ) ;
 
 /* DS1902 */
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 
 /* 1902 */
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, (size_t) (offset+((pn->extension)<<5)), pn) ) return -EINVAL ;
     return size ;
 }
 
 static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not page-limited */
-    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, (size_t) offset, pn) ) return -EINVAL ;
     return size ;
 }
 
@@ -153,18 +152,5 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
     if ( BUS_transaction( tsram, pn ) ) return 1 ;
 
     UT_delay(32) ;
-    return 0 ;
-}
-
-static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    BYTE p[3] = { 0xF0, offset&0xFF , (offset>>8)&0xFF, } ;
-    struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 3, trxn_match } ,
-        { NULL, data, size, trxn_read } ,
-        TRXN_END,
-    } ;
-
-    if ( BUS_transaction( t, pn ) ) return 1 ;
     return 0 ;
 }

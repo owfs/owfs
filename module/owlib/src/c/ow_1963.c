@@ -165,29 +165,20 @@ static int OW_r_mem( BYTE * data, const size_t size, const off_t offset, const s
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
 static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    BYTE data[1+2+32+10] = { 0xA5, offset&0xFF , offset>>8, } ;
-    /* rest in the remaining length of the 32 byte page */
-    size_t rest = 32 - (offset&0x1F) ;
-    struct transaction_log t[] = {
-        TRXN_START,
-        { data, NULL, 3, trxn_match } ,
-        { NULL, &data[3], rest+10, trxn_read } ,
-        TRXN_END,
-    } ;
+    BYTE extra[8] ;
+
+    if ( OW_r_mem_p8_crc16(p,size,offset,pn,32,extra) ) return 1 ;
 
       /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-    if ( BUS_transaction( t, pn ) ) return 1 ;
-    if ( CRC16(data,rest+13) || data[rest+7]!=0x55 || data[rest+8]!=0x55 || data[rest+9]!=0x55 || data[rest+10]!=0x55 ) return 1 ;
+    if ( extra[4]!=0x55 || extra[5]!=0x55 || extra[6]!=0x55 || extra[7]!=0x55 ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */
     if ( counter ) 
         counter[0] = 
-             ((UINT)data[rest+3])
-           + (((UINT)data[rest+4])<<8) 
-           + (((UINT)data[rest+5])<<16) 
-           + (((UINT)data[rest+6])<<24) ;
-    /* memory contents after the command and location */
-    if ( p ) memcpy(p,&data[3],size) ;
+                ((UINT)extra[0])
+                + (((UINT)extra[1])<<8)
+                + (((UINT)extra[2])<<16)
+                + (((UINT)extra[3])<<24) ;
 
     return 0 ;
 }

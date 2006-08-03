@@ -66,14 +66,13 @@ DeviceEntry( 14, DS2430A ) ;
 
 /* DS2502 */
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
-static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_app( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_r_app( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_r_status( BYTE * data, const struct parsedname * pn ) ;
 
 /* DS2430A memory */
 static int FS_r_memory(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, offset, pn ) ) return -EINVAL ;
     return size ;
 }
 
@@ -184,18 +183,6 @@ static int OW_w_app( const BYTE * data , const size_t size, const off_t offset ,
     if ( memcmp( data, ver, size ) ) return 1 ;
     /* copy scratchpad to memory */
     return BUS_transaction( tcopy, pn ) ;
-}
-
-static int OW_r_mem( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
-    BYTE fo[] = { 0xF0, (BYTE) (offset & 0x1F), } ;
-    struct transaction_log tread[] = {
-        TRXN_START ,
-        { fo, NULL, 2, trxn_match },
-        { NULL, data, size, trxn_read },
-        TRXN_END,
-    } ;
-    if ( BUS_transaction( tread, pn ) ) return 1 ;
-    return 0 ;
 }
 
 static int OW_r_app( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {

@@ -734,6 +734,10 @@ int OW_read_paged( BYTE * p, size_t size, off_t offset, const struct parsedname 
     size_t pagelen, int (*readfunc)(BYTE *,const size_t,const off_t,const struct parsedname *) ) ;
 int OW_write_paged( const BYTE * p, size_t size, off_t offset, const struct parsedname * pn,
     size_t pagelen, int (*writefunc)(const BYTE *,const size_t,const off_t,const struct parsedname *) ) ;
+    
+int OW_r_mem_simple( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+int OW_r_mem_crc16( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn, size_t pagesize ) ;
+int OW_r_mem_p8_crc16( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn, size_t pagesize, BYTE * extra ) ;
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;

@@ -87,7 +87,6 @@ DeviceEntryExtended( 1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr ) ;
 /* ------- Functions ------------ */
 
 /* DS2804 */
-static int OW_r_mem( BYTE * data , const size_t size, const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_scratch( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_pio( const BYTE data , const struct parsedname * pn ) ;
@@ -98,7 +97,7 @@ static int OW_w_reg( const BYTE * data, const size_t size, const off_t offset, c
 /* 2804 memory read */
 static int FS_r_mem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     /* read is not a "paged" endeavor, the CRC comes after a full read */
-    if ( OW_r_mem( buf, size, offset, pn ) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, offset, pn ) ) return -EINVAL ;
     return size ;
 }
 
@@ -112,7 +111,7 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
 /* 2406 memory write */
 static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
-    if ( OW_r_mem( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple( buf, size, offset+(pn->extension<<5), pn) ) return -EINVAL ;
     return size ;
 }
 
@@ -124,7 +123,7 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
 /* 2406 switch */
 static int FS_r_pio(UINT * u , const struct parsedname * pn) {
     BYTE data ;
-    if ( OW_r_mem(&data,1,0x0221,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data,1,0x0221,pn) ) return -EINVAL ;
     u[0] = ( data^0xFF ) & 0x03 ; /* reverse bits */
     return 0 ;
 }
@@ -141,7 +140,7 @@ static int FS_w_pio(const UINT * u, const struct parsedname * pn) {
 /* 2406 switch -- is Vcc powered?*/
 static int FS_power(int * y , const struct parsedname * pn) {
     BYTE data ;
-    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data,1,0x0225,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&data,7) ;
     return 0 ;
 }
@@ -149,7 +148,7 @@ static int FS_power(int * y , const struct parsedname * pn) {
 /* 2406 switch -- power-on status of polrity pin */
 static int FS_polarity(int * y , const struct parsedname * pn) {
     BYTE data ;
-    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data,1,0x0225,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&data,6) ;
     return 0 ;
 }
@@ -157,7 +156,7 @@ static int FS_polarity(int * y , const struct parsedname * pn) {
 /* 2406 switch -- power-on status of polrity pin */
 static int FS_r_por(int * y , const struct parsedname * pn) {
     BYTE data ;
-    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data,1,0x0225,pn) ) return -EINVAL ;
     y[0] = UT_getbit(&data,3) ;
     return 0 ;
 }
@@ -166,7 +165,7 @@ static int FS_r_por(int * y , const struct parsedname * pn) {
 static int FS_w_por(const int * y , const struct parsedname * pn) {
     BYTE data ;
     (void) y ;
-    if ( OW_r_mem(&data,1,0x0225,pn) ) return -EINVAL ; /* get current register */
+    if ( OW_r_mem_simple(&data,1,0x0225,pn) ) return -EINVAL ; /* get current register */
     if ( UT_getbit(&data,3) ) { /* needs resetting? bit3==1 */
         int yy ;
         data ^= 0x08 ; /* flip bit 3 */
@@ -180,7 +179,7 @@ static int FS_w_por(const int * y , const struct parsedname * pn) {
 /* 2406 switch PIO sensed*/
 static int FS_sense(UINT * u , const struct parsedname * pn) {
     BYTE data ;
-    if ( OW_r_mem(&data,1,0x0220,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data,1,0x0220,pn) ) return -EINVAL ;
     u[0] = ( data ) & 0x03 ;
     return 0 ;
 }
@@ -188,7 +187,7 @@ static int FS_sense(UINT * u , const struct parsedname * pn) {
 /* 2406 switch activity latch*/
 static int FS_r_latch(UINT * u , const struct parsedname * pn) {
     BYTE data ;
-    if ( OW_r_mem(&data,1,0x0222,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data,1,0x0222,pn) ) return -EINVAL ;
     u[0] = data & 0x03 ;
     return 0 ;
 }
@@ -203,7 +202,7 @@ static int FS_w_latch(const UINT * u , const struct parsedname * pn) {
 /* 2804 alarm settings*/
 static int FS_r_s_alarm(UINT * u , const struct parsedname * pn) {
     BYTE data[3] ;
-    if ( OW_r_mem(data,3,0x0223,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(data,3,0x0223,pn) ) return -EINVAL ;
     u[0] = ( data[2] & 0x03 ) * 100 ;
     u[0] += UT_getbit(&data[1],0) | ( UT_getbit(&data[0],0) << 1 ) ;
     u[0] += UT_getbit(&data[1],1) | ( UT_getbit(&data[0],1) << 1 ) * 10 ;
@@ -213,7 +212,7 @@ static int FS_r_s_alarm(UINT * u , const struct parsedname * pn) {
 /* 2804 alarm settings*/
 static int FS_w_s_alarm(const UINT * u , const struct parsedname * pn) {
     BYTE data[3] = { 0, 0, 0, } ;
-    if ( OW_r_mem(&data[2],1,0x0225,pn) ) return -EINVAL ;
+    if ( OW_r_mem_simple(&data[2],1,0x0225,pn) ) return -EINVAL ;
     data[2] |= (u[0] / 100 % 10) & 0x03 ;
     UT_setbit(&data[1],0,(int)(u[0] % 10) & 0x01) ;
     UT_setbit(&data[1],1,(int)(u[0] / 10 % 10) & 0x01) ;
@@ -221,18 +220,6 @@ static int FS_w_s_alarm(const UINT * u , const struct parsedname * pn) {
     UT_setbit(&data[0],1,((int)(u[0] / 10 % 10) & 0x02) >> 1) ;
     if ( OW_w_reg(data,3,0x0223,pn) ) return -EINVAL ;
     return 0 ;
-}
-
-static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-    BYTE p[3] = { 0xF0, offset&0xFF , offset>>8, } ;
-    struct transaction_log t[] = {
-        TRXN_START ,
-        { p, NULL, 3, trxn_match, } ,
-        { NULL, data, size, trxn_read, } ,
-        TRXN_END ,
-    } ;
-
-    return BUS_transaction(t,pn) ;
 }
 
 static int OW_w_scratch( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
