@@ -124,8 +124,7 @@ static int FS_r_version(ASCII *buf, const size_t size, const off_t offset , cons
     /* otherwise need a buffer */
     BYTE v[16] ;
     if ( OW_r_version( v, pn ) ) return -EINVAL ;
-    memcpy( buf, (ASCII *)(&v[offset]), size ) ;
-    return size ;
+    return FS_output_ascii( buf, size, offset, v, 16 ) ;
 }
 
 static int FS_w_on(const int * y , const struct parsedname * pn ) {

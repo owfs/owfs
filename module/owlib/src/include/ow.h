@@ -715,6 +715,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 int FS_read_postparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
 int FS_read_fake( char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+int FS_output_ascii( ASCII * buf, size_t size, off_t offset, ASCII * answer, size_t length ) ;
 
 int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;

@@ -90,56 +90,43 @@ void update_max_delay(const struct parsedname * pn) {
 }
 
 int FS_type(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    size_t len = strlen(pn->dev->name) ;
-//printf("TYPE len=%d, size=%d\n",len,size);
-    if ( offset ) return -EFAULT ;
-    if ( len > size ) return -EMSGSIZE ;
-    strcpy( buf , pn->dev->name ) ;
-    return len ;
+    return FS_output_ascii( buf, size, offset, pn->dev->name, strlen(pn->dev->name) ) ;
 }
 
 int FS_code(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    if ( offset ) return -EFAULT ;
-    if ( size < 2 ) return -EMSGSIZE ;
-    num2string( buf , pn->sn[0] ) ;
-    return 2 ;
+    ASCII code[2] ;
+    num2string( code , pn->sn[0] ) ;
+    return FS_output_ascii( buf, size, offset, code, 2 ) ;
 }
 
 int FS_ID(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[i+off+1] ) ;
-    return size ;
+    ASCII id[12] ;
+    bytes2string( id, &(pn->sn[2]), 6 ) ;
+    return FS_output_ascii( buf, size, offset, id, 12 ) ;
 }
 
 int FS_r_ID(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[6-i-off] ) ;
-    return size ;
+    ASCII id[12] ;
+    for ( i= 0 ; i < 6 ; ++i ) num2string( id+(i<<1), pn->sn[6-i] ) ;
+    return FS_output_ascii( buf, size, offset, id, 12 ) ;
 }
 
 int FS_crc8(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    (void) size ;
-    (void) offset ;
-    num2string(buf,pn->sn[7]) ;
-    return 2 ;
+    ASCII crc[2] ;
+    num2string( crc , pn->sn[7] ) ;
+    return FS_output_ascii( buf, size, offset, crc, 2 ) ;
 }
 
 int FS_address(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[i+off] ) ;
-    return size ;
+    ASCII ad[16] ;
+    bytes2string( ad, pn->sn, 8 ) ;
+    return FS_output_ascii( buf, size, offset, ad, 16 ) ;
 }
 
 int FS_r_address(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, pn->sn[7-i-off] ) ;
-    return size ;
+    ASCII ad[16] ;
+    for ( i= 0 ; i < 8 ; ++i ) num2string( ad+(i<<1), pn->sn[7-i] ) ;
+    return FS_output_ascii( buf, size, offset, ad, 16 ) ;
 }

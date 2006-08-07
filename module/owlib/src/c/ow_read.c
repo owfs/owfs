@@ -893,3 +893,11 @@ int FS_output_date_array( DATE * values, char * buf, const size_t size, const st
     if ( (len=FS_output_date( values[i], first, (size_t)left, pn )) < 0 ) return -EMSGSIZE ;
     return size-(left-len) ;
 }
+
+int FS_output_ascii( ASCII * buf, size_t size, off_t offset, ASCII * answer, size_t length ) {
+    if ( offset > length ) return -EFAULT ;
+    length -= offset ;
+    if ( length > size ) length = size ;
+    if ( length ) memcpy( buf, &answer[offset], length ) ;
+    return length ;
+}

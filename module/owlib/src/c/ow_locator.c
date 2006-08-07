@@ -21,10 +21,8 @@ static int OW_locator( BYTE * addr, const struct parsedname * pn ) ;
 
 
 int FS_locator(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    BYTE loc[8] ;     
-    size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
+    BYTE loc[8] ;
+    ASCII ad[16] ;
     
     if(get_busmode(pn->in) == bus_fake) {
         if ( pn->sn[7] & 0x01 ) { // 50% chance of locator
@@ -34,15 +32,14 @@ int FS_locator(char *buf, size_t size, off_t offset , const struct parsedname * 
     } else {
         OW_locator(loc,pn) ;
     }
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, loc[i+off] ) ;
-    return size ;
+    bytes2string( ad, loc, 8 ) ;
+    return FS_output_ascii( buf, size, offset, ad, 16 ) ;
 }
 
 int FS_r_locator(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
     BYTE loc[8] ;     
+    ASCII ad[16] ;
     size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
 
     if(get_busmode(pn->in) == bus_fake) {
         if ( pn->sn[7] & 0x01 ) { // 50% chance of locator
@@ -52,8 +49,8 @@ int FS_r_locator(char *buf, size_t size, off_t offset , const struct parsedname 
     } else {
         OW_locator(loc,pn) ;
     }
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, loc[7-i-off] ) ;
-    return size ;
+    for ( i= 0 ; i < 8 ; ++i ) num2string( ad+(i<<1), loc[7-i] ) ;
+    return FS_output_ascii( buf, size, offset, ad, 16 ) ;
 }
 
 static int OW_locator( BYTE * addr, const struct parsedname * pn ) {

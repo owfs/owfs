@@ -384,13 +384,11 @@ static int TAI8570_A( const struct parsedname * pn ) ;
 static int TAI8570_B( const struct parsedname * pn ) ;
 
 int FS_sibling(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    size_t i ;
-    size_t siz = size>>1 ;
-    size_t off = offset>>1 ;
+    ASCII sib[16] ;
     struct s_TAI8570 tai ;
     if ( testTAI8570( &tai, pn ) ) return -ENOENT ;
-    for ( i= 0 ; i < siz ; ++i ) num2string( buf+2*i+offset, tai.sibling[i+off] ) ;
-    return size ;
+    bytes2string( sib, tai.sibling, 8 ) ;
+    return FS_output_ascii( buf, size, offset, sib, 16 ) ;
 }
 
 int FS_temp( FLOAT * T, const struct parsedname * pn ) {

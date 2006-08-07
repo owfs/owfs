@@ -166,8 +166,7 @@ static int FS_name(char *buf, const size_t size, const off_t offset , const stru
     if(!in) return -ENOENT ;
     
     if ( in->adapter_name == NULL ) return FS_nullstring(buf) ;
-    strncpy(buf,&(in->adapter_name[offset]),size);
-    return buf[size-1]?size:strlen(buf) ;
+    return FS_output_ascii( buf, size, offset, in->adapter_name, strlen(in->adapter_name) ) ;
 }
 
 /* special check, -remote file length won't match local sizes */
@@ -179,8 +178,8 @@ static int FS_port(char *buf, const size_t size, const off_t offset , const stru
     in = find_connection_in(dindex);
     if(!in) return -ENOENT ;
     
-    strncpy(buf,&(in->name[offset]),size);
-    return buf[size-1]?size:strlen(buf) ;
+    if ( in->name == NULL ) return FS_nullstring(buf) ;
+    return FS_output_ascii( buf, size, offset, in->name, strlen(in->name) ) ;
 }
 
 /* special check, -remote file length won't match local sizes */
@@ -198,10 +197,7 @@ static int FS_version(UINT * u, const struct parsedname * pn) {
 
 static int FS_pidfile(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     (void) pn ;
-    if( pid_file ) {
-        strncpy( buf,&pid_file[offset],size ) ;
-        return buf[size-1]?size:strlen(buf) ;
-    }
+    if( pid_file ) return FS_output_ascii( buf, size, offset, pid_file, strlen(pid_file) ) ;
     return FS_nullstring(buf) ;
 }
 
