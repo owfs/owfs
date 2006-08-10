@@ -51,6 +51,7 @@ bWRITE_FUNCTION( FS_w_page ) ;
  fREAD_FUNCTION( FS_temp ) ;
  fREAD_FUNCTION( FS_volts ) ;
  fREAD_FUNCTION( FS_Humid ) ;
+ fREAD_FUNCTION( FS_Humid_1735 ) ;
  iREAD_FUNCTION( FS_Current ) ;
  uREAD_FUNCTION( FS_r_Ienable ) ;
 uWRITE_FUNCTION( FS_w_Ienable ) ;
@@ -105,6 +106,8 @@ struct filetype DS2438[] = {
     {"endcharge"        ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
     {"endcharge/udate"  ,  12, NULL , ft_unsigned  , fc_volatile, {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x14} , } ,
     {"endcharge/date"   ,  24, NULL , ft_date      , fc_volatile, {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x14} , } ,
+    {"HTM1735"          ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
+    {"HTM1735/humidity" ,  12, NULL , ft_float     , fc_volatile, {f:FS_Humid_1735}, {v:NULL}        ,{v:NULL}, } ,
 } ;
 DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_volt ) ;
 
@@ -176,6 +179,23 @@ static int FS_Humid(FLOAT * H , const struct parsedname * pn) {
     The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
     */
     H[0] = (VAD/VDD-(0.8/VDD))/(.0062*(1.0546-.00216*T)) ;
+
+    return 0 ;
+}
+
+/*
+ * Willy Robison's contribution
+ *      HTM1735 from Humirel (www.humirel.com) hooked up like everyone
+ *      else.  The datasheet seems to suggest that the humidity
+ *      measurement isn't too sensitive to VCC (VCC=5.0V +/- 0.25V).
+ *      The conversion formula is derived directly from the datasheet
+ *      (page 2).  VAD is assumed to be volts and *H is relative
+ *      humidity in percent.
+ */
+static int FS_Humid_1735(FLOAT * H , const struct parsedname * pn) {
+    FLOAT T,VAD,VDD ;
+    if ( OW_volts( &VAD , 0 , pn ) ) return -EINVAL ;
+    H[0]  = 38.92 * VAD - 41.98;
 
     return 0 ;
 }
