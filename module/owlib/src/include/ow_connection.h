@@ -56,6 +56,7 @@ $Id$
 
 #include "ow.h"
 #include "ow_counters.h"
+#include <sys/ioctl.h>
 
 /* Number of "fake" adapters */
 extern int fakes ;

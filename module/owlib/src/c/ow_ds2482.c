@@ -41,8 +41,6 @@ $Id$
 #include "ow_connection.h"
 
 #if OW_I2C
-// Special for i2c work
-#include <sys/ioctl.h>
 // Header taken from lm-sensors code
 // specifically lm-sensors-2.10.0
 #include "i2c-dev.h"

@@ -418,9 +418,19 @@ int FS_pressure( FLOAT * P, const struct parsedname * pn ) {
 
 // Read a page and confirm its a valid tmax page
 static int ReadTmexPage( BYTE * data, size_t size, int page, const struct parsedname * pn ) {
-    if ( OW_r_mem( data, size, size*page, pn) ) return 1 ; // read page
-    if ( data[0] > size ) return 1 ; // check length
-    return CRC16seeded( data, data[0]+3, page ) ;
+    if ( OW_r_mem( data, size, size*page, pn) ) {
+        LEVEL_DETAIL("Cannot read Tmex page %d\n",page) ;
+        return 1 ; // read page
+    }
+    if ( data[0] > size ) {
+        LEVEL_DETAIL("Tmex page %d bad length %d\n",page,data[0]) ;
+        return 1 ; // check length
+}
+    if ( CRC16seeded( data, data[0]+3, page ) ) {
+        LEVEL_DETAIL("Tmex page %d CRC16 error\n",page) ;
+        return 1 ; // check length
+    }
+    return 0 ;
 }
 
 static int TAI8570_config( BYTE cfg, BYTE * sn, const struct parsedname * pn ) {
@@ -597,11 +607,17 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
     if ( Cache_Get_Internal( (void *) tai, &s, &ip_bar, pn ) == 0 ) return 0 ;
     // read page 0
     if ( ReadTmexPage(data,32,0,pn) ) return 1 ; // read page
-    if ( memcmp("8570",&data[8],4) ) return 1 ; // check dir entry
+    if ( memcmp("8570",&data[8],4) ) { // check dir entry
+        LEVEL_DETAIL("No 8670 Tmex file\n") ;
+        return 1 ;
+    }
     // See if page 1 is readable
     if ( ReadTmexPage(data,32,1,pn) ) return 1 ; // read page
     // see which DS2406 is powered
-    if ( FS_power( &pow, pn) ) return 1 ;
+    if ( FS_power( &pow, pn) ) {
+        LEVEL_DETAIL("Cannot tell DS2406 power status\n") ;
+        return 1 ;
+    }
     memcpy( tai->sibling, &data[1], 8 ) ;
     if ( pow ) {
         memcpy( tai->writer, pn->sn  , 8 ) ;
@@ -611,7 +627,10 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
         memcpy( tai->reader, &data[1], 8 ) ;
     }
     LEVEL_DETAIL("TAI8570 reader="SNformat" writer="SNformat"\n",SNvar(tai->reader),SNvar(tai->writer)) ;
-    if ( TAI8570_Calibration(cal,tai,pn) ) return 1 ;
+    if ( TAI8570_Calibration(cal,tai,pn) ) {
+        LEVEL_DETAIL("Trouble reading TAI8570 calibration constants\n") ;
+        return 1 ;
+    }
     tai->C[0] = ((cal[0])>>1) ;
     tai->C[1] = ((cal[3])&0x3F) | (((cal[2])&0x3F)<<6) ;
     tai->C[2] = ((cal[3])>>6) ;

@@ -142,6 +142,26 @@ static int DS9097_reset( const struct parsedname * pn ) {
     return ret ;
 }
 
+/* Adapted from http://www.linuxquestions.org/questions/showthread.php?t=221632 */
+static int setRTS(int on, const struct connection_in * in) {
+    int status;
+
+    if (ioctl(in->fd, TIOCMGET, &status) == -1) {
+        ERROR_CONNECT("setRTS(): TIOCMGET");
+        return 0;
+    }
+    if ( on ) {
+        status |= TIOCM_RTS;
+    } else {
+        status &= ~TIOCM_RTS;
+    }
+    if (ioctl(in->fd, TIOCMSET, &status) == -1) {
+        ERROR_CONNECT("setRTS(): TIOCMSET");
+        return 0;
+    }
+    return 1;
+}
+
 /* Symmetric */
 /* send bits -- read bits */
 /* Actually uses bit zero of each byte */
