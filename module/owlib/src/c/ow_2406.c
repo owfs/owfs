@@ -624,7 +624,7 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
         memcpy( tai->reader, &data[1], 8 ) ;
     } else {
         memcpy( tai->reader, pn->sn  , 8 ) ;
-        memcpy( tai->reader, &data[1], 8 ) ;
+        memcpy( tai->writer, &data[1], 8 ) ;
     }
     LEVEL_DETAIL("TAI8570 reader="SNformat" writer="SNformat"\n",SNvar(tai->reader),SNvar(tai->writer)) ;
     if ( TAI8570_Calibration(cal,tai,pn) ) {
