@@ -302,12 +302,10 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct pars
         return ret ;
     }
     while (ret==0) {
-        char ID[] = "XX";
         STAT_ADD1(dir_main.entries);
         memcpy( pn2->sn, ds.sn, 8 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, ds.sn[0] ) ;
-        FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
+        FS_devicefindhex( ds.sn[0], pn2 ) ;  // lookup ID and set pn2.dev
         DIRLOCK;
             dirfunc( pn2 ) ;
         DIRUNLOCK;
@@ -356,7 +354,6 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
     /* BUS still locked */
     if ( pn2->pathlength == 0 ) db.allocated = pn2->in->last_root_devs ; // root dir estimated length
     do {
-        char ID[] = "XX";
         BUSUNLOCK(pn2);
         if ( DirblobPure( &db ) ) { /* only add if there is a blob allocated successfully */
             DirblobAdd( ds.sn, &db ) ;
@@ -367,8 +364,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
         /* Add to Device location cache */
         Cache_Add_Device(pn2->in->index, pn2 ) ;
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, ds.sn[0] ) ;
-        FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
+        FS_devicefindhex( ds.sn[0], pn2 ) ;  // lookup ID and set pn2.dev
         
         DIRLOCK;
             dirfunc( pn2 ) ;
@@ -425,10 +421,8 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
 
     /* Get directory from the cache */
     for ( dindex = 0 ; DirblobGet(dindex,pn2->sn,&db)==0 ; ++dindex )  {
-        char ID[] = "XX";
         /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        num2string( ID, pn2->sn[0] ) ;
-        FS_devicefind( ID, pn2 ) ;  // lookup ID and set pn2.dev
+        FS_devicefindhex( pn2->sn[0], pn2 ) ;  // lookup ID and set pn2.dev
         DIRLOCK;
             dirfunc( pn2 ) ;
             flags[0] |= pn2->dev->flags ;

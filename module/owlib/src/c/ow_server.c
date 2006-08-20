@@ -19,7 +19,8 @@ $Id$
 
 static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
-static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
+//static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
+static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
 static uint32_t SetupSemi( const struct parsedname * pn ) ;
@@ -58,6 +59,7 @@ static void Server_close( struct connection_in * in ) {
 int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
     int connectfd ;
     int ret = 0 ;
 
@@ -76,7 +78,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     //printf("ServerRead path=%s\n", pn->path_busless);
     LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
 
-    if ( ToServer( connectfd, &sm, pn->path_busless, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, &sp ) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, buf, size ) < 0 ) {
         ret = -EIO ;
@@ -90,6 +92,7 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
 int ServerPresence( const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
     int connectfd ;
     int ret = 0 ;
 
@@ -107,7 +110,7 @@ int ServerPresence( const struct parsedname * pn ) {
     //printf("ServerPresence path=%s\n", pn->path_busless);
     LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
 
-    if ( ToServer( connectfd, &sm, pn->path_busless, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, &sp) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
@@ -121,6 +124,7 @@ int ServerPresence( const struct parsedname * pn ) {
 int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    struct serverpackage sp = { pn->path_busless, buf, size, pn->tokenstring, pn->tokens, } ;
     int connectfd ;
     int ret = 0 ;
 
@@ -139,7 +143,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     //printf("ServerRead path=%s\n", pn->path_busless);
     LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
 
-    if ( ToServer( connectfd, &sm, pn->path_busless, buf, size) ) {
+    if ( ToServer( connectfd, &sm, &sp) ) {
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
         ret = -EIO ;
@@ -159,6 +163,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
 int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct parsedname * pn, uint32_t * flags ) {
     struct server_msg sm ;
     struct client_msg cm ;
+    struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
     int connectfd ;
     
     BUSLOCK(pn) ;
@@ -175,7 +180,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 
     LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
 
-    if ( ToServer( connectfd, &sm, pn->path_busless, NULL, 0) ) {
+    if ( ToServer( connectfd, &sm, &sp) ) {
         cm.ret = -EIO ;
     } else {
         char * path2 ;
@@ -342,34 +347,52 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
 
 // should be const char * data but iovec has problems with const arguments
 //static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) {
-static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) {
-    int nio = 1 ;
+static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) {
     int payload = 0 ;
-    struct iovec io[] = {
+    struct iovec io[5] = {
         { sm, sizeof(struct server_msg), } ,
-        { path, 0, } ,
-        { data, datasize, } ,
     } ;
-    if ( path ) {
-        ++ nio ;
-        io[1].iov_len = payload = strlen(path) + 1 ;
-        if ( data && datasize ) {
-            ++nio ;
-            payload += datasize ;
+    if ( (io[1].iov_base=sp->path) ) {
+        io[1].iov_len = payload = strlen(sp->path) + 1 ;
+    } else {
+        io[1].iov_len = payload = 0 ;
+    }
+    if ( (io[2].iov_base=sp->data) ) {
+        payload += ( io[2].iov_len=sp->datasize)  ;
+    } else {
+        io[2].iov_len = 0 ;
+    }
+    if ( server_mode == 0 ) {
+        io[3].iov_base = io[4].iov_base = NULL ;
+        io[3].iov_len  = io[4].iov_len  = 0 ;
+        sp->tokens = 0 ;
+        sm->version = 0 ;
+    } else {
+        if ( sp->tokens > 0 ) {
+            io[3].iov_base = sp->tokenstring ;
+            io[3].iov_len  = sp->tokens * sizeof(union antiloop) ;
+        } else {
+            io[3].iov_base = NULL ;
+            io[3].iov_len  = 0 ;
         }
+        ++sp->tokens ;
+        sm->version = Servermessage + (sp->tokens) ;
+        io[4].iov_base = &Token ;
+        io[4].iov_len  = sizeof(union antiloop) ;
     }
 
 //printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
 //printf("<%.4d|%.4d\n",sm->type,payload);
     //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));
 
+    sm->version = htonl(sm->version)   ;
     sm->payload = htonl(payload)       ;
     sm->size    = htonl(sm->size)      ;
     sm->type    = htonl(sm->type)      ;
     sm->sg      = htonl(sm->sg)        ;
     sm->offset  = htonl(sm->offset)    ;
 
-    return writev( fd, io, nio ) != (payload + sizeof(struct server_msg)) ;
+    return writev( fd, io, 5 ) != (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop) ) ;
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */

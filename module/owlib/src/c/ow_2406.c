@@ -497,7 +497,7 @@ static int TAI8570_Reset( const struct s_TAI8570 * tai, const struct parsedname 
 }
 
 static int TAI8570_Write( BYTE * cmd, const struct s_TAI8570 * tai, const struct parsedname * pn ) {
-    size_t len = strlen( cmd ) ;
+    size_t len = strlen( (ASCII *) cmd ) ;
     BYTE zero = 0x04 ;
     struct transaction_log t[] = {
         { cmd, NULL, len, trxn_read, } ,

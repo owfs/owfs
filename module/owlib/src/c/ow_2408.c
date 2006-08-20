@@ -328,6 +328,7 @@ static int FS_Hscreen(const char *buf, const size_t size, const off_t offset , c
 static int FS_Hmessage(const char *buf, const size_t size, const off_t offset , const struct parsedname * pn ) {
     int y = 1 ;
     if ( FS_Hclear(&y,pn) || FS_Hhome(&y,pn) || FS_Hscreen(buf,size,offset,pn) ) return -EINVAL ;
+    return 0 ;
 }
 
 /* Read 6 bytes --

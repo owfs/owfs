@@ -49,6 +49,7 @@ void FS_ParsedName_destroy( struct parsedname * pn ) {
         free(pn->lock) ;
         pn->lock = NULL ;
     }
+    // Tokenstring is part of a larger allocation and destroyed separately 
 }
 
 /* Parse a path to check it's validity and attach to the propery data structures */
@@ -78,16 +79,9 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
 
     if ( pn == NULL ) return -EINVAL ;
 
-    pn->path = pn->path_busless = NULL ;
+    memset( pn, 0, sizeof(struct parsedname) ) ;
     pn->in = indevice ;
-    pn->pathlength = 0 ; /* No branches yet */
-    pn->bp = NULL ; /* No list of branches */
-    pn->dev = NULL ; /* No Device */
-    pn->ft = NULL ; /* No filetypes */
-    pn->subdir = NULL ; /* Not subdirectory */
     pn->bus_nr = -1 ; /* all busses */
-    pn->lock = NULL ; /* device lock array */
-    memset(pn->sn,0,8) ; /* Blank number if not a device */
 
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
     pn->sg = SemiGlobal | (1<<BUSRET_BIT) ; // initial flag as the bus-returning level, will change if a bus is specified
@@ -314,41 +308,37 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
 static enum parse_enum Parse_RealDevice( char * filename, int remote, struct parsedname * pn ) {
     //printf("DevicePart: %s %s\n", filename, pn->path);
 
-    if ( !isxdigit(filename[0]) || !isxdigit(filename[1]) ) {
-        //printf("devicepart2: not xdigit\n");
-        return parse_error ; /* starts with 2 hex digits ? */
-    } else {
-        ASCII ID[14] = { filename[0], filename[1], 0x00, } ;
-        int i ;
-        //printf("NP hex = %s\n",filename ) ;
-        /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-        FS_devicefind( ID, pn ) ;
-        //printf("NP cmp'ed %s\n",ID ) ;
-        for ( i=2, filename+=2 ; i<14 ; ++i,++filename ) { /* get ID number */
-            if ( *filename == '.' ) ++filename ;
-            if ( isxdigit(*filename) ) {
-                ID[i] = *filename ;
-            } else {
-                return parse_error ;
-            }
-        }
-        //printf("NP0\n");
-        pn->sn[0] = string2num( &ID[0] ) ;
-        pn->sn[1] = string2num( &ID[2] ) ;
-        pn->sn[2] = string2num( &ID[4] ) ;
-        pn->sn[3] = string2num( &ID[6] ) ;
-        pn->sn[4] = string2num( &ID[8] ) ;
-        pn->sn[5] = string2num( &ID[10] ) ;
-        pn->sn[6] = string2num( &ID[12] ) ;
-        pn->sn[7] = CRC8compute(pn->sn,7,0) ;
+    ASCII ID[14] ;
+    int i ;
+    //printf("NP hex = %s\n",filename ) ;
+    //printf("NP cmp'ed %s\n",ID ) ;
+    for ( i=0 ; i<14 ; ++i,++filename ) { /* get ID number */
         if ( *filename == '.' ) ++filename ;
-        //printf("NP1\n");
-        if ( isxdigit(filename[0]) && isxdigit(filename[1]) ) {
-            char crc[2] ;
-            num2string(crc,pn->sn[7]) ;
-            if ( strncasecmp( crc, filename, 2 ) ) return parse_error ;
+        if ( isxdigit(*filename) ) {
+            ID[i] = *filename ;
+        } else {
+            return parse_error ;
         }
     }
+    //printf("NP0\n");
+    pn->sn[0] = string2num( &ID[0] ) ;
+    pn->sn[1] = string2num( &ID[2] ) ;
+    pn->sn[2] = string2num( &ID[4] ) ;
+    pn->sn[3] = string2num( &ID[6] ) ;
+    pn->sn[4] = string2num( &ID[8] ) ;
+    pn->sn[5] = string2num( &ID[10] ) ;
+    pn->sn[6] = string2num( &ID[12] ) ;
+    pn->sn[7] = CRC8compute(pn->sn,7,0) ;
+    if ( *filename == '.' ) ++filename ;
+    //printf("NP1\n");
+    if ( isxdigit(filename[0]) && isxdigit(filename[1]) ) {
+        char crc[2] ;
+        num2string(crc,pn->sn[7]) ;
+        if ( strncasecmp( crc, filename, 2 ) ) return parse_error ;
+    }
+    /* Search for known 1-wire device -- keyed to device name (family code in HEX) */
+    FS_devicefindhex( pn->sn[0], pn ) ;
+    
     //printf("NP2\n");
     if( !remote && !(pn->state & pn_bus) ) { /* Check the presence, and cache the proper bus number for better performance */
         int bus_nr = -1;

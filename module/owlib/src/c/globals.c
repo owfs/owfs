@@ -46,5 +46,7 @@ uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8
 uint32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 ;
 #endif
 
+union antiloop Token ;
+
 /* Statistics globals are stored in ow_stats.c */
 

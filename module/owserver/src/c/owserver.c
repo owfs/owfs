@@ -106,10 +106,11 @@ static void * RealHandler( void * v ) ; // Called from ping wrapper
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
-static void * FromClientAlloc( int fd, struct server_msg *sm ) ;
+static int FromClient( int fd, struct server_msg *sm, struct serverpackage * sp ) ;
 static int ToClient( int fd, struct client_msg *cm, char *data ) ;
 static void ow_exit( int e ) ;
 static void exit_handler(int i) ;
+static void SetupAntiloop( void ) ;
 
 
 static void ow_exit( int e ) {
@@ -125,14 +126,20 @@ static void exit_handler(int i) {
 }
 
 /* read from client, free return pointer if not Null */
-static void * FromClientAlloc( int fd, struct server_msg * sm ) {
+static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp ) {
     char * msg ;
-    //printf("FromClientAlloc\n");
+    ssize_t trueload ;
+    //printf("FromClient\n");
+
+    /* Clear return structure */
+    memset( sp, 0, sizeof(struct serverpackage) ) ;
+    
     if ( readn(fd, sm, sizeof(struct server_msg), &tv ) != sizeof(struct server_msg) ) {
         sm->type = msg_error ;
-        return NULL ;
+        return -EIO ;
     }
 
+    sm->version = ntohl(sm->version) ;
     sm->payload = ntohl(sm->payload) ;
     sm->size    = ntohl(sm->size)    ;
     sm->type    = ntohl(sm->type)    ;
@@ -140,19 +147,61 @@ static void * FromClientAlloc( int fd, struct server_msg * sm ) {
     sm->offset  = ntohl(sm->offset)  ;
     //printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
     //printf("<%.4d|%.4d\n",sm->type,sm->payload);
-    if ( sm->payload == 0 ) {
-         msg = NULL ;
-    } else if ( (sm->payload<0) || (sm->payload>MAXBUFFERSIZE) ) {
+    trueload = sm->payload ;
+    if ( isServermessage(sm->version) ) trueload += sizeof(union antiloop) * Servertokens(sm->version) ;
+    if ( trueload == 0 ) return 0 ;
+    
+    /* valid size? */
+    if ( (sm->payload<0) || (trueload>MAXBUFFERSIZE) ) {
         sm->type = msg_error ;
-        msg = NULL ;
-    } else if ( (msg = (char *)malloc((size_t)sm->payload)) ) {
-        if ( readn( fd, msg, (size_t)sm->payload, &tv ) != sm->payload ) {
+        return -EMSGSIZE ;
+    }
+
+    /* Can allocate space? */
+    if ( (msg = (char *)malloc(trueload)) == NULL ) { /* create a buffer */
+        sm->type = msg_error ;
+        return -ENOMEM ;
+    }
+    
+    /* read in data */
+    if ( readn( fd, msg, trueload, &tv ) != trueload ) { /* read in the expected data */
+        sm->type = msg_error ;
+        free(msg);
+        return -EIO ;
+    }
+
+    /* path has null termination? */
+    if ( sm->payload ) {
+        int pathlen ;
+        if ( memchr( msg, 0, (size_t)sm->payload)==NULL ) {
             sm->type = msg_error ;
             free(msg);
-            msg = NULL ;
+            return -EINVAL ;
+        }
+        pathlen = strlen( msg ) + 1 ;
+        sp->data = & msg[pathlen] ;
+        sp->datasize = sm->payload - pathlen ;
+    } else {
+        sp->data = NULL ;
+        sp->datasize = 0 ;
+    }
+        
+    if ( isServermessage(sm->version) ) { /* make sure no loop */
+        int i ;
+        char * p = &msg[sm->payload] ; // end of normal buffer
+        sp->tokenstring = p ;
+        sp->tokens = Servertokens(sm->version) ;
+        for ( i=0 ; i<sp->tokens ; ++i, p+=sizeof(union antiloop) ) {
+            if ( memcmp( p, &Token, sizeof(union antiloop))==0 ) {
+                free(msg) ;
+                sm->type = msg_error ;
+                LEVEL_DEBUG("owserver loop suppression\n") ;
+                return -ELOOP ;
+            }
         }
     }
-    return msg ;
+    sp->path = msg ;
+    return 0 ;
 }
 
 static int ToClient( int fd, struct client_msg * cm, char * data ) {
@@ -270,7 +319,7 @@ static void * RealHandler( void * v ) {
     struct server_msg sm ;
     struct client_msg cm ;
     struct parsedname pn ;
-    char * path = FromClientAlloc( hd->fd, &sm ) ;
+    struct serverpackage sp ;
 
 #if OW_MT
     pthread_detach( pthread_self() );
@@ -279,22 +328,27 @@ static void * RealHandler( void * v ) {
     //printf("OWSERVER message type = %d\n",sm.type ) ;
     memset(&cm, 0, sizeof(struct client_msg));
 
+    cm.ret = FromClient( hd->fd, &sm, &sp ) ;
+
     switch( (enum msg_classification) sm.type ) { // outer switch
         case msg_read: // good message
         case msg_write: // good message
         case msg_dir: // good message
         case msg_presence: // good message
-            if ( (path==NULL) || (memchr( path, 0, (size_t)sm.payload)==NULL) ) { /* Bad string -- no trailing null */
+            if ( sm.payload==0 ) { /* Bad string -- no trailing null */
                 cm.ret = -EBADMSG ;
             } else {
                 //printf("Handler: path=%s\n",path);
                 /* Parse the path string */
 
-                LEVEL_CALL("owserver: parse path=%s\n",path);
-                if ( (cm.ret=FS_ParsedName( path, &pn )) ) break ;
+                LEVEL_CALL("owserver: parse path=%s\n",sp.path);
+                if ( (cm.ret=FS_ParsedName( sp.path, &pn )) ) break ;
 
                 /* Use client persistent settings (temp scale, display mode ...) */
                 pn.sg = sm.sg ;
+                /* Antilooping tags */
+                pn.tokens = sp.tokens ;
+                pn.tokenstring = sp.tokenstring ;
                 //printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
                 //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
@@ -311,14 +365,11 @@ static void * RealHandler( void * v ) {
                         LEVEL_DEBUG("Read message done retbuffer=%p\n", retbuffer) ;
                         break ;
                     case msg_write: {
-                            int pathlen = strlen( path ) + 1 ; /* include trailing null */
-                            int datasize = sm.payload - pathlen ;
                             LEVEL_CALL("Write message\n") ;
-                            if ( (datasize<=0) || (datasize<sm.size) ) {
+                            if ( (sp.datasize<=0) || (sp.datasize<sm.size) ) {
                                 cm.ret = -EMSGSIZE ;
                             } else {
-                                BYTE * data = (BYTE *) (&path[pathlen]) ;
-                                WriteHandler( &sm, &cm, data, &pn ) ;
+                                WriteHandler( &sm, &cm, sp.data, &pn ) ;
                             }
                         }
                         break ;
@@ -338,18 +389,18 @@ static void * RealHandler( void * v ) {
             cm.ret = 0 ;
             break ;
         case msg_size: // no longer used
+        case msg_error:
         default: // "bad" message
             LEVEL_CALL("No message\n") ;
-            cm.ret = -EIO ;
             break ;
     }
     LEVEL_DEBUG("RealHandler: cm.ret=%d\n", cm.ret);
 
-    if (path) free(path) ;
     TOCLIENTLOCK(hd) ;
     if ( cm.ret != -EIO ) ToClient( hd->fd, &cm, retbuffer ) ;
     timerclear(&(hd->tv)) ;
     TOCLIENTUNLOCK(hd) ;
+    if (sp.path) free(sp.path) ;
     if ( retbuffer ) free(retbuffer) ;
     LEVEL_DEBUG("RealHandler: done\n");
     return NULL ;
@@ -501,6 +552,7 @@ int main( int argc , char ** argv ) {
 
     /* Set up owlib */
     LibSetup() ;
+    
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -543,9 +595,18 @@ int main( int argc , char ** argv ) {
      * This old bug/workaround might be fixed?, and get_busmode() could perhaps
      * be removed. */
     //printf("main7: indevice=%p indevice->busmode==%d %d\n", indevice, indevice->busmode, get_busmode(indevice));
+    
+    /* Set up "Antiloop" -- a unique token */
+    SetupAntiloop() ;
 
     ServerProcess( Handler, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }
 
+static void SetupAntiloop( void ) {
+    struct tms t ;
+    bzero( &Token, sizeof(union antiloop) ) ;
+    Token.simple.pid = getpid() ;
+    Token.simple.clock = times(&t) ;
+}

@@ -76,6 +76,7 @@ $Id$
 #ifdef HAVE_SYS_TYPES_H
     #include <sys/types.h> /* for stat */
 #endif
+#include <sys/times.h> /* for times */
 #include <ctype.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -500,6 +501,8 @@ struct parsedname {
     struct connection_in * in ;
     uint32_t sg ; // more state info, packed for network transmission
     struct devlock ** lock ; // need to clear dev lock?
+    int tokens ; /* for anti-loop work */
+    BYTE * tokenstring ; /* List of tokens from owservers passed */
 } ;
 
 enum simul_type { simul_temp, simul_volt, } ;
@@ -571,7 +574,27 @@ struct client_msg {
     int32_t offset ;
 } ;
 
+/* Unique token for owserver loop checks */
+union antiloop {
+    struct {
+        pid_t pid ;
+        clock_t clock ;
+    } simple ;
+    BYTE uuid[16] ;
+} ;
+extern union antiloop Token ;
 
+struct serverpackage {
+    ASCII * path ;
+BYTE * data ;
+    size_t datasize ;
+    BYTE * tokenstring ;
+    size_t tokens ;
+} ;
+
+#define Servermessage       (((int32_t)1)<<16)
+#define isServermessage( version )    (((version)&Servermessage)!=0)
+#define Servertokens(version)    ((version)&0xFFFF)
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
 extern time_t start_time ;
@@ -615,6 +638,7 @@ size_t SimpleFullFileLength( const struct parsedname * pn ) ;
 int CheckPresence( const struct parsedname * pn ) ;
 void FS_devicename( char * buffer, const size_t length, const BYTE * sn, const struct parsedname * pn ) ;
 void FS_devicefind( const char * code, struct parsedname * pn ) ;
+void FS_devicefindhex( BYTE f, struct parsedname * pn ) ;
 
 int FS_dirname_state( char * buffer, const size_t length, const struct parsedname * pn ) ;
 int FS_dirname_type( char * buffer, const size_t length, const struct parsedname * pn ) ;
