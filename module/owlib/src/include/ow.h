@@ -227,7 +227,7 @@ extern int multithreading ;
 
 /* command line options */
 /* These are the owlib-specific options */
-#define OWLIB_OPT "f:p:s:hu::d:t:CFRKVP:"
+#define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_perl, opt_python, opt_php, opt_tcl, } ;
 int owopt( const int c , const char * arg, enum opt_program op ) ;

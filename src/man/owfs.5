@@ -15,7 +15,7 @@
 .SH SYNOPSIS
 An OWFS configuration file is specified on the command line:
 .TP 
-owfs -c config_file [other options]
+.B owfs -c config_file [other options]
 The file name is arbitrary, there is no default configuration file used.
 .SH USAGE
 A configuration file can be invoked for any of the OWFS programs (
@@ -48,7 +48,7 @@ opt            # non-ambiguous abbreviation allowed
 # no limit on number of lines
 .SH "DESCRIPTION"
 .so description
-.SS configuration
+.SS Configuration
 .B owfs.conf (5)
 allows a uniform set of command line parameters to be set.
 .PP
@@ -57,18 +57,139 @@ Not all OWFS programs use the same command line options, but the non-relevant on
 Command line and configuration options can mixed. They will be invoked in the order presented. Left to right for the command line. Top to bottom for the configuration file.
 .PP
 Configuration files can call other configuration files. There is an arbitrary depth of 5 levels to prevent infinite loops. More than one configuration file can be specified.
-.SH EXAMPLE
+.SH SAMPLE
 .TP
-owfs -d /dev/ttyS0 /mnt/1wire
-Adapter on serial port
-.TP
-owfs -F -u /mnt/1wire
-USB adapter, temperatures reported in Fahrenheit
-.TP
-owfs -s 10.0.1.2:3001 /mnt/1wire
-Connect to a OWFS server process (
-.I owserver
-) that was started on another machine at tcp port 3001
+Here is a sample configuration file with all the possible parameters included.
+#
+.B Sources
+.br
+.I device
+= /dev/ttyS0 # serial port: DS9097U DS9097 ECLO or LINK
+.br
+.I device
+= /dev/i2c-0 # i2c port: DS2482-100 or DS2482-800
+.br
+.I usb
+#       USB device: DS9490 PuceBaboon
+.br
+.I usb
+= 2 #   Second DS9490
+.br
+.I usb
+= all # All DS9490s
+.br
+.I altUSB
+# Willy Robison's tweaks
+.br
+.I LINK
+= /dev/ttyS0 #     serial LINK in ascii mode
+.br
+.I LINK
+= [address:]port # LINK-HUB-E (tcp access)
+.br
+.I HA7
+# HA7Net autodiscovery mode
+.br
+.I HA7
+= address[:port] # HA7Net at tcp address (port 80)
+.br
+.I server
+= [address:]port #
+.B owserver
+tcp address
+.br
+.I FAKE
+= 01,10,1B,28 # Fake device with family codes (hex)
+.br
+#
+.br
+#
+.B Sinks
+.br
+# #
+.B owfs
+specific
+.br
+.I mountpoint
+= filelocation #
+.I FUSE
+mount point
+.br
+# #
+.B owhttpd owserver owftpd
+specific
+.br
+.I port
+= [address:]port # tcp out port
+.br
+#
+.br
+#
+.B Temperature scales
+.br
+.I Celsius
+# default
+.br
+.I Fahrenheit
+.br
+.I Kelvin
+.br
+.I Rankine
+.br
+#
+.br
+#
+.B Process control
+.br
+.I configuration
+= filename # file (like this) of program options
+.br
+.I pid_file
+= filename # file to store PID number
+.br
+.I foreground
+.br
+.I background
+# default
+.br
+.I readonly
+# prevent changing 1-wire device contents
+.br
+.I write
+# default
+.br
+.I error_print
+= 0-3 # 0-mixed 1-syslog 2-stderr 3-suppressed
+.br
+.I error_level
+= 0-9 # increasing noise
+.br
+#
+.br
+#
+.B Display
+.br
+.I format
+= f[.]i[[.]c] # 1-wire address
+.I f
+amily
+.I i
+d code
+.I c
+rc
+.br
+#
+.br
+#
+.B Information
+.br
+# (silly in a configuration file)
+.br
+.I version
+.br
+.I help
+.br
+.I morehelp
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

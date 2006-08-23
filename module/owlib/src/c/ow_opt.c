@@ -20,6 +20,17 @@ $Id$
 int max_clients ;
 int ftp_timeout ;
 
+struct lineparse {
+    ASCII line[256] ;
+    ASCII * opt ;
+    ASCII * val ;
+    int c ;
+} ;
+
+static void ParseTheLine( struct lineparse * lp ) ;
+static int ConfigurationFile( const ASCII * file, enum opt_program op ) ;
+static int ParseInterp(struct lineparse * lp ) ;
+
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
 static int OW_ArgI2C( const char * arg ) ;
@@ -27,10 +38,12 @@ static int OW_ArgHA7( const char * arg ) ;
 static int OW_ArgFake( const char * arg ) ;
 
 const struct option owopts_long[] = {
+    {"configuration",required_argument,NULL,'c'},
     {"device",     required_argument,NULL,'d'},
     {"usb",        optional_argument,NULL,'u'},
     {"help",       no_argument,      NULL,'h'},
     {"port",       required_argument,NULL,'p'},
+    {"mountpoint", required_argument,NULL,'m'},
     {"server",     required_argument,NULL,'s'},
     {"readonly",   required_argument,NULL,'r'},
     {"write",      required_argument,NULL,'w'},
@@ -70,13 +83,161 @@ const struct option owopts_long[] = {
     {0,0,0,0},
 } ;
 
+static int ParseInterp(struct lineparse * lp ) {
+    int c = 0 ; // default character found
+    int f ;
+    size_t len ;
+    const struct option * so ;
+    int * flag = NULL ;
+
+    if ( lp->opt == NULL ) return 0 ;
+    len = strlen(lp->opt) ;
+    if ( len==1 ) return lp->opt[0] ;
+    for ( so=owopts_long ; so->name ; ++so ) {
+        if (strncasecmp(lp->opt,so->name,len)) continue ; // no match
+        //LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
+        printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
+        if ( so->flag ) { // immediate value mode
+            //printf("flag c=%d flag=%p so->flag=%p\n",c,flag,so->flag);
+            if ( (c!=0) || (flag!=NULL && flag!=so->flag) ) {
+                fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
+                return -1 ;
+            }
+            flag = so->flag ;
+            f = so->val ;
+        } else if ( c==0 ) { // char mode first match
+            c = so->val ;
+        } else if ( c != so->val ) { // char mode -- second match
+            fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
+            return -1 ;
+        }
+    }
+    if ( flag ) {
+        flag[0] = f ;
+        return 0 ;
+    }
+    if ( c==0 ) {
+        fprintf(stderr,"Configuration option %s not recognized. Value=%s\n",lp->opt,SAFESTRING(lp->val)) ;
+    }
+    return c ;
+}
+
+// Parse the configuration file line
+// Basically look for lines of form opt=val
+// optional white space
+// optional '='
+// optional val
+// Comment with #
+// set opt and val as pointers into line (or NULL if not there)
+// set NULL char at end of opt and val
+static void ParseTheLine( struct lineparse * lp ) {
+    ASCII * p ;
+    // state machine -- pretty self-explanatory.
+    enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps = pspreopt ;
+    lp->opt = NULL ;
+    lp->val = NULL ;
+    for( p=lp->line ; *p ; ++p ) {
+        switch( *p ) {
+            // end of line characters
+            case '#':
+            case '\n':
+            case '\r':
+                *p = '\0' ;
+                return ;
+            // whitespace characters
+            case ' ':
+            case '\t':
+                switch (ps) {
+                    case psinopt:
+                        *p = '\0' ;
+                        ++ps ; // inopt->preeq
+                        break ;
+                    case psinval:
+                        *p = '\0' ;
+                        return ;
+                    default:
+                        break ;
+                }
+                break ;
+            // equals special case: jump state
+            case '=':
+                switch (ps) {
+                    case psinopt:
+                        ++ps ; // inopt->preeq
+                        // fall through intentionally
+                    case pspreeq:
+                        *p = '\0' ;
+                        ++ps ; // preeq->preval
+                        break ;
+                    default: // rogue '='
+                        *p = '\0' ;
+                        return ;
+                }
+                break ;
+            // real character, start or continue parameter, jump past "="
+            default:
+                switch (ps) {
+                    case pspreopt:
+                        lp->opt = p ;
+                        ++ps ; // preopt->inopt
+                        break ;
+                    case pspreeq:
+                        ++ps ; // preeq->preval
+                        // fall through intentionally
+                    case pspreval:
+                        lp->val = p ;
+                        ++ps ; // preval->inval
+                        // token fall through
+                    default :
+                        break ;
+                }
+                break ;
+        }
+    }
+}
+static int ConfigurationFile( const ASCII * file, enum opt_program op ) {
+    FILE * f = fopen( file, "r" ) ;
+    if ( f ) {
+        int ret = 0 ;
+        struct lineparse lp ;
+        while( fgets(lp.line, 256, f ) ) {
+            // check line length
+            if ( strlen(lp.line)>250 ) {
+                ERROR_DEFAULT("Line too long (>250 characters) in file %s.\n%s\n",file,lp.line) ;
+                ret = 1 ;
+                break ;
+            }
+            ParseTheLine( &lp ) ;
+            ret = owopt( ParseInterp(&lp), lp.val, op ) ;
+            if ( ret ) break ;
+        }
+        fclose( f ) ;
+        return ret ;
+    } else {
+        ERROR_DEFAULT("Cannot process configuration file %s\n",file) ;
+        return 1 ;
+    }
+}
+
 /* Globals */
 unsigned long int usec_read = 500000 ;
 
 /* Parses one argument */
 /* return 0 if ok */
 int owopt( const int c , const char * arg, enum opt_program op ) {
+    static int config_depth = 0 ;
     switch (c) {
+    case 'c':
+        if ( config_depth > 4 ) {
+            LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n",config_depth) ;
+            return 1 ;
+        } else {
+            int ret ;
+            ++config_depth ;
+            ret = ConfigurationFile( arg, op ) ;
+            --config_depth ;
+            return ret ;
+        }
     case 'h':
         ow_help( op ) ;
         return 1 ;
@@ -111,8 +272,21 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
     case 's':
         return OW_ArgNet( arg ) ;
     case 'p':
-//printf("Arg: -p [%s]\n", arg);
-        return OW_ArgServer( arg ) ;
+        switch ( op ) {
+            case opt_httpd:
+            case opt_server:
+            case opt_ftpd:
+                return OW_ArgServer( arg ) ;
+            default:
+                return 0 ;
+        }
+    case 'm':
+        switch ( op ) {
+            case opt_owfs:
+                return OW_ArgServer( arg ) ;
+            default:
+                return 0 ;
+        }
     case 'f':
         if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
         else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);

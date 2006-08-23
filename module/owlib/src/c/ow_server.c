@@ -350,25 +350,25 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
 static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) {
     int payload = 0 ;
     struct iovec io[5] = {
-        { sm, sizeof(struct server_msg), } ,
+        { sm, sizeof(struct server_msg), } , // send "server message" header structure
     } ;
-    if ( (io[1].iov_base=sp->path) ) {
+    if ( (io[1].iov_base=sp->path) ) { // send path (if not null)
         io[1].iov_len = payload = strlen(sp->path) + 1 ;
     } else {
         io[1].iov_len = payload = 0 ;
     }
-    if ( (io[2].iov_base=sp->data) ) {
+    if ( (io[2].iov_base=sp->data) ) { // send data (if datasize not zero)
         payload += ( io[2].iov_len=sp->datasize)  ;
     } else {
         io[2].iov_len = 0 ;
     }
-    if ( server_mode == 0 ) {
+    if ( server_mode == 0 ) { // if not being called from owserver, that's it
         io[3].iov_base = io[4].iov_base = NULL ;
         io[3].iov_len  = io[4].iov_len  = 0 ;
         sp->tokens = 0 ;
         sm->version = 0 ;
     } else {
-        if ( sp->tokens > 0 ) {
+        if ( sp->tokens > 0 ) { // owserver: send prior tags
             io[3].iov_base = sp->tokenstring ;
             io[3].iov_len  = sp->tokens * sizeof(union antiloop) ;
         } else {
@@ -377,14 +377,15 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
         }
         ++sp->tokens ;
         sm->version = Servermessage + (sp->tokens) ;
-        io[4].iov_base = &Token ;
+        io[4].iov_base = &Token ; // owserver: add our tag
         io[4].iov_len  = sizeof(union antiloop) ;
     }
 
-//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
-//printf("<%.4d|%.4d\n",sm->type,payload);
+    //printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
+    //printf("<%.4d|%.4d\n",sm->type,payload);
     //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));
 
+    // encode in network order (just the header)
     sm->version = htonl(sm->version)   ;
     sm->payload = htonl(payload)       ;
     sm->size    = htonl(sm->size)      ;

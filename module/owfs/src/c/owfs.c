@@ -16,6 +16,7 @@ $Id$
 */
 
 #include "owfs.h"
+#include "ow_connection.h"
 
 #if OW_MT
 pthread_t main_threadid ;
@@ -40,7 +41,6 @@ static void ow_exit( int e ) {
     Global variables -- each invokation will have it's own data
 */
 struct fuse *fuse;
-char *fuse_mountpoint = NULL;
 int fuse_fd = -1 ;
 char umount_cmd[1024] = "";
 char * fuse_mnt_opt = NULL ;
@@ -82,22 +82,25 @@ int main(int argc, char *argv[]) {
     }
 
     /* non-option arguments */
-    if ( optind == argc ) {
+    while ( optind < argc-1 ) {
+        OW_ArgGeneric(argv[optind]) ;
+        ++optind ;
+    }
+    while ( optind < argc ) {
+        if ( outdevices ) {
+            OW_ArgGeneric(argv[optind]) ;
+        } else {
+            OW_ArgServer(argv[optind]) ;
+        }
+    }
+    
+    if ( outdevices==0 ) {
         LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n",argv[0])
         ow_exit(1) ;
-    } else if ( outdevices ) {
-        LEVEL_DEFAULT("Network output not supported\n")
-        ow_exit(1) ;
-    } else {
-        while ( optind < argc-1 ) {
-            OW_ArgGeneric(argv[optind]) ;
-            ++optind ;
-        }
     }
 
     // FUSE directory mounting
-    fuse_mountpoint = strdup(argv[optind]);
-    LEVEL_CONNECT("fuse mount point: %s\n",fuse_mountpoint) ;
+    LEVEL_CONNECT("fuse mount point: %s\n",outdevice->name) ;
 
     // Signal handler is set in fuse library
     //set_signal_handlers(exit_handler);
@@ -115,7 +118,7 @@ int main(int argc, char *argv[]) {
 #if FUSE_VERSION >= 14
     /* Set up "command line" for main fuse routines */
     Fuse_setup( &fuse_options ) ; // command line setup
-    Fuse_add(fuse_mountpoint , &fuse_options) ; // mount point
+    Fuse_add(outdevice->name , &fuse_options) ; // mount point
  #if FUSE_VERSION >= 22
     Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
     Fuse_add("direct_io" , &fuse_options) ;

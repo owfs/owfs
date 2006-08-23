@@ -88,6 +88,7 @@ void ow_morehelp( enum opt_program op ) {
     "  -P --pid_file                  |file where program id (pid) will be stored\n"
     "     --background                |become a deamon process(default)\n"
     "     --foreground                |stay in foreground\n"
+    "  -c --configuration filename    |configuration file\n"
     "  -r --readonly                  |no writing to 1-wire bus\n"
     "  -w --write                     |allow reading and writing to bus(default)\n"
     "     --fake                      |with list of emulated device family codes\n"
