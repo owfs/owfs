@@ -1,4 +1,8 @@
 .SH STANDARD OPTIONS
+.SS -c file | --configuration file
+Name of a
+.B owfs (5)
+configuration file with more command line parameters
 .SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
 Temperature scale used for data output. Celsius is the default.
 .SS \-r \-\-readonly
