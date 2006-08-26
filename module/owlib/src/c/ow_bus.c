@@ -26,7 +26,8 @@ int BUS_send_data( const BYTE * data, const size_t len, const struct parsedname 
     int ret ;
     if ( len>16 ) {
         int dlen = len-(len>>1) ;
-        (ret=BUS_send_data(data,dlen,pn)) || (ret=BUS_send_data(&data[dlen],len>>1,pn)) ;
+        if ( (ret=BUS_send_data(data,dlen,pn)) ) return ret ;
+        ret = BUS_send_data(&data[dlen],len>>1,pn) ;
     } else {
         BYTE resp[16] ;
         if ((ret=BUS_sendback_data( data, resp, len,pn ))==0) {

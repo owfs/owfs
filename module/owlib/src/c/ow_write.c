@@ -352,7 +352,7 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
             size_t s = fl ;
             s -= offset ;
             if ( s > size ) s = size ;
-            ret = (pn->ft->write.b)(buf,s,offset,pn) ;
+            ret = (pn->ft->write.b)((const BYTE *)buf,s,offset,pn) ;
             /* Special code to exclude partial data from cache */
             if ( s < fl ) {
                 if ( cbuf ) free(cbuf) ;
@@ -501,7 +501,7 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
     case ft_ascii:
         {
             size_t s = ffl ;
-            if ( offset > s ) {
+            if ( offset > (off_t)s ) {
                 ret = -ERANGE ;
             } else {
                 s -= offset ;
@@ -519,12 +519,12 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
     case ft_binary:
         {
             size_t s = ffl ;
-            if ( offset > s ) {
+            if ( offset > (off_t)s ) {
                 ret = -ERANGE ;
             } else {
                 s -= offset ;
                 if ( s > size ) s = size ;
-                ret = (pn->ft->write.b)(buf,s,offset,pn) ;
+                ret = (pn->ft->write.b)((const BYTE *)buf,s,offset,pn) ;
                 /* Special code to exclude partial data from cache */
                 if ( s < ffl ) {
                     if ( cbuf ) free(cbuf) ;
@@ -661,7 +661,7 @@ static int FS_w_split(const char * buf, const size_t size, const off_t offset , 
             ret = -EADDRNOTAVAIL ;
         } else {
             UINT U ;
-            int y ;
+            UINT y ;
             ret = ((pn->ft->read.u)(&U,pn)<0) || FS_input_unsigned(&y,buf,size) ;
             if ( ret==0) {
                 UT_setbit((void*)(&U),pn->extension,y) ;

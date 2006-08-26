@@ -24,7 +24,7 @@ static void hex_only( char * str ) ;
 void ChangeData( char * value, const struct parsedname * pn ) {
 /* Do command processing and make changes to 1-wire devices */
     if ( pn->ft && value ) {
-        httpunescape(value) ;
+        httpunescape((BYTE*)value) ;
         LEVEL_DETAIL("CHANGEDATA path=%s value=%s\n",pn->path,value);
         switch ( pn->ft->format ) {
             case ft_binary:
@@ -92,6 +92,6 @@ static void hex_only( char * str ) {
 /* reads an as ascii hex string, strips out non-hex, converts in place */
 static void hex_convert( char * str ) {
     char * uc = str ;
-    BYTE * hx = str ;
+    BYTE * hx = (BYTE *) str ;
     for( ; *uc ; uc+=2 ) *hx++ = string2num( uc ) ;
 }

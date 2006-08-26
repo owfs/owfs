@@ -229,7 +229,7 @@ extern int multithreading ;
 /* These are the owlib-specific options */
 #define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
-enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_perl, opt_python, opt_php, opt_tcl, } ;
+enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl, opt_swig, opt_c, } ;
 int owopt( const int c , const char * arg, enum opt_program op ) ;
 
 /* Several different structures:
@@ -470,7 +470,7 @@ subdir points to in-device groupings
     /* presencecheck */
     /* tempscale */
     /* device format */
-extern uint32_t SemiGlobal ;
+extern int32_t SemiGlobal ;
 
 struct buspath {
     BYTE sn[8] ;
@@ -708,7 +708,7 @@ void UT_delay_us(const unsigned long len) ;
 ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) ;
 int ClientAddr(  char * sname, struct connection_in * in ) ;
 int ClientConnect( struct connection_in * in ) ;
-void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
+void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (*Exit)(int errcode) ) ;
 void FreeClientAddr(  struct connection_in * in ) ;
 int ServerOutSetup( struct connection_out * out ) ;
 

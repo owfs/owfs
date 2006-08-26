@@ -142,6 +142,7 @@ static int DS9097_reset( const struct parsedname * pn ) {
     return ret ;
 }
 
+#if 0
 /* Adapted from http://www.linuxquestions.org/questions/showthread.php?t=221632 */
 static int setRTS(int on, const struct connection_in * in) {
     int status;
@@ -161,6 +162,7 @@ static int setRTS(int on, const struct connection_in * in) {
     }
     return 1;
 }
+#endif /* 0 */
 
 /* Symmetric */
 /* send bits -- read bits */

@@ -80,6 +80,7 @@ OWLIB_SOURCE = compat.c          \
                ow_util.c         \
                ow_verify.c       \
                ow_write.c        \
+               ow_zero.c         \
                owlib.c           \
                error.c           \
                globals.c

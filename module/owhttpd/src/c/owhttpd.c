@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     main_threadid = pthread_self() ;
 #endif
 
-    ServerProcess( Acceptor, ow_exit ) ;
+    ServerProcess( Acceptor, opt_httpd, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }

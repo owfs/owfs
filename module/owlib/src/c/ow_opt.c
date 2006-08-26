@@ -85,7 +85,7 @@ const struct option owopts_long[] = {
 
 static int ParseInterp(struct lineparse * lp ) {
     int c = 0 ; // default character found
-    int f ;
+    int f = 0 ; // initialize to avoid compiler warning
     size_t len ;
     const struct option * so ;
     int * flag = NULL ;

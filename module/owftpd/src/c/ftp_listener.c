@@ -68,6 +68,10 @@ int ftp_listener_init(struct ftp_listener_s *f) {
     }
 
     if ( ServerOutSetup( outdevice ) ) return 0 ;
+#if OW_ZERO
+    // Zeroconf/Bonjour start (since owftpd doesn't use ServerProcess yet)
+    OW_Announce(outdevice,opt_ftpd) ;
+#endif /* OW_ZERO */
 
     /* prevent socket from blocking on accept() */
     flags = fcntl(outdevice->fd, F_GETFL);
@@ -253,7 +257,7 @@ static void *connection_acceptor(void * v) {
                           info);
 
              if (error_code != 0) {
-                 errno - error_code ;
+                 errno = error_code ;
                  ERROR_CONNECT("Error creating new thread\n");
                  close(fd);
                  telnet_session_destroy(&info->telnet_session);

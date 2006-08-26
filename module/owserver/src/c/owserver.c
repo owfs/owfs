@@ -179,7 +179,7 @@ static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp
             return -EINVAL ;
         }
         pathlen = strlen( msg ) + 1 ;
-        sp->data = & msg[pathlen] ;
+        sp->data = (BYTE*) &msg[pathlen] ;
         sp->datasize = sm->payload - pathlen ;
     } else {
         sp->data = NULL ;
@@ -187,9 +187,9 @@ static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp
     }
         
     if ( isServermessage(sm->version) ) { /* make sure no loop */
-        int i ;
+        size_t i ;
         char * p = &msg[sm->payload] ; // end of normal buffer
-        sp->tokenstring = p ;
+        sp->tokenstring = (BYTE *) p ;
         sp->tokens = Servertokens(sm->version) ;
         for ( i=0 ; i<sp->tokens ; ++i, p+=sizeof(union antiloop) ) {
             if ( memcmp( p, &Token, sizeof(union antiloop))==0 ) {
@@ -366,7 +366,7 @@ static void * RealHandler( void * v ) {
                         break ;
                     case msg_write: {
                             LEVEL_CALL("Write message\n") ;
-                            if ( (sp.datasize<=0) || (sp.datasize<sm.size) ) {
+                            if ( (sp.datasize<=0) || ((int)sp.datasize<sm.size) ) {
                                 cm.ret = -EMSGSIZE ;
                             } else {
                                 WriteHandler( &sm, &cm, sp.data, &pn ) ;
@@ -599,7 +599,7 @@ int main( int argc , char ** argv ) {
     /* Set up "Antiloop" -- a unique token */
     SetupAntiloop() ;
 
-    ServerProcess( Handler, ow_exit ) ;
+    ServerProcess( Handler, opt_server, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }

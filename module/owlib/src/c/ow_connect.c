@@ -82,6 +82,11 @@ struct connection_out * NewOut( void ) {
 #if OW_MT
         pthread_mutex_init(&(now->accept_mutex), pmattr);
 #endif /* OW_MT */
+#if OW_ZERO
+        // Zero sref's -- done with struct memset
+        //now->sref0 = 0 ;
+        //now->sref1 = 0 ;
+#endif /* OW_MT */
     } else {
         LEVEL_DEFAULT("Cannot allocate memory for server structure,\n") ;
     }
@@ -177,6 +182,10 @@ void FreeOut( void ) {
 #if OW_MT
         pthread_mutex_destroy(&(now->accept_mutex)) ;
 #endif /* OW_MT */
+#if OW_ZERO
+        if ( now->sref0 ) DNSServiceRefDeallocate(now->sref0) ;
+        if ( now->sref1 ) DNSServiceRefDeallocate(now->sref1) ;
+#endif /* OW_ZERO */
         free(now) ;
     }
 }

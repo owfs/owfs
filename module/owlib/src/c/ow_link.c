@@ -136,7 +136,7 @@ int LINKE_detect( struct connection_in * in ) {
     in->Adapter = adapter_LINK_E ;
     if ( LINK_write(LINK_string(" "),1,&pn)==0 ) {
         char buf[18] ;
-        if ( LINKE_preamble( &pn ) || LINK_read( buf, 17, &pn, 1 ) || strncmp( buf, "Link", 4 ) ) return -ENODEV ;
+        if ( LINKE_preamble( &pn ) || LINK_read( (BYTE *)buf, 17, &pn, 1 ) || strncmp( buf, "Link", 4 ) ) return -ENODEV ;
 //        printf("LINKE\n");
         in->adapter_name = "Link-Hub-E" ;
         in->busmode = bus_tcp ;
@@ -311,7 +311,7 @@ static int LINK_read_low(BYTE * buf, const size_t size, const struct parsedname 
 static int LINK_read(BYTE * buf, const size_t size, const struct parsedname * pn , int ExtraEbyte ) {
     if ( pn->in->Adapter !=adapter_LINK_E ) {
         return LINK_read_low( buf, size, pn ) ;
-    } else if ( readn( pn->in->fd, buf, size+ExtraEbyte, &tvnet ) != size+ExtraEbyte ) { /* NOTE NOTE extra byte length for buffer */
+    } else if ( readn( pn->in->fd, buf, size+ExtraEbyte, &tvnet ) != (ssize_t)size+ExtraEbyte ) { /* NOTE NOTE extra byte length for buffer */
         LEVEL_CONNECT("LINK_read (ethernet) error\n") ;
         return -EIO ;
     }

@@ -275,7 +275,7 @@ int LibStart( void ) {
 
     /* Use first bus for http bus name */
     SimpleBusName = indevice->name ;
-    
+
     return 0 ;
 }
 

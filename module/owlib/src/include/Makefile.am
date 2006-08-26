@@ -1,9 +1,9 @@
-noinst_HEADERS = \
-	compat_getopt.h \
-        compat.h \
-        i2c-dev.h \
-        compat_netdb.h \
-        ow.h \
+noinst_HEADERS =          \
+	compat_getopt.h       \
+        compat.h          \
+        i2c-dev.h         \
+        compat_netdb.h    \
+        ow.h              \
         ow_1820.h \
         ow_1821.h \
         ow_1921.h \
@@ -31,19 +31,19 @@ noinst_HEADERS = \
         ow_2760.h \
         ow_2804.h \
         ow_2890.h \
-        ow_counters.h \
-        ow_connection.h \
-        ow_debug.h \
-        ow_devices.h \
-        ow_dirblob.h \
-        ow_lcd.h \
-        ow_none.h \
-        ow_pid.h     \
-        ow_settings.h \
+        ow_counters.h     \
+        ow_connection.h   \
+        ow_debug.h        \
+        ow_devices.h      \
+        ow_dirblob.h      \
+        ow_lcd.h          \
+        ow_none.h         \
+        ow_pid.h          \
+        ow_settings.h     \
         ow_simultaneous.h \
-        ow_stats.h \
-        ow_stub.h \
-        ow_system.h \
+        ow_stats.h        \
+        ow_stub.h         \
+        ow_system.h       \
         ow_xxxx.h
 
 clean-generic:

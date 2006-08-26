@@ -51,8 +51,8 @@ static int FS_read_fake_single( char *buf, const size_t size, const off_t offset
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
     s = SimpleFileLength(pn) ;
-    if ( offset > s ) return -ERANGE ;
-    if ( offset == s ) return 0 ;
+    if ( offset > (off_t)s ) return -ERANGE ;
+    if ( offset == (off_t)s ) return 0 ;
    
     switch( pn->ft->format ) {
         case ft_integer: {
@@ -158,8 +158,8 @@ static int FS_read_fake_array(char *buf, const size_t size, const off_t offset ,
     STAT_ADD1(read_array) ; /* statistics */
 
     s = SimpleFullFileLength(pn) ;
-    if ( offset > s ) return -ERANGE ;
-    if ( offset == s ) return 0 ;
+    if ( offset > (off_t)s ) return -ERANGE ;
+    if ( offset == (off_t)s ) return 0 ;
 
     /* shallow copy */
     memcpy( &pn2 , pn , sizeof(struct parsedname) ) ;

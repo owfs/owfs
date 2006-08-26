@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="2"
 VERSION_MINOR="5"
-PATCHLEVEL="0"
+PATCHLEVEL="1"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -955,6 +955,42 @@ fi
 AC_SUBST(ENABLE_USB)
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
+# Check for nDNS (Bonjour/zeroconf) enabled
+ENABLE_ZERO=auto
+AC_MSG_CHECKING([if zeroconf support is enabled])
+
+AC_ARG_ENABLE(zero,
+[  --enable-zero          Enable 1-Wire zeroconf (Bonjour) support (default auto)],
+[
+    AC_MSG_RESULT([$enableval])
+
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_ZERO=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+
+# Include libdns_sd if the zeroconf is enabled
+if test "${ENABLE_ZERO}" != "false" ; then
+
+    AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
+    if test "${ENABLE_ZERO}" = "true" ; then
+        AC_MSG_ERROR([libdns_sd must be installed to use zeroconf])
+    else
+            AC_MSG_WARN([libdns_sd not found, zeroconf will be disabled])
+            ENABLE_ZERO=false
+    fi
+    ])
+    if test "${ENABLE_ZERO}" != "false" ; then
+        ENABLE_ZERO=true
+    fi
+fi
+
+AC_SUBST(ENABLE_ZERO)
+AM_CONDITIONAL(ENABLE_ZERO, test "${ENABLE_ZERO}" = "true")
+
 # Check for Parallel port enabled
 ENABLE_PARPORT=auto
 AC_MSG_CHECKING([if parallel port support is enabled])
@@ -1099,6 +1135,13 @@ else
 fi
 AC_SUBST(OW_USB)
 
+if test "${ENABLE_ZERO}" = "true" ; then
+   OW_ZERO=1
+else
+   OW_ZERO=0
+fi
+AC_SUBST(OW_ZERO)
+
 if test "${ENABLE_PROFILING}" = "true" ; then
    PROFILING_FLAG=-pg
 fi
@@ -1234,29 +1277,29 @@ AC_MSG_RESULT()
 AC_MSG_RESULT([Compile-time options:])
 
 if test "${ENABLE_CACHE}" = "true"; then
-    AC_MSG_RESULT([    Caching is enabled])
+    AC_MSG_RESULT([                  Caching is enabled])
 else
-    AC_MSG_RESULT([    Caching is DISABLED])
+    AC_MSG_RESULT([                  Caching is DISABLED])
 fi
 if test "${ENABLE_USB}" = "true"; then
-    AC_MSG_RESULT([    USB is enabled])
+    AC_MSG_RESULT([                      USB is enabled])
 else
-    AC_MSG_RESULT([    USB is DISABLED])
+    AC_MSG_RESULT([                      USB is DISABLED])
 fi
 if test "${ENABLE_I2C}" = "true"; then
-    AC_MSG_RESULT([    i2c is enabled])
+    AC_MSG_RESULT([                      I2C is enabled])
 else
-    AC_MSG_RESULT([    i2c is DISABLED])
+    AC_MSG_RESULT([                      I2C is DISABLED])
 fi
 if test "${ENABLE_HA7}" = "true"; then
-    AC_MSG_RESULT([    HA7Net is enabled])
+    AC_MSG_RESULT([                   HA7Net is enabled])
 else
-    AC_MSG_RESULT([    HA7Net is DISABLED])
+    AC_MSG_RESULT([                   HA7Net is DISABLED])
 fi
 if test "${ENABLE_MT}" = "true"; then
-    AC_MSG_RESULT([    Multithreading is enabled])
+    AC_MSG_RESULT([           Multithreading is enabled])
 else
-    AC_MSG_RESULT([    Multithreading is DISABLED])
+    AC_MSG_RESULT([           Multithreading is DISABLED])
 fi
 if test "${ENABLE_PARPORT}" = "true"; then
     AC_MSG_RESULT([    Parallel port DS1410E is enabled])
@@ -1264,43 +1307,48 @@ else
     AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
 fi
 if test "${ENABLE_TAI8570}" = "true"; then
-    AC_MSG_RESULT([    TAI8570 barometer is enabled])
+    AC_MSG_RESULT([        TAI8570 barometer is enabled])
 else
-    AC_MSG_RESULT([    TAI8570 barometer is DISABLED])
+    AC_MSG_RESULT([        TAI8570 barometer is DISABLED])
 fi
 if test "${ENABLE_THERMOCOUPLE}" = "true"; then
-    AC_MSG_RESULT([    Thermocouples are enabled])
+    AC_MSG_RESULT([             Thermocouple is enabled])
 else
-    AC_MSG_RESULT([    Thermocouples are DISABLED])
+    AC_MSG_RESULT([             Thermocouple is DISABLED])
 fi
 if test "${ENABLE_DEBUG}" = "true"; then
-    AC_MSG_RESULT([    Debug-output is enabled])
+    AC_MSG_RESULT([             Debug-output is enabled])
 else
-    AC_MSG_RESULT([    Debug-output is DISABLED])
+    AC_MSG_RESULT([             Debug-output is DISABLED])
 fi
 if test "${ENABLE_PROFILING}" = "true"; then
-    AC_MSG_RESULT([    Profiling is enabled])
+    AC_MSG_RESULT([                Profiling is enabled])
 else
-    AC_MSG_RESULT([    Profiling is DISABLED])
+    AC_MSG_RESULT([                Profiling is DISABLED])
+fi
+if test "${ENABLE_ZERO}" = "true"; then
+    AC_MSG_RESULT([       Zeroconf (Bonjour) is enabled])
+else
+    AC_MSG_RESULT([       Zeroconf (Bonjour) is DISABLED])
 fi
 
 AC_MSG_RESULT()
 AC_MSG_RESULT([Module configuration:])
 
 if test "${ENABLE_OWFS}" = "true"; then
-    AC_MSG_RESULT([    owfs is enabled])
+    AC_MSG_RESULT([        owfs is enabled])
 else
-    AC_MSG_RESULT([    owfs is DISABLED])
+    AC_MSG_RESULT([        owfs is DISABLED])
 fi
 if test "${ENABLE_OWHTTPD}" = "true"; then
-    AC_MSG_RESULT([    owhttpd is enabled])
+    AC_MSG_RESULT([     owhttpd is enabled])
 else
-    AC_MSG_RESULT([    owhttpd is DISABLED])
+    AC_MSG_RESULT([     owhttpd is DISABLED])
 fi
 if test "${ENABLE_OWFTPD}" = "true"; then
-    AC_MSG_RESULT([    owftpd is enabled])
+    AC_MSG_RESULT([      owftpd is enabled])
 else
-    AC_MSG_RESULT([    owftpd is DISABLED])
+    AC_MSG_RESULT([      owftpd is DISABLED])
 fi
 if test "${ENABLE_OWSERVER}" = "true"; then
     AC_MSG_RESULT([    owserver is enabled])
@@ -1308,24 +1356,24 @@ else
     AC_MSG_RESULT([    owserver is DISABLED])
 fi
 if test "${ENABLE_OWCAPI}" = "true"; then
-    AC_MSG_RESULT([    owcapi is enabled])
+    AC_MSG_RESULT([      owcapi is enabled])
 else
-    AC_MSG_RESULT([    owcapi is DISABLED])
+    AC_MSG_RESULT([      owcapi is DISABLED])
 fi
 if test "${ENABLE_SWIG}" = "true"; then
-    AC_MSG_RESULT([    swig is enabled])
+    AC_MSG_RESULT([        swig is enabled])
 else
-    AC_MSG_RESULT([    swig is DISABLED])
+    AC_MSG_RESULT([        swig is DISABLED])
 fi
 if test "${ENABLE_OWPERL}" = "true"; then
-    AC_MSG_RESULT([    owperl is enabled])
+    AC_MSG_RESULT([      owperl is enabled])
 else
-    AC_MSG_RESULT([    owperl is DISABLED])
+    AC_MSG_RESULT([      owperl is DISABLED])
 fi
 if test "${ENABLE_OWPHP}" = "true"; then
-    AC_MSG_RESULT([    owphp is enabled])
+    AC_MSG_RESULT([       owphp is enabled])
 else
-    AC_MSG_RESULT([    owphp is DISABLED])
+    AC_MSG_RESULT([       owphp is DISABLED])
 fi
 if test "${ENABLE_OWPYTHON}" = "true"; then
     AC_MSG_RESULT([    owpython is enabled])
@@ -1333,8 +1381,8 @@ else
     AC_MSG_RESULT([    owpython is DISABLED])
 fi
 if test "${ENABLE_OWTCL}" = "true"; then
-    AC_MSG_RESULT([    owtcl is enabled])
+    AC_MSG_RESULT([       owtcl is enabled])
 else
-    AC_MSG_RESULT([    owtcl is DISABLED])
+    AC_MSG_RESULT([       owtcl is DISABLED])
 fi
 AC_MSG_RESULT()

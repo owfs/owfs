@@ -106,11 +106,11 @@ static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
 static int OW_w_1_pio( const int pio , const int element , const struct parsedname * pn ) ;
 static int OW_r_vset( FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
 static int OW_w_vset( const FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
-static int OW_r_high( UINT * y , const int high, const struct parsedname * pn ) ;
-static int OW_w_high( const UINT * y , const int high, const struct parsedname * pn ) ;
-static int OW_r_flag( UINT * y , const int high, const struct parsedname * pn ) ;
-static int OW_w_flag( const UINT * y , const int high, const struct parsedname * pn ) ;
-static int OW_r_por( UINT * y , const struct parsedname * pn ) ;
+static int OW_r_high( int * y , const int high, const struct parsedname * pn ) ;
+static int OW_w_high( const int * y , const int high, const struct parsedname * pn ) ;
+static int OW_r_flag( int * y , const int high, const struct parsedname * pn ) ;
+static int OW_w_flag( const int * y , const int high, const struct parsedname * pn ) ;
+static int OW_r_por( int * y , const struct parsedname * pn ) ;
 static int OW_w_por( const int por , const struct parsedname * pn ) ;
 
 /* read a page of memory (8 bytes) */
@@ -464,7 +464,7 @@ static int OW_w_vset( const FLOAT * V , const int high, const int resolution, co
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_high( UINT * y , const int high, const struct parsedname * pn ) {
+static int OW_r_high( int * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p, 8+2+high) ;
@@ -474,13 +474,13 @@ static int OW_r_high( UINT * y , const int high, const struct parsedname * pn ) 
     return 0 ;
 }
 
-static int OW_w_high( const UINT * y , const int high, const struct parsedname * pn ) {
+static int OW_w_high( const int * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
-    UT_setbit(p, 8+2+high,(int)y[0]&0x01) ;
-    UT_setbit(p,24+2+high,(int)y[1]&0x01) ;
-    UT_setbit(p,40+2+high,(int)y[2]&0x01) ;
-    UT_setbit(p,56+2+high,(int)y[3]&0x01) ;
+    UT_setbit(p, 8+2+high,y[0]&0x01) ;
+    UT_setbit(p,24+2+high,y[1]&0x01) ;
+    UT_setbit(p,40+2+high,y[2]&0x01) ;
+    UT_setbit(p,56+2+high,y[3]&0x01) ;
     /* turn POR off */
     UT_setbit(p,15,0) ;
     UT_setbit(p,31,0) ;
@@ -489,7 +489,7 @@ static int OW_w_high( const UINT * y , const int high, const struct parsedname *
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_flag( UINT * y , const int high, const struct parsedname * pn ) {
+static int OW_r_flag( int * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p, 8+4+high) ;
@@ -499,17 +499,17 @@ static int OW_r_flag( UINT * y , const int high, const struct parsedname * pn ) 
     return 0 ;
 }
 
-static int OW_w_flag( const UINT * y , const int high, const struct parsedname * pn ) {
+static int OW_w_flag( const int * y , const int high, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
-    UT_setbit(p, 8+4+high,(int)y[0]&0x01) ;
-    UT_setbit(p,24+4+high,(int)y[1]&0x01) ;
-    UT_setbit(p,40+4+high,(int)y[2]&0x01) ;
-    UT_setbit(p,56+4+high,(int)y[3]&0x01) ;
+    UT_setbit(p, 8+4+high,y[0]&0x01) ;
+    UT_setbit(p,24+4+high,y[1]&0x01) ;
+    UT_setbit(p,40+4+high,y[2]&0x01) ;
+    UT_setbit(p,56+4+high,y[3]&0x01) ;
     return OW_w_mem(p,8,1<<3,pn) ;
 }
 
-static int OW_r_por( UINT * y , const struct parsedname * pn ) {
+static int OW_r_por( int * y , const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,1<<3,pn) ) return 1;
     y[0] = UT_getbit(p,15) || UT_getbit(p,31) || UT_getbit(p,47) || UT_getbit(p,63);

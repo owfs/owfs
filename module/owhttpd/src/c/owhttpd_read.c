@@ -41,7 +41,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
         int canread = ( pn.ft->read.v != NULL ) ;
         int suglen = 0 ;
         enum ft_format format = pn.ft->format ;
-        int len ;
+        int len = 0 ; // initialize to avoid compiler warning
         char *buf = NULL ;
 
         if ( pn.type==pn_structure ) {
@@ -154,7 +154,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
         int canread = ( pn.ft->read.v != NULL ) ;
         int suglen = 0 ;
         enum ft_format format = pn.ft->format ;
-        int len ;
+        int len = 0 ; // initialize to avoid compiler warning
         char *buf = NULL ;
 
         if ( pn.type==pn_structure ) {

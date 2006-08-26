@@ -29,7 +29,9 @@ BYTE string2num( const char * s ) {
 }
 
 
-#define _TOHEXCHAR(c) (((c) >= 0 && (c) <= 9) ? '0'+(c) : 'A'+(c)-10 )
+//#define _TOHEXCHAR(c) (((c) >= 0 && (c) <= 9) ? '0'+(c) : 'A'+(c)-10 )
+// we only use a nibble
+#define _TOHEXCHAR(c) (((c) <= 9) ? '0'+(c) : ('A'-10)+(c) )
 
 #if 0
 /* number to a hex digit */

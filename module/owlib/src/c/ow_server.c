@@ -325,14 +325,14 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
 //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     if ( cm->payload==0 ) return 0 ; // No payload, done.
 
-    rtry = cm->payload<size ? cm->payload : size ;
+    rtry = cm->payload<(ssize_t)size ? (size_t)cm->payload : size ;
     ret = readn(fd, msg, rtry, &tv ); // read expected payload now.
     if ( ret != rtry ) {
         cm->ret = -EIO ;
         return -EIO ;
     }
 
-    if ( cm->payload > size ) { // Uh oh. payload bigger than expected. read it in and discard
+    if ( cm->payload > (ssize_t)size ) { // Uh oh. payload bigger than expected. read it in and discard
         size_t d = cm->payload - size ;
         char extra[d] ;
         ret = readn(fd,extra,d,&tv);
@@ -393,7 +393,7 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
     sm->sg      = htonl(sm->sg)        ;
     sm->offset  = htonl(sm->offset)    ;
 
-    return writev( fd, io, 5 ) != (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop) ) ;
+    return writev( fd, io, 5 ) != (ssize_t)(payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop) ) ;
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */

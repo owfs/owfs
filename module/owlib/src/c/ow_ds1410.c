@@ -1,4 +1,3 @@
-#if 0
 /*
 $Id$
     OWFS -- One-Wire filesystem
@@ -15,6 +14,8 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+
+#if 0
 
 #if OW_PARPORT
 

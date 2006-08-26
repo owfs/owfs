@@ -57,6 +57,9 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include <sys/ioctl.h>
+#if OW_ZERO
+#include <dns_sd.h>
+#endif
 
 /* Number of "fake" adapters */
 extern int fakes ;
@@ -358,6 +361,10 @@ struct connection_out {
 #if OW_MT
     pthread_mutex_t accept_mutex ;
 #endif /* OW_MT */
+#if OW_ZERO
+    DNSServiceRef sref0 ;
+    DNSServiceRef sref1 ;
+#endif
 } ;
 extern struct connection_out * outdevice ;
 extern struct connection_in * indevice ;
@@ -392,6 +399,11 @@ void DelIn( struct connection_in * in ) ;
 struct connection_in * NewIn( const struct connection_in * in ) ;
 struct connection_out * NewOut( void ) ;
 struct connection_in *find_connection_in(int nr);
+
+#if OW_ZERO
+/* Bonjour registration */
+void OW_Announce( struct connection_out * out, enum opt_program opt ) ;
+#endif /* OW_ZERO */
 
 /* Low-level functions
     slowly being abstracted and separated from individual

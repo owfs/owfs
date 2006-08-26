@@ -275,8 +275,8 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
     struct parsedname pn2 ;
 
     size_t s = SimpleFullFileLength(pn) ;
-    if ( offset > s ) return -ERANGE ;
-    if ( offset == s ) return 0 ;
+    if ( offset > (off_t)s ) return -ERANGE ;
+    if ( offset == (off_t)s ) return 0 ;
 
     memcpy( &pn2, pn, sizeof(struct parsedname) ) ; /* shallow copy */
     pn2.type = pn_real ; /* "real" type to get return length, rather than "structure" length */
@@ -316,8 +316,8 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
     s = SimpleFileLength(pn) ;
-    if ( offset > s ) return -ERANGE ;
-    if ( offset == s ) return 0 ;
+    if ( offset > (off_t)s ) return -ERANGE ;
+    if ( offset == (off_t)s ) return 0 ;
 
     /* Special for *.BYTE -- treat as a single value */
     if ( format==ft_bitfield && pn->extension==-2 ) format = ft_unsigned ;
@@ -402,7 +402,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             //if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
-            return (pn->ft->read.b)(buf,s,offset,pn) ;
+            return (pn->ft->read.b)((BYTE *)buf,s,offset,pn) ;
             }
         case ft_directory:
         case ft_subdir:
@@ -428,8 +428,8 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
     s = SimpleFullFileLength(pn) ;
-    if ( offset > s ) return -ERANGE ;
-    if ( offset == s ) return 0 ;
+    if ( offset > (off_t)s ) return -ERANGE ;
+    if ( offset == (off_t)s ) return 0 ;
 
     switch( pn->ft->format ) {
     case ft_integer:
@@ -536,7 +536,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
         //if ( offset > s ) return -ERANGE ;
         s -= offset ;
         if ( s > size ) s = size ;
-        return (pn->ft->read.b)(buf,s,offset,pn) ;
+        return (pn->ft->read.b)((BYTE *)buf,s,offset,pn) ;
         }
     case ft_directory:
     case ft_subdir:
@@ -571,8 +571,8 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     STAT_ADD1(read_array) ; /* statistics */
 
     s = SimpleFullFileLength(pn) ;
-    if ( offset > s ) return -ERANGE ;
-    if ( offset == s ) return 0 ;
+    if ( offset > (off_t)s ) return -ERANGE ;
+    if ( offset == (off_t)s ) return 0 ;
 
     /* shallow copy */
     memcpy( &pn2 , pn , sizeof(struct parsedname) ) ;
@@ -617,7 +617,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0 ;
-    size_t s = 0 ;
+    off_t s = 0 ;
     
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
@@ -708,7 +708,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         if ( offset > s ) return -ERANGE ;
         if ( offset == s ) return 0 ;
         s -= offset ;
-        if ( s > size ) s = size ;
+        if ( s > (off_t)size ) s = size ;
         return (pn->ft->read.a)(buf,s,offset,pn) ;
         }
     case ft_binary: {
@@ -716,8 +716,8 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         if ( offset > s ) return -ERANGE ;
         if ( offset == s ) return 0 ;
         s -= offset ;
-        if ( s > size ) s = size ;
-        return (pn->ft->read.b)(buf,s,offset,pn) ;
+        if ( s > (off_t)size ) s = size ;
+        return (pn->ft->read.b)((BYTE*)buf,s,offset,pn) ;
         }
     case ft_directory:
     case ft_subdir:
@@ -726,7 +726,7 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
         return -ENOENT ;
     }
 
-    if((size_t)ret != s) {
+    if(ret != s) {
       /* Read error since we didn't get all bytes */
       LEVEL_DEBUG("FS_r_split: error ret=%d s=%d\n", ret, s);
       return -ENOENT ;
@@ -895,7 +895,7 @@ int FS_output_date_array( DATE * values, char * buf, const size_t size, const st
 }
 
 int FS_output_ascii( ASCII * buf, size_t size, off_t offset, ASCII * answer, size_t length ) {
-    if ( offset > length ) return -EFAULT ;
+    if ( offset > (off_t) length ) return -EFAULT ;
     length -= offset ;
     if ( length > size ) length = size ;
     if ( length ) memcpy( buf, &answer[offset], length ) ;
