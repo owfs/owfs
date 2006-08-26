@@ -472,6 +472,15 @@ subdir points to in-device groupings
     /* device format */
 extern int32_t SemiGlobal ;
 
+/* Global information (for local control) */
+struct global {
+#if OW_ZERO
+    int announce_on ; // use zeroconf?
+    ASCII * announce_name ;
+#endif /* OW_ZERO */
+} ;
+extern struct global Global ;
+
 struct buspath {
     BYTE sn[8] ;
     BYTE branch ;

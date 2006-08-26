@@ -13,7 +13,7 @@
 /* prototypes */
 static int invariant(const struct ftp_session_s *f);
 static void reply(struct ftp_session_s *f, int code, const char *fmt, ...);
-static void change_dir(struct ftp_session_s *f, const char *new_dir);
+static void change_dir(struct ftp_session_s *f, char *new_dir);
 static int open_connection(struct ftp_session_s *f);
 static int write_fully(int fd, const char *buf, int buflen);
 static void init_passive_port(void);
@@ -25,7 +25,7 @@ static void netscape_hack(int fd);
 static void set_port(struct ftp_session_s *f, const sockaddr_storage_t *host_port);
 static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t *host_port);
 //static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b);
-static int ip_equal(sockaddr_storage_t *a, sockaddr_storage_t *b);
+static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b);
 static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, const char *file);
 static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, enum file_list_e fle ) ;
 
@@ -178,7 +178,7 @@ void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched) {
     char buf[2048];
     int len;
     struct ftp_command_s cmd;
-    int i;
+    size_t i;
 
     daemon_assert(invariant(f));
     daemon_assert(watched != NULL);
@@ -332,7 +332,6 @@ static void reply(struct ftp_session_s *f, int code, const char *fmt, ...) {
 
 static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     const char *user;
-    char addr_port[ADDRPORT_STRLEN];
 
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
@@ -352,7 +351,6 @@ static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
 
 static void do_pass(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     const char *password;
-    char addr_port[ADDRPORT_STRLEN];
 
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
@@ -414,7 +412,7 @@ static void get_addr_str(const sockaddr_storage_t *s, char *buf, int bufsiz) {
 #endif
 
 static void do_cwd(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
-    const char *new_dir;
+    char *new_dir;
 
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
@@ -436,10 +434,10 @@ static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     daemon_assert(invariant(f));
 }
 
-static void change_dir(struct ftp_session_s *f, const char *new_dir) {
+static void change_dir(struct ftp_session_s *f, char *new_dir) {
     struct cd_parse_s cps ;
 
-    strcpy( cps.buffer, f->dir ) ;
+    strcpy( cps.buffer, (ASCII *)f->dir ) ;
     cps.rest = new_dir ;
     cps.pse = parse_status_init ;
     
@@ -488,7 +486,7 @@ static void set_port(struct ftp_session_s *f, const sockaddr_storage_t *host_por
         reply(f, 500, "After EPSV ALL, only EPSV allowed.");
     } else if (!ip_equal(&f->client_addr, host_port)) {
         reply(f, 500, "Port must be on command channel IP.");
-    } else if (ntohs(SINPORT(host_port)) < IPPORT_RESERVED) {
+    } else if (ntohs(cSINPORT(host_port)) < IPPORT_RESERVED) {
         reply(f, 500, "Port may not be less than 1024, which is reserved.");
     } else {
         /* close any outstanding PASSIVE port */
@@ -514,7 +512,7 @@ static void do_port(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     daemon_assert(cmd->num_arg == 1);
 
     host_port = &cmd->arg[0].host_port;
-    daemon_assert(SSFAM(host_port) == AF_INET);
+    daemon_assert(cSSFAM(host_port) == AF_INET);
 
     set_port(f, host_port);
 
@@ -1355,18 +1353,14 @@ static void netscape_hack(int fd) {
 
 /* compare two addresses to see if they contain the same IP address */
 //static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b) {
-static int ip_equal(sockaddr_storage_t *a, sockaddr_storage_t *b) {
+static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b) {
     daemon_assert(a != NULL);
     daemon_assert(b != NULL);
-    daemon_assert((SSFAM(a) == AF_INET) || (SSFAM(a) == AF_INET6));
-    daemon_assert((SSFAM(b) == AF_INET) || (SSFAM(b) == AF_INET6));
+    daemon_assert((cSSFAM(a) == AF_INET) || (cSSFAM(a) == AF_INET6));
+    daemon_assert((cSSFAM(b) == AF_INET) || (cSSFAM(b) == AF_INET6));
 
-    if (SSFAM(a) != SSFAM(b)) {
-        return 0;
-    }
-    if (memcmp(&SINADDR(a), &SINADDR(b), sizeof(SINADDR(a))) != 0) {
-        return 0;
-    }
+    if (cSSFAM(a) != cSSFAM(b)) return 0 ;
+    if (memcmp(&cSINADDR(a), &cSINADDR(b), sizeof(cSINADDR(a))) != 0) return 0;
     return 1;
 }
 

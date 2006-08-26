@@ -24,7 +24,6 @@ char *alloca ();
 
 static void fdprintf(int fd, const char *fmt, ...);
 static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) ;
-void FileLexParse( struct file_parse_s * fps ) ;
 static void WildLexParse( struct file_parse_s * fps, ASCII * match ) ;
 static char * skip_ls_options(char *filespec) ;
 

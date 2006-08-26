@@ -223,9 +223,9 @@ static void process_data(struct telnet_session_s *t, int wait_flag)
 }
 
 static void read_incoming_data(struct telnet_session_s *t) {
-    size_t read_ret;
+    ssize_t read_ret;
     char buf[BUF_LEN];
-    size_t i;
+    ssize_t i;
 
     /* read as much data as we have buffer space for */
     daemon_assert(max_input_read(t) <= BUF_LEN);
@@ -361,7 +361,7 @@ static void add_outgoing_char(struct telnet_session_s *t, int c) {
 
 
 static void write_outgoing_data(struct telnet_session_s *t) {
-    size_t write_ret;
+    ssize_t write_ret;
 
     if (t->out_take < t->out_add) {
         /* handle a buffer that looks like this:       */

@@ -19,6 +19,7 @@
 /* _x_ must be a pointer to a sockaddr structure */
 
 #define SAFAM(_x_)  (((struct sockaddr *)(_x_))->sa_family)
+#define cSAFAM(_x_)  (((const struct sockaddr *)(_x_))->sa_family)
 
 #ifdef HAVE_NEW_SS_FAMILY
 #define SSFAM(_x_)  (((struct sockaddr_storage *)(_x_))->ss_family)
@@ -32,13 +33,21 @@
 #define SIN4PORT(_x_)   (((struct sockaddr_in *)(_x_))->sin_port)
 #define SIN6ADDR(_x_)   (((struct sockaddr_in6 *)(_x_))->sin6_addr)
 #define SIN6PORT(_x_)   (((struct sockaddr_in6 *)(_x_))->sin6_port)
+#define cSIN4ADDR(_x_)   (((const struct sockaddr_in *)(_x_))->sin_addr)
+#define cSIN4PORT(_x_)   (((const struct sockaddr_in *)(_x_))->sin_port)
+#define cSIN6ADDR(_x_)   (((const struct sockaddr_in6 *)(_x_))->sin6_addr)
+#define cSIN6PORT(_x_)   (((const struct sockaddr_in6 *)(_x_))->sin6_port)
 
 #ifdef INET6
 #define SINADDR(_x_)    ((SAFAM(_x_)==AF_INET6) ? SIN6ADDR(_x_) : SIN4ADDR(_x_))
 #define SINPORT(_x_)    ((SAFAM(_x_)==AF_INET6) ? SIN6PORT(_x_) : SIN4PORT(_x_))
+#define cSINADDR(_x_)    ((cSAFAM(_x_)==AF_INET6) ? cSIN6ADDR(_x_) : cSIN4ADDR(_x_))
+#define cSINPORT(_x_)    ((cSAFAM(_x_)==AF_INET6) ? cSIN6PORT(_x_) : cSIN4PORT(_x_))
 #else
 #define SINADDR(_x_)    SIN4ADDR(_x_)
 #define SINPORT(_x_)    SIN4PORT(_x_)
+#define cSINADDR(_x_)    cSIN4ADDR(_x_)
+#define cSINPORT(_x_)    cSIN4PORT(_x_)
 #endif
 
 #ifndef INET_ADDRSTRLEN

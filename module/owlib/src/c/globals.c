@@ -48,5 +48,7 @@ int32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_
 
 union antiloop Token ;
 
+struct global Global ;
+
 /* Statistics globals are stored in ow_stats.c */
 

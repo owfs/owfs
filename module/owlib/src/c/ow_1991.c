@@ -90,7 +90,7 @@ struct filetype DS1425[] = {
 } ;
 DeviceEntry( 82, DS1425 ) ;
 
-static char global_passwd[3][8] = { "", "", "" };
+static BYTE global_passwd[3][8] = { "", "", "" };
 
 /* ------- Functions ------------ */
 
@@ -175,8 +175,8 @@ static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset ,
 
 static int OW_w_reset_password( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE set_password[3] = { 0x5A, 0x00, 0x00} ;
-    char passwd[8];
-    char ident[8];
+    BYTE passwd[8];
+    BYTE ident[8];
     struct transaction_log tscratch[] = {
         TRXN_START,
         { set_password, NULL, 3, trxn_match } ,
@@ -205,7 +205,7 @@ static int OW_w_reset_password( const BYTE * data , const size_t size , const of
 
 static int OW_w_subkey( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn, const int extension ) {
     BYTE p[4] = { 0x99, 0x00, 0x00, 0x00} ; // write subkey
-    char ident[8];
+    BYTE ident[8];
     struct transaction_log tscratch[] = {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
@@ -259,7 +259,7 @@ static int OW_r_subkey( BYTE * data , const size_t size , const off_t offset, co
 }
 
 static int OW_r_memory( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-  char all_data[0x40];
+  BYTE all_data[0x40];
   int i, ret, nr_bytes;
   size_t left = size;
 
@@ -281,7 +281,7 @@ static int OW_r_memory( BYTE * data , const size_t size , const off_t offset, co
 }
 
 static int OW_w_memory( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-  char all_data[0x40];
+  BYTE all_data[0x40];
   int i, ret, nr_bytes;
   size_t left = size;
 
@@ -310,7 +310,7 @@ static int OW_w_memory( const BYTE * data , const size_t size , const off_t offs
 
 // size and offset already bounds checked
 static int OW_r_ident( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-    char all_data[0x40];
+    BYTE all_data[0x40];
     //printf("OW_r_ident\n");
 
     if ( OW_r_subkey(all_data, 0x40, 0, pn, pn->extension) ) return 1 ;
@@ -322,7 +322,7 @@ static int OW_r_ident( BYTE * data , const size_t size , const off_t offset, con
 static int OW_w_ident( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE write_scratch[3] = { 0x96, 0x00, 0x00 } ;
     BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
-    char all_data[0x40];
+    BYTE all_data[0x40];
     struct transaction_log tscratch[] = {
         TRXN_START,
         { write_scratch, NULL, 3, trxn_match } ,
@@ -357,7 +357,7 @@ static int OW_w_ident( const BYTE * data , const size_t size , const off_t offse
 static int OW_w_change_password( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE write_scratch[3] = { 0x96, 0x00, 0x00 } ;
     BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
-    char all_data[0x40];
+    BYTE all_data[0x40];
     struct transaction_log tscratch[] = {
         TRXN_START,
         { write_scratch, NULL, 3, trxn_match } ,
@@ -390,7 +390,7 @@ static int OW_w_change_password( const BYTE * data , const size_t size , const o
 }
 
 static int OW_r_page( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-    char all_data[0x40];
+    BYTE all_data[0x40];
     int ret ;
 
     if(offset > 0x2F) return -EINVAL;
@@ -404,7 +404,7 @@ static int OW_r_page( BYTE * data , const size_t size , const off_t offset, cons
 }
 
 static int OW_w_page( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-    BYTE write_scratch[3] = { 0x96, 0xC0, ~(0xC0) } ;
+    BYTE write_scratch[3] = { 0x96, 0xC0, (0xFF^0xC0) } ;
     BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 } ;
     BYTE all_data[0x40];
     int i, nr_bytes ;
@@ -423,7 +423,7 @@ static int OW_w_page( const BYTE * data , const size_t size , const off_t offset
         TRXN_END,
     } ;
 
-
+    (void) offset ; // to suppress compiler warning
     if(size > 0x30) {
         //printf("size > 0x30\n");
         return 1;

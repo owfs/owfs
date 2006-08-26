@@ -193,7 +193,7 @@ static int FS_Humid(FLOAT * H , const struct parsedname * pn) {
  *      humidity in percent.
  */
 static int FS_Humid_1735(FLOAT * H , const struct parsedname * pn) {
-    FLOAT T,VAD,VDD ;
+    FLOAT VAD ;
     if ( OW_volts( &VAD , 0 , pn ) ) return -EINVAL ;
     H[0]  = 38.92 * VAD - 41.98;
 

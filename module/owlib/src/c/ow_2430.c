@@ -58,7 +58,7 @@ struct filetype DS2430A[] = {
     F_STANDARD   ,
     {"memory"    ,    16,  NULL,   ft_binary, fc_stable  , {b:FS_r_memory}, {b:FS_w_memory}, {v:NULL}, } ,
     {"application",    8,  NULL,   ft_binary, fc_stable  , {b:FS_r_application}, {b:FS_w_application}, {v:NULL}, } ,
-    {"lock"      ,     1,  NULL,    ft_yesno, fc_stable  , {b:FS_r_lock}  , {v:NULL}       , {v:NULL}, } ,
+    {"lock"      ,     1,  NULL,    ft_yesno, fc_stable  , {y:FS_r_lock}  , {v:NULL}       , {v:NULL}, } ,
 } ;
 DeviceEntry( 14, DS2430A ) ;
 
@@ -111,7 +111,7 @@ static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset ,
     struct transaction_log twrite[] = {
         TRXN_START ,
         { of, NULL, 2, trxn_match },
-        { NULL, data, size, trxn_match },
+        { data, NULL, size, trxn_match },
         TRXN_END,
     } ;
     BYTE ver[16] ;
@@ -154,7 +154,7 @@ static int OW_w_app( const BYTE * data , const size_t size, const off_t offset ,
     struct transaction_log twrite[] = {
         TRXN_START ,
         { of, NULL, 2, trxn_match },
-        { NULL, data, size, trxn_match },
+        { data, NULL, size, trxn_match },
         TRXN_END,
     } ;
     BYTE ver[9] ;

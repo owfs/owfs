@@ -62,31 +62,20 @@ static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s);
 
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 {
-    int i;
-    int len;
-    int match;
+    size_t match;
     struct ftp_command_s tmp;
     int c;
     const char *optional_number;
 
-    daemon_assert(input != NULL);
-    daemon_assert(cmd != NULL);
+    if ( input==NULL || cmd==NULL ) return 0 ;
 
     /* see if our input starts with a valid command */
-    match = -1;
-    for (i=0; (i<NUM_COMMAND) && (match == -1); i++) {
-        len = strlen(command_def[i].name);
-        if (strncasecmp(input, command_def[i].name, len) == 0) {
-	    match = i;
-	}
+    for (match=0 ; match < NUM_COMMAND ; ++match ) {
+        if (strncasecmp(input, command_def[match].name, strlen(command_def[match].name)) == 0) break ;
     }
 
     /* if we didn't find a match, return error */
-    if (match == -1) {
-        return 0;
-    }
-    daemon_assert(match >= 0);
-    daemon_assert(match < NUM_COMMAND);
+    if ( match == NUM_COMMAND ) return 0 ;
 
     /* copy our command */
     strcpy(tmp.command, command_def[match].name);
@@ -96,72 +85,50 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 
     /* now act based on the command */
     switch (command_def[match].arg_type) {
-
         case ARG_NONE:
-	    tmp.num_arg = 0;
-	    break;
-
+            tmp.num_arg = 0;
+            break;
         case ARG_STRING:
-	    if (*input != ' ') {
-	        return 0;
-	    }
+            if (*input != ' ') return 0 ;
             ++input;
             input = copy_string(tmp.arg[0].string, input);
-	    tmp.num_arg = 1;
-	    break;
-
-        case ARG_OPTIONAL_STRING:
-	    if (*input == ' ') {
-	        ++input;
-	        input = copy_string(tmp.arg[0].string, input);
-	        tmp.num_arg = 1;
-	    } else {
-	        tmp.num_arg = 0;
-	    }
-	    break;
-
-        case ARG_HOST_PORT:
-	    if (*input != ' ') {
-	        return 0;
-	    }
-	    input++;
-
-            /* parse the host & port information (if any) */
-	    input = parse_host_port(&tmp.arg[0].host_port, input);
-	    if (input == NULL) {
-	        return 0;
-	    }
-	    tmp.num_arg = 1;
-	    break;
-
-       case ARG_HOST_PORT_LONG:
-            if (*input != ' ') {
-                return 0;
-            }
-            input++;
- 
-            /* parse the host & port information (if any) */
-            input = parse_host_port_long(&tmp.arg[0].host_port, input);
-            if (input == NULL) {
-                return 0;
-            }
-            tmp.num_arg = 1;
-            break;    
-
-        case ARG_HOST_PORT_EXT:
-            if (*input != ' ') {
-                return 0;
-            }
-            input++;
- 
-            /* parse the host & port information (if any) */
-            input = parse_host_port_ext(&tmp.arg[0].host_port, input);
-            if (input == NULL) {
-                return 0;
-            }
             tmp.num_arg = 1;
             break;
- 
+        case ARG_OPTIONAL_STRING:
+            if (*input == ' ') {
+                ++input;
+                input = copy_string(tmp.arg[0].string, input);
+                tmp.num_arg = 1;
+            } else {
+                tmp.num_arg = 0;
+            }
+            break;
+        case ARG_HOST_PORT:
+            if (*input != ' ') {
+                return 0;
+            }
+            input++;
+            /* parse the host & port information (if any) */
+            input = parse_host_port(&tmp.arg[0].host_port, input);
+            if (input == NULL) return 0 ;
+            tmp.num_arg = 1;
+            break;
+       case ARG_HOST_PORT_LONG:
+            if (*input != ' ') return 0 ;
+            input++; 
+            /* parse the host & port information (if any) */
+            input = parse_host_port_long(&tmp.arg[0].host_port, input);
+            if (input == NULL) return 0 ;
+            tmp.num_arg = 1;
+            break;
+        case ARG_HOST_PORT_EXT:
+            if (*input != ' ') return 0 ;
+            input++;
+            /* parse the host & port information (if any) */
+            input = parse_host_port_ext(&tmp.arg[0].host_port, input);
+            if (input == NULL) return 0 ;
+            tmp.num_arg = 1;
+            break;
         /* the optional number may also be "ALL" */
         case ARG_OPTIONAL_NUMBER:
             if (*input == ' ') {
@@ -174,7 +141,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
                         (tolower(input[1]) == 'l') &&
                         (tolower(input[2]) == 'l')) 
                     {
-			tmp.arg[0].num = EPSV_ALL;
+                        tmp.arg[0].num = EPSV_ALL;
                         input += 3;
                     } else {
                         return 0;
@@ -184,105 +151,77 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
             } else {
                 tmp.num_arg = 0;
             }
-            break;     
-
+            break;
         case ARG_TYPE:
-	    if (*input != ' ') {
-	        return 0;
-	    }
-	    input++;
-
+            if (*input != ' ') {
+                return 0;
+            }
+            input++;
             c = toupper(*input);
             if ((c == 'A') || (c == 'E')) {
-	        tmp.arg[0].string[0] = c;
-		tmp.arg[0].string[1] = '\0';
-		input++;
-
-		if (*input == ' ') {
-		    input++;
-		    c = toupper(*input);
-		    if ((c != 'N') && (c != 'T') && (c != 'C')) {
-		        return 0;
-		    }
-		    tmp.arg[1].string[0] = c;
-		    tmp.arg[1].string[1] = '\0';
-		    input++;
-		    tmp.num_arg = 2;
-		} else {
-		    tmp.num_arg = 1;
-		}
-	    } else if (c == 'I') {
-	        tmp.arg[0].string[0] = 'I';
-	        tmp.arg[0].string[1] = '\0';
-		input++;
-	        tmp.num_arg = 1;
-	    } else if (c == 'L') {
-	        tmp.arg[0].string[0] = 'L';
-	        tmp.arg[0].string[1] = '\0';
-		input++;
-		input = parse_number(&tmp.arg[1].num, input, 255);
-		if (input == NULL) {
-		    return 0;
-		}
-	        tmp.num_arg = 2;
-	    } else {
-	        return 0;
-	    }
-
-	    break;
-
+                tmp.arg[0].string[0] = c;
+                tmp.arg[0].string[1] = '\0';
+                input++;
+                if (*input == ' ') {
+                    input++;
+                    c = toupper(*input);
+                    if ((c != 'N') && (c != 'T') && (c != 'C')) return 0 ;
+                    tmp.arg[1].string[0] = c;
+                    tmp.arg[1].string[1] = '\0';
+                    input++;
+                    tmp.num_arg = 2;
+                } else {
+                    tmp.num_arg = 1;
+                }
+                } else if (c == 'I') {
+                    tmp.arg[0].string[0] = 'I';
+                    tmp.arg[0].string[1] = '\0';
+                    input++;
+                    tmp.num_arg = 1;
+                } else if (c == 'L') {
+                    tmp.arg[0].string[0] = 'L';
+                    tmp.arg[0].string[1] = '\0';
+                    input++;
+                    input = parse_number(&tmp.arg[1].num, input, 255);
+                    if (input == NULL) return 0 ;
+                    tmp.num_arg = 2;
+                } else {
+                    return 0;
+                }
+                break;
         case ARG_STRUCTURE:
-	    if (*input != ' ') {
-	        return 0;
-	    }
-	    input++;
-
-            c = toupper(*input);
-	    if ((c != 'F') && (c != 'R') && (c != 'P')) {
-	        return 0;
-	    }
+            if (*input != ' ') return 0;
             input++;
-	    tmp.arg[0].string[0] = c;
-	    tmp.arg[0].string[1] = '\0';
-	    tmp.num_arg = 1;
-	    break;
-
+            c = toupper(*input);
+            if ((c != 'F') && (c != 'R') && (c != 'P')) return 0 ;
+            input++;
+            tmp.arg[0].string[0] = c;
+            tmp.arg[0].string[1] = '\0';
+            tmp.num_arg = 1;
+            break;
         case ARG_MODE:
-	    if (*input != ' ') {
-	        return 0;
-	    }
-	    input++;
-
-            c = toupper(*input);
-	    if ((c != 'S') && (c != 'B') && (c != 'C')) {
-	        return 0;
-	    }
+            if (*input != ' ') return 0 ;
             input++;
-	    tmp.arg[0].string[0] = c;
-	    tmp.arg[0].string[1] = '\0';
-	    tmp.num_arg = 1;
-	    break;
-
+            c = toupper(*input);
+            if ((c != 'S') && (c != 'B') && (c != 'C')) return 0 ;
+            input++;
+            tmp.arg[0].string[0] = c;
+            tmp.arg[0].string[1] = '\0';
+            tmp.num_arg = 1;
+            break;
         case ARG_OFFSET:
-	    if (*input != ' ') {
-	        return 0;
-	    }
-	    input++;
-	    input = parse_offset(&tmp.arg[0].offset, input);
-	    if (input == NULL) {
-	        return 0;
-	    }
-	    tmp.num_arg = 1;
-	    break;
-
+            if (*input != ' ') return 0 ;
+            input++;
+            input = parse_offset(&tmp.arg[0].offset, input);
+            if (input == NULL) return 0 ;
+            tmp.num_arg = 1;
+            break;
         default:
-	    daemon_assert(0);
+            daemon_assert(0);
     } 
 
     /* check for our ending newline */
-    if (*input != '\n') {
-        return 0;
-    }
+    if (*input != '\n') return 0 ;
 
     /* return our result */
     *cmd = tmp;
@@ -320,20 +259,14 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
     /* scan in 5 pairs of "#," */
     for (i=0; i<5; i++) {
         s = parse_number(&octets[i], s, 255);
-	if (s == NULL) {
-	    return NULL;
-	}
-	if (*s != ',') {
-	    return NULL;
-	}
-	s++;
+        if (s == NULL) return NULL;
+        if (*s != ',') return NULL;
+        s++;
     }
 
     /* scan in ending "#" */
     s = parse_number(&octets[5], s, 255);
-    if (s == NULL) {
-        return NULL;
-    }
+    if (s == NULL) return NULL;
 
     daemon_assert(octets[0] >= 0);
     daemon_assert(octets[0] <= 255);
@@ -354,7 +287,7 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
     }
 #else
     in_addr.s_addr = inet_addr(addr_str);
-    if (in_addr.s_addr == -1) {
+    if (in_addr.s_addr == (in_addr_t)-1) {
         return NULL;
     }
 #endif
@@ -400,15 +333,15 @@ static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s)
 
     /* parse address */
     for (i=0; i<addr_len; i++) {
-	daemon_assert(i < sizeof(addr)/sizeof(addr[0]));
+        //daemon_assert(i < sizeof(addr)/sizeof(addr[0]));
         s = parse_number(&tmp, s, 255);
-	addr[i] = tmp;
-	if (s == NULL) {
-	    return NULL;
-	}
-	if (*s != ',') {
-	    return NULL;
-	}
+        addr[i] = tmp;
+        if (s == NULL) {
+            return NULL;
+        }
+        if (*s != ',') {
+            return NULL;
+        }
         s++;
     }
 
@@ -421,37 +354,37 @@ static const char *parse_host_port_long(sockaddr_storage_t *sa, const char *s)
     /* parse port */
     for (i=0; i<port_len; i++) {
         if (*s != ',') {
-	    return NULL;
-	}
-	s++;
-	daemon_assert(i < sizeof(port)/sizeof(port[0]));
-	s = parse_number(&tmp, s, 255);
+            return NULL;
+        }
+        s++;
+        //daemon_assert(i < sizeof(port)/sizeof(port[0]));
+        s = parse_number(&tmp, s, 255);
         port[i] = tmp;
     }
 
     /* okay, everything parses, load the address if possible */
     if (family == 4) {
         SAFAM(sa) = AF_INET;
-	if (addr_len != sizeof(struct in_addr)) {
-	    return NULL;
-	}
-	if (port_len != 2) {
-	    return NULL;
-	}
-	memcpy(&SINADDR(sa), addr, addr_len);
-	SINPORT(sa) = htons((port[0] << 8) + port[1]);
+        if (addr_len != sizeof(struct in_addr)) {
+            return NULL;
+        }
+        if (port_len != 2) {
+            return NULL;
+        }
+        memcpy(&SINADDR(sa), addr, addr_len);
+        SINPORT(sa) = htons((port[0] << 8) + port[1]);
     }
 #ifdef INET6
     else if (family == 6) {
         SAFAM(sa) = AF_INET6;
-	if (addr_len != sizeof(struct in6_addr)) {
-	    return NULL;
-	}
-	if (port_len != 2) {
-	    return NULL;
-	}
-	memcpy(&SIN6ADDR(sa), addr, addr_len);
-	SINPORT(sa) = htons((port[0] << 8) + port[1]);
+        if (addr_len != sizeof(struct in6_addr)) {
+            return NULL;
+        }
+        if (port_len != 2) {
+            return NULL;
+        }
+        memcpy(&SIN6ADDR(sa), addr, addr_len);
+        SINPORT(sa) = htons((port[0] << 8) + port[1]);
     }
 #endif
     else {
@@ -467,7 +400,7 @@ static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s)
     int delimeter;
     int family;
     char *p;
-    int len;
+    ssize_t len;
     char addr_str[256];
     int port;
 
@@ -502,7 +435,7 @@ static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s)
         return NULL;
     }
     len = p - s;
-    if (len >= sizeof(addr_str)) {
+    if (len >= (ssize_t)sizeof(addr_str)) {
         return NULL;
     }
     memcpy(addr_str, s, len);
@@ -530,7 +463,7 @@ static const char *parse_host_port_ext(sockaddr_storage_t *sa, const char *s)
         }
 #else
         in_addr.s_addr = inet_addr(addr_str);
-        if (in_addr.s_addr == -1) {
+        if (in_addr.s_addr == (in_addr_t)-1) {
             return NULL;
         }
 #endif /* HAVE_INET_ATON */

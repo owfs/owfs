@@ -226,6 +226,11 @@ unsigned long int usec_read = 500000 ;
 /* return 0 if ok */
 int owopt( const int c , const char * arg, enum opt_program op ) {
     static int config_depth = 0 ;
+    static int global_zero = 1 ;
+    if ( global_zero ) {
+        global_zero = 0 ;
+        memset( &Global, 0, sizeof(struct global) ) ;
+    }
     switch (c) {
     case 'c':
         if ( config_depth > 4 ) {
