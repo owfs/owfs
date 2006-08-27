@@ -64,7 +64,7 @@ void owtcl_ErrorMsg(Tcl_Interp *interp, const char *format, ...)
 owtcl_ObjCmdProc(Owtcl_Connect)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-  char *con_str, *arg;
+  char *arg;
   int con_len;
   int tcl_return = TCL_OK;
   owtcl_ArgObjIncr;
@@ -84,7 +84,7 @@ owtcl_ObjCmdProc(Owtcl_Connect)
     goto common_exit;
   }
 
-  LibSetup();
+  LibSetup(opt_tcl);
   delay_background = 1 ;
 
   for (objix=1; objix<objc; objix++) {
@@ -166,6 +166,11 @@ owtcl_ObjCmdProc(Owtcl_Connect)
 owtcl_ObjCmdProc(Owtcl_Delete)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
+
+  (void) interp ; // suppress compiler warning
+  (void) objc ; // suppress compiler warning
+  (void) objv ; // suppress compiler warning
+
   if (OwtclStatePtr->used)
     LibClose();
   OwtclStatePtr->used = 0;
@@ -179,7 +184,7 @@ owtcl_ObjCmdProc(Owtcl_Put)
   int path_len, value_len, r;
   int tcl_return = TCL_OK;
   owtcl_ArgObjIncr;
-
+  
   if (OwtclStatePtr->used == 0) {
     Tcl_AppendResult(interp, "owtcl not connected.", NULL);
     tcl_return = TCL_ERROR;
@@ -311,6 +316,12 @@ owtcl_ObjCmdProc(Owtcl_Version)
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
   char buf[128];
   Tcl_Obj *resultPtr;
+
+
+  (void) OwtclStatePtr ; // suppress compiler warning
+  (void) objc ; // suppress compiler warning
+  (void) objv ; // suppress compiler warning
+
   sprintf(buf, "owtcl:\t%s\nlibow:\t%s", OWTCL_VERSION, VERSION);
   resultPtr = Tcl_NewStringObj(buf, -1);
   Tcl_SetObjResult(interp, resultPtr);
