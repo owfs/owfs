@@ -192,7 +192,7 @@ static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp
         sp->tokenstring = (BYTE *) p ;
         sp->tokens = Servertokens(sm->version) ;
         for ( i=0 ; i<sp->tokens ; ++i, p+=sizeof(union antiloop) ) {
-            if ( memcmp( p, &Token, sizeof(union antiloop))==0 ) {
+            if ( memcmp( p, &(Global.Token), sizeof(union antiloop))==0 ) {
                 free(msg) ;
                 sm->type = msg_error ;
                 LEVEL_DEBUG("owserver loop suppression\n") ;
@@ -544,15 +544,11 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
 int main( int argc , char ** argv ) {
     int c ;
 
-    /* grab our executable name */
-    if (argc > 0) progname = strdup(argv[0]);
-
-    /* Flag for server access to the library */
-    server_mode = 1 ; // set in owserver to 1
-
     /* Set up owlib */
-    LibSetup() ;
+    LibSetup(opt_server) ;
     
+    /* grab our executable name */
+    if (argc > 0) Global.progname = strdup(argv[0]);
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -563,7 +559,7 @@ int main( int argc , char ** argv ) {
         default:
             break;
         }
-        if ( owopt(c,optarg,opt_server) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
@@ -599,14 +595,13 @@ int main( int argc , char ** argv ) {
     /* Set up "Antiloop" -- a unique token */
     SetupAntiloop() ;
 
-    ServerProcess( Handler, opt_server, ow_exit ) ;
+    ServerProcess( Handler, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }
 
 static void SetupAntiloop( void ) {
     struct tms t ;
-    bzero( &Token, sizeof(union antiloop) ) ;
-    Token.simple.pid = getpid() ;
-    Token.simple.clock = times(&t) ;
+    Global.Token.simple.pid = getpid() ;
+    Global.Token.simple.clock = times(&t) ;
 }

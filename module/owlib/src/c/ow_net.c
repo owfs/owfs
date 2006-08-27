@@ -270,7 +270,6 @@ struct serverprocessstruct {
     struct connection_out * out ;
     void (*HandlerRoutine)(int fd) ;
     void (*Exit)(int errcode) ;
-    enum opt_program opt ;
 } ;
 
 static void * ServerProcessAccept( void * vp ) {
@@ -314,12 +313,12 @@ static void * ServerProcessOut( void * vp ) {
         LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(sps->out->name),sps->out->index) ;
         (sps->Exit)(1) ;
     }
-    OW_Announce( sps->out, sps->opt ) ;
+    OW_Announce( sps->out ) ;
     ServerProcessAccept( vp ) ;
     return NULL ;
 }
 
-void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (*Exit)(int errcode) ) {
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct serverprocessstruct * sps ;
     struct connection_out * out = outdevice ;
     int i ;
@@ -342,7 +341,6 @@ void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (
         sps[i].out = out ;
         sps[i].HandlerRoutine = HandlerRoutine ;
         sps[i].Exit = Exit ;
-        sps[i].opt = opt ;
         if ( pthread_create(&thread, NULL, ServerProcessOut, (void *)(&(sps[i])) ) ) {
             ERROR_CONNECT("Could not create a thread for %s\n",SAFESTRING(sps[i].out->name)) ;
             Exit(1) ;
@@ -358,7 +356,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (
 
 #else /* OW_MT */
 
-void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (*Exit)(int errcode) ) {
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     if ( outdevices==0 ) {
         LEVEL_CONNECT("Not output device (port) specified. Exiting.\n") ;
         Exit(1) ;
@@ -370,7 +368,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (
         Exit(1) ;
     } else {
 #if OW_ZERO        
-        OW_Announce( outdevice, opt ) ;
+        OW_Announce( outdevice ) ;
 #endif /* OW_ZERO */
         while (1) {
             int acceptfd=accept(outdevice->fd,NULL,NULL) ;

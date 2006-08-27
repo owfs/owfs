@@ -402,7 +402,7 @@ struct connection_in *find_connection_in(int nr);
 
 #if OW_ZERO
 /* Bonjour registration */
-void OW_Announce( struct connection_out * out, enum opt_program opt ) ;
+void OW_Announce( struct connection_out * out ) ;
 #endif /* OW_ZERO */
 
 /* Low-level functions

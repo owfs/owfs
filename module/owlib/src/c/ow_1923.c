@@ -103,43 +103,34 @@ struct aggregate A1923h = { 63, ag_numbers, ag_mixed, } ;
 struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, } ;
 struct filetype DS1923[] = {
     F_STANDARD          ,
-    {"pages"                ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"pages/page"           , 32,&A1923p,  ft_binary,   fc_stable, {b:FS_r_page}       , {b:FS_w_page}      , NULL, } ,
-
-
-    {"temperature"      ,  12, NULL , ft_temperature   , fc_volatile, {f:FS_r_temperature}     , {v:NULL}        , NULL      , } ,
-    {"humidity"         ,  12, NULL , ft_float   , fc_volatile, {f:FS_r_humid}    , {v:NULL}        , NULL      , } ,
-
-    {"clock"                ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
-    {"clock/date"           , 24,   NULL,    ft_date,   fc_second, {d:FS_r_date}       , {d:FS_w_date}      , NULL, } ,
-    {"clock/udate"          , 12,   NULL,ft_unsigned,   fc_second, {u:FS_r_counter}    , {u:FS_w_counter}   , NULL, } ,
+    {"pages"                ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , {v:NULL}, } ,
+    {"pages/page"           , 32,&A1923p,  ft_binary,   fc_stable, {b:FS_r_page}       , {b:FS_w_page}      , {v:NULL}, } ,
+    {"temperature"      ,  12, NULL , ft_temperature   , fc_volatile, {f:FS_r_temperature}     , {v:NULL}        , {v:NULL}      , } ,
+    {"humidity"         ,  12, NULL , ft_float   , fc_volatile, {f:FS_r_humid}    , {v:NULL}        , {v:NULL}      , } ,
+    {"clock"                ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , {v:NULL}, } ,
+    {"clock/date"           , 24,   NULL,    ft_date,   fc_second, {d:FS_r_date}       , {d:FS_w_date}      , {v:NULL}, } ,
+    {"clock/udate"          , 12,   NULL,ft_unsigned,   fc_second, {u:FS_r_counter}    , {u:FS_w_counter}   , {v:NULL}, } ,
     {"clock/running"        ,  1,   NULL,   ft_yesno,   fc_stable, {y:FS_rbitread}     , {y:FS_rbitwrite}   , {v:&BitReads[2]}, } ,
-
 #if 0
     /* Just test functions */
-    {"running"        ,  1,   NULL,    ft_yesno,  fc_stable, {y:FS_r_run}        , {y:FS_w_run}       , NULL, } ,
-    {"memory"               ,512,   NULL,  ft_binary,   fc_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , NULL, } ,
-    {"clearmem"             ,1,   NULL,  ft_binary,   fc_stable, {b:FS_clearmem}        , {v:NULL}  , NULL, } ,
-    {"enableosc"             ,1,   NULL,  ft_binary,   fc_stable, {b:FS_enable_osc}        , {v:NULL}  , NULL, } ,
-    
+    {"running"        ,  1,   NULL,    ft_yesno,  fc_stable, {y:FS_r_run}        , {y:FS_w_run}       , {v:NULL}, } ,
+    {"memory"               ,512,   NULL,  ft_binary,   fc_stable, {b:FS_r_mem}        , {b:FS_w_mem}       , {v:NULL}, } ,
+    {"clearmem"             ,1,   NULL,  ft_binary,   fc_stable, {b:FS_clearmem}        , {v:NULL}  , {v:NULL}, } ,
+    {"enableosc"             ,1,   NULL,  ft_binary,   fc_stable, {b:FS_enable_osc}        , {v:NULL}  , {v:NULL}, } ,
 #endif
-
-    {"mission"              ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , NULL, } ,
+    {"mission"              ,  0,   NULL,  ft_subdir, fc_volatile, {v:NULL}            , {v:NULL}           , {v:NULL}, } ,
     {"mission/running"      ,  1,   NULL,   ft_yesno, fc_volatile, {y:FS_bitread}      , {y:FS_w_mip}       , {v:&BitReads[0]}, } ,
     {"mission/rollover"     ,  1,   NULL,   ft_yesno,   fc_stable, {y:FS_bitread}      , {y:FS_bitwrite}    , {v:&BitReads[1]}, } ,
-    {"mission/delay"        , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
+    {"mission/delay"        , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , {v:NULL}, } ,
     {"mission/samplingtemp"     ,  1,   NULL,   ft_yesno, fc_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[3]}, } ,
     {"mission/samplinghumidity"     ,  1,   NULL,   ft_yesno, fc_volatile, {y:FS_bitread}      , {v:NULL}           , {v:&BitReads[4]}, } ,
-
-
 #if 0
-    {"mission/frequency"    ,  1,   NULL,   ft_yesno, fc_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, NULL, } ,
+    {"mission/frequency"    ,  1,   NULL,   ft_yesno, fc_volatile, {u:FS_r_samplerate} , {u:FS_w_samplerate}, {v:NULL}, } ,
     {"mission/samples"      , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_3byte}      , {v:NULL}           , {s:0x021A}, } ,
-    {"mission/delay"        , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , NULL, } ,
-    {"mission/date"         , 24,   NULL,    ft_date, fc_volatile, {d:FS_mdate}        , {v:NULL}           , NULL, } ,
-    {"mission/easystart"    , 12,   NULL,ft_unsigned,   fc_stable, {v:NULL}            , {u:FS_easystart}   , NULL, } ,
+    {"mission/delay"        , 12,   NULL,ft_unsigned, fc_volatile, {u:FS_r_delay}      , {u:FS_w_delay}     , {v:NULL}, } ,
+    {"mission/date"         , 24,   NULL,    ft_date, fc_volatile, {d:FS_mdate}        , {v:NULL}           , {v:NULL}, } ,
+    {"mission/easystart"    , 12,   NULL,ft_unsigned,   fc_stable, {v:NULL}            , {u:FS_easystart}   , {v:NULL}, } ,
 #endif
-
 } ;
 DeviceEntryExtended( 41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume ) ;
 
@@ -202,6 +193,7 @@ static int FS_w_delay( const UINT * u , const struct parsedname * pn) {
 
 /* Just a test-function */
 static int FS_enable_osc(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    (void) offset ; // to quash compiler noise
 #if 0
   /* Just write to address without any check */
     BYTE d = 0x01 ;
@@ -220,7 +212,8 @@ static int FS_enable_osc(BYTE *buf, const size_t size, const off_t offset , cons
 }
 
 static int FS_clearmem(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-  memset(buf, 0, 1);
+    (void) offset ; // to quash compiler noise
+    memset(buf, 0, 1);
     if ( OW_clearmemory( pn ) ) return -EINVAL ;
     return size ;
 }
@@ -480,7 +473,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
     int ret ;
     int i ;
 
-    printf("OW_w_mem: size=%d offset=%X rest=%d\n", size, offset, rest);
+    LEVEL_DEBUG("OW_w_mem: size=%ld offset=%X rest=%ld\n", size, offset, rest);
       
     memset(passwd, 0xFF, 8) ; // dummy password
 
@@ -623,7 +616,7 @@ static int OW_clearmemory( const struct parsedname * pn ) {
       printf("error2\n");
       return ret;
     }
-    printf("Read 0x0215: MEMCLR=%d %02X\n", (r&0x08 ? 1:0), r);
+    LEVEL_DEBUG("Read 0x0215: MEMCLR=%d %02X\n", (r&0x08 ? 1:0), r);
 
     return 0;
 }
@@ -632,7 +625,6 @@ static int OW_clearmemory( const struct parsedname * pn ) {
 static int OW_flush( const struct parsedname * pn, int lock ) {
   int i = 0;
   int ret ;
-  BYTE p ;
   
   if(lock) BUSLOCK(pn);
   do {
@@ -658,14 +650,12 @@ static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const
     int rest = 32 - (offset&0x1F) ;
     BYTE passwd[8] ;
     int ret ;
-    int i, j;
+    int i;
 
     memset(passwd, 0xFF, 8) ;  // dummy password
     memset(data, 0, size); // clear output
 
-    printf("OW_r_mem: size=%X offset=%X  %02X %02X %02X\n", size, offset,
-	   p[0], p[1], p[2]);
-
+    printf("OW_r_mem: size=%lX offset=%lX  %02X %02X %02X\n", size, offset,p[0], p[1], p[2]);
 
     BUSLOCK(pn);
 #if 0
@@ -752,7 +742,6 @@ static void OW_date(const DATE * d , BYTE * data) {
 
 static int OW_force_conversion( const UINT delay, const struct parsedname * pn ) {
     BYTE t[2] = { 0x55, 0xFF } ;
-    BYTE cr ;
     int ret = 0 ;
 
     if(OW_oscillator(1, pn)) {

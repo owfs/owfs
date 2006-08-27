@@ -15,23 +15,23 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-void ow_help( enum opt_program op ) {
+void ow_help( void ) {
     printf(
     "1-wire access programs\n"
     "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
     "\n"
     ) ;
-    switch(op) {
+    switch(Global.opt) {
     case opt_owfs:
-        printf("Syntax: %s [options] device mountpoint\n",progname);
+        printf("Syntax: %s [options] device mountpoint\n",SAFESTRING(Global.progname));
         break ;
     case opt_httpd:
     case opt_server:
-        printf("Syntax: %s [options] device clientport\n",progname);
+        printf("Syntax: %s [options] device clientport\n",SAFESTRING(Global.progname));
         break ;
     case opt_ftpd:
     default:
-        printf("Syntax: %s [options] device\n",progname);
+        printf("Syntax: %s [options] device\n",SAFESTRING(Global.progname));
         break ;
     }
     printf(
@@ -47,7 +47,7 @@ void ow_help( enum opt_program op ) {
     "                                 |  e.g: -s embeddedhost:3030\n"
     "\n"
     ) ;
-    switch(op) {
+    switch(Global.opt) {
     case opt_owfs:
         printf(
         "\n"
@@ -74,7 +74,7 @@ void ow_help( enum opt_program op ) {
     ) ;
 }
 
-void ow_morehelp( enum opt_program op ) {
+void ow_morehelp( void ) {
     printf(
     "1-wire access programs\n"
     "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
@@ -105,7 +105,7 @@ void ow_morehelp( enum opt_program op ) {
     "     --msec_read                 | millisecond timeout for reads on bus (serial and i2c)\n"
     "  -V --version                   |Program and library versions\n"
     ) ;
-    switch(op) {
+    switch(Global.opt) {
     case opt_owfs:
         printf(
         "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"

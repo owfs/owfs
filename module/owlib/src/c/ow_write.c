@@ -144,7 +144,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             if ( r < 0 ) {
                 memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
                 STAT_ADD1(write_tries[1]) ;
-                if ( server_mode ) {
+                if ( Global.opt==opt_server ) { // called from owserver
                     Cache_Del_Device( pn ) ;
                 } else if ( pn->state & pn_buspath ) {
                     r = TestConnection(pn) ? -ECONNABORTED : FS_write_seek( buf, size, offset, pn ) ;
@@ -161,7 +161,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 
             /* Third try */
             /* if not a specified bus, relook for chip location */
-            if ( !server_mode && (r < 0) ) {
+            if ( (Global.opt!=opt_server) && (r < 0) ) {
                 STAT_ADD1(write_tries[2]) ;
                 if ( pn->state & pn_buspath ) {
                     r = TestConnection(pn) ? -ECONNABORTED : FS_write_seek( buf, size, offset, pn ) ;

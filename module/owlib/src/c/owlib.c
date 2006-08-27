@@ -18,12 +18,13 @@ $Id$
 int now_background = 0 ;
 int delay_background = 0 ; // special flag set by owfs -- fuse backgrounds for us
 char * SimpleBusName = "None" ;
-/* Flag for server access to the library */
-int server_mode = 0 ; // set in owserver to 1
-
 
 /* All ow library setup */
-void LibSetup( void ) {
+void LibSetup( enum opt_program opt ) {
+    // global structure of configuration parameters
+    memset( &Global, 0, sizeof(struct global) ) ;
+    Global.opt = opt ;
+
     /* special resort in case static data (devices and filetypes) not properly sorted */
     DeviceSort() ;
 
@@ -180,7 +181,7 @@ int LibStart( void ) {
 #endif /* __UCLIBC__ */
 
     if ( indevice==NULL ) {
-        LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",progname) ;
+    LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",SAFESTRING(Global.progname)) ;
         BadAdapter_detect(NewIn(NULL)) ;
         return 1;
     }
@@ -301,9 +302,8 @@ void LibClose( void ) {
     }
 #endif /* OW_MT */
 
-    if ( progname && progname[0] ) {
-        free(progname) ;
-        progname = NULL ;
+    if ( Global.progname ) {
+        free(Global.progname) ;
     }
     LEVEL_CALL("Finished Library cleanup\n");
 }

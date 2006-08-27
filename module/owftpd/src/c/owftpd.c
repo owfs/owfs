@@ -14,21 +14,17 @@ int main(int argc, char *argv[]) {
     sigset_t term_signal;
     int sig;
 
+    /* Set up owlib */
+    LibSetup(opt_ftpd) ;
+
     /* grab our executable name */
-    if ( argc>0 ) progname = strdup(argv[0]) ;
+    if ( argc>0 ) Global.progname = strdup(argv[0]) ;
 
     /* default command-line arguments */
     max_clients = MAX_CLIENTS;
     ftp_timeout = INACTIVITY_TIMEOUT ;
+    
     /* check our command-line arguments */
-    /* grab our executable name */
-    if ( argc>0 ) progname = strdup(argv[0]) ;
-
-    //mtrace() ;
-    /* Set up owlib */
-    LibSetup() ;
-
-    /* process command line arguments */
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
             case 'V':
@@ -36,7 +32,7 @@ int main(int argc, char *argv[]) {
                         "%s version:\n\t" VERSION "\n",argv[0] ) ;
                 break ;
         }
-        if ( owopt(c,optarg,opt_ftpd) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
 
     /* FTP on default port? */

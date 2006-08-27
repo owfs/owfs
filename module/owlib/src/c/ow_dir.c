@@ -100,7 +100,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else { /* Directory of some kind */
         if ( pn->pathlength == 0 ) { /* root directory */
-            if ( !server_mode && !SpecifiedBus(pn) && NotUncachedDir(pn) ) { /* structure only in true root */
+            if ( (Global.opt!=opt_server) && !SpecifiedBus(pn) && NotUncachedDir(pn) ) { /* structure only in true root */
                 pn2.type = pn_structure ;
                 dirfunc( &pn2 ) ;
                 pn2.type = pn_real ;
@@ -128,7 +128,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         /* Now get the actual devices */
         ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, &pn2, flags) : FS_dir_seek( dirfunc, pn2.in, &pn2, flags ) ;
     }
-    if ( ! server_mode ) {
+    if ( Global.opt!=opt_server ) {
         if( NotAlarmDir(pn) ) {
             /* don't show alarm directory in alarm directory */
             /* alarm directory */

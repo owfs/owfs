@@ -362,7 +362,7 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
     } else {
         io[2].iov_len = 0 ;
     }
-    if ( server_mode == 0 ) { // if not being called from owserver, that's it
+    if ( Global.opt != opt_server ) { // if not being called from owserver, that's it
         io[3].iov_base = io[4].iov_base = NULL ;
         io[3].iov_len  = io[4].iov_len  = 0 ;
         sp->tokens = 0 ;
@@ -377,7 +377,7 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
         }
         ++sp->tokens ;
         sm->version = Servermessage + (sp->tokens) ;
-        io[4].iov_base = &Token ; // owserver: add our tag
+        io[4].iov_base = &(Global.Token) ; // owserver: add our tag
         io[4].iov_len  = sizeof(union antiloop) ;
     }
 

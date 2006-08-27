@@ -201,7 +201,7 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
 /* Limits Tindex=0 high 1=low */
 static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) {
     BYTE p[] = { 0x01, 0x02, } ;
-    signed char data = (int) (T[0]+.49);
+    BYTE data = ((int) (T[0]+.49))&0xFF ; // round off
     int ret ;
 
     BUSLOCK(pn) ;

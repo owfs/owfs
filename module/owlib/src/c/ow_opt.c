@@ -28,7 +28,7 @@ struct lineparse {
 } ;
 
 static void ParseTheLine( struct lineparse * lp ) ;
-static int ConfigurationFile( const ASCII * file, enum opt_program op ) ;
+static int ConfigurationFile( const ASCII * file ) ;
 static int ParseInterp(struct lineparse * lp ) ;
 
 static int OW_ArgSerial( const char * arg ) ;
@@ -195,7 +195,7 @@ static void ParseTheLine( struct lineparse * lp ) {
         }
     }
 }
-static int ConfigurationFile( const ASCII * file, enum opt_program op ) {
+static int ConfigurationFile( const ASCII * file ) {
     FILE * f = fopen( file, "r" ) ;
     if ( f ) {
         int ret = 0 ;
@@ -208,7 +208,7 @@ static int ConfigurationFile( const ASCII * file, enum opt_program op ) {
                 break ;
             }
             ParseTheLine( &lp ) ;
-            ret = owopt( ParseInterp(&lp), lp.val, op ) ;
+            ret = owopt( ParseInterp(&lp), lp.val ) ;
             if ( ret ) break ;
         }
         fclose( f ) ;
@@ -219,18 +219,52 @@ static int ConfigurationFile( const ASCII * file, enum opt_program op ) {
     }
 }
 
+int owopt_packed( const char * params ) {
+    char * prms, *p, *q ;
+    char ** argv = NULL;
+    int argc = 0 ;
+    int ret = 0 ;
+    int allocated = 0 ;
+    int c ;
+    
+    if ( params==NULL ) return 0 ;
+    p = prms = strdup(params) ;
+    if ( prms==NULL ) return -ENOMEM ;
+    
+    for( q=strsep(&p," "); q; q=strsep(&p," ") ) {
+        // make room
+        if ( argc>=allocated-1 ) {
+            char ** temp = realloc( argv, (allocated+10)*sizeof(char *)) ;
+            if ( temp ) {
+                allocated += 10 ;
+                argv = temp ;
+            } else {
+                ret = -ENOMEM ;
+                break ;
+            }
+        }
+        argv[argc] = q ;
+        ++argc ;
+        argv[argc] = NULL ;
+    }
+    while ( ret==0 ) {
+        if ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) == -1 ) break ;
+        ret = owopt(c,optarg) ;
+    }
+
+    if ( argv ) free(argv) ;
+    free(prms) ;
+    return ret ;
+}
+
 /* Globals */
 unsigned long int usec_read = 500000 ;
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt( const int c , const char * arg, enum opt_program op ) {
+int owopt( const int c , const char * arg ) {
     static int config_depth = 0 ;
-    static int global_zero = 1 ;
-    if ( global_zero ) {
-        global_zero = 0 ;
-        memset( &Global, 0, sizeof(struct global) ) ;
-    }
+    printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
     switch (c) {
     case 'c':
         if ( config_depth > 4 ) {
@@ -239,12 +273,12 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
         } else {
             int ret ;
             ++config_depth ;
-            ret = ConfigurationFile( arg, op ) ;
+            ret = ConfigurationFile( arg ) ;
             --config_depth ;
             return ret ;
         }
     case 'h':
-        ow_help( op ) ;
+        ow_help( ) ;
         return 1 ;
     case 'u':
         return OW_ArgUSB( arg ) ;
@@ -277,7 +311,7 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
     case 's':
         return OW_ArgNet( arg ) ;
     case 'p':
-        switch ( op ) {
+        switch ( Global.opt ) {
             case opt_httpd:
             case opt_server:
             case opt_ftpd:
@@ -286,7 +320,7 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
                 return 0 ;
         }
     case 'm':
-        switch ( op ) {
+        switch ( Global.opt ) {
             case opt_owfs:
                 return OW_ArgServer( arg ) ;
             default:
@@ -320,7 +354,7 @@ int owopt( const int c , const char * arg, enum opt_program op ) {
         error_level = atoi(arg) ;
         break ;
     case 259:
-        ow_morehelp(op) ;
+        ow_morehelp() ;
         return 1 ;
     case 260: /* fuse_opt, handled in owfs.c */
         break ;

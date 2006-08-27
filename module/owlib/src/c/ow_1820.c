@@ -218,7 +218,7 @@ static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
 }
 
 static int FS_r_die(char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
-    const char * d ;
+    char * d ;
     switch ( OW_die(pn) ) {
         case eB6:
             d = "B6" ;

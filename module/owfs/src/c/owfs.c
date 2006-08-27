@@ -53,13 +53,13 @@ int main(int argc, char *argv[]) {
     int c ;
     struct Fuse_option fuse_options ;
 
+    /* Set up owlib */
+    LibSetup(opt_owfs) ;
+
     /* grab our executable name */
-    if ( argc>0 ) progname = strdup(argv[0]) ;
+    if ( argc>0 ) Global.progname = strdup(argv[0]) ;
 
     //mtrace() ;
-    /* Set up owlib */
-    LibSetup() ;
-
     /* process command line arguments */
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
             if ( fuse_open_opt == NULL ) ow_exit(0) ;
             break ;
         }
-        if ( owopt(c,optarg,opt_owfs) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
         } else {
             OW_ArgServer(argv[optind]) ;
         }
+        ++optind ;
     }
     
     if ( outdevices==0 ) {

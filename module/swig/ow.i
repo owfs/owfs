@@ -9,7 +9,7 @@
 #include "../../../src/include/config.h"
 #include "owfs_config.h"
 #include "ow.h"
-LibSetup() ;
+LibSetup(opt_swig) ;
 %}
 
 %{

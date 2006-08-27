@@ -230,7 +230,8 @@ extern int multithreading ;
 #define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl, opt_swig, opt_c, } ;
-int owopt( const int c , const char * arg, enum opt_program op ) ;
+int owopt( const int c , const char * arg ) ;
+int owopt_packed( const char * params ) ;
 
 /* Several different structures:
   device -- one for each type of 1-wire device
@@ -313,9 +314,6 @@ extern int indevices ;
 extern char * SimpleBusName ;
 extern int max_clients ;
 extern int ftp_timeout ;
-
-/* Flag for server access to the library */
-extern int server_mode ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -472,12 +470,24 @@ subdir points to in-device groupings
     /* device format */
 extern int32_t SemiGlobal ;
 
+/* Unique token for owserver loop checks */
+union antiloop {
+    struct {
+        pid_t pid ;
+        clock_t clock ;
+    } simple ;
+    BYTE uuid[16] ;
+} ;
+
 /* Global information (for local control) */
 struct global {
 #if OW_ZERO
     int announce_on ; // use zeroconf?
     ASCII * announce_name ;
 #endif /* OW_ZERO */
+    enum opt_program opt ;
+    ASCII * progname ;
+    union antiloop Token ;
 } ;
 extern struct global Global ;
 
@@ -524,7 +534,6 @@ enum simul_type { simul_temp, simul_volt, } ;
 #define    WASTE_TIME    (2)
 
 /* Globals */
-extern char * progname ; /* argv[0] stored */
 extern int readonly ; /* readonly file system ? */
 
 /* device display format */
@@ -583,19 +592,9 @@ struct client_msg {
     int32_t offset ;
 } ;
 
-/* Unique token for owserver loop checks */
-union antiloop {
-    struct {
-        pid_t pid ;
-        clock_t clock ;
-    } simple ;
-    BYTE uuid[16] ;
-} ;
-extern union antiloop Token ;
-
 struct serverpackage {
     ASCII * path ;
-BYTE * data ;
+    BYTE * data ;
     size_t datasize ;
     BYTE * tokenstring ;
     size_t tokens ;
@@ -627,7 +626,7 @@ extern time_t dir_time ; /* time of last directory scan */
 #define bWRITE_FUNCTION( fname )  static int fname(const BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 /* Prototypes for owlib.c -- libow overall control */
-void LibSetup( void ) ;
+void LibSetup( enum opt_program op ) ;
 int LibStart( void ) ;
 void LibClose( void ) ;
 
@@ -717,7 +716,7 @@ void UT_delay_us(const unsigned long len) ;
 ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) ;
 int ClientAddr(  char * sname, struct connection_in * in ) ;
 int ClientConnect( struct connection_in * in ) ;
-void ServerProcess( void (*HandlerRoutine)(int fd), enum opt_program opt, void (*Exit)(int errcode) ) ;
+void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) ;
 void FreeClientAddr(  struct connection_in * in ) ;
 int ServerOutSetup( struct connection_out * out ) ;
 
@@ -727,8 +726,8 @@ int OW_ArgUSB( const char * arg ) ;
 int OW_ArgDevice( const char * arg ) ;
 int OW_ArgGeneric( const char * arg ) ;
 
-void ow_help( enum opt_program op ) ;
-void ow_morehelp( enum opt_program op ) ;
+void ow_help( void ) ;
+void ow_morehelp( void ) ;
 
 void update_max_delay( const struct parsedname * pn ) ;
 

@@ -14,8 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 
-char * progname = "" ;
-
 /* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * indevices ...         */
@@ -45,8 +43,6 @@ int32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_
 #else
 int32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 ;
 #endif
-
-union antiloop Token ;
 
 struct global Global ;
 

@@ -58,11 +58,11 @@ static void exit_handler(int i) {
 int main(int argc, char *argv[]) {
     int c ;
 
-    /* grab our executable name */
-    if (argc > 0) progname = strdup(argv[0]);
-
     /* Set up owlib */
-    LibSetup() ;
+    LibSetup(opt_httpd) ;
+
+    /* grab our executable name */
+    if (argc > 0) Global.progname = strdup(argv[0]);
 
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
         }
-        if ( owopt(c,optarg,opt_httpd) ) ow_exit(0) ; /* rest of message */
+        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
 
     /* non-option arguments */
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     main_threadid = pthread_self() ;
 #endif
 
-    ServerProcess( Acceptor, opt_httpd, ow_exit ) ;
+    ServerProcess( Acceptor, ow_exit ) ;
     ow_exit(0) ;
     return 0 ;
 }

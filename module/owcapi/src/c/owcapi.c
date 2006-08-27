@@ -54,17 +54,17 @@ ssize_t OW_init( const char * params ) {
 
     while ( argc < MAX_ARGS ) {
         char * tok = strsep(&p," ");
-	if ( (tok == NULL) ) {
-	    argv[argc] = NULL ;
-	    break ;
-	} else {
-	    argv[argc] = strdup(tok) ;
-	    if ( argv[argc] == NULL ) {
-	        ret = -ENOMEM ;
-		break ;
-	    }
-	}
-	++argc ;
+        if ( (tok == NULL) ) {
+            argv[argc] = NULL ;
+            break ;
+        } else {
+            argv[argc] = strdup(tok) ;
+            if ( argv[argc] == NULL ) {
+                ret = -ENOMEM ;
+            break ;
+            }
+        }
+        ++argc ;
     }
     argv[argc+1]=NULL ;
 
@@ -91,18 +91,18 @@ static ssize_t internal_OW_init_args( int argc, char ** argv ) {
         return -EALREADY ;
     }
     
-    /* Proceed with init while lock held */    
-    /* grab our executable name */
-    if (argc > 0) progname = strdup(argv[0]);
-
     /* Set up owlib */
-    LibSetup() ;
+    LibSetup(opt_c) ;
+
+    /* Proceed with init while lock held */
+    /* grab our executable name */
+    if (argc > 0) Global.progname = strdup(argv[0]);
 
     while ( 
             ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 )
             && ( ret==0)
           ) {
-        ret = owopt(c,optarg,opt_server) ;
+        ret = owopt(c,optarg) ;
     }
 
     /* non-option arguments */
