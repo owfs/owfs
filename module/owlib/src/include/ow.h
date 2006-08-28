@@ -156,7 +156,6 @@ typedef int             INT ;
 /* Directory blob separated out for readability */
 #include "ow_dirblob.h"
 
-extern int multithreading ;
 #if OW_MT
     #include <pthread.h>
 
@@ -488,6 +487,14 @@ struct global {
     enum opt_program opt ;
     ASCII * progname ;
     union antiloop Token ;
+    int want_background ;
+    int now_background ;
+    int error_level ;
+    int error_print ;
+    int readonly ;
+    char * SimpleBusName ;
+
+
 } ;
 extern struct global Global ;
 
@@ -533,9 +540,6 @@ enum simul_type { simul_temp, simul_volt, } ;
 /* Delay for clearing buffer */
 #define    WASTE_TIME    (2)
 
-/* Globals */
-extern int readonly ; /* readonly file system ? */
-
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
 /* Gobal temperature scale */
@@ -547,8 +551,6 @@ FLOAT fromTempGap( FLOAT T, const struct parsedname * pn) ;
 const char *TemperatureScaleName(enum temp_type t) ;
 
 extern int cacheavailable ; /* is caching available */
-extern int delay_background ;  // special flag for owfs-- fuse does the backgrounding
-extern int background ; /* operate in background mode */
 
 extern void set_signal_handlers( void (*exit_handler)(int errcode) ) ;
 

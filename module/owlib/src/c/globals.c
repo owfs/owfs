@@ -33,9 +33,6 @@ pid_t pid_num ;
 time_t start_time ;
 time_t dir_time ; /* time of last directory scan */
 
-int background = 1 ; /* operate in background mode */
-int readonly = 0 ; /* readonly file system */
-
 /* State informatoin, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE

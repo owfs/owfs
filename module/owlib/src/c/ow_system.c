@@ -61,6 +61,7 @@ $Id$
 uWRITE_FUNCTION( FS_w_overdrive ) ;
  uREAD_FUNCTION( FS_r_ds2404_compliance ) ;
 uWRITE_FUNCTION( FS_w_ds2404_compliance ) ;
+ iREAD_FUNCTION( FS_define ) ;
 
 static int FS_nullstring( char * buf ) ;
 
@@ -76,6 +77,7 @@ struct filetype sys_adapter[] = {
 } ;
 struct device d_sys_adapter = { "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter } ;
 
+/* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
   //    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   fc_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
     {"pidfile"    ,      128, NULL    , ft_vascii,   fc_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } , // variable length
@@ -83,12 +85,25 @@ struct filetype sys_process[] = {
 } ;
 struct device d_sys_process = { "process", "process", pn_system, NFT(sys_process), sys_process } ;
 
-/* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_connections[] = {
     {"indevices"  ,       12, NULL    , ft_unsigned,fc_static, {u:FS_in}    , {v:NULL}, {v: NULL } , } ,
     {"outdevices" ,       12, NULL    , ft_unsigned,fc_static, {u:FS_out}   , {v:NULL}, {v: NULL } , } ,
 } ;
 struct device d_sys_connections = { "connections", "connections", pn_system, NFT(sys_connections), sys_connections } ;
+
+struct filetype sys_configure[] = {
+    {"threaded"     ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_MT } , } ,
+    {"tai8570"      ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_TAI8570 } , } ,
+    {"thermocouples",    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_THERMOCOUPLE } , } ,
+    {"parport"      ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_PARPORT } , } ,
+    {"USB"          ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_USB } , } ,
+    {"i2c"          ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_I2C } , } ,
+    {"cache"        ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_CACHE } , } ,
+    {"HA7Net"       ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_HA7 } , } ,
+    {"DebugInfo"    ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_DEBUG } , } ,
+    {"zeroconf"     ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_ZERO } , } ,
+} ;
+struct device d_sys_configure = { "configuration", "configuration", pn_system, NFT(sys_configure), sys_configure } ;
 
 /* ------- Functions ------------ */
 
@@ -224,3 +239,7 @@ static int FS_nullstring( char * buf ) {
     return 0 ;
 }
 
+static int FS_define( int * y, const struct parsedname * pn ) {
+    y[0] = pn->ft->data.i ;
+    return 0 ;
+}

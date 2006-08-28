@@ -85,7 +85,6 @@ owtcl_ObjCmdProc(Owtcl_Connect)
   }
 
   LibSetup(opt_tcl);
-  delay_background = 1 ;
 
   for (objix=1; objix<objc; objix++) {
     arg = Tcl_GetStringFromObj(objv[objix], &con_len);
@@ -116,15 +115,15 @@ owtcl_ObjCmdProc(Owtcl_Connect)
         objix++;
         Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));
       } else if (!strncasecmp(arg, "-readonly", 9)) {
-        readonly = 1;
+        Global.readonly = 1;
       } else if (!strncasecmp(arg, "-error-print", 12)) {
         objix++;
         arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-        error_print = atoi(arg);
+        Global.error_print = atoi(arg);
       } else if (!strncasecmp(arg, "-error-level", 12)) {
         objix++;
         arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-	error_level = atoi(arg);
+        Global.error_level = atoi(arg);
       } else {
         owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache -readonly, -error-print or -error-level\n", arg);
         tcl_return = TCL_ERROR;

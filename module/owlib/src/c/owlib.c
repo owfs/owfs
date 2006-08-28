@@ -15,15 +15,13 @@ $Id$
 #include "ow_devices.h"
 #include "ow_pid.h"
 
-int now_background = 0 ;
-int delay_background = 0 ; // special flag set by owfs -- fuse backgrounds for us
-char * SimpleBusName = "None" ;
-
 /* All ow library setup */
 void LibSetup( enum opt_program opt ) {
     // global structure of configuration parameters
     memset( &Global, 0, sizeof(struct global) ) ;
     Global.opt = opt ;
+    Global.want_background = 1 ;
+    Global.SimpleBusName = "None" ;
 
     /* special resort in case static data (devices and filetypes) not properly sorted */
     DeviceSort() ;
@@ -149,18 +147,25 @@ int LibStart( void ) {
 #ifdef __UCLIBC__
     /* First call to pthread should be done after daemon() in uClibc, so
      * I moved it here to avoid calling __pthread_initialize() */
-    if ( background && !delay_background ) {
-        if(
+    if ( Global.want_background ) {
+        switch ( Global.opt) {
+            case opt_httpd:
+            case opt_ftpd:
+            case opt_server:
+                 if(
  #ifdef HAVE_DAEMON
-            daemon(1, 0)
+                     daemon(1, 0)
  #else /* HAVE_DAEMON */
-            my_daemon(1, 0)
+                     my_daemon(1, 0)
  #endif /* HAVE_DAEMON */
-        ) {
-            LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
-            return 1 ;
+                 ) {
+                     LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+                     return 1 ;
+                 }
+                 Global.now_background = 1;
+            default:
+                 break ;
         }
-        now_background = 1;
     }
 
     /* Have to re-initialize pthread since the main-process is gone.
@@ -255,27 +260,38 @@ int LibStart( void ) {
     Asystem.elements = indevices ;
 
 #ifndef __UCLIBC__
-    if ( background && !delay_background ) {
+    if ( Global.want_background ) {
+        switch ( Global.opt) {
+            case opt_owfs:
+                // handles PID from a callback
+                break ;
+            case opt_httpd:
+            case opt_ftpd:
+            case opt_server:
  #ifdef HAVE_DAEMON
-        if(daemon(1, 0)) {
-            ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
-            return 1 ;
-        }
+                 if(daemon(1, 0)) {
+                     ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
+                     return 1 ;
+                 }
  #else /* HAVE_DAEMON */
-        if(my_daemon(1, 0)) {
-            LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
-            return 1 ;
-        }
+                 if(my_daemon(1, 0)) {
+                     LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+                     return 1 ;
+                 }
  #endif /* HAVE_DAEMON */
-        now_background = 1;
+                 Global.now_background = 1;
+            default:
+                /* store the PID */
+                PIDstart() ;
+                break ;
+        }
+    } else { // not background
+        if ( Global.opt != opt_owfs ) PIDstart() ;
     }
 #endif /* __UCLIBC__ */
 
-    /* store the PID */
-    if ( !delay_background ) PIDstart() ;
-
     /* Use first bus for http bus name */
-    SimpleBusName = indevice->name ;
+    Global.SimpleBusName = indevice->name ;
 
     return 0 ;
 }

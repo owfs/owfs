@@ -238,7 +238,6 @@ struct filetype stats_directory[] = {
 struct device d_stats_directory = { "directory", "directory", 0, NFT(stats_directory), stats_directory } ;
 
 struct filetype stats_thread[] = {
-    {"multithreading"  , 15, NULL  , ft_unsigned, fc_statistic, {u:FS_stat}, {v:NULL}, {v: & multithreading}   , } ,
     {"directory"       ,  0, NULL  , ft_subdir  , fc_statistic, {v:NULL}   , {v:NULL}, {v: NULL}          , } ,
     {"directory/now"   , 15, NULL  , ft_unsigned, fc_statistic, {u:FS_stat}, {v:NULL}, {v: & dir_avg.current}  , } ,
     {"directory/sum"   , 15, NULL  , ft_unsigned, fc_statistic, {u:FS_stat}, {v:NULL}, {v: & dir_avg.sum}      , } ,

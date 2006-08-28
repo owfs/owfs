@@ -30,8 +30,6 @@ $Id$
 
 #define MAX_ARGS 20
 
-static ssize_t internal_OW_init_args( int argc, char ** argv ) ;
-
 static ssize_t ReturnAndErrno( ssize_t ret ) {
     if ( ret < 0 ) {
         errno = -ret ;
@@ -43,52 +41,37 @@ static ssize_t ReturnAndErrno( ssize_t ret ) {
 }
 
 ssize_t OW_init( const char * params ) {
-    char * prms = strdup(params) ;
-    char * p = prms ;
-    int argc = 0 ;
     ssize_t ret = 0 ;
-    char * argv[MAX_ARGS+1] ;
+
+    if ( OWLIB_can_init_start() ) {
+        OWLIB_can_init_end() ;
+        return -EALREADY ;
+    }
     
-    if (!prms) return ReturnAndErrno(-ENOMEM) ;
-    argv[argc++] = strdup("owcapi") ;
+    /* Set up owlib */
+    LibSetup(opt_c) ;
 
-    while ( argc < MAX_ARGS ) {
-        char * tok = strsep(&p," ");
-        if ( (tok == NULL) ) {
-            argv[argc] = NULL ;
-            break ;
-        } else {
-            argv[argc] = strdup(tok) ;
-            if ( argv[argc] == NULL ) {
-                ret = -ENOMEM ;
-            break ;
-            }
-        }
-        ++argc ;
+    /* Proceed with init while lock held */
+    /* grab our executable name */
+    Global.progname = strdup("OWCAPI");
+
+    ret = owopt_packed( params ) ;
+          
+    if ( ret || (ret=LibStart()) ) {
+        LibClose() ;
     }
-    argv[argc+1]=NULL ;
 
-    if ( ret == 0 ) ret = internal_OW_init_args( argc, argv ) ;
-
-    while(argc>=0) {
-        if(argv[argc]) free(argv[argc]) ;
-        argc-- ;
-    }
-    if ( prms ) free( prms ) ;
+    OWLIB_can_init_end() ;
     return ReturnAndErrno(ret) ;
 }
 
 ssize_t OW_init_args( int argc, char ** argv ) {
-    return ReturnAndErrno(internal_OW_init_args(argc,argv)) ;
-}
-
-static ssize_t internal_OW_init_args( int argc, char ** argv ) {
     ssize_t ret = 0 ;
     int c ;
 
     if ( OWLIB_can_init_start() ) {
         OWLIB_can_init_end() ;
-        return -EALREADY ;
+        return ReturnAndErrno(-EALREADY) ;
     }
     
     /* Set up owlib */
@@ -111,14 +94,12 @@ static ssize_t internal_OW_init_args( int argc, char ** argv ) {
         ++optind ;
     }
 
-    delay_background = 1 ; // Cannot enter background mode, since this is a called library
-
     if ( ret || (ret=LibStart()) ) {
         LibClose() ;
     }
 
     OWLIB_can_init_end() ;    
-    return ret ;
+    return ReturnAndErrno(ret) ;
 }
 
 ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {

@@ -33,7 +33,7 @@ int TestConnection( const struct parsedname * pn ) {
             STAT_ADD1(BUS_reconnects);
             STAT_ADD1(pn->in->bus_reconnect);
 
-            if ( pn->in == indevice ) SimpleBusName = "Reconnecting..." ;
+            if ( pn->in == indevice ) Global.SimpleBusName = "Reconnecting..." ;
     
             // Close the bus (should leave enough reconnection information available)
             BUS_close(pn->in) ; // already locked
@@ -53,7 +53,7 @@ int TestConnection( const struct parsedname * pn ) {
             } else {
                 LEVEL_DEFAULT("%s adapter reconnected\n",pn->in->adapter_name);
                 pn->in->reconnect_state = reconnect_ok ;
-                if ( pn->in == indevice ) SimpleBusName = indevice->name ;
+                if ( pn->in == indevice ) Global.SimpleBusName = indevice->name ;
             }
         }
     BUSUNLOCK(pn) ;

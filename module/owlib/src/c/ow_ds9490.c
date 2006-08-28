@@ -656,7 +656,7 @@ static int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname 
         }
 #if 0
 #ifdef OW_DEBUG
-        if (error_level>4) { // LEVEL_DETAIL
+        if (Global.error_level>4) { // LEVEL_DETAIL
             s[0] = '\0';
             for (i = 0; i < ret; i++) {
                 sprintf(t,"-%02x",buffer[i]);

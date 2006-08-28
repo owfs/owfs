@@ -125,7 +125,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname * pn ) {
     } else { /* known 1-wire filetype */
         stbuf->st_mode = S_IFREG ;
         if ( pn->ft->read.v ) stbuf->st_mode |= 0444 ;
-        if ( !readonly && pn->ft->write.v ) stbuf->st_mode |= 0222 ;
+        if ( !Global.readonly && pn->ft->write.v ) stbuf->st_mode |= 0222 ;
         stbuf->st_nlink = 1;
 
         switch ( pn->ft->change ) {

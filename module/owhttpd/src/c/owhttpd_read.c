@@ -37,7 +37,7 @@ static void Show( FILE * out, const char * path, const char * file ) {
     if ( IsDir(&pn) ) { /* Directory jump */
         fprintf( out, "<A HREF='%s'>%s</A>",pn.path,file);
     } else {
-        int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
+        int canwrite = !Global.readonly && ( pn.ft->write.v != NULL ) ;
         int canread = ( pn.ft->read.v != NULL ) ;
         int suglen = 0 ;
         enum ft_format format = pn.ft->format ;
@@ -150,7 +150,7 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
     
     if ( IsDir(&pn) ) { /* Directory jump */
     } else {
-        int canwrite = !readonly && ( pn.ft->write.v != NULL ) ;
+        int canwrite = !Global.readonly && ( pn.ft->write.v != NULL ) ;
         int canread = ( pn.ft->read.v != NULL ) ;
         int suglen = 0 ;
         enum ft_format format = pn.ft->format ;

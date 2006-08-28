@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
 
     /* grab our executable name */
     if ( argc>0 ) Global.progname = strdup(argv[0]) ;
-
     //mtrace() ;
     /* process command line arguments */
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
@@ -105,9 +104,6 @@ int main(int argc, char *argv[]) {
 
     // Signal handler is set in fuse library
     //set_signal_handlers(exit_handler);
-
-    /* Backgrounding done in fuse, not LibStart */
-    delay_background = 1 ;
     
     /* Set up adapters */
     if ( LibStart() ) ow_exit(1) ;
@@ -124,9 +120,9 @@ int main(int argc, char *argv[]) {
     Fuse_add("-o" , &fuse_options) ; // add "-o direct_io" to prevent buffering
     Fuse_add("direct_io" , &fuse_options) ;
  #endif /* FUSE_VERSION >= 22 */
-    if ( !background ) {
+    if ( !Global.want_background ) {
         Fuse_add("-f", &fuse_options) ; // foreground for fuse too
-        if ( error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
+        if ( Global.error_level > 2 ) Fuse_add("-d", &fuse_options ) ; // debug for fuse too
     }
     Fuse_parse(fuse_mnt_opt, &fuse_options) ;
     LEVEL_DEBUG("fuse_mnt_opt=[%s]\n", fuse_mnt_opt);
@@ -135,7 +131,7 @@ int main(int argc, char *argv[]) {
  #if OW_MT == 0
     Fuse_add("-s" , &fuse_options) ; // single threaded
  #endif /* OW_MT */
-    now_background = background ; // tell "error" that we are background
+    Global.now_background = Global.want_background ; // tell "error" that we are background
  #if 0
     {
       int i;

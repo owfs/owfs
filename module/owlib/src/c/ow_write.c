@@ -75,7 +75,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     LEVEL_CALL("WRITE path=%s size=%d offset=%d\n",SAFESTRING(path),(int)size,(int)offset)
 
     /* if readonly exit */
-    if ( readonly ) return -EROFS ;
+    if ( Global.readonly ) return -EROFS ;
 
     if ( FS_ParsedName( path , &pn ) ) {
         r = -ENOENT;
@@ -104,7 +104,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     STATUNLOCK;
 
     /* if readonly exit */
-    if ( readonly ) return -EROFS ;
+    if ( Global.readonly ) return -EROFS ;
 
     switch (pn->type) {
     case pn_structure:
@@ -115,7 +115,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     case pn_settings:
         //printf("FS_write_postparse: pid=%ld system/settings/statistics\n", pthread_self());
         /* if readonly exit */
-        if ( readonly ) return -EROFS ;
+        if ( Global.readonly ) return -EROFS ;
 
         r = FS_write_seek(buf, size, offset, pn) ;
         break;
@@ -129,7 +129,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             * not just /simultaneous/temperature
             */
             r = FS_allwrite(buf, size, offset, pn) ;
-        } else if ( readonly ) {
+        } else if ( Global.readonly ) {
             return -EROFS ;
         } else {
             struct parsedname pn2 ;

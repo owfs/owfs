@@ -19,25 +19,22 @@
 /* error functions */
 void err_msg(int errnoflag, int level, const char *fmt, ...) ;
 
-extern int error_print ;
-extern int error_level ;
-extern int now_background ;
 extern int log_available ;
 
 #if OW_DEBUG
-#define LEVEL_DEFAULT(...)    if (error_level>0) err_msg(0,0,__VA_ARGS__) ;
-#define LEVEL_CONNECT(...)    if (error_level>1) err_msg(0,1,__VA_ARGS__) ;
-#define LEVEL_CALL(...)       if (error_level>2) err_msg(0,2,__VA_ARGS__) ;
-#define LEVEL_DATA(...)       if (error_level>3) err_msg(0,3,__VA_ARGS__) ;
-#define LEVEL_DETAIL(...)     if (error_level>4) err_msg(0,4,__VA_ARGS__) ;
-#define LEVEL_DEBUG(...)      if (error_level>5) err_msg(0,5,__VA_ARGS__) ;
+#define LEVEL_DEFAULT(...)    if (Global.error_level>0) err_msg(0,0,__VA_ARGS__) ;
+#define LEVEL_CONNECT(...)    if (Global.error_level>1) err_msg(0,1,__VA_ARGS__) ;
+#define LEVEL_CALL(...)       if (Global.error_level>2) err_msg(0,2,__VA_ARGS__) ;
+#define LEVEL_DATA(...)       if (Global.error_level>3) err_msg(0,3,__VA_ARGS__) ;
+#define LEVEL_DETAIL(...)     if (Global.error_level>4) err_msg(0,4,__VA_ARGS__) ;
+#define LEVEL_DEBUG(...)      if (Global.error_level>5) err_msg(0,5,__VA_ARGS__) ;
 
-#define ERROR_DEFAULT(...)    if (error_level>5) err_msg(1,0,__VA_ARGS__) ;
-#define ERROR_CONNECT(...)    if (error_level>5) err_msg(1,1,__VA_ARGS__) ;
-#define ERROR_CALL(...)       if (error_level>5) err_msg(1,2,__VA_ARGS__) ;
-#define ERROR_DATA(...)       if (error_level>5) err_msg(1,3,__VA_ARGS__) ;
-#define ERROR_DETAIL(...)     if (error_level>5) err_msg(1,4,__VA_ARGS__) ;
-#define ERROR_DEBUG(...)      if (error_level>5) err_msg(1,5,__VA_ARGS__) ;
+#define ERROR_DEFAULT(...)    if (Global.error_level>0) err_msg(1,0,__VA_ARGS__) ;
+#define ERROR_CONNECT(...)    if (Global.error_level>1) err_msg(1,1,__VA_ARGS__) ;
+#define ERROR_CALL(...)       if (Global.error_level>2) err_msg(1,2,__VA_ARGS__) ;
+#define ERROR_DATA(...)       if (Global.error_level>3) err_msg(1,3,__VA_ARGS__) ;
+#define ERROR_DETAIL(...)     if (Global.error_level>4) err_msg(1,4,__VA_ARGS__) ;
+#define ERROR_DEBUG(...)      if (Global.error_level>5) err_msg(1,5,__VA_ARGS__) ;
 #else
 #define LEVEL_DEFAULT(...)    { } while (0);
 #define LEVEL_CONNECT(...)    { } while (0);

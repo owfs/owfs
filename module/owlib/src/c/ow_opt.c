@@ -45,8 +45,8 @@ const struct option owopts_long[] = {
     {"port",       required_argument,NULL,'p'},
     {"mountpoint", required_argument,NULL,'m'},
     {"server",     required_argument,NULL,'s'},
-    {"readonly",   required_argument,NULL,'r'},
-    {"write",      required_argument,NULL,'w'},
+    {"readonly",   no_argument,      NULL,'r'},
+    {"write",      no_argument,      NULL,'w'},
     {"Celsius",    no_argument,      NULL,'C'},
     {"Fahrenheit", no_argument,      NULL,'F'},
     {"Kelvin",     no_argument,      NULL,'K'},
@@ -55,8 +55,8 @@ const struct option owopts_long[] = {
     {"format",     required_argument,NULL,'f'},
     {"pid_file",   required_argument,NULL,'P'},
     {"pid-file",   required_argument,NULL,'P'},
-    {"background", no_argument,&background, 1},
-    {"foreground", no_argument,&background, 0},
+    {"background", no_argument,&Global.want_background, 1},
+    {"foreground", no_argument,&Global.want_background, 0},
     {"error_print",required_argument,NULL,257},
     {"error-print",required_argument,NULL,257},
     {"error_level",required_argument,NULL,258},
@@ -96,11 +96,11 @@ static int ParseInterp(struct lineparse * lp ) {
     for ( so=owopts_long ; so->name ; ++so ) {
         if (strncasecmp(lp->opt,so->name,len)) continue ; // no match
         //LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
-        printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
+        //printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
         if ( so->flag ) { // immediate value mode
             //printf("flag c=%d flag=%p so->flag=%p\n",c,flag,so->flag);
             if ( (c!=0) || (flag!=NULL && flag!=so->flag) ) {
-                fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
+                //fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
                 return -1 ;
             }
             flag = so->flag ;
@@ -108,7 +108,7 @@ static int ParseInterp(struct lineparse * lp ) {
         } else if ( c==0 ) { // char mode first match
             c = so->val ;
         } else if ( c != so->val ) { // char mode -- second match
-            fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
+            //fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
             return -1 ;
         }
     }
@@ -117,7 +117,7 @@ static int ParseInterp(struct lineparse * lp ) {
         return 0 ;
     }
     if ( c==0 ) {
-        fprintf(stderr,"Configuration option %s not recognized. Value=%s\n",lp->opt,SAFESTRING(lp->val)) ;
+        //fprintf(stderr,"Configuration option %s not recognized. Value=%s\n",lp->opt,SAFESTRING(lp->val)) ;
     }
     return c ;
 }
@@ -230,8 +230,9 @@ int owopt_packed( const char * params ) {
     if ( params==NULL ) return 0 ;
     p = prms = strdup(params) ;
     if ( prms==NULL ) return -ENOMEM ;
-    
-    for( q=strsep(&p," "); q; q=strsep(&p," ") ) {
+
+    // Stuffs arbitrary first value since argv[0] ignored by getopt
+    for( q="X"; q; q=strsep(&p," ") ) {
         // make room
         if ( argc>=allocated-1 ) {
             char ** temp = realloc( argv, (allocated+10)*sizeof(char *)) ;
@@ -251,6 +252,12 @@ int owopt_packed( const char * params ) {
         if ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) == -1 ) break ;
         ret = owopt(c,optarg) ;
     }
+    /* non-option arguments */
+    while ( (ret==0) && (optind<argc) ) {
+        //printf("optind = %d arg=%s\n",optind,SAFESTRING(argv[optind]));
+        OW_ArgGeneric(argv[optind]) ;
+        ++optind ;
+    }
 
     if ( argv ) free(argv) ;
     free(prms) ;
@@ -264,7 +271,7 @@ unsigned long int usec_read = 500000 ;
 /* return 0 if ok */
 int owopt( const int c , const char * arg ) {
     static int config_depth = 0 ;
-    printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
+    //printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
     switch (c) {
     case 'c':
         if ( config_depth > 4 ) {
@@ -288,10 +295,10 @@ int owopt( const int c , const char * arg ) {
         Timeout(arg) ;
         break ;
     case 'r':
-        readonly = 1 ;
+        Global.readonly = 1 ;
         break ;
     case 'w':
-        readonly = 0 ;
+        Global.readonly = 0 ;
         break ;
     case 'C':
         set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
@@ -348,10 +355,10 @@ int owopt( const int c , const char * arg ) {
         }
         break ;
     case 257:
-        error_print = atoi(arg) ;
+        Global.error_print = atoi(arg) ;
         break ;
     case 258:
-        error_level = atoi(arg) ;
+        Global.error_level = atoi(arg) ;
         break ;
     case 259:
         ow_morehelp() ;

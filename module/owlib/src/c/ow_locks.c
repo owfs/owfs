@@ -33,13 +33,6 @@ pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
 #endif
 #endif /* OW_MT */
 
-/* maxslots and multithreading are ints to allow address-of */
-#if OW_MT
-    int multithreading = 1 ;
-#else /* OW_MT */
-    int multithreading = 0 ;
-#endif /* OW_MT */
-
 /* Essentially sets up semaphore for device slots */
 void LockSetup( void ) {
 #if OW_MT

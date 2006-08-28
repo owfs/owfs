@@ -23,8 +23,6 @@ $Id$
 #include <stdarg.h>
 
 /* See man page for explanation */
-int error_print = 0 ;
-int error_level = 0 ;
 int log_available = 0 ;
 
 /* Print message and return to caller
@@ -38,9 +36,9 @@ void err_msg(int errnoflag, int level, const char *fmt, ...) {
     va_list ap ;
 
     /* Print where? */
-    switch ( error_print ) {
+    switch ( Global.error_print ) {
     case 0 :
-        sl = now_background ;
+        sl = Global.now_background ;
         break ;
     case 1 :
         sl = 1 ;

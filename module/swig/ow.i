@@ -31,9 +31,12 @@ char *version( ) {
 
 int init( const char * dev ) {
     int ret = 1 ; /* Good initialization */
-    //    LibSetup() ; /* Done in %init section */
-    delay_background = 1 ; // No backgrounding done
-    if ( OWLIB_can_init_start() || OW_ArgGeneric(dev) || LibStart() ) ret = 0 ;
+    //    LibSetup(opt_swig) ; /* Done in %init section */
+    if ( OWLIB_can_init_start() || owopt_packed(dev) ) {
+        ret = 0 ; // error
+    } else {
+        LibStart() ;
+    }
     OWLIB_can_init_end() ;
     return ret ; 
 }
@@ -128,5 +131,5 @@ extern char * get( const char * path ) ;
 extern int put( const char * path, const char * value ) ;
 extern void finish( void ) ;
 
-extern int error_print;
-extern int error_level ;
+//extern int error_print;
+//extern int error_level ;
