@@ -82,12 +82,14 @@ static time_t TimeOut( const enum fc_change change ) {
         return 1 ;
     case fc_volatile:
     case fc_Avolatile:
-        return timeout.vol ;
+        return Global.timeout_volatile ;
     case fc_stable:
     case fc_Astable:
-        return timeout.stable;
+        return Global.timeout_stable;
+    case fc_presence:
+        return Global.timeout_presence ;
     case fc_directory:
-        return timeout.dir ;
+        return Global.timeout_directory ;
     default: /* static or statistic */
         return 0 ;
     }
@@ -208,7 +210,7 @@ int Cache_Add_Dir( const struct dirblob * db, const struct parsedname * pn ) {
 /* Add a device entry to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add_Device( const int bus_nr, const struct parsedname * pn ) {
-    time_t duration = TimeOut( fc_directory ) ;
+    time_t duration = TimeOut( fc_presence ) ;
     if ( duration > 0 ) { /* in case timeout set to 0 */
         struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + sizeof(int) ) ;
         if ( tn ) {
@@ -453,7 +455,7 @@ static int Cache_Get_Common_Dir( struct dirblob * db, time_t duration, const str
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) {
-    time_t duration = TimeOut( fc_directory ) ;
+    time_t duration = TimeOut( fc_presence ) ;
     if ( duration > 0 ) {
         size_t size = sizeof(int) ;
         struct tree_node tn  ;
@@ -587,7 +589,7 @@ int Cache_Del_Dir( const struct parsedname * pn ) {
 }
 
 int Cache_Del_Device( const struct parsedname * pn ) {
-    time_t duration = TimeOut( fc_directory ) ;
+    time_t duration = TimeOut( fc_presence ) ;
     if ( duration > 0 ) {
         struct tree_node tn  ;
         memcpy( tn.tk.sn , pn->sn , 8 ) ;

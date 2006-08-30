@@ -244,16 +244,11 @@ static int DS9097_send_and_get( const BYTE * bussend, BYTE * busget, const size_
             struct timeval tv;
             //printf("SAG readlength=%d\n",gl);
             if(!pn->in) break;
-#if 1
                 /* I can't imagine that 5 seconds timeout is needed???
                 * Any comments Paul ? */
                 /* We make it 10 * standard since 10 bytes required for 1 bit */
-                tv.tv_sec = usec_read / 100000 ;
-                tv.tv_usec = usec_read % 100000;
-#else
-                tv.tv_sec = usec_read / 1000000 ;
-                tv.tv_usec = usec_read % 1000000 ;
-#endif
+                tv.tv_sec = Global.timeout_serial ;
+                tv.tv_usec = 0;
                 /* Initialize readset */
                 FD_ZERO(&readset);
                 FD_SET(pn->in->fd, &readset);

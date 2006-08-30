@@ -48,39 +48,26 @@ $Id$
 
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
- yREAD_FUNCTION( FS_r_enable ) ;
-yWRITE_FUNCTION( FS_w_enable ) ;
  iREAD_FUNCTION( FS_r_timeout ) ;
 iWRITE_FUNCTION( FS_w_timeout ) ;
 
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-    {"enabled"         ,  1, NULL  , ft_yesno,    fc_local, {y:FS_r_enable},  {y:FS_w_enable},    {v: NULL}          , } ,
-    {"volatile"        , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.vol}   , } ,
-    {"stable"          , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.stable}, } ,
-    {"directory"       , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & timeout.dir}   , } ,
+    {"volatile"  , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_volatile} , } ,
+    {"stable"    , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_stable}   , } ,
+    {"directory" , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_directory}, } ,
+    {"presence"  , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_presence} , } ,
+    {"serial"    , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_serial}   , } ,
+    {"usb"       , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_usb}      , } ,
+    {"network"   , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_network}  , } ,
+    {"server"    , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_server}   , } ,
+    {"ftp"       , 15, NULL  , ft_unsigned, fc_static, {i:FS_r_timeout}, {i:FS_w_timeout}, {v: & Global.timeout_ftp}      , } ,
 }
  ;
-struct device d_set_cache = { "cache", "cache", pn_settings, NFT(set_cache), set_cache } ;
+struct device d_set_cache = { "timeout", "timeout", pn_settings, NFT(set_cache), set_cache } ;
 
 /* ------- Functions ------------ */
-
-static int FS_r_enable(int * y , const struct parsedname * pn) {
-    (void) pn ; /* to avoid compiler warning about unused parameter */
-    CACHELOCK;
-        y[0] =  IsLocalCacheEnabled(pn) ;
-    CACHEUNLOCK;
-    return 0 ;
-}
-
-static int FS_w_enable(const int * y , const struct parsedname * pn) {
-    (void) pn ; /* to avoid compiler warning about unused parameter */
-    if ( cacheavailable==0 ) return -EINVAL ;
-    set_semiglobal(&SemiGlobal, CACHE_MASK, CACHE_BIT, (1 && y[0]));
-    if ( !IsLocalCacheEnabled(pn) ) Cache_Clear() ;
-    return 0 ;
-}
 
 static int FS_r_timeout(int * i , const struct parsedname * pn) {
     CACHELOCK;

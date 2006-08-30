@@ -51,7 +51,8 @@ struct connection_in * NewIn( const struct connection_in * in ) {
         now->next = indevice ; /* put in linked list at start */
         indevice = now ;
         now->index = indevices++ ;
-    #if OW_MT
+        Asystem.elements = indevices ;
+#if OW_MT
         pthread_mutex_init(&(now->bus_mutex), pmattr);
         pthread_mutex_init(&(now->dev_mutex), pmattr);
         now->dev_db = NULL ;
@@ -107,7 +108,7 @@ void FreeIn( void ) {
         pthread_mutex_destroy(&(now->dev_mutex));
 #endif /* OW_MT */
         switch (get_busmode(now)) {
-        case bus_remote:
+        case bus_server:
             if ( now->connin.server.host ) {
                 free(now->connin.server.host) ;
                 now->connin.server.host = NULL ;
@@ -121,6 +122,7 @@ void FreeIn( void ) {
                 now->connin.server.ai = NULL ;
             }
             break ;
+        case bus_link:
         case bus_serial:
             COM_close(now) ;
             break ;
@@ -130,6 +132,7 @@ void FreeIn( void ) {
             now->name = NULL ; // rather than a static data string;
             break ;
 #endif
+        case bus_elink:
         case bus_ha7:
             BUS_close(now) ;
             break ;
@@ -191,5 +194,5 @@ void FreeOut( void ) {
 }
 
 int FS_RemoteBus( const struct parsedname * pn ) {
-    return (get_busmode(pn->in) == bus_remote);
+    return (get_busmode(pn->in) == bus_server);
 }

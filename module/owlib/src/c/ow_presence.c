@@ -54,7 +54,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
 int CheckPresence( const struct parsedname * pn ) {
     if ( IsRealDir(pn) && pn->dev != DeviceSimultaneous && pn->dev != DeviceThermostat ) {
         LEVEL_DETAIL("Checking presence of %s\n",SAFESTRING(pn->path) ) ;
-        return CheckPresence_low(indevice,pn) ;
+        return CheckPresence_low(pn->indevice,pn) ; // check only allocvated indevices
     }
     return 0 ;
 }
@@ -93,7 +93,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     //printf("CheckPresence_low:\n");
     if ( TestConnection(&pn2) ) { // reconnect successful?
         ret = -ECONNABORTED ;
-    } else if(get_busmode(in) == bus_remote) {
+    } else if(get_busmode(in) == bus_server) {
         //printf("CheckPresence_low: call ServerPresence\n");
         if(ServerPresence(&pn2) >= 0) {
             /* Device was found on this in-device, return it's index */
@@ -145,7 +145,7 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
     pn2.in = in ;
     if ( TestConnection(&pn2) ) { // reconnect successful?
         ret = -ECONNABORTED ;
-    } else if(get_busmode(in) == bus_remote) {
+    } else if(get_busmode(in) == bus_server) {
         //printf("CheckPresence_low: call ServerPresence\n");
         if( ServerPresence(&pn2) >= 0) {
             /* Device was found on this in-device, return it's index */

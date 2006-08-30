@@ -358,7 +358,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     if ( outdevices==0 ) {
-        LEVEL_CONNECT("Not output device (port) specified. Exiting.\n") ;
+        LEVEL_CONNECT("No output device (port) specified. Exiting.\n") ;
         Exit(1) ;
     } else if ( outdevices>1 ) {
         LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n",indevices) ;

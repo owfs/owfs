@@ -139,6 +139,43 @@ specific
 #
 .br
 #
+.B Timeouts (all in seconds)
+.br
+#                    cache for values that change on their own
+.br
+.I timeout_volatile
+= value # seconds "volatile" values remain in cache
+.br
+#                    cache for values that change on command
+.br
+.I timeout_stable
+= value # seconds "stable" values remain in cache
+.br
+#                    cache for directory lists (non-alarm)
+.br
+.I timeout_directory
+= value # seconds "directory" values remain in cache
+.br
+#                    cache for 1-wire device location
+.br
+.I timeout_presence
+= value # seconds "device presence" (which bus)
+.br
+.I timeout_serial
+= value # seconds to wait for serial response
+.br
+.I timeout_usb
+= value # seconds to wait for USB response
+.br
+.I timeout_network
+= value # seconds to wait for tcp/ip response
+.br
+.I timeout_ftp
+= value # seconds inactivity before closing ftp session
+.br
+#
+.br
+#
 .B Process control
 .br
 .I configuration
@@ -163,6 +200,26 @@ specific
 .br
 .I error_level
 = 0-9 # increasing noise
+.br
+#
+.br
+#
+.B zeroconf / Bonjour
+.br
+.I zero
+#   turn on zeroconf announcement (default)
+.br
+.I nozero
+#   turn off zeroconf announcement
+.br
+. I annouce
+= name  # name of announced service (optional)
+.br
+.I autoserver
+#   Add owservers descovered by zeroconf/Bonjour
+.br
+.I noautoserver
+#   Don't use zeroconf/Bonjour owservers (default)
 .br
 #
 .br

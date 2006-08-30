@@ -57,16 +57,9 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include <sys/ioctl.h>
-#if OW_ZERO
-#include <dns_sd.h>
-#endif
 
 /* Number of "fake" adapters */
 extern int fakes ;
-
-/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
-extern int altUSB ;
-
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
@@ -251,17 +244,17 @@ struct connin_link {
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
-/* bus_remote is owserver and bus_tcp is Link-E */
-enum bus_mode { 
+enum bus_mode {
     bus_unknown=0, 
-    bus_remote, 
-    bus_serial, 
+    bus_serial,
     bus_usb, 
     bus_parallel, 
-    bus_tcp, 
+    bus_server, 
     bus_i2c,
     bus_ha7 ,
     bus_fake ,
+    bus_link ,
+    bus_elink ,
 } ;
 
 enum adapter_type {
@@ -283,10 +276,6 @@ enum adapter_type {
     adapter_fake          ,
 } ;
 
-extern unsigned long int usec_read ; /* how long to waait for serial reads */
-
-
-extern int LINK_mode ; /* flag to use LINKs in ascii mode */
 enum e_reconnect {
     reconnect_ok = 0 ,
     reconnect_error = 5 ,
@@ -404,6 +393,7 @@ struct connection_in *find_connection_in(int nr);
 /* Bonjour registration */
 void OW_Announce( struct connection_out * out ) ;
 #endif /* OW_ZERO */
+void OW_Browse( void ) ;
 
 /* Low-level functions
     slowly being abstracted and separated from individual

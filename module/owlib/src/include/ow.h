@@ -135,6 +135,11 @@ $Id$
     #undef OW_PARPORT
 #endif /* USE_NO_PARPORT */
 
+/* Zeroconf / Bonjour */
+#if OW_ZERO
+    #include <dns_sd.h>
+#endif
+
 /* Include some compatibility functions */
 #include "compat.h"
 
@@ -166,6 +171,7 @@ typedef int             INT ;
     extern pthread_mutex_t simul_mutex ;
     extern pthread_mutex_t dir_mutex ;
     extern pthread_mutex_t libusb_mutex ;
+    extern pthread_mutex_t connin_mutex ;
     
     extern pthread_mutexattr_t * pmattr;
  #ifdef __UCLIBC__
@@ -186,6 +192,8 @@ typedef int             INT ;
     #define DIRUNLOCK         pthread_mutex_unlock(&dir_mutex    )
     #define LIBUSBLOCK        pthread_mutex_lock(  &libusb_mutex    )
     #define LIBUSBUNLOCK      pthread_mutex_unlock(&libusb_mutex    )
+    #define CONNINLOCK        pthread_mutex_lock(  &connin_mutex    )
+    #define CONNINUNLOCK      pthread_mutex_unlock(&connin_mutex    )
     #define BUSLOCK(pn)       BUS_lock(pn)
     #define BUSUNLOCK(pn)     BUS_unlock(pn)
  #ifdef __UCLIBC__
@@ -215,6 +223,8 @@ typedef int             INT ;
     #define LIBUSBUNLOCK
     #define UCLIBCLOCK
     #define UCLIBCUNLOCK
+    #define CONNINLOCK
+    #define CONNINUNLOCK
     #define BUSLOCK(pn)
     #define BUSUNLOCK(pn)
 #endif /* OW_MT */
@@ -298,7 +308,7 @@ enum ft_format {
     ft_tempgap,
 } ;
     /* property changability. Static unchanged, Stable we change, Volatile changes */
-enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile, fc_Avolatile, fc_second, fc_statistic, fc_persistent, fc_directory, } ;
+enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile, fc_Avolatile, fc_second, fc_statistic, fc_persistent, fc_directory, fc_presence, } ;
 
 /* Predeclare parsedname */
 struct parsedname ;
@@ -310,9 +320,6 @@ struct connection_out ;
 /* Exposed connection info */
 extern int outdevices ;
 extern int indevices ;
-extern char * SimpleBusName ;
-extern int max_clients ;
-extern int ftp_timeout ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -480,9 +487,10 @@ union antiloop {
 
 /* Global information (for local control) */
 struct global {
-#if OW_ZERO
-    int announce_on ; // use zeroconf?
+    int announce_off ; // use zeroconf?
     ASCII * announce_name ;
+#if OW_ZERO
+    DNSServiceRef browse ;
 #endif /* OW_ZERO */
     enum opt_program opt ;
     ASCII * progname ;
@@ -493,7 +501,20 @@ struct global {
     int error_print ;
     int readonly ;
     char * SimpleBusName ;
-
+    int max_clients ; // for ftp
+    int autoserver ;
+    /* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
+    int altUSB ;
+    /* timeouts -- order must match ow_opt.c values for correct indexing */
+    int timeout_volatile ;
+    int timeout_stable ;
+    int timeout_directory ;
+    int timeout_presence ;
+    int timeout_serial ;
+    int timeout_usb ;
+    int timeout_network ;
+    int timeout_server ;
+    int timeout_ftp ;
 
 } ;
 extern struct global Global ;
@@ -524,6 +545,7 @@ struct parsedname {
     struct filetype * subdir ; // in-device grouping
     UINT pathlength ; // DS2409 branching depth
     struct buspath * bp ; // DS2409 branching route
+    struct connection_in * indevice ; // Global indevice at definition time
     struct connection_in * in ;
     uint32_t sg ; // more state info, packed for network transmission
     struct devlock ** lock ; // need to clear dev lock?
@@ -553,16 +575,6 @@ const char *TemperatureScaleName(enum temp_type t) ;
 extern int cacheavailable ; /* is caching available */
 
 extern void set_signal_handlers( void (*exit_handler)(int errcode) ) ;
-
-#define DEFAULT_TIMEOUT  (15)
-void Timeout( const char * c ) ;
-struct s_timeout {
-    int second ; /* timeout for clocks */
-    int vol ;/* timeout (in seconds) for the volatile cached values */
-    int stable ;/* timeout for the stable cached values */
-    int dir ;/* timeout for directory listings */
-} ;
-extern struct s_timeout timeout ;
 
 /* Server (Socket-based) interface */
 enum msg_classification {

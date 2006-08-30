@@ -202,7 +202,7 @@ static int FS_allwrite(const char *buf, const size_t size, const off_t offset, c
         memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
         pn2.state |= pn_bus ;
         pn2.bus_nr = -1 ;
-        for ( pn2.in = indevice ; pn2.in ; pn2.in = pn2.in->next ) {
+        for ( pn2.in = pn->indevice ; pn2.in ; pn2.in = pn2.in->next ) {
             ++pn2.bus_nr ;
             FS_write_seek(buf,size,offset,&pn2) ;
         }
@@ -216,7 +216,7 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
 
     if ( TestConnection(pn) ) {
         ret = -ECONNABORTED ;
-    } else if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
+    } else if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_server) ) {
         ret = ServerWrite( buf, size, offset, pn ) ;
     } else if ( (ret=LockGet(pn))==0 ) {
             ret = FS_real_write( buf, size, offset, pn ) ;

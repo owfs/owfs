@@ -80,7 +80,6 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     if ( pn == NULL ) return -EINVAL ;
 
     memset( pn, 0, sizeof(struct parsedname) ) ;
-    pn->in = indevice ;
     pn->bus_nr = -1 ; /* all busses */
 
     /* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
@@ -100,9 +99,15 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
     /* make a copy for destructive parsing */
     pathcpy = strdup( path ) ;
     pn->path = (char *) malloc(2 * strlen(path)+ 2) ;
-    pn->lock = calloc( indevices, sizeof(struct devlock *) ) ;
 
-    if ( pathcpy==NULL || pn->path==NULL || pn->lock==NULL ) {
+    /* connection_in list and start */
+    CONNINLOCK ;
+        pn->indevice = indevice ;
+        pn->lock = calloc( indevices, sizeof(struct devlock *) ) ;
+    CONNINUNLOCK ;
+    pn->in = pn->indevice ;
+
+    if ( pathcpy==NULL || pn->path==NULL || pn->lock==NULL || pn->indevice==NULL ) {
         if (pathcpy) free(pathcpy) ;
         if (pn->path) {
             free(pn->path) ;
@@ -112,7 +117,7 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
             free(pn->lock) ;
             pn->lock = NULL;
         }
-        return -ENOMEM ;
+        return (pn->indevice==NULL) ? -ENOENT : -ENOMEM ;
     }
     
     /* pointer to rest of path after current token peeled off */
@@ -197,7 +202,7 @@ static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct par
     } else if ( strcasecmp( pathnow, "system" )==0 ) {
         if ( SpecifiedBus(pn) ) { /* already specified a "bus." */
             /* structure only for root (remote tested remotely) */
-            if ( pn->in->busmode != bus_remote ) return parse_error ;
+            if ( pn->in->busmode != bus_server ) return parse_error ;
         }
         pn->type = pn_system ;
         return parse_nonreal ;
@@ -263,7 +268,7 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
      * they will just end up with empty directory listings. */
     if ( SpecifiedBus(pn) ) { /* already specified a "bus." */
         /* too many levels of bus for a non-remote adapter */
-        if ( pn->in->busmode != bus_remote ) return parse_error ;
+        if ( pn->in->busmode != bus_server ) return parse_error ;
     } else {
         char * found ;
         int length = 0 ;
@@ -271,11 +276,13 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
         pn->state |= pn_bus ;
         pn->state |= pn_buspath ; /* specified a bus */
         pn->bus_nr = atoi(&pathnow[4]);
-        if ( pn->bus_nr < 0 || pn->bus_nr >= indevices ) return parse_error ;
+        CONNINLOCK ;
+            if ( pn->bus_nr < 0 || pn->bus_nr >= indevices ) return parse_error ;
+        CONNINUNLOCK ;
         /* Since we are going to use a specific in-device now, set
          * pn->in to point at that device at once. */
         pn->in = find_connection_in(pn->bus_nr) ;
-    if(pn->in->busmode != bus_remote) {
+    if(pn->in->busmode != bus_server) {
         /* don't return bus-list for local paths. */
         pn->sg &= (~BUSRET_MASK) ;
     }

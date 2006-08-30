@@ -224,7 +224,9 @@ static int FS_pid(UINT * u, const struct parsedname * pn) {
 
 static int FS_in(UINT * u, const struct parsedname * pn) {
     (void) pn ;
-    u[0] = indevices ;
+    CONNINLOCK ;
+        u[0] = indevices ;
+    CONNINUNLOCK ;
     return 0 ;
 }
 

@@ -37,8 +37,6 @@ $Id$
 
 #include "owserver.h"
 
-struct timeval tv = { 10, 0, } ;
-
 /* These macros doesn't exist for Solaris */
 /* Convenience macros for operations on timevals.
    NOTE: `timercmp' does not work for >= or <=.  */
@@ -129,6 +127,7 @@ static void exit_handler(int i) {
 static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp ) {
     char * msg ;
     ssize_t trueload ;
+    struct timeval tv = { Global.timeout_server, 0, } ;
     //printf("FromClient\n");
 
     /* Clear return structure */
@@ -256,7 +255,7 @@ static void Handler( int fd ) {
 #if OW_MT
     struct client_msg ping_cm ;
     struct timeval now ; // timer calculation
-    struct timeval delta = { 1, 500000 } ; // 1.5 seconds ping interval
+    struct timeval delta = { Global.timeout_network, 500000 } ; // 1.5 seconds ping interval
     struct timeval result ; // timer calculation
     //pthread_attr_t attr ; // for "detached" state
     pthread_t thread ; // hanler thread id (not used)
@@ -482,7 +481,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
         size_t _pathlen ;
-        char *path = ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote)) ? pn->path_busless : pn->path ;
+        char *path = ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_server)) ? pn->path_busless : pn->path ;
 
         _pathlen = strlen(path);
 #ifdef VALGRIND
@@ -569,8 +568,11 @@ int main( int argc , char ** argv ) {
     }
 
     if ( outdevices==0 ) {
-        LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",argv[0])
-        ow_exit(1);
+        if ( Global.announce_off ) {
+            LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",argv[0]) ;
+            ow_exit(1);
+        }
+        OW_ArgServer("0") ; // make an ephemeral assignment
     }
 
     set_signal_handlers(exit_handler);

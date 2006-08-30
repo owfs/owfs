@@ -25,8 +25,6 @@ static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
 static uint32_t SetupSemi( const struct parsedname * pn ) ;
 
-struct timeval tv = { 2, 0, } ;
-
 static void Server_setroutines( struct interface_routines * f ) {
     f->detect        = Server_detect ;
 //    f->reset         =;
@@ -47,7 +45,7 @@ int Server_detect( struct connection_in * in ) {
     if ( ClientAddr( in->name, in ) ) return -1 ;
     in->Adapter = adapter_tcp ;
     in->adapter_name = "tcp" ;
-    in->busmode = bus_remote ;
+    in->busmode = bus_server ;
     Server_setroutines( & (in->iroutines) ) ;
     return 0 ;
 }
@@ -257,6 +255,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
 static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     char * msg ;
     int ret;
+    struct timeval tv = { Global.timeout_network+1, 0, } ;
 
     do { /* loop until non delay message (payload>=0) */
         //printf("OW_SERVER loop1\n");
@@ -302,6 +301,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
 static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) {
     size_t rtry ;
     size_t ret;
+    struct timeval tv = { Global.timeout_network+1, 0, } ;
 
     do { // read regular header, or delay (delay when payload<0)
         //printf("OW_SERVER loop2\n");

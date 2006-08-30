@@ -22,6 +22,17 @@ void LibSetup( enum opt_program opt ) {
     Global.opt = opt ;
     Global.want_background = 1 ;
     Global.SimpleBusName = "None" ;
+    Global.max_clients = 250 ;
+    
+    Global.timeout_volatile =  15 ;
+    Global.timeout_stable   = 300 ;
+    Global.timeout_directory=  60 ;
+    Global.timeout_presence = 120 ;
+    Global.timeout_serial   =   5 ;
+    Global.timeout_usb      =   5 ;
+    Global.timeout_network  =   1 ;
+    Global.timeout_server   =  10 ;
+    Global.timeout_ftp      = 900 ;
 
     /* special resort in case static data (devices and filetypes) not properly sorted */
     DeviceSort() ;
@@ -185,7 +196,7 @@ int LibStart( void ) {
     LockSetup();
 #endif /* __UCLIBC__ */
 
-    if ( indevice==NULL ) {
+    if ( indevice==NULL && !Global.autoserver ) {
     LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",SAFESTRING(Global.progname)) ;
         BadAdapter_detect(NewIn(NULL)) ;
         return 1;
@@ -193,12 +204,9 @@ int LibStart( void ) {
     do {
         BadAdapter_detect(in) ; /* default "NOTSUP" calls */
         switch( get_busmode(in) ) {
-            case bus_tcp:
-            case bus_remote:
-                if ( LINKE_detect(in) ) {
-                    BUS_close( in ) ;
-                    BadAdapter_detect(in) ; /* reset the methods */
-                    ret = Server_detect(in) ;
+            case bus_server:
+                if ( (ret = Server_detect(in)) ) {
+                    LEVEL_CONNECT("Cannot open server at %s\n",in->name) ;
                 }
                 break ;
             case bus_serial:
@@ -218,6 +226,8 @@ int LibStart( void ) {
                     LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n",in->name) ;
                     ret = -ENODEV ;
                 }
+#else /* OW_I2C */
+                ret =  -ENOPROTOOPT ;
 #endif /* OW_I2C */
                 break ;
             case bus_ha7:
@@ -226,6 +236,8 @@ int LibStart( void ) {
                     LEVEL_CONNECT("Cannot detect an HA7net server on %s\n",in->name) ;
                     ret = -ENODEV ;
                 }
+#else /* OW_HA7 */
+                ret =  -ENOPROTOOPT ;
 #endif /* OW_HA7 */
                 break ;
             case bus_parallel:
@@ -242,8 +254,22 @@ int LibStart( void ) {
                 /* in->connin.usb.ds1420_address should be set to identify the
                     * adapter just in case it's disconnected. It's done in the
                 * DS9490_next_both() if not set. */
-                ret = DS9490_detect(in) ;
+                if ( (ret = DS9490_detect(in)) ) {
+                    LEVEL_DEFAULT("Cannot open USB adapter\n") ;
+                }
+#else /* OW_USB */
+                ret =  -ENOPROTOOPT ;
 #endif /* OW_USB */
+                break ;
+            case bus_link:
+                if ( (ret = LINK_detect(in)) ) {
+                    LEVEL_CONNECT("Cannot open LINK adapter at %s\n",in->name) ;
+                }
+                break ;
+            case bus_elink:
+                if ( (ret = LINKE_detect(in)) ) {
+                    LEVEL_CONNECT("Cannot open LINK-HUB-E adapter at %s\n",in->name) ;
+                }
                 break ;
             case bus_fake:
                 Fake_detect(in) ; // never fails
@@ -257,7 +283,6 @@ int LibStart( void ) {
             BadAdapter_detect(in) ; /* Set to default null assignments */
         }
     } while ( (in=in->next) ) ;
-    Asystem.elements = indevices ;
 
 #ifndef __UCLIBC__
     if ( Global.want_background ) {
@@ -269,17 +294,18 @@ int LibStart( void ) {
             case opt_ftpd:
             case opt_server:
  #ifdef HAVE_DAEMON
-                 if(daemon(1, 0)) {
-                     ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
-                     return 1 ;
-                 }
+                if(daemon(1, 0)) {
+                    ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
+                    return 1 ;
+                }
  #else /* HAVE_DAEMON */
-                 if(my_daemon(1, 0)) {
-                     LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
-                     return 1 ;
-                 }
+                if(my_daemon(1, 0)) {
+                    LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+                    return 1 ;
+                }
  #endif /* HAVE_DAEMON */
-                 Global.now_background = 1;
+                Global.now_background = 1;
+                 // fall thought
             default:
                 /* store the PID */
                 PIDstart() ;
@@ -291,7 +317,11 @@ int LibStart( void ) {
 #endif /* __UCLIBC__ */
 
     /* Use first bus for http bus name */
-    Global.SimpleBusName = indevice->name ;
+    CONNINLOCK ;
+        Global.SimpleBusName = indevice->name ;
+    CONNINUNLOCK ;
+    // zeroconf/Bonjour look for new services
+    if ( Global.autoserver ) OW_Browse() ;
 
     return 0 ;
 }
@@ -318,18 +348,15 @@ void LibClose( void ) {
     }
 #endif /* OW_MT */
 
+    if ( Global.announce_name ) free(Global.announce_name) ;
+
     if ( Global.progname ) {
         free(Global.progname) ;
     }
+#if OW_ZERO
+    if ( Global.browse ) DNSServiceRefDeallocate( Global.browse ) ;
+#endif /* OW_ZERO */
     LEVEL_CALL("Finished Library cleanup\n");
-}
-
-struct s_timeout timeout = {1,DEFAULT_TIMEOUT,10*DEFAULT_TIMEOUT,5*DEFAULT_TIMEOUT,} ;
-void Timeout( const char * c ) {
-    timeout.vol = strtol( c,NULL,10 ) ;
-    if ( errno || timeout.vol<1 ) timeout.vol = DEFAULT_TIMEOUT ;
-    timeout.stable = 10*timeout.vol ;
-    timeout.dir = 5*timeout.vol ;
 }
 
 void set_signal_handlers( void (*exit_handler)(int errcode) ) {

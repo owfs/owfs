@@ -17,9 +17,6 @@ $Id$
 #include "ow_connection.h"
 #include "ow_pid.h"
 
-int max_clients ;
-int ftp_timeout ;
-
 struct lineparse {
     ASCII line[256] ;
     ASCII * opt ;
@@ -30,17 +27,20 @@ struct lineparse {
 static void ParseTheLine( struct lineparse * lp ) ;
 static int ConfigurationFile( const ASCII * file ) ;
 static int ParseInterp(struct lineparse * lp ) ;
+static int OW_parsevalue( int * var, const ASCII * str ) ;
 
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
 static int OW_ArgI2C( const char * arg ) ;
 static int OW_ArgHA7( const char * arg ) ;
 static int OW_ArgFake( const char * arg ) ;
+static int OW_ArgLink( const char * arg ) ;
 
 const struct option owopts_long[] = {
     {"configuration",required_argument,NULL,'c'},
     {"device",     required_argument,NULL,'d'},
     {"usb",        optional_argument,NULL,'u'},
+    {"USB",        optional_argument,NULL,'u'},
     {"help",       no_argument,      NULL,'h'},
     {"port",       required_argument,NULL,'p'},
     {"mountpoint", required_argument,NULL,'m'},
@@ -63,23 +63,34 @@ const struct option owopts_long[] = {
     {"error-level",required_argument,NULL,258},
     {"morehelp",   no_argument,      NULL,259},
     {"fuse_opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
-    {"fuse-opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
+    {"fuse-opt",     required_argument,NULL,260}, /* owfs, fuse mount option */
     {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
-    {"msec_read",  required_argument,NULL,268}, /* Time out for serial reads */
-    {"msec-read",  required_argument,NULL,268}, /* Time out for serial reads */
-    {"max_clients", required_argument, NULL, 269}, /* ftp max connections */
-    {"ftp_timeout", required_argument, NULL, 270}, /* ftp max connections */
-    {"HA7", required_argument, NULL, 271}, /* HA7Net */
-    {"ha7", required_argument, NULL, 271}, /* HA7Net */
-    {"FAKE", required_argument, NULL, 272}, /* Fake */
-    {"Fake", required_argument, NULL, 272}, /* Fake */
-    {"fake", required_argument, NULL, 272}, /* Fake */
-    {"link", no_argument,   &LINK_mode,1}, /* link in ascii mode */
-    {"LINK", no_argument,   &LINK_mode,1}, /* link in ascii mode */
-    {"nolink", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
-    {"NOLINK", no_argument,   &LINK_mode,0}, /* link not in ascii mode */
-    {"altUSB", no_argument, &altUSB, 1}, /* Willy Robison's tweaks */
+    {"max_clients",  required_argument, NULL, 269}, /* ftp max connections */
+    {"HA7",          required_argument, NULL, 271}, /* HA7Net */
+    {"ha7",          required_argument, NULL, 271}, /* HA7Net */
+    {"FAKE",         required_argument, NULL, 272}, /* Fake */
+    {"Fake",         required_argument, NULL, 272}, /* Fake */
+    {"fake",         required_argument, NULL, 272}, /* Fake */
+    {"link",         required_argument, NULL, 273}, /* link in ascii mode */
+    {"LINK",         required_argument, NULL, 273}, /* link in ascii mode */
+    {"zero",         no_argument,&Global.announce_off, 0},
+    {"nozero",       no_argument,&Global.announce_off, 1},
+    {"autoserver",   no_argument,&Global.autoserver, 1},
+    {"noautoserver", no_argument,&Global.autoserver, 0},
+    {"announce",     required_argument,NULL,280},
+    {"altUSB",       no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
+    
+    {"timeout_volatile"  , required_argument, NULL, 301, } , // timeout -- changing cached values
+    {"timeout_stable"    , required_argument, NULL, 302, } , // timeout -- unchanging cached values
+    {"timeout_directory" , required_argument, NULL, 303, } , // timeout -- direcory cached values
+    {"timeout_presence"  , required_argument, NULL, 304, } , // timeout -- device location
+    {"timeout_serial"    , required_argument, NULL, 305, } , // timeout -- serial wait
+    {"timeout_usb"       , required_argument, NULL, 306, } , // timeout -- usb wait
+    {"timeout_network"   , required_argument, NULL, 307, } , // timeout -- tcp wait
+    {"timeout_server"    , required_argument, NULL, 308, } , // timeout -- server wait
+    {"timeout_ftp"       , required_argument, NULL, 309, } , // timeout -- ftp wait
+
     {0,0,0,0},
 } ;
 
@@ -264,9 +275,6 @@ int owopt_packed( const char * params ) {
     return ret ;
 }
 
-/* Globals */
-unsigned long int usec_read = 500000 ;
-
 /* Parses one argument */
 /* return 0 if ok */
 int owopt( const int c , const char * arg ) {
@@ -292,7 +300,7 @@ int owopt( const int c , const char * arg ) {
     case 'd':
         return OW_ArgSerial( arg ) ;
     case 't':
-        Timeout(arg) ;
+        OW_parsevalue(&Global.timeout_volatile,arg) ;
         break ;
     case 'r':
         Global.readonly = 1 ;
@@ -355,11 +363,9 @@ int owopt( const int c , const char * arg ) {
         }
         break ;
     case 257:
-        Global.error_print = atoi(arg) ;
-        break ;
+        return OW_parsevalue( &Global.error_print,arg) ;
     case 258:
-        Global.error_level = atoi(arg) ;
-        break ;
+        return OW_parsevalue( &Global.error_level,arg) ;
     case 259:
         ow_morehelp() ;
         return 1 ;
@@ -367,20 +373,19 @@ int owopt( const int c , const char * arg ) {
         break ;
     case 267: /* fuse_open_opt, handled in owfs.c */
         break ;
-    case 268:
-        usec_read = atol(arg)*1000 ; /* entered in msec, stored as usec */
-        if (usec_read < 500000) usec_read = 500000 ;
-        break ;
     case 269:
-        max_clients = atoi(arg) ;
-        break ;
-    case 270:
-        ftp_timeout = atoi(arg) ;
-        break ;
+        return OW_parsevalue( &Global.max_clients,arg) ;
     case 271:
         return OW_ArgHA7( arg ) ;
     case 272:
         return OW_ArgFake( arg ) ;
+    case 273:
+        return OW_ArgLink( arg ) ;
+    case 280:
+        Global.announce_name = strdup(arg) ;
+        break ;
+    case 301: case 302: case 303: case 304: case 305: case 306: case 307: case 308: case 309:
+        return OW_parsevalue(&((int *) &Global.timeout_volatile)[c-301],arg) ;
     case 0:
         break ;
     default:
@@ -393,7 +398,7 @@ int OW_ArgNet( const char * arg ) {
     struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
-    in->busmode = bus_remote ;
+    in->busmode = bus_server ;
     return 0 ;
 }
 
@@ -447,10 +452,16 @@ int OW_ArgDevice( const char * arg ) {
 static int OW_ArgSerial( const char * arg ) {
     struct connection_in * in = NewIn(NULL) ;
     if ( in==NULL ) return 1 ;
-    in->connin.serial.speed = B9600;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
+    return 0 ;
+}
 
+static int OW_ArgLink( const char * arg ) {
+    struct connection_in * in = NewIn(NULL) ;
+    if ( in==NULL ) return 1 ;
+    in->name = strdup(arg) ;
+    in->busmode = (arg[0]=='/') ? bus_link : bus_elink ;
     return 0 ;
 }
 
@@ -532,4 +543,16 @@ int OW_ArgGeneric( const char * arg ) {
         }
     }
     return 1 ;
+}
+
+static int OW_parsevalue( int * var, const ASCII * str ) {
+    int I ;
+    errno = 0 ;
+    I = strtol(str,NULL,10) ;
+    if ( errno ) {
+        ERROR_DETAIL("Bad configuration value %s\n",str) ;
+        return 1 ;
+    }
+    var[0] = I ;
+    return 0 ;
 }

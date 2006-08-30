@@ -93,9 +93,9 @@ int ftp_listener_init(struct ftp_listener_s *f) {
     /* now load the values into the structure, since we can't fail from
        here */
     f->fd = outdevice->fd;
-    f->max_connections = max_clients ;
+    f->max_connections = Global.max_clients ;
     f->num_connections = 0;
-    f->inactivity_timeout = ftp_timeout ;
+    f->inactivity_timeout = Global.timeout_ftp ;
     pthread_mutex_init(&f->mutex, NULL);
 
     strcpy(f->dir, "/");

@@ -15,10 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static struct timeval tvnetfirst = { 1, 0, } ;
-static struct timeval tvnet = { 0, 100000, } ;
-
-int LINK_mode ; /* flag to use LINKs in ascii mode */
+static struct timeval tvnet = { 0, 200000, } ;
 
 //static void byteprint( const BYTE * b, int size ) ;
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname * pn ) ;
@@ -139,7 +136,6 @@ int LINKE_detect( struct connection_in * in ) {
         if ( LINKE_preamble( &pn ) || LINK_read( (BYTE *)buf, 17, &pn, 1 ) || strncmp( buf, "Link", 4 ) ) return -ENODEV ;
 //        printf("LINKE\n");
         in->adapter_name = "Link-Hub-E" ;
-        in->busmode = bus_tcp ;
         return 0 ;
     }
     return -EIO ;
@@ -251,8 +247,8 @@ static int LINK_read_low(BYTE * buf, const size_t size, const struct parsedname 
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
-        tval.tv_sec = usec_read / 1000000 ;
-        tval.tv_usec = usec_read % 1000000 ;
+        tval.tv_sec = Global.timeout_serial ;
+        tval.tv_usec = 0 ;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't
@@ -415,6 +411,7 @@ static int LINK_CR( const struct parsedname * pn ) {
 /* read the telnet-formatted start of a response line from the Link-Hub-E */
 static int LINKE_preamble( const struct parsedname * pn ) {
     BYTE byte[6] ;
+    struct timeval tvnetfirst = { Global.timeout_network, 0, } ;
     if ( readn( pn->in->fd, byte, 6, &tvnetfirst )!=6  ) return -EIO ;
     LEVEL_CONNECT("Good preamble\n") ;
     return 0 ;

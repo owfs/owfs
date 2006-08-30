@@ -183,7 +183,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
     //printf("READSEEK\n");
     LEVEL_DEBUG("READSEEK\n");
 
-    if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_remote) ) {
+    if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_server) ) {
         LEVEL_DEBUG("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         //printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
         r = ServerRead(buf,size,offset,pn) ;

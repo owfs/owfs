@@ -92,17 +92,16 @@ void ow_morehelp( void ) {
     "  -r --readonly                  |no writing to 1-wire bus\n"
     "  -w --write                     |allow reading and writing to bus(default)\n"
     "     --fake                      |with list of emulated device family codes\n"
-    "     --link | --nolink           |LINK adapters in ascii|emulation mode (emulation)\n");
-#if OW_CACHE
-    printf("  -t                             |cache timeout (in seconds)\n");
-#endif /* OW_CACHE */    
-    printf("  -f --format                    |format for 1-wire unique serial IDs display\n"
+    "     --LINK port or device       |LINK adapter with serial_dev or [tcp:]port\n"
+    "     --timeout_xxx               |time (in sec) to keep cached results, or wait\n"
+    "     --timeout_volatile --timeout_stable --timeout_directory --timeout_presence\n"
+    "     --timeout_serial --timeout_usb --timeout_network --timeout_ftp\n"
+    "  -f --format                    |format for 1-wire unique serial IDs display\n"
     "                                 |  f[.]i[[.]c] f-amily i-d c-rc (all in hex)\n"
     "     --error_print               |Where information/error messages are printed\n"
     "                                 |  0-mixed(default) 1-syslog 2-stderr 3-suppressed\n"
     "     --error_level               |What kind of information is printed\n"
     "                                 |  0-fatal 1-connections 2-calls 3-data 4-detail\n"    
-    "     --msec_read                 | millisecond timeout for reads on bus (serial and i2c)\n"
     "  -V --version                   |Program and library versions\n"
     ) ;
     switch(Global.opt) {
@@ -127,7 +126,6 @@ void ow_morehelp( void ) {
         "\n"
         "Client side:\n"
         "  -p --port                      |tcp/ip address that program can be found\n"
-        "  --ftp_timeout                  |logoff time (sec) for inactive client\n"
         "  --max_clients                  |maximum simultaneous clients (1-300)\n"
             ) ;
         break ;

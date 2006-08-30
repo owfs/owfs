@@ -20,10 +20,6 @@ int main(int argc, char *argv[]) {
     /* grab our executable name */
     if ( argc>0 ) Global.progname = strdup(argv[0]) ;
 
-    /* default command-line arguments */
-    max_clients = MAX_CLIENTS;
-    ftp_timeout = INACTIVITY_TIMEOUT ;
-    
     /* check our command-line arguments */
     while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
         switch (c) {
@@ -46,7 +42,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Need at least 1 adapter */
-    if ( indevices==0 ) {
+    if ( indevices==0 || !Global.autoserver ) {
         LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.\n") ;
         ow_exit(1) ;
     }

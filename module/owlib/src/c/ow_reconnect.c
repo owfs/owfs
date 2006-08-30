@@ -21,10 +21,13 @@ $Id$
 /* USB is a special case, in gets reenumerated, so we look for similar DS2401 chip */
 int TestConnection( const struct parsedname * pn ) {
     int ret = 0 ;
+    struct connection_in * in ;
 
     // Test without a lock -- efficient
     if ( pn==NULL || pn->in==NULL || pn->in->reconnect_state < reconnect_error ) return 0 ;
-    
+    CONNINLOCK ;
+        in = indevice ;
+    CONNINUNLOCK ;
     // Lock the bus
     BUSLOCK(pn) ;
         // Test again
@@ -33,7 +36,7 @@ int TestConnection( const struct parsedname * pn ) {
             STAT_ADD1(BUS_reconnects);
             STAT_ADD1(pn->in->bus_reconnect);
 
-            if ( pn->in == indevice ) Global.SimpleBusName = "Reconnecting..." ;
+            if ( pn->in == in ) Global.SimpleBusName = "Reconnecting..." ;
     
             // Close the bus (should leave enough reconnection information available)
             BUS_close(pn->in) ; // already locked
@@ -53,7 +56,7 @@ int TestConnection( const struct parsedname * pn ) {
             } else {
                 LEVEL_DEFAULT("%s adapter reconnected\n",pn->in->adapter_name);
                 pn->in->reconnect_state = reconnect_ok ;
-                if ( pn->in == indevice ) Global.SimpleBusName = indevice->name ;
+                if ( pn->in == in ) Global.SimpleBusName = in->name ;
             }
         }
     BUSUNLOCK(pn) ;

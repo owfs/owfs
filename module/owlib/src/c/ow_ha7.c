@@ -16,8 +16,8 @@ $Id$
 #include "ow_connection.h"
 
 #if OW_HA7
-static struct timeval tvnetfirst = { 1, 0, } ;
-static struct timeval tvnet = { 0, 100000, } ;
+
+static struct timeval tvnet = { 0, 200000, } ;
 
 struct toHA7 {
     ASCII * command ;
@@ -215,6 +215,7 @@ static int HA7_read(int fd, ASCII ** buffer ) {
     ASCII * start ;
     int ret = 0 ;
     ssize_t r,s ;
+    struct timeval tvnetfirst = { Global.timeout_network, 0, } ;
     
     *buffer = NULL ;
     buf[4096] = '\0' ; // just in case

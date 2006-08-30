@@ -282,10 +282,6 @@ int DS2480_detect( struct connection_in * in ) {
             case adapter_LINK_11:
             case adapter_LINK_12:
                 in->adapter_name = "LINK" ;
-                if ( LINK_mode ) {
-                    BUS_close(in) ;
-                    return LINK_detect(in) ;
-                }
                 break;
             default:
                 return -ENODEV ; ;
@@ -739,8 +735,8 @@ static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname * 
         // set a descriptor to wait for a character available
         FD_ZERO(&fdset);
         FD_SET(pn->in->fd,&fdset);
-        tval.tv_sec = usec_read / 1000000 ;
-        tval.tv_usec = usec_read % 1000000 ;
+        tval.tv_sec = Global.timeout_serial ;
+        tval.tv_usec = 0 ;
         /* This timeout need to be pretty big for some reason.
         * Even commands like DS2480_reset() fails with too low
         * timeout. I raise it to 0.5 seconds, since it shouldn't

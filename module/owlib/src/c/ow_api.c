@@ -43,6 +43,7 @@ int  access_num = 0 ;
 /* Returns 0 if ok, else 1 */
 /* MUST BE PAIRED with OWLIB_can_init_end() */
 int OWLIB_can_init_start( void ) {
+    int ids ;
 #if OW_MT
   #ifdef __UCLIBC__
     if ( INITLOCK == EINVAL ) { /* Not initialized */
@@ -54,7 +55,10 @@ int OWLIB_can_init_start( void ) {
     INITLOCK ;
   #endif /* UCLIBC */
 #endif /* OW_MT */
-  return indevices > 0 ;
+  CONNINLOCK ;
+    ids = indevices ;
+  CONNINUNLOCK ;
+  return ids > 0 ;
 }
     
 void OWLIB_can_init_end( void ) {
@@ -69,7 +73,9 @@ int OWLIB_can_access_start( void ) {
         access_num++ ;    
     ACCESSUNLOCK ;
     INITLOCK ;
+    CONNINLOCK ;
         ret = (indevices == 0) ;
+    CONNINUNLOCK ;
     INITUNLOCK ;
     return ret ;
 }
