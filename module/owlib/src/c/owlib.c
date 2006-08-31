@@ -195,13 +195,12 @@ int LibStart( void ) {
     /* Setup the multithreading synchronizing locks */
     LockSetup();
 #endif /* __UCLIBC__ */
-
     if ( indevice==NULL && !Global.autoserver ) {
     LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",SAFESTRING(Global.progname)) ;
         BadAdapter_detect(NewIn(NULL)) ;
         return 1;
     }
-    do {
+    while (in) {
         BadAdapter_detect(in) ; /* default "NOTSUP" calls */
         switch( get_busmode(in) ) {
             case bus_server:
@@ -282,7 +281,8 @@ int LibStart( void ) {
             BUS_close(in) ; /* can use adapter's close */
             BadAdapter_detect(in) ; /* Set to default null assignments */
         }
-    } while ( (in=in->next) ) ;
+        in = in->next ;
+    }
 
 #ifndef __UCLIBC__
     if ( Global.want_background ) {
@@ -318,7 +318,7 @@ int LibStart( void ) {
 
     /* Use first bus for http bus name */
     CONNINLOCK ;
-        Global.SimpleBusName = indevice->name ;
+        if ( indevice) Global.SimpleBusName = indevice->name ;
     CONNINUNLOCK ;
     // zeroconf/Bonjour look for new services
     if ( Global.autoserver ) OW_Browse() ;

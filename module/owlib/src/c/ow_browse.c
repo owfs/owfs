@@ -21,11 +21,15 @@ $Id$
 static void BrowseBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c ) {
     ASCII name[121] ;
     struct connection_in * in ;
+    int len = host==NULL ? -1 : (int)strlen(host) ;
     (void) tl ;
     (void) t ;
     (void) c ;
-    LEVEL_DETAIL("Browse Callback2 ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
-    if ( snprintf(name,120,"%s:%d",host,ntohs(port)) < 0 ) {
+    LEVEL_DETAIL("Resolve Callback ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
+    /* remove trailing .local. */
+    if ( len < 0 ) return ;
+    if ( len >= 7 && strncmp(".local.",&host[len-7],7)==0 ) len -= 7 ;
+    if ( snprintf(name,120,"%.*s:%d",len,host,ntohs(port)) < 0 ) {
         ERROR_CONNECT("Trouble with zeroconf browse return %s\n",n) ;
         return ;
     }
@@ -41,10 +45,15 @@ static void CallBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSService
     (void) context ;
     LEVEL_DETAIL("Browse Callback ref=%d flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",s,f,i,e,name,type,domain) ;
     if ( e!=kDNSServiceErr_NoError ) return ;
+    //printf("Browse Callback noerror\n");
     if ( (f & kDNSServiceFlagsAdd) == 0 ) return ;
+    //printf("Browse Callback add\n");
     if ( DNSServiceResolve( &sref, 0,0,name,type,domain,BrowseBack,NULL) == kDNSServiceErr_NoError ) {
+        //printf("Browse Callback Resolve\n");
         DNSServiceProcessResult(sref) ;
+        //printf("Browse Callback Resolve Process\n");
         DNSServiceRefDeallocate(sref) ;
+        //printf("Browse Callback Resolve Deallocate\n");
     }
 }
 
@@ -52,7 +61,10 @@ static void CallBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSService
 static void * Browse( void * v ) {
     (void) v ;
     pthread_detach( pthread_self() ) ;
-    while ( DNSServiceProcessResult(Global.browse) == kDNSServiceErr_NoError ) continue ;
+    while ( DNSServiceProcessResult(Global.browse) == kDNSServiceErr_NoError ) {
+        //printf("DNSServiceProcessResult in Browse\n") ;
+        continue ;
+    }
     return NULL ;
 }
 
@@ -72,7 +84,7 @@ void OW_Browse( void ) {
 #else /* OW_MT */
 
 void OW_Browse( void ) {
-    LEVEL_CONNECT("Zeroconf/Bonjour requires multothreading support\n");
+    LEVEL_CONNECT("Zeroconf/Bonjour requires multithreading support (a compile-time configuration setting).\n");
 }
 
 #endif /* OW_MT */
