@@ -216,7 +216,7 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
 
     if ( TestConnection(pn) ) {
         ret = -ECONNABORTED ;
-    } else if ( (pn->state & pn_bus) && (get_busmode(pn->in) == bus_server) ) {
+    } else if ( (pn->state & pn_bus) && is_servermode(pn->in) ) {
         ret = ServerWrite( buf, size, offset, pn ) ;
     } else if ( (ret=LockGet(pn))==0 ) {
             ret = FS_real_write( buf, size, offset, pn ) ;

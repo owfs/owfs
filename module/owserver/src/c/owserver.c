@@ -481,7 +481,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     void directory( const struct parsedname * const pn2 ) {
         char *retbuffer ;
         size_t _pathlen ;
-        char *path = ((pn->state & pn_bus) && (get_busmode(pn->in) == bus_server)) ? pn->path_busless : pn->path ;
+        char *path = ((pn->state & pn_bus) && (is_servermode(pn->in))) ? pn->path_busless : pn->path ;
 
         _pathlen = strlen(path);
 #ifdef VALGRIND

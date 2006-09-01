@@ -202,7 +202,7 @@ static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct par
     } else if ( strcasecmp( pathnow, "system" )==0 ) {
         if ( SpecifiedBus(pn) ) { /* already specified a "bus." */
             /* structure only for root (remote tested remotely) */
-            if ( pn->in->busmode != bus_server ) return parse_error ;
+            if ( !is_servermode(pn->in) ) return parse_error ;
         }
         pn->type = pn_system ;
         return parse_nonreal ;
@@ -268,7 +268,7 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
      * they will just end up with empty directory listings. */
     if ( SpecifiedBus(pn) ) { /* already specified a "bus." */
         /* too many levels of bus for a non-remote adapter */
-        if ( pn->in->busmode != bus_server ) return parse_error ;
+        if ( !is_servermode(pn->in) ) return parse_error ;
     } else {
         char * found ;
         int length = 0 ;
@@ -282,10 +282,10 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
         /* Since we are going to use a specific in-device now, set
          * pn->in to point at that device at once. */
         pn->in = find_connection_in(pn->bus_nr) ;
-    if(pn->in->busmode != bus_server) {
-        /* don't return bus-list for local paths. */
-        pn->sg &= (~BUSRET_MASK) ;
-    }
+        if ( !is_servermode(pn->in) ) {
+            /* don't return bus-list for local paths. */
+            pn->sg &= (~BUSRET_MASK) ;
+        }
         /* We have to allow any bus-number here right now. We receive
          * paths like /bus.4 from a remote owserver, and we have to trust
          * this result. */

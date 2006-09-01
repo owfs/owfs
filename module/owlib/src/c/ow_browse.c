@@ -28,14 +28,14 @@ static void BrowseBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServi
     LEVEL_DETAIL("Resolve Callback ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
     /* remove trailing .local. */
     if ( len < 0 ) return ;
-    if ( len >= 7 && strncmp(".local.",&host[len-7],7)==0 ) len -= 7 ;
+    //if ( len >= 7 && strncmp(".local.",&host[len-7],7)==0 ) len -= 7 ;
     if ( snprintf(name,120,"%.*s:%d",len,host,ntohs(port)) < 0 ) {
         ERROR_CONNECT("Trouble with zeroconf browse return %s\n",n) ;
         return ;
     }
     CONNINLOCK ;
         for ( in = indevice ; in ; in=in->next ) if ( strcasecmp(in->name,name)==0 ) break ;
-        if ( in==NULL && OW_ArgNet(name)==0 ) Server_detect(indevice) ;
+        if ( in==NULL && OW_ArgNet(name)==0 && Server_detect(indevice)==0 ) indevice->busmode = bus_zero ;
     CONNINUNLOCK ;
 }
 
@@ -45,15 +45,15 @@ static void CallBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSService
     (void) context ;
     LEVEL_DETAIL("Browse Callback ref=%d flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",s,f,i,e,name,type,domain) ;
     if ( e!=kDNSServiceErr_NoError ) return ;
-    //printf("Browse Callback noerror\n");
+    printf("Browse Callback noerror\n");
     if ( (f & kDNSServiceFlagsAdd) == 0 ) return ;
-    //printf("Browse Callback add\n");
+    printf("Browse Callback add\n");
     if ( DNSServiceResolve( &sref, 0,0,name,type,domain,BrowseBack,NULL) == kDNSServiceErr_NoError ) {
-        //printf("Browse Callback Resolve\n");
+        printf("Browse Callback Resolve\n");
         DNSServiceProcessResult(sref) ;
-        //printf("Browse Callback Resolve Process\n");
+        printf("Browse Callback Resolve Process\n");
         DNSServiceRefDeallocate(sref) ;
-        //printf("Browse Callback Resolve Deallocate\n");
+        printf("Browse Callback Resolve Deallocate\n");
     }
 }
 

@@ -667,8 +667,6 @@ int FS_dirname_type( char * buffer, const size_t length, const struct parsedname
 void FS_DirName( char * buffer, const size_t size, const struct parsedname * pn ) ;
 int FS_FileName( char * name, const size_t size, const struct parsedname * pn ) ;
 
-int FS_RemoteBus( const struct parsedname * pn ) ;
-
 /* Utility functions */
 BYTE CRC8( const BYTE * bytes , const size_t length ) ;
 BYTE CRC8seeded( const BYTE * bytes , const size_t length , const UINT seed ) ;

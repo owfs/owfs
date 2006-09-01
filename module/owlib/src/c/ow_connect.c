@@ -33,8 +33,12 @@ struct connection_in *find_connection_in(int iindex) {
 }
 
 enum bus_mode get_busmode(struct connection_in *in) {
-  if(!in) return bus_unknown;
-  return in->busmode;
+    if(!in) return bus_unknown;
+    return in->busmode;
+}
+
+int is_servermode(struct connection_in *in) {
+    return (in->busmode==bus_server) || (in->busmode==bus_zero) ;
 }
 
 /* Make a new indevice, and place it in the chain */
@@ -108,6 +112,7 @@ void FreeIn( void ) {
         pthread_mutex_destroy(&(now->dev_mutex));
 #endif /* OW_MT */
         switch (get_busmode(now)) {
+        case bus_zero:
         case bus_server:
             if ( now->connin.server.host ) {
                 free(now->connin.server.host) ;
@@ -126,12 +131,12 @@ void FreeIn( void ) {
         case bus_serial:
             COM_close(now) ;
             break ;
-#if OW_USB
         case bus_usb:
+#if OW_USB
             DS9490_close(now) ;
             now->name = NULL ; // rather than a static data string;
-            break ;
 #endif
+            break ;
         case bus_elink:
         case bus_ha7:
             BUS_close(now) ;
@@ -146,7 +151,7 @@ void FreeIn( void ) {
                 pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex)) ;
             }
 #endif /* OW_MT */
-            default:
+        default:
             break ;
         }
         if ( now->name) {
@@ -191,8 +196,4 @@ void FreeOut( void ) {
 #endif /* OW_ZERO */
         free(now) ;
     }
-}
-
-int FS_RemoteBus( const struct parsedname * pn ) {
-    return (get_busmode(pn->in) == bus_server);
 }

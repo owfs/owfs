@@ -84,7 +84,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
         /* Device structure is always known for ordinary devices, so don't
         * bother calling ServerDir() */
             ret = FS_devdir( dirfunc, &pn2 ) ;
-        } else if ( SpecifiedBus(pn) && (get_busmode(pn->in)==bus_server) ) {
+        } else if ( SpecifiedBus(pn) && (is_servermode(pn->in)) ) {
             ret = ServerDir(dirfunc, &pn2, flags) ;
         } else {
             ret = FS_devdir( dirfunc, &pn2 ) ;
@@ -95,7 +95,7 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
     } else if ( NotRealDir(pn) ) {  /* stat, sys or set dir */
         /* there are some files with variable sizes, and /system/adapter have variable
         * number of entries and we have to call ServerDir() */
-        ret = (SpecifiedBus(pn) && (get_busmode(pn->in)==bus_server))
+        ret = (SpecifiedBus(pn) && (is_servermode(pn->in)))
                 ? ServerDir(dirfunc, &pn2, flags)
                 : FS_typedir( dirfunc, &pn2 ) ;
     } else { /* Directory of some kind */
@@ -187,7 +187,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct conn
     
     if ( TestConnection(&pn2) ) { // reconnect ok?
     ret = -ECONNABORTED ;
-    } else if ( (pn->state & pn_bus) && (get_busmode(in) == bus_server) ) { /* is this a remote bus? */
+    } else if ( (pn->state & pn_bus) && (is_servermode(in)) ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */
@@ -221,7 +221,7 @@ static int FS_dir_seek( void (* dirfunc)(const struct parsedname *), struct conn
     pn2.in = in ;
     if ( TestConnection(&pn2) ) { // reconnect ok?
     ret = -ECONNABORTED ;
-    } else if ( (pn->state & pn_bus) && (get_busmode(in) == bus_server) ) { /* is this a remote bus? */
+    } else if ( (pn->state & pn_bus) && (is_servermode(in)) ) { /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc,&pn2,flags) ;
     } else { /* local bus */
@@ -284,10 +284,7 @@ static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct pars
     struct device_search ds ; // holds search state
 
     /* cache from Server if this is a remote bus */
-    if (
-	/* (pn2->state & pn_bus) && */
-	(get_busmode(pn2->in) == bus_server) )
-      return ServerDir( dirfunc, pn2, &flags ) ;
+    if ( is_servermode(pn2->in) ) return ServerDir( dirfunc, pn2, &flags ) ;
 
     /* STATISCTICS */
     STAT_ADD1(dir_main.calls);
@@ -329,7 +326,7 @@ static int FS_realdir( void (* dirfunc)(const struct parsedname *), struct parse
     int ret ;
 
     /* cache from Server if this is a remote bus */
-    if ( (get_busmode(pn2->in) == bus_server) ) return ServerDir( dirfunc, pn2, flags ) ;
+    if ( is_servermode(pn2->in) ) return ServerDir( dirfunc, pn2, flags ) ;
 
     /* STATISTICS */
     STAT_ADD1(dir_main.calls);

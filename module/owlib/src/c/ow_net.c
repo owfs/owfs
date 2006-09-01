@@ -118,7 +118,7 @@ static int ServerAddr(  struct connection_out * out ) {
     //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
     if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
-        ERROR_CONNECT("GetAddrInfo error [%s]\n",SAFESTRING(out->name));
+    ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s\n",SAFESTRING(out->name),SAFESTRING(out->host),SAFESTRING(out->service));
         return -1 ;
     }
     return 0 ;

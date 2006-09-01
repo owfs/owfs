@@ -249,7 +249,8 @@ enum bus_mode {
     bus_serial,
     bus_usb, 
     bus_parallel, 
-    bus_server, 
+    bus_server,
+    bus_zero,
     bus_i2c,
     bus_ha7 ,
     bus_fake ,
@@ -362,6 +363,7 @@ extern struct connection_in * indevice ;
  * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
  * returned very strange result on c->busmode before... but not anymore */
 enum bus_mode get_busmode(struct connection_in *c);
+int is_servermode(struct connection_in *in) ;
 
 // mode bit flags for level
 #define MODE_NORMAL                    0x00
