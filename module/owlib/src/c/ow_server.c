@@ -23,6 +23,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
+static int ServerNOP( struct connection_in * in ) ;
 static uint32_t SetupSemi( const struct parsedname * pn ) ;
 
 static void Server_setroutines( struct interface_routines * f ) {
@@ -38,6 +39,15 @@ static void Server_setroutines( struct interface_routines * f ) {
 //    f->select        = ;
     f->reconnect     = NULL          ;
     f->close         = Server_close  ;
+}
+
+// bus_zero is a server found by zeroconf/Bonjour
+// It differs in that the server must respond
+int Zero_detect( struct connection_in * in ) {
+    if ( Server_detect(in) || ServerNOP(in) )
+        if ( ServerNOP(in) ) return -1 ;
+    in->busmode = bus_zero ;
+    return 0 ;
 }
 
 int Server_detect( struct connection_in * in ) {
@@ -127,7 +137,7 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     int ret = 0 ;
 
     BUSLOCK(pn) ;
-        connectfd = ClientConnect( pn->in ) ;
+    connectfd = ClientConnect( pn->in ) ;
     BUSUNLOCK(pn) ;
     
     if ( connectfd < 0 ) return -EIO ;
@@ -150,9 +160,38 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         if ( SemiGlobal != cm.sg ) {
             //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
             CACHELOCK;
-                SemiGlobal = cm.sg & (~BUSRET_MASK) ;
+            SemiGlobal = cm.sg & (~BUSRET_MASK) ;
             CACHEUNLOCK;
         }
+    }
+    close( connectfd ) ;
+    return ret ;
+}
+
+static int ServerNOP( struct connection_in * in ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    struct serverpackage sp = { "", NULL, 0, NULL, 0, } ;
+    int connectfd ;
+    int ret = 0 ;
+
+    connectfd = ClientConnect( in ) ;
+    
+    if ( connectfd < 0 ) return -EIO ;
+    //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
+    memset(&sm, 0, sizeof(struct server_msg));
+    sm.type = msg_nop ;
+    sm.size = 0 ;
+    sm.sg =  0 ;
+    sm.offset = 0 ;
+
+    //printf("ServerRead path=%s\n", pn->path_busless);
+    LEVEL_CALL("SERVER(%d)NOP\n", in->index );
+
+    if ( ToServer( connectfd, &sm, &sp) ) {
+        ret = -EIO ;
+    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
+        ret = -EIO ;
     }
     close( connectfd ) ;
     return ret ;

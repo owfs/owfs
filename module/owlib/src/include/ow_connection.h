@@ -404,6 +404,7 @@ void OW_Browse( void ) ;
 int DS2480_baud( speed_t baud, const struct parsedname * pn );
 
 int Server_detect( struct connection_in * in  ) ;
+int Zero_detect( struct connection_in * in  ) ;
 int DS2480_detect( struct connection_in * in ) ;
 
 #if OW_PARPORT

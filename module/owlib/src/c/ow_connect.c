@@ -60,7 +60,7 @@ struct connection_in * NewIn( const struct connection_in * in ) {
         pthread_mutex_init(&(now->bus_mutex), pmattr);
         pthread_mutex_init(&(now->dev_mutex), pmattr);
         now->dev_db = NULL ;
-    #endif /* OW_MT */
+#endif /* OW_MT */
         /* Support DS1994/DS2404 which require longer delays, and is automatically
         * turned on in *_next_both().
         * If it's turned off, it will result into a faster reset-sequence.

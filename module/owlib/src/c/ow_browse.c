@@ -17,62 +17,75 @@ $Id$
 
 #if OW_MT
 
+struct RefStruct {
+    DNSServiceRef sref ;
+} ;
+
+/* Look for new services with Bonjour -- will block so done in a separate thread */
+static void * Process( void * v ) {
+    struct RefStruct * rs = v ;
+    pthread_detach( pthread_self() ) ;
+    while ( DNSServiceProcessResult(rs->sref) == kDNSServiceErr_NoError ) {
+        printf("DNSServiceProcessResult ref %ld\n",(long int)rs->sref) ;
+        continue ;
+    }
+    DNSServiceRefDeallocate(rs->sref) ;
+    free(rs) ;
+    return NULL ;
+}
+
 /* Resolved service -- add to connection_in */
-static void BrowseBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c ) {
+static void ResolveBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c ) {
     ASCII name[121] ;
     struct connection_in * in ;
-    int len = host==NULL ? -1 : (int)strlen(host) ;
     (void) tl ;
     (void) t ;
     (void) c ;
-    LEVEL_DETAIL("Resolve Callback ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
+    LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
     /* remove trailing .local. */
-    if ( len < 0 ) return ;
-    //if ( len >= 7 && strncmp(".local.",&host[len-7],7)==0 ) len -= 7 ;
-    if ( snprintf(name,120,"%.*s:%d",len,host,ntohs(port)) < 0 ) {
-        ERROR_CONNECT("Trouble with zeroconf browse return %s\n",n) ;
+    if ( snprintf(name,120,"%s:%d",SAFESTRING(host),ntohs(port)) < 0 ) {
+        ERROR_CONNECT("Trouble with zeroconf resolve return %s\n",n) ;
         return ;
     }
     CONNINLOCK ;
         for ( in = indevice ; in ; in=in->next ) if ( strcasecmp(in->name,name)==0 ) break ;
-        if ( in==NULL && OW_ArgNet(name)==0 && Server_detect(indevice)==0 ) indevice->busmode = bus_zero ;
+        if ( in==NULL && OW_ArgNet(name)==0 )
+            if ( Zero_detect(indevice)==0 ) BadAdapter_detect(indevice) ;
     CONNINUNLOCK ;
 }
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
-static void CallBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char * name, const char * type, const char * domain, void * context ) {
-    DNSServiceRef sref ;
+static void BrowseBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char * name, const char * type, const char * domain, void * context ) {
+    struct RefStruct * rs ;
     (void) context ;
-    LEVEL_DETAIL("Browse Callback ref=%d flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",s,f,i,e,name,type,domain) ;
-    if ( e!=kDNSServiceErr_NoError ) return ;
-    printf("Browse Callback noerror\n");
-    if ( (f & kDNSServiceFlagsAdd) == 0 ) return ;
-    printf("Browse Callback add\n");
-    if ( DNSServiceResolve( &sref, 0,0,name,type,domain,BrowseBack,NULL) == kDNSServiceErr_NoError ) {
-        printf("Browse Callback Resolve\n");
-        DNSServiceProcessResult(sref) ;
-        printf("Browse Callback Resolve Process\n");
-        DNSServiceRefDeallocate(sref) ;
-        printf("Browse Callback Resolve Deallocate\n");
-    }
-}
+    LEVEL_DETAIL("BrowseBack ref=%d flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",s,f,i,e,name,type,domain) ;
+        
+    if ( (rs = malloc(sizeof(struct RefStruct))) == NULL ) return ;
 
-/* Look for new services with Bonjour -- will block so done in a separate thread */
-static void * Browse( void * v ) {
-    (void) v ;
-    pthread_detach( pthread_self() ) ;
-    while ( DNSServiceProcessResult(Global.browse) == kDNSServiceErr_NoError ) {
-        //printf("DNSServiceProcessResult in Browse\n") ;
-        continue ;
+    if ( e!=kDNSServiceErr_NoError ) return ;
+    //printf("BrowseBack noerror\n");
+    if ( (f & kDNSServiceFlagsAdd) == 0 ) return ;
+    //printf("BrowseBack add\n");
+    if ( DNSServiceResolve( &(rs->sref), 0,0,name,type,domain,ResolveBack,NULL) == kDNSServiceErr_NoError ) {
+        pthread_t thread ;
+        int err = pthread_create( &thread, 0, Process, (void *) rs ) ;
+        if ( err ) {
+            ERROR_CONNECT("Zeroconf/Bounjour resolve thread error %d).\n",err) ;
+        }
     }
-    return NULL ;
 }
 
 void OW_Browse( void ) {
-    DNSServiceErrorType dnserr = DNSServiceBrowse( &Global.browse, 0,0,"_owserver._tcp",NULL,CallBack,NULL) ;
+    struct RefStruct * rs ;
+    DNSServiceErrorType dnserr ;
+    
+    if ( (rs = malloc(sizeof(struct RefStruct))) == NULL ) return ;
+
+    dnserr = DNSServiceBrowse( &Global.browse, 0,0,"_owserver._tcp",NULL,BrowseBack,NULL) ;
+    rs->sref = Global.browse ;
     if ( dnserr == kDNSServiceErr_NoError ) {
         pthread_t thread ;
-        int err = pthread_create( &thread, 0, Browse, NULL ) ;
+        int err = pthread_create( &thread, 0, Process, (void *) rs ) ;
         if ( err ) {
             ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n",err) ;
         }

@@ -204,6 +204,10 @@ int LibStart( void ) {
         BadAdapter_detect(in) ; /* default "NOTSUP" calls */
         switch( get_busmode(in) ) {
             case bus_zero:
+                if ( (ret = Zero_detect(in)) ) {
+                    LEVEL_CONNECT("Cannot open server at %s\n",in->name) ;
+                }
+                break ;
             case bus_server:
                 if ( (ret = Server_detect(in)) ) {
                     LEVEL_CONNECT("Cannot open server at %s\n",in->name) ;

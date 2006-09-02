@@ -24,9 +24,9 @@ struct announce_struct {
 } ;
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
-static void CallBack( DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType e, const char * name, const char * type, const char * domain, void * context ) {
+static void RegisterBack( DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType e, const char * name, const char * type, const char * domain, void * context ) {
     DNSServiceRef * sref = context ;
-    LEVEL_DETAIL("Callback ref=%d flags=%d error=%d name=%s type=%s domain=%s\n",s,f,e,name,type,domain) ;
+    LEVEL_DETAIL("RegisterBack ref=%d flags=%d error=%d name=%s type=%s domain=%s\n",s,f,e,name,type,domain) ;
     if ( e==kDNSServiceErr_NoError ) sref[0] = s ;
 }
 
@@ -34,7 +34,7 @@ static void CallBack( DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType e,
 static void * Announce( void * v ) {
     struct announce_struct * as = v ;
     DNSServiceRef sref ;
-    DNSServiceErrorType err = DNSServiceRegister(&sref,0,0,Global.announce_name?Global.announce_name:as->name,as->type0,NULL,NULL,as->port,0,NULL,CallBack,&(as->out->sref0)) ;
+    DNSServiceErrorType err = DNSServiceRegister(&sref,0,0,Global.announce_name?Global.announce_name:as->name,as->type0,NULL,NULL,as->port,0,NULL,RegisterBack,&(as->out->sref0)) ;
     LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,as->name,ntohs(as->port),as->type0,as->type1) ;
 #if OW_MT
     pthread_detach( pthread_self() ) ;
@@ -45,7 +45,7 @@ if ( err == kDNSServiceErr_NoError ) {
         ERROR_CONNECT("Unsuccessful call to DNSServiceRegister err = %d\n",err) ;
     }
     if (as->type1 ) {
-        err = DNSServiceRegister(&sref,0,0,Global.announce_name?Global.announce_name:as->name,as->type1,NULL,NULL,as->port,0,NULL,CallBack,&(as->out->sref1)) ;
+        err = DNSServiceRegister(&sref,0,0,Global.announce_name?Global.announce_name:as->name,as->type1,NULL,NULL,as->port,0,NULL,RegisterBack,&(as->out->sref1)) ;
         if ( err == kDNSServiceErr_NoError ) {
             DNSServiceProcessResult(sref) ;
         } else {
