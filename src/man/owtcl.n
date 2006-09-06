@@ -265,7 +265,7 @@ layer has been modified to return native Tcl data.
 The following low-level commands are possible:
 .TP
 \fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
-Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR defines a way of
+Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR and \fIoptions\fR defines a way of
 connection to the 1-wire bus. See
 .B owfs (1)
 for full syntax.
