@@ -13,6 +13,7 @@
 #endif
 #include <tcl.h>
 #include "ow.h"
+#include "owcapi.h"
 #include "version.h"
 
 //extern int errno;
@@ -66,7 +67,7 @@ owtcl_ObjCmdProc(Owtcl_Connect)
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
   char *arg;
   int con_len;
-  int tcl_return = TCL_OK;
+  int tcl_return = TCL_OK, r;
   owtcl_ArgObjIncr;
 
   if (OwtclStatePtr->used) {
@@ -74,83 +75,10 @@ owtcl_ObjCmdProc(Owtcl_Connect)
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
-
-  if (objc < 2) {
-    Tcl_WrongNumArgs(interp,
-		     objc,
-		     objv,
-		     "/dev/ttyS0|usb?N?|u?N?|host:port|socket:/local-socket-path ?...? ?options?");
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  }
-
-  LibSetup(opt_tcl);
-
-  for (objix=1; objix<objc; objix++) {
-    arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-    if (!strncasecmp(arg, "-", 1)) {
-      if (!strncasecmp(arg, "-format", 7)) {
-        objix++;
-        arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-        if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
-        else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
-        else if (!strcasecmp(arg,"f.i.c")) set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
-        else if (!strcasecmp(arg,"f.ic"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
-        else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
-        else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
-        else {
-  	  owtcl_ErrorMsg(interp, "bad format \"%s\": should be one of f.i, fi, f.i.c, f.ic, fi.c or fic\n",arg);
-	  tcl_return = TCL_ERROR;
-	  goto common_exit;
-        }
-      } else if (!strncasecmp(arg, "-celsius", 8)) {
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
-      } else if (!strncasecmp(arg, "-fahrenheit", 11)) {
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
-      } else if (!strncasecmp(arg, "-kelvin", 7)) {
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
-      } else if (!strncasecmp(arg, "-rankine", 8)) {
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
-      } else if (!strncasecmp(arg, "-cache", 6)) {
-        objix++;
-        Timeout(Tcl_GetStringFromObj(objv[objix], &con_len));
-      } else if (!strncasecmp(arg, "-readonly", 9)) {
-        Global.readonly = 1;
-      } else if (!strncasecmp(arg, "-error-print", 12)) {
-        objix++;
-        arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-        Global.error_print = atoi(arg);
-      } else if (!strncasecmp(arg, "-error-level", 12)) {
-        objix++;
-        arg = Tcl_GetStringFromObj(objv[objix], &con_len);
-        Global.error_level = atoi(arg);
-      } else {
-        owtcl_ErrorMsg(interp, "bad option \"%s\": should be one of -format, -celsius, -fahrenheit, -kelvin, -rankine, -cache -readonly, -error-print or -error-level\n", arg);
-        tcl_return = TCL_ERROR;
-        goto common_exit;
-      }
-    } else {
-      if (strrchr(arg,':')) {
-	if (!strncasecmp(arg, "socket:", 7))
-	  OW_ArgNet(&arg[7]);
-	else
-	  OW_ArgNet(arg);
-      } else if (!strncasecmp(arg, "usb", 3) || !strncasecmp(arg, "u", 1)) {
-	char *p = arg;
-	while (*p != '\0') {
-	  if ((*p >= '0') && (*p <= '9')) break;
-	  p++;
-	}
-	OW_ArgUSB(p);
-      } else {
-	OW_ArgDevice(arg);
-      }
-    }
-  }
-
-  if (LibStart()) {
+  arg = Tcl_GetStringFromObj(objv[1], &con_len);
+  r = OW_init(arg);
+  if (r != 0) {
     owtcl_ErrorMsg(interp, strerror(errno));
-    LibClose();
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
@@ -171,7 +99,7 @@ owtcl_ObjCmdProc(Owtcl_Delete)
   (void) objv ; // suppress compiler warning
 
   if (OwtclStatePtr->used)
-    LibClose();
+    OW_finish();
   OwtclStatePtr->used = 0;
   return TCL_OK;
 }
@@ -207,7 +135,7 @@ owtcl_ObjCmdProc(Owtcl_Put)
     value_len = 1;
   }
 
-  if ((r = FS_write(path, value, (size_t)value_len, (off_t)0)) < 0) {
+  if ((r = OW_put(path, value, (size_t)value_len)) < 0) {
     owtcl_ErrorMsg(interp, strerror(r));
     tcl_return = TCL_ERROR;
     goto common_exit;
@@ -221,94 +149,65 @@ owtcl_ObjCmdProc(Owtcl_Put)
 owtcl_ObjCmdProc(Owtcl_Get)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-  char *path;
-  int s;
-  struct parsedname pn;
-  char * buf = NULL, *p, *d ;
-  int tcl_return = TCL_OK, r;
+  char *arg, *path, *buf, *d, *p;
+  int tcl_return = TCL_OK, r, s, lst;
   Tcl_Obj *resultPtr;
-  char name[OW_FULLNAME_MAX+2];
-  void directory( const struct parsedname * const pn2 ) {
-    FS_DirName(name, OW_FULLNAME_MAX, pn2) ;
-    if (
-	pn2->dev ==NULL
-	|| pn2->ft ==NULL
-	|| pn2->ft->format ==ft_subdir
-	|| pn2->ft->format ==ft_directory
-	) strcat(name, "/");
-    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(name, -1));
-  }
-
   owtcl_ArgObjIncr;
 
-  memset(&pn, 0, sizeof(struct parsedname)); // make sure common_exit could be used for all exits.
   if (OwtclStatePtr->used == 0) {
     Tcl_AppendResult(interp, "owtcl not connected.", NULL);
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
 
-  if (objc < 2)
-    path = "";
-  else if (objc == 2)
-    path = Tcl_GetStringFromObj(objv[1], &s);
-  else {
-    Tcl_WrongNumArgs(interp,
-		     1,
-		     objv,
-		     "?path?");
+  path = "";
+  lst = 0;
+  for (objix=1; objix<objc; objix++) {
+    arg = Tcl_GetStringFromObj(objv[objix], &s);
+    if (!strncasecmp(arg, "-", 1)) {
+      if (!strncasecmp(arg, "-list", 5)) {
+	lst = 1;
+      } else {
+	owtcl_ErrorMsg(interp, "bad switch \"%s\": should be -list\n", arg);
+	tcl_return = TCL_ERROR;
+	goto common_exit;
+      }
+    } else {
+      path = Tcl_GetStringFromObj(objv[objix], &s);
+    }
+  }
+
+  r = OW_get(path, &buf, &s);
+  if ( r<0 ) {
+    owtcl_ErrorMsg(interp, strerror(-r));
+    free(buf);
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
 
-  if ((r = FS_ParsedName(path, &pn))) {
-    owtcl_ErrorMsg(interp, strerror(-r));
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  }
-  if (pn.dev==NULL || pn.ft == NULL || pn.subdir) { /* A directory of some kind */
-    resultPtr = Tcl_NewListObj(0, NULL);
-    FS_dir(directory, &pn) ;
-    Tcl_SetObjResult(interp, resultPtr);
-  } else { /* A regular file */
-    s = FullFileLength(&pn) ;
-    if (s < 0) {
-	owtcl_ErrorMsg(interp, strerror(-s));
-	tcl_return = TCL_ERROR;
-	goto common_exit;
-    }
-    if ((buf=(char *) ckalloc((size_t)s+1))) {
-      r =  FS_read_postparse(buf, (size_t)s, (off_t)0, &pn) ;
-      if ( r<0 ) {
-	owtcl_ErrorMsg(interp, strerror(-r));
-	ckfree(buf);
-	tcl_return = TCL_ERROR;
-	goto common_exit;
+  buf[s] = 0;
+  if (lst) {
+    if (strchr(buf, ',')) {
+      resultPtr = Tcl_NewListObj(0, NULL);
+      p = buf;
+      while((d = strchr(p, ',')) != NULL) {
+        Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(p, d-p));
+        d++;
+        p = d;
       }
-      buf[s] = '\0';
-      if (strchr(buf, ',')) {
-	resultPtr = Tcl_NewListObj(0, NULL);
-	p = buf;
-	while((d = strchr(p, ',')) != NULL) {
-	  Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(p, d-p));
-	  d++;
-	  p = d;
-	  printf("p: '%s'\n", p);
-	}
-	Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(p, -1));
-      } else {
-	resultPtr = Tcl_NewStringObj(buf, -1);
-      }
+      Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(p, -1));
+    } else {
+      resultPtr = Tcl_NewStringObj(buf, -1);
     }
+  } else {
+    resultPtr = Tcl_NewStringObj(buf, -1);
   }
   Tcl_SetObjResult(interp, resultPtr);
-  
+
  common_exit:
-  FS_ParsedName_destroy(&pn) ;
   owtcl_ArgObjDecr;
   return tcl_return;
 }
-
 
 owtcl_ObjCmdProc(Owtcl_Version)
 {
@@ -385,7 +284,7 @@ struct CmdListType {
   char *name;
   void *func;
 } OwtclCmdList[] = {
-  {"::OW::init", Owtcl_Connect},
+  {"::OW::_init", Owtcl_Connect},
   {"::OW::put", Owtcl_Put},
   {"::OW::get", Owtcl_Get},
   {"::OW::version", Owtcl_Version},

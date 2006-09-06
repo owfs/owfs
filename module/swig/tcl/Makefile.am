@@ -7,8 +7,8 @@ EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl
 pkglib_LTLIBRARIES = ow.la
 ow_la_SOURCES = ow.c
 ow_la_LDFLAGS = -module -release $(OWTCL_VERSION) -shared -shrext "$(TCL_SHLIB_SUFFIX)"
-ow_la_LIBADD = ../../owlib/src/c/libow.la
-ow_la_DEPENDENCIES = ../../owlib/src/c/libow.la
+ow_la_LIBADD = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
+ow_la_DEPENDENCIES = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
 ow.lo: owtclInitScript.h ow.tcl.h version.h
 
 data_DATA = ow.tcl pkgIndex.tcl
@@ -27,6 +27,7 @@ LIBTOOL_DEPS = @LIBTOOL_DEPS@
 
 
 AM_CFLAGS = -I../../owlib/src/include \
+	-I ../../owcapi/src/include \
 	-fexceptions \
 	-Wall \
 	-W \

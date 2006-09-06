@@ -313,7 +313,9 @@ static void * ServerProcessOut( void * vp ) {
         LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(sps->out->name),sps->out->index) ;
         (sps->Exit)(1) ;
     }
+#if OW_ZERO
     OW_Announce( sps->out ) ;
+#endif
     ServerProcessAccept( vp ) ;
     return NULL ;
 }

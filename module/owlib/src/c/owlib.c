@@ -325,8 +325,10 @@ int LibStart( void ) {
     CONNINLOCK ;
         if ( indevice) Global.SimpleBusName = indevice->name ;
     CONNINUNLOCK ;
+#if OW_ZERO
     // zeroconf/Bonjour look for new services
     if ( Global.autoserver ) OW_Browse() ;
+#endif
 
     return 0 ;
 }

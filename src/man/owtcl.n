@@ -243,131 +243,39 @@ Owtcl \- OWFS library access commands for Tcl
 .br
 \fB::OW::finish
 .br
-\fB::OW::get\fI \fR?\fIpath\fR?
+\fB::OW::get\fI \fR?\fIpath\fR? \fR?\fIoptions\fR?
 .br
 \fB::OW::put\fI \fIpath \fR?\fIvalue\fR?
 .br
 \fB::OW::isdirectory\fI \fIpath
 .br
 \fB::OW::isdir\fI \fIpath
-
+\fR
 .SH DESCRIPTION
-.B owtcl
-is a Tcl extension that provides an interface to OWFS. OWFS is a family
-of programs that manipulate the Dallas/Maxim 1-wire bus -- a low power,
-low speed, system of smart memory chips and sensors. Each item on the bus
-is uniquely numbered and addressable. Bus elements can be added and 
-subtracted at will.
-.PP
-There is optional data caching. Which can speed repeated access to the
-same 1wire properties (but is potentially confusing). Use the uncached
-links to see immediate values.
-.PP
-The underlying interface to the 1-wire bus is identical to \fIowfs\fR
-(filesystem view) and \fIowhttpd\fR web server interface. Only the top
-layer has been modified to return native Tcl data. Development here,
-and support for new devices, will progress with those projects.
-
+.so description
+.SS owtcl
+.B owtcl (3)
+is a Tcl extension that provides an interface to OWFS. The underlying interface to the 1-wire bus is identical to 
+.B owfs (1)
+(filesystem view) and 
+.B owhttpd (1) 
+web server interface. Only the top
+layer has been modified to return native Tcl data.
 .SH LOW-LEVEL COMMANDS
 The following low-level commands are possible:
 .TP
 \fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
 Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR defines a way of
-connection to the 1-wire bus. Possible values:
-.RS
-.TP
-\fBusb \fR| \fBusb\fIN \fR| \fBu \fR| \fBu\fIN
-Direct connection to the 1-wire interface on the USB port -- \fIDS9490\fR.
-\fIN \fR- optional number for multiple usb adapters.
-.TP
-\fB/dev/ttySx
-Direct connection to a 1-wire interface on the serial port -- \fIDS9097U\fR
-or \fIDS9097\fR.
-.TP
-\fB:port\fR | \fBhost:port\fR | \fBsocket:/local/socket/path
-Location of an \fIowserver\fR daemon that connects to the 1-wire bus. Multiple
-\fIowtcl\fR as well as \fIowfs\fR and \fIowhttpd\fR programs can access the
-\fIowserver\fR process simultaneously. In fact, this will probably be the
-prefered mode of access to OWFS for \fIowtcl\fR except in trivial applications.
-.RE
-.sp
-.RS
-\fIoptions\fR allow to set additional parameters of operation with 1-wire bus.
-Possible options:
-.TP
-\fB\-format \fIvalue
-presentation format of names 1-wire devices. Possible formats:
-.RS
-.TP
-\fBf.i
-XX.YYYYYYYYYYYY (default)
-.TP
-\fBfi
-XXYYYYYYYYYYYY
-.TP
-\fBf.i.c
-XX.YYYYYYYYYYYY.ZZ
-.TP
-\fBf.ic
-XX.YYYYYYYYYYYYZZ
-.TP
-\fBfi.c
-XXYYYYYYYYYYYY.ZZ
-.TP
-\fBfic
-XXYYYYYYYYYYYYZZ
-.RE
-.TP
-\fB\-cache \fIvalue
-cache timeout (in seconds)
-.TP
-\fB\-celsius \fR| \fB\-fahrenheit \fR| \fB\-kelvin \fR| \fB\-rankine
-temperature scale. Default Celsius.
-.TP
-\fB\-readonly
-only allow reading of 1-wire devices
-.TP
-\fB\-error-print
-Where information/error messages are printed
-.RS
-.TP
-.I 0
-default mixed destination: stderr foreground / syslog background
-.TP
-.I 1
-syslog only
-.TP
-.I 2
-stderr only
-.TP
-.I 3
-dev/null (supress all).
-.RE
-.TP
-\fB\-error-level
-What kind of information is printed
-.RS
-.TP
-.I 0
-default errors only
-.TP
-.I 1
-connections/disconnections
-.TP
-.I 2
-all high level calls
-.TP
-.I 3
-data summary for each call
-.RE
-.RE
+connection to the 1-wire bus. See
+.B owfs (1)
+for full syntax.
 
 .TP
 \fB::OW::finish
 Close connection to 1-wire bus or owserver.
 
 .TP
-\fB::OW::get \fR?\fIpath\fR?
+\fB::OW::get \fR?\fIpath\fR? \fR?\fI-list\fR?
 Returns contents of OWFS directory as the list if path contains name OWFS directory.
 If path is name of OWFS file, returns of contents of this file. For files *.ALL
 returns a values list. If path is not defined, contents of root OWFS directory come
@@ -386,7 +294,10 @@ If \fIpath\fR is the directory - return 1. Otherwise return 0.
 \fB::OW::isdir \fIpath
 Synonym of \fB::OW::isdirectory
 
-
+.SH SEE ALSO
+.so seealso
+.SH AVAILABILITY
+http://owfs.sourceforge.net
 .SH AUTHOR
 Serg Oskin (serg@oskin.ru)
 .sp
