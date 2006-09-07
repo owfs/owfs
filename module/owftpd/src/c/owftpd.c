@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Need at least 1 adapter */
-    if ( indevices==0 || !Global.autoserver ) {
+    if ( indevices==0 && !Global.autoserver ) {
         LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.\n") ;
         ow_exit(1) ;
     }

@@ -281,7 +281,7 @@ static void * ServerProcessAccept( void * vp ) {
     pthread_detach( pthread_self() ) ;
 
 badthread:
-        //LEVEL_DEBUG("ACCEPT %s[%lu] start %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    //LEVEL_DEBUG("ACCEPT %s[%lu] start %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     ACCEPTLOCK(sps->out) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] locked %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     ret = pthread_create( &thread, NULL, ServerProcessAccept, vp ) ;
