@@ -63,6 +63,7 @@ int ftp_listener_init(struct ftp_listener_s *f) {
         }
         strcpy(newname,"0.0.0.0:") ;
         strcat(newname,oldname) ;
+        //printf("OWSERVER composite name <%s> -> <%s>\n",oldname,newname);
         outdevice->name = newname ;
         free(oldname) ;
     }

@@ -178,8 +178,7 @@ void FreeOut( void ) {
         if ( now->host ) {
             free(now->host) ;
             now->host = NULL ;
-        }
-        if ( now->service ) {
+        } else if ( now->service ) {
             free(now->service) ;
             now->service = NULL ;
         }

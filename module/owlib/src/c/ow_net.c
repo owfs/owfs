@@ -97,10 +97,13 @@ static int ServerAddr(  struct connection_out * out ) {
 
     if ( out->name == NULL ) return -1 ;
     if ( (p=strrchr(out->name,':')) ) { /* : exists */
-        p[0] = '\0' ; /* Separate tokens in the string */
+        p[0] = '\0' ;
         out->host = strdup(out->name) ;
-        out->service = strdup(&p[1]) ;
-        p[0] = ':' ; /* Restore the string */
+        p[0] = ':' ;
+        if ( out->host== NULL ) return -ENOMEM ;
+        out->service = p+1 ;
+        //printf("ServerAddr name=<%s>\n",out->name) ;
+        //printf("ServerAddr search name=<%s> :=<%s>\n",out->host,out->service) ;
     } else {
         out->host = NULL ;
         out->service = strdup(out->name) ;
@@ -115,7 +118,7 @@ static int ServerAddr(  struct connection_out * out ) {
     hint.ai_family = AF_UNSPEC ;
 #endif /* __FreeBSD__ */
 
-    //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
+    printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
     if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
     ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s\n",SAFESTRING(out->name),SAFESTRING(out->host),SAFESTRING(out->service));

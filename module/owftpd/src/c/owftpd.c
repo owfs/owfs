@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     /* non-option args are adapters */
     while ( optind < argc ) {
-        printf("Adapter(%d): %s\n",optind,argv[optind]);
+        //printf("Adapter(%d): %s\n",optind,argv[optind]);
         OW_ArgGeneric(argv[optind]) ;
         ++optind ;
     }
