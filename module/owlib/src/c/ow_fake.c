@@ -142,7 +142,7 @@ static const ASCII * namefind( const char * name ) {
     const ASCII * ret = NULL ;
     /* Embedded function */
     void action(const void *nodep, const VISIT which, const int depth) {
-        const struct device * p = *(const struct device **) nodep ; 
+       const struct device * p = *(struct device * const *) nodep ;
         (void) depth ;
         //printf("Comparing %s|%s with %s\n",p->name ,p->code , name ) ;
         switch(which) {

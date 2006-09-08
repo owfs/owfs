@@ -68,7 +68,7 @@ static void DS9490_setroutines( struct interface_routines * f ) ;
 static int DS9490_detect_low( const struct parsedname * pn ) ;
 static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
 static int DS9490_read( BYTE * buf, const size_t size, const struct parsedname * pn) ;
-static int DS9490_write( const BYTE * buf, const size_t size, const struct parsedname * pn) ;
+static int DS9490_write( BYTE * buf, const size_t size, const struct parsedname * pn) ;
 static int DS9490_overdrive( const UINT overdrive, const struct parsedname * pn ) ;
 static int DS9490_testoverdrive(const struct parsedname * pn) ;
 static int DS9490_redetect_low( const struct parsedname * pn ) ;
@@ -890,11 +890,11 @@ static int DS9490_read( BYTE * buf, const size_t size, const struct parsedname *
     return ret ;
 }
 
-static int DS9490_write( const BYTE * buf, const size_t size, const struct parsedname * pn) {
+static int DS9490_write( BYTE * buf, const size_t size, const struct parsedname * pn) {
     int ret;
     usb_dev_handle * usb = pn->in->connin.usb.usb ;
     //printf("DS9490_write\n");
-    if ((ret=usb_bulk_write(usb,DS2490_EP2,(const ASCII *)buf,(const int)size,Global.timeout_usb )) > 0) return ret ;
+    if ((ret=usb_bulk_write(usb,DS2490_EP2,(ASCII *)buf,(const int)size,Global.timeout_usb )) > 0) return ret ;
     LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
     USB_CLEAR_HALT(usb,DS2490_EP2) ;
     STAT_ADD1_BUS(BUS_write_errors,pn->in) ;

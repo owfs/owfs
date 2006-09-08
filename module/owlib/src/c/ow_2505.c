@@ -130,41 +130,29 @@ static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset ,
     if ( size==0 ) return 0 ;
     if ( size==1 ) return BUS_transaction(tfirst,pn)||(p[0]&(~data[0])) ;
     BUSLOCK(pn) ;
-    if (BUS_transaction(tfirst,pn)||(p[3]&(~data[0]))) {
-        ret = 1 ;
-    } else {
-        size_t i ;
-        BYTE * d = 
-        UINT s = offset + 1 ;
-        struct transaction_log trest[]  = {
-            { p,   NULL, 1, trxn_match,      },
-            { NULL,&p[1],2, trxn_read,       },
-            { p,   &s,   3, trxn_crc16seeded,},
-            { NULL,NULL, 0, trxn_program,    },
-            { NULL,p,    1, trxn_read,       },
-            TRXN_END,
-        } ;
-        for ( i=0,d
-    BUSINLOCK(pn) ;
-    if (size>0) {
-        /* First byte */
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data(p,4,pn) || BUS_readin_data(&p[4],2,pn) || CRC16(p,6) || BUS_ProgramPulse(pn)
-            || BUS_readin_data(&p[3],1,pn) || (p[3]&~data[0]);
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
-
-        /* Successive bytes */
-        for ( i=1 ; i<size ; ++i ) {
-            p[0] = data[i] ;
-            BUSLOCK(pn);
-                ret = BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],2,pn) || CRC16seeded(p,3,offset+i) || BUS_ProgramPulse(pn)
-                || BUS_readin_data(p,1,pn) || (p[0]&~data[i]) ;
-            BUSUNLOCK(pn);
-            if ( ret ) return 1 ;
+        if ( BUS_transaction(tfirst,pn)|| (p[0]&~data[0]) ) {
+            ret = 1 ;
+        } else {
+            size_t i ;
+            const BYTE * d = &data[1] ;
+            UINT s = offset + 1 ;
+            struct transaction_log trest[]  = {
+                { p,   NULL, 1, trxn_match,      },
+                { NULL,&p[1],2, trxn_read,       },
+                { p,   (BYTE *)&s,   3, trxn_crc16seeded,},
+                { NULL,NULL, 0, trxn_program,    },
+                { NULL,p,    1, trxn_read,       },
+                TRXN_END,
+            } ;
+            for ( i=0 ; i < size ; ++i,++d,++s ) {
+                if ( BUS_transaction(trest,pn)|| (p[0]&~d[0]) ) {
+                    ret = 1 ;
+                    break ;
+                }
+            }
         }
-    }
-    return 0 ;
+    BUSUNLOCK(pn) ;
+    return ret ;
 }
 
 /* page oriented read -- call will not span pages */

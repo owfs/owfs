@@ -130,12 +130,12 @@ static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset ,
     BUSLOCK(pn) ;
     if ( (ret=BUS_transaction_nolock(tfirst,pn)||(p[3]!=data[0]))==0 ) {
         size_t i ;
-        BYTE * d = &data[1] ;
+        const BYTE * d = &data[1] ;
         UINT s = offset+1 ;
         struct transaction_log trest[] = {
             {d,   NULL, 1,trxn_match,     },
             {NULL,p,    1,trxn_read,      },
-            {p,   &s,   1,trxn_crc8seeded,},
+            {p,   (BYTE *)(&s),   1,trxn_crc8seeded,},
             {NULL,NULL, 0,trxn_program,   },
             {NULL,p,    1,trxn_read,      },
             TRXN_END,

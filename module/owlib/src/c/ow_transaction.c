@@ -78,7 +78,7 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
                 ret = CRC8( t->out, t->size) ;
                 LEVEL_DEBUG("  Transaction CRC8 = %d\n",ret) ;
             case trxn_crc8seeded:
-                ret = CRC8seeded( t->out, t->size, ((UINT *)(t->in))[0])) ;
+                ret = CRC8seeded( t->out, t->size, ((UINT *)(t->in))[0]) ;
                 LEVEL_DEBUG("  Transaction CRC8 = %d\n",ret) ;
                 break ;
             case trxn_crc16:
