@@ -149,32 +149,40 @@ void LockRelease( const struct parsedname * pn ) {
 }
 
 void BUS_lock( const struct parsedname * pn ) {
-    if(!pn || !pn->in) return ;
+    if ( pn ) BUS_lock_in(pn->in) ;
+}
+
+void BUS_unlock( const struct parsedname * pn ) {
+    if ( pn ) BUS_unlock_in(pn->in) ;
+}
+
+void BUS_lock_in( struct connection_in * in ) {
+    if(!in) return ;
 #if OW_MT
-    pthread_mutex_lock( &(pn->in->bus_mutex) ) ;
-    if ( pn->in->busmode == bus_i2c && pn->in->connin.i2c.channels > 1 ) {
-        pthread_mutex_lock( &(pn->in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
+    pthread_mutex_lock( &(in->bus_mutex) ) ;
+    if ( in->busmode == bus_i2c && in->connin.i2c.channels > 1 ) {
+        pthread_mutex_lock( &(in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
     }
 #endif /* OW_MT */
-    gettimeofday( &(pn->in->last_lock) , NULL ) ; /* for statistics */
+    gettimeofday( &(in->last_lock) , NULL ) ; /* for statistics */
     STATLOCK;
-        ++ pn->in->bus_locks ; /* statistics */
+        ++ in->bus_locks ; /* statistics */
         ++ total_bus_locks ; /* statistics */
     STATUNLOCK;
 }
 
-void BUS_unlock( const struct parsedname * pn ) {
+void BUS_unlock_in( struct connection_in * in ) {
     struct timeval *t;
     long sec, usec;
-    if(!pn || !pn->in) return ;
+    if(!in) return ;
 
-    gettimeofday( &(pn->in->last_unlock), NULL ) ;
+    gettimeofday( &(in->last_unlock), NULL ) ;
 
     /* avoid update if system-clock have changed */
     STATLOCK;
-        sec = pn->in->last_unlock.tv_sec - pn->in->last_lock.tv_sec;
+        sec = in->last_unlock.tv_sec - in->last_lock.tv_sec;
         if((sec >= 0) && (sec < 60)) {
-            usec = pn->in->last_unlock.tv_usec - pn->in->last_lock.tv_usec;
+            usec = in->last_unlock.tv_usec - in->last_lock.tv_usec;
             total_bus_time.tv_sec += sec;
             total_bus_time.tv_usec += usec;
             if ( total_bus_time.tv_usec >= 1000000 ) {
@@ -185,7 +193,7 @@ void BUS_unlock( const struct parsedname * pn ) {
                 --total_bus_time.tv_sec;
             }
 
-            t = &pn->in->bus_time;
+            t = &in->bus_time;
             t->tv_sec += sec;
             t->tv_usec += usec;
             if ( t->tv_usec >= 1000000 ) {
@@ -196,13 +204,13 @@ void BUS_unlock( const struct parsedname * pn ) {
                 --t->tv_sec;
             }
         }
-        ++ pn->in->bus_unlocks ; /* statistics */
+        ++ in->bus_unlocks ; /* statistics */
         ++ total_bus_unlocks ; /* statistics */
     STATUNLOCK;
 #if OW_MT
-    if ( pn->in->busmode == bus_i2c && pn->in->connin.i2c.channels > 1 ) {
-        pthread_mutex_unlock( &(pn->in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
+    if ( in->busmode == bus_i2c && in->connin.i2c.channels > 1 ) {
+        pthread_mutex_unlock( &(in->connin.i2c.head->connin.i2c.i2c_mutex) ) ;
     }
-    pthread_mutex_unlock( &(pn->in->bus_mutex) ) ;
+    pthread_mutex_unlock( &(in->bus_mutex) ) ;
 #endif /* OW_MT */
 }

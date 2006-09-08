@@ -116,9 +116,36 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
 
 static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE p[6] = { 0x0F, offset&0xFF , offset>>8, data[0] } ;
-    size_t i ;
     int ret ;
+    struct transaction_log tfirst[] = {
+        TRXN_START,
+        { p,   NULL, 4, trxn_match,      },
+        { NULL,&p[4],2, trxn_read,       },
+        { p,   NULL, 6, trxn_crc16,      },
+        { NULL,NULL, 0, trxn_program,    },
+        { NULL,p   , 1, trxn_read,       },
+        TRXN_END,
+    } ;
 
+    if ( size==0 ) return 0 ;
+    if ( size==1 ) return BUS_transaction(tfirst,pn)||(p[0]&(~data[0])) ;
+    BUSLOCK(pn) ;
+    if (BUS_transaction(tfirst,pn)||(p[3]&(~data[0]))) {
+        ret = 1 ;
+    } else {
+        size_t i ;
+        BYTE * d = 
+        UINT s = offset + 1 ;
+        struct transaction_log trest[]  = {
+            { p,   NULL, 1, trxn_match,      },
+            { NULL,&p[1],2, trxn_read,       },
+            { p,   &s,   3, trxn_crc16seeded,},
+            { NULL,NULL, 0, trxn_program,    },
+            { NULL,p,    1, trxn_read,       },
+            TRXN_END,
+        } ;
+        for ( i=0,d
+    BUSINLOCK(pn) ;
     if (size>0) {
         /* First byte */
         BUSLOCK(pn);

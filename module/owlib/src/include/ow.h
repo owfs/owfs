@@ -786,6 +786,8 @@ int OW_r_mem_p8_crc16( BYTE * data , const size_t size, const off_t offset , con
 
 void BUS_lock( const struct parsedname * pn ) ;
 void BUS_unlock( const struct parsedname * pn ) ;
+void BUS_lock_in( struct connection_in * in ) ;
+void BUS_unlock_in( struct connection_in * in ) ;
 
 #define CACHE_MASK     ( (UINT) 0x00000001 )
 #define CACHE_BIT      0

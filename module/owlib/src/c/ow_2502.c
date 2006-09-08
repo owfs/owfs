@@ -113,44 +113,60 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
 /* Byte-oriented write */
 static int OW_w_mem( const BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
     BYTE p[5] = { 0x0F, offset&0xFF , offset>>8, data[0] } ;
-    size_t i ;
     int ret ;
+    struct transaction_log tfirst[] = {
+        TRXN_START,
+        {p,   NULL, 4,trxn_match,     },
+        {NULL,&p[4],1,trxn_read,      },
+        {p,   NULL, 5,trxn_crc8,      },
+        {NULL,NULL, 0,trxn_program,   },
+        {NULL,&p[3],1,trxn_read,      },
+        TRXN_END,
+    } ;
 
-    if (size>0) {
-        /* First byte */
-        BUSLOCK(pn);
-            ret = BUS_select(pn) || BUS_send_data(p,4,pn) || BUS_readin_data(&p[4],1,pn) || CRC8(p,5) || BUS_ProgramPulse(pn)
-            || BUS_readin_data(&p[3],1,pn) || (p[3]!=data[0]) ;
-        BUSUNLOCK(pn);
-        if ( ret ) return 1 ;
+    if ( size==0 ) return 0 ;
+    if ( size==1 ) return BUS_transaction(tfirst,pn) || (p[3]!=data[0]) ;
 
-        /* Successive bytes */
-        for ( i=1 ; i<size ; ++i ) {
-            BUSLOCK(pn);
-                ret = BUS_send_data(&data[i],1,pn) || BUS_readin_data(p,1,pn) || CRC8seeded(p,1,(offset+i)&0xFF) || BUS_ProgramPulse(pn)
-                || BUS_readin_data(p,1,pn) || (p[0]!=data[i]) ;
-            BUSUNLOCK(pn);
-            if ( ret ) return 1 ;
+    BUSLOCK(pn) ;
+    if ( (ret=BUS_transaction_nolock(tfirst,pn)||(p[3]!=data[0]))==0 ) {
+        size_t i ;
+        BYTE * d = &data[1] ;
+        UINT s = offset+1 ;
+        struct transaction_log trest[] = {
+            {d,   NULL, 1,trxn_match,     },
+            {NULL,p,    1,trxn_read,      },
+            {p,   &s,   1,trxn_crc8seeded,},
+            {NULL,NULL, 0,trxn_program,   },
+            {NULL,p,    1,trxn_read,      },
+            TRXN_END,
+        } ;
+        for ( i=1 ; i<size ; ++i,++s,++d ) {
+            if ( (ret=BUS_transaction_nolock(trest,pn)||(p[0]!=d[0])) ) break ;
         }
     }
+    BUSUNLOCK(pn);
 
-    return 0 ;
+    return ret ;
 }
 
 /* page-oriented read -- call will not span page boundaries */
 static int OW_r_mem( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn ) {
-    BYTE p[33] = { 0xC3, offset&0xFF , offset>>8, } ;
-    int rest = 32 - (offset & 0x1F) ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,3,pn) || BUS_readin_data(&p[3],1,pn) || CRC8(p,4)
-        || BUS_readin_data(p,rest+1,pn) || CRC8(p,rest+1) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    BYTE p[4] = { 0xC3, offset&0xFF , offset>>8, } ;
+    BYTE q[33] ;
+    int rest = 33 - (offset & 0x1F) ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        {p,NULL,3,trxn_match,},
+        {NULL,&p[3],1,trxn_read,},
+        {p,NULL,4,trxn_crc8,},
+        {NULL,q,rest,trxn_read,},
+        {q,NULL,rest,trxn_crc8,},
+        TRXN_END,
+    } ;
+    
+    if ( BUS_transaction(t,pn) ) return 1 ;
 
     memcpy( data, p, size ) ;
-
     return 0 ;
 }
 

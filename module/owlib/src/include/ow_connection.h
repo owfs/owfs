@@ -97,8 +97,12 @@ enum transaction_type {
     trxn_read, 
     trxn_power, 
     trxn_program, 
-    trxn_reset, 
-    trxn_end, 
+    trxn_reset,
+    trxn_crc8,
+    trxn_crc8seeded,
+    trxn_crc16,
+    trxn_crc16seeded,
+    trxn_end,
     trxn_verify ,
 } ;
 struct transaction_log {
@@ -455,6 +459,7 @@ int BUS_sendback_data( const BYTE * data, BYTE * resp , const size_t len, const 
 int TestConnection( const struct parsedname * pn ) ;
 
 int BUS_transaction( const struct transaction_log * tl, const struct parsedname * pn ) ;
+int BUS_transaction_nolock( const struct transaction_log * tl, const struct parsedname * pn ) ;
 
 #define STAT_ADD1_BUS( err, in )     STATLOCK; ++err; ++(in->bus_errors) ; STATUNLOCK ;
 
