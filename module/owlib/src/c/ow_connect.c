@@ -192,6 +192,8 @@ void FreeOut( void ) {
 #if OW_ZERO
         if ( now->sref0 ) DNSServiceRefDeallocate(now->sref0) ;
         if ( now->sref1 ) DNSServiceRefDeallocate(now->sref1) ;
+        if ( now->type ) free(now->type) ;
+        if ( now->domain ) free(now->domain) ;
 #endif /* OW_ZERO */
         free(now) ;
     }

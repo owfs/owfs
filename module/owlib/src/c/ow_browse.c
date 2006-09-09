@@ -41,6 +41,7 @@ static void ResolveBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServ
     (void) tl ;
     (void) t ;
     (void) c ;
+    printf("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
     LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",s,f,i,e,name,host,ntohs(port)) ;
     /* remove trailing .local. */
     if ( snprintf(name,120,"%s:%d",SAFESTRING(host),ntohs(port)) < 0 ) {
@@ -58,6 +59,7 @@ static void ResolveBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServ
 static void BrowseBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char * name, const char * type, const char * domain, void * context ) {
     struct RefStruct * rs ;
     (void) context ;
+    printf("BrowseBack ref=%d flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",s,f,i,e,name,type,domain) ;
     LEVEL_DETAIL("BrowseBack ref=%d flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",s,f,i,e,name,type,domain) ;
         
     if ( (rs = malloc(sizeof(struct RefStruct))) == NULL ) return ;
@@ -68,7 +70,9 @@ static void BrowseBack( DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServi
     //printf("BrowseBack add\n");
     if ( DNSServiceResolve( &(rs->sref), 0,0,name,type,domain,ResolveBack,NULL) == kDNSServiceErr_NoError ) {
         pthread_t thread ;
-        int err = pthread_create( &thread, 0, Process, (void *) rs ) ;
+        int err ;
+        printf("Resolve %d %s|%s|%s\n",rs->sref,name,type,domain) ;
+        err = pthread_create( &thread, 0, Process, (void *) rs ) ;
         if ( err ) {
             ERROR_CONNECT("Zeroconf/Bounjour resolve thread error %d).\n",err) ;
         }
@@ -85,7 +89,9 @@ void OW_Browse( void ) {
     rs->sref = Global.browse ;
     if ( dnserr == kDNSServiceErr_NoError ) {
         pthread_t thread ;
-        int err = pthread_create( &thread, 0, Process, (void *) rs ) ;
+        int err ;
+        printf("Browse %d %s|%s|%s\n",Global.browse,"","_owserver._tcp","") ;
+        err = pthread_create( &thread, 0, Process, (void *) rs ) ;
         if ( err ) {
             ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n",err) ;
         }

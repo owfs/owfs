@@ -358,6 +358,8 @@ struct connection_out {
 #if OW_ZERO
     DNSServiceRef sref0 ;
     DNSServiceRef sref1 ;
+    char * type ; // for zeroconf
+    char * domain ; // for zeroconf
 #endif
 } ;
 extern struct connection_out * outdevice ;
