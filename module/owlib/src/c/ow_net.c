@@ -213,7 +213,7 @@ int ClientConnect( struct connection_in * in ) {
     struct addrinfo *ai ;
 
     if ( in->connin.server.ai == NULL ) {
-        LEVEL_CONNECT("Client address not yet parsed\n");
+        LEVEL_DEBUG("Client address not yet parsed\n");
         return -1 ;
     }
 

@@ -96,14 +96,17 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
             case trxn_end:
                 return 0 ;
             case trxn_verify:
-            {
-                struct parsedname pn2 ;
-                memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
-                pn2.dev = NULL ;
-                ret = BUS_select(&pn2) || BUS_verify(t->size,pn) ;
-                LEVEL_DEBUG("  Transaction verify = %d\n",ret) ;
-            }
-            break ;
+                {
+                    struct parsedname pn2 ;
+                    memcpy( &pn2, pn, sizeof(struct parsedname) ) ; //shallow copy
+                    pn2.dev = NULL ;
+                    ret = BUS_select(&pn2) || BUS_verify(t->size,pn) ;
+                    LEVEL_DEBUG("  Transaction verify = %d\n",ret) ;
+                }
+                break ;
+            case trxn_nop:
+                ret = 0 ;
+                break ;
         }
         ++ t ;
     } while ( ret==0) ;

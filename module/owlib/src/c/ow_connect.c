@@ -113,19 +113,13 @@ void FreeIn( void ) {
 #endif /* OW_MT */
         switch (get_busmode(now)) {
         case bus_zero:
+            if ( now->type ) free(now->type) ;
+            if ( now->domain ) free(now->domain) ;
+            // fall through
         case bus_server:
-            if ( now->connin.server.host ) {
-                free(now->connin.server.host) ;
-                now->connin.server.host = NULL ;
-            }
-            if ( now->connin.server.service ) {
-                free(now->connin.server.service) ;
-                now->connin.server.service = NULL ;
-            }
-            if ( now->connin.server.ai ) {
-                freeaddrinfo(now->connin.server.ai) ;
-                now->connin.server.ai = NULL ;
-            }
+            FreeClientAddr(now) ;
+            if(now->type) free(now->type) ;
+            if(now->domain) free(now->domain) ;
             break ;
         case bus_link:
         case bus_serial:
@@ -192,8 +186,7 @@ void FreeOut( void ) {
 #if OW_ZERO
         if ( now->sref0 ) DNSServiceRefDeallocate(now->sref0) ;
         if ( now->sref1 ) DNSServiceRefDeallocate(now->sref1) ;
-        if ( now->type ) free(now->type) ;
-        if ( now->domain ) free(now->domain) ;
+
 #endif /* OW_ZERO */
         free(now) ;
     }

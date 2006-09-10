@@ -111,20 +111,25 @@ static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
 
 static int OW_r_status( BYTE * data, const struct parsedname * pn) {
     BYTE p[] = { 0xAC, } ;
-    int ret ;
-    BUSLOCK(pn) ;
-        ret = BUS_select(pn) || BUS_send_data( p,1,pn ) || BUS_readin_data( data,1,pn ) ;
-    BUSUNLOCK(pn) ;
-    return ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 1, trxn_match, },
+        { NULL, data, 1, trxn_read, },
+        TRXN_END,
+    } ;
+    
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_w_status( BYTE * data, const struct parsedname * pn) {
     BYTE p[] = { 0x0C, data[0] } ;
-    int ret ;
-    BUSLOCK(pn) ;
-        ret = BUS_select(pn) || BUS_send_data( p,2,pn ) ;
-    BUSUNLOCK(pn) ;
-    return ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { p, NULL, 2, trxn_match, },
+        TRXN_END,
+    } ;
+    
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) {
@@ -132,24 +137,25 @@ static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) {
     BYTE status ;
     int continuous ;
     int need_to_trigger = 0 ;
-    size_t s = sizeof(continuous) ;
-    int ret = OW_r_status( &status, pn ) ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { c, NULL, 1, trxn_match, },
+        TRXN_END,
+    } ;
 
-    if ( ret ) return ret ;
+    if ( OW_r_status( &status, pn ) ) return 1 ;
 
     if ( status & 0x01 ) { /* 1-shot, convert and wait 1 second */
         need_to_trigger = 1 ;
     } else { /* continuous conversion mode */
+        size_t s = sizeof(continuous) ;
         if ( Cache_Get_Internal( &continuous,&s,&ip_continuous,pn ) || continuous==0 ) {
             need_to_trigger = 1 ;
         }
     }
     
     if ( need_to_trigger ) {
-        BUSLOCK(pn) ;
-        ret = BUS_select(pn) || BUS_send_data( c,1,pn) ;
-        BUSUNLOCK(pn) ;
-        if (ret) return ret ;
+        if ( BUS_transaction(t,pn) ) return 1 ;
         UT_delay(1000) ;
         if ( (status & 0x01) == 0 ) { /* continuous mode, just triggered */
             continuous = 1 ;
@@ -166,17 +172,22 @@ static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn )
     BYTE temp_read ;
     BYTE count_per_c ;
     BYTE count_remain ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        {rt,  NULL,         1,trxn_match,} ,
+        {NULL,&temp_read,   1,trxn_read,} ,
+        TRXN_START,
+        {rc,  NULL,         1,trxn_match,} ,
+        {NULL,&count_remain,1,trxn_read,} ,
+        TRXN_START,
+        {lc,  NULL,         1,trxn_match,} ,
+        TRXN_START,
+        {rc,  NULL,         1,trxn_match,} ,
+        {NULL,&count_per_c, 1,trxn_read,} ,
+        TRXN_END,
+    } ;
 
-    BUSLOCK(pn) ;
-    ret =
-            BUS_select(pn) || BUS_send_data( rt,1,pn) || BUS_readin_data( &temp_read,1,pn )
-        ||  BUS_select(pn) || BUS_send_data( rc,1,pn) || BUS_readin_data( &count_remain,1,pn )
-        ||  BUS_select(pn) || BUS_send_data( lc,1,pn)
-        ||  BUS_select(pn) || BUS_send_data( rc,1,pn) || BUS_readin_data( &count_per_c,1,pn ) ;
-    
-    BUSUNLOCK(pn) ;
-    if ( ret ) return ret ;
+    if ( BUS_transaction(t,pn) ) return 1 ;
     if ( count_per_c ) {
         temp[0] = (FLOAT) ((int8_t)temp_read) + .5 - ((FLOAT)count_remain)/((FLOAT)count_per_c) ;
     } else { /* Bad count_per_c -- use lower resolution */
@@ -189,23 +200,27 @@ static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn )
 static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
     BYTE p[] = { 0xA1, 0xA2, } ;
     BYTE data ;
-    int ret ;
-
-    BUSLOCK(pn) ;
-    ret = BUS_select(pn) || BUS_send_data( &p[Tindex],1,pn ) || BUS_readin_data( &data,1,pn ) ;
-    BUSUNLOCK(pn) ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { &p[Tindex], NULL, 1, trxn_match,} ,
+        { NULL, &data, 1, trxn_read, } ,
+        TRXN_END ,
+    } ;
+    
+    if ( BUS_transaction(t,pn) ) return 1 ;
     T[0] = (FLOAT) ((int8_t)data) ;
-    return ret ;
+    return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
 static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) {
     BYTE p[] = { 0x01, 0x02, } ;
     BYTE data = ((int) (T[0]+.49))&0xFF ; // round off
-    int ret ;
-
-    BUSLOCK(pn) ;
-    ret = BUS_select(pn) || BUS_send_data( &p[Tindex],1,pn ) || BUS_send_data( &data,1,pn ) ;
-    BUSUNLOCK(pn) ;
-    return ret ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        { &p[Tindex], NULL, 1, trxn_match,} ,
+        { &data, NULL, 1, trxn_match, } ,
+        TRXN_END ,
+    } ;
+    return BUS_transaction(t,pn) ; ;
 }

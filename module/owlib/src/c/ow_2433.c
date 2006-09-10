@@ -116,34 +116,45 @@ static int FS_w_page2D(const BYTE *buf, const size_t size, const off_t offset , 
 
 /* paged, and pre-screened */
 static int OW_w_23page( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
-    BYTE p[3+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
-    int ret ;
+    BYTE p[1+2+32+2] = { 0x0F, offset&0xFF , offset>>8, } ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        {p,NULL,size+3,trxn_match,} ,
+        {NULL,&p[size+3],2,trxn_read,} ,
+        {p,NULL,1+2+size+2,trxn_crc16,} ,
+        TRXN_END,
+    } ;
+    struct transaction_log treread[] = {
+        TRXN_START,
+        {p,NULL,1,trxn_match,} ,
+        {NULL,&p[1],3+size,trxn_read,} ,
+        TRXN_END,
+    } ;
+    struct transaction_log twrite[] = {
+        TRXN_START,
+        {p,NULL,4,trxn_match,} ,
+        TRXN_END,
+    } ;
 
     /* Copy to scratchpad */
     memcpy( &p[3], data, size ) ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,size+3,pn) ;
-        if ( ret==0 && ((offset+size)&0x1F)==0 ) ret = BUS_readin_data(&p[size+3],2,pn) || CRC16(p,1+2+size+2) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( ((offset+size)&0x1F) ) { // doesn't end on page boundary, no crc16
+        tcopy[2].type = tcopy[3].type = trxn_nop ;
+    }
+
+    if ( BUS_transaction(tcopy,pn) ) return 1 ;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = 0xAA ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,1,pn) || BUS_readin_data(&p[1],3+size,pn) || memcmp( &p[4], data, size) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(treread,pn) || memcmp( &p[4], data, size) ) return 1 ;
 
-    /* Copy Scratchpad to EPROM */
-    p[0] = 0x55 ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,4,pn) ;
-        UT_delay(5) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    /* Copy Scratchpad to SRAM */
+    p[0] = 0x5A ;
+    if ( BUS_transaction(twrite,pn) ) return 1 ;
 
+    UT_delay(5) ;
     return 0 ;
 }
 

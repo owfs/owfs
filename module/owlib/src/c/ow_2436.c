@@ -104,29 +104,34 @@ static int OW_r_page( BYTE * p , const size_t size , const off_t offset, const s
     size_t s ;
     BYTE scratchin[] = {0x11 , offset, } ;
     static BYTE copyin[] = {0x71, 0x77, 0x7A, } ;
-    int ret ;
+    BYTE * copy = & copyin[page] ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { copy, NULL, 1, trxn_match, } ,
+        TRXN_END ,
+    } ;
+    struct transaction_log tscratch[] = {
+        TRXN_START,
+        { scratchin, NULL, 2, trxn_match, } ,
+        { NULL, data, size, trxn_read } ,
+        TRXN_END ,
+    } ;
+    
 
     s = Asize[page] - (offset & 0x1F) ;
     if ( s > size ) s = size ;
+    tscratch[2].size = s ;
 
     memset( p, 0xFF, size ) ;
 
-    // send perment memory to scratchpad
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( &copyin[page],1,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(tcopy,pn) ) return 1 ;
 
     UT_delay(10) ;
     
-    // re-read scratchpad and compare
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchin, 2,pn ) || BUS_readin_data( data,s,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction( tscratch,pn) ) return 1 ;
 
     // copy to buffer
-    memcpy( p , data , size ) ;
+    memcpy( p , data , s ) ;
     
     return 0 ;
 }
@@ -139,28 +144,27 @@ static int OW_w_page( const BYTE * p , const size_t size , const off_t offset , 
     BYTE scratchout[] = {0x17 , offset, } ;
     BYTE data[32] ;
     static BYTE copyout[] = {0x22, 0x25, 0x27, } ;
-    int ret ;
-
+    BYTE * copy = &copyout[page] ;
+    struct transaction_log tscratch[] = {
+        TRXN_START ,
+        { scratchout, NULL, 2, trxn_match, } ,
+        { p, NULL, size, trxn_match, } ,
+        TRXN_START ,
+        { scratchin,  NULL, 2, trxn_match, } ,
+        { data, NULL, size, trxn_match, } ,
+        TRXN_END,
+    } ;
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        { copy, NULL, 1, trxn_match, } ,
+        TRXN_END ,
+    } ;
+        
     s = Asize[page] - (offset & 0x1F) ;
     if ( s > size ) s = size ;
+    tscratch[2].size = tscratch[5].size = s ;
 
-    // write to scratchpad
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchout, 2,pn ) || BUS_send_data( data,s,pn ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    // re-read scratchpad and compare
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( scratchin, 2,pn ) || BUS_readin_data( data,s,pn ) || memcpy( data,p,s ) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
-
-    // send scratchpad to perment memory
-    BUSLOCK(pn);
-        ret = BUS_send_data( &copyout[page],1,pn) ;
-    BUSUNLOCK(pn);
-    if ( ret ) return 1 ;
+    if ( BUS_transaction(tscratch,pn) || memcmp(data,p,s) || BUS_transaction(tcopy,pn) ) return 1 ;
 
     UT_delay(10) ;
     

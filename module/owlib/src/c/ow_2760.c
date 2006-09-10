@@ -810,27 +810,27 @@ static int FS_w_pio(const int * y, const struct parsedname * pn) {
 
 static int OW_r_eeprom( const size_t page, const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[] = { 0xB8, page&0xFF, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 2, trxn_match,} ,
+        TRXN_END ,
+    } ;
     if ( offset > (off_t)page+16 ) return 0 ;
     if ( offset + size <= page ) return 0 ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 2,pn ) ;
-    BUSUNLOCK(pn);
-//printf("OW_r_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 /* just read the sram -- eeprom may need to be recalled if you want it */
 static int OW_r_sram( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[] = { 0x69, offset&0xFF , } ;
-    int ret ;
-
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 2,pn ) || BUS_readin_data( data, size,pn ) ;
-    BUSUNLOCK(pn);
-//printf("OW_r_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
-
-    return ret ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 2, trxn_match,} ,
+        { NULL, data, size, trxn_match,} ,
+        TRXN_END ,
+    } ;
+    
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
@@ -842,36 +842,36 @@ static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const
 /* Special processing for eeprom -- page is the address of a 16 byte page (e.g. 0x20) */
 static int OW_w_eeprom( const size_t page, const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[] = { 0x48, page&0xFF, } ;
-    int ret ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 2, trxn_match,} ,
+        TRXN_END ,
+    } ;
     if ( offset > (off_t)page+16 ) return 0 ;
     if ( offset + size <= page ) return 0 ;
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data( p, 2,pn ) ;
-    BUSUNLOCK(pn);
-//printf("OW_w_eeprom page=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",page,size,offset,ret,p[0],p[1]);
-
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_w_sram( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[] = { 0x6C, offset&0xFF , } ;
-    int ret  ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { p, NULL, 2, trxn_match,} ,
+        { data, NULL, size, trxn_match,} ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(p,2,pn) || BUS_send_data(data,size,pn) ;
-    BUSUNLOCK(pn);
-//printf("OW_w_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_cmd( const BYTE cmd , const struct parsedname * pn ) {
-    int ret  ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { &cmd, NULL, 1, trxn_match,} ,
+        TRXN_END ,
+    } ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(&cmd,1,pn) ;
-    BUSUNLOCK(pn);
-//printf("OW_w_sram data[0]=%.2X, size=%d, offset=%d, ret=%d command=%.2X,%.2X\n",data[0],size,offset,ret,p[0],p[1]);
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
@@ -910,15 +910,16 @@ static int OW_w_int8(const int * I, off_t offset, const struct parsedname * pn) 
 
 static int OW_lock( const struct parsedname * pn ) {
     BYTE lock[] = { 0x6C, 0x07, 0x40, 0x6A, 0x00 } ;
-    int ret  ;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        { lock, NULL, 5, trxn_match,} ,
+        TRXN_END ,
+    } ;
     
     UT_setbit( &lock[2], pn->extension, 1 ) ;
     lock[4] = ((struct LockPage *) pn->ft->data.v)->offset[pn->extension] ;
 
-    BUSLOCK(pn);
-        ret = BUS_select(pn) || BUS_send_data(lock,5,pn) ;
-    BUSUNLOCK(pn);
-    return ret ;
+    return BUS_transaction(t,pn) ;
 }
 
 #if OW_THERMOCOUPLE

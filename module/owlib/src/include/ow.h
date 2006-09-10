@@ -196,6 +196,8 @@ typedef int             INT ;
     #define CONNINUNLOCK      pthread_mutex_unlock(&connin_mutex    )
     #define BUSLOCK(pn)       BUS_lock(pn)
     #define BUSUNLOCK(pn)     BUS_unlock(pn)
+    #define BUSLOCKIN(in)       BUS_lock_in(in)
+    #define BUSUNLOCKIN(in)     BUS_unlock_in(in)
  #ifdef __UCLIBC__
     #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
     #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
@@ -227,6 +229,8 @@ typedef int             INT ;
     #define CONNINUNLOCK
     #define BUSLOCK(pn)
     #define BUSUNLOCK(pn)
+    #define BUSLOCKIN(in)
+    #define BUSUNLOCKIN(in)
 #endif /* OW_MT */
 
 /*

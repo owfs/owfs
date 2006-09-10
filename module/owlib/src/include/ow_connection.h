@@ -103,7 +103,8 @@ enum transaction_type {
     trxn_crc16,
     trxn_crc16seeded,
     trxn_end,
-    trxn_verify ,
+    trxn_verify,
+    trxn_nop,
 } ;
 struct transaction_log {
     const BYTE * out ;
@@ -282,6 +283,7 @@ enum adapter_type {
 } ;
 
 enum e_reconnect {
+    reconnect_bad = -1 ,
     reconnect_ok = 0 ,
     reconnect_error = 5 ,
 } ;
@@ -312,6 +314,8 @@ struct connection_in {
     UINT bus_unlocks ;
     UINT bus_errors ;
     struct timeval bus_time ;
+    char * type ; // for zeroconf
+    char * domain ; // for zeroconf
 
     struct timeval bus_read_time ;
     struct timeval bus_write_time ; /* for statistics */
@@ -358,8 +362,6 @@ struct connection_out {
 #if OW_ZERO
     DNSServiceRef sref0 ;
     DNSServiceRef sref1 ;
-    char * type ; // for zeroconf
-    char * domain ; // for zeroconf
 #endif
 } ;
 extern struct connection_out * outdevice ;
