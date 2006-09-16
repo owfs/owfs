@@ -485,7 +485,8 @@ static int SetConfiguration( BYTE c, struct connection_in * in ) {
     int read_back ;
 
     /* Write, readback, and compare configuration register */
-    if ( i2c_smbus_write_byte_data( fd, DS2482_CMD_WRITE_CONFIG, c|(~(c<<4)) )
+    /* Logic error fix from Uli Raich */
+    if ( i2c_smbus_write_byte_data( fd, DS2482_CMD_WRITE_CONFIG, c|((~c)<<4) )
         || (read_back=i2c_smbus_read_byte(fd))<0
         || ((BYTE)read_back != c )
     ) {
