@@ -97,7 +97,7 @@ static int FS_r_cp(int * y , const struct parsedname * pn) {
 
 /* write Wiper */
 static int OW_w_wiper(const UINT val, const struct parsedname * pn) {
-    BYTE resp[0] ;
+    BYTE resp[1] ;
     BYTE cmd[] = { 0x0F , (BYTE) val, } ;
     BYTE ns[] = { 0x96, } ;
     struct transaction_log t[] = {
