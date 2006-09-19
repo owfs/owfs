@@ -201,6 +201,16 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset, cons
                 LockRelease(pn) ;
             }
             //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
+        } else if ( pn->extension!=-1 && pn->ft->ag && pn->ft->ag->combined==ag_aggregate ) { // aggregate property, single value -- handle cache at lower level
+            if ( (r=LockGet(pn))==0 ) {
+                r = FS_r_local( buf, size, offset, pn ) ;
+                LockRelease(pn) ;
+            }
+        } else if ( pn->extension==-1 && pn->ft->ag && pn->ft->ag->combined==ag_mixed ) { // mixed doesn't cache ALL
+            if ( (r=LockGet(pn))==0 ) {
+                r = FS_r_local( buf, size, offset, pn ) ;
+                LockRelease(pn) ;
+            }
         } else if ( IsUncachedDir(pn) || Cache_Get( buf, &s, pn ) ) {
             LEVEL_DEBUG("READSEEK2 pid=%d not found in cache\n",getpid());
             //printf("READSEEK2 pid=%d not found in cache\n",getpid());

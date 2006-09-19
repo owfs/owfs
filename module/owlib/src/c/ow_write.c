@@ -20,7 +20,7 @@ static int FS_w_given_bus(const char *buf, const size_t size, const off_t offset
 static int FS_w_local(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_w_simultaneous(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_w_separate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_separate_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_w_aggregate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_w_single(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 
@@ -249,7 +249,7 @@ static int FS_w_local(const char * buf, const size_t size, const off_t offset, c
             break ; /* continue for bitfield */
         case ag_separate:
             /* write all of them, but one at a time */
-            if ( pn->extension == -1 ) return FS_w_separate(buf,size,offset,pn) ;
+            if ( pn->extension == -1 ) return FS_w_separate_all(buf,size,offset,pn) ;
             break ; /* fall through for individual writes */
         }
     }
@@ -560,7 +560,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
 
 /* Non-combined input  field, so treat  as several separate transactions */
 /* return 0 if ok */
-static int FS_w_separate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_separate_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t left = size ;
     const char * p = buf ;
     int r ;
@@ -605,6 +605,10 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
 
     const size_t ffl = FullFileLength(pn) ;
     char * cbuf = NULL ;
+    struct parsedname pn_all ;
+    
+    memcpy( &pn_all, pn, sizeof(struct parsedname) ) ; //shallow copy
+    pn_all.extension = -1 ; // to save full string only
 
     /* readable at all? cannot write a part if whole can't be read */
     if ( pn->ft->read.v == NULL ) return -EFAULT ;
@@ -781,10 +785,10 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
 
     /* Add to cache? */
     if ( cbuf && ret==0 ) {
-        Cache_Add( cbuf, strlen(cbuf), pn ) ;
+        Cache_Add( cbuf, strlen(cbuf), &pn_all ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
     } else if ( IsLocalCacheEnabled(pn) ) {
-            Cache_Del( pn ) ;
+            Cache_Del( &pn_all ) ;
     }
     /* free cache string buffer */
     if ( cbuf ) free(cbuf) ;
