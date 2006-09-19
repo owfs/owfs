@@ -229,6 +229,9 @@ struct connin_server {
     char * service ;
     struct addrinfo * ai ;
     struct addrinfo * ai_ok ;
+    char * type ; // for zeroconf
+    char * domain ; // for zeroconf
+    char * fqdn ;
 } ;
 struct connin_ha7 {
     struct connin_server server; // mirror connin.server
@@ -314,8 +317,6 @@ struct connection_in {
     UINT bus_unlocks ;
     UINT bus_errors ;
     struct timeval bus_time ;
-    char * type ; // for zeroconf
-    char * domain ; // for zeroconf
 
     struct timeval bus_read_time ;
     struct timeval bus_write_time ; /* for statistics */

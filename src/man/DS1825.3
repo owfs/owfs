@@ -17,13 +17,11 @@ Thermometer with hardware address pins.
 .PP
 .B 3B
 [.]XXXXXXXXXXXX[XX][/[
-.B fasttemp
+.so temperatures_mini
 |
 .B power
 |
 .B prog_addr
-|
-.B temperature
 |
 .B temphigh
 |
@@ -35,15 +33,7 @@ Thermometer with hardware address pins.
 .PP
 .I 3B
 .SH SPECIAL PROPERTIES
-.SS fasttemp
-.I read-only, floating point
-.br
-Low resolution but faster temperature reading by the chip. (~9 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-Conversion takes 94 msec.
+.so temperatures
 .SS power
 .I read-only,yes-no
 .br
@@ -55,17 +45,7 @@ A distiguishing feature of the
 .B DS1825 (3)
 is the ability to set hardware pins for an address (0-15). This is an alternative to the unique 64-bit
 .I address
-that isw set in the factory.
-.SS temperature
-.I read-only, floating point
-.br
-.I Temperature
-read by the chip at high resolution (~12 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-Conversion takes 750 msec.
+that is set in the factory.
 .SS temphigh templow
 .I read-write. floating point
 .br

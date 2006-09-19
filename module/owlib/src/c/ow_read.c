@@ -17,12 +17,12 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
-static int FS_real_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_gamish(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_r_given_bus(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) ;
+static int FS_r_local(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_r_separate_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_r_single(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
 /*
@@ -161,7 +161,7 @@ int FS_read_postpostparse(char *buf, const size_t size, const off_t offset, cons
             r = FS_structure(buf,size,offset,pn) ;
             break;
         default:
-            r = FS_read_seek( buf, size, offset, pn ) ;
+            r = FS_r_given_bus( buf, size, offset, pn ) ;
             break;
     }
     STATLOCK;
@@ -178,7 +178,7 @@ LEVEL_DEBUG("READ_POSTPOSTPARSE: %s return %d\n", pn->path, r);
     return r;
 }
 
-static int FS_read_seek(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+static int FS_r_given_bus(char *buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
     int r = 0;
     //printf("READSEEK\n");
     LEVEL_DEBUG("READSEEK\n");
@@ -193,11 +193,11 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
         STAT_ADD1(read_calls) ; /* statistics */
         /* Check the cache (if not pn_uncached) */
         if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
-            LEVEL_DEBUG("READSEEK1 pid=%d call FS_real_read\n",getpid());
-            //printf("READSEEK1 pid=%d call FS_real_read\n",getpid());
+            LEVEL_DEBUG("READSEEK1 pid=%d call FS_r_local\n",getpid());
+            //printf("READSEEK1 pid=%d call FS_r_local\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
-                r = FS_real_read(buf, size, offset, pn ) ;
-                //printf("READSEEK1 FS_real_read ret=%d\n", r);
+                r = FS_r_local(buf, size, offset, pn ) ;
+                //printf("READSEEK1 FS_r_local ret=%d\n", r);
                 LockRelease(pn) ;
             }
             //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
@@ -206,8 +206,8 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
             //printf("READSEEK2 pid=%d not found in cache\n",getpid());
             if ( (r=LockGet(pn))==0 ) {
                 //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
-                r = FS_real_read( buf, size, offset, pn ) ;
-                //printf("READSEEK2 FS_real_read ret=%d\n", r);
+                r = FS_r_local( buf, size, offset, pn ) ;
+                //printf("READSEEK2 FS_r_local ret=%d\n", r);
                 if ( r>0 ) Cache_Add( buf, (const size_t)r, pn ) ;
                 LockRelease(pn) ;
             }
@@ -229,8 +229,7 @@ static int FS_read_seek(char *buf, const size_t size, const off_t offset, const 
 /* Real read -- called from read
    Integrates with cache -- read not called if cached value already set
 */
-static int FS_real_read(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    int r;
+static int FS_r_local(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     //printf("RealRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n", pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
     /* Readable? */
     if ( (pn->ft->read.v) == NULL ) return -ENOTSUP ;
@@ -243,28 +242,20 @@ static int FS_real_read(char *buf, const size_t size, const off_t offset, const 
         if ( pn->extension==-1) {
             switch(pn->ft->ag->combined) {
                 case ag_separate: /* separate reads, artificially combined into a single array */
-                    return FS_r_all(buf,size,offset,pn) ;
+                    return FS_r_separate_all(buf,size,offset,pn) ;
                 case ag_mixed: /* mixed mode, ALL read handled differently */
-                    return FS_gamish(buf,size,offset,pn) ;
                 case ag_aggregate: /* natively an array */
                     /* return ALL if required   (comma separated)*/
-                    return FS_gamish(buf,size,offset,pn) ;
+                    return FS_r_aggregate_all(buf,size,offset,pn) ;
             }
         } else if ( pn->extension>-1 && pn->ft->ag->combined==ag_aggregate ) {
             /* split apart if a single item requested */
-            return FS_r_split(buf,size,offset,pn) ;
+            return FS_r_aggregate(buf,size,offset,pn) ;
         }
     }
      
     /* Normal read. */
-    r = FS_parse_read( buf, size, offset, pn ) ;
-    //printf("RealRead path=%s size=%d, offset=%d, extension=%d adapter=%d result=%d\n",pn->path,size,(int)offset,pn->extension,pn->in->index,r) ;
-    //    ++read_tries[1] ; /* statitics */
-    //    if ( (r=FS_parse_read( buf, size, offset, pn )) >= 0 ) return r;
-    //    ++read_tries[2] ; /* statitics */
-    //    r = FS_parse_read( buf, size, offset, pn ) ;
-    //    if (r<0) LEVEL_DATA("Read error on %s (size=%d)\n",SAFESTRING(pn->path),(int)size)
-    return r;
+    return FS_r_single( buf, size, offset, pn ) ;
 }
 
 /* Structure file */
@@ -304,14 +295,14 @@ static int FS_structure(char *buf, const size_t size, const off_t offset, const 
 }
 
 /* read without artificial separation or combination */
-static int FS_parse_read(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_single(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     int ret = 0 ;
     int sz ;
     size_t s = 0 ;
     enum ft_format format = pn->ft->format ;
 //printf("ParseRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
 
-    LEVEL_CALL("FS_parse_read: format=%d s=%d offset=%d\n", (int)pn->ft->format, (int)size, (int)offset )
+    LEVEL_CALL("FS_r_single: format=%d s=%d offset=%d\n", (int)pn->ft->format, (int)size, (int)offset )
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
      * at end-of-file... Just return 0 if offset == size */
@@ -327,7 +318,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             int i ;
             ret = (pn->ft->read.i)(&i,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (integer) %d\n", i ) ;
+            LEVEL_DEBUG("FS_r_single: (integer) %d\n", i ) ;
             sz = FS_output_integer( i , buf , size , pn ) ;
             break;
             }
@@ -336,7 +327,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             if (size < 1) return -EMSGSIZE ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (bitfield) %u\n", u ) ;
+            LEVEL_DEBUG("FS_r_single: (bitfield) %u\n", u ) ;
             buf[0] = UT_getbit((void*)(&u),pn->extension) ? '1' : '0' ;
             return 1 ;
             }
@@ -344,7 +335,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             UINT u ;
             ret = (pn->ft->read.u)(&u,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (unsigned) %u\n", u ) ;
+            LEVEL_DEBUG("FS_r_single: (unsigned) %u\n", u ) ;
             sz = FS_output_unsigned( u , buf , size , pn ) ;
             break ;
             }
@@ -352,7 +343,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             FLOAT f ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (float) %G\n", f ) ;
+            LEVEL_DEBUG("FS_r_single: (float) %G\n", f ) ;
             sz = FS_output_float( f , buf , size , pn ) ;
             break ;
             }
@@ -360,7 +351,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             FLOAT f ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (temperature) %G\n", f ) ;
+            LEVEL_DEBUG("FS_r_single: (temperature) %G\n", f ) ;
             sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
             break ;
             }
@@ -368,7 +359,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             FLOAT f ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (tempgap) %G\n", f ) ;
+            LEVEL_DEBUG("FS_r_single: (tempgap) %G\n", f ) ;
             sz = FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
             break ;
             }
@@ -376,7 +367,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             DATE d ;
             ret = (pn->ft->read.d)(&d,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (date) %lu\n", (unsigned long int) d ) ;
+            LEVEL_DEBUG("FS_r_single: (date) %lu\n", (unsigned long int) d ) ;
             sz = FS_output_date( d , buf , size , pn ) ;
             break;
             }
@@ -385,7 +376,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
             if (size < 1) return -EMSGSIZE ;
             ret = (pn->ft->read.y)(&y,pn) ;
             if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_parse_read: (yesno) %d\n", y ) ;
+            LEVEL_DEBUG("FS_r_single: (yesno) %d\n", y ) ;
             buf[0] = y ? '1' : '0' ;
             return 1 ;
             }
@@ -420,7 +411,7 @@ static int FS_parse_read(char *buf, const size_t size, const off_t offset , cons
 }
 
 /* read an aggregation (returns an array from a single read) */
-static int FS_gamish(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0 ;
     size_t s = 0 ;
@@ -547,7 +538,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
 
     if((size_t)ret != s) {
       /* Read error since we didn't get all bytes */
-      LEVEL_DEBUG("FS_gamish: error ret=%d s=%d\n", ret, s);
+      LEVEL_DEBUG("FS_r_aggregate_all: error ret=%d s=%d\n", ret, s);
       return -ENOENT ;
     }
 
@@ -561,7 +552,7 @@ static int FS_gamish(char *buf, const size_t size, const off_t offset , const st
 
 /* Read each array element independently, but return as one long string */
 /* called when pn->extension==-1 (ALL) and pn->ft->ag->combined==ag_separate */
-static int FS_r_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_separate_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t left = size ;
     char * p = buf ;
     int r ;
@@ -587,7 +578,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
             -- left ;
             //printf("READALL(%p) comma\n",p) ;
         }
-        if ( (r=FS_parse_read(p,left,(const off_t)0,&pn2)) < 0 ) return r ;
+        if ( (r=FS_r_single(p,left,(const off_t)0,&pn2)) < 0 ) return r ;
         left -= r ;
         p += r ;
         //printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
@@ -599,12 +590,12 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
     // /var/1wire/system/adapter/address.ALL is 512 long
     // but will only return 10 bytes or something
     if(sz != s) {
-      LEVEL_DEBUG("FS_r_all: error sz=%d s=%d\n", sz, s);
+      LEVEL_DEBUG("FS_r_separate_all: error sz=%d s=%d\n", sz, s);
       return -ENOENT ;
     }
 #endif
 
-    LEVEL_DEBUG("FS_r_all: size=%d left=%d sz=%d\n", size, left, sz);
+    LEVEL_DEBUG("FS_r_separate_all: size=%d left=%d sz=%d\n", size, left, sz);
     if((sz > 0) && offset) {
         memcpy(buf, &buf[offset], sz - (size_t)offset);
         return sz - offset;
@@ -614,7 +605,7 @@ static int FS_r_all(char *buf, const size_t size, const off_t offset , const str
 
 /* read the combined data, and then separate */
 /* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
-static int FS_r_split(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0 ;
     off_t s = 0 ;
@@ -728,11 +719,11 @@ static int FS_r_split(char *buf, const size_t size, const off_t offset , const s
 
     if(ret != s) {
       /* Read error since we didn't get all bytes */
-      LEVEL_DEBUG("FS_r_split: error ret=%d s=%d\n", ret, s);
+      LEVEL_DEBUG("FS_r_aggregate: error ret=%d s=%d\n", ret, s);
       return -ENOENT ;
     }
 
-    LEVEL_DEBUG("FS_r_split: size=%d sz=%d\n", size, ret);
+    LEVEL_DEBUG("FS_r_aggregate: size=%d sz=%d\n", size, ret);
     if((ret > 0) && offset) {
       memcpy(buf, &buf[offset], (size_t)ret - (size_t)offset);
       return ret - offset;

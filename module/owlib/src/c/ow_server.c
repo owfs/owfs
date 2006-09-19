@@ -22,11 +22,28 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 //static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
 static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) ;
 static void Server_setroutines( struct interface_routines * f ) ;
+static void Zero_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
 static int ServerNOP( struct connection_in * in ) ;
 static uint32_t SetupSemi( const struct parsedname * pn ) ;
+static int ConnectToServer( struct connection_in * in ) ;
 
 static void Server_setroutines( struct interface_routines * f ) {
+    f->detect        = Server_detect ;
+//    f->reset         =;
+//    f->next_both  ;
+//    f->overdrive = ;
+//    f->testoverdrive = ;
+//    f->PowerByte     = ;
+//    f->ProgramPulse = ;
+//    f->sendback_data = ;
+//    f->sendback_bits = ;
+//    f->select        = ;
+    f->reconnect     = NULL          ;
+    f->close         = Server_close  ;
+}
+
+static void Zero_setroutines( struct interface_routines * f ) {
     f->detect        = Server_detect ;
 //    f->reset         =;
 //    f->next_both  ;
@@ -44,9 +61,15 @@ static void Server_setroutines( struct interface_routines * f ) {
 // bus_zero is a server found by zeroconf/Bonjour
 // It differs in that the server must respond
 int Zero_detect( struct connection_in * in ) {
-    if ( Server_detect(in) || ServerNOP(in) )
-        if ( ServerNOP(in) ) return -1 ;
+//    if ( Server_detect(in) || ServerNOP(in) )
+//        if ( ServerNOP(in) ) return -1 ;
+    if ( in->name == NULL ) return -1 ;
+    if ( ClientAddr( in->name, in ) ) return -1 ;
+    in->Adapter = adapter_tcp ;
+    in->adapter_name = "tcp" ;
     in->busmode = bus_zero ;
+    in->reconnect_state = reconnect_ok ; // Special since slot reused
+    Zero_setroutines( & (in->iroutines) ) ;
     return 0 ;
 }
 
@@ -68,13 +91,9 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     struct server_msg sm ;
     struct client_msg cm ;
     struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
-    int connectfd ;
+    int connectfd = ConnectToServer(pn->in) ;
     int ret = 0 ;
 
-    BUSLOCK(pn) ;
-        connectfd = ClientConnect( pn->in ) ;
-    BUSUNLOCK(pn) ;
-    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -101,13 +120,9 @@ int ServerPresence( const struct parsedname * pn ) {
     struct server_msg sm ;
     struct client_msg cm ;
     struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
-    int connectfd ;
+    int connectfd  = ConnectToServer(pn->in) ;
     int ret = 0 ;
 
-    BUSLOCK(pn) ;
-        connectfd = ClientConnect( pn->in ) ;
-    BUSUNLOCK(pn) ;
-    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerPresence pn->path=%s\n",pn->path);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -133,13 +148,9 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     struct server_msg sm ;
     struct client_msg cm ;
     struct serverpackage sp = { pn->path_busless, buf, size, pn->tokenstring, pn->tokens, } ;
-    int connectfd ;
+    int connectfd  = ConnectToServer(pn->in) ;
     int ret = 0 ;
 
-    BUSLOCK(pn) ;
-    connectfd = ClientConnect( pn->in ) ;
-    BUSUNLOCK(pn) ;
-    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -168,15 +179,15 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     return ret ;
 }
 
+/* Null "ping" message */
+/* Note, uses connection_in rather than full parsedname structure */
 static int ServerNOP( struct connection_in * in ) {
     struct server_msg sm ;
     struct client_msg cm ;
     struct serverpackage sp = { "", NULL, 0, NULL, 0, } ;
-    int connectfd ;
+    int connectfd  = ConnectToServer(in) ;
     int ret = 0 ;
 
-    connectfd = ClientConnect( in ) ;
-    
     if ( connectfd < 0 ) return -EIO ;
     //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
     memset(&sm, 0, sizeof(struct server_msg));
@@ -201,11 +212,7 @@ int ServerDir( void (* dirfunc)(const struct parsedname * const), const struct p
     struct server_msg sm ;
     struct client_msg cm ;
     struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
-    int connectfd ;
-    
-    BUSLOCK(pn) ;
-        connectfd = ClientConnect( pn->in ) ;
-    BUSUNLOCK(pn) ;
+    int connectfd  = ConnectToServer(pn->in) ;
     
     if ( connectfd < 0 ) return -EIO ;
 
@@ -440,4 +447,24 @@ static uint32_t SetupSemi( const struct parsedname * pn ) {
     uint32_t sg = pn->sg & (~BUSRET_MASK) ;
     if ( SpecifiedBus(pn) ) sg |= (1<<BUSRET_BIT) ;
     return sg ;
+}
+
+/* Wrapper for ClientConnect */
+static int ConnectToServer( struct connection_in * in ) {
+    int fd ;
+
+    BUSLOCKIN(in) ;
+        if ( ( in->busmode == bus_zero )
+               && ( in->reconnect_state >= reconnect_error )
+               && ( in->connin.server.ai != NULL ) ) {
+            in->reconnect_state = reconnect_ok ;
+            LEVEL_DEBUG("Attempting zeroconf reconnect on %s\n",in->name) ;
+            DNSServiceReconfirmRecord(0,0,in->connin.server.fqdn,kDNSServiceType_SRV,kDNSServiceClass_IN,0,NULL) ;
+        }
+        fd = ClientConnect(in) ;
+        if ( fd<0) {
+            STAT_ADD1(in->reconnect_state) ;
+        }
+    BUSUNLOCKIN(in) ;
+    return fd ;
 }

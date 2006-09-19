@@ -113,13 +113,12 @@ void FreeIn( void ) {
 #endif /* OW_MT */
         switch (get_busmode(now)) {
         case bus_zero:
-            if ( now->type ) free(now->type) ;
-            if ( now->domain ) free(now->domain) ;
+            if ( now->connin.server.type ) free(now->connin.server.type) ;
+            if ( now->connin.server.domain ) free(now->connin.server.domain) ;
+            if ( now->connin.server.fqdn ) free( now->connin.server.fqdn ) ;
             // fall through
         case bus_server:
             FreeClientAddr(now) ;
-            if(now->type) free(now->type) ;
-            if(now->domain) free(now->domain) ;
             break ;
         case bus_link:
         case bus_serial:

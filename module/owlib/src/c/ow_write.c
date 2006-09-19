@@ -16,13 +16,13 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
-static int FS_real_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_allwrite(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
-static int FS_gamish(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_w_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_w_split(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
-static int FS_parse_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_given_bus(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+static int FS_w_local(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_simultaneous(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
+static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_separate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_aggregate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
+static int FS_w_single(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 
 static int FS_input_yesno( int * result, const char * buf, const size_t size ) ;
 static int FS_input_integer( int * result, const char * buf, const size_t size ) ;
@@ -117,10 +117,10 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         /* if readonly exit */
         if ( Global.readonly ) return -EROFS ;
 
-        r = FS_write_seek(buf, size, offset, pn) ;
+        r = FS_w_given_bus(buf, size, offset, pn) ;
         break;
     default: // pn_real
-//printf("FS_write_postparse: pid=%ld call fs_write_seek size=%ld\n", pthread_self(), size);
+//printf("FS_write_postparse: pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
 
         /* handle DeviceSimultaneous */
         if(pn->dev == DeviceSimultaneous) {
@@ -128,7 +128,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             * available bus.?/simultaneous/temperature
             * not just /simultaneous/temperature
             */
-            r = FS_allwrite(buf, size, offset, pn) ;
+            r = FS_w_simultaneous(buf, size, offset, pn) ;
         } else if ( Global.readonly ) {
             return -EROFS ;
         } else {
@@ -137,7 +137,7 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             /* First try */
             /* in and bus_nr already set */
             STAT_ADD1(write_tries[0]) ;
-            r = FS_write_seek( buf, size, offset, pn ) ;
+            r = FS_w_given_bus( buf, size, offset, pn ) ;
 
             /* Second Try */
             /* if not a specified bus, relook for chip location */
@@ -147,13 +147,13 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
                 if ( Global.opt==opt_server ) { // called from owserver
                     Cache_Del_Device( pn ) ;
                 } else if ( pn->state & pn_buspath ) {
-                    r = TestConnection(pn) ? -ECONNABORTED : FS_write_seek( buf, size, offset, pn ) ;
+                    r = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus( buf, size, offset, pn ) ;
                 } else if ( (r = CheckPresence( pn )) >= 0 ) {
                     pn2.in = find_connection_in(r);
                     pn2.state |= pn_bus ;
                     pn2.bus_nr = r ;
                     Cache_Add_Device( r, pn ) ;
-                    r = FS_write_seek( buf, size, offset, &pn2 ) ;
+                    r = FS_w_given_bus( buf, size, offset, &pn2 ) ;
                 } else {
                     r = -ENOENT ;
                 }
@@ -164,13 +164,13 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             if ( (Global.opt!=opt_server) && (r < 0) ) {
                 STAT_ADD1(write_tries[2]) ;
                 if ( pn->state & pn_buspath ) {
-                    r = TestConnection(pn) ? -ECONNABORTED : FS_write_seek( buf, size, offset, pn ) ;
+                    r = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus( buf, size, offset, pn ) ;
                 } else if ( (r = CheckPresence( pn )) >= 0 ) {
                     pn2.in = find_connection_in(r);
                     pn2.state |= pn_bus ;
                     pn2.bus_nr = r ;
                     Cache_Add_Device( r, pn ) ;
-                    r = FS_write_seek( buf, size, offset, &pn2 ) ;
+                    r = FS_w_given_bus( buf, size, offset, &pn2 ) ;
                 } else {
                     Cache_Del_Device(pn) ;
                     r = -ENOENT ;
@@ -194,9 +194,9 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
 
 /* This function is only used by "Simultaneous" */
 /* It certainly could use pthreads, but might be overkill */
-static int FS_allwrite(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+static int FS_w_simultaneous(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     if ( pn->state & pn_bus ) {
-        return FS_write_seek(buf,size,offset,pn) ;
+        return FS_w_given_bus(buf,size,offset,pn) ;
     } else {
         struct parsedname pn2 ;
         memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
@@ -204,14 +204,14 @@ static int FS_allwrite(const char *buf, const size_t size, const off_t offset, c
         pn2.bus_nr = -1 ;
         for ( pn2.in = pn->indevice ; pn2.in ; pn2.in = pn2.in->next ) {
             ++pn2.bus_nr ;
-            FS_write_seek(buf,size,offset,&pn2) ;
+            FS_w_given_bus(buf,size,offset,&pn2) ;
         }
         return 0 ;
     }
 }
 
 /* return 0 if ok, else negative */
-static int FS_write_seek(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+static int FS_w_given_bus(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     ssize_t ret ;
 
     if ( TestConnection(pn) ) {
@@ -219,16 +219,16 @@ static int FS_write_seek(const char *buf, const size_t size, const off_t offset,
     } else if ( (pn->state & pn_bus) && is_servermode(pn->in) ) {
         ret = ServerWrite( buf, size, offset, pn ) ;
     } else if ( (ret=LockGet(pn))==0 ) {
-            ret = FS_real_write( buf, size, offset, pn ) ;
+            ret = FS_w_local( buf, size, offset, pn ) ;
             LockRelease(pn) ;
     }
     return ret ;
 }
 
 /* return 0 if ok */
-static int FS_real_write(const char * buf, const size_t size, const off_t offset, const struct parsedname * pn) {
+static int FS_w_local(const char * buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     int r = 0;
-    //printf("FS_real_write\n");
+    //printf("FS_w_local\n");
 
     /* Writable? */
     if ( (pn->ft->write.v) == NULL ) return -ENOTSUP ;
@@ -241,32 +241,33 @@ static int FS_real_write(const char * buf, const size_t size, const off_t offset
         switch( pn->ft->ag->combined) {
         case ag_aggregate:
             /* agregate property -- need to read all and replace a single value, then write all */
-            if ( pn->extension > -1 ) return FS_w_split(buf,size,offset,pn) ;
+            if ( pn->extension > -1 ) return FS_w_aggregate(buf,size,offset,pn) ;
             /* fallthrough for extension==-1 or -2 */
         case ag_mixed:
-            if ( pn->extension == -1 ) return FS_gamish(buf,size,offset,pn) ;
+            if ( pn->extension == -1 ) return FS_w_aggregate_all(buf,size,offset,pn) ;
             /* Does the right thing, aggregate write for ALL and individual for splits */
             break ; /* continue for bitfield */
         case ag_separate:
             /* write all of them, but one at a time */
-            if ( pn->extension == -1 ) return FS_w_all(buf,size,offset,pn) ;
+            if ( pn->extension == -1 ) return FS_w_separate(buf,size,offset,pn) ;
             break ; /* fall through for individual writes */
         }
     }
 
     /* write individual entries */
-    r = FS_parse_write( buf, size, offset, pn ) ;
+    r = FS_w_single( buf, size, offset, pn ) ;
     if ( r<0 ) LEVEL_DATA("Write error on %s (size=%d)\n",pn->path,(int)size) ;
     return r ;
 }
 
 /* return 0 if ok */
 /* write a single element */
-static int FS_parse_write(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+/* either no array, or a separate-type array */
+static int FS_w_single(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t fl = FileLength(pn) ;
     int ret ;
     char * cbuf = NULL ;
-//printf("FS_parse_write\n");
+//printf("FS_w_single\n");
 
 #if OW_CACHE
     /* buffer for storing parsed data to cache */
@@ -381,13 +382,14 @@ static int FS_parse_write(const char * buf, const size_t size, const off_t offse
     /* free cache string buffer */
     if ( cbuf ) free(cbuf) ;
 
-    //printf("FS_parse_write: return %d\n", ret);
+    //printf("FS_w_single: return %d\n", ret);
     return ret ;
 }
 
 /* return 0 if ok */
 /* write aggregate all */
-static int FS_gamish(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+/* Unlike FS_w_aggregate, no need to read in values first, since all will be replaced */
+static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     size_t ffl = FullFileLength(pn);
     int ret ;
@@ -558,7 +560,7 @@ static int FS_gamish(const char * buf, const size_t size, const off_t offset , c
 
 /* Non-combined input  field, so treat  as several separate transactions */
 /* return 0 if ok */
-static int FS_w_all(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_separate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t left = size ;
     const char * p = buf ;
     int r ;
@@ -574,7 +576,7 @@ static int FS_w_all(const char * buf, const size_t size, const off_t offset , co
         int suglen = pname.ft->suglen ;
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             if ( (int) left < suglen ) return -ERANGE ;
-            if ( (r=FS_parse_write(p,(size_t) suglen,(const off_t)0,&pname)) ) return r ;
+            if ( (r=FS_w_single(p,(size_t) suglen,(const off_t)0,&pname)) ) return r ;
             p += suglen ;
             left -= suglen ;
         }
@@ -582,11 +584,11 @@ static int FS_w_all(const char * buf, const size_t size, const off_t offset , co
         for ( pname.extension=0 ; pname.extension < pname.ft->ag->elements ; ++pname.extension ) {
             char * c = memchr( p , ',' , left ) ;
             if ( c==NULL ) {
-                if ( (r=FS_parse_write(p,left,(const off_t)0,&pname)) ) return r ;
+                if ( (r=FS_w_single(p,left,(const off_t)0,&pname)) ) return r ;
                 p = buf + size ;
                 left = 0 ;
             } else {
-                if ( (r=FS_parse_write(p,(size_t)(c-p),(const off_t)0,&pname)) ) return r ;
+                if ( (r=FS_w_single(p,(size_t)(c-p),(const off_t)0,&pname)) ) return r ;
                 p = c + 1 ;
                 left = size - (buf-p) ;
             }
@@ -597,7 +599,7 @@ static int FS_w_all(const char * buf, const size_t size, const off_t offset , co
 
 /* Combined field, so read all, change the relevant field, and write back */
 /* return 0 if ok */
-static int FS_w_split(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+static int FS_w_aggregate(const char * buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     size_t elements = pn->ft->ag->elements ;
     int ret = 0;
 

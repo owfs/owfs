@@ -17,13 +17,10 @@ Thermometer.
 .PP
 .B 28
 [.]XXXXXXXXXXXX[XX][/[
+.so temperatures_mini
 .B die
 |
-.B fasttemp
-|
 .B power
-|
-.B temperature
 |
 .B temphigh
 |
@@ -41,15 +38,7 @@ Thermometer.
 .PP
 .I 28
 .SH SPECIAL PROPERTIES
-.SS fasttemp
-.I read-only, floating point
-.br
-Low resolution but faster temperature reading by the chip. (~9 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-Conversion takes 94 msec.
+.so temperatures
 .SS die
 .I read-only,ascii
 .br
@@ -58,16 +47,6 @@ Two character manufacturing die lot. "B6" "B7" or "C2"
 .I read-only,yes-no
 .br
 Is the chip powered externally (=1) or from the parasitically from the data bus (=0)?
-.SS temperature
-.I read-only, floating point
-.br
-.I Temperature
-read by the chip at high resolution (~12 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-Conversion takes 750 msec.
 .SS temphigh templow
 .I read-write. floating point
 .br

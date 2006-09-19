@@ -62,7 +62,8 @@ yWRITE_FUNCTION( FS_w_blanket ) ;
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
     F_STANDARD   ,
-    {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_10temp}     , {v:NULL}          , {i: 1000}, } ,
+    {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_10temp}     , {v:NULL}          , {V:NULL}, } ,
+
     {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},   } ,
     {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},   } ,
     {"trim",          12,  NULL, ft_unsigned   , fc_volatile, {u:FS_r_trim}     , {u:FS_w_trim}     , {v:NULL},         } ,
@@ -78,6 +79,10 @@ struct filetype DS18B20[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, NULL,} ,
     {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
+    {"temperature9",  12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
+    {"temperature10", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:10},  } ,
+    {"temperature11", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:11},  } ,
+    {"temperature12", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
     {"fasttemp"  ,    12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
     {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
     {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
@@ -93,6 +98,10 @@ struct filetype DS1822[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
     {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
+    {"temperature9",  12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
+    {"temperature10", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:10},  } ,
+    {"temperature11", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:11},  } ,
+    {"temperature12", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
     {"fasttemp"  ,    12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
     {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
     {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
@@ -108,6 +117,10 @@ struct filetype DS1825[] = {
     F_STANDARD   ,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
     {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
+    {"temperature9",  12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
+    {"temperature10", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:10},  } ,
+    {"temperature11", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:11},  } ,
+    {"temperature12", 12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i:12},  } ,
     {"fasttemp"  ,    12,  NULL, ft_temperature, fc_volatile, {f:FS_22temp}     , {v:NULL}          , {i: 9},  } ,
     {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},  } ,
     {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},  } ,
@@ -310,7 +323,7 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     BYTE data[9] ;
     BYTE convert[] = { 0x44, } ;
     BYTE dummy ;
-    UINT delay = pn->ft->data.i ;
+    UINT delay = 1000 ; // hard wired
     BYTE pow ;
     struct transaction_log tconvert[] = {
         TRXN_START ,
