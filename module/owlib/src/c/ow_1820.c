@@ -62,7 +62,7 @@ yWRITE_FUNCTION( FS_w_blanket ) ;
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
     F_STANDARD   ,
-    {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_10temp}     , {v:NULL}          , {V:NULL}, } ,
+    {"temperature",   12,  NULL, ft_temperature, fc_volatile, {f:FS_10temp}     , {v:NULL}          , {v:NULL}, } ,
 
     {"templow",       12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 1},   } ,
     {"temphigh",      12,  NULL, ft_temperature, fc_stable  , {f:FS_r_templimit}, {f:FS_w_templimit}, {i: 0},   } ,
