@@ -298,7 +298,7 @@ int owopt( const int c , const char * arg ) {
     case 'u':
         return OW_ArgUSB( arg ) ;
     case 'd':
-        return OW_ArgSerial( arg ) ;
+        return OW_ArgDevice( arg ) ;
     case 't':
         OW_parsevalue(&Global.timeout_volatile,arg) ;
         break ;
