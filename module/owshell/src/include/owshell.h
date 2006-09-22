@@ -322,43 +322,18 @@ int ServerDir( ASCII * path ) ;
 #define CACHE_BIT      0
 #define BUSRET_MASK    ( (UINT) 0x00000002 )
 #define BUSRET_BIT     1
-//#define PRESENCE_MASK  ( (UINT) 0x0000FF00 )
-//#define PRESENCE_BIT   8
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
-#define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg & CACHE_MASK) )
-#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
-#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
-#define IsDir( pn )    ( ((pn)->dev)==NULL \
-                      || ((pn)->ft)==NULL  \
-                      || ((pn)->ft)->format==ft_subdir \
-                      || ((pn)->ft)->format==ft_directory )
-#define NotUncachedDir(pn)    ( (((pn)->state)&pn_uncached) == 0 )
-#define  IsUncachedDir(pn)    ( ! NotUncachedDir(pn) )
-#define    NotAlarmDir(pn)    ( (((pn)->state)&pn_alarm) == 0 )
-#define     IsAlarmDir(pn)    ( ! NotAlarmDir(pn) )
-#define     NotRealDir(pn)    ( ((pn)->type) != pn_real )
-#define      IsRealDir(pn)    ( ((pn)->type) == pn_real )
 #endif /* OW_H */
 
 #ifndef OW_CONNECTION_H  /* tedious wrapper */
 #define OW_CONNECTION_H
 
 struct connection_in ;
-#define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
-//#define BUS_next_both(ds,pn)                (((pn)->in->iroutines.next_both)((ds),(pn)))
-#define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
-//#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
-//#define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
-#define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive)((speed),(pn)))
-#define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
-#define BUS_close(in)                       (((in)->iroutines.close(in)))
 
 /* placed in iroutines.flags */
 #define ADAP_FLAG_overdrive     0x00000001

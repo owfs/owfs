@@ -797,13 +797,11 @@ void BUS_unlock_in( struct connection_in * in ) ;
 #define CACHE_BIT      0
 #define BUSRET_MASK    ( (UINT) 0x00000002 )
 #define BUSRET_BIT     1
-//#define PRESENCE_MASK  ( (UINT) 0x0000FF00 )
-//#define PRESENCE_BIT   8
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
-#define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg & CACHE_MASK) )
+#define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg &  CACHE_MASK) )
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
 #define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )

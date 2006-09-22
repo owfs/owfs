@@ -79,7 +79,9 @@ static int FS_dir_both( void (* dirfunc)(const struct parsedname *), const struc
     /* Make a copy (shallow) of pn to modify for directory entries */
     memcpy( &pn2, pn , sizeof( struct parsedname ) ) ; /*shallow copy */
 
-    if ( pn->dev ) { /* device directory */
+    if ( pn->ft ) {
+        ret = -ENOTDIR ;
+    } else if ( pn->dev ) { /* device directory */
         if ( pn->type == pn_structure ) {
         /* Device structure is always known for ordinary devices, so don't
         * bother calling ServerDir() */

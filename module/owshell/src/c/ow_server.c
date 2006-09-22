@@ -268,6 +268,6 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
 static uint32_t SetupSemi( void ) {
-    uint32_t sg = SemiGlobal | (1<<BUSRET_BIT) ;
+    uint32_t sg = SemiGlobal | BUSRET_MASK ;
     return sg ;
 }
