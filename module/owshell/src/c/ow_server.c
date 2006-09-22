@@ -16,43 +16,8 @@ $Id$
 
 static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size ) ;
 static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
-//static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
 static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) ;
-static void Server_setroutines( struct interface_routines * f ) ;
-static void Zero_setroutines( struct interface_routines * f ) ;
-static void Server_close( struct connection_in * in ) ;
-static int ServerNOP( struct connection_in * in ) ;
 static uint32_t SetupSemi( void ) ;
-
-static void Server_setroutines( struct interface_routines * f ) {
-    f->detect        = Server_detect ;
-//    f->reset         =;
-//    f->next_both  ;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
-//    f->PowerByte     = ;
-//    f->ProgramPulse = ;
-//    f->sendback_data = ;
-//    f->sendback_bits = ;
-//    f->select        = ;
-    f->reconnect     = NULL          ;
-    f->close         = Server_close  ;
-}
-
-static void Zero_setroutines( struct interface_routines * f ) {
-    f->detect        = Server_detect ;
-//    f->reset         =;
-//    f->next_both  ;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
-//    f->PowerByte     = ;
-//    f->ProgramPulse = ;
-//    f->sendback_data = ;
-//    f->sendback_bits = ;
-//    f->select        = ;
-    f->reconnect     = NULL          ;
-    f->close         = Server_close  ;
-}
 
 int Server_detect( void ) {
     if ( indevice->name == NULL ) return -1 ;
@@ -60,19 +25,16 @@ int Server_detect( void ) {
     indevice->Adapter = adapter_tcp ;
     indevice->adapter_name = "tcp" ;
     indevice->busmode = bus_server ;
-    Server_setroutines( & (indevice->iroutines) ) ;
     return 0 ;
 }
 
-static void Server_close( struct connection_in * in ) {
-    FreeClientAddr() ;
-}
-
-int ServerRead( char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
+int ServerRead( ASCII * path ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
+    struct serverpackage sp = { path, NULL, 0, NULL, 0, } ;
     int connectfd = ClientConnect() ;
+    int size = 8096 ;
+    char buf[size+1] ;
     int ret = 0 ;
 
     if ( connectfd < 0 ) return -EIO ;
@@ -80,55 +42,33 @@ int ServerRead( char * buf, const size_t size, const off_t offset, const struct 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_read ;
     sm.size = size ;
-    sm.sg = SetupSemi(pn) ;
-    sm.offset = offset ;
-
-    //printf("ServerRead path=%s\n", pn->path_busless);
-    LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
+    sm.sg = SetupSemi() ;
+    sm.offset = 0 ;
 
     if ( ToServer( connectfd, &sm, &sp ) ) {
+        fprintf(stderr,"Error sending request for %s\n",path) ;
         ret = -EIO ;
     } else if ( FromServer( connectfd, &cm, buf, size ) < 0 ) {
+        fprintf(stderr,"Error receiving data on %s\n",path) ;
         ret = -EIO ;
     } else {
         ret = cm.ret ;
+        if ( ret <=0 || ret > size ) {
+            fprintf(stderr,"Data error on %s\n",path) ;
+        } else {
+            buf[ret] = '\0' ;
+            printf("%s",buf) ;
+        }
     }
     close( connectfd ) ;
     return ret ;
 }
 
-int ServerPresence( const struct parsedname * pn ) {
+int ServerWrite( ASCII * path, BYTE * data ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    struct serverpackage sp = { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, } ;
-    int connectfd  = ClientConnect() ;
-    int ret = 0 ;
-
-    if ( connectfd < 0 ) return -EIO ;
-    //printf("ServerPresence pn->path=%s\n",pn->path);
-    memset(&sm, 0, sizeof(struct server_msg));
-    sm.type = msg_presence ;
-
-    sm.sg =  SetupSemi(pn) ;
-
-    //printf("ServerPresence path=%s\n", pn->path_busless);
-    LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
-
-    if ( ToServer( connectfd, &sm, &sp) ) {
-        ret = -EIO ;
-    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
-        ret = -EIO ;
-    } else {
-        ret = cm.ret ;
-    }
-    close( connectfd ) ;
-    return ret ;
-}
-
-int ServerWrite( const char * buf, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    struct server_msg sm ;
-    struct client_msg cm ;
-    struct serverpackage sp = { pn->path_busless, buf, size, pn->tokenstring, pn->tokens, } ;
+    int size = strlen((ASCII *)data) ;
+    struct serverpackage sp = { path, data, size, NULL, 0, } ;
     int connectfd  = ClientConnect() ;
     int ret = 0 ;
 
@@ -137,11 +77,11 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
     memset(&sm, 0, sizeof(struct server_msg));
     sm.type = msg_write ;
     sm.size = size ;
-    sm.sg =  SetupSemi(pn) ;
-    sm.offset = offset ;
+    sm.sg =  SetupSemi() ;
+    sm.offset = 0 ;
 
     //printf("ServerRead path=%s\n", pn->path_busless);
-    LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
+    //LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
 
     if ( ToServer( connectfd, &sm, &sp) ) {
         ret = -EIO ;
@@ -149,41 +89,6 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
         ret = -EIO ;
     } else {
         ret = cm.ret ;
-        if ( SemiGlobal != cm.sg ) {
-            //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
-            CACHELOCK;
-            SemiGlobal = cm.sg & (~BUSRET_MASK) ;
-            CACHEUNLOCK;
-        }
-    }
-    close( connectfd ) ;
-    return ret ;
-}
-
-/* Null "ping" message */
-/* Note, uses connection_in rather than full parsedname structure */
-static int ServerNOP( struct connection_in * in ) {
-    struct server_msg sm ;
-    struct client_msg cm ;
-    struct serverpackage sp = { "", NULL, 0, NULL, 0, } ;
-    int connectfd  = ClientConnect() ;
-    int ret = 0 ;
-
-    if ( connectfd < 0 ) return -EIO ;
-    //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
-    memset(&sm, 0, sizeof(struct server_msg));
-    sm.type = msg_nop ;
-    sm.size = 0 ;
-    sm.sg =  0 ;
-    sm.offset = 0 ;
-
-    //printf("ServerRead path=%s\n", pn->path_busless);
-    LEVEL_CALL("SERVER(%d)NOP\n", in->index );
-
-    if ( ToServer( connectfd, &sm, &sp) ) {
-        ret = -EIO ;
-    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
-        ret = -EIO ;
     }
     close( connectfd ) ;
     return ret ;
@@ -208,7 +113,7 @@ int ServerDir( ASCII * path ) {
         char * path2 ;
         while((path2 = FromServerAlloc( connectfd, &cm))) {
             path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
-            print("%s\n",path2) ;
+            printf("%s\n",path2) ;
             free(path2) ;
         }
     }

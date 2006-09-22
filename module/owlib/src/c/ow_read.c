@@ -270,8 +270,24 @@ static int FS_r_local(char *buf, const size_t size, const off_t offset, const st
 
 /* Structure file */
 static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
-    char ft_format_char[] = "  iufabydy" ; /* return type */
-    /* dir,dir,int,unsigned,float,ascii,binary,yesno,date,bitfield */
+    char ft_format_char[] = "  iufaabydytg" ; /* return type */
+    /* 
+    enum ft_format {
+        ft_directory,
+        ft_subdir,
+        ft_integer,
+        ft_unsigned,
+        ft_float,
+        ft_ascii,
+        ft_vascii, // variable length ascii -- must be read and measured.
+        ft_binary,
+        ft_yesno,
+        ft_date,
+        ft_bitfield,
+        ft_temperature,
+        ft_tempgap,
+    } ;
+    */
     int len ;
     struct parsedname pn2 ;
 

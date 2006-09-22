@@ -24,7 +24,7 @@ if ENABLE_SWIG
   MODULE_SUBDIRS += swig
 endif
 
-SUBDIRS = owlib $(MODULE_SUBDIRS)
+SUBDIRS = owlib owshell $(MODULE_SUBDIRS)
 
 clean-generic:
 

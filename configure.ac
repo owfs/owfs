@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 VERSION_MAJOR="2"
 VERSION_MINOR="5"
-PATCHLEVEL="2"
+PATCHLEVEL="3"
 
 AC_SUBST(VERSION_MAJOR)dnl
 AC_SUBST(VERSION_MINOR)dnl
@@ -1238,6 +1238,11 @@ AC_CONFIG_FILES([
     module/owftpd/src/include/Makefile
     module/owftpd/src/c/Makefile
     module/owftpd/src/man/Makefile
+    module/owshell/Makefile
+    module/owshell/src/Makefile
+    module/owshell/src/include/Makefile
+    module/owshell/src/c/Makefile
+    module/owshell/src/man/Makefile
     module/owcapi/Makefile
     module/owcapi/src/Makefile
     module/owcapi/src/include/Makefile

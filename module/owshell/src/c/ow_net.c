@@ -49,8 +49,7 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
                     errno = 0; // clear errno. We never use it anyway.
                     nread = 0; /* and call read() again */
                 } else {
-                    ERROR_DATA("Network data read error\n") ;
-                    STAT_ADD1(NET_read_errors);
+                    //ERROR_DATA("Network data read error\n") ;
                     return(-1);
                 }
             } else if (nread == 0) {
@@ -62,15 +61,12 @@ ssize_t readn(int fd, void *vptr, size_t n, const struct timeval * ptv ) {
         } else if(rc < 0) { /* select error */
             if(errno == EINTR) {
                 /* select() was interrupted, try again */
-//                STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
                 continue;
             }
-            ERROR_DATA("Selection error (network)\n") ;
-//            STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
+            //ERROR_DATA("Selection error (network)\n") ;
             return -EINTR;
         } else { /* timed out */
-            LEVEL_CONNECT("TIMEOUT after %d bytes\n",n-nleft);
-//            STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
+            //LEVEL_CONNECT("TIMEOUT after %d bytes\n",n-nleft);
             return -EAGAIN;
         }
     }
@@ -100,7 +96,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
 //printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
 
     if ( (ret=getaddrinfo( in->connin.server.host, in->connin.server.service, &hint, &in->connin.server.ai )) ) {
-        LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
+        //LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
         return -1 ;
     }
     return 0 ;
@@ -127,7 +123,7 @@ int ClientConnect( void ) {
     struct addrinfo *ai ;
 
     if ( indevice->connin.server.ai == NULL ) {
-        LEVEL_DEBUG("Client address not yet parsed\n");
+        //LEVEL_DEBUG("Client address not yet parsed\n");
         return -1 ;
     }
 
@@ -166,7 +162,6 @@ int ClientConnect( void ) {
     } while ( (ai = ai->ai_next) ) ;
     indevice->connin.server.ai_ok = NULL ;
 
-    ERROR_CONNECT("ClientConnect: Socket problem\n") ;
-    STAT_ADD1(NET_connection_errors);
+    //ERROR_CONNECT("ClientConnect: Socket problem\n") ;
     return -1 ;
 }

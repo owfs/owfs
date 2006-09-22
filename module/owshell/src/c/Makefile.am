@@ -1,19 +1,25 @@
 # $Id$
 
-bin_PROGRAMS = owdir
-owfs_SOURCES = owdir.c \
-               ow_read.c  \
-               ow_help.c \
+bin_PROGRAMS = owdir owread
+owdir_SOURCES = ow_opt.c    \
+               ow_help.c    \
                ow_connect.c \
-               ow_server.c \
-               ow_net.c \
+               ow_server.c  \
+               ow_net.c     \
+               globals.c    \
+               owdir.c
+
+owread_SOURCES = ow_opt.c   \
+               ow_help.c    \
                ow_connect.c \
-               globals.c \
-               ow_opt.c
-owfs_DEPENDENCIES =
+               ow_server.c  \
+               ow_net.c     \
+               globals.c    \
+               owread.c
 
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
+         -I../../../owlib/src/include \
          -fexceptions \
          -Wall \
          -W \

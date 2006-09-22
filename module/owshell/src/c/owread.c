@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
                 }
                 detect_needed = 0 ;
             }
-            ServerDir(argv[optind]) ;
+            ServerRead(argv[optind]) ;
         }
         ++optind ;
     }
