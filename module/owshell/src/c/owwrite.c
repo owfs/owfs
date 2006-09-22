@@ -26,18 +26,23 @@ int main(int argc, char *argv[]) {
 
     Setup() ;
     /* process command line arguments */
-    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 )
+    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) 
         owopt(c,optarg) ;
 
     /* non-option arguments */
-    while ( optind < argc ) {
+    while ( optind < argc-1 ) {
         if ( indevice==NULL ) {
             OW_ArgNet(argv[optind]) ;
+            ++optind ;
         } else {
             if ( paths_found++ == 0 ) Server_detect() ;
-            ServerRead(argv[optind]) ;
+            ServerWrite(argv[optind],argv[optind+1]) ;
+            optind += 2 ;
         }
-        ++optind ;
+    }
+    if ( optind < argc ) {
+        fprintf(stderr,"Unpaired <path> <value> entry: %s\n",argv[optind]) ;
+        exit(1) ;
     }
     exit(0) ;
 }

@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = owdir owread
+bin_PROGRAMS = owdir owread owwrite owpresent
 owdir_SOURCES = ow_opt.c    \
                ow_help.c    \
                ow_connect.c \
@@ -16,6 +16,22 @@ owread_SOURCES = ow_opt.c   \
                ow_net.c     \
                globals.c    \
                owread.c
+
+owwrite_SOURCES = ow_opt.c   \
+               ow_help.c    \
+               ow_connect.c \
+               ow_server.c  \
+               ow_net.c     \
+               globals.c    \
+               owwrite.c
+
+owpresent_SOURCES = ow_opt.c   \
+               ow_help.c    \
+               ow_connect.c \
+               ow_server.c  \
+               ow_net.c     \
+               globals.c    \
+               owpresent.c
 
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \

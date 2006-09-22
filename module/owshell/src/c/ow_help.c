@@ -11,130 +11,34 @@ $Id$
 
 /* ow_opt -- owlib specific command line options processing */
 
-#include <config.h>
-#include "owfs_config.h"
-#include "ow.h"
+#include "owshell.h"
 
 void ow_help( void ) {
     printf(
-    "1-wire access programs\n"
+    "\n1-wire access programs\n"
     "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
     "\n"
-    ) ;
-    switch(Global.opt) {
-    case opt_owfs:
-        printf("Syntax: %s [options] device mountpoint\n",SAFESTRING(Global.progname));
-        break ;
-    case opt_httpd:
-    case opt_server:
-        printf("Syntax: %s [options] device clientport\n",SAFESTRING(Global.progname));
-        break ;
-    case opt_ftpd:
-    default:
-        printf("Syntax: %s [options] device\n",SAFESTRING(Global.progname));
-        break ;
-    }
-    printf(
+    "Command line access to owserver process\n"
     "\n"
-    "1-wire side (device):\n"
-    "  -d --device    devicename      |Serial port device name of 1-wire adapter\n"
-    "                                 |  e.g: -d /dev/ttyS0\n");
-#if OW_USB
-    printf("  -u --usb       [number]|all    |USB 1-wire adapter. Choose first one unless number specified\n");
-#endif /* OW_USB */
-    printf("                                 |  e.g: -u -u3  first and third USB 1wire adapters\n"
-    "  -s --server    [host:]port     |owserver program that talks to adapter. Give tcp/ip address.\n"
-    "                                 |  e.g: -s embeddedhost:3030\n"
+    "Syntax: owdir     [Options] -s Server DirPath\n"
+    "Syntax: owread    [Options] -s Server ReadPath\n"
+    "Syntax: owwrite   [Options] -s Server WritePath WriteVal\n"
+    "Syntax: owpresent [Options] -s Server Path\n"
     "\n"
-    ) ;
-    switch(Global.opt) {
-    case opt_owfs:
-        printf(
-        "\n"
-        "Client side:\n"
-        "  mountpoint                     |Directory the 1-wire filesystem is mounted\n"
-        ) ;
-        break ;
-    case opt_httpd:
-    case opt_ftpd:
-    case opt_server:
-    printf(
-        "\n"
-        "Client side:\n"
-        "  -p --port                      |tcp/ip address that program can be found\n"
-        ) ;
-    break ;
-    default:
-    break ;
-}
-    printf(
+    "Server is an owserver net address (port number or ipaddress:port)\n"
     "\n"
-    "  -h --help                      |This basic help page\n"
-    "     --morehelp                  |Optional items help page\n"
-    ) ;
-}
-
-void ow_morehelp( void ) {
-    printf(
-    "1-wire access programs\n"
-    "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
+    "Path is in OWFS format e.g. 10.2301A3008000/temperature\n"
+            "  more than one path (or path/value pair for owwrite) can be given\n"
+            "  each is processed in turn\n"
     "\n"
-    ) ;
-    printf(
+    "Options include:\n"
     "  -C --Celsius                   |Celsius(default) temperature scale\n"
     "  -F --Fahrenheit                |Fahrenheit temperature scale\n"
     "  -K --Kelvin                    |Kelvin temperature scale\n"
     "  -R --Rankine                   |Rankine temperature scale\n"
-    "  -P --pid_file                  |file where program id (pid) will be stored\n"
-    "     --background                |become a deamon process(default)\n"
-    "     --foreground                |stay in foreground\n"
-    "  -c --configuration filename    |configuration file\n"
-    "  -r --readonly                  |no writing to 1-wire bus\n"
-    "  -w --write                     |allow reading and writing to bus(default)\n"
-    "     --fake                      |with list of emulated device family codes\n"
-    "     --LINK port or device       |LINK adapter with serial_dev or [tcp:]port\n"
-    "     --timeout_xxx               |time (in sec) to keep cached results, or wait\n"
-    "     --timeout_volatile --timeout_stable --timeout_directory --timeout_presence\n"
-    "     --timeout_serial --timeout_usb --timeout_network --timeout_ftp\n"
     "  -f --format                    |format for 1-wire unique serial IDs display\n"
     "                                 |  f[.]i[[.]c] f-amily i-d c-rc (all in hex)\n"
-    "     --error_print               |Where information/error messages are printed\n"
-    "                                 |  0-mixed(default) 1-syslog 2-stderr 3-suppressed\n"
-    "     --error_level               |What kind of information is printed\n"
-    "                                 |  0-fatal 1-connections 2-calls 3-data 4-detail\n"    
-    "  -V --version                   |Program and library versions\n"
-    ) ;
-    switch(Global.opt) {
-    case opt_owfs:
-        printf(
-        "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"
-        "                                 |  e.g: --fuse_opt=\"-x -f\"\n"
-        "     --fuse_open_opt             |Options to send to fuse_open (must be quoted)\n"
-        "                                 |  e.g: --fuse_open_opt=\"direct_io\"\n"
-        ) ;
-        break ;
-    case opt_httpd:
-    case opt_server:
-        printf(
-        "\n"
-        "Client side:\n"
-        "  -p --port                      |tcp/ip address that program can be found\n"
-        ) ;
-        break ;
-    case opt_ftpd:
-        printf(
-        "\n"
-        "Client side:\n"
-        "  -p --port                      |tcp/ip address that program can be found\n"
-        "  --max_clients                  |maximum simultaneous clients (1-300)\n"
-            ) ;
-        break ;
-    default:
-        break ;
-    }
-    printf(
-    "\n"
+    "  -V --version                   |Program version\n"
     "  -h --help                      |Basic help page\n"
-    "     --morehelp                  |This optional items help page\n"
     ) ;
 }

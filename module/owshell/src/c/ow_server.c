@@ -19,13 +19,14 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) ;
 static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp ) ;
 static uint32_t SetupSemi( void ) ;
 
-int Server_detect( void ) {
-    if ( indevice->name == NULL ) return -1 ;
-    if ( ClientAddr( indevice->name, indevice ) ) return -1 ;
+void Server_detect( void ) {
+    if ( indevice->name == NULL || ClientAddr( indevice->name, indevice ) ) {
+        fprintf(stderr,"Could not connect with owserver %s\n",indevice->name) ;
+        exit (1) ;
+    }
     indevice->Adapter = adapter_tcp ;
     indevice->adapter_name = "tcp" ;
     indevice->busmode = bus_server ;
-    return 0 ;
 }
 
 int ServerRead( ASCII * path ) {
@@ -64,11 +65,11 @@ int ServerRead( ASCII * path ) {
     return ret ;
 }
 
-int ServerWrite( ASCII * path, BYTE * data ) {
+int ServerWrite( ASCII * path, ASCII * data ) {
     struct server_msg sm ;
     struct client_msg cm ;
-    int size = strlen((ASCII *)data) ;
-    struct serverpackage sp = { path, data, size, NULL, 0, } ;
+    int size = strlen(data) ;
+    struct serverpackage sp = { path, (BYTE*)data, size, NULL, 0, } ;
     int connectfd  = ClientConnect() ;
     int ret = 0 ;
 
@@ -119,6 +120,32 @@ int ServerDir( ASCII * path ) {
     }
     close( connectfd ) ;
     return cm.ret ;
+}
+
+int ServerPresence( ASCII * path ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    struct serverpackage sp = { path, NULL, 0, NULL, 0, } ;
+    int connectfd  = ClientConnect() ;
+    int ret = 0 ;
+
+    if ( connectfd < 0 ) return -EIO ;
+    //printf("ServerPresence pn->path=%s\n",pn->path);
+    memset(&sm, 0, sizeof(struct server_msg));
+    sm.type = msg_presence ;
+
+    sm.sg =  SetupSemi() ;
+
+    if ( ToServer( connectfd, &sm, &sp) ) {
+        ret = -EIO ;
+    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
+        ret = -EIO ;
+    } else {
+        ret = cm.ret ;
+    }
+    close( connectfd ) ;
+    printf((ret>=0)?"1":"0") ;
+    return ret ;
 }
 
 /* read from server, free return pointer if not Null */

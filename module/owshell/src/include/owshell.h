@@ -157,8 +157,7 @@ typedef int             INT ;
 #define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl, opt_swig, opt_c, } ;
-int owopt( const int c , const char * arg ) ;
-int owopt_packed( const char * params ) ;
+void owopt( const int c , const char * arg ) ;
 
 /* Several different structures:
   device -- one for each type of 1-wire device
@@ -309,14 +308,15 @@ int ClientAddr(  char * sname, struct connection_in * in ) ;
 int ClientConnect( void ) ;
 void FreeClientAddr(  struct connection_in * in ) ;
 
-int OW_ArgNet( const char * arg ) ;
+void OW_ArgNet( const char * arg ) ;
 void Setup(void) ;
 void ow_help( void ) ;
-void ow_morehelp( void ) ;
 
+void Server_detect( void  ) ;
 int ServerRead( ASCII * path ) ;
-int ServerWrite( ASCII * path, BYTE * data ) ;
+int ServerWrite( ASCII * path, ASCII * data ) ;
 int ServerDir( ASCII * path ) ;
+int ServerPresence( ASCII * path ) ;
 
 #define CACHE_MASK     ( (UINT) 0x00000001 )
 #define CACHE_BIT      0
@@ -419,7 +419,5 @@ void FreeIn( void ) ;
 void DelIn( struct connection_in * in ) ;
 
 struct connection_in * NewIn( void ) ;
-
-int Server_detect( void  ) ;
 
 #endif /* OW_CONNECTION_H */

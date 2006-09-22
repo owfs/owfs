@@ -13,7 +13,7 @@ $Id$
 
 #include "owshell.h"
 
-static int OW_parsevalue( int * var, const ASCII * str ) ;
+static void OW_parsevalue( int * var, const ASCII * str ) ;
 
 const struct option owopts_long[] = {
     {"help",       no_argument,      NULL,'h'},
@@ -24,7 +24,6 @@ const struct option owopts_long[] = {
     {"Rankine",    no_argument,      NULL,'R'},
     {"version",    no_argument,      NULL,'V'},
     {"format",     required_argument,NULL,'f'},
-    {"morehelp",   no_argument,      NULL,259},
     
     {"timeout_network"   , required_argument, NULL, 307, } , // timeout -- tcp wait
     {"timeout_server"    , required_argument, NULL, 308, } , // timeout -- server wait
@@ -34,12 +33,12 @@ const struct option owopts_long[] = {
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt( const int c , const char * arg ) {
+void owopt( const int c , const char * arg ) {
     //printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
     switch (c) {
     case 'h':
-        ow_help( ) ;
-        return 1 ;
+        ow_help() ;
+        exit(0) ;
     case 'C':
         set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
         break ;
@@ -54,9 +53,9 @@ int owopt( const int c , const char * arg ) {
         break ;
     case 'V':
         printf("owshell version:\n\t" VERSION "\n") ;
-        return 1 ;
+        exit(0) ;
     case 's':
-        return OW_ArgNet( arg ) ;
+        OW_ArgNet( arg ) ;
     case 'f':
         if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
         else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
@@ -65,45 +64,39 @@ int owopt( const int c , const char * arg ) {
         else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
         else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
         else {
-             //LEVEL_DEFAULT("Unrecognized format type %s\n",arg)
-             return 1 ;
+            fprintf(stderr,"Unrecognized format type %s\n",arg) ;
+            exit(1) ;
         }
         break ;
-    case 259:
-        ow_morehelp() ;
-        return 1 ;
     case 307: case 308:
-        return OW_parsevalue(&((int *) &Global.timeout_volatile)[c-301],arg) ;
+        OW_parsevalue(&((int *) &Global.timeout_volatile)[c-301],arg) ;
     case 0:
         break ;
     default:
-        return 1 ;
+        exit(1) ;
     }
-    return 0 ;
 }
 
-int OW_ArgNet( const char * arg ) {
+void OW_ArgNet( const char * arg ) {
     struct connection_in * in ;
     if ( indevice ) {
         fprintf(stderr,"Cannot link to more than one owserver. (%s and %s).\n",indevice->name,arg) ;
-        return 1 ;
+        exit(1) ;
     } else if ( (in = NewIn())==NULL ) {
         fprintf(stderr,"Memory exhausted.\n") ;
-        return 1 ;
+        exit(1) ;
     }
     in->name = strdup(arg) ;
     in->busmode = bus_server ;
-    return 0 ;
 }
 
-static int OW_parsevalue( int * var, const ASCII * str ) {
+static void OW_parsevalue( int * var, const ASCII * str ) {
     int I ;
     errno = 0 ;
     I = strtol(str,NULL,10) ;
     if ( errno ) {
-        //ERROR_DETAIL("Bad configuration value %s\n",str) ;
-        return 1 ;
+        fprintf(stderr,"Bad configuration value %s\n",str) ;
+        exit(1) ;
     }
     var[0] = I ;
-    return 0 ;
 }

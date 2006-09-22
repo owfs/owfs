@@ -22,29 +22,27 @@ $Id$
 /* ---------------------------------------------- */
 int main(int argc, char *argv[]) {
     int c ;
-    int detect_needed = 1 ;
+    int paths_found = 0 ;
 
     Setup() ;
     /* process command line arguments */
-    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
-        if ( owopt(c,optarg) ) exit(1) ; /* rest of message */
-    }
+    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 )
+        owopt(c,optarg) ;
 
     /* non-option arguments */
     while ( optind < argc ) {
         if ( indevice==NULL ) {
-            if ( OW_ArgNet(argv[optind]) ) exit (1) ;
+            OW_ArgNet(argv[optind]) ;
         } else {
-            if ( detect_needed ) {
-                if ( Server_detect() ) {
-                    fprintf(stderr,"Could not connect with owserver %s\n",indevice->name) ;
-                    exit(1) ;
-                }
-                detect_needed = 0 ;
-            }
+            if ( paths_found++ == 0 ) Server_detect() ;
             ServerDir(argv[optind]) ;
         }
         ++optind ;
+    }
+    // Was anything requested?
+    if ( paths_found == 0 ) {
+        Server_detect() ;
+        ServerDir("/") ;
     }
     exit(0) ;
 }

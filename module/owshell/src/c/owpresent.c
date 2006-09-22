@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
             OW_ArgNet(argv[optind]) ;
         } else {
             if ( paths_found++ == 0 ) Server_detect() ;
-            ServerRead(argv[optind]) ;
+            ServerPresence(argv[optind]) ;
         }
         ++optind ;
     }
