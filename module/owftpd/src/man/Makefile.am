@@ -1,4 +1,0 @@
-clean-generic:
-
-	@RM@ -f *~ .*~
-

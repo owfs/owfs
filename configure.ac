@@ -1217,37 +1217,30 @@ AC_CONFIG_FILES([
     module/owlib/src/Makefile
     module/owlib/src/include/Makefile
     module/owlib/src/c/Makefile
-    module/owlib/src/man/Makefile
     module/owfs/Makefile
     module/owfs/src/Makefile
     module/owfs/src/include/Makefile
     module/owfs/src/c/Makefile
-    module/owfs/src/man/Makefile
     module/owhttpd/Makefile
     module/owhttpd/src/Makefile
     module/owhttpd/src/include/Makefile
     module/owhttpd/src/c/Makefile
-    module/owhttpd/src/man/Makefile
     module/owserver/Makefile
     module/owserver/src/Makefile
     module/owserver/src/include/Makefile
     module/owserver/src/c/Makefile
-    module/owserver/src/man/Makefile
     module/owftpd/Makefile
     module/owftpd/src/Makefile
     module/owftpd/src/include/Makefile
     module/owftpd/src/c/Makefile
-    module/owftpd/src/man/Makefile
     module/owshell/Makefile
     module/owshell/src/Makefile
     module/owshell/src/include/Makefile
     module/owshell/src/c/Makefile
-    module/owshell/src/man/Makefile
     module/owcapi/Makefile
     module/owcapi/src/Makefile
     module/owcapi/src/include/Makefile
     module/owcapi/src/c/Makefile
-    module/owcapi/src/man/Makefile
     module/owcapi/src/example/Makefile
     module/swig/Makefile
     module/swig/perl5/Makefile

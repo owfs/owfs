@@ -1,4 +1,4 @@
-SUBDIRS = include c man
+SUBDIRS = include c
 
 clean-generic:
 
