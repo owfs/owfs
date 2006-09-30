@@ -51,8 +51,8 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_H  /* tedious wrapper */
-#define OW_H
+#ifndef OWSHELL_H  /* tedious wrapper */
+#define OWSHELL_H
 
 #include "owfs_config.h"
 
@@ -128,6 +128,11 @@ $Id$
   #include <search.h>
  #endif /* __USE_GNU */
 #endif /* SKIP_SEARCH_H */
+
+/* Zeroconf / Bonjour */
+#if OW_ZERO
+    #include <dns_sd.h>
+#endif /* OW_ZERO */
 
 /* Include some compatibility functions */
 #include "compat.h"
@@ -311,6 +316,9 @@ void FreeClientAddr(  struct connection_in * in ) ;
 void OW_ArgNet( const char * arg ) ;
 void Setup(void) ;
 void ow_help( void ) ;
+#ifdef OW_ZERO
+void OW_Browse( void ) ;
+#endif /* OW_ZERO */
 
 void Server_detect( void  ) ;
 int ServerRead( ASCII * path ) ;
@@ -327,11 +335,6 @@ int ServerPresence( ASCII * path ) ;
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
-
-#endif /* OW_H */
-
-#ifndef OW_CONNECTION_H  /* tedious wrapper */
-#define OW_CONNECTION_H
 
 struct connection_in ;
 
@@ -420,4 +423,4 @@ void DelIn( struct connection_in * in ) ;
 
 struct connection_in * NewIn( void ) ;
 
-#endif /* OW_CONNECTION_H */
+#endif /* OWSHELL_H */

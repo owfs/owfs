@@ -36,6 +36,22 @@ filepath value
 filepath
 .PP
 .B owdir
+.I --autoserver
+[directory]
+.br
+.B owread
+.I --autoserver
+filepath
+.br
+.B owwrite
+.I --autoserver
+filepath value
+.br
+.B owpresent
+.I --autoserver
+filepath
+.PP
+.B owdir
 .I -C --celsius
 .I -K --kelvin
 .I -F --fahrenheit
@@ -114,7 +130,7 @@ for use in command line scripts.
 .PP
 Unlike
 .B owserver (1) owhttpd (1) owftpd (1) owhttpd (1)
-there is not persistent connection with the 1-wire bus, no caching, no multithreading. Instead, each program connects to a running
+there is not persistent connection with the 1-wire bus, no caching and no multithreading. Instead, each program connects to a running
 .B owserver (1)
 and performs a quick set of queries.
 .PP
@@ -162,16 +178,24 @@ in the
 filesystem.
 .SS owpresent
 .B owpresent
-reports whether a particular 1-wire chip exists on owserver. e.g. 26.3C80BE21DD00 is a DS2438.
+reports whether a particular 1-wire chip exists on 
+.I owserver. 
+e.g. 26.3C80BE21DD00 is a DS2438.
 .B owpresent
 prints 1 for device present, else 0.
 .SH STANDARD OPTIONS
+.SS \-\-autoserver
+Find an 
+.I owserver
+using the Service Discovery protocol. Essentially Apple's Bonjour (aka zeroconf). Only the first 
+.I owserver 
+will be used, and that choice is probably arbitrary.
 .SS \-s [host:]port
 Connect via tcp (network) to an
 .I owserver
 process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The
 .I owserver
-process can be local, or remote.
+process can be local or remote.
 .SH HELP OPTIONS
 .SS \-h \-\-help
 Shows basic summary of options.
@@ -179,7 +203,7 @@ Shows basic summary of options.
 .I Version
 of this program and related libraries.
 .SS \-f \-\-format "f[.]i[[.]c]"
-Display format for the 1-wire devices. Each device has a 8byte address, consisting of:
+Display format for the 1-wire devices. Each device has a 8 byte address, consisting of:
 .TP
 .I f
 family code, 1 byte
@@ -205,10 +229,10 @@ Get the device listing (full 16 hex digits, no dots) from the local
 .I owserver
 at port 3000
 .TP
-owread -F -s 4000 51.125499A32000/typeK/temperature
-Read temperature from the DS2751-based thermocouple on
+owread -F --autoserver 51.125499A32000/typeK/temperature
+Read temperature from the DS2751-based thermocouple on an auto-discovered
 .I owserver
-at local port 4000 in fahrenheit.
+Temperature in fahrenheit.
 .TP
 owwrite -s 10.0.1.2:3001 32.000800AD23110/pages/page.1 "Passed"
 Connect to a OWFS server process (

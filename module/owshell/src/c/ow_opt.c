@@ -27,6 +27,7 @@ const struct option owopts_long[] = {
     
     {"timeout_network"   , required_argument, NULL, 307, } , // timeout -- tcp wait
     {"timeout_server"    , required_argument, NULL, 308, } , // timeout -- server wait
+    {"autoserver",    no_argument,      NULL,275},
 
     {0,0,0,0},
 } ;
@@ -67,6 +68,9 @@ void owopt( const int c , const char * arg ) {
             fprintf(stderr,"Unrecognized format type %s\n",arg) ;
             exit(1) ;
         }
+        break ;
+    case 275: // autoserver
+        OW_Browse() ;
         break ;
     case 307: case 308:
         OW_parsevalue(&((int *) &Global.timeout_volatile)[c-301],arg) ;

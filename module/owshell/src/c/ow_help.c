@@ -32,6 +32,7 @@ void ow_help( void ) {
             "  each is processed in turn\n"
     "\n"
     "Options include:\n"
+    "     --autoserver                |Use Bonjour (zeroconf) to find owserver\n"
     "  -C --Celsius                   |Celsius(default) temperature scale\n"
     "  -F --Fahrenheit                |Fahrenheit temperature scale\n"
     "  -K --Kelvin                    |Kelvin temperature scale\n"

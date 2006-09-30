@@ -1020,12 +1020,118 @@ exit_retr:
 }
 
 static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
+    const char *file_name;
+    int file_fd;
+    int socket_fd;
+    ASCII * buf = NULL ;
+    struct timeval start_timestamp;
+    struct timeval end_timestamp;
+    struct timeval transfer_time;
+    struct timeval limit_time = {Global.timeout_ftp,0} ;
+    struct parsedname pn ;
+    size_t size_read ;
+    ssize_t size_actual ;
+    int r ;
+    off_t offset = 0 ;
+    int need_pn_destroy = 1 ;
+
     daemon_assert(invariant(f));
     daemon_assert(cmd != NULL);
     daemon_assert(cmd->num_arg == 1);
 
-    reply(f, 553, "Server will not store files.");
+    /* set up for exit */
+    file_fd = -1;
+    socket_fd = -1;
 
+    /* create an absolute name for our file */
+    file_name = cmd->arg[0].string;
+    
+    /* if the last command was a REST command, restart at the */
+    /* requested position in the file                         */
+    if ((f->file_offset_command_number == (f->command_number - 1)) ) offset = f->file_offset ;
+
+    if ( FS_ParsedNamePlus( f->dir, file_name, &pn ) ) {
+        reply(f, 550, "File does not exist.");
+        need_pn_destroy = 0 ;
+        goto exit_stor;
+    } else if ( pn.dev==NULL || pn.ft==NULL ) {
+        reply(f, 550, "Error, file is a directory.");
+        goto exit_stor;
+    } else if ( pn.ft->write.v == NULL ) {
+        reply(f, 550, "Error, file is read-only.");
+        goto exit_stor;
+    } else if ( (pn.ft->format==ft_binary) && (f->data_type==TYPE_ASCII) ) {
+        reply(f, 550, "Error, binary file (type ascii).");
+        goto exit_stor;
+    } else if ( (buf=(ASCII*)malloc(size_read=FullFileLength(&pn)-offset+100))==NULL ) {
+        reply(f, 550, "Out of memory.");
+        goto exit_stor;
+    }
+
+    /* ready to transfer */
+    reply(f, 150, "About to open data connection.");
+    
+    /* mark start time */
+    gettimeofday(&start_timestamp, NULL);
+
+    /* open data path */
+    socket_fd = open_connection(f);
+    if (socket_fd == -1) goto exit_stor;
+
+    /* we're golden, read the file */
+    if ((size_actual=readn(socket_fd, buf, size_read, &limit_time)) == -1) {
+        reply(f, 550, "Error reading from data connection; %s.",
+        strerror(errno));
+        goto exit_stor;
+    }
+
+    watchdog_defer_watched(f->watched);
+
+    /* disconnect */
+    close(socket_fd);
+    socket_fd = -1;
+
+    /* hey, it worked, let the other side know */
+    reply(f, 226, "File transfer complete.");
+
+    /* mark end time */
+    gettimeofday(&end_timestamp, NULL);
+
+    /* calculate transfer rate */
+    transfer_time.tv_sec = end_timestamp.tv_sec - start_timestamp.tv_sec;
+    transfer_time.tv_usec = end_timestamp.tv_usec - start_timestamp.tv_usec;
+    while (transfer_time.tv_usec >= 1000000) {
+        transfer_time.tv_sec++;
+        transfer_time.tv_usec -= 1000000;
+    }
+    while (transfer_time.tv_usec < 0) {
+        transfer_time.tv_sec--;
+        transfer_time.tv_usec += 1000000;
+    }
+
+    if ( (r=FS_write_postparse( buf, size_actual, offset, &pn )) < 0 ) {
+        reply(f, 550, "Error writing to file; %s.", strerror(errno));
+        goto exit_stor;
+    }
+    
+    /* note the transfer */
+    LEVEL_DATA("%s stored \"%s\", %ld bytes in %d.%06d seconds\n",
+      f->client_addr_str, 
+      pn.path,
+      size_actual,
+      transfer_time.tv_sec,
+      transfer_time.tv_usec);
+
+exit_stor:
+    if ( buf ) free(buf) ;
+    if ( need_pn_destroy ) FS_ParsedName_destroy( &pn ) ;
+    f->file_offset = 0;
+    if (socket_fd != -1) {
+        close(socket_fd);
+    }
+    if (file_fd != -1) {
+        close(file_fd);
+    }
     daemon_assert(invariant(f));
 }
 
