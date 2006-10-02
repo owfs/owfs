@@ -8,6 +8,7 @@
 %define build_php 1
 %define build_tcl 1
 %define build_shell 1
+%define build_man 1
 
 %define debug_package   %{nil}
 
@@ -141,6 +142,15 @@ Group: Applications/System
 
 %description shell
 %{name}-shell is 4 small programs to easily access owserver (and thus the 1-wire system) from shell scripts. owdir, owread, owwrite and owpresent.
+%endif
+
+%if %{build_man}
+%package man
+Summary: %{name}-man installs man pages for all the OWFS programs 1-wire devices.
+Group: Documentation
+
+%description man
+%{name}-man installs man pages for all the OWFS progams (owfs, owhtttpd, owserver, owftpd, owshell, owperl, owtcl) and also all the supported 1-wire devices.
 %endif
 
 
@@ -319,7 +329,17 @@ fi
 
 %preun shell
 if [ $1 = 0 ]; then
-	/sbin/chkconfig --del owshell
+    /sbin/chkconfig --del owshell
+fi
+%endif
+
+%if %{build_man}
+%post man
+/sbin/chkconfig --add owman
+
+%preun man
+if [ $1 = 0 ]; then
+    /sbin/chkconfig --del owman
 fi
 %endif
 
@@ -380,6 +400,17 @@ fi
 %{_mandir}/man1/owread.1.gz
 %{_mandir}/man1/owwrite.1.gz
 %{_mandir}/man1/owpresent.1.gz
+%endif
+
+%if %{build_man}
+%files man
+%defattr(-,root,root)
+%{_mandir}/man1/ow*.1.gz
+%{_mandir}/man3/DS*.3.gz
+%{_mandir}/man3/LCD.3.gz
+%{_mandir}/man3/Thermachron.3.gz
+%{_mandir}/man5/owfs.5.gz
+%{_mandir}/mann/owtcl.n.gz
 %endif
 
 %if %{build_ftpd}
