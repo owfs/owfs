@@ -2,12 +2,12 @@
 %define build_httpd 1
 %define build_capi 1
 %define build_ftpd 1
-%define build_nfsd 0
 %define build_server 1
 %define build_perl 1
 %define build_python 1
 %define build_php 1
 %define build_tcl 1
+%define build_shell 1
 
 %define debug_package   %{nil}
 
@@ -77,16 +77,6 @@ Requires: %{name}-libs = %{version}
 %{name}-ftpd is a FTP daemon on top of %{name} providing access to 1-Wire networks.
 %endif
 
-%if %{build_nfsd}
-%package nfsd
-Summary: NFS daemon providing access to 1-Wire networks.
-Group: System Environment/Daemon
-Requires: %{name}-libs = %{version}
-
-%description nfsd
-%{name}-nfsd is a NFS daemon on top of %{name} providing access to 1-Wire networks.
-%endif
-
 %if %{build_server}
 %package server
 Summary: Backend server (daemon) for 1-wire control
@@ -144,6 +134,15 @@ BuildRequires: tcl-devel >= 8.1
 %{name}-tcl is a Tcl interface for the 1-wire filesystem
 %endif
 
+%if %{build_shell}
+%package shell
+Summary: %{name}-shell gives light weight shell access to owserver and the 1-wire filesystem
+Group: Applications/System
+
+%description shell
+%{name}-shell is 4 small programs to easily access owserver (and thus the 1-wire system) from shell scripts. owdir, owread, owwrite and owpresent.
+%endif
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -181,11 +180,6 @@ automake -a -c
 	--enable-owftpd \
 %else
 	--disable-owftpd \
-%endif
-%if %{build_nfsd}
-	--enable-ownfsd \
-%else
-	--disable-ownfsd \
 %endif
 %if %{build_server}
 	--enable-owserver \
@@ -233,22 +227,26 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/man
 %if %{build_fs}
 install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
 install -D -m 755 src/rpm/owfs.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owfs
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owfs $RPM_BUILD_ROOT%{prefix}/sbin
 %endif
 %if %{build_httpd}
 install -D -m 755 src/rpm/owhttpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owhttpd
 install -D -m 644 src/rpm/owhttpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owhttpd
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owhttpd $RPM_BUILD_ROOT%{prefix}/sbin
 %endif
 %if %{build_ftpd}
 install -D -m 644 src/rpm/owftpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owftpd
 install -D -m 755 src/rpm/owftpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owftpd
-%endif
-%if %{build_nfsd}
-install -D -m 644 src/rpm/ownfsd.conf $RPM_BUILD_ROOT/etc/sysconfig/ownfsd
-install -D -m 755 src/rpm/ownfsd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/ownfsd
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owftpd $RPM_BUILD_ROOT%{prefix}/sbin
 %endif
 %if %{build_server}
 install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
 install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
 #[ -f $RPM_BUILD_ROOT%{prefix}/man/man1/owserver.1 ] || \
 #	install -D -m 644 src/man/owserver.1 $RPM_BUILD_ROOT%{_mandir}/man1/owserver.1
 %endif
@@ -268,9 +266,8 @@ rm -f $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.la $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp
 rm -f $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.a
 %endif
 
-install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
-mv -f $RPM_BUILD_ROOT%{prefix}/bin/* $RPM_BUILD_ROOT%{prefix}/sbin
-rm -rf $RPM_BUILD_ROOT%{prefix}/bin
+#mv -f $RPM_BUILD_ROOT%{prefix}/bin/* $RPM_BUILD_ROOT%{prefix}/sbin
+#rm -rf $RPM_BUILD_ROOT%{prefix}/bin
 
 %post libs
 /sbin/ldconfig
@@ -316,13 +313,13 @@ if [ $1 = 0 ]; then
 fi
 %endif
 
-%if %{build_nfsd}
-%post nfsd
-/sbin/chkconfig --add ownfsd
+%if %{build_shell}
+%post shell
+/sbin/chkconfig --add owshell
 
-%preun nfsd
+%preun shell
 if [ $1 = 0 ]; then
-	/sbin/chkconfig --del ownfsd
+	/sbin/chkconfig --del owshell
 fi
 %endif
 
@@ -371,6 +368,20 @@ fi
 %{_mandir}/man1/owhttpd.1.gz
 %endif
 
+%if %{build_shell}
+%files shell
+%defattr(-,root,root)
+%{prefix}/bin/owdir
+%{prefix}/bin/owread
+%{prefix}/bin/owwrite
+%{prefix}/bin/owpresent
+%{_mandir}/man1/owshell.1.gz
+%{_mandir}/man1/owdir.1.gz
+%{_mandir}/man1/owread.1.gz
+%{_mandir}/man1/owwrite.1.gz
+%{_mandir}/man1/owpresent.1.gz
+%endif
+
 %if %{build_ftpd}
 %files ftpd
 %defattr(-,root,root)
@@ -378,15 +389,6 @@ fi
 %config /etc/sysconfig/owftpd
 %{prefix}/sbin/owftpd
 %{_mandir}/man1/owftpd.1.gz
-%endif
-
-%if %{build_nfsd}
-%files nfsd
-%defattr(-,root,root)
-/etc/rc.d/init.d/ownfsd
-%config /etc/sysconfig/ownfsd
-%{prefix}/sbin/ownfsd
-#%{_mandir}/man1/ownfsd.1.gz
 %endif
 
 %if %{build_server}
@@ -437,6 +439,8 @@ fi
 
 
 %changelog
+* Sat Sep 30 2006 Paul Alfille <paul.alfille@gmail.com>
+- added shell programs, removed nfsd
 
 * Thu Jan 13 2005 Serg Oskin <oskin@macomnet.ru>
 - reorganized

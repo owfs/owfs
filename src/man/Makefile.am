@@ -74,6 +74,7 @@ man_MANS = owfs.1 \
            standard_mini \
            owperl.3 \
            owtcl.3 \
+           owshell.1 owdir.1 owread.1 owwrite.1 owpresent.1 \
            owtcl.n
 
 
