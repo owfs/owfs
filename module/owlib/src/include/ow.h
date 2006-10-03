@@ -10,6 +10,20 @@ $Id$
     FS -- filesystem commands
     UT -- utility functions
 
+    LICENSE (As of version 2.5p4 2-Oct-2006)
+    owlib: LGPL v2
+    owfs, owhttpd, owftpd, owserver: GPL v2
+    owshell(owdir owread owwrite owpresent): GPL v2
+    owcapi (libowcapi): LGPL v2
+    owperl: GPL v2
+    owtcl: GPL v2 or later at your discretion
+    owphp: GPL v2
+    owpython: GPL v2
+    owsim.tcl: GPL v2
+    where GPL v2 is the "Gnu General License version 2"
+    and "LGPL v2" is the "Lesser Gnu General License version 2"
+
+
     Written 2003 Paul H Alfille
         Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
         Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
