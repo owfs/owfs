@@ -15,6 +15,9 @@ $Id$
 #include "ow_devices.h"
 #include "ow_pid.h"
 
+void SetSignals( void ) ;
+void SigHandler( int signo, siginfo_t * info, void * context ) ;
+
 /* All ow library setup */
 void LibSetup( enum opt_program opt ) {
     // global structure of configuration parameters
@@ -330,7 +333,24 @@ int LibStart( void ) {
     if ( Global.autoserver ) OW_Browse() ;
 #endif
 
+    // Signal handlers
+    SetSignals() ;
+
     return 0 ;
+}
+
+void SetSignals( void ) {
+    struct sigaction sa ;
+    sigemptyset( &sa.sa_mask ) ;
+    sa.sa_flags=SA_SIGINFO ;
+    sa.sa_sigaction = SigHandler ;
+    sigaction(SIGPIPE,&sa,NULL) ;
+
+}
+
+void SigHandler( int signo, siginfo_t * info, void * context ) {
+    (void) context ;
+    LEVEL_DEBUG("Signal handler for $d, errno %d, code %d, pid %ld\n",signo,info->si_errno,info->si_code,(long int)info->si_pid) ;
 }
 
 /* All ow library closeup */
