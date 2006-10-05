@@ -37,7 +37,10 @@ man_MANS = owfs.1 \
            owtcl.n
 
 
-EXTRA_DIST = ${man_MANS}
+EXTRA_DIST = ${man_MANS} \
+           addressing cmdline cmdline2_mini cmdline_mini \
+           description seealso standard standard_mini \
+           temperatures temperatures_mini
 
 clean-generic:
 
