@@ -33,6 +33,7 @@ man_MANS = owfs.1 \
            standard_mini \
            owperl.3 \
            owtcl.3 \
+           owfs.5 \ 
            owtcl.n
 
 
