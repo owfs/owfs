@@ -32,7 +32,7 @@ void LibSetup( enum opt_program opt ) {
     Global.timeout_directory=  60 ;
     Global.timeout_presence = 120 ;
     Global.timeout_serial   =   5 ;
-    Global.timeout_usb      =   5 ;
+    Global.timeout_usb      =5000 ; // 5 seconds
     Global.timeout_network  =   1 ;
     Global.timeout_server   =  10 ;
     Global.timeout_ftp      = 900 ;
