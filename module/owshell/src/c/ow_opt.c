@@ -57,6 +57,7 @@ void owopt( const int c , const char * arg ) {
         exit(0) ;
     case 's':
         OW_ArgNet( arg ) ;
+        break ;
     case 'f':
         if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
         else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
