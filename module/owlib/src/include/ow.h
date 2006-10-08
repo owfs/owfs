@@ -11,12 +11,12 @@ $Id$
     UT -- utility functions
 
     LICENSE (As of version 2.5p4 2-Oct-2006)
-    owlib: LGPL v2
+    owlib: GPL v2
     owfs, owhttpd, owftpd, owserver: GPL v2
     owshell(owdir owread owwrite owpresent): GPL v2
-    owcapi (libowcapi): LGPL v2
+    owcapi (libowcapi): GPL v2
     owperl: GPL v2
-    owtcl: GPL v2 or later at your discretion
+    owtcl: LGPL v2
     owphp: GPL v2
     owpython: GPL v2
     owsim.tcl: GPL v2
@@ -192,7 +192,7 @@ typedef int             INT ;
     extern pthread_mutexattr_t mattr;
     extern pthread_mutex_t uclibc_mutex;
  #endif /* __UCLIBC__ */
-    #define STATLOCK          pthread_mutex_lock(  &stat_mutex   )
+#define STATLOCK          pthread_mutex_lock(  &stat_mutex   )
     #define STATUNLOCK        pthread_mutex_unlock(&stat_mutex   )
     #define CACHELOCK         pthread_mutex_lock(  &cache_mutex  )
     #define CACHEUNLOCK       pthread_mutex_unlock(&cache_mutex  )

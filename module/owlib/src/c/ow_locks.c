@@ -31,7 +31,7 @@ pthread_mutex_t connin_mutex  = PTHREAD_MUTEX_INITIALIZER ;
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
 pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER ;
-#endif
+#endif /* __UCLIBC__ */
 #endif /* OW_MT */
 
 /* Essentially sets up semaphore for device slots */

@@ -7,6 +7,20 @@ $Id$
 	Released under the GPL
 	See the header file: ow.h for full attribution
 	1wire/iButton system from Dallas Semiconductor
+    
+    LICENSE (As of version 2.5p4 2-Oct-2006)
+    owlib: LGPL v2
+    owfs, owhttpd, owftpd, owserver: GPL v2
+    owshell(owdir owread owwrite owpresent): GPL v2
+    owcapi (libowcapi): LGPL v2
+    owperl: GPL v2
+    owtcl: GPL v2 or later at your discretion
+    owphp: GPL v2
+    owpython: GPL v2
+    owsim.tcl: GPL v2
+    where GPL v2 is the "Gnu General License version 2"
+    and "LGPL v2" is the "Lesser Gnu General License version 2"
+
 */
 
 #ifndef OW_1820_H

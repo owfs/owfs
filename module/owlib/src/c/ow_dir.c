@@ -435,12 +435,31 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
     return 0 ;
 }
 
+#ifdef __MacOSX__
+ #if OW_MT
+    pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER ;
+ #endif /* OW_MT */
+    void (* Typedirfunc)(const struct parsedname *) ;
+    struct parsedname * Typedirpn ;
+    static void Typediraction( const void * t, const VISIT which, const int depth ) {
+        (void) depth ;
+        switch(which) {
+            case leaf:
+            case postorder:
+                Typedirpn->dev = ((const struct device_opaque *)t)->key ;
+                dirfunc( Typedirpn ) ;
+            default:
+                break ;
+        }
+    } ;
+#endif /* __MacOSX__ */
+
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
 static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
-    void action( const void * t, const VISIT which, const int depth ) {
+#ifndef __MacOSX__
+    void Typediraction( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
-//printf("Action\n") ;
         switch(which) {
         case leaf:
         case postorder:
@@ -450,8 +469,21 @@ static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parse
             break ;
         }
     } ;
-    twalk( Tree[pn2->type],action) ;
+#elseif /* __MacOSX__ */
+ #if OW_MT
+    pthread_mutex_lock(&Typedirmutex) ;
+ #endif /* OW_MT */
+    Typedirfunc = dirfunc ;
+    Typedirpn = pn2 ;
+#endif /* __MacOSX__ */
+    twalk( Tree[pn2->type],Typediraction) ;
+#ifndef __MacOSX__
     pn2->dev = NULL ;
+#elseif /* __MacOSX__ */
+ #if OW_MT
+    pthread_mutex_unlock(&Typedirmutex) ;
+ #endif /* OW_MT */
+#endif /* __MacOSX__ */
     return 0 ;
 }
 
