@@ -960,7 +960,7 @@ ENABLE_ZERO=auto
 AC_MSG_CHECKING([if zeroconf support is enabled])
 
 AC_ARG_ENABLE(zero,
-[  --enable-zero          Enable 1-Wire zeroconf (Bonjour) support (default auto)],
+[  --enable-zero         Enable 1-Wire zeroconf (Bonjour) support (default auto)],
 [
     AC_MSG_RESULT([$enableval])
 
