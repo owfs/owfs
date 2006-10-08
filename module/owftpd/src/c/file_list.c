@@ -27,6 +27,20 @@ static void List_show( struct file_parse_s * fps, const struct parsedname * pn )
 static void WildLexParse( struct file_parse_s * fps, ASCII * match ) ;
 static char * skip_ls_options(char *filespec) ;
 
+/* if no localtime_r() is available, provide one */
+#ifndef HAVE_LOCALTIME_R
+#include <pthread.h>
+
+struct tm *localtime_r(const time_t *timep, struct tm *timeptr) {
+    static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
+
+    pthread_mutex_lock(&time_lock);
+    *timeptr = *(localtime(timep));
+    pthread_mutex_unlock(&time_lock);
+    return timeptr;
+}
+#endif /* HAVE_LOCALTIME_R */
+
 static void List_show( struct file_parse_s * fps, const struct parsedname * pn ) {
     struct stat stbuf ;
     time_t now;
@@ -240,19 +254,6 @@ static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
     if ( rest ) free( rest ) ;
 }
 
-/* if no localtime_r() is available, provide one */
-#ifndef HAVE_LOCALTIME_R
-#include <pthread.h>
-
-struct tm *localtime_r(const time_t *timep, struct tm *timeptr) {
-    static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
-
-    pthread_mutex_lock(&time_lock);
-    *timeptr = *(localtime(timep));
-    pthread_mutex_unlock(&time_lock);
-    return timeptr;
-}
-#endif /* HAVE_LOCALTIME_R */
 
 /* write with care for max length and incomplete outout */
 static void fdprintf(int fd, const char *fmt, ...) {
