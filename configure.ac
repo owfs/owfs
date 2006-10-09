@@ -362,14 +362,6 @@ AC_ARG_ENABLE(i2c,
     AC_MSG_RESULT([yes (default)])
 ])
 
-if test "${ENABLE_I2C}" = "true" ; then
-    ACX_PTHREAD
-    if test "$acx_pthread_ok" = "yes"; then
-    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-    else
-    ENABLE_I2C="false"
-    fi
-fi
 AC_SUBST(ENABLE_I2C)
 AM_CONDITIONAL(ENABLE_I2C, test "${ENABLE_I2C}" = "true")
 
@@ -388,15 +380,6 @@ AC_ARG_ENABLE(ha7,
 [
     AC_MSG_RESULT([yes (default)])
 ])
-
-if test "${ENABLE_HA7}" = "true" ; then
-    ACX_PTHREAD
-    if test "$acx_pthread_ok" = "yes"; then
-    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-    else
-    ENABLE_HA7="false"
-    fi
-fi
 AC_SUBST(ENABLE_HA7)
 AM_CONDITIONAL(ENABLE_HA7, test "${ENABLE_HA7}" = "true")
 
