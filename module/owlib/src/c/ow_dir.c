@@ -435,7 +435,7 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
     return 0 ;
 }
 
-#ifdef __MacOSX__
+#ifdef NO_NESTED_FUNCTIONS
  #if OW_MT
     pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER ;
  #endif /* OW_MT */
@@ -452,12 +452,12 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
                 break ;
         }
     } ;
-#endif /* __MacOSX__ */
+#endif /* NO_NESTED_FUNCTIONS */
 
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
 static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
-#ifndef __MacOSX__
+#ifndef NO_NESTED_FUNCTIONS
     void Typediraction( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
         switch(which) {
@@ -469,21 +469,21 @@ static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parse
             break ;
         }
     } ;
-#elseif /* __MacOSX__ */
+#else /* NO_NESTED_FUNCTIONS */
  #if OW_MT
     pthread_mutex_lock(&Typedirmutex) ;
  #endif /* OW_MT */
     Typedirfunc = dirfunc ;
     Typedirpn = pn2 ;
-#endif /* __MacOSX__ */
+#endif /* NO_NESTED_FUNCTIONS */
     twalk( Tree[pn2->type],Typediraction) ;
-#ifndef __MacOSX__
+#ifndef NO_NESTED_FUNCTIONS
     pn2->dev = NULL ;
-#elseif /* __MacOSX__ */
+#else /* NO_NESTED_FUNCTIONS */
  #if OW_MT
     pthread_mutex_unlock(&Typedirmutex) ;
  #endif /* OW_MT */
-#endif /* __MacOSX__ */
+#endif /* NO_NESTED_FUNCTIONS */
     return 0 ;
 }
 
