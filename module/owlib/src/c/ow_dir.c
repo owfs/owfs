@@ -436,28 +436,44 @@ static int FS_cache2real( void (* dirfunc)(const struct parsedname *), struct pa
 }
 
 #ifdef NO_NESTED_FUNCTIONS
- #if OW_MT
-    pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER ;
- #endif /* OW_MT */
-    void (* Typedirfunc)(const struct parsedname *) ;
-    struct parsedname * Typedirpn ;
-    static void Typediraction( const void * t, const VISIT which, const int depth ) {
-        (void) depth ;
-        switch(which) {
-            case leaf:
-            case postorder:
-                Typedirpn->dev = ((const struct device_opaque *)t)->key ;
-                dirfunc( Typedirpn ) ;
-            default:
-                break ;
-        }
-    } ;
-#endif /* NO_NESTED_FUNCTIONS */
+#if OW_MT
+pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+void (* Typedirfunc)(const struct parsedname *) ;
+struct parsedname * Typedirpn ;
+
+static void Typediraction( const void * t, const VISIT which, const int depth ) {
+    (void) depth ;
+    switch(which) {
+    case leaf:
+    case postorder:
+        Typedirpn->dev = ((const struct device_opaque *)t)->key ;
+        dirfunc( Typedirpn ) ;
+    default:
+        break ;
+    }
+}
 
 /* Show the pn->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
 static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
-#ifndef NO_NESTED_FUNCTIONS
+#if OW_MT
+    pthread_mutex_lock(&Typedirmutex) ;
+#endif /* OW_MT */
+    Typedirfunc = dirfunc ;
+    Typedirpn = pn2 ;
+    twalk( Tree[pn2->type],Typediraction) ;
+#if OW_MT
+    pthread_mutex_unlock(&Typedirmutex) ;
+#endif /* OW_MT */
+    return 0 ;
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
+/* Show the pn->type (statistics, system, ...) entries */
+/* Only the top levels, the rest will be shown by FS_devdir */
+static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
     void Typediraction( const void * t, const VISIT which, const int depth ) {
         (void) depth ;
         switch(which) {
@@ -469,23 +485,12 @@ static int FS_typedir( void (* dirfunc)(const struct parsedname *), struct parse
             break ;
         }
     } ;
-#else /* NO_NESTED_FUNCTIONS */
- #if OW_MT
-    pthread_mutex_lock(&Typedirmutex) ;
- #endif /* OW_MT */
-    Typedirfunc = dirfunc ;
-    Typedirpn = pn2 ;
-#endif /* NO_NESTED_FUNCTIONS */
     twalk( Tree[pn2->type],Typediraction) ;
-#ifndef NO_NESTED_FUNCTIONS
     pn2->dev = NULL ;
-#else /* NO_NESTED_FUNCTIONS */
- #if OW_MT
-    pthread_mutex_unlock(&Typedirmutex) ;
- #endif /* OW_MT */
-#endif /* NO_NESTED_FUNCTIONS */
     return 0 ;
 }
+
+#endif /* NO_NESTED_FUNCTIONS */
 
 /* Show the bus entries */
 /* No reason to lock or use a copy */

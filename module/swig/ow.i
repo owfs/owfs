@@ -56,6 +56,81 @@ int put( const char * path, const char * value ) {
     return ret ;
 }
 
+
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t owigetmutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+
+char * owigetbuf = NULL ;
+int owigetsz ; /* current buffer size */
+int owigets ; /* current string length */
+
+void owigetdirectory( const struct parsedname * const pn2 ) {
+    int sn = owigets+OW_FULLNAME_MAX+2 ; /* next buffer limit */
+    if ( owigetsz<sn ) {
+        void * temp = owigetbuf ;
+        owigetsz = sn ;
+        owigetbuf = realloc( temp, sn ) ;
+        //printf("Realloc buf pointer=%p,%p\n",buf,&buf);
+        if ( owigetbuf==NULL && temp ) free(temp) ;
+    }
+    if ( owigetbuf ) {
+        if ( owigets ) strcpy( &owigetbuf[owigets++], "," ) ;
+        FS_DirName( &owigetbuf[owigets], OW_FULLNAME_MAX, pn2 ) ;
+        if ( IsDir(pn2) ) strcat( &owigetbuf[owigets], "/" );
+        owigets = strlen( owigetbuf ) ;
+        //printf("buf=%s len=%d\n", owigetbuf, owigets);
+    }
+}
+
+char * get( const char * path ) {
+#if OW_MT
+    pthread_mutex_lock(&owigetmutex) ;
+#endif /* OW_MT */
+    struct parsedname pn ;
+
+    if ( OWLIB_can_access_start() ) { /* Prior init */
+        // owigetbuf = NULL ;
+    } else if ( FS_ParsedName( path, &pn ) ) { /* Parse the input string */
+        // owigetbuf = NULL ;
+    } else {
+        //printf("path=%s dev=%p ft=%p subdir=%p format=%d\n",pathcpy,pn.dev,pn.ft,pn.subdir,pn.ft?pn.ft->format:-1) ;
+
+//        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
+        if ( IsDir(&pn) ) { /* A directory of some kind */
+            //printf("Directory\n");
+            owigets=owigetsz=0 ;
+            FS_dir( owigetdirectory, &pn ) ;
+        } else { /* A regular file */
+            //printf("File %s\n",path);
+            owigets = FullFileLength(&pn) ;
+            //printf("File len=%d, %s\n",owigets,path);
+            if ( (owigetbuf=(char *) malloc( owigets+1 )) ) {
+                int r =  FS_read_postparse( owigetbuf, owigets, 0, &pn ) ;
+                if ( r<0 ) {
+                    free(owigetbuf) ;
+                    owigetbuf = NULL;
+                } else {
+                    owigetbuf[owigets] = '\0' ;
+                    // if (r!=owigets) printf("Mismatch path=%s read=%d len=%d\n",path,r,owigets);
+                }
+            }
+        }
+        //printf("End GET\n");
+        FS_ParsedName_destroy(&pn) ;
+        if(!owigetbuf) owigetbuf = strdup("") ; // have to return empty string on error
+    }
+    OWLIB_can_access_end() ;
+#if OW_MT
+    pthread_mutex_unlock(&owigetmutex) ;
+#endif /* OW_MT */
+    return owigetbuf ;
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
 char * get( const char * path ) {
     struct parsedname pn ;
     char * buf = NULL ;
@@ -114,6 +189,9 @@ char * get( const char * path ) {
     OWLIB_can_access_end() ;
     return buf ;
 }
+
+#endif /* NO_NESTED_FUNCTIONS */
+
 
 void finish( void ) {
     OWLIB_can_finish_start() ;

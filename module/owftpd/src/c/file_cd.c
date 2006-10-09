@@ -144,6 +144,75 @@ void FileLexCD( struct cd_parse_s * cps ) {
     }
 }
 
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t WildLexCDmutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+
+ASCII * WildLexCDend = NULL;
+ASCII * WildLexCDrest = NULL ;
+struct cd_parse_s * WildLexCDcps = NULL;
+ASCII * WildLexCDmatch = NULL;
+
+void WildLexCDdirectory( const struct parsedname * const pn2 ) {
+    FS_DirName( &WildLexCDend[1], OW_FULLNAME_MAX, pn2 ) ;
+    //printf("Try %s vs %s\n",end,match) ;
+    //if ( fnmatch( match, end, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
+    if ( fnmatch( WildLexCDmatch, &WildLexCDend[1], FNM_PATHNAME ) ) return ;
+    //printf("Match! %s\n",end) ;
+    WildLexCDcps->pse = parse_status_next ;
+    FileLexCD( WildLexCDcps ) ;
+    WildLexCDcps->rest = WildLexCDrest ;
+}
+
+static void WildLexCD( struct cd_parse_s * cps, ASCII * match ) {
+    int root = (cps->buffer[1]=='\0') ;
+    struct parsedname pn ;
+
+#if OW_MT
+    pthread_mutex_lock(&WildLexCDmutex) ;
+#endif /* OW_MT */
+
+    WildLexCDend = &cps->buffer[strlen(cps->buffer)] ;
+    WildLexCDcps = cps;
+    WildLexCDmatch = match;
+
+    LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, rest=%s\n",SAFESTRING(cps->buffer),SAFESTRING(match),SAFESTRING(cps->rest));
+    /* Check potential length */
+    if ( strlen(cps->buffer)+OW_FULLNAME_MAX+2 > PATH_MAX ) {
+        cps->ret = -ENAMETOOLONG ;
+        return ;
+    }
+    
+    if ( cps->rest ) WildLexCDrest = strdup(cps->rest ) ;
+
+    if ( FS_ParsedName( cps->buffer, &pn ) ) {
+        cps->ret = -ENOENT ;
+    } else {
+        if ( pn.ft ) {
+            cps->ret = -ENOTDIR ;
+        } else {
+            if ( root ) --WildLexCDend ;
+            WildLexCDend[0] = '/' ;
+            FS_dir( WildLexCDdirectory, &pn ) ;
+            if ( root ) ++WildLexCDend ;
+            WildLexCDend[0] = '\0' ; // restore cps->buffer
+        }
+        FS_ParsedName_destroy( &pn ) ;
+    }
+    if ( WildLexCDrest ) {
+      free( WildLexCDrest ) ;
+      WildLexCDrest = NULL;
+    }
+
+#if OW_MT
+    pthread_mutex_unlock(&WildLexCDmutex) ;
+#endif /* OW_MT */
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
 static void WildLexCD( struct cd_parse_s * cps, ASCII * match ) {
     ASCII * end = &cps->buffer[strlen(cps->buffer)] ;
     ASCII * rest = NULL ;
@@ -186,3 +255,5 @@ static void WildLexCD( struct cd_parse_s * cps, ASCII * match ) {
     }
     if ( rest ) free( rest ) ;
 }
+
+#endif /* NO_NESTED_FUNCTIONS */

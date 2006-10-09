@@ -214,6 +214,79 @@ static void ShowText( FILE * out, const char * path, const char * file ) {
     FS_ParsedName_destroy( &pn ) ;
 }
 
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t ShowDevicemutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+
+FILE * ShowDeviceout = NULL;
+char * ShowDevicepath2 = NULL;
+
+void ShowDevicedirectory( const struct parsedname * const pn2 ) {
+    char *file;
+    if( !(file = malloc(OW_FULLNAME_MAX+1)) ) { /* buffer for name */
+        //printf("ShowDevice error malloc %d bytes\n",OW_FULLNAME_MAX+1) ;
+        return;
+    }
+    FS_DirName(file,OW_FULLNAME_MAX,pn2);
+    //printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+    pn2->state & pn_text ? 
+        ShowText( ShowDeviceout, ShowDevicepath2, file ) :
+        Show( ShowDeviceout, ShowDevicepath2, file ) ;
+    free(file);
+}
+
+/* Now show the device */
+void ShowDevice( FILE * out, const struct parsedname * const pn ) {
+    struct parsedname pncopy ;
+    char * slash;
+    int b ;
+
+#if OW_MT
+    pthread_mutex_lock(&ShowDevicemutex) ;
+#endif /* OW_MT */
+    ShowDeviceout = out;
+    //printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->bus_nr, pn->dev) ;
+    if(! (ShowDevicepath2 = strdup(pn->path)) ) return ;
+    memcpy(&pncopy, pn, sizeof(struct parsedname));
+
+    HTTPstart( ShowDeviceout , "200 OK", (pn->state & pn_text)?ct_text:ct_html ) ;
+    if(!(pn->state & pn_text)) {
+        b = Backup(pn->path) ;
+        HTTPtitle( ShowDeviceout , &pn->path[1] ) ;
+        HTTPheader( ShowDeviceout , &pn->path[1] ) ;
+        if ( IsLocalCacheEnabled(pn) && NotUncachedDir(pn) && IsRealDir(pn) )
+            fprintf( ShowDeviceout , "<BR><small><A href='/uncached%s'>uncached version</A></small>",pn->path) ;
+        fprintf( ShowDeviceout, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>" ) ;
+        fprintf( ShowDeviceout, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>",b, pn->path ) ;
+    }
+
+
+    if ( pn->ft ) { /* single item */
+        //printf("single item path=%s pn->path=%s\n", ShowDevicepath2, pn->path);
+        slash = strrchr(ShowDevicepath2,'/') ;
+        /* Nested function */
+        if ( slash ) slash[0] = '\0' ; /* pare off device name */
+            //printf("single item path=%s\n", ShowDevicepath2);
+        ShowDevicedirectory(&pncopy) ;
+    } else { /* whole device */
+        //printf("whole directory path=%s pn->path=%s\n", ShowDevicepath2, pn->path);
+        //printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
+        FS_dir( ShowDevicedirectory, &pncopy ) ;
+    }
+    if(!(pn->state & pn_text)) {
+        fprintf( ShowDeviceout, "</TABLE>" ) ;
+        HTTPfoot( ShowDeviceout ) ;
+    }
+    free(ShowDevicepath2) ;
+#if OW_MT
+    pthread_mutex_unlock(&ShowDevicemutex) ;
+#endif /* OW_MT */
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
 /* Now show the device */
 void ShowDevice( FILE * out, const struct parsedname * const pn ) {
     struct parsedname pncopy ;
@@ -268,3 +341,5 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) {
     }
     free(path2) ;
 }
+
+#endif /* NO_NESTED_FUNCTIONS */

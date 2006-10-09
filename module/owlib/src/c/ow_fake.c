@@ -138,11 +138,51 @@ static int Fake_next_both(struct device_search * ds, const struct parsedname * p
     return 0 ;
 }
 
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+ASCII * Namefindret = NULL;
+char * Namefindname = NULL;
+
+void Namefindaction(const void *nodep, const VISIT which, const int depth) {
+    const struct device * p = *(struct device * const *) nodep ;
+    (void) depth ;
+    //printf("Comparing %s|%s with %s\n",p->name ,p->code , Namefindname ) ;
+    switch(which) {
+    case leaf:
+    case postorder:
+        if ( strcasecmp(p->name, Namefindname)==0 || strcasecmp(p->code, Namefindname)==0 ) {
+            Namefindret = p->code ;
+        }
+    case preorder:
+    case endorder:
+        break;
+    }
+}
+
+static const ASCII * namefind( const char * name ) {
+#if OW_MT
+    pthread_mutex_lock(&Namefindmutex) ;
+#endif /* OW_MT */
+
+    Namefindname = name;
+    twalk( Tree[pn_real], Namefindaction ) ;
+
+#if OW_MT
+    pthread_mutex_lock(&Namefindmutex) ;
+#endif /* OW_MT */
+    return Namefindret;
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
 static const ASCII * namefind( const char * name ) {
     const ASCII * ret = NULL ;
     /* Embedded function */
     void action(const void *nodep, const VISIT which, const int depth) {
-       const struct device * p = *(struct device * const *) nodep ;
+        const struct device * p = *(struct device * const *) nodep ;
         (void) depth ;
         //printf("Comparing %s|%s with %s\n",p->name ,p->code , name ) ;
         switch(which) {
@@ -160,3 +200,5 @@ static const ASCII * namefind( const char * name ) {
     twalk( Tree[pn_real], action ) ;
     return ret ;
 }
+
+#endif /* NO_NESTED_FUNCTIONS */

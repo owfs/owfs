@@ -210,6 +210,78 @@ void FileLexParse( struct file_parse_s * fps ) {
     }
 }
 
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t WildLexParsemutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+
+ASCII * WildLexParseend = NULL;
+ASCII * WildLexParserest = NULL ;
+ASCII * WildLexParsematch = NULL;
+struct file_parse_s * WildLexParsefps = NULL;
+
+void WildLexParsedirectory( const struct parsedname * const pn2 ) {
+    FS_DirName( &WildLexParseend[1], OW_FULLNAME_MAX, pn2 ) ;
+    printf("Try %s vs %s  rest %s->%s\n",
+           &WildLexParseend[1],
+           WildLexParsematch, 
+           WildLexParsefps->rest,WildLexParserest) ;
+    //if ( fnmatch( WildLexParsematch, WildLexParseend, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
+    if ( fnmatch( WildLexParsematch, &WildLexParseend[1], FNM_PATHNAME ) ) return ;
+    //printf("Match! %s\n",WildLexParseend) ;
+    WildLexParsefps->pse = parse_status_next ;
+    FileLexParse( WildLexParsefps ) ;
+    WildLexParsefps->rest = WildLexParserest ;
+}
+
+static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
+    int root = (fps->buffer[1]=='\0') ;
+    struct parsedname pn ;
+
+#if OW_MT
+    pthread_mutex_lock(&WildLexParsemutex) ;
+#endif /* OW_MT */
+    WildLexParseend = &fps->buffer[strlen(fps->buffer)] ;
+    WildLexParsematch = match;
+    WildLexParsefps = fps;
+
+    LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, File=%s\n",SAFESTRING(fps->buffer),SAFESTRING(match),SAFESTRING(fps->rest));
+
+    /* Check potential length */
+    if ( strlen(fps->buffer)+OW_FULLNAME_MAX+2 > PATH_MAX ) {
+        fps->ret = -ENAMETOOLONG ;
+        return ;
+    }
+    
+    if ( fps->rest ) WildLexParserest = strdup(fps->rest ) ;
+
+    if ( FS_ParsedName( fps->buffer, &pn ) ) {
+        fps->ret = -ENOENT ;
+    } else {
+        if ( pn.ft ) {
+            fps->ret = -ENOTDIR ;
+        } else {
+            if ( root ) --WildLexParseend ;
+            WildLexParseend[0] = '/' ;
+            FS_dir( WildLexParsedirectory, &pn ) ;
+            if ( root ) ++WildLexParseend ;
+            WildLexParseend[0] = '\0' ; // restore fps->buffer
+        }
+        FS_ParsedName_destroy( &pn ) ;
+    }
+    if ( WildLexParserest ) {
+        free( WildLexParserest ) ;
+        WildLexParserest = NULL;
+    }
+
+#if OW_MT
+    pthread_mutex_unlock(&WildLexParsemutex) ;
+#endif /* OW_MT */
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
 static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
     ASCII * end = &fps->buffer[strlen(fps->buffer)] ;
     ASCII * rest = NULL ;
@@ -254,6 +326,7 @@ static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
     if ( rest ) free( rest ) ;
 }
 
+#endif
 
 /* write with care for max length and incomplete outout */
 static void fdprintf(int fd, const char *fmt, ...) {

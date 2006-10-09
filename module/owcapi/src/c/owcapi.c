@@ -102,6 +102,88 @@ ssize_t OW_init_args( int argc, char ** argv ) {
     return ReturnAndErrno(ret) ;
 }
 
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t OW_getmutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+
+char * OW_getbuf = NULL ;
+size_t OW_getsz = 0 ; /* current buffer size */
+int OW_gets = 0 ; /* current buffer string length */
+
+void OW_getdirectory( const struct parsedname * const pn2 ) {
+    size_t sn = OW_gets+OW_FULLNAME_MAX+2 ; /* next buffer limit */
+    if ( OW_getsz < sn ) {
+        void * temp = OW_getbuf ;
+        OW_getsz = sn ;
+        OW_getbuf = realloc( temp, sn ) ;
+        if ( OW_getbuf==NULL && temp ) free(temp) ;
+    }
+    if ( OW_getbuf ) {
+        if ( OW_gets ) strcpy( &OW_getbuf[OW_gets++], "," ) ; // add a comma
+        FS_DirName( &OW_getbuf[OW_gets], OW_FULLNAME_MAX, pn2 ) ;
+        if ( IsDir(pn2) ) strcat( &OW_getbuf[OW_gets], "/" );
+        OW_gets += strlen( &OW_getbuf[OW_gets] ) ;
+	    //LEVEL_DEBUG("buf=[%s] len=%d\n", OW_getbuf, OW_gets);
+    }
+}
+
+
+ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
+#if OW_MT
+    pthread_mutex_lock(&OW_getmutex) ;
+#endif /* OW_MT */
+    struct parsedname pn ;
+
+    /* Check the parameters */
+    if ( buffer==NULL ) return ReturnAndErrno(-EINVAL) ;
+    if ( path==NULL ) path="/" ;
+    if ( strlen(path) > PATH_MAX ) return ReturnAndErrno(-EINVAL) ;
+
+    if ( OWLIB_can_access_start() ) { /* Check for prior init */
+        OW_gets = -ENETDOWN ;
+    } else if ( FS_ParsedName( path, &pn ) ) { /* Can we parse the input string */
+        OW_gets = -ENOENT ;
+    } else {
+        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
+            int ret = FS_dir( OW_getdirectory, &pn ) ;
+	    if(ret < 0) OW_gets = ret;
+	    //LEVEL_DEBUG("OW_get(): FS_dir returned %d\n", ret);
+        } else { /* A regular file */
+            OW_gets = FullFileLength(&pn) ;
+	    //LEVEL_DEBUG("OW_get(): size=%d\n", s);
+            if ( (OW_gets>=0) && (OW_getbuf=(char *) malloc( OW_gets+1 )) ) {
+                int r =  FS_read_postparse( OW_getbuf, OW_gets, 0, &pn ) ;
+                if ( r<0 ) {
+		    LEVEL_DEBUG("OW_get(): failed after FS_read_postparse %d\n", r);
+                    free(OW_getbuf) ;
+                    OW_gets = r ;
+                } else {
+                    OW_getbuf[OW_gets] = '\0' ;
+                }
+            }
+        }
+        FS_ParsedName_destroy(&pn) ;
+        if ( OW_gets<0 ) {
+            if ( OW_getbuf ) free(OW_getbuf) ;
+            OW_getbuf = NULL ;
+            if ( buffer_length ) *buffer_length = 0 ;
+        } else {
+            if ( buffer_length ) *buffer_length = OW_gets ;
+        }
+        buffer[0] = OW_getbuf ;
+    }
+    OWLIB_can_access_end() ;
+    ssize_t ret = ReturnAndErrno(OW_gets) ;
+#if OW_MT
+    pthread_mutex_unlock(&OW_getmutex) ;
+#endif /* OW_MT */
+    return ret;
+}
+
+#else /* NO_NESTED_FUNCTIONS */
+
 ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     struct parsedname pn ;
     char * buf = NULL ;
@@ -166,6 +248,9 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
     OWLIB_can_access_end() ;
     return ReturnAndErrno(s) ;
 }
+
+#endif /* NO_NESTED_FUNCTIONS */
+
 
 ssize_t OW_lread( const char * path, char * buf, const size_t size, const off_t offset ) {
     return ReturnAndErrno( FS_read( path, buf, size, offset ) ) ;

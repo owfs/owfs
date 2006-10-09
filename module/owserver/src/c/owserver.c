@@ -467,6 +467,107 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYT
     }
 }
 
+#ifdef NO_NESTED_FUNCTIONS
+
+#if OW_MT
+pthread_mutex_t Dirhandlermutex = PTHREAD_MUTEX_INITIALIZER ;
+#endif /* OW_MT */
+
+struct server_msg  *DirHandlersm = NULL;
+struct client_msg  *DirHandlercm = NULL;
+struct handlerdata *DirHandlerhd = NULL;
+const struct parsedname  *DirHandlerpn = NULL;
+
+void DirHandlerdirectory( const struct parsedname * const pn2 ) {
+    char *retbuffer ;
+    size_t _pathlen ;
+    char *path = ((DirHandlerpn->state & pn_bus) && (is_servermode(DirHandlerpn->in))) ? DirHandlerpn->path_busless : DirHandlerpn->path ;
+
+    _pathlen = strlen(path);
+#ifdef VALGRIND
+    if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) {
+#else
+    if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) {
+#endif
+        return ;
+    }
+    LEVEL_DEBUG("owserver dir path = %s\n",SAFESTRING(pn2->path)) ;
+    if ( pn2->dev==NULL ) {
+        if ( NotRealDir(pn2) ) {
+            //printf("DirHandler: call FS_dirname_type\n");
+            FS_dirname_type(retbuffer,OW_FULLNAME_MAX,pn2);
+        } else if ( pn2->state ) {
+            FS_dirname_state(retbuffer,OW_FULLNAME_MAX,pn2) ;
+            //printf("DirHandler: call FS_dirname_state\n");
+        }
+    } else {
+        //printf("DirHandler: call FS_DirName pn2->dev=%p  Nodevice=%p\n", pn2->dev, NoDevice);
+        strcpy(retbuffer, path);
+        if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
+            retbuffer[_pathlen] = '/' ;
+            ++_pathlen ;
+        }
+        retbuffer[_pathlen] = '\000' ;
+        /* make sure path ends with a / */
+        FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
+    }
+
+    DirHandlercm->size = strlen(retbuffer) ;
+    //printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
+    DirHandlercm->ret = 0 ;
+    TOCLIENTLOCK(DirHandlerhd) ;
+    ToClient(DirHandlerhd->fd, DirHandlercm, retbuffer) ; // send this directory element
+    gettimeofday( &(DirHandlerhd->tv), NULL ) ; // reset timer
+    TOCLIENTUNLOCK(DirHandlerhd) ;
+    free(retbuffer);
+}
+
+/* Dir, called from Handler with the following caveats: */
+/* path is path, already parsed, and null terminated */
+/* sm has been read, cm has been zeroed */
+/* pn is configured */
+/* Dir, will return: */
+/* cm fully constructed for error message or null marker (end of directory elements */
+/* cm.ret is also set to an error or 0 */
+static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) {
+#if OW_MT
+    pthread_mutex_lock(&Dirhandlermutex) ;
+#endif /* OW_MT */
+
+    uint32_t flags = 0 ;
+    /* embedded function -- callback for directory entries */
+    /* return the full path length, including current entry */
+
+    //printf("DirHandler: pn->path=%s\n", pn->path);
+    
+    DirHandlersm = sm;
+    DirHandlercm = cm;
+    DirHandlerhd = hd;
+    DirHandlerpn = pn;
+
+    // Settings for all directory elements
+    cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
+    cm->sg = sm->sg ;
+
+    // Now generate the directory (using the embedded callback function above for each element
+    LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
+    LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
+    cm->ret = FS_dir_remote( DirHandlerdirectory, pn, &flags ) ;
+    LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;
+
+    // Finished -- send some flags and set up for a null element to tell client we're done
+    cm->offset = flags ; /* send the flags in the offset slot */
+    /* Now null entry to show end of directory listing */
+    cm->payload = cm->size = 0 ;
+    //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
+
+#if OW_MT
+    pthread_mutex_unlock(&Dirhandlermutex) ;
+#endif /* OW_MT */
+}
+
+#else /* NO_NESTED_FUNCTIONS
+
 /* Dir, called from Handler with the following caveats: */
 /* path is path, already parsed, and null terminated */
 /* sm has been read, cm has been zeroed */
@@ -540,6 +641,10 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     cm->payload = cm->size = 0 ;
     //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
 }
+
+#endif /* NO_NESTED_FUNCTIONS */
+
+
 int main( int argc , char ** argv ) {
     int c ;
 
