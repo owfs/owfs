@@ -991,7 +991,8 @@ AC_ARG_ENABLE(zero,
 # Include libdns_sd if the zeroconf is enabled
 if test "${ENABLE_ZERO}" != "false" ; then
 
-    AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
+#    AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
+    AC_CHECK_LIB(mDNSResponder,mDNS_RegisterService,,[
     if test "${ENABLE_ZERO}" = "true" ; then
         AC_MSG_ERROR([libdns_sd must be installed to use zeroconf])
     else

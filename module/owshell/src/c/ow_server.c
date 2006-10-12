@@ -20,6 +20,10 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
 static uint32_t SetupSemi( void ) ;
 
 void Server_detect( void ) {
+    if(indevice == NULL) {
+        fprintf(stderr,"No indevice defined\n") ;
+        exit (1) ;
+    }
     if ( indevice->name == NULL || ClientAddr( indevice->name, indevice ) ) {
         fprintf(stderr,"Could not connect with owserver %s\n",indevice->name) ;
         exit (1) ;
