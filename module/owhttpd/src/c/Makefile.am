@@ -27,16 +27,7 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          -D_FILE_OFFSET_BITS=64
 
-#         -Wconversion \
-#
-
-if WITH_CYGWIN
-# test
-endif
-#LDADD = ../../../owlib/src/c/.libs/libow.a ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
-
-
 
 clean-generic:
 
