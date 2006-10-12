@@ -1,8 +1,8 @@
 # $Id$
 
 OWLIB_SOURCE = compat.c          \
-               getopt.c          \
                getaddrinfo.c     \
+               getopt.c          \
                ow_xxxx.c         \
                ow_none.c         \
                ow_1820.c         \
@@ -90,6 +90,7 @@ lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
+# -version-info 0:0:1 -release ow
 
 # Maybe need this for MacOS X
 #if DARWIN_API

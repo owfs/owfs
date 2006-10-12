@@ -160,6 +160,9 @@ $Id$
 /* Debugging and error messages separated out for readability */
 #include "ow_debug.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 2048
+#endif
 
 /* Floating point */
 /* I hate to do this, making everything a double */

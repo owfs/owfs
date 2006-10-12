@@ -47,6 +47,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include "owfs_config.h"
 
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
+
 #ifndef HAVE_GETADDRINFO
 
 #define _GNU_SOURCE
@@ -58,7 +62,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <netdb.h>
 #include "compat_netdb.h"
+#ifdef HAVE_RESOLV_H
 #include <resolv.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,10 +88,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define GAIH_OKIFUNSPEC 0x0100
 #define GAIH_EAI        ~(GAIH_OKIFUNSPEC)
-
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX  108
-#endif
 
 struct gaih_service
 {
@@ -165,6 +167,10 @@ static int addrconfig (sa_family_t af)
 }
 
 #if 0
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX  108
+#endif
+
 /* Using Unix sockets this way is a security risk.  */
 static int
 gaih_local (const char *name, const struct gaih_service *service,
@@ -275,6 +281,60 @@ gaih_local (const char *name, const struct gaih_service *service,
 }
 #endif	/* 0 */
 
+#ifndef HAVE_GETHOSTBYNAME_R
+struct hostent *gethostbyname_r(const char *name, struct hostent *result,
+				char *buf, size_t buflen, int *h_errnop)
+{
+#ifdef HAVE_PTHREAD
+  static pthread_mutex_t gethostbyname_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+  struct hostent *res;
+  (void) buf;     // not used
+  (void) buflen;  // not used
+  
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(&gethostbyname_lock);
+#endif
+  res = gethostbyname(name);
+  if(res) {
+    memcpy(result, res, sizeof(struct hostent));
+  } else {
+    *h_errnop = errno;
+  }
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(&gethostbyname_lock);
+#endif
+  return res;
+}
+#endif
+
+#ifndef HAVE_GETSERVBYNAME_R
+struct servent *getservbyname_r(const char *name, const char *proto,
+				struct servent *result,
+				char *buf, size_t buflen) {
+#ifdef HAVE_PTHREAD
+  static pthread_mutex_t getservbyname_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+  struct servent *res;
+  (void) buf;     // not used
+  (void) buflen;  // not used
+  
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(&getservbyname_lock);
+#endif
+  res = getservbyname(name, proto);
+  if(res) memcpy(result, res, sizeof(struct servent));
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(&getservbyname_lock);
+#endif
+  return res;
+}
+#endif
+ 
+
+
+
+
 static int
 gaih_inet_serv (const char *servicename, const struct gaih_typeproto *tp,
 		const struct addrinfo *req, struct gaih_servtuple *st)
@@ -288,15 +348,10 @@ gaih_inet_serv (const char *servicename, const struct gaih_typeproto *tp,
     do
     {
 	tmpbuf = alloca (tmpbuflen);
-
 #if 0
 	r = getservbyname_r (servicename, tp->name, &ts, tmpbuf, tmpbuflen,
 			     &s);
-#else
-	r = 0;
-	s = getservbyname_r(servicename, tp->name, &ts,  tmpbuf, tmpbuflen);
 	if(!s) r = errno;
-#endif
 	if (r != 0 || s == NULL)
 	{
 	    if (r == ERANGE)
@@ -304,6 +359,19 @@ gaih_inet_serv (const char *servicename, const struct gaih_typeproto *tp,
 	    else
 		return GAIH_OKIFUNSPEC | -EAI_SERVICE;
 	}
+#else
+	s = getservbyname_r(servicename, tp->name, &ts,  tmpbuf, tmpbuflen);
+	if (s == NULL)
+	{
+	    r = errno;
+	    if (r == ERANGE)
+		tmpbuflen *= 2;
+	    else
+		return GAIH_OKIFUNSPEC | -EAI_SERVICE;
+	} else {
+	    r = 0;
+	}
+#endif
     }
     while (r);
 
@@ -361,6 +429,24 @@ gaih_inet_serv (const char *servicename, const struct gaih_typeproto *tp,
     }									\
 }
 
+#ifndef HAVE_GETHOSTBYNAME2_R
+struct hostenv *gethostbyname2_r(const char *name, int af,
+				 struct hostent *ret, char *buf, size_t buflen,
+				 struct hostent **result, int *h_errnop)
+{
+  /* Don't support this if it doesn't exists...
+     (eg. IPV6 will fail on cygwin for example) */
+  (void) name;
+  (void) af;
+  (void) ret;
+  (void) buf;
+  (void) buflen;
+  (void) result;
+  (void) h_errnop;
+  return NULL;
+}
+#endif
+
 
 #if __HAS_IPV6__
 #define gethosts2(_family, _type)					\
@@ -404,6 +490,34 @@ gaih_inet_serv (const char *servicename, const struct gaih_typeproto *tp,
 		pat = &((*pat)->next);					\
 	}								\
     }									\
+}
+#endif
+
+#ifndef HAVE_GETHOSTBYADDR_R
+struct hostent *gethostbyaddr_r(const char *name, int len, int type,
+				struct hostent *result,
+				char *buf, size_t buflen, int *h_errnop)
+{
+#ifdef HAVE_PTHREAD
+  static pthread_mutex_t gethostbyaddr_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+  struct hostent *res;
+  (void) buf;     // not used
+  (void) buflen;  // not used
+  
+#ifdef HAVE_PTHREAD
+  pthread_mutex_lock(&gethostbyaddr_lock);
+#endif
+  res = gethostbyaddr(name, len, type);
+  if(res) {
+    memcpy(result, res, sizeof(struct hostent));
+  } else {
+    *h_errnop = errno;
+  }
+#ifdef HAVE_PTHREAD
+  pthread_mutex_unlock(&gethostbyaddr_lock);
+#endif
+  return res;
 }
 #endif
 

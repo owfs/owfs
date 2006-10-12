@@ -7,6 +7,7 @@ owdir_SOURCES = ow_opt.c    \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \
+               getaddrinfo.c  \
                globals.c    \
                owdir.c
 
@@ -16,6 +17,7 @@ owread_SOURCES = ow_opt.c   \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \
+               getaddrinfo.c  \
                globals.c    \
                owread.c
 
@@ -25,6 +27,7 @@ owwrite_SOURCES = ow_opt.c   \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \
+               getaddrinfo.c  \
                globals.c    \
                owwrite.c
 
@@ -34,6 +37,7 @@ owpresent_SOURCES = ow_opt.c   \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \
+               getaddrinfo.c  \
                globals.c    \
                owpresent.c
 

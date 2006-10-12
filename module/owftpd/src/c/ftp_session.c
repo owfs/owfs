@@ -1462,8 +1462,13 @@ static void netscape_hack(int fd) {
 static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b) {
     daemon_assert(a != NULL);
     daemon_assert(b != NULL);
+#ifdef AF_INET6
     daemon_assert((cSSFAM(a) == AF_INET) || (cSSFAM(a) == AF_INET6));
     daemon_assert((cSSFAM(b) == AF_INET) || (cSSFAM(b) == AF_INET6));
+#else
+    daemon_assert((cSSFAM(a) == AF_INET));
+    daemon_assert((cSSFAM(b) == AF_INET));
+#endif
 
     if (cSSFAM(a) != cSSFAM(b)) return 0 ;
     if (memcmp(&cSINADDR(a), &cSINADDR(b), sizeof(cSINADDR(a))) != 0) return 0;

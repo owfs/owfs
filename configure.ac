@@ -36,6 +36,7 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
+AC_LIBTOOL_WIN32_DLL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
@@ -43,6 +44,32 @@ AC_PROG_AWK
 AC_LIBTOOL_DLOPEN
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
+
+
+AC_MSG_CHECKING([if building for some Win32 platform])
+case "$host" in
+  *-*-mingw*|*-*-cygwin*)
+    platform_win32=yes
+    ;;
+  *)
+    platform_win32=no
+    ;;
+esac
+AC_MSG_RESULT($platform_win32)
+AM_CONDITIONAL(PLATFORM_WIN32, test x$platform_win32 = xyes)
+
+AC_MSG_CHECKING([for cygwin])
+case "$host" in
+  *-*-cygwin*)
+    owfs_with_cygwin=yes
+    ;;
+  *)
+    owfs_with_cygwin=no
+    ;;
+esac
+AC_MSG_RESULT([$owfs_with_cygwin])
+AM_CONDITIONAL(WITH_CYGWIN, test "$owfs_with_cygwin" = "yes")
+
 
 OW_CHECK_NESTED_FUNCTIONS
 
@@ -143,6 +170,10 @@ case "${host_cpu}-${host_os}" in
 # libc doesn't load libow when using perl.
 	*linux*)
         acx_pthread_flags="-pthread $acx_pthread_flags"
+        PTHREAD_LIBS="-lpthread"
+        ;;
+	*cygwin*)
+#        acx_pthread_flags="-lpthread $acx_pthread_flags"
         PTHREAD_LIBS="-lpthread"
         ;;
 esac
@@ -1056,7 +1087,7 @@ case "${host_cpu}-${host_os}" in
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*)
-		LD_EXTRALIBS="$LD_EXTRALIBS -Wl,--rpath -Wl,$libdir"
+		LD_EXTRALIBS="-Wl,--rpath -Wl,$libdir $LD_EXTRALIBS"
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 esac
@@ -1066,7 +1097,7 @@ AC_SUBST(LD_EXTRALIBS)
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h])
+AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h])
 AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h])
 
 # owftpd section
@@ -1180,7 +1211,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
+AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
 
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 

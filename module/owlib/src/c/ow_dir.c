@@ -282,7 +282,7 @@ static int FS_devdir( void (* dirfunc)(const struct parsedname *), struct parsed
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
 static int FS_alarmdir( void (* dirfunc)(const struct parsedname *), struct parsedname * pn2 ) {
     int ret ;
-    UINT flags ;
+    uint32_t flags ;
     struct device_search ds ; // holds search state
 
     /* cache from Server if this is a remote bus */
@@ -448,7 +448,7 @@ static void Typediraction( const void * t, const VISIT which, const int depth ) 
     case leaf:
     case postorder:
         Typedirpn->dev = ((const struct device_opaque *)t)->key ;
-        dirfunc( Typedirpn ) ;
+	Typedirfunc( Typedirpn ) ;
     default:
         break ;
     }

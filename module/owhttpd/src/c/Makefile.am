@@ -30,7 +30,13 @@ AM_CFLAGS = -I../include \
 #         -Wconversion \
 #
 
+if WITH_CYGWIN
+# test
+endif
+#LDADD = ../../../owlib/src/c/.libs/libow.a ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+
+
 
 clean-generic:
 
