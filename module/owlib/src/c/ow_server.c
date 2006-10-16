@@ -24,7 +24,6 @@ static int ToServer( int fd, struct server_msg * sm, struct serverpackage * sp )
 static void Server_setroutines( struct interface_routines * f ) ;
 static void Zero_setroutines( struct interface_routines * f ) ;
 static void Server_close( struct connection_in * in ) ;
-static int ServerNOP( struct connection_in * in ) ;
 static uint32_t SetupSemi( const struct parsedname * pn ) ;
 static int ConnectToServer( struct connection_in * in ) ;
 
@@ -174,35 +173,6 @@ int ServerWrite( const char * buf, const size_t size, const off_t offset, const 
             SemiGlobal = cm.sg & (~BUSRET_MASK) ;
             CACHEUNLOCK;
         }
-    }
-    close( connectfd ) ;
-    return ret ;
-}
-
-/* Null "ping" message */
-/* Note, uses connection_in rather than full parsedname structure */
-static int ServerNOP( struct connection_in * in ) {
-    struct server_msg sm ;
-    struct client_msg cm ;
-    struct serverpackage sp = { "", NULL, 0, NULL, 0, } ;
-    int connectfd  = ConnectToServer(in) ;
-    int ret = 0 ;
-
-    if ( connectfd < 0 ) return -EIO ;
-    //printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
-    memset(&sm, 0, sizeof(struct server_msg));
-    sm.type = msg_nop ;
-    sm.size = 0 ;
-    sm.sg =  0 ;
-    sm.offset = 0 ;
-
-    //printf("ServerRead path=%s\n", pn->path_busless);
-    LEVEL_CALL("SERVER(%d)NOP\n", in->index );
-
-    if ( ToServer( connectfd, &sm, &sp) ) {
-        ret = -EIO ;
-    } else if ( FromServer( connectfd, &cm, NULL, 0 ) < 0 ) {
-        ret = -EIO ;
     }
     close( connectfd ) ;
     return ret ;

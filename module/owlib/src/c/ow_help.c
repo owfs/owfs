@@ -101,7 +101,8 @@ void ow_morehelp( void ) {
     "     --error_print               |Where information/error messages are printed\n"
     "                                 |  0-mixed(default) 1-syslog 2-stderr 3-suppressed\n"
     "     --error_level               |What kind of information is printed\n"
-    "                                 |  0-fatal 1-connections 2-calls 3-data 4-detail\n"    
+    "                                 |  0-fatal 1-connections 2-calls 3-data 4-detail\n"
+    "     --cache_size                | maximum cache size (in bytes) or 0 for default no limit\n"
     "  -V --version                   |Program and library versions\n"
     ) ;
     switch(Global.opt) {

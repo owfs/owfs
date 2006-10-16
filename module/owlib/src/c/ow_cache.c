@@ -26,6 +26,8 @@ static struct {
     void * new_db ; // current cache database
     void * old_db ; // older cache database
     void * store  ; // persistent database
+    size_t old_ram ; // cache size
+    size_t new_ram ; // cache size
     time_t retired ; // start time of older
     time_t killed ; // deathtime of older
     time_t lifespan ; // lifetime of older
@@ -138,6 +140,8 @@ static void tree_show( const void *node, const VISIT which, const int depth ) {
 void Cache_Open( void ) {
     cache.new_db = NULL ;
     cache.old_db = NULL ;
+    cache.old_ram = 0 ;
+    cache.new_ram = 0 ;
     cache.store  = NULL ;
     cache.lifespan = TimeOut( fc_stable ) ;
     if (cache.lifespan>3600 ) cache.lifespan = 3600 ; /* 1 hour tops */
@@ -269,18 +273,25 @@ static int Cache_Add_Common( struct tree_node * tn ) {
             flip = cache.old_db ;
             /* Flip caches! old = new. New truncated, reset time and counters and flag */
             cache.old_db  = cache.new_db ;
+            cache.old_ram = cache.new_ram ;
             cache.new_db = NULL ;
+            cache.new_ram = 0 ;
             cache.added = 0 ;
             cache.retired = time(NULL) ;
             cache.killed = cache.retired + cache.lifespan ;
         }
-        if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
+        if ( Global.cache_size && (cache.old_ram+cache.new_ram > Global.cache_size) ) {
+            // failed size test
+            free(tn) ;
+        } else if ( (opaque=tsearch(tn,&cache.new_db,tree_compare)) ) {
             if ( tn!=opaque->key ) {
+                cache.new_ram += sizeof(tn) - sizeof(opaque->key) ;
                 free(opaque->key);
                 opaque->key = tn ;
                 state = just_update ;
             } else {
                 state = yes_add ;
+                cache.new_ram += sizeof(tn) ;
             }
         } else { // nothing found or added?!? free our memory segment
             free(tn) ;
@@ -324,6 +335,8 @@ void Cache_Clear( void ) {
         c_new = cache.new_db ;
         cache.old_db = NULL ;
         cache.new_db = NULL ;
+        cache.old_ram = 0 ;
+        cache.new_ram = 0 ;
         cache.added = 0 ;
         cache.retired = time(NULL) ;
         cache.killed = cache.retired + cache.lifespan ;

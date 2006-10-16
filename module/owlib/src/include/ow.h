@@ -524,6 +524,7 @@ struct global {
     char * SimpleBusName ;
     int max_clients ; // for ftp
     int autoserver ;
+    size_t cache_size ; // max cache size (or 0 for no max) ;
     /* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
     int altUSB ;
     /* timeouts -- order must match ow_opt.c values for correct indexing */

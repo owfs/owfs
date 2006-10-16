@@ -27,7 +27,7 @@ struct lineparse {
 static void ParseTheLine( struct lineparse * lp ) ;
 static int ConfigurationFile( const ASCII * file ) ;
 static int ParseInterp(struct lineparse * lp ) ;
-static int OW_parsevalue( int * var, const ASCII * str ) ;
+static int OW_parsevalue( long long int * var, const ASCII * str ) ;
 
 static int OW_ArgSerial( const char * arg ) ;
 static int OW_ArgParallel( const char * arg ) ;
@@ -59,14 +59,23 @@ const struct option owopts_long[] = {
     {"foreground", no_argument,&Global.want_background, 0},
     {"error_print",required_argument,NULL,257},
     {"error-print",required_argument,NULL,257},
+    {"errorprint",required_argument,NULL,257},
     {"error_level",required_argument,NULL,258},
     {"error-level",required_argument,NULL,258},
-    {"morehelp",   no_argument,      NULL,259},
-    {"fuse_opt",   required_argument,NULL,260}, /* owfs, fuse mount option */
-    {"fuse-opt",     required_argument,NULL,260}, /* owfs, fuse mount option */
+    {"errorlevel",required_argument,NULL,258},
+    {"morehelp",   no_argument,      NULL,259},    
+    {"cache_size",   required_argument,NULL,260}, /* max cache size */
+    {"cache-size",   required_argument,NULL,260}, /* max cache size */
+    {"cachesize",   required_argument,NULL,260}, /* max cache size */
+    {"fuse_opt",     required_argument,NULL,266}, /* owfs, fuse mount option */
+    {"fuse-opt",     required_argument,NULL,266}, /* owfs, fuse mount option */
+    {"fuseopt",     required_argument,NULL,266}, /* owfs, fuse mount option */
     {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
+    {"fuseopenopt",required_argument,NULL,267}, /* owfs, fuse open option */
     {"max_clients",  required_argument, NULL, 269}, /* ftp max connections */
+    {"max-clients",  required_argument, NULL, 269}, /* ftp max connections */
+    {"maxclients",  required_argument, NULL, 269}, /* ftp max connections */
     {"HA7",          required_argument, NULL, 271}, /* HA7Net */
     {"ha7",          required_argument, NULL, 271}, /* HA7Net */
     {"FAKE",         required_argument, NULL, 272}, /* Fake */
@@ -300,7 +309,11 @@ int owopt( const int c , const char * arg ) {
     case 'd':
         return OW_ArgDevice( arg ) ;
     case 't':
-        OW_parsevalue(&Global.timeout_volatile,arg) ;
+        {
+            long long int i ;
+            if ( OW_parsevalue(&i,arg) ) return 1 ;
+            Global.timeout_volatile = (int) i ;
+        }
         break ;
     case 'r':
         Global.readonly = 1 ;
@@ -363,18 +376,40 @@ int owopt( const int c , const char * arg ) {
         }
         break ;
     case 257:
-        return OW_parsevalue( &Global.error_print,arg) ;
+        {
+            long long int i ;
+            if ( OW_parsevalue( &i,arg) ) return 1 ;
+            Global.error_print = (int) i ;
+        }
+        break ;
     case 258:
-        return OW_parsevalue( &Global.error_level,arg) ;
+        {
+            long long int i ;
+            if ( OW_parsevalue( &i,arg) ) return 1 ;
+            Global.error_level = (int) i ;
+        }
+        break ;
     case 259:
         ow_morehelp() ;
         return 1 ;
-    case 260: /* fuse_opt, handled in owfs.c */
+    case 260:
+        {
+            long long int i ;
+            if ( OW_parsevalue( &i,arg) ) return 1 ;
+            Global.cache_size = (size_t) i ;
+        }
+        break ;
+    case 266: /* fuse_opt, handled in owfs.c */
         break ;
     case 267: /* fuse_open_opt, handled in owfs.c */
         break ;
     case 269:
-        return OW_parsevalue( &Global.max_clients,arg) ;
+        {
+            long long int i ;
+            if ( OW_parsevalue( &i,arg) ) return 1 ;
+            Global.max_clients = (int) i ;
+        }
+        break ;
     case 271:
         return OW_ArgHA7( arg ) ;
     case 272:
@@ -385,7 +420,12 @@ int owopt( const int c , const char * arg ) {
         Global.announce_name = strdup(arg) ;
         break ;
     case 301: case 302: case 303: case 304: case 305: case 306: case 307: case 308: case 309:
-        return OW_parsevalue(&((int *) &Global.timeout_volatile)[c-301],arg) ;
+        {
+            long long int i ;
+            if ( OW_parsevalue( &i,arg) ) return 1 ;
+            (&Global.timeout_volatile)[c-301] = (int) i ;
+        }
+        break ;
     case 0:
         break ;
     default:
@@ -545,14 +585,12 @@ int OW_ArgGeneric( const char * arg ) {
     return 1 ;
 }
 
-static int OW_parsevalue( int * var, const ASCII * str ) {
-    int I ;
+static int OW_parsevalue( long long int * var, const ASCII * str ) {
     errno = 0 ;
-    I = strtol(str,NULL,10) ;
+    var[0] = strtol(str,NULL,10) ;
     if ( errno ) {
         ERROR_DETAIL("Bad configuration value %s\n",str) ;
         return 1 ;
     }
-    var[0] = I ;
     return 0 ;
 }
