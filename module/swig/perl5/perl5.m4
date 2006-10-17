@@ -9,7 +9,7 @@ PERLBIN=
 
 #AC_ARG_WITH(perl5, AS_HELP_STRING([--without-perl5], [Disable Perl5])
 #AS_HELP_STRING([--with-perl5=path], [Set location of Perl5 executable]),[ PERLBIN="$withval"], [PERLBIN=yes])
-AC_ARG_WITH(python, [  --with-perl5            Set location of Perl executable],[ PERLBIN="$withval"], [PERLBIN=yes])
+AC_ARG_WITH(perl5, [  --with-perl5            Set location of Perl executable],[ PERLBIN="$withval"], [PERLBIN=yes])
 
 
 # First, check for "--without-perl5" or "--with-perl5=no".
