@@ -472,7 +472,7 @@ static int USB_init( struct usb_list * ul ) {
     usb_init() ;
     usb_find_busses() ;
     usb_find_devices() ;
-    ul->bus = usb_busses ;
+    ul->bus = usb_get_busses() ;
     ul->dev = NULL ;
     return 0 ;
 }
