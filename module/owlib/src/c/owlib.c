@@ -198,11 +198,48 @@ int LibStart( void ) {
     /* Setup the multithreading synchronizing locks */
     LockSetup();
 #endif /* __UCLIBC__ */
+
     if ( indevice==NULL && !Global.autoserver ) {
-    LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",SAFESTRING(Global.progname)) ;
-        BadAdapter_detect(NewIn(NULL)) ;
-        return 1;
+      LEVEL_DEFAULT( "No device port/server specified (-d or -u or -s)\n%s -h for help\n",SAFESTRING(Global.progname)) ;
+      BadAdapter_detect(NewIn(NULL)) ;
+      return 1;
     }
+
+#ifndef __UCLIBC__
+    /* daemon() is called BEFORE initialization of USB adapter etc... Cygwin will fail to
+     * use the adapter after daemon otherwise. Some permissions are changed on the process
+     * (or process-group id) which libusb-win32 is depending on. */
+    if ( Global.want_background ) {
+        switch ( Global.opt) {
+            case opt_owfs:
+                // handles PID from a callback
+                break ;
+            case opt_httpd:
+            case opt_ftpd:
+            case opt_server:
+ #ifdef HAVE_DAEMON
+                if(daemon(1, 0)) {
+                    ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
+                    return 1 ;
+                }
+ #else /* HAVE_DAEMON */
+                if(my_daemon(1, 0)) {
+                    LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+                    return 1 ;
+                }
+ #endif /* HAVE_DAEMON */
+                Global.now_background = 1;
+                 // fall thought
+            default:
+                /* store the PID */
+                PIDstart() ;
+                break ;
+        }
+    } else { // not background
+        if ( Global.opt != opt_owfs ) PIDstart() ;
+    }
+#endif /* __UCLIBC__ */
+
     while (in) {
         BadAdapter_detect(in) ; /* default "NOTSUP" calls */
         switch( get_busmode(in) ) {
@@ -292,37 +329,6 @@ int LibStart( void ) {
         in = in->next ;
     }
 
-#ifndef __UCLIBC__
-    if ( Global.want_background ) {
-        switch ( Global.opt) {
-            case opt_owfs:
-                // handles PID from a callback
-                break ;
-            case opt_httpd:
-            case opt_ftpd:
-            case opt_server:
- #ifdef HAVE_DAEMON
-                if(daemon(1, 0)) {
-                    ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
-                    return 1 ;
-                }
- #else /* HAVE_DAEMON */
-                if(my_daemon(1, 0)) {
-                    LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
-                    return 1 ;
-                }
- #endif /* HAVE_DAEMON */
-                Global.now_background = 1;
-                 // fall thought
-            default:
-                /* store the PID */
-                PIDstart() ;
-                break ;
-        }
-    } else { // not background
-        if ( Global.opt != opt_owfs ) PIDstart() ;
-    }
-#endif /* __UCLIBC__ */
 
     /* Use first bus for http bus name */
     CONNINLOCK ;
