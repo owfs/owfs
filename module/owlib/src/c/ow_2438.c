@@ -52,7 +52,7 @@ bWRITE_FUNCTION( FS_w_page ) ;
  fREAD_FUNCTION( FS_volts ) ;
  fREAD_FUNCTION( FS_Humid ) ;
  fREAD_FUNCTION( FS_Humid_1735 ) ;
- iREAD_FUNCTION( FS_Current ) ;
+ fREAD_FUNCTION( FS_Current ) ;
  uREAD_FUNCTION( FS_r_Ienable ) ;
 uWRITE_FUNCTION( FS_w_Ienable ) ;
  iREAD_FUNCTION( FS_r_Offset ) ;
@@ -72,7 +72,7 @@ struct filetype DS2437[] = {
     {"VDD"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_volts}    , {v:NULL}        , {i: 1}, } ,
     {"VAD"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_volts}    , {v:NULL}        , {i: 0}, } ,
     {"temperature"      ,  12, NULL ,ft_temperature, fc_volatile, {f:FS_temp}     , {v:NULL}        ,{v:NULL}, } ,
-    {"current"          ,  12, NULL , ft_integer   , fc_volatile, {i:FS_Current}  , {v:NULL}        ,{v:NULL}, } ,
+    {"vis"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_Current}  , {v:NULL}        ,{v:NULL}, } ,
     {"Ienable"          ,  12, NULL , ft_unsigned  , fc_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable},{v:NULL}, } ,
     {"udate"            ,  12, NULL , ft_unsigned  , fc_second  , {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x08} , } ,
     {"date"             ,  24, NULL , ft_date      , fc_second  , {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x08} , } ,
@@ -95,7 +95,7 @@ struct filetype DS2438[] = {
     {"VAD"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_volts}    , {v:NULL}        , {i: 0}, } ,
     {"temperature"      ,  12, NULL ,ft_temperature, fc_volatile, {f:FS_temp}     , {v:NULL}        ,{v:NULL}, } ,
     {"humidity"         ,  12, NULL , ft_float     , fc_volatile, {f:FS_Humid}    , {v:NULL}        ,{v:NULL}, } ,
-    {"current"          ,  12, NULL , ft_integer   , fc_volatile, {i:FS_Current}  , {v:NULL}        ,{v:NULL}, } ,
+    {"vis"              ,  12, NULL , ft_float     , fc_volatile, {f:FS_Current}  , {v:NULL}        ,{v:NULL}, } ,
     {"Ienable"          ,  12, NULL , ft_unsigned  , fc_stable  , {u:FS_r_Ienable}, {u:FS_w_Ienable},{v:NULL}, } ,
     {"offset"           ,  12, NULL , ft_unsigned  , fc_stable  , {i:FS_r_Offset} , {i:FS_w_Offset} ,{v:NULL}, } ,
     {"udate"            ,  12, NULL , ft_unsigned  , fc_second  , {u:FS_r_counter}, {u:FS_w_counter}, {s: 0x08} , } ,
@@ -118,7 +118,7 @@ static int OW_r_page( BYTE * p , const int page , const struct parsedname * pn) 
 static int OW_w_page( const BYTE * p , const int page , const struct parsedname * pn ) ;
 static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
 static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) ;
-static int OW_current( int * I , const struct parsedname * pn ) ;
+static int OW_current( FLOAT * I , const struct parsedname * pn ) ;
 static int OW_r_Ienable( unsigned * u , const struct parsedname * pn ) ;
 static int OW_w_Ienable( const unsigned u , const struct parsedname * pn ) ;
 static int OW_r_int( int * I , const UINT address, const struct parsedname * pn ) ;
@@ -200,7 +200,7 @@ static int FS_Humid_1735(FLOAT * H , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_Current(int * I , const struct parsedname * pn) {
+static int FS_Current(FLOAT * I , const struct parsedname * pn) {
     if ( OW_current( I , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -393,28 +393,27 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
-    *V = .01 * (FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
+    V[0] = .01 * (FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
     return 0 ;
 }
 
-static int OW_current( int * I , const struct parsedname * pn ) {
+static int OW_current( FLOAT * I , const struct parsedname * pn ) {
     BYTE data[8] ;
     int enabled ;
 
     // set current readings on source command
+    // Actual units are volts-- need to know sense resistor for current
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
-    enabled = UT_getbit( data , 0 ) ;
-    if ( !enabled ) {
-        UT_setbit( data , 0 , 1 ) ; // AD bit in status register
+    enabled = data[0] & 0x01 ; // IAC bit
+    if ( !enabled ) { // need to temporariliy turn on current measurements
+        data[0] |= 0x01 ;
         if ( OW_w_page( data, 0, pn ) ) return 1 ;
+        UT_delay(38) ; // enough time for one conversion (38msec)
+        if ( OW_r_page( data , 0 , pn ) ) return 1 ; // reread
     }
-
-    // read back registers
-    if ( OW_r_int( I, 0x05, pn ) ) return 1 ;
-
-    if ( !enabled ) {
-        // if ( OW_r_page( data , 0 , pn ) ) return 1 ; /* Assume no change to these fields */
-        UT_setbit( data , 0 , 0 ) ; // AD bit in status register
+    I[0] = .0002441 * (FLOAT)( ( ((int)data[6]) <<8 )|data[5] ) ;
+    if ( !enabled ) { // need to restore no current measurements
+        data[0] &= 0xFE ;
         if ( OW_w_page( data, 0, pn ) ) return 1 ;
     }
     return 0 ;
