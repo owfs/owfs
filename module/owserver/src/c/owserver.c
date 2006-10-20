@@ -566,7 +566,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
 #endif /* OW_MT */
 }
 
-#else /* NO_NESTED_FUNCTIONS
+#else /* NO_NESTED_FUNCTIONS */
 
 /* Dir, called from Handler with the following caveats: */
 /* path is path, already parsed, and null terminated */
