@@ -1,4 +1,4 @@
-SUBDIRS = windows
+SUBDIRS = usb
 
 clean-generic:
 

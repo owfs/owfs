@@ -1,5 +1,5 @@
 
-Some instructions how to install and use OWFS on Windows(Cygwin).
+Some instructions how to install and use OWFS on Windows with Cygwin.
 
 
 Install Cygwin
@@ -24,7 +24,6 @@ drwxr-xr-x+ 2 Mag Ingen 0 Oct 19 11:55 drivers
 drwxr-xr-x+ 2 Mag Ingen 0 Oct 19 11:28 include
 drwxr-xr-x+ 2 Mag Ingen 0 Oct 19 11:28 lib
 drwxr-xr-x+ 6 Mag Ingen 0 Oct 15 09:54 man
-drwxr-xr-x+ 3 Mag Ingen 0 Oct 18 17:48 share
 
 
 Plugin the DS9490 USB-adapter.
