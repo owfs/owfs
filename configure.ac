@@ -1273,7 +1273,9 @@ AC_CONFIG_FILES([
     src/rpm/Makefile
     src/rpm/owfs.spec
     src/scripts/Makefile
-    src/scripts/windows/Makefile
+    src/scripts/usb/Makefile
+    src/scripts/usb/cygwin/Makefile
+    src/scripts/usb/windows/Makefile
     src/include/owfs_config.h
 ])
 AC_OUTPUT
