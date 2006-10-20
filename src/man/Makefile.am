@@ -1,5 +1,7 @@
 ## $Id$
 
+mandir = ${prefix}/man
+
 man_MANS = owfs.1 \
            owhttpd.1 \
            owserver.1 \

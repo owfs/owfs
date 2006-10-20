@@ -46,30 +46,18 @@ AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 
-AC_MSG_CHECKING([if building for some Win32 platform])
-case "$host" in
-  *-*-mingw*|*-*-cygwin*)
-    platform_win32=yes
-    ;;
-  *)
-    platform_win32=no
-    ;;
-esac
-AC_MSG_RESULT($platform_win32)
-AM_CONDITIONAL(PLATFORM_WIN32, test x$platform_win32 = xyes)
-
 AC_MSG_CHECKING([for cygwin])
 case "$host" in
   *-*-cygwin*)
-    owfs_with_cygwin=yes
+    HAVE_CYGWIN="true"
+#    LDFLAGS="-static"
     ;;
   *)
-    owfs_with_cygwin=no
+    HAVE_CYGWIN="false"
     ;;
 esac
-AC_MSG_RESULT([$owfs_with_cygwin])
-AM_CONDITIONAL(WITH_CYGWIN, test "$owfs_with_cygwin" = "yes")
-
+AC_SUBST(HAVE_CYGWIN)
+AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 
 OW_CHECK_NESTED_FUNCTIONS
 
@@ -522,22 +510,33 @@ AC_MSG_CHECKING(if swig is enabled)
 if test -z "$SWIG"  ; then
      ENABLE_SWIG="false"
 else
-     ENABLE_SWIG="true"
+     ENABLE_SWIG="auto"
 fi
 AC_ARG_ENABLE(swig,
-[  --enable-swig         Enable swig (default true)],
+[  --enable-swig         Enable swig (default auto)],
 [
-    if test ! "$enableval" = "yes"; then
+    if test "$enableval" = "false"; then
         ENABLE_SWIG="false"
         SWIG=""
 	AC_MSG_RESULT([no])
     else
-	AC_MSG_RESULT([yes (default)])
+        if test -z "$SWIG"; then
+	   AC_MSG_ERROR([Swig is not found and could not be enabled])
+	fi
+        ENABLE_SWIG="true"
+	AC_MSG_RESULT([yes])
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    AC_MSG_RESULT([auto (default)])
 ])
+if test $HAVE_CYGWIN; then
+    if test ! "$ENABLE_SWIG" = "true"; then
+       ENABLE_SWIG="false"
+       SWIG=""
+       AC_MSG_RESULT([(Disable swig by default in Cygwin)])
+    fi
+fi
 AC_SUBST(ENABLE_SWIG)
 AM_CONDITIONAL(ENABLE_SWIG, test "${ENABLE_SWIG}" = "true")
 
@@ -954,7 +953,6 @@ AC_ARG_ENABLE(usb,
 
 # Include libusb if the usb is enabled
 if test "${ENABLE_USB}" != "false" ; then
-
     AC_CHECK_LIB(usb,usb_open, ,[
     if test "${ENABLE_USB}" = "true" ; then
         AC_MSG_ERROR([libusb must be installed to use a USB adapter])
@@ -1079,12 +1077,12 @@ esac
 AC_MSG_CHECKING([if extra libs are required])
 case "${host_cpu}-${host_os}" in
 	*-darwin*)
-		LD_EXTRALIBS="-framework CoreFoundation -framework IOKit"
+		LD_EXTRALIBS+=" -framework CoreFoundation -framework IOKit"
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*-solaris*)
                 LIBS="$LIBS -lsocket -lnsl"
-		LD_EXTRALIBS="-lsocket -lnsl"
+		LD_EXTRALIBS+=" -lsocket -lnsl "
 		AC_MSG_RESULT([${LD_EXTRALIBS}])
 	;;
 	*)
@@ -1093,6 +1091,7 @@ case "${host_cpu}-${host_os}" in
 	;;
 esac
 AC_SUBST(LD_EXTRALIBS)
+AC_MSG_WARN([LD_EXTRALBS = ${LD_EXTRALIBS}])
 
 # Checks for header files.
 
@@ -1274,6 +1273,7 @@ AC_CONFIG_FILES([
     src/rpm/Makefile
     src/rpm/owfs.spec
     src/scripts/Makefile
+    src/scripts/windows/Makefile
     src/include/owfs_config.h
 ])
 AC_OUTPUT

@@ -3,7 +3,10 @@ Some instructions how to install and use OWFS on Windows(Cygwin).
 
 
 Install Cygwin
-Install cygwin package libusb-win32
+Install cygwin package libusb-win32-0.1.10.1-3)
+	Easiest way is to use cygwin's setup.exe to download and install it.
+	Source could be found at: http://brl.thefreecat.org/libusb-win32/
+	  if you want to compile it by yourself. (haven't tried it myself)
 
 # /usr/sbin/libusb-install.exe
 This will install the Windows service called "Libusb-win32 daemon"
@@ -29,6 +32,10 @@ Manually install the driver by choosing C:\cygwin\opt\owfs\drivers\ds9490.inf
 You will be asked to point out the location of the files:
     C:\cygwin\lib\libusb\libusb0.sys
     C:\cygwin\usr\bin\cygusb0.dll
+
+Note: The reason to the different dll-prefix could be found here:
+      http://comments.gmane.org/gmane.os.cygwin.applications/13209
+
 
 You will now see your "DS9490 1-Wire USB Adapter" in your device list.
 

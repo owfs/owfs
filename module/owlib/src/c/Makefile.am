@@ -117,10 +117,6 @@ AM_CFLAGS = -I../include \
          -D__EXTENSIONS__ \
          ${PROFILING_FLAG}
 
-#         -Wconversion \
-#
-#LDADD = ${PROFILING_FLAG} ${PTHREAD_LIBS}
-
 clean-generic:
 
 	@RM@ -f *~ .*~
