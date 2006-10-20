@@ -515,7 +515,7 @@ fi
 AC_ARG_ENABLE(swig,
 [  --enable-swig         Enable swig (default auto)],
 [
-    if test "$enableval" = "false"; then
+    if test "$enableval" = "no"; then
         ENABLE_SWIG="false"
         SWIG=""
 	AC_MSG_RESULT([no])
