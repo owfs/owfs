@@ -1,9 +1,4 @@
-SUBDIRS =
-
-if HAVE_CYGWIN
-SUBDIRS += windows
-endif
-
+SUBDIRS = windows
 
 clean-generic:
 
