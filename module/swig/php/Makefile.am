@@ -35,7 +35,7 @@ if ENABLE_OWPHP
 # avoid problem when "make dist" and there are no swig available
 	$(SWIG) -php4 -o $@ ../ow.i
 else
-	touch $@
+	touch ow_wrap.c php_OW.h
 endif
 
 #install-data-local:
