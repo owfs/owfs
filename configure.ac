@@ -1273,6 +1273,7 @@ AC_CONFIG_FILES([
     src/rpm/Makefile
     src/rpm/owfs.spec
     src/scripts/Makefile
+    src/scripts/windows/owfs.nsi
     src/scripts/usb/Makefile
     src/scripts/usb/cygwin/Makefile
     src/scripts/usb/windows/Makefile
