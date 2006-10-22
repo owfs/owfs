@@ -109,9 +109,9 @@ void ow_morehelp( void ) {
     case opt_owfs:
         printf(
         "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"
-        "                                 |  e.g: --fuse_opt=\"-x -f\"\n"
-        "     --fuse_open_opt             |Options to send to fuse_open (must be quoted)\n"
-        "                                 |  e.g: --fuse_open_opt=\"direct_io\"\n"
+        "                                 |  e.g: --fuse_opt=\\\"\"-o allow_others\"\\\"\n"
+//        "     --fuse_open_opt             |Options to send to fuse_open (must be quoted)\n"
+//        "                                 |  e.g: --fuse_open_opt=\"direct_io\"\n"
         ) ;
         break ;
     case opt_httpd:
