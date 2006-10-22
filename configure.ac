@@ -59,7 +59,9 @@ esac
 AC_SUBST(HAVE_CYGWIN)
 AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 
+if test "$cross_compiling" != yes; then
 OW_CHECK_NESTED_FUNCTIONS
+fi
 
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
