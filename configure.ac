@@ -56,6 +56,7 @@ case "$host" in
     HAVE_CYGWIN="false"
     ;;
 esac
+AC_MSG_RESULT($HAVE_CYGWIN)
 AC_SUBST(HAVE_CYGWIN)
 AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 
@@ -532,11 +533,15 @@ AC_ARG_ENABLE(swig,
 [
     AC_MSG_RESULT([auto (default)])
 ])
-if test $HAVE_CYGWIN; then
+if test "${HAVE_CYGWIN}" = "true"; then
     if test ! "$ENABLE_SWIG" = "true"; then
        ENABLE_SWIG="false"
        SWIG=""
        AC_MSG_RESULT([(Disable swig by default in Cygwin)])
+    fi
+else
+    if test "$ENABLE_SWIG" = "auto"; then
+       ENABLE_SWIG="true"
     fi
 fi
 AC_SUBST(ENABLE_SWIG)
