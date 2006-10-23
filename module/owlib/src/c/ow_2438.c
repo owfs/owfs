@@ -397,24 +397,39 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
     return 0 ;
 }
 
+// Read current register
+// turn on (temporary) A/D in scratchpad
 static int OW_current( FLOAT * I , const struct parsedname * pn ) {
     BYTE data[8] ;
+    BYTE r[] = { 0xBE, 0x00, } ;
+    BYTE w[] = { 0x4E, 0x00, } ;
     int enabled ;
+    struct transaction_log tread[] = {
+        TRXN_START,
+        { r, NULL, 2, trxn_match, } ,
+        { NULL, data, 1, trxn_read, } ,
+        TRXN_END,
+    } ;
+    struct transaction_log twrite[] = {
+        TRXN_START,
+        { w, NULL, 2, trxn_match, } ,
+        { data, NULL, 1, trxn_match, } ,
+        TRXN_END,
+    } ;
 
     // set current readings on source command
     // Actual units are volts-- need to know sense resistor for current
-    if ( OW_r_page( data , 0 , pn ) ) return 1 ;
+    if ( BUS_transaction( tread, pn ) ) return 1 ;
     enabled = data[0] & 0x01 ; // IAC bit
     if ( !enabled ) { // need to temporariliy turn on current measurements
         data[0] |= 0x01 ;
-        if ( OW_w_page( data, 0, pn ) ) return 1 ;
+        if ( BUS_transaction( twrite, pn ) ) return 1 ;
         UT_delay(38) ; // enough time for one conversion (38msec)
         if ( OW_r_page( data , 0 , pn ) ) return 1 ; // reread
     }
     I[0] = .0002441 * (FLOAT)( ( ((int)data[6]) <<8 )|data[5] ) ;
     if ( !enabled ) { // need to restore no current measurements
-        data[0] &= 0xFE ;
-        if ( OW_w_page( data, 0, pn ) ) return 1 ;
+        if ( BUS_transaction( twrite, pn ) ) return 1 ;
     }
     return 0 ;
 }
