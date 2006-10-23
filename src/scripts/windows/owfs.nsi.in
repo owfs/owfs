@@ -93,7 +93,7 @@ Section "OWFS program files" Bins
   File "${ROOT_CYGWIN}\bin\cygwin1.dll"
   File "*.ico"
   WriteUninstaller "$INSTDIR\owfs_uninstall.exe"
-  WriteRegStr HKLM "Software\OWFS\Version" "String Value" "$Version"
+  WriteRegStr HKLM "Software\OWFS\Version" "String Value" "${VERSION}"
 
 SectionEnd
 
@@ -116,17 +116,25 @@ SectionEnd
 
 Section "Add to Start menu"
   CreateDirectory "$SMPROGRAMS\OWFS"
-  CreateShortcut "$SMPROGRAMS\OWFS\owserver.lnk" "$INSTDIR\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Server/Multiplexor"
-  CreateShortcut "$SMPROGRAMS\OWFS\owftpd.lnk" "$INSTDIR\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION FTP server"
-  CreateShortcut "$SMPROGRAMS\OWFS\owhttpd.lnk" "$INSTDIR\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Web server"
-  CreateShortcut "$SMPROGRAMS\OWFS\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS $VERSION"
+  Delete "$SMPROGRAMS\OWFS\owserver.lnk"
+  Delete "$SMPROGRAMS\OWFS\owftpd.lnk"
+  Delete "$SMPROGRAMS\OWFS\owhttpd.lnk"
+  Delete "$SMPROGRAMS\OWFS\owfs_uninstall.lnk"
+  CreateShortcut "$SMPROGRAMS\OWFS\owserver.lnk" "$INSTDIR\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Server/Multiplexor"
+  CreateShortcut "$SMPROGRAMS\OWFS\owftpd.lnk" "$INSTDIR\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} FTP server"
+  CreateShortcut "$SMPROGRAMS\OWFS\owhttpd.lnk" "$INSTDIR\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Web server"
+  CreateShortcut "$SMPROGRAMS\OWFS\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS ${VERSION}"
 SectionEnd
 
 Section "Add to Desktop"
-  CreateShortcut "$DESKTOP\owserver.lnk" "$INSTDIR\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Server/Multiplexor"
-  CreateShortcut "$DESKTOP\owftpd.lnk" "$INSTDIR\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION FTP server"
-  CreateShortcut "$DESKTOP\owhttpd.lnk" "$INSTDIR\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Web server"
-  CreateShortcut "$DESKTOP\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS $VERSION"
+  Delete "$DESKTOP\owserver.lnk"
+  Delete "$DESKTOP\owftpd.lnk"
+  Delete "$DESKTOP\owhttpd.lnk"
+  Delete "$DESKTOP\owfs_uninstall.lnk"
+  CreateShortcut "$DESKTOP\owserver.lnk" "$INSTDIR\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Server/Multiplexor"
+  CreateShortcut "$DESKTOP\owftpd.lnk" "$INSTDIR\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} FTP server"
+  CreateShortcut "$DESKTOP\owhttpd.lnk" "$INSTDIR\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Web server"
+  CreateShortcut "$DESKTOP\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS ${VERSION}"
 SectionEnd
 
 Section "USB Support Installation"
