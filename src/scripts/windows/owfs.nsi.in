@@ -25,10 +25,20 @@
 !define ROOT_CYGWIN "${ROOT_HOME}\.."
 
 #########
+# Install settings
+#########
+SetCompressor /SOLID lzma
+SetOverwrite ifnewer
+CRCCheck on
+
+#########
 # Name
 #########
 Name "OWFS"
 Caption "OWFS (One Wire Filesystem) ${VERSION} Setup"
+BrandingText /TRIMCENTER "http://www.owfs.org"
+Icon "owfs.ico"
+UninstallIcon "unowfs.ico"
 
 #########
 # Location
@@ -42,12 +52,6 @@ InstallDir $PROGRAMFILES\OWFS
   OutFile ${ROOT_OWFS}\owfs_${VERSION}.exe
 !endif
 
-#########
-# Install settings
-#########
-SetCompressor /SOLID lzma
-SetOverwrite ifnewer
-CRCCheck on
 
 InstType "Programs"
 InstType "Source"
@@ -78,7 +82,6 @@ Section "OWFS program files" Bins
 
   SectionIn 1 2 RO
   SetOutPath $INSTDIR
-  MessageBox MB_OK Fversion
   File "${ROOT_MODULE}\owshell\src\c\owdir.exe"
   File "${ROOT_MODULE}\owshell\src\c\owread.exe"
   File "${ROOT_MODULE}\owshell\src\c\owwrite.exe"
@@ -88,6 +91,9 @@ Section "OWFS program files" Bins
   File "${ROOT_MODULE}\owserver\src\c\owserver.exe"
   File "${ROOT_MODULE}\owftpd\src\c\owftpd.exe"
   File "${ROOT_CYGWIN}\bin\cygwin1.dll"
+  File "*.ico"
+  WriteUninstaller "$INSTDIR\owfs_uninstall.exe"
+  WriteRegStr HKLM "Software\OWFS\Version" "String Value" "$Version"
 
 SectionEnd
 
@@ -106,4 +112,39 @@ Section "OWFS source files" Source
   SetOutPath $INSTDIR\source\src\man
   File /r "${ROOT_OWFS}\src\man\*"
 
+SectionEnd
+
+Section "Add to Start menu"
+  CreateDirectory "$SMPROGRAMS\OWFS"
+  CreateShortcut "$SMPROGRAMS\OWFS\owserver.lnk" "$INSTDIR\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Server/Multiplexor"
+  CreateShortcut "$SMPROGRAMS\OWFS\owftpd.lnk" "$INSTDIR\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION FTP server"
+  CreateShortcut "$SMPROGRAMS\OWFS\owhttpd.lnk" "$INSTDIR\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Web server"
+  CreateShortcut "$SMPROGRAMS\OWFS\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS $VERSION"
+SectionEnd
+
+Section "Add to Desktop"
+  CreateShortcut "$DESKTOP\owserver.lnk" "$INSTDIR\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Server/Multiplexor"
+  CreateShortcut "$DESKTOP\owftpd.lnk" "$INSTDIR\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION FTP server"
+  CreateShortcut "$DESKTOP\owhttpd.lnk" "$INSTDIR\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS $VERSION Web server"
+  CreateShortcut "$DESKTOP\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS $VERSION"
+SectionEnd
+
+Section "USB Support Installation"
+  MessageBox MB_OK "Going to LibUsb-Win32 site for installation."
+  ExecShell "open" "http://libusb-win32.sourceforge.net/"
+SectionEnd
+
+Section "Cygwin Installation"
+  MessageBox MB_OK "Going to RedHat's Cygwin site for installation."
+  ExecShell "open" "http://www.redhat.com/services/custom/cygwin/"
+SectionEnd
+
+Section "Uninstall"
+  RMDir /r /REBOOTOK $INSTDIR
+  RMDir /r /REBOOTOK "$SMPROGRAMS\OWFS"
+  Delete "$DESKTOP\owserver.lnk"
+  Delete "$DESKTOP\owftpd.lnk"
+  Delete "$DESKTOP\owhttpd.lnk"
+  Delete "$DESKTOP\owfs_uninstall.lnk"
+  DeleteRegKey HKLM "Software\OWFS\Version"
 SectionEnd
