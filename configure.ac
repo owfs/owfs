@@ -291,6 +291,12 @@ fi
 AC_LANG_RESTORE
 ])dnl ACX_PTHREAD
 
+# Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h])
+AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h dns_sd.h])
+
 # Test if debugging out enabled
 ENABLE_DEBUG="true"
 AC_MSG_CHECKING([if debug-output is enabled])
@@ -993,8 +999,14 @@ AC_ARG_ENABLE(zero,
     AC_MSG_RESULT([yes (default)])
 ])
 
+if test "${ENABLE_ZERO}" != "false" -a "${ac_cv_header_dns_sd_h}" != "yes"; then
+	ENABLE_ZERO=false
+        AC_MSG_WARN([dns_sd.h is not found, zeroconf will be disabled])
+fi
+
 # Include libdns_sd if the zeroconf is enabled
 if test "${ENABLE_ZERO}" != "false" ; then
+
 
 #    AC_CHECK_LIB(mDNSResponder,mDNS_RegisterService,,[
     AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
@@ -1099,13 +1111,6 @@ case "${host_cpu}-${host_os}" in
 esac
 AC_SUBST(LD_EXTRALIBS)
 AC_MSG_WARN([LD_EXTRALBS = ${LD_EXTRALIBS}])
-
-# Checks for header files.
-
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h])
-AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h])
 
 # owftpd section
 AC_SUBST(HAVE_NEW_SS_FAMILY)
