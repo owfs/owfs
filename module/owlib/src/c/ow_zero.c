@@ -35,7 +35,7 @@ static void * Announce( void * v ) {
     struct announce_struct * as = v ;
     DNSServiceRef sref ;
     DNSServiceErrorType err = DNSServiceRegister(&sref,0,0,Global.announce_name?Global.announce_name:as->name,as->type0,NULL,NULL,as->port,0,NULL,RegisterBack,&(as->out->sref0)) ;
-    LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,as->name,ntohs(as->port),as->type0,as->type1) ;
+    LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,as->name,ntohs(as->port),as->type0,SAFESTRING(as->type1)) ;
 #if OW_MT
     pthread_detach( pthread_self() ) ;
 #endif /* OW_MT */
