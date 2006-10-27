@@ -45,10 +45,13 @@ static void * Announce( void * v ) {
     LEVEL_DEBUG("Announce: err=%d\n", err);
 
     //LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
+#if 0
+// just a test to remove multitasking
 #ifdef OW_MT
 #undef OW_MT
 #endif
 #define OW_MT 0
+#endif
 
 #if OW_MT
     pthread_detach( pthread_self() ) ;

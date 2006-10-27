@@ -20,11 +20,11 @@ static void HandleCall( DNSServiceRef sref ) ;
 static void HandleCall( DNSServiceRef sref ) {
     int fd;
     DNSServiceErrorType err = kDNSServiceErr_Unknown ;
-    fd = DNSServiceRefSockFD(NULL) ;
-    fprintf(stderr, "HandleCall: fd=%d (just a test of function-call, should result -1)\n", fd);
+    //fd = DNSServiceRefSockFD(NULL) ;
+    //fprintf(stderr, "HandleCall: fd=%d (just a test of function-call, should result -1)\n", fd);
     fd = DNSServiceRefSockFD(sref) ;
-    fprintf(stderr, "HandleCall: fd=%d\n", fd);
-    sleep(30);
+    //fprintf(stderr, "HandleCall: fd=%d\n", fd);
+    //sleep(30);
     if ( fd >= 0 ) {
         while (1) {
             fd_set readfd ;

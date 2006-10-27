@@ -184,6 +184,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
     hint.ai_family = AF_UNSPEC ;
 
 //printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
+LEVEL_DEBUG("GetAddrInfo [%s] [%s]\n",in->connin.server.host, in->connin.server.service);
 
     if ( (ret=getaddrinfo( in->connin.server.host, in->connin.server.service, &hint, &in->connin.server.ai )) ) {
         LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
