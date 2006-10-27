@@ -64,6 +64,9 @@ if test "$cross_compiling" != yes; then
 OW_CHECK_NESTED_FUNCTIONS
 fi
 
+OWFSROOT="`pwd`"
+AC_SUBST(OWFSROOT)
+
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
@@ -1007,8 +1010,10 @@ fi
 # Include libdns_sd if the zeroconf is enabled
 if test "${ENABLE_ZERO}" != "false" ; then
 
-
-#    AC_CHECK_LIB(mDNSResponder,mDNS_RegisterService,,[
+if test "${HAVE_CYGWIN}" = "true"; then
+    LD_EXTRALIBS+=" -L${OWFSROOT}/src/scripts/windows -ldnssd "
+    AC_MSG_WARN([libdnssd.dll.a is used for bonjour])
+else
     AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
     if test "${ENABLE_ZERO}" = "true" ; then
         AC_MSG_ERROR([libdns_sd must be installed to use zeroconf])
@@ -1017,9 +1022,12 @@ if test "${ENABLE_ZERO}" != "false" ; then
             ENABLE_ZERO=false
     fi
     ])
+fi
+
     if test "${ENABLE_ZERO}" != "false" ; then
         ENABLE_ZERO=true
     fi
+
 fi
 
 AC_SUBST(ENABLE_ZERO)
@@ -1285,6 +1293,7 @@ AC_CONFIG_FILES([
     src/rpm/Makefile
     src/rpm/owfs.spec
     src/scripts/Makefile
+    src/scripts/windows/Makefile
     src/scripts/windows/owfs.nsi
     src/scripts/usb/Makefile
     src/scripts/usb/cygwin/Makefile

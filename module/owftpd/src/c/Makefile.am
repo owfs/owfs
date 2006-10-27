@@ -1,5 +1,11 @@
 # $Id$
 
+if HAVE_CYGWIN
+if ENABLE_ZERO
+DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+endif
+endif
+
 bin_PROGRAMS = owftpd
 owftpd_SOURCES = file_list.c \
                  file_cd.c    \
@@ -10,7 +16,7 @@ owftpd_SOURCES = file_list.c \
                  telnet_session.c  \
                  watchdog.c         \
                  daemon_assert.c
-owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
+owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la $(DNSSDLIB)
 
 if HAVE_NEW_SS_FAMILY
 SS_FLAG = -DHAVE_NEW_SS_FAMILY

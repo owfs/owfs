@@ -1,8 +1,14 @@
 # $Id$
 
+if HAVE_CYGWIN
+if ENABLE_ZERO
+DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+endif
+endif
+
 bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c fuse_line.c
-owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
+owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la $(DNSSDLIB)
 
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
@@ -21,9 +27,6 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG}
-
-#         -Wconversion \
-#
 
 LDADD = -low $(FUSE_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 

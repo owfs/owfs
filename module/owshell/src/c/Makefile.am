@@ -1,5 +1,11 @@
 # $Id$
 
+if HAVE_CYGWIN
+if ENABLE_ZERO
+DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+endif
+endif
+
 bin_PROGRAMS = owdir owread owwrite owpresent
 owdir_SOURCES = ow_opt.c    \
                ow_help.c    \
@@ -41,6 +47,11 @@ owpresent_SOURCES = ow_opt.c   \
                globals.c    \
                owpresent.c
 
+owdir_DEPENDENCIES = $(DNSSDLIB)
+owread_DEPENDENCIES = $(DNSSDLIB)
+owwrite_DEPENDENCIES = $(DNSSDLIB)
+owpresent_DEPENDENCIES = $(DNSSDLIB)
+
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          -I../../../owlib/src/include \
@@ -55,9 +66,6 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG}
-
-#         -Wconversion \
-#
 
 LDADD = ${PROFILING_FLAG} ${LD_EXTRALIBS}
 
