@@ -366,7 +366,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
             break ;
             }
         case ft_float: {
-            FLOAT f ;
+            _FLOAT f ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
             LEVEL_DEBUG("FS_r_single: (float) %G\n", f ) ;
@@ -374,7 +374,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
             break ;
             }
         case ft_temperature: {
-            FLOAT f ;
+            _FLOAT f ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
             LEVEL_DEBUG("FS_r_single: (temperature) %G\n", f ) ;
@@ -382,7 +382,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
             break ;
             }
         case ft_tempgap: {
-            FLOAT f ;
+            _FLOAT f ;
             ret = (pn->ft->read.f)(&f,pn) ;
             if (ret < 0) return ret ;
             LEVEL_DEBUG("FS_r_single: (tempgap) %G\n", f ) ;
@@ -390,7 +390,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
             break ;
             }
         case ft_date: {
-            DATE d ;
+            _DATE d ;
             ret = (pn->ft->read.d)(&d,pn) ;
             if (ret < 0) return ret ;
             LEVEL_DEBUG("FS_r_single: (date) %lu\n", (unsigned long int) d ) ;
@@ -470,7 +470,7 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
         }
     case ft_float:
         {
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
@@ -480,7 +480,7 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
     case ft_temperature:
         {
             size_t i ;
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 for ( i=0; i<elements ; ++i ) f[i] = Temperature(f[i],pn) ;
@@ -491,7 +491,7 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
     case ft_tempgap:
         {
             size_t i ;
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 for ( i=0; i<elements ; ++i ) f[i] = TemperatureGap(f[i],pn) ;
@@ -501,7 +501,7 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
         }
     case ft_date:
         {
-            DATE * d = (DATE *) calloc( elements, sizeof(DATE) ) ;
+            _DATE * d = (_DATE *) calloc( elements, sizeof(_DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.d)(d,pn) ;
                 if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
@@ -663,7 +663,7 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         }
     case ft_float:
         {
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float( f[pn->extension] , buf , size , pn ) ;
@@ -672,7 +672,7 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         }
     case ft_temperature:
         {
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float( Temperature(f[pn->extension],pn) , buf , size , pn ) ;
@@ -681,7 +681,7 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         }
     case ft_tempgap:
         {
-            FLOAT * f = (FLOAT *) calloc( elements, sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.f)(f,pn) ;
                 if (ret >= 0) ret = FS_output_float( TemperatureGap(f[pn->extension],pn) , buf , size , pn ) ;
@@ -690,7 +690,7 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         }
     case ft_date:
         {
-            DATE * d = (DATE *) calloc( elements, sizeof(DATE) ) ;
+            _DATE * d = (_DATE *) calloc( elements, sizeof(_DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.d)(d,pn) ;
                 if (ret >= 0) ret = FS_output_date( d[pn->extension] , buf , size , pn ) ;
@@ -807,7 +807,7 @@ int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct 
     return len ;
 }
 
-int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_float( _FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) {
     size_t suglen = SimpleFileLength(pn) ;
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
@@ -829,7 +829,7 @@ int FS_output_float( FLOAT value, char * buf, const size_t size, const struct pa
     return len ;
 }
 
-int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_date( _DATE value, char * buf, const size_t size, const struct parsedname * pn ) {
     char c[26] ;
     (void) pn ;
     if ( size < 24 ) return -EMSGSIZE ;
@@ -875,7 +875,7 @@ int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, cons
     return size-(left-len) ;
 }
 
-int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
@@ -893,7 +893,7 @@ int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const 
     return size-(left-len) ;
 }
 
-int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
+int FS_output_date_array( _DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;

@@ -91,7 +91,7 @@ static struct BitRead BitReads[] =
   01100000 DS1922T
 */
 struct Mission {
-    DATE start ;
+    _DATE start ;
     int rollover ;
     int interval ;
     int samples ;
@@ -139,16 +139,16 @@ DeviceEntryExtended( 41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume ) 
 /* DS1923 */
 static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
-static int OW_r_temperature( FLOAT * T , const UINT delay, const struct parsedname * pn ) ;
-static int OW_r_humid( FLOAT * H , const UINT delay, const struct parsedname * pn ) ;
+static int OW_r_temperature( _FLOAT * T , const UINT delay, const struct parsedname * pn ) ;
+static int OW_r_humid( _FLOAT * H , const UINT delay, const struct parsedname * pn ) ;
 static int OW_startmission( unsigned long mdelay, const struct parsedname * pn ) ;
 static int OW_stopmission( const struct parsedname * pn ) ;
 static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_clearmemory( const struct parsedname * pn ) ;
 static int OW_force_conversion( const UINT delay, const struct parsedname * pn ) ;
-static int OW_2date(DATE * d, const BYTE * data) ;
+static int OW_2date(_DATE * d, const BYTE * data) ;
 static int OW_oscillator(const int on, const struct parsedname * pn) ;
-static void OW_date(const DATE * d , BYTE * data) ;
+static void OW_date(const _DATE * d , BYTE * data) ;
 
 
 
@@ -293,7 +293,7 @@ static int FS_rbitwrite( const int * y , const struct parsedname * pn ) {
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_temperature(_FLOAT * T , const struct parsedname * pn) {
     UINT delay = 666;
     int ret;
     if ( (ret=OW_MIP(pn)) ) {
@@ -310,7 +310,7 @@ static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_humid(FLOAT * H , const struct parsedname * pn) {
+static int FS_r_humid(_FLOAT * H , const struct parsedname * pn) {
     UINT delay = 666;
     int ret;
     if ( (ret=OW_MIP(pn)) ) {
@@ -327,7 +327,7 @@ static int FS_r_humid(FLOAT * H , const struct parsedname * pn) {
 }
 
 /* translate 7 byte field to a Unix-style date (number) */
-static int OW_2date(DATE * d, const BYTE * data) {
+static int OW_2date(_DATE * d, const BYTE * data) {
     struct tm t ;
 
     /* Prefill entries */
@@ -337,7 +337,7 @@ static int OW_2date(DATE * d, const BYTE * data) {
       return -EINVAL ;
     }
 
-printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec,t.tm_min,t.tm_hour,t.tm_mday,t.tm_mon,t.tm_year,t.tm_wday,t.tm_isdst) ;
+printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec,t.tm_min,t.tm_hour,t.tm_mday,t.tm_mon,t.tm_year,t.tm_wday,t.tm_isdst) ;
 
 #define bcd2dec(x) (((x)&0x70)>>4)*10 + ((x)&0x0F)
     t.tm_sec = bcd2dec(data[0]);
@@ -353,8 +353,8 @@ printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=
     //The number of years since 1900.
     t.tm_year = (data[4]&0x80?100:0) + bcd2dec(data[5]&0xFF);
 
-printf("DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5]);
-printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec,t.tm_min,t.tm_hour,t.tm_mday,t.tm_mon,t.tm_year,t.tm_wday,t.tm_isdst) ;
+printf("_DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5]);
+printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec,t.tm_min,t.tm_hour,t.tm_mday,t.tm_mon,t.tm_year,t.tm_wday,t.tm_isdst) ;
 
     /* Pass through time_t again to validate */
     if((*d = mktime(&t)) == -1) {
@@ -403,7 +403,7 @@ static int OW_oscillator(const int on, const struct parsedname * pn) {
 
 
 /* read clock */
-int FS_r_date( DATE * d , const struct parsedname * pn) {
+int FS_r_date( _DATE * d , const struct parsedname * pn) {
     BYTE data[6] ;
     int ret ;
     
@@ -418,7 +418,7 @@ int FS_r_date( DATE * d , const struct parsedname * pn) {
 /* read clock */
 static int FS_r_counter(UINT * u , const struct parsedname * pn) {
     BYTE data[6] ;
-    DATE d ;
+    _DATE d ;
     int ret ;
 
     /* Get date from chip */
@@ -429,7 +429,7 @@ static int FS_r_counter(UINT * u , const struct parsedname * pn) {
 }
 
 /* set clock */
-static int FS_w_date(const DATE * d , const struct parsedname * pn) {
+static int FS_w_date(const _DATE * d , const struct parsedname * pn) {
     BYTE data[6] ;
     int y = 1 ;
     int ret;
@@ -452,7 +452,7 @@ static int FS_w_date(const DATE * d , const struct parsedname * pn) {
 
 static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
     BYTE data[6] ;
-    DATE d = (DATE) u[0] ;
+    _DATE d = (_DATE) u[0] ;
     int ret;
 
     /* Busy if in mission */
@@ -721,7 +721,7 @@ static int OW_MIP( const struct parsedname * pn ) {
 }
 
 /* set clock */
-static void OW_date(const DATE * d , BYTE * data) {
+static void OW_date(const _DATE * d , BYTE * data) {
     struct tm tm ;
     int year ;
 
@@ -736,8 +736,8 @@ static void OW_date(const DATE * d , BYTE * data) {
     year = tm.tm_year % 100 ;
     data[5] = year + 6*(year/10) ; /* dec->bcd */
     if ( tm.tm_year>99 && tm.tm_year<200 ) data[4] |= 0x80 ;
-//printf("DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5]);
-//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
+//printf("_DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5]);
+//printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
 
 static int OW_force_conversion( const UINT delay, const struct parsedname * pn ) {
@@ -768,7 +768,7 @@ static int OW_force_conversion( const UINT delay, const struct parsedname * pn )
     return 0;
 }
 
-static int OW_r_temperature( FLOAT * T, const UINT delay, const struct parsedname * pn ) {
+static int OW_r_temperature( _FLOAT * T, const UINT delay, const struct parsedname * pn ) {
     BYTE data[32] ;
     (void) delay;
 
@@ -776,17 +776,17 @@ static int OW_r_temperature( FLOAT * T, const UINT delay, const struct parsednam
       printf("OW_r_temperature: error1\n");
       return -EINVAL ;
     }
-    *T = ((FLOAT)((BYTE)data[1]))/2 - 41;
+    *T = ((_FLOAT)((BYTE)data[1]))/2 - 41;
     
     if ( data[7] & 0x04 ) {
-      *T += ((FLOAT)((BYTE)data[0]))/512 ;
+      *T += ((_FLOAT)((BYTE)data[0]))/512 ;
     }
     return 0 ;
 }
 
 
-static int OW_r_humid( FLOAT * H , const UINT delay, const struct parsedname * pn ) {
-    FLOAT ADVAL, IVAL;
+static int OW_r_humid( _FLOAT * H , const UINT delay, const struct parsedname * pn ) {
+    _FLOAT ADVAL, IVAL;
     BYTE data[32] ;
     (void) delay;
 
@@ -800,7 +800,7 @@ static int OW_r_humid( FLOAT * H , const UINT delay, const struct parsedname * p
       ADVAL = (IVAL*5.02) / 4096 ;
     } else {
       // low resolution
-      ADVAL = ((FLOAT)((BYTE)data[1]))*5.02 / 256 ;
+      ADVAL = ((_FLOAT)((BYTE)data[1]))*5.02 / 256 ;
     }
     *H = (ADVAL - 0.958)/0.0307 ;
     return 0 ;
@@ -846,7 +846,7 @@ static int OW_startmission( unsigned long mdelay, const struct parsedname * pn )
     if ( OW_r_mem( &cc, 1, 0x0212, pn ) ) return -EINVAL ;
     if (cc & 0xFC) return -EINVAL ;
     if ( !(cc&0x01) ) { /* clock stopped */
-        DATE d = time(NULL) ;
+        _DATE d = time(NULL) ;
         /* start clock */
         if ( FS_w_date(&d,pn ) ) return -EINVAL ; /* set the clock to current time */
         UT_delay(1000) ; /* wait for the clock to count a second */

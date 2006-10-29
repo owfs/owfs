@@ -97,15 +97,15 @@ DeviceEntryExtended( 20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr ) ;
 /* DS2450 */
 static int OW_r_mem( BYTE * p , const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int OW_w_mem( const BYTE * p , const size_t size , const off_t offset , const struct parsedname * pn) ;
-static int OW_volts( FLOAT * f , const int resolution , const struct parsedname * pn ) ;
-static int OW_1_volts( FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) ;
+static int OW_volts( _FLOAT * f , const int resolution , const struct parsedname * pn ) ;
+static int OW_1_volts( _FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) ;
 static int OW_convert( const struct parsedname * pn ) ;
 static int OW_r_pio( int * pio , const struct parsedname * pn ) ;
 static int OW_r_1_pio( int * pio , const int element , const struct parsedname * pn ) ;
 static int OW_w_pio( const int * pio , const struct parsedname * pn ) ;
 static int OW_w_1_pio( const int pio , const int element , const struct parsedname * pn ) ;
-static int OW_r_vset( FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
-static int OW_w_vset( const FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
+static int OW_r_vset( _FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
+static int OW_w_vset( const _FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) ;
 static int OW_r_high( int * y , const int high, const struct parsedname * pn ) ;
 static int OW_w_high( const int * y , const int high, const struct parsedname * pn ) ;
 static int OW_r_flag( int * y , const int high, const struct parsedname * pn ) ;
@@ -206,18 +206,18 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
 }
 
 /* 2450 A/D */
-static int FS_volts(FLOAT * V , const struct parsedname * pn) {
+static int FS_volts(_FLOAT * V , const struct parsedname * pn) {
     int element = pn->extension ;
     if ( (element<0)?OW_volts( V, pn->ft->data.i, pn ):OW_1_volts( V, element, pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_r_setvolt( FLOAT * V, const struct parsedname * pn ) {
+static int FS_r_setvolt( _FLOAT * V, const struct parsedname * pn ) {
     if ( OW_r_vset( V , ( pn->ft->data.i ) >>1 , ( pn->ft->data.i ) & 0x01 , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_w_setvolt( const FLOAT * V, const struct parsedname * pn ) {
+static int FS_w_setvolt( const _FLOAT * V, const struct parsedname * pn ) {
     if ( OW_w_vset( V , ( pn->ft->data.i ) >>1 , ( pn->ft->data.i ) & 0x01 , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -275,7 +275,7 @@ static int OW_w_mem( const BYTE * p , const size_t size , const off_t offset, co
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution and all 4 channels */
 /* resolution is 1->5.10V 0->2.55V */
-static int OW_volts( FLOAT * f , const int resolution, const struct parsedname * pn ) {
+static int OW_volts( _FLOAT * f , const int resolution, const struct parsedname * pn ) {
     BYTE control[8] ;
     BYTE data[8] ;
     int i ;
@@ -325,7 +325,7 @@ static int OW_volts( FLOAT * f , const int resolution, const struct parsedname *
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution on a single channel */
 /* resolution is 1->5.10V 0->2.55V */
-static int OW_1_volts( FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) {
+static int OW_1_volts( _FLOAT * f , const int element, const int resolution , const struct parsedname * pn ) {
     BYTE control[2] ;
     BYTE data[2] ;
     int writeback = 0 ; /* write control back? */
@@ -437,7 +437,7 @@ static int OW_w_1_pio( const int pio , const int element, const struct parsednam
     return OW_w_mem(p,2,(1<<3)+(element<<1),pn) ;
 }
 
-static int OW_r_vset( FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) {
+static int OW_r_vset( _FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,2<<3,pn) ) return 1;
     V[0] = (resolution?.02:.01) * p[0+high] ;
@@ -447,7 +447,7 @@ static int OW_r_vset( FLOAT * V , const int high, const int resolution, const st
     return 0 ;
 }
 
-static int OW_w_vset( const FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) {
+static int OW_w_vset( const _FLOAT * V , const int high, const int resolution, const struct parsedname * pn ) {
     BYTE p[8] ;
     if ( OW_r_mem(p,8,2<<3,pn) ) return 1;
     p[0+high] = V[0] * (resolution?50.:100.) ;

@@ -24,7 +24,7 @@ static int FS_read_fake_array(char *buf, const size_t size, const off_t offset ,
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
-#define Random (((FLOAT)rand())/RAND_MAX)
+#define Random (((_FLOAT)rand())/RAND_MAX)
 #define Random_y (rand()&0x01)
 #define Random_t (Random*100)
 #define Random_d (time(NULL)*(1-.1*Random))
@@ -78,25 +78,25 @@ static int FS_read_fake_single( char *buf, const size_t size, const off_t offset
             break ;
             }
         case ft_float: {
-            FLOAT f = Random_f ;
+            _FLOAT f = Random_f ;
             LEVEL_DEBUG("FS_parse_readfake: (float) %G\n", f ) ;
             sz = FS_output_float( f , buf , size , pn ) ;
             break ;
             }
         case ft_temperature: {
-            FLOAT f = Random_t ;
+            _FLOAT f = Random_t ;
             LEVEL_DEBUG("FS_parse_readfake: (temperature) %G\n", f ) ;
             sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
             break ;
             }
         case ft_tempgap: {
-            FLOAT f = Random_t ;
+            _FLOAT f = Random_t ;
             LEVEL_DEBUG("FS_parse_readfake: (tempgap) %G\n", f ) ;
             sz = FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
             break ;
             }
         case ft_date: {
-            DATE d = Random_d ;
+            _DATE d = Random_d ;
             LEVEL_DEBUG("FS_parse_readfake: (date) %lu\n", (unsigned long int) d ) ;
             sz = FS_output_date( d , buf , size , pn ) ;
             break;

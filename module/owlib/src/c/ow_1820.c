@@ -176,24 +176,24 @@ struct die_limits DIE[] = {
 /* ------- Functions ------------ */
 
 /* DS1820&2*/
-static int OW_10temp(FLOAT * temp , const struct parsedname * pn) ;
-static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) ;
+static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) ;
+static int OW_22temp(_FLOAT * temp , const int resolution, const struct parsedname * pn) ;
 static int OW_power(BYTE * data, const struct parsedname * pn) ;
-static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) ;
-static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) ;
+static int OW_r_templimit( _FLOAT * T, const int Tindex, const struct parsedname * pn) ;
+static int OW_w_templimit( const _FLOAT T, const int Tindex, const struct parsedname * pn) ;
 static int OW_r_scratchpad(BYTE * data, const struct parsedname * pn) ;
 static int OW_w_scratchpad(const BYTE * data, const struct parsedname * pn) ;
 static int OW_r_trim(BYTE * trim, const struct parsedname * pn) ;
 static int OW_w_trim(const BYTE * trim, const struct parsedname * pn) ;
 static enum eDie OW_die( const struct parsedname * pn ) ;
 
-static int FS_10temp(FLOAT *T , const struct parsedname * pn) {
+static int FS_10temp(_FLOAT *T , const struct parsedname * pn) {
     if ( OW_10temp( T , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
-static int FS_22temp(FLOAT *T , const struct parsedname * pn) {
+static int FS_22temp(_FLOAT *T , const struct parsedname * pn) {
     switch( pn->ft->data.i ) {
     case 9:
     case 10:
@@ -212,7 +212,7 @@ static int FS_power(int * y , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_templimit(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_templimit(_FLOAT * T , const struct parsedname * pn) {
     if ( OW_r_templimit( T , pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -225,7 +225,7 @@ static int FS_r_ad(UINT * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
+static int FS_w_templimit(const _FLOAT * T, const struct parsedname * pn) {
     if ( OW_w_templimit( T[0] , pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -319,7 +319,7 @@ static int FS_w_blanket(const int * y , const struct parsedname * pn) {
 }
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
-static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
+static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) {
     BYTE data[9] ;
     BYTE convert[] = { 0x44, } ;
     BYTE dummy ;
@@ -360,12 +360,12 @@ static int OW_10temp(FLOAT * temp , const struct parsedname * pn) {
     }
 
     // Correction thanks to Nathan D. Holmes
-    //temp[0] = (FLOAT) ((int16_t)(data[1]<<8|data[0])) * .5 ; // Main conversion
+    //temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])) * .5 ; // Main conversion
     // Further correction, using "truncation" thanks to Wim Heirman
-    temp[0] = (FLOAT) ((int16_t)(data[1]<<8|data[0])>>1); // Main conversion
+    temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])>>1); // Main conversion
     if ( data[7] ) { // only if COUNT_PER_C non-zero (supposed to be!)
-//        temp[0] += (FLOAT)(data[7]-data[6]) / (FLOAT)data[7] - .25 ; // additional precision
-        temp[0] += .75 - (FLOAT)data[6] / (FLOAT)data[7] ; // additional precision
+//        temp[0] += (_FLOAT)(data[7]-data[6]) / (_FLOAT)data[7] - .25 ; // additional precision
+        temp[0] += .75 - (_FLOAT)data[6] / (_FLOAT)data[7] ; // additional precision
     }
     return 0 ;
 }
@@ -391,7 +391,7 @@ static int OW_power( BYTE * data, const struct parsedname * pn) {
     return 0 ;
 }
 
-static int OW_22temp(FLOAT * temp , const int resolution, const struct parsedname * pn) {
+static int OW_22temp(_FLOAT * temp , const int resolution, const struct parsedname * pn) {
     BYTE data[9] ;
     BYTE convert[] = { 0x44, } ;
     BYTE pow ;
@@ -436,12 +436,12 @@ static int OW_22temp(FLOAT * temp , const int resolution, const struct parsednam
 
     //*temp = .0625*(((char)data[1])<<8|data[0]) ;
     // Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
-    temp[0] = (FLOAT) ((int16_t)((data[1]<<8)|(data[0]&mask))) * .0625 ;
+    temp[0] = (_FLOAT) ((int16_t)((data[1]<<8)|(data[0]&mask))) * .0625 ;
     return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
+static int OW_r_templimit( _FLOAT * T, const int Tindex, const struct parsedname * pn) {
     BYTE data[9] ;
     BYTE recall[] = { 0xB4, } ;
     struct transaction_log trecall[] = {
@@ -455,12 +455,12 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
     UT_delay(10) ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
-    T[0] = (FLOAT) ((int8_t)data[2+Tindex]) ;
+    T[0] = (_FLOAT) ((int8_t)data[2+Tindex]) ;
     return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit( const FLOAT T, const int Tindex, const struct parsedname * pn) {
+static int OW_w_templimit( const _FLOAT T, const int Tindex, const struct parsedname * pn) {
     BYTE data[9] ;
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;

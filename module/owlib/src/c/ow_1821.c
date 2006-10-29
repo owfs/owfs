@@ -66,17 +66,17 @@ DeviceEntry( thermostat, DS1821 ) ;
 /* ------- Functions ------------ */
 
 /* DS1821*/
-static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) ;
-static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn ) ;
+static int OW_temperature( _FLOAT * temp , const struct parsedname * pn ) ;
+static int OW_current_temperature( _FLOAT * temp , const struct parsedname * pn ) ;
 static int OW_r_status( BYTE * data, const struct parsedname * pn) ;
 static int OW_w_status( BYTE * data, const struct parsedname * pn) ;
-static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) ;
-static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) ;
+static int OW_r_templimit( _FLOAT * T, const int Tindex, const struct parsedname * pn) ;
+static int OW_w_templimit( const _FLOAT * T, const int Tindex, const struct parsedname * pn) ;
 
 /* Internal properties */
 static struct internal_prop ip_continuous = {"CON",fc_stable} ;
 
-static int FS_temperature(FLOAT *T , const struct parsedname * pn) {
+static int FS_temperature(_FLOAT *T , const struct parsedname * pn) {
     if ( OW_temperature( T , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -99,12 +99,12 @@ static int FS_w_polarity( const int * y , const struct parsedname * pn) {
 }
 
 
-static int FS_r_templimit(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_templimit(_FLOAT * T , const struct parsedname * pn) {
     if ( OW_r_templimit( T , pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_w_templimit(const FLOAT * T, const struct parsedname * pn) {
+static int FS_w_templimit(const _FLOAT * T, const struct parsedname * pn) {
     if ( OW_w_templimit( T , pn->ft->data.i, pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -132,7 +132,7 @@ static int OW_w_status( BYTE * data, const struct parsedname * pn) {
     return BUS_transaction(t,pn) ;
 }
 
-static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) {
+static int OW_temperature( _FLOAT * temp , const struct parsedname * pn ) {
     BYTE c[] = { 0xEE, } ;
     BYTE status ;
     int continuous ;
@@ -165,7 +165,7 @@ static int OW_temperature( FLOAT * temp , const struct parsedname * pn ) {
     return OW_current_temperature(temp,pn) ;
 }
 
-static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn ) {
+static int OW_current_temperature( _FLOAT * temp , const struct parsedname * pn ) {
     BYTE rt[] = { 0xAA, } ;
     BYTE rc[] = { 0xA0, } ;
     BYTE lc[] = { 0x41, } ;
@@ -189,15 +189,15 @@ static int OW_current_temperature( FLOAT * temp , const struct parsedname * pn )
 
     if ( BUS_transaction(t,pn) ) return 1 ;
     if ( count_per_c ) {
-        temp[0] = (FLOAT) ((int8_t)temp_read) + .5 - ((FLOAT)count_remain)/((FLOAT)count_per_c) ;
+        temp[0] = (_FLOAT) ((int8_t)temp_read) + .5 - ((_FLOAT)count_remain)/((_FLOAT)count_per_c) ;
     } else { /* Bad count_per_c -- use lower resolution */
-        temp[0] = (FLOAT) ((int8_t)temp_read) ;
+        temp[0] = (_FLOAT) ((int8_t)temp_read) ;
     }
     return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname * pn) {
+static int OW_r_templimit( _FLOAT * T, const int Tindex, const struct parsedname * pn) {
     BYTE p[] = { 0xA1, 0xA2, } ;
     BYTE data ;
     struct transaction_log t[] = {
@@ -208,12 +208,12 @@ static int OW_r_templimit( FLOAT * T, const int Tindex, const struct parsedname 
     } ;
     
     if ( BUS_transaction(t,pn) ) return 1 ;
-    T[0] = (FLOAT) ((int8_t)data) ;
+    T[0] = (_FLOAT) ((int8_t)data) ;
     return 0 ;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit( const FLOAT * T, const int Tindex, const struct parsedname * pn) {
+static int OW_w_templimit( const _FLOAT * T, const int Tindex, const struct parsedname * pn) {
     BYTE p[] = { 0x01, 0x02, } ;
     BYTE data = ((int) (T[0]+.49))&0xFF ; // round off
     struct transaction_log t[] = {

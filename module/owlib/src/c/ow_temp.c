@@ -27,7 +27,7 @@ const char *TemperatureScaleName(enum temp_type t) {
 /* Temperture Conversion routines  */
 
 /* convert internal (Centigrade) to external format */
-FLOAT Temperature( FLOAT C, const struct parsedname * pn) {
+_FLOAT Temperature( _FLOAT C, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
         return 1.8*C+32. ;
@@ -41,7 +41,7 @@ FLOAT Temperature( FLOAT C, const struct parsedname * pn) {
 }
 
 /* convert internal (Centigrade) to external format */
-FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) {
+_FLOAT TemperatureGap( _FLOAT C, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
     case temp_rankine:
@@ -52,7 +52,7 @@ FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) {
 }
 
 /* convert to internal (Centigrade) from external format */
-FLOAT fromTemperature( FLOAT T, const struct parsedname * pn) {
+_FLOAT fromTemperature( _FLOAT T, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
         return (T-32.)/1.8 ;
@@ -65,7 +65,7 @@ FLOAT fromTemperature( FLOAT T, const struct parsedname * pn) {
     }
 }
 /* convert to internal (Centigrade) from external format */
-FLOAT fromTempGap( FLOAT T, const struct parsedname * pn) {
+_FLOAT fromTempGap( _FLOAT T, const struct parsedname * pn) {
     switch( TemperatureScale(pn) ) {
     case temp_fahrenheit:
     case temp_rankine:

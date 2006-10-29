@@ -90,12 +90,12 @@ yWRITE_FUNCTION( FS_refresh ) ;
  /* ------- Structures ----------- */
 
 struct thermocouple {
-    FLOAT v1, v2 ;
-    FLOAT rangeLow, rangeHigh ;
-    FLOAT low[11] ;
-    FLOAT mid[11] ;
-    FLOAT high[11];
-    FLOAT mV[11] ;
+    _FLOAT v1, v2 ;
+    _FLOAT rangeLow, rangeHigh ;
+    _FLOAT low[11] ;
+    _FLOAT mid[11] ;
+    _FLOAT high[11];
+    _FLOAT mV[11] ;
 } ;
 
 struct thermocouple type_b =
@@ -521,9 +521,9 @@ static int FS_w_mem(const BYTE *buf, const size_t size, const off_t offset , con
     return 0 ;
 }
 
-static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
+static int FS_r_vis(_FLOAT *V , const struct parsedname * pn) {
     int I ;
-    FLOAT f = 0. ;
+    _FLOAT f = 0. ;
     if ( OW_r_int(&I,0x0E,pn) ) return -EINVAL ;
     switch ( pn->sn[0] ) {
         case 0x36: //DS2740
@@ -548,7 +548,7 @@ static int FS_r_vis(FLOAT *V , const struct parsedname * pn) {
 }
 
 // Volt-hours
-static int FS_r_vis_avg(FLOAT *V , const struct parsedname * pn) {
+static int FS_r_vis_avg(_FLOAT *V , const struct parsedname * pn) {
     int I ;
     int ret = 1 ;
     switch (pn->sn[0]) {
@@ -566,7 +566,7 @@ static int FS_r_vis_avg(FLOAT *V , const struct parsedname * pn) {
 }
 
 // Volt-hours
-static int FS_r_vh(FLOAT *V , const struct parsedname * pn) {
+static int FS_r_vh(_FLOAT *V , const struct parsedname * pn) {
     int I ;
     if ( OW_r_int(&I,0x10,pn) ) return -EINVAL ;
     V[0] = .00000625 * I ;
@@ -574,13 +574,13 @@ static int FS_r_vh(FLOAT *V , const struct parsedname * pn) {
 }
 
 // Volt-hours
-static int FS_w_vh(const FLOAT *V , const struct parsedname * pn) {
+static int FS_w_vh(const _FLOAT *V , const struct parsedname * pn) {
     int I = V[0] / .00000625 ;
     return OW_w_int(&I,0x10,pn)?-EINVAL:0 ;
 }
 
 // Volt-limits
-static int FS_r_voltlim(FLOAT *V , const struct parsedname * pn) {
+static int FS_r_voltlim(_FLOAT *V , const struct parsedname * pn) {
     int I ;
     if ( OW_r_int(&I,pn->ft->data.u,pn) ) return -EINVAL ;
     V[0] = .00000625 * I ;
@@ -588,13 +588,13 @@ static int FS_r_voltlim(FLOAT *V , const struct parsedname * pn) {
 }
 
 // Volt-limits
-static int FS_w_voltlim(const FLOAT *V , const struct parsedname * pn) {
+static int FS_w_voltlim(const _FLOAT *V , const struct parsedname * pn) {
     int I = V[0] / .00000625 ;
     return OW_w_int(&I,pn->ft->data.u,pn)?-EINVAL:0 ;
 }
 
 // Volt-limits
-static int FS_r_templim(FLOAT *T , const struct parsedname * pn) {
+static int FS_r_templim(_FLOAT *T , const struct parsedname * pn) {
     int I ;
     if (OW_r_int8( &I , pn->ft->data.u, pn )) return -EINVAL ;
     T[0] = I ;
@@ -602,7 +602,7 @@ static int FS_r_templim(FLOAT *T , const struct parsedname * pn) {
 }
             
 // Volt-limits
-static int FS_w_templim(const FLOAT *T , const struct parsedname * pn) {
+static int FS_w_templim(const _FLOAT *T , const struct parsedname * pn) {
     int I = T[0] ;
     if ( I < -128 ) return -ERANGE ;
     if ( I > 127 ) return -ERANGE ;
@@ -610,7 +610,7 @@ static int FS_w_templim(const FLOAT *T , const struct parsedname * pn) {
 }
 
 // timer
-static int FS_r_timer(FLOAT *F , const struct parsedname * pn) {
+static int FS_r_timer(_FLOAT *F , const struct parsedname * pn) {
     int I ;
     if ( OW_r_int(&I,0x02,pn) ) return -EINVAL ;
     F[0] = .015625 * I ;
@@ -618,27 +618,27 @@ static int FS_r_timer(FLOAT *F , const struct parsedname * pn) {
 }
 
 // timer
-static int FS_w_timer(const FLOAT *F , const struct parsedname * pn) {
+static int FS_w_timer(const _FLOAT *F , const struct parsedname * pn) {
     int I = F[0] / .015625 ;
     return OW_w_int(&I,0x02,pn)?-EINVAL:0 ;
 }
 
 // Amp-hours -- using 25mOhm internal resistor
-static int FS_r_ah(FLOAT *A , const struct parsedname * pn) {
-    FLOAT V ;
+static int FS_r_ah(_FLOAT *A , const struct parsedname * pn) {
+    _FLOAT V ;
     if ( FS_r_vh(&V, pn ) ) return -EINVAL ;
     A[0] = V / .025 ;
     return 0 ;
 }
 
 // Amp-hours -- using 25mOhm internal resistor
-static int FS_w_ah(const FLOAT *A , const struct parsedname * pn) {
-    FLOAT V = A[0] * .025 ;
+static int FS_w_ah(const _FLOAT *A , const struct parsedname * pn) {
+    _FLOAT V = A[0] * .025 ;
     return FS_w_vh(&V,pn) ;
 }
 
 // current offset
-static int FS_r_vis_off(FLOAT *V , const struct parsedname * pn) {
+static int FS_r_vis_off(_FLOAT *V , const struct parsedname * pn) {
     int I ;
     if ( OW_r_int8(&I, 0x7B, pn ) ) return -EINVAL ;
     V[0] = 1.56E-6 * I ;
@@ -646,7 +646,7 @@ static int FS_r_vis_off(FLOAT *V , const struct parsedname * pn) {
 }
 
 // current offset
-static int FS_w_vis_off(const FLOAT *V , const struct parsedname * pn) {
+static int FS_w_vis_off(const _FLOAT *V , const struct parsedname * pn) {
     int I = V[0] / 1.56E-6 ;
     if ( I < -128 ) return -ERANGE ;
     if ( I >  127 ) return -ERANGE ;
@@ -654,28 +654,28 @@ static int FS_w_vis_off(const FLOAT *V , const struct parsedname * pn) {
 }
 
 // Current bias -- using 25mOhm internal resistor
-static int FS_r_abias(FLOAT *A , const struct parsedname * pn) {
-    FLOAT V ;
+static int FS_r_abias(_FLOAT *A , const struct parsedname * pn) {
+    _FLOAT V ;
     int ret = FS_r_vbias(&V, pn ) ;
     A[0] = V / .025 ;
     return ret?-EINVAL:0 ;
 }
 
 // Current bias -- using 25mOhm internal resistor
-static int FS_w_abias(const FLOAT *A , const struct parsedname * pn) {
-    FLOAT V = A[0] * .025 ;
+static int FS_w_abias(const _FLOAT *A , const struct parsedname * pn) {
+    _FLOAT V = A[0] * .025 ;
     return FS_w_vbias(&V,pn) ;
 }
 
 // Read current using internal 25mOhm resistor and Vis
-static int FS_r_current(FLOAT * A , const struct parsedname * pn) {
-    FLOAT V ;
+static int FS_r_current(_FLOAT * A , const struct parsedname * pn) {
+    _FLOAT V ;
     int ret = FS_r_vis(&V,pn) ;
     A[0] = V / .025 ;
     return ret ;
 }
 
-static int FS_r_vbias(FLOAT * V , const struct parsedname * pn) {
+static int FS_r_vbias(_FLOAT * V , const struct parsedname * pn) {
     int I ;
     switch ( pn->sn[0] ) {
         case 0x51: //DS2751
@@ -701,7 +701,7 @@ static int FS_r_vbias(FLOAT * V , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_w_vbias(const FLOAT * V , const struct parsedname * pn) {
+static int FS_w_vbias(const _FLOAT * V , const struct parsedname * pn) {
     int I ;
     int ret = 0 ; // assign unnecessarily to avoid compiler warning
     switch ( pn->sn[0] ) {
@@ -735,7 +735,7 @@ static int FS_w_vbias(const FLOAT * V , const struct parsedname * pn) {
     return ret ? -EINVAL : 0 ;
 }
 
-static int FS_r_volt(FLOAT * V , const struct parsedname * pn) {
+static int FS_r_volt(_FLOAT * V , const struct parsedname * pn) {
     int I ;
     if (OW_r_int( &I , 0x0C, pn )) return -EINVAL ;
     switch (pn->sn[0]) {
@@ -749,7 +749,7 @@ static int FS_r_volt(FLOAT * V , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_temp(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_temp(_FLOAT * T , const struct parsedname * pn) {
     int I ;
     size_t off ;
     switch ( pn->sn[0] ) {
@@ -923,20 +923,20 @@ static int OW_lock( const struct parsedname * pn ) {
 }
 
 #if OW_THERMOCOUPLE
-static FLOAT polycomp( FLOAT x , FLOAT * coef ) ;
+static _FLOAT polycomp( _FLOAT x , _FLOAT * coef ) ;
 
-static int FS_rangelow(FLOAT *F , const struct parsedname * pn) {
+static int FS_rangelow(_FLOAT *F , const struct parsedname * pn) {
     F[0] = ((struct thermocouple *) pn->ft->data.v)->rangeLow ;
     return 0 ;
 }
 
-static int FS_rangehigh(FLOAT *F , const struct parsedname * pn) {
+static int FS_rangehigh(_FLOAT *F , const struct parsedname * pn) {
     F[0] = ((struct thermocouple *) pn->ft->data.v)->rangeHigh ;
     return 0 ;
 }
 
-static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
-    FLOAT T, V;
+static int FS_thermocouple(_FLOAT *F , const struct parsedname * pn) {
+    _FLOAT T, V;
     int ret ;
     struct thermocouple * thermo = (struct thermocouple *) pn->ft->data.v ;
 
@@ -963,8 +963,8 @@ static int FS_thermocouple(FLOAT *F , const struct parsedname * pn) {
 }
 
 /* Compute a 10th order polynomial with cooef being a10, a9, ... a0 */
-static FLOAT polycomp( FLOAT x , FLOAT * coef ) {
-    FLOAT r = coef[0] ;
+static _FLOAT polycomp( _FLOAT x , _FLOAT * coef ) {
+    _FLOAT r = coef[0] ;
     int i ;
     for ( i=1; i<=10; ++i ) r = x*r + coef[i] ;
     return r ;

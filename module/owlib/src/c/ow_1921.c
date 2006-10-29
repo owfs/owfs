@@ -107,7 +107,7 @@ static struct BitRead BitReads[] =
 } ;
 
 struct Mission {
-    DATE start ;
+    _DATE start ;
     int rollover ;
     int interval ;
     int samples ;
@@ -196,7 +196,7 @@ struct filetype DS1921[] = {
 DeviceEntryExtended( 21, DS1921, DEV_alarm | DEV_temp | DEV_ovdr ) ;
 
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
-struct Version { UINT ID ; char * name ; FLOAT histolow ; FLOAT resolution ; FLOAT rangelow ; FLOAT rangehigh ; UINT delay ;} ;
+struct Version { UINT ID ; char * name ; _FLOAT histolow ; _FLOAT resolution ; _FLOAT rangelow ; _FLOAT rangehigh ; UINT delay ;} ;
 static struct Version Versions[] =
     {
         { 0x000, "DS1921G-F5" , -40.0, 0.500, -40., +85.,  90, } ,
@@ -221,9 +221,9 @@ static int OW_w_mem( const BYTE * data , const size_t length , const off_t offse
 static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) ;
 static int OW_temperature( int * T , const UINT delay, const struct parsedname * pn ) ;
 static int OW_clearmemory( const struct parsedname * pn) ;
-static int OW_2date(DATE * d, const BYTE * data) ;
-static int OW_2mdate(DATE * d, const BYTE * data) ;
-static void OW_date(const DATE * d , BYTE * data) ;
+static int OW_2date(_DATE * d, const BYTE * data) ;
+static int OW_2mdate(_DATE * d, const BYTE * data) ;
+static void OW_date(const _DATE * d , BYTE * data) ;
 static int OW_MIP( const struct parsedname * pn ) ;
 static int OW_FillMission( struct Mission * m , const struct parsedname * pn ) ;
 static int OW_alarmlog( int * t, int * c, const off_t offset, const struct parsedname * pn ) ;
@@ -279,7 +279,7 @@ static int FS_r_histogram(UINT * h , const struct parsedname * pn) {
     return 0 ;
 }
     
-static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
+static int FS_r_histotemp(_FLOAT * h , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( pn->extension < 0 ) { /* ALL */
@@ -291,7 +291,7 @@ static int FS_r_histotemp(FLOAT * h , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_r_histogap(FLOAT * g , const struct parsedname * pn) {
+static int FS_r_histogap(_FLOAT * g , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     *g = v->resolution*4 ;
@@ -309,21 +309,21 @@ static int FS_r_version(char *buf, const size_t size, const off_t offset , const
     return v?FS_output_ascii( buf, size, offset, v->name, strlen(v->name) ):-ENOENT ;
 }
 
-static int FS_r_resolution(FLOAT * r , const struct parsedname * pn) {
+static int FS_r_resolution(_FLOAT * r , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     r[0] = v->resolution ;
     return 0 ;
 }
 
-static int FS_r_rangelow(FLOAT * rl , const struct parsedname * pn) {
+static int FS_r_rangelow(_FLOAT * rl , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     rl[0] = v->rangelow ;
     return 0 ;
 }
 
-static int FS_r_rangehigh(FLOAT * rh , const struct parsedname * pn) {
+static int FS_r_rangehigh(_FLOAT * rh , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     rh[0] = v->rangehigh ;
@@ -331,13 +331,13 @@ static int FS_r_rangehigh(FLOAT * rh , const struct parsedname * pn) {
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_temperature(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_temperature(_FLOAT * T , const struct parsedname * pn) {
     int temp ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_MIP(pn) ) return -EBUSY ; /* Mission in progress */
     if ( OW_temperature( &temp , v->delay, pn ) ) return -EINVAL ;
-    T[0] = (FLOAT)temp * v->resolution + v->histolow ;
+    T[0] = (_FLOAT)temp * v->resolution + v->histolow ;
     return 0 ;
 }
 
@@ -352,7 +352,7 @@ static int FS_r_3byte(UINT * u , const struct parsedname * pn) {
 }
 
 /* mission start date */
-static int FS_mdate(DATE * d , const struct parsedname * pn) {
+static int FS_mdate(_DATE * d , const struct parsedname * pn) {
     struct Mission mission ;
 
     if ( OW_FillMission( &mission, pn ) ) return -EINVAL ;
@@ -385,17 +385,17 @@ static int FS_alarmelems(UINT * u , const struct parsedname * pn) {
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_alarmtemp(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_alarmtemp(_FLOAT * T , const struct parsedname * pn) {
     BYTE data[1] ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
     if ( OW_r_mem_crc16(data,1,pn->ft->data.s,pn,32) ) return -EINVAL ;
-    T[0] = (FLOAT)data[0] * v->resolution + v->histolow ;
+    T[0] = (_FLOAT)data[0] * v->resolution + v->histolow ;
     return 0 ;
 }
 
 /* Temperature -- force if not in progress */
-static int FS_w_alarmtemp(const FLOAT * T , const struct parsedname * pn) {
+static int FS_w_alarmtemp(const _FLOAT * T , const struct parsedname * pn) {
     BYTE data[1] ;
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
     if ( v==NULL ) return -EINVAL ;
@@ -416,7 +416,7 @@ static int FS_alarmudate(UINT * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_alarmstart(DATE * d , const struct parsedname * pn) {
+static int FS_alarmstart(_DATE * d , const struct parsedname * pn) {
     struct Mission mission ;
     int t[12] ;
     int c[12] ;
@@ -428,7 +428,7 @@ static int FS_alarmstart(DATE * d , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_alarmend(DATE * d , const struct parsedname * pn) {
+static int FS_alarmend(_DATE * d , const struct parsedname * pn) {
     struct Mission mission ;
     int t[12] ;
     int c[12] ;
@@ -451,7 +451,7 @@ static int FS_alarmcnt(UINT * u , const struct parsedname * pn) {
 }
 
 /* read clock */
-static int FS_r_date(DATE * d , const struct parsedname * pn) {
+static int FS_r_date(_DATE * d , const struct parsedname * pn) {
     BYTE data[7] ;
 
     /* Get date from chip */
@@ -462,7 +462,7 @@ static int FS_r_date(DATE * d , const struct parsedname * pn) {
 /* read clock */
 static int FS_r_counter(UINT * u , const struct parsedname * pn) {
     BYTE data[7] ;
-    DATE d ;
+    _DATE d ;
     int ret ;
 
     /* Get date from chip */
@@ -473,7 +473,7 @@ static int FS_r_counter(UINT * u , const struct parsedname * pn) {
 }
 
 /* set clock */
-static int FS_w_date(const DATE * d , const struct parsedname * pn) {
+static int FS_w_date(const _DATE * d , const struct parsedname * pn) {
     BYTE data[7] ;
     int y = 1 ;
 
@@ -487,7 +487,7 @@ static int FS_w_date(const DATE * d , const struct parsedname * pn) {
 
 static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
     BYTE data[7] ;
-    DATE d = (DATE) u[0] ;
+    _DATE d = (_DATE) u[0] ;
 
     /* Busy if in mission */
     if ( OW_MIP(pn) ) return -EBUSY ;
@@ -631,7 +631,7 @@ static int FS_logelements( UINT * u , const struct parsedname * pn) {
 }
 
 /* temperature log */
-static int FS_r_logdate( DATE * d , const struct parsedname * pn) {
+static int FS_r_logdate( _DATE * d , const struct parsedname * pn) {
     struct Mission mission ;
     int pass=0 ;
 
@@ -697,7 +697,7 @@ static int FS_r_logudate( UINT * u , const struct parsedname * pn) {
 }
 
 /* temperature log */
-static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
+static int FS_r_logtemp(_FLOAT * T , const struct parsedname * pn) {
     struct Mission mission ;
     int pass=0 ;
     int off=0 ;
@@ -718,15 +718,15 @@ static int FS_r_logtemp(FLOAT * T , const struct parsedname * pn) {
         } else {
             if ( OW_r_mem_crc16( data , 1,(size_t) (0x1000+pn->extension), pn,32 ) ) return -EINVAL ;
         }
-        T[0] = (FLOAT)data[0] * v->resolution + v->histolow ;
+        T[0] = (_FLOAT)data[0] * v->resolution + v->histolow ;
     } else {
         int i ;
         BYTE data[1] ;
         if ( OW_read_paged( data, 2048, 0x1000, pn, 32 , OW_r_mem ) ) return -EINVAL ;
         if ( pass ) {
-            for (i=0;i<2048;++i) T[i] = (FLOAT)data[(i+off)&0x07FF] * v->resolution + v->histolow ;
+            for (i=0;i<2048;++i) T[i] = (_FLOAT)data[(i+off)&0x07FF] * v->resolution + v->histolow ;
         } else {
-            for (i=0;i<2048;++i) T[i] = (FLOAT)data[i] * v->resolution + v->histolow ;
+            for (i=0;i<2048;++i) T[i] = (_FLOAT)data[i] * v->resolution + v->histolow ;
         }
     }
     return 0 ;
@@ -823,7 +823,7 @@ static int OW_clearmemory( const struct parsedname * pn) {
 }
 
 /* translate 7 byte field to a Unix-style date (number) */
-static int OW_2date(DATE * d, const BYTE * data) {
+static int OW_2date(_DATE * d, const BYTE * data) {
     struct tm t ;
 
     /* Prefill entries */
@@ -837,8 +837,8 @@ static int OW_2date(DATE * d, const BYTE * data) {
     t.tm_mday = (data[4]&0x0F) + 10*(data[4]>>4) ; /* BCD->dec */
     t.tm_mon  = (data[5]&0x0F) + 10*((data[5]&0x10)>>4) ; /* BCD->dec */
     t.tm_year = (data[6]&0x0F) + 10*(data[6]>>4) + 100*(2-(data[5]>>7)); /* BCD->dec */
-//printf("DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
-//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
+//printf("_DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
+//printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 
     /* Pass through time_t again to validate */
     if ( (d[0]=mktime(&t)) == (time_t)-1 ) return -EINVAL ;
@@ -846,15 +846,15 @@ static int OW_2date(DATE * d, const BYTE * data) {
 }
 
 /* translate m byte field to a Unix-style date (number) */
-static int OW_2mdate(DATE * d, const BYTE * data) {
+static int OW_2mdate(_DATE * d, const BYTE * data) {
     struct tm t ;
     int year ;
-//printf("MDATE data=%.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4]);
+//printf("M_DATE data=%.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4]);
     /* Prefill entries */
     d[0] = time(NULL) ;
     if ( gmtime_r(d,&t)==NULL ) return -EINVAL ;
     year = t.tm_year ;
-//printf("MDATE year=%d\n",year);
+//printf("M_DATE year=%d\n",year);
 
     /* Get date from chip */
     t.tm_sec  = 0 ; /* BCD->dec */
@@ -863,10 +863,10 @@ static int OW_2mdate(DATE * d, const BYTE * data) {
     t.tm_mday = (data[2]&0x0F) +  10*(data[2]>>4) ; /* BCD->dec */
     t.tm_mon  = (data[3]&0x0F) + 10*((data[3]&0x10)>>4) ; /* BCD->dec */
     t.tm_year = (data[4]&0x0F) +  10*(data[4]>>4) ; /* BCD->dec */
-//printf("MDATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
+//printf("M_DATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
     /* Adjust the century -- should be within 50 years of current */
     while ( t.tm_year+50 < year ) t.tm_year += 100 ;
-//printf("MDATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
+//printf("M_DATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
     
     /* Pass through time_t again to validate */
     if ( (d[0]=mktime(&t)) == (time_t)-1 ) return -EINVAL ;
@@ -874,7 +874,7 @@ static int OW_2mdate(DATE * d, const BYTE * data) {
 }
 
 /* set clock */
-static void OW_date(const DATE * d , BYTE * data) {
+static void OW_date(const _DATE * d , BYTE * data) {
     struct tm tm ;
     int year ;
 
@@ -890,8 +890,8 @@ static void OW_date(const DATE * d , BYTE * data) {
     year = tm.tm_year % 100 ;
     data[6] = year + 6*(year/10) ; /* dec->bcd */
     if ( tm.tm_year>99 && tm.tm_year<200 ) data[5] |= 0x80 ;
-//printf("DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
-//printf("DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
+//printf("_DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
+//printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
 
 /* many things are disallowed if mission in progress */
@@ -947,7 +947,7 @@ static int OW_startmission( UINT freq, const struct parsedname * pn ) {
 
     if ( OW_r_mem_crc16( &data, 1, 0x020E, pn,32 ) ) return -EINVAL ;
     if ( (data&0x80) ) { /* clock stopped */
-        DATE d = time(NULL) ;
+        _DATE d = time(NULL) ;
         /* start clock */
         if ( FS_w_date(&d,pn ) ) return -EINVAL ; /* set the clock to current time */
         UT_delay(1000) ; /* wait for the clock to count a second */

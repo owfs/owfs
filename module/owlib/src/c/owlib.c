@@ -20,6 +20,9 @@ void SigHandler( int signo, siginfo_t * info, void * context ) ;
 
 /* All ow library setup */
 void LibSetup( enum opt_program opt ) {
+#if OW_CYGWIN && OW_ZERO
+    OW_Load_dnssd_library();
+#endif
     // global structure of configuration parameters
     memset( &Global, 0, sizeof(struct global) ) ;
     Global.opt = opt ;
@@ -388,6 +391,9 @@ void LibClose( void ) {
     }
 #if OW_ZERO
     if ( Global.browse ) DNSServiceRefDeallocate( Global.browse ) ;
+#if OW_CYGWIN
+    OW_Free_dnssd_library();
+#endif
 #endif /* OW_ZERO */
     LEVEL_CALL("Finished Library cleanup\n");
 }

@@ -68,5 +68,6 @@ $Id$
 #define OW_HA7          @OW_HA7@
 #define OW_I2C          @OW_I2C@
 #define OW_THERMOCOUPLE @OW_THERMOCOUPLE@
+#define OW_CYGWIN       @OW_CYGWIN@
 
 #endif /* OWFS_CONFIG_H */

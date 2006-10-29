@@ -116,9 +116,9 @@ DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_volt ) ;
 /* DS2438 */
 static int OW_r_page( BYTE * p , const int page , const struct parsedname * pn) ;
 static int OW_w_page( const BYTE * p , const int page , const struct parsedname * pn ) ;
-static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
-static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) ;
-static int OW_current( FLOAT * I , const struct parsedname * pn ) ;
+static int OW_temp( _FLOAT * T , const struct parsedname * pn ) ;
+static int OW_volts( _FLOAT * V , const int src, const struct parsedname * pn ) ;
+static int OW_current( _FLOAT * I , const struct parsedname * pn ) ;
 static int OW_r_Ienable( unsigned * u , const struct parsedname * pn ) ;
 static int OW_w_Ienable( const unsigned u , const struct parsedname * pn ) ;
 static int OW_r_int( int * I , const UINT address, const struct parsedname * pn ) ;
@@ -145,19 +145,19 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
     return 0 ;
 }
 
-static int FS_temp(FLOAT * T , const struct parsedname * pn) {
+static int FS_temp(_FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_volts(FLOAT * V , const struct parsedname * pn) {
+static int FS_volts(_FLOAT * V , const struct parsedname * pn) {
     /* data=1 VDD data=0 VAD */
     if ( OW_volts( V , pn->ft->data.i , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_Humid(FLOAT * H , const struct parsedname * pn) {
-    FLOAT T,VAD,VDD ;
+static int FS_Humid(_FLOAT * H , const struct parsedname * pn) {
+    _FLOAT T,VAD,VDD ;
     if ( OW_volts( &VDD , 1 , pn ) || OW_volts( &VAD , 0 , pn ) || OW_temp( &T , pn ) ) return -EINVAL ;
     //*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
     /*
@@ -192,15 +192,15 @@ static int FS_Humid(FLOAT * H , const struct parsedname * pn) {
  *      (page 2).  VAD is assumed to be volts and *H is relative
  *      humidity in percent.
  */
-static int FS_Humid_1735(FLOAT * H , const struct parsedname * pn) {
-    FLOAT VAD ;
+static int FS_Humid_1735(_FLOAT * H , const struct parsedname * pn) {
+    _FLOAT VAD ;
     if ( OW_volts( &VAD , 0 , pn ) ) return -EINVAL ;
     H[0]  = 38.92 * VAD - 41.98;
 
     return 0 ;
 }
 
-static int FS_Current(FLOAT * I , const struct parsedname * pn) {
+static int FS_Current(_FLOAT * I , const struct parsedname * pn) {
     if ( OW_current( I , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -231,12 +231,12 @@ static int FS_w_Offset(const int * i , const struct parsedname * pn) {
 
 /* set clock */
 static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
-    DATE d = (DATE) u[0] ;
+    _DATE d = (_DATE) u[0] ;
     return FS_w_date(&d,pn) ;
 }
 
 /* set clock */
-static int FS_w_date(const DATE *d , const struct parsedname * pn) {
+static int FS_w_date(const _DATE *d , const struct parsedname * pn) {
     int page   = ((uint32_t)(pn->ft->data.s))>>3   ;
     int offset = ((uint32_t)(pn->ft->data.s))&0x07 ;
     BYTE data[8] ;
@@ -248,14 +248,14 @@ static int FS_w_date(const DATE *d , const struct parsedname * pn) {
 
 /* read clock */
 int FS_r_counter(UINT * u , const struct parsedname * pn) {
-    DATE d ;
+    _DATE d ;
     int ret = FS_r_date( &d, pn ) ;
     u[0] = (UINT) d ;
     return ret ;
 }
 
 /* read clock */
-int FS_r_date( DATE * d , const struct parsedname * pn) {
+int FS_r_date( _DATE * d , const struct parsedname * pn) {
     int page   = ((uint32_t)(pn->ft->data.s))>>3   ;
     int offset = ((uint32_t)(pn->ft->data.s))&0x07 ;
     BYTE data[8] ;
@@ -343,7 +343,7 @@ static int OW_w_page( const BYTE * p , const int page , const struct parsedname 
     return 1 ; // timeout
 }
 
-static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
+static int OW_temp( _FLOAT * T , const struct parsedname * pn ) {
     BYTE data[9] ;
     static BYTE t[] = {0x44, } ;
     struct transaction_log tconvert[] = {
@@ -363,7 +363,7 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
+static int OW_volts( _FLOAT * V , const int src, const struct parsedname * pn ) {
     // src deserves some explanation:
     //   1 -- VDD (battery) measured
     //   0 -- VAD (other) measured
@@ -393,13 +393,13 @@ static int OW_volts( FLOAT * V , const int src, const struct parsedname * pn ) {
 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
-    V[0] = .01 * (FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
+    V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
     return 0 ;
 }
 
 // Read current register
 // turn on (temporary) A/D in scratchpad
-static int OW_current( FLOAT * I , const struct parsedname * pn ) {
+static int OW_current( _FLOAT * I , const struct parsedname * pn ) {
     BYTE data[8] ;
     BYTE r[] = { 0xBE, 0x00, } ;
     BYTE w[] = { 0x4E, 0x00, } ;
@@ -427,7 +427,7 @@ static int OW_current( FLOAT * I , const struct parsedname * pn ) {
         UT_delay(38) ; // enough time for one conversion (38msec)
         if ( OW_r_page( data , 0 , pn ) ) return 1 ; // reread
     }
-    I[0] = .0002441 * (FLOAT)( ( ((int)data[6]) <<8 )|data[5] ) ;
+    I[0] = .0002441 * (_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ) ;
     if ( !enabled ) { // need to restore no current measurements
         if ( BUS_transaction( twrite, pn ) ) return 1 ;
     }

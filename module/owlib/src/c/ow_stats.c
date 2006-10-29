@@ -387,8 +387,8 @@ static int FS_stat_p(UINT * u , const struct parsedname * pn) {
     return 0 ;
 }
 
-static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
-    FLOAT f;
+static int FS_time_p(_FLOAT *u , const struct parsedname * pn) {
+    _FLOAT f;
     int dindex = pn->extension ;
     struct timeval * tv;
     struct connection_in *c;
@@ -406,15 +406,15 @@ static int FS_time_p(FLOAT *u , const struct parsedname * pn) {
     }
     /* to prevent simultaneous changes to bus timing variables */
     STATLOCK;
-        f = (FLOAT)tv->tv_sec + ((FLOAT)(tv->tv_usec/1000))/1000.0;
+        f = (_FLOAT)tv->tv_sec + ((_FLOAT)(tv->tv_usec/1000))/1000.0;
     STATUNLOCK;
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;
     return 0 ;
 }
 
-static int FS_time(FLOAT *u , const struct parsedname * pn) {
-    FLOAT f;
+static int FS_time(_FLOAT *u , const struct parsedname * pn) {
+    _FLOAT f;
     int dindex = pn->extension ;
     struct timeval * tv;
     if (dindex<0) dindex = 0 ;
@@ -424,7 +424,7 @@ static int FS_time(FLOAT *u , const struct parsedname * pn) {
 
     /* to prevent simultaneous changes to bus timing variables */
     STATLOCK;
-        f = (FLOAT)tv[dindex].tv_sec + ((FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
+        f = (_FLOAT)tv[dindex].tv_sec + ((_FLOAT)(tv[dindex].tv_usec/1000))/1000.0;
     STATUNLOCK;
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
     u[0] = f;

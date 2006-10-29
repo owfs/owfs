@@ -162,13 +162,13 @@ int BUS_sendback_data( const BYTE * data, BYTE * resp , const size_t len, const 
 /* Returns 0=good
    bad = -EIO
  */
-int BUS_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) {
+int BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parsedname * pn) {
     if (pn->in->iroutines.PowerByte) {
-        return (pn->in->iroutines.PowerByte)(byte,resp,delay,pn) ;
+        return (pn->in->iroutines.PowerByte)(data,resp,delay,pn) ;
     } else {
         int ret ;
         // send the packet
-        if((ret=BUS_sendback_data(&byte,resp,1,pn))) {
+        if((ret=BUS_sendback_data(&data,resp,1,pn))) {
             STAT_ADD1_BUS(BUS_PowerByte_errors,pn->in);
             return ret ;
         }

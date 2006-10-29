@@ -24,6 +24,9 @@ struct global Global ;
 
 /* All ow library setup */
 void Setup( void ) {
+#if OW_CYGWIN && OW_ZERO
+    OW_Load_dnssd_library();
+#endif
     // global structure of configuration parameters
     memset( &Global, 0, sizeof(struct global) ) ;
     Global.timeout_volatile =  15 ;

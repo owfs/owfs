@@ -27,14 +27,14 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
 static int FS_input_yesno( int * result, const char * buf, const size_t size ) ;
 static int FS_input_integer( int * result, const char * buf, const size_t size ) ;
 static int FS_input_unsigned( UINT * result, const char * buf, const size_t size ) ;
-static int FS_input_float( FLOAT * result, const char * buf, const size_t size ) ;
-static int FS_input_date( DATE * result, const char * buf, const size_t size ) ;
+static int FS_input_float( _FLOAT * result, const char * buf, const size_t size ) ;
+static int FS_input_date( _DATE * result, const char * buf, const size_t size ) ;
 
 static int FS_input_yesno_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_input_unsigned_array( UINT * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 static int FS_input_integer_array( int * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_input_float_array( FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
-static int FS_input_date_array( DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_float_array( _FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_input_date_array( _DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -302,7 +302,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            FLOAT F ;
+            _FLOAT F ;
             ret = FS_input_float( &F, buf, size ) ;
             if ( pn->ft->format == ft_temperature ) {
                 F = fromTemperature( F , pn ) ;
@@ -317,7 +317,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            DATE D ;
+            _DATE D ;
             ret = FS_input_date( &D, buf, size ) ;
             if ( cbuf && ret==0 ) FS_output_date(D,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.d)(&D,pn) ;
@@ -435,7 +435,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
     case ft_float:
     case ft_temperature:
         {
-            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements , sizeof(_FLOAT) ) ;
             if ( f==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -456,7 +456,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
         break ;
     case ft_date:
         {
-            DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+            _DATE * d = (_DATE *) calloc( elements , sizeof(_DATE) ) ;
             if ( d==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -681,7 +681,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
             if ( offset ) {
                 ret = -EADDRNOTAVAIL ;
         } else {
-            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements , sizeof(_FLOAT) ) ;
             if ( f==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -695,7 +695,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            FLOAT * f = (FLOAT *) calloc( elements , sizeof(FLOAT) ) ;
+            _FLOAT * f = (_FLOAT *) calloc( elements , sizeof(_FLOAT) ) ;
             if ( f==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -715,7 +715,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
         if ( offset ) {
             ret = -EADDRNOTAVAIL ;
         } else {
-            DATE * d = (DATE *) calloc( elements , sizeof(DATE) ) ;
+            _DATE * d = (_DATE *) calloc( elements , sizeof(_DATE) ) ;
             if ( d==NULL ) {
                 ret = -ENOMEM ;
             } else {
@@ -840,7 +840,7 @@ static int FS_input_unsigned( UINT * result, const char * buf, const size_t size
 }
 
 /* return 0 if ok */
-static int FS_input_float( FLOAT * result, const char * buf, const size_t size ) {
+static int FS_input_float( _FLOAT * result, const char * buf, const size_t size ) {
     char cp[size+1] ;
     char * end ;
 
@@ -852,7 +852,7 @@ static int FS_input_float( FLOAT * result, const char * buf, const size_t size )
 }
 
 /* return 0 if ok */
-static int FS_input_date( DATE * result, const char * buf, const size_t size ) {
+static int FS_input_date( _DATE * result, const char * buf, const size_t size ) {
     struct tm tm ;
     if ( size<2 || buf[0]=='\0' || buf[0]=='\n' ) {
         *result = time(NULL) ;
@@ -930,7 +930,7 @@ static int FS_input_unsigned_array( UINT * results, const char * buf, const size
 }
 
 /* returns 0, or negative for error */
-static int FS_input_float_array( FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_input_float_array( _FLOAT * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;
@@ -950,13 +950,13 @@ static int FS_input_float_array( FLOAT * results, const char * buf, const size_t
 }
 
 /* returns 0, or negative for error */
-static int FS_input_date_array( DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_input_date_array( _DATE * results, const char * buf, const size_t size, const struct parsedname * pn ) {
     int i ;
     int last = pn->ft->ag->elements - 1 ;
     const char * first ;
     const char * end = buf + size - 1 ;
     const char * next = buf ;
-    DATE now = time(NULL) ;
+    _DATE now = time(NULL) ;
     for ( i=0 ; i<=last ; ++i ) {
         if ( next <= end ) {
             first = next ;

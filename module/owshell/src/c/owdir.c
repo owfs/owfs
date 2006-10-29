@@ -44,5 +44,8 @@ int main(int argc, char *argv[]) {
         Server_detect() ;
         ServerDir("/") ;
     }
+#if OW_CYGWIN && OW_ZERO
+    OW_Free_dnssd_library();
+#endif
     exit(0) ;
 }

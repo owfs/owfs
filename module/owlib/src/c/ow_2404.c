@@ -159,16 +159,16 @@ static int FS_w_memory( const BYTE *buf, const size_t size, const off_t offset ,
 }
 
 /* set clock */
-static int FS_w_date(const DATE * d , const struct parsedname * pn) {
+static int FS_w_date(const _DATE * d , const struct parsedname * pn) {
     const UINT D = (UINT) d[0] ;
     return FS_w_counter5( &D, pn ) ;
 }
 
 /* read clock */
-static int FS_r_date( DATE * d , const struct parsedname * pn) {
+static int FS_r_date( _DATE * d , const struct parsedname * pn) {
     UINT D ;
     if ( FS_r_counter5(&D,pn) ) return -EINVAL ;
-    d[0] = (DATE) D ;
+    d[0] = (_DATE) D ;
     return 0 ;
 }
 

@@ -89,19 +89,19 @@ static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, } ;
 /* DS2415/DS1904 Digital clock in a can */
 
 /* DS1904 */
-static int OW_r_clock( DATE * d , const struct parsedname * pn ) ;
+static int OW_r_clock( _DATE * d , const struct parsedname * pn ) ;
 static int OW_r_control( BYTE * cr , const struct parsedname * pn ) ;
-static int OW_w_clock( const DATE d , const struct parsedname * pn ) ;
+static int OW_w_clock( const _DATE d , const struct parsedname * pn ) ;
 static int OW_w_control( const BYTE cr , const struct parsedname * pn ) ;
 
 /* set clock */
 static int FS_w_counter(const UINT * u , const struct parsedname * pn) {
-    if ( OW_w_clock( (DATE) u[0] , pn ) ) return -EINVAL ;
+    if ( OW_w_clock( (_DATE) u[0] , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
 /* set clock */
-static int FS_w_date(const DATE *d , const struct parsedname * pn) {
+static int FS_w_date(const _DATE *d , const struct parsedname * pn) {
     if ( OW_w_clock( d[0], pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -209,11 +209,11 @@ int FS_r_enable(int * y , const struct parsedname * pn) {
 
 /* read clock */
 int FS_r_counter(UINT * u , const struct parsedname * pn) {
-    return OW_r_clock( (DATE *) u, pn) ? -EINVAL : 0 ;
+    return OW_r_clock( (_DATE *) u, pn) ? -EINVAL : 0 ;
 }
 
 /* read clock */
-int FS_r_date( DATE * d , const struct parsedname * pn) {
+int FS_r_date( _DATE * d , const struct parsedname * pn) {
     if ( OW_r_clock(d,pn) ) return -EINVAL ;
     return 0 ;
 }
@@ -234,7 +234,7 @@ static int OW_r_control( BYTE * cr , const struct parsedname * pn ) {
 }
 
 /* 1904 clock-in-a-can */
-static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
+static int OW_r_clock( _DATE * d , const struct parsedname * pn ) {
     BYTE r[] = { 0x66, } ;
     BYTE data[5] ;
     struct transaction_log t[] = {
@@ -251,7 +251,7 @@ static int OW_r_clock( DATE * d , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_w_clock( const DATE d , const struct parsedname * pn ) {
+static int OW_w_clock( const _DATE d , const struct parsedname * pn ) {
     BYTE r[] = { 0x66, } ;
     BYTE w[6] = { 0x99, } ;
     struct transaction_log tread[] = {

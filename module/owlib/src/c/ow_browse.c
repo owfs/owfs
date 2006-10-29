@@ -11,11 +11,18 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_connection.h"
 
 #if OW_ZERO
 
 #if OW_MT
+
+#include "ow.h"
+#include "ow_connection.h"
+#if OW_CYGWIN
+ #include "ow_dnssd.h"
+#else
+ #include <dns_sd.h>
+#endif
 
 struct RefStruct {
     DNSServiceRef sref ;

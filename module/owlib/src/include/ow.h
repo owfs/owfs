@@ -100,6 +100,9 @@ $Id$
 #include <signal.h>
 #ifdef HAVE_STDINT_H
  #include <stdint.h> /* for bit twiddling */
+ #if OW_CYGWIN
+  #define _MSL_STDINT_H
+ #endif
 #endif
 
 #include <unistd.h>
@@ -151,7 +154,11 @@ $Id$
 
 /* Zeroconf / Bonjour */
 #if OW_ZERO
-    #include <dns_sd.h>
+ #if OW_CYGWIN
+  #include "ow_dnssd.h"
+ #else
+  #include <dns_sd.h>
+ #endif
 #endif
 
 /* Include some compatibility functions */
@@ -168,8 +175,9 @@ $Id$
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */
 /* 1-wire really is low precision -- float is more than enough */
-typedef double          FLOAT ;
-typedef time_t          DATE ;
+/* FLOAT and DATE collides with cygwin windows include-files. */
+typedef double          _FLOAT ;
+typedef time_t          _DATE ;
 typedef unsigned char   BYTE ;
 typedef char            ASCII ;
 typedef unsigned int    UINT ;
@@ -359,9 +367,9 @@ struct filetype {
         void * v ;
         int (*i) (int *, const struct parsedname *);
         int (*u) (UINT *, const struct parsedname *);
-        int (*f) (FLOAT *, const struct parsedname *);
+        int (*f) (_FLOAT *, const struct parsedname *);
         int (*y) (int *, const struct parsedname *);
-        int (*d) (DATE *, const struct parsedname *);
+        int (*d) (_DATE *, const struct parsedname *);
         int (*a) (char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (BYTE *, const size_t, const off_t, const struct parsedname *);
     } read ; // read callback function
@@ -369,9 +377,9 @@ struct filetype {
         void * v ;
         int (*i) (const int *, const struct parsedname *);
         int (*u) (const UINT *, const struct parsedname *);
-        int (*f) (const FLOAT *, const struct parsedname *);
+        int (*f) (const _FLOAT *, const struct parsedname *);
         int (*y) (const int *, const struct parsedname *);
-        int (*d) (const DATE *, const struct parsedname *);
+        int (*d) (const _DATE *, const struct parsedname *);
         int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
         int (*b) (const BYTE *, const size_t, const off_t, const struct parsedname *);
     } write ; // write callback function
@@ -379,7 +387,7 @@ struct filetype {
         void * v ;
         int    i ;
         UINT u ;
-        FLOAT  f ;
+        _FLOAT  f ;
         size_t s ;
         BYTE c ;
     } data ; // extra data pointer (used for separating similar but differently name functions)
@@ -588,10 +596,10 @@ enum simul_type { simul_temp, simul_volt, } ;
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic } ;
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine, } ;
-FLOAT Temperature( FLOAT C, const struct parsedname * pn) ;
-FLOAT TemperatureGap( FLOAT C, const struct parsedname * pn) ;
-FLOAT fromTemperature( FLOAT T, const struct parsedname * pn) ;
-FLOAT fromTempGap( FLOAT T, const struct parsedname * pn) ;
+_FLOAT Temperature( _FLOAT C, const struct parsedname * pn) ;
+_FLOAT TemperatureGap( _FLOAT C, const struct parsedname * pn) ;
+_FLOAT fromTemperature( _FLOAT T, const struct parsedname * pn) ;
+_FLOAT fromTempGap( _FLOAT T, const struct parsedname * pn) ;
 const char *TemperatureScaleName(enum temp_type t) ;
 
 extern int cacheavailable ; /* is caching available */
@@ -647,16 +655,16 @@ extern time_t dir_time ; /* time of last directory scan */
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
 #define uREAD_FUNCTION( fname )  static int fname(UINT *, const struct parsedname * pn)
-#define fREAD_FUNCTION( fname )  static int fname(FLOAT *, const struct parsedname * pn)
-#define dREAD_FUNCTION( fname )  static int fname(DATE *, const struct parsedname * pn)
+#define fREAD_FUNCTION( fname )  static int fname(_FLOAT *, const struct parsedname * pn)
+#define dREAD_FUNCTION( fname )  static int fname(_DATE *, const struct parsedname * pn)
 #define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
 #define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bREAD_FUNCTION( fname )  static int fname(BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 #define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define uWRITE_FUNCTION( fname )  static int fname(const UINT *, const struct parsedname * pn)
-#define fWRITE_FUNCTION( fname )  static int fname(const FLOAT *, const struct parsedname * pn)
-#define dWRITE_FUNCTION( fname )  static int fname(const DATE *, const struct parsedname * pn)
+#define fWRITE_FUNCTION( fname )  static int fname(const _FLOAT *, const struct parsedname * pn)
+#define dWRITE_FUNCTION( fname )  static int fname(const _DATE *, const struct parsedname * pn)
 #define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bWRITE_FUNCTION( fname )  static int fname(const BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
@@ -705,8 +713,8 @@ int UT_getbit(const BYTE * buf, const int loc) ;
 int UT_get2bit(const BYTE * buf, const int loc) ;
 void UT_setbit( BYTE * buf, const int loc , const int bit ) ;
 void UT_set2bit( BYTE * buf, const int loc , const int bits ) ;
-void UT_fromDate( const DATE D, BYTE * data) ;
-DATE UT_toDate( const BYTE * date ) ;
+void UT_fromDate( const _DATE D, BYTE * data) ;
+_DATE UT_toDate( const BYTE * date ) ;
 int FS_busless( char * path ) ;
 
 /* Cache  and Storage functions */
@@ -785,13 +793,13 @@ int FS_output_ascii( ASCII * buf, size_t size, off_t offset, ASCII * answer, siz
 
 int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer( int value, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_float( FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_date( DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_float( _FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_date( _DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_float_array( FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_date_array( DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+int FS_output_date_array( _DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname * pn ) ;

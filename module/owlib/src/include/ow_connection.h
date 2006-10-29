@@ -134,7 +134,7 @@ struct interface_routines {
     /* Change speed between overdrive and normal on the 1-wire bus */
     int (* testoverdrive) (const struct parsedname * pn) ;
     /* Send a byte with bus power to follow */
-    int (* PowerByte) (const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
+    int (* PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn) ;
     /* Send a 12V 480msec oulse to program EEPROM */
     int (* ProgramPulse) (const struct parsedname * pn) ;
     /* send and recieve data -- byte at a time */
@@ -457,7 +457,7 @@ int BUS_send_data(const BYTE * data , const size_t len, const struct parsedname 
 int BUS_readin_data(BYTE * data , const size_t len, const struct parsedname * pn ) ;
 int BUS_verify(BYTE search, const struct parsedname * pn) ;
 
-int BUS_PowerByte(const BYTE byte, BYTE * resp, UINT delay, const struct parsedname * pn) ;
+int BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname * pn) ;
 int BUS_next_both(struct device_search * ds, const struct parsedname * pn) ;
 int BUS_sendback_data( const BYTE * data, BYTE * resp , const size_t len, const struct parsedname * pn ) ;
 

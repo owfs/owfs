@@ -1011,7 +1011,8 @@ fi
 if test "${ENABLE_ZERO}" != "false" ; then
 
 if test "${HAVE_CYGWIN}" = "true"; then
-    LD_EXTRALIBS+=" -L${OWFSROOT}/src/scripts/windows -ldnssd "
+    CFLAGS="$CFLAGS -mwin32 -g"
+#    LD_EXTRALIBS+=" -L${OWFSROOT}/src/scripts/windows -ldnssd "
     AC_MSG_WARN([libdnssd.dll.a is used for bonjour])
 else
     AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
@@ -1135,6 +1136,13 @@ AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
 AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
+
+if test "${HAVE_CYGWIN}" = "true" ; then
+   OW_CYGWIN=1
+else
+   OW_CYGWIN=0
+fi
+AC_SUBST(OW_CYGWIN)
 
 if test "${ENABLE_MT}" = "true" ; then
    OW_MT=1

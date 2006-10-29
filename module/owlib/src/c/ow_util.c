@@ -89,14 +89,14 @@ void UT_set2bit( BYTE * buf, const int loc , const int bits ) {
     }
 }
 
-void UT_fromDate( const DATE d, BYTE * data) {
+void UT_fromDate( const _DATE d, BYTE * data) {
     data[0] = d & 0xFF ;
     data[1] = (d>>8) & 0xFF ;
     data[2] = (d>>16) & 0xFF ;
     data[3] = (d>>24) & 0xFF ;
 }
 
-DATE UT_toDate( const BYTE * data ) {
+_DATE UT_toDate( const BYTE * data ) {
     return (((((((UINT) data[3])<<8)|data[2])<<8)|data[1])<<8)|data[0] ;
 }
 

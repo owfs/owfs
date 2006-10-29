@@ -391,7 +391,7 @@ int FS_sibling(char *buf, size_t size, off_t offset , const struct parsedname * 
     return FS_output_ascii( buf, size, offset, sib, 16 ) ;
 }
 
-int FS_temp( FLOAT * T, const struct parsedname * pn ) {
+int FS_temp( _FLOAT * T, const struct parsedname * pn ) {
     UINT D2 ;
     struct s_TAI8570 tai ;
     
@@ -401,9 +401,9 @@ int FS_temp( FLOAT * T, const struct parsedname * pn ) {
     return 0 ;
 }
 
-int FS_pressure( FLOAT * P, const struct parsedname * pn ) {
+int FS_pressure( _FLOAT * P, const struct parsedname * pn ) {
     UINT D1, D2 ;
-    FLOAT dT, OFF, SENS, X ;
+    _FLOAT dT, OFF, SENS, X ;
     struct s_TAI8570 tai ;
     if ( testTAI8570( &tai, pn ) ) return -ENOENT ;
     if ( TAI8570_SenseValue( &D1, SEC_READD1, &tai, pn ) ) return -EINVAL ;

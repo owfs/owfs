@@ -54,6 +54,7 @@ $Id$
 #ifndef OWSHELL_H  /* tedious wrapper */
 #define OWSHELL_H
 
+#include "config.h"
 #include "owfs_config.h"
 
 // Define this to avoid some VALGRIND warnings... (just for testing)
@@ -84,6 +85,9 @@ $Id$
 #include <signal.h>
 #ifdef HAVE_STDINT_H
  #include <stdint.h> /* for bit twiddling */
+ #if OW_CYGWIN
+  #define _MSL_STDINT_H
+ #endif
 #endif
 
 #include <unistd.h>
@@ -131,7 +135,11 @@ $Id$
 
 /* Zeroconf / Bonjour */
 #if OW_ZERO
-    #include <dns_sd.h>
+ #if OW_CYGWIN
+  #include "ow_dnssd.h"
+ #else
+  #include <dns_sd.h>
+ #endif
 #endif /* OW_ZERO */
 
 /* Include some compatibility functions */
@@ -145,8 +153,8 @@ $Id$
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */
 /* 1-wire really is low precision -- float is more than enough */
-typedef double          FLOAT ;
-typedef time_t          DATE ;
+typedef double          _FLOAT ;
+typedef time_t          _DATE ;
 typedef unsigned char   BYTE ;
 typedef char            ASCII ;
 typedef unsigned int    UINT ;

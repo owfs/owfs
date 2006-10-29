@@ -68,8 +68,8 @@ DeviceEntry( 1B, DS2436 ) ;
 /* DS2436 */
 static int OW_r_page( BYTE * p , const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int OW_w_page( const BYTE * p , const size_t size , const off_t offset , const struct parsedname * pn ) ;
-static int OW_temp( FLOAT * T , const struct parsedname * pn ) ;
-static int OW_volts( FLOAT * V , const struct parsedname * pn ) ;
+static int OW_temp( _FLOAT * T , const struct parsedname * pn ) ;
+static int OW_volts( _FLOAT * V , const struct parsedname * pn ) ;
 
 static size_t Asize[] = { 24, 8, 8, } ;
 
@@ -86,12 +86,12 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
     return 0 ;
 }
 
-static int FS_temp(FLOAT * T , const struct parsedname * pn) {
+static int FS_temp(_FLOAT * T , const struct parsedname * pn) {
     if ( OW_temp( T , pn ) ) return -EINVAL ;
     return 0 ;
 }
 
-static int FS_volts(FLOAT * V , const struct parsedname * pn) {
+static int FS_volts(_FLOAT * V , const struct parsedname * pn) {
     if ( OW_volts( V , pn ) ) return -EINVAL ;
     return 0 ;
 }
@@ -171,7 +171,7 @@ static int OW_w_page( const BYTE * p , const size_t size , const off_t offset , 
     return 0 ;
 }
 
-static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
+static int OW_temp( _FLOAT * T , const struct parsedname * pn ) {
     BYTE d2[] = { 0xD2, } ;
     BYTE b2[] = { 0xB2 , 0x60, } ;
     BYTE t[2] ;
@@ -203,7 +203,7 @@ static int OW_temp( FLOAT * T , const struct parsedname * pn ) {
     return 0 ;
 }
 
-static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
+static int OW_volts( _FLOAT * V , const struct parsedname * pn ) {
     BYTE b4[] = { 0xB4, } ;
     BYTE b2[] = { 0xB2 , 0x77, } ;
     BYTE v[2] ;
@@ -227,6 +227,6 @@ static int OW_volts( FLOAT * V , const struct parsedname * pn ) {
     if ( BUS_transaction( tdata, pn ) ) return 1 ;
 
     // success
-    V[0] = .01 * (FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
+    V[0] = .01 * (_FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
     return 0 ;
 }

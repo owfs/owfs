@@ -1,6 +1,8 @@
 # $Id$
 
-OWLIB_SOURCE = compat.c          \
+OWLIB_SOURCE = ow_dnssd.c        \
+               ow_browse.c       \
+               compat.c          \
                getaddrinfo.c     \
                getopt.c          \
                ow_xxxx.c         \
@@ -34,7 +36,6 @@ OWLIB_SOURCE = compat.c          \
                ow_2890.c         \
                ow_api.c          \
                ow_badadapter.c   \
-               ow_browse.c       \
                ow_bus.c          \
                ow_cache.c        \
                ow_com.c          \
