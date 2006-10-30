@@ -27,6 +27,8 @@ Temperature Voltages (Humidity) and Memory.
 |
 .B endcharge/udate
 |
+.B HIH4000/humidity
+|
 .B HTM1735/humidity
 |
 .B humidity
@@ -105,6 +107,12 @@ Representation of
 as a number. See
 .I udate
 for details.
+.SS HIH4000/humidity
+.I read-only, floating point
+.br
+Relative humidity, as percent (1-100 scale).
+.br
+This value is for a design based on Huoneywell's HIH-4000 humidity sensor.
 .SS HTM1735/humidity
 .I read-only, floating point
 .br
@@ -118,7 +126,9 @@ Relative humidity, as percent (1-100 scale).
 .br
 The
 .B DS2438
-actually does not read humidity, but a widely available and publicised circuit based on the chip, does. This design is for the common Honeywell HIH-3610 humidity chip. See the datasheets for details.
+actually does not read humidity, but a widely available and publicised circuit based on the chip, does. This design is for the common Honeywell HIH-3610 humidity chip. The mostly compatible HIH-4000 chip uses different temperature compensation, so is better read from the 
+.I HIH4000/humidity
+value. See the datasheets for details.
 .SS Ienable
 .I read-write, unsigned integer
 .br
@@ -216,6 +226,10 @@ family of chips.
 http://pdfserv.maxim-ic.com/en/ds/DS2438.pdf
 .br
 http://pdfserv.maxim-ic.com/en/an/humsensor.pdf
+.br
+http://content.honeywell.com/sensing/prodinfo/humiditymoisture/009012_2.pdf
+.br
+http://www.phanderson.com/hih-4000.pdf
 .br
 http://www.humirel.com/product/fichier/HTM1735%20RevG%20.pdf
 .SH SEE ALSO

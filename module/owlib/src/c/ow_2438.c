@@ -52,6 +52,7 @@ bWRITE_FUNCTION( FS_w_page ) ;
  fREAD_FUNCTION( FS_volts ) ;
  fREAD_FUNCTION( FS_Humid ) ;
  fREAD_FUNCTION( FS_Humid_1735 ) ;
+ fREAD_FUNCTION( FS_Humid_4000 ) ;
  fREAD_FUNCTION( FS_Current ) ;
  uREAD_FUNCTION( FS_r_Ienable ) ;
 uWRITE_FUNCTION( FS_w_Ienable ) ;
@@ -108,6 +109,8 @@ struct filetype DS2438[] = {
     {"endcharge/date"   ,  24, NULL , ft_date      , fc_volatile, {d:FS_r_date}   , {d:FS_w_date}   , {s: 0x14} , } ,
     {"HTM1735"          ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
     {"HTM1735/humidity" ,  12, NULL , ft_float     , fc_volatile, {f:FS_Humid_1735}, {v:NULL}        ,{v:NULL}, } ,
+    {"HIH4000"          ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
+    {"HIH4000/humidity" ,  12, NULL , ft_float     , fc_volatile, {f:FS_Humid_4000}, {v:NULL}        ,{v:NULL}, } ,
 } ;
 DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_volt ) ;
 
@@ -179,6 +182,14 @@ static int FS_Humid(_FLOAT * H , const struct parsedname * pn) {
     The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
     */
     H[0] = (VAD/VDD-(0.8/VDD))/(.0062*(1.0546-.00216*T)) ;
+
+    return 0 ;
+}
+
+static int FS_Humid_4000(_FLOAT * H , const struct parsedname * pn) {
+    _FLOAT T,VAD,VDD ;
+    if ( OW_volts( &VDD , 1 , pn ) || OW_volts( &VAD , 0 , pn ) || OW_temp( &T , pn ) ) return -EINVAL ;
+    H[0] = (VAD/VDD-(0.8/VDD))/(.0062*(1.0305+.000044*T+.0000011*T*T)) ;
 
     return 0 ;
 }
