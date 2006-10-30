@@ -1,0 +1,1684 @@
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/Clients/Makefile /home/Mag/mDNSResponder-107.6/Clients/Makefile
+--- /home/Mag/mDNSResponder-107.6.org/Clients/Makefile	2006-08-15 01:23:55.000000000 +0200
++++ /home/Mag/mDNSResponder-107.6/Clients/Makefile	2006-10-27 23:27:55.698125000 +0200
+@@ -65,5 +65,5 @@
+ build:
+ 	mkdir build
+ 
+-build/dns-sd: build dns-sd.c
+-	cc $(filter %.c %.o, $+) $(LIBS) -I../mDNSShared -o $@
++build/dns-sd: build dns-sd.c getaddrinfo.c
++	gcc $(filter %.c %.o, $+) $(LIBS) -I../mDNSShared -o $@ -DNOT_HAVE_GETADDRINFO
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/Clients/compat_netdb.h /home/Mag/mDNSResponder-107.6/Clients/compat_netdb.h
+--- /home/Mag/mDNSResponder-107.6.org/Clients/compat_netdb.h	1970-01-01 01:00:00.000000000 +0100
++++ /home/Mag/mDNSResponder-107.6/Clients/compat_netdb.h	2006-10-27 23:18:25.073125000 +0200
+@@ -0,0 +1,198 @@
++/* Copyright (C) 1996,1997,1998,1999,2000,2001 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++/* All data returned by the network data base library are supplied in
++   host order and returned in network order (suitable for use in
++   system calls).  */
++
++#ifndef	_COMPAT_NETDB_H
++#define	_COMPAT_NETDB_H	1
++
++//#include <config.h>
++//#include "owfs_config.h"
++
++#ifdef HAVE_FEATURES_H
++#include <features.h>
++#endif
++
++#ifndef __USE_GNU
++#define __USE_GNU
++#endif
++
++/* Doesn't exist for Solaris, make a test for it later */
++/* #undef HAVE_SA_LEN */
++
++#ifndef __HAS_IPV6__
++#define __HAS_IPV6__ 0
++#endif
++#ifndef __USE_POSIX
++#define __USE_POSIX
++#endif
++#ifndef __THROW
++#define __THROW
++#endif
++
++#ifdef HAVE_SYS_TYPES_H
++#include <sys/types.h>
++#endif
++
++#ifdef HAVE_SYS_SOCKET_H
++#include <sys/socket.h>
++#endif
++
++#ifdef HAVE_NETINET_IN_H
++#include <netinet/in.h>
++#endif
++
++#ifdef HAVE_STDINT_H
++#include <stdint.h>
++#endif
++
++#ifdef __USE_MISC
++/* This is necessary to make this include file properly replace the
++   Sun version.  */
++# include <rpc/netdb.h>
++#endif
++
++#ifdef HAVE_BITS_NETDB_H
++#include <bits/netdb.h>
++#endif
++
++/* Absolute file name for network data base files.  */
++#define	_PATH_HEQUIV		"/etc/hosts.equiv"
++#define	_PATH_HOSTS		"/etc/hosts"
++#define	_PATH_NETWORKS		"/etc/networks"
++#define	_PATH_NSSWITCH_CONF	"/etc/nsswitch.conf"
++#define	_PATH_PROTOCOLS		"/etc/protocols"
++#define	_PATH_SERVICES		"/etc/services"
++
++#ifndef __set_errno
++#define __set_errno(x) (errno = (x))
++#endif
++
++#ifndef __set_h_errno
++#define __set_h_errno(x) (h_errno = (x))
++#endif
++
++
++#ifndef HAVE_INET_NTOP
++const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
++#endif
++
++#ifndef HAVE_INET_PTON
++int inet_pton(int af, const char *src, void *dst);
++#endif
++
++#ifndef HAVE_GETADDRINFO
++
++/* Possible values left in `h_errno'.  */
++#define	NETDB_INTERNAL	-1	/* See errno.  */
++#define	NETDB_SUCCESS	0	/* No problem.  */
++#define	HOST_NOT_FOUND	1	/* Authoritative Answer Host not found.  */
++#define	TRY_AGAIN	2	/* Non-Authoritative Host not found,
++				   or SERVERFAIL.  */
++#define	NO_RECOVERY	3	/* Non recoverable errors, FORMERR, REFUSED,
++				   NOTIMP.  */
++#define	NO_DATA		4	/* Valid name, no data record of requested
++				   type.  */
++#define	NO_ADDRESS	NO_DATA	/* No address, look for MX record.  */
++
++#ifdef __USE_XOPEN2K
++/* Highest reserved Internet port number.  */
++# define IPPORT_RESERVED	1024
++#endif
++
++
++#ifdef __USE_GNU
++/* Scope delimiter for getaddrinfo(), getnameinfo().  */
++# define SCOPE_DELIMITER	'%'
++#endif
++
++/* Extension from POSIX.1g.  */
++#ifdef	__USE_POSIX
++/* Structure to contain information about address of a service provider.  */
++struct addrinfo
++{
++  int ai_flags;			/* Input flags.  */
++  int ai_family;		/* Protocol family for socket.  */
++  int ai_socktype;		/* Socket type.  */
++  int ai_protocol;		/* Protocol for socket.  */
++  socklen_t ai_addrlen;		/* Length of socket address.  */
++  struct sockaddr *ai_addr;	/* Socket address for socket.  */
++  char *ai_canonname;		/* Canonical name for service location.  */
++  struct addrinfo *ai_next;	/* Pointer to next in list.  */
++};
++
++# ifdef __USE_GNU
++/* Lookup mode.  */
++#  define GAI_WAIT	0
++#  define GAI_NOWAIT	1
++# endif
++
++/* Possible values for `ai_flags' field in `addrinfo' structure.  */
++# define AI_PASSIVE	0x0001	/* Socket address is intended for `bind'.  */
++# define AI_CANONNAME	0x0002	/* Request for canonical name.  */
++# define AI_NUMERICHOST	0x0004	/* Don't use name resolution.  */
++
++/* Error values for `getaddrinfo' function.  */
++# define EAI_BADFLAGS	  -1	/* Invalid value for `ai_flags' field.  */
++# define EAI_NONAME	  -2	/* NAME or SERVICE is unknown.  */
++# define EAI_AGAIN	  -3	/* Temporary failure in name resolution.  */
++# define EAI_FAIL	  -4	/* Non-recoverable failure in name res.  */
++# define EAI_NODATA	  -5	/* No address associated with NAME.  */
++# define EAI_FAMILY	  -6	/* `ai_family' not supported.  */
++# define EAI_SOCKTYPE	  -7	/* `ai_socktype' not supported.  */
++# define EAI_SERVICE	  -8	/* SERVICE not supported for `ai_socktype'.  */
++# define EAI_ADDRFAMILY	  -9	/* Address family for NAME not supported.  */
++# define EAI_MEMORY	  -10	/* Memory allocation failure.  */
++# define EAI_SYSTEM	  -11	/* System error returned in `errno'.  */
++# ifdef __USE_GNU
++#  define EAI_INPROGRESS  -100	/* Processing request in progress.  */
++#  define EAI_CANCELED	  -101	/* Request canceled.  */
++#  define EAI_NOTCANCELED -102	/* Request not canceled.  */
++#  define EAI_ALLDONE	  -103	/* All requests done.  */
++#  define EAI_INTR	  -104	/* Interrupted by a signal.  */
++# endif
++
++# define NI_MAXHOST      1025
++# define NI_MAXSERV      32
++
++# define NI_NUMERICHOST	1	/* Don't try to look up hostname.  */
++# define NI_NUMERICSERV 2	/* Don't convert port number to name.  */
++# define NI_NAMEREQD	8	/* Don't return numeric addresses.  */
++# define NI_DGRAM	16	/* Look up UDP service rather than TCP.  */
++
++/* Translate name of a service location and/or a service name to set of
++   socket addresses.  */
++extern int getaddrinfo (__const char *__restrict __name,
++			__const char *__restrict __service,
++			__const struct addrinfo *__restrict __req,
++			struct addrinfo **__restrict __pai) __THROW;
++
++/* Free `addrinfo' structure AI including associated storage.  */
++extern void freeaddrinfo (struct addrinfo *__ai) __THROW;
++
++/* Convert error return from getaddrinfo() to a string.  */
++extern const char *gai_strerror (int __ecode) __THROW;
++
++#endif /* HAVE_GETADDRINFO */
++
++#endif	/* POSIX */
++
++#endif	/* COMPAT_NETDB_H */
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/Clients/dns-sd.c /home/Mag/mDNSResponder-107.6/Clients/dns-sd.c
+--- /home/Mag/mDNSResponder-107.6.org/Clients/dns-sd.c	2006-07-18 20:33:41.000000000 +0200
++++ /home/Mag/mDNSResponder-107.6/Clients/dns-sd.c	2006-10-27 23:18:00.135625000 +0200
+@@ -96,6 +96,11 @@
+ 
+ //#include "../mDNSShared/dnssd_clientstub.c"
+ 
++#ifdef NOT_HAVE_GETADDRINFO
++#include "compat_netdb.h"
++#endif
++
++
+ //*************************************************************************************************************
+ // Globals
+ 
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/Clients/getaddrinfo.c /home/Mag/mDNSResponder-107.6/Clients/getaddrinfo.c
+--- /home/Mag/mDNSResponder-107.6.org/Clients/getaddrinfo.c	1970-01-01 01:00:00.000000000 +0100
++++ /home/Mag/mDNSResponder-107.6/Clients/getaddrinfo.c	2006-10-27 23:32:57.385625000 +0200
+@@ -0,0 +1,1262 @@
++/* $USAGI: getaddrinfo.c,v 1.16 2001/10/04 09:52:03 sekiya Exp $ */
++
++/* The Inner Net License, Version 2.00
++
++  The author(s) grant permission for redistribution and use in source and
++binary forms, with or without modification, of the software and documentation
++provided that the following conditions are met:
++
++0. If you receive a version of the software that is specifically labelled
++   as not being for redistribution (check the version message and/or README),
++   you are not permitted to redistribute that version of the software in any
++   way or form.
++1. All terms of the all other applicable copyrights and licenses must be
++   followed.
++2. Redistributions of source code must retain the authors' copyright
++   notice(s), this list of conditions, and the following disclaimer.
++3. Redistributions in binary form must reproduce the authors' copyright
++   notice(s), this list of conditions, and the following disclaimer in the
++   documentation and/or other materials provided with the distribution.
++4. All advertising materials mentioning features or use of this software
++   must display the following acknowledgement with the name(s) of the
++   authors as specified in the copyright notice(s) substituted where
++   indicated:
++
++	This product includes software developed by <name(s)>, The Inner
++	Net, and other contributors.
++
++5. Neither the name(s) of the author(s) nor the names of its contributors
++   may be used to endorse or promote products derived from this software
++   without specific prior written permission.
++
++THIS SOFTWARE IS PROVIDED BY ITS AUTHORS AND CONTRIBUTORS ``AS IS'' AND ANY
++EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY
++DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
++(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
++ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++  If these license terms cause you a real problem, contact the author.  */
++
++/* This software is Copyright 1996 by Craig Metz, All Rights Reserved.  */
++
++//#include <config.h>
++//#include "owfs_config.h"
++
++#ifdef HAVE_PTHREAD
++#include <pthread.h>
++#endif
++
++#ifndef HAVE_GETADDRINFO
++
++#define _GNU_SOURCE
++#define __FORCE_GLIBC
++#ifdef HAVE_FEATURES_H
++#include <features.h>
++#endif
++#include <assert.h>
++#include <errno.h>
++#include <netdb.h>
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <arpa/inet.h>
++#include <sys/socket.h>
++
++#include "compat_netdb.h"
++#ifdef HAVE_RESOLV_H
++#include <resolv.h>
++#endif
++#include <netinet/in.h>
++#include <sys/types.h>
++#include <sys/un.h>
++#include <sys/utsname.h>
++#include <net/if.h>
++
++/* The following declarations and definitions have been removed from
++ *    the public header since we don't want people to use them.  */
++#define AI_V4MAPPED     0x0008  /* IPv4-mapped addresses are acceptable.  */
++#define AI_ALL          0x0010  /* Return both IPv4 and IPv6 addresses.  */
++#define AI_ADDRCONFIG   0x0020  /* Use configuration of this host to choose 
++				    returned address type.  */
++#define AI_DEFAULT    (AI_V4MAPPED | AI_ADDRCONFIG)
++
++
++#define GAIH_OKIFUNSPEC 0x0100
++#define GAIH_EAI        ~(GAIH_OKIFUNSPEC)
++
++struct gaih_service
++{
++    const char *name;
++    int num;
++};
++
++struct gaih_servtuple
++{
++    struct gaih_servtuple *next;
++    int socktype;
++    int protocol;
++    int port;
++};
++
++static const struct gaih_servtuple nullserv;
++
++struct gaih_addrtuple
++{
++    struct gaih_addrtuple *next;
++    int family;
++    char addr[16];
++    uint32_t scopeid;
++};
++
++struct gaih_typeproto
++{
++    int socktype;
++    int protocol;
++    char name[4];
++    int protoflag;
++};
++
++/* Values for `protoflag'.  */
++#define GAI_PROTO_NOSERVICE	1
++#define GAI_PROTO_PROTOANY	2
++
++static const struct gaih_typeproto gaih_inet_typeproto[] =
++{
++    { 0, 0, "", 0 },
++    { SOCK_STREAM, IPPROTO_TCP, "tcp", 0 },
++    { SOCK_DGRAM, IPPROTO_UDP, "udp", 0 },
++    { SOCK_RAW, 0, "raw", GAI_PROTO_PROTOANY|GAI_PROTO_NOSERVICE },
++    { 0, 0, "", 0 }
++};
++
++struct gaih
++{
++    int family;
++    int (*gaih)(const char *name, const struct gaih_service *service,
++		const struct addrinfo *req, struct addrinfo **pai);
++};
++
++#if PF_UNSPEC == 0
++static const struct addrinfo default_hints;
++#else
++static const struct addrinfo default_hints =
++{ 0, PF_UNSPEC, 0, 0, 0, NULL, NULL, NULL };
++#endif
++
++
++static int addrconfig (sa_family_t af)
++{
++    int s;
++    int ret;
++    int saved_errno = errno;
++    s = socket(af, SOCK_DGRAM, 0);
++    if (s < 0)
++	ret = (errno == EMFILE) ? 1 : 0;
++    else
++    {
++	close(s);
++	ret = 1;
++    }
++    __set_errno (saved_errno);
++    return ret;
++}
++
++#if 0
++#ifndef UNIX_PATH_MAX
++#define UNIX_PATH_MAX  108
++#endif
++
++/* Using Unix sockets this way is a security risk.  */
++static int
++gaih_local (const char *name, const struct gaih_service *service,
++	    const struct addrinfo *req, struct addrinfo **pai)
++{
++    struct utsname utsname;
++
++    if ((name != NULL) && (req->ai_flags & AI_NUMERICHOST))
++	return GAIH_OKIFUNSPEC | -EAI_NONAME;
++
++    if ((name != NULL) || (req->ai_flags & AI_CANONNAME))
++	if (uname (&utsname) < 0)
++	    return -EAI_SYSTEM;
++
++    if (name != NULL)
++    {
++	if (strcmp(name, "localhost") &&
++	    strcmp(name, "local") &&
++	    strcmp(name, "unix") &&
++	    strcmp(name, utsname.nodename))
++	    return GAIH_OKIFUNSPEC | -EAI_NONAME;
++    }
++
++    if (req->ai_protocol || req->ai_socktype)
++    {
++	const struct gaih_typeproto *tp = gaih_inet_typeproto + 1;
++
++	while (tp->name[0]
++	       && ((tp->protoflag & GAI_PROTO_NOSERVICE) != 0
++		   || (req->ai_socktype != 0 && req->ai_socktype != tp->socktype)
++		   || (req->ai_protocol != 0
++		       && !(tp->protoflag & GAI_PROTO_PROTOANY)
++		       && req->ai_protocol != tp->protocol)))
++	    ++tp;
++
++	if (! tp->name[0])
++	{
++	    if (req->ai_socktype)
++		return (GAIH_OKIFUNSPEC | -EAI_SOCKTYPE);
++	    else
++		return (GAIH_OKIFUNSPEC | -EAI_SERVICE);
++	}
++    }
++
++    *pai = malloc (sizeof (struct addrinfo) + sizeof (struct sockaddr_un)
++		   + ((req->ai_flags & AI_CANONNAME)
++		      ? (strlen(utsname.nodename) + 1): 0));
++    if (*pai == NULL)
++	return -EAI_MEMORY;
++
++    (*pai)->ai_next = NULL;
++    (*pai)->ai_flags = req->ai_flags;
++    (*pai)->ai_family = AF_LOCAL;
++    (*pai)->ai_socktype = req->ai_socktype ? req->ai_socktype : SOCK_STREAM;
++    (*pai)->ai_protocol = req->ai_protocol;
++    (*pai)->ai_addrlen = sizeof (struct sockaddr_un);
++    (*pai)->ai_addr = (void *) (*pai) + sizeof (struct addrinfo);
++
++#ifdef HAVE_SA_LEN
++    ((struct sockaddr_un *) (*pai)->ai_addr)->sun_len =
++	sizeof (struct sockaddr_un);
++#endif /* HAVE_SA_LEN */
++
++    ((struct sockaddr_un *)(*pai)->ai_addr)->sun_family = AF_LOCAL;
++    memset(((struct sockaddr_un *)(*pai)->ai_addr)->sun_path, 0, UNIX_PATH_MAX);
++
++    if (service)
++    {
++	struct sockaddr_un *sunp = (struct sockaddr_un *) (*pai)->ai_addr;
++
++	if (strchr (service->name, '/') != NULL)
++	{
++	    if (strlen (service->name) >= sizeof (sunp->sun_path))
++		return GAIH_OKIFUNSPEC | -EAI_SERVICE;
++
++	    strcpy (sunp->sun_path, service->name);
++	}
++	else
++	{
++	    if (strlen (P_tmpdir "/") + 1 + strlen (service->name) >=
++		sizeof (sunp->sun_path))
++		return GAIH_OKIFUNSPEC | -EAI_SERVICE;
++
++	    __stpcpy (__stpcpy (sunp->sun_path, P_tmpdir "/"), service->name);
++	}
++    }
++    else
++    {
++	/* This is a dangerous use of the interface since there is a time
++	   window between the test for the file and the actual creation
++	   (done by the caller) in which a file with the same name could
++	   be created.  */
++	char *buf = ((struct sockaddr_un *) (*pai)->ai_addr)->sun_path;
++
++	if (__builtin_expect (__path_search (buf, L_tmpnam, NULL, NULL, 0),
++			      0) != 0
++	    || __builtin_expect (__gen_tempname (buf, __GT_NOCREATE), 0) != 0)
++	    return -EAI_SYSTEM;
++    }
++
++    if (req->ai_flags & AI_CANONNAME)
++	(*pai)->ai_canonname = strcpy ((char *) *pai + sizeof (struct addrinfo)
++				       + sizeof (struct sockaddr_un),
++				       utsname.nodename);
++    else
++	(*pai)->ai_canonname = NULL;
++    return 0;
++}
++#endif	/* 0 */
++
++#ifndef HAVE_GETHOSTBYNAME_R
++struct hostent *gethostbyname_r(const char *name, struct hostent *result,
++				char *buf, size_t buflen, int *h_errnop)
++{
++#ifdef HAVE_PTHREAD
++  static pthread_mutex_t gethostbyname_lock = PTHREAD_MUTEX_INITIALIZER;
++#endif
++  struct hostent *res;
++  (void) buf;     // not used
++  (void) buflen;  // not used
++  
++#ifdef HAVE_PTHREAD
++  pthread_mutex_lock(&gethostbyname_lock);
++#endif
++  res = gethostbyname(name);
++  if(res) {
++    memcpy(result, res, sizeof(struct hostent));
++  } else {
++    *h_errnop = errno;
++  }
++#ifdef HAVE_PTHREAD
++  pthread_mutex_unlock(&gethostbyname_lock);
++#endif
++  return res;
++}
++#endif
++
++#ifndef HAVE_GETSERVBYNAME_R
++struct servent *getservbyname_r(const char *name, const char *proto,
++				struct servent *result,
++				char *buf, size_t buflen) {
++#ifdef HAVE_PTHREAD
++  static pthread_mutex_t getservbyname_lock = PTHREAD_MUTEX_INITIALIZER;
++#endif
++  struct servent *res;
++  (void) buf;     // not used
++  (void) buflen;  // not used
++  
++#ifdef HAVE_PTHREAD
++  pthread_mutex_lock(&getservbyname_lock);
++#endif
++  res = getservbyname(name, proto);
++  if(res) memcpy(result, res, sizeof(struct servent));
++#ifdef HAVE_PTHREAD
++  pthread_mutex_unlock(&getservbyname_lock);
++#endif
++  return res;
++}
++#endif
++ 
++
++
++
++
++static int
++gaih_inet_serv (const char *servicename, const struct gaih_typeproto *tp,
++		const struct addrinfo *req, struct gaih_servtuple *st)
++{
++    struct servent *s;
++    size_t tmpbuflen = 1024;
++    struct servent ts;
++    char *tmpbuf;
++    int r;
++
++    do
++    {
++	tmpbuf = alloca (tmpbuflen);
++#if 0
++	r = getservbyname_r (servicename, tp->name, &ts, tmpbuf, tmpbuflen,
++			     &s);
++	if(!s) r = errno;
++	if (r != 0 || s == NULL)
++	{
++	    if (r == ERANGE)
++		tmpbuflen *= 2;
++	    else
++		return GAIH_OKIFUNSPEC | -EAI_SERVICE;
++	}
++#else
++	s = getservbyname_r(servicename, tp->name, &ts,  tmpbuf, tmpbuflen);
++	if (s == NULL)
++	{
++	    r = errno;
++	    if (r == ERANGE)
++		tmpbuflen *= 2;
++	    else
++		return GAIH_OKIFUNSPEC | -EAI_SERVICE;
++	} else {
++	    r = 0;
++	}
++#endif
++    }
++    while (r);
++
++    st->next = NULL;
++    st->socktype = tp->socktype;
++    st->protocol = ((tp->protoflag & GAI_PROTO_PROTOANY)
++		    ? req->ai_protocol : tp->protocol);
++    st->port = s->s_port;
++
++    return 0;
++}
++
++#define gethosts(_family, _type)					\
++{									\
++    int i, herrno;							\
++    size_t tmpbuflen;							\
++    struct hostent th;							\
++    char *tmpbuf;							\
++    tmpbuflen = 512;							\
++    no_data = 0;							\
++    do {								\
++	tmpbuflen *= 2;							\
++	tmpbuf = alloca (tmpbuflen);					\
++        rc = 0;								\
++	h = gethostbyname_r (name, &th, tmpbuf,				\
++			       tmpbuflen, &herrno);			\
++        if(!h) rc = errno;						\
++    } while (rc == ERANGE && herrno == NETDB_INTERNAL);			\
++    if (rc != 0)							\
++    {									\
++	if (herrno == NETDB_INTERNAL)					\
++	{								\
++	    __set_h_errno (herrno);					\
++		return -EAI_SYSTEM;					\
++	}								\
++	if (herrno == TRY_AGAIN)					\
++	    no_data = EAI_AGAIN;					\
++	else								\
++	    no_data = herrno == NO_DATA;				\
++    }									\
++    else if (h != NULL)							\
++    {									\
++	for (i = 0; h->h_addr_list[i]; i++)				\
++	{								\
++	    if (*pat == NULL) {						\
++		*pat = alloca (sizeof(struct gaih_addrtuple));		\
++		    (*pat)->scopeid = 0;				\
++	    }								\
++	    (*pat)->next = NULL;					\
++		(*pat)->family = _family;				\
++		memcpy ((*pat)->addr, h->h_addr_list[i],		\
++			sizeof(_type));					\
++		pat = &((*pat)->next);					\
++	}								\
++    }									\
++}
++
++#ifndef HAVE_GETHOSTBYNAME2_R
++struct hostenv *gethostbyname2_r(const char *name, int af,
++				 struct hostent *ret, char *buf, size_t buflen,
++				 struct hostent **result, int *h_errnop)
++{
++  /* Don't support this if it doesn't exists...
++     (eg. IPV6 will fail on cygwin for example) */
++  (void) name;
++  (void) af;
++  (void) ret;
++  (void) buf;
++  (void) buflen;
++  (void) result;
++  (void) h_errnop;
++  return NULL;
++}
++#endif
++
++
++#if __HAS_IPV6__
++#define gethosts2(_family, _type)					\
++{									\
++    int i, herrno;							\
++    size_t tmpbuflen;							\
++    struct hostent th;							\
++    char *tmpbuf;							\
++    tmpbuflen = 512;							\
++    no_data = 0;							\
++    do {								\
++	tmpbuflen *= 2;							\
++	tmpbuf = alloca (tmpbuflen);					\
++	rc = gethostbyname2_r (name, _family, &th, tmpbuf,		\
++			       tmpbuflen, &h, &herrno);			\
++    } while (rc == ERANGE && herrno == NETDB_INTERNAL);			\
++    if (rc != 0)							\
++    {									\
++	if (herrno == NETDB_INTERNAL)					\
++	{								\
++	    __set_h_errno (herrno);					\
++		return -EAI_SYSTEM;					\
++	}								\
++	if (herrno == TRY_AGAIN)					\
++	    no_data = EAI_AGAIN;					\
++	else								\
++	    no_data = herrno == NO_DATA;				\
++    }									\
++    else if (h != NULL)							\
++    {									\
++	for (i = 0; h->h_addr_list[i]; i++)				\
++	{								\
++	    if (*pat == NULL) {						\
++		*pat = alloca (sizeof(struct gaih_addrtuple));		\
++		    (*pat)->scopeid = 0;				\
++	    }								\
++	    (*pat)->next = NULL;					\
++		(*pat)->family = _family;				\
++		memcpy ((*pat)->addr, h->h_addr_list[i],		\
++			sizeof(_type));					\
++		pat = &((*pat)->next);					\
++	}								\
++    }									\
++}
++#endif
++
++#ifndef HAVE_GETHOSTBYADDR_R
++struct hostent *gethostbyaddr_r(const char *name, int len, int type,
++				struct hostent *result,
++				char *buf, size_t buflen, int *h_errnop)
++{
++#ifdef HAVE_PTHREAD
++  static pthread_mutex_t gethostbyaddr_lock = PTHREAD_MUTEX_INITIALIZER;
++#endif
++  struct hostent *res;
++  (void) buf;     // not used
++  (void) buflen;  // not used
++  
++#ifdef HAVE_PTHREAD
++  pthread_mutex_lock(&gethostbyaddr_lock);
++#endif
++  res = gethostbyaddr(name, len, type);
++  if(res) {
++    memcpy(result, res, sizeof(struct hostent));
++  } else {
++    *h_errnop = errno;
++  }
++#ifdef HAVE_PTHREAD
++  pthread_mutex_unlock(&gethostbyaddr_lock);
++#endif
++  return res;
++}
++#endif
++
++static int
++gaih_inet (const char *name, const struct gaih_service *service,
++	   const struct addrinfo *req, struct addrinfo **pai)
++{
++    const struct gaih_typeproto *tp = gaih_inet_typeproto;
++    struct gaih_servtuple *st = (struct gaih_servtuple *) &nullserv;
++    struct gaih_addrtuple *at = NULL;
++    int rc;
++    int v4mapped = (req->ai_family == PF_UNSPEC
++#if __HAS_IPV6__
++		    || req->ai_family == PF_INET6
++#endif
++		    ) &&
++	(req->ai_flags & AI_V4MAPPED);
++
++    if (req->ai_protocol || req->ai_socktype)
++    {
++	++tp;
++
++	while (tp->name[0]
++	       && ((req->ai_socktype != 0 && req->ai_socktype != tp->socktype)
++		   || (req->ai_protocol != 0
++		       && !(tp->protoflag & GAI_PROTO_PROTOANY)
++		       && req->ai_protocol != tp->protocol)))
++	    ++tp;
++
++	if (! tp->name[0])
++	{
++	    if (req->ai_socktype)
++		return (GAIH_OKIFUNSPEC | -EAI_SOCKTYPE);
++	    else
++		return (GAIH_OKIFUNSPEC | -EAI_SERVICE);
++	}
++    }
++
++    if (service != NULL)
++    {
++	if ((tp->protoflag & GAI_PROTO_NOSERVICE) != 0)
++	    return (GAIH_OKIFUNSPEC | -EAI_SERVICE);
++
++	if (service->num < 0)
++	{
++	    if (tp->name[0])
++	    {
++		st = (struct gaih_servtuple *)
++		    alloca (sizeof (struct gaih_servtuple));
++
++		if ((rc = gaih_inet_serv (service->name, tp, req, st)))
++		    return rc;
++	    }
++	    else
++	    {
++		struct gaih_servtuple **pst = &st;
++		for (tp++; tp->name[0]; tp++)
++		{
++		    struct gaih_servtuple *newp;
++
++		    if ((tp->protoflag & GAI_PROTO_NOSERVICE) != 0)
++			continue;
++
++		    if (req->ai_socktype != 0
++			&& req->ai_socktype != tp->socktype)
++			continue;
++		    if (req->ai_protocol != 0
++			&& !(tp->protoflag & GAI_PROTO_PROTOANY)
++			&& req->ai_protocol != tp->protocol)
++			continue;
++
++		    newp = (struct gaih_servtuple *)
++			alloca (sizeof (struct gaih_servtuple));
++
++		    if ((rc = gaih_inet_serv (service->name, tp, req, newp)))
++		    {
++			if (rc & GAIH_OKIFUNSPEC)
++			    continue;
++			return rc;
++		    }
++
++		    *pst = newp;
++		    pst = &(newp->next);
++		}
++		if (st == (struct gaih_servtuple *) &nullserv)
++		    return (GAIH_OKIFUNSPEC | -EAI_SERVICE);
++	    }
++	}
++	else
++	{
++	    st = alloca (sizeof (struct gaih_servtuple));
++	    st->next = NULL;
++	    st->socktype = tp->socktype;
++	    st->protocol = ((tp->protoflag & GAI_PROTO_PROTOANY)
++			    ? req->ai_protocol : tp->protocol);
++	    st->port = htons (service->num);
++	}
++    }
++    else if (req->ai_socktype || req->ai_protocol)
++    {
++	st = alloca (sizeof (struct gaih_servtuple));
++	st->next = NULL;
++	st->socktype = tp->socktype;
++	st->protocol = ((tp->protoflag & GAI_PROTO_PROTOANY)
++			? req->ai_protocol : tp->protocol);
++	st->port = 0;
++    }
++    else
++    {
++	/* 
++	 * Neither socket type nor protocol is set.  Return all socket types
++	 * we know about.
++	 */
++	struct gaih_servtuple **lastp = &st;
++	for (++tp; tp->name[0]; ++tp)
++	{
++	    struct gaih_servtuple *newp;
++
++	    newp = alloca (sizeof (struct gaih_servtuple));
++	    newp->next = NULL;
++	    newp->socktype = tp->socktype;
++	    newp->protocol = tp->protocol;
++	    newp->port = 0;
++
++	    *lastp = newp;
++	    lastp = &newp->next;
++	}
++    }
++
++    if (name != NULL)
++    {
++	at = alloca (sizeof (struct gaih_addrtuple));
++
++	at->family = AF_UNSPEC;
++	at->scopeid = 0;
++	at->next = NULL;
++
++	if (inet_pton (AF_INET, name, at->addr) > 0)
++	{
++	    if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET || v4mapped)
++		at->family = AF_INET;
++	    else
++		return -EAI_FAMILY;
++	}
++
++#if __HAS_IPV6__
++	if (at->family == AF_UNSPEC)
++	{
++	    char *namebuf = strdupa (name);
++	    char *scope_delim;
++
++	    scope_delim = strchr (namebuf, SCOPE_DELIMITER);
++	    if (scope_delim != NULL)
++		*scope_delim = '\0';
++
++	    if (inet_pton (AF_INET6, namebuf, at->addr) > 0)
++	    {
++		if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET6)
++		    at->family = AF_INET6;
++		else
++		    return -EAI_FAMILY;
++
++		if (scope_delim != NULL)
++		{
++		    int try_numericscope = 0;
++		    if (IN6_IS_ADDR_LINKLOCAL (at->addr)
++			|| IN6_IS_ADDR_MC_LINKLOCAL (at->addr))
++		    {
++			at->scopeid = if_nametoindex (scope_delim + 1);
++			if (at->scopeid == 0)
++			    try_numericscope = 1;
++		    }
++		    else
++			try_numericscope = 1;
++
++		    if (try_numericscope != 0)
++		    {
++			char *end;
++			assert (sizeof (uint32_t) <= sizeof (unsigned long));
++			at->scopeid = (uint32_t) strtoul (scope_delim + 1, &end,
++							  10);
++			if (*end != '\0')
++			    return GAIH_OKIFUNSPEC | -EAI_NONAME;
++		    }
++		}
++	    }
++	}
++#endif
++
++	if (at->family == AF_UNSPEC && (req->ai_flags & AI_NUMERICHOST) == 0)
++	{
++	    struct hostent *h;
++	    struct gaih_addrtuple **pat = &at;
++	    int no_data = 0;
++	    int no_inet6_data;
++
++	    /*
++	     * If we are looking for both IPv4 and IPv6 address we don't want
++	     * the lookup functions to automatically promote IPv4 addresses to
++	     * IPv6 addresses.
++	     */
++
++#if __HAS_IPV6__
++	    if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET6)
++		gethosts (AF_INET6, struct in6_addr);
++#endif
++	    no_inet6_data = no_data;
++
++	    if (req->ai_family == AF_INET ||
++		(!v4mapped && req->ai_family == AF_UNSPEC) ||
++		(v4mapped && (no_inet6_data != 0 || (req->ai_flags & AI_ALL))))
++#if __HAS_IPV6__
++		gethosts2 (AF_INET, struct in_addr);
++#else
++		gethosts (AF_INET, struct in_addr);
++#endif
++	    if (no_data != 0 && no_inet6_data != 0)
++	    {
++		/* If both requests timed out report this. */
++		if (no_data == EAI_AGAIN && no_inet6_data == EAI_AGAIN)
++		    return -EAI_AGAIN;
++
++		/*
++		 * We made requests but they turned out no data.
++		 * The name is known, though.
++		 */
++		return (GAIH_OKIFUNSPEC | -EAI_AGAIN);
++	    }
++	}
++
++	if (at->family == AF_UNSPEC)
++	    return (GAIH_OKIFUNSPEC | -EAI_NONAME);
++    }
++    else
++    {
++	struct gaih_addrtuple *atr;
++	atr = at = alloca (sizeof (struct gaih_addrtuple));
++	memset (at, '\0', sizeof (struct gaih_addrtuple));
++
++	if (req->ai_family == 0)
++	{
++	    at->next = alloca (sizeof (struct gaih_addrtuple));
++	    memset (at->next, '\0', sizeof (struct gaih_addrtuple));
++	}
++
++#if __HAS_IPV6__
++	if (req->ai_family == 0 || req->ai_family == AF_INET6)
++	{
++	    extern const struct in6_addr __in6addr_loopback;
++	    at->family = AF_INET6;
++	    if ((req->ai_flags & AI_PASSIVE) == 0)
++		memcpy (at->addr, &__in6addr_loopback, sizeof (struct in6_addr));
++	    atr = at->next;
++	}
++#endif
++
++	if (req->ai_family == 0 || req->ai_family == AF_INET)
++	{
++	    atr->family = AF_INET;
++	    if ((req->ai_flags & AI_PASSIVE) == 0)
++		*(uint32_t *) atr->addr = htonl (INADDR_LOOPBACK);
++	}
++    }
++
++    if (pai == NULL)
++	return 0;
++
++    {
++	const char *c = NULL;
++	struct gaih_servtuple *st2;
++	struct gaih_addrtuple *at2 = at;
++	size_t socklen, namelen;
++	sa_family_t family;
++
++	/*
++	 * buffer is the size of an unformatted IPv6 address in
++	 * printable format.
++	 */
++	char buffer[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
++
++	while (at2 != NULL)
++	{
++	    if (req->ai_flags & AI_CANONNAME)
++	    {
++		struct hostent *h = NULL;
++
++		int herrno;
++		struct hostent th;
++		size_t tmpbuflen = 512;
++		char *tmpbuf;
++
++		do
++		{
++		    tmpbuflen *= 2;
++		    tmpbuf = alloca (tmpbuflen);
++
++		    if (tmpbuf == NULL)
++			return -EAI_MEMORY;
++
++		    rc = 0;
++		    h = gethostbyaddr_r (at2->addr,
++#if __HAS_IPV6__
++					  ((at2->family == AF_INET6)
++					   ? sizeof(struct in6_addr)
++					   : sizeof(struct in_addr)),
++#else
++					  sizeof(struct in_addr),
++#endif
++					  at2->family, &th, tmpbuf, tmpbuflen,
++					  &herrno);
++
++		    if(!h) rc = errno;
++		}
++		while (rc == errno && herrno == NETDB_INTERNAL);
++
++		if (rc != 0 && herrno == NETDB_INTERNAL)
++		{
++		    __set_h_errno (herrno);
++		    return -EAI_SYSTEM;
++		}
++
++		if (h == NULL)
++		    c = inet_ntop (at2->family, at2->addr, buffer, sizeof(buffer));
++		else
++		    c = h->h_name;
++
++		if (c == NULL)
++		    return GAIH_OKIFUNSPEC | -EAI_NONAME;
++
++		namelen = strlen (c) + 1;
++	    }
++	    else
++		namelen = 0;
++
++#if __HAS_IPV6__
++	    if (at2->family == AF_INET6 || v4mapped)
++	    {
++		family = AF_INET6;
++		socklen = sizeof (struct sockaddr_in6);
++	    }
++	    else
++#endif
++	    {
++		family = AF_INET;
++		socklen = sizeof (struct sockaddr_in);
++	    }
++
++	    for (st2 = st; st2 != NULL; st2 = st2->next)
++	    {
++		*pai = malloc (sizeof (struct addrinfo) + socklen + namelen);
++		if (*pai == NULL)
++		    return -EAI_MEMORY;
++
++		(*pai)->ai_flags = req->ai_flags;
++		(*pai)->ai_family = family;
++		(*pai)->ai_socktype = st2->socktype;
++		(*pai)->ai_protocol = st2->protocol;
++		(*pai)->ai_addrlen = socklen;
++		(*pai)->ai_addr = (void *) (*pai) + sizeof(struct addrinfo);
++#ifdef HAVE_SA_LEN
++		(*pai)->ai_addr->sa_len = socklen;
++#endif /* HAVE_SA_LEN */
++		(*pai)->ai_addr->sa_family = family;
++
++#if __HAS_IPV6__
++		if (family == AF_INET6)
++		{
++		    struct sockaddr_in6 *sin6p =
++			(struct sockaddr_in6 *) (*pai)->ai_addr;
++
++		    sin6p->sin6_flowinfo = 0;
++		    if (at2->family == AF_INET6)
++		    {
++			memcpy (&sin6p->sin6_addr,
++				at2->addr, sizeof (struct in6_addr));
++		    }
++		    else
++		    {
++			sin6p->sin6_addr.s6_addr32[0] = 0;
++			sin6p->sin6_addr.s6_addr32[1] = 0;
++			sin6p->sin6_addr.s6_addr32[2] = htonl(0x0000ffff);
++			memcpy(&sin6p->sin6_addr.s6_addr32[3], 
++			       at2->addr, sizeof (sin6p->sin6_addr.s6_addr32[3]));
++		    }
++		    sin6p->sin6_port = st2->port;
++		    sin6p->sin6_scope_id = at2->scopeid;
++		}
++		else
++#endif
++		{
++		    struct sockaddr_in *sinp =
++			(struct sockaddr_in *) (*pai)->ai_addr;
++
++		    memcpy (&sinp->sin_addr,
++			    at2->addr, sizeof (struct in_addr));
++		    sinp->sin_port = st2->port;
++		    memset (sinp->sin_zero, '\0', sizeof (sinp->sin_zero));
++		}
++
++		if (c)
++		{
++		    (*pai)->ai_canonname = ((void *) (*pai) +
++					    sizeof (struct addrinfo) + socklen);
++		    strcpy ((*pai)->ai_canonname, c);
++		}
++		else
++		    (*pai)->ai_canonname = NULL;
++
++		(*pai)->ai_next = NULL;
++		pai = &((*pai)->ai_next);
++	    }
++
++	    at2 = at2->next;
++	}
++    }
++    return 0;
++}
++
++static struct gaih gaih[] =
++{
++#if __HAS_IPV6__
++    { PF_INET6, gaih_inet },
++#endif
++    { PF_INET, gaih_inet },
++#if 0
++    { PF_LOCAL, gaih_local },
++#endif
++    { PF_UNSPEC, NULL }
++};
++
++int
++getaddrinfo (const char *name, const char *service,
++	     const struct addrinfo *hints, struct addrinfo **pai)
++{
++    int i = 0, j = 0, last_i = 0;
++    struct addrinfo *p = NULL, **end;
++    struct gaih *g = gaih, *pg = NULL;
++    struct gaih_service gaih_service, *pservice;
++
++    if (name != NULL && name[0] == '*' && name[1] == 0)
++	name = NULL;
++
++    if (service != NULL && service[0] == '*' && service[1] == 0)
++	service = NULL;
++
++    if (name == NULL && service == NULL)
++	return EAI_NONAME;
++
++    if (hints == NULL)
++	hints = &default_hints;
++
++    if (hints->ai_flags & ~(AI_PASSIVE|AI_CANONNAME|AI_NUMERICHOST|
++			    AI_ADDRCONFIG|AI_V4MAPPED|AI_ALL))
++	return EAI_BADFLAGS;
++
++    if ((hints->ai_flags & AI_CANONNAME) && name == NULL)
++	return EAI_BADFLAGS;
++
++    if (service && service[0])
++    {
++	char *c;
++	gaih_service.name = service;
++	gaih_service.num = strtoul (gaih_service.name, &c, 10);
++	if (*c)
++	    gaih_service.num = -1;
++	else
++	    /*
++	     * Can't specify a numerical socket unless a protocol
++	     * family was given.
++	     */
++	    if (hints->ai_socktype == 0 && hints->ai_protocol == 0)
++		return EAI_SERVICE;
++	pservice = &gaih_service;
++    }
++    else
++	pservice = NULL;
++
++    if (pai)
++	end = &p;
++    else
++	end = NULL;
++
++    while (g->gaih)
++    {
++	if (hints->ai_family == g->family || hints->ai_family == AF_UNSPEC)
++	{
++	    if ((hints->ai_flags & AI_ADDRCONFIG) && !addrconfig(g->family))
++		continue;
++	    j++;
++	    if (pg == NULL || pg->gaih != g->gaih)
++	    {
++		pg = g;
++		i = g->gaih (name, pservice, hints, end);
++		if (i != 0)
++		{
++		    last_i = i;
++
++		    if (hints->ai_family == AF_UNSPEC && (i & GAIH_OKIFUNSPEC))
++			continue;
++
++		    if (p)
++			freeaddrinfo (p);
++
++		    return -(i & GAIH_EAI);
++		}
++		if (end)
++		    while(*end) end = &((*end)->ai_next);
++	    }
++	}
++	++g;
++    }
++
++    if (j == 0)
++	return EAI_FAMILY;
++
++    if (p)
++    {
++	*pai = p;
++	return 0;
++    }
++
++    if (pai == NULL && last_i == 0)
++	return 0;
++
++    if (p)
++	freeaddrinfo (p);
++
++    return last_i ? -(last_i & GAIH_EAI) : EAI_NONAME;
++}
++
++void
++freeaddrinfo (struct addrinfo *ai)
++{
++    struct addrinfo *p;
++
++    while (ai != NULL)
++    {
++	p = ai;
++	ai = ai->ai_next;
++	free (p);
++    }
++}
++
++#define N_(x) x
++static struct
++{
++  int code;
++  const char *msg;
++}
++values[] =
++{
++  { EAI_ADDRFAMILY, N_("Address family for hostname not supported") },
++  { EAI_AGAIN, N_("Temporary failure in name resolution") },
++  { EAI_BADFLAGS, N_("Bad value for ai_flags") },
++  { EAI_FAIL, N_("Non-recoverable failure in name resolution") },
++  { EAI_FAMILY, N_("ai_family not supported") },
++  { EAI_MEMORY, N_("Memory allocation failure") },
++  { EAI_NODATA, N_("No address associated with hostname") },
++  { EAI_NONAME, N_("Name or service not known") },
++  { EAI_SERVICE, N_("Servname not supported for ai_socktype") },
++  { EAI_SOCKTYPE, N_("ai_socktype not supported") },
++  { EAI_SYSTEM, N_("System error") },
++  { EAI_INPROGRESS, N_("Processing request in progress") },
++  { EAI_CANCELED, N_("Request canceled") },
++  { EAI_NOTCANCELED, N_("Request not canceled") },
++  { EAI_ALLDONE, N_("All requests done") },
++  { EAI_INTR, N_("Interrupted by a signal") }
++};
++ 
++const char *
++gai_strerror (int code)
++{
++  size_t i;
++  for (i = 0; i < sizeof (values) / sizeof (values[0]); ++i)
++    if (values[i].code == code)
++      return (values[i].msg);
++ 
++  return ("Unknown error");
++}
++
++#endif /* HAVE_GETADDRINFO */
++
++
++
++#ifndef HAVE_INET_NTOP
++/* char *
++ * inet_ntop4(src, dst, size)
++ *      format an IPv4 address
++ * return:
++ *      `dst' (as a const)
++ * notes:
++ *      (1) uses no statics
++ *      (2) takes a u_char* not an in_addr as input
++ * author:
++ *      Paul Vixie, 1996.
++ */
++static const char *
++inet_ntop4(const u_char *src, char *dst, size_t size)
++{
++  char tmp[sizeof ("255.255.255.255") + 1] = "\0";
++  int octet;
++  int i;
++
++  i = 0;
++  for (octet = 0; octet <= 3; octet++) {
++
++    if (src[octet] > 255) { /* bug? */
++      __set_errno (ENOSPC);
++      return (NULL);
++    }
++    tmp[i++] = '0' + src[octet] / 100;
++    if (tmp[i - 1] == '0') {
++      tmp[i - 1] = '0' + (src[octet] / 10 % 10);
++      if (tmp[i - 1] == '0') i--;
++    } else {
++      tmp[i++] = '0' + (src[octet] / 10 % 10);
++    }
++    tmp[i++] = '0' + src[octet] % 10;
++    tmp[i++] = '.';
++  }
++  tmp[i - 1] = '\0';
++
++  if (strlen (tmp) > size) {
++    __set_errno (ENOSPC);
++    return (NULL);
++  }
++
++  return strcpy(dst, tmp);
++}
++
++/* char *
++ * inet_ntop(af, src, dst, size)
++ *      convert a network format address to presentation format.
++ * return:
++ *      pointer to presentation format address (`dst'), or NULL (see errno).
++ * author:
++ *      Paul Vixie, 1996.
++ */
++const char *
++inet_ntop(af, src, dst, size)
++     int af;
++     const void *src;
++     char *dst;
++     socklen_t size;
++{
++  switch (af) {
++  case AF_INET:
++    return (inet_ntop4(src, dst, size));
++#if __HAS_IPV6__
++  case AF_INET6:
++    return (inet_ntop6(src, dst, size));
++#endif
++  default:
++    __set_errno (EAFNOSUPPORT);
++    return (NULL);
++  }
++  /* NOTREACHED */
++}
++#endif /* HAVE_INET_NTOP */
++
++
++#ifndef HAVE_INET_PTON
++/* int
++ * inet_pton4(src, dst)
++ *      like inet_aton() but without all the hexadecimal and shorthand.
++ * return:
++ *      1 if `src' is a valid dotted quad, else 0.
++ * notice:
++ *      does not touch `dst' unless it's returning 1.
++ * author:
++ *      Paul Vixie, 1996.
++ */
++static int
++inet_pton4(const char *src, u_char *dst)
++{
++  int saw_digit, octets, ch;
++  u_char tmp[4], *tp;
++
++  saw_digit = 0;
++  octets = 0;
++  *(tp = tmp) = 0;
++  while ((ch = *src++) != '\0') {
++
++    if (ch >= '0' && ch <= '9') {
++      u_int new = *tp * 10 + (ch - '0');
++
++      if (new > 255)
++	return (0);
++      *tp = new;
++      if (! saw_digit) {
++	if (++octets > 4)
++	  return (0);
++	saw_digit = 1;
++      }
++    } else if (ch == '.' && saw_digit) {
++      if (octets == 4)
++	return (0);
++      *++tp = 0;
++      saw_digit = 0;
++    } else
++      return (0);
++  }
++  if (octets < 4)
++    return (0);
++  memcpy(dst, tmp, 4);
++  return (1);
++}
++
++/* int
++ * inet_pton(af, src, dst)
++ *      convert from presentation format (which usually means ASCII printable)
++ *      to network format (which is usually some kind of binary format).
++ * return:
++ *      1 if the address was valid for the specified address family
++ *      0 if the address wasn't valid (`dst' is untouched in this case)
++ *      -1 if some other error occurred (`dst' is untouched in this case, too)
++ * author:
++ *      Paul Vixie, 1996.
++ */
++int
++inet_pton(af, src, dst)
++     int af;
++     const char *src;
++     void *dst;
++{
++  switch (af) {
++  case AF_INET:
++    return (inet_pton4(src, dst));
++#if __HAS_IPV6__
++  case AF_INET6:
++    return (inet_pton6(src, dst));
++#endif
++  default:
++    __set_errno (EAFNOSUPPORT);
++    return (-1);
++  }
++  /* NOTREACHED */
++}
++#endif /* HAVE_INET_PTON */
++
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/mDNSPosix/Makefile /home/Mag/mDNSResponder-107.6/mDNSPosix/Makefile
+--- /home/Mag/mDNSResponder-107.6.org/mDNSPosix/Makefile	2006-06-21 01:07:04.000000000 +0200
++++ /home/Mag/mDNSResponder-107.6/mDNSPosix/Makefile	2006-10-30 17:43:46.914375000 +0100
+@@ -267,7 +267,8 @@
+ SHAREDDIR = ../mDNSShared
+ JDK = /usr/jdk
+ 
+-CC = @cc
++#CC = @cc
++CC = gcc
+ LD = ld -shared
+ CP = cp
+ RM = rm
+@@ -296,6 +297,8 @@
+ STRIP = strip -S 
+ endif
+ 
++os = cygwin
++
+ # Configure per-OS peculiarities
+ ifeq ($(os),solaris)
+ CFLAGS_OS = -DNOT_HAVE_DAEMON -DNOT_HAVE_SA_LEN -DNOT_HAVE_SOCKLEN_T -DNOT_HAVE_IF_NAMETOINDEX \
+@@ -373,6 +376,14 @@
+ JAVACFLAGS_OS = -dynamiclib -I/System/Library/Frameworks/JavaVM.framework/Headers -framework JavaVM 
+ else
+ 
++ifeq ($(os),cygwin)
++CFLAGS_OS = -DNOT_HAVE_SA_LEN -DHAVE_LINUX -DHAVE_CYGWIN -DNOT_HAVE_IF_NAMETOINDEX -D__EXTENSIONS__ -Din_pktinfo_definition_is_missing -DNOT_HAVE_GETADDRINFO -DUSE_TCP_LOOPBACK
++LDSUFFIX = dll
++JAVACFLAGS_OS += -I$(JDK)/include/linux
++#OPTIONALTARG = nss_mdns
++#OPTINSTALL   = InstalledNSS
++else
++
+ $(error ERROR: Must specify target OS on command-line, e.g. "make os=tiger [target]".\
+ Supported operating systems include: jaguar, panther, tiger, linux, netbsd, freebsd, openbsd, solaris) 
+ endif
+@@ -383,6 +394,7 @@
+ endif
+ endif
+ endif
++endif
+ 
+ NSSLIBNAME  := libnss_mdns
+ NSSVERSION  := 0.2
+@@ -464,7 +476,7 @@
+ 
+ $(BUILDDIR)/mdnsd: $(DAEMONOBJS)
+ 	$(CC) -o $@ $+ $(LINKOPTS)
+-	@$(STRIP) $@
++	#$(STRIP) $@
+ 
+ # libdns_sd target builds the client library
+ libdns_sd: setup $(BUILDDIR)/libdns_sd.$(LDSUFFIX)
+@@ -473,8 +485,8 @@
+ CLIENTLIBOBJS = $(OBJDIR)/dnssd_clientlib.c.so.o $(OBJDIR)/dnssd_clientstub.c.so.o $(OBJDIR)/dnssd_ipc.c.so.o
+ 
+ $(BUILDDIR)/libdns_sd.$(LDSUFFIX): $(CLIENTLIBOBJS)
+-	@$(LD) $(LINKOPTS) -o $@ $+
+-	@$(STRIP) $@
++	$(CC) -shared $(LINKOPTS) -o $@ $+
++	#$(STRIP) $@
+ 
+ Clients: setup libdns_sd ../Clients/build/dns-sd
+ 	@echo "Clients done"
+@@ -487,8 +499,8 @@
+ 	@echo "Name Service Switch module done"
+ 
+ $(BUILDDIR)/$(NSSLIBFILE): $(CLIENTLIBOBJS) $(OBJDIR)/nss_mdns.c.so.o
+-	@$(LD) $(LINKOPTS) -o $@ $+
+-	@$(STRIP) $@
++	$(CC) -shared $(LINKOPTS) -o $@ $+
++	#@$(STRIP) $@
+ 
+ #############################################################################
+ 
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/mDNSPosix/NetMonitor.c /home/Mag/mDNSResponder-107.6/mDNSPosix/NetMonitor.c
+--- /home/Mag/mDNSResponder-107.6.org/mDNSPosix/NetMonitor.c	2006-08-15 01:24:46.000000000 +0200
++++ /home/Mag/mDNSResponder-107.6/mDNSPosix/NetMonitor.c	2006-10-30 15:59:22.226875000 +0100
+@@ -733,7 +733,14 @@
+ 	struct tm tm;
+ 	const mDNSu32 index = mDNSPlatformInterfaceIndexfromInterfaceID(m, InterfaceID);
+ 	char if_name[IFNAMSIZ];		// Older Linux distributions don't define IF_NAMESIZE
++#if NOT_HAVE_IF_NAMETOINDEX
++	strcpy(if_name, "lo");
++	if_name[3] = '0'+(int)index;
++	if_name[4] = '\000';
++	fprintf(stderr, "if_indextoname %d = %s\n", (int)index, if_name);
++#else
+ 	if_indextoname(index, if_name);
++#endif
+ 	gettimeofday(&tv, NULL);
+ 	localtime_r((time_t*)&tv.tv_sec, &tm);
+ 	mprintf("\n%d:%02d:%02d.%06d Interface %d/%s\n", tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec, index, if_name);
+@@ -1145,18 +1152,22 @@
+ 		else
+ 			{
+ 			struct in_addr s4;
++#if HAVE_IPV6
+ 			struct in6_addr s6;
++#endif
+ 			FilterList *f;
+ 			mDNSAddr a;
+ 			a.type = mDNSAddrType_IPv4;
+ 	
+ 			if (inet_pton(AF_INET, argv[i], &s4) == 1)
+ 				a.ip.v4.NotAnInteger = s4.s_addr;
++#if HAVE_IPV6
+ 			else if (inet_pton(AF_INET6, argv[i], &s6) == 1)
+ 				{
+ 				a.type = mDNSAddrType_IPv6;
+ 				bcopy(&s6, &a.ip.v6, sizeof(a.ip.v6));
+ 				}
++#endif
+ 			else
+ 				{
+ 				struct hostent *h = gethostbyname(argv[i]);
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/mDNSPosix/mDNSPosix.c /home/Mag/mDNSResponder-107.6/mDNSPosix/mDNSPosix.c
+--- /home/Mag/mDNSResponder-107.6.org/mDNSPosix/mDNSPosix.c	2006-08-29 08:24:34.000000000 +0200
++++ /home/Mag/mDNSResponder-107.6/mDNSPosix/mDNSPosix.c	2006-10-30 17:39:05.383125000 +0100
+@@ -316,7 +316,9 @@
+ #include <linux/netlink.h>
+ #include <linux/rtnetlink.h>
+ #else // USES_NETLINK
++#ifndef HAVE_CYGWIN
+ #include <net/route.h>
++#endif
+ #include <net/if.h>
+ #endif // USES_NETLINK
+ 
+@@ -1089,7 +1091,11 @@
+ #if HAVE_IPV6
+ 					  || (i->ifi_addr->sa_family == AF_INET6)
+ #endif
+-				) &&  (i->ifi_flags & IFF_UP) && !(i->ifi_flags & IFF_POINTOPOINT) )
++				) &&  (i->ifi_flags & IFF_UP)
++#ifndef HAVE_CYGWIN
++					 && !(i->ifi_flags & IFF_POINTOPOINT)
++#endif
++					 )
+ 				{
+ 				if (i->ifi_flags & IFF_LOOPBACK)
+ 					{
+@@ -1244,7 +1250,11 @@
+ // Open a socket that will receive interface change notifications
+ mDNSlocal mStatus OpenIfNotifySocket( int *pFD)
+ 	{
++#ifdef HAVE_CYGWIN
++	*pFD = socket( AF_INET, SOCK_RAW, 0);
++#else
+ 	*pFD = socket( AF_ROUTE, SOCK_RAW, 0);
++#endif
+ 
+ 	if ( *pFD < 0)
+ 		return mStatus_UnknownErr;
+@@ -1268,6 +1278,12 @@
+ 	}
+ #endif
+ 
++#ifdef HAVE_CYGWIN
++mDNSlocal mDNSu32		ProcessRoutingNotification( int sd)
++{
++  return 1;
++}
++#else
+ mDNSlocal mDNSu32		ProcessRoutingNotification( int sd)
+ // Read through the messages on sd and if any indicate that any interface records should
+ // be torn down and rebuilt, return affected indices as a bitmask. Otherwise return 0.
+@@ -1297,6 +1313,7 @@
+ 
+ 	return result;
+ 	}
++#endif
+ 
+ #endif // USES_NETLINK
+ 
+diff -ruwN /home/Mag/mDNSResponder-107.6.org/mDNSPosix/mDNSUNP.h /home/Mag/mDNSResponder-107.6/mDNSPosix/mDNSUNP.h
+--- /home/Mag/mDNSResponder-107.6.org/mDNSPosix/mDNSUNP.h	2006-08-15 01:24:47.000000000 +0200
++++ /home/Mag/mDNSResponder-107.6/mDNSPosix/mDNSUNP.h	2006-10-27 20:32:09.416875000 +0200
+@@ -90,8 +90,10 @@
+ #include <netinet/in.h>
+ 
+ #ifdef HAVE_LINUX
++#ifndef HAVE_CYGWIN
+ #include <linux/socket.h>
+ #endif
++#endif
+ 
+ #ifdef  __cplusplus
+     extern "C" {
+Files /home/Mag/mDNSResponder-107.6.org/mDNSPosix/objects/prod/PosixDaemon.c.o and /home/Mag/mDNSResponder-107.6/mDNSPosix/objects/prod/PosixDaemon.c.o differ
