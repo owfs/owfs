@@ -32,7 +32,7 @@ int OW_Load_dnssd_library(void) {
   char file[255];
 #if OW_CYGWIN
   strcpy(file, "dnssd.dll");
-  if (!(libdnssd = DL_open(file, RTLD_LAZY))) {
+  if (!(libdnssd = DL_open(file, 0))) {
     /* Couldn't open that lib, but continue anyway */
 #if 0
     char *derr;

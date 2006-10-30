@@ -11,25 +11,24 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-//#include "ow.h"
 #include "ow_dl.h"
 
 DLHANDLE DL_open(const char *pathname, int mode)
 {
-#ifdef HAVE_DLOPEN
-  return dlopen(pathname, mode);
-#elif OW_CYGWIN
+#if OW_CYGWIN
   return LoadLibrary(pathname);
+#elif defined(HAVE_DLOPEN)
+  return dlopen(pathname, mode);
 #endif
 
 }
 
 void *DL_sym(DLHANDLE handle, const char *name)
 {
-#ifdef HAVE_DLOPEN
-  return dlsym(handle, name);
-#elif OW_CYGWIN
+#if OW_CYGWIN
   return (void *) GetProcAddress(handle, name);
+#elif defined(HAVE_DLOPEN)
+  return dlsym(handle, name);
 #endif
 
 }
@@ -37,20 +36,20 @@ void *DL_sym(DLHANDLE handle, const char *name)
 
 int DL_close(DLHANDLE handle)
 {
-#ifdef HAVE_DLOPEN
-  return dlclose(handle);
-#elif OW_CYGWIN
+#if OW_CYGWIN
   if (FreeLibrary(handle)) return 0;
   return -1;
+#elif defined(HAVE_DLOPEN)
+  return dlclose(handle);
 #endif
 }
 
 char *DL_error(void)
 {
-#ifdef HAVE_DLOPEN
-  return dlerror();
-#elif OW_CYGWIN
+#if OW_CYGWIN
   return "Error in WIN32 DL";
+#elif defined(HAVE_DLOPEN)
+  return dlerror();
 #endif
 }
 

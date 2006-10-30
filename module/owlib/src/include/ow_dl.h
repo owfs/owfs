@@ -13,12 +13,16 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 
-#ifdef HAVE_DLOPEN
-#include <dlfcn.h>
-typedef void * DLHANDLE;
-#elif OW_CYGWIN
+#if OW_CYGWIN
+
 #include <windows.h>
 typedef HMODULE DLHANDLE;
+
+#elif defined(HAVE_DLOPEN)
+
+#include <dlfcn.h>
+typedef void * DLHANDLE;
+
 #endif
 
 extern DLHANDLE libdnssd;
