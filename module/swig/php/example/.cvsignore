@@ -1,5 +1,3 @@
 Makefile.in
 Makefile
-*.PL
-*.c
-*.o
+load_php_OW.php
