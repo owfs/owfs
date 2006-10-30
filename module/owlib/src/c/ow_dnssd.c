@@ -16,6 +16,14 @@ $Id$
 #include "ow_dl.h"
 #include "ow_dnssd.h"
 
+#if OW_CYGWIN
+
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
+
+#endif
+
 DLHANDLE libdnssd = NULL;
 
 _DNSServiceRefSockFD DNSServiceRefSockFD;
@@ -31,23 +39,75 @@ _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 int OW_Load_dnssd_library(void) {
   char file[255];
 #if OW_CYGWIN
-  strcpy(file, "dnssd.dll");
-  if (!(libdnssd = DL_open(file, 0))) {
-    /* Couldn't open that lib, but continue anyway */
-#if 0
-    char *derr;
-    derr = DL_error();
-    fprintf(stderr, "DL_open [%s] failed [%s]\n", file, derr);
-#endif
-  }
-#elif defined(HAVE_DLOPEN)
   int i;
   char libdirs[4][80] = {
-    { "/opt/owfs/lib/libdns_sd.so" },
-    { "libdns_sd.so" },
+    { "/opt/owfs/lib/libdns_sd.dll" },
+    { "libdns_sd.dll" },
     { "" }
   };
 
+  i = 0;
+  while(*libdirs[i]) {
+    strcpy(file, libdirs[i]);
+
+    if (!(libdnssd = dlopen(file, RTLD_LAZY))) {
+      /* Couldn't open that lib, but continue anyway */
+#if 0
+      char *derr;
+      derr = DL_error();
+      fprintf(stderr, "dlopen [%s] failed [%s]\n", file, derr);
+#endif
+      i++;
+      continue;
+    } else {
+#if 0
+      fprintf(stderr, "dlopen [%s] success\n", file);
+#endif
+      break;
+    }
+  }
+
+  if(!libdnssd) {
+    /* This file compiled with Microsoft Visual C doesn't work actually... */
+    strcpy(file, "dnssd.dll");
+    if (!(libdnssd = DL_open(file, 0))) {
+      /* Couldn't open that lib, but continue anyway */
+#if 0
+      char *derr;
+      derr = DL_error();
+      fprintf(stderr, "DL_open [%s] failed [%s]\n", file, derr);
+#endif
+    } else {
+#if 0
+      fprintf(stderr, "DL_open [%s] success\n", file);
+#endif
+    }
+  }
+
+  if(libdnssd == NULL) {
+    //fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library is not found\n");
+    return -1;
+  }
+
+  DNSServiceRefSockFD = (_DNSServiceRefSockFD)DL_sym(libdnssd, "DNSServiceRefSockFD");
+  DNSServiceProcessResult = (_DNSServiceProcessResult)DL_sym(libdnssd, "DNSServiceProcessResult");
+  DNSServiceRefDeallocate = (_DNSServiceRefDeallocate)DL_sym(libdnssd, "DNSServiceRefDeallocate");
+  DNSServiceResolve = (_DNSServiceResolve)DL_sym(libdnssd, "DNSServiceResolve");
+  DNSServiceBrowse = (_DNSServiceBrowse)DL_sym(libdnssd, "DNSServiceBrowse");
+  DNSServiceRegister  = (_DNSServiceRegister)DL_sym(libdnssd, "DNSServiceRegister");
+  DNSServiceReconfirmRecord = (_DNSServiceReconfirmRecord)DL_sym(libdnssd, "DNSServiceReconfirmRecord");
+  DNSServiceCreateConnection = (_DNSServiceCreateConnection)DL_sym(libdnssd, "DNSServiceCreateConnection");
+  DNSServiceEnumerateDomains = (_DNSServiceEnumerateDomains)DL_sym(libdnssd, "DNSServiceEnumerateDomains");
+#endif
+
+#elif defined(HAVE_DLOPEN)
+    int i;
+    char libdirs[4][80] = {
+      { "/opt/owfs/lib/libdns_sd.so" },
+      { "libdns_sd.so" },
+      { "" }
+    };
+    
   i = 0;
   while(*libdirs[i]) {
     strcpy(file, libdirs[i]);
@@ -68,7 +128,6 @@ int OW_Load_dnssd_library(void) {
       break;
     }
   }
-#endif
 
   if(libdnssd == NULL) {
     //fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library is not found\n");
@@ -85,6 +144,8 @@ int OW_Load_dnssd_library(void) {
   DNSServiceReconfirmRecord = (_DNSServiceReconfirmRecord)DL_sym(libdnssd, "DNSServiceReconfirmRecord");
   DNSServiceCreateConnection = (_DNSServiceCreateConnection)DL_sym(libdnssd, "DNSServiceCreateConnection");
   DNSServiceEnumerateDomains = (_DNSServiceEnumerateDomains)DL_sym(libdnssd, "DNSServiceEnumerateDomains");
+#endif
+
   return 0;
 }
 
