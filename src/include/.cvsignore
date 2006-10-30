@@ -1,4 +1,5 @@
 Makefile
 Makefile.in
 owfs_config.h
+config.h
 stamp-h1
