@@ -429,9 +429,7 @@ static int ConnectToServer( struct connection_in * in ) {
                && ( in->connin.server.ai != NULL ) ) {
             in->reconnect_state = reconnect_ok ;
             LEVEL_DEBUG("Attempting zeroconf reconnect on %s\n",in->name) ;
-#if OW_ZERO
-            DNSServiceReconfirmRecord(0,0,in->connin.server.fqdn,kDNSServiceType_SRV,kDNSServiceClass_IN,0,NULL) ;
-#endif /* OW_ZERO */
+            if(libdnssd != NULL) DNSServiceReconfirmRecord(0,0,in->connin.server.fqdn,kDNSServiceType_SRV,kDNSServiceClass_IN,0,NULL) ;
         }
         fd = ClientConnect(in) ;
         if ( fd<0) {

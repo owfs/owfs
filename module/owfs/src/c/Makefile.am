@@ -1,10 +1,10 @@
 # $Id$
 
-if HAVE_CYGWIN
-if ENABLE_ZERO
-DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-endif
-endif
+#if HAVE_CYGWIN
+#if ENABLE_ZERO
+#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+#endif
+#endif
 
 bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c fuse_line.c

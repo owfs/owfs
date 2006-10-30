@@ -13,8 +13,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow_connection.h"
 
-#if OW_ZERO
-
 struct announce_struct {
     struct connection_out * out ;
     ASCII * name ;
@@ -38,6 +36,8 @@ static void * Announce( void * v ) {
     struct announce_struct * as = v ;
     DNSServiceRef sref ;
     DNSServiceErrorType err ;
+    
+    if(libdnssd == NULL) return NULL;
 
     LEVEL_DEBUG("Announce: 1\n");
 
@@ -45,14 +45,6 @@ static void * Announce( void * v ) {
     LEVEL_DEBUG("Announce: err=%d\n", err);
 
     //LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
-#if 0
-// just a test to remove multitasking
-#ifdef OW_MT
-#undef OW_MT
-#endif
-#define OW_MT 0
-#endif
-
 #if OW_MT
     pthread_detach( pthread_self() ) ;
 #endif /* OW_MT */
@@ -80,6 +72,9 @@ void OW_Announce( struct connection_out * out ) {
     struct announce_struct * as = malloc( sizeof(struct announce_struct) ) ;
     struct sockaddr sa ;
     socklen_t sl = sizeof(sa) ;
+
+    if(libdnssd == NULL) return;
+
     if ( as==NULL || Global.announce_off) return ;
     as->out = out ;
     LEVEL_DEBUG("OW_Announce: 1\n");
@@ -122,5 +117,3 @@ void OW_Announce( struct connection_out * out ) {
 #endif /* OW_MT */
     LEVEL_DEBUG("OW_Announce: end\n");
 }
-
-#endif /* OW_ZERO */

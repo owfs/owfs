@@ -134,13 +134,8 @@ $Id$
 #endif /* SKIP_SEARCH_H */
 
 /* Zeroconf / Bonjour */
-#if OW_ZERO
- #if OW_CYGWIN
-  #include "ow_dnssd.h"
- #else
-  #include <dns_sd.h>
- #endif
-#endif /* OW_ZERO */
+#include "ow_dl.h"
+#include "ow_dnssd.h"
 
 /* Include some compatibility functions */
 #include "compat.h"
@@ -323,10 +318,9 @@ void FreeClientAddr(  struct connection_in * in ) ;
 
 void OW_ArgNet( const char * arg ) ;
 void Setup(void) ;
+void Cleanup( void ) ;
 void ow_help( void ) ;
-#ifdef OW_ZERO
 void OW_Browse( void ) ;
-#endif /* OW_ZERO */
 
 void Server_detect( void  ) ;
 int ServerRead( ASCII * path ) ;

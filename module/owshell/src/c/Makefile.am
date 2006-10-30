@@ -1,50 +1,33 @@
 # $Id$
 
-if HAVE_CYGWIN
-if ENABLE_ZERO
-DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-endif
-endif
+#if HAVE_CYGWIN
+#if ENABLE_ZERO
+#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+#endif
+#endif
+
+COMMON_OWSHELL_SOURCE = ow_opt.c   \
+               ow_help.c    \
+               ow_connect.c \
+               ow_server.c  \
+               ow_net.c     \
+               ow_browse.c  \
+               ow_dl.c      \
+               ow_dnssd.c   \
+               getaddrinfo.c  \
+               globals.c
 
 bin_PROGRAMS = owdir owread owwrite owpresent
-owdir_SOURCES = ow_opt.c    \
-               ow_help.c    \
-               ow_connect.c \
-               ow_server.c  \
-               ow_net.c     \
-               ow_browse.c  \
-               getaddrinfo.c  \
-               globals.c    \
+owdir_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owdir.c
 
-owread_SOURCES = ow_opt.c   \
-               ow_help.c    \
-               ow_connect.c \
-               ow_server.c  \
-               ow_net.c     \
-               ow_browse.c  \
-               getaddrinfo.c  \
-               globals.c    \
+owread_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owread.c
 
-owwrite_SOURCES = ow_opt.c   \
-               ow_help.c    \
-               ow_connect.c \
-               ow_server.c  \
-               ow_net.c     \
-               ow_browse.c  \
-               getaddrinfo.c  \
-               globals.c    \
+owwrite_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owwrite.c
 
-owpresent_SOURCES = ow_opt.c   \
-               ow_help.c    \
-               ow_connect.c \
-               ow_server.c  \
-               ow_net.c     \
-               ow_browse.c  \
-               getaddrinfo.c  \
-               globals.c    \
+owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owpresent.c
 
 owdir_DEPENDENCIES = $(DNSSDLIB)

@@ -1,10 +1,10 @@
 # $Id$
 
-if HAVE_CYGWIN
-if ENABLE_ZERO
-DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-endif
-endif
+#if HAVE_CYGWIN
+#if ENABLE_ZERO
+#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+#endif
+#endif
 
 bin_PROGRAMS = owhttpd
 owhttpd_SOURCES = owhttpd.c          \

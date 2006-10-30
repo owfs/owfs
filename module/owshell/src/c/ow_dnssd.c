@@ -13,8 +13,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#include "ow_dnssd.h"
 #include "ow_dl.h"
+#include "ow_dnssd.h"
 
 DLHANDLE libdnssd = NULL;
 

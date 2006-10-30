@@ -2,7 +2,7 @@
 EXTRA_DIST = dnssd.dll dllextract.sed
 
 if HAVE_CYGWIN
-if ENABLE_ZERO
+# not used anymore since dnssd.dll is used
 all:	libdnssd.dll.a
 
 libdnssd.dll.a:	dnssd.lib dnssd.def
@@ -12,7 +12,6 @@ dnssd.def: dllextract.sed dnssd.dll
 	echo "LIBRARY dnssd.dll" > $@
 	echo EXPORTS >> $@
 	objdump -p dnssd.dll | sed -nf dllextract.sed >> $@
-endif
 endif
 
 clean-generic:

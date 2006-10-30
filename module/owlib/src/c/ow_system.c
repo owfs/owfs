@@ -101,7 +101,7 @@ struct filetype sys_configure[] = {
     {"cache"        ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_CACHE } , } ,
     {"HA7Net"       ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_HA7 } , } ,
     {"DebugInfo"    ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_DEBUG } , } ,
-    {"zeroconf"     ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: OW_ZERO } , } ,
+    {"zeroconf"     ,    12, NULL    , ft_integer,fc_static, {i:FS_define}  , {v:NULL}, {i: 1 } , } ,
 } ;
 struct device d_sys_configure = { "configuration", "configuration", pn_system, NFT(sys_configure), sys_configure } ;
 

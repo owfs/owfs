@@ -1,10 +1,10 @@
 # $Id$
 
-if HAVE_CYGWIN
-if ENABLE_ZERO
-DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-endif
-endif
+#if HAVE_CYGWIN
+#if ENABLE_ZERO
+#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
+#endif
+#endif
 
 bin_PROGRAMS = owftpd
 owftpd_SOURCES = file_list.c \
@@ -38,9 +38,6 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          ${SS_FLAG} \
          -D_FILE_OFFSET_BITS=64
-
-#         -Wconversion \
-#
 
 LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 

@@ -12,17 +12,12 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_ZERO
-
 #if OW_MT
 
 #include "ow.h"
 #include "ow_connection.h"
-#if OW_CYGWIN
- #include "ow_dnssd.h"
-#else
- #include <dns_sd.h>
-#endif
+
+#include "ow_dnssd.h"
 
 struct RefStruct {
     DNSServiceRef sref ;
@@ -248,5 +243,3 @@ void OW_Browse( void ) {
 }
 
 #endif /* OW_MT */
-
-#endif /* OW_ZERO */

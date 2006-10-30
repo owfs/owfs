@@ -39,8 +39,6 @@ int main(int argc, char *argv[]) {
         }
         ++optind ;
     }
-#if OW_CYGWIN && OW_ZERO
-    OW_Free_dnssd_library();
-#endif
+    Cleanup();
     exit(0) ;
 }

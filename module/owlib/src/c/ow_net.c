@@ -317,9 +317,7 @@ static void * ServerProcessOut( void * vp ) {
         LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(sps->out->name),sps->out->index) ;
         (sps->Exit)(1) ;
     }
-#if OW_ZERO
     OW_Announce( sps->out ) ;
-#endif
     ServerProcessAccept( vp ) ;
     return NULL ;
 }
@@ -373,9 +371,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         LEVEL_CONNECT("Cannot set up outdevice [%s] -- will exit\n",SAFESTRING(outdevice->name)) ;
         Exit(1) ;
     } else {
-#if OW_ZERO        
         OW_Announce( outdevice ) ;
-#endif /* OW_ZERO */
         while (1) {
             int acceptfd=accept(outdevice->fd,NULL,NULL) ;
             if ( acceptfd < 0 ) {

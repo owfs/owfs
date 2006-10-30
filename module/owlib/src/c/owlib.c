@@ -20,9 +20,8 @@ void SigHandler( int signo, siginfo_t * info, void * context ) ;
 
 /* All ow library setup */
 void LibSetup( enum opt_program opt ) {
-#if OW_CYGWIN && OW_ZERO
     OW_Load_dnssd_library();
-#endif
+
     // global structure of configuration parameters
     memset( &Global, 0, sizeof(struct global) ) ;
     Global.opt = opt ;
@@ -337,10 +336,16 @@ int LibStart( void ) {
     CONNINLOCK ;
         if ( indevice) Global.SimpleBusName = indevice->name ;
     CONNINUNLOCK ;
-#if OW_ZERO
+
     // zeroconf/Bonjour look for new services
-    if ( Global.autoserver ) OW_Browse() ;
-#endif
+    if ( Global.autoserver ) { 
+      if(libdnssd == NULL) {
+	fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+	exit(0);
+      } else {
+	OW_Browse() ;
+      }
+    }
 
     // Signal handlers
     SetSignals() ;
@@ -389,12 +394,11 @@ void LibClose( void ) {
     if ( Global.progname ) {
         free(Global.progname) ;
     }
-#if OW_ZERO
-    if ( Global.browse ) DNSServiceRefDeallocate( Global.browse ) ;
-#if OW_CYGWIN
+
+    if ( Global.browse ) {
+      if(libdnssd != NULL) DNSServiceRefDeallocate( Global.browse ) ;
+    }
     OW_Free_dnssd_library();
-#endif
-#endif /* OW_ZERO */
     LEVEL_CALL("Finished Library cleanup\n");
 }
 

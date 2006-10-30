@@ -44,8 +44,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr,"Unpaired <path> <value> entry: %s\n",argv[optind]) ;
         exit(1) ;
     }
-#if OW_CYGWIN && OW_ZERO
-    OW_Free_dnssd_library();
-#endif
+    Cleanup();
     exit(0) ;
 }

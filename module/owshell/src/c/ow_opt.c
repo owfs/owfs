@@ -71,9 +71,12 @@ void owopt( const int c , const char * arg ) {
         }
         break ;
     case 275: // autoserver
-#if OW_ZERO
-        OW_Browse() ;
-#endif /* OW_ZERO */
+        if(libdnssd == NULL) {
+	  fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+	  exit(0);
+	} else {
+	  OW_Browse() ;
+	}
         break ;
     case 307: case 308:
         OW_parsevalue(&((int *) &Global.timeout_volatile)[c-301],arg) ;

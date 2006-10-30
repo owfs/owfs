@@ -50,7 +50,7 @@ AC_MSG_CHECKING([for cygwin])
 case "$host" in
   *-*-cygwin*)
     HAVE_CYGWIN="true"
-#    LDFLAGS="-static"
+    CFLAGS="$CFLAGS -mwin32 -g"
     ;;
   *)
     HAVE_CYGWIN="false"
@@ -985,55 +985,6 @@ fi
 AC_SUBST(ENABLE_USB)
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
-# Check for nDNS (Bonjour/zeroconf) enabled
-ENABLE_ZERO=auto
-AC_MSG_CHECKING([if zeroconf support is enabled])
-
-AC_ARG_ENABLE(zero,
-[  --enable-zero         Enable 1-Wire zeroconf (Bonjour) support (default auto)],
-[
-    AC_MSG_RESULT([$enableval])
-
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_ZERO=false
-    fi
-],
-[
-    AC_MSG_RESULT([yes (default)])
-])
-
-if test "${ENABLE_ZERO}" != "false" -a "${ac_cv_header_dns_sd_h}" != "yes"; then
-	ENABLE_ZERO=false
-        AC_MSG_WARN([dns_sd.h is not found, zeroconf will be disabled])
-fi
-
-# Include libdns_sd if the zeroconf is enabled
-if test "${ENABLE_ZERO}" != "false" ; then
-
-if test "${HAVE_CYGWIN}" = "true"; then
-    CFLAGS="$CFLAGS -mwin32 -g"
-#    LD_EXTRALIBS+=" -L${OWFSROOT}/src/scripts/windows -ldnssd "
-    AC_MSG_WARN([libdnssd.dll.a is used for bonjour])
-else
-    AC_CHECK_LIB(dns_sd,DNSServiceRegister, ,[
-    if test "${ENABLE_ZERO}" = "true" ; then
-        AC_MSG_ERROR([libdns_sd must be installed to use zeroconf])
-    else
-            AC_MSG_WARN([libdns_sd not found, zeroconf will be disabled])
-            ENABLE_ZERO=false
-    fi
-    ])
-fi
-
-    if test "${ENABLE_ZERO}" != "false" ; then
-        ENABLE_ZERO=true
-    fi
-
-fi
-
-AC_SUBST(ENABLE_ZERO)
-AM_CONDITIONAL(ENABLE_ZERO, test "${ENABLE_ZERO}" = "true")
-
 # Check for Parallel port enabled
 ENABLE_PARPORT=auto
 AC_MSG_CHECKING([if parallel port support is enabled])
@@ -1179,13 +1130,6 @@ else
 fi
 AC_SUBST(OW_USB)
 
-if test "${ENABLE_ZERO}" = "true" ; then
-   OW_ZERO=1
-else
-   OW_ZERO=0
-fi
-AC_SUBST(OW_ZERO)
-
 if test "${ENABLE_PROFILING}" = "true" ; then
    PROFILING_FLAG=-pg
 fi
@@ -1241,6 +1185,7 @@ AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
 
+AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 
 AC_SUBST(MODULE_SUBDIRS)
@@ -1372,11 +1317,6 @@ if test "${ENABLE_PROFILING}" = "true"; then
     AC_MSG_RESULT([                Profiling is enabled])
 else
     AC_MSG_RESULT([                Profiling is DISABLED])
-fi
-if test "${ENABLE_ZERO}" = "true"; then
-    AC_MSG_RESULT([       Zeroconf (Bonjour) is enabled])
-else
-    AC_MSG_RESULT([       Zeroconf (Bonjour) is DISABLED])
 fi
 
 AC_MSG_RESULT()

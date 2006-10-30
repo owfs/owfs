@@ -5,7 +5,6 @@ libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
 lib_LTLIBRARIES = libowcapi.la
 
 libowcapi_la_SOURCES = owcapi.c
-#perhaps define this... haven't tried yet
 libowcapi_la_LDFLAGS = -low ${PROFILING_FLAG} -shared -shrext .so
 
 AM_CFLAGS = -I../include \
@@ -24,11 +23,6 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          -D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64
-
-#         -Wconversion \
-#
-
-#LDADD = -lowxx ${PROFILING_FLAG}
 
 clean-generic:
 

@@ -1,6 +1,7 @@
 # $Id$
 
-OWLIB_SOURCE = ow_dnssd.c        \
+OWLIB_SOURCE = ow_dl.c           \
+               ow_dnssd.c        \
                ow_browse.c       \
                compat.c          \
                getaddrinfo.c     \

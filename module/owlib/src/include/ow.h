@@ -92,7 +92,6 @@ $Id$
 #endif
 #include <sys/times.h> /* for times */
 #include <ctype.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -153,13 +152,8 @@ $Id$
 #endif /* USE_NO_PARPORT */
 
 /* Zeroconf / Bonjour */
-#if OW_ZERO
- #if OW_CYGWIN
-  #include "ow_dnssd.h"
- #else
-  #include <dns_sd.h>
- #endif
-#endif
+#include "ow_dl.h"
+#include "ow_dnssd.h"
 
 /* Include some compatibility functions */
 #include "compat.h"
@@ -518,9 +512,7 @@ union antiloop {
 struct global {
     int announce_off ; // use zeroconf?
     ASCII * announce_name ;
-#if OW_ZERO
     DNSServiceRef browse ;
-#endif /* OW_ZERO */
     enum opt_program opt ;
     ASCII * progname ;
     union antiloop Token ;
