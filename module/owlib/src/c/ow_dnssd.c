@@ -98,7 +98,6 @@ int OW_Load_dnssd_library(void) {
   DNSServiceReconfirmRecord = (_DNSServiceReconfirmRecord)DL_sym(libdnssd, "DNSServiceReconfirmRecord");
   DNSServiceCreateConnection = (_DNSServiceCreateConnection)DL_sym(libdnssd, "DNSServiceCreateConnection");
   DNSServiceEnumerateDomains = (_DNSServiceEnumerateDomains)DL_sym(libdnssd, "DNSServiceEnumerateDomains");
-#endif
 
 #elif defined(HAVE_DLOPEN)
     int i;
