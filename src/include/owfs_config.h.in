@@ -61,7 +61,6 @@ $Id$
 #define OW_MT           @OW_MT@
 #define OW_CACHE        @OW_CACHE@
 #define OW_USB          @OW_USB@
-#define OW_ZERO         @OW_ZERO@
 #define OW_PARPORT      @OW_PARPORT@
 #define OW_DEBUG        @OW_DEBUG@
 #define OW_TAI8570      @OW_TAI8570@
