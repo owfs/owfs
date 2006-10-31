@@ -19,6 +19,7 @@ $Id$
 
 /* -------- Structures ---------- */
 DeviceHeader( set_cache ) ;
+DeviceHeader( set_units ) ;
 
 #endif /* OW_SETTINGS_H */
 

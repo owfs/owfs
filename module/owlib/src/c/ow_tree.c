@@ -141,6 +141,7 @@ void DeviceSort( void ) {
     Device2Tree( & d_stats_thread , pn_statistics ) ;
     Device2Tree( & d_stats_write ,  pn_statistics ) ;
     Device2Tree( & d_set_cache ,    pn_settings ) ;
+    Device2Tree( & d_set_units ,    pn_settings ) ;
     Device2Tree( & d_sys_adapter ,  pn_system ) ;
     Device2Tree( & d_sys_process ,  pn_system ) ;
     Device2Tree( & d_sys_connections, pn_system ) ;
