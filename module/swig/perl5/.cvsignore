@@ -1,5 +1,9 @@
 Makefile.in
 Makefile
+Makefile.perl
+OW.bs
+OW.pm
+pm_to_blib
 *.PL
 *.c
 *.o

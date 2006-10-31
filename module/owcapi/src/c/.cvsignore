@@ -3,3 +3,5 @@ Makefile.in
 .deps
 .libs
 owfs
+*.la
+*.lo

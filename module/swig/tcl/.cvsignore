@@ -1,2 +1,8 @@
 Makefile.in
 Makefile
+.deps
+.libs
+ow.tcl.h
+*.o
+*.lo
+*.la
