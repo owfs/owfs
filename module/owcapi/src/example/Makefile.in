@@ -7,7 +7,7 @@ OBJS = owdir.o
 all:	owdir
 
 owdir: $(OBJS)
-	@CC@ $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+	@CC@ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 %.o: %.c
 	@CC@ $(CFLAGS) -c -o $@ $<
