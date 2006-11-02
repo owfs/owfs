@@ -5,7 +5,12 @@ libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
 lib_LTLIBRARIES = libowcapi.la
 
 libowcapi_la_SOURCES = owcapi.c
+
+if HAVE_CYGWIN
+libowcapi_la_LDFLAGS = -low ${PROFILING_FLAG} -shared -no-undefined 
+else
 libowcapi_la_LDFLAGS = -low ${PROFILING_FLAG} -shared -shrext .so
+endif
 
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \

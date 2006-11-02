@@ -1,11 +1,5 @@
 # $Id$
 
-#if HAVE_CYGWIN
-#if ENABLE_ZERO
-#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-#endif
-#endif
-
 COMMON_OWSHELL_SOURCE = ow_opt.c   \
                ow_help.c    \
                ow_connect.c \
@@ -30,10 +24,10 @@ owwrite_SOURCES = ${COMMON_OWSHELL_SOURCE} \
 owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owpresent.c
 
-owdir_DEPENDENCIES = $(DNSSDLIB)
-owread_DEPENDENCIES = $(DNSSDLIB)
-owwrite_DEPENDENCIES = $(DNSSDLIB)
-owpresent_DEPENDENCIES = $(DNSSDLIB)
+owdir_DEPENDENCIES =
+owread_DEPENDENCIES =
+owwrite_DEPENDENCIES =
+owpresent_DEPENDENCIES =
 
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \

@@ -37,11 +37,10 @@ _DNSServiceCreateConnection DNSServiceCreateConnection;
 _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 
 int OW_Load_dnssd_library(void) {
-  char file[255];
 #if OW_CYGWIN
   int i;
   char libdirs[3][80] = {
-    { "/opt/owfs/lib/libdns_sd.dll" },
+    //{ "/opt/owfs/lib/libdns_sd.dll" },
     { "libdns_sd.dll" },
     { "" }
   };
@@ -49,19 +48,18 @@ int OW_Load_dnssd_library(void) {
   i = 0;
   while(*libdirs[i]) {
     /* Cygwin has dlopen and it seems to be ok to use it actually. */
-    strcpy(file, libdirs[i]);
-    if (!(libdnssd = dlopen(file, RTLD_LAZY))) {
+    if (!(libdnssd = DL_open(libdirs[i], 0))) {
       /* Couldn't open that lib, but continue anyway */
 #if 0
       char *derr;
       derr = DL_error();
-      fprintf(stderr, "dlopen [%s] failed [%s]\n", file, derr);
+      fprintf(stderr, "dlopen [%s] failed [%s]\n", libdirs[i], derr);
 #endif
       i++;
       continue;
     } else {
 #if 0
-      fprintf(stderr, "dlopen [%s] success\n", file);
+      fprintf(stderr, "dlopen [%s] success\n", libdirs[i]);
 #endif
       break;
     }
@@ -69,6 +67,7 @@ int OW_Load_dnssd_library(void) {
 #if 0
   /* This file compiled with Microsoft Visual C doesn't work actually... */
   if(!libdnssd) {
+    char file[255];
     strcpy(file, "dnssd.dll");
     if (!(libdnssd = DL_open(file, 0))) {
       /* Couldn't open that lib, but continue anyway */
@@ -77,38 +76,32 @@ int OW_Load_dnssd_library(void) {
       derr = DL_error();
       fprintf(stderr, "DL_open [%s] failed [%s]\n", file, derr);
 #endif
-    } else {
-#if 0
-      fprintf(stderr, "DL_open [%s] success\n", file);
-#endif
     }
   }
 #endif
 
 #elif defined(HAVE_DLOPEN)
-    int i;
-    char libdirs[3][80] = {
-      { "/opt/owfs/lib/libdns_sd.so" },
-      { "libdns_sd.so" },
-      { "" }
-    };
-    
+  int i;
+  char libdirs[3][80] = {
+    { "/opt/owfs/lib/libdns_sd.so" },
+    { "libdns_sd.so" },
+    { "" }
+  };
+  
   i = 0;
   while(*libdirs[i]) {
-    strcpy(file, libdirs[i]);
-
-    if (!(libdnssd = DL_open(file, RTLD_LAZY))) {
+    if (!(libdnssd = DL_open(libdirs[i], RTLD_LAZY))) {
       /* Couldn't open that lib, but continue anyway */
 #if 0
       char *derr;
       derr = DL_error();
-      fprintf(stderr, "DL_open [%s] failed [%s]\n", file, derr);
+      fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
 #endif
       i++;
       continue;
     } else {
 #if 0
-      fprintf(stderr, "DL_open [%s] success\n", file);
+      fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
 #endif
       break;
     }

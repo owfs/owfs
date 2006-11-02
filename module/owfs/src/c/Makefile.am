@@ -1,14 +1,8 @@
 # $Id$
 
-#if HAVE_CYGWIN
-#if ENABLE_ZERO
-#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-#endif
-#endif
-
 bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c fuse_line.c
-owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la $(DNSSDLIB)
+owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \

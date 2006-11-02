@@ -105,7 +105,11 @@ static int ServerAddr(  struct connection_out * out ) {
         //printf("ServerAddr name=<%s>\n",out->name) ;
         //printf("ServerAddr search name=<%s> :=<%s>\n",out->host,out->service) ;
     } else {
-        out->host = NULL ;
+#if OW_CYGWIN
+        out->host = strdup("0.0.0.0");
+#else
+	out->host = NULL ;
+#endif
         out->service = strdup(out->name) ;
     }
 
@@ -175,7 +179,11 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
         in->connin.server.service = strdup(&p[1]) ;
         p[0] = ':' ; /* restore name string */
     } else {
+#if OW_CYGWIN
+        in->connin.server.host = strdup("0.0.0.0") ;
+#else
         in->connin.server.host = NULL ;
+#endif
         in->connin.server.service = strdup(sname) ;
     }
     

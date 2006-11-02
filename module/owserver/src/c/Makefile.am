@@ -1,14 +1,8 @@
 # $Id$
 
-#if HAVE_CYGWIN
-#if ENABLE_ZERO
-#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-#endif
-#endif
-
 bin_PROGRAMS = owserver
 owserver_SOURCES = owserver.c
-owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la $(DNSSDLIB)
+owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \

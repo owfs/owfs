@@ -4,6 +4,8 @@ CFLAGS = -g -I@prefix@/include
 
 OBJS = owdir.o
 
+all:	owdir
+
 owdir: $(OBJS)
 	@CC@ $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
 

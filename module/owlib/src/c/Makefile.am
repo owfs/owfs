@@ -91,7 +91,11 @@ OWLIB_SOURCE = ow_dl.c           \
 lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
+if HAVE_CYGWIN
+libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
+else
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
+endif
 # -version-info 0:0:1 -release ow
 
 # Maybe need this for MacOS X

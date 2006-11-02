@@ -1,11 +1,5 @@
 # $Id$
 
-#if HAVE_CYGWIN
-#if ENABLE_ZERO
-#DNSSDLIB = ../../../../src/scripts/windows/libdnssd.dll.a
-#endif
-#endif
-
 bin_PROGRAMS = owhttpd
 owhttpd_SOURCES = owhttpd.c          \
                   owhttpd_handler.c  \
@@ -15,7 +9,7 @@ owhttpd_SOURCES = owhttpd.c          \
                   owhttpd_dir.c      \
                   owhttpd_favicon.c
 
-owhttpd_DEPENDENCIES = ../../../owlib/src/c/libow.la $(DNSSDLIB)
+owhttpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 AM_CFLAGS = -I../include \
          -I../../../owlib/src/include \
