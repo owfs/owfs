@@ -85,13 +85,21 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
         in->connin.server.service = strdup(&p[1]) ;
         p[0] = ':' ; /* restore name string */
     } else {
+#if OW_CYGWIN
+        in->connin.server.host = strdup("0.0.0.0") ;
+#else
         in->connin.server.host = NULL ;
+#endif
         in->connin.server.service = strdup(sname) ;
     }
     
     memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_socktype = SOCK_STREAM ;
+#if OW_CYGWIN
+    hint.ai_family = AF_INET ;
+#else
     hint.ai_family = AF_UNSPEC ;
+#endif
 
 //printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
 

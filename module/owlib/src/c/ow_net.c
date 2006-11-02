@@ -116,7 +116,7 @@ static int ServerAddr(  struct connection_out * out ) {
     memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_flags = AI_PASSIVE ;
     hint.ai_socktype = SOCK_STREAM ;
-#ifdef __FreeBSD__
+#if OW_CYGWIN || defined(__FreeBSD__)
     hint.ai_family = AF_INET ; // FreeBSD will bind IP6 preferentially
 #else /* __FreeBSD__ */
     hint.ai_family = AF_UNSPEC ;
@@ -189,7 +189,11 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
     
     memset( &hint, 0, sizeof(struct addrinfo) ) ;
     hint.ai_socktype = SOCK_STREAM ;
+#if OW_CYGWIN
+    hint.ai_family = AF_INET ;
+#else
     hint.ai_family = AF_UNSPEC ;
+#endif
 
 //printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
 LEVEL_DEBUG("GetAddrInfo [%s] [%s]\n",in->connin.server.host, in->connin.server.service);
@@ -304,7 +308,10 @@ badthread:
     //LEVEL_DEBUG("ACCEPT %s[%lu] unlock %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     
     if ( acceptfd < 0 ) {
-        ERROR_CONNECT("Trouble with accept on listen socket %d [%s](%d)\n",sps->out->fd, sps->out->name, sps->out->index ) ;
+        ERROR_CONNECT("Trouble with accept on listen socket %d (%d)\n",sps->out->fd, sps->out->index ) ;
+	/* sps->out could actually be freed here since the thread is not killed
+	 * when user kills the main process. Avoid print out->name at least
+	 * which certainly is a bad pointer. */
     } else {
         (sps->HandlerRoutine)(acceptfd) ;
         close(acceptfd) ;
