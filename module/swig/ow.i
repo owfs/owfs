@@ -50,7 +50,7 @@ int put( const char * path, const char * value ) {
         ret = 0 ;
     } else {
         s = strlen(value) ;
-        if ( FS_write(path,value,s,0) ) ret = 0 ;
+        if ( FS_write(path,value,s,0) < 0  ) ret = 0 ;
     }
     OWLIB_can_access_end() ;
     return ret ;
