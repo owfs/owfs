@@ -46,16 +46,13 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset) 
 
     LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path), (int)size, (int)offset )
 
-    if ( FS_ParsedName( path , &pn ) ) {
-        r = -ENOENT;
-    } else if ( pn.dev==NULL || pn.ft == NULL ) {
-        r = -EISDIR ;
-    } else {
-      //printf("FS_read: pn->state=pn_bus=%c pn->bus_nr=%d\n", pn.state&pn_bus?'Y':'N', pn.bus_nr);
-      //printf("FS_read: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
-      //printf("FS_read: pid=%ld call postparse size=%ld pn->type=%d\n", pthread_self(), size, pn.type);
-      r = FS_read_postparse(buf, size, offset, &pn ) ;
-    }
+    // Parseable path?
+    if ( FS_ParsedName( path , &pn ) ) return -ENOENT;
+
+    //printf("FS_read: pn->state=pn_bus=%c pn->bus_nr=%d\n", pn.state&pn_bus?'Y':'N', pn.bus_nr);
+    //printf("FS_read: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
+    //printf("FS_read: pid=%ld call postparse size=%ld pn->type=%d\n", pthread_self(), size, pn.type);
+    r = FS_read_postparse(buf, size, offset, &pn ) ;
     FS_ParsedName_destroy(&pn) ;
     return r ;
 }
@@ -65,8 +62,11 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     struct parsedname pn2 ;
     ssize_t r = 0 ;
     //    if ( pn->in==NULL ) return -ENODEV ;
-    /* Normal read. Try three times */
 
+    // ServerRead jumps in here, perhaps with non-file entry
+    if ( pn.dev==NULL || pn.ft == NULL ) return -EISDIR ;
+
+    /* Normal read. Try three times */
     LEVEL_DEBUG("READ_POSTPARSE %s\n", pn->path);
     STATLOCK;
     AVERAGE_IN(&read_avg);

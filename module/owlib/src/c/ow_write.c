@@ -77,18 +77,10 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
     /* if readonly exit */
     if ( Global.readonly ) return -EROFS ;
 
-    if ( FS_ParsedName( path , &pn ) ) {
-        r = -ENOENT;
-    } else if ( pn.dev==NULL || pn.ft == NULL ) {
-        r = -EISDIR ;
-    } else if (pn.type == pn_structure ) { /* structure is read-only */
-        r = -ENOTSUP ;
-    } else if ( pn.in == NULL ) {
-        r = -ENODEV ;
-    } else {
-        r = FS_write_postparse( buf, size, offset, &pn ) ;
-    }
+    // parsable path?
+    if ( FS_ParsedName( path , &pn ) ) return -ENOENT ;
 
+    r = FS_write_postparse( buf, size, offset, &pn ) ;
     FS_ParsedName_destroy(&pn) ;
     return r ; /* here's where the size is used! */
 }
@@ -97,14 +89,15 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn) {
     ssize_t r ;
 
+    if ( Global.readonly ) return -EROFS ;  // read-only invokation
+    if ( pn.dev==NULL || pn.ft == NULL ) return -EISDIR ; // not a file
+    if ( pn.in == NULL ) return -ENODEV ; // no busses
+
     STATLOCK;
       AVERAGE_IN(&write_avg)
       AVERAGE_IN(&all_avg)
       ++ write_calls ; /* statistics */
     STATUNLOCK;
-
-    /* if readonly exit */
-    if ( Global.readonly ) return -EROFS ;
 
     switch (pn->type) {
     case pn_structure:
@@ -113,10 +106,6 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
         r = -ENOTSUP ;
         break;
     case pn_settings:
-        //printf("FS_write_postparse: pid=%ld system/settings/statistics\n", pthread_self());
-        /* if readonly exit */
-        if ( Global.readonly ) return -EROFS ;
-
         r = FS_w_given_bus(buf, size, offset, pn) ;
         break;
     default: // pn_real
@@ -129,8 +118,6 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
             * not just /simultaneous/temperature
             */
             r = FS_w_simultaneous(buf, size, offset, pn) ;
-        } else if ( Global.readonly ) {
-            return -EROFS ;
         } else {
             struct parsedname pn2 ;
 
