@@ -64,7 +64,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset, const st
     //    if ( pn->in==NULL ) return -ENODEV ;
 
     // ServerRead jumps in here, perhaps with non-file entry
-    if ( pn.dev==NULL || pn.ft == NULL ) return -EISDIR ;
+    if ( pn->dev==NULL || pn->ft == NULL ) return -EISDIR ;
 
     /* Normal read. Try three times */
     LEVEL_DEBUG("READ_POSTPARSE %s\n", pn->path);

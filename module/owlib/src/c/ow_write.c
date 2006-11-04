@@ -90,8 +90,8 @@ int FS_write_postparse(const char *buf, const size_t size, const off_t offset, c
     ssize_t r ;
 
     if ( Global.readonly ) return -EROFS ;  // read-only invokation
-    if ( pn.dev==NULL || pn.ft == NULL ) return -EISDIR ; // not a file
-    if ( pn.in == NULL ) return -ENODEV ; // no busses
+    if ( pn->dev==NULL || pn->ft == NULL ) return -EISDIR ; // not a file
+    if ( pn->in == NULL ) return -ENODEV ; // no busses
 
     STATLOCK;
       AVERAGE_IN(&write_avg)
