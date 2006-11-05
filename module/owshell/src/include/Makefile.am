@@ -3,7 +3,7 @@ noinst_HEADERS =          \
         compat.h          \
         compat_netdb.h    \
         ow_dl.h           \
-        os_dnssd.h        \
+        ow_dnssd.h        \
         owshell.h
 
 clean-generic:
