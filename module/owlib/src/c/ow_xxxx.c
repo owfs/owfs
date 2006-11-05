@@ -90,7 +90,7 @@ void update_max_delay(const struct parsedname * pn) {
 }
 
 int FS_type(char *buf, size_t size, off_t offset , const struct parsedname * pn) {
-    return FS_output_ascii( buf, size, offset, pn->dev->name, strlen(pn->dev->name) ) ;
+    return FS_output_ascii_z( buf, size, offset, pn->dev->name ) ;
 }
 
 int FS_code(char *buf, size_t size, off_t offset , const struct parsedname * pn) {

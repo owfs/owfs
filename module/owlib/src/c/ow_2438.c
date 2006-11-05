@@ -62,6 +62,7 @@ iWRITE_FUNCTION( FS_w_Offset ) ;
 uWRITE_FUNCTION( FS_w_counter ) ;
  dREAD_FUNCTION( FS_r_date ) ;
 dWRITE_FUNCTION( FS_w_date ) ;
+ aREAD_FUNCTION( FS_MStype ) ;
 
 /* ------- Structures ----------- */
 
@@ -111,6 +112,8 @@ struct filetype DS2438[] = {
     {"HTM1735/humidity" ,  12, NULL , ft_float     , fc_volatile, {f:FS_Humid_1735}, {v:NULL}        ,{v:NULL}, } ,
     {"HIH4000"          ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
     {"HIH4000/humidity" ,  12, NULL , ft_float     , fc_volatile, {f:FS_Humid_4000}, {v:NULL}        ,{v:NULL}, } ,
+    {"MultiSensor"      ,   0, NULL , ft_subdir    , fc_volatile, {v:NULL}        , {v:NULL}        ,{v:NULL}, } ,
+    {"MultiSensor/type" ,  12, NULL , ft_vascii    , fc_stable,   {a:FS_MStype}   , {v:NULL}        ,{v:NULL}, } ,
 } ;
 DeviceEntryExtended( 26, DS2438, DEV_temp | DEV_volt ) ;
 
@@ -146,6 +149,22 @@ static int FS_w_page(const BYTE *buf, const size_t size, const off_t offset , co
         if ( OW_w_page(buf,pn->extension,pn) ) return -EFAULT ;
     }
     return 0 ;
+}
+
+static int FS_MStype(ASCII *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
+    BYTE data[8] ;
+    ASCII * t ;
+    if ( OW_r_page( data, 0, pn ) ) return -EINVAL ;
+    switch (data[0]) {
+        case 0x00: t = "MS-T" ; break ;
+        case 0x19: t = "MS-TH" ; break ;
+        case 0x1A: t = "MS-TV" ; break ;
+        case 0x1B: t = "MS-TL" ; break ;
+        case 0x1C: t = "MS-TC" ; break ;
+        case 0x1D: t = "MS-TW" ; break ;
+        default: t="unknown" ; break ;
+    }
+    return FS_output_ascii_z( buf, size, offset, t ) ;
 }
 
 static int FS_temp(_FLOAT * T , const struct parsedname * pn) {
@@ -404,6 +423,7 @@ static int OW_volts( _FLOAT * V , const int src, const struct parsedname * pn ) 
 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
+    //printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
     V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
     return 0 ;
 }
@@ -418,7 +438,7 @@ static int OW_current( _FLOAT * I , const struct parsedname * pn ) {
     struct transaction_log tread[] = {
         TRXN_START,
         { r, NULL, 2, trxn_match, } ,
-        { NULL, data, 1, trxn_read, } ,
+        { NULL, data, 7, trxn_read, } ,
         TRXN_END,
     } ;
     struct transaction_log twrite[] = {
@@ -431,13 +451,16 @@ static int OW_current( _FLOAT * I , const struct parsedname * pn ) {
     // set current readings on source command
     // Actual units are volts-- need to know sense resistor for current
     if ( BUS_transaction( tread, pn ) ) return 1 ;
+    //printf("DS2438 current PREread %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
     enabled = data[0] & 0x01 ; // IAC bit
     if ( !enabled ) { // need to temporariliy turn on current measurements
+        //printf("DS2438 Current needs to be enabled\n");
         data[0] |= 0x01 ;
         if ( BUS_transaction( twrite, pn ) ) return 1 ;
-        UT_delay(38) ; // enough time for one conversion (38msec)
-        if ( OW_r_page( data , 0 , pn ) ) return 1 ; // reread
+        UT_delay(30) ; // enough time for one conversion (30msec)
+        if ( BUS_transaction( tread, pn ) ) return 1 ; // reread
     }
+    //printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
     I[0] = .0002441 * (_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ) ;
     if ( !enabled ) { // need to restore no current measurements
         if ( BUS_transaction( twrite, pn ) ) return 1 ;

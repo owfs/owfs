@@ -35,6 +35,8 @@ Temperature Voltages (Humidity) and Memory.
 |
 .I Ienable
 |
+.B MultiSensor/type
+|
 .I offset
 |
 .B pages/page.[0-7|ALL]
@@ -149,6 +151,13 @@ current conversion and accumulation
 .TP
 .B 3
 current conversion and accumulation with EEPROM backup
+.SS MultiSensor/type
+.I read-only, ascii
+.br
+For
+.I iButtonLink's MultiSensor
+line of 1-wire devices, give the speicif configuration based on a data byte set in memory. (Byte 0 of page 3).
+This can help interpretation of the sensor values, distinguishing, current from water from light.
 .SS offset
 .I read-write, integer
 .br

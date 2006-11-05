@@ -108,5 +108,5 @@ static int FS_w_TS(const char *buf, const size_t size, const off_t offset , cons
 
 static int FS_r_TS(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     const char * t = TemperatureScaleName( TemperatureScale(pn) ) ;
-    return FS_output_ascii( buf, size, offset, t, strlen(t) ) ;
+    return FS_output_ascii_z( buf, size, offset, t ) ;
 }

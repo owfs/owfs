@@ -248,7 +248,7 @@ static int FS_r_die(char * buf, const size_t size, const off_t offset , const st
         default:
             return -EINVAL ;
     }
-    return FS_output_ascii( buf, size, offset, d, 2 ) ;
+    return FS_output_ascii_z( buf, size, offset, d ) ;
 }
 
 static int FS_r_trim(UINT * trim , const struct parsedname * pn) {

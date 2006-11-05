@@ -306,7 +306,7 @@ static int FS_r_histoelem(UINT * u , const struct parsedname * pn) {
 
 static int FS_r_version(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     struct Version *v = (struct Version*) bsearch( pn , Versions , VersionElements, sizeof(struct Version), VersionCmp ) ;
-    return v?FS_output_ascii( buf, size, offset, v->name, strlen(v->name) ):-ENOENT ;
+    return v?FS_output_ascii_z( buf, size, offset, v->name ):-ENOENT ;
 }
 
 static int FS_r_resolution(_FLOAT * r , const struct parsedname * pn) {

@@ -918,3 +918,9 @@ int FS_output_ascii( ASCII * buf, size_t size, off_t offset, ASCII * answer, siz
     if ( length ) memcpy( buf, &answer[offset], length ) ;
     return length ;
 }
+
+/* If the string is properly terminated, we can use a simpler routine */
+int FS_output_ascii_z( ASCII * buf, size_t size, off_t offset, ASCII * answer ) {
+    return FS_output_ascii( buf, size, offset, answer, strlen(answer) ) ;
+}
+
