@@ -776,6 +776,7 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
       return -EMSGSIZE ;
     }
     memcpy( buf, c, (size_t)len ) ;
+    buf[len] = '\0';
     free(c) ;
     return len ;
 }
@@ -803,6 +804,7 @@ int FS_output_unsigned( UINT value, char * buf, const size_t size, const struct 
       return -EMSGSIZE ;
     }
     memcpy( buf, c, (size_t)len ) ;
+    buf[len] = '\0';
     free(c) ;
     return len ;
 }
@@ -825,6 +827,7 @@ int FS_output_float( _FLOAT value, char * buf, const size_t size, const struct p
       return -EMSGSIZE ;
     }
     memcpy( buf, c, (size_t)len ) ;
+    buf[len] = '\0';
     free(c) ;
     return len ;
 }
@@ -835,6 +838,7 @@ int FS_output_date( _DATE value, char * buf, const size_t size, const struct par
     if ( size < 24 ) return -EMSGSIZE ;
     ctime_r( &value, c) ;
     memcpy( buf, c, 24 ) ;
+    buf[24] = '\0';
     return 24 ;
 }
 
