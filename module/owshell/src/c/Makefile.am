@@ -6,9 +6,9 @@ COMMON_OWSHELL_SOURCE = ow_opt.c   \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \
-               ow_dl.c      \
-               ow_dnssd.c   \
-               getaddrinfo.c  \
+               ../../../owlib/src/c/ow_dl.c      \
+               ../../../owlib/src/c/ow_dnssd.c   \
+               ../../../owlib/src/c/getaddrinfo.c\
                globals.c
 
 bin_PROGRAMS = owdir owread owwrite owpresent
@@ -23,11 +23,6 @@ owwrite_SOURCES = ${COMMON_OWSHELL_SOURCE} \
 
 owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owpresent.c
-
-owdir_DEPENDENCIES =
-owread_DEPENDENCIES =
-owwrite_DEPENDENCIES =
-owpresent_DEPENDENCIES =
 
 AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \

@@ -37,7 +37,7 @@ noinst_HEADERS =          \
         ow_devices.h      \
         ow_dirblob.h      \
         ow_dl.h           \
-        ow_dnssd.h        \  
+        ow_dnssd.h        \
         ow_lcd.h          \
         ow_none.h         \
         ow_pid.h          \
