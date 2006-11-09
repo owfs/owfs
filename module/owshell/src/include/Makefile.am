@@ -1,10 +1,5 @@
-noinst_HEADERS =          \
-        compat_getopt.h   \
-        compat.h          \
-        compat_netdb.h    \
-        ow_dl.h           \
-        ow_dnssd.h        \
-        owshell.h
+
+noinst_HEADERS = owshell.h
 
 clean-generic:
 
