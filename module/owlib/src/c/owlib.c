@@ -174,9 +174,9 @@ int LibStart( void ) {
  #else /* HAVE_DAEMON */
                      my_daemon(1, 0)
  #endif /* HAVE_DAEMON */
-                 ) {
-                     LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
-                     return 1 ;
+		     ) {
+		   LEVEL_DEFAULT("Cannot enter background mode, quitting.\n");
+		   return 1 ;
                  }
                  Global.now_background = 1;
             default:
@@ -221,12 +221,12 @@ int LibStart( void ) {
             case opt_server:
  #ifdef HAVE_DAEMON
                 if(daemon(1, 0)) {
-                    ERROR_DEFAULT("Cannot enter background mode, quitting.\n")
+		    ERROR_DEFAULT("Cannot enter background mode, quitting.\n");
                     return 1 ;
                 }
  #else /* HAVE_DAEMON */
                 if(my_daemon(1, 0)) {
-                    LEVEL_DEFAULT("Cannot enter background mode, quitting.\n")
+		    LEVEL_DEFAULT("Cannot enter background mode, quitting.\n");
                     return 1 ;
                 }
  #endif /* HAVE_DAEMON */
@@ -355,16 +355,24 @@ int LibStart( void ) {
 
 void SetSignals( void ) {
     struct sigaction sa ;
-    sigemptyset( &sa.sa_mask ) ;
+    memset(&sa, 0, sizeof(struct sigaction));
+    sigemptyset(&(sa.sa_mask));
+#if 0
     sa.sa_flags=SA_SIGINFO ;
     sa.sa_sigaction = SigHandler ;
     sigaction(SIGPIPE,&sa,NULL) ;
-
+#else
+    sa.sa_handler = SIG_IGN;
+    if(sigaction(SIGPIPE, &sa, NULL) == -1) {
+	LEVEL_DEFAULT("Cannot set ignored signals") ;
+	exit(0);
+    }
+#endif
 }
 
 void SigHandler( int signo, siginfo_t * info, void * context ) {
     (void) context ;
-    LEVEL_DEBUG("Signal handler for $d, errno %d, code %d, pid %ld\n",signo,info->si_errno,info->si_code,(long int)info->si_pid) ;
+    LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid %ld\n",signo,info->si_errno,info->si_code,(long int)info->si_pid) ;
 }
 
 /* All ow library closeup */
@@ -411,15 +419,15 @@ void set_signal_handlers( void (*exit_handler)(int errcode) ) {
 
     sa.sa_handler = exit_handler;
     if ((sigaction(SIGHUP,  &sa, NULL) == -1) ||
-   (sigaction(SIGINT,  &sa, NULL) == -1) ||
-   (sigaction(SIGTERM, &sa, NULL) == -1)) {
-        LEVEL_DEFAULT("Cannot set exit signal handlers")
-        exit_handler(-1);
+	(sigaction(SIGINT,  &sa, NULL) == -1) ||
+	(sigaction(SIGTERM, &sa, NULL) == -1)) {
+      LEVEL_DEFAULT("Cannot set exit signal handlers");
+      exit_handler(-1);
     }
 
     sa.sa_handler = SIG_IGN;
     if(sigaction(SIGPIPE, &sa, NULL) == -1) {
-        LEVEL_DEFAULT("Cannot set ignored signals")
-        exit_handler(-1);
+      LEVEL_DEFAULT("Cannot set ignored signals");
+      exit_handler(-1);
     }
 }

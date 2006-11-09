@@ -369,6 +369,8 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     /* Wait for the end */
     pause() ;
 
+    LEVEL_DEBUG("ow_net.c:ServerProcess() pause() returned. errno=%d [%s]", errno, strerror(errno));
+
     /* Cleanup that may never be reached */
     free(sps) ;
 }
