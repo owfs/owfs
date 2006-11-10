@@ -541,6 +541,8 @@ struct global {
 } ;
 extern struct global Global ;
 
+extern int shutdown_in_progress ;
+
 struct buspath {
     BYTE sn[8] ;
     BYTE branch ;

@@ -44,15 +44,20 @@ pthread_t main_threadid ;
 #endif
 
 static void ow_exit( int e ) {
+    LEVEL_DEBUG("ow_exit %d", e);
     if(IS_MAINTHREAD) {
         LibClose() ;
     }
     /* Process never die on WRT54G router with uClibc if exit() is used */
-    _exit( e ) ;
+    //_exit( e ) ;
+    exit( e ) ;
 }
 
 static void exit_handler(int i) {
-    return ow_exit( ((i<0) ? 1 : 0) ) ;
+    shutdown_in_progress = 1;
+    LEVEL_DEBUG("exit_handler: %d", i);
+    //return ow_exit( ((i<0) ? 1 : 0) ) ;
+    return;
 }
 
 int main(int argc, char *argv[]) {

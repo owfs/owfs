@@ -122,7 +122,7 @@ static int ServerAddr(  struct connection_out * out ) {
     hint.ai_family = AF_UNSPEC ;
 #endif /* __FreeBSD__ */
 
-    printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
+    //printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
     if ( (ret=getaddrinfo( out->host, out->service, &hint, &out->ai )) ) {
     ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s\n",SAFESTRING(out->name),SAFESTRING(out->host),SAFESTRING(out->service));
@@ -286,6 +286,7 @@ struct serverprocessstruct {
     struct connection_out * out ;
     void (*HandlerRoutine)(int fd) ;
     void (*Exit)(int errcode) ;
+    pthread_t tid ;
 } ;
 
 static void * ServerProcessAccept( void * vp ) {
@@ -356,23 +357,56 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
 
     /* Start the head of a thread chain for each outdevice */
     for ( i=0 ; i<outdevices ; ++i,out=out->next ) {
-        pthread_t thread ;
         sps[i].out = out ;
         sps[i].HandlerRoutine = HandlerRoutine ;
         sps[i].Exit = Exit ;
-        if ( pthread_create(&thread, NULL, ServerProcessOut, (void *)(&(sps[i])) ) ) {
+        if ( pthread_create(&(sps[i].tid), NULL, ServerProcessOut, (void *)(&(sps[i])) ) ) {
             ERROR_CONNECT("Could not create a thread for %s\n",SAFESTRING(sps[i].out->name)) ;
             Exit(1) ;
         }
     }
 
-    /* Wait for the end */
-    pause() ;
+#if 1
+    {
+      int sig;
+      sigset_t myset;
+      (void) sigemptyset(&myset);
+      (void) sigaddset(&myset, SIGINT);
+      (void) sigaddset(&myset, SIGTERM);
+      (void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+      while (!shutdown_in_progress) {
+#if 0
+	// old solaris function...
+	sig = sigwait(&myset);
+	if (sig > 0) {
+	  break;
+	}
+#else
+	if(sigwait(&myset, &sig)==0) break;
+#endif
+      }
+    }
+#else
+    /* Wait forever... Since any signals will abort pause() we have to loop forever */
+    while(1) {
+      pause() ;
+      if(shutdown_in_progress) break;
+      LEVEL_DEBUG("ow_net.c:ServerProcess() pause() returned. errno=%d [%s]\n", errno, strerror(errno));
+    }
+#endif
+    LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown initiated\n");
 
-    LEVEL_DEBUG("ow_net.c:ServerProcess() pause() returned. errno=%d [%s]", errno, strerror(errno));
+    for ( i=0 ; i<outdevices ; ++i,out=out->next ) {
+        if ( pthread_cancel(sps[i].tid) ) {
+	  //ERROR_CONNECT("Could not kill thread %d for [%s]\n",sps[i].tid, sps[i].out->name) ;
+        }
+    }
 
+    LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown done\n");
+      
     /* Cleanup that may never be reached */
     free(sps) ;
+    Exit(0);
 }
 
 #else /* OW_MT */
@@ -391,6 +425,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         OW_Announce( outdevice ) ;
         while (1) {
             int acceptfd=accept(outdevice->fd,NULL,NULL) ;
+	    if(shutdown_in_progress) break;
             if ( acceptfd < 0 ) {
                 ERROR_CONNECT("Trouble with accept, will reloop\n") ;
             } else {
@@ -398,6 +433,7 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
                 close(acceptfd) ;
             }
         }
+	Exit(0);
     }
 }
 #endif /* OW_MT */

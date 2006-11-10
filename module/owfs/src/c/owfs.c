@@ -26,14 +26,16 @@ pthread_t main_threadid ;
 #endif
 
 static void ow_exit( int e ) {
+    shutdown_in_progress = 1;
     LEVEL_DEBUG("owfs: ow_exit(%d)\n", e);
     if(IS_MAINTHREAD) {
         LEVEL_DEBUG("owfs: LibClose()\n");
         LibClose() ;
     }
-    LEVEL_DEBUG("owfs: call _exit(%d)\n", e);
+    //LEVEL_DEBUG("owfs: call _exit(%d)\n", e);
     /* Process never die on WRT54G router with uClibc if exit() is used */
-    _exit( e ) ;
+    //_exit( e ) ;
+    exit( e ) ;
 }
 
 /*

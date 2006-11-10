@@ -16,7 +16,9 @@ $Id$
 #include "ow_pid.h"
 
 void SetSignals( void ) ;
-void SigHandler( int signo, siginfo_t * info, void * context ) ;
+
+// flag to initiate shutdown
+int shutdown_in_progress = 0;
 
 /* All ow library setup */
 void LibSetup( enum opt_program opt ) {
@@ -353,26 +355,38 @@ int LibStart( void ) {
     return 0 ;
 }
 
-void SetSignals( void ) {
-    struct sigaction sa ;
-    memset(&sa, 0, sizeof(struct sigaction));
-    sigemptyset(&(sa.sa_mask));
-#if 0
-    sa.sa_flags=SA_SIGINFO ;
-    sa.sa_sigaction = SigHandler ;
-    sigaction(SIGPIPE,&sa,NULL) ;
-#else
-    sa.sa_handler = SIG_IGN;
-    if(sigaction(SIGPIPE, &sa, NULL) == -1) {
-	LEVEL_DEFAULT("Cannot set ignored signals") ;
-	exit(0);
-    }
-#endif
-}
-
 void SigHandler( int signo, siginfo_t * info, void * context ) {
     (void) context ;
     LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid %ld\n",signo,info->si_errno,info->si_code,(long int)info->si_pid) ;
+}
+
+void SetSignals( void ) {
+    struct sigaction sa, oldsigset ;
+
+    memset(&sa, 0, sizeof(struct sigaction));
+    sigemptyset(&(sa.sa_mask));
+
+    sa.sa_flags = SA_SIGINFO ;
+    sa.sa_sigaction = SigHandler ;
+    if(sigaction(SIGHUP, &sa, NULL) == -1) {
+	LEVEL_DEFAULT("Cannot handle SIGHUP\n") ;
+	exit(0);
+    }
+
+    // more like a test to see if signals are handled correctly
+    sa.sa_flags = SA_SIGINFO ;
+    sa.sa_sigaction = SigHandler ;
+    if(sigaction(SIGUSR1, &sa, NULL) == -1) {
+	LEVEL_DEFAULT("Cannot handle SIGUSR1\n") ;
+	exit(0);
+    }
+
+    sa.sa_flags = 0 ;
+    sa.sa_handler = SIG_IGN ;
+    if(sigaction(SIGPIPE, &sa, NULL) == -1) {
+	LEVEL_DEFAULT("Cannot ignore SIGPIPE\n") ;
+	exit(0);
+    }
 }
 
 /* All ow library closeup */
@@ -387,7 +401,6 @@ void LibClose( void ) {
     FreeIn() ;
     LEVEL_CALL("Closing outout devices\n");
     FreeOut() ;
-    if ( log_available ) closelog() ;
     DeviceDestroy() ;
 
 #if OW_MT
@@ -408,6 +421,7 @@ void LibClose( void ) {
     }
     OW_Free_dnssd_library();
     LEVEL_CALL("Finished Library cleanup\n");
+    if ( log_available ) closelog() ;
 }
 
 void set_signal_handlers( void (*exit_handler)(int errcode) ) {
@@ -415,19 +429,12 @@ void set_signal_handlers( void (*exit_handler)(int errcode) ) {
 
     memset(&sa, 0, sizeof(struct sigaction));
     sigemptyset(&(sa.sa_mask));
+
     sa.sa_flags = 0;
-
     sa.sa_handler = exit_handler;
-    if ((sigaction(SIGHUP,  &sa, NULL) == -1) ||
-	(sigaction(SIGINT,  &sa, NULL) == -1) ||
+    if ((sigaction(SIGINT,  &sa, NULL) == -1) ||
 	(sigaction(SIGTERM, &sa, NULL) == -1)) {
-      LEVEL_DEFAULT("Cannot set exit signal handlers");
-      exit_handler(-1);
-    }
-
-    sa.sa_handler = SIG_IGN;
-    if(sigaction(SIGPIPE, &sa, NULL) == -1) {
-      LEVEL_DEFAULT("Cannot set ignored signals");
+      LEVEL_DEFAULT("Cannot set exit signal handlers\n");
       exit_handler(-1);
     }
 }
