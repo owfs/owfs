@@ -167,6 +167,9 @@ int LibStart( void ) {
      * I moved it here to avoid calling __pthread_initialize() */
     if ( Global.want_background ) {
         switch ( Global.opt) {
+            case opt_owfs:
+                // handles PID from a callback
+                break ;
             case opt_httpd:
             case opt_ftpd:
             case opt_server:
@@ -182,8 +185,11 @@ int LibStart( void ) {
                  }
                  Global.now_background = 1;
             default:
+                 PIDstart() ;
                  break ;
         }
+    } else { // not background
+        if ( Global.opt != opt_owfs ) PIDstart() ;
     }
 
     /* Have to re-initialize pthread since the main-process is gone.

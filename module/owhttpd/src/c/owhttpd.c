@@ -44,18 +44,21 @@ pthread_t main_threadid ;
 #endif
 
 static void ow_exit( int e ) {
-    LEVEL_DEBUG("ow_exit %d", e);
+    LEVEL_DEBUG("ow_exit %d\n", e);
     if(IS_MAINTHREAD) {
         LibClose() ;
     }
+#ifdef __UCLIBC__
     /* Process never die on WRT54G router with uClibc if exit() is used */
-    //_exit( e ) ;
+    _exit( e ) ;
+#else
     exit( e ) ;
+#endif
 }
 
 static void exit_handler(int i) {
     shutdown_in_progress = 1;
-    LEVEL_DEBUG("exit_handler: %d", i);
+    LEVEL_DEBUG("exit_handler: %d\n", i);
     //return ow_exit( ((i<0) ? 1 : 0) ) ;
     return;
 }
@@ -75,6 +78,8 @@ int main(int argc, char *argv[]) {
             fprintf(stderr,
             "%s version:\n\t" VERSION "\n",argv[0] ) ;
             break ;
+        default:
+            break;
         }
         if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
     }
@@ -104,7 +109,6 @@ int main(int argc, char *argv[]) {
 #endif
 
     ServerProcess( Acceptor, ow_exit ) ;
-    ow_exit(0) ;
     return 0 ;
 }
 

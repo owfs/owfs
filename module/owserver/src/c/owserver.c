@@ -112,18 +112,21 @@ static void SetupAntiloop( void ) ;
 
 
 static void ow_exit( int e ) {
-    LEVEL_DEBUG("ow_exit %d", e);
+    LEVEL_DEBUG("ow_exit %d\n", e);
     if(IS_MAINTHREAD) {
         LibClose() ;
     }
+#ifdef __UCLIBC__
     /* Process never die on WRT54G router with uClibc if exit() is used */
-    //_exit( e ) ;
+    _exit( e ) ;
+#else
     exit( e ) ;
+#endif
 }
 
 static void exit_handler(int i) {
     shutdown_in_progress = 1;
-    LEVEL_DEBUG("exit_handler: %d", i);
+    LEVEL_DEBUG("exit_handler: %d\n", i);
     //return ow_exit( ((i<0) ? 1 : 0) ) ;
     return;
 }
@@ -650,7 +653,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
 #endif /* NO_NESTED_FUNCTIONS */
 
 
-int main( int argc , char ** argv ) {
+int main(int argc , char ** argv) {
     int c ;
 
     /* Set up owlib */
@@ -691,24 +694,14 @@ int main( int argc , char ** argv ) {
      * Now we drop privledges and become a daemon.
      */
     if ( LibStart() ) ow_exit(1) ;
-
 #if OW_MT
     main_threadid = pthread_self() ;
 #endif
 
-    /* this row will give a very strange output??
-     * indevice->busmode is not working for me?
-     * main7: indevice=0x9d314d0 indevice->busmode==858692 2
-     *
-     * This old bug/workaround might be fixed?, and get_busmode() could perhaps
-     * be removed. */
-    //printf("main7: indevice=%p indevice->busmode==%d %d\n", indevice, indevice->busmode, get_busmode(indevice));
-    
     /* Set up "Antiloop" -- a unique token */
     SetupAntiloop() ;
 
     ServerProcess( Handler, ow_exit ) ;
-    //ow_exit(0) ;
     return 0 ;
 }
 
