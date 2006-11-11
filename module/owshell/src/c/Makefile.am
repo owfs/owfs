@@ -6,9 +6,9 @@ COMMON_OWSHELL_SOURCE = ow_opt.c   \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \
-               ../../../owlib/src/c/ow_dl.c      \
-               ../../../owlib/src/c/ow_dnssd.c   \
-               ../../../owlib/src/c/getaddrinfo.c\
+               ow_dl.c      \
+               ow_dnssd.c   \
+               getaddrinfo.c\
                globals.c
 
 bin_PROGRAMS = owdir owread owwrite owpresent
