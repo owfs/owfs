@@ -288,7 +288,7 @@ static void * ServerProcessAccept( void * vp ) {
     int acceptfd ;
     int ret ;
     
-    printf("ServerProcessAccept = %ld\n",pthread_self() ) ;
+    LEVEL_DEBUG("ServerProcessAccept = %ld\n",pthread_self() );
     pthread_detach( pthread_self() ) ;
 
 badthread:
@@ -297,10 +297,28 @@ badthread:
     //LEVEL_DEBUG("ACCEPT %s[%lu] locked %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     ret = pthread_create( &thread, NULL, ServerProcessAccept, vp ) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] create %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
-    acceptfd = accept( out->fd, NULL, NULL ) ;
-    //LEVEL_DEBUG("ACCEPT %s[%lu] accept %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    do {
+      acceptfd = accept( out->fd, NULL, NULL ) ;
+      //LEVEL_DEBUG("ACCEPT %s[%lu] accept %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+      if(shutdown_in_progress) break;
+      if(acceptfd < 0) {
+	if(errno == EINTR) {
+	  LEVEL_DEBUG("ow_net.c: accept interrupted\n");
+	  continue;
+	}
+	LEVEL_DEBUG("ow_net.c: accept error %d [%s]\n", errno, strerror(errno));
+	break;
+      } else {
+	break;
+      }
+    } while(1);
     ACCEPTUNLOCK(out) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] unlock %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+
+    if(shutdown_in_progress) {
+      if(acceptfd >= 0) close(acceptfd) ;
+      return NULL;
+    }
     
     if ( acceptfd < 0 ) {
         ERROR_CONNECT("Trouble with accept on listen socket %d (%d)\n",out->fd, out->index ) ;
@@ -315,13 +333,13 @@ badthread:
     //LEVEL_DEBUG("ACCEPT %s[%lu] handled %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     /* only loop if another thread couldn't be created */
     if ( ret ) goto badthread ;
-    printf("ServerProcessAccept = %ld CLOSING\n",pthread_self() ) ;
+    //printf("ServerProcessAccept = %ld CLOSING\n",pthread_self() ) ;
     return NULL ;
 }
     
 static void * ServerProcessOut( void * vp ) {
     struct connection_out * out = (struct connection_out *) vp ;
-    printf("ServerProcessOut = %ld\n",pthread_self() ) ;
+    LEVEL_DEBUG("ServerProcessOut = %ld\n",pthread_self() );
     pthread_detach( pthread_self() ) ;
 
     if ( ServerOutSetup( out ) ) {
