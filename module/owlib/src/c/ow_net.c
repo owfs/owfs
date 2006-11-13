@@ -282,88 +282,80 @@ int ServerOutSetup( struct connection_out * out ) {
 
 /* Server Process run for each out device, and each */
 #if OW_MT
-struct serverprocessstruct {
-    struct connection_out * out ;
-    void (*HandlerRoutine)(int fd) ;
-    void (*Exit)(int errcode) ;
-    pthread_t tid ;
-} ;
-
 static void * ServerProcessAccept( void * vp ) {
-    struct serverprocessstruct * sps = (struct serverprocessstruct *) vp ;
+    struct connection_out * out = (struct connection_out *) vp ;
     pthread_t thread ;
     int acceptfd ;
     int ret ;
     
+    printf("ServerProcessAccept = %ld\n",pthread_self() ) ;
     pthread_detach( pthread_self() ) ;
 
 badthread:
     //LEVEL_DEBUG("ACCEPT %s[%lu] start %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
-    ACCEPTLOCK(sps->out) ;
+    ACCEPTLOCK(out) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] locked %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     ret = pthread_create( &thread, NULL, ServerProcessAccept, vp ) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] create %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
-    acceptfd = accept( sps->out->fd, NULL, NULL ) ;
+    acceptfd = accept( out->fd, NULL, NULL ) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] accept %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
-    ACCEPTUNLOCK(sps->out) ;
+    ACCEPTUNLOCK(out) ;
     //LEVEL_DEBUG("ACCEPT %s[%lu] unlock %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     
     if ( acceptfd < 0 ) {
-        ERROR_CONNECT("Trouble with accept on listen socket %d (%d)\n",sps->out->fd, sps->out->index ) ;
+        ERROR_CONNECT("Trouble with accept on listen socket %d (%d)\n",out->fd, out->index ) ;
 	/* sps->out could actually be freed here since the thread is not killed
 	 * when user kills the main process. Avoid print out->name at least
 	 * which certainly is a bad pointer. */
     } else {
-        (sps->HandlerRoutine)(acceptfd) ;
+        (out->HandlerRoutine)(acceptfd) ;
         close(acceptfd) ;
     }
     //LEVEL_DEBUG("ACCEPT  <%p> <%p>\n",sps,sps->out);
     //LEVEL_DEBUG("ACCEPT %s[%lu] handled %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     /* only loop if another thread couldn't be created */
     if ( ret ) goto badthread ;
+    printf("ServerProcessAccept = %ld CLOSING\n",pthread_self() ) ;
     return NULL ;
 }
     
 static void * ServerProcessOut( void * vp ) {
-    struct serverprocessstruct * sps = (struct serverprocessstruct *) vp ;
-
+    struct connection_out * out = (struct connection_out *) vp ;
+    printf("ServerProcessOut = %ld\n",pthread_self() ) ;
     pthread_detach( pthread_self() ) ;
 
-    if ( ServerOutSetup( sps->out ) ) {
-        LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(sps->out->name),sps->out->index) ;
-        (sps->Exit)(1) ;
+    if ( ServerOutSetup( out ) ) {
+        LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(out->name),out->index) ;
+        (out->Exit)(1) ;
     }
-    OW_Announce( sps->out ) ;
+    OW_Announce( out ) ;
     ServerProcessAccept( vp ) ;
+    LEVEL_DEBUG("ServerProcessOut = %ld CLOSING (%s)\n",pthread_self(), SAFESTRING(out->name) ) ;
+    OUTLOCK(out) ;
+        out->tid = 0 ;
+    OUTUNLOCK(out) ;
     return NULL ;
 }
 
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
-    struct serverprocessstruct * sps ;
     struct connection_out * out = outdevice ;
-    int i ;
 
     if ( outdevices==0 ) {
         LEVEL_CALL("No output devices defined\n") ;
         Exit(1) ;
     }
 
-    /* Create a memory buffer for each device */
-    sps = (struct serverprocessstruct *) calloc(outdevices, sizeof(struct serverprocessstruct)) ;
-    if ( sps==NULL ) {
-        LEVEL_CALL("Cannot allocate space for out device structures\n") ;
-        Exit(1) ;
-    }
-
     /* Start the head of a thread chain for each outdevice */
-    for ( i=0 ; i<outdevices ; ++i,out=out->next ) {
-        sps[i].out = out ;
-        sps[i].HandlerRoutine = HandlerRoutine ;
-        sps[i].Exit = Exit ;
-        if ( pthread_create(&(sps[i].tid), NULL, ServerProcessOut, (void *)(&(sps[i])) ) ) {
-            ERROR_CONNECT("Could not create a thread for %s\n",SAFESTRING(sps[i].out->name)) ;
+    for ( out = outdevice ; out ; out=out->next ) {
+        OUTLOCK(out) ;
+        out->HandlerRoutine = HandlerRoutine ;
+        out->Exit = Exit ;
+        if ( pthread_create(&(out->tid), NULL, ServerProcessOut, (void *)(out) ) ) {
+            OUTUNLOCK(out) ;
+            ERROR_CONNECT("Could not create a thread for %s\n",SAFESTRING(out->name)) ;
             Exit(1) ;
         }
+        OUTUNLOCK(out) ;
     }
 
 #if 1
@@ -388,24 +380,28 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
     }
 #else
     /* Wait forever... Since any signals will abort pause() we have to loop forever */
-    while(1) {
+    while(!shutdown_in_progress) {
       pause() ;
-      if(shutdown_in_progress) break;
       LEVEL_DEBUG("ow_net.c:ServerProcess() pause() returned. errno=%d [%s]\n", errno, strerror(errno));
     }
 #endif
     LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown initiated\n");
 
-    for ( i=0 ; i<outdevices ; ++i,out=out->next ) {
-        if ( pthread_cancel(sps[i].tid) ) {
-	  //ERROR_CONNECT("Could not kill thread %d for [%s]\n",sps[i].tid, sps[i].out->name) ;
+    for ( out = outdevice ; out ; out=out->next ) {
+        OUTLOCK(out) ;
+        if ( out->tid ) {
+            LEVEL_DEBUG( "Shutting down %d of %d thread %ld\n",out->index,outdevices,out->tid) ;
+            if ( pthread_cancel(out->tid) ) {
+                LEVEL_DEBUG( "Can't kill %d of %d\n",out->index,outdevices) ;
+            }
+            out->tid = 0 ;
         }
+        OUTUNLOCK(out) ;
     }
 
     LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown done\n");
       
     /* Cleanup that may never be reached */
-    free(sps) ;
     Exit(0);
 }
 

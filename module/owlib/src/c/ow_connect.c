@@ -86,6 +86,7 @@ struct connection_out * NewOut( void ) {
         now->index = outdevices ++ ;
 #if OW_MT
         pthread_mutex_init(&(now->accept_mutex), pmattr);
+        pthread_mutex_init(&(now->out_mutex), pmattr);
 #endif /* OW_MT */
         // Zero sref's -- done with struct memset
         //now->sref0 = 0 ;

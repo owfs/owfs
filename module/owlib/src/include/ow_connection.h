@@ -173,11 +173,15 @@ struct interface_routines {
 #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
 #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) )
 #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) )
+#define OUTLOCK(out)          pthread_mutex_lock(  &((out)->out_mutex) )
+#define OUTUNLOCK(out)        pthread_mutex_unlock(&((out)->out_mutex) )
 #else /* OW_MT */
 #define DEVLOCK(pn)
 #define DEVUNLOCK(pn)
 #define ACCEPTLOCK(out)
 #define ACCEPTUNLOCK(out)
+#define OUTLOCK(out)
+#define OUTUNLOCK(out)
 #endif /* OW_MT */
 
 struct connin_serial {
@@ -350,6 +354,8 @@ struct connection_in {
 /* Network connection structure */
 struct connection_out {
     struct connection_out * next ;
+    void (*HandlerRoutine)(int fd) ;
+    void (*Exit)(int errcode) ;
     char * name ;
     char * host ;
     char * service ;
@@ -359,6 +365,8 @@ struct connection_out {
     int fd ;
 #if OW_MT
     pthread_mutex_t accept_mutex ;
+    pthread_mutex_t out_mutex ;
+    pthread_t tid ;
 #endif /* OW_MT */
     DNSServiceRef sref0 ;
     DNSServiceRef sref1 ;
