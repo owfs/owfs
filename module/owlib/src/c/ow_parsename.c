@@ -37,18 +37,22 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
 void FS_ParsedName_destroy( struct parsedname * pn ) {
     if(!pn) return ;
     LEVEL_DEBUG("ParsedName_destroy %s\n",SAFESTRING(pn->path)) ;
+    //printf("PNDestroy bp (%d)\n",is_servermode(pn->in)) ;
     if ( pn->bp ) {
         free( pn->bp ) ;
         pn->bp = NULL ;
     }
+    //printf("PNDestroy path (%d)\n",is_servermode(pn->in)) ;
     if ( pn->path ) {
         free(pn->path);
         pn->path = NULL;
     }
+    //printf("PNDestroy lock (%d)\n",is_servermode(pn->in)) ;
     if ( pn->lock ) {
         free(pn->lock) ;
         pn->lock = NULL ;
     }
+    //printf("PNDestroy done (%d)\n",is_servermode(pn->in)) ;
     // Tokenstring is part of a larger allocation and destroyed separately 
 }
 

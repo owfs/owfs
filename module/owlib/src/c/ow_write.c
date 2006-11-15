@@ -254,6 +254,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
     size_t fl = FileLength(pn) ;
     int ret ;
     char * cbuf = NULL ;
+    size_t cbuflen ;
 //printf("FS_w_single\n");
 
 #if OW_CACHE
@@ -268,7 +269,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
         } else {
             int I ;
             ret = FS_input_integer( &I, buf, size ) ;
-            if ( cbuf && ret==0 ) FS_output_integer(I,cbuf,fl,pn) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) cbuflen = FS_output_integer(I,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.i)(&I,pn) ;
         }
         break ;
@@ -279,7 +280,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
         } else {
             UINT U ;
             ret = FS_input_unsigned( &U, buf, size ) ;
-            if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,fl,pn) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) cbuflen = FS_output_unsigned(U,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.u)(&U,pn) ;
         }
         break ;
@@ -296,7 +297,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
             } else if ( pn->ft->format == ft_tempgap ) {
                 F = fromTempGap( F , pn ) ;
             }
-            if ( cbuf && ret==0 ) FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) cbuflen = FS_output_float(F,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.f)(&F,pn) ;
         }
         break ;
@@ -306,7 +307,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
         } else {
             _DATE D ;
             ret = FS_input_date( &D, buf, size ) ;
-            if ( cbuf && ret==0 ) FS_output_date(D,cbuf,fl,pn) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) cbuflen = FS_output_date(D,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.d)(&D,pn) ;
         }
         break ;
@@ -316,7 +317,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
         } else {
             int Y ;
             ret = FS_input_yesno( &Y, buf, size ) ;
-            if ( cbuf && ret==0 ) FS_output_integer(Y,cbuf,fl,pn) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) cbuflen = FS_output_integer(Y,cbuf,fl,pn) ; /* post-parse cachable string creation */
             ret = ret || (pn->ft->write.y)(&Y,pn) ;
         }
         break ;
@@ -332,7 +333,10 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
                 if ( cbuf ) free(cbuf) ;
                 cbuf = NULL ;
             }
-            if ( cbuf && ret==0 ) strncpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) {
+                cbuflen = s ;
+                strncpy(cbuf,buf,cbuflen) ; /* post-parse cachable string creation */
+            }
         }
         break ;
     case ft_binary:
@@ -346,7 +350,10 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
                 if ( cbuf ) free(cbuf) ;
                 cbuf = NULL ;
             }
-            if ( cbuf && ret==0 ) memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+            if ( cbuf && ret==0 ) {
+                cbuflen = s ;
+                memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+            }
         }
         break ;
     case ft_directory:
@@ -361,7 +368,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
     /* Add to cache? */
     if ( cbuf && ret==0 ) {
       //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
-        Cache_Add( cbuf, strlen(cbuf), pn ) ;
+        Cache_Add( cbuf, cbuflen, pn ) ;
     } else if ( IsLocalCacheEnabled(pn) ) {
       //printf("CACHEDEL: %s\n",pn->path);
             Cache_Del( pn ) ;
@@ -381,6 +388,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
     size_t ffl = FullFileLength(pn);
     int ret ;
     char * cbuf = NULL ;
+    size_t cbuflen ;
 
 #if OW_CACHE
     /* buffer for storing parsed data to cache */
@@ -397,7 +405,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                 ret = -ENOMEM ;
             } else {
                 if ( (ret = FS_input_integer_array( i, buf, size, pn ))==0 ) {
-                    if ( cbuf ) FS_output_integer_array(i,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    if ( cbuf ) cbuflen = FS_output_integer_array(i,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.i)(i,pn) ;
                 }
             free(i) ;
@@ -411,7 +419,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                 ret = -ENOMEM ;
             } else {
                 if ( (ret = FS_input_unsigned_array( u, buf, size, pn )) == 0 ) {
-                    if ( cbuf ) FS_output_unsigned_array(u,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    if ( cbuf ) cbuflen = FS_output_unsigned_array(u,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.u)(u,pn) ;
                 }
             free(u) ;
@@ -434,7 +442,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                         size_t i ;
                         for ( i=0 ; i<elements ; ++i ) f[i] = fromTempGap(f[i],pn) ;
                     }
-                    if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    if ( cbuf ) cbuflen = FS_output_float_array(f,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.f)(f,pn) ;
                 }
             free(f) ;
@@ -448,7 +456,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                 ret = -ENOMEM ;
             } else {
                 if ( (ret = FS_input_date_array( d, buf, size, pn )) ==0 ) {
-                    if ( cbuf ) FS_output_date_array(d,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    if ( cbuf ) cbuflen = FS_output_date_array(d,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.d)(d,pn) ;
                 }
             free(d) ;
@@ -462,7 +470,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                 ret = -ENOMEM ;
             } else {
                 if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
-                    if ( cbuf ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    if ( cbuf ) cbuflen = FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.y)(y,pn) ;
                 }
             free(y) ;
@@ -479,7 +487,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                 UINT U = 0 ;
                 if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
                     for (i=pn->ft->ag->elements-1;i>=0;--i) U = (U<<1) | (y[i]&0x01) ;
-                    if ( cbuf ) FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
+                    if ( cbuf ) cbuflen = FS_output_integer_array(y,cbuf,ffl,pn) ; /* post-parse cachable string creation */
                     ret = (pn->ft->write.u)(&U,pn) ;
                 }
             free(y) ;
@@ -501,7 +509,10 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                     if ( cbuf ) free(cbuf) ;
                     cbuf = NULL ;
                 }
-                if ( cbuf && ret==0 ) strncpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+                if ( cbuf && ret==0 ) {
+                    cbuflen = s ;
+                    memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+                }
             }
         }
         break ;
@@ -519,7 +530,10 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
                     if ( cbuf ) free(cbuf) ;
                     cbuf = NULL ;
                 }
-                if ( cbuf && ret==0 ) memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+                if ( cbuf && ret==0 ) {
+                    cbuflen = s ;
+                    memcpy(cbuf,buf,s) ; /* post-parse cachable string creation */
+                }
             }
         }
         break ;
@@ -534,7 +548,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
 
     /* Add to cache? */
     if ( cbuf && ret==0 ) {
-        Cache_Add( cbuf, strlen(cbuf), pn ) ;
+        Cache_Add( cbuf, cbuflen, pn ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
     } else if ( IsLocalCacheEnabled(pn) ) {
             Cache_Del( pn ) ;
@@ -592,6 +606,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
 
     const size_t ffl = FullFileLength(pn) ;
     char * cbuf = NULL ;
+    size_t cbuflen ;
     struct parsedname pn_all ;
     
     memcpy( &pn_all, pn, sizeof(struct parsedname) ) ; //shallow copy
@@ -616,7 +631,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                 ret = -ENOMEM ;
             } else {
                 ret = ((pn->ft->read.y)(y,pn)<0) || FS_input_yesno(&y[pn->extension],buf,size) || (pn->ft->write.y)(y,pn)  ;
-                if ( cbuf && ret==0 ) FS_output_integer_array(y,cbuf,ffl,pn) ;
+                if ( cbuf && ret==0 ) cbuflen = FS_output_integer_array(y,cbuf,ffl,pn) ;
             free( y ) ;
             }
         }
@@ -630,7 +645,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                 ret = -ENOMEM ;
             } else {
                 ret = ((pn->ft->read.i)(i,pn)<0) || FS_input_integer(&i[pn->extension],buf,size) || (pn->ft->write.i)(i,pn) ;
-                if ( cbuf && ret==0 ) FS_output_integer_array(i,cbuf,ffl,pn) ;
+                if ( cbuf && ret==0 ) cbuflen = FS_output_integer_array(i,cbuf,ffl,pn) ;
             free( i ) ;
             }
         }
@@ -644,7 +659,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                 ret = -ENOMEM ;
             } else {
                 ret = ((pn->ft->read.u)(u,pn)<0) || FS_input_unsigned(&u[pn->extension],buf,size) || (pn->ft->write.u)(u,pn) ;
-                if ( cbuf && ret==0 ) FS_output_unsigned_array(u,cbuf,ffl,pn) ;
+                if ( cbuf && ret==0 ) cbuflen = FS_output_unsigned_array(u,cbuf,ffl,pn) ;
             free( u ) ;
             }
         }
@@ -660,7 +675,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                 UT_setbit((void*)(&U),pn->extension,y) ;
                 ret = (pn->ft->write.u)(&U,pn) ;
             }
-            if ( cbuf && ret==0 ) FS_output_unsigned(U,cbuf,ffl,pn) ;
+            if ( cbuf && ret==0 ) cbuflen = FS_output_unsigned(U,cbuf,ffl,pn) ;
         }
         break ;
     case ft_tempgap:
@@ -673,7 +688,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                 ret = -ENOMEM ;
             } else {
                 ret = ((pn->ft->read.f)(f,pn)<0) || FS_input_float(&f[pn->extension],buf,size) || (pn->ft->write.f)(f,pn) ;
-                if ( cbuf && ret==0 ) FS_output_float_array(f,cbuf,ffl,pn) ;
+                if ( cbuf && ret==0 ) cbuflen = FS_output_float_array(f,cbuf,ffl,pn) ;
             free(f) ;
             }
         }
@@ -690,7 +705,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                     if ( (ret=FS_input_float(&f[pn->extension],buf,size))==0 ) {
                         f[pn->extension] = fromTemperature(f[pn->extension],pn) ;
                         if ( (ret=(pn->ft->write.f)(f,pn))==0 ) {
-                            if ( cbuf ) FS_output_float_array(f,cbuf,ffl,pn) ;
+                            if ( cbuf ) cbuflen = FS_output_float_array(f,cbuf,ffl,pn) ;
                         }
                     }
                 }
@@ -707,7 +722,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                 ret = -ENOMEM ;
             } else {
                 ret = ((pn->ft->read.d)(d,pn)<0) || FS_input_date(&d[pn->extension],buf,size) || (pn->ft->write.d)(d,pn) ;
-                if ( cbuf && ret==0 ) FS_output_date_array(d,cbuf,ffl,pn) ;
+                if ( cbuf && ret==0 ) cbuflen = FS_output_date_array(d,cbuf,ffl,pn) ;
             free(d) ;
             }
         }
@@ -730,7 +745,10 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                         if ( cbuf ) free(cbuf) ;
                         cbuf = NULL ;
                     }
-                    if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
+                    if ( cbuf && ret == 0 ) {
+                        cbuflen = ffl ;
+                        memcpy( cbuf, all, ffl ) ;
+                    }
                 }
                 free( all ) ;
             } else {
@@ -757,7 +775,10 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
                         if ( cbuf ) free(cbuf) ;
                         cbuf = NULL ;
                     }
-                    if ( cbuf && ret == 0 ) memcpy( cbuf, all, ffl ) ;
+                    if ( cbuf && ret == 0 ) {
+                        cbuflen = ffl ;
+                        memcpy( cbuf, all, ffl ) ;
+                    }
                 }
                 free( all ) ;
             } else
@@ -772,7 +793,7 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
 
     /* Add to cache? */
     if ( cbuf && ret==0 ) {
-        Cache_Add( cbuf, strlen(cbuf), &pn_all ) ;
+        Cache_Add( cbuf, cbuflen, &pn_all ) ;
 //printf("CACHEADD: [%i] %s\n",strlen(cbuf),cbuf);
     } else if ( IsLocalCacheEnabled(pn) ) {
             Cache_Del( &pn_all ) ;

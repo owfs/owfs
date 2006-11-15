@@ -407,7 +407,9 @@ static void * RealHandler( void * v ) {
     if ( cm.ret != -EIO ) ToClient( hd->fd, &cm, retbuffer ) ;
     timerclear(&(hd->tv)) ;
     TOCLIENTUNLOCK(hd) ;
+    //printf("RealHandler: About to clear path\n");
     if (sp.path) free(sp.path) ;
+    //printf("RealHandler: About to clear retbuffer\n");
     if ( retbuffer ) free(retbuffer) ;
     LEVEL_DEBUG("RealHandler: done\n");
     return NULL ;
@@ -452,6 +454,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
         cm->size = ret ;
         cm->ret = ret ;
     }
+    LEVEL_DEBUG("ReadHandler: return %*s\n",sm->size,retbuffer);
     return retbuffer ;
 }
 
