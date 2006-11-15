@@ -177,6 +177,9 @@ typedef char            ASCII ;
 typedef unsigned int    UINT ;
 typedef int             INT ;
 
+/* Include sone byte conversion convenience routines */
+#include "ow_integer.h"
+
 /* Directory blob separated out for readability */
 #include "ow_dirblob.h"
 
