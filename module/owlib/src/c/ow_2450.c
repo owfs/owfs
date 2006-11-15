@@ -359,7 +359,8 @@ static int OW_1_volts( _FLOAT * f , const int element, const int resolution , co
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
 
     // data conversions
-    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[1])<<8)|data[0]) ;
+    //f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[1])<<8)|data[0]) ;
+    f[0] = (resolution?7.8126192E-5:3.90630961E-5)*UT_uint16(data) ;
     return 0 ;
 }
 

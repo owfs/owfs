@@ -173,12 +173,7 @@ static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const 
     if ( extra[4]!=0x55 || extra[5]!=0x55 || extra[6]!=0x55 || extra[7]!=0x55 ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */
-    if ( counter ) 
-        counter[0] = 
-                ((UINT)extra[0])
-                + (((UINT)extra[1])<<8)
-                + (((UINT)extra[2])<<16)
-                + (((UINT)extra[3])<<24) ;
+    if ( counter ) counter[0] = UT_uint32(extra) ;
 
     return 0 ;
 }

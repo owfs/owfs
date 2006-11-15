@@ -362,7 +362,8 @@ static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) {
     // Correction thanks to Nathan D. Holmes
     //temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])) * .5 ; // Main conversion
     // Further correction, using "truncation" thanks to Wim Heirman
-    temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])>>1); // Main conversion
+    //temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])>>1); // Main conversion
+    temp[0] = (_FLOAT) ((UT_int16(data))>>1); // Main conversion -- now with helper function
     if ( data[7] ) { // only if COUNT_PER_C non-zero (supposed to be!)
 //        temp[0] += (_FLOAT)(data[7]-data[6]) / (_FLOAT)data[7] - .25 ; // additional precision
         temp[0] += .75 - (_FLOAT)data[6] / (_FLOAT)data[7] ; // additional precision

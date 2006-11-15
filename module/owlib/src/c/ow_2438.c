@@ -389,7 +389,8 @@ static int OW_temp( _FLOAT * T , const struct parsedname * pn ) {
 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
-    *T = ((int)((signed char)data[2])) + .00390625*data[1] ;
+    //*T = ((int)((signed char)data[2])) + .00390625*data[1] ;
+    T[0] = UT_int16(&data[1]) / 256.0 ;
     return 0 ;
 }
 
@@ -424,7 +425,8 @@ static int OW_volts( _FLOAT * V , const int src, const struct parsedname * pn ) 
     // read back registers
     if ( OW_r_page( data , 0 , pn ) ) return 1 ;
     //printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
-    V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
+    //V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
+    V[0] = .01 * (_FLOAT) UT_int16(&data[3]) ;
     return 0 ;
 }
 

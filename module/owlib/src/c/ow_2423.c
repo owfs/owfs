@@ -204,7 +204,8 @@ static int OW_r_mem_counter( BYTE * p, UINT * counter, const size_t size, const 
     if ( OW_r_mem_p8_crc16(p,size,offset,pn,32,extra) ) return 1 ;
 
     /* counter is held in the 4 bytes after the data */
-    if ( counter ) *counter = (((((((UINT) extra[3])<<8) | extra[2])<<8) | extra[1])<<8) | extra[0] ;
+    //if ( counter ) *counter = (((((((UINT) extra[3])<<8) | extra[2])<<8) | extra[1])<<8) | extra[0] ;
+    if ( counter ) counter[0] = UT_uint32(extra) ;
 
     return 0 ;
 }

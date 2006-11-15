@@ -886,7 +886,8 @@ static int OW_r_int(int * I, off_t offset, const struct parsedname * pn) {
     BYTE i[2] ;
     int ret = OW_r_sram(i,2,offset,pn) ;
     if (ret) return ret ;
-    I[0] = (((int)((int8_t)i[0])<<8) + ((uint8_t)i[1]) ) ;
+    //I[0] = (((int)((int8_t)i[0])<<8) + ((uint8_t)i[1]) ) ;
+    I[0] = UT_int16(i) ;
     return 0 ;
 }
 
@@ -899,7 +900,8 @@ static int OW_r_int8(int * I, off_t offset, const struct parsedname * pn) {
     BYTE i[1] ;
     int ret = OW_r_sram(i,1,offset,pn) ;
     if (ret) return ret ;
-    I[0] = ((int)((int8_t)i[0]) ) ;
+    //I[0] = ((int)((int8_t)i[0]) ) ;
+    I[0] = UT_int8(i) ;
     return 0 ;
 }
 

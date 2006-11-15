@@ -97,6 +97,6 @@ void UT_fromDate( const _DATE d, BYTE * data) {
 }
 
 _DATE UT_toDate( const BYTE * data ) {
-    return (((((((UINT) data[3])<<8)|data[2])<<8)|data[1])<<8)|data[0] ;
+    return UT_uint32(data) ;
 }
 

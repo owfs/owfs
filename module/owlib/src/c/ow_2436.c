@@ -142,7 +142,8 @@ static int OW_w_page( const BYTE * p , const size_t size , const off_t offset , 
     size_t s ;
     BYTE scratchin[] = {0x11 , offset, } ;
     BYTE scratchout[] = {0x17 , offset, } ;
-    BYTE data[32] ;
+    BYTE data[32
+            ] ;
     static BYTE copyout[] = {0x22, 0x25, 0x27, } ;
     BYTE * copy = &copyout[page] ;
     struct transaction_log tscratch[] = {
@@ -199,7 +200,8 @@ static int OW_temp( _FLOAT * T , const struct parsedname * pn ) {
     //printf("Temp bytes %0.2X %0.2X\n",t[0],t[1]);
     //printf("temp int=%d\n",((int)((int8_t)t[1])));
     
-    T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
+    //T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
+    T[0] = UT_int16(t) / 256. ;
     return 0 ;
 }
 
@@ -227,6 +229,7 @@ static int OW_volts( _FLOAT * V , const struct parsedname * pn ) {
     if ( BUS_transaction( tdata, pn ) ) return 1 ;
 
     // success
-    V[0] = .01 * (_FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
+    //V[0] = .01 * (_FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
+    V[0] = .01 * (_FLOAT)( UT_uint16(v) ) ;
     return 0 ;
 }
