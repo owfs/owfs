@@ -599,8 +599,6 @@ _FLOAT fromTemperature( _FLOAT T, const struct parsedname * pn) ;
 _FLOAT fromTempGap( _FLOAT T, const struct parsedname * pn) ;
 const char *TemperatureScaleName(enum temp_type t) ;
 
-extern int cacheavailable ; /* is caching available */
-
 extern void set_signal_handlers( void (*exit_handler)(int errcode) ) ;
 
 /* Server (Socket-based) interface */
@@ -716,6 +714,7 @@ int FS_busless( char * path ) ;
 
 /* Cache  and Storage functions */
 #include "ow_cache.h"
+void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) ;
 
 int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;

@@ -19,8 +19,6 @@ $Id$
 #if OW_CACHE
 #include <limits.h>
 
-int cacheavailable = 1 ; /* is caching available */
-
 /* Put the globals into a struct to declutter the namespace */
 static struct {
     void * new_db ; // current cache database
@@ -666,38 +664,4 @@ static int Cache_Del_Store( const struct tree_node * tn ) {
     return 1 ;
 }
 
-#else /* OW_CACHE is unset */
-
-int cacheavailable = 0 ; /* is caching available */
-
-void Cache_Open( void )
-    {}
-void Cache_Close( void )
-    {}
-void Cache_Clear( void )
-    {}
-int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * pn )
-    { return 1; }
-int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * pn )
-    { return 1; }
-int Cache_Get(          void * data, size_t * dsize, const struct parsedname * pn )
-    { return 1; }
-int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn )
-    { return 1; }
-int Cache_Del(          const struct parsedname * pn                                                                   )
-    { return 1; }
-int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn )
-    { return 1; }
-int Cache_Add_Dir( const struct dirblob * db, const struct parsedname * pn )
-{ return 1; } // fix from Vincent Fleming
-int Cache_Add_Device( const int bus_nr, const struct parsedname * pn )
-    { return 1; }
-int Cache_Get_Dir( struct dirblob * db, const struct parsedname * pn )
-    { return 1; }
-int Cache_Get_Device( void * bus_nr, const struct parsedname * pn )
-    { return 1; }
-int Cache_Del_Dir( const struct parsedname * pn )
-    { return 1; }
-int Cache_Del_Device( const struct parsedname * pn )
-    { return 1; }
 #endif /* OW_CACHE */
