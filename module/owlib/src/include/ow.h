@@ -715,22 +715,7 @@ _DATE UT_toDate( const BYTE * date ) ;
 int FS_busless( char * path ) ;
 
 /* Cache  and Storage functions */
-void Cache_Open( void ) ;
-void Cache_Close( void ) ;
-void Cache_Clear( void ) ;
-int Cache_Add(          const void * data, const size_t datasize, const struct parsedname * pn ) ;
-int Cache_Add_Dir( const struct dirblob * db, const struct parsedname * pn ) ;
-int Cache_Add_Device( const int bus_nr, const struct parsedname * pn ) ;
-int Cache_Add_Internal( const void * data, const size_t datasize, const struct internal_prop * ip, const struct parsedname * pn ) ;
-int Cache_Get(          void * data, size_t * dsize, const struct parsedname * pn ) ;
-int Cache_Get_Dir( struct dirblob * db, const struct parsedname * pn ) ;
-int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) ;
-int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn ) ;
-int Cache_Del(          const struct parsedname * pn                                                                   ) ;
-int Cache_Del_Dir( const struct parsedname * pn ) ;
-int Cache_Del_Device( const struct parsedname * pn ) ;
-int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname * pn ) ;
-void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) ;
+#include "ow_cache.h"
 
 int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) ;
 int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
