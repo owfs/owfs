@@ -216,7 +216,9 @@ int BUS_next_both(struct device_search * ds, const struct parsedname * pn) {
             }
             if ( bits[1] ) {
                 if ( bits[2] ) { /* 1,1 */
-                    break ; /* No devices respond */
+                    /* No devices respond */
+                    ds->LastDevice = 1 ;
+                    return -ENODEV ;
                 } else { /* 1,0 */
                     search_direction = 1;  // bit write value for search
                 }

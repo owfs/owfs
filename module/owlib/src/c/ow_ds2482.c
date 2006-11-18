@@ -292,7 +292,9 @@ static int DS2482_next_both(struct device_search * ds, const struct parsedname *
         if ( (ret=DS2482_triple(bits, search_direction, fd)) ) return ret ;
         if ( bits[0] || bits[1] || bits[2] ) {
             if ( bits[0] && bits[1] ) { /* 1,1 */
-                break ; /* No devices respond */
+                /* No devices respond */
+                ds->LastDevice = 1 ;
+                return -ENODEV ;
             }
         } else { /* 0,0,0 */
             last_zero = bit_number ;
