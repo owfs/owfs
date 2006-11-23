@@ -91,7 +91,7 @@ $Id$
 #endif
 
 #include <unistd.h>
-//#ifdef HAVE_GETOPT_H
+#ifdef HAVE_GETOPT_H
     #ifdef __GNU_LIBRARY__
         #include <getopt.h>
     #else /* __GNU_LIBRARY__ */
@@ -99,7 +99,7 @@ $Id$
             #include <getopt.h>
         #undef __GNU_LIBRARY__
     #endif /* __GNU_LIBRARY__ */
-//#endif /* HAVE_GETOPT_H */
+#endif /* HAVE_GETOPT_H */
 #include <fcntl.h>
 #ifndef __USE_XOPEN
  #define __USE_XOPEN /* for strptime fuction */
