@@ -76,7 +76,6 @@ $Id$
   } while (0)
 #endif
 
-
 #if OW_MT
   pthread_t main_threadid ;
   #define IS_MAINTHREAD (main_threadid == pthread_self())
@@ -107,7 +106,6 @@ static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct hand
 static int FromClient( int fd, struct server_msg *sm, struct serverpackage * sp ) ;
 static int ToClient( int fd, struct client_msg *cm, char *data ) ;
 static void ow_exit( int e ) ;
-static void exit_handler(int i) ;
 static void SetupAntiloop( void ) ;
 
 
@@ -124,10 +122,36 @@ static void ow_exit( int e ) {
 #endif
 }
 
-static void exit_handler(int i) {
+static void exit_handler(int signo, siginfo_t *info, void *context) {
+    (void) context;
+    if(info) {
+      LEVEL_DEBUG ("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n", signo,
+		   info->si_errno, info->si_code, (long int) info->si_pid,
+		   pthread_self(), main_threadid);
+    } else {
+      LEVEL_DEBUG ("exit_handler: for %d, self=%lu, main=%lu\n", signo,
+		   pthread_self(), main_threadid);
+    }
+#if OW_MT
+    if(!shutdown_in_progress) {
+      shutdown_in_progress = 1;
+      
+      if(info != NULL) {
+	if(SI_FROMUSER(info)) {
+	  LEVEL_DEBUG("exit_handler: kill from user\n");
+	}
+	if(SI_FROMKERNEL(info)) {
+	  LEVEL_DEBUG("exit_handler: kill from kernel\n");
+	}
+      }
+      if(!IS_MAINTHREAD) {
+	LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
+	pthread_kill(main_threadid, signo);
+      }
+    }
+#else
     shutdown_in_progress = 1;
-    LEVEL_DEBUG("exit_handler: %d\n", i);
-    //return ow_exit( ((i<0) ? 1 : 0) ) ;
+#endif
     return;
 }
 
@@ -265,7 +289,6 @@ static void Handler( int fd ) {
     struct timeval now ; // timer calculation
     struct timeval delta = { Global.timeout_network, 500000 } ; // 1.5 seconds ping interval
     struct timeval result ; // timer calculation
-    //pthread_attr_t attr ; // for "detached" state
     pthread_t thread ; // hanler thread id (not used)
     int loop = 1 ; // ping loop flap
 
@@ -275,41 +298,35 @@ static void Handler( int fd ) {
 
     //printf("OWSERVER pre-create\n");
     // PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
-    //pthread_attr_init( &attr ) ;
-    //pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ;
-    //if ( pthread_create( &thread, &attr, RealHandler, &hd ) )
+
     if ( pthread_create( &thread, NULL, RealHandler, &hd ) )
       {
-	LEVEL_DEBUG("OWSERVER can't create new thread\n");
-        //printf("OWSERVER can't create\n");
-        // Can't start thread, so no pinging
-        RealHandler( &hd ) ;
-    } else {
-        //printf("OWSERVER create\n");
-        do { // ping loop
+	LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
+	return;
+      }
+
+    do { // ping loop
 #ifdef HAVE_NANOSLEEP
-            struct timespec nano = {0, 100000000} ; // .1 seconds (Note second element NANOsec)
-            nanosleep( &nano, NULL ) ;
+      struct timespec nano = {0, 100000000} ; // .1 seconds (Note second element NANOsec)
+      nanosleep( &nano, NULL ) ;
 #else
-            usleep((unsigned long)100000);
+      usleep((unsigned long)100000);
 #endif
-            TOCLIENTLOCK( &hd ) ;
-                if ( ! timerisset( &(hd.tv) ) ) { // flag that the other thread is done
-                        loop = 0 ;
-                } else { // check timing -- ping if expired
-                    gettimeofday( &now, NULL ) ; // current time
-                    timersub( &now, &delta, &result ) ; // less delay
-                    if ( timercmp( &(hd.tv), &result, < ) ) { // test against last message time
-                        char * c = NULL ; // dummy argument
-                        ToClient( hd.fd, &ping_cm, c ) ; // send the ping
-                        //printf("OWSERVER ping\n") ;
-                        gettimeofday( &(hd.tv), NULL ) ; // reset timer
-                    }
-                }                
-            TOCLIENTUNLOCK( &hd ) ;
-        } while ( loop ) ;
-    }
-    //pthread_attr_destroy( &attr ) ;
+      TOCLIENTLOCK( &hd ) ;
+      if ( ! timerisset( &(hd.tv) ) ) { // flag that the other thread is done
+	loop = 0 ;
+      } else { // check timing -- ping if expired
+	gettimeofday( &now, NULL ) ; // current time
+	timersub( &now, &delta, &result ) ; // less delay
+	if ( timercmp( &(hd.tv), &result, < ) ) { // test against last message time
+	  char * c = NULL ; // dummy argument
+	  ToClient( hd.fd, &ping_cm, c ) ; // send the ping
+	  //printf("OWSERVER ping\n") ;
+	  gettimeofday( &(hd.tv), NULL ) ; // reset timer
+	}
+      }                
+      TOCLIENTUNLOCK( &hd ) ;
+    } while ( loop ) ;
 #else /* OW_MT */
     RealHandler( &hd ) ;
 #endif /* OW_MT */
@@ -699,6 +716,7 @@ int main(int argc , char ** argv) {
     if ( LibStart() ) ow_exit(1) ;
 #if OW_MT
     main_threadid = pthread_self() ;
+    LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int)main_threadid);
 #endif
 
     /* Set up "Antiloop" -- a unique token */

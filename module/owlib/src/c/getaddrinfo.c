@@ -1115,7 +1115,7 @@ gai_strerror (int code)
  *      Paul Vixie, 1996.
  */
 static const char *
-inet_ntop4(const u_char *src, char *dst, size_t size)
+inet_ntop4(const unsigned char *src, char *dst, size_t size)
 {
   char tmp[sizeof ("255.255.255.255") + 1] = "\0";
   int octet;
@@ -1191,10 +1191,10 @@ inet_ntop(af, src, dst, size)
  *      Paul Vixie, 1996.
  */
 static int
-inet_pton4(const char *src, u_char *dst)
+inet_pton4(const char *src, unsigned char *dst)
 {
   int saw_digit, octets, ch;
-  u_char tmp[4], *tp;
+  unsigned char tmp[4], *tp;
 
   saw_digit = 0;
   octets = 0;
@@ -1202,7 +1202,7 @@ inet_pton4(const char *src, u_char *dst)
   while ((ch = *src++) != '\0') {
 
     if (ch >= '0' && ch <= '9') {
-      u_int new = *tp * 10 + (ch - '0');
+      unsigned int new = *tp * 10 + (ch - '0');
 
       if (new > 255)
 	return (0);

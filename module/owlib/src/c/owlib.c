@@ -417,17 +417,26 @@ LibStart (void)
 }
 
 void
-SigHandler (int signo, siginfo_t * info, void *context)
+SigHandler (int signo, siginfo_t *info, void *context)
 {
   (void) context;
-  LEVEL_DEBUG ("Signal handler for %d, errno %d, code %d, pid %ld\n", signo,
-	       info->si_errno, info->si_code, (long int) info->si_pid);
+  if(info) {
+    LEVEL_DEBUG ("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
+		 signo,
+		 info->si_errno, info->si_code, (long int) info->si_pid,
+		 pthread_self());
+  } else {
+    LEVEL_DEBUG ("Signal handler for %d, self=%lu\n",
+		 signo,
+		 pthread_self());
+  }
+  return;
 }
 
 void
 SetSignals (void)
 {
-  struct sigaction sa, oldsigset;
+  struct sigaction sa;
 
   memset (&sa, 0, sizeof (struct sigaction));
   sigemptyset (&(sa.sa_mask));
@@ -486,15 +495,11 @@ LibClose (void)
     free (Global.announce_name);
 
   if (Global.progname)
-    {
-      free (Global.progname);
-    }
+    free (Global.progname);
 
-  if (Global.browse)
-    {
-      if (libdnssd != NULL)
-	DNSServiceRefDeallocate (Global.browse);
-    }
+  if (Global.browse && (libdnssd != NULL))
+    DNSServiceRefDeallocate (Global.browse);
+
   OW_Free_dnssd_library ();
   LEVEL_CALL ("Finished Library cleanup\n");
   if (log_available)
@@ -502,19 +507,20 @@ LibClose (void)
 }
 
 void
-set_signal_handlers (void (*exit_handler) (int errcode))
+set_signal_handlers (void (*exit_handler) (int signo, siginfo_t *info, void *context))
 {
   struct sigaction sa;
 
   memset (&sa, 0, sizeof (struct sigaction));
   sigemptyset (&(sa.sa_mask));
 
-  sa.sa_flags = 0;
-  sa.sa_handler = exit_handler;
+  sa.sa_flags = SA_SIGINFO;
+  sa.sa_sigaction = exit_handler;
   if ((sigaction (SIGINT, &sa, NULL) == -1) ||
       (sigaction (SIGTERM, &sa, NULL) == -1))
     {
       LEVEL_DEFAULT ("Cannot set exit signal handlers\n");
-      exit_handler (-1);
+      //exit_handler (-1, NULL, NULL);
+      exit(1);
     }
 }

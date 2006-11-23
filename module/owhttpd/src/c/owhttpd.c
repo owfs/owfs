@@ -56,10 +56,36 @@ static void ow_exit( int e ) {
 #endif
 }
 
-static void exit_handler(int i) {
+static void exit_handler(int signo, siginfo_t *info, void *context) {
+    (void) context;
+    if(info) {
+      LEVEL_DEBUG ("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n", signo,
+		   info->si_errno, info->si_code, (long int) info->si_pid,
+		   pthread_self(), main_threadid);
+    } else {
+      LEVEL_DEBUG ("exit_handler: for %d, self=%lu, main=%lu\n", signo,
+		   pthread_self(), main_threadid);
+    }
+#if OW_MT
+    if(!shutdown_in_progress) {
+      shutdown_in_progress = 1;
+
+      if(info != NULL) {
+	if(SI_FROMUSER(info)) {
+	  LEVEL_DEBUG("exit_handler: kill from user\n");
+	}
+	if(SI_FROMKERNEL(info)) {
+	  LEVEL_DEBUG("exit_handler: kill from kernel\n");
+	}
+      }
+      if(!IS_MAINTHREAD) {
+	LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
+	pthread_kill(main_threadid, signo);
+      }
+    }
+#else
     shutdown_in_progress = 1;
-    LEVEL_DEBUG("exit_handler: %d\n", i);
-    //return ow_exit( ((i<0) ? 1 : 0) ) ;
+#endif
     return;
 }
 

@@ -24,30 +24,29 @@ struct announce_struct {
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void RegisterBack( DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType e, const char * name, const char * type, const char * domain, void * context ) {
     DNSServiceRef * sref = context ;
-    LEVEL_DEBUG("RegisterBack:\n");
     LEVEL_DETAIL("RegisterBack ref=%d flags=%d error=%d name=%s type=%s domain=%s\n",s,f,e,SAFESTRING(name),SAFESTRING(type),SAFESTRING(domain)) ;
-    LEVEL_DEBUG("RegisterBack: 1\n");
     if ( e==kDNSServiceErr_NoError ) sref[0] = s ;
     LEVEL_DEBUG("RegisterBack: done\n");
 }
 
 /* Register the out port with Bonjour -- might block so done in a separate thread */
 static void * Announce( void * v ) {
-    struct announce_struct * as = v ;
+    struct announce_struct *as = (struct announce_struct *)v ;
     DNSServiceRef sref ;
     DNSServiceErrorType err ;
     
     if(libdnssd == NULL) return NULL;
+#if OW_MT
+    pthread_detach( pthread_self() ) ;
+#endif /* OW_MT */
 
     LEVEL_DEBUG("Announce: 1\n");
 
     err = DNSServiceRegister(&sref,0,0,Global.announce_name?Global.announce_name:as->name,as->type0,NULL,NULL,as->port,0,NULL,RegisterBack,&(as->out->sref0)) ;
-    LEVEL_DEBUG("Announce: err=%d\n", err);
+    if(err)
+      LEVEL_DEBUG("Announce: err=%d\n", err);
 
     //LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
-#if OW_MT
-    pthread_detach( pthread_self() ) ;
-#endif /* OW_MT */
     LEVEL_DEBUG("Announce: 2\n");
     if ( err == kDNSServiceErr_NoError ) {
         DNSServiceProcessResult(sref) ;
@@ -65,12 +64,19 @@ static void * Announce( void * v ) {
     }
     free(as) ;
     LEVEL_DEBUG("Announce: end\n");
+#if OW_MT
+    pthread_exit(NULL);
+#endif
     return NULL ;
 }
 
 void OW_Announce( struct connection_out * out ) {
     struct announce_struct * as = malloc( sizeof(struct announce_struct) ) ;
     struct sockaddr sa ;
+#if OW_MT
+    pthread_t thread ;
+    int err ;
+#endif
     socklen_t sl = sizeof(sa) ;
 
     if(libdnssd == NULL) return;
@@ -103,17 +109,16 @@ void OW_Announce( struct connection_out * out ) {
             return ;
     }
     LEVEL_DEBUG("OW_Announce: 2\n");
+    if(libdnssd) {
 #if OW_MT
-    // LEVEL_DEBUG("DNSServiceRegister request: index=%d, name=%s, port=%d, type=%s / %s\n",out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
-    {
-        pthread_t thread ;
-        int err = pthread_create( &thread, 0, Announce, as ) ;
-        if ( err ) {
-            ERROR_CONNECT("Zeroconf/Bounjour registration thread error %d).\n",err) ;
-        }
-    }
+      //LEVEL_DEBUG("DNSServiceRegister request: index=%d, name=%s, port=%d, type=%s / %s\n",out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
+      err = pthread_create( &thread, NULL, Announce, (void *)as ) ;
+      if ( err ) {
+	ERROR_CONNECT("Zeroconf/Bounjour registration thread error %d).\n",err) ;
+      }
 #else /* OW_MT */
-    Announce( as ) ;
+      Announce( as ) ;
 #endif /* OW_MT */
+    }
     LEVEL_DEBUG("OW_Announce: end\n");
 }

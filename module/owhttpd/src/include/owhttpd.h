@@ -17,6 +17,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_connection.h"
 
 #include <pwd.h> // getpwuid
 #include <grp.h> // initgroups

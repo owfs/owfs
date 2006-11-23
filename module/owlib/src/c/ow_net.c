@@ -20,10 +20,10 @@ $Id$
 #include "ow_connection.h"
 
 /* structures */
-struct AcceptThread_data {
-    struct connection_out *o2;
-    void (*HandlerRoutine)(int fd);
-} ;
+struct HandlerThread_data {
+  int acceptfd;
+  void (*HandlerRoutine)(int fd);
+};
 
 /* Prototypes */
 static int ServerAddr(  struct connection_out * out ) ;
@@ -282,81 +282,103 @@ int ServerOutSetup( struct connection_out * out ) {
 
 /* Server Process run for each out device, and each */
 #if OW_MT
-static void * ServerProcessAccept( void * vp ) {
+
+
+void *ServerProcessHandler(void *arg)
+{
+  struct HandlerThread_data *hp = (struct HandlerThread_data *)arg;
+  pthread_detach(pthread_self());
+  if(hp) {
+    hp->HandlerRoutine(hp->acceptfd);
+    close(hp->acceptfd);
+    free(hp);
+  }
+  pthread_exit(NULL);
+  return NULL;
+}
+
+static void ServerProcessAccept( void * vp ) {
     struct connection_out * out = (struct connection_out *) vp ;
-    pthread_t thread ;
+    pthread_t tid ;
     int acceptfd ;
     int ret ;
     
-    LEVEL_DEBUG("ServerProcessAccept = %ld\n",pthread_self() );
-    pthread_detach( pthread_self() ) ;
+    LEVEL_DEBUG("ServerProcessAccept %s[%lu] try lock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
-badthread:
-    //LEVEL_DEBUG("ACCEPT %s[%lu] start %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
     ACCEPTLOCK(out) ;
-    //LEVEL_DEBUG("ACCEPT %s[%lu] locked %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
-    ret = pthread_create( &thread, NULL, ServerProcessAccept, vp ) ;
-    //LEVEL_DEBUG("ACCEPT %s[%lu] create %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+
+    LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
+
     do {
       acceptfd = accept( out->fd, NULL, NULL ) ;
-      //LEVEL_DEBUG("ACCEPT %s[%lu] accept %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+      //LEVEL_DEBUG("ServerProcessAccept %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
       if(shutdown_in_progress) break;
       if(acceptfd < 0) {
 	if(errno == EINTR) {
 	  LEVEL_DEBUG("ow_net.c: accept interrupted\n");
 	  continue;
 	}
-	LEVEL_DEBUG("ow_net.c: accept error %d [%s]\n", errno, strerror(errno));
-	break;
-      } else {
-	break;
+	LEVEL_DEBUG("ow_net.c: accept error %d [%s]\n",errno,strerror(errno));
       }
+      break;
     } while(1);
     ACCEPTUNLOCK(out) ;
-    //LEVEL_DEBUG("ACCEPT %s[%lu] unlock %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
+    //LEVEL_DEBUG("ServerProcessAccept %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
     if(shutdown_in_progress) {
+      LEVEL_DEBUG("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
       if(acceptfd >= 0) close(acceptfd) ;
-      return NULL;
+      return ;
     }
     
     if ( acceptfd < 0 ) {
-        ERROR_CONNECT("Trouble with accept on listen socket %d (%d)\n",out->fd, out->index ) ;
-	/* sps->out could actually be freed here since the thread is not killed
-	 * when user kills the main process. Avoid print out->name at least
-	 * which certainly is a bad pointer. */
+        ERROR_CONNECT("ServerProcessAccept: accept() problem %d (%d)\n",out->fd, out->index ) ;
     } else {
-        (out->HandlerRoutine)(acceptfd) ;
-        close(acceptfd) ;
+      struct HandlerThread_data *hp;
+      hp = malloc(sizeof(struct HandlerThread_data));
+      if(hp) {
+	hp->HandlerRoutine = out->HandlerRoutine;
+	hp->acceptfd = acceptfd;
+	ret = pthread_create( &tid, NULL, ServerProcessHandler, hp ) ;
+	if(ret) {
+	  LEVEL_DEBUG("ServerProcessAccept %s[%lu] create failed ret=%d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(), ret) ;
+	  close(acceptfd) ;
+	  free(hp);
+	}
+      }
     }
-    //LEVEL_DEBUG("ACCEPT  <%p> <%p>\n",sps,sps->out);
-    //LEVEL_DEBUG("ACCEPT %s[%lu] handled %d\n",SAFESTRING(sps->out->name),(unsigned long int)pthread_self(),sps->out->index) ;
-    /* only loop if another thread couldn't be created */
-    if ( ret ) goto badthread ;
-    //printf("ServerProcessAccept = %ld CLOSING\n",pthread_self() ) ;
-    return NULL ;
+    LEVEL_DEBUG("ServerProcessAccept = %lu CLOSING\n",(unsigned long int)pthread_self() ) ;
+    return ;
 }
     
 static void * ServerProcessOut( void * vp ) {
     struct connection_out * out = (struct connection_out *) vp ;
-    LEVEL_DEBUG("ServerProcessOut = %ld\n",pthread_self() );
-    pthread_detach( pthread_self() ) ;
+    pthread_t tid;
+    int ret;
+
+    LEVEL_DEBUG("ServerProcessOut = %lu\n",(unsigned long int)pthread_self() );
 
     if ( ServerOutSetup( out ) ) {
         LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(out->name),out->index) ;
         (out->Exit)(1) ;
     }
     OW_Announce( out ) ;
-    ServerProcessAccept( vp ) ;
-    LEVEL_DEBUG("ServerProcessOut = %ld CLOSING (%s)\n",pthread_self(), SAFESTRING(out->name) ) ;
+
+    while(!shutdown_in_progress) {
+      ServerProcessAccept( vp ) ;
+    }
+    LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n",(unsigned long int)pthread_self(), SAFESTRING(out->name) ) ;
     OUTLOCK(out) ;
         out->tid = 0 ;
     OUTUNLOCK(out) ;
+    pthread_exit(NULL);
     return NULL ;
 }
 
 void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) {
     struct connection_out * out = outdevice ;
+    int err, signo;
+    sigset_t myset;
 
     if ( outdevices==0 ) {
         LEVEL_CALL("No output devices defined\n") ;
@@ -376,33 +398,23 @@ void ServerProcess( void (*HandlerRoutine)(int fd), void (*Exit)(int errcode) ) 
         OUTUNLOCK(out) ;
     }
 
-#if 1
-    {
-      int sig;
-      sigset_t myset;
-      (void) sigemptyset(&myset);
-      (void) sigaddset(&myset, SIGINT);
-      (void) sigaddset(&myset, SIGTERM);
-      (void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
-      while (!shutdown_in_progress) {
-#if 0
-	// old solaris function...
-	sig = sigwait(&myset);
-	if (sig > 0) {
-	  break;
+    (void) sigemptyset(&myset);
+    (void) sigaddset(&myset, SIGHUP);
+    (void) sigaddset(&myset, SIGINT);
+    (void) sigaddset(&myset, SIGTERM);
+    (void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+    while (!shutdown_in_progress) {
+      if((err=sigwait(&myset, &signo))==0) {
+	if(signo == SIGHUP) {
+	  LEVEL_DEBUG("ServerProcess: ignore signo=%d\n", signo);
+	  continue;
 	}
-#else
-	if(sigwait(&myset, &sig)==0) break;
-#endif
+	LEVEL_DEBUG("ServerProcess: break signo=%d\n", signo);
+	break;
+      } else {
+	LEVEL_DEBUG("ServerProcess: sigwait error %n\n", err);
       }
     }
-#else
-    /* Wait forever... Since any signals will abort pause() we have to loop forever */
-    while(!shutdown_in_progress) {
-      pause() ;
-      LEVEL_DEBUG("ow_net.c:ServerProcess() pause() returned. errno=%d [%s]\n", errno, strerror(errno));
-    }
-#endif
     LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown initiated\n");
 
     for ( out = outdevice ; out ; out=out->next ) {

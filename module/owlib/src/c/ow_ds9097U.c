@@ -724,7 +724,7 @@ static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname * 
     size_t rl = size;
     ssize_t r ;
     struct timeval tval;
-    int rc ;
+    int rc = 0;
 
     while(rl > 0) {
         if(!pn->in) { 

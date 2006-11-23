@@ -599,7 +599,15 @@ _FLOAT fromTemperature( _FLOAT T, const struct parsedname * pn) ;
 _FLOAT fromTempGap( _FLOAT T, const struct parsedname * pn) ;
 const char *TemperatureScaleName(enum temp_type t) ;
 
-extern void set_signal_handlers( void (*exit_handler)(int errcode) ) ;
+extern void set_signal_handlers( void (*exit_handler)(int signo, siginfo_t *info, void *context) ) ;
+
+#ifndef SI_FROMUSER
+#define SI_FROMUSER(siptr)      ((siptr)->si_code <= 0)
+#endif
+#ifndef SI_FROMKERNEL
+#define SI_FROMKERNEL(siptr)    ((siptr)->si_code > 0)
+#endif
+
 
 /* Server (Socket-based) interface */
 enum msg_classification {
