@@ -304,7 +304,7 @@ AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h dlfcn
 ENABLE_DEBUG="true"
 AC_MSG_CHECKING([if debug-output is enabled])
 AC_ARG_ENABLE(debug,
-[  --enable-debug        Enable debug-output (default true)],
+[  --enable-debug          Enable debug-output (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if ! test "$enableval" = "yes" ; then
@@ -338,7 +338,7 @@ AM_CONDITIONAL(ENABLE_TAI8570, test "${ENABLE_TAI8570}" = "true")
 ENABLE_THERMOCOUPLE="true"
 AC_MSG_CHECKING([if thermocouple support is enabled])
 AC_ARG_ENABLE(thermocouple,
-[  --enable-thermocouple        Enable thermocouple support (default true)],
+[  --enable-thermocouple   Enable thermocouple support (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if ! test "$enableval" = "yes" ; then
@@ -355,7 +355,7 @@ AM_CONDITIONAL(ENABLE_THERMOCOUPLE, test "${ENABLE_THERMOCOUPLE}" = "true")
 ENABLE_MT="true"
 AC_MSG_CHECKING([if multithreading is enabled])
 AC_ARG_ENABLE(mt,
-[  --enable-mt           Enable multithreading support (default true)],
+[  --enable-mt             Enable multithreading support (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if ! test "$enableval" = "yes" ; then
@@ -382,7 +382,7 @@ AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
 ENABLE_I2C="true"
 AC_MSG_CHECKING([if i2c(DS2482-x00) is enabled])
 AC_ARG_ENABLE(i2c,
-[  --enable-i2c           Enable i2c (DS2482-x00) support (default true)],
+[  --enable-i2c            Enable i2c (DS2482-x00) support (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if ! test "$enableval" = "yes" ; then
@@ -401,7 +401,7 @@ AM_CONDITIONAL(ENABLE_I2C, test "${ENABLE_I2C}" = "true")
 ENABLE_HA7="true"
 AC_MSG_CHECKING([if HA7Net is enabled])
 AC_ARG_ENABLE(ha7,
-[  --enable-ha7           Enable ha7 support (default true)],
+[  --enable-ha7            Enable ha7 support (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if ! test "$enableval" = "yes" ; then
@@ -421,7 +421,7 @@ AM_CONDITIONAL(ENABLE_HA7, test "${ENABLE_HA7}" = "true")
 AC_MSG_CHECKING([if owfs is enabled])
 ENABLE_OWFS="auto"
 AC_ARG_ENABLE(owfs,
-[  --enable-owfs         Enable owfs module (default auto)],
+[  --enable-owfs           Enable owfs module (default auto)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
@@ -440,7 +440,7 @@ AC_SUBST(ENABLE_OWFS)
 AC_MSG_CHECKING(if owhttpd is enabled)
 ENABLE_OWHTTPD="true"
 AC_ARG_ENABLE(owhttpd,
-[  --enable-owhttpd      Enable owhttpd module (default true)],
+[  --enable-owhttpd        Enable owhttpd module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -456,7 +456,7 @@ AC_SUBST(ENABLE_OWHTTPD)
 AC_MSG_CHECKING(if owftpd is enabled)
 ENABLE_OWFTPD="true"
 AC_ARG_ENABLE(owftpd,
-[  --enable-owftpd       Enable owftpd module (default false)],
+[  --enable-owftpd         Enable owftpd module (default false)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -472,7 +472,7 @@ AC_SUBST(ENABLE_OWFTPD)
 AC_MSG_CHECKING(if owserver is enabled)
 ENABLE_OWSERVER="true"
 AC_ARG_ENABLE(owserver,
-[  --enable-owserver     Enable owserver module (default true)],
+[  --enable-owserver       Enable owserver module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -489,7 +489,7 @@ AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 AC_MSG_CHECKING(if owcapi is enabled)
 ENABLE_OWCAPI="true"
 AC_ARG_ENABLE(owcapi,
-[  --enable-owcapi       Enable owcapi module (default true)],
+[  --enable-owcapi         Enable owcapi module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -525,7 +525,7 @@ else
      ENABLE_SWIG="auto"
 fi
 AC_ARG_ENABLE(swig,
-[  --enable-swig         Enable swig (default auto)],
+[  --enable-swig           Enable swig (default auto)],
 [
     if test "$enableval" = "no"; then
         ENABLE_SWIG="false"
@@ -564,7 +564,7 @@ else
     ENABLE_OWPERL="true"
 fi
 AC_ARG_ENABLE(owperl,
-[  --enable-owperl       Enable owperl module (default true)],
+[  --enable-owperl         Enable owperl module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
@@ -616,7 +616,7 @@ else
     ENABLE_OWPHP="true"
 fi
 AC_ARG_ENABLE(owphp,
-[  --enable-owphp        Enable owphp module (default true)],
+[  --enable-owphp          Enable owphp module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "no" ; then
@@ -682,7 +682,7 @@ else
     ENABLE_OWPYTHON="true"
 fi
 AC_ARG_ENABLE(owpython,
-[  --enable-owpython     Enable owpython module (default true)],
+[  --enable-owpython       Enable owpython module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "no" ; then
@@ -743,7 +743,7 @@ else
     ENABLE_OWTCL="true"
 fi
 AC_ARG_ENABLE(owtcl,
-[  --enable-owtcl        Enable owtcl module (default true)],
+[  --enable-owtcl          Enable owtcl module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "no" ; then
@@ -936,7 +936,7 @@ AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 AC_MSG_CHECKING(if caching is enabled)
 ENABLE_CACHE="true"
 AC_ARG_ENABLE(cache,
-[  --enable-cache        Enable caching (default true)],
+[  --enable-cache          Enable caching (default true)],
 [
     AC_MSG_RESULT([$enableval])
 
@@ -955,7 +955,7 @@ ENABLE_USB=auto
 AC_MSG_CHECKING([if usb support is enabled])
 
 AC_ARG_ENABLE(usb,
-[  --enable-usb          Enable 1-Wire usb DS2490 support (default auto)],
+[  --enable-usb            Enable 1-Wire usb DS2490 support (default auto)],
 [
     AC_MSG_RESULT([$enableval])
 
@@ -990,7 +990,7 @@ ENABLE_PARPORT=auto
 AC_MSG_CHECKING([if parallel port support is enabled])
 
 AC_ARG_ENABLE(parport,
-[  --enable-parport      Enable 1-Wire parallel port DS1410E support (default auto)],
+[  --enable-parport        Enable 1-Wire parallel port DS1410E support (default auto)],
 [
     AC_MSG_RESULT([$enableval])
 
@@ -1025,7 +1025,7 @@ AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 AC_MSG_CHECKING(if profiling is enabled)
 ENABLE_PROFILING="false"
 AC_ARG_ENABLE(profiling,
-[  --enable-profiling    Enable profiling (default false)],
+[  --enable-profiling      Enable profiling (default false)],
 [
 AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then

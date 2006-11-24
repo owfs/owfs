@@ -26,7 +26,7 @@ static enum parse_enum Parse_NonReal( char * pathnow, struct parsedname * pn ) ;
 static enum parse_enum Parse_RealDevice( char * filename, int remote, struct parsedname * pn ) ;
 static enum parse_enum Parse_NonRealDevice( char * filename, struct parsedname * pn ) ;
 static enum parse_enum Parse_Property( char * filename, struct parsedname * pn ) ;
-static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathnow, struct parsedname * pn ) ;
+static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathnow, int remote, struct parsedname * pn ) ;
 static int FS_ParsedName_anywhere( const char * path , int remote, struct parsedname * pn ) ;
 
 #define BRANCH_INCR (9)
@@ -153,24 +153,24 @@ static int FS_ParsedName_anywhere( const char * path , int remote, struct parsed
         if ( pathnow==NULL || pathnow[0]== '\0' ) goto end ;
         switch( pe ) {
             case parse_first:
-                //printf("PARSENAME parse_first\n") ;
+	        //LEVEL_DEBUG("PARSENAME parse_first\n") ;
                 pe = Parse_Unspecified( pathnow, remote, pn ) ;
                 break ;
             case parse_real:
-                //printf("PARSENAME parse_real\n") ;
+	        //LEVEL_DEBUG("PARSENAME parse_real\n") ;
                 pe = Parse_Real( pathnow, remote, pn ) ;
                 break ;
             case parse_nonreal:
-                //printf("PARSENAME parse_nonreal\n") ;
+	        //LEVEL_DEBUG("PARSENAME parse_nonreal\n") ;
                 pe = Parse_NonReal( pathnow, pn ) ;
                 break ;
             case parse_prop:
-                //printf("PARSENAME parse_prop\n") ;
+	        //LEVEL_DEBUG("PARSENAME parse_prop\n") ;
                 pathlast = pathnow ; /* Save for concatination if subdirectory later wanted */
                 pe = Parse_Property( pathnow, pn ) ;
                 break ;
             case parse_subprop:
-                //printf("PARSENAME parse_subprop\n") ;
+	        //LEVEL_DEBUG("PARSENAME parse_subprop\n") ;
                 pathnow[-1] = '/' ;
                 pe = Parse_Property( pathlast, pn ) ;
                 break ;
@@ -190,7 +190,7 @@ static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct par
         pn->state |= pn_alarm ;
         return parse_real ;
     } else if ( strncasecmp( pathnow, "bus.", 4 )==0 ) {
-        return Parse_Bus( parse_first, pathnow, pn ) ;
+        return Parse_Bus( parse_first, pathnow, remote, pn ) ;
     } else if ( strcasecmp( pathnow, "settings" )==0 ) {
         pn->type = pn_settings ;
         return parse_nonreal ;
@@ -229,7 +229,7 @@ static enum parse_enum Parse_Real( char * pathnow, int remote, struct parsedname
         pn->state |= pn_alarm ;
         return parse_real ;
     } else if ( strncasecmp( pathnow, "bus.", 4 )==0 ) {
-        return Parse_Bus( parse_nonreal, pathnow, pn ) ;
+        return Parse_Bus( parse_nonreal, pathnow, remote, pn ) ;
     } else if ( strcasecmp( pathnow, "simultaneous" )==0 ) {
         pn->dev = DeviceSimultaneous ;
         return parse_prop ;
@@ -250,7 +250,7 @@ static enum parse_enum Parse_Real( char * pathnow, int remote, struct parsedname
 
 static enum parse_enum Parse_NonReal( char * pathnow, struct parsedname * pn ) {
     if ( strncasecmp( pathnow, "bus.", 4 )==0 ) {
-        return Parse_Bus( parse_nonreal, pathnow, pn ) ;
+        return Parse_Bus( parse_nonreal, pathnow, 0, pn ) ;
     } else if ( strcasecmp( pathnow, "text" )==0 ) {
         pn->state |= pn_text ;
         return parse_nonreal ;
@@ -263,7 +263,7 @@ static enum parse_enum Parse_NonReal( char * pathnow, struct parsedname * pn ) {
     return parse_error ;
 }
 
-static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathnow, struct parsedname * pn ) {
+static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathnow, int remote, struct parsedname * pn ) {
     /* Processing for bus.X directories -- eventually will make this more generic */
     if(!isdigit(pathnow[4])) return 1 ;
         
@@ -280,8 +280,16 @@ static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathn
         pn->state |= pn_bus ;
         pn->state |= pn_buspath ; /* specified a bus */
         pn->bus_nr = atoi(&pathnow[4]);
+
+	if(remote) {
+	  /* Accept any bus value */
+	  return pe_default;
+	}
         CONNINLOCK ;
-            if ( pn->bus_nr < 0 || pn->bus_nr >= indevices ) return parse_error ;
+	if ( pn->bus_nr < 0 || pn->bus_nr >= indevices ) {
+	  CONNINUNLOCK ;
+	  return parse_error ;
+	}
         CONNINUNLOCK ;
         /* Since we are going to use a specific in-device now, set
          * pn->in to point at that device at once. */
