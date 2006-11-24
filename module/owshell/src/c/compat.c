@@ -100,20 +100,37 @@ typedef struct node_t {
 } node;
 
 static void tdestroy_recurse_ (node *root, void *freefct) {
-    if (root->left != NULL)
+    if (root->left != NULL) {
         tdestroy_recurse_ (root->left, freefct);
-    if (root->right != NULL)
+#ifdef DELETE_KEY
+	free(root->left);
+	root->left = NULL;
+#endif
+    }
+    if (root->right != NULL) {
         tdestroy_recurse_ (root->right, freefct);
+#ifdef DELETE_KEY
+	free(root->right);
+	root->right = NULL;
+#endif
+    }
     //(*freefct) ((void *) root->key);
-    free((void *) root->key);
-    /* Free the node itself.  */
-    free (root);
+#ifdef DELETE_KEY
+    if(root->key) {
+      free(root->key);
+      root->key = NULL;
+    }
+#endif
 }
 
 void tdestroy(void *vroot, void *freefct) {
     node *root = (node *) vroot;
     if (root != NULL) {
         tdestroy_recurse_ (root, freefct);
+#ifdef DELETE_KEY
+	/* Free the node itself.  */
+	free (root);
+#endif
     }
 }
 #endif /* HAVE_TDESTROY */
