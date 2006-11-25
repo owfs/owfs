@@ -682,6 +682,7 @@ void DeviceSort( void ) ;
 void DeviceDestroy( void ) ;
 //  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
+int filecmp(const void * name , const void * ex ) ;
 int FS_ParsedNamePlus( const char * path, const char * file, struct parsedname * pn ) ;
 int FS_ParsedName( const char * fn , struct parsedname * pn ) ;
 int FS_ParsedName_Remote( const char * fn , struct parsedname * pn ) ;
@@ -786,10 +787,6 @@ int FS_output_integer( int value, char * buf, const size_t size, const struct pa
 int FS_output_float( _FLOAT value, char * buf, const size_t size, const struct parsedname * pn ) ;
 int FS_output_date( _DATE value, char * buf, const size_t size, const struct parsedname * pn ) ;
 
-int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
-int FS_output_date_array( _DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
 
 int FS_fstat(const char *path, struct stat *stbuf) ;
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname * pn ) ;

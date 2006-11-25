@@ -25,6 +25,12 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
 static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset , const struct parsedname * pn) ;
 static int FS_structure(char *buf, const size_t size, const off_t offset, const struct parsedname * pn) ;
 
+static int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+static int FS_output_date_array( _DATE * values, char * buf, const size_t size, const struct parsedname * pn ) ;
+
+
 /*
 Change in strategy 6/2006:
 Now use CheckPresence as primary method of finding correct bus
@@ -189,48 +195,11 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset, cons
         r = ServerRead(buf,size,offset,pn) ;
         //printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
     } else {
-        size_t s = size ;
         STAT_ADD1(read_calls) ; /* statistics */
-        /* Check the cache (if not pn_uncached) */
-        if ( offset!=0 || IsLocalCacheEnabled(pn)==0 ) {
-            LEVEL_DEBUG("READSEEK1 pid=%d call FS_r_local\n",getpid());
-            //printf("READSEEK1 pid=%d call FS_r_local\n",getpid());
-            if ( (r=LockGet(pn))==0 ) {
-                r = FS_r_local(buf, size, offset, pn ) ;
-                //printf("READSEEK1 FS_r_local ret=%d\n", r);
-                LockRelease(pn) ;
-            }
-            //printf("READSEEK1 pid=%d = %d\n",getpid(), r);
-        } else if ( pn->extension!=-1 && pn->ft->ag && pn->ft->ag->combined==ag_aggregate ) { // aggregate property, single value -- handle cache at lower level
-            if ( (r=LockGet(pn))==0 ) {
-                r = FS_r_local( buf, size, offset, pn ) ;
-                LockRelease(pn) ;
-            }
-        } else if ( pn->extension==-1 && pn->ft->ag && pn->ft->ag->combined==ag_mixed ) { // mixed doesn't cache ALL
-            if ( (r=LockGet(pn))==0 ) {
-                r = FS_r_local( buf, size, offset, pn ) ;
-                LockRelease(pn) ;
-            }
-        } else if ( IsUncachedDir(pn) || Cache_Get( buf, &s, pn ) ) {
-            LEVEL_DEBUG("READSEEK2 pid=%d not found in cache\n",getpid());
-            //printf("READSEEK2 pid=%d not found in cache\n",getpid());
-            if ( (r=LockGet(pn))==0 ) {
-                //printf("READSEEK2 lock get size=%d offset=%d\n", size, offset);
-                r = FS_r_local( buf, size, offset, pn ) ;
-                //printf("READSEEK2 FS_r_local ret=%d\n", r);
-                if ( r>0 ) Cache_Add( buf, (const size_t)r, pn ) ;
-                LockRelease(pn) ;
-            }
-            //printf("READSEEK2 pid=%d = %d\n",getpid(), r);
-        } else {
-            LEVEL_DEBUG("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
-            //printf("READSEEK3 pid=%ld cached found\n",pthread_self()) ;
-            STATLOCK;
-                ++read_cache ; /* statistics */
-                read_cachebytes += s ; /* statistics */
-            STATUNLOCK;
-            r = s ;
-            //printf("READSEEK3 pid=%ld r=%d\n",pthread_self(), r);
+        if ( (r=LockGet(pn))==0 ) {
+            r = FS_r_local(buf, size, offset, pn ) ;
+            //printf("READSEEK1 FS_r_local ret=%d\n", r);
+            LockRelease(pn) ;
         }
     }
     return r ;
@@ -342,8 +311,10 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
     switch( format ) {
         case ft_integer: {
             int i ;
-            ret = (pn->ft->read.i)(&i,pn) ;
-            if (ret < 0) return ret ;
+            if ( Cache_Get_Strict( &i, sizeof(int), pn ) ) {
+                if ( (ret=(pn->ft->read.i)(&i,pn)) < 0 ) return ret ;
+                Cache_Add(&i, sizeof(int), pn ) ;
+            }
             LEVEL_DEBUG("FS_r_single: (integer) %d\n", i ) ;
             sz = FS_output_integer( i , buf , size , pn ) ;
             break;
@@ -351,48 +322,47 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
         case ft_bitfield: {
             UINT u ;
             if (size < 1) return -EMSGSIZE ;
-            ret = (pn->ft->read.u)(&u,pn) ;
-            if (ret < 0) return ret ;
+            if ( Cache_Get_Strict( &u, sizeof(UINT), pn ) ) {
+                if ( (ret=(pn->ft->read.u)(&u,pn)) < 0 ) return ret ;
+                Cache_Add(&u, sizeof(UINT), pn ) ;
+            }
             LEVEL_DEBUG("FS_r_single: (bitfield) %u\n", u ) ;
             buf[0] = UT_getbit((void*)(&u),pn->extension) ? '1' : '0' ;
             return 1 ;
             }
         case ft_unsigned: {
             UINT u ;
-            ret = (pn->ft->read.u)(&u,pn) ;
-            if (ret < 0) return ret ;
+            if ( Cache_Get_Strict( &u, sizeof(UINT), pn ) ) {
+                if ( (ret=(pn->ft->read.u)(&u,pn)) < 0 ) return ret ;
+                Cache_Add(&u, sizeof(UINT), pn ) ;
+            }
             LEVEL_DEBUG("FS_r_single: (unsigned) %u\n", u ) ;
             sz = FS_output_unsigned( u , buf , size , pn ) ;
             break ;
             }
-        case ft_float: {
-            _FLOAT f ;
-            ret = (pn->ft->read.f)(&f,pn) ;
-            if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_r_single: (float) %G\n", f ) ;
-            sz = FS_output_float( f , buf , size , pn ) ;
-            break ;
-            }
-        case ft_temperature: {
-            _FLOAT f ;
-            ret = (pn->ft->read.f)(&f,pn) ;
-            if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_r_single: (temperature) %G\n", f ) ;
-            sz = FS_output_float( Temperature(f,pn) , buf , size , pn ) ;
-            break ;
-            }
+        case ft_float:
+        case ft_temperature:
         case ft_tempgap: {
             _FLOAT f ;
-            ret = (pn->ft->read.f)(&f,pn) ;
-            if (ret < 0) return ret ;
-            LEVEL_DEBUG("FS_r_single: (tempgap) %G\n", f ) ;
-            sz = FS_output_float( TemperatureGap(f,pn) , buf , size , pn ) ;
+            if ( Cache_Get_Strict( &f, sizeof(_FLOAT), pn ) ) {
+                if ( (ret=(pn->ft->read.f)(&f,pn)) < 0 ) return ret ;
+                Cache_Add(&f, sizeof(_FLOAT), pn ) ;
+            }
+            LEVEL_DEBUG("FS_r_single: (float) %G\n", f ) ;
+            if ( format==ft_temperature ) {
+                f = Temperature(f,pn) ;
+            } else if ( format==ft_tempgap ) {
+                f = TemperatureGap(f,pn) ;
+            }
+            sz = FS_output_float( f , buf , size , pn ) ;
             break ;
             }
         case ft_date: {
             _DATE d ;
-            ret = (pn->ft->read.d)(&d,pn) ;
-            if (ret < 0) return ret ;
+            if ( Cache_Get_Strict( &d, sizeof(_DATE), pn ) ) {
+                if ( (ret=(pn->ft->read.d)(&d,pn)) < 0 ) return ret ;
+                Cache_Add(&d, sizeof(_DATE), pn ) ;
+            }
             LEVEL_DEBUG("FS_r_single: (date) %lu\n", (unsigned long int) d ) ;
             sz = FS_output_date( d , buf , size , pn ) ;
             break;
@@ -400,26 +370,30 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset , const 
         case ft_yesno: {
             int y ;
             if (size < 1) return -EMSGSIZE ;
-            ret = (pn->ft->read.y)(&y,pn) ;
-            if (ret < 0) return ret ;
+            if ( Cache_Get_Strict( &y, sizeof(int), pn ) ) {
+                if ( (ret=(pn->ft->read.y)(&y,pn)) < 0 ) return ret ;
+                Cache_Add(&y, sizeof(int), pn ) ;
+            }
             LEVEL_DEBUG("FS_r_single: (yesno) %d\n", y ) ;
             buf[0] = y ? '1' : '0' ;
             return 1 ;
             }
         case ft_vascii:
-        case ft_ascii: {
-            //size_t s = SimpleFileLength(pn) ;
-            //if ( offset > s ) return -ERANGE ;
-            s -= offset ;
-            if ( s > size ) s = size ;
-            return (pn->ft->read.a)(buf,s,offset,pn) ;
-            }
+        case ft_ascii:
         case ft_binary: {
             //size_t s = SimpleFileLength(pn) ;
             //if ( offset > s ) return -ERANGE ;
             s -= offset ;
             if ( s > size ) s = size ;
-            return (pn->ft->read.b)((BYTE *)buf,s,offset,pn) ;
+            if ( Cache_Get_Strict( &buf, s, pn ) ) {
+                ret = (format==ft_binary) ? (pn->ft->read.b)((BYTE *)buf,s,offset,pn) : (pn->ft->read.a)(buf,s,offset,pn) ;
+                if ( ret == pn->ft->suglen ) {
+                    Cache_Add(buf, ret, pn ) ;
+                } else if ( ret >= 0 ) {
+                    Cache_Del(pn) ;
+                }
+            }     return ret ;
+            return s ;
             }
         case ft_directory:
         case ft_subdir:
@@ -453,7 +427,9 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
         {
             int * i = (int *) calloc( elements, sizeof(int) ) ;
                 if ( i==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.i)(i,pn) ;
+                if ( Cache_Get_Strict( i, elements*sizeof(int), pn ) ) {
+                    if ( (ret=(pn->ft->read.i)(i,pn) ) >= 0 ) Cache_Add( i, elements*sizeof(int), pn ) ;
+                }
                 if (ret >= 0) ret = FS_output_integer_array( i , buf , size , pn ) ;
             free( i ) ;
             break;
@@ -463,39 +439,32 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
             UINT * u = (UINT *) calloc( elements, sizeof(UINT) ) ;
 
                 if ( u==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.u)(u,pn) ;
+                if ( Cache_Get_Strict( u, elements*sizeof(UINT), pn ) ) {
+                    if ( (ret=(pn->ft->read.u)(u,pn) ) >= 0 ) Cache_Add( u, elements*sizeof(UINT), pn ) ;
+                }
                 if (ret >= 0) ret = FS_output_unsigned_array( u , buf , size , pn ) ;
             free( u ) ;
             break;
         }
+    case ft_temperature:
+    case ft_tempgap:
     case ft_float:
         {
             _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.f)(f,pn) ;
-                if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
-            free( f ) ;
-            break ;
-        }
-    case ft_temperature:
-        {
-            size_t i ;
-            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
-                if ( f==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.f)(f,pn) ;
-                for ( i=0; i<elements ; ++i ) f[i] = Temperature(f[i],pn) ;
-                if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
-            free( f ) ;
-            break ;
-        }
-    case ft_tempgap:
-        {
-            size_t i ;
-            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
-                if ( f==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.f)(f,pn) ;
-                for ( i=0; i<elements ; ++i ) f[i] = TemperatureGap(f[i],pn) ;
-                if (ret >= 0) ret = FS_output_float_array( f , buf , size , pn ) ;
+                if ( Cache_Get_Strict( f, elements*sizeof(_FLOAT), pn ) ) {
+                    if ( (ret=(pn->ft->read.f)(f,pn) ) >= 0 ) Cache_Add( f, elements*sizeof(_FLOAT), pn ) ;
+                }
+                if ( ret >= 0 ) {
+                    if ( pn->ft->format==ft_temperature ) {
+                        size_t i ;
+                        for ( i=0 ; i<elements ; ++i ) f[i] = Temperature(f[i],pn) ;
+                    } else if ( pn->ft->format==ft_tempgap ) {
+                        size_t i ;
+                        for ( i=0 ; i<elements ; ++i ) f[i] = TemperatureGap(f[i],pn) ;
+                    }
+                    ret = FS_output_float_array( f , buf , size , pn ) ;
+                }
             free( f ) ;
             break ;
         }
@@ -504,6 +473,9 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
             _DATE * d = (_DATE *) calloc( elements, sizeof(_DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
                 ret = (pn->ft->read.d)(d,pn) ;
+                if ( Cache_Get_Strict( d, elements*sizeof(_DATE), pn ) ) {
+                    if ( (ret=(pn->ft->read.d)(d,pn) ) >= 0 ) Cache_Add( d, elements*sizeof(_DATE), pn ) ;
+                }
                 if (ret >= 0) ret = FS_output_date_array( d , buf , size , pn ) ;
             free( d ) ;
             break ;
@@ -512,7 +484,9 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
         {
             int * y = (int *) calloc( elements, sizeof(int) ) ;
                 if ( y==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.y)(y,pn) ;
+                if ( Cache_Get_Strict( y, elements*sizeof(int), pn ) ) {
+                    if ( (ret=(pn->ft->read.y)(y,pn) ) >= 0 ) Cache_Add( y, elements*sizeof(int), pn ) ;
+                }
                 if (ret >= 0) {
                     size_t i ;
                     for ( i=0 ; i<elements ; ++i ) {
@@ -528,6 +502,9 @@ static int FS_r_aggregate_all(char *buf, const size_t size, const off_t offset ,
         {
             UINT u ;
             ret = (pn->ft->read.u)(&u,pn) ;
+            if ( Cache_Get_Strict( &u, sizeof(UINT), pn ) ) {
+                if ( (ret=(pn->ft->read.u)(&u,pn) ) >= 0 ) Cache_Add( &u, sizeof(UINT), pn ) ;
+            }
             if (ret >= 0) {
                 size_t i ;
                 size_t j = 0 ;
@@ -610,7 +587,6 @@ static int FS_r_separate_all(char *buf, const size_t size, const off_t offset , 
         //printf("READALL(%p) %d->%d (%d->%d)\n",p,pname.extension,r,size,left) ;
     }
     //printf("READALL return %d\n",size-left) ;
-
     sz = size - left ;
 #if 0
     // /var/1wire/system/adapter/address.ALL is 512 long
@@ -647,7 +623,9 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         {
             int * i = (int *) calloc( elements, sizeof(int) ) ;
                 if ( i==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.i)(i,pn) ;
+                if ( Cache_Get_Strict( i, elements*sizeof(int), pn ) ) {
+                    if ( (ret=(pn->ft->read.i)(i,pn) ) >= 0 ) Cache_Add( i, elements*sizeof(int), pn ) ;
+                }
                 if (ret >= 0) ret = FS_output_integer( i[pn->extension] , buf , size , pn ) ;
             free( i ) ;
             break ;
@@ -656,35 +634,31 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         {
             UINT * u = (UINT *) calloc( elements, sizeof(UINT) ) ;
                 if ( u==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.u)(u,pn) ;
+                if ( Cache_Get_Strict( u, elements*sizeof(UINT), pn ) ) {
+                    if ( (ret=(pn->ft->read.u)(u,pn) ) >= 0 ) Cache_Add( u, elements*sizeof(UINT), pn ) ;
+                }
                 if (ret >= 0) ret = FS_output_unsigned( u[pn->extension] , buf , size , pn ) ;
             free( u ) ;
             break ;
         }
     case ft_float:
-        {
-            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
-                if ( f==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.f)(f,pn) ;
-                if (ret >= 0) ret = FS_output_float( f[pn->extension] , buf , size , pn ) ;
-            free( f ) ;
-            break ;
-        }
     case ft_temperature:
-        {
-            _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
-                if ( f==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.f)(f,pn) ;
-                if (ret >= 0) ret = FS_output_float( Temperature(f[pn->extension],pn) , buf , size , pn ) ;
-            free( f ) ;
-            break ;
-        }
     case ft_tempgap:
         {
             _FLOAT * f = (_FLOAT *) calloc( elements, sizeof(_FLOAT) ) ;
                 if ( f==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.f)(f,pn) ;
-                if (ret >= 0) ret = FS_output_float( TemperatureGap(f[pn->extension],pn) , buf , size , pn ) ;
+                if ( Cache_Get_Strict( f, elements*sizeof(_FLOAT), pn ) ) {
+                    if ( (ret=(pn->ft->read.f)(f,pn) ) >= 0 ) Cache_Add( f, elements*sizeof(_FLOAT), pn ) ;
+                }
+                if (ret >= 0) {
+                    _FLOAT F = f[pn->extension] ;
+                    if ( pn->ft->format==ft_temperature ) {
+                        F = Temperature(F,pn) ;
+                    } else if ( pn->ft->format==ft_tempgap ) {
+                        F = TemperatureGap(F,pn) ;
+                    }
+                    ret = FS_output_float( F , buf , size , pn ) ;
+                }
             free( f ) ;
             break ;
         }
@@ -692,7 +666,9 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         {
             _DATE * d = (_DATE *) calloc( elements, sizeof(_DATE) ) ;
                 if ( d==NULL ) return -ENOMEM ;
-                ret = (pn->ft->read.d)(d,pn) ;
+                if ( Cache_Get_Strict( d, elements*sizeof(_DATE), pn ) ) {
+                    if ( (ret=(pn->ft->read.d)(d,pn) ) >= 0 ) Cache_Add( d, elements*sizeof(_DATE), pn ) ;
+                }
                 if (ret >= 0) ret = FS_output_date( d[pn->extension] , buf , size , pn ) ;
             free( d ) ;
             break ;
@@ -701,7 +677,9 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         {
             int * y = (int *) calloc( elements, sizeof(int) ) ;
             if ( y==NULL ) return -ENOMEM ;
-            ret = (pn->ft->read.y)(y,pn) ;
+            if ( Cache_Get_Strict( y, elements*sizeof(int), pn ) ) {
+                if ( (ret=(pn->ft->read.y)(y,pn) ) >= 0 ) Cache_Add( y, elements*sizeof(int), pn ) ;
+            }
             if (ret >= 0) {
                 buf[0] = y[pn->extension]?'1':'0' ;
                 ret = 1;
@@ -713,6 +691,9 @@ static int FS_r_aggregate(char *buf, const size_t size, const off_t offset , con
         {
             UINT u ;
             ret = (pn->ft->read.u)(&u,pn) ;
+            if ( Cache_Get_Strict( &u, sizeof(UINT), pn ) ) {
+                if ( (ret=(pn->ft->read.u)(&u,pn) ) >= 0 ) Cache_Add( &u, sizeof(UINT), pn ) ;
+            }
             if (ret >= 0) {
                 buf[0] = u & (1<<pn->extension) ? '1' : '0' ;
                 ret = 1 ;
@@ -838,7 +819,7 @@ int FS_output_date( _DATE value, char * buf, const size_t size, const struct par
     return 24 ;
 }
 
-int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_output_integer_array( int * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
@@ -856,7 +837,7 @@ int FS_output_integer_array( int * values, char * buf, const size_t size, const 
     return size-(left-len) ;
 }
 
-int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
@@ -875,7 +856,7 @@ int FS_output_unsigned_array( UINT * values, char * buf, const size_t size, cons
     return size-(left-len) ;
 }
 
-int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;
@@ -893,7 +874,7 @@ int FS_output_float_array( _FLOAT * values, char * buf, const size_t size, const
     return size-(left-len) ;
 }
 
-int FS_output_date_array( _DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
+static int FS_output_date_array( _DATE * values, char * buf, const size_t size, const struct parsedname * pn ) {
     int len ;
     int left = size ;
     char * first = buf ;

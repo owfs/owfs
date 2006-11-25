@@ -16,8 +16,6 @@ $Id$
 
 static int BranchAdd( struct parsedname * pn ) ;
 
-static int filecmp(const void * name , const void * ex ) ;
-
 enum  parse_enum {parse_first, parse_done, parse_error, parse_real, parse_nonreal, parse_prop, parse_subprop } ;
 
 static enum parse_enum Parse_Unspecified( char * pathnow, int remote, struct parsedname * pn ) ;
@@ -480,7 +478,7 @@ static int BranchAdd( struct parsedname * pn ) {
     return 0 ;
 }
 
-static int filecmp(const void * name , const void * ex ) {
+int filecmp(const void * name , const void * ex ) {
     return strcmp( (const char *) name , ((const struct filetype *) ex)->name ) ;
 }
 
