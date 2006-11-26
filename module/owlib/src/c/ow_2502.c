@@ -96,8 +96,7 @@ static int FS_r_page(BYTE *buf, const size_t size, const off_t offset , const st
 static int FS_r_param(BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
     BYTE data[32] ;
     if ( OW_r_data(data,pn) ) return -EINVAL ;
-    memcpy( buf, &data[pn->ft->data.i+offset], size ) ;
-    return size ;
+    return FS_output_ascii( (ASCII *)buf, size, offset, (ASCII *) &data[pn->ft->data.i], (size_t)pn->ft->suglen ) ;
 }
 
 static int FS_w_memory(const BYTE *buf, const size_t size, const off_t offset , const struct parsedname * pn) {
@@ -163,10 +162,9 @@ static int OW_r_mem( BYTE * data , const size_t size, const off_t offset , const
         {q,NULL,rest,trxn_crc8,},
         TRXN_END,
     } ;
-    
     if ( BUS_transaction(t,pn) ) return 1 ;
 
-    memcpy( data, p, size ) ;
+    memcpy( data, q, size ) ;
     return 0 ;
 }
 
