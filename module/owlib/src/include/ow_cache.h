@@ -86,8 +86,6 @@ int Cache_Get_Dir( struct dirblob * db, const struct parsedname * pn ) ;
 int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) ;
 int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn ) ;
 
-int Cache_Del_Property( const struct parsedname * pn ) ;
-int Cache_Del_Friend( ASCII * friend, const struct parsedname * pn ) ;
 int Cache_Del(          const struct parsedname * pn                                                                   ) ;
 int Cache_Del_Dir( const struct parsedname * pn ) ;
 int Cache_Del_Device( const struct parsedname * pn ) ;
@@ -111,8 +109,6 @@ int Cache_Del_Internal( const struct internal_prop * ip, const struct parsedname
 #define Cache_Get_Device(bus_nr,pn )        (1)
 #define Cache_Get_Internal(data,dsize,ip,pn )       (1)
 
-#define Cache_Del_Property(pn )             (1)
-#define Cache_Del_Friend(friend,pn )        (1)
 #define Cache_Del(pn )                      (1)
 #define Cache_Del_Dir(pn )                  (1)
 #define Cache_Del_Device(pn )               (1)

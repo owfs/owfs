@@ -636,30 +636,6 @@ int Cache_Del( const struct parsedname * pn ) {
     return 1 ;
 }
 
-/* Delete a property in the same device */
-int Cache_Del_Friend( ASCII * friend, const struct parsedname * pn ) {
-    struct tree_node tn  ;
-    struct filetype * ft = bsearch( friend , pn->dev->ft , (size_t) pn->dev->nft , sizeof(struct filetype) , filecmp ) ;
-    if ( ft ) {
-        memset( &tn.tk, 0, sizeof(struct tree_key) ) ;
-        memcpy( tn.tk.sn , pn->sn , 8 ) ;
-        tn.tk.p.ft = ft ;
-        tn.tk.extension = pn->extension ;
-        return Del_Stat(&cache_ext, Cache_Del_Common(&tn)) ;
-    }
-    return 1 ;
-}
-
-/* Delete a property in the same device */
-int Cache_Del_Property( const struct parsedname * pn ) {
-    struct tree_node tn  ;
-    memset( &tn.tk, 0, sizeof(struct tree_key) ) ;
-    memcpy( tn.tk.sn , pn->sn , 8 ) ;
-    tn.tk.p.ft = pn->ft ;
-    tn.tk.extension = pn->extension ;
-    return Del_Stat(&cache_ext, Cache_Del_Common(&tn)) ;
-}
-
 int Cache_Del_Dir( const struct parsedname * pn ) {
     time_t duration = TimeOut( fc_directory ) ;
     if ( duration > 0 ) {
@@ -710,6 +686,7 @@ static int Cache_Del_Common( const struct tree_node * tn ) {
     struct tree_opaque * opaque ;
     time_t now = time(NULL) ;
     int ret = 1 ;
+    LEVEL_DEBUG("Delete from cache sn "SNformat" in=%p index=%d\n",SNvar(tn->tk.sn),tn->tk.p.in,tn->tk.extension) ;
     CACHELOCK;
         if ( (opaque=tfind( tn, &cache.new_db, tree_compare ))
          || ( (cache.killed>now) && (opaque=tfind( tn, &cache.old_db, tree_compare )) )

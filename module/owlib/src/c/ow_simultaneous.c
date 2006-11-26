@@ -135,8 +135,10 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
 
 static int FS_r_convert(int * y , const struct parsedname * pn) {
     struct parsedname pn2 ;
+    struct timeval tv ;
+    size_t dsize = sizeof(struct timeval) ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
-    y[0] = ( Cache_Del_Internal(&ipSimul[pn->ft->data.i],&pn2) == 0 ) ;
+    y[0] = ( Cache_Get_Internal(&tv,&dsize,&ipSimul[pn->ft->data.i],&pn2) == 0 ) ;
     return 0 ;
 }
