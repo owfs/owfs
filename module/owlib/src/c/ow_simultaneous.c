@@ -45,17 +45,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow_simultaneous.h"
 
-
-/* Not currently implemented -- cannot do simultaneous without a cache */
-/* Some day will be able to store one path */
-#if OW_CACHE == 0
-    struct buspath simulpath[2] ;
-    int simulpathlength ;
-    time_t simulexpire ;
-    #define SIMULTANEOUS_TIME 10
-#endif /* OW_CACHE */
-
-
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
  yREAD_FUNCTION( FS_r_convert ) ;
@@ -69,11 +58,6 @@ struct filetype simultaneous[] = {
 DeviceEntry( simultaneous, simultaneous ) ;
 
 /* ------- Functions ------------ */
-static int OW_skiprom( enum simul_type type, const struct parsedname * pn );
-static int OW_setcache( enum simul_type type, const struct parsedname * pn ) ;
-static int OW_getcache( enum simul_type type, const UINT msec, const struct parsedname * pn ) ;
-static int OW_killcache( enum simul_type type, const struct parsedname * pn ) ;
-
 struct internal_prop ipSimul[] = {
     {"temperature",fc_volatile},
     {"voltage",fc_volatile},
@@ -81,84 +65,78 @@ struct internal_prop ipSimul[] = {
 
 /* returns 0 if valid conversion exists */
 int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) {
-    return OW_getcache(type,msec,pn) ;
-}
-
-int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) {
-    return OW_killcache(type,pn) ;
-}
-
-static int FS_w_convert(const int * y , const struct parsedname * pn) {
-    if ( y[0]==0 ) {
-        if ( OW_killcache((enum simul_type) pn->ft->data.i,pn) ) return -EINVAL ;
-        return 0 ;
-    }
-    /* Since writing to /simultaneous/temperature is done recursive to all
-     * adapters, we have to fake a successful write even if it's detected
-     * as a bad adapter. */
-    if(pn->in->Adapter == adapter_Bad) return 0;
-
-    if ( OW_skiprom(  (enum simul_type) pn->ft->data.i, pn ) ) return -EINVAL ;
-    if ( OW_setcache( (enum simul_type) pn->ft->data.i, pn ) ) return -EINVAL ;
-    return 0 ;
-}
-
-static int FS_r_convert(int * y , const struct parsedname * pn) {
-    y[0] = 1 ;
-    if ( OW_getcache((enum simul_type) pn->ft->data.i,0,pn) ) y[0] = 0 ;
-    return 0 ;
-}
-
-static int OW_setcache( enum simul_type type, const struct parsedname * pn ) {
-    struct parsedname pn2 ;
-    struct timeval tv ;
-    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
-    FS_LoadPath(pn2.sn,&pn2) ;
-    gettimeofday(&tv, NULL) ;
-    return Cache_Add_Internal(&tv,sizeof(struct timeval),&ipSimul[type],&pn2) ;
-}
-
-static int OW_killcache( enum simul_type type, const struct parsedname * pn ) {
-    struct parsedname pn2 ;
-    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
-    FS_LoadPath(pn2.sn,&pn2) ;
-    return Cache_Del_Internal(&ipSimul[type],&pn2) ;
-}
-
-static int OW_getcache( enum simul_type type ,const UINT msec, const struct parsedname * pn ) {
     struct parsedname pn2 ;
     struct timeval tv,now ;
     long int diff ;
-    size_t dsize ;
+    size_t dsize = sizeof( struct timeval ) ;
     int ret ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
-    if ( (ret=Cache_Get_Internal(&tv, &dsize, &ipSimul[type],&pn2)) ) return ret ;
+    if ( (ret=Cache_Get_Internal(&tv, &dsize, &ipSimul[type],&pn2)) ) {
+        LEVEL_DEBUG("No simultaneous conversion valid.") ;
+        return ret ;
+    }
+    LEVEL_DEBUG("Simultaneous conversion IS valid.") ;
     gettimeofday(&now, NULL) ;
     diff =  1000*(now.tv_sec-tv.tv_sec) + (now.tv_usec-tv.tv_usec)/1000 ;
     if ( diff<(long int)msec ) UT_delay(msec-diff) ;
     return 0 ;
 }
 
-static int OW_skiprom( enum simul_type type, const struct parsedname * pn ) {
-    const BYTE cmd_temp[] = { 0xCC, 0x44 } ;
-    const BYTE cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF } ;
-    BYTE data[6];
-    int ret = 0;
+static int FS_w_convert(const int * y , const struct parsedname * pn) {
     struct parsedname pn2 ;
-    memcpy( &pn2, pn, sizeof(struct parsedname)) ; /* shallow copy */
+    enum simul_type type = (enum simul_type) pn->ft->data.i ;
+    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
+    FS_LoadPath(pn2.sn,&pn2) ;
     pn2.dev = NULL ; /* only branch select done, not actual device */
-    /* Make sure pn has bus-mutex initiated and it on local bus, NOT remote */
-    BUSLOCK(pn);
-        switch ( type ) {
-        case simul_temp:
-            ret = BUS_select(&pn2) || BUS_send_data( cmd_temp,2,pn ) ;
-            break ;
-        case simul_volt:
-            ret = BUS_select(&pn2) || BUS_sendback_data( cmd_volt,data,6,pn ) || memcmp( cmd_volt , data , 4 ) || CRC16(&data[1],5) ;
-            break ;
+    /* Since writing to /simultaneous/temperature is done recursive to all
+    * adapters, we have to fake a successful write even if it's detected
+    * as a bad adapter. */
+    if ( y[0] ) {
+        if ( pn->in->Adapter != adapter_Bad ) {
+            int ret = 1 ; // set just to block compiler errors
+            switch ( type ) {
+                case simul_temp: {
+                    const BYTE cmd_temp[] = { 0xCC, 0x44 } ;
+                    struct transaction_log t[] = {
+                        TRXN_START,
+                        {cmd_temp, NULL, 2, trxn_match, } ,
+                        TRXN_END ,
+                    } ;
+                    ret = BUS_transaction(t,&pn2) ;
+                    //printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
+                }
+                break ;
+                case simul_volt: {
+                    BYTE cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF } ;
+                    struct transaction_log t[] = {
+                        TRXN_START,
+                        {cmd_volt, NULL, 4, trxn_match, } ,
+                        {NULL, &cmd_volt[4], 2, trxn_read, } ,
+                        TRXN_END ,
+                    } ;
+                    ret = BUS_transaction(t,&pn2) || CRC16( &cmd_volt[1],5 ) ;
+                    //printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
+                }
+                break ;
+            }
+            if ( ret==0 ) {
+                struct timeval tv ;
+                gettimeofday(&tv, NULL) ;
+                Cache_Add_Internal(&tv,sizeof(struct timeval),&ipSimul[type],&pn2) ;
+            }
         }
-    BUSUNLOCK(pn);
-    return ret ;
+    } else {
+        //printf("CONVERT (simulateous) turning off\n") ;
+        Cache_Del_Internal(&ipSimul[type],&pn2) ;
+    }
+    return 0 ;
 }
 
+static int FS_r_convert(int * y , const struct parsedname * pn) {
+    struct parsedname pn2 ;
+    memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
+    FS_LoadPath(pn2.sn,&pn2) ;
+    y[0] = ( Cache_Del_Internal(&ipSimul[pn->ft->data.i],&pn2) == 0 ) ;
+    return 0 ;
+}

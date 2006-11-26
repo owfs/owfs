@@ -262,7 +262,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
             ret = -EADDRNOTAVAIL ;
         } else {
             int I ;
-            if ( FS_input_integer( &I, buf, size ) == 0 ) {
+            if ( FS_input_integer( &I, buf, size )==0 ) {
                 ret = (pn->ft->write.i)(&I,pn) ;
                 if ( ret==0 ) Cache_Add( &I, sizeof(int), pn ) ;
             }
@@ -274,7 +274,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
             ret = -EADDRNOTAVAIL ;
         } else {
             UINT U ;
-            if ( FS_input_unsigned( &U, buf, size ) == 0 ) {
+            if ( FS_input_unsigned( &U, buf, size )==0 ) {
                 ret = (pn->ft->write.u)(&U,pn) ;
                 if ( ret == 0 ) Cache_Add( &U, sizeof(UINT), pn ) ;
             }
@@ -287,7 +287,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
             ret = -EADDRNOTAVAIL ;
         } else {
             _FLOAT F ;
-            if ( FS_input_float( &F, buf, size ) ) {
+            if ( FS_input_float( &F, buf, size )==0 ) {
                 if ( pn->ft->format == ft_temperature ) {
                     F = fromTemperature( F , pn ) ;
                 } else if ( pn->ft->format == ft_tempgap ) {
@@ -303,7 +303,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
             ret = -EADDRNOTAVAIL ;
         } else {
             _DATE D ;
-            if ( FS_input_date( &D, buf, size ) ) {
+            if ( FS_input_date( &D, buf, size )==0 ) {
                 ret = FS_input_date( &D, buf, size ) ;
                 if ( ret == 0 ) Cache_Add( &D, sizeof(_DATE), pn ) ;
             }
@@ -314,7 +314,7 @@ static int FS_w_single(const char * buf, const size_t size, const off_t offset ,
             ret = -EADDRNOTAVAIL ;
         } else {
             int Y ;
-            if ( FS_input_yesno( &Y, buf, size ) ) {
+            if ( FS_input_yesno( &Y, buf, size )==0 ) {
                 ret = (pn->ft->write.y)(&Y,pn) ;
                 if ( ret == 0 ) Cache_Add( &Y, sizeof(int), pn ) ;
             }
@@ -381,7 +381,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
             if ( i==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                if ( (ret = FS_input_integer_array( i, buf, size, pn ))==0 ) {
+                if ( (ret=FS_input_integer_array( i, buf, size, pn ))==0 ) {
                     ret = (pn->ft->write.i)(i,pn) ;
                     if ( ret==0 ) Cache_Add( &i, elements * sizeof(int), pn ) ;
                 }
@@ -395,7 +395,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
             if ( u==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                if ( (ret = FS_input_unsigned_array( u, buf, size, pn )) == 0 ) {
+                if ( (ret=FS_input_unsigned_array( u, buf, size, pn )) == 0 ) {
                     ret = (pn->ft->write.u)(u,pn) ;
                     if ( ret==0 ) Cache_Add( &u, elements * sizeof(UINT), pn ) ;
                 }
@@ -411,7 +411,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
             if ( f==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                if ( (ret = FS_input_float_array( f, buf, size, pn ))==0 ) {
+                if ( (ret=FS_input_float_array( f, buf, size, pn ))==0 ) {
                     if ( pn->ft->format == ft_temperature ) {
                         size_t i ;
                         for ( i=0 ; i<elements ; ++i ) f[i] = fromTemperature(f[i],pn) ;
@@ -432,7 +432,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
             if ( d==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                if ( (ret = FS_input_date_array( d, buf, size, pn )) ==0 ) {
+                if ( (ret=FS_input_date_array( d, buf, size, pn )) ==0 ) {
                     ret = (pn->ft->write.d)(d,pn) ;
                     if ( ret==0 ) Cache_Add( &d, elements * sizeof(_DATE), pn ) ;
                 }
@@ -446,7 +446,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
             if ( y==NULL ) {
                 ret = -ENOMEM ;
             } else {
-                if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
+                if ( (ret=FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
                     ret = (pn->ft->write.y)(y,pn) ;
                     if ( ret==0 ) Cache_Add( &y, elements * sizeof(int), pn ) ;
                 }
@@ -462,7 +462,7 @@ static int FS_w_aggregate_all(const char * buf, const size_t size, const off_t o
             } else {
                 int i ;
                 UINT U = 0 ;
-                if ( (ret = FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
+                if ( (ret=FS_input_yesno_array( y, buf, size, pn )) == 0 ) {
                     for (i=pn->ft->ag->elements-1;i>=0;--i) U = (U<<1) | (y[i]&0x01) ;
                     ret = (pn->ft->write.u)(&U,pn) ;
                     if ( ret==0 ) Cache_Add( &U, sizeof(UINT), pn ) ;
@@ -752,19 +752,30 @@ static int FS_w_aggregate(const char * buf, const size_t size, const off_t offse
 /* return 0 if ok */
 static int FS_input_yesno( int * result, const char * buf, const size_t size ) {
 //printf("yesno size=%d, buf=%s\n",size,buf);
-    if ( size ) {
-        if ( buf[0]=='1' || strncasecmp("on",buf,2)==0 || strncasecmp("yes",buf,2)==0 ) {
-            *result = 1 ;
-//printf("YESno\n");
-            return 0 ;
+    const char * b ;
+    size_t s ;
+    for ( s=size, b=buf ; s>0 ; --s,++b ) {
+        if ( b[0] == ' ' ) continue ;
+        if ( s>2 ) {
+            if ( strncasecmp("yes",b,3 )==0 ) goto yes ;
+            if ( strncasecmp("off",b,3 )==0 ) goto no ;
         }
-        if ( buf[0]=='0' || strncasecmp("off",buf,2)==0 || strncasecmp("no",buf,2)==0 ) {
-            *result = 0 ;
-//printf("yesNO\n") ;
-            return 0 ;
+        if ( s>1 ) {
+            if ( strncasecmp("on",b,2 )==0 ) goto yes ;
+            if ( strncasecmp("no",b,2 )==0 ) goto no ;
         }
+        if ( s>0 ) {
+            if ( b[0]=='1' ) goto yes ;
+            if ( b[0]=='0' ) goto no ;
+        }
+        break ;
     }
     return 1 ;
+    yes: result[0] = 1 ;
+    return 0 ;
+    no: result[0] = 0 ;
+    return 0 ;
+    
 }
 
 /* return 0 if ok */

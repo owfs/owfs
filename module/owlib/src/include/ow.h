@@ -726,7 +726,6 @@ int FS_busless( char * path ) ;
 void FS_LoadPath( BYTE * sn, const struct parsedname * pn ) ;
 
 int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname * pn ) ;
-int Simul_Clear( const enum simul_type type, const struct parsedname * pn ) ;
 
 // ow_locks.c
 void LockSetup( void ) ;
