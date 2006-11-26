@@ -77,23 +77,25 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
             case trxn_crc8:
                 ret = CRC8( t->out, t->size) ;
                 LEVEL_DEBUG("  Transaction CRC8 = %d\n",ret) ;
+                break ;
             case trxn_crc8seeded:
                 ret = CRC8seeded( t->out, t->size, ((UINT *)(t->in))[0]) ;
                 LEVEL_DEBUG("  Transaction CRC8 = %d\n",ret) ;
                 break ;
             case trxn_crc16:
                 ret = CRC16( t->out, t->size) ;
-                LEVEL_DEBUG("  Transaction CRC8 = %d\n",ret) ;
+                LEVEL_DEBUG("  Transaction CRC16 = %d\n",ret) ;
                 break ;
             case trxn_crc16seeded:
                 ret = CRC16seeded( t->out, t->size, ((UINT *)(t->in))[0]) ;
-                LEVEL_DEBUG("  Transaction CRC8 = %d\n",ret) ;
+                LEVEL_DEBUG("  Transaction CRC16 = %d\n",ret) ;
                 break ;
             case trxn_reset:
                 ret = BUS_reset(pn) ;
                 LEVEL_DEBUG("  Transaction reset = %d\n",ret) ;
                     // fall through
             case trxn_end:
+                LEVEL_DEBUG("  Transaction end = %d\n",ret) ;
                 return 0 ;
             case trxn_verify:
                 {
@@ -110,7 +112,6 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
         }
         ++ t ;
     } while ( ret==0) ;
-
     return ret ;
 }
 
