@@ -84,6 +84,7 @@ int LINK_detect( struct connection_in * in ) {
 
     // set the baud rate to 9600
     COM_speed(B9600,&pn);
+    COM_flush(&pn) ;
     if ( LINK_reset(&pn)==0 && LINK_write(LINK_string(" "),1,&pn)==0 ) {
         BYTE tmp[36] = "(none)";
         char * stringp = (char *) tmp ;
@@ -113,7 +114,7 @@ int LINK_detect( struct connection_in * in ) {
             return 0 ;
         }
     }
-    LEVEL_DEFAULT("LINK detection error -- back to emulation mode\n");
+    LEVEL_DEFAULT("LINK detection error\n");
     return -ENODEV  ;
 }
 
@@ -289,14 +290,17 @@ static int LINK_read_low(BYTE * buf, const size_t size, const struct parsedname 
             STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
             return -EINTR;
         } else {
+            ERROR_CONNECT("LINK timeout error: %s\n",SAFESTRING(pn->in->name)) ;
             STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
             return -EINTR;
         }
     }
     if(inlength > 0) { /* signal that an error was encountered */
+        ERROR_CONNECT("LINK read short error: %s\n",SAFESTRING(pn->in->name)) ;
         STAT_ADD1_BUS(BUS_read_errors,pn->in);
         return ret;  /* error */
     }
+    //printf("Link_Read_Low <%*s>\n",(int)size,buf) ;
     return 0;
 }
 
@@ -343,6 +347,7 @@ static int LINK_write(const BYTE * buf, const size_t size, const struct parsedna
         STAT_ADD1_BUS(BUS_write_errors,pn->in);
         return -EIO;
     }
+    //printf("Link wrote <%*s>\n",(int)size,buf);
     return 0;
 }
 

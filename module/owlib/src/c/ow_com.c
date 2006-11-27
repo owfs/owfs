@@ -34,16 +34,16 @@ int COM_open( struct connection_in * in ) {
     struct termios newSerialTio; /*new serial port settings*/
     if(!in) return -ENODEV;
 
-    if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK)) < 0) {
-        ERROR_DEFAULT("Cannot open port: %s\n",SAFESTRING(in->name));
+//    if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
+    if ((in->fd = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
+    ERROR_DEFAULT("Cannot open port: %s\n",SAFESTRING(in->name));
         STAT_ADD1_BUS(BUS_open_errors,in) ;
         return -ENODEV;
     }
 
-    if ( tcgetattr(in->fd, &in->connin.serial.oldSerialTio) < 0 ) {
+    if ( (tcgetattr(in->fd, &in->connin.serial.oldSerialTio) < 0) || (tcgetattr(in->fd, &newSerialTio) < 0) ) {
         ERROR_CONNECT("Cannot get old port attributes: %s\n",SAFESTRING(in->name)) ;
     }
-    memcpy(&newSerialTio, &in->connin.serial.oldSerialTio, sizeof(struct termios));
     in->connin.serial.speed = B9600 ;
      // set baud in structure
     if ( cfsetospeed(&newSerialTio, in->connin.serial.speed)<0 || cfsetispeed(&newSerialTio, in->connin.serial.speed)<0 ) {
@@ -52,9 +52,11 @@ int COM_open( struct connection_in * in ) {
 
     // Set to non-canonical mode, and no RTS/CTS handshaking
     newSerialTio.c_iflag = IGNBRK|IGNPAR|IXANY;
-    newSerialTio.c_oflag &= ~(OPOST);
+    //newSerialTio.c_oflag &= ~(OPOST);
+    newSerialTio.c_oflag = 0 ;
     newSerialTio.c_cflag = CLOCAL|CS8|CREAD;
-    newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
+    //newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
+    newSerialTio.c_lflag = 0 ;
     newSerialTio.c_cc[VMIN] = 0;
     newSerialTio.c_cc[VTIME] = 3;
     if (tcsetattr(in->fd, TCSAFLUSH, &newSerialTio)) {
