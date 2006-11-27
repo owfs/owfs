@@ -950,6 +950,24 @@ AC_ARG_ENABLE(cache,
 AC_SUBST(ENABLE_CACHE)
 AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
 
+# Check if the zeroconf/bonjour is enabled.
+AC_MSG_CHECKING(if zeroconf/bonjour is enabled)
+ENABLE_ZERO="true"
+AC_ARG_ENABLE(zero,
+[  --enable-zero           Enable zeroconf/bonjour (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_ZERO=false
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_ZERO)
+AM_CONDITIONAL(ENABLE_ZERK, test "${ENABLE_ZERO}" = "true")
+
 # Check for USB enabled
 ENABLE_USB=auto
 AC_MSG_CHECKING([if usb support is enabled])
@@ -1130,6 +1148,13 @@ else
 fi
 AC_SUBST(OW_USB)
 
+if test "${ENABLE_ZERO}" = "true" ; then
+   OW_ZERO=1
+else
+   OW_ZERO=0
+fi
+AC_SUBST(OW_ZERO)
+
 if test "${ENABLE_PROFILING}" = "true" ; then
    PROFILING_FLAG=-pg
 fi
@@ -1185,7 +1210,10 @@ AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
 
-AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
+if test "${ENABLE_ZERO}" = "true" ; then
+   AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
+fi
+
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 
 AC_SUBST(MODULE_SUBDIRS)
@@ -1307,6 +1335,11 @@ if test "${ENABLE_THERMOCOUPLE}" = "true"; then
     AC_MSG_RESULT([             Thermocouple is enabled])
 else
     AC_MSG_RESULT([             Thermocouple is DISABLED])
+fi
+if test "${ENABLE_ZERO}" = "true"; then
+    AC_MSG_RESULT([             Zeroconf/Bonjour is enabled])
+else
+    AC_MSG_RESULT([             Zeroconf/Bonjour is DISABLED])
 fi
 if test "${ENABLE_DEBUG}" = "true"; then
     AC_MSG_RESULT([             Debug-output is enabled])

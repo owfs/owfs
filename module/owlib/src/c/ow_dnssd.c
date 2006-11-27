@@ -11,10 +11,14 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow.h"
 
+#include "ow.h"
 #include "ow_dl.h"
 #include "ow_dnssd.h"
+
+DLHANDLE libdnssd = NULL;
+
+#if OW_ZERO
 
 #if OW_CYGWIN
 
@@ -23,8 +27,6 @@ $Id$
 #endif
 
 #endif
-
-DLHANDLE libdnssd = NULL;
 
 _DNSServiceRefSockFD DNSServiceRefSockFD;
 _DNSServiceProcessResult DNSServiceProcessResult;
@@ -132,3 +134,13 @@ int OW_Free_dnssd_library(void) {
   libdnssd = NULL;
   return rc;
 }
+
+#else  /* OW_ZERO */
+
+int OW_Load_dnssd_library(void) {
+  return 0;
+}
+int OW_Free_dnssd_library(void) {
+  return 0;
+}
+#endif /* OW_ZERO */

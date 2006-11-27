@@ -11,10 +11,12 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow.h"
+
+#if OW_ZERO
 
 #if OW_MT
 
-#include "ow.h"
 #include "ow_connection.h"
 
 #include "ow_dnssd.h"
@@ -243,3 +245,11 @@ void OW_Browse( void ) {
 }
 
 #endif /* OW_MT */
+
+#else  /* OW_ZERO */
+
+void OW_Browse( void ) {
+    LEVEL_CONNECT("OWFS is compiled without Zeroconf/Bonjour support.\n");
+}
+
+#endif /* OW_ZERO */

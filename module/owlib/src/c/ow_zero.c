@@ -13,6 +13,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow_connection.h"
 
+#if OW_ZERO
+
 struct announce_struct {
     struct connection_out * out ;
     ASCII * name ;
@@ -122,3 +124,12 @@ void OW_Announce( struct connection_out * out ) {
     }
     LEVEL_DEBUG("OW_Announce: end\n");
 }
+
+#else  /* OW_ZERO */
+
+void OW_Announce( struct connection_out * out ) {
+  (void) out;
+  return;
+}
+
+#endif /* OW_ZERO */

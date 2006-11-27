@@ -515,7 +515,9 @@ union antiloop {
 struct global {
     int announce_off ; // use zeroconf?
     ASCII * announce_name ;
+#if OW_ZERO
     DNSServiceRef browse ;
+#endif
     enum opt_program opt ;
     ASCII * progname ;
     union antiloop Token ;

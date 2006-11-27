@@ -13,6 +13,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow_dl.h"
 
+#if OW_ZERO
+
 DLHANDLE DL_open(const char *pathname, int mode)
 {
 #if OW_CYGWIN
@@ -53,3 +55,4 @@ char *DL_error(void)
 #endif
 }
 
+#endif

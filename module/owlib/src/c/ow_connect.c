@@ -181,10 +181,12 @@ void FreeOut( void ) {
 #if OW_MT
         pthread_mutex_destroy(&(now->accept_mutex)) ;
 #endif /* OW_MT */
+#if OW_ZERO
 	if(libdnssd != NULL) {
 	  if ( now->sref0 ) DNSServiceRefDeallocate(now->sref0) ;
 	  if ( now->sref1 ) DNSServiceRefDeallocate(now->sref1) ;
 	}
+#endif
         free(now) ;
     }
 }

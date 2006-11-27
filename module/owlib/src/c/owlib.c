@@ -300,8 +300,7 @@ LibStart (void)
 	case bus_serial:
 	  if (DS2480_detect (in))
 	    {			/* Set up DS2480/LINK interface */
-	      LEVEL_CONNECT
-		("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
+	      LEVEL_CONNECT ("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
 	      BUS_close (in);
 	      BadAdapter_detect (in);	/* reset the methods */
 	      if (DS9097_detect (in))
@@ -497,8 +496,10 @@ LibClose (void)
   if (Global.progname)
     free (Global.progname);
 
+#if OW_ZERO
   if (Global.browse && (libdnssd != NULL))
     DNSServiceRefDeallocate (Global.browse);
+#endif
 
   OW_Free_dnssd_library ();
   LEVEL_CALL ("Finished Library cleanup\n");

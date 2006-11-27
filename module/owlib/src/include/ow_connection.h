@@ -368,8 +368,10 @@ struct connection_out {
     pthread_mutex_t out_mutex ;
     pthread_t tid ;
 #endif /* OW_MT */
+#if OW_ZERO
     DNSServiceRef sref0 ;
     DNSServiceRef sref1 ;
+#endif
 } ;
 extern struct connection_out * outdevice ;
 extern struct connection_in * indevice ;
