@@ -20,7 +20,7 @@
 # Version
 #########
 !ifndef VERSION
-  !define VERSION '@Version@'
+  !define VERSION '@VERSION@'
 !endif
 
 #########
@@ -171,20 +171,9 @@ SectionEnd
 # Source
 #########
 Section "OWFS source files" Source
-
-  SetDetailsPrint textonly
-  DetailPrint "Installing OWFS Source Files..."
-  SetDetailsPrint listonly
-
   SectionIn 2
-  SetOutPath $INSTDIR\source
-  File /r "${ROOT_OWFS}\*.c"
-  File /r "${ROOT_OWFS}\*.h"
-  File /r "${ROOT_OWFS}\*.am"
-
-  SetOutPath $INSTDIR\source\src\man
-  File /r "${ROOT_OWFS}\src\man\*"
-
+  MessageBox MB_OK "Going to Sourceforge OWFS site for source file installation."
+  ExecShell "open" "http://sourceforge.net/project/downloading.php?group_id=85502&filename=owfs-${VERSION}.zip"
 SectionEnd
 
 Section "USB Support Installation"
