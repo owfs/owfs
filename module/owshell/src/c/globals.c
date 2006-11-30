@@ -24,7 +24,9 @@ struct global Global ;
 
 /* All ow library setup */
 void Setup( void ) {
+#if OW_ZERO
     OW_Load_dnssd_library();
+#endif
 
     // global structure of configuration parameters
     memset( &Global, 0, sizeof(struct global) ) ;
@@ -41,5 +43,7 @@ void Setup( void ) {
 }
 
 void Cleanup( void ) {
+#if OW_ZERO
   OW_Free_dnssd_library();
+#endif
 }

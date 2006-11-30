@@ -86,7 +86,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
         p[0] = ':' ; /* restore name string */
     } else {
 #if OW_CYGWIN
-        in->connin.server.host = strdup("0.0.0.0") ;
+        in->connin.server.host = strdup("127.0.0.1") ;
 #else
         in->connin.server.host = NULL ;
 #endif

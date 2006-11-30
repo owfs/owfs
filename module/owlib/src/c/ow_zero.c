@@ -11,9 +11,10 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_connection.h"
 
 #if OW_ZERO
+
+#include "ow_connection.h"
 
 struct announce_struct {
     struct connection_out * out ;
@@ -85,7 +86,6 @@ void OW_Announce( struct connection_out * out ) {
 
     if ( as==NULL || Global.announce_off) return ;
     as->out = out ;
-    LEVEL_DEBUG("OW_Announce: 1\n");
     if ( getsockname( out->fd, &sa, &sl) ) {
         ERROR_CONNECT("Could not get port number of device.\n") ;
         return ;
@@ -110,7 +110,7 @@ void OW_Announce( struct connection_out * out ) {
         default:
             return ;
     }
-    LEVEL_DEBUG("OW_Announce: 2\n");
+    LEVEL_DEBUG("OW_Announce: 1\n");
     if(libdnssd) {
 #if OW_MT
       //LEVEL_DEBUG("DNSServiceRegister request: index=%d, name=%s, port=%d, type=%s / %s\n",out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;

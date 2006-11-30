@@ -24,7 +24,9 @@ int shutdown_in_progress = 0;
 void
 LibSetup (enum opt_program opt)
 {
+#if OW_ZERO
   OW_Load_dnssd_library ();
+#endif
 
   // global structure of configuration parameters
   memset (&Global, 0, sizeof (struct global));
@@ -397,6 +399,7 @@ LibStart (void)
   // zeroconf/Bonjour look for new services
   if (Global.autoserver)
     {
+#if OW_ZERO
       if (libdnssd == NULL)
 	{
 	  fprintf (stderr,
@@ -407,6 +410,10 @@ LibStart (void)
 	{
 	  OW_Browse ();
 	}
+#else
+      fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
+      exit (0);
+#endif
     }
 
   // Signal handlers
@@ -499,9 +506,9 @@ LibClose (void)
 #if OW_ZERO
   if (Global.browse && (libdnssd != NULL))
     DNSServiceRefDeallocate (Global.browse);
-#endif
 
   OW_Free_dnssd_library ();
+#endif
   LEVEL_CALL ("Finished Library cleanup\n");
   if (log_available)
     closelog ();

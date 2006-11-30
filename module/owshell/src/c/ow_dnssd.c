@@ -12,13 +12,13 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 
+#if OW_ZERO
+
 #include "ow.h"
 #include "ow_dl.h"
 #include "ow_dnssd.h"
 
 DLHANDLE libdnssd = NULL;
-
-#if OW_ZERO
 
 #if OW_CYGWIN
 
@@ -60,9 +60,7 @@ int OW_Load_dnssd_library(void) {
       i++;
       continue;
     } else {
-#if 0
-      fprintf(stderr, "dlopen [%s] success\n", libdirs[i]);
-#endif
+      //fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
       break;
     }
   }
@@ -73,11 +71,6 @@ int OW_Load_dnssd_library(void) {
     strcpy(file, "dnssd.dll");
     if (!(libdnssd = DL_open(file, 0))) {
       /* Couldn't open that lib, but continue anyway */
-#if 0
-      char *derr;
-      derr = DL_error();
-      fprintf(stderr, "DL_open [%s] failed [%s]\n", file, derr);
-#endif
     }
   }
 #endif
@@ -102,9 +95,7 @@ int OW_Load_dnssd_library(void) {
       i++;
       continue;
     } else {
-#if 0
-      fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
-#endif
+      //fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
       break;
     }
   }
@@ -135,12 +126,4 @@ int OW_Free_dnssd_library(void) {
   return rc;
 }
 
-#else  /* OW_ZERO */
-
-int OW_Load_dnssd_library(void) {
-  return 0;
-}
-int OW_Free_dnssd_library(void) {
-  return 0;
-}
 #endif /* OW_ZERO */

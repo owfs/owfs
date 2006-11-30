@@ -133,9 +133,9 @@ $Id$
  #endif /* __USE_GNU */
 #endif /* SKIP_SEARCH_H */
 
-#include "ow_dl.h"
 #if OW_ZERO
 /* Zeroconf / Bonjour */
+#include "ow_dl.h"
 #include "ow_dnssd.h"
 #endif
 

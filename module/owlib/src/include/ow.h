@@ -151,9 +151,11 @@ $Id$
     #undef OW_PARPORT
 #endif /* USE_NO_PARPORT */
 
+#if OW_ZERO
 /* Zeroconf / Bonjour */
 #include "ow_dl.h"
 #include "ow_dnssd.h"
+#endif
 
 /* Include some compatibility functions */
 #include "compat.h"

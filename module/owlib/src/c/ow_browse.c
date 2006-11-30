@@ -19,8 +19,6 @@ $Id$
 
 #include "ow_connection.h"
 
-#include "ow_dnssd.h"
-
 struct RefStruct {
     DNSServiceRef sref ;
 } ;
@@ -247,6 +245,8 @@ void OW_Browse( void ) {
 #endif /* OW_MT */
 
 #else  /* OW_ZERO */
+
+#include "ow_debug.h"
 
 void OW_Browse( void ) {
     LEVEL_CONNECT("OWFS is compiled without Zeroconf/Bonjour support.\n");

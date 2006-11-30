@@ -180,7 +180,7 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
         p[0] = ':' ; /* restore name string */
     } else {
 #if OW_CYGWIN
-        in->connin.server.host = strdup("0.0.0.0") ;
+        in->connin.server.host = strdup("127.0.0.1") ;
 #else
         in->connin.server.host = NULL ;
 #endif
@@ -196,7 +196,6 @@ int ClientAddr(  char * sname, struct connection_in * in ) {
 #endif
 
 //printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
-LEVEL_DEBUG("GetAddrInfo [%s] [%s]\n",in->connin.server.host, in->connin.server.service);
 
     if ( (ret=getaddrinfo( in->connin.server.host, in->connin.server.service, &hint, &in->connin.server.ai )) ) {
         LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
@@ -353,8 +352,6 @@ static void ServerProcessAccept( void * vp ) {
     
 static void * ServerProcessOut( void * vp ) {
     struct connection_out * out = (struct connection_out *) vp ;
-    pthread_t tid;
-    int ret;
 
     LEVEL_DEBUG("ServerProcessOut = %lu\n",(unsigned long int)pthread_self() );
 
@@ -362,6 +359,7 @@ static void * ServerProcessOut( void * vp ) {
         LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",SAFESTRING(out->name),out->index) ;
         (out->Exit)(1) ;
     }
+
     OW_Announce( out ) ;
 
     while(!shutdown_in_progress) {
