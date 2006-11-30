@@ -1337,9 +1337,9 @@ else
     AC_MSG_RESULT([             Thermocouple is DISABLED])
 fi
 if test "${ENABLE_ZERO}" = "true"; then
-    AC_MSG_RESULT([             Zeroconf/Bonjour is enabled])
+    AC_MSG_RESULT([         Zeroconf/Bonjour is enabled])
 else
-    AC_MSG_RESULT([             Zeroconf/Bonjour is DISABLED])
+    AC_MSG_RESULT([         Zeroconf/Bonjour is DISABLED])
 fi
 if test "${ENABLE_DEBUG}" = "true"; then
     AC_MSG_RESULT([             Debug-output is enabled])
