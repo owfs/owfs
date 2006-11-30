@@ -282,7 +282,6 @@ int ServerOutSetup( struct connection_out * out ) {
 /* Server Process run for each out device, and each */
 #if OW_MT
 
-
 void *ServerProcessHandler(void *arg)
 {
   struct HandlerThread_data *hp = (struct HandlerThread_data *)arg;

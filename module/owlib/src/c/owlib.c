@@ -178,6 +178,10 @@ LibStart (void)
   struct connection_in *in = indevice;
   int ret = 0;
 
+  /* Initialize random number generator, make sure fake devices get the same
+   * id each time */
+  srand(1);
+
 #ifdef __UCLIBC__
   /* First call to pthread should be done after daemon() in uClibc, so
    * I moved it here to avoid calling __pthread_initialize() */

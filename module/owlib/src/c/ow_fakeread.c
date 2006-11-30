@@ -53,7 +53,7 @@ static int FS_read_fake_single( char *buf, const size_t size, const off_t offset
     s = SimpleFileLength(pn) ;
     if ( offset > (off_t)s ) return -ERANGE ;
     if ( offset == (off_t)s ) return 0 ;
-   
+
     switch( pn->ft->format ) {
         case ft_integer: {
             int i = Random_i ;

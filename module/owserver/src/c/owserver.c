@@ -99,7 +99,7 @@ struct handlerdata {
 
 /* --- Prototypes ------------ */
 static void Handler( int fd ) ; // Each new interaction from client
-static void * RealHandler( void * v ) ; // Called from ping wrapper
+void * RealHandler( void * v ) ; // Called from ping wrapper
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
@@ -337,7 +337,7 @@ static void Handler( int fd ) {
  * Main routine for actually handling a request
  * deals with a conncection
  */
-static void * RealHandler( void * v ) {
+void * RealHandler( void * v ) {
     struct handlerdata * hd = (struct handlerdata *) v ;
     char * retbuffer = NULL ;
     struct server_msg sm ;
@@ -347,6 +347,17 @@ static void * RealHandler( void * v ) {
 
 #if OW_MT
     pthread_detach( pthread_self() );
+#endif
+
+#if OW_CYGWIN
+    /* Random generator seem to need initialization for each new thread
+     * If not, seed will be reset and rand() will return 0 the first call.
+     */
+    {
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      srand((unsigned int)tv.tv_usec);
+    }
 #endif
 
     //printf("OWSERVER message type = %d\n",sm.type ) ;
@@ -424,9 +435,10 @@ static void * RealHandler( void * v ) {
     if ( cm.ret != -EIO ) ToClient( hd->fd, &cm, retbuffer ) ;
     timerclear(&(hd->tv)) ;
     TOCLIENTUNLOCK(hd) ;
-    //printf("RealHandler: About to clear path\n");
-    if (sp.path) free(sp.path) ;
-    //printf("RealHandler: About to clear retbuffer\n");
+    if (sp.path) {
+      free(sp.path) ;
+      sp.path = NULL;
+    }
     if ( retbuffer ) free(retbuffer) ;
     LEVEL_DEBUG("RealHandler: done\n");
     return NULL ;
@@ -471,7 +483,7 @@ static void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const s
         cm->size = ret ;
         cm->ret = ret ;
     }
-    LEVEL_DEBUG("ReadHandler: return %*s\n",sm->size,retbuffer);
+    LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n",sm->size, sm->size, retbuffer);
     return retbuffer ;
 }
 

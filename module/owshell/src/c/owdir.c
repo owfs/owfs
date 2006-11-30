@@ -23,6 +23,7 @@ $Id$
 int main(int argc, char *argv[]) {
     int c ;
     int paths_found = 0 ;
+    int rc = -1 ;
 
     Setup() ;
     /* process command line arguments */
@@ -35,15 +36,15 @@ int main(int argc, char *argv[]) {
             OW_ArgNet(argv[optind]) ;
         } else {
             if ( paths_found++ == 0 ) Server_detect() ;
-            ServerDir(argv[optind]) ;
+            rc = ServerDir(argv[optind]) ;
         }
         ++optind ;
     }
     // Was anything requested?
     if ( paths_found == 0 ) {
         Server_detect() ;
-        ServerDir("/") ;
+        rc = ServerDir("/") ;
     }
     Cleanup();
-    exit(0) ;
+    exit((rc >= 0 ? 0 : 1)) ;
 }
