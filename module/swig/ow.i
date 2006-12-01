@@ -199,6 +199,22 @@ void finish( void ) {
     OWLIB_can_finish_end() ;
 }
 
+void set_error_print(int val) {
+    Global.error_print = val;
+}
+
+int get_error_print() {
+    return Global.error_print;
+}
+
+void set_error_level(int val) {
+    Global.error_level = val;
+}
+
+int get_error_level() {
+    return Global.error_level;
+}
+
 %}
 %typemap(newfree) char * { if ($1) free($1) ; }
 %newobject get ;
@@ -208,6 +224,7 @@ extern int init( const char * dev ) ;
 extern char * get( const char * path ) ;
 extern int put( const char * path, const char * value ) ;
 extern void finish( void ) ;
-
-//extern int error_print;
-//extern int error_level ;
+extern void set_error_print(int);
+extern int get_error_print(void);
+extern void set_error_level(int);
+extern int get_error_level(void);

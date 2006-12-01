@@ -92,8 +92,8 @@ def error_level(level=None):
         error_level.debug
     """
     if level:
-        _OW.cvar.error_level = level
-    return _OW.cvar.error_level
+        _OW.set_error_level(level)
+    return _OW.get_error_level()
 
 error_level.fatal   = 0
 error_level.default = 1
@@ -117,8 +117,8 @@ def error_print(level=None):
         error_print.suppressed
     """
     if level:
-        _OW.cvar.error_print = level
-    return _OW.cvar.error_print
+        _OW.set_error_print(level)
+    return _OW.get_error_print()
 
 error_print.mixed      = 0
 error_print.syslog     = 1
