@@ -56,7 +56,10 @@ AC_DEFUN([SC_PATH_TCLCONFIG],
 			../../../tcl \
 			`ls -dr ../../../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
 			`ls -dr ../../../tcl[[8-9]].[[0-9]] 2>/dev/null` \
-			`ls -dr ../../../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
+			`ls -dr ../../../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../../../../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../../../../tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr ../../../../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tclConfig.sh" ; then
 			ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
 			break
