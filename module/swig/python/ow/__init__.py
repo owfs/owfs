@@ -61,6 +61,10 @@ class exNotInitialized( exError ):
     """Exception raised when a controller has not been initialized."""
 
 
+class exUnknownSensor(exErrorValue):
+    """Exception raised when a specified sensor is not found."""
+
+
 #
 # Module variable used to insure that the _OW library has been
 # initialized before any calls into it are made.
@@ -131,12 +135,30 @@ use_logging = False
 #use_logging = True
 
 
+def _get(path):
+    """
+    Get the sensor data. In the case where a sensor is disconnected
+    from the bus or something else goes wrong, raise exUnknownSensor.
+    """
+    sensor = _OW.get(path)
+    if sensor == None:
+        raise exUnknownSensor(path)
+    return sensor
+
+
+def _put(path, value):
+    """
+    Write the _OW.put call details out to the log file.
+    """
+    return _OW.put(path, value)
+
+
 def log_get( path ):
     """
     Write the _OW.get call details out to the log file.
     """
     logfile.write( "_OW.get( '%s' )%s" % ( path, os.linesep ) )
-    return _OW.get( path )
+    return _OW.get(path)
 
 
 def log_put( path, value ):
@@ -152,8 +174,8 @@ if use_logging:
     owfs_get = log_get
     owfs_put = log_put
 else:
-    owfs_get = _OW.get
-    owfs_put = _OW.put
+    owfs_get = _get
+    owfs_put = _put
 
 
 #
@@ -282,6 +304,14 @@ class Sensor( object ):
         return self._path == other._path
 
 
+    def __hash__(self):
+        """
+        Return a hash for the Sensor object's name. This allows
+        Sensors to be used better in sets.Set.
+        """
+        return hash(self._path)
+
+
     def __getattr__( self, name ):
         """
         Retreive an attribute from the sensor. __getattr__ is called
@@ -367,9 +397,10 @@ class Sensor( object ):
                 self._usePath = '/uncached' + self._path
 
         if self._path == '/':
-            self._type    = owfs_get( '/system/adapter/name' )
+            self._type    = owfs_get('/system/adapter/name.0')
         else:
             self._type  = owfs_get( '%s/type' % self._usePath )
+
         self._attrs = dict( [ (n.replace( '.', '_' ), self._usePath + '/' + n )
                               for n in owfs_get( self._usePath ).split( ',' ) ] )
 
@@ -382,8 +413,11 @@ class Sensor( object ):
         list = owfs_get( self._usePath )
         if list:
             for entry in list.split( ',' ):
-                if not owfs_get( entry + 'type' ):
+                try:
+                    owfs_get(entry + 'type')
+                except exUnknownSensor, ex:
                     yield entry.split( '/' )[ 0 ]
+
 
 
     def entryList( self ):
@@ -423,18 +457,24 @@ class Sensor( object ):
                 if list:
                     for branch_entry in list.split( ',' ):
                         branch_path = self._usePath + '/' + branch + '/' + branch_entry.split( '/' )[ 0 ]
-                        if owfs_get( branch_path + '/type' ):
-                            yield Sensor( branch_path )
+                        try:
+                            owfs_get( branch_path + '/type' )
+                        except exUnknownSensor, ex:
+                            continue
+                        yield Sensor( branch_path )
 
         else:
             list = owfs_get( self._usePath )
             if list:
                 for branch_entry in list.split( ',' ):
-                    if owfs_get( branch_entry + 'type' ):
-                        path = self._usePath + '/' + branch_entry.split( '/' )[ 0 ]
-                        if path[ :2 ] == '//':
-                            path = path[ 1: ]
-                        yield Sensor( path )
+                    try:
+                        owfs_get( branch_entry + 'type' )
+                    except exUnknownSensor, ex:
+                        continue
+                    path = self._usePath + '/' + branch_entry.split( '/' )[ 0 ]
+                    if path[ :2 ] == '//':
+                        path = path[ 1: ]
+                    yield Sensor( path )
 
 
     def sensorList( self, names = [ 'main', 'aux' ] ):
