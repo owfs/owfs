@@ -518,6 +518,13 @@ int Cache_Get_Device( void * bus_nr, const struct parsedname * pn ) {
     return 1 ;
 }
 
+/* Does cache get, but doesn't allow play in data size */
+int Cache_Get_Internal_Strict( void * data, size_t dsize, const struct internal_prop * ip, const struct parsedname * pn ) {
+    size_t size = dsize ;
+    if ( Cache_Get_Internal( data,&size,ip,pn) || dsize != size ) return 1 ;
+    return 0 ;
+}
+
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Internal( void * data, size_t * dsize, const struct internal_prop * ip, const struct parsedname * pn ) {
     //printf("Cache_Get_Internal\n") ;

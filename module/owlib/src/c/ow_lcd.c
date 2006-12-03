@@ -189,10 +189,8 @@ static int FS_r_counters(UINT * u , const struct parsedname * pn ) {
 
 #if OW_CACHE /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 static int FS_r_cum(UINT * u , const struct parsedname * pn ) {
-    size_t s = 4*sizeof(UINT) ;
-
     if ( OW_r_counters(u,pn) ) return -EINVAL ; /* just to prime the "CUM" data */
-    if ( Cache_Get_Internal( (void *) u, &s, &ip_cum, pn ) ) return -EINVAL ;
+    if ( Cache_Get_Internal_Strict( (void *) u, 4*sizeof(UINT), &ip_cum, pn ) ) return -EINVAL ;
     return 0 ;
 }
 
@@ -328,7 +326,6 @@ static int OW_r_gpio( BYTE * data , const struct parsedname* pn ) {
 static int OW_r_counters( UINT * data , const struct parsedname* pn ) {
     BYTE d[8] ;
     UINT cum[4] ;
-    size_t s = sizeof(cum);
 
     if ( LCD_byte(0x23,1,pn) ||  OW_r_scratch(d,8,pn) ) return 1 ; // 80uS
 
@@ -338,7 +335,7 @@ static int OW_r_counters( UINT * data , const struct parsedname* pn ) {
     data[3] = ((UINT) d[7])<<8 | d[6] ;
 
 //printf("OW_COUNTER key=%s\n",key);
-    if ( Cache_Get_Internal( (void *) cum, &s, &ip_cum, pn ) ) { /* First pass at cumulative */
+    if ( Cache_Get_Internal_Strict( (void *) cum, sizeof(cum), &ip_cum, pn ) ) { /* First pass at cumulative */
         cum[0] = data[0] ;
         cum[1] = data[1] ;
         cum[2] = data[2] ;

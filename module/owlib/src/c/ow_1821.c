@@ -148,8 +148,7 @@ static int OW_temperature( _FLOAT * temp , const struct parsedname * pn ) {
     if ( status & 0x01 ) { /* 1-shot, convert and wait 1 second */
         need_to_trigger = 1 ;
     } else { /* continuous conversion mode */
-        size_t s = sizeof(continuous) ;
-        if ( Cache_Get_Internal( &continuous,&s,&ip_continuous,pn ) || continuous==0 ) {
+        if ( Cache_Get_Internal_Strict( &continuous,sizeof(continuous),&ip_continuous,pn ) || continuous==0 ) {
             need_to_trigger = 1 ;
         }
     }

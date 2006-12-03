@@ -221,7 +221,6 @@ static int FS_use( const BYTE *buf, const size_t size, const off_t offset , cons
 
 static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE p[1+2+64+2] = { 0x0F, offset&0xFF , offset>>8, } ;
-    size_t s = 8 ;
     int ret ;
 
     /* Copy to scratchpad */
@@ -242,7 +241,7 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
     if ( ret ) return 1 ;
 
 #if OW_CACHE
-    Cache_Get_Internal( (void *)(&p[4]), &s, &ip_ful, pn ) ;
+    Cache_Get_Internal_Strict( (void *)(&p[4]), 8, &ip_ful, pn ) ;
 #endif /* OW_CACHE */
 
     /* Copy Scratchpad to SRAM */
@@ -257,11 +256,10 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
 
 static int OW_r_mem( BYTE * data , const size_t size , const off_t offset, const struct parsedname * pn ) {
     BYTE pwd[8] = {0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, } ;
-    size_t s = sizeof(pwd) ;
 
 #if OW_CACHE
-    if ( Cache_Get_Internal( (void *)pwd, &s, &ip_ful, pn ) || OW_r_pmem( data,pwd,size,offset,pn) ) return 0 ;
-    Cache_Get_Internal( (void *)pwd, &s, &ip_rea, pn ) ;
+    if ( Cache_Get_Internal_Strict( (void *)pwd, sizeof(pwd), &ip_ful, pn ) || OW_r_pmem( data,pwd,size,offset,pn) ) return 0 ;
+    Cache_Get_Internal_Strict( (void *)pwd, sizeof(pwd), &ip_rea, pn ) ;
 #endif /* OW_CACHE */
     return OW_r_pmem(data,pwd,size,offset,pn) ;
 }

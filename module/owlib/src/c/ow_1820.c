@@ -379,13 +379,12 @@ static int OW_power( BYTE * data, const struct parsedname * pn) {
         { NULL, data, 1, trxn_read },
         TRXN_END,
     } ;
-    size_t s = sizeof(BYTE) ;
     //printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
-    if ( IsUncachedDir(pn) || Cache_Get_Internal(data,&s,&ip_power,pn) ) {
+    if ( IsUncachedDir(pn) || Cache_Get_Internal_Strict(data,sizeof(BYTE),&ip_power,pn) ) {
         //printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
         if ( BUS_transaction( tpower, pn ) ) return 1 ;
         //printf("POWER "SNformat", asked\n",SNvar(pn->sn)) ;
-        Cache_Add_Internal(data,s,&ip_power,pn) ;
+        Cache_Add_Internal(data,sizeof(BYTE),&ip_power,pn) ;
         //printf("POWER "SNformat", cached\n",SNvar(pn->sn)) ;
     }
     //printf("POWER "SNformat", done\n",SNvar(pn->sn)) ;
@@ -400,7 +399,6 @@ static int OW_22temp(_FLOAT * temp , const int resolution, const struct parsedna
     UINT delay = Resolutions[resolution-9].delay ;
     BYTE mask = Resolutions[resolution-9].mask ;
     int oldres ;
-    size_t s = sizeof(oldres) ;
     struct transaction_log tconvert[] = {
         TRXN_START ,
         { convert, convert, 1, trxn_power },
@@ -412,7 +410,7 @@ static int OW_22temp(_FLOAT * temp , const int resolution, const struct parsedna
     if ( OW_power( &pow, pn ) ) pow = 0x00 ; /* assume unpowered if cannot tell */
 
     /* Resolution */
-    if ( Cache_Get_Internal(&oldres,&s,&ip_resolution,pn) || oldres!=resolution ) {
+    if ( Cache_Get_Internal_Strict(&oldres,sizeof(oldres),&ip_resolution,pn) || oldres!=resolution ) {
         /* Get existing settings */
         if ( OW_r_scratchpad(data , pn ) ) return 1 ;
             /* Put in new settings */

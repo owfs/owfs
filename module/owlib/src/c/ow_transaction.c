@@ -44,8 +44,13 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
                 LEVEL_DEBUG("  Transaction select = %d\n",ret) ;
                 break ;
             case trxn_match:
-                ret = BUS_send_data( t->out, t->size, pn ) ;
-                LEVEL_DEBUG("  Transaction send = %d\n",ret) ;
+                if ( t->in ) { /* just compare out and in */
+                    ret = memcmp( t->out, t->in, t->size ) ;
+                    LEVEL_DEBUG("  Transaction match = %d\n",ret) ;
+                } else {
+                    ret = BUS_send_data( t->out, t->size, pn ) ;
+                    LEVEL_DEBUG("  Transaction send = %d\n",ret) ;
+                }
                 break ;
             case trxn_read:
                 if ( t->out == NULL ) {
@@ -93,7 +98,7 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
             case trxn_reset:
                 ret = BUS_reset(pn) ;
                 LEVEL_DEBUG("  Transaction reset = %d\n",ret) ;
-                    // fall through
+                return 0 ;
             case trxn_end:
                 LEVEL_DEBUG("  Transaction end = %d\n",ret) ;
                 return 0 ;

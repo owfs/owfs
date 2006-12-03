@@ -123,7 +123,7 @@ static int FS_r_mincount(UINT * u , const struct parsedname * pn ) {
     UINT st[3], ct[2] ; // stored and current counter values
 
     if ( OW_counter( &ct[0] , 0,  pn ) || OW_counter( &ct[1] , 1,  pn ) ) return -EINVAL ; // current counters
-    if ( Cache_Get_Internal( (void *) st, &s, &ip_cum, pn ) ) { // record doesn't (yet) exist
+    if ( Cache_Get_Internal_Strict( (void *) st, 3*sizeof(UINT), &ip_cum, pn ) ) { // record doesn't (yet) exist
         st[2] = ct[0]<ct[1] ? ct[0] : ct[1] ;
     } else {
         UINT d0 = ct[0] - st[0] ; //delta counter.A

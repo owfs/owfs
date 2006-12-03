@@ -599,12 +599,11 @@ static int TAI8570_Calibration (UINT * cal, const struct s_TAI8570 * tai, const 
 }
 
 static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
-    size_t s = sizeof( struct s_TAI8570 ) ;
     int pow ;
     BYTE data[32] ;
     UINT cal[4] ;
     // See if already cached
-    if ( Cache_Get_Internal( (void *) tai, &s, &ip_bar, pn ) == 0 ) return 0 ;
+    if ( Cache_Get_Internal_Strict( (void *) tai, sizeof( struct s_TAI8570 ), &ip_bar, pn ) == 0 ) return 0 ;
     // read page 0
     if ( ReadTmexPage(data,32,0,pn) ) return 1 ; // read page
     if ( memcmp("8570",&data[8],4) ) { // check dir entry

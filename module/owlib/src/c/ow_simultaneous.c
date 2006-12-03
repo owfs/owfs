@@ -68,11 +68,10 @@ int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname *
     struct parsedname pn2 ;
     struct timeval tv,now ;
     long int diff ;
-    size_t dsize = sizeof( struct timeval ) ;
     int ret ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
-    if ( (ret=Cache_Get_Internal(&tv, &dsize, &ipSimul[type],&pn2)) ) {
+    if ( (ret=Cache_Get_Internal_Strict(&tv, sizeof( struct timeval ), &ipSimul[type],&pn2)) ) {
         LEVEL_DEBUG("No simultaneous conversion valid.") ;
         return ret ;
     }
@@ -136,9 +135,8 @@ static int FS_w_convert(const int * y , const struct parsedname * pn) {
 static int FS_r_convert(int * y , const struct parsedname * pn) {
     struct parsedname pn2 ;
     struct timeval tv ;
-    size_t dsize = sizeof(struct timeval) ;
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
-    y[0] = ( Cache_Get_Internal(&tv,&dsize,&ipSimul[pn->ft->data.i],&pn2) == 0 ) ;
+    y[0] = ( Cache_Get_Internal_Strict(&tv,sizeof(struct timeval),&ipSimul[pn->ft->data.i],&pn2) == 0 ) ;
     return 0 ;
 }

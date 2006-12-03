@@ -148,9 +148,8 @@ static int FS_w_strobe(const int * y, const struct parsedname * pn) {
 
 static int FS_Mclear(const int * y, const struct parsedname * pn) {
     int init = 1 ;
-    size_t s = sizeof(init) ;
 
-    if ( Cache_Get_Internal(&init,&s,&ip_init,pn) ) {
+    if ( Cache_Get_Internal_Strict(&init,sizeof(init),&ip_init,pn) ) {
         int one = 1 ;
         if ( FS_r_strobe(&one,pn)  // set reset pin to strobe mode
             || OW_w_pio(0x30,pn) ) return -EINVAL ;
@@ -284,12 +283,11 @@ static int FS_w_por(const int * y, const struct parsedname * pn) {
 
 static int FS_Hclear(const int * y, const struct parsedname * pn) {
     int init = 1 ;
-    size_t s = sizeof(init) ;
     // clear, display on, mode
     BYTE clear[6] = { 0x00, 0x10, 0x00, 0xC0, 0x00, 0x60 } ; 
     (void) y ;
 
-    if ( Cache_Get_Internal(&init,&s,&ip_init,pn) ) {
+    if ( Cache_Get_Internal_Strict(&init,sizeof(init),&ip_init,pn) ) {
         BYTE data[6] ;
         BYTE setup[] = { 0x30, 0x30, 0x20, 0x20, 0x80 } ;
         if (
@@ -346,14 +344,13 @@ static int OW_r_reg( BYTE * data , const struct parsedname * pn ) {
         TRXN_START,
         { p, NULL, 3, trxn_match } ,
         { NULL, &p[3], 8+2, trxn_read } ,
+        { p, NULL, 3+8+2, trxn_crc16 } ,
         TRXN_END,
     } ;
 
     //printf( "R_REG read attempt\n");
     if ( BUS_transaction( t, pn ) ) return 1 ;
     //printf( "R_REG read ok\n");
-    if ( CRC16(p,3+8+2) ) return 1 ;
-    //printf( "R_REG CRC16 ok\n");
 
     memcpy( data , &p[3], 6 ) ;
     return 0 ;
@@ -428,9 +425,15 @@ static int OW_c_latch(const struct parsedname * pn) {
 static int OW_w_control( const BYTE data , const struct parsedname * pn ) {
     BYTE d[6] ; /* register read */
     BYTE p[] = { 0xCC, 0x8D, 0x00, data, } ;
+    BYTE q[3+3+2] = { 0xF0, 0x8D , 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 4, trxn_match } ,
+        /* Read registers */
+        TRXN_START,
+        { q, NULL, 3, trxn_match } ,
+        { NULL, &q[3], 3+2, trxn_read } ,
+        { q, NULL, 3+3+2, trxn_crc16 } ,
         TRXN_END,
     } ;
 
@@ -438,10 +441,7 @@ static int OW_w_control( const BYTE data , const struct parsedname * pn ) {
     if ( BUS_transaction( t, pn ) ) return 1 ;
     //printf( "W_CONTROL ok, now check\n");
 
-    /* Read registers */
-    if ( OW_r_reg(d,pn) ) return -EINVAL ;
-
-    return ( (data & 0x0F) != (d[5] & 0x0F) ) ;
+    return ( (data & 0x0F) != (q[0] & 0x0F) ) ;
 }
 
 /* write alarm settings */
