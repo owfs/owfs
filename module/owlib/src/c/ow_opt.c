@@ -88,6 +88,7 @@ const struct option owopts_long[] = {
     {"autoserver",   no_argument,&Global.autoserver, 1},
     {"noautoserver", no_argument,&Global.autoserver, 0},
     {"announce",     required_argument,NULL,280},
+    {"allow_other",  no_argument,NULL,298},
     {"altUSB",       no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
     
     {"timeout_volatile"  , required_argument, NULL, 301, } , // timeout -- changing cached values
@@ -418,6 +419,8 @@ int owopt( const int c , const char * arg ) {
         return OW_ArgLink( arg ) ;
     case 280:
         Global.announce_name = strdup(arg) ;
+        break ;
+    case 298: /* allow_other */
         break ;
     case 301: case 302: case 303: case 304: case 305: case 306: case 307: case 308: case 309:
         {

@@ -110,6 +110,8 @@ void ow_morehelp( void ) {
         printf(
         "     --fuse_opt                  |Options to send to fuse_mount (must be quoted)\n"
         "                                 |  e.g: --fuse_opt=\\\"\"-o allow_others\"\\\"\n"
+        "     --allow_other               | Allow other users to see owfs mount (set /etc/fuse.conf too)\n"
+        "                                 |    shorthand for -o allow_other\n"
 //        "     --fuse_open_opt             |Options to send to fuse_open (must be quoted)\n"
 //        "                                 |  e.g: --fuse_open_opt=\"direct_io\"\n"
         ) ;

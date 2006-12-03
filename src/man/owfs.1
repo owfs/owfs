@@ -30,6 +30,9 @@ mountdir
 .I \-\-fuse_opt
 options ]
 .I mountpoint
+[
+.I \-\-allow_other
+]
 .br
 .B owfs
 .I \-V \-\-version
@@ -55,8 +58,10 @@ Essentially, the entire 1-wire bus is mounted to a place in your filesystem. All
 .SH SPECIFIC OPTIONS
 .SS \-\-mountpoint
 directory to mount the 1-wire file system
+.SS \-\-allow_other
+Shorthand for fuse mount option "-o allow_other"  Allows uther users to see the fuse (owfs) mount point and file system. Requires a setting in /etc/fuse.conf as well.
 .SS \-\-fuse-opt "options"
-Sends options to the fuse-mount process. Options should be quoted, e.g. "-x" (which allows others to mount this directory).
+Sends options to the fuse-mount process. Options should be quoted, e.g. "\"-o allow_other\"" .
 .SH EXAMPLE
 .TP
 owfs -d /dev/ttyS0 /mnt/1wire
