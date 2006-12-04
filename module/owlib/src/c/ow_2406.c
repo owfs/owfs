@@ -638,7 +638,7 @@ static int testTAI8570( struct s_TAI8570 * tai, const struct parsedname * pn ) {
     tai->C[5] = ((cal[1])&0x3F) ;
     
     LEVEL_DETAIL("TAI8570 C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u\n",tai->C[0],tai->C[1],tai->C[2],tai->C[3],tai->C[4],tai->C[5]);
-    return Cache_Add_Internal( (const void *) tai, s, &ip_bar, pn ) ;
+    return Cache_Add_Internal( (const void *) tai, sizeof( struct s_TAI8570 ), &ip_bar, pn ) ;
 }
 
 #endif /* OW_TAI8570 */

@@ -423,7 +423,6 @@ static int OW_c_latch(const struct parsedname * pn) {
 
 /* Write control/status */
 static int OW_w_control( const BYTE data , const struct parsedname * pn ) {
-    BYTE d[6] ; /* register read */
     BYTE p[] = { 0xCC, 0x8D, 0x00, data, } ;
     BYTE q[3+3+2] = { 0xF0, 0x8D , 0x00, } ;
     struct transaction_log t[] = {
