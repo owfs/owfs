@@ -72,10 +72,10 @@ int Simul_Test( const enum simul_type type, UINT msec, const struct parsedname *
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
     if ( (ret=Cache_Get_Internal_Strict(&tv, sizeof( struct timeval ), &ipSimul[type],&pn2)) ) {
-        LEVEL_DEBUG("No simultaneous conversion valid.") ;
+        LEVEL_DEBUG("No simultaneous conversion valid.\n") ;
         return ret ;
     }
-    LEVEL_DEBUG("Simultaneous conversion IS valid.") ;
+    LEVEL_DEBUG("Simultaneous conversion IS valid.\n") ;
     gettimeofday(&now, NULL) ;
     diff =  1000*(now.tv_sec-tv.tv_sec) + (now.tv_usec-tv.tv_usec)/1000 ;
     if ( diff<(long int)msec ) UT_delay(msec-diff) ;
