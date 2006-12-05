@@ -34,6 +34,7 @@ Summary: Core library providing base functions to other OWFS modules.
 Group: System Environment/Libraries
 Requires: libusb >= 0.1.6
 BuildRequires: automake autoconf libtool
+BuildRequires: libusb-devel
 
 %description libs
 %{name}-libs is a core library providing base functions to other OWFS modules.
@@ -53,6 +54,7 @@ Requires: %{name}-libs = %{version}
 Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
 Group: System Environment/Daemon
 Requires: %{name}-libs = %{version}, fuse >= 1.0
+BuildRequires: fuse-devel >= 1.0
 
 %description fs
 %{name}-fs is a virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
@@ -117,8 +119,8 @@ BuildRequires: python-devel >= 2.0
 %package php
 Summary: %{name}-php is a php interface for the 1-wire filesystem
 Group: System Environment/Libraries
-#Requires: %{name}-libs = %{version}, php >= 4.3.0
-#BuildRequires: php-devel >= 4.3.0
+Requires: %{name}-libs = %{version}, php >= 4.3.0
+BuildRequires: php-devel >= 4.3.0
 
 %description php
 %{name}-php is a php interface for the 1-wire filesystem
@@ -269,7 +271,7 @@ rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/.
 %if %{build_python}
 %endif
 %if %{build_php}
-#rm -f $RPM_BUILD_ROOT%{prefix}/lib*/php/modules/libowphp.la $RPM_BUILD_ROOT%{prefix}/lib*/php/modules/libowphp.a
+#rm -f $RPM_BUILD_ROOT%{prefix}/lib*/php*/modules/libowphp.la $RPM_BUILD_ROOT%{prefix}/lib*/php*/modules/libowphp.a
 rm -f $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.la $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.a
 %endif
 %if %{build_tcl}
@@ -373,7 +375,7 @@ fi
 %if %{build_fs}
 %files fs
 %defattr(-,root,root)
-/etc/rc.d/init.d/owfs
+%attr(0755,root,root) /etc/rc.d/init.d/owfs
 %config /etc/sysconfig/owfs
 %{prefix}/sbin/owfs
 %{_mandir}/man1/owfs.1.gz
@@ -382,7 +384,7 @@ fi
 %if %{build_httpd}
 %files httpd
 %defattr(-,root,root)
-/etc/rc.d/init.d/owhttpd
+%attr(0755,root,root) /etc/rc.d/init.d/owhttpd
 %config /etc/sysconfig/owhttpd
 %{prefix}/sbin/owhttpd
 %{_mandir}/man1/owhttpd.1.gz
@@ -416,7 +418,7 @@ fi
 %if %{build_ftpd}
 %files ftpd
 %defattr(-,root,root)
-/etc/rc.d/init.d/owftpd
+%attr(0755,root,root) /etc/rc.d/init.d/owftpd
 %config /etc/sysconfig/owftpd
 %{prefix}/sbin/owftpd
 %{_mandir}/man1/owftpd.1.gz
@@ -425,7 +427,7 @@ fi
 %if %{build_server}
 %files server
 %defattr(-,root,root)
-/etc/rc.d/init.d/owserver
+%attr(0755,root,root) /etc/rc.d/init.d/owserver
 %config /etc/sysconfig/owserver
 %{prefix}/sbin/owserver
 %{_mandir}/man1/owserver.1.gz
@@ -453,7 +455,7 @@ fi
 %defattr(-,root,root)
 %dir @PHPLIBDIR@
 @PHPLIBDIR@/libowphp.so*
-#%dir %{prefix}/lib*/php/modules
+#%dir %{prefix}/lib*/php*/modules
 #%{prefix}/lib*/php*/modules/libowphp.so*
 %endif
 

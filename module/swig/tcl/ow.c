@@ -149,7 +149,7 @@ owtcl_ObjCmdProc(Owtcl_Put)
 owtcl_ObjCmdProc(Owtcl_Get)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-  char *arg, *path, *buf, *d, *p;
+  char *arg, *path, *buf = NULL, *d, *p;
   int tcl_return = TCL_OK, r, s, lst;
   size_t ss ;
   Tcl_Obj *resultPtr;
@@ -182,8 +182,12 @@ owtcl_ObjCmdProc(Owtcl_Get)
   s = ss ; // to get around OW_get uses size_t
   if ( r<0 ) {
     owtcl_ErrorMsg(interp, strerror(-r));
-    free(buf);
+    if (buf) free(buf);
     tcl_return = TCL_ERROR;
+    goto common_exit;
+  }
+  if (buf==NULL) {
+    tcl_return = TCL_OK;
     goto common_exit;
   }
 
