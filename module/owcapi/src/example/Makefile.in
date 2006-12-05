@@ -2,15 +2,15 @@
 LDFLAGS = -L@prefix@/lib -Wl,--rpath -Wl,@prefix@/lib -lowcapi
 CFLAGS = -g -I@prefix@/include
 
-OBJS = owdir.o
+OBJS = owcapiexample.o
 
-all:	owdir
+all:	owcapiexample
 
-owdir: $(OBJS)
+owcapiexample: $(OBJS)
 	@CC@ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 %.o: %.c
 	@CC@ $(CFLAGS) -c -o $@ $<
 
 clean:
-	$(RM) -f owdir *.o *~ .~
+	$(RM) -f owcapiexample *.o *~ .~
