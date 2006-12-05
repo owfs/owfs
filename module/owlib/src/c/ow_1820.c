@@ -325,9 +325,14 @@ static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) {
     BYTE dummy ;
     UINT delay = 1000 ; // hard wired
     BYTE pow ;
-    struct transaction_log tconvert[] = {
+    struct transaction_log tunpowered[] = {
         TRXN_START ,
-        { convert, &dummy, 1, trxn_power },
+        { convert, convert, delay, trxn_power },
+        TRXN_END,
+    } ;
+    struct transaction_log tpowered[] = {
+        TRXN_START ,
+        { convert, NULL, 1, trxn_match },
         TRXN_END,
     } ;
 
@@ -335,11 +340,9 @@ static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) {
     
     /* Select particular device and start conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        tconvert[1].size = delay ;
-        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
+        if ( BUS_transaction( tunpowered, pn ) ) return 1 ;
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        tconvert[1].type = trxn_match ;
-        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
+        if ( BUS_transaction( tpowered, pn ) ) return 1 ;
         UT_delay( delay ) ;
     }
 
@@ -348,14 +351,8 @@ static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) {
     /* Check for error condition */
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
         /* repeat the conversion (only once) */
-        if ( pow ) { // powered, so release bus immediately after issuing convert
-            tconvert[1].type = trxn_match ;
-            if ( BUS_transaction( tconvert, pn ) ) return 1 ;
-            UT_delay( delay ) ;
-        } else { // unpowered, deliver power, no communication allowed
-            tconvert[1].size = delay ;
-            if ( BUS_transaction( tconvert, pn ) ) return 1 ;
-        }
+        /* Do it the most conservative way -- unpowered */
+        if ( BUS_transaction( tunpowered, pn ) ) return 1 ;
         if ( OW_r_scratchpad( data , pn ) ) return 1 ;
     }
 
