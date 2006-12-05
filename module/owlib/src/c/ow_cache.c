@@ -566,7 +566,7 @@ static int Cache_Get_Common( void * data, size_t * dsize, time_t duration, const
         //printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
         LEVEL_DEBUG("Found in cache\n") ;
         if ( opaque->key->expires >= now ) {
-            printf("CACHE GET 3 buffer size=%lu stored size=%d\n",*dsize,opaque->key->dsize);
+            //printf("CACHE GET 3 buffer size=%lu stored size=%d\n",*dsize,opaque->key->dsize);
             if ( (ssize_t)dsize[0] >= opaque->key->dsize ) {
                 //printf("CACHE GET 4\n");
                 dsize[0] = opaque->key->dsize ;

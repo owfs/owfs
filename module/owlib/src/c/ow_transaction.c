@@ -95,6 +95,14 @@ int BUS_transaction_nolock( const struct transaction_log * tl, const struct pars
                 ret = CRC16seeded( t->out, t->size, ((UINT *)(t->in))[0]) ;
                 LEVEL_DEBUG("  Transaction CRC16 = %d\n",ret) ;
                 break ;
+            case trxn_delay:
+                UT_delay( t->size ) ;
+                LEVEL_DEBUG("  Transaction Delay %d\n",t->size) ;
+                break ;
+            case trxn_udelay:
+                UT_delay_us( t->size ) ;
+                LEVEL_DEBUG("  Transaction Micro Delay %d\n",t->size) ;
+                break ;
             case trxn_reset:
                 ret = BUS_reset(pn) ;
                 LEVEL_DEBUG("  Transaction reset = %d\n",ret) ;

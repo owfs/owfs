@@ -105,6 +105,8 @@ enum transaction_type {
     trxn_end,
     trxn_verify,
     trxn_nop,
+    trxn_delay,
+    trxn_udelay,
 } ;
 struct transaction_log {
     const BYTE * out ;
