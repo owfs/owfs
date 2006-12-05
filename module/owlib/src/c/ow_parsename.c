@@ -263,7 +263,7 @@ static enum parse_enum Parse_NonReal( char * pathnow, struct parsedname * pn ) {
 
 static enum parse_enum Parse_Bus( const enum parse_enum pe_default, char * pathnow, int remote, struct parsedname * pn ) {
     /* Processing for bus.X directories -- eventually will make this more generic */
-    if(!isdigit(pathnow[4])) return 1 ;
+    if(!isdigit(pathnow[4])) return parse_error ;
         
     /* Should make a presence check on remote busses here, but
      * it's not a major problem if people use bad paths since
