@@ -399,9 +399,14 @@ static int OW_22temp(_FLOAT * temp , const int resolution, const struct parsedna
     UINT delay = Resolutions[resolution-9].delay ;
     BYTE mask = Resolutions[resolution-9].mask ;
     int oldres ;
-    struct transaction_log tconvert[] = {
+    struct transaction_log tunpowered[] = {
         TRXN_START ,
-        { convert, convert, 1, trxn_power },
+        { convert, convert, delay, trxn_power },
+        TRXN_END,
+    } ;
+    struct transaction_log tpowered[] = {
+        TRXN_START ,
+        { convert, NULL, 1, trxn_match },
         TRXN_END,
     } ;
 
@@ -423,15 +428,16 @@ static int OW_22temp(_FLOAT * temp , const int resolution, const struct parsedna
 
     /* Conversion */
     if ( !pow ) { // unpowered, deliver power, no communication allowed
-        tconvert[1].size = delay ;
-        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
+        LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n",delay) ;
+        if ( BUS_transaction( tunpowered, pn ) ) return 1 ;
     } else if ( Simul_Test( simul_temp, delay, pn ) != 0 ) { // powered, so release bus immediately after issuing convert
-        tconvert[1].type = trxn_match ;
-        if ( BUS_transaction( tconvert, pn ) ) return 1 ;
+        if ( BUS_transaction( tpowered, pn ) ) return 1 ;
+        LEVEL_DEBUG("Powered temperature conversion -- %d msec\n",delay) ;
         UT_delay( delay ) ;
     }
 
     if ( OW_r_scratchpad( data, pn ) ) return 1 ;
+    //printf("Temperature Got bytes %.2X %.2X\n",data[0],data[1]) ;
 
     //*temp = .0625*(((char)data[1])<<8|data[0]) ;
     // Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
