@@ -417,25 +417,6 @@ AM_CONDITIONAL(ENABLE_HA7, test "${ENABLE_HA7}" = "true")
 
 # Check if the modules are enabled
 
-#Check owfs
-AC_MSG_CHECKING([if owfs is enabled])
-ENABLE_OWFS="auto"
-AC_ARG_ENABLE(owfs,
-[  --enable-owfs           Enable owfs module (default auto)],
-[
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWFS="true"
-    fi
-    if test "$enableval" = "no" ; then
-        ENABLE_OWFS="false"
-    fi
-],
-[
-    AC_MSG_RESULT([auto (default)])
-])
-AC_SUBST(ENABLE_OWFS)
-
 #Check owhttpd
 AC_MSG_CHECKING(if owhttpd is enabled)
 ENABLE_OWHTTPD="true"
@@ -451,6 +432,7 @@ AC_ARG_ENABLE(owhttpd,
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWHTTPD)
+AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 
 #Check owftpd
 AC_MSG_CHECKING(if owftpd is enabled)
@@ -467,6 +449,7 @@ AC_ARG_ENABLE(owftpd,
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWFTPD)
+AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
 
 #Check owserver
 AC_MSG_CHECKING(if owserver is enabled)
@@ -500,6 +483,7 @@ AC_ARG_ENABLE(owcapi,
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWCAPI)
+AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 
 
 # Make sure tclConfig.sh is found under /usr/lib64/
@@ -584,8 +568,7 @@ AC_ARG_ENABLE(owperl,
         AC_MSG_RESULT([yes (default)])
     fi
 ])
-AC_SUBST(ENABLE_OWPERL)
-AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
+
 if test "${ENABLE_OWPERL}" = "true" ; then
     m4_include(module/swig/perl5/perl5.m4)
     AC_MSG_RESULT(Looking for location of Perl executable)
@@ -607,6 +590,8 @@ if test "${ENABLE_OWPERL}" = "true" ; then
 	fi
     fi
 fi
+AC_SUBST(ENABLE_OWPERL)
+AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
 
 #Check owphp
 AC_MSG_CHECKING(if owphp is enabled)
@@ -638,8 +623,7 @@ AC_ARG_ENABLE(owphp,
         AC_MSG_RESULT([yes (default)])
     fi
 ])
-AC_SUBST(ENABLE_OWPHP)
-AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
+
 if test "${ENABLE_OWPHP}" = "true" ; then
     m4_include(module/swig/php/php.m4)
     AC_MSG_RESULT(Looking for location of Php executable)
@@ -671,7 +655,8 @@ if test "${ENABLE_OWPHP}" = "true" ; then
         fi
     fi
 fi
-
+AC_SUBST(ENABLE_OWPHP)
+AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
 
 
 #Check owpython
@@ -704,8 +689,7 @@ AC_ARG_ENABLE(owpython,
         AC_MSG_RESULT([yes (default)])
     fi
 ])
-AC_SUBST(ENABLE_OWPYTHON)
-AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
+
 if test "${ENABLE_OWPYTHON}" = "true" ; then
     m4_include(module/swig/python/python.m4)
     AC_MSG_RESULT(Looking for location of Python executable)
@@ -733,7 +717,8 @@ if test "${ENABLE_OWPYTHON}" = "true" ; then
         fi
     fi
 fi
-
+AC_SUBST(ENABLE_OWPYTHON)
+AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 
 #Check owtcl
 AC_MSG_CHECKING(if owtcl is enabled)
@@ -766,8 +751,6 @@ AC_ARG_ENABLE(owtcl,
     fi
 ])
 
-AC_SUBST(ENABLE_OWTCL)
-AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
 if test "${ENABLE_OWTCL}" = "true" ; then
     m4_include(module/swig/tcl/tcl.m4)
     AC_MSG_RESULT(Looking for tclConfig.sh)
@@ -801,6 +784,8 @@ if test "${ENABLE_OWTCL}" = "true" ; then
         AC_SUBST(TCL_PACKAGE_PATH)
     fi
 fi
+AC_SUBST(ENABLE_OWTCL)
+AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
 
 LD_EXTRALIBS=""
 
@@ -817,6 +802,24 @@ AC_ARG_WITH(fuselib,
             [fuse_lib_path='/usr/local/lib'])
 AC_SUBST(fuse_lib_path)
 
+
+#Check owfs
+AC_MSG_CHECKING([if owfs is enabled])
+ENABLE_OWFS="auto"
+AC_ARG_ENABLE(owfs,
+[  --enable-owfs           Enable owfs module (default auto)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWFS="true"
+    fi
+    if test "$enableval" = "no" ; then
+        ENABLE_OWFS="false"
+    fi
+],
+[
+    AC_MSG_RESULT([auto (default)])
+])
 
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
@@ -929,7 +932,7 @@ fi
 AC_SUBST(FUSE_LIBS)
 AC_SUBST(FUSE_FLAGS)
 AC_SUBST(FUSE_INCLUDES)
-
+AC_SUBST(ENABLE_OWFS)
 AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 
 # Check if the cache is enabled.
@@ -966,7 +969,7 @@ AC_ARG_ENABLE(zero,
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_ZERO)
-AM_CONDITIONAL(ENABLE_ZERK, test "${ENABLE_ZERO}" = "true")
+AM_CONDITIONAL(ENABLE_ZERO, test "${ENABLE_ZERO}" = "true")
 
 # Check for USB enabled
 ENABLE_USB=auto
@@ -1101,10 +1104,6 @@ AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
 # end owftpd section
 
 
-# conditionals for httpd/ftpd
-AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
-AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
-AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 
 if test "${HAVE_CYGWIN}" = "true" ; then
    OW_CYGWIN=1
