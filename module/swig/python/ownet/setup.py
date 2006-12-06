@@ -41,14 +41,14 @@ Topic :: Utilities
 
 setup(
     name             = 'ownet',
-    description      = '1-wire owserver interface.',
+    description      = 'Standalone 1-wire owserver interface.',
     version          = '0.2',
     author           = 'Peter Kropf',
     author_email     = 'pkropf@gmail.com',
     url              = 'http://owfs.sourceforge.net/',
     license          = 'GPL',
     platforms        = 'Linux',
-    long_description = 'Interface with 1-wire owserver and sensors from Python.',
+    long_description = 'Interface with 1-wire owserver and sensors from Python without requiring the core ow libraries to be built on the local host.',
     classifiers      = filter( None, classifiers.split( '\n' ) ),
     packages         = [ 'ownet' ],
     )
