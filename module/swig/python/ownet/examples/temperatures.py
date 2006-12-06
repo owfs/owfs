@@ -14,6 +14,6 @@ print 'r:', r
 print 'r.entryList():', e
 print 'r.sensorList():', s
 
-for s in r.sensors():
-    if hasattr(s, 'temperature'):
-        print s, s.temperature
+for x in r.sensors():
+    if hasattr(x, 'temperature'):
+        print x, x.temperature

@@ -42,7 +42,7 @@ Topic :: Utilities
 setup(
     name             = 'ownet',
     description      = '1-wire owserver interface.',
-    version          = '0.1',
+    version          = '0.2',
     author           = 'Peter Kropf',
     author_email     = 'pkropf@gmail.com',
     url              = 'http://owfs.sourceforge.net/',

@@ -26,29 +26,18 @@ local system. As a result, ownet can run on almost any platform that
 support Python.
 
 OWFS is an open source project developed by Paul Alfille and hosted at
-http://owfs.sourceforge.net.
+http://owfs.org
 """
 
 
 import sys
 import os
-import socket
-import struct
+from connection import Connection
 
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
-__version__ = '$id: __init__.py,v 1.9 2006/12/01 01:07:44 peterk exp $'.split()[2]
-
-
-class OWMsg:
-    error    = 0
-    nop      = 1
-    read     = 2
-    write    = 3
-    dir      = 4
-    size     = 5
-    presence = 6
+__version__ = '0.2' + '-' + '$Id$'.split()[2]
 
 
 #
@@ -81,125 +70,6 @@ class exUnknownSensor(exErrorValue):
 
 
 
-def _read(server, port, path):
-    """
-    """
-
-    #print '_read("%s", %i, "%s")' % (server, port, path)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((server, port))
-
-    smsg = struct.pack('iiiiii',
-                       socket.htonl(0),             #version
-                       socket.htonl(len(path) + 1), #payload length
-                       socket.htonl(OWMsg.read),    #type of function call
-                       socket.htonl(258),           #format flags
-                       socket.htonl(8192),          #size of data element for read or write
-                       socket.htonl(0),             #offset for read or write
-                       )
-
-    s.sendall(smsg)
-    smsg = path + '\x00'
-    s.sendall(smsg)
-
-    while 1:
-        data = s.recv(24)
-
-        version, payload_len, type_of_call, format_flags, size_of_data, offset = struct.unpack('iiiiii', data)
-
-        version = socket.ntohl(version)
-        payload_len = socket.ntohl(payload_len)
-        type_of_call = socket.ntohl(type_of_call)
-        format_flags = socket.ntohl(format_flags)
-        size_of_data = socket.ntohl(size_of_data)
-        offset = socket.ntohl(offset)
-
-        #print 'payload_len:', payload_len
-        #print 'size_of_data:', size_of_data
-        
-        if payload_len:
-            data = s.recv(payload_len)
-            rtn = data[:size_of_data]
-            break
-        else:
-            rtn = None
-            break
-
-    s.close()
-    return rtn
-
-
-def _dir(server, port, path):
-    """
-    """
-
-    #print '_dir("%s", %i, "%s")' % (server, port, path)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((server, port))
-
-    smsg = struct.pack('iiiiii',
-                       socket.htonl(0),             #version
-                       socket.htonl(len(path) + 1), #payload length
-                       socket.htonl(OWMsg.dir),     #type of function call
-                       socket.htonl(258),           #format flags
-                       socket.htonl(0),             #size of data element for read or write
-                       socket.htonl(0),             #offset for read or write
-                       )
-
-    s.sendall(smsg)
-    smsg = path + '\x00'
-    s.sendall(smsg)
-
-    fields = []
-    while 1:
-        data = s.recv(24)
-
-        version, payload_len, type_of_call, format_flags, size_of_data, offset = struct.unpack('iiiiii', data)
-
-        version = socket.ntohl(version)
-        payload_len = socket.ntohl(payload_len)
-        type_of_call = socket.ntohl(type_of_call)
-        format_flags = socket.ntohl(format_flags)
-        size_of_data = socket.ntohl(size_of_data)
-        offset = socket.ntohl(offset)
-
-        #print 'payload_len:', payload_len
-        #print 'size_of_data:', size_of_data
-        
-        if payload_len:
-            data = s.recv(payload_len)
-            fields.append(data[:size_of_data])
-        else:
-            break
-
-    s.close()
-    return fields
-
-
-def _get(path):
-    """
-    Get the sensor data. In the case where a sensor is disconnected
-    from the bus or something else goes wrong, raise exUnknownSensor.
-    """
-    #print 'ownet._get(%s)' % path
-    sensor = _OW.get(path)
-    if sensor == None:
-        raise exUnknownSensor(path)
-    return sensor
-
-
-def _put(path, value):
-    """
-    Write the _OW.put call details out to the log file.
-    """
-    #print 'ownet._put(%s, %s)' % (path, value)
-    return _OW.put(path, value)
-
-
-ownet_get = _get
-ownet_put = _put
-
-
 #
 # _server and _port are the default server and port values to be used
 # if a Sensor is initialized without specifying a server and port.
@@ -210,7 +80,7 @@ _port        = None
 
 
 #
-# Initialize and cleanup the _OW library.
+# Initialize and cleanup the _server and _port default values.
 #
 
 def init(iface):
@@ -259,19 +129,25 @@ class Sensor(object):
     A Sensor is the basic component of a 1-wire network. It represents
     a individual 1-wire element as it exists on the network.
     """
-    def __init__(self, path, server = None, port = None):
+
+    def __init__(self, path, server = None, port = None, connection=None):
         """
         Create a new Sensor as it exists at the specified path.
         """
-        #print 'ownet.Sensor.__init__(%s, server="%s", port=%s)' % (path, str(server), str(port))
-        if not server or not port:
+        #print 'Sensor.__init__(%s, server="%s", port=%s)' % (path, str(server), str(port))
+
+        # setup the connection to use for connunication with the owsensor server
+        if connection:
+            self._connection = connection
+        elif not server or not port:
             global _server
             global _port
             if not _server or not _port:
                 raise exNotInitialized
             else:
-                server = _server
-                port   = _port
+                self._connection = Connection(server, port)
+        else:
+            self._connection = Connection(server, port)
 
         self._attrs = {}
 
@@ -289,9 +165,6 @@ class Sensor(object):
                 self._path     = path
                 self._useCache = True
 
-        self._server  = server
-        self._port    = port
-
         self.useCache(self._useCache)
 
 
@@ -307,8 +180,8 @@ class Sensor(object):
             xyzzy:9876/ - DS9490
         """
 
-        #print 'ownet.Sensor.__str__'
-        return "%s:%i%s - %s" % (self._server, self._port, self._usePath, self._type)
+        #print 'Sensor.__str__'
+        return "%s%s - %s" % (str(self._connection), self._usePath, self._type)
 
 
     def __repr__(self):
@@ -323,8 +196,8 @@ class Sensor(object):
             Sensor("/", server="xyzzy", port=9876)
         """
 
-        #print 'ownet.Sensor.__repr__'
-        return 'Sensor("%s", server="%s", port="%i")' % (self._usePath, self._server, self._port)
+        #print 'Sensor.__repr__'
+        return 'Sensor("%s", server="%s", port=%i)' % (self._usePath, self._connection._server, self._connection._port)
 
 
     def __eq__(self, other):
@@ -342,7 +215,7 @@ class Sensor(object):
             True
         """
 
-        #print 'ownet.__eq__(%s)' % str(other)
+        #print 'Sensor.__eq__(%s)' % str(other)
         return self._path == other._path
 
 
@@ -352,7 +225,7 @@ class Sensor(object):
         Sensors to be used better in sets.Set.
         """
 
-        #print 'ownet.__hash__'
+        #print 'Sensor.__hash__'
         return hash(self._path)
 
 
@@ -365,7 +238,7 @@ class Sensor(object):
 
         Usage:
 
-            s = ow.Sensor('/1F.5D0B01000000')
+            s = ownet.Sensor('/1F.5D0B01000000')
             print s.family, s.PIO_0
 
         will result in the family and PIO.0 values being read from the
@@ -374,8 +247,8 @@ class Sensor(object):
         """
 
         if name in self._attrs:
-            #print 'ownet.Sensor.__getattr__(%s)' % name
-            attr = _read(self._server, self._port, self._attrs[name])
+            #print 'Sensor.__getattr__(%s)' % name
+            attr = self._connection.read(self._attrs[name])
         else:
             raise AttributeError, name
 
@@ -392,13 +265,13 @@ class Sensor(object):
 
         Usage:
 
-            s = ow.Sensor('/1F.5D0B01000000')
+            s = ownet.Sensor('/1F.5D0B01000000')
             s.PIO_1 = '1'
 
         will set the value of PIO.1 to 1.
         """
 
-        #print 'ownet.Sensor.__setattr__(%s, %s)' % (name, value)
+        #print 'Sensor.__setattr__(%s, %s)' % (name, value)
 
         # Life can get tricky when using __setattr__. Self doesn't
         # have an _attrs atribute when it's initially created. _attrs
@@ -406,8 +279,7 @@ class Sensor(object):
         # only reference it if it's already been added.
         if hasattr(self, '_attrs'):
             if name in self._attrs:
-                #print 'owfs_put', self._attrs[name], value
-                owfs_put(self._attrs[name], value)
+                self._connection.write(self._attrs[name], value)
             else:
                 self.__dict__[name] = value
         else:
@@ -421,20 +293,20 @@ class Sensor(object):
 
         Usage:
 
-            s = ow.Sensor('/1F.5D0B01000000')
+            s = ownet.Sensor('/1F.5D0B01000000')
             s.useCache(False)
 
         will set the internal sensor path to /uncached/1F.5D0B01000000.
 
         Also:
 
-            s = ow.Sensor('/uncached/1F.5D0B01000000')
+            s = ownet.Sensor('/uncached/1F.5D0B01000000')
             s.useCache(True)
 
         will set the internal sensor path to /1F.5D0B01000000.
         """
 
-        #print 'ownet.Sensor.useCache(%s)' % str(use_cache)
+        #print 'Sensor.useCache(%s)' % str(use_cache)
         self._useCache = use_cache
         if self._useCache:
             self._usePath = self._path
@@ -445,9 +317,9 @@ class Sensor(object):
                 self._usePath = '/uncached' + self._path
 
         if self._path == '/':
-            self._type    = _read(self._server, self._port, '/system/adapter/name.0')
+            self._type    = self._connection.read('/system/adapter/name.0')
         else:
-            self._type  = _read(self._server, self._port, '%s/type' % self._usePath)
+            self._type  = self._connection.read('%s/type' % self._usePath)
 
         self._attrs = dict([(n.replace('.', '_'), self._usePath + '/' + n) for n in self.entries()])
 
@@ -456,8 +328,8 @@ class Sensor(object):
         """
         Generator which yields the attributes of a sensor.
         """
-        #print 'ownet.Sensor.entries()'
-        list = _dir(self._server, self._port, self._usePath)
+        #print 'Sensor.entries()'
+        list = self._connection.dir(self._usePath)
         if self._path == '/':
             for entry in list:
                 if not '/' in entry:
@@ -478,7 +350,7 @@ class Sensor(object):
             'present', 'temperature', 'temphigh', 'templow',
             'trim', 'trimblanket', 'trimvalid', 'type']
         """
-        #print 'ownet.Sensor.entryList()'
+        #print 'Sensor.entryList()'
         return [e for e in self.entries()]
 
 
@@ -497,26 +369,26 @@ class Sensor(object):
         yielded. The names parameter defaults to ['main', 'aux'].
         """
 
-        #print 'ownet.Sensor.sensors(%s)' % str(names)
+        #print 'Sensor.sensors(%s)' % str(names)
         if self._type == 'DS2409':
             for branch in names:
                 path = self._usePath + '/' + branch
-                list = filter(lambda x: '/' in x, _dir(self._server, self._port, self._usePath))
+                list = filter(lambda x: '/' in x, self._connection.dir(self._usePath))
                 if list:
                     for branch_entry in list.split(','):
                         branch_path = self._usePath + '/' + branch + '/' + branch_entry.split('/')[0]
                         try:
-                            owfs_get(branch_path + '/type')
+                            self._connection.read(branch_path + '/type')
                         except exUnknownSensor, ex:
                             continue
-                        yield Sensor(branch_path, self._server, self._port)
+                        yield Sensor(branch_path, connection=self._connection)
 
         else:
-            list = _dir(self._server, self._port, self._usePath)
+            list = self._connection.dir(self._usePath)
             if self._path == '/':
                 for entry in list:
                     if '/' in entry:
-                        yield Sensor(entry, self._server, self._port)
+                        yield Sensor(entry, connection=self._connection)
                 
 
     def sensorList(self, names = ['main', 'aux']):
@@ -539,7 +411,7 @@ class Sensor(object):
             [Sensor("/1F.440701000000/main/29.400900000000")]
         """
 
-        #print 'ownet.Sensor.sensorList(%s)' % str(names)
+        #print 'Sensor.sensorList(%s)' % str(names)
         return [s for s in self.sensors()]
 
 
@@ -565,7 +437,7 @@ class Sensor(object):
         will print the count of sensors whose family is 1F and whose
         type is DS2409.
         """
-        #print 'ownet.Sensor.find', keywords
+        #print 'Sensor.find', keywords
         #recursion = keywords.pop('recursion', False)
         all       = keywords.pop('all',       False)
 
