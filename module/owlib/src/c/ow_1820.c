@@ -352,7 +352,12 @@ static int OW_10temp(_FLOAT * temp , const struct parsedname * pn) {
     if ( data[0]==0xAA && data[1]==0x00 && data[6]==0x0C ) {
         /* repeat the conversion (only once) */
         /* Do it the most conservative way -- unpowered */
-        if ( BUS_transaction( tunpowered, pn ) ) return 1 ;
+        if ( !pow ) { // unpowered, deliver power, no communication allowed
+            if ( BUS_transaction( tunpowered, pn ) ) return 1 ;
+        } else { // powered, so release bus immediately after issuing convert
+            if ( BUS_transaction( tpowered, pn ) ) return 1 ;
+            UT_delay( delay ) ;
+        }
         if ( OW_r_scratchpad( data , pn ) ) return 1 ;
     }
 
