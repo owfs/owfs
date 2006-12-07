@@ -16,7 +16,7 @@ $Id$
 void ow_help( void ) {
     printf(
     "\n1-wire access programs\n"
-    "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
+    "By Paul H Alfille and others. See http://www.owfs.org\n"
     "\n"
     "Command line access to owserver process\n"
     "\n"

@@ -9,7 +9,7 @@ use OW ;
 
 die (
      "OWFS 1-wire tree perl program\n"
-    ."  by Paul Alfille 2004 see http://owfs.sourceforge.net\n"
+    ."  by Paul Alfille 2004 see http://www.owfs.org\n"
     ."Syntax:\n"
     ."\t$0 1wire-adapter\n"
     ."  1wire-adapter (required):\n"

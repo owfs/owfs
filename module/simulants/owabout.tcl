@@ -28,7 +28,7 @@ Author: Paul H Alfille <palfille@earthlink.net>
 Copyright: June 2006 GPL 2.0 license (though a more liberal license may be possible).
     
 Website: http://www.owfs.org
-Download: http://owfs/sourceforge.net
+Download: http://www.owfs.org/index.php?page=download
     }
 }
 

@@ -18,7 +18,7 @@ $Id$
 void ow_help( void ) {
     printf(
     "1-wire access programs\n"
-    "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
+    "By Paul H Alfille and others. See http://www.owfs.org\n"
     "\n"
     ) ;
     switch(Global.opt) {
@@ -77,7 +77,7 @@ void ow_help( void ) {
 void ow_morehelp( void ) {
     printf(
     "1-wire access programs\n"
-    "By Paul H Alfille and others. See http://owfs.sourceforge.net\n"
+    "By Paul H Alfille and others. See http://www.owfs.org\n"
     "\n"
     ) ;
     printf(

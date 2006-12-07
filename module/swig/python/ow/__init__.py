@@ -23,7 +23,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 1-wire sensor network interface.
 
 OWFS is an open source project developed by Paul Alfille and hosted at
-http://owfs.sourceforge.net.
+http://www.owfs.org.
 """
 
 

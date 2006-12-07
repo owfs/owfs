@@ -52,7 +52,7 @@ setup(
     version          = '@VERSION@',
     author           = 'Peter Kropf',
     author_email     = 'pkropf@gmail.com',
-    url              = 'http://owfs.sourceforge.net/',
+    url              = 'http://www.owfs.org/',
     license          = 'GPL',
     platforms        = 'Linux',
     long_description = 'Interface with 1-wire controllers and sensors from Python.',

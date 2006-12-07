@@ -21,7 +21,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ::EOH
 
 OWFS is an open source project developed by Paul Alfille and hosted at
-http://owfs.org
+http://www.owfs.org
 """
 
 

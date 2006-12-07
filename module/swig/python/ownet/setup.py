@@ -45,7 +45,7 @@ setup(
     version          = '0.2',
     author           = 'Peter Kropf',
     author_email     = 'pkropf@gmail.com',
-    url              = 'http://owfs.org/',
+    url              = 'http://www.owfs.org/',
     license          = 'GPL',
     platforms        = 'Linux',
     long_description = 'Interface with 1-wire owserver and sensors from Python without requiring the core ow libraries to be built on the local host.',

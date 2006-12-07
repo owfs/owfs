@@ -26,7 +26,7 @@ local system. As a result, ownet can run on almost any platform that
 support Python.
 
 OWFS is an open source project developed by Paul Alfille and hosted at
-http://owfs.org
+http://www.owfs.org
 """
 
 
