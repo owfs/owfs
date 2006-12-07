@@ -14,6 +14,7 @@ import ownet
 import sys
 import os
 from optparse import OptionParser
+import socket
 
 
 class nagios:
@@ -47,6 +48,9 @@ try:
 except ownet.exUnknownSensor, ex:
     print 'OW ' + nagios.unknown[1] + ' - unknown sensor ' + str(ex)
     sys.exit(nagios.unknown[0])
+except socket.error, ex:
+    print 'OW ' + nagios.unknown[1] + ' - communication error ' + str(ex)
+    sys.exit(nagios.unknown[0])
 
 if options.verbose == 1:
     print s
@@ -71,5 +75,5 @@ else:
     status    = nagios.ok[1]
     exit_code = nagios.ok[0]
 
-print 'OW %s - %s %s: %i;| %s/%s=%i' % (status, path, options.field, val, path, options.field, val)
+print 'OW %s - %s %s: %i| %s/%s=%i' % (status, path, options.field, val, path, options.field, val)
 sys.exit(exit_code)
