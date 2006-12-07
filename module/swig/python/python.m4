@@ -70,7 +70,24 @@ if test -n "$PYTHON"; then
     PYLIBDIR=`($PYTHON -c "import sys; print sys.lib") 2>/dev/null`
     if test -z "$PYLIBDIR"; then
       # older versions don't have sys.lib  so the best we can do is assume lib
-      PYLIBDIR="lib$LIBPOSTFIX"
+      #PYLIBDIR="lib$LIBPOSTFIX"
+
+      if test -r $PYPREFIX/include/$PYVERSION/Python.h; then
+        if test -d "$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/config"; then
+	  PYLIBDIR="lib$LIBPOSTFIX"
+        else
+	  if test -d "$PYEPREFIX/lib/$PYVERSION/config"; then
+	    # for some reason a 64bit system could have libs installed at lib
+	    PYLIBDIR="lib"
+	  else
+	    # I doubt this will work
+	    PYLIBDIR="lib$LIBPOSTFIX"
+	  fi
+        fi
+      else
+	# probably very old installation...
+	PYLIBDIR="lib"
+      fi
     fi
     AC_MSG_RESULT($PYLIBDIR)
     
