@@ -233,12 +233,13 @@ static int OW_w_scratch( const BYTE * data , const size_t size , const off_t off
         TRXN_START ,
         { p, NULL, 3+size, trxn_match, } ,
         { &p[3+size], NULL, 2, trxn_read, } ,
+        { p, NULL, 3+size+2, trxn_crc16 } ,
         TRXN_END ,
     } ;
 
     memcpy( &p[3] , data, size ) ;
     if ( ((size+offset)&0x1F)==0 ) { /* Check CRC if write is to end of page */
-        return BUS_transaction(tcrc,pn) || CRC16(p,3+size+2) ;
+        return BUS_transaction(tcrc,pn) ;
     } else {
         return BUS_transaction(t,pn) ;
     }
@@ -251,6 +252,8 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
         TRXN_START ,
         { p, NULL, 1, trxn_match, } ,
         { &p[1], NULL, 1+size+2, trxn_read, } ,
+        { p, NULL, 4+size+2, trxn_crc16, } ,
+        { data, &p[4], size, trxn_match, } ,
         TRXN_END ,
     } ;
     struct transaction_log tcopy[] = {
@@ -262,8 +265,6 @@ static int OW_w_mem( const BYTE * data , const size_t size , const off_t offset,
 
     if (  OW_w_scratch(data,size,offset,pn)
             || BUS_transaction(tread,pn)
-            || CRC16(p,4+size+2)
-            || memcmp(data,&p[4],size)
         ) return 1 ;
     p[0] = 0x55 ;
     return BUS_transaction(tcopy,pn) ;
