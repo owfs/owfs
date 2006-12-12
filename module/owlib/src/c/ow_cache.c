@@ -176,7 +176,7 @@ static int Add_Stat( struct cache * scache, const int result ) {
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add( const void * data, const size_t datasize, const struct parsedname * pn ) {
-    if ( pn ) { // do check here to avoid needless processing
+    if ( pn && NotAlarmDir(pn) ) { // do check here to avoid needless processing
         time_t duration = TimeOut( pn->ft->change ) ;
         if ( duration > 0 ) {
             struct tree_node * tn = (struct tree_node *) malloc ( sizeof(struct tree_node) + datasize ) ;
@@ -428,7 +428,7 @@ int Cache_Get_Strict( void * data, size_t dsize, const struct parsedname * pn ) 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get( void * data, size_t * dsize, const struct parsedname * pn ) {
     //printf("Cache_Get\n") ;
-    if ( pn && (pn->state&pn_uncached)==0 ) { // do check here to avoid needless processing
+    if ( pn && IsUncachedDir(pn) && NotAlarmDir(pn) ) { // do check here to avoid needless processing
         time_t duration = TimeOut( pn->ft->change ) ;
         if ( duration > 0 ) {
             struct tree_node tn  ;
