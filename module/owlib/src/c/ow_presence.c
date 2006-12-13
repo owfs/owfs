@@ -103,12 +103,13 @@ static int CheckPresence_low( struct connection_in * in, const struct parsedname
         }
       //printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
     } else if(get_busmode(in) == bus_fake) {
-        int i = in->connin.fake.devices - 1 ;
+        int i = -1 ;
+        BYTE sn[8] ;
         ret = -1 ;
         //printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
-        for ( ; i > -1 ; --i ) {
+        while ( DirblobGet( ++i, sn, &(in->connin.fake.db) )==0 ) {
             //printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
-            if ( memcmp(pn2.sn, &(in->connin.fake.device[8*i]), 8 ) ) continue ;
+            if ( memcmp(pn2.sn, sn, 8 ) ) continue ;
             ret = in->index ;
             break ;
         }

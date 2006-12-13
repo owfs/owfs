@@ -51,16 +51,13 @@ int Fake_detect( struct connection_in * in ) {
     in->iroutines.transaction   = NULL               ;
     in->iroutines.flags         = ADAP_FLAG_2409path ;
 
-    in->connin.fake.devices=0 ;
-    in->connin.fake.device=NULL ;
+    DirblobInit( &(in->connin.fake.db) ) ;
     in->adapter_name = "Simulated" ;
     in->Adapter = adapter_fake ;
-    in->AnyDevices = 0 ;
     LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n",fakes) ;
     if ( (newname=(ASCII *)malloc(20)) ) {
         const ASCII * dev ;
         ASCII * rest = in->name ;
-        int allocated = 0 ;
 
         snprintf(newname,18,"fake.%d",fakes) ;
         in->name = newname ;
@@ -79,20 +76,10 @@ int Fake_detect( struct connection_in * in ) {
                 sn[5] = rand()&0xFF ;
                 sn[6] = rand()&0xFF ;
                 sn[7] = CRC8compute(sn,7,0) ;
-                if ( in->connin.fake.devices >= allocated ) {
-                    BYTE * temp = (BYTE *) realloc( in->connin.fake.device, allocated*8+88 ) ;
-                    if ( temp ) {
-                        allocated += 10 ;
-                        in->connin.fake.device = temp ;
-                    }
-                }
-                if ( in->connin.fake.devices < allocated ) {
-                    memcpy( &(in->connin.fake.device[in->connin.fake.devices*8]), sn, 8 ) ;
-                    in->AnyDevices = 1 ;
-                    ++ in->connin.fake.devices ;
-                }
+                DirblobAdd( sn, &(in->connin.fake.db) ) ; // Ignore bad return
             }
         }
+        in->AnyDevices = ( in->connin.fake.db.devices > 0 ) ;
         if (oldname) free(oldname) ;
     }
     ++ fakes ;
@@ -129,12 +116,14 @@ static void Fake_close( struct connection_in * in ) {
 
 static int Fake_next_both(struct device_search * ds, const struct parsedname * pn) {
     //printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->LastDiscrepancy,pn->in->connin.fake.devices,ds->LastDevice,pn->in->AnyDevices);
-    if ( ++ds->LastDiscrepancy >= pn->in->connin.fake.devices 
-        ||        
-         ! pn->in->AnyDevices 
-        ) ds->LastDevice = 1 ;
-    if ( ds->LastDevice ) return -ENODEV ;
-    memcpy( ds->sn, &(pn->in->connin.fake.device[8*ds->LastDiscrepancy]), 8 ) ;
+    if ( ds->search == 0xEC ) { // alarm not supported
+        ds->LastDevice = 1 ;
+        return -ENODEV ;
+    }
+    if ( DirblobGet(++ds->LastDiscrepancy, ds->sn, &(pn->in->connin.fake.db) ) ) {
+        ds->LastDevice = 1 ;
+        return -ENODEV ;
+    }
     return 0 ;
 }
 

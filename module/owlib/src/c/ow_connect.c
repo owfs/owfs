@@ -134,8 +134,7 @@ void FreeIn( void ) {
             BUS_close(now) ;
             break ;
         case bus_fake:
-            if ( now->connin.fake.device ) free(now->connin.fake.device) ;
-            now->connin.fake.device = NULL ;
+            DirblobClear( &(now->connin.fake.db) ) ;
             break ;
         case bus_i2c:
 #if OW_MT

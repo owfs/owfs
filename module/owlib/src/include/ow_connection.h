@@ -194,12 +194,11 @@ struct connin_serial {
     struct termios oldSerialTio;    /*old serial port settings*/
 } ;
 struct connin_fake {
-    speed_t speed;
-    int USpeed ;
-    int ULevel ;
-    int UMode ;
-    int devices ;
-    BYTE * device ;
+//    speed_t speed;
+//    int USpeed ;
+//    int ULevel ;
+//    int UMode ;
+    struct dirblob db ;
 } ;
 struct connin_usb {
     struct usb_device * dev ;

@@ -147,7 +147,7 @@ static int FS_r_convert(int * y , const struct parsedname * pn) {
 
 static int FS_r_present( int * y , const struct parsedname * pn ) {
     if ( pn->in->Adapter == adapter_fake ) {
-        y[0] = (pn->in->fd>0) ;
+        y[0] = (pn->in->connin.fake.db.devices > 0) ;
     } else {
         struct parsedname pn2 ;
         BYTE read_ROM[] = { 0x0F, } ;
@@ -168,7 +168,7 @@ static int FS_r_present( int * y , const struct parsedname * pn ) {
             if ( CRC8(resp, 8 ) ) return 0 ; // crc8 error -- more than one device
             memcpy( pn2.sn, resp, 8 ) ;
             Cache_Add_Device( pn2.in->index, &pn2 ) ; // single device -- mark it's presence
-       } else { // no devices
+        } else { // no devices
             y[0] = 0 ;
         }
     }
