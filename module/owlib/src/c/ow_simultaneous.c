@@ -41,6 +41,8 @@ $Id$
 
 /* Simultaneous is a trigger to do a mass conversion on all the devices in the specified path */
 
+/* Added "present" From Jan Kandziora to search for any devices */
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_simultaneous.h"
@@ -49,11 +51,13 @@ $Id$
 /* Statistics reporting */
  yREAD_FUNCTION( FS_r_convert ) ;
 yWRITE_FUNCTION( FS_w_convert ) ;
+ yREAD_FUNCTION( FS_r_present ) ;
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
     {"temperature"     ,  1, NULL  , ft_yesno, fc_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_temp} , } ,
     {"voltage"         ,  1, NULL  , ft_yesno, fc_volatile, {y:FS_r_convert}, {y:FS_w_convert}, {i: simul_volt} , } ,
+    {"present"         ,  1, NULL  , ft_yesno, fc_volatile, {y:FS_r_present}, {v:NULL},         {v: NULL }      , } ,
 } ;
 DeviceEntry( simultaneous, simultaneous ) ;
 
@@ -138,5 +142,35 @@ static int FS_r_convert(int * y , const struct parsedname * pn) {
     memcpy( &pn2, pn , sizeof(struct parsedname)) ; // shallow copy
     FS_LoadPath(pn2.sn,&pn2) ;
     y[0] = ( Cache_Get_Internal_Strict(&tv,sizeof(struct timeval),&ipSimul[pn->ft->data.i],&pn2) == 0 ) ;
+    return 0 ;
+}
+
+static int FS_r_present( int * y , const struct parsedname * pn ) {
+    if ( pn->in->Adapter == adapter_fake ) {
+        y[0] = (pn->in->fd>0) ;
+    } else {
+        struct parsedname pn2 ;
+        BYTE read_ROM[] = { 0x0F, } ;
+        BYTE resp[8] ;
+        BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, } ;
+        struct transaction_log t[] = {
+            TRXN_START ,
+            { read_ROM, NULL, 1, trxn_match, } ,
+            { NULL, resp, 8, trxn_read, } ,
+            TRXN_END ,
+        } ;
+        memcpy( &pn2, pn, sizeof(struct parsedname) ) ; // shallow copy
+        FS_LoadPath(pn2.sn,&pn2) ;
+        pn2.dev = NULL ; // directory only
+        if ( BUS_transaction( t, &pn2 ) ) return -EINVAL ;
+        if ( memcmp(resp, match, 8 ) ) { // some device(s) complained
+            y[0] = 1 ; // YES present
+            if ( CRC8(resp, 8 ) ) return 0 ; // crc8 error -- more than one device
+            memcpy( pn2.sn, resp, 8 ) ;
+            Cache_Add_Device( pn2.in->index, &pn2 ) ; // single device -- mark it's presence
+       } else { // no devices
+            y[0] = 0 ;
+        }
+    }
     return 0 ;
 }
