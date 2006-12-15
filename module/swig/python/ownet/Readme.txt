@@ -12,6 +12,35 @@ ownet module can be installed on any system with Python.
 Installation
 ------------
 
+Via easy_install
+++++++++++++++++
+
+If you have installed easy_install
+(http://peak.telecommunity.com/DevCenter/EasyInstall) installing is as
+simple as:
+
+$ easy_install ownet
+Searching for ownet
+Reading http://www.python.org/pypi/ownet/
+Reading http://www.owfs.org/
+Reading http://www.python.org/pypi/ownet/0.2
+Best match: ownet 0.2
+Downloading http://cheeseshop.python.org/packages/source/o/ownet/ownet-0.2.tar.gz
+Processing ownet-0.2.tar.gz
+Running ownet-0.2/setup.py -q bdist_egg --dist-dir /tmp/easy_install--lFbng/ownet-0.2/egg-dist-tmp-ed4Ygq
+package init file 'examples/__init__.py' not found (or not a regular file)
+Creating missing __init__.py for examples
+zip_safe flag not set; analyzing archive contents...
+Adding ownet 0.2 to easy-install.pth file
+
+Installed /sw/lib/python2.5/site-packages/ownet-0.2-py2.5.egg
+Processing dependencies for ownet
+$
+
+
+From CVS
+++++++++
+
 Installation of the ownet module follows the standard Python distutils
 installation.
 

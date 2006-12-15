@@ -1,0 +1,5 @@
+README.txt
+setup.py
+ownet/__init__.py
+ownet/connection.py
+recursive-include examples *.txt *.py
