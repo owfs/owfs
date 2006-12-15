@@ -127,8 +127,9 @@ static int FS_w_control(const UINT * u , const struct parsedname * pn) {
     return 0 ;
 }
 
+/* Fix from Jan Kandziora for proper command code */
 static int OW_discharge( const struct parsedname * pn ) {
-    BYTE dis[] = { 0xCC, } ;
+    BYTE dis[] = { 0x99, } ;
     struct transaction_log t[] = {
         TRXN_START,
         { dis, NULL, 1, trxn_match } ,
