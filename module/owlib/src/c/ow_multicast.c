@@ -78,7 +78,7 @@ int FS_FindHA7( void ) {
             inet_ntop(AF_INET,&(from.sin_addr),name,64) ;
             snprintf(&name[64-strlen(name)],64-strlen(name),":%d",(buffer[2]<<8)+buffer[3]);
             in->name = strdup(name) ;
-            in->busmode = bus_ha7 ;
+            in->busmode = bus_ha7net ;
         } else {
             LEVEL_CONNECT( "HA7 broadcast timeout\n") ;
         }

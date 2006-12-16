@@ -121,6 +121,7 @@ void FreeIn( void ) {
             break ;
         case bus_link:
         case bus_serial:
+        case bus_passive:
             COM_close(now) ;
             break ;
         case bus_usb:
@@ -130,7 +131,7 @@ void FreeIn( void ) {
 #endif
             break ;
         case bus_elink:
-        case bus_ha7:
+        case bus_ha7net:
             BUS_close(now) ;
             break ;
         case bus_fake:

@@ -28,9 +28,6 @@ void Server_detect( void ) {
         fprintf(stderr,"Could not connect with owserver %s\n",indevice->name) ;
         exit (1) ;
     }
-    indevice->Adapter = adapter_tcp ;
-    indevice->adapter_name = "tcp" ;
-    indevice->busmode = bus_server ;
 }
 
 int ServerRead( ASCII * path ) {

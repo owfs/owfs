@@ -102,7 +102,6 @@ void OW_ArgNet( const char * arg ) {
         exit(1) ;
     }
     in->name = strdup(arg) ;
-    in->busmode = bus_server ;
 }
 
 static void OW_parsevalue( int * var, const ASCII * str ) {

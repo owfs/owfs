@@ -55,10 +55,9 @@ int DS9097_detect( struct connection_in * in ) {
     /* Set up low-level routines */
     DS9097_setroutines( & (in->iroutines) ) ;
 
-    /* Reset the bus */
-    in->Adapter = adapter_DS9097 ; /* OWFS assigned value */
-    in->adapter_name = "DS9097" ;
-    in->busmode = bus_serial ;
+    in->Adapter = adapter_DS9097 ;
+    // in->adapter_name already set, to support HA3 and HA4B
+    in->busmode = bus_passive ;
     
     FS_ParsedName(NULL,&pn) ; // minimal parsename -- no destroy needed
     pn.in = in ;

@@ -35,61 +35,74 @@ static int OW_ArgI2C( const char * arg ) ;
 static int OW_ArgHA7( const char * arg ) ;
 static int OW_ArgFake( const char * arg ) ;
 static int OW_ArgLink( const char * arg ) ;
+static int OW_ArgPassive( char * name, const char * arg ) ;
 
 const struct option owopts_long[] = {
-    {"configuration",required_argument,NULL,'c'},
-    {"device",     required_argument,NULL,'d'},
-    {"usb",        optional_argument,NULL,'u'},
-    {"USB",        optional_argument,NULL,'u'},
-    {"help",       no_argument,      NULL,'h'},
-    {"port",       required_argument,NULL,'p'},
-    {"mountpoint", required_argument,NULL,'m'},
-    {"server",     required_argument,NULL,'s'},
-    {"readonly",   no_argument,      NULL,'r'},
-    {"write",      no_argument,      NULL,'w'},
-    {"Celsius",    no_argument,      NULL,'C'},
-    {"Fahrenheit", no_argument,      NULL,'F'},
-    {"Kelvin",     no_argument,      NULL,'K'},
-    {"Rankine",    no_argument,      NULL,'R'},
-    {"version",    no_argument,      NULL,'V'},
-    {"format",     required_argument,NULL,'f'},
-    {"pid_file",   required_argument,NULL,'P'},
-    {"pid-file",   required_argument,NULL,'P'},
-    {"background", no_argument,&Global.want_background, 1},
-    {"foreground", no_argument,&Global.want_background, 0},
-    {"error_print",required_argument,NULL,257},
-    {"error-print",required_argument,NULL,257},
-    {"errorprint",required_argument,NULL,257},
-    {"error_level",required_argument,NULL,258},
-    {"error-level",required_argument,NULL,258},
-    {"errorlevel",required_argument,NULL,258},
-    {"morehelp",   no_argument,      NULL,259},    
-    {"cache_size",   required_argument,NULL,260}, /* max cache size */
-    {"cache-size",   required_argument,NULL,260}, /* max cache size */
-    {"cachesize",   required_argument,NULL,260}, /* max cache size */
-    {"fuse_opt",     required_argument,NULL,266}, /* owfs, fuse mount option */
-    {"fuse-opt",     required_argument,NULL,266}, /* owfs, fuse mount option */
-    {"fuseopt",     required_argument,NULL,266}, /* owfs, fuse mount option */
-    {"fuse_open_opt",required_argument,NULL,267}, /* owfs, fuse open option */
-    {"fuse-open-opt",required_argument,NULL,267}, /* owfs, fuse open option */
-    {"fuseopenopt",required_argument,NULL,267}, /* owfs, fuse open option */
-    {"max_clients",  required_argument, NULL, 269}, /* ftp max connections */
-    {"max-clients",  required_argument, NULL, 269}, /* ftp max connections */
-    {"maxclients",  required_argument, NULL, 269}, /* ftp max connections */
-    {"HA7",          required_argument, NULL, 271}, /* HA7Net */
-    {"ha7",          required_argument, NULL, 271}, /* HA7Net */
-    {"FAKE",         required_argument, NULL, 272}, /* Fake */
-    {"Fake",         required_argument, NULL, 272}, /* Fake */
-    {"fake",         required_argument, NULL, 272}, /* Fake */
-    {"link",         required_argument, NULL, 273}, /* link in ascii mode */
-    {"LINK",         required_argument, NULL, 273}, /* link in ascii mode */
-    {"zero",         no_argument,&Global.announce_off, 0},
-    {"nozero",       no_argument,&Global.announce_off, 1},
-    {"autoserver",   no_argument,&Global.autoserver, 1},
-    {"noautoserver", no_argument,&Global.autoserver, 0},
-    {"announce",     required_argument,NULL,280},
-    {"allow_other",  no_argument,NULL,298},
-    {"altUSB",       no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
+    {"configuration",required_argument, NULL, 'c' },
+    {"device",       required_argument, NULL, 'd' },
+    {"usb",          optional_argument, NULL, 'u' },
+    {"USB",          optional_argument, NULL, 'u' },
+    {"help",         optional_argument, NULL, 'h' },
+    {"port",         required_argument, NULL, 'p' },
+    {"mountpoint",   required_argument, NULL, 'm' },
+    {"server",       required_argument, NULL, 's' },
+    {"readonly",           no_argument, NULL, 'r' },
+    {"write",              no_argument, NULL, 'w' },
+    {"Celsius",            no_argument, NULL, 'C' },
+    {"Fahrenheit",         no_argument, NULL, 'F' },
+    {"Kelvin",             no_argument, NULL, 'K' },
+    {"Rankine",            no_argument, NULL, 'R' },
+    {"version",            no_argument, NULL, 'V' },
+    {"format",       required_argument, NULL, 'f' },
+    {"pid_file",     required_argument, NULL, 'P' },
+    {"pid-file",     required_argument, NULL, 'P' },
+    {"background",         no_argument,&Global.want_background, 1},
+    {"foreground",         no_argument,&Global.want_background, 0},
+    {"error_print",  required_argument, NULL, 257 },
+    {"error-print",  required_argument, NULL, 257 },
+    {"errorprint",   required_argument, NULL, 257 },
+    {"error_level",  required_argument, NULL, 258 },
+    {"error-level",  required_argument, NULL, 258 },
+    {"errorlevel",   required_argument, NULL, 258 },
+    {"cache_size",   required_argument, NULL, 260 }, /* max cache size */
+    {"cache-size",   required_argument, NULL, 260 }, /* max cache size */
+    {"cachesize",    required_argument, NULL, 260 }, /* max cache size */
+    {"fuse_opt",     required_argument, NULL, 266 }, /* owfs, fuse mount option */
+    {"fuse-opt",     required_argument, NULL, 266 }, /* owfs, fuse mount option */
+    {"fuseopt",      required_argument, NULL, 266 }, /* owfs, fuse mount option */
+    {"fuse_open_opt",required_argument, NULL, 267 }, /* owfs, fuse open option */
+    {"fuse-open-opt",required_argument, NULL, 267 }, /* owfs, fuse open option */
+    {"fuseopenopt",  required_argument, NULL, 267 }, /* owfs, fuse open option */
+    {"max_clients",  required_argument, NULL, 269 }, /* ftp max connections */
+    {"max-clients",  required_argument, NULL, 269 }, /* ftp max connections */
+    {"maxclients",   required_argument, NULL, 269 }, /* ftp max connections */
+    {"HA7",          required_argument, NULL, 271 }, /* HA7Net */
+    {"ha7",          required_argument, NULL, 271 }, /* HA7Net */
+    {"HA7NET",       required_argument, NULL, 271 },
+    {"HA7Net",       required_argument, NULL, 271 },
+    {"ha7net",       required_argument, NULL, 271 },
+    {"FAKE",         required_argument, NULL, 272 }, /* Fake */
+    {"Fake",         required_argument, NULL, 272 }, /* Fake */
+    {"fake",         required_argument, NULL, 272 }, /* Fake */
+    {"link",         required_argument, NULL, 273 }, /* link in ascii mode */
+    {"LINK",         required_argument, NULL, 273 }, /* link in ascii mode */
+    {"HA3",          required_argument, NULL, 274 },
+    {"ha3",          required_argument, NULL, 274 },
+    {"HA4B",         required_argument, NULL, 275 },
+    {"HA4b",         required_argument, NULL, 275 },
+    {"ha4b",         required_argument, NULL, 275 },
+    {"HA5",          required_argument, NULL, 276 },
+    {"ha5",          required_argument, NULL, 276 },
+    {"ha7e",         required_argument, NULL, 277 },
+    {"HA7e",         required_argument, NULL, 277 },
+    {"HA7E",         required_argument, NULL, 277 },
+    {"zero",               no_argument,&Global.announce_off, 0},
+    {"nozero",             no_argument,&Global.announce_off, 1},
+    {"autoserver",         no_argument,&Global.autoserver, 1},
+    {"noautoserver",       no_argument,&Global.autoserver, 0},
+    {"announce",     required_argument, NULL, 280 },
+    {"allow_other",        no_argument, NULL, 298 },
+    {"altUSB",             no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
     
     {"timeout_volatile"  , required_argument, NULL, 301, } , // timeout -- changing cached values
     {"timeout_stable"    , required_argument, NULL, 302, } , // timeout -- unchanging cached values
@@ -303,7 +316,7 @@ int owopt( const int c , const char * arg ) {
             return ret ;
         }
     case 'h':
-        ow_help( ) ;
+        ow_help( arg ) ;
         return 1 ;
     case 'u':
         return OW_ArgUSB( arg ) ;
@@ -390,9 +403,6 @@ int owopt( const int c , const char * arg ) {
             Global.error_level = (int) i ;
         }
         break ;
-    case 259:
-        ow_morehelp() ;
-        return 1 ;
     case 260:
         {
             long long int i ;
@@ -417,6 +427,10 @@ int owopt( const int c , const char * arg ) {
         return OW_ArgFake( arg ) ;
     case 273:
         return OW_ArgLink( arg ) ;
+    case 274:
+        return OW_ArgPassive( "HA3", arg ) ;
+    case 275:
+        return OW_ArgPassive( "HA4B", arg ) ;
     case 280:
         Global.announce_name = strdup(arg) ;
         break ;
@@ -451,7 +465,7 @@ static int OW_ArgHA7( const char * arg ) {
         struct connection_in * in = NewIn(NULL) ;
         if ( in==NULL ) return 1 ;
         in->name = strdup(arg) ;
-        in->busmode = bus_ha7 ;
+        in->busmode = bus_ha7net ;
         return 0 ;
     } else { // Try multicast discovery
         return FS_FindHA7() ;
@@ -497,6 +511,18 @@ static int OW_ArgSerial( const char * arg ) {
     if ( in==NULL ) return 1 ;
     in->name = strdup(arg) ;
     in->busmode = bus_serial ;
+    in->Adapter = adapter_DS9097 ; // default serial adapter -- the passive one
+    in->adapter_name = "DS9097" ;
+    return 0 ;
+}
+
+static int OW_ArgPassive( char * name, const char * arg ) {
+    struct connection_in * in = NewIn(NULL) ;
+    if ( in==NULL ) return 1 ;
+    in->name = strdup(arg) ;
+    in->busmode = bus_passive ;
+    in->Adapter = adapter_DS9097 ; // passive adapter
+    in->adapter_name = name ;
     return 0 ;
 }
 

@@ -357,41 +357,6 @@ struct connin_server {
     char * fqdn ;
 } ;
 
-//enum server_type { srv_unknown, srv_direct, srv_client, src_
-/* Network connection structure */
-enum bus_mode {
-    bus_unknown=0,
-    bus_serial,
-    bus_usb,
-    bus_parallel,
-    bus_server,
-    bus_zero,
-    bus_i2c,
-    bus_ha7 ,
-    bus_fake ,
-    bus_link ,
-    bus_elink ,
-} ;
-
-enum adapter_type {
-    adapter_DS9097   =  0 ,
-    adapter_DS1410   =  1 ,
-    adapter_DS9097U2 =  2 ,
-    adapter_DS9097U  =  3 ,
-    adapter_LINK     =  7 ,
-    adapter_DS9490   =  8 ,
-    adapter_tcp      =  9 ,
-    adapter_Bad      = 10 ,
-    adapter_LINK_10       ,
-    adapter_LINK_11       ,
-    adapter_LINK_12       ,
-    adapter_LINK_E        ,
-    adapter_DS2482_100    ,
-    adapter_DS2482_800    ,
-    adapter_HA7           ,
-    adapter_fake          ,
-} ;
-
 enum e_reconnect {
     reconnect_bad = -1 ,
     reconnect_ok = 0 ,
@@ -411,8 +376,6 @@ struct connection_in {
     char * name ;
     int fd ;
   
-    enum bus_mode busmode ;
-    enum adapter_type Adapter ;
     char * adapter_name ;
 
     union {

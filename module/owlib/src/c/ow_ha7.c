@@ -86,7 +86,7 @@ int HA7_detect( struct connection_in * in ) {
     }
     if ( ClientAddr( in->name, in ) ) return -1 ;
     if ( (fd=ClientConnect(in)) < 0 ) return -EIO ; 
-    in->Adapter = adapter_HA7 ;
+    in->Adapter = adapter_HA7NET ;
     
     toHA7init( &ha7 ) ;
     ha7.command = "ReleaseLock" ;
@@ -94,7 +94,7 @@ int HA7_detect( struct connection_in * in ) {
         ASCII * buf ;
         if ( HA7_read( fd, &buf )==0 ) {
             in->adapter_name = "HA7Net" ;
-            in->busmode = bus_ha7 ;
+            in->busmode = bus_ha7net ;
             in->AnyDevices = 1 ;
             free(buf) ;
             close(fd) ;

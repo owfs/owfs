@@ -264,7 +264,7 @@ typedef int             INT ;
 
 /* command line options */
 /* These are the owlib-specific options */
-#define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
+#define OWLIB_OPT "m:c:f:p:s:h::u::d:t:CFRKVP:"
 extern const struct option owopts_long[] ;
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl, opt_swig, opt_c, } ;
 int owopt( const int c , const char * arg ) ;
@@ -761,8 +761,7 @@ int OW_ArgUSB( const char * arg ) ;
 int OW_ArgDevice( const char * arg ) ;
 int OW_ArgGeneric( const char * arg ) ;
 
-void ow_help( void ) ;
-void ow_morehelp( void ) ;
+void ow_help( const char * arg ) ;
 
 void update_max_delay( const struct parsedname * pn ) ;
 

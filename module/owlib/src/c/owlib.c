@@ -40,7 +40,7 @@ LibSetup (enum opt_program opt)
   Global.timeout_directory = 60;
   Global.timeout_presence = 120;
   Global.timeout_serial = 5;
-  Global.timeout_usb = 5000;	// 5 seconds
+  Global.timeout_usb = 5;	// 5 seconds
   Global.timeout_network = 1;
   Global.timeout_server = 10;
   Global.timeout_ftp = 900;
@@ -309,6 +309,9 @@ LibStart (void)
 	      LEVEL_CONNECT ("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
 	      BUS_close (in);
 	      BadAdapter_detect (in);	/* reset the methods */
+        }
+        // Fall Through
+    case bus_passive:
 	      if (DS9097_detect (in))
 		{
 		  LEVEL_DEFAULT
@@ -316,7 +319,6 @@ LibStart (void)
 		     in->name);
 		  ret = -ENODEV;
 		}
-	    }
 	  break;
 	case bus_i2c:
 #if OW_I2C
@@ -330,7 +332,7 @@ LibStart (void)
 	  ret = -ENOPROTOOPT;
 #endif /* OW_I2C */
 	  break;
-	case bus_ha7:
+	case bus_ha7net:
 #if OW_HA7
 	  if (HA7_detect (in))
 	    {
