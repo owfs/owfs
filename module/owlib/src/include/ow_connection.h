@@ -336,6 +336,7 @@ struct connection_in {
     int ds2404_compliance ;
     int ProgramAvailable ;
     size_t last_root_devs ;
+    int buspath_bad ; // should the current DS2409 branches be cleared?
     struct buspath branch ; // Branch currently selected
 
     /* Static buffer for serial conmmunications */

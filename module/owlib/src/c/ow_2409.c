@@ -136,6 +136,11 @@ static int OW_discharge( const struct parsedname * pn ) {
         TRXN_END,
     } ;
 
+    // Could certainly couple this with next transaction
+    BUSLOCK(pn) ;
+    pn->in->buspath_bad = 1 ;
+    BUSUNLOCK(pn) ;
+    
     if ( BUS_transaction( t, pn ) ) return 1 ;
 
     UT_delay(100) ;

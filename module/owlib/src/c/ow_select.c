@@ -53,7 +53,7 @@ int BUS_select(const struct parsedname * pn) {
         /* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
         if ( pl == 0 ) { /* no branches, overdrive possible */
             //printf("SELECT_LOW root path\n") ;
-            if ( pn->in->branch.sn[0] ) { // need clear root branch */
+            if ( pn->in->branch.sn[0] || pn->in->buspath_bad ) { // need clear root branch */
                 //printf("SELECT_LOW root path will be cleared\n") ;
                 LEVEL_DEBUG("Clearing root branch\n") ;
                 if ( Turnoff(0,pn) ) return 1 ;
@@ -68,7 +68,7 @@ int BUS_select(const struct parsedname * pn) {
                     sent[0] = 0x69 ;
                 }
             }
-        } else if ( memcmp( pn->in->branch.sn, pn->bp[pl-1].sn, 8 ) ) { /* different path */
+        } else if ( memcmp( pn->in->branch.sn, pn->bp[pl-1].sn, 8 ) || pn->in->buspath_bad ) { /* different path */
             int iclear ;
             LEVEL_DEBUG("Clearing all branches to level %d\n",pl) ;
             //printf("SELECT_LOW clear pathes to level %d \n",pl) ;
@@ -84,6 +84,7 @@ int BUS_select(const struct parsedname * pn) {
             if ( Turnoff(pl,pn) ) return 1 ; // clear just last level
             pn->in->branch.branch =  pn->bp[pl-1].branch ;
         }
+        pn->in->buspath_bad = 0 ;
     
         /* proper path now "turned on" */
         /* Now select */
