@@ -45,139 +45,160 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2409 switch */
-yWRITE_FUNCTION( FS_discharge ) ;
- uREAD_FUNCTION( FS_r_control ) ;
-uWRITE_FUNCTION( FS_w_control ) ;
- uREAD_FUNCTION( FS_r_sensed ) ;
- uREAD_FUNCTION( FS_r_branch ) ;
- uREAD_FUNCTION( FS_r_event ) ;
+yWRITE_FUNCTION(FS_discharge);
+uREAD_FUNCTION(FS_r_control);
+uWRITE_FUNCTION(FS_w_control);
+uREAD_FUNCTION(FS_r_sensed);
+uREAD_FUNCTION(FS_r_branch);
+uREAD_FUNCTION(FS_r_event);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, } ;
+struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, };
 struct filetype DS2409[] = {
-    F_STANDARD   ,
-    {"discharge" ,     1,  NULL,    ft_yesno , fc_stable  , {v:NULL}        , {y:FS_discharge}, {v:NULL},       } ,
-    {"control"   ,     1,  NULL, ft_unsigned , fc_stable  , {u:FS_r_control}, {u:FS_w_control}, {v:NULL},       } ,
-    {"sensed"    ,     1,&A2409, ft_bitfield , fc_volatile, {u:FS_r_sensed} , {v:NULL}        , {v:NULL},       } ,
-    {"branch"    ,     1,&A2409, ft_bitfield , fc_volatile, {u:FS_r_branch} , {v:NULL}        , {v:NULL},       } ,
-    {"event"     ,     1,&A2409, ft_bitfield , fc_volatile, {u:FS_r_event}  , {v:NULL}        , {v:NULL},       } ,
-    {"aux"       ,     0,  NULL, ft_directory, fc_volatile, {v:NULL}        , {v:NULL}        , {i: 1}, } ,
-    {"main"      ,     0,  NULL, ft_directory, fc_volatile, {v:NULL}        , {v:NULL}        , {i: 0}, } ,
-} ;
-DeviceEntry( 1F, DS2409 ) ;
+    F_STANDARD,
+  {"discharge", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {y: FS_discharge}, {v:NULL},},
+  {"control", 1, NULL, ft_unsigned, fc_stable, {u: FS_r_control}, {u: FS_w_control}, {v:NULL},},
+  {"sensed", 1, &A2409, ft_bitfield, fc_volatile, {u: FS_r_sensed}, {v: NULL}, {v:NULL},},
+  {"branch", 1, &A2409, ft_bitfield, fc_volatile, {u: FS_r_branch}, {v: NULL}, {v:NULL},},
+  {"event", 1, &A2409, ft_bitfield, fc_volatile, {u: FS_r_event}, {v: NULL}, {v:NULL},},
+  {"aux", 0, NULL, ft_directory, fc_volatile, {v: NULL}, {v: NULL}, {i:1},},
+  {"main", 0, NULL, ft_directory, fc_volatile, {v: NULL}, {v: NULL}, {i:0},},
+};
+
+DeviceEntry(1F, DS2409);
 
 /* ------- Functions ------------ */
 
 /* DS2409 */
-static int OW_r_control( BYTE * data, const struct parsedname * pn ) ;
+static int OW_r_control(BYTE * data, const struct parsedname *pn);
 
-static int OW_discharge( const struct parsedname * pn ) ;
-static int OW_w_control( const UINT data , const struct parsedname * pn ) ;
+static int OW_discharge(const struct parsedname *pn);
+static int OW_w_control(const UINT data, const struct parsedname *pn);
 
 /* discharge 2409 lines */
-static int FS_discharge(const int * y, const struct parsedname * pn) {
-    if ( (*y) && OW_discharge(pn) ) return -EINVAL ;
-    return 0 ;
+static int FS_discharge(const int *y, const struct parsedname *pn)
+{
+    if ((*y) && OW_discharge(pn))
+	return -EINVAL;
+    return 0;
 }
 
 /* 2409 switch -- branch pin voltage */
-static int FS_r_sensed(UINT * u , const struct parsedname * pn) {
-    BYTE data ;
-    if ( OW_r_control(&data,pn) ) return -EINVAL ;
+static int FS_r_sensed(UINT * u, const struct parsedname *pn)
+{
+    BYTE data;
+    if (OW_r_control(&data, pn))
+	return -EINVAL;
 //    y[0] = data&0x02 ? 1 : 0 ;
 //    y[1] = data&0x08 ? 1 : 0 ;
-    u[0] = ((data>>1)&0x01) | ((data>>2)&0x02) ;
-    return 0 ;
+    u[0] = ((data >> 1) & 0x01) | ((data >> 2) & 0x02);
+    return 0;
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
-static int FS_r_branch(UINT * u , const struct parsedname * pn) {
-    BYTE data ;
-    if ( OW_r_control(&data,pn) ) return -EINVAL ;
+static int FS_r_branch(UINT * u, const struct parsedname *pn)
+{
+    BYTE data;
+    if (OW_r_control(&data, pn))
+	return -EINVAL;
 //    y[0] = data&0x01 ? 0 : 1 ;
 //    y[1] = data&0x04 ? 0 : 1 ;
-    u[0] = (((data)&0x01) | ((data>>1)&0x02)) ^ 0x03 ;
-    return 0 ;
+    u[0] = (((data) & 0x01) | ((data >> 1) & 0x02)) ^ 0x03;
+    return 0;
 }
 
 /* 2409 switch -- event status */
-static int FS_r_event(UINT * u , const struct parsedname * pn) {
-    BYTE data ;
-    if ( OW_r_control(&data,pn) ) return -EINVAL ;
+static int FS_r_event(UINT * u, const struct parsedname *pn)
+{
+    BYTE data;
+    if (OW_r_control(&data, pn))
+	return -EINVAL;
 //    y[0] = data&0x10 ? 1 : 0 ;
 //    y[1] = data&0x20 ? 1 : 0 ;
-    u[0] = (data>>4)&0x03 ;
-    return 0 ;
+    u[0] = (data >> 4) & 0x03;
+    return 0;
 }
 
 /* 2409 switch -- control pin state */
-static int FS_r_control(UINT * u , const struct parsedname * pn) {
-    BYTE data ;
-    UINT control[] = { 2, 3, 0, 1, } ;
-    if ( OW_r_control(&data,pn) ) return -EINVAL ;
-    *u = control[data>>6] ;
-    return 0 ;
+static int FS_r_control(UINT * u, const struct parsedname *pn)
+{
+    BYTE data;
+    UINT control[] = { 2, 3, 0, 1, };
+    if (OW_r_control(&data, pn))
+	return -EINVAL;
+    *u = control[data >> 6];
+    return 0;
 }
 
 /* 2409 switch -- control pin state */
-static int FS_w_control(const UINT * u , const struct parsedname * pn) {
-    if ( *u > 3 ) return -EINVAL ;
-    if ( OW_w_control(*u,pn) ) return -EINVAL ;
-    return 0 ;
+static int FS_w_control(const UINT * u, const struct parsedname *pn)
+{
+    if (*u > 3)
+	return -EINVAL;
+    if (OW_w_control(*u, pn))
+	return -EINVAL;
+    return 0;
 }
 
 /* Fix from Jan Kandziora for proper command code */
-static int OW_discharge( const struct parsedname * pn ) {
-    BYTE dis[] = { 0x99, } ;
+static int OW_discharge(const struct parsedname *pn)
+{
+    BYTE dis[] = { 0x99, };
     struct transaction_log t[] = {
-        TRXN_START,
-        { dis, NULL, 1, trxn_match } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{dis, NULL, 1, trxn_match},
+	TRXN_END,
+    };
 
     // Could certainly couple this with next transaction
-    BUSLOCK(pn) ;
-    pn->in->buspath_bad = 1 ;
-    BUSUNLOCK(pn) ;
-    
-    if ( BUS_transaction( t, pn ) ) return 1 ;
+    BUSLOCK(pn);
+    pn->in->buspath_bad = 1;
+    BUSUNLOCK(pn);
 
-    UT_delay(100) ;
+    if (BUS_transaction(t, pn))
+	return 1;
 
-    dis[0] = 0x66 ;
-    if ( BUS_transaction( t, pn ) ) return 1 ;
+    UT_delay(100);
 
-    return 0 ;
+    dis[0] = 0x66;
+    if (BUS_transaction(t, pn))
+	return 1;
+
+    return 0;
 }
 
-static int OW_w_control( const UINT data , const struct parsedname * pn ) {
-    const BYTE d[] = { 0x20, 0xA0, 0x00, 0x40, } ;
-    BYTE p[] = { 0x5A, d[data], } ;
-    const BYTE r[] = { 0x80, 0xC0, 0x00, 0x40, } ;
-    BYTE info ;
+static int OW_w_control(const UINT data, const struct parsedname *pn)
+{
+    const BYTE d[] = { 0x20, 0xA0, 0x00, 0x40, };
+    BYTE p[] = { 0x5A, d[data], };
+    const BYTE r[] = { 0x80, 0xC0, 0x00, 0x40, };
+    BYTE info;
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 2, trxn_match } ,
-        { NULL, &info, 1, trxn_read } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 2, trxn_match},
+	{NULL, &info, 1, trxn_read},
+	TRXN_END,
+    };
 
-    if ( BUS_transaction( t, pn ) ) return 1 ;
+    if (BUS_transaction(t, pn))
+	return 1;
 
     /* Check that Info corresponds */
-    return (info&0xC0)==r[data] ? 0 : 1 ;
+    return (info & 0xC0) == r[data] ? 0 : 1;
 }
 
-static int OW_r_control( BYTE * data , const struct parsedname * pn ) {
-    BYTE p[] = { 0x5A, 0xFF, } ;
+static int OW_r_control(BYTE * data, const struct parsedname *pn)
+{
+    BYTE p[] = { 0x5A, 0xFF, };
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 2, trxn_match } ,
-        { NULL, data, 1, trxn_read } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 2, trxn_match},
+	{NULL, data, 1, trxn_read},
+	TRXN_END,
+    };
 
-    if ( BUS_transaction( t, pn ) ) return 1 ;
-    return 0 ;
+    if (BUS_transaction(t, pn))
+	return 1;
+    return 0;
 }

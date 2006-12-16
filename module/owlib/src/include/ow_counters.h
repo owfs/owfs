@@ -5,7 +5,7 @@ $Id$
 
     All the error and statistics counters are declared here,
    including handling macros
-*/ 
+*/
 
 
 /*
@@ -50,134 +50,134 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_COUNTERS_H  /* tedious wrapper */
+#ifndef OW_COUNTERS_H		/* tedious wrapper */
 #define OW_COUNTERS_H
 
 /* ----------------- */
 /* -- Statistics --- */
 /* ----------------- */
 struct average {
-    UINT max ;
-    UINT sum ;
-    UINT count ;
-    UINT current ;
-} ;
+    UINT max;
+    UINT sum;
+    UINT count;
+    UINT current;
+};
 
 struct cache {
-    UINT tries ;
-    UINT hits ;
-    UINT adds ;
-    UINT expires ;
-    UINT deletes ;
-} ;
+    UINT tries;
+    UINT hits;
+    UINT adds;
+    UINT expires;
+    UINT deletes;
+};
 
 struct directory {
-    UINT calls ;
-    UINT entries ;
-} ;
+    UINT calls;
+    UINT entries;
+};
 
 #define AVERAGE_IN(pA)  ++(pA)->current; ++(pA)->count; (pA)->sum+=(pA)->current; if ((pA)->current>(pA)->max)++(pA)->max;
 #define AVERAGE_OUT(pA) --(pA)->current;
 #define AVERAGE_MARK(pA)  ++(pA)->count; (pA)->sum+=(pA)->current;
 #define AVERAGE_CLEAR(pA)  (pA)->current=0;
 
-extern UINT cache_flips ;
-extern UINT cache_adds ;
-extern struct average new_avg ;
-extern struct average old_avg ;
-extern struct average store_avg ;
-extern struct cache cache_ext ;
-extern struct cache cache_int ;
-extern struct cache cache_dir ;
-extern struct cache cache_dev ;
-extern struct cache cache_sto ;
+extern UINT cache_flips;
+extern UINT cache_adds;
+extern struct average new_avg;
+extern struct average old_avg;
+extern struct average store_avg;
+extern struct cache cache_ext;
+extern struct cache cache_int;
+extern struct cache cache_dir;
+extern struct cache cache_dev;
+extern struct cache cache_sto;
 
-extern UINT read_calls ;
-extern UINT read_cache ;
-extern UINT read_cachebytes ;
-extern UINT read_bytes ;
-extern UINT read_array ;
-extern UINT read_tries[3] ;
-extern UINT read_success ;
-extern struct average read_avg ;
+extern UINT read_calls;
+extern UINT read_cache;
+extern UINT read_cachebytes;
+extern UINT read_bytes;
+extern UINT read_array;
+extern UINT read_tries[3];
+extern UINT read_success;
+extern struct average read_avg;
 
-extern UINT write_calls ;
-extern UINT write_bytes ;
-extern UINT write_array ;
-extern UINT write_tries[3] ;
-extern UINT write_success ;
-extern struct average write_avg ;
+extern UINT write_calls;
+extern UINT write_bytes;
+extern UINT write_array;
+extern UINT write_tries[3];
+extern UINT write_success;
+extern struct average write_avg;
 
-extern struct directory dir_main ;
-extern struct directory dir_dev ;
-extern UINT dir_depth ;
-extern struct average dir_avg ;
+extern struct directory dir_main;
+extern struct directory dir_dev;
+extern UINT dir_depth;
+extern struct average dir_avg;
 
-extern struct average all_avg ;
+extern struct average all_avg;
 
-extern struct timeval max_delay ;
+extern struct timeval max_delay;
 
 // ow_locks.c
-extern struct timeval total_bus_time ;  // total bus_time
+extern struct timeval total_bus_time;	// total bus_time
 //extern struct timeval bus_pause ; 
-extern UINT total_bus_locks ;   // total number of locks
-extern UINT total_bus_unlocks ; // total number of unlocks
+extern UINT total_bus_locks;	// total number of locks
+extern UINT total_bus_unlocks;	// total number of unlocks
 
 // ow_crc.c
-extern UINT CRC8_tries ;
-extern UINT CRC8_errors ;
-extern UINT CRC16_tries ;
-extern UINT CRC16_errors ;
+extern UINT CRC8_tries;
+extern UINT CRC8_errors;
+extern UINT CRC16_tries;
+extern UINT CRC16_errors;
 
 // ow_net.c
-extern UINT NET_accept_errors ;
-extern UINT NET_connection_errors ;
-extern UINT NET_read_errors ;
+extern UINT NET_accept_errors;
+extern UINT NET_connection_errors;
+extern UINT NET_read_errors;
 
 // ow_bus.c
-extern UINT BUS_reconnects ;         // sum from all adapters
-extern UINT BUS_reconnect_errors ;  // sum from all adapters
-extern UINT BUS_send_data_errors ;
-extern UINT BUS_send_data_memcmp_errors ;
-extern UINT BUS_readin_data_errors ;
-extern UINT BUS_select_low_errors ;
-extern UINT BUS_select_low_branch_errors ;
-extern UINT BUS_level_errors ;
-extern UINT BUS_write_errors ;
-extern UINT BUS_write_interrupt_errors ;
-extern UINT BUS_read_errors ;
-extern UINT BUS_read_interrupt_errors ;
-extern UINT BUS_read_select_errors ;
-extern UINT BUS_read_timeout_errors ;
-extern UINT BUS_next_errors ;
-extern UINT BUS_next_alarm_errors ;
-extern UINT BUS_detect_errors ;
-extern UINT BUS_open_errors ;
-extern UINT BUS_PowerByte_errors ;
-extern UINT BUS_reset_errors ;
-extern UINT BUS_short_errors ;
-extern UINT BUS_bit_errors ;
-extern UINT BUS_byte_errors ;
-extern UINT BUS_echo_errors ;
-extern UINT BUS_ProgramPulse_errors ;
-extern UINT BUS_Overdrive_errors ;
-extern UINT BUS_TestOverdrive_errors ;
-extern UINT BUS_tcsetattr_errors ;
-extern UINT BUS_status_errors ;
+extern UINT BUS_reconnects;	// sum from all adapters
+extern UINT BUS_reconnect_errors;	// sum from all adapters
+extern UINT BUS_send_data_errors;
+extern UINT BUS_send_data_memcmp_errors;
+extern UINT BUS_readin_data_errors;
+extern UINT BUS_select_low_errors;
+extern UINT BUS_select_low_branch_errors;
+extern UINT BUS_level_errors;
+extern UINT BUS_write_errors;
+extern UINT BUS_write_interrupt_errors;
+extern UINT BUS_read_errors;
+extern UINT BUS_read_interrupt_errors;
+extern UINT BUS_read_select_errors;
+extern UINT BUS_read_timeout_errors;
+extern UINT BUS_next_errors;
+extern UINT BUS_next_alarm_errors;
+extern UINT BUS_detect_errors;
+extern UINT BUS_open_errors;
+extern UINT BUS_PowerByte_errors;
+extern UINT BUS_reset_errors;
+extern UINT BUS_short_errors;
+extern UINT BUS_bit_errors;
+extern UINT BUS_byte_errors;
+extern UINT BUS_echo_errors;
+extern UINT BUS_ProgramPulse_errors;
+extern UINT BUS_Overdrive_errors;
+extern UINT BUS_TestOverdrive_errors;
+extern UINT BUS_tcsetattr_errors;
+extern UINT BUS_status_errors;
 
 // ow_ds9097U.c
-extern UINT DS2480_send_cmd_errors ;
-extern UINT DS2480_send_cmd_memcmp_errors ;
-extern UINT DS2480_sendout_data_errors ;
-extern UINT DS2480_sendout_cmd_errors ;
-extern UINT DS2480_sendback_cmd_errors ;
-extern UINT DS2480_write_interrupted ;
-extern UINT DS2480_read_fd_isset ;
-extern UINT DS2480_read_null ;
-extern UINT DS2480_read_read ;
-extern UINT DS2480_level_docheck_errors ;
-extern UINT DS2480_databit_errors ;
+extern UINT DS2480_send_cmd_errors;
+extern UINT DS2480_send_cmd_memcmp_errors;
+extern UINT DS2480_sendout_data_errors;
+extern UINT DS2480_sendout_cmd_errors;
+extern UINT DS2480_sendback_cmd_errors;
+extern UINT DS2480_write_interrupted;
+extern UINT DS2480_read_fd_isset;
+extern UINT DS2480_read_null;
+extern UINT DS2480_read_read;
+extern UINT DS2480_level_docheck_errors;
+extern UINT DS2480_databit_errors;
 
 #define STAT_ADD1(x)    STATLOCK ; ++x ; STATUNLOCK
 
-#endif /* OW_COUNTERS_H */
+#endif				/* OW_COUNTERS_H */

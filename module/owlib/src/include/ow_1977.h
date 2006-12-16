@@ -19,8 +19,6 @@ $Id$
 
 /* ------- Structures ----------- */
 
-DeviceHeader( DS1977 ) ;
+DeviceHeader(DS1977);
 
-#endif /* OW_1977_H */
-
-
+#endif				/* OW_1977_H */

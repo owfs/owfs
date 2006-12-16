@@ -18,11 +18,9 @@ $Id$
 #include "ow_xxxx.h"
 
 /* -------- Structures ---------- */
-DeviceHeader( sys_adapter ) ;
-DeviceHeader( sys_process ) ;
-DeviceHeader( sys_connections ) ;
-DeviceHeader( sys_configure ) ;
+DeviceHeader(sys_adapter);
+DeviceHeader(sys_process);
+DeviceHeader(sys_connections);
+DeviceHeader(sys_configure);
 
-#endif /* OW_SYSTEM_H */
-
-
+#endif				/* OW_SYSTEM_H */

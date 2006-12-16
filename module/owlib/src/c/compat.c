@@ -45,46 +45,45 @@ $Id$
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
- 
+
  /*
- * Get next token from string *stringp, where tokens are possibly-empty
- * strings separated by characters from delim.
- *
- * Writes NULs into the string at *stringp to end tokens.
- * delim need not remain constant from call to call.
- * On return, *stringp points past the last NUL written (if there might
- * be further tokens), or is NULL (if there are definitely no more tokens).
- *
- * If *stringp is NULL, strsep returns NULL.
- */
-char *
-strsep(char **stringp, const char *delim)
+  * Get next token from string *stringp, where tokens are possibly-empty
+  * strings separated by characters from delim.
+  *
+  * Writes NULs into the string at *stringp to end tokens.
+  * delim need not remain constant from call to call.
+  * On return, *stringp points past the last NUL written (if there might
+  * be further tokens), or is NULL (if there are definitely no more tokens).
+  *
+  * If *stringp is NULL, strsep returns NULL.
+  */
+char *strsep(char **stringp, const char *delim)
 {
-  char *s;
-  const char *spanp;
-  int c, sc;
-  char *tok;
- 
-  if ((s = *stringp) == NULL)
-    return (NULL);
-  for (tok = s;;) {
-    c = *s++;
-    spanp = delim;
-    do {
-      if ((sc = *spanp++) == c) {
-	if (c == 0)
-	  s = NULL;
-                                else
-				  s[-1] = 0;
-	*stringp = s;
-	return (tok);
-      }
-    } while (sc != 0);
-  }
-  /* NOTREACHED */
+    char *s;
+    const char *spanp;
+    int c, sc;
+    char *tok;
+
+    if ((s = *stringp) == NULL)
+	return (NULL);
+    for (tok = s;;) {
+	c = *s++;
+	spanp = delim;
+	do {
+	    if ((sc = *spanp++) == c) {
+		if (c == 0)
+		    s = NULL;
+		else
+		    s[-1] = 0;
+		*stringp = s;
+		return (tok);
+	    }
+	} while (sc != 0);
+    }
+    /* NOTREACHED */
 }
- 
-#endif /* !defined(HAVE_STRSEP) */
+
+#endif				/* !defined(HAVE_STRSEP) */
 
 
 #ifndef HAVE_TDESTROY
@@ -95,20 +94,21 @@ strsep(char **stringp, const char *delim)
 */
 
 typedef struct node_t {
-    void        *key;
+    void *key;
     struct node_t *left, *right;
 } node;
 
-static void tdestroy_recurse_ (node *root, void *freefct) {
+static void tdestroy_recurse_(node * root, void *freefct)
+{
     if (root->left != NULL) {
-        tdestroy_recurse_ (root->left, freefct);
+	tdestroy_recurse_(root->left, freefct);
 #ifdef DELETE_KEY
 	free(root->left);
 	root->left = NULL;
 #endif
     }
     if (root->right != NULL) {
-        tdestroy_recurse_ (root->right, freefct);
+	tdestroy_recurse_(root->right, freefct);
 #ifdef DELETE_KEY
 	free(root->right);
 	root->right = NULL;
@@ -116,24 +116,22 @@ static void tdestroy_recurse_ (node *root, void *freefct) {
     }
     //(*freefct) ((void *) root->key);
 #ifdef DELETE_KEY
-    if(root->key) {
-      free(root->key);
-      root->key = NULL;
+    if (root->key) {
+	free(root->key);
+	root->key = NULL;
     }
 #endif
 }
 
-void tdestroy(void *vroot, void *freefct) {
+void tdestroy(void *vroot, void *freefct)
+{
     node *root = (node *) vroot;
     if (root != NULL) {
-        tdestroy_recurse_ (root, freefct);
+	tdestroy_recurse_(root, freefct);
 #ifdef DELETE_KEY
 	/* Free the node itself.  */
-	free (root);
+	free(root);
 #endif
     }
 }
-#endif /* HAVE_TDESTROY */
-
-
-
+#endif				/* HAVE_TDESTROY */

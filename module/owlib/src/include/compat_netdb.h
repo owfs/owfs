@@ -126,16 +126,15 @@ int inet_pton(int af, const char *src, void *dst);
 /* Extension from POSIX.1g.  */
 #ifdef	__USE_POSIX
 /* Structure to contain information about address of a service provider.  */
-struct addrinfo
-{
-  int ai_flags;			/* Input flags.  */
-  int ai_family;		/* Protocol family for socket.  */
-  int ai_socktype;		/* Socket type.  */
-  int ai_protocol;		/* Protocol for socket.  */
-  socklen_t ai_addrlen;		/* Length of socket address.  */
-  struct sockaddr *ai_addr;	/* Socket address for socket.  */
-  char *ai_canonname;		/* Canonical name for service location.  */
-  struct addrinfo *ai_next;	/* Pointer to next in list.  */
+struct addrinfo {
+    int ai_flags;		/* Input flags.  */
+    int ai_family;		/* Protocol family for socket.  */
+    int ai_socktype;		/* Socket type.  */
+    int ai_protocol;		/* Protocol for socket.  */
+    socklen_t ai_addrlen;	/* Length of socket address.  */
+    struct sockaddr *ai_addr;	/* Socket address for socket.  */
+    char *ai_canonname;		/* Canonical name for service location.  */
+    struct addrinfo *ai_next;	/* Pointer to next in list.  */
 };
 
 # ifdef __USE_GNU
@@ -180,19 +179,19 @@ struct addrinfo
 
 /* Translate name of a service location and/or a service name to set of
    socket addresses.  */
-extern int getaddrinfo (__const char *__restrict __name,
-			__const char *__restrict __service,
-			__const struct addrinfo *__restrict __req,
-			struct addrinfo **__restrict __pai) __THROW;
+extern int getaddrinfo(__const char *__restrict __name,
+		       __const char *__restrict __service,
+		       __const struct addrinfo *__restrict __req,
+		       struct addrinfo **__restrict __pai) __THROW;
 
 /* Free `addrinfo' structure AI including associated storage.  */
-extern void freeaddrinfo (struct addrinfo *__ai) __THROW;
+extern void freeaddrinfo(struct addrinfo *__ai) __THROW;
 
 /* Convert error return from getaddrinfo() to a string.  */
-extern const char *gai_strerror (int __ecode) __THROW;
+extern const char *gai_strerror(int __ecode) __THROW;
 
-#endif /* HAVE_GETADDRINFO */
+#endif				/* HAVE_GETADDRINFO */
 
-#endif	/* POSIX */
+#endif				/* POSIX */
 
-#endif	/* COMPAT_NETDB_H */
+#endif				/* COMPAT_NETDB_H */

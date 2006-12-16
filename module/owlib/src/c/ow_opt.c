@@ -18,142 +18,146 @@ $Id$
 #include "ow_pid.h"
 
 struct lineparse {
-    ASCII line[256] ;
-    ASCII * opt ;
-    ASCII * val ;
-    int c ;
-} ;
+    ASCII line[256];
+    ASCII *opt;
+    ASCII *val;
+    int c;
+};
 
-static void ParseTheLine( struct lineparse * lp ) ;
-static int ConfigurationFile( const ASCII * file ) ;
-static int ParseInterp(struct lineparse * lp ) ;
-static int OW_parsevalue( long long int * var, const ASCII * str ) ;
+static void ParseTheLine(struct lineparse *lp);
+static int ConfigurationFile(const ASCII * file);
+static int ParseInterp(struct lineparse *lp);
+static int OW_parsevalue(long long int *var, const ASCII * str);
 
-static int OW_ArgSerial( const char * arg ) ;
-static int OW_ArgParallel( const char * arg ) ;
-static int OW_ArgI2C( const char * arg ) ;
-static int OW_ArgHA7( const char * arg ) ;
-static int OW_ArgFake( const char * arg ) ;
-static int OW_ArgLink( const char * arg ) ;
-static int OW_ArgPassive( char * name, const char * arg ) ;
+static int OW_ArgSerial(const char *arg);
+static int OW_ArgParallel(const char *arg);
+static int OW_ArgI2C(const char *arg);
+static int OW_ArgHA7(const char *arg);
+static int OW_ArgFake(const char *arg);
+static int OW_ArgLink(const char *arg);
+static int OW_ArgPassive(char *name, const char *arg);
 
 const struct option owopts_long[] = {
-    {"configuration",required_argument, NULL, 'c' },
-    {"device",       required_argument, NULL, 'd' },
-    {"usb",          optional_argument, NULL, 'u' },
-    {"USB",          optional_argument, NULL, 'u' },
-    {"help",         optional_argument, NULL, 'h' },
-    {"port",         required_argument, NULL, 'p' },
-    {"mountpoint",   required_argument, NULL, 'm' },
-    {"server",       required_argument, NULL, 's' },
-    {"readonly",           no_argument, NULL, 'r' },
-    {"write",              no_argument, NULL, 'w' },
-    {"Celsius",            no_argument, NULL, 'C' },
-    {"Fahrenheit",         no_argument, NULL, 'F' },
-    {"Kelvin",             no_argument, NULL, 'K' },
-    {"Rankine",            no_argument, NULL, 'R' },
-    {"version",            no_argument, NULL, 'V' },
-    {"format",       required_argument, NULL, 'f' },
-    {"pid_file",     required_argument, NULL, 'P' },
-    {"pid-file",     required_argument, NULL, 'P' },
-    {"background",         no_argument,&Global.want_background, 1},
-    {"foreground",         no_argument,&Global.want_background, 0},
-    {"error_print",  required_argument, NULL, 257 },
-    {"error-print",  required_argument, NULL, 257 },
-    {"errorprint",   required_argument, NULL, 257 },
-    {"error_level",  required_argument, NULL, 258 },
-    {"error-level",  required_argument, NULL, 258 },
-    {"errorlevel",   required_argument, NULL, 258 },
-    {"cache_size",   required_argument, NULL, 260 }, /* max cache size */
-    {"cache-size",   required_argument, NULL, 260 }, /* max cache size */
-    {"cachesize",    required_argument, NULL, 260 }, /* max cache size */
-    {"fuse_opt",     required_argument, NULL, 266 }, /* owfs, fuse mount option */
-    {"fuse-opt",     required_argument, NULL, 266 }, /* owfs, fuse mount option */
-    {"fuseopt",      required_argument, NULL, 266 }, /* owfs, fuse mount option */
-    {"fuse_open_opt",required_argument, NULL, 267 }, /* owfs, fuse open option */
-    {"fuse-open-opt",required_argument, NULL, 267 }, /* owfs, fuse open option */
-    {"fuseopenopt",  required_argument, NULL, 267 }, /* owfs, fuse open option */
-    {"max_clients",  required_argument, NULL, 269 }, /* ftp max connections */
-    {"max-clients",  required_argument, NULL, 269 }, /* ftp max connections */
-    {"maxclients",   required_argument, NULL, 269 }, /* ftp max connections */
-    {"HA7",          required_argument, NULL, 271 }, /* HA7Net */
-    {"ha7",          required_argument, NULL, 271 }, /* HA7Net */
-    {"HA7NET",       required_argument, NULL, 271 },
-    {"HA7Net",       required_argument, NULL, 271 },
-    {"ha7net",       required_argument, NULL, 271 },
-    {"FAKE",         required_argument, NULL, 272 }, /* Fake */
-    {"Fake",         required_argument, NULL, 272 }, /* Fake */
-    {"fake",         required_argument, NULL, 272 }, /* Fake */
-    {"link",         required_argument, NULL, 273 }, /* link in ascii mode */
-    {"LINK",         required_argument, NULL, 273 }, /* link in ascii mode */
-    {"HA3",          required_argument, NULL, 274 },
-    {"ha3",          required_argument, NULL, 274 },
-    {"HA4B",         required_argument, NULL, 275 },
-    {"HA4b",         required_argument, NULL, 275 },
-    {"ha4b",         required_argument, NULL, 275 },
-    {"HA5",          required_argument, NULL, 276 },
-    {"ha5",          required_argument, NULL, 276 },
-    {"ha7e",         required_argument, NULL, 277 },
-    {"HA7e",         required_argument, NULL, 277 },
-    {"HA7E",         required_argument, NULL, 277 },
-    {"zero",               no_argument,&Global.announce_off, 0},
-    {"nozero",             no_argument,&Global.announce_off, 1},
-    {"autoserver",         no_argument,&Global.autoserver, 1},
-    {"noautoserver",       no_argument,&Global.autoserver, 0},
-    {"announce",     required_argument, NULL, 280 },
-    {"allow_other",        no_argument, NULL, 298 },
-    {"altUSB",             no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
-    
-    {"timeout_volatile"  , required_argument, NULL, 301, } , // timeout -- changing cached values
-    {"timeout_stable"    , required_argument, NULL, 302, } , // timeout -- unchanging cached values
-    {"timeout_directory" , required_argument, NULL, 303, } , // timeout -- direcory cached values
-    {"timeout_presence"  , required_argument, NULL, 304, } , // timeout -- device location
-    {"timeout_serial"    , required_argument, NULL, 305, } , // timeout -- serial wait
-    {"timeout_usb"       , required_argument, NULL, 306, } , // timeout -- usb wait
-    {"timeout_network"   , required_argument, NULL, 307, } , // timeout -- tcp wait
-    {"timeout_server"    , required_argument, NULL, 308, } , // timeout -- server wait
-    {"timeout_ftp"       , required_argument, NULL, 309, } , // timeout -- ftp wait
+    {"configuration", required_argument, NULL, 'c'},
+    {"device", required_argument, NULL, 'd'},
+    {"usb", optional_argument, NULL, 'u'},
+    {"USB", optional_argument, NULL, 'u'},
+    {"help", optional_argument, NULL, 'h'},
+    {"port", required_argument, NULL, 'p'},
+    {"mountpoint", required_argument, NULL, 'm'},
+    {"server", required_argument, NULL, 's'},
+    {"readonly", no_argument, NULL, 'r'},
+    {"write", no_argument, NULL, 'w'},
+    {"Celsius", no_argument, NULL, 'C'},
+    {"Fahrenheit", no_argument, NULL, 'F'},
+    {"Kelvin", no_argument, NULL, 'K'},
+    {"Rankine", no_argument, NULL, 'R'},
+    {"version", no_argument, NULL, 'V'},
+    {"format", required_argument, NULL, 'f'},
+    {"pid_file", required_argument, NULL, 'P'},
+    {"pid-file", required_argument, NULL, 'P'},
+    {"background", no_argument, &Global.want_background, 1},
+    {"foreground", no_argument, &Global.want_background, 0},
+    {"error_print", required_argument, NULL, 257},
+    {"error-print", required_argument, NULL, 257},
+    {"errorprint", required_argument, NULL, 257},
+    {"error_level", required_argument, NULL, 258},
+    {"error-level", required_argument, NULL, 258},
+    {"errorlevel", required_argument, NULL, 258},
+    {"cache_size", required_argument, NULL, 260},	/* max cache size */
+    {"cache-size", required_argument, NULL, 260},	/* max cache size */
+    {"cachesize", required_argument, NULL, 260},	/* max cache size */
+    {"fuse_opt", required_argument, NULL, 266},	/* owfs, fuse mount option */
+    {"fuse-opt", required_argument, NULL, 266},	/* owfs, fuse mount option */
+    {"fuseopt", required_argument, NULL, 266},	/* owfs, fuse mount option */
+    {"fuse_open_opt", required_argument, NULL, 267},	/* owfs, fuse open option */
+    {"fuse-open-opt", required_argument, NULL, 267},	/* owfs, fuse open option */
+    {"fuseopenopt", required_argument, NULL, 267},	/* owfs, fuse open option */
+    {"max_clients", required_argument, NULL, 269},	/* ftp max connections */
+    {"max-clients", required_argument, NULL, 269},	/* ftp max connections */
+    {"maxclients", required_argument, NULL, 269},	/* ftp max connections */
+    {"HA7", required_argument, NULL, 271},	/* HA7Net */
+    {"ha7", required_argument, NULL, 271},	/* HA7Net */
+    {"HA7NET", required_argument, NULL, 271},
+    {"HA7Net", required_argument, NULL, 271},
+    {"ha7net", required_argument, NULL, 271},
+    {"FAKE", required_argument, NULL, 272},	/* Fake */
+    {"Fake", required_argument, NULL, 272},	/* Fake */
+    {"fake", required_argument, NULL, 272},	/* Fake */
+    {"link", required_argument, NULL, 273},	/* link in ascii mode */
+    {"LINK", required_argument, NULL, 273},	/* link in ascii mode */
+    {"HA3", required_argument, NULL, 274},
+    {"ha3", required_argument, NULL, 274},
+    {"HA4B", required_argument, NULL, 275},
+    {"HA4b", required_argument, NULL, 275},
+    {"ha4b", required_argument, NULL, 275},
+    {"HA5", required_argument, NULL, 276},
+    {"ha5", required_argument, NULL, 276},
+    {"ha7e", required_argument, NULL, 277},
+    {"HA7e", required_argument, NULL, 277},
+    {"HA7E", required_argument, NULL, 277},
+    {"zero", no_argument, &Global.announce_off, 0},
+    {"nozero", no_argument, &Global.announce_off, 1},
+    {"autoserver", no_argument, &Global.autoserver, 1},
+    {"noautoserver", no_argument, &Global.autoserver, 0},
+    {"announce", required_argument, NULL, 280},
+    {"allow_other", no_argument, NULL, 298},
+    {"altUSB", no_argument, &Global.altUSB, 1},	/* Willy Robison's tweaks */
 
-    {0,0,0,0},
-} ;
+    {"timeout_volatile", required_argument, NULL, 301,},	// timeout -- changing cached values
+    {"timeout_stable", required_argument, NULL, 302,},	// timeout -- unchanging cached values
+    {"timeout_directory", required_argument, NULL, 303,},	// timeout -- direcory cached values
+    {"timeout_presence", required_argument, NULL, 304,},	// timeout -- device location
+    {"timeout_serial", required_argument, NULL, 305,},	// timeout -- serial wait
+    {"timeout_usb", required_argument, NULL, 306,},	// timeout -- usb wait
+    {"timeout_network", required_argument, NULL, 307,},	// timeout -- tcp wait
+    {"timeout_server", required_argument, NULL, 308,},	// timeout -- server wait
+    {"timeout_ftp", required_argument, NULL, 309,},	// timeout -- ftp wait
 
-static int ParseInterp(struct lineparse * lp ) {
-    int c = 0 ; // default character found
-    int f = 0 ; // initialize to avoid compiler warning
-    size_t len ;
-    const struct option * so ;
-    int * flag = NULL ;
+    {0, 0, 0, 0},
+};
 
-    if ( lp->opt == NULL ) return 0 ;
-    len = strlen(lp->opt) ;
-    if ( len==1 ) return lp->opt[0] ;
-    for ( so=owopts_long ; so->name ; ++so ) {
-        if (strncasecmp(lp->opt,so->name,len)) continue ; // no match
-        //LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
-        //printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
-        if ( so->flag ) { // immediate value mode
-            //printf("flag c=%d flag=%p so->flag=%p\n",c,flag,so->flag);
-            if ( (c!=0) || (flag!=NULL && flag!=so->flag) ) {
-                //fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
-                return -1 ;
-            }
-            flag = so->flag ;
-            f = so->val ;
-        } else if ( c==0 ) { // char mode first match
-            c = so->val ;
-        } else if ( c != so->val ) { // char mode -- second match
-            //fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
-            return -1 ;
-        }
+static int ParseInterp(struct lineparse *lp)
+{
+    int c = 0;			// default character found
+    int f = 0;			// initialize to avoid compiler warning
+    size_t len;
+    const struct option *so;
+    int *flag = NULL;
+
+    if (lp->opt == NULL)
+	return 0;
+    len = strlen(lp->opt);
+    if (len == 1)
+	return lp->opt[0];
+    for (so = owopts_long; so->name; ++so) {
+	if (strncasecmp(lp->opt, so->name, len))
+	    continue;		// no match
+	//LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
+	//printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
+	if (so->flag) {		// immediate value mode
+	    //printf("flag c=%d flag=%p so->flag=%p\n",c,flag,so->flag);
+	    if ((c != 0) || (flag != NULL && flag != so->flag)) {
+		//fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
+		return -1;
+	    }
+	    flag = so->flag;
+	    f = so->val;
+	} else if (c == 0) {	// char mode first match
+	    c = so->val;
+	} else if (c != so->val) {	// char mode -- second match
+	    //fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
+	    return -1;
+	}
     }
-    if ( flag ) {
-        flag[0] = f ;
-        return 0 ;
+    if (flag) {
+	flag[0] = f;
+	return 0;
     }
-    if ( c==0 ) {
-        //fprintf(stderr,"Configuration option %s not recognized. Value=%s\n",lp->opt,SAFESTRING(lp->val)) ;
+    if (c == 0) {
+	//fprintf(stderr,"Configuration option %s not recognized. Value=%s\n",lp->opt,SAFESTRING(lp->val)) ;
     }
-    return c ;
+    return c;
 }
 
 // Parse the configuration file line
@@ -164,462 +168,539 @@ static int ParseInterp(struct lineparse * lp ) {
 // Comment with #
 // set opt and val as pointers into line (or NULL if not there)
 // set NULL char at end of opt and val
-static void ParseTheLine( struct lineparse * lp ) {
-    ASCII * p ;
+static void ParseTheLine(struct lineparse *lp)
+{
+    ASCII *p;
     // state machine -- pretty self-explanatory.
-    enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps = pspreopt ;
-    lp->opt = NULL ;
-    lp->val = NULL ;
-    for( p=lp->line ; *p ; ++p ) {
-        switch( *p ) {
-            // end of line characters
-            case '#':
-            case '\n':
-            case '\r':
-                *p = '\0' ;
-                return ;
-            // whitespace characters
-            case ' ':
-            case '\t':
-                switch (ps) {
-                    case psinopt:
-                        *p = '\0' ;
-                        ++ps ; // inopt->preeq
-                        break ;
-                    case psinval:
-                        *p = '\0' ;
-                        return ;
-                    default:
-                        break ;
-                }
-                break ;
-            // equals special case: jump state
-            case '=':
-                switch (ps) {
-                    case psinopt:
-                        ++ps ; // inopt->preeq
-                        // fall through intentionally
-                    case pspreeq:
-                        *p = '\0' ;
-                        ++ps ; // preeq->preval
-                        break ;
-                    default: // rogue '='
-                        *p = '\0' ;
-                        return ;
-                }
-                break ;
-            // real character, start or continue parameter, jump past "="
-            default:
-                switch (ps) {
-                    case pspreopt:
-                        lp->opt = p ;
-                        ++ps ; // preopt->inopt
-                        break ;
-                    case pspreeq:
-                        ++ps ; // preeq->preval
-                        // fall through intentionally
-                    case pspreval:
-                        lp->val = p ;
-                        ++ps ; // preval->inval
-                        // token fall through
-                    default :
-                        break ;
-                }
-                break ;
-        }
+    enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps =
+	pspreopt;
+    lp->opt = NULL;
+    lp->val = NULL;
+    for (p = lp->line; *p; ++p) {
+	switch (*p) {
+	    // end of line characters
+	case '#':
+	case '\n':
+	case '\r':
+	    *p = '\0';
+	    return;
+	    // whitespace characters
+	case ' ':
+	case '\t':
+	    switch (ps) {
+	    case psinopt:
+		*p = '\0';
+		++ps;		// inopt->preeq
+		break;
+	    case psinval:
+		*p = '\0';
+		return;
+	    default:
+		break;
+	    }
+	    break;
+	    // equals special case: jump state
+	case '=':
+	    switch (ps) {
+	    case psinopt:
+		++ps;		// inopt->preeq
+		// fall through intentionally
+	    case pspreeq:
+		*p = '\0';
+		++ps;		// preeq->preval
+		break;
+	    default:		// rogue '='
+		*p = '\0';
+		return;
+	    }
+	    break;
+	    // real character, start or continue parameter, jump past "="
+	default:
+	    switch (ps) {
+	    case pspreopt:
+		lp->opt = p;
+		++ps;		// preopt->inopt
+		break;
+	    case pspreeq:
+		++ps;		// preeq->preval
+		// fall through intentionally
+	    case pspreval:
+		lp->val = p;
+		++ps;		// preval->inval
+		// token fall through
+	    default:
+		break;
+	    }
+	    break;
+	}
     }
 }
-static int ConfigurationFile( const ASCII * file ) {
-    FILE * f = fopen( file, "r" ) ;
-    if ( f ) {
-        int ret = 0 ;
-        struct lineparse lp ;
-        while( fgets(lp.line, 256, f ) ) {
-            // check line length
-            if ( strlen(lp.line)>250 ) {
-                ERROR_DEFAULT("Line too long (>250 characters) in file %s.\n%s\n",file,lp.line) ;
-                ret = 1 ;
-                break ;
-            }
-            ParseTheLine( &lp ) ;
-            ret = owopt( ParseInterp(&lp), lp.val ) ;
-            if ( ret ) break ;
-        }
-        fclose( f ) ;
-        return ret ;
+static int ConfigurationFile(const ASCII * file)
+{
+    FILE *f = fopen(file, "r");
+    if (f) {
+	int ret = 0;
+	struct lineparse lp;
+	while (fgets(lp.line, 256, f)) {
+	    // check line length
+	    if (strlen(lp.line) > 250) {
+		ERROR_DEFAULT
+		    ("Line too long (>250 characters) in file %s.\n%s\n",
+		     file, lp.line);
+		ret = 1;
+		break;
+	    }
+	    ParseTheLine(&lp);
+	    ret = owopt(ParseInterp(&lp), lp.val);
+	    if (ret)
+		break;
+	}
+	fclose(f);
+	return ret;
     } else {
-        ERROR_DEFAULT("Cannot process configuration file %s\n",file) ;
-        return 1 ;
+	ERROR_DEFAULT("Cannot process configuration file %s\n", file);
+	return 1;
     }
 }
 
-int owopt_packed( const char * params ) {
-    char * prms, *p, *q ;
-    char ** argv = NULL;
-    int argc = 0 ;
-    int ret = 0 ;
-    int allocated = 0 ;
-    int c ;
-    
-    if ( params==NULL ) return 0 ;
-    p = prms = strdup(params) ;
-    if ( prms==NULL ) return -ENOMEM ;
+int owopt_packed(const char *params)
+{
+    char *prms, *p, *q;
+    char **argv = NULL;
+    int argc = 0;
+    int ret = 0;
+    int allocated = 0;
+    int c;
+
+    if (params == NULL)
+	return 0;
+    p = prms = strdup(params);
+    if (prms == NULL)
+	return -ENOMEM;
 
     // Stuffs arbitrary first value since argv[0] ignored by getopt
-    for( q="X"; q; q=strsep(&p," ") ) {
-        // make room
-        if ( argc>=allocated-1 ) {
-            char ** temp = realloc( argv, (allocated+10)*sizeof(char *)) ;
-            if ( temp ) {
-                allocated += 10 ;
-                argv = temp ;
-            } else {
-                ret = -ENOMEM ;
-                break ;
-            }
-        }
-        argv[argc] = q ;
-        ++argc ;
-        argv[argc] = NULL ;
+    for (q = "X"; q; q = strsep(&p, " ")) {
+	// make room
+	if (argc >= allocated - 1) {
+	    char **temp = realloc(argv, (allocated + 10) * sizeof(char *));
+	    if (temp) {
+		allocated += 10;
+		argv = temp;
+	    } else {
+		ret = -ENOMEM;
+		break;
+	    }
+	}
+	argv[argc] = q;
+	++argc;
+	argv[argc] = NULL;
     }
-    while ( ret==0 ) {
-        if ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) == -1 ) break ;
-        ret = owopt(c,optarg) ;
+    while (ret == 0) {
+	if ((c =
+	     getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
+	    break;
+	ret = owopt(c, optarg);
     }
     /* non-option arguments */
-    while ( (ret==0) && (optind<argc) ) {
-        //printf("optind = %d arg=%s\n",optind,SAFESTRING(argv[optind]));
-        OW_ArgGeneric(argv[optind]) ;
-        ++optind ;
+    while ((ret == 0) && (optind < argc)) {
+	//printf("optind = %d arg=%s\n",optind,SAFESTRING(argv[optind]));
+	OW_ArgGeneric(argv[optind]);
+	++optind;
     }
 
-    if ( argv ) free(argv) ;
-    free(prms) ;
-    return ret ;
+    if (argv)
+	free(argv);
+    free(prms);
+    return ret;
 }
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt( const int c , const char * arg ) {
-    static int config_depth = 0 ;
+int owopt(const int c, const char *arg)
+{
+    static int config_depth = 0;
     //printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
     switch (c) {
     case 'c':
-        if ( config_depth > 4 ) {
-            LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n",config_depth) ;
-            return 1 ;
-        } else {
-            int ret ;
-            ++config_depth ;
-            ret = ConfigurationFile( arg ) ;
-            --config_depth ;
-            return ret ;
-        }
+	if (config_depth > 4) {
+	    LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n",
+			  config_depth);
+	    return 1;
+	} else {
+	    int ret;
+	    ++config_depth;
+	    ret = ConfigurationFile(arg);
+	    --config_depth;
+	    return ret;
+	}
     case 'h':
-        ow_help( arg ) ;
-        return 1 ;
+	ow_help(arg);
+	return 1;
     case 'u':
-        return OW_ArgUSB( arg ) ;
+	return OW_ArgUSB(arg);
     case 'd':
-        return OW_ArgDevice( arg ) ;
+	return OW_ArgDevice(arg);
     case 't':
-        {
-            long long int i ;
-            if ( OW_parsevalue(&i,arg) ) return 1 ;
-            Global.timeout_volatile = (int) i ;
-        }
-        break ;
+	{
+	    long long int i;
+	    if (OW_parsevalue(&i, arg))
+		return 1;
+	    Global.timeout_volatile = (int) i;
+	}
+	break;
     case 'r':
-        Global.readonly = 1 ;
-        break ;
+	Global.readonly = 1;
+	break;
     case 'w':
-        Global.readonly = 0 ;
-        break ;
+	Global.readonly = 0;
+	break;
     case 'C':
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
-        break ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+		       temp_celsius);
+	break;
     case 'F':
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit) ;
-        break ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+		       temp_fahrenheit);
+	break;
     case 'R':
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine) ;
-        break ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+		       temp_rankine);
+	break;
     case 'K':
-        set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin) ;
-        break ;
+	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+		       temp_kelvin);
+	break;
     case 'V':
-        printf("libow version:\n\t" VERSION "\n") ;
-        return 1 ;
+	printf("libow version:\n\t" VERSION "\n");
+	return 1;
     case 's':
-        return OW_ArgNet( arg ) ;
+	return OW_ArgNet(arg);
     case 'p':
-        switch ( Global.opt ) {
-            case opt_httpd:
-            case opt_server:
-            case opt_ftpd:
-                return OW_ArgServer( arg ) ;
-            default:
-                return 0 ;
-        }
+	switch (Global.opt) {
+	case opt_httpd:
+	case opt_server:
+	case opt_ftpd:
+	    return OW_ArgServer(arg);
+	default:
+	    return 0;
+	}
     case 'm':
-        switch ( Global.opt ) {
-            case opt_owfs:
-                return OW_ArgServer( arg ) ;
-            default:
-                return 0 ;
-        }
+	switch (Global.opt) {
+	case opt_owfs:
+	    return OW_ArgServer(arg);
+	default:
+	    return 0;
+	}
     case 'f':
-        if (!strcasecmp(arg,"f.i"))        set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
-        else if (!strcasecmp(arg,"fi"))    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
-        else if (!strcasecmp(arg,"f.i.c")) set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
-        else if (!strcasecmp(arg,"f.ic"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
-        else if (!strcasecmp(arg,"fi.c"))  set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
-        else if (!strcasecmp(arg,"fic"))   set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
-        else {
-             LEVEL_DEFAULT("Unrecognized format type %s\n",arg)
-             return 1 ;
-        }
-        break ;
+	if (!strcasecmp(arg, "f.i"))
+	    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
+			   fdi);
+	else if (!strcasecmp(arg, "fi"))
+	    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+	else if (!strcasecmp(arg, "f.i.c"))
+	    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
+			   fdidc);
+	else if (!strcasecmp(arg, "f.ic"))
+	    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
+			   fdic);
+	else if (!strcasecmp(arg, "fi.c"))
+	    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
+			   fidc);
+	else if (!strcasecmp(arg, "fic"))
+	    set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
+			   fic);
+	else {
+	    LEVEL_DEFAULT("Unrecognized format type %s\n", arg)
+		return 1;
+	}
+	break;
     case 'P':
-        if ( arg==NULL || strlen(arg)==0 ) {
-            LEVEL_DEFAULT("No PID file specified\n")
-            return 1 ;
-        } else if ( (pid_file=strdup(arg)) == NULL ) {
-            fprintf( stderr,"Insufficient memory to store the PID filename: %s\n",arg) ;
-            return 1 ;
-        }
-        break ;
+	if (arg == NULL || strlen(arg) == 0) {
+	    LEVEL_DEFAULT("No PID file specified\n")
+		return 1;
+	} else if ((pid_file = strdup(arg)) == NULL) {
+	    fprintf(stderr,
+		    "Insufficient memory to store the PID filename: %s\n",
+		    arg);
+	    return 1;
+	}
+	break;
     case 257:
-        {
-            long long int i ;
-            if ( OW_parsevalue( &i,arg) ) return 1 ;
-            Global.error_print = (int) i ;
-        }
-        break ;
+	{
+	    long long int i;
+	    if (OW_parsevalue(&i, arg))
+		return 1;
+	    Global.error_print = (int) i;
+	}
+	break;
     case 258:
-        {
-            long long int i ;
-            if ( OW_parsevalue( &i,arg) ) return 1 ;
-            Global.error_level = (int) i ;
-        }
-        break ;
+	{
+	    long long int i;
+	    if (OW_parsevalue(&i, arg))
+		return 1;
+	    Global.error_level = (int) i;
+	}
+	break;
     case 260:
-        {
-            long long int i ;
-            if ( OW_parsevalue( &i,arg) ) return 1 ;
-            Global.cache_size = (size_t) i ;
-        }
-        break ;
-    case 266: /* fuse_opt, handled in owfs.c */
-        break ;
-    case 267: /* fuse_open_opt, handled in owfs.c */
-        break ;
+	{
+	    long long int i;
+	    if (OW_parsevalue(&i, arg))
+		return 1;
+	    Global.cache_size = (size_t) i;
+	}
+	break;
+    case 266:			/* fuse_opt, handled in owfs.c */
+	break;
+    case 267:			/* fuse_open_opt, handled in owfs.c */
+	break;
     case 269:
-        {
-            long long int i ;
-            if ( OW_parsevalue( &i,arg) ) return 1 ;
-            Global.max_clients = (int) i ;
-        }
-        break ;
+	{
+	    long long int i;
+	    if (OW_parsevalue(&i, arg))
+		return 1;
+	    Global.max_clients = (int) i;
+	}
+	break;
     case 271:
-        return OW_ArgHA7( arg ) ;
+	return OW_ArgHA7(arg);
     case 272:
-        return OW_ArgFake( arg ) ;
+	return OW_ArgFake(arg);
     case 273:
-        return OW_ArgLink( arg ) ;
+	return OW_ArgLink(arg);
     case 274:
-        return OW_ArgPassive( "HA3", arg ) ;
+	return OW_ArgPassive("HA3", arg);
     case 275:
-        return OW_ArgPassive( "HA4B", arg ) ;
+	return OW_ArgPassive("HA4B", arg);
     case 280:
-        Global.announce_name = strdup(arg) ;
-        break ;
-    case 298: /* allow_other */
-        break ;
-    case 301: case 302: case 303: case 304: case 305: case 306: case 307: case 308: case 309:
-        {
-            long long int i ;
-            if ( OW_parsevalue( &i,arg) ) return 1 ;
-            (&Global.timeout_volatile)[c-301] = (int) i ;
-        }
-        break ;
+	Global.announce_name = strdup(arg);
+	break;
+    case 298:			/* allow_other */
+	break;
+    case 301:
+    case 302:
+    case 303:
+    case 304:
+    case 305:
+    case 306:
+    case 307:
+    case 308:
+    case 309:
+	{
+	    long long int i;
+	    if (OW_parsevalue(&i, arg))
+		return 1;
+	    (&Global.timeout_volatile)[c - 301] = (int) i;
+	}
+	break;
     case 0:
-        break ;
+	break;
     default:
-        return 1 ;
+	return 1;
     }
-    return 0 ;
+    return 0;
 }
 
-int OW_ArgNet( const char * arg ) {
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_server ;
-    return 0 ;
+int OW_ArgNet(const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_server;
+    return 0;
 }
 
-static int OW_ArgHA7( const char * arg ) {
+static int OW_ArgHA7(const char *arg)
+{
 #if OW_HA7
-    if ( arg ) {
-        struct connection_in * in = NewIn(NULL) ;
-        if ( in==NULL ) return 1 ;
-        in->name = strdup(arg) ;
-        in->busmode = bus_ha7net ;
-        return 0 ;
-    } else { // Try multicast discovery
-        return FS_FindHA7() ;
+    if (arg) {
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL)
+	    return 1;
+	in->name = strdup(arg);
+	in->busmode = bus_ha7net;
+	return 0;
+    } else {			// Try multicast discovery
+	return FS_FindHA7();
     }
-#else /* OW_HA7 */
-    LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
-    return 1 ;
-#endif /* OW_HA7 */
+#else				/* OW_HA7 */
+    LEVEL_DEFAULT
+	("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+    return 1;
+#endif				/* OW_HA7 */
 }
 
-static int OW_ArgFake( const char * arg ) {
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_fake ;
-    return 0 ;
+static int OW_ArgFake(const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_fake;
+    return 0;
 }
 
-int OW_ArgServer( const char * arg ) {
-    struct connection_out * out = NewOut() ;
-    if ( out==NULL ) return 1 ;
-    out->name = strdup(arg) ;
-    return 0 ;
+int OW_ArgServer(const char *arg)
+{
+    struct connection_out *out = NewOut();
+    if (out == NULL)
+	return 1;
+    out->name = strdup(arg);
+    return 0;
 }
 
-int OW_ArgDevice( const char * arg ) {
-    struct stat sbuf ;
-    if ( stat( arg, &sbuf ) ) {
-        LEVEL_DEFAULT("Cannot access device %s\n",arg) ;
-        return 1 ;
+int OW_ArgDevice(const char *arg)
+{
+    struct stat sbuf;
+    if (stat(arg, &sbuf)) {
+	LEVEL_DEFAULT("Cannot access device %s\n", arg);
+	return 1;
     }
-    if ( ! S_ISCHR( sbuf.st_mode ) ) {
-        LEVEL_DEFAULT("Not a \"character\" device %s\n",arg) ;
-        return 1 ;
+    if (!S_ISCHR(sbuf.st_mode)) {
+	LEVEL_DEFAULT("Not a \"character\" device %s\n", arg);
+	return 1;
     }
-    if ( major(sbuf.st_rdev)==99 ) return OW_ArgParallel(arg) ;
-    if ( major(sbuf.st_rdev)==89 ) return OW_ArgI2C(arg) ;
-    return OW_ArgSerial(arg) ;
-} 
-
-static int OW_ArgSerial( const char * arg ) {
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_serial ;
-    in->Adapter = adapter_DS9097 ; // default serial adapter -- the passive one
-    in->adapter_name = "DS9097" ;
-    return 0 ;
+    if (major(sbuf.st_rdev) == 99)
+	return OW_ArgParallel(arg);
+    if (major(sbuf.st_rdev) == 89)
+	return OW_ArgI2C(arg);
+    return OW_ArgSerial(arg);
 }
 
-static int OW_ArgPassive( char * name, const char * arg ) {
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_passive ;
-    in->Adapter = adapter_DS9097 ; // passive adapter
-    in->adapter_name = name ;
-    return 0 ;
+static int OW_ArgSerial(const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_serial;
+    in->Adapter = adapter_DS9097;	// default serial adapter -- the passive one
+    in->adapter_name = "DS9097";
+    return 0;
 }
 
-static int OW_ArgLink( const char * arg ) {
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = (arg[0]=='/') ? bus_link : bus_elink ;
-    return 0 ;
+static int OW_ArgPassive(char *name, const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_passive;
+    in->Adapter = adapter_DS9097;	// passive adapter
+    in->adapter_name = name;
+    return 0;
 }
 
-static int OW_ArgParallel( const char * arg ) {
+static int OW_ArgLink(const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = (arg[0] == '/') ? bus_link : bus_elink;
+    return 0;
+}
+
+static int OW_ArgParallel(const char *arg)
+{
 #if OW_PARPORT
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_parallel ;
-    return 0 ;
-#else /* OW_PARPORT */
-    LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n") ;
-    return 1 ;
-#endif /* OW_PARPORT */
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_parallel;
+    return 0;
+#else				/* OW_PARPORT */
+    LEVEL_DEFAULT
+	("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n");
+    return 1;
+#endif				/* OW_PARPORT */
 }
 
-static int OW_ArgI2C( const char * arg ) {
+static int OW_ArgI2C(const char *arg)
+{
 #if OW_I2C
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->name = strdup(arg) ;
-    in->busmode = bus_i2c ;
-    return 0 ;
-#else /* OW_I2C */
-    LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
-    return 1 ;
-#endif /* OW_I2C */
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_i2c;
+    return 0;
+#else				/* OW_I2C */
+    LEVEL_DEFAULT
+	("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+    return 1;
+#endif				/* OW_I2C */
 }
 
-int OW_ArgUSB( const char * arg ) {
+int OW_ArgUSB(const char *arg)
+{
 #if OW_USB
-    struct connection_in * in = NewIn(NULL) ;
-    if ( in==NULL ) return 1 ;
-    in->busmode = bus_usb ;
-    if ( arg == NULL ) {
-        in->connin.usb.usb_nr = 1 ;
-    } else if ( strcasecmp(arg,"all") == 0 ) {
-        int n ;
-        n = DS9490_enumerate() ;
-        LEVEL_CONNECT("All USB adapters requested, %d found.\n",n) ;
-        if ( n > 1 ) {
-            int i ;
-            for ( i=2 ; i<=n ; ++i ) {
-                struct connection_in * in2 = NewIn(NULL) ;
-                if ( in2==NULL ) return 1 ;
-                in2->busmode = bus_usb ;
-                in2->connin.usb.usb_nr = i ;
-            }
-        }
-        // first one
-        in->connin.usb.usb_nr = 1 ;
-    } else { 
-        in->connin.usb.usb_nr = atoi(arg) ;
-        //printf("ArgUSB fd=%d\n",in->fd);
-        if ( in->connin.usb.usb_nr < 1 ) {
-            LEVEL_CONNECT("USB option %s implies no USB detection.\n",arg) ;
-            in->connin.usb.usb_nr = 0 ;
-        } else if ( in->connin.usb.usb_nr > 1 ) {
-            LEVEL_CONNECT("USB adapter %d requested.\n",in->connin.usb.usb_nr) ;
-        }
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+	return 1;
+    in->busmode = bus_usb;
+    if (arg == NULL) {
+	in->connin.usb.usb_nr = 1;
+    } else if (strcasecmp(arg, "all") == 0) {
+	int n;
+	n = DS9490_enumerate();
+	LEVEL_CONNECT("All USB adapters requested, %d found.\n", n);
+	if (n > 1) {
+	    int i;
+	    for (i = 2; i <= n; ++i) {
+		struct connection_in *in2 = NewIn(NULL);
+		if (in2 == NULL)
+		    return 1;
+		in2->busmode = bus_usb;
+		in2->connin.usb.usb_nr = i;
+	    }
+	}
+	// first one
+	in->connin.usb.usb_nr = 1;
+    } else {
+	in->connin.usb.usb_nr = atoi(arg);
+	//printf("ArgUSB fd=%d\n",in->fd);
+	if (in->connin.usb.usb_nr < 1) {
+	    LEVEL_CONNECT("USB option %s implies no USB detection.\n",
+			  arg);
+	    in->connin.usb.usb_nr = 0;
+	} else if (in->connin.usb.usb_nr > 1) {
+	    LEVEL_CONNECT("USB adapter %d requested.\n",
+			  in->connin.usb.usb_nr);
+	}
     }
-    return 0 ;
-#else /* OW_USB */
-    LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
-    return 1 ;
-#endif /* OW_USB */
+    return 0;
+#else				/* OW_USB */
+    LEVEL_DEFAULT
+	("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
+    return 1;
+#endif				/* OW_USB */
 }
 
-int OW_ArgGeneric( const char * arg ) {
-    if ( arg && arg[0] ) {
-        switch (arg[0]) {
-            case '/':
-                return OW_ArgDevice(arg) ;
-            case 'u':
-            case 'U':
-                return OW_ArgUSB(&arg[1]) ;
-            default:
-                return OW_ArgNet(arg) ;
-        }
+int OW_ArgGeneric(const char *arg)
+{
+    if (arg && arg[0]) {
+	switch (arg[0]) {
+	case '/':
+	    return OW_ArgDevice(arg);
+	case 'u':
+	case 'U':
+	    return OW_ArgUSB(&arg[1]);
+	default:
+	    return OW_ArgNet(arg);
+	}
     }
-    return 1 ;
+    return 1;
 }
 
-static int OW_parsevalue( long long int * var, const ASCII * str ) {
-    errno = 0 ;
-    var[0] = strtol(str,NULL,10) ;
-    if ( errno ) {
-        ERROR_DETAIL("Bad configuration value %s\n",str) ;
-        return 1 ;
+static int OW_parsevalue(long long int *var, const ASCII * str)
+{
+    errno = 0;
+    var[0] = strtol(str, NULL, 10);
+    if (errno) {
+	ERROR_DETAIL("Bad configuration value %s\n", str);
+	return 1;
     }
-    return 0 ;
+    return 0;
 }

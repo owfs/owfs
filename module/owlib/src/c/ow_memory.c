@@ -44,54 +44,64 @@ $Id$
 #include "ow_connection.h"
 
 /* No CRC -- 0xF0 code */
-int OW_r_mem_simple( BYTE * data, const size_t size, const off_t offset, const struct parsedname * pn ) {
-    BYTE p[3] = { 0xF0, offset&0xFF , (offset>>8)&0xFF, } ;
+int OW_r_mem_simple(BYTE * data, const size_t size, const off_t offset,
+		    const struct parsedname *pn)
+{
+    BYTE p[3] = { 0xF0, offset & 0xFF, (offset >> 8) & 0xFF, };
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 3, trxn_match } ,
-        { NULL, data, size, trxn_read } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 3, trxn_match},
+	{NULL, data, size, trxn_read},
+	TRXN_END,
+    };
 
-    return BUS_transaction( t, pn ) ;
+    return BUS_transaction(t, pn);
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-int OW_r_mem_crc16( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn, size_t pagesize ) {
-    BYTE p[3+pagesize+2] ;
-    int rest = pagesize - (offset%pagesize) ;
+int OW_r_mem_crc16(BYTE * data, const size_t size, const off_t offset,
+		   const struct parsedname *pn, size_t pagesize)
+{
+    BYTE p[3 + pagesize + 2];
+    int rest = pagesize - (offset % pagesize);
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 3, trxn_match, } ,
-        { NULL, &p[3], rest+2, trxn_read, } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 3, trxn_match,},
+	{NULL, &p[3], rest + 2, trxn_read,},
+	TRXN_END,
+    };
 
-    p[0] = 0xA5 ;
-    p[1] = offset&0xFF ;
-    p[2] = (offset>>8)&0xFF ;
-    if ( BUS_transaction( t, pn ) || CRC16(p,3+rest+2) ) return 1 ;
-    memcpy( data , &p[3], size ) ;
-    return 0 ;
+    p[0] = 0xA5;
+    p[1] = offset & 0xFF;
+    p[2] = (offset >> 8) & 0xFF;
+    if (BUS_transaction(t, pn) || CRC16(p, 3 + rest + 2))
+	return 1;
+    memcpy(data, &p[3], size);
+    return 0;
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
 /* Extra 8 bytes, too */
-int OW_r_mem_p8_crc16( BYTE * data , const size_t size, const off_t offset , const struct parsedname * pn, size_t pagesize, BYTE * extra ) {
-    BYTE p[3+pagesize+8+2] ;
-    int rest = pagesize - (offset%pagesize) ;
+int OW_r_mem_p8_crc16(BYTE * data, const size_t size, const off_t offset,
+		      const struct parsedname *pn, size_t pagesize,
+		      BYTE * extra)
+{
+    BYTE p[3 + pagesize + 8 + 2];
+    int rest = pagesize - (offset % pagesize);
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 3, trxn_match, } ,
-        { NULL, &p[3], rest+8+2, trxn_read, } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 3, trxn_match,},
+	{NULL, &p[3], rest + 8 + 2, trxn_read,},
+	TRXN_END,
+    };
 
-    p[0] = 0xA5 ;
-    p[1] = offset&0xFF ;
-    p[2] = (offset>>8)&0xFF ;
-    if ( BUS_transaction( t, pn ) || CRC16(p,3+rest+8+2) ) return 1 ;
-    if (data) memcpy( data , &p[3], size ) ;
-    memcpy( extra , &p[3+rest], 8 ) ;
-    return 0 ;
+    p[0] = 0xA5;
+    p[1] = offset & 0xFF;
+    p[2] = (offset >> 8) & 0xFF;
+    if (BUS_transaction(t, pn) || CRC16(p, 3 + rest + 8 + 2))
+	return 1;
+    if (data)
+	memcpy(data, &p[3], size);
+    memcpy(extra, &p[3 + rest], 8);
+    return 0;
 }

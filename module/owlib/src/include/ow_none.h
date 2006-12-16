@@ -24,4 +24,3 @@ $Id$
 extern struct filetype NoDev[];
 
 #endif
-

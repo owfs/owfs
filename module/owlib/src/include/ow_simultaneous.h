@@ -18,8 +18,6 @@ $Id$
 #include "ow_xxxx.h"
 
 /* -------- Structures ---------- */
-DeviceHeader( simultaneous ) ;
+DeviceHeader(simultaneous);
 
-#endif /* OW_SIMULTANEOUS */
-
-
+#endif				/* OW_SIMULTANEOUS */

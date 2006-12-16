@@ -64,48 +64,54 @@ $Id$
     Most interesting, it allocates memory dynamically.
 */
 
-void DirblobClear( struct dirblob * db ) {
-    if ( db->snlist ) {
-        free(db->snlist) ;
-        db->snlist = NULL ;
+void DirblobClear(struct dirblob *db)
+{
+    if (db->snlist) {
+	free(db->snlist);
+	db->snlist = NULL;
     }
-    db->allocated = db->devices ;
-    db->devices = 0 ;
+    db->allocated = db->devices;
+    db->devices = 0;
 }
 
-void DirblobInit( struct dirblob * db ) {
-    db->devices = 0 ;
-    db->allocated = 0 ;
-    db->snlist = 0 ;
-    db->troubled = 0 ;
+void DirblobInit(struct dirblob *db)
+{
+    db->devices = 0;
+    db->allocated = 0;
+    db->snlist = 0;
+    db->troubled = 0;
 }
 
-int DirblobPure( struct dirblob * db ) {
-    return ! db->troubled ;
+int DirblobPure(struct dirblob *db)
+{
+    return !db->troubled;
 }
 
-int DirblobAdd( BYTE * sn, struct dirblob * db ) {
+int DirblobAdd(BYTE * sn, struct dirblob *db)
+{
     // make more room? -- blocks of 10 devices (80byte)
-    if ( (db->devices >= db->allocated) || ( db->snlist == NULL ) ) {
-        int newalloc = db->allocated + 10 ;
-        BYTE * temp = realloc( db->snlist, 8*newalloc ) ;
-        if ( temp ) {
-            db->allocated = newalloc ;
-            db->snlist = temp ;
-        } else { // allocation failed -- keep old
-            db->troubled = 1 ;
-            return -ENOMEM ;
-        }
+    if ((db->devices >= db->allocated) || (db->snlist == NULL)) {
+	int newalloc = db->allocated + 10;
+	BYTE *temp = realloc(db->snlist, 8 * newalloc);
+	if (temp) {
+	    db->allocated = newalloc;
+	    db->snlist = temp;
+	} else {		// allocation failed -- keep old
+	    db->troubled = 1;
+	    return -ENOMEM;
+	}
     } else {
     }
     // add the device and increment the counter
-    memcpy( &(db->snlist[8*db->devices]),sn,8) ;
-    ++ db->devices ;
-    return 0 ;
+    memcpy(&(db->snlist[8 * db->devices]), sn, 8);
+    ++db->devices;
+    return 0;
 }
 
-int DirblobGet( int dev, BYTE * sn, struct dirblob * db ) {
-    if ( dev >= db->devices ) return -ENODEV ;
-    memcpy( sn, &(db->snlist[8*dev]), 8  ) ;
-    return 0 ;
+int DirblobGet(int dev, BYTE * sn, struct dirblob *db)
+{
+    if (dev >= db->devices)
+	return -ENODEV;
+    memcpy(sn, &(db->snlist[8 * dev]), 8);
+    return 0;
 }

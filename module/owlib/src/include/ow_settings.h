@@ -18,9 +18,7 @@ $Id$
 #include "ow_xxxx.h"
 
 /* -------- Structures ---------- */
-DeviceHeader( set_cache ) ;
-DeviceHeader( set_units ) ;
+DeviceHeader(set_cache);
+DeviceHeader(set_units);
 
-#endif /* OW_SETTINGS_H */
-
-
+#endif				/* OW_SETTINGS_H */

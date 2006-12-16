@@ -44,7 +44,7 @@ $Id$
 
 /* ------- Prototypes ----------- */
 
-    /* All from ow_xxxx.c file */
+	/* All from ow_xxxx.c file */
 
 #include <config.h>
 #include "owfs_config.h"
@@ -54,12 +54,14 @@ $Id$
 
 struct filetype DS2401[] = {
     F_STANDARD,
-} ;
-DeviceEntry( 01, DS2401 ) ;
+};
+
+DeviceEntry(01, DS2401);
 
 struct filetype DS1420[] = {
     F_STANDARD,
-} ;
-DeviceEntry( 81, DS1420 ) ;
+};
+
+DeviceEntry(81, DS1420);
 
 /* ------- Functions ------------ */

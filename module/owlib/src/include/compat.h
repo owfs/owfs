@@ -62,38 +62,38 @@ $Id$
 #include "compat_getopt.h"
 
 #ifndef HAVE_STRSEP
-char *strsep(char **stringp, const char *delim) ;
+char *strsep(char **stringp, const char *delim);
 #endif
 
 #if defined(__UCLIBC__)
- #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913)
-  #undef HAVE_TDESTROY
- #else /* Older than 0.9.19 */
-  #define HAVE_TDESTROY 1
- #endif /* Older than 0.9.19 */
+#if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913)
+#undef HAVE_TDESTROY
+#else				/* Older than 0.9.19 */
+#define HAVE_TDESTROY 1
+#endif				/* Older than 0.9.19 */
 #else
 
-#endif /* __UCLIBC__ */
+#endif				/* __UCLIBC__ */
 
 #ifndef HAVE_TDESTROY
 void tdestroy(void *vroot, void *freefct);
 #endif
 
 #ifdef __UCLIBC__
- #if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
-  #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000913
+#if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
+#if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000913
 
 /* Since syslog will hang forever with uClibc-0.9.19 if syslogd is not
  * running, then we don't use it unless we really wants it
  * WRT45G usually have syslogd running. uClinux-dist might not have it. */
-   #ifndef USE_SYSLOG
-    #define syslog(a,...)	{ /* ignore_syslog */ }
-    #define openlog(a,...)	{ /* ignore_openlog */ }
-    #define closelog()		{ /* ignore_closelog */ }
-   #endif
-  #endif    /* __UCLIBC__ */
- #endif   /* __UCLIBC__ */
-#endif  /* __UCLIBC__ */
+#ifndef USE_SYSLOG
+#define syslog(a,...)	{ /* ignore_syslog */ }
+#define openlog(a,...)	{ /* ignore_openlog */ }
+#define closelog()		{ /* ignore_closelog */ }
+#endif
+#endif				/* __UCLIBC__ */
+#endif				/* __UCLIBC__ */
+#endif				/* __UCLIBC__ */
 
 
 

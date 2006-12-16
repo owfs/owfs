@@ -19,9 +19,6 @@ $Id$
 
 /* ------- Structures ----------- */
 
-DeviceHeader( DS2450 ) ;
+DeviceHeader(DS2450);
 
 #endif
-
-
-

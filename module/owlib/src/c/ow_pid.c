@@ -15,34 +15,36 @@ $Id$
 #include "ow_pid.h"
 
 /* Globals */
-int pid_created = 0 ; /* flag flag when file actually created */
-char * pid_file = NULL ; /* filename where PID number stored */
+int pid_created = 0;		/* flag flag when file actually created */
+char *pid_file = NULL;		/* filename where PID number stored */
 
-void PIDstart( void ) {
+void PIDstart(void)
+{
 /* store the PID */
-    pid_t pid_num = getpid() ;
+    pid_t pid_num = getpid();
 
     if (pid_file) {
-        FILE * pid = fopen(  pid_file, "w+" ) ;
-        if ( pid == NULL ) {
-            ERROR_CONNECT("Cannot open PID file: %s\n",pid_file ) ;
-            free( pid_file ) ;
-            pid_file = NULL ;
-        } else {
-            fprintf(pid,"%lu",(unsigned long int)pid_num ) ;
-            fclose(pid) ;
-            pid_created = 1 ;
-        }
+	FILE *pid = fopen(pid_file, "w+");
+	if (pid == NULL) {
+	    ERROR_CONNECT("Cannot open PID file: %s\n", pid_file);
+	    free(pid_file);
+	    pid_file = NULL;
+	} else {
+	    fprintf(pid, "%lu", (unsigned long int) pid_num);
+	    fclose(pid);
+	    pid_created = 1;
+	}
     }
 }
 
 /* All ow library closeup */
-void PIDstop( void ) {
-    if ( pid_created && pid_file ) {
-        if ( unlink( pid_file ) ) {
-            ERROR_CONNECT("Cannot remove PID file: %s\n",pid_file) ;
-        }
-        free( pid_file ) ;
-        pid_file = NULL ;
+void PIDstop(void)
+{
+    if (pid_created && pid_file) {
+	if (unlink(pid_file)) {
+	    ERROR_CONNECT("Cannot remove PID file: %s\n", pid_file);
+	}
+	free(pid_file);
+	pid_file = NULL;
     }
 }

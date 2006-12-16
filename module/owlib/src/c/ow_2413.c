@@ -49,95 +49,109 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2406 switch */
- uREAD_FUNCTION( FS_r_pio ) ;
-uWRITE_FUNCTION( FS_w_pio ) ;
- uREAD_FUNCTION( FS_sense ) ;
- uREAD_FUNCTION( FS_r_latch ) ;
+uREAD_FUNCTION(FS_r_pio);
+uWRITE_FUNCTION(FS_w_pio);
+uREAD_FUNCTION(FS_sense);
+uREAD_FUNCTION(FS_r_latch);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2413 = { 2, ag_letters, ag_aggregate, } ;
+struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
-    F_STANDARD   ,
-    {"PIO"       ,     1,  &A2413,  ft_bitfield, fc_volatile, {u:FS_r_pio}    , {u:FS_w_pio} , {v:NULL}, } ,
-    {"sensed"    ,     1,  &A2413,  ft_bitfield, fc_volatile, {u:FS_sense}    , {v:NULL}     , {v:NULL}, } ,
-    {"latch"     ,     1,  &A2413,  ft_bitfield, fc_volatile, {u:FS_r_latch}  , {v:NULL}     , {v:NULL}, } ,
-} ;
-DeviceEntryExtended( 3A, DS2413, DEV_resume | DEV_ovdr ) ;
+    F_STANDARD,
+  {"PIO", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_r_pio}, {u: FS_w_pio}, {v:NULL},},
+  {"sensed", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_sense}, {v: NULL}, {v:NULL},},
+  {"latch", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_r_latch}, {v: NULL}, {v:NULL},},
+};
+
+DeviceEntryExtended(3 A, DS2413, DEV_resume | DEV_ovdr);
 
 /* ------- Functions ------------ */
 
 /* DS2413 */
-static int OW_write( const BYTE data , const struct parsedname * pn ) ;
-static int OW_read( BYTE * data , const struct parsedname * pn ) ;
+static int OW_write(const BYTE data, const struct parsedname *pn);
+static int OW_read(BYTE * data, const struct parsedname *pn);
 
 /* 2413 switch */
 /* bits 0 and 2 */
-static int FS_r_pio(UINT * u , const struct parsedname * pn) {
-    BYTE data ;
-    BYTE uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, } ;
-    if ( OW_read(&data,pn) ) return -EINVAL ;
-    u[0] = uu[data&0x07] ; /* look up reversed bits */
-    return 0 ;
+static int FS_r_pio(UINT * u, const struct parsedname *pn)
+{
+    BYTE data;
+    BYTE uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, };
+    if (OW_read(&data, pn))
+	return -EINVAL;
+    u[0] = uu[data & 0x07];	/* look up reversed bits */
+    return 0;
 }
 
 /* 2413 switch PIO sensed*/
 /* bits 0 and 2 */
-static int FS_sense(UINT * u , const struct parsedname * pn) {
-    if ( FS_r_pio(u,pn) ) return -EINVAL ;
-    u[0] ^= 0x03 ;
-    return 0 ;
+static int FS_sense(UINT * u, const struct parsedname *pn)
+{
+    if (FS_r_pio(u, pn))
+	return -EINVAL;
+    u[0] ^= 0x03;
+    return 0;
 }
 
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
-static int FS_r_latch(UINT * u , const struct parsedname * pn) {
-    BYTE data ;
-    BYTE uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, } ;
-    if ( OW_read(&data,pn) ) return -EINVAL ;
-    u[0] = uu[(data>>1)&0x07] ;
-    return 0 ;
+static int FS_r_latch(UINT * u, const struct parsedname *pn)
+{
+    BYTE data;
+    BYTE uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, };
+    if (OW_read(&data, pn))
+	return -EINVAL;
+    u[0] = uu[(data >> 1) & 0x07];
+    return 0;
 }
 
 /* write 2413 switch -- 2 values*/
-static int FS_w_pio(const UINT * u, const struct parsedname * pn) {
+static int FS_w_pio(const UINT * u, const struct parsedname *pn)
+{
     /* reverse bits */
-    BYTE data = ~(u[0]&0xFF);
-    if ( OW_write(data,pn) ) return -EINVAL ;
-    return 0 ;
+    BYTE data = ~(u[0] & 0xFF);
+    if (OW_write(data, pn))
+	return -EINVAL;
+    return 0;
 }
 
 /* read status byte */
-static int OW_read( BYTE * data , const struct parsedname * pn ) {
-    BYTE p[] = { 0xF5, } ;
+static int OW_read(BYTE * data, const struct parsedname *pn)
+{
+    BYTE p[] = { 0xF5, };
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 1, trxn_match, } ,
-        { NULL, data, 1, trxn_read, } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 1, trxn_match,},
+	{NULL, data, 1, trxn_read,},
+	TRXN_END,
+    };
 
-    if ( BUS_transaction( t, pn ) ) return 1 ;
-    if ( (data[0]&0x0F)+((data[0]>>4)&0x0F)!=0x0F ) return 1 ;
+    if (BUS_transaction(t, pn))
+	return 1;
+    if ((data[0] & 0x0F) + ((data[0] >> 4) & 0x0F) != 0x0F)
+	return 1;
 
-    return 0 ;
+    return 0;
 }
 
 /* write status byte */
 /* top 6 bits are set to 1, complement then sent */
-static int OW_write( const BYTE data , const struct parsedname * pn ) {
-    BYTE p[] = { 0x5A, data|0xFC , (~data)&0x03, } ;
-    BYTE q[2] ;
+static int OW_write(const BYTE data, const struct parsedname *pn)
+{
+    BYTE p[] = { 0x5A, data | 0xFC, (~data) & 0x03, };
+    BYTE q[2];
     struct transaction_log t[] = {
-        TRXN_START,
-        { p, NULL, 3, trxn_match, } ,
-        { NULL, q, 2, trxn_read, } ,
-        TRXN_END,
-    } ;
+	TRXN_START,
+	{p, NULL, 3, trxn_match,},
+	{NULL, q, 2, trxn_read,},
+	TRXN_END,
+    };
 
-    if ( BUS_transaction( t, pn ) ) return 1 ;
-    if ( q[0]!=0xAA ) return 1 ;
+    if (BUS_transaction(t, pn))
+	return 1;
+    if (q[0] != 0xAA)
+	return 1;
 
-    return 0 ;
+    return 0;
 }
-

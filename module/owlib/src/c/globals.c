@@ -21,27 +21,30 @@ $Id$
 #if OW_MT
 /* mutex attribute -- needed for uClibc programming */
 /* we create at start, and destroy at end */
-pthread_mutexattr_t * pmattr = NULL ;
-pthread_mutexattr_t mattr ;
-#endif /* OW_MT */
+pthread_mutexattr_t *pmattr = NULL;
+pthread_mutexattr_t mattr;
+#endif				/* OW_MT */
 
 /* information about this process */
-pid_t pid_num ;
+pid_t pid_num;
 /* char * pid_file in ow_opt.c */
 
 /* Times for directory information */
-time_t start_time ;
-time_t dir_time ; /* time of last directory scan */
+time_t start_time;
+time_t dir_time;		/* time of last directory scan */
 
 /* State informatoin, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE
-int32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 | ((uint8_t)1) ;
+int32_t SemiGlobal =
+    ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
+    << 8 | ((uint8_t) 1);
 #else
-int32_t SemiGlobal = ((uint8_t)fdi)<<24 | ((uint8_t)temp_celsius)<<16 | ((uint8_t)1)<<8 ;
+int32_t SemiGlobal =
+    ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
+    << 8;
 #endif
 
-struct global Global ;
+struct global Global;
 
 /* Statistics globals are stored in ow_stats.c */
-

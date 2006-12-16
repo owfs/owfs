@@ -19,8 +19,6 @@ $Id$
 
 /* ------- Structures ----------- */
 
-DeviceHeader( LCD ) ;
+DeviceHeader(LCD);
 
 #endif
-
-
