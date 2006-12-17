@@ -17,6 +17,7 @@ $Id$
 
 static int Turnoff(int depth, const struct parsedname *pn);
 static int BUS_selection_error(int ret);
+static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn);
 
@@ -97,7 +98,7 @@ int BUS_select(const struct parsedname *pn)
 
 		/* proper path now "turned on" */
 		/* Now select */
-		if (BUS_reset(pn))
+		if (BUS_reset(pn) || BUS_select_branch(pn))
 			return 1;
 
 		if (pn->dev && (pn->dev != DeviceThermostat)) {
@@ -125,7 +126,7 @@ int BUS_select(const struct parsedname *pn)
 }
 
 /* All the railroad switches are correctly set, just isolate the last segment */
-int BUS_select_branch(const struct parsedname *pn)
+static int BUS_select_branch(const struct parsedname *pn)
 {
 	if (pn->pathlength == 0)
 		return 0;
@@ -139,26 +140,22 @@ static int BUS_select_subbranch(const struct buspath *bp,
 	BYTE sent[10] = { 0x55, };
 	BYTE branch[2] = { 0xCC, 0x33, };	/* Main, Aux */
 	BYTE resp[3];
-	int ret;
+	struct transaction_log t[] = {
+		{sent, NULL, 10, trxn_match,},
+		{NULL, resp, 3, trxn_read,},
+		TRXN_END,
+	};
 
 	memcpy(&sent[1], bp->sn, 8);
 	sent[9] = branch[bp->branch];
-
-	if ((ret = BUS_send_data(sent, 10, pn))) {
-		BUS_selection_error(ret);
-		//printf("SELECT error1\n");
-		return ret;
-	}
-	if ((ret = BUS_readin_data(resp, 3, pn))) {
-		BUS_selection_error(ret);
-		//printf("SELECT error2\n");
-		return ret;
-	}
-	if (resp[2] != branch[bp->branch]) {
+	printf("subbranch start\n");
+	if (BUS_transaction_nolock(t, pn) || (resp[2] != branch[bp->branch])) {
 		STAT_ADD1(BUS_select_low_branch_errors);
 		//printf("SELECT error3\n");
-		return -EINVAL;
+		printf("subbranch error\n");
+		return 1;
 	}
+	printf("subbranch stop\n");
 	return 0;
 }
 
@@ -166,15 +163,19 @@ static int BUS_select_subbranch(const struct buspath *bp,
 static int Turnoff(int depth, const struct parsedname *pn)
 {
 	BYTE sent[2] = { 0xCC, 0x66, };
+	struct transaction_log t[] = {
+		{sent, NULL, 2, trxn_match},
+		TRXN_END,
+	};
 	int ret;
 
 	//printf("TURNOFF entry depth=%d\n",depth) ;
 
-	if ((ret = BUS_reset(pn)))
-		return ret;
-	if (depth && (ret = BUS_select_subbranch(&(pn->bp[depth - 1]), pn)))
-		return ret;
-	return BUS_send_data(sent, 2, pn);
+	if ((BUS_reset(pn)))
+		return 1;
+	if (depth && BUS_select_subbranch(&(pn->bp[depth - 1]), pn))
+		return 1;
+	return BUS_transaction_nolock(t, pn);
 }
 
 static int BUS_selection_error(int ret)

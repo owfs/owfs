@@ -122,7 +122,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret;
 
-	if (BUS_select(pn) || BUS_select_branch(pn))
+	if (BUS_select(pn))
 		return 1;
 	ret = BUS_next_both(ds, pn);
 	LEVEL_DEBUG("BUS_next return = %d " SNformat "\n", ret, SNvar(ds->sn));

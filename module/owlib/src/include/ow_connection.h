@@ -468,7 +468,6 @@ int BUS_first_family(const BYTE family, struct device_search *ds,
 		     const struct parsedname *pn);
 
 int BUS_select(const struct parsedname *pn);
-int BUS_select_branch(const struct parsedname *pn);
 
 int BUS_sendout_cmd(const BYTE * cmd, const size_t len,
 		    const struct parsedname *pn);
