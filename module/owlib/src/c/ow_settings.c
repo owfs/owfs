@@ -69,67 +69,67 @@ struct filetype set_cache[] = {
 
 ;
 struct device d_set_cache =
-    { "timeout", "timeout", pn_settings, NFT(set_cache), set_cache };
+	{ "timeout", "timeout", pn_settings, NFT(set_cache), set_cache };
 struct filetype set_units[] = {
   {"temperature_scale", 1, NULL, ft_ascii, fc_static, {a: FS_r_TS}, {a: FS_w_TS}, {v:NULL},},
 }
 
 ;
 struct device d_set_units =
-    { "units", "units", pn_settings, NFT(set_units), set_units };
+	{ "units", "units", pn_settings, NFT(set_units), set_units };
 
 /* ------- Functions ------------ */
 
 static int FS_r_timeout(int *i, const struct parsedname *pn)
 {
-    CACHELOCK;
-    i[0] = ((UINT *) pn->ft->data.v)[0];
-    CACHEUNLOCK;
-    return 0;
+	CACHELOCK;
+	i[0] = ((UINT *) pn->ft->data.v)[0];
+	CACHEUNLOCK;
+	return 0;
 }
 
 static int FS_w_timeout(const int *i, const struct parsedname *pn)
 {
-    int previous;
-    CACHELOCK;
-    previous = ((UINT *) pn->ft->data.v)[0];
-    ((UINT *) pn->ft->data.v)[0] = i[0];
-    CACHEUNLOCK;
-    if (previous > i[0])
-	Cache_Clear();
-    return 0;
+	int previous;
+	CACHELOCK;
+	previous = ((UINT *) pn->ft->data.v)[0];
+	((UINT *) pn->ft->data.v)[0] = i[0];
+	CACHEUNLOCK;
+	if (previous > i[0])
+		Cache_Clear();
+	return 0;
 }
 
 static int FS_w_TS(const char *buf, const size_t size, const off_t offset,
-		   const struct parsedname *pn)
+				   const struct parsedname *pn)
 {
-    (void) size;
-    (void) offset;
-    (void) pn;
-    switch (buf[0]) {
-    case 'C':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-		       temp_celsius);
-	return 0;
-    case 'F':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-		       temp_fahrenheit);
-	return 0;
-    case 'R':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-		       temp_rankine);
-	return 0;
-    case 'K':
-	set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-		       temp_kelvin);
-	return 0;
-    }
-    return -EINVAL;
+	(void) size;
+	(void) offset;
+	(void) pn;
+	switch (buf[0]) {
+	case 'C':
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+					   temp_celsius);
+		return 0;
+	case 'F':
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+					   temp_fahrenheit);
+		return 0;
+	case 'R':
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+					   temp_rankine);
+		return 0;
+	case 'K':
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
+					   temp_kelvin);
+		return 0;
+	}
+	return -EINVAL;
 }
 
 static int FS_r_TS(char *buf, const size_t size, const off_t offset,
-		   const struct parsedname *pn)
+				   const struct parsedname *pn)
 {
-    const char *t = TemperatureScaleName(TemperatureScale(pn));
-    return FS_output_ascii_z(buf, size, offset, t);
+	const char *t = TemperatureScaleName(TemperatureScale(pn));
+	return FS_output_ascii_z(buf, size, offset, t);
 }

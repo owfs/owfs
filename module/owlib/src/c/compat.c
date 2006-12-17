@@ -59,31 +59,31 @@ $Id$
   */
 char *strsep(char **stringp, const char *delim)
 {
-    char *s;
-    const char *spanp;
-    int c, sc;
-    char *tok;
+	char *s;
+	const char *spanp;
+	int c, sc;
+	char *tok;
 
-    if ((s = *stringp) == NULL)
-	return (NULL);
-    for (tok = s;;) {
-	c = *s++;
-	spanp = delim;
-	do {
-	    if ((sc = *spanp++) == c) {
-		if (c == 0)
-		    s = NULL;
-		else
-		    s[-1] = 0;
-		*stringp = s;
-		return (tok);
-	    }
-	} while (sc != 0);
-    }
-    /* NOTREACHED */
+	if ((s = *stringp) == NULL)
+		return (NULL);
+	for (tok = s;;) {
+		c = *s++;
+		spanp = delim;
+		do {
+			if ((sc = *spanp++) == c) {
+				if (c == 0)
+					s = NULL;
+				else
+					s[-1] = 0;
+				*stringp = s;
+				return (tok);
+			}
+		} while (sc != 0);
+	}
+	/* NOTREACHED */
 }
 
-#endif				/* !defined(HAVE_STRSEP) */
+#endif							/* !defined(HAVE_STRSEP) */
 
 
 #ifndef HAVE_TDESTROY
@@ -94,44 +94,44 @@ char *strsep(char **stringp, const char *delim)
 */
 
 typedef struct node_t {
-    void *key;
-    struct node_t *left, *right;
+	void *key;
+	struct node_t *left, *right;
 } node;
 
 static void tdestroy_recurse_(node * root, void *freefct)
 {
-    if (root->left != NULL) {
-	tdestroy_recurse_(root->left, freefct);
+	if (root->left != NULL) {
+		tdestroy_recurse_(root->left, freefct);
 #ifdef DELETE_KEY
-	free(root->left);
-	root->left = NULL;
+		free(root->left);
+		root->left = NULL;
 #endif
-    }
-    if (root->right != NULL) {
-	tdestroy_recurse_(root->right, freefct);
+	}
+	if (root->right != NULL) {
+		tdestroy_recurse_(root->right, freefct);
 #ifdef DELETE_KEY
-	free(root->right);
-	root->right = NULL;
+		free(root->right);
+		root->right = NULL;
 #endif
-    }
-    //(*freefct) ((void *) root->key);
+	}
+	//(*freefct) ((void *) root->key);
 #ifdef DELETE_KEY
-    if (root->key) {
-	free(root->key);
-	root->key = NULL;
-    }
+	if (root->key) {
+		free(root->key);
+		root->key = NULL;
+	}
 #endif
 }
 
 void tdestroy(void *vroot, void *freefct)
 {
-    node *root = (node *) vroot;
-    if (root != NULL) {
-	tdestroy_recurse_(root, freefct);
+	node *root = (node *) vroot;
+	if (root != NULL) {
+		tdestroy_recurse_(root, freefct);
 #ifdef DELETE_KEY
-	/* Free the node itself.  */
-	free(root);
+		/* Free the node itself.  */
+		free(root);
 #endif
-    }
+	}
 }
-#endif				/* HAVE_TDESTROY */
+#endif							/* HAVE_TDESTROY */

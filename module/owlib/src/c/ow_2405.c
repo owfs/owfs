@@ -53,7 +53,7 @@ yWRITE_FUNCTION(FS_w_PIO);
 /* ------- Structures ----------- */
 
 struct filetype DS2405[] = {
-    F_STANDARD,
+	F_STANDARD,
   {"PIO", 1, NULL, ft_yesno, fc_stable, {y: FS_r_PIO}, {y: FS_w_PIO}, {v:NULL},},
   {"sensed", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_sense}, {v: NULL}, {v:NULL},},
 };
@@ -69,86 +69,86 @@ static int OW_w_PIO(int val, const struct parsedname *pn);
 /* 2405 switch */
 static int FS_r_PIO(int *y, const struct parsedname *pn)
 {
-    int num;
-    if (OW_r_PIO(&num, pn))
-	return -EINVAL;
-    y[0] = (num != 0);
-    return 0;
+	int num;
+	if (OW_r_PIO(&num, pn))
+		return -EINVAL;
+	y[0] = (num != 0);
+	return 0;
 }
 
 /* 2405 switch */
 static int FS_r_sense(int *y, const struct parsedname *pn)
 {
-    int num;
-    if (OW_r_sense(&num, pn))
-	return -EINVAL;
-    y[0] = (num != 0);
-    return 0;
+	int num;
+	if (OW_r_sense(&num, pn))
+		return -EINVAL;
+	y[0] = (num != 0);
+	return 0;
 }
 
 /* write 2405 switch */
 static int FS_w_PIO(const int *y, const struct parsedname *pn)
 {
-    if (OW_w_PIO(y[0], pn))
-	return -EINVAL;
-    return 0;
+	if (OW_w_PIO(y[0], pn))
+		return -EINVAL;
+	return 0;
 }
 
 /* read the sense of the DS2405 switch */
 static int OW_r_sense(int *val, const struct parsedname *pn)
 {
-    BYTE inp;
-    struct transaction_log r[] = {
-	TRXN_NVERIFY,
-	{NULL, &inp, 1, trxn_read,},
-	TRXN_END,
-    };
+	BYTE inp;
+	struct transaction_log r[] = {
+		TRXN_NVERIFY,
+		{NULL, &inp, 1, trxn_read,},
+		TRXN_END,
+	};
 
-    if (BUS_transaction(r, pn))
-	return 1;
+	if (BUS_transaction(r, pn))
+		return 1;
 
-    val[0] = (inp != 0);
-    return 0;
+	val[0] = (inp != 0);
+	return 0;
 }
 
 /* read the state of the DS2405 switch */
 static int OW_r_PIO(int *val, const struct parsedname *pn)
 {
-    struct transaction_log a[] = {
-	TRXN_AVERIFY,
-	TRXN_END,
-    };
-
-    if (BUS_transaction(a, pn)) {
-	struct transaction_log n[] = {
-	    TRXN_NVERIFY,
-	    TRXN_END,
+	struct transaction_log a[] = {
+		TRXN_AVERIFY,
+		TRXN_END,
 	};
-	if (BUS_transaction(n, pn))
-	    return -ENOENT;
-	val[0] = 0;
-    } else {
-	val[0] = 1;
-    }
-    return 0;
+
+	if (BUS_transaction(a, pn)) {
+		struct transaction_log n[] = {
+			TRXN_NVERIFY,
+			TRXN_END,
+		};
+		if (BUS_transaction(n, pn))
+			return -ENOENT;
+		val[0] = 0;
+	} else {
+		val[0] = 1;
+	}
+	return 0;
 }
 
 /* write (set) the state of the DS2405 switch */
 static int OW_w_PIO(const int val, const struct parsedname *pn)
 {
-    int current;
+	int current;
 
-    if (OW_r_PIO(&current, pn))
-	return 1;
+	if (OW_r_PIO(&current, pn))
+		return 1;
 
-    if (current != val) {
-	struct transaction_log n[] = {
-	    TRXN_START,
-	    TRXN_END,
-	};
-	if (BUS_transaction(n, pn))
-	    return 1;
-    }
-    //printf("2405write current=%d new=%d\n",current,val) ;
-    return 0;
+	if (current != val) {
+		struct transaction_log n[] = {
+			TRXN_START,
+			TRXN_END,
+		};
+		if (BUS_transaction(n, pn))
+			return 1;
+	}
+	//printf("2405write current=%d new=%d\n",current,val) ;
+	return 0;
 }

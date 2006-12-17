@@ -103,7 +103,7 @@ UINT NET_connection_errors = 0;
 UINT NET_read_errors = 0;
 
 // ow_bus.c
-UINT BUS_reconnects = 0;	// sum from all adapters
+UINT BUS_reconnects = 0;		// sum from all adapters
 UINT BUS_reconnect_errors = 0;	// sum from all adapters
 UINT BUS_send_data_errors = 0;
 UINT BUS_send_data_memcmp_errors = 0;
@@ -162,79 +162,79 @@ struct filetype stats_cache[] = {
   {"additions", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_adds},},
   {"primary", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"primary/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&new_avg.
-	    current},},
+			current},},
   {"primary/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&new_avg.
-	    sum},},
+			sum},},
   {"primary/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&new_avg.
-	    count},},
+			count},},
   {"primary/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&new_avg.
-	    max},},
+			max},},
   {"secondary", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"secondary/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&old_avg.
-	    current},},
+			current},},
   {"secondary/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&old_avg.
-	    sum},},
+			sum},},
   {"secondary/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&old_avg.
-	    count},},
+			count},},
   {"secondary/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&old_avg.
-	    max},},
+			max},},
   {"persistent", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"persistent/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&store_avg.
-	    current,}},
+			current,}},
   {"persistent/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&store_avg.
-	    sum},},
+			sum},},
   {"persistent/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&store_avg.
-	    count},},
+			count},},
   {"persistent/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&store_avg.
-	    max},},
+			max},},
   {"external", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"external/tries", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_ext.
-	    tries},},
+			tries},},
   {"external/hits", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_ext.
-	    hits},},
+			hits},},
   {"external/added", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_ext.
-	    adds,}},
+			adds,}},
   {"external/expired", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_ext.
-	    expires,}},
+			expires,}},
   {"external/deleted", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_ext.
-	    deletes,}},
+			deletes,}},
   {"internal", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"internal/tries", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_int.
-	    tries},},
+			tries},},
   {"internal/hits", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_int.
-	    hits},},
+			hits},},
   {"internal/added", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_int.
-	    adds,}},
+			adds,}},
   {"internal/expired", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_int.
-	    expires,}},
+			expires,}},
   {"internal/deleted", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_int.
-	    deletes,}},
+			deletes,}},
   {"directory", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"directory/tries", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dir.
-	    tries},},
+			tries},},
   {"directory/hits", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dir.
-	    hits},},
+			hits},},
   {"directory/added", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dir.
-	    adds},},
+			adds},},
   {"directory/expired", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dir.
-	    expires,}},
+			expires,}},
   {"directory/deleted", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dir.
-	    deletes,}},
+			deletes,}},
   {"device", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"device/tries", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dev.
-	    tries},},
+			tries},},
   {"device/hits", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dev.
-	    hits},},
+			hits},},
   {"device/added", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dev.
-	    adds},},
+			adds},},
   {"device/expired", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dev.
-	    expires,}},
+			expires,}},
   {"device/deleted", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&cache_dev.
-	    deletes,}},
+			deletes,}},
 };
 
 struct device d_stats_cache =
-    { "cache", "cache", 0, NFT(stats_cache), stats_cache };
+	{ "cache", "cache", 0, NFT(stats_cache), stats_cache };
 	// Note, the store hit rate and deletions are not shown -- too much information!
 
 struct aggregate Aread = { 3, ag_numbers, ag_separate, };
@@ -249,7 +249,7 @@ struct filetype stats_read[] = {
 
 ;
 struct device d_stats_read =
-    { "read", "read", 0, NFT(stats_read), stats_read };
+	{ "read", "read", 0, NFT(stats_read), stats_read };
 
 struct filetype stats_write[] = {
   {"calls", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&write_calls},},
@@ -260,68 +260,68 @@ struct filetype stats_write[] = {
 
 ;
 struct device d_stats_write =
-    { "write", "write", 0, NFT(stats_write), stats_write };
+	{ "write", "write", 0, NFT(stats_write), stats_write };
 
 struct filetype stats_directory[] = {
   {"maxdepth", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_depth},},
   {"bus", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"bus/calls", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_main.
-	    calls},},
+			calls},},
   {"bus/entries", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_main.
-	    entries},},
+			entries},},
   {"device", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"device/calls", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_dev.
-	    calls},},
+			calls},},
   {"device/entries", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_dev.
-	    entries},},
+			entries},},
 }
 
 ;
 struct device d_stats_directory =
-    { "directory", "directory", 0, NFT(stats_directory), stats_directory };
+	{ "directory", "directory", 0, NFT(stats_directory), stats_directory };
 
 struct filetype stats_thread[] = {
   {"directory", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"directory/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_avg.
-	    current},},
+			current},},
   {"directory/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_avg.
-	    sum},},
+			sum},},
   {"directory/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_avg.
-	    count},},
+			count},},
   {"directory/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&dir_avg.
-	    max},},
+			max},},
   {"overall", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"overall/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&all_avg.
-	    current},},
+			current},},
   {"overall/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&all_avg.
-	    sum},},
+			sum},},
   {"overall/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&all_avg.
-	    count},},
+			count},},
   {"overall/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&all_avg.
-	    max},},
+			max},},
   {"read", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"read/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&read_avg.
-	    current},},
+			current},},
   {"read/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&read_avg.
-	    sum},},
+			sum},},
   {"read/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&read_avg.
-	    count},},
+			count},},
   {"read/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&read_avg.
-	    max},},
+			max},},
   {"write", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
   {"write/now", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&write_avg.
-	    current,}},
+			current,}},
   {"write/sum", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&write_avg.
-	    sum},},
+			sum},},
   {"write/num", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&write_avg.
-	    count},},
+			count},},
   {"write/max", 15, NULL, ft_unsigned, fc_statistic, {u: FS_stat}, {v: NULL}, {v:&write_avg.
-	    max},},
+			max},},
 }
 
 ;
 struct device d_stats_thread =
-    { "threads", "threads", 0, NFT(stats_thread), stats_thread };
+	{ "threads", "threads", 0, NFT(stats_thread), stats_thread };
 
 struct filetype stats_bus[] = {
   {"elapsed_time", 15, NULL, ft_unsigned, fc_statistic, {u: FS_elapsed}, {v: NULL}, {v:NULL},},
@@ -343,180 +343,180 @@ struct filetype stats_errors[] = {
   {"max_delay", 12, NULL, ft_float, fc_statistic, {f: FS_time}, {v: NULL}, {v:&max_delay},},
 
 // ow_net.c
-    FS_stat_ROW(NET_accept_errors),
-    FS_stat_ROW(NET_read_errors),
-    FS_stat_ROW(NET_connection_errors),
+	FS_stat_ROW(NET_accept_errors),
+	FS_stat_ROW(NET_read_errors),
+	FS_stat_ROW(NET_connection_errors),
 
 // ow_bus.c
-    FS_stat_ROW(BUS_reconnects),
-    FS_stat_ROW(BUS_reconnect_errors),
-    FS_stat_ROW(BUS_send_data_errors),
-    FS_stat_ROW(BUS_send_data_memcmp_errors),
-    FS_stat_ROW(BUS_readin_data_errors),
-    FS_stat_ROW(BUS_select_low_errors),
-    FS_stat_ROW(BUS_select_low_branch_errors),
-    FS_stat_ROW(BUS_open_errors),
-    FS_stat_ROW(BUS_detect_errors),
-    FS_stat_ROW(BUS_PowerByte_errors),
-    FS_stat_ROW(BUS_level_errors),
-    FS_stat_ROW(BUS_write_errors),
-    FS_stat_ROW(BUS_write_interrupt_errors),
-    FS_stat_ROW(BUS_read_errors),
-    FS_stat_ROW(BUS_read_interrupt_errors),
-    FS_stat_ROW(BUS_read_select_errors),
-    FS_stat_ROW(BUS_read_timeout_errors),
-    FS_stat_ROW(BUS_next_errors),
-    FS_stat_ROW(BUS_next_alarm_errors),
-    FS_stat_ROW(BUS_reset_errors),
-    FS_stat_ROW(BUS_short_errors),
-    FS_stat_ROW(BUS_bit_errors),
-    FS_stat_ROW(BUS_byte_errors),
-    FS_stat_ROW(BUS_echo_errors),
-    FS_stat_ROW(BUS_ProgramPulse_errors),
-    FS_stat_ROW(BUS_Overdrive_errors),
-    FS_stat_ROW(BUS_TestOverdrive_errors),
-    FS_stat_ROW(BUS_tcsetattr_errors),
-    FS_stat_ROW(BUS_status_errors),
+	FS_stat_ROW(BUS_reconnects),
+	FS_stat_ROW(BUS_reconnect_errors),
+	FS_stat_ROW(BUS_send_data_errors),
+	FS_stat_ROW(BUS_send_data_memcmp_errors),
+	FS_stat_ROW(BUS_readin_data_errors),
+	FS_stat_ROW(BUS_select_low_errors),
+	FS_stat_ROW(BUS_select_low_branch_errors),
+	FS_stat_ROW(BUS_open_errors),
+	FS_stat_ROW(BUS_detect_errors),
+	FS_stat_ROW(BUS_PowerByte_errors),
+	FS_stat_ROW(BUS_level_errors),
+	FS_stat_ROW(BUS_write_errors),
+	FS_stat_ROW(BUS_write_interrupt_errors),
+	FS_stat_ROW(BUS_read_errors),
+	FS_stat_ROW(BUS_read_interrupt_errors),
+	FS_stat_ROW(BUS_read_select_errors),
+	FS_stat_ROW(BUS_read_timeout_errors),
+	FS_stat_ROW(BUS_next_errors),
+	FS_stat_ROW(BUS_next_alarm_errors),
+	FS_stat_ROW(BUS_reset_errors),
+	FS_stat_ROW(BUS_short_errors),
+	FS_stat_ROW(BUS_bit_errors),
+	FS_stat_ROW(BUS_byte_errors),
+	FS_stat_ROW(BUS_echo_errors),
+	FS_stat_ROW(BUS_ProgramPulse_errors),
+	FS_stat_ROW(BUS_Overdrive_errors),
+	FS_stat_ROW(BUS_TestOverdrive_errors),
+	FS_stat_ROW(BUS_tcsetattr_errors),
+	FS_stat_ROW(BUS_status_errors),
 
 // ow_ds9097U.c
-    FS_stat_ROW(DS2480_send_cmd_errors),
-    FS_stat_ROW(DS2480_send_cmd_memcmp_errors),
-    FS_stat_ROW(DS2480_sendout_data_errors),
-    FS_stat_ROW(DS2480_sendout_cmd_errors),
-    FS_stat_ROW(DS2480_sendback_cmd_errors),
-    FS_stat_ROW(DS2480_write_interrupted),
-    FS_stat_ROW(DS2480_read_fd_isset),
-    FS_stat_ROW(DS2480_read_null),
-    FS_stat_ROW(DS2480_read_read),
-    FS_stat_ROW(DS2480_level_docheck_errors),
+	FS_stat_ROW(DS2480_send_cmd_errors),
+	FS_stat_ROW(DS2480_send_cmd_memcmp_errors),
+	FS_stat_ROW(DS2480_sendout_data_errors),
+	FS_stat_ROW(DS2480_sendout_cmd_errors),
+	FS_stat_ROW(DS2480_sendback_cmd_errors),
+	FS_stat_ROW(DS2480_write_interrupted),
+	FS_stat_ROW(DS2480_read_fd_isset),
+	FS_stat_ROW(DS2480_read_null),
+	FS_stat_ROW(DS2480_read_read),
+	FS_stat_ROW(DS2480_level_docheck_errors),
 
-    FS_stat_ROW(CRC8_errors),
-    FS_stat_ROW(CRC8_tries),
-    FS_stat_ROW(CRC16_errors),
-    FS_stat_ROW(CRC16_tries),
+	FS_stat_ROW(CRC8_errors),
+	FS_stat_ROW(CRC8_tries),
+	FS_stat_ROW(CRC16_errors),
+	FS_stat_ROW(CRC16_tries),
 
 }
 
 ;
 
 struct device d_stats_errors =
-    { "errors", "errors", 0, NFT(stats_errors), stats_errors };
+	{ "errors", "errors", 0, NFT(stats_errors), stats_errors };
 
 
 /* ------- Functions ------------ */
 
 static int FS_stat(UINT * u, const struct parsedname *pn)
 {
-    int dindex = pn->extension;
-    if (dindex < 0)
-	dindex = 0;
-    if (pn->ft == NULL)
-	return -ENOENT;
-    if (pn->ft->data.v == NULL)
-	return -ENOENT;
-    STATLOCK;
-    u[0] = ((UINT *) pn->ft->data.v)[dindex];
-    STATUNLOCK;
-    return 0;
+	int dindex = pn->extension;
+	if (dindex < 0)
+		dindex = 0;
+	if (pn->ft == NULL)
+		return -ENOENT;
+	if (pn->ft->data.v == NULL)
+		return -ENOENT;
+	STATLOCK;
+	u[0] = ((UINT *) pn->ft->data.v)[dindex];
+	STATUNLOCK;
+	return 0;
 }
 
 static int FS_stat_p(UINT * u, const struct parsedname *pn)
 {
-    int dindex = pn->extension;
-    UINT *ptr;
-    struct connection_in *c;
-    if (dindex < 0)
-	dindex = 0;
-    c = find_connection_in(dindex);
-    if (!c)
-	return -ENOENT;
+	int dindex = pn->extension;
+	UINT *ptr;
+	struct connection_in *c;
+	if (dindex < 0)
+		dindex = 0;
+	c = find_connection_in(dindex);
+	if (!c)
+		return -ENOENT;
 
-    if (pn->ft == NULL)
-	return -ENOENT;
-    switch (pn->ft->data.i) {
-    case 0:
-	ptr = &c->bus_locks;
-	break;
-    case 1:
-	ptr = &c->bus_unlocks;
-	break;
-    case 2:
-	ptr = &c->bus_reconnect;
-	break;
-    case 3:
-	ptr = &c->bus_reconnect_errors;
-	break;
-    case 4:
-	ptr = &c->bus_errors;
-	break;
-    default:
-	return -ENOENT;
-    }
-    STATLOCK;
-    u[0] = *ptr;
-    STATUNLOCK;
-    return 0;
+	if (pn->ft == NULL)
+		return -ENOENT;
+	switch (pn->ft->data.i) {
+	case 0:
+		ptr = &c->bus_locks;
+		break;
+	case 1:
+		ptr = &c->bus_unlocks;
+		break;
+	case 2:
+		ptr = &c->bus_reconnect;
+		break;
+	case 3:
+		ptr = &c->bus_reconnect_errors;
+		break;
+	case 4:
+		ptr = &c->bus_errors;
+		break;
+	default:
+		return -ENOENT;
+	}
+	STATLOCK;
+	u[0] = *ptr;
+	STATUNLOCK;
+	return 0;
 }
 
 static int FS_time_p(_FLOAT * u, const struct parsedname *pn)
 {
-    _FLOAT f;
-    int dindex = pn->extension;
-    struct timeval *tv;
-    struct connection_in *c;
-    if (dindex < 0)
-	dindex = 0;
-    c = find_connection_in(dindex);
-    if (!c)
-	return -ENOENT;
+	_FLOAT f;
+	int dindex = pn->extension;
+	struct timeval *tv;
+	struct connection_in *c;
+	if (dindex < 0)
+		dindex = 0;
+	c = find_connection_in(dindex);
+	if (!c)
+		return -ENOENT;
 
-    if (pn->ft == NULL)
-	return -ENOENT;
-    switch (pn->ft->data.i) {
-    case 0:
-	tv = &c->bus_time;
-	break;
-    default:
-	return -ENOENT;
-    }
-    /* to prevent simultaneous changes to bus timing variables */
-    STATLOCK;
-    f = (_FLOAT) tv->tv_sec + ((_FLOAT) (tv->tv_usec / 1000)) / 1000.0;
-    STATUNLOCK;
+	if (pn->ft == NULL)
+		return -ENOENT;
+	switch (pn->ft->data.i) {
+	case 0:
+		tv = &c->bus_time;
+		break;
+	default:
+		return -ENOENT;
+	}
+	/* to prevent simultaneous changes to bus timing variables */
+	STATLOCK;
+	f = (_FLOAT) tv->tv_sec + ((_FLOAT) (tv->tv_usec / 1000)) / 1000.0;
+	STATUNLOCK;
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
-    u[0] = f;
-    return 0;
+	u[0] = f;
+	return 0;
 }
 
 static int FS_time(_FLOAT * u, const struct parsedname *pn)
 {
-    _FLOAT f;
-    int dindex = pn->extension;
-    struct timeval *tv;
-    if (dindex < 0)
-	dindex = 0;
-    if (pn->ft == NULL)
-	return -ENOENT;
-    tv = (struct timeval *) pn->ft->data.v;
-    if (tv == NULL)
-	return -ENOENT;
+	_FLOAT f;
+	int dindex = pn->extension;
+	struct timeval *tv;
+	if (dindex < 0)
+		dindex = 0;
+	if (pn->ft == NULL)
+		return -ENOENT;
+	tv = (struct timeval *) pn->ft->data.v;
+	if (tv == NULL)
+		return -ENOENT;
 
-    /* to prevent simultaneous changes to bus timing variables */
-    STATLOCK;
-    f = (_FLOAT) tv[dindex].tv_sec +
-	((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
-    STATUNLOCK;
+	/* to prevent simultaneous changes to bus timing variables */
+	STATLOCK;
+	f = (_FLOAT) tv[dindex].tv_sec +
+		((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
+	STATUNLOCK;
 //printf("FS_time sec=%ld usec=%ld f=%7.3f\n",tv[dindex].tv_sec,tv[dindex].tv_usec, f) ;
-    u[0] = f;
-    return 0;
+	u[0] = f;
+	return 0;
 }
 
 static int FS_elapsed(UINT * u, const struct parsedname *pn)
 {
 //printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
-    (void) pn;
-    STATLOCK;
-    u[0] = time(NULL) - start_time;
-    STATUNLOCK;
-    return 0;
+	(void) pn;
+	STATLOCK;
+	u[0] = time(NULL) - start_time;
+	STATUNLOCK;
+	return 0;
 }

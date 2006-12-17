@@ -17,40 +17,40 @@ $Id$
 #include "ow.h"
 
 int OW_read_paged(BYTE * p, size_t size, off_t offset,
-		  const struct parsedname *pn, size_t pagelen,
-		  int (*readfunc) (BYTE *, const size_t, const off_t,
-				   const struct parsedname * const))
+				  const struct parsedname *pn, size_t pagelen,
+				  int (*readfunc) (BYTE *, const size_t, const off_t,
+								   const struct parsedname * const))
 {
-    /* successive pages, will start at page start */
-    while (size > 0) {
-	size_t thispage = pagelen - (offset % pagelen);
-	if (thispage > size)
-	    thispage = size;
-	if (readfunc(p, thispage, offset, pn))
-	    return 1;
-	p += thispage;
-	size -= thispage;
-	offset += thispage;
-    }
-    return 0;
+	/* successive pages, will start at page start */
+	while (size > 0) {
+		size_t thispage = pagelen - (offset % pagelen);
+		if (thispage > size)
+			thispage = size;
+		if (readfunc(p, thispage, offset, pn))
+			return 1;
+		p += thispage;
+		size -= thispage;
+		offset += thispage;
+	}
+	return 0;
 }
 
 int OW_write_paged(const BYTE * p, size_t size, off_t offset,
-		   const struct parsedname *pn, size_t pagelen,
-		   int (*writefunc) (const BYTE *, const size_t,
-				     const off_t,
-				     const struct parsedname * const))
+				   const struct parsedname *pn, size_t pagelen,
+				   int (*writefunc) (const BYTE *, const size_t,
+									 const off_t,
+									 const struct parsedname * const))
 {
-    /* successive pages, will start at page start */
-    while (size > 0) {
-	size_t thispage = pagelen - (offset % pagelen);
-	if (thispage > size)
-	    thispage = size;
-	if (writefunc(p, thispage, offset, pn))
-	    return 1;
-	p += thispage;
-	size -= thispage;
-	offset += thispage;
-    }
-    return 0;
+	/* successive pages, will start at page start */
+	while (size > 0) {
+		size_t thispage = pagelen - (offset % pagelen);
+		if (thispage > size)
+			thispage = size;
+		if (writefunc(p, thispage, offset, pn))
+			return 1;
+		p += thispage;
+		size -= thispage;
+		offset += thispage;
+	}
+	return 0;
 }

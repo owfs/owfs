@@ -115,9 +115,9 @@ DS9123OwithOther.frm:7090:            WriteToPIC doowrx8, nullcmd, nullcmd, null
 /* Note, terminal settings already saved */
 int DS9123O_detect(struct connection_in *in)
 {
-    struct stateinfo si;
-    struct parsedname pn;
-    int ret;
+	struct stateinfo si;
+	struct parsedname pn;
+	int ret;
 
-    return -ENOTSUP;
+	return -ENOTSUP;
 }

@@ -29,14 +29,14 @@ pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
 #define ACCESSUNLOCK   pthread_mutex_unlock(&access_mutex   )
 #define ACCESSWAIT     pthread_cond_wait(    &access_cond, &access_mutex )
 #define ACCESSSIGNAL   pthread_cond_signal(  &access_cond )
-#else				/* OW_MT */
+#else							/* OW_MT */
 #define INITLOCK
 #define INITUNLOCK
 #define ACCESSLOCK
 #define ACCESSUNLOCK
 #define ACCESSWAIT
 #define ACCESSSIGNAL
-#endif				/* OW_MT */
+#endif							/* OW_MT */
 
 int access_num = 0;
 
@@ -44,65 +44,65 @@ int access_num = 0;
 /* MUST BE PAIRED with OWLIB_can_init_end() */
 int OWLIB_can_init_start(void)
 {
-    int ids;
+	int ids;
 #if OW_MT
 #ifdef __UCLIBC__
-    if (INITLOCK == EINVAL) {	/* Not initialized */
-	pthread_mutex_init(&init_mutex, pmattr);
-	pthread_mutex_init(&access_mutex, pmattr);
+	if (INITLOCK == EINVAL) {	/* Not initialized */
+		pthread_mutex_init(&init_mutex, pmattr);
+		pthread_mutex_init(&access_mutex, pmattr);
+		INITLOCK;
+	}
+#else							/* UCLIBC */
 	INITLOCK;
-    }
-#else				/* UCLIBC */
-    INITLOCK;
-#endif				/* UCLIBC */
-#endif				/* OW_MT */
-    CONNINLOCK;
-    ids = indevices;
-    CONNINUNLOCK;
-    return ids > 0;
+#endif							/* UCLIBC */
+#endif							/* OW_MT */
+	CONNINLOCK;
+	ids = indevices;
+	CONNINUNLOCK;
+	return ids > 0;
 }
 
 void OWLIB_can_init_end(void)
 {
-    INITUNLOCK;
+	INITUNLOCK;
 }
 
 /* Returns 0 if ok, else 1 */
 /* MUST BE PAIRED with OWLIB_can_access_end() */
 int OWLIB_can_access_start(void)
 {
-    int ret;
-    ACCESSLOCK;
-    access_num++;
-    ACCESSUNLOCK;
-    INITLOCK;
-    CONNINLOCK;
-    ret = (indevices == 0);
-    CONNINUNLOCK;
-    INITUNLOCK;
-    return ret;
+	int ret;
+	ACCESSLOCK;
+	access_num++;
+	ACCESSUNLOCK;
+	INITLOCK;
+	CONNINLOCK;
+	ret = (indevices == 0);
+	CONNINUNLOCK;
+	INITUNLOCK;
+	return ret;
 }
 
 void OWLIB_can_access_end(void)
 {
-    ACCESSLOCK;
-    access_num--;
-    ACCESSSIGNAL;
-    ACCESSUNLOCK;
+	ACCESSLOCK;
+	access_num--;
+	ACCESSSIGNAL;
+	ACCESSUNLOCK;
 }
 
 /* Returns 0 always */
 /* MUST BE PAIRED with OWLIB_can_finish_end() */
 int OWLIB_can_finish_start(void)
 {
-    ACCESSLOCK;
-    while (access_num > 0)
-	ACCESSWAIT;
-    INITLOCK;
-    return 0;			/* just for symetry */
+	ACCESSLOCK;
+	while (access_num > 0)
+		ACCESSWAIT;
+	INITLOCK;
+	return 0;					/* just for symetry */
 }
 void OWLIB_can_finish_end(void)
 {
-    INITUNLOCK;
-    ACCESSUNLOCK;
+	INITUNLOCK;
+	ACCESSUNLOCK;
 }

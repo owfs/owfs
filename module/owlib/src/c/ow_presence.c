@@ -47,19 +47,19 @@ $Id$
 
 /* ------- Prototypes ------------ */
 static int CheckPresence_low(struct connection_in *in,
-			     const struct parsedname *pn);
+							 const struct parsedname *pn);
 
 /* ------- Functions ------------ */
 
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence(const struct parsedname *pn)
 {
-    if (IsRealDir(pn) && pn->dev != DeviceSimultaneous
-	&& pn->dev != DeviceThermostat) {
-	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
-	return CheckPresence_low(pn->indevice, pn);	// check only allocvated indevices
-    }
-    return 0;
+	if (IsRealDir(pn) && pn->dev != DeviceSimultaneous
+		&& pn->dev != DeviceThermostat) {
+		LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
+		return CheckPresence_low(pn->indevice, pn);	// check only allocvated indevices
+	}
+	return 0;
 }
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
@@ -67,152 +67,152 @@ int CheckPresence(const struct parsedname *pn)
 #if OW_MT
 
 struct checkpresence_struct {
-    struct connection_in *in;
-    const struct parsedname *pn;
-    int ret;
+	struct connection_in *in;
+	const struct parsedname *pn;
+	int ret;
 };
 
 static void *CheckPresence_callback(void *vp)
 {
-    struct checkpresence_struct *cps = (struct checkpresence_struct *) vp;
-    cps->ret = CheckPresence_low(cps->in, cps->pn);
-    pthread_exit(NULL);
-    return NULL;
+	struct checkpresence_struct *cps = (struct checkpresence_struct *) vp;
+	cps->ret = CheckPresence_low(cps->in, cps->pn);
+	pthread_exit(NULL);
+	return NULL;
 }
 
 static int CheckPresence_low(struct connection_in *in,
-			     const struct parsedname *pn)
+							 const struct parsedname *pn)
 {
-    int ret = 0;
-    pthread_t thread;
-    int threadbad = 1;
-    struct parsedname pn2;
-    struct checkpresence_struct cps = { in->next, pn, 0 };
+	int ret = 0;
+	pthread_t thread;
+	int threadbad = 1;
+	struct parsedname pn2;
+	struct checkpresence_struct cps = { in->next, pn, 0 };
 
-    if (!(pn->state & pn_bus)) {
-	threadbad = in->next == NULL
-	    || pthread_create(&thread, NULL, CheckPresence_callback,
-			      (void *) (&cps));
-    }
+	if (!(pn->state & pn_bus)) {
+		threadbad = in->next == NULL
+			|| pthread_create(&thread, NULL, CheckPresence_callback,
+							  (void *) (&cps));
+	}
 
-    memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    pn2.in = in;
+	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+	pn2.in = in;
 
-    //printf("CheckPresence_low:\n");
-    if (TestConnection(&pn2)) {	// reconnect successful?
-	ret = -ECONNABORTED;
-    } else if (is_servermode(in)) {
-	//printf("CheckPresence_low: call ServerPresence\n");
-	if (ServerPresence(&pn2) >= 0) {
-	    /* Device was found on this in-device, return it's index */
-	    ret = in->index;
+	//printf("CheckPresence_low:\n");
+	if (TestConnection(&pn2)) {	// reconnect successful?
+		ret = -ECONNABORTED;
+	} else if (is_servermode(in)) {
+		//printf("CheckPresence_low: call ServerPresence\n");
+		if (ServerPresence(&pn2) >= 0) {
+			/* Device was found on this in-device, return it's index */
+			ret = in->index;
+		} else {
+			ret = -1;
+		}
+		//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
+	} else if (get_busmode(in) == bus_fake) {
+		int i = -1;
+		BYTE sn[8];
+		ret = -1;
+		//printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
+		while (DirblobGet(++i, sn, &(in->connin.fake.db)) == 0) {
+			//printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
+			if (memcmp(pn2.sn, sn, 8))
+				continue;
+			ret = in->index;
+			break;
+		}
 	} else {
-	    ret = -1;
+		struct transaction_log t[] = {
+			TRXN_NVERIFY,
+			TRXN_END,
+		};
+		/* this can only be done on local busses */
+		if (BUS_transaction(t, &pn2)) {
+			ret = -1;
+		} else {
+			/* Device was found on this in-device, return it's index */
+			ret = in->index;
+		}
 	}
-	//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
-    } else if (get_busmode(in) == bus_fake) {
-	int i = -1;
-	BYTE sn[8];
-	ret = -1;
-	//printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
-	while (DirblobGet(++i, sn, &(in->connin.fake.db)) == 0) {
-	    //printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
-	    if (memcmp(pn2.sn, sn, 8))
-		continue;
-	    ret = in->index;
-	    break;
+	if (threadbad == 0) {		/* was a thread created? */
+		void *v;
+		if (pthread_join(thread, &v))
+			return ret;			/* wait for it (or return only this result) */
+		if (cps.ret >= 0)
+			return cps.in->index;
 	}
-    } else {
-	struct transaction_log t[] = {
-	    TRXN_NVERIFY,
-	    TRXN_END,
-	};
-	/* this can only be done on local busses */
-	if (BUS_transaction(t, &pn2)) {
-	    ret = -1;
-	} else {
-	    /* Device was found on this in-device, return it's index */
-	    ret = in->index;
-	}
-    }
-    if (threadbad == 0) {	/* was a thread created? */
-	void *v;
-	if (pthread_join(thread, &v))
-	    return ret;		/* wait for it (or return only this result) */
-	if (cps.ret >= 0)
-	    return cps.in->index;
-    }
-    //printf("Presence return = %d\n",ret) ;
-    return ret;
+	//printf("Presence return = %d\n",ret) ;
+	return ret;
 }
 
-#else				/* OW_MT */
+#else							/* OW_MT */
 
 static int CheckPresence_low(struct connection_in *in,
-			     const struct parsedname *pn)
+							 const struct parsedname *pn)
 {
-    int ret = 0;
-    struct parsedname pn2;
+	int ret = 0;
+	struct parsedname pn2;
 
-    memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    //printf("CheckPresence_low:\n");
-    pn2.in = in;
-    if (TestConnection(&pn2)) {	// reconnect successful?
-	ret = -ECONNABORTED;
-    } else if (is_servermode(in)) {
-	//printf("CheckPresence_low: call ServerPresence\n");
-	if (ServerPresence(&pn2) >= 0) {
-	    /* Device was found on this in-device, return it's index */
-	    ret = in->index;
+	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+	//printf("CheckPresence_low:\n");
+	pn2.in = in;
+	if (TestConnection(&pn2)) {	// reconnect successful?
+		ret = -ECONNABORTED;
+	} else if (is_servermode(in)) {
+		//printf("CheckPresence_low: call ServerPresence\n");
+		if (ServerPresence(&pn2) >= 0) {
+			/* Device was found on this in-device, return it's index */
+			ret = in->index;
+		} else {
+			ret = -1;
+		}
+		//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
+	} else if (get_busmode(in) == bus_fake) {
+		int i = in->connin.fake.devices - 1;
+		ret = -1;
+		//printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
+		for (; i > -1; --i) {
+			//printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
+			if (memcmp(pn2.sn, &(in->connin.fake.device[8 * i]), 8))
+				continue;
+			ret = in->index;
+			break;
+		}
 	} else {
-	    ret = -1;
+		struct transaction_log t[] = {
+			TRXN_NVERIFY,
+			TRXN_END,
+		};
+		/* this can only be done on local busses */
+		if (BUS_transaction(t, &pn2)) {
+			ret = -1;
+		} else {
+			/* Device was found on this in-device, return it's index */
+			ret = in->index;
+		}
 	}
-	//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
-    } else if (get_busmode(in) == bus_fake) {
-	int i = in->connin.fake.devices - 1;
-	ret = -1;
-	//printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
-	for (; i > -1; --i) {
-	    //printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
-	    if (memcmp(pn2.sn, &(in->connin.fake.device[8 * i]), 8))
-		continue;
-	    ret = in->index;
-	    break;
-	}
-    } else {
-	struct transaction_log t[] = {
-	    TRXN_NVERIFY,
-	    TRXN_END,
-	};
-	/* this can only be done on local busses */
-	if (BUS_transaction(t, &pn2)) {
-	    ret = -1;
-	} else {
-	    /* Device was found on this in-device, return it's index */
-	    ret = in->index;
-	}
-    }
 
-    if (ret < 0 && in->next)
-	return CheckPresence_low(in->next, pn);
-    return ret;
+	if (ret < 0 && in->next)
+		return CheckPresence_low(in->next, pn);
+	return ret;
 }
-#endif				/* OW_MT */
+#endif							/* OW_MT */
 
 int FS_present(int *y, const struct parsedname *pn)
 {
 
-    if (NotRealDir(pn) || pn->dev == DeviceSimultaneous
-	|| pn->dev == DeviceThermostat) {
-	y[0] = 1;
-    } else if (get_busmode(pn->in) == bus_fake) {
-	y[0] = 1;
-    } else {
-	struct transaction_log t[] = {
-	    TRXN_NVERIFY,
-	    TRXN_END,
-	};
-	y[0] = BUS_transaction(t, pn) ? 0 : 1;
-    }
-    return 0;
+	if (NotRealDir(pn) || pn->dev == DeviceSimultaneous
+		|| pn->dev == DeviceThermostat) {
+		y[0] = 1;
+	} else if (get_busmode(pn->in) == bus_fake) {
+		y[0] = 1;
+	} else {
+		struct transaction_log t[] = {
+			TRXN_NVERIFY,
+			TRXN_END,
+		};
+		y[0] = BUS_transaction(t, pn) ? 0 : 1;
+	}
+	return 0;
 }

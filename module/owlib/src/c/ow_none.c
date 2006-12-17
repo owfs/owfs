@@ -59,13 +59,13 @@ $Id$
 /* ------- Structures ----------- */
 
 struct filetype NoDev[] = {
-    F_address,
-    F_code,
-    F_crc8,
-    F_id,
-    F_present,
-    F_r_address,
-    F_r_id,
+	F_address,
+	F_code,
+	F_crc8,
+	F_id,
+	F_present,
+	F_r_address,
+	F_r_id,
 };
 struct device NoDevice = { "XX", "generic", pn_real, NFT(NoDev), NoDev };
 

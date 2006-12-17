@@ -56,95 +56,95 @@ $Id$
  */
 void update_max_delay(const struct parsedname *pn)
 {
-    long sec, usec;
-    struct timeval *r, *w;
-    struct timeval last_delay;
-    if (!pn || !pn->in)
+	long sec, usec;
+	struct timeval *r, *w;
+	struct timeval last_delay;
+	if (!pn || !pn->in)
+		return;
+	gettimeofday(&(pn->in->bus_read_time), NULL);
+	r = &pn->in->bus_read_time;
+	w = &pn->in->bus_write_time;
+
+	sec = r->tv_sec - w->tv_sec;
+	if ((sec >= 0) && (sec <= 5)) {
+		usec = r->tv_usec - w->tv_usec;
+		last_delay.tv_sec = sec;
+		last_delay.tv_usec = usec;
+
+		while (last_delay.tv_usec >= 1000000) {
+			last_delay.tv_usec -= 1000000;
+			last_delay.tv_sec++;
+		}
+		if ((last_delay.tv_sec > max_delay.tv_sec)
+			|| ((last_delay.tv_sec >= max_delay.tv_sec)
+				&& (last_delay.tv_usec > max_delay.tv_usec))
+			) {
+			STATLOCK;
+			max_delay.tv_sec = last_delay.tv_sec;
+			max_delay.tv_usec = last_delay.tv_usec;
+			STATUNLOCK;
+		}
+	}
+	/* DS9097(1410)_send_and_get() call this function many times, therefore
+	 * I reset bus_write_time after every calls */
+	gettimeofday(&(pn->in->bus_write_time), NULL);
 	return;
-    gettimeofday(&(pn->in->bus_read_time), NULL);
-    r = &pn->in->bus_read_time;
-    w = &pn->in->bus_write_time;
-
-    sec = r->tv_sec - w->tv_sec;
-    if ((sec >= 0) && (sec <= 5)) {
-	usec = r->tv_usec - w->tv_usec;
-	last_delay.tv_sec = sec;
-	last_delay.tv_usec = usec;
-
-	while (last_delay.tv_usec >= 1000000) {
-	    last_delay.tv_usec -= 1000000;
-	    last_delay.tv_sec++;
-	}
-	if ((last_delay.tv_sec > max_delay.tv_sec)
-	    || ((last_delay.tv_sec >= max_delay.tv_sec)
-		&& (last_delay.tv_usec > max_delay.tv_usec))
-	    ) {
-	    STATLOCK;
-	    max_delay.tv_sec = last_delay.tv_sec;
-	    max_delay.tv_usec = last_delay.tv_usec;
-	    STATUNLOCK;
-	}
-    }
-    /* DS9097(1410)_send_and_get() call this function many times, therefore
-     * I reset bus_write_time after every calls */
-    gettimeofday(&(pn->in->bus_write_time), NULL);
-    return;
 }
 
 int FS_type(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn)
+			const struct parsedname *pn)
 {
-    return FS_output_ascii_z(buf, size, offset, pn->dev->name);
+	return FS_output_ascii_z(buf, size, offset, pn->dev->name);
 }
 
 int FS_code(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn)
+			const struct parsedname *pn)
 {
-    ASCII code[2];
-    num2string(code, pn->sn[0]);
-    return FS_output_ascii(buf, size, offset, code, 2);
+	ASCII code[2];
+	num2string(code, pn->sn[0]);
+	return FS_output_ascii(buf, size, offset, code, 2);
 }
 
 int FS_ID(char *buf, size_t size, off_t offset,
-	  const struct parsedname *pn)
+		  const struct parsedname *pn)
 {
-    ASCII id[12];
-    bytes2string(id, &(pn->sn[2]), 6);
-    return FS_output_ascii(buf, size, offset, id, 12);
+	ASCII id[12];
+	bytes2string(id, &(pn->sn[2]), 6);
+	return FS_output_ascii(buf, size, offset, id, 12);
 }
 
 int FS_r_ID(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn)
+			const struct parsedname *pn)
 {
-    size_t i;
-    ASCII id[12];
-    for (i = 0; i < 6; ++i)
-	num2string(id + (i << 1), pn->sn[6 - i]);
-    return FS_output_ascii(buf, size, offset, id, 12);
+	size_t i;
+	ASCII id[12];
+	for (i = 0; i < 6; ++i)
+		num2string(id + (i << 1), pn->sn[6 - i]);
+	return FS_output_ascii(buf, size, offset, id, 12);
 }
 
 int FS_crc8(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn)
+			const struct parsedname *pn)
 {
-    ASCII crc[2];
-    num2string(crc, pn->sn[7]);
-    return FS_output_ascii(buf, size, offset, crc, 2);
+	ASCII crc[2];
+	num2string(crc, pn->sn[7]);
+	return FS_output_ascii(buf, size, offset, crc, 2);
 }
 
 int FS_address(char *buf, size_t size, off_t offset,
-	       const struct parsedname *pn)
+			   const struct parsedname *pn)
 {
-    ASCII ad[16];
-    bytes2string(ad, pn->sn, 8);
-    return FS_output_ascii(buf, size, offset, ad, 16);
+	ASCII ad[16];
+	bytes2string(ad, pn->sn, 8);
+	return FS_output_ascii(buf, size, offset, ad, 16);
 }
 
 int FS_r_address(char *buf, size_t size, off_t offset,
-		 const struct parsedname *pn)
+				 const struct parsedname *pn)
 {
-    size_t i;
-    ASCII ad[16];
-    for (i = 0; i < 8; ++i)
-	num2string(ad + (i << 1), pn->sn[7 - i]);
-    return FS_output_ascii(buf, size, offset, ad, 16);
+	size_t i;
+	ASCII ad[16];
+	for (i = 0; i < 8; ++i)
+		num2string(ad + (i << 1), pn->sn[7 - i]);
+	return FS_output_ascii(buf, size, offset, ad, 16);
 }

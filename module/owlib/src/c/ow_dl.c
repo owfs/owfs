@@ -18,9 +18,9 @@ $Id$
 DLHANDLE DL_open(const char *pathname, int mode)
 {
 #if OW_CYGWIN
-    return LoadLibrary(pathname);
+	return LoadLibrary(pathname);
 #elif defined(HAVE_DLOPEN)
-    return dlopen(pathname, mode);
+	return dlopen(pathname, mode);
 #endif
 
 }
@@ -28,9 +28,9 @@ DLHANDLE DL_open(const char *pathname, int mode)
 void *DL_sym(DLHANDLE handle, const char *name)
 {
 #if OW_CYGWIN
-    return (void *) GetProcAddress(handle, name);
+	return (void *) GetProcAddress(handle, name);
 #elif defined(HAVE_DLOPEN)
-    return dlsym(handle, name);
+	return dlsym(handle, name);
 #endif
 
 }
@@ -39,20 +39,20 @@ void *DL_sym(DLHANDLE handle, const char *name)
 int DL_close(DLHANDLE handle)
 {
 #if OW_CYGWIN
-    if (FreeLibrary(handle))
-	return 0;
-    return -1;
+	if (FreeLibrary(handle))
+		return 0;
+	return -1;
 #elif defined(HAVE_DLOPEN)
-    return dlclose(handle);
+	return dlclose(handle);
 #endif
 }
 
 char *DL_error(void)
 {
 #if OW_CYGWIN
-    return "Error in WIN32 DL";
+	return "Error in WIN32 DL";
 #elif defined(HAVE_DLOPEN)
-    return dlerror();
+	return dlerror();
 #endif
 }
 

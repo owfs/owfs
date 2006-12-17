@@ -53,13 +53,13 @@ $Id$
 /* ------- Structures ----------- */
 
 struct filetype DS2401[] = {
-    F_STANDARD,
+	F_STANDARD,
 };
 
 DeviceEntry(01, DS2401);
 
 struct filetype DS1420[] = {
-    F_STANDARD,
+	F_STANDARD,
 };
 
 DeviceEntry(81, DS1420);

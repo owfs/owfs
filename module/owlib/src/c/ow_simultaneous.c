@@ -70,190 +70,190 @@ DeviceEntry(simultaneous, simultaneous);
 static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
 
 struct internal_prop ipSimul[] = {
-    {"temperature", fc_volatile},
-    {"voltage", fc_volatile},
+	{"temperature", fc_volatile},
+	{"voltage", fc_volatile},
 };
 
 /* returns 0 if valid conversion exists */
 int Simul_Test(const enum simul_type type, UINT msec,
-	       const struct parsedname *pn)
+			   const struct parsedname *pn)
 {
-    struct parsedname pn2;
-    struct timeval tv, now;
-    long int diff;
-    int ret;
-    memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    FS_LoadPath(pn2.sn, &pn2);
-    if ((ret =
-	 Cache_Get_Internal_Strict(&tv, sizeof(struct timeval),
-				   &ipSimul[type], &pn2))) {
-	LEVEL_DEBUG("No simultaneous conversion valid.\n");
-	return ret;
-    }
-    LEVEL_DEBUG("Simultaneous conversion IS valid.\n");
-    gettimeofday(&now, NULL);
-    diff =
-	1000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec -
-					   tv.tv_usec) / 1000;
-    if (diff < (long int) msec)
-	UT_delay(msec - diff);
-    return 0;
+	struct parsedname pn2;
+	struct timeval tv, now;
+	long int diff;
+	int ret;
+	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+	FS_LoadPath(pn2.sn, &pn2);
+	if ((ret =
+		 Cache_Get_Internal_Strict(&tv, sizeof(struct timeval),
+								   &ipSimul[type], &pn2))) {
+		LEVEL_DEBUG("No simultaneous conversion valid.\n");
+		return ret;
+	}
+	LEVEL_DEBUG("Simultaneous conversion IS valid.\n");
+	gettimeofday(&now, NULL);
+	diff =
+		1000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec -
+										   tv.tv_usec) / 1000;
+	if (diff < (long int) msec)
+		UT_delay(msec - diff);
+	return 0;
 }
 
 static int FS_w_convert(const int *y, const struct parsedname *pn)
 {
-    struct parsedname pn2;
-    enum simul_type type = (enum simul_type) pn->ft->data.i;
-    memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    FS_LoadPath(pn2.sn, &pn2);
-    pn2.dev = NULL;		/* only branch select done, not actual device */
-    /* Since writing to /simultaneous/temperature is done recursive to all
-     * adapters, we have to fake a successful write even if it's detected
-     * as a bad adapter. */
-    if (y[0]) {
-	if (pn->in->Adapter != adapter_Bad) {
-	    int ret = 1;	// set just to block compiler errors
-	    switch (type) {
-	    case simul_temp:{
-		    const BYTE cmd_temp[] = { 0xCC, 0x44 };
-		    struct transaction_log t[] = {
-			TRXN_START,
-			{cmd_temp, NULL, 2, trxn_match,},
-			TRXN_END,
-		    };
-		    ret = BUS_transaction(t, &pn2);
-		    //printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
+	struct parsedname pn2;
+	enum simul_type type = (enum simul_type) pn->ft->data.i;
+	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+	FS_LoadPath(pn2.sn, &pn2);
+	pn2.dev = NULL;				/* only branch select done, not actual device */
+	/* Since writing to /simultaneous/temperature is done recursive to all
+	 * adapters, we have to fake a successful write even if it's detected
+	 * as a bad adapter. */
+	if (y[0]) {
+		if (pn->in->Adapter != adapter_Bad) {
+			int ret = 1;		// set just to block compiler errors
+			switch (type) {
+			case simul_temp:{
+					const BYTE cmd_temp[] = { 0xCC, 0x44 };
+					struct transaction_log t[] = {
+						TRXN_START,
+						{cmd_temp, NULL, 2, trxn_match,},
+						TRXN_END,
+					};
+					ret = BUS_transaction(t, &pn2);
+					//printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
+				}
+				break;
+			case simul_volt:{
+					BYTE cmd_volt[] =
+						{ 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
+					struct transaction_log t[] = {
+						TRXN_START,
+						{cmd_volt, NULL, 4, trxn_match,},
+						{NULL, &cmd_volt[4], 2, trxn_read,},
+						TRXN_END,
+					};
+					ret = BUS_transaction(t, &pn2)
+						|| CRC16(&cmd_volt[1], 5);
+					//printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
+				}
+				break;
+			}
+			if (ret == 0) {
+				struct timeval tv;
+				gettimeofday(&tv, NULL);
+				Cache_Add_Internal(&tv, sizeof(struct timeval),
+								   &ipSimul[type], &pn2);
+			}
 		}
-		break;
-	    case simul_volt:{
-		    BYTE cmd_volt[] =
-			{ 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
-		    struct transaction_log t[] = {
-			TRXN_START,
-			{cmd_volt, NULL, 4, trxn_match,},
-			{NULL, &cmd_volt[4], 2, trxn_read,},
-			TRXN_END,
-		    };
-		    ret = BUS_transaction(t, &pn2)
-			|| CRC16(&cmd_volt[1], 5);
-		    //printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
-		}
-		break;
-	    }
-	    if (ret == 0) {
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		Cache_Add_Internal(&tv, sizeof(struct timeval),
-				   &ipSimul[type], &pn2);
-	    }
+	} else {
+		//printf("CONVERT (simulateous) turning off\n") ;
+		Cache_Del_Internal(&ipSimul[type], &pn2);
 	}
-    } else {
-	//printf("CONVERT (simulateous) turning off\n") ;
-	Cache_Del_Internal(&ipSimul[type], &pn2);
-    }
-    return 0;
+	return 0;
 }
 
 static int FS_r_convert(int *y, const struct parsedname *pn)
 {
-    struct parsedname pn2;
-    struct timeval tv;
-    memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    FS_LoadPath(pn2.sn, &pn2);
-    y[0] =
-	(Cache_Get_Internal_Strict
-	 (&tv, sizeof(struct timeval), &ipSimul[pn->ft->data.i],
-	  &pn2) == 0);
-    return 0;
+	struct parsedname pn2;
+	struct timeval tv;
+	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+	FS_LoadPath(pn2.sn, &pn2);
+	y[0] =
+		(Cache_Get_Internal_Strict
+		 (&tv, sizeof(struct timeval), &ipSimul[pn->ft->data.i],
+		  &pn2) == 0);
+	return 0;
 }
 
 static int FS_r_present(int *y, const struct parsedname *pn)
 {
-    if (pn->in->Adapter == adapter_fake) {	// fake adapter -- simple memory look
-	y[0] = (pn->in->connin.fake.db.devices > 0);
-    } else {			// real adapter
-	struct parsedname pn2;
-	BYTE read_ROM[] = { 0x33, };
-	BYTE resp[8];
-	BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
-	struct transaction_log t[] = {
-	    TRXN_START,
-	    {read_ROM, NULL, 1, trxn_match,},
-	    {NULL, resp, 8, trxn_read,},
-	    TRXN_END,
-	};
+	if (pn->in->Adapter == adapter_fake) {	// fake adapter -- simple memory look
+		y[0] = (pn->in->connin.fake.db.devices > 0);
+	} else {					// real adapter
+		struct parsedname pn2;
+		BYTE read_ROM[] = { 0x33, };
+		BYTE resp[8];
+		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
+		struct transaction_log t[] = {
+			TRXN_START,
+			{read_ROM, NULL, 1, trxn_match,},
+			{NULL, resp, 8, trxn_read,},
+			TRXN_END,
+		};
 
-	/* check if DS2400 compatibility is needed */
-	if (pn->ft->data.i)
-	    read_ROM[0] = 0x0F;
+		/* check if DS2400 compatibility is needed */
+		if (pn->ft->data.i)
+			read_ROM[0] = 0x0F;
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2.sn, &pn2);
-	pn2.dev = NULL;		// directory only
-	if (BUS_transaction(t, &pn2))
-	    return -EINVAL;
-	if (memcmp(resp, match, 8)) {	// some device(s) complained
-	    y[0] = 1;		// YES present
-	    if (CRC8(resp, 8))
-		return 0;	// crc8 error -- more than one device
-	    OW_single2cache(resp, &pn2);
-	} else {		// no devices
-	    y[0] = 0;
+		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+		FS_LoadPath(pn2.sn, &pn2);
+		pn2.dev = NULL;			// directory only
+		if (BUS_transaction(t, &pn2))
+			return -EINVAL;
+		if (memcmp(resp, match, 8)) {	// some device(s) complained
+			y[0] = 1;			// YES present
+			if (CRC8(resp, 8))
+				return 0;		// crc8 error -- more than one device
+			OW_single2cache(resp, &pn2);
+		} else {				// no devices
+			y[0] = 0;
+		}
 	}
-    }
-    return 0;
+	return 0;
 }
 
 static int FS_r_single(char *buf, const size_t size, const off_t offset,
-		       const struct parsedname *pn)
+					   const struct parsedname *pn)
 {
-    ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
-    BYTE resp[8];
-    if (pn->in->Adapter == adapter_fake) {	// fake adapter -- look in memory
-	if (pn->in->connin.fake.db.devices == 1) {
-	    DirblobGet(0, resp, &(pn->in->connin.fake.db));
-	    FS_devicename(ad, sizeof(ad), resp, pn);
-	}
-    } else {			// real adapter
-	struct parsedname pn2;
-	BYTE read_ROM[] = { 0x33, };
-	BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
-	struct transaction_log t[] = {
-	    TRXN_START,
-	    {read_ROM, NULL, 1, trxn_match,},
-	    {NULL, resp, 8, trxn_read,},
-	    TRXN_END,
-	};
+	ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
+	BYTE resp[8];
+	if (pn->in->Adapter == adapter_fake) {	// fake adapter -- look in memory
+		if (pn->in->connin.fake.db.devices == 1) {
+			DirblobGet(0, resp, &(pn->in->connin.fake.db));
+			FS_devicename(ad, sizeof(ad), resp, pn);
+		}
+	} else {					// real adapter
+		struct parsedname pn2;
+		BYTE read_ROM[] = { 0x33, };
+		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
+		struct transaction_log t[] = {
+			TRXN_START,
+			{read_ROM, NULL, 1, trxn_match,},
+			{NULL, resp, 8, trxn_read,},
+			TRXN_END,
+		};
 
-	/* check if DS2400 compatibility is needed */
-	if (pn->ft->data.i)
-	    read_ROM[0] = 0x0F;
+		/* check if DS2400 compatibility is needed */
+		if (pn->ft->data.i)
+			read_ROM[0] = 0x0F;
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2.sn, &pn2);
-	pn2.dev = NULL;		// directory only
-	if (BUS_transaction(t, &pn2))
-	    return -EINVAL;
-	LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat
-		    " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
-	if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
-	    OW_single2cache(resp, &pn2);
-	    /* Return device id. */
-	    FS_devicename(ad, sizeof(ad), resp, pn);
+		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+		FS_LoadPath(pn2.sn, &pn2);
+		pn2.dev = NULL;			// directory only
+		if (BUS_transaction(t, &pn2))
+			return -EINVAL;
+		LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat
+					" crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
+		if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
+			OW_single2cache(resp, &pn2);
+			/* Return device id. */
+			FS_devicename(ad, sizeof(ad), resp, pn);
+		}
 	}
-    }
-    return FS_output_ascii_z(buf, size, offset, ad);
+	return FS_output_ascii_z(buf, size, offset, ad);
 }
 
 // called with pn copy
 // Do cache for single item
 static void OW_single2cache(BYTE * sn, const struct parsedname *pn2)
 {
-    struct dirblob db;
-    DirblobInit(&db);
-    DirblobAdd(sn, &db);
-    if (DirblobPure(&db))
-	Cache_Add_Dir(&db, pn2);	// Directory cache
-    memcpy(pn2->sn, sn, 8);
-    Cache_Add_Device(pn2->in->index, pn2);	// Device cache
+	struct dirblob db;
+	DirblobInit(&db);
+	DirblobAdd(sn, &db);
+	if (DirblobPure(&db))
+		Cache_Add_Dir(&db, pn2);	// Directory cache
+	memcpy(pn2->sn, sn, 8);
+	Cache_Add_Device(pn2->in->index, pn2);	// Device cache
 }
