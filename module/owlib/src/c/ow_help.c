@@ -202,5 +202,5 @@ void ow_help(const char *arg)
 	}
 
 	printf("\n"
-		   "Copyrite 2003 GPLv2. See http://www.owfs.org for support, downloads\n");
+		   "Copyright 2003 GPLv2. See http://www.owfs.org for support, downloads\n");
 }
