@@ -46,6 +46,7 @@ $Id$
 
 /* DS2409 switch */
 yWRITE_FUNCTION(FS_discharge);
+yWRITE_FUNCTION(FS_clearevent);
 uREAD_FUNCTION(FS_r_control);
 uWRITE_FUNCTION(FS_w_control);
 uREAD_FUNCTION(FS_r_sensed);
@@ -58,6 +59,7 @@ struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, };
 struct filetype DS2409[] = {
 	F_STANDARD,
   {"discharge", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {y: FS_discharge}, {v:NULL},},
+  {"clearevent", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {y: FS_clearevent}, {v:NULL},},
   {"control", 1, NULL, ft_unsigned, fc_stable, {u: FS_r_control}, {u: FS_w_control}, {v:NULL},},
   {"sensed", 1, &A2409, ft_bitfield, fc_volatile, {u: FS_r_sensed}, {v: NULL}, {v:NULL},},
   {"branch", 1, &A2409, ft_bitfield, fc_volatile, {u: FS_r_branch}, {v: NULL}, {v:NULL},},
@@ -74,12 +76,22 @@ DeviceEntry(1F, DS2409);
 static int OW_r_control(BYTE * data, const struct parsedname *pn);
 
 static int OW_discharge(const struct parsedname *pn);
+static int OW_clearevent(const struct parsedname *pn);
 static int OW_w_control(const UINT data, const struct parsedname *pn);
 
 /* discharge 2409 lines */
 static int FS_discharge(const int *y, const struct parsedname *pn)
 {
 	if ((*y) && OW_discharge(pn))
+		return -EINVAL;
+	return 0;
+}
+
+/* Clear 2409 event flags */
+/* Added by Jan Kandziora */
+static int FS_clearevent(const int *y, const struct parsedname *pn)
+{
+	if ((*y) && OW_clearevent(pn))
 		return -EINVAL;
 	return 0;
 }
@@ -162,6 +174,27 @@ static int OW_discharge(const struct parsedname *pn)
 	UT_delay(100);
 
 	dis[0] = 0x66;
+	if (BUS_transaction(t, pn))
+		return 1;
+
+	return 0;
+}
+
+/* Added by Jan Kandziora */
+static int OW_clearevent(const struct parsedname *pn)
+{
+	BYTE clr[] = { 0x66, };
+	struct transaction_log t[] = {
+		TRXN_START,
+		{clr, NULL, 1, trxn_match},
+		TRXN_END,
+	};
+
+	// Could certainly couple this with next transaction
+	BUSLOCK(pn);
+//	pn->in->buspath_bad = 1;
+	BUSUNLOCK(pn);
+
 	if (BUS_transaction(t, pn))
 		return 1;
 

@@ -27,6 +27,8 @@
 |
 .B event.[0|1|ALL|BYTE]
 |
+.B clearevent 
+|
 .B main
 |
 .B sensed.[0|1|ALL|BYTE]
@@ -88,7 +90,9 @@ branch switched in
 .SS discharge
 .I write-only, yes-no
 .br
-Writing a non-zero value to this property will electrically reset both the main and auxillary branches of the 1-wire bus by dropping power for 100 milliseconds. All devices on those branches will lose parasitic power and reset to power-up defaults.
+Writing a non-zero value to this property will electrically reset both the main and auxillary branches of the 1-wire bus by dropping power for 100 milliseconds. All devices on those branches will lose parasitic power and reset to power-up defaults. As a side effect, both
+.I event
+flags and thus, the alarm state, are cleared, too.
 .SS event.0 event.1 event.ALL event.BYTE
 .I read-only, yes-no
 .br
@@ -98,13 +102,21 @@ flag for the branch been triggered? A negative edge on the disconnected branch (
 .I 0=main
 or
 .I 1=aux
-) sets the flag. Value returned is 1 (yes) or 0 (no).
-.br
+) sets the flag. This is achieved by e.g. connecting an iButton to the branch. Value returned is 1 (yes) or 0 (no).
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
 .br
 .I BYTE
-is an aggregate of the branches as a byte, A is bit 0.
+is an aggregate of the branches as a byte,
+.I main
+is bit 0.
+.SS clearevent
+.I write-only, yes-no
+.br
+Writing a non-zero value to this property will reset both
+.I event
+flags and thus, clear the alarm state, too.
+.br
 .SS main
 .I directory
 .br
@@ -132,7 +144,11 @@ is an aggregate of the branches as a byte, A is bit 0.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
-None implemented.
+The
+.I DS2409
+will respond to a conditional search if the 
+.I main
+event flag is set.
 .SH DESCRIPTION
 .so description
 .SS DS2409
