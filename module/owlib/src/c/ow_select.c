@@ -148,14 +148,14 @@ static int BUS_select_subbranch(const struct buspath *bp,
 
 	memcpy(&sent[1], bp->sn, 8);
 	sent[9] = branch[bp->branch];
-	printf("subbranch start\n");
+	//printf("subbranch start\n");
 	if (BUS_transaction_nolock(t, pn) || (resp[2] != branch[bp->branch])) {
 		STAT_ADD1(BUS_select_low_branch_errors);
 		//printf("SELECT error3\n");
-		printf("subbranch error\n");
+		//printf("subbranch error\n");
 		return 1;
 	}
-	printf("subbranch stop\n");
+	//printf("subbranch stop\n");
 	return 0;
 }
 
