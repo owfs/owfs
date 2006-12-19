@@ -467,7 +467,7 @@ static int OW_convert(const struct parsedname *pn)
 		return 1;
 
 	/* See if a conversion was globally triggered */
-	if (power == 0x40 && Simul_Test(simul_volt, 6, pn) == 0)
+	if (power == 0x40 && Simul_Test(simul_volt, pn) == 0)
 		return 0;
 
 	// Start conversion

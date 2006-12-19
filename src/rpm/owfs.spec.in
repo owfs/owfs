@@ -448,6 +448,8 @@ fi
 %dir %{prefix}/lib*/python*/site-packages/ow
 %{prefix}/lib*/python*/site-packages/ow/__init__.py*
 %{prefix}/lib*/python*/site-packages/ow/_OW.so
+%dir %{prefix}/lib*/python*/site-packages/ownet
+%{prefix}/lib*/python*/site-packages/ownet/__init__.py*
 %endif
 
 %if %{build_php}

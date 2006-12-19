@@ -447,6 +447,11 @@ static int FS_realdir(void (*dirfunc) (const struct parsedname *),
 	return ret;
 }
 
+/* points "serial number" to directory
+   -- 0 for root
+   -- DS2409/mai|aux for branch
+   -- DS2409 needs only the last element since each DS2409 is unique
+   */
 void FS_LoadPath(BYTE * sn, const struct parsedname *pn)
 {
 	if (pn->pathlength == 0) {

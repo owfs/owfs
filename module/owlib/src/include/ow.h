@@ -747,8 +747,8 @@ int FS_busless(char *path);
 #include "ow_cache.h"
 void FS_LoadPath(BYTE * sn, const struct parsedname *pn);
 
-int Simul_Test(const enum simul_type type, UINT msec,
-	       const struct parsedname *pn);
+int Simul_Test(const enum simul_type type, const struct parsedname *pn);
+int FS_poll_convert( const struct parsedname * pn ) ;
 
 // ow_locks.c
 void LockSetup(void);

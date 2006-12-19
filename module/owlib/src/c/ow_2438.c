@@ -460,7 +460,7 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 		TRXN_END,
 	};
 	// write conversion command
-	if (Simul_Test(simul_temp, 10, pn) != 0) {
+	if (Simul_Test(simul_temp, pn) != 0) {
 		if (BUS_transaction(tconvert, pn))
 			return 1;
 		UT_delay(10);

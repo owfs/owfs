@@ -201,7 +201,7 @@ int Cache_Add(const void *data, const size_t datasize,
 				tn->tk.extension = pn->extension;
 				tn->expires = duration + time(NULL);
 				tn->dsize = datasize;
-				memcpy(TREE_DATA(tn), data, datasize);
+                if ( datasize ) memcpy(TREE_DATA(tn), data, datasize);
 				switch (pn->ft->change) {
 				case fc_persistent:
 					return Add_Stat(&cache_sto, Cache_Add_Store(tn));
@@ -232,7 +232,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 			tn->tk.extension = 0;
 			tn->expires = duration + time(NULL);
 			tn->dsize = size;
-			memcpy(TREE_DATA(tn), db->snlist, size);
+            if ( size ) memcpy(TREE_DATA(tn), db->snlist, size);
 			return Add_Stat(&cache_dir, Cache_Add_Common(tn));
 		}
 	}
@@ -284,7 +284,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 				tn->tk.extension = -2;
 				tn->expires = duration + time(NULL);
 				tn->dsize = datasize;
-				memcpy(TREE_DATA(tn), data, datasize);
+                if ( datasize) memcpy(TREE_DATA(tn), data, datasize);
 				//printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
 				//printf("  ADD INTERNAL data[0]=%d size=%d \n",((BYTE *)data)[0],datasize);
 				switch (ip->change) {
@@ -635,7 +635,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
 				dsize[0] = opaque->key->dsize;
 				//tree_show(opaque,leaf,0);
 				//printf("CACHE GET 5 size=%lu\n",*dsize);
-				memcpy(data, TREE_DATA(opaque->key), *dsize);
+                if ( dsize[0] ) memcpy(data, TREE_DATA(opaque->key), dsize[0] );
 				ret = 0;
 				//printf("CACHE GOT\n");
 				//twalk(cache.new_db,tree_show) ;
@@ -669,7 +669,7 @@ static int Cache_Get_Store(void *data, size_t * dsize, time_t duration,
 	if ((opaque = tfind(tn, &cache.store, tree_compare))) {
 		if ((ssize_t) dsize[0] >= opaque->key->dsize) {
 			dsize[0] = opaque->key->dsize;
-			memcpy(data, TREE_DATA(opaque->key), *dsize);
+            if ( dsize[0] ) memcpy(data, TREE_DATA(opaque->key), dsize[0] );
 			ret = 0;
 		} else {
 			ret = -EMSGSIZE;

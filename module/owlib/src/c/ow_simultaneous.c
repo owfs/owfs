@@ -75,28 +75,16 @@ struct internal_prop ipSimul[] = {
 };
 
 /* returns 0 if valid conversion exists */
-int Simul_Test(const enum simul_type type, UINT msec,
-			   const struct parsedname *pn)
+int Simul_Test(const enum simul_type type, const struct parsedname *pn)
 {
 	struct parsedname pn2;
-	struct timeval tv, now;
-	long int diff;
-	int ret;
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 	FS_LoadPath(pn2.sn, &pn2);
-	if ((ret =
-		 Cache_Get_Internal_Strict(&tv, sizeof(struct timeval),
-								   &ipSimul[type], &pn2))) {
+    if ( Cache_Get_Internal_Strict(NULL, 0, &ipSimul[type], &pn2)) {
 		LEVEL_DEBUG("No simultaneous conversion valid.\n");
-		return ret;
+        return 1 ;
 	}
 	LEVEL_DEBUG("Simultaneous conversion IS valid.\n");
-	gettimeofday(&now, NULL);
-	diff =
-		1000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec -
-										   tv.tv_usec) / 1000;
-	if (diff < (long int) msec)
-		UT_delay(msec - diff);
 	return 0;
 }
 
@@ -106,65 +94,55 @@ static int FS_w_convert(const int *y, const struct parsedname *pn)
 	enum simul_type type = (enum simul_type) pn->ft->data.i;
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 	FS_LoadPath(pn2.sn, &pn2);
-	pn2.dev = NULL;				/* only branch select done, not actual device */
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected
 	 * as a bad adapter. */
-	if (y[0]) {
-		if (pn->in->Adapter != adapter_Bad) {
-			int ret = 1;		// set just to block compiler errors
-			switch (type) {
-			case simul_temp:{
-					const BYTE cmd_temp[] = { 0xCC, 0x44 };
-					struct transaction_log t[] = {
-						TRXN_START,
-						{cmd_temp, NULL, 2, trxn_match,},
-						TRXN_END,
-					};
-					ret = BUS_transaction(t, &pn2);
-					//printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
-				}
-				break;
-			case simul_volt:{
-					BYTE cmd_volt[] =
-						{ 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
-					struct transaction_log t[] = {
-						TRXN_START,
-						{cmd_volt, NULL, 4, trxn_match,},
-						{NULL, &cmd_volt[4], 2, trxn_read,},
-						TRXN_END,
-					};
-					ret = BUS_transaction(t, &pn2)
-						|| CRC16(&cmd_volt[1], 5);
-					//printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
-				}
-				break;
-			}
-			if (ret == 0) {
-				struct timeval tv;
-				gettimeofday(&tv, NULL);
-				Cache_Add_Internal(&tv, sizeof(struct timeval),
-								   &ipSimul[type], &pn2);
-			}
-		}
-	} else {
-		//printf("CONVERT (simulateous) turning off\n") ;
-		Cache_Del_Internal(&ipSimul[type], &pn2);
-	}
+    Cache_Del_Internal(&ipSimul[type], &pn2);
+    if ( y[0] == 0 ) return 0 ; // don't send convert
+    if (pn->in->Adapter != adapter_Bad) {
+        int ret = 1;		// set just to block compiler errors
+        switch (type) {
+        case simul_temp:{
+                const BYTE cmd_temp[] = { 0xCC, 0x44 };
+                struct transaction_log t[] = {
+                    TRXN_START,
+                    {cmd_temp, NULL, 2, trxn_match,},
+                    TRXN_END,
+                };
+                BUSLOCK(&pn2) ;
+                ret = BUS_transaction_nolock(t, &pn2) || FS_poll_convert(&pn2) ;
+                BUSUNLOCK(&pn2) ;
+                //printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
+            }
+            break;
+        case simul_volt:{
+                BYTE cmd_volt[] =
+                    { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
+                struct transaction_log t[] = {
+                    TRXN_START,
+                    {cmd_volt, NULL, 4, trxn_match,},
+                    {NULL, &cmd_volt[4], 2, trxn_read,},
+                    {&cmd_volt[1], NULL, 5, trxn_crc16, } ,
+                    {NULL, NULL, 5, trxn_delay} ,
+                    TRXN_END,
+                };
+                ret = BUS_transaction(t, &pn2) ;
+                //printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
+            }
+            break;
+        }
+        if (ret == 0) Cache_Add_Internal(NULL, 0, &ipSimul[type], &pn2);
+    }
 	return 0;
 }
 
 static int FS_r_convert(int *y, const struct parsedname *pn)
 {
 	struct parsedname pn2;
-	struct timeval tv;
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 	FS_LoadPath(pn2.sn, &pn2);
-	y[0] =
-		(Cache_Get_Internal_Strict
-		 (&tv, sizeof(struct timeval), &ipSimul[pn->ft->data.i],
-		  &pn2) == 0);
-	return 0;
+	y[0] =	(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->ft->data.i], &pn2) == 0);
+    return 0 ;
 }
 
 static int FS_r_present(int *y, const struct parsedname *pn)

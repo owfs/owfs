@@ -355,13 +355,12 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE convert[] = { 0x44, };
-	BYTE dummy;
 	UINT delay = 1000;			// hard wired
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
 		{convert, convert, delay, trxn_power},
-		TRXN_END,
+        TRXN_END,
 	};
 	struct transaction_log tpowered[] = {
 		TRXN_START,
@@ -376,16 +375,19 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
-	} else if (Simul_Test(simul_temp, delay, pn) != 0) {	// powered, so release bus immediately after issuing convert
-		if (BUS_transaction(tpowered, pn))
-			return 1;
-		UT_delay(delay);
-	}
+	} else if (Simul_Test(simul_temp, pn) != 0) {	// powered
+        int ret ;
+        BUSLOCK(pn) ;
+            ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn) ;
+        BUSUNLOCK(pn) ;
+        if (ret) return ret ;
+    }
+    
+    if (OW_r_scratchpad(data, pn))
+        return 1;
 
-	if (OW_r_scratchpad(data, pn))
-		return 1;
-
-	/* Check for error condition */
+#if 0
+    /* Check for error condition */
 	if (data[0] == 0xAA && data[1] == 0x00 && data[6] == 0x0C) {
 		/* repeat the conversion (only once) */
 		/* Do it the most conservative way -- unpowered */
@@ -400,7 +402,8 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		if (OW_r_scratchpad(data, pn))
 			return 1;
 	}
-	// Correction thanks to Nathan D. Holmes
+#endif	
+// Correction thanks to Nathan D. Holmes
 	//temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])) * .5 ; // Main conversion
 	// Further correction, using "truncation" thanks to Wim Heirman
 	//temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])>>1); // Main conversion
@@ -444,18 +447,17 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 	int res = Resolutions[resolution - 9].config;
 	UINT delay = Resolutions[resolution - 9].delay;
 	BYTE mask = Resolutions[resolution - 9].mask;
-	int oldres;
-	struct transaction_log tunpowered[] = {
-		TRXN_START,
-		{convert, convert, delay, trxn_power},
-		TRXN_END,
-	};
-	struct transaction_log tpowered[] = {
-		TRXN_START,
-		{convert, NULL, 1, trxn_match},
-		TRXN_END,
-	};
-
+    int oldres;
+    struct transaction_log tunpowered[] = {
+        TRXN_START,
+        {convert, convert, delay, trxn_power},
+        TRXN_END,
+    };
+    struct transaction_log tpowered[] = {
+        TRXN_START,
+        {convert, NULL, 1, trxn_match},
+        TRXN_END,
+    };
 	//LEVEL_DATA("OW_22temp\n");
 	/* powered? */
 	if (OW_power(&pow, pn))
@@ -484,15 +486,15 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 					delay);
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
-	} else if (Simul_Test(simul_temp, delay, pn) != 0) {	// powered, so release bus immediately after issuing convert
-		if (BUS_transaction(tpowered, pn))
-			return 1;
-		LEVEL_DEBUG("Powered temperature conversion -- %d msec\n", delay);
-		UT_delay(delay);
-	}
-
-	if (OW_r_scratchpad(data, pn))
-		return 1;
+	} else if (Simul_Test(simul_temp, pn) != 0) {	// powered, so release bus immediately after issuing convert
+        int ret ;
+        BUSLOCK(pn) ;
+        ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn) ;
+        BUSUNLOCK(pn) ;
+        if (ret) return ret ;
+    }
+    if (OW_r_scratchpad(data, pn))
+        return 1;
 	//printf("Temperature Got bytes %.2X %.2X\n",data[0],data[1]) ;
 
 	//*temp = .0625*(((char)data[1])<<8|data[0]) ;
@@ -546,11 +548,10 @@ static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 		TRXN_START,
 		{be, NULL, 1, trxn_match},
 		{NULL, data, 9, trxn_read},
+        {data, NULL, 9, trxn_crc8, } ,
 		TRXN_END,
 	};
-	if (BUS_transaction(tread, pn))
-		return 1;
-	return CRC8(data, 9);
+    return BUS_transaction(tread, pn) ;
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
@@ -644,4 +645,21 @@ static enum eDie OW_die(const struct parsedname *pn)
 	if (memcmp(die, DIE[pn->ft->data.i].B7, 6) > 0)
 		return eB7;
 	return eB6;
+}
+
+/* Powered temperature measurements -- need to poll line since it is held low during measurement */
+/* We check every 50 msec (arbitrary) up to 1.25 seconds */
+int FS_poll_convert( const struct parsedname * pn ) {
+    int i ;
+    BYTE p[1] ;
+    struct transaction_log t[] = {
+        { NULL, NULL, 50, trxn_delay, } ,
+        { NULL, p, 1, trxn_read, } ,
+        TRXN_END,
+    } ;
+    for ( i=0 ; i<25 ; ++i ) {
+        if ( BUS_transaction_nolock( t, pn ) ) break ;
+        if ( p[0] != 0 ) return 0 ;
+    }
+    return 1 ;
 }
