@@ -657,9 +657,13 @@ int FS_poll_convert( const struct parsedname * pn ) {
         { NULL, p, 1, trxn_read, } ,
         TRXN_END,
     } ;
-    for ( i=0 ; i<25 ; ++i ) {
+
+    // the first test is faster for just DS2438 (10 msec)
+    // subsequent polling is slower since the DS18x20 is a slower converter
+    for ( i=0 ; i<22 ; ++i ) {
         if ( BUS_transaction_nolock( t, pn ) ) break ;
         if ( p[0] != 0 ) return 0 ;
+        t[0].size = 50 ; // 50 msec for rest of delays
     }
     return 1 ;
 }
