@@ -283,7 +283,8 @@ int LibStart(void)
 					 in->name);
 				BUS_close(in);
 				BadAdapter_detect(in);	/* reset the methods */
-			}
+			} else
+				break;
 			// Fall Through
 		case bus_passive:
 			if (DS9097_detect(in)) {
