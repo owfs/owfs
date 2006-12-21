@@ -167,6 +167,15 @@ Section "Add to Desktop"
 SectionEnd
 
 #########
+# Bonjour
+#########
+Section "Bonjour (zeroconf autodiscovery) installation"
+  SectionIn 1
+  MessageBox MB_OK "Going to Apple site for installation."
+  ExecShell "open" "http://developer.apple.com/networking/bonjour/download/"
+SectionEnd
+
+#########
 # Source
 #########
 Section "OWFS source files" Source
