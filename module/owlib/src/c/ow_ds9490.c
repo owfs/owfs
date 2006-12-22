@@ -220,7 +220,7 @@ static void DS9490_setroutines(struct interface_routines *f)
 #define PARMSET_DS0_W0R_4us 0x1
 #define PARMSET_DS0_W0R_5us 0x2
 #define PARMSET_DS0_W0R_6us 0x3
-#define PARMSET_DS0_W0R_7us 0x6
+#define PARMSET_DS0_W0R_7us 0x4
 #define PARMSET_DS0_W0R_8us 0x5
 #define PARMSET_DS0_W0R_9us 0x6
 #define PARMSET_DS0_W0R_10us 0x7
