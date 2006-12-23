@@ -445,7 +445,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset,
 															  pn) : (pn->
 																	 ft->
 																	 read.
-																	 a)
+																	 b)
 					(buf, s, offset, pn);
 				if (ret == pn->ft->suglen) {
 					Cache_Add(buf, ret, pn);

@@ -36,11 +36,7 @@ static struct {
 
 struct tree_key {
 	BYTE sn[8];
-	union {
-		const struct filetype *ft;
-		const char *nm;
-		const struct connection_in *in;
-	} p;
+    void * p ;
 	int extension;
 };
 
@@ -117,7 +113,7 @@ static void node_show(struct tree_node *tn)
 	ctime_r(&tn->expires, b);
 	printf("\tNode " SNformat
 		   " pointer=%p extension=%d length=%d start=%p expires=%s",
-		   SNvar(tn->tk.sn), tn->tk.p.in, tn->tk.extension, tn->dsize, tn,
+		   SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize, tn,
 		   b ? b : "null\n");
 	for (i = 0; i < sizeof(struct tree_key); ++i)
 		printf("%.2X ", ((uint8_t *) tn)[i]);
@@ -198,7 +194,7 @@ int Cache_Add(const void *data, const size_t datasize,
                 LEVEL_DEBUG("Cache_Add "SNformat" size=%d\n",SNvar(pn->sn),(int)datasize);
 				memset(&tn->tk, 0, sizeof(struct tree_key));
 				memcpy(tn->tk.sn, pn->sn, 8);
-				tn->tk.p.ft = pn->ft;
+				tn->tk.p = pn->ft;
 				tn->tk.extension = pn->extension;
 				tn->expires = duration + time(NULL);
 				tn->dsize = datasize;
@@ -230,7 +226,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		if (tn) {
             LEVEL_DEBUG("Cache_Add_Dir "SNformat" elements=%d\n",SNvar(pn->sn),(int)(db->devices));
             FS_LoadPath(tn->tk.sn, pn);
-			tn->tk.p.in = pn->in;
+			tn->tk.p = pn->in;
 			tn->tk.extension = 0;
 			tn->expires = duration + time(NULL);
 			tn->dsize = size;
@@ -255,7 +251,7 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
             LEVEL_DEBUG("Cache_Add_Device "SNformat" bus=%d\n",SNvar(pn->sn),(int)bus_nr);
             memset(&tn->tk, 0, sizeof(struct tree_key));
 			memcpy(tn->tk.sn, pn->sn, 8);
-			tn->tk.p.in = NULL;	// value connected to all in-devices
+			tn->tk.p = NULL;	// value connected to all in-devices
 			//tn->tk.p.in = pn->in ;
 			tn->tk.extension = -1;
 			tn->expires = duration + time(NULL);
@@ -284,7 +280,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
                 LEVEL_DEBUG("Cache_Add_Internal "SNformat" size=%d\n",SNvar(pn->sn),(int)datasize);
                 memset(&tn->tk, 0, sizeof(struct tree_key));
 				memcpy(tn->tk.sn, pn->sn, 8);
-				tn->tk.p.nm = ip->name;
+				tn->tk.p = ip->name;
 				tn->tk.extension = -2;
 				tn->expires = duration + time(NULL);
 				tn->dsize = datasize;
@@ -314,8 +310,8 @@ static int Cache_Add_Common(struct tree_node *tn)
 	void *flip = NULL;
 	//printf("Cache_Add_Common\n") ;
 	node_show(tn);
-	LEVEL_DEBUG("Add to cache sn " SNformat " in=%p index=%d size=%d\n",
-				SNvar(tn->tk.sn), tn->tk.p.in, tn->tk.extension,
+	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d\n",
+				SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension,
 				tn->dsize);
 	CACHELOCK;
 	if (cache.killed < time(NULL)) {	// old database has timed out
@@ -475,7 +471,7 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
             struct tree_node tn;
 			memset(&tn.tk, 0, sizeof(struct tree_key));
 			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p.ft = pn->ft;
+			tn.tk.p = pn->ft;
 			tn.tk.extension = pn->extension;
 			switch (pn->ft->change) {
 			case fc_persistent:
@@ -504,7 +500,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 		//printf("GetDir tn=%p\n",tn) ;
 		memset(&tn.tk, 0, sizeof(struct tree_key));
 		FS_LoadPath(tn.tk.sn, pn);
-		tn.tk.p.in = pn->in;
+		tn.tk.p = pn->in;
 		tn.tk.extension = 0;
 		return Get_Stat(&cache_dir,
 						Cache_Get_Common_Dir(db, duration, &tn));
@@ -522,7 +518,7 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration,
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common_Dir\n") ;
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d\n",
-				SNvar(tn->tk.sn), tn->tk.p.in, tn->tk.extension);
+				SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHELOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.retired + duration > now)
@@ -565,7 +561,7 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
         LEVEL_DEBUG("Cache_Get_Device "SNformat"\n",SNvar(pn->sn));
         memset(&tn.tk, 0, sizeof(struct tree_key));
 		memcpy(tn.tk.sn, pn->sn, 8);
-		tn.tk.p.in = NULL;		// value connected to all in-devices
+		tn.tk.p = NULL;		// value connected to all in-devices
 		tn.tk.extension = -1;
 		return Get_Stat(&cache_dev,
 						Cache_Get_Common(bus_nr, &size, duration, &tn));
@@ -597,7 +593,7 @@ int Cache_Get_Internal(void *data, size_t * dsize,
             LEVEL_DEBUG("Cache_Get_Internal "SNformat" size=%d\n",SNvar(pn->sn),(int)dsize[0]);
             memset(&tn.tk, 0, sizeof(struct tree_key));
 			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p.nm = ip->name;
+			tn.tk.p = ip->name;
 			tn.tk.extension = -2;
 			switch (ip->change) {
 			case fc_persistent:
@@ -622,8 +618,8 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
 	time_t now = time(NULL);
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common\n") ;
-	LEVEL_DEBUG("Get from cache sn " SNformat " in=%p index=%d size=%lu\n",
-				SNvar(tn->tk.sn), tn->tk.p.in, tn->tk.extension, dsize[0]);
+	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%lu\n",
+				SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, dsize[0]);
 	node_show(tn);
 	//printf("\nTree (new):\n");
 	new_tree();
@@ -705,7 +701,7 @@ int Cache_Del(const struct parsedname *pn)
 			struct tree_node tn;
 			memset(&tn.tk, 0, sizeof(struct tree_key));
 			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p.ft = pn->ft;
+			tn.tk.p = pn->ft;
 			tn.tk.extension = pn->extension;
 			switch (pn->ft->change) {
 			case fc_persistent:
@@ -725,7 +721,7 @@ int Cache_Del_Dir(const struct parsedname *pn)
 		struct tree_node tn;
 		memset(&tn.tk, 0, sizeof(struct tree_key));
 		FS_LoadPath(tn.tk.sn, pn);
-		tn.tk.p.in = pn->in;
+		tn.tk.p = pn->in;
 		tn.tk.extension = 0;
 		return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 	}
@@ -739,7 +735,7 @@ int Cache_Del_Device(const struct parsedname *pn)
 		struct tree_node tn;
 		memset(&tn.tk, 0, sizeof(struct tree_key));
 		memcpy(tn.tk.sn, pn->sn, 8);
-		tn.tk.p.in = pn->in;
+		tn.tk.p = pn->in;
 		tn.tk.extension = -1;
 		return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 	}
@@ -755,7 +751,7 @@ int Cache_Del_Internal(const struct internal_prop *ip,
 			struct tree_node tn;
 			memset(&tn.tk, 0, sizeof(struct tree_key));
 			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p.nm = ip->name;
+			tn.tk.p = ip->name;
 			tn.tk.extension = 0;
 			switch (ip->change) {
 			case fc_persistent:
@@ -774,7 +770,7 @@ static int Cache_Del_Common(const struct tree_node *tn)
 	time_t now = time(NULL);
 	int ret = 1;
 	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d\n",
-				SNvar(tn->tk.sn), tn->tk.p.in, tn->tk.extension);
+				SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHELOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.killed > now)
