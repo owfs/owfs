@@ -195,6 +195,7 @@ int Cache_Add(const void *data, const size_t datasize,
 				(struct tree_node *) malloc(sizeof(struct tree_node) +
 											datasize);
 			if (tn) {
+                LEVEL_DEBUG("Cache_Add "SNformat" size=%d\n",SNvar(pn->sn),(int)datasize);
 				memset(&tn->tk, 0, sizeof(struct tree_key));
 				memcpy(tn->tk.sn, pn->sn, 8);
 				tn->tk.p.ft = pn->ft;
@@ -227,7 +228,8 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 			(struct tree_node *) malloc(sizeof(struct tree_node) + size);
 		//printf("AddDir tn=%p\n",tn) ;
 		if (tn) {
-			FS_LoadPath(tn->tk.sn, pn);
+            LEVEL_DEBUG("Cache_Add_Dir "SNformat" elements=%d\n",SNvar(pn->sn),(int)(db->devices));
+            FS_LoadPath(tn->tk.sn, pn);
 			tn->tk.p.in = pn->in;
 			tn->tk.extension = 0;
 			tn->expires = duration + time(NULL);
@@ -250,7 +252,8 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 			(struct tree_node *) malloc(sizeof(struct tree_node) +
 										sizeof(int));
 		if (tn) {
-			memset(&tn->tk, 0, sizeof(struct tree_key));
+            LEVEL_DEBUG("Cache_Add_Device "SNformat" bus=%d\n",SNvar(pn->sn),(int)bus_nr);
+            memset(&tn->tk, 0, sizeof(struct tree_key));
 			memcpy(tn->tk.sn, pn->sn, 8);
 			tn->tk.p.in = NULL;	// value connected to all in-devices
 			//tn->tk.p.in = pn->in ;
@@ -278,7 +281,8 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 				(struct tree_node *) malloc(sizeof(struct tree_node) +
 											datasize);
 			if (tn) {
-				memset(&tn->tk, 0, sizeof(struct tree_key));
+                LEVEL_DEBUG("Cache_Add_Internal "SNformat" size=%d\n",SNvar(pn->sn),(int)datasize);
+                memset(&tn->tk, 0, sizeof(struct tree_key));
 				memcpy(tn->tk.sn, pn->sn, 8);
 				tn->tk.p.nm = ip->name;
 				tn->tk.extension = -2;
@@ -464,10 +468,11 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 {
 	//printf("Cache_Get\n") ;
-	if (pn && IsUncachedDir(pn) && NotAlarmDir(pn)) {	// do check here to avoid needless processing
+	if (pn && NotUncachedDir(pn) && NotAlarmDir(pn)) {	// do check here to avoid needless processing
 		time_t duration = TimeOut(pn->ft->change);
 		if (duration > 0) {
-			struct tree_node tn;
+            LEVEL_DEBUG("Cache_Get "SNformat" size=%d IsUncachedDir=%d\n",SNvar(pn->sn),(int)dsize[0],IsUncachedDir(pn));
+            struct tree_node tn;
 			memset(&tn.tk, 0, sizeof(struct tree_key));
 			memcpy(tn.tk.sn, pn->sn, 8);
 			tn.tk.p.ft = pn->ft;
@@ -495,6 +500,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	//printf("Cache_Get_Dir\n") ;
 	if (duration > 0) {
 		struct tree_node tn;
+        LEVEL_DEBUG("Cache_Get_Dir "SNformat"\n",SNvar(pn->sn));
 		//printf("GetDir tn=%p\n",tn) ;
 		memset(&tn.tk, 0, sizeof(struct tree_key));
 		FS_LoadPath(tn.tk.sn, pn);
@@ -556,7 +562,8 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 	if (duration > 0) {
 		size_t size = sizeof(int);
 		struct tree_node tn;
-		memset(&tn.tk, 0, sizeof(struct tree_key));
+        LEVEL_DEBUG("Cache_Get_Device "SNformat"\n",SNvar(pn->sn));
+        memset(&tn.tk, 0, sizeof(struct tree_key));
 		memcpy(tn.tk.sn, pn->sn, 8);
 		tn.tk.p.in = NULL;		// value connected to all in-devices
 		tn.tk.extension = -1;
@@ -587,7 +594,8 @@ int Cache_Get_Internal(void *data, size_t * dsize,
 		time_t duration = TimeOut(ip->change);
 		if (duration > 0) {
 			struct tree_node tn;
-			memset(&tn.tk, 0, sizeof(struct tree_key));
+            LEVEL_DEBUG("Cache_Get_Internal "SNformat" size=%d\n",SNvar(pn->sn),(int)dsize[0]);
+            memset(&tn.tk, 0, sizeof(struct tree_key));
 			memcpy(tn.tk.sn, pn->sn, 8);
 			tn.tk.p.nm = ip->name;
 			tn.tk.extension = -2;
