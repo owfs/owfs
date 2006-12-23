@@ -364,26 +364,18 @@ static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 	BYTE data[9];
 	BYTE recall[] = { 0xB8, page, };
 	BYTE r[] = { 0xBE, page, };
-	struct transaction_log trecall[] = {
+	struct transaction_log t[] = {
 		TRXN_START,
 		{recall, NULL, 2, trxn_match},
-		TRXN_END,
-	};
-	struct transaction_log tread[] = {
 		TRXN_START,
 		{r, NULL, 2, trxn_match},
 		{NULL, data, 9, trxn_read},
+        {data, NULL, 9, trxn_crc8, } ,
 		TRXN_END,
 	};
 
 	// read to scratch, then in
-	if (BUS_transaction(trecall, pn))
-		return 1;
-
-	// read back to compare
-	if (BUS_transaction(tread, pn))
-		return 1;
-	if (CRC8(data, 9))
+	if (BUS_transaction(t, pn))
 		return 1;
 
 	// copy to buffer
@@ -399,55 +391,27 @@ static int OW_w_page(const BYTE * p, const int page,
 	BYTE w[] = { 0x4E, page, };
 	BYTE r[] = { 0xBE, page, };
 	BYTE eeprom[] = { 0x48, page, };
-	int i;
-	struct transaction_log twrite[] = {
+	struct transaction_log t[] = {
+        TRXN_START, // 0
+        {w, NULL, 2, trxn_match}, //1 write to scratch command
+        {p, NULL, 8, trxn_match},// write to scratch data
 		TRXN_START,
-		{w, NULL, 2, trxn_match},
-		{p, NULL, 8, trxn_match},
-		TRXN_END,
-	};
-	struct transaction_log tread[] = {
+        {r, NULL, 2, trxn_match}, //4 read back command
+        {NULL, data, 9, trxn_read}, //5 read data
+        {data, NULL, 9, trxn_crc8} ,//6 crc8
+        {data, p, 0, trxn_match, } , //7 match except page 0
 		TRXN_START,
-		{r, NULL, 2, trxn_match},
-		{NULL, data, 9, trxn_read},
-		TRXN_END,
-	};
-	struct transaction_log tsave[] = {
-		TRXN_START,
-		{eeprom, NULL, 2, trxn_match},
-		TRXN_END,
-	};
-	struct transaction_log tdone[] = {
-		TRXN_START,
-		{NULL, data, 1, trxn_match},
+        {eeprom, NULL, 2, trxn_match},//9 actual write
 		TRXN_END,
 	};
 
+    if ( page>0 ) t[7].size = 8 ; // full match for all but volatile page 0
 	// write then read to scratch, then into EEPROM if scratch matches
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(t, pn))
 		return 1;
 
-	// read back to compare
-	if (BUS_transaction(tread, pn))
-		return 1;
-	if (CRC8(data, 9))
-		return 1;
-	if (page && memcmp(p, data, 8))
-		return 1;				/* page 0 has readonly fields that won't compare */
-
-	// commit to eeprom
-	if (BUS_transaction(tsave, pn))
-		return 1;
-
-	// Loop waiting for completion
-	for (i = 0; i < 10; ++i) {
-		UT_delay(1);
-		if (BUS_transaction(tdone, pn))
-			return 1;
-		if (data[0])
-			return 0;
-	}
-	return 1;					// timeout
+    UT_delay(10) ;
+	return 0;					// timeout
 }
 
 static int OW_temp(_FLOAT * T, const struct parsedname *pn)

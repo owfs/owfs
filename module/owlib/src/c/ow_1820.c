@@ -375,7 +375,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
-	} else if (Simul_Test(simul_temp, pn) != 0) {	// powered
+	} else if (Simul_Test(simul_temp, pn)) {	// powered
         int ret ;
         BUSLOCK(pn) ;
             ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn) ;
@@ -486,13 +486,16 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 					delay);
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
-	} else if (Simul_Test(simul_temp, pn) != 0) {	// powered, so release bus immediately after issuing convert
+	} else if (Simul_Test(simul_temp, pn)) {	// powered, so release bus immediately after issuing convert
+        LEVEL_DEBUG("Powered temperature conversion\n") ;
         int ret ;
         BUSLOCK(pn) ;
         ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn) ;
         BUSUNLOCK(pn) ;
         if (ret) return ret ;
-    }
+    } else {
+        LEVEL_DEBUG("Simultaneous temperature conversion\n") ;
+}
     if (OW_r_scratchpad(data, pn))
         return 1;
 	//printf("Temperature Got bytes %.2X %.2X\n",data[0],data[1]) ;
