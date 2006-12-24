@@ -44,7 +44,7 @@ From CVS
 Installation of the ownet module follows the standard Python distutils
 installation.
 
-$ cd module/swig/python/ownet
+$ cd module/ownet/python
 $ sudo python setup.py install
 
 There should now be a module called ownet in the site-packages
