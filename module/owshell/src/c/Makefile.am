@@ -8,6 +8,7 @@ COMMON_OWSHELL_SOURCE = ow_opt.c   \
                ow_browse.c  \
                ow_dl.c      \
                ow_dnssd.c   \
+               ow_tcp_read.c\
                getaddrinfo.c\
                getopt.c     \
                globals.c

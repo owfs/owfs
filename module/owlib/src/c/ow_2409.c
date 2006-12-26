@@ -192,7 +192,7 @@ static int OW_clearevent(const struct parsedname *pn)
 
 	// Could certainly couple this with next transaction
 	BUSLOCK(pn);
-//	pn->in->buspath_bad = 1;
+//  pn->in->buspath_bad = 1;
 	BUSUNLOCK(pn);
 
 	if (BUS_transaction(t, pn))

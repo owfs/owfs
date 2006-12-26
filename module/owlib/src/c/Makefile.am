@@ -77,6 +77,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_settings.c     \
                ow_simultaneous.c \
                ow_system.c       \
+               ow_tcp_read.c     \
                ow_temp.c         \
                ow_tree.c         \
                ow_transaction.c  \

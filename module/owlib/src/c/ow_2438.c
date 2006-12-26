@@ -370,7 +370,7 @@ static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 		TRXN_START,
 		{r, NULL, 2, trxn_match},
 		{NULL, data, 9, trxn_read},
-        {data, NULL, 9, trxn_crc8, } ,
+		{data, NULL, 9, trxn_crc8,},
 		TRXN_END,
 	};
 
@@ -392,25 +392,26 @@ static int OW_w_page(const BYTE * p, const int page,
 	BYTE r[] = { 0xBE, page, };
 	BYTE eeprom[] = { 0x48, page, };
 	struct transaction_log t[] = {
-        TRXN_START, // 0
-        {w, NULL, 2, trxn_match}, //1 write to scratch command
-        {p, NULL, 8, trxn_match},// write to scratch data
+		TRXN_START,				// 0
+		{w, NULL, 2, trxn_match},	//1 write to scratch command
+		{p, NULL, 8, trxn_match},	// write to scratch data
 		TRXN_START,
-        {r, NULL, 2, trxn_match}, //4 read back command
-        {NULL, data, 9, trxn_read}, //5 read data
-        {data, NULL, 9, trxn_crc8} ,//6 crc8
-        {data, p, 0, trxn_match, } , //7 match except page 0
+		{r, NULL, 2, trxn_match},	//4 read back command
+		{NULL, data, 9, trxn_read},	//5 read data
+		{data, NULL, 9, trxn_crc8},	//6 crc8
+		{data, p, 0, trxn_match,},	//7 match except page 0
 		TRXN_START,
-        {eeprom, NULL, 2, trxn_match},//9 actual write
+		{eeprom, NULL, 2, trxn_match},	//9 actual write
 		TRXN_END,
 	};
 
-    if ( page>0 ) t[7].size = 8 ; // full match for all but volatile page 0
+	if (page > 0)
+		t[7].size = 8;			// full match for all but volatile page 0
 	// write then read to scratch, then into EEPROM if scratch matches
 	if (BUS_transaction(t, pn))
 		return 1;
 
-    UT_delay(10) ;
+	UT_delay(10);
 	return 0;					// timeout
 }
 

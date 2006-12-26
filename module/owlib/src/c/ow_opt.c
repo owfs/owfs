@@ -76,11 +76,11 @@ const struct option owopts_long[] = {
 	{"max_clients", required_argument, NULL, 269},	/* ftp max connections */
 	{"max-clients", required_argument, NULL, 269},	/* ftp max connections */
 	{"maxclients", required_argument, NULL, 269},	/* ftp max connections */
-	{"HA7", required_argument, NULL, 271},	/* HA7Net */
-	{"ha7", required_argument, NULL, 271},	/* HA7Net */
-	{"HA7NET", required_argument, NULL, 271},
-	{"HA7Net", required_argument, NULL, 271},
-	{"ha7net", required_argument, NULL, 271},
+	{"HA7", optional_argument, NULL, 271},	/* HA7Net */
+	{"ha7", optional_argument, NULL, 271},	/* HA7Net */
+	{"HA7NET", optional_argument, NULL, 271},
+	{"HA7Net", optional_argument, NULL, 271},
+	{"ha7net", optional_argument, NULL, 271},
 	{"FAKE", required_argument, NULL, 272},	/* Fake */
 	{"Fake", required_argument, NULL, 272},	/* Fake */
 	{"fake", required_argument, NULL, 272},	/* Fake */
@@ -517,10 +517,11 @@ static int OW_ArgHA7(const char *arg)
 		struct connection_in *in = NewIn(NULL);
 		if (in == NULL)
 			return 1;
-		in->name = strdup(arg);
+		in->name = arg ? strdup(arg) : NULL;
 		in->busmode = bus_ha7net;
 		return 0;
 	} else {					// Try multicast discovery
+		printf("Find HA7\n");
 		return FS_FindHA7();
 	}
 #else							/* OW_HA7 */

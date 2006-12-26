@@ -1249,6 +1249,9 @@ AC_CONFIG_FILES([
     module/owftpd/src/Makefile
     module/owftpd/src/include/Makefile
     module/owftpd/src/c/Makefile
+    module/ownet/Makefile
+    module/ownet/php/Makefile
+    module/ownet/python/Makefile
     module/owshell/Makefile
     module/owshell/src/Makefile
     module/owshell/src/include/Makefile

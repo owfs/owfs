@@ -1079,7 +1079,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
     if (socket_fd == -1) goto exit_stor;
 
     /* we're golden, read the file */
-    if ((size_actual=readn(socket_fd, buf, size_read, &limit_time)) == -1) {
+    if ((size_actual=tcp_read(socket_fd, buf, size_read, &limit_time)) == -1) {
         reply(f, 550, "Error reading from data connection; %s.",
         strerror(errno));
         goto exit_stor;

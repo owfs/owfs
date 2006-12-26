@@ -346,7 +346,7 @@ static int LINK_read(BYTE * buf, const size_t size,
 {
 	if (pn->in->Adapter != adapter_LINK_E) {
 		return LINK_read_low(buf, size, pn);
-	} else if (readn(pn->in->fd, buf, size + ExtraEbyte, &tvnet) != (ssize_t) size + ExtraEbyte) {	/* NOTE NOTE extra byte length for buffer */
+	} else if (tcp_read(pn->in->fd, buf, size + ExtraEbyte, &tvnet) != (ssize_t) size + ExtraEbyte) {	/* NOTE NOTE extra byte length for buffer */
 		LEVEL_CONNECT("LINK_read (ethernet) error\n");
 		return -EIO;
 	}
@@ -471,7 +471,7 @@ static int LINKE_preamble(const struct parsedname *pn)
 {
 	BYTE byte[6];
 	struct timeval tvnetfirst = { Global.timeout_network, 0, };
-	if (readn(pn->in->fd, byte, 6, &tvnetfirst) != 6)
+	if (tcp_read(pn->in->fd, byte, 6, &tvnetfirst) != 6)
 		return -EIO;
 	LEVEL_CONNECT("Good preamble\n");
 	return 0;

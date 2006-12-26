@@ -165,7 +165,7 @@ static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp
     /* Clear return structure */
     memset( sp, 0, sizeof(struct serverpackage) ) ;
     
-    if ( readn(fd, sm, sizeof(struct server_msg), &tv ) != sizeof(struct server_msg) ) {
+    if ( tcp_read(fd, sm, sizeof(struct server_msg), &tv ) != sizeof(struct server_msg) ) {
         sm->type = msg_error ;
         return -EIO ;
     }
@@ -195,7 +195,7 @@ static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp
     }
     
     /* read in data */
-    if ( readn( fd, msg, trueload, &tv ) != trueload ) { /* read in the expected data */
+    if ( tcp_read( fd, msg, trueload, &tv ) != trueload ) { /* read in the expected data */
         sm->type = msg_error ;
         free(msg);
         return -EIO ;

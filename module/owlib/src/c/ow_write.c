@@ -335,21 +335,21 @@ static int FS_w_single(const char *buf, const size_t size,
 		break;
 	case ft_tempgap:
 	case ft_float:
-        case ft_temperature:
-            if (offset) {
+	case ft_temperature:
+		if (offset) {
 			ret = -EADDRNOTAVAIL;
 		} else {
 			_FLOAT F;
 			if (FS_input_float(&F, buf, size) == 0) {
-                switch( pn->ft->format) {
-                    case ft_temperature:
+				switch (pn->ft->format) {
+				case ft_temperature:
 					F = fromTemperature(F, pn);
-                    break ;
-                    case ft_tempgap:
+					break;
+				case ft_tempgap:
 					F = fromTempGap(F, pn);
-                    // trivial fall-through
-                    default:
-                        break ;
+					// trivial fall-through
+				default:
+					break;
 				}
 				ret = (pn->ft->write.f) (&F, pn);
 				if (ret == 0)
@@ -474,25 +474,25 @@ static int FS_w_aggregate_all(const char *buf, const size_t size,
 		break;
 	case ft_tempgap:
 	case ft_float:
-        case ft_temperature:
-        {
+	case ft_temperature:
+		{
 			_FLOAT *f = (_FLOAT *) calloc(elements, sizeof(_FLOAT));
 			if (f == NULL) {
 				ret = -ENOMEM;
 			} else {
 				if ((ret = FS_input_float_array(f, buf, size, pn)) == 0) {
-                    size_t i;
-                    switch ( pn->ft->format) {
-                        case ft_temperature:
+					size_t i;
+					switch (pn->ft->format) {
+					case ft_temperature:
 						for (i = 0; i < elements; ++i)
 							f[i] = fromTemperature(f[i], pn);
-                        break ;
-                        case ft_tempgap:
+						break;
+					case ft_tempgap:
 						for (i = 0; i < elements; ++i)
 							f[i] = fromTempGap(f[i], pn);
-                        // trivial fall through
-                        default:
-                        break ;
+						// trivial fall through
+					default:
+						break;
 					}
 					ret = (pn->ft->write.f) (f, pn);
 					if (ret == 0)
@@ -770,16 +770,16 @@ static int FS_w_aggregate(const char *buf, const size_t size,
 					if (FS_input_float(&F, buf, size)) {
 						ret = -EBADMSG;
 					} else {
-                        switch (pn->ft->format) {
-                            case ft_temperature:
+						switch (pn->ft->format) {
+						case ft_temperature:
 							f[pn->extension] = fromTemperature(F, pn);
-                            break ;
-                            case ft_tempgap:
+							break;
+						case ft_tempgap:
 							f[pn->extension] = fromTempGap(F, pn);
-                            break ;
-                            default :
+							break;
+						default:
 							f[pn->extension] = F;
-                        }
+						}
 						if ((ret = (pn->ft->write.f) (f, pn)) >= 0)
 							Cache_Add(f, elements * sizeof(_FLOAT), pn);
 					}

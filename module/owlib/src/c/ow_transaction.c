@@ -49,9 +49,9 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 			LEVEL_DEBUG("  Transaction select = %d\n", ret);
 			break;
 		case trxn_match:
-            if ( t->size == 0 ) { /* ignore for both cases */
-                break ;
-            } else if (t->in) {		/* just compare out and in */
+			if (t->size == 0) {	/* ignore for both cases */
+				break;
+			} else if (t->in) {	/* just compare out and in */
 				ret = memcmp(t->out, t->in, t->size);
 				LEVEL_DEBUG("  Transaction match = %d\n", ret);
 			} else {
@@ -60,9 +60,9 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 			}
 			break;
 		case trxn_read:
-            if ( t->size == 0 ) { /* ignore for all cases */
-                break ;
-            } else if (t->out == NULL) {
+			if (t->size == 0) {	/* ignore for all cases */
+				break;
+			} else if (t->out == NULL) {
 				ret = BUS_readin_data(t->in, t->size, pn);
 				LEVEL_DEBUG("  Transaction readin = %d\n", ret);
 			} else if (t->in == NULL) {

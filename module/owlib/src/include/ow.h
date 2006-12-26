@@ -767,7 +767,7 @@ void OWLIB_can_finish_end(void);
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
-ssize_t readn(int fd, void *vptr, size_t n, const struct timeval *ptv);
+ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void ServerProcess(void (*HandlerRoutine) (int fd),

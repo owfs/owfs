@@ -24,16 +24,14 @@ $Id$
 /* Multicast to discover HA7 servers */
 /* Wait 10 seconds for responses */
 /* returns number found (>=0) or <0 on error */
+# define HA7_response_len 84
 int FS_FindHA7(void)
 {
 	struct addrinfo *ai;
 	struct addrinfo hint;
 	struct addrinfo *now;
-	int n, fd;
 	int ret = -1;
-
-	struct timeval tcopy, tv = { 5, 0 };
-	fd_set readfd;
+	int n;
 
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_flags = AI_CANONNAME;
@@ -47,53 +45,51 @@ int FS_FindHA7(void)
 	}
 
 	for (now = ai; now; now = now->ai_next) {
+		BYTE buffer[HA7_response_len];
+		struct timeval tv = { 5, 0 };
+		int fd;
+		struct sockaddr_in from;
+		ASCII name[64];
+		struct connection_in *in;
+		printf("Finding...\n");
 		if ((fd =
 			 socket(now->ai_family, now->ai_socktype,
 					now->ai_protocol)) < 0)
 			continue;
+		printf("Finding fd=%d\n", fd);
 		if (sendto(fd, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
 			!= 4) {
 			ERROR_CONNECT("Trouble sending broadcast message\n");
 			continue;
 		}
+		printf("sendto ok\n");
 		if (ret < 0)
 			ret = 0;			// possible read -- no default error
 
 		/* now read */
-		memcpy(&tcopy, &tv, sizeof(struct timeval));
-		FD_ZERO(&readfd);
-		FD_SET(fd, &readfd);
-		select(fd + 1, &readfd, NULL, NULL, &tcopy);
-		if (FD_ISSET(fd, &readfd)) {
-# define HA7_response_len 84
-			BYTE buffer[HA7_response_len];
-			struct sockaddr_in from;
-			socklen_t len = sizeof(struct sockaddr);
-			ASCII name[64];
-			struct connection_in *in;
 
-			if (recvfrom
-				(fd, buffer, HA7_response_len, 0,
-				 (struct sockaddr *) (&(from)),
-				 &len) != HA7_response_len) {
-				LEVEL_CONNECT("HA7 response bad length\n");
-				continue;
-			}
-			if (memcmp("HA\x80\x01", buffer, 4)) {
-				LEVEL_CONNECT("HA7 response content error\n");
-				continue;
-			}
-			if ((in = NewIn(NULL)) == NULL)
-				break;
-			++ret;
-			inet_ntop(AF_INET, &(from.sin_addr), name, 64);
-			snprintf(&name[64 - strlen(name)], 64 - strlen(name), ":%d",
-					 (buffer[2] << 8) + buffer[3]);
-			in->name = strdup(name);
-			in->busmode = bus_ha7net;
-		} else {
-			LEVEL_CONNECT("HA7 broadcast timeout\n");
+		if ((n =
+			 tcp_read(fd, buffer, HA7_response_len,
+					  &tv)) != HA7_response_len) {
+			LEVEL_CONNECT("HA7 response bad length\n");
+			printf("HA7 response bad length %d\n", n);
+			continue;
 		}
+		printf("Read in the corrent length\n");
+		if (memcmp("HA\x80\x01", buffer, 4)) {
+			LEVEL_CONNECT("HA7 response content error\n");
+			continue;
+		}
+		printf("Read in with correct start chars\n");
+		if ((in = NewIn(NULL)) == NULL)
+			break;
+		printf("Success!\n");
+		++ret;
+		inet_ntop(AF_INET, &(from.sin_addr), name, 64);
+		snprintf(&name[64 - strlen(name)], 64 - strlen(name), ":%d",
+				 (buffer[2] << 8) + buffer[3]);
+		in->name = strdup(name);
+		in->busmode = bus_ha7net;
 	}
 	freeaddrinfo(ai);
 	return ret;

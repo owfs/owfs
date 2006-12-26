@@ -243,7 +243,7 @@ static int HA7_read(int fd, ASCII ** buffer)
 
 	*buffer = NULL;
 	buf[4096] = '\0';			// just in case
-	if ((r = readn(fd, buf, 4096, &tvnetfirst)) < 0) {
+	if ((r = tcp_read(fd, buf, 4096, &tvnetfirst)) < 0) {
 		LEVEL_CONNECT("HA7_read (ethernet) error = %d\n", r);
 		write(1, buf, r);
 		ret = -EIO;
@@ -265,7 +265,7 @@ static int HA7_read(int fd, ASCII ** buffer)
 		} else {
 			memcpy(*buffer, start, s);
 			while (r == 4096) {
-				if ((r = readn(fd, buf, 4096, &tvnet)) < 0) {
+				if ((r = tcp_read(fd, buf, 4096, &tvnet)) < 0) {
 					LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n",
 							   r);
 					ret = -EIO;
@@ -495,4 +495,5 @@ static void toHA7init(struct toHA7 *ha7)
 	ha7->length = 0;
 	ha7->conditional[0] = ha7->lock[0] = ha7->address[0] = '\0';
 }
+
 #endif							/* OW_HA7 */

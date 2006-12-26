@@ -157,7 +157,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
 
     do { /* loop until non delay message (payload>=0) */
         //printf("OW_SERVER loop1\n");
-        ret = readn(fd, cm, sizeof(struct client_msg), &tv );
+        ret = tcp_read(fd, cm, sizeof(struct client_msg), &tv );
         if ( ret != sizeof(struct client_msg) ) {
             memset(cm, 0, sizeof(struct client_msg)) ;
             cm->ret = -EIO ;
@@ -181,7 +181,7 @@ static void * FromServerAlloc( int fd, struct client_msg * cm ) {
     }
 
     if ( (msg=(char *)malloc((size_t)cm->payload)) ) {
-        ret = readn(fd,msg,(size_t)(cm->payload), &tv );
+        ret = tcp_read(fd,msg,(size_t)(cm->payload), &tv );
         if ( ret != cm->payload ) {
 //printf("FromServer couldn't read payload\n");
             cm->payload = 0 ;
@@ -203,7 +203,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
 
     do { // read regular header, or delay (delay when payload<0)
         //printf("OW_SERVER loop2\n");
-        ret = readn(fd, cm, sizeof(struct client_msg), &tv );
+        ret = tcp_read(fd, cm, sizeof(struct client_msg), &tv );
         if ( ret != sizeof(struct client_msg) ) {
             //printf("OW_SERVER loop2 bad\n");
             cm->size = 0 ;
@@ -224,7 +224,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     if ( cm->payload==0 ) return 0 ; // No payload, done.
 
     rtry = cm->payload<(ssize_t)size ? (size_t)cm->payload : size ;
-    ret = readn(fd, msg, rtry, &tv ); // read expected payload now.
+    ret = tcp_read(fd, msg, rtry, &tv ); // read expected payload now.
     if ( ret != rtry ) {
         cm->ret = -EIO ;
         return -EIO ;
@@ -233,7 +233,7 @@ static int FromServer( int fd, struct client_msg * cm, char * msg, size_t size )
     if ( cm->payload > (ssize_t)size ) { // Uh oh. payload bigger than expected. read it in and discard
         size_t d = cm->payload - size ;
         char extra[d] ;
-        ret = readn(fd,extra,d,&tv);
+        ret = tcp_read(fd,extra,d,&tv);
         if ( ret != d ) {
             cm->ret = -EIO ;
             return -EIO ;
