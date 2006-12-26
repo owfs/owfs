@@ -315,6 +315,9 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
 		pn->state |= pn_buspath;	/* specified a bus */
 		pn->bus_nr = atoi(&pathnow[4]);
 
+		/* We have to allow any bus-number if it's a remote-server.
+		 * We receive paths like /bus.4 from a remote owserver, and we
+		 * have to trust this result. */
 		if (remote) {
 			/* Accept any bus value */
 			return pe_default;
@@ -332,9 +335,6 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
 			/* don't return bus-list for local paths. */
 			pn->sg &= (~BUSRET_MASK);
 		}
-		/* We have to allow any bus-number here right now. We receive
-		 * paths like /bus.4 from a remote owserver, and we have to trust
-		 * this result. */
 
 		if (!(found = strstr(pn->path, "/bus."))) {
 			length = pn->path_busless - pn->path - 1;

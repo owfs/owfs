@@ -82,12 +82,15 @@ void COM_close(struct connection_in *in)
 	fd = in->fd;
 	// restore tty settings
 	if (fd > -1) {
-		if (tcsetattr(fd, TCSAFLUSH, &in->connin.serial.oldSerialTio)) {
+		LEVEL_DEBUG("COM_close: flush\n");
+		tcflush(fd, TCIOFLUSH);
+		LEVEL_DEBUG("COM_close: restore\n");
+		if(tcsetattr(fd, TCSANOW, &in->connin.serial.oldSerialTio)<0) {
 			ERROR_CONNECT("Cannot restore port attributes: %s\n",
 						  SAFESTRING(in->name));
 			STAT_ADD1_BUS(BUS_tcsetattr_errors, in);
 		}
-		tcflush(fd, TCIOFLUSH);
+		LEVEL_DEBUG("COM_close: close\n");
 		close(fd);
 		in->fd = -1;
 	}

@@ -148,7 +148,7 @@ static void new_tree(void)
 #endif							/* CACHE_DEBUG */
 
 /* DB cache creation code */
-	/* Note: done in single-threaded mode so locking not yet needed */
+/* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open(void)
 {
 	cache.new_db = NULL;
@@ -163,7 +163,7 @@ void Cache_Open(void)
 	cache.killed = cache.retired + cache.lifespan;
 }
 
-	/* Note: done in single-threaded mode so locking not yet needed */
+/* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Close(void)
 {
 	tdestroy(cache.new_db, free);
@@ -184,34 +184,32 @@ static int Add_Stat(struct cache *scache, const int result)
 int Cache_Add(const void *data, const size_t datasize,
 			  const struct parsedname *pn)
 {
-	if (pn && NotAlarmDir(pn)) {	// do check here to avoid needless processing
-		time_t duration = TimeOut(pn->ft->change);
-		if (duration > 0) {
-			struct tree_node *tn =
-				(struct tree_node *) malloc(sizeof(struct tree_node) +
-											datasize);
-			if (tn) {
-				LEVEL_DEBUG("Cache_Add " SNformat " size=%d\n",
-							SNvar(pn->sn), (int) datasize);
-				memset(&tn->tk, 0, sizeof(struct tree_key));
-				memcpy(tn->tk.sn, pn->sn, 8);
-				tn->tk.p = pn->ft;
-				tn->tk.extension = pn->extension;
-				tn->expires = duration + time(NULL);
-				tn->dsize = datasize;
-				if (datasize)
-					memcpy(TREE_DATA(tn), data, datasize);
-				switch (pn->ft->change) {
-				case fc_persistent:
-					return Add_Stat(&cache_sto, Cache_Add_Store(tn));
-				default:
-					return Add_Stat(&cache_ext, Cache_Add_Common(tn));
-				}
-			}
-			return -ENOMEM;
-		}
+	struct tree_node *tn;
+	time_t duration;
+
+	if(!pn || IsAlarmDir(pn)) return 0;  // do check here to avoid needless processing
+
+	duration = TimeOut(pn->ft->change);
+	if(duration <= 0) return 0;  /* in case timeout set to 0 */
+	
+	tn = (struct tree_node *) malloc(sizeof(struct tree_node) +
+					 datasize);
+	if(!tn) return -ENOMEM;
+	
+	LEVEL_DEBUG("Cache_Add "SNformat" size=%d\n",SNvar(pn->sn),(int)datasize);
+	memset(&tn->tk, 0, sizeof(struct tree_key));
+	memcpy(tn->tk.sn, pn->sn, 8);
+	tn->tk.p = pn->ft;
+	tn->tk.extension = pn->extension;
+	tn->expires = duration + time(NULL);
+	tn->dsize = datasize;
+	if(datasize) memcpy(TREE_DATA(tn), data, datasize);
+	switch (pn->ft->change) {
+	case fc_persistent:
+		return Add_Stat(&cache_sto, Cache_Add_Store(tn));
+	default:
+		return Add_Stat(&cache_ext, Cache_Add_Common(tn));
 	}
-	return 0;
 }
 
 /* Add a directory entry to the cache */
@@ -219,26 +217,25 @@ int Cache_Add(const void *data, const size_t datasize,
 int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
+	struct tree_node *tn;
 	size_t size = db->devices * 8;
 	//printf("Cache_Add_Dir\n") ;
-	if (duration > 0) {			/* in case timeout set to 0 */
-		struct tree_node *tn =
-			(struct tree_node *) malloc(sizeof(struct tree_node) + size);
-		//printf("AddDir tn=%p\n",tn) ;
-		if (tn) {
-			LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n",
-						SNvar(pn->sn), (int) (db->devices));
-			FS_LoadPath(tn->tk.sn, pn);
-			tn->tk.p = pn->in;
-			tn->tk.extension = 0;
-			tn->expires = duration + time(NULL);
-			tn->dsize = size;
-			if (size)
-				memcpy(TREE_DATA(tn), db->snlist, size);
-			return Add_Stat(&cache_dir, Cache_Add_Common(tn));
-		}
-	}
-	return -ENOMEM;
+	if(!pn) return 0;  // do check here to avoid needless processing
+
+	if(duration <= 0) return 0;  /* in case timeout set to 0 */
+
+	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + size);
+	//printf("AddDir tn=%p\n",tn) ;
+	if(!tn) return -ENOMEM;
+
+	LEVEL_DEBUG("Cache_Add_Dir "SNformat" elements=%d\n",SNvar(pn->sn),(int)(db->devices));
+	FS_LoadPath(tn->tk.sn, pn);
+	tn->tk.p = pn->in;
+	tn->tk.extension = 0;
+	tn->expires = duration + time(NULL);
+	tn->dsize = size;
+	if(size) memcpy(TREE_DATA(tn), db->snlist, size);
+	return Add_Stat(&cache_dir, Cache_Add_Common(tn));
 }
 
 /* Add a device entry to the cache */
@@ -246,26 +243,26 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_presence);
-	//printf("Cache_Add_Device\n") ;
-	if (duration > 0) {			/* in case timeout set to 0 */
-		struct tree_node *tn =
-			(struct tree_node *) malloc(sizeof(struct tree_node) +
-										sizeof(int));
-		if (tn) {
-			LEVEL_DEBUG("Cache_Add_Device " SNformat " bus=%d\n",
-						SNvar(pn->sn), (int) bus_nr);
-			memset(&tn->tk, 0, sizeof(struct tree_key));
-			memcpy(tn->tk.sn, pn->sn, 8);
-			tn->tk.p = NULL;	// value connected to all in-devices
-			//tn->tk.p.in = pn->in ;
-			tn->tk.extension = -1;
-			tn->expires = duration + time(NULL);
-			tn->dsize = sizeof(int);
-			memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
-			return Add_Stat(&cache_dev, Cache_Add_Common(tn));
-		}
-	}
-	return -ENOMEM;
+	struct tree_node *tn;
+	//printf("Cache_Add_Device\n");
+	if(!pn) return 0;  // do check here to avoid needless processing
+
+	if(duration <= 0) return 0; /* in case timeout set to 0 */
+
+	tn = (struct tree_node *) malloc(sizeof(struct tree_node) +
+					 sizeof(int));
+	if(!tn) return -ENOMEM;
+
+	LEVEL_DEBUG("Cache_Add_Device "SNformat" bus=%d\n",SNvar(pn->sn),(int)bus_nr);
+	memset(&tn->tk, 0, sizeof(struct tree_key));
+	memcpy(tn->tk.sn, pn->sn, 8);
+	tn->tk.p = NULL;	// value connected to all in-devices
+	//tn->tk.p.in = pn->in ;
+	tn->tk.extension = -1;
+	tn->expires = duration + time(NULL);
+	tn->dsize = sizeof(int);
+	memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
+	return Add_Stat(&cache_dev, Cache_Add_Common(tn));
 }
 
 /* Add an item to the cache */
@@ -274,37 +271,33 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 					   const struct internal_prop *ip,
 					   const struct parsedname *pn)
 {
-	//printf("Cache_Add_Internal\n") ;
-	if (pn) {					// do check here to avoid needless processing
-		time_t duration = TimeOut(ip->change);
-		if (duration > 0) {
-			struct tree_node *tn =
-				(struct tree_node *) malloc(sizeof(struct tree_node) +
-											datasize);
-			if (tn) {
-				LEVEL_DEBUG("Cache_Add_Internal " SNformat " size=%d\n",
-							SNvar(pn->sn), (int) datasize);
-				memset(&tn->tk, 0, sizeof(struct tree_key));
-				memcpy(tn->tk.sn, pn->sn, 8);
-				tn->tk.p = ip->name;
-				tn->tk.extension = -2;
-				tn->expires = duration + time(NULL);
-				tn->dsize = datasize;
-				if (datasize)
-					memcpy(TREE_DATA(tn), data, datasize);
-				//printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
-				//printf("  ADD INTERNAL data[0]=%d size=%d \n",((BYTE *)data)[0],datasize);
-				switch (ip->change) {
-				case fc_persistent:
-					return Add_Stat(&cache_sto, Cache_Add_Store(tn));
-				default:
-					return Add_Stat(&cache_int, Cache_Add_Common(tn));
-				}
-			}
-			return -ENOMEM;
-		}
+	struct tree_node *tn;
+	time_t duration;
+	//printf("Cache_Add_Internal\n");
+	if(!pn) return 0;  // do check here to avoid needless processing
+
+	duration = TimeOut(ip->change);
+	if(duration <= 0) return 0; /* in case timeout set to 0 */
+
+	tn = (struct tree_node *) malloc(sizeof(struct tree_node) +
+					 datasize);
+	if(!tn) return -ENOMEM;
+	LEVEL_DEBUG("Cache_Add_Internal "SNformat" size=%d\n",SNvar(pn->sn),(int)datasize);
+	memset(&tn->tk, 0, sizeof(struct tree_key));
+	memcpy(tn->tk.sn, pn->sn, 8);
+	tn->tk.p = ip->name;
+	tn->tk.extension = -2;
+	tn->expires = duration + time(NULL);
+	tn->dsize = datasize;
+	if(datasize) memcpy(TREE_DATA(tn), data, datasize);
+	//printf("ADD INTERNAL name= %s size=%d \n",tn->tk.p.nm,tn->dsize);
+	//printf("  ADD INTERNAL data[0]=%d size=%d \n",((BYTE *)data)[0],datasize);
+	switch (ip->change) {
+	case fc_persistent:
+	  return Add_Stat(&cache_sto, Cache_Add_Store(tn));
+	default:
+	  return Add_Stat(&cache_int, Cache_Add_Common(tn));
 	}
-	return 0;
 }
 
 /* Add an item to the cache */
@@ -353,12 +346,13 @@ static int Cache_Add_Common(struct tree_node *tn)
 	CACHEUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
 	if (flip) {
+		LEVEL_DEBUG("Cache_Add_Common: flip cache. tdestroy() will be called.\n");
 		tdestroy(flip, free);
 		STATLOCK;
 		++cache_flips;			/* statistics */
 		memcpy(&old_avg, &new_avg, sizeof(struct average));
-		AVERAGE_CLEAR(&new_avg)
-			STATUNLOCK;
+		AVERAGE_CLEAR(&new_avg);
+		STATUNLOCK;
 		//printf("FLIP points to: %p\n",flip);
 	}
 	/* Added or updated, update statistics */
@@ -366,15 +360,15 @@ static int Cache_Add_Common(struct tree_node *tn)
 	case yes_add:
 		//printf("CACHECommon: Yes add\n");
 		STATLOCK;
-		AVERAGE_IN(&new_avg)
-			++ cache_adds;		/* statistics */
+		AVERAGE_IN(&new_avg);
+		++ cache_adds;		/* statistics */
 		STATUNLOCK;
 		return 0;
 	case just_update:
 		//printf("CACHECommon: Yes update\n");
 		STATLOCK;
-		AVERAGE_MARK(&new_avg)
-			++ cache_adds;		/* statistics */
+		AVERAGE_MARK(&new_avg);
+		++ cache_adds;		/* statistics */
 		STATUNLOCK;
 		return 0;
 	default:
@@ -431,13 +425,13 @@ static int Cache_Add_Store(struct tree_node *tn)
 	switch (state) {
 	case yes_add:
 		STATLOCK;
-		AVERAGE_IN(&store_avg)
-			STATUNLOCK;
+		AVERAGE_IN(&store_avg);
+		STATUNLOCK;
 		return 0;
 	case just_update:
 		STATLOCK;
-		AVERAGE_MARK(&store_avg)
-			STATUNLOCK;
+		AVERAGE_MARK(&store_avg);
+		STATUNLOCK;
 		return 0;
 	default:
 		return 1;
@@ -470,51 +464,47 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 {
+	time_t duration;
+	struct tree_node tn;
 	//printf("Cache_Get\n") ;
-	if (pn && NotUncachedDir(pn) && NotAlarmDir(pn)) {	// do check here to avoid needless processing
-		time_t duration = TimeOut(pn->ft->change);
-		if (duration > 0) {
-			LEVEL_DEBUG("Cache_Get " SNformat
-						" size=%d IsUncachedDir=%d\n", SNvar(pn->sn),
-						(int) dsize[0], IsUncachedDir(pn));
-			struct tree_node tn;
-			memset(&tn.tk, 0, sizeof(struct tree_key));
-			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p = pn->ft;
-			tn.tk.extension = pn->extension;
-			switch (pn->ft->change) {
-			case fc_persistent:
-				return Get_Stat(&cache_sto,
-								Cache_Get_Store(data, dsize, duration,
-												&tn));
-			default:
-				return Get_Stat(&cache_ext,
-								Cache_Get_Common(data, dsize, duration,
-												 &tn));
-			}
-		}
+	// do check here to avoid needless processing
+	if(!pn || IsUncachedDir(pn) || IsAlarmDir(pn)) return 1;
+
+	duration = TimeOut(pn->ft->change);
+	if(duration <= 0) return 1;
+
+	LEVEL_DEBUG("Cache_Get "SNformat" size=%d IsUncachedDir=%d\n",SNvar(pn->sn),(int)dsize[0],IsUncachedDir(pn));
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = pn->ft;
+	tn.tk.extension = pn->extension;
+	switch (pn->ft->change) {
+	case fc_persistent:
+		return Get_Stat(&cache_sto,
+				Cache_Get_Store(data, dsize, duration, &tn));
+	default:
+		return Get_Stat(&cache_ext,
+				Cache_Get_Common(data, dsize, duration, &tn));
 	}
-	return 1;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
+	struct tree_node tn;
 	DirblobInit(db);
 	//printf("Cache_Get_Dir\n") ;
-	if (duration > 0) {
-		struct tree_node tn;
-		LEVEL_DEBUG("Cache_Get_Dir " SNformat "\n", SNvar(pn->sn));
-		//printf("GetDir tn=%p\n",tn) ;
-		memset(&tn.tk, 0, sizeof(struct tree_key));
-		FS_LoadPath(tn.tk.sn, pn);
-		tn.tk.p = pn->in;
-		tn.tk.extension = 0;
-		return Get_Stat(&cache_dir,
-						Cache_Get_Common_Dir(db, duration, &tn));
-	}
-	return 1;
+	if(duration <= 0) return 1;
+
+	LEVEL_DEBUG("Cache_Get_Dir "SNformat"\n",SNvar(pn->sn));
+	//printf("GetDir tn=%p\n",tn) ;
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	FS_LoadPath(tn.tk.sn, pn);
+	tn.tk.p = pn->in;
+	tn.tk.extension = 0;
+	return Get_Stat(&cache_dir,
+			Cache_Get_Common_Dir(db, duration, &tn));
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
@@ -533,7 +523,7 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration,
 		|| ((cache.retired + duration > now)
 			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
 		) {
-		LEVEL_DEBUG("Found in cache\n");
+		LEVEL_DEBUG("dir found in cache\n");
 		if (opaque->key->expires >= now) {
 			size = opaque->key->dsize;
 			if ((db->snlist = (BYTE *) malloc(size))) {
@@ -552,7 +542,7 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration,
 			ret = -ETIMEDOUT;
 		}
 	} else {
-		LEVEL_DEBUG("Found in cache\n");
+		LEVEL_DEBUG("dir not found in cache\n");
 		ret = -ENOENT;
 	}
 	CACHEUNLOCK;
@@ -563,19 +553,18 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration,
 int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_presence);
+	size_t size = sizeof(int);
+	struct tree_node tn;
 	//printf("Cache_Get_Device\n") ;
-	if (duration > 0) {
-		size_t size = sizeof(int);
-		struct tree_node tn;
-		LEVEL_DEBUG("Cache_Get_Device " SNformat "\n", SNvar(pn->sn));
-		memset(&tn.tk, 0, sizeof(struct tree_key));
-		memcpy(tn.tk.sn, pn->sn, 8);
-		tn.tk.p = NULL;			// value connected to all in-devices
-		tn.tk.extension = -1;
-		return Get_Stat(&cache_dev,
-						Cache_Get_Common(bus_nr, &size, duration, &tn));
-	}
-	return 1;
+	if(duration <= 0) return 1;
+
+        LEVEL_DEBUG("Cache_Get_Device "SNformat"\n",SNvar(pn->sn));
+        memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = NULL;		// value connected to all in-devices
+	tn.tk.extension = -1;
+	return Get_Stat(&cache_dev,
+			Cache_Get_Common(bus_nr, &size, duration, &tn));
 }
 
 /* Does cache get, but doesn't allow play in data size */
@@ -594,30 +583,27 @@ int Cache_Get_Internal(void *data, size_t * dsize,
 					   const struct internal_prop *ip,
 					   const struct parsedname *pn)
 {
-	//printf("Cache_Get_Internal\n") ;
-	if (pn) {					// do check here to avoid needless processing
-		time_t duration = TimeOut(ip->change);
-		if (duration > 0) {
-			struct tree_node tn;
-			LEVEL_DEBUG("Cache_Get_Internal " SNformat " size=%d\n",
-						SNvar(pn->sn), (int) dsize[0]);
-			memset(&tn.tk, 0, sizeof(struct tree_key));
-			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p = ip->name;
-			tn.tk.extension = -2;
-			switch (ip->change) {
-			case fc_persistent:
-				return Get_Stat(&cache_sto,
-								Cache_Get_Store(data, dsize, duration,
-												&tn));
-			default:
-				return Get_Stat(&cache_int,
-								Cache_Get_Common(data, dsize, duration,
-												 &tn));
-			}
-		}
+	struct tree_node tn;
+	time_t duration;
+	//printf("Cache_Get_Internal\n");
+	if(!pn) return 1;  // do check here to avoid needless processing
+
+	duration = TimeOut(ip->change);
+	if(duration <= 0) return 1; /* in case timeout set to 0 */
+	
+	LEVEL_DEBUG("Cache_Get_Internal "SNformat" size=%d\n",SNvar(pn->sn),(int)dsize[0]);
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = ip->name;
+	tn.tk.extension = -2;
+	switch (ip->change) {
+	case fc_persistent:
+		return Get_Stat(&cache_sto,
+				Cache_Get_Store(data, dsize, duration, &tn));
+	default:
+		return Get_Stat(&cache_int,
+				Cache_Get_Common(data, dsize, duration, &tn));
 	}
-	return 1;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
@@ -642,7 +628,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
 			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
 		) {
 		//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
-		LEVEL_DEBUG("Found in cache\n");
+		LEVEL_DEBUG("value found in cache\n");
 		if (opaque->key->expires >= now) {
 			//printf("CACHE GET 3 buffer size=%lu stored size=%d\n",*dsize,opaque->key->dsize);
 			if ((ssize_t) dsize[0] >= opaque->key->dsize) {
@@ -666,7 +652,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
 			ret = -ETIMEDOUT;
 		}
 	} else {
-		LEVEL_DEBUG("Not found in cache\n");
+		LEVEL_DEBUG("value not found in cache\n");
 		ret = -ENOENT;
 	}
 	CACHEUNLOCK;
@@ -708,73 +694,73 @@ static int Del_Stat(struct cache *scache, const int result)
 
 int Cache_Del(const struct parsedname *pn)
 {
-	if (pn) {					// do check here to avoid needless processing
-		time_t duration = TimeOut(pn->ft->change);
-		if (duration > 0) {
-			struct tree_node tn;
-			memset(&tn.tk, 0, sizeof(struct tree_key));
-			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p = pn->ft;
-			tn.tk.extension = pn->extension;
-			switch (pn->ft->change) {
-			case fc_persistent:
-				return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
-			default:
-				return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
-			}
-		}
+	struct tree_node tn;
+	time_t duration;
+	//printf("Cache_Del\n") ;
+	if(!pn) return 1;  // do check here to avoid needless processing
+
+	duration = TimeOut(pn->ft->change);
+	if(duration <= 0) return 1; /* in case timeout set to 0 */
+
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = pn->ft;
+	tn.tk.extension = pn->extension;
+	switch (pn->ft->change) {
+	case fc_persistent:
+		return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+	default:
+		return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
 	}
-	return 1;
 }
 
 int Cache_Del_Dir(const struct parsedname *pn)
 {
+	struct tree_node tn;
 	time_t duration = TimeOut(fc_directory);
-	if (duration > 0) {
-		struct tree_node tn;
-		memset(&tn.tk, 0, sizeof(struct tree_key));
-		FS_LoadPath(tn.tk.sn, pn);
-		tn.tk.p = pn->in;
-		tn.tk.extension = 0;
-		return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
-	}
-	return 1;
+	if(duration <= 0) return 1;
+
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	FS_LoadPath(tn.tk.sn, pn);
+	tn.tk.p = pn->in;
+	tn.tk.extension = 0;
+	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 
 int Cache_Del_Device(const struct parsedname *pn)
 {
+	struct tree_node tn;
 	time_t duration = TimeOut(fc_presence);
-	if (duration > 0) {
-		struct tree_node tn;
-		memset(&tn.tk, 0, sizeof(struct tree_key));
-		memcpy(tn.tk.sn, pn->sn, 8);
-		tn.tk.p = pn->in;
-		tn.tk.extension = -1;
-		return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
-	}
-	return 1;
+	if(duration <= 0) return 1;
+
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = pn->in;
+	tn.tk.extension = -1;
+	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }
 
 int Cache_Del_Internal(const struct internal_prop *ip,
 					   const struct parsedname *pn)
 {
-	if (pn) {					// do check here to avoid needless processing
-		time_t duration = TimeOut(ip->change);
-		if (duration > 0) {
-			struct tree_node tn;
-			memset(&tn.tk, 0, sizeof(struct tree_key));
-			memcpy(tn.tk.sn, pn->sn, 8);
-			tn.tk.p = ip->name;
-			tn.tk.extension = 0;
-			switch (ip->change) {
-			case fc_persistent:
-				return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
-			default:
-				return Del_Stat(&cache_int, Cache_Del_Common(&tn));
-			}
-		}
+	struct tree_node tn;
+	time_t duration;
+	//printf("Cache_Del_Internal\n") ;
+	if(!pn) return 1;  // do check here to avoid needless processing
+
+	duration = TimeOut(ip->change);
+	if(duration <= 0) return 1; /* in case timeout set to 0 */
+
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = ip->name;
+	tn.tk.extension = 0;
+	switch (ip->change) {
+	case fc_persistent:
+		return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+	default:
+		return Del_Stat(&cache_int, Cache_Del_Common(&tn));
 	}
-	return 1;
 }
 
 static int Cache_Del_Common(const struct tree_node *tn)
@@ -806,14 +792,13 @@ static int Cache_Del_Store(const struct tree_node *tn)
 		tdelete(tn, &cache.store, tree_compare);
 	}
 	STOREUNLOCK;
-	if (tn_found) {
-		free(tn_found);
-		STATLOCK;
-		AVERAGE_OUT(&store_avg)
-			STATUNLOCK;
-		return 0;
-	}
-	return 1;
+	if(!tn_found) return 1;
+
+	free(tn_found);
+	STATLOCK;
+	AVERAGE_OUT(&store_avg);
+	STATUNLOCK;
+	return 0;
 }
 
 #endif							/* OW_CACHE */

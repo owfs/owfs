@@ -215,19 +215,24 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset,
 						  const struct parsedname *pn)
 {
 	int r = 0;
-	//printf("READSEEK\n");
-	LEVEL_DEBUG("READSEEK\n");
+	//printf("FS_r_given_bus\n");
+	LEVEL_DEBUG("FS_r_given_bus\n");
+
+	if(!(pn->state & pn_bus)) {
+	  LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set!\n");
+	}
 
 	if ((pn->state & pn_bus) && (is_servermode(pn->in))) {
-		LEVEL_DEBUG("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
-		//printf("READSEEK0 pid=%ld call ServerRead\n", pthread_self());
+		/* The bus is not local... use a network connection instead */
+		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
+		//printf("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
 		r = ServerRead(buf, size, offset, pn);
-		//printf("READSEEK0 pid=%ld r=%d\n",pthread_self(), r);
+		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
 	} else {
 		STAT_ADD1(read_calls);	/* statistics */
 		if ((r = LockGet(pn)) == 0) {
 			r = FS_r_local(buf, size, offset, pn);
-			//printf("READSEEK1 FS_r_local ret=%d\n", r);
+			//printf("FS_r_given_bus FS_r_local ret=%d\n", r);
 			LockRelease(pn);
 		}
 	}
@@ -240,7 +245,7 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset,
 static int FS_r_local(char *buf, const size_t size, const off_t offset,
 					  const struct parsedname *pn)
 {
-	//printf("RealRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n", pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
+	//printf("FS_r_local pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n", pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
 	/* Readable? */
 	if ((pn->ft->read.v) == NULL)
 		return -ENOTSUP;
@@ -334,7 +339,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset,
 	int sz;
 	size_t s = 0;
 	enum ft_format format = pn->ft->format;
-//printf("ParseRead pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
+//printf("FS_r_single pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
 
 	LEVEL_CALL("FS_r_single: format=%d s=%d offset=%d\n",
 			   (int) pn->ft->format, (int) size, (int) offset)

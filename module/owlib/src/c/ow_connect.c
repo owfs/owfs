@@ -114,6 +114,7 @@ void FreeIn(void)
 	while (next) {
 		now = next;
 		next = now->next;
+		LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
 #if OW_MT
 		pthread_mutex_destroy(&(now->bus_mutex));
 		pthread_mutex_destroy(&(now->dev_mutex));
@@ -128,6 +129,7 @@ void FreeIn(void)
 				free(now->connin.server.fqdn);
 			// fall through
 		case bus_server:
+			LEVEL_DEBUG("FreeClientAddr\n");
 			FreeClientAddr(now);
 			break;
 		case bus_link:
