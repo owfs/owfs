@@ -1,7 +1,7 @@
 # $Id$
 
-SUBDIRS = ow
-EXTRA_DIST = python.m4 $(wildcard examples/*.py) $(wildcard unittest/*.py) $(wildcard unittest/*.ini) unittest/Readme.txt 
+SUBDIRS = ow ownet
+EXTRA_DIST = python.m4 $(wildcard examples/*.py) $(wildcard unittest/*.py) $(wildcard unittest/*.ini) unittest/Readme.txt
 noinst_DATA = OW.py
 LIBOW = ../../owlib/src/c/libow.la
 

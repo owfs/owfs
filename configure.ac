@@ -1268,6 +1268,7 @@ AC_CONFIG_FILES([
     module/swig/php/example/load_php_OW.php
     module/swig/python/Makefile
     module/swig/python/ow/Makefile
+    module/swig/python/ownet/Makefile
     module/swig/python/setup.py
     module/swig/tcl/Makefile
     src/Makefile
