@@ -52,7 +52,7 @@ Topic :: Utilities
 """
 
 doclines = __doc__.split('::EOH')[1].split('\n')[1:]
-version  = '0.2'
+version  = '0.3'
 
 setup(
     name             = 'ownet',
@@ -67,6 +67,6 @@ setup(
     platforms        = ['any'],
     long_description = '\n'.join(doclines),
     classifiers      = filter( None, classifiers.split( '\n' ) ),
-    packages         = ['ownet', 'examples'],
+    packages         = ['ownet'],
     download_url     = 'http://cheeseshop.python.org/packages/source/o/ownet/ownet-%s.tar.gz' % version
     )

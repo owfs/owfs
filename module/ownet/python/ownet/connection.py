@@ -36,6 +36,27 @@ __email__ = 'pkropf@gmail.com'
 __version__ = '$Id$'.split()[2]
 
 
+class exError(Exception):
+    """base exception for all one wire raised exceptions."""
+
+
+class exErrorValue(exError):
+    """Base exception for all one wire raised exceptions with a value."""
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
+class exInvalidMessage(exErrorValue):
+    """Exception raised when trying to unpack a message that doesn't meet specs."""
+
+
+class exShortRead(exError):
+    """Exception raised when too few bytes are received from the owserver."""
+
+
 class OWMsg:
     """
     Constants for the owserver api message types.
@@ -109,6 +130,9 @@ class Connection(object):
         while 1:
             data = s.recv(24)
 
+            if len(data) is not 24:
+                raise exShortRead
+
             ret, payload_len, data_len = self.unpack(data)
 
             if payload_len:
@@ -138,6 +162,9 @@ class Connection(object):
 
         data = s.recv(24)
 
+        if len(data) is not 24:
+            raise exShortRead
+
         ret, payload_len, data_len = self.unpack(data)
 
         s.close()
@@ -159,6 +186,9 @@ class Connection(object):
         fields = []
         while 1:
             data = s.recv(24)
+
+            if len(data) is not 24:
+                raise exShortRead
 
             ret, payload_len, data_len = self.unpack(data)
 
@@ -192,6 +222,9 @@ class Connection(object):
         """
 
         #print 'Connection.unpack("%s")' % msg
+        if len(msg) is not 24:
+            raise exInvalidMessage, msg
+
         val          = struct.unpack('iiiiii', msg)
         version      = socket.ntohl(val[0])
         payload_len  = socket.ntohl(val[1])
