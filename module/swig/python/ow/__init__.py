@@ -26,10 +26,11 @@ OWFS is an open source project developed by Paul Alfille and hosted at
 http://www.owfs.org.
 """
 
+# avoid error with python2.2
+from __future__ import generators
 
 import os
 import _OW
-
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
