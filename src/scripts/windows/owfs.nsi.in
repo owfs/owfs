@@ -29,6 +29,7 @@
 !define OPTDIR "\cygwin\opt\owfs"
 !define ROOT_HOME "${ROOT_OWFS}\..\.."
 !define ROOT_CYGWIN "${ROOT_HOME}\.."
+!define ROOT_OWNET "$(ROOT_OWFS)\module\ownet"
 
 #########
 # Install settings
@@ -113,6 +114,11 @@ Section "OWFS program files" Bins
   WriteRegStr HKLM "Software\OWFS\Version" "String Value" "${VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS" "DisplayName" "OWFS -- One Wire Filesystem"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS" "UninstallString" '"$INSTDIR\owfs_uninstall.exe"'
+
+  SetOutPath $INSTDIR\ownet
+  File  ..\..\..\module\ownet\python\ownet\*
+  WriteRegStr HKLM "Software\Python\PythonCore\2.5\PythonPath\OWFS" "" '"$INSTDIR"'
+  WriteRegStr HKLM "Software\Python\PythonCore\2.4.4\PythonPath\OWFS" "" '"$INSTDIR"'
 
 SectionEnd
 
@@ -203,5 +209,7 @@ Section "Uninstall"
   Delete "$DESKTOP\owfs_uninstall.lnk"
   DeleteRegKey HKLM "Software\OWFS\Version"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS"
+  DeleteRegKey HKLM "Software\Python\PythonCore\2.5\PythonPath\OWFS"
+  DeleteRegKey HKLM "Software\Python\PythonCore\2.4.4\PythonPath\OWFS"
 
 SectionEnd
