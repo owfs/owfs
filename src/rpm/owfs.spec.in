@@ -259,8 +259,6 @@ install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
 install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
 mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
-#[ -f $RPM_BUILD_ROOT%{prefix}/man/man1/owserver.1 ] || \
-#	install -D -m 644 src/man/owserver.1 $RPM_BUILD_ROOT%{_mandir}/man1/owserver.1
 %endif
 %if %{build_perl}
 [ -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm ] && \
@@ -402,17 +400,31 @@ fi
 %{_mandir}/man1/owread.1.gz
 %{_mandir}/man1/owwrite.1.gz
 %{_mandir}/man1/owpresent.1.gz
+
+%if %{build_php}
+# include ownet-php (it's a duplicate since it's in owfs-php too)
+%{prefix}/bin/ownet.php
+%endif
+
+%if %{build_python}
+#%dir %{prefix}/lib*/python*/site-packages/ow
+#%{prefix}/lib*/python*/site-packages/ow/__init__.py*
+#%{prefix}/lib*/python*/site-packages/ow/_OW.so
+# include ownet-python (it's a duplicate since it's in owfs-python too)
+%dir %{prefix}/lib*/python*/site-packages/ownet
+%{prefix}/lib*/python*/site-packages/ownet/__init__.py*
+%{prefix}/lib*/python*/site-packages/ownet/connection.py*
+%endif
+
 %endif
 
 %if %{build_man}
 %files man
 %defattr(-,root,root)
 %{_mandir}/man1/ow*.1.gz
-%{_mandir}/man3/DS*.3.gz
-%{_mandir}/man3/LCD.3.gz
-%{_mandir}/man3/Thermachron.3.gz
-%{_mandir}/man5/owfs.5.gz
-%{_mandir}/mann/owtcl.n.gz
+%{_mandir}/man3/*.3.gz
+%{_mandir}/man5/*.5.gz
+%{_mandir}/mann/*.n.gz
 %endif
 
 %if %{build_ftpd}
@@ -450,6 +462,7 @@ fi
 %{prefix}/lib*/python*/site-packages/ow/_OW.so
 %dir %{prefix}/lib*/python*/site-packages/ownet
 %{prefix}/lib*/python*/site-packages/ownet/__init__.py*
+%{prefix}/lib*/python*/site-packages/ownet/connection.py*
 %endif
 
 %if %{build_php}
@@ -459,6 +472,7 @@ fi
 @PHPLIBDIR@/libowphp.so*
 #%dir %{prefix}/lib*/php*/modules
 #%{prefix}/lib*/php*/modules/libowphp.so*
+%{prefix}/bin/ownet.php
 %endif
 
 %if %{build_tcl}

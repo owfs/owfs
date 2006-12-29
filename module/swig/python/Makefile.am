@@ -22,10 +22,8 @@ OW.py: ow_wrap.c setup.py
 install-data-local:
 	$(PYTHON) setup.py install --root="/$(DESTDIR)"
 
-CLEANFILES = *~ .*~ *.o
-
 clean-local:
-	@RM@ -f $(CLEANFILES)
+	@RM@ -f *~ .*~ *.o
 	@RM@ -rf build OW.py ow_wrap.c
 
 clean-generic:
