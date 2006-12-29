@@ -2,3 +2,7 @@ Makefile
 Makefile.in
 .deps
 .libs
+owdir
+owread
+owwrite
+owpresent

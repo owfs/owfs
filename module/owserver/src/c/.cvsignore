@@ -2,4 +2,4 @@ Makefile
 Makefile.in
 .deps
 .libs
-owhttpd
+owserver
