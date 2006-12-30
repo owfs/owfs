@@ -337,7 +337,7 @@ class Sensor(object):
                     yield entry
         else:
             for entry in list:
-                yield entry.split('/')[2]
+                yield entry.split('/')[-1]
 
 
     def entryList(self):
@@ -374,15 +374,17 @@ class Sensor(object):
         if self._type == 'DS2409':
             for branch in names:
                 path = self._usePath + '/' + branch
-                list = filter(lambda x: '/' in x, self._connection.dir(self._usePath))
+                list = filter(lambda x: '/' in x, self._connection.dir(path))
                 if list:
-                    for branch_entry in list.split(','):
-                        branch_path = self._usePath + '/' + branch + '/' + branch_entry.split('/')[0]
+                    namelist = ','.join(list)
+                    #print 'Sensor.sensors namelist(%s)' % str(namelist)
+                    for branch_entry in namelist.split(','):
+                        # print 'branch_entry(%s)' % str(branch_entry)
                         try:
-                            self._connection.read(branch_path + '/type')
+                            self._connection.read(branch_entry + '/type')
                         except exUnknownSensor, ex:
                             continue
-                        yield Sensor(branch_path, connection=self._connection)
+                        yield Sensor(branch_entry, connection=self._connection)
 
         else:
             list = self._connection.dir(self._usePath)
