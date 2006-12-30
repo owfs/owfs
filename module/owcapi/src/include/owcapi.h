@@ -16,7 +16,11 @@ $Id$
 #define OWCAPI_H
 
 #include <owfs_config.h>
-#include <stdlib.h>  // for malloc
+#include <stdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* initialization, required before any other calls. Should be paired with a finish
     OW_init -- simplest, just a device name
@@ -101,5 +105,9 @@ ssize_t OW_lwrite( const char * path, const char * buf, const size_t size, const
   No error return
 */
 void OW_finish( void ) ;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* OWCAPI_H */
