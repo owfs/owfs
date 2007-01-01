@@ -580,7 +580,7 @@ struct filetype DS2781[] = {
 	F_thermocouple
 };
 
-DeviceEntry(3 D, DS2781);
+DeviceEntry(3D, DS2781);
 
 /* ------- Functions ------------ */
 

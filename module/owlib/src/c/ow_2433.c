@@ -63,7 +63,7 @@ struct filetype DS2431[] = {
   {"memory", 128, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory2D}, {v:NULL},},
 };
 
-DeviceEntryExtended(2 D, DS2431, DEV_ovdr | DEV_resume);
+DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
 
 struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2433[] = {

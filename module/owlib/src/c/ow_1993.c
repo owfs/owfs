@@ -81,7 +81,7 @@ struct filetype DS1995[] = {
   {"memory", 2048, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
 };
 
-DeviceEntryExtended(0 A, DS1995, DEV_ovdr);
+DeviceEntryExtended(0A, DS1995, DEV_ovdr);
 
 struct aggregate A1996 = { 256, ag_numbers, ag_separate, };
 struct filetype DS1996[] = {
@@ -91,7 +91,7 @@ struct filetype DS1996[] = {
   {"memory", 8192, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
 };
 
-DeviceEntryExtended(0 C, DS1996, DEV_ovdr);
+DeviceEntryExtended(0C, DS1996, DEV_ovdr);
 
 /* ------- Functions ------------ */
 

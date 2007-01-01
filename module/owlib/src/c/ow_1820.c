@@ -131,7 +131,7 @@ struct filetype DS1825[] = {
   {"prog_addr", 12, NULL, ft_unsigned, fc_stable, {u: FS_r_ad}, {v: NULL}, {v:NULL},},
 };
 
-DeviceEntryExtended(3 B, DS1825, DEV_temp | DEV_alarm);
+DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm);
 
 /* Internal properties */
 static struct internal_prop ip_resolution = { "RES", fc_stable };

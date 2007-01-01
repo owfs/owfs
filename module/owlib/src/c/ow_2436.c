@@ -62,7 +62,7 @@ struct filetype DS2436[] = {
   {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_temp}, {v: NULL}, {v:NULL},},
 };
 
-DeviceEntry(1 B, DS2436);
+DeviceEntry(1B, DS2436);
 
 /* ------- Functions ------------ */
 

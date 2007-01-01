@@ -64,7 +64,7 @@ struct filetype DS2413[] = {
   {"latch", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_r_latch}, {v: NULL}, {v:NULL},},
 };
 
-DeviceEntryExtended(3 A, DS2413, DEV_resume | DEV_ovdr);
+DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 
 /* ------- Functions ------------ */
 

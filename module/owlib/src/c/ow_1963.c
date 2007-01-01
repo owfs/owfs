@@ -76,7 +76,7 @@ struct filetype DS1963L[] = {
   {"memory", 512, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
 };
 
-DeviceEntryExtended(1 A, DS1963L, DEV_ovdr);
+DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
 
 /* ------- Functions ------------ */
 

@@ -83,7 +83,7 @@ struct filetype DS28E04[] = {
   {"set_alarm", 3, NULL, ft_unsigned, fc_stable, {u: FS_r_s_alarm}, {u: FS_w_s_alarm}, {v:NULL},},
 };
 
-DeviceEntryExtended(1 C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
+DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
 
 /* ------- Functions ------------ */
 

@@ -59,7 +59,7 @@ struct filetype DS2890[] = {
   {"wiper", 3, NULL, ft_unsigned, fc_stable, {u: FS_r_wiper}, {u: FS_w_wiper}, {v:NULL},},
 };
 
-DeviceEntryExtended(2 C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);
+DeviceEntryExtended(2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);
 
 /* ------- Functions ------------ */
 
