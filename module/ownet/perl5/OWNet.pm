@@ -93,74 +93,75 @@ sub _new($$) {
 
 sub _Sock($) {
     my $self = shift ;
-	$self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$self->{ADDR},Proto=>'tcp') || do {
-		warn("Can't open $self->{ADDR} ($!) \n") ;
-		$self->{SOCK} = undef ;
-	} ;
+    $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$self->{ADDR},Proto=>'tcp') || do {
+	warn("Can't open $self->{ADDR} ($!) \n") ;
+	$self->{SOCK} = undef ;
+    } ;
     print "SOCK ".$self->{SOCK}." \n" ;
-	return ( 258 ) ;
+    return ( 258 ) ;
 }
 
 sub _ToServer ($$$$$;$) {
-	my ($self, $pay, $typ, $siz, $off, $dat) = @_ ;
-	my $f = "N6" ;
-	$f .= 'Z'.$pay if ( $pay > 0 ) ; 
-	send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG},$siz,$off,$dat), MSG_DONTWAIT ) || do {
- 		warn("Send problem $! \n");
-		return ;
-	} ;
-	return 1 ;
+    my ($self, $pay, $typ, $siz, $off, $dat) = @_ ;
+    my $f = "N6" ;
+    $f .= 'Z'.$pay if ( $pay > 0 ) ; 
+    send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG},$siz,$off,$dat), MSG_DONTWAIT ) || do {
+	warn("Send problem $! \n");
+	return ;
+    } ;
+    return 1 ;
 }
 
-sub _FromServerLow ($$) {
+sub _FromServerLow($$) {
     my $self = shift ;
-	my $length = shift ;
-	return '' if $length == 0 ;
+    my $length = shift ;
+    return '' if $length == 0 ;
     my $sock = $self->{SOCK} ;
-	my $sel = '' ;
-	vec($sel,$sock->fileno,1) = 1 ;
-	my $len = $length ;
-	my $ret = '' ;
-	my $a ;
-	#print "LOOOP for length $length \n" ;
-	do {
-		print "LOW: ".join(',',select($sel,undef,undef,1))." \n" ;
-		return if vec($sel,$sock->fileno,1) == 0 ;
-#		return if $sel->can_read(1) == 0 ;
-		defined( recv( $self->{SOCK}, $a, $len, MSG_DONTWAIT ) ) || do {
-			warn("Trouble getting data back $! after $len of $length") ;
-			return ;
-		} ;
-		#print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
-		$ret .= $a ;
-		$len = $length - length($ret) ;
-		#print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
-	} while $len > 0 ;
-	return $ret ;
+    my $sel = '' ;
+    vec($sel,$sock->fileno,1) = 1 ;
+    my $len = $length ;
+    my $ret = '' ;
+    my $a ;
+    #print "LOOOP for length $length \n" ;
+    do {
+	print "LOW: ".join(',',select($sel,undef,undef,1))." \n" ;
+	return if vec($sel,$sock->fileno,1) == 0 ;
+#	return if $sel->can_read(1) == 0 ;
+	defined( recv( $self->{SOCK}, $a, $len, MSG_DONTWAIT ) ) || do {
+	    warn("Trouble getting data back $! after $len of $length") ;
+	    return ;
+	} ;
+	#print "reading=".$a."\n";
+	#print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
+	$ret .= $a ;
+	$len = $length - length($ret) ;
+	#print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
+    } while $len > 0 ;
+    return $ret ;
 }
 
-sub _FromServer ($) {
+sub _FromServer($) {
     my $self = shift ;
-	my ( $ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
-	do {
-		my $r = _FromServerLow( $self,24 ) || do {
-			warn("Trouble getting header $!") ;
-			return ;
-		} ;
-		($ver, $pay, $ret, $sg, $siz, $off) = unpack('N6', $r ) ;
-		# returns unsigned (though originals signed
-		# assume anything above 66000 is an error
-		return if $ret > 66000 ;
-		#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
-	} while $pay > 66000 ;
-	$dat = _FromServerLow( $self,$pay ) ;
-	if ( !defined($dat) ) { 
-		warn("Trouble getting payload $!") ;
-		return ;
+    my ( $ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
+    do {
+	my $r = _FromServerLow( $self,24 ) || do {
+	    warn("Trouble getting header $!") ;
+	    return ;
 	} ;
-	$dat = substr($dat,0,$siz) ;
-	#print "From Server, payload retrieved <$dat> \n" ;
-	return ($ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
+	($ver, $pay, $ret, $sg, $siz, $off) = unpack('N6', $r ) ;
+	# returns unsigned (though originals signed
+	# assume anything above 66000 is an error
+	return if $ret > 66000 ;
+	#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
+    } while $pay > 66000 ;
+    $dat = _FromServerLow( $self,$pay ) ;
+    if ( !defined($dat) ) { 
+	warn("Trouble getting payload $!") ;
+	return ;
+    } ;
+    $dat = substr($dat,0,$siz) ;
+    #print "From Server, payload retrieved <$dat> \n" ;
+    return ($ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
 }
 
 =item I<new>
@@ -180,6 +181,18 @@ Error (and undef return value) if:
 =back
 
 =cut
+
+sub newtest($$) {
+    my $class = $_[0];
+#    my addr => $_[1];
+    my $objref = { addr => $_[1], };
+#    _new($self, $addr) ;
+#    if ( !defined($self->{SOCK}) ) {
+#        return ;
+#    } ;
+    bless $objref, $class ;
+    return $objref ;
+}
 
 sub new($$) {
     my $class = shift ;
@@ -214,8 +227,11 @@ Error (and undef return value) if:
 =cut
 
 sub read($$) {
-    my $self = {} ;
-	my ( $addr,$path ) = @_ ;
+    my ($self, @args) = @_ ;
+    my $path = $args[0];
+    my $addr = $self->{ADDR};
+#    my $self = {} ;
+#    my ( $addr,$path ) = @_ ;
     _new($self,$addr)  ;
     if ( !defined($self->{SOCK}) ) {
         return ;
@@ -248,8 +264,12 @@ Error (and undef return value) if:
 =cut
 
 sub write($$$) {
-    my $self = {} ;
-	my ( $addr,$path,$val ) = @_ ;
+    my ($self, @args) = @_ ;
+    my $path = $args[0];
+    my $val = $args[1];
+    my $addr = $self->{ADDR};
+#    my $self = {} ;
+#    my ( $addr,$path,$val ) = @_ ;
     _new($self,$addr)  ;
     if ( !defined($self->{SOCK}) ) {
         return ;
@@ -283,8 +303,11 @@ Error (and undef return value) if:
 =cut
 
 sub present($$) {
-    my $self = {} ;
-	my ( $addr,$path ) = @_ ;
+    my ($self, @args) = @_ ;
+    my $path = $args[0];
+    my $addr = $self->{ADDR};
+#    my $self = {} ;
+#	my ( $addr,$path ) = @_ ;
     _new($self,$addr)  ;
     if ( !defined($self->{SOCK}) ) {
         return ;
@@ -315,6 +338,29 @@ Error (and undef return value) if:
 =cut
 
 sub dir($$) {
+	my ($self, @args) = @_ ;
+	my $path = $args[0];
+	my $addr = $self->{ADDR};
+	_new($self,$addr) ;
+	if ( !defined($self->{SOCK}) ) {
+		return ;
+	} ;
+#	print "path=".$path."\n";
+	_ToServer($self,length($path)+1,4,4096,0,$path) || do {
+		warn "Couldn't SEND directory request to $addr.\n" ;
+		return ;
+	} ;
+	my $ret = '' ;
+	while (1) {
+		my @r = _FromServer($self) ;
+		if (!@r) { return ; } ;
+		return substr($ret,1) if $r[1] == 0 ;
+		$ret .= ','.$r[6] ;
+	}
+}
+
+
+sub dir2($$) {
 	my $self = {} ;
 	my ( $addr,$path ) = @_ ;
 	_new($self,$addr)  ;
