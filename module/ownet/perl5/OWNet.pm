@@ -7,6 +7,71 @@
 #  http://www.owfs.org
 #  http://owfs.sourceforge.net
 
+=head1 NAME
+
+B<OWNet>
+Light weight access to B<owserver>
+
+=head1 SYNOPSIS
+
+=over
+
+=item B<read>( I<address> , I<path> )
+
+=item B<write>( I<address> , I<path> , I<value> )
+
+=item B<dir>( I<address> , I<path> )
+
+=item B<present>( I<address> , I<path> )
+
+=back
+
+=head2 I<address>
+
+TCP/IP I<address> of B<owserver>. Valid forms:
+
+=over
+
+=item I<name> test.owfs.net:3001
+
+=item I<quad> number: 123.231.312.213:3001
+
+=item I<host> localhost:3001
+
+=item I<port> 3001
+
+=back
+
+=head2 I<path>
+
+I<path> to an item on the 1-wire bus. Valid forms:
+
+=over
+
+=item main directories
+
+Used for the I<dir> method. E.g. "/" "/uncached" "/1F.321432320000/main"
+
+=item device directory
+
+Used for the I<dir> and I<present> method. E.g. "/10.4300AC220000" "/statistics"
+
+=item device properties
+
+Used to I<read>, I<write>. E.g. "/10.4300AC220000/temperature"
+
+=back
+
+=head2 I<value>
+
+New I<value> for a device property. Used by I<write>.
+
+=head1 METHODS
+
+=over
+
+=cut
+
 package OWNet ;
 
 BEGIN { }
@@ -14,6 +79,7 @@ BEGIN { }
 use strict ;
 
 use IO::Socket::INET ;
+use bytes ;
 
 my $sock ;
 
@@ -31,7 +97,6 @@ sub ToServer ($$$$$$;$) {
 	my $f = "N6" ;
 	$f .= 'Z'.$pay if ( $pay > 0 ) ; 
 	print "Sock = $OWNet::sock  mesg:($ver,$pay,$typ,$sg,$siz,$off,$dat) \n" ;
-	do { use bytes ; print "To server length = ".length(pack($f,$ver,$pay,$typ,$sg,$siz,$off,$dat))." \n" ; } ;
 	send( $OWNet::sock, pack($f,$ver,$pay,$typ,$sg,$siz,$off,$dat), MSG_DONTWAIT ) || do { 		warn("Send problem $! \n");
 		return ;
 	} ;
@@ -57,7 +122,7 @@ sub FromServerLow ($) {
 		} ;
 		#print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
 		$ret .= $a ;
-		do { use bytes ; $len = $length - length($ret); } ;
+		$len = $length - length($ret) ;
 		#print "FromServerLow (a.len=".length($a)." $len of $length \n" ;
 	} while $len > 0 ;
 	return $ret ;
@@ -86,6 +151,26 @@ sub FromServer () {
 	return ($ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
 }
 
+=item I<read>
+
+B<read>( I<address> , <I>path )
+
+Read the value of a 1-wire device property. Returns the (scalar string) value of the property.
+
+Error (and undef return value) if:
+
+=over
+
+=item 1 No <B>owserver at I<address>
+
+=item 2 Bad I<path> 
+
+=item 3 I<path> not a readable device property
+
+=back
+
+=cut
+
 sub read($$) {
 	local $OWNet::sock ;
 	my ( $addr,$path ) = @_ ;
@@ -98,6 +183,28 @@ sub read($$) {
 	my @r = FromServer() ;
 	return $r[6] ;
 }
+
+=item I<write>
+
+B<write>( I<address> , <I>path  , <I>write )
+
+Set the value of a 1-wire device property. Returns "1" on success.
+
+Error (and undef return value) if:
+
+=over
+
+=item 1 No <B>owserver at I<address>
+
+=item 2 Bad I<path> 
+
+=item 3 I<path> not a writable device property
+
+=item 4 I<value> incorrect size or format
+
+=back
+
+=cut
 
 sub write($$$) {
 	local $OWNet::sock ;
@@ -115,6 +222,26 @@ sub write($$$) {
 	return $r[2]>=0 ;
 }
 
+=item I<present>
+
+B<present>( I<address> , <I>path )
+
+Test if a 1-wire device exists.
+
+Error (and undef return value) if:
+
+=over
+
+=item 1 No <B>owserver at I<address>
+
+=item 2 Bad I<path> 
+
+=item 3 I<path> not a device
+
+=back
+
+=cut
+
 sub present($$) {
 	local $OWNet::sock ;
 	my ( $addr,$path ) = @_ ;
@@ -127,6 +254,26 @@ sub present($$) {
 	my @r = FromServer() ;
 	return $r[2]>=0 ;
 }
+
+=item I<dir>
+
+B<dir>( I<address> , <I>path )
+
+Return a comma-separated list of the entries in I<path>. Entries are equivalent to "fully qualified names" -- full path names.
+
+Error (and undef return value) if:
+
+=over
+
+=item 1 No <B>owserver at I<address>
+
+=item 2 Bad I<path> 
+
+=item 3 I<path> not a directory
+
+=back
+
+=cut
 
 sub dir($$) {
 	local $OWNet::sock ;
@@ -151,3 +298,45 @@ sub dir($$) {
 return 1 ;
 
 END { }
+
+=back
+
+=head1 DESCRIPTION
+
+=head2 OWFS
+
+I<OWFS> is a suite of programs that allows easy access to I<Dallas Semiconductor>'s 1-wire bus and devices. I<OWFS> provides a consistent naming scheme, safe multplexing of 1-wire traffice, multiple methods of access and display, and network access. The basic I<OWFS> metaphor is a file-system, with the bus beinng the root directory, each device a subdirectory, and the the device properties (e.g. voltage, temperature, memory) a file.
+
+=head2 1-Wire
+
+I<1-wire> is a protocol allowing simple connection of inexpensive devices. Each device has a unique ID number (used in it's OWFS address) and is individually addressable. The bus itself is extremely simple -- a data line and a ground. The data line also provides power. 1-wire devices come in a variety of packages -- chips, commercial boxes, and iButtons (stainless steel cans). 1-wire devices have a variety of capabilities, from simple ID to complex voltage, temperature, current measurements, memory, and switch control.
+
+=head2 Programs
+
+Connection to the 1-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master -- USB, serial, i2c, parallel. The heavy-weight I<OWFS> programs: B<owserver> B<owfs> B<owhttpd> B<owftpd> and the heavy-weight perl module B<OW> all link in the full I<OWFS> library and can connect directly to the bus master(s) and/or to B<owserver>.  
+
+B<OWNet> is a light-weight module. It connects only to an B<owserver>, does not link in the I<OWFS> library, and should be more portable.
+
+=head1 AUTHOR
+
+Paul H Alfille paul.alfille @ gmail . com
+
+=head1 BUGS
+
+Support for proper timeout using the "select" function seems broken in perl. This lease the routines vulnerable to network timing errors.
+
+=head1 SEE ALSO
+
+=over
+
+=item http://www.owfs.org
+
+Documentation for the full B<owfs> program suite, including man pages for each of the supported 1-wire devices, nand more extensive explanatation of owfs components.
+
+=item http://owfs.sourceforge.net
+
+Location where source code is hosted.
+
+=back
+
+=cut
