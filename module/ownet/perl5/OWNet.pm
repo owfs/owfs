@@ -83,7 +83,7 @@ use bytes ;
 
 my $sock ;
 
-sub Sock($) {
+sub _Sock($) {
 	my $addr = shift ;
 	$OWNet::sock = IO::Socket::INET->new(PeerAddr=>$addr,Proto=>'tcp') || do {
 		warn("Can't open $addr ($!) \n") ;
@@ -92,7 +92,7 @@ sub Sock($) {
 	return ( 258 ) ;
 }
 
-sub ToServer ($$$$$$;$) {
+sub _ToServer ($$$$$$;$) {
 	my ($ver, $pay, $typ, $sg, $siz, $off, $dat) = @_ ;
 	my $f = "N6" ;
 	$f .= 'Z'.$pay if ( $pay > 0 ) ; 
@@ -103,7 +103,7 @@ sub ToServer ($$$$$$;$) {
 	return 1 ;
 }
 
-sub FromServerLow ($) {
+sub _FromServerLow ($) {
 	my $length = shift ;
 	return '' if $length == 0 ;
 	my $sel = '' ;
@@ -123,15 +123,15 @@ sub FromServerLow ($) {
 		#print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
 		$ret .= $a ;
 		$len = $length - length($ret) ;
-		#print "FromServerLow (a.len=".length($a)." $len of $length \n" ;
+		#print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
 	} while $len > 0 ;
 	return $ret ;
 }
 
-sub FromServer () {
+sub _FromServer () {
 	my ( $ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
 	do {
-		my $r = FromServerLow( 24 ) || do {
+		my $r = _FromServerLow( 24 ) || do {
 			warn("Trouble getting header $!") ;
 			return ;
 		} ;
@@ -141,7 +141,7 @@ sub FromServer () {
 		return if $ret > 66000 ;
 		#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
 	} while $pay > 66000 ;
-	$dat = FromServerLow( $pay ) ;
+	$dat = _FromServerLow( $pay ) ;
 	if ( !defined($dat) ) { 
 		warn("Trouble getting payload $!") ;
 		return ;
@@ -174,13 +174,13 @@ Error (and undef return value) if:
 sub read($$) {
 	local $OWNet::sock ;
 	my ( $addr,$path ) = @_ ;
-	my ( $sg ) = Sock($addr)  ;
+	my ( $sg ) = _Sock($addr)  ;
 	if ( !defined($OWNet::sock) ) {
 		warn "Sock problem $OWNet::sock \n" ;
 		return ;
 	} ;
-	print ToServer(0,length($path)+1,2,$sg,4096,0,$path) ;
-	my @r = FromServer() ;
+	print _ToServer(0,length($path)+1,2,$sg,4096,0,$path) ;
+	my @r = _FromServer() ;
 	return $r[6] ;
 }
 
@@ -212,13 +212,13 @@ sub write($$$) {
 	my $siz = length($val) ;
 	my $s1 = length($path)+1 ;
 	my $dat = pack( 'Z'.$s1.'A'.$siz,$path,$val ) ;
-	my ( $sg ) = Sock($addr)  ;
+	my ( $sg ) = _Sock($addr)  ;
 	if ( !defined($OWNet::sock) ) {
 		warn "Sock problem $OWNet::sock \n" ;
 		return ;
 	} ;
-	print ToServer(0,length($dat),3,$sg,$siz,0,$dat) ;
-	my @r = FromServer() ;
+	print _ToServer(0,length($dat),3,$sg,$siz,0,$dat) ;
+	my @r = _FromServer() ;
 	return $r[2]>=0 ;
 }
 
@@ -245,13 +245,13 @@ Error (and undef return value) if:
 sub present($$) {
 	local $OWNet::sock ;
 	my ( $addr,$path ) = @_ ;
-	my ( $sg ) = Sock($addr)  ;
+	my ( $sg ) = _Sock($addr)  ;
 	if ( !defined($OWNet::sock) ) {
 		warn "Sock problem $OWNet::sock \n" ;
 		return ;
 	} ;
-	print ToServer(0,length($path)+1,6,$sg,4096,0,$path) ;
-	my @r = FromServer() ;
+	print _ToServer(0,length($path)+1,6,$sg,4096,0,$path) ;
+	my @r = _FromServer() ;
 	return $r[2]>=0 ;
 }
 
@@ -278,17 +278,17 @@ Error (and undef return value) if:
 sub dir($$) {
 	local $OWNet::sock ;
 	my ( $addr,$path ) = @_ ;
-	my ( $sg ) = Sock($addr)  ;
+	my ( $sg ) = _Sock($addr)  ;
 	if ( !defined($OWNet::sock) ) {
 		return ;
 	} ;
-	ToServer(0,length($path)+1,4,$sg,4096,0,$path) || do {
+	_ToServer(0,length($path)+1,4,$sg,4096,0,$path) || do {
 		warn "Couldn't SEND directory request to $addr.\n" ;
 		return ;
 	} ;
 	my $ret = '' ;
 	while (1) {
-		my @r = FromServer() ;
+		my @r = _FromServer() ;
 		if (!@r) { return ; } ;
 		return substr($ret,1) if $r[1] == 0 ;
 		$ret .= ','.$r[6] ;
