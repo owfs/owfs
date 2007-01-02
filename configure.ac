@@ -1253,6 +1253,7 @@ AC_CONFIG_FILES([
     module/ownet/php/Makefile
     module/ownet/php/examples/ownet_example.php
     module/ownet/python/Makefile
+    module/ownet/perl5/Makefile
     module/owshell/Makefile
     module/owshell/src/Makefile
     module/owshell/src/include/Makefile

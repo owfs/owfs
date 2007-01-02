@@ -19,9 +19,6 @@ AM_CFLAGS = -I../include \
          -DSKIP_SEARCH_H \
          -D_FILE_OFFSET_BITS=64
 
-#         -Wconversion \
-#
-
 LDADD = -low ${PTHREAD_LIBS}
 
 Makefile.perl: Makefile.PL
