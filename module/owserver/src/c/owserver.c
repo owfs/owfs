@@ -176,7 +176,7 @@ static int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp
     sm->type    = ntohl(sm->type)    ;
     sm->sg      = ntohl(sm->sg)      ;
     sm->offset  = ntohl(sm->offset)  ;
-    //printf("FromClientAlloc payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
+    LEVEL_DEBUG("FromClient payload=%d size=%d type=%d tempscale=%X offset=%d\n",sm->payload,sm->size,sm->type,sm->sg,sm->offset);
     //printf("<%.4d|%.4d\n",sm->type,sm->payload);
     trueload = sm->payload ;
     if ( isServermessage(sm->version) ) trueload += sizeof(union antiloop) * Servertokens(sm->version) ;
@@ -250,7 +250,7 @@ static int ToClient( int fd, struct client_msg * cm, char * data ) {
     if ( data && cm->payload>0 ) {
         ++nio ;
     }
-    //printf("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d payload=%s\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset,data?data:"");
+    LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=%X offset=%d \n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
     //printf(">%.4d|%.4d\n",cm->ret,cm->payload);
     //printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 
