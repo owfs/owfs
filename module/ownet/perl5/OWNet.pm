@@ -14,6 +14,27 @@ Light weight access to B<owserver>
 
 =head1 SYNOPSIS
 
+OWNet is an easy way to access the B<owserver> and thus the 1-wire bus.
+
+Suppose a 1-wire adapter (serial DS9097U) attaches to a 1-wire bus with a single DS18S20 temperature sensor. B<owserver> was invoked with:
+
+ owserver -d /dev/ttyS0 -p 3000
+
+Then the following perl program prints the temperature:
+
+ use OWNet ;
+ print OWNET::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\n" ; 
+
+There is the alternative object oriented form:
+
+ use OWNet ;
+ my $owserver = OWNET->new( "localhost:3000" ) ;
+ print $owserver->read( "/10.67C6697351FF/temperature" ) ."\n" ; 
+
+=head1 SYNTAX
+
+=head2 methods
+
 =over
 
 =item B<new>
@@ -62,9 +83,49 @@ TCP/IP I<address> of B<owserver>. Valid forms:
 
 =back
 
+Temperature scale can also be specified in the I<address>. Same syntax as the other OWFS programs:
+
+=over
+
+=item -C Celsius (Centigrade)
+
+=item -F Fahrenheit
+
+=item -K Kelvin
+
+=item -R Rankine
+
+=back
+
+Device display format (1-wire unique address) can also be specified in the I<address>, with the general form of -ff[.]i[[.]c] (I<f>amily I<i>d I<c>rc):
+
+=over
+
+=item -ff.i   /10.67C6697351FF (default)
+
+=item -ffi    /1067C6697351FF
+
+=item -ff.i.c /10.67C6697351FF.8D
+
+=item -ff.ic  /10.67C6697351FF8D
+
+=item -ffi.c  /1067C6697351FF.8D
+
+=item -ffic   /1067C6697351FF8D
+
+=back
+
+Warning messages will only be display if verbose flag is specified in I<address>
+
+=over
+
+=item -v      verbose
+
+=back
+
 =head2 I<path>
 
-I<path> to an item on the 1-wire bus. Valid forms:
+B<owfs>-type I<path> to an item on the 1-wire bus. Valid forms:
 
 =over
 
@@ -105,16 +166,45 @@ my $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
 sub _new($$) {
     my ($self,$addr) = @_ ;
+
+    my $tempscale = 0 ;
+    TEMPSCALE: {
+        $tempscale = 0x00000 , last TEMPSCALE if $addr =~ /-C/ ;
+        $tempscale = 0x10000 , last TEMPSCALE if $addr =~ /-F/ ;
+        $tempscale = 0x20000 , last TEMPSCALE if $addr =~ /-K/ ;
+        $tempscale = 0x30000 , last TEMPSCALE if $addr =~ /-R/ ;
+    }
+
+    my $format = 0 ;
+    FORMAT: {
+        $format = 0x2000000 , last FORMAT if $addr =~ /-ff\.i\.c/ ;
+        $format = 0x4000000 , last FORMAT if $addr =~ /-ffi\.c/ ;
+        $format = 0x3000000 , last FORMAT if $addr =~ /-ff\.ic/ ;
+        $format = 0x5000000 , last FORMAT if $addr =~ /-ffic/ ;
+        $format = 0x0000000 , last FORMAT if $addr =~ /-ff\.i/ ;
+        $format = 0x1000000 , last FORMAT if $addr =~ /-ffi/ ;
+        $format = 0x2000000 , last FORMAT if $addr =~ /-f\.i\.c/ ;
+        $format = 0x4000000 , last FORMAT if $addr =~ /-fi\.c/ ;
+        $format = 0x3000000 , last FORMAT if $addr =~ /-f\.ic/ ;
+        $format = 0x5000000 , last FORMAT if $addr =~ /-fic/ ;
+        $format = 0x0000000 , last FORMAT if $addr =~ /-f\.i/ ;
+        $format = 0x1000000 , last FORMAT if $addr =~ /-fi/ ;
+    }
+
+	$self->{VERBOSE} = 1 if $addr =~ /-v/ ;
+
+    $addr =~ s/-[\w\.]*//g ;
+    $addr =~ s/ //g ;
+
     $self->{ADDR} = $addr ;
-    $self->{SG} = 258 ;
+    $self->{SG} = 0x0102 + $tempscale + $format ;
     $self->{VER} = 0 ;
-    #_Sock($self) ;
 }
 
 sub _Sock($) {
     my $self = shift ;
     $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$self->{ADDR},Proto=>'tcp') || do {
-	warn("Can't open $self->{ADDR} ($!) \n") ;
+	warn("Can't open $self->{ADDR} ($!) \n") if $self->{VERBOSE} ;
 	$self->{SOCK} = undef ;
     } ;
     return ( 258 ) ;
@@ -125,7 +215,7 @@ sub _ToServer ($$$$$;$) {
     my $f = "N6" ;
     $f .= 'Z'.$pay if ( $pay > 0 ) ; 
     send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG},$siz,$off,$dat), MSG_DONTWAIT ) || do {
-	warn("Send problem $! \n");
+	warn("Send problem $! \n") if $self->{VERBOSE} ;
 	return ;
     } ;
     return 1 ;
@@ -147,7 +237,7 @@ sub _FromServerLow($$) {
 	return if vec($sel,$sock->fileno,1) == 0 ;
 #	return if $sel->can_read(1) == 0 ;
 	defined( recv( $self->{SOCK}, $a, $len, MSG_DONTWAIT ) ) || do {
-	    warn("Trouble getting data back $! after $len of $length") ;
+	    warn("Trouble getting data back $! after $len of $length") if $self->{VERBOSE} ;
 	    return ;
 	} ;
 	#print "reading=".$a."\n";
@@ -164,7 +254,7 @@ sub _FromServer($) {
     my ( $ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
     do {
 	my $r = _FromServerLow( $self,24 ) || do {
-	    warn("Trouble getting header $!") ;
+	    warn("Trouble getting header $!") if $self->{VERBOSE} ;
 	    return ;
 	} ;
 	($ver, $pay, $ret, $sg, $siz, $off) = unpack('N6', $r ) ;
@@ -175,7 +265,7 @@ sub _FromServer($) {
     } while $pay > 66000 ;
     $dat = _FromServerLow( $self,$pay ) ;
     if ( !defined($dat) ) { 
-	warn("Trouble getting payload $!") ;
+	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
 	return ;
     } ;
     $dat = substr($dat,0,$siz) ;
@@ -427,7 +517,7 @@ sub dir($$) {
 		return ;
 	} ;
 	_ToServer($self,length($path)+1,4,4096,0,$path) || do {
-		warn "Couldn't SEND directory request to $addr.\n" ;
+		warn "Couldn't SEND directory request to $addr.\n" if $self->{VERBOSE} ;
 		return ;
 	} ;
 	my $ret = '' ;

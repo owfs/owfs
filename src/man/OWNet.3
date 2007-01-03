@@ -129,22 +129,61 @@
 .\" ========================================================================
 .\"
 .IX Title "OWNet 3"
-.TH OWNet 3 "2007-01-02" "perl v5.8.8" "User Contributed Perl Documentation"
+.TH OWNet 3 "2007-01-03" "perl v5.8.8" "User Contributed Perl Documentation"
 .SH "NAME"
 \&\fBOWNet\fR
 Light weight access to \fBowserver\fR
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
-.IP "\fBread\fR( \fIaddress\fR , \fIpath\fR )" 4
-.IX Item "read( address , path )"
-.PD 0
-.IP "\fBwrite\fR( \fIaddress\fR , \fIpath\fR , \fIvalue\fR )" 4
-.IX Item "write( address , path , value )"
-.IP "\fBdir\fR( \fIaddress\fR , \fIpath\fR )" 4
-.IX Item "dir( address , path )"
-.IP "\fBpresent\fR( \fIaddress\fR , \fIpath\fR )" 4
-.IX Item "present( address , path )"
-.PD
+OWNet is an easy way to access the \fBowserver\fR and thus the 1\-wire bus.
+.PP
+Suppose a 1\-wire adapter (serial \s-1DS9097U\s0) attaches to a 1\-wire bus with a single \s-1DS18S20\s0 temperature sensor. \fBowserver\fR was invoked with:
+.PP
+.Vb 1
+\& owserver -d /dev/ttyS0 -p 3000
+.Ve
+.PP
+Then the following perl program prints the temperature:
+.PP
+.Vb 2
+\& use OWNet ;
+\& print OWNET::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\en" ;
+.Ve
+.PP
+There is the alternative object oriented form:
+.PP
+.Vb 3
+\& use OWNet ;
+\& my $owserver = OWNET->new( "localhost:3000" ) ;
+\& print $owserver->read( "/10.67C6697351FF/temperature" ) ."\en" ;
+.Ve
+.SH "SYNTAX"
+.IX Header "SYNTAX"
+.Sh "methods"
+.IX Subsection "methods"
+.IP "\fBnew\fR" 4
+.IX Item "new"
+my \f(CW$ownet\fR = OWNet::\fBnew\fR( \fIaddress\fR ) ;
+.IP "\fBread\fR" 4
+.IX Item "read"
+\&\fBread\fR( \fIaddress\fR , \fIpath\fR )
+.Sp
+$ownet\->\fBread\fR( \fIpath\fR )
+.IP "\fBwrite\fR" 4
+.IX Item "write"
+\&\fBwrite\fR( \fIaddress\fR , \fIpath\fR , \fIvalue\fR )
+.Sp
+$ownet\->\fBwrite\fR( \fIpath\fR , \fIvalue\fR )
+.IP "\fBdir\fR" 4
+.IX Item "dir"
+\&\fBdir\fR( \fIaddress\fR , \fIpath\fR )
+.Sp
+$ownet\->\fBdir\fR( \fIpath\fR )
+.IP "\fBpresent\fR" 4
+.IX Item "present"
+\&\fBpresent\fR( \fIaddress\fR , \fIpath\fR )
+.Sp
+$ownet\->\fBpresent\fR( \fIpath\fR )
 .Sh "\fIaddress\fP"
 .IX Subsection "address"
 \&\s-1TCP/IP\s0 \fIaddress\fR of \fBowserver\fR. Valid forms:
@@ -158,9 +197,41 @@ Light weight access to \fBowserver\fR
 .IP "\fIport\fR 3001" 4
 .IX Item "port 3001"
 .PD
+.PP
+Temperature scale can also be specified in the \fIaddress\fR. Same syntax as the other \s-1OWFS\s0 programs:
+.IP "\-C Celsius (Centigrade)" 4
+.IX Item "-C Celsius (Centigrade)"
+.PD 0
+.IP "\-F Fahrenheit" 4
+.IX Item "-F Fahrenheit"
+.IP "\-K Kelvin" 4
+.IX Item "-K Kelvin"
+.IP "\-R Rankine" 4
+.IX Item "-R Rankine"
+.PD
+.PP
+Device display format (1\-wire unique address) can also be specified in the \fIaddress\fR, with the general form of \-ff[.]i[[.]c] (\fIf\fRamily \fIi\fRd \fIc\fRrc):
+.IP "\-ff.i   /10.67C6697351FF (default)" 4
+.IX Item "-ff.i   /10.67C6697351FF (default)"
+.PD 0
+.IP "\-ffi    /1067C6697351FF" 4
+.IX Item "-ffi    /1067C6697351FF"
+.IP "\-ff.i.c /10.67C6697351FF.8D" 4
+.IX Item "-ff.i.c /10.67C6697351FF.8D"
+.IP "\-ff.ic  /10.67C6697351FF8D" 4
+.IX Item "-ff.ic  /10.67C6697351FF8D"
+.IP "\-ffi.c  /1067C6697351FF.8D" 4
+.IX Item "-ffi.c  /1067C6697351FF.8D"
+.IP "\-ffic   /1067C6697351FF8D" 4
+.IX Item "-ffic   /1067C6697351FF8D"
+.PD
+.PP
+Warning messages will only be display if verbose flag is specified in \fIaddress\fR
+.IP "\-v      verbose" 4
+.IX Item "-v      verbose"
 .Sh "\fIpath\fP"
 .IX Subsection "path"
-\&\fIpath\fR to an item on the 1\-wire bus. Valid forms:
+\&\fBowfs\fR\-type \fIpath\fR to an item on the 1\-wire bus. Valid forms:
 .IP "main directories" 4
 .IX Item "main directories"
 Used for the \fIdir\fR method. E.g. \*(L"/\*(R" \*(L"/uncached\*(R" \*(L"/1F.321432320000/main\*(R"
@@ -175,80 +246,133 @@ Used to \fIread\fR, \fIwrite\fR. E.g. \*(L"/10.4300AC220000/temperature\*(R"
 New \fIvalue\fR for a device property. Used by \fIwrite\fR.
 .SH "METHODS"
 .IX Header "METHODS"
+.IP "\fInew\fR" 4
+.IX Item "new"
+\&\fBnew\fR( \fIaddress\fR )
+.Sp
+Create a new OWNet object \*(-- corresponds to an \fBowserver\fR.
+.Sp
+Error (and undef return value) if:
+.RS 4
+.IP "1 Badly formed tcp/ip \fIaddress\fR" 4
+.IX Item "1 Badly formed tcp/ip address"
+.PD 0
+.IP "2 No <B>owserver at \fIaddress\fR" 4
+.IX Item "2 No <B>owserver at address"
+.RE
+.RS 4
+.RE
 .IP "\fIread\fR" 4
 .IX Item "read"
-\&\fBread\fR( \fIaddress\fR , <I>path )
+.RS 4
+.IP "Non object\-oriented:" 4
+.IX Item "Non object-oriented:"
+.PD
+\&\fBread\fR( \fIaddress\fR , \fIpath\fR )
+.IP "Object\-oriented:" 4
+.IX Item "Object-oriented:"
+$ownet\->\fBread\fR( \fIpath\fR )
+.RE
+.RS 4
 .Sp
 Read the value of a 1\-wire device property. Returns the (scalar string) value of the property.
 .Sp
 Error (and undef return value) if:
-.RS 4
-.IP "1 No <B>owserver at \fIaddress\fR" 4
-.IX Item "1 No <B>owserver at address"
+.IP "1 (Non object) No \fBowserver\fR at \fIaddress\fR" 4
+.IX Item "1 (Non object) No owserver at address"
 .PD 0
-.IP "2 Bad \fIpath\fR" 4
-.IX Item "2 Bad path"
-.IP "3 \fIpath\fR not a readable device property" 4
-.IX Item "3 path not a readable device property"
+.IP "2 (Object form) Not called with a valid OWNet object" 4
+.IX Item "2 (Object form) Not called with a valid OWNet object"
+.IP "3 Bad \fIpath\fR" 4
+.IX Item "3 Bad path"
+.IP "4 \fIpath\fR not a readable device property" 4
+.IX Item "4 path not a readable device property"
 .RE
 .RS 4
 .RE
 .IP "\fIwrite\fR" 4
 .IX Item "write"
+.RS 4
+.IP "Non object\-oriented:" 4
+.IX Item "Non object-oriented:"
 .PD
-\&\fBwrite\fR( \fIaddress\fR , <I>path  , <I>write )
+\&\fBwrite\fR( \fIaddress\fR , \fIpath\fR , \fIvalue\fR )
+.IP "Object\-oriented:" 4
+.IX Item "Object-oriented:"
+$ownet\->\fBwrite\fR( \fIpath\fR , \fIvalue\fR )
+.RE
+.RS 4
 .Sp
 Set the value of a 1\-wire device property. Returns \*(L"1\*(R" on success.
 .Sp
 Error (and undef return value) if:
-.RS 4
-.IP "1 No <B>owserver at \fIaddress\fR" 4
-.IX Item "1 No <B>owserver at address"
+.IP "1 (Non object) No \fBowserver\fR at \fIaddress\fR" 4
+.IX Item "1 (Non object) No owserver at address"
 .PD 0
-.IP "2 Bad \fIpath\fR" 4
-.IX Item "2 Bad path"
-.IP "3 \fIpath\fR not a writable device property" 4
-.IX Item "3 path not a writable device property"
-.IP "4 \fIvalue\fR incorrect size or format" 4
-.IX Item "4 value incorrect size or format"
+.IP "2 (Object form) Not called with a valid OWNet object" 4
+.IX Item "2 (Object form) Not called with a valid OWNet object"
+.IP "3 Bad \fIpath\fR" 4
+.IX Item "3 Bad path"
+.IP "4 \fIpath\fR not a writable device property" 4
+.IX Item "4 path not a writable device property"
+.IP "5 \fIvalue\fR incorrect size or format" 4
+.IX Item "5 value incorrect size or format"
 .RE
 .RS 4
 .RE
 .IP "\fIpresent\fR" 4
 .IX Item "present"
+.RS 4
+.IP "Non object\-oriented:" 4
+.IX Item "Non object-oriented:"
 .PD
-\&\fBpresent\fR( \fIaddress\fR , <I>path )
+\&\fBpresent\fR( \fIaddress\fR , \fIpath\fR )
+.IP "Object\-oriented:" 4
+.IX Item "Object-oriented:"
+$ownet\->\fBpresent\fR( \fIpath\fR )
+.RE
+.RS 4
 .Sp
 Test if a 1\-wire device exists.
 .Sp
 Error (and undef return value) if:
-.RS 4
-.IP "1 No <B>owserver at \fIaddress\fR" 4
-.IX Item "1 No <B>owserver at address"
+.IP "1 (Non object) No \fBowserver\fR at \fIaddress\fR" 4
+.IX Item "1 (Non object) No owserver at address"
 .PD 0
-.IP "2 Bad \fIpath\fR" 4
-.IX Item "2 Bad path"
-.IP "3 \fIpath\fR not a device" 4
-.IX Item "3 path not a device"
+.IP "2 (Object form) Not called with a valid OWNet object" 4
+.IX Item "2 (Object form) Not called with a valid OWNet object"
+.IP "3 Bad \fIpath\fR" 4
+.IX Item "3 Bad path"
+.IP "4 \fIpath\fR not a device" 4
+.IX Item "4 path not a device"
 .RE
 .RS 4
 .RE
 .IP "\fIdir\fR" 4
 .IX Item "dir"
+.RS 4
+.IP "Non object\-oriented:" 4
+.IX Item "Non object-oriented:"
 .PD
-\&\fBdir\fR( \fIaddress\fR , <I>path )
+\&\fBdir\fR( \fIaddress\fR , \fIpath\fR )
+.IP "Object\-oriented:" 4
+.IX Item "Object-oriented:"
+$ownet\->\fBdir\fR( \fIpath\fR )
+.RE
+.RS 4
 .Sp
 Return a comma-separated list of the entries in \fIpath\fR. Entries are equivalent to \*(L"fully qualified names\*(R" \*(-- full path names.
 .Sp
 Error (and undef return value) if:
-.RS 4
-.IP "1 No <B>owserver at \fIaddress\fR" 4
-.IX Item "1 No <B>owserver at address"
+.IP "1 (Non object) No \fBowserver\fR at \fIaddress\fR" 4
+.IX Item "1 (Non object) No owserver at address"
 .PD 0
-.IP "2 Bad \fIpath\fR" 4
-.IX Item "2 Bad path"
-.IP "3 \fIpath\fR not a directory" 4
-.IX Item "3 path not a directory"
+.IP "2 (Object form) Not called with a valid OWNet object" 4
+.IX Item "2 (Object form) Not called with a valid OWNet object"
+.IP "3 Bad \fIpath\fR" 4
+.IX Item "3 Bad path"
+.IP "4 \fIpath\fR not a directory" 4
+.IX Item "4 path not a directory"
 .RE
 .RS 4
 .RE
@@ -265,7 +389,10 @@ Error (and undef return value) if:
 .IX Subsection "Programs"
 Connection to the 1\-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master \*(-- \s-1USB\s0, serial, i2c, parallel. The heavy-weight \fI\s-1OWFS\s0\fR programs: \fBowserver\fR \fBowfs\fR \fBowhttpd\fR \fBowftpd\fR and the heavy-weight perl module \fB\s-1OW\s0\fR all link in the full \fI\s-1OWFS\s0\fR library and can connect directly to the bus master(s) and/or to \fBowserver\fR.  
 .PP
-\&\fBOWNet\fR is a light-weight module. It connects only to an \fBowserver\fR, does not link in the \fI\s-1OWFS\s0\fR library, and should be more portable.
+\&\fBOWNet\fR is a light-weight module. It connects only to an \fBowserver\fR, does not link in the \fI\s-1OWFS\s0\fR library, and should be more portable..
+.Sh "Object-oriented"
+.IX Subsection "Object-oriented"
+\&\fIOWNet\fR can be used in either a classical (non\-object\-oriented) manner, or with objects. The object stored the ip address of the \fBowserver\fR and a network socket to communicate.
 .SH "AUTHOR"
 .IX Header "AUTHOR"
 Paul H Alfille paul.alfille @ gmail . com
@@ -280,3 +407,8 @@ Documentation for the full \fBowfs\fR program suite, including man pages for eac
 .IP "http://owfs.sourceforge.net" 4
 .IX Item "http://owfs.sourceforge.net"
 Location where source code is hosted.
+.SH "COPYRIGHT"
+.IX Header "COPYRIGHT"
+Copyright (c) 2007 Paul H Alfille. All rights reserved.
+ This program is free software; you can redistribute it and/or
+ modify it under the same terms as Perl itself.
