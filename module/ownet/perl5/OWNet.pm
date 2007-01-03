@@ -16,13 +16,33 @@ Light weight access to B<owserver>
 
 =over
 
-=item B<read>( I<address> , I<path> )
+=item B<new>
 
-=item B<write>( I<address> , I<path> , I<value> )
+my $ownet = OWNet::B<new>( I<address> ) ;
 
-=item B<dir>( I<address> , I<path> )
+=item B<read>
 
-=item B<present>( I<address> , I<path> )
+B<read>( I<address> , I<path> )
+
+$ownet->B<read>( I<path> )
+
+=item B<write>
+
+B<write>( I<address> , I<path> , I<value> )
+
+$ownet->B<write>( I<path> , I<value> )
+
+=item B<dir>
+
+B<dir>( I<address> , I<path> )
+
+$ownet->B<dir>( I<path> )
+
+=item B<present>
+
+B<present>( I<address> , I<path> )
+
+$ownet->B<present>( I<path> )
 
 =back
 
@@ -176,7 +196,7 @@ Error (and undef return value) if:
 
 =item 1 Badly formed tcp/ip I<address>
 
-=item 1 No <B>owserver at I<address>
+=item 2 No <B>owserver at I<address>
 
 =back
 
@@ -202,13 +222,24 @@ sub new($$) {
     if ( !defined($self->{SOCK}) ) {
         return ;
     } ;
-    bless($self) ;
+    bless $self, $class ;
     return $self ;
 }
 
 =item I<read>
 
-B<read>( I<address> , <I>path )
+=over
+
+=item Non object-oriented:
+
+B<read>( I<address> , I<path> )
+
+=item Object-oriented:
+
+$ownet->B<read>( I<path> )
+
+=back
+
 
 Read the value of a 1-wire device property. Returns the (scalar string) value of the property.
 
@@ -216,26 +247,30 @@ Error (and undef return value) if:
 
 =over
 
-=item 1 No <B>owserver at I<address>
+=item 1 (Non object) No B<owserver> at I<address>
 
-=item 2 Bad I<path> 
+=item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 I<path> not a readable device property
+=item 3 Bad I<path> 
+
+=item 4 I<path> not a readable device property
 
 =back
 
 =cut
 
 sub read($$) {
-    my ($self, @args) = @_ ;
-    my $path = $args[0];
-    my $addr = $self->{ADDR};
-#    my $self = {} ;
-#    my ( $addr,$path ) = @_ ;
-    _new($self,$addr)  ;
-    if ( !defined($self->{SOCK}) ) {
-        return ;
-    } ;
+	my ( $addr,$path ) = @_ ;
+	my $self ;
+	if ( ref($addr) eq "OWNet" ) {
+		$self = $addr ;
+	} else {
+		$self = {} ;
+		_new($self,$addr)  ;
+	}
+	if ( !defined($self->{SOCK}) ) {
+		return ;
+	} ;
 	_ToServer($self,length($path)+1,2,4096,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[6] ;
@@ -243,7 +278,17 @@ sub read($$) {
 
 =item I<write>
 
-B<write>( I<address> , <I>path  , <I>write )
+=over
+
+=item Non object-oriented:
+
+B<write>( I<address> , I<path> , I<value> )
+
+=item Object-oriented:
+
+$ownet->B<write>( I<path> , I<value> )
+
+=back
 
 Set the value of a 1-wire device property. Returns "1" on success.
 
@@ -251,29 +296,32 @@ Error (and undef return value) if:
 
 =over
 
-=item 1 No <B>owserver at I<address>
+=item 1 (Non object) No B<owserver> at I<address>
 
-=item 2 Bad I<path> 
+=item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 I<path> not a writable device property
+=item 3 Bad I<path> 
 
-=item 4 I<value> incorrect size or format
+=item 4 I<path> not a writable device property
+
+=item 5 I<value> incorrect size or format
 
 =back
 
 =cut
 
 sub write($$$) {
-    my ($self, @args) = @_ ;
-    my $path = $args[0];
-    my $val = $args[1];
-    my $addr = $self->{ADDR};
-#    my $self = {} ;
-#    my ( $addr,$path,$val ) = @_ ;
-    _new($self,$addr)  ;
-    if ( !defined($self->{SOCK}) ) {
-        return ;
-    } ;
+	my ( $addr,$path, $val ) = @_ ;
+	my $self ;
+	if ( ref($addr) eq "OWNet" ) {
+		$self = $addr ;
+	} else {
+		$self = {} ;
+		_new($self,$addr)  ;
+	}
+	if ( !defined($self->{SOCK}) ) {
+		return ;
+	} ;
 	my $siz = length($val) ;
 	my $s1 = length($path)+1 ;
 	my $dat = pack( 'Z'.$s1.'A'.$siz,$path,$val ) ;
@@ -284,7 +332,17 @@ sub write($$$) {
 
 =item I<present>
 
-B<present>( I<address> , <I>path )
+=over
+
+=item Non object-oriented:
+
+B<present>( I<address> , I<path> )
+
+=item Object-oriented:
+
+$ownet->B<present>( I<path> )
+
+=back
 
 Test if a 1-wire device exists.
 
@@ -292,26 +350,30 @@ Error (and undef return value) if:
 
 =over
 
-=item 1 No <B>owserver at I<address>
+=item 1 (Non object) No B<owserver> at I<address>
 
-=item 2 Bad I<path> 
+=item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 I<path> not a device
+=item 3 Bad I<path> 
+
+=item 4 I<path> not a device
 
 =back
 
 =cut
 
 sub present($$) {
-    my ($self, @args) = @_ ;
-    my $path = $args[0];
-    my $addr = $self->{ADDR};
-#    my $self = {} ;
-#	my ( $addr,$path ) = @_ ;
-    _new($self,$addr)  ;
-    if ( !defined($self->{SOCK}) ) {
-        return ;
-    } ;
+	my ( $addr,$path ) = @_ ;
+	my $self ;
+	if ( ref($addr) eq "OWNet" ) {
+		$self = $addr ;
+	} else {
+		$self = {} ;
+		_new($self,$addr)  ;
+	}
+	if ( !defined($self->{SOCK}) ) {
+		return ;
+	} ;
 	print _ToServer($self,length($path)+1,6,4096,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
@@ -319,7 +381,17 @@ sub present($$) {
 
 =item I<dir>
 
-B<dir>( I<address> , <I>path )
+=over
+
+=item Non object-oriented:
+
+B<dir>( I<address> , I<path> )
+
+=item Object-oriented:
+
+$ownet->B<dir>( I<path> )
+
+=back
 
 Return a comma-separated list of the entries in I<path>. Entries are equivalent to "fully qualified names" -- full path names.
 
@@ -327,43 +399,27 @@ Error (and undef return value) if:
 
 =over
 
-=item 1 No <B>owserver at I<address>
+=item 1 (Non object) No B<owserver> at I<address>
 
-=item 2 Bad I<path> 
+=item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 I<path> not a directory
+=item 3 Bad I<path> 
+
+=item 4 I<path> not a directory
 
 =back
 
 =cut
 
 sub dir($$) {
-	my ($self, @args) = @_ ;
-	my $path = $args[0];
-	my $addr = $self->{ADDR};
-	_new($self,$addr) ;
-	if ( !defined($self->{SOCK}) ) {
-		return ;
-	} ;
-#	print "path=".$path."\n";
-	_ToServer($self,length($path)+1,4,4096,0,$path) || do {
-		warn "Couldn't SEND directory request to $addr.\n" ;
-		return ;
-	} ;
-	my $ret = '' ;
-	while (1) {
-		my @r = _FromServer($self) ;
-		if (!@r) { return ; } ;
-		return substr($ret,1) if $r[1] == 0 ;
-		$ret .= ','.$r[6] ;
-	}
-}
-
-
-sub dir2($$) {
-	my $self = {} ;
 	my ( $addr,$path ) = @_ ;
-	_new($self,$addr)  ;
+	my $self ;
+	if ( ref($addr) eq "OWNet" ) {
+		$self = $addr ;
+	} else {
+		$self = {} ;
+		_new($self,$addr)  ;
+	}
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
@@ -400,7 +456,11 @@ I<1-wire> is a protocol allowing simple connection of inexpensive devices. Each 
 
 Connection to the 1-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master -- USB, serial, i2c, parallel. The heavy-weight I<OWFS> programs: B<owserver> B<owfs> B<owhttpd> B<owftpd> and the heavy-weight perl module B<OW> all link in the full I<OWFS> library and can connect directly to the bus master(s) and/or to B<owserver>.  
 
-B<OWNet> is a light-weight module. It connects only to an B<owserver>, does not link in the I<OWFS> library, and should be more portable.
+B<OWNet> is a light-weight module. It connects only to an B<owserver>, does not link in the I<OWFS> library, and should be more portable..
+
+=head2 Object-oriented
+
+I<OWNet> can be used in either a classical (non-object-oriented) manner, or with objects. The object stored the ip address of the B<owserver> and a network socket to communicate.
 
 =head1 AUTHOR
 
