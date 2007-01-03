@@ -108,7 +108,7 @@ sub _new($$) {
     $self->{ADDR} = $addr ;
     $self->{SG} = 258 ;
     $self->{VER} = 0 ;
-    _Sock($self) ;
+    #_Sock($self) ;
 }
 
 sub _Sock($) {
@@ -117,7 +117,6 @@ sub _Sock($) {
 	warn("Can't open $self->{ADDR} ($!) \n") ;
 	$self->{SOCK} = undef ;
     } ;
-    print "SOCK ".$self->{SOCK}." \n" ;
     return ( 258 ) ;
 }
 
@@ -144,7 +143,7 @@ sub _FromServerLow($$) {
     my $a ;
     #print "LOOOP for length $length \n" ;
     do {
-	select($sel,undef,undef,1)) ;
+	select($sel,undef,undef,1) ;
 	return if vec($sel,$sock->fileno,1) == 0 ;
 #	return if $sel->can_read(1) == 0 ;
 	defined( recv( $self->{SOCK}, $a, $len, MSG_DONTWAIT ) ) || do {
@@ -219,7 +218,7 @@ sub new($$) {
     my $addr = shift ;
     my $self = {} ;
     _new($self,$addr) ;
-    if ( !defined($self->{SOCK}) ) {
+    if ( !defined($self->{ADDR}) ) {
         return ;
     } ;
     bless $self, $class ;
@@ -262,12 +261,13 @@ Error (and undef return value) if:
 sub read($$) {
 	my ( $addr,$path ) = @_ ;
 	my $self ;
-	if ( ref($addr) eq "OWNet" ) {
+	if ( ref($addr) ) {
 		$self = $addr ;
-	} else {
+} else {
 		$self = {} ;
 		_new($self,$addr)  ;
 	}
+    _Sock($self) ;
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
@@ -313,12 +313,13 @@ Error (and undef return value) if:
 sub write($$$) {
 	my ( $addr,$path, $val ) = @_ ;
 	my $self ;
-	if ( ref($addr) eq "OWNet" ) {
+	if ( ref($addr) ) {
 		$self = $addr ;
-	} else {
+} else {
 		$self = {} ;
 		_new($self,$addr)  ;
 	}
+    _Sock($self) ;
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
@@ -365,12 +366,13 @@ Error (and undef return value) if:
 sub present($$) {
 	my ( $addr,$path ) = @_ ;
 	my $self ;
-	if ( ref($addr) eq "OWNet" ) {
+	if ( ref($addr) ) {
 		$self = $addr ;
-	} else {
+} else {
 		$self = {} ;
 		_new($self,$addr)  ;
 	}
+    _Sock($self) ;
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
@@ -414,12 +416,13 @@ Error (and undef return value) if:
 sub dir($$) {
 	my ( $addr,$path ) = @_ ;
 	my $self ;
-	if ( ref($addr) eq "OWNet" ) {
+	if ( ref($addr) ) {
 		$self = $addr ;
 	} else {
 		$self = {} ;
 		_new($self,$addr)  ;
 	}
+    _Sock($self) ;
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
