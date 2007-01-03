@@ -101,7 +101,7 @@ use strict ;
 use IO::Socket::INET ;
 use bytes ;
 
-my $VERSION=substr(chomp("$Revision$"),13) ;
+my $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
 sub _new($$) {
     my ($self,$addr) = @_ ;
@@ -144,7 +144,7 @@ sub _FromServerLow($$) {
     my $a ;
     #print "LOOOP for length $length \n" ;
     do {
-	print "LOW: ".join(',',select($sel,undef,undef,1))." \n" ;
+	select($sel,undef,undef,1)) ;
 	return if vec($sel,$sock->fileno,1) == 0 ;
 #	return if $sel->can_read(1) == 0 ;
 	defined( recv( $self->{SOCK}, $a, $len, MSG_DONTWAIT ) ) || do {
@@ -325,7 +325,7 @@ sub write($$$) {
 	my $siz = length($val) ;
 	my $s1 = length($path)+1 ;
 	my $dat = pack( 'Z'.$s1.'A'.$siz,$path,$val ) ;
-	print _ToServer($self,length($dat),3,$siz,0,$dat) ;
+	_ToServer($self,length($dat),3,$siz,0,$dat) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
 }
@@ -374,7 +374,7 @@ sub present($$) {
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
-	print _ToServer($self,length($path)+1,6,4096,0,$path) ;
+	_ToServer($self,length($path)+1,6,4096,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
 }
