@@ -1062,7 +1062,10 @@ AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
 AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
 case "${host_cpu}-${host_os}" in
-	*-aix* | *-darwin* | *solaris* | *-osf* | *-hpux*)
+	*-darwin*)
+		AC_MSG_RESULT([no])
+	;;
+	*-aix* | *solaris* | *-osf* | *-hpux*)
 		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;

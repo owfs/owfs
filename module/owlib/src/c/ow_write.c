@@ -303,7 +303,7 @@ static int FS_w_single(const char *buf, const size_t size,
 					   const off_t offset, const struct parsedname *pn)
 {
 	size_t fl = FileLength(pn);
-	int ret = EBADMSG;
+	int ret = -EBADMSG;
 //printf("FS_w_single\n");
 
 

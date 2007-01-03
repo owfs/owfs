@@ -167,6 +167,15 @@ $Id$
 #define PATH_MAX 2048
 #endif
 
+/* Some errnos are not defined for MacOSX and gcc3.3 */
+#ifndef EBADMSG
+#define EBADMSG ENOMSG
+#endif
+#ifndef EPROTO
+#define EPROTO EIO
+#endif
+
+
 /* Floating point */
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */

@@ -76,7 +76,7 @@ char *strsep(char **stringp, const char *delim);
 #endif				/* __UCLIBC__ */
 
 #ifndef HAVE_TDESTROY
-void tdestroy(void *vroot, void (*freefct)(void *))
+void tdestroy(void *vroot, void (*freefct)(void *));
 #endif
 
 #ifdef __UCLIBC__
