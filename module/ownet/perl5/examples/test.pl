@@ -24,7 +24,7 @@ my $ow ;
 
 #$ow = OWNet::new("OWNet", $ARGV[0]) ;
 $ow = OWNet->new($ARGV[0]) ;
-die ("Cannot open OWNet connection") if (!defined($ow->{SOCK})) ;
+#die ("Cannot open OWNet connection") if (!defined($ow->{SOCK})) ;
 
 print "Try dir\n" ;
 $ow->dir("/") ;
