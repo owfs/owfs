@@ -1,30 +1,30 @@
 ## $Id$
 
 if ENABLE_OWHTTPD
-  MODULE_SUBDIRS += owhttpd
+  MODULE_SUBDIR_OWHTTPD = owhttpd
 endif
 
 if ENABLE_OWSERVER
-  MODULE_SUBDIRS += owserver
+  MODULE_SUBDIR_OWSERVER = owserver
 endif
 
 if ENABLE_OWFS
-  MODULE_SUBDIRS += owfs
+  MODULE_SUBDIR_OWFS = owfs
 endif
 
 if ENABLE_OWFTPD
-  MODULE_SUBDIRS += owftpd
+  MODULE_SUBDIR_OWFTPD = owftpd
 endif
 
 if ENABLE_OWCAPI
-  MODULE_SUBDIRS += owcapi
+  MODULE_SUBDIR_OWCAPI = owcapi
 endif
   
 if ENABLE_SWIG
-  MODULE_SUBDIRS += swig
+  MODULE_SUBDIR_SWIG = swig
 endif
 
-SUBDIRS = owshell ownet owlib $(MODULE_SUBDIRS)
+SUBDIRS = owshell ownet owlib $(MODULE_SUBDIR_OWHTTPD) $(MODULE_SUBDIR_OWSERVER) $(MODULE_SUBDIR_OWFS) $(MODULE_SUBDIR_OWFTPD) $(MODULE_SUBDIR_OWCAPI) $(MODULE_SUBDIR_SWIG)
 
 clean-generic:
 
