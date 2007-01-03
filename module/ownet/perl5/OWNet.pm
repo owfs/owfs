@@ -101,7 +101,7 @@ use strict ;
 use IO::Socket::INET ;
 use bytes ;
 
-my $VERSION="2.5" ;
+my $VERSION=substr(chomp("$Revision$"),13) ;
 
 sub _new($$) {
     my ($self,$addr) = @_ ;
