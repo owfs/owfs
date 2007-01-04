@@ -1,0 +1,6 @@
+Revision history for Perl extension OWNet.
+
+0.01  Wed Jan  3 21:42:03 2007
+	- original version; created by h2xs 1.23 with options
+		-X -n OWNet -b 5.8.0 -O
+
