@@ -9,9 +9,10 @@ OWNet/Makefile: OWNet/Makefile.PL
 	( cd OWNet; $(PERL) Makefile.PL )
 
 install-data-local: OWNet/Makefile
-	( cd OWNet; $(MAKE) install )
+	( cd OWNet; $(MAKE) install DESTDIR="$(DESTDIR)" )
 #	( cd OWNet; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 
 clean-generic:
 	@RM@ -f *~ .*~
 	if test -f OWNet/Makefile; then cd OWNet; $(MAKE) clean; fi
+	@RM@ -f OWNet/Makefile.old
