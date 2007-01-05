@@ -1037,7 +1037,8 @@ if test "X$with_libusb_config" != "X" ; then
     LIBUSB_CONFIG=$with_libusb_config
 fi
 
-if test "X$LIBUSB_CONFIG" == "X" ; then
+if test "$cross_compiling" != yes; then
+ if test "X$LIBUSB_CONFIG" == "X" ; then
    dirs="/usr/bin /usr/local/bin /opt/local/bin"
    for i in $dirs; do
        echo $i/libusb-config
@@ -1047,6 +1048,7 @@ if test "X$LIBUSB_CONFIG" == "X" ; then
 	  break;
        fi
    done
+ fi
 fi
 
 # Check for USB enabled
@@ -1079,13 +1081,7 @@ if test "${ENABLE_USB}" != "false"; then
     CPPFLAGS="$save_CPPFLAGS $LIBUSB_CFLAGS"
     LDFLAGS="$save_LDFLAGS $LIBUSB_LIBS"
 
-    #AC_MSG_WARN([LIBS=$LIBS])
-    #AC_MSG_WARN([CPPFLAGS=$CPPFLAGS])
-    #AC_MSG_WARN([LDFLAGS=$LDFLAGS])
-    #AC_MSG_WARN([LIBUSB_LIBS=$LIBUSB_LIBS])
-    #AC_MSG_WARN([LIBUSB_CFLAGS=$LIBUSB_CFLAGS])
-
-    AC_MSG_CHECKING([for libusb includes/libs ])
+    AC_MSG_CHECKING([if libusb compiles with includes+lib ])
     AC_COMPILE_IFELSE([
 	AC_LANG_PROGRAM([[#include <usb.h>]],
 	[[
