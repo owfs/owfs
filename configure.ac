@@ -1105,7 +1105,8 @@ if test "${ENABLE_USB}" != "false"; then
 
        AC_MSG_CHECKING([if libusb is could be compiled])
        AC_CHECK_LIB(usb,usb_open,[
-	    AC_MSG_RESULT([ok])],[
+	    AC_MSG_RESULT([ok])
+	    LIBUSB_LIBS="-lusb"],[
 	    AC_MSG_WARN([Can't find libusb])
 	        if test "${ENABLE_USB}" = "true" ; then
 		        AC_MSG_ERROR([libusb must be installed to use a USB adapter])
@@ -1113,7 +1114,7 @@ if test "${ENABLE_USB}" != "false"; then
 	                AC_MSG_WARN([libusb not found, usb will be disabled])
 			ENABLE_USB=false
 	        fi
-	    ],)
+        ],)
   fi
 
   if test "${ENABLE_USB}" != "false" ; then

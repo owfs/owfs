@@ -96,11 +96,7 @@ libow_la_SOURCES = ${OWLIB_SOURCE}
 if HAVE_CYGWIN
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
 else
-if HAVE_DARWIN
-libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
-else
-libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
-endif
+libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
 endif
 # -version-info 0:0:1 -release ow
 
