@@ -26,7 +26,7 @@ AM_CFLAGS = -fexceptions \
 	-D_FILE_OFFSET_BITS=64 \
 	@PHPINC@
 
-LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 libowphp_la_SOURCES = ow_wrap.c php_OW.h
 

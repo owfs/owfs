@@ -48,8 +48,8 @@ AM_CFLAGS = -I../../owlib/src/include \
 #	-Wconversion \
 #
 
-LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
-#SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+#SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 #install-local: ow.tcl pkgIndex.tcl
 #install-data-local:

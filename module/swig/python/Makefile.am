@@ -11,7 +11,7 @@ AM_CFLAGS = -I../include \
          -fexceptions \
          -D_FILE_OFFSET_BITS=64
 
-LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 ow_wrap.c: ../ow.i ${LIBOW}
 	$(SWIG) -python -o $@ ../ow.i

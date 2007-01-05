@@ -24,10 +24,11 @@ AM_CFLAGS = -I../include \
          -Wcast-align \
          -Wstrict-prototypes \
          -Wredundant-decls \
+         -D_FILE_OFFSET_BITS=64 \
          ${PROFILING_FLAG} \
-         -D_FILE_OFFSET_BITS=64
+	 ${LIBUSB_CFLAGS}
 
-LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -low ${LIBUSB_LIBS} ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-generic:
 

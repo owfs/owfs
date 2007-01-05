@@ -92,15 +92,20 @@ OWLIB_SOURCE = ow_dl.c           \
 lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
+
 if HAVE_CYGWIN
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
 else
+if HAVE_DARWIN
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
+else
+libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
+endif
 endif
 # -version-info 0:0:1 -release ow
 
 # Maybe need this for MacOS X
-#if DARWIN_API
+#if HAVE_DARWIN
 #LDADDS = -framework IOKit -framework CoreFoundation
 #endif
 #libow_la_LDFLAGS = -shared -shrext .so \
@@ -122,7 +127,8 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          -D_FILE_OFFSET_BITS=64 \
          -D__EXTENSIONS__ \
-         ${PROFILING_FLAG}
+         ${PROFILING_FLAG} \
+	 ${LIBUSB_CFLAGS}
 
 clean-generic:
 

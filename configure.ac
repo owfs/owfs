@@ -46,17 +46,26 @@ AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 
-AC_MSG_CHECKING([for cygwin])
+HAVE_DARWIN=false
+HAVE_CYGWIN="false"
+
+AC_MSG_CHECKING([for special host])
 case "$host" in
   *-*-cygwin*)
     HAVE_CYGWIN="true"
     CFLAGS="$CFLAGS -mwin32 -g"
+    AC_MSG_RESULT([Cygwin])
+    ;;
+  *-darwin*)
+    HAVE_DARWIN="true"
+    AC_MSG_RESULT([Darwin])
     ;;
   *)
-    HAVE_CYGWIN="false"
+    AC_MSG_RESULT([Other host])
     ;;
 esac
-AC_MSG_RESULT($HAVE_CYGWIN)
+AC_SUBST(HAVE_DARWIN)
+AM_CONDITIONAL(HAVE_DARWIN, test "${HAVE_DARWIN}" = "true")
 AC_SUBST(HAVE_CYGWIN)
 AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 
@@ -787,8 +796,45 @@ fi
 AC_SUBST(ENABLE_OWTCL)
 AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
 
-LD_EXTRALIBS=""
+AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
+case "${host_cpu}-${host_os}" in
+	*-aix* | *solaris* | *-osf* | *-hpux*)
+		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
+		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
+	;;
+	*-freebsd* | *)
+		AC_MSG_RESULT([no])
+	;;
+	*-darwin*)
+		AC_MSG_RESULT([no])
+	;;
+esac
 
+# Check if extra libs are needed. Should perhaps test if they are available too
+# instead of hardcoding the libraries.
+AC_MSG_CHECKING([if extra libs are required])
+case "${host_cpu}-${host_os}" in
+	*-darwin*)
+		# This will actually be duplicates if libusb is used.
+		OSLIBS="-Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation"
+		LD_EXTRALIBS=""
+		AC_MSG_RESULT([${OSLIBS}])
+	;;
+	*-solaris*)
+		OSLIBS=""
+		LD_EXTRALIBS=" -lsocket -lnsl "
+		LIBS="$LIBS -lsocket -lnsl"
+		AC_MSG_RESULT([${LD_EXTRALIBS}])
+	;;
+	*)
+		OSLIBS=""
+		LD_EXTRALIBS="-Wl,--rpath -Wl,$libdir"
+		AC_MSG_RESULT([${LD_EXTRALIBS}])
+	;;
+esac
+AC_SUBST(LD_EXTRALIBS)
+AC_SUBST(OSLIBS)
+AC_MSG_WARN([LD_EXTRALIBS=${LD_EXTRALIBS} OSLIBS=${OSLIBS}])
 
 AC_ARG_WITH(fuseinclude,
             [  --with-fuseinclude=DIR  FUSE-include from @<:@/usr/local/include@:>@],
@@ -824,12 +870,13 @@ AC_ARG_ENABLE(owfs,
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
 
+    save_LD_EXTRALIBS="$LD_EXTRALIBS"
     save_CPPFLAGS="$CPPFLAGS"
     save_LDFLAGS="$LDFLAGS"
     FUSE_FLAGS="-DFUSE_USE_VERSION=26"
     FUSE_INCLUDES="-I${fuse_include_path}"
     FUSE_LIBS="-L${fuse_lib_path}"
-    LD_EXTRALIBS="-Wl,--rpath -Wl,${fuse_lib_path}"
+    LD_EXTRALIBS="$save_LD_EXTRALIBS -Wl,--rpath -Wl,${fuse_lib_path}"
     CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
     LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
@@ -840,9 +887,9 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	FUSE_FLAGS=""
 	FUSE_INCLUDES=""
 	FUSE_LIBS=""
-	LD_EXTRALIBS=""
-	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
-	LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
+	LD_EXTRALIBS="$save_LD_EXTRALIBS"
+	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64"
+	LDFLAGS="$save_LDFLAGS"
 
 	AC_MSG_WARN([Install FUSE-2.2 or later to enable owfs - download it from http://fuse.sourceforge.net/])
 
@@ -922,6 +969,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 
     CPPFLAGS="$save_CPPFLAGS"
     LDFLAGS="$save_LDFLAGS"
+    LD_EXTRALIBS="$save_LD_EXTRALIBS"
 
     if test "${ENABLE_OWFS}" != "false"; then
         ENABLE_OWFS="true"
@@ -971,6 +1019,36 @@ AC_ARG_ENABLE(zero,
 AC_SUBST(ENABLE_ZERO)
 AM_CONDITIONAL(ENABLE_ZERO, test "${ENABLE_ZERO}" = "true")
 
+
+LIBUSB_CFLAGS=""
+LIBUSB_LIBS=""
+
+if test "$cross_compiling" != yes; then
+AC_CHECK_PROGS(LIBUSB_CONFIG, libusb-config)
+else
+LIBUSB_CONFIG=""
+fi
+AC_SUBST(LIBUSB_CONFIG)
+
+AC_ARG_WITH(libusb-config,
+            [  --with-libusb-config=PATH Specify full path to libusb-config])
+dnl Check if user passed a specific php-config program.
+if test "X$with_libusb_config" != "X" ; then
+    LIBUSB_CONFIG=$with_libusb_config
+fi
+
+if test "X$LIBUSB_CONFIG" == "X" ; then
+   dirs="/usr/bin /usr/local/bin /opt/local/bin"
+   for i in $dirs; do
+       echo $i/libusb-config
+       if test -x $i/libusb-config; then
+	  AC_MSG_RESULT($i/libusb-config is found)
+	  LIBUSB_CONFIG="$i/libusb-config"
+	  break;
+       fi
+   done
+fi
+
 # Check for USB enabled
 ENABLE_USB=auto
 AC_MSG_CHECKING([if usb support is enabled])
@@ -985,24 +1063,73 @@ AC_ARG_ENABLE(usb,
     fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+    AC_MSG_RESULT([auto (default)])
 ])
 
-# Include libusb if the usb is enabled
-if test "${ENABLE_USB}" != "false" ; then
-    AC_CHECK_LIB(usb,usb_open, ,[
-    if test "${ENABLE_USB}" = "true" ; then
-        AC_MSG_ERROR([libusb must be installed to use a USB adapter])
-    else
-            AC_MSG_WARN([libusb not found, usb will be disabled])
-            ENABLE_USB=false
-    fi
+if test "${ENABLE_USB}" != "false"; then
+
+  # Include libusb if the usb is enabled
+  if test "X$LIBUSB_CONFIG" != "X" ; then
+
+    LIBUSB_CFLAGS=`$LIBUSB_CONFIG --cflags`
+    LIBUSB_LIBS=`$LIBUSB_CONFIG --libs`
+
+    save_CPPFLAGS="$CPPFLAGS"
+    save_LDFLAGS="$LDFLAGS"
+    CPPFLAGS="$save_CPPFLAGS $LIBUSB_CFLAGS"
+    LDFLAGS="$save_LDFLAGS $LIBUSB_LIBS"
+
+    #AC_MSG_WARN([LIBS=$LIBS])
+    #AC_MSG_WARN([CPPFLAGS=$CPPFLAGS])
+    #AC_MSG_WARN([LDFLAGS=$LDFLAGS])
+    #AC_MSG_WARN([LIBUSB_LIBS=$LIBUSB_LIBS])
+    #AC_MSG_WARN([LIBUSB_CFLAGS=$LIBUSB_CFLAGS])
+
+    AC_MSG_CHECKING([for libusb includes/libs ])
+    AC_COMPILE_IFELSE([
+	AC_LANG_PROGRAM([[#include <usb.h>]],
+	[[
+	    usb_open(NULL);
+	]])],
+	[AC_MSG_RESULT([ok])],
+	[AC_MSG_RESULT([compilation error])
+	LIBUSB_CFLAGS=""
+	LIBUSB_LDFLAGS=""
+	LIBUSB_CONFIG=""
     ])
-    if test "${ENABLE_USB}" != "false" ; then
-        ENABLE_USB=true
-    fi
+
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
+
+  #LIBUSB_CONFIG
+  fi
+
+  # last test to see if libusb is found after AC_CHECK_LIB
+  if test "X${LIBUSB_CONFIG}" == "X"; then
+
+       AC_MSG_CHECKING([if libusb is could be compiled])
+       AC_CHECK_LIB(usb,usb_open,[
+	    AC_MSG_RESULT([ok])],[
+	    AC_MSG_WARN([Can't find libusb])
+	        if test "${ENABLE_USB}" = "true" ; then
+		        AC_MSG_ERROR([libusb must be installed to use a USB adapter])
+		else
+	                AC_MSG_WARN([libusb not found, usb will be disabled])
+			ENABLE_USB=false
+	        fi
+	    ],)
+  fi
+
+  if test "${ENABLE_USB}" != "false" ; then
+      ENABLE_USB=true
+  fi
+
+# ENABLE_USB
 fi
 
+
+AC_SUBST(LIBUSB_CFLAGS)
+AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(ENABLE_USB)
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
 
@@ -1059,42 +1186,6 @@ AC_MSG_RESULT([$enableval])
 AC_SUBST(ENABLE_PROFILING)
 AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 
-
-AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
-case "${host_cpu}-${host_os}" in
-	*-darwin*)
-		AC_MSG_RESULT([no])
-	;;
-	*-aix* | *solaris* | *-osf* | *-hpux*)
-		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
-		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
-	;;
-	*-freebsd* | *)
-		AC_MSG_RESULT([no])
-	;;
-esac
-
-# Check if extra libs are needed. Should perhaps test if they are available too
-# instead of hardcoding the libraries.
-
-AC_MSG_CHECKING([if extra libs are required])
-case "${host_cpu}-${host_os}" in
-	*-darwin*)
-		LD_EXTRALIBS+=" -framework CoreFoundation -framework IOKit"
-		AC_MSG_RESULT([${LD_EXTRALIBS}])
-	;;
-	*-solaris*)
-                LIBS="$LIBS -lsocket -lnsl"
-		LD_EXTRALIBS+=" -lsocket -lnsl "
-		AC_MSG_RESULT([${LD_EXTRALIBS}])
-	;;
-	*)
-		LD_EXTRALIBS="-Wl,--rpath -Wl,$libdir $LD_EXTRALIBS"
-		AC_MSG_RESULT([${LD_EXTRALIBS}])
-	;;
-esac
-AC_SUBST(LD_EXTRALIBS)
-AC_MSG_WARN([LD_EXTRALBS = ${LD_EXTRALIBS}])
 
 # owftpd section
 AC_SUBST(HAVE_NEW_SS_FAMILY)

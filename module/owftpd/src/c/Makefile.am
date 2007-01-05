@@ -31,9 +31,11 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
          ${SS_FLAG} \
+	 ${LIBUSB_CFLAGS} \
          -D_FILE_OFFSET_BITS=64
 
-LDADD = -low ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS}
+LDADD = -low ${LIBUSB_LIBS} ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+
 
 clean-generic:
 

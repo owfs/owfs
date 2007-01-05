@@ -1,5 +1,7 @@
 
+DARWINLDFLAGS = -L@prefix@/lib -lowcapi -low @LIBUSB_LIBS@
 LDFLAGS = -L@prefix@/lib -Wl,--rpath -Wl,@prefix@/lib -lowcapi
+
 CFLAGS = -g -I@prefix@/include
 
 OBJS = owcapiexample.o
@@ -7,7 +9,12 @@ OBJS = owcapiexample.o
 all:	owcapiexample
 
 owcapiexample: $(OBJS)
-	@CC@ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+	if @TEST@ @HAVE_DARWIN@ ; then \
+		@CC@ $(CFLAGS) -o $@ $(OBJS) $(DARWINLDFLAGS) ; \
+	else \
+		@CC@ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) ; \
+	fi
+
 
 %.o: %.c
 	@CC@ $(CFLAGS) -c -o $@ $<

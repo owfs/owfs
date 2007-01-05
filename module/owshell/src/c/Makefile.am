@@ -41,7 +41,7 @@ AM_CFLAGS = -I../include \
          -Wredundant-decls \
          ${PROFILING_FLAG}
 
-LDADD = ${PROFILING_FLAG} ${LD_EXTRALIBS}
+LDADD = ${PROFILING_FLAG} ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-generic:
 
