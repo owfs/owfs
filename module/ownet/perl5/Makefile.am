@@ -1,14 +1,17 @@
 ## $Id$
 
-EXTRA_DIST = $(wildcard examples/*.pl)
+EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/lib/OWNet.pm OWNet/t/OWNet.t $(wildcard examples/*.pl)
 noinst_DATA = OWNet.pm
 
-PERLSITEDIR = $(wildcard ${DESTDIR}/usr/lib*/perl5/site_perl/*/*-linux-thread-*/auto/ )
+all: OWNet/Makefile
 
-install-data-local:
-	@INSTALL@ OWNet.pm ${DESTDIR}${prefix}/bin/
-	if test -d "${PERLSITEDIR}"; then @INSTALL@ OWNet.pm "${PERLSITEDIR}/../"; fi
+OWNet/Makefile: OWNet/Makefile.PL
+	( cd OWNet; $(PERL) Makefile.PL )
 
+install-data-local: OWNet/Makefile
+	( cd OWNet; $(MAKE) install )
+#	( cd OWNet; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 
 clean-generic:
 	@RM@ -f *~ .*~
+	if test -f OWNet/Makefile; then cd OWNet; $(MAKE) clean; fi
