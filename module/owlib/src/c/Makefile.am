@@ -94,7 +94,7 @@ lib_LTLIBRARIES = libow.la
 libow_la_SOURCES = ${OWLIB_SOURCE}
 
 if HAVE_CYGWIN
-libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
+libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS}
 else
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
 endif
