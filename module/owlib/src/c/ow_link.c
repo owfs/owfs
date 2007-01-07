@@ -27,7 +27,7 @@ static int LINK_read_low(BYTE * buf, const size_t size,
 static int LINK_reset(const struct parsedname *pn);
 static int LINK_next_both(struct device_search *ds,
 						  const struct parsedname *pn);
-static int LINK_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
+static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 						  const struct parsedname *pn);
 static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 							  const size_t len,
@@ -391,12 +391,12 @@ static int LINK_write(const BYTE * buf, const size_t size,
 	return 0;
 }
 
-static int LINK_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
+static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 						  const struct parsedname *pn)
 {
 
 	if (LINK_write(LINK_string("p"), 1, pn)
-		|| LINK_byte_bounce(&byte, resp, pn)) {
+		|| LINK_byte_bounce(&data, resp, pn)) {
 		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
 		return -EIO;			// send just the <CR>
 	}
@@ -449,19 +449,19 @@ static void byteprint( const BYTE * b, int size ) {
 static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 							const struct parsedname *pn)
 {
-	BYTE byte[2];
+	BYTE data[2];
 
-	num2string((char *) byte, out[0]);
-	if (LINK_write(byte, 2, pn) || LINK_read(byte, 2, pn, 0))
+	num2string((char *) data, out[0]);
+	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn, 0))
 		return -EIO;
-	in[0] = string2num((char *) byte);
+	in[0] = string2num((char *) data);
 	return 0;
 }
 
 static int LINK_CR(const struct parsedname *pn)
 {
-	BYTE byte[3];
-	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(byte, 2, pn, 1))
+	BYTE data[3];
+	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn, 1))
 		return -EIO;
 	return 0;
 }
@@ -469,9 +469,9 @@ static int LINK_CR(const struct parsedname *pn)
 /* read the telnet-formatted start of a response line from the Link-Hub-E */
 static int LINKE_preamble(const struct parsedname *pn)
 {
-	BYTE byte[6];
+	BYTE data[6];
 	struct timeval tvnetfirst = { Global.timeout_network, 0, };
-	if (tcp_read(pn->in->fd, byte, 6, &tvnetfirst) != 6)
+	if (tcp_read(pn->in->fd, data, 6, &tvnetfirst) != 6)
 		return -EIO;
 	LEVEL_CONNECT("Good preamble\n");
 	return 0;
