@@ -203,7 +203,7 @@ void set_error_print(int val) {
     Global.error_print = val;
 }
 
-int get_error_print() {
+int get_error_print(void) {
     return Global.error_print;
 }
 
@@ -211,7 +211,7 @@ void set_error_level(int val) {
     Global.error_level = val;
 }
 
-int get_error_level() {
+int get_error_level(void) {
     return Global.error_level;
 }
 
