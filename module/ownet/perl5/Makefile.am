@@ -1,7 +1,6 @@
 ## $Id$
 
 EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/lib/OWNet.pm OWNet/t/OWNet.t $(wildcard examples/*.pl)
-noinst_DATA = OWNet.pm
 
 all: OWNet/Makefile
 
