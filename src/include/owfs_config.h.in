@@ -69,5 +69,6 @@ $Id$
 #define OW_THERMOCOUPLE @OW_THERMOCOUPLE@
 #define OW_ZERO         @OW_ZERO@
 #define OW_CYGWIN       @OW_CYGWIN@
+#define OW_DARWIN       @OW_DARWIN@
 
 #endif /* OWFS_CONFIG_H */

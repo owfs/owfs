@@ -46,7 +46,7 @@ AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 
-HAVE_DARWIN=false
+HAVE_DARWIN="false"
 HAVE_CYGWIN="false"
 
 AC_MSG_CHECKING([for special host])
@@ -1202,6 +1202,13 @@ else
    OW_CYGWIN=0
 fi
 AC_SUBST(OW_CYGWIN)
+
+if test "${HAVE_DARWIN}" = "true" ; then
+   OW_DARWIN=1
+else
+   OW_DARWIN=0
+fi
+AC_SUBST(OW_DARWIN)
 
 if test "${ENABLE_MT}" = "true" ; then
    OW_MT=1

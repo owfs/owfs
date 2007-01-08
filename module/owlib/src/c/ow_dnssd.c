@@ -40,15 +40,14 @@ _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 
 int OW_Load_dnssd_library(void)
 {
+	int i = 0;
 #if OW_CYGWIN
-	int i;
 	char libdirs[3][80] = {
 		//{ "/opt/owfs/lib/libdns_sd.dll" },
 		{"libdns_sd.dll"},
 		{""}
 	};
 
-	i = 0;
 	while (*libdirs[i]) {
 		/* Cygwin has dlopen and it seems to be ok to use it actually. */
 		if (!(libdnssd = DL_open(libdirs[i], 0))) {
@@ -76,15 +75,39 @@ int OW_Load_dnssd_library(void)
 	}
 #endif
 
-#elif defined(HAVE_DLOPEN)
-	int i;
-	char libdirs[3][80] = {
-		{"/opt/owfs/lib/libdns_sd.so"},
-		{"libdns_sd.so"},
+#elif OW_DARWIN
+
+	// MacOSX have dnssd functions in libSystem
+	char libdirs[2][80] = {
+		{"libSystem.dylib"},
 		{""}
 	};
 
-	i = 0;
+	while (*libdirs[i]) {
+		if (!(libdnssd = DL_open(libdirs[i], RTLD_LAZY))) {
+			/* Couldn't open that lib, but continue anyway */
+#if 0
+			char *derr;
+			derr = DL_error();
+			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i],
+					derr);
+#endif
+			i++;
+			continue;
+		} else {
+			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
+			break;
+		}
+	}
+
+#elif defined(HAVE_DLOPEN)
+
+        char libdirs[3][80] = {
+                {"/opt/owfs/lib/libdns_sd.so"},
+                {"libdns_sd.so"},
+                {""}
+        };
+
 	while (*libdirs[i]) {
 		if (!(libdnssd = DL_open(libdirs[i], RTLD_LAZY))) {
 			/* Couldn't open that lib, but continue anyway */
@@ -104,7 +127,7 @@ int OW_Load_dnssd_library(void)
 #endif
 
 	if (libdnssd == NULL) {
-		//fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library is not found\n");
+		//fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found\n");
 		return -1;
 	}
 
