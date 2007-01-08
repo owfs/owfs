@@ -32,6 +32,7 @@ noinst_HEADERS =          \
         ow_2804.h \
         ow_2890.h \
         ow_cache.h        \
+        ow_charblob.h     \
         ow_counters.h     \
         ow_connection.h   \
         ow_debug.h        \

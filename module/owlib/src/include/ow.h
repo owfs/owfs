@@ -194,6 +194,9 @@ typedef int INT;
 /* Directory blob separated out for readability */
 #include "ow_dirblob.h"
 
+/* Directory blob (strings) separated out for readability */
+#include "ow_charblob.h"
+
 #if OW_MT
 #include <pthread.h>
 
