@@ -163,6 +163,14 @@ use strict ;
 use IO::Socket::INET ;
 use bytes ;
 
+my $msg_read = 2 ;
+my $msg_write = 3 ;
+my $msg_dir = 4 ;
+my $msg_presence = 6 ;
+my $msg_dirall = 7 ;
+my $msg_get = 8 ;
+
+
 our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
 sub _new($$) {
@@ -196,6 +204,9 @@ sub _new($$) {
 
     $addr =~ s/-[\w\.]*//g ;
     $addr =~ s/ //g ;
+
+    $addr = "127.0.0.1:".$addr unless $addr =~ /:/ ;
+    $addr = "127.0.0.1".$addr if $addr =~ /^:/ ;
 
     $self->{ADDR} = $addr ;
     $self->{SG} = 0x0102 + $tempscale + $format ;
@@ -362,7 +373,7 @@ sub read($$) {
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
-	_ToServer($self,length($path)+1,2,4096,0,$path) ;
+	_ToServer($self,length($path)+1,$msg_read,4096,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[6] ;
 }
@@ -417,7 +428,7 @@ sub write($$$) {
 	my $siz = length($val) ;
 	my $s1 = length($path)+1 ;
 	my $dat = pack( 'Z'.$s1.'A'.$siz,$path,$val ) ;
-	_ToServer($self,length($dat),3,$siz,0,$dat) ;
+	_ToServer($self,length($dat),$msg_write,$siz,0,$dat) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
 }
@@ -467,7 +478,7 @@ sub present($$) {
 	if ( !defined($self->{SOCK}) ) {
 		return ;
 	} ;
-	_ToServer($self,length($path)+1,6,4096,0,$path) ;
+	_ToServer($self,length($path)+1,$msg_presence,4096,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
 }
@@ -513,17 +524,31 @@ sub dir($$) {
 		$self = {} ;
 		_new($self,$addr)  ;
 	}
+    # new msg_dirall method -- single packet
     _Sock($self) ;
-	if ( !defined($self->{SOCK}) ) {
-		return ;
-	} ;
-	_ToServer($self,length($path)+1,4,4096,0,$path) || do {
-		warn "Couldn't SEND directory request to $addr.\n" if $self->{VERBOSE} ;
-		return ;
-	} ;
+    if ( !defined($self->{SOCK}) ) {
+        return ;
+    } ;
+    _ToServer($self,length($path)+1,$msg_dirall,4096,0,$path) || do {
+        warn "Couldn't SEND directory all request to $addr.\n" if $self->{VERBOSE} ;
+        return ;
+    } ;
+    my @r = _FromServer($self) ;
+    if (@r) {
+        return $r[6] ;
+    } ;
+    # old msg_dir method -- many packets
+    _Sock($self) ;
+    if ( !defined($self->{SOCK}) ) {
+        return ;
+    } ;
+    _ToServer($self,length($path)+1,$msg_dir,4096,0,$path) || do {
+        warn "Couldn't SEND directory request to $addr.\n" if $self->{VERBOSE} ;
+        return ;
+    } ;
 	my $ret = '' ;
 	while (1) {
-		my @r = _FromServer($self) ;
+		@r = _FromServer($self) ;
 		if (!@r) { return ; } ;
 		return substr($ret,1) if $r[1] == 0 ;
 		$ret .= ','.$r[6] ;

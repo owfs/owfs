@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     int c ;
     int paths_found = 0 ;
     int rc = -1 ;
+    int dirall = 1 ;
 
     Setup() ;
     /* process command line arguments */
@@ -36,14 +37,23 @@ int main(int argc, char *argv[]) {
             OW_ArgNet(argv[optind]) ;
         } else {
             if ( paths_found++ == 0 ) Server_detect() ;
-            rc = ServerDir(argv[optind]) ;
+            if ( dirall ) {
+                rc = ServerDirall(argv[optind]) ;
+                if ( rc<0 ) {
+                    dirall = 0 ;
+                    rc = ServerDir(argv[optind]) ;
+                }
+            } else {
+                rc = ServerDir(argv[optind]) ;
+            }
         }
         ++optind ;
     }
     // Was anything requested?
     if ( paths_found == 0 ) {
         Server_detect() ;
-        rc = ServerDir("/") ;
+        rc = ServerDirall("/") ;
+        if ( rc<0 ) rc = ServerDir("/") ;
     }
     Cleanup();
     exit((rc >= 0 ? 0 : 1)) ;

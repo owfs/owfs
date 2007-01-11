@@ -276,6 +276,8 @@ enum msg_classification {
     msg_dir,
     msg_size, // No longer used, leave here to compatibility
     msg_presence,
+    msg_dirall,
+    msg_get,
 } ;
 /* message to owserver */
 struct server_msg {
@@ -328,6 +330,7 @@ void Server_detect( void  ) ;
 int ServerRead( ASCII * path ) ;
 int ServerWrite( ASCII * path, ASCII * data ) ;
 int ServerDir( ASCII * path ) ;
+int ServerDirall( ASCII * path ) ;
 int ServerPresence( ASCII * path ) ;
 
 #define CACHE_MASK     ( (UINT) 0x00000001 )

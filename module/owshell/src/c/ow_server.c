@@ -96,12 +96,41 @@ int ServerWrite( ASCII * path, ASCII * data ) {
     return ret ;
 }
 
+int ServerDirall( ASCII * path ) {
+    struct server_msg sm ;
+    struct client_msg cm ;
+    struct serverpackage sp = { path, NULL, 0, NULL, 0, } ;
+    char * path2 ;
+    int connectfd  = ClientConnect() ;
+    //printf("DirALL <%s>\n",path ) ;
+    
+    if ( connectfd < 0 ) return -EIO ;
+
+    memset(&sm, 0, sizeof(struct server_msg));
+    sm.type = msg_dirall ;
+
+    sm.sg =  SetupSemi() ;
+
+    if ( ToServer( connectfd, &sm, &sp) ) {
+        cm.ret = -EIO ;
+    } else if ( (path2 = FromServerAlloc( connectfd, &cm)) ) {
+        char * p ;
+        path2[cm.payload-1] = '\0' ; /* Ensure trailing null */
+        for ( p = path2; *p; ++p ) if (*p==',') *p = '\n' ;
+        printf("%s\n",path2) ;
+        free(path2) ;
+    }
+    close( connectfd ) ;
+    return cm.ret ;
+}
+
 int ServerDir( ASCII * path ) {
     struct server_msg sm ;
     struct client_msg cm ;
     struct serverpackage sp = { path, NULL, 0, NULL, 0, } ;
     int connectfd  = ClientConnect() ;
     
+    //printf("Dir <%s>\n", path ) ;
     if ( connectfd < 0 ) return -EIO ;
 
     memset(&sm, 0, sizeof(struct server_msg));
