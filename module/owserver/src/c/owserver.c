@@ -412,12 +412,21 @@ void * RealHandler( void * v ) {
                         }
                         break ;
                     case msg_dir:
-                        LEVEL_CALL("Directory message\n") ;
+                        LEVEL_CALL("Directory message (by bits)\n") ;
                         DirHandler( &sm, &cm, hd, &pn ) ;
                         break ;
                     case msg_dirall:
-                        LEVEL_CALL("Directory message\n") ;
+                        LEVEL_CALL("Directory message (all at once)\n") ;
                         DirallHandler( &sm, &cm, hd, &pn ) ;
+                        break ;
+                    case msg_get:
+                        if ( IsDir( &pn ) ) {
+                            LEVEL_CALL("Get -> Directory message (all at once)\n") ;
+                            DirallHandler( &sm, &cm, hd, &pn ) ;
+                        } else {
+                            LEVEL_CALL("Get -> Read message\n") ;
+                            ReadHandler( &sm, &cm, &pn ) ;
+                        }
                         break ;
                     default: // never reached
                         break ;
