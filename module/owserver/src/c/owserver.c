@@ -103,6 +103,7 @@ void * RealHandler( void * v ) ; // Called from ping wrapper
 static void * ReadHandler( struct server_msg *sm, struct client_msg *cm, const struct parsedname *pn ) ;
 static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 static void DirHandler(struct server_msg *sm, struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
+static void DirallHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
 static int FromClient( int fd, struct server_msg *sm, struct serverpackage * sp ) ;
 static int ToClient( int fd, struct client_msg *cm, char *data ) ;
 static void ow_exit( int e ) ;
@@ -370,6 +371,8 @@ void * RealHandler( void * v ) {
         case msg_write: // good message
         case msg_dir: // good message
         case msg_presence: // good message
+        case msg_dirall: // good message
+        case msg_get: // good message
             if ( sm.payload==0 ) { /* Bad string -- no trailing null */
                 cm.ret = -EBADMSG ;
             } else {
@@ -411,6 +414,10 @@ void * RealHandler( void * v ) {
                     case msg_dir:
                         LEVEL_CALL("Directory message\n") ;
                         DirHandler( &sm, &cm, hd, &pn ) ;
+                        break ;
+                    case msg_dirall:
+                        LEVEL_CALL("Directory message\n") ;
+                        DirallHandler( &sm, &cm, hd, &pn ) ;
                         break ;
                     default: // never reached
                         break ;
@@ -507,23 +514,24 @@ static void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYT
     }
 }
 
-#ifdef NO_NESTED_FUNCTIONS
-
-#if OW_MT
-pthread_mutex_t Dirhandlermutex = PTHREAD_MUTEX_INITIALIZER ;
-#endif /* OW_MT */
-
-struct server_msg  *DirHandlersm = NULL;
-struct client_msg  *DirHandlercm = NULL;
-struct handlerdata *DirHandlerhd = NULL;
-const struct parsedname  *DirHandlerpn = NULL;
-
-void DirHandlerdirectory( const struct parsedname * const pn2 ) {
+/* Dir, called from Handler with the following caveats: */
+/* path is path, already parsed, and null terminated */
+/* sm has been read, cm has been zeroed */
+/* pn is configured */
+/* Dir, will return: */
+/* cm fully constructed for error message or null marker (end of directory elements */
+/* cm.ret is also set to an error or 0 */
+struct dirhandlerstruct {
+    struct client_msg * cm ;
+    const struct parsedname * pn ;
+    struct handlerdata * hd ;
+} ;
+void DirHandlerCallback( void * v, const struct parsedname * pn2 ) {
+    struct dirhandlerstruct * dhs = (struct dirhandlerstruct *) v ;
     char *retbuffer ;
-    size_t _pathlen ;
-    char *path = ((DirHandlerpn->state & pn_bus) && (is_servermode(DirHandlerpn->in))) ? DirHandlerpn->path_busless : DirHandlerpn->path ;
+    char *path = ((dhs->pn->state & pn_bus) && (is_servermode(dhs->pn->in))) ? dhs->pn->path_busless : dhs->pn->path ;
+    size_t _pathlen = strlen(path);
 
-    _pathlen = strlen(path);
 #ifdef VALGRIND
     if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) {
 #else
@@ -552,39 +560,23 @@ void DirHandlerdirectory( const struct parsedname * const pn2 ) {
         FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
     }
 
-    DirHandlercm->size = strlen(retbuffer) ;
+    dhs->cm->size = strlen(retbuffer) ;
     //printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
-    DirHandlercm->ret = 0 ;
-    TOCLIENTLOCK(DirHandlerhd) ;
-    ToClient(DirHandlerhd->fd, DirHandlercm, retbuffer) ; // send this directory element
-    gettimeofday( &(DirHandlerhd->tv), NULL ) ; // reset timer
-    TOCLIENTUNLOCK(DirHandlerhd) ;
+    dhs->cm->ret = 0 ;
+    TOCLIENTLOCK(dhs->hd) ;
+        ToClient(dhs->hd->fd, dhs->cm, retbuffer) ; // send this directory element
+        gettimeofday( &(dhs->hd->tv), NULL ) ; // reset timer
+    TOCLIENTUNLOCK(dhs->hd) ;
     free(retbuffer);
 }
-
-/* Dir, called from Handler with the following caveats: */
-/* path is path, already parsed, and null terminated */
-/* sm has been read, cm has been zeroed */
-/* pn is configured */
-/* Dir, will return: */
-/* cm fully constructed for error message or null marker (end of directory elements */
-/* cm.ret is also set to an error or 0 */
 static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) {
-#if OW_MT
-    pthread_mutex_lock(&Dirhandlermutex) ;
-#endif /* OW_MT */
-
     uint32_t flags = 0 ;
+    struct dirhandlerstruct dhs = { cm, pn, hd, } ;
     /* embedded function -- callback for directory entries */
     /* return the full path length, including current entry */
 
     //printf("DirHandler: pn->path=%s\n", pn->path);
     
-    DirHandlersm = sm;
-    DirHandlercm = cm;
-    DirHandlerhd = hd;
-    DirHandlerpn = pn;
-
     // Settings for all directory elements
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
@@ -592,7 +584,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     // Now generate the directory (using the embedded callback function above for each element
     LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
     LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
-    cm->ret = FS_dir_remote( DirHandlerdirectory, pn, &flags ) ;
+    cm->ret = FS_dir_remote( DirHandlerCallback, &dhs, pn, &flags ) ;
     LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;
 
     // Finished -- send some flags and set up for a null element to tell client we're done
@@ -600,13 +592,7 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     /* Now null entry to show end of directory listing */
     cm->payload = cm->size = 0 ;
     //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
-
-#if OW_MT
-    pthread_mutex_unlock(&Dirhandlermutex) ;
-#endif /* OW_MT */
 }
-
-#else /* NO_NESTED_FUNCTIONS */
 
 /* Dir, called from Handler with the following caveats: */
 /* path is path, already parsed, and null terminated */
@@ -615,75 +601,76 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
 /* Dir, will return: */
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
-static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) {
-    uint32_t flags = 0 ;
-    /* embedded function -- callback for directory entries */
-    /* return the full path length, including current entry */
-    void directory( const struct parsedname * const pn2 ) {
-        char *retbuffer ;
-        size_t _pathlen ;
-        char *path = ((pn->state & pn_bus) && (is_servermode(pn->in))) ? pn->path_busless : pn->path ;
+struct dirallhandlerstruct {
+    struct charblob * cb ;
+    const struct parsedname * pn ;
+    struct handlerdata * hd ;
+} ;
+void DirallHandlerCallback( void * v, const struct parsedname * pn2 ) {
+    struct dirallhandlerstruct * dhs = (struct dirallhandlerstruct *) v ;
+    char *retbuffer ;
+    char *path = ((dhs->pn->state & pn_bus) && (is_servermode(dhs->pn->in))) ? dhs->pn->path_busless : dhs->pn->path ;
+    size_t _pathlen = strlen(path);
 
-        _pathlen = strlen(path);
 #ifdef VALGRIND
-        if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) {
+    if( (retbuffer = (char *)calloc(1, _pathlen + 1 + OW_FULLNAME_MAX + 3)) == NULL) {
 #else
-        if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) {
+    if( (retbuffer = (char *)malloc(_pathlen + 1 + OW_FULLNAME_MAX + 2)) == NULL) {
 #endif
-            return ;
+        return ;
+    }
+    LEVEL_DEBUG("owserver dir path = %s\n",SAFESTRING(pn2->path)) ;
+    if ( pn2->dev==NULL ) {
+        if ( NotRealDir(pn2) ) {
+            //printf("DirHandler: call FS_dirname_type\n");
+            FS_dirname_type(retbuffer,OW_FULLNAME_MAX,pn2);
+        } else if ( pn2->state ) {
+            FS_dirname_state(retbuffer,OW_FULLNAME_MAX,pn2) ;
+            //printf("DirHandler: call FS_dirname_state\n");
         }
-        LEVEL_DEBUG("owserver dir path = %s\n",SAFESTRING(pn2->path)) ;
-        if ( pn2->dev==NULL ) {
-            if ( NotRealDir(pn2) ) {
-                //printf("DirHandler: call FS_dirname_type\n");
-                FS_dirname_type(retbuffer,OW_FULLNAME_MAX,pn2);
-            } else if ( pn2->state ) {
-                FS_dirname_state(retbuffer,OW_FULLNAME_MAX,pn2) ;
-                //printf("DirHandler: call FS_dirname_state\n");
-            }
-        } else {
-            //printf("DirHandler: call FS_DirName pn2->dev=%p  Nodevice=%p\n", pn2->dev, NoDevice);
-            strcpy(retbuffer, path);
-            if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
-                retbuffer[_pathlen] = '/' ;
-                ++_pathlen ;
-            }
-            retbuffer[_pathlen] = '\000' ;
-            /* make sure path ends with a / */
-            FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
+    } else {
+        //printf("DirHandler: call FS_DirName pn2->dev=%p  Nodevice=%p\n", pn2->dev, NoDevice);
+        strcpy(retbuffer, path);
+        if ( (_pathlen == 0) || (retbuffer[_pathlen-1] !='/') ) {
+            retbuffer[_pathlen] = '/' ;
+            ++_pathlen ;
         }
-
-        cm->size = strlen(retbuffer) ;
-        //printf("DirHandler: loop size=%d [%s]\n",cm->size, retbuffer);
-        cm->ret = 0 ;
-        TOCLIENTLOCK(hd) ;
-            ToClient(hd->fd, cm, retbuffer) ; // send this directory element
-            gettimeofday( &(hd->tv), NULL ) ; // reset timer
-        TOCLIENTUNLOCK(hd) ;
-        free(retbuffer);
+        retbuffer[_pathlen] = '\000' ;
+        /* make sure path ends with a / */
+        FS_DirName( &retbuffer[_pathlen], OW_FULLNAME_MAX, pn2 ) ;
     }
 
-    //printf("DirHandler: pn->path=%s\n", pn->path);
-    
+    CharblobAdd( retbuffer, strlen(retbuffer), dhs->cb ) ;
+    free(retbuffer);
+}
+static void DirallHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) {
+    uint32_t flags = 0 ;
+    struct charblob cb ;
+    struct dirallhandlerstruct dhs = { &cb, pn, hd, } ;
+
     // Settings for all directory elements
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
+    CharblobInit(&cb) ;
 
     // Now generate the directory (using the embedded callback function above for each element
     LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
-    LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
-    cm->ret = FS_dir_remote( directory, pn, &flags ) ;
-    LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;
+    LEVEL_DEBUG("owserver dirall pre = %s\n",SAFESTRING(pn->path)) ;
+    /* embedded function -- callback for directory entries */
+    cm->ret = FS_dir_remote( DirallHandlerCallback, &dhs, pn, &flags ) ;
+    LEVEL_DEBUG("owserver dir postall = %s\n",SAFESTRING(pn->path)) ;
 
-    // Finished -- send some flags and set up for a null element to tell client we're done
-    cm->offset = flags ; /* send the flags in the offset slot */
-    /* Now null entry to show end of directory listing */
-    cm->payload = cm->size = 0 ;
-    //printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
+    if ( cm->ret ) {
+        cm->size = cm->payload = 0 ;
+    } else {
+        cm->size = cm->payload = cb.used ;
+    }
+    TOCLIENTLOCK(hd) ;
+        ToClient(hd->fd, cm, cb.blob) ; // send this directory element
+        gettimeofday( &(hd->tv), NULL ) ; // reset timer
+    TOCLIENTUNLOCK(hd) ;
+    CharblobClear(&cb);
 }
-
-#endif /* NO_NESTED_FUNCTIONS */
-
 
 int main(int argc , char ** argv) {
     int c ;

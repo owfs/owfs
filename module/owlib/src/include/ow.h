@@ -646,6 +646,8 @@ enum msg_classification {
     msg_dir,
     msg_size,			// No longer used, leave here to compatibility
     msg_presence,
+    msg_dirall,
+    msg_get,
 };
 /* message to owserver */
 struct server_msg {
@@ -803,13 +805,17 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 int ServerWrite(const char *buf, const size_t size, const off_t offset,
 		const struct parsedname *pn);
 int ServerDir(void (*dirfunc) (const struct parsedname *),
-	      const struct parsedname *pn, uint32_t * flags);
+          const struct parsedname *pn, uint32_t * flags);
+int ServerDir2(void (*dirfunc) (void *, const struct parsedname *),
+          void * v, const struct parsedname *pn, uint32_t * flags);
 
 /* High-level callback functions */
 int FS_dir(void (*dirfunc) (const struct parsedname *),
-	   const struct parsedname *pn);
-int FS_dir_remote(void (*dirfunc) (const struct parsedname *),
-		  const struct parsedname *pn, uint32_t * flags);
+       const struct parsedname *pn);
+int FS_dir2(void (*dirfunc) (void *, const struct parsedname *),
+       void * v, const struct parsedname *pn);
+int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
+          void * v, const struct parsedname *pn, uint32_t * flags);
 
 int FS_write(const char *path, const char *buf, const size_t size,
 	     const off_t offset);
