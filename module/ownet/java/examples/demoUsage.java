@@ -3,7 +3,7 @@
  *
  * Example of org.owfs.ownet package usage
  *
- * $Id:
+ * $Id$
  *
  * (c) 2007 George M. Zouganelis - gzoug@aueb.gr
  *
@@ -34,7 +34,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * @version $Id:
+ * @version $Id$
  * @author George M. Zouganelis (gzoug@aueb.gr)
  */
 

@@ -1,24 +1,23 @@
 /**
  * ownet/java
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- * 	
+ *
  * OWFS is an open source project developed by Paul Alfille and hosted at
  * http://www.owfs.org
- * 
- * mailto:gzoug@aueb.gr
+ *
  */
 
 package org.owfs.ownet;
@@ -28,8 +27,8 @@ import java.net.*;
 import java.util.Vector;
 
 /**
- * @author George M. Zouganelis
- * @version $Id:
+ * @author George M. Zouganelis (gzoug@aueb.gr)
+ * @version $Id$
  */
 public class OWNet {
 
@@ -38,10 +37,10 @@ public class OWNet {
 //
     static final String OWNET_DEFAULT_HOST = "127.0.0.1";
     static final int OWNET_DEFAULT_PORT = 1234;
-    
+
     static private final int OWNET_DEFAULT_DATALEN = 8192;
-    
-    
+
+
     static private final int OWNET_MSG_ERROR = 0;
     static private final int OWNET_MSG_NOP = 1;
     static private final int OWNET_MSG_READ = 2;
@@ -52,8 +51,8 @@ public class OWNet {
     static private final int OWNET_MSG_DIRALL = 7;
     static private final int OWNET_MSG_GET = 8;
     static private final int OWNET_MSG_READ_ANY = 99999;
-    
-    
+
+
     static private final int OWNET_PROT_STRUCT_SIZE = 6;
     static private final int OWNET_PROT_VERSION = 0;
     static private final int OWNET_PROT_PAYLOAD = 1;
@@ -62,7 +61,7 @@ public class OWNet {
     static private final int OWNET_PROT_FLAGS = 3;
     static private final int OWNET_PROT_DATALEN = 4;
     static private final int OWNET_PROT_OFFSET = 5;
-    
+
 
 //
 // class private variables
@@ -72,16 +71,16 @@ public class OWNet {
     private int formatflags = 259;
     private boolean debug = false;
     private int defaultDataLen = OWNET_DEFAULT_DATALEN;
-    
+
 //
 // Constructors
 //
-    
+
     /** Create a new instance of OWNet */
     public OWNet() {
-       // just a constructor        
+       // just a constructor
     }
-    
+
     /**
      * Create a new instance of OWNet
      * @param server ip or hostname of owserver to connect to
@@ -96,7 +95,7 @@ public class OWNet {
 //
 // Getters / Setters
 //
-    
+
     /**
      * Get debugging mode
      * @return debug mode is on
@@ -112,7 +111,7 @@ public class OWNet {
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-        
+
     // member access
     /**
      * Get remote server
@@ -121,7 +120,7 @@ public class OWNet {
     public String getRemoteServer(){
         return remoteServer;
     }
-    
+
     /**
      * Set remote server
      * @param newServer remote server to connect
@@ -177,14 +176,14 @@ public class OWNet {
     public void setDefaultDataLen(int newDefaultDataLen) {
         defaultDataLen = newDefaultDataLen;
     }
-    
 
-    
-    
+
+
+
 //
 // Private methods for protocol and network access
 //
-    
+
     /**
      * Print ownet message packet to STDERR
      * @param tag tag to append
@@ -199,7 +198,7 @@ public class OWNet {
         System.err.println();
         System.err.flush();
     }
-       
+
     /**
      * Send a ownet message packet
      * @param out output stream to use
@@ -211,14 +210,14 @@ public class OWNet {
     private void sendPacket(DataOutputStream out, int function, int payloadlen, int datalen) throws IOException
     {
         int[] msg = new int[OWNET_PROT_STRUCT_SIZE];
-        msg[OWNET_PROT_VERSION] = 0; 
-        msg[OWNET_PROT_PAYLOAD] = payloadlen; 
-        msg[OWNET_PROT_FUNCTION] = function; 
-        msg[OWNET_PROT_FLAGS] = formatflags; 
-        msg[OWNET_PROT_DATALEN] = datalen; 
-        msg[OWNET_PROT_OFFSET] = 0; 
-        debugprint("sendPacket", msg); 
-        for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) out.writeInt(msg[i]);  
+        msg[OWNET_PROT_VERSION] = 0;
+        msg[OWNET_PROT_PAYLOAD] = payloadlen;
+        msg[OWNET_PROT_FUNCTION] = function;
+        msg[OWNET_PROT_FLAGS] = formatflags;
+        msg[OWNET_PROT_DATALEN] = datalen;
+        msg[OWNET_PROT_OFFSET] = 0;
+        debugprint("sendPacket", msg);
+        for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) out.writeInt(msg[i]);
     }
 
     /**
@@ -227,14 +226,14 @@ public class OWNet {
      * @return the ownet's received header packet from server
      * @throws java.io.IOException Exception to throw, when something is wrong
      */
-    private int[] getPacket(DataInputStream in) throws IOException 
+    private int[] getPacket(DataInputStream in) throws IOException
     {
         int[] msg = new int[OWNET_PROT_STRUCT_SIZE];
-        for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) msg[i] = in.readInt(); 
+        for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) msg[i] = in.readInt();
         debugprint("getPacket", msg);
         return msg;
     }
-    
+
     /**
      * Get a data packet from remote server
      * @param in input stream to use
@@ -245,7 +244,7 @@ public class OWNet {
     private String getPacketData(DataInputStream in, int[] packetHeader) throws IOException {
         byte[] data = new byte[packetHeader[OWNET_PROT_PAYLOAD]];
         String retVal = null;
-        in.read(data,0,data.length); 
+        in.read(data,0,data.length);
         retVal = new String(data,packetHeader[OWNET_PROT_OFFSET],packetHeader[OWNET_PROT_DATALEN]);
         /*
          if (retVal.indexOf(0)>-1) {
@@ -254,7 +253,7 @@ public class OWNet {
          */
         return retVal;
     }
-    
+
     /**
      * Transmit a Java String as a C-String (null terminated)
      * @param out output stream to use
@@ -263,7 +262,7 @@ public class OWNet {
      */
     private void sendCString(DataOutputStream out, String str) throws IOException {
        out.write(str.getBytes());out.writeByte(0);
-    }            
+    }
 
     /**
      * Internal method to read from server
@@ -272,7 +271,7 @@ public class OWNet {
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return attribute's value
      */
-    private String OW_Read(String path, int expectedDataLen) throws IOException 
+    private String OW_Read(String path, int expectedDataLen) throws IOException
     {
         String retVal = "";
 
@@ -280,18 +279,18 @@ public class OWNet {
         DataInputStream in;
         DataOutputStream out;
         int[] msg = null;
-        
+
         // try to connect to remote server
         // possible exception must be caught by the calling method
-        
+
         ows = new Socket(remoteServer, remotePort);
         in = new DataInputStream(ows.getInputStream());
         out = new DataOutputStream(ows.getOutputStream());
-        
+
         sendPacket(out, OWNET_MSG_READ, path.length()+1, expectedDataLen);
         sendCString(out,path);
         msg = getPacket(in);
-        if (msg[OWNET_PROT_RETVALUE] >= 0) {  
+        if (msg[OWNET_PROT_RETVALUE] >= 0) {
             if (msg[OWNET_PROT_PAYLOAD]>=0) retVal = getPacketData(in,msg);
         } else {
           in.close();
@@ -312,12 +311,12 @@ public class OWNet {
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return attribute's value
      */
-    private String OW_Read(String path) throws IOException 
+    private String OW_Read(String path) throws IOException
     {
         return OW_Read(path,this.defaultDataLen);
-    }    
-    
-    
+    }
+
+
     /**
      * Internal method to write to server
      * @param path attribute's path
@@ -325,7 +324,7 @@ public class OWNet {
      * @return sucess state (most likely to be true or exception)
      * @throws java.io.IOException Exception to throw, when something is wrong
      */
-    private boolean OW_Write(String path, String value) throws IOException 
+    private boolean OW_Write(String path, String value) throws IOException
     {
         boolean retVal = false;
 
@@ -333,17 +332,17 @@ public class OWNet {
         DataInputStream in;
         DataOutputStream out;
         int[] msg = null;
-        
+
         // try to connect to remote server
         // possible exception must be caught by the calling method
         ows = new Socket(remoteServer, remotePort);
         in = new DataInputStream(ows.getInputStream());
         out = new DataOutputStream(ows.getOutputStream());
-        
+
         sendPacket(out, OWNET_MSG_WRITE, path.length() + 1 + value.length() + 1, value.length() + 1);
         sendCString(out,path);
         sendCString(out,value);
-        msg = getPacket(in);      
+        msg = getPacket(in);
 
         if (msg[OWNET_PROT_RETVALUE] >= 0) {
             retVal = true;
@@ -369,7 +368,7 @@ public class OWNet {
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return presence
      */
-    private boolean OW_Presence(String path) throws IOException 
+    private boolean OW_Presence(String path) throws IOException
     {
         boolean retVal = false;
 
@@ -377,13 +376,13 @@ public class OWNet {
         DataInputStream in;
         DataOutputStream out;
         int[] msg = null;
-        
+
         // try to connect to remote server
         // possible exception must be caught by the calling method
         ows = new Socket(remoteServer, remotePort);
         in = new DataInputStream(ows.getInputStream());
         out = new DataOutputStream(ows.getOutputStream());
-        
+
         sendPacket(out, OWNET_MSG_PRESENCE, path.length()+1, 0);
         sendCString(out,path);
         msg = getPacket(in);
@@ -403,40 +402,40 @@ public class OWNet {
         ows.close();
         return retVal;
     }
-    
-    
+
+
     /**
      * Internal method to get directory list from server (multipacket mode)
      * @param path directory to list
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return vector list of elements found
      */
-    private Vector<String> OW_Dir(String path) throws IOException 
+    private Vector<String> OW_Dir(String path) throws IOException
     {
         Vector<String> retVal = new Vector<String>();
         Socket ows = null;
         DataInputStream in;
         DataOutputStream out;
         int[] msg = null;
-        
+
         // try to connect to remote server
         // possible exception must be caught by the calling method
         ows = new Socket(remoteServer, remotePort);
         in = new DataInputStream(ows.getInputStream());
         out = new DataOutputStream(ows.getOutputStream());
-        
+
         sendPacket(out, OWNET_MSG_DIR, path.length()+1, 0);
         sendCString(out,path);
-        
+
         do{
-            msg = getPacket(in);            
+            msg = getPacket(in);
             if (msg[OWNET_PROT_RETVALUE] >= 0){
                if (msg[OWNET_PROT_PAYLOAD] > 0)  retVal.add(getPacketData(in,msg));
             } else {
                in.close();
                out.close();
                ows.close();
-               throw new IOException("Error getting Directory. Error " + msg[OWNET_PROT_RETVALUE]);                                
+               throw new IOException("Error getting Directory. Error " + msg[OWNET_PROT_RETVALUE]);
             }
         } while (msg[OWNET_PROT_PAYLOAD]!=0); // <0 = please wait, 0=end of list, >0 = we have data waiting (is this the way?)
 
@@ -455,7 +454,7 @@ public class OWNet {
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return vector list of elements found
      */
-    private Vector<String> OW_DirAll(String path) throws IOException 
+    private Vector<String> OW_DirAll(String path) throws IOException
     {
         Vector<String> retVal = new Vector<String>();
         Socket ows = null;
@@ -463,28 +462,28 @@ public class OWNet {
         DataOutputStream out;
         int[] msg = null;
         String[] values = null;
-        
+
         // try to connect to remote server
         // possible exception must be caught by the calling method
         ows = new Socket(remoteServer, remotePort);
         in = new DataInputStream(ows.getInputStream());
         out = new DataOutputStream(ows.getOutputStream());
-        
+
         sendPacket(out, OWNET_MSG_DIRALL, path.length()+1, 0);
         sendCString(out,path);
-        
+
         msg = getPacket(in);
         if (msg[OWNET_PROT_RETVALUE] >= 0 )
         {
             if (msg[OWNET_PROT_PAYLOAD]>0){
                 values = getPacketData(in,msg).split(",");
                 for (int i=0; i<values.length; i++) retVal.add(values[i]);
-            }            
+            }
         } else {
            in.close();
            out.close();
            ows.close();
-           throw new IOException("Error getting Directory. Error " + msg[OWNET_PROT_RETVALUE]);                                
+           throw new IOException("Error getting Directory. Error " + msg[OWNET_PROT_RETVALUE]);
         }
 
         // close streams and connection
@@ -510,7 +509,7 @@ public class OWNet {
     public String Read(String path) throws IOException{
         return OW_Read(path);
     }
-    
+
     /**
      * Read from server and swallow any IOException
      * @param path attribute's path
@@ -530,7 +529,7 @@ public class OWNet {
      * @param value value to set
      * @return sucess state (most likely to be true or exception)
      * @throws java.io.IOException Exception to throw, when something is wrong
-     */    
+     */
     public boolean Write(String path, String value) throws IOException{
         return OW_Write(path,value);
     }
@@ -540,7 +539,7 @@ public class OWNet {
      * @param path attribute's path
      * @param value value to set
      * @return sucess state, false on error
-     */    
+     */
     public boolean safeWrite(String path, String value){
         try {
             return OW_Write(path,value);
@@ -548,22 +547,22 @@ public class OWNet {
             return false;
         }
     }
-        
+
     /**
      * Get presence state from server
      * @param path element to check
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return presence
-     */    
+     */
     public boolean Presence(String path) throws IOException{
         return OW_Presence(path);
     }
-    
+
     /**
      * Get presence state from server and swallow any IOException
      * @param path element to check
      * @return presence, false on missing or error
-     */    
+     */
     public boolean safePresence(String path){
         try {
             return OW_Presence(path);
@@ -571,7 +570,7 @@ public class OWNet {
             return false;
         }
     }
-    
+
     /**
      * Get directory list from server (multipacket mode)
      * @param path directory to list
@@ -594,7 +593,7 @@ public class OWNet {
             return new Vector<String>();
         }
     }
-    
+
     /**
      * Get directory list from server (singlepacket mode)
      * @param path directory to list
@@ -617,5 +616,5 @@ public class OWNet {
             return new Vector<String>();
         }
     }
-    
+
 }
