@@ -876,12 +876,16 @@ void BUS_unlock_in(struct connection_in *in);
 #define CACHE_BIT      0
 #define BUSRET_MASK    ( (UINT) 0x00000002 )
 #define BUSRET_BIT     1
+#define PERSISTENT_MASK    ( (UINT) 0x00000004 )
+#define PERSISTENT_BIT     2
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg &  CACHE_MASK) )
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
+#define IsPersistent(ppn)         ( ((ppn)->sg & PERSISTENT_MASK) )
+#define SetPersistent(ppn,b)      UT_Setbit(((ppn)->sg),PERSISTENT_BIT,(b))
 #define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
