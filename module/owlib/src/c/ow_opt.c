@@ -113,6 +113,10 @@ const struct option owopts_long[] = {
 	{"timeout_network", required_argument, NULL, 307,},	// timeout -- tcp wait
 	{"timeout_server", required_argument, NULL, 308,},	// timeout -- server wait
 	{"timeout_ftp", required_argument, NULL, 309,},	// timeout -- ftp wait
+    {"timeout_persistent_low",required_argument, NULL, 310,},
+    {"timeout_persistent_high",required_argument, NULL, 311,},
+    {"clients_persistent_low",required_argument, NULL, 312,},
+    {"clients_persistent_high",required_argument, NULL, 313,},
 
 	{0, 0, 0, 0},
 };
@@ -484,7 +488,11 @@ int owopt(const int c, const char *arg)
 	case 306:
 	case 307:
 	case 308:
-	case 309:
+    case 309:
+    case 310:
+    case 311:
+    case 312:
+    case 313:
 		{
 			long long int i;
 			if (OW_parsevalue(&i, arg))

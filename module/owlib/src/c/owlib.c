@@ -43,6 +43,10 @@ void LibSetup(enum opt_program opt)
 	Global.timeout_network = 1;
 	Global.timeout_server = 10;
 	Global.timeout_ftp = 900;
+    Global.timeout_persistent_low = 600 ;
+    Global.timeout_persistent_high = 3600 ;
+    Global.clients_persistent_low = 10 ;
+    Global.clients_persistent_high = 20 ;
 
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();
