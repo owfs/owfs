@@ -488,8 +488,8 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
 	} else if (Simul_Test(simul_temp, pn)) {	// powered, so release bus immediately after issuing convert
-		LEVEL_DEBUG("Powered temperature conversion\n");
-		int ret;
+        int ret;
+        LEVEL_DEBUG("Powered temperature conversion\n");
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);

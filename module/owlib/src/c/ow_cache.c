@@ -143,7 +143,7 @@ static void new_tree(void)
 	twalk(cache.new_db, tree_show);
 }
 #else							/* CACHE_DEBUG */
-#define new_tree(x)
+#define new_tree()
 #define node_show(tn)
 #endif							/* CACHE_DEBUG */
 

@@ -38,7 +38,7 @@ void FileLexCD( struct cd_parse_s * cps ) {
                 if ( cps->rest==NULL || cps->rest[0]=='\0' ) {
                     cps->pse = parse_status_tame ;
                 } else{
-                    if ( cps->rest[0]=='/' ) { // root specification
+                    if ( cps->rest[0]=='/' ) { // root (absolute) specification
                         cps->buffer[1] = '\0' ;
                         ++cps->rest ;
                     }
