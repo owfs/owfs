@@ -137,18 +137,27 @@ static int FS_truncate(const char *path, const off_t size) {
 #else /* FUSE22PLUS */
     #define FILLER(handle,name) filler(handle,name,DT_DIR)
 #endif /* FUSE22PLUS */
+struct getdirstruct {
+    fuse_dirh_t h ;
+    fuse_dirfil_t filler ;
+} ;
+    /* Callback function to FS_dir */
+    /* Prints this directory element (not the whole path) */
+static void FS_getdir_callback( void * v, const struct parsedname * pn2 ) {
+    char extname[OW_FULLNAME_MAX+1] ;
+    struct getdirstruct * gds = v ;
+    FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
+#ifdef FUSE22PLUS
+    (gds->filler)(gds->h,extname,DT_DIR,(ino_t)0) ;
+#else /* FUSE22PLUS */
+    (gds->filler)(gds->h,extname,DT_DIR) ;
+#endif /* FUSE22PLUS */
+}
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     struct parsedname pn ;
     int ret ;
-    /* Embedded function */
-    /* Callback function to FS_dir */
-    /* Prints this directory element (not the whole path) */
-    void directory( const struct parsedname * const pn2 ) {
-        char extname[OW_FULLNAME_MAX+1] ;
-        FS_DirName( extname, OW_FULLNAME_MAX+1, pn2 ) ;
-        FILLER(h,extname) ;
-    }
-
+    struct getdirstruct gds = { h, filler, } ;
+    
     LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
 
     if ( (ret=FS_ParsedName( path, &pn )) ) return ret ;
@@ -157,7 +166,8 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
         ret = -ENOENT;
     } else { /* Good pn */
         /* Call directory spanning function */
-        FS_dir( directory, &pn ) ;
+//        FS_dir( directory, &pn ) ;
+        FS_dir2( FS_getdir_callback, &gds, &pn ) ;
         FILLER(h,".") ;
         FILLER(h,"..") ;
     }
