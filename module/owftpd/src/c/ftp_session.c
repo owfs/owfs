@@ -457,10 +457,10 @@ static void change_dir(struct ftp_session_s *f, char *new_dir) {
     if ( cps.ret ) {
         reply(f, 550, "Error changing directory. %s", strerror(-cps.ret) ) ;
     } else {
-        if ( strcasecmp(f->dir,cps.dir) ) {
-            reply(f, 250, "Directory change successful.");
+        if ( strcasecmp(f->dir,cps.dir) ) { // change only if needed.
             strcpy( f->dir, cps.dir ) ;
         }
+        reply(f, 250, "Directory change successful.");
     }
 
     if ( cps.dir ) free( cps.dir) ;
