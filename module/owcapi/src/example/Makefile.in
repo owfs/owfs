@@ -9,7 +9,7 @@ OBJS = owcapiexample.o
 all:	owcapiexample
 
 owcapiexample: $(OBJS)
-	if @TEST@ @HAVE_DARWIN@ ; then \
+	if [ `@TEST@ @HAVE_DARWIN@ -eq 1` ] ; then \
 		@CC@ $(CFLAGS) -o $@ $(OBJS) $(DARWINLDFLAGS) ; \
 	else \
 		@CC@ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) ; \
