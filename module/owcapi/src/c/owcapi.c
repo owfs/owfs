@@ -102,155 +102,82 @@ ssize_t OW_init_args( int argc, char ** argv ) {
     return ReturnAndErrno(ret) ;
 }
 
-#ifdef NO_NESTED_FUNCTIONS
+static void getdircallback( void * v, const struct parsedname * const pn2 ) {
+    struct charblob * cb = v ;
+    char buf[OW_FULLNAME_MAX+2] ;
+    FS_DirName( buf, OW_FULLNAME_MAX, pn2 ) ;
+    CharblobAdd( buf, strlen(buf), cb ) ;
+    if ( IsDir(pn2) ) CharblobAddChar( '/', cb ) ;
+}
+/*
+  Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
+  return length of string, or <0 for error
+  *buffer will be returned as NULL on error
+ */
+static ssize_t getdir( char ** buffer, const struct parsedname * pn ) {
+    struct charblob cb ;
+    int ret ;
 
-#if OW_MT
-pthread_mutex_t OW_getmutex = PTHREAD_MUTEX_INITIALIZER ;
-#endif /* OW_MT */
-
-char * OW_getbuf = NULL ;
-size_t OW_getsz = 0 ; /* current buffer size */
-int OW_gets = 0 ; /* current buffer string length */
-
-void OW_getdirectory( const struct parsedname * const pn2 ) {
-    size_t sn = OW_gets+OW_FULLNAME_MAX+2 ; /* next buffer limit */
-    if ( OW_getsz < sn ) {
-        void * temp = OW_getbuf ;
-        OW_getsz = sn ;
-        OW_getbuf = realloc( temp, sn ) ;
-        if ( OW_getbuf==NULL && temp ) free(temp) ;
+    CharblobInit( &cb ) ;
+    ret = FS_dir2( getdircallback, &cb, pn ) ;
+    if ( ret < 0 ) {
+        // continue ;
+    } else if ( (*buffer = strdup( cb.blob )) ) {
+        ret = cb.used ;
+    } else {
+        ret = -ENOMEM ;
     }
-    if ( OW_getbuf ) {
-        if ( OW_gets ) strcpy( &OW_getbuf[OW_gets++], "," ) ; // add a comma
-        FS_DirName( &OW_getbuf[OW_gets], OW_FULLNAME_MAX, pn2 ) ;
-        if ( IsDir(pn2) ) strcat( &OW_getbuf[OW_gets], "/" );
-        OW_gets += strlen( &OW_getbuf[OW_gets] ) ;
-	    //LEVEL_DEBUG("buf=[%s] len=%d\n", OW_getbuf, OW_gets);
-    }
+    CharblobClear( &cb ) ;
+    return ret ;
 }
 
+/*
+  Get a value,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
+  return length of string, or <0 for error
+  *buffer will be returned as NULL on error
+ */
+static ssize_t getval( char ** buffer, const struct parsedname * pn ) {
+    ssize_t ret ;
+    ssize_t s = FullFileLength(&pn) ;
+    if ( s <= 0 ) return -ENOENT ;
+    if ( (*buffer = malloc(s+1))==NULL ) return -ENOMEM ;
+    ret = FS_read_postparse( *buffer, s, 0, &pn ) ;
+    if ( ret < 0 ) {
+        free(*buffer) ;
+        *buffer = NULL ;
+    }
+    return ret ;
+}
 
 ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
-#if OW_MT
-    pthread_mutex_lock(&OW_getmutex) ;
-#endif /* OW_MT */
     struct parsedname pn ;
+    ssize_t ret = 0 ; /* current buffer string length */
 
     /* Check the parameters */
     if ( buffer==NULL ) return ReturnAndErrno(-EINVAL) ;
     if ( path==NULL ) path="/" ;
     if ( strlen(path) > PATH_MAX ) return ReturnAndErrno(-EINVAL) ;
 
+    *buffer = NULL ; // default return string on error
+    if ( buffer_length ) *buffer_length = 0 ;
+    
     if ( OWLIB_can_access_start() ) { /* Check for prior init */
-        OW_gets = -ENETDOWN ;
+        ret = -ENETDOWN ;
     } else if ( FS_ParsedName( path, &pn ) ) { /* Can we parse the input string */
-        OW_gets = -ENOENT ;
+        ret = -ENOENT ;
     } else {
-        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
-            int ret = FS_dir( OW_getdirectory, &pn ) ;
-	    if(ret < 0) OW_gets = ret;
-	    //LEVEL_DEBUG("OW_get(): FS_dir returned %d\n", ret);
+        if ( IsDir( &pn ) ) { /* A directory of some kind */
+            ret = getdir( buffer, &pn ) ;
+            if ( ret>0 && buffer_length ) *buffer_length = ret ;
         } else { /* A regular file */
-            OW_gets = FullFileLength(&pn) ;
-	    //LEVEL_DEBUG("OW_get(): size=%d\n", s);
-            if ( (OW_gets>=0) && (OW_getbuf=(char *) malloc( OW_gets+1 )) ) {
-                int r =  FS_read_postparse( OW_getbuf, OW_gets, 0, &pn ) ;
-                if ( r<0 ) {
-		    LEVEL_DEBUG("OW_get(): failed after FS_read_postparse %d\n", r);
-                    free(OW_getbuf) ;
-                    OW_gets = r ;
-                } else {
-                    OW_getbuf[OW_gets] = '\0' ;
-                }
-            }
+            ret = getval( buffer, &pn ) ;
+            if ( ret>0 && buffer_length ) *buffer_length = ret ;
         }
         FS_ParsedName_destroy(&pn) ;
-        if ( OW_gets<0 ) {
-            if ( OW_getbuf ) free(OW_getbuf) ;
-            OW_getbuf = NULL ;
-            if ( buffer_length ) *buffer_length = 0 ;
-        } else {
-            if ( buffer_length ) *buffer_length = OW_gets ;
-        }
-        buffer[0] = OW_getbuf ;
     }
     OWLIB_can_access_end() ;
-    ssize_t ret = ReturnAndErrno(OW_gets) ;
-#if OW_MT
-    pthread_mutex_unlock(&OW_getmutex) ;
-#endif /* OW_MT */
-    return ret;
+    return ReturnAndErrno(ret) ;
 }
-
-#else /* NO_NESTED_FUNCTIONS */
-
-ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) {
-    struct parsedname pn ;
-    char * buf = NULL ;
-    size_t sz = 0 ; /* current buffer size */
-    int s = 0 ; /* current buffer string length */
-    /* Embedded callback function */
-    void directory( const struct parsedname * const pn2 ) {
-        size_t sn = s+OW_FULLNAME_MAX+2 ; /* next buffer limit */
-        if ( sz<sn ) {
-            void * temp = buf ;
-            sz = sn ;
-            buf = realloc( temp, sn ) ;
-            if ( buf==NULL && temp ) free(temp) ;
-        }
-        if ( buf ) {
-            if ( s ) strcpy( &buf[s++], "," ) ; // add a comma
-            FS_DirName( &buf[s], OW_FULLNAME_MAX, pn2 ) ;
-            if ( IsDir(pn2) ) strcat( &buf[s], "/" );
-            s += strlen( &buf[s] ) ;
-	    //LEVEL_DEBUG("buf=[%s] len=%d\n", buf, s);
-        }
-    }
-
-    /* Check the parameters */
-    if ( buffer==NULL ) return ReturnAndErrno(-EINVAL) ;
-    if ( path==NULL ) path="/" ;
-    if ( strlen(path) > PATH_MAX ) return ReturnAndErrno(-EINVAL) ;
-
-    if ( OWLIB_can_access_start() ) { /* Check for prior init */
-        s = -ENETDOWN ;
-    } else if ( FS_ParsedName( path, &pn ) ) { /* Can we parse the input string */
-        s = -ENOENT ;
-    } else {
-        if ( pn.dev==NULL || pn.ft == NULL || pn.subdir ) { /* A directory of some kind */
-            int ret = FS_dir( directory, &pn ) ;
-	    if(ret < 0) s = ret;
-	    //LEVEL_DEBUG("OW_get(): FS_dir returned %d\n", ret);
-        } else { /* A regular file */
-            s = FullFileLength(&pn) ;
-	    //LEVEL_DEBUG("OW_get(): size=%d\n", s);
-            if ( (s>=0) && (buf=(char *) malloc( s+1 )) ) {
-                int r =  FS_read_postparse( buf, s, 0, &pn ) ;
-                if ( r<0 ) {
-		    LEVEL_DEBUG("OW_get(): failed after FS_read_postparse %d\n", r);
-                    free(buf) ;
-                    s = r ;
-                } else {
-                    buf[s] = '\0' ;
-                }
-            }
-        }
-        FS_ParsedName_destroy(&pn) ;
-        if ( s<0 ) {
-            if ( buf ) free(buf) ;
-            buf = NULL ;
-            if ( buffer_length ) *buffer_length = 0 ;
-        } else {
-            if ( buffer_length ) *buffer_length = s ;
-        }
-        buffer[0] = buf ;
-    }
-    OWLIB_can_access_end() ;
-    return ReturnAndErrno(s) ;
-}
-
-#endif /* NO_NESTED_FUNCTIONS */
-
 
 ssize_t OW_lread( const char * path, char * buf, const size_t size, const off_t offset ) {
     return ReturnAndErrno( FS_read( path, buf, size, offset ) ) ;

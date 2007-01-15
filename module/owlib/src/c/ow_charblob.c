@@ -84,24 +84,43 @@ int CharblobPure(struct charblob *cb)
 
 int CharblobAdd(ASCII * a, size_t s , struct charblob *cb)
 {
-	// make more room? -- blocks of 10 devices (80byte)
-	if ((cb->used + s + 1 >= cb->allocated) || (cb->blob == NULL)) {
-		int newalloc = cb->allocated + 1024;
+    size_t incr = 1024 ;
+    if ( incr < s ) incr = s ;
+    // make more room? -- blocks of 1k
+    if ( cb->used ) CharblobAddChar( ',' , cb ) ; // add a comma
+    if (cb->used + s > cb->allocated) {
+		int newalloc = cb->allocated + incr ;
 		ASCII *temp = realloc(cb->blob, newalloc);
 		if (temp) {
-			cb->allocated = newalloc;
-			cb->blob = temp;
-		} else {				// allocation failed -- keep old
+            memset( &temp[cb->allocated],0,incr ) ; // set the new memory to blank
+            cb->allocated = newalloc;
+            cb->blob = temp;
+        } else {				// allocation failed -- keep old
 			cb->troubled = 1;
 			return -ENOMEM;
 		}
 	}
-    if ( cb->used ) {
-        cb->blob[cb->used-1] = ',' ;
-    }
     memcpy( &cb->blob[cb->used],a,s) ;
     cb->used += s ;
-    cb->blob[cb->used] = '\0' ;
-	++cb->used ;
 	return 0 ;
+}
+
+int CharblobAddChar(ASCII a, struct charblob *cb)
+{
+    // make more room? -- blocks of 1k
+    if (cb->used + 1 > cb->allocated) {
+        int newalloc = cb->allocated + 1024;
+        ASCII *temp = realloc(cb->blob, newalloc);
+        if (temp) {
+            memset( &temp[cb->allocated],0,1024 ) ; // set the new memory to blank
+            cb->allocated = newalloc;
+            cb->blob = temp;
+        } else {                // allocation failed -- keep old
+            cb->troubled = 1;
+            return -ENOMEM;
+        }
+    }
+    cb->blob[cb->used]=a ;
+    ++cb->used ;
+    return 0 ;
 }

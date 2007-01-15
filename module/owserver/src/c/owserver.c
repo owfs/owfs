@@ -672,8 +672,8 @@ static void DirallHandler(struct server_msg *sm , struct client_msg *cm, struct 
     if ( cm->ret ) {
         cm->size = cm->payload = 0 ;
     } else {
-        cm->payload = cb.used ;
-        cm->size = cb.used -1 ;
+        cm->payload = cb.used + 1 ;
+        cm->size = cb.used ;
     }
     TOCLIENTLOCK(hd) ;
         ToClient(hd->fd, cm, cb.blob) ; // send this directory element
