@@ -57,7 +57,7 @@ static void List_show( struct file_parse_s * fps, const struct parsedname * pn )
         "rw-rw-rw-",
         "rwxrwxrwx",
     } ;
-    printf("List_show %s\n",pn->path);
+    LEVEL_DEBUG("List_show %s\n",pn->path);
     switch( fps->fle ) {
         case file_list_list:
             FS_fstat_postparse(&stbuf,pn) ;
@@ -151,9 +151,7 @@ void FileLexParse( struct file_parse_s * fps ) {
                 } else {
                     ASCII * oldrest = strsep( &fps->rest, "/" ) ;
                     if ( strpbrk( oldrest, "*[?" ) ) {
-                        printf("parse_status_next starting\n");
                         WildLexParse( fps, oldrest ) ;
-                        printf("parse_status_next returning\n");
                         return ;
                     } else {
                         if ( oldrest && ( strlen(fps->buffer) + strlen(oldrest) + 4 > PATH_MAX )) {
@@ -221,7 +219,7 @@ static void WildLexParseCallback( void * v, const struct parsedname * const pn2 
     struct wildlexparse * wlp = v ;
     struct file_parse_s fps ; // duplicate for recursive call
     FS_DirName( &wlp->end[1], OW_FULLNAME_MAX, pn2 ) ;
-    printf("Try %s vs %s\n",&wlp->end[1],wlp->match) ;
+    LEVEL_DEBUG("Try %s vs %s\n",&wlp->end[1],wlp->match) ;
         //if ( fnmatch( match, end, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
     if ( fnmatch( wlp->match, &wlp->end[1], FNM_PATHNAME ) ) return ;
         //printf("Match! %s\n",end) ;
@@ -261,7 +259,6 @@ static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
         wlp.end[0] = '\0' ; // restore fps->buffer
     }
     FS_ParsedName_destroy( &pn ) ;
-    printf("Reached WLP end for : Path=%s, Pattern=%s, File=%s\n",SAFESTRING(fps->buffer),SAFESTRING(match),SAFESTRING(fps->rest));
 
 }
 
