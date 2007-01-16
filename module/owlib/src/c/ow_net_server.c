@@ -190,6 +190,7 @@ LoopIfNoThreading:
 					  out->fd, out->index);
 	} else {
         (out->HandlerRoutine)(acceptfd) ;
+        close(acceptfd) ;
     }
 
     if ( ret ) goto LoopIfNoThreading ;

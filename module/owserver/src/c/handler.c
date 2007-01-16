@@ -70,7 +70,7 @@ void Handler(int fd)
 	if (pthread_create(&thread, NULL, DataHandler, &hd)) {
 		LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
 		DataHandler(&hd);		// do it without pings
-		return;
+		goto HandlerDone ;
 	}
 
 	do {						// ping loop
@@ -98,5 +98,6 @@ void Handler(int fd)
 #else							/* OW_MT */
 	DataHandler(&hd);
 #endif							/* OW_MT */
-	//printf("OWSERVER handler done\n" ) ;
+HandlerDone:	
+//printf("OWSERVER handler done\n" ) ;
 }
