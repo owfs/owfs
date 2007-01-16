@@ -71,7 +71,7 @@ static void getdircallback( void * v, const struct parsedname * const pn2 ) {
 static void getdir( char ** buffer, const struct parsedname * pn ) {
     struct charblob cb ;
     CharblobInit( &cb ) ;
-    if ( FS_dir2( getdircallback, &cb, pn ) >= 0 ) {
+    if ( FS_dir( getdircallback, &cb, pn ) >= 0 ) {
         *buffer = strdup( cb.blob ) ;
     }
     CharblobClear( &cb ) ;

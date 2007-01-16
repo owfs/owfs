@@ -256,7 +256,7 @@ static void WildLexParse( struct file_parse_s * fps, ASCII * match ) {
 
         if ( root ) --wlp.end ;
         wlp.end[0] = '/' ;
-        FS_dir2( WildLexParseCallback, &wlp, &pn ) ;
+        FS_dir( WildLexParseCallback, &wlp, &pn ) ;
         if ( root ) ++wlp.end ;
         wlp.end[0] = '\0' ; // restore fps->buffer
     }

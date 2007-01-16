@@ -119,7 +119,7 @@ static ssize_t getdir( char ** buffer, const struct parsedname * pn ) {
     int ret ;
 
     CharblobInit( &cb ) ;
-    ret = FS_dir2( getdircallback, &cb, pn ) ;
+    ret = FS_dir( getdircallback, &cb, pn ) ;
     if ( ret < 0 ) {
         // continue ;
     } else if ( (*buffer = strdup( cb.blob )) ) {

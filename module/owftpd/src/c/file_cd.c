@@ -185,7 +185,7 @@ static void WildLexCD( struct cd_parse_s * cps, ASCII * match ) {
         wlcd.end = &cps->buffer[strlen(cps->buffer)] ;
         if ( root ) --wlcd.end ;
         wlcd.end[0] = '/' ;
-        FS_dir2( WildLexCDCallback, &wlcd, &pn ) ;
+        FS_dir( WildLexCDCallback, &wlcd, &pn ) ;
         if ( root ) ++wlcd.end ;
         wlcd.end[0] = '\0' ; // restore cps->buffer
     }

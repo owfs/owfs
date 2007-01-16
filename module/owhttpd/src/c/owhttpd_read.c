@@ -253,7 +253,7 @@ static void ShowDeviceText( FILE * out, const struct parsedname * const pn ) {
     } else { /* whole device */
         //printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
         //printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
-        FS_dir2( ShowDeviceTextCallback, &sds, pn ) ;
+        FS_dir( ShowDeviceTextCallback, &sds, pn ) ;
     }
     free(sds.path) ;
 }
@@ -289,7 +289,7 @@ void ShowDevice( FILE * out, const struct parsedname * const pn ) {
     } else { /* whole device */
         //printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
         //printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
-        FS_dir2( ShowDeviceCallback, &sds, pn ) ;
+        FS_dir( ShowDeviceCallback, &sds, pn ) ;
     }
     fprintf( out, "</TABLE>" ) ;
     HTTPfoot( out ) ;

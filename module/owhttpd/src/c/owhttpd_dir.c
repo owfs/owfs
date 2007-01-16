@@ -110,7 +110,7 @@ void ShowDir( FILE * out, const struct parsedname * const pn ) {
         fprintf( out, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>" ) ;
     }
 
-    FS_dir2( ShowDirCallback, &sds, pn ) ;
+    FS_dir( ShowDirCallback, &sds, pn ) ;
     fprintf( out, "</TABLE>" ) ;
     HTTPfoot( out ) ;
 }
@@ -153,6 +153,6 @@ static void ShowDirText( FILE * out, const struct parsedname * const pn ) {
 
     HTTPstart( out , "200 OK", ct_text ) ;
 
-    FS_dir2( ShowDirTextCallback, &sds, pn ) ;
+    FS_dir( ShowDirTextCallback, &sds, pn ) ;
     return;
 }
