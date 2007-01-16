@@ -68,7 +68,8 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_pid.c          \
                ow_presence.c     \
                ow_name.c         \
-               ow_net.c          \
+               ow_net_client.c   \
+               ow_net_server.c   \
                ow_opt.c          \
                ow_read.c         \
                ow_reconnect.c    \
