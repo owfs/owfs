@@ -19,12 +19,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-/* structures */
-struct HandlerThread_data {
-	int acceptfd;
-	void (*HandlerRoutine) (int fd);
-};
-
 /* Prototypes */
 static int ServerAddr(struct connection_out *out);
 static int ServerListen(struct connection_out *out);
@@ -229,36 +223,38 @@ int ServerOutSetup(struct connection_out *out)
  Uses my non-patented "pre-threaded technique"
  */
 
-/* Server Process run for each out device, and each */
 #if OW_MT
 
-void *ServerProcessHandler(void *arg)
-{
-	struct HandlerThread_data *hp = (struct HandlerThread_data *) arg;
-	pthread_detach(pthread_self());
-	if (hp) {
-		hp->HandlerRoutine(hp->acceptfd);
-		close(hp->acceptfd);
-		free(hp);
-	}
-	pthread_exit(NULL);
-	return NULL;
-}
+/* Accept thread
+   Very clever design (if I may say so)
+   Avoids thundering herd, and precreates the next thread before the connection comes in
+   so thread creation isn't charged to transaction time
 
-static void ServerProcessAccept(void *vp)
+   A mutex is used.
+
+   Try to lock mutex.
+        If able to lock, then create son and proceed to accept. On acccept, unlock mutex, and process.
+ */
+static void * ServerProcessAccept(void *v)
 {
-	struct connection_out *out = (struct connection_out *) vp;
+	struct connection_out *out = v ;
 	pthread_t tid;
 	int acceptfd;
 	int ret;
 
+    pthread_detach(pthread_self());
+
+LoopIfNoThreading:
+    
 	LEVEL_DEBUG("ServerProcessAccept %s[%lu] try lock %d\n",
 				SAFESTRING(out->name), (unsigned long int) pthread_self(),
 				out->index);
 
 	ACCEPTLOCK(out);
 
-	LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n",
+    ret = pthread_create( &tid, NULL, ServerProcessAccept, v ) ;
+
+    LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n",
 				SAFESTRING(out->name), (unsigned long int) pthread_self(),
 				out->index);
 
@@ -287,37 +283,27 @@ static void ServerProcessAccept(void *vp)
 			 out->index);
 		if (acceptfd >= 0)
 			close(acceptfd);
-		return;
+		return NULL;
 	}
 
 	if (acceptfd < 0) {
 		ERROR_CONNECT("ServerProcessAccept: accept() problem %d (%d)\n",
 					  out->fd, out->index);
 	} else {
-		struct HandlerThread_data *hp;
-		hp = malloc(sizeof(struct HandlerThread_data));
-		if (hp) {
-			hp->HandlerRoutine = out->HandlerRoutine;
-			hp->acceptfd = acceptfd;
-			ret = pthread_create(&tid, NULL, ServerProcessHandler, hp);
-			if (ret) {
-				LEVEL_DEBUG
-					("ServerProcessAccept %s[%lu] create failed ret=%d\n",
-					 SAFESTRING(out->name),
-					 (unsigned long int) pthread_self(), ret);
-				close(acceptfd);
-				free(hp);
-			}
-		}
-	}
-	LEVEL_DEBUG("ServerProcessAccept = %lu CLOSING\n",
+        (out->HandlerRoutine)(acceptfd) ;
+    }
+
+    if ( ret ) goto LoopIfNoThreading ;
+    
+    LEVEL_DEBUG("ServerProcessAccept = %lu CLOSING\n",
 				(unsigned long int) pthread_self());
-	return;
+	return NULL ;
 }
 
-static void *ServerProcessOut(void *vp)
+/* For a given port (connecion_out) set up listening */
+static void *ServerProcessOut(void *v)
 {
-	struct connection_out *out = (struct connection_out *) vp;
+	struct connection_out *out = v;
 
 	LEVEL_DEBUG("ServerProcessOut = %lu\n",
 				(unsigned long int) pthread_self());
@@ -331,7 +317,7 @@ static void *ServerProcessOut(void *vp)
 	OW_Announce(out);
 
 	while (!shutdown_in_progress) {
-		ServerProcessAccept(vp);
+		ServerProcessAccept(v);
 	}
 	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n",
 				(unsigned long int) pthread_self(), SAFESTRING(out->name));
@@ -342,6 +328,7 @@ static void *ServerProcessOut(void *vp)
 	return NULL;
 }
 
+/* Setup Servers -- a thread for each port */
 void ServerProcess(void (*HandlerRoutine) (int fd),
 				   void (*Exit) (int errcode))
 {
@@ -410,6 +397,7 @@ void ServerProcess(void (*HandlerRoutine) (int fd),
 
 #else							/* OW_MT */
 
+// Non multithreaded
 void ServerProcess(void (*HandlerRoutine) (int fd),
 				   void (*Exit) (int errcode))
 {
