@@ -138,10 +138,10 @@ static ssize_t getdir( char ** buffer, const struct parsedname * pn ) {
  */
 static ssize_t getval( char ** buffer, const struct parsedname * pn ) {
     ssize_t ret ;
-    ssize_t s = FullFileLength(&pn) ;
+    ssize_t s = FullFileLength(pn) ;
     if ( s <= 0 ) return -ENOENT ;
     if ( (*buffer = malloc(s+1))==NULL ) return -ENOMEM ;
-    ret = FS_read_postparse( *buffer, s, 0, &pn ) ;
+    ret = FS_read_postparse( *buffer, s, 0, pn ) ;
     if ( ret < 0 ) {
         free(*buffer) ;
         *buffer = NULL ;
