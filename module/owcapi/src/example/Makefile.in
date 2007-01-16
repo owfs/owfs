@@ -1,8 +1,5 @@
-# Makefile for owcapi exammple program -- invoked separately from this directory
+# Makefile for owcapi example program -- invoked separately from this directory
 # $Id$
-
-DARWINLDFLAGS = -L@prefix@/lib -lowcapi -low @LIBUSB_LIBS@
-LDFLAGS = -L@prefix@/lib -Wl,--rpath -Wl,@prefix@/lib -lowcapi
 
 CFLAGS = -g -I@prefix@/include
 
@@ -10,13 +7,23 @@ OBJS = owcapiexample.o
 
 all:	owcapiexample
 
-owcapiexample: $(OBJS)
-	if `@TEST@ @OW_DARWIN@ -eq 1` ; then \
-		@CC@ $(CFLAGS) -o $@ $(OBJS) $(DARWINLDFLAGS) ; \
-	else \
-		@CC@ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) ; \
-	fi
+ifeq "$(shell uname)" "Darwin"
 
+# Compile-flags for MacOSX
+DARWINLDFLAGS = -L@prefix@/lib -lowcapi -low @LIBUSB_LIBS@
+
+owcapiexample: $(OBJS)
+	gcc $(CFLAGS) -o $@ $(OBJS) $(DARWINLDFLAGS)
+
+else
+
+# Compile-flags for Linux and Cygwin
+LDFLAGS = -L@prefix@/lib -Wl,--rpath -Wl,@prefix@/lib -lowcapi
+
+owcapiexample: $(OBJS)
+	gcc $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+
+endif
 
 %.o: %.c
 	@CC@ $(CFLAGS) -c -o $@ $<
