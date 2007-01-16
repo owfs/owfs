@@ -38,7 +38,7 @@ $Id$
 #include "owserver.h"
 
 /* read from client, free return pointer if not Null */
-int FromClient(int fd, struct server_msg *sm, struct serverpackage *sp)
+int FromClient(struct handlerdata * hd)
 {
 	char *msg;
 	ssize_t trueload;
@@ -46,79 +46,79 @@ int FromClient(int fd, struct server_msg *sm, struct serverpackage *sp)
 	//printf("FromClient\n");
 
 	/* Clear return structure */
-	memset(sp, 0, sizeof(struct serverpackage));
+	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
-	if (tcp_read(fd, sm, sizeof(struct server_msg), &tv) !=
+	if (tcp_read(hd->fd, &hd->sm, sizeof(struct server_msg), &tv) !=
 		sizeof(struct server_msg)) {
-		sm->type = msg_error;
+		hd->sm.type = msg_error;
 		return -EIO;
 	}
 
-	sm->version = ntohl(sm->version);
-	sm->payload = ntohl(sm->payload);
-	sm->size = ntohl(sm->size);
-	sm->type = ntohl(sm->type);
-	sm->sg = ntohl(sm->sg);
-	sm->offset = ntohl(sm->offset);
+    hd->sm.version = ntohl(hd->sm.version );
+    hd->sm.payload = ntohl(hd->sm.payload );
+    hd->sm.size    = ntohl(hd->sm.size    );
+    hd->sm.type    = ntohl(hd->sm.type    );
+    hd->sm.sg      = ntohl(hd->sm.sg      );
+    hd->sm.offset  = ntohl(hd->sm.offset  );
 	LEVEL_DEBUG
 		("FromClient payload=%d size=%d type=%d tempscale=%X offset=%d\n",
-		 sm->payload, sm->size, sm->type, sm->sg, sm->offset);
+		 hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
 	//printf("<%.4d|%.4d\n",sm->type,sm->payload);
-	trueload = sm->payload;
-	if (isServermessage(sm->version))
-		trueload += sizeof(union antiloop) * Servertokens(sm->version);
+	trueload = hd->sm.payload;
+	if (isServermessage(hd->sm.version))
+		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
 	if (trueload == 0)
 		return 0;
 
 	/* valid size? */
-	if ((sm->payload < 0) || (trueload > MAXBUFFERSIZE)) {
-		sm->type = msg_error;
+	if ((hd->sm.payload < 0) || (trueload > MAXBUFFERSIZE)) {
+		hd->sm.type = msg_error;
 		return -EMSGSIZE;
 	}
 
 	/* Can allocate space? */
 	if ((msg = (char *) malloc(trueload)) == NULL) {	/* create a buffer */
-		sm->type = msg_error;
+		hd->sm.type = msg_error;
 		return -ENOMEM;
 	}
 
 	/* read in data */
-	if (tcp_read(fd, msg, trueload, &tv) != trueload) {	/* read in the expected data */
-		sm->type = msg_error;
+	if (tcp_read(hd->fd, msg, trueload, &tv) != trueload) {	/* read in the expected data */
+		hd->sm.type = msg_error;
 		free(msg);
 		return -EIO;
 	}
 
 	/* path has null termination? */
-	if (sm->payload) {
+	if (hd->sm.payload) {
 		int pathlen;
-		if (memchr(msg, 0, (size_t) sm->payload) == NULL) {
-			sm->type = msg_error;
+		if (memchr(msg, 0, (size_t) hd->sm.payload) == NULL) {
+			hd->sm.type = msg_error;
 			free(msg);
 			return -EINVAL;
 		}
 		pathlen = strlen(msg) + 1;
-		sp->data = (BYTE *) & msg[pathlen];
-		sp->datasize = sm->payload - pathlen;
+		hd->sp.data = (BYTE *) & msg[pathlen];
+		hd->sp.datasize = hd->sm.payload - pathlen;
 	} else {
-		sp->data = NULL;
-		sp->datasize = 0;
+		hd->sp.data = NULL;
+		hd->sp.datasize = 0;
 	}
 
-	if (isServermessage(sm->version)) {	/* make sure no loop */
+	if (isServermessage(hd->sm.version)) {	/* make sure no loop */
 		size_t i;
-		char *p = &msg[sm->payload];	// end of normal buffer
-		sp->tokenstring = (BYTE *) p;
-		sp->tokens = Servertokens(sm->version);
-		for (i = 0; i < sp->tokens; ++i, p += sizeof(union antiloop)) {
+		char *p = &msg[hd->sm.payload];	// end of normal buffer
+		hd->sp.tokenstring = (BYTE *) p;
+		hd->sp.tokens = Servertokens(hd->sm.version);
+		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(union antiloop)) {
 			if (memcmp(p, &(Global.Token), sizeof(union antiloop)) == 0) {
 				free(msg);
-				sm->type = msg_error;
+				hd->sm.type = msg_error;
 				LEVEL_DEBUG("owserver loop suppression\n");
 				return -ELOOP;
 			}
 		}
 	}
-	sp->path = msg;
+	hd->sp.path = msg;
 	return 0;
 }

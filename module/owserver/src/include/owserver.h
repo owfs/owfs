@@ -78,25 +78,27 @@ struct handlerdata {
     pthread_mutex_t to_client ;
 #endif /* OW_MT */
     struct timeval tv ;
+    struct server_msg sm ;
+    struct serverpackage sp ;
 } ;
 
 /* read from client, free return pointer if not Null */
-int FromClient( int fd, struct server_msg * sm, struct serverpackage * sp ) ;
+int FromClient( struct handlerdata * hd ) ;
 
 /* Send fully configured message back to client */
 int ToClient( int fd, struct client_msg * cm, char * data ) ;
 
 /* Read from 1-wire bus and return file contents */
-void * ReadHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
+void * ReadHandler(struct handlerdata * hd , struct client_msg *cm, const struct parsedname * pn ) ;
 
 /* write a new value ot a 1-wire device */
-void WriteHandler(struct server_msg *sm, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
+void WriteHandler(struct handlerdata * hd, struct client_msg *cm, const BYTE *data, const struct parsedname *pn ) ;
 
 /* Clasic directory -- one value at a time */
-void DirHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) ;
+void DirHandler(struct handlerdata * hd , struct client_msg *cm, const struct parsedname * pn ) ;
 
 /* Newer directory-at-once */
-void * DirallHandler(struct server_msg *sm , struct client_msg *cm, const struct parsedname * pn ) ;
+void * DirallHandler(struct handlerdata * hd , struct client_msg *cm, const struct parsedname * pn ) ;
 
 /* Handle the actual request -- pings handled higher up */
 void * DataHandler( void * v ) ;

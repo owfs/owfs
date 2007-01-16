@@ -47,43 +47,40 @@ $Id$
 /* The length of string in cm.payload */
 /* If cm.payload is 0, then a NULL string is returned */
 /* cm.ret is also set to an error <0 or the read length */
-void *ReadHandler(struct server_msg *sm, struct client_msg *cm,
+void *ReadHandler(struct handlerdata * hd, struct client_msg *cm,
 				  const struct parsedname *pn)
 {
 	char *retbuffer = NULL;
 	ssize_t ret;
 
 	//printf("ReadHandler:\n");
-	LEVEL_DEBUG("ReadHandler: cm->payload=%d cm->size=%d cm->offset=%d\n",
-				cm->payload, cm->size, cm->offset);
-	LEVEL_DEBUG("ReadHandler: sm->payload=%d sm->size=%d sm->offset=%d\n",
-				sm->payload, sm->size, sm->offset);
-	cm->size = 0;
-	cm->payload = 0;
-	cm->offset = 0;
+	LEVEL_DEBUG("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
+				hd->sm.payload, hd->sm.size, hd->sm.offset);
 
-	if ((sm->size <= 0) || (sm->size > MAXBUFFERSIZE)) {
+	if ((hd->sm.size <= 0) || (hd->sm.size > MAXBUFFERSIZE)) {
 		cm->ret = -EMSGSIZE;
 #ifdef VALGRIND
-	} else if ((retbuffer = (char *) calloc(1, (size_t) sm->size)) == NULL) {	// allocate return buffer
+	} else if ((retbuffer = (char *) calloc(1, (size_t) hd->sm.size)) == NULL) {	// allocate return buffer
 #else
-	} else if ((retbuffer = (char *) malloc((size_t) sm->size)) == NULL) {	// allocate return buffer
+	} else if ((retbuffer = (char *) malloc((size_t) hd->sm.size)) == NULL) {	// allocate return buffer
 #endif
 		cm->ret = -ENOBUFS;
 	} else
 		if ((ret =
-			 FS_read_postparse(retbuffer, (size_t) sm->size,
-							   (off_t) sm->offset, pn)) <= 0) {
+			 FS_read_postparse(retbuffer, (size_t) hd->sm.size,
+							   (off_t) hd->sm.offset, pn)) <= 0) {
 		free(retbuffer);
 		retbuffer = NULL;
 		cm->ret = ret;
 	} else {
-		cm->payload = sm->size;
-		cm->offset = sm->offset;
+		cm->payload = hd->sm.size;
+		cm->offset = hd->sm.offset;
 		cm->size = ret;
 		cm->ret = ret;
 	}
-	LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n", sm->size, sm->size,
+    LEVEL_DEBUG("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d\n",
+                cm->payload, cm->size, cm->offset);
+    LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n", cm->size, cm->size,
 				retbuffer);
 	return retbuffer;
 }

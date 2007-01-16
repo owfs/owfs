@@ -41,14 +41,12 @@ $Id$
  * lower level routine for actually handling a request
  * deals with data (ping is handled higher)
  */
-void *DataHandler(void *v)
+void * DataHandler(void *v)
 {
 	struct handlerdata *hd = v;
 	char *retbuffer = NULL;
-	struct server_msg sm;
 	struct client_msg cm;
 	struct parsedname pn;
-	struct serverpackage sp;
 
 #if OW_MT
 	pthread_detach(pthread_self());
@@ -68,34 +66,32 @@ void *DataHandler(void *v)
 	//printf("OWSERVER message type = %d\n",sm.type ) ;
 	memset(&cm, 0, sizeof(struct client_msg));
 
-	cm.ret = FromClient(hd->fd, &sm, &sp);
-
-	switch ((enum msg_classification) sm.type) {	// outer switch
+	switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message
 	case msg_write:			// good message
 	case msg_dir:				// good message
 	case msg_presence:			// good message
 	case msg_dirall:			// good message
 	case msg_get:				// good message
-		if (sm.payload == 0) {	/* Bad string -- no trailing null */
+		if (hd->sm.payload == 0) {	/* Bad string -- no trailing null */
 			cm.ret = -EBADMSG;
 		} else {
 			//printf("Handler: path=%s\n",path);
 			/* Parse the path string */
 
-			LEVEL_CALL("owserver: parse path=%s\n", sp.path);
-			if ((cm.ret = FS_ParsedName(sp.path, &pn)))
+			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);
+			if ((cm.ret = FS_ParsedName(hd->sp.path, &pn)))
 				break;
 
 			/* Use client persistent settings (temp scale, display mode ...) */
-			pn.sg = sm.sg;
+			pn.sg = hd->sm.sg;
 			/* Antilooping tags */
-			pn.tokens = sp.tokens;
-			pn.tokenstring = sp.tokenstring;
+			pn.tokens = hd->sp.tokens;
+			pn.tokenstring = hd->sp.tokenstring;
 			//printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
 			//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
-			switch ((enum msg_classification) sm.type) {
+			switch ((enum msg_classification) hd->sm.type) {
 			case msg_presence:
 				LEVEL_CALL("Presence message on %s bus_nr=%d\n",
 						   SAFESTRING(pn.path), pn.bus_nr);
@@ -105,34 +101,34 @@ void *DataHandler(void *v)
 				break;
 			case msg_read:
 				LEVEL_CALL("Read message\n");
-				retbuffer = ReadHandler(&sm, &cm, &pn);
+				retbuffer = ReadHandler(hd, &cm, &pn);
 				LEVEL_DEBUG("Read message done retbuffer=%p\n", retbuffer);
 				break;
 			case msg_write:{
 					LEVEL_CALL("Write message\n");
-					if ((sp.datasize <= 0)
-						|| ((int) sp.datasize < sm.size)) {
+					if ((hd->sp.datasize <= 0)
+						|| ((int) hd->sp.datasize < hd->sm.size)) {
 						cm.ret = -EMSGSIZE;
 					} else {
-						WriteHandler(&sm, &cm, sp.data, &pn);
+						WriteHandler(hd, &cm, hd->sp.data, &pn);
 					}
 				}
 				break;
 			case msg_dir:
 				LEVEL_CALL("Directory message (by bits)\n");
-				DirHandler(&sm, &cm, hd, &pn);
+				DirHandler( hd, &cm,&pn);
 				break;
 			case msg_dirall:
 				LEVEL_CALL("Directory message (all at once)\n");
-				retbuffer = DirallHandler(&sm, &cm, &pn);
+				retbuffer = DirallHandler( hd, &cm, &pn);
 				break;
 			case msg_get:
 				if (IsDir(&pn)) {
 					LEVEL_CALL("Get -> Directory message (all at once)\n");
-					retbuffer = DirallHandler(&sm, &cm, &pn);
+					retbuffer = DirallHandler( hd, &cm, &pn);
 				} else {
 					LEVEL_CALL("Get -> Read message\n");
-					retbuffer = ReadHandler(&sm, &cm, &pn);
+					retbuffer = ReadHandler(hd, &cm, &pn);
 				}
 				break;
 			default:			// never reached
@@ -159,10 +155,6 @@ void *DataHandler(void *v)
 		ToClient(hd->fd, &cm, retbuffer);
 	timerclear(&(hd->tv));
 	TOCLIENTUNLOCK(hd);
-	if (sp.path) {
-		free(sp.path);
-		sp.path = NULL;
-	}
 	if (retbuffer)
 		free(retbuffer);
 	LEVEL_DEBUG("RealHandler: done\n");

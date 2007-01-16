@@ -49,6 +49,7 @@ struct dirallhandlerstruct {
 	struct charblob *cb;
 	const struct parsedname *pn;
 };
+
 void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 {
 	struct dirallhandlerstruct *dhs = v;
@@ -56,33 +57,30 @@ void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 	char *path = ((dhs->pn->state & pn_bus)
 				  && (is_servermode(dhs->pn->in))) ? dhs->pn->
 		path_busless : dhs->pn->path;
-	size_t _pathlen = strlen(path);
-
+	
+    /* make sure path has a "/" before the file is added */
+    size_t _pathlen = strlen(path);
 	strcpy(retbuffer, path);
 	if ((_pathlen == 0) || (retbuffer[_pathlen - 1] != '/')) {
 		retbuffer[_pathlen] = '/';
 		retbuffer[++_pathlen] = '\0';
 	}
-	LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
-	if (pn2->dev == NULL) {
-		if (NotRealDir(pn2)) {
-			//printf("DirHandler: call FS_dirname_type\n");
-			FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
-							pn2);
-		} else if (pn2->state) {
-			FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
-							 pn2);
-			//printf("DirHandler: call FS_dirname_state\n");
-		}
-	} else {
-		/* make sure path ends with a / */
-		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+	
+    LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
+	if (pn2->dev) {
+        FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+    } else if (NotRealDir(pn2)) {
+        FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
+                        pn2);
+    } else {
+        FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
+                         pn2);
 	}
 
 	CharblobAdd(retbuffer, strlen(retbuffer), dhs->cb);
 }
 
-void *DirallHandler(struct server_msg *sm, struct client_msg *cm,
+void *DirallHandler(struct handlerdata * hd, struct client_msg *cm,
 					const struct parsedname *pn)
 {
 	uint32_t flags = 0;
@@ -90,14 +88,14 @@ void *DirallHandler(struct server_msg *sm, struct client_msg *cm,
 	struct dirallhandlerstruct dhs = { &cb, pn, };
 	char *ret = NULL;
 
-	cm->sg = sm->sg;
+	cm->sg = hd->sm.sg;
 	CharblobInit(&cb);
 
 	// Now generate the directory (using the embedded callback function above for each element
-	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",
-				SpecifiedBus(pn), pn->bus_nr);
-	LEVEL_DEBUG("owserver dirall path = %s\n", SAFESTRING(pn->path));
-	// Now generate the directory using the callback function above for each element
+	LEVEL_DEBUG("OWSERVER Dir-All SpecifiedBus=%d pn->bus_nr=%d path = %s\n",
+                SpecifiedBus(pn), pn->bus_nr, SAFESTRING(pn->path));
+	
+    // Now generate the directory using the callback function above for each element
 	cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
 
 	if (cm->ret) {

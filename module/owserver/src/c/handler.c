@@ -37,67 +37,88 @@ $Id$
 
 #include "owserver.h"
 
+/* Counters for persistent connections */
+UINT    persistent_connections ;
 
+#if OW_MT  // Handler for multithreaded approach -- with ping
 /*
  * Main routine for actually handling a request
  * deals with a connection
  */
 void Handler(int fd)
 {
-	struct handlerdata hd = {
-		fd,
-#if OW_MT
-		PTHREAD_MUTEX_INITIALIZER,
-#endif							/* OW_MT */
-		{0, 0},
-	};
+    struct handlerdata hd ;
+    struct client_msg ping_cm;
+    struct timeval now;         // timer calculation
+    struct timeval delta = { Global.timeout_network, 500000 };  // 1.5 seconds ping interval
+    struct timeval result;      // timer calculation
+    pthread_t thread;           // hanler thread id (not used)
+    int loop = 1;               // ping loop flap
 
-#if OW_MT
-	struct client_msg ping_cm;
-	struct timeval now;			// timer calculation
-	struct timeval delta = { Global.timeout_network, 500000 };	// 1.5 seconds ping interval
-	struct timeval result;		// timer calculation
-	pthread_t thread;			// hanler thread id (not used)
-	int loop = 1;				// ping loop flap
+    /* Special early return -- error on input message */
+    hd.fd = fd ;
+    pthread_mutex_init( &hd.to_client, NULL ) ;
+    timerclear( &hd.tv ) ;
+    if ( FromClient( &hd ) ) return ;
+    
+    memset(&ping_cm, 0, sizeof(struct client_msg));
+    ping_cm.payload = -1;       /* flag for delay message */
+    gettimeofday(&(hd.tv), NULL);
 
-	memset(&ping_cm, 0, sizeof(struct client_msg));
-	ping_cm.payload = -1;		/* flag for delay message */
-	gettimeofday(&(hd.tv), NULL);
+    //printf("OWSERVER pre-create\n");
+    // PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
-	//printf("OWSERVER pre-create\n");
-	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
+    if (pthread_create(&thread, NULL, DataHandler, &hd)) {
+        LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
+        DataHandler(&hd);       // do it without pings
+        goto HandlerDone ;
+    }
 
-	if (pthread_create(&thread, NULL, DataHandler, &hd)) {
-		LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
-		DataHandler(&hd);		// do it without pings
-		goto HandlerDone ;
-	}
-
-	do {						// ping loop
+    do {                        // ping loop
 #ifdef HAVE_NANOSLEEP
-		struct timespec nano = { 0, 100000000 };	// .1 seconds (Note second element NANOsec)
-		nanosleep(&nano, NULL);
+        struct timespec nano = { 0, 100000000 };    // .1 seconds (Note second element NANOsec)
+        nanosleep(&nano, NULL);
 #else
-		usleep((unsigned long) 100000);
+        usleep((unsigned long) 100000);
 #endif
-		TOCLIENTLOCK(&hd);
-		if (!timerisset(&(hd.tv))) {	// flag that the other thread is done
-			loop = 0;
-		} else {				// check timing -- ping if expired
-			gettimeofday(&now, NULL);	// current time
-			timersub(&now, &delta, &result);	// less delay
-			if (timercmp(&(hd.tv), &result, <)) {	// test against last message time
-				char *c = NULL;	// dummy argument
-				ToClient(hd.fd, &ping_cm, c);	// send the ping
-				//printf("OWSERVER ping\n") ;
-				gettimeofday(&(hd.tv), NULL);	// reset timer
-			}
-		}
-		TOCLIENTUNLOCK(&hd);
-	} while (loop);
-#else							/* OW_MT */
-	DataHandler(&hd);
-#endif							/* OW_MT */
-HandlerDone:	
+        TOCLIENTLOCK(&hd);
+        if (!timerisset(&(hd.tv))) {    // flag that the other thread is done
+            loop = 0;
+        } else {                // check timing -- ping if expired
+            gettimeofday(&now, NULL);   // current time
+            timersub(&now, &delta, &result);    // less delay
+            if (timercmp(&(hd.tv), &result, <)) {   // test against last message time
+                char *c = NULL; // dummy argument
+                ToClient(hd.fd, &ping_cm, c);   // send the ping
+                //printf("OWSERVER ping\n") ;
+                gettimeofday(&(hd.tv), NULL);   // reset timer
+            }
+        }
+        TOCLIENTUNLOCK(&hd);
+    } while (loop);
+HandlerDone:
+    if (hd.sp.path) {
+        free(hd.sp.path);
+        hd.sp.path = NULL;
+    }
+//printf("OWSERVER handler done\n" ) ;
+    pthread_mutex_destroy( &hd.to_client ) ;
+}
+
+#else /* no OW_MT */
+void Handler(int fd)
+{
+    struct handlerdata hd ;
+    hd.fd = fd ;
+    if ( FromClient( &hd ) == 0 ) {
+        DataHandler(&hd);
+    }
+HandlerDone:
+    if (sp.path) {
+        free(sp.path);
+        sp.path = NULL;
+    }
 //printf("OWSERVER handler done\n" ) ;
 }
+
+#endif /* OW_MT */
