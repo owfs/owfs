@@ -106,19 +106,19 @@ enum file_list_e {
 struct file_parse_s {
     ASCII buffer[PATH_MAX+1] ;
     ASCII * rest ;
-    enum parse_status_e pse ;
-    enum file_list_e fle ;
-    int out ;
-    int ret ;
+    enum parse_status_e pse ; // state machine
+    enum file_list_e fle ; // long or short listing flag
+    int out ; // file descriptor to send result
+    int ret ; // return status
     int start ;
 } ;
 
 struct cd_parse_s {
-    ASCII buffer[PATH_MAX+1] ;
+    ASCII buffer[PATH_MAX+1] ; // working copy of current directory
     ASCII * rest ;
-    enum parse_status_e pse ;
-    int ret ;
-    int solutions ;
+    enum parse_status_e pse ; // state machine
+    int ret ; // return status
+    int solutions ; // is the solution unique?
     ASCII * dir ;
 } ;
 

@@ -457,9 +457,7 @@ static void change_dir(struct ftp_session_s *f, char *new_dir) {
     if ( cps.ret ) {
         reply(f, 550, "Error changing directory. %s", strerror(-cps.ret) ) ;
     } else {
-        if ( strcasecmp(f->dir,cps.dir) ) { // change only if needed.
-            strcpy( f->dir, cps.dir ) ;
-        }
+        strcpy( f->dir, cps.dir ) ;
         reply(f, 250, "Directory change successful.");
     }
 
@@ -1258,11 +1256,8 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
         daemon_assert(cmd->num_arg == 1);
 
         /* ignore attempts to send options to "ls" by silently dropping */
-        if (cmd->arg[0].string[0] == '-') {
-            fps.rest = strdup("*");
-        } else {
-            fps.rest = strdup(cmd->arg[0].string) ;
-        }
+        /* We don't use "ls" so can just pass on literal text */
+        fps.rest = strdup(cmd->arg[0].string) ;
     }
 
     /* ready to list */
@@ -1288,9 +1283,8 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
 
     /* clean up and exit */
 exit_blst:
-    if (fps.out != -1) close(fps.out) ;
-    if (fps.rest) free(fps.rest) ;
-    daemon_assert(invariant(f));
+        if (fps.out != -1) close(fps.out) ;
+        daemon_assert(invariant(f));
 }
 
 static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd) {
