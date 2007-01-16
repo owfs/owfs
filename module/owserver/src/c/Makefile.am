@@ -1,7 +1,16 @@
 # $Id$
 
 bin_PROGRAMS = owserver
-owserver_SOURCES = owserver.c
+owserver_SOURCES = owserver.c    \
+                   from_client.c \
+                   to_client.c   \
+                   read.c        \
+                   write.c       \
+                   dir.c         \
+                   dirall.c      \
+                   data.c        \
+                   handler.c
+                   
 owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 AM_CFLAGS = -I../include \
