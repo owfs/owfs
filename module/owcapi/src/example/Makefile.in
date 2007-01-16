@@ -1,3 +1,5 @@
+# Makefile for owcapi exammple program -- invoked separately from this directory
+# $Id$
 
 DARWINLDFLAGS = -L@prefix@/lib -lowcapi -low @LIBUSB_LIBS@
 LDFLAGS = -L@prefix@/lib -Wl,--rpath -Wl,@prefix@/lib -lowcapi
