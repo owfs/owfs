@@ -581,8 +581,6 @@ void DirHandlerCallback( void * v, const struct parsedname * pn2 ) {
 static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct handlerdata * hd, const struct parsedname * pn ) {
     uint32_t flags = 0 ;
     struct dirhandlerstruct dhs = { cm, pn, hd, } ;
-    /* embedded function -- callback for directory entries */
-    /* return the full path length, including current entry */
 
     //printf("DirHandler: pn->path=%s\n", pn->path);
     
@@ -590,9 +588,9 @@ static void DirHandler(struct server_msg *sm , struct client_msg *cm, struct han
     cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2 ;
     cm->sg = sm->sg ;
 
-    // Now generate the directory (using the embedded callback function above for each element
     LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
     LEVEL_DEBUG("owserver dir pre = %s\n",SAFESTRING(pn->path)) ;
+    // Now generate the directory using the callback function above for each element
     cm->ret = FS_dir_remote( DirHandlerCallback, &dhs, pn, &flags ) ;
     LEVEL_DEBUG("owserver dir post = %s\n",SAFESTRING(pn->path)) ;
 
@@ -665,7 +663,7 @@ static void DirallHandler(struct server_msg *sm , struct client_msg *cm, struct 
     // Now generate the directory (using the embedded callback function above for each element
     LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d\n",SpecifiedBus(pn),pn->bus_nr);
     LEVEL_DEBUG("owserver dirall pre = %s\n",SAFESTRING(pn->path)) ;
-    /* embedded function -- callback for directory entries */
+    // Now generate the directory using the callback function above for each element
     cm->ret = FS_dir_remote( DirallHandlerCallback, &dhs, pn, &flags ) ;
     LEVEL_DEBUG("owserver dir postall = %s\n",SAFESTRING(pn->path)) ;
 
