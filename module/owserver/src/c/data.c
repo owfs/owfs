@@ -65,6 +65,7 @@ void * DataHandler(void *v)
 
 	//printf("OWSERVER message type = %d\n",sm.type ) ;
 	memset(&cm, 0, sizeof(struct client_msg));
+    cm.sg = hd->sm.sg ; // default flag return -- includes persistence state
 
 	switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message

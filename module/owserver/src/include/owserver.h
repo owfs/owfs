@@ -74,6 +74,7 @@ $Id$
 // this structure holds the data needed for the handler function called in a separate thread by the ping wrapper
 struct handlerdata {
     int fd ;
+    int persistent ;
 #if OW_MT
     pthread_mutex_t to_client ;
 #endif /* OW_MT */

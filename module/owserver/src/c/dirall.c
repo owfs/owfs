@@ -88,7 +88,8 @@ void *DirallHandler(struct handlerdata * hd, struct client_msg *cm,
 	struct dirallhandlerstruct dhs = { &cb, pn, };
 	char *ret = NULL;
 
-	cm->sg = hd->sm.sg;
+    (void) hd ;
+    
 	CharblobInit(&cb);
 
 	// Now generate the directory (using the embedded callback function above for each element

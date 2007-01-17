@@ -53,9 +53,9 @@ void WriteHandler(struct handlerdata * hd, struct client_msg *cm,
 	//printf("Handler: WRITE done\n");
 	if (ret < 0) {
 		cm->size = 0;
-		cm->sg = hd->sm.sg;
 	} else {
 		cm->size = ret;
 		cm->sg = pn->sg;
+        if ( hd->persistent ) cm->sg |= PERSISTENT_MASK ;
 	}
 }

@@ -48,12 +48,14 @@ int FromClient(struct handlerdata * hd)
 	/* Clear return structure */
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
-	if (tcp_read(hd->fd, &hd->sm, sizeof(struct server_msg), &tv) !=
+    /* read header */
+    if (tcp_read(hd->fd, &hd->sm, sizeof(struct server_msg), &tv) !=
 		sizeof(struct server_msg)) {
 		hd->sm.type = msg_error;
 		return -EIO;
 	}
 
+    /* translate endian state */
     hd->sm.version = ntohl(hd->sm.version );
     hd->sm.payload = ntohl(hd->sm.payload );
     hd->sm.size    = ntohl(hd->sm.size    );
@@ -64,7 +66,9 @@ int FromClient(struct handlerdata * hd)
 		("FromClient payload=%d size=%d type=%d tempscale=%X offset=%d\n",
 		 hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
 	//printf("<%.4d|%.4d\n",sm->type,sm->payload);
-	trueload = hd->sm.payload;
+	
+    /* figure out length of rest of message: payload plus tokens */
+    trueload = hd->sm.payload;
 	if (isServermessage(hd->sm.version))
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
 	if (trueload == 0)

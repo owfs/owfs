@@ -96,7 +96,6 @@ void DirHandler(struct handlerdata * hd, struct client_msg *cm,
 
 	// Settings for all directory elements
 	cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2;
-	cm->sg = hd->sm.sg;
 
 	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d path=%s\n",
                 SpecifiedBus(pn), pn->bus_nr, SAFESTRING(pn->path));
