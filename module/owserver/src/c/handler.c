@@ -44,7 +44,10 @@ int    persistent_connections = 0 ;
 #if OW_MT  // Handler for multithreaded approach -- with ping
 
 static void SingleHandler(struct handlerdata * hd) ;
+
 pthread_mutex_t persistence_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define PERSISTENCELOCK    pthread_mutex_lock(   &persistence_mutex ) ;
+#define PERSISTENCEUNLOCK  pthread_mutex_unlock( &persistence_mutex ) ;
 
 /*
  * Main routine for actually handling a request
@@ -70,7 +73,7 @@ void Handler(int fd)
             if ( persistent ) { /* already had persistence granted */
                 hd.persistent = 1 ; /* so keep it */
             } else { /* See if available */
-                pthread_mutex_lock( &persistence_mutex ) ;
+                PERSISTENCELOCK ;
                 if ( persistent_connections < Global.clients_persistent_high ) { /* ok */
                     ++ persistent_connections ; /* global count */
                     persistent = 1 ; /* connection toggle */
@@ -79,7 +82,7 @@ void Handler(int fd)
                     loop_persistent = 0 ; /* denied! */
                     hd.persistent = 0 ; /* for responses */
                 }
-                pthread_mutex_unlock( &persistence_mutex ) ;
+                PERSISTENCEUNLOCK ;
             }
         } else { /* No persistence requested this time */
             hd.persistent = 0 ; /* for responses */
@@ -99,24 +102,28 @@ void Handler(int fd)
         if ( loop_persistent == 0 ) break ; /* easiest one */
 
         /* Shorter wait */
-        if ( tcp_wait( fd, &tv_low ) == 0 ) continue ;
-        pthread_mutex_lock( &persistence_mutex ) ;
-        /* store the test because the mutex locks the variable */
-        loop_persistent = (persistent_connections < Global.clients_persistent_low) ;
-        pthread_mutex_unlock( &persistence_mutex ) ;
-        if ( loop_persistent == 0 ) break ; /* too many connections and we're slow */
-            
-        /*  longer wait */
-        if ( tcp_wait( fd, &tv_high ) ) break ;
-    } ;
+        if ( tcp_wait( fd, &tv_low ) ) { // timed out
+            /* test if below threshold for longer wait */
+            PERSISTENCELOCK ;
+            /* store the test because the mutex locks the variable */
+            loop_persistent = (persistent_connections < Global.clients_persistent_low) ;
+            PERSISTENCEUNLOCK ;
+            if ( loop_persistent == 0 ) break ; /* too many connections and we're slow */
+
+            /*  longer wait */
+            if ( tcp_wait( fd, &tv_high ) ) break ;
+        }
+
+        LEVEL_DEBUG("OWSERVER tcp connection persistence -- reusing connection now.\n");
+    }
     
-    //printf("OWSERVER handler done\n" ) ;
+    LEVEL_DEBUG("OWSERVER handler done\n" ) ;
     pthread_mutex_destroy( &hd.to_client ) ;
     // restore the persistent count
     if ( persistent ) {
-        pthread_mutex_lock( &persistence_mutex ) ;
+        PERSISTENCELOCK ;
         -- persistent_connections ;
-        pthread_mutex_unlock( &persistence_mutex ) ;
+        PERSISTENCEUNLOCK ;
     }
 }
 
