@@ -233,7 +233,14 @@ install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
 
 install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
-mv -f $RPM_BUILD_ROOT%{prefix}/man/* $RPM_BUILD_ROOT%{_mandir}
+install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man1
+mv -f $RPM_BUILD_ROOT%{prefix}/man/man1/* $RPM_BUILD_ROOT%{_mandir}/man1/
+install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man3
+mv -f $RPM_BUILD_ROOT%{prefix}/man/man3/* $RPM_BUILD_ROOT%{_mandir}/man3/
+install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man5
+mv -f $RPM_BUILD_ROOT%{prefix}/man/man5/* $RPM_BUILD_ROOT%{_mandir}/man5/
+install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/mann
+mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
 rm -rf $RPM_BUILD_ROOT%{prefix}/man
 
 %if %{build_fs}
@@ -265,6 +272,7 @@ mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
 	mv -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*
 rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/perl5/5.*
 rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/.packlist
+rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OWNet/.packlist
 %endif
 %if %{build_python}
 %endif
@@ -452,6 +460,10 @@ fi
 %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.bs
 %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.so
 %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/OW.pm
+%dir %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OWNet
+#%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OWNet/.packlist
+%{prefix}/lib*/perl5/site_perl/*/OWNet.pm
+%{_mandir}/man3/OWNet.3pm.gz
 %endif
 
 %if %{build_python}
