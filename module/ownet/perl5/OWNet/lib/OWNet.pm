@@ -15,11 +15,17 @@ Light weight access to B<owserver>
 
 =head1 SYNOPSIS
 
-OWNet is an easy way to access the B<owserver> and thus the 1-wire bus.
+OWNet is an easy way to access B<owserver> and thence the 1-wire bus.
 
-Suppose a 1-wire adapter (serial DS9097U) attaches to a 1-wire bus with a single DS18S20 temperature sensor. B<owserver> was invoked with:
+Dallas Semiconductor's 1-wire system uses simple wiring and unique addresses for it's interesting devices. The B<One Wire File System> is a suite of programs that hides 1-wire details behind a file system metaphor. B<owserver> connects to the 1-wire bus and provides network access.
+
+B<OWNet> is a perl module that connects to B<owserver> and allows reading, writing and listing the 1-wire bus.
+
+For instance if we start owserver with:
 
  owserver -d /dev/ttyS0 -p 3000
+
+I<Serial 1-wire adapter attached to a 1-wire bus with a DS18S20 temperature sensor.>
 
 Then the following perl program prints the temperature:
 
@@ -170,6 +176,9 @@ my $msg_presence = 6 ;
 my $msg_dirall = 7 ;
 my $msg_get = 8 ;
 
+my $persistence_bit = 0x04 ;
+my $default_sg = 0x102 ;
+my $default_block = 4096 ;
 
 our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
@@ -209,56 +218,85 @@ sub _new($$) {
     $addr = "127.0.0.1".$addr if $addr =~ /^:/ ;
 
     $self->{ADDR} = $addr ;
-    $self->{SG} = 0x0102 + $tempscale + $format ;
+    $self->{SG} = $default_sg + $tempscale + $format ;
     $self->{VER} = 0 ;
 }
 
 sub _Sock($) {
     my $self = shift ;
+    # persistent socket already there?
+    if ( defined($self->{SOCK} && $self->{PERSIST} != 0  ) ) { 
+        return 1 ; 
+    }
+    # New socket
     $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$self->{ADDR},Proto=>'tcp') || do {
-	warn("Can't open $self->{ADDR} ($!) \n") if $self->{VERBOSE} ;
-	$self->{SOCK} = undef ;
+        warn("Can't open $self->{ADDR} ($!) \n") if $self->{VERBOSE} ;
+        $self->{SOCK} = undef ;
+        return ;
     } ;
-    return ( 258 ) ;
+    return 1 ;
+}
+
+sub _self($) {
+    my $addr = shift ;
+    my $self ;
+    if ( ref($addr) ) {
+        $self = $addr ;
+        $self->{PERSIST} = $persistence_bit ;
+    } else {
+        $self = {} ;
+        _new($self,$addr)  ;
+        $self->{PERSIST} = 0 ;
+    }
+    _Sock($self) || return ;
+    return $self;
 }
 
 sub _ToServer ($$$$$;$) {
     my ($self, $pay, $typ, $siz, $off, $dat) = @_ ;
     my $f = "N6" ;
     $f .= 'Z'.$pay if ( $pay > 0 ) ; 
-    send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG},$siz,$off,$dat), MSG_DONTWAIT ) || do {
+
+    # try to send
+    send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG}|$self->{PERSIST},$siz,$off,$dat), MSG_DONTWAIT ) && return 1 ;
+
+    # maybe bad persistent connection
+    if ( $self->{PERSIST} != 0 ) {
+        $self->{SOCK} = undef ;
+        _Sock($self) || return ;
+        send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG}|$self->{PERSIST},$siz,$off,$dat), MSG_DONTWAIT ) && return 1 ;
+    }
+
 	warn("Send problem $! \n") if $self->{VERBOSE} ;
 	return ;
-    } ;
-    return 1 ;
 }
 
 sub _FromServerLow($$) {
     my $self = shift ;
     my $length = shift ;
     return '' if $length == 0 ;
-    my $sock = $self->{SOCK} ;
-    my $sel = '' ;
-    vec($sel,$sock->fileno,1) = 1 ;
-    my $len = $length ;
-    my $ret = '' ;
-    my $a ;
+    my $fileno = $self->{SOCK}->fileno ;
+    my $selectreadbits = '' ;
+    vec($selectreadbits,$fileno,1) = 1 ;
+    my $remaininglength = $length ;
+    my $fullread = '' ;
     #print "LOOOP for length $length \n" ;
     do {
-	select($sel,undef,undef,1) ;
-	return if vec($sel,$sock->fileno,1) == 0 ;
-#	return if $sel->can_read(1) == 0 ;
-	defined( recv( $self->{SOCK}, $a, $len, MSG_DONTWAIT ) ) || do {
-	    warn("Trouble getting data back $! after $len of $length") if $self->{VERBOSE} ;
-	    return ;
-	} ;
-	#print "reading=".$a."\n";
-	#print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
-	$ret .= $a ;
-	$len = $length - length($ret) ;
-	#print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
-    } while $len > 0 ;
-    return $ret ;
+        select($selectreadbits,undef,undef,1) ;
+        return if vec($selectreadbits,$fileno,1) == 0 ;
+    #	return if $sel->can_read(1) == 0 ;
+        my $partialread ;
+        defined( recv( $self->{SOCK}, $partialread, $remaininglength, MSG_DONTWAIT ) ) || do {
+            warn("Trouble getting data back $! after $remaininglength of $length") if $self->{VERBOSE} ;
+            return ;
+        } ;
+        #print "reading=".$a."\n";
+        #print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
+        $fullread .= $partialread ;
+        $remaininglength = $length - length($fullread) ;
+        #print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
+    } while $remaininglength > 0 ;
+    return $fullread ;
 }
 
 sub _FromServer($) {
@@ -282,6 +320,7 @@ sub _FromServer($) {
     } ;
     $dat = substr($dat,0,$siz) ;
     #print "From Server, payload retrieved <$dat> \n" ;
+    $self->{PERSIST} = $sg & $persistence_bit ;
     return ($ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
 }
 
@@ -302,18 +341,6 @@ Error (and undef return value) if:
 =back
 
 =cut
-
-sub newtest($$) {
-    my $class = $_[0];
-#    my addr => $_[1];
-    my $objref = { addr => $_[1], };
-#    _new($self, $addr) ;
-#    if ( !defined($self->{SOCK}) ) {
-#        return ;
-#    } ;
-    bless $objref, $class ;
-    return $objref ;
-}
 
 sub new($$) {
     my $class = shift ;
@@ -361,19 +388,9 @@ Error (and undef return value) if:
 =cut
 
 sub read($$) {
-	my ( $addr,$path ) = @_ ;
-	my $self ;
-	if ( ref($addr) ) {
-		$self = $addr ;
-} else {
-		$self = {} ;
-		_new($self,$addr)  ;
-	}
-    _Sock($self) ;
-	if ( !defined($self->{SOCK}) ) {
-		return ;
-	} ;
-	_ToServer($self,length($path)+1,$msg_read,4096,0,$path) ;
+    my $self = _self(shift) || return ;
+    my $path = shift ;
+    _ToServer($self,length($path)+1,$msg_read,$default_block,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[6] ;
 }
@@ -413,18 +430,10 @@ Error (and undef return value) if:
 =cut
 
 sub write($$$) {
-	my ( $addr,$path, $val ) = @_ ;
-	my $self ;
-	if ( ref($addr) ) {
-		$self = $addr ;
-} else {
-		$self = {} ;
-		_new($self,$addr)  ;
-	}
-    _Sock($self) ;
-	if ( !defined($self->{SOCK}) ) {
-		return ;
-	} ;
+    my $self = _self(shift) || return ;
+    my $path = shift ;
+    my $val = shift ;
+
 	my $siz = length($val) ;
 	my $s1 = length($path)+1 ;
 	my $dat = pack( 'Z'.$s1.'A'.$siz,$path,$val ) ;
@@ -466,19 +475,9 @@ Error (and undef return value) if:
 =cut
 
 sub present($$) {
-	my ( $addr,$path ) = @_ ;
-	my $self ;
-	if ( ref($addr) ) {
-		$self = $addr ;
-} else {
-		$self = {} ;
-		_new($self,$addr)  ;
-	}
-    _Sock($self) ;
-	if ( !defined($self->{SOCK}) ) {
-		return ;
-	} ;
-	_ToServer($self,length($path)+1,$msg_presence,4096,0,$path) ;
+    my $self = _self(shift) || return ;
+    my $path = shift ;
+	_ToServer($self,length($path)+1,$msg_presence,$default_block,0,$path) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
 }
@@ -516,44 +515,32 @@ Error (and undef return value) if:
 =cut
 
 sub dir($$) {
-	my ( $addr,$path ) = @_ ;
-	my $self ;
-	if ( ref($addr) ) {
-		$self = $addr ;
-	} else {
-		$self = {} ;
-		_new($self,$addr)  ;
-	}
+    my $self = _self(shift) || return ;
+    my $path = shift ;
+
     # new msg_dirall method -- single packet
-    _Sock($self) ;
-    if ( !defined($self->{SOCK}) ) {
-        return ;
-    } ;
-    _ToServer($self,length($path)+1,$msg_dirall,4096,0,$path) || do {
-        warn "Couldn't SEND directory all request to $addr.\n" if $self->{VERBOSE} ;
-        return ;
-    } ;
+    _ToServer($self,length($path)+1,$msg_dirall,$default_block,0,$path) || return ;
     my @r = _FromServer($self) ;
     if (@r) {
+        $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
         return $r[6] ;
     } ;
+
     # old msg_dir method -- many packets
-    _Sock($self) ;
-    if ( !defined($self->{SOCK}) ) {
-        return ;
-    } ;
-    _ToServer($self,length($path)+1,$msg_dir,4096,0,$path) || do {
-        warn "Couldn't SEND directory request to $addr.\n" if $self->{VERBOSE} ;
-        return ;
-    } ;
-	my $ret = '' ;
+    _Sock($self) || return ;
+    _ToServer($self,length($path)+1,$msg_dir,$default_block,0,$path) || return ;
+	my $dirlist = '' ;
 	while (1) {
 		@r = _FromServer($self) ;
 		if (!@r) { return ; } ;
-		return substr($ret,1) if $r[1] == 0 ;
-		$ret .= ','.$r[6] ;
+        if ( $r[1] == 0 ) { # last null packet
+            $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
+            return substr($dirlist,1) ; # not starting comma
+        }
+		$dirlist .= ','.$r[6] ;
 	}
 }
+
 
 return 1 ;
 
@@ -581,13 +568,59 @@ B<OWNet> is a light-weight module. It connects only to an B<owserver>, does not 
 
 I<OWNet> can be used in either a classical (non-object-oriented) manner, or with objects. The object stored the ip address of the B<owserver> and a network socket to communicate.
 
+=head1 INTERNALS
+
+=head2 Object properties (All private)
+
+=item ADDR
+
+literal sting for the IP address, in ip:port format. This property is also used to indicate a substantiated object.
+
+=item SG
+
+Flag sent to server, and returned, that encodes temperature scale and display format. Persistence is also encoded in this word in the actual tcp message, but kept separately in the object.
+
+=item VERBOSE
+
+Print errors? Corresponds to "-v" in object invocation.
+
+=item SOCK
+
+Socket address (object) for communication. Stays defined for persistent connections, else deleted between calls.
+
+=head2 Private methods
+
+=item _self
+
+Takes either the implicit object reference (if called on an object) or the ip address in non-object format. In either case a socket is created, the persistence bit is property set, and the address parsed. Returns the object reference, or undef on error. Called by each external method (read,write,dir) on the first parameter.
+
+=item _new
+
+Takes command line invocation parameters (for an object or not) and properly parses and sets up the properties in a hash array.
+
+=item _Sock
+
+Socket processing, including tests for persistence, and opening.
+
+=item _ToServer
+
+Sends formats and sends a message to owserver. If a persistent socket fails, retries after new socket created.
+
+=item _FromServerLow
+
+Reads a specified length from server
+
+=item _FromServer
+
+Reads whole packet from server, usung _FromServerLow (first for header, then payload/tokens). Discards ping packets silently.
+
 =head1 AUTHOR
 
 Paul H Alfille paul.alfille @ gmail . com
 
 =head1 BUGS
 
-Support for proper timeout using the "select" function seems broken in perl. This lease the routines vulnerable to network timing errors.
+Support for proper timeout using the "select" function seems broken in perl. This leaves the routines vulnerable to network timing errors.
 
 =head1 SEE ALSO
 
