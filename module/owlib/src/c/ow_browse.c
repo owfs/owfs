@@ -119,9 +119,9 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 			if (Zero_detect(in)) {
 				BadAdapter_detect(in);
 			} else {
-				in->connin.server.type = strdup(bs->type);
-				in->connin.server.domain = strdup(bs->domain);
-				in->connin.server.fqdn = strdup(n);
+				in->connin.tcp.type = strdup(bs->type);
+				in->connin.tcp.domain = strdup(bs->domain);
+				in->connin.tcp.fqdn = strdup(n);
 			}
 			BUSUNLOCKIN(in);
 		}
@@ -181,8 +181,8 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 	CONNINLOCK;
 	for (now = indevice; now; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
-			|| strcasecmp(now->connin.server.type, bs->type)
-			|| strcasecmp(now->connin.server.domain, bs->domain)
+			|| strcasecmp(now->connin.tcp.type, bs->type)
+			|| strcasecmp(now->connin.tcp.domain, bs->domain)
 			)
 			continue;
 		BUSLOCKIN(now);

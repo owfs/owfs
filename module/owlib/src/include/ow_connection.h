@@ -54,6 +54,16 @@ $Id$
 #ifndef OW_CONNECTION_H		/* tedious wrapper */
 #define OW_CONNECTION_H
 
+/*
+Jan 21, 2007 from the IANA:
+owserver        4304/tcp   One-Wire Filesystem Server
+owserver        4304/udp   One-Wire Filesystem Server
+#                          Paul Alfille <paul.alfille@gmail.com> January 2007
+
+See: http://www.iana.org/assignments/port-numbers
+*/
+#define DEFAULT_PORT  "4304"
+
 #include "ow.h"
 #include "ow_counters.h"
 #include <sys/ioctl.h>
@@ -235,7 +245,7 @@ struct connin_i2c {
     int fd;
     struct connection_in *head;
 };
-struct connin_server {
+struct connin_tcp {
     char *host;
     char *service;
     struct addrinfo *ai;
@@ -245,7 +255,7 @@ struct connin_server {
     char *fqdn;
 };
 struct connin_ha7 {
-    struct connin_server server;	// mirror connin.server
+    struct connin_tcp tcp;	// mirror connin.server
     ASCII lock[10];
     int locked;
     int found;
@@ -253,7 +263,7 @@ struct connin_ha7 {
     struct dirblob alarm;	/* alarm directory */
 };
 struct connin_link {
-    struct connin_server server;	// mirror connin.server
+    struct connin_tcp tcp;	// mirror connin.server
     speed_t speed;
     int USpeed;
     int ULevel;
@@ -357,7 +367,7 @@ struct connection_in {
     union {
 	struct connin_serial serial;
 	struct connin_link link;
-	struct connin_server server;
+	struct connin_tcp tcp;
 	struct connin_usb usb;
 	struct connin_i2c i2c;
 	struct connin_fake fake;

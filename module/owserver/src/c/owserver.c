@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 						  argv[0]);
 			ow_exit(1);
 		}
-		OW_ArgServer("0");		// make an ephemeral assignment
+		OW_ArgServer(NULL);		// make the default assignment
 	}
 
 	set_signal_handlers(exit_handler);

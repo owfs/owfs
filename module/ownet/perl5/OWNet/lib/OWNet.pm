@@ -253,18 +253,19 @@ sub _self($) {
 }
 
 sub _ToServer ($$$$$;$) {
-    my ($self, $pay, $typ, $siz, $off, $dat) = @_ ;
+    my ($self, $payload_length, $msg_type, $size, $offset, $payload_data) = @_ ;
     my $f = "N6" ;
-    $f .= 'Z'.$pay if ( $pay > 0 ) ; 
+    $f .= 'Z'.$payload_length if ( $payload_length > 0 ) ; 
+    my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
     # try to send
-    send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG}|$self->{PERSIST},$siz,$off,$dat), MSG_DONTWAIT ) && return 1 ;
+    send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
 
     # maybe bad persistent connection
     if ( $self->{PERSIST} != 0 ) {
         $self->{SOCK} = undef ;
         _Sock($self) || return ;
-        send( $self->{SOCK}, pack($f,$self->{VER},$pay,$typ,$self->{SG}|$self->{PERSIST},$siz,$off,$dat), MSG_DONTWAIT ) && return 1 ;
+        send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
     }
 
 	warn("Send problem $! \n") if $self->{VERBOSE} ;
@@ -273,12 +274,12 @@ sub _ToServer ($$$$$;$) {
 
 sub _FromServerLow($$) {
     my $self = shift ;
-    my $length = shift ;
-    return '' if $length == 0 ;
+    my $length_wanted = shift ;
+    return '' if $length_wanted == 0 ;
     my $fileno = $self->{SOCK}->fileno ;
     my $selectreadbits = '' ;
     vec($selectreadbits,$fileno,1) = 1 ;
-    my $remaininglength = $length ;
+    my $remaininglength = $length_wanted ;
     my $fullread = '' ;
     #print "LOOOP for length $length \n" ;
     do {
@@ -287,13 +288,13 @@ sub _FromServerLow($$) {
     #	return if $sel->can_read(1) == 0 ;
         my $partialread ;
         defined( recv( $self->{SOCK}, $partialread, $remaininglength, MSG_DONTWAIT ) ) || do {
-            warn("Trouble getting data back $! after $remaininglength of $length") if $self->{VERBOSE} ;
+            warn("Trouble getting data back $! after $remaininglength of $length_wanted") if $self->{VERBOSE} ;
             return ;
         } ;
         #print "reading=".$a."\n";
         #print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
         $fullread .= $partialread ;
-        $remaininglength = $length - length($fullread) ;
+        $remaininglength = $length_wanted - length($fullread) ;
         #print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
     } while $remaininglength > 0 ;
     return $fullread ;
@@ -301,27 +302,27 @@ sub _FromServerLow($$) {
 
 sub _FromServer($) {
     my $self = shift ;
-    my ( $ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
+    my ( $version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
     do {
 	my $r = _FromServerLow( $self,24 ) || do {
 	    warn("Trouble getting header $!") if $self->{VERBOSE} ;
 	    return ;
 	} ;
-	($ver, $pay, $ret, $sg, $siz, $off) = unpack('N6', $r ) ;
+	($version, $payload_length, $return_status, $sg, $size, $offset) = unpack('N6', $r ) ;
 	# returns unsigned (though originals signed
 	# assume anything above 66000 is an error
-	return if $ret > 66000 ;
+	return if $return_status > 66000 ;
 	#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
-    } while $pay > 66000 ;
-    $dat = _FromServerLow( $self,$pay ) ;
-    if ( !defined($dat) ) { 
+    } while $payload_length > 66000 ;
+    $payload_data = _FromServerLow( $self,$payload_length ) ;
+    if ( !defined($payload_data) ) { 
 	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
 	return ;
     } ;
-    $dat = substr($dat,0,$siz) ;
+    $payload_data = substr($payload_data,0,$size) ;
     #print "From Server, payload retrieved <$dat> \n" ;
     $self->{PERSIST} = $sg & $persistence_bit ;
-    return ($ver, $pay, $ret, $sg, $siz, $off, $dat ) ;
+    return ($version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
 }
 
 =item I<new>
@@ -434,10 +435,10 @@ sub write($$$) {
     my $path = shift ;
     my $val = shift ;
 
-	my $siz = length($val) ;
-	my $s1 = length($path)+1 ;
-	my $dat = pack( 'Z'.$s1.'A'.$siz,$path,$val ) ;
-	_ToServer($self,length($dat),$msg_write,$siz,0,$dat) ;
+	my $value_length = length($val) ;
+	my $path_length = length($path)+1 ;
+	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
+	_ToServer($self,length($payload),$msg_write,$value_length,0,$payload) ;
 	my @r = _FromServer($self) ;
 	return $r[2]>=0 ;
 }
