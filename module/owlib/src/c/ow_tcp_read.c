@@ -21,25 +21,31 @@ $Id$
 /* Wait for something to be readable or timeout */
 int tcp_wait(int fd, const struct timeval * ptv)
 {
-    int rc;
-    fd_set readset;
-    struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
-
-    /* Initialize readset */
-    FD_ZERO(&readset);
-    FD_SET(fd, &readset);
-
-    /* Read if it doesn't timeout first */
-    rc = select(fd + 1, &readset, NULL, NULL, &tv);
-    if (rc > 0) {
-        /* Is there something to read? */
-        if (FD_ISSET(fd, &readset) == 0) {
-            return -EIO;	/* error */
-        }
-        return 0 ;
-    } else {				/* timed out */
-        return -EAGAIN;
-    }
+	int rc;
+	fd_set readset;
+	struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
+	
+	/* Initialize readset */
+	FD_ZERO(&readset);
+	FD_SET(fd, &readset);
+	
+	while(1) {
+		// Read if it doesn't timeout first
+		rc = select(fd + 1, &readset, NULL, NULL, &tv);
+		if(rc < 0) {
+			if(errno == EINTR)
+				continue;	/* interrupted */
+			return -EIO;		/* error */
+		} else if(rc == 0) {
+			return -EAGAIN;		/* timeout */
+		} else {
+			// Is there something to read?
+			if (FD_ISSET(fd, &readset)) {
+				break;
+			}
+		}
+	}
+	return 0;
 }
 
 /* Read "n" bytes from a descriptor. */
