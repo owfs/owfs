@@ -57,11 +57,11 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 	char *path = ((dhs->pn->state & pn_bus)
 				  && (is_servermode(dhs->pn->in))) ? dhs->pn->
 		path_busless : dhs->pn->path;
+    size_t _pathlen = strlen(path);
 
 	LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
 
     /* make sure path ends in "/" before anything is tacked on */
-    size_t _pathlen = strlen(path);
     strcpy(retbuffer, path);
     if ((_pathlen == 0) || (retbuffer[_pathlen - 1] != '/')) {
         retbuffer[_pathlen] = '/';
