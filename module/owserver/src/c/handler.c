@@ -61,7 +61,7 @@ void Handler(int fd)
     int persistent = 0 ;
 
     hd.fd = fd ;
-    pthread_mutex_init( &hd.to_client, NULL ) ;
+    pthread_mutex_init( &hd.to_client, pmattr ) ;
 
     timersub(&tv_high, &tv_low, &tv_high) ; // just the delta
     

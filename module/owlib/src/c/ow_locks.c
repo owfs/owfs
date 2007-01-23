@@ -25,27 +25,32 @@ pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t store_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t fstat_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t dir_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t libusb_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t connin_mutex = PTHREAD_MUTEX_INITIALIZER;
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
 pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif							/* __UCLIBC__ */
+#if OW_USB
+pthread_mutex_t libusb_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif							/* OW_USB */
 #endif							/* OW_MT */
 
-/* Essentially sets up semaphore for device slots */
+/* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
 #if OW_MT
-#ifdef __UCLIBC__
 	pthread_mutex_init(&stat_mutex, pmattr);
 	pthread_mutex_init(&cache_mutex, pmattr);
 	pthread_mutex_init(&store_mutex, pmattr);
 	pthread_mutex_init(&fstat_mutex, pmattr);
 	pthread_mutex_init(&dir_mutex, pmattr);
+#ifdef __UCLIBC__
 	pthread_mutex_init(&uclibc_mutex, pmattr);
 #endif							/* UCLIBC */
+#if OW_USB
+	pthread_mutex_init(&libusb_mutex, pmattr);
+#endif							/* OW_USB */
 #endif							/* OW_MT */
 }
 

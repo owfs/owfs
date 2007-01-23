@@ -41,6 +41,9 @@ $Id$
 static void ow_exit(int e);
 static void SetupAntiloop(void);
 
+#if OW_MT
+extern pthread_mutex_t persistence_mutex;
+#endif
 
 static void ow_exit(int e)
 {
@@ -140,6 +143,8 @@ int main(int argc, char **argv)
 	if (LibStart())
 		ow_exit(1);
 #if OW_MT
+	pthread_mutex_init(&persistence_mutex, pmattr);
+
 	main_threadid = pthread_self();
 	LEVEL_DEBUG("main_threadid = %lu\n",
 				(unsigned long int) main_threadid);

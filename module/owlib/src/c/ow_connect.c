@@ -118,6 +118,8 @@ void FreeIn(void)
 #if OW_MT
 		pthread_mutex_destroy(&(now->bus_mutex));
 		pthread_mutex_destroy(&(now->dev_mutex));
+		if(now->dev_db) tdestroy(now->dev_db, free);
+		now->dev_db = NULL;
 #endif							/* OW_MT */
 		switch (get_busmode(now)) {
 		case bus_zero:
@@ -194,6 +196,7 @@ void FreeOut(void)
 		}
 #if OW_MT
 		pthread_mutex_destroy(&(now->accept_mutex));
+		pthread_mutex_destroy(&(now->out_mutex));
 #endif							/* OW_MT */
 #if OW_ZERO
 		if (libdnssd != NULL) {
