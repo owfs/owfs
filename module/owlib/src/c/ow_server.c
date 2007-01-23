@@ -74,8 +74,8 @@ int Zero_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-    in->fd = -1 ; // No persistent connection yet
-    in->Adapter = adapter_tcp;
+	in->fd = -1 ; // No persistent connection yet
+	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_zero;
 	in->reconnect_state = reconnect_ok;	// Special since slot reused
@@ -89,8 +89,8 @@ int Server_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-    in->fd = -1 ; // No persistent connection yet
-    in->Adapter = adapter_tcp;
+	in->fd = -1 ; // No persistent connection yet
+	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
 	Server_setroutines(&(in->iroutines));
@@ -99,10 +99,10 @@ int Server_detect(struct connection_in *in)
 
 static void Server_close(struct connection_in *in)
 {
-    if ( in->fd > -1 ) { // persistent connection
-        close(in->fd) ;
-        in->fd = -1 ;
-    }
+	if ( in->fd > -1 ) { // persistent connection
+		close(in->fd) ;
+		in->fd = -1 ;
+	}
 	FreeClientAddr(in);
 }
 
@@ -120,8 +120,8 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 		return -EIO;
 	//printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
 	memset(&sm, 0, sizeof(struct server_msg));
-    memset(&cm, 0, sizeof(struct client_msg));
-    sm.type = msg_read;
+	memset(&cm, 0, sizeof(struct client_msg));
+	sm.type = msg_read;
 	sm.size = size;
 	sm.sg = SetupSemi(pn);
 	sm.offset = offset;
@@ -130,15 +130,15 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index,
 			   SAFESTRING(pn->path_busless));
 
-    if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
+	if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
 		ret = -EIO;
 	} else if (FromServer(connectfd, &cm, buf, size) < 0) {
 		ret = -EIO;
 	} else {
 		ret = cm.ret;
 	}
-    PersistentCheck(connectfd,&cm,pn->in) ;
-    return ret;
+	PersistentCheck(connectfd,&cm,pn->in) ;
+	return ret;
 }
 
 int ServerPresence(const struct parsedname *pn)
@@ -153,9 +153,9 @@ int ServerPresence(const struct parsedname *pn)
 	if (connectfd < 0)
 		return -EIO;
 	//printf("ServerPresence pn->path=%s\n",pn->path);
-    memset(&sm, 0, sizeof(struct server_msg));
-    memset(&cm, 0, sizeof(struct client_msg));
-    sm.type = msg_presence;
+	memset(&sm, 0, sizeof(struct server_msg));
+	memset(&cm, 0, sizeof(struct client_msg));
+	sm.type = msg_presence;
 
 	sm.sg = SetupSemi(pn);
 
@@ -163,16 +163,16 @@ int ServerPresence(const struct parsedname *pn)
 	LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index,
 			   SAFESTRING(pn->path_busless));
 
-    if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
-        ret = -EIO;
+	if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
+		ret = -EIO;
 	} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 		ret = -EIO;
 	} else {
-        PersistentCheck(connectfd,&cm,pn->in) ;
-        ret = cm.ret;
+		PersistentCheck(connectfd,&cm,pn->in) ;
+		ret = cm.ret;
 	}
-    PersistentCheck(connectfd,&cm,pn->in) ;
-    return ret;
+	PersistentCheck(connectfd,&cm,pn->in) ;
+	return ret;
 }
 
 int ServerWrite(const char *buf, const size_t size, const off_t offset,
@@ -189,8 +189,8 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
 		return -EIO;
 	//printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
 	memset(&sm, 0, sizeof(struct server_msg));
-    memset(&cm, 0, sizeof(struct client_msg));
-    sm.type = msg_write;
+	memset(&cm, 0, sizeof(struct client_msg));
+	sm.type = msg_write;
 	sm.size = size;
 	sm.sg = SetupSemi(pn);
 	sm.offset = offset;
@@ -199,118 +199,118 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
 	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index,
 			   SAFESTRING(pn->path_busless));
 
-    if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
-        ret = -EIO;
+	if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
+		ret = -EIO;
 	} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 		ret = -EIO;
 	} else {
 		ret = cm.ret;
-        PersistentCheck(connectfd,&cm,pn->in) ;
-        if (SemiGlobal != cm.sg) {
+		PersistentCheck(connectfd,&cm,pn->in) ;
+		if (SemiGlobal != cm.sg) {
 			//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
 			CACHELOCK;
 			SemiGlobal = cm.sg & (~BUSRET_MASK);
 			CACHEUNLOCK;
 		}
 	}
-    PersistentCheck(connectfd,&cm,pn->in) ;
-    return ret;
+	PersistentCheck(connectfd,&cm,pn->in) ;
+	return ret;
 }
 
 int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
               void * v, const struct parsedname *pn, uint32_t * flags)
 {
-    struct server_msg sm;
-    struct client_msg cm;
-    struct serverpackage sp =
-        { pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
-    int connectfd = ConnectToServer(pn->in);
-
-    if (connectfd < 0)
-        return -EIO;
-
-    memset(&sm, 0, sizeof(struct server_msg));
-    memset(&cm, 0, sizeof(struct client_msg));
-    sm.type = msg_dir;
-
-    sm.sg = SetupSemi(pn);
-
-
-    LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index,
-               SAFESTRING(pn->path_busless));
-
-    if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
-        cm.ret = -EIO;
-    } else {
-        char *path2;
-        size_t devices = 0;
-        struct parsedname pn2;
-        struct dirblob db;
-
-        /* If cacheable, try to allocate a blob for storage */
-        /* only for "read devices" and not alarm */
-        DirblobInit(&db);
-        if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
-            && pn->dev == NULL) {
-            if (pn2.pathlength == 0) {  /* root dir */
-                BUSLOCK(pn);
-                db.allocated = pn->in->last_root_devs;  // root dir estimated length
-                BUSUNLOCK(pn);
-            }
-        } else {
-            db.troubled = 1;    // no dirblob cache
-        }
-
-        while ((path2 = FromServerAlloc(connectfd, &cm))) {
-            path2[cm.payload - 1] = '\0';   /* Ensure trailing null */
-            LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
-
-            if (FS_ParsedName_Remote(path2, &pn2)) {
-                cm.ret = -EINVAL;
-                free(path2);
-                break;
-            }
-            pn2.in = pn->in;    //use parent connection_in
-
-            /* we got a device on bus_nr = pn->in->index. Cache it so we
-               find it quicker next time we want to do read values from the
-               the actual device
-             */
-            if (pn2.dev && IsRealDir(&pn2)) {
-                /* If we get a device then cache the bus_nr */
-                Cache_Add_Device(pn->in->index, &pn2);
-            }
-            /* Add to cache Blob -- snlist is also a flag for cachable */
-            if (DirblobPure(&db)) { /* only add if there is a blob allocated successfully */
-                DirblobAdd(pn2.sn, &db);
-            }
-            ++devices;
-
-            DIRLOCK;
-            dirfunc(v,&pn2);
-            DIRUNLOCK;
-
-            FS_ParsedName_destroy(&pn2);    // destroy the last parsed name
-            free(path2);
-        }
-        /* Add to the cache (full list as a single element */
-        if (DirblobPure(&db)) {
-            Cache_Add_Dir(&db, pn); // end with a null entry
-            if (pn2.pathlength == 0) {
-                BUSLOCK(pn);
-                pn->in->last_root_devs = db.devices;    // root dir estimated length
-                BUSUNLOCK(pn);
-            }
-        }
-        DirblobClear(&db);
-
-        DIRLOCK;
-        /* flags are sent back in "offset" of final blank entry */
-        flags[0] |= cm.offset;
-        DIRUNLOCK;
-    }
-    PersistentCheck(connectfd,&cm,pn->in) ;
-    return cm.ret;
+	struct server_msg sm;
+	struct client_msg cm;
+	struct serverpackage sp =
+		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
+	int connectfd = ConnectToServer(pn->in);
+	
+	if (connectfd < 0)
+		return -EIO;
+	
+	memset(&sm, 0, sizeof(struct server_msg));
+	memset(&cm, 0, sizeof(struct client_msg));
+	sm.type = msg_dir;
+	
+	sm.sg = SetupSemi(pn);
+	
+	
+	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index,
+		   SAFESTRING(pn->path_busless));
+	
+	if ( (connectfd=ToServerTwice(connectfd, &sm, &sp, pn->in)) < 0 ) {
+		cm.ret = -EIO;
+	} else {
+		char *path2;
+		size_t devices = 0;
+		struct parsedname pn2;
+		struct dirblob db;
+		
+		/* If cacheable, try to allocate a blob for storage */
+		/* only for "read devices" and not alarm */
+		DirblobInit(&db);
+		if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
+		    && pn->dev == NULL) {
+			if (pn2.pathlength == 0) {  /* root dir */
+				BUSLOCK(pn);
+				db.allocated = pn->in->last_root_devs;  // root dir estimated length
+				BUSUNLOCK(pn);
+			}
+		} else {
+			db.troubled = 1;    // no dirblob cache
+		}
+		
+		while ((path2 = FromServerAlloc(connectfd, &cm))) {
+			path2[cm.payload - 1] = '\0';   /* Ensure trailing null */
+			LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
+			
+			if (FS_ParsedName_Remote(path2, &pn2)) {
+				cm.ret = -EINVAL;
+				free(path2);
+				break;
+			}
+			pn2.in = pn->in;    //use parent connection_in
+			
+			/* we got a device on bus_nr = pn->in->index. Cache it so we
+			   find it quicker next time we want to do read values from the
+			   the actual device
+			*/
+			if (pn2.dev && IsRealDir(&pn2)) {
+			  /* If we get a device then cache the bus_nr */
+				Cache_Add_Device(pn->in->index, &pn2);
+			}
+			/* Add to cache Blob -- snlist is also a flag for cachable */
+			if (DirblobPure(&db)) { /* only add if there is a blob allocated successfully */
+				DirblobAdd(pn2.sn, &db);
+			}
+			++devices;
+			
+			DIRLOCK;
+			dirfunc(v,&pn2);
+			DIRUNLOCK;
+			
+			FS_ParsedName_destroy(&pn2);    // destroy the last parsed name
+			free(path2);
+		}
+		/* Add to the cache (full list as a single element */
+		if (DirblobPure(&db)) {
+			Cache_Add_Dir(&db, pn); // end with a null entry
+			if (pn2.pathlength == 0) {
+				BUSLOCK(pn);
+				pn->in->last_root_devs = db.devices;    // root dir estimated length
+				BUSUNLOCK(pn);
+			}
+		}
+		DirblobClear(&db);
+		
+		DIRLOCK;
+		/* flags are sent back in "offset" of final blank entry */
+		flags[0] |= cm.offset;
+		DIRUNLOCK;
+	}
+	PersistentCheck(connectfd,&cm,pn->in) ;
+	return cm.ret;
 }
 
 /* read from server, free return pointer if not Null */
@@ -464,8 +464,7 @@ static int ToServer(int fd, struct server_msg *sm,
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(fd, io,
-				  5) !=
+	return writev(fd, io, 5) !=
 		(ssize_t) (payload + sizeof(struct server_msg) +
 				   sp->tokens * sizeof(union antiloop));
 }
@@ -474,7 +473,7 @@ static int ToServer(int fd, struct server_msg *sm,
 static uint32_t SetupSemi(const struct parsedname *pn)
 {
 	uint32_t sg = pn->sg & (~BUSRET_MASK);
-    sg |= PERSISTENT_MASK ;
+	sg |= PERSISTENT_MASK ;
 	if (SpecifiedBus(pn))
 		sg |= (1 << BUSRET_BIT);
 	return sg;
@@ -483,80 +482,79 @@ static uint32_t SetupSemi(const struct parsedname *pn)
 /* Wrapper for ClientConnect */
 static int ConnectToServer(struct connection_in *in)
 {
-    int fd;
+	int fd;
 
-    BUSLOCKIN(in);
-    if ( in->fd > -1 ) { // good persistent connection
-        fd = in->fd ;
-    } else { // no persistent connection
-        if ((in->busmode == bus_zero)
-             && (in->reconnect_state >= reconnect_error)
-             && (in->connin.server.ai != NULL)) { // reconnect?
-            in->reconnect_state = reconnect_ok;
-            LEVEL_DEBUG("Attempting zeroconf reconnect on %s\n", in->name);
+	BUSLOCKIN(in);
+	if ( in->fd > -1 ) { // good persistent connection
+		fd = in->fd ;
+	} else { // no persistent connection
+		if ((in->busmode == bus_zero)
+		    && (in->reconnect_state >= reconnect_error)
+		    && (in->connin.server.ai != NULL)) { // reconnect?
+			in->reconnect_state = reconnect_ok;
+			LEVEL_DEBUG("Attempting zeroconf reconnect on %s\n", in->name);
 #if OW_ZERO
-            if (libdnssd != NULL)
-                DNSServiceReconfirmRecord(0, 0, in->connin.server.fqdn,
-                                          kDNSServiceType_SRV,
-                                          kDNSServiceClass_IN, 0, NULL);
+			if (libdnssd != NULL)
+				DNSServiceReconfirmRecord(0, 0, in->connin.server.fqdn,
+							  kDNSServiceType_SRV,
+							  kDNSServiceClass_IN, 0, NULL);
 #endif
-             }
-             fd = ClientConnect(in);
-             if (fd < 0) {
-                 STAT_ADD1(in->reconnect_state);
-             }
-    }
-    BUSUNLOCKIN(in);
-    return fd;
+		}
+		if ((fd = ClientConnect(in)) < 0) {
+			STAT_ADD1(in->reconnect_state);
+		}
+	}
+	BUSUNLOCKIN(in);
+	return fd;
 }
 
 /* Wrapper for ClientConnect -- when persistent connection returned an error */
 static int FreshConnectToServer(struct connection_in *in)
 {
-    int fd;
+	int fd;
 
-    BUSLOCKIN(in);
-    if ( in->fd > -1 ) { // good persistent connection
-        close (in->fd) ;
-        in->fd = -1 ;
-        fd = ClientConnect(in);
-        if (fd < 0) {
-            STAT_ADD1(in->reconnect_state);
-        }
-    } else { // wasn't persistent in the first place -- no need to retry
-        fd = -1 ;
-    }
-    BUSUNLOCKIN(in);
-    return fd;
+	BUSLOCKIN(in);
+	if ( in->fd > -1 ) { // good persistent connection
+		close (in->fd) ;
+		in->fd = -1 ;
+		fd = ClientConnect(in);
+		if (fd < 0) {
+			STAT_ADD1(in->reconnect_state);
+		}
+	} else { // wasn't persistent in the first place -- no need to retry
+		fd = -1 ;
+	}
+	BUSUNLOCKIN(in);
+	return fd;
 }
     
 /* Send a message to server, or try a new connection and send again */
 /* return file descriptor */
 static int ToServerTwice( int fd, struct server_msg * sm, struct serverpackage *sp, struct connection_in * in )
 {
-    int newfd ;
-    if ( ToServer(fd, sm, sp) == 0 ) return fd ;
-    newfd = FreshConnectToServer(in) ;
-    if ( newfd < 0 ) return -1 ;
-    if ( ToServer(newfd, sm, sp) == 0 ) return newfd ;
-    return -1 ;
+	int newfd ;
+	if ( ToServer(fd, sm, sp) == 0 ) return fd ;
+	newfd = FreshConnectToServer(in) ;
+	if ( newfd < 0 ) return -1 ;
+	if ( ToServer(newfd, sm, sp) == 0 ) return newfd ;
+	return -1 ;
 }
 
 /* See if it really is a peristent connection */
 static void PersistentCheck( int fd, struct client_msg * cm, struct connection_in * in )
 {
-    BUSLOCKIN(in) ;
-    if ( cm->sg & PERSISTENT_MASK ) { // respond persistence */
-        if ( in->fd != fd ) {
-            close(in->fd) ;
-        }
-        in->fd = fd ;
-    } else {
-        if ( in->fd > -1 ) { // kill persistence
-            close(in->fd) ;
-            in->fd = -1 ;
-        }
-        close(fd) ;
-    }
-    BUSUNLOCKIN(in) ;
+	BUSLOCKIN(in) ;
+	if ( cm->sg & PERSISTENT_MASK ) { // respond persistence */
+		if ( in->fd != fd ) {
+			close(in->fd) ;
+		}
+		in->fd = fd ;
+	} else {
+		if ( in->fd > -1 ) { // kill persistence
+			close(in->fd) ;
+			in->fd = -1 ;
+		}
+		close(fd) ;
+	}
+	BUSUNLOCKIN(in) ;
 }
