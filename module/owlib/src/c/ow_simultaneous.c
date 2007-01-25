@@ -98,7 +98,8 @@ static int FS_w_convert(const int *y, const struct parsedname *pn)
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected
 	 * as a bad adapter. */
-	Cache_Del_Internal(&ipSimul[type], &pn2);
+	Cache_Del_Internal(&ipSimul[type], &pn2); // remove existing entry
+    CookTheCache() ; // make sure all volatile entries are invalidated
 	if (y[0] == 0)
 		return 0;				// don't send convert
 	if (pn->in->Adapter != adapter_Bad) {

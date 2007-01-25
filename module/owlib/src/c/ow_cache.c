@@ -31,15 +31,27 @@ static struct {
 	time_t retired;				// start time of older
 	time_t killed;				// deathtime of older
 	time_t lifespan;			// lifetime of older
+    time_t cooked_now;          // special "now" for ignoring volatile and simultaneous
 	UINT added;					// items added
 } cache;
 
+/* Key used for sorting/retrieving cache data
+   sn is for device serial number
+   p is a pointer to filetype, or other things (guaranteed unique and fast lookup
+   extension is used for indexed array properties
+*/
 struct tree_key {
 	BYTE sn[8];
 	void *p;
 	int extension;
 };
 
+/* How we organize the data in the binary tree used for cache storage
+   A key (see above)
+   An expiration time
+   And a size in bytes
+   Actaully size bytes follows for the data
+*/
 struct tree_node {
 	struct tree_key tk;
 	time_t expires;
@@ -75,6 +87,7 @@ static int Del_Stat(struct cache *scache, const int result);
 static int tree_compare(const void *a, const void *b);
 static time_t TimeOut(const enum fc_change change);
 
+/* used for the sort/search b-tree routines */
 static int tree_compare(const void *a, const void *b)
 {
 	return memcmp(&((const struct tree_node *) a)->tk,
@@ -82,6 +95,7 @@ static int tree_compare(const void *a, const void *b)
 				  sizeof(struct tree_key));
 }
 
+/* Gives the delay for a given property type */
 static time_t TimeOut(const enum fc_change change)
 {
 	switch (change) {
@@ -161,6 +175,7 @@ void Cache_Open(void)
 		cache.lifespan = 3600;	/* 1 hour tops */
 	cache.retired = time(NULL);
 	cache.killed = cache.retired + cache.lifespan;
+    cache.cooked_now = time(NULL) ; // current time, or in the future for simultaneous */
 }
 
 /* Note: done in single-threaded mode so locking not yet needed */
@@ -468,7 +483,7 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 	struct tree_node tn;
 	//printf("Cache_Get\n") ;
 	// do check here to avoid needless processing
-	if(!pn || IsUncachedDir(pn) || IsAlarmDir(pn)) return 1;
+	if(IsUncachedDir(pn) || IsAlarmDir(pn)) return 1;
 
 	duration = TimeOut(pn->ft->change);
 	if(duration <= 0) return 1;
@@ -606,12 +621,35 @@ int Cache_Get_Internal(void *data, size_t * dsize,
 	}
 }
 
+/* Do the processing for finding the correct "current" time
+   if device presence (tn.tk.p==NULL) use now
+   if cache.cooked_now < now, use now
+   else used cache.cooked_now
+*/
+static time_t Cooked_Now( const struct tree_node *tn )
+{
+    time_t now = time(NULL) ; // true current time
+    if ( tn->tk.p == NULL ) return now ; // device presence
+    if ( cache.cooked_now < now ) return now ; // not post-dated
+    return cache.cooked_now ;
+}
+
+/* "Post-date" the current time to invalidate all volatile properties
+   used when Simultaneous is done to prevent conflicts
+*/
+void CookTheCache( void ) 
+{
+    CACHELOCK ;
+    cache.cooked_now = time(NULL) + TimeOut(fc_volatile) ;
+    CACHEUNLOCK ;
+}
+
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
 							const struct tree_node *tn)
 {
 	int ret;
-	time_t now = time(NULL);
+	time_t now = Cooked_Now(tn) ;
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common\n") ;
 	LEVEL_DEBUG("Get from cache sn " SNformat

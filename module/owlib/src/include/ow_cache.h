@@ -100,6 +100,7 @@ int Cache_Del_Dir(const struct parsedname *pn);
 int Cache_Del_Device(const struct parsedname *pn);
 int Cache_Del_Internal(const struct internal_prop *ip,
 		       const struct parsedname *pn);
+void CookTheCache( void ) ;
 
 #else				/* OW_CACHE */
 
@@ -124,6 +125,7 @@ int Cache_Del_Internal(const struct internal_prop *ip,
 #define Cache_Del_Dir(pn )                  (1)
 #define Cache_Del_Device(pn )               (1)
 #define Cache_Del_Internal(ip,pn )          (1)
+#define CookTheCache()
 
 #endif				/* OW_CACHE */
 
