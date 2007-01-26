@@ -609,7 +609,6 @@ struct parsedname {
 };
 
 enum simul_type { simul_temp, simul_volt, };
-#define SpecifiedBus(pn)  ((((pn)->state) & pn_buspath) != 0 )
 
 /* ---- end Parsedname ----------------- */
 /* ------------------------------------- */
@@ -719,7 +718,7 @@ int filecmp(const void *name, const void *ex);
 int FS_ParsedNamePlus(const char *path, const char *file,
 		      struct parsedname *pn);
 int FS_ParsedName(const char *fn, struct parsedname *pn);
-int FS_ParsedName_Remote(const char *fn, struct parsedname *pn);
+int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
@@ -883,7 +882,6 @@ void BUS_unlock_in(struct connection_in *in);
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg &  CACHE_MASK) )
-#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
 #define IsPersistent(ppn)         ( ((ppn)->sg & PERSISTENT_MASK) )
 #define SetPersistent(ppn,b)      UT_Setbit(((ppn)->sg),PERSISTENT_BIT,(b))
 #define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
@@ -901,4 +899,15 @@ void BUS_unlock_in(struct connection_in *in);
 #define     IsAlarmDir(pn)    ( ! NotAlarmDir(pn) )
 #define     NotRealDir(pn)    ( ((pn)->type) != pn_real )
 #define      IsRealDir(pn)    ( ((pn)->type) == pn_real )
+
+#define KnownBus(pn)          ((((pn)->state) & pn_bus) != 0 )
+#define SetKnownBus(bus_number,pn)  do { (pn)->state |= pn_bus; \
+                                        (pn)->bus_nr=(bus_number); \
+                                        (pn)->in=find_connection_in(bus_number); \
+                                    } while(0)
+
+#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
+#define SpecifiedBus(pn)          ((((pn)->state) & pn_buspath) != 0 )
+#define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= pn_buspath ; SetKnownBus(bus_number,pn); } while(0)
+
 #endif				/* OW_H */

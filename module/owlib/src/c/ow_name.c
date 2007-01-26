@@ -69,7 +69,7 @@ int FS_dirname_state(char *buffer, const size_t length,
 #endif
 	} else if (IsUncachedDir(pn)) {
 		p = dirname_state_uncached;
-	} else if (pn->state & pn_bus) {
+	} else if (KnownBus(pn)) {
 		int ret;
 		UCLIBCLOCK;
 		ret = snprintf(buffer, length, "bus.%d", pn->bus_nr);

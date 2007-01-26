@@ -20,21 +20,21 @@ enum parse_enum { parse_first, parse_done, parse_error, parse_real,
 	parse_nonreal, parse_prop, parse_subprop
 };
 
-static enum parse_enum Parse_Unspecified(char *pathnow, int remote,
+static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote,
 										 struct parsedname *pn);
-static enum parse_enum Parse_Real(char *pathnow, int remote,
+static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 								  struct parsedname *pn);
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
-static enum parse_enum Parse_RealDevice(char *filename, int remote,
+static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote,
 										struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename,
 										   struct parsedname *pn);
 static enum parse_enum Parse_Property(char *filename,
 									  struct parsedname *pn);
 static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
-								 char *pathnow, int remote,
+								 char *pathnow, int back_from_remote,
 								 struct parsedname *pn);
-static int FS_ParsedName_anywhere(const char *path, int remote,
+static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 								  struct parsedname *pn);
 
 #define BRANCH_INCR (9)
@@ -47,22 +47,22 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	if (!pn)
 		return;
 	LEVEL_DEBUG("ParsedName_destroy %s\n", SAFESTRING(pn->path));
-	//printf("PNDestroy bp (%d)\n",is_servermode(pn->in)) ;
+	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->in)) ;
 	if (pn->bp) {
 		free(pn->bp);
 		pn->bp = NULL;
 	}
-	//printf("PNDestroy path (%d)\n",is_servermode(pn->in)) ;
+	//printf("PNDestroy path (%d)\n",BusIsServer(pn->in)) ;
 	if (pn->path) {
 		free(pn->path);
 		pn->path = NULL;
 	}
-	//printf("PNDestroy lock (%d)\n",is_servermode(pn->in)) ;
+	//printf("PNDestroy lock (%d)\n",BusIsServer(pn->in)) ;
 	if (pn->lock) {
 		free(pn->lock);
 		pn->lock = NULL;
 	}
-	//printf("PNDestroy done (%d)\n",is_servermode(pn->in)) ;
+	//printf("PNDestroy done (%d)\n",BusIsServer(pn->in)) ;
 	// Tokenstring is part of a larger allocation and destroyed separately 
 }
 
@@ -73,13 +73,13 @@ int FS_ParsedName(const char *path, struct parsedname *pn)
 }
 
 /* Parse a path from a remote source back -- so don't check presence */
-int FS_ParsedName_Remote(const char *path, struct parsedname *pn)
+int FS_ParsedName_BackFromRemote(const char *path, struct parsedname *pn)
 {
 	return FS_ParsedName_anywhere(path, 1, pn);
 }
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
-static int FS_ParsedName_anywhere(const char *path, int remote,
+static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 								  struct parsedname *pn)
 {
 	char *pathcpy;
@@ -175,11 +175,11 @@ static int FS_ParsedName_anywhere(const char *path, int remote,
 		switch (pe) {
 		case parse_first:
 			//LEVEL_DEBUG("PARSENAME parse_first\n") ;
-			pe = Parse_Unspecified(pathnow, remote, pn);
+			pe = Parse_Unspecified(pathnow, back_from_remote, pn);
 			break;
 		case parse_real:
 			//LEVEL_DEBUG("PARSENAME parse_real\n") ;
-			pe = Parse_Real(pathnow, remote, pn);
+			pe = Parse_Real(pathnow, back_from_remote, pn);
 			break;
 		case parse_nonreal:
 			//LEVEL_DEBUG("PARSENAME parse_nonreal\n") ;
@@ -205,17 +205,21 @@ static int FS_ParsedName_anywhere(const char *path, int remote,
 	free(pathcpy);
 	if (ret)
 		FS_ParsedName_destroy(pn);
+printf("BIG RETURN from ParsedName:\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",
+SAFESTRING(pn->path),
+SAFESTRING(pn->path_busless),
+KnownBus(pn),SpecifiedBus(pn));
 	return ret;
 }
 
-static enum parse_enum Parse_Unspecified(char *pathnow, int remote,
+static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote,
 										 struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "alarm") == 0) {
 		pn->state |= pn_alarm;
 		return parse_real;
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(parse_first, pathnow, remote, pn);
+		return Parse_Bus(parse_first, pathnow, back_from_remote, pn);
 	} else if (strcasecmp(pathnow, "settings") == 0) {
 		pn->type = pn_settings;
 		return parse_nonreal;
@@ -231,7 +235,7 @@ static enum parse_enum Parse_Unspecified(char *pathnow, int remote,
 	} else if (strcasecmp(pathnow, "system") == 0) {
 		if (SpecifiedBus(pn)) {	/* already specified a "bus." */
 			/* structure only for root (remote tested remotely) */
-			if (!is_servermode(pn->in))
+			if (!BusIsServer(pn->in))
 				return parse_error;
 		}
 		pn->type = pn_system;
@@ -246,18 +250,18 @@ static enum parse_enum Parse_Unspecified(char *pathnow, int remote,
 		pn->state |= pn_uncached;
 		return parse_first;
 	} else {
-		return Parse_RealDevice(pathnow, remote, pn);
+		return Parse_RealDevice(pathnow, back_from_remote, pn);
 	}
 }
 
-static enum parse_enum Parse_Real(char *pathnow, int remote,
+static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 								  struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "alarm") == 0) {
 		pn->state |= pn_alarm;
 		return parse_real;
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(parse_nonreal, pathnow, remote, pn);
+		return Parse_Bus(parse_nonreal, pathnow, back_from_remote, pn);
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
 		pn->dev = DeviceSimultaneous;
 		return parse_prop;
@@ -271,7 +275,7 @@ static enum parse_enum Parse_Real(char *pathnow, int remote,
 		pn->state |= pn_uncached;
 		return parse_real;
 	} else {
-		return Parse_RealDevice(pathnow, remote, pn);
+		return Parse_RealDevice(pathnow, back_from_remote, pn);
 	}
 	return parse_error;
 }
@@ -293,63 +297,70 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 }
 
 static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
-								 char *pathnow, int remote,
+								 char *pathnow, int back_from_remote,
 								 struct parsedname *pn)
 {
+    char *found;
+    int bus_number ;
+
 	/* Processing for bus.X directories -- eventually will make this more generic */
-	if (!isdigit(pathnow[4]))
+	if (!isdigit(pathnow[4])) {
 		return parse_error;
+    }
 
 	/* Should make a presence check on remote busses here, but
 	 * it's not a major problem if people use bad paths since
 	 * they will just end up with empty directory listings. */
 	if (SpecifiedBus(pn)) {		/* already specified a "bus." */
 		/* too many levels of bus for a non-remote adapter */
-		if (!is_servermode(pn->in))
-			return parse_error;
-	} else {
-		char *found;
-		int length = 0;
-		/* this will only be reached once */
-		pn->state |= pn_bus;
-		pn->state |= pn_buspath;	/* specified a bus */
-		pn->bus_nr = atoi(&pathnow[4]);
+		return BusIsServer(pn->in) ? pe_default : parse_error ;
+    }
 
-		/* We have to allow any bus-number if it's a remote-server.
-		 * We receive paths like /bus.4 from a remote owserver, and we
-		 * have to trust this result. */
-		if (remote) {
-			/* Accept any bus value */
-			return pe_default;
-		}
-		CONNINLOCK;
-		if (pn->bus_nr < 0 || pn->bus_nr >= indevices) {
-			CONNINUNLOCK;
-			return parse_error;
-		}
-		CONNINUNLOCK;
-		/* Since we are going to use a specific in-device now, set
-		 * pn->in to point at that device at once. */
-		pn->in = find_connection_in(pn->bus_nr);
-		if (!is_servermode(pn->in)) {
-			/* don't return bus-list for local paths. */
-			pn->sg &= (~BUSRET_MASK);
-		}
+    /* on return from remote directory ow_server.c:ServerDir
+      the SetKnownBus will be be performed else where since the sending bus number is used */
+    if (back_from_remote) {
+        return pe_default ;
+    }
 
-		if (!(found = strstr(pn->path, "/bus."))) {
-			length = pn->path_busless - pn->path - 1;
-			strncpy(pn->path_busless, pn->path, length);
-		} else {
-			length = found - pn->path;
-			strncpy(pn->path_busless, pn->path, length);
-			if ((found = strchr(found + 1, '/'))) {
-				strcpy(&(pn->path_busless[length]), found);
-			} else {
-				pn->path_busless[length] = '\0';
-			}
-		}
-		//LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
-	}
+    /* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
+printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",
+bus_number,
+SAFESTRING(pn->path),
+SAFESTRING(pn->path_busless),
+KnownBus(pn),SpecifiedBus(pn));
+    bus_number = atoi(&pathnow[4]);
+    CONNINLOCK;
+    if (bus_number < 0 || indevices <= bus_number) {
+        CONNINUNLOCK;
+        return parse_error;
+    }
+    CONNINUNLOCK;
+    /* Since we are going to use a specific in-device now, set
+        * pn->in to point at that device at once. */
+    SetSpecifiedBus(bus_number,pn) ;
+    if (!BusIsServer(pn->in)) {
+        /* don't return bus-list for local paths. */
+        pn->sg &= (~BUSRET_MASK);
+    }
+
+    if (!(found = strstr(pn->path, "/bus."))) {
+        int length = pn->path_busless - pn->path - 1;
+        strncpy(pn->path_busless, pn->path, length);
+    } else {
+        int length = found - pn->path;
+        strncpy(pn->path_busless, pn->path, length);
+        if ((found = strchr(found + 1, '/'))) {
+            strcpy(&(pn->path_busless[length]), found);
+        } else {
+            pn->path_busless[length] = '\0';
+        }
+    }
+printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",
+bus_number,
+SAFESTRING(pn->path),
+SAFESTRING(pn->path_busless),
+KnownBus(pn),SpecifiedBus(pn));
+    //LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
 	return pe_default;
 }
 
@@ -358,7 +369,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
    return 0 if good
    *next points to next segment, or NULL if not filetype
  */
-static enum parse_enum Parse_RealDevice(char *filename, int remote,
+static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote,
 										struct parsedname *pn)
 {
 	//printf("DevicePart: %s %s\n", filename, pn->path);
@@ -398,7 +409,7 @@ static enum parse_enum Parse_RealDevice(char *filename, int remote,
 	FS_devicefindhex(pn->sn[0], pn);
 
 	//printf("NP2\n");
-	if (!remote && !(pn->state & pn_bus)) {	/* Check the presence, and cache the proper bus number for better performance */
+	if (!back_from_remote && !KnownBus(pn)) {	/* Check the presence, and cache the proper bus number for better performance */
 		int bus_nr = -1;
 		if (Cache_Get_Device(&bus_nr, pn)) {
 			//printf("PN Cache_Get_Device didn't find bus_nr\n");
@@ -413,9 +424,7 @@ static enum parse_enum Parse_RealDevice(char *filename, int remote,
 			//printf("PN Cache_Get_Device found bus! %d\n", bus_nr);
 		}
 		/* fake that we read from only one indevice now! */
-		pn->in = find_connection_in(bus_nr);
-		pn->state |= pn_bus;
-		pn->bus_nr = bus_nr;
+        SetKnownBus(bus_nr,pn);
 	}
 	return parse_prop;
 }

@@ -23,11 +23,11 @@ int outdevices = 0;
 struct connection_in *indevice = NULL;
 int indevices = 0;
 
-struct connection_in *find_connection_in(int iindex)
+struct connection_in *find_connection_in(int bus_number)
 {
 	struct connection_in *c = indevice;
 	while (c) {
-		if (c->index == iindex)
+		if (c->index == bus_number)
 			break;
 		c = c->next;
 	}
@@ -41,7 +41,7 @@ enum bus_mode get_busmode(struct connection_in *in)
 	return in->busmode;
 }
 
-int is_servermode(struct connection_in *in)
+int BusIsServer(struct connection_in *in)
 {
 	return (in->busmode == bus_server) || (in->busmode == bus_zero);
 }

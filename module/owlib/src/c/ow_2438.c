@@ -399,7 +399,7 @@ static int OW_w_page(const BYTE * p, const int page,
 		{r, NULL, 2, trxn_match},	//4 read back command
 		{NULL, data, 9, trxn_read},	//5 read data
 		{data, NULL, 9, trxn_crc8},	//6 crc8
-		{data, p, 0, trxn_match,},	//7 match except page 0
+		{p, data, 0, trxn_match,},	//7 match except page 0
 		TRXN_START,
 		{eeprom, NULL, 2, trxn_match},	//9 actual write
 		TRXN_END,

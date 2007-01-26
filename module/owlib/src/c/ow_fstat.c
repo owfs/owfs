@@ -61,7 +61,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 	memset(stbuf, 0, sizeof(struct stat));
 
 	LEVEL_CALL("ATTRIBUTES path=%s\n", SAFESTRING(pn->path));
-	if ((pn->state & pn_bus) && !find_connection_in(pn->bus_nr)) {
+	if (KnownBus(pn) && !find_connection_in(pn->bus_nr)) {
 		/* check for presence of first in-device at least since FS_ParsedName
 		 * doesn't do it yet. */
 		return -ENOENT;

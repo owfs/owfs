@@ -75,7 +75,7 @@ int FS_read(const char *path, char *buf, const size_t size,
 		if (FS_ParsedName(path, &pn))
 		return -ENOENT;
 
-	//printf("FS_read: pn->state=pn_bus=%c pn->bus_nr=%d\n", pn.state&pn_bus?'Y':'N', pn.bus_nr);
+	//printf("FS_read: KnownBus=%c pn->bus_nr=%d\n", KnownBus(&pn)?'Y':'N', pn.bus_nr);
 	//printf("FS_read: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
 	//printf("FS_read: pid=%ld call postparse size=%ld pn->type=%d\n", pthread_self(), size, pn.type);
 	r = FS_read_postparse(buf, size, offset, &pn);
@@ -114,13 +114,11 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 		STAT_ADD1(read_tries[1]);
 		if (Global.opt == opt_server) {	// called from owserver
 			Cache_Del_Device(pn);
-		} else if (pn->state & pn_buspath) {
+		} else if (SpecifiedBus(pn)) {
 			r = TestConnection(pn) ? -ECONNABORTED :
 				FS_read_postpostparse(buf, size, offset, pn);
 		} else if ((r = CheckPresence(pn)) >= 0) {
-			pn2.in = find_connection_in(r);
-			pn2.state |= pn_bus;
-			pn2.bus_nr = r;
+            SetKnownBus(r,&pn2) ;
 			Cache_Add_Device(r, pn);
 			r = FS_read_postpostparse(buf, size, offset, &pn2);
 		} else {
@@ -132,13 +130,11 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 	/* if not a specified bus, relook for chip location */
 	if ((Global.opt != opt_server) && (r < 0)) {
 		STAT_ADD1(read_tries[2]);
-		if (pn->state & pn_buspath) {
+		if (SpecifiedBus(pn)) {
 			r = TestConnection(pn) ? -ECONNABORTED :
 				FS_read_postpostparse(buf, size, offset, pn);
 		} else if ((r = CheckPresence(pn)) >= 0) {
-			pn2.in = find_connection_in(r);
-			pn2.state |= pn_bus;
-			pn2.bus_nr = r;
+            SetKnownBus(r,&pn2) ;
 			Cache_Add_Device(r, pn);
 			r = FS_read_postpostparse(buf, size, offset, &pn2);
 		} else {
@@ -218,11 +214,11 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset,
 	//printf("FS_r_given_bus\n");
 	LEVEL_DEBUG("FS_r_given_bus\n");
 
-	if(!(pn->state & pn_bus)) {
+	if(!KnownBus(pn)) {
 	  LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set!\n");
 	}
 
-	if ((pn->state & pn_bus) && (is_servermode(pn->in))) {
+	if (KnownBus(pn) && BusIsServer(pn->in)) {
 		/* The bus is not local... use a network connection instead */
 		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
 		//printf("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());

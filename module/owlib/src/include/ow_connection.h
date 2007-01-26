@@ -403,7 +403,7 @@ extern struct connection_in *indevice;
  * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
  * returned very strange result on c->busmode before... but not anymore */
 enum bus_mode get_busmode(struct connection_in *c);
-int is_servermode(struct connection_in *in);
+int BusIsServer(struct connection_in *in);
 
 // mode bit flags for level
 #define MODE_NORMAL                    0x00

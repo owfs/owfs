@@ -54,8 +54,8 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 {
 	struct dirhandlerstruct *dhs = (struct dirhandlerstruct *) v;
 	char retbuffer[PATH_MAX];
-	char *path = ((dhs->pn->state & pn_bus)
-				  && (is_servermode(dhs->pn->in))) ? dhs->pn->
+	char *path = (KnownBus(dhs->pn)
+				  && (BusIsServer(dhs->pn->in))) ? dhs->pn->
 		path_busless : dhs->pn->path;
     size_t _pathlen = strlen(path);
 

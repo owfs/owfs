@@ -89,7 +89,7 @@ static int CheckPresence_low(struct connection_in *in,
 	struct parsedname pn2;
 	struct checkpresence_struct cps = { in->next, pn, 0 };
 
-	if (!(pn->state & pn_bus)) {
+	if (!KnownBus(pn)) {
 		threadbad = in->next == NULL
 			|| pthread_create(&thread, NULL, CheckPresence_callback,
 							  (void *) (&cps));
@@ -101,7 +101,7 @@ static int CheckPresence_low(struct connection_in *in,
 	//printf("CheckPresence_low:\n");
 	if (TestConnection(&pn2)) {	// reconnect successful?
 		ret = -ECONNABORTED;
-	} else if (is_servermode(in)) {
+	} else if (BusIsServer(in)) {
 		//printf("CheckPresence_low: call ServerPresence\n");
 		if (ServerPresence(&pn2) >= 0) {
 			/* Device was found on this in-device, return it's index */
@@ -159,7 +159,7 @@ static int CheckPresence_low(struct connection_in *in,
 	pn2.in = in;
 	if (TestConnection(&pn2)) {	// reconnect successful?
 		ret = -ECONNABORTED;
-	} else if (is_servermode(in)) {
+	} else if (BusIsServer(in)) {
 		//printf("CheckPresence_low: call ServerPresence\n");
 		if (ServerPresence(&pn2) >= 0) {
 			/* Device was found on this in-device, return it's index */

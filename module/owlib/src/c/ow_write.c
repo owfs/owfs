@@ -167,13 +167,11 @@ int FS_write_postparse(const char *buf, const size_t size,
 				STAT_ADD1(write_tries[1]);
 				if (Global.opt == opt_server) {	// called from owserver
 					Cache_Del_Device(pn);
-				} else if (pn->state & pn_buspath) {
+				} else if (SpecifiedBus(pn)) {
 					r = TestConnection(pn) ? -ECONNABORTED :
 						FS_w_given_bus(buf, size, offset, pn);
 				} else if ((r = CheckPresence(pn)) >= 0) {
-					pn2.in = find_connection_in(r);
-					pn2.state |= pn_bus;
-					pn2.bus_nr = r;
+                    SetKnownBus(r,&pn2) ;
 					Cache_Add_Device(r, pn);
 					r = FS_w_given_bus(buf, size, offset, &pn2);
 				} else {
@@ -185,13 +183,11 @@ int FS_write_postparse(const char *buf, const size_t size,
 			/* if not a specified bus, relook for chip location */
 			if ((Global.opt != opt_server) && (r < 0)) {
 				STAT_ADD1(write_tries[2]);
-				if (pn->state & pn_buspath) {
+				if (SpecifiedBus(pn)) {
 					r = TestConnection(pn) ? -ECONNABORTED :
 						FS_w_given_bus(buf, size, offset, pn);
 				} else if ((r = CheckPresence(pn)) >= 0) {
-					pn2.in = find_connection_in(r);
-					pn2.state |= pn_bus;
-					pn2.bus_nr = r;
+                    SetKnownBus(r,&pn2) ;
 					Cache_Add_Device(r, pn);
 					r = FS_w_given_bus(buf, size, offset, &pn2);
 				} else {
@@ -221,15 +217,15 @@ static int FS_w_simultaneous(const char *buf, const size_t size,
 							 const off_t offset,
 							 const struct parsedname *pn)
 {
-	if (pn->state & pn_bus) {
+	if (SpecifiedBus(pn)) {
 		return FS_w_given_bus(buf, size, offset, pn);
 	} else {
 		struct parsedname pn2;
+        int bus_number ;
+
 		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-		pn2.state |= pn_bus;
-		pn2.bus_nr = -1;
-		for (pn2.in = pn->indevice; pn2.in; pn2.in = pn2.in->next) {
-			++pn2.bus_nr;
+        for (bus_number=0; bus_number<indevices; ++bus_number) {
+            SetKnownBus(bus_number,&pn2) ;
 			FS_w_given_bus(buf, size, offset, &pn2);
 		}
 		return 0;
@@ -244,7 +240,7 @@ static int FS_w_given_bus(const char *buf, const size_t size,
 
 	if (TestConnection(pn)) {
 		ret = -ECONNABORTED;
-	} else if ((pn->state & pn_bus) && is_servermode(pn->in)) {
+	} else if (KnownBus(pn) && BusIsServer(pn->in)) {
 		ret = ServerWrite(buf, size, offset, pn);
 	} else if ((ret = LockGet(pn)) == 0) {
 		ret = FS_w_local(buf, size, offset, pn);

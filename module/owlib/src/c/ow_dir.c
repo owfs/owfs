@@ -103,7 +103,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
             /* Device structure is always known for ordinary devices, so don't
              * bother calling ServerDir() */
             ret = FS_devdir(dirfunc, v, &pn2);
-        } else if (SpecifiedBus(pn) && (is_servermode(pn->in))) {
+        } else if (SpecifiedBus(pn) && BusIsServer(pn->in)) {
             ret = ServerDir(dirfunc, v, &pn2, flags);
         } else {
             ret = FS_devdir(dirfunc, v, &pn2);
@@ -116,7 +116,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
     } else if (NotRealDir(pn)) {    /* stat, sys or set dir */
         /* there are some files with variable sizes, and /system/adapter have variable
          * number of entries and we have to call ServerDir() */
-        ret = (SpecifiedBus(pn) && (is_servermode(pn->in)))
+        ret = (SpecifiedBus(pn) && BusIsServer(pn->in))
             ? ServerDir(dirfunc, v, &pn2, flags)
             : FS_typedir(dirfunc, v, &pn2);
     } else {                    /* Directory of some kind */
@@ -205,7 +205,7 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
     pthread_t thread;
     int threadbad = 1;
 
-    if (!(pn->state & pn_bus)) {
+    if (!KnownBus(pn)) {
         threadbad = in->next == NULL
             || pthread_create(&thread, NULL, FS_dir_seek_callback,
                               (void *) (&dss));
@@ -216,7 +216,7 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 
     if (TestConnection(&pn2)) { // reconnect ok?
         ret = -ECONNABORTED;
-    } else if ((pn->state & pn_bus) && (is_servermode(in))) {   /* is this a remote bus? */
+    } else if (KnownBus(pn) && BusIsServer(in)) {   /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc, v, &pn2, flags);
     } else {                    /* local bus */
@@ -255,7 +255,7 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
     pn2.in = in;
     if (TestConnection(&pn2)) { // reconnect ok?
         ret = -ECONNABORTED;
-    } else if ((pn->state & pn_bus) && (is_servermode(in))) {   /* is this a remote bus? */
+    } else if (KnownBus(pn) && BusIsServer(in)) {   /* is this a remote bus? */
         //printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
         ret = ServerDir(dirfunc, v, &pn2, flags);
     } else {                    /* local bus */
@@ -328,7 +328,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
     struct device_search ds;    // holds search state
 
     /* cache from Server if this is a remote bus */
-    if (is_servermode(pn2->in))
+    if (BusIsServer(pn2->in))
         return ServerDir(dirfunc, v, pn2, &flags);
 
     /* STATISCTICS */
@@ -375,7 +375,7 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
     int ret;
 
     /* cache from Server if this is a remote bus */
-    if (is_servermode(pn2->in))
+    if (BusIsServer(pn2->in))
         return ServerDir(dirfunc, v, pn2, flags);
 
     /* STATISTICS */
@@ -539,17 +539,16 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *),
 }
 
 /* Show the bus entries */
-/* No reason to lock or use a copy */
 static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
                      void * v, const struct parsedname *pn)
 {
     struct parsedname pn2;
-
+    int bus_number ;
+    
     memcpy(&pn2, pn, sizeof(struct parsedname));    // shallow copy
-    pn2.state = pn_bus;
 
-    for (pn2.in = indevice; pn2.in; pn2.in = pn2.in->next) {
-        pn2.bus_nr = pn2.in->index;
+    for ( bus_number=0; bus_number<indevices; ++bus_number ) {
+        SetKnownBus( bus_number, &pn2 ) ;
         dirfunc(v, &pn2);
     }
 

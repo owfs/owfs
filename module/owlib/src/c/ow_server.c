@@ -216,7 +216,7 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
             ret = -EIO;
         } else {
             ret = cm.ret;
-            int32_t sg = cm.sg | ~(BUSRET_MASK|PERSISTENT_MASK) ;
+            int32_t sg = cm.sg & ~(BUSRET_MASK|PERSISTENT_MASK) ;
             if (SemiGlobal != sg) {
                 //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
                 CACHELOCK;
@@ -278,12 +278,12 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
                 path2[cm.payload - 1] = '\0';   /* Ensure trailing null */
                 LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
                 
-                if (FS_ParsedName_Remote(path2, &pn2)) {
+                if (FS_ParsedName_BackFromRemote(path2, &pn2)) {
                     cm.ret = -EINVAL;
                     free(path2);
                     break;
                 }
-                pn2.in = pn->in;    //use parent connection_in
+                SetKnownBus(pn->in->index,&pn2) ;  //use parent connection_in
                 
                 /* we got a device on bus_nr = pn->in->index. Cache it so we
                     find it quicker next time we want to do read values from the
@@ -506,12 +506,18 @@ static int ToServer(int fd, struct server_msg *sm,
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
 static uint32_t SetupSemi(int persistent, const struct parsedname *pn)
 {
-	uint32_t sg = pn->sg & (~BUSRET_MASK);
+	uint32_t sg = pn->sg ;
+
+    sg &= ~PERSISTENT_MASK ;
     if ( persistent) {
         sg |= PERSISTENT_MASK ;
     }
-	if (SpecifiedBus(pn))
-		sg |= (1 << BUSRET_BIT);
+
+    sg &= ~BUSRET_MASK ;
+	if (SpecifiedBus(pn)) {
+		sg |= BUSRET_MASK;
+    }
+
 	return sg;
 }
 

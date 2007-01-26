@@ -54,8 +54,8 @@ void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 {
 	struct dirallhandlerstruct *dhs = v;
 	char retbuffer[PATH_MAX];
-	char *path = ((dhs->pn->state & pn_bus)
-				  && (is_servermode(dhs->pn->in))) ? dhs->pn->
+	char *path = (KnownBus(dhs->pn)
+				  && BusIsServer(dhs->pn->in)) ? dhs->pn->
 		path_busless : dhs->pn->path;
 	
     /* make sure path has a "/" before the file is added */

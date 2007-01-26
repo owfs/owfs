@@ -554,7 +554,7 @@ int OW_ArgServer(const char *arg)
 	struct connection_out *out = NewOut();
 	if (out == NULL)
 		return 1;
-	out->name = strdup(arg);
+	out->name = arg ? strdup(arg) : NULL ;
 	return 0;
 }
 
