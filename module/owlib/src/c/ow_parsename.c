@@ -205,10 +205,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	free(pathcpy);
 	if (ret)
 		FS_ParsedName_destroy(pn);
-printf("BIG RETURN from ParsedName:\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",
-SAFESTRING(pn->path),
-SAFESTRING(pn->path_busless),
-KnownBus(pn),SpecifiedBus(pn));
+    //printf("BIG RETURN from ParsedName:\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
 	return ret;
 }
 
@@ -323,11 +320,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     }
 
     /* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
-printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",
-bus_number,
-SAFESTRING(pn->path),
-SAFESTRING(pn->path_busless),
-KnownBus(pn),SpecifiedBus(pn));
+    //printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
     bus_number = atoi(&pathnow[4]);
     CONNINLOCK;
     if (bus_number < 0 || indevices <= bus_number) {
@@ -355,11 +348,7 @@ KnownBus(pn),SpecifiedBus(pn));
             pn->path_busless[length] = '\0';
         }
     }
-printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",
-bus_number,
-SAFESTRING(pn->path),
-SAFESTRING(pn->path_busless),
-KnownBus(pn),SpecifiedBus(pn));
+    //printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
     //LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
 	return pe_default;
 }
