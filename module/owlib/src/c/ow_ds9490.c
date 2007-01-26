@@ -70,6 +70,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 static int DS9490_level(int new_level, const struct parsedname *pn);
 static void DS9490_setroutines(struct interface_routines *f);
 static int DS9490_detect_low(const struct parsedname *pn);
+static int DS9490_detect_found(struct usb_list * ul, const struct parsedname *pn) ;
 static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 							const struct parsedname *pn);
 static int DS9490_read(BYTE * buf, const size_t size,
@@ -290,14 +291,51 @@ int DS9490_detect(struct connection_in *in)
 	return ret;
 }
 
+/* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
+static int DS9490_detect_found(struct usb_list * ul, const struct parsedname *pn)
+{
+    struct device_search ds;
+    struct parsedname pncopy;
+    int ret;
+
+    if (DS9490_open(ul, pn))
+        return -EIO;
+
+    /* We are looking for devices in the root (not the branch
+        * pn eventually points to */
+    memcpy(&pncopy, pn, sizeof(struct parsedname));
+    pncopy.dev = NULL;
+    pncopy.pathlength = 0;
+
+    /* Do a quick directory listing and find the DS1420 id */
+    if ((ret = BUS_first(&ds, &pncopy))) {
+        // clear it just in case nothing is found
+        memset(pn->in->connin.usb.ds1420_address, 0, 8);
+        LEVEL_DATA("BUS_first failed during connect [%s]\n",
+                    pn->in->name);
+    } else {
+        while (ret == 0) {
+            if ((ds.sn[0] & 0x7F) == 0x01) {
+                LEVEL_CONNECT("Good DS1421 tag found for %s\n",
+                                SAFESTRING(pn->in->name));
+                break;  // good tag
+            }
+            ret = BUS_next(&ds, &pncopy);
+        }
+        memcpy(pn->in->connin.usb.ds1420_address, ds.sn, 8);
+        LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat "\n",
+                        SAFESTRING(pn->in->name),
+                        SNvar(pn->in->connin.usb.ds1420_address));
+    }
+    return 0;
+}
+
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static int DS9490_detect_low(const struct parsedname *pn)
 {
 	struct usb_list ul;
 	int useusb = pn->in->connin.usb.usb_nr;	/* usb_nr holds the number of the adapter */
 	int usbnum = 0;
-	int ret;
-	struct parsedname pncopy;
 
 	USB_init(&ul);
 	while (!USB_next(&ul)) {
@@ -305,38 +343,7 @@ static int DS9490_detect_low(const struct parsedname *pn)
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)\n",
 						  usbnum, useusb);
 		} else {
-			struct device_search ds;
-
-			if (DS9490_open(&ul, pn))
-				return -EIO;
-
-			/* We are looking for devices in the root (not the branch
-			 * pn eventually points to */
-			memcpy(&pncopy, pn, sizeof(struct parsedname));
-			pncopy.dev = NULL;
-			pncopy.pathlength = 0;
-
-			/* Do a quick directory listing and find the DS1420 id */
-			if ((ret = BUS_first(&ds, &pncopy))) {
-				// clear it just in case nothing is found
-				memset(pn->in->connin.usb.ds1420_address, 0, 8);
-				LEVEL_DATA("BUS_first failed during connect [%s]\n",
-						   pn->in->name);
-			} else {
-				while (ret == 0) {
-					if ((ds.sn[0] & 0x7F) == 0x01) {
-						LEVEL_CONNECT("Good DS1421 tag found for %s\n",
-									  SAFESTRING(pn->in->name));
-						break;	// good tag
-					}
-					ret = BUS_next(&ds, &pncopy);
-				}
-				memcpy(pn->in->connin.usb.ds1420_address, ds.sn, 8);
-				LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat "\n",
-							  SAFESTRING(pn->in->name),
-							  SNvar(pn->in->connin.usb.ds1420_address));
-			}
-			return 0;
+            return DS9490_detect_found(&ul,pn) ;
 		}
 	}
 
