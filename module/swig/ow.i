@@ -87,10 +87,11 @@ static void getval( char ** buffer, const struct parsedname * pn ) {
     s = FullFileLength(pn) ;
     if ( s <= 0 ) return ;
     if ( (*buffer = malloc(s+1))==NULL ) return ;
-    if ( FS_read_postparse( *buffer, s, 0, pn ) < 0 ) {
+    if ( s = FS_read_postparse( *buffer, s, 0, pn ) < 0 ) {
         free(*buffer) ;
         *buffer = NULL ;
     }
+    buffer[s] = '\0' ; // shorten to actual returned length
 }
 
 char * get( const char * path ) {
