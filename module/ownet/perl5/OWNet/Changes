@@ -4,3 +4,8 @@ Revision history for Perl extension OWNet.
 	- original version; created by h2xs 1.23 with options
 		-X -n OWNet -b 5.8.0 -O
 
+
+1.5 1/25/2007 
+    - Add persistent tcp support
+    - Add default port (4304)
+    - Add Bonjour support

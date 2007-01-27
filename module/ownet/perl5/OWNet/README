@@ -51,11 +51,10 @@ DEPENDENCIES
 
 This module requires these other modules and libraries:
 
-  blah blah blah
+  IO::Socket::INET
+  Net::Rendezvous (optional)
 
 COPYRIGHT AND LICENCE
-
-Put the correct copyright and licence information here.
 
 Copyright (C) 2007 by Paul H Alfille
 
