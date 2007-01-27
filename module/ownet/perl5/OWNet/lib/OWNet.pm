@@ -248,8 +248,51 @@ sub _self($) {
         _new($self,$addr)  ;
         $self->{PERSIST} = 0 ;
     }
-    _Sock($self) || return ;
+    if ( $self->{ADDR} =~ // ) {
+        _DefaultLookup($self) || _BonjourLookup($self) || return ;
+    } else {
+        _Sock($self) || return ;
+    }
     return $self;
+}
+
+sub _DefaultLookup($) {
+    my $self = shift ;
+    # New socket
+    $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>"localhost:owserver(4304)",Proto=>'tcp') || do {
+        warn("Can't open default port ($!) \n") if $self->{VERBOSE} ;
+        $self->{SOCK} = undef ;
+        return ;
+    } ;
+    $self->{ADDR} = $self->{SOCK}->peeraddr.":".$self->{SOCK}->peerport ;
+    return 1 ;
+}
+
+sub _BonjourLookup($) {
+    my $self = shift ;
+    eval { require Net::Rendezvous; }; 
+    if ($@) { 
+        print "$@\n" if $self->{VERBOSE} ;
+        return ;
+    }
+    my $owservers = Net::Rendezvous->new('owserver') || do {
+        print "Unable to start owserver discovery via Net::Rendezvous $!\n" if $self->{VERBOSE} ;
+        return ;
+    } ;
+    $owservers->discover ;
+    my $owserver_selected = $owservers->shift_entry || do {
+        print "No owserver discovered by Net::Rendezvous\n" if $self->{VERBOSE} ;
+        return ;
+    } ;
+    print $owserver_selected->host.":".$owserver_selected->port."\n" ;
+    # New socket
+    $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$owserver_selected->host,PeerPort=>$owserver_selected->port,Proto=>'tcp') || do {
+        warn("Can't open Bonjour (autodiscovered) port ($!) \n") if $self->{VERBOSE} ;
+        $self->{SOCK} = undef ;
+        return ;
+    } ;
+    $self->{ADDR} = $self->{SOCK}->peeraddr.":".$self->{SOCK}->peerport ;
+    return 1 ;
 }
 
 sub _ToServer ($$$$$;$) {
@@ -345,7 +388,7 @@ Error (and undef return value) if:
 
 sub new($$) {
     my $class = shift ;
-    my $addr = shift ;
+    my $addr = shift || "" ;
     my $self = {} ;
     _new($self,$addr) ;
     if ( !defined($self->{ADDR}) ) {
@@ -614,6 +657,18 @@ Reads a specified length from server
 =item _FromServer
 
 Reads whole packet from server, usung _FromServerLow (first for header, then payload/tokens). Discards ping packets silently.
+
+=item _DefaultLookup
+
+Uses the IANA allocated well known port for owserver. First looks in /etc/services, then just tries 4304.
+
+=item _BonjourLookup
+
+Uses the mDNS service discovery protocol to find an available owserver.
+Employs NET::Rendezvous (an earlier name or Apple's Bonjour)
+This module is loaded only if available using the method of http://sial.org/blog/2006/12/optional_perl_module_loading.html
+
+Bounjour details for owserver at: 
 
 =head1 AUTHOR
 
