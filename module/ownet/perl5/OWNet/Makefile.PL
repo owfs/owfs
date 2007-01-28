@@ -7,6 +7,6 @@ WriteMakefile(
     VERSION_FROM      => 'lib/OWNet.pm', # finds $VERSION
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/OWNet.pm', # retrieve abstract from module
+      (ABSTRACT       => 'Light-weight connection to owserver to access the Dallas 1-wire system for monitoring and control',
        AUTHOR         => 'Paul H Alfille <paul.alfille@gmail.com>') : ()),
 );
