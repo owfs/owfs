@@ -215,8 +215,8 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
         } else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
             ret = -EIO;
         } else {
-            ret = cm.ret;
             int32_t sg = cm.sg & ~(BUSRET_MASK|PERSISTENT_MASK) ;
+            ret = cm.ret;
             if (SemiGlobal != sg) {
                 //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
                 CACHELOCK;
