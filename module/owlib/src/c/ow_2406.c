@@ -421,6 +421,7 @@ struct s_TAI8570 {
 /* Internal files */
 static struct internal_prop ip_bar = { "BAR", fc_persistent };
 
+// Read from the TSI8570 microcontroller vias the paired DS2406s
 // Updated by Simon Melhuish, with ref. to AAG C++ code
 static BYTE SEC_READW4[] =
 	{ 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04,
@@ -790,6 +791,11 @@ static int testTAI8570(struct s_TAI8570 *tai, struct parsedname *pn)
 	// See if already cached
 	if (Cache_Get_Internal_Strict
 		((void *) tai, sizeof(struct s_TAI8570), &ip_bar, pn) == 0)
+		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer=" SNformat "\n",
+				 SNvar(tai->reader), SNvar(tai->writer));
+		LEVEL_DEBUG("TAI8570 cache read: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u\n",
+				 tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4],
+				 tai->C[5]);
 		return 0;
 
 	// Set master SN
