@@ -34,9 +34,9 @@ extern "C" {
                < 0 error
   
   No need to call OW_finish if an error
-*/ 
-ssize_t OW_init(        const char * params ) ;
-ssize_t OW_init_args(   int argc, char ** args ) ;
+*/
+	ssize_t OW_init(const char *params);
+	ssize_t OW_init_args(int argc, char **args);
 
 /* OW_get -- data read or directory read
   path is OWFS style name,
@@ -57,7 +57,8 @@ ssize_t OW_init_args(   int argc, char ** args ) ;
   return value >=0 ok, length of information returned (in bytes)
                 <0 error
 */
-ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) ;
+	ssize_t OW_get(const char *path, char **buffer,
+				   size_t * buffer_length);
 
 /* OW_put -- data write
   path is OWFS style name,
@@ -71,8 +72,9 @@ ssize_t OW_get( const char * path, char ** buffer, size_t * buffer_length ) ;
   
   return value  = 0 ok
                 < 0 error
-*/ 
-ssize_t OW_put( const char * path, const char * buffer, size_t buffer_length ) ;
+*/
+	ssize_t OW_put(const char *path, const char *buffer,
+				   size_t buffer_length);
 
 /*  OW_lread -- read data with offset
   path is OWFS style name,
@@ -84,7 +86,8 @@ ssize_t OW_put( const char * path, const char * buffer, size_t buffer_length ) ;
     offset is from start of value
     only ascii and binary data appropriate
 */
-ssize_t OW_lread( const char * path, char * buf, const size_t size, const off_t offset ) ;
+	ssize_t OW_lread(const char *path, char *buf, const size_t size,
+					 const off_t offset);
 
 /*  OW_lwrite -- write data with offset
   path is OWFS style name,
@@ -96,7 +99,8 @@ ssize_t OW_lread( const char * path, char * buf, const size_t size, const off_t 
     offset is from start of value
     only ascii and binary data appropriate
 */
-ssize_t OW_lwrite( const char * path, const char * buf, const size_t size, const off_t offset ) ;
+	ssize_t OW_lwrite(const char *path, const char *buf, const size_t size,
+					  const off_t offset);
 
 /* cleanup
   Clears internal buffer, frees file descriptors
@@ -104,10 +108,9 @@ ssize_t OW_lwrite( const char * path, const char * buf, const size_t size, const
   But not calling OW_init more than once without an intervening OW_finish will cause a memory leak
   No error return
 */
-void OW_finish( void ) ;
+	void OW_finish(void);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* OWCAPI_H */
+#endif							/* OWCAPI_H */

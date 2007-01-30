@@ -20,23 +20,23 @@ $Id$
 
 /* ------- Prototypes ----------- */
 int FS_type(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn);
+			const struct parsedname *pn);
 int FS_code(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn);
+			const struct parsedname *pn);
 int FS_crc8(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn);
+			const struct parsedname *pn);
 int FS_ID(char *buf, size_t size, off_t offset,
-	  const struct parsedname *pn);
+		  const struct parsedname *pn);
 int FS_r_ID(char *buf, size_t size, off_t offset,
-	    const struct parsedname *pn);
+			const struct parsedname *pn);
 int FS_address(char *buf, size_t size, off_t offset,
-	       const struct parsedname *pn);
+			   const struct parsedname *pn);
 int FS_r_address(char *buf, size_t size, off_t offset,
-		 const struct parsedname *pn);
+				 const struct parsedname *pn);
 int FS_locator(char *buf, size_t size, off_t offset,
-	       const struct parsedname *pn);
+			   const struct parsedname *pn);
 int FS_r_locator(char *buf, size_t size, off_t offset,
-		 const struct parsedname *pn);
+				 const struct parsedname *pn);
 int FS_present(int *, const struct parsedname *pn);
 
 /* ------- Structures ----------- */

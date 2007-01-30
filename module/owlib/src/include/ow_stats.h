@@ -26,4 +26,4 @@ DeviceHeader(stats_bus);
 DeviceHeader(stats_errors);
 DeviceHeader(stats_thread);
 
-#endif				/* OW_STATS */
+#endif							/* OW_STATS */

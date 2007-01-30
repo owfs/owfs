@@ -151,9 +151,9 @@ pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
 ASCII *Namefindret = NULL;
 char *Namefindname = NULL;
 struct {
-    ASCII * name ;
-    ASCII * ret ;
-} nfa ;
+	ASCII *name;
+	ASCII *ret;
+} nfa;
 void Namefindaction(const void *nodep, const VISIT which, const int depth)
 {
 	const struct device *p = *(struct device * const *) nodep;
@@ -174,15 +174,15 @@ void Namefindaction(const void *nodep, const VISIT which, const int depth)
 
 static const ASCII *namefind(const char *name)
 {
-    ASCII * ret ;
+	ASCII *ret;
 #if OW_MT
 	pthread_mutex_lock(&Namefindmutex);
 #endif							/* OW_MT */
 
 	nfa.name = name;
-    nfa.ret = NULL ;   
+	nfa.ret = NULL;
 	twalk(Tree[pn_real], Namefindaction);
-    ret = nfa.ret ;
+	ret = nfa.ret;
 #if OW_MT
 	pthread_mutex_lock(&Namefindmutex);
 #endif							/* OW_MT */

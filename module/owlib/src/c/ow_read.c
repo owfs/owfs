@@ -118,7 +118,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 			r = TestConnection(pn) ? -ECONNABORTED :
 				FS_read_postpostparse(buf, size, offset, pn);
 		} else if ((r = CheckPresence(pn)) >= 0) {
-            SetKnownBus(r,&pn2) ;
+			SetKnownBus(r, &pn2);
 			Cache_Add_Device(r, pn);
 			r = FS_read_postpostparse(buf, size, offset, &pn2);
 		} else {
@@ -134,7 +134,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 			r = TestConnection(pn) ? -ECONNABORTED :
 				FS_read_postpostparse(buf, size, offset, pn);
 		} else if ((r = CheckPresence(pn)) >= 0) {
-            SetKnownBus(r,&pn2) ;
+			SetKnownBus(r, &pn2);
 			Cache_Add_Device(r, pn);
 			r = FS_read_postpostparse(buf, size, offset, &pn2);
 		} else {
@@ -214,13 +214,14 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset,
 	//printf("FS_r_given_bus\n");
 	LEVEL_DEBUG("FS_r_given_bus\n");
 
-	if(!KnownBus(pn)) {
-	  LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set!\n");
+	if (!KnownBus(pn)) {
+		LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set!\n");
 	}
 
 	if (KnownBus(pn) && BusIsServer(pn->in)) {
 		/* The bus is not local... use a network connection instead */
-		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
+		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
+					pthread_self());
 		//printf("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
 		r = ServerRead(buf, size, offset, pn);
 		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);

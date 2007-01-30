@@ -101,16 +101,16 @@ int inet_pton(int af, const char *src, void *dst);
 #ifndef HAVE_GETADDRINFO
 
 /* Possible values left in `h_errno'.  */
-#define	NETDB_INTERNAL	-1	/* See errno.  */
-#define	NETDB_SUCCESS	0	/* No problem.  */
-#define	HOST_NOT_FOUND	1	/* Authoritative Answer Host not found.  */
-#define	TRY_AGAIN	2	/* Non-Authoritative Host not found,
-				   or SERVERFAIL.  */
-#define	NO_RECOVERY	3	/* Non recoverable errors, FORMERR, REFUSED,
-				   NOTIMP.  */
-#define	NO_DATA		4	/* Valid name, no data record of requested
-				   type.  */
-#define	NO_ADDRESS	NO_DATA	/* No address, look for MX record.  */
+#define	NETDB_INTERNAL	-1		/* See errno.  */
+#define	NETDB_SUCCESS	0		/* No problem.  */
+#define	HOST_NOT_FOUND	1		/* Authoritative Answer Host not found.  */
+#define	TRY_AGAIN	2			/* Non-Authoritative Host not found,
+								   or SERVERFAIL.  */
+#define	NO_RECOVERY	3			/* Non recoverable errors, FORMERR, REFUSED,
+								   NOTIMP.  */
+#define	NO_DATA		4			/* Valid name, no data record of requested
+								   type.  */
+#define	NO_ADDRESS	NO_DATA		/* No address, look for MX record.  */
 
 #ifdef __USE_XOPEN2K
 /* Highest reserved Internet port number.  */
@@ -127,14 +127,14 @@ int inet_pton(int af, const char *src, void *dst);
 #ifdef	__USE_POSIX
 /* Structure to contain information about address of a service provider.  */
 struct addrinfo {
-    int ai_flags;		/* Input flags.  */
-    int ai_family;		/* Protocol family for socket.  */
-    int ai_socktype;		/* Socket type.  */
-    int ai_protocol;		/* Protocol for socket.  */
-    socklen_t ai_addrlen;	/* Length of socket address.  */
-    struct sockaddr *ai_addr;	/* Socket address for socket.  */
-    char *ai_canonname;		/* Canonical name for service location.  */
-    struct addrinfo *ai_next;	/* Pointer to next in list.  */
+	int ai_flags;				/* Input flags.  */
+	int ai_family;				/* Protocol family for socket.  */
+	int ai_socktype;			/* Socket type.  */
+	int ai_protocol;			/* Protocol for socket.  */
+	socklen_t ai_addrlen;		/* Length of socket address.  */
+	struct sockaddr *ai_addr;	/* Socket address for socket.  */
+	char *ai_canonname;			/* Canonical name for service location.  */
+	struct addrinfo *ai_next;	/* Pointer to next in list.  */
 };
 
 # ifdef __USE_GNU
@@ -144,45 +144,45 @@ struct addrinfo {
 # endif
 
 /* Possible values for `ai_flags' field in `addrinfo' structure.  */
-# define AI_PASSIVE	0x0001	/* Socket address is intended for `bind'.  */
+# define AI_PASSIVE	0x0001		/* Socket address is intended for `bind'.  */
 # define AI_CANONNAME	0x0002	/* Request for canonical name.  */
 # define AI_NUMERICHOST	0x0004	/* Don't use name resolution.  */
 
 /* Error values for `getaddrinfo' function.  */
 # define EAI_BADFLAGS	  -1	/* Invalid value for `ai_flags' field.  */
-# define EAI_NONAME	  -2	/* NAME or SERVICE is unknown.  */
-# define EAI_AGAIN	  -3	/* Temporary failure in name resolution.  */
-# define EAI_FAIL	  -4	/* Non-recoverable failure in name res.  */
-# define EAI_NODATA	  -5	/* No address associated with NAME.  */
-# define EAI_FAMILY	  -6	/* `ai_family' not supported.  */
+# define EAI_NONAME	  -2		/* NAME or SERVICE is unknown.  */
+# define EAI_AGAIN	  -3		/* Temporary failure in name resolution.  */
+# define EAI_FAIL	  -4		/* Non-recoverable failure in name res.  */
+# define EAI_NODATA	  -5		/* No address associated with NAME.  */
+# define EAI_FAMILY	  -6		/* `ai_family' not supported.  */
 # define EAI_SOCKTYPE	  -7	/* `ai_socktype' not supported.  */
 # define EAI_SERVICE	  -8	/* SERVICE not supported for `ai_socktype'.  */
 # define EAI_ADDRFAMILY	  -9	/* Address family for NAME not supported.  */
-# define EAI_MEMORY	  -10	/* Memory allocation failure.  */
-# define EAI_SYSTEM	  -11	/* System error returned in `errno'.  */
+# define EAI_MEMORY	  -10		/* Memory allocation failure.  */
+# define EAI_SYSTEM	  -11		/* System error returned in `errno'.  */
 # ifdef __USE_GNU
 #  define EAI_INPROGRESS  -100	/* Processing request in progress.  */
 #  define EAI_CANCELED	  -101	/* Request canceled.  */
 #  define EAI_NOTCANCELED -102	/* Request not canceled.  */
 #  define EAI_ALLDONE	  -103	/* All requests done.  */
-#  define EAI_INTR	  -104	/* Interrupted by a signal.  */
+#  define EAI_INTR	  -104		/* Interrupted by a signal.  */
 # endif
 
 # define NI_MAXHOST      1025
 # define NI_MAXSERV      32
 
-# define NI_NUMERICHOST	1	/* Don't try to look up hostname.  */
-# define NI_NUMERICSERV 2	/* Don't convert port number to name.  */
-# define NI_NOFQDN	4	/* Only return nodename portion.  */
-# define NI_NAMEREQD	8	/* Don't return numeric addresses.  */
-# define NI_DGRAM	16	/* Look up UDP service rather than TCP.  */
+# define NI_NUMERICHOST	1		/* Don't try to look up hostname.  */
+# define NI_NUMERICSERV 2		/* Don't convert port number to name.  */
+# define NI_NOFQDN	4			/* Only return nodename portion.  */
+# define NI_NAMEREQD	8		/* Don't return numeric addresses.  */
+# define NI_DGRAM	16			/* Look up UDP service rather than TCP.  */
 
 /* Translate name of a service location and/or a service name to set of
    socket addresses.  */
 extern int getaddrinfo(__const char *__restrict __name,
-		       __const char *__restrict __service,
-		       __const struct addrinfo *__restrict __req,
-		       struct addrinfo **__restrict __pai) __THROW;
+					   __const char *__restrict __service,
+					   __const struct addrinfo *__restrict __req,
+					   struct addrinfo **__restrict __pai) __THROW;
 
 /* Free `addrinfo' structure AI including associated storage.  */
 extern void freeaddrinfo(struct addrinfo *__ai) __THROW;
@@ -190,8 +190,8 @@ extern void freeaddrinfo(struct addrinfo *__ai) __THROW;
 /* Convert error return from getaddrinfo() to a string.  */
 extern const char *gai_strerror(int __ecode) __THROW;
 
-#endif				/* HAVE_GETADDRINFO */
+#endif							/* HAVE_GETADDRINFO */
 
-#endif				/* POSIX */
+#endif							/* POSIX */
 
-#endif				/* COMPAT_NETDB_H */
+#endif							/* COMPAT_NETDB_H */

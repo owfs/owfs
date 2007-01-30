@@ -51,14 +51,14 @@ $Id$
     2006 dirblob
 */
 
-#ifndef OW_DIRBLOB_H		/* tedious wrapper */
+#ifndef OW_DIRBLOB_H			/* tedious wrapper */
 #define OW_DIRBLOB_H
 
 struct dirblob {
-    int troubled;
-    int allocated;
-    int devices;
-    BYTE *snlist;
+	int troubled;
+	int allocated;
+	int devices;
+	BYTE *snlist;
 };
 
 void DirblobClear(struct dirblob *db);
@@ -67,4 +67,4 @@ int DirblobPure(struct dirblob *db);
 int DirblobAdd(BYTE * sn, struct dirblob *db);
 int DirblobGet(int dev, BYTE * sn, struct dirblob *db);
 
-#endif				/* OW_DIRBLOB_H */
+#endif							/* OW_DIRBLOB_H */

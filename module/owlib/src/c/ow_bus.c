@@ -35,7 +35,7 @@ int BUS_send_data(const BYTE * data, const size_t len,
 		BYTE resp[16];
 		if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
 			if ((ret = memcmp(data, resp, (size_t) len))) {
-				ret = -EIO;  /* EPROTO not available for MacOSX */
+				ret = -EIO;		/* EPROTO not available for MacOSX */
 				STAT_ADD1_BUS(BUS_echo_errors, pn->in);
 			}
 		}

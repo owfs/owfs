@@ -65,7 +65,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OWCACHE_H		/* tedious wrapper */
+#ifndef OWCACHE_H				/* tedious wrapper */
 #define OWCACHE_H
 
 #if OW_CACHE
@@ -76,33 +76,33 @@ void Cache_Close(void);
 void Cache_Clear(void);
 
 int Cache_Add(const void *data, const size_t datasize,
-	      const struct parsedname *pn);
+			  const struct parsedname *pn);
 int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
 int Cache_Add_Device(const int bus_nr, const struct parsedname *pn);
 int Cache_Add_Internal(const void *data, const size_t datasize,
-		       const struct internal_prop *ip,
-		       const struct parsedname *pn);
+					   const struct internal_prop *ip,
+					   const struct parsedname *pn);
 
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
 int Cache_Get_Strict(void *data, size_t dsize,
-		     const struct parsedname *pn);
+					 const struct parsedname *pn);
 int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 int Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 int Cache_Get_Internal(void *data, size_t * dsize,
-		       const struct internal_prop *ip,
-		       const struct parsedname *pn);
+					   const struct internal_prop *ip,
+					   const struct parsedname *pn);
 int Cache_Get_Internal_Strict(void *data, size_t dsize,
-			      const struct internal_prop *ip,
-			      const struct parsedname *pn);
+							  const struct internal_prop *ip,
+							  const struct parsedname *pn);
 
 int Cache_Del(const struct parsedname *pn);
 int Cache_Del_Dir(const struct parsedname *pn);
 int Cache_Del_Device(const struct parsedname *pn);
 int Cache_Del_Internal(const struct internal_prop *ip,
-		       const struct parsedname *pn);
-void CookTheCache( void ) ;
+					   const struct parsedname *pn);
+void CookTheCache(void);
 
-#else				/* OW_CACHE */
+#else							/* OW_CACHE */
 
 #define Cache_Open( void )
 #define Cache_Close( void )
@@ -127,6 +127,6 @@ void CookTheCache( void ) ;
 #define Cache_Del_Internal(ip,pn )          (1)
 #define CookTheCache()
 
-#endif				/* OW_CACHE */
+#endif							/* OW_CACHE */
 
-#endif				/* OWCACHE_H */
+#endif							/* OWCACHE_H */

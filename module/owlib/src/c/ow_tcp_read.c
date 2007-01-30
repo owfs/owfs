@@ -19,24 +19,24 @@ $Id$
 #include "ow_counters.h"
 
 /* Wait for something to be readable or timeout */
-int tcp_wait(int fd, const struct timeval * ptv)
+int tcp_wait(int fd, const struct timeval *ptv)
 {
 	int rc;
 	fd_set readset;
 	struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
-	
+
 	/* Initialize readset */
 	FD_ZERO(&readset);
 	FD_SET(fd, &readset);
-	
-	while(1) {
+
+	while (1) {
 		// Read if it doesn't timeout first
 		rc = select(fd + 1, &readset, NULL, NULL, &tv);
-		if(rc < 0) {
-			if(errno == EINTR)
-				continue;	/* interrupted */
+		if (rc < 0) {
+			if (errno == EINTR)
+				continue;		/* interrupted */
 			return -EIO;		/* error */
-		} else if(rc == 0) {
+		} else if (rc == 0) {
 			return -EAGAIN;		/* timeout */
 		} else {
 			// Is there something to read?
@@ -52,60 +52,60 @@ int tcp_wait(int fd, const struct timeval * ptv)
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 {
-    size_t nleft;
-    ssize_t nread;
-    char *ptr;
-    //printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",n,ptv->tv_sec,ptv->tv_usec ) ;
-    ptr = vptr;
-    nleft = n;
-    while (nleft > 0) {
-        int rc;
-        fd_set readset;
-        struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
+	size_t nleft;
+	ssize_t nread;
+	char *ptr;
+	//printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",n,ptv->tv_sec,ptv->tv_usec ) ;
+	ptr = vptr;
+	nleft = n;
+	while (nleft > 0) {
+		int rc;
+		fd_set readset;
+		struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
 
-        /* Initialize readset */
-        FD_ZERO(&readset);
-        FD_SET(fd, &readset);
+		/* Initialize readset */
+		FD_ZERO(&readset);
+		FD_SET(fd, &readset);
 
-        /* Read if it doesn't timeout first */
-        rc = select(fd + 1, &readset, NULL, NULL, &tv);
-        if (rc > 0) {
+		/* Read if it doesn't timeout first */
+		rc = select(fd + 1, &readset, NULL, NULL, &tv);
+		if (rc > 0) {
 
-            /* Is there something to read? */
-            if (FD_ISSET(fd, &readset) == 0) {
+			/* Is there something to read? */
+			if (FD_ISSET(fd, &readset) == 0) {
 //                  STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
-                return -EIO;    /* error */
-            }
+				return -EIO;	/* error */
+			}
 //                    update_max_delay(pn);
-            if ((nread = read(fd, ptr, nleft)) < 0) {
-                if (errno == EINTR) {
-                    errno = 0;  // clear errno. We never use it anyway.
-                    nread = 0;  /* and call read() again */
-                } else {
-                    ERROR_DATA("Network data read error\n");
-                    STAT_ADD1(NET_read_errors);
-                    return (-1);
-                }
-            } else if (nread == 0) {
-                break;          /* EOF */
-            }
-            //{ int i ; for ( i=0 ; i<nread ; ++i ) printf("%.2X ",ptr[i]) ; printf("\n") ; }
-            nleft -= nread;
-            ptr += nread;
-        } else if (rc < 0) {    /* select error */
-            if (errno == EINTR) {
-                /* select() was interrupted, try again */
+			if ((nread = read(fd, ptr, nleft)) < 0) {
+				if (errno == EINTR) {
+					errno = 0;	// clear errno. We never use it anyway.
+					nread = 0;	/* and call read() again */
+				} else {
+					ERROR_DATA("Network data read error\n");
+					STAT_ADD1(NET_read_errors);
+					return (-1);
+				}
+			} else if (nread == 0) {
+				break;			/* EOF */
+			}
+			//{ int i ; for ( i=0 ; i<nread ; ++i ) printf("%.2X ",ptr[i]) ; printf("\n") ; }
+			nleft -= nread;
+			ptr += nread;
+		} else if (rc < 0) {	/* select error */
+			if (errno == EINTR) {
+				/* select() was interrupted, try again */
 //                STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
-                continue;
-            }
-            ERROR_DATA("Selection error (network)\n");
+				continue;
+			}
+			ERROR_DATA("Selection error (network)\n");
 //            STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
-            return -EINTR;
-        } else {                /* timed out */
-            LEVEL_CONNECT("TIMEOUT after %d bytes\n", n - nleft);
+			return -EINTR;
+		} else {				/* timed out */
+			LEVEL_CONNECT("TIMEOUT after %d bytes\n", n - nleft);
 //            STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
-            return -EAGAIN;
-        }
-    }
-    return (n - nleft);         /* return >= 0 */
+			return -EAGAIN;
+		}
+	}
+	return (n - nleft);			/* return >= 0 */
 }

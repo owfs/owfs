@@ -22,7 +22,7 @@ $Id$
 
 /* ------- Prototypes ----------- */
 
-    /* All from ow_xxxx.c file */
+	/* All from ow_xxxx.c file */
 
 /* ------- Structures ----------- */
 

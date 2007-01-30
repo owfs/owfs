@@ -25,18 +25,18 @@ typedef HMODULE DLHANDLE;
 #include <dlfcn.h>
 typedef void *DLHANDLE;
 
-#endif				/* OW_CYGWIN */
+#endif							/* OW_CYGWIN */
 
 DLHANDLE DL_open(const char *pathname, int mode);
 void *DL_sym(DLHANDLE handle, const char *name);
 int DL_close(DLHANDLE handle);
 char *DL_error(void);
 
-#else				/* OW_ZERO */
+#else							/* OW_ZERO */
 
 typedef void *DLHANDLE;
 
-#endif				/* OW_ZERO */
+#endif							/* OW_ZERO */
 
 extern DLHANDLE libdnssd;
 

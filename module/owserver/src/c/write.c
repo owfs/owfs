@@ -45,17 +45,19 @@ $Id$
 /* Read, will return: */
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
-void WriteHandler(struct handlerdata * hd, struct client_msg *cm,
+void WriteHandler(struct handlerdata *hd, struct client_msg *cm,
 				  const BYTE * data, const struct parsedname *pn)
 {
-	int ret = FS_write_postparse((const ASCII *) data, (size_t) hd->sm.size,
-								 (off_t) hd->sm.offset, pn);
+	int ret =
+		FS_write_postparse((const ASCII *) data, (size_t) hd->sm.size,
+						   (off_t) hd->sm.offset, pn);
 	//printf("Handler: WRITE done\n");
 	if (ret < 0) {
 		cm->size = 0;
 	} else {
 		cm->size = ret;
 		cm->sg = pn->sg;
-        if ( hd->persistent ) cm->sg |= PERSISTENT_MASK ;
+		if (hd->persistent)
+			cm->sg |= PERSISTENT_MASK;
 	}
 }

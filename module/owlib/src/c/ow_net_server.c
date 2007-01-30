@@ -30,23 +30,23 @@ static int ServerAddr(struct connection_out *out)
 	int ret;
 	char *p;
 
-    if (out->name == NULL) { // use defaults
-        out->host = strdup("0.0.0.0") ;
-        out->service = strdup(DEFAULT_PORT) ;
-    } else if ( (p = strrchr(out->name, ':')) == NULL ) {
-        if ( strchr(out->name,'.') ) { //probably an address
-            out->host = strdup(out->name) ;
-            out->service = strdup(DEFAULT_PORT) ;
-        } else { // assume a port
-            out->host = strdup("0.0.0.0") ;
-            out->service = strdup(out->name) ;
-        }
-    } else {
+	if (out->name == NULL) {	// use defaults
+		out->host = strdup("0.0.0.0");
+		out->service = strdup(DEFAULT_PORT);
+	} else if ((p = strrchr(out->name, ':')) == NULL) {
+		if (strchr(out->name, '.')) {	//probably an address
+			out->host = strdup(out->name);
+			out->service = strdup(DEFAULT_PORT);
+		} else {				// assume a port
+			out->host = strdup("0.0.0.0");
+			out->service = strdup(out->name);
+		}
+	} else {
 		p[0] = '\0';
 		out->host = strdup(out->name);
 		p[0] = ':';
-        out->service = strdup(&p[1]);
-    }
+		out->service = strdup(&p[1]);
+	}
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_flags = AI_PASSIVE;
 	hint.ai_socktype = SOCK_STREAM;

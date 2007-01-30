@@ -50,30 +50,30 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_COUNTERS_H		/* tedious wrapper */
+#ifndef OW_COUNTERS_H			/* tedious wrapper */
 #define OW_COUNTERS_H
 
 /* ----------------- */
 /* -- Statistics --- */
 /* ----------------- */
 struct average {
-    UINT max;
-    UINT sum;
-    UINT count;
-    UINT current;
+	UINT max;
+	UINT sum;
+	UINT count;
+	UINT current;
 };
 
 struct cache {
-    UINT tries;
-    UINT hits;
-    UINT adds;
-    UINT expires;
-    UINT deletes;
+	UINT tries;
+	UINT hits;
+	UINT adds;
+	UINT expires;
+	UINT deletes;
 };
 
 struct directory {
-    UINT calls;
-    UINT entries;
+	UINT calls;
+	UINT entries;
 };
 
 #define AVERAGE_IN(pA)  ++(pA)->current; ++(pA)->count; (pA)->sum+=(pA)->current; if ((pA)->current>(pA)->max)++(pA)->max;
@@ -135,7 +135,7 @@ extern UINT NET_connection_errors;
 extern UINT NET_read_errors;
 
 // ow_bus.c
-extern UINT BUS_reconnects;	// sum from all adapters
+extern UINT BUS_reconnects;		// sum from all adapters
 extern UINT BUS_reconnect_errors;	// sum from all adapters
 extern UINT BUS_send_data_errors;
 extern UINT BUS_send_data_memcmp_errors;
@@ -180,4 +180,4 @@ extern UINT DS2480_databit_errors;
 
 #define STAT_ADD1(x)    STATLOCK ; ++x ; STATUNLOCK
 
-#endif				/* OW_COUNTERS_H */
+#endif							/* OW_COUNTERS_H */

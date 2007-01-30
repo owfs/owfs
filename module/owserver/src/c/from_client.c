@@ -38,7 +38,7 @@ $Id$
 #include "owserver.h"
 
 /* read from client, free return pointer if not Null */
-int FromClient(struct handlerdata * hd)
+int FromClient(struct handlerdata *hd)
 {
 	char *msg;
 	ssize_t trueload;
@@ -48,27 +48,28 @@ int FromClient(struct handlerdata * hd)
 	/* Clear return structure */
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
-    /* read header */
-    if (tcp_read(hd->fd, &hd->sm, sizeof(struct server_msg), &tv) !=
+	/* read header */
+	if (tcp_read(hd->fd, &hd->sm, sizeof(struct server_msg), &tv) !=
 		sizeof(struct server_msg)) {
 		hd->sm.type = msg_error;
 		return -EIO;
 	}
 
-    /* translate endian state */
-    hd->sm.version = ntohl(hd->sm.version );
-    hd->sm.payload = ntohl(hd->sm.payload );
-    hd->sm.size    = ntohl(hd->sm.size    );
-    hd->sm.type    = ntohl(hd->sm.type    );
-    hd->sm.sg      = ntohl(hd->sm.sg      );
-    hd->sm.offset  = ntohl(hd->sm.offset  );
+	/* translate endian state */
+	hd->sm.version = ntohl(hd->sm.version);
+	hd->sm.payload = ntohl(hd->sm.payload);
+	hd->sm.size = ntohl(hd->sm.size);
+	hd->sm.type = ntohl(hd->sm.type);
+	hd->sm.sg = ntohl(hd->sm.sg);
+	hd->sm.offset = ntohl(hd->sm.offset);
 	LEVEL_DEBUG
 		("FromClient payload=%d size=%d type=%d tempscale=%X offset=%d\n",
-		 hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
+		 hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg,
+		 hd->sm.offset);
 	//printf("<%.4d|%.4d\n",sm->type,sm->payload);
-	
-    /* figure out length of rest of message: payload plus tokens */
-    trueload = hd->sm.payload;
+
+	/* figure out length of rest of message: payload plus tokens */
+	trueload = hd->sm.payload;
 	if (isServermessage(hd->sm.version))
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
 	if (trueload == 0)

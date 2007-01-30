@@ -102,7 +102,7 @@ int ClientConnect(struct connection_in *in)
 		}
 	}
 
-	ai = in->connin.tcp.ai;	// loop from first address info since it failed.
+	ai = in->connin.tcp.ai;		// loop from first address info since it failed.
 	do {
 		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (fd >= 0) {
@@ -119,4 +119,3 @@ int ClientConnect(struct connection_in *in)
 	STAT_ADD1(NET_connection_errors);
 	return -1;
 }
-

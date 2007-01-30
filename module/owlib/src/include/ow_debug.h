@@ -58,4 +58,4 @@ extern int log_available;
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"
 #define SNvar(sn)	(sn)[0],(sn)[1],(sn)[2],(sn)[3],(sn)[4],(sn)[5],(sn)[6],(sn)[7]
 
-#endif				/* OW_DEBUG_H */
+#endif							/* OW_DEBUG_H */

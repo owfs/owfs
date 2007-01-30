@@ -65,7 +65,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_H			/* tedious wrapper */
+#ifndef OW_H					/* tedious wrapper */
 #define OW_H
 
 #ifndef OWFS_CONFIG_H
@@ -85,12 +85,12 @@ $Id$
 #include <feature_tests.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>		/* for stat */
+#include <sys/stat.h>			/* for stat */
 #endif
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>		/* for stat */
+#include <sys/types.h>			/* for stat */
 #endif
-#include <sys/times.h>		/* for times */
+#include <sys/times.h>			/* for times */
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -98,7 +98,7 @@ $Id$
 #include <dirent.h>
 #include <signal.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>		/* for bit twiddling */
+#include <stdint.h>				/* for bit twiddling */
 #if OW_CYGWIN
 #define _MSL_STDINT_H
 #endif
@@ -107,9 +107,9 @@ $Id$
 #include <unistd.h>
 #include <fcntl.h>
 #ifndef __USE_XOPEN
-#define __USE_XOPEN		/* for strptime fuction */
+#define __USE_XOPEN				/* for strptime fuction */
 #include <time.h>
-#undef __USE_XOPEN		/* for strptime fuction */
+#undef __USE_XOPEN				/* for strptime fuction */
 #else
 #include <time.h>
 #endif
@@ -118,21 +118,21 @@ $Id$
 #include <syslog.h>
 //#include <sys/file.h> /* for flock */
 #ifdef HAVE_GETOPT_H
-#include <getopt.h>		/* for long options */
+#include <getopt.h>				/* for long options */
 #endif
 
 #include <sys/uio.h>
-#include <sys/time.h>		/* for gettimeofday */
+#include <sys/time.h>			/* for gettimeofday */
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#include <netdb.h>		/* addrinfo */
+#include <netdb.h>				/* addrinfo */
 
 #ifdef HAVE_SYS_MKDEV_H
-#include <sys/mkdev.h>		/* for major() */
+#include <sys/mkdev.h>			/* for major() */
 #endif
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
@@ -141,15 +141,15 @@ $Id$
 #define __USE_GNU
 #include <search.h>
 #undef __USE_GNU
-#else				/* __USE_GNU */
+#else							/* __USE_GNU */
 #include <search.h>
-#endif				/* __USE_GNU */
-#endif				/* SKIP_SEARCH_H */
+#endif							/* __USE_GNU */
+#endif							/* SKIP_SEARCH_H */
 
 /* Parport enabled uses two flags (one a holdover from the embedded work) */
 #ifdef USE_NO_PARPORT
 #undef OW_PARPORT
-#endif				/* USE_NO_PARPORT */
+#endif							/* USE_NO_PARPORT */
 
 #if OW_ZERO
 /* Zeroconf / Bonjour */
@@ -213,7 +213,7 @@ extern pthread_mutexattr_t *pmattr;
 #ifdef __UCLIBC__
 extern pthread_mutexattr_t mattr;
 extern pthread_mutex_t uclibc_mutex;
-#endif				/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 #define STATLOCK          pthread_mutex_lock(  &stat_mutex   )
 #define STATUNLOCK        pthread_mutex_unlock(&stat_mutex   )
 #define CACHELOCK         pthread_mutex_lock(  &cache_mutex  )
@@ -237,12 +237,12 @@ extern pthread_mutex_t uclibc_mutex;
 #ifdef __UCLIBC__
 #define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
 #define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
-#else				/* __UCLIBC__ */
+#else							/* __UCLIBC__ */
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK
-#endif				/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 
-#else				/* OW_MT */
+#else							/* OW_MT */
 #define STATLOCK
 #define STATUNLOCK
 #define CACHELOCK
@@ -267,7 +267,7 @@ extern pthread_mutex_t uclibc_mutex;
 #define BUSUNLOCK(pn)
 #define BUSLOCKIN(in)
 #define BUSUNLOCKIN(in)
-#endif				/* OW_MT */
+#endif							/* OW_MT */
 
 /*
     OW -- One Wire
@@ -279,7 +279,8 @@ extern pthread_mutex_t uclibc_mutex;
 #define OWLIB_OPT "m:c:f:p:s:h::u::d:t:CFRKVP:"
 extern const struct option owopts_long[];
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-	opt_swig, opt_c, };
+	opt_swig, opt_c,
+};
 int owopt(const int c, const char *arg);
 int owopt_packed(const char *params);
 
@@ -318,13 +319,13 @@ enum ag_index { ag_numbers, ag_letters, };
 enum ag_combined { ag_separate, ag_aggregate, ag_mixed, };
 /* aggregate defines array properties */
 struct aggregate {
-    int elements;		/* Maximum number of elements */
-    enum ag_index letters;	/* name them with letters or numbers */
-    enum ag_combined combined;	/* Combined bitmaps properties, or separately addressed */
+	int elements;				/* Maximum number of elements */
+	enum ag_index letters;		/* name them with letters or numbers */
+	enum ag_combined combined;	/* Combined bitmaps properties, or separately addressed */
 };
 extern struct aggregate Asystem;	/* for remote directories */
 
-    /* property format, controls web display */
+	/* property format, controls web display */
 /* Some explanation of ft_format:
      Each file type is either a device (physical 1-wire chip or virtual statistics container).
      or a file (property).
@@ -334,24 +335,25 @@ extern struct aggregate Asystem;	/* for remote directories */
      There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
 */
 enum ft_format {
-    ft_directory,
-    ft_subdir,
-    ft_integer,
-    ft_unsigned,
-    ft_float,
-    ft_ascii,
-    ft_vascii,			// variable length ascii -- must be read and measured.
-    ft_binary,
-    ft_yesno,
-    ft_date,
-    ft_bitfield,
-    ft_temperature,
-    ft_tempgap,
+	ft_directory,
+	ft_subdir,
+	ft_integer,
+	ft_unsigned,
+	ft_float,
+	ft_ascii,
+	ft_vascii,					// variable length ascii -- must be read and measured.
+	ft_binary,
+	ft_yesno,
+	ft_date,
+	ft_bitfield,
+	ft_temperature,
+	ft_tempgap,
 };
-    /* property changability. Static unchanged, Stable we change, Volatile changes */
+	/* property changability. Static unchanged, Stable we change, Volatile changes */
 enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile,
 	fc_Avolatile, fc_second, fc_statistic, fc_persistent, fc_directory,
-	fc_presence, };
+	fc_presence,
+};
 
 /* Predeclare parsedname */
 struct parsedname;
@@ -372,43 +374,43 @@ extern int indevices;
 
 /* filetype gives -file types- for chip properties */
 struct filetype {
-    char *name;
-    int suglen;			// length of field
-    struct aggregate *ag;	// struct pointer for aggregate
-    enum ft_format format;	// type of data
-    enum fc_change change;	// volatility
-    union {
-	void *v;
-	int (*i) (int *, const struct parsedname *);
-	int (*u) (UINT *, const struct parsedname *);
-	int (*f) (_FLOAT *, const struct parsedname *);
-	int (*y) (int *, const struct parsedname *);
-	int (*d) (_DATE *, const struct parsedname *);
-	int (*a) (char *, const size_t, const off_t,
-		  const struct parsedname *);
-	int (*b) (BYTE *, const size_t, const off_t,
-		  const struct parsedname *);
-    } read;			// read callback function
-    union {
-	void *v;
-	int (*i) (const int *, const struct parsedname *);
-	int (*u) (const UINT *, const struct parsedname *);
-	int (*f) (const _FLOAT *, const struct parsedname *);
-	int (*y) (const int *, const struct parsedname *);
-	int (*d) (const _DATE *, const struct parsedname *);
-	int (*a) (const char *, const size_t, const off_t,
-		  const struct parsedname *);
-	int (*b) (const BYTE *, const size_t, const off_t,
-		  const struct parsedname *);
-    } write;			// write callback function
-    union {
-	void *v;
-	int i;
-	UINT u;
-	_FLOAT f;
-	size_t s;
-	BYTE c;
-    } data;			// extra data pointer (used for separating similar but differently name functions)
+	char *name;
+	int suglen;					// length of field
+	struct aggregate *ag;		// struct pointer for aggregate
+	enum ft_format format;		// type of data
+	enum fc_change change;		// volatility
+	union {
+		void *v;
+		int (*i) (int *, const struct parsedname *);
+		int (*u) (UINT *, const struct parsedname *);
+		int (*f) (_FLOAT *, const struct parsedname *);
+		int (*y) (int *, const struct parsedname *);
+		int (*d) (_DATE *, const struct parsedname *);
+		int (*a) (char *, const size_t, const off_t,
+				  const struct parsedname *);
+		int (*b) (BYTE *, const size_t, const off_t,
+				  const struct parsedname *);
+	} read;						// read callback function
+	union {
+		void *v;
+		int (*i) (const int *, const struct parsedname *);
+		int (*u) (const UINT *, const struct parsedname *);
+		int (*f) (const _FLOAT *, const struct parsedname *);
+		int (*y) (const int *, const struct parsedname *);
+		int (*d) (const _DATE *, const struct parsedname *);
+		int (*a) (const char *, const size_t, const off_t,
+				  const struct parsedname *);
+		int (*b) (const BYTE *, const size_t, const off_t,
+				  const struct parsedname *);
+	} write;					// write callback function
+	union {
+		void *v;
+		int i;
+		UINT u;
+		_FLOAT f;
+		size_t s;
+		BYTE c;
+	} data;						// extra data pointer (used for separating similar but differently name functions)
 };
 #define NFT(ft) ((int)(sizeof(ft)/sizeof(struct filetype)))
 
@@ -418,8 +420,8 @@ struct filetype {
 /* Internal properties -- used by some devices */
 /* in passing to store state information        */
 struct internal_prop {
-    char *name;
-    enum fc_change change;
+	char *name;
+	enum fc_change change;
 };
 
 /* -------------------------------- */
@@ -440,24 +442,24 @@ bound the allowable files in a device directory
 /* A separate root for each device type: real, statistics, settings, system, structure */
 extern void *Tree[6];
 
-    /* supports RESUME command */
+	/* supports RESUME command */
 #define DEV_resume  0x0001
-    /* can trigger an alarm */
+	/* can trigger an alarm */
 #define DEV_alarm   0x0002
-    /* support OVERDRIVE */
+	/* support OVERDRIVE */
 #define DEV_ovdr    0x0004
-    /* responds to simultaneous temperature convert 0x44 */
+	/* responds to simultaneous temperature convert 0x44 */
 #define DEV_temp    0x8000
-    /* responds to simultaneous voltage convert 0x3C */
+	/* responds to simultaneous voltage convert 0x3C */
 #define DEV_volt    0x4000
 
 
 struct device {
-    const char *code;
-    char *name;
-    uint32_t flags;
-    int nft;
-    struct filetype *ft;
+	const char *code;
+	char *name;
+	uint32_t flags;
+	int nft;
+	struct filetype *ft;
 };
 
 #define DeviceHeader( chip )    extern struct device d_##chip
@@ -472,8 +474,8 @@ struct device {
 /* implementation of tfind, tsearch returns an opaque structure */
 /* you have to know that the first element is a pointer to your data */
 struct device_opaque {
-    struct device *key;
-    void *other;
+	struct device *key;
+	void *other;
 };
 
 /* Must be sorted for bsearch */
@@ -517,95 +519,97 @@ subdir points to in-device groupings
 */
 
 /* Semi-global information (for remote control) */
-    /* bit0: cacheenabled  bit1: return bus-list */
-    /* presencecheck */
-    /* tempscale */
-    /* device format */
+	/* bit0: cacheenabled  bit1: return bus-list */
+	/* presencecheck */
+	/* tempscale */
+	/* device format */
 extern int32_t SemiGlobal;
 
 /* Unique token for owserver loop checks */
 union antiloop {
-    struct {
-	pid_t pid;
-	clock_t clock;
-    } simple;
-    BYTE uuid[16];
+	struct {
+		pid_t pid;
+		clock_t clock;
+	} simple;
+	BYTE uuid[16];
 };
 
 /* Global information (for local control) */
 struct global {
-    int announce_off;		// use zeroconf?
-    ASCII *announce_name;
+	int announce_off;			// use zeroconf?
+	ASCII *announce_name;
 #if OW_ZERO
-    DNSServiceRef browse;
+	DNSServiceRef browse;
 #endif
-    enum opt_program opt;
-    ASCII *progname;
-    union antiloop Token;
-    int want_background;
-    int now_background;
-    int error_level;
-    int error_print;
-    int readonly;
-    char *SimpleBusName;
-    int max_clients;		// for ftp
-    int autoserver;
-    size_t cache_size;		// max cache size (or 0 for no max) ;
-    /* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
-    int altUSB;
-    /* timeouts -- order must match ow_opt.c values for correct indexing */
-    int timeout_volatile;
-    int timeout_stable;
-    int timeout_directory;
-    int timeout_presence;
-    int timeout_serial;
-    int timeout_usb;
-    int timeout_network;
-    int timeout_server;
-    int timeout_ftp;
-    int timeout_persistent_low ;
-    int timeout_persistent_high ;
-    int clients_persistent_low ;
-    int clients_persistent_high ;
+	enum opt_program opt;
+	ASCII *progname;
+	union antiloop Token;
+	int want_background;
+	int now_background;
+	int error_level;
+	int error_print;
+	int readonly;
+	char *SimpleBusName;
+	int max_clients;			// for ftp
+	int autoserver;
+	size_t cache_size;			// max cache size (or 0 for no max) ;
+	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
+	int altUSB;
+	/* timeouts -- order must match ow_opt.c values for correct indexing */
+	int timeout_volatile;
+	int timeout_stable;
+	int timeout_directory;
+	int timeout_presence;
+	int timeout_serial;
+	int timeout_usb;
+	int timeout_network;
+	int timeout_server;
+	int timeout_ftp;
+	int timeout_persistent_low;
+	int timeout_persistent_high;
+	int clients_persistent_low;
+	int clients_persistent_high;
 };
 extern struct global Global;
 
 extern int shutdown_in_progress;
 
 struct buspath {
-    BYTE sn[8];
-    BYTE branch;
+	BYTE sn[8];
+	BYTE branch;
 };
 
 struct devlock {
-    BYTE sn[8];
-    UINT users;
-    pthread_mutex_t lock;
+	BYTE sn[8];
+	UINT users;
+	pthread_mutex_t lock;
 };
 
 enum pn_type { pn_real =
-	0, pn_statistics, pn_system, pn_settings, pn_structure };
+		0, pn_statistics, pn_system, pn_settings, pn_structure
+};
 enum pn_state { pn_normal = 0, pn_uncached = 1, pn_alarm = 2, pn_text =
-	4, pn_bus = 8, pn_buspath = 16, };
+		4, pn_bus = 8, pn_buspath = 16,
+};
 struct parsedname {
-    char *path;			// text-more device name
-    char *path_busless;		// pointer to path without first bus
-    int bus_nr;
-    enum pn_type type;		// global branch
-    enum pn_state state;	// global branch
-    BYTE sn[8];			// 64-bit serial number
-    struct device *dev;		// 1-wire device
-    struct filetype *ft;	// device property
-    int extension;		// numerical extension (for array values) or -1
-    struct filetype *subdir;	// in-device grouping
-    UINT pathlength;		// DS2409 branching depth
-    struct buspath *bp;		// DS2409 branching route
-    struct connection_in *indevice;	// Global indevice at definition time
-    struct connection_in *in;
-    uint32_t sg;		// more state info, packed for network transmission
-    struct devlock **lock;	// need to clear dev lock?
-    int tokens;			/* for anti-loop work */
-    BYTE *tokenstring;		/* List of tokens from owservers passed */
+	char *path;					// text-more device name
+	char *path_busless;			// pointer to path without first bus
+	int bus_nr;
+	enum pn_type type;			// global branch
+	enum pn_state state;		// global branch
+	BYTE sn[8];					// 64-bit serial number
+	struct device *dev;			// 1-wire device
+	struct filetype *ft;		// device property
+	int extension;				// numerical extension (for array values) or -1
+	struct filetype *subdir;	// in-device grouping
+	UINT pathlength;			// DS2409 branching depth
+	struct buspath *bp;			// DS2409 branching route
+	struct connection_in *indevice;	// Global indevice at definition time
+	struct connection_in *in;
+	uint32_t sg;				// more state info, packed for network transmission
+	struct devlock **lock;		// need to clear dev lock?
+	int tokens;					/* for anti-loop work */
+	BYTE *tokenstring;			/* List of tokens from owservers passed */
 };
 
 enum simul_type { simul_temp, simul_volt, };
@@ -620,16 +624,16 @@ enum simul_type { simul_temp, simul_volt, };
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
-    };
+};
 _FLOAT Temperature(_FLOAT C, const struct parsedname *pn);
 _FLOAT TemperatureGap(_FLOAT C, const struct parsedname *pn);
 _FLOAT fromTemperature(_FLOAT T, const struct parsedname *pn);
 _FLOAT fromTempGap(_FLOAT T, const struct parsedname *pn);
 const char *TemperatureScaleName(enum temp_type t);
 
-extern void
-set_signal_handlers(void (*exit_handler)
-		    (int signo, siginfo_t * info, void *context));
+extern void set_signal_handlers(void (*exit_handler)
+								 (int signo, siginfo_t * info,
+								  void *context));
 
 #ifndef SI_FROMUSER
 #define SI_FROMUSER(siptr)      ((siptr)->si_code <= 0)
@@ -641,42 +645,42 @@ set_signal_handlers(void (*exit_handler)
 
 /* Server (Socket-based) interface */
 enum msg_classification {
-    msg_error,
-    msg_nop,
-    msg_read,
-    msg_write,
-    msg_dir,
-    msg_size,			// No longer used, leave here to compatibility
-    msg_presence,
-    msg_dirall,
-    msg_get,
+	msg_error,
+	msg_nop,
+	msg_read,
+	msg_write,
+	msg_dir,
+	msg_size,					// No longer used, leave here to compatibility
+	msg_presence,
+	msg_dirall,
+	msg_get,
 };
 /* message to owserver */
 struct server_msg {
-    int32_t version;
-    int32_t payload;
-    int32_t type;
-    int32_t sg;
-    int32_t size;
-    int32_t offset;
+	int32_t version;
+	int32_t payload;
+	int32_t type;
+	int32_t sg;
+	int32_t size;
+	int32_t offset;
 };
 
 /* message to client */
 struct client_msg {
-    int32_t version;
-    int32_t payload;
-    int32_t ret;
-    int32_t sg;
-    int32_t size;
-    int32_t offset;
+	int32_t version;
+	int32_t payload;
+	int32_t ret;
+	int32_t sg;
+	int32_t size;
+	int32_t offset;
 };
 
 struct serverpackage {
-    ASCII *path;
-    BYTE *data;
-    size_t datasize;
-    BYTE *tokenstring;
-    size_t tokens;
+	ASCII *path;
+	BYTE *data;
+	size_t datasize;
+	BYTE *tokenstring;
+	size_t tokens;
 };
 
 #define Servermessage       (((int32_t)1)<<16)
@@ -685,7 +689,7 @@ struct serverpackage {
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
 extern time_t start_time;
-extern time_t dir_time;		/* time of last directory scan */
+extern time_t dir_time;			/* time of last directory scan */
 
 /* Prototypes */
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
@@ -716,7 +720,7 @@ void DeviceDestroy(void);
 /* Pasename processing -- URL/path comprehension */
 int filecmp(const void *name, const void *ex);
 int FS_ParsedNamePlus(const char *path, const char *file,
-		      struct parsedname *pn);
+					  struct parsedname *pn);
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
@@ -726,18 +730,18 @@ size_t SimpleFileLength(const struct parsedname *pn);
 size_t SimpleFullFileLength(const struct parsedname *pn);
 int CheckPresence(const struct parsedname *pn);
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn,
-		   const struct parsedname *pn);
+				   const struct parsedname *pn);
 void FS_devicefind(const char *code, struct parsedname *pn);
 void FS_devicefindhex(BYTE f, struct parsedname *pn);
 
 int FS_dirname_state(char *buffer, const size_t length,
-		     const struct parsedname *pn);
+					 const struct parsedname *pn);
 int FS_dirname_type(char *buffer, const size_t length,
-		    const struct parsedname *pn);
+					const struct parsedname *pn);
 void FS_DirName(char *buffer, const size_t size,
-		const struct parsedname *pn);
+				const struct parsedname *pn);
 int FS_FileName(char *name, const size_t size,
-		const struct parsedname *pn);
+				const struct parsedname *pn);
 
 /* Utility functions */
 BYTE CRC8(const BYTE * bytes, const size_t length);
@@ -764,7 +768,7 @@ int FS_busless(char *path);
 void FS_LoadPath(BYTE * sn, const struct parsedname *pn);
 
 int Simul_Test(const enum simul_type type, const struct parsedname *pn);
-int FS_poll_convert( const struct parsedname * pn ) ;
+int FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
 void LockSetup(void);
@@ -784,11 +788,11 @@ void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
 ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval *ptv);
-int tcp_wait(int fd, const struct timeval * ptv) ;
+int tcp_wait(int fd, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void ServerProcess(void (*HandlerRoutine) (int fd),
-		   void (*Exit) (int errcode));
+				   void (*Exit) (int errcode));
 void FreeClientAddr(struct connection_in *in);
 int ServerOutSetup(struct connection_out *out);
 
@@ -804,44 +808,44 @@ void update_max_delay(const struct parsedname *pn);
 
 int ServerPresence(const struct parsedname *pn);
 int ServerRead(char *buf, const size_t size, const off_t offset,
-	       const struct parsedname *pn);
+			   const struct parsedname *pn);
 int ServerWrite(const char *buf, const size_t size, const off_t offset,
-		const struct parsedname *pn);
+				const struct parsedname *pn);
 int ServerDir(void (*dirfunc) (void *, const struct parsedname *),
-          void * v, const struct parsedname *pn, uint32_t * flags);
+			  void *v, const struct parsedname *pn, uint32_t * flags);
 
 /* High-level callback functions */
 int FS_dir(void (*dirfunc) (void *, const struct parsedname *),
-       void * v, const struct parsedname *pn);
+		   void *v, const struct parsedname *pn);
 int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
-          void * v, const struct parsedname *pn, uint32_t * flags);
+				  void *v, const struct parsedname *pn, uint32_t * flags);
 
 int FS_write(const char *path, const char *buf, const size_t size,
-	     const off_t offset);
+			 const off_t offset);
 int FS_write_postparse(const char *buf, const size_t size,
-		       const off_t offset, const struct parsedname *pn);
+					   const off_t offset, const struct parsedname *pn);
 
 int FS_read(const char *path, char *buf, const size_t size,
-	    const off_t offset);
+			const off_t offset);
 int FS_read_postparse(char *buf, const size_t size, const off_t offset,
-		      const struct parsedname *pn);
+					  const struct parsedname *pn);
 int FS_read_postpostparse(char *buf, const size_t size, const off_t offset,
-			  const struct parsedname *pn);
+						  const struct parsedname *pn);
 int FS_read_fake(char *buf, const size_t size, const off_t offset,
-		 const struct parsedname *pn);
+				 const struct parsedname *pn);
 int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
-		    size_t length);
+					size_t length);
 int FS_output_ascii_z(ASCII * buf, size_t size, off_t offset,
-		      ASCII * answer);
+					  ASCII * answer);
 
 int FS_output_unsigned(UINT value, char *buf, const size_t size,
-		       const struct parsedname *pn);
+					   const struct parsedname *pn);
 int FS_output_integer(int value, char *buf, const size_t size,
-		      const struct parsedname *pn);
+					  const struct parsedname *pn);
 int FS_output_float(_FLOAT value, char *buf, const size_t size,
-		    const struct parsedname *pn);
+					const struct parsedname *pn);
 int FS_output_date(_DATE value, char *buf, const size_t size,
-		   const struct parsedname *pn);
+				   const struct parsedname *pn);
 
 
 int FS_fstat(const char *path, struct stat *stbuf);
@@ -849,22 +853,22 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
 /* iteration functions for splitting writes to buffers */
 int OW_read_paged(BYTE * p, size_t size, off_t offset,
-		  const struct parsedname *pn, size_t pagelen,
-		  int (*readfunc) (BYTE *, const size_t, const off_t,
-				   const struct parsedname *));
+				  const struct parsedname *pn, size_t pagelen,
+				  int (*readfunc) (BYTE *, const size_t, const off_t,
+								   const struct parsedname *));
 int OW_write_paged(const BYTE * p, size_t size, off_t offset,
-		   const struct parsedname *pn, size_t pagelen,
-		   int (*writefunc) (const BYTE *, const size_t,
-				     const off_t,
-				     const struct parsedname *));
+				   const struct parsedname *pn, size_t pagelen,
+				   int (*writefunc) (const BYTE *, const size_t,
+									 const off_t,
+									 const struct parsedname *));
 
 int OW_r_mem_simple(BYTE * data, const size_t size, const off_t offset,
-		    const struct parsedname *pn);
+					const struct parsedname *pn);
 int OW_r_mem_crc16(BYTE * data, const size_t size, const off_t offset,
-		   const struct parsedname *pn, size_t pagesize);
+				   const struct parsedname *pn, size_t pagesize);
 int OW_r_mem_p8_crc16(BYTE * data, const size_t size, const off_t offset,
-		      const struct parsedname *pn, size_t pagesize,
-		      BYTE * extra);
+					  const struct parsedname *pn, size_t pagesize,
+					  BYTE * extra);
 
 void BUS_lock(const struct parsedname *pn);
 void BUS_unlock(const struct parsedname *pn);
@@ -910,4 +914,4 @@ void BUS_unlock_in(struct connection_in *in);
 #define SpecifiedBus(pn)          ((((pn)->state) & pn_buspath) != 0 )
 #define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= pn_buspath ; SetKnownBus(bus_number,pn); } while(0)
 
-#endif				/* OW_H */
+#endif							/* OW_H */

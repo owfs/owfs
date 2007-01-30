@@ -68,15 +68,15 @@ char *strsep(char **stringp, const char *delim);
 #if defined(__UCLIBC__)
 #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) <= 0x000913)
 #undef HAVE_TDESTROY
-#else				/* Older than 0.9.19 */
+#else							/* Older than 0.9.19 */
 #define HAVE_TDESTROY 1
-#endif				/* Older than 0.9.19 */
+#endif							/* Older than 0.9.19 */
 #else
 
-#endif				/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 
 #ifndef HAVE_TDESTROY
-void tdestroy(void *vroot, void (*freefct)(void *));
+void tdestroy(void *vroot, void (*freefct) (void *));
 #endif
 
 #ifdef __UCLIBC__
@@ -91,9 +91,9 @@ void tdestroy(void *vroot, void (*freefct)(void *));
 #define openlog(a,...)	{ /* ignore_openlog */ }
 #define closelog()		{ /* ignore_closelog */ }
 #endif
-#endif				/* __UCLIBC__ */
-#endif				/* __UCLIBC__ */
-#endif				/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 
 
 

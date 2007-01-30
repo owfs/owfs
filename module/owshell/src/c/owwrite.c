@@ -20,31 +20,35 @@ $Id$
 /* ---------------------------------------------- */
 /* Command line parsing and result generation     */
 /* ---------------------------------------------- */
-int main(int argc, char *argv[]) {
-    int c ;
-    int paths_found = 0 ;
-    int rc = -1 ;
+int main(int argc, char *argv[])
+{
+	int c;
+	int paths_found = 0;
+	int rc = -1;
 
-    Setup() ;
-    /* process command line arguments */
-    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) 
-        owopt(c,optarg) ;
+	Setup();
+	/* process command line arguments */
+	while ((c =
+			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
+		owopt(c, optarg);
 
-    /* non-option arguments */
-    while ( optind < argc-1 ) {
-        if ( indevice==NULL ) {
-            OW_ArgNet(argv[optind]) ;
-            ++optind ;
-        } else {
-            if ( paths_found++ == 0 ) Server_detect() ;
-            rc = ServerWrite(argv[optind],argv[optind+1]) ;
-            optind += 2 ;
-        }
-    }
-    if ( optind < argc ) {
-        fprintf(stderr,"Unpaired <path> <value> entry: %s\n",argv[optind]) ;
-        exit(1) ;
-    }
-    Cleanup();
-    exit((rc >= 0 ? 0 : 1)) ;
+	/* non-option arguments */
+	while (optind < argc - 1) {
+		if (indevice == NULL) {
+			OW_ArgNet(argv[optind]);
+			++optind;
+		} else {
+			if (paths_found++ == 0)
+				Server_detect();
+			rc = ServerWrite(argv[optind], argv[optind + 1]);
+			optind += 2;
+		}
+	}
+	if (optind < argc) {
+		fprintf(stderr, "Unpaired <path> <value> entry: %s\n",
+				argv[optind]);
+		exit(1);
+	}
+	Cleanup();
+	exit((rc >= 0 ? 0 : 1));
 }

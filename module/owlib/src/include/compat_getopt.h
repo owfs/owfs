@@ -45,7 +45,7 @@ extern "C" {
    Also, when `ordering' is RETURN_IN_ORDER,
    each non-option ARGV-element is returned here.  */
 
-    extern char *optarg;
+	extern char *optarg;
 
 /* Index in ARGV of the next element to be scanned.
    This is used for communication to and from the caller
@@ -59,18 +59,18 @@ extern "C" {
    Otherwise, `optind' communicates from one call to the next
    how much of ARGV has been scanned so far.  */
 
-    extern int optind;
+	extern int optind;
 
 /* Callers store zero here to inhibit the error message `getopt' prints
    for unrecognized options.  */
 
-    extern int opterr;
+	extern int opterr;
 
 /* Set to an option character which was unrecognized.  */
 
-    extern int optopt;
+	extern int optopt;
 
-#endif				/* HAVE_GETOPT */
+#endif							/* HAVE_GETOPT */
 
 #ifndef HAVE_GETOPT_LONG
 /* Describe the long-named options requested by the application.
@@ -94,21 +94,21 @@ extern "C" {
    one).  For long options that have a zero `flag' field, `getopt'
    returns the contents of the `val' field.  */
 
-    struct option {
-	const char *name;
-	/* has_arg can't be an enum because some compilers complain about
-	   type mismatches in all the code that assumes it is an int.  */
-	int has_arg;
-	int *flag;
-	int val;
-    };
+	struct option {
+		const char *name;
+		/* has_arg can't be an enum because some compilers complain about
+		   type mismatches in all the code that assumes it is an int.  */
+		int has_arg;
+		int *flag;
+		int val;
+	};
 
 /* Names for the values of the `has_arg' field of `struct option'.  */
 
 # define no_argument		0
 # define required_argument	1
 # define optional_argument	2
-#endif				/* HAVE_GETOPT_LONG */
+#endif							/* HAVE_GETOPT_LONG */
 
 
 /* Get definitions and prototypes for functions to process the
@@ -139,28 +139,28 @@ extern "C" {
 /* Many other libraries have conflicting prototypes for getopt, with
    differences in the consts, in stdlib.h.  To avoid compilation
    errors, only prototype getopt for the GNU C library.  */
-    extern int getopt(int __argc, char *const *__argv,
-		      const char *__shortopts);
+	extern int getopt(int __argc, char *const *__argv,
+					  const char *__shortopts);
 #endif
 
 #ifndef HAVE_GETOPT_LONG
-    extern int getopt_long(int __argc, char *const *__argv,
-			   const char *__shortopts,
-			   const struct option *__longopts,
-			   int *__longind);
-    extern int getopt_long_only(int __argc, char *const *__argv,
-				const char *__shortopts,
-				const struct option *__longopts,
-				int *__longind);
+	extern int getopt_long(int __argc, char *const *__argv,
+						   const char *__shortopts,
+						   const struct option *__longopts,
+						   int *__longind);
+	extern int getopt_long_only(int __argc, char *const *__argv,
+								const char *__shortopts,
+								const struct option *__longopts,
+								int *__longind);
 
 /* Internal only.  Users should not call this directly.  */
-    extern int _getopt_internal(int __argc, char *const *__argv,
-				const char *__shortopts,
-				const struct option *__longopts,
-				int *__longind, int __long_only);
+	extern int _getopt_internal(int __argc, char *const *__argv,
+								const char *__shortopts,
+								const struct option *__longopts,
+								int *__longind, int __long_only);
 #endif
 
 #ifdef	__cplusplus
 }
 #endif
-#endif				/* _COMP_GETOPT_H */
+#endif							/* _COMP_GETOPT_H */

@@ -41,7 +41,7 @@ $Id$
  * lower level routine for actually handling a request
  * deals with data (ping is handled higher)
  */
-void * DataHandler(void *v)
+void *DataHandler(void *v)
 {
 	struct handlerdata *hd = v;
 	char *retbuffer = NULL;
@@ -65,7 +65,7 @@ void * DataHandler(void *v)
 
 	//printf("OWSERVER message type = %d\n",sm.type ) ;
 	memset(&cm, 0, sizeof(struct client_msg));
-    cm.sg = hd->sm.sg ; // default flag return -- includes persistence state
+	cm.sg = hd->sm.sg;			// default flag return -- includes persistence state
 
 	switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message
@@ -117,16 +117,16 @@ void * DataHandler(void *v)
 				break;
 			case msg_dir:
 				LEVEL_CALL("Directory message (by bits)\n");
-				DirHandler( hd, &cm,&pn);
+				DirHandler(hd, &cm, &pn);
 				break;
 			case msg_dirall:
 				LEVEL_CALL("Directory message (all at once)\n");
-				retbuffer = DirallHandler( hd, &cm, &pn);
+				retbuffer = DirallHandler(hd, &cm, &pn);
 				break;
 			case msg_get:
 				if (IsDir(&pn)) {
 					LEVEL_CALL("Get -> Directory message (all at once)\n");
-					retbuffer = DirallHandler( hd, &cm, &pn);
+					retbuffer = DirallHandler(hd, &cm, &pn);
 				} else {
 					LEVEL_CALL("Get -> Read message\n");
 					retbuffer = ReadHandler(hd, &cm, &pn);

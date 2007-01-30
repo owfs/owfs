@@ -20,4 +20,4 @@ $Id$
 /* -------- Structures ---------- */
 DeviceHeader(simultaneous);
 
-#endif				/* OW_SIMULTANEOUS */
+#endif							/* OW_SIMULTANEOUS */

@@ -28,14 +28,17 @@ static void Zero_setroutines(struct interface_routines *f);
 static void Server_close(struct connection_in *in);
 static uint32_t SetupSemi(int persistent, const struct parsedname *pn);
 static int ConnectToServer(struct connection_in *in);
-static int ToServerTwice( int fd, int persistent, struct server_msg * sm, struct serverpackage *sp, struct connection_in * in ) ;
+static int ToServerTwice(int fd, int persistent, struct server_msg *sm,
+						 struct serverpackage *sp,
+						 struct connection_in *in);
 
-static int PersistentStart( int * persistent, struct connection_in * in ) ;
-static void PersistentEnd( int fd, int persistent, int granted, struct connection_in * in ) ;
-static void PersistentFree( int fd, struct connection_in * in ) ;
-static void PersistentClear( int fd, struct connection_in * in ) ;
-static int PersistentRequest( struct connection_in * in ) ;
-static int PersistentReRequest( int fd, struct connection_in * in ) ;
+static int PersistentStart(int *persistent, struct connection_in *in);
+static void PersistentEnd(int fd, int persistent, int granted,
+						  struct connection_in *in);
+static void PersistentFree(int fd, struct connection_in *in);
+static void PersistentClear(int fd, struct connection_in *in);
+static int PersistentRequest(struct connection_in *in);
+static int PersistentReRequest(int fd, struct connection_in *in);
 
 
 static void Server_setroutines(struct interface_routines *f)
@@ -80,7 +83,7 @@ int Zero_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->fd = -1 ; // No persistent connection yet
+	in->fd = -1;				// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_zero;
@@ -95,7 +98,7 @@ int Server_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->fd = -1 ; // No persistent connection yet
+	in->fd = -1;				// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
@@ -105,9 +108,9 @@ int Server_detect(struct connection_in *in)
 
 static void Server_close(struct connection_in *in)
 {
-	if ( in->fd > -1 ) { // persistent connection
-		close(in->fd) ;
-		in->fd = -1 ;
+	if (in->fd > -1) {			// persistent connection
+		close(in->fd);
+		in->fd = -1;
 	}
 	FreeClientAddr(in);
 }
@@ -119,8 +122,8 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 	struct client_msg cm;
 	struct serverpackage sp =
 		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
-    int persistent = 1 ;
-	int connectfd ;
+	int persistent = 1;
+	int connectfd;
 	int ret = 0;
 
 	//printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
@@ -134,20 +137,21 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index,
 			   SAFESTRING(pn->path_busless));
 
-    connectfd = PersistentStart( &persistent, pn->in ) ;
-    if (connectfd > -1 ) {
-        sm.sg = SetupSemi(persistent,pn);
-        if ( (connectfd=ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0 ) {
-            ret = -EIO;
-        } else if (FromServer(connectfd, &cm, buf, size) < 0) {
-            ret = -EIO;
-        } else {
-            ret = cm.ret;
-        }
-    } else {
-        ret = -EIO ;
-    }
-    PersistentEnd(connectfd,persistent,cm.sg&PERSISTENT_MASK,pn->in) ;
+	connectfd = PersistentStart(&persistent, pn->in);
+	if (connectfd > -1) {
+		sm.sg = SetupSemi(persistent, pn);
+		if ((connectfd =
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ret = -EIO;
+		} else if (FromServer(connectfd, &cm, buf, size) < 0) {
+			ret = -EIO;
+		} else {
+			ret = cm.ret;
+		}
+	} else {
+		ret = -EIO;
+	}
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
 	return ret;
 }
 
@@ -157,9 +161,9 @@ int ServerPresence(const struct parsedname *pn)
 	struct client_msg cm;
 	struct serverpackage sp =
 		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
-    int persistent = 1 ;
-    int connectfd ;
-    int ret = 0;
+	int persistent = 1;
+	int connectfd;
+	int ret = 0;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
@@ -169,21 +173,22 @@ int ServerPresence(const struct parsedname *pn)
 	LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index,
 			   SAFESTRING(pn->path_busless));
 
-    connectfd = PersistentStart( &persistent, pn->in ) ;
-    if (connectfd > -1 ) {
-        sm.sg = SetupSemi(persistent,pn);
-        if ( (connectfd=ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0 ) {
-            ret = -EIO;
-        } else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
-            ret = -EIO;
-        } else {
-            ret = cm.ret;
-        }
-    } else {
-        ret = -EIO ;
-    }
-    PersistentEnd(connectfd,persistent,cm.sg&PERSISTENT_MASK,pn->in) ;
-    return ret;
+	connectfd = PersistentStart(&persistent, pn->in);
+	if (connectfd > -1) {
+		sm.sg = SetupSemi(persistent, pn);
+		if ((connectfd =
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ret = -EIO;
+		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
+			ret = -EIO;
+		} else {
+			ret = cm.ret;
+		}
+	} else {
+		ret = -EIO;
+	}
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	return ret;
 }
 
 int ServerWrite(const char *buf, const size_t size, const off_t offset,
@@ -193,9 +198,9 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
 	struct client_msg cm;
 	struct serverpackage sp =
 		{ pn->path_busless, buf, size, pn->tokenstring, pn->tokens, };
-    int persistent = 1 ;
-    int connectfd ;
-    int ret = 0;
+	int persistent = 1;
+	int connectfd;
+	int ret = 0;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
@@ -207,127 +212,129 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
 	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index,
 			   SAFESTRING(pn->path_busless));
 
-    connectfd = PersistentStart( &persistent, pn->in ) ;
-    if (connectfd > -1 ) {
-        sm.sg = SetupSemi(persistent,pn);
-        if ( (connectfd=ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0 ) {
-            ret = -EIO;
-        } else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
-            ret = -EIO;
-        } else {
-            int32_t sg = cm.sg & ~(BUSRET_MASK|PERSISTENT_MASK) ;
-            ret = cm.ret;
-            if (SemiGlobal != sg) {
-                //printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
-                CACHELOCK;
-                SemiGlobal = sg;
-                CACHEUNLOCK;
-            }
-        }
-    } else {
-        ret = -EIO ;
-    }
-    PersistentEnd(connectfd,persistent,cm.sg&PERSISTENT_MASK,pn->in) ;
-    return ret;
+	connectfd = PersistentStart(&persistent, pn->in);
+	if (connectfd > -1) {
+		sm.sg = SetupSemi(persistent, pn);
+		if ((connectfd =
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ret = -EIO;
+		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
+			ret = -EIO;
+		} else {
+			int32_t sg = cm.sg & ~(BUSRET_MASK | PERSISTENT_MASK);
+			ret = cm.ret;
+			if (SemiGlobal != sg) {
+				//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
+				CACHELOCK;
+				SemiGlobal = sg;
+				CACHEUNLOCK;
+			}
+		}
+	} else {
+		ret = -EIO;
+	}
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	return ret;
 }
 
 int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
-              void * v, const struct parsedname *pn, uint32_t * flags)
+			  void *v, const struct parsedname *pn, uint32_t * flags)
 {
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp =
 		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
-    int persistent = 1 ;
-    int connectfd ;
-    int ret ;
-	
+	int persistent = 1;
+	int connectfd;
+	int ret;
+
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
-	
+
 	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index,
-		   SAFESTRING(pn->path_busless));
-	
-    connectfd = PersistentStart( &persistent, pn->in ) ;
-    if (connectfd > -1 ) {
-        sm.sg = SetupSemi(persistent,pn);
-        if ( (connectfd=ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0 ) {
-            ret = -EIO;
-        } else {
-            char *path2;
-            size_t devices = 0;
-            struct parsedname pn2;
-            struct dirblob db;
-            
-            /* If cacheable, try to allocate a blob for storage */
-            /* only for "read devices" and not alarm */
-            DirblobInit(&db);
-            if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
-                && pn->dev == NULL) {
-                if (pn2.pathlength == 0) {  /* root dir */
-                    BUSLOCK(pn);
-                    db.allocated = pn->in->last_root_devs;  // root dir estimated length
-                    BUSUNLOCK(pn);
-                }
-            } else {
-                db.troubled = 1;    // no dirblob cache
-            }
-            
-            while ((path2 = FromServerAlloc(connectfd, &cm))) {
-                path2[cm.payload - 1] = '\0';   /* Ensure trailing null */
-                LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
-                
-                if (FS_ParsedName_BackFromRemote(path2, &pn2)) {
-                    cm.ret = -EINVAL;
-                    free(path2);
-                    break;
-                }
-                SetKnownBus(pn->in->index,&pn2) ;  //use parent connection_in
-                
-                /* we got a device on bus_nr = pn->in->index. Cache it so we
-                    find it quicker next time we want to do read values from the
-                    the actual device
-                */
-                if (pn2.dev && IsRealDir(&pn2)) {
-                    /* If we get a device then cache the bus_nr */
-                    Cache_Add_Device(pn->in->index, &pn2);
-                }
-                /* Add to cache Blob -- snlist is also a flag for cachable */
-                if (DirblobPure(&db)) { /* only add if there is a blob allocated successfully */
-                    DirblobAdd(pn2.sn, &db);
-                }
-                ++devices;
-                
-                DIRLOCK;
-                dirfunc(v,&pn2);
-                DIRUNLOCK;
-                
-                FS_ParsedName_destroy(&pn2);    // destroy the last parsed name
-                free(path2);
-            }
-            /* Add to the cache (full list as a single element */
-            if (DirblobPure(&db)) {
-                Cache_Add_Dir(&db, pn); // end with a null entry
-                if (pn2.pathlength == 0) {
-                    BUSLOCK(pn);
-                    pn->in->last_root_devs = db.devices;    // root dir estimated length
-                    BUSUNLOCK(pn);
-                }
-            }
-            DirblobClear(&db);
-            
-            DIRLOCK;
-            /* flags are sent back in "offset" of final blank entry */
-            flags[0] |= cm.offset;
-            DIRUNLOCK;
-            ret = cm.ret ;
-        }
-    } else {
-        ret = -EIO ;
-    }
-    PersistentEnd(connectfd,persistent,cm.sg&PERSISTENT_MASK,pn->in) ;
-    return ret;
+			   SAFESTRING(pn->path_busless));
+
+	connectfd = PersistentStart(&persistent, pn->in);
+	if (connectfd > -1) {
+		sm.sg = SetupSemi(persistent, pn);
+		if ((connectfd =
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ret = -EIO;
+		} else {
+			char *path2;
+			size_t devices = 0;
+			struct parsedname pn2;
+			struct dirblob db;
+
+			/* If cacheable, try to allocate a blob for storage */
+			/* only for "read devices" and not alarm */
+			DirblobInit(&db);
+			if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
+				&& pn->dev == NULL) {
+				if (pn2.pathlength == 0) {	/* root dir */
+					BUSLOCK(pn);
+					db.allocated = pn->in->last_root_devs;	// root dir estimated length
+					BUSUNLOCK(pn);
+				}
+			} else {
+				db.troubled = 1;	// no dirblob cache
+			}
+
+			while ((path2 = FromServerAlloc(connectfd, &cm))) {
+				path2[cm.payload - 1] = '\0';	/* Ensure trailing null */
+				LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
+
+				if (FS_ParsedName_BackFromRemote(path2, &pn2)) {
+					cm.ret = -EINVAL;
+					free(path2);
+					break;
+				}
+				SetKnownBus(pn->in->index, &pn2);	//use parent connection_in
+
+				/* we got a device on bus_nr = pn->in->index. Cache it so we
+				   find it quicker next time we want to do read values from the
+				   the actual device
+				 */
+				if (pn2.dev && IsRealDir(&pn2)) {
+					/* If we get a device then cache the bus_nr */
+					Cache_Add_Device(pn->in->index, &pn2);
+				}
+				/* Add to cache Blob -- snlist is also a flag for cachable */
+				if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
+					DirblobAdd(pn2.sn, &db);
+				}
+				++devices;
+
+				DIRLOCK;
+				dirfunc(v, &pn2);
+				DIRUNLOCK;
+
+				FS_ParsedName_destroy(&pn2);	// destroy the last parsed name
+				free(path2);
+			}
+			/* Add to the cache (full list as a single element */
+			if (DirblobPure(&db)) {
+				Cache_Add_Dir(&db, pn);	// end with a null entry
+				if (pn2.pathlength == 0) {
+					BUSLOCK(pn);
+					pn->in->last_root_devs = db.devices;	// root dir estimated length
+					BUSUNLOCK(pn);
+				}
+			}
+			DirblobClear(&db);
+
+			DIRLOCK;
+			/* flags are sent back in "offset" of final blank entry */
+			flags[0] |= cm.offset;
+			DIRUNLOCK;
+			ret = cm.ret;
+		}
+	} else {
+		ret = -EIO;
+	}
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	return ret;
 }
 
 /* read from server, free return pointer if not Null */
@@ -433,19 +440,24 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 
 /* Send a message to server, or try a new connection and send again */
 /* return file descriptor */
-static int ToServerTwice( int fd, int persistent, struct server_msg * sm, struct serverpackage *sp, struct connection_in * in )
+static int ToServerTwice(int fd, int persistent, struct server_msg *sm,
+						 struct serverpackage *sp,
+						 struct connection_in *in)
 {
-    int newfd ;
-    if ( ToServer(fd, sm, sp) == 0 ) return fd ;
-    if ( persistent==0 ) {
-        close(fd) ;
-        return -1 ;
-    }
-    newfd = PersistentReRequest(fd,in) ;
-    if ( newfd < 0 ) return -1 ;
-    if ( ToServer(newfd, sm, sp) == 0 ) return newfd ;
-    close(newfd) ;
-    return -1 ;
+	int newfd;
+	if (ToServer(fd, sm, sp) == 0)
+		return fd;
+	if (persistent == 0) {
+		close(fd);
+		return -1;
+	}
+	newfd = PersistentReRequest(fd, in);
+	if (newfd < 0)
+		return -1;
+	if (ToServer(newfd, sm, sp) == 0)
+		return newfd;
+	close(newfd);
+	return -1;
 }
 
 // should be const char * data but iovec has problems with const arguments
@@ -506,17 +518,17 @@ static int ToServer(int fd, struct server_msg *sm,
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
 static uint32_t SetupSemi(int persistent, const struct parsedname *pn)
 {
-	uint32_t sg = pn->sg ;
+	uint32_t sg = pn->sg;
 
-    sg &= ~PERSISTENT_MASK ;
-    if ( persistent) {
-        sg |= PERSISTENT_MASK ;
-    }
+	sg &= ~PERSISTENT_MASK;
+	if (persistent) {
+		sg |= PERSISTENT_MASK;
+	}
 
-    sg &= ~BUSRET_MASK ;
+	sg &= ~BUSRET_MASK;
 	if (SpecifiedBus(pn)) {
 		sg |= BUSRET_MASK;
-    }
+	}
 
 	return sg;
 }
@@ -526,13 +538,13 @@ static int ConnectToServer(struct connection_in *in)
 {
 	int fd;
 
-    fd = ClientConnect(in);
-    if (fd < 0) {
-        STAT_ADD1(in->reconnect_state);
-    }
+	fd = ClientConnect(in);
+	if (fd < 0) {
+		STAT_ADD1(in->reconnect_state);
+	}
 	return fd;
 }
-    
+
 /* Request a persistent connection
    Three possibilities:
      1. no persistent connection currently (in->fd = -1)
@@ -543,61 +555,61 @@ static int ConnectToServer(struct connection_in *in)
      3. in use, (in->fd = -2)
         return -1
 */
-static int PersistentRequest( struct connection_in * in )
+static int PersistentRequest(struct connection_in *in)
 {
-    int fd ;
-    BUSLOCKIN(in) ;
-    if ( in->fd == -2 ) { // in use
-        fd = -1 ;
-    } else if (in->fd > -1 ) { // available
-        fd = in->fd ;
-        in->fd = -2 ;
-    } else if ( (fd=ConnectToServer(in)) == -1 ) { // can't get a connection
-        fd = -1 ;
-    } else { // new connection -- make it persistent
-        in->fd = -2 ;
-    }
-    BUSUNLOCKIN(in) ;
-    return fd ;
+	int fd;
+	BUSLOCKIN(in);
+	if (in->fd == -2) {			// in use
+		fd = -1;
+	} else if (in->fd > -1) {	// available
+		fd = in->fd;
+		in->fd = -2;
+	} else if ((fd = ConnectToServer(in)) == -1) {	// can't get a connection
+		fd = -1;
+	} else {					// new connection -- make it persistent
+		in->fd = -2;
+	}
+	BUSUNLOCKIN(in);
+	return fd;
 }
 
 /* A persistent connection didn't work (probably expired on the other end
    recreate it, or clear and return -1
  */
-static int PersistentReRequest( int fd, struct connection_in * in )
+static int PersistentReRequest(int fd, struct connection_in *in)
 {
-    close(fd) ;
-    BUSLOCKIN(in) ;
-    fd = ConnectToServer(in) ;
-    if ( fd == -1 ) { // bad connection
-        in->fd = -1 ;
-    }
-    // else leave as in->fd = -2
-    BUSUNLOCKIN(in) ;
-    return fd ;
+	close(fd);
+	BUSLOCKIN(in);
+	fd = ConnectToServer(in);
+	if (fd == -1) {				// bad connection
+		in->fd = -1;
+	}
+	// else leave as in->fd = -2
+	BUSUNLOCKIN(in);
+	return fd;
 }
 
 /* Clear a persistent connection */
-static void PersistentClear( int fd, struct connection_in * in )
+static void PersistentClear(int fd, struct connection_in *in)
 {
-    if ( fd > -1 ) {
-        close(fd) ;
-    }
-    BUSLOCKIN(in) ;
-    in->fd = -1 ;
-    BUSUNLOCKIN(in) ;
+	if (fd > -1) {
+		close(fd);
+	}
+	BUSLOCKIN(in);
+	in->fd = -1;
+	BUSUNLOCKIN(in);
 }
 
 /* Free a persistent connection */
-static void PersistentFree( int fd, struct connection_in * in )
+static void PersistentFree(int fd, struct connection_in *in)
 {
-    if ( fd == -1 ) {
-        PersistentClear( fd, in ) ;
-    } else {
-        BUSLOCKIN(in) ;
-        in->fd = fd ;
-        BUSUNLOCKIN(in) ;
-    }
+	if (fd == -1) {
+		PersistentClear(fd, in);
+	} else {
+		BUSLOCKIN(in);
+		in->fd = fd;
+		BUSUNLOCKIN(in);
+	}
 }
 
 /* All the startup code
@@ -605,32 +617,33 @@ static void PersistentFree( int fd, struct connection_in * in )
    persistent starts 0 or 1 for whether persistence is wanted
    persistent returns 0 or 1 for whether persistence is granted
 */
-static int PersistentStart( int * persistent, struct connection_in * in )
+static int PersistentStart(int *persistent, struct connection_in *in)
 {
-    int fd ;
-    if ( *persistent==0 ) {
-        fd = ConnectToServer(in) ;
-        *persistent = 0 ;
-    } else if ( (fd=PersistentRequest(in)) == -1 ) { // tried but failed
-        fd = ConnectToServer(in) ;
-        *persistent = 0 ;
-    } else {
-        *persistent = 1 ;
-    }
-    return fd ;
+	int fd;
+	if (*persistent == 0) {
+		fd = ConnectToServer(in);
+		*persistent = 0;
+	} else if ((fd = PersistentRequest(in)) == -1) {	// tried but failed
+		fd = ConnectToServer(in);
+		*persistent = 0;
+	} else {
+		*persistent = 1;
+	}
+	return fd;
 }
 
 /* Clean up at end of routine,
    either leave connection open and persistent flag available,
    or close and leave available
 */
-static void PersistentEnd( int fd, int persistent, int granted, struct connection_in * in )
+static void PersistentEnd(int fd, int persistent, int granted,
+						  struct connection_in *in)
 {
-    if ( persistent==0 ) {
-        close(fd) ;
-    } else if ( granted==0 ) {
-        PersistentClear( fd, in ) ;
-    } else {
-        PersistentFree( fd, in ) ;
-    }
+	if (persistent == 0) {
+		close(fd);
+	} else if (granted == 0) {
+		PersistentClear(fd, in);
+	} else {
+		PersistentFree(fd, in);
+	}
 }

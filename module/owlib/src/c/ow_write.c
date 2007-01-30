@@ -171,7 +171,7 @@ int FS_write_postparse(const char *buf, const size_t size,
 					r = TestConnection(pn) ? -ECONNABORTED :
 						FS_w_given_bus(buf, size, offset, pn);
 				} else if ((r = CheckPresence(pn)) >= 0) {
-                    SetKnownBus(r,&pn2) ;
+					SetKnownBus(r, &pn2);
 					Cache_Add_Device(r, pn);
 					r = FS_w_given_bus(buf, size, offset, &pn2);
 				} else {
@@ -187,7 +187,7 @@ int FS_write_postparse(const char *buf, const size_t size,
 					r = TestConnection(pn) ? -ECONNABORTED :
 						FS_w_given_bus(buf, size, offset, pn);
 				} else if ((r = CheckPresence(pn)) >= 0) {
-                    SetKnownBus(r,&pn2) ;
+					SetKnownBus(r, &pn2);
 					Cache_Add_Device(r, pn);
 					r = FS_w_given_bus(buf, size, offset, &pn2);
 				} else {
@@ -221,11 +221,11 @@ static int FS_w_simultaneous(const char *buf, const size_t size,
 		return FS_w_given_bus(buf, size, offset, pn);
 	} else {
 		struct parsedname pn2;
-        int bus_number ;
+		int bus_number;
 
 		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-        for (bus_number=0; bus_number<indevices; ++bus_number) {
-            SetKnownBus(bus_number,&pn2) ;
+		for (bus_number = 0; bus_number < indevices; ++bus_number) {
+			SetKnownBus(bus_number, &pn2);
 			FS_w_given_bus(buf, size, offset, &pn2);
 		}
 		return 0;

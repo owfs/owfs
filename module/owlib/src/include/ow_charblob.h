@@ -51,20 +51,20 @@ $Id$
     2006 dirblob
 */
 
-#ifndef OW_CHARBLOB_H		/* tedious wrapper */
+#ifndef OW_CHARBLOB_H			/* tedious wrapper */
 #define OW_CHARBLOB_H
 
 struct charblob {
-    int troubled;
-    size_t allocated;
-    size_t used ;
-    ASCII * blob ;
+	int troubled;
+	size_t allocated;
+	size_t used;
+	ASCII *blob;
 };
 
 void CharblobClear(struct charblob *cb);
 void CharblobInit(struct charblob *cb);
 int CharblobPure(struct charblob *cb);
 int CharblobAdd(ASCII * a, size_t s, struct charblob *cb);
-int CharblobAddChar(ASCII a, struct charblob *cb) ;
+int CharblobAddChar(ASCII a, struct charblob *cb);
 
-#endif				/* OW_CHARBLOB_H */
+#endif							/* OW_CHARBLOB_H */

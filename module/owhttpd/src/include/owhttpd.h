@@ -19,8 +19,8 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-#include <pwd.h> // getpwuid
-#include <grp.h> // initgroups
+#include <pwd.h>				// getpwuid
+#include <grp.h>				// initgroups
 #include <limits.h>
 
 #define SVERSION "owhttpd"
@@ -38,23 +38,23 @@ $Id$
 int handle_socket(FILE * out);
 
 /* in owhttpd_present */
-enum content_type { ct_text, ct_html, ct_icon } ;
-void HTTPstart(FILE * out, const char * status, const enum content_type ct ) ;
-void HTTPtitle(FILE * out, const char * title ) ;
-void HTTPheader(FILE * out, const char * head ) ;
-void HTTPfoot(FILE * out ) ;
+enum content_type { ct_text, ct_html, ct_icon };
+void HTTPstart(FILE * out, const char *status, const enum content_type ct);
+void HTTPtitle(FILE * out, const char *title);
+void HTTPheader(FILE * out, const char *head);
+void HTTPfoot(FILE * out);
 
 /* in owhttpd_write.c */
-void ChangeData( char * value , const struct parsedname * pn ) ;
+void ChangeData(char *value, const struct parsedname *pn);
 
 /* in owhttpd_read.c */
-void ShowDevice( FILE * out, const struct parsedname * const pn ) ;
+void ShowDevice(FILE * out, const struct parsedname *const pn);
 
 /* in owhttpd_dir.c */
-void ShowDir( FILE * out, const struct parsedname * const pn ) ;
-int Backup( const char * path ) ;
+void ShowDir(FILE * out, const struct parsedname *const pn);
+int Backup(const char *path);
 
 /* in ow_favicon.c */
-void Favicon( FILE * out ) ;
+void Favicon(FILE * out);
 
-#endif /* OWHTTPD_H */
+#endif							/* OWHTTPD_H */

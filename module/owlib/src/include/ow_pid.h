@@ -6,7 +6,7 @@ $Id$
     PID saving code -- isolated for convenience
 */
 
-#ifndef OWPID_H			/* tedious wrapper */
+#ifndef OWPID_H					/* tedious wrapper */
 #define OWPID_H
 
 
@@ -17,4 +17,4 @@ extern char *pid_file;
 void PIDstart(void);
 void PIDstop(void);
 
-#endif				/* OWPID_H */
+#endif							/* OWPID_H */

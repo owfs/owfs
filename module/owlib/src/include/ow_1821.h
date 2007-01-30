@@ -34,4 +34,4 @@ $Id$
 /* -------- Structures ---------- */
 DeviceHeader(DS1821);
 
-#endif				/* OW_1821_h */
+#endif							/* OW_1821_h */

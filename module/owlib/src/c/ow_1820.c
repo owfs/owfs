@@ -488,8 +488,8 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
 	} else if (Simul_Test(simul_temp, pn)) {	// powered, so release bus immediately after issuing convert
-        int ret;
-        LEVEL_DEBUG("Powered temperature conversion\n");
+		int ret;
+		LEVEL_DEBUG("Powered temperature conversion\n");
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
@@ -654,29 +654,31 @@ static enum eDie OW_die(const struct parsedname *pn)
 
 /* Powered temperature measurements -- need to poll line since it is held low during measurement */
 /* We check every 50 msec (arbitrary) up to 1.25 seconds */
-int FS_poll_convert(const struct parsedname * pn)
+int FS_poll_convert(const struct parsedname *pn)
 {
-	int i ;
-	BYTE p[1] ;
+	int i;
+	BYTE p[1];
 	struct transaction_log t[] = {
-		{ NULL, NULL, 50, trxn_delay, } ,
-		{ NULL, p, 1, trxn_read, } ,
+		{NULL, NULL, 50, trxn_delay,},
+		{NULL, p, 1, trxn_read,},
 		TRXN_END,
-	} ;
-	
+	};
+
 	// the first test is faster for just DS2438 (10 msec)
 	// subsequent polling is slower since the DS18x20 is a slower converter
-	for ( i=0 ; i<22 ; ++i ) {
-		if (BUS_transaction_nolock( t, pn )) {
+	for (i = 0; i < 22; ++i) {
+		if (BUS_transaction_nolock(t, pn)) {
 			LEVEL_DEBUG("FS_poll_convert: BUS_transaction failed\n");
-			break ;
+			break;
 		}
 		if (p[0] != 0) {
-			LEVEL_DEBUG("FS_poll_convert: BUS_transaction done after %dms\n", (i+1)*50);
-			return 0 ;
+			LEVEL_DEBUG
+				("FS_poll_convert: BUS_transaction done after %dms\n",
+				 (i + 1) * 50);
+			return 0;
 		}
-		t[0].size = 50 ; // 50 msec for rest of delays
+		t[0].size = 50;			// 50 msec for rest of delays
 	}
 	LEVEL_DEBUG("FS_poll_convert: failed\n");
-	return 1 ;
+	return 1;
 }

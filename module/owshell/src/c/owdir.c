@@ -20,41 +20,45 @@ $Id$
 /* ---------------------------------------------- */
 /* Command line parsing and result generation     */
 /* ---------------------------------------------- */
-int main(int argc, char *argv[]) {
-    int c ;
-    int paths_found = 0 ;
-    int rc = -1 ;
-    int dirall = 1 ;
+int main(int argc, char *argv[])
+{
+	int c;
+	int paths_found = 0;
+	int rc = -1;
+	int dirall = 1;
 
-    Setup() ;
-    /* process command line arguments */
-    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 )
-        owopt(c,optarg) ;
+	Setup();
+	/* process command line arguments */
+	while ((c =
+			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
+		owopt(c, optarg);
 
-    /* non-option arguments */
-    while ( optind < argc ) {
-        if ( indevice==NULL ) {
-            OW_ArgNet(argv[optind]) ;
-        } else {
-            if ( paths_found++ == 0 ) Server_detect() ;
-            if ( dirall ) {
-                rc = ServerDirall(argv[optind]) ;
-                if ( rc<0 ) {
-                    dirall = 0 ;
-                    rc = ServerDir(argv[optind]) ;
-                }
-            } else {
-                rc = ServerDir(argv[optind]) ;
-            }
-        }
-        ++optind ;
-    }
-    // Was anything requested?
-    if ( paths_found == 0 ) {
-        Server_detect() ;
-        rc = ServerDirall("/") ;
-        if ( rc<0 ) rc = ServerDir("/") ;
-    }
-    Cleanup();
-    exit((rc >= 0 ? 0 : 1)) ;
+	/* non-option arguments */
+	while (optind < argc) {
+		if (indevice == NULL) {
+			OW_ArgNet(argv[optind]);
+		} else {
+			if (paths_found++ == 0)
+				Server_detect();
+			if (dirall) {
+				rc = ServerDirall(argv[optind]);
+				if (rc < 0) {
+					dirall = 0;
+					rc = ServerDir(argv[optind]);
+				}
+			} else {
+				rc = ServerDir(argv[optind]);
+			}
+		}
+		++optind;
+	}
+	// Was anything requested?
+	if (paths_found == 0) {
+		Server_detect();
+		rc = ServerDirall("/");
+		if (rc < 0)
+			rc = ServerDir("/");
+	}
+	Cleanup();
+	exit((rc >= 0 ? 0 : 1));
 }

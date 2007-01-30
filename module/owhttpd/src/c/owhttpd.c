@@ -26,7 +26,7 @@ $Id$
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "owhttpd.h" // httpd-specific
+#include "owhttpd.h"			// httpd-specific
 
 /*
  * Default port to listen too. If you aren't root, you'll need it to
@@ -34,115 +34,126 @@ $Id$
  */
 #define DEFAULTPORT    80
 
-static void Acceptor( int listenfd ) ;
+static void Acceptor(int listenfd);
 
 #if OW_MT
-pthread_t main_threadid ;
+pthread_t main_threadid;
 #define IS_MAINTHREAD (main_threadid == pthread_self())
 #else
 #define IS_MAINTHREAD 1
 #endif
 
-static void ow_exit( int e ) {
-    LEVEL_DEBUG("ow_exit %d\n", e);
-    if(IS_MAINTHREAD) {
-        LibClose() ;
-    }
+static void ow_exit(int e)
+{
+	LEVEL_DEBUG("ow_exit %d\n", e);
+	if (IS_MAINTHREAD) {
+		LibClose();
+	}
 #ifdef __UCLIBC__
-    /* Process never die on WRT54G router with uClibc if exit() is used */
-    _exit( e ) ;
+	/* Process never die on WRT54G router with uClibc if exit() is used */
+	_exit(e);
 #else
-    exit( e ) ;
+	exit(e);
 #endif
 }
 
-static void exit_handler(int signo, siginfo_t *info, void *context) {
-    (void) context;
-    if(info) {
-      LEVEL_DEBUG ("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n", signo,
-		   info->si_errno, info->si_code, (long int) info->si_pid,
-		   pthread_self(), main_threadid);
-    } else {
-      LEVEL_DEBUG ("exit_handler: for %d, self=%lu, main=%lu\n", signo,
-		   pthread_self(), main_threadid);
-    }
+static void exit_handler(int signo, siginfo_t * info, void *context)
+{
+	(void) context;
+	if (info) {
+		LEVEL_DEBUG
+			("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			 signo, info->si_errno, info->si_code, (long int) info->si_pid,
+			 pthread_self(), main_threadid);
+	} else {
+		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo,
+					pthread_self(), main_threadid);
+	}
 #if OW_MT
-    if(!shutdown_in_progress) {
-      shutdown_in_progress = 1;
+	if (!shutdown_in_progress) {
+		shutdown_in_progress = 1;
 
-      if(info != NULL) {
-	if(SI_FROMUSER(info)) {
-	  LEVEL_DEBUG("exit_handler: kill from user\n");
+		if (info != NULL) {
+			if (SI_FROMUSER(info)) {
+				LEVEL_DEBUG("exit_handler: kill from user\n");
+			}
+			if (SI_FROMKERNEL(info)) {
+				LEVEL_DEBUG("exit_handler: kill from kernel\n");
+			}
+		}
+		if (!IS_MAINTHREAD) {
+			LEVEL_DEBUG
+				("exit_handler: kill mainthread %lu self=%d signo=%d\n",
+				 main_threadid, pthread_self(), signo);
+			pthread_kill(main_threadid, signo);
+		}
 	}
-	if(SI_FROMKERNEL(info)) {
-	  LEVEL_DEBUG("exit_handler: kill from kernel\n");
-	}
-      }
-      if(!IS_MAINTHREAD) {
-	LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
-	pthread_kill(main_threadid, signo);
-      }
-    }
 #else
-    shutdown_in_progress = 1;
+	shutdown_in_progress = 1;
 #endif
-    return;
+	return;
 }
 
-int main(int argc, char *argv[]) {
-    int c ;
+int main(int argc, char *argv[])
+{
+	int c;
 
-    /* Set up owlib */
-    LibSetup(opt_httpd) ;
+	/* Set up owlib */
+	LibSetup(opt_httpd);
 
-    /* grab our executable name */
-    if (argc > 0) Global.progname = strdup(argv[0]);
+	/* grab our executable name */
+	if (argc > 0)
+		Global.progname = strdup(argv[0]);
 
-    while ( (c=getopt_long(argc,argv,OWLIB_OPT,owopts_long,NULL)) != -1 ) {
-        switch (c) {
-        case 'V':
-            fprintf(stderr,
-            "%s version:\n\t" VERSION "\n",argv[0] ) ;
-            break ;
-        default:
-            break;
-        }
-        if ( owopt(c,optarg) ) ow_exit(0) ; /* rest of message */
-    }
+	while ((c =
+			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
+		switch (c) {
+		case 'V':
+			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
+			break;
+		default:
+			break;
+		}
+		if (owopt(c, optarg))
+			ow_exit(0);			/* rest of message */
+	}
 
-    /* non-option arguments */
-    while ( optind < argc ) {
-        OW_ArgGeneric(argv[optind]) ;
-        ++optind ;
-    }
+	/* non-option arguments */
+	while (optind < argc) {
+		OW_ArgGeneric(argv[optind]);
+		++optind;
+	}
 
-    if ( outdevices==0 ) {
-        if ( Global.announce_off ) {
-            LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",argv[0]) ;
-            ow_exit(1);
-        }
-        OW_ArgServer("0") ; // make an ephemeral assignment
-    }
+	if (outdevices == 0) {
+		if (Global.announce_off) {
+			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",
+						  argv[0]);
+			ow_exit(1);
+		}
+		OW_ArgServer("0");		// make an ephemeral assignment
+	}
 
-    set_signal_handlers(exit_handler);
+	set_signal_handlers(exit_handler);
 
-    /*
-     * Now we drop privledges and become a daemon.
-     */
-    if ( LibStart() ) ow_exit(1) ;
+	/*
+	 * Now we drop privledges and become a daemon.
+	 */
+	if (LibStart())
+		ow_exit(1);
 #if OW_MT
-    main_threadid = pthread_self() ;
+	main_threadid = pthread_self();
 #endif
 
-    ServerProcess( Acceptor, ow_exit ) ;
-    return 0 ;
+	ServerProcess(Acceptor, ow_exit);
+	return 0;
 }
 
-static void Acceptor( int listenfd ) {
-    FILE * fp = fdopen(listenfd, "w+");
-    if (fp) {
-        handle_socket( fp ) ;
-        fflush(fp);
-        fclose(fp);
-    }
+static void Acceptor(int listenfd)
+{
+	FILE *fp = fdopen(listenfd, "w+");
+	if (fp) {
+		handle_socket(fp);
+		fflush(fp);
+		fclose(fp);
+	}
 }

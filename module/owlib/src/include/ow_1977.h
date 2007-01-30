@@ -21,4 +21,4 @@ $Id$
 
 DeviceHeader(DS1977);
 
-#endif				/* OW_1977_H */
+#endif							/* OW_1977_H */

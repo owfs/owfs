@@ -47,15 +47,16 @@ $Id$
 /* The length of string in cm.payload */
 /* If cm.payload is 0, then a NULL string is returned */
 /* cm.ret is also set to an error <0 or the read length */
-void *ReadHandler(struct handlerdata * hd, struct client_msg *cm,
+void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 				  const struct parsedname *pn)
 {
 	char *retbuffer = NULL;
 	ssize_t ret;
 
 	//printf("ReadHandler:\n");
-	LEVEL_DEBUG("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
-				hd->sm.payload, hd->sm.size, hd->sm.offset);
+	LEVEL_DEBUG
+		("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
+		 hd->sm.payload, hd->sm.size, hd->sm.offset);
 
 	if ((hd->sm.size <= 0) || (hd->sm.size > MAXBUFFERSIZE)) {
 		cm->ret = -EMSGSIZE;
@@ -78,9 +79,10 @@ void *ReadHandler(struct handlerdata * hd, struct client_msg *cm,
 		cm->size = ret;
 		cm->ret = ret;
 	}
-    LEVEL_DEBUG("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d\n",
-                cm->payload, cm->size, cm->offset);
-    LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n", cm->size, cm->size,
+	LEVEL_DEBUG
+		("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d\n",
+		 cm->payload, cm->size, cm->offset);
+	LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n", cm->size, cm->size,
 				retbuffer);
 	return retbuffer;
 }

@@ -98,7 +98,7 @@ typedef struct node_t {
 	struct node_t *left, *right;
 } node;
 
-static void tdestroy_recurse_(node * root, void (*freefct)(void *))
+static void tdestroy_recurse_(node * root, void (*freefct) (void *))
 {
 	if (root->left != NULL)
 		tdestroy_recurse_(root->left, freefct);
@@ -113,7 +113,7 @@ static void tdestroy_recurse_(node * root, void (*freefct)(void *))
 	free(root);
 }
 
-void tdestroy(void *vroot, void (*freefct)(void *))
+void tdestroy(void *vroot, void (*freefct) (void *))
 {
 	node *root = (node *) vroot;
 	if (root != NULL) {

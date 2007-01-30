@@ -85,7 +85,7 @@ void COM_close(struct connection_in *in)
 		LEVEL_DEBUG("COM_close: flush\n");
 		tcflush(fd, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore\n");
-		if(tcsetattr(fd, TCSANOW, &in->connin.serial.oldSerialTio)<0) {
+		if (tcsetattr(fd, TCSANOW, &in->connin.serial.oldSerialTio) < 0) {
 			ERROR_CONNECT("Cannot restore port attributes: %s\n",
 						  SAFESTRING(in->name));
 			STAT_ADD1_BUS(BUS_tcsetattr_errors, in);

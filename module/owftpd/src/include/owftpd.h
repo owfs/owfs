@@ -90,73 +90,73 @@ typedef struct sockaddr_in sockaddr_storage_t;
 #define MAX_NUM_CLIENTS 300
 
 enum parse_status_e {
-    parse_status_init, // need to test for initial /
-    parse_status_init2,// need to test for virginity (no wildness)
-    parse_status_back, // .. still allowed
-    parse_status_next, // figure out this level
-    parse_status_last, // last level
-    parse_status_tame, // no wildcard at all
-} ;
+	parse_status_init,			// need to test for initial /
+	parse_status_init2,			// need to test for virginity (no wildness)
+	parse_status_back,			// .. still allowed
+	parse_status_next,			// figure out this level
+	parse_status_last,			// last level
+	parse_status_tame,			// no wildcard at all
+};
 
 enum file_list_e {
-    file_list_list ,
-    file_list_nlst ,
-} ;
+	file_list_list,
+	file_list_nlst,
+};
 
 struct file_parse_s {
-    ASCII buffer[PATH_MAX+1] ;
-    ASCII * rest ;
-    enum parse_status_e pse ; // state machine
-    enum file_list_e fle ; // long or short listing flag
-    int out ; // file descriptor to send result
-    int ret ; // return status
-    int start ;
-} ;
+	ASCII buffer[PATH_MAX + 1];
+	ASCII *rest;
+	enum parse_status_e pse;	// state machine
+	enum file_list_e fle;		// long or short listing flag
+	int out;					// file descriptor to send result
+	int ret;					// return status
+	int start;
+};
 
 struct cd_parse_s {
-    ASCII buffer[PATH_MAX+1] ; // working copy of current directory
-    ASCII * rest ;
-    enum parse_status_e pse ; // state machine
-    int ret ; // return status
-    int solutions ; // is the solution unique?
-    ASCII * dir ;
-} ;
+	ASCII buffer[PATH_MAX + 1];	// working copy of current directory
+	ASCII *rest;
+	enum parse_status_e pse;	// state machine
+	int ret;					// return status
+	int solutions;				// is the solution unique?
+	ASCII *dir;
+};
 
-void FileLexParse( struct file_parse_s * fps ) ;
-void FileLexCD( struct cd_parse_s * cps ) ;
+void FileLexParse(struct file_parse_s *fps);
+void FileLexCD(struct cd_parse_s *cps);
 
 /* each watched thread gets one of these structures */
 struct watched_s {
-    /* thread to monitor */
-    pthread_t watched_thread;
+	/* thread to monitor */
+	pthread_t watched_thread;
 
-    /* flag whether in a watchdog list */
-    int in_list;
+	/* flag whether in a watchdog list */
+	int in_list;
 
-    /* time when to cancel thread if no activity */
-    time_t alarm_time;
+	/* time when to cancel thread if no activity */
+	time_t alarm_time;
 
-    /* for location in doubly-linked list */
-    struct watched_s *older;
-    struct watched_s *newer;
+	/* for location in doubly-linked list */
+	struct watched_s *older;
+	struct watched_s *newer;
 
-    /* watchdog that this watched_s is in */
-    void *watchdog;
-} ;
+	/* watchdog that this watched_s is in */
+	void *watchdog;
+};
 
 /* the watchdog keeps track of all information */
 struct watchdog_s {
-    pthread_mutex_t mutex;
-    int inactivity_timeout;
+	pthread_mutex_t mutex;
+	int inactivity_timeout;
 
-    /* the head and tail of our list */
-    struct watched_s *oldest;
-    struct watched_s *newest;
-} ;
+	/* the head and tail of our list */
+	struct watched_s *oldest;
+	struct watched_s *newest;
+};
 
 int watchdog_init(struct watchdog_s *w, int inactivity_timeout);
 void watchdog_add_watched(struct watchdog_s *w, struct watched_s *watched);
-void watchdog_defer_watched( struct watched_s *watched);
+void watchdog_defer_watched(struct watched_s *watched);
 void watchdog_remove_watched(struct watched_s *watched);
 
 
@@ -165,45 +165,43 @@ void watchdog_remove_watched(struct watched_s *watched);
 
 /* information on a telnet session */
 struct telnet_session_s {
-    int in_fd;
-    int in_errno;
-    int in_eof;
-    int in_take;
-    int in_add;
-    char in_buf[BUF_LEN];
-    int in_buflen;
+	int in_fd;
+	int in_errno;
+	int in_eof;
+	int in_take;
+	int in_add;
+	char in_buf[BUF_LEN];
+	int in_buflen;
 
-    int in_status;
+	int in_status;
 
-    int out_fd;
-    int out_errno;
-    int out_eof;
-    int out_take;
-    int out_add;
-    char out_buf[BUF_LEN];
-    int out_buflen;
-} ;
+	int out_fd;
+	int out_errno;
+	int out_eof;
+	int out_take;
+	int out_add;
+	char out_buf[BUF_LEN];
+	int out_buflen;
+};
 
 #ifdef NDEBUG
 
- #define daemon_assert(expr)
+#define daemon_assert(expr)
 
-#else /* NDEBUG */
+#else							/* NDEBUG */
 
 void daemon_assert_fail(const char *assertion,
-                        const char *file,
-                        int line,
-                        const char *function);
+						const char *file, int line, const char *function);
 
- #ifndef __STRING
-  #define __STRING(x) #x
- #endif
+#ifndef __STRING
+#define __STRING(x) #x
+#endif
 
- #define daemon_assert(expr)                                                   \
+#define daemon_assert(expr)                                                   \
            ((expr) ? 0 :                                                      \
             (daemon_assert_fail(__STRING(expr), __FILE__, __LINE__, __func__)))
 
-#endif /* NDEBUG */
+#endif							/* NDEBUG */
 
 /* data representation types supported */
 #define TYPE_ASCII  0
@@ -224,53 +222,52 @@ void daemon_assert_fail(const char *assertion,
 
 /* structure encapsulating an FTP session's information */
 struct ftp_session_s {
-    /* flag whether session is active */
-    int session_active;
+	/* flag whether session is active */
+	int session_active;
 
-    /* incremented for each command */
-    unsigned long command_number;
+	/* incremented for each command */
+	unsigned long command_number;
 
-    /* options about transfer set by user */
-    int data_type;
-    int file_structure;
+	/* options about transfer set by user */
+	int data_type;
+	int file_structure;
 
-    /* offset to begin sending file from */
-    off_t file_offset;
-    unsigned long file_offset_command_number;
+	/* offset to begin sending file from */
+	off_t file_offset;
+	unsigned long file_offset_command_number;
 
-    /* flag set if client requests ESPV ALL - this prevents subsequent
-    use of PORT, PASV, LPRT, LPSV, or EPRT */
-    int epsv_all_set;
+	/* flag set if client requests ESPV ALL - this prevents subsequent
+	   use of PORT, PASV, LPRT, LPSV, or EPRT */
+	int epsv_all_set;
 
-    /* address of client */
-    sockaddr_storage_t client_addr;
-    char client_addr_str[ADDRPORT_STRLEN];
+	/* address of client */
+	sockaddr_storage_t client_addr;
+	char client_addr_str[ADDRPORT_STRLEN];
 
-    /* address of server (including IPv4 version) */
-    sockaddr_storage_t server_addr;
-    struct sockaddr_in server_ipv4_addr;
+	/* address of server (including IPv4 version) */
+	sockaddr_storage_t server_addr;
+	struct sockaddr_in server_ipv4_addr;
 
-    /* telnet session to encapsulate control channel logic */
-    struct telnet_session_s *telnet_session;
+	/* telnet session to encapsulate control channel logic */
+	struct telnet_session_s *telnet_session;
 
-    /* current working directory of this connection */
-    char dir[PATH_MAX+1];
+	/* current working directory of this connection */
+	char dir[PATH_MAX + 1];
 
-    /* data channel information, including type,
-    and client address or server port depending on type */
-    int data_channel;
-    sockaddr_storage_t data_port;
-    int server_fd;
+	/* data channel information, including type,
+	   and client address or server port depending on type */
+	int data_channel;
+	sockaddr_storage_t data_port;
+	int server_fd;
 
-    /* watchdog to handle timeout */
-    struct watched_s *watched;
-} ;
+	/* watchdog to handle timeout */
+	struct watched_s *watched;
+};
 
 int ftp_session_init(struct ftp_session_s *f,
-                     const sockaddr_storage_t *client_addr,
-                     const sockaddr_storage_t *server_addr,
-                     struct telnet_session_s *t,
-                     const char *dir);
+					 const sockaddr_storage_t * client_addr,
+					 const sockaddr_storage_t * server_addr,
+					 struct telnet_session_s *t, const char *dir);
 void ftp_session_drop(struct ftp_session_s *f, const char *reason);
 void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched);
 void ftp_session_destroy(struct ftp_session_s *f);
@@ -278,43 +275,43 @@ void ftp_session_destroy(struct ftp_session_s *f);
 
 struct ftp_listener_s {
 
-    /* file descriptor incoming connections arrive on */
-    int fd;
+	/* file descriptor incoming connections arrive on */
+	int fd;
 
-    /* maximum number of connections */
-    int max_connections;
+	/* maximum number of connections */
+	int max_connections;
 
-    /* current number of connections */
-    int num_connections;
+	/* current number of connections */
+	int num_connections;
 
-    /* timeout (in seconds) for connections */
-    int inactivity_timeout;
+	/* timeout (in seconds) for connections */
+	int inactivity_timeout;
 
-    /* watchdog monitoring this listener's connections */
-    struct watchdog_s watchdog;
+	/* watchdog monitoring this listener's connections */
+	struct watchdog_s watchdog;
 
-    /* mutext to lock changes to this structure */
-    pthread_mutex_t mutex;
+	/* mutext to lock changes to this structure */
+	pthread_mutex_t mutex;
 
-    /* starting directory */
-    char dir[3] ; // only root directory for OWFS
+	/* starting directory */
+	char dir[3];				// only root directory for OWFS
 
-    /* boolean defining whether listener is running or not */
-    int listener_running;
+	/* boolean defining whether listener is running or not */
+	int listener_running;
 
-    /* thread identifier for listener */
-    pthread_t listener_thread;
+	/* thread identifier for listener */
+	pthread_t listener_thread;
 
-    /* end of pipe to wake up listening thread with */
-    int shutdown_request_send_fd;
+	/* end of pipe to wake up listening thread with */
+	int shutdown_request_send_fd;
 
-    /* end of pipe listening thread waits on */
-    int shutdown_request_recv_fd;
+	/* end of pipe listening thread waits on */
+	int shutdown_request_recv_fd;
 
-    /* condition to signal thread requesting shutdown */
-    pthread_cond_t shutdown_cond;
+	/* condition to signal thread requesting shutdown */
+	pthread_cond_t shutdown_cond;
 
-} ;
+};
 
 int ftp_listener_init(struct ftp_listener_s *f);
 int ftp_listener_start(struct ftp_listener_s *f);
@@ -330,15 +327,15 @@ void ftp_listener_stop(struct ftp_listener_s *f);
 #define MAX_STRING_LEN PATH_MAX
 
 struct ftp_command_s {
-    char command[5];
-    int num_arg;
-    union {
-        char string[MAX_STRING_LEN+1];
-        sockaddr_storage_t host_port;
-        int num;
-        off_t offset;
-    } arg[MAX_ARG];
-} ;
+	char command[5];
+	int num_arg;
+	union {
+		char string[MAX_STRING_LEN + 1];
+		sockaddr_storage_t host_port;
+		int num;
+		off_t offset;
+	} arg[MAX_ARG];
+};
 
 /* methods */
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd);
@@ -347,8 +344,8 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd);
 void telnet_session_init(struct telnet_session_s *t, int in, int out);
 int telnet_session_print(struct telnet_session_s *t, const char *s);
 int telnet_session_println(struct telnet_session_s *t, const char *s);
-int telnet_session_readln(struct telnet_session_s *t, char *buf, int buflen);
+int telnet_session_readln(struct telnet_session_s *t, char *buf,
+						  int buflen);
 void telnet_session_destroy(struct telnet_session_s *t);
 
-#endif /* OWFTPD_H */
-
+#endif							/* OWFTPD_H */

@@ -22,4 +22,4 @@ $Id$
 DeviceHeader(DS2404);
 DeviceHeader(DS2404S);
 
-#endif				/* OW_2404_h */
+#endif							/* OW_2404_h */

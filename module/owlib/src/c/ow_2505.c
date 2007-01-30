@@ -60,7 +60,7 @@ struct filetype DS2505[] = {
   {"pages/page", 32, &A2505, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
 };
 
-DeviceEntry( 0B, DS2505);
+DeviceEntry(0B, DS2505);
 
 struct filetype DS1985U[] = {
 	F_STANDARD,
@@ -69,7 +69,7 @@ struct filetype DS1985U[] = {
   {"pages/page", 32, &A2505, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
 };
 
-DeviceEntry( 8B, DS1985U);
+DeviceEntry(8B, DS1985U);
 
 struct aggregate A2506 = { 256, ag_numbers, ag_separate, };
 struct filetype DS2506[] = {
@@ -79,7 +79,7 @@ struct filetype DS2506[] = {
   {"pages/page", 32, NULL, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
 };
 
-DeviceEntryExtended( 0F, DS2506, DEV_ovdr);
+DeviceEntryExtended(0F, DS2506, DEV_ovdr);
 
 struct filetype DS1986U[] = {
 	F_STANDARD,
@@ -88,7 +88,7 @@ struct filetype DS1986U[] = {
   {"pages/page", 32, NULL, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
 };
 
-DeviceEntryExtended( 8F, DS1986U, DEV_ovdr);
+DeviceEntryExtended(8F, DS1986U, DEV_ovdr);
 
 /* ------- Functions ------------ */
 

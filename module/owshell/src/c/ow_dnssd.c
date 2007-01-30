@@ -102,11 +102,11 @@ int OW_Load_dnssd_library(void)
 
 #elif defined(HAVE_DLOPEN)
 
-        char libdirs[3][80] = {
-                {"/opt/owfs/lib/libdns_sd.so"},
-                {"libdns_sd.so"},
-                {""}
-        };
+	char libdirs[3][80] = {
+		{"/opt/owfs/lib/libdns_sd.so"},
+		{"libdns_sd.so"},
+		{""}
+	};
 
 	while (*libdirs[i]) {
 		if (!(libdnssd = DL_open(libdirs[i], RTLD_LAZY))) {

@@ -45,8 +45,8 @@ $Id$
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
 struct dirhandlerstruct {
-    struct handlerdata *hd;
-    struct client_msg *cm;
+	struct handlerdata *hd;
+	struct client_msg *cm;
 	const struct parsedname *pn;
 };
 
@@ -57,36 +57,36 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 	char *path = (KnownBus(dhs->pn)
 				  && (BusIsServer(dhs->pn->in))) ? dhs->pn->
 		path_busless : dhs->pn->path;
-    size_t _pathlen = strlen(path);
+	size_t _pathlen = strlen(path);
 
 	LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
 
-    /* make sure path ends in "/" before anything is tacked on */
-    strcpy(retbuffer, path);
-    if ((_pathlen == 0) || (retbuffer[_pathlen - 1] != '/')) {
-        retbuffer[_pathlen] = '/';
-        retbuffer[++_pathlen] = '\0';
-    }
-    
-    if (pn2->dev) {
-        FS_DirName(&retbuffer[_pathlen], PATH_MAX-_pathlen-1, pn2);
-    } else if (NotRealDir(pn2)) {
-        FS_dirname_type(retbuffer, PATH_MAX-_pathlen-1, pn2);
-    } else {
-        FS_dirname_state(retbuffer, PATH_MAX-_pathlen-1, pn2);
+	/* make sure path ends in "/" before anything is tacked on */
+	strcpy(retbuffer, path);
+	if ((_pathlen == 0) || (retbuffer[_pathlen - 1] != '/')) {
+		retbuffer[_pathlen] = '/';
+		retbuffer[++_pathlen] = '\0';
 	}
 
-    dhs->cm->size = strlen(retbuffer);
-    dhs->cm->payload = dhs->cm->size + 1 ;
+	if (pn2->dev) {
+		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+	} else if (NotRealDir(pn2)) {
+		FS_dirname_type(retbuffer, PATH_MAX - _pathlen - 1, pn2);
+	} else {
+		FS_dirname_state(retbuffer, PATH_MAX - _pathlen - 1, pn2);
+	}
+
+	dhs->cm->size = strlen(retbuffer);
+	dhs->cm->payload = dhs->cm->size + 1;
 	dhs->cm->ret = 0;
-	
-    TOCLIENTLOCK(dhs->hd);
+
+	TOCLIENTLOCK(dhs->hd);
 	ToClient(dhs->hd->fd, dhs->cm, retbuffer);	// send this directory element
 	gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
 	TOCLIENTUNLOCK(dhs->hd);
 }
 
-void DirHandler(struct handlerdata * hd, struct client_msg *cm,
+void DirHandler(struct handlerdata *hd, struct client_msg *cm,
 				const struct parsedname *pn)
 {
 	uint32_t flags = 0;
@@ -98,7 +98,7 @@ void DirHandler(struct handlerdata * hd, struct client_msg *cm,
 	cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2;
 
 	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d path=%s\n",
-                SpecifiedBus(pn), pn->bus_nr, SAFESTRING(pn->path));
+				SpecifiedBus(pn), pn->bus_nr, SAFESTRING(pn->path));
 	// Now generate the directory using the callback function above for each element
 	cm->ret = FS_dir_remote(DirHandlerCallback, &dhs, pn, &flags);
 
