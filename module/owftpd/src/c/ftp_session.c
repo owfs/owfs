@@ -992,7 +992,7 @@ static void do_retr(struct ftp_session_s *f,
 	struct parsedname pn;
 	size_t size;
 	size_t size_write;
-	int r;
+	int returned_length;
 	off_t offset = 0;
 	int need_pn_destroy = 1;
 
@@ -1012,11 +1012,12 @@ static void do_retr(struct ftp_session_s *f,
 	if ((f->file_offset_command_number == (f->command_number - 1)))
 		offset = f->file_offset;
 
-	if (FS_ParsedNamePlus(f->dir, file_name, &pn)) {
+    /* Can we parse the name? */
+    if (FS_ParsedNamePlus(f->dir, file_name, &pn)) {
 		reply(f, 550, "File does not exist.");
 		need_pn_destroy = 0;
 		goto exit_retr;
-	} else if (pn.dev == NULL || pn.ft == NULL) {
+    } else if ( IsDir(&pn)) { 
 		reply(f, 550, "Error, file is a directory.");
 		goto exit_retr;
 	} else if (pn.ft->read.v == NULL) {
@@ -1032,17 +1033,17 @@ static void do_retr(struct ftp_session_s *f,
 							  FullFileLength(&pn) - offset)) == NULL) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
-	} else if ((r = FS_read_postparse(buf, size, offset, &pn)) < 0) {
-		reply(f, 550, "Error reading from file; %s.", strerror(errno));
+                              } else if ((returned_length = FS_read_postparse(buf, size, offset, &pn)) < 0) {
+                                  reply(f, 550, "Error reading from file; %s.", strerror(-returned_length));
 		goto exit_retr;
 	} else if (f->data_type == TYPE_IMAGE) {
 		bufwrite = buf;
-		size_write = size;
-	} else if ((buf2 = (ASCII *) malloc(2 * size)) == NULL) {
+        size_write = returned_length;
+    } else if ((buf2 = (ASCII *) malloc(2 * returned_length)) == NULL) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
 	} else {					// TYPE_ASCII
-		size_write = convert_newlines(buf2, buf, size);
+        size_write = convert_newlines(buf2, buf, returned_length);
 		bufwrite = buf2;
 	}
 
@@ -1112,6 +1113,7 @@ static void do_retr(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
+/* Write to 1-wire device */
 static void do_stor(struct ftp_session_s *f,
 					const struct ftp_command_s *cmd)
 {
