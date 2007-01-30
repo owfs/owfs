@@ -1,5 +1,5 @@
  /**
-  * Module: ownet/java 
+  * Module: ownet/java
   * Package: org.owfs.ownet.OWNet
   *
   * @author George M. Zouganelis (gzoug@aueb.gr)
@@ -9,12 +9,12 @@
   * it under the terms of the GNU General Public License as published by
   * the Free Software Foundation; either version 2 of the License, or (at
   * your option) any later version.
-  * 
+  *
   * This program is distributed in the hope that it will be useful, but
   * WITHOUT ANY WARRANTY; without even the implied warranty of
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   * General Public License for more details.
-  * 
+  *
   * You should have received a copy of the GNU General Public License
   * along with this program; if not, write to the Free Software
   * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -30,8 +30,10 @@ import java.util.Vector;
 /**
  * Java class for accessing OWFS through owserver daemon over IP.
  *
+ * <p>
  * OWFS is an open source project developed by Paul Alfille and hosted at
- * http://www.owfs.org
+ * <a href="http://www.owfs.org" target="_top">http://www.owfs.org</a>
+ * </p>
  *
  */
 
@@ -43,6 +45,7 @@ import java.util.Vector;
  * 2007/01/28: Persistent connection support
  *             Connect/Disconnect introduced
  *             fix for large packet socket reads, timeout added
+ * 2007/01/30: Beautifying and grouping methods
  */
 
 public class OWNet {
@@ -85,27 +88,27 @@ public class OWNet {
     /**
      * format as f.i (10.67C6697351FF)
      */
-    static public final int OWNET_FLAG_D_F_I    = 0x0000000; 
+    static public final int OWNET_FLAG_D_F_I    = 0x0000000;
     /**
      * format as fi (1067C6697351FF)
      */
-    static public final int OWNET_FLAG_D_FI     = 0x1000000; 
+    static public final int OWNET_FLAG_D_FI     = 0x1000000;
     /**
      * format as f.i.c (10.67C6697351FF.8D)
      */
-    static public final int OWNET_FLAG_D_F_I_C  = 0x2000000; 
+    static public final int OWNET_FLAG_D_F_I_C  = 0x2000000;
     /**
      * format as f.ic (10.67C6697351FF8D)
      */
-    static public final int OWNET_FLAG_D_F_IC   = 0x3000000; 
+    static public final int OWNET_FLAG_D_F_IC   = 0x3000000;
     /**
      * format as fi.c (1067C6697351FF.8D)
      */
-    static public final int OWNET_FLAG_D_FI_C   = 0x4000000; 
+    static public final int OWNET_FLAG_D_FI_C   = 0x4000000;
     /**
      * format as fic (1067C6697351FF8D)
      */
-    static public final int OWNET_FLAG_D_FIC    = 0x5000000; 
+    static public final int OWNET_FLAG_D_FIC    = 0x5000000;
 
     // ################################
     // temperature scale format
@@ -113,24 +116,24 @@ public class OWNet {
     /**
      * Temperature format: (C) Centigrade
      */
-    static public final int OWNET_FLAG_T_C      = 0x0000000; 
+    static public final int OWNET_FLAG_T_C      = 0x0000000;
     /**
      * Temperature format: (F) Fahrenheit
      */
-    static public final int OWNET_FLAG_T_F      = 0x0010000; 
+    static public final int OWNET_FLAG_T_F      = 0x0010000;
     /**
      * Temperature format: (K) Kelvin
      */
-    static public final int OWNET_FLAG_T_K      = 0x0020000; 
+    static public final int OWNET_FLAG_T_K      = 0x0020000;
     /**
      * Temperature format: (R) Rankine
      */
-    static public final int OWNET_FLAG_T_R      = 0x0030000; 
+    static public final int OWNET_FLAG_T_R      = 0x0030000;
 
-    
-    
+
     static private final int OWNET_DEFAULT_SG_FLAGS = 0x0000103;
     static private final int OWNET_FLAG_PERSIST     = 0x0000004; // for Persistent connections
+
 //
 // class private variables
 //
@@ -140,26 +143,26 @@ public class OWNet {
     private boolean debugEnabled = false;                       // debug enable
     private     int conn_timeout = OWNET_DEFAULT_TIMEOUT;       // timeout for socket reads
     private     int defDataLen   = OWNET_DEFAULT_DATALEN;       // default data length for read/write commands
-    
+
     // socket connection
-    
+
     private Socket owsocket = null;
     private DataInputStream in = null;
     private DataOutputStream out = null;
     private boolean persistentConnection = false;
 
-    
-    
+
+
 //
 // Constructors
 //
 
-    /** 
-     * Create a new instance of OWNet 
-     * OWNet autoconnects to remote server when requested
+    /**
+     * Create a new instance of OWNet
+     * OWNet autoconnects to remote server when requested.
      * Default server:port are localhost:4304 (127.0.0.1:4304).
      * If others than default are requested,
-     * set them using the setters setRemoteServer/setRemotePort, 
+     * set them using the setters setRemoteServer/setRemotePort,
      * before performing any read/write opertions to OW.
      */
     public OWNet() {
@@ -169,7 +172,7 @@ public class OWNet {
     /**
      * Create a new instance of OWNet and set server:port for future connections
      * OWNet autoconnects to remote server when requested
-     * 
+     *
      * @param server ip or hostname of owserver to connect to
      * @param port remote's owserver port to connect to
      */
@@ -189,8 +192,8 @@ public class OWNet {
     public boolean isDebug() {
         return debugEnabled;
     }
-    
-   
+
+
     /**
      * Set debugging mode (default=false)
      * @param newstate enable/disable debug mode
@@ -199,7 +202,6 @@ public class OWNet {
         debugEnabled = newstate;
     }
 
-    // member access
     /**
      * Get remote server
      * @return remote server
@@ -315,13 +317,13 @@ public class OWNet {
         System.err.print(message);
         System.err.flush();
     }
-    
-    
+
+
     /**
      * Connect to remote host.
-     * If we have already connected in persistent mode, reconnection is discarded 
-     * unless the remote has close the connection. 
-     * If no previous connection has been made, or previous connection was not persistent, 
+     * If we have already connected in persistent mode, reconnection is discarded
+     * unless the remote has close the connection.
+     * If no previous connection has been made, or previous connection was not persistent,
      * we follow a disconnect/connect sequence.
      * @throws java.io.IOException Exception to throw on connection error
      */
@@ -329,8 +331,8 @@ public class OWNet {
        if (!persistentConnection) {
           // make sure we have cleared old connection objects
           debugprint("CONNECT","!persistentConnection\n");
-          if (owsocket!=null) disconnect(true);  
-          debugprint("CONNECT","Initializing connection\n");          
+          if (owsocket!=null) disconnect(true);
+          debugprint("CONNECT","Initializing connection\n");
           owsocket = new Socket(remoteServer, remotePort);
           owsocket.setSoTimeout(conn_timeout);
           in = new DataInputStream(owsocket.getInputStream());
@@ -341,16 +343,16 @@ public class OWNet {
           if (owsocket.isClosed()) {
               debugprint("CONNECT","reconnecting to " + owsocket.getRemoteSocketAddress()+"\n");
               owsocket.connect(owsocket.getRemoteSocketAddress());
-          } 
+          }
        } else {
           // should never been here (persistent connection & no connection object)
           debugprint("CONNECT","persistentConnection\n");
-          if (owsocket!=null) disconnect(true);  
-          debugprint("CONNECT","Initializing connection\n");          
+          if (owsocket!=null) disconnect(true);
+          debugprint("CONNECT","Initializing connection\n");
           owsocket = new Socket(remoteServer, remotePort);
           owsocket.setSoTimeout(conn_timeout);
           in = new DataInputStream(owsocket.getInputStream());
-          out = new DataOutputStream(owsocket.getOutputStream());          
+          out = new DataOutputStream(owsocket.getOutputStream());
         }
     }
 
@@ -362,55 +364,16 @@ public class OWNet {
      */
     private void disconnect(boolean force) throws IOException {
         if ((!persistentConnection) || force) {
-          debugprint("DISCONNECT","Cleaning up connection\n");          
+          debugprint("DISCONNECT","Cleaning up connection\n");
           persistentConnection = false;
           if (in != null) in.close(); in = null;
           if (out != null) out.close(); out = null;
           if (owsocket != null) owsocket.close();  owsocket = null;
-          debugprint("DISCONNECT","Done.\n");          
+          debugprint("DISCONNECT","Done.\n");
         }
     }
-    
-    /**
-     * Connect to remote host
-     * @throws java.io.IOException Exception to throw on connection error
-     */
-    public void Connect() throws IOException {
-        connect();
-    }
-    
-    /**
-     * Connect to remote host and swallow any IOException
-     * @return success
-     */
-    public boolean safeConnect() {
-        try { connect(); } catch (IOException e) {return false;}
-        return true;
-    }
-   
-    
-    
-    /**
-     * Disconnect from remote host. 
-     * Note: On clean-up, you should always try a Disconnect
-     * @throws java.io.IOException Exception to throw on disconnection error
-     */
-    public void Disconnect() throws IOException {
-        disconnect(true);
-    }
-    
-    /**
-     * Disconnect from remote host and swallow any IOException
-     * Note: Before freeing OWNet, you should always be polite and try a Disconnect to honor remote server
-     * @return success
-     */
-    public boolean safeDisconnect()  {
-        try { disconnect(true); } catch (IOException e) {return false;}
-        return true;
-    }
 
-    
-    
+
     /**
      * Send a ownet message packet
      * @param function ownet's header field
@@ -433,7 +396,7 @@ public class OWNet {
         try {
            for ( i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) out.writeInt(msg[i]);
         } catch (IOException e) { // if timeout (maybe!)
-           if (persistentConnection) {               
+           if (persistentConnection) {
                 disconnect(true);
                 connect();
                 try {
@@ -443,7 +406,7 @@ public class OWNet {
                 }
            }
         }
-       
+
     }
 
     /**
@@ -454,12 +417,12 @@ public class OWNet {
     private int[] getPacket() throws IOException
     {
         int[] msg = new int[OWNET_PROT_STRUCT_SIZE];
-        for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++){ 
+        for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++){
             msg[i] = in.readInt();
-        }   
-        
+        }
+
         persistentConnection = ((msg[OWNET_PROT_FLAGS] & OWNET_FLAG_PERSIST) == OWNET_FLAG_PERSIST);
-        debugprint("getPacket (Persistent="+persistentConnection+")", msg);        
+        debugprint("getPacket (Persistent="+persistentConnection+")", msg);
         return msg;
     }
 
@@ -484,7 +447,6 @@ public class OWNet {
      */
     private void sendCString(String str) throws IOException {
        out.write(str.getBytes());out.writeByte(0);
-       //out.flush();
     }
 
     /**
@@ -515,7 +477,7 @@ public class OWNet {
         // possible exception must be caught by the calling method
         disconnect(false);
         return retVal;
-    
+
     }
     /**
      * Internal method to read from server, using default excpected datalen
@@ -636,7 +598,7 @@ public class OWNet {
      */
     private Vector<String> OW_DirAll(String path) throws IOException
     {
-       
+
         Vector<String> retVal = new Vector<String>();
         int[] msg = null;
         String[] values = null;
@@ -672,6 +634,45 @@ public class OWNet {
 //
 
     /**
+     * Connect to remote host
+     * @throws java.io.IOException Exception to throw on connection error
+     */
+    public void Connect() throws IOException {
+        connect();
+    }
+
+    /**
+     * Connect to remote host and swallow any IOException
+     * @return success
+     */
+    public boolean safeConnect() {
+        try { connect(); } catch (IOException e) {return false;}
+        return true;
+    }
+
+
+
+    /**
+     * Disconnect from remote host.
+     * Note: On clean-up, you should always try a Disconnect
+     * @throws java.io.IOException Exception to throw on disconnection error
+     */
+    public void Disconnect() throws IOException {
+        disconnect(true);
+    }
+
+    /**
+     * Disconnect from remote host and swallow any IOException
+     * Note: Before freeing OWNet, you should always be polite and try a Disconnect to honor remote server
+     * @return success
+     */
+    public boolean safeDisconnect()  {
+        try { disconnect(true); } catch (IOException e) {return false;}
+        return true;
+    }
+
+
+    /**
      * Read from server or throw IOException on error
      * @param path attribute's path
      * @throws java.io.IOException Exception to throw, when something is wrong
@@ -687,10 +688,10 @@ public class OWNet {
      * @return attribute's value, empty on error
      */
     public String safeRead(String path){
-        try { 
-            return OW_Read(path); 
-        } catch (IOException e) { 
-            return ""; 
+        try {
+            return OW_Read(path);
+        } catch (IOException e) {
+            return "";
         }
     }
 
@@ -735,10 +736,10 @@ public class OWNet {
      * @return presence, false on missing or error
      */
     public boolean safePresence(String path){
-        try {           
-            return OW_Presence(path);        
-        } catch (IOException e) {            
-            return false;        
+        try {
+            return OW_Presence(path);
+        } catch (IOException e) {
+            return false;
         }
     }
 

@@ -52,14 +52,13 @@ public class demoUsage {
         //ow.setDebug(true);
 
         // Safe Presence - DS18B20
-        System.out.println("Presence");
+        System.out.println("safe Presence");
         System.out.println(ow.safePresence("/28.0E67C0000000"));
 
 
         // simple Read - DS18B20
-        System.out.println("Reading temperature");
+        System.out.println("safe Reading Temperature");
         System.out.println(ow.safeRead("/28.0E67C0000000/temperature"));
-        System.out.println(ow.safeRead("/28.5A0DC0000000/temperature"));
 
         // simple Read - reading a DS2406's memory
         try {
@@ -112,6 +111,7 @@ public class demoUsage {
             System.err.println(e);
         }
 
+        ow.safeDisconnect();
 
         System.err.flush();
         System.out.flush();

@@ -1,0 +1,66 @@
+#
+# ownet/java: java package for accessing owfs
+#
+# !!! EXTREMELY BETA Makefile !!!!
+#
+# $Id$
+# (C) Copyright 2007 George M. Zouganelis (gzoug@aueb.gr)
+#
+#
+
+# ---- those should be visible in path ---- 
+JAVAC=javac
+JAR=jar
+JAVADOC=javadoc
+
+
+# ---- folders for building ---- 
+BUILD_DIR=.build
+DOCS_DIR=.doc
+INSTALL_DIR=.install
+
+# ---- package names and folders ---- 
+JARNAME=ownet.jar
+PACKAGEFOLDER=org/owfs/ownet
+PACKAGENAME=org.owfs.ownet
+JARADDITIONALFILES=README COPYING
+INSTALL_FILES=$(BUILD_DIR)/ownet.jar $(DOCS_DIR)/javadoc
+
+# ---- source locations ----
+PACKAGE_SOURCES=$(wildcard src/$(PACKAGEFOLDER)/*.java)
+
+# ----  FLAGS ----
+
+# -g for all debug info, or -g:none for none
+JAVAC_ARGS=-g:none
+JAR_ARGS=
+JAVADOC_ARGS=
+
+# #######################
+# Lets build them
+# #######################
+
+PHONY: makedirs makeclasses makejar makedocs
+
+makeclasses:
+	$(JAVAC) $(JAVAC_ARGS) -d $(BUILD_DIR) $(PACKAGE_SOURCES)
+
+makejar:
+	$(JAR) $(JAR_ARGS) -c -f $(BUILD_DIR)/$(JARNAME) -C $(BUILD_DIR) org $(JARADDITIONALFILES)
+
+makedocs:
+	$(JAVADOC) $(JAVADOC_ARGS) -d $(DOCS_DIR)/javadoc -sourcepath src $(PACKAGENAME)
+	
+install:
+	@cp -R $(INSTALL_FILES) $(INSTALL_DIR)
+	
+makedirs:
+	@mkdir -p $(BUILD_DIR) 2>&1 > /dev/null
+	@mkdir -p $(DOCS_DIR) 2>&1 > /dev/null
+	@mkdir -p $(INSTALL_DIR) 2>&1 > /dev/null
+	
+
+clean:
+	@rm -fR $(BUILD_DIR)
+	@rm -fR $(DOCS_DIR)
+	@rm -fR $(INSTALL_DIR)
