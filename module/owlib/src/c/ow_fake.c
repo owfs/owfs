@@ -156,8 +156,8 @@ pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
 #endif                          /* OW_MT */
 
 struct {
-	ASCII *name;
-	ASCII *ret;
+	const ASCII *name;
+	const ASCII *ret;
 } nfa;
 void Namefindaction(const void *nodep, const VISIT which, const int depth)
 {
@@ -179,7 +179,7 @@ void Namefindaction(const void *nodep, const VISIT which, const int depth)
 
 static const ASCII *namefind(const char *name)
 {
-	ASCII *ret;
+	const ASCII *ret;
     
     NAMEFINDMUTEXLOCK ;
 
