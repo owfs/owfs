@@ -73,8 +73,10 @@ void Handler(int fd)
 			if (persistent) {	/* already had persistence granted */
 				hd.persistent = 1;	/* so keep it */
 			} else {			/* See if available */
-				PERSISTENCELOCK;
-				if (persistent_connections < Global.clients_persistent_high) {	/* ok */
+
+                PERSISTENCELOCK;
+
+                if (persistent_connections < Global.clients_persistent_high) {	/* ok */
 					++persistent_connections;	/* global count */
 					persistent = 1;	/* connection toggle */
 					hd.persistent = 1;	/* for responses */
@@ -82,7 +84,9 @@ void Handler(int fd)
 					loop_persistent = 0;	/* denied! */
 					hd.persistent = 0;	/* for responses */
 				}
-				PERSISTENCEUNLOCK;
+
+                PERSISTENCEUNLOCK;
+                
 			}
 		} else {				/* No persistence requested this time */
 			hd.persistent = 0;	/* for responses */
@@ -105,12 +109,16 @@ void Handler(int fd)
 		/* Shorter wait */
 		if (tcp_wait(fd, &tv_low)) {	// timed out
 			/* test if below threshold for longer wait */
-			PERSISTENCELOCK;
-			/* store the test because the mutex locks the variable */
+
+            PERSISTENCELOCK;
+
+            /* store the test because the mutex locks the variable */
 			loop_persistent =
 				(persistent_connections < Global.clients_persistent_low);
-			PERSISTENCEUNLOCK;
-			if (loop_persistent == 0)
+
+            PERSISTENCEUNLOCK;
+
+            if (loop_persistent == 0)
 				break;			/* too many connections and we're slow */
 
 			/*  longer wait */
@@ -126,10 +134,14 @@ void Handler(int fd)
 	pthread_mutex_destroy(&hd.to_client);
 	// restore the persistent count
 	if (persistent) {
-		PERSISTENCELOCK;
-		--persistent_connections;
-		PERSISTENCEUNLOCK;
-	}
+
+        PERSISTENCELOCK;
+
+        --persistent_connections;
+
+        PERSISTENCEUNLOCK;
+
+    }
 }
 
 /*

@@ -145,11 +145,16 @@ static int Fake_next_both(struct device_search *ds,
 	return 0;
 }
 
+/* Need to lock struct nfa since twalk requires global data -- can't pass void pointer */
 #if OW_MT
 pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
-#endif							/* OW_MT */
-ASCII *Namefindret = NULL;
-char *Namefindname = NULL;
+#define NAMEFINDMUTEXLOCK pthread_mutex_lock(&Namefindmutex)
+#define NAMEFINDMUTEXUNLOCK pthread_mutex_unlock(&Namefindmutex)
+#else                          /* OW_MT */
+#define NAMEFINDMUTEXLOCK
+#define NAMEFINDMUTEXUNLOCK
+#endif                          /* OW_MT */
+
 struct {
 	ASCII *name;
 	ASCII *ret;
@@ -175,16 +180,15 @@ void Namefindaction(const void *nodep, const VISIT which, const int depth)
 static const ASCII *namefind(const char *name)
 {
 	ASCII *ret;
-#if OW_MT
-	pthread_mutex_lock(&Namefindmutex);
-#endif							/* OW_MT */
+    
+    NAMEFINDMUTEXLOCK ;
 
 	nfa.name = name;
 	nfa.ret = NULL;
 	twalk(Tree[pn_real], Namefindaction);
 	ret = nfa.ret;
-#if OW_MT
-	pthread_mutex_lock(&Namefindmutex);
-#endif							/* OW_MT */
-	return ret;
+
+    NAMEFINDMUTEXUNLOCK ;
+
+    return ret;
 }

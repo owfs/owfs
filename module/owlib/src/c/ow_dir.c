@@ -506,6 +506,11 @@ FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v,
 #if OW_MT
 // must lock a global struct for walking through tree -- limitation of "twalk"
 pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER;
+#define TYPEDIRMUTEXLOCK  pthread_mutex_lock(&Typedirmutex)
+#define TYPEDIRMUTEXUNLOCK  pthread_mutex_unlock(&Typedirmutex)
+#else /* OW_MT */
+#define TYPEDIRMUTEXLOCK
+#define TYPEDIRMUTEXUNLOCK
 #endif							/* OW_MT */
 
 // struct for walkking through tree -- cannot send data except globally
@@ -533,17 +538,16 @@ static void Typediraction(const void *t, const VISIT which,
 static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *),
 					  void *v, struct parsedname *pn2)
 {
-#if OW_MT
-	pthread_mutex_lock(&Typedirmutex);
-#endif							/* OW_MT */
-	tda.dirfunc = dirfunc;
+    TYPEDIRMUTEXLOCK ;
+
+    tda.dirfunc = dirfunc;
 	tda.v = v;
 	tda.pn = pn2;
 	twalk(Tree[pn2->type], Typediraction);
-#if OW_MT
-	pthread_mutex_unlock(&Typedirmutex);
-#endif							/* OW_MT */
-	return 0;
+
+    TYPEDIRMUTEXUNLOCK ;
+
+    return 0;
 }
 
 /* Show the bus entries */
