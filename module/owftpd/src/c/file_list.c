@@ -237,21 +237,30 @@ struct wildlexparse {
 	ASCII *match;
 	struct file_parse_s *fps;
 };
+/* Called for each directory element, and operates recursively */
+/* uses C library fnmatch for file wildcard comparisons */
 static void WildLexParseCallback(void *v,
 								 const struct parsedname *const pn2)
 {
 	struct wildlexparse *wlp = v;
 	struct file_parse_s fps;	// duplicate for recursive call
-	FS_DirName(&wlp->end[1], OW_FULLNAME_MAX, pn2);
-	LEVEL_DEBUG("Try %s vs %s\n", &wlp->end[1], wlp->match);
-	//if ( fnmatch( match, end, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
-	if (fnmatch(wlp->match, &wlp->end[1], FNM_PATHNAME))
+	
+    /* get real name from parsedname struct */
+    FS_DirName(&wlp->end[1], OW_FULLNAME_MAX, pn2);
+
+    LEVEL_DEBUG("WildLexParseCallback: Try %s vs %s\n", &wlp->end[1], wlp->match);
+    if (fnmatch(wlp->match, &wlp->end[1], FNM_PATHNAME)) {
 		return;
-	//printf("Match! %s\n",end) ;
+    }
+	
+    /* Matched! So set up for recursive call on nect elements in path name */
 	memcpy(&fps, wlp->fps, sizeof(fps));
 	fps.pse = parse_status_next;
 	FileLexParse(&fps);
 }
+/* Called for each directory, calls WildLEexParseCallback on each element
+   to see if matches wildcards (even used for normal listings with * wildcard)
+ */
 static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 {
 	struct parsedname pn;
@@ -268,7 +277,8 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 		return;
 	}
 
-	if (FS_ParsedName(fps->buffer, &pn)) {
+    /* Can we understand the current path? */
+    if (FS_ParsedName(fps->buffer, &pn)) {
 		fps->ret = -ENOENT;
 		return;
 	}
