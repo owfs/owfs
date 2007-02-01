@@ -720,7 +720,7 @@ public class OWNet {
      * Get directory list from server (multipacket mode)
      * @param path directory to list
      * @throws java.io.IOException Exception to throw, when something is wrong
-     * @return vector list of elements found
+     * @return array of elements found
      */
     public String[] Dir(String path) throws IOException{
         return OW_Dir(path,false);
@@ -730,7 +730,7 @@ public class OWNet {
     /**
      * Get directory list from server (multipacket mode) and swallow any IOException
      * @param path directory to list
-     * @return vector list of elements found, empty on error
+     * @return array of elements found, empty on error
      */
     public String[] safeDir(String path){
         String[] retVal = {};
@@ -745,7 +745,7 @@ public class OWNet {
      * Get directory list from server (singlepacket mode)
      * @param path directory to list
      * @throws java.io.IOException Exception to throw, when something is wrong
-     * @return vector list of elements found
+     * @return array of elements found
      */
     public String[] DirAll(String path) throws IOException{
         return OW_Dir(path,true);
@@ -755,7 +755,7 @@ public class OWNet {
     /**
      * Get directory list from server (singlepacket mode) and swallow any IOException
      * @param path directory to list
-     * @return vector list of elements found, empty on error
+     * @return array of elements found, empty on error
      */
     public String[]  safeDirAll(String path){
         String[] retVal = {};
