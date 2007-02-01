@@ -152,7 +152,6 @@ public class OWNet {
     private boolean persistentConnection = false;
 
 
-
 //
 // Constructors
 //
@@ -395,8 +394,9 @@ public class OWNet {
         debugprint("sendPacket", msg);
         try {
            for ( i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) out.writeInt(msg[i]);
-        } catch (IOException e) { // if timeout (maybe!)
-           if (persistentConnection) {
+        } catch (IOException e) { 
+           // if persistent connection has timeout
+            if (persistentConnection) {
                 disconnect(true);
                 connect();
                 try {
@@ -420,7 +420,6 @@ public class OWNet {
         for (int i = 0; i<OWNET_PROT_STRUCT_SIZE; i++){
             msg[i] = in.readInt();
         }
-
         persistentConnection = ((msg[OWNET_PROT_FLAGS] & OWNET_FLAG_PERSIST) == OWNET_FLAG_PERSIST);
         debugprint("getPacket (Persistent="+persistentConnection+")", msg);
         return msg;
@@ -560,72 +559,46 @@ public class OWNet {
     /**
      * Internal method to get directory list from server (multipacket mode)
      * @param path directory to list
-     * @return vector list of elements found
+     * @return list of elements found
      * @throws java.io.IOException Exception to throw, when something is wrong
      */
-    private Vector<String> OW_Dir(String path) throws IOException
+    private String[] OW_Dir(String path, boolean dirall) throws IOException
     {
-        Vector<String> retVal = new Vector<String>();
+        StringBuilder retVals = new StringBuilder();
+        
         int[] msg = null;
 
         // try to connect to remote server
         // possible exception must be caught by the calling method
         connect();
-        sendPacket(OWNET_MSG_DIR, path.length()+1, 0);
+        if (dirall) {
+            sendPacket(OWNET_MSG_DIRALL, path.length()+1, 0);
+        } else {
+            sendPacket(OWNET_MSG_DIR, path.length()+1, 0);            
+        }
         sendCString(path);
 
         do{
             msg = getPacket();
             if (msg[OWNET_PROT_RETVALUE] >= 0){
-               if (msg[OWNET_PROT_PAYLOAD] > 0)  retVal.add(getPacketData(msg));
+               if (msg[OWNET_PROT_PAYLOAD] > 0)  {
+                   if (!dirall) {
+                     if (retVals.length()>0) retVals.append(',');
+                     retVals = retVals.append(getPacketData(msg));
+                   } else {
+                       retVals.append(getPacketData(msg));
+                   }
+               }
             } else {
                disconnect(false);
                throw new IOException("Error getting Directory. Error " + msg[OWNET_PROT_RETVALUE]);
             }
-        } while (msg[OWNET_PROT_PAYLOAD]!=0); // <0 = please wait, 0=end of list, >0 = we have data waiting (is this the way?)
+        } while (!dirall && (msg[OWNET_PROT_PAYLOAD]!=0) ); // <0 = please wait, 0=end of list, >0 = we have data waiting (is this the way?)
 
         // close streams and connection
         // possible exception must be caught by the calling method
         disconnect(false);
-        return retVal;
-    }
-
-     /**
-     * Internal method to get directory list from server (single packet mode)
-     * @param path directory to list
-     * @throws java.io.IOException Exception to throw, when something is wrong
-     * @return vector list of elements found
-     */
-    private Vector<String> OW_DirAll(String path) throws IOException
-    {
-
-        Vector<String> retVal = new Vector<String>();
-        int[] msg = null;
-        String[] values = null;
-
-        // try to connect to remote server
-        // possible exception must be caught by the calling method
-        connect();
-
-        sendPacket(OWNET_MSG_DIRALL, path.length()+1, 0);
-        sendCString(path);
-
-        msg = getPacket();
-        if (msg[OWNET_PROT_RETVALUE] >= 0 )
-        {
-            if (msg[OWNET_PROT_PAYLOAD]>0){
-                values = getPacketData(msg).split(",");
-                for (int i=0; i<values.length; i++) retVal.add(values[i]);
-            }
-        } else {
-           disconnect(false);
-           throw new IOException("Error getting Directory. Error " + msg[OWNET_PROT_RETVALUE]);
-        }
-
-        // close streams and connection
-        // possible exception must be caught by the calling method
-        disconnect(false);
-        return retVal;
+        return retVals.toString().split(",");
     }
 
 
@@ -749,21 +722,23 @@ public class OWNet {
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return vector list of elements found
      */
-    public Vector<String> Dir(String path) throws IOException{
-        return OW_Dir(path);
+    public String[] Dir(String path) throws IOException{
+        return OW_Dir(path,false);
     }
 
+    
     /**
      * Get directory list from server (multipacket mode) and swallow any IOException
      * @param path directory to list
      * @return vector list of elements found, empty on error
      */
-    public Vector<String> safeDir(String path){
+    public String[] safeDir(String path){
+        String[] retVal = {};
         try {
-            return OW_Dir(path);
+            retVal =  OW_Dir(path,false);
         } catch (IOException e) {
-            return new Vector<String>();
         }
+        return retVal;
     }
 
     /**
@@ -772,21 +747,23 @@ public class OWNet {
      * @throws java.io.IOException Exception to throw, when something is wrong
      * @return vector list of elements found
      */
-    public Vector<String> DirAll(String path) throws IOException{
-        return OW_DirAll(path);
+    public String[] DirAll(String path) throws IOException{
+        return OW_Dir(path,true);
     }
 
+    
     /**
      * Get directory list from server (singlepacket mode) and swallow any IOException
      * @param path directory to list
      * @return vector list of elements found, empty on error
      */
-    public Vector<String> safeDirAll(String path){
+    public String[]  safeDirAll(String path){
+        String[] retVal = {};
         try {
-            return OW_DirAll(path);
+            retVal = OW_Dir(path,true);
         } catch (IOException e) {
-            return new Vector<String>();
         }
+        return retVal;
     }
 
 }

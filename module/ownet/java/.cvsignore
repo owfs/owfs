@@ -1,4 +1,7 @@
 build
+.build
+.doc
+.install
 dist
 nbproject
 test

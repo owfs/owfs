@@ -32,7 +32,7 @@ PACKAGE_SOURCES=$(wildcard src/$(PACKAGEFOLDER)/*.java)
 # ----  FLAGS ----
 
 # -g for all debug info, or -g:none for none
-JAVAC_ARGS=-g:none
+JAVAC_ARGS=-g:none -nowarn
 JAR_ARGS=
 JAVADOC_ARGS=
 

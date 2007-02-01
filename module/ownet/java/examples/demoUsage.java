@@ -31,7 +31,6 @@
 
 import org.owfs.ownet.*;
 import java.io.*;
-import java.util.*;
 
 /**
  * @version $Id$
@@ -46,7 +45,7 @@ public class demoUsage {
     public static void main(String[] args) {
 
         String RemoteHost = "blue";
-        int RemotePort = 9999;
+        int RemotePort = 4304;
 
         OWNet ow = new OWNet(RemoteHost, RemotePort);
         //ow.setDebug(true);
@@ -85,13 +84,13 @@ public class demoUsage {
             System.err.println(e);
         }
 
-
        // Directory - simple
         try {
           System.out.println("Classic Directory (multipacket)");
-          Vector<String> Dir = ow.Dir("/");
-          for (Enumeration<String> e = Dir.elements(); e.hasMoreElements();){
-              System.out.println(e.nextElement());
+          System.out.println("-------------------------------");
+          String[] Dir = ow.Dir("/");
+          for (int i=0; i<Dir.length; i++){
+              System.out.println(Dir[i]);
           }
           Dir = null;
         } catch (IOException e) {
@@ -100,16 +99,18 @@ public class demoUsage {
 
 
        // Directory - All
-        try {
-          System.out.println("Compact Directory (singlepacket)");
-          Vector<String> Dir = ow.DirAll("/");
-          for (Enumeration<String> e = Dir.elements(); e.hasMoreElements();){
-              System.out.println(e.nextElement());
+        try{
+          System.out.println("Classic Directory (singlepacket)");
+          System.out.println("-------------------------------");
+          String[] Dir = ow.DirAll("/");
+          for (int i=0; i<Dir.length; i++){
+              System.out.println(Dir[i]);
           }
           Dir = null;
         } catch (IOException e) {
             System.err.println(e);
         }
+
 
         ow.safeDisconnect();
 
