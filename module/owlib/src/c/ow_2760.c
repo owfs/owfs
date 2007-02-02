@@ -1037,7 +1037,7 @@ static int OW_r_sram(BYTE * data, const size_t size, const off_t offset,
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
-		{NULL, data, size, trxn_match,},
+		{NULL, data, size, trxn_read,},
 		TRXN_END,
 	};
 
