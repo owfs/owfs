@@ -130,7 +130,9 @@ int LockGet(const struct parsedname *pn)
 		pthread_mutex_lock(&(opaque->key->lock));
 		pn->lock[inindex] = opaque->key;
 	}
-#endif							/* OW_MT */
+#else                          /* OW_MT */
+    (void) pn ; // suppress compiler warning in the trivial case.
+#endif                          /* OW_MT */
 	return 0;
 }
 
@@ -157,6 +159,8 @@ void LockRelease(const struct parsedname *pn)
 		}
 		pn->lock[inindex] = NULL;
 	}
+#else                          /* OW_MT */
+    (void) pn ; // suppress compiler warning in the trivial case.
 #endif							/* OW_MT */
 }
 
