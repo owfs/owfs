@@ -151,33 +151,25 @@ static int CheckPresence_low(struct connection_in *in,
 static int CheckPresence_low(struct connection_in *in,
 							 const struct parsedname *pn)
 {
-	int ret = 0;
 	struct parsedname pn2;
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	//printf("CheckPresence_low:\n");
 	pn2.in = in;
-	if (TestConnection(&pn2)) {	// reconnect successful?
-		ret = -ECONNABORTED;
+	
+    if (TestConnection(&pn2)) {	// reconnect successful?
+		return -ECONNABORTED;
 	} else if (BusIsServer(in)) {
-		//printf("CheckPresence_low: call ServerPresence\n");
 		if (ServerPresence(&pn2) >= 0) {
 			/* Device was found on this in-device, return it's index */
-			ret = in->index;
-		} else {
-			ret = -1;
+			return in->index;
 		}
-		//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
 	} else if (get_busmode(in) == bus_fake) {
-		int i = in->connin.fake.devices - 1;
-		ret = -1;
-		//printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
-		for (; i > -1; --i) {
-			//printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
-			if (memcmp(pn2.sn, &(in->connin.fake.device[8 * i]), 8))
-				continue;
-			ret = in->index;
-			break;
+		int device ;
+        BYTE sn[8] ;
+        for ( device=0; DirblobGet(device,sn,&(in->connin.fake.db)) == 0 ; ++device) {
+            if (memcmp(pn2.sn, sn, 8) == 0) {
+                return in->index;
+            }
 		}
 	} else {
 		struct transaction_log t[] = {
@@ -185,17 +177,17 @@ static int CheckPresence_low(struct connection_in *in,
 			TRXN_END,
 		};
 		/* this can only be done on local busses */
-		if (BUS_transaction(t, &pn2)) {
-			ret = -1;
-		} else {
+		if (BUS_transaction(t, &pn2)==0) {
 			/* Device was found on this in-device, return it's index */
-			ret = in->index;
+			return in->index;
 		}
 	}
 
-	if (ret < 0 && in->next)
+    /* recurse to next bus number */
+    if (in->next) {
 		return CheckPresence_low(in->next, pn);
-	return ret;
+    }
+    return -ENOENT ; // no success
 }
 #endif							/* OW_MT */
 
