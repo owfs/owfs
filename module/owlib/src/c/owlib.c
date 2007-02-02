@@ -400,16 +400,27 @@ int LibStart(void)
 void SigHandler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
-	if (info) {
-		LEVEL_DEBUG
-			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
-			 signo, info->si_errno, info->si_code, (long int) info->si_pid,
-			 pthread_self());
-	} else {
-		LEVEL_DEBUG("Signal handler for %d, self=%lu\n",
-					signo, pthread_self());
-	}
-	return;
+#if OW_MT
+    if (info) {
+    LEVEL_DEBUG
+            ("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
+             signo, info->si_errno, info->si_code, (long int) info->si_pid,
+             pthread_self());
+    } else {
+        LEVEL_DEBUG("Signal handler for %d, self=%lu\n",
+                    signo, pthread_self());
+    }
+#else /* OW_MT */
+    if (info) {
+    LEVEL_DEBUG
+            ("Signal handler for %d, errno %d, code %d, pid=%ld\n",
+             signo, info->si_errno, info->si_code, (long int) info->si_pid);
+    } else {
+        LEVEL_DEBUG("Signal handler for %d\n",
+                    signo);
+    }
+#endif /* OW_MT */
+    return;
 }
 
 void SetSignals(void)

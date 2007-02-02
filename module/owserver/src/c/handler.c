@@ -176,9 +176,9 @@ static void SingleHandler(struct handlerdata *hd)
 #ifdef HAVE_NANOSLEEP
 		struct timespec nano = { 0, 100000000 };	// .1 seconds (Note second element NANOsec)
 		nanosleep(&nano, NULL);
-#else
+#else /* HAVE_NANOSLEEP */
 		usleep((unsigned long) 100000);
-#endif
+#endif /* HAVE_NANOSLEEP */
 		TOCLIENTLOCK(hd);
 		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
 			loop = 0;
@@ -210,10 +210,9 @@ void Handler(int fd)
 	if (FromClient(&hd) == 0) {
 		DataHandler(&hd);
 	}
-  HandlerDone:
-	if (sp.path) {
-		free(sp.path);
-		sp.path = NULL;
+	if (hd.sp.path) {
+		free(hd.sp.path);
+		hd.sp.path = NULL;
 	}
 //printf("OWSERVER handler done\n" ) ;
 }

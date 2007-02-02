@@ -220,8 +220,10 @@ static int FS_r_given_bus(char *buf, const size_t size, const off_t offset,
 
 	if (KnownBus(pn) && BusIsServer(pn->in)) {
 		/* The bus is not local... use a network connection instead */
+#if OW_MT
 		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
 					pthread_self());
+#endif /* OW_MT */
 		//printf("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
 		r = ServerRead(buf, size, offset, pn);
 		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
@@ -447,7 +449,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset,
 															  pn) : (pn->
 																	 ft->
 																	 read.
-																	 b)
+																	 a)
 					(buf, s, offset, pn);
 				if (ret == pn->ft->suglen) {
 					Cache_Add(buf, ret, pn);

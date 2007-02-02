@@ -468,8 +468,7 @@ void FS_LoadPath(BYTE * sn, const struct parsedname *pn)
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else can directory from bus (and add to cache) */
-static int
-FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v,
+static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v,
 			  struct parsedname *pn2, uint32_t * flags)
 {
 	size_t dindex;

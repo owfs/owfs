@@ -60,17 +60,17 @@ static void ow_exit(int e)
 static void exit_handler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
-	if (info) {
-		LEVEL_DEBUG
-			("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
-			 signo, info->si_errno, info->si_code, (long int) info->si_pid,
-			 pthread_self(), main_threadid);
-	} else {
-		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo,
-					pthread_self(), main_threadid);
-	}
 #if OW_MT
-	if (!shutdown_in_progress) {
+    if (info) {
+    LEVEL_DEBUG
+            ("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+             signo, info->si_errno, info->si_code, (long int) info->si_pid,
+             pthread_self(), main_threadid);
+    } else {
+        LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo,
+                    pthread_self(), main_threadid);
+    }
+    if (!shutdown_in_progress) {
 		shutdown_in_progress = 1;
 
 		if (info != NULL) {
@@ -89,6 +89,8 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 		}
 	}
 #else
+    (void) signo ;
+    (void) info ;
 	shutdown_in_progress = 1;
 #endif
 	return;

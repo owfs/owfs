@@ -167,7 +167,6 @@ static int Turnoff(int depth, const struct parsedname *pn)
 		{sent, NULL, 2, trxn_match},
 		TRXN_END,
 	};
-	int ret;
 
 	//printf("TURNOFF entry depth=%d\n",depth) ;
 

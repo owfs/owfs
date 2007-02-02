@@ -291,7 +291,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 					break;
 				}
 				SetKnownBus(pn->in->index, &pn2);	//use parent connection_in
-
+                printf("SERVERDIR path=%s\n",pn2.path);
 				/* we got a device on bus_nr = pn->in->index. Cache it so we
 				   find it quicker next time we want to do read values from the
 				   the actual device
