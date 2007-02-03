@@ -557,6 +557,7 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
 	int bus_number;
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+    pn2.state = pn_bus ; // even stronger statement than SetKnownBus
 
 	for (bus_number = 0; bus_number < indevices; ++bus_number) {
 		SetKnownBus(bus_number, &pn2);
