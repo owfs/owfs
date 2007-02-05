@@ -452,6 +452,8 @@ extern void *Tree[6];
 #define DEV_temp    0x8000
 	/* responds to simultaneous voltage convert 0x3C */
 #define DEV_volt    0x4000
+	/* supports CHAIN command */
+#define DEV_chain   0x2000
 
 
 struct device {

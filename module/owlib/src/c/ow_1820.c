@@ -58,6 +58,9 @@ yREAD_FUNCTION(FS_r_trimvalid);
 yREAD_FUNCTION(FS_r_blanket);
 yWRITE_FUNCTION(FS_w_blanket);
 uREAD_FUNCTION(FS_r_ad);
+uREAD_FUNCTION(FS_r_pio);
+uWRITE_FUNCTION(FS_w_pio);
+uREAD_FUNCTION(FS_sense);
 
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
@@ -133,6 +136,26 @@ struct filetype DS1825[] = {
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm);
 
+struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
+
+struct filetype DS28EA00[] = {
+	F_STANDARD,
+//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
+  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
+  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:10},},
+  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:11},},
+  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
+  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
+  {"power", 1, NULL, ft_yesno, fc_volatile, {y: FS_power}, {v: NULL}, {v:NULL},},
+  {"PIO", 1, &A28EA00, ft_bitfield, fc_stable, {u: FS_r_pio}, {u: FS_w_pio}, {v:NULL},},
+  {"sensed", 1, &A28EA00, ft_bitfield, fc_volatile, {u: FS_sense}, {v: NULL}, {v:NULL},},
+};
+
+DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain);
+
 /* Internal properties */
 static struct internal_prop ip_resolution = { "RES", fc_stable };
 static struct internal_prop ip_power = { "POW", fc_stable };
@@ -177,6 +200,20 @@ struct die_limits DIE[] = {
    POW -- power
 */
 
+#define CMD_WRITE_SCRATCHPAD 0x4E
+#define CMD_READ_SCRATCHPAD 0xBE
+#define CMD_COPY_SCRATCHPAD 0x48
+#define CMD_CONVERT_TEMPERATURE 0x44
+#define CMD_READ_POWERMODE 0xB4
+#define CMD_RECALL_EEPROM 0xB8
+#define CMD_PIO_ACCESS_READ 0xF5
+#define CMD_PIO_ACCESS_WRITE 0xA5
+#define CMD_CHAIN_COMMAND 0x99
+#define CMD_CHAIN_SUBCOMMAND_OFF 0x3C
+#define CMD_CHAIN_SUBCOMMAND_ON 0x5A
+#define CMD_CHAIN_SUBCOMMAND_DONE 0x96
+
+
 /* ------- Functions ------------ */
 
 /* DS1820&2*/
@@ -193,6 +230,8 @@ static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn);
 static int OW_r_trim(BYTE * trim, const struct parsedname *pn);
 static int OW_w_trim(const BYTE * trim, const struct parsedname *pn);
 static enum eDie OW_die(const struct parsedname *pn);
+static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn) ;
+static int OW_w_pio( BYTE pio, const struct parsedname * pn ) ;
 
 static int FS_10temp(_FLOAT * T, const struct parsedname *pn)
 {
@@ -222,6 +261,34 @@ static int FS_power(int *y, const struct parsedname *pn)
 	if (OW_power(&data, pn))
 		return -EINVAL;
 	y[0] = data != 0x00;
+	return 0;
+}
+
+
+/* 28EA00 switch */
+static int FS_w_pio(const UINT * u, const struct parsedname *pn)
+{
+	BYTE data = (u[0]&0x03) ^ 0xFF ; /* reverse bits, set unused to 1s */
+	if (OW_w_pio(data, pn))
+		return -EINVAL;
+	return 0;
+}
+
+static int FS_sense(UINT * u, const struct parsedname *pn)
+{
+	BYTE pio, latch;
+	if (OW_read_pio(&pio, &latch, pn))
+		return -EINVAL;
+	u[0] = pio & 0x03;	/* don't reverse bits */
+	return 0;
+}
+
+static int FS_r_pio(UINT * u, const struct parsedname *pn)
+{
+	BYTE pio, latch;
+	if (OW_read_pio(&pio, &latch, pn))
+		return -EINVAL;
+	u[0] = (latch ^ 0xFF) & 0x03;	/* reverse bits */
 	return 0;
 }
 
@@ -354,7 +421,7 @@ static int FS_w_blanket(const int *y, const struct parsedname *pn)
 static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE convert[] = { 0x44, };
+	BYTE convert[] = { CMD_CONVERT_TEMPERATURE, };
 	UINT delay = 1000;			// hard wired
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
@@ -418,7 +485,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 
 static int OW_power(BYTE * data, const struct parsedname *pn)
 {
-	BYTE b4[] = { 0xB4, };
+	BYTE b4[] = { CMD_READ_POWERMODE, };
 	struct transaction_log tpower[] = {
 		TRXN_START,
 		{b4, NULL, 1, trxn_match},
@@ -443,7 +510,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 					 const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE convert[] = { 0x44, };
+	BYTE convert[] = { CMD_CONVERT_TEMPERATURE, };
 	BYTE pow;
 	int res = Resolutions[resolution - 9].config;
 	UINT delay = Resolutions[resolution - 9].delay;
@@ -514,7 +581,7 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 						  const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE recall[] = { 0xB4, };
+	BYTE recall[] = { CMD_READ_POWERMODE, };
 	struct transaction_log trecall[] = {
 		TRXN_START,
 		{recall, NULL, 1, trxn_match},
@@ -548,7 +615,7 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex,
 static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 {
 	/* data is 9 bytes long */
-	BYTE be[] = { 0xBE, };
+	BYTE be[] = { CMD_READ_SCRATCHPAD, };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{be, NULL, 1, trxn_match},
@@ -563,8 +630,8 @@ static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 {
 	/* data is 3 bytes long */
-	BYTE d[4] = { 0x4E, data[0], data[1], data[2], };
-	BYTE pow[] = { 0x48, };
+	BYTE d[4] = { CMD_WRITE_SCRATCHPAD, data[0], data[1], data[2], };
+	BYTE pow[] = { CMD_COPY_SCRATCHPAD, };
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		{d, NULL, 4, trxn_match},
@@ -682,3 +749,52 @@ int FS_poll_convert(const struct parsedname *pn)
 	LEVEL_DEBUG("FS_poll_convert: failed\n");
 	return 1;
 }
+
+/* read PIO pins for the DS28EA00 and rearrange slightly */
+static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
+{
+  BYTE data[1] ;
+  BYTE cmd[] = { CMD_PIO_ACCESS_READ, } ;
+  struct transaction_log t[] = {
+    TRXN_START,
+    { cmd, NULL, 1, trxn_match, } ,
+    { NULL, data, 1, trxn_read, } ,
+    TRXN_END ,
+  } ;
+  if ( BUS_transaction(t,pn) ) return 1 ;
+  /* compare lower and upper nibble to be complements */
+  if ( (data[0]&0x0F)^(data[0]>>4) ) return 1 ;
+  switch ( data[0]&0x0F ) {
+    case 0x0: pio[0] = 0 ; latch[0] = 0; break ;
+    case 0x1: pio[0] = 1 ; latch[0] = 0; break ;
+    case 0x2: pio[0] = 0 ; latch[0] = 1; break ;
+    case 0x3: pio[0] = 1 ; latch[0] = 1; break ;
+    case 0x4: pio[0] = 2 ; latch[0] = 0; break ;
+    case 0x5: pio[0] = 3 ; latch[0] = 0; break ;
+    case 0x6: pio[0] = 2 ; latch[0] = 1; break ;
+    case 0x7: pio[0] = 3 ; latch[0] = 1; break ;
+    case 0x8: pio[0] = 0 ; latch[0] = 2; break ;
+    case 0x9: pio[0] = 1 ; latch[0] = 2; break ;
+    case 0xA: pio[0] = 0 ; latch[0] = 3; break ;
+    case 0xB: pio[0] = 1 ; latch[0] = 3; break ;
+    case 0xC: pio[0] = 2 ; latch[0] = 2; break ;
+    case 0xD: pio[0] = 3 ; latch[0] = 2; break ;
+    case 0xE: pio[0] = 2 ; latch[0] = 3; break ;
+    case 0xF: pio[0] = 3 ; latch[0] = 3; break ;
+  }
+  return 0 ;
+}
+
+static int OW_w_pio( BYTE pio, const struct parsedname * pn )
+{
+  BYTE cmd[] = { CMD_PIO_ACCESS_WRITE, pio, } ;
+  struct transaction_log t[] = {
+    TRXN_START,
+    { cmd, NULL, 2, trxn_match, } ,
+    TRXN_END ,
+  } ;
+  return BUS_transaction(t,pn) ;
+}
+
+
+

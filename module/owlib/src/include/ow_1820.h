@@ -36,5 +36,6 @@ DeviceHeader(DS18S20);
 DeviceHeader(DS18B20);
 DeviceHeader(DS1822);
 DeviceHeader(DS1825);
+DeviceHeader(DS28EA00);
 
 #endif
