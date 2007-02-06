@@ -204,8 +204,14 @@ sub _new($$) {
     $addr =~ s/-[\w\.]*//g ;
     $addr =~ s/ //g ;
 
-    $addr = "127.0.0.1:".$addr unless $addr =~ /:/ ;
-    $addr = "127.0.0.1".$addr if $addr =~ /^:/ ;
+    if ( $addr =~ /:/ ) {
+      $addr = "127.0.0.1".$addr if $addr =~ /^:/ ;
+      $addr = $addr."4304" if $addr =~ /:$/ ;
+    } else if ($addr =~/\./) {
+      $addr .= ":4304" ;
+    } else if ( $addr eq "localhost" ) {
+      $addr .= ":4304" ;
+    }
 
     $self->{ADDR} = $addr ;
     $self->{SG} = $default_sg + $tempscale + $format ;
@@ -349,8 +355,8 @@ sub _FromServer($) {
     } while $payload_length > 66000 ;
     $payload_data = _FromServerLow( $self,$payload_length ) ;
     if ( !defined($payload_data) ) { 
-	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
-	return ;
+    	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
+      return ;
     } ;
     $payload_data = substr($payload_data,0,$size) ;
     #print "From Server, payload retrieved <$dat> \n" ;
@@ -425,7 +431,7 @@ sub read($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
     _ToServer($self,length($path)+1,$msg_read,$default_block,0,$path) ;
-	my @r = _FromServer($self) ;
+	my @r = _FromServer($self) || return ;
 	return $r[6] ;
 }
 
@@ -472,7 +478,7 @@ sub write($$$) {
 	my $path_length = length($path)+1 ;
 	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
 	_ToServer($self,length($payload),$msg_write,$value_length,0,$payload) ;
-	my @r = _FromServer($self) ;
+	my @r = _FromServer($self) || return ;
 	return $r[2]>=0 ;
 }
 
@@ -512,7 +518,7 @@ sub present($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
 	_ToServer($self,length($path)+1,$msg_presence,$default_block,0,$path) ;
-	my @r = _FromServer($self) ;
+	my @r = _FromServer($self) || return ;
 	return $r[2]>=0 ;
 }
 
@@ -565,7 +571,7 @@ sub dir($$) {
     _ToServer($self,length($path)+1,$msg_dir,$default_block,0,$path) || return ;
 	my $dirlist = '' ;
 	while (1) {
-		@r = _FromServer($self) ;
+		@r = _FromServer($self) || return ;
 		if (!@r) { return ; } ;
         if ( $r[1] == 0 ) { # last null packet
             $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
@@ -617,7 +623,7 @@ An example owserver invocation for a serial adapter and explicitly the default p
  use OWNet ;
  
  # Create owserver object
- my $owserver = OWNet->new('localhost:4304 -v -K') ; #default location, verbose errors, Kelvin degrees
+ my $owserver = OWNet->new('localhost:4304 -v -F') ; #default location, verbose errors, Fahrenheit degrees
  # my $owserver = OWNet->new() ; #simpler, again default location, no error messages, default Celsius
 
  #print directory
@@ -634,7 +640,7 @@ An example owserver invocation for a serial adapter and explicitly the default p
    print "$path\t" ;
   
    # first try to read
-   my $value = $ow->read($fil) ;
+   my $value = $ow->read($path) ;
    if ( defined($value) ) { 
      print "$value\n"; 
      return ;
