@@ -170,6 +170,10 @@ my $persistence_bit = 0x04 ;
 my $default_sg = 0x102 ;
 my $default_block = 4096 ;
 
+#if ( !defined(&MSG_DONTWAIT) ) {
+#  sub MSG_DONTWAIT { return 0 ; }
+#}
+
 our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
 sub _new($$) {
@@ -207,9 +211,9 @@ sub _new($$) {
     if ( $addr =~ /:/ ) {
       $addr = "127.0.0.1".$addr if $addr =~ /^:/ ;
       $addr = $addr."4304" if $addr =~ /:$/ ;
-    } else if ($addr =~/\./) {
+    } elsif ( $addr =~/\./ ) {
       $addr .= ":4304" ;
-    } else if ( $addr eq "localhost" ) {
+    } elsif ( $addr eq "localhost" ) {
       $addr .= ":4304" ;
     }
 
@@ -298,13 +302,15 @@ sub _ToServer ($$$$$;$) {
     my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
     # try to send
-    send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
+#    send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
+    send( $self->{SOCK}, $message, 0 ) && return 1 ;
 
     # maybe bad persistent connection
     if ( $self->{PERSIST} != 0 ) {
         $self->{SOCK} = undef ;
         _Sock($self) || return ;
-        send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
+#        send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
+        send( $self->{SOCK}, $message, 0 ) && return 1 ;
     }
 
 	warn("Send problem $! \n") if $self->{VERBOSE} ;
@@ -326,7 +332,8 @@ sub _FromServerLow($$) {
         return if vec($selectreadbits,$fileno,1) == 0 ;
     #	return if $sel->can_read(1) == 0 ;
         my $partialread ;
-        defined( recv( $self->{SOCK}, $partialread, $remaininglength, MSG_DONTWAIT ) ) || do {
+#        defined( recv( $self->{SOCK}, $partialread, $remaininglength, MSG_DONTWAIT ) ) || do {
+        defined( recv( $self->{SOCK}, $partialread, $remaininglength, 0 ) ) || do {
             warn("Trouble getting data back $! after $remaininglength of $length_wanted") if $self->{VERBOSE} ;
             return ;
         } ;
@@ -431,8 +438,9 @@ sub read($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
     _ToServer($self,length($path)+1,$msg_read,$default_block,0,$path) ;
-	my @r = _FromServer($self) || return ;
-	return $r[6] ;
+	my @r = _FromServer($self) ;
+		return if !@r ;
+  	return $r[6] ;
 }
 
 =item I<write>
@@ -478,7 +486,8 @@ sub write($$$) {
 	my $path_length = length($path)+1 ;
 	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
 	_ToServer($self,length($payload),$msg_write,$value_length,0,$payload) ;
-	my @r = _FromServer($self) || return ;
+	my @r = _FromServer($self) ;
+		return if !@r ;
 	return $r[2]>=0 ;
 }
 
@@ -518,7 +527,8 @@ sub present($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
 	_ToServer($self,length($path)+1,$msg_presence,$default_block,0,$path) ;
-	my @r = _FromServer($self) || return ;
+	my @r = _FromServer($self) ;
+		return if !@r ;
 	return $r[2]>=0 ;
 }
 
@@ -572,7 +582,7 @@ sub dir($$) {
 	my $dirlist = '' ;
 	while (1) {
 		@r = _FromServer($self) || return ;
-		if (!@r) { return ; } ;
+		return if !@r ;
         if ( $r[1] == 0 ) { # last null packet
             $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
             return substr($dirlist,1) ; # not starting comma
@@ -647,7 +657,7 @@ An example owserver invocation for a serial adapter and explicitly the default p
    } 
 
    # not readable, try as directory
-   my $dirstring == $ow->dir($path) ;
+   my $dirstring = $ow->dir($path) ;
    if ( defined($dirstring) ) { 
      print "<directory>\n" ; 
      my @dir = split /,/ ,  $ow->dir($path) ;
