@@ -128,8 +128,8 @@
 .rm #[ #] #H #V #F C
 .\" ========================================================================
 .\"
-.IX Title "OWNet 3"
-.TH OWNet 3 "2007-01-21" "perl v5.8.7" "User Contributed Perl Documentation"
+.IX Title "OWNet::lib::OWNet 3"
+.TH OWNet::lib::OWNet 3 "2007-02-08" "perl v5.8.7" "User Contributed Perl Documentation"
 .SH "NAME"
 \&\fBOWNet\fR
 Light weight access to \fBowserver\fR
@@ -140,14 +140,6 @@ OWNet is an easy way to access \fBowserver\fR and thence the 1\-wire bus.
 Dallas Semiconductor's 1\-wire system uses simple wiring and unique addresses for it's interesting devices. The \fBOne Wire File System\fR is a suite of programs that hides 1\-wire details behind a file system metaphor. \fBowserver\fR connects to the 1\-wire bus and provides network access.
 .PP
 \&\fBOWNet\fR is a perl module that connects to \fBowserver\fR and allows reading, writing and listing the 1\-wire bus.
-.PP
-For instance if we start owserver with:
-.PP
-.Vb 1
-\& owserver -d /dev/ttyS0 -p 3000
-.Ve
-.PP
-\&\fISerial 1\-wire adapter attached to a 1\-wire bus with a \s-1DS18S20\s0 temperature sensor.\fR
 .PP
 Then the following perl program prints the temperature:
 .PP
@@ -160,7 +152,7 @@ There is the alternative object oriented form:
 .PP
 .Vb 3
 \& use OWNet ;
-\& my $owserver = OWNET->new( "localhost:3000" ) ;
+\& my $owserver = OWNET->new( "localhost:4304" ) ;
 \& print $owserver->read( "/10.67C6697351FF/temperature" ) ."\en" ;
 .Ve
 .SH "SYNTAX"
@@ -169,27 +161,33 @@ There is the alternative object oriented form:
 .IX Subsection "methods"
 .IP "\fBnew\fR" 4
 .IX Item "new"
-my \f(CW$ownet\fR = OWNet::\fBnew\fR( \fIaddress\fR ) ;
+.Vb 1
+\& my $owserver = OWNet -> new( address ) ;
+.Ve
 .IP "\fBread\fR" 4
 .IX Item "read"
-\&\fBread\fR( \fIaddress\fR , \fIpath\fR )
-.Sp
-$ownet\->\fBread\fR( \fIpath\fR )
+.Vb 2
+\& read( address, path )
+\& $owserver -> read( path )
+.Ve
 .IP "\fBwrite\fR" 4
 .IX Item "write"
-\&\fBwrite\fR( \fIaddress\fR , \fIpath\fR , \fIvalue\fR )
-.Sp
-$ownet\->\fBwrite\fR( \fIpath\fR , \fIvalue\fR )
+.Vb 2
+\& write( address, path, value )
+\& $owserver -> write( path, value )
+.Ve
 .IP "\fBdir\fR" 4
 .IX Item "dir"
-\&\fBdir\fR( \fIaddress\fR , \fIpath\fR )
-.Sp
-$ownet\->\fBdir\fR( \fIpath\fR )
+.Vb 2
+\& dir( address, path )
+\& $owserver -> dir( path )
+.Ve
 .IP "\fBpresent\fR" 4
 .IX Item "present"
-\&\fBpresent\fR( \fIaddress\fR , \fIpath\fR )
-.Sp
-$ownet\->\fBpresent\fR( \fIpath\fR )
+.Vb 2
+\& present( address, path )
+\& $owserver -> present( path )
+.Ve
 .Sh "\fIaddress\fP"
 .IX Subsection "address"
 \&\s-1TCP/IP\s0 \fIaddress\fR of \fBowserver\fR. Valid forms:
@@ -398,7 +396,83 @@ Connection to the 1\-wire bus is either done by bit-banging a digital pin on the
 \&\fBOWNet\fR is a light-weight module. It connects only to an \fBowserver\fR, does not link in the \fI\s-1OWFS\s0\fR library, and should be more portable..
 .Sh "Object-oriented"
 .IX Subsection "Object-oriented"
-\&\fIOWNet\fR can be used in either a classical (non\-object\-oriented) manner, or with objects. The object stored the ip address of the \fBowserver\fR and a network socket to communicate.
+\&\fIOWNet\fR can be used in either a classical (non\-object\-oriented) manner, or with objects. The object stored the ip address of the \fBowserver\fR and a network socket to communicate. \fIOWNet\fR will use persistent tcp connections for the object form \*(-- potentially a performance boost over a slow network.
+.SH "EXAMPLES"
+.IX Header "EXAMPLES"
+.Sh "owserver"
+.IX Subsection "owserver"
+owserver is a separate process that must be accessible on the network. It allows multiple clients, and can connect to many physical 1\-wire adapters and 1\-wire devices. It's address must be discoverable \*(-- either set on the command line, or at it's default location, or by using Bonjour (zeroconf) service discovery.
+.PP
+An example owserver invocation for a serial adapter and explicitly the default port:
+.PP
+.Vb 1
+\& owserver -d /dev/ttyS0 -p 4304
+.Ve
+.Sh "OWNet"
+.IX Subsection "OWNet"
+.Vb 1
+\& use OWNet ;
+.Ve
+.PP
+.Vb 3
+\& # Create owserver object
+\& my $owserver = OWNet->new('localhost:4304 -v -F') ; #default location, verbose errors, Fahrenheit degrees
+\& # my $owserver = OWNet->new() ; #simpler, again default location, no error messages, default Celsius
+.Ve
+.PP
+.Vb 2
+\& #print directory
+\& print $owserver->dir('/') ;
+.Ve
+.PP
+.Vb 2
+\& #print temperature from known device (DS18S20,  ID: 10.13224366A280)
+\& print "Temperature: ".$owserver->read('/uncached/10.13224366A280/temperature') ;
+.Ve
+.PP
+.Vb 4
+\& # Now for some fun -- a tree of everything:
+\& sub Tree($$) {
+\&   my $ow = shift ;
+\&   my $path = shift ;
+.Ve
+.PP
+.Vb 1
+\&   print "$path\et" ;
+.Ve
+.PP
+.Vb 6
+\&   # first try to read
+\&   my $value = $ow->read($path) ;
+\&   if ( defined($value) ) { 
+\&     print "$value\en"; 
+\&     return ;
+\&   }
+.Ve
+.PP
+.Vb 10
+\&   # not readable, try as directory
+\&   my $dirstring = $ow->dir($path) ;
+\&   if ( defined($dirstring) ) { 
+\&     print "<directory>\en" ; 
+\&     my @dir = split /,/ ,  $ow->dir($path) ;
+\&     foreach (@dir) {
+\&        Tree($ow,$_) ;
+\&     }
+\&     return ;
+\&   }
+.Ve
+.PP
+.Vb 4
+\&   # can't read, not directory
+\&   print "<write-only>\en" ;
+\&   return ;
+\& }
+.Ve
+.PP
+.Vb 1
+\& Tree( $owserver, '/' ) ;
+.Ve
 .SH "INTERNALS"
 .IX Header "INTERNALS"
 .Sh "Object properties (All private)"
@@ -414,7 +488,7 @@ Flag sent to server, and returned, that encodes temperature scale and display fo
 .RE
 .IP "\s-1VERBOSE\s0"
 .IX Item "VERBOSE"
-Print errors? Corresponds to \*(L"\-v\*(R" in object invocation.
+Print error messages? Set by \*(L"\-v\*(R" in object invocation.
 .RE
 .IP "\s-1SOCK\s0"
 .IX Item "SOCK"
@@ -444,13 +518,25 @@ Reads a specified length from server
 .RE
 .IP "_FromServer"
 .IX Item "_FromServer"
-Reads whole packet from server, usung _FromServerLow (first for header, then payload/tokens). Discards ping packets silently.
+Reads whole packet from server, using _FromServerLow (first for header, then payload/tokens). Discards ping packets silently.
+.RE
+.IP "_DefaultLookup"
+.IX Item "_DefaultLookup"
+Uses the \s-1IANA\s0 allocated well known port (4304) for owserver. First looks in /etc/services, then just tries 4304.
+.RE
+.IP "_BonjourLookup"
+.IX Item "_BonjourLookup"
+Uses the mDNS service discovery protocol to find an available owserver.
+Employs NET::Rendezvous (an earlier name or Apple's Bonjour)
+This module is loaded only if available using the method of http://sial.org/blog/2006/12/optional_perl_module_loading.html
+.PP
+Bounjour details for owserver at: 
 .SH "AUTHOR"
 .IX Header "AUTHOR"
 Paul H Alfille paul.alfille @ gmail . com
 .SH "BUGS"
 .IX Header "BUGS"
-Support for proper timeout using the \*(L"select\*(R" function seems broken in perl. This leaves the routines vulnerable to network timing errors.
+Support for proper timeout using the \*(L"select\*(R" function seems broken in perl. This might leave the routines vulnerable to network timing errors.
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
 .IP "http://www.owfs.org" 4
