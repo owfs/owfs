@@ -71,7 +71,8 @@ int FS_dirname_state(char *buffer, const size_t length,
 		p = dirname_state_uncached;
 	} else if (KnownBus(pn)) {
 		int ret;
-		UCLIBCLOCK;
+        //printf("Called FS_dirname_state on %s bus number %d\n",pn->path,pn->bus_nr) ;
+        UCLIBCLOCK;
 		ret = snprintf(buffer, length, "bus.%d", pn->bus_nr);
 		UCLIBCUNLOCK;
 		return ret;

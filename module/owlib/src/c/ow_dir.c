@@ -561,7 +561,8 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
 
 	for (bus_number = 0; bus_number < indevices; ++bus_number) {
 		SetKnownBus(bus_number, &pn2);
-		dirfunc(v, &pn2);
+        //printf("Called FS_busdir on %s bus number %d\n",pn->path,bus_number) ;
+        dirfunc(v, &pn2);
 	}
 
 	return 0;
