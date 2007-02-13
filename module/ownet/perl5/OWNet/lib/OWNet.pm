@@ -208,16 +208,19 @@ sub _new($$) {
     $addr =~ s/-[\w\.]*//g ;
     $addr =~ s/ //g ;
 
-    if ( $addr =~ /:/ ) {
-      $addr = "127.0.0.1".$addr if $addr =~ /^:/ ;
-      $addr = $addr."4304" if $addr =~ /:$/ ;
-    } elsif ( $addr =~/\./ ) {
-      $addr .= ":4304" ;
-    } elsif ( $addr eq "localhost" ) {
-      $addr .= ":4304" ;
+    my $port ;
+    if ( $addr =~ /(.*):(.*?)/ ) {
+      $addr = $1 ;
+      $port = $2 ;
+    } elsif ( $addr =~/\D/ ) {
+      $port = '' ;
+    } else {
+      $port = $addr ;
+      $addr = '' ;
     }
 
     $self->{ADDR} = $addr ;
+    $self->{PORT} = $port ;
     $self->{SG} = $default_sg + $tempscale + $format ;
     $self->{VER} = 0 ;
 }
@@ -228,12 +231,21 @@ sub _Sock($) {
     if ( defined($self->{SOCK} && $self->{PERSIST} != 0  ) ) { 
         return 1 ; 
     }
+    # defaults
+    my $addr = $self->{ADDR} ;
+    my $port = $self->{PORT} ;
+    $addr = '127.0.0.1' if $addr eq '' ;
+    $port = 'owserver(4304)' if $port eq '' ;
     # New socket
-    $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$self->{ADDR},Proto=>'tcp') || do {
-        warn("Can't open $self->{ADDR} ($!) \n") if $self->{VERBOSE} ;
-        $self->{SOCK} = undef ;
-        return ;
-    } ;
+    $self->{SOCK} = IO::Socket::INET->new(
+            PeerAddr=>$addr,
+            PeerPort=>$port,
+            Proto=>'tcp')
+        || do {
+            warn("Can't open $addr:$port ($!) \n") if $self->{VERBOSE} ;
+            $self->{SOCK} = undef ;
+            return ;
+        } ;
     return 1 ;
 }
 
@@ -248,24 +260,12 @@ sub _self($) {
         _new($self,$addr)  ;
         $self->{PERSIST} = 0 ;
     }
-    if ( $self->{ADDR} =~ // ) {
-        _DefaultLookup($self) || _BonjourLookup($self) || return ;
+    if ( ($self->{ADDR} eq '') && ($self->{PORT} eq '') ) {
+        _BonjourLookup($self) || _Sock($self) || return ;
     } else {
         _Sock($self) || return ;
     }
     return $self;
-}
-
-sub _DefaultLookup($) {
-    my $self = shift ;
-    # New socket
-    $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>"localhost:owserver(4304)",Proto=>'tcp') || do {
-        warn("Can't open default port ($!) \n") if $self->{VERBOSE} ;
-        $self->{SOCK} = undef ;
-        return ;
-    } ;
-    $self->{ADDR} = $self->{SOCK}->peeraddr.":".$self->{SOCK}->peerport ;
-    return 1 ;
 }
 
 sub _BonjourLookup($) {
@@ -291,7 +291,8 @@ sub _BonjourLookup($) {
         $self->{SOCK} = undef ;
         return ;
     } ;
-    $self->{ADDR} = $self->{SOCK}->peeraddr.":".$self->{SOCK}->peerport ;
+    $self->{ADDR} = $self->{SOCK}->peeraddr ;
+    $self->{PORT} = $self->{SOCK}->peerport ;
     return 1 ;
 }
 
@@ -680,7 +681,11 @@ An example owserver invocation for a serial adapter and explicitly the default p
 
 =item ADDR
 
-literal sting for the IP address, in ip:port format. This property is also used to indicate a substantiated object.
+literal sting for the IP address, in dotted-quad or host format. This property is also used to indicate a substantiated object.
+
+=item PORT
+
+string for the port number (or service name). Service name must be specified as :owserver or the like.
 
 =item SG
 
@@ -707,6 +712,8 @@ Takes command line invocation parameters (for an object or not) and properly par
 =item _Sock
 
 Socket processing, including tests for persistence, and opening.
+If no host is specified, localhost (127.0.0.1) is used.
+If no port is specified, uses the IANA allocated well known port (4304) for owserver. First looks in /etc/services, then just tries 4304.
 
 =item _ToServer
 
@@ -719,8 +726,6 @@ Reads a specified length from server
 =item _FromServer
 
 Reads whole packet from server, using _FromServerLow (first for header, then payload/tokens). Discards ping packets silently.
-
-=item _DefaultLookup
 
 Uses the IANA allocated well known port (4304) for owserver. First looks in /etc/services, then just tries 4304.
 
@@ -746,7 +751,7 @@ Support for proper timeout using the "select" function seems broken in perl. Thi
 
 =item http://www.owfs.org
 
-Documentation for the full B<owfs> program suite, including man pages for each of the supported 1-wire devices, nand more extensive explanatation of owfs components.
+Documentation for the full B<owfs> program suite, including man pages for each of the supported 1-wire devices, and more extensive explanatation of owfs components.
 
 =item http://owfs.sourceforge.net
 
