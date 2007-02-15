@@ -1,11 +1,8 @@
 <?php
 /*
-$Id$
-ownet.php
+VERSION: 2007.01.11 - 17:05  BRST
 
-VERSION: 2006.12.20 - 12:44  BRST
-
-Copyright (c) 2006 Spadim Technology / Brazil. All rights reserved.
+Copyright (c) 2007 Spadim Technology / Brazil. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -62,6 +59,8 @@ define('OWNET_DEFAULT_HOST'	,'127.0.0.1');
 define('OWNET_DEFAULT_PORT'	,1234);
 define('OWNET_LINK_TYPE_SOCKET'	,0);
 define('OWNET_LINK_TYPE_STREAM'	,1);
+define('OWNET_LINK_TYPE_TCP'	,0);
+define('OWNET_LINK_TYPE_UDP'	,1);
 
 /*
 Constants for the owserver api message types. from ow.h
@@ -82,6 +81,7 @@ define('OWNET_MSG_WRITE'	,3);
 define('OWNET_MSG_DIR'		,4);
 define('OWNET_MSG_SIZE'		,5);
 define('OWNET_MSG_PRESENCE'	,6);
+define('OWNET_MSG_DIR_ALL'	,7);
 define('OWNET_MSG_READ_ANY'	,99999);
 
 
@@ -95,7 +95,8 @@ class OWNet{
 	protected $link=0;
 	protected $host='';
 	protected $port=0;
-	protected $link_type=0;
+	protected $sock_type=OWNET_LINK_TYPE_TCP;
+	protected $link_type=OWNET_LINK_TYPE_SOCKET;
 	protected $link_connected=false;
 	protected $timeout=0;
 	protected $use_swig_dir=true;
@@ -122,9 +123,19 @@ class OWNet{
 		// host must be "anything://host:port" or "anything://host" OR 'anything that don't parse_url and get default values'
 		// use "stream://host:port" or "ow-stream://host:port" to prefer stream instead sockets
 		$tmp_path	=@parse_url($host);	// get URL information from host
+		if (!isset($tmp_path['scheme']))
+			$tmp_path	=@parse_url("tcp://$host");
+		
 		$this->host	=	(!isset($tmp_path['host'])?OWNET_DEFAULT_HOST:$tmp_path['host']);	// if don't have host get default host
 		$this->port	=(int)	(!isset($tmp_path['port'])?OWNET_DEFAULT_PORT:$tmp_path['port']);	// if don't have port get default port
-		$prefer_sock	=(isset($tmp_path['scheme'])?($tmp_path['scheme']!='stream' && $tmp_path['scheme']!='ow-stream'):true);	// check if prefer using streams instead socket
+		$prefer_sock	=(isset($tmp_path['scheme'])?
+			($tmp_path['scheme']!='stream' && $tmp_path['scheme']!='ow-stream' &&
+			 $tmp_path['scheme']!='stream-udp' && $tmp_path['scheme']!='ow-stream-udp')
+			:true);	// check if prefer using streams instead socket
+		if (strpos($tmp_path['scheme'],'udp')!==false)
+			$this->sock_type=OWNET_LINK_TYPE_UDP;
+		else
+			$this->sock_type=OWNET_LINK_TYPE_TCP;
 		unset($tmp_path);
 		
 		if (function_exists('socket_connect') && $prefer_sock){	
@@ -138,8 +149,8 @@ class OWNet{
 	function getHost(){
 		// return and URI that can be used with setHost again
 		if ($this->link_type==OWNET_LINK_TYPE_STREAM)	
-			return('ow-stream://'.$this->host.':'.$this->port);	// using streams
-		return('ow://'.$this->host.':'.$this->port);			// using sockets if possible
+			return('ow-stream'.($this->sock_type==OWNET_LINK_TYPE_UDP?'-udp':'').'://'.$this->host.':'.$this->port);	// using streams
+		return('ow'.($this->sock_type==OWNET_LINK_TYPE_UDP?'-udp':'').'://'.$this->host.':'.$this->port);			// using sockets if possible
 	}
 	protected function pack_htonl( $val ){
 		// builtin function to use htonl, big endian style
@@ -169,7 +180,8 @@ class OWNet{
 		// disconnect link
 		if ($this->link_type==OWNET_LINK_TYPE_SOCKET){		// socket
 			@socket_set_block($this->link);
-			@socket_shutdown($this->link,2);
+			if ($this->sock_type==OWNET_LINK_TYPE_TCP)
+				@socket_shutdown($this->link,2);
 			@socket_close($this->link);
 		}else{
 			@fclose($this->link);				// streams
@@ -182,29 +194,43 @@ class OWNet{
 		if ($this->link_connected)
 			return(true);		// if connected don't continue
 		if ($this->link_type==OWNET_LINK_TYPE_SOCKET){		// socket
-			$this->link=@socket_create(AF_INET, SOCK_STREAM, SOL_TCP);		// create socket
-			if ($this->link){
-				@socket_set_block($this->link);					// set it to blocking
-				$ok=@socket_connect($this->link,$this->host,$this->port);	// try to connect
-				if (!$ok){
-					$errno	=@socket_last_error();				// get error when connecting
-					$errstr	=@socket_strerror(socket_last_error());
+			if ($this->sock_type==OWNET_LINK_TYPE_TCP){
+				$this->link=@socket_create(AF_INET, SOCK_STREAM, SOL_TCP);		// create socket
+				if ($this->link){
+					@socket_set_block($this->link);					// set it to blocking
+					$ok=@socket_connect($this->link,$this->host,$this->port);	// try to connect
+					if (!$ok){
+						$errno	=@socket_last_error();				// get error when connecting
+						$errstr	=@socket_strerror(socket_last_error());
+						trigger_error("Can't create socket [ow://".$this->host.":".$this->port."], errno: $errno, error: $errstr",E_USER_NOTICE);
+						@socket_shutdown($this->link,2);			// unload socket
+						@socket_close($this->link);
+						$this->link=NULL;
+						return(false);						// return false on error or can't connect
+					}	// socket created and connected
+				}else{
+					$errno	=@socket_last_error();					// get error when creating socket
+					$errstr	=@socket_strerror(@socket_last_error());
 					trigger_error("Can't create socket [ow://".$this->host.":".$this->port."], errno: $errno, error: $errstr",E_USER_NOTICE);
-					@socket_shutdown($this->link,2);			// unload socket
-					@socket_close($this->link);
-					$this->link=NULL;
-					return(false);						// return false on error or can't connect
-				}	// socket created and connected
-			}else{
-				$errno	=@socket_last_error();					// get error when creating socket
-				$errstr	=@socket_strerror(@socket_last_error());
-				trigger_error("Can't create socket [ow://".$this->host.":".$this->port."], errno: $errno, error: $errstr",E_USER_NOTICE);
-				return(false);							// return false on error or can't connect
+					return(false);							// return false on error or can't connect
+				}
+			}else{	// udp
+				$this->link=@socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);		// create socket
+				if ($this->link){
+					@socket_set_block($this->link);					// set it to blocking
+				}else{
+					$errno	=@socket_last_error();					// get error when creating socket
+					$errstr	=@socket_strerror(@socket_last_error());
+					trigger_error("Can't create socket [ow-udp://".$this->host.":".$this->port."], errno: $errno, error: $errstr",E_USER_NOTICE);
+					return(false);							// return false on error or can't connect
+				}
 			}
 		}else{							// stream
-			$this->link	=@stream_socket_client("tcp://".$this->host.":".$this->port, $errno, $errstr, $this->timeout);		// connect with streams, could be with fsockopen but stream_socket_client is faster (we will use PHP 5+)
+			$this->link	=@stream_socket_client(
+				($this->sock_type==OWNET_LINK_TYPE_TCP?'tcp://':'udp://').
+				$this->host.":".$this->port, $errno, $errstr, $this->timeout);		// connect with streams, could be with fsockopen but stream_socket_client is faster (we will use PHP 5+)
 			if (!$this->link){
-				trigger_error("Can't create stream [ow-stream://".$this->host.":".$this->port."], errno: $errno, error: $errstr",E_USER_NOTICE);
+				trigger_error("Can't create stream [ow-stream".($this->sock_type!=OWNET_LINK_TYPE_TCP?'-udp':'')."://".$this->host.":".$this->port."], errno: $errno, error: $errstr",E_USER_NOTICE);
 				return(false);							// return false on error or can't connect
 			}
 		}
@@ -218,11 +244,13 @@ class OWNet{
 			return(false);
 		if ($this->link_type==OWNET_LINK_TYPE_SOCKET){		// socket
 			socket_set_block(	$this->link);				// set blocking mode
-			socket_set_option(	$this->link,SOL_SOCKET, SO_RCVTIMEO, array("sec"=>0, "usec"=>100));	// receive timeout
-			socket_set_option(	$this->link,SOL_SOCKET, SO_SNDTIMEO, array("sec"=>0, "usec"=>100));	// send timeout
-			socket_set_option($this->link, SOL_SOCKET, SO_REUSEADDR, 1);	// reuse address
-			socket_set_option($this->link, SOL_SOCKET, SO_OOBINLINE, 1);	// out off band inline
-			@socket_set_option($this->link, IPPROTO_TCP, TCP_NODELAY, 1);	// no delay  can have bug with windows?!
+			if ($this->sock_type==OWNET_LINK_TYPE_TCP){
+				socket_set_option(	$this->link,SOL_SOCKET, SO_RCVTIMEO, array("sec"=>0, "usec"=>100));	// receive timeout
+				socket_set_option(	$this->link,SOL_SOCKET, SO_SNDTIMEO, array("sec"=>0, "usec"=>100));	// send timeout
+				socket_set_option($this->link, SOL_SOCKET, SO_REUSEADDR, 1);	// reuse address
+				socket_set_option($this->link, SOL_SOCKET, SO_OOBINLINE, 1);	// out off band inline
+				@socket_set_option($this->link, IPPROTO_TCP, TCP_NODELAY, 1);	// no delay  can have bug with windows?!
+			}
 			socket_set_option($this->link, SOL_SOCKET, SO_RCVBUF, 8192);	// set receive buffer
 			socket_set_option($this->link, SOL_SOCKET, SO_SNDBUF, 8192);	// set send buffer
 		}else{
@@ -236,28 +264,42 @@ class OWNet{
 		// get messagem from server
 		$num_changed_sockets	=0;
 		$read_data		='';
+		$last_read		=microtime(1);
+		$t1=intval($this->timeout);
+		$t2=($this->timeout*1000000)%1000000;
 		while ($num_changed_sockets<=0){	// can loop forever? owserver must send something! or disconnect!
 			$read=array($this->link);
 			if ($this->link_type==OWNET_LINK_TYPE_SOCKET)
-				$num_changed_sockets = socket_select($read, $write = NULL, $except = NULL, 1);	// use socket_select
+				$num_changed_sockets = socket_select($read, $write = NULL, $except = NULL, $t1,$t2);	// use socket_select
 			else
-				$num_changed_sockets = stream_select($read, $write = NULL, $except = NULL, 1);	// use stream_select
+				$num_changed_sockets = stream_select($read, $write = NULL, $except = NULL, $t1,$t2);	// use stream_select
 			if ($num_changed_sockets===false){	// error handling select
 				$this->disconnect();
 				trigger_error("Error handling get_msg#1",E_USER_NOTICE);
 				return(false);			// return false when have error
 			}elseif($num_changed_sockets>0){	// we can read!
-				if ($this->link_type==OWNET_LINK_TYPE_SOCKET)
-					$read_data=socket_read($this->link,$msg_size,PHP_BINARY_READ);	// read with sockets
-				else
+				if ($this->link_type==OWNET_LINK_TYPE_SOCKET){
+					if ($this->sock_type==OWNET_LINK_TYPE_TCP){
+						$read_data=socket_read($this->link,$msg_size,PHP_BINARY_READ);	// read with sockets
+					}else{
+						$ret=socket_recvfrom($this->link,$read_data,$msg_size,$tmp_host,$tmp_port);	// read with sockets
+						if ($ret>0){
+							$this->host=$tmp_host;
+							$this->port=$tmp_port;
+						}
+					}
+				}else
 					$read_data=fread($this->link,$msg_size);			// read with streams
 				if ($read_data==''){		// disconnected :'(
 					$this->disconnect();
 					trigger_error("Disconnected",E_USER_NOTICE);
 					return(false);			// return false when have error
-				}
+				}else
+					$last_read		=microtime(1);
 				break;
 			}else
+				break;
+			if (microtime(1)-$last_read>$this->timeout)
 				break;
 		}
 		return($read_data);			// return data
@@ -283,9 +325,12 @@ class OWNet{
 		$sent=0;
 		while($sent<$size){
 			// we will not use select, using can be slower, and without work! :D
-			if ($this->link_type==OWNET_LINK_TYPE_SOCKET)
-				$ret=socket_write($this->link, $string, strlen($string));	// write and get sent bytes
-			else
+			if ($this->link_type==OWNET_LINK_TYPE_SOCKET){
+				if ($this->sock_type==OWNET_LINK_TYPE_TCP)
+					$ret=socket_write($this->link, $string, strlen($string));				// write and get sent bytes
+				else
+					$ret=socket_sendto($this->link, $string, strlen($string),0,$this->host,$this->port);	// write and get sent bytes
+			}else
 				$ret=fwrite($this->link,$string,strlen($string));		// write and get sent bytes
 			if ($ret===false){
 				// error sending
@@ -305,7 +350,7 @@ class OWNet{
 	function dir($path){
 		// return NULL on error or no directory
 		// return numeric array starting from 0 with directory list
-		return($this->get($path,OWNET_MSG_DIR,false,false));		// return get with right flags
+		return($this->get($path,OWNET_MSG_DIR_ALL,false,false));		// return get with right flags
 	}
 	function presence($path){
 		// return NULL on error
@@ -316,7 +361,7 @@ class OWNet{
 		// path = path of file or directory
 		// get_type = 	OWNET_MSG_READ_ANY 	(READ AND DIR)
 		//		OWNET_MSG_READ		read an file
-		//		OWNET_MSG_DIR		read an directory (output is an array)
+		//		OWNET_MSG_DIR or OWNET_MSG_DIR_ALL		read an directory (output is an array)
 		//		OWNET_MSG_PRESENCE	check presence output is true or false
 		// return_full_info_array	if true return everything from comunication and unit if variables is an temperature, ['data'] is returned data and ['data_php'] is an parsed data in (double) or (string) types
 		// parse_php_type		if true try to get right data_php variable type
@@ -331,9 +376,9 @@ class OWNet{
 			$ret=$this->get($path,OWNET_MSG_READ,$return_full_info_array,$parse_php_type);
 			if ($ret!==NULL)
 				return($ret);	// ok we get and result
-			return($this->get($path,OWNET_MSG_DIR,$return_full_info_array,$parse_php_type));	// return dir
+			return($this->get($path,OWNET_MSG_DIR_ALL,$return_full_info_array,$parse_php_type));	// return dir
 		}
-		if ($get_type!=OWNET_MSG_DIR){
+		if ($get_type!=OWNET_MSG_DIR && $get_type!=OWNET_MSG_DIR_ALL){
 			if (substr($path,strlen($path)-1,1)=='/')	// isn't a dir, dir must end with characters != '/'
 				return(NULL);
 		}
@@ -344,8 +389,8 @@ class OWNet{
 			return(NULL);
 		}
 		// get value
-		if ($get_type==OWNET_MSG_DIR){	// get right send function
-			$msg=$this->pack(OWNET_MSG_DIR		,strlen($path)+1,0	);
+		if ($get_type==OWNET_MSG_DIR || $get_type==OWNET_MSG_DIR_ALL){	// get right send function
+			$msg=$this->pack($get_type		,strlen($path)+1,0	);
 		}elseif ($get_type==OWNET_MSG_PRESENCE){
 			$msg=$this->pack(OWNET_MSG_PRESENCE	,strlen($path)+1,0	);
 		}else{
@@ -382,7 +427,9 @@ class OWNet{
 					break;
 			}
 			$ret=$this->unpack(substr($data,0,24));	// unpack 24bytes into 6 data 
-			if (count($ret)<6){	
+			if (count($ret)<6){
+				if ($get_type==OWNET_MSG_DIR_ALL)	// old servers
+					return($this->get($path,OWNET_MSG_DIR,$return_full_info_array,$parse_php_type));	
 				$data=substr($data,0,24);
 				trigger_error("Error unpacking data get#1 [".strlen($data)."] ".$data,E_USER_NOTICE);
 				$this->disconnect();
@@ -398,7 +445,7 @@ class OWNet{
 			if (!isset($ret[1]))
 				$ret[1]=false;		// just to be sure that will not get into $ret parsing
 			if ($ret[1]>0){
-				if ($get_type==OWNET_MSG_DIR)	// reading directory use $ret[1] for read data
+				if ($get_type==OWNET_MSG_DIR || $get_type==OWNET_MSG_DIR_ALL)	// reading directory use $ret[1] for read data
 					$data_len=$ret[1];
 				else
 					$data_len=$ret[2];	// reading file use $ret[2] for read data
@@ -438,7 +485,7 @@ class OWNet{
 					$ret['data_len']=strlen($data);
 					$this->disconnect();		// disconnect from server
 					$type=false;			// check type?
-					if ($parse_php_type){
+					if ($parse_php_type && $get_type!=OWNET_MSG_DIR_ALL){
 						$tmp		=explode('/',$path);$c=count($tmp)-1;
 						if ($c>0){		// must be something like '/dir/file'	array('dir', 'file'), count()-1 = 1 > 0
 							$variavel	=$tmp[$c];		// get last two uri args
@@ -487,6 +534,10 @@ class OWNet{
 					}else{
 						$ret['data_php']=&$ret['data'];		// we will use not parsed values (we use it when getting structure information! or setting $parse_php_type=false)
 					}
+					if ($get_type==OWNET_MSG_DIR_ALL){
+						$return=& $ret;
+						break;
+					}
 					if ($return_full_info_array){
 						return($ret);			// return array
 					}else{
@@ -498,9 +549,34 @@ class OWNet{
 			}
 		}
 		$this->disconnect();	// disconnect from server (dir listing)
-		if ($this->use_swig_dir && !$return_full_info_array && $get_type==OWNET_MSG_DIR)
-			if (is_array($return))
-				$return=implode(',',$return);
+		if ($get_type==OWNET_MSG_DIR_ALL && $return===NULL)	// old servers
+			return($this->get($path,OWNET_MSG_DIR,$return_full_info_array,$parse_php_type));	
+		if ($return!==NULL){
+			if ($this->use_swig_dir && !$return_full_info_array && $get_type==OWNET_MSG_DIR)
+				if (is_array($return))
+					$return=implode(',',$return);
+			if ($this->use_swig_dir==false && $get_type==OWNET_MSG_DIR_ALL){
+				if ($return_full_info_array){
+					$tmp=explode(',',$return['data_php']);
+					$r=array();
+					for ($i=0;$i<count($tmp);$i++)
+						$r[]=array(
+							0=>$return[0],
+							1=>$return[1],
+							2=>$return[2],
+							3=>$return[3],
+							4=>$return[4],
+							5=>$return[5],
+							'data'=>$return['data'],
+							'data_len'=>$return['data_len'],
+							'data_php'=>$tmp[$i]
+						);
+					$return=$r;
+					unset($tmp,$r);
+				}else
+					$return=explode(',',$return);
+			}
+		}
 		return($return);
 	}
 	function set($path,$value=''){
@@ -679,7 +755,7 @@ array(9) {
     [3]=>    int(258)
     [4]=>    int(5)
     [5]=>    int(0)
-    ["data"]=>    string(42) "bus.0 ath a  Ã°Ã£ aPÃœ aÂÂ» a0"
+    ["data"]=>    string(42) "bus.0athaðãaPÜa»a0"
     ["data_len"]=>    int(42)
     ["data_php"]=>    string(5) "bus.0"
   }
@@ -725,7 +801,7 @@ array(9) {
     [3]=>    int(258)
     [4]=>    int(16)
     [5]=>    int(0)
-    ["data"]=>    string(42) "/10.E8C1C9000800  PÃ— aÃ Ã‘ a Â» a0"
+    ["data"]=>    string(42) "/10.E8C1C9000800P×aàÑa »a0"
     ["data_len"]=>    int(42)
     ["data_php"]=>    string(16) "/10.E8C1C9000800"
   }
@@ -737,7 +813,7 @@ array(9) {
     [3]=>    int(258)
     [4]=>    int(16)
     [5]=>    int(0)
-    ["data"]=>    string(42) "/10.54FDED000800  PÃ— aÃ Ã‘ a Â» a0"
+    ["data"]=>    string(42) "/10.54FDED000800P×aàÑa »a0"
     ["data_len"]=>    int(42)
     ["data_php"]=>    string(16) "/10.54FDED000800"
   }
@@ -749,7 +825,7 @@ array(9) {
     [3]=>    int(258)
     [4]=>    int(16)
     [5]=>    int(0)
-    ["data"]=>    string(42) "/10.6F7EC9000800  PÃ— aÃ Ã‘ a Â» a0"
+    ["data"]=>    string(42) "/10.6F7EC9000800P×aàÑa »a0"
     ["data_len"]=>    int(42)
     ["data_php"]=>    string(16) "/10.6F7EC9000800"
   }
@@ -761,7 +837,7 @@ array(9) {
     [3]=>    int(258)
     [4]=>    int(16)
     [5]=>    int(0)
-    ["data"]=>    string(42) "/28.924FE0000000  PÃ— aÃ Ã‘ a Â» a0"
+    ["data"]=>    string(42) "/28.924FE0000000P×aàÑa »a0"
     ["data_len"]=>    int(42)
     ["data_php"]=>    string(16) "/28.924FE0000000"
   }
@@ -773,7 +849,7 @@ array(9) {
     [3]=>    int(258)
     [4]=>    int(16)
     [5]=>    int(0)
-    ["data"]=>    string(42) "/28.5D59E0000000  PÃ— aÃ Ã‘ a Â» a0"
+    ["data"]=>    string(42) "/28.5D59E0000000P×aàÑa »a0"
     ["data_len"]=>    int(42)
     ["data_php"]=>    string(16) "/28.5D59E0000000"
   }
