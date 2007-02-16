@@ -34,6 +34,7 @@ static int OW_ArgParallel(const char *arg);
 static int OW_ArgI2C(const char *arg);
 static int OW_ArgHA7(const char *arg);
 static int OW_ArgFake(const char *arg);
+static int OW_ArgTester(const char *arg);
 static int OW_ArgLink(const char *arg);
 static int OW_ArgPassive(char *name, const char *arg);
 
@@ -96,7 +97,10 @@ const struct option owopts_long[] = {
 	{"ha7e", required_argument, NULL, 277},
 	{"HA7e", required_argument, NULL, 277},
 	{"HA7E", required_argument, NULL, 277},
-	{"zero", no_argument, &Global.announce_off, 0},
+    {"TESTER", required_argument, NULL, 278}, /* Tester */
+    {"Tester", required_argument, NULL, 278}, /* Tester */
+    {"tester", required_argument, NULL, 278}, /* Tester */
+    {"zero", no_argument, &Global.announce_off, 0},
 	{"nozero", no_argument, &Global.announce_off, 1},
 	{"autoserver", no_argument, &Global.autoserver, 1},
 	{"noautoserver", no_argument, &Global.autoserver, 0},
@@ -475,7 +479,9 @@ int owopt(const int c, const char *arg)
 		return OW_ArgPassive("HA3", arg);
 	case 275:
 		return OW_ArgPassive("HA4B", arg);
-	case 280:
+    case 278:
+        return OW_ArgTester(arg);
+        case 280:
 		Global.announce_name = strdup(arg);
 		break;
 	case 298:					/* allow_other */
@@ -541,12 +547,22 @@ static int OW_ArgHA7(const char *arg)
 
 static int OW_ArgFake(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
-		return 1;
-	in->name = strdup(arg);
-	in->busmode = bus_fake;
-	return 0;
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+        return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_fake;
+    return 0;
+}
+
+static int OW_ArgTester(const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL)
+        return 1;
+    in->name = strdup(arg);
+    in->busmode = bus_tester;
+    return 0;
 }
 
 int OW_ArgServer(const char *arg)

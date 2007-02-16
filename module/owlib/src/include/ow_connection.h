@@ -214,6 +214,7 @@ struct connin_fake {
 //    int ULevel ;
 //    int UMode ;
 	struct dirblob db;
+    int bus_number_this_type ;
 };
 struct connin_usb {
 	struct usb_device *dev;
@@ -285,8 +286,9 @@ enum bus_mode {
 	bus_ha7net,
 	bus_ha5,
 	bus_ha7e,
-	bus_fake,
-	bus_link,
+    bus_fake,
+    bus_tester,
+    bus_link,
 	bus_elink,
 };
 
@@ -308,7 +310,8 @@ enum adapter_type {
 	adapter_HA7NET,
 	adapter_HA5,
 	adapter_HA7E,
-	adapter_fake,
+    adapter_fake,
+    adapter_tester,
 };
 
 enum e_reconnect {
@@ -370,8 +373,9 @@ struct connection_in {
 		struct connin_tcp tcp;
 		struct connin_usb usb;
 		struct connin_i2c i2c;
-		struct connin_fake fake;
-		struct connin_ha7 ha7;
+        struct connin_fake fake;
+        struct connin_fake tester;
+        struct connin_ha7 ha7;
 	} connin;
 };
 /* Network connection structure */
@@ -454,6 +458,7 @@ int LINK_detect(struct connection_in *in);
 int BadAdapter_detect(struct connection_in *in);
 int LINKE_detect(struct connection_in *in);
 int Fake_detect(struct connection_in *in);
+int Tester_detect(struct connection_in *in);
 
 #if OW_HA7
 int HA7_detect(struct connection_in *in);

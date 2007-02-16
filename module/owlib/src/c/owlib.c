@@ -354,10 +354,13 @@ int LibStart(void)
 							  in->name);
 			}
 			break;
-		case bus_fake:
-			Fake_detect(in);	// never fails
-			break;
-		default:
+        case bus_fake:
+            Fake_detect(in);    // never fails
+            break;
+        case bus_tester:
+            Tester_detect(in);    // never fails
+            break;
+        default:
 			break;
 		}
 		if (ret) {				/* flag that that the adapter initiation was unsuccessful */

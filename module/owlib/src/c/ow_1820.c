@@ -426,8 +426,8 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
-		{convert, convert, delay, trxn_power},
-		TRXN_END,
+        {convert, convert, delay, trxn_power},
+        TRXN_END,
 	};
 	struct transaction_log tpowered[] = {
 		TRXN_START,
