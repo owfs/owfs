@@ -31,6 +31,7 @@ static int Fake_next_both(struct device_search *ds,
 						  const struct parsedname *pn);
 static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct interface_routines *f) ;
+static void Tester_setroutines(struct interface_routines *f) ;
 
 static void Fake_setroutines(struct interface_routines *f)
 {
@@ -48,6 +49,12 @@ static void Fake_setroutines(struct interface_routines *f)
     f->close = Fake_close;
     f->transaction = NULL;
     f->flags = ADAP_FLAG_2409path;
+}
+
+static void Tester_setroutines(struct interface_routines *f)
+{
+    Fake_setroutines(f) ;
+    f->detect = Fake_detect;
 }
 
 /* Device-specific functions */
@@ -107,7 +114,7 @@ int Tester_detect(struct connection_in *in)
     ASCII *oldname = in->name;
 
     in->fd = testers;
-    Fake_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
+    Tester_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.tester.db));
     in->adapter_name = "Simulated";
@@ -130,14 +137,14 @@ int Tester_detect(struct connection_in *in)
             if ((isxdigit(dev[0]) && isxdigit(dev[1]))
                  || (dev = namefind(dev))) {
                 unsigned int device_number = in->connin.tester.db.devices ;
-                sn[0] = string2num(dev);
-                sn[1] = (testers>>16) & 0xFF;
-                sn[2] = (testers>>8) & 0xFF;
-                sn[3] = (testers) & 0xFF;
-                sn[4] = (device_number>>16) & 0xFF;
-                sn[5] = (device_number>>8) & 0xFF;
-                sn[6] = (device_number) & 0xFF;
-                sn[7] = CRC8compute(sn, 7, 0);
+                sn[0] = string2num(dev); // family code
+                sn[1] = (testers>>8) & 0xFF; // "bus" number
+                sn[2] = (testers>>0) & 0xFF; // "bus" number
+                sn[3] = sn[0] ; // repeat family code
+                sn[4] = (sn[0]^0xFF) & 0xFF; // family code complement
+                sn[5] = (device_number>>8) & 0xFF; // "device" number
+                sn[6] = (device_number>>0) & 0xFF; // "device" number
+                sn[7] = CRC8compute(sn, 7, 0); // CRC
                 DirblobAdd(sn, &(in->connin.tester.db));  // Ignore bad return
             }
         }

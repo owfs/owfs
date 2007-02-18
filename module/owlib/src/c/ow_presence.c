@@ -111,17 +111,9 @@ static int CheckPresence_low(struct connection_in *in,
 		}
 		//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
 	} else if (get_busmode(in) == bus_fake) {
-		int i = -1;
-		BYTE sn[8];
-		ret = -1;
-		//printf("Pre Checking "SNformat" devices=%d \n",SNvar(pn2.sn),in->connin.fake.devices ) ;
-		while (DirblobGet(++i, sn, &(in->connin.fake.db)) == 0) {
-			//printf("Checking "SNformat" against device(%d) "SNformat"\n",SNvar(pn2.sn),i,SNvar(&(in->connin.fake.device[8*i])) ) ;
-			if (memcmp(pn2.sn, sn, 8))
-				continue;
-			ret = in->index;
-			break;
-		}
+		ret = DirblobSearch( pn2.sn, &(in->connin.fake.db) ) ;
+	} else if (get_busmode(in) == bus_tester) {
+		ret = DirblobSearch( pn2.sn, &(in->connin.tester.db) ) ;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
@@ -164,12 +156,14 @@ static int CheckPresence_low(struct connection_in *in,
 			return in->index;
 		}
 	} else if (get_busmode(in) == bus_fake) {
-		int device ;
-        BYTE sn[8] ;
-        for ( device=0; DirblobGet(device,sn,&(in->connin.fake.db)) == 0 ; ++device) {
-            if (memcmp(pn2.sn, sn, 8) == 0) {
-                return in->index;
-            }
+		int ret = DirblobSearch(pn2.sn,&(in->connin.fake.db)) ;
+		if ( ret >= 0 ) {
+			return ret ;
+		}
+	} else if (get_busmode(in) == bus_tester) {
+		int ret = DirblobSearch(pn2.sn,&(in->connin.tester.db)) ;
+		if ( ret >= 0 ) {
+			return ret ;
 		}
 	} else {
 		struct transaction_log t[] = {
@@ -198,6 +192,8 @@ int FS_present(int *y, const struct parsedname *pn)
 		|| pn->dev == DeviceThermostat) {
 		y[0] = 1;
 	} else if (get_busmode(pn->in) == bus_fake) {
+		y[0] = 1;
+	} else if (get_busmode(pn->in) == bus_tester) {
 		y[0] = 1;
 	} else {
 		struct transaction_log t[] = {

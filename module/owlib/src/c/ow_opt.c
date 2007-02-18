@@ -479,8 +479,8 @@ int owopt(const int c, const char *arg)
 		return OW_ArgPassive("HA3", arg);
 	case 275:
 		return OW_ArgPassive("HA4B", arg);
-    case 278:
-        return OW_ArgTester(arg);
+	case 278:
+		return OW_ArgTester(arg);
         case 280:
 		Global.announce_name = strdup(arg);
 		break;

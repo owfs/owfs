@@ -108,10 +108,29 @@ int DirblobAdd(BYTE * sn, struct dirblob *db)
 	return 0;
 }
 
-int DirblobGet(int dev, BYTE * sn, struct dirblob *db)
+int DirblobGet(int dev, BYTE * sn, const struct dirblob *db)
 {
 	if (dev >= db->devices)
 		return -ENODEV;
 	memcpy(sn, &(db->snlist[8 * dev]), 8);
 	return 0;
 }
+
+/* Search for a serial number
+   return position (>=0) on match
+   return -1 on no match or error
+ */
+int DirblobSearch( BYTE * sn, const struct dirblob *db)
+{
+    int position ;
+    if ( db==NULL || db->devices < 1 ) {
+        return -1 ;
+    }
+    for ( position = 0 ; position < db->devices ; ++position ) {
+        if (memcmp(sn,&(db->snlist[8*position]),8)==0 ) {
+            return position ;
+        }
+    }
+    return -1 ;
+}
+

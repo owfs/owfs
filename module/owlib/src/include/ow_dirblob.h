@@ -65,6 +65,7 @@ void DirblobClear(struct dirblob *db);
 void DirblobInit(struct dirblob *db);
 int DirblobPure(struct dirblob *db);
 int DirblobAdd(BYTE * sn, struct dirblob *db);
-int DirblobGet(int dev, BYTE * sn, struct dirblob *db);
+int DirblobGet(int dev, BYTE * sn, const struct dirblob *db);
+int DirblobSearch(BYTE * sn, const struct dirblob *db);
 
 #endif							/* OW_DIRBLOB_H */

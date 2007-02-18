@@ -153,6 +153,9 @@ void FreeIn(void)
 		case bus_fake:
 			DirblobClear(&(now->connin.fake.db));
 			break;
+		case bus_tester:
+			DirblobClear(&(now->connin.tester.db));
+			break;
 		case bus_i2c:
 #if OW_MT
 			if (now->connin.i2c.index == 0) {
