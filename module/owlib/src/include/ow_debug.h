@@ -18,6 +18,7 @@
 
 /* error functions */
 void err_msg(int errnoflag, int level, const char *fmt, ...);
+void Debug_Bytes( const char * title, const unsigned char * buf, size_t length) ;
 
 extern int log_available;
 

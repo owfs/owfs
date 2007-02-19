@@ -99,3 +99,29 @@ void err_msg(int errnoflag, int level, const char *fmt, ...)
 	}
 	return;
 }
+
+/* Purely a debugging routine -- print an arbitrary buffer of bytes */
+void Debug_Bytes( const char * title, const unsigned char * buf, size_t length)
+{
+    size_t i ;
+    /* title line */
+    printf("Byte buffer %s, length=%d",title?title:"anonymous",(int)length) ;
+    if ( buf==NULL ) {
+        printf("\n-- NULL buffer\n");
+        return ;
+    }
+    /* hex lines -- 16 bytes each */
+    for ( i=0 ; i<length ; ++i ) {
+        if ( (i&0x0F) == 0 ) { // devisible by 16
+            printf("\n--");
+        }
+        printf(" %.2X",buf[i]) ;
+    }
+    /* char line -- printable or . */
+    printf("\n   <");
+    for ( i=0 ; i<length ; ++i ) {
+        char c = buf[i] ;
+        printf("%c",isprint(c)?c:'.');
+    }
+    printf(">\n");
+}

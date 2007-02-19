@@ -15,11 +15,15 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+static struct timeval tvnet = { 0, 200000, };
+
 //static void byteprint( const BYTE * b, int size ) ;
-static int LINK_read(BYTE * buf, const size_t size,
-					 const struct parsedname *pn);
 static int LINK_write(const BYTE * buf, const size_t size,
-                      const struct parsedname *pn);
+					  const struct parsedname *pn);
+static int LINK_read(BYTE * buf, const size_t size,
+					 const struct parsedname *pn, int ExtraEbyte);
+static int LINK_read_low(BYTE * buf, const size_t size,
+						 const struct parsedname *pn);
 static int LINK_reset(const struct parsedname *pn);
 static int LINK_next_both(struct device_search *ds,
 						  const struct parsedname *pn);
@@ -32,10 +36,13 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 							const struct parsedname *pn);
 static int LINK_CR(const struct parsedname *pn);
 static void LINK_setroutines(struct interface_routines *f);
+static void LINKE_setroutines(struct interface_routines *f);
+static int LINKE_preamble(const struct parsedname *pn);
+static void LINKE_close(struct connection_in *in);
 
-static void LINK_setroutines(struct interface_routines *f)
+static void LINKE_setroutines(struct interface_routines *f)
 {
-	f->detect = LINK_detect;
+	f->detect = LINKE_detect;
 	f->reset = LINK_reset;
 	f->next_both = LINK_next_both;
 //    f->overdrive = ;
@@ -46,64 +53,43 @@ static void LINK_setroutines(struct interface_routines *f)
 //    f->sendback_bits = ;
 	f->select = NULL;
 	f->reconnect = NULL;
-	f->close = COM_close;
+	f->close = LINKE_close;
 	f->transaction = NULL;
 	f->flags = ADAP_FLAG_2409path;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
 
-/* Called from DS2480_detect, and is set up to DS9097U emulation by default */
-// bus locking done at a higher level
-int LINK_detect(struct connection_in *in)
+
+int LINKE_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.in = in;
-
+	LEVEL_CONNECT("LinkE detect\n");
 	/* Set up low-level routines */
-	LINK_setroutines(&(in->iroutines));
+	LINKE_setroutines(&(in->iroutines));
 
-	/* Open the com port */
-	if (COM_open(in))
-		return -ENODEV;
+    if (in->name ==
+        NULL)
+		return -1;
+	if (ClientAddr(in->name, in))
+		return -1;
+	if ((pn.in->fd = ClientConnect(in)) < 0)
+		return -EIO;
 
-	// set the baud rate to 9600
-	COM_speed(B9600, &pn);
-	COM_flush(&pn);
-	if (LINK_reset(&pn) == 0 && LINK_write(LINK_string(" "), 1, &pn) == 0) {
-		BYTE tmp[36] = "(none)";
-		char *stringp = (char *) tmp;
-		/* read the version string */
-		memset(tmp, 0, 36);
-        LINK_read(tmp, 36, &pn);	// ignore return value -- will time out, probably
-        //Debug_Bytes("Read version from link",tmp,36);
-        COM_flush(&pn);
-
-		/* Now find the dot for the version parsing */
-		strsep(&stringp, ".");
-		if (stringp && stringp[0]) {
-			switch (stringp[0]) {
-			case '0':
-				in->Adapter = adapter_LINK_10;
-				in->adapter_name = "LINK v1.0";
-				break;
-			case '1':
-				in->Adapter = adapter_LINK_11;
-				in->adapter_name = "LINK v1.1";
-				break;
-			case '2':
-			default:
-				in->Adapter = adapter_LINK_12;
-				in->adapter_name = "LINK v1.2";
-				break;
-			}
-			return 0;
-		}
+	in->Adapter = adapter_LINK_E;
+	if (LINK_write(LINK_string(" "), 1, &pn) == 0) {
+		char buf[18];
+		if (LINKE_preamble(&pn) || LINK_read((BYTE *) buf, 17, &pn, 1)
+			|| strncmp(buf, "Link", 4))
+			return -ENODEV;
+//        printf("LINKE\n");
+		in->adapter_name = "Link-Hub-E";
+		return 0;
 	}
-	LEVEL_DEFAULT("LINK detection error\n");
-	return -ENODEV;
+	return -EIO;
 }
 
 static int LINK_reset(const struct parsedname *pn)
@@ -111,9 +97,10 @@ static int LINK_reset(const struct parsedname *pn)
 	BYTE resp[5];
 	int ret = 0;
 
-	COM_flush(pn);
+	if (pn->in->Adapter != adapter_LINK_E)
+		COM_flush(pn);
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
-    if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn)) {
+    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn, 1)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
 		return -EIO;
 	}
@@ -144,7 +131,8 @@ static int LINK_next_both(struct device_search *ds,
 	if (ds->LastDevice)
 		return -ENODEV;
 
-	COM_flush(pn);
+	if (pn->in->Adapter != adapter_LINK_E)
+		COM_flush(pn);
 	if (ds->LastDiscrepancy == -1) {
 		if ((ret = LINK_write(LINK_string("f"), 1, pn)))
 			return ret;
@@ -154,7 +142,7 @@ static int LINK_next_both(struct device_search *ds,
 			return ret;
 	}
 
-	if ((ret = LINK_read(LINK_string(resp), 20, pn))) {
+	if ((ret = LINK_read(LINK_string(resp), 20, pn, 1))) {
 		return ret;
 	}
 
@@ -195,90 +183,17 @@ static int LINK_next_both(struct device_search *ds,
 	return 0;
 }
 
-/* Assymetric */
-/* Read from LINK with timeout on each character */
-// NOTE: from PDkit, reead 1-byte at a time
-// NOTE: change timeout to 40msec from 10msec for LINK
-// returns 0=good 1=bad
-/* return 0=good,
-          -errno = read error
-          -EINTR = timeout
- */
+/* Read from Link or Link-E
+   0=good else bad
+   Note that buffer length should 1 exta char long for ethernet reads
+*/
 static int LINK_read(BYTE * buf, const size_t size,
-						 const struct parsedname *pn)
+					 const struct parsedname *pn, int ExtraEbyte)
 {
-	size_t inlength = size;
-	fd_set fdset;
-	ssize_t r;
-	struct timeval tval;
-	int ret;
-
-	while (inlength > 0) {
-		if (!pn->in) {
-			ret = -EIO;
-			STAT_ADD1(DS2480_read_null);
-			break;
-		}
-		// set a descriptor to wait for a character available
-		FD_ZERO(&fdset);
-		FD_SET(pn->in->fd, &fdset);
-		tval.tv_sec = Global.timeout_serial;
-		tval.tv_usec = 0;
-		/* This timeout need to be pretty big for some reason.
-		 * Even commands like DS2480_reset() fails with too low
-		 * timeout. I raise it to 0.5 seconds, since it shouldn't
-		 * be any bad experience for any user... Less read and
-		 * timeout errors for users with slow machines. I have seen
-		 * 276ms delay on my Coldfire board.
-		 */
-
-		// if byte available read or return bytes read
-		ret = select(pn->in->fd + 1, &fdset, NULL, NULL, &tval);
-		if (ret > 0) {
-			if (FD_ISSET(pn->in->fd, &fdset) == 0) {
-				ret = -EIO;		/* error */
-				STAT_ADD1(DS2480_read_fd_isset);
-				break;
-			}
-//            update_max_delay(pn);
-			r = read(pn->in->fd, &buf[size - inlength], inlength);
-			if (r < 0) {
-				if (errno == EINTR) {
-					/* read() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
-					continue;
-				}
-				ERROR_CONNECT("LINK read error: %s\n",
-							  SAFESTRING(pn->in->name));
-				ret = -errno;	/* error */
-				STAT_ADD1(DS2480_read_read);
-				break;
-			}
-			inlength -= r;
-		} else if (ret < 0) {
-			if (errno == EINTR) {
-				/* select() was interrupted, try again */
-				STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
-				continue;
-			}
-			ERROR_CONNECT("LINK select error: %s\n",
-						  SAFESTRING(pn->in->name));
-			STAT_ADD1_BUS(BUS_read_select_errors, pn->in);
-			return -EINTR;
-		} else {
-			ERROR_CONNECT("LINK timeout error: %s\n",
-						  SAFESTRING(pn->in->name));
-			STAT_ADD1_BUS(BUS_read_timeout_errors, pn->in);
-			return -EINTR;
-		}
+    if ( tcp_read(pn->in->fd, buf, size+ExtraEbyte, &tvnet) != size+ExtraEbyte ) {
+        LEVEL_CONNECT("LINK_read (ethernet) error\n");
+        return -EIO ;
 	}
-	if (inlength > 0) {			/* signal that an error was encountered */
-		ERROR_CONNECT("LINK read short error: %s\n",
-					  SAFESTRING(pn->in->name));
-		STAT_ADD1_BUS(BUS_read_errors, pn->in);
-		return ret;				/* error */
-	}
-	//printf("Link_Read_Low <%*s>\n",(int)size,buf) ;
 	return 0;
 }
 
@@ -292,23 +207,31 @@ static int LINK_write(const BYTE * buf, const size_t size,
 					  const struct parsedname *pn)
 {
 	ssize_t r ;
-    ssize_t left = size ;
-    //Debug_Bytes( "LINK write", buf, size) ;
+    struct iovec write_vectors[2] = {
+        { buf, size } ,
+        { "\r",  1  } ,
+    } ;
+    int vector_count = (pn->in->Adapter == adapter_LINK_E) ? 2 : 1 ;
+    Debug_Bytes( "LINK write", buf, size) ;
+    if ( vector_count>1) Debug_Bytes("LF",write_vectors[1].iov_base,write_vectors[1].iov_len) ;
 //    COM_flush(pn) ;
-    while ( left > 0 ) {
-        r = write(pn->in->fd, buf, size);
+    r = writev(pn->in->fd, write_vectors, vector_count);
 
-        if (r < 0) {
-            ERROR_CONNECT("Trouble writing data to LINK: %s\n",
+    if (r < 0) {
+        ERROR_CONNECT("Trouble writing data to LINK: %s\n",
                         SAFESTRING(pn->in->name));
-            STAT_ADD1_BUS(BUS_write_errors, pn->in);
-            return r ;
-        }
-        left -= r ;
+        return r ;
     }
+
     tcdrain(pn->in->fd);
     gettimeofday(&(pn->in->bus_write_time), NULL);
 	
+    if (r+1 < size+vector_count) {
+        LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n",(int)size+vector_count-1,(int)r) ;
+		STAT_ADD1_BUS(BUS_write_errors, pn->in);
+		return -EIO;
+	}
+	//printf("Link wrote <%*s>\n",(int)size,buf);
 	return 0;
 }
 
@@ -351,7 +274,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 		i = (left > 16) ? 16 : left;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) buf, &data[size - left], i);
-		if (LINK_write(buf, i << 1, pn) || LINK_read(buf, i << 1, pn))
+		if (LINK_write(buf, i << 1, pn) || LINK_read(buf, i << 1, pn, 0))
 			return -EIO;
 		string2bytes((char *) buf, &resp[size - left], i);
 		left -= i;
@@ -373,7 +296,7 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 	BYTE data[2];
 
 	num2string((char *) data, out[0]);
-	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn))
+	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn, 0))
 		return -EIO;
 	in[0] = string2num((char *) data);
 	return 0;
@@ -382,8 +305,27 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 static int LINK_CR(const struct parsedname *pn)
 {
 	BYTE data[3];
-	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn))
+	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn, 1))
 		return -EIO;
 	return 0;
 }
 
+/* read the telnet-formatted start of a response line from the Link-Hub-E */
+static int LINKE_preamble(const struct parsedname *pn)
+{
+	BYTE data[6];
+	struct timeval tvnetfirst = { Global.timeout_network, 0, };
+	if (tcp_read(pn->in->fd, data, 6, &tvnetfirst) != 6)
+		return -EIO;
+	LEVEL_CONNECT("Good preamble\n");
+	return 0;
+}
+
+static void LINKE_close(struct connection_in *in)
+{
+	if (in->fd >= 0) {
+		close(in->fd);
+		in->fd = -1;
+	}
+	FreeClientAddr(in);
+}

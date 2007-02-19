@@ -55,7 +55,7 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 	size_t nleft;
 	ssize_t nread;
 	char *ptr;
-	//printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",n,ptv->tv_sec,ptv->tv_usec ) ;
+    printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
 	ptr = vptr;
 	nleft = n;
 	while (nleft > 0) {
@@ -78,6 +78,7 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 			}
 //                    update_max_delay(pn);
 			if ((nread = read(fd, ptr, nleft)) < 0) {
+                printf("NETREAD: return %d\n",(int)nread);
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
@@ -87,9 +88,10 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 					return (-1);
 				}
 			} else if (nread == 0) {
-				break;			/* EOF */
+                printf("NETREAD: return %d\n",(int)nread);
+                break;			/* EOF */
 			}
-			//{ int i ; for ( i=0 ; i<nread ; ++i ) printf("%.2X ",ptr[i]) ; printf("\n") ; }
+            Debug_Bytes( "NETREAD",ptr, nread ) ;
 			nleft -= nread;
 			ptr += nread;
 		} else if (rc < 0) {	/* select error */
