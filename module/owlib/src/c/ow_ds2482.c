@@ -358,22 +358,22 @@ static int DS2482_reset(const struct parsedname *pn)
 
 	/* Make sure we're using the correct channel */
 	if (DS2482_channel_select(pn))
-		return -1;
+		return -EIO;
 
 	/* write the RESET code */
 	if (i2c_smbus_write_byte(fd, DS2482_CMD_1WIRE_RESET))
-		return -1;
+		return -EIO;
 
 	/* wait */
 	// rstl+rsth+.25 usec
 
 	/* read status */
 	if (DS2482_readstatus(&c, fd, 1125, 1250))
-		return -1;				// 8 * Tslot
+		return -EIO;				// 8 * Tslot
 
 	pn->in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
 	LEVEL_DEBUG("DS2482 Reset\n");
-	return 0;
+    return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK ;
 }
 
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp,

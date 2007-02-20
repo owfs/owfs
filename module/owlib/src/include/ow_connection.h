@@ -475,7 +475,10 @@ int DS9490_detect(struct connection_in *in);
 void DS9490_close(struct connection_in *in);
 #endif							/* OW_USB */
 
+#define BUS_RESET_OK    0
+#define BUS_RESET_SHORT 1
 int BUS_reset(const struct parsedname *pn);
+
 int BUS_first(struct device_search *ds, const struct parsedname *pn);
 int BUS_next(struct device_search *ds, const struct parsedname *pn);
 int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);

@@ -109,7 +109,7 @@ int LINK_detect(struct connection_in *in)
 static int LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[5];
-	int ret = 0;
+	int ret ;
 
 	COM_flush(pn);
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
@@ -117,20 +117,24 @@ static int LINK_reset(const struct parsedname *pn)
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
 		return -EIO;
 	}
-	switch (resp[1]) {
+	
+    switch (resp[1]) {
 	case 'P':
-		pn->in->AnyDevices = 1;
+        ret = BUS_RESET_OK ;
+        pn->in->AnyDevices = 1;
 		break;
 	case 'N':
-		pn->in->AnyDevices = 0;
+        ret = BUS_RESET_OK ;
+        pn->in->AnyDevices = 0;
 		break;
-	default:
-		ret = 1;				// marker for shorted bus
-		pn->in->AnyDevices = 0;
-		STAT_ADD1_BUS(BUS_short_errors, pn->in);
-		LEVEL_CONNECT("1-wire bus short circuit.\n")
+	case 'S':
+        ret = BUS_RESET_SHORT ;
+        break ;
+    default:
+        ret = -EIO ;
 	}
-	return 0;
+	
+    return ret;
 }
 
 static int LINK_next_both(struct device_search *ds,

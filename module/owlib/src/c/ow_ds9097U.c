@@ -283,8 +283,7 @@ int DS2480_detect(struct connection_in *in)
 		//printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 		/* Apparently need to reset again to get the version number properly */
 
-		if ((ret = DS2480_reset(&pn))) {	/* Note, reset sets Adapter from aadapter response to initialization */
-			LEVEL_DEFAULT("DS2480 reset error\n");
+		if ((ret = DS2480_reset(&pn))) {
 			return ret;
 		}
 		in->busmode = bus_serial;
@@ -298,13 +297,13 @@ int DS2480_detect(struct connection_in *in)
 		case adapter_LINK_10:
 		case adapter_LINK_11:
 		case adapter_LINK_12:
-			in->adapter_name = "LINK";
+            in->adapter_name = "LINK(emulate mode)";
 			break;
 		default:
-			return -ENODEV;;
+			return -ENODEV;
 		}
 		//printf("2480Detect version=%d\n",in->Adapter) ;
-		return 0;
+		return 0 ;
 	}
 	//printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 
@@ -369,16 +368,16 @@ static int DS2480_reset(const struct parsedname *pn)
 
 	switch (buf & RB_RESET_MASK) {
 	case RB_1WIRESHORT:
-		STAT_ADD1_BUS(BUS_short_errors, pn->in);
-		LEVEL_CONNECT("1-wire bus short circuit.\n");
-		ret = 1;
-		// fall through
+        ret = BUS_RESET_SHORT ;
+        break ;
 	case RB_NOPRESENCE:
-		pn->in->AnyDevices = 0;
+        ret = BUS_RESET_OK ;
+        pn->in->AnyDevices = 0;
 		break;
 	case RB_PRESENCE:
 	case RB_ALARMPRESENCE:
-		pn->in->AnyDevices = 1;
+        ret = BUS_RESET_OK ;
+        pn->in->AnyDevices = 1;
 		// check if programming voltage available
 		pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
 		if (pn->in->ds2404_compliance) {

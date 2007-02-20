@@ -998,7 +998,7 @@ static int DS9490_reset(const struct parsedname *pn)
 			pn->in->AnyDevices = 0;
 			STAT_ADD1_BUS(BUS_short_errors, pn->in);
 			LEVEL_DATA("DS9490_reset: short detected\n", ret);
-			return 1;
+			return BUS_RESET_SHORT ;
 		}
 		LEVEL_DATA("DS9490_reset: getstatus failed ret=%d\n", ret);
 		return ret;
@@ -1019,7 +1019,7 @@ static int DS9490_reset(const struct parsedname *pn)
 	}
 
 	LEVEL_DATA("DS9490_reset: ok\n");
-	return 0;
+	return BUS_RESET_OK;
 }
 
 static int DS9490_read(BYTE * buf, const size_t size,

@@ -160,7 +160,7 @@ int Tester_detect(struct connection_in *in)
 static int Fake_reset(const struct parsedname *pn)
 {
 	(void) pn;
-	return 0;
+	return BUS_RESET_OK;
 }
 static int Fake_overdrive(const UINT ov, const struct parsedname *pn)
 {

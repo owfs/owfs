@@ -111,3 +111,23 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 	}
 	return (n - nleft);			/* return >= 0 */
 }
+
+void tcp_read_flush(int fd)
+{
+    ASCII buffer[16] ;
+    ssize_t nread ;
+    int flags = fcntl( fd, F_GETFL, 0 ) ;
+
+    // Apparently you can test for GET_FL success like this
+    // see http://www.informit.com/articles/article.asp?p=99706&seqNum=13&rl=1
+    if ( flags<0 ) return ;
+
+    if ( fcntl(fd, F_SETFL, flags|O_NONBLOCK ) < 0 ) return ;
+
+    while ( ( nread = read( fd, (BYTE *)buffer, 16 ) ) > 0 ) {
+        Debug_Bytes("tcp_read_flush",buffer,nread) ;
+        continue;
+    }
+
+    fcntl( fd, F_SETFL, flags ) ;
+}

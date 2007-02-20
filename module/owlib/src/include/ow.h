@@ -790,6 +790,7 @@ void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
 ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval *ptv);
+void tcp_read_flush(int fd) ;
 int tcp_wait(int fd, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);

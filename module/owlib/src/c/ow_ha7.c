@@ -122,7 +122,7 @@ static int HA7_reset(const struct parsedname *pn)
 {
 	ASCII *resp = NULL;
 	int fd = ClientConnect(pn->in);
-	int ret = 0;
+	int ret = BUS_RESET_OK;
 	struct toHA7 ha7;
 
 	if (fd < 0) {

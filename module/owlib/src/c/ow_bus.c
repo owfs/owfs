@@ -302,13 +302,16 @@ int BUS_reset(const struct parsedname *pn)
 {
 	int ret = (pn->in->iroutines.reset) (pn);
 	/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-	if (ret == 1) {
-		return 1;
-	} else if (ret) {
+    if (ret == BUS_RESET_OK ) {
+        pn->in->reconnect_state = reconnect_ok; // Flag as good!
+    } else if (ret == BUS_RESET_SHORT) {
+        pn->in->AnyDevices = 0;
+        STAT_ADD1_BUS(BUS_short_errors, pn->in);
+        LEVEL_CONNECT("1-wire bus short circuit.\n")
+        return 1;
+	} else {
 		pn->in->reconnect_state++;	// Flag for eventual reconnection
 		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
-	} else {
-		pn->in->reconnect_state = reconnect_ok;	// Flag as good!
 	}
 
 	return ret;
