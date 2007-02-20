@@ -92,11 +92,11 @@ static int LINK_reset(const struct parsedname *pn)
 
     // Send 'r' reset
     // Actually send an extra LF to set mode
-    if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 5, pn)) {
+    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
 		return -EIO;
 	}
-	switch (resp[1]) {
+	switch (resp[0]) {
 	case 'P':
 		pn->in->AnyDevices = 1;
 		break;
