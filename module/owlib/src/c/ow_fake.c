@@ -138,12 +138,12 @@ int Tester_detect(struct connection_in *in)
                  || (dev = namefind(dev))) {
                 unsigned int device_number = in->connin.tester.db.devices ;
                 sn[0] = string2num(dev); // family code
-                sn[1] = (testers>>8) & 0xFF; // "bus" number
-                sn[2] = (testers>>0) & 0xFF; // "bus" number
+                sn[1] = (testers>>0) & 0xFF; // "bus" number
+                sn[2] = (testers>>8) & 0xFF; // "bus" number
                 sn[3] = sn[0] ; // repeat family code
                 sn[4] = (sn[0]^0xFF) & 0xFF; // family code complement
-                sn[5] = (device_number>>8) & 0xFF; // "device" number
-                sn[6] = (device_number>>0) & 0xFF; // "device" number
+                sn[5] = (device_number>>0) & 0xFF; // "device" number
+                sn[6] = (device_number>>8) & 0xFF; // "device" number
                 sn[7] = CRC8compute(sn, 7, 0); // CRC
                 DirblobAdd(sn, &(in->connin.tester.db));  // Ignore bad return
             }

@@ -835,7 +835,9 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 int FS_read_postpostparse(char *buf, const size_t size, const off_t offset,
 						  const struct parsedname *pn);
 int FS_read_fake(char *buf, const size_t size, const off_t offset,
-				 const struct parsedname *pn);
+                 const struct parsedname *pn);
+int FS_read_tester(char *buf, const size_t size, const off_t offset,
+                 const struct parsedname *pn);
 int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
 					size_t length);
 int FS_output_ascii_z(ASCII * buf, size_t size, off_t offset,
