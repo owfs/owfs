@@ -21,9 +21,7 @@ static struct timeval tvnet = { 0, 200000, };
 static int LINK_write(const BYTE * buf, const size_t size,
 					  const struct parsedname *pn);
 static int LINK_read(BYTE * buf, const size_t size,
-					 const struct parsedname *pn, int ExtraEbyte);
-static int LINK_read_low(BYTE * buf, const size_t size,
-						 const struct parsedname *pn);
+					 const struct parsedname *pn);
 static int LINK_reset(const struct parsedname *pn);
 static int LINK_next_both(struct device_search *ds,
 						  const struct parsedname *pn);
@@ -32,10 +30,6 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 							  const size_t len,
 							  const struct parsedname *pn);
-static int LINK_byte_bounce(const BYTE * out, BYTE * in,
-							const struct parsedname *pn);
-static int LINK_CR(const struct parsedname *pn);
-static void LINK_setroutines(struct interface_routines *f);
 static void LINKE_setroutines(struct interface_routines *f);
 static int LINKE_preamble(const struct parsedname *pn);
 static void LINKE_close(struct connection_in *in);
@@ -82,10 +76,9 @@ int LINKE_detect(struct connection_in *in)
 	in->Adapter = adapter_LINK_E;
 	if (LINK_write(LINK_string(" "), 1, &pn) == 0) {
 		char buf[18];
-		if (LINKE_preamble(&pn) || LINK_read((BYTE *) buf, 17, &pn, 1)
+		if (LINKE_preamble(&pn) || LINK_read((BYTE *) buf, 18, &pn)
 			|| strncmp(buf, "Link", 4))
 			return -ENODEV;
-//        printf("LINKE\n");
 		in->adapter_name = "Link-Hub-E";
 		return 0;
 	}
@@ -94,13 +87,12 @@ int LINKE_detect(struct connection_in *in)
 
 static int LINK_reset(const struct parsedname *pn)
 {
-	BYTE resp[5];
+	BYTE resp[8];
 	int ret = 0;
 
-	if (pn->in->Adapter != adapter_LINK_E)
-		COM_flush(pn);
-    //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
-    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn, 1)) {
+    // Send 'r' reset
+    // Actually send an extra LF to set mode
+    if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 5, pn)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
 		return -EIO;
 	}
@@ -131,8 +123,6 @@ static int LINK_next_both(struct device_search *ds,
 	if (ds->LastDevice)
 		return -ENODEV;
 
-	if (pn->in->Adapter != adapter_LINK_E)
-		COM_flush(pn);
 	if (ds->LastDiscrepancy == -1) {
 		if ((ret = LINK_write(LINK_string("f"), 1, pn)))
 			return ret;
@@ -142,7 +132,7 @@ static int LINK_next_both(struct device_search *ds,
 			return ret;
 	}
 
-	if ((ret = LINK_read(LINK_string(resp), 20, pn, 1))) {
+	if ((ret = LINK_read(LINK_string(resp), 21, pn))) {
 		return ret;
 	}
 
@@ -188,9 +178,9 @@ static int LINK_next_both(struct device_search *ds,
    Note that buffer length should 1 exta char long for ethernet reads
 */
 static int LINK_read(BYTE * buf, const size_t size,
-					 const struct parsedname *pn, int ExtraEbyte)
+					 const struct parsedname *pn)
 {
-    if ( tcp_read(pn->in->fd, buf, size+ExtraEbyte, &tvnet) != size+ExtraEbyte ) {
+    if ( tcp_read(pn->in->fd, buf, size, &tvnet) != (ssize_t) size ) {
         LEVEL_CONNECT("LINK_read (ethernet) error\n");
         return -EIO ;
 	}
@@ -207,15 +197,8 @@ static int LINK_write(const BYTE * buf, const size_t size,
 					  const struct parsedname *pn)
 {
 	ssize_t r ;
-    struct iovec write_vectors[2] = {
-        { buf, size } ,
-        { "\r",  1  } ,
-    } ;
-    int vector_count = (pn->in->Adapter == adapter_LINK_E) ? 2 : 1 ;
-    Debug_Bytes( "LINK write", buf, size) ;
-    if ( vector_count>1) Debug_Bytes("LF",write_vectors[1].iov_base,write_vectors[1].iov_len) ;
-//    COM_flush(pn) ;
-    r = writev(pn->in->fd, write_vectors, vector_count);
+    //Debug_Bytes( "LINK write", buf, size) ;
+    r = write(pn->in->fd, buf, size);
 
     if (r < 0) {
         ERROR_CONNECT("Trouble writing data to LINK: %s\n",
@@ -226,8 +209,8 @@ static int LINK_write(const BYTE * buf, const size_t size,
     tcdrain(pn->in->fd);
     gettimeofday(&(pn->in->bus_write_time), NULL);
 	
-    if (r+1 < size+vector_count) {
-        LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n",(int)size+vector_count-1,(int)r) ;
+    if (r < (ssize_t) size) {
+        LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n",(int)size,(int)r) ;
 		STAT_ADD1_BUS(BUS_write_errors, pn->in);
 		return -EIO;
 	}
@@ -238,75 +221,56 @@ static int LINK_write(const BYTE * buf, const size_t size,
 static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 						  const struct parsedname *pn)
 {
+    ASCII buf[3] = "pxx" ;
 
-	if (LINK_write(LINK_string("p"), 1, pn)
-		|| LINK_byte_bounce(&data, resp, pn)) {
+    num2string( &buf[1], data ) ;
+    
+    if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf),2,pn) ) {
 		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
 		return -EIO;			// send just the <CR>
 	}
-	// delay
+
+    resp[0] = string2num(buf) ;
+    
+    // delay
 	UT_delay(delay);
 
-	// flush the buffers
-	return LINK_CR(pn);			// send just the <CR>
+    if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(LINK_string(buf),3,pn) ) {
+        STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
+        return -EIO;            // send just the <CR>
+    }
+    
+    return 0 ;
 }
 
-// DS2480_sendback_data
+// _sendback_data
 //  Send data and return response block
-//  puts into data mode if needed.
 /* return 0=good
    sendout_data, readin
  */
+// Assume buffer length (combuffer) is 1 + 32*2 + 1
 static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 							  const size_t size,
 							  const struct parsedname *pn)
 {
-	size_t i;
-	size_t left;
+	size_t left = size ;
 	BYTE *buf = pn->in->combuffer;
 
-	if (size == 0)
+    if (size == 0)
 		return 0;
-	if (LINK_write(LINK_string("b"), 1, pn))
-		return -EIO;
-//    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
-	for (left = size; left;) {
-		i = (left > 16) ? 16 : left;
+
+    while ( left > 0 ) {
+        buf[0] = 'b' ; //put in byte mode
+        size_t this_length = (left > 32) ? 32 : left;
+        size_t total_length = 2 * this_length + 2 ;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
-		bytes2string((char *) buf, &data[size - left], i);
-		if (LINK_write(buf, i << 1, pn) || LINK_read(buf, i << 1, pn, 0))
+		bytes2string((char *) &buf[1], &data[size - left], this_length);
+        buf[total_length-1] = '\r' ; // take out of byte mode
+		if (LINK_write(buf, total_length, pn) || LINK_read(buf, total_length+2, pn))
 			return -EIO;
-		string2bytes((char *) buf, &resp[size - left], i);
-		left -= i;
+		string2bytes((char *) buf, &resp[size - left], this_length);
+		left -= this_length;
 	}
-	return LINK_CR(pn);
-}
-
-/*
-static void byteprint( const BYTE * b, int size ) {
-    int i ;
-    for ( i=0; i<size; ++i ) printf( "%.2X ",b[i] ) ;
-    if ( size ) printf("\n") ;
-}
-*/
-
-static int LINK_byte_bounce(const BYTE * out, BYTE * in,
-							const struct parsedname *pn)
-{
-	BYTE data[2];
-
-	num2string((char *) data, out[0]);
-	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn, 0))
-		return -EIO;
-	in[0] = string2num((char *) data);
-	return 0;
-}
-
-static int LINK_CR(const struct parsedname *pn)
-{
-	BYTE data[3];
-	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn, 1))
-		return -EIO;
 	return 0;
 }
 
