@@ -224,7 +224,7 @@ struct connin_usb {
 	int ULevel;
 	int UMode;
 	unsigned int timeout;
-	char ds1420_address[8];
+	BYTE ds1420_address[8];
 	/* "Name" of the device, like "8146572300000051"
 	 * This is set to the first DS1420 id found on the 1-wire adapter which
 	 * exists on the DS9490 adapters. If user only have a DS2490 chip, there
