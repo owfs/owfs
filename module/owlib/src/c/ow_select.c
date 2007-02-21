@@ -39,7 +39,7 @@ static int BUS_select_subbranch(const struct buspath *bp,
 */
 int BUS_select(const struct parsedname *pn)
 {
-	if (pn->pathlength > 0
+	if (!RootNotBranch(pn)
 		&& (pn->in->iroutines.flags & ADAP_FLAG_2409path)) {
 		LEVEL_CALL
 			("Attempt to use a branched path (DS2409 main or aux) when adapter doesn't support it.\n");
@@ -128,7 +128,7 @@ int BUS_select(const struct parsedname *pn)
 /* All the railroad switches are correctly set, just isolate the last segment */
 static int BUS_select_branch(const struct parsedname *pn)
 {
-	if (pn->pathlength == 0)
+	if (RootNotBranch(pn))
 		return 0;
 	return BUS_select_subbranch(&(pn->bp[pn->pathlength - 1]), pn);
 }

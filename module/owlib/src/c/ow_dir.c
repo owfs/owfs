@@ -127,7 +127,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 			? ServerDir(dirfunc, v, &pn2, flags)
 			: FS_typedir(dirfunc, v, &pn2);
 	} else {					/* Directory of some kind */
-		if (pn->pathlength == 0) {	/* root directory */
+		if (RootNotBranch(pn)) {	/* root directory */
 			if ((Global.opt != opt_server) && !SpecifiedBus(pn) && NotUncachedDir(pn)) {	/* structure only in true root */
 				pn2.type = pn_structure;
 				dirfunc(v, &pn2);
@@ -400,14 +400,14 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 	if ((ret = BUS_first(&ds, pn2))) {
 		BUSUNLOCK(pn2);
 		if (ret == -ENODEV) {
-			if (pn2->pathlength == 0)
+			if (RootNotBranch(pn2))
 				pn2->in->last_root_devs = 0;	// root dir estimated length
 			return 0;			/* no more devices is ok */
 		}
 		return -EIO;
 	}
 	/* BUS still locked */
-	if (pn2->pathlength == 0)
+	if (RootNotBranch(pn2))
 		db.allocated = pn2->in->last_root_devs;	// root dir estimated length
 	do {
 		BUSUNLOCK(pn2);
@@ -431,7 +431,7 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 		BUSLOCK(pn2);
 	} while ((ret = BUS_next(&ds, pn2)) == 0);
 	/* BUS still locked */
-	if (pn2->pathlength == 0 && ret == -ENODEV)
+	if (RootNotBranch(pn2) && ret == -ENODEV)
 		pn2->in->last_root_devs = devices;	// root dir estimated length
 	BUSUNLOCK(pn2);
 
@@ -456,7 +456,7 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
    */
 void FS_LoadPath(BYTE * sn, const struct parsedname *pn)
 {
-	if (pn->pathlength == 0) {
+	if (RootNotBranch(pn)) {
 		memset(sn, 0, 8);
 	} else {
 		memcpy(sn, pn->bp[pn->pathlength - 1].sn, 7);

@@ -919,4 +919,6 @@ void BUS_unlock_in(struct connection_in *in);
 #define SpecifiedBus(pn)          ((((pn)->state) & pn_buspath) != 0 )
 #define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= pn_buspath ; SetKnownBus(bus_number,pn); } while(0)
 
+#define RootNotBranch(pn)         (((pn)->pathlength)==0)
+
 #endif							/* OW_H */

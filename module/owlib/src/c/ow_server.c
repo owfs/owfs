@@ -272,7 +272,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			DirblobInit(&db);
 			if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
 				&& pn->dev == NULL) {
-				if (pn2.pathlength == 0) {	/* root dir */
+				if (RootNotBranch(&pn2)) {	/* root dir */
 					BUSLOCK(pn);
 					db.allocated = pn->in->last_root_devs;	// root dir estimated length
 					BUSUNLOCK(pn);
@@ -315,7 +315,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			/* Add to the cache (full list as a single element */
 			if (DirblobPure(&db)) {
 				Cache_Add_Dir(&db, pn);	// end with a null entry
-				if (pn2.pathlength == 0) {
+				if (RootNotBranch(&pn2)) {
 					BUSLOCK(pn);
 					pn->in->last_root_devs = db.devices;	// root dir estimated length
 					BUSUNLOCK(pn);
