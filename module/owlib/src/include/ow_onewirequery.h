@@ -22,6 +22,7 @@ union value_object {
 	_DATE       D ;
     int	         Y ;//boolean
 	struct owq_memory M ;
+	union value_object * array ;
 } ;
 
 struct one_wire_query {
@@ -31,9 +32,12 @@ struct one_wire_query {
 	union value_object val ;
 } ;
 
-#define OWQ_get_pn(owq)		((owq)->pn)
-#define OWQ_get_size(owq)	((owq)->size)
-#define OWQ_get_pn(offset)	((owq)->offset)
-#define OWQ_get_val(owq)	((owq)->val)
+#define OWQ_pn(owq)		((owq)->pn)
+#define OWQ_size(owq)	((owq)->size)
+#define OWQ_offset(owq)	((owq)->offset)
+#define OWQ_val(owq)	((owq)->val)
+#define OWQ_array(owq)	(((owq)->val).array)
+
+#define OWQ_I(owq)		(OWQ_val(owq).I
 
 #endif							/* OW_ONEWIREQUERY_H */

@@ -619,6 +619,8 @@ enum simul_type { simul_temp, simul_volt, };
 /* ---- end Parsedname ----------------- */
 /* ------------------------------------- */
 
+#include "ow_onewirequery.h"
+
 /* Delay for clearing buffer */
 #define    WASTE_TIME    (2)
 

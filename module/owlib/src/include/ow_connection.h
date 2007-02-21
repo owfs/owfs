@@ -185,6 +185,8 @@ struct interface_routines {
 #define ADAP_FLAG_2409path      0x00000010
 #define ADAP_FLAG_dirgulp       0x00000100
 
+#define AdapterSupports2409(pn)	(((pn)->in->iroutines.flags&ADAP_FLAG_2409path)!=0)
+
 #if OW_MT
 #define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
 #define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )

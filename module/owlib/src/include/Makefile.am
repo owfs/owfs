@@ -43,6 +43,7 @@ noinst_HEADERS =          \
         ow_integer.h      \
         ow_lcd.h          \
         ow_none.h         \
+        ow_onewirequery.h \
         ow_pid.h          \
         ow_settings.h     \
         ow_simultaneous.h \

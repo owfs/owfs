@@ -33,7 +33,7 @@ int FS_read_tester(char *buf, const size_t size, const off_t offset,
 {
     switch (pn->extension) {
         case -1:                    /* array */
-            return FS_read_fake_array(buf, size, offset, pn);
+            return FS_read_tester_array(buf, size, offset, pn);
         case -2:                    /* bitfield */
         default:
             return FS_read_tester_single(buf, size, offset, pn);
