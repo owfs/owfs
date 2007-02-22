@@ -85,7 +85,7 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 			break;
 		case trxn_power:
 			ret = BUS_PowerByte(t->out[0], t->in, t->size, pn);
-			LEVEL_DEBUG("  Transaction power = %d\n", ret);
+			LEVEL_DEBUG("  Transaction power (%d usec) = %d\n", t->size, ret);
 			break;
 		case trxn_program:
 			ret = BUS_ProgramPulse(pn);
@@ -139,37 +139,3 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 	} while (ret == 0);
 	return ret;
 }
-
-#if 0							/* not yet needed */
-/* Bus transaction */
-/* length of send/receive buffer
-   return length (>=0) */
-static int BUS_transaction_length(const struct transaction_log *tl,
-								  const struct parsedname *pn)
-{
-	const struct transaction_log *t = tl;
-	size_t size = 0;
-	(void) pn;
-
-	while (1) {
-		switch (t->type) {
-		case trxn_read:
-		case trxn_match:
-			size += t->size;
-			//printf("  Transaction send = %d\n",ret) ;
-			break;
-		case trxn_power:
-			++size;
-			break;
-		case trxn_select:
-		case trxn_program:
-			break;
-		case trxn_reset:
-		case trxn_end:
-			return size;
-			break;
-		}
-		++t;
-	}
-}
-#endif							/* 0 */
