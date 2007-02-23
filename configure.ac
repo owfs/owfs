@@ -95,6 +95,7 @@ AC_ARG_ENABLE(ccmalloc,
 )
 AC_SUBST(CCLD)
 
+
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
 AC_LANG_SAVE
@@ -1023,6 +1024,40 @@ AM_CONDITIONAL(ENABLE_ZERO, test "${ENABLE_ZERO}" = "true")
 LIBUSB_CFLAGS=""
 LIBUSB_LIBS=""
 
+
+AC_DEFUN([ACX_USB_INTERRUPT_READ], [
+AC_REQUIRE([AC_CANONICAL_HOST])
+AC_LANG_SAVE
+AC_LANG_C
+acx_usb_interrupt_read_ok=no
+
+        AC_MSG_CHECKING([if usb_interrupt_read is found])
+
+        save_LIBS="$LIBS"
+        save_CFLAGS="$CFLAGS"
+	LIBS="$save_LIBS $LIBUSB_LIBS"
+        CFLAGS="$save_CFLAGS $LIBUSB_CFLAGS"
+        AC_TRY_LINK([#include <usb.h>],
+                    [usb_interrupt_read(NULL, 0, NULL, 0, 0);],
+                    acx_usb_interrupt_read_ok=yes)
+
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+
+        AC_MSG_RESULT(${acx_usb_interrupt_read_ok})
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x"$acx_usb_interrupt_read_ok" = xyes; then
+        ifelse([$1],,AC_DEFINE(HAVE_USB_INTERRUPT_READ,1,[Define to 1 if you have the `usb_interrupt_read' function.]),[$1])
+        :
+else
+        acx_usb_interrupt_read_ok=no
+        $2
+fi
+AC_LANG_RESTORE
+])dnl ACX_USB_INTERRUPT_READ
+
+
 if test "$cross_compiling" != yes; then
 AC_CHECK_PROGS(LIBUSB_CONFIG, libusb-config)
 else
@@ -1071,7 +1106,7 @@ AC_ARG_ENABLE(usb,
 if test "${ENABLE_USB}" != "false"; then
 
   # Include libusb if the usb is enabled
-  if test "X$LIBUSB_CONFIG" != "X" ; then
+  if test "X${LIBUSB_CONFIG}" != "X" ; then
 
     LIBUSB_CFLAGS=`$LIBUSB_CONFIG --cflags`
     LIBUSB_LIBS=`$LIBUSB_CONFIG --libs`
@@ -1094,6 +1129,10 @@ if test "${ENABLE_USB}" != "false"; then
 	LIBUSB_CONFIG=""
     ])
 
+    if test "X${LIBUSB_CONFIG}" != "X" ; then
+       ACX_USB_INTERRUPT_READ
+    fi
+
     CPPFLAGS="$save_CPPFLAGS"
     LDFLAGS="$save_LDFLAGS"
 
@@ -1103,9 +1142,7 @@ if test "${ENABLE_USB}" != "false"; then
   # last test to see if libusb is found after AC_CHECK_LIB
   if test "X${LIBUSB_CONFIG}" == "X"; then
 
-       AC_MSG_CHECKING([if libusb is could be compiled])
        AC_CHECK_LIB(usb,usb_open,[
-	    AC_MSG_RESULT([ok])
 	    LIBUSB_LIBS="-lusb"],[
 	    AC_MSG_WARN([Can't find libusb])
 	        if test "${ENABLE_USB}" = "true" ; then
@@ -1115,6 +1152,10 @@ if test "${ENABLE_USB}" != "false"; then
 			ENABLE_USB=false
 	        fi
         ],)
+
+       if test "${ENABLE_USB}" != "false" ; then
+          ACX_USB_INTERRUPT_READ
+       fi
   fi
 
   if test "${ENABLE_USB}" != "false" ; then
@@ -1123,7 +1164,6 @@ if test "${ENABLE_USB}" != "false"; then
 
 # ENABLE_USB
 fi
-
 
 AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
@@ -1305,7 +1345,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf usb_interrupt_read strsep vsprintf vsnprintf])
+AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul tsearch tfind tdelete tdestroy vasprintf strsep vsprintf vsnprintf])
 
 if test "${ENABLE_ZERO}" = "true" ; then
    AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
