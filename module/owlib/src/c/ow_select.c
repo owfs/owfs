@@ -21,6 +21,17 @@ static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn);
 
+#define Match_ROM 0x55
+#define Skip_ROM 0xCC
+#define Search_ROM 0xF0
+#define Conditional_Search_ROM 0xEC
+#define Discharge_Lines 0x99
+#define Direct_On_Main 0xA5
+#define Smart_On_Main 0xCC
+#define All_Lines_Off 0x66
+#define Smart_On_Aux 0x33
+
+
 //--------------------------------------------------------------------------
 /** Select
    -- selects a 1-wire device to respond to further commands.
@@ -41,7 +52,7 @@ int BUS_select(const struct parsedname *pn)
 {
 	int ret;
 	// match Serial Number command 0x55
-	BYTE sent[9] = { 0x55, };
+    BYTE sent[9] = { Match_ROM, };
 	int pl = pn->pathlength;
 
 	if (!RootNotBranch(pn) && AdapterSupports2409(pn)) {
@@ -137,8 +148,8 @@ static int BUS_select_branch(const struct parsedname *pn)
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn)
 {
-	BYTE sent[10] = { 0x55, };
-	BYTE branch[2] = { 0xCC, 0x33, };	/* Main, Aux */
+    BYTE sent[10] = { Match_ROM, };
+    BYTE branch[2] = { Smart_On_Main, Smart_On_Aux, };	/* Main, Aux */
 	BYTE resp[3];
 	struct transaction_log t[] = {
 		{sent, NULL, 10, trxn_match,},
@@ -162,7 +173,7 @@ static int BUS_select_subbranch(const struct buspath *bp,
 /* find every DS2409 (family code 1F) and switch off, at this depth */
 static int Turnoff(int depth, const struct parsedname *pn)
 {
-	BYTE sent[2] = { 0xCC, 0x66, };
+    BYTE sent[2] = { Skip_ROM, All_Lines_Off, };
 	struct transaction_log t[] = {
 		{sent, NULL, 2, trxn_match},
 		TRXN_END,
