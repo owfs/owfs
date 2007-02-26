@@ -15,6 +15,8 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+#define   DEFAULT_INPUT_BUFFER_LENGTH   128
+
 /* ------- Prototypes ----------- */
 static int FS_input_yesno(int *result, const char *buf, const size_t size);
 static int FS_input_integer(int *result, const char *buf,
@@ -110,61 +112,134 @@ static int FS_input_yesno(int *result, const char *buf, const size_t size)
 
 }
 
+/* parse a value for write from buffer to value_object */
 /* return 0 if ok */
 static int FS_input_integer(struct one_wire_query * owq )
 {
-    char cp[OWQ_size(owq) + 1];
+    char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH+1] ;
+    char * input_buffer = default_input_buffer ;
     char *end;
 
-    memcpy(cp, OWQ_buffer(owq), OWQ_size(owq));
-    cp[OWQ_size(owq)] = '\0';
+    /* allocate more space if buffer is really long */
+    if ( OWQ_size(owq)>DEFAULT_INPUT_BUFFER_LENGTH ) {
+        input_buffer = malloc(OWQ_size(owq)+1) ;
+        if ( input_buffer == NULL ) return -ENOMEM ;
+    }
+
+    memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
+    input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
     errno = 0;
-    OWQ_I(owq) = strtol(cp, &end, 10);
-    return end == cp || errno;
+    OWQ_I(owq) = strtol(input_buffer, &end, 10);
+
+    /* free specially long buffer */
+    if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
+
+    if (errno) return -errno ; // conversion error
+    if (end == cp) return -EINVAL; // nothing valid found for conversion
+    return 0 ; // good return
 }
 
+/* parse a value for write from buffer to value_object */
 /* return 0 if ok */
 static int FS_input_unsigned(struct one_wire_query * owq )
 {
-    char cp[OWQ_size(owq) + 1];
+    char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH+1] ;
+    char * input_buffer = default_input_buffer ;
     char *end;
 
-    memcpy(cp, OWQ_buffer(owq), OWQ_size(owq));
-    cp[OWQ_size(owq)] = '\0';
+    /* allocate more space if buffer is really long */
+    if ( OWQ_size(owq)>DEFAULT_INPUT_BUFFER_LENGTH ) {
+        input_buffer = malloc(OWQ_size(owq)+1) ;
+        if ( input_buffer == NULL ) return -ENOMEM ;
+    }
+
+    memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
+    input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
     errno = 0;
-    OWQ_U(owq) = strtoul(cp, &end, 10);
-    return end == cp || errno;
+    OWQ_U(owq) = strtoul(input_buffer, &end, 10);
+
+    /* free specially long buffer */
+    if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
+
+    if (errno) return -errno ; // conversion error
+    if (end == cp) return -EINVAL; // nothing valid found for conversion
+    return 0 ; // good return
 }
 
+/* parse a value for write from buffer to value_object */
 /* return 0 if ok */
 static int FS_input_float(struct one_wire_query * owq )
 {
-    char cp[OWQ_size(owq) + 1];
+    char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH+1] ;
+    char * input_buffer = default_input_buffer ;
     char *end;
 
-    memcpy(cp, OWQ_buffer(owq), OWQ_size(owq));
-    cp[OWQ_size(owq)] = '\0';
+    _FLOAT F ;
+
+    /* allocate more space if buffer is really long */
+    if ( OWQ_size(owq)>DEFAULT_INPUT_BUFFER_LENGTH ) {
+        input_buffer = malloc(OWQ_size(owq)+1) ;
+        if ( input_buffer == NULL ) return -ENOMEM ;
+    }
+
+    memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
+    input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
     errno = 0;
-    OWQ_F(owq) = strtoud(cp, &end, 10);
-    return end == cp || errno;
+    F = strtod(input_buffer, &end, 10);
+
+    /* free specially long buffer */
+    if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
+
+    if (errno) return -errno ; // conversion error
+    if (end == cp) return -EINVAL; // nothing valid found for conversion
+
+    switch ( OWQ_pn(owq).ft->format ) {
+        case ft_temperture:
+            OWQ_F(owq) = fromTemperature( F, &OWQ_pn(owq) ) ;
+            break ;
+        case ft_tempgap:
+            OWQ_F(owq) = fromTempGap( F, &OWQ_pn(owq) ) ;
+            break ;
+        default:
+            OWQ_F(owq) = F ;
+            break ;
+    }
+    return 0 ; // good return
 }
 
 /* return 0 if ok */
-static int FS_input_date(_DATE * result, const char *buf,
-						 const size_t size)
+static int FS_input_date(struct one_wire_query * owq )
 {
+    char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH+1] ;
+    char * input_buffer = default_input_buffer ;
+
 	struct tm tm;
-	if (size < 2 || buf[0] == '\0' || buf[0] == '\n') {
-		*result = time(NULL);
-	} else if (strptime(buf, "%a %b %d %T %Y", &tm) == NULL
-			   && strptime(buf, "%b %d %T %Y", &tm) == NULL
-			   && strptime(buf, "%c", &tm) == NULL
-			   && strptime(buf, "%D %T", &tm) == NULL) {
-		return -EINVAL;
+    int ret = 0 ; // default ok
+
+    /* allocate more space if buffer is really long */
+    if ( OWQ_size(owq)>DEFAULT_INPUT_BUFFER_LENGTH ) {
+        input_buffer = malloc(OWQ_size(owq)+1) ;
+        if ( input_buffer == NULL ) return -ENOMEM ;
+    }
+
+    memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
+    input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
+
+	if ( OWQ_size(owq)< 2 || input_buffer[0] == '\0' || input_buffer[0] == '\n') {
+		OWQ_D(owq) = time(NULL);
+	} else if ( strptime(input_buffer, "%a %b %d %T %Y", &tm) == NULL
+			   && strptime(input_buffer, "%b %d %T %Y", &tm) == NULL
+			   && strptime(input_buffer, "%c", &tm) == NULL
+			   && strptime(input_buffer, "%D %T", &tm) == NULL) {
+		ret = -EINVAL;
 	} else {
-		*result = mktime(&tm);
+		OWQ_D(owq) = mktime(&tm);
 	}
-	return 0;
+
+    /* free specially long buffer */
+    if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
+
+	return ret ;
 }
 
 /* returns 0 if ok */
