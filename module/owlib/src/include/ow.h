@@ -372,6 +372,12 @@ extern int indevices;
 #define OW_FULLNAME_MAX  (OW_NAME_MAX+OW_EXT_MAX)
 #define OW_DEFAULT_LENGTH (128)
 
+#define PROPERTY_LENGTH_INTEGER   12
+#define PROPERTY_LENGTH_UNSIGNED  12
+#define PROPERTY_LENGTH_FLOAT     12
+#define PROPERTY_LENGTH_DATE      24
+#define PROPERTY_LENGTH_YESNO      1
+
 /* filetype gives -file types- for chip properties */
 struct filetype {
 	char *name;
