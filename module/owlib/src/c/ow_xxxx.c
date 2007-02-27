@@ -109,17 +109,17 @@ int FS_ID(char *buf, size_t size, off_t offset,
 		  const struct parsedname *pn)
 {
 	ASCII id[12];
-	bytes2string(id, &(pn->sn[2]), 6);
+	bytes2string(id, &(pn->sn[1]), 6);
 	return FS_output_ascii(buf, size, offset, id, 12);
 }
 
 int FS_r_ID(char *buf, size_t size, off_t offset,
 			const struct parsedname *pn)
 {
-	size_t i;
+	int sn_index,id_index;
 	ASCII id[12];
-	for (i = 0; i < 6; ++i)
-		num2string(id + (i << 1), pn->sn[6 - i]);
+	for (sn_index = 6, id_index =0 ; sn_index > 0 ; --sn_index, id_index += 2 )
+		num2string(&id[id_index], pn->sn[sn_index]);
 	return FS_output_ascii(buf, size, offset, id, 12);
 }
 
@@ -142,9 +142,9 @@ int FS_address(char *buf, size_t size, off_t offset,
 int FS_r_address(char *buf, size_t size, off_t offset,
 				 const struct parsedname *pn)
 {
-	size_t i;
+	int sn_index, ad_index ;
 	ASCII ad[16];
-	for (i = 0; i < 8; ++i)
-		num2string(ad + (i << 1), pn->sn[7 - i]);
+	for (sn_index = 7, ad_index = 0 ; sn_index >= 0 ; --sn_index, ad_index += 2 )
+		num2string(&ad[ad_index], pn->sn[sn_index]);
 	return FS_output_ascii(buf, size, offset, ad, 16);
 }
