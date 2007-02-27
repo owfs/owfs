@@ -132,7 +132,19 @@ int FS_write_postparse(const char *buf, const size_t size,
 		AVERAGE_IN(&all_avg)
 		++ write_calls;			/* statistics */
 	STATUNLOCK;
-
+#if 0
+    { // testing code
+        struct one_wire_query owq ;
+        int owq_reply ;
+        memcpy(&OWQ_pn(&owq),pn,sizeof(struct parsedname)) ;
+        OWQ_buffer(&owq) = buf;
+        OWQ_size(&owq) = size ;
+        OWQ_offset(&owq) = offset ;
+        owq_reply = FS_input_owq(&owq) ;
+        printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
+        print_owq(&owq) ;
+    }
+#endif
 	switch (pn->type) {
 	case pn_structure:
 	case pn_statistics:

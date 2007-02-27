@@ -72,6 +72,8 @@ int FS_output_owq( struct one_wire_query * owq)
                 case ft_vascii:
                 case ft_ascii:
                 case ft_binary:
+                    OWQ_mem(owq) = OWQ_buffer(owq) ; // until full support
+                    OWQ_length(owq) = OWQ_size(owq) ; // until full support
                     return Fowq_output_ascii(owq) ;
                 case ft_directory:
                 case ft_subdir:
@@ -163,6 +165,7 @@ static int Fowq_output_offset_and_size(char * string, size_t length, struct one_
 {
     size_t copy_length = length ;
     off_t offset = OWQ_offset(owq) ;
+    Debug_Bytes("Fowq_output_offset_and_size",string,length);
     if (offset>(off_t)length) return -EFAULT ;
     copy_length -= offset ;
     if ( copy_length > OWQ_size(owq) ) copy_length = OWQ_size(owq) ;

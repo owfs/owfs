@@ -102,7 +102,7 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 	AVERAGE_IN(&all_avg);
 	STATUNLOCK;
 
-	/* First try */
+        /* First try */
 	/* in and bus_nr already set */
 	STAT_ADD1(read_tries[0]);
 	r = FS_read_postpostparse(buf, size, offset, pn);
@@ -146,7 +146,24 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 	if (r >= 0) {
 		++read_success;			/* statistics */
 		read_bytes += r;		/* statistics */
-	}
+#if 0
+        { // testing code
+            struct one_wire_query owq ;
+            int owq_reply ;
+            memcpy(&OWQ_pn(&owq),pn,sizeof(struct parsedname)) ;
+            OWQ_buffer(&owq) = buf;
+            OWQ_size(&owq) = r ;
+            OWQ_offset(&owq) = offset ;
+            printf("OWQ pre test\n");
+            Debug_Bytes("Real buffer returned",buf,r) ;
+            owq_reply = FS_input_owq(&owq) ;
+            printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
+            owq_reply = FS_output_owq(&owq) ;
+            printf("OWQ OUTPUT PARSE = %d\n",owq_reply) ;
+            print_owq(&owq) ;
+        }
+#endif
+    }
 	AVERAGE_OUT(&read_avg);
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;

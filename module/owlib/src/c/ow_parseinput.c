@@ -115,9 +115,11 @@ static int FS_input_yesno(struct one_wire_query * owq)
     memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
     input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
 
+    //printf("YESNO: %s\n",input_buffer);
     errno = 0 ;
     I = strtol(input_buffer, &end, 10);
     if ( (errno==0) && (end!=input_buffer) ) { // NUMBER?
+        //printf("YESNO number = %d\n",I) ;
         OWQ_Y(owq) = (I!=0) ;
         ret = 0 ;
     } else { // WORD?
@@ -149,7 +151,7 @@ static int FS_input_yesno(struct one_wire_query * owq)
     }
     /* free specially long buffer */
     if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
-    return 1 ;
+    return ret ;
 }
 
 /* parse a value for write from buffer to value_object */
@@ -330,6 +332,8 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
                 return -EINVAL ;
             }
         }
+        //Debug_Bytes("FS_input_array_with_commas -- to end",buffer_position,end-buffer_position) ;
+        //Debug_Bytes("FS_input_array_with_commas -- to comma",buffer_position,comma-buffer_position) ;
         // set up single element
         memcpy( &owq_single, owq, sizeof(owq_single) ) ;
         OWQ_pn(&owq_single).extension = extension ;

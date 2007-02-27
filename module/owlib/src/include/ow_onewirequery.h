@@ -56,7 +56,11 @@ struct one_wire_query {
 #define OWQ_array_mem(owq,i)    ((OWQ_array(owq)[i]).M.mem)
 #define OWQ_array_length(owq,i) ((OWQ_array(owq)[i]).M.size)
 
+int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, struct one_wire_query * owq ) ;
+void FS_OWQ_destroy( struct one_wire_query * owq ) ;
+
 int FS_input_owq( struct one_wire_query * owq) ;
 int FS_output_owq( struct one_wire_query * owq) ;
+void print_owq( struct one_wire_query * owq ) ;
 
 #endif							/* OW_ONEWIREQUERY_H */

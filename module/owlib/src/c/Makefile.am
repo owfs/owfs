@@ -65,15 +65,17 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_locks.c        \
                ow_memory.c       \
                ow_multicast.c    \
-               ow_parseinput.c   \
-               ow_parsename.c    \
-               ow_parseoutput.c  \
-               ow_pid.c          \
-               ow_presence.c     \
                ow_name.c         \
                ow_net_client.c   \
                ow_net_server.c   \
                ow_opt.c          \
+               ow_parseinput.c   \
+               ow_parsename.c    \
+               ow_parseobject.c  \
+               ow_parseoutput.c  \
+               ow_pid.c          \
+               ow_presence.c     \
+               ow_printparse.c   \
                ow_read.c         \
                ow_reconnect.c    \
                ow_stats.c        \
