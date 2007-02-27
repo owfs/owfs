@@ -17,6 +17,7 @@ $Id$
 
 int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, struct one_wire_query * owq )
 {
+    printf("FS_OWQ_create of %s\n",path) ;
     if ( FS_ParsedName(path,&OWQ_pn(owq)) ) return -ENOENT ;
     OWQ_buffer(owq) = buffer ;
     OWQ_size(  owq) = size ;
@@ -31,6 +32,7 @@ int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, 
 
 void FS_OWQ_destroy( struct one_wire_query * owq )
 {
+    printf("FS_OWQ_destroy of %s\n",OWQ_pn(owq).path) ;
     if ( OWQ_pn(owq).extension == -1 ) {
         if ( OWQ_array(owq) ) {
             free( OWQ_array(owq) ) ;

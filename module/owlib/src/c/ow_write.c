@@ -135,14 +135,15 @@ int FS_write_postparse(const char *buf, const size_t size,
 #if 0
     { // testing code
         struct one_wire_query owq ;
-        int owq_reply ;
-        memcpy(&OWQ_pn(&owq),pn,sizeof(struct parsedname)) ;
-        OWQ_buffer(&owq) = buf;
-        OWQ_size(&owq) = size ;
-        OWQ_offset(&owq) = offset ;
-        owq_reply = FS_input_owq(&owq) ;
-        printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
-        print_owq(&owq) ;
+        int owq_reply = FS_OWQ_create( pn->path, buf, size, offset, &owq ) ;
+        if ( owq_reply ) {
+            printf("OWQ_create error = %d\n") ;
+        } else {
+            owq_reply = FS_input_owq(&owq) ;
+            printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
+            print_owq(&owq) ;
+            FS_OWQ_destroy(&owq) ;
+        }
     }
 #endif
 	switch (pn->type) {

@@ -80,6 +80,24 @@ int FS_read(const char *path, char *buf, const size_t size,
 	//printf("FS_read: pid=%ld call postparse size=%ld pn->type=%d\n", pthread_self(), size, pn.type);
 	r = FS_read_postparse(buf, size, offset, &pn);
 	FS_ParsedName_destroy(&pn);
+#if 0
+{ // testing code
+    struct one_wire_query owq ;
+    int owq_reply = FS_OWQ_create(path,buf,size,offset,&owq) ;
+    if ( owq_reply ) {
+        printf("OWQ Create error = %d\n" ) ;
+    } else {
+        printf("OWQ pre test\n");
+        Debug_Bytes("Real buffer returned",buf,r) ;
+        owq_reply = FS_input_owq(&owq) ;
+        printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
+        owq_reply = FS_output_owq(&owq) ;
+        printf("OWQ OUTPUT PARSE = %d\n",owq_reply) ;
+        print_owq(&owq) ;
+        FS_OWQ_destroy(&owq) ;
+    }
+}
+#endif
 	return r;
 }
 
@@ -146,23 +164,6 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 	if (r >= 0) {
 		++read_success;			/* statistics */
 		read_bytes += r;		/* statistics */
-#if 0
-        { // testing code
-            struct one_wire_query owq ;
-            int owq_reply ;
-            memcpy(&OWQ_pn(&owq),pn,sizeof(struct parsedname)) ;
-            OWQ_buffer(&owq) = buf;
-            OWQ_size(&owq) = r ;
-            OWQ_offset(&owq) = offset ;
-            printf("OWQ pre test\n");
-            Debug_Bytes("Real buffer returned",buf,r) ;
-            owq_reply = FS_input_owq(&owq) ;
-            printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
-            owq_reply = FS_output_owq(&owq) ;
-            printf("OWQ OUTPUT PARSE = %d\n",owq_reply) ;
-            print_owq(&owq) ;
-        }
-#endif
     }
 	AVERAGE_OUT(&read_avg);
 	AVERAGE_OUT(&all_avg);
