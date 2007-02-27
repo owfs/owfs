@@ -65,7 +65,9 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_locks.c        \
                ow_memory.c       \
                ow_multicast.c    \
+               ow_parseinput.c   \
                ow_parsename.c    \
+               ow_parseoutput.c  \
                ow_pid.c          \
                ow_presence.c     \
                ow_name.c         \

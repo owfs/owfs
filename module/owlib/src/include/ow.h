@@ -78,18 +78,23 @@ $Id$
 //#define VALGRIND 1
 
 #define _FILE_OFFSET_BITS   64
+
 #ifdef HAVE_FEATURES_H
 #include <features.h>
-#endif
+#endif /* HAVE_FEATURES_H */
+
 #ifdef HAVE_FEATURE_TESTS_H
 #include <feature_tests.h>
-#endif
+#endif /* HAVE_FEATURE_TESTS_H */
+
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>			/* for stat */
-#endif
+#endif /* HAVE_SYS_STAT_H */
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>			/* for stat */
-#endif
+#endif /* HAVE_SYS_TYPES_H */
+
 #include <sys/times.h>			/* for times */
 #include <ctype.h>
 #include <stdlib.h>
@@ -97,43 +102,49 @@ $Id$
 #include <string.h>
 #include <dirent.h>
 #include <signal.h>
+
 #ifdef HAVE_STDINT_H
 #include <stdint.h>				/* for bit twiddling */
 #if OW_CYGWIN
 #define _MSL_STDINT_H
-#endif
-#endif
+#endif /* OW_CYGWIN */
+#endif /* HAVE_STDINT_H */
 
 #include <unistd.h>
 #include <fcntl.h>
+
 #ifndef __USE_XOPEN
 #define __USE_XOPEN				/* for strptime fuction */
 #include <time.h>
 #undef __USE_XOPEN				/* for strptime fuction */
-#else
+#else /* __USE_XOPEN */
 #include <time.h>
-#endif
+#endif /* __USE_XOPEN */
+
 #include <termios.h>
 #include <errno.h>
 #include <syslog.h>
-//#include <sys/file.h> /* for flock */
+
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>				/* for long options */
-#endif
+#endif /* HAVE_GETOPT_H */
 
 #include <sys/uio.h>
 #include <sys/time.h>			/* for gettimeofday */
+
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
+#endif /* HAVE_SYS_SOCKET_H */
+
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#endif
+#endif /* HAVE_NETINET_IN_H */
+
 #include <netdb.h>				/* addrinfo */
 
 #ifdef HAVE_SYS_MKDEV_H
 #include <sys/mkdev.h>			/* for major() */
-#endif
+#endif /* HAVE_SYS_MKDEV_H */
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H
@@ -155,7 +166,7 @@ $Id$
 /* Zeroconf / Bonjour */
 #include "ow_dl.h"
 #include "ow_dnssd.h"
-#endif
+#endif /* OW_ZERO */
 
 /* Include some compatibility functions */
 #include "compat.h"
@@ -170,10 +181,11 @@ $Id$
 /* Some errnos are not defined for MacOSX and gcc3.3 */
 #ifndef EBADMSG
 #define EBADMSG ENOMSG
-#endif
+#endif /* EBADMSG */
+
 #ifndef EPROTO
 #define EPROTO EIO
-#endif
+#endif /* EPROTO */
 
 
 /* Floating point */

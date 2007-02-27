@@ -17,14 +17,15 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_output_integer(struct one_wire_query * owq) ;
-static int FS_output_unsigned(struct one_wire_query * owq) ;
-static int FS_output_float(struct one_wire_query * owq) ;
-static int FS_output_date(struct one_wire_query * owq) ;
-static int FS_output_yesno(struct one_wire_query * owq) ;
-static int FS_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
-static FS_output_array_with_commas( struct one_wire_query * owq  ;
-static FS_output_array_no_commas( struct one_wire_query * owq  ;
+static int Fowq_output_integer(struct one_wire_query * owq) ;
+static int Fowq_output_unsigned(struct one_wire_query * owq) ;
+static int Fowq_output_float(struct one_wire_query * owq) ;
+static int Fowq_output_date(struct one_wire_query * owq) ;
+static int Fowq_output_yesno(struct one_wire_query * owq) ;
+static int Fowq_output_ascii(struct one_wire_query * owq) ;
+static int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
+static int Fowq_output_array_with_commas( struct one_wire_query * owq ) ;
+static int Fowq_output_array_no_commas( struct one_wire_query * owq ) ;
 
 /*
 Change in strategy 6/2006:
@@ -45,40 +46,42 @@ int FS_output_owq( struct one_wire_query * owq)
 {
     switch (OWQ_pn(owq).extension) {
         case -2:
-            return FS_output_unsigned(owq) ;
+            return Fowq_output_unsigned(owq) ;
         case -1:
             switch (OWQ_pn(owq).ft->format) {
                 case ft_binary:
-                    return FS_output_array_no_commas(owq) ;
+                    return Fowq_output_array_no_commas(owq) ;
                 default:
-                    return FS_output_array_with_commas(owq) ;
+                    return Fowq_output_array_with_commas(owq) ;
             }
         default:
             switch (OWQ_pn(owq).ft->format) {
                 case ft_integer:
-                    return FS_output_integer(owq) ;
+                    return Fowq_output_integer(owq) ;
                 case ft_yesno:
                 case ft_bitfield:
-                    return FS_output_yesno(owq) ;
+                    return Fowq_output_yesno(owq) ;
                 case ft_unsigned:
-                    return FS_output_unsigned(owq) ;
+                    return Fowq_output_unsigned(owq) ;
                 case ft_temperature:
                 case ft_tempgap:
                 case ft_float:
-                    return FS_output_float(owq) ;
+                    return Fowq_output_float(owq) ;
                 case ft_date:
-                    return FS_output_date(owq) ;
+                    return Fowq_output_date(owq) ;
                 case ft_vascii:
                 case ft_ascii:
-                    return FS_output_integer(owq) ;
                 case ft_binary:
-                    return FS_output_integer(owq) ;
+                    return Fowq_output_ascii(owq) ;
+                case ft_directory:
+                case ft_subdir:
+                    return -ENOENT ;
             }
     }
+    return -EINVAL ; // should never be reached if all the cases are truly covered
 }
 
-
-static int FS_output_integer(struct one_wire_query * owq)
+static int Fowq_output_integer(struct one_wire_query * owq)
 {
 	/* should only need suglen+1, but uClibc's snprintf()
 	   seem to trash 'len' if not increased */
@@ -91,10 +94,10 @@ static int FS_output_integer(struct one_wire_query * owq)
     if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_INTEGER)) {
         return -EMSGSIZE;
     }
-	return FS_output_offset_and_size(c,PROPERTY_LENGTH_INTEGER,owq) ;
+	return Fowq_output_offset_and_size(c,PROPERTY_LENGTH_INTEGER,owq) ;
 }
 
-static int FS_output_unsigned(struct one_wire_query * owq)
+static int Fowq_output_unsigned(struct one_wire_query * owq)
 {
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
@@ -107,10 +110,10 @@ static int FS_output_unsigned(struct one_wire_query * owq)
     if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_UNSIGNED)) {
         return -EMSGSIZE;
     }
-    return FS_output_offset_and_size(c,PROPERTY_LENGTH_UNSIGNED,owq) ;
+    return Fowq_output_offset_and_size(c,PROPERTY_LENGTH_UNSIGNED,owq) ;
 }
 
-static int FS_output_float(struct one_wire_query * owq)
+static int Fowq_output_float(struct one_wire_query * owq)
 {
     /* should only need suglen+1, but uClibc's snprintf()
        seem to trash 'len' if not increased */
@@ -120,13 +123,13 @@ static int FS_output_float(struct one_wire_query * owq)
 
     switch (OWQ_pn(owq).ft->format) {
         case ft_temperature:
-            F = Temperature(OW_F(owq),&OW_pn(owq)) ;
+            F = Temperature(OWQ_F(owq),&OWQ_pn(owq)) ;
             break ;
         case ft_tempgap:
-            F = TemperatureGap(OW_F(owq),&OW_pn(owq)) ;
+            F = TemperatureGap(OWQ_F(owq),&OWQ_pn(owq)) ;
             break ;
         default:
-            F = OW_F(owq) ;
+            F = OWQ_F(owq) ;
             break ;
     }
 
@@ -136,71 +139,78 @@ static int FS_output_float(struct one_wire_query * owq)
     if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_FLOAT)) {
         return -EMSGSIZE;
     }
-    return FS_output_offset_and_size(c,PROPERTY_LENGTH_FLOAT,owq) ;
+    return Fowq_output_offset_and_size(c,PROPERTY_LENGTH_FLOAT,owq) ;
 }
 
-static int FS_output_date(struct one_wire_query * owq)
+static int Fowq_output_date(struct one_wire_query * owq)
 {
-    char c[PROPERTY_LENTH_DATE+2];
+    char c[PROPERTY_LENGTH_DATE+2];
     if (OWQ_size(owq) < PROPERTY_LENGTH_DATE)
         return -EMSGSIZE;
     ctime_r(&OWQ_D(owq), c);
-    return FS_output_offset_and_size(c,PROPERTY_LENGTH_DATE,owq) ;
+    return Fowq_output_offset_and_size(c,PROPERTY_LENGTH_DATE,owq) ;
 }
 
-static int FS_output_yesno(struct one_wire_query * owq)
+static int Fowq_output_yesno(struct one_wire_query * owq)
 {
-    if (OWQ_size(owq) < PROPERTY_LENGTH_YEDSNO)
+    if (OWQ_size(owq) < PROPERTY_LENGTH_YESNO)
         return -EMSGSIZE;
     OWQ_buffer(owq)[0] = ((OWQ_Y(owq)&0x1)==0) ? '0' : '1' ;
     return PROPERTY_LENGTH_YESNO;
 }
 
-static int FS_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq)
+static int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq)
 {
     size_t copy_length = length ;
     off_t offset = OWQ_offset(owq) ;
-    if (offset>length) return -EFAULT ; 
+    if (offset>(off_t)length) return -EFAULT ;
     copy_length -= offset ;
     if ( copy_length > OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
     memcpy(OWQ_buffer(owq), &string[offset], copy_length) ;
     return copy_length ;
 }
 
-int FS_output_ascii(struct one_wire_query * owq)
+static int Fowq_output_ascii(struct one_wire_query * owq)
 {
-    return FS_output_offset_and_size(OWQ_mem(owq),OWQ_length(owq),owq) ;
+    return Fowq_output_offset_and_size(OWQ_mem(owq),OWQ_length(owq),owq) ;
 }
 
 /* If the string is properly terminated, we can use a simpler routine */
-int FS_output_ascii_z(size_t suglen, struct one_wire_query * owq)
+static int Fowq_output_ascii_z(struct one_wire_query * owq)
 {
-	return FS_output_ascii(buf, size, offset, answer, strlen(answer));
+    OWQ_length(owq) = strlen(OWQ_mem(owq)) ;
+    return Fowq_output_ascii(owq);
 }
 
-static FS_output_array_with_commas( struct one_wire_query * owq )
+static int Fowq_output_array_with_commas( struct one_wire_query * owq )
 {
     struct one_wire_query owq_single ;
     size_t extension ;
     int len ;
     size_t used_size = 0 ;
     size_t remaining_size = OWQ_size(owq) ;
+    size_t elements = OWQ_pn(owq).ft->ag->elements ;
 
     if (OWQ_offset(owq)>0) return -EFAULT ;
 
-    for ( extension = 0 ; extension < OWQ_pn(owq).extension ; ++extension ) {
+    // loop though all array elements
+    for ( extension = 0 ; extension < elements ; ++extension ) {
+        // Prepare a copy of owq that only points to a single element
         memcpy( &owq_single, owq, sizeof(owq_single) ) ;
         OWQ_pn(&owq_single).extension = extension ;
-        memcpy(OWQ_val(owq_single),OWQ_array(owq)[extension],sizeof(union value_object)) ;
+        memcpy(&OWQ_val(&owq_single),&OWQ_array(owq)[extension],sizeof(union value_object)) ;
+        // add the comma first (if not the first element and enough room)
         if ( used_size > 0 ) {
             if ( remaining_size == 0 ) return -EFAULT ;
             OWQ_buffer(owq)[used_size] = ',' ;
             ++used_size ;
             --remaining_size ;
         }
+        // Now process the single element
         OWQ_buffer(&owq_single) = &OWQ_buffer(owq)[used_size] ;
         OWQ_size(&owq_single) = remaining_size ;
         len = FS_output_owq(&owq_single) ;
+        // any error aborts
         if ( len < 0 ) return len ;
         remaining_size -= len ;
         used_size += len ;
@@ -208,20 +218,22 @@ static FS_output_array_with_commas( struct one_wire_query * owq )
     return used_size ;
 }
 
-static FS_output_array_no_commas( struct one_wire_query * owq )
+static int Fowq_output_array_no_commas( struct one_wire_query * owq )
 {
     struct one_wire_query owq_single ;
     size_t extension ;
     int len ;
     size_t used_size = 0 ;
     size_t remaining_size = OWQ_size(owq) ;
+    size_t elements = OWQ_pn(owq).ft->ag->elements ;
 
     if (OWQ_offset(owq)>0) return -EFAULT ;
 
-    for ( extension = 0 ; extension < OWQ_pn(owq).extension ; ++extension ) {
+    // loop though all array elements
+    for ( extension = 0 ; extension < elements ; ++extension ) {
         memcpy( &owq_single, owq, sizeof(owq_single) ) ;
         OWQ_pn(&owq_single).extension = extension ;
-        memcpy(OWQ_val(owq_single),OWQ_array(owq)[extension],sizeof(union value_object)) ;
+        memcpy(&OWQ_val(&owq_single),&OWQ_array(owq)[extension],sizeof(union value_object)) ;
         OWQ_buffer(&owq_single) = &OWQ_buffer(owq)[used_size] ;
         OWQ_size(&owq_single) = remaining_size ;
         len = FS_output_owq(&owq_single) ;

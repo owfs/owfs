@@ -56,6 +56,7 @@ struct one_wire_query {
 #define OWQ_array_mem(owq,i)    ((OWQ_array(owq)[i]).M.mem)
 #define OWQ_array_length(owq,i) ((OWQ_array(owq)[i]).M.size)
 
-#define OWQ_I(owq)		(OWQ_val(owq).I
+int FS_input_owq( struct one_wire_query * owq) ;
+int FS_output_owq( struct one_wire_query * owq) ;
 
 #endif							/* OW_ONEWIREQUERY_H */

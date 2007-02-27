@@ -18,31 +18,14 @@ $Id$
 #define   DEFAULT_INPUT_BUFFER_LENGTH   128
 
 /* ------- Prototypes ----------- */
-static int FS_input_yesno(int *result, const char *buf, const size_t size);
-static int FS_input_integer(int *result, const char *buf,
-							const size_t size);
-static int FS_input_unsigned(UINT * result, const char *buf,
-							 const size_t size);
-static int FS_input_float(_FLOAT * result, const char *buf,
-						  const size_t size);
-static int FS_input_date(_DATE * result, const char *buf,
-						 const size_t size);
-
-static int FS_input_yesno_array(int *results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn);
-static int FS_input_unsigned_array(UINT * results, const char *buf,
-								   const size_t size,
-								   const struct parsedname *pn);
-static int FS_input_integer_array(int *results, const char *buf,
-								  const size_t size,
-								  const struct parsedname *pn);
-static int FS_input_float_array(_FLOAT * results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn);
-static int FS_input_date_array(_DATE * results, const char *buf,
-							   const size_t size,
-							   const struct parsedname *pn);
+static int FS_input_yesno(struct one_wire_query * owq) ;
+static int FS_input_integer(struct one_wire_query * owq) ;
+static int FS_input_unsigned(struct one_wire_query * owq) ;
+static int FS_input_float(struct one_wire_query * owq) ;
+static int FS_input_date(struct one_wire_query * owq) ;
+static int FS_input_ascii(struct one_wire_query * owq ) ;
+static int FS_input_array_with_commas(struct one_wire_query * owq ) ;
+static int FS_input_array_no_commas(struct one_wire_query * owq ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -74,42 +57,99 @@ static int FS_input_date_array(_DATE * results, const char *buf,
         binary   memcpy     fixed length binary string      binary "string"
 */
 
+int FS_input_owq( struct one_wire_query * owq)
+{
+    switch (OWQ_pn(owq).extension) {
+        case -2:
+            return FS_input_unsigned(owq) ;
+        case -1:
+            switch (OWQ_pn(owq).ft->format) {
+                case ft_binary:
+                    return FS_input_array_no_commas(owq) ;
+                default:
+                    return FS_input_array_with_commas(owq) ;
+            }
+        default:
+            switch (OWQ_pn(owq).ft->format) {
+                case ft_integer:
+                    return FS_input_integer(owq) ;
+                case ft_yesno:
+                case ft_bitfield:
+                    return FS_input_yesno(owq) ;
+                case ft_unsigned:
+                    return FS_input_unsigned(owq) ;
+                case ft_temperature:
+                case ft_tempgap:
+                case ft_float:
+                    return FS_input_float(owq) ;
+                case ft_date:
+                    return FS_input_date(owq) ;
+                case ft_vascii:
+                case ft_ascii:
+                case ft_binary:
+                    return FS_input_ascii(owq) ;
+                case ft_directory:
+                case ft_subdir:
+                    return -ENOENT ;
+            }
+    }
+    return -EINVAL ; // should never be reached if all the cases are truly covered
+}
+
 
 /* return 0 if ok */
-static int FS_input_yesno(int *result, const char *buf, const size_t size)
+static int FS_input_yesno(struct one_wire_query * owq)
 {
-//printf("yesno size=%d, buf=%s\n",size,buf);
-	const char *b;
-	size_t s;
-	for (s = size, b = buf; s > 0; --s, ++b) {
-		if (b[0] == ' ')
-			continue;
-		if (s > 2) {
-			if (strncasecmp("yes", b, 3) == 0)
-				goto yes;
-			if (strncasecmp("off", b, 3) == 0)
-				goto no;
-		}
-		if (s > 1) {
-			if (strncasecmp("on", b, 2) == 0)
-				goto yes;
-			if (strncasecmp("no", b, 2) == 0)
-				goto no;
-		}
-		if (s > 0) {
-			if (b[0] == '1')
-				goto yes;
-			if (b[0] == '0')
-				goto no;
-		}
-		break;
-	}
-	return 1;
-  yes:result[0] = 1;
-	return 0;
-  no:result[0] = 0;
-	return 0;
+    char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH+1] ;
+    char * input_buffer = default_input_buffer ;
 
+    char *end;
+    int I ;
+    int ret ;
+
+    /* allocate more space if buffer is really long */
+    if ( OWQ_size(owq)>DEFAULT_INPUT_BUFFER_LENGTH ) {
+        input_buffer = malloc(OWQ_size(owq)+1) ;
+        if ( input_buffer == NULL ) return -ENOMEM ;
+    }
+    memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
+    input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
+
+    errno = 0 ;
+    I = strtol(input_buffer, &end, 10);
+    if ( (errno==0) && (end!=input_buffer) ) { // NUMBER?
+        OWQ_Y(owq) = (I!=0) ;
+        ret = 0 ;
+    } else { // WORD?
+        char * non_blank ;
+        ret = -EFAULT ; //default error until a non-blank found
+        for ( non_blank = input_buffer ; non_blank[0] ; ++non_blank ) {
+            if ( non_blank[0]!=' ' && non_blank[0]!='\t') {
+                ret = 0 ; // now assume good
+                if ( strncasecmp(non_blank,"y",1)==0 ) {
+                    OWQ_Y(owq) = 1 ;
+                    break ;
+                }
+                if ( strncasecmp(non_blank,"n",1)==0 ) {
+                    OWQ_Y(owq) = 0 ;
+                    break ;
+                }
+                if ( strncasecmp(non_blank,"on",2)==0 ) {
+                    OWQ_Y(owq) = 1 ;
+                    break ;
+                }
+                if ( strncasecmp(non_blank,"off",3)==0 ) {
+                    OWQ_Y(owq) = 0 ;
+                    break ;
+                }
+                ret = -EINVAL ;
+                break ;
+            }
+        }
+    }
+    /* free specially long buffer */
+    if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
+    return 1 ;
 }
 
 /* parse a value for write from buffer to value_object */
@@ -135,7 +175,7 @@ static int FS_input_integer(struct one_wire_query * owq )
     if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
 
     if (errno) return -errno ; // conversion error
-    if (end == cp) return -EINVAL; // nothing valid found for conversion
+    if (end == input_buffer) return -EINVAL; // nothing valid found for conversion
     return 0 ; // good return
 }
 
@@ -162,7 +202,7 @@ static int FS_input_unsigned(struct one_wire_query * owq )
     if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
 
     if (errno) return -errno ; // conversion error
-    if (end == cp) return -EINVAL; // nothing valid found for conversion
+    if (end == input_buffer) return -EINVAL; // nothing valid found for conversion
     return 0 ; // good return
 }
 
@@ -185,16 +225,16 @@ static int FS_input_float(struct one_wire_query * owq )
     memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
     input_buffer[OWQ_size(owq)] = '\0'; // make sure null-ended
     errno = 0;
-    F = strtod(input_buffer, &end, 10);
+    F = strtod(input_buffer, &end);
 
     /* free specially long buffer */
     if ( input_buffer != default_input_buffer ) free(input_buffer ) ;
 
     if (errno) return -errno ; // conversion error
-    if (end == cp) return -EINVAL; // nothing valid found for conversion
+    if (end == input_buffer) return -EINVAL; // nothing valid found for conversion
 
     switch ( OWQ_pn(owq).ft->format ) {
-        case ft_temperture:
+        case ft_temperature:
             OWQ_F(owq) = fromTemperature( F, &OWQ_pn(owq) ) ;
             break ;
         case ft_tempgap:
@@ -227,10 +267,11 @@ static int FS_input_date(struct one_wire_query * owq )
 
 	if ( OWQ_size(owq)< 2 || input_buffer[0] == '\0' || input_buffer[0] == '\n') {
 		OWQ_D(owq) = time(NULL);
-	} else if ( strptime(input_buffer, "%a %b %d %T %Y", &tm) == NULL
-			   && strptime(input_buffer, "%b %d %T %Y", &tm) == NULL
-			   && strptime(input_buffer, "%c", &tm) == NULL
-			   && strptime(input_buffer, "%D %T", &tm) == NULL) {
+    } else if (  (strptime(input_buffer, "%T %a %b %d %Y", &tm) == NULL) // 12:27:02 Tuesday March 23 2007
+                  && (strptime(input_buffer, "%b %d %Y %T", &tm)    == NULL) // March 23 2007 12:27:03
+               && (strptime(input_buffer, "%a %b %d %Y %T", &tm) == NULL) // Tuesday March 23 2007 12:27:02
+                          && (strptime(input_buffer, "%c", &tm)             == NULL)
+                          && (strptime(input_buffer, "%D %T", &tm) == NULL) ) {
 		ret = -EINVAL;
 	} else {
 		OWQ_D(owq) = mktime(&tm);
@@ -242,138 +283,90 @@ static int FS_input_date(struct one_wire_query * owq )
 	return ret ;
 }
 
+static int FS_input_ascii(struct one_wire_query * owq )
+{
+    OWQ_mem(owq) = OWQ_buffer(owq) ;
+    OWQ_length(owq) = OWQ_size(owq) ;
+    return 0 ;
+}
+
 /* returns 0 if ok */
-static int FS_input_yesno_array(int *results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn)
+/* creates a new allocated memory area IF no error */
+static int FS_input_array_with_commas(struct one_wire_query * owq )
 {
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_yesno
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0;
-			++next;				/* past comma */
-		} else {				/* assume "no" for absent values */
-			results[i] = 0;
-		}
-	}
-	return 0;
+    int elements = OWQ_pn(owq).ft->ag->elements ;
+    union value_object * value_object_array = calloc((size_t) elements, sizeof(union value_object)) ;
+    int extension ;
+    char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
+    char * comma = NULL ; // assignment to avoid compiler warning
+    char * buffer_position ;
+    struct one_wire_query owq_single ;
+
+    if ( value_object_array == NULL ) return -ENOMEM ;
+
+    if ( OWQ_offset(owq) ) {
+        free(value_object_array) ;
+        return -EINVAL ;
+    }
+    
+    for ( extension = 0 ; extension < elements ; ++extension ) {
+        // find start of buffer span
+        if ( extension == 0 ) {
+            buffer_position = OWQ_buffer(owq) ;
+        } else {
+            buffer_position = comma + 1 ;
+            if ( buffer_position >= end ) {
+                free(value_object_array) ;
+                return -EINVAL ;
+            }
+        }
+        // find end of buffer span
+        if ( extension == elements-1 ) {
+            comma = end ;
+        } else {
+            comma = memchr(buffer_position, ',', end - buffer_position ) ;
+            if ( comma == NULL ) {
+                free(value_object_array) ;
+                return -EINVAL ;
+            }
+        }
+        // set up single element
+        memcpy( &owq_single, owq, sizeof(owq_single) ) ;
+        OWQ_pn(&owq_single).extension = extension ;
+        OWQ_buffer(&owq_single) = buffer_position ;
+        OWQ_size(&owq_single) = comma - buffer_position ;
+        if ( FS_input_owq(&owq_single) ) {
+            free( value_object_array ) ;
+            return -EINVAL ;
+        }
+        memcpy( &(value_object_array[extension]), &OWQ_val(&owq_single), sizeof(union value_object) ) ;
+    }
+    OWQ_array(owq) = value_object_array ;
+    return 0 ;
 }
 
-/* returns number of valid integers, or negative for error */
-static int FS_input_integer_array(int *results, const char *buf,
-								  const size_t size,
-								  const struct parsedname *pn)
+
+/* returns 0 if ok */
+/* creates a new allocated memory area IF no error */
+static int FS_input_array_no_commas(struct one_wire_query * owq )
 {
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_integer
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0;
-			++next;				/* past comma */
-		} else {				/* assume 0 for absent values */
-			results[i] = 0;
-		}
-	}
-	return 0;
+    int elements = OWQ_pn(owq).ft->ag->elements ;
+    union value_object * value_object_array = calloc((size_t) elements, sizeof(union value_object)) ;
+    int extension ;
+    int suglen = OWQ_pn(owq).ft->suglen ;
+
+    if ( value_object_array == NULL ) return -ENOMEM ;
+
+    if ( (OWQ_offset(owq)!=0) || ((int) OWQ_size(owq)!=suglen*elements) ) {
+        free(value_object_array) ;
+        return -EINVAL ;
+    }
+    
+    OWQ_array(owq) = value_object_array ;
+    for ( extension = 0 ; extension < elements ; ++extension ) {
+        OWQ_array_mem(owq,extension) = OWQ_buffer(owq) + suglen*extension ;
+        OWQ_array_length(owq,extension) = suglen ;
+    }
+    return 0 ;
 }
 
-/* returns 0, or negative for error */
-static int FS_input_unsigned_array(UINT * results, const char *buf,
-								   const size_t size,
-								   const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_unsigned
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0;
-			++next;				/* past comma */
-		} else {				/* assume 0 for absent values */
-			results[i] = 0;
-		}
-	}
-	return 0;
-}
-
-/* returns 0, or negative for error */
-static int FS_input_float_array(_FLOAT * results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_float
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0.;
-			++next;				/* past comma */
-		} else {				/* assume 0. for absent values */
-			results[i] = 0.;
-		}
-	}
-	return 0;
-}
-
-/* returns 0, or negative for error */
-static int FS_input_date_array(_DATE * results, const char *buf,
-							   const size_t size,
-							   const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	_DATE now = time(NULL);
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_date
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = now;
-			++next;				/* past comma */
-		} else {				/* assume now for absent values */
-			results[i] = now;
-		}
-	}
-	return 0;
-}
