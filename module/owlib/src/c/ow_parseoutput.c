@@ -23,7 +23,6 @@ static int Fowq_output_float(struct one_wire_query * owq) ;
 static int Fowq_output_date(struct one_wire_query * owq) ;
 static int Fowq_output_yesno(struct one_wire_query * owq) ;
 static int Fowq_output_ascii(struct one_wire_query * owq) ;
-static int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
 static int Fowq_output_array_with_commas( struct one_wire_query * owq ) ;
 static int Fowq_output_array_no_commas( struct one_wire_query * owq ) ;
 
@@ -161,7 +160,7 @@ static int Fowq_output_yesno(struct one_wire_query * owq)
     return PROPERTY_LENGTH_YESNO;
 }
 
-static int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq)
+int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq)
 {
     size_t copy_length = length ;
     off_t offset = OWQ_offset(owq) ;

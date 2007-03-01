@@ -746,6 +746,8 @@ int FS_ParsedNamePlus(const char *path, const char *file,
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
+size_t OWQ_FileLength( struct one_wire_query * owq ) ;
+size_t OWQ_FullFileLength( struct one_wire_query * owq ) ;
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
 size_t SimpleFileLength(const struct parsedname *pn);
@@ -850,10 +852,10 @@ int FS_write_postparse(const char *buf, const size_t size,
 
 int FS_read(const char *path, char *buf, const size_t size,
 			const off_t offset);
-int FS_read_postparse(char *buf, const size_t size, const off_t offset,
-					  const struct parsedname *pn);
-int FS_read_postpostparse(char *buf, const size_t size, const off_t offset,
-						  const struct parsedname *pn);
+//int FS_read_postparse(char *buf, const size_t size, const off_t offset,
+//					  const struct parsedname *pn);
+int FS_read_postparse(struct one_wire_query * owq) ;
+int FS_read_postpostparse(struct one_wire_query * owq);
 int FS_read_fake(char *buf, const size_t size, const off_t offset,
                  const struct parsedname *pn);
 int FS_read_tester(char *buf, const size_t size, const off_t offset,
@@ -862,6 +864,7 @@ int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
 					size_t length);
 int FS_output_ascii_z(ASCII * buf, size_t size, off_t offset,
 					  ASCII * answer);
+int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
 
 int FS_output_unsigned(UINT value, char *buf, const size_t size,
 					   const struct parsedname *pn);

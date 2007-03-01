@@ -68,11 +68,13 @@ static void getdircallback( void * v, const struct parsedname * const pn2 ) {
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static void getdir( char ** buffer, const struct parsedname * pn ) {
+static void getdir( struct one_wire_query * owq ) {
     struct charblob cb ;
     CharblobInit( &cb ) ;
-    if ( FS_dir( getdircallback, &cb, pn ) >= 0 ) {
-        *buffer = strdup( cb.blob ) ;
+    if ( FS_dir( getdircallback, &cb, &OWQ_pn(owq) ) >= 0 ) {
+        OWQ_buffer(owq) = strdup( cb.blob ) ;
+    } else {
+        OWQ_buffer(owq) = NULL ;
     }
     CharblobClear( &cb ) ;
 }
@@ -82,20 +84,22 @@ static void getdir( char ** buffer, const struct parsedname * pn ) {
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static void getval( char ** buffer, const struct parsedname * pn ) {
-    ssize_t s ;
-    s = FullFileLength(pn) ;
+static void getval( struct one_wire_query * owq ) {
+    size_t s = OWQ_FullFileLength(owq) ;
     if ( s <= 0 ) return ;
-    if ( (*buffer = malloc(s+1))==NULL ) return ;
-    if ( s = FS_read_postparse( *buffer, s, 0, pn ) < 0 ) {
-        free(*buffer) ;
-        *buffer = NULL ;
+    if ( (OWQ_buffer(owq) = malloc(s+1))==NULL ) return ;
+    OWQ_size(owq) = s ;
+    if ( (s = FS_read_postparse( owq )) < 1 ) {
+        free(OWQ_buffer(owq)) ;
+        OWQ_buffer(owq) = NULL ;
+    } else {
+        OWQ_buffer(owq)[s] = '\0' ; // shorten to actual returned length
     }
-    buffer[s] = '\0' ; // shorten to actual returned length
 }
 
 char * get( const char * path ) {
-    struct parsedname pn ;
+    //struct parsedname pn ;
+    struct one_wire_query owq ;
     char * buf = NULL ;
 
     /* Check the parameters */
@@ -105,15 +109,16 @@ char * get( const char * path ) {
         // buf = NULL ;
     } else if ( OWLIB_can_access_start() ) { /* Check for prior init */
         // buf = NULL ;
-    } else if ( FS_ParsedName( path, &pn ) ) { /* Can we parse the input string */
+    } else if ( FS_OWQ_create( path, NULL, 0, 0, &owq ) ) { /* Can we parse the input string */
         // buf = NULL ;
     } else {
-        if ( IsDir( &pn ) ) { /* A directory of some kind */
-            getdir( &buf, &pn ) ;
+        if ( IsDir( &OWQ_pn(&owq) ) ) { /* A directory of some kind */
+            getdir( &owq ) ;
         } else { /* A regular file */
-            getval( &buf, &pn ) ;
+            getval( &owq ) ;
         }
-        FS_ParsedName_destroy(&pn) ;
+        buf = OWQ_buffer(&owq) ;
+        FS_OWQ_destroy(&owq) ;
     }
     OWLIB_can_access_end() ;
     return buf ;

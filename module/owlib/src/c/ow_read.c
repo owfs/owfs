@@ -31,8 +31,7 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset,
 static int FS_r_aggregate_all(char *buf, const size_t size,
 							  const off_t offset,
 							  const struct parsedname *pn);
-static int FS_structure(char *buf, const size_t size, const off_t offset,
-						const struct parsedname *pn);
+static int FS_structure(struct one_wire_query * owq) ;
 
 static int FS_output_unsigned_array(UINT * values, char *buf,
 									const size_t size,
@@ -66,46 +65,40 @@ Can break down cases into:
 int FS_read(const char *path, char *buf, const size_t size,
 			const off_t offset)
 {
-	struct parsedname pn;
+	//struct parsedname pn;
+    struct one_wire_query owq ;
+    
 	int r;
 
 	LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path),
-			   (int) size, (int) offset)
-		// Parseable path?
-		if (FS_ParsedName(path, &pn))
-		return -ENOENT;
+        (int) size, (int) offset) ;
+    // Parseable path?
+    //if (FS_ParsedName(path, &pn))
+    if (FS_OWQ_create(path,buf,size,offset,&owq))
+        return -ENOENT;
 
 	//printf("FS_read: KnownBus=%c pn->bus_nr=%d\n", KnownBus(&pn)?'Y':'N', pn.bus_nr);
 	//printf("FS_read: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
 	//printf("FS_read: pid=%ld call postparse size=%ld pn->type=%d\n", pthread_self(), size, pn.type);
-	r = FS_read_postparse(buf, size, offset, &pn);
-	FS_ParsedName_destroy(&pn);
+    //r = FS_read_postparse(buf, size, offset, &pn);
 #if 0
-{ // testing code
-    struct one_wire_query owq ;
-    int owq_reply = FS_OWQ_create(path,buf,size,offset,&owq) ;
-    if ( owq_reply ) {
-        printf("OWQ Create error = %d\n" ) ;
-    } else {
-        printf("OWQ pre test\n");
-        Debug_Bytes("Real buffer returned",buf,r) ;
-        owq_reply = FS_input_owq(&owq) ;
-        printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
-        owq_reply = FS_output_owq(&owq) ;
-        printf("OWQ OUTPUT PARSE = %d\n",owq_reply) ;
-        print_owq(&owq) ;
-        FS_OWQ_destroy(&owq) ;
-    }
-}
+    Debug_Bytes("Real buffer returned",buf,r) ;
+    owq_reply = FS_input_owq(&owq) ;
+    printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
+    owq_reply = FS_output_owq(&owq) ;
+    printf("OWQ OUTPUT PARSE = %d\n",owq_reply) ;
+    print_owq(&owq) ;
 #endif
+    r = FS_read_postparse(&owq);
+    //FS_ParsedName_destroy(&pn);
+    FS_OWQ_destroy(&owq);
 	return r;
 }
 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
-int FS_read_postparse(char *buf, const size_t size, const off_t offset,
-					  const struct parsedname *pn)
+int FS_read_postparse(struct one_wire_query * owq)
 {
-	struct parsedname pn2;
+    struct parsedname * pn = &OWQ_pn(owq) ;
 	ssize_t r = 0;
 	//    if ( pn->in==NULL ) return -ENODEV ;
 
@@ -123,22 +116,23 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
         /* First try */
 	/* in and bus_nr already set */
 	STAT_ADD1(read_tries[0]);
-	r = FS_read_postpostparse(buf, size, offset, pn);
+	r = FS_read_postpostparse(owq);
 
 	/* Second Try */
 	/* if not a specified bus, relook for chip location */
 	if (r < 0) {
-		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 		STAT_ADD1(read_tries[1]);
 		if (Global.opt == opt_server) {	// called from owserver
 			Cache_Del_Device(pn);
 		} else if (SpecifiedBus(pn)) {
 			r = TestConnection(pn) ? -ECONNABORTED :
-				FS_read_postpostparse(buf, size, offset, pn);
+				FS_read_postpostparse(owq);
 		} else if ((r = CheckPresence(pn)) >= 0) {
-			SetKnownBus(r, &pn2);
+            struct one_wire_query owq_knownbus;
+            memcpy(&owq_knownbus, owq, sizeof(struct one_wire_query));  // shallow copy
+            SetKnownBus(r, &OWQ_pn(&owq_knownbus));
 			Cache_Add_Device(r, pn);
-			r = FS_read_postpostparse(buf, size, offset, &pn2);
+			r = FS_read_postpostparse(&owq_knownbus);
 		} else {
 			r = -ENOENT;
 		}
@@ -150,11 +144,13 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 		STAT_ADD1(read_tries[2]);
 		if (SpecifiedBus(pn)) {
 			r = TestConnection(pn) ? -ECONNABORTED :
-				FS_read_postpostparse(buf, size, offset, pn);
+				FS_read_postpostparse(owq);
 		} else if ((r = CheckPresence(pn)) >= 0) {
-			SetKnownBus(r, &pn2);
+            struct one_wire_query owq_knownbus;
+            memcpy(&owq_knownbus, owq, sizeof(struct one_wire_query));  // shallow copy
+            SetKnownBus(r, &OWQ_pn(&owq_knownbus));
 			Cache_Add_Device(r, pn);
-			r = FS_read_postpostparse(buf, size, offset, &pn2);
+			r = FS_read_postpostparse(&owq_knownbus);
 		} else {
 			Cache_Del_Device(pn);
 			r = -ENOENT;
@@ -189,26 +185,24 @@ int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
 /* After parsing, choose special read based on path type */
-int FS_read_postpostparse(char *buf, const size_t size, const off_t offset,
-						  const struct parsedname *pn)
+int FS_read_postpostparse(struct one_wire_query * owq)
 {
 	int r = 0;
-	//printf("FS_read_postpostparse: pid=%ld busmode=%d pn->type=%d size=%d\n", pthread_self(), get_busmode(pn->in), pn->type, size);
 
-	LEVEL_DEBUG("READ_POSTPOSTPARSE %s\n", pn->path);
+    LEVEL_DEBUG("READ_POSTPOSTPARSE %s\n", OWQ_pn(owq).path);
 	STATLOCK;
 	AVERAGE_IN(&read_avg);
 	AVERAGE_IN(&all_avg);
 	STATUNLOCK;
 
-	switch (pn->type) {
+    switch (OWQ_pn(owq).type) {
 	case pn_structure:
 		/* Get structure data from local memory */
 		//printf("FS_read_postpostparse: pid=%ld call fs_structure\n", pthread_self());
-		r = FS_structure(buf, size, offset, pn);
+        r = FS_structure(owq);
 		break;
 	default:
-		r = FS_r_given_bus(buf, size, offset, pn);
+        r = FS_r_given_bus(OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), &OWQ_pn(owq));
 		break;
 	}
 	STATLOCK;
@@ -220,7 +214,7 @@ int FS_read_postpostparse(char *buf, const size_t size, const off_t offset,
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	LEVEL_DEBUG("READ_POSTPOSTPARSE: %s return %d\n", pn->path, r);
+    LEVEL_DEBUG("READ_POSTPOSTPARSE: %s return %d\n", OWQ_pn(owq).path, r);
 //printf("FS_read_postpostparse: pid=%ld return %d\n", pthread_self(), r);
 	return r;
 }
@@ -298,8 +292,7 @@ static int FS_r_local(char *buf, const size_t size, const off_t offset,
 }
 
 /* Structure file */
-static int FS_structure(char *buf, const size_t size, const off_t offset,
-						const struct parsedname *pn)
+static int FS_structure(struct one_wire_query * owq)
 {
 	char ft_format_char[] = "  iufaabydytg";	/* return type */
 	/* 
@@ -321,35 +314,31 @@ static int FS_structure(char *buf, const size_t size, const off_t offset,
 	 */
 	int len;
 	struct parsedname pn2;
+    struct one_wire_query owq_copy ;
 
-	size_t s = SimpleFullFileLength(pn);
-	if (offset > (off_t) s)
+	size_t s = OWQ_FullFileLength(owq);
+    if (OWQ_offset(owq) > (off_t) s)
 		return -ERANGE;
-	if (offset == (off_t) s)
-		return 0;
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	/* shallow copy */
-	pn2.type = pn_real;			/* "real" type to get return length, rather than "structure" length */
+	memcpy(&owq_copy, owq, sizeof(struct one_wire_query));	/* shallow copy */
+    OWQ_pn(&owq_copy).type = pn_real;			/* "real" type to get return length, rather than "structure" length */
 
 	UCLIBCLOCK;
-	len = snprintf(buf,
-				   size,
+    len = snprintf(OWQ_buffer(owq),
+                   OWQ_size(owq),
 				   "%c,%.6d,%.6d,%.2s,%.6d,",
-				   ft_format_char[pn->ft->format],
-				   (pn->ft->ag) ? pn->extension : 0,
-				   (pn->ft->ag) ? pn->ft->ag->elements : 1,
-				   (pn->ft->read.v) ?
-				   ((pn->ft->write.v) ? "rw" : "ro") :
-				   ((pn->ft->write.v) ? "wo" : "oo"),
-				   (int) SimpleFullFileLength(&pn2)
+                   ft_format_char[OWQ_pn(owq).ft->format],
+                   (OWQ_pn(owq).ft->ag) ? OWQ_pn(owq).extension : 0,
+                   (OWQ_pn(owq).ft->ag) ? OWQ_pn(owq).ft->ag->elements : 1,
+                   (OWQ_pn(owq).ft->read.v) ?
+				   ((OWQ_pn(owq).ft->write.v) ? "rw" : "ro") :
+                           ((OWQ_pn(owq).ft->write.v) ? "wo" : "oo"),
+				   (int) OWQ_FullFileLength(owq)
 		);
 	UCLIBCUNLOCK;
 
-	if ((len > 0) && offset) {
-		memcpy(buf, &buf[offset], (size_t) len - (size_t) offset);
-		return len - offset;
-	}
-	return len;
+    if ( len <0 ) return -EFAULT ;
+    return Fowq_output_offset_and_size( OWQ_buffer(owq), len, owq ) ;
 }
 
 /* read without artificial separation or combination */

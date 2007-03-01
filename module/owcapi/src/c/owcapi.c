@@ -121,19 +121,22 @@ static void getdircallback(void *v, const struct parsedname *const pn2)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static ssize_t getdir(char **buffer, const struct parsedname *pn)
+static ssize_t getdir(struct one_wire_query * owq)
 {
 	struct charblob cb;
 	int ret;
 
 	CharblobInit(&cb);
-	ret = FS_dir(getdircallback, &cb, pn);
+    ret = FS_dir(getdircallback, &cb, &OWQ_pn(owq));
 	if (ret < 0) {
-		// continue ;
-	} else if ((*buffer = strdup(cb.blob))) {
-		ret = cb.used;
+        OWQ_buffer(owq) = NULL;
+        OWQ_size(owq) = 0 ;
+    } else if ((OWQ_buffer(owq) = strdup(cb.blob))) {
+        ret = cb.used;
+        OWQ_size(owq) = ret ;
 	} else {
 		ret = -ENOMEM;
+        OWQ_size(owq) = 0 ;
 	}
 	CharblobClear(&cb);
 	return ret;
@@ -144,25 +147,30 @@ static ssize_t getdir(char **buffer, const struct parsedname *pn)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static ssize_t getval(char **buffer, const struct parsedname *pn)
+static ssize_t getval(struct one_wire_query * owq)
 {
 	ssize_t ret;
-	ssize_t s = FullFileLength(pn);
+    ssize_t s = FullFileLength(&OWQ_pn(owq));
 	if (s <= 0)
 		return -ENOENT;
-	if ((*buffer = malloc(s + 1)) == NULL)
+    if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL)
 		return -ENOMEM;
-	ret = FS_read_postparse(*buffer, s, 0, pn);
+	ret = FS_read_postparse(owq);
 	if (ret < 0) {
-		free(*buffer);
-		*buffer = NULL;
-	}
+        free(OWQ_buffer(owq));
+        OWQ_buffer(owq) = NULL;
+        OWQ_size(owq) = 0 ;
+    } else {
+        OWQ_size(owq) = ret ;
+        OWQ_buffer(owq)[ret] = '\0' ;
+    }
 	return ret;
 }
 
 ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 {
-	struct parsedname pn;
+	//struct parsedname pn;
+    struct one_wire_query owq ;
 	ssize_t ret = 0;			/* current buffer string length */
 
 	/* Check the parameters */
@@ -179,19 +187,23 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 
 	if (OWLIB_can_access_start()) {	/* Check for prior init */
 		ret = -ENETDOWN;
-	} else if (FS_ParsedName(path, &pn)) {	/* Can we parse the input string */
+	} else if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
 		ret = -ENOENT;
 	} else {
-		if (IsDir(&pn)) {		/* A directory of some kind */
-			ret = getdir(buffer, &pn);
-			if (ret > 0 && buffer_length)
-				*buffer_length = ret;
+        if (IsDir(&OWQ_pn(&owq))) {		/* A directory of some kind */
+            ret = getdir(&owq);
+            if (ret > 0) {
+                if ( buffer_length) *buffer_length = OWQ_size(&owq);
+                *buffer = OWQ_buffer(&owq) ;
+            }
 		} else {				/* A regular file */
-			ret = getval(buffer, &pn);
-			if (ret > 0 && buffer_length)
-				*buffer_length = ret;
+			ret = getval(&owq);
+            if (ret > 0) {
+                if ( buffer_length) *buffer_length = OWQ_size(&owq);
+                *buffer = OWQ_buffer(&owq) ;
+            }
 		}
-		FS_ParsedName_destroy(&pn);
+		FS_OWQ_destroy(&owq);
 	}
 	OWLIB_can_access_end();
 	return ReturnAndErrno(ret);

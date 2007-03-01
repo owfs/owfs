@@ -120,7 +120,6 @@ static struct {
 
 #define NUM_COMMAND_FUNC (sizeof(command_func) / sizeof(command_func[0]))
 
-
 int ftp_session_init(struct ftp_session_s *f,
 					 const sockaddr_storage_t * client_addr,
 					 const sockaddr_storage_t * server_addr,
@@ -983,18 +982,16 @@ static void do_retr(struct ftp_session_s *f,
 	const char *file_name;
 	int file_fd;
 	int socket_fd;
-	ASCII *buf = NULL;
 	ASCII *buf2 = NULL;
 	ASCII *bufwrite;
 	struct timeval start_timestamp;
 	struct timeval end_timestamp;
 	struct timeval transfer_time;
-	struct parsedname pn;
-	size_t size;
+	struct one_wire_query owq;
 	size_t size_write;
 	int returned_length;
 	off_t offset = 0;
-	int need_pn_destroy = 1;
+	int need_owq_destroy = 1;
 
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -1013,40 +1010,58 @@ static void do_retr(struct ftp_session_s *f,
 		offset = f->file_offset;
 
     /* Can we parse the name? */
-    if (FS_ParsedNamePlus(f->dir, file_name, &pn)) {
+    if (FS_OWQ_create_plus(f->dir, file_name, NULL,0,offset,&owq)) {
 		reply(f, 550, "File does not exist.");
-		need_pn_destroy = 0;
+		need_owq_destroy = 0;
 		goto exit_retr;
-    } else if ( IsDir(&pn)) { 
+    }
+    
+    if ( IsDir(&OWQ_pn(&owq))) {
 		reply(f, 550, "Error, file is a directory.");
 		goto exit_retr;
-	} else if (pn.ft->read.v == NULL) {
+    }
+    
+    if (OWQ_pn(&owq).ft->read.v == NULL) {
 		reply(f, 550, "Error, file is write-only.");
 		goto exit_retr;
-	} else if ((pn.ft->format == ft_binary)
+    }
+    
+    if ((OWQ_pn(&owq).ft->format == ft_binary)
 			   && (f->data_type == TYPE_ASCII)) {
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_retr;
-	} else
-		if ((buf =
-			 (ASCII *) malloc(size =
-							  FullFileLength(&pn) - offset)) == NULL) {
+    }
+    
+    OWQ_size(&owq) = OWQ_FullFileLength(&owq) ;
+    OWQ_buffer(&owq) = malloc(OWQ_size(&owq) - offset) ;
+	if (OWQ_buffer(&owq) == NULL) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
-                              } else if ((returned_length = FS_read_postparse(buf, size, offset, &pn)) < 0) {
-                                  reply(f, 550, "Error reading from file; %s.", strerror(-returned_length));
-		goto exit_retr;
-	} else if (f->data_type == TYPE_IMAGE) {
-		bufwrite = buf;
-        size_write = returned_length;
-    } else if ((buf2 = (ASCII *) malloc(2 * returned_length)) == NULL) {
-		reply(f, 550, "Error, file too large.");
-		goto exit_retr;
-	} else {					// TYPE_ASCII
-        size_write = convert_newlines(buf2, buf, returned_length);
-		bufwrite = buf2;
-	}
+    }
 
+    returned_length = FS_read_postparse(&owq) ;
+    if (returned_length  < 0) {
+        reply(f, 550, "Error reading from file; %s.", strerror(-returned_length));
+		goto exit_retr;
+    }
+    
+	if (f->data_type == TYPE_IMAGE) {
+        bufwrite = OWQ_buffer(&owq);
+        size_write = returned_length;
+        goto good_retr ;
+    }
+
+    buf2 = malloc(2 * returned_length) ;
+    if (buf2 == NULL) {
+		reply(f, 550, "Error, file too large.");
+		goto exit_retr;
+    }
+    
+	// TYPE_ASCII
+    size_write = convert_newlines(buf2, OWQ_buffer(&owq), returned_length);
+    bufwrite = buf2;
+
+good_retr:
 	/* ready to transfer */
 	reply(f, 150, "About to open data connection.");
 
@@ -1093,16 +1108,16 @@ static void do_retr(struct ftp_session_s *f,
 	/* note the transfer */
 	LEVEL_DATA("%s retrieved \"%s\", %ld bytes in %d.%06d seconds\n",
 			   f->client_addr_str,
-			   pn.path,
+               OWQ_pn(&owq).path,
 			   size_write, transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_retr:
-	if (buf)
-		free(buf);
+          if (OWQ_buffer(&owq))
+          free(OWQ_buffer(&owq));
 	if (buf2)
 		free(buf2);
-	if (need_pn_destroy)
-		FS_ParsedName_destroy(&pn);
+	if (need_owq_destroy)
+		FS_OWQ_destroy(&owq);
 	f->file_offset = 0;
 	if (socket_fd != -1) {
 		close(socket_fd);

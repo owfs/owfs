@@ -13,6 +13,51 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+size_t OWQ_FileLength( struct one_wire_query * owq )
+{
+    if (OWQ_pn(owq).type == pn_structure)
+        return 30;              /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
+
+    /* directory ? */
+    if (IsDir(&OWQ_pn(owq)))
+        return 8;
+
+    switch ( OWQ_pn(owq).ft->format ) {
+        case ft_yesno:
+            return PROPERTY_LENGTH_YESNO ;
+        case ft_integer:
+            return PROPERTY_LENGTH_INTEGER ;
+        case ft_unsigned:
+            return PROPERTY_LENGTH_UNSIGNED ;
+        case ft_float:
+        case ft_temperature:
+        case ft_tempgap:
+            return PROPERTY_LENGTH_FLOAT ;
+        case ft_date:
+            return PROPERTY_LENGTH_YESNO ;
+        case ft_bitfield:
+            return (OWQ_pn(owq).extension==-2) ? PROPERTY_LENGTH_UNSIGNED : PROPERTY_LENGTH_YESNO ;
+        case ft_vascii:
+        case ft_ascii:
+        case ft_binary:
+        default:
+            return OWQ_pn(owq).ft->suglen ; ;
+    }
+}
+
+    /* Length of file based on filetype and extension */
+size_t OWQ_FullFileLength( struct one_wire_query * owq )
+{
+    if (OWQ_pn(owq).type != pn_structure) {
+        return OWQ_FileLength(owq) ;
+    } else if (OWQ_pn(owq).extension != -1 ) {
+        return OWQ_FileLength(owq) ;
+    } else {
+        size_t elements = OWQ_pn(owq).ft->ag->elements ;
+        return OWQ_FileLength(owq) * elements + ( (OWQ_pn(owq).ft->format==ft_binary) ? 0 : (elements-1) ) ;
+    }
+}
+
 /* Length of file based on filetype alone */
 size_t FileLength(const struct parsedname * pn)
 {
@@ -21,10 +66,8 @@ size_t FileLength(const struct parsedname * pn)
 		return 30;				/* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
 
 	/* directory ? */
-	if (pn->dev == NULL || pn->ft == NULL)
+    if (IsDir(pn))
 		return 8;
-	if (pn->ft->format == ft_directory || pn->ft->format == ft_subdir)
-		return 8;				/* arbitrary, but non-zero for "find" and "tree" commands */
 
 	/* local or simple remote, test for special case */
 	switch (pn->ft->format) {
@@ -35,14 +78,18 @@ size_t FileLength(const struct parsedname * pn)
 		break;
 	case ft_vascii:			// variable length ascii
 		{
-			ASCII *buf = malloc(pn->ft->suglen);
-			if (buf) {
-				ssize_t ret =
-					FS_read_postpostparse(buf, pn->ft->suglen, 0, pn);
-				free(buf);
+            struct one_wire_query owq ;
+            OWQ_size(&owq) = pn->ft->suglen ;
+            OWQ_offset(&owq) = 0 ;
+            OWQ_buffer(&owq) = malloc(OWQ_size(&owq));
+            memcpy( &OWQ_pn(&owq), pn, sizeof(struct parsedname) ) ;
+            if (OWQ_buffer(&owq)) {
+				ssize_t ret = FS_read_postpostparse(&owq);
+                free(OWQ_buffer(&owq));
 				if (ret > 0)
 					return ret;
 			}
+            return OWQ_size(&owq) ;
 		}
 		/* fall through is ok */
 	default:

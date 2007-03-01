@@ -24,48 +24,43 @@ static void ShowText(FILE * out, const char *path, const char *file);
 /* Device entry -- table line for a filetype */
 static void Show(FILE * out, const char *path, const char *file)
 {
-	struct parsedname pn;
+	struct one_wire_query owq;
+    struct parsedname * pn ; // for convenience
 
 	//printf("Show: path=%s, file=%s\n",path,file) ;
-	if (FS_ParsedNamePlus(path, file, &pn)) {
+	if (FS_OWQ_create_plus(path, file, NULL, 0, 0, &owq)) {
 		fprintf(out, "<TR><TD><B>%s</B></TD><TD>", file);
 		fprintf(out, "<B>Unparsable name</B></TD></TR>");
 		return;
 	}
+    pn = &OWQ_pn(&owq) ;
 
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", file);
 
-	if (IsDir(&pn)) {			/* Directory jump */
-		fprintf(out, "<A HREF='%s'>%s</A>", pn.path, file);
+    if (IsDir(pn)) {			/* Directory jump */
+        fprintf(out, "<A HREF='%s'>%s</A>", pn->path, file);
 	} else {
-		int canwrite = !Global.readonly && (pn.ft->write.v != NULL);
-		int canread = (pn.ft->read.v != NULL);
-		int suglen = 0;
-		enum ft_format format = pn.ft->format;
+        int canwrite = !Global.readonly && (pn->ft->write.v != NULL);
+        int canread = (pn->ft->read.v != NULL);
+        enum ft_format format = pn->ft->format;
 		int len = 0;			// initialize to avoid compiler warning
-		char *buf = NULL;
 
-		if (pn.type == pn_structure) {
+        if (pn->type == pn_structure) {
 			format = ft_ascii;
 			canread = 1;
 			canwrite = 0;
 		}
 
-		if ((suglen = FullFileLength(&pn)) < 0) {
-			//printf("Show: can't find file-size of %s ???\n", pn->path);
-			suglen = 0;
-		}
+        OWQ_size(&owq) = OWQ_FullFileLength(&owq) ;
 
 		/* buffer for field value */
-		if ((buf = malloc((size_t) suglen + 1))) {
-			buf[suglen] = '\0';
+        if ((OWQ_buffer(&owq) = malloc(OWQ_size(&owq) + 1))) {
+            OWQ_buffer(&owq)[OWQ_size(&owq)] = '\0';
 
 			if (canread) {		/* At least readable */
-				if ((len =
-					 FS_read_postparse(buf, (size_t) suglen, 0,
-									   &pn)) >= 0) {
-					buf[len] = '\0';
+				if ((len = FS_read_postparse(&owq)) >= 0) {
+                    OWQ_buffer(&owq)[len] = '\0';
 					//printf("SHOW read of %s len = %d, value=%s\n",pn.path,len,SAFESTRING(buf)) ;
 				}
 			}
@@ -79,7 +74,7 @@ static void Show(FILE * out, const char *path, const char *file)
 									"<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>",
 									file, len >> 5);
 							while (i < len) {
-								fprintf(out, "%.2hhX", buf[i]);
+                                fprintf(out, "%.2hhX", OWQ_buffer(&owq)[i]);
 								if (((++i) < len) && (i & 0x1F) == 0)
 									fprintf(out, "\r\n");
 							}
@@ -89,7 +84,7 @@ static void Show(FILE * out, const char *path, const char *file)
 							int i = 0;
 							fprintf(out, "<PRE>");
 							while (i < len) {
-								fprintf(out, "%.2hhX", buf[i]);
+                                fprintf(out, "%.2hhX", OWQ_buffer(&owq)[i]);
 								if (((++i) < len) && (i & 0x1F) == 0)
 									fprintf(out, "\r\n");
 							}
@@ -102,19 +97,19 @@ static void Show(FILE * out, const char *path, const char *file)
 				} else if (canwrite) {	/* rare write-only */
 					fprintf(out,
 							"<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",
-							file, (pn.ft->suglen) >> 5);
+                            file, (pn->ft->suglen) >> 5);
 				}
-			} else if (pn.extension >= 0
+            } else if (pn->extension >= 0
 					   && (format == ft_yesno || format == ft_bitfield)) {
 				if (canread) {	/* at least readable */
 					if (len >= 0) {
 						if (canwrite) {	/* read-write */
 							fprintf(out,
 									"<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>",
-									file, (buf[0] == '0') ? "" : "CHECKED",
+                                    file, (OWQ_buffer(&owq)[0] == '0') ? "" : "CHECKED",
 									file);
 						} else {	/* read-only */
-							switch (buf[0]) {
+                            switch (OWQ_buffer(&owq)[0]) {
 							case '0':
 								fprintf(out, "NO");
 								break;
@@ -137,9 +132,9 @@ static void Show(FILE * out, const char *path, const char *file)
 						if (canwrite) {	/* read-write */
 							fprintf(out,
 									"<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",
-									file, buf);
+                                    file, OWQ_buffer(&owq));
 						} else {	/* read only */
-							fprintf(out, "%s", buf);
+                            fprintf(out, "%s", OWQ_buffer(&owq));
 						}
 					} else {
 						fprintf(out, "Error: %s", strerror(-len));
@@ -150,56 +145,50 @@ static void Show(FILE * out, const char *path, const char *file)
 							file);
 				}
 			}
-			free(buf);
+            free(OWQ_buffer(&owq));
 		}
 	}
 	fprintf(out, "</TD></TR>\r\n");
-	FS_ParsedName_destroy(&pn);
+	FS_OWQ_destroy(&owq);
 }
 
 /* Device entry -- table line for a filetype */
 static void ShowText(FILE * out, const char *path, const char *file)
 {
-	struct parsedname pn;
+    struct one_wire_query owq;
+    struct parsedname * pn ; // for convenience
 
-	//printf("Show: path=%s, file=%s\n",path,file) ;
-	if (FS_ParsedNamePlus(path, file, &pn)) {
-		return;
+    if (FS_OWQ_create_plus(path, file, NULL, 0, 0, &owq)) {
+        return;
 	}
+    pn = &OWQ_pn(&owq) ;
 
 	/* Left column */
 	fprintf(out, "%s ", file);
 
-	if (IsDir(&pn)) {			/* Directory jump */
+    if (IsDir(pn)) {			/* Directory jump */
 	} else {
-		int canwrite = !Global.readonly && (pn.ft->write.v != NULL);
-		int canread = (pn.ft->read.v != NULL);
-		int suglen = 0;
-		enum ft_format format = pn.ft->format;
+        int canwrite = !Global.readonly && (pn->ft->write.v != NULL);
+        int canread = (pn->ft->read.v != NULL);
+        enum ft_format format = pn->ft->format;
 		int len = 0;			// initialize to avoid compiler warning
-		char *buf = NULL;
 
-		if (pn.type == pn_structure) {
+        if (pn->type == pn_structure) {
 			format = ft_ascii;
 			canread = 1;
 			canwrite = 0;
 		}
 
-		if ((suglen = FullFileLength(&pn)) < 0) {
-			//printf("Show: can't find file-size of %s ???\n", pn->path);
-			suglen = 0;
-		}
-
-		/* buffer for field value */
-		if ((buf = malloc((size_t) suglen + 1))) {
-			buf[suglen] = '\0';
+        OWQ_size(&owq) = OWQ_FullFileLength(&owq) ;
+		
+        /* buffer for field value */
+        OWQ_buffer(&owq) = malloc(OWQ_size(&owq) + 1) ;
+        if (OWQ_buffer(&owq) != NULL) {
+            OWQ_buffer(&owq)[OWQ_size(&owq)] = '\0';
 
 			if (canread) {		/* At least readable */
-				if ((len =
-					 FS_read_postparse(buf, (size_t) suglen, 0,
-									   &pn)) >= 0) {
-					buf[len] = '\0';
-					//printf("SHOW read of %s len = %d, value=%s\n",pn.path,len,SAFESTRING(buf)) ;
+                if ((len = FS_read_postparse(&owq)) >= 0) {
+                    OWQ_buffer(&owq)[len] = '\0';
 				}
 			}
 
@@ -208,17 +197,17 @@ static void ShowText(FILE * out, const char *path, const char *file)
 					if (len >= 0) {
 						int i;
 						for (i = 0; i < len; ++i) {
-							fprintf(out, "%.2hhX", buf[i]);
+                            fprintf(out, "%.2hhX", OWQ_buffer(&owq)[i]);
 						}
 					}
 				} else if (canwrite) {	/* rare write-only */
 					fprintf(out, "(writeonly)");
 				}
-			} else if (pn.extension >= 0
+            } else if (pn->extension >= 0
 					   && (format == ft_yesno || format == ft_bitfield)) {
 				if (canread) {	/* at least readable */
 					if (len >= 0) {
-						fprintf(out, "%c", buf[0]);
+                        fprintf(out, "%c", OWQ_buffer(&owq)[0]);
 					}
 				} else if (canwrite) {	/* rare write-only */
 					fprintf(out, "(writeonly)");
@@ -226,17 +215,17 @@ static void ShowText(FILE * out, const char *path, const char *file)
 			} else {
 				if (canread) {	/* At least readable */
 					if (len >= 0) {
-						fprintf(out, "%s", buf);
+                        fprintf(out, "%s", OWQ_buffer(&owq));
 					}
 				} else if (canwrite) {	/* rare write-only */
 					fprintf(out, "(writeonly)");
 				}
 			}
-			free(buf);
+            free(OWQ_buffer(&owq));
 		}
 	}
 	fprintf(out, "\r\n");
-	FS_ParsedName_destroy(&pn);
+	FS_OWQ_destroy(&owq);
 }
 
 
