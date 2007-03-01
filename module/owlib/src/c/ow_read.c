@@ -313,7 +313,6 @@ static int FS_structure(struct one_wire_query * owq)
 	   } ;
 	 */
 	int len;
-	struct parsedname pn2;
     struct one_wire_query owq_copy ;
 
 	size_t s = OWQ_FullFileLength(owq);

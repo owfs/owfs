@@ -58,4 +58,3 @@ void FS_OWQ_destroy( struct one_wire_query * owq )
     }
     FS_ParsedName_destroy( &OWQ_pn(owq) ) ;
 }
-    
