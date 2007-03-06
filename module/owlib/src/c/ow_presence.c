@@ -52,14 +52,38 @@ static int CheckPresence_low(struct connection_in *in,
 /* ------- Functions ------------ */
 
 /* Check if device exists -- >=0 yes, -1 no */
-int CheckPresence(const struct parsedname *pn)
+int CheckPresence(struct parsedname *pn)
 {
-	if (IsRealDir(pn) && pn->dev != DeviceSimultaneous
-		&& pn->dev != DeviceThermostat) {
-		LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
-		return CheckPresence_low(pn->indevice, pn);	// check only allocvated indevices
-	}
-	return 0;
+    int bus_nr ;
+
+    if (NotRealDir(pn)) {
+        return 0 ;
+    }
+    
+    if ( (pn->dev == DeviceSimultaneous) || (pn->dev == DeviceThermostat) ) {
+        return 0 ;
+    }
+		
+    /* If set, already found bus. */
+    /* Use UnsetKnownBus to clear and allow a new search */
+    if ( KnownBus(pn) ) {
+        return pn->bus_nr ;
+    }
+    
+    if ( Cache_Get_Device(&bus_nr, pn) == 0 ) {
+        SetKnownBus( bus_nr, pn ) ;
+        return bus_nr ;
+    }
+    
+    LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
+	bus_nr = CheckPresence_low(pn->indevice, pn);	// check only allocated indevices
+    if ( bus_nr >= 0 ) {
+        SetKnownBus( bus_nr, pn ) ;
+        Cache_Add_Device(bus_nr, pn);
+        return bus_nr ;
+    }
+    UnsetKnownBus(pn) ;
+    return -1 ;
 }
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
@@ -89,11 +113,9 @@ static int CheckPresence_low(struct connection_in *in,
 	struct parsedname pn2;
 	struct checkpresence_struct cps = { in->next, pn, 0 };
 
-	if (!KnownBus(pn)) {
-		threadbad = in->next == NULL
+    threadbad = ( in->next == NULL )
 			|| pthread_create(&thread, NULL, CheckPresence_callback,
 							  (void *) (&cps));
-	}
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 	pn2.in = in;
@@ -111,9 +133,9 @@ static int CheckPresence_low(struct connection_in *in,
 		}
 		//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
 	} else if (get_busmode(in) == bus_fake) {
-		ret = DirblobSearch( pn2.sn, &(in->connin.fake.db) ) ;
+        ret = (DirblobSearch( pn2.sn, &(in->connin.fake.db) ) < 0) ? -1 : in->index;
 	} else if (get_busmode(in) == bus_tester) {
-		ret = DirblobSearch( pn2.sn, &(in->connin.tester.db) ) ;
+        ret = (DirblobSearch( pn2.sn, &(in->connin.tester.db) ) < 0) ? -1 : in->index;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,

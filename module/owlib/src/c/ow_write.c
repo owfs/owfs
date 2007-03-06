@@ -96,7 +96,7 @@ int FS_write(const char *path, const char *buf, const size_t size,
 			 const off_t offset)
 {
 	struct parsedname pn;
-	int r;
+	int write_return;
 
 	LEVEL_CALL("WRITE path=%s size=%d offset=%d\n", SAFESTRING(path),
 			   (int) size, (int) offset)
@@ -109,16 +109,16 @@ int FS_write(const char *path, const char *buf, const size_t size,
 	if (FS_ParsedName(path, &pn))
 		return -ENOENT;
 
-	r = FS_write_postparse(buf, size, offset, &pn);
+    write_return = FS_write_postparse(buf, size, offset, &pn);
 	FS_ParsedName_destroy(&pn);
-	return r;					/* here's where the size is used! */
+    return write_return;					/* here's where the size is used! */
 }
 
 /* return size if ok, else negative */
 int FS_write_postparse(const char *buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+					   const off_t offset, struct parsedname *pn)
 {
-	ssize_t r;
+	ssize_t write_or_error;
 
 	if (Global.readonly)
 		return -EROFS;			// read-only invokation
@@ -150,10 +150,10 @@ int FS_write_postparse(const char *buf, const size_t size,
 	case pn_structure:
 	case pn_statistics:
 	case pn_system:
-		r = -ENOTSUP;
+        write_or_error = -ENOTSUP;
 		break;
 	case pn_settings:
-		r = FS_w_given_bus(buf, size, offset, pn);
+        write_or_error = FS_w_given_bus(buf, size, offset, pn);
 		break;
 	default:					// pn_real
 //printf("FS_write_postparse: pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
@@ -164,64 +164,54 @@ int FS_write_postparse(const char *buf, const size_t size,
 			 * available bus.?/simultaneous/temperature
 			 * not just /simultaneous/temperature
 			 */
-			r = FS_w_simultaneous(buf, size, offset, pn);
+            write_or_error = FS_w_simultaneous(buf, size, offset, pn);
 		} else {
-			struct parsedname pn2;
-
 			/* First try */
 			/* in and bus_nr already set */
 			STAT_ADD1(write_tries[0]);
-			r = FS_w_given_bus(buf, size, offset, pn);
+            write_or_error = FS_w_given_bus(buf, size, offset, pn);
 
 			/* Second Try */
 			/* if not a specified bus, relook for chip location */
-			if (r < 0) {
-				memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+            if (write_or_error < 0) { // second look -- initial write gave an error
 				STAT_ADD1(write_tries[1]);
 				if (Global.opt == opt_server) {	// called from owserver
 					Cache_Del_Device(pn);
 				} else if (SpecifiedBus(pn)) {
-					r = TestConnection(pn) ? -ECONNABORTED :
-						FS_w_given_bus(buf, size, offset, pn);
-				} else if ((r = CheckPresence(pn)) >= 0) {
-					SetKnownBus(r, &pn2);
-					Cache_Add_Device(r, pn);
-					r = FS_w_given_bus(buf, size, offset, &pn2);
-				} else {
-					r = -ENOENT;
-				}
-			}
-
-			/* Third try */
-			/* if not a specified bus, relook for chip location */
-			if ((Global.opt != opt_server) && (r < 0)) {
-				STAT_ADD1(write_tries[2]);
-				if (SpecifiedBus(pn)) {
-					r = TestConnection(pn) ? -ECONNABORTED :
-						FS_w_given_bus(buf, size, offset, pn);
-				} else if ((r = CheckPresence(pn)) >= 0) {
-					SetKnownBus(r, &pn2);
-					Cache_Add_Device(r, pn);
-					r = FS_w_given_bus(buf, size, offset, &pn2);
-				} else {
-					Cache_Del_Device(pn);
-					r = -ENOENT;
-				}
-			}
-		}
-	}
+					write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(buf, size, offset, pn);
+                    if ( write_or_error < 0 ) { // third try
+                        STAT_ADD1(write_tries[2]);
+                        write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(buf, size, offset, pn);
+                    }
+                } else {
+                    int busloc_or_error;
+                    UnsetKnownBus(pn) ; // eliminate cached location
+                    busloc_or_error = CheckPresence(pn) ;
+                    if ( busloc_or_error < 0 ) {
+                        write_or_error = -ENOENT ;
+                    } else {
+                        write_or_error = FS_w_given_bus(buf, size, offset, pn);
+                        if ( write_or_error < 0 ) { // third try
+                            STAT_ADD1(write_tries[2]);
+                            write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(buf, size, offset, pn);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 	STATLOCK;
-	if (r == 0) {
+    if (write_or_error == 0) {
 		++write_success;		/* statistics */
 		write_bytes += size;	/* statistics */
-		r = size;				/* here's where the size is used! */
+        write_or_error = size;				/* here's where the size is used! */
 	}
 	AVERAGE_OUT(&write_avg)
 		AVERAGE_OUT(&all_avg)
 		STATUNLOCK;
 
-	return r;
+    return write_or_error;
 }
 
 /* This function is only used by "Simultaneous" */

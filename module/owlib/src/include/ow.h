@@ -752,7 +752,7 @@ size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
 size_t SimpleFileLength(const struct parsedname *pn);
 size_t SimpleFullFileLength(const struct parsedname *pn);
-int CheckPresence(const struct parsedname *pn);
+int CheckPresence(struct parsedname *pn);
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn,
 				   const struct parsedname *pn);
 void FS_devicefind(const char *code, struct parsedname *pn);
@@ -848,7 +848,7 @@ int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
 int FS_write(const char *path, const char *buf, const size_t size,
 			 const off_t offset);
 int FS_write_postparse(const char *buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn);
+					   const off_t offset, struct parsedname *pn);
 
 int FS_read(const char *path, char *buf, const size_t size,
 			const off_t offset);
@@ -856,10 +856,8 @@ int FS_read(const char *path, char *buf, const size_t size,
 //					  const struct parsedname *pn);
 int FS_read_postparse(struct one_wire_query * owq) ;
 int FS_read_postpostparse(struct one_wire_query * owq);
-int FS_read_fake(char *buf, const size_t size, const off_t offset,
-                 const struct parsedname *pn);
-int FS_read_tester(char *buf, const size_t size, const off_t offset,
-                 const struct parsedname *pn);
+int FS_read_fake(struct one_wire_query * owq);
+int FS_read_tester(struct one_wire_query * owq);
 int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
 					size_t length);
 int FS_output_ascii_z(ASCII * buf, size_t size, off_t offset,
@@ -936,6 +934,10 @@ void BUS_unlock_in(struct connection_in *in);
 #define SetKnownBus(bus_number,pn)  do { (pn)->state |= pn_bus; \
                                         (pn)->bus_nr=(bus_number); \
                                         (pn)->in=find_connection_in(bus_number); \
+                                    } while(0)
+#define UnsetKnownBus(pn)           do { (pn)->state &= ~pn_bus; \
+                                        (pn)->bus_nr=-1; \
+                                        (pn)->in=NULL; \
                                     } while(0)
 
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )

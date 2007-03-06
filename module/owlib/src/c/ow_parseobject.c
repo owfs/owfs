@@ -18,13 +18,19 @@ $Id$
 /* Create the Parsename structure and load the relevant fields */
 int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, struct one_wire_query * owq )
 {
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    
     printf("FS_OWQ_create of %s\n",path) ;
-    if ( FS_ParsedName(path,&OWQ_pn(owq)) ) return -ENOENT ;
+    if ( FS_ParsedName(path,pn) ) return -ENOENT ;
     OWQ_buffer(owq) = buffer ;
     OWQ_size(  owq) = size ;
     OWQ_offset(owq) = offset ;
-    if ( OWQ_pn(owq).extension == -1 ) {
-        OWQ_array(owq) = NULL ;
+    if ( pn->extension == -1 ) {
+        OWQ_array(owq) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
+        if (OWQ_array(owq) == NULL ) {
+            FS_ParsedName_destroy( pn ) ;
+            return -ENOMEM ;
+        }
     } else {
         OWQ_I(owq) = 0 ;
     }
@@ -34,13 +40,19 @@ int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, 
 /* Create the Parsename structure (using path and file) and load the relevant fields */
 int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, size_t size, off_t offset, struct one_wire_query * owq )
 {
-    printf("FS_OWQ_create_plus of %s\n",path) ;
-    if ( FS_ParsedNamePlus(path,file,&OWQ_pn(owq)) ) return -ENOENT ;
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    
+    printf("FS_OWQ_create_plus of %s + %s\n",path,file) ;
+    if ( FS_ParsedNamePlus(path,file,pn) ) return -ENOENT ;
     OWQ_buffer(owq) = buffer ;
     OWQ_size(  owq) = size ;
     OWQ_offset(owq) = offset ;
-    if ( OWQ_pn(owq).extension == -1 ) {
-        OWQ_array(owq) = NULL ;
+    if ( pn->extension == -1 ) {
+        OWQ_array(owq) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
+        if (OWQ_array(owq) == NULL ) {
+            FS_ParsedName_destroy( pn ) ;
+            return -ENOMEM ;
+        }
     } else {
         OWQ_I(owq) = 0 ;
     }

@@ -407,7 +407,8 @@ static enum parse_enum Parse_RealDevice(char *filename,
 	//printf("DevicePart: %s %s\n", filename, pn->path);
 
 	ASCII ID[14];
-	int i;
+    int bus_nr ;
+    int i;
 	//printf("NP hex = %s\n",filename ) ;
 	//printf("NP cmp'ed %s\n",ID ) ;
 	for (i = 0; i < 14; ++i, ++filename) {	/* get ID number */
@@ -440,25 +441,16 @@ static enum parse_enum Parse_RealDevice(char *filename,
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	FS_devicefindhex(pn->sn[0], pn);
 
-	//printf("NP2\n");
-	if (!back_from_remote && !KnownBus(pn)) {	/* Check the presence, and cache the proper bus number for better performance */
-		int bus_nr = -1;
-		if (Cache_Get_Device(&bus_nr, pn)) {
-			//printf("PN Cache_Get_Device didn't find bus_nr\n");
-			bus_nr = CheckPresence(pn);
-			if (bus_nr >= 0) {
-				//printf("PN CheckPresence(%s) found bus_nr %d (add to cache)\n", pn->path, bus_nr);
-				Cache_Add_Device(bus_nr, pn);
-			} else {
-				return parse_error;	/* CheckPresence failed */
-			}
-		} else {
-			//printf("PN Cache_Get_Device found bus! %d\n", bus_nr);
-		}
-		/* fake that we read from only one indevice now! */
-		SetKnownBus(bus_nr, pn);
-	}
-	return parse_prop;
+    if ( back_from_remote ) return parse_prop ;
+
+    //printf("NP2\n");
+	/* Check the presence, and cache the proper bus number for better performance */
+    bus_nr = CheckPresence(pn) ;
+    if (bus_nr < 0) {
+        return parse_error;	/* CheckPresence failed */
+    }
+	
+    return parse_prop;
 }
 
 /* Parse Name (non-device name) part of string */

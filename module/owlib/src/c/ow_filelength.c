@@ -34,7 +34,7 @@ size_t OWQ_FileLength( struct one_wire_query * owq )
         case ft_tempgap:
             return PROPERTY_LENGTH_FLOAT ;
         case ft_date:
-            return PROPERTY_LENGTH_YESNO ;
+            return PROPERTY_LENGTH_DATE ;
         case ft_bitfield:
             return (OWQ_pn(owq).extension==-2) ? PROPERTY_LENGTH_UNSIGNED : PROPERTY_LENGTH_YESNO ;
         case ft_vascii:
@@ -48,13 +48,17 @@ size_t OWQ_FileLength( struct one_wire_query * owq )
     /* Length of file based on filetype and extension */
 size_t OWQ_FullFileLength( struct one_wire_query * owq )
 {
-    if (OWQ_pn(owq).type != pn_structure) {
+    if (OWQ_pn(owq).type == pn_structure) {
         return OWQ_FileLength(owq) ;
     } else if (OWQ_pn(owq).extension != -1 ) {
         return OWQ_FileLength(owq) ;
     } else {
         size_t elements = OWQ_pn(owq).ft->ag->elements ;
-        return OWQ_FileLength(owq) * elements + ( (OWQ_pn(owq).ft->format==ft_binary) ? 0 : (elements-1) ) ;
+        if ( OWQ_pn(owq).ft->format==ft_binary ) {
+            return OWQ_FileLength(owq) * elements ;
+        } else { // add room for commas
+            return (OWQ_FileLength(owq) + 1) * elements  - 1 ;
+        }
     }
 }
 

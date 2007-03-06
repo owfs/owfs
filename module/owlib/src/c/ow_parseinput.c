@@ -297,17 +297,13 @@ static int FS_input_ascii(struct one_wire_query * owq )
 static int FS_input_array_with_commas(struct one_wire_query * owq )
 {
     int elements = OWQ_pn(owq).ft->ag->elements ;
-    union value_object * value_object_array = calloc((size_t) elements, sizeof(union value_object)) ;
     int extension ;
     char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
     char * comma = NULL ; // assignment to avoid compiler warning
     char * buffer_position ;
     struct one_wire_query owq_single ;
 
-    if ( value_object_array == NULL ) return -ENOMEM ;
-
     if ( OWQ_offset(owq) ) {
-        free(value_object_array) ;
         return -EINVAL ;
     }
     
@@ -318,7 +314,6 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
         } else {
             buffer_position = comma + 1 ;
             if ( buffer_position >= end ) {
-                free(value_object_array) ;
                 return -EINVAL ;
             }
         }
@@ -328,7 +323,6 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
         } else {
             comma = memchr(buffer_position, ',', end - buffer_position ) ;
             if ( comma == NULL ) {
-                free(value_object_array) ;
                 return -EINVAL ;
             }
         }
@@ -340,12 +334,10 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
         OWQ_buffer(&owq_single) = buffer_position ;
         OWQ_size(&owq_single) = comma - buffer_position ;
         if ( FS_input_owq(&owq_single) ) {
-            free( value_object_array ) ;
             return -EINVAL ;
         }
-        memcpy( &(value_object_array[extension]), &OWQ_val(&owq_single), sizeof(union value_object) ) ;
+        memcpy( &(OWQ_array(owq)[extension]), &OWQ_val(&owq_single), sizeof(union value_object) ) ;
     }
-    OWQ_array(owq) = value_object_array ;
     return 0 ;
 }
 
@@ -355,18 +347,13 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
 static int FS_input_array_no_commas(struct one_wire_query * owq )
 {
     int elements = OWQ_pn(owq).ft->ag->elements ;
-    union value_object * value_object_array = calloc((size_t) elements, sizeof(union value_object)) ;
     int extension ;
     int suglen = OWQ_pn(owq).ft->suglen ;
 
-    if ( value_object_array == NULL ) return -ENOMEM ;
-
     if ( (OWQ_offset(owq)!=0) || ((int) OWQ_size(owq)!=suglen*elements) ) {
-        free(value_object_array) ;
         return -EINVAL ;
     }
     
-    OWQ_array(owq) = value_object_array ;
     for ( extension = 0 ; extension < elements ; ++extension ) {
         OWQ_array_mem(owq,extension) = OWQ_buffer(owq) + suglen*extension ;
         OWQ_array_length(owq,extension) = suglen ;

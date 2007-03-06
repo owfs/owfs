@@ -197,6 +197,7 @@ static int Fowq_output_array_with_commas( struct one_wire_query * owq )
 
     // loop though all array elements
     for ( extension = 0 ; extension < elements ; ++extension ) {
+        printf("Fowq_output_array_with_commas element=%d, size_used=%d, remaining=%d\n",(int)extension,(int)used_size,(int)remaining_size) ;
         // Prepare a copy of owq that only points to a single element
         memcpy( &owq_single, owq, sizeof(owq_single) ) ;
         OWQ_pn(&owq_single).extension = extension ;

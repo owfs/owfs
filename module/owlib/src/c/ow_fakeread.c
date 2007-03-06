@@ -17,12 +17,8 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_read_fake_single(char *buf, const size_t size,
-                               const off_t offset,
-                               const struct parsedname *pn);
-static int FS_read_fake_array(char *buf, const size_t size,
-                              const off_t offset,
-                              const struct parsedname *pn);
+static int FS_read_fake_single(struct one_wire_query * owq);
+static int FS_read_fake_array(struct one_wire_query * owq);
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -38,172 +34,106 @@ static int FS_read_fake_array(char *buf, const size_t size,
 #define Random_a (32+(rand()&0x3F))
 #define Random_f (10*Random)
 
-int FS_read_fake(char *buf, const size_t size, const off_t offset,
-                 const struct parsedname *pn)
+int FS_read_fake(struct one_wire_query * owq)
 {
-    switch (pn->extension) {
+    switch (OWQ_pn(owq).extension) {
         case -1:                    /* array */
-            return FS_read_fake_array(buf, size, offset, pn);
+            return FS_read_fake_array(owq);
             case -2:                    /* bitfield */
         default:
-            return FS_read_fake_single(buf, size, offset, pn);
+            return FS_read_fake_single(owq);
     }
 }
 
-static int FS_read_fake_single(char *buf, const size_t size,
-                               const off_t offset,
-                               const struct parsedname *pn)
+static int FS_read_fake_single(struct one_wire_query * owq)
 {
-    int sz;
-    size_t s = 0;
-
-    /* Mounting fuse with "direct_io" will cause a second read with offset
-    * at end-of-file... Just return 0 if offset == size */
-    s = SimpleFileLength(pn);
-    if (offset > (off_t) s)
-        return -ERANGE;
-    if (offset == (off_t) s)
-        return 0;
-    
-    switch (pn->ft->format) {
-        case ft_integer:{
-            int i = Random_i;
-            LEVEL_DEBUG("FS_parse_readfake: (integer) %d\n", i);
-            sz = FS_output_integer(i, buf, size, pn);
-            break;
-        }
+    switch (OWQ_pn(owq).ft->format) {
+        case ft_integer:
+            OWQ_I(owq) = Random_i ;
+            break ;
+        case ft_yesno:
+            OWQ_Y(owq) = Random_y ;
+            break ;
         case ft_bitfield:
-            if (pn->extension != -2) {
-                buf[0] = Random_y ? '1' : '0';
-                return 1;
+            if ( OWQ_pn(owq).extension == -2 ) {
+                OWQ_U(owq) = Random_u ;
             } else {
-                UINT u = rand() % pn->ft->ag->elements;
-                LEVEL_DEBUG("FS_parse_readfake: (bitfield) %u\n", u);
-                sz = FS_output_unsigned(u, buf, size, pn);
-                break;
+                OWQ_Y(owq) = Random_y ;
             }
-            case ft_unsigned:{
-                UINT u = Random_u;
-                LEVEL_DEBUG("FS_parse_readfake: (unsigned) %u\n", u);
-                sz = FS_output_unsigned(u, buf, size, pn);
-                break;
-            }
-            case ft_float:{
-                _FLOAT f = Random_f;
-                LEVEL_DEBUG("FS_parse_readfake: (float) %G\n", f);
-                sz = FS_output_float(f, buf, size, pn);
-                break;
-            }
-            case ft_temperature:{
-                _FLOAT f = Random_t;
-                LEVEL_DEBUG("FS_parse_readfake: (temperature) %G\n", f);
-                sz = FS_output_float(Temperature(f, pn), buf, size, pn);
-                break;
-            }
-            case ft_tempgap:{
-                _FLOAT f = Random_t;
-                LEVEL_DEBUG("FS_parse_readfake: (tempgap) %G\n", f);
-                sz = FS_output_float(TemperatureGap(f, pn), buf, size, pn);
-                break;
-            }
-            case ft_date:{
-                _DATE d = Random_d;
-                LEVEL_DEBUG("FS_parse_readfake: (date) %lu\n",
-                            (unsigned long int) d);
-                sz = FS_output_date(d, buf, size, pn);
-                break;
-            }
-            case ft_yesno:{
-                int y = Random_y;
-                if (size < 1)
-                    return -EMSGSIZE;
-                LEVEL_DEBUG("FS_parse_readfake: (yesno) %d\n", y);
-                buf[0] = y ? '1' : '0';
-                return 1;
-            }
+            break ;
+        case ft_unsigned:
+            OWQ_U(owq) = Random_u ;
+            break ;
+        case ft_temperature:
+        case ft_tempgap:
+        case ft_float:
+            OWQ_F(owq) = Random_f ;
+            break ;
+        case ft_date:
+            OWQ_D(owq) = Random_d ;
+            break ;
         case ft_vascii:
-            case ft_ascii:{
-                s -= offset;
-                if (s > size)
-                    s = size;
-                {
-                    size_t i;
-                    for (i = 0; i < s; ++i)
-                        buf[i] = Random_a;
-                }
-                return s;
+        case ft_ascii:
+        {
+            size_t i ;
+            for ( i=0 ; i < OWQ_size(owq) ; ++i ) {
+                OWQ_buffer(owq)[i] = Random_a ;
             }
-            case ft_binary:{
-                s -= offset;
-                if (s > size)
-                    s = size;
-                {
-                    size_t i;
-                    for (i = 0; i < s; ++i)
-                        buf[i] = Random_b;
-                }
-                return s;
+        }
+        break ;
+        case ft_binary:
+        {
+            size_t i ;
+            for ( i=0 ; i < OWQ_size(owq) ; ++i ) {
+                OWQ_buffer(owq)[i] = Random_b ;
             }
+        }
+        break ;
         case ft_directory:
         case ft_subdir:
-            return -ENOSYS;
-        default:
-            return -ENOENT;
+            return -ENOENT ;
     }
-
-    /* Return correct buffer according to offset for most data-types here */
-    if ((sz > 0) && offset) {
-        memcpy(buf, &buf[offset], (size_t) sz - (size_t) offset);
-        return sz - offset;
-    }
-    return sz;
+    return FS_output_owq(owq) ; // put data as string into buffer and return length
 }
 
 /* Read each array element independently, but return as one long string */
 /* called when pn->extension==-1 (ALL) and pn->ft->ag->combined==ag_separate */
-static int FS_read_fake_array(char *buf, const size_t size,
-                              const off_t offset,
-                              const struct parsedname *pn)
+static int FS_read_fake_array(struct one_wire_query * owq)
 {
-    size_t left = size;
-    char *p = buf;
-    int r;
-    struct parsedname pn2;
-    size_t s, sz;
+    size_t buffer_space_left = OWQ_size(owq);
+    char *pointer_into_buffer = OWQ_buffer(owq);
+    struct one_wire_query struct_owq_single;
+    struct one_wire_query * owq_single = &struct_owq_single;
+    struct parsedname * pn_single = &OWQ_pn(owq_single) ;
 
     STAT_ADD1(read_array);      /* statistics */
 
-    s = SimpleFullFileLength(pn);
-    if (offset > (off_t) s)
-        return -ERANGE;
-    if (offset == (off_t) s)
-        return 0;
+    if (OWQ_offset(owq) != 0) return -ERANGE;
 
     /* shallow copy */
-    memcpy(&pn2, pn, sizeof(struct parsedname));
+    memcpy(owq_single, owq, sizeof(struct one_wire_query));
 
-    for (pn2.extension = 0; pn2.extension < pn2.ft->ag->elements;
-         ++pn2.extension) {
-             /* Add a separating comma if not the first element */
-             if (pn2.extension && pn2.ft->format != ft_binary) {
-                 if (left == 0)
-                     return -ERANGE;
-                 *p = ',';
-                 ++p;
-                 --left;
-             }
-             if ((r = FS_read_fake_single(p, left, (const off_t) 0, &pn2)) < 0)
-                 return r;
-             left -= r;
-             p += r;
-         }
-         sz = size - left;
+    for (pn_single->extension = 0; pn_single->extension < pn_single->ft->ag->elements;
+         ++pn_single->extension) {
+        int read_or_error ;
+        /* Add a separating comma if not the first element */
+        if (pn_single->extension && pn_single->ft->format != ft_binary) {
+            if (buffer_space_left == 0)
+                return -ERANGE;
+            *pointer_into_buffer = ',';
+            ++pointer_into_buffer;
+            --buffer_space_left;
+        }
+        OWQ_buffer(owq_single) = pointer_into_buffer ;
+        OWQ_size(owq_single) = buffer_space_left ;
+        OWQ_offset(owq_single) = 0 ;
+        read_or_error = FS_read_fake_single(owq_single) ;
+        if ( read_or_error < 0 ) return read_or_error ;
+        buffer_space_left -= read_or_error;
+        pointer_into_buffer += read_or_error;
+    }
 
-         LEVEL_DEBUG("FS_readfake_all: size=%d left=%d sz=%d\n", size, left,
-                     sz);
-         if ((sz > 0) && offset) {
-             memcpy(buf, &buf[offset], sz - (size_t) offset);
-             return sz - offset;
-         }
-         return size - left;
+    LEVEL_DEBUG("FS_readfake_all: size=%d buffer_space_left=%d used=%d\n", OWQ_size(owq), buffer_space_left,
+                OWQ_size(owq) - buffer_space_left);
+    return Fowq_output_offset_and_size( OWQ_buffer(owq), OWQ_size(owq) - buffer_space_left, owq ) ;
 }
