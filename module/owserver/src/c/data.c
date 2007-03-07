@@ -46,7 +46,6 @@ void *DataHandler(void *v)
 	struct handlerdata *hd = v;
 	char *retbuffer = NULL;
 	struct client_msg cm;
-	struct parsedname pn;
 
 #if OW_MT
 	pthread_detach(pthread_self());
@@ -77,32 +76,34 @@ void *DataHandler(void *v)
 		if (hd->sm.payload == 0) {	/* Bad string -- no trailing null */
 			cm.ret = -EBADMSG;
 		} else {
-			//printf("Handler: path=%s\n",path);
+            struct one_wire_query struct_owq ;
+            struct one_wire_query * owq = &struct_owq ;
+            struct parsedname * pn = &OWQ_pn(owq) ;
+            
 			/* Parse the path string */
-
 			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);
-			if ((cm.ret = FS_ParsedName(hd->sp.path, &pn)))
+			if ((cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq)))
 				break;
 
 			/* Use client persistent settings (temp scale, display mode ...) */
-			pn.sg = hd->sm.sg;
+			pn->sg = hd->sm.sg;
 			/* Antilooping tags */
-			pn.tokens = hd->sp.tokens;
-			pn.tokenstring = hd->sp.tokenstring;
+			pn->tokens = hd->sp.tokens;
+			pn->tokenstring = hd->sp.tokenstring;
 			//printf("Handler: sm.sg=%X pn.state=%X\n", sm.sg, pn.state);
 			//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm.sg)));
 
 			switch ((enum msg_classification) hd->sm.type) {
 			case msg_presence:
 				LEVEL_CALL("Presence message on %s bus_nr=%d\n",
-						   SAFESTRING(pn.path), pn.bus_nr);
+						   SAFESTRING(pn->path), pn->bus_nr);
 				// Basically, if we were able to ParsedName it's here!
 				cm.size = cm.payload = 0;
 				cm.ret = 0;		// good answer
 				break;
 			case msg_read:
 				LEVEL_CALL("Read message\n");
-				retbuffer = ReadHandler(hd, &cm, &pn);
+				retbuffer = ReadHandler(hd, &cm, owq);
 				LEVEL_DEBUG("Read message done retbuffer=%p\n", retbuffer);
 				break;
 			case msg_write:{
@@ -111,31 +112,32 @@ void *DataHandler(void *v)
 						|| ((int) hd->sp.datasize < hd->sm.size)) {
 						cm.ret = -EMSGSIZE;
 					} else {
-						WriteHandler(hd, &cm, hd->sp.data, &pn);
+                        OWQ_buffer(owq) = (ASCII *) hd->sp.data ;
+						WriteHandler(hd, &cm, owq);
 					}
 				}
 				break;
 			case msg_dir:
 				LEVEL_CALL("Directory message (by bits)\n");
-				DirHandler(hd, &cm, &pn);
+				DirHandler(hd, &cm, pn);
 				break;
 			case msg_dirall:
 				LEVEL_CALL("Directory message (all at once)\n");
-				retbuffer = DirallHandler(hd, &cm, &pn);
+				retbuffer = DirallHandler(hd, &cm, pn);
 				break;
 			case msg_get:
-				if (IsDir(&pn)) {
+				if (IsDir(pn)) {
 					LEVEL_CALL("Get -> Directory message (all at once)\n");
-					retbuffer = DirallHandler(hd, &cm, &pn);
+					retbuffer = DirallHandler(hd, &cm, pn);
 				} else {
 					LEVEL_CALL("Get -> Read message\n");
-					retbuffer = ReadHandler(hd, &cm, &pn);
+					retbuffer = ReadHandler(hd, &cm, owq);
 				}
 				break;
 			default:			// never reached
 				break;
 			}
-			FS_ParsedName_destroy(&pn);
+			FS_OWQ_destroy(owq);
 			LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy done\n");
 		}
 		break;

@@ -45,7 +45,7 @@ void HTTPheader(FILE * out, const char *head);
 void HTTPfoot(FILE * out);
 
 /* in owhttpd_write.c */
-void ChangeData(char *value, const struct parsedname *pn);
+void ChangeData(struct one_wire_query * owq);
 
 /* in owhttpd_read.c */
 void ShowDevice(FILE * out, const struct parsedname *const pn);

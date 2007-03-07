@@ -16,23 +16,13 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_w_given_bus(const char *buf, const size_t size,
-						  const off_t offset, const struct parsedname *pn);
-static int FS_w_local(const char *buf, const size_t size,
-					  const off_t offset, const struct parsedname *pn);
-static int FS_w_simultaneous(const char *buf, const size_t size,
-							 const off_t offset,
-							 const struct parsedname *pn);
-static int FS_w_aggregate_all(const char *buf, const size_t size,
-							  const off_t offset,
-							  const struct parsedname *pn);
-static int FS_w_separate_all(const char *buf, const size_t size,
-							 const off_t offset,
-							 const struct parsedname *pn);
-static int FS_w_aggregate(const char *buf, const size_t size,
-						  const off_t offset, const struct parsedname *pn);
-static int FS_w_single(const char *buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn);
+static int FS_w_given_bus(struct one_wire_query * owq);
+static int FS_w_local(struct one_wire_query * owq);
+static int FS_w_simultaneous(struct one_wire_query * owq);
+static int FS_w_aggregate_all(struct one_wire_query * owq);
+static int FS_w_separate_all(struct one_wire_query * owq);
+static int FS_w_aggregate(struct one_wire_query * owq);
+static int FS_w_single(struct one_wire_query * owq);
 
 static int FS_input_yesno(int *result, const char *buf, const size_t size);
 static int FS_input_integer(int *result, const char *buf,
@@ -95,7 +85,8 @@ static int FS_input_date_array(_DATE * results, const char *buf,
 int FS_write(const char *path, const char *buf, const size_t size,
 			 const off_t offset)
 {
-	struct parsedname pn;
+	struct one_wire_query struct_owq;
+    struct one_wire_query * owq = &struct_owq ;
 	int write_return;
 
 	LEVEL_CALL("WRITE path=%s size=%d offset=%d\n", SAFESTRING(path),
@@ -106,23 +97,24 @@ int FS_write(const char *path, const char *buf, const size_t size,
 		return -EROFS;
 
 	// parsable path?
-	if (FS_ParsedName(path, &pn))
+	if (FS_OWQ_create(path, buf, size, offset, owq))
 		return -ENOENT;
 
-    write_return = FS_write_postparse(buf, size, offset, &pn);
-	FS_ParsedName_destroy(&pn);
+    write_return = FS_write_postparse(owq);
+	FS_OWQ_destroy(owq);
     return write_return;					/* here's where the size is used! */
 }
 
 /* return size if ok, else negative */
-int FS_write_postparse(const char *buf, const size_t size,
-					   const off_t offset, struct parsedname *pn)
+int FS_write_postparse(struct one_wire_query * owq)
 {
-	ssize_t write_or_error;
+    ssize_t input_or_error;
+    ssize_t write_or_error;
+    struct parsedname * pn = &OWQ_pn(owq) ;
 
 	if (Global.readonly)
 		return -EROFS;			// read-only invokation
-	if (pn->dev == NULL || pn->ft == NULL)
+    if (IsDir(pn))
 		return -EISDIR;			// not a file
 	if (pn->in == NULL)
 		return -ENODEV;			// no busses
@@ -132,20 +124,11 @@ int FS_write_postparse(const char *buf, const size_t size,
 		AVERAGE_IN(&all_avg)
 		++ write_calls;			/* statistics */
 	STATUNLOCK;
-#if 0
-    { // testing code
-        struct one_wire_query owq ;
-        int owq_reply = FS_OWQ_create( pn->path, buf, size, offset, &owq ) ;
-        if ( owq_reply ) {
-            printf("OWQ_create error = %d\n") ;
-        } else {
-            owq_reply = FS_input_owq(&owq) ;
-            printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
-            print_owq(&owq) ;
-            FS_OWQ_destroy(&owq) ;
-        }
-    }
-#endif
+    
+    input_or_error = FS_input_owq(owq) ;
+    print_owq(owq) ;
+    if ( input_or_error < 0 ) return input_or_error ;
+
 	switch (pn->type) {
 	case pn_structure:
 	case pn_statistics:
@@ -153,7 +136,7 @@ int FS_write_postparse(const char *buf, const size_t size,
         write_or_error = -ENOTSUP;
 		break;
 	case pn_settings:
-        write_or_error = FS_w_given_bus(buf, size, offset, pn);
+        write_or_error = FS_w_given_bus(owq);
 		break;
 	default:					// pn_real
 //printf("FS_write_postparse: pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
@@ -164,12 +147,12 @@ int FS_write_postparse(const char *buf, const size_t size,
 			 * available bus.?/simultaneous/temperature
 			 * not just /simultaneous/temperature
 			 */
-            write_or_error = FS_w_simultaneous(buf, size, offset, pn);
+            write_or_error = FS_w_simultaneous(owq);
 		} else {
 			/* First try */
 			/* in and bus_nr already set */
 			STAT_ADD1(write_tries[0]);
-            write_or_error = FS_w_given_bus(buf, size, offset, pn);
+            write_or_error = FS_w_given_bus(owq);
 
 			/* Second Try */
 			/* if not a specified bus, relook for chip location */
@@ -178,10 +161,10 @@ int FS_write_postparse(const char *buf, const size_t size,
 				if (Global.opt == opt_server) {	// called from owserver
 					Cache_Del_Device(pn);
 				} else if (SpecifiedBus(pn)) {
-					write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(buf, size, offset, pn);
+					write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
                     if ( write_or_error < 0 ) { // third try
                         STAT_ADD1(write_tries[2]);
-                        write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(buf, size, offset, pn);
+                        write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
                     }
                 } else {
                     int busloc_or_error;
@@ -190,10 +173,10 @@ int FS_write_postparse(const char *buf, const size_t size,
                     if ( busloc_or_error < 0 ) {
                         write_or_error = -ENOENT ;
                     } else {
-                        write_or_error = FS_w_given_bus(buf, size, offset, pn);
+                        write_or_error = FS_w_given_bus(owq);
                         if ( write_or_error < 0 ) { // third try
                             STAT_ADD1(write_tries[2]);
-                            write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(buf, size, offset, pn);
+                            write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
                         }
                     }
                 }
@@ -204,8 +187,8 @@ int FS_write_postparse(const char *buf, const size_t size,
 	STATLOCK;
     if (write_or_error == 0) {
 		++write_success;		/* statistics */
-		write_bytes += size;	/* statistics */
-        write_or_error = size;				/* here's where the size is used! */
+        write_bytes += OWQ_size(owq);	/* statistics */
+        write_or_error = OWQ_size(owq);				/* here's where the size is used! */
 	}
 	AVERAGE_OUT(&write_avg)
 		AVERAGE_OUT(&all_avg)
@@ -216,47 +199,52 @@ int FS_write_postparse(const char *buf, const size_t size,
 
 /* This function is only used by "Simultaneous" */
 /* It certainly could use pthreads, but might be overkill */
-static int FS_w_simultaneous(const char *buf, const size_t size,
-							 const off_t offset,
-							 const struct parsedname *pn)
+static int FS_w_simultaneous(struct one_wire_query * owq)
 {
-	if (SpecifiedBus(pn)) {
-		return FS_w_given_bus(buf, size, offset, pn);
+    if (SpecifiedBus(&OWQ_pn(owq))) {
+		return FS_w_given_bus(owq);
 	} else {
-		struct parsedname pn2;
+        struct one_wire_query struct_owq_given ;
+        struct one_wire_query * owq_given = &struct_owq_given ;
 		int bus_number;
 
-		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
 		for (bus_number = 0; bus_number < indevices; ++bus_number) {
-			SetKnownBus(bus_number, &pn2);
-			FS_w_given_bus(buf, size, offset, &pn2);
+            SetKnownBus(bus_number, &OWQ_pn(owq_given));
+			FS_w_given_bus(owq_given);
 		}
 		return 0;
 	}
 }
 
 /* return 0 if ok, else negative */
-static int FS_w_given_bus(const char *buf, const size_t size,
-						  const off_t offset, const struct parsedname *pn)
+static int FS_w_given_bus(struct one_wire_query * owq)
 {
-	ssize_t ret;
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    ssize_t write_or_error;
 
 	if (TestConnection(pn)) {
-		ret = -ECONNABORTED;
+		write_or_error = -ECONNABORTED;
 	} else if (KnownBus(pn) && BusIsServer(pn->in)) {
-		ret = ServerWrite(buf, size, offset, pn);
-	} else if ((ret = LockGet(pn)) == 0) {
-		ret = FS_w_local(buf, size, offset, pn);
-		LockRelease(pn);
+        char * buf = OWQ_buffer(owq) ;
+        size_t size = OWQ_size(owq) ;
+        off_t offset = OWQ_offset(owq) ;
+        write_or_error = ServerWrite(buf, size, offset, pn);
+    } else {
+        write_or_error = LockGet(pn) ;
+        if (write_or_error == 0) {
+            write_or_error = FS_w_local(owq);
+            LockRelease(pn);
+        }
 	}
-	return ret;
+	return write_or_error;
 }
 
 /* return 0 if ok */
-static int FS_w_local(const char *buf, const size_t size,
-					  const off_t offset, const struct parsedname *pn)
+static int FS_w_local(struct one_wire_query * owq)
 {
-	int r = 0;
+	int write_or_error;
+    struct parsedname * pn = &OWQ_pn(owq) ;
 	//printf("FS_w_local\n");
 
 	/* Writable? */
@@ -273,145 +261,99 @@ static int FS_w_local(const char *buf, const size_t size,
 		case ag_aggregate:
 			/* agregate property -- need to read all and replace a single value, then write all */
 			if (pn->extension > -1)
-				return FS_w_aggregate(buf, size, offset, pn);
+				return FS_w_aggregate(owq);
 			/* fallthrough for extension==-1 or -2 */
 		case ag_mixed:
 			if (pn->extension == -1)
-				return FS_w_aggregate_all(buf, size, offset, pn);
+				return FS_w_aggregate_all(owq);
 			/* Does the right thing, aggregate write for ALL and individual for splits */
 			break;				/* continue for bitfield */
 		case ag_separate:
 			/* write all of them, but one at a time */
 			if (pn->extension == -1)
-				return FS_w_separate_all(buf, size, offset, pn);
+				return FS_w_separate_all(owq);
 			break;				/* fall through for individual writes */
 		}
 	}
 
-	/* write individual entries */
-	r = FS_w_single(buf, size, offset, pn);
-	if (r < 0)
-		LEVEL_DATA("Write error on %s (size=%d)\n", pn->path, (int) size);
-	return r;
+	/* write individual entry */
+	write_or_error = FS_w_single(owq);
+	if (write_or_error < 0)
+        LEVEL_DATA("Write error on %s (size=%d)\n", pn->path, (int) OWQ_size(owq));
+	return write_or_error;
 }
 
 /* return 0 if ok */
 /* write a single element */
 /* either no array, or a separate-type array */
-static int FS_w_single(const char *buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_single(struct one_wire_query * owq)
 {
-	size_t fl = FileLength(pn);
-	int ret = -EBADMSG;
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    int ret = -EBADMSG;
 //printf("FS_w_single\n");
 
 
 	switch (pn->ft->format) {
 	case ft_integer:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			int I;
-			if (FS_input_integer(&I, buf, size) == 0) {
-				ret = (pn->ft->write.i) (&I, pn);
-				if (ret == 0)
-					Cache_Add(&I, sizeof(int), pn);
-			}
-		}
+        ret = (pn->ft->write.i) (&OWQ_I(owq), pn);
+        if (ret == 0)
+            Cache_Add(&OWQ_I(owq), sizeof(int), pn);
 		break;
 	case ft_bitfield:
 	case ft_unsigned:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			UINT U;
-			if (FS_input_unsigned(&U, buf, size) == 0) {
-				ret = (pn->ft->write.u) (&U, pn);
-				if (ret == 0)
-					Cache_Add(&U, sizeof(UINT), pn);
-			}
-		}
-		break;
+        ret = (pn->ft->write.u) (&OWQ_U(owq), pn);
+        if (ret == 0)
+            Cache_Add(&OWQ_U(owq), sizeof(UINT), pn);
+        break;
 	case ft_tempgap:
 	case ft_float:
 	case ft_temperature:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			_FLOAT F;
-			if (FS_input_float(&F, buf, size) == 0) {
-				switch (pn->ft->format) {
-				case ft_temperature:
-					F = fromTemperature(F, pn);
-					break;
-				case ft_tempgap:
-					F = fromTempGap(F, pn);
-					// trivial fall-through
-				default:
-					break;
-				}
-				ret = (pn->ft->write.f) (&F, pn);
-				if (ret == 0)
-					Cache_Add(&F, sizeof(_FLOAT), pn);
-			}
-		}
-		break;
+        ret = (pn->ft->write.f) (&OWQ_F(owq), pn);
+        if (ret == 0)
+            Cache_Add(&OWQ_F(owq), sizeof(_FLOAT), pn);
+        break;
 	case ft_date:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			_DATE D;
-			if (FS_input_date(&D, buf, size) == 0) {
-				ret = FS_input_date(&D, buf, size);
-				if (ret == 0)
-					Cache_Add(&D, sizeof(_DATE), pn);
-			}
-		}
-		break;
+        ret = (pn->ft->write.d) (&OWQ_D(owq), pn);
+        if (ret == 0)
+            Cache_Add(&OWQ_D(owq), sizeof(_DATE), pn);
+        break;
 	case ft_yesno:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			int Y;
-			if (FS_input_yesno(&Y, buf, size) == 0) {
-				ret = (pn->ft->write.y) (&Y, pn);
-				if (ret == 0)
-					Cache_Add(&Y, sizeof(int), pn);
-			}
-		}
-		break;
+        ret = (pn->ft->write.y) (&OWQ_Y(owq), pn);
+        if (ret == 0)
+            Cache_Add(&OWQ_Y(owq), sizeof(int), pn);
+        break;
 	case ft_vascii:
 	case ft_ascii:
 		{
-			size_t s = fl;
-			s -= offset;
-			if (s > size)
-				s = size;
-			ret = (pn->ft->write.a) (buf, s, offset, pn);
-			if (ret >= 0) {
-				if (s == fl) {
-					Cache_Add(buf, ret, pn);
-				} else {
-					Cache_Del(pn);
-				}
-			}
+            ssize_t file_length = OWQ_FileLength(owq) ;
+            ssize_t write_length = OWQ_size(owq) ;
+            if ( OWQ_offset(owq) > file_length ) return -ERANGE ;
+            if ( write_length + OWQ_offset(owq) > file_length ) {
+                write_length = file_length - OWQ_offset(owq) ;
+            }
+            ret = (pn->ft->write.a) (OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
+            if ( (ret >= 0) && (write_length == file_length) ) {
+                Cache_Add(OWQ_buffer(owq), write_length, pn);
+            } else {
+                Cache_Del(pn);
+            }
 		}
 		break;
 	case ft_binary:
 		{
-			size_t s = fl;
-			s -= offset;
-			if (s > size)
-				s = size;
-			ret = (pn->ft->write.b) ((const BYTE *) buf, s, offset, pn);
-			if (ret >= 0) {
-				if (s == fl) {
-					Cache_Add(buf, ret, pn);
-				} else {
-					Cache_Del(pn);
-				}
-			}
-		}
+            ssize_t file_length = OWQ_FileLength(owq) ;
+            ssize_t write_length = OWQ_size(owq) ;
+            if ( OWQ_offset(owq) > file_length ) return -ERANGE ;
+            if ( write_length + OWQ_offset(owq) > file_length ) {
+                write_length = file_length - OWQ_offset(owq) ;
+            }
+            ret = (pn->ft->write.b) ((BYTE *) OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
+            if ( (ret >= 0) && (write_length == file_length) ) {
+                Cache_Add(OWQ_buffer(owq), write_length, pn);
+            } else {
+                Cache_Del(pn);
+            }
+        }
 		break;
 	case ft_directory:
 	case ft_subdir:
@@ -429,11 +371,13 @@ static int FS_w_single(const char *buf, const size_t size,
 /* return 0 if ok */
 /* write aggregate all */
 /* Unlike FS_w_aggregate, no need to read in values first, since all will be replaced */
-static int FS_w_aggregate_all(const char *buf, const size_t size,
-							  const off_t offset,
-							  const struct parsedname *pn)
+static int FS_w_aggregate_all(struct one_wire_query * owq)
 {
-	size_t elements = pn->ft->ag->elements;
+    char * buf = OWQ_buffer(owq) ;
+    size_t size = OWQ_size(owq) ;
+    off_t offset = OWQ_offset(owq) ;
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    size_t elements = pn->ft->ag->elements;
 	size_t ffl = FullFileLength(pn);
 	int ret;
 
@@ -606,62 +550,35 @@ static int FS_w_aggregate_all(const char *buf, const size_t size,
 
 /* Non-combined input  field, so treat  as several separate transactions */
 /* return 0 if ok */
-static int FS_w_separate_all(const char *buf, const size_t size,
-							 const off_t offset,
-							 const struct parsedname *pn)
+static int FS_w_separate_all(struct one_wire_query * owq)
 {
-	size_t left = size;
-	const char *p = buf;
-	int r;
-	struct parsedname pname;
-//printf("WRITE_ALL\n");
+    int extension ;
+    struct one_wire_query struct_owq_single ;
+    struct one_wire_query * owq_single = &struct_owq_single ;
 
 	STAT_ADD1(write_array);		/* statistics */
-	memcpy(&pname, pn, sizeof(struct parsedname));	/* shallow copy */
-//printf("WRITEALL(%p) %s\n",p,path) ;
-	if (offset)
-		return -ERANGE;
-
-	if (pname.ft->format == ft_binary) {	/* handle binary differently, no commas */
-		int suglen = pname.ft->suglen;
-		for (pname.extension = 0; pname.extension < pname.ft->ag->elements;
-			 ++pname.extension) {
-			if ((int) left < suglen)
-				return -ERANGE;
-			if ((r =
-				 FS_w_single(p, (size_t) suglen, (const off_t) 0, &pname)))
-				return r;
-			p += suglen;
-			left -= suglen;
-		}
-	} else {					/* comma separation */
-		for (pname.extension = 0; pname.extension < pname.ft->ag->elements;
-			 ++pname.extension) {
-			char *c = memchr(p, ',', left);
-			if (c == NULL) {
-				if ((r = FS_w_single(p, left, (const off_t) 0, &pname)))
-					return r;
-				p = buf + size;
-				left = 0;
-			} else {
-				if ((r =
-					 FS_w_single(p, (size_t) (c - p), (const off_t) 0,
-								 &pname)))
-					return r;
-				p = c + 1;
-				left = size - (buf - p);
-			}
-		}
-	}
+	
+    memcpy(owq_single, owq, sizeof(struct one_wire_query));	/* shallow copy */
+    
+    for (extension = 0; extension < OWQ_pn(owq).ft->ag->elements; ++extension) {
+        int write_or_error ;
+        OWQ_pn(owq_single).extension = extension ;
+        memcpy( &OWQ_val(owq_single), &OWQ_array(owq)[extension], sizeof(union value_object) ) ;
+        write_or_error = FS_w_single(owq_single) ;
+        if ( write_or_error < 0 ) return write_or_error ;
+    }
 	return 0;
 }
 
 /* Combined field, so read all, change the relevant field, and write back */
 /* return 0 if ok */
-static int FS_w_aggregate(const char *buf, const size_t size,
-						  const off_t offset, const struct parsedname *pn)
+static int FS_w_aggregate(struct one_wire_query * owq)
 {
-	size_t elements = pn->ft->ag->elements;
+    char * buf = OWQ_buffer(owq) ;
+    size_t size = OWQ_size(owq) ;
+    off_t offset = OWQ_offset(owq) ;
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    size_t elements = pn->ft->ag->elements;
 	int ret = 0;
 
 	const size_t ffl = FullFileLength(pn);

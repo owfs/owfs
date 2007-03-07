@@ -1132,19 +1132,18 @@ good_retr:
 static void do_stor(struct ftp_session_s *f,
 					const struct ftp_command_s *cmd)
 {
-	const char *file_name;
 	int file_fd;
 	int socket_fd;
-	ASCII *buf = NULL;
 	struct timeval start_timestamp;
 	struct timeval end_timestamp;
 	struct timeval transfer_time;
 	struct timeval limit_time = { Global.timeout_ftp, 0 };
-	struct parsedname pn;
-	size_t size_read;
-	ssize_t size_actual;
-	int r;
-	off_t offset = 0;
+    
+    struct one_wire_query struct_owq ;
+    struct one_wire_query * owq = &struct_owq ;
+    struct parsedname * pn = &OWQ_pn(owq);
+
+    size_t size_read;
 	int need_pn_destroy = 1;
 
 	daemon_assert(invariant(f));
@@ -1156,32 +1155,36 @@ static void do_stor(struct ftp_session_s *f,
 	socket_fd = -1;
 
 	/* create an absolute name for our file */
-	file_name = cmd->arg[0].string;
-
-	/* if the last command was a REST command, restart at the */
-	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1)))
-		offset = f->file_offset;
-
-	if (FS_ParsedNamePlus(f->dir, file_name, &pn)) {
+    if (FS_OWQ_create_plus(f->dir, cmd->arg[0].string, NULL, 0, 0, owq)) {
 		reply(f, 550, "File does not exist.");
 		need_pn_destroy = 0;
 		goto exit_stor;
-	} else if (pn.dev == NULL || pn.ft == NULL) {
+	}
+    
+    /* if the last command was a REST command, restart at the */
+    /* requested position in the file                         */
+    if ((f->file_offset_command_number == (f->command_number - 1)))
+        OWQ_offset(owq) = f->file_offset;
+    
+    if (IsDir(pn)) {
 		reply(f, 550, "Error, file is a directory.");
 		goto exit_stor;
-	} else if (pn.ft->write.v == NULL) {
+    }
+
+    if (pn->ft->write.v == NULL) {
 		reply(f, 550, "Error, file is read-only.");
 		goto exit_stor;
-	} else if ((pn.ft->format == ft_binary)
+	}
+
+    if ((pn->ft->format == ft_binary)
 			   && (f->data_type == TYPE_ASCII)) {
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_stor;
-	} else
-		if ((buf =
-			 (ASCII *) malloc(size_read =
-							  FullFileLength(&pn) - offset + 100)) ==
-			NULL) {
+	}
+    size_read = OWQ_FullFileLength(owq) - OWQ_offset(owq) + 100 ;
+    OWQ_buffer(owq) = malloc(size_read) ;
+    
+    if (OWQ_buffer(owq) == NULL) {
 		reply(f, 550, "Out of memory.");
 		goto exit_stor;
 	}
@@ -1197,13 +1200,16 @@ static void do_stor(struct ftp_session_s *f,
 	if (socket_fd == -1)
 		goto exit_stor;
 
-	/* we're golden, read the file */
-	if ((size_actual =
-		 tcp_read(socket_fd, buf, size_read, &limit_time)) == -1) {
-		reply(f, 550, "Error reading from data connection; %s.",
-			  strerror(errno));
-		goto exit_stor;
-	}
+    {
+        /* we're golden, read the file */
+        ssize_t size_actual = tcp_read(socket_fd, OWQ_buffer(owq), size_read, &limit_time) ;
+        if ( size_actual < 0 ) {
+            reply(f, 550, "Error reading from data connection; %s.",
+                strerror(errno));
+            goto exit_stor;
+        }
+        OWQ_size(owq) = size_actual ;
+    }
 
 	watchdog_defer_watched(f->watched);
 
@@ -1230,22 +1236,26 @@ static void do_stor(struct ftp_session_s *f,
 		transfer_time.tv_usec += 1000000;
 	}
 
-	if ((r = FS_write_postparse(buf, size_actual, offset, &pn)) < 0) {
-		reply(f, 550, "Error writing to file; %s.", strerror(errno));
-		goto exit_stor;
+    {
+        /* write to one-wire */
+        int tcp_error = FS_write_postparse(owq) ;
+        if (tcp_error < 0) {
+            reply(f, 550, "Error writing to file; %s.", strerror(-tcp_error));
+            goto exit_stor;
+        }
 	}
 
 	/* note the transfer */
 	LEVEL_DATA("%s stored \"%s\", %ld bytes in %d.%06d seconds\n",
 			   f->client_addr_str,
-			   pn.path,
-			   size_actual, transfer_time.tv_sec, transfer_time.tv_usec);
+			   pn->path,
+               OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_stor:
-	if (buf)
-		free(buf);
+    if (OWQ_buffer(owq))
+          free(OWQ_buffer(owq));
 	if (need_pn_destroy)
-		FS_ParsedName_destroy(&pn);
+		FS_OWQ_destroy(owq);
 	f->file_offset = 0;
 	if (socket_fd != -1) {
 		close(socket_fd);

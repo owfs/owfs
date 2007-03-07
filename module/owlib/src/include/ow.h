@@ -847,8 +847,7 @@ int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
 
 int FS_write(const char *path, const char *buf, const size_t size,
 			 const off_t offset);
-int FS_write_postparse(const char *buf, const size_t size,
-					   const off_t offset, struct parsedname *pn);
+int FS_write_postparse(struct one_wire_query * owq);
 
 int FS_read(const char *path, char *buf, const size_t size,
 			const off_t offset);

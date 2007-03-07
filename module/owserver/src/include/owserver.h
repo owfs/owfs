@@ -91,11 +91,11 @@ int ToClient(int fd, struct client_msg *cm, char *data);
 
 /* Read from 1-wire bus and return file contents */
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
-				  const struct parsedname *pn);
+				  struct one_wire_query * owq);
 
 /* write a new value ot a 1-wire device */
 void WriteHandler(struct handlerdata *hd, struct client_msg *cm,
-				  const BYTE * data, const struct parsedname *pn);
+                  struct one_wire_query * owq);
 
 /* Clasic directory -- one value at a time */
 void DirHandler(struct handlerdata *hd, struct client_msg *cm,

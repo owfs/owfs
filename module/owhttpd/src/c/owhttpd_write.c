@@ -21,33 +21,24 @@ static void hex_only(char *str);
 /* --------------- Functions ---------------- */
 
 
-void ChangeData(char *value, const struct parsedname *pn)
+void ChangeData(struct one_wire_query * owq)
 {
-/* Do command processing and make changes to 1-wire devices */
-	if (pn->ft && value) {
-		httpunescape((BYTE *) value);
-		LEVEL_DETAIL("CHANGEDATA path=%s value=%s\n", pn->path, value);
-		switch (pn->ft->format) {
-		case ft_binary:
-			hex_only(value);
-			if ((int) strlen(value) == (pn->ft->suglen << 1)) {
-				hex_convert(value);
-				FS_write_postparse(value, (size_t) pn->ft->suglen, 0, pn);
-			}
-			break;
-		case ft_yesno:
-		case ft_bitfield:
-			if (pn->extension >= 0) {	// Single check box handled differently
-				FS_write_postparse(strncasecmp(value, "on", 2) ? "0" : "1",
-								   2, 0, pn);
-				break;
-			}
-			// fall through
-		default:
-			FS_write_postparse(value, strlen(value) + 1, 0, pn);
-			break;
-		}
-	}
+    struct parsedname * pn = &OWQ_pn(owq) ;
+    ASCII * value_string = OWQ_buffer(owq) ;
+    
+    /* Do command processing and make changes to 1-wire devices */
+    httpunescape((BYTE *) value_string);
+    LEVEL_DETAIL("CHANGEDATA path=%s value=%s\n", pn->path, value_string);
+    switch (pn->ft->format) {
+        case ft_binary:
+            hex_only(value_string);
+            hex_convert(value_string);
+            OWQ_size(owq) = strlen(value_string) ;
+            break;
+        default:
+            break;
+    }
+    FS_write_postparse(owq) ;
 }
 
 /* Change web-escaped string back to straight ascii */
@@ -100,4 +91,5 @@ static void hex_convert(char *str)
 	BYTE *hx = (BYTE *) str;
 	for (; *uc; uc += 2)
 		*hx++ = string2num(uc);
+    *hx = '\0';
 }

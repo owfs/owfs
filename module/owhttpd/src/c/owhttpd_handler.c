@@ -83,14 +83,15 @@ int handle_socket(FILE * out)
 		} else if (up.request == NULL) {
 			ShowDevice(out, &pn);
 		} else {				/* First write new values, then show */
-			struct parsedname pn2;
+			struct one_wire_query struct_owq_write ;
+            struct one_wire_query * owq_write = &struct_owq_write ;
 
-			if (FS_ParsedNamePlus(up.file, up.request, &pn2)) {
+            if (FS_OWQ_create_plus(up.file, up.request, up.value, strlen(up.value), 0, owq_write)) {
 				Bad404(out);
 			} else {
 				/* Single device, show it's properties */
-				ChangeData(up.value, &pn2);
-				FS_ParsedName_destroy(&pn2);
+				ChangeData(owq_write);
+				FS_OWQ_destroy(owq_write);
 				ShowDevice(out, &pn);
 			}
 		}

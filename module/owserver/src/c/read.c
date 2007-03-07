@@ -48,10 +48,10 @@ $Id$
 /* If cm.payload is 0, then a NULL string is returned */
 /* cm.ret is also set to an error <0 or the read length */
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
-				  const struct parsedname *pn)
+				  struct one_wire_query * owq)
 {
 	char *retbuffer = NULL;
-	ssize_t ret;
+	ssize_t read_or_error;
 
 	//printf("ReadHandler:\n");
 	LEVEL_DEBUG
@@ -67,20 +67,17 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 #endif
 		cm->ret = -ENOBUFS;
     } else {
-        struct one_wire_query owq ;
-        OWQ_buffer(&owq) = retbuffer ;
-        OWQ_size(&owq) = (size_t) hd->sm.size ;
-        OWQ_offset(&owq) = (off_t) hd->sm.offset ;
-        memcpy( &OWQ_pn(&owq), pn, sizeof(struct parsedname) ) ;
-        if ((ret = FS_read_postparse(&owq)) <= 0) {
+        OWQ_buffer(owq) = retbuffer ;
+        read_or_error = FS_read_postparse(owq) ;
+        if (read_or_error <= 0) {
             free(retbuffer);
             retbuffer = NULL;
-            cm->ret = ret;
+            cm->ret = read_or_error;
         } else {
             cm->payload = hd->sm.size;
             cm->offset = hd->sm.offset;
-            cm->size = ret;
-            cm->ret = ret;
+            cm->size = read_or_error;
+            cm->ret = read_or_error;
         }
 	}
 	LEVEL_DEBUG
