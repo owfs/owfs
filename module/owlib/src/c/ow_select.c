@@ -91,7 +91,6 @@ int BUS_select(const struct parsedname *pn)
 	} else if (memcmp(pn->in->branch.sn, pn->bp[pl - 1].sn, 8) || pn->in->buspath_bad) {	/* different path */
 		int iclear;
 		LEVEL_DEBUG("Clearing all branches to level %d\n", pl);
-		//printf("SELECT_LOW clear pathes to level %d \n",pl) ;
 		for (iclear = 0; iclear <= pl; ++iclear) {
 			// All lines off
 			if (Turnoff(iclear, pn))
@@ -100,7 +99,6 @@ int BUS_select(const struct parsedname *pn)
 		memcpy(pn->in->branch.sn, pn->bp[pl - 1].sn, 8);
 		pn->in->branch.branch = pn->bp[pl - 1].branch;
 	} else if (pn->in->branch.branch != pn->bp[pl - 1].branch) {	/* different branch */
-		//printf("SELECT_LOW clear path just level %d \n",pl) ;
 		LEVEL_DEBUG("Clearing last branches (level %d)\n", pl);
 		if (Turnoff(pl, pn))
 			return 1;		// clear just last level
@@ -179,7 +177,7 @@ static int Turnoff(int depth, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	//printf("TURNOFF entry depth=%d\n",depth) ;
+	printf("TURNOFF entry depth=%d\n",depth) ;
 
 	if ((BUS_reset(pn)))
 		return 1;

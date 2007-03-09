@@ -60,9 +60,9 @@ static int FS_input_array_no_commas(struct one_wire_query * owq ) ;
 int FS_input_owq( struct one_wire_query * owq)
 {
     switch (OWQ_pn(owq).extension) {
-        case -2:
+        case EXTENSION_BYTE:
             return FS_input_unsigned(owq) ;
-        case -1:
+        case EXTENSION_ALL:
             switch (OWQ_pn(owq).ft->format) {
                 case ft_binary:
                     return FS_input_array_no_commas(owq) ;

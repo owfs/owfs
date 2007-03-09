@@ -36,7 +36,7 @@ size_t OWQ_FileLength( struct one_wire_query * owq )
         case ft_date:
             return PROPERTY_LENGTH_DATE ;
         case ft_bitfield:
-            return (OWQ_pn(owq).extension==-2) ? PROPERTY_LENGTH_UNSIGNED : PROPERTY_LENGTH_YESNO ;
+            return (OWQ_pn(owq).extension==EXTENSION_BYTE) ? PROPERTY_LENGTH_UNSIGNED : PROPERTY_LENGTH_YESNO ;
         case ft_vascii:
         case ft_ascii:
         case ft_binary:
@@ -50,7 +50,7 @@ size_t OWQ_FullFileLength( struct one_wire_query * owq )
 {
     if (OWQ_pn(owq).type == pn_structure) {
         return OWQ_FileLength(owq) ;
-    } else if (OWQ_pn(owq).extension != -1 ) {
+    } else if (OWQ_pn(owq).extension != EXTENSION_ALL ) {
         return OWQ_FileLength(owq) ;
     } else {
         size_t elements = OWQ_pn(owq).ft->ag->elements ;
@@ -77,7 +77,7 @@ size_t FileLength(const struct parsedname * pn)
 	switch (pn->ft->format) {
 		/* bitfield ? */
 	case ft_bitfield:
-		if (pn->extension == -2)
+		if (pn->extension == EXTENSION_BYTE)
 			return 12;
 		break;
 	case ft_vascii:			// variable length ascii
@@ -111,7 +111,7 @@ size_t FullFileLength(const struct parsedname * pn)
 	//printf("FullFileLength: pid=%ld %s\n", pthread_self(), pn->path);
 	if (pn->ft && pn->ft->ag) {	/* aggregate files */
 		switch (pn->extension) {
-		case -1:				/* ALL */
+		case EXTENSION_ALL:				/* ALL */
 			if ((pn->ft->format == ft_binary)
 				|| (pn->ft->format == ft_ascii)) {
 				/* not comma-separated values are ft_binary and ft_ascii
@@ -125,7 +125,7 @@ size_t FullFileLength(const struct parsedname * pn)
 				//printf("FullFileLength: pid=%ld size2=%d\n", pthread_self(), ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 );
 				return ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1;
 			}
-		case -2:				/* BYTE */
+		case EXTENSION_BYTE:				/* BYTE */
 			return 12;
 		}
 	}
@@ -150,7 +150,7 @@ size_t SimpleFileLength(const struct parsedname * pn)
 	switch (pn->ft->format) {
 		/* bitfield ? */
 	case ft_bitfield:
-		if (pn->extension == -2)
+		if (pn->extension == EXTENSION_BYTE)
 			return 12;
 		break;
 	default:
@@ -168,7 +168,7 @@ size_t SimpleFullFileLength(const struct parsedname * pn)
 	//printf("FullFileLength: pid=%ld %s\n", pthread_self(), pn->path);
 	if (pn->ft && pn->ft->ag) {	/* aggregate files */
 		switch (pn->extension) {
-		case -1:				/* ALL */
+		case EXTENSION_ALL:				/* ALL */
 			if ((pn->ft->format == ft_binary)
 				|| (pn->ft->format == ft_ascii)) {
 				/* not comma-separated values are ft_binary and ft_ascii
@@ -182,7 +182,7 @@ size_t SimpleFullFileLength(const struct parsedname * pn)
 				//printf("FullFileLength: pid=%ld size2=%d\n", pthread_self(), ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1 );
 				return ((pn->ft->ag->elements) * (pn->ft->suglen + 1)) - 1;
 			}
-		case -2:				/* BYTE */
+		case EXTENSION_BYTE:				/* BYTE */
 			return 12;
 		}
 	}

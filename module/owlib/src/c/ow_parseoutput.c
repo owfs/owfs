@@ -44,9 +44,9 @@ Can break down cases into:
 int FS_output_owq( struct one_wire_query * owq)
 {
     switch (OWQ_pn(owq).extension) {
-        case -2:
+        case EXTENSION_BYTE:
             return Fowq_output_unsigned(owq) ;
-        case -1:
+        case EXTENSION_ALL:
             switch (OWQ_pn(owq).ft->format) {
                 case ft_binary:
                     return Fowq_output_array_no_commas(owq) ;

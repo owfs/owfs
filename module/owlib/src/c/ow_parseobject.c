@@ -25,7 +25,7 @@ int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, 
     OWQ_buffer(owq) = buffer ;
     OWQ_size(  owq) = size ;
     OWQ_offset(owq) = offset ;
-    if ( pn->extension == -1 ) {
+    if ( pn->extension == EXTENSION_ALL ) {
         OWQ_array(owq) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
         if (OWQ_array(owq) == NULL ) {
             FS_ParsedName_destroy( pn ) ;
@@ -47,7 +47,7 @@ int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, siz
     OWQ_buffer(owq) = buffer ;
     OWQ_size(  owq) = size ;
     OWQ_offset(owq) = offset ;
-    if ( pn->extension == -1 ) {
+    if ( pn->extension == EXTENSION_ALL ) {
         OWQ_array(owq) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
         if (OWQ_array(owq) == NULL ) {
             FS_ParsedName_destroy( pn ) ;
@@ -62,7 +62,7 @@ int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, siz
 void FS_OWQ_destroy( struct one_wire_query * owq )
 {
     printf("FS_OWQ_destroy of %s\n",OWQ_pn(owq).path) ;
-    if ( OWQ_pn(owq).extension == -1 ) {
+    if ( OWQ_pn(owq).extension == EXTENSION_ALL ) {
         if ( OWQ_array(owq) ) {
             free( OWQ_array(owq) ) ;
             OWQ_array(owq) = NULL ;

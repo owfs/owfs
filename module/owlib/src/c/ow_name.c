@@ -130,9 +130,9 @@ int FS_FileName(char *name, const size_t size, const struct parsedname *pn)
 	UCLIBCLOCK;
 	if (pn->ft->ag == NULL) {
 		s = snprintf(name, size, "%s", pn->ft->name);
-	} else if (pn->extension == -1) {
+	} else if (pn->extension == EXTENSION_ALL) {
 		s = snprintf(name, size, "%s.ALL", pn->ft->name);
-	} else if (pn->extension == -2) {
+	} else if (pn->extension == EXTENSION_BYTE) {
 		s = snprintf(name, size, "%s.BYTE", pn->ft->name);
 	} else if (pn->ft->ag->letters == ag_letters) {
 		s = snprintf(name, size, "%s.%c", pn->ft->name,
@@ -162,9 +162,9 @@ void FS_DirName(char *buffer, const size_t size,
 		UCLIBCLOCK;
 		if (pn->ft->ag == NULL) {
 			snprintf(buffer, size, "%s", pname);
-		} else if (pn->extension == -1) {
+		} else if (pn->extension == EXTENSION_ALL) {
 			snprintf(buffer, size, "%s.ALL", pname);
-		} else if (pn->extension == -2) {
+		} else if (pn->extension == EXTENSION_BYTE) {
 			snprintf(buffer, size, "%s.BYTE", pname);
 		} else if (pn->ft->ag->letters == ag_letters) {
 			snprintf(buffer, size, "%s.%c", pname, pn->extension + 'A');

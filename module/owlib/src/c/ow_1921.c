@@ -790,7 +790,7 @@ static int FS_r_logdate(_DATE * d, const struct parsedname *pn)
 	if (mission.rollover)
 		pass = mission.samples >> 11;	// samples/2048
 
-	if (pn->extension > -1) {
+	if (pn->extension > EXTENSION_ALL) {
 		if (pass) {
 			d[0] =
 				mission.start + (mission.samples - 2048 -
@@ -845,7 +845,7 @@ static int FS_r_logudate(UINT * u, const struct parsedname *pn)
 	if (mission.rollover)
 		pass = mission.samples >> 11;	// samples/2048
 
-	if (pn->extension > -1) {
+	if (pn->extension > EXTENSION_ALL) {
 		if (pass) {
 			u[0] =
 				mission.start + (mission.samples - 2048 -
@@ -888,7 +888,7 @@ static int FS_r_logtemp(_FLOAT * T, const struct parsedname *pn)
 		off = mission.samples & 0x07FF;	// samples%2048
 	}
 
-	if (pn->extension > -1) {
+	if (pn->extension > EXTENSION_ALL) {
 		BYTE data[1];
 		if (pass) {
 			if (OW_r_mem_crc16

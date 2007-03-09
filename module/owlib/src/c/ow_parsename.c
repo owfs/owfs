@@ -488,10 +488,10 @@ static enum parse_enum Parse_Property(char *filename,
 			return parse_error;	/* An extension not allowed when non-aggregate */
 		} else if (strcasecmp(dot, "ALL") == 0) {
 			//printf("FP ALL\n");
-			pn->extension = -1;	/* ALL */
+			pn->extension = EXTENSION_ALL;	/* ALL */
 		} else if (pn->ft->format == ft_bitfield
 				   && strcasecmp(dot, "BYTE") == 0) {
-			pn->extension = -2;	/* BYTE */
+			pn->extension = EXTENSION_BYTE;	/* BYTE */
 			//printf("FP BYTE\n") ;
 		} else {
 			if (pn->ft->ag->letters == ag_letters) {

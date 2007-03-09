@@ -241,7 +241,7 @@ static int FS_r_local(struct one_wire_query * owq)
 
 	/* Array property? Read separately? Read together and manually separate? */
 	if (pn->ft->ag) {			/* array property */
-		if (pn->extension == -1) {
+		if (pn->extension == EXTENSION_ALL) {
 			switch (pn->ft->ag->combined) {
 			case ag_separate:	/* separate reads, artificially combined into a single array */
 				return FS_r_separate_all(owq);
@@ -250,7 +250,7 @@ static int FS_r_local(struct one_wire_query * owq)
 				/* return ALL if required   (comma separated) */
 				return FS_r_aggregate_all(owq);
 			}
-		} else if (pn->extension > -1
+		} else if (pn->extension > EXTENSION_ALL
 				   && pn->ft->ag->combined == ag_aggregate) {
 			/* split apart if a single item requested */
 			return FS_r_aggregate(owq);
@@ -331,7 +331,7 @@ static int FS_r_single(struct one_wire_query * owq)
 		return 0;
 
 	/* Special for *.BYTE -- treat as a single value */
-	if (format == ft_bitfield && pn->extension == -2)
+	if (format == ft_bitfield && pn->extension == EXTENSION_BYTE)
 		format = ft_unsigned;
 
 	switch (format) {

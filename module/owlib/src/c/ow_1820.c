@@ -422,7 +422,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE convert[] = { CMD_CONVERT_TEMPERATURE, };
-	UINT delay = 1000;			// hard wired
+	UINT delay = 1100;			// hard wired
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
 		TRXN_START,

@@ -605,6 +605,12 @@ struct devlock {
 	pthread_mutex_t lock;
 };
 
+#define EXTENSION_BYTE	-2
+#define EXTENSION_ALL	-1
+#define EXTENSION_ALL_SEPARATE	-1
+#define EXTENSION_ALL_MIXED		-1
+#define EXTENSION_ALL_AGGREGATE	-1
+
 enum pn_type { pn_real =
 		0, pn_statistics, pn_system, pn_settings, pn_structure
 };

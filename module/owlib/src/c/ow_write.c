@@ -260,17 +260,17 @@ static int FS_w_local(struct one_wire_query * owq)
 		switch (pn->ft->ag->combined) {
 		case ag_aggregate:
 			/* agregate property -- need to read all and replace a single value, then write all */
-			if (pn->extension > -1)
+			if (pn->extension > EXTENSION_ALL)
 				return FS_w_aggregate(owq);
 			/* fallthrough for extension==-1 or -2 */
 		case ag_mixed:
-			if (pn->extension == -1)
+			if (pn->extension == EXTENSION_ALL)
 				return FS_w_aggregate_all(owq);
 			/* Does the right thing, aggregate write for ALL and individual for splits */
 			break;				/* continue for bitfield */
 		case ag_separate:
 			/* write all of them, but one at a time */
-			if (pn->extension == -1)
+			if (pn->extension == EXTENSION_ALL)
 				return FS_w_separate_all(owq);
 			break;				/* fall through for individual writes */
 		}
@@ -585,7 +585,7 @@ static int FS_w_aggregate(struct one_wire_query * owq)
 	struct parsedname pn_all;
 
 	memcpy(&pn_all, pn, sizeof(struct parsedname));	//shallow copy
-	pn_all.extension = -1;		// to save full string only
+	pn_all.extension = EXTENSION_ALL;		// to save full string only
 
 	/* readable at all? cannot write a part if whole can't be read */
 	if (pn->ft->read.v == NULL)

@@ -75,6 +75,7 @@ void Cache_Open(void);
 void Cache_Close(void);
 void Cache_Clear(void);
 
+int OWQ_Cache_Add( const struct one_wire_query * owq ) ;
 int Cache_Add(const void *data, const size_t datasize,
 			  const struct parsedname *pn);
 int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
@@ -83,6 +84,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 					   const struct internal_prop *ip,
 					   const struct parsedname *pn);
 
+int OWQ_Cache_Get( struct one_wire_query * owq ) ;
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
 int Cache_Get_Strict(void *data, size_t dsize,
 					 const struct parsedname *pn);
@@ -95,6 +97,7 @@ int Cache_Get_Internal_Strict(void *data, size_t dsize,
 							  const struct internal_prop *ip,
 							  const struct parsedname *pn);
 
+int OWQ_Cache_Del( const struct one_wire_query * owq ) ;
 int Cache_Del(const struct parsedname *pn);
 int Cache_Del_Dir(const struct parsedname *pn);
 int Cache_Del_Device(const struct parsedname *pn);

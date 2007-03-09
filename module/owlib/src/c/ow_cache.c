@@ -21,6 +21,9 @@ $Id$
 #if OW_CACHE
 #include <limits.h>
 
+#define EXTENSION_DEVICE	-1
+#define EXTENSION_INTERNAL	-2
+
 /* Put the globals into a struct to declutter the namespace */
 static struct {
 	void *new_db;				// current cache database
@@ -194,6 +197,51 @@ static int Add_Stat(struct cache *scache, const int result)
 	return result;
 }
 
+int OWQ_Cache_Add( const struct one_wire_query * owq )
+{
+	struct parsedname * pn = &OWQ_pn(owq) ;
+	if ( pn->extension == EXTENSION_ALL ) {
+		switch ( pn->ft->format ) {
+			case ft_ascii:
+			case ft_vascii:
+			case ft_binary:
+				if ( OWQ_offset(owq) > 0 ) return 1 ;
+				if ( OWQ_size(owq) != OWQ_FullFileLength(owq) ) return 1 ;
+				return Cache_Add( OWQ_buffer(owq), OWQ_size(owq), pn ) ;
+			case ft_integer:
+			case ft_unsigned:
+			case ft_yesno:
+			case ft_date:
+			case ft_float:
+			case ft_temperature:
+			case ft_tempgap:
+				return Cache_Add( &OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
+			default:
+				return 1 ;
+		}
+	} else {
+		switch ( pn->ft->format ) {
+			case ft_ascii:
+			case ft_vascii:
+			case ft_binary:
+				if ( OWQ_offset(owq) > 0 ) return 1 ;
+				if ( OWQ_length(owq) != OWQ_FileLength(owq) ) return 1 ;
+				return Cache_Add( OWQ_mem(owq), OWQ_length(owq), pn ) ;
+			case ft_integer:
+			case ft_unsigned:
+			case ft_yesno:
+			case ft_date:
+			case ft_float:
+			case ft_temperature:
+			case ft_tempgap:
+				return Cache_Add( &OWQ_val(owq), sizeof(union value_object), pn ) ;
+			default:
+				return 1 ;
+		}
+	}
+}
+	
+
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
 int Cache_Add(const void *data, const size_t datasize,
@@ -286,7 +334,7 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = NULL;			// value connected to all in-devices
 	//tn->tk.p.in = pn->in ;
-	tn->tk.extension = -1;
+	tn->tk.extension = EXTENSION_DEVICE;
 	tn->expires = duration + time(NULL);
 	tn->dsize = sizeof(int);
 	memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
@@ -317,7 +365,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = ip->name;
-	tn->tk.extension = -2;
+	tn->tk.extension = EXTENSION_INTERNAL;
 	tn->expires = duration + time(NULL);
 	tn->dsize = datasize;
 	if (datasize)
@@ -494,6 +542,52 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 	return 0;
 }
 
+
+int OWQ_Cache_Get( struct one_wire_query * owq )
+{
+	struct parsedname * pn = &OWQ_pn(owq) ;
+	if ( pn->extension == EXTENSION_ALL ) {
+		switch ( pn->ft->format ) {
+			case ft_ascii:
+			case ft_vascii:
+			case ft_binary:
+				if ( OWQ_offset(owq) > 0 ) return 1 ;
+				if ( OWQ_size(owq) != OWQ_FullFileLength(owq) ) return 1 ;
+				return Cache_Get_Strict( OWQ_buffer(owq), OWQ_size(owq), pn ) ;
+			case ft_integer:
+			case ft_unsigned:
+			case ft_yesno:
+			case ft_date:
+			case ft_float:
+			case ft_temperature:
+			case ft_tempgap:
+				return Cache_Get_Strict( &OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
+			default:
+				return 1 ;
+		}
+	} else {
+		switch ( pn->ft->format ) {
+			case ft_ascii:
+			case ft_vascii:
+			case ft_binary:
+				if ( OWQ_offset(owq) > 0 ) return 1 ;
+				if ( OWQ_length(owq) != OWQ_FileLength(owq) ) return 1 ;
+				return Cache_Get_Strict( OWQ_mem(owq), OWQ_length(owq), pn ) ;
+			case ft_integer:
+			case ft_unsigned:
+			case ft_yesno:
+			case ft_date:
+			case ft_float:
+			case ft_temperature:
+			case ft_tempgap:
+				return Cache_Get_Strict( &OWQ_val(owq), sizeof(union value_object), pn ) ;
+			default:
+				return 1 ;
+		}
+	}
+}
+
+
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 {
@@ -599,7 +693,7 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = NULL;				// value connected to all in-devices
-	tn.tk.extension = -1;
+	tn.tk.extension = EXTENSION_DEVICE;
 	return Get_Stat(&cache_dev,
 					Cache_Get_Common(bus_nr, &size, duration, &tn));
 }
@@ -635,7 +729,7 @@ int Cache_Get_Internal(void *data, size_t * dsize,
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = ip->name;
-	tn.tk.extension = -2;
+	tn.tk.extension = EXTENSION_INTERNAL;
 	switch (ip->change) {
 	case fc_persistent:
 		return Get_Stat(&cache_sto,
@@ -757,6 +851,11 @@ static int Del_Stat(struct cache *scache, const int result)
 	return result;
 }
 
+int OWQ_Cache_Del( const struct one_wire_query * owq )
+{
+	return Cache_Del( &OWQ_pn(owq) ) ;
+}
+
 int Cache_Del(const struct parsedname *pn)
 {
 	struct tree_node tn;
@@ -805,7 +904,7 @@ int Cache_Del_Device(const struct parsedname *pn)
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->in;
-	tn.tk.extension = -1;
+	tn.tk.extension = EXTENSION_DEVICE;
 	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }
 

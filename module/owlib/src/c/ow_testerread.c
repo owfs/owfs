@@ -27,9 +27,9 @@ static int FS_read_tester_array(struct one_wire_query * owq);
 int FS_read_tester(struct one_wire_query * owq)
 {
     switch (OWQ_pn(owq).extension) {
-        case -1:                    /* array */
+        case EXTENSION_ALL:                    /* array */
             return FS_read_tester_array(owq);
-            case -2:                    /* bitfield */
+		case EXTENSION_BYTE:                    /* bitfield */
         default:
             return FS_read_tester_single(owq);
     }
@@ -51,7 +51,7 @@ static int FS_read_tester_single(struct one_wire_query * owq)
             OWQ_Y(owq) = calculated_value & 0x1 ;
             break ;
         case ft_bitfield:
-            if ( OWQ_pn(owq).extension == -2 ) {
+            if ( OWQ_pn(owq).extension == EXTENSION_BYTE ) {
                 OWQ_U(owq) = calculated_value ;
             } else {
                 OWQ_Y(owq) = calculated_value & 0x1 ;
@@ -105,7 +105,7 @@ static int FS_read_tester_single(struct one_wire_query * owq)
 }
 
 /* Read each array element independently, but return as one long string */
-/* called when pn->extension==-1 (ALL) and pn->ft->ag->combined==ag_separate */
+/* called when pn->extension==EXTENSION_ALL and pn->ft->ag->combined==ag_separate */
 static int FS_read_tester_array(struct one_wire_query * owq)
 {
     size_t buffer_space_left = OWQ_size(owq);

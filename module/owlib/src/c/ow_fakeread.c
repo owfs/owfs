@@ -37,9 +37,9 @@ static int FS_read_fake_array(struct one_wire_query * owq);
 int FS_read_fake(struct one_wire_query * owq)
 {
     switch (OWQ_pn(owq).extension) {
-        case -1:                    /* array */
+        case EXTENSION_ALL:                    /* array */
             return FS_read_fake_array(owq);
-            case -2:                    /* bitfield */
+		case EXTENSION_BYTE:                    /* bitfield */
         default:
             return FS_read_fake_single(owq);
     }
@@ -55,7 +55,7 @@ static int FS_read_fake_single(struct one_wire_query * owq)
             OWQ_Y(owq) = Random_y ;
             break ;
         case ft_bitfield:
-            if ( OWQ_pn(owq).extension == -2 ) {
+            if ( OWQ_pn(owq).extension == EXTENSION_BYTE ) {
                 OWQ_U(owq) = Random_u ;
             } else {
                 OWQ_Y(owq) = Random_y ;
@@ -97,7 +97,7 @@ static int FS_read_fake_single(struct one_wire_query * owq)
 }
 
 /* Read each array element independently, but return as one long string */
-/* called when pn->extension==-1 (ALL) and pn->ft->ag->combined==ag_separate */
+/* called when pn->extension==EXTENSION_ALL and pn->ft->ag->combined==ag_separate */
 static int FS_read_fake_array(struct one_wire_query * owq)
 {
     size_t buffer_space_left = OWQ_size(owq);
