@@ -51,14 +51,9 @@ int FS_read(const char *path, char *buf, const size_t size,
 	LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path),
         (int) size, (int) offset) ;
     // Parseable path?
-    //if (FS_ParsedName(path, &pn))
     if (FS_OWQ_create(path,buf,size,offset,&owq))
         return -ENOENT;
 
-	//printf("FS_read: KnownBus=%c pn->bus_nr=%d\n", KnownBus(&pn)?'Y':'N', pn.bus_nr);
-	//printf("FS_read: pn->path=%s pn->path_busless=%s\n", pn.path, pn.path_busless);
-	//printf("FS_read: pid=%ld call postparse size=%ld pn->type=%d\n", pthread_self(), size, pn.type);
-    //r = FS_read_postparse(buf, size, offset, &pn);
 #if 0
     Debug_Bytes("Real buffer returned",buf,r) ;
     Debug_OWQ = FS_input_owq(&owq) ;
@@ -206,8 +201,7 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
 					pthread_self());
 #endif /* OW_MT */
-		//printf("FS_r_given_bus pid=%ld call ServerRead\n", pthread_self());
-		r = ServerRead(OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), pn);
+		r = ServerRead(owq);
 		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
 	} else {
         STAT_ADD1(read_calls);	/* statistics */

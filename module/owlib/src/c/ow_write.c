@@ -226,10 +226,7 @@ static int FS_w_given_bus(struct one_wire_query * owq)
 	if (TestConnection(pn)) {
 		write_or_error = -ECONNABORTED;
 	} else if (KnownBus(pn) && BusIsServer(pn->in)) {
-        char * buf = OWQ_buffer(owq) ;
-        size_t size = OWQ_size(owq) ;
-        off_t offset = OWQ_offset(owq) ;
-        write_or_error = ServerWrite(buf, size, offset, pn);
+        write_or_error = ServerWrite(owq);
     } else {
         write_or_error = LockGet(pn) ;
         if (write_or_error == 0) {
@@ -296,31 +293,21 @@ static int FS_w_single(struct one_wire_query * owq)
 	switch (pn->ft->format) {
 	case ft_integer:
         ret = (pn->ft->write.i) (&OWQ_I(owq), pn);
-        if (ret == 0)
-            Cache_Add(&OWQ_I(owq), sizeof(int), pn);
 		break;
 	case ft_bitfield:
 	case ft_unsigned:
         ret = (pn->ft->write.u) (&OWQ_U(owq), pn);
-        if (ret == 0)
-            Cache_Add(&OWQ_U(owq), sizeof(UINT), pn);
         break;
 	case ft_tempgap:
 	case ft_float:
 	case ft_temperature:
         ret = (pn->ft->write.f) (&OWQ_F(owq), pn);
-        if (ret == 0)
-            Cache_Add(&OWQ_F(owq), sizeof(_FLOAT), pn);
         break;
 	case ft_date:
         ret = (pn->ft->write.d) (&OWQ_D(owq), pn);
-        if (ret == 0)
-            Cache_Add(&OWQ_D(owq), sizeof(_DATE), pn);
         break;
 	case ft_yesno:
         ret = (pn->ft->write.y) (&OWQ_Y(owq), pn);
-        if (ret == 0)
-            Cache_Add(&OWQ_Y(owq), sizeof(int), pn);
         break;
 	case ft_vascii:
 	case ft_ascii:
@@ -332,11 +319,8 @@ static int FS_w_single(struct one_wire_query * owq)
                 write_length = file_length - OWQ_offset(owq) ;
             }
             ret = (pn->ft->write.a) (OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
-            if ( (ret >= 0) && (write_length == file_length) ) {
-                Cache_Add(OWQ_buffer(owq), write_length, pn);
-            } else {
-                Cache_Del(pn);
-            }
+            OWQ_mem(owq) = OWQ_buffer(owq) ;
+            OWQ_length(owq) = ret ;
 		}
 		break;
 	case ft_binary:
@@ -348,11 +332,8 @@ static int FS_w_single(struct one_wire_query * owq)
                 write_length = file_length - OWQ_offset(owq) ;
             }
             ret = (pn->ft->write.b) ((BYTE *) OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
-            if ( (ret >= 0) && (write_length == file_length) ) {
-                Cache_Add(OWQ_buffer(owq), write_length, pn);
-            } else {
-                Cache_Del(pn);
-            }
+            OWQ_mem(owq) = OWQ_buffer(owq) ;
+            OWQ_length(owq) = ret ;
         }
 		break;
 	case ft_directory:
@@ -364,7 +345,9 @@ static int FS_w_single(struct one_wire_query * owq)
 		break;
 	}
 
-	//printf("FS_w_single: return %d\n", ret);
+    if ( ret < 0 || OWQ_Cache_Add(owq) ) {
+        OWQ_Cache_Del(owq) ;
+    }
 	return ret;
 }
 

@@ -71,12 +71,13 @@ int LINK_detect(struct connection_in *in)
 
 	// set the baud rate to 9600
 	COM_speed(B9600, &pn);
-	COM_flush(&pn);
+	//COM_flush(&pn);
 	if (LINK_reset(&pn) == 0 && LINK_write(LINK_string(" "), 1, &pn) == 0) {
 		BYTE tmp[36] = "(none)";
 		char *stringp = (char *) tmp;
 		/* read the version string */
-		memset(tmp, 0, 36);
+        printf("LINK 0\n");
+        memset(tmp, 0, 36);
         LINK_read(tmp, 36, &pn);	// ignore return value -- will time out, probably
         //Debug_Bytes("Read version from link",tmp,36);
         COM_flush(&pn);
@@ -88,16 +89,19 @@ int LINK_detect(struct connection_in *in)
 			case '0':
 				in->Adapter = adapter_LINK_10;
 				in->adapter_name = "LINK v1.0";
-				break;
+                printf("LINK 00\n");
+                break;
 			case '1':
 				in->Adapter = adapter_LINK_11;
 				in->adapter_name = "LINK v1.1";
-				break;
+                printf("LINK 01\n");
+                break;
 			case '2':
 			default:
 				in->Adapter = adapter_LINK_12;
 				in->adapter_name = "LINK v1.2";
-				break;
+                printf("LINK 02\n");
+                break;
 			}
 			return 0;
 		}
@@ -113,24 +117,29 @@ static int LINK_reset(const struct parsedname *pn)
 
 	COM_flush(pn);
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
-    if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn)) {
+    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 2, pn)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
-		return -EIO;
+        printf("LINK 1\n");
+        return -EIO;
 	}
 	
     switch (resp[1]) {
 	case 'P':
+        printf("LINK 1P\n");
         ret = BUS_RESET_OK ;
         pn->in->AnyDevices = 1;
 		break;
 	case 'N':
+        printf("LINK 1N\n");
         ret = BUS_RESET_OK ;
         pn->in->AnyDevices = 0;
 		break;
 	case 'S':
+        printf("LINK 1S\n");
         ret = BUS_RESET_SHORT ;
         break ;
     default:
+        printf("LINK 1Z\n");
         ret = -EIO ;
 	}
 	
@@ -211,18 +220,18 @@ static int LINK_next_both(struct device_search *ds,
 static int LINK_read(BYTE * buf, const size_t size,
 						 const struct parsedname *pn)
 {
-	size_t inlength = size;
-	fd_set fdset;
-	ssize_t r;
-	struct timeval tval;
-	int ret;
+    int error_return = 0 ;
+    size_t bytes_left = size;
 
-	while (inlength > 0) {
-		if (!pn->in) {
-			ret = -EIO;
-			STAT_ADD1(DS2480_read_null);
-			break;
-		}
+    if (pn->in == NULL) {
+        STAT_ADD1(DS2480_read_null);
+        return -EIO ;
+    }
+    printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->in->fd,(long int)Global.timeout_serial);
+    while (bytes_left > 0) {
+        int select_return = 0 ;
+        fd_set fdset;
+        struct timeval tval;
 		// set a descriptor to wait for a character available
 		FD_ZERO(&fdset);
 		FD_SET(pn->in->fd, &fdset);
@@ -237,16 +246,19 @@ static int LINK_read(BYTE * buf, const size_t size,
 		 */
 
 		// if byte available read or return bytes read
-		ret = select(pn->in->fd + 1, &fdset, NULL, NULL, &tval);
-		if (ret > 0) {
+        select_return = select(pn->in->fd + 1, &fdset, NULL, NULL, &tval);
+        printf("Link Read select = %d\n",select_return) ;
+        if (select_return > 0) {
+            ssize_t read_return ;
 			if (FD_ISSET(pn->in->fd, &fdset) == 0) {
-				ret = -EIO;		/* error */
+                error_return = -EIO;		/* error */
 				STAT_ADD1(DS2480_read_fd_isset);
 				break;
 			}
 //            update_max_delay(pn);
-			r = read(pn->in->fd, &buf[size - inlength], inlength);
-			if (r < 0) {
+            read_return = read(pn->in->fd, &buf[size - bytes_left], bytes_left);
+            Debug_Bytes( "LINK read",&buf[size - bytes_left], read_return ) ;
+            if (read_return < 0) {
 				if (errno == EINTR) {
 					/* read() was interrupted, try again */
 					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
@@ -254,12 +266,12 @@ static int LINK_read(BYTE * buf, const size_t size,
 				}
 				ERROR_CONNECT("LINK read error: %s\n",
 							  SAFESTRING(pn->in->name));
-				ret = -errno;	/* error */
+                error_return = -errno;	/* error */
 				STAT_ADD1(DS2480_read_read);
 				break;
 			}
-			inlength -= r;
-		} else if (ret < 0) {
+            bytes_left -= read_return;
+        } else if (select_return < 0) {
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
 				STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
@@ -276,11 +288,11 @@ static int LINK_read(BYTE * buf, const size_t size,
 			return -EINTR;
 		}
 	}
-	if (inlength > 0) {			/* signal that an error was encountered */
+	if (bytes_left > 0) {			/* signal that an error was encountered */
 		ERROR_CONNECT("LINK read short error: %s\n",
 					  SAFESTRING(pn->in->name));
 		STAT_ADD1_BUS(BUS_read_errors, pn->in);
-		return ret;				/* error */
+        return error_return;				/* error */
 	}
 	//printf("Link_Read_Low <%*s>\n",(int)size,buf) ;
 	return 0;
@@ -295,20 +307,22 @@ static int LINK_read(BYTE * buf, const size_t size,
 static int LINK_write(const BYTE * buf, const size_t size,
 					  const struct parsedname *pn)
 {
-	ssize_t r ;
-    ssize_t left = size ;
-    //Debug_Bytes( "LINK write", buf, size) ;
-//    COM_flush(pn) ;
-    while ( left > 0 ) {
-        r = write(pn->in->fd, buf, size);
+    ssize_t left_to_write = size ;
 
-        if (r < 0) {
+    Debug_Bytes( "LINK write", buf, size) ;
+//    COM_flush(pn) ;
+    printf("Link write attempting %d bytes on %d\n",(int)size,pn->in->fd) ;
+    while ( left_to_write > 0 ) {
+        ssize_t write_or_error = write(pn->in->fd, buf, left_to_write);
+        Debug_Bytes("Link write",buf,left_to_write);
+        printf("Link write = %d\n",(int)write_or_error);
+        if (write_or_error < 0) {
             ERROR_CONNECT("Trouble writing data to LINK: %s\n",
                         SAFESTRING(pn->in->name));
             STAT_ADD1_BUS(BUS_write_errors, pn->in);
-            return r ;
+            return write_or_error ;
         }
-        left -= r ;
+        left_to_write -= write_or_error ;
     }
     tcdrain(pn->in->fd);
     gettimeofday(&(pn->in->bus_write_time), NULL);

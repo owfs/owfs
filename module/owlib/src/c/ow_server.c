@@ -115,11 +115,11 @@ static void Server_close(struct connection_in *in)
 	FreeClientAddr(in);
 }
 
-int ServerRead(char *buf, const size_t size, const off_t offset,
-			   const struct parsedname *pn)
+int ServerRead(struct one_wire_query * owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
+    struct parsedname * pn = &OWQ_pn(owq) ;
 	struct serverpackage sp =
 		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
 	int persistent = 1;
@@ -130,8 +130,8 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
-	sm.size = size;
-	sm.offset = offset;
+    sm.size = OWQ_size(owq);
+    sm.offset = OWQ_offset(owq);
 
 	//printf("ServerRead path=%s\n", pn->path_busless);
 	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index,
@@ -143,7 +143,7 @@ int ServerRead(char *buf, const size_t size, const off_t offset,
 		if ((connectfd =
 			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
 			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, buf, size) < 0) {
+             } else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq)) < 0) {
 			ret = -EIO;
 		} else {
 			ret = cm.ret;
@@ -191,13 +191,13 @@ int ServerPresence(const struct parsedname *pn)
 	return ret;
 }
 
-int ServerWrite(const char *buf, const size_t size, const off_t offset,
-				const struct parsedname *pn)
+int ServerWrite(struct one_wire_query * owq )
 {
 	struct server_msg sm;
 	struct client_msg cm;
+    struct parsedname * pn = &OWQ_pn(owq) ;
 	struct serverpackage sp =
-		{ pn->path_busless, buf, size, pn->tokenstring, pn->tokens, };
+    { pn->path_busless, (BYTE *)OWQ_buffer(owq), OWQ_size(owq), pn->tokenstring, pn->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;
@@ -205,8 +205,8 @@ int ServerWrite(const char *buf, const size_t size, const off_t offset,
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_write;
-	sm.size = size;
-	sm.offset = offset;
+    sm.size = OWQ_size(owq);
+    sm.offset = OWQ_offset(owq);
 
 	//printf("ServerRead path=%s\n", pn->path_busless);
 	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index,

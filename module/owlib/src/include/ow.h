@@ -838,10 +838,8 @@ void ow_help(const char *arg);
 void update_max_delay(const struct parsedname *pn);
 
 int ServerPresence(const struct parsedname *pn);
-int ServerRead(char *buf, const size_t size, const off_t offset,
-			   const struct parsedname *pn);
-int ServerWrite(const char *buf, const size_t size, const off_t offset,
-				const struct parsedname *pn);
+int ServerRead(struct one_wire_query * owq);
+int ServerWrite(struct one_wire_query * owq);
 int ServerDir(void (*dirfunc) (void *, const struct parsedname *),
 			  void *v, const struct parsedname *pn, uint32_t * flags);
 
