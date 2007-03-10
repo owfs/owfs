@@ -101,11 +101,15 @@ void err_msg(int errnoflag, int level, const char *fmt, ...)
 }
 
 /* Purely a debugging routine -- print an arbitrary buffer of bytes */
-void Debug_Bytes( const char * title, const unsigned char * buf, size_t length)
+void _Debug_Bytes( const char * title, const unsigned char * buf, int length)
 {
-    size_t i ;
+    int i ;
     /* title line */
     printf("Byte buffer %s, length=%d",title?title:"anonymous",(int)length) ;
+    if ( length < 0 ) {
+        printf( "\n-- Attempt to write with bad length\n");
+        return ;
+    }
     if ( buf==NULL ) {
         printf("\n-- NULL buffer\n");
         return ;

@@ -11,7 +11,7 @@ $Id$
 #define OW_ONEWIREQUERY_H
 
 struct owq_memory {
-	void * mem ;
+	char * mem ;
 	size_t size ;
 }  ;
 
@@ -60,8 +60,11 @@ int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, 
 int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, size_t size, off_t offset, struct one_wire_query * owq ) ;
 void FS_OWQ_destroy( struct one_wire_query * owq ) ;
 
+int OWQ_create_shallow( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original, int extension ) ;
+void OWQ_destroy_shallow( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original ) ;
+
 int FS_input_owq( struct one_wire_query * owq) ;
 int FS_output_owq( struct one_wire_query * owq) ;
-void print_owq( struct one_wire_query * owq ) ;
+void _print_owq( struct one_wire_query * owq ) ;
 
 #endif							/* OW_ONEWIREQUERY_H */

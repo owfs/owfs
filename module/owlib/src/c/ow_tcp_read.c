@@ -125,7 +125,7 @@ void tcp_read_flush(int fd)
     if ( fcntl(fd, F_SETFL, flags|O_NONBLOCK ) < 0 ) return ;
 
     while ( ( nread = read( fd, (BYTE *)buffer, 16 ) ) > 0 ) {
-        Debug_Bytes("tcp_read_flush",buffer,nread) ;
+        Debug_Bytes("tcp_read_flush",(BYTE *)buffer,nread) ;
         continue;
     }
 

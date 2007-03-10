@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-size_t OWQ_FileLength( struct one_wire_query * owq )
+size_t OWQ_FileLength( const struct one_wire_query * owq )
 {
     if (OWQ_pn(owq).type == pn_structure)
         return 30;              /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
@@ -46,7 +46,7 @@ size_t OWQ_FileLength( struct one_wire_query * owq )
 }
 
     /* Length of file based on filetype and extension */
-size_t OWQ_FullFileLength( struct one_wire_query * owq )
+size_t OWQ_FullFileLength( const struct one_wire_query * owq )
 {
     if (OWQ_pn(owq).type == pn_structure) {
         return OWQ_FileLength(owq) ;

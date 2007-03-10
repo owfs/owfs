@@ -15,7 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-void print_owq( struct one_wire_query * owq )
+void _print_owq( struct one_wire_query * owq )
 {
     char c[32] ;
     printf("OWQ OneWireQuery structure of %s\n",OWQ_pn(owq).path) ;

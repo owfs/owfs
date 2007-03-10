@@ -752,8 +752,8 @@ int FS_ParsedNamePlus(const char *path, const char *file,
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
-size_t OWQ_FileLength( struct one_wire_query * owq ) ;
-size_t OWQ_FullFileLength( struct one_wire_query * owq ) ;
+size_t OWQ_FileLength( const struct one_wire_query * owq ) ;
+size_t OWQ_FullFileLength( const struct one_wire_query * owq ) ;
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
 size_t SimpleFileLength(const struct parsedname *pn);

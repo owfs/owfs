@@ -126,7 +126,7 @@ int FS_write_postparse(struct one_wire_query * owq)
 	STATUNLOCK;
     
     input_or_error = FS_input_owq(owq) ;
-    print_owq(owq) ;
+    Debug_OWQ(owq) ;
     if ( input_or_error < 0 ) return input_or_error ;
 
 	switch (pn->type) {
@@ -449,7 +449,8 @@ static int FS_w_aggregate_all(struct one_wire_query * owq)
 		{
 			_DATE *d = (_DATE *) calloc(elements, sizeof(_DATE));
 			if (d == NULL) {
-				ret = -ENOMEM;
+                size_t fl = FileLength(pn);
+                ret = -ENOMEM;
 			} else {
 				if ((ret = FS_input_date_array(d, buf, size, pn)) == 0) {
 					ret = (pn->ft->write.d) (d, pn);

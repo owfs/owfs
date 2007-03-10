@@ -18,7 +18,7 @@
 
 /* error functions */
 void err_msg(int errnoflag, int level, const char *fmt, ...);
-void Debug_Bytes( const char * title, const unsigned char * buf, size_t length) ;
+void _Debug_Bytes( const char * title, const unsigned char * buf, int length) ;
 
 extern int log_available;
 
@@ -36,6 +36,9 @@ extern int log_available;
 #define ERROR_DATA(...)       if (Global.error_level>3) err_msg(1,3,__VA_ARGS__) ;
 #define ERROR_DETAIL(...)     if (Global.error_level>4) err_msg(1,4,__VA_ARGS__) ;
 #define ERROR_DEBUG(...)      if (Global.error_level>5) err_msg(1,5,__VA_ARGS__) ;
+
+#define Debug_Bytes(title,buf,length)    if (Global.error_level>5) _Debug_Bytes(title,buf,length) ;
+#define Debug_OWQ(owq)        if (Global.error_level>5) _print_owq(owq) ;
 #else
 #define LEVEL_DEFAULT(...)    { } while (0);
 #define LEVEL_CONNECT(...)    { } while (0);
@@ -50,6 +53,9 @@ extern int log_available;
 #define ERROR_DATA(...)       { } while (0);
 #define ERROR_DETAIL(...)     { } while (0);
 #define ERROR_DEBUG(...)      { } while (0);
+
+#define Debug_Bytes(title,buf,length)    { } while (0);
+#define Debug_OWQ(owq)        { } while (0);
 #endif
 
 /* Make sure strings are safe for printf */

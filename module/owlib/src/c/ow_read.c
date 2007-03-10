@@ -61,11 +61,11 @@ int FS_read(const char *path, char *buf, const size_t size,
     //r = FS_read_postparse(buf, size, offset, &pn);
 #if 0
     Debug_Bytes("Real buffer returned",buf,r) ;
-    owq_reply = FS_input_owq(&owq) ;
+    Debug_OWQ = FS_input_owq(&owq) ;
     printf("OWQ INPUT PARSE = %d\n",owq_reply) ;
-    owq_reply = FS_output_owq(&owq) ;
+    Debug_OWQ = FS_output_owq(&owq) ;
     printf("OWQ OUTPUT PARSE = %d\n",owq_reply) ;
-    print_owq(&owq) ;
+    Debug_OWQ(&owq) ;
 #endif
     r = FS_read_postparse(&owq);
     //FS_ParsedName_destroy(&pn);
@@ -195,7 +195,7 @@ static int FS_r_given_bus(struct one_wire_query * owq)
     int r = 0;
 	//printf("FS_r_given_bus\n");
 	LEVEL_DEBUG("FS_r_given_bus\n");
-    print_owq(owq) ;
+    Debug_OWQ(owq) ;
 
 	if (!KnownBus(pn)) {
 		LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set!\n");
@@ -226,6 +226,7 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 static int FS_r_local(struct one_wire_query * owq)
 {
     struct parsedname * pn = &OWQ_pn(owq) ;
+    off_t file_length = 0;
 	
     /* Readable? */
 	if ((pn->ft->read.v) == NULL)
@@ -239,7 +240,15 @@ static int FS_r_local(struct one_wire_query * owq)
     if (pn->in->Adapter == adapter_tester && pn->ft->change != fc_static)
         return FS_read_tester(owq);
 
-	/* Array property? Read separately? Read together and manually separate? */
+    /* Mounting fuse with "direct_io" will cause a second read with offset
+    * at end-of-file... Just return 0 if offset == size */
+    file_length = OWQ_FileLength(owq);
+    if (OWQ_offset(owq) > file_length)
+        return -ERANGE;
+    if (OWQ_offset(owq) == file_length)
+        return 0;
+
+    /* Array property? Read separately? Read together and manually separate? */
 	if (pn->ft->ag) {			/* array property */
 		if (pn->extension == EXTENSION_ALL) {
 			switch (pn->ft->ag->combined) {
@@ -283,29 +292,31 @@ static int FS_structure(struct one_wire_query * owq)
 	   } ;
 	 */
 	int len;
-    struct one_wire_query owq_copy ;
+    struct one_wire_query struct_owq_copy ;
+    struct one_wire_query * owq_copy = &struct_owq_copy ;
 
 	size_t file_length = OWQ_FullFileLength(owq);
     if (OWQ_offset(owq) > (off_t) file_length)
 		return -ERANGE;
 
-	memcpy(&owq_copy, owq, sizeof(struct one_wire_query));	/* shallow copy */
-    OWQ_pn(&owq_copy).type = pn_real;			/* "real" type to get return length, rather than "structure" length */
+    OWQ_create_shallow( owq_copy, owq, OWQ_pn(owq).extension );	/* shallow copy */
+    OWQ_pn(owq_copy).type = pn_real;			/* "real" type to get return length, rather than "structure" length */
 
 	UCLIBCLOCK;
     len = snprintf(OWQ_buffer(owq),
                    OWQ_size(owq),
 				   "%c,%.6d,%.6d,%.2s,%.6d,",
-                   ft_format_char[OWQ_pn(owq).ft->format],
-                   (OWQ_pn(owq).ft->ag) ? OWQ_pn(owq).extension : 0,
-                   (OWQ_pn(owq).ft->ag) ? OWQ_pn(owq).ft->ag->elements : 1,
-                   (OWQ_pn(owq).ft->read.v) ?
-				   ((OWQ_pn(owq).ft->write.v) ? "rw" : "ro") :
-                           ((OWQ_pn(owq).ft->write.v) ? "wo" : "oo"),
-				   (int) OWQ_FullFileLength(owq)
+                   ft_format_char[OWQ_pn(owq_copy).ft->format],
+                   (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).extension : 0,
+                   (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).ft->ag->elements : 1,
+                   (OWQ_pn(owq_copy).ft->read.v) ?
+				   ((OWQ_pn(owq_copy).ft->write.v) ? "rw" : "ro") :
+                           ((OWQ_pn(owq_copy).ft->write.v) ? "wo" : "oo"),
+				   (int) OWQ_FullFileLength(owq_copy)
 		);
 	UCLIBCUNLOCK;
 
+    OWQ_destroy_shallow( owq_copy, owq ) ;
     if ( len <0 ) return -EFAULT ;
     return Fowq_output_offset_and_size( OWQ_buffer(owq), len, owq ) ;
 }
@@ -313,283 +324,217 @@ static int FS_structure(struct one_wire_query * owq)
 /* read without artificial separation or combination */
 static int FS_r_single(struct one_wire_query * owq)
 {
-	size_t file_length ;
     struct parsedname * pn = &OWQ_pn(owq) ;
     enum ft_format format = pn->ft->format;
 
-//printf("FS_r_single pid=%ld path=%s size=%d, offset=%d, extension=%d adapter=%d\n",pthread_self(), pn->path,size,(int)offset,pn->extension,pn->in->index) ;
-
 	LEVEL_CALL("FS_r_single: format=%d file_length=%d offset=%d\n",
-               (int) pn->ft->format, (int) OWQ_size(owq), (int) OWQ_offset(owq))
+               (int) pn->ft->format, (int) OWQ_size(owq), (int) OWQ_offset(owq)) ;
 
-    /* Mounting fuse with "direct_io" will cause a second read with offset
-        * at end-of-file... Just return 0 if offset == size */
-            file_length = OWQ_FileLength(owq);
-    if (OWQ_offset(owq) > (off_t) file_length)
-		return -ERANGE;
-    if (OWQ_offset(owq) == (off_t) file_length)
-		return 0;
+    if ( OWQ_Cache_Get(owq) ) { // non-zero means not found
 
-	/* Special for *.BYTE -- treat as a single value */
-	if (format == ft_bitfield && pn->extension == EXTENSION_BYTE)
-		format = ft_unsigned;
-
-	switch (format) {
-	case ft_integer:{
-			int i;
-			if (Cache_Get_Strict(&i, sizeof(int), pn)) {
+        /* Special for *.BYTE -- treat as a single value */
+        if (format == ft_bitfield && pn->extension == EXTENSION_BYTE)
+            format = ft_unsigned;
+    
+        switch (format) {
+        case ft_integer:{
+                int i;
                 int ret ;
                 if ((ret = (pn->ft->read.i) (&i, pn)) < 0)
-					return ret;
-				Cache_Add(&i, sizeof(int), pn);
-			}
-			LEVEL_DEBUG("FS_r_single: (integer) %d\n", i);
-            OWQ_I(owq) = i ;
-			break;
-		}
-	case ft_bitfield:{
-			UINT u;
-			if (Cache_Get_Strict(&u, sizeof(UINT), pn)) {
+                    return ret;
+                    Cache_Add(&i, sizeof(int), pn);
+                    LEVEL_DEBUG("FS_r_single: (integer) %d\n", i);
+                    OWQ_I(owq) = i ;
+                break;
+            }
+        case ft_bitfield:{
+                UINT u;
                 int ret ;
                 if ((ret = (pn->ft->read.u) (&u, pn)) < 0)
-					return ret;
-				Cache_Add(&u, sizeof(UINT), pn);
-			}
-			LEVEL_DEBUG("FS_r_single: (bitfield) %u\n", u);
-            OWQ_Y(owq) = UT_getbit((void *) (&u), pn->extension) ;
-			break;
-		}
-	case ft_unsigned:{
-			UINT u;
-			if (Cache_Get_Strict(&u, sizeof(UINT), pn)) {
+                    return ret;
+                LEVEL_DEBUG("FS_r_single: (bitfield) %u\n", u);
+                OWQ_Y(owq) = UT_getbit((void *) (&u), pn->extension) ;
+                break;
+            }
+        case ft_unsigned:{
+                UINT u;
                 int ret ;
                 if ((ret = (pn->ft->read.u) (&u, pn)) < 0)
-					return ret;
-				Cache_Add(&u, sizeof(UINT), pn);
-			}
-			LEVEL_DEBUG("FS_r_single: (unsigned) %u\n", u);
-            OWQ_U(owq) = u ;
-            break;
-		}
-	case ft_float:
-	case ft_temperature:
-	case ft_tempgap:{
-			_FLOAT f;
-			if (Cache_Get_Strict(&f, sizeof(_FLOAT), pn)) {
+                    return ret;
+                LEVEL_DEBUG("FS_r_single: (unsigned) %u\n", u);
+                OWQ_U(owq) = u ;
+                break;
+            }
+        case ft_float:
+        case ft_temperature:
+        case ft_tempgap:{
+                _FLOAT f;
                 int ret ;
                 if ((ret = (pn->ft->read.f) (&f, pn)) < 0)
-					return ret;
-				Cache_Add(&f, sizeof(_FLOAT), pn);
-			}
-			LEVEL_DEBUG("FS_r_single: (float) %G\n", f);
-            OWQ_F(owq) = f ;
-            break;
-		}
-	case ft_date:{
-			_DATE d;
-			if (Cache_Get_Strict(&d, sizeof(_DATE), pn)) {
+                    return ret;
+                LEVEL_DEBUG("FS_r_single: (float) %G\n", f);
+                OWQ_F(owq) = f ;
+                break;
+            }
+        case ft_date:{
+                _DATE d;
                 int ret ;
                 if ((ret = (pn->ft->read.d) (&d, pn)) < 0)
-					return ret;
-				Cache_Add(&d, sizeof(_DATE), pn);
-			}
-			LEVEL_DEBUG("FS_r_single: (date) %lu\n",
-						(unsigned long int) d);
-            OWQ_D(owq) = d ;
-            break;
-		}
-	case ft_yesno:{
-			int y;
-			if (Cache_Get_Strict(&y, sizeof(int), pn)) {
+                    return ret;
+                LEVEL_DEBUG("FS_r_single: (date) %lu\n",
+                            (unsigned long int) d);
+                OWQ_D(owq) = d ;
+                break;
+            }
+        case ft_yesno:{
+                int y;
                 int ret ;
                 if ((ret = (pn->ft->read.y) (&y, pn)) < 0)
-					return ret;
-				Cache_Add(&y, sizeof(int), pn);
-			}
-			LEVEL_DEBUG("FS_r_single: (yesno) %d\n", y);
-            OWQ_Y(owq) = y ;
-            break;
-		}
-	case ft_vascii:
-	case ft_ascii:
-	case ft_binary:{
-        ssize_t allowed_size = file_length - OWQ_offset(owq);
-        if (allowed_size > (ssize_t) OWQ_size(owq) ) {
-            allowed_size = OWQ_size(owq) ;
-        }
-        if (Cache_Get_Strict(OWQ_buffer(owq), file_length, pn)) {
-            int ret ;
-            ret = (format == ft_binary) ?
-                  (pn->ft->read.b) ((BYTE *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq),pn) :
-                  (pn->ft->read.a) ((ASCII *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq),pn) ;
-            if (ret == pn->ft->suglen) {
-                Cache_Add(OWQ_buffer(owq), ret, pn);
-            } else if (ret >= 0) {
-                Cache_Del(pn);
+                    return ret;
+                LEVEL_DEBUG("FS_r_single: (yesno) %d\n", y);
+                OWQ_Y(owq) = y ;
+                break;
             }
-            return ret;
+        case ft_vascii:
+        case ft_ascii:
+        case ft_binary:{
+            ssize_t allowed_size = OWQ_FileLength(owq) - OWQ_offset(owq);
+            int ret ;
+            if (allowed_size > (ssize_t) OWQ_size(owq) ) {
+                allowed_size = OWQ_size(owq) ;
+            }
+            ret = (format == ft_binary) ?
+                (pn->ft->read.b) ((BYTE *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq),pn) :
+                (pn->ft->read.a) ((ASCII *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq),pn) ;
+            if (ret ) return ret ;
+            /* Set up for caching */
+            OWQ_mem(owq) = OWQ_buffer(owq) ;
+            OWQ_length(owq) = OWQ_size(owq) ;
+            break ;
         }
-        return file_length ;
+        case ft_directory:
+        case ft_subdir:
+            return -ENOSYS;
+        default:
+            return -ENOENT;
+        }
+        OWQ_Cache_Add(owq) ;
     }
-	case ft_directory:
-	case ft_subdir:
-		return -ENOSYS;
-	default:
-		return -ENOENT;
-	}
     return FS_output_owq(owq) ; // put data as string into buffer and return length
 }
 
 /* read an aggregation (returns an array from a single read) */
 static int FS_r_aggregate_all(struct one_wire_query * owq)
 {
-    struct parsedname * pn = &OWQ_pn(owq) ;
-    size_t elements = pn->ft->ag->elements;
-	int ret = 0;
-	size_t file_length = 0;
-
+    size_t file_length = OWQ_FullFileLength(owq);
     
-	/* Mounting fuse with "direct_io" will cause a second read with offset
-	 * at end-of-file... Just return 0 if offset == size */
-    file_length = OWQ_FullFileLength(owq);
-    if (OWQ_offset(owq) > (off_t) file_length)
-		return -ERANGE;
-    if (OWQ_offset(owq) == (off_t) file_length)
-		return 0;
+    if ( OWQ_Cache_Get(owq) ) { // non-zero means not found
+        int ret = 0;
+        struct parsedname * pn = &OWQ_pn(owq) ;
+        size_t elements = pn->ft->ag->elements;
 
-	switch (pn->ft->format) {
-	case ft_integer:
-		{
-			int *i = (int *) calloc(elements, sizeof(int));
-            if (i == NULL) {
-				ret = -ENOMEM;
-                break ;
-            }
-			if (Cache_Get_Strict(i, elements * sizeof(int), pn)) {
-				if ((ret = (pn->ft->read.i) (i, pn)) >= 0)
-					Cache_Add(i, elements * sizeof(int), pn);
-			}
-            if (ret >= 0) {
-                size_t transfer_index ;
-                for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_I(owq,transfer_index) = i[transfer_index] ;
-            }
-            free(i);
-			break;
-		}
-	case ft_unsigned:
-		{
-			UINT *u = (UINT *) calloc(elements, sizeof(UINT));
+        switch (pn->ft->format) {
+        case ft_integer:
+            {
+                int *i = (int *) calloc(elements, sizeof(int));
+                if (i == NULL) return -ENOMEM;
 
-            if (u == NULL){
-                ret = -ENOMEM;
-                break ;
+                ret = (pn->ft->read.i) (i, pn) ;
+                if (ret >= 0) {
+                    size_t transfer_index ;
+                    for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_I(owq,transfer_index) = i[transfer_index] ;
+                }
+                free(i);
+                break;
             }
-			if (Cache_Get_Strict(u, elements * sizeof(UINT), pn)) {
-				if ((ret = (pn->ft->read.u) (u, pn)) >= 0)
-					Cache_Add(u, elements * sizeof(UINT), pn);
-			}
-            if (ret >= 0) {
-                size_t transfer_index ;
-                for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_U(owq,transfer_index) = u[transfer_index] ;
+        case ft_unsigned:
+            {
+                UINT *u = (UINT *) calloc(elements, sizeof(UINT));
+                if (u == NULL) return -ENOMEM;
+                
+                ret = (pn->ft->read.u) (u, pn) ;
+                if (ret >= 0) {
+                    size_t transfer_index ;
+                    for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_U(owq,transfer_index) = u[transfer_index] ;
+                }
+                free(u);
+                break;
             }
-            free(u);
-			break;
-		}
-	case ft_temperature:
-	case ft_tempgap:
-	case ft_float:
-		{
-			_FLOAT *f = (_FLOAT *) calloc(elements, sizeof(_FLOAT));
-            if (f == NULL){
-                ret = -ENOMEM;
-                break ;
-            }
-            if (Cache_Get_Strict(f, elements * sizeof(_FLOAT), pn)) {
-				if ((ret = (pn->ft->read.f) (f, pn)) >= 0)
-					Cache_Add(f, elements * sizeof(_FLOAT), pn);
-			}
-            if (ret >= 0) {
-                size_t transfer_index ;
-                for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_F(owq,transfer_index) = f[transfer_index] ;
-            }
-            free(f);
-			break;
-		}
-	case ft_date:
-		{
-			_DATE *d = (_DATE *) calloc(elements, sizeof(_DATE));
-            if (d == NULL){
-                ret = -ENOMEM;
-                break ;
-            }
-            ret = (pn->ft->read.d) (d, pn);
-			if (Cache_Get_Strict(d, elements * sizeof(_DATE), pn)) {
-				if ((ret = (pn->ft->read.d) (d, pn)) >= 0)
-					Cache_Add(d, elements * sizeof(_DATE), pn);
-			}
-            if (ret >= 0) {
-                size_t transfer_index ;
-                for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_D(owq,transfer_index) = d[transfer_index] ;
-            }
-            free(d);
-			break;
-		}
-	case ft_yesno:
-		{
-			int *y = (int *) calloc(elements, sizeof(int));
-            if (y == NULL){
-                ret = -ENOMEM;
-                break ;
-            }
-            if (Cache_Get_Strict(y, elements * sizeof(int), pn)) {
-				if ((ret = (pn->ft->read.y) (y, pn)) >= 0)
-					Cache_Add(y, elements * sizeof(int), pn);
-			}
-            if (ret >= 0) {
-                size_t transfer_index ;
-                for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_Y(owq,transfer_index) = y[transfer_index] ;
-            }
-            free(y);
-			break;
-		}
-	case ft_bitfield:
-		{
-			UINT u;
-			ret = (pn->ft->read.u) (&u, pn);
-			if (Cache_Get_Strict(&u, sizeof(UINT), pn)) {
-				if ((ret = (pn->ft->read.u) (&u, pn)) >= 0)
-					Cache_Add(&u, sizeof(UINT), pn);
-			}
-            if (ret >= 0) {
-                size_t transfer_index ;
-                for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_Y(owq,transfer_index) = UT_getbit((void *)(&u),transfer_index) ;
-            }
-            break;
-		}
-	case ft_vascii:
-	case ft_ascii:{
-        ssize_t allowed_size = file_length - OWQ_offset(owq);
-        if (allowed_size > (ssize_t) OWQ_size(owq))
-            allowed_size = OWQ_size(owq);
-        return (pn->ft->read.a) ((ASCII *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq), pn);
-		}
-	case ft_binary:{
-        ssize_t allowed_size = file_length - OWQ_offset(owq);
-        if (allowed_size > (ssize_t) OWQ_size(owq))
-            allowed_size = OWQ_size(owq);
-        return (pn->ft->read.b) ((BYTE *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq), pn);
-		}
-	case ft_directory:
-	case ft_subdir:
-		return -ENOSYS;
-	default:
-		return -ENOENT;
-	}
+        case ft_temperature:
+        case ft_tempgap:
+        case ft_float:
+            {
+                _FLOAT *f = (_FLOAT *) calloc(elements, sizeof(_FLOAT));
+                if (f == NULL) return -ENOMEM;
 
-    if ( ret >= 0 ) {
-        ret = FS_output_owq(owq) ; // put data as string into buffer and return length
+                ret = (pn->ft->read.f) (f, pn) ;
+                if (ret >= 0) {
+                    size_t transfer_index ;
+                    for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_F(owq,transfer_index) = f[transfer_index] ;
+                }
+                free(f);
+                break;
+            }
+        case ft_date:
+            {
+                _DATE *d = (_DATE *) calloc(elements, sizeof(_DATE));
+                if (d == NULL) return -ENOMEM;
+
+                ret = (pn->ft->read.d) (d, pn);
+                if (ret >= 0) {
+                    size_t transfer_index ;
+                    for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_D(owq,transfer_index) = d[transfer_index] ;
+                }
+                free(d);
+                break;
+            }
+        case ft_yesno:
+            {
+                int *y = (int *) calloc(elements, sizeof(int));
+                if (y == NULL) return -ENOMEM;
+
+                ret = (pn->ft->read.y) (y, pn);
+                if (ret >= 0) {
+                    size_t transfer_index ;
+                    for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_Y(owq,transfer_index) = y[transfer_index] ;
+                }
+                free(y);
+                break;
+            }
+        case ft_bitfield:
+            {
+                UINT u;
+                
+                ret = (pn->ft->read.u) (&u, pn);
+                if (ret >= 0) {
+                    size_t transfer_index ;
+                    for (transfer_index = 0 ; transfer_index < elements ; ++transfer_index ) OWQ_array_Y(owq,transfer_index) = UT_getbit((void *)(&u),transfer_index) ;
+                }
+                break;
+            }
+        case ft_vascii:
+        case ft_ascii:
+        case ft_binary:
+            {
+                ssize_t allowed_size = file_length - OWQ_offset(owq);
+                
+                if (allowed_size > (ssize_t) OWQ_size(owq))
+                    allowed_size = OWQ_size(owq);
+                ret = (pn->ft->format==ft_binary) ?
+                        (pn->ft->read.b) ((BYTE *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq), pn) :
+                        (pn->ft->read.a) ((ASCII *) OWQ_buffer(owq), allowed_size, OWQ_offset(owq), pn);
+            }
+        case ft_directory:
+        case ft_subdir:
+            return -ENOSYS;
+        default:
+            return -ENOENT;
+        }
+        if ( ret ) return ret ;
+        OWQ_Cache_Add(owq) ;
     }
-	return ret;
+
+    return FS_output_owq(owq) ; // put data as string into buffer and return length
 }
 
 /* Read each array element independently, but return as one long string */
@@ -599,12 +544,12 @@ static int FS_r_separate_all(struct one_wire_query * owq)
     struct parsedname * pn = &OWQ_pn(owq) ;
     struct one_wire_query struct_owq_single ;
     struct one_wire_query * owq_single = &struct_owq_single ;
+
     size_t file_length  = OWQ_FullFileLength(owq);
     size_t entry_length  = OWQ_FileLength(owq);;
     size_t elements = pn->ft->ag->elements ;
     size_t extension ;
     int output_or_error ;
-    
     BYTE * memory_buffer = NULL ; // used for ascii and binary only
 
 	STAT_ADD1(read_array);		/* statistics */
@@ -615,7 +560,7 @@ static int FS_r_separate_all(struct one_wire_query * owq)
 		return 0;
 
 	/* shallow copy */
-	memcpy(owq_single, owq, sizeof(struct one_wire_query));
+    OWQ_create_shallow( owq_single, owq, 0 ) ;
 
     /* set up a memory buffer space for ascii or binary data, temporarily */
     switch ( pn->ft->format ) {
@@ -623,7 +568,10 @@ static int FS_r_separate_all(struct one_wire_query * owq)
         case ft_vascii:
         case ft_binary:
             memory_buffer = malloc( file_length ) ;
-            if ( memory_buffer == NULL ) return -ENOMEM ;
+            if ( memory_buffer == NULL ) {
+                OWQ_destroy_shallow( owq_single, owq ) ;
+                return -ENOMEM ;
+            }
             break ;
         default:
             break ;
@@ -631,19 +579,23 @@ static int FS_r_separate_all(struct one_wire_query * owq)
     
     /* Loop through F_r_single, just to get data */
 	for (extension = 0; extension < elements; ++extension) {
+        int single_or_error ;
+
         OWQ_pn(owq_single).extension = extension ;
-        int ret = FS_r_single(owq_single) ;
-        if ( ret < 0 ) {
+        single_or_error = FS_r_single(owq_single) ;
+
+        if ( single_or_error < 0 ) {
             if ( memory_buffer != NULL ) free( memory_buffer) ;
-            return ret ;
+            OWQ_destroy_shallow( owq_single, owq ) ;
+            return single_or_error ;
         }
         switch ( pn->ft->format ) {
             case ft_ascii:
             case ft_vascii:
             case ft_binary:
-                OWQ_mem(owq_single) = &memory_buffer[extension*entry_length] ;
-                memcpy( OWQ_mem(owq_single), OWQ_buffer(owq_single), ret ) ;
-                OWQ_length(owq_single) = ret ;
+                OWQ_mem(owq_single) = (char *) &memory_buffer[extension*entry_length] ;
+                memcpy( OWQ_mem(owq_single), OWQ_buffer(owq_single), single_or_error ) ;
+                OWQ_length(owq_single) = single_or_error ;
                 break ;
             default:
                 break ;
@@ -653,6 +605,7 @@ static int FS_r_separate_all(struct one_wire_query * owq)
 	}
     
     output_or_error = FS_output_owq(owq) ; // put data as string into buffer and return length
+    OWQ_destroy_shallow( owq_single, owq ) ;
     if ( memory_buffer != NULL ) free( memory_buffer) ;
     return output_or_error;
 }
@@ -661,139 +614,52 @@ static int FS_r_separate_all(struct one_wire_query * owq)
 /* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
 static int FS_r_aggregate(struct one_wire_query * owq)
 {
-    struct parsedname * pn = &OWQ_pn(owq) ;
-    size_t elements = pn->ft->ag->elements;
-	int ret = 0;
-	off_t file_length = 0;
-    size_t extension = pn->extension ;
+    struct one_wire_query struct_owq_all ;
+    struct one_wire_query * owq_all = &struct_owq_all ;
+    
+	int return_status = 0;
+    size_t extension = OWQ_pn(owq).extension ;
 
-	/* Mounting fuse with "direct_io" will cause a second read with offset
-	 * at end-of-file... Just return 0 if offset == size */
-	file_length = OWQ_FileLength(owq);
-    if (OWQ_offset(owq) > file_length)
-		return -ERANGE;
-    if (OWQ_offset(owq) == file_length)
-		return 0;
+    if ( OWQ_create_shallow( owq_all, owq, EXTENSION_ALL ) ) return -ENOMEM ;
 
-	switch (pn->ft->format) {
+    switch (OWQ_pn(owq).ft->format) {
 	case ft_integer:
-		{
-			int *i = (int *) calloc(elements, sizeof(int));
-			if (i == NULL)
-				return -ENOMEM;
-			if (Cache_Get_Strict(i, elements * sizeof(int), pn)) {
-				if ((ret = (pn->ft->read.i) (i, pn)) >= 0)
-					Cache_Add(i, elements * sizeof(int), pn);
-			}
-			if (ret >= 0)
-                OWQ_I(owq) = i[extension] ;
-			free(i);
-			break;
-		}
 	case ft_unsigned:
-		{
-			UINT *u = (UINT *) calloc(elements, sizeof(UINT));
-			if (u == NULL)
-				return -ENOMEM;
-			if (Cache_Get_Strict(u, elements * sizeof(UINT), pn)) {
-				if ((ret = (pn->ft->read.u) (u, pn)) >= 0)
-					Cache_Add(u, elements * sizeof(UINT), pn);
-			}
-			if (ret >= 0)
-                OWQ_U(owq) = u[extension] ;
-            free(u);
-			break;
-		}
 	case ft_float:
 	case ft_temperature:
 	case ft_tempgap:
-		{
-			_FLOAT *f = (_FLOAT *) calloc(elements, sizeof(_FLOAT));
-			if (f == NULL)
-				return -ENOMEM;
-			if (Cache_Get_Strict(f, elements * sizeof(_FLOAT), pn)) {
-				if ((ret = (pn->ft->read.f) (f, pn)) >= 0)
-					Cache_Add(f, elements * sizeof(_FLOAT), pn);
-			}
-            if (ret >= 0)
-                OWQ_F(owq) = f[extension] ;
-            free(f);
-			break;
-		}
 	case ft_date:
-		{
-			_DATE *d = (_DATE *) calloc(elements, sizeof(_DATE));
-			if (d == NULL)
-				return -ENOMEM;
-			if (Cache_Get_Strict(d, elements * sizeof(_DATE), pn)) {
-				if ((ret = (pn->ft->read.d) (d, pn)) >= 0)
-					Cache_Add(d, elements * sizeof(_DATE), pn);
-			}
-			if (ret >= 0)
-                OWQ_D(owq) = d[extension] ;
-            free(d);
-			break;
-		}
 	case ft_yesno:
-		{
-			int *y = (int *) calloc(elements, sizeof(int));
-			if (y == NULL)
-				return -ENOMEM;
-			if (Cache_Get_Strict(y, elements * sizeof(int), pn)) {
-				if ((ret = (pn->ft->read.y) (y, pn)) >= 0)
-					Cache_Add(y, elements * sizeof(int), pn);
-			}
-			if (ret >= 0)
-                OWQ_Y(owq) = y[extension] ;
-            free(y);
-			break;
-		}
 	case ft_bitfield:
-		{
-			UINT u;
-			ret = (pn->ft->read.u) (&u, pn);
-			if (Cache_Get_Strict(&u, sizeof(UINT), pn)) {
-				if ((ret = (pn->ft->read.u) (&u, pn)) >= 0)
-					Cache_Add(&u, sizeof(UINT), pn);
-			}
-			if (ret >= 0) 
-                OWQ_Y(owq) = UT_getbit((void *) (&u), extension) ;
-			break;
-		}
+        memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
+        break ;
 	case ft_vascii:
 	case ft_ascii:
     case ft_binary:
     {
-        size_t full_file_length = OWQ_FullFileLength(owq) ;
-        BYTE * memory_buffer = malloc( full_file_length ) ;
-        if ( memory_buffer == NULL ) return -ENOMEM ;
-        ret = ( OWQ_pn(owq).ft->format == ft_binary ) ?
-                (pn->ft->read.b) (memory_buffer, full_file_length, 0, pn) :
-                (pn->ft->read.a) ((ASCII *)memory_buffer, full_file_length, 0, pn) ;
-        if ( ret < 0 ) {
-            free(memory_buffer) ;
-            return ret ;
+        ssize_t copy_length = OWQ_FileLength(owq) - OWQ_offset(owq) ;
+        if ( copy_length < 0 ) {
+            return_status = -ERANGE ;
+        } else {
+            if ( copy_length > (ssize_t) OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
+            memcpy( OWQ_buffer(owq), &(OWQ_array_mem(owq_all,extension)[OWQ_offset(owq)]), copy_length ) ;
+            OWQ_mem(owq) = OWQ_buffer(owq) ;
+            OWQ_length(owq) = copy_length ;
         }
-        ret = Fowq_output_offset_and_size( (ASCII *) &memory_buffer[file_length*extension], file_length, owq ) ;
-        if ( ret < 0 ) {
-            free(memory_buffer) ;
-            return ret ;
-        }
-        OWQ_mem(owq) = OWQ_buffer(owq) ;
-        OWQ_length(owq) = ret ;
-        break ;
     }
 	case ft_directory:
 	case ft_subdir:
-		return -ENOSYS;
+		return_status = -ENOSYS;
 	default:
-		return -ENOENT;
+		return_status = -ENOENT;
 	}
 
-    if ( ret >= 0 ) {
-        ret = FS_output_owq(owq) ; // put data as string into buffer and return length
+    OWQ_destroy_shallow(owq_all,owq) ;
+    
+    if ( return_status >= 0 ) {
+        return FS_output_owq(owq) ; // put data as string into buffer and return length
     }
-    return ret;
+    return return_status ;
 }
 
 int FS_output_integer(int value, char *buf, const size_t size,

@@ -164,7 +164,7 @@ int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_qu
 {
     size_t copy_length = length ;
     off_t offset = OWQ_offset(owq) ;
-    Debug_Bytes("Fowq_output_offset_and_size",string,length);
+    Debug_Bytes("Fowq_output_offset_and_size",(BYTE *)string,length);
     if (offset>(off_t)length) return -EFAULT ;
     copy_length -= offset ;
     if ( copy_length > OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
@@ -197,7 +197,7 @@ static int Fowq_output_array_with_commas( struct one_wire_query * owq )
 
     // loop though all array elements
     for ( extension = 0 ; extension < elements ; ++extension ) {
-        printf("Fowq_output_array_with_commas element=%d, size_used=%d, remaining=%d\n",(int)extension,(int)used_size,(int)remaining_size) ;
+        //printf("Fowq_output_array_with_commas element=%d, size_used=%d, remaining=%d\n",(int)extension,(int)used_size,(int)remaining_size) ;
         // Prepare a copy of owq that only points to a single element
         memcpy( &owq_single, owq, sizeof(owq_single) ) ;
         OWQ_pn(&owq_single).extension = extension ;
