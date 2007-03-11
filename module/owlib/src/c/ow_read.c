@@ -22,7 +22,6 @@ static int FS_r_local(struct one_wire_query * owq);
 static int FS_r_separate_all(struct one_wire_query * owq);
 static int FS_r_aggregate(struct one_wire_query * owq);
 static int FS_r_single(struct one_wire_query * owq);
-static int FS_r_aggregate_all(struct one_wire_query * owq);
 static int FS_structure(struct one_wire_query * owq) ;
 
 /*
@@ -293,7 +292,7 @@ static int FS_structure(struct one_wire_query * owq)
     if (OWQ_offset(owq) > (off_t) file_length)
 		return -ERANGE;
 
-    OWQ_create_shallow( owq_copy, owq, OWQ_pn(owq).extension );	/* shallow copy */
+    OWQ_create_shallow_single( owq_copy, owq );	/* shallow copy */
     OWQ_pn(owq_copy).type = pn_real;			/* "real" type to get return length, rather than "structure" length */
 
 	UCLIBCLOCK;
@@ -310,7 +309,7 @@ static int FS_structure(struct one_wire_query * owq)
 		);
 	UCLIBCUNLOCK;
 
-    OWQ_destroy_shallow( owq_copy, owq ) ;
+    OWQ_destroy_shallow_single( owq_copy ) ;
     if ( len <0 ) return -EFAULT ;
     return Fowq_output_offset_and_size( OWQ_buffer(owq), len, owq ) ;
 }
@@ -418,7 +417,7 @@ static int FS_r_single(struct one_wire_query * owq)
 }
 
 /* read an aggregation (returns an array from a single read) */
-static int FS_r_aggregate_all(struct one_wire_query * owq)
+int FS_r_aggregate_all(struct one_wire_query * owq)
 {
     size_t file_length = OWQ_FullFileLength(owq);
     
@@ -554,7 +553,7 @@ static int FS_r_separate_all(struct one_wire_query * owq)
 		return 0;
 
 	/* shallow copy */
-    OWQ_create_shallow( owq_single, owq, 0 ) ;
+    OWQ_create_shallow_single( owq_single, owq ) ;
 
     /* set up a memory buffer space for ascii or binary data, temporarily */
     switch ( pn->ft->format ) {
@@ -563,7 +562,7 @@ static int FS_r_separate_all(struct one_wire_query * owq)
         case ft_binary:
             memory_buffer = malloc( file_length ) ;
             if ( memory_buffer == NULL ) {
-                OWQ_destroy_shallow( owq_single, owq ) ;
+                OWQ_destroy_shallow_single( owq_single ) ;
                 return -ENOMEM ;
             }
             break ;
@@ -580,7 +579,7 @@ static int FS_r_separate_all(struct one_wire_query * owq)
 
         if ( single_or_error < 0 ) {
             if ( memory_buffer != NULL ) free( memory_buffer) ;
-            OWQ_destroy_shallow( owq_single, owq ) ;
+            OWQ_destroy_shallow_single( owq_single ) ;
             return single_or_error ;
         }
         switch ( pn->ft->format ) {
@@ -599,7 +598,7 @@ static int FS_r_separate_all(struct one_wire_query * owq)
 	}
     
     output_or_error = FS_output_owq(owq) ; // put data as string into buffer and return length
-    OWQ_destroy_shallow( owq_single, owq ) ;
+    OWQ_destroy_shallow_single( owq_single ) ;
     if ( memory_buffer != NULL ) free( memory_buffer) ;
     return output_or_error;
 }
@@ -614,41 +613,44 @@ static int FS_r_aggregate(struct one_wire_query * owq)
 	int return_status = 0;
     size_t extension = OWQ_pn(owq).extension ;
 
-    if ( OWQ_create_shallow( owq_all, owq, EXTENSION_ALL ) ) return -ENOMEM ;
+    if ( OWQ_create_shallow_aggregate( owq_all, owq ) ) return -ENOMEM ;
 
-    switch (OWQ_pn(owq).ft->format) {
-	case ft_integer:
-	case ft_unsigned:
-	case ft_float:
-	case ft_temperature:
-	case ft_tempgap:
-	case ft_date:
-	case ft_yesno:
-	case ft_bitfield:
-        memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
-        break ;
-	case ft_vascii:
-	case ft_ascii:
-    case ft_binary:
-    {
-        ssize_t copy_length = OWQ_FileLength(owq) - OWQ_offset(owq) ;
-        if ( copy_length < 0 ) {
-            return_status = -ERANGE ;
-        } else {
-            if ( copy_length > (ssize_t) OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
-            memcpy( OWQ_buffer(owq), &(OWQ_array_mem(owq_all,extension)[OWQ_offset(owq)]), copy_length ) ;
-            OWQ_mem(owq) = OWQ_buffer(owq) ;
-            OWQ_length(owq) = copy_length ;
+    return_status = FS_r_aggregate_all(owq_all) ;
+    if ( return_status == 0 ) {
+        switch (OWQ_pn(owq).ft->format) {
+        case ft_integer:
+        case ft_unsigned:
+        case ft_float:
+        case ft_temperature:
+        case ft_tempgap:
+        case ft_date:
+        case ft_yesno:
+        case ft_bitfield:
+            memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
+            break ;
+        case ft_vascii:
+        case ft_ascii:
+        case ft_binary:
+        {
+            ssize_t copy_length = OWQ_FileLength(owq) - OWQ_offset(owq) ;
+            if ( copy_length < 0 ) {
+                return_status = -ERANGE ;
+            } else {
+                if ( copy_length > (ssize_t) OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
+                memcpy( OWQ_buffer(owq), &(OWQ_array_mem(owq_all,extension)[OWQ_offset(owq)]), copy_length ) ;
+                OWQ_mem(owq) = OWQ_buffer(owq) ;
+                OWQ_length(owq) = copy_length ;
+            }
+        }
+        case ft_directory:
+        case ft_subdir:
+            return_status = -ENOSYS;
+        default:
+            return_status = -ENOENT;
         }
     }
-	case ft_directory:
-	case ft_subdir:
-		return_status = -ENOSYS;
-	default:
-		return_status = -ENOENT;
-	}
 
-    OWQ_destroy_shallow(owq_all,owq) ;
+    OWQ_destroy_shallow_aggregate(owq_all) ;
     
     if ( return_status >= 0 ) {
         return FS_output_owq(owq) ; // put data as string into buffer and return length
@@ -656,97 +658,6 @@ static int FS_r_aggregate(struct one_wire_query * owq)
     return return_status ;
 }
 
-int FS_output_integer(int value, char *buf, const size_t size,
-					  const struct parsedname *pn)
-{
-	size_t suglen = SimpleFileLength(pn);
-	/* should only need suglen+1, but uClibc's snprintf()
-	   seem to trash 'len' if not increased */
-	int len;
-	char *c;
-	if (!(c = (char *) malloc(suglen + 2))) {
-		return -ENOMEM;
-	}
-	if (suglen > size)
-		suglen = size;
-	UCLIBCLOCK;
-	len = snprintf(c, suglen + 1, "%*d", (int) suglen, value);
-	UCLIBCUNLOCK;
-	if ((len < 0) || ((size_t) len > suglen)) {
-		free(c);
-		return -EMSGSIZE;
-	}
-	memcpy(buf, c, (size_t) len);
-	free(c);
-	return len;
-}
-
-int FS_output_unsigned(UINT value, char *buf, const size_t size,
-					   const struct parsedname *pn)
-{
-	size_t suglen = SimpleFileLength(pn);
-	int len;
-	/*
-	   char c[suglen+2] ;
-	   defining this REALLY doesn't work on gcc 3.3.2 either...
-	   It will corrupt "const size_t size"! after returning from this function
-	 */
-	/* should only need suglen+1, but uClibc's snprintf()
-	   seem to trash 'len' if not increased */
-	char *c;
-	if (!(c = (char *) malloc(suglen + 2))) {
-		return -ENOMEM;
-	}
-	if (suglen > size)
-		suglen = size;
-	UCLIBCLOCK;
-	len = snprintf(c, suglen + 1, "%*u", (int) suglen, value);
-	UCLIBCUNLOCK;
-	if ((len < 0) || ((size_t) len > suglen)) {
-		free(c);
-		return -EMSGSIZE;
-	}
-	memcpy(buf, c, (size_t) len);
-	free(c);
-	return len;
-}
-
-int FS_output_float(_FLOAT value, char *buf, const size_t size,
-					const struct parsedname *pn)
-{
-	size_t suglen = SimpleFileLength(pn);
-	/* should only need suglen+1, but uClibc's snprintf()
-	   seem to trash 'len' if not increased */
-	int len;
-	char *c;
-	if (!(c = (char *) malloc(suglen + 2))) {
-		return -ENOMEM;
-	}
-	if (suglen > size)
-		suglen = size;
-	UCLIBCLOCK;
-	len = snprintf(c, suglen + 1, "%*G", (int) suglen, value);
-	UCLIBCUNLOCK;
-	if ((len < 0) || ((size_t) len > suglen)) {
-		free(c);
-		return -EMSGSIZE;
-	}
-	memcpy(buf, c, (size_t) len);
-	free(c);
-	return len;
-}
-
-int FS_output_date(_DATE value, char *buf, const size_t size,
-				   const struct parsedname *pn)
-{
-	char c[26];
-	(void) pn;
-	if (size < 24)
-		return -EMSGSIZE;
-	ctime_r(&value, c);
-	memcpy(buf, c, 24);
-	return 24;
-}
 int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
 					size_t length)
 {

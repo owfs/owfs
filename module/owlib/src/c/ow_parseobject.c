@@ -88,60 +88,67 @@ static void value_object_pointers( struct one_wire_query * owq )
 
 /* make a "shallow" copy -- but possibly full array size or just an element size */
 /* if full array size, allocate extra space for value_object and possible buffer */
-int OWQ_create_shallow( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original, int extension )
+void OWQ_create_shallow_single( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original )
+{
+    memcpy( owq_shallow, owq_original, sizeof(struct one_wire_query) ) ;
+    OWQ_mem(owq_shallow) = OWQ_buffer(owq_shallow) ;
+    OWQ_length(owq_shallow) = OWQ_size(owq_shallow) ;
+}
+
+/* make a "shallow" copy -- but possibly full array size or just an element size */
+/* if full array size, allocate extra space for value_object and possible buffer */
+int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original )
 {
     struct parsedname * pn = &OWQ_pn(owq_original) ;
 
     memcpy( owq_shallow, owq_original, sizeof(struct one_wire_query) ) ;
-    OWQ_pn(owq_shallow).extension = extension;
     
-    if ( extension == EXTENSION_ALL ) {
-        /* allocate new value_object array space */
-        OWQ_array(owq_shallow) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
-        if ( OWQ_array(owq_shallow) == NULL ) return -ENOMEM ;
-        if ( pn->extension == EXTENSION_ALL ) {
-            memcpy( OWQ_array(owq_shallow), OWQ_array(owq_original), pn->ft->ag->elements * sizeof(union value_object) ) ;
-        }
-        if ( pn->extension>EXTENSION_ALL ) {
-            OWQ_offset(owq_shallow) = 0 ;
-            switch ( pn->ft->format ) {
-                case ft_binary:
-                case ft_ascii:
-                case ft_vascii:
-                    /* allocate larger buffer space */
-                    OWQ_size(owq_shallow) = OWQ_FullFileLength(owq_shallow) ;
-                    OWQ_buffer(owq_shallow) = malloc( OWQ_size(owq_shallow) ) ;
-                    if ( OWQ_buffer(owq_shallow) == NULL ) {
-                        free( OWQ_array(owq_shallow) ) ;
-                        return -ENOMEM ;
-                    }
-                    value_object_pointers(owq_shallow) ;
-                    break ;
-                default:
-                    break ;
-            }
-        }
+    /* allocate new value_object array space */
+    OWQ_array(owq_shallow) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
+    if ( OWQ_array(owq_shallow) == NULL ) return -ENOMEM ;
+    if ( pn->extension == EXTENSION_ALL ) {
+        memcpy( OWQ_array(owq_shallow), OWQ_array(owq_original), pn->ft->ag->elements * sizeof(union value_object) ) ;
     }
+    
+    OWQ_offset(owq_shallow) = 0 ;
+    switch ( pn->ft->format ) {
+        case ft_binary:
+        case ft_ascii:
+        case ft_vascii:
+            /* allocate larger buffer space */
+            OWQ_size(owq_shallow) = OWQ_FullFileLength(owq_shallow) ;
+            OWQ_buffer(owq_shallow) = malloc( OWQ_size(owq_shallow) ) ;
+            if ( OWQ_buffer(owq_shallow) == NULL ) {
+                free( OWQ_array(owq_shallow) ) ;
+                return -ENOMEM ;
+            }
+            value_object_pointers(owq_shallow) ;
+            break ;
+        default:
+            break ;
+    }
+    
     return 0 ;
 }
 
-void OWQ_destroy_shallow( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original )
+void OWQ_destroy_shallow_single( struct one_wire_query * owq_shallow )
 {
-    if ( OWQ_pn(owq_shallow).extension == EXTENSION_ALL ) {
-        if ( OWQ_array(owq_shallow) ) {
-            free( OWQ_array(owq_shallow) ) ;
-            OWQ_array(owq_shallow) = NULL ;
-        }
-        if ( OWQ_pn(owq_original).extension>EXTENSION_ALL ) {
-            switch ( OWQ_pn(owq_original).ft->format ) {
-                case ft_binary:
-                case ft_ascii:
-                case ft_vascii:
-                    free ( OWQ_buffer(owq_shallow) ) ;
-                    break ;
-                default:
-                    break ;
-            }
-        }
+    (void) owq_shallow ;
+}
+
+void OWQ_destroy_shallow_aggregate( struct one_wire_query * owq_shallow )
+{
+    if ( OWQ_array(owq_shallow) ) {
+        free( OWQ_array(owq_shallow) ) ;
+        OWQ_array(owq_shallow) = NULL ;
+    }
+    switch ( OWQ_pn(owq_shallow).ft->format ) {
+        case ft_binary:
+        case ft_ascii:
+        case ft_vascii:
+            free ( OWQ_buffer(owq_shallow) ) ;
+            break ;
+        default:
+            break ;
     }
 }

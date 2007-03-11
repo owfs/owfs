@@ -76,7 +76,7 @@ int LINK_detect(struct connection_in *in)
 		BYTE tmp[36] = "(none)";
 		char *stringp = (char *) tmp;
 		/* read the version string */
-        printf("LINK 0\n");
+        //printf("LINK 0\n");
         memset(tmp, 0, 36);
         LINK_read(tmp, 36, &pn);	// ignore return value -- will time out, probably
         //Debug_Bytes("Read version from link",tmp,36);
@@ -89,18 +89,18 @@ int LINK_detect(struct connection_in *in)
 			case '0':
 				in->Adapter = adapter_LINK_10;
 				in->adapter_name = "LINK v1.0";
-                printf("LINK 00\n");
+                //printf("LINK 00\n");
                 break;
 			case '1':
 				in->Adapter = adapter_LINK_11;
 				in->adapter_name = "LINK v1.1";
-                printf("LINK 01\n");
+                //printf("LINK 01\n");
                 break;
 			case '2':
 			default:
 				in->Adapter = adapter_LINK_12;
 				in->adapter_name = "LINK v1.2";
-                printf("LINK 02\n");
+                //printf("LINK 02\n");
                 break;
 			}
 			return 0;
@@ -119,27 +119,27 @@ static int LINK_reset(const struct parsedname *pn)
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
     if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 2, pn)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
-        printf("LINK 1\n");
+        //printf("LINK 1\n");
         return -EIO;
 	}
 	
     switch (resp[1]) {
 	case 'P':
-        printf("LINK 1P\n");
+        //printf("LINK 1P\n");
         ret = BUS_RESET_OK ;
         pn->in->AnyDevices = 1;
 		break;
 	case 'N':
-        printf("LINK 1N\n");
+        //printf("LINK 1N\n");
         ret = BUS_RESET_OK ;
         pn->in->AnyDevices = 0;
 		break;
 	case 'S':
-        printf("LINK 1S\n");
+        //printf("LINK 1S\n");
         ret = BUS_RESET_SHORT ;
         break ;
     default:
-        printf("LINK 1Z\n");
+        //printf("LINK 1Z\n");
         ret = -EIO ;
 	}
 	
@@ -227,7 +227,7 @@ static int LINK_read(BYTE * buf, const size_t size,
         STAT_ADD1(DS2480_read_null);
         return -EIO ;
     }
-    printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->in->fd,(long int)Global.timeout_serial);
+    //printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->in->fd,(long int)Global.timeout_serial);
     while (bytes_left > 0) {
         int select_return = 0 ;
         fd_set fdset;
@@ -247,7 +247,7 @@ static int LINK_read(BYTE * buf, const size_t size,
 
 		// if byte available read or return bytes read
         select_return = select(pn->in->fd + 1, &fdset, NULL, NULL, &tval);
-        printf("Link Read select = %d\n",select_return) ;
+        //printf("Link Read select = %d\n",select_return) ;
         if (select_return > 0) {
             ssize_t read_return ;
 			if (FD_ISSET(pn->in->fd, &fdset) == 0) {
@@ -311,11 +311,11 @@ static int LINK_write(const BYTE * buf, const size_t size,
 
     Debug_Bytes( "LINK write", buf, size) ;
 //    COM_flush(pn) ;
-    printf("Link write attempting %d bytes on %d\n",(int)size,pn->in->fd) ;
+    //printf("Link write attempting %d bytes on %d\n",(int)size,pn->in->fd) ;
     while ( left_to_write > 0 ) {
         ssize_t write_or_error = write(pn->in->fd, buf, left_to_write);
         Debug_Bytes("Link write",buf,left_to_write);
-        printf("Link write = %d\n",(int)write_or_error);
+        //printf("Link write = %d\n",(int)write_or_error);
         if (write_or_error < 0) {
             ERROR_CONNECT("Trouble writing data to LINK: %s\n",
                         SAFESTRING(pn->in->name));

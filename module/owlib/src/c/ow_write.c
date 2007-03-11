@@ -24,32 +24,6 @@ static int FS_w_separate_all(struct one_wire_query * owq);
 static int FS_w_aggregate(struct one_wire_query * owq);
 static int FS_w_single(struct one_wire_query * owq);
 
-static int FS_input_yesno(int *result, const char *buf, const size_t size);
-static int FS_input_integer(int *result, const char *buf,
-							const size_t size);
-static int FS_input_unsigned(UINT * result, const char *buf,
-							 const size_t size);
-static int FS_input_float(_FLOAT * result, const char *buf,
-						  const size_t size);
-static int FS_input_date(_DATE * result, const char *buf,
-						 const size_t size);
-
-static int FS_input_yesno_array(int *results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn);
-static int FS_input_unsigned_array(UINT * results, const char *buf,
-								   const size_t size,
-								   const struct parsedname *pn);
-static int FS_input_integer_array(int *results, const char *buf,
-								  const size_t size,
-								  const struct parsedname *pn);
-static int FS_input_float_array(_FLOAT * results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn);
-static int FS_input_date_array(_DATE * results, const char *buf,
-							   const size_t size,
-							   const struct parsedname *pn);
-
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
@@ -286,28 +260,28 @@ static int FS_w_local(struct one_wire_query * owq)
 static int FS_w_single(struct one_wire_query * owq)
 {
     struct parsedname * pn = &OWQ_pn(owq) ;
-    int ret = -EBADMSG;
+    int write_status = -EBADMSG;
 //printf("FS_w_single\n");
 
 
 	switch (pn->ft->format) {
 	case ft_integer:
-        ret = (pn->ft->write.i) (&OWQ_I(owq), pn);
+        write_status = (pn->ft->write.i) (&OWQ_I(owq), pn);
 		break;
 	case ft_bitfield:
 	case ft_unsigned:
-        ret = (pn->ft->write.u) (&OWQ_U(owq), pn);
+        write_status = (pn->ft->write.u) (&OWQ_U(owq), pn);
         break;
 	case ft_tempgap:
 	case ft_float:
 	case ft_temperature:
-        ret = (pn->ft->write.f) (&OWQ_F(owq), pn);
+        write_status = (pn->ft->write.f) (&OWQ_F(owq), pn);
         break;
 	case ft_date:
-        ret = (pn->ft->write.d) (&OWQ_D(owq), pn);
+        write_status = (pn->ft->write.d) (&OWQ_D(owq), pn);
         break;
 	case ft_yesno:
-        ret = (pn->ft->write.y) (&OWQ_Y(owq), pn);
+        write_status = (pn->ft->write.y) (&OWQ_Y(owq), pn);
         break;
 	case ft_vascii:
 	case ft_ascii:
@@ -318,9 +292,9 @@ static int FS_w_single(struct one_wire_query * owq)
             if ( write_length + OWQ_offset(owq) > file_length ) {
                 write_length = file_length - OWQ_offset(owq) ;
             }
-            ret = (pn->ft->write.a) (OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
+            write_status = (pn->ft->write.a) (OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
             OWQ_mem(owq) = OWQ_buffer(owq) ;
-            OWQ_length(owq) = ret ;
+            OWQ_length(owq) = write_status ;
 		}
 		break;
 	case ft_binary:
@@ -331,24 +305,24 @@ static int FS_w_single(struct one_wire_query * owq)
             if ( write_length + OWQ_offset(owq) > file_length ) {
                 write_length = file_length - OWQ_offset(owq) ;
             }
-            ret = (pn->ft->write.b) ((BYTE *) OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
+            write_status = (pn->ft->write.b) ((BYTE *) OWQ_buffer(owq), write_length, OWQ_offset(owq), pn);
             OWQ_mem(owq) = OWQ_buffer(owq) ;
-            OWQ_length(owq) = ret ;
+            OWQ_length(owq) = write_status ;
         }
 		break;
 	case ft_directory:
 	case ft_subdir:
-		ret = -ENOSYS;
+        write_status = -ENOSYS;
 		break;
 	default:					/* Unknown data type */
-		ret = -EINVAL;
+        write_status = -EINVAL;
 		break;
 	}
 
-    if ( ret < 0 || OWQ_Cache_Add(owq) ) {
+    if ( write_status < 0 || OWQ_Cache_Add(owq) ) {
         OWQ_Cache_Del(owq) ;
     }
-	return ret;
+    return write_status;
 }
 
 /* return 0 if ok */
@@ -356,180 +330,88 @@ static int FS_w_single(struct one_wire_query * owq)
 /* Unlike FS_w_aggregate, no need to read in values first, since all will be replaced */
 static int FS_w_aggregate_all(struct one_wire_query * owq)
 {
-    char * buf = OWQ_buffer(owq) ;
-    size_t size = OWQ_size(owq) ;
-    off_t offset = OWQ_offset(owq) ;
     struct parsedname * pn = &OWQ_pn(owq) ;
     size_t elements = pn->ft->ag->elements;
-	size_t ffl = FullFileLength(pn);
-	int ret;
+	int write_status ;
 
-	if (offset)
+    if (OWQ_offset(owq))
 		return -EADDRNOTAVAIL;
 
 	switch (pn->ft->format) {
-	case ft_integer:
-		{
-			int *i = (int *) calloc(elements, sizeof(int));
-			if (i == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = FS_input_integer_array(i, buf, size, pn)) == 0) {
-					ret = (pn->ft->write.i) (i, pn);
-					if (ret == 0)
-						Cache_Add(&i, elements * sizeof(int), pn);
-				}
-				free(i);
-			}
-		}
-		break;
-	case ft_unsigned:
-		{
-			UINT *u = (UINT *) calloc(elements, sizeof(UINT));
-			if (u == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = FS_input_unsigned_array(u, buf, size, pn)) == 0) {
-					ret = (pn->ft->write.u) (u, pn);
-					if (ret == 0)
-						Cache_Add(&u, elements * sizeof(UINT), pn);
-				}
-				free(u);
-			}
-		}
-		break;
-	case ft_tempgap:
-	case ft_float:
-	case ft_temperature:
-		{
-			_FLOAT *f = (_FLOAT *) calloc(elements, sizeof(_FLOAT));
-			if (f == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = FS_input_float_array(f, buf, size, pn)) == 0) {
-					size_t i;
-					switch (pn->ft->format) {
-					case ft_temperature:
-						for (i = 0; i < elements; ++i)
-							f[i] = fromTemperature(f[i], pn);
-						break;
-					case ft_tempgap:
-						for (i = 0; i < elements; ++i)
-							f[i] = fromTempGap(f[i], pn);
-						// trivial fall through
-					default:
-						break;
-					}
-					ret = (pn->ft->write.f) (f, pn);
-					if (ret == 0)
-						Cache_Add(&f, elements * sizeof(_FLOAT), pn);
-				}
-				free(f);
-			}
-		}
-		break;
-	case ft_date:
-		{
-			_DATE *d = (_DATE *) calloc(elements, sizeof(_DATE));
-			if (d == NULL) {
-                size_t fl = FileLength(pn);
-                ret = -ENOMEM;
-			} else {
-				if ((ret = FS_input_date_array(d, buf, size, pn)) == 0) {
-					ret = (pn->ft->write.d) (d, pn);
-					if (ret == 0)
-						Cache_Add(&d, elements * sizeof(_DATE), pn);
-				}
-				free(d);
-			}
-		}
-		break;
-	case ft_yesno:
-		{
-			int *y = (int *) calloc(elements, sizeof(int));
-			if (y == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = FS_input_yesno_array(y, buf, size, pn)) == 0) {
-					ret = (pn->ft->write.y) (y, pn);
-					if (ret == 0)
-						Cache_Add(&y, elements * sizeof(int), pn);
-				}
-				free(y);
-			}
-		}
-		break;
-	case ft_bitfield:
-		{
-			int *y = (int *) calloc(elements, sizeof(int));
-			if (y == NULL) {
-				ret = -ENOMEM;
-			} else {
-				int i;
-				UINT U = 0;
-				if ((ret = FS_input_yesno_array(y, buf, size, pn)) == 0) {
-					for (i = pn->ft->ag->elements - 1; i >= 0; --i)
-						U = (U << 1) | (y[i] & 0x01);
-					ret = (pn->ft->write.u) (&U, pn);
-					if (ret == 0)
-						Cache_Add(&U, sizeof(UINT), pn);
-				}
-				free(y);
-			}
-		}
-		break;
-	case ft_vascii:
-	case ft_ascii:
-		{
-			size_t s = ffl;
-			if (offset > (off_t) s) {
-				ret = -ERANGE;
-			} else {
-				s -= offset;
-				if (s > size)
-					s = size;
-				ret = (pn->ft->write.a) (buf, s, offset, pn);
-				if (ret >= 0) {
-					if (s == ffl) {
-						Cache_Add(&buf, s, pn);
-					} else {
-						Cache_Del(pn);
-					}
-				}
-			}
-		}
-		break;
-	case ft_binary:
-		{
-			size_t s = ffl;
-			if (offset > (off_t) s) {
-				ret = -ERANGE;
-			} else {
-				s -= offset;
-				if (s > size)
-					s = size;
-				ret =
-					(pn->ft->write.b) ((const BYTE *) buf, s, offset, pn);
-				if (ret >= 0) {
-					if (s == ffl) {
-						Cache_Add(&buf, s, pn);
-					} else {
-						Cache_Del(pn);
-					}
-				}
-			}
-		}
-		break;
-	case ft_directory:
-	case ft_subdir:
-		ret = -ENOSYS;
-		break;
-	default:					/* Unknown data type */
-		ret = -EINVAL;
-		break;
+        case ft_integer:
+        {
+            int *i = calloc(elements, sizeof(int));
+            size_t extension ;
+            if (i == NULL) return-ENOMEM;
+            for ( extension = 0 ; extension < elements ; ++extension ) i[extension] = OWQ_array_I(owq,extension) ;
+            free(i);
+            write_status = (pn->ft->write.i) (i, pn) ;
+            break;
+        }
+        case ft_unsigned:
+        {
+            UINT *u = calloc(elements, sizeof(UINT));
+            size_t extension ;
+            if (u == NULL) return-ENOMEM;
+            for ( extension = 0 ; extension < elements ; ++extension ) u[extension] = OWQ_array_U(owq,extension) ;
+            free(u);
+            write_status = (pn->ft->write.u) (u, pn) ;
+            break;
+        }
+        case ft_tempgap:
+        case ft_float:
+        case ft_temperature:
+        {
+            _FLOAT *f = calloc(elements, sizeof(_FLOAT));
+            size_t extension ;
+            if (f == NULL) return-ENOMEM;
+            for ( extension = 0 ; extension < elements ; ++extension ) f[extension] = OWQ_array_F(owq,extension) ;
+            free(f);
+            write_status = (pn->ft->write.f) (f, pn) ;
+            break;
+        }
+        case ft_date:
+        {
+            _DATE *d = calloc(elements, sizeof(_DATE));
+            size_t extension ;
+            if (d == NULL) return-ENOMEM;
+            for ( extension = 0 ; extension < elements ; ++extension ) d[extension] = OWQ_array_D(owq,extension) ;
+            free(d);
+            write_status = (pn->ft->write.d) (d, pn) ;
+            break;
+        }
+        case ft_bitfield:
+        case ft_yesno:
+        {
+            int *y = calloc(elements, sizeof(int));
+            size_t extension ;
+            if (y == NULL) return-ENOMEM;
+            for ( extension = 0 ; extension < elements ; ++extension ) y[extension] = OWQ_array_Y(owq,extension) ;
+            free(y);
+            write_status = (pn->ft->write.y) (y, pn) ;
+            break;
+        }
+        case ft_vascii:
+        case ft_ascii:
+            write_status = (pn->ft->write.a) (OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), pn) ;
+            break;
+        case ft_binary:
+            write_status = (pn->ft->write.b) ((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), pn) ;
+            break;
+        case ft_directory:
+        case ft_subdir:
+            return -ENOSYS;
+            break;
+        default:					/* Unknown data type */
+            return -EINVAL;
+            break;
 	}
+    
+    if ( write_status < 0 || OWQ_Cache_Add(owq) ) {
+        OWQ_Cache_Del(owq) ;
+    }
 
-	return ret;
+	return write_status;
 }
 
 /* Non-combined input  field, so treat  as several separate transactions */
@@ -542,466 +424,75 @@ static int FS_w_separate_all(struct one_wire_query * owq)
 
 	STAT_ADD1(write_array);		/* statistics */
 	
-    memcpy(owq_single, owq, sizeof(struct one_wire_query));	/* shallow copy */
+    OWQ_create_shallow_single( owq_single, owq) ;
     
     for (extension = 0; extension < OWQ_pn(owq).ft->ag->elements; ++extension) {
         int write_or_error ;
         OWQ_pn(owq_single).extension = extension ;
         memcpy( &OWQ_val(owq_single), &OWQ_array(owq)[extension], sizeof(union value_object) ) ;
         write_or_error = FS_w_single(owq_single) ;
-        if ( write_or_error < 0 ) return write_or_error ;
+        if ( write_or_error < 0 ) {
+            OWQ_destroy_shallow_single( owq_single ) ;
+            return write_or_error ;
+        }
     }
-	return 0;
+    OWQ_destroy_shallow_single( owq_single ) ;
+    return 0;
 }
 
 /* Combined field, so read all, change the relevant field, and write back */
 /* return 0 if ok */
 static int FS_w_aggregate(struct one_wire_query * owq)
 {
-    char * buf = OWQ_buffer(owq) ;
-    size_t size = OWQ_size(owq) ;
-    off_t offset = OWQ_offset(owq) ;
-    struct parsedname * pn = &OWQ_pn(owq) ;
-    size_t elements = pn->ft->ag->elements;
-	int ret = 0;
+    struct one_wire_query struct_owq_all ;
+    struct one_wire_query * owq_all = &struct_owq_all ;
+    
+    int return_status = 0;
+    size_t extension = OWQ_pn(owq).extension ;
 
-	const size_t ffl = FullFileLength(pn);
-	struct parsedname pn_all;
+    if ( OWQ_create_shallow_aggregate( owq_all, owq ) ) return -ENOMEM ;
 
-	memcpy(&pn_all, pn, sizeof(struct parsedname));	//shallow copy
-	pn_all.extension = EXTENSION_ALL;		// to save full string only
+    return_status = FS_r_aggregate_all(owq_all) ;
 
-	/* readable at all? cannot write a part if whole can't be read */
-	if (pn->ft->read.v == NULL)
-		return -EFAULT;
+    if ( return_status == 0 ) {
+        switch (OWQ_pn(owq).ft->format) {
+            case ft_integer:
+            case ft_unsigned:
+            case ft_float:
+            case ft_temperature:
+            case ft_tempgap:
+            case ft_date:
+            case ft_yesno:
+            case ft_bitfield:
+                memcpy( &OWQ_array(owq_all)[extension], &OWQ_val(owq),  sizeof(union value_object)) ;
+                break ;
+            case ft_vascii:
+            case ft_ascii:
+            case ft_binary:
+            {
+                ssize_t copy_length = OWQ_FileLength(owq) - OWQ_offset(owq) ;
+                if ( copy_length < 0 ) {
+                    return_status = -ERANGE ;
+                } else {
+                    if ( copy_length > (ssize_t) OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
+                    memcpy( &(OWQ_array_mem(owq_all,extension)[OWQ_offset(owq)]), OWQ_buffer(owq), copy_length ) ;
+                }
+            }
+            case ft_directory:
+            case ft_subdir:
+                return_status = -ENOSYS;
+            default:
+                return_status = -ENOENT;
+        }
+        return_status = FS_w_aggregate_all(owq_all) ;
+        if ( return_status == 0 ) {
+            OWQ_Cache_Add(owq_all) ;
+        }else{
+            OWQ_Cache_Del(owq_all) ;
+        }
+    }
 
-//printf("WRITE_SPLIT\n");
-
-	switch (pn->ft->format) {
-	case ft_yesno:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			int *y = (int *) calloc(elements, sizeof(int));
-			if (y == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = (pn->ft->read.y) (y, pn)) >= 0) {
-					if (FS_input_yesno(&y[pn->extension], buf, size)) {
-						ret = -EBADMSG;
-					} else {
-						if ((ret = (pn->ft->write.y) (y, pn)) >= 0)
-							Cache_Add(&y, elements * sizeof(int), pn);
-					}
-				}
-				free(y);
-			}
-		}
-		break;
-	case ft_integer:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			int *i = (int *) calloc(elements, sizeof(int));
-			if (i == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = (pn->ft->read.i) (i, pn)) >= 0) {
-					if (FS_input_integer(&i[pn->extension], buf, size)) {
-						ret = -EBADMSG;
-					} else {
-						if ((ret = (pn->ft->write.i) (i, pn)) >= 0)
-							Cache_Add(i, elements * sizeof(int), pn);
-					}
-				}
-				free(i);
-			}
-		}
-		break;
-	case ft_unsigned:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			UINT *u = (UINT *) calloc(elements, sizeof(UINT));
-			if (u == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = (pn->ft->read.u) (u, pn)) >= 0) {
-					if (FS_input_unsigned(&u[pn->extension], buf, size)) {
-						ret = -EBADMSG;
-					} else {
-						if ((ret = (pn->ft->write.u) (u, pn)) >= 0)
-							Cache_Add(u, elements * sizeof(UINT), pn);
-					}
-				}
-				free(u);
-			}
-		}
-		break;
-	case ft_bitfield:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			UINT U;
-			UINT y;
-			if ((ret = (pn->ft->read.u) (&U, pn)) >= 0) {
-				if (FS_input_unsigned(&y, buf, size)) {
-					ret = -EBADMSG;
-				} else {
-					UT_setbit((void *) (&U), pn->extension, y);
-					if ((ret = (pn->ft->write.u) (&U, pn) >= 0))
-						Cache_Add(&U, sizeof(UINT), pn);
-				}
-			}
-		}
-		break;
-	case ft_temperature:
-	case ft_tempgap:
-	case ft_float:
-		if (offset) {
-			ret = -EADDRNOTAVAIL;
-		} else {
-			_FLOAT *f = (_FLOAT *) calloc(elements, sizeof(_FLOAT));
-			_FLOAT F;
-			if (f == NULL) {
-				ret = -ENOMEM;
-			} else {
-				if ((ret = (pn->ft->read.f) (f, pn)) >= 0) {
-					if (FS_input_float(&F, buf, size)) {
-						ret = -EBADMSG;
-					} else {
-						switch (pn->ft->format) {
-						case ft_temperature:
-							f[pn->extension] = fromTemperature(F, pn);
-							break;
-						case ft_tempgap:
-							f[pn->extension] = fromTempGap(F, pn);
-							break;
-						default:
-							f[pn->extension] = F;
-						}
-						if ((ret = (pn->ft->write.f) (f, pn)) >= 0)
-							Cache_Add(f, elements * sizeof(_FLOAT), pn);
-					}
-				}
-				free(f);
-			}
-		}
-		break;
-	case ft_date:{
-			if (offset) {
-				ret = -EADDRNOTAVAIL;
-			} else {
-				_DATE *d = (_DATE *) calloc(elements, sizeof(_DATE));
-				if (d == NULL) {
-					ret = -ENOMEM;
-				} else {
-					if ((ret = (pn->ft->read.d) (d, pn)) >= 0) {
-						if (FS_input_date(&d[pn->extension], buf, size)) {
-							ret = -EBADMSG;
-						} else {
-							if ((ret = (pn->ft->write.d) (d, pn)) >= 0)
-								Cache_Add(&d, elements * sizeof(_DATE),
-										  pn);
-						}
-					}
-					free(d);
-				}
-			}
-			break;
-	case ft_binary:{
-				BYTE *all;
-				int suglen = pn->ft->suglen;
-				size_t s = suglen;
-				if (offset > suglen) {
-					ret = -ERANGE;
-				} else {
-					s -= offset;
-					if (s > size)
-						s = size;
-					if ((all = (BYTE *) malloc(ffl))) {;
-						if ((ret =
-							 (pn->ft->read.b) (all, ffl, (const off_t) 0,
-											   pn)) == 0) {
-							memcpy(&all[suglen * pn->extension + offset],
-								   buf, s);
-							if ((ret =
-								 (pn->ft->write.b) (all, ffl,
-													(const off_t) 0,
-													pn)) >= 0)
-								Cache_Add(all, ffl, pn);
-						}
-						free(all);
-					} else {
-						ret = -ENOMEM;
-					}
-				}
-			}
-			break;
-	case ft_vascii:
-	case ft_ascii:
-			if (offset) {
-				return -EADDRNOTAVAIL;
-			} else {
-				char *all;
-				int suglen = pn->ft->suglen;
-				size_t s = suglen;
-				if (s > size)
-					s = size;
-				if ((all = (char *) malloc(ffl))) {
-					if ((ret =
-						 (pn->ft->read.a) (all, ffl, (const off_t) 0,
-										   pn)) == 0) {
-						memcpy(&all[(suglen + 1) * pn->extension], buf, s);
-						if ((ret =
-							 (pn->ft->write.a) (all, ffl, (const off_t) 0,
-												pn)) >= 0)
-							Cache_Add(all, ffl, pn);
-					}
-					free(all);
-				} else
-					ret = -ENOMEM;
-			}
-		}
-		break;
-	case ft_directory:
-	case ft_subdir:
-		ret = -ENOSYS;
-	}
-
-	return ret ? -EINVAL : 0;
-}
-
-/* return 0 if ok */
-static int FS_input_yesno(int *result, const char *buf, const size_t size)
-{
-//printf("yesno size=%d, buf=%s\n",size,buf);
-	const char *b;
-	size_t s;
-	for (s = size, b = buf; s > 0; --s, ++b) {
-		if (b[0] == ' ')
-			continue;
-		if (s > 2) {
-			if (strncasecmp("yes", b, 3) == 0)
-				goto yes;
-			if (strncasecmp("off", b, 3) == 0)
-				goto no;
-		}
-		if (s > 1) {
-			if (strncasecmp("on", b, 2) == 0)
-				goto yes;
-			if (strncasecmp("no", b, 2) == 0)
-				goto no;
-		}
-		if (s > 0) {
-			if (b[0] == '1')
-				goto yes;
-			if (b[0] == '0')
-				goto no;
-		}
-		break;
-	}
-	return 1;
-  yes:result[0] = 1;
-	return 0;
-  no:result[0] = 0;
-	return 0;
-
-}
-
-/* return 0 if ok */
-static int FS_input_integer(int *result, const char *buf,
-							const size_t size)
-{
-	char cp[size + 1];
-	char *end;
-
-	memcpy(cp, buf, size);
-	cp[size] = '\0';
-	errno = 0;
-	*result = strtol(cp, &end, 10);
-	return end == cp || errno;
-}
-
-/* return 0 if ok */
-static int FS_input_unsigned(UINT * result, const char *buf,
-							 const size_t size)
-{
-	char cp[size + 1];
-	char *end;
-
-	memcpy(cp, buf, size);
-	cp[size] = '\0';
-	errno = 0;
-	*result = strtoul(cp, &end, 10);
-//printf("UI str=%s, val=%u\n",cp,*result) ;
-	return end == cp || errno;
-}
-
-/* return 0 if ok */
-static int FS_input_float(_FLOAT * result, const char *buf,
-						  const size_t size)
-{
-	char cp[size + 1];
-	char *end;
-
-	memcpy(cp, buf, size);
-	cp[size] = '\0';
-	errno = 0;
-	*result = strtod(cp, &end);
-	return end == cp || errno;
-}
-
-/* return 0 if ok */
-static int FS_input_date(_DATE * result, const char *buf,
-						 const size_t size)
-{
-	struct tm tm;
-	if (size < 2 || buf[0] == '\0' || buf[0] == '\n') {
-		*result = time(NULL);
-	} else if (strptime(buf, "%a %b %d %T %Y", &tm) == NULL
-			   && strptime(buf, "%b %d %T %Y", &tm) == NULL
-			   && strptime(buf, "%c", &tm) == NULL
-			   && strptime(buf, "%D %T", &tm) == NULL) {
-		return -EINVAL;
-	} else {
-		*result = mktime(&tm);
-	}
-	return 0;
-}
-
-/* returns 0 if ok */
-static int FS_input_yesno_array(int *results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_yesno
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0;
-			++next;				/* past comma */
-		} else {				/* assume "no" for absent values */
-			results[i] = 0;
-		}
-	}
-	return 0;
-}
-
-/* returns number of valid integers, or negative for error */
-static int FS_input_integer_array(int *results, const char *buf,
-								  const size_t size,
-								  const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_integer
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0;
-			++next;				/* past comma */
-		} else {				/* assume 0 for absent values */
-			results[i] = 0;
-		}
-	}
-	return 0;
-}
-
-/* returns 0, or negative for error */
-static int FS_input_unsigned_array(UINT * results, const char *buf,
-								   const size_t size,
-								   const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_unsigned
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0;
-			++next;				/* past comma */
-		} else {				/* assume 0 for absent values */
-			results[i] = 0;
-		}
-	}
-	return 0;
-}
-
-/* returns 0, or negative for error */
-static int FS_input_float_array(_FLOAT * results, const char *buf,
-								const size_t size,
-								const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_float
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = 0.;
-			++next;				/* past comma */
-		} else {				/* assume 0. for absent values */
-			results[i] = 0.;
-		}
-	}
-	return 0;
-}
-
-/* returns 0, or negative for error */
-static int FS_input_date_array(_DATE * results, const char *buf,
-							   const size_t size,
-							   const struct parsedname *pn)
-{
-	int i;
-	int last = pn->ft->ag->elements - 1;
-	const char *first;
-	const char *end = buf + size - 1;
-	const char *next = buf;
-	_DATE now = time(NULL);
-	for (i = 0; i <= last; ++i) {
-		if (next <= end) {
-			first = next;
-			if ((next =
-				 memchr(first, ',', (size_t) (first - end + 1))) == NULL)
-				next = end;
-			if (FS_input_date
-				(&results[i], first, (const size_t) (next - first)))
-				results[i] = now;
-			++next;				/* past comma */
-		} else {				/* assume now for absent values */
-			results[i] = now;
-		}
-	}
-	return 0;
+    OWQ_destroy_shallow_aggregate(owq_all) ;
+    
+    return return_status ;
 }

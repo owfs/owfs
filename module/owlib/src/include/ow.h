@@ -861,21 +861,12 @@ int FS_read_postparse(struct one_wire_query * owq) ;
 int FS_read_postpostparse(struct one_wire_query * owq);
 int FS_read_fake(struct one_wire_query * owq);
 int FS_read_tester(struct one_wire_query * owq);
+int FS_r_aggregate_all(struct one_wire_query * owq) ;
 int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
 					size_t length);
 int FS_output_ascii_z(ASCII * buf, size_t size, off_t offset,
 					  ASCII * answer);
 int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
-
-int FS_output_unsigned(UINT value, char *buf, const size_t size,
-					   const struct parsedname *pn);
-int FS_output_integer(int value, char *buf, const size_t size,
-					  const struct parsedname *pn);
-int FS_output_float(_FLOAT value, char *buf, const size_t size,
-					const struct parsedname *pn);
-int FS_output_date(_DATE value, char *buf, const size_t size,
-				   const struct parsedname *pn);
-
 
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
