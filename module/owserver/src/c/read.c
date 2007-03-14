@@ -74,7 +74,8 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
             retbuffer = NULL;
             cm->ret = read_or_error;
         } else {
-            cm->payload = hd->sm.size;
+			// m,ake return size smaller (just lsarge enough)
+            cm->payload = read_or_error;
             cm->offset = hd->sm.offset;
             cm->size = read_or_error;
             cm->ret = read_or_error;
