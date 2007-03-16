@@ -1404,6 +1404,7 @@ AC_CONFIG_FILES([
     module/swig/Makefile
     module/swig/perl5/Makefile
     module/swig/perl5/Makefile.PL
+    module/swig/perl5/Makefile_osx.PL
     module/swig/php/Makefile
     module/swig/php/example/load_php_OW.php
     module/swig/python/Makefile

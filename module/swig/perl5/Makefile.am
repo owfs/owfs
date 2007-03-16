@@ -21,8 +21,17 @@ AM_CFLAGS = -I../include \
 
 LDADD = -low ${PTHREAD_LIBS}
 
+if HAVE_DARWIN
+
+Makefile.perl: Makefile_osx.PL
+	$(PERL) $< MAKEFILE=$@
+
+else
+
 Makefile.perl: Makefile.PL
 	$(PERL) $< MAKEFILE=$@
+
+endif
 
 ow_wrap.c: ../ow.i Makefile.perl ${LIBOW}
 	$(SWIG) -perl5 -o $@ ../ow.i
