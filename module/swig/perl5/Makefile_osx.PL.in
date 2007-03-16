@@ -12,7 +12,7 @@ WriteMakefile(
     'INC'       =>	q[-I../../../src/include -I../../owlib/src/include @CPPFLAGS@],
 # Default value for LDDLFLAGS is $Config{lddlflags}="-shared -L/usr/local/lib"
 # but we want rpath to be @libdir@ or @exec_prefix@/lib
-    'LDDLFLAGS' =>      q[-bundle -flat_namespace -undefined suppress -Wl,-L../../owlib/src/c/.libs -Wl,-rpath=@prefix@/lib],
+    'LDDLFLAGS' =>      q[-bundle -flat_namespace -undefined suppress -Wl,-L../../owlib/src/c/.libs],
     'LIBS'      =>	q[-L../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
     'OBJECT'	=>	'ow_wrap.o',
     'NAME'      =>	'OW',
