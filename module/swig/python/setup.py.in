@@ -45,11 +45,11 @@ ow_libs = [ 'ow' ]
 if enable_usb == 'true':
     ow_libs.append( 'usb' )
 
-extra_c_args = ''
+extra_c_args = [ ]
 if len('@LIBUSB_CFLAGS@') > 0:
 	extra_c_args = string.split('@LIBUSB_CFLAGS@', ' ')
 
-extra_l_args = ''
+extra_l_args = [ ]
 if len('@LIBUSB_LIBS@') > 0:
 	extra_l_args = string.split('@LIBUSB_LIBS@', ' ')
 
