@@ -1,57 +1,41 @@
-# $Id$
+## $Id$
 
+#EXTRA_DIST = OW/README OW/MANIFEST OW/Changes OW/Makefile.PL OW/lib/OW.pm OW/t/OW.t $(wildcard example/*.pl)
+EXTRA_DIST = OW/Makefile.linux OW/Makefile.osx OW/OW.pm $(wildcard example/*.pl)
 
-EXTRA_DIST = perl5.m4 example/test.pl
-noinst_DATA = OW.pm
-LIBOW = ../../owlib/src/c/libow.la
+all: OW/OW.pm
 
-AM_CFLAGS = -I../include \
-         -fexceptions \
-         -Wall \
-         -W \
-         -Wundef \
-         -Wshadow \
-         -Wpointer-arith \
-         -Wcast-qual \
-         -Wcast-align \
-         -Wstrict-prototypes \
-         -Wredundant-decls \
-         -DSKIP_SEARCH_H \
-         -D_FILE_OFFSET_BITS=64
-
-LDADD = -low ${PTHREAD_LIBS}
-
+OW/Makefile:
 if HAVE_DARWIN
-
-Makefile.perl: Makefile_osx.PL
-	$(PERL) $< MAKEFILE=$@
-
+	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL )
 else
-
-Makefile.perl: Makefile.PL
-	$(PERL) $< MAKEFILE=$@
-
+	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL )
 endif
 
-ow_wrap.c: ../ow.i Makefile.perl ${LIBOW}
+#OW/Makefile:
+#	if test $(HAVE_DARWIN); then \
+#		( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL; ) \
+#	else \
+#		( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL ) \
+#	fi
+
+OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
 	$(SWIG) -perl5 -o $@ ../ow.i
 
-OW.pm: ow_wrap.c
-	$(MAKE) -fMakefile.perl
+OW/OW.pm: OW/ow_wrap.c
+	( cd OW; $(MAKE) -fMakefile )
 
 PERLSITEDIR = $(wildcard ${DESTDIR}/usr/lib*/perl5/site_perl/*/*-linux-thread-*/auto/ )
 
-install-data-local:
-	$(MAKE) -fMakefile.perl PREFIX=$(prefix) install
+install-data-local: OW/Makefile OW/ow_wrap.c OW/OW.pm
+	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
+#	( cd OW; $(MAKE) -fMakefile.perl PREFIX=$(prefix) DESTDIR="$(DESTDIR)" install )
+#	( cd OW; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 	@INSTALL@ -d ${DESTDIR}${prefix}/bin/
-	@INSTALL@ OW.pm ${DESTDIR}${prefix}/bin/
-	if test -d "${PERLSITEDIR}"; then @INSTALL@ OW.pm "${PERLSITEDIR}/../"; fi
-
-clean-local:
-	if test -f Makefile.perl; then $(MAKE) -fMakefile.perl realclean; fi
-	@RM@ -f Makefile.perl Makefile.perl.old
-	@RM@ -f *~ .*~ *.o ow_wrap.c OW.pm
+	@INSTALL@ OW/OW.pm ${DESTDIR}${prefix}/bin/
+	if test -d "${PERLSITEDIR}"; then @INSTALL@ OW/OW.pm "${PERLSITEDIR}/../"; fi
 
 clean-generic:
-
 	@RM@ -f *~ .*~
+	if test -f OW/Makefile; then cd OW; $(MAKE) clean; fi
+	@RM@ -f OW/Makefile.old OW/ow_wrap.c OW/OW.pm OW/Makefile OW/*~

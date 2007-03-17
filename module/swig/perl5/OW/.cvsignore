@@ -1,0 +1,10 @@
+Makefile.in
+Makefile
+Makefile.perl
+OW.bs
+OW.pm
+pm_to_blib
+blib
+*.PL
+*.c
+*.o

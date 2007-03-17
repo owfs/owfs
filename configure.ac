@@ -1403,8 +1403,8 @@ AC_CONFIG_FILES([
     module/owcapi/src/example/Makefile
     module/swig/Makefile
     module/swig/perl5/Makefile
-    module/swig/perl5/Makefile.PL
-    module/swig/perl5/Makefile_osx.PL
+    module/swig/perl5/OW/Makefile.linux
+    module/swig/perl5/OW/Makefile.osx
     module/swig/php/Makefile
     module/swig/php/example/load_php_OW.php
     module/swig/python/Makefile

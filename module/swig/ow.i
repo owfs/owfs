@@ -6,14 +6,14 @@
 %include "typemaps.i"
 
 %init %{
-#include "../../../src/include/config.h"
+#include "config.h"
 #include "owfs_config.h"
 #include "ow.h"
 LibSetup(opt_swig) ;
 %}
 
 %{
-#include "../../../src/include/config.h"
+#include "config.h"
 #include "owfs_config.h"
 #include "ow.h"
 

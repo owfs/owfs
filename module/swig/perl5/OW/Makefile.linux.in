@@ -9,11 +9,11 @@ WriteMakefile(
     'VERSION'	=>	q[@VERSION@],
 # Avoid compilation problem for Fedora Core 1 and Slackware 10.2
     'DEFINE'    =>	q[-DSKIP_SEARCH_H @DEFS@],
-    'INC'       =>	q[-I../../../src/include -I../../owlib/src/include @CPPFLAGS@],
+    'INC'       =>	q[-I../../../../src/include -I../../../owlib/src/include @CPPFLAGS@],
 # Default value for LDDLFLAGS is $Config{lddlflags}="-shared -L/usr/local/lib"
 # but we want rpath to be @libdir@ or @exec_prefix@/lib
-    'LDDLFLAGS' =>      q[-bundle -flat_namespace -undefined suppress -Wl,-L../../owlib/src/c/.libs],
-    'LIBS'      =>	q[-L../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
+    'LDDLFLAGS' =>      q[-shared -Wl,-L../../../owlib/src/c/.libs -Wl,-rpath=@prefix@/lib],
+    'LIBS'      =>	q[-L../../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
     'OBJECT'	=>	'ow_wrap.o',
     'NAME'      =>	'OW',
 ) ;
