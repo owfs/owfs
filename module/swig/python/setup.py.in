@@ -26,7 +26,7 @@ project.
 
 
 from distutils.core import setup, Extension
-
+import string
 
 classifiers = """
 Development Status :: 4 - Beta
@@ -44,7 +44,8 @@ enable_usb = '@ENABLE_USB@'
 ow_libs = [ 'ow' ]
 if enable_usb == 'true':
     ow_libs.append( 'usb' )
-
+extra_c_args = string.split('@LIBUSB_CFLAGS@', ' ')
+extra_l_args = string.split('@LIBUSB_LIBS@', ' ')
 
 setup(
     name             = 'ow',
@@ -64,6 +65,8 @@ setup(
                                                      '../../../src/include',
                                                      ],
                                     library_dirs = [ '../../owlib/src/c/.libs', ],
+				    extra_compile_args = extra_c_args,
+				    extra_link_args = extra_l_args,
                                     libraries    = ow_libs,
                                     runtime_library_dirs = [ '@prefix@/lib' ],
                                     )
