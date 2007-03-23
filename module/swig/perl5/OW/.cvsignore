@@ -1,6 +1,6 @@
-Makefile.in
 Makefile
-Makefile.perl
+Makefile.linux
+Makefile.osx
 OW.bs
 OW.pm
 pm_to_blib
