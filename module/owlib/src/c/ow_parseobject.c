@@ -18,7 +18,7 @@ $Id$
 /* Create the Parsename structure and load the relevant fields */
 int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, struct one_wire_query * owq )
 {
-    struct parsedname * pn = &OWQ_pn(owq) ;
+    struct parsedname * pn = PN(owq) ;
     
     LEVEL_DEBUG("FS_OWQ_create of %s\n",path) ;
     if ( FS_ParsedName(path,pn) ) return -ENOENT ;
@@ -40,7 +40,7 @@ int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, 
 /* Create the Parsename structure (using path and file) and load the relevant fields */
 int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, size_t size, off_t offset, struct one_wire_query * owq )
 {
-    struct parsedname * pn = &OWQ_pn(owq) ;
+    struct parsedname * pn = PN(owq) ;
     
     LEVEL_DEBUG("FS_OWQ_create_plus of %s + %s\n",path,file) ;
     if ( FS_ParsedNamePlus(path,file,pn) ) return -ENOENT ;
@@ -68,22 +68,7 @@ void FS_OWQ_destroy( struct one_wire_query * owq )
             OWQ_array(owq) = NULL ;
         }
     }
-    FS_ParsedName_destroy( &OWQ_pn(owq) ) ;
-}
-
-static void value_object_pointers( struct one_wire_query * owq )
-{
-    int elements = OWQ_pn(owq).ft->ag->elements ;
-    int comma_length = (OWQ_pn(owq).ft->format==ft_binary) ? 1 : 0 ;
-    size_t field_length = OWQ_FileLength(owq) ;
-    int extension ;
-    char * buffer_pointer = OWQ_buffer(owq) ;
-
-    for ( extension = 0 ; extension < elements ; ++extension ) {
-        OWQ_array_mem(owq,extension) = buffer_pointer ;
-        OWQ_array_length(owq,extension) = field_length ;
-        buffer_pointer += field_length + comma_length ;
-    }
+    FS_ParsedName_destroy( PN(owq) ) ;
 }
 
 /* make a "shallow" copy -- but possibly full array size or just an element size */
@@ -91,15 +76,13 @@ static void value_object_pointers( struct one_wire_query * owq )
 void OWQ_create_shallow_single( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original )
 {
     memcpy( owq_shallow, owq_original, sizeof(struct one_wire_query) ) ;
-    OWQ_mem(owq_shallow) = OWQ_buffer(owq_shallow) ;
-    OWQ_length(owq_shallow) = OWQ_size(owq_shallow) ;
 }
 
 /* make a "shallow" copy -- but possibly full array size or just an element size */
 /* if full array size, allocate extra space for value_object and possible buffer */
 int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original )
 {
-    struct parsedname * pn = &OWQ_pn(owq_original) ;
+    struct parsedname * pn = PN(owq_original) ;
 
     memcpy( owq_shallow, owq_original, sizeof(struct one_wire_query) ) ;
     
@@ -111,6 +94,8 @@ int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct on
     }
     
     OWQ_offset(owq_shallow) = 0 ;
+    OWQ_pn(owq_shallow).extension = EXTENSION_ALL ;
+    
     switch ( pn->ft->format ) {
         case ft_binary:
         case ft_ascii:
@@ -122,18 +107,12 @@ int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct on
                 free( OWQ_array(owq_shallow) ) ;
                 return -ENOMEM ;
             }
-            value_object_pointers(owq_shallow) ;
             break ;
         default:
             break ;
     }
     
     return 0 ;
-}
-
-void OWQ_destroy_shallow_single( struct one_wire_query * owq_shallow )
-{
-    (void) owq_shallow ;
 }
 
 void OWQ_destroy_shallow_aggregate( struct one_wire_query * owq_shallow )
@@ -151,4 +130,12 @@ void OWQ_destroy_shallow_aggregate( struct one_wire_query * owq_shallow )
         default:
             break ;
     }
+}
+
+void OWQ_create_temporary( struct one_wire_query * owq_temporary, char * buffer, size_t size, off_t offset, struct parsedname * pn )
+{
+	OWQ_buffer(owq_temporary) = buffer ;
+	OWQ_size(  owq_temporary) = size ;
+	OWQ_offset(owq_temporary) = offset ;
+	memcpy( PN(owq_temporary), pn, sizeof(struct parsedname) ) ;
 }

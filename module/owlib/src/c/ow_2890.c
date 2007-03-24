@@ -46,17 +46,17 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2890 Digital Potentiometer */
-yREAD_FUNCTION(FS_r_cp);
-yWRITE_FUNCTION(FS_w_cp);
-uREAD_FUNCTION(FS_r_wiper);
-uWRITE_FUNCTION(FS_w_wiper);
+READ_FUNCTION(FS_r_cp);
+WRITE_FUNCTION(FS_w_cp);
+READ_FUNCTION(FS_r_wiper);
+WRITE_FUNCTION(FS_w_wiper);
 
 /* ------- Structures ----------- */
 
 struct filetype DS2890[] = {
 	F_STANDARD,
-  {"chargepump", 1, NULL, ft_yesno, fc_stable, {y: FS_r_cp}, {y: FS_w_cp}, {v:NULL},},
-  {"wiper", 3, NULL, ft_unsigned, fc_stable, {u: FS_r_wiper}, {u: FS_w_wiper}, {v:NULL},},
+  {"chargepump", 1, NULL, ft_yesno, fc_stable, {o: FS_r_cp}, {o: FS_w_cp}, {v:NULL},},
+  {"wiper", 3, NULL, ft_unsigned, fc_stable, {o: FS_r_wiper}, {o: FS_w_wiper}, {v:NULL},},
 };
 
 DeviceEntryExtended(2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);
@@ -70,37 +70,37 @@ static int OW_r_cp(int *val, const struct parsedname *pn);
 static int OW_w_cp(const int val, const struct parsedname *pn);
 
 /* Wiper */
-static int FS_w_wiper(const UINT * i, const struct parsedname *pn)
+static int FS_w_wiper(struct one_wire_query * owq)
 {
-	UINT num = i[0];
+    UINT num = OWQ_U(owq);
 	if (num > 255)
 		num = 255;
 
-	if (OW_w_wiper(num, pn))
+    if (OW_w_wiper(num, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write Charge Pump */
-static int FS_w_cp(const int *y, const struct parsedname *pn)
+static int FS_w_cp(struct one_wire_query * owq)
 {
-	if (OW_w_cp(y[0], pn))
+    if (OW_w_cp(OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* read Wiper */
-static int FS_r_wiper(UINT * w, const struct parsedname *pn)
+static int FS_r_wiper(struct one_wire_query * owq)
 {
-	if (OW_r_wiper(w, pn))
+    if (OW_r_wiper(&OWQ_U(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* Charge Pump */
-static int FS_r_cp(int *y, const struct parsedname *pn)
+static int FS_r_cp(struct one_wire_query * owq)
 {
-	if (OW_r_cp(y, pn))
+    if (OW_r_cp(&OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }

@@ -46,19 +46,19 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
-bREAD_FUNCTION(FS_r_memory);
-bWRITE_FUNCTION(FS_w_memory);
-yREAD_FUNCTION(FS_r_lock);
-bREAD_FUNCTION(FS_r_application);
-bWRITE_FUNCTION(FS_w_application);
+READ_FUNCTION(FS_r_memory);
+WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_lock);
+READ_FUNCTION(FS_r_application);
+WRITE_FUNCTION(FS_w_application);
 
 /* ------- Structures ----------- */
 
 struct filetype DS2430A[] = {
 	F_STANDARD,
-  {"memory", 16, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
-  {"application", 8, NULL, ft_binary, fc_stable, {b: FS_r_application}, {b: FS_w_application}, {v:NULL},},
-  {"lock", 1, NULL, ft_yesno, fc_stable, {y: FS_r_lock}, {v: NULL}, {v:NULL},},
+  {"memory", 16, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
+  {"application", 8, NULL, ft_binary, fc_stable, {o: FS_r_application}, {o: FS_w_application}, {v:NULL},},
+  {"lock", 1, NULL, ft_yesno, fc_stable, {o: FS_r_lock}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntry(14, DS2430A);
@@ -75,47 +75,41 @@ static int OW_r_app(BYTE * data, const size_t size, const off_t offset,
 static int OW_r_status(BYTE * data, const struct parsedname *pn);
 
 /* DS2430A memory */
-static int FS_r_memory(BYTE * buf, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int FS_r_memory(struct one_wire_query * owq)
 {
-	if (OW_r_mem_simple(buf, size, offset, pn))
+    if (OW_r_mem_simple( owq, 0, 0 ))
 		return -EINVAL;
-	return size;
+    return 0 ;
 }
 
 /* DS2430A memory */
-static int FS_r_application(BYTE * buf, const size_t size,
-							const off_t offset,
-							const struct parsedname *pn)
+static int FS_r_application(struct one_wire_query * owq)
 {
-	if (OW_r_app(buf, size, offset, pn))
+    if (OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
-	return size;
+    return OWQ_size(owq);
 }
 
-static int FS_w_memory(const BYTE * buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_memory(struct one_wire_query * owq)
 {
-	if (OW_w_mem(buf, size, (size_t) offset, pn))
+    if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_application(const BYTE * buf, const size_t size,
-							const off_t offset,
-							const struct parsedname *pn)
+static int FS_w_application(struct one_wire_query * owq)
 {
-	if (OW_w_app(buf, size, (size_t) offset, pn))
+    if (OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_lock(int *y, const struct parsedname *pn)
+static int FS_r_lock(struct one_wire_query * owq)
 {
 	BYTE data;
-	if (OW_r_status(&data, pn))
+    if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-	y[0] = data & 0x01;
+    OWQ_Y(owq) = data & 0x01;
 	return 0;
 }
 

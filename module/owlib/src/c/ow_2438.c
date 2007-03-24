@@ -46,23 +46,23 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2438 Battery */
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-fREAD_FUNCTION(FS_temp);
-fREAD_FUNCTION(FS_volts);
-fREAD_FUNCTION(FS_Humid);
-fREAD_FUNCTION(FS_Humid_1735);
-fREAD_FUNCTION(FS_Humid_4000);
-fREAD_FUNCTION(FS_Current);
-uREAD_FUNCTION(FS_r_Ienable);
-uWRITE_FUNCTION(FS_w_Ienable);
-iREAD_FUNCTION(FS_r_Offset);
-iWRITE_FUNCTION(FS_w_Offset);
-uREAD_FUNCTION(FS_r_counter);
-uWRITE_FUNCTION(FS_w_counter);
-dREAD_FUNCTION(FS_r_date);
-dWRITE_FUNCTION(FS_w_date);
-aREAD_FUNCTION(FS_MStype);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_temp);
+READ_FUNCTION(FS_volts);
+READ_FUNCTION(FS_Humid);
+READ_FUNCTION(FS_Humid_1735);
+READ_FUNCTION(FS_Humid_4000);
+READ_FUNCTION(FS_Current);
+READ_FUNCTION(FS_r_Ienable);
+WRITE_FUNCTION(FS_w_Ienable);
+READ_FUNCTION(FS_r_Offset);
+WRITE_FUNCTION(FS_w_Offset);
+READ_FUNCTION(FS_r_counter);
+WRITE_FUNCTION(FS_w_counter);
+READ_FUNCTION(FS_r_date);
+WRITE_FUNCTION(FS_w_date);
+READ_FUNCTION(FS_MStype);
 
 /* ------- Structures ----------- */
 
@@ -70,20 +70,20 @@ struct aggregate A2437 = { 8, ag_numbers, ag_separate, };
 struct filetype DS2437[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 8, &A2437, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"VDD", 12, NULL, ft_float, fc_volatile, {f: FS_volts}, {v: NULL}, {i:1},},
-  {"VAD", 12, NULL, ft_float, fc_volatile, {f: FS_volts}, {v: NULL}, {i:0},},
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_temp}, {v: NULL}, {v:NULL},},
-  {"vis", 12, NULL, ft_float, fc_volatile, {f: FS_Current}, {v: NULL}, {v:NULL},},
-  {"Ienable", 12, NULL, ft_unsigned, fc_stable, {u: FS_r_Ienable}, {u: FS_w_Ienable}, {v:NULL},},
-  {"udate", 12, NULL, ft_unsigned, fc_second, {u: FS_r_counter}, {u: FS_w_counter}, {s:0x08},},
-  {"date", 24, NULL, ft_date, fc_second, {d: FS_r_date}, {d: FS_w_date}, {s:0x08},},
+  {"pages/page", 8, &A2437, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"VDD", 12, NULL, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {i:1},},
+  {"VAD", 12, NULL, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {i:0},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {v: NULL}, {v:NULL},},
+  {"vis", 12, NULL, ft_float, fc_volatile, {o: FS_Current}, {v: NULL}, {v:NULL},},
+  {"Ienable", 12, NULL, ft_unsigned, fc_stable, {o: FS_r_Ienable}, {o: FS_w_Ienable}, {v:NULL},},
+  {"udate", 12, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {s:0x08},},
+  {"date", 24, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {s:0x08},},
   {"disconnect", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"disconnect/udate", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_counter}, {u: FS_w_counter}, {s:0x10},},
-  {"disconnect/date", 24, NULL, ft_date, fc_volatile, {d: FS_r_date}, {d: FS_w_date}, {s:0x10},},
+  {"disconnect/udate", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_counter}, {o: FS_w_counter}, {s:0x10},},
+  {"disconnect/date", 24, NULL, ft_date, fc_volatile, {o: FS_r_date}, {o: FS_w_date}, {s:0x10},},
   {"endcharge", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"endcharge/udate", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_counter}, {u: FS_w_counter}, {s:0x14},},
-  {"endcharge/date", 24, NULL, ft_date, fc_volatile, {d: FS_r_date}, {d: FS_w_date}, {s:0x14},},
+  {"endcharge/udate", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_counter}, {o: FS_w_counter}, {s:0x14},},
+  {"endcharge/date", 24, NULL, ft_date, fc_volatile, {o: FS_r_date}, {o: FS_w_date}, {s:0x14},},
 };
 
 DeviceEntryExtended(1E, DS2437, DEV_temp | DEV_volt);
@@ -93,28 +93,28 @@ struct aggregate A2438 = { 8, ag_numbers, ag_separate, };
 struct filetype DS2438[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 8, &A2438, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"VDD", 12, NULL, ft_float, fc_volatile, {f: FS_volts}, {v: NULL}, {i:1},},
-  {"VAD", 12, NULL, ft_float, fc_volatile, {f: FS_volts}, {v: NULL}, {i:0},},
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_temp}, {v: NULL}, {v:NULL},},
-  {"humidity", 12, NULL, ft_float, fc_volatile, {f: FS_Humid}, {v: NULL}, {v:NULL},},
-  {"vis", 12, NULL, ft_float, fc_volatile, {f: FS_Current}, {v: NULL}, {v:NULL},},
-  {"Ienable", 12, NULL, ft_unsigned, fc_stable, {u: FS_r_Ienable}, {u: FS_w_Ienable}, {v:NULL},},
-  {"offset", 12, NULL, ft_unsigned, fc_stable, {i: FS_r_Offset}, {i: FS_w_Offset}, {v:NULL},},
-  {"udate", 12, NULL, ft_unsigned, fc_second, {u: FS_r_counter}, {u: FS_w_counter}, {s:0x08},},
-  {"date", 24, NULL, ft_date, fc_second, {d: FS_r_date}, {d: FS_w_date}, {s:0x08},},
+  {"pages/page", 8, &A2438, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"VDD", 12, NULL, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {i:1},},
+  {"VAD", 12, NULL, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {i:0},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {v: NULL}, {v:NULL},},
+  {"humidity", 12, NULL, ft_float, fc_volatile, {o: FS_Humid}, {v: NULL}, {v:NULL},},
+  {"vis", 12, NULL, ft_float, fc_volatile, {o: FS_Current}, {v: NULL}, {v:NULL},},
+  {"Ienable", 12, NULL, ft_unsigned, fc_stable, {o: FS_r_Ienable}, {o: FS_w_Ienable}, {v:NULL},},
+  {"offset", 12, NULL, ft_unsigned, fc_stable, {o: FS_r_Offset}, {o: FS_w_Offset}, {v:NULL},},
+  {"udate", 12, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {s:0x08},},
+  {"date", 24, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {s:0x08},},
   {"disconnect", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"disconnect/udate", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_counter}, {u: FS_w_counter}, {s:0x10},},
-  {"disconnect/date", 24, NULL, ft_date, fc_volatile, {d: FS_r_date}, {d: FS_w_date}, {s:0x10},},
+  {"disconnect/udate", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_counter}, {o: FS_w_counter}, {s:0x10},},
+  {"disconnect/date", 24, NULL, ft_date, fc_volatile, {o: FS_r_date}, {o: FS_w_date}, {s:0x10},},
   {"endcharge", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"endcharge/udate", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_counter}, {u: FS_w_counter}, {s:0x14},},
-  {"endcharge/date", 24, NULL, ft_date, fc_volatile, {d: FS_r_date}, {d: FS_w_date}, {s:0x14},},
+  {"endcharge/udate", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_counter}, {o: FS_w_counter}, {s:0x14},},
+  {"endcharge/date", 24, NULL, ft_date, fc_volatile, {o: FS_r_date}, {o: FS_w_date}, {s:0x14},},
   {"HTM1735", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"HTM1735/humidity", 12, NULL, ft_float, fc_volatile, {f: FS_Humid_1735}, {v: NULL}, {v:NULL},},
+  {"HTM1735/humidity", 12, NULL, ft_float, fc_volatile, {o: FS_Humid_1735}, {v: NULL}, {v:NULL},},
   {"HIH4000", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"HIH4000/humidity", 12, NULL, ft_float, fc_volatile, {f: FS_Humid_4000}, {v: NULL}, {v:NULL},},
+  {"HIH4000/humidity", 12, NULL, ft_float, fc_volatile, {o: FS_Humid_4000}, {v: NULL}, {v:NULL},},
   {"MultiSensor", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"MultiSensor/type", 12, NULL, ft_vascii, fc_stable, {a: FS_MStype}, {v: NULL}, {v:NULL},},
+  {"MultiSensor/type", 12, NULL, ft_vascii, fc_stable, {o: FS_MStype}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt);
@@ -139,39 +139,38 @@ static int OW_w_int(const int I, const UINT address,
 static int OW_w_offset(const int I, const struct parsedname *pn);
 
 /* 2438 A/D */
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	BYTE data[8];
+    struct parsedname * pn = PN(owq) ;
+    BYTE data[8];
 	if (OW_r_page(data, pn->extension, pn))
 		return -EINVAL;
-	memcpy(buf, &data[offset], size);
-	return size;
+    memcpy((BYTE *) OWQ_buffer(owq), &data[OWQ_offset(owq)], OWQ_size(owq));
+    return OWQ_size(owq);
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	if (size != 8) {			/* partial page */
+    struct parsedname * pn = PN(owq) ;
+    if (OWQ_size(owq) != 8) {			/* partial page */
 		BYTE data[8];
 		if (OW_r_page(data, pn->extension, pn))
 			return -EINVAL;
-		memcpy(&data[offset], buf, size);
+        memcpy(&data[OWQ_offset(owq)], (BYTE *) OWQ_buffer(owq), OWQ_size(owq));
 		if (OW_w_page(data, pn->extension, pn))
 			return -EFAULT;
 	} else {					/* complete page */
-		if (OW_w_page(buf, pn->extension, pn))
+        if (OW_w_page((BYTE *) OWQ_buffer(owq), pn->extension, pn))
 			return -EFAULT;
 	}
 	return 0;
 }
 
-static int FS_MStype(ASCII * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_MStype(struct one_wire_query * owq)
 {
 	BYTE data[8];
 	ASCII *t;
-	if (OW_r_page(data, 0, pn))
+    if (OW_r_page(data, 0, PN(owq)))
 		return -EINVAL;
 	switch (data[0]) {
 	case 0x00:
@@ -196,27 +195,28 @@ static int FS_MStype(ASCII * buf, const size_t size, const off_t offset,
 		t = "unknown";
 		break;
 	}
-	return FS_output_ascii_z(buf, size, offset, t);
+    return Fowq_output_offset_and_size_z(t, owq);
 }
 
-static int FS_temp(_FLOAT * T, const struct parsedname *pn)
+static int FS_temp(struct one_wire_query * owq)
 {
-	if (OW_temp(T, pn))
+    if (OW_temp(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_volts(_FLOAT * V, const struct parsedname *pn)
+static int FS_volts(struct one_wire_query * owq)
 {
 	/* data=1 VDD data=0 VAD */
-	if (OW_volts(V, pn->ft->data.i, pn))
+    if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).ft->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_Humid(_FLOAT * H, const struct parsedname *pn)
+static int FS_Humid(struct one_wire_query * owq)
 {
-	_FLOAT T, VAD, VDD;
+    struct parsedname * pn = PN(owq);
+    _FLOAT T, VAD, VDD;
 	if (OW_volts(&VDD, 1, pn) || OW_volts(&VAD, 0, pn) || OW_temp(&T, pn))
 		return -EINVAL;
 	//*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
@@ -238,17 +238,18 @@ static int FS_Humid(_FLOAT * H, const struct parsedname *pn)
 	   So, their documentation is a little wrong.
 	   The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
 	 */
-	H[0] = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0546 - .00216 * T));
+    OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0546 - .00216 * T));
 
 	return 0;
 }
 
-static int FS_Humid_4000(_FLOAT * H, const struct parsedname *pn)
+static int FS_Humid_4000(struct one_wire_query * owq)
 {
-	_FLOAT T, VAD, VDD;
+    struct parsedname * pn = PN(owq);
+    _FLOAT T, VAD, VDD;
 	if (OW_volts(&VDD, 1, pn) || OW_volts(&VAD, 0, pn) || OW_temp(&T, pn))
 		return -EINVAL;
-	H[0] =
+    OWQ_F(owq) =
 		(VAD / VDD -
 		 (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T +
 								  .0000011 * T * T));
@@ -265,96 +266,101 @@ static int FS_Humid_4000(_FLOAT * H, const struct parsedname *pn)
  *      (page 2).  VAD is assumed to be volts and *H is relative
  *      humidity in percent.
  */
-static int FS_Humid_1735(_FLOAT * H, const struct parsedname *pn)
+static int FS_Humid_1735(struct one_wire_query * owq)
 {
-	_FLOAT VAD;
+    struct parsedname * pn = PN(owq);
+    _FLOAT VAD;
 	if (OW_volts(&VAD, 0, pn))
 		return -EINVAL;
-	H[0] = 38.92 * VAD - 41.98;
+    OWQ_F(owq) = 38.92 * VAD - 41.98;
 
 	return 0;
 }
 
-static int FS_Current(_FLOAT * I, const struct parsedname *pn)
+static int FS_Current(struct one_wire_query * owq)
 {
-	if (OW_current(I, pn))
+    if (OW_current(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_Ienable(unsigned *u, const struct parsedname *pn)
+static int FS_r_Ienable(struct one_wire_query * owq)
 {
-	if (OW_r_Ienable(u, pn))
+    if (OW_r_Ienable(&OWQ_U(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_Ienable(const unsigned *u, const struct parsedname *pn)
+static int FS_w_Ienable(struct one_wire_query * owq)
 {
-	if (*u > 3)
+    if (OWQ_U(owq) > 3)
 		return -EINVAL;
-	if (OW_w_Ienable(*u, pn))
+    if (OW_w_Ienable(OWQ_U(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_Offset(int *i, const struct parsedname *pn)
+static int FS_r_Offset(struct one_wire_query * owq)
 {
-	if (OW_r_int(i, 0x0D, pn))
+    if (OW_r_int(&OWQ_I(owq), 0x0D, PN(owq)))
 		return -EINVAL;			/* page1 byte 5 */
-	*i >>= 3;
+    OWQ_I(owq) >>= 3;
 	return 0;
 }
 
-static int FS_w_Offset(const int *i, const struct parsedname *pn)
+static int FS_w_Offset(struct one_wire_query * owq)
 {
-	int I = *i;
+    int I = OWQ_I(owq);
 	if (I > 255 || I < -256)
 		return -EINVAL;
-	if (OW_w_offset(I << 3, pn))
+    if (OW_w_offset(I << 3, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* set clock */
-static int FS_w_counter(const UINT * u, const struct parsedname *pn)
+static int FS_w_counter(struct one_wire_query * owq)
 {
-	_DATE d = (_DATE) u[0];
-	return FS_w_date(&d, pn);
+    _DATE d = (_DATE) OWQ_U(owq);
+    OWQ_D(owq) = d ;
+    return FS_w_date(owq);
 }
 
 /* set clock */
-static int FS_w_date(const _DATE * d, const struct parsedname *pn)
+static int FS_w_date(struct one_wire_query * owq)
 {
+    struct parsedname * pn = PN(owq) ;
 	int page = ((uint32_t) (pn->ft->data.s)) >> 3;
 	int offset = ((uint32_t) (pn->ft->data.s)) & 0x07;
 	BYTE data[8];
 	if (OW_r_page(data, page, pn))
 		return -EINVAL;
-	UT_fromDate(d[0], &data[offset]);
+    UT_fromDate(OWQ_D(owq), &data[offset]);
 	if (OW_w_page(data, page, pn))
 		return -EINVAL;
 	return 0;
 }
 
 /* read clock */
-int FS_r_counter(UINT * u, const struct parsedname *pn)
+int FS_r_counter(struct one_wire_query * owq)
 {
 	_DATE d;
-	int ret = FS_r_date(&d, pn);
-	u[0] = (UINT) d;
+	int ret = FS_r_date(owq);
+    d = OWQ_D(owq) ;
+    OWQ_U(owq) = (UINT) d;
 	return ret;
 }
 
 /* read clock */
-int FS_r_date(_DATE * d, const struct parsedname *pn)
+int FS_r_date(struct one_wire_query * owq)
 {
-	int page = ((uint32_t) (pn->ft->data.s)) >> 3;
+    struct parsedname * pn = PN(owq) ;
+    int page = ((uint32_t) (pn->ft->data.s)) >> 3;
 	int offset = ((uint32_t) (pn->ft->data.s)) & 0x07;
 	BYTE data[8];
 	if (OW_r_page(data, page, pn))
 		return -EINVAL;
-	d[0] = UT_toDate(&data[offset]);
+    OWQ_D(owq) = UT_toDate(&data[offset]);
 	return 0;
 }
 

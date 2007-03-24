@@ -46,32 +46,32 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-bREAD_FUNCTION(FS_r_memory);
-bWRITE_FUNCTION(FS_w_memory);
-bREAD_FUNCTION(FS_r_param);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_r_memory);
+WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_param);
 
 /* ------- Structures ----------- */
 
 struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2502[] = {
 	F_STANDARD,
-  {"memory", 128, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A2502, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
+  {"pages/page", 32, &A2502, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
 };
 
 DeviceEntry(09, DS2502);
 
 struct filetype DS1982U[] = {
 	F_STANDARD,
-  {"mac_e", 6, NULL, ft_binary, fc_stable, {b: FS_r_param}, {v: NULL}, {i:4},},
-  {"mac_fw", 8, NULL, ft_binary, fc_stable, {b: FS_r_param}, {v: NULL}, {i:4},},
-  {"project", 4, NULL, ft_binary, fc_stable, {b: FS_r_param}, {v: NULL}, {i:0},},
-  {"memory", 128, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"mac_e", 6, NULL, ft_binary, fc_stable, {o: FS_r_param}, {v: NULL}, {i:4},},
+  {"mac_fw", 8, NULL, ft_binary, fc_stable, {o: FS_r_param}, {v: NULL}, {i:4},},
+  {"project", 4, NULL, ft_binary, fc_stable, {o: FS_r_param}, {v: NULL}, {i:0},},
+  {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A2502, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
+  {"pages/page", 32, &A2502, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
 };
 
 DeviceEntry(89, DS1982U);
@@ -79,60 +79,57 @@ DeviceEntry(89, DS1982U);
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn);
-static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn);
-static int OW_r_data(BYTE * data, const struct parsedname *pn);
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn);
+static int OW_r_mem(BYTE * data,  size_t size,  off_t offset,
+					 struct parsedname *pn);
+static int OW_r_data(BYTE * data, struct parsedname *pn);
 
 /* 2502 memory */
-static int FS_r_memory(BYTE * buf, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int FS_r_memory(struct one_wire_query * owq)
 {
-//    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
-	if (OW_read_paged(buf, size, (size_t) offset, pn, 32, OW_r_mem))
+	size_t pagesize = 32 ;
+    if (OW_readwrite_paged(owq, 0, pagesize, OW_r_mem))
 		return -EINVAL;
-	return size;
+    return 0;
 }
 
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	if (OW_r_mem(buf, size, (offset + (pn->extension << 5)), pn))
+	size_t pagesize = 32 ;
+    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem))
 		return -EINVAL;
-	return size;
+    return 0 ;
 }
 
-static int FS_r_param(BYTE * buf, const size_t size, const off_t offset,
-					  const struct parsedname *pn)
+static int FS_r_param(struct one_wire_query * owq)
 {
-	BYTE data[32];
+    struct parsedname * pn = PN(owq) ;
+    BYTE data[32];
 	if (OW_r_data(data, pn))
 		return -EINVAL;
-	return FS_output_ascii((ASCII *) buf, size, offset,
-						   (ASCII *) & data[pn->ft->data.i],
-						   (size_t) pn->ft->suglen);
+    return Fowq_output_offset_and_size((ASCII *) & data[pn->ft->data.i], (size_t) pn->ft->suglen, owq ) ;
 }
 
-static int FS_w_memory(const BYTE * buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_memory(struct one_wire_query * owq)
 {
-	if (OW_w_mem(buf, size, (size_t) offset, pn))
+    if (OW_w_mem(OWQ_explode(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	if (OW_w_mem(buf, size, (size_t) (offset + (pn->extension << 5)), pn))
+	size_t pagesize = 32 ;
+	OWQ_offset(owq) += OWQ_pn(owq).extension * pagesize ;
+    if (OW_w_mem(OWQ_explode(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* Byte-oriented write */
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn)
+static int OW_w_mem(BYTE * data, size_t size,
+					off_t offset, struct parsedname *pn)
 {
 	BYTE p[5] = { 0x0F, offset & 0xFF, offset >> 8, data[0] };
 	int ret;
@@ -177,8 +174,8 @@ static int OW_w_mem(const BYTE * data, const size_t size,
 }
 
 /* page-oriented read -- call will not span page boundaries */
-static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn)
+static int OW_r_mem(BYTE * data, size_t size, off_t offset,
+					struct parsedname *pn)
 {
 	BYTE p[4] = { 0xC3, offset & 0xFF, offset >> 8, };
 	BYTE q[33];
@@ -199,7 +196,7 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 	return 0;
 }
 
-static int OW_r_data(BYTE * data, const struct parsedname *pn)
+static int OW_r_data(BYTE * data, struct parsedname *pn)
 {
 	BYTE p[32];
 

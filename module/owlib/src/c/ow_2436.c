@@ -46,10 +46,10 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2436 Battery */
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-fREAD_FUNCTION(FS_temp);
-fREAD_FUNCTION(FS_volts);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_temp);
+READ_FUNCTION(FS_volts);
 
 /* ------- Structures ----------- */
 
@@ -57,9 +57,9 @@ struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
 struct filetype DS2436[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A2436, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"volts", 12, NULL, ft_float, fc_volatile, {f: FS_volts}, {v: NULL}, {v:NULL},},
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_temp}, {v: NULL}, {v:NULL},},
+  {"pages/page", 32, &A2436, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"volts", 12, NULL, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {v:NULL},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntry(1B, DS2436);
@@ -77,36 +77,36 @@ static int OW_volts(_FLOAT * V, const struct parsedname *pn);
 static size_t Asize[] = { 24, 8, 8, };
 
 /* 2436 A/D */
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	if (pn->extension > 2)
+    struct parsedname * pn = PN(owq) ;
+    if (pn->extension > 2)
 		return -ERANGE;
-	if (OW_r_page(buf, size, offset + ((pn->extension) << 5), pn))
+    if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn))
 		return -EINVAL;
-	return size;
+    return OWQ_size(owq);
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	if (pn->extension > 2)
+    struct parsedname * pn = PN(owq) ;
+    if (pn->extension > 2)
 		return -ERANGE;
-	if (OW_w_page(buf, size, offset + ((pn->extension) << 5), pn))
+    if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_temp(_FLOAT * T, const struct parsedname *pn)
+static int FS_temp(struct one_wire_query * owq)
 {
-	if (OW_temp(T, pn))
+    if (OW_temp(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_volts(_FLOAT * V, const struct parsedname *pn)
+static int FS_volts(struct one_wire_query * owq)
 {
-	if (OW_volts(V, pn))
+    if (OW_volts(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }

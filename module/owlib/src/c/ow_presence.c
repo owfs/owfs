@@ -207,22 +207,23 @@ static int CheckPresence_low(struct connection_in *in,
 }
 #endif							/* OW_MT */
 
-int FS_present(int *y, const struct parsedname *pn)
+int FS_present(struct one_wire_query * owq)
 {
+    struct parsedname * pn = PN(owq) ;
 
 	if (NotRealDir(pn) || pn->dev == DeviceSimultaneous
 		|| pn->dev == DeviceThermostat) {
-		y[0] = 1;
+        OWQ_Y(owq) = 1;
 	} else if (get_busmode(pn->in) == bus_fake) {
-		y[0] = 1;
+        OWQ_Y(owq) = 1;
 	} else if (get_busmode(pn->in) == bus_tester) {
-		y[0] = 1;
+        OWQ_Y(owq) = 1;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		y[0] = BUS_transaction(t, pn) ? 0 : 1;
+        OWQ_Y(owq) = BUS_transaction(t, pn) ? 0 : 1;
 	}
 	return 0;
 }

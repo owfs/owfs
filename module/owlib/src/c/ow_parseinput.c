@@ -25,6 +25,7 @@ static int FS_input_float(struct one_wire_query * owq) ;
 static int FS_input_date(struct one_wire_query * owq) ;
 static int FS_input_ascii(struct one_wire_query * owq ) ;
 static int FS_input_array_with_commas(struct one_wire_query * owq ) ;
+static int FS_input_ascii_array(struct one_wire_query * owq ) ;
 static int FS_input_array_no_commas(struct one_wire_query * owq ) ;
 
 /* ---------------------------------------------- */
@@ -64,6 +65,9 @@ int FS_input_owq( struct one_wire_query * owq)
             return FS_input_unsigned(owq) ;
         case EXTENSION_ALL:
             switch (OWQ_pn(owq).ft->format) {
+                case ft_ascii:
+                case ft_vascii:
+                    return FS_input_ascii_array(owq) ;
                 case ft_binary:
                     return FS_input_array_no_commas(owq) ;
                 default:
@@ -237,10 +241,10 @@ static int FS_input_float(struct one_wire_query * owq )
 
     switch ( OWQ_pn(owq).ft->format ) {
         case ft_temperature:
-            OWQ_F(owq) = fromTemperature( F, &OWQ_pn(owq) ) ;
+            OWQ_F(owq) = fromTemperature( F, PN(owq) ) ;
             break ;
         case ft_tempgap:
-            OWQ_F(owq) = fromTempGap( F, &OWQ_pn(owq) ) ;
+            OWQ_F(owq) = fromTempGap( F, PN(owq) ) ;
             break ;
         default:
             OWQ_F(owq) = F ;
@@ -287,7 +291,6 @@ static int FS_input_date(struct one_wire_query * owq )
 
 static int FS_input_ascii(struct one_wire_query * owq )
 {
-    OWQ_mem(owq) = OWQ_buffer(owq) ;
     OWQ_length(owq) = OWQ_size(owq) ;
     return 0 ;
 }
@@ -301,11 +304,13 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
     char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
     char * comma = NULL ; // assignment to avoid compiler warning
     char * buffer_position ;
-    struct one_wire_query owq_single ;
+	OWQ_make( owq_single ) ;
 
     if ( OWQ_offset(owq) ) {
         return -EINVAL ;
     }
+
+    OWQ_create_shallow_single( owq_single, owq ) ;
     
     for ( extension = 0 ; extension < elements ; ++extension ) {
         // find start of buffer span
@@ -329,16 +334,47 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
         //Debug_Bytes("FS_input_array_with_commas -- to end",buffer_position,end-buffer_position) ;
         //Debug_Bytes("FS_input_array_with_commas -- to comma",buffer_position,comma-buffer_position) ;
         // set up single element
-        memcpy( &owq_single, owq, sizeof(owq_single) ) ;
-        OWQ_pn(&owq_single).extension = extension ;
-        OWQ_buffer(&owq_single) = buffer_position ;
-        OWQ_size(&owq_single) = comma - buffer_position ;
-        if ( FS_input_owq(&owq_single) ) {
+        OWQ_pn(owq_single).extension = extension ;
+        OWQ_buffer(owq_single) = buffer_position ;
+        OWQ_size(owq_single) = comma - buffer_position ;
+        if ( FS_input_owq(owq_single) ) {
             return -EINVAL ;
         }
-        memcpy( &(OWQ_array(owq)[extension]), &OWQ_val(&owq_single), sizeof(union value_object) ) ;
+        memcpy( &(OWQ_array(owq)[extension]), &OWQ_val(owq_single), sizeof(union value_object) ) ;
     }
     return 0 ;
+}
+
+/* returns 0 if ok */
+/* creates a new allocated memory area IF no error */
+static int FS_input_ascii_array(struct one_wire_query * owq )
+{
+    int elements = OWQ_pn(owq).ft->ag->elements ;
+    int extension ;
+    char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
+    char * buffer_position = OWQ_buffer(owq) ;
+
+    if ( OWQ_offset(owq) ) {
+        return -EINVAL ;
+    }
+
+    for ( extension = 0 ; extension < elements ; ++extension ) {
+        char * comma ;
+        // find end of buffer span
+        if ( extension == elements-1 ) { // last element
+            OWQ_array_length(owq,extension) = end - buffer_position ;
+            return 0 ;
+        }
+        // pre-terminal element
+        comma = memchr(buffer_position, ',', end - buffer_position ) ;
+        if ( comma == NULL ) {
+            return -EINVAL ;
+        }
+        OWQ_array_length(owq,extension) = comma - buffer_position ;
+        memmove( comma, comma+1, end-comma-1 ) ;
+        -- end ;
+    }
+    return -ERANGE ; // never reach !
 }
 
 
@@ -355,7 +391,6 @@ static int FS_input_array_no_commas(struct one_wire_query * owq )
     }
     
     for ( extension = 0 ; extension < elements ; ++extension ) {
-        OWQ_array_mem(owq,extension) = OWQ_buffer(owq) + suglen*extension ;
         OWQ_array_length(owq,extension) = suglen ;
     }
     return 0 ;

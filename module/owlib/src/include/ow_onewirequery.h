@@ -10,18 +10,13 @@ $Id$
 #ifndef OW_ONEWIREQUERY_H			/* tedious wrapper */
 #define OW_ONEWIREQUERY_H
 
-struct owq_memory {
-	char * mem ;
-	size_t size ;
-}  ;
-
 union value_object {
 	int          I ;
 	unsigned int U ;
 	_FLOAT       F ;
-	_DATE       D ;
+	_DATE        D ;
     int	         Y ;//boolean
-	struct owq_memory M ;
+	size_t       length ;
 	union value_object * array ;
 } ;
 
@@ -39,22 +34,25 @@ struct one_wire_query {
 #define OWQ_offset(owq)	((owq)->offset)
 #define OWQ_val(owq)	((owq)->val)
 #define OWQ_array(owq)	(((owq)->val).array)
+#define PN(owq)         (&OWQ_pn(owq))
 
 #define OWQ_I(owq)      ((OWQ_val(owq)).I)
 #define OWQ_U(owq)      ((OWQ_val(owq)).U)
 #define OWQ_F(owq)      ((OWQ_val(owq)).F)
 #define OWQ_D(owq)      ((OWQ_val(owq)).D)
 #define OWQ_Y(owq)      ((OWQ_val(owq)).Y)
-#define OWQ_mem(owq)    ((OWQ_val(owq)).M.mem)
-#define OWQ_length(owq) ((OWQ_val(owq)).M.size)
+#define OWQ_length(owq) ((OWQ_val(owq)).length)
 
 #define OWQ_array_I(owq,i)      ((OWQ_array(owq)[i]).I)
 #define OWQ_array_U(owq,i)      ((OWQ_array(owq)[i]).U)
 #define OWQ_array_F(owq,i)      ((OWQ_array(owq)[i]).F)
 #define OWQ_array_D(owq,i)      ((OWQ_array(owq)[i]).D)
 #define OWQ_array_Y(owq,i)      ((OWQ_array(owq)[i]).Y)
-#define OWQ_array_mem(owq,i)    ((OWQ_array(owq)[i]).M.mem)
-#define OWQ_array_length(owq,i) ((OWQ_array(owq)[i]).M.size)
+#define OWQ_array_length(owq,i) ((OWQ_array(owq)[i]).length)
+
+#define OWQ_explode(owq)	(BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)
+
+#define OWQ_make( owq_name )		struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name 
 
 int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, struct one_wire_query * owq ) ;
 int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, size_t size, off_t offset, struct one_wire_query * owq ) ;
@@ -62,8 +60,8 @@ void FS_OWQ_destroy( struct one_wire_query * owq ) ;
 
 void OWQ_create_shallow_single( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original ) ;
 int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct one_wire_query * owq_original ) ;
-void OWQ_destroy_shallow_single( struct one_wire_query * owq_shallow ) ;
 void OWQ_destroy_shallow_aggregate( struct one_wire_query * owq_shallow ) ;
+void OWQ_create_temporary( struct one_wire_query * owq_temporary, char * buffer, size_t size, off_t offset, struct parsedname * pn ) ;
 
 int FS_input_owq( struct one_wire_query * owq) ;
 int FS_output_owq( struct one_wire_query * owq) ;

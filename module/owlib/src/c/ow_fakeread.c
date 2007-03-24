@@ -32,12 +32,14 @@ static int FS_read_fake_array(struct one_wire_query * owq);
 #define Random_u (rand()&0xFF)
 #define Random_b (rand()&0xFF)
 #define Random_a (32+(rand()&0x3F))
-#define Random_f (10*Random)
+#define Random_f (100.*Random)
 
 int FS_read_fake(struct one_wire_query * owq)
 {
     switch (OWQ_pn(owq).extension) {
-        case EXTENSION_ALL:                    /* array */
+        case EXTENSION_ALL:
+            if ( OWQ_offset(owq) ) return 0 ;
+            if ( OWQ_size(owq) < OWQ_FullFileLength(owq) ) return -ERANGE ;
             return FS_read_fake_array(owq);
 		case EXTENSION_BYTE:                    /* bitfield */
         default:
@@ -76,6 +78,7 @@ static int FS_read_fake_single(struct one_wire_query * owq)
         case ft_ascii:
         {
             size_t i ;
+            OWQ_length(owq) = OWQ_size(owq) ;
             for ( i=0 ; i < OWQ_size(owq) ; ++i ) {
                 OWQ_buffer(owq)[i] = Random_a ;
             }
@@ -84,6 +87,7 @@ static int FS_read_fake_single(struct one_wire_query * owq)
         case ft_binary:
         {
             size_t i ;
+            OWQ_length(owq) = OWQ_size(owq) ;
             for ( i=0 ; i < OWQ_size(owq) ; ++i ) {
                 OWQ_buffer(owq)[i] = Random_b ;
             }
@@ -93,47 +97,44 @@ static int FS_read_fake_single(struct one_wire_query * owq)
         case ft_subdir:
             return -ENOENT ;
     }
-    return FS_output_owq(owq) ; // put data as string into buffer and return length
+    return 0 ; // put data as string into buffer and return length
 }
 
 /* Read each array element independently, but return as one long string */
 /* called when pn->extension==EXTENSION_ALL and pn->ft->ag->combined==ag_separate */
 static int FS_read_fake_array(struct one_wire_query * owq)
 {
-    size_t buffer_space_left = OWQ_size(owq);
-    char *pointer_into_buffer = OWQ_buffer(owq);
-    struct one_wire_query struct_owq_single;
-    struct one_wire_query * owq_single = &struct_owq_single;
-    struct parsedname * pn_single = &OWQ_pn(owq_single) ;
+    size_t elements = OWQ_pn(owq).ft->ag->elements ;
+    size_t extension ;
+    size_t entry_length = OWQ_FileLength(owq) ;
+    OWQ_make( owq_single ) ;
 
-    STAT_ADD1(read_array);      /* statistics */
+    OWQ_create_shallow_single( owq_single, owq ) ;
 
-    if (OWQ_offset(owq) != 0) return -ERANGE;
-
-    /* shallow copy */
-    memcpy(owq_single, owq, sizeof(struct one_wire_query));
-
-    for (pn_single->extension = 0; pn_single->extension < pn_single->ft->ag->elements;
-         ++pn_single->extension) {
-        int read_or_error ;
-        /* Add a separating comma if not the first element */
-        if (pn_single->extension && pn_single->ft->format != ft_binary) {
-            if (buffer_space_left == 0)
-                return -ERANGE;
-            *pointer_into_buffer = ',';
-            ++pointer_into_buffer;
-            --buffer_space_left;
+    for ( extension = 0 ; extension < elements ; ++extension ) {
+        OWQ_pn(owq_single).extension = extension ;
+        switch (OWQ_pn(owq).ft->format) {
+            case ft_integer:
+            case ft_yesno:
+            case ft_bitfield:
+            case ft_unsigned:
+            case ft_temperature:
+            case ft_tempgap:
+            case ft_float:
+            case ft_date:
+                break ;
+            case ft_vascii:
+            case ft_ascii:
+            case ft_binary:
+                OWQ_size(owq_single) = entry_length ;
+                OWQ_buffer(owq_single) = & OWQ_buffer(owq)[extension*entry_length] ;
+                break ;
+            case ft_directory:
+            case ft_subdir:
+                return -ENOENT ;
         }
-        OWQ_buffer(owq_single) = pointer_into_buffer ;
-        OWQ_size(owq_single) = buffer_space_left ;
-        OWQ_offset(owq_single) = 0 ;
-        read_or_error = FS_read_fake_single(owq_single) ;
-        if ( read_or_error < 0 ) return read_or_error ;
-        buffer_space_left -= read_or_error;
-        pointer_into_buffer += read_or_error;
+        if ( FS_read_fake_single( owq_single ) ) return -EINVAL ;
+        memcpy( &OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof( union value_object ) ) ;
     }
-
-    LEVEL_DEBUG("FS_readfake_all: size=%d buffer_space_left=%d used=%d\n", OWQ_size(owq), buffer_space_left,
-                OWQ_size(owq) - buffer_space_left);
-    return Fowq_output_offset_and_size( OWQ_buffer(owq), OWQ_size(owq) - buffer_space_left, owq ) ;
+    return 0 ;
 }

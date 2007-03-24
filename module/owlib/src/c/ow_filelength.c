@@ -16,10 +16,10 @@ $Id$
 size_t OWQ_FileLength( const struct one_wire_query * owq )
 {
     if (OWQ_pn(owq).type == pn_structure)
-        return 30;              /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
+        return PROPERTY_LENGTH_STRUCTURE;              /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
 
     /* directory ? */
-    if (IsDir(&OWQ_pn(owq)))
+    if (IsDir(PN(owq)))
         return 8;
 
     switch ( OWQ_pn(owq).ft->format ) {
@@ -86,9 +86,9 @@ size_t FileLength(const struct parsedname * pn)
             OWQ_size(&owq) = pn->ft->suglen ;
             OWQ_offset(&owq) = 0 ;
             OWQ_buffer(&owq) = malloc(OWQ_size(&owq));
-            memcpy( &OWQ_pn(&owq), pn, sizeof(struct parsedname) ) ;
+            memcpy( PN(&owq), pn, sizeof(struct parsedname) ) ;
             if (OWQ_buffer(&owq)) {
-				ssize_t ret = FS_read_postpostparse(&owq);
+				ssize_t ret = FS_read_distribute(&owq);
                 free(OWQ_buffer(&owq));
 				if (ret > 0)
 					return ret;

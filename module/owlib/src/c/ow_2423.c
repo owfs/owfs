@@ -46,15 +46,15 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2423 counter */
-bREAD_FUNCTION(FS_r_mem);
-bWRITE_FUNCTION(FS_w_mem);
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-uREAD_FUNCTION(FS_counter);
-uREAD_FUNCTION(FS_pagecount);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_counter);
+READ_FUNCTION(FS_pagecount);
 #if OW_CACHE
-uREAD_FUNCTION(FS_r_mincount);
-uWRITE_FUNCTION(FS_w_mincount);
+READ_FUNCTION(FS_r_mincount);
+WRITE_FUNCTION(FS_w_mincount);
 #endif							/* OW_CACHE */
 
 /* ------- Structures ----------- */
@@ -63,14 +63,14 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate, };
 struct aggregate A2423c = { 2, ag_letters, ag_separate, };
 struct filetype DS2423[] = {
 	F_STANDARD,
-  {"memory", 512, NULL, ft_binary, fc_stable, {b: FS_r_mem}, {b: FS_w_mem}, {v:NULL},},
+  {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A2423, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"counters", 12, &A2423c, ft_unsigned, fc_volatile, {u: FS_counter}, {v: NULL}, {v:NULL},},
+  {"pages/page", 32, &A2423, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"counters", 12, &A2423c, ft_unsigned, fc_volatile, {o: FS_counter}, {v: NULL}, {v:NULL},},
 #if OW_CACHE
-  {"mincount", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_mincount}, {u: FS_w_mincount}, {v:NULL},},
+  {"mincount", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_mincount}, {o: FS_w_mincount}, {v:NULL},},
 #endif							/*OW_CACHE */
-  {"pages/count", 12, &A2423, ft_unsigned, fc_volatile, {u: FS_pagecount}, {v: NULL}, {v:NULL},},
+  {"pages/count", 12, &A2423, ft_unsigned, fc_volatile, {o: FS_pagecount}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(1D, DS2423, DEV_ovdr);
@@ -81,72 +81,73 @@ static struct internal_prop ip_cum = { "CUM", fc_persistent };
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn);
-static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn);
-static int OW_counter(UINT * counter, const int page,
-					  const struct parsedname *pn);
-static int OW_r_mem_counter(BYTE * p, UINT * counter, const size_t size,
-							const off_t offset,
-							const struct parsedname *pn);
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn);
+static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize) ;
 
 /* 2423A/D Counter */
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	if (OW_r_mem(buf, size, offset + ((pn->extension) << 5), pn))
+    size_t pagesize = 32 ;
+    if ( OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_counter ) )
 		return -EINVAL;
-	return size;
+    return 0;
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	if (OW_w_mem(buf, size, offset + ((pn->extension) << 5), pn))
+    size_t pagesize = 32 ;
+	if ( OW_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_w_mem ) )
 		return -EINVAL;
-	return 0;
+    return 0;
 }
 
-static int FS_r_mem(BYTE * buf, const size_t size, const off_t offset,
-					const struct parsedname *pn)
+static int FS_r_mem(struct one_wire_query * owq)
 {
-	if (OW_read_paged(buf, size, offset, pn, 32, OW_r_mem))
+    size_t pagesize = 32 ;
+    if ( OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_counter ) )
 		return -EINVAL;
-	return size;
+    return 0;
 }
 
-static int FS_w_mem(const BYTE * buf, const size_t size,
-					const off_t offset, const struct parsedname *pn)
+static int FS_w_mem(struct one_wire_query * owq)
 {
-	if (OW_write_paged(buf, size, offset, pn, 32, OW_w_mem))
+    size_t pagesize = 32 ;
+	if ( OW_readwrite_paged( owq, 0, pagesize, OW_w_mem ) )
 		return -EINVAL;
-	return 0;
+    return 0;
 }
 
-static int FS_counter(UINT * u, const struct parsedname *pn)
+static int FS_counter(struct one_wire_query * owq)
 {
-	if (OW_counter(u, (pn->extension) + 14, pn))
-		return -EINVAL;
-	return 0;
+    size_t pagesize = 32 ;
+    if (OW_r_mem_counter(owq, OWQ_pn(owq).extension + 14, pagesize ))
+        return -EINVAL;
+    return 0;
 }
 
-static int FS_pagecount(UINT * u, const struct parsedname *pn)
+static int FS_pagecount(struct one_wire_query * owq)
 {
-	if (OW_counter(u, pn->extension, pn))
-		return -EINVAL;
-	return 0;
+    size_t pagesize = 32 ;
+    if (OW_r_mem_counter(owq, OWQ_pn(owq).extension, pagesize ))
+        return -EINVAL;
+    return 0;
 }
 
-#if OW_CACHE					/* Special code for cumulative counters -- read/write -- uses the caching system for storage */
+#if OW_CACHE
+/* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
-static int FS_r_mincount(UINT * u, const struct parsedname *pn)
+static int FS_r_mincount(struct one_wire_query * owq)
 {
-	size_t s = 3 * sizeof(UINT);
+    struct parsedname * pn = PN(owq) ;
 	UINT st[3], ct[2];			// stored and current counter values
-
-	if (OW_counter(&ct[0], 0, pn) || OW_counter(&ct[1], 1, pn))
-		return -EINVAL;			// current counters
+    
+    if ( OW_r_mem_counter( owq, 0, 32 ) ) return -EINVAL ;
+    ct[0] = OWQ_U(owq) ;
+    
+    if ( OW_r_mem_counter( owq, 1, 32 ) ) return -EINVAL ;
+    ct[1] = OWQ_U(owq) ;
+    
 	if (Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), &ip_cum, pn)) {	// record doesn't (yet) exist
 		st[2] = ct[0] < ct[1] ? ct[0] : ct[1];
 	} else {
@@ -156,24 +157,34 @@ static int FS_r_mincount(UINT * u, const struct parsedname *pn)
 	}
 	st[0] = ct[0];
 	st[1] = ct[1];
-	u[0] = st[2];
-	return Cache_Add_Internal((void *) st, s, &ip_cum, pn) ? -EINVAL : 0;
+    OWQ_U(owq) = st[2];
+    
+    if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), &ip_cum, pn) )
+        return -EINVAL ;
+    return 0 ;
 }
 
-static int FS_w_mincount(const UINT * u, const struct parsedname *pn)
+static int FS_w_mincount(struct one_wire_query * owq)
 {
-	UINT st[3];					// stored and current counter values
+    struct parsedname * pn = PN(owq) ;
+    UINT st[3];					// stored and current counter values
 
-	if (OW_counter(&st[0], 0, pn) || OW_counter(&st[1], 1, pn))
-		return -EINVAL;
-	st[2] = u[0];
-	return Cache_Add_Internal((void *) st, 3 * sizeof(UINT), &ip_cum,
-							  pn) ? -EINVAL : 0;
+    st[2] = OWQ_U(owq) ;
+
+    if ( OW_r_mem_counter( owq, 0, 32 ) ) return -EINVAL ;
+    st[0] = OWQ_U(owq) ;
+    
+    if ( OW_r_mem_counter( owq, 1, 32 ) ) return -EINVAL ;
+    st[1] = OWQ_U(owq) ;
+    
+    if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), &ip_cum, pn) )
+        return -EINVAL ;
+    return 0 ;
 }
 #endif							/*OW_CACHE */
 
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn)
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 32 + 2] = { 0x0F, offset & 0xFF, offset >> 8, };
 	struct transaction_log tcopy[] = {
@@ -220,33 +231,30 @@ static int OW_w_mem(const BYTE * data, const size_t size,
 	return 0;
 }
 
-static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn)
-{
-	return OW_r_mem_counter(data, NULL, size, offset, pn);
-}
-
-static int OW_counter(UINT * counter, const int page,
-					  const struct parsedname *pn)
-{
-	return OW_r_mem_counter(NULL, counter, 1, (page << 5) + 31, pn);
-}
-
 /* read memory area and counter (just past memory) */
 /* Nathan Holmes help troubleshoot this one! */
-static int OW_r_mem_counter(BYTE * p, UINT * counter, const size_t size,
-							const off_t offset,
-							const struct parsedname *pn)
+static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
 {
-
-	BYTE extra[8];
-	if (OW_r_mem_p8_crc16(p, size, offset, pn, 32, extra))
-		return 1;
-
-	/* counter is held in the 4 bytes after the data */
-	//if ( counter ) *counter = (((((((UINT) extra[3])<<8) | extra[2])<<8) | extra[1])<<8) | extra[0] ;
-	if (counter)
-		counter[0] = UT_uint32(extra);
-
-	return 0;
+    /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
+    switch( OWQ_pn(owq).ft->format ) {
+        case ft_binary:
+        case ft_ascii:
+        case ft_vascii:
+            return OW_r_mem_p8_crc16( owq, page, pagesize, NULL ) ;
+        case ft_unsigned:
+        {
+            BYTE extra[8];
+            OWQ_make( owq_read ) ;
+            OWQ_create_temporary( owq_read, NULL, 1, 31, PN(owq) ) ;
+            if ( OW_r_mem_p8_crc16( owq_read, page, pagesize, extra ) ) return 1 ;
+            if (extra[4] != 0x55 || extra[5] != 0x55 || extra[6] != 0x55
+                || extra[7] != 0x55)
+                return 1;
+            /* counter is held in the 4 bytes after the data */
+            OWQ_U(owq) = UT_uint32(extra);
+            return 0 ;
+        }
+        default:
+            return 1 ;
+    }
 }

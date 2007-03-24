@@ -46,18 +46,18 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS1977 counter */
-bREAD_FUNCTION(FS_r_mem);
-bWRITE_FUNCTION(FS_w_mem);
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-uREAD_FUNCTION(FS_ver);
-yREAD_FUNCTION(FS_r_pwd);
-yWRITE_FUNCTION(FS_w_pwd);
-bWRITE_FUNCTION(FS_set);
-aWRITE_FUNCTION(FS_nset);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_ver);
+READ_FUNCTION(FS_r_pwd);
+WRITE_FUNCTION(FS_w_pwd);
+WRITE_FUNCTION(FS_set);
+WRITE_FUNCTION(FS_nset);
 #if OW_CACHE
-bWRITE_FUNCTION(FS_use);
-aWRITE_FUNCTION(FS_nuse);
+WRITE_FUNCTION(FS_use);
+WRITE_FUNCTION(FS_nuse);
 #endif							/* OW_CACHE */
 
 /* ------- Structures ----------- */
@@ -65,24 +65,24 @@ aWRITE_FUNCTION(FS_nuse);
 struct aggregate A1977 = { 511, ag_numbers, ag_separate, };
 struct filetype DS1977[] = {
 	F_STANDARD,
-  {"memory", 32704, NULL, ft_binary, fc_stable, {b: FS_r_mem}, {b: FS_w_mem}, {v:NULL},},
+  {"memory", 32704, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
   {"pages", 0, NULL, ft_subdir, fc_stable, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 64, &A1977, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
+  {"pages/page", 64, &A1977, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"set_password", 0, NULL, ft_subdir, fc_stable, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"set_password/read", 8, NULL, ft_binary, fc_stable, {v: NULL}, {b: FS_set}, {i:0},},
-  {"set_password/full", 8, NULL, ft_binary, fc_stable, {v: NULL}, {b: FS_set}, {i:8},},
-  {"set_password/enabled", 1, NULL, ft_yesno, fc_stable, {y: FS_r_pwd}, {y: FS_w_pwd}, {v:NULL},},
+  {"set_password/read", 8, NULL, ft_binary, fc_stable, {v: NULL}, {o: FS_set}, {i:0},},
+  {"set_password/full", 8, NULL, ft_binary, fc_stable, {v: NULL}, {o: FS_set}, {i:8},},
+  {"set_password/enabled", 1, NULL, ft_yesno, fc_stable, {o: FS_r_pwd}, {o: FS_w_pwd}, {v:NULL},},
   {"set_number", 0, NULL, ft_subdir, fc_stable, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"set_number/read", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_nset}, {i:0},},
-  {"set_number/full", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_nset}, {i:8},},
-  {"version", 12, NULL, ft_unsigned, fc_stable, {u: FS_ver}, {v: NULL}, {v:NULL},},
+  {"set_number/read", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_nset}, {i:0},},
+  {"set_number/full", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_nset}, {i:8},},
+  {"version", 12, NULL, ft_unsigned, fc_stable, {o: FS_ver}, {v: NULL}, {v:NULL},},
 #if OW_CACHE
   {"use_password", 0, NULL, ft_subdir, fc_stable, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"use_password/read", 8, NULL, ft_binary, fc_stable, {v: NULL}, {b: FS_use}, {i:0},},
-  {"use_password/full", 8, NULL, ft_binary, fc_stable, {v: NULL}, {b: FS_use}, {i:8},},
+  {"use_password/read", 8, NULL, ft_binary, fc_stable, {v: NULL}, {o: FS_use}, {i:0},},
+  {"use_password/full", 8, NULL, ft_binary, fc_stable, {v: NULL}, {o: FS_use}, {i:8},},
   {"use_number", 0, NULL, ft_subdir, fc_stable, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"use_number/read", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_nuse}, {i:0},},
-  {"use_number/full", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_nuse}, {i:8},},
+  {"use_number/read", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_nuse}, {i:0},},
+  {"use_number/full", 47, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_nuse}, {i:8},},
 #endif							/*OW_CACHE */
 };
 
@@ -95,174 +95,180 @@ static struct internal_prop ip_ful = { "FUL", fc_persistent };
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn);
-static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn);
-static int OW_r_pmem(BYTE * data, const BYTE * pwd, const size_t size,
-					 const off_t offset, const struct parsedname *pn);
-static int OW_ver(UINT * u, const struct parsedname *pn);
-static int OW_verify(BYTE * pwd, const off_t offset,
-					 const struct parsedname *pn);
-static int OW_clear(const struct parsedname *pn);
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn);
+static int OW_r_mem(BYTE * data,  size_t size,  off_t offset,
+					 struct parsedname *pn);
+static int OW_r_pmem(BYTE * data,  BYTE * pwd,  size_t size,
+					  off_t offset,  struct parsedname *pn);
+static int OW_ver(UINT * u,  struct parsedname *pn);
+static int OW_verify(BYTE * pwd,  off_t offset,
+					  struct parsedname *pn);
+static int OW_clear( struct parsedname *pn);
 
 /* 1977 password */
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	if (OW_r_mem(buf, size, offset + ((pn->extension) << 6), pn))
+	size_t pagesize = 64 ;
+	if ( OW_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem ) )
 		return -EACCES;
-	return size;
+    return 0;
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	if (OW_w_mem(buf, size, offset + ((pn->extension) << 6), pn))
-		return -EACCES;
-	return 0;
-}
-
-static int FS_r_mem(BYTE * buf, const size_t size, const off_t offset,
-					const struct parsedname *pn)
-{
-	if (OW_read_paged(buf, size, offset, pn, 64, OW_r_mem))
-		return -EACCES;
-	return size;
-}
-
-static int FS_w_mem(const BYTE * buf, const size_t size,
-					const off_t offset, const struct parsedname *pn)
-{
-	if (OW_write_paged(buf, size, offset, pn, 64, OW_w_mem))
+	size_t pagesize = 64 ;
+	if ( OW_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_w_mem ) )
 		return -EACCES;
 	return 0;
 }
 
-static int FS_ver(UINT * u, const struct parsedname *pn)
+static int FS_r_mem(struct one_wire_query * owq)
 {
-	return OW_ver(u, pn) ? -EINVAL : 0;
+	size_t pagesize = 64 ;
+	if ( OW_readwrite_paged( owq, 0, pagesize, OW_r_mem ) )
+		return -EACCES;
+    return OWQ_size(owq);
 }
 
-static int FS_r_pwd(int *y, const struct parsedname *pn)
+static int FS_w_mem(struct one_wire_query * owq)
+{
+	size_t pagesize = 64 ;
+	if ( OW_readwrite_paged( owq, 0, pagesize, OW_w_mem ) )
+        return -EACCES;
+	return 0;
+}
+
+static int FS_ver(struct one_wire_query * owq)
+{
+    return OW_ver(&OWQ_U(owq), PN(owq)) ? -EINVAL : 0;
+}
+
+static int FS_r_pwd(struct one_wire_query * owq)
 {
 	BYTE p;
-	if (OW_r_mem(&p, 1, 0x7FD0, pn))
+    if (OW_r_mem(&p, 1, 0x7FD0, PN(owq)))
 		return -EACCES;
-	y[0] = (p == 0xAA);
+    OWQ_Y(owq) = (p == 0xAA);
 	return 0;
 }
 
-static int FS_w_pwd(const int *y, const struct parsedname *pn)
+static int FS_w_pwd(struct one_wire_query * owq)
 {
-	BYTE p = y[0] ? 0x00 : 0xAA;
-	if (OW_w_mem(&p, 1, 0x7FD0, pn))
+    BYTE p = OWQ_Y(owq) ? 0x00 : 0xAA;
+    if (OW_w_mem(&p, 1, 0x7FD0, PN(owq)))
 		return -EACCES;
 	return 0;
 }
 
-static int FS_nset(const char *buf, const size_t size, const off_t offset,
-				   const struct parsedname *pn)
+static int FS_nset(struct one_wire_query * owq)
 {
 	char a[48];
 	char *end;
-	union {
+	OWQ_make( owq_scratch ) ;
+    union {
 		BYTE b[8];
-		long long int i;
+		int64_t i;
 	} xfer;
 
 	bzero(a, 48);
 	bzero(xfer.b, 8);
-	memcpy(&a[offset], buf, size);
+    memcpy(&a[OWQ_offset(owq)], OWQ_buffer(owq), OWQ_size(owq));
 	xfer.i = strtoll(a, &end, 0);
 	if (end == a || errno)
 		return -EINVAL;
-	return FS_set(xfer.b, 8, 0, pn);
+    OWQ_create_shallow_single( owq_scratch, owq ) ; // won't bother to destroy
+    OWQ_buffer(owq_scratch) = (char *) xfer.b ;
+    OWQ_size(owq_scratch)= 8 ;
+    OWQ_offset(owq_scratch) = 0 ;
+    return FS_set(owq_scratch);
 }
 
-static int FS_set(const BYTE * buf, const size_t size, const off_t offset,
-				  const struct parsedname *pn)
+static int FS_set(struct one_wire_query * owq)
 {
-	int ret;
-	BYTE p[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
-	int oldy, y = 0;
-	size_t off = 0x7FC0 + pn->ft->data.i;
-	size_t s = size;
-	if (s > 8)
-		s = 8;
-	memcpy(p, buf, s);
+    struct parsedname * pn = PN(owq) ;
+	OWQ_make( owq_scratch ) ;
+    int ret;
+	int oldy ;
 
-	(void) offset;
+    if ( OWQ_size(owq) < 8 ) return -ERANGE ;
+    
+    OWQ_create_shallow_single( owq_scratch, owq ) ; // won't bother to destroy
 
 	/* disable passwords */
-	if (FS_r_pwd(&oldy, pn))
+	if (FS_r_pwd(owq_scratch))
 		return -EACCES;
-	if (oldy)
-		if (FS_w_pwd(&y, pn))
+    oldy = OWQ_Y(owq) ;
+    if (oldy) {
+        OWQ_Y(owq_scratch) = 0 ;
+		if (FS_w_pwd(owq_scratch))
 			return -EACCES;
+    }
 
 	/* write password */
-	ret = FS_w_mem(p, 8, off, pn);
+    OWQ_offset(owq_scratch) = 0x7FC0 + pn->ft->data.i;
+    OWQ_size(owq_scratch) = 8 ;
+	ret = FS_w_mem(owq_scratch);
 	OW_clear(pn);
 	if (ret)
 		return -EINVAL;
 
 	/* Verify */
-	if (OW_verify(p, off, pn))
+    if (OW_verify( (BYTE *) OWQ_buffer(owq_scratch),OWQ_offset(owq_scratch),PN(owq)))
 		return -EINVAL;
 
 #if OW_CACHE
 	/* set cache */
-	FS_use(p, 8, 0, pn);
+    OWQ_offset(owq_scratch) = 0 ;
+	FS_use(owq_scratch);
 #endif							/* OW_CACHE */
 
 	/* reenable passwords */
-	if (oldy)
-		if (FS_w_pwd(&oldy, pn))
+	if (oldy) {
+        OWQ_Y(owq_scratch) = 1 ;
+		if (FS_w_pwd(owq_scratch))
 			return -EACCES;
+    }
 
 	return 0;
 }
 
 #if OW_CACHE
-static int FS_nuse(const char *buf, const size_t size, const off_t offset,
-				   const struct parsedname *pn)
+static int FS_nuse(struct one_wire_query * owq)
 {
 	char a[48];
 	char *end;
 	union {
 		BYTE b[8];
-		long long int i;
+		int64_t i;
 	} xfer;
+	OWQ_make( owq_scratch ) ;
 
 	bzero(a, 48);
 	bzero(xfer.b, 8);
-	memcpy(&a[offset], buf, size);
+    memcpy(&a[OWQ_offset(owq)], OWQ_buffer(owq), OWQ_size(owq));
 	xfer.i = strtoll(a, &end, 0);
 	if (end == a || errno)
 		return -EINVAL;
-	return FS_use(xfer.b, 8, 0, pn);
+    OWQ_create_shallow_single( owq_scratch, owq ) ; // won't bother to destroy
+    OWQ_buffer(owq_scratch) = (char *) xfer.b ;
+    OWQ_size(owq_scratch)= 8 ;
+    OWQ_offset(owq_scratch) = 0 ;
+    return FS_use(owq_scratch);
 }
 
-static int FS_use(const BYTE * buf, const size_t size, const off_t offset,
-				  const struct parsedname *pn)
+static int FS_use(struct one_wire_query * owq)
 {
-	BYTE p[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
-	size_t s = size;
-	if (s > 8)
-		s = 8;
-	memcpy(p, buf, s);
-
-	(void) offset;
-
-	if (Cache_Add_Internal(p, s, pn->ft->data.i ? &ip_ful : &ip_rea, pn))
+    if ( OWQ_size(owq) < 8 ) return -ERANGE ;
+    
+    if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).ft->data.i ? &ip_ful : &ip_rea, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 #endif							/* OW_CACHE */
 
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn)
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 64 + 2] = { 0x0F, offset & 0xFF, offset >> 8, };
 	int ret;
@@ -306,8 +312,8 @@ static int OW_w_mem(const BYTE * data, const size_t size,
 	return 0;
 }
 
-static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn)
+static int OW_r_mem(BYTE * data,  size_t size,  off_t offset,
+					 struct parsedname *pn)
 {
 	BYTE pwd[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
@@ -320,8 +326,8 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 	return OW_r_pmem(data, pwd, size, offset, pn);
 }
 
-static int OW_r_pmem(BYTE * data, const BYTE * pwd, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int OW_r_pmem(BYTE * data,  BYTE * pwd,  size_t size,
+					  off_t offset,  struct parsedname *pn)
 {
 	int ret;
 	BYTE p[1 + 2 + 64 + 2] = { 0x69, offset & 0xFF, offset >> 8, };
@@ -344,7 +350,7 @@ static int OW_r_pmem(BYTE * data, const BYTE * pwd, const size_t size,
 	return 0;
 }
 
-static int OW_ver(UINT * u, const struct parsedname *pn)
+static int OW_ver(UINT * u,  struct parsedname *pn)
 {
 	int ret;
 	BYTE p[] = { 0xCC, };
@@ -358,10 +364,11 @@ static int OW_ver(UINT * u, const struct parsedname *pn)
 	if (ret || b[0] != b[1])
 		return 1;
 	u[0] = b[0];
+    return 0 ;
 }
 
-static int OW_verify(BYTE * pwd, const off_t offset,
-					 const struct parsedname *pn)
+static int OW_verify(BYTE * pwd,  off_t offset,
+					  struct parsedname *pn)
 {
 	int ret;
 	BYTE p[1 + 2 + 8] = { 0xC3, offset & 0xFF, offset >> 8, };
@@ -377,7 +384,7 @@ static int OW_verify(BYTE * pwd, const off_t offset,
 }
 
 /* Clear first 16 bytes of scratchpad after password setting */
-static int OW_clear(const struct parsedname *pn)
+static int OW_clear( struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 16] = { 0x0F, 0x00, 0x00, };
 	int ret;

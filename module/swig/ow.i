@@ -71,7 +71,7 @@ static void getdircallback( void * v, const struct parsedname * const pn2 ) {
 static void getdir( struct one_wire_query * owq ) {
     struct charblob cb ;
     CharblobInit( &cb ) ;
-    if ( FS_dir( getdircallback, &cb, &OWQ_pn(owq) ) >= 0 ) {
+    if ( FS_dir( getdircallback, &cb, PN(owq) ) >= 0 ) {
         OWQ_buffer(owq) = strdup( cb.blob ) ;
     } else {
         OWQ_buffer(owq) = NULL ;
@@ -112,7 +112,7 @@ char * get( const char * path ) {
     } else if ( FS_OWQ_create( path, NULL, 0, 0, &owq ) ) { /* Can we parse the input string */
         // buf = NULL ;
     } else {
-        if ( IsDir( &OWQ_pn(&owq) ) ) { /* A directory of some kind */
+        if ( IsDir( PN(&owq) ) ) { /* A directory of some kind */
             getdir( &owq ) ;
         } else { /* A regular file */
             getval( &owq ) ;

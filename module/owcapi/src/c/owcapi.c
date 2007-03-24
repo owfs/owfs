@@ -127,7 +127,7 @@ static ssize_t getdir(struct one_wire_query * owq)
 	int ret;
 
 	CharblobInit(&cb);
-    ret = FS_dir(getdircallback, &cb, &OWQ_pn(owq));
+    ret = FS_dir(getdircallback, &cb, PN(owq));
 	if (ret < 0) {
         OWQ_buffer(owq) = NULL;
         OWQ_size(owq) = 0 ;
@@ -150,7 +150,7 @@ static ssize_t getdir(struct one_wire_query * owq)
 static ssize_t getval(struct one_wire_query * owq)
 {
 	ssize_t ret;
-    ssize_t s = FullFileLength(&OWQ_pn(owq));
+    ssize_t s = FullFileLength(PN(owq));
 	if (s <= 0)
 		return -ENOENT;
     if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL)
@@ -190,7 +190,7 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 	} else if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
 		ret = -ENOENT;
 	} else {
-        if (IsDir(&OWQ_pn(&owq))) {		/* A directory of some kind */
+        if (IsDir(PN(&owq))) {		/* A directory of some kind */
             ret = getdir(&owq);
             if (ret > 0) {
                 if ( buffer_length) *buffer_length = OWQ_size(&owq);

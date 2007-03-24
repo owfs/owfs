@@ -370,6 +370,9 @@ enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile,
 /* Predeclare parsedname */
 struct parsedname;
 
+/* Predeclare one_wire_query */
+struct one_wire_query;
+
 /* predeclare connection_in/out */
 struct connection_in;
 struct connection_out;
@@ -389,6 +392,7 @@ extern int indevices;
 #define PROPERTY_LENGTH_FLOAT     12
 #define PROPERTY_LENGTH_DATE      24
 #define PROPERTY_LENGTH_YESNO      1
+#define PROPERTY_LENGTH_STRUCTURE 30
 
 /* filetype gives -file types- for chip properties */
 struct filetype {
@@ -398,6 +402,7 @@ struct filetype {
 	enum ft_format format;		// type of data
 	enum fc_change change;		// volatility
 	union {
+        int (*o) ( struct one_wire_query * ) ;
 		void *v;
 		int (*i) (int *, const struct parsedname *);
 		int (*u) (UINT *, const struct parsedname *);
@@ -410,7 +415,8 @@ struct filetype {
 				  const struct parsedname *);
 	} read;						// read callback function
 	union {
-		void *v;
+        int (*o) ( struct one_wire_query * ) ;
+        void *v;
 		int (*i) (const int *, const struct parsedname *);
 		int (*u) (const UINT *, const struct parsedname *);
 		int (*f) (const _FLOAT *, const struct parsedname *);
@@ -720,6 +726,7 @@ extern time_t start_time;
 extern time_t dir_time;			/* time of last directory scan */
 
 /* Prototypes */
+#define  READ_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
 #define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
 #define uREAD_FUNCTION( fname )  static int fname(UINT *, const struct parsedname * pn)
 #define fREAD_FUNCTION( fname )  static int fname(_FLOAT *, const struct parsedname * pn)
@@ -728,6 +735,7 @@ extern time_t dir_time;			/* time of last directory scan */
 #define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 #define bREAD_FUNCTION( fname )  static int fname(BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
+#define  WRITE_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
 #define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
 #define uWRITE_FUNCTION( fname )  static int fname(const UINT *, const struct parsedname * pn)
 #define fWRITE_FUNCTION( fname )  static int fname(const _FLOAT *, const struct parsedname * pn)
@@ -858,37 +866,26 @@ int FS_read(const char *path, char *buf, const size_t size,
 //int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 //					  const struct parsedname *pn);
 int FS_read_postparse(struct one_wire_query * owq) ;
-int FS_read_postpostparse(struct one_wire_query * owq);
+int FS_read_distribute(struct one_wire_query * owq);
 int FS_read_fake(struct one_wire_query * owq);
 int FS_read_tester(struct one_wire_query * owq);
 int FS_r_aggregate_all(struct one_wire_query * owq) ;
-int FS_output_ascii(ASCII * buf, size_t size, off_t offset, ASCII * answer,
-					size_t length);
-int FS_output_ascii_z(ASCII * buf, size_t size, off_t offset,
-					  ASCII * answer);
 int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
+int Fowq_output_offset_and_size_z(char * string, struct one_wire_query * owq) ;
 
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
 /* iteration functions for splitting writes to buffers */
-int OW_read_paged(BYTE * p, size_t size, off_t offset,
-				  const struct parsedname *pn, size_t pagelen,
-				  int (*readfunc) (BYTE *, const size_t, const off_t,
-								   const struct parsedname *));
-int OW_write_paged(const BYTE * p, size_t size, off_t offset,
-				   const struct parsedname *pn, size_t pagelen,
-				   int (*writefunc) (const BYTE *, const size_t,
-									 const off_t,
-									 const struct parsedname *));
+int OW_readwrite_paged(struct one_wire_query * owq, size_t page, size_t pagelen,
+				  int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname * )) ;
+int OWQ_readwrite_paged(struct one_wire_query * owq, size_t page, size_t pagelen,
+                        int (*readwritefunc) (struct one_wire_query *, size_t, size_t )) ;
 
-int OW_r_mem_simple(BYTE * data, const size_t size, const off_t offset,
-					const struct parsedname *pn);
-int OW_r_mem_crc16(BYTE * data, const size_t size, const off_t offset,
-				   const struct parsedname *pn, size_t pagesize);
-int OW_r_mem_p8_crc16(BYTE * data, const size_t size, const off_t offset,
-					  const struct parsedname *pn, size_t pagesize,
-					  BYTE * extra);
+int OW_r_mem_simple(struct one_wire_query * owq, size_t page, size_t pagesize ) ;
+int OW_r_mem_crc16_A5(struct one_wire_query * owq, size_t page, size_t pagesize) ;
+int OW_r_mem_crc16_AA(struct one_wire_query * owq, size_t page, size_t pagesize) ;
+int OW_r_mem_p8_crc16(struct one_wire_query * owq, size_t page, size_t pagesize, BYTE * extra ) ;
 
 void BUS_lock(const struct parsedname *pn);
 void BUS_unlock(const struct parsedname *pn);

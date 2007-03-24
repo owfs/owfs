@@ -19,48 +19,39 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-int FS_type(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn);
-int FS_code(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn);
-int FS_crc8(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn);
-int FS_ID(char *buf, size_t size, off_t offset,
-		  const struct parsedname *pn);
-int FS_r_ID(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn);
-int FS_address(char *buf, size_t size, off_t offset,
-			   const struct parsedname *pn);
-int FS_r_address(char *buf, size_t size, off_t offset,
-				 const struct parsedname *pn);
-int FS_locator(char *buf, size_t size, off_t offset,
-			   const struct parsedname *pn);
-int FS_r_locator(char *buf, size_t size, off_t offset,
-				 const struct parsedname *pn);
-int FS_present(int *, const struct parsedname *pn);
+int FS_type(struct one_wire_query * owq);
+int FS_code(struct one_wire_query * owq);
+int FS_crc8(struct one_wire_query * owq);
+int FS_ID(struct one_wire_query * owq);
+int FS_r_ID(struct one_wire_query * owq);
+int FS_address(struct one_wire_query * owq);
+int FS_r_address(struct one_wire_query * owq);
+int FS_locator(struct one_wire_query * owq);
+int FS_r_locator(struct one_wire_query * owq);
+int FS_present(struct one_wire_query * owq);
 
 /* ------- Structures ----------- */
 
 #define F_address  \
-    {"address"   ,  16,  NULL, ft_ascii , fc_static  , {a:FS_address}  , {v:NULL}, {v:NULL}, }
+    {"address"   ,  16,  NULL, ft_ascii , fc_static  , {o: FS_address}  , {v:NULL}, {v:NULL}, }
 #define F_r_address  \
-    {"r_address" ,  16,  NULL, ft_ascii , fc_static  , {a:FS_r_address}, {v:NULL}, {v:NULL}, }
+    {"r_address" ,  16,  NULL, ft_ascii , fc_static  , {o: FS_r_address}, {v:NULL}, {v:NULL}, }
 #define F_crc8     \
-    {"crc8"      ,   2,  NULL, ft_ascii , fc_static  , {a:FS_crc8}     , {v:NULL}, {v:NULL}, }
+    {"crc8"      ,   2,  NULL, ft_ascii , fc_static  , {o: FS_crc8}     , {v:NULL}, {v:NULL}, }
 #define F_id       \
-    {"id"        ,  12,  NULL, ft_ascii , fc_static  , {a:FS_ID}       , {v:NULL}, {v:NULL}, }
+    {"id"        ,  12,  NULL, ft_ascii , fc_static  , {o: FS_ID}       , {v:NULL}, {v:NULL}, }
 #define F_r_id       \
-    {"r_id"      ,  12,  NULL, ft_ascii , fc_static  , {a:FS_r_ID}     , {v:NULL}, {v:NULL}, }
+    {"r_id"      ,  12,  NULL, ft_ascii , fc_static  , {o: FS_r_ID}     , {v:NULL}, {v:NULL}, }
 #define F_code     \
-    {"family"    ,   2,  NULL, ft_ascii , fc_static  , {a:FS_code}     , {v:NULL}, {v:NULL}, }
+    {"family"    ,   2,  NULL, ft_ascii , fc_static  , {o: FS_code}     , {v:NULL}, {v:NULL}, }
 #define F_present  \
-    {"present"   ,   1,  NULL, ft_yesno , fc_volatile, {y:FS_present}  , {v:NULL}, {v:NULL}, }
+    {"present"   ,   1,  NULL, ft_yesno , fc_volatile, {o: FS_present}  , {v:NULL}, {v:NULL}, }
 #define F_type     \
-    {"type"      ,  32,  NULL, ft_vascii, fc_static  , {a:FS_type}     , {v:NULL}, {v:NULL}, }
+    {"type"      ,  32,  NULL, ft_vascii, fc_static  , {o: FS_type}     , {v:NULL}, {v:NULL}, }
 #define F_locator  \
-    {"locator"   ,  16,  NULL, ft_ascii , fc_directory,{a:FS_locator}  , {v:NULL}, {v:NULL}, }
+    {"locator"   ,  16,  NULL, ft_ascii , fc_directory,{o: FS_locator}  , {v:NULL}, {v:NULL}, }
 #define F_r_locator\
-    {"r_locator" ,  16,  NULL, ft_ascii , fc_directory,{a:FS_r_locator}, {v:NULL}, {v:NULL}, }
+    {"r_locator" ,  16,  NULL, ft_ascii , fc_directory,{o: FS_r_locator}, {v:NULL}, {v:NULL}, }
 
 #define F_STANDARD          F_address,F_code,F_crc8,F_id,F_locator,F_present,F_r_address,F_r_id,F_r_locator,F_type
 

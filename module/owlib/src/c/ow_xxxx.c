@@ -91,60 +91,60 @@ void update_max_delay(const struct parsedname *pn)
 	return;
 }
 
-int FS_type(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn)
+int FS_type(struct one_wire_query * owq)
 {
-	return FS_output_ascii_z(buf, size, offset, pn->dev->name);
+    struct parsedname * pn = PN(owq) ;
+    return Fowq_output_offset_and_size_z(pn->dev->name, owq);
 }
 
-int FS_code(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn)
+int FS_code(struct one_wire_query * owq)
 {
 	ASCII code[2];
-	num2string(code, pn->sn[0]);
-	return FS_output_ascii(buf, size, offset, code, 2);
+    struct parsedname * pn = PN(owq) ;
+    num2string(code, pn->sn[0]);
+    return Fowq_output_offset_and_size(code, 2, owq);
 }
 
-int FS_ID(char *buf, size_t size, off_t offset,
-		  const struct parsedname *pn)
+int FS_ID(struct one_wire_query * owq)
 {
 	ASCII id[12];
-	bytes2string(id, &(pn->sn[1]), 6);
-	return FS_output_ascii(buf, size, offset, id, 12);
+    struct parsedname * pn = PN(owq) ;
+    bytes2string(id, &(pn->sn[1]), 6);
+    return Fowq_output_offset_and_size(id, 12, owq);
 }
 
-int FS_r_ID(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn)
+int FS_r_ID(struct one_wire_query * owq)
 {
 	int sn_index,id_index;
 	ASCII id[12];
-	for (sn_index = 6, id_index =0 ; sn_index > 0 ; --sn_index, id_index += 2 )
+    struct parsedname * pn = PN(owq) ;
+    for (sn_index = 6, id_index =0 ; sn_index > 0 ; --sn_index, id_index += 2 )
 		num2string(&id[id_index], pn->sn[sn_index]);
-	return FS_output_ascii(buf, size, offset, id, 12);
+    return Fowq_output_offset_and_size(id, 12, owq);
 }
 
-int FS_crc8(char *buf, size_t size, off_t offset,
-			const struct parsedname *pn)
+int FS_crc8(struct one_wire_query * owq)
 {
 	ASCII crc[2];
-	num2string(crc, pn->sn[7]);
-	return FS_output_ascii(buf, size, offset, crc, 2);
+    struct parsedname * pn = PN(owq) ;
+    num2string(crc, pn->sn[7]);
+    return Fowq_output_offset_and_size(crc, 2, owq);
 }
 
-int FS_address(char *buf, size_t size, off_t offset,
-			   const struct parsedname *pn)
+int FS_address(struct one_wire_query * owq)
 {
 	ASCII ad[16];
-	bytes2string(ad, pn->sn, 8);
-	return FS_output_ascii(buf, size, offset, ad, 16);
+    struct parsedname * pn = PN(owq) ;
+    bytes2string(ad, pn->sn, 8);
+    return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
-int FS_r_address(char *buf, size_t size, off_t offset,
-				 const struct parsedname *pn)
+int FS_r_address(struct one_wire_query * owq)
 {
 	int sn_index, ad_index ;
 	ASCII ad[16];
-	for (sn_index = 7, ad_index = 0 ; sn_index >= 0 ; --sn_index, ad_index += 2 )
+    struct parsedname * pn = PN(owq) ;
+    for (sn_index = 7, ad_index = 0 ; sn_index >= 0 ; --sn_index, ad_index += 2 )
 		num2string(&ad[ad_index], pn->sn[sn_index]);
-	return FS_output_ascii(buf, size, offset, ad, 16);
+    return Fowq_output_offset_and_size(ad, 16, owq);
 }

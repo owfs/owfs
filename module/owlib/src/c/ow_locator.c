@@ -20,10 +20,10 @@ static int OW_locator(BYTE * addr, const struct parsedname *pn);
 /* ------- Functions ------------ */
 
 
-int FS_locator(char *buf, size_t size, off_t offset,
-			   const struct parsedname *pn)
+int FS_locator(struct one_wire_query * owq)
 {
-	BYTE loc[8];
+    struct parsedname * pn = PN(owq) ;
+    BYTE loc[8];
 	ASCII ad[16];
 
 	if (get_busmode(pn->in) == bus_fake) {
@@ -35,13 +35,13 @@ int FS_locator(char *buf, size_t size, off_t offset,
 		OW_locator(loc, pn);
 	}
 	bytes2string(ad, loc, 8);
-	return FS_output_ascii(buf, size, offset, ad, 16);
+    return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
-int FS_r_locator(char *buf, size_t size, off_t offset,
-				 const struct parsedname *pn)
+int FS_r_locator(struct one_wire_query * owq)
 {
-	BYTE loc[8];
+    struct parsedname * pn = PN(owq) ;
+    BYTE loc[8];
 	ASCII ad[16];
 	size_t i;
 
@@ -55,7 +55,7 @@ int FS_r_locator(char *buf, size_t size, off_t offset,
 	}
 	for (i = 0; i < 8; ++i)
 		num2string(ad + (i << 1), loc[7 - i]);
-	return FS_output_ascii(buf, size, offset, ad, 16);
+    return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
 static int OW_locator(BYTE * addr, const struct parsedname *pn)

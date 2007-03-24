@@ -14,7 +14,7 @@ $Id$
 
 // #include <libgen.h>  /* for dirname() */
 	/* string format functions */
-static void hex_convert(char *str);
+static int hex_convert(char *str);
 static int httpunescape(BYTE * httpstr);
 static void hex_only(char *str);
 
@@ -23,7 +23,7 @@ static void hex_only(char *str);
 
 void ChangeData(struct one_wire_query * owq)
 {
-    struct parsedname * pn = &OWQ_pn(owq) ;
+    struct parsedname * pn = PN(owq) ;
     ASCII * value_string = OWQ_buffer(owq) ;
     
     /* Do command processing and make changes to 1-wire devices */
@@ -32,10 +32,10 @@ void ChangeData(struct one_wire_query * owq)
     switch (pn->ft->format) {
         case ft_binary:
             hex_only(value_string);
-            hex_convert(value_string);
-            OWQ_size(owq) = strlen(value_string) ;
+            OWQ_size(owq) = hex_convert(value_string);
             break;
         default:
+            OWQ_size(owq) = strlen(value_string) ;
             break;
     }
     FS_write_postparse(owq) ;
@@ -85,11 +85,16 @@ static void hex_only(char *str)
 }
 
 /* reads an as ascii hex string, strips out non-hex, converts in place */
-static void hex_convert(char *str)
+/* returns length */
+static int hex_convert(char *str)
 {
 	char *uc = str;
 	BYTE *hx = (BYTE *) str;
-	for (; *uc; uc += 2)
+    int return_length = 0 ;
+    for (; *uc; uc += 2) {
 		*hx++ = string2num(uc);
+    ++return_length ;
+    }
     *hx = '\0';
+    return return_length ;
 }

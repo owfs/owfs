@@ -25,6 +25,7 @@ static int Fowq_output_yesno(struct one_wire_query * owq) ;
 static int Fowq_output_ascii(struct one_wire_query * owq) ;
 static int Fowq_output_array_with_commas( struct one_wire_query * owq ) ;
 static int Fowq_output_array_no_commas( struct one_wire_query * owq ) ;
+static int Fowq_output_ascii_array( struct one_wire_query * owq ) ;
 
 /*
 Change in strategy 6/2006:
@@ -48,6 +49,9 @@ int FS_output_owq( struct one_wire_query * owq)
             return Fowq_output_unsigned(owq) ;
         case EXTENSION_ALL:
             switch (OWQ_pn(owq).ft->format) {
+                case ft_ascii:
+                case ft_vascii:
+                    return Fowq_output_ascii_array(owq) ;
                 case ft_binary:
                     return Fowq_output_array_no_commas(owq) ;
                 default:
@@ -71,8 +75,6 @@ int FS_output_owq( struct one_wire_query * owq)
                 case ft_vascii:
                 case ft_ascii:
                 case ft_binary:
-                    OWQ_mem(owq) = OWQ_buffer(owq) ; // until full support
-                    OWQ_length(owq) = OWQ_size(owq) ; // until full support
                     return Fowq_output_ascii(owq) ;
                 case ft_directory:
                 case ft_subdir:
@@ -124,10 +126,10 @@ static int Fowq_output_float(struct one_wire_query * owq)
 
     switch (OWQ_pn(owq).ft->format) {
         case ft_temperature:
-            F = Temperature(OWQ_F(owq),&OWQ_pn(owq)) ;
+            F = Temperature(OWQ_F(owq),PN(owq)) ;
             break ;
         case ft_tempgap:
-            F = TemperatureGap(OWQ_F(owq),&OWQ_pn(owq)) ;
+            F = TemperatureGap(OWQ_F(owq),PN(owq)) ;
             break ;
         default:
             F = OWQ_F(owq) ;
@@ -160,28 +162,36 @@ static int Fowq_output_yesno(struct one_wire_query * owq)
     return PROPERTY_LENGTH_YESNO;
 }
 
+int Fowq_output_offset_and_size_z(char * string, struct one_wire_query * owq)
+{
+    return Fowq_output_offset_and_size( string, strlen(string), owq) ;
+}
+
 int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq)
 {
     size_t copy_length = length ;
     off_t offset = OWQ_offset(owq) ;
     Debug_Bytes("Fowq_output_offset_and_size",(BYTE *)string,length);
-    if (offset>(off_t)length) return -EFAULT ;
+    if (offset>(off_t)length) return 0 ;
     copy_length -= offset ;
     if ( copy_length > OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
     memcpy(OWQ_buffer(owq), &string[offset], copy_length) ;
+    switch (OWQ_pn(owq).ft->format) {
+        case ft_vascii:
+        case ft_ascii:
+        case ft_binary:
+            OWQ_length(owq) = copy_length ;
+        default:
+            break ;
+    }
     return copy_length ;
 }
 
 static int Fowq_output_ascii(struct one_wire_query * owq)
 {
-    return Fowq_output_offset_and_size(OWQ_mem(owq),OWQ_length(owq),owq) ;
-}
-
-/* If the string is properly terminated, we can use a simpler routine */
-static int Fowq_output_ascii_z(struct one_wire_query * owq)
-{
-    OWQ_length(owq) = strlen(OWQ_mem(owq)) ;
-    return Fowq_output_ascii(owq);
+    printf("Fowq_output_ascii\n");
+    Debug_OWQ(owq) ;
+    return OWQ_length(owq) ;
 }
 
 static int Fowq_output_array_with_commas( struct one_wire_query * owq )
@@ -221,28 +231,37 @@ static int Fowq_output_array_with_commas( struct one_wire_query * owq )
     return used_size ;
 }
 
+static int Fowq_output_ascii_array( struct one_wire_query * owq )
+{
+    size_t extension ;
+    size_t elements = OWQ_pn(owq).ft->ag->elements ;
+    size_t total_length = 0 ;
+    size_t current_offset = OWQ_array_length(owq,1) ;
+
+    for ( extension = 0 ; extension < elements ; ++extension ) {
+        total_length += OWQ_array_length(owq,extension) ;
+    }
+    
+    for ( extension = 1 ; extension < elements ; ++extension ) {
+        memmove( &OWQ_buffer(owq)[current_offset], &OWQ_buffer(owq)[current_offset+1], total_length - current_offset ) ;
+        OWQ_buffer(owq)[current_offset] = ',' ;
+        ++total_length ;
+        current_offset += 1 + OWQ_array_length(owq,extension) ;
+    }
+
+    return total_length ;
+}
+
 static int Fowq_output_array_no_commas( struct one_wire_query * owq )
 {
-    struct one_wire_query owq_single ;
     size_t extension ;
-    int len ;
-    size_t used_size = 0 ;
-    size_t remaining_size = OWQ_size(owq) ;
+    size_t total_length = 0 ;
     size_t elements = OWQ_pn(owq).ft->ag->elements ;
 
-    if (OWQ_offset(owq)>0) return -EFAULT ;
-
-    // loop though all array elements
+    printf("Array no commas -- start\n");
     for ( extension = 0 ; extension < elements ; ++extension ) {
-        memcpy( &owq_single, owq, sizeof(owq_single) ) ;
-        OWQ_pn(&owq_single).extension = extension ;
-        memcpy(&OWQ_val(&owq_single),&OWQ_array(owq)[extension],sizeof(union value_object)) ;
-        OWQ_buffer(&owq_single) = &OWQ_buffer(owq)[used_size] ;
-        OWQ_size(&owq_single) = remaining_size ;
-        len = FS_output_owq(&owq_single) ;
-        if ( len < 0 ) return len ;
-        remaining_size -= len ;
-        used_size += len ;
+        total_length += OWQ_array_length(owq,extension) ;
     }
-    return used_size ;
+    printf("Array no commas -- end\n");
+    return total_length ;
 }

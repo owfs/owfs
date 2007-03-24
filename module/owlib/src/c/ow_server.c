@@ -119,7 +119,7 @@ int ServerRead(struct one_wire_query * owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
-    struct parsedname * pn = &OWQ_pn(owq) ;
+    struct parsedname * pn = PN(owq) ;
 	struct serverpackage sp =
 		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
 	int persistent = 1;
@@ -195,7 +195,7 @@ int ServerWrite(struct one_wire_query * owq )
 {
 	struct server_msg sm;
 	struct client_msg cm;
-    struct parsedname * pn = &OWQ_pn(owq) ;
+    struct parsedname * pn = PN(owq) ;
 	struct serverpackage sp =
     { pn->path_busless, (BYTE *)OWQ_buffer(owq), OWQ_size(owq), pn->tokenstring, pn->tokens, };
 	int persistent = 1;

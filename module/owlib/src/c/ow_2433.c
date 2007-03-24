@@ -46,12 +46,12 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2433 EEPROM */
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-bWRITE_FUNCTION(FS_w_page2D);
-bREAD_FUNCTION(FS_r_memory);
-bWRITE_FUNCTION(FS_w_memory);
-bWRITE_FUNCTION(FS_w_memory2D);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+WRITE_FUNCTION(FS_w_page2D);
+READ_FUNCTION(FS_r_memory);
+WRITE_FUNCTION(FS_w_memory);
+WRITE_FUNCTION(FS_w_memory2D);
 
  /* ------- Structures ----------- */
 
@@ -59,8 +59,8 @@ struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2431[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A2431, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page2D}, {v:NULL},},
-  {"memory", 128, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory2D}, {v:NULL},},
+  {"pages/page", 32, &A2431, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page2D}, {v:NULL},},
+  {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory2D}, {v:NULL},},
 };
 
 DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
@@ -69,8 +69,8 @@ struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2433[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A2433, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"memory", 512, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"pages/page", 32, &A2433, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr);
@@ -79,64 +79,67 @@ DeviceEntryExtended(23, DS2433, DEV_ovdr);
 
 /* DS2433 */
 
-static int OW_w_23page(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn);
-static int OW_w_2Dpage(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn);
+static int OW_w_23page( BYTE * data,  size_t size,
+					    off_t offset,  struct parsedname *pn);
+static int OW_w_2Dpage( BYTE * data,  size_t size,
+					    off_t offset,  struct parsedname *pn);
 
-static int FS_r_memory(BYTE * buf, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int FS_r_memory(struct one_wire_query * owq)
 {
 	/* read is not page-limited */
-	if (OW_r_mem_simple(buf, size, (size_t) offset, pn))
+    if (OW_r_mem_simple(owq, 0, 0 ))
 		return -EINVAL;
-	return size;
+    return OWQ_size(owq);
 }
 
-static int FS_w_memory(const BYTE * buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_memory(struct one_wire_query * owq)
 {
 	/* paged access */
-	if (OW_write_paged(buf, size, offset, pn, 32, OW_w_23page))
+	size_t pagesize = 32 ;
+    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_23page))
 		return -EFAULT;
 	return 0;
 }
 
 /* Although externally it's 32 byte pages, internally it acts as 8 byte pages */
-static int FS_w_memory2D(const BYTE * buf, const size_t size,
-						 const off_t offset, const struct parsedname *pn)
+static int FS_w_memory2D(struct one_wire_query * owq)
 {
 	/* paged access */
-	if (OW_write_paged(buf, size, offset, pn, 8, OW_w_2Dpage))
+	size_t pagesize = 8 ;
+    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage))
 		return -EFAULT;
 	return 0;
 }
 
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	if (OW_r_mem_simple(buf, size, offset + ((pn->extension) << 5), pn))
+	size_t pagesize = 32 ;
+    if (OW_r_mem_simple( owq, OWQ_pn(owq).extension, pagesize ))
 		return -EINVAL;
-	return size;
+    return OWQ_size(owq);
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	return FS_w_memory(buf, size, offset + 32 * (pn->extension), pn);
+	/* paged access */
+	size_t pagesize = 32 ;
+    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page))
+		return -EFAULT;
+	return 0;
 }
 
-static int FS_w_page2D(const BYTE * buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_page2D(struct one_wire_query * owq)
 {
-//    if ( pn->extension > 15 ) return -ERANGE ;
-	//printf("FS_w_page: size=%d offset=%d pn->extension=%d (%d)\n", size, offset, pn->extension, (pn->extension)<<5);
-	return FS_w_memory2D(buf, size, offset + 32 * (pn->extension), pn);
+	/* paged access */
+	size_t pagesize = 8 ;
+    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage))
+		return -EFAULT;
+	return 0;
 }
 
 /* paged, and pre-screened */
-static int OW_w_23page(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int OW_w_23page( BYTE * data,  size_t size,
+					    off_t offset,  struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 32 + 2] = { 0x0F, offset & 0xFF, offset >> 8, };
 	struct transaction_log tcopy[] = {
@@ -185,8 +188,8 @@ static int OW_w_23page(const BYTE * data, const size_t size,
 
 /* paged, and pre-screened */
 /* read REAL DS2431 pages -- 8 bytes. */
-static int OW_w_2Dpage(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int OW_w_2Dpage( BYTE * data,  size_t size,
+					    off_t offset,  struct parsedname *pn)
 {
 	off_t pageoff = offset & 0x07;
 	BYTE p[4 + 8 + 2] = { 0x0F, (offset - pageoff) & 0xFF,
@@ -209,9 +212,12 @@ static int OW_w_2Dpage(const BYTE * data, const size_t size,
 		TRXN_END,
 	};
 
-	if (size != 8)
-		if (OW_r_mem_simple(&p[3], 8, (offset - pageoff), pn))
+	if (size != 8) { // incomplete page
+		OWQ_make( owq_old ) ;
+        OWQ_create_temporary( owq_old, (char *) &p[3], 8, offset - pageoff, pn ) ;
+		if (OW_r_mem_simple( owq_old, 0 ,0 ))
 			return 1;
+	}
 
 	memcpy(&p[3 + pageoff], data, size);
 

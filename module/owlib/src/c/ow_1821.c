@@ -46,19 +46,19 @@ $Id$
 /* ------- Prototypes ----------- */
 /* DS18S20&2 Temperature */
 // READ_FUNCTION( FS_tempdata ) ;
-fREAD_FUNCTION(FS_temperature);
-yREAD_FUNCTION(FS_r_polarity);
-yWRITE_FUNCTION(FS_w_polarity);
-fREAD_FUNCTION(FS_r_templimit);
-fWRITE_FUNCTION(FS_w_templimit);
+READ_FUNCTION(FS_temperature);
+READ_FUNCTION(FS_r_polarity);
+WRITE_FUNCTION(FS_w_polarity);
+READ_FUNCTION(FS_r_templimit);
+WRITE_FUNCTION(FS_w_templimit);
 
 /* -------- Structures ---------- */
 struct filetype DS1821[] = {
 	F_type,
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_temperature}, {v: NULL}, {v:NULL},},
-  {"polarity", 1, NULL, ft_yesno, fc_stable, {y: FS_r_polarity}, {y: FS_w_polarity}, {v:NULL},},
-  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
-  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_temperature}, {v: NULL}, {v:NULL},},
+  {"polarity", 1, NULL, ft_yesno, fc_stable, {o: FS_r_polarity}, {o: FS_w_polarity}, {v:NULL},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:0},},
 }
 
 ;
@@ -74,52 +74,52 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn);
 static int OW_w_status(BYTE * data, const struct parsedname *pn);
 static int OW_r_templimit(_FLOAT * T, const int Tindex,
 						  const struct parsedname *pn);
-static int OW_w_templimit(const _FLOAT * T, const int Tindex,
+static int OW_w_templimit(const _FLOAT T, const int Tindex,
 						  const struct parsedname *pn);
 
 /* Internal properties */
 static struct internal_prop ip_continuous = { "CON", fc_stable };
 
-static int FS_temperature(_FLOAT * T, const struct parsedname *pn)
+static int FS_temperature(struct one_wire_query * owq)
 {
-	if (OW_temperature(T, pn))
+    if (OW_temperature(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_polarity(int *y, const struct parsedname *pn)
+static int FS_r_polarity(struct one_wire_query * owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, pn))
+    if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-	y[0] = (data & 0x02) >> 1;
+    OWQ_Y(owq) = (data & 0x02) >> 1;
 	return 0;
 }
 
-static int FS_w_polarity(const int *y, const struct parsedname *pn)
+static int FS_w_polarity(struct one_wire_query * owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, pn))
+    if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-	UT_setbit(&data, 1, y[0]);
-	if (OW_w_status(&data, pn))
-		return -EINVAL;
-	return 0;
-}
-
-
-static int FS_r_templimit(_FLOAT * T, const struct parsedname *pn)
-{
-	if (OW_r_templimit(T, pn->ft->data.i, pn))
+    UT_setbit(&data, 1, OWQ_Y(owq));
+    if (OW_w_status(&data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_templimit(const _FLOAT * T, const struct parsedname *pn)
+
+static int FS_r_templimit(struct one_wire_query * owq)
 {
-	if (OW_w_templimit(T, pn->ft->data.i, pn))
+    if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).ft->data.i, PN(owq)))
+		return -EINVAL;
+	return 0;
+}
+
+static int FS_w_templimit(struct one_wire_query * owq)
+{
+    if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).ft->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -242,11 +242,11 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit(const _FLOAT * T, const int Tindex,
+static int OW_w_templimit(const _FLOAT T, const int Tindex,
 						  const struct parsedname *pn)
 {
 	BYTE p[] = { 0x01, 0x02, };
-	BYTE data = ((int) (T[0] + .49)) & 0xFF;	// round off
+	BYTE data = ((int) (T + .49)) & 0xFF;	// round off
 	struct transaction_log t[] = {
 		TRXN_START,
 		{&p[Tindex], NULL, 1, trxn_match,},

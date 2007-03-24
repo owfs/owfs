@@ -199,23 +199,21 @@ static int Add_Stat(struct cache *scache, const int result)
 
 int OWQ_Cache_Add( const struct one_wire_query * owq )
 {
-	const struct parsedname * pn = &OWQ_pn(owq) ;
+	const struct parsedname * pn = PN(owq) ;
 	if ( pn->extension == EXTENSION_ALL ) {
 		switch ( pn->ft->format ) {
 			case ft_ascii:
 			case ft_vascii:
 			case ft_binary:
-				if ( OWQ_offset(owq) > 0 ) return 1 ;
-				if ( OWQ_size(owq) != OWQ_FullFileLength(owq) ) return 1 ;
-				return Cache_Add( OWQ_buffer(owq), OWQ_size(owq), pn ) ;
-			case ft_integer:
+                return 1 ; // cache of string arrays not supported
+            case ft_integer:
 			case ft_unsigned:
 			case ft_yesno:
 			case ft_date:
 			case ft_float:
 			case ft_temperature:
 			case ft_tempgap:
-				return Cache_Add( &OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
+				return Cache_Add( OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
 			default:
 				return 1 ;
 		}
@@ -225,8 +223,7 @@ int OWQ_Cache_Add( const struct one_wire_query * owq )
 			case ft_vascii:
 			case ft_binary:
 				if ( OWQ_offset(owq) > 0 ) return 1 ;
-				if ( OWQ_length(owq) != OWQ_FileLength(owq) ) return 1 ;
-				return Cache_Add( OWQ_mem(owq), OWQ_length(owq), pn ) ;
+                return Cache_Add( OWQ_buffer(owq), OWQ_length(owq), pn ) ;
 			case ft_integer:
 			case ft_unsigned:
 			case ft_yesno:
@@ -545,15 +542,13 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 
 int OWQ_Cache_Get( struct one_wire_query * owq )
 {
-	struct parsedname * pn = &OWQ_pn(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	if ( pn->extension == EXTENSION_ALL ) {
 		switch ( pn->ft->format ) {
 			case ft_ascii:
 			case ft_vascii:
 			case ft_binary:
-				if ( OWQ_offset(owq) > 0 ) return 1 ;
-				if ( OWQ_size(owq) != OWQ_FullFileLength(owq) ) return 1 ;
-				return Cache_Get_Strict( OWQ_buffer(owq), OWQ_size(owq), pn ) ;
+                return 1 ; // string arrays not supported
 			case ft_integer:
 			case ft_unsigned:
 			case ft_yesno:
@@ -561,7 +556,7 @@ int OWQ_Cache_Get( struct one_wire_query * owq )
 			case ft_float:
 			case ft_temperature:
 			case ft_tempgap:
-				return Cache_Get_Strict( &OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
+				return Cache_Get_Strict( OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
 			default:
 				return 1 ;
 		}
@@ -570,16 +565,9 @@ int OWQ_Cache_Get( struct one_wire_query * owq )
 			case ft_ascii:
 			case ft_vascii:
             case ft_binary:
-            {
-                size_t size = OWQ_size(owq);
-                int return_code ;
-
                 if ( OWQ_offset(owq) > 0 ) return 1 ;
-                return_code = Cache_Get( OWQ_buffer(owq), &size, pn ) ;
-                OWQ_mem(owq) = OWQ_buffer(owq) ;
-                OWQ_length(owq) = size ;
-				return return_code ;
-            }
+                OWQ_length(owq) = OWQ_size(owq) ;
+                return Cache_Get( OWQ_buffer(owq), &OWQ_length(owq), pn ) ;
 			case ft_integer:
 			case ft_unsigned:
 			case ft_yesno:
@@ -860,7 +848,7 @@ static int Del_Stat(struct cache *scache, const int result)
 
 int OWQ_Cache_Del( const struct one_wire_query * owq )
 {
-	return Cache_Del( &OWQ_pn(owq) ) ;
+	return Cache_Del( PN(owq) ) ;
 }
 
 int Cache_Del(const struct parsedname *pn)

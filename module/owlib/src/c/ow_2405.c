@@ -46,16 +46,16 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2405 */
-yREAD_FUNCTION(FS_r_sense);
-yREAD_FUNCTION(FS_r_PIO);
-yWRITE_FUNCTION(FS_w_PIO);
+READ_FUNCTION(FS_r_sense);
+READ_FUNCTION(FS_r_PIO);
+WRITE_FUNCTION(FS_w_PIO);
 
 /* ------- Structures ----------- */
 
 struct filetype DS2405[] = {
 	F_STANDARD,
-  {"PIO", 1, NULL, ft_yesno, fc_stable, {y: FS_r_PIO}, {y: FS_w_PIO}, {v:NULL},},
-  {"sensed", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_sense}, {v: NULL}, {v:NULL},},
+  {"PIO", 1, NULL, ft_yesno, fc_stable, {o: FS_r_PIO}, {o: FS_w_PIO}, {v:NULL},},
+  {"sensed", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_sense}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(05, DS2405, DEV_alarm);
@@ -67,29 +67,29 @@ static int OW_r_PIO(int *val, const struct parsedname *pn);
 static int OW_w_PIO(int val, const struct parsedname *pn);
 
 /* 2405 switch */
-static int FS_r_PIO(int *y, const struct parsedname *pn)
+static int FS_r_PIO(struct one_wire_query * owq)
 {
 	int num;
-	if (OW_r_PIO(&num, pn))
+    if (OW_r_PIO(&num, PN(owq)))
 		return -EINVAL;
-	y[0] = (num != 0);
+    OWQ_Y(owq) = (num != 0);
 	return 0;
 }
 
 /* 2405 switch */
-static int FS_r_sense(int *y, const struct parsedname *pn)
+static int FS_r_sense(struct one_wire_query * owq)
 {
 	int num;
-	if (OW_r_sense(&num, pn))
+    if (OW_r_sense(&num, PN(owq)))
 		return -EINVAL;
-	y[0] = (num != 0);
+    OWQ_Y(owq) = (num != 0);
 	return 0;
 }
 
 /* write 2405 switch */
-static int FS_w_PIO(const int *y, const struct parsedname *pn)
+static int FS_w_PIO(struct one_wire_query * owq)
 {
-	if (OW_w_PIO(y[0], pn))
+    if (OW_w_PIO(OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }

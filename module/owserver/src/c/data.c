@@ -78,7 +78,7 @@ void *DataHandler(void *v)
 		} else {
             struct one_wire_query struct_owq ;
             struct one_wire_query * owq = &struct_owq ;
-            struct parsedname * pn = &OWQ_pn(owq) ;
+            struct parsedname * pn = PN(owq) ;
             
 			/* Parse the path string */
 			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);

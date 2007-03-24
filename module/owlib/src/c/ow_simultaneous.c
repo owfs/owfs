@@ -49,19 +49,19 @@ $Id$
 
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
-yREAD_FUNCTION(FS_r_convert);
-yWRITE_FUNCTION(FS_w_convert);
-yREAD_FUNCTION(FS_r_present);
-aREAD_FUNCTION(FS_r_single);
+READ_FUNCTION(FS_r_convert);
+WRITE_FUNCTION(FS_w_convert);
+READ_FUNCTION(FS_r_present);
+READ_FUNCTION(FS_r_single);
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-  {"temperature", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_convert}, {y: FS_w_convert}, {i:simul_temp},},
-  {"voltage", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_convert}, {y: FS_w_convert}, {i:simul_volt},},
-  {"present", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_present}, {v: NULL}, {i:0},},
-  {"present_ds2400", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_present}, {v: NULL}, {i:1},},
-  {"single", 18, NULL, ft_ascii, fc_volatile, {a: FS_r_single}, {v: NULL}, {i:0},},
-  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, {a: FS_r_single}, {v: NULL}, {i:1},},
+  {"temperature", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_temp},},
+  {"voltage", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_volt},},
+  {"present", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {v: NULL}, {i:0},},
+  {"present_ds2400", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {v: NULL}, {i:1},},
+  {"single", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {v: NULL}, {i:0},},
+  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {v: NULL}, {i:1},},
 };
 
 DeviceEntry(simultaneous, simultaneous);
@@ -88,19 +88,22 @@ int Simul_Test(const enum simul_type type, const struct parsedname *pn)
 	return 0;
 }
 
-static int FS_w_convert(const int *y, const struct parsedname *pn)
+static int FS_w_convert(struct one_wire_query * owq)
 {
-	struct parsedname pn2;
-	enum simul_type type = (enum simul_type) pn->ft->data.i;
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2.sn, &pn2);
-	pn2.dev = NULL;				/* only branch select done, not actual device */
+    struct parsedname * pn = PN(owq) ;
+    struct parsedname struct_pn2 ;
+    struct parsedname * pn2 = & struct_pn2 ;
+    
+    enum simul_type type = (enum simul_type) pn->ft->data.i;
+	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
+	FS_LoadPath(pn2->sn, pn2);
+	pn2->dev = NULL;				/* only branch select done, not actual device */
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected
 	 * as a bad adapter. */
-	Cache_Del_Internal(&ipSimul[type], &pn2);	// remove existing entry
+	Cache_Del_Internal(&ipSimul[type], pn2);	// remove existing entry
 	CookTheCache();				// make sure all volatile entries are invalidated
-	if (y[0] == 0)
+    if (OWQ_Y(owq) == 0)
 		return 0;				// don't send convert
 	if (pn->in->Adapter != adapter_Bad) {
 		int ret = 1;			// set just to block compiler errors
@@ -112,10 +115,10 @@ static int FS_w_convert(const int *y, const struct parsedname *pn)
 					{cmd_temp, NULL, 2, trxn_match,},
 					TRXN_END,
 				};
-				BUSLOCK(&pn2);
-				ret = BUS_transaction_nolock(t, &pn2)
-					|| FS_poll_convert(&pn2);
-				BUSUNLOCK(&pn2);
+				BUSLOCK(pn2);
+				ret = BUS_transaction_nolock(t, pn2)
+					|| FS_poll_convert(pn2);
+				BUSUNLOCK(pn2);
 				//printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
 			}
 			break;
@@ -129,35 +132,40 @@ static int FS_w_convert(const int *y, const struct parsedname *pn)
 					{NULL, NULL, 5, trxn_delay},
 					TRXN_END,
 				};
-				ret = BUS_transaction(t, &pn2);
+				ret = BUS_transaction(t, pn2);
 				//printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
 			}
 			break;
 		}
 		if (ret == 0)
-			Cache_Add_Internal(NULL, 0, &ipSimul[type], &pn2);
+			Cache_Add_Internal(NULL, 0, &ipSimul[type], pn2);
 	}
 	return 0;
 }
 
-static int FS_r_convert(int *y, const struct parsedname *pn)
+static int FS_r_convert(struct one_wire_query * owq)
 {
-	struct parsedname pn2;
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2.sn, &pn2);
-	y[0] =
-		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->ft->data.i], &pn2)
+    struct parsedname * pn = PN(owq) ;
+    struct parsedname struct_pn2 ;
+    struct parsedname * pn2 = & struct_pn2 ;
+    
+	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
+	FS_LoadPath(pn2->sn, pn2);
+    OWQ_Y(owq) =
+		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->ft->data.i], pn2)
 		 == 0);
 	return 0;
 }
 
-static int FS_r_present(int *y, const struct parsedname *pn)
+static int FS_r_present(struct one_wire_query * owq)
 {
-	if (pn->in->Adapter == adapter_fake) {	// fake adapter -- simple memory look
-		y[0] = (pn->in->connin.fake.db.devices > 0);
+    struct parsedname * pn = PN(owq) ;
+    if (pn->in->Adapter == adapter_fake) {	// fake adapter -- simple memory look
+        OWQ_Y(owq) = (pn->in->connin.fake.db.devices > 0);
 	} else {					// real adapter
-		struct parsedname pn2;
-		BYTE read_ROM[] = { 0x33, };
+        struct parsedname struct_pn2 ;
+        struct parsedname * pn2 = & struct_pn2 ;
+        BYTE read_ROM[] = { 0x33, };
 		BYTE resp[8];
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
@@ -171,27 +179,27 @@ static int FS_r_present(int *y, const struct parsedname *pn)
 		if (pn->ft->data.i)
 			read_ROM[0] = 0x0F;
 
-		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-		FS_LoadPath(pn2.sn, &pn2);
-		pn2.dev = NULL;			// directory only
-		if (BUS_transaction(t, &pn2))
+		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
+		FS_LoadPath(pn2->sn, pn2);
+		pn2->dev = NULL;			// directory only
+		if (BUS_transaction(t, pn2))
 			return -EINVAL;
 		if (memcmp(resp, match, 8)) {	// some device(s) complained
-			y[0] = 1;			// YES present
+            OWQ_Y(owq) = 1;			// YES present
 			if (CRC8(resp, 8))
 				return 0;		// crc8 error -- more than one device
-			OW_single2cache(resp, &pn2);
+			OW_single2cache(resp, pn2);
 		} else {				// no devices
-			y[0] = 0;
+            OWQ_Y(owq) = 0;
 		}
 	}
 	return 0;
 }
 
-static int FS_r_single(char *buf, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int FS_r_single(struct one_wire_query * owq)
 {
-	ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
+    struct parsedname * pn = PN(owq) ;
+    ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
 	BYTE resp[8];
 	if (pn->in->Adapter == adapter_fake) {	// fake adapter -- look in memory
 		if (pn->in->connin.fake.db.devices == 1) {
@@ -199,8 +207,9 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset,
 			FS_devicename(ad, sizeof(ad), resp, pn);
 		}
 	} else {					// real adapter
-		struct parsedname pn2;
-		BYTE read_ROM[] = { 0x33, };
+        struct parsedname struct_pn2 ;
+        struct parsedname * pn2 = & struct_pn2 ;
+        BYTE read_ROM[] = { 0x33, };
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
 			TRXN_START,
@@ -213,20 +222,21 @@ static int FS_r_single(char *buf, const size_t size, const off_t offset,
 		if (pn->ft->data.i)
 			read_ROM[0] = 0x0F;
 
-		memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-		FS_LoadPath(pn2.sn, &pn2);
-		pn2.dev = NULL;			// directory only
-		if (BUS_transaction(t, &pn2))
+		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
+		FS_LoadPath(pn2->sn, pn2);
+		pn2->dev = NULL;			// directory only
+		if (BUS_transaction(t, pn2))
 			return -EINVAL;
 		LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat
 					" crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
 		if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
-			OW_single2cache(resp, &pn2);
+			OW_single2cache(resp, pn2);
 			/* Return device id. */
 			FS_devicename(ad, sizeof(ad), resp, pn);
 		}
 	}
-	return FS_output_ascii_z(buf, size, offset, ad);
+    Fowq_output_offset_and_size_z(ad, owq) ;
+    return 0 ;
 }
 
 // called with pn copy

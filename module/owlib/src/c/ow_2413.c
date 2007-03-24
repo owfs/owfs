@@ -49,19 +49,19 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2406 switch */
-uREAD_FUNCTION(FS_r_pio);
-uWRITE_FUNCTION(FS_w_pio);
-uREAD_FUNCTION(FS_sense);
-uREAD_FUNCTION(FS_r_latch);
+READ_FUNCTION(FS_r_pio);
+WRITE_FUNCTION(FS_w_pio);
+READ_FUNCTION(FS_sense);
+READ_FUNCTION(FS_r_latch);
 
 /* ------- Structures ----------- */
 
 struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
-  {"PIO", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_r_pio}, {u: FS_w_pio}, {v:NULL},},
-  {"sensed", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_sense}, {v: NULL}, {v:NULL},},
-  {"latch", 1, &A2413, ft_bitfield, fc_volatile, {u: FS_r_latch}, {v: NULL}, {v:NULL},},
+  {"PIO", 1, &A2413, ft_bitfield, fc_volatile, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
+  {"sensed", 1, &A2413, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
+  {"latch", 1, &A2413, ft_bitfield, fc_volatile, {o: FS_r_latch}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
@@ -74,44 +74,44 @@ static int OW_read(BYTE * data, const struct parsedname *pn);
 
 /* 2413 switch */
 /* bits 0 and 2 */
-static int FS_r_pio(UINT * u, const struct parsedname *pn)
+static int FS_r_pio(struct one_wire_query * owq)
 {
 	BYTE data;
 	BYTE uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, };
-	if (OW_read(&data, pn))
+    if (OW_read(&data, PN(owq)))
 		return -EINVAL;
-	u[0] = uu[data & 0x07];		/* look up reversed bits */
+    OWQ_U(owq) = uu[data & 0x07];		/* look up reversed bits */
 	return 0;
 }
 
 /* 2413 switch PIO sensed*/
 /* bits 0 and 2 */
-static int FS_sense(UINT * u, const struct parsedname *pn)
+static int FS_sense(struct one_wire_query * owq)
 {
-	if (FS_r_pio(u, pn))
+    if (FS_r_pio(owq))
 		return -EINVAL;
-	u[0] ^= 0x03;
+    OWQ_U(owq) ^= 0x03;
 	return 0;
 }
 
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
-static int FS_r_latch(UINT * u, const struct parsedname *pn)
+static int FS_r_latch(struct one_wire_query * owq)
 {
 	BYTE data;
 	BYTE uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, };
-	if (OW_read(&data, pn))
+    if (OW_read(&data, PN(owq)))
 		return -EINVAL;
-	u[0] = uu[(data >> 1) & 0x07];
+    OWQ_U(owq) = uu[(data >> 1) & 0x07];
 	return 0;
 }
 
 /* write 2413 switch -- 2 values*/
-static int FS_w_pio(const UINT * u, const struct parsedname *pn)
+static int FS_w_pio(struct one_wire_query * owq)
 {
 	/* reverse bits */
-	BYTE data = ~(u[0] & 0xFF);
-	if (OW_write(data, pn))
+    BYTE data = ~(OWQ_U(owq) & 0xFF);
+    if (OW_write(data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }

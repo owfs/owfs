@@ -46,34 +46,34 @@ $Id$
 /* ------- Prototypes ----------- */
 /* DS18S20&2 Temperature */
 // READ_FUNCTION( FS_tempdata ) ;
-fREAD_FUNCTION(FS_10temp);
-fREAD_FUNCTION(FS_22temp);
-yREAD_FUNCTION(FS_power);
-fREAD_FUNCTION(FS_r_templimit);
-fWRITE_FUNCTION(FS_w_templimit);
-aREAD_FUNCTION(FS_r_die);
-uREAD_FUNCTION(FS_r_trim);
-uWRITE_FUNCTION(FS_w_trim);
-yREAD_FUNCTION(FS_r_trimvalid);
-yREAD_FUNCTION(FS_r_blanket);
-yWRITE_FUNCTION(FS_w_blanket);
-uREAD_FUNCTION(FS_r_ad);
-uREAD_FUNCTION(FS_r_pio);
-uWRITE_FUNCTION(FS_w_pio);
-uREAD_FUNCTION(FS_sense);
+READ_FUNCTION(FS_10temp);
+READ_FUNCTION(FS_22temp);
+READ_FUNCTION(FS_power);
+READ_FUNCTION(FS_r_templimit);
+WRITE_FUNCTION(FS_w_templimit);
+READ_FUNCTION(FS_r_die);
+READ_FUNCTION(FS_r_trim);
+WRITE_FUNCTION(FS_w_trim);
+READ_FUNCTION(FS_r_trimvalid);
+READ_FUNCTION(FS_r_blanket);
+WRITE_FUNCTION(FS_w_blanket);
+READ_FUNCTION(FS_r_ad);
+READ_FUNCTION(FS_r_pio);
+WRITE_FUNCTION(FS_w_pio);
+READ_FUNCTION(FS_sense);
 
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
 	F_STANDARD,
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_10temp}, {v: NULL}, {v:NULL},},
+    {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_10temp}, {v: NULL}, {v:NULL},},
 
-  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
-  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
-  {"trim", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_trim}, {u: FS_w_trim}, {v:NULL},},
-  {"die", 2, NULL, ft_ascii, fc_static, {a: FS_r_die}, {v: NULL}, {i:1},},
-  {"trimvalid", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_trimvalid}, {v: NULL}, {v:NULL},},
-  {"trimblanket", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_blanket}, {y: FS_w_blanket}, {v:NULL},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {y: FS_power}, {v: NULL}, {v:NULL},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:0},},
+  {"trim", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_trim}, {o: FS_w_trim}, {v:NULL},},
+  {"die", 2, NULL, ft_ascii, fc_static, {o: FS_r_die}, {v: NULL}, {i:1},},
+  {"trimvalid", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_trimvalid}, {v: NULL}, {v:NULL},},
+  {"trimblanket", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_blanket}, {o: FS_w_blanket}, {v:NULL},},
+  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
 }
 
 ;
@@ -82,19 +82,19 @@ DeviceEntryExtended(10, DS18S20, DEV_temp | DEV_alarm);
 struct filetype DS18B20[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, NULL,} ,
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:10},},
-  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:11},},
-  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
-  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
-  {"trim", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_trim}, {u: FS_w_trim}, {v:NULL},},
-  {"die", 2, NULL, ft_ascii, fc_static, {a: FS_r_die}, {v: NULL}, {i:2},},
-  {"trimvalid", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_trimvalid}, {v: NULL}, {v:NULL},},
-  {"trimblanket", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_blanket}, {y: FS_w_blanket}, {v:NULL},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {y: FS_power}, {v: NULL}, {v:NULL},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:10},},
+  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:11},},
+  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:0},},
+  {"trim", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_trim}, {o: FS_w_trim}, {v:NULL},},
+  {"die", 2, NULL, ft_ascii, fc_static, {o: FS_r_die}, {v: NULL}, {i:2},},
+  {"trimvalid", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_trimvalid}, {v: NULL}, {v:NULL},},
+  {"trimblanket", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_blanket}, {o: FS_w_blanket}, {v:NULL},},
+  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
@@ -102,19 +102,19 @@ DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
 struct filetype DS1822[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:10},},
-  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:11},},
-  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
-  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
-  {"trim", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_trim}, {u: FS_w_trim}, {v:NULL},},
-  {"die", 2, NULL, ft_ascii, fc_static, {a: FS_r_die}, {v: NULL}, {i:0},},
-  {"trimvalid", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_trimvalid}, {v: NULL}, {v:NULL},},
-  {"trimblanket", 1, NULL, ft_yesno, fc_volatile, {y: FS_r_blanket}, {y: FS_w_blanket}, {v:NULL},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {y: FS_power}, {v: NULL}, {v:NULL},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:10},},
+  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:11},},
+  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:0},},
+  {"trim", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_trim}, {o: FS_w_trim}, {v:NULL},},
+  {"die", 2, NULL, ft_ascii, fc_static, {o: FS_r_die}, {v: NULL}, {i:0},},
+  {"trimvalid", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_trimvalid}, {v: NULL}, {v:NULL},},
+  {"trimblanket", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_blanket}, {o: FS_w_blanket}, {v:NULL},},
+  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
@@ -122,16 +122,16 @@ DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
 struct filetype DS1825[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:10},},
-  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:11},},
-  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
-  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {y: FS_power}, {v: NULL}, {v:NULL},},
-  {"prog_addr", 12, NULL, ft_unsigned, fc_stable, {u: FS_r_ad}, {v: NULL}, {v:NULL},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:10},},
+  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:11},},
+  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:0},},
+  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
+  {"prog_addr", 12, NULL, ft_unsigned, fc_stable, {o: FS_r_ad}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm);
@@ -141,17 +141,17 @@ struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS28EA00[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile, FS_tempdata   , NULL, NULL, } ,
-  {"temperature", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:10},},
-  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:11},},
-  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:12},},
-  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {f: FS_22temp}, {v: NULL}, {i:9},},
-  {"templow", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:1},},
-  {"temphigh", 12, NULL, ft_temperature, fc_stable, {f: FS_r_templimit}, {f: FS_w_templimit}, {i:0},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {y: FS_power}, {v: NULL}, {v:NULL},},
-  {"PIO", 1, &A28EA00, ft_bitfield, fc_stable, {u: FS_r_pio}, {u: FS_w_pio}, {v:NULL},},
-  {"sensed", 1, &A28EA00, ft_bitfield, fc_volatile, {u: FS_sense}, {v: NULL}, {v:NULL},},
+  {"temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"temperature9", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"temperature10", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:10},},
+  {"temperature11", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:11},},
+  {"temperature12", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:12},},
+  {"fasttemp", 12, NULL, ft_temperature, fc_volatile, {o: FS_22temp}, {v: NULL}, {i:9},},
+  {"templow", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:1},},
+  {"temphigh", 12, NULL, ft_temperature, fc_stable, {o: FS_r_templimit}, {o: FS_w_templimit}, {i:0},},
+  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
+  {"PIO", 1, &A28EA00, ft_bitfield, fc_stable, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
+  {"sensed", 1, &A28EA00, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain);
@@ -233,94 +233,94 @@ static enum eDie OW_die(const struct parsedname *pn);
 static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn) ;
 static int OW_w_pio( BYTE pio, const struct parsedname * pn ) ;
 
-static int FS_10temp(_FLOAT * T, const struct parsedname *pn)
+static int FS_10temp(struct one_wire_query * owq)
 {
-	if (OW_10temp(T, pn))
+    if (OW_10temp(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
-static int FS_22temp(_FLOAT * T, const struct parsedname *pn)
+static int FS_22temp(struct one_wire_query * owq)
 {
-	switch (pn->ft->data.i) {
+    int resolution = OWQ_pn(owq).ft->data.i ;
+    switch (resolution) {
 	case 9:
 	case 10:
 	case 11:
 	case 12:
-		if (OW_22temp(T, pn->ft->data.i, pn))
+        if (OW_22temp(&OWQ_F(owq), resolution, PN(owq)))
 			return -EINVAL;
 		return 0;
 	}
 	return -ENODEV;
 }
 
-static int FS_power(int *y, const struct parsedname *pn)
+static int FS_power(struct one_wire_query * owq)
 {
 	BYTE data;
-	if (OW_power(&data, pn))
+    if (OW_power(&data, PN(owq)))
 		return -EINVAL;
-	y[0] = data != 0x00;
+    OWQ_Y(owq) = (data != 0x00);
 	return 0;
 }
 
 
 /* 28EA00 switch */
-static int FS_w_pio(const UINT * u, const struct parsedname *pn)
+static int FS_w_pio(struct one_wire_query * owq)
 {
-	BYTE data = (u[0]&0x03) ^ 0xFF ; /* reverse bits, set unused to 1s */
-	if (OW_w_pio(data, pn))
+    BYTE data = (OWQ_U(owq)&0x03) ^ 0xFF ; /* reverse bits, set unused to 1s */
+    if (OW_w_pio(data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_sense(UINT * u, const struct parsedname *pn)
-{
-	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, pn))
-		return -EINVAL;
-	u[0] = pio & 0x03;	/* don't reverse bits */
-	return 0;
-}
-
-static int FS_r_pio(UINT * u, const struct parsedname *pn)
+static int FS_sense(struct one_wire_query * owq)
 {
 	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, pn))
+    if (OW_read_pio(&pio, &latch, PN(owq)))
 		return -EINVAL;
-	u[0] = (latch ^ 0xFF) & 0x03;	/* reverse bits */
+    OWQ_U(owq) = pio & 0x03;	/* don't reverse bits */
 	return 0;
 }
 
-static int FS_r_templimit(_FLOAT * T, const struct parsedname *pn)
+static int FS_r_pio(struct one_wire_query * owq)
 {
-	if (OW_r_templimit(T, pn->ft->data.i, pn))
+	BYTE pio, latch;
+    if (OW_read_pio(&pio, &latch, PN(owq)))
+		return -EINVAL;
+    OWQ_U(owq) = (latch ^ 0xFF) & 0x03;	/* reverse bits */
+	return 0;
+}
+
+static int FS_r_templimit(struct one_wire_query * owq)
+{
+    if (OW_r_templimit(&OWQ_F(owq), PN(owq)->ft->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-/* DS1825 hardware proigrammable address */
-static int FS_r_ad(UINT * u, const struct parsedname *pn)
+/* DS1825 hardware programmable address */
+static int FS_r_ad(struct one_wire_query * owq)
 {
 	BYTE data[9];
-	if (OW_r_scratchpad(data, pn))
+    if (OW_r_scratchpad(data, PN(owq)))
 		return -EINVAL;
-	u[0] = data[4] & 0x0F;
+    OWQ_U(owq) = data[4] & 0x0F;
 	return 0;
 }
 
-static int FS_w_templimit(const _FLOAT * T, const struct parsedname *pn)
+static int FS_w_templimit(struct one_wire_query * owq)
 {
-	if (OW_w_templimit(T[0], pn->ft->data.i, pn))
+    if (OW_w_templimit(OWQ_F(owq), PN(owq)->ft->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_die(char *buf, const size_t size, const off_t offset,
-					const struct parsedname *pn)
+static int FS_r_die(struct one_wire_query * owq)
 {
 	char *d;
-	switch (OW_die(pn)) {
+    switch (OW_die(PN(owq))) {
 	case eB6:
 		d = "B6";
 		break;
@@ -336,28 +336,28 @@ static int FS_r_die(char *buf, const size_t size, const off_t offset,
 	default:
 		return -EINVAL;
 	}
-	return FS_output_ascii_z(buf, size, offset, d);
+    return Fowq_output_offset_and_size(d, 2, owq);
 }
 
-static int FS_r_trim(UINT * trim, const struct parsedname *pn)
+static int FS_r_trim(struct one_wire_query * owq)
 {
 	BYTE t[2];
-	if (OW_r_trim(t, pn))
+    if (OW_r_trim(t, PN(owq)))
 		return -EINVAL;
-	trim[0] = (t[1] << 8) | t[0];
-//printf("TRIM t:%.2X %.2X trim:%u \n",t[0],t[1],trim[0]) ;
+    OWQ_U(owq) = (t[1] << 8) | t[0];
 	return 0;
 }
 
-static int FS_w_trim(const UINT * trim, const struct parsedname *pn)
+static int FS_w_trim(struct one_wire_query * owq)
 {
 	BYTE t[2];
-	switch (OW_die(pn)) {
+    UINT trim = OWQ_U(owq) ;
+    switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		t[0] = trim[0] && 0xFF;
-		t[1] = (trim[0] >> 8) && 0xFF;
-		if (OW_w_trim(t, pn))
+		t[0] = trim && 0xFF;
+		t[1] = (trim >> 8) && 0xFF;
+        if (OW_w_trim(t, PN(owq)))
 			return -EINVAL;
 		return 0;
 	default:
@@ -366,34 +366,34 @@ static int FS_w_trim(const UINT * trim, const struct parsedname *pn)
 }
 
 /* Are the trim values valid-looking? */
-static int FS_r_trimvalid(int *y, const struct parsedname *pn)
+static int FS_r_trimvalid(struct one_wire_query * owq)
 {
 	BYTE trim[2];
-	switch (OW_die(pn)) {
+    switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (OW_r_trim(trim, pn))
+        if (OW_r_trim(trim, PN(owq)))
 			return -EINVAL;
-		y[0] = (((trim[0] & 0x07) == 0x05) || ((trim[0] & 0x07) == 0x03))
+        OWQ_Y(owq) = (((trim[0] & 0x07) == 0x05) || ((trim[0] & 0x07) == 0x03))
 			&& (trim[1] == 0xBB);
 		break;
 	default:
-		y[0] = 1;				/* Assume true */
+        OWQ_Y(owq) = 1;				/* Assume true */
 	}
 	return 0;
 }
 
 /* Put in a black trim value if non-zero */
-static int FS_r_blanket(int *y, const struct parsedname *pn)
+static int FS_r_blanket(struct one_wire_query * owq)
 {
 	BYTE trim[2];
 	BYTE blanket[] = { 0x9D, 0xBB };
-	switch (OW_die(pn)) {
+    switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (OW_r_trim(trim, pn))
+        if (OW_r_trim(trim, PN(owq)))
 			return -EINVAL;
-		y[0] = (memcmp(trim, blanket, 2) == 0);
+        OWQ_Y(owq) = (memcmp(trim, blanket, 2) == 0);
 		return 0;
 	default:
 		return -EINVAL;
@@ -401,14 +401,14 @@ static int FS_r_blanket(int *y, const struct parsedname *pn)
 }
 
 /* Put in a black trim value if non-zero */
-static int FS_w_blanket(const int *y, const struct parsedname *pn)
+static int FS_w_blanket(struct one_wire_query * owq)
 {
 	BYTE blanket[] = { 0x9D, 0xBB };
-	switch (OW_die(pn)) {
+    switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (y[0]) {
-			if (OW_w_trim(blanket, pn))
+        if (OWQ_Y(owq)) {
+            if (OW_w_trim(blanket, PN(owq)))
 				return -EINVAL;
 		}
 		return 0;

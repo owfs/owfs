@@ -46,24 +46,24 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* LCD display */
-aREAD_FUNCTION(FS_r_version);
-uREAD_FUNCTION(FS_r_counters);
-yWRITE_FUNCTION(FS_w_on);
-yWRITE_FUNCTION(FS_w_backlight);
-yREAD_FUNCTION(FS_r_gpio);
-yWRITE_FUNCTION(FS_w_gpio);
-uREAD_FUNCTION(FS_r_data);
-uWRITE_FUNCTION(FS_w_data);
-bREAD_FUNCTION(FS_r_memory);
-bWRITE_FUNCTION(FS_w_memory);
-uREAD_FUNCTION(FS_r_register);
-uWRITE_FUNCTION(FS_w_register);
+READ_FUNCTION(FS_r_version);
+READ_FUNCTION(FS_r_counters);
+WRITE_FUNCTION(FS_w_on);
+WRITE_FUNCTION(FS_w_backlight);
+READ_FUNCTION(FS_r_gpio);
+WRITE_FUNCTION(FS_w_gpio);
+READ_FUNCTION(FS_r_data);
+WRITE_FUNCTION(FS_w_data);
+READ_FUNCTION(FS_r_memory);
+WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_register);
+WRITE_FUNCTION(FS_w_register);
 #if OW_CACHE
-uREAD_FUNCTION(FS_r_cum);
-uWRITE_FUNCTION(FS_w_cum);
+READ_FUNCTION(FS_r_cum);
+WRITE_FUNCTION(FS_w_cum);
 #endif							/* OW_CACHE */
-aWRITE_FUNCTION(FS_w_screenX);
-aWRITE_FUNCTION(FS_w_lineX);
+WRITE_FUNCTION(FS_w_screenX);
+WRITE_FUNCTION(FS_w_lineX);
 
 /* ------- Structures ----------- */
 
@@ -73,23 +73,23 @@ struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, };
 struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, };
 struct filetype LCD[] = {
 	F_STANDARD,
-  {"LCDon", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {y: FS_w_on}, {v:NULL},},
-  {"backlight", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {y: FS_w_backlight}, {v:NULL},},
-  {"version", 16, NULL, ft_ascii, fc_stable, {a: FS_r_version}, {v: NULL}, {v:NULL},},
-  {"gpio", 1, &ALCD, ft_yesno, fc_volatile, {y: FS_r_gpio}, {y: FS_w_gpio}, {v:NULL},},
-  {"register", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_register}, {u: FS_w_register}, {v:NULL},},
-  {"data", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_data}, {u: FS_w_data}, {v:NULL},},
-  {"counters", 12, &ALCD, ft_unsigned, fc_volatile, {u: FS_r_counters}, {v: NULL}, {v:NULL},},
+  {"LCDon", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_w_on}, {v:NULL},},
+  {"backlight", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_w_backlight}, {v:NULL},},
+  {"version", 16, NULL, ft_ascii, fc_stable, {o: FS_r_version}, {v: NULL}, {v:NULL},},
+  {"gpio", 1, &ALCD, ft_bitfield, fc_volatile, {o: FS_r_gpio}, {o: FS_w_gpio}, {v:NULL},},
+  {"register", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_register}, {o: FS_w_register}, {v:NULL},},
+  {"data", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_data}, {o: FS_w_data}, {v:NULL},},
+  {"counters", 12, &ALCD, ft_unsigned, fc_volatile, {o: FS_r_counters}, {v: NULL}, {v:NULL},},
 #if OW_CACHE
-  {"cumulative", 12, &ALCD, ft_unsigned, fc_volatile, {u: FS_r_cum}, {u: FS_w_cum}, {v:NULL},},
+  {"cumulative", 12, &ALCD, ft_unsigned, fc_volatile, {o: FS_r_cum}, {o: FS_w_cum}, {v:NULL},},
 #endif							/*OW_CACHE */
-  {"memory", 112, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
-  {"screen16", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_w_screenX}, {i:16},},
-  {"screen20", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_w_screenX}, {i:20},},
-  {"screen40", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {a: FS_w_screenX}, {i:40},},
-  {"line16", 16, &ALCD_L16, ft_ascii, fc_stable, {v: NULL}, {a: FS_w_lineX}, {i:16},},
-  {"line20", 20, &ALCD_L20, ft_ascii, fc_stable, {v: NULL}, {a: FS_w_lineX}, {i:20},},
-  {"line40", 40, &ALCD_L40, ft_ascii, fc_stable, {v: NULL}, {a: FS_w_lineX}, {i:40},},
+  {"memory", 112, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
+  {"screen16", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_screenX}, {i:16},},
+  {"screen20", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_screenX}, {i:20},},
+  {"screen40", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_screenX}, {i:40},},
+  {"line16", 16, &ALCD_L16, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_lineX}, {i:16},},
+  {"line20", 20, &ALCD_L20, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_lineX}, {i:20},},
+  {"line40", 40, &ALCD_L40, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_lineX}, {i:40},},
 };
 
 DeviceEntryExtended(FF, LCD, DEV_alarm);
@@ -111,10 +111,10 @@ static int OW_w_gpio(const BYTE data, const struct parsedname *pn);
 static int OW_r_gpio(BYTE * data, const struct parsedname *pn);
 static int OW_r_version(BYTE * data, const struct parsedname *pn);
 static int OW_r_counters(UINT * data, const struct parsedname *pn);
-static int OW_r_memory(BYTE * data, const size_t size, const off_t offset,
-					   const struct parsedname *pn);
-static int OW_w_memory(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn);
+static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
+					    struct parsedname *pn);
+static int OW_w_memory( BYTE * data,  size_t size,
+					    off_t offset,  struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
 static int OW_w_screen(const BYTE loc, const char *text, const int size,
 					   const struct parsedname *pn);
@@ -125,163 +125,181 @@ static int LCD_2byte(BYTE * byte, int delay, const struct parsedname *pn);
 static struct internal_prop ip_cum = { "CUM", fc_persistent };
 
 /* LCD */
-static int FS_r_version(ASCII * buf, const size_t size, const off_t offset,
-						const struct parsedname *pn)
+static int FS_r_version(struct one_wire_query * owq)
 {
 	/* Not sure if this is valid, but won't allow offset != 0 at first */
 	/* otherwise need a buffer */
 	BYTE v[16];
-	if (OW_r_version(v, pn))
+    if (OW_r_version(v, PN(owq)))
 		return -EINVAL;
-	return FS_output_ascii(buf, size, offset, (ASCII *) v, 16);
+    return Fowq_output_offset_and_size( (ASCII *) v, 16, owq);
 }
 
-static int FS_w_on(const int *y, const struct parsedname *pn)
+static int FS_w_on(struct one_wire_query * owq)
 {
-	if (OW_w_on(y[0], pn))
+    if (OW_w_on(OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_backlight(const int *y, const struct parsedname *pn)
+static int FS_w_backlight(struct one_wire_query * owq)
 {
-	if (OW_w_backlight(y[0], pn))
+    if (OW_w_backlight(OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_gpio(int *y, const struct parsedname *pn)
+static int FS_r_gpio(struct one_wire_query * owq)
 {
 	BYTE data;
-	int i;
-	if (OW_r_gpio(&data, pn))
+    if (OW_r_gpio(&data, PN(owq)))
 		return -EINVAL;
-	for (i = 0; i < 4; ++i)
-		y[i] = ~UT_getbit(&data, i);
+    OWQ_U(owq) = (~data) & 0x0F ;
 	return 0;
 }
 
 /* 4 value array */
-static int FS_w_gpio(const int *y, const struct parsedname *pn)
+static int FS_w_gpio(struct one_wire_query * owq)
 {
-	int i;
 	BYTE data;
 
 //    /* First get current states */
-	if (OW_r_gpio(&data, pn))
+    if (OW_r_gpio(&data, PN(owq)))
 		return -EINVAL;
 	/* Now set pins */
-	for (i = 0; i < 4; ++i)
-		UT_setbit(&data, i, y[i] == 0);
-	if (OW_w_gpio(data, pn))
+    data = (data & 0xF0) | (~OWQ_U(owq) & 0x0F) ;
+    if (OW_w_gpio(data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_register(UINT * u, const struct parsedname *pn)
+static int FS_r_register(struct one_wire_query * owq)
 {
 	BYTE data;
-	if (OW_r_register(&data, pn))
+    if (OW_r_register(&data, PN(owq)))
 		return -EINVAL;
-	u[0] = data;
+    OWQ_U(owq) = data;
 	return 0;
 }
 
-static int FS_w_register(const UINT * u, const struct parsedname *pn)
+static int FS_w_register(struct one_wire_query * owq)
 {
-	if (OW_w_register(((BYTE) (u[0] & 0xFF)), pn))
+    if (OW_w_register(((BYTE) (OWQ_U(owq) & 0xFF)), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_data(UINT * u, const struct parsedname *pn)
+static int FS_r_data(struct one_wire_query * owq)
 {
 	BYTE data;
-	if (OW_r_data(&data, pn))
+    if (OW_r_data(&data, PN(owq)))
 		return -EINVAL;
-	u[0] = data;
+    OWQ_U(owq) = data;
 	return 0;
 }
 
-static int FS_w_data(const UINT * u, const struct parsedname *pn)
+static int FS_w_data(struct one_wire_query * owq)
 {
-	if (OW_w_data(((BYTE) (u[0] & 0xFF)), pn))
+    if (OW_w_data(((BYTE) (OWQ_U(owq) & 0xFF)), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_counters(UINT * u, const struct parsedname *pn)
+static int FS_r_counters(struct one_wire_query * owq)
 {
-	if (OW_r_counters(u, pn))
+    UINT u[4] ;
+    if (OW_r_counters(u, PN(owq)))
 		return -EINVAL;
-	return 0;
+    OWQ_array_U(owq,0) = u[0] ;
+    OWQ_array_U(owq,1) = u[1] ;
+    OWQ_array_U(owq,2) = u[2] ;
+    OWQ_array_U(owq,3) = u[3] ;
+    return 0;
 }
 
 #if OW_CACHE					/* Special code for cumulative counters -- read/write -- uses the caching system for storage */
-static int FS_r_cum(UINT * u, const struct parsedname *pn)
+static int FS_r_cum(struct one_wire_query * owq)
 {
-	if (OW_r_counters(u, pn))
+    UINT u[4] ;
+    if (OW_r_counters(u, PN(owq)))
 		return -EINVAL;			/* just to prime the "CUM" data */
 	if (Cache_Get_Internal_Strict
-		((void *) u, 4 * sizeof(UINT), &ip_cum, pn))
+           ((void *) u, 4 * sizeof(UINT), &ip_cum, PN(owq)))
 		return -EINVAL;
-	return 0;
+    OWQ_array_U(owq,0) = u[0] ;
+    OWQ_array_U(owq,1) = u[1] ;
+    OWQ_array_U(owq,2) = u[2] ;
+    OWQ_array_U(owq,3) = u[3] ;
+    return 0;
 }
 
-static int FS_w_cum(const UINT * u, const struct parsedname *pn)
+static int FS_w_cum(struct one_wire_query * owq)
 {
+    UINT u[4] = {
+        OWQ_array_U(owq,0),
+        OWQ_array_U(owq,1),
+        OWQ_array_U(owq,2),
+        OWQ_array_U(owq,3),
+    } ;
 	return Cache_Add_Internal((const void *) u, 4 * sizeof(UINT), &ip_cum,
-							  pn) ? -EINVAL : 0;
+                               PN(owq)) ? -EINVAL : 0;
 }
 #endif							/*OW_CACHE */
 
-static int FS_w_lineX(const char *buf, const size_t size,
-					  const off_t offset, const struct parsedname *pn)
+static int FS_w_lineX(struct one_wire_query * owq)
 {
-	int width = pn->ft->data.i;
+    struct parsedname * pn = PN(owq) ;
+    int width = pn->ft->data.i;
 	BYTE loc[] = { 0x00, 0x40, 0x00 + width, 0x40 + width };
 	char line[width];
+    size_t size = OWQ_size(owq) ;
 
-	if (offset)
+    if (OWQ_offset(owq))
 		return -EADDRNOTAVAIL;
-	memcpy(line, buf, size);
+    memcpy(line, OWQ_buffer(owq), size);
 	memset(&line[size], ' ', width - size);
 	if (OW_w_screen(loc[pn->extension], line, width, pn))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_screenX(const char *buf, const size_t size,
-						const off_t offset, const struct parsedname *pn)
+static int FS_w_screenX(struct one_wire_query * owq)
 {
-	int width = pn->ft->data.i;
+    struct parsedname * pn = PN(owq) ;
+    int width = pn->ft->data.i;
 	int rows = (width == 40) ? 2 : 4;	/* max number of rows */
-	struct parsedname pn2;
-	const char *nl;
-	const char *b = buf;
-	const char *end = buf + size;
+	char *nl;
+    char *b = OWQ_buffer(owq);
+    char *end = OWQ_buffer(owq) + OWQ_size(owq);
+    int extension ;
+	OWQ_make( owq_line ) ;
 
-	if (offset)
+    if (OWQ_offset(owq))
 		return -EADDRNOTAVAIL;
 
 	if (OW_clear(pn))
 		return -EFAULT;
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	/* shallow copy */
-
-	for (pn2.extension = 0; pn2.extension < rows; ++pn2.extension) {
+    OWQ_create_shallow_single( owq_line, owq ) ; // won't bother to destroy
+    
+	for (extension = 0; extension < rows; ++extension) {
+        OWQ_pn(owq_line).extension = extension ;
 		nl = memchr(b, '\n', end - b);
 		if (nl && nl < b + width) {
-			if (FS_w_lineX(b, b - nl, 0, &pn2))
+            OWQ_buffer(owq_line) = b ;
+            OWQ_size(owq_line) = b - nl ;
+			if (FS_w_lineX(owq_line))
 				return -EINVAL;
 			b = nl + 1;			/* skip over newline */
 		} else {
 			nl = b + width;
 			if (nl > end)
 				nl = end;
-			if (FS_w_lineX(b, b - nl, 0, &pn2))
-				return -EINVAL;
-			b = nl;
+            OWQ_buffer(owq_line) = b ;
+            OWQ_size(owq_line) = b - nl ;
+            if (FS_w_lineX(owq_line))
+                return -EINVAL;
+            b = nl;
 		}
 		if (b >= end)
 			break;
@@ -289,20 +307,20 @@ static int FS_w_screenX(const char *buf, const size_t size,
 	return 0;
 }
 
-static int FS_r_memory(BYTE * buf, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int FS_r_memory(struct one_wire_query * owq)
 {
+	size_t pagesize = 16 ;
 //    if ( OW_r_memory(buf,size,offset,pn) ) return -EFAULT ;
-	if (OW_read_paged(buf, size, offset, pn, 16, OW_r_memory))
+    if (OW_readwrite_paged(owq, 0, pagesize, OW_r_memory))
 		return -EFAULT;
-	return size;
+    return 0;
 }
 
-static int FS_w_memory(const BYTE * buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_memory(struct one_wire_query * owq)
 {
+	size_t pagesize = 16 ;
 //    if ( OW_w_memory(buf,size,offset,pn) ) return -EFAULT ;
-	if (OW_write_paged(buf, size, offset, pn, 16, OW_w_memory))
+    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_memory))
 		return -EFAULT;
 	return 0;
 }
@@ -423,8 +441,8 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_r_memory(BYTE * data, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
+					    struct parsedname *pn)
 {
 	BYTE buf[2] = { offset & 0xFF, size & 0xFF, };
 
@@ -441,8 +459,8 @@ static int OW_r_memory(BYTE * data, const size_t size, const off_t offset,
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_w_memory(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int OW_w_memory( BYTE * data,  size_t size,
+					    off_t offset,  struct parsedname *pn)
 {
 	BYTE buf[17] = { offset & 0xFF, };
 

@@ -1016,7 +1016,7 @@ static void do_retr(struct ftp_session_s *f,
 		goto exit_retr;
     }
     
-    if ( IsDir(&OWQ_pn(&owq))) {
+    if ( IsDir(PN(&owq))) {
 		reply(f, 550, "Error, file is a directory.");
 		goto exit_retr;
     }
@@ -1139,9 +1139,8 @@ static void do_stor(struct ftp_session_s *f,
 	struct timeval transfer_time;
 	struct timeval limit_time = { Global.timeout_ftp, 0 };
     
-    struct one_wire_query struct_owq ;
-    struct one_wire_query * owq = &struct_owq ;
-    struct parsedname * pn = &OWQ_pn(owq);
+	OWQ_make( owq ) ;
+    struct parsedname * pn = PN(owq);
 
     size_t size_read;
 	int need_pn_destroy = 1;

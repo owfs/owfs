@@ -46,10 +46,10 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS1902 ibutton memory */
-bREAD_FUNCTION(FS_r_page);
-bWRITE_FUNCTION(FS_w_page);
-bREAD_FUNCTION(FS_r_memory);
-bWRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_r_memory);
+WRITE_FUNCTION(FS_w_memory);
 
 /* ------- Structures ----------- */
 
@@ -57,8 +57,8 @@ struct aggregate A1992 = { 4, ag_numbers, ag_separate, };
 struct filetype DS1992[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A1992, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"memory", 128, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"pages/page", 32, &A1992, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
 
 DeviceEntry(08, DS1992);
@@ -67,8 +67,8 @@ struct aggregate A1993 = { 16, ag_numbers, ag_separate, };
 struct filetype DS1993[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A1993, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"memory", 512, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"pages/page", 32, &A1993, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
 
 DeviceEntry(06, DS1993);
@@ -77,8 +77,8 @@ struct aggregate A1995 = { 64, ag_numbers, ag_separate, };
 struct filetype DS1995[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A1995, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"memory", 2048, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"pages/page", 32, &A1995, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"memory", 2048, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
 
 DeviceEntryExtended(0A, DS1995, DEV_ovdr);
@@ -87,8 +87,8 @@ struct aggregate A1996 = { 256, ag_numbers, ag_separate, };
 struct filetype DS1996[] = {
 	F_STANDARD,
   {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"pages/page", 32, &A1996, ft_binary, fc_stable, {b: FS_r_page}, {b: FS_w_page}, {v:NULL},},
-  {"memory", 8192, NULL, ft_binary, fc_stable, {b: FS_r_memory}, {b: FS_w_memory}, {v:NULL},},
+  {"pages/page", 32, &A1996, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
+  {"memory", 8192, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
 
 DeviceEntryExtended(0C, DS1996, DEV_ovdr);
@@ -96,50 +96,46 @@ DeviceEntryExtended(0C, DS1996, DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn);
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn);
 
 /* 1902 */
-static int FS_r_page(BYTE * buf, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int FS_r_page(struct one_wire_query * owq)
 {
-	if (OW_r_mem_simple
-		(buf, size, (size_t) (offset + ((pn->extension) << 5)), pn))
+	size_t pagesize = 32 ;
+	if (OW_r_mem_simple( owq, OWQ_pn(owq).extension, pagesize ))
 		return -EINVAL;
-	return size;
+    return OWQ_size(owq);
 }
 
-static int FS_r_memory(BYTE * buf, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int FS_r_memory(struct one_wire_query * owq)
 {
 	/* read is not page-limited */
-	if (OW_r_mem_simple(buf, size, (size_t) offset, pn))
+    if (OW_r_mem_simple( owq, 0, 0 ))
 		return -EINVAL;
-	return size;
+    return OWQ_size(owq);
 }
 
-static int FS_w_page(const BYTE * buf, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int FS_w_page(struct one_wire_query * owq)
 {
-	if (OW_w_mem
-		(buf, size, (size_t) (offset + ((pn->extension) << 5)), pn))
+	size_t pagesize = 32 ;
+    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
 		return -EFAULT;
 	return 0;
 }
 
-static int FS_w_memory(const BYTE * buf, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int FS_w_memory(struct one_wire_query * owq)
 {
 	/* paged access */
-	//if ( OW_w_mem( buf, size, (size_t) offset, pn) ) return -EFAULT ;
-	if (OW_write_paged(buf, size, offset, pn, 32, OW_w_mem))
+	size_t pagesize = 32 ;
+    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
 		return -EFAULT;
 	return 0;
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn)
+static int OW_w_mem( BYTE * data,  size_t size,
+					 off_t offset,  struct parsedname *pn)
 {
 	BYTE p[4 + 32] = { 0x0F, offset & 0xFF, (offset >> 8) & 0xFF, };
 	struct transaction_log tcopy[] = {

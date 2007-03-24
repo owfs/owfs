@@ -33,7 +33,7 @@ static void Show(FILE * out, const char *path, const char *file)
 		fprintf(out, "<B>Unparsable name</B></TD></TR>");
 		return;
 	}
-    pn = &OWQ_pn(&owq) ;
+    pn = PN(&owq) ;
 
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", file);
@@ -161,7 +161,7 @@ static void ShowText(FILE * out, const char *path, const char *file)
     if (FS_OWQ_create_plus(path, file, NULL, 0, 0, &owq)) {
         return;
 	}
-    pn = &OWQ_pn(&owq) ;
+    pn = PN(&owq) ;
 
 	/* Left column */
 	fprintf(out, "%s ", file);

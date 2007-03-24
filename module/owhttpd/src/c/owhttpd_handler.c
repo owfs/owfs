@@ -83,8 +83,7 @@ int handle_socket(FILE * out)
 		} else if (up.request == NULL) {
 			ShowDevice(out, &pn);
 		} else {				/* First write new values, then show */
-			struct one_wire_query struct_owq_write ;
-            struct one_wire_query * owq_write = &struct_owq_write ;
+			OWQ_make( owq_write ) ;
 
             if (FS_OWQ_create_plus(up.file, up.request, up.value, strlen(up.value), 0, owq_write)) {
 				Bad404(out);
