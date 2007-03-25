@@ -47,7 +47,7 @@ int FS_read(const char *path, char *buf, const size_t size,
             const off_t offset)
 {
     OWQ_make( owq ) ;
-    int r;
+    int read_or_error ;
 
     LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path),
                (int) size, (int) offset) ;
@@ -55,17 +55,17 @@ int FS_read(const char *path, char *buf, const size_t size,
     if (FS_OWQ_create(path,buf,size,offset,owq))
         return -ENOENT;
 
-    r = FS_read_postparse(owq);
-    //FS_ParsedName_destroy(&pn);
+    read_or_error = FS_read_postparse(owq);
     FS_OWQ_destroy(owq);
-    return r;
+    
+    return read_or_error;
 }
 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
 int FS_read_postparse(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    ssize_t read_or_error ;
+    int read_or_error ;
 
     // ServerRead jumps in here, perhaps with non-file entry
     if (pn->dev == NULL || pn->ft == NULL)
@@ -91,11 +91,14 @@ int FS_read_postparse(struct one_wire_query * owq)
             // Only one try (repeated remotely)
             Cache_Del_Device(pn);
         } else if (SpecifiedBus(pn)) { // this bus or bust!
-            read_or_error = TestConnection(pn) ? -ECONNABORTED :
-                    FS_read_distribute(owq);
-            if ( read_or_error < 0 ) { // third try
-                STAT_ADD1(read_tries[2]);
-                read_or_error = FS_read_distribute(owq);
+            if ( TestConnection(pn) ) {
+                read_or_error = -ECONNABORTED ;
+            } else {
+                read_or_error = FS_read_distribute(owq) ; // 2nd try
+                if ( read_or_error < 0 ) { // third try
+                    STAT_ADD1(read_tries[2]);
+                    read_or_error = FS_read_distribute(owq);
+                }
             }
         } else {
             int busloc_or_error ;
@@ -242,6 +245,7 @@ static int FS_r_local(struct one_wire_query * owq)
             case EXTENSION_BYTE:
                 return FS_read_lump(owq);
             case EXTENSION_ALL:
+                if ( OWQ_offset(owq) > 0 ) return 0 ; // no aggregates can be offset -- too confusing
                 if ( pn->ft->format == ft_bitfield ) return FS_read_all_bits(owq) ;
                 switch (pn->ft->ag->combined) {
                     case ag_separate:   /* separate reads, artificially combined into a single array */

@@ -189,7 +189,6 @@ int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_qu
 
 static int Fowq_output_ascii(struct one_wire_query * owq)
 {
-    printf("Fowq_output_ascii\n");
     Debug_OWQ(owq) ;
     return OWQ_length(owq) ;
 }
@@ -202,8 +201,6 @@ static int Fowq_output_array_with_commas( struct one_wire_query * owq )
     size_t used_size = 0 ;
     size_t remaining_size = OWQ_size(owq) ;
     size_t elements = OWQ_pn(owq).ft->ag->elements ;
-
-    if (OWQ_offset(owq)>0) return -EFAULT ;
 
     // loop though all array elements
     for ( extension = 0 ; extension < elements ; ++extension ) {
@@ -258,10 +255,8 @@ static int Fowq_output_array_no_commas( struct one_wire_query * owq )
     size_t total_length = 0 ;
     size_t elements = OWQ_pn(owq).ft->ag->elements ;
 
-    printf("Array no commas -- start\n");
     for ( extension = 0 ; extension < elements ; ++extension ) {
         total_length += OWQ_array_length(owq,extension) ;
     }
-    printf("Array no commas -- end\n");
     return total_length ;
 }
