@@ -1,6 +1,6 @@
 ## $Id$
 
-EXTRA_DIST = OW/Makefile.linux OW/Makefile.osx OW/OW.pm $(wildcard example/*.pl)
+EXTRA_DIST = OW/Makefile.linux.in OW/Makefile.linux OW/Makefile.osx.in OW/Makefile.osx OW/OW.pm $(wildcard example/*.pl)
 
 all: OW/OW.pm
 
