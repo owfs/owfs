@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="OWFS/OWnet" default="dist" basedir=".">
-<description>
-</description>
+  <project name="OWFS/OWnet" default="dist" basedir=".">
+  <description>
+  </description>
 
-	<property name="user.home" value=".."/>
-	<property name="src" value="src"/>
-	<property name="build" value="java"/>
-	<property name="dist" value="dist"/>
-	<property name="dest.dir" value="dest"/>
-	<property name="examples.src" value="examples"/>
-	<property name="examples.build" value="demo"/>
+  <property name="src" value="src"/>
+  <property name="build" value="java"/>
+  <property name="dist" value="dist"/>
+  <property name="examples.src" value="examples"/>
+  <property name="examples.build" value="demo"/>
 
   <target name="init">
     <!-- Create the time stamp -->
@@ -34,42 +32,38 @@
     <buildnumber/>
     <mkdir dir="${examples.build}"/>
     <javac srcdir="${examples.src}"
-	   destdir="${examples.build}"
-	   classpath="${build}"
-	   verbose="no" debug="on">
-	   <compilerarg value="-Xlint:unchecked"/>
+      destdir="${examples.build}"
+      classpath="${build}"
+      verbose="no" debug="on">
+      <compilerarg value="-Xlint:unchecked"/>
     </javac>
   </target>
 
   <target name="run_example" depends="examples" description="Run example" >
-       <java classname="demoUsage">
-         <arg value="-h"/>
-         <classpath>
-           <pathelement path="dist/lib/ownet.jar:demo"/>
-         </classpath>
-       </java>
+    <java classname="demoUsage">
+      <arg value="-h"/>
+      <classpath>
+        <pathelement path="dist/lib/ownet.jar:demo"/>
+      </classpath>
+    </java>
   </target>
 
+  <target name="dist" depends="compile" description="Create binary distribution">
+    <!-- Create application JAR file -->
+    <mkdir dir="${dist}/lib"/>
+    <jar jarfile="${dist}/lib/ownet.jar" basedir="${build}" />
+  </target>
 
-	<target name="dist" depends="compile" description="Create binary distribution">
-		<!-- Create application JAR file -->
-		<mkdir dir="${dist}/lib"/>
-		<jar jarfile="${dist}/lib/ownet.jar" basedir="${build}" />
-		<!-- Copy additional files to ${dist.home} as necessary -->
+  <target name="clean" description="Delete all generated files">
+    <delete dir="${build}" />
+    <delete dir="${examples.build}" />
+  </target>
 
-	</target>
-
-	<target name="clean" description="Delete all generated files">
-		<delete dir="${build}" />
-		<delete dir="${examples.build}" />
-	</target>
-
-	<target name="javadoc" depends="compile" description="Create Javadoc API documentation">
-		<mkdir dir="${dist}/docs/api" />
-		<javadoc sourcepath="${src}" destdir="${dist}/docs/api" packagenames="*">
-<!--			<classpath refid="compile.classpath" /> -->
-		</javadoc>
-	</target>
+  <target name="javadoc" depends="compile" description="Create Javadoc API documentation">
+    <mkdir dir="${dist}/docs/api" />
+    <javadoc sourcepath="${src}" destdir="${dist}/docs/api" packagenames="*">
+    </javadoc>
+  </target>
 
 </project>
 
