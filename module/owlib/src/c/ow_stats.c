@@ -161,76 +161,44 @@ struct filetype stats_cache[] = {
   {"flips", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_flips},},
   {"additions", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_adds},},
   {"primary", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"primary/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.
-			current},},
-  {"primary/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.
-			sum},},
-  {"primary/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.
-			count},},
-  {"primary/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.
-			max},},
+  {"primary/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.current},},
+  {"primary/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.sum},},
+  {"primary/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.count},},
+  {"primary/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&new_avg.max},},
   {"secondary", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"secondary/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.
-			current},},
-  {"secondary/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.
-			sum},},
-  {"secondary/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.
-			count},},
-  {"secondary/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.
-			max},},
+  {"secondary/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.current},},
+  {"secondary/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.sum},},
+  {"secondary/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.count},},
+  {"secondary/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&old_avg.max},},
   {"persistent", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"persistent/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.
-			current,}},
-  {"persistent/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.
-			sum},},
-  {"persistent/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.
-			count},},
-  {"persistent/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.
-			max},},
+  {"persistent/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.current,}},
+  {"persistent/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.sum},},
+  {"persistent/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.count},},
+  {"persistent/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&store_avg.max},},
   {"external", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"external/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.
-			tries},},
-  {"external/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.
-			hits},},
-  {"external/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.
-			adds,}},
-  {"external/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.
-			expires,}},
-  {"external/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.
-			deletes,}},
+  {"external/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.tries},},
+  {"external/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.hits},},
+  {"external/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.adds,}},
+  {"external/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.expires,}},
+  {"external/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_ext.deletes,}},
   {"internal", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"internal/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.
-			tries},},
-  {"internal/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.
-			hits},},
-  {"internal/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.
-			adds,}},
-  {"internal/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.
-			expires,}},
-  {"internal/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.
-			deletes,}},
+  {"internal/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.tries},},
+  {"internal/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.hits},},
+  {"internal/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.adds,}},
+  {"internal/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.expires,}},
+  {"internal/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_int.deletes,}},
   {"directory", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"directory/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.
-			tries},},
-  {"directory/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.
-			hits},},
-  {"directory/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.
-			adds},},
-  {"directory/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.
-			expires,}},
-  {"directory/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.
-			deletes,}},
+  {"directory/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.tries},},
+  {"directory/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.hits},},
+  {"directory/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.adds},},
+  {"directory/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.expires,}},
+  {"directory/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dir.deletes,}},
   {"device", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"device/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.
-			tries},},
-  {"device/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.
-			hits},},
-  {"device/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.
-			adds},},
-  {"device/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.
-			expires,}},
-  {"device/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.
-			deletes,}},
+  {"device/tries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.tries},},
+  {"device/hits", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.hits},},
+  {"device/added", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.adds},},
+  {"device/expired", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.expires,}},
+  {"device/deleted", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&cache_dev.deletes,}},
 };
 
 struct device d_stats_cache =
@@ -265,15 +233,11 @@ struct device d_stats_write =
 struct filetype stats_directory[] = {
   {"maxdepth", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_depth},},
   {"bus", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"bus/calls", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_main.
-			calls},},
-  {"bus/entries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_main.
-			entries},},
+  {"bus/calls", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_main.calls},},
+  {"bus/entries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_main.entries},},
   {"device", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"device/calls", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_dev.
-			calls},},
-  {"device/entries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_dev.
-			entries},},
+  {"device/calls", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_dev.calls},},
+  {"device/entries", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_dev.entries},},
 }
 
 ;
@@ -282,41 +246,25 @@ struct device d_stats_directory =
 
 struct filetype stats_thread[] = {
   {"directory", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"directory/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.
-			current},},
-  {"directory/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.
-			sum},},
-  {"directory/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.
-			count},},
-  {"directory/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.
-			max},},
+  {"directory/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.current},},
+  {"directory/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.sum},},
+  {"directory/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.count},},
+  {"directory/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&dir_avg.max},},
   {"overall", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"overall/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.
-			current},},
-  {"overall/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.
-			sum},},
-  {"overall/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.
-			count},},
-  {"overall/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.
-			max},},
+  {"overall/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.current},},
+  {"overall/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.sum},},
+  {"overall/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.count},},
+  {"overall/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&all_avg.max},},
   {"read", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"read/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.
-			current},},
-  {"read/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.
-			sum},},
-  {"read/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.
-			count},},
-  {"read/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.
-			max},},
+  {"read/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.current},},
+  {"read/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.sum},},
+  {"read/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.count},},
+  {"read/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&read_avg.max},},
   {"write", 0, NULL, ft_subdir, fc_statistic, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"write/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.
-			current,}},
-  {"write/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.
-			sum},},
-  {"write/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.
-			count},},
-  {"write/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.
-			max},},
+  {"write/now", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.current,}},
+  {"write/sum", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.sum},},
+  {"write/num", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.count},},
+  {"write/max", 15, NULL, ft_unsigned, fc_statistic, {o: FS_stat}, {v: NULL}, {v:&write_avg.max},},
 }
 
 ;
