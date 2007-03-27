@@ -141,9 +141,9 @@ int ServerRead(struct one_wire_query * owq)
 	if (connectfd > -1) {
 		sm.sg = SetupSemi(persistent, pn);
 		if ((connectfd =
-			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
 			ret = -EIO;
-             } else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq)) < 0) {
+		} else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq)) < 0) {
 			ret = -EIO;
 		} else {
 			ret = cm.ret;

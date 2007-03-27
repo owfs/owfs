@@ -197,20 +197,25 @@ static int FS_r_given_bus(struct one_wire_query * owq)
         LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
                     pthread_self());
 #endif /* OW_MT */
+		// Read afar -- returns already formatted in buffer
         read_status = ServerRead(owq);
         //printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
     } else {
         STAT_ADD1(read_calls);  /* statistics */
-        read_status = LockGet(pn) ;
-        if (read_status == 0) {
+        if (LockGet(pn) == 0) {
             read_status = FS_r_local(owq);
             //printf("FS_r_given_bus FS_r_local ret=%d\n", r);
+			if ( read_status >= 0 ) {
+				// local success -- now format in buffer
+				read_status = FS_output_owq(owq) ;
+			}
             LockRelease(pn);
-        }
+        } else {
+			read_status = -EADDRINUSE ;
+		}
     }
-    if ( read_status < 0 ) return read_status ;
-    
-    return FS_output_owq(owq) ;
+
+	return read_status ;
 }
 
 /* Real read -- called from read
