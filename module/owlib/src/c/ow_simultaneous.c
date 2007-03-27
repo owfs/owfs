@@ -56,10 +56,10 @@ READ_FUNCTION(FS_r_single);
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-  {"temperature", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_temp},},
-  {"voltage", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_volt},},
-  {"present", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {v: NULL}, {i:0},},
-  {"present_ds2400", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {v: NULL}, {i:1},},
+  {"temperature",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_temp},},
+  {"voltage",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_volt},},
+  {"present",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {v: NULL}, {i:0},},
+  {"present_ds2400",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {v: NULL}, {i:1},},
   {"single", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {v: NULL}, {i:0},},
   {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {v: NULL}, {i:1},},
 };

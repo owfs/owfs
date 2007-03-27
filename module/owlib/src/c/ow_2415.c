@@ -65,22 +65,22 @@ WRITE_FUNCTION(FS_w_itime);
 
 struct filetype DS2415[] = {
 	F_STANDARD,
-  {"flags", 1, NULL, ft_unsigned, fc_stable, {o: FS_r_flags}, {o: FS_w_flags}, {v:NULL},},
-  {"running", 1, NULL, ft_yesno, fc_stable, {o: FS_r_run}, {o: FS_w_run}, {v:NULL},},
-  {"udate", 12, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {v:NULL},},
-  {"date", 24, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {v:NULL},},
+  {"flags",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_flags}, {o: FS_w_flags}, {v:NULL},},
+  {"running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_run}, {o: FS_w_run}, {v:NULL},},
+  {"udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {v:NULL},},
+  {"date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {v:NULL},},
 };
 
 DeviceEntry(24, DS2415);
 
 struct filetype DS2417[] = {
 	F_STANDARD,
-  {"enable", 1, NULL, ft_yesno, fc_stable, {o: FS_r_enable}, {o: FS_w_enable}, {v:NULL},},
-  {"interval", 1, NULL, ft_integer, fc_stable, {o: FS_r_interval}, {o: FS_w_interval}, {v:NULL},},
-  {"itime", 1, NULL, ft_integer, fc_stable, {o: FS_r_itime}, {o: FS_w_itime}, {v:NULL},},
-  {"running", 1, NULL, ft_yesno, fc_stable, {o: FS_r_run}, {o: FS_w_run}, {v:NULL},},
-  {"udate", 12, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {v:NULL},},
-  {"date", 24, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {v:NULL},},
+  {"enable",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_enable}, {o: FS_w_enable}, {v:NULL},},
+  {"interval",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_stable, {o: FS_r_interval}, {o: FS_w_interval}, {v:NULL},},
+  {"itime",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_stable, {o: FS_r_itime}, {o: FS_w_itime}, {v:NULL},},
+  {"running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_run}, {o: FS_w_run}, {v:NULL},},
+  {"udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {v:NULL},},
+  {"date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {v:NULL},},
 };
 
 DeviceEntry(27, DS2417);

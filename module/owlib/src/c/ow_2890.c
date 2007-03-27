@@ -55,8 +55,8 @@ WRITE_FUNCTION(FS_w_wiper);
 
 struct filetype DS2890[] = {
 	F_STANDARD,
-  {"chargepump", 1, NULL, ft_yesno, fc_stable, {o: FS_r_cp}, {o: FS_w_cp}, {v:NULL},},
-  {"wiper", 3, NULL, ft_unsigned, fc_stable, {o: FS_r_wiper}, {o: FS_w_wiper}, {v:NULL},},
+  {"chargepump",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_cp}, {o: FS_w_cp}, {v:NULL},},
+  {"wiper",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_wiper}, {o: FS_w_wiper}, {v:NULL},},
 };
 
 DeviceEntryExtended(2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);

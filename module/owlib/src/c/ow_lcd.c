@@ -73,15 +73,15 @@ struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, };
 struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, };
 struct filetype LCD[] = {
 	F_STANDARD,
-  {"LCDon", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_w_on}, {v:NULL},},
-  {"backlight", 1, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_w_backlight}, {v:NULL},},
+  {"LCDon",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_w_on}, {v:NULL},},
+  {"backlight",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_w_backlight}, {v:NULL},},
   {"version", 16, NULL, ft_ascii, fc_stable, {o: FS_r_version}, {v: NULL}, {v:NULL},},
-  {"gpio", 1, &ALCD, ft_bitfield, fc_volatile, {o: FS_r_gpio}, {o: FS_w_gpio}, {v:NULL},},
-  {"register", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_register}, {o: FS_w_register}, {v:NULL},},
-  {"data", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_data}, {o: FS_w_data}, {v:NULL},},
-  {"counters", 12, &ALCD, ft_unsigned, fc_volatile, {o: FS_r_counters}, {v: NULL}, {v:NULL},},
+  {"gpio",PROPERTY_LENGTH_BITFIELD, &ALCD, ft_bitfield, fc_volatile, {o: FS_r_gpio}, {o: FS_w_gpio}, {v:NULL},},
+  {"register",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_r_register}, {o: FS_w_register}, {v:NULL},},
+  {"data",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_r_data}, {o: FS_w_data}, {v:NULL},},
+  {"counters",PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, {o: FS_r_counters}, {v: NULL}, {v:NULL},},
 #if OW_CACHE
-  {"cumulative", 12, &ALCD, ft_unsigned, fc_volatile, {o: FS_r_cum}, {o: FS_w_cum}, {v:NULL},},
+  {"cumulative",PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, {o: FS_r_cum}, {o: FS_w_cum}, {v:NULL},},
 #endif							/*OW_CACHE */
   {"memory", 112, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
   {"screen16", 128, NULL, ft_ascii, fc_stable, {v: NULL}, {o: FS_w_screenX}, {i:16},},

@@ -64,13 +64,13 @@ struct aggregate A2423c = { 2, ag_letters, ag_separate, };
 struct filetype DS2423[] = {
 	F_STANDARD,
   {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 32, &A2423, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-  {"counters", 12, &A2423c, ft_unsigned, fc_volatile, {o: FS_counter}, {v: NULL}, {v:NULL},},
+  {"counters",PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, {o: FS_counter}, {v: NULL}, {v:NULL},},
 #if OW_CACHE
-  {"mincount", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_mincount}, {o: FS_w_mincount}, {v:NULL},},
+  {"mincount",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_r_mincount}, {o: FS_w_mincount}, {v:NULL},},
 #endif							/*OW_CACHE */
-  {"pages/count", 12, &A2423, ft_unsigned, fc_volatile, {o: FS_pagecount}, {v: NULL}, {v:NULL},},
+  {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, {o: FS_pagecount}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(1D, DS2423, DEV_ovdr);

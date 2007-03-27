@@ -60,13 +60,13 @@ WRITE_FUNCTION(FS_w_change_password);
 struct aggregate A1991 = { 3, ag_numbers, ag_separate, };
 struct filetype DS1991[] = {
 	F_STANDARD,
-  {"settings", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"settings",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"settings/reset_password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_reset_password}, {v:NULL},},
   {"settings/change_password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_change_password}, {v:NULL},},
   {"settings/password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_password}, {v:NULL},},
   {"settings/ident", 8, &A1991, ft_binary, fc_volatile, {o: FS_r_ident}, {o: FS_w_ident}, {v:NULL},},
   {"settings/page", 48, &A1991, ft_binary, fc_volatile, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 48, &A1991, ft_binary, fc_volatile, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"pages/password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_password}, {v:NULL},},
   {"pages/ident", 8, &A1991, ft_binary, fc_volatile, {o: FS_r_ident}, {o: FS_w_ident}, {v:NULL},},
@@ -77,13 +77,13 @@ DeviceEntry(02, DS1991);
 
 struct filetype DS1425[] = {
 	F_STANDARD,
-  {"settings", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"settings",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"settings/reset_password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_reset_password}, {v:NULL},},
   {"settings/change_password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_change_password}, {v:NULL},},
   {"settings/password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_password}, {v:NULL},},
   {"settings/ident", 8, &A1991, ft_binary, fc_volatile, {o: FS_r_ident}, {o: FS_w_ident}, {v:NULL},},
   {"settings/page", 48, &A1991, ft_binary, fc_volatile, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 48, &A1991, ft_binary, fc_volatile, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"pages/password", 8, &A1991, ft_binary, fc_stable, {v: NULL}, {o: FS_w_password}, {v:NULL},},
   {"pages/ident", 8, &A1991, ft_binary, fc_volatile, {o: FS_r_ident}, {o: FS_w_ident}, {v:NULL},},

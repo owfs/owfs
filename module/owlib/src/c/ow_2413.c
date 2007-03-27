@@ -59,9 +59,9 @@ READ_FUNCTION(FS_r_latch);
 struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
-  {"PIO", 1, &A2413, ft_bitfield, fc_volatile, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
-  {"sensed", 1, &A2413, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
-  {"latch", 1, &A2413, ft_bitfield, fc_volatile, {o: FS_r_latch}, {v: NULL}, {v:NULL},},
+  {"PIO",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
+  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
+  {"latch",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_r_latch}, {v: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);

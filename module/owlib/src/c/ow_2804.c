@@ -72,15 +72,15 @@ struct aggregate A2804p = { 17, ag_numbers, ag_separate, };
 struct filetype DS28E04[] = {
 	F_STANDARD,
   {"memory", 550, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 32, &A2804p, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-  {"polarity", 1, NULL, ft_yesno, fc_volatile, {o: FS_polarity}, {v: NULL}, {v:NULL},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
-  {"por", 1, NULL, ft_yesno, fc_volatile, {o: FS_r_por}, {o: FS_w_por}, {v:NULL},},
-  {"PIO", 1, &A2804, ft_bitfield, fc_stable, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
-  {"sensed", 1, &A2804, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
-  {"latch", 1, &A2804, ft_bitfield, fc_volatile, {o: FS_r_latch}, {o: FS_w_latch}, {v:NULL},},
-  {"set_alarm", 3, NULL, ft_unsigned, fc_stable, {o: FS_r_s_alarm}, {o: FS_w_s_alarm}, {v:NULL},},
+  {"polarity",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_polarity}, {v: NULL}, {v:NULL},},
+  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
+  {"por",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_por}, {o: FS_w_por}, {v:NULL},},
+  {"PIO",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
+  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
+  {"latch",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, {o: FS_r_latch}, {o: FS_w_latch}, {v:NULL},},
+  {"set_alarm",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_s_alarm}, {o: FS_w_s_alarm}, {v:NULL},},
 };
 
 DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);

@@ -56,15 +56,15 @@ WRITE_FUNCTION(FS_w_TS);
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-  {"volatile", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_volatile},},
-  {"stable", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_stable},},
-  {"directory", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_directory},},
-  {"presence", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_presence},},
-  {"serial", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_serial},},
-  {"usb", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_usb},},
-  {"network", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_network},},
-  {"server", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_server},},
-  {"ftp", 15, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_ftp},},
+  {"volatile",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_volatile},},
+  {"stable",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_stable},},
+  {"directory",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_directory},},
+  {"presence",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_presence},},
+  {"serial",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_serial},},
+  {"usb",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_usb},},
+  {"network",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_network},},
+  {"server",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_server},},
+  {"ftp",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_r_timeout}, {o: FS_w_timeout}, {v:&Global.timeout_ftp},},
 }
 
 ;

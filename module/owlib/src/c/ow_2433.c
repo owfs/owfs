@@ -58,7 +58,7 @@ WRITE_FUNCTION(FS_w_memory2D);
 struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2431[] = {
 	F_STANDARD,
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 32, &A2431, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page2D}, {v:NULL},},
   {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory2D}, {v:NULL},},
 };
@@ -68,7 +68,7 @@ DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
 struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2433[] = {
 	F_STANDARD,
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 32, &A2433, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };

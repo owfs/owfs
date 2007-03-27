@@ -389,11 +389,15 @@ extern int indevices;
 
 #define PROPERTY_LENGTH_INTEGER   12
 #define PROPERTY_LENGTH_UNSIGNED  12
+#define PROPERTY_LENGTH_BITFIELD  12
 #define PROPERTY_LENGTH_FLOAT     12
+#define PROPERTY_LENGTH_TEMP      12
+#define PROPERTY_LENGTH_TEMPGAP   12
 #define PROPERTY_LENGTH_DATE      24
 #define PROPERTY_LENGTH_YESNO      1
 #define PROPERTY_LENGTH_STRUCTURE 30
-#define PROPERTY_LENGTH_DIRECTORY 8
+#define PROPERTY_LENGTH_DIRECTORY  8
+#define PROPERTY_LENGTH_SUBDIR     0
 
 /* filetype gives -file types- for chip properties */
 struct filetype {

@@ -77,18 +77,18 @@ struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
 struct filetype DS2406[] = {
 	F_STANDARD,
   {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
-  {"pages", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"pages/page", 32, &A2406p, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-  {"power", 1, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
-  {"channels", 1, NULL, ft_unsigned, fc_stable, {o: FS_channel}, {v: NULL}, {v:NULL},},
-  {"PIO", 1, &A2406, ft_bitfield, fc_stable, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
-  {"sensed", 1, &A2406, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
-  {"latch", 1, &A2406, ft_bitfield, fc_volatile, {o: FS_r_latch}, {o: FS_w_latch}, {v:NULL},},
-  {"set_alarm", 3, NULL, ft_unsigned, fc_stable, {o: FS_r_s_alarm}, {o: FS_w_s_alarm}, {v:NULL},},
+  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
+  {"channels",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_channel}, {v: NULL}, {v:NULL},},
+  {"PIO",PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_stable, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
+  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
+  {"latch",PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, {o: FS_r_latch}, {o: FS_w_latch}, {v:NULL},},
+  {"set_alarm",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_s_alarm}, {o: FS_w_s_alarm}, {v:NULL},},
 #if OW_TAI8570
-  {"TAI8570", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-  {"TAI8570/temperature", 12, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {v: NULL}, {v:NULL},},
-  {"TAI8570/pressure", 12, NULL, ft_float, fc_volatile, {o: FS_pressure}, {v: NULL}, {v:NULL},},
+  {"TAI8570",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"TAI8570/temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {v: NULL}, {v:NULL},},
+  {"TAI8570/pressure",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, {o: FS_pressure}, {v: NULL}, {v:NULL},},
   {"TAI8570/sibling", 16, NULL, ft_ascii, fc_stable, {o: FS_sibling}, {v: NULL}, {v:NULL},},
 #endif							/* OW_TAI8570 */
 };
