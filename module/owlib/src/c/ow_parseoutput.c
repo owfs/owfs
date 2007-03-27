@@ -44,6 +44,17 @@ Can break down cases into:
 
 int FS_output_owq( struct one_wire_query * owq)
 {
+    // have to check if offset is beyond the filesize.
+    if(OWQ_offset(owq)) {
+      off_t file_length = FileLength(PN(owq));
+      LEVEL_DEBUG("FS_output_owq: file_length=%lu offset=%lu size=%lu\n",
+		  (unsigned long)file_length, (unsigned long)OWQ_offset(owq), (unsigned long)OWQ_size(owq));
+      if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
+	OWQ_length(owq) = 0;
+        return 0;  // This is data-length
+      }
+    }
+
     switch (OWQ_pn(owq).extension) {
         case EXTENSION_BYTE:
             return Fowq_output_unsigned(owq) ;

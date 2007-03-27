@@ -180,6 +180,7 @@ int FS_read_distribute(struct one_wire_query * owq)
     return r;
 }
 
+// This function should return number of bytes read... not status.
 static int FS_r_given_bus(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
@@ -205,19 +206,19 @@ static int FS_r_given_bus(struct one_wire_query * owq)
     } else {
         STAT_ADD1(read_calls);  /* statistics */
         if (LockGet(pn) == 0) {
-            read_status = FS_r_local(owq);
-            //printf("FS_r_given_bus FS_r_local ret=%d\n", r);
-			if ( read_status >= 0 ) {
-				// local success -- now format in buffer
-				read_status = FS_output_owq(owq) ;
-			}
-            LockRelease(pn);
+	  read_status = FS_r_local(owq);  // this returns status
+	  //printf("FS_r_given_bus FS_r_local ret=%d\n", r);
+	  if ( read_status >= 0 ) {
+	    // local success -- now format in buffer
+	    read_status = FS_output_owq(owq) ; // this returns nr. bytes
+	  }
+	  LockRelease(pn);
         } else {
-			read_status = -EADDRINUSE ;
-		}
+	  read_status = -EADDRINUSE ;
+	}
     }
-
-	return read_status ;
+    LEVEL_DEBUG("FS_r_given_bus return %d\n", read_status);
+    return read_status ;
 }
 
 /* Real read -- called from read
@@ -232,6 +233,19 @@ static int FS_r_local(struct one_wire_query * owq)
     if ((pn->ft->read.v) == NULL)
         return -ENOTSUP;
 
+    /* Mounting fuse with "direct_io" will cause a second read with offset
+     * at end-of-file... Just return 0 if offset == size */
+    // This check is done in FS_output_owq() too, since it's always called when this function returns 0
+    if(OWQ_offset(owq)) {
+      file_length = FileLength(PN(owq));
+      LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
+		  (unsigned long)file_length, (unsigned long)OWQ_offset(owq), (unsigned long)OWQ_size(owq));
+      if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
+	OWQ_length(owq) = 0;
+        return 0;  // this is status ok... but 0 bytes were read...
+      }
+    }
+
     /* Special case for "fake" adapter */
     if (pn->in->Adapter == adapter_fake && pn->ft->change != fc_static && IsRealDir(pn))
         return FS_read_fake(owq);
@@ -239,12 +253,6 @@ static int FS_r_local(struct one_wire_query * owq)
     /* Special case for "tester" adapter */
     if (pn->in->Adapter == adapter_tester && pn->ft->change != fc_static)
         return FS_read_tester(owq);
-
-    /* Mounting fuse with "direct_io" will cause a second read with offset
-    * at end-of-file... Just return 0 if offset == size */
-    file_length = FileLength(PN(owq));
-    if (OWQ_offset(owq) >= file_length)
-        return 0;
 
     /* Array property? Read separately? Read together and manually separate? */
     if (pn->ft->ag) {           /* array property */
