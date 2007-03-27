@@ -31,7 +31,7 @@ static int FS_read_fake_array(struct one_wire_query * owq);
 #define Random_i (rand()&0xFF)
 #define Random_u (rand()&0xFF)
 #define Random_b (rand()&0xFF)
-#define Random_a (32+(rand()&0x3F))
+#define Random_a ('a'+(rand() % (26)))
 #define Random_f (100.*Random)
 
 int FS_read_fake(struct one_wire_query * owq)

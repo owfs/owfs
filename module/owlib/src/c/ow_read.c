@@ -199,6 +199,8 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 #endif /* OW_MT */
 		// Read afar -- returns already formatted in buffer
         read_status = ServerRead(owq);
+        LEVEL_DEBUG("FS_r_given_bus -- back from server\n");
+        Debug_OWQ(owq) ;
         //printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
     } else {
         STAT_ADD1(read_calls);  /* statistics */
@@ -336,59 +338,35 @@ static int FS_read_from_parts(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
 	OWQ_make( owq_single ) ;
 
-    size_t entry_length  = FileLength(pn);;
     size_t elements = pn->ft->ag->elements ;
     size_t extension ;
-    char * memory_buffer = NULL ; // used for ascii and binary only
-    char * buffer_pointer = OWQ_buffer(owq) ;
 
     STAT_ADD1(read_array);      /* statistics */
 
     /* shallow copy */
-    OWQ_create_shallow_single( owq_single, owq ) ;
+    OWQ_create_temporary( owq_single, OWQ_buffer(owq), FileLength(pn), 0, pn ) ;
 
-    /* set up a memory buffer space for ascii or binary data, temporarily */
-    switch ( pn->ft->format ) {
-        case ft_ascii:
-        case ft_vascii:
-        case ft_binary:
-            memory_buffer = malloc( entry_length ) ;
-            if ( memory_buffer == NULL ) {
-                return -ENOMEM ;
-            }
-            OWQ_buffer(owq_single) = memory_buffer ;
-            OWQ_size(owq_single) = entry_length ;
-            OWQ_offset(owq_single) = 0 ;
-            break ;
-        default:
-            break ;
-    }
-    
     /* Loop through F_r_single, just to get data */
     for (extension = 0; extension < elements; ++extension) {
         OWQ_pn(owq_single).extension = extension ;
         if ( OWQ_Cache_Get(owq_single) ) { // non-zero if not there
             int single_or_error = (pn->ft->read.o)(owq_single) ;
-            if ( single_or_error < 0 ) {
-                if ( memory_buffer != NULL ) free( memory_buffer) ;
-                return single_or_error ;
-            }
+            if ( single_or_error < 0 ) return single_or_error ;
             OWQ_Cache_Add(owq_single) ;
         }
+        //printf("FS_read_from_parts extension=%d, length=%d, <%.*s> %p\n",(int)extension,(int)OWQ_length(owq_single),(int)OWQ_length(owq_single),OWQ_buffer(owq_single),OWQ_buffer(owq_single)) ;
         memcpy( &OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof(union value_object ) ) ;
         switch ( pn->ft->format ) {
             case ft_ascii:
             case ft_vascii:
             case ft_binary:
-                memcpy( buffer_pointer, memory_buffer, OWQ_length(owq_single) ) ;
-                buffer_pointer += OWQ_length(owq_single) ;
+                OWQ_buffer(owq_single) += OWQ_length(owq_single) ;
                 break ;
             default:
                 break ;
         }
     }
 
-    if ( memory_buffer != NULL ) free( memory_buffer) ;
     return 0 ;
 }
 

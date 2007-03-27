@@ -233,14 +233,14 @@ static int Fowq_output_ascii_array( struct one_wire_query * owq )
     size_t extension ;
     size_t elements = OWQ_pn(owq).ft->ag->elements ;
     size_t total_length = 0 ;
-    size_t current_offset = OWQ_array_length(owq,1) ;
+    size_t current_offset = OWQ_array_length(owq,0) ;
 
     for ( extension = 0 ; extension < elements ; ++extension ) {
         total_length += OWQ_array_length(owq,extension) ;
     }
     
     for ( extension = 1 ; extension < elements ; ++extension ) {
-        memmove( &OWQ_buffer(owq)[current_offset], &OWQ_buffer(owq)[current_offset+1], total_length - current_offset ) ;
+        memmove( &OWQ_buffer(owq)[current_offset+1], &OWQ_buffer(owq)[current_offset], total_length - current_offset ) ;
         OWQ_buffer(owq)[current_offset] = ',' ;
         ++total_length ;
         current_offset += 1 + OWQ_array_length(owq,extension) ;
