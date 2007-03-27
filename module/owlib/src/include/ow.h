@@ -393,6 +393,7 @@ extern int indevices;
 #define PROPERTY_LENGTH_DATE      24
 #define PROPERTY_LENGTH_YESNO      1
 #define PROPERTY_LENGTH_STRUCTURE 30
+#define PROPERTY_LENGTH_DIRECTORY 8
 
 /* filetype gives -file types- for chip properties */
 struct filetype {
@@ -760,12 +761,8 @@ int FS_ParsedNamePlus(const char *path, const char *file,
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
-size_t OWQ_FileLength( const struct one_wire_query * owq ) ;
-size_t OWQ_FullFileLength( const struct one_wire_query * owq ) ;
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
-size_t SimpleFileLength(const struct parsedname *pn);
-size_t SimpleFullFileLength(const struct parsedname *pn);
 int CheckPresence(struct parsedname *pn);
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn,
 				   const struct parsedname *pn);

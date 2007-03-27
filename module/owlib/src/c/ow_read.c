@@ -240,7 +240,7 @@ static int FS_r_local(struct one_wire_query * owq)
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
     * at end-of-file... Just return 0 if offset == size */
-    file_length = OWQ_FileLength(owq);
+    file_length = FileLength(PN(owq));
     if (OWQ_offset(owq) >= file_length)
         return 0;
 
@@ -298,7 +298,7 @@ static int FS_structure(struct one_wire_query * owq)
                    (OWQ_pn(owq_copy).ft->read.v) ?
                    ((OWQ_pn(owq_copy).ft->write.v) ? "rw" : "ro") :
                            ((OWQ_pn(owq_copy).ft->write.v) ? "wo" : "oo"),
-                   (int) OWQ_FullFileLength(owq_copy)
+                   (int) FullFileLength(PN(owq_copy))
                   );
     UCLIBCUNLOCK;
 
@@ -336,7 +336,7 @@ static int FS_read_from_parts(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
 	OWQ_make( owq_single ) ;
 
-    size_t entry_length  = OWQ_FileLength(owq);;
+    size_t entry_length  = FileLength(pn);;
     size_t elements = pn->ft->ag->elements ;
     size_t extension ;
     char * memory_buffer = NULL ; // used for ascii and binary only

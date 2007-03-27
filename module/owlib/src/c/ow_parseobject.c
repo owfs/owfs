@@ -101,7 +101,7 @@ int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct on
         case ft_ascii:
         case ft_vascii:
             /* allocate larger buffer space */
-            OWQ_size(owq_shallow) = OWQ_FullFileLength(owq_shallow) ;
+            OWQ_size(owq_shallow) = FullFileLength(PN(owq_shallow)) ;
             OWQ_buffer(owq_shallow) = malloc( OWQ_size(owq_shallow) ) ;
             if ( OWQ_buffer(owq_shallow) == NULL ) {
                 free( OWQ_array(owq_shallow) ) ;

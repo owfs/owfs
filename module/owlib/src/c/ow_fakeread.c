@@ -39,7 +39,7 @@ int FS_read_fake(struct one_wire_query * owq)
     switch (OWQ_pn(owq).extension) {
         case EXTENSION_ALL:
             if ( OWQ_offset(owq) ) return 0 ;
-            if ( OWQ_size(owq) < OWQ_FullFileLength(owq) ) return -ERANGE ;
+            if ( OWQ_size(owq) < FullFileLength(PN(owq)) ) return -ERANGE ;
             return FS_read_fake_array(owq);
 		case EXTENSION_BYTE:                    /* bitfield */
         default:
@@ -106,7 +106,7 @@ static int FS_read_fake_array(struct one_wire_query * owq)
 {
     size_t elements = OWQ_pn(owq).ft->ag->elements ;
     size_t extension ;
-    size_t entry_length = OWQ_FileLength(owq) ;
+    size_t entry_length = FileLength(PN(owq)) ;
     OWQ_make( owq_single ) ;
 
     OWQ_create_shallow_single( owq_single, owq ) ;

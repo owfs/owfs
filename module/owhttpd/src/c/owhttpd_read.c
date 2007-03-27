@@ -52,7 +52,7 @@ static void Show(FILE * out, const char *path, const char *file)
 			canwrite = 0;
 		}
 
-        OWQ_size(&owq) = OWQ_FullFileLength(&owq) ;
+        OWQ_size(&owq) = FullFileLength(PN(&owq)) ;
 
 		/* buffer for field value */
         if ((OWQ_buffer(&owq) = malloc(OWQ_size(&owq) + 1))) {
@@ -179,7 +179,7 @@ static void ShowText(FILE * out, const char *path, const char *file)
 			canwrite = 0;
 		}
 
-        OWQ_size(&owq) = OWQ_FullFileLength(&owq) ;
+        OWQ_size(&owq) = FullFileLength(pn) ;
 		
         /* buffer for field value */
         OWQ_buffer(&owq) = malloc(OWQ_size(&owq) + 1) ;

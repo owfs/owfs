@@ -85,7 +85,7 @@ static void getdir( struct one_wire_query * owq ) {
   *buffer will be returned as NULL on error
  */
 static void getval( struct one_wire_query * owq ) {
-    size_t s = OWQ_FullFileLength(owq) ;
+    size_t s = FullFileLength(PN(owq)) ;
     if ( s <= 0 ) return ;
     if ( (OWQ_buffer(owq) = malloc(s+1))==NULL ) return ;
     OWQ_size(owq) = s ;

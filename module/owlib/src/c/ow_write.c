@@ -393,7 +393,7 @@ static int FS_write_in_parts(struct one_wire_query * owq)
         int single_write ;
         memcpy( &OWQ_val(owq_single), &OWQ_array(owq)[extension], sizeof( union value_object ) ) ;
         OWQ_pn(owq_single).extension = extension ;
-        OWQ_size(owq_single) = OWQ_FileLength(owq_single) ;
+        OWQ_size(owq_single) = FileLength(PN(owq_single)) ;
         OWQ_offset(owq_single) = 0 ;
         if ( buffer_pointer ) OWQ_buffer(owq_single) = buffer_pointer ;
 

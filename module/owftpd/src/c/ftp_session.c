@@ -1032,7 +1032,7 @@ static void do_retr(struct ftp_session_s *f,
 		goto exit_retr;
     }
     
-    OWQ_size(&owq) = OWQ_FullFileLength(&owq) ;
+    OWQ_size(&owq) = FullFileLength(PN(&owq)) ;
     OWQ_buffer(&owq) = malloc(OWQ_size(&owq) - offset) ;
 	if (OWQ_buffer(&owq) == NULL) {
 		reply(f, 550, "Error, file too large.");
@@ -1180,7 +1180,7 @@ static void do_stor(struct ftp_session_s *f,
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_stor;
 	}
-    size_read = OWQ_FullFileLength(owq) - OWQ_offset(owq) + 100 ;
+    size_read = FullFileLength(PN(owq)) - OWQ_offset(owq) + 100 ;
     OWQ_buffer(owq) = malloc(size_read) ;
     
     if (OWQ_buffer(owq) == NULL) {
