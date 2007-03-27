@@ -405,28 +405,24 @@ struct filetype {
 	union {
         int (*o) ( struct one_wire_query * ) ;
 		void *v;
-		int (*i) (int *, const struct parsedname *);
-		int (*u) (UINT *, const struct parsedname *);
-		int (*f) (_FLOAT *, const struct parsedname *);
-		int (*y) (int *, const struct parsedname *);
-		int (*d) (_DATE *, const struct parsedname *);
-		int (*a) (char *, const size_t, const off_t,
-				  const struct parsedname *);
-		int (*b) (BYTE *, const size_t, const off_t,
-				  const struct parsedname *);
+//		int (*i) (int *, const struct parsedname *);
+//		int (*u) (UINT *, const struct parsedname *);
+//		int (*f) (_FLOAT *, const struct parsedname *);
+//		int (*y) (int *, const struct parsedname *);
+//		int (*d) (_DATE *, const struct parsedname *);
+//		int (*a) (char *, const size_t, const off_t, const struct parsedname *);
+//		int (*b) (BYTE *, const size_t, const off_t, const struct parsedname *);
 	} read;						// read callback function
 	union {
         int (*o) ( struct one_wire_query * ) ;
         void *v;
-		int (*i) (const int *, const struct parsedname *);
-		int (*u) (const UINT *, const struct parsedname *);
-		int (*f) (const _FLOAT *, const struct parsedname *);
-		int (*y) (const int *, const struct parsedname *);
-		int (*d) (const _DATE *, const struct parsedname *);
-		int (*a) (const char *, const size_t, const off_t,
-				  const struct parsedname *);
-		int (*b) (const BYTE *, const size_t, const off_t,
-				  const struct parsedname *);
+//		int (*i) (const int *, const struct parsedname *);
+//		int (*u) (const UINT *, const struct parsedname *);
+//		int (*f) (const _FLOAT *, const struct parsedname *);
+//		int (*y) (const int *, const struct parsedname *);
+//		int (*d) (const _DATE *, const struct parsedname *);
+//		int (*a) (const char *, const size_t, const off_t, const struct parsedname *);
+//		int (*b) (const BYTE *, const size_t, const off_t, const struct parsedname *);
 	} write;					// write callback function
 	union {
 		void *v;

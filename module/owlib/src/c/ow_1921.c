@@ -146,8 +146,7 @@ struct filetype DS1921[] = {
   {"about/temphigh", PROPERTY_LENGTH_FLOAT, NULL, ft_temperature, fc_static, {o: FS_r_rangehigh}, {v: NULL}, {v:NULL},},
   {"about/version", 11, NULL, ft_ascii, fc_stable, {o: FS_r_version}, {v: NULL}, {v:NULL},},
   {"about/samples", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_r_3byte}, {v: NULL}, {s:0x021D},},
-  {"about/measuring", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_rbitread}, {v: NULL}, {v:&BitReads
-			[0]},},
+  {"about/measuring", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_rbitread}, {v: NULL}, {v:&BitReads[0]},},
 
   {"temperature", PROPERTY_LENGTH_FLOAT, NULL, ft_temperature, fc_volatile, {o: FS_r_temperature}, {v: NULL}, {v:NULL},},
 
@@ -159,8 +158,7 @@ struct filetype DS1921[] = {
   {"mission/rollover", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_bitread}, {o: FS_bitwrite}, {v:&BitReads[3]},},
   {"mission/date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_volatile, {o: FS_mdate}, {v: NULL}, {v:NULL},},
   {"mission/udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_umdate}, {v: NULL}, {v:NULL},},
-  {"mission/sampling", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads
-			[2]},},
+  {"mission/sampling", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads[2]},},
   {"mission/easystart", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {v: NULL}, {o: FS_easystart}, {v:NULL},},
 
   {"overtemp", 0, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},

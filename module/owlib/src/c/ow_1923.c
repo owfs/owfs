@@ -124,10 +124,8 @@ struct filetype DS1923[] = {
 {"mission/running", 1, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {o: FS_w_mip}, {v:&BitReads[0]},},
 {"mission/rollover", 1, NULL, ft_yesno, fc_stable, {o: FS_bitread}, {o: FS_bitwrite}, {v:&BitReads[1]},},
 {"mission/delay", 12, NULL, ft_unsigned, fc_volatile, {o: FS_r_delay}, {o: FS_w_delay}, {v:NULL},},
-{"mission/samplingtemp", 1, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads
-    [3]},},
-    {"mission/samplinghumidity", 1, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads
-        [4]},},
+{"mission/samplingtemp", 1, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads[3]},},
+    {"mission/samplinghumidity", 1, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads[4]},},
 #if 0
 {"mission/frequency", 1, NULL, ft_yesno, fc_volatile, {u: FS_r_samplerate}, {u: FS_w_samplerate}, {v:NULL},},
 {"mission/samples", 12, NULL, ft_unsigned, fc_volatile, {u: FS_r_3byte}, {v: NULL}, {s:0x021A},},
