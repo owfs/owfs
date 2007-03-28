@@ -37,7 +37,7 @@ size_t FileLength( const struct parsedname * pn )
             return PROPERTY_LENGTH_DATE ;
         case ft_bitfield:
             return (pn->extension==EXTENSION_BYTE) ? PROPERTY_LENGTH_UNSIGNED : PROPERTY_LENGTH_YESNO ;
-        case ft_vascii:
+        case ft_vascii:  // not used anymore here... 
         case ft_ascii:
         case ft_binary:
         default:

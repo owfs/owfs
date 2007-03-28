@@ -206,10 +206,13 @@ static int FS_r_given_bus(struct one_wire_query * owq)
     } else {
         STAT_ADD1(read_calls);  /* statistics */
         if (LockGet(pn) == 0) {
+	  LEVEL_DEBUG("FS_r_given_bus: format=%d\n", PN(owq)->ft->format);
+
 	  read_status = FS_r_local(owq);  // this returns status
-	  //printf("FS_r_given_bus FS_r_local ret=%d\n", r);
+	  LEVEL_DEBUG("FS_r_given_bus FS_r_local return=%d\n", read_status);
 	  if ( read_status >= 0 ) {
 	    // local success -- now format in buffer
+	    LEVEL_DEBUG("FS_r_given_bus: format2=%d\n", PN(owq)->ft->format);
 	    read_status = FS_output_owq(owq) ; // this returns nr. bytes
 	  }
 	  LockRelease(pn);
@@ -221,13 +224,51 @@ static int FS_r_given_bus(struct one_wire_query * owq)
     return read_status ;
 }
 
+size_t FileLength_vascii(struct one_wire_query * owq)
+{
+  size_t file_length = 0;
+
+  // This is to avoid returning suglen on system/adapter/name.ALL etc with variable length
+  if (PN(owq)->ft->ag) {           /* array property */
+    switch (PN(owq)->extension) {
+    case EXTENSION_ALL:
+      if ( PN(owq)->ft->format == ft_bitfield ) return FileLength(PN(owq));
+      switch (PN(owq)->ft->ag->combined) {
+      case ag_separate:   /* separate reads, artificially combined into a single array */
+	// this is probably the only case needed
+	file_length = FS_read_from_parts(owq);
+	LEVEL_DEBUG("FS_r_local: change1 file_length = %d\n", file_length);
+	return file_length;
+	break;
+      case ag_mixed:      /* mixed mode, ALL read handled differently */
+      case ag_aggregate:  /* natively an array */
+	/* return ALL if required   (comma separated) */
+      default:
+	// don't think this will happen...
+	file_length = FS_read_lump(owq);
+	LEVEL_DEBUG("FS_r_local: change2 file_length = %d\n", file_length);
+	break;
+      }
+      break;
+    default:
+	// don't think this will happen...
+      file_length = FileLength(PN(owq));
+      LEVEL_DEBUG("FS_r_local: change3 file_length = %d\n", file_length);
+      break;
+    }
+  } else {
+    // don't think this will happen...
+    file_length = FileLength(PN(owq));
+  }
+  return file_length;
+}
+
 /* Real read -- called from read
    Integrates with cache -- read not called if cached value already set
 */
 static int FS_r_local(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    off_t file_length = 0;
     
     /* Readable? */
     if ((pn->ft->read.v) == NULL)
@@ -237,11 +278,15 @@ static int FS_r_local(struct one_wire_query * owq)
      * at end-of-file... Just return 0 if offset == size */
     // This check is done in FS_output_owq() too, since it's always called when this function returns 0
     if(OWQ_offset(owq)) {
-      file_length = FileLength(PN(owq));
+      size_t file_length = 0;
+      if( PN(owq)->ft->format == ft_vascii) {
+	file_length = FileLength_vascii(owq);
+      } else {
+	file_length = FileLength(PN(owq));
+      }
       LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
 		  (unsigned long)file_length, (unsigned long)OWQ_offset(owq), (unsigned long)OWQ_size(owq));
       if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
-	OWQ_length(owq) = 0;
         return 0;  // this is status ok... but 0 bytes were read...
       }
     }
@@ -344,7 +389,7 @@ static int FS_read_lump(struct one_wire_query * owq)
 static int FS_read_from_parts(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-	OWQ_make( owq_single ) ;
+    OWQ_make( owq_single ) ;
 
     size_t elements = pn->ft->ag->elements ;
     size_t extension ;
