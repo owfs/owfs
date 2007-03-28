@@ -83,7 +83,7 @@ int Zero_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->fd = -1;				// No persistent connection yet
+	in->fd = FD_PERSISTENT_NONE;				// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_zero;
@@ -98,7 +98,7 @@ int Server_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->fd = -1;				// No persistent connection yet
+	in->fd = FD_PERSISTENT_NONE;				// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
@@ -108,9 +108,9 @@ int Server_detect(struct connection_in *in)
 
 static void Server_close(struct connection_in *in)
 {
-	if (in->fd > -1) {			// persistent connection
+	if (in->fd > FD_PERSISTENT_NONE) {			// persistent connection
 		close(in->fd);
-		in->fd = -1;
+		in->fd = FD_PERSISTENT_NONE;
 	}
 	FreeClientAddr(in);
 }
@@ -138,7 +138,7 @@ int ServerRead(struct one_wire_query * owq)
 			   SAFESTRING(pn->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn->in);
-	if (connectfd > -1) {
+	if (connectfd > FD_CURRENT_BAD) {
 		sm.sg = SetupSemi(persistent, pn);
 		if ((connectfd =
 			ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
@@ -174,7 +174,7 @@ int ServerPresence(const struct parsedname *pn)
 			   SAFESTRING(pn->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn->in);
-	if (connectfd > -1) {
+	if (connectfd > FD_CURRENT_BAD) {
 		sm.sg = SetupSemi(persistent, pn);
 		if ((connectfd =
 			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
@@ -448,15 +448,15 @@ static int ToServerTwice(int fd, int persistent, struct server_msg *sm,
 		return fd;
 	if (persistent == 0) {
 		close(fd);
-		return -1;
+		return FD_CURRENT_BAD;
 	}
 	newfd = PersistentReRequest(fd, in);
 	if (newfd < 0)
-		return -1;
+		return FD_CURRENT_BAD;
 	if (ToServer(newfd, sm, sp) == 0)
 		return newfd;
 	close(newfd);
-	return -1;
+	return FD_CURRENT_BAD;
 }
 
 // should be const char * data but iovec has problems with const arguments
@@ -538,7 +538,7 @@ static int ConnectToServer(struct connection_in *in)
 	int fd;
 
 	fd = ClientConnect(in);
-	if (fd < 0) {
+	if (fd == FD_CURRENT_BAD) {
 		STAT_ADD1(in->reconnect_state);
 	}
 	return fd;
@@ -558,15 +558,15 @@ static int PersistentRequest(struct connection_in *in)
 {
 	int fd;
 	BUSLOCKIN(in);
-	if (in->fd == -2) {			// in use
-		fd = -1;
-	} else if (in->fd > -1) {	// available
+	if (in->fd == FD_PERSISTENT_IN_USE) {			// in use
+		fd = FD_CURRENT_BAD;
+	} else if (in->fd > FD_PERSISTENT_NONE) {	// available
 		fd = in->fd;
-		in->fd = -2;
-	} else if ((fd = ConnectToServer(in)) == -1) {	// can't get a connection
-		fd = -1;
+		in->fd = FD_PERSISTENT_IN_USE;
+	} else if ((fd = ConnectToServer(in)) == FD_CURRENT_BAD) {	// can't get a connection
+		fd = FD_CURRENT_BAD;
 	} else {					// new connection -- make it persistent
-		in->fd = -2;
+		in->fd = FD_PERSISTENT_IN_USE;
 	}
 	BUSUNLOCKIN(in);
 	return fd;
@@ -580,8 +580,8 @@ static int PersistentReRequest(int fd, struct connection_in *in)
 	close(fd);
 	BUSLOCKIN(in);
 	fd = ConnectToServer(in);
-	if (fd == -1) {				// bad connection
-		in->fd = -1;
+	if (fd == FD_CURRENT_BAD) {				// bad connection
+		in->fd = FD_PERSISTENT_NONE;
 	}
 	// else leave as in->fd = -2
 	BUSUNLOCKIN(in);
@@ -591,18 +591,18 @@ static int PersistentReRequest(int fd, struct connection_in *in)
 /* Clear a persistent connection */
 static void PersistentClear(int fd, struct connection_in *in)
 {
-	if (fd > -1) {
+	if (fd > FD_CURRENT_BAD) {
 		close(fd);
 	}
 	BUSLOCKIN(in);
-	in->fd = -1;
+	in->fd = FD_PERSISTENT_NONE;
 	BUSUNLOCKIN(in);
 }
 
 /* Free a persistent connection */
 static void PersistentFree(int fd, struct connection_in *in)
 {
-	if (fd == -1) {
+	if (fd == FD_CURRENT_BAD) {
 		PersistentClear(fd, in);
 	} else {
 		BUSLOCKIN(in);
@@ -622,7 +622,7 @@ static int PersistentStart(int *persistent, struct connection_in *in)
 	if (*persistent == 0) {
 		fd = ConnectToServer(in);
 		*persistent = 0;
-	} else if ((fd = PersistentRequest(in)) == -1) {	// tried but failed
+	} else if ((fd = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
 		fd = ConnectToServer(in);
 		*persistent = 0;
 	} else {

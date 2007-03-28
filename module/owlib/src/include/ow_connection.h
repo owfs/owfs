@@ -405,6 +405,9 @@ struct connection_out {
 extern struct connection_out *outdevice;
 extern struct connection_in *indevice;
 
+#define  FD_PERSISTENT_IN_USE    -2
+#define  FD_PERSISTENT_NONE      -1
+#define  FD_CURRENT_BAD          -1
 /* This bug-fix/workaround function seem to be fixed now... At least on
  * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
  * returned very strange result on c->busmode before... but not anymore */
