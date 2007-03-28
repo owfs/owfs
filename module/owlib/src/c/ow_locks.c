@@ -80,13 +80,15 @@ int LockGet(const struct parsedname *pn)
 #if OW_MT
 	struct devlock *dlock;
 	struct dev_opaque *opaque;
-	int inindex = pn->in->index;
+	int inindex;
 
 	//printf("LockGet() pn->path=%s\n", pn->path);
 	if (pn->dev == DeviceSimultaneous) {
 		/* Shouldn't call LockGet() on DeviceSimultaneous. No sn exists */
 		return 0;
 	}
+
+	inindex = pn->in->index; // do this after testing pn->dev since pn->in is perhaps null
 
 	pn->lock[inindex] = NULL;
 	/* Need locking? */
@@ -139,13 +141,14 @@ int LockGet(const struct parsedname *pn)
 void LockRelease(const struct parsedname *pn)
 {
 #if OW_MT
-	int inindex = pn->in->index;
+	int inindex;
+
+	/* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
+	if (pn->dev == DeviceSimultaneous)
+		return;
+
+	inindex = pn->in->index;
 	if (pn->lock[inindex]) {
-
-		/* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
-		if (pn->dev == DeviceSimultaneous)
-			return;
-
 		pthread_mutex_unlock(&(pn->lock[inindex]->lock));
 		DEVLOCK(pn);
 		if (pn->lock[inindex]->users == 1) {
@@ -160,7 +163,7 @@ void LockRelease(const struct parsedname *pn)
 		pn->lock[inindex] = NULL;
 	}
 #else                          /* OW_MT */
-    (void) pn ; // suppress compiler warning in the trivial case.
+	(void) pn ; // suppress compiler warning in the trivial case.
 #endif							/* OW_MT */
 }
 

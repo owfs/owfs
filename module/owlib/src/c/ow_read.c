@@ -129,6 +129,22 @@ int FS_read_postparse(struct one_wire_query * owq)
     return read_or_error;
 }
 
+// This function probably need to be modified a bit...
+static int FS_r_simultaneous(struct one_wire_query * owq)
+{
+    if (SpecifiedBus(PN(owq))) {
+    	return FS_r_given_bus(owq);
+    } else {
+    	OWQ_make(owq_given);
+
+	memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
+
+	// it's hard to know what we should return when reading /simultaneous/temperature
+	SetKnownBus(0, PN(owq_given));
+	return FS_r_given_bus(owq_given);
+    }
+}
+
 
 /* Note on return values */
 /* functions return the actual number of bytes read, */
@@ -163,7 +179,12 @@ int FS_read_distribute(struct one_wire_query * owq)
             r = FS_structure(owq);
             break;
         default:
-            r = FS_r_given_bus(owq);
+	    /* handle DeviceSimultaneous */
+	    if (PN(owq)->dev == DeviceSimultaneous) {
+	        r = FS_r_simultaneous(owq);
+	    } else {
+	        r = FS_r_given_bus(owq);
+	    }
             break;
     }
     STATLOCK;
@@ -206,13 +227,10 @@ static int FS_r_given_bus(struct one_wire_query * owq)
     } else {
         STAT_ADD1(read_calls);  /* statistics */
         if (LockGet(pn) == 0) {
-	  LEVEL_DEBUG("FS_r_given_bus: format=%d\n", PN(owq)->ft->format);
-
 	  read_status = FS_r_local(owq);  // this returns status
 	  LEVEL_DEBUG("FS_r_given_bus FS_r_local return=%d\n", read_status);
 	  if ( read_status >= 0 ) {
 	    // local success -- now format in buffer
-	    LEVEL_DEBUG("FS_r_given_bus: format2=%d\n", PN(owq)->ft->format);
 	    read_status = FS_output_owq(owq) ; // this returns nr. bytes
 	  }
 	  LockRelease(pn);
