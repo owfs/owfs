@@ -209,7 +209,7 @@ sub _new($$) {
     $addr =~ s/ //g ;
 
     my $port ;
-    if ( $addr =~ /(.*):(.*?)/ ) {
+    if ( $addr =~ /(.*):(.*)/ ) {
       $addr = $1 ;
       $port = $2 ;
     } elsif ( $addr =~/\D/ ) {
