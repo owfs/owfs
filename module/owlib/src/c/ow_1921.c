@@ -183,11 +183,14 @@ struct filetype DS1921[] = {
   {"log/udate",PROPERTY_LENGTH_UNSIGNED, &A1921l, ft_unsigned, fc_volatile, {o: FS_r_logudate}, {v: NULL}, {v:NULL},},
   {"log/elements",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_logelements}, {v: NULL}, {v:NULL},},
 
+#if 0
+  // no functions defined here yet... It crash read functions...
   {"set_alarm",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"set_alarm/trigger",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"set_alarm/templow",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"set_alarm/temphigh",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
   {"set_alarm/date",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+#endif
 
   {"alarm_state",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_samplerate}, {o: FS_w_samplerate}, {v:NULL},},
 
