@@ -72,7 +72,7 @@ static void getdir( struct one_wire_query * owq ) {
     struct charblob cb ;
     CharblobInit( &cb ) ;
     if ( FS_dir( getdircallback, &cb, PN(owq) ) >= 0 ) {
-        OWQ_buffer(owq) = strdup( cb.blob ) ;
+        OWQ_buffer(owq) = strdup( (cb.blob == NULL ? "" : cb.blob) ) ;
     } else {
         OWQ_buffer(owq) = NULL ;
     }
