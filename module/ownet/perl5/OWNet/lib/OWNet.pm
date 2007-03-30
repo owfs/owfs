@@ -329,7 +329,7 @@ sub _FromServerLow($$) {
     my $fullread = '' ;
     #print "LOOOP for length $length \n" ;
     do {
-        select($selectreadbits,undef,undef,1) ;
+        select($selectreadbits,undef,undef,3000) ;  // 3000ms timeout
         return if vec($selectreadbits,$fileno,1) == 0 ;
     #	return if $sel->can_read(1) == 0 ;
         my $partialread ;
