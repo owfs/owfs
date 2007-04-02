@@ -177,7 +177,7 @@ static int Turnoff(int depth, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	printf("TURNOFF entry depth=%d\n",depth) ;
+	//printf("TURNOFF entry depth=%d\n",depth) ;
 
 	if ((BUS_reset(pn)))
 		return 1;
