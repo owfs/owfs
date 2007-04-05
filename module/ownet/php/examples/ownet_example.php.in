@@ -38,8 +38,14 @@ device 10.67C6697351FF will be available at port 1234.
 
 
 //check to make sure the file exists
-if(file_exists("bcadd.php"))  {
-  require "bcadd.php";
+if(!function_exists('bcadd'))  {
+  if(file_exists("@prefix@/bin/bcadd.php"))  {
+    require "@prefix@/bin/bcadd.php";
+  } else if(file_exists("bcadd.php"))  {
+    require "bcadd.php";
+  } else  {
+    die("File 'bcadd.php' is not found.\n");
+  }
 }
 
 //check to make sure the file exists
