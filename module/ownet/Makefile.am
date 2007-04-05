@@ -1,14 +1,14 @@
 ## $Id$
 
-if ENABLE_OWPHP
+if ENABLE_PHP
   OWNET_SUBDIRPHP = php
 endif
 
-if ENABLE_OWPYTHON
+if ENABLE_PYTHON
   OWNET_SUBDIRPYTHON = python
 endif
 
-if ENABLE_OWPERL
+if ENABLE_PERL
   OWNET_SUBDIRPERL = perl5
 endif
 
