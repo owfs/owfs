@@ -26,12 +26,12 @@ my $ow ;
 $ow = OWNet->new($ARGV[0]) ;
 #die ("Cannot open OWNet connection") if (!defined($ow->{SOCK})) ;
 
-print "Try dir\n" ;
-$ow->dir("/") ;
+print "\nTry dir\n" ;
+print $ow->dir("/") ;
 
-print "Try present\n" ;
-$ow->present("/10.67C6697351FF") ;
+print "\nTry present\n" ;
+print $ow->present("/10.67C6697351FF") ;
 
-print "Try read\n" ;
-$ow->read("/10.67C6697351FF/temperature") ;
+print "\nTry read\n" ;
+print $ow->read("/10.67C6697351FF/temperature") ;
 
