@@ -30,9 +30,8 @@ parser = OptionParser(usage='usage: %prog [options] server port sensor_path',
 parser.add_option('-v', dest='verbose', action='count',             help='multiple -v increases the level of debugging output.')
 parser.add_option('-w', dest='warning',                 type='int', help='warning level.')
 parser.add_option('-c', dest='critical',                type='int', help='critical level.')
-parser.add_option('-f', dest='field',                               help='sensor field to be used for monitoring.')
+parser.add_option('-f', dest='field',                               help='sensor field to be used for monitoring.', default='temperature')
 options, args = parser.parse_args()
-
 
 if len(args) != 3:
     print 'OW ' + nagios.unknown[1] + ' - ' + 'missing command line arguments'
