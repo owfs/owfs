@@ -14,7 +14,7 @@ libowphp_la_LDFLAGS = -shared -shrext .so
 # to include non-existing config.h if HAVE_CONFIG_H is defined.
 #DEFS+= -UHAVE_CONFIG_H
 
-EXTENSION_DIR := @PHPLIBDIR@
+EXTENSION_DIR = @PHPLIBDIR@
 # Something like /usr/lib/php4, /usr/lib/php5/20041030, /usr/lib/php/modules/ or /usr/lib64/php/modules/
 
 libdir = $(EXTENSION_DIR)
