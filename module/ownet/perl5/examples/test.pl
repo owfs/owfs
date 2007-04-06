@@ -4,9 +4,10 @@
 # See owfs.sourceforge.net for details
 # {copyright} 2007 Paul H. Alfille
 # GPL license
+# ID:$
 
 # Start a test-server before running this script:
-#    owserver -p 1234 --fake 10,10
+#    owserver -p 1234 --tester 10,10
 
 
 use OWNet ;
