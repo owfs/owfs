@@ -2,7 +2,7 @@
  abstract: Build and install OWNet module
  version: 1.11
  author:
-   - Paul H Alfille <palfille@earthlink.net>
+   - Paul H Alfille <paul.alfille@gmail.com>
  license: perl
  distribution_type: module
  requires:
