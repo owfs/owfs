@@ -1,4 +1,4 @@
-# $ID:$
+# $Id$
 
 EXTRA_DIST = ow.i
 
