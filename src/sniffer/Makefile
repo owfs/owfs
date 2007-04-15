@@ -38,11 +38,14 @@ xt : linksniff.c Makefile
 install : all
 	cp xt $(prefix)/bin/
 	cp xt.1 $(prefix)/man/man1/
+	cp linksniff $(prefix)/bin/
+	cp linksniff.1 $(prefix)/man/man1/
 
 uninstall : clean
 	rm $(prefix)/bin/xt
 	rm $(prefix)/bin/linksniff
 	rm $(prefix)/man/man1/xt.1
+	rm $(prefix)/man/man1/linksniff.1
 
 clean :
 	rm xt
