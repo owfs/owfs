@@ -79,6 +79,13 @@ static int OW_discharge(const struct parsedname *pn);
 static int OW_clearevent(const struct parsedname *pn);
 static int OW_w_control(const UINT data, const struct parsedname *pn);
 
+#define _1W_STATUS_READ_WRITE  0x5A
+#define _1W_ALL_LINES_OFF      0x66
+#define _1W_DISCHARGE_LINES    0x99
+#define _1W_DIRECT_ON_MAIN     0xA5
+#define _1W_SMART_ON_MAIN      0xCC
+#define _1W_SMART_ON_AUX       0x33
+
 /* discharge 2409 lines */
 static int FS_discharge(struct one_wire_query * owq)
 {
@@ -156,7 +163,7 @@ static int FS_w_control(struct one_wire_query * owq)
 /* Fix from Jan Kandziora for proper command code */
 static int OW_discharge(const struct parsedname *pn)
 {
-	BYTE dis[] = { 0x99, };
+    BYTE dis[] = { _1W_DISCHARGE_LINES, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{dis, NULL, 1, trxn_match},
@@ -173,7 +180,7 @@ static int OW_discharge(const struct parsedname *pn)
 
 	UT_delay(100);
 
-	dis[0] = 0x66;
+    dis[0] = _1W_ALL_LINES_OFF;
 	if (BUS_transaction(t, pn))
 		return 1;
 
@@ -183,7 +190,7 @@ static int OW_discharge(const struct parsedname *pn)
 /* Added by Jan Kandziora */
 static int OW_clearevent(const struct parsedname *pn)
 {
-	BYTE clr[] = { 0x66, };
+    BYTE clr[] = { _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{clr, NULL, 1, trxn_match},
@@ -204,7 +211,7 @@ static int OW_clearevent(const struct parsedname *pn)
 static int OW_w_control(const UINT data, const struct parsedname *pn)
 {
 	const BYTE d[] = { 0x20, 0xA0, 0x00, 0x40, };
-	BYTE p[] = { 0x5A, d[data], };
+    BYTE p[] = { _1W_STATUS_READ_WRITE, d[data], };
 	const BYTE r[] = { 0x80, 0xC0, 0x00, 0x40, };
 	BYTE info;
 	struct transaction_log t[] = {
@@ -223,7 +230,7 @@ static int OW_w_control(const UINT data, const struct parsedname *pn)
 
 static int OW_r_control(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0x5A, 0xFF, };
+    BYTE p[] = { _1W_STATUS_READ_WRITE, 0xFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match},

@@ -25,11 +25,14 @@ static int BUS_select_subbranch(const struct buspath *bp,
 #define Skip_ROM 0xCC
 #define Search_ROM 0xF0
 #define Conditional_Search_ROM 0xEC
-#define Discharge_Lines 0x99
-#define Direct_On_Main 0xA5
-#define Smart_On_Main 0xCC
-#define All_Lines_Off 0x66
-#define Smart_On_Aux 0x33
+
+/* DS2409 commands */
+#define _1W_STATUS_READ_WRITE  0x5A
+#define _1W_ALL_LINES_OFF      0x66
+#define _1W_DISCHARGE_LINES    0x99
+#define _1W_DIRECT_ON_MAIN     0xA5
+#define _1W_SMART_ON_MAIN      0xCC
+#define _1W_SMART_ON_AUX       0x33
 
 
 //--------------------------------------------------------------------------
@@ -147,7 +150,7 @@ static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn)
 {
     BYTE sent[10] = { Match_ROM, };
-    BYTE branch[2] = { Smart_On_Main, Smart_On_Aux, };	/* Main, Aux */
+    BYTE branch[2] = { _1W_SMART_ON_MAIN, _1W_SMART_ON_AUX, };	/* Main, Aux */
 	BYTE resp[3];
 	struct transaction_log t[] = {
 		{sent, NULL, 10, trxn_match,},
@@ -171,7 +174,7 @@ static int BUS_select_subbranch(const struct buspath *bp,
 /* find every DS2409 (family code 1F) and switch off, at this depth */
 static int Turnoff(int depth, const struct parsedname *pn)
 {
-    BYTE sent[2] = { Skip_ROM, All_Lines_Off, };
+    BYTE sent[2] = { Skip_ROM, _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
 		{sent, NULL, 2, trxn_match},
 		TRXN_END,

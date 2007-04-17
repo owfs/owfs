@@ -69,6 +69,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
     } else {
         OWQ_buffer(owq) = retbuffer ;
         read_or_error = FS_read_postparse(owq) ;
+        printf("OWSERVER read on %s return = %d\n",PN(owq)->path,read_or_error) ;
+        Debug_OWQ(owq) ;
+
         if (read_or_error <= 0) {
             free(retbuffer);
             retbuffer = NULL;

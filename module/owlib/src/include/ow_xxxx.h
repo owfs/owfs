@@ -17,6 +17,7 @@ $Id$
 #endif
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 /* ------- Prototypes ----------- */
 int FS_type(struct one_wire_query * owq);
