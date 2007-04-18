@@ -109,7 +109,7 @@ static int FS_w_convert(struct one_wire_query * owq)
 		int ret = 1;			// set just to block compiler errors
 		switch (type) {
 		case simul_temp:{
-				const BYTE cmd_temp[] = { 0xCC, 0x44 };
+            const BYTE cmd_temp[] = { _1W_SKIP_ROM, 0x44 };
 				struct transaction_log t[] = {
 					TRXN_START,
 					{cmd_temp, NULL, 2, trxn_match,},
@@ -123,7 +123,7 @@ static int FS_w_convert(struct one_wire_query * owq)
 			}
 			break;
 		case simul_volt:{
-				BYTE cmd_volt[] = { 0xCC, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
+            BYTE cmd_volt[] = { _1W_SKIP_ROM, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
 				struct transaction_log t[] = {
 					TRXN_START,
 					{cmd_volt, NULL, 4, trxn_match,},
@@ -165,7 +165,7 @@ static int FS_r_present(struct one_wire_query * owq)
 	} else {					// real adapter
         struct parsedname struct_pn2 ;
         struct parsedname * pn2 = & struct_pn2 ;
-        BYTE read_ROM[] = { 0x33, };
+        BYTE read_ROM[] = { _1W_READ_ROM, };
 		BYTE resp[8];
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
@@ -209,7 +209,7 @@ static int FS_r_single(struct one_wire_query * owq)
 	} else {					// real adapter
         struct parsedname struct_pn2 ;
         struct parsedname * pn2 = & struct_pn2 ;
-        BYTE read_ROM[] = { 0x33, };
+        BYTE read_ROM[] = { _1W_READ_ROM, };
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
 			TRXN_START,

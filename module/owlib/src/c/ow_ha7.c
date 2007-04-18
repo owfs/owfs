@@ -14,6 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 #if OW_HA7
 
@@ -161,7 +162,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 
 	toHA7init(&ha7);
 	ha7.command = "Search";
-	if (search == 0xEC)
+    if (search == _1W_CONDITIONAL_SEARCH_ROM)
 		ha7.conditional[0] = '1';
 	if (HA7_toHA7(fd, &ha7, pn->in)) {
 		ret = -EIO;
@@ -200,7 +201,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 static int HA7_next_both(struct device_search *ds,
 						 const struct parsedname *pn)
 {
-	struct dirblob *db = (ds->search == 0xEC) ?
+    struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->in->connin.ha7.alarm) : &(pn->in->connin.ha7.main);
 	int ret = 0;
 

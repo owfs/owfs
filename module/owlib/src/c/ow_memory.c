@@ -111,6 +111,12 @@ int OW_r_mem_crc16_AA(struct one_wire_query * owq, size_t page, size_t pagesize 
     return OW_r_crc16( 0xAA, owq, page, pagesize ) ;
 }
 
+/* read up to end of page to CRC16 -- 0xF0 code */
+int OW_r_mem_crc16_F0(struct one_wire_query * owq, size_t page, size_t pagesize )
+{
+    return OW_r_crc16( 0xF0, owq, page, pagesize ) ;
+}
+
 /* read up to end of page to CRC16 -- 0xA5 code */
 /* Extra 8 bytes, too */
 int OW_r_mem_p8_crc16(struct one_wire_query * owq, size_t page, size_t pagesize, BYTE * extra)

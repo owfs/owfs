@@ -19,5 +19,8 @@
 #define _1W_SKIP_ROM               0xCC
 #define _1W_SEARCH_ROM             0xF0
 #define _1W_CONDITIONAL_SEARCH_ROM 0xEC
+#define _1W_RESUME                 0xA5
+#define _1W_OVERDRIVE_SKIP_ROM     0x3C
+#define _1W_OVERDRIVE_MATCH_ROM    0x69
 
 #endif							/* OW_CODES_H */

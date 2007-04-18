@@ -14,17 +14,13 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 static int Turnoff(int depth, const struct parsedname *pn);
 static int BUS_selection_error(int ret);
 static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn);
-
-#define Match_ROM 0x55
-#define Skip_ROM 0xCC
-#define Search_ROM 0xF0
-#define Conditional_Search_ROM 0xEC
 
 /* DS2409 commands */
 #define _1W_STATUS_READ_WRITE  0x5A
@@ -55,7 +51,7 @@ int BUS_select(const struct parsedname *pn)
 {
 	int ret;
 	// match Serial Number command 0x55
-    BYTE sent[9] = { Match_ROM, };
+    BYTE sent[9] = { _1W_MATCH_ROM, };
 	int pl = pn->pathlength;
 
 	if (!RootNotBranch(pn) && AdapterSupports2409(pn)) {
@@ -88,7 +84,7 @@ int BUS_select(const struct parsedname *pn)
 				return ret;
 			} else {
 				//printf("use overdrive speed\n");
-				sent[0] = 0x69;
+                sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 			}
 		}
 	} else if (memcmp(pn->in->branch.sn, pn->bp[pl - 1].sn, 8) || pn->in->buspath_bad) {	/* different path */
@@ -121,7 +117,7 @@ int BUS_select(const struct parsedname *pn)
 			BUS_selection_error(ret);
 			return ret;
 		}
-		if (sent[0] == 0x69) {
+        if (sent[0] == _1W_OVERDRIVE_MATCH_ROM) {
 			if ((ret =
 					BUS_overdrive(ONEWIREBUSSPEED_OVERDRIVE, pn)) < 0) {
 				BUS_selection_error(ret);
@@ -149,7 +145,7 @@ static int BUS_select_branch(const struct parsedname *pn)
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn)
 {
-    BYTE sent[10] = { Match_ROM, };
+    BYTE sent[10] = { _1W_MATCH_ROM, };
     BYTE branch[2] = { _1W_SMART_ON_MAIN, _1W_SMART_ON_AUX, };	/* Main, Aux */
 	BYTE resp[3];
 	struct transaction_log t[] = {
@@ -174,7 +170,7 @@ static int BUS_select_subbranch(const struct buspath *bp,
 /* find every DS2409 (family code 1F) and switch off, at this depth */
 static int Turnoff(int depth, const struct parsedname *pn)
 {
-    BYTE sent[2] = { Skip_ROM, _1W_ALL_LINES_OFF, };
+    BYTE sent[2] = { _1W_SKIP_ROM, _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
 		{sent, NULL, 2, trxn_match},
 		TRXN_END,

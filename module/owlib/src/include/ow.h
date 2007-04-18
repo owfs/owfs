@@ -882,6 +882,7 @@ int OWQ_readwrite_paged(struct one_wire_query * owq, size_t page, size_t pagelen
 int OW_r_mem_simple(struct one_wire_query * owq, size_t page, size_t pagesize ) ;
 int OW_r_mem_crc16_A5(struct one_wire_query * owq, size_t page, size_t pagesize) ;
 int OW_r_mem_crc16_AA(struct one_wire_query * owq, size_t page, size_t pagesize) ;
+int OW_r_mem_crc16_F0(struct one_wire_query * owq, size_t page, size_t pagesize) ;
 int OW_r_mem_p8_crc16(struct one_wire_query * owq, size_t page, size_t pagesize, BYTE * extra ) ;
 
 void BUS_lock(const struct parsedname *pn);

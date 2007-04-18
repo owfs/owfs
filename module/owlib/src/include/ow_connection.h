@@ -124,8 +124,8 @@ struct transaction_log {
 	size_t size;
 	enum transaction_type type;
 };
-#define TRXN_NVERIFY { NULL, NULL, 0xF0, trxn_verify }
-#define TRXN_AVERIFY { NULL, NULL, 0xEC, trxn_verify }
+#define TRXN_NVERIFY { NULL, NULL, _1W_SEARCH_ROM, trxn_verify }
+#define TRXN_AVERIFY { NULL, NULL, _1W_CONDITIONAL_SEARCH_ROM, trxn_verify }
 #define TRXN_START   { NULL, NULL, 0, trxn_select }
 #define TRXN_END     { NULL, NULL, 0, trxn_end }
 #define TRXN_RESET   { NULL, NULL, 0, trxn_reset }

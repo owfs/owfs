@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 int fakes = 0;
 int testers = 0 ;
@@ -197,7 +198,7 @@ static int Fake_next_both(struct device_search *ds,
 						  const struct parsedname *pn)
 {
 	//printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->LastDiscrepancy,pn->in->connin.fake.devices,ds->LastDevice,pn->in->AnyDevices);
-	if (ds->search == 0xEC) {	// alarm not supported
+    if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {	// alarm not supported
 		ds->LastDevice = 1;
 		return -ENODEV;
 	}

@@ -14,6 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 /** BUS_send_data
     Send a data and expect response match
@@ -76,7 +77,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	ds->LastDiscrepancy = -1;
 	ds->LastDevice = 0;
 	pn->in->ExtraReset = 0;
-	ds->search = 0xF0;
+    ds->search = _1W_SEARCH_ROM;
 
 	if (!pn->in->AnyDevices) {
 		LEVEL_DATA("BUS_first: No data will be returned\n");
@@ -91,7 +92,7 @@ int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 	memset(ds->sn, 0, 8);		// clear the serial number
 	ds->LastDiscrepancy = -1;
 	ds->LastDevice = 0;
-	ds->search = 0xEC;
+    ds->search = _1W_CONDITIONAL_SEARCH_ROM;
 	BUS_reset(pn);
 	return BUS_next(ds, pn);
 }
@@ -104,7 +105,7 @@ int BUS_first_family(const BYTE family, struct device_search *ds,
 	ds->sn[0] = family;
 	ds->LastDiscrepancy = 7;
 	ds->LastDevice = 0;
-	ds->search = 0xF0;
+    ds->search = _1W_SEARCH_ROM;
 
 	return BUS_next(ds, pn);
 }
