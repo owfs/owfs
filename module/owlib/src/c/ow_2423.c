@@ -75,6 +75,12 @@ struct filetype DS2423[] = {
 
 DeviceEntryExtended(1D, DS2423, DEV_ovdr);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD 0x5A
+#define _1W_READ_MEMORY 0xF0
+#define _1W_READ_MEMORY_PLUS_COUNTER 0xA5
+
 /* Persistent storage */
 static struct internal_prop ip_cum = { "CUM", fc_persistent };
 
@@ -186,7 +192,7 @@ static int FS_w_mincount(struct one_wire_query * owq)
 static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[1 + 2 + 32 + 2] = { 0x0F, offset & 0xFF, offset >> 8, };
+    BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		{p, NULL, size + 3, trxn_match,},
@@ -218,12 +224,12 @@ static int OW_w_mem( BYTE * data,  size_t size,
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
-	p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD ;
 	if (BUS_transaction(treread, pn) || memcmp(&p[4], data, size))
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-	p[0] = 0x5A;
+    p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn))
 		return 1;
 
