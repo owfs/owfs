@@ -95,6 +95,15 @@ struct filetype DS2406[] = {
 
 DeviceEntryExtended(12, DS2406, DEV_alarm);
 
+#define _1W_READ_MEMORY 0xF0
+#define _1W_EXTENDED_READ_MEMORY 0xA5
+#define _1W_WRITE_MEMORY 0x0F
+#define _1W_WRITE_STATUS 0x55
+#define _1W_READ_STATUS 0xAA
+#define _1W_CHANNEL_ACCESS 0xF5
+
+#define _ADDRESS_STATUS_MEMORY_SRAM 0x0007
+
 /* ------- Functions ------------ */
 
 /* DS2406 */
@@ -250,7 +259,7 @@ static int FS_w_pio(struct one_wire_query * owq)
 static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 					const struct parsedname *pn)
 {
-	BYTE p[3 + 128 + 2] = { 0xF0, offset & 0xFF, offset >> 8, };
+    BYTE p[3 + 128 + 2] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match},
@@ -268,7 +277,7 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 static int OW_w_mem(const BYTE * data, const size_t size,
 					const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[6] = { 0x0F, offset & 0xFF, offset >> 8, data[0], };
+    BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data[0], };
 	BYTE resp;
 	size_t i;
 	struct transaction_log tfirst[] = {
@@ -320,7 +329,7 @@ static int OW_power(int * y, struct parsedname * pn)
 /* read status byte */
 static int OW_r_control(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[3 + 1 + 2] = { 0xAA, 0x07, 0x00, };
+    BYTE p[3 + 1 + 2] = { _1W_READ_STATUS, LOW_HIGH_ADDRESS(_ADDRESS_STATUS_MEMORY_SRAM), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match},
@@ -340,7 +349,7 @@ static int OW_r_control(BYTE * data, const struct parsedname *pn)
 /* write status byte */
 static int OW_w_control(const BYTE data, const struct parsedname *pn)
 {
-	BYTE p[3 + 1 + 2] = { 0x55, 0x07, 0x00, data, };
+    BYTE p[3 + 1 + 2] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(_ADDRESS_STATUS_MEMORY_SRAM), data, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 4, trxn_match},
@@ -395,7 +404,7 @@ static int OW_clear(const struct parsedname *pn)
 // write both control bytes, and read both back
 static int OW_full_access(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[3 + 2 + 2] = { 0xF5, data[0], data[1], };
+    BYTE p[3 + 2 + 2] = { _1W_CHANNEL_ACCESS, data[0], data[1], };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match},
@@ -563,7 +572,7 @@ static int ReadTmexPage(BYTE * data, size_t size, int page,
 /* called with a copy of pn already set to the right device */
 static int TAI8570_config(BYTE cfg, struct parsedname *pn)
 {
-	BYTE data[] = { 0xF5, cfg, 0xFF, 0xFF };
+    BYTE data[] = { _1W_CHANNEL_ACCESS, cfg, 0xFF, 0xFF };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{data, data, 4, trxn_read,},
