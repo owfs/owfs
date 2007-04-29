@@ -111,6 +111,15 @@ struct filetype DS2408[] = {
 
 DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
 
+#define _1W_READ_PIO_REGISTERS  0xF0
+#define _1W_CHANNEL_ACCESS_READ 0xF5
+#define _1W_CHANNEL_ACCESS_WRITE 0x5A
+#define _1W_WRITE_CONDITIONAL_SEARCH_REGISTER 0xCC
+#define _1W_RESET_ACTIVITY_LATCHES 0xC3
+
+#define _ADDRESS_PIO_LOGIC_STATE 0x0088
+#define _ADDRESS_CONTROL_STATUS_REGISTER 0x008D
+
 /* Internal properties */
 static struct internal_prop ip_init = { "INI", fc_stable };
 
@@ -409,7 +418,7 @@ static int FS_Hmessage(struct one_wire_query * owq)
 */
 static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[3 + 8 + 2] = { 0xF0, 0x88, 0x00, };
+    BYTE p[3 + 8 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_PIO_LOGIC_STATE), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match},
@@ -429,7 +438,7 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 
 static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0x5A, data, ~data, };
+    BYTE p[] = { _1W_CHANNEL_ACCESS_WRITE, data, ~data, };
 	BYTE r[2];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -466,7 +475,7 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 	int ret = 0;
 
 	t[1].size = n;
-	p[0] = 0x5A;
+    p[0] = _1W_CHANNEL_ACCESS_WRITE;
 	// setup the array
 	for (i = 0, q = p; i < size; ++i) {
 		*(++q) = data[i];
@@ -497,7 +506,7 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 /* Reset activity latch */
 static int OW_c_latch(const struct parsedname *pn)
 {
-	BYTE p[] = { 0xC3, };
+    BYTE p[] = { _1W_RESET_ACTIVITY_LATCHES, };
 	BYTE r;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -520,8 +529,8 @@ static int OW_c_latch(const struct parsedname *pn)
 /* Write control/status */
 static int OW_w_control(const BYTE data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0xCC, 0x8D, 0x00, data, };
-	BYTE q[3 + 3 + 2] = { 0xF0, 0x8D, 0x00, };
+    BYTE p[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), data, };
+    BYTE q[3 + 3 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 4, trxn_match},
@@ -545,7 +554,7 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
 static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 {
 	BYTE d[6], cr;
-	BYTE a[] = { 0xCC, 0x8D, 0x00, };
+    BYTE a[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{a, NULL, 3, trxn_match},

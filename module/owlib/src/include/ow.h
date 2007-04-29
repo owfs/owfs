@@ -935,4 +935,6 @@ void BUS_unlock_in(struct connection_in *in);
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)
 
+#define LOW_HIGH_ADDRESS(x)         ((x)&0xFF),(((x)>>8)&0xFF)
+
 #endif							/* OW_H */
