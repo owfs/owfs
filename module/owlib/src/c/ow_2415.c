@@ -87,6 +87,10 @@ DeviceEntry(27, DS2417);
 
 static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, };
 
+#define _1W_READ_CLOCK 0x66
+#define _1W_WRITE_CLOCK 0x99
+
+
 /* ------- Functions ------------ */
 /* DS2415/DS1904 Digital clock in a can */
 
@@ -263,7 +267,7 @@ int FS_r_date(struct one_wire_query * owq)
 /* 1904 clock-in-a-can */
 static int OW_r_control(BYTE * cr, const struct parsedname *pn)
 {
-	BYTE r[] = { 0x66, };
+    BYTE r[1] = { _1W_READ_CLOCK, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{r, NULL, 1, trxn_match,},
@@ -280,7 +284,7 @@ static int OW_r_control(BYTE * cr, const struct parsedname *pn)
 /* 1904 clock-in-a-can */
 static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 {
-	BYTE r[] = { 0x66, };
+    BYTE r[1] = { _1W_READ_CLOCK, };
 	BYTE data[5];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -299,8 +303,8 @@ static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 
 static int OW_w_clock(const _DATE d, const struct parsedname *pn)
 {
-	BYTE r[] = { 0x66, };
-	BYTE w[6] = { 0x99, };
+    BYTE r[1] = { _1W_READ_CLOCK, };
+    BYTE w[6] = { _1W_WRITE_CLOCK, };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{r, NULL, 1, trxn_match,},
@@ -326,7 +330,7 @@ static int OW_w_clock(const _DATE d, const struct parsedname *pn)
 
 static int OW_w_control(const BYTE cr, const struct parsedname *pn)
 {
-	BYTE w[2] = { 0x99, cr, };
+    BYTE w[2] = { _1W_WRITE_CLOCK, cr, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{w, NULL, 2, trxn_match,},
