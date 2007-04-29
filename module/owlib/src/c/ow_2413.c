@@ -66,6 +66,9 @@ struct filetype DS2413[] = {
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 
+#define _1W_PIO_ACCESS_READ 0xF5
+#define _1W_PIO_ACCESS_WRITE 0x5A
+
 /* ------- Functions ------------ */
 
 /* DS2413 */
@@ -119,7 +122,7 @@ static int FS_w_pio(struct one_wire_query * owq)
 /* read status byte */
 static int OW_read(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0xF5, };
+    BYTE p[] = { _1W_PIO_ACCESS_READ, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 1, trxn_match,},
@@ -139,7 +142,7 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 /* top 6 bits are set to 1, complement then sent */
 static int OW_write(const BYTE data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0x5A, data | 0xFC, (~data) & 0x03, };
+    BYTE p[] = { _1W_PIO_ACCESS_WRITE, data | 0xFC, (~data) & 0x03, };
 	BYTE q[2];
 	struct transaction_log t[] = {
 		TRXN_START,
