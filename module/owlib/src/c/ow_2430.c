@@ -63,6 +63,16 @@ struct filetype DS2430A[] = {
 
 DeviceEntry(14, DS2430A);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD 0x55
+#define _1W_COPY_SCRATCHPAD_VALIDATION_KEY 0xA5
+#define _1W_READ_MEMORY 0xF0
+#define _1W_READ_STATUS_REGISTER 0x66
+#define _1W_WRITE_APPLICATION_REGISTER 0x99
+#define _1W_READ_APPLICATION_REGISTER 0xC3
+#define _1W_COPY_AND_LOCK_APPLICATION_REGISTER 0x5A
+
 /* ------- Functions ------------ */
 
 /* DS2502 */
@@ -117,13 +127,13 @@ static int FS_r_lock(struct one_wire_query * owq)
 static int OW_w_mem(const BYTE * data, const size_t size,
 					const off_t offset, const struct parsedname *pn)
 {
-	BYTE fo[] = { 0xF0, };
+    BYTE fo[] = { _1W_READ_MEMORY, };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{fo, NULL, 1, trxn_match},
 		TRXN_END,
 	};
-	BYTE of[] = { 0x0F, (BYTE) (offset & 0x1F), };
+    BYTE of[] = { _1W_WRITE_SCRATCHPAD, (BYTE) (offset & 0x1F), };
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		{of, NULL, 2, trxn_match},
@@ -131,15 +141,15 @@ static int OW_w_mem(const BYTE * data, const size_t size,
 		TRXN_END,
 	};
 	BYTE ver[16];
-	BYTE vr[] = { 0xAA, (BYTE) (offset & 0x1F), };
+    BYTE vr[] = { _1W_READ_SCRATCHPAD, (BYTE) (offset & 0x1F), };
 	struct transaction_log tver[] = {
 		TRXN_START,
 		{vr, NULL, 2, trxn_match},
 		{NULL, ver, size, trxn_read},
 		TRXN_END,
 	};
-	BYTE cp[] = { 0x55, };
-	BYTE cf[] = { 0xA5, };
+    BYTE cp[] = { _1W_COPY_SCRATCHPAD, };
+    BYTE cf[] = { _1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		{cp, NULL, 1, trxn_match},
@@ -166,13 +176,13 @@ static int OW_w_mem(const BYTE * data, const size_t size,
 static int OW_w_app(const BYTE * data, const size_t size,
 					const off_t offset, const struct parsedname *pn)
 {
-	BYTE fo[] = { 0xC3, };
+    BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{fo, NULL, 1, trxn_match},
 		TRXN_END,
 	};
-	BYTE of[] = { 0x99, (BYTE) (offset & 0x0F), };
+    BYTE of[] = { _1W_WRITE_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		{of, NULL, 2, trxn_match},
@@ -180,15 +190,15 @@ static int OW_w_app(const BYTE * data, const size_t size,
 		TRXN_END,
 	};
 	BYTE ver[9];
-	BYTE vr[] = { 0xAA, (BYTE) (offset & 0x1F), };
+    BYTE vr[] = { _1W_READ_SCRATCHPAD, (BYTE) (offset & 0x1F), };
 	struct transaction_log tver[] = {
 		TRXN_START,
 		{vr, NULL, 2, trxn_match},
 		{NULL, ver, size, trxn_read},
 		TRXN_END,
 	};
-	BYTE cp[] = { 0x5A, };
-	BYTE cf[] = { 0xA5, };
+    BYTE cp[] = { _1W_COPY_AND_LOCK_APPLICATION_REGISTER, };
+    BYTE cf[] = { _1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		{cp, NULL, 1, trxn_match},
@@ -214,7 +224,7 @@ static int OW_w_app(const BYTE * data, const size_t size,
 static int OW_r_app(BYTE * data, const size_t size, const off_t offset,
 					const struct parsedname *pn)
 {
-	BYTE fo[] = { 0xC3, (BYTE) (offset & 0x0F), };
+    BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{fo, NULL, 2, trxn_match},
@@ -228,7 +238,7 @@ static int OW_r_app(BYTE * data, const size_t size, const off_t offset,
 
 static int OW_r_status(BYTE * data, const struct parsedname *pn)
 {
-	BYTE ss[] = { 0x66, 0x00 };
+    BYTE ss[] = { _1W_READ_STATUS_REGISTER, 0x00 };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{ss, NULL, 2, trxn_match},
