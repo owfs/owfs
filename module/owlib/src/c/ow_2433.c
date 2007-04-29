@@ -75,6 +75,11 @@ struct filetype DS2433[] = {
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD 0x55
+#define _1W_READ_MEMORY 0xF0
+
 /* ------- Functions ------------ */
 
 /* DS2433 */
@@ -141,7 +146,7 @@ static int FS_w_page2D(struct one_wire_query * owq)
 static int OW_w_23page( BYTE * data,  size_t size,
 					    off_t offset,  struct parsedname *pn)
 {
-	BYTE p[1 + 2 + 32 + 2] = { 0x0F, offset & 0xFF, offset >> 8, };
+    BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		{p, NULL, size + 3, trxn_match,},
@@ -173,12 +178,12 @@ static int OW_w_23page( BYTE * data,  size_t size,
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
-	p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(treread, pn) || memcmp(&p[4], data, size))
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-	p[0] = 0x5A;
+    p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn))
 		return 1;
 
@@ -192,8 +197,7 @@ static int OW_w_2Dpage( BYTE * data,  size_t size,
 					    off_t offset,  struct parsedname *pn)
 {
 	off_t pageoff = offset & 0x07;
-	BYTE p[4 + 8 + 2] = { 0x0F, (offset - pageoff) & 0xFF,
-		((offset - pageoff) >> 8) & 0xFF,
+    BYTE p[4 + 8 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset - pageoff),
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
@@ -226,7 +230,7 @@ static int OW_w_2Dpage( BYTE * data,  size_t size,
 		return 1;
 
 	/* Re-read scratchpad and compare */
-	p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn))
 		return 1;
 	if (memcmp(&p[4 + pageoff], data, size))
@@ -235,7 +239,7 @@ static int OW_w_2Dpage( BYTE * data,  size_t size,
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-	p[0] = 0x55;
+    p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(tsram, pn))
 		return 1;
 
