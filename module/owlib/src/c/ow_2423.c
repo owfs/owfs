@@ -253,8 +253,8 @@ static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pag
             OWQ_make( owq_read ) ;
             OWQ_create_temporary( owq_read, NULL, 1, 31, PN(owq) ) ;
             if ( OW_r_mem_p8_crc16( owq_read, page, pagesize, extra ) ) return 1 ;
-            if (extra[4] != 0x55 || extra[5] != 0x55 || extra[6] != 0x55
-                || extra[7] != 0x55)
+            if (extra[4] != 0x00 || extra[5] != 0x00 || extra[6] != 0x00
+                || extra[7] != 0x00)
                 return 1;
             /* counter is held in the 4 bytes after the data */
             OWQ_U(owq) = UT_uint32(extra);
