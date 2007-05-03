@@ -534,6 +534,8 @@ static int OW_r_int8(int *I, off_t offset, const struct parsedname *pn);
 static int OW_w_int8(const int *I, off_t offset,
 					 const struct parsedname *pn);
 static int OW_cmd(const BYTE cmd, const struct parsedname *pn);
+}
+
 
 /* 2406 memory read */
 static int FS_r_mem(struct one_wire_query * owq)
@@ -600,6 +602,8 @@ static int FS_r_vis(struct one_wire_query * owq)
 	switch (pn->sn[0]) {
 	case 0x36:					//DS2740
 		f = 6.25E-6;
+    	if (pn->ft->data.v)
+    		f = pn->ft->data.f;		// for DS2740BU
 		break;
 	case 0x51:					//DS2751
 	case 0x35:					//DS2755
@@ -614,8 +618,6 @@ static int FS_r_vis(struct one_wire_query * owq)
 		f = 1.5625E-6;
 		break;
 	}
-	if (pn->ft->data.v)
-		f = pn->ft->data.f;		// for DS2740BU
     OWQ_F(owq) = f * I;
 	return 0;
 }
@@ -1040,8 +1042,9 @@ static int OW_r_int(int *I, off_t offset, const struct parsedname *pn)
 	int ret = OW_r_sram(i, 2, offset, pn);
 	if (ret)
 		return ret;
-	//I[0] = (((int)((int8_t)i[0])<<8) + ((uint8_t)i[1]) ) ;
-	I[0] = UT_int16(i);
+		// Data in the DS27xx is stored MSB/LSB -- different from DS2438 for example
+		// Thanks to Jan Bertelsen for finding this!
+	I[0] = (((int)((int8_t)i[0])<<8) + ((uint8_t)i[1]) ) ;
 	return 0;
 }
 
