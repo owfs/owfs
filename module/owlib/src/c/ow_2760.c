@@ -511,6 +511,12 @@ struct filetype DS2781[] = {
 
 DeviceEntry(3D, DS2781);
 
+#define _1W_READ_DATA 0x69
+#define _1W_WRITE_DATA 0x6C
+#define _1W_COPY_DATA 0x48
+#define _1W_RECALL_DATA 0xB8
+#define _1W_LOCK 0x6A
+
 /* ------- Functions ------------ */
 
 /* DS2406 */
@@ -948,7 +954,7 @@ static int FS_w_pio(struct one_wire_query * owq)
 static int OW_r_eeprom(const size_t page, const size_t size,
 					   const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[] = { 0xB8, page & 0xFF, };
+	BYTE p[] = { _1W_RECALL_DATA, page & 0xFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -965,7 +971,7 @@ static int OW_r_eeprom(const size_t page, const size_t size,
 static int OW_r_sram(BYTE * data, const size_t size, const off_t offset,
 					 const struct parsedname *pn)
 {
-	BYTE p[] = { 0x69, offset & 0xFF, };
+	BYTE p[] = { _1W_READ_DATA, offset & 0xFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -988,7 +994,7 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 static int OW_w_eeprom(const size_t page, const size_t size,
 					   const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[] = { 0x48, page & 0xFF, };
+	BYTE p[] = { _1W_COPY_DATA, page & 0xFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -1004,7 +1010,7 @@ static int OW_w_eeprom(const size_t page, const size_t size,
 static int OW_w_sram(const BYTE * data, const size_t size,
 					 const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[] = { 0x6C, offset & 0xFF, };
+	BYTE p[] = { _1W_WRITE_DATA, offset & 0xFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -1075,7 +1081,7 @@ static int OW_w_int8(const int *I, off_t offset,
 
 static int OW_lock(const struct parsedname *pn)
 {
-	BYTE lock[] = { 0x6C, 0x07, 0x40, 0x6A, 0x00 };
+	BYTE lock[] = { _1W_WRITE_DATA, 0x07, 0x40, _1W_LOCK, 0x00 };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{lock, NULL, 5, trxn_match,},
