@@ -540,7 +540,6 @@ static int OW_r_int8(int *I, off_t offset, const struct parsedname *pn);
 static int OW_w_int8(const int *I, off_t offset,
 					 const struct parsedname *pn);
 static int OW_cmd(const BYTE cmd, const struct parsedname *pn);
-}
 
 
 /* 2406 memory read */
