@@ -64,6 +64,25 @@ struct filetype DS2436[] = {
 
 DeviceEntry(1B, DS2436);
 
+#define _1W_READ_SCRATCHPAD 0x11
+#define _1W_WRITE_SCRATCHPAD 0x17
+#define _1W_COPY_SP1_TO_NV1	0x22
+#define _1W_COPY_SP2_TO_NV2	0x25
+#define _1W_COPY_SP3_TO_NV3	0x28
+#define _1W_COPY_NV1_TO_SP1 0x71
+#define _1W_COPY_NV2_TO_SP2 0x77
+#define _1W_COPY_NV3_TO_SP3 0x7A
+#define _1W_LOCK_NV1 0x43
+#define _1W_UNLOCK_NV1 0x44
+#define _1W_CONVERT_T 0xD2
+#define _1W_CONVERT_V 0xB4
+#define _1W_READ_REGISTERS 0xB2
+#define _1W_INCREMENT_CYCLE 0xB5
+#define _1W_RESET_CYCLE_COUNTER 0xB8
+
+#define _ADDRESS_TEMPERATURE 0x60
+#define _ADDRESS_VOLTAGE 0x77
+
 /* ------- Functions ------------ */
 
 /* DS2436 */
@@ -119,8 +138,8 @@ static int OW_r_page(BYTE * p, const size_t size, const off_t offset,
 	BYTE data[32];
 	int page = offset >> 5;
 	size_t s;
-	BYTE scratchin[] = { 0x11, offset, };
-	static BYTE copyin[] = { 0x71, 0x77, 0x7A, };
+	BYTE scratchin[] = { _1W_READ_SCRATCHPAD, offset, };
+	static BYTE copyin[] = { _1W_COPY_NV1_TO_SP1, _1W_COPY_NV2_TO_SP2, _1W_COPY_NV3_TO_SP3, };
 	BYTE *copy = &copyin[page];
 	struct transaction_log tcopy[] = {
 		TRXN_START,
@@ -162,10 +181,10 @@ static int OW_w_page(const BYTE * p, const size_t size, const off_t offset,
 {
 	int page = offset >> 5;
 	size_t s;
-	BYTE scratchin[] = { 0x11, offset, };
-	BYTE scratchout[] = { 0x17, offset, };
+	BYTE scratchin[] = { _1W_READ_SCRATCHPAD, offset, };
+	BYTE scratchout[] = { _1W_WRITE_SCRATCHPAD, offset, };
 	BYTE data[32];
-	static BYTE copyout[] = { 0x22, 0x25, 0x27, };
+	static BYTE copyout[] = { _1W_COPY_SP1_TO_NV1, _1W_COPY_SP2_TO_NV2, _1W_COPY_SP3_TO_NV3, };
 	BYTE *copy = &copyout[page];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
@@ -198,8 +217,8 @@ static int OW_w_page(const BYTE * p, const size_t size, const off_t offset,
 
 static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 {
-	BYTE d2[] = { 0xD2, };
-	BYTE b2[] = { 0xB2, 0x60, };
+	BYTE d2[] = { _1W_CONVERT_T, };
+	BYTE b2[] = { _1W_READ_REGISTERS, _ADDRESS_TEMPERATURE, };
 	BYTE t[2];
 	struct transaction_log tconvert[] = {
 		TRXN_START,
@@ -234,8 +253,8 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 
 static int OW_volts(_FLOAT * V, const struct parsedname *pn)
 {
-	BYTE b4[] = { 0xB4, };
-	BYTE b2[] = { 0xB2, 0x77, };
+	BYTE b4[] = { _1W_CONVERT_V, };
+	BYTE b2[] = { _1W_READ_REGISTERS, _ADDRESS_VOLTAGE, };
 	BYTE v[2];
 	struct transaction_log tconvert[] = {
 		TRXN_START,
