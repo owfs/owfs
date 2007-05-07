@@ -9,6 +9,32 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
+/*
+    Written by Jacob Potter 2007
+    for the "EtherWeather":
+
+    It started out as a school-related project, then grew into a
+    hobby/for-fun thing, and now I'm polishing it off to be able to sell.
+    The main components are an AVR microcontroller and Ethernet chip; I
+    wrote all the interface and application code (using the uIP TCP/IP
+    stack). I'm planning to keep the firmware closed, but the
+    communication protocols and support code will all be open.
+
+    The system listens on a TCP socket and acts as a low-level bus master
+    (reset/bit/byte, strong pullup, and search acceleration), so it should
+    be able to talk to any device supported by the code talking to it.
+    Besides waiting for connections from PC-side software such as OWFS, it
+    can also periodically connect to a remote system over the Internet to
+    receive commands, and I've written some code to handle that as well.
+
+    At the moment, I've built a few prototypes and am waiting for the next
+    round of components and boards to come in. The majority of the
+    software (firmware w/DHCP, bootloader, OWFS patch, and service
+    daemon/Web interface) is working, although not polished off yet. The
+    board is 2" x 3", runs off of 7-9v DC, and should cost around $50
+    (assembled/programmed, but without case and power supply).
+*/    
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
