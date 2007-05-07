@@ -354,6 +354,15 @@ int LibStart(void)
 							  in->name);
 			}
 			break;
+
+		case bus_etherweather:
+			if (EtherWeather_detect(in)) {
+				LEVEL_CONNECT("Cannot detect an EtherWeather server on %s\n",
+					in->name);
+				ret = -ENODEV;
+			}
+			break;
+
         case bus_fake:
             Fake_detect(in);    // never fails
             break;

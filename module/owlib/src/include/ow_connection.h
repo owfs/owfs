@@ -265,6 +265,9 @@ struct connin_ha7 {
 	struct dirblob main;		/* main directory */
 	struct dirblob alarm;		/* alarm directory */
 };
+struct connin_etherweather {
+	struct connin_tcp tcp;
+};
 struct connin_link {
 	struct connin_tcp tcp;		// mirror connin.server
 	speed_t speed;
@@ -292,6 +295,7 @@ enum bus_mode {
     bus_tester,
     bus_link,
 	bus_elink,
+	bus_etherweather,
 };
 
 enum adapter_type {
@@ -312,6 +316,7 @@ enum adapter_type {
 	adapter_HA7NET,
 	adapter_HA5,
 	adapter_HA7E,
+	adapter_EtherWeather,
     adapter_fake,
     adapter_tester,
 };
@@ -378,6 +383,7 @@ struct connection_in {
         struct connin_fake fake;
         struct connin_fake tester;
         struct connin_ha7 ha7;
+		struct connin_etherweather etherweather;
 	} connin;
 };
 /* Network connection structure */

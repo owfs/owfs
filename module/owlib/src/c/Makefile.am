@@ -51,6 +51,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_ds1410.c       \
                ow_ds9097U.c      \
                ow_ds9490.c       \
+               ow_etherweather.c \
                ow_ha7.c          \
                ow_fake.c         \
                ow_fakeread.c     \

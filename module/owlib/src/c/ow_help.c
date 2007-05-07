@@ -160,6 +160,7 @@ void ow_help_device(void)
 		   "  -s address      owserver\n"
 		   "  --LINK address  LINK-HUB-E network LINK\n"
 		   "  --HA7NET address HA7NET busmaster\n"
+		   "  --etherweather address EtherWeather\n"
 		   "  --autoserver    Find owserver using zeroconf\n"
 		   "\n"
 		   " Simulated\n"

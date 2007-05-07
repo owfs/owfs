@@ -148,6 +148,7 @@ void FreeIn(void)
 			break;
 		case bus_elink:
 		case bus_ha7net:
+		case bus_etherweather:
 			BUS_close(now);
 			break;
 		case bus_fake:

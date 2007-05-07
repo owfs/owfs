@@ -33,6 +33,7 @@ static int OW_ArgSerial(const char *arg);
 static int OW_ArgParallel(const char *arg);
 static int OW_ArgI2C(const char *arg);
 static int OW_ArgHA7(const char *arg);
+static int OW_ArgEtherWeather(const char *arg);
 static int OW_ArgFake(const char *arg);
 static int OW_ArgTester(const char *arg);
 static int OW_ArgLink(const char *arg);
@@ -100,6 +101,8 @@ const struct option owopts_long[] = {
     {"TESTER", required_argument, NULL, 278}, /* Tester */
     {"Tester", required_argument, NULL, 278}, /* Tester */
     {"tester", required_argument, NULL, 278}, /* Tester */
+	{"etherweather", required_argument, NULL, 279}, /* EtherWeather */
+	{"EtherWeather", required_argument, NULL, 279}, /* EtherWeather */
     {"zero", no_argument, &Global.announce_off, 0},
 	{"nozero", no_argument, &Global.announce_off, 1},
 	{"autoserver", no_argument, &Global.autoserver, 1},
@@ -481,6 +484,8 @@ int owopt(const int c, const char *arg)
 		return OW_ArgPassive("HA4B", arg);
 	case 278:
 		return OW_ArgTester(arg);
+	case 279:
+		return OW_ArgEtherWeather(arg);
         case 280:
 		Global.announce_name = strdup(arg);
 		break;
@@ -543,6 +548,16 @@ static int OW_ArgHA7(const char *arg)
 		("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
 	return 1;
 #endif							/* OW_HA7 */
+}
+
+static int OW_ArgEtherWeather(const char *arg)
+{
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL)
+		return 1;
+	in->name = arg ? strdup(arg) : NULL;
+	in->busmode = bus_etherweather;
+	return 0;
 }
 
 static int OW_ArgFake(const char *arg)
