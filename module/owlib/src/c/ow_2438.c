@@ -119,6 +119,13 @@ struct filetype DS2438[] = {
 
 DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt);
 
+#define _1W_WRITE_SCRATCHPAD 0x4E
+#define _1W_READ_SCRATCHPAD 0xBE
+#define _1W_COPY_SCRATCHPAD 0x48
+#define _1W_RECALL_SCRATCHPAD 0xB8
+#define _1W_CONVERT_T 0x44
+#define _1W_CONVERT_V 0xB4
+
 /* ------- Functions ------------ */
 
 /* DS2438 */
@@ -368,8 +375,8 @@ int FS_r_date(struct one_wire_query * owq)
 static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE recall[] = { 0xB8, page, };
-	BYTE r[] = { 0xBE, page, };
+	BYTE recall[] = { _1W_RECALL_SCRATCHPAD, page, };
+	BYTE r[] = { _1W_READ_SCRATCHPAD, page, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{recall, NULL, 2, trxn_match},
@@ -394,9 +401,9 @@ static int OW_w_page(const BYTE * p, const int page,
 					 const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE w[] = { 0x4E, page, };
-	BYTE r[] = { 0xBE, page, };
-	BYTE eeprom[] = { 0x48, page, };
+	BYTE w[] = { _1W_WRITE_SCRATCHPAD, page, };
+	BYTE r[] = { _1W_READ_SCRATCHPAD, page, };
+	BYTE eeprom[] = { _1W_COPY_SCRATCHPAD, page, };
 	struct transaction_log t[] = {
 		TRXN_START,				// 0
 		{w, NULL, 2, trxn_match},	//1 write to scratch command
@@ -424,7 +431,7 @@ static int OW_w_page(const BYTE * p, const int page,
 static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 {
 	BYTE data[9];
-	static BYTE t[] = { 0x44, };
+	static BYTE t[] = { _1W_CONVERT_T, };
 	struct transaction_log tconvert[] = {
 		TRXN_START,
 		{t, NULL, 1, trxn_match},
@@ -450,8 +457,8 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 	//   1 -- VDD (battery) measured
 	//   0 -- VAD (other) measured
 	BYTE data[9];
-	static BYTE v[] = { 0xB4, };
-	static BYTE w[] = { 0x4E, 0x00, };
+	static BYTE v[] = { _1W_CONVERT_V, };
+	static BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
 	struct transaction_log tsource[] = {
 		TRXN_START,
 		{w, NULL, 2, trxn_match},
@@ -490,8 +497,8 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 static int OW_current(_FLOAT * I, const struct parsedname *pn)
 {
 	BYTE data[8];
-	BYTE r[] = { 0xBE, 0x00, };
-	BYTE w[] = { 0x4E, 0x00, };
+	BYTE r[] = { _1W_READ_SCRATCHPAD, 0x00, };
+	BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
 	int enabled;
 	struct transaction_log tread[] = {
 		TRXN_START,
