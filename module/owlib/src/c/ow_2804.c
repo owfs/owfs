@@ -85,6 +85,22 @@ struct filetype DS28E04[] = {
 
 DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD 0x55
+#define _1W_READ_MEMORY 0xF0
+#define _1W_PIO_ACCESS_READ 0xF5
+#define _1W_PIO_ACCESS_WRITE 0x5A
+#define _1W_READ_ACTIVE_LATCH 0xA5
+#define _1W_WRITE_REGISTER 0xCC
+#define _1W_RESET_ACTIVITY_LATCHES 0xC3
+
+#define _ADDRESS_PIO_LOGIC 0x0220
+#define _ADDRESS_PIO_OUTPUT 0x0221
+#define _ADDRESS_PIO_ACTIVITY 0x0222
+#define _ADDRESS_CONDITIONAL_SEARCH_PIO 0x0223
+#define _ADDRESS_CONDITIONAL_SEARCH_CONTROL 0x0225
+
 /* ------- Functions ------------ */
 
 /* DS2804 */
@@ -141,7 +157,7 @@ static int FS_r_pio(struct one_wire_query * owq)
 {
 	BYTE data;
 	OWQ_make( owq_pio ) ;
-    OWQ_create_temporary( owq_pio, (char *) &data, 1, 0x0221, PN(owq) ) ;
+    OWQ_create_temporary( owq_pio, (char *) &data, 1, _ADDRESS_PIO_OUTPUT, PN(owq) ) ;
     if (OW_r_mem_simple( owq_pio, 0, 0 ))
 		return -EINVAL;
     OWQ_U(owq) = (data ^ 0xFF) & 0x03;	/* reverse bits */
@@ -164,7 +180,7 @@ static int FS_power(struct one_wire_query * owq)
 {
 	BYTE data;
 	OWQ_make( owq_power ) ;
-    OWQ_create_temporary( owq_power, (char *) &data, 1, 0x0225, PN(owq) ) ;
+    OWQ_create_temporary( owq_power, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq) ) ;
     if (OW_r_mem_simple( owq_power, 0, 0 ))
 		return -EINVAL;
     OWQ_Y(owq) = UT_getbit(&data, 7);
@@ -176,7 +192,7 @@ static int FS_polarity(struct one_wire_query * owq)
 {
 	BYTE data;
 	OWQ_make( owq_polarity ) ;
-    OWQ_create_temporary( owq_polarity, (char *) &data, 1, 0x0225, PN(owq) ) ;
+    OWQ_create_temporary( owq_polarity, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq) ) ;
     if (OW_r_mem_simple( owq_polarity, 0, 0 ))
 		return -EINVAL;
     OWQ_Y(owq) = UT_getbit(&data, 6);
@@ -188,7 +204,7 @@ static int FS_r_por(struct one_wire_query * owq)
 {
 	BYTE data;
 	OWQ_make( owq_por ) ;
-    OWQ_create_temporary( owq_por, (char *) &data, 1, 0x0225, PN(owq) ) ;
+    OWQ_create_temporary( owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq) ) ;
     if (OW_r_mem_simple( owq_por, 0, 0 ))
 		return -EINVAL;
     OWQ_Y(owq) = UT_getbit(&data, 3);
@@ -201,12 +217,12 @@ static int FS_w_por(struct one_wire_query * owq)
 	BYTE data;
     struct parsedname * pn = PN(owq) ;
 	OWQ_make( owq_por ) ;
-    OWQ_create_temporary( owq_por, (char *) &data, 1, 0x0225, pn ) ;
+    OWQ_create_temporary( owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn ) ;
     if (OW_r_mem_simple( owq_por, 0, 0 ))
 		return -EINVAL;			/* get current register */
 	if (UT_getbit(&data, 3)) {	/* needs resetting? bit3==1 */
 		data ^= 0x08;			/* flip bit 3 */
-        if (OW_w_reg(&data, 1, 0x0225, pn))
+        if (OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn))
 			return -EINVAL;		/* reset */
 		if (FS_r_por(owq))
 			return -EINVAL;		/* reread */
@@ -221,7 +237,7 @@ static int FS_sense(struct one_wire_query * owq)
 {
 	BYTE data;
 	OWQ_make( owq_sense ) ;
-    OWQ_create_temporary( owq_sense, (char *) &data, 1, 0x0220, PN(owq) ) ;
+    OWQ_create_temporary( owq_sense, (char *) &data, 1, _ADDRESS_PIO_LOGIC, PN(owq) ) ;
     if (OW_r_mem_simple( owq_sense, 0, 0 ))
 		return -EINVAL;
     OWQ_U(owq) = (data) & 0x03;
@@ -233,7 +249,7 @@ static int FS_r_latch(struct one_wire_query * owq)
 {
 	BYTE data;
 	OWQ_make( owq_latch ) ;
-    OWQ_create_temporary( owq_latch, (char *) &data, 1, 0x0222, PN(owq) ) ;
+    OWQ_create_temporary( owq_latch, (char *) &data, 1, _ADDRESS_PIO_ACTIVITY, PN(owq) ) ;
     if (OW_r_mem_simple( owq_latch, 0, 0 ))
 		return -EINVAL;
     OWQ_U(owq) = data & 0x03;
@@ -253,7 +269,7 @@ static int FS_r_s_alarm(struct one_wire_query * owq)
 {
 	BYTE data[3];
 	OWQ_make( owq_alarm ) ;
-    OWQ_create_temporary( owq_alarm, (char *) data, 3, 0x0223, PN(owq) ) ;
+    OWQ_create_temporary( owq_alarm, (char *) data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq) ) ;
     if (OW_r_mem_simple( owq_alarm, 0, 0 ))
 		return -EINVAL;
     OWQ_U(owq) = (data[2] & 0x03) * 100;
@@ -268,7 +284,7 @@ static int FS_w_s_alarm(struct one_wire_query * owq)
 	BYTE data[3] = { 0, 0, 0, };
     UINT U = OWQ_U(owq) ;
 	OWQ_make( owq_alarm ) ;
-    OWQ_create_temporary( owq_alarm, (char *) &data[2], 1, 0x0225, PN(owq) ) ;
+    OWQ_create_temporary( owq_alarm, (char *) &data[2], 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq) ) ;
     if (OW_r_mem_simple( owq_alarm, 0, 0 ))
 		return -EINVAL;
     data[2] |= (U / 100 % 10) & 0x03;
@@ -276,7 +292,7 @@ static int FS_w_s_alarm(struct one_wire_query * owq)
 	UT_setbit(&data[1], 1, (int) (U / 10 % 10) & 0x01);
 	UT_setbit(&data[0], 0, ((int) (U % 10) & 0x02) >> 1);
 	UT_setbit(&data[0], 1, ((int) (U / 10 % 10) & 0x02) >> 1);
-    if (OW_w_reg(data, 3, 0x0223, PN(owq)))
+    if (OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -284,7 +300,7 @@ static int FS_w_s_alarm(struct one_wire_query * owq)
 static int OW_w_scratch( BYTE * data,  size_t size,
 						 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[3 + 32 + 2] = { 0x0F, offset & 0xFF, (offset >> 8) & 0xFF, };
+	BYTE p[3 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 3 + size, trxn_match,},
@@ -310,7 +326,7 @@ static int OW_w_scratch( BYTE * data,  size_t size,
 static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[4 + 32 + 2] = { 0xAA, offset & 0xFF, (offset >> 8) & 0xFF, };
+	BYTE p[4 + 32 + 2] = { _1W_READ_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{p, NULL, 1, trxn_match,},
@@ -330,7 +346,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 		|| BUS_transaction(tread, pn)
 		)
 		return 1;
-	p[0] = 0x55;
+	p[0] = _1W_COPY_SCRATCHPAD;
 	return BUS_transaction(tcopy, pn);
 }
 
@@ -338,7 +354,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 static int OW_w_reg( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[3] = { 0xCC, offset & 0xFF, (offset >> 8) & 0xFF, };
+	BYTE p[3] = { _1W_WRITE_REGISTER, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match,},
@@ -351,7 +367,7 @@ static int OW_w_reg( BYTE * data,  size_t size,
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
 static int OW_w_pio( BYTE data,  struct parsedname *pn)
 {
-	BYTE p[3] = { 0x5A, data & 0xFF, (data & 0xFF) ^ 0xFF, };
+	BYTE p[3] = { _1W_PIO_ACCESS_WRITE, data & 0xFF, (data & 0xFF) ^ 0xFF, };
 	BYTE resp[1];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -366,12 +382,12 @@ static int OW_w_pio( BYTE data,  struct parsedname *pn)
 /* Clear latches */
 static int OW_clear( struct parsedname *pn)
 {
-	BYTE p[2] = { 0xC3, 0xFF };
+	BYTE p[2] = { _1W_RESET_ACTIVITY_LATCHES, 0xFF };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, p, 2, trxn_read,},
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn) || p[0] != 0xC3 || p[1] != 0xAA;
+	return BUS_transaction(t, pn) || p[0] != _1W_RESET_ACTIVITY_LATCHES || p[1] != 0xAA;
 }
