@@ -93,6 +93,11 @@ struct filetype DS1996[] = {
 
 DeviceEntryExtended(0C, DS1996, DEV_ovdr);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD 0x55
+#define _1W_READ_MEMORY 0xF0
+
 /* ------- Functions ------------ */
 
 /* DS1902 */
@@ -137,7 +142,7 @@ static int FS_w_memory(struct one_wire_query * owq)
 static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[4 + 32] = { 0x0F, offset & 0xFF, (offset >> 8) & 0xFF, };
+    BYTE p[4 + 32] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match},
@@ -161,14 +166,14 @@ static int OW_w_mem( BYTE * data,  size_t size,
 		return 1;
 
 	/* Re-read scratchpad and compare */
-	p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn))
 		return 1;
 	if (memcmp(&p[4], data, (size_t) size))
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-	p[0] = 0x55;
+    p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(tsram, pn))
 		return 1;
 
