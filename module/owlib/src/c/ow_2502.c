@@ -76,6 +76,12 @@ struct filetype DS1982U[] = {
 
 DeviceEntry(89, DS1982U);
 
+#define _1W_READ_MEMORY 0xF0
+#define _1W_READ_STATUS 0xAA
+#define _1W_READ_DATA_CRC8 0xC3
+#define _1W_WRITE_MEMORY 0x0F
+#define _1W_WRITE_STATUS 0x55
+
 /* ------- Functions ------------ */
 
 /* DS2502 */
@@ -131,7 +137,7 @@ static int FS_w_page(struct one_wire_query * owq)
 static int OW_w_mem(BYTE * data, size_t size,
 					off_t offset, struct parsedname *pn)
 {
-	BYTE p[5] = { 0x0F, offset & 0xFF, offset >> 8, data[0] };
+	BYTE p[5] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data[0] };
 	int ret;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
@@ -177,7 +183,7 @@ static int OW_w_mem(BYTE * data, size_t size,
 static int OW_r_mem(BYTE * data, size_t size, off_t offset,
 					struct parsedname *pn)
 {
-	BYTE p[4] = { 0xC3, offset & 0xFF, offset >> 8, };
+	BYTE p[4] = { _1W_READ_DATA_CRC8, LOW_HIGH_ADDRESS(offset), };
 	BYTE q[33];
 	int rest = 33 - (offset & 0x1F);
 	struct transaction_log t[] = {
