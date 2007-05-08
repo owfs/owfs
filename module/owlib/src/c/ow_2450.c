@@ -93,6 +93,10 @@ struct filetype DS2450[] = {
 
 DeviceEntryExtended(20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr);
 
+#define _1W_READ_MEMORY 0x44
+#define _1W_WRITE_MEMORY 0x55
+#define _1W_CONVERT 0x3C
+
 /* ------- Functions ------------ */
 
 /* DS2450 */
@@ -358,7 +362,7 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 					struct parsedname *pn)
 {
 	// command, address(2) , data , crc(2), databack
-	BYTE buf[7] = { 0x55, offset & 0xFF, (offset >> 8) & 0xFF, p[0], };
+	BYTE buf[7] = { _1W_WRITE_MEMORY, ADDRESS_LOW_HIGH(offset), p[0], };
 	size_t i;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
@@ -497,7 +501,7 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution,
 /* send A/D conversion command */
 static int OW_convert(struct parsedname *pn)
 {
-	BYTE convert[] = { 0x3C, 0x0F, 0x00, 0xFF, 0xFF, };
+	BYTE convert[] = { _1W_CONVERT, 0x0F, 0x00, 0xFF, 0xFF, };
 	BYTE power;
 	struct transaction_log tpower[] = {
 		TRXN_START,
