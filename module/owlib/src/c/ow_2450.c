@@ -362,7 +362,7 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 					struct parsedname *pn)
 {
 	// command, address(2) , data , crc(2), databack
-	BYTE buf[7] = { _1W_WRITE_MEMORY, LOW_HIGH_ADRESS(offset), p[0], };
+	BYTE buf[7] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), p[0], };
 	size_t i;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
