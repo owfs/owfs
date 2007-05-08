@@ -61,6 +61,14 @@ struct filetype DS2890[] = {
 
 DeviceEntryExtended(2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);
 
+#define _1W_WRITE_POSITION 0x0F
+#define _1W_READ_POSITION 0xF0
+#define _1W_INCREMENT 0xC3
+#define _1W_DECREMENT 0x99
+#define _1W_WRITE_CONTROL_REGISTER 0x55
+#define _1W_READ_CONTROL_REGISTER 0xAA
+#define _1W_RELEASE_WIPER 0x96
+
 /* ------- Functions ------------ */
 
 /* DS2890 */
@@ -109,8 +117,8 @@ static int FS_r_cp(struct one_wire_query * owq)
 static int OW_w_wiper(const UINT val, const struct parsedname *pn)
 {
 	BYTE resp[1];
-	BYTE cmd[] = { 0x0F, (BYTE) val, };
-	BYTE ns[] = { 0x96, };
+	BYTE cmd[] = { _1W_WRITE_POSITION, (BYTE) val, };
+	BYTE ns[] = { _1W_RELEASE_WIPER, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{cmd, NULL, 2, trxn_match,},
@@ -125,7 +133,7 @@ static int OW_w_wiper(const UINT val, const struct parsedname *pn)
 /* read Wiper */
 static int OW_r_wiper(UINT * val, const struct parsedname *pn)
 {
-	BYTE fo[] = { 0xF0, };
+	BYTE fo[] = { _1W_READ_POSITION, };
 	BYTE resp[2];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -145,8 +153,8 @@ static int OW_r_wiper(UINT * val, const struct parsedname *pn)
 static int OW_w_cp(const int val, const struct parsedname *pn)
 {
 	BYTE resp[1];
-	BYTE cmd[] = { 0x55, (val) ? 0x4C : 0x0C };
-	BYTE ns[] = { 0x96, };
+	BYTE cmd[] = { _1W_WRITE_CONTROL_REGISTER, (val) ? 0x4C : 0x0C };
+	BYTE ns[] = { _1W_RELEASE_WIPER, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{cmd, NULL, 2, trxn_match,},
@@ -161,7 +169,7 @@ static int OW_w_cp(const int val, const struct parsedname *pn)
 /* read Charge Pump */
 static int OW_r_cp(int *val, const struct parsedname *pn)
 {
-	BYTE aa[] = { 0xAA, };
+	BYTE aa[] = { _1W_READ_CONTROL_REGISTER, };
 	BYTE resp[2];
 	struct transaction_log t[] = {
 		TRXN_START,
