@@ -199,18 +199,18 @@ struct die_limits DIE[] = {
    POW -- power
 */
 
-#define CMD_WRITE_SCRATCHPAD 0x4E
-#define CMD_READ_SCRATCHPAD 0xBE
-#define CMD_COPY_SCRATCHPAD 0x48
-#define CMD_CONVERT_TEMPERATURE 0x44
-#define CMD_READ_POWERMODE 0xB4
-#define CMD_RECALL_EEPROM 0xB8
-#define CMD_PIO_ACCESS_READ 0xF5
-#define CMD_PIO_ACCESS_WRITE 0xA5
-#define CMD_CHAIN_COMMAND 0x99
-#define CMD_CHAIN_SUBCOMMAND_OFF 0x3C
-#define CMD_CHAIN_SUBCOMMAND_ON 0x5A
-#define CMD_CHAIN_SUBCOMMAND_DONE 0x96
+#define _1W_WRITE_SCRATCHPAD 0x4E
+#define _1W_READ_SCRATCHPAD 0xBE
+#define _1W_COPY_SCRATCHPAD 0x48
+#define _1W_CONVERT_T 0x44
+#define _1W_READ_POWERMODE 0xB4
+#define _1W_RECALL_EEPROM 0xB8
+#define _1W_PIO_ACCESS_READ 0xF5
+#define _1W_PIO_ACCESS_WRITE 0xA5
+#define _1W_CHAIN_COMMAND 0x99
+#define _1W_CHAIN_SUBCOMMAND_OFF 0x3C
+#define _1W_CHAIN_SUBCOMMAND_ON 0x5A
+#define _1W_CHAIN_SUBCOMMAND_DONE 0x96
 
 
 /* ------- Functions ------------ */
@@ -420,7 +420,7 @@ static int FS_w_blanket(struct one_wire_query * owq)
 static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE convert[] = { CMD_CONVERT_TEMPERATURE, };
+	BYTE convert[] = { _1W_CONVERT_T, };
 	UINT delay = 1100;			// hard wired
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
@@ -484,7 +484,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 
 static int OW_power(BYTE * data, const struct parsedname *pn)
 {
-	BYTE b4[] = { CMD_READ_POWERMODE, };
+	BYTE b4[] = { _1W_READ_POWERMODE, };
 	struct transaction_log tpower[] = {
 		TRXN_START,
 		{b4, NULL, 1, trxn_match},
@@ -509,7 +509,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 					 const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE convert[] = { CMD_CONVERT_TEMPERATURE, };
+	BYTE convert[] = { _1W_CONVERT_T, };
 	BYTE pow;
 	int res = Resolutions[resolution - 9].config;
 	UINT delay = Resolutions[resolution - 9].delay;
@@ -580,7 +580,7 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 						  const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE recall[] = { CMD_READ_POWERMODE, };
+	BYTE recall[] = { _1W_READ_POWERMODE, };
 	struct transaction_log trecall[] = {
 		TRXN_START,
 		{recall, NULL, 1, trxn_match},
@@ -614,7 +614,7 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex,
 static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 {
 	/* data is 9 bytes long */
-	BYTE be[] = { CMD_READ_SCRATCHPAD, };
+	BYTE be[] = { _1W_READ_SCRATCHPAD, };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		{be, NULL, 1, trxn_match},
@@ -629,8 +629,8 @@ static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 {
 	/* data is 3 bytes long */
-	BYTE d[4] = { CMD_WRITE_SCRATCHPAD, data[0], data[1], data[2], };
-	BYTE pow[] = { CMD_COPY_SCRATCHPAD, };
+	BYTE d[4] = { _1W_WRITE_SCRATCHPAD, data[0], data[1], data[2], };
+	BYTE pow[] = { _1W_COPY_SCRATCHPAD, };
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		{d, NULL, 4, trxn_match},
@@ -753,7 +753,7 @@ int FS_poll_convert(const struct parsedname *pn)
 static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
 {
   BYTE data[1] ;
-  BYTE cmd[] = { CMD_PIO_ACCESS_READ, } ;
+  BYTE cmd[] = { _1W_PIO_ACCESS_READ, } ;
   struct transaction_log t[] = {
     TRXN_START,
     { cmd, NULL, 1, trxn_match, } ,
@@ -786,7 +786,7 @@ static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
 
 static int OW_w_pio( BYTE pio, const struct parsedname * pn )
 {
-  BYTE cmd[] = { CMD_PIO_ACCESS_WRITE, pio, } ;
+  BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, } ;
   struct transaction_log t[] = {
     TRXN_START,
     { cmd, NULL, 2, trxn_match, } ,
