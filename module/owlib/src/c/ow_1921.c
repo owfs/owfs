@@ -202,6 +202,14 @@ struct filetype DS1921[] = {
 
 DeviceEntryExtended(21, DS1921, DEV_alarm | DEV_temp | DEV_ovdr);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD 0x55
+#define _1W_READ_MEMORY 0xF0
+#define _1W_READ_MEMORY_WITH_CRC 0xA5
+#define _1W_CLEAR_MEMORY 0x3C
+#define _1W_CONVERT_TEMPERATURE 0x44
+
 /* Different version of the Thermocron, sorted by ID[11,12] of name. Keep in sorted order */
 struct Version {
 	UINT ID;
@@ -864,7 +872,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
 	BYTE p[3 + 1 + 32 + 2] =
-		{ 0x0F, offset & 0xFF, (offset >> 8) & 0xFF, };
+    { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	size_t rest = 32 - (offset & 0x1F);
 	int ret;
 
@@ -886,7 +894,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
-	p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD;
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 3, pn)
 		|| BUS_readin_data(&p[3], 1 + rest + 2, pn)
@@ -896,7 +904,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-	p[0] = 0x55;
+    p[0] = _1W_COPY_SCRATCHPAD;
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 4, pn);
 	BUSUNLOCK(pn);
@@ -910,7 +918,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 static int OW_temperature(int *T, const UINT delay,
 						  struct parsedname *pn)
 {
-	BYTE data = 0x44;
+    BYTE data = _1W_CONVERT_TEMPERATURE;
 	int ret;
 
 	/* Mission not progress, force conversion */
@@ -940,7 +948,7 @@ static int OW_clearmemory( struct parsedname *pn)
 		return -EINVAL;
 
 	/* Clear memory command */
-	cr = 0x3C;
+    cr = _1W_CLEAR_MEMORY;
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(&cr, 1, pn);
 	BUSUNLOCK(pn);
