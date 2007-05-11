@@ -227,16 +227,16 @@ static int FS_r_given_bus(struct one_wire_query * owq)
     } else {
         STAT_ADD1(read_calls);  /* statistics */
         if (LockGet(pn) == 0) {
-	  read_status = FS_r_local(owq);  // this returns status
-	  LEVEL_DEBUG("FS_r_given_bus FS_r_local return=%d\n", read_status);
-	  if ( read_status >= 0 ) {
-	    // local success -- now format in buffer
-	    read_status = FS_output_owq(owq) ; // this returns nr. bytes
-	  }
-	  LockRelease(pn);
+	        read_status = FS_r_local(owq);  // this returns status
+	        LEVEL_DEBUG("FS_r_given_bus FS_r_local return=%d\n", read_status);
+	        if ( read_status >= 0 ) {
+	            // local success -- now format in buffer
+	            read_status = FS_output_owq(owq) ; // this returns nr. bytes
+	        }
+	        LockRelease(pn);
         } else {
-	  read_status = -EADDRINUSE ;
-	}
+	        read_status = -EADDRINUSE ;
+	    }
     }
     LEVEL_DEBUG("FS_r_given_bus return %d\n", read_status);
     return read_status ;
