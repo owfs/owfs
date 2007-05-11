@@ -64,6 +64,18 @@ struct filetype DS1821[] = {
 ;
 DeviceEntry(thermostat, DS1821);
 
+#define _1W_READ_TEMPERATURE 0xAA
+#define _1W_START_CONVERT_T 0xEE
+#define _1W_STOP_CONVERT_T 0x22
+#define _1W_WRITE_TH 0x01
+#define _1W_WRITE_TL 0x02
+#define _1W_READ_TH 0xA1
+#define _1W_READ_TL 0xA2
+#define _1W_WRITE_STATUS 0x0C
+#define _1W_READ_STATUS 0xAC
+#define _1W_READ_COUNTER 0xA0
+#define _1W_LOAD_COUNTER 0x41
+
 /* ------- Functions ------------ */
 
 /* DS1821*/
@@ -126,7 +138,7 @@ static int FS_w_templimit(struct one_wire_query * owq)
 
 static int OW_r_status(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0xAC, };
+    BYTE p[] = { _1W_READ_STATUS, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 1, trxn_match,},
@@ -139,7 +151,7 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn)
 
 static int OW_w_status(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[] = { 0x0C, data[0] };
+    BYTE p[] = { _1W_WRITE_STATUS, data[0] };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -151,7 +163,7 @@ static int OW_w_status(BYTE * data, const struct parsedname *pn)
 
 static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 {
-	BYTE c[] = { 0xEE, };
+    BYTE c[] = { _1W_START_CONVERT_T, };
 	BYTE status;
 	int continuous;
 	int need_to_trigger = 0;
@@ -189,9 +201,9 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 static int OW_current_temperature(_FLOAT * temp,
 								  const struct parsedname *pn)
 {
-	BYTE rt[] = { 0xAA, };
-	BYTE rc[] = { 0xA0, };
-	BYTE lc[] = { 0x41, };
+    BYTE rt[] = { _1W_READ_TEMPERATURE, };
+    BYTE rc[] = { _1W_READ_COUNTER, };
+    BYTE lc[] = { _1W_LOAD_COUNTER, };
 	BYTE temp_read;
 	BYTE count_per_c;
 	BYTE count_remain;
@@ -226,7 +238,7 @@ static int OW_current_temperature(_FLOAT * temp,
 static int OW_r_templimit(_FLOAT * T, const int Tindex,
 						  const struct parsedname *pn)
 {
-	BYTE p[] = { 0xA1, 0xA2, };
+    BYTE p[] = { _1W_READ_TH, _1W_READ_TL, };
 	BYTE data;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -245,7 +257,7 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 static int OW_w_templimit(const _FLOAT T, const int Tindex,
 						  const struct parsedname *pn)
 {
-	BYTE p[] = { 0x01, 0x02, };
+    BYTE p[] = { _1W_WRITE_TH, _1W_WRITE_TL, };
 	BYTE data = ((int) (T + .49)) & 0xFF;	// round off
 	struct transaction_log t[] = {
 		TRXN_START,
