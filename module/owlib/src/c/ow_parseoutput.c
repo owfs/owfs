@@ -48,17 +48,17 @@ int FS_output_owq( struct one_wire_query * owq)
 {
     // have to check if offset is beyond the filesize.
     if(OWQ_offset(owq)) {
-      size_t file_length = 0;
-      if( PN(owq)->ft->format == ft_vascii) {
-	file_length = FileLength_vascii(owq);
-      } else {
-	file_length = FileLength(PN(owq));
-      }
-      LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
+        size_t file_length = 0;
+        if( PN(owq)->ft->format == ft_vascii) {
+	        file_length = FileLength_vascii(owq);
+        } else {
+	        file_length = FileLength(PN(owq));
+        }
+        LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
 		  (unsigned long)file_length, (unsigned long)OWQ_offset(owq), (unsigned long)OWQ_size(owq));
-      if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
-        return 0;  // This is data-length
-      }
+        if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
+            return 0;  // This is data-length
+        }
     }
 
     switch (OWQ_pn(owq).extension) {
