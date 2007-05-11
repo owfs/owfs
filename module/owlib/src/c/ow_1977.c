@@ -88,6 +88,13 @@ struct filetype DS1977[] = {
 
 DeviceEntryExtended(37, DS1977, DEV_resume | DEV_ovdr);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD_WITH_PASSWORD 0x99
+#define _1W_READ_MEMORY_WITH_PASSWORD 0xC3
+#define _1W_VERIFY_PASSWORD 0x69
+#define _1W_READ_VERSION 0xCC
+
 /* Persistent storage */
 static struct internal_prop ip_rea = { "REA", fc_persistent };
 static struct internal_prop ip_ful = { "FUL", fc_persistent };
@@ -149,13 +156,13 @@ static int FS_r_pwd(struct one_wire_query * owq)
 	BYTE p;
     if (OW_r_mem(&p, 1, 0x7FD0, PN(owq)))
 		return -EACCES;
-    OWQ_Y(owq) = (p == 0xAA);
+    OWQ_Y(owq) = (p == _1W_READ_SCRATCHPAD);
 	return 0;
 }
 
 static int FS_w_pwd(struct one_wire_query * owq)
 {
-    BYTE p = OWQ_Y(owq) ? 0x00 : 0xAA;
+    BYTE p = OWQ_Y(owq) ? 0x00 : _1W_READ_SCRATCHPAD;
     if (OW_w_mem(&p, 1, 0x7FD0, PN(owq)))
 		return -EACCES;
 	return 0;
@@ -270,7 +277,7 @@ static int FS_use(struct one_wire_query * owq)
 static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[1 + 2 + 64 + 2] = { 0x0F, offset & 0xFF, offset >> 8, };
+    BYTE p[1 + 2 + 64 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	int ret;
 
 	/* Copy to scratchpad */
@@ -287,7 +294,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
-	p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD;
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 1, pn)
 		|| BUS_readin_data(&p[1], 3 + size, pn)
@@ -301,7 +308,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 #endif							/* OW_CACHE */
 
 	/* Copy Scratchpad to SRAM */
-	p[0] = 0x99;
+	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 4 + 7, pn)
 		|| BUS_PowerByte(p[4 + 7], &p[4 + 7], 10, pn);
@@ -330,7 +337,7 @@ static int OW_r_pmem(BYTE * data,  BYTE * pwd,  size_t size,
 					  off_t offset,  struct parsedname *pn)
 {
 	int ret;
-	BYTE p[1 + 2 + 64 + 2] = { 0x69, offset & 0xFF, offset >> 8, };
+    BYTE p[1 + 2 + 64 + 2] = { _1W_VERIFY_PASSWORD, LOW_HIGH_ADDRESS(offset), };
 
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 3, pn)
@@ -353,7 +360,7 @@ static int OW_r_pmem(BYTE * data,  BYTE * pwd,  size_t size,
 static int OW_ver(UINT * u,  struct parsedname *pn)
 {
 	int ret;
-	BYTE p[] = { 0xCC, };
+    BYTE p[] = { _1W_READ_VERSION, };
 	BYTE b[2];
 
 	BUSLOCK(pn);
@@ -371,7 +378,7 @@ static int OW_verify(BYTE * pwd,  off_t offset,
 					  struct parsedname *pn)
 {
 	int ret;
-	BYTE p[1 + 2 + 8] = { 0xC3, offset & 0xFF, offset >> 8, };
+    BYTE p[1 + 2 + 8] = { _1W_READ_MEMORY_WITH_PASSWORD, LOW_HIGH_ADDRESS(offset), };
 	BYTE c;
 
 	BUSLOCK(pn);
@@ -386,7 +393,7 @@ static int OW_verify(BYTE * pwd,  off_t offset,
 /* Clear first 16 bytes of scratchpad after password setting */
 static int OW_clear( struct parsedname *pn)
 {
-	BYTE p[1 + 2 + 16] = { 0x0F, 0x00, 0x00, };
+    BYTE p[1 + 2 + 16] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(0x00), };
 	int ret;
 
 	/* Copy to scratchpad */
