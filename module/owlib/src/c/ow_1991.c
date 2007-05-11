@@ -92,6 +92,13 @@ struct filetype DS1425[] = {
 
 DeviceEntry(82, DS1425);
 
+#define _1W_WRITE_SCRATCHPAD 0x96
+#define _1W_READ_SCRATCHPAD 0x69
+#define _1W_COPY_SCRATCHPAD 0x3C
+#define _1W_WRITE_PASSWORD 0x5A
+#define _1W_WRITE_SUBKEY 0x99
+#define _1W_READ_SUBKEY 0x66
+
 static BYTE global_passwd[3][8] = { "", "", "" };
 
 /* ------- Functions ------------ */
@@ -213,7 +220,7 @@ static int OW_w_reset_password(const BYTE * data, const size_t size,
 							   const off_t offset,
 							   const struct parsedname *pn)
 {
-	BYTE set_password[3] = { 0x5A, 0x00, 0x00 };
+	BYTE set_password[3] = { _1W_WRITE_PASSWORD, 0x00, 0x00 };
 	BYTE passwd[8];
 	BYTE ident[8];
 	struct transaction_log tscratch[] = {
@@ -248,7 +255,7 @@ static int OW_w_subkey(const BYTE * data, const size_t size,
 					   const off_t offset, const struct parsedname *pn,
 					   const int extension)
 {
-	BYTE p[4] = { 0x99, 0x00, 0x00, 0x00 };	// write subkey
+	BYTE p[4] = { _1W_WRITE_SUBKEY, 0x00, 0x00, 0x00 };	// write subkey
 	BYTE ident[8];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
@@ -275,7 +282,7 @@ static int OW_w_subkey(const BYTE * data, const size_t size,
 static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset,
 					   const struct parsedname *pn, const int extension)
 {
-	BYTE p[3] = { 0x66, 0x00, 0x00 };	// read subkey
+	BYTE p[3] = { _1W_READ_SUBKEY, 0x00, 0x00 };	// read subkey
 	struct transaction_log tscratch[] = {
 		TRXN_START,
 		{p, NULL, 3, trxn_match},
@@ -380,8 +387,8 @@ static int OW_r_ident(BYTE * data, const size_t size, const off_t offset,
 static int OW_w_ident(const BYTE * data, const size_t size,
 					  const off_t offset, const struct parsedname *pn)
 {
-	BYTE write_scratch[3] = { 0x96, 0x00, 0x00 };
-	BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 };
+	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0x00, 0x00 };
+	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
 	BYTE all_data[0x40];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
@@ -421,8 +428,8 @@ static int OW_w_change_password(const BYTE * data, const size_t size,
 								const off_t offset,
 								const struct parsedname *pn)
 {
-	BYTE write_scratch[3] = { 0x96, 0x00, 0x00 };
-	BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 };
+	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0x00, 0x00 };
+	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
 	BYTE all_data[0x40];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
@@ -478,8 +485,8 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
 static int OW_w_page(const BYTE * data, const size_t size,
 					 const off_t offset, const struct parsedname *pn)
 {
-	BYTE write_scratch[3] = { 0x96, 0xC0, (0xFF ^ 0xC0) };
-	BYTE copy_scratch[3] = { 0x3C, 0x00, 0x00 };
+	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0xC0, (0xFF ^ 0xC0) };
+	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
 	BYTE all_data[0x40];
 	int i, nr_bytes;
 	size_t left = size;
