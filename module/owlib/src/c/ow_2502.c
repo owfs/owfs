@@ -58,7 +58,7 @@ struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2502[] = {
 	F_STANDARD,
   {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A2502, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
 };
 
@@ -66,11 +66,11 @@ DeviceEntry(09, DS2502);
 
 struct filetype DS1982U[] = {
 	F_STANDARD,
-  {"mac_e", 6, NULL, ft_binary, fc_stable, {o: FS_r_param}, {v: NULL}, {i:4},},
-  {"mac_fw", 8, NULL, ft_binary, fc_stable, {o: FS_r_param}, {v: NULL}, {i:4},},
-  {"project", 4, NULL, ft_binary, fc_stable, {o: FS_r_param}, {v: NULL}, {i:0},},
+  {"mac_e", 6, NULL, ft_binary, fc_stable, {o: FS_r_param}, {o: NULL}, {i:4},},
+  {"mac_fw", 8, NULL, ft_binary, fc_stable, {o: FS_r_param}, {o: NULL}, {i:4},},
+  {"project", 4, NULL, ft_binary, fc_stable, {o: FS_r_param}, {o: NULL}, {i:0},},
   {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A2502, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
 };
 

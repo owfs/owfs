@@ -67,13 +67,13 @@ READ_FUNCTION(FS_define);
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
 struct aggregate Asystem = { 1, ag_numbers, ag_separate, };
 struct filetype sys_adapter[] = {
-  {"name", 128, &Asystem, ft_vascii, fc_static, {o: FS_name}, {v: NULL}, {v:NULL},},
+  {"name", 128, &Asystem, ft_vascii, fc_static, {o: FS_name}, {o: NULL}, {v:NULL},},
 	// variable length
-  {"address", 512, &Asystem, ft_vascii, fc_static, {o: FS_port}, {v: NULL}, {v:NULL},},
+  {"address", 512, &Asystem, ft_vascii, fc_static, {o: FS_port}, {o: NULL}, {v:NULL},},
 	// variable length
   {"ds2404_compliance",PROPERTY_LENGTH_YESNO, &Asystem, ft_yesno, fc_static, {o: FS_r_ds2404_compliance}, {o: FS_w_ds2404_compliance}, {v:NULL},},
   {"overdrive",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static, {o: FS_r_overdrive}, {o: FS_w_overdrive}, {v:NULL},},
-  {"version",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static, {o: FS_version}, {v: NULL}, {v:NULL},},
+  {"version",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static, {o: FS_version}, {o: NULL}, {v:NULL},},
 };
 struct device d_sys_adapter =
 	{ "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter };
@@ -81,16 +81,16 @@ struct device d_sys_adapter =
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
 	//    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   fc_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
-  {"pidfile", 128, NULL, ft_vascii, fc_static, {o: FS_pidfile}, {v: NULL}, {v:NULL},},
+  {"pidfile", 128, NULL, ft_vascii, fc_static, {o: FS_pidfile}, {o: NULL}, {v:NULL},},
 	// variable length
-  {"pid",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_pid}, {v: NULL}, {v:NULL},},
+  {"pid",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_pid}, {o: NULL}, {v:NULL},},
 };
 struct device d_sys_process =
 	{ "process", "process", pn_system, NFT(sys_process), sys_process };
 
 struct filetype sys_connections[] = {
-  {"indevices",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_in}, {v: NULL}, {v:NULL},},
-  {"outdevices",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_out}, {v: NULL}, {v:NULL},},
+  {"indevices",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_in}, {o: NULL}, {v:NULL},},
+  {"outdevices",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_out}, {o: NULL}, {v:NULL},},
 };
 struct device d_sys_connections =
 	{ "connections", "connections", pn_system, NFT(sys_connections),
@@ -98,16 +98,16 @@ struct device d_sys_connections =
 };
 
 struct filetype sys_configure[] = {
-  {"threaded",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_MT},},
-  {"tai8570",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_TAI8570},},
-  {"thermocouples",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_THERMOCOUPLE},},
-  {"parport",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_PARPORT},},
-  {"USB",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_USB},},
-  {"i2c",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_I2C},},
-  {"cache",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_CACHE},},
-  {"HA7Net",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_HA7},},
-  {"DebugInfo",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:OW_DEBUG},},
-  {"zeroconf",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {v: NULL}, {i:1},},
+  {"threaded",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_MT},},
+  {"tai8570",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_TAI8570},},
+  {"thermocouples",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_THERMOCOUPLE},},
+  {"parport",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_PARPORT},},
+  {"USB",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_USB},},
+  {"i2c",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_I2C},},
+  {"cache",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_CACHE},},
+  {"HA7Net",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_HA7},},
+  {"DebugInfo",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:OW_DEBUG},},
+  {"zeroconf",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, {o: FS_define}, {o: NULL}, {i:1},},
 };
 struct device d_sys_configure =
 	{ "configuration", "configuration", pn_system, NFT(sys_configure),

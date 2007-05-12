@@ -72,13 +72,13 @@ struct aggregate A2804p = { 17, ag_numbers, ag_separate, };
 struct filetype DS28E04[] = {
 	F_STANDARD,
   {"memory", 550, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A2804p, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"polarity",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_polarity}, {v: NULL}, {v:NULL},},
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_power}, {v: NULL}, {v:NULL},},
+  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_power}, {o: NULL}, {v:NULL},},
   {"por",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_por}, {o: FS_w_por}, {v:NULL},},
   {"PIO",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
-  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
+  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, {o: FS_sense}, {o: NULL}, {v:NULL},},
   {"latch",PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, {o: FS_r_latch}, {o: FS_w_latch}, {v:NULL},},
   {"set_alarm",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_s_alarm}, {o: FS_w_s_alarm}, {v:NULL},},
 };
