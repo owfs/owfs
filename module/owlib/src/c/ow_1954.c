@@ -58,13 +58,12 @@ WRITE_FUNCTION(FS_reset);
 
 /* ------- Structures ----------- */
 
-struct aggregate A1992 = { 4, ag_numbers, ag_separate, };
 struct filetype DS1954[] = {
 	F_STANDARD,
   {"ipr", 128, NULL, ft_binary, fc_volatile, {o: FS_r_ipr}, {o: FS_w_ipr}, {v:NULL},},
   {"io_buffer", 8, NULL, ft_binary, fc_volatile, {o: FS_r_io}, {o: FS_w_io}, {v:NULL},},
   {"status", 4, NULL, ft_binary, fc_volatile, {o: FS_r_status}, {o: FS_w_status}, {v:NULL},},
-  {"reset", 1, NULL, ft_yesno, fc_volatile, NULL, {o: FS_reset}, {v:NULL},},
+  {"reset", 1, NULL, ft_yesno, fc_volatile, {o:NULL}, {o: FS_reset}, {v:NULL},},
 };
 
 DeviceEntryExtended(16, DS1954, DEV_ovdr );
@@ -189,7 +188,7 @@ static int OW_w_status( struct one_wire_query * owq ) {
         { NULL, &p[1], 3, trxn_read, } ,
         { p, NULL, 1+1+2, trxn_crc16, } ,
         { release, release, 2, trxn_read, },
-        { release, zero, 2, trnx_match, },
+        { release, zero, 2, trxn_match, },
         TRXN_END,
     } ;
     return BUS_transaction( t, PN(owq) ) ;
@@ -223,7 +222,7 @@ static int OW_w_io( struct one_wire_query * owq ) {
         { NULL, &p[2+size], 2, trxn_read, } ,
         { p, NULL, 2+size+2, trxn_crc16, } ,
         { release, release, 2, trxn_read, },
-        { release, zero, 2, trnx_match, },
+        { release, zero, 2, trxn_match, },
         TRXN_END,
     } ;
     return BUS_transaction( t, PN(owq) ) ;
@@ -240,7 +239,7 @@ static int OW_r_io( struct one_wire_query * owq ) {
         { NULL, &p[2], size+2, trxn_read, } ,
         { p, NULL, 2+size+2, trxn_crc16, } ,
         { release, release, 2, trxn_read, },
-        { release, zero, 2, trnx_match, },
+        { release, zero, 2, trxn_match, },
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) ) return 1 ;
@@ -258,7 +257,7 @@ static int OW_reset( struct one_wire_query * owq ) {
         TRXN_START,
         { p, NULL, 1, trxn_match, } ,
         { release, release, 2, trxn_read, },
-        { release, zero, 2, trnx_match, },
+        { release, zero, 2, trxn_match, },
         { NULL, testbit, 1, trxn_read, } ,
         TRXN_END,
     } ;
