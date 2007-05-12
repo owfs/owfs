@@ -289,7 +289,7 @@ static int FS_r_local(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     
     /* Readable? */
-    if ((pn->ft->read.o) == NULL)
+    if ( pn->ft->read != NO_READ_FUNCTION )
         return -ENOTSUP;
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
@@ -368,9 +368,9 @@ static int FS_structure(struct one_wire_query * owq)
                    ft_format_char[OWQ_pn(owq_copy).ft->format],
                    (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).extension : 0,
                    (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).ft->ag->elements : 1,
-                   (OWQ_pn(owq_copy).ft->read.o) ?
-                   ((OWQ_pn(owq_copy).ft->write.o) ? "rw" : "ro") :
-                           ((OWQ_pn(owq_copy).ft->write.o) ? "wo" : "oo"),
+                   (OWQ_pn(owq_copy).ft->read == NO_READ_FUNCTION) ?
+                     ((OWQ_pn(owq_copy).ft->write == NO_WRITE_FUNCTION) ? "oo" : "wo") :
+                     ((OWQ_pn(owq_copy).ft->write == NO_WRITE_FUNCTION) ? "ro" : "rw") ,
                    (int) FullFileLength(PN(owq_copy))
                   );
     UCLIBCUNLOCK;
@@ -395,7 +395,7 @@ static int FS_structure(struct one_wire_query * owq)
 static int FS_read_lump(struct one_wire_query * owq)
 {
     if ( OWQ_Cache_Get(owq) ) { // non-zero means not found
-        int read_error = (OWQ_pn(owq).ft->read.o)(owq) ;
+        int read_error = (OWQ_pn(owq).ft->read)(owq) ;
         if ( read_error < 0 ) return read_error ;
         OWQ_Cache_Add(owq) ;
     }
@@ -421,7 +421,7 @@ static int FS_read_from_parts(struct one_wire_query * owq)
     for (extension = 0; extension < elements; ++extension) {
         OWQ_pn(owq_single).extension = extension ;
         if ( OWQ_Cache_Get(owq_single) ) { // non-zero if not there
-            int single_or_error = (pn->ft->read.o)(owq_single) ;
+            int single_or_error = (pn->ft->read)(owq_single) ;
             if ( single_or_error < 0 ) return single_or_error ;
             OWQ_Cache_Add(owq_single) ;
         }

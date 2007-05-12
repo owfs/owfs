@@ -60,10 +60,10 @@ WRITE_FUNCTION(FS_reset);
 
 struct filetype DS1954[] = {
 	F_STANDARD,
-  {"ipr", 128, NULL, ft_binary, fc_volatile,  {o:FS_r_ipr}, {o:FS_w_ipr}, {v:NULL},},  {"ipr", 128, NULL, ft_binary, fc_volatile,  {o:FS_r_ipr}, {o:FS_w_ipr}, {v:NULL},},  {"ipr", 128, NULL, ft_binary, fc_volatile,  {o:FS_r_ipr}, {o:FS_w_ipr}, {v:NULL},},  {"ipr", 128, NULL, ft_binary, fc_volatile, {o: FS_r_ipr}, {o: FS_w_ipr}, {v:NULL},},
-  {"io_buffer", 8, NULL, ft_binary, fc_volatile,  {o:FS_r_io}, {o:FS_w_io}, {v:NULL},},  {"io_buffer", 8, NULL, ft_binary, fc_volatile,  {o:FS_r_io}, {o:FS_w_io}, {v:NULL},},  {"io_buffer", 8, NULL, ft_binary, fc_volatile,  {o:FS_r_io}, {o:FS_w_io}, {v:NULL},},  {"io_buffer", 8, NULL, ft_binary, fc_volatile, {o: FS_r_io}, {o: FS_w_io}, {v:NULL},},
-  {"status", 4, NULL, ft_binary, fc_volatile,  {o:FS_r_status}, {o:FS_w_status}, {v:NULL},},  {"status", 4, NULL, ft_binary, fc_volatile,  {o:FS_r_status}, {o:FS_w_status}, {v:NULL},},  {"status", 4, NULL, ft_binary, fc_volatile,  {o:FS_r_status}, {o:FS_w_status}, {v:NULL},},  {"status", 4, NULL, ft_binary, fc_volatile, {o: FS_r_status}, {o: FS_w_status}, {v:NULL},},
-  {"reset", 1, NULL, ft_yesno, fc_volatile,  {o:NO_READ_FUNCTION}, {o:FS_reset}, {v:NULL},},  {"reset", 1, NULL, ft_yesno, fc_volatile,  {o:NO_READ_FUNCTION}, {o:FS_reset}, {v:NULL},},  {"reset", 1, NULL, ft_yesno, fc_volatile,  {o:NO_READ_FUNCTION}, {o:FS_reset}, {v:NULL},},  {"reset", 1, NULL, ft_yesno, fc_volatile, {o:NULL}, {o: FS_reset}, {v:NULL},},
+  {"ipr", 128, NULL, ft_binary, fc_volatile,   FS_r_ipr, FS_w_ipr, {v:NULL},} ,
+  {"io_buffer", 8, NULL, ft_binary, fc_volatile,   FS_r_io, FS_w_io, {v:NULL},} ,
+  {"status", 4, NULL, ft_binary, fc_volatile,   FS_r_status, FS_w_status, {v:NULL},} ,
+  {"reset", 1, NULL, ft_yesno, fc_volatile,   NO_READ_FUNCTION, FS_reset, {v:NULL},} ,
 };
 
 DeviceEntryExtended(16, DS1954, DEV_ovdr );

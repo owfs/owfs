@@ -41,8 +41,8 @@ static void Show(FILE * out, const char *path, const char *file)
     if (IsDir(pn)) {			/* Directory jump */
         fprintf(out, "<A HREF='%s'>%s</A>", pn->path, file);
 	} else {
-        int canwrite = !Global.readonly && (pn->ft->write.o != NO_WRITE_FUNCTION);
-        int canread = (pn->ft->read.o != NO_READ_FUNCTION);
+        int canwrite = !Global.readonly && (pn->ft->write != NO_WRITE_FUNCTION);
+        int canread = (pn->ft->read != NO_READ_FUNCTION);
         enum ft_format format = pn->ft->format;
 		int len = 0;			// initialize to avoid compiler warning
 
@@ -168,8 +168,8 @@ static void ShowText(FILE * out, const char *path, const char *file)
 
     if (IsDir(pn)) {			/* Directory jump */
 	} else {
-        int canwrite = !Global.readonly && (pn->ft->write.o != NO_READ_FUNCTION);
-        int canread = (pn->ft->read.o != NO_WRITE_FUNCTION);
+        int canwrite = !Global.readonly && (pn->ft->write != NO_READ_FUNCTION);
+        int canread = (pn->ft->read != NO_WRITE_FUNCTION);
         enum ft_format format = pn->ft->format;
 		int len = 0;			// initialize to avoid compiler warning
 

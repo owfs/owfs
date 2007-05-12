@@ -34,25 +34,25 @@ int FS_present(struct one_wire_query * owq);
 /* ------- Structures ----------- */
 
 #define F_address  \
-    {"address"   ,  16,  NULL, ft_ascii , fc_static  , {o: FS_address}  , {o:NULL}, {v:NULL}, }
+    {"address"   ,  16,  NULL, ft_ascii , fc_static  , FS_address  , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_r_address  \
-    {"r_address" ,  16,  NULL, ft_ascii , fc_static  , {o: FS_r_address}, {o:NULL}, {v:NULL}, }
+    {"r_address" ,  16,  NULL, ft_ascii , fc_static  , FS_r_address, NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_crc8     \
-    {"crc8"      ,   2,  NULL, ft_ascii , fc_static  , {o: FS_crc8}     , {o:NULL}, {v:NULL}, }
+    {"crc8"      ,   2,  NULL, ft_ascii , fc_static  , FS_crc8     , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_id       \
-    {"id"        ,  12,  NULL, ft_ascii , fc_static  , {o: FS_ID}       , {o:NULL}, {v:NULL}, }
+    {"id"        ,  12,  NULL, ft_ascii , fc_static  , FS_ID       , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_r_id       \
-    {"r_id"      ,  12,  NULL, ft_ascii , fc_static  , {o: FS_r_ID}     , {o:NULL}, {v:NULL}, }
+    {"r_id"      ,  12,  NULL, ft_ascii , fc_static  , FS_r_ID     , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_code     \
-    {"family"    ,   2,  NULL, ft_ascii , fc_static  , {o: FS_code}     , {o:NULL}, {v:NULL}, }
+    {"family"    ,   2,  NULL, ft_ascii , fc_static  , FS_code     , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_present  \
-    {"present"   ,   1,  NULL, ft_yesno , fc_volatile, {o: FS_present}  , {o:NULL}, {v:NULL}, }
+    {"present"   ,   1,  NULL, ft_yesno , fc_volatile, FS_present  , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_type     \
-    {"type"      ,  32,  NULL, ft_vascii, fc_static  , {o: FS_type}     , {o:NULL}, {v:NULL}, }
+    {"type"      ,  32,  NULL, ft_vascii, fc_static  , FS_type     , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_locator  \
-    {"locator"   ,  16,  NULL, ft_ascii , fc_directory,{o: FS_locator}  , {o:NULL}, {v:NULL}, }
+    {"locator"   ,  16,  NULL, ft_ascii , fc_directory,FS_locator  , NO_WRITE_FUNCTION, {v:NULL}, }
 #define F_r_locator\
-    {"r_locator" ,  16,  NULL, ft_ascii , fc_directory,{o: FS_r_locator}, {o:NULL}, {v:NULL}, }
+    {"r_locator" ,  16,  NULL, ft_ascii , fc_directory,FS_r_locator, NO_WRITE_FUNCTION, {v:NULL}, }
 
 #define F_STANDARD          F_address,F_code,F_crc8,F_id,F_locator,F_present,F_r_address,F_r_id,F_r_locator,F_type
 

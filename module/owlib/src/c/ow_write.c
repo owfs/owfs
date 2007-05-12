@@ -219,7 +219,7 @@ static int FS_w_local(struct one_wire_query * owq)
 	//printf("FS_w_local\n");
 
 	/* Writable? */
-	if ((pn->ft->write.o) == NULL)
+	if ( pn->ft->write == NO_WRITE_FUNCTION )
 		return -ENOTSUP;
 
 	/* Special case for "fake" adapter */
@@ -264,7 +264,7 @@ static int FS_write_single_lump(struct one_wire_query * owq)
 
     OWQ_create_shallow_single( owq_copy, owq ) ;
 
-    write_error = (OWQ_pn(owq).ft->write.o)(owq_copy) ;
+    write_error = (OWQ_pn(owq).ft->write)(owq_copy) ;
 
     if ( write_error < 0 ) return write_error ;
 
@@ -285,7 +285,7 @@ static int FS_write_a_part(struct one_wire_query * owq)
     if ( OWQ_create_shallow_aggregate( owq_all, owq ) < 0 ) return -ENOMEM ;
 
     if ( OWQ_Cache_Get(owq_all) ) {
-        write_error = (pn->ft->write.o)(owq_all) ;
+        write_error = (pn->ft->write)(owq_all) ;
         if ( write_error < 0 ) {
             OWQ_destroy_shallow_aggregate(owq_all) ;
             return write_error ;
@@ -342,7 +342,7 @@ static int FS_write_aggregate_lump(struct one_wire_query * owq)
 
     OWQ_create_shallow_aggregate( owq_copy, owq ) ;
 
-    write_error = (OWQ_pn(owq).ft->write.o)(owq_copy) ;
+    write_error = (OWQ_pn(owq).ft->write)(owq_copy) ;
 
     OWQ_destroy_shallow_aggregate(owq_copy) ;
 
@@ -428,6 +428,7 @@ static int FS_write_all_bits(struct one_wire_query * owq)
     return FS_write_single_lump(owq_single) ;
 }
 
+/* Writing a single bit -- need to read in whole byte and change bit */
 static int FS_write_a_bit(struct one_wire_query * owq)
 {
 	OWQ_make( owq_single ) ;
@@ -438,7 +439,7 @@ static int FS_write_a_bit(struct one_wire_query * owq)
     OWQ_pn(owq_single).extension = EXTENSION_BYTE ;
     
     if ( OWQ_Cache_Get(owq_single) ) {
-        int read_error = (pn->ft->read.o)(owq_single) ;
+        int read_error = (pn->ft->read)(owq_single) ;
         if ( read_error < 0 ) return read_error ;
     }
 
