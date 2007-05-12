@@ -12,6 +12,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_1821.c         \
                ow_1921.c         \
                ow_1923.c         \
+               ow_1954.c         \
                ow_1963.c         \
                ow_1977.c         \
                ow_1991.c         \

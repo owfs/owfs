@@ -8,6 +8,7 @@ noinst_HEADERS =          \
         ow_1821.h \
         ow_1921.h \
         ow_1923.h \
+        ow_1954.h \
         ow_1963.h \
         ow_1977.h \
         ow_1991.h \
