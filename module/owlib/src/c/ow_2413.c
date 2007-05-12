@@ -48,7 +48,7 @@ $Id$
 
 /* ------- Prototypes ----------- */
 
-/* DS2406 switch */
+/* DS2413 switch */
 READ_FUNCTION(FS_r_pio);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
@@ -60,8 +60,8 @@ struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
   {"PIO",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_r_pio}, {o: FS_w_pio}, {v:NULL},},
-  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_sense}, {v: NULL}, {v:NULL},},
-  {"latch",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_r_latch}, {v: NULL}, {v:NULL},},
+  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_sense}, {o: NULL}, {v:NULL},},
+  {"latch",PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, {o: FS_r_latch}, {o: NULL}, {v:NULL},},
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);

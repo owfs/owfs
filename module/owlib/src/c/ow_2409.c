@@ -58,14 +58,14 @@ READ_FUNCTION(FS_r_event);
 struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, };
 struct filetype DS2409[] = {
 	F_STANDARD,
-  {"discharge",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_discharge}, {v:NULL},},
-  {"clearevent",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {v: NULL}, {o: FS_clearevent}, {v:NULL},},
+  {"discharge",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: NULL}, {o: FS_discharge}, {v:NULL},},
+  {"clearevent",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: NULL}, {o: FS_clearevent}, {v:NULL},},
   {"control",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: FS_r_control}, {o: FS_w_control}, {v:NULL},},
-  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, {o: FS_r_sensed}, {v: NULL}, {v:NULL},},
-  {"branch",PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, {o: FS_r_branch}, {v: NULL}, {v:NULL},},
-  {"event",PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, {o: FS_r_event}, {v: NULL}, {v:NULL},},
-  {"aux", 0, NULL, ft_directory, fc_volatile, {v: NULL}, {v: NULL}, {i:1},},
-  {"main", 0, NULL, ft_directory, fc_volatile, {v: NULL}, {v: NULL}, {i:0},},
+  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, {o: FS_r_sensed}, {o: NULL}, {v:NULL},},
+  {"branch",PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, {o: FS_r_branch}, {o: NULL}, {v:NULL},},
+  {"event",PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, {o: FS_r_event}, {o: NULL}, {v:NULL},},
+  {"aux", 0, NULL, ft_directory, fc_volatile, {o: NULL}, {o: NULL}, {i:1},},
+  {"main", 0, NULL, ft_directory, fc_volatile, {o: NULL}, {o: NULL}, {i:0},},
 };
 
 DeviceEntry(1F, DS2409);

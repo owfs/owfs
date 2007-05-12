@@ -80,7 +80,7 @@ struct device d_sys_adapter =
 
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
-	//    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   fc_static, {a:FS_pidfile}, {v:NULL}, {v: NULL }, } ,
+	//    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   fc_static, {a:FS_pidfile}, {o:NULL}, {v: NULL }, } ,
   {"pidfile", 128, NULL, ft_vascii, fc_static, {o: FS_pidfile}, {o: NULL}, {v:NULL},},
 	// variable length
   {"pid",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, {o: FS_pid}, {o: NULL}, {v:NULL},},

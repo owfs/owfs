@@ -105,11 +105,11 @@ struct aggregate A1923h = { 63, ag_numbers, ag_mixed, };
 struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, };
 struct filetype DS1923[] = {
     F_STANDARD,
-    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
     {"pages/page", 32, &A1923p, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-    {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, {o: FS_r_temperature}, {v: NULL}, {v:NULL},},
-    {"humidity",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, {o: FS_r_humid}, {v: NULL}, {v:NULL},},
-    {"clock",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+    {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, {o: FS_r_temperature}, {o: NULL}, {v:NULL},},
+    {"humidity",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, {o: FS_r_humid}, {o: NULL}, {v:NULL},},
+    {"clock",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
     {"clock/date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, {o: FS_r_date}, {o: FS_w_date}, {v:NULL},},
     {"clock/udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second, {o: FS_r_counter}, {o: FS_w_counter}, {v:NULL},},
     {"clock/running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_rbitread}, {o: FS_rbitwrite}, {v:&BitReads[2]},},
@@ -117,21 +117,21 @@ struct filetype DS1923[] = {
     /* Just test functions */
 {"running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_run}, {o: FS_w_run}, {v:NULL},},
 {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
-{"clearmem", 1, NULL, ft_binary, fc_stable, {o: FS_clearmem}, {v: NULL}, {v:NULL},},
-{"enableosc", 1, NULL, ft_binary, fc_stable, {o: FS_enable_osc}, {v: NULL}, {v:NULL},},
+{"clearmem", 1, NULL, ft_binary, fc_stable, {o: FS_clearmem}, {o: NULL}, {v:NULL},},
+{"enableosc", 1, NULL, ft_binary, fc_stable, {o: FS_enable_osc}, {o: NULL}, {v:NULL},},
 #endif
-{"mission",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+{"mission",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
 {"mission/running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {o: FS_w_mip}, {v:&BitReads[0]},},
 {"mission/rollover",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_bitread}, {o: FS_bitwrite}, {v:&BitReads[1]},},
 {"mission/delay",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_r_delay}, {o: FS_w_delay}, {v:NULL},},
-{"mission/samplingtemp",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads[3]},},
-    {"mission/samplinghumidity",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {v: NULL}, {v:&BitReads[4]},},
+{"mission/samplingtemp",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {o: NULL}, {v:&BitReads[3]},},
+    {"mission/samplinghumidity",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_bitread}, {o: NULL}, {v:&BitReads[4]},},
 #if 0
 {"mission/frequency",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {u: FS_r_samplerate}, {u: FS_w_samplerate}, {v:NULL},},
-{"mission/samples",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {u: FS_r_3byte}, {v: NULL}, {s:0x021A},},
+{"mission/samples",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {u: FS_r_3byte}, {o: NULL}, {s:0x021A},},
 {"mission/delay",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, {o: FS_r_delay}, {o: FS_w_delay}, {v:NULL},},
-{"mission/date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_volatile, {d: FS_mdate}, {v: NULL}, {v:NULL},},
-{"mission/easystart",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {v: NULL}, {u: FS_easystart}, {v:NULL},},
+{"mission/date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_volatile, {d: FS_mdate}, {o: NULL}, {o:NULL},},
+{"mission/easystart",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, {o: NULL}, {u: FS_easystart}, {v:NULL},},
 #endif
 };
 

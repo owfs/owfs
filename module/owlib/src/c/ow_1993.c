@@ -56,7 +56,7 @@ WRITE_FUNCTION(FS_w_memory);
 struct aggregate A1992 = { 4, ag_numbers, ag_separate, };
 struct filetype DS1992[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A1992, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"memory", 128, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
@@ -66,7 +66,7 @@ DeviceEntry(08, DS1992);
 struct aggregate A1993 = { 16, ag_numbers, ag_separate, };
 struct filetype DS1993[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A1993, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
@@ -76,7 +76,7 @@ DeviceEntry(06, DS1993);
 struct aggregate A1995 = { 64, ag_numbers, ag_separate, };
 struct filetype DS1995[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A1995, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"memory", 2048, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
@@ -86,7 +86,7 @@ DeviceEntryExtended(0A, DS1995, DEV_ovdr);
 struct aggregate A1996 = { 256, ag_numbers, ag_separate, };
 struct filetype DS1996[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A1996, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"memory", 8192, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };

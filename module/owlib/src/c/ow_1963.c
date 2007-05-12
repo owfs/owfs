@@ -57,12 +57,12 @@ READ_FUNCTION(FS_counter);
 struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963S[] = {
     F_STANDARD,
-    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
     {"pages/page", 32, &A1963S, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-    {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, {o: FS_counter}, {v: NULL}, {v:NULL},},
-    {"pages/password", 8, NULL, ft_binary, fc_stable, {v: NULL}, {o: FS_w_password}, {v:NULL},},
+    {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, {o: FS_counter}, {o: NULL}, {v:NULL},},
+    {"pages/password", 8, NULL, ft_binary, fc_stable, {o: NULL}, {o: FS_w_password}, {v:NULL},},
     {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
-    {"password", 8, NULL, ft_binary, fc_stable, {v: NULL}, {o: FS_w_password}, {v:NULL},},
+    {"password", 8, NULL, ft_binary, fc_stable, {o: NULL}, {o: FS_w_password}, {v:NULL},},
 };
 
 DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr);
@@ -70,9 +70,9 @@ DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr);
 struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963L[] = {
     F_STANDARD,
-    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
-    {"pages/page", 32, &A1963L, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-    {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, {o: FS_counter}, {v: NULL}, {v:NULL},},
+    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
+    {"pages/page", 32, &A1963L, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v: NULL},},
+    {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, {o: FS_counter}, {o: NULL}, {v:NULL},},
     {"memory", 512, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
 };
 

@@ -71,14 +71,14 @@ struct aggregate A2450m = { 4, ag_letters, ag_mixed, };
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, };
 struct filetype DS2450[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 8, &A2450, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
   {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_power}, {o: FS_w_power}, {v:NULL},},
   {"memory", 32, NULL, ft_binary, fc_stable, {o: FS_r_mem}, {o: FS_w_mem}, {v:NULL},},
   {"PIO",PROPERTY_LENGTH_YESNO, &A2450m, ft_yesno, fc_stable, {o: FS_r_PIO}, {o: FS_w_PIO}, {i:0},},
-  {"volt",PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {i:1},},
-  {"volt2",PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {i:0},},
-  {"set_alarm",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"volt",PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, {o: FS_volts}, {o: NULL}, {i:1},},
+  {"volt2",PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, {o: FS_volts}, {o: NULL}, {i:0},},
+  {"set_alarm",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"set_alarm/volthigh",PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_stable, {o: FS_r_setvolt}, {o: FS_w_setvolt}, {i:3},},
   {"set_alarm/volt2high",PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_stable, {o: FS_r_setvolt}, {o: FS_w_setvolt}, {i:2},},
   {"set_alarm/voltlow",PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_stable, {o: FS_r_setvolt}, {o: FS_w_setvolt}, {i:1},},
@@ -86,7 +86,7 @@ struct filetype DS2450[] = {
   {"set_alarm/high",PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_stable, {o: FS_r_high}, {o: FS_w_high}, {i:1},},
   {"set_alarm/low",PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_stable, {o: FS_r_high}, {o: FS_w_high}, {i:0},},
   {"set_alarm/unset",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_por}, {o: FS_w_por}, {v:NULL},},
-  {"alarm",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"alarm",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"alarm/high",PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_volatile, {o: FS_r_flag}, {o: FS_w_flag}, {i:1},},
   {"alarm/low",PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_volatile, {o: FS_r_flag}, {o: FS_w_flag}, {i:0},},
 };

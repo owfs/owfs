@@ -56,10 +56,10 @@ READ_FUNCTION(FS_volts);
 struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
 struct filetype DS2436[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {v: NULL}, {v: NULL}, {v:NULL},},
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, {o: NULL}, {o: NULL}, {v:NULL},},
   {"pages/page", 32, &A2436, ft_binary, fc_stable, {o: FS_r_page}, {o: FS_w_page}, {v:NULL},},
-  {"volts",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, {o: FS_volts}, {v: NULL}, {v:NULL},},
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {v: NULL}, {v:NULL},},
+  {"volts",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, {o: FS_volts}, {o: NULL}, {v:NULL},},
+  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, {o: FS_temp}, {o: NULL}, {v:NULL},},
 };
 
 DeviceEntry(1B, DS2436);

@@ -58,7 +58,7 @@ struct filetype DS2430A[] = {
 	F_STANDARD,
   {"memory", 16, NULL, ft_binary, fc_stable, {o: FS_r_memory}, {o: FS_w_memory}, {v:NULL},},
   {"application", 8, NULL, ft_binary, fc_stable, {o: FS_r_application}, {o: FS_w_application}, {v:NULL},},
-  {"lock",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_lock}, {v: NULL}, {v:NULL},},
+  {"lock",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, {o: FS_r_lock}, {o: NULL}, {v:NULL},},
 };
 
 DeviceEntry(14, DS2430A);
