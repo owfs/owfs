@@ -1021,7 +1021,7 @@ static void do_retr(struct ftp_session_s *f,
 		goto exit_retr;
     }
     
-    if (OWQ_pn(&owq).ft->read.v == NULL) {
+    if (OWQ_pn(&owq).ft->read.o == NO_READ_FUNCTION) {
 		reply(f, 550, "Error, file is write-only.");
 		goto exit_retr;
     }
@@ -1170,7 +1170,7 @@ static void do_stor(struct ftp_session_s *f,
 		goto exit_stor;
     }
 
-    if (pn->ft->write.v == NULL) {
+    if (pn->ft->write.o == NO_WRITE_FUNCTION) {
 		reply(f, 550, "Error, file is read-only.");
 		goto exit_stor;
 	}

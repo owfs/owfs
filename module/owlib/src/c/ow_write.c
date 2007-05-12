@@ -219,7 +219,7 @@ static int FS_w_local(struct one_wire_query * owq)
 	//printf("FS_w_local\n");
 
 	/* Writable? */
-	if ((pn->ft->write.v) == NULL)
+	if ((pn->ft->write.o) == NULL)
 		return -ENOTSUP;
 
 	/* Special case for "fake" adapter */

@@ -289,7 +289,7 @@ static int FS_r_local(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     
     /* Readable? */
-    if ((pn->ft->read.v) == NULL)
+    if ((pn->ft->read.o) == NULL)
         return -ENOTSUP;
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
@@ -368,9 +368,9 @@ static int FS_structure(struct one_wire_query * owq)
                    ft_format_char[OWQ_pn(owq_copy).ft->format],
                    (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).extension : 0,
                    (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).ft->ag->elements : 1,
-                   (OWQ_pn(owq_copy).ft->read.v) ?
-                   ((OWQ_pn(owq_copy).ft->write.v) ? "rw" : "ro") :
-                           ((OWQ_pn(owq_copy).ft->write.v) ? "wo" : "oo"),
+                   (OWQ_pn(owq_copy).ft->read.o) ?
+                   ((OWQ_pn(owq_copy).ft->write.o) ? "rw" : "ro") :
+                           ((OWQ_pn(owq_copy).ft->write.o) ? "wo" : "oo"),
                    (int) FullFileLength(PN(owq_copy))
                   );
     UCLIBCUNLOCK;

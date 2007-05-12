@@ -470,6 +470,7 @@ int BadAdapter_detect(struct connection_in *in);
 int LINKE_detect(struct connection_in *in);
 int Fake_detect(struct connection_in *in);
 int Tester_detect(struct connection_in *in);
+int EtherWeather_detect(struct connection_in *in);
 
 #if OW_HA7
 int HA7_detect(struct connection_in *in);

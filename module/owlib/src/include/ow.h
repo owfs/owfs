@@ -399,6 +399,8 @@ extern int indevices;
 #define PROPERTY_LENGTH_DIRECTORY  8
 #define PROPERTY_LENGTH_SUBDIR     0
 
+#define NO_READ_FUNCTION NULL
+#define NO_WRITE_FUNCTION NULL
 /* filetype gives -file types- for chip properties */
 struct filetype {
 	char *name;
@@ -408,7 +410,7 @@ struct filetype {
 	enum fc_change change;		// volatility
 	union {
         int (*o) ( struct one_wire_query * ) ;
-		void *v;
+//		void *v;
 //		int (*i) (int *, const struct parsedname *);
 //		int (*u) (UINT *, const struct parsedname *);
 //		int (*f) (_FLOAT *, const struct parsedname *);
@@ -419,7 +421,7 @@ struct filetype {
 	} read;						// read callback function
 	union {
         int (*o) ( struct one_wire_query * ) ;
-        void *v;
+//        void *v;
 //		int (*i) (const int *, const struct parsedname *);
 //		int (*u) (const UINT *, const struct parsedname *);
 //		int (*f) (const _FLOAT *, const struct parsedname *);
@@ -728,22 +730,22 @@ extern time_t dir_time;			/* time of last directory scan */
 
 /* Prototypes */
 #define  READ_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
-#define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
-#define uREAD_FUNCTION( fname )  static int fname(UINT *, const struct parsedname * pn)
-#define fREAD_FUNCTION( fname )  static int fname(_FLOAT *, const struct parsedname * pn)
-#define dREAD_FUNCTION( fname )  static int fname(_DATE *, const struct parsedname * pn)
-#define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
-#define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bREAD_FUNCTION( fname )  static int fname(BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+//#define iREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname *)
+//#define uREAD_FUNCTION( fname )  static int fname(UINT *, const struct parsedname * pn)
+//#define fREAD_FUNCTION( fname )  static int fname(_FLOAT *, const struct parsedname * pn)
+//#define dREAD_FUNCTION( fname )  static int fname(_DATE *, const struct parsedname * pn)
+//#define yREAD_FUNCTION( fname )  static int fname(int *, const struct parsedname * pn)
+//#define aREAD_FUNCTION( fname )  static int fname(char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+//#define bREAD_FUNCTION( fname )  static int fname(BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 #define  WRITE_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
-#define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
-#define uWRITE_FUNCTION( fname )  static int fname(const UINT *, const struct parsedname * pn)
-#define fWRITE_FUNCTION( fname )  static int fname(const _FLOAT *, const struct parsedname * pn)
-#define dWRITE_FUNCTION( fname )  static int fname(const _DATE *, const struct parsedname * pn)
-#define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
-#define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
-#define bWRITE_FUNCTION( fname )  static int fname(const BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+//#define iWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
+//#define uWRITE_FUNCTION( fname )  static int fname(const UINT *, const struct parsedname * pn)
+//#define fWRITE_FUNCTION( fname )  static int fname(const _FLOAT *, const struct parsedname * pn)
+//#define dWRITE_FUNCTION( fname )  static int fname(const _DATE *, const struct parsedname * pn)
+//#define yWRITE_FUNCTION( fname )  static int fname(const int *, const struct parsedname * pn)
+//#define aWRITE_FUNCTION( fname )  static int fname(const char *buf, const size_t size, const off_t offset, const struct parsedname * pn)
+//#define bWRITE_FUNCTION( fname )  static int fname(const BYTE *buf, const size_t size, const off_t offset, const struct parsedname * pn)
 
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup(enum opt_program op);

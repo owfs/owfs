@@ -47,8 +47,6 @@ $Id$
 #define EtherWeather_COMMAND_BITS		'b'
 #define EtherWeather_COMMAND_POWER	'P'
 
-int EtherWeather_detect(struct connection_in *in);
-
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata) {
 	ssize_t res;
 	ssize_t left = datalen;
