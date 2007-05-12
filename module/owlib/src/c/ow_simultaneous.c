@@ -56,12 +56,12 @@ READ_FUNCTION(FS_r_single);
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-  {"temperature",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_temp},},
-  {"voltage",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_volt},},
-  {"present",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {o: NULL}, {i:0},},
-  {"present_ds2400",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {o: NULL}, {i:1},},
-  {"single", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {o: NULL}, {i:0},},
-  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {o: NULL}, {i:1},},
+  {"temperature",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_convert}, {o:FS_w_convert}, {i:simul_temp},},  {"temperature",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_convert}, {o:FS_w_convert}, {i:simul_temp},},  {"temperature",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_convert}, {o:FS_w_convert}, {i:simul_temp},},  {"temperature",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_temp},},
+  {"voltage",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_convert}, {o:FS_w_convert}, {i:simul_volt},},  {"voltage",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_convert}, {o:FS_w_convert}, {i:simul_volt},},  {"voltage",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_convert}, {o:FS_w_convert}, {i:simul_volt},},  {"voltage",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_convert}, {o: FS_w_convert}, {i:simul_volt},},
+  {"present",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_present}, {o:NO_WRITE_FUNCTION}, {i:0},},  {"present",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_present}, {o:NO_WRITE_FUNCTION}, {i:0},},  {"present",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_present}, {o:NO_WRITE_FUNCTION}, {i:0},},  {"present",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {o: NULL}, {i:0},},
+  {"present_ds2400",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_present}, {o:NO_WRITE_FUNCTION}, {i:1},},  {"present_ds2400",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_present}, {o:NO_WRITE_FUNCTION}, {i:1},},  {"present_ds2400",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,  {o:FS_r_present}, {o:NO_WRITE_FUNCTION}, {i:1},},  {"present_ds2400",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, {o: FS_r_present}, {o: NULL}, {i:1},},
+  {"single", 18, NULL, ft_ascii, fc_volatile,  {o:FS_r_single}, {o:NO_WRITE_FUNCTION}, {i:0},},  {"single", 18, NULL, ft_ascii, fc_volatile,  {o:FS_r_single}, {o:NO_WRITE_FUNCTION}, {i:0},},  {"single", 18, NULL, ft_ascii, fc_volatile,  {o:FS_r_single}, {o:NO_WRITE_FUNCTION}, {i:0},},  {"single", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {o: NULL}, {i:0},},
+  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile,  {o:FS_r_single}, {o:NO_WRITE_FUNCTION}, {i:1},},  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile,  {o:FS_r_single}, {o:NO_WRITE_FUNCTION}, {i:1},},  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile,  {o:FS_r_single}, {o:NO_WRITE_FUNCTION}, {i:1},},  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, {o: FS_r_single}, {o: NULL}, {i:1},},
 };
 
 DeviceEntry(simultaneous, simultaneous);
