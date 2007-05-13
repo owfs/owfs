@@ -623,7 +623,7 @@ static int OW_w_int(const int I, const UINT address,
 	// read back registers
 	if (OW_r_page(data, address >> 3, pn))
 		return 1;
-	data[address & 0x07] = I & 0xFF;
-	data[(address & 0x07) + 1] = (I >> 8) & 0xFF;
+	data[address & 0x07] = BYTE_MASK(I) ;
+	data[(address & 0x07) + 1] = BYTE_MASK(I >> 8) ;
 	return OW_w_page(data, address >> 3, pn);
 }

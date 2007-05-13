@@ -95,6 +95,8 @@ DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
 #define _1W_WRITE_REGISTER 0xCC
 #define _1W_RESET_ACTIVITY_LATCHES 0xC3
 
+#define _1W_PIO_CONFIRMATION 0xAA
+
 #define _ADDRESS_PIO_LOGIC 0x0220
 #define _ADDRESS_PIO_OUTPUT 0x0221
 #define _ADDRESS_PIO_ACTIVITY 0x0222
@@ -160,7 +162,7 @@ static int FS_r_pio(struct one_wire_query * owq)
     OWQ_create_temporary( owq_pio, (char *) &data, 1, _ADDRESS_PIO_OUTPUT, PN(owq) ) ;
     if (OW_r_mem_simple( owq_pio, 0, 0 ))
 		return -EINVAL;
-    OWQ_U(owq) = (data ^ 0xFF) & 0x03;	/* reverse bits */
+    OWQ_U(owq) = BYTE_INVERSE(data) & 0x03;	/* reverse bits */
 	return 0;
 }
 
@@ -169,7 +171,7 @@ static int FS_w_pio(struct one_wire_query * owq)
 {
 	BYTE data = 0;
 	/* reverse bits */
-    data = (OWQ_U(owq) ^ 0xFF) | 0xFC;	/* Set bits 2-7 to "1" */
+    data = BYTE_INVERSE(OWQ_U(owq)) | 0xFC;	/* Set bits 2-7 to "1" */
     if (OW_w_pio(data, PN(owq)))
 		return -EINVAL;
 	return 0;
@@ -367,7 +369,7 @@ static int OW_w_reg( BYTE * data,  size_t size,
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
 static int OW_w_pio( BYTE data,  struct parsedname *pn)
 {
-	BYTE p[3] = { _1W_PIO_ACCESS_WRITE, data & 0xFF, (data & 0xFF) ^ 0xFF, };
+	BYTE p[3] = { _1W_PIO_ACCESS_WRITE, BYTE_MASK(data), BYTE_INVERSE(data), };
 	BYTE resp[1];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -376,7 +378,7 @@ static int OW_w_pio( BYTE data,  struct parsedname *pn)
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn) || resp[0] != 0xAA;
+	return BUS_transaction(t, pn) || resp[0] != _1W_PIO_CONFIRMATION;
 }
 
 /* Clear latches */
@@ -389,5 +391,5 @@ static int OW_clear( struct parsedname *pn)
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn) || p[0] != _1W_RESET_ACTIVITY_LATCHES || p[1] != 0xAA;
+	return BUS_transaction(t, pn) || p[0] != _1W_RESET_ACTIVITY_LATCHES || p[1] != _1W_PIO_CONFIRMATION;
 }

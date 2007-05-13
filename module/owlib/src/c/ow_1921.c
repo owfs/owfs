@@ -825,7 +825,7 @@ static int FS_r_delay(struct one_wire_query * owq)
 /* mission delay */
 static int FS_w_delay(struct one_wire_query * owq)
 {
-    BYTE data[] = { OWQ_U(owq) & 0xFF, (OWQ_U(owq) >> 8) & 0xFF, };
+    BYTE data[2] = { LOW_HIGH_ADDRESS(OWQ_U(owq)), };
     if (OW_MIP(PN(owq)))
 		return -EBUSY;
     if (OW_w_mem(data, 2, (size_t) 0x0212, PN(owq)))
@@ -871,8 +871,7 @@ static int FS_easystart(struct one_wire_query * owq)
 static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
-	BYTE p[3 + 1 + 32 + 2] =
-    { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
+	BYTE p[3 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	size_t rest = 32 - (offset & 0x1F);
 	int ret;
 
@@ -1119,7 +1118,7 @@ static int OW_startmission(UINT freq, struct parsedname *pn)
 		return -EINVAL;
 
 	/* finally, set the sample interval (to start the mission) */
-	data = freq & 0xFF;
+	data = BYTE_MASK(freq) ;
 	return OW_w_mem(&data, 1, 0x020D, pn);
 }
 

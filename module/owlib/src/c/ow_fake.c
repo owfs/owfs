@@ -90,12 +90,12 @@ int Fake_detect(struct connection_in *in)
             if ((isxdigit(dev[0]) && isxdigit(dev[1]))
                  || (dev = namefind(dev))) {
                 sn[0] = string2num(dev);
-                sn[1] = rand() & 0xFF;
-                sn[2] = rand() & 0xFF;
-                sn[3] = rand() & 0xFF;
-                sn[4] = rand() & 0xFF;
-                sn[5] = rand() & 0xFF;
-                sn[6] = rand() & 0xFF;
+                sn[1] = BYTE_MASK(rand()) ;
+                sn[2] = BYTE_MASK(rand()) ;
+                sn[3] = BYTE_MASK(rand()) ;
+                sn[4] = BYTE_MASK(rand()) ;
+                sn[5] = BYTE_MASK(rand()) ;
+                sn[6] = BYTE_MASK(rand()) ;
                 sn[7] = CRC8compute(sn, 7, 0);
                 DirblobAdd(sn, &(in->connin.fake.db));  // Ignore bad return
                  }
@@ -139,12 +139,12 @@ int Tester_detect(struct connection_in *in)
                  || (dev = namefind(dev))) {
                 unsigned int device_number = in->connin.tester.db.devices ;
                 sn[0] = string2num(dev); // family code
-                sn[1] = (testers>>0) & 0xFF; // "bus" number
-                sn[2] = (testers>>8) & 0xFF; // "bus" number
+                sn[1] = BYTE_MASK(testers>>0) ; // "bus" number
+                sn[2] = BYTE_MASK(testers>>8) ; // "bus" number
                 sn[3] = sn[0] ; // repeat family code
-                sn[4] = (sn[0]^0xFF) & 0xFF; // family code complement
-                sn[5] = (device_number>>0) & 0xFF; // "device" number
-                sn[6] = (device_number>>8) & 0xFF; // "device" number
+                sn[4] = BYTE_INVERSE(sn[0]) ; // family code complement
+                sn[5] = BYTE_MASK(device_number>>0) ; // "device" number
+                sn[6] = BYTE_MASK(device_number>>8) ; // "device" number
                 sn[7] = CRC8compute(sn, 7, 0); // CRC
                 DirblobAdd(sn, &(in->connin.tester.db));  // Ignore bad return
             }

@@ -184,7 +184,7 @@ static int FS_r_register(struct one_wire_query * owq)
 
 static int FS_w_register(struct one_wire_query * owq)
 {
-    if (OW_w_register(((BYTE) (OWQ_U(owq) & 0xFF)), PN(owq)))
+    if ( OW_w_register((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq)) )
 		return -EINVAL;
 	return 0;
 }
@@ -200,7 +200,7 @@ static int FS_r_data(struct one_wire_query * owq)
 
 static int FS_w_data(struct one_wire_query * owq)
 {
-    if (OW_w_data(((BYTE) (OWQ_U(owq) & 0xFF)), PN(owq)))
+    if ( OW_w_data((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq)) )
 		return -EINVAL;
 	return 0;
 }
@@ -444,7 +444,7 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
 					    struct parsedname *pn)
 {
-	BYTE buf[2] = { offset & 0xFF, size & 0xFF, };
+	BYTE buf[2] = { BYTE_MASK(offset), BYTE_MASK(size), };
 
 	if (buf[1] == 0)
 		return 0;
@@ -462,7 +462,7 @@ static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
 static int OW_w_memory( BYTE * data,  size_t size,
 					    off_t offset,  struct parsedname *pn)
 {
-	BYTE buf[17] = { offset & 0xFF, };
+	BYTE buf[17] = { BYTE_MASK(offset), };
 
 	if (size == 0)
 		return 0;

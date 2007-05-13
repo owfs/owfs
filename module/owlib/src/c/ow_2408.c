@@ -244,7 +244,7 @@ static int FS_r_pio(struct one_wire_query * owq)
     BYTE data[6];
     if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = data[1] ^ 0xFF;		/* reverse bits */
+    OWQ_U(owq) = BYTE_INVERSE(data[1]) ;		/* reverse bits */
 	return 0;
 }
 
@@ -252,7 +252,7 @@ static int FS_r_pio(struct one_wire_query * owq)
 static int FS_w_pio(struct one_wire_query * owq)
 {
     /* reverse bits */
-    if (OW_w_pio((OWQ_U(owq) & 0xFF) ^ 0xFF, PN(owq)))
+    if (OW_w_pio(BYTE_INVERSE(OWQ_U(owq)), PN(owq)))
 		return -EINVAL;
 	return 0;
 }

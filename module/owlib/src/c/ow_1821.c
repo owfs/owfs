@@ -258,7 +258,7 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex,
 						  const struct parsedname *pn)
 {
     BYTE p[] = { _1W_WRITE_TH, _1W_WRITE_TL, };
-	BYTE data = ((int) (T + .49)) & 0xFF;	// round off
+	BYTE data = BYTE_MASK((int) (T + .49)) ;	// round off
 	struct transaction_log t[] = {
 		TRXN_START,
 		{&p[Tindex], NULL, 1, trxn_match,},

@@ -485,7 +485,7 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
 static int OW_w_page(const BYTE * data, const size_t size,
 					 const off_t offset, const struct parsedname *pn)
 {
-	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0xC0, (0xFF ^ 0xC0) };
+	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0xC0, BYTE_INVERSE(0xC0) };
 	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
 	BYTE all_data[0x40];
 	int i, nr_bytes;

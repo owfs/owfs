@@ -169,7 +169,7 @@ static int FS_w_page(struct one_wire_query * owq)
 static int OW_w_mem( BYTE * data,  size_t size,
                      off_t offset,  struct parsedname *pn)
 {
-    BYTE p[6] = { _1W_WRITE_MEMORY, offset & 0xFF, offset >> 8, data[0] };
+    BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data[0] };
     int ret;
     struct transaction_log tfirst[] = {
         TRXN_START,
@@ -214,7 +214,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 static int OW_w_status( BYTE * data,  size_t size,
                      off_t offset,  struct parsedname *pn)
 {
-    BYTE p[6] = { _1W_WRITE_STATUS, offset & 0xFF, offset >> 8, data[0] };
+    BYTE p[6] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data[0] };
     int ret;
     struct transaction_log tfirst[] = {
         TRXN_START,

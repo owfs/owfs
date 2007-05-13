@@ -268,7 +268,7 @@ static int FS_power(struct one_wire_query * owq)
 /* 28EA00 switch */
 static int FS_w_pio(struct one_wire_query * owq)
 {
-    BYTE data = (OWQ_U(owq)&0x03) ^ 0xFF ; /* reverse bits, set unused to 1s */
+    BYTE data = BYTE_INVERSE(OWQ_U(owq)&0x03) ; /* reverse bits, set unused to 1s */
     if (OW_w_pio(data, PN(owq)))
 		return -EINVAL;
 	return 0;
@@ -288,7 +288,7 @@ static int FS_r_pio(struct one_wire_query * owq)
 	BYTE pio, latch;
     if (OW_read_pio(&pio, &latch, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = (latch ^ 0xFF) & 0x03;	/* reverse bits */
+    OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;	/* reverse bits */
 	return 0;
 }
 
@@ -349,13 +349,11 @@ static int FS_r_trim(struct one_wire_query * owq)
 
 static int FS_w_trim(struct one_wire_query * owq)
 {
-	BYTE t[2];
     UINT trim = OWQ_U(owq) ;
+	BYTE t[2] = {LOW_HIGH_ADDRESS(trim), } ;
     switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		t[0] = trim && 0xFF;
-		t[1] = (trim >> 8) && 0xFF;
         if (OW_w_trim(t, PN(owq)))
 			return -EINVAL;
 		return 0;

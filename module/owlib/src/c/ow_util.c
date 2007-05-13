@@ -104,10 +104,10 @@ void UT_set2bit(BYTE * buf, const int loc, const int bits)
 
 void UT_fromDate(const _DATE d, BYTE * data)
 {
-	data[0] = d & 0xFF;
-	data[1] = (d >> 8) & 0xFF;
-	data[2] = (d >> 16) & 0xFF;
-	data[3] = (d >> 24) & 0xFF;
+	data[0] = BYTE_MASK(d) ;
+	data[1] = BYTE_MASK(d >> 8)  ;
+	data[2] = BYTE_MASK(d >> 16) ;
+	data[3] = BYTE_MASK(d >> 24) ;
 }
 
 _DATE UT_toDate(const BYTE * data)

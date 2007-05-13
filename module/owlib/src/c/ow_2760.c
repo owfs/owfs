@@ -899,7 +899,7 @@ static int FS_r_temp(struct one_wire_query * owq)
 static int FS_r_bit(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int bit = pn->ft->data.u & 0xFF;
+    int bit = BYTE_MASK(pn->ft->data.u) ;
 	size_t location = pn->ft->data.u >> 8;
 	BYTE c[1];
 	if (OW_r_mem(c, 1, location, pn))
@@ -911,7 +911,7 @@ static int FS_r_bit(struct one_wire_query * owq)
 static int FS_w_bit(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int bit = pn->ft->data.u & 0xFF;
+    int bit = BYTE_MASK(pn->ft->data.u) ;
 	size_t location = pn->ft->data.u >> 8;
 	BYTE c[1];
 	if (OW_r_mem(c, 1, location, pn))
@@ -920,7 +920,7 @@ static int FS_w_bit(struct one_wire_query * owq)
 	return OW_w_mem(c, 1, location, pn) ? -EINVAL : 0;
 }
 
-/* 2406 switch PIO sensed*/
+/* switch PIO sensed*/
 static int FS_r_pio(struct one_wire_query * owq)
 {
 	if (FS_r_bit(owq))
@@ -953,7 +953,7 @@ static int FS_w_pio(struct one_wire_query * owq)
 static int OW_r_eeprom(const size_t page, const size_t size,
 					   const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_RECALL_DATA, page & 0xFF, };
+	BYTE p[] = { _1W_RECALL_DATA, BYTE_MASK(page), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -970,7 +970,7 @@ static int OW_r_eeprom(const size_t page, const size_t size,
 static int OW_r_sram(BYTE * data, const size_t size, const off_t offset,
 					 const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_READ_DATA, offset & 0xFF, };
+	BYTE p[] = { _1W_READ_DATA, BYTE_MASK(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -993,7 +993,7 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 static int OW_w_eeprom(const size_t page, const size_t size,
 					   const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_COPY_DATA, page & 0xFF, };
+	BYTE p[] = { _1W_COPY_DATA, BYTE_MASK(page), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -1009,7 +1009,7 @@ static int OW_w_eeprom(const size_t page, const size_t size,
 static int OW_w_sram(const BYTE * data, const size_t size,
 					 const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_WRITE_DATA, offset & 0xFF, };
+	BYTE p[] = { _1W_WRITE_DATA, BYTE_MASK(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		{p, NULL, 2, trxn_match,},
@@ -1056,7 +1056,7 @@ static int OW_r_int(int *I, off_t offset, const struct parsedname *pn)
 static int OW_w_int(const int *I, off_t offset,
 					const struct parsedname *pn)
 {
-	BYTE i[2] = { (I[0] >> 8) & 0xFF, I[0] & 0xFF, };
+	BYTE i[2] = { BYTE_MASK(I[0] >> 8), BYTE_MASK(I[0]), };
 	return OW_w_sram(i, 2, offset, pn);
 }
 
@@ -1074,7 +1074,7 @@ static int OW_r_int8(int *I, off_t offset, const struct parsedname *pn)
 static int OW_w_int8(const int *I, off_t offset,
 					 const struct parsedname *pn)
 {
-	BYTE i[1] = { I[0] & 0xFF, };
+	BYTE i[1] = { BYTE_MASK(I[0]), };
 	return OW_w_sram(i, 1, offset, pn);
 }
 

@@ -148,7 +148,7 @@ static int FS_reset(struct one_wire_query * owq)
 
 static int OW_w_ipr( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
-    BYTE p[2+128+2] = { _1W_WRITE_IPR, (size&0xFF), } ;
+    BYTE p[2+128+2] = { _1W_WRITE_IPR, BYTE_MASK(size), } ;
     struct transaction_log t[] = {
         TRXN_START,
         { p, NULL, 2+size, trxn_match, } ,
@@ -179,7 +179,7 @@ static int OW_r_ipr( struct one_wire_query * owq ) {
 
 static int OW_w_status( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
-    BYTE p[1+1+2] = { _1W_WRITE_STATUS, (size&0xFF), } ;
+    BYTE p[1+1+2] = { _1W_WRITE_STATUS, BYTE_MASK(size), } ;
     BYTE release[2] = { _1W_STATUS_RELEASE_SEQUENCE, } ;
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
@@ -213,7 +213,7 @@ static int OW_r_status( struct one_wire_query * owq ) {
 
 static int OW_w_io( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
-    BYTE p[2+8+2] = { _1W_WRITE_IO_BUFFER, (size&0xFF), } ;
+    BYTE p[2+8+2] = { _1W_WRITE_IO_BUFFER, BYTE_MASK(size), } ;
     BYTE release[2] = { _1W_WRITE_RELEASE_SEQUENCE, } ;
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
@@ -230,7 +230,7 @@ static int OW_w_io( struct one_wire_query * owq ) {
 
 static int OW_r_io( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
-    BYTE p[2+8+2] = { _1W_READ_IO_BUFFER, (size&0xFF), } ;
+    BYTE p[2+8+2] = { _1W_READ_IO_BUFFER, BYTE_MASK(size), } ;
     BYTE release[2] = { _1W_READ_RELEASE_SEQUENCE, } ;
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {

@@ -401,11 +401,11 @@ static int OW_w_ulong( uint64_t * L,  size_t size,
 	BYTE data[5] = { 0x00, 0x00, 0x00, 0x00, 0x00, };
 	if (size > 5)
 		return -ERANGE;
-	data[0] = L[0] & 0xFF;
-	data[1] = (L[0] >> 8) & 0xFF;
-	data[2] = (L[0] >> 16) & 0xFF;
-	data[3] = (L[0] >> 24) & 0xFF;
-	data[4] = (L[0] >> 32) & 0xFF;
+	data[0] = BYTE_MASK(L[0]) ;
+	data[1] = BYTE_MASK(L[0] >> 8) ;
+	data[2] = BYTE_MASK(L[0] >> 16) ;
+	data[3] = BYTE_MASK(L[0] >> 24) ;
+	data[4] = BYTE_MASK(L[0] >> 32) ;
 	if (OW_w_mem(data, size, offset, pn))
 		return -EINVAL;
 	return 0;

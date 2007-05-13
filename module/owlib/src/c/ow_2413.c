@@ -113,7 +113,7 @@ static int FS_r_latch(struct one_wire_query * owq)
 static int FS_w_pio(struct one_wire_query * owq)
 {
 	/* reverse bits */
-    BYTE data = ~(OWQ_U(owq) & 0xFF);
+    BYTE data = ~BYTE_MASK(OWQ_U(owq));
     if (OW_write(data, PN(owq)))
 		return -EINVAL;
 	return 0;
