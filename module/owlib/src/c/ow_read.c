@@ -289,7 +289,7 @@ static int FS_r_local(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     
     /* Readable? */
-    if ( pn->ft->read != NO_READ_FUNCTION )
+    if ( pn->ft->read == NO_READ_FUNCTION )
         return -ENOTSUP;
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
