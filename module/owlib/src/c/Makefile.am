@@ -103,12 +103,12 @@ lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
 
+
 if HAVE_CYGWIN
 libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS}
 else
-libow_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
+libow_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
 endif
-# -version-info 0:0:1 -release ow
 
 # Maybe need this for MacOS X
 #if HAVE_DARWIN

@@ -25,7 +25,7 @@ sub ConfigureAC {
   printf "RELEASE -- updating configure.ac\n" ;
   `/usr/bin/perl -i.old -pe 's\{VERSION_MAJOR=.*?\$\}\{VERSION_MAJOR=$maj}' configure.ac` ;
   `/usr/bin/perl -i.old -pe 's\{VERSION_MINOR=.*?\$\}\{VERSION_MINOR=$min}' configure.ac` ;
-  `/usr/bin/perl -i.old -pe 's\{PATCHLEVEL=.*?\$\}\{PATCHLEVEL=$pat}' configure.ac` ;
+  `/usr/bin/perl -i.old -pe 's\{VERSION_PATCHLEVEL=.*?\$\}\{VERSION_PATCHLEVEL=$pat}' configure.ac` ;
 }
 
 sub PerModule {

@@ -56,7 +56,7 @@ $Id$
 #define OWFS_VERSION    "@VERSION@"
 #define OWFS_MAJOR      "@VERSION_MAJOR@"
 #define OWFS_MINOR      "@VERSION_MINOR@"
-#define OWFS_PATCHLEVEL "@PATCHLEVEL@"
+#define OWFS_PATCHLEVEL "@VERSION_PATCHLEVEL@"
 
 #define OW_MT           @OW_MT@
 #define OW_CACHE        @OW_CACHE@
