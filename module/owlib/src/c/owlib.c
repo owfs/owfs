@@ -207,6 +207,7 @@ int LibStart(void)
 			PIDstart();
 	}
 
+#if OW_MT
 	/* Have to re-initialize pthread since the main-process is gone.
 	 *
 	 * This workaround will probably be fixed in uClibc-0.9.28
@@ -219,6 +220,7 @@ int LibStart(void)
 	pthread_mutexattr_init(&mattr);
 	pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	pmattr = &mattr;
+#endif							/* OW_MT */
 
 	/* Setup the multithreading synchronizing locks */
 	LockSetup();
