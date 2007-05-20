@@ -206,6 +206,9 @@
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
 
+/* Define to 1 if you have the `twalk' function. */
+#undef HAVE_TWALK
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 

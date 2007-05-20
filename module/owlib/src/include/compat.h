@@ -79,6 +79,46 @@ char *strsep(char **stringp, const char *delim);
 void tdestroy(void *vroot, void (*freefct) (void *));
 #endif
 
+#ifndef __COMPAR_FN_T
+# define __COMPAR_FN_T
+typedef int (*__compar_fn_t) (__const void *, __const void *);
+#endif
+
+#ifndef HAVE_TSEARCH
+void *tsearch (__const void *__key, void **__rootp,
+                      __compar_fn_t __compar);
+#endif
+
+#ifndef HAVE_TFIND
+void *tfind (__const void *__key, void *__const *__rootp,
+                    __compar_fn_t __compar);
+#endif
+
+#ifndef HAVE_TDELETE
+void *tdelete (__const void *__restrict __key,
+                      void **__restrict __rootp,
+                      __compar_fn_t __compar);
+#endif
+
+#ifndef __ACTION_FN_T
+# define __ACTION_FN_T
+typedef enum
+  {
+    preorder,
+    postorder,
+    endorder,
+  leaf
+  }
+VISIT;
+
+typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
+                               int __level);
+#endif
+
+#ifndef HAVE_TWALK
+void twalk (__const void *__root, __action_fn_t __action);
+#endif
+
 #ifdef __UCLIBC__
 #if defined(__UCLIBC_MAJOR__) && defined(__UCLIBC_MINOR__) && defined(__UCLIBC_SUBLEVEL__)
 #if ((__UCLIBC_MAJOR__<<16) + (__UCLIBC_MINOR__<<8) + (__UCLIBC_SUBLEVEL__)) <= 0x000913
