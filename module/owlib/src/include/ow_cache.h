@@ -115,10 +115,12 @@ void CookTheCache(void);
 #define Cache_Add_Dir(db,pn )               (1)
 #define Cache_Add_Device(bus_nr,pn )        (1)
 #define Cache_Add_Internal(data,datasize,ip,pn )    (1)
+#define OWQ_Cache_Add( owq )                (1)
 
 #define Cache_Get(data,dsize,pn )           (1)
 #define Cache_Get_Dir(db,pn )               (1)
 #define Cache_Get_Strict(data,dsize,pn )    (1)
+#define OWQ_Cache_Get( owq )                (1)
 
 #define Cache_Get_Device(bus_nr,pn )        (1)
 #define Cache_Get_Internal(data,dsize,ip,pn )       (1)
@@ -128,6 +130,7 @@ void CookTheCache(void);
 #define Cache_Del_Dir(pn )                  (1)
 #define Cache_Del_Device(pn )               (1)
 #define Cache_Del_Internal(ip,pn )          (1)
+#define OWQ_Cache_Del( owq )                (1)
 #define CookTheCache()
 
 #endif							/* OW_CACHE */
