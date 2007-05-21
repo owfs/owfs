@@ -432,7 +432,8 @@ struct s_TAI8570 {
 	UINT C[6];
 };
 /* Internal files */
-static struct internal_prop ip_bar = { "BAR", fc_persistent };
+//static struct internal_prop ip_bar = { "BAR", fc_persistent };
+MakeInternalProp(bar) ;
 
 // Read from the TSI8570 microcontroller vias the paired DS2406s
 // Updated by Simon Melhuish, with ref. to AAG C++ code
@@ -802,7 +803,7 @@ static int testTAI8570(struct s_TAI8570 *tai, struct parsedname *pn)
 	UINT cal[4];
 	// See if already cached
 	if (Cache_Get_Internal_Strict
-           ((void *) tai, sizeof(struct s_TAI8570), &ip_bar, pn) == 0) {
+           ((void *) tai, sizeof(struct s_TAI8570), InternalProp(bar), pn) == 0) {
 		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer="
 					SNformat "\n", SNvar(tai->reader), SNvar(tai->writer));
         LEVEL_DEBUG
@@ -856,7 +857,7 @@ static int testTAI8570(struct s_TAI8570 *tai, struct parsedname *pn)
 				 tai->C[5]);
 	memcpy(pn->sn, tai->master, 8);	// restore original for cache
 	return Cache_Add_Internal((const void *) tai, sizeof(struct s_TAI8570),
-							  &ip_bar, pn);
+                               InternalProp(bar), pn);
 }
 
 #endif							/* OW_TAI8570 */

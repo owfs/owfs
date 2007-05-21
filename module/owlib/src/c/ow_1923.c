@@ -138,6 +138,18 @@ struct filetype DS1923[] = {
 DeviceEntryExtended(41, DS1923,
                     DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume);
 
+#define _1W_WRITE_SCRATCHPAD 0x0F
+#define _1W_READ_SCRATCHPAD 0xAA
+#define _1W_COPY_SCRATCHPAD_WITH_PASSWORD 0x99
+#define _1W_READ_MEMORY_WITH_PASSWORD_AND_CRC 0x69
+#define _1W_CLEAR_MEMORY_WITH_PASSWORD 0x96
+#define _1W_FORCED_CONVERSION 0x55
+    #define _1W_FORCED_CONVERSION_START 0xFF
+#define _1W_START_MISSION_WITH_PASSWORD 0xCC
+    #define _1W_START_MISSION_WITH_PASSWORD_START 0xFF
+#define _1W_STOP_MISSION_WITH_PASSWORD 0x33
+    #define _1W_STOP_MISSION_WITH_PASSWORD_START 0xFF
+
 /* ------- Functions ------------ */
 
 /* DS1923 */
@@ -553,7 +565,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
                      off_t offset,  struct parsedname *pn)
 {
     BYTE p[3 + 1 + 32 + 2] =
-    { 0x0F, offset & 0xFF, (offset >> 8) & 0xFF, };
+    { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
     BYTE passwd[8];
     int rest = 32 - (offset & 0x1F);
     int ret;
@@ -586,7 +598,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
         BUSUNLOCK(pn);
         return 1;
     }
-    p[0] = 0xAA;
+    p[0] = _1W_READ_SCRATCHPAD;
     ret = BUS_send_data(p, 1, pn);
     if (ret) {
         printf("OW_w_mem: err4\n");
@@ -633,8 +645,8 @@ static int OW_w_mem( BYTE * data,  size_t size,
         BUSUNLOCK(pn);
         return 1;
     }
-    // send 0x99 TAL TAH E/S
-    p[0] = 0x99;
+    // send _1W_COPY_SCRATCHPAD_WITH_PASSWORD    TAL TAH E/S
+    p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
     ret = BUS_send_data(p, 4, pn);
     if (ret) {
         printf("OW_w_mem: err9\n");
@@ -677,7 +689,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 
 static int OW_clearmemory(struct parsedname *pn)
 {
-    BYTE p[3 + 8 + 32 + 2] = { 0x96, };
+    BYTE p[3 + 8 + 32 + 2] = { _1W_CLEAR_MEMORY_WITH_PASSWORD, };
     BYTE r;
     int ret;
 
@@ -741,8 +753,7 @@ static int OW_r_mem(BYTE * data,  size_t size,  off_t offset,
                      struct parsedname *pn)
 {
     BYTE p[3 + 8 + 32 + 2] =
-    { 0x69, offset & 0xFF, (offset >> 8) & 0xFF, };
-    //BYTE r[3+8+32+2] = { 0xAA, } ;
+    { _1W_READ_MEMORY_WITH_PASSWORD_AND_CRC, LOW_HIGH_ADDRESS(offset), };
     int rest = 32 - (offset & 0x1F);
     BYTE passwd[8];
     int ret;
@@ -846,7 +857,7 @@ static void OW_date(const _DATE * d, BYTE * data)
 static int OW_force_conversion(const UINT delay,
                                 struct parsedname *pn)
 {
-    BYTE t[2] = { 0x55, 0xFF };
+    BYTE t[2] = { _1W_FORCED_CONVERSION, _1W_FORCED_CONVERSION_START };
     int ret = 0;
 
     if (OW_oscillator(1, pn)) {
@@ -917,10 +928,10 @@ static int OW_r_humid(_FLOAT * H, const UINT delay,
 
 static int OW_stopmission(struct parsedname *pn)
 {
-    BYTE data[10] = { 0x33, };
+    BYTE data[10] = { _1W_STOP_MISSION_WITH_PASSWORD, };
     int ret;
     memset(&data[1], 0xFF, 8);  // dummy password
-    data[9] = 0xFF;
+    data[9] = _1W_STOP_MISSION_WITH_PASSWORD_START;
 
     BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data(data, 10, pn);
@@ -947,7 +958,7 @@ static int OW_startmission(unsigned long mdelay,
                            struct parsedname *pn)
 {
     BYTE cc, data;
-    BYTE p[10] = { 0xCC, };
+    BYTE p[10] = { _1W_START_MISSION_WITH_PASSWORD, };
     int ret;
 
     /* stop the mission */
@@ -1010,9 +1021,9 @@ static int OW_startmission(unsigned long mdelay,
         return ret;
     }
 
-    p[0] = 0xCC;
+    p[0] = _1W_START_MISSION_WITH_PASSWORD;
     memset(&p[1], 0xFF, 8);     // dummy password
-    p[9] = 0xFF;                // dummy byte
+    p[9] = _1W_START_MISSION_WITH_PASSWORD_START;    // dummy byte
     BUSLOCK(pn);
     ret = BUS_select(pn) || BUS_send_data(p, 10, pn);
     BUSUNLOCK(pn);

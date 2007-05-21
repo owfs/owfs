@@ -70,6 +70,9 @@ $Id$
 
 #if OW_CACHE
 
+#define MakeInternalProp(tag)  static struct internal_prop ip_##tag = { #tag , fc_persistent }
+#define InternalProp(tag)     (& ip_##tag)
+
 /* Cache  and Storage functions */
 void Cache_Open(void);
 void Cache_Close(void);
@@ -106,6 +109,9 @@ int Cache_Del_Internal(const struct internal_prop *ip,
 void CookTheCache(void);
 
 #else							/* OW_CACHE */
+
+#define MakeInternalProp(tag)
+#define InternalProp(tag)     NULL
 
 #define Cache_Open( void )
 #define Cache_Close( void )
