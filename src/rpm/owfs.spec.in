@@ -365,16 +365,20 @@ fi
 %defattr(-,root,root)
 %doc README NEWS INSTALL ChangeLog AUTHORS COPYING
 %{prefix}/include/owfs/owfs_config.h
-%{prefix}/lib/libow*.so*
-%{prefix}/lib/libow*.la
-%{prefix}/lib/libow*.a
+%{prefix}/lib/libow-*.so*
+%{prefix}/lib/libow.so
+%{prefix}/lib/libow.a
+%{prefix}/lib/libow.la
 %{_mandir}/man3/*.3.gz
 
 %if %{build_capi}
 %files capi
 %defattr(-,root,root)
 %{prefix}/include/owfs/owcapi.h
-%{prefix}/lib/libowcapi.*
+%{prefix}/lib/libowcapi-*.so*
+%{prefix}/lib/libowcapi.so
+%{prefix}/lib/libowcapi.a
+%{prefix}/lib/libowcapi.la
 %{_mandir}/man1/*owcapi.1.gz
 %endif
 
