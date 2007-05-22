@@ -3,7 +3,7 @@
 /usr/bin/owhttpd
 /usr/bin/owpresent
 /usr/bin/owread
-/usr/sbin/owserver
+/usr/bin/owserver
 /usr/bin/owwrite
 /usr/share/man/man1/owdir.1
 /usr/share/man/man1/owftpd.1
