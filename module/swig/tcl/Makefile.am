@@ -43,7 +43,8 @@ AM_CFLAGS = -I../../owlib/src/include \
 	$(TCL_SHLIB_CFLAGS) \
 	$(TCL_INCLUDE_SPEC) \
 	-DTCL_PACKAGE_PATH=\"'$(TCL_PACKAGE_PATH)'\" \
-	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\"
+	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\" \
+       $(TCL_LIB_SPEC)
 
 #	-Wconversion \
 #
