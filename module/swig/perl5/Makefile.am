@@ -17,14 +17,14 @@ OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
 OW/OW.pm: OW/ow_wrap.c
 	( cd OW; $(MAKE) -fMakefile )
 
-PERLSITEDIR = $(wildcard ${DESTDIR}/usr/lib*/perl5/site_perl/*/*-linux-thread-*/auto/ )
+PERLSITEDIR = ${DESTDIR}/usr/lib/perl/$(shell perl -e 'printf "%vd", $^V;')/auto/
 
 install-data-local: OW/Makefile OW/ow_wrap.c OW/OW.pm
 	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
 #	( cd OW; $(MAKE) PREFIX=$(prefix) DESTDIR="$(DESTDIR)" install )
 #	( cd OW; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 	@INSTALL@ -d ${DESTDIR}${prefix}/bin/
-	@INSTALL@ OW/OW.pm ${DESTDIR}${prefix}/bin/
+#	@INSTALL@ OW/OW.pm ${DESTDIR}${prefix}/bin/
 	if test -d "${PERLSITEDIR}"; then @INSTALL@ OW/OW.pm "${PERLSITEDIR}/../"; fi
 
 clean-generic:
