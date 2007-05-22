@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = owserver
+sbin_PROGRAMS = owserver
 owserver_SOURCES = owserver.c    \
                    from_client.c \
                    to_client.c   \
