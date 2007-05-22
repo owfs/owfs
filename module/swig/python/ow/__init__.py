@@ -30,7 +30,7 @@ http://www.owfs.org.
 from __future__ import generators
 
 import os
-import _OW
+from ow import _OW
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
@@ -454,7 +454,10 @@ class Sensor( object ):
         if self._type == 'DS2409':
             for branch in names:
                 path = self._usePath + '/' + branch
-                list = owfs_get( path )
+                try:
+                    list = owfs_get( path )
+                except exUnknownSensor, ex:
+                    continue
                 if list:
                     for branch_entry in list.split( ',' ):
                         branch_path = self._usePath + '/' + branch + '/' + branch_entry.split( '/' )[ 0 ]
