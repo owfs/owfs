@@ -156,8 +156,10 @@ struct filetype DS28EA00[] = {
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain);
 
 /* Internal properties */
-static struct internal_prop ip_resolution = { "RES", fc_stable };
-static struct internal_prop ip_power = { "POW", fc_stable };
+//static struct internal_prop ip_resolution = { "RES", fc_stable };
+MakeInternalProp(res,fc_stable) ; // resolution
+//static struct internal_prop ip_power = { "POW", fc_stable };
+MakeInternalProp(pow,fc_stable) ; // power status
 
 struct tempresolution {
 	BYTE config;
@@ -491,12 +493,12 @@ static int OW_power(BYTE * data, const struct parsedname *pn)
 	};
 	//printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
 	if (IsUncachedDir(pn)
-		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), &ip_power, pn)) {
+		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(pow), pn)) {
 		//printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
 		if (BUS_transaction(tpower, pn))
 			return 1;
 		//printf("POWER "SNformat", asked\n",SNvar(pn->sn)) ;
-		Cache_Add_Internal(data, sizeof(BYTE), &ip_power, pn);
+		Cache_Add_Internal(data, sizeof(BYTE), InternalProp(pow), pn);
 		//printf("POWER "SNformat", cached\n",SNvar(pn->sn)) ;
 	}
 	//printf("POWER "SNformat", done\n",SNvar(pn->sn)) ;
@@ -530,7 +532,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 
 	/* Resolution */
 	if (Cache_Get_Internal_Strict
-		(&oldres, sizeof(oldres), &ip_resolution, pn)
+		(&oldres, sizeof(oldres), InternalProp(res), pn)
 		|| oldres != resolution) {
 		/* Get existing settings */
 		if (OW_r_scratchpad(data, pn))
@@ -540,7 +542,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 			data[4] = (res & 0xF0) | (data[4] & 0x0F);
 			if (OW_w_scratchpad(&data[2], pn))
 				return 1;
-			Cache_Add_Internal(&resolution, sizeof(int), &ip_resolution,
+			Cache_Add_Internal(&resolution, sizeof(int), InternalProp(res),
 							   pn);
 		}
 	}

@@ -96,8 +96,10 @@ DeviceEntryExtended(37, DS1977, DEV_resume | DEV_ovdr);
 #define _1W_READ_VERSION 0xCC
 
 /* Persistent storage */
-static struct internal_prop ip_rea = { "REA", fc_persistent };
-static struct internal_prop ip_ful = { "FUL", fc_persistent };
+//static struct internal_prop ip_rea = { "REA", fc_persistent };
+MakeInternalProp(rea,fc_persistent) ;
+//static struct internal_prop ip_ful = { "FUL", fc_persistent };
+MakeInternalProp(ful,fc_persistent) ;
 
 /* ------- Functions ------------ */
 
@@ -268,7 +270,7 @@ static int FS_use(struct one_wire_query * owq)
 {
     if ( OWQ_size(owq) < 8 ) return -ERANGE ;
     
-    if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).ft->data.i ? &ip_ful : &ip_rea, PN(owq)))
+    if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).ft->data.i ? InternalProp(ful) : InternalProp(rea), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -304,7 +306,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 		return 1;
 
 #if OW_CACHE
-	Cache_Get_Internal_Strict((void *) (&p[4]), 8, &ip_ful, pn);
+	Cache_Get_Internal_Strict((void *) (&p[4]), 8, InternalProp(ful), pn);
 #endif							/* OW_CACHE */
 
 	/* Copy Scratchpad to SRAM */
@@ -325,10 +327,10 @@ static int OW_r_mem(BYTE * data,  size_t size,  off_t offset,
 	BYTE pwd[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
 #if OW_CACHE
-	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), &ip_ful, pn)
+	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(ful), pn)
 		|| OW_r_pmem(data, pwd, size, offset, pn))
 		return 0;
-	Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), &ip_rea, pn);
+	Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(rea), pn);
 #endif							/* OW_CACHE */
 	return OW_r_pmem(data, pwd, size, offset, pn);
 }

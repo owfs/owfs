@@ -123,7 +123,7 @@ static int LCD_2byte(BYTE * byte, int delay, const struct parsedname *pn);
 
 /* Internal files */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
-MakeInternalProp(cum) ; //cumulative
+MakeInternalProp(cum,fc_persistent) ; //cumulative
 
 /* LCD */
 static int FS_r_version(struct one_wire_query * owq)

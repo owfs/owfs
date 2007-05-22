@@ -83,7 +83,7 @@ DeviceEntryExtended(1D, DS2423, DEV_ovdr);
 
 /* Persistent storage */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
-MakeInternalProp(cum) ; // cumulative
+MakeInternalProp(cum,fc_persistent) ; // cumulative
 
 /* ------- Functions ------------ */
 

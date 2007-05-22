@@ -70,7 +70,7 @@ $Id$
 
 #if OW_CACHE
 
-#define MakeInternalProp(tag)  static struct internal_prop ip_##tag = { #tag , fc_persistent }
+#define MakeInternalProp(tag,change)  static struct internal_prop ip_##tag = { #tag , change }
 #define InternalProp(tag)     (& ip_##tag)
 
 /* Cache  and Storage functions */

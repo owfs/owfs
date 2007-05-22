@@ -433,7 +433,7 @@ struct s_TAI8570 {
 };
 /* Internal files */
 //static struct internal_prop ip_bar = { "BAR", fc_persistent };
-MakeInternalProp(bar) ;
+MakeInternalProp(bar,fc_persistent) ;
 
 // Read from the TSI8570 microcontroller vias the paired DS2406s
 // Updated by Simon Melhuish, with ref. to AAG C++ code
