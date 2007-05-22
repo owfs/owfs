@@ -1,6 +1,6 @@
 ## $Id$
 
-mandir = ${prefix}/man
+mandir = @mandir@
 
 man_MANS = owfs.1 \
            owhttpd.1 \
