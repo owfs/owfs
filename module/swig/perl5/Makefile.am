@@ -6,9 +6,9 @@ all: OW/OW.pm
 
 OW/Makefile:
 if HAVE_DARWIN
-	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL )
+	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
 else
-	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL )
+	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
 endif
 
 OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}

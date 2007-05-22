@@ -5,7 +5,7 @@ EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/l
 all: OWNet/Makefile
 
 OWNet/Makefile: OWNet/Makefile.PL
-	( cd OWNet; $(PERL) Makefile.PL )
+	( cd OWNet; $(PERL) Makefile.PL PREFIX=@prefix@ )
 
 install-data-local: OWNet/Makefile
 	( cd OWNet; $(MAKE) install DESTDIR="$(DESTDIR)" )
