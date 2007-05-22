@@ -1,0 +1,116 @@
+Source: 1wire
+Section: misc
+Priority: extra
+Maintainer: Matthias Urlichs <smurf@debian.org>
+Build-Depends: debhelper (>= 5), autotools-dev, python-dev (>= 2.5), tcl8.4-dev, perl (>= 5.8), php5-dev, autotools-dev, automake1.9, autoconf
+Build-Conflicts: autoconf2.13
+Standards-Version: 3.7.2
+XS-Python-Version: >= 2.5
+
+Package: 1wire
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Dallas 1-wire support
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ While there is a basic kernel interface for 1-Wire, this package
+ implements a feature-rich userspace-only solution.
+ .
+ This is the base package, including
+
+Package: lib1wire
+Architecture: any
+Section: libs
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Description: Dallas 1-wire support: libraries
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the shared libraries.
+
+Package: fuse1wire
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Dallas 1-wire support: FUSE daemon
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the FUSE daemon.
+
+Package: 1wire-dev
+Architecture: any
+Section: libdevel
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Description: Dallas 1-wire support: development files
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the development libraries and interfaces.
+
+Package: lib1wire-perl
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}
+Description: Dallas 1-wire support: Perl5 bindings
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the Perl bindings.
+
+Package: python-1wire
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Provides: ${python:Provides}
+XB-Python-Version: ${python:Versions}
+Description: Dallas 1-wire support: Python bindings
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the Python bindings.
+
+Package: 1wire-tcl
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Dallas 1-wire support: TCL bindings
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the TCL bindings.
+
+Package: lib1wire-php
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, php5
+Description: Dallas 1-wire support: TCL bindings
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the TCL bindings.
+
+Package: 1wire-doc
+Architecture: all
+Description: Documentation for owfs
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the documentation for 1wire, including the
+ device-specific manpages.
+
+Package: 1wire-dbg
+Architecture: any
+Description: Debug symnbols for owfs
+ The 1-Wire bus is a cheap low-speed bus for devices like weather
+ sensors, access control, etc. It can be attached to your system via
+ serial, USB, I2C, and other interfaces.
+ .
+ This package contains the debug symbol files.
+ You need this if you see crashes in programs using 1-wire.
+

@@ -1,0 +1,82 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          owfs
+# Required-Start:    1wire
+# Required-Stop:     1wire
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: Example initscript
+# Description:       This file should be used to construct scripts to be
+#                    placed in /etc/init.d.
+### END INIT INFO
+
+set -e
+
+PATH=/opt/owfs/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+NAME=owfs
+DAEMON=/opt/owfs/bin/$NAME
+SCRIPTNAME=/etc/init.d/$NAME
+MOUNTPOINT=/dev/1wire
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+# Read config file if it is present.
+if [ -r /etc/default/1wire ]
+then
+       . /etc/default/1wire
+fi
+
+#
+#      Function that starts the daemon/service.
+#
+d_start() {
+       mkdir -p $MOUNTPOINT
+       start-stop-daemon --start --quiet \
+               --exec $DAEMON -- $FS_OPTS $CLIENT_OPTS $MOUNTPOINT \
+               || echo -n " already running"
+}
+
+#
+#      Function that stops the daemon/service.
+#
+d_stop() {
+       umount $MOUNTPOINT \
+               || echo -n " not running"
+}
+
+case "$1" in
+  start)
+       echo -n "Starting $DESC: $NAME"
+       d_start
+       echo "."
+       ;;
+  stop)
+       echo -n "Stopping $DESC: $NAME"
+       d_stop
+       echo "."
+       ;;
+  restart|force-reload)
+       #
+       #       If the "reload" option is implemented, move the "force-reload"
+       #       option to the "reload" entry above. If not, "force-reload" is
+       #       just the same as "restart".
+       #
+       echo -n "Restarting $DESC: $NAME"
+       d_stop
+       # One second might not be time enough for a daemon to stop,
+       # if this happens, d_start will fail (and dpkg will break if
+       # the package is being upgraded). Change the timeout if needed
+       # be, or change d_stop to have start-stop-daemon use --retry.
+       # Notice that using --retry slows down the shutdown process somewhat.
+       sleep 1
+       d_start
+       echo "."
+       ;;
+  *)
+       echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+       exit 3
+       ;;
+esac
+
+exit 0

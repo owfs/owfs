@@ -1,0 +1,6 @@
+1wire (2.6p4+cvs20070515-1) unstable; urgency=low
+
+  * Initial release (Closes: #325159)
+
+ -- Matthias Urlichs <smurf@smurf.noris.de>  Tue, 15 May 2007 11:59:13 +0200
+
