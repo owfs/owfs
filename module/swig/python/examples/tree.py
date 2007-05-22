@@ -40,7 +40,7 @@ def tree( sensor ):
 
 if __name__ == "__main__":
     if len( sys.argv ) == 1:
-        print 'usage: tree.py u|serial_port_path'
+        print 'usage: tree.py u|serial_port_path|localhost:4304'
         sys.exit( 1 )
     else:
         ow.init( sys.argv[ 1 ] )
