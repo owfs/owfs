@@ -14,4 +14,5 @@ install-data-local: OWNet/Makefile
 clean-generic:
 	@RM@ -f *~ .*~
 	if test -f OWNet/Makefile; then cd OWNet; $(MAKE) clean; fi
-	@RM@ -f OWNet/Makefile.old
+	@RM@ -f OWNet/Makefile.old OWNet/Makefile
+
