@@ -1,4 +1,4 @@
 #! /bin/sh
 
 rm -rf *cache
-aclocal-1.9 && autoheader && autoconf && automake-1.9 && echo "Run './configure' and 'make' to build owfs"
+aclocal && autoheader && autoconf && automake && echo "Run './configure' and 'make' to build owfs"
