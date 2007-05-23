@@ -7,11 +7,13 @@ all: OW/OW.pm
 # Can't really install the perl-modules under prefix-directory.. it should be site-global.. or?
 OW/Makefile:
 if HAVE_DARWIN
-#	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
 	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL )
 else
-#	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
+if HAVE_DEBIAN
+	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
+else
 	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL )
+endif
 endif
 
 OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
@@ -20,14 +22,17 @@ OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
 OW/OW.pm: OW/ow_wrap.c
 	( cd OW; $(MAKE) -fMakefile )
 
-#PERLSITEDIR = ${DESTDIR}/usr/lib/perl/$(shell $(PERL) perl-version )/auto/
+if HAVE_DEBIAN
+PERLSITEDIR = ${DESTDIR}/usr/lib/perl/$(shell $(PERL) perl-version )/auto/
+else
 PERLSITEDIR = $(wildcard ${DESTDIR}/usr/lib*/perl5/site_perl/$(shell $(PERL) perl-version)/*-linux-thread-*/auto/ )
+endif
 
 install-data-local: OW/Makefile OW/ow_wrap.c OW/OW.pm
 	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
 #	( cd OW; $(MAKE) PREFIX=$(prefix) DESTDIR="$(DESTDIR)" install )
 #	( cd OW; $(MAKE) ; $(MAKE) test; $(MAKE) install )
-	@INSTALL@ -d ${DESTDIR}${prefix}/bin/
+#	@INSTALL@ -d ${DESTDIR}${prefix}/bin/
 #	@INSTALL@ OW/OW.pm ${DESTDIR}${prefix}/bin/
 	if test -d "${PERLSITEDIR}"; then @INSTALL@ OW/OW.pm "${PERLSITEDIR}/../"; fi
 

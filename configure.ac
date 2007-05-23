@@ -70,6 +70,23 @@ AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
 
+HAVE_DEBIAN="false"
+AC_MSG_CHECKING([if debian-system is used])
+AC_ARG_ENABLE(debian,
+[  --enable-debian         Enable debian-system (default false)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        HAVE_DEBIAN="true"
+    fi
+],
+[
+    AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(HAVE_DEBIAN)
+AM_CONDITIONAL(HAVE_DEBIAN, test "${HAVE_DEBIAN}" = "true")
+
+
 HAVE_DARWIN="false"
 HAVE_CYGWIN="false"
 

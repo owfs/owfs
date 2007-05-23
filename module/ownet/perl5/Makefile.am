@@ -6,8 +6,11 @@ all: OWNet/Makefile
 
 # Can't really install the perl-modules under prefix-directory.. it should be site-global.
 OWNet/Makefile: OWNet/Makefile.PL
+if HAVE_DEBIAN
+	( cd OWNet; $(PERL) Makefile.PL PREFIX=@prefix@ )
+else
 	( cd OWNet; $(PERL) Makefile.PL )
-#	( cd OWNet; $(PERL) Makefile.PL PREFIX=@prefix@ )
+endif
 
 install-data-local: OWNet/Makefile
 	( cd OWNet; $(MAKE) install DESTDIR="$(DESTDIR)" )
