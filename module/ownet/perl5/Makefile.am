@@ -4,8 +4,10 @@ EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/l
 
 all: OWNet/Makefile
 
+# Can't really install the perl-modules under prefix-directory.. it should be site-global.
 OWNet/Makefile: OWNet/Makefile.PL
-	( cd OWNet; $(PERL) Makefile.PL PREFIX=@prefix@ )
+	( cd OWNet; $(PERL) Makefile.PL )
+#	( cd OWNet; $(PERL) Makefile.PL PREFIX=@prefix@ )
 
 install-data-local: OWNet/Makefile
 	( cd OWNet; $(MAKE) install DESTDIR="$(DESTDIR)" )
