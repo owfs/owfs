@@ -4,11 +4,14 @@ EXTRA_DIST = perl5.m4 OW/Makefile.linux.in OW/Makefile.linux OW/Makefile.osx.in 
 
 all: OW/OW.pm
 
+# Can't really install the perl-modules under prefix-directory.. it should be site-global.. or?
 OW/Makefile:
 if HAVE_DARWIN
 	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
+#	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL )
 else
 	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
+#	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL )
 endif
 
 OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
@@ -17,7 +20,8 @@ OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
 OW/OW.pm: OW/ow_wrap.c
 	( cd OW; $(MAKE) -fMakefile )
 
-PERLSITEDIR = ${DESTDIR}/usr/lib/perl/$(shell perl -e 'printf "%vd", $^V;')/auto/
+PERLSITEDIR = ${DESTDIR}/usr/lib/perl/$(shell $(PERL) perl-version )/auto/
+#PERLSITEDIR = $(wildcard ${DESTDIR}/usr/lib*/perl5/site_perl/$(shell $(PERL) perl-version)/*-linux-thread-*/auto/ )
 
 install-data-local: OW/Makefile OW/ow_wrap.c OW/OW.pm
 	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
