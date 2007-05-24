@@ -1,17 +1,24 @@
 ## $Id$
 
-EXTRA_DIST = OW/README OW/MANIFEST OW/Changes OW/Makefile.linux.in OW/Makefile.osx.in OW/t/OW.t $(wildcard example/*.pl)
+EXTRA_DIST = perl5.m4 OW/META.yml OW/README OW/MANIFEST OW/Changes OW/Makefile.linux.in OW/Makefile.osx.in OW/t/OW.t $(wildcard example/*.pl)
 
 all: OW/Makefile
 
+OW/Makefile.PL:
+if HAVE_DARWIN
+	cp OW/Makefile.osx OW/Makefile.PL
+else
+	cp OW/Makefile.linux OW/Makefile.PL
+endif
+
 OW/Makefile: OW/Makefile.PL
 if HAVE_DARWIN
-	( cd OW; cp Makefile.osx Makefile.PL; $(PERL) Makefile.PL )
+	( cd OW; $(PERL) Makefile.PL )
 else
 if HAVE_DEBIAN
-	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL PREFIX=@prefix@ )
+	( cd OW; $(PERL) Makefile.PL PREFIX=@prefix@ )
 else
-	( cd OW; cp Makefile.linux Makefile.PL; $(PERL) Makefile.PL )
+	( cd OW; $(PERL) Makefile.PL )
 endif
 endif
 
