@@ -1,0 +1,63 @@
+OWNet version 1.10
+==================
+
+OWNet is a light-weight module for accessing owserver. 
+
+The overall goal is an easy way to use the 1-Wire bus and devices. Useful
+for monitoring, security, hobby, control. (Projects include weather 
+monitoring, heating and cooling control, aquarium, tractor, motorcycle,
+swimming pool and others.)
+
+The full explanation can be found at http://www.owfs.org
+
+Basically 1-Wire is a simple and inexpensive way to connect chips made
+by Dallas Semicondictor to a computer. These chips each have a unique
+ID, and are individually addressable, even with a bus that has only a
+combined power/data line and ground.
+
+The underlying idea of OWFS (One Wire File System) is to make the whole
+1-wire bus look like a file system. Devices are directories (named by
+their unique ID) and their properties (memory, contact, voltage, 
+temperature,...) are files.
+
+owserver is one of the OWFS programs that connects and virtuallizes the
+1-wire bus. It communicates via a well-documented tcp/ip protocol,
+see: http://www.owfs.org/index.php?page=owserver-protocol
+
+OWNet is a perl module to connect to a owserver process.
+There are four methods: read, write, dir, present
+All that's needed is the ip address of the owserver, and the "path"
+-- unique name or the 1-wire resource wanted.
+
+---------------
+
+OWNet is pure perl. It uses the IO::Socket::INET module for tcp/ip
+communication.
+
+It should be usable on any system with perl, and a network stack.
+
+---------------
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+  IO::Socket::INET
+  Net::Rendezvous (optional)
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2007 by Paul H Alfille
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+

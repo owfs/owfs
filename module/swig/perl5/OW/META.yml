@@ -1,0 +1,23 @@
+ name: OW
+ abstract: Build and install OW module
+ version: 1.13
+ author:
+   - Paul H Alfille <paul.alfille@gmail.com>
+ license: perl
+ distribution_type: module
+ requires:
+   IO::Socket::INET: 0
+   perl: 5.005_03
+ recommends:
+   Net::Rendezvous: 0
+ build_requires:
+   Test: 0
+ provides:
+   OW:
+     file: OW.pm
+ urls:
+   license: http://dev.perl.org/licenses/
+ meta-spec:
+   version: 1.3
+   url: http://module-build.sourceforge.net/META-spec-v1.3.html
+ generated_by: Module::Build version 0.20
