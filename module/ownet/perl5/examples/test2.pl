@@ -21,17 +21,14 @@ die (
     ."\t$0 127.0.0.1:1234\n"
     ) if ( $#ARGV != 0 ) ;
 
-my $ow ;
-$ow = OWNet->new($ARGV[0]) ;
 
-print "\nTry dir\n" ;
-print $ow->dir("/") ;
-die ("Cannot open OWNet connection") if (!defined($ow->{SOCK})) ;
+print "\nCall dir\n" ;
+print OWNet::dir($ARGV[0] . " -v", "/") ;
 
-print "\nTry present\n" ;
-print $ow->present("/10.67C6697351FF") ;
+print "\nCall read\n" ;
+print OWNet::read($ARGV[0] . " -v", "/10.67C6697351FF/temperature") ;
 
-print "\nTry read\n" ;
-print $ow->read("/10.67C6697351FF/temperature") ;
+print "\nCall read (Fahrenheit)\n" ;
+print OWNet::read($ARGV[0] . " -v -F", "/10.67C6697351FF/temperature") ;
 
 print "\n" ;
