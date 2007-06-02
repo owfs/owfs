@@ -430,7 +430,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	};
 	struct transaction_log tpowered[] = {
 		TRXN_START,
-		{convert, NULL, 1, trxn_match},
+		TRXN_WRITE1(convert),
 		TRXN_END,
 	};
 
@@ -487,8 +487,8 @@ static int OW_power(BYTE * data, const struct parsedname *pn)
 	BYTE b4[] = { _1W_READ_POWERMODE, };
 	struct transaction_log tpower[] = {
 		TRXN_START,
-		{b4, NULL, 1, trxn_match},
-		{NULL, data, 1, trxn_read},
+		TRXN_WRITE(b4,1),
+		TRXN_READ1(data),
 		TRXN_END,
 	};
 	//printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
@@ -522,7 +522,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 	};
 	struct transaction_log tpowered[] = {
 		TRXN_START,
-		{convert, NULL, 1, trxn_match},
+		TRXN_WRITE1(convert),
 		TRXN_END,
 	};
 	//LEVEL_DATA("OW_22temp\n");
@@ -583,7 +583,7 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 	BYTE recall[] = { _1W_READ_POWERMODE, };
 	struct transaction_log trecall[] = {
 		TRXN_START,
-		{recall, NULL, 1, trxn_match},
+		TRXN_WRITE1(recall),
 		TRXN_END,
 	};
 
@@ -617,9 +617,9 @@ static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 	BYTE be[] = { _1W_READ_SCRATCHPAD, };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{be, NULL, 1, trxn_match},
-		{NULL, data, 9, trxn_read},
-		{data, NULL, 9, trxn_crc8,},
+		TRXN_WRITE1(be),
+		TRXN_READ(data,9),
+		TRXN_CRC8(data,9),
 		TRXN_END,
 	};
 	return BUS_transaction(tread, pn);
@@ -633,7 +633,7 @@ static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 	BYTE pow[] = { _1W_COPY_SCRATCHPAD, };
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		{d, NULL, 4, trxn_match},
+		TRXN_WRITE(d,4),
 		TRXN_END,
 	};
 	struct transaction_log tpower[] = {
@@ -659,14 +659,14 @@ static int OW_r_trim(BYTE * trim, const struct parsedname *pn)
 	BYTE cmd1[] = { 0x68, };
 	struct transaction_log t0[] = {
 		TRXN_START,
-		{cmd0, NULL, 1, trxn_match},
-		{NULL, &trim[0], 1, trxn_read},
+		TRXN_WRITE1(cmd0),
+		TRXN_READ1(&trim[0]),
 		TRXN_END,
 	};
 	struct transaction_log t1[] = {
 		TRXN_START,
-		{cmd1, NULL, 1, trxn_match},
-		{NULL, &trim[1], 1, trxn_read},
+		TRXN_WRITE1(cmd1),
+		TRXN_READ1(&trim[1]),
 		TRXN_END,
 	};
 
@@ -682,27 +682,36 @@ static int OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 	BYTE cmd1[] = { 0x63, trim[1], };
 	BYTE cmd2[] = { 0x94, };
 	BYTE cmd3[] = { 0x64, };
-	struct transaction_log tt[] = {
+	struct transaction_log t0[] = {
 		TRXN_START,
-		{cmd0, NULL, 2, trxn_match},
+		TRXN_WRITE(cmd0,2),
 		TRXN_END,
 	};
-	struct transaction_log t[] = {
+	struct transaction_log t1[] = {
 		TRXN_START,
-		{cmd2, NULL, 1, trxn_match},
+		TRXN_WRITE(cmd1,2),
+		TRXN_END,
+	};
+	struct transaction_log t2[] = {
+		TRXN_START,
+		TRXN_WRITE1(cmd2),
+		TRXN_END,
+	};
+	struct transaction_log t3[] = {
+		TRXN_START,
+		TRXN_WRITE1(cmd3),
 		TRXN_END,
 	};
 
-	if (BUS_transaction(tt, pn))
+	if (BUS_transaction(t0, pn))
 		return 1;
-	tt[1].out = cmd1;
-	if (BUS_transaction(tt, pn))
+	if (BUS_transaction(t1, pn))
 		return 1;
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t2, pn))
 		return 1;
-
-	t[1].out = cmd3;
-	return BUS_transaction(t, pn);
+	if (BUS_transaction(t3, pn))
+		return 1;
+	return 0;
 }
 
 static enum eDie OW_die(const struct parsedname *pn)
@@ -726,7 +735,7 @@ int FS_poll_convert(const struct parsedname *pn)
 	BYTE p[1];
 	struct transaction_log t[] = {
 		{NULL, NULL, 50, trxn_delay,},
-		{NULL, p, 1, trxn_read,},
+		TRXN_READ1(p),
 		TRXN_END,
 	};
 
@@ -756,8 +765,8 @@ static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
   BYTE cmd[] = { _1W_PIO_ACCESS_READ, } ;
   struct transaction_log t[] = {
     TRXN_START,
-    { cmd, NULL, 1, trxn_match, } ,
-    { NULL, data, 1, trxn_read, } ,
+    TRXN_WRITE1(cmd),
+    TRXN_READ1(data),
     TRXN_END ,
   } ;
   if ( BUS_transaction(t,pn) ) return 1 ;
@@ -789,7 +798,7 @@ static int OW_w_pio( BYTE pio, const struct parsedname * pn )
   BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, } ;
   struct transaction_log t[] = {
     TRXN_START,
-    { cmd, NULL, 2, trxn_match, } ,
+    TRXN_WRITE(cmd,2),
     TRXN_END ,
   } ;
   return BUS_transaction(t,pn) ;

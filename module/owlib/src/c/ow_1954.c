@@ -151,9 +151,9 @@ static int OW_w_ipr( struct one_wire_query * owq ) {
     BYTE p[2+128+2] = { _1W_WRITE_IPR, BYTE_MASK(size), } ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 2+size, trxn_match, } ,
-        { NULL, &p[2+size], 2, trxn_read, } ,
-        { p, NULL, 2+size+2, trxn_crc16, } ,
+        TRXN_WRITE(p,2+size),
+        TRXN_READ(&p[2+size],2),
+        TRXN_CRC16(p,2+size+2),
         TRXN_END,
     } ;
     return BUS_transaction( t, PN(owq) ) ;
@@ -165,9 +165,9 @@ static int OW_r_ipr( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 2, trxn_match, } ,
-        { NULL, &p[2], 128+2, trxn_read, } ,
-        { p, NULL, 2+128+2, trxn_crc16, } ,
+        TRXN_WRITE(p,2),
+        TRXN_READ(&p[2],128+2),
+        TRXN_CRC16(p,2+128+2),
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) ) return 1 ;
@@ -184,11 +184,11 @@ static int OW_w_status( struct one_wire_query * owq ) {
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 1, trxn_match, } ,
-        { NULL, &p[1], 3, trxn_read, } ,
-        { p, NULL, 1+1+2, trxn_crc16, } ,
-        { release, release, 2, trxn_read, },
-        { release, zero, 2, trxn_match, },
+        TRXN_WRITE1(p),
+        TRXN_READ(&p[1],1+2),
+        TRXN_CRC16(p,1+1+2),
+        TRXN_MODIFY(release,release,2),
+        TRXN_COMPARE(release,zero,2),
         TRXN_END,
     } ;
     return BUS_transaction( t, PN(owq) ) ;
@@ -199,9 +199,9 @@ static int OW_r_status( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 1, trxn_match, } ,
-        { NULL, &p[1], 4+2, trxn_read, } ,
-        { p, NULL, 1+4+2, trxn_crc16, } ,
+        TRXN_WRITE1(p),
+        TRXN_READ(&p[1],4+2),
+        TRXN_CRC16(p,1+4+2),
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) ) return 1 ;
@@ -218,11 +218,11 @@ static int OW_w_io( struct one_wire_query * owq ) {
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 2+size, trxn_match, } ,
-        { NULL, &p[2+size], 2, trxn_read, } ,
-        { p, NULL, 2+size+2, trxn_crc16, } ,
-        { release, release, 2, trxn_read, },
-        { release, zero, 2, trxn_match, },
+        TRXN_WRITE(p,2+size),
+        TRXN_READ(&p[2+size],2),
+        TRXN_CRC16(p,2+size+2),
+        TRXN_MODIFY(release,release,2),
+        TRXN_COMPARE(release,zero,2),
         TRXN_END,
     } ;
     return BUS_transaction( t, PN(owq) ) ;
@@ -235,11 +235,11 @@ static int OW_r_io( struct one_wire_query * owq ) {
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 2, trxn_match, } ,
-        { NULL, &p[2], size+2, trxn_read, } ,
-        { p, NULL, 2+size+2, trxn_crc16, } ,
-        { release, release, 2, trxn_read, },
-        { release, zero, 2, trxn_match, },
+        TRXN_WRITE(p,2),
+        TRXN_READ(&p[2],size+2),
+        TRXN_CRC16(p,2+size+2),
+        TRXN_MODIFY(release,release,2),
+        TRXN_COMPARE(release,zero,2),
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) ) return 1 ;
@@ -255,10 +255,10 @@ static int OW_reset( struct one_wire_query * owq ) {
     BYTE testbit[1] ;
     struct transaction_log t[] = {
         TRXN_START,
-        { p, NULL, 1, trxn_match, } ,
-        { release, release, 2, trxn_read, },
-        { release, zero, 2, trxn_match, },
-        { NULL, testbit, 1, trxn_read, } ,
+        TRXN_WRITE1(p),
+        TRXN_MODIFY(release,release,2),
+        TRXN_COMPARE(release,zero,2),
+        TRXN_READ1(testbit),
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) || testbit[0]&0x80 ) return 1;

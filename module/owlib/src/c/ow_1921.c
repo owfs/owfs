@@ -873,42 +873,48 @@ static int OW_w_mem( BYTE * data,  size_t size,
 {
 	BYTE p[3 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	size_t rest = 32 - (offset & 0x1F);
-	int ret;
+	struct transaction_log tcopy[] = {
+    	TRXN_START,
+    	TRXN_WRITE(p,3+size),
+    	TRXN_END,
+	} ;
+	struct transaction_log tcopy_crc[] = {
+    	TRXN_START,
+    	TRXN_WRITE(p,3+size),
+    	TRXN_READ(&p[3 + size], 2),
+    	TRXN_CRC16(p,3+size+2),
+    	TRXN_END,
+	} ;
+	struct transaction_log tread[] = {
+    	TRXN_START,
+    	TRXN_WRITE(p,3),
+    	TRXN_READ(&p[3], 1+rest+2),
+    	TRXN_CRC16(p,4+rest+2),
+    	TRXN_COMPARE(&p[4],data,size),
+    	TRXN_END,
+	} ;
+	struct transaction_log twrite[] = {
+    	TRXN_START,
+    	TRXN_WRITE(p,4),
+    	TRXN_END,
+	} ;
 
 	/* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
 	memcpy(&p[3], data, size);
 	if ((offset + size) & 0x1F) {	/* to end of page */
-		BUSLOCK(pn);
-		ret = BUS_select(pn) || BUS_send_data(p, 3 + size, pn);
-		BUSUNLOCK(pn);
+	    if ( BUS_transaction(tcopy,pn) ) return 1;
 	} else {
-		BUSLOCK(pn);
-		ret = BUS_select(pn) || BUS_send_data(p, 3 + size, pn)
-			|| BUS_readin_data(&p[3 + size], 2, pn)
-			|| CRC16(p, 3 + size + 2);
-		BUSUNLOCK(pn);
+	    if ( BUS_transaction(tcopy_crc,pn) ) return 1;
 	}
-	if (ret)
-		return 1;
 
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
     p[0] = _1W_READ_SCRATCHPAD;
-	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 3, pn)
-		|| BUS_readin_data(&p[3], 1 + rest + 2, pn)
-		|| CRC16(p, 4 + rest + 2) || memcmp(&p[4], data, size);
-	BUSUNLOCK(pn);
-	if (ret)
-		return 1;
+    if ( BUS_transaction(tread,pn) ) return 1;
 
-	/* Copy Scratchpad to SRAM */
+	/* write Scratchpad to SRAM */
     p[0] = _1W_COPY_SCRATCHPAD;
-	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 4, pn);
-	BUSUNLOCK(pn);
-	if (ret)
-		return 1;
+    if ( BUS_transaction(twrite,pn) ) return 1;
 
 	UT_delay(1);				/* 1 msec >> 2 usec per byte */
 	return 0;
@@ -917,43 +923,46 @@ static int OW_w_mem( BYTE * data,  size_t size,
 static int OW_temperature(int *T, const UINT delay,
 						  struct parsedname *pn)
 {
-    BYTE data = _1W_CONVERT_TEMPERATURE;
-	int ret;
+    BYTE convert[] = { _1W_CONVERT_TEMPERATURE, } ;
+    BYTE data ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WRITE1(convert),
+        TRXN_END,
+    } ;
 
 	/* Mission not progress, force conversion */
-	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(&data, 1, pn);
-	BUSUNLOCK(pn);
-	if (ret)
-		return 1;
+	if ( BUS_transaction(t,pn) ) return 1 ;
 
 	/* Thermochron is powered (internally by battery) -- no reason to hold bus */
 	UT_delay(delay);
 
-	ret = OW_small_read(&data, 1, 0x0211, pn );	/* read temp register */
+	if ( OW_small_read(&data, 1, 0x0211, pn ) ) return 1 ;	/* read temp register */
 	*T = (int) data;
-	return ret;
+	return 0;
 }
 
 static int OW_clearmemory( struct parsedname *pn)
 {
-	BYTE cr;
-	int ret;
+	/* Clear memory command */
+	BYTE cr[] = { _1W_CLEAR_MEMORY, } ;
+	BYTE flag ;
+	struct transaction_log t[] = {
+    	TRXN_START,
+    	TRXN_WRITE1(cr),
+    	TRXN_END,
+	} ;
 	/* Clear memory flag */
-	if (OW_small_read(&cr, 1, 0x020E, pn ))
+	if (OW_small_read(&flag, 1, 0x020E, pn ))
 		return -EINVAL;
-	cr = (cr & 0x3F) | 0x40;
-	if (OW_w_mem(&cr, 1, 0x020E, pn))
+	flag = (flag & 0x3F) | 0x40;
+	if (OW_w_mem(&flag, 1, 0x020E, pn))
 		return -EINVAL;
 
-	/* Clear memory command */
-    cr = _1W_CLEAR_MEMORY;
-	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(&cr, 1, pn);
-	BUSUNLOCK(pn);
+    if ( BUS_transaction(t,pn) ) return 1 ;
 
 	UT_delay(1);				/* wait 500 usec */
-	return ret;
+	return 0;
 }
 
 /* translate 7 byte field to a Unix-style date (number) */

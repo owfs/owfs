@@ -67,6 +67,7 @@ See: http://www.iana.org/assignments/port-numbers
 #include "ow.h"
 #include "ow_counters.h"
 #include <sys/ioctl.h>
+#include "ow_transaction.h"
 
 /* Number of "fake" adapters */
 extern int fakes;
@@ -100,35 +101,6 @@ extern int fakes;
 #else
 #define MAX_FIFO_SIZE UART_FIFO_SIZE
 #endif
-
-enum transaction_type {
-	trxn_select,
-	trxn_match,
-	trxn_read,
-	trxn_power,
-	trxn_program,
-	trxn_reset,
-	trxn_crc8,
-	trxn_crc8seeded,
-	trxn_crc16,
-	trxn_crc16seeded,
-	trxn_end,
-	trxn_verify,
-	trxn_nop,
-	trxn_delay,
-	trxn_udelay,
-};
-struct transaction_log {
-	const BYTE *out;
-	BYTE *in;
-	size_t size;
-	enum transaction_type type;
-};
-#define TRXN_NVERIFY { NULL, NULL, _1W_SEARCH_ROM, trxn_verify }
-#define TRXN_AVERIFY { NULL, NULL, _1W_CONDITIONAL_SEARCH_ROM, trxn_verify }
-#define TRXN_START   { NULL, NULL, 0, trxn_select }
-#define TRXN_END     { NULL, NULL, 0, trxn_end }
-#define TRXN_RESET   { NULL, NULL, 0, trxn_reset }
 
 struct connection_in;
 struct device_search;
@@ -519,11 +491,7 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 
 int TestConnection(const struct parsedname *pn);
 
-int BUS_transaction(const struct transaction_log *tl,
-					const struct parsedname *pn);
-int BUS_transaction_nolock(const struct transaction_log *tl,
-						   const struct parsedname *pn);
-
 #define STAT_ADD1_BUS( err, in )     STATLOCK; ++err; ++(in->bus_errors) ; STATUNLOCK ;
 
 #endif							/* OW_CONNECTION_H */
+

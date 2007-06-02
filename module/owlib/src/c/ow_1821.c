@@ -243,8 +243,8 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 	BYTE data;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{&p[Tindex], NULL, 1, trxn_match,},
-		{NULL, &data, 1, trxn_read,},
+		TRXN_WRITE1(&p[Tindex]),
+		TRXN_READ1(&data),
 		TRXN_END,
 	};
 
@@ -262,8 +262,8 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex,
 	BYTE data = BYTE_MASK((int) (T + .49)) ;	// round off
 	struct transaction_log t[] = {
 		TRXN_START,
-		{&p[Tindex], NULL, 1, trxn_match,},
-		{&data, NULL, 1, trxn_match,},
+		TRXN_WRITE1(&p[Tindex]),
+		TRXN_WRITE1(&data),
 		TRXN_END,
 	};
 	return BUS_transaction(t, pn);;
