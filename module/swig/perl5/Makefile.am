@@ -37,5 +37,5 @@ install-data-local: OW/Makefile OW/ow_wrap.c OW/blib/lib/OW.pm
 clean-generic:
 	@RM@ -f *~ .*~
 	if test -f OW/Makefile; then cd OW; $(MAKE) clean; fi
-	@RM@ -f OW/Makefile.old OW/Makefile OW/OW.pm OW/OW.bs OW/ow_wrap.c
+	@RM@ -f OW/Makefile.old OW/Makefile OW/Makefile.PL OW/OW.pm OW/OW.bs OW/ow_wrap.c
 
