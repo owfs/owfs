@@ -13,8 +13,15 @@ puts [ ::OW::version ]
 
 ::OW::init --fake 28 --fake 10
 
-puts "\nDirectory-listing of /"
+puts "\nDirectory-listing of / (return string)"
 puts [ ::OW::get "/" ]
+
+puts "\nDirectory-listing of / (return list)"
+set list [ ::OW::get / -list ]
+puts $list
+
+puts "\nFirst object in directory list"
+puts [ lindex $list 0 ]
 
 puts "\nRead /10.67C6697351FF/temperature"
 puts [ ::OW::get "/10.67C6697351FF/temperature" ]
