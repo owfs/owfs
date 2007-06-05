@@ -4,7 +4,7 @@
 
 #include <owcapi.h>
 
-const char DEFAULT_ARGV[] = "--fake 10,28";
+const char DEFAULT_ARGV[] = "--fake 28 --fake 10";
 
 const char DEFAULT_PATH[] = "/";
 
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   }
   printf("OW_get() returned rc=%d, len=%d\n", (int)rc, (int)len);
   buffer[len] = 0;
-  printf("------- buffer content -------\n");
+  printf("------- buffer content (10.67C6697351FF/type) -------\n");
   printf("%s\n", buffer);
   printf("------------------------------\n");
   if(buffer) {
@@ -94,7 +94,27 @@ int main(int argc, char **argv)
   }
   printf("OW_get() returned rc=%d, len=%d\n", (int)rc, (int)len);
   buffer[len] = 0;
-  printf("------- buffer content -------\n");
+  printf("------- buffer content (10.67C6697351FF/temperature) -------\n");
+  printf("%s\n", buffer);
+  printf("------------------------------\n");
+  if(buffer) {
+    free(buffer);
+    buffer = NULL;
+  }
+
+  if((rc = OW_get("system/adapter/name.ALL",&buffer,&len)) < 0) {
+    printf("OW_get(system/adapter/name.ALL) failed with rc=%d\n", rc);
+    ret = rc;
+    goto cleanup;
+  }
+  if(!buffer || (len <= 0)) {
+    printf("OW_get: buffer is empty (buffer=%p len=%d)\n", buffer, len);
+    ret = 1;
+    goto cleanup;
+  }
+  printf("OW_get() returned rc=%d, len=%d\n", (int)rc, (int)len);
+  buffer[len] = 0;
+  printf("------- buffer content (system/adapter/name.ALL) -------\n");
   printf("%s\n", buffer);
   printf("------------------------------\n");
   
