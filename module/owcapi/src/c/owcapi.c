@@ -127,16 +127,16 @@ static ssize_t getdir(struct one_wire_query * owq)
 	int ret;
 
 	CharblobInit(&cb);
-    ret = FS_dir(getdircallback, &cb, PN(owq));
+	ret = FS_dir(getdircallback, &cb, PN(owq));
 	if (ret < 0) {
-        OWQ_buffer(owq) = NULL;
-        OWQ_size(owq) = 0 ;
-    } else if ((OWQ_buffer(owq) = strdup(cb.blob))) {
-        ret = cb.used;
-        OWQ_size(owq) = ret ;
+		OWQ_buffer(owq) = NULL;
+		OWQ_size(owq) = 0 ;
+	} else if ((OWQ_buffer(owq) = strdup(cb.blob))) {
+		ret = cb.used;
+		OWQ_size(owq) = ret ;
 	} else {
 		ret = -ENOMEM;
-        OWQ_size(owq) = 0 ;
+		OWQ_size(owq) = 0 ;
 	}
 	CharblobClear(&cb);
 	return ret;
@@ -150,27 +150,28 @@ static ssize_t getdir(struct one_wire_query * owq)
 static ssize_t getval(struct one_wire_query * owq)
 {
 	ssize_t ret;
-    ssize_t s = FullFileLength(PN(owq));
+	ssize_t s = FullFileLength(PN(owq));
 	if (s <= 0)
 		return -ENOENT;
-    if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL)
+	if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL)
 		return -ENOMEM;
+	OWQ_size(owq) = s ;
 	ret = FS_read_postparse(owq);
 	if (ret < 0) {
-        free(OWQ_buffer(owq));
-        OWQ_buffer(owq) = NULL;
-        OWQ_size(owq) = 0 ;
-    } else {
-        OWQ_size(owq) = ret ;
-        OWQ_buffer(owq)[ret] = '\0' ;
-    }
+		free(OWQ_buffer(owq));
+		OWQ_buffer(owq) = NULL;
+		OWQ_size(owq) = 0 ;
+	} else {
+		OWQ_size(owq) = ret ;
+		OWQ_buffer(owq)[ret] = '\0' ;
+	}
 	return ret;
 }
 
 ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 {
 	//struct parsedname pn;
-    struct one_wire_query owq ;
+	struct one_wire_query owq ;
 	ssize_t ret = 0;			/* current buffer string length */
 
 	/* Check the parameters */
@@ -190,18 +191,18 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 	} else if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
 		ret = -ENOENT;
 	} else {
-        if (IsDir(PN(&owq))) {		/* A directory of some kind */
-            ret = getdir(&owq);
-            if (ret > 0) {
-                if ( buffer_length) *buffer_length = OWQ_size(&owq);
-                *buffer = OWQ_buffer(&owq) ;
-            }
+		if (IsDir(PN(&owq))) {		/* A directory of some kind */
+			ret = getdir(&owq);
+			if (ret > 0) {
+				if ( buffer_length) *buffer_length = OWQ_size(&owq);
+				*buffer = OWQ_buffer(&owq) ;
+			}
 		} else {				/* A regular file */
 			ret = getval(&owq);
-            if (ret > 0) {
-                if ( buffer_length) *buffer_length = OWQ_size(&owq);
-                *buffer = OWQ_buffer(&owq) ;
-            }
+			if (ret > 0) {
+				if ( buffer_length) *buffer_length = OWQ_size(&owq);
+				*buffer = OWQ_buffer(&owq) ;
+			}
 		}
 		FS_OWQ_destroy(&owq);
 	}
