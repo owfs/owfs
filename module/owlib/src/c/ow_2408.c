@@ -122,7 +122,7 @@ DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
 
 /* Internal properties */
 //static struct internal_prop ip_init = { "INI", fc_stable };
-MakeInternalProp(ini,fc_stable) ; // LCD screen initialized?
+MakeInternalProp(INI,fc_stable) ; // LCD screen initialized?
 
 /* Nibbles for LCD controller */
 #define NIBBLE_CTRL( x )    ((x)&0xF0) , (((x)<<4)&0xF0)
@@ -174,7 +174,7 @@ static int FS_Mclear(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     int init = 1;
 
-	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(ini), pn)) {
+	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
         OWQ_Y(owq) = 1 ;
 		if (FS_r_strobe(owq)	// set reset pin to strobe mode
 			|| OW_w_pio(0x30, pn))
@@ -188,7 +188,7 @@ static int FS_Mclear(struct one_wire_query * owq)
 		// Entry-mode: auto-increment, no shift
 		if (OW_w_pio(0x0F, pn) || OW_w_pio(0x06, pn))
 			return -EINVAL;
-		Cache_Add_Internal(&init, sizeof(init), InternalProp(ini), pn);
+		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
 	}
 	// clear
 	if (OW_w_pio(0x01, pn))
@@ -351,7 +351,7 @@ static int FS_Hclear(struct one_wire_query * owq)
 	// 0C -- display on
 	// 06 -- entry mode set
 
-	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(ini), pn)) {
+	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
 		BYTE data[6];
 		if (OW_w_control(0x04, pn)	// strobe
 			|| OW_r_reg(data, pn)
@@ -362,7 +362,7 @@ static int FS_Hclear(struct one_wire_query * owq)
 		UT_delay(5);
 		if (OW_w_pios(next, 5, pn))
 			return -EINVAL;
-		Cache_Add_Internal(&init, sizeof(init), InternalProp(ini), pn);
+		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
 	}
 	if (OW_w_pios(clear, 6, pn))
 		return -EINVAL;

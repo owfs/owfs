@@ -91,7 +91,7 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex,
 
 /* Internal properties */
 //static struct internal_prop ip_continuous = { "CON", fc_stable };
-MakeInternalProp(con,fc_stable) ; // continuous conversions
+MakeInternalProp(CON,fc_stable) ; // continuous conversions
 
 static int FS_temperature(struct one_wire_query * owq)
 {
@@ -181,7 +181,7 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 		need_to_trigger = 1;
 	} else {					/* continuous conversion mode */
 		if (Cache_Get_Internal_Strict
-			(&continuous, sizeof(continuous), InternalProp(con), pn)
+			(&continuous, sizeof(continuous), InternalProp(CON), pn)
 			|| continuous == 0) {
 			need_to_trigger = 1;
 		}
@@ -193,7 +193,7 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 		UT_delay(1000);
 		if ((status & 0x01) == 0) {	/* continuous mode, just triggered */
 			continuous = 1;
-			Cache_Add_Internal(&continuous, sizeof(int), InternalProp(con), pn);	/* Flag as continuous */
+			Cache_Add_Internal(&continuous, sizeof(int), InternalProp(CON), pn);	/* Flag as continuous */
 		}
 	}
 	return OW_current_temperature(temp, pn);

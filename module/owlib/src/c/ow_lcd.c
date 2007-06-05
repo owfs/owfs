@@ -123,7 +123,7 @@ static int LCD_2byte(BYTE * byte, int delay, const struct parsedname *pn);
 
 /* Internal files */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
-MakeInternalProp(cum,fc_persistent) ; //cumulative
+MakeInternalProp(CUM,fc_persistent) ; //cumulative
 
 /* LCD */
 static int FS_r_version(struct one_wire_query * owq)
@@ -225,7 +225,7 @@ static int FS_r_cum(struct one_wire_query * owq)
     if (OW_r_counters(u, PN(owq)))
 		return -EINVAL;			/* just to prime the "CUM" data */
 	if (Cache_Get_Internal_Strict
-           ((void *) u, 4 * sizeof(UINT), InternalProp(cum), PN(owq)))
+           ((void *) u, 4 * sizeof(UINT), InternalProp(CUM), PN(owq)))
 		return -EINVAL;
     OWQ_array_U(owq,0) = u[0] ;
     OWQ_array_U(owq,1) = u[1] ;
@@ -242,7 +242,7 @@ static int FS_w_cum(struct one_wire_query * owq)
         OWQ_array_U(owq,2),
         OWQ_array_U(owq,3),
     } ;
-    return Cache_Add_Internal((const void *) u, 4 * sizeof(UINT), InternalProp(cum),
+    return Cache_Add_Internal((const void *) u, 4 * sizeof(UINT), InternalProp(CUM),
                                PN(owq)) ? -EINVAL : 0;
 }
 #endif							/*OW_CACHE */
@@ -422,7 +422,7 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 	data[3] = ((UINT) d[7]) << 8 | d[6];
 
 //printf("OW_COUNTER key=%s\n",key);
-    if (Cache_Get_Internal_Strict((void *) cum, sizeof(cum), InternalProp(cum), pn)) {	/* First pass at cumulative */
+    if (Cache_Get_Internal_Strict((void *) cum, sizeof(cum), InternalProp(CUM), pn)) {	/* First pass at cumulative */
 		cum[0] = data[0];
 		cum[1] = data[1];
 		cum[2] = data[2];
@@ -433,7 +433,7 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 		cum[2] += data[2];
 		cum[3] += data[3];
 	}
-    Cache_Add_Internal((void *) cum, sizeof(cum), InternalProp(cum), pn);
+    Cache_Add_Internal((void *) cum, sizeof(cum), InternalProp(CUM), pn);
 	return 0;
 }
 

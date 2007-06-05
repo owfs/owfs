@@ -83,7 +83,7 @@ DeviceEntryExtended(1D, DS2423, DEV_ovdr);
 
 /* Persistent storage */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
-MakeInternalProp(cum,fc_persistent) ; // cumulative
+MakeInternalProp(CUM,fc_persistent) ; // cumulative
 
 /* ------- Functions ------------ */
 
@@ -155,7 +155,7 @@ static int FS_r_mincount(struct one_wire_query * owq)
     if ( OW_r_mem_counter( owq, 1, 32 ) ) return -EINVAL ;
     ct[1] = OWQ_U(owq) ;
     
-    if (Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), InternalProp(cum), pn)) {	// record doesn't (yet) exist
+    if (Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {	// record doesn't (yet) exist
 		st[2] = ct[0] < ct[1] ? ct[0] : ct[1];
 	} else {
 		UINT d0 = ct[0] - st[0];	//delta counter.A
@@ -166,7 +166,7 @@ static int FS_r_mincount(struct one_wire_query * owq)
 	st[1] = ct[1];
     OWQ_U(owq) = st[2];
     
-    if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(cum), pn) )
+    if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn) )
         return -EINVAL ;
     return 0 ;
 }
@@ -184,7 +184,7 @@ static int FS_w_mincount(struct one_wire_query * owq)
     if ( OW_r_mem_counter( owq, 1, 32 ) ) return -EINVAL ;
     st[1] = OWQ_U(owq) ;
     
-    if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(cum), pn) )
+    if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn) )
         return -EINVAL ;
     return 0 ;
 }

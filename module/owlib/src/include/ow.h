@@ -424,13 +424,6 @@ struct filetype {
 /* --------- end Filetype -------------------- */
 /* ------------------------------------------- */
 
-/* Internal properties -- used by some devices */
-/* in passing to store state information        */
-struct internal_prop {
-	char *name;
-	enum fc_change change;
-};
-
 /* -------------------------------- */
 /* Devices -- types of 1-wire chips */
 /*

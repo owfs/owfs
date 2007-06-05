@@ -68,9 +68,16 @@ $Id$
 #ifndef OWCACHE_H				/* tedious wrapper */
 #define OWCACHE_H
 
+/* Internal properties -- used by some devices */
+/* in passing to store state information        */
+struct internal_prop {
+    char *name;
+    enum fc_change change;
+};
+
 #if OW_CACHE
 
-#define MakeInternalProp(tag,change)  static struct internal_prop ip_##tag = { #tag , change }
+#define MakeInternalProp(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
 #define InternalProp(tag)     (& ip_##tag)
 
 /* Cache  and Storage functions */
