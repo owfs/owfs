@@ -516,6 +516,17 @@ DeviceEntry(3D, DS2781);
 #define _1W_COPY_DATA 0x48
 #define _1W_RECALL_DATA 0xB8
 #define _1W_LOCK 0x6A
+/* DS2784 - specific */
+#define _1W_WRITE_CHALLENGE 0x0C
+#define _1W_COMPUTE_MAC_WITHOUT 0x36
+#define _1W_COMPUTE_MAC_WITH 0x35
+#define _1W_CLEAR_SECRET 0x5A
+#define _1W_COMPUTE_NEXT_SECRET_WITHOUT 0x30
+#define _1W_COMPUTE_NEXT_SECRET_WITH 0x33
+#define _1W_LOCK_SECRET 0x60
+#define _1W_SET_OVERDRIVE 0x8B
+#define _1W_CLEAR_OVERDRIVE 0x8D
+#define _1W_RESET 0xC4
 
 /* ------- Functions ------------ */
 
