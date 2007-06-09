@@ -184,14 +184,25 @@ int Fowq_output_offset_and_size_z(char * string, struct one_wire_query * owq)
     return Fowq_output_offset_and_size( string, strlen(string), owq) ;
 }
 
+/* Put a string ionto the OWQ structure and return the length
+   check lengths and offsets as part of the process */
 int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq)
 {
     size_t copy_length = length ;
     off_t offset = OWQ_offset(owq) ;
     Debug_Bytes("Fowq_output_offset_and_size",(BYTE *)string,length);
+
+    /* offset is after the length of the string -- return 0 since
+    some conditions a read after the end is done automatically */
     if (offset>(off_t)length) return 0 ;
+    
+    /* correct length for offset (cannot be negative because of previous check) */
     copy_length -= offset ;
+
+    /* correct length for buffer space */
     if ( copy_length > OWQ_size(owq) ) copy_length = OWQ_size(owq) ;
+    
+    /* and copy */
     memcpy(OWQ_buffer(owq), &string[offset], copy_length) ;
     switch (OWQ_pn(owq).ft->format) {
         case ft_vascii:

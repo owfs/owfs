@@ -752,13 +752,14 @@ static int DS9490_getstatus(BYTE * buffer, int readlen,
 			 usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer,
 								(size_t) 32,
 								pn->in->connin.usb.timeout)) < 0) {
+            LEVEL_DATA("DS9490_getstatus: (HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
 #else
 		if ((ret =
 			 usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32,
 						   pn->in->connin.usb.timeout)) < 0) {
+            LEVEL_DATA("DS9490_getstatus: (no HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
 #endif
 			STAT_ADD1_BUS(BUS_status_errors, pn->in);
-			LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
 			return -EIO;
 		}
 #if 0
