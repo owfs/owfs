@@ -146,15 +146,19 @@ static int OW_w_mem( BYTE * data,  size_t size,
     BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
     struct transaction_log tcopy[] = {
         TRXN_START,
-        {p, NULL, size + 3, trxn_match},
-        {data, NULL, size, trxn_match},
-        {NULL, &p[size + 3], 2, trxn_read},
+        TRXN_WRITE(p,3+size),
+        TRXN_END,
+    };
+    struct transaction_log tcopy_crc16[] = {
+        TRXN_START,
+        TRXN_WR_CRC16(p,3+size,0),
         TRXN_END,
     };
     struct transaction_log tread[] = {
         TRXN_START,
-        {p, NULL, 1, trxn_match},
-        {NULL, &p[1], size + 3, trxn_read},
+        TRXN_WRITE1(p),
+        TRXN_READ(&p[1],3+size),
+        TRXN_COMPARE(data,&p[4],size),
         TRXN_END,
     };
     struct transaction_log tsram[] = {
@@ -166,19 +170,15 @@ static int OW_w_mem( BYTE * data,  size_t size,
     /* Copy to scratchpad */
     memcpy(&p[3], data, size);
 
-    if (((offset + size) & 0x1F) != 0)
-        tcopy[3].type = trxn_end;   // not at page boundary at end
-    if (BUS_transaction(tcopy, pn))
-        return 1;
-    if (((offset + size) & 0x1F) == 0 && CRC16(p, 1 + 2 + size + 2))
+    if (BUS_transaction(
+            ((offset + size) & 0x1F) != 0 ? tcopy : tcopy_crc16,
+            pn))
         return 1;
 
     /* Re-read scratchpad and compare */
     /* Note that we tacitly shift the data one byte down for the E/S byte */
     p[0] = _1W_READ_SCRATCHPAD;
     if (BUS_transaction(tread, pn))
-        return 1;
-    if (memcmp(&p[4], data, size))
         return 1;
 
     /* Copy Scratchpad to SRAM */

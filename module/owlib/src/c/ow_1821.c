@@ -142,8 +142,8 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn)
     BYTE p[] = { _1W_READ_STATUS, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 1, trxn_match,},
-		{NULL, data, 1, trxn_read,},
+        TRXN_WRITE1(p),
+        TRXN_READ1(data),
 		TRXN_END,
 	};
 
@@ -155,7 +155,7 @@ static int OW_w_status(BYTE * data, const struct parsedname *pn)
     BYTE p[] = { _1W_WRITE_STATUS, data[0] };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match,},
+        TRXN_WRITE2(p),
 		TRXN_END,
 	};
 
@@ -170,7 +170,7 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 	int need_to_trigger = 0;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{c, NULL, 1, trxn_match,},
+        TRXN_WRITE1(c),
 		TRXN_END,
 	};
 
@@ -202,24 +202,24 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 static int OW_current_temperature(_FLOAT * temp,
 								  const struct parsedname *pn)
 {
-    BYTE rt[] = { _1W_READ_TEMPERATURE, };
-    BYTE rc[] = { _1W_READ_COUNTER, };
-    BYTE lc[] = { _1W_LOAD_COUNTER, };
+    BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
+    BYTE read_counter[] = { _1W_READ_COUNTER, };
+    BYTE load_counter[] = { _1W_LOAD_COUNTER, };
 	BYTE temp_read;
 	BYTE count_per_c;
 	BYTE count_remain;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{rt, NULL, 1, trxn_match,},
-		{NULL, &temp_read, 1, trxn_read,},
+        TRXN_WRITE1(read_temp),
+        TRXN_READ1(&temp_read),
 		TRXN_START,
-		{rc, NULL, 1, trxn_match,},
-		{NULL, &count_remain, 1, trxn_read,},
+        TRXN_WRITE1(read_counter),
+        TRXN_READ1(&count_remain),
 		TRXN_START,
-		{lc, NULL, 1, trxn_match,},
+        TRXN_WRITE1(load_counter),
 		TRXN_START,
-		{rc, NULL, 1, trxn_match,},
-		{NULL, &count_per_c, 1, trxn_read,},
+        TRXN_WRITE1(read_counter),
+        TRXN_READ1(&count_per_c),
 		TRXN_END,
 	};
 

@@ -487,7 +487,7 @@ static int OW_power(BYTE * data, const struct parsedname *pn)
 	BYTE b4[] = { _1W_READ_POWERMODE, };
 	struct transaction_log tpower[] = {
 		TRXN_START,
-		TRXN_WRITE(b4,1),
+		TRXN_WRITE1(b4),
 		TRXN_READ1(data),
 		TRXN_END,
 	};
@@ -684,12 +684,12 @@ static int OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 	BYTE cmd3[] = { 0x64, };
 	struct transaction_log t0[] = {
 		TRXN_START,
-		TRXN_WRITE(cmd0,2),
+		TRXN_WRITE2(cmd0),
 		TRXN_END,
 	};
 	struct transaction_log t1[] = {
 		TRXN_START,
-		TRXN_WRITE(cmd1,2),
+		TRXN_WRITE2(cmd1),
 		TRXN_END,
 	};
 	struct transaction_log t2[] = {
@@ -798,7 +798,7 @@ static int OW_w_pio( BYTE pio, const struct parsedname * pn )
   BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, } ;
   struct transaction_log t[] = {
     TRXN_START,
-    TRXN_WRITE(cmd,2),
+    TRXN_WRITE2(cmd),
     TRXN_END ,
   } ;
   return BUS_transaction(t,pn) ;

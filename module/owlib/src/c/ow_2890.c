@@ -121,13 +121,14 @@ static int OW_w_wiper(const UINT val, const struct parsedname *pn)
 	BYTE ns[] = { _1W_RELEASE_WIPER, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{cmd, NULL, 2, trxn_match,},
-		{NULL, resp, 1, trxn_read,},
-		{ns, NULL, 1, trxn_match,},
+        TRXN_WRITE2(cmd),
+        TRXN_READ1(resp),
+        TRXN_WRITE1(ns),
+        TRXN_COMPARE(resp,&cmd[1],1),
 		TRXN_END
 	};
 
-	return BUS_transaction(t, pn) || resp[0] != val;
+	return BUS_transaction(t, pn);
 }
 
 /* read Wiper */
@@ -137,8 +138,8 @@ static int OW_r_wiper(UINT * val, const struct parsedname *pn)
 	BYTE resp[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-		{fo, NULL, 1, trxn_match,},
-		{NULL, resp, 2, trxn_read,},
+        TRXN_WRITE1(fo),
+        TRXN_READ2(resp),
 		TRXN_END
 	};
 
@@ -157,13 +158,14 @@ static int OW_w_cp(const int val, const struct parsedname *pn)
 	BYTE ns[] = { _1W_RELEASE_WIPER, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{cmd, NULL, 2, trxn_match,},
-		{NULL, resp, 1, trxn_read,},
-		{ns, NULL, 1, trxn_match,},
+        TRXN_WRITE2(cmd),
+        TRXN_READ1(resp),
+        TRXN_WRITE1(ns),
+        TRXN_COMPARE(resp,&cmd[1],1),
 		TRXN_END
 	};
 
-	return BUS_transaction(t, pn) || resp[0] != cmd[1];
+	return BUS_transaction(t, pn) ;
 }
 
 /* read Charge Pump */
@@ -173,8 +175,8 @@ static int OW_r_cp(int *val, const struct parsedname *pn)
 	BYTE resp[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-		{aa, NULL, 1, trxn_match,},
-		{NULL, resp, 2, trxn_read,},
+        TRXN_WRITE1(aa),
+        TRXN_READ2(resp) ,
 		TRXN_END
 	};
 

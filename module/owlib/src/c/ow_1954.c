@@ -151,9 +151,7 @@ static int OW_w_ipr( struct one_wire_query * owq ) {
     BYTE p[2+128+2] = { _1W_WRITE_IPR, BYTE_MASK(size), } ;
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WRITE(p,2+size),
-        TRXN_READ(&p[2+size],2),
-        TRXN_CRC16(p,2+size+2),
+        TRXN_WR_CRC16(p,2+size,0),
         TRXN_END,
     } ;
     return BUS_transaction( t, PN(owq) ) ;
@@ -165,9 +163,7 @@ static int OW_r_ipr( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WRITE(p,2),
-        TRXN_READ(&p[2],128+2),
-        TRXN_CRC16(p,2+128+2),
+        TRXN_WR_CRC16(p,2,128),
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) ) return 1 ;
@@ -184,9 +180,7 @@ static int OW_w_status( struct one_wire_query * owq ) {
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WRITE1(p),
-        TRXN_READ(&p[1],1+2),
-        TRXN_CRC16(p,1+1+2),
+        TRXN_WR_CRC16(p,1,1),
         TRXN_MODIFY(release,release,2),
         TRXN_COMPARE(release,zero,2),
         TRXN_END,
@@ -199,9 +193,7 @@ static int OW_r_status( struct one_wire_query * owq ) {
     int size = OWQ_size(owq) ;
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WRITE1(p),
-        TRXN_READ(&p[1],4+2),
-        TRXN_CRC16(p,1+4+2),
+        TRXN_WR_CRC16(p,1,4),
         TRXN_END,
     } ;
     if ( BUS_transaction( t, PN(owq) ) ) return 1 ;
@@ -218,9 +210,7 @@ static int OW_w_io( struct one_wire_query * owq ) {
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WRITE(p,2+size),
-        TRXN_READ(&p[2+size],2),
-        TRXN_CRC16(p,2+size+2),
+        TRXN_WR_CRC16(p,2+size,0),
         TRXN_MODIFY(release,release,2),
         TRXN_COMPARE(release,zero,2),
         TRXN_END,
@@ -235,9 +225,7 @@ static int OW_r_io( struct one_wire_query * owq ) {
     BYTE zero[2] = { 0x00, 0x00, } ;
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WRITE(p,2),
-        TRXN_READ(&p[2],size+2),
-        TRXN_CRC16(p,2+size+2),
+        TRXN_WR_CRC16(p,2,size),
         TRXN_MODIFY(release,release,2),
         TRXN_COMPARE(release,zero,2),
         TRXN_END,

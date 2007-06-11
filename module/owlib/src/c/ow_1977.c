@@ -396,13 +396,14 @@ static int OW_verify(BYTE * pwd,  off_t offset,
 static int OW_clear( struct parsedname *pn)
 {
     BYTE p[1 + 2 + 16] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(0x00), };
-	int ret;
+    struct transaction_log t[] = {
+        TRXN_START ,
+        TRXN_WRITE(p,3+16),
+        TRXN_END,
+    } ;
 
 	/* Copy to scratchpad */
 	bzero(&p[3], 16);
 
-	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 3 + 16, pn);
-	BUSUNLOCK(pn);
-	return ret;
+    return BUS_transaction(t,pn) ;
 }

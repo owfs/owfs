@@ -92,6 +92,15 @@ struct transaction_log {
 
 #define TRXN_WRITE1(writedata)  TRXN_WRITE(writedata,1)
 #define TRXN_READ1(readdata)    TRXN_READ(readdata,1)
+#define TRXN_WRITE2(writedata)  TRXN_WRITE(writedata,2)
+#define TRXN_READ2(readdata)    TRXN_READ(readdata,2)
+#define TRXN_WRITE3(writedata)  TRXN_WRITE(writedata,3)
+#define TRXN_READ3(readdata)    TRXN_READ(readdata,3)
+
+#define TRXN_WR_CRC16(pointer,writelength,readlength) \
+                TRXN_WRITE((BYTE *)pointer,writelength), \
+                TRXN_READ(((BYTE *)pointer)+(writelength),readlength), \
+                TRXN_CRC16((BYTE *)pointer,writelength+readlength+2)
 
 int BUS_transaction(const struct transaction_log *tl,
 					const struct parsedname *pn);

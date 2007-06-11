@@ -872,7 +872,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
 	BYTE p[3 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
-	size_t rest = 32 - (offset & 0x1F);
+	int rest = 32 - (offset & 0x1F);
 	struct transaction_log tcopy[] = {
     	TRXN_START,
     	TRXN_WRITE(p,3+size),
@@ -880,16 +880,12 @@ static int OW_w_mem( BYTE * data,  size_t size,
 	} ;
 	struct transaction_log tcopy_crc[] = {
     	TRXN_START,
-    	TRXN_WRITE(p,3+size),
-    	TRXN_READ(&p[3 + size], 2),
-    	TRXN_CRC16(p,3+size+2),
+        TRXN_WR_CRC16(p,3+size,0),
     	TRXN_END,
 	} ;
 	struct transaction_log tread[] = {
     	TRXN_START,
-    	TRXN_WRITE(p,3),
-    	TRXN_READ(&p[3], 1+rest+2),
-    	TRXN_CRC16(p,4+rest+2),
+        TRXN_WR_CRC16(p,3,1+rest),
     	TRXN_COMPARE(&p[4],data,size),
     	TRXN_END,
 	} ;

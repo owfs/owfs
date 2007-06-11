@@ -305,14 +305,12 @@ static int OW_w_scratch( BYTE * data,  size_t size,
 	BYTE p[3 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3 + size, trxn_match,},
+        TRXN_WRITE(p,3+size),
 		TRXN_END,
 	};
 	struct transaction_log tcrc[] = {
 		TRXN_START,
-		{p, NULL, 3 + size, trxn_match,},
-		{&p[3 + size], NULL, 2, trxn_read,},
-		{p, NULL, 3 + size + 2, trxn_crc16},
+        TRXN_WR_CRC16(p,3+size,0),
 		TRXN_END,
 	};
 
@@ -331,15 +329,13 @@ static int OW_w_mem( BYTE * data,  size_t size,
 	BYTE p[4 + 32 + 2] = { _1W_READ_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{p, NULL, 1, trxn_match,},
-		{&p[1], NULL, 1 + size + 2, trxn_read,},
-		{p, NULL, 4 + size + 2, trxn_crc16,},
-		{data, &p[4], size, trxn_match,},
+        TRXN_WR_CRC16(p,3,1+size),
+        TRXN_COMPARE(&p[4],data,size),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match,},
+        TRXN_WRITE3(p),
 		{&p[3], &p[3], 10, trxn_power,},
 		TRXN_END,
 	};
@@ -359,8 +355,8 @@ static int OW_w_reg( BYTE * data,  size_t size,
 	BYTE p[3] = { _1W_WRITE_REGISTER, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match,},
-		{data, NULL, size, trxn_match,},
+        TRXN_WRITE3(p),
+        TRXN_READ(data,size),
 		TRXN_END,
 	};
 	return BUS_transaction(t, pn);
@@ -370,26 +366,32 @@ static int OW_w_reg( BYTE * data,  size_t size,
 static int OW_w_pio( BYTE data,  struct parsedname *pn)
 {
 	BYTE p[3] = { _1W_PIO_ACCESS_WRITE, BYTE_MASK(data), BYTE_INVERSE(data), };
-	BYTE resp[1];
+    BYTE confirm[] = { _1W_PIO_CONFIRMATION, } ;
+    BYTE resp[1];
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match,},
-		{NULL, resp, 1, trxn_read,},
+        TRXN_WRITE3(p),
+        TRXN_READ1(resp),
+        TRXN_COMPARE(resp,confirm,1),
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn) || resp[0] != _1W_PIO_CONFIRMATION;
+	return BUS_transaction(t, pn);
 }
 
 /* Clear latches */
 static int OW_clear( struct parsedname *pn)
 {
-	BYTE p[2] = { _1W_RESET_ACTIVITY_LATCHES, 0xFF };
+    BYTE cmd[] = { _1W_RESET_ACTIVITY_LATCHES, } ;
+    BYTE resp[1] ;
+    BYTE confirm[] = { _1W_PIO_CONFIRMATION, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, p, 2, trxn_read,},
+        TRXN_WRITE1(cmd),
+        TRXN_READ1(resp),
+        TRXN_COMPARE(resp,confirm,1),
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn) || p[0] != _1W_RESET_ACTIVITY_LATCHES || p[1] != _1W_PIO_CONFIRMATION;
+	return BUS_transaction(t, pn);
 }
