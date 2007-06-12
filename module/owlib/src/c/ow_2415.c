@@ -270,8 +270,8 @@ static int OW_r_control(BYTE * cr, const struct parsedname *pn)
     BYTE r[1] = { _1W_READ_CLOCK, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{r, NULL, 1, trxn_match,},
-		{NULL, cr, 1, trxn_read,},
+		TRXN_WRITE1(r),
+		TRXN_READ1(cr),
 		TRXN_END,
 	};
 
@@ -288,8 +288,8 @@ static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 	BYTE data[5];
 	struct transaction_log t[] = {
 		TRXN_START,
-		{r, NULL, 1, trxn_match,},
-		{NULL, data, 5, trxn_read,},
+		TRXN_WRITE1(r),
+		TRXN_READ(data,5),
 		TRXN_END,
 	};
 
@@ -307,13 +307,13 @@ static int OW_w_clock(const _DATE d, const struct parsedname *pn)
     BYTE w[6] = { _1W_WRITE_CLOCK, };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{r, NULL, 1, trxn_match,},
-		{NULL, &w[1], 1, trxn_read,},
+		TRXN_WRITE1(r),
+		TRXN_READ1(&w[1]),
 		TRXN_END,
 	};
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		{w, NULL, 6, trxn_match,},
+		TRXN_WRITE(w,6),
 		TRXN_END,
 	};
 
@@ -333,7 +333,7 @@ static int OW_w_control(const BYTE cr, const struct parsedname *pn)
     BYTE w[2] = { _1W_WRITE_CLOCK, cr, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{w, NULL, 2, trxn_match,},
+		TRXN_WRITE2(w),
 		TRXN_END,
 	};
 

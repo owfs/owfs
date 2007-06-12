@@ -125,8 +125,8 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
     BYTE p[] = { _1W_PIO_ACCESS_READ, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 1, trxn_match,},
-		{NULL, data, 1, trxn_read,},
+		TRXN_WRITE1(p),
+		TRXN_READ1(data),
 		TRXN_END,
 	};
 
@@ -146,8 +146,8 @@ static int OW_write(const BYTE data, const struct parsedname *pn)
 	BYTE q[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match,},
-		{NULL, q, 2, trxn_read,},
+		TRXN_WRITE3(p),
+		TRXN_READ2(q),
 		TRXN_END,
 	};
 
