@@ -166,7 +166,7 @@ static int OW_discharge(const struct parsedname *pn)
     BYTE dis[] = { _1W_DISCHARGE_LINES, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{dis, NULL, 1, trxn_match},
+		TRXN_WRITE1(dis),
 		TRXN_END,
 	};
 
@@ -193,15 +193,11 @@ static int OW_clearevent(const struct parsedname *pn)
     BYTE clr[] = { _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{clr, NULL, 1, trxn_match},
+		TRXN_WRITE1(clr),
 		TRXN_END,
 	};
 
 	// Could certainly couple this with next transaction
-	BUSLOCK(pn);
-//  pn->in->buspath_bad = 1;
-	BUSUNLOCK(pn);
-
 	if (BUS_transaction(t, pn))
 		return 1;
 
@@ -216,8 +212,8 @@ static int OW_w_control(const UINT data, const struct parsedname *pn)
 	BYTE info;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match},
-		{NULL, &info, 1, trxn_read},
+		TRXN_WRITE2(p),
+		TRXN_READ1(&info),
 		TRXN_END,
 	};
 
@@ -233,8 +229,8 @@ static int OW_r_control(BYTE * data, const struct parsedname *pn)
     BYTE p[] = { _1W_STATUS_READ_WRITE, 0xFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match},
-		{NULL, data, 1, trxn_read},
+		TRXN_WRITE2(p),
+		TRXN_READ1(data),
 		TRXN_END,
 	};
 
