@@ -339,19 +339,20 @@ static int OW_w_mem( BYTE * data,  size_t size,
 	BYTE p[4 + 32] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{data, NULL, size, trxn_match},
+		TRXN_WRITE3(p),
+		TRXN_WRITE(data,size),
 		TRXN_END,
 	};
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{p, NULL, 1, trxn_match},
-		{NULL, &p[1], size + 3, trxn_read},
+		TRXN_WRITE1(p),
+		TRXN_READ(&p[1],3+size),
+		TRXN_COMPARE(data,&p[4],size),
 		TRXN_END,
 	};
 	struct transaction_log tsram[] = {
 		TRXN_START,
-		{p, NULL, 4, trxn_match},
+		TRXN_WRITE(p,4),
 		TRXN_END,
 	};
 
@@ -362,8 +363,6 @@ static int OW_w_mem( BYTE * data,  size_t size,
 	/* Re-read scratchpad and compare */
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn))
-		return 1;
-	if (memcmp(&p[4], data, size))
 		return 1;
 
 	/* Copy Scratchpad to SRAM */

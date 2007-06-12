@@ -422,9 +422,7 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
     BYTE p[3 + 8 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_PIO_LOGIC_STATE), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, &p[3], 8 + 2, trxn_read},
-		{p, NULL, 3 + 8 + 2, trxn_crc16},
+		TRXN_WR_CRC16(p,3,8),
 		TRXN_END,
 	};
 
@@ -443,8 +441,8 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 	BYTE r[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, r, 2, trxn_read},
+		TRXN_WRITE3(p),
+		TRXN_READ2(r),
 		TRXN_END,
 	};
 
@@ -464,44 +462,41 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 static int OW_w_pios(const BYTE * data, const size_t size,
 					 const struct parsedname *pn)
 {
-	BYTE p[4 * size + 1];
+	BYTE cmd[] = { _1W_CHANNEL_ACCESS_WRITE, } ;
+	size_t n = 4 * size;
+	BYTE p[n];
 	BYTE *q;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, p, 1, trxn_read},
+		TRXN_WRITE1(cmd),
+		TRXN_MODIFY(p,p,n),
 		TRXN_END,
 	};
-	size_t n = 1 + 4 * size;
 	size_t i;
-	int ret = 0;
 
-	t[1].size = n;
-    p[0] = _1W_CHANNEL_ACCESS_WRITE;
 	// setup the array
 	for (i = 0, q = p; i < size; ++i) {
-		*(++q) = data[i];
-		*(++q) = ~data[i];
-		*(++q) = 0xFF;
-		*(++q) = 0xFF;
+		*(q++) = data[i];
+		*(q++) = ~data[i];
+		*(q++) = 0xFF;
+		*(q++) = 0xFF;
 	}
 	//{ int j ; printf("IN  "); for (j=0 ; j<n ; ++j ) printf("%.2X ",p[j]); printf("\n") ; }
 	if (BUS_transaction(t, pn)) {
-		ret = 1;
-	} else {
-		//{ int j ; printf("OUT "); for (j=0 ; j<n ; ++j ) printf("%.2X ",p[j]); printf("\n") ; }
-		// check the array
-		for (i = 0, q = p; i < size; ++i) {
-			//printf("WPIOS %d\n",(int)i) ;
-			if ((*(++q) != data[i]) || (*(++q) != (BYTE) (~data[i]))
-				|| (*(++q) != 0xAA) || (*(++q) != data[i])) {
-				//printf("WPIOS problem\n") ;
-				ret = 1;
-				break;
-			}
+		return 1;
+	}
+	//{ int j ; printf("OUT "); for (j=0 ; j<n ; ++j ) printf("%.2X ",p[j]); printf("\n") ; }
+	// check the array
+	for (i = 0, q = p; i < size; ++i) {
+		//printf("WPIOS %d\n",(int)i) ;
+		if ((*(q++) != data[i]) || (*(q++) != (BYTE) (~data[i]))
+			|| (*(q++) != 0xAA) || (*(q++) != data[i])) {
+			//printf("WPIOS problem\n") ;
+			return 1;
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 /* Reset activity latch */
@@ -511,8 +506,8 @@ static int OW_c_latch(const struct parsedname *pn)
 	BYTE r;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 1, trxn_match},
-		{NULL, &r, 1, trxn_read},
+		TRXN_WRITE1(p),
+		TRXN_READ1(&r),
 		TRXN_END,
 	};
 
@@ -534,12 +529,10 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
     BYTE q[3 + 3 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 4, trxn_match},
+		TRXN_WRITE(p,4),
 		/* Read registers */
 		TRXN_START,
-		{q, NULL, 3, trxn_match},
-		{NULL, &q[3], 3 + 2, trxn_read},
-		{q, NULL, 3 + 3 + 2, trxn_crc16},
+		TRXN_WR_CRC16(q,3,3),
 		TRXN_END,
 	};
 
@@ -558,9 +551,9 @@ static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
     BYTE a[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{a, NULL, 3, trxn_match},
-		{data, NULL, 2, trxn_match},
-		{&cr, NULL, 1, trxn_match},
+		TRXN_WRITE3(a),
+		TRXN_WRITE2(data),
+		TRXN_WRITE1(&cr),
 		TRXN_END,
 	};
 
