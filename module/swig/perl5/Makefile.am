@@ -2,7 +2,8 @@
 
 EXTRA_DIST = perl5.m4 OW/META.yml OW/README OW/MANIFEST OW/Changes OW/Makefile.linux.in OW/Makefile.osx.in OW/t/OW.t $(wildcard example/*.pl)
 
-all: OW/Makefile
+#all: OW/Makefile
+all: OW/blib/lib/OW.pm
 
 OW/Makefile.PL:
 if HAVE_DARWIN
@@ -26,13 +27,15 @@ OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
 	$(SWIG) -perl5 -o $@ ../ow.i
 
 OW/blib/lib/OW.pm: OW/ow_wrap.c
-	( cd OW; $(MAKE) -fMakefile )
+	$(MAKE) -C OW -fMakefile
+#	( cd OW; $(MAKE) -fMakefile )
 	@INSTALL@ -d OW/blib/lib
 	@INSTALL@ OW/OW.pm OW/blib/lib/
 	@ECHO@ >> OW/blib/lib/OW.pm 'our $$VERSION='\''@VERSION@'\'' ;'
 
 install-data-local: OW/Makefile OW/ow_wrap.c OW/blib/lib/OW.pm
-	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
+	$(MAKE) -C OW install DESTDIR="$(DESTDIR)"
+#	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
 
 clean-generic:
 	@RM@ -f *~ .*~
