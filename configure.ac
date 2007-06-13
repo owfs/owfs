@@ -1615,6 +1615,11 @@ if test "${ENABLE_OWSERVER}" = "true"; then
 else
     AC_MSG_RESULT([    owserver is DISABLED])
 fi
+if test "${ENABLE_OWNET}" = "true"; then
+    AC_MSG_RESULT([    ownet is enabled])
+else
+    AC_MSG_RESULT([    ownet is DISABLED])
+fi
 if test "${ENABLE_OWCAPI}" = "true"; then
     AC_MSG_RESULT([      owcapi is enabled])
 else
