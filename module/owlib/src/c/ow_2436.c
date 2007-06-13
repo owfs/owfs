@@ -132,34 +132,25 @@ static int FS_volts(struct one_wire_query * owq)
 
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_r_page(BYTE * p, const size_t size, const off_t offset,
+static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
 					 const struct parsedname *pn)
 {
-	BYTE data[32];
-	int page = offset >> 5;
-	size_t s;
+	int pagesize = 32 ;
+	int page = offset / pagesize ;
 	BYTE scratchin[] = { _1W_READ_SCRATCHPAD, offset, };
 	static BYTE copyin[] = { _1W_COPY_NV1_TO_SP1, _1W_COPY_NV2_TO_SP2, _1W_COPY_NV3_TO_SP3, };
 	BYTE *copy = &copyin[page];
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{copy, NULL, 1, trxn_match,},
+		TRXN_WRITE1(copy),
 		TRXN_END,
 	};
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{scratchin, NULL, 2, trxn_match,},
-		{NULL, data, size, trxn_read},
+		TRXN_WRITE2(scratchin),
+		TRXN_READ(data,size),
 		TRXN_END,
 	};
-
-
-	s = Asize[page] - (offset & 0x1F);
-	if (s > size)
-		s = size;
-	tscratch[2].size = s;
-
-	memset(p, 0xFF, size);
 
 	if (BUS_transaction(tcopy, pn))
 		return 1;
@@ -169,46 +160,42 @@ static int OW_r_page(BYTE * p, const size_t size, const off_t offset,
 	if (BUS_transaction(tscratch, pn))
 		return 1;
 
-	// copy to buffer
-	memcpy(p, data, s);
-
 	return 0;
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_w_page(const BYTE * p, const size_t size, const off_t offset,
+static int OW_w_page(const BYTE * data, const size_t size, const off_t offset,
 					 const struct parsedname *pn)
 {
-	int page = offset >> 5;
-	size_t s;
+	int pagesize = 32 ;
+	int page = offset / pagesize ;
 	BYTE scratchin[] = { _1W_READ_SCRATCHPAD, offset, };
 	BYTE scratchout[] = { _1W_WRITE_SCRATCHPAD, offset, };
-	BYTE data[32];
+	BYTE p[pagesize];
 	static BYTE copyout[] = { _1W_COPY_SP1_TO_NV1, _1W_COPY_SP2_TO_NV2, _1W_COPY_SP3_TO_NV3, };
 	BYTE *copy = &copyout[page];
-	struct transaction_log tscratch[] = {
+	struct transaction_log twrite[] = {
 		TRXN_START,
-		{scratchout, NULL, 2, trxn_match,},
-		{p, NULL, size, trxn_match,},
+		TRXN_WRITE2(scratchout),
+		TRXN_WRITE(data,size),
+		TRXN_END,
+	} ;
+	struct transaction_log tread[] = {
 		TRXN_START,
-		{scratchin, NULL, 2, trxn_match,},
-		{data, NULL, size, trxn_match,},
+		TRXN_WRITE2(scratchin),
+		TRXN_READ(p,size),
+		TRXN_COMPARE(p,data,size),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{copy, NULL, 1, trxn_match,},
+		TRXN_WRITE1(copy),
 		TRXN_END,
 	};
 
-	s = Asize[page] - (offset & 0x1F);
-	if (s > size)
-		s = size;
-	tscratch[2].size = tscratch[5].size = s;
-
-	if (BUS_transaction(tscratch, pn) || memcmp(data, p, s)
-		|| BUS_transaction(tcopy, pn))
-		return 1;
+	if (BUS_transaction(twrite, pn)) return 1 ;
+	if (BUS_transaction(tread, pn)) return 1 ;
+	if (BUS_transaction(tcopy, pn)) return 1 ;
 
 	UT_delay(10);
 
@@ -222,13 +209,13 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 	BYTE t[2];
 	struct transaction_log tconvert[] = {
 		TRXN_START,
-		{d2, NULL, 1, trxn_match},
+		TRXN_WRITE1(d2),
 		TRXN_END,
 	};
 	struct transaction_log tdata[] = {
 		TRXN_START,
-		{b2, NULL, 2, trxn_match},
-		{NULL, t, 3, trxn_read},
+		TRXN_WRITE2(b2),
+		TRXN_READ3(t),
 		TRXN_END,
 	};
 
@@ -258,13 +245,13 @@ static int OW_volts(_FLOAT * V, const struct parsedname *pn)
 	BYTE v[2];
 	struct transaction_log tconvert[] = {
 		TRXN_START,
-		{b4, NULL, 1, trxn_match},
+		TRXN_WRITE1(b4),
 		TRXN_END,
 	};
 	struct transaction_log tdata[] = {
 		TRXN_START,
-		{b2, NULL, 2, trxn_match},
-		{NULL, v, 2, trxn_read},
+		TRXN_WRITE2(b2),
+		TRXN_READ2(v),
 		TRXN_END,
 	};
 

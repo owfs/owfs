@@ -130,29 +130,29 @@ static int OW_w_mem(const BYTE * data, const size_t size,
     BYTE fo[] = { _1W_READ_MEMORY, };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{fo, NULL, 1, trxn_match},
+		TRXN_WRITE1(fo),
 		TRXN_END,
 	};
     BYTE of[] = { _1W_WRITE_SCRATCHPAD, (BYTE) (offset & 0x1F), };
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		{of, NULL, 2, trxn_match},
-		{data, NULL, size, trxn_match},
+		TRXN_WRITE2(of),
+		TRXN_WRITE(data,size),
 		TRXN_END,
 	};
 	BYTE ver[16];
     BYTE vr[] = { _1W_READ_SCRATCHPAD, (BYTE) (offset & 0x1F), };
 	struct transaction_log tver[] = {
 		TRXN_START,
-		{vr, NULL, 2, trxn_match},
-		{NULL, ver, size, trxn_read},
+		TRXN_WRITE2(vr),
+		TRXN_READ(ver,size),
 		TRXN_END,
 	};
     BYTE cp[] = { _1W_COPY_SCRATCHPAD, };
     BYTE cf[] = { _1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{cp, NULL, 1, trxn_match},
+		TRXN_WRITE1(cp),
 		{cf, cf, 10, trxn_power},
 		TRXN_END,
 	};
@@ -179,22 +179,23 @@ static int OW_w_app(const BYTE * data, const size_t size,
     BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{fo, NULL, 1, trxn_match},
+		TRXN_WRITE1(fo),
 		TRXN_END,
 	};
     BYTE of[] = { _1W_WRITE_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		{of, NULL, 2, trxn_match},
-		{data, NULL, size, trxn_match},
+		TRXN_WRITE2(of),
+		TRXN_WRITE(data,size),
 		TRXN_END,
 	};
 	BYTE ver[9];
     BYTE vr[] = { _1W_READ_SCRATCHPAD, (BYTE) (offset & 0x1F), };
 	struct transaction_log tver[] = {
 		TRXN_START,
-		{vr, NULL, 2, trxn_match},
-		{NULL, ver, size, trxn_read},
+		TRXN_WRITE2(vr),
+		TRXN_READ(ver,size),
+		TRXN_COMPARE(data,ver,size),
 		TRXN_END,
 	};
     BYTE cp[] = { _1W_COPY_AND_LOCK_APPLICATION_REGISTER, };
@@ -215,8 +216,6 @@ static int OW_w_app(const BYTE * data, const size_t size,
 	/* read back the scratchpad */
 	if (BUS_transaction(tver, pn))
 		return 1;
-	if (memcmp(data, ver, size))
-		return 1;
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }
@@ -227,8 +226,8 @@ static int OW_r_app(BYTE * data, const size_t size, const off_t offset,
     BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{fo, NULL, 2, trxn_match},
-		{NULL, data, size, trxn_read},
+		TRXN_WRITE2(fo),
+		TRXN_READ(data,size),
 		TRXN_END,
 	};
 	if (BUS_transaction(tread, pn))
@@ -241,8 +240,8 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn)
     BYTE ss[] = { _1W_READ_STATUS_REGISTER, 0x00 };
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{ss, NULL, 2, trxn_match},
-		{NULL, data, 1, trxn_read},
+		TRXN_WRITE2(ss),
+		TRXN_READ1(data),
 		TRXN_END,
 	};
 	return BUS_transaction(tread, pn);
