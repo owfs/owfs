@@ -362,17 +362,19 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 					struct parsedname *pn)
 {
 	// command, address(2) , data , crc(2), databack
-	BYTE buf[7] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), p[0], };
+	BYTE buf[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), p[0], };
+    BYTE echo[1] ;
 	size_t i;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
-		{buf, NULL, 4, trxn_match},
-		{NULL, &buf[4], 3, trxn_read},
+        TRXN_WR_CRC16(buf,4,0),
+        TRXN_READ1(echo),
+        TRXN_COMPARE(echo,p,1),
 		TRXN_END,
 	};
 	struct transaction_log trest[] = {	// note no TRXN_START
-		{buf, NULL, 1, trxn_match},
-		{NULL, &buf[1], 3, trxn_read},
+        TRXN_WRITE1(buf),
+        TRXN_READ3(&buf[1]),
 		TRXN_END,
 	};
 //printf("2450 W mem size=%d location=%d\n",size,location) ;
@@ -381,7 +383,7 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 		return 0;
 
 	/* Send the first byte (handled differently) */
-	if (BUS_transaction(tfirst, pn) || CRC16(buf, 6) || (buf[6] != p[0]))
+	if (BUS_transaction(tfirst, pn))
 		return 1;
 	/* rest of the bytes */
 	for (i = 1; i < size; ++i) {
@@ -505,15 +507,15 @@ static int OW_convert(struct parsedname *pn)
 	BYTE power;
 	struct transaction_log tpower[] = {
 		TRXN_START,
-		{convert, NULL, 3, trxn_match},
-		{NULL, &convert[3], 2, trxn_read},
+        TRXN_WR_CRC16(convert,3,0),
 		TRXN_END,
 	};
 	struct transaction_log tdead[] = {
 		TRXN_START,
-		{convert, NULL, 3, trxn_match},
-		{NULL, &convert[3], 1, trxn_read},
+        TRXN_WRITE3(convert),
+        TRXN_READ1(&convert[3]),
 		{&convert[4], &convert[4], 6, trxn_power},
+        TRXN_CRC16(convert,5),
 		TRXN_END,
 	};
 
@@ -528,11 +530,11 @@ static int OW_convert(struct parsedname *pn)
 	// Start conversion
 	// 6 msec for 16bytex4channel (5.2)
 	if (power == 0x40) {		//powered
-		if (BUS_transaction(tpower, pn) || CRC16(convert, 5))
+		if (BUS_transaction(tpower, pn))
 			return 1;
 		UT_delay(6);			/* don't need to hold line for conversion! */
 	} else {
-		if (BUS_transaction(tdead, pn) || CRC16(convert, 5))
+		if (BUS_transaction(tdead, pn))
 			return 1;
 	}
 	return 0;

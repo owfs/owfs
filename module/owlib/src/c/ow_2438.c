@@ -379,11 +379,11 @@ static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 	BYTE r[] = { _1W_READ_SCRATCHPAD, page, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{recall, NULL, 2, trxn_match},
+        TRXN_WRITE2(recall),
 		TRXN_START,
-		{r, NULL, 2, trxn_match},
-		{NULL, data, 9, trxn_read},
-		{data, NULL, 9, trxn_crc8,},
+        TRXN_WRITE2(r),
+        TRXN_READ(data,9),
+        TRXN_CRC8(data,9),
 		TRXN_END,
 	};
 
@@ -406,21 +406,17 @@ static int OW_w_page(const BYTE * p, const int page,
 	BYTE eeprom[] = { _1W_COPY_SCRATCHPAD, page, };
 	struct transaction_log t[] = {
 		TRXN_START,				// 0
-		{w, NULL, 2, trxn_match},	//1 write to scratch command
-		{p, NULL, 8, trxn_match},	// write to scratch data
+        TRXN_WRITE2(w),
+        TRXN_WRITE(p,8),
 		TRXN_START,
-		{r, NULL, 2, trxn_match},	//4 read back command
-		{NULL, data, 9, trxn_read},	//5 read data
-		{data, NULL, 9, trxn_crc8},	//6 crc8
-		{p, data, 0, trxn_match,},	//7 match except page 0
+        TRXN_WRITE2(r),
+        TRXN_READ(data,9),
+        TRXN_CRC8(data,9),
 		TRXN_START,
-		{eeprom, NULL, 2, trxn_match},	//9 actual write
+        TRXN_WRITE2(eeprom),
 		TRXN_END,
 	};
 
-	if (page > 0)
-		t[7].size = 8;			// full match for all but volatile page 0
-	// write then read to scratch, then into EEPROM if scratch matches
 	if (BUS_transaction(t, pn))
 		return 1;
 
@@ -434,7 +430,7 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 	static BYTE t[] = { _1W_CONVERT_T, };
 	struct transaction_log tconvert[] = {
 		TRXN_START,
-		{t, NULL, 1, trxn_match},
+        TRXN_WRITE1(t),
 		TRXN_END,
 	};
 	// write conversion command
@@ -461,13 +457,13 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 	static BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
 	struct transaction_log tsource[] = {
 		TRXN_START,
-		{w, NULL, 2, trxn_match},
-		{data, NULL, 8, trxn_match},
+        TRXN_WRITE2(w),
+        TRXN_WRITE(data,8),
 		TRXN_END,
 	};
 	struct transaction_log tconvert[] = {
 		TRXN_START,
-		{v, NULL, 1, trxn_match},
+        TRXN_WRITE1(v),
 		TRXN_END,
 	};
 
@@ -502,14 +498,14 @@ static int OW_current(_FLOAT * I, const struct parsedname *pn)
 	int enabled;
 	struct transaction_log tread[] = {
 		TRXN_START,
-		{r, NULL, 2, trxn_match,},
-		{NULL, data, 7, trxn_read,},
+        TRXN_WRITE2(r),
+        TRXN_READ(data,7),
 		TRXN_END,
 	};
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		{w, NULL, 2, trxn_match,},
-		{data, NULL, 1, trxn_match,},
+        TRXN_WRITE2(w),
+        TRXN_WRITE1(data),
 		TRXN_END,
 	};
 
