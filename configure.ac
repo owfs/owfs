@@ -643,17 +643,18 @@ if test "${ENABLE_OWPERL}" = "true"; then
     m4_include(module/swig/perl5/perl5.m4)
     AC_MSG_RESULT(Looking for location of Perl executable)
     SC_PATH_PERL5
-#    AC_SUBST(PERL)
     AC_SUBST(PERL5EXT)
     AC_SUBST(PERL5DYNAMICLINKING)
     AC_SUBST(PERL5LIB)
+    AC_SUBST(PERL5DIR)
+    AC_SUBST(PERL5NAME)
     AC_SUBST(PERL5CCFLAGS)
     if test -z "${PERL}" ; then
         AC_MSG_WARN([Cannot find perl binary.])
         AC_MSG_WARN([OWPERL is disabled because perl binary is not found])
         ENABLE_OWPERL="false"
     else
-	if test -z "${PERL5LIB}" ; then
+	if test -z "${PERL5NAME}" ; then
 	    AC_MSG_WARN([Cannot find perl library. Install perl-devel package.])
             AC_MSG_WARN([OWPERL is disabled because perl library is not found])
             ENABLE_OWPERL="false"

@@ -29,8 +29,11 @@ fi
 # perl -MExtUtils::Embed -e ccopts
 AC_MSG_CHECKING(for Perl5 header files)
 if test -n "$PERL"; then
-	PERL5DIR=`($PERL -e 'use Config; print $Config{archlib}, "\n";') 2>/dev/null`
-	if test "$PERL5DIR" != ""; then
+	# Make it possible to force a directory during cross-compilation
+	if test -z "$PERL5DIR"; then
+		PERL5DIR=`($PERL -e 'use Config; print $Config{archlib}, "\n";') 2>/dev/null`
+	fi
+	if test -n "$PERL5DIR"; then
 		dirs="$PERL5DIR $PERL5DIR/CORE"
 		PERL5EXT=none
 		for i in $dirs; do
@@ -46,13 +49,13 @@ if test -n "$PERL"; then
 		fi
 
 		AC_MSG_CHECKING(for Perl5 library)
-		PERL5LIB=`($PERL -e 'use Config; $_=$Config{libperl}; s/^lib//; s/$Config{_a}$//; print $_, "\n"') 2>/dev/null`
-		if test "$PERL5LIB" = "" ; then
+		PERL5NAME=`($PERL -e 'use Config; $_=$Config{libperl}; s/^lib//; s/$Config{_a}$//; print $_, "\n"') 2>/dev/null`
+		if test "$PERL5NAME" = "" ; then
 			AC_MSG_RESULT(not found)
 		else
-			AC_MSG_RESULT($PERL5LIB)
+			AC_MSG_RESULT($PERL5NAME)
 		fi
-    AC_MSG_CHECKING(for Perl5 compiler options)
+		AC_MSG_CHECKING(for Perl5 compiler options)
  		PERL5CCFLAGS=`($PERL -e 'use Config; print $Config{ccflags}, "\n"' | sed "s/-I/$ISYSTEM/") 2>/dev/null`
  		if test "$PERL5CCFLAGS" = "" ; then
  			AC_MSG_RESULT(not found)
@@ -69,7 +72,7 @@ fi
 
 # Cygwin (Windows) needs the library for dynamic linking
 case $host in
-*-*-cygwin* | *-*-mingw*) PERL5DYNAMICLINKING="-L$PERL5EXT -l$PERL5LIB";;
+*-*-cygwin* | *-*-mingw*) PERL5DYNAMICLINKING="-L$PERL5EXT -l$PERL5NAME";;
 *)PERL5DYNAMICLINKING="";;
 esac
 fi
