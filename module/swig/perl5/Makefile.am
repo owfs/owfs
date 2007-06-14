@@ -28,14 +28,12 @@ OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
 
 OW/blib/lib/OW.pm: OW/ow_wrap.c
 	$(MAKE) -C OW -fMakefile
-#	( cd OW; $(MAKE) -fMakefile )
 	@INSTALL@ -d OW/blib/lib
 	@INSTALL@ OW/OW.pm OW/blib/lib/
 	@ECHO@ >> OW/blib/lib/OW.pm 'our $$VERSION='\''@VERSION@'\'' ;'
 
 install-data-local: OW/Makefile OW/ow_wrap.c OW/blib/lib/OW.pm
 	$(MAKE) -C OW install DESTDIR="$(DESTDIR)"
-#	( cd OW; $(MAKE) install DESTDIR="$(DESTDIR)" )
 
 clean-generic:
 	@RM@ -f *~ .*~
