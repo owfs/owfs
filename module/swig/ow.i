@@ -98,8 +98,7 @@ static void getval( struct one_wire_query * owq ) {
 }
 
 char * get( const char * path ) {
-    //struct parsedname pn ;
-    struct one_wire_query owq ;
+    OWQ_make(owq);
     char * buf = NULL ;
 
     /* Check the parameters */
@@ -109,16 +108,16 @@ char * get( const char * path ) {
         // buf = NULL ;
     } else if ( OWLIB_can_access_start() ) { /* Check for prior init */
         // buf = NULL ;
-    } else if ( FS_OWQ_create( path, NULL, 0, 0, &owq ) ) { /* Can we parse the input string */
+    } else if ( FS_OWQ_create( path, NULL, (size_t)0, (off_t)0, owq ) ) { /* Can we parse the input string */
         // buf = NULL ;
     } else {
-        if ( IsDir( PN(&owq) ) ) { /* A directory of some kind */
-            getdir( &owq ) ;
+        if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
+            getdir( owq ) ;
         } else { /* A regular file */
-            getval( &owq ) ;
+            getval( owq ) ;
         }
-        buf = OWQ_buffer(&owq) ;
-        FS_OWQ_destroy(&owq) ;
+        buf = OWQ_buffer(owq) ;
+        FS_OWQ_destroy(owq) ;
     }
     OWLIB_can_access_end() ;
     return buf ;

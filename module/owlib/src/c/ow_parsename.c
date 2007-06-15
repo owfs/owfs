@@ -164,10 +164,10 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	while (1) {
 		switch (pe) {
 		case parse_done:
-			//printf("PARSENAME parse_done\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
 			goto end;
 		case parse_error:
-			//printf("PARSENAME parse_error\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_error\n") ;
 			ret = -ENOENT;
 			goto end;
 		default:
