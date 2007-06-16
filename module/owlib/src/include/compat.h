@@ -102,6 +102,8 @@ void *tdelete (__const void *__restrict __key,
 
 #ifndef __ACTION_FN_T
 # define __ACTION_FN_T
+#if OW_DARWIN == 0
+/* VISIT is always defined in search.h on MacOSX. */
 typedef enum
   {
     preorder,
@@ -110,6 +112,7 @@ typedef enum
   leaf
   }
 VISIT;
+#endif /* OW_DARWIN */
 
 typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
                                int __level);
