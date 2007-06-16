@@ -100,19 +100,21 @@ void *tdelete (__const void *__restrict __key,
                       __compar_fn_t __compar);
 #endif
 
-#ifndef __ACTION_FN_T
-# define __ACTION_FN_T
-#if OW_DARWIN == 0
+#if defined(_SEARCH_H) || defined(_SEARCH_H_)
 /* VISIT is always defined in search.h on MacOSX. */
+#else
 typedef enum
   {
     preorder,
     postorder,
     endorder,
-  leaf
+    leaf
   }
 VISIT;
-#endif /* OW_DARWIN */
+#endif /* SEARCH_H */
+
+#ifndef __ACTION_FN_T
+# define __ACTION_FN_T
 
 typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
                                int __level);
