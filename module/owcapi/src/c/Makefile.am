@@ -26,6 +26,7 @@ AM_CFLAGS = -I../include \
          -Wstrict-prototypes \
          -Wredundant-decls \
          ${PROFILING_FLAG} \
+	 ${PTHREAD_CFLAGS} \
          -D__EXTENSIONS__ \
          -D_FILE_OFFSET_BITS=64
 

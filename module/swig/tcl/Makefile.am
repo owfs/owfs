@@ -38,16 +38,14 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-        -D_FILE_OFFSET_BITS=64 \
+	${PTHREAD_CFLAGS} \
+	-D_FILE_OFFSET_BITS=64 \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \
 	$(TCL_INCLUDE_SPEC) \
 	-DTCL_PACKAGE_PATH=\"'$(TCL_PACKAGE_PATH)'\" \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\" \
-       $(TCL_LIB_SPEC)
-
-#	-Wconversion \
-#
+	$(TCL_LIB_SPEC)
 
 LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 #SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}

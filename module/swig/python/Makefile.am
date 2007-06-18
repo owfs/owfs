@@ -8,8 +8,9 @@ LIBOW = ../../owlib/src/c/libow.la
 #owpython_LDFLAGS = -shared -shrext .so
 
 AM_CFLAGS = -I../include \
-         -fexceptions \
-         -D_FILE_OFFSET_BITS=64
+	-fexceptions \
+	${PTHREAD_CFLAGS} \
+	-D_FILE_OFFSET_BITS=64
 
 LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 

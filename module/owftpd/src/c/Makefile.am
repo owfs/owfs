@@ -32,6 +32,7 @@ AM_CFLAGS = -I../include \
          ${PROFILING_FLAG} \
          ${SS_FLAG} \
 	 ${LIBUSB_CFLAGS} \
+	 ${PTHREAD_CFLAGS} \
          -D_FILE_OFFSET_BITS=64
 
 LDADD = -low ${LIBUSB_LIBS} ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}

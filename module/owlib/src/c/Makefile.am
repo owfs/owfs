@@ -134,6 +134,7 @@ AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          -D__EXTENSIONS__ \
          ${PROFILING_FLAG} \
+	 ${PTHREAD_CFLAGS} \
 	 ${LIBUSB_CFLAGS}
 
 clean-generic:

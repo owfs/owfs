@@ -420,9 +420,14 @@ AC_ARG_ENABLE(mt,
 if test "${ENABLE_MT}" = "true" ; then
     ACX_PTHREAD
     if test "$acx_pthread_ok" = "yes"; then
-	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	# can't set pthread flags for all compilations, since owshell doesn't need it.
+	ENABLE_MT="true"
     else
 	ENABLE_MT="false"
+	PTHREAD_CFLAGS=""
+	PTHREAD_LIBS=""
+	PTHREAD_CC=""
     fi
 fi
 AC_SUBST(ENABLE_MT)
