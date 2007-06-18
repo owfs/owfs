@@ -1006,6 +1006,10 @@ if test "${ENABLE_OWFS}" != "false" ; then
     ])
 
     if test "${ENABLE_OWFS}" != "false"; then
+        save_CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_LIBS="$LIBS $PTHREAD_LIBS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        LIBS="$LIBS $PTHREAD_LIBS"
 	AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="$FUSE_LIBS -lfuse"],[
 	    AC_MSG_WARN([
 	Can't find libfuse.a - add the search path with --with-fuselib])
@@ -1017,6 +1021,8 @@ if test "${ENABLE_OWFS}" != "false" ; then
 			AC_MSG_ERROR([Can't enable OWFS])
 		fi
 	    ],)
+        CFLAGS="$save_CFLAGS"
+        LIBS="$save_LIBS"
     fi
 
 
