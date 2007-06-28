@@ -75,7 +75,7 @@ class Connection(object):
     A Connection provides access to a owserver without the standard
     core ow libraries. Instead, it impliments the wire protocol for
     communicating with the owserver. This allows Python programs to
-    inteact with the ow sensors on any platform supported by Python.
+    interact with the ow sensors on any platform supported by Python.
     """
 
     def __init__(self, server, port):
@@ -135,11 +135,12 @@ class Connection(object):
 
             ret, payload_len, data_len = self.unpack(data)
 
-            if payload_len:
+            if payload_len >= 0:
                 data = s.recv(payload_len)
                 rtn = self.toNumber(data[:data_len])
                 break
             else:
+                # ping response
                 rtn = None
                 break
 
@@ -192,10 +193,11 @@ class Connection(object):
 
             ret, payload_len, data_len = self.unpack(data)
 
-            if payload_len:
+            if payload_len > 0:
                 data = s.recv(payload_len)
                 fields.append(data[:data_len])
             else:
+                # end of dir list or 'ping' response
                 break
 
         s.close()
