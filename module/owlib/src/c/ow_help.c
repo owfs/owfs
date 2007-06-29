@@ -155,6 +155,7 @@ void ow_help_device(void)
 		   "  -u              DS9490R or PuceBaboon adapter\n"
 		   "  -u all          Scan and use all DS9490-type adapters\n"
 		   "  -d /dev/ttyUSB0 ECLO USB adapter\n"
+		   "  --altUSB        Change some settings for DS9490 adapters (especially for AAG and DS2423)\n"
 		   "\n"
 		   " Network (address is form [ip:]port, ip DNS name or n.n.n.n, port is port number)\n"
 		   "  -s address      owserver\n"
