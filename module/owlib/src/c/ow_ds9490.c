@@ -282,6 +282,11 @@ int DS9490_detect(struct connection_in *in)
 	// store timeout value -- sec -> msec
 	in->connin.usb.timeout = 1000 * Global.timeout_usb;
 
+	// default values for bus-timing when using --altUSB
+	in->connin.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
+	in->connin.usb.writeonelowtime = PARMSET_W1L_10us;
+	in->connin.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
+
 	ret = DS9490_detect_low(&pn);
 	if (ret) {
 		fprintf(stderr,
@@ -352,6 +357,43 @@ static int DS9490_detect_low(const struct parsedname *pn)
 		return -ENODEV;
 }
 
+int DS9490_BusParm(struct connection_in *in)
+{
+	int ret = 0;
+	usb_dev_handle *usb = in->connin.usb.usb;
+
+	/* Willy Robison's tweaks */
+	if (Global.altUSB) {
+		if(usb == NULL) return -1;
+
+		/* Slew Rate, PARMSET_Slew1p37Vus */
+		if ((ret =
+			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULLDOWN_SLEWRATE,
+					 in->connin.usb.pulldownslewrate, NULL, 0,
+					 in->connin.usb.timeout)) < 0) {
+			LEVEL_DATA("DS9490_BusParm: Error MOD_PULLDOWN_SLEWRATE\n");
+			return -EIO;
+		}
+		/* Low Time, PARMSET_W1L_10us */
+		if ((ret =
+			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_WRITE1_LOWTIME,
+					 in->connin.usb.writeonelowtime, NULL, 0,
+					 in->connin.usb.timeout)) < 0) {
+			LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
+			return -EIO;
+		}
+		/* DS0 Low, PARMSET_DS0_W0R_8us */
+		if ((ret =
+			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_DSOW0_TREC,
+					 in->connin.usb.datasampleoffset, NULL, 0,
+					 in->connin.usb.timeout)) < 0) {
+			LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
+			return -EIO;
+		}
+	}
+	return ret;
+}
+
 static int DS9490_setup_adapter(const struct parsedname *pn)
 {
 	BYTE buffer[32];
@@ -399,34 +441,7 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 		return ret;
 	}
 
-	/* Willy Robison's tweaks */
-	if (Global.altUSB) {
-		/* Slew Rate */
-		if ((ret =
-			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULLDOWN_SLEWRATE,
-							 PARMSET_Slew1p37Vus, NULL, 0,
-							 pn->in->connin.usb.timeout)) < 0) {
-			LEVEL_DATA("DS9490_BusParm: Error MOD_PULLDOWN_SLEWRATE\n");
-			return -EIO;
-		}
-		/* Low Time */
-		if ((ret =
-			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_WRITE1_LOWTIME,
-							 PARMSET_W1L_10us, NULL, 0,
-							 pn->in->connin.usb.timeout)) < 0) {
-			LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
-			return -EIO;
-		}
-		/* DS0 Low */
-		if ((ret =
-			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_DSOW0_TREC,
-							 PARMSET_DS0_W0R_8us, NULL, 0,
-							 pn->in->connin.usb.timeout)) < 0) {
-			LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
-			return -EIO;
-		}
-	}
-
+	if((ret = DS9490_BusParm(pn->in)) < 0) return ret;
 
 	LEVEL_DATA("DS9490_setup_adapter: done (ret=%d)\n", ret);
 	return 0;

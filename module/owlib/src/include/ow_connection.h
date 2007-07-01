@@ -197,6 +197,9 @@ struct connin_usb {
 	int USpeed;
 	int ULevel;
 	int UMode;
+	int datasampleoffset;
+	int writeonelowtime;
+	int pulldownslewrate;
 	unsigned int timeout;
 	BYTE ds1420_address[8];
 	/* "Name" of the device, like "8146572300000051"
@@ -457,6 +460,7 @@ int DS2482_detect(struct connection_in *in);
 int DS9490_enumerate(void);
 int DS9490_detect(struct connection_in *in);
 void DS9490_close(struct connection_in *in);
+int DS9490_BusParm(struct connection_in *in);
 #endif							/* OW_USB */
 
 #define BUS_RESET_OK    0

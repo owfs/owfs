@@ -108,9 +108,9 @@ int FS_write_postparse(struct one_wire_query * owq)
 	switch (pn->type) {
 	case pn_structure:
 	case pn_statistics:
-	case pn_system:
         write_or_error = -ENOTSUP;
 		break;
+	case pn_system:
 	case pn_settings:
         write_or_error = FS_w_given_bus(owq);
 		break;

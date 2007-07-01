@@ -204,42 +204,54 @@ int FS_read_distribute(struct one_wire_query * owq)
 // This function should return number of bytes read... not status.
 static int FS_r_given_bus(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int read_status = 0;
-    //printf("FS_r_given_bus\n");
-    LEVEL_DEBUG("FS_r_given_bus\n");
-    Debug_OWQ(owq) ;
-
-    if (!KnownBus(pn) && pn->type != pn_settings ) {
-        LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set!\n");
-    }
-    if (KnownBus(pn) && BusIsServer(pn->in)) {
-        /* The bus is not local... use a network connection instead */
+	struct parsedname * pn = PN(owq) ;
+	int read_status = 0;
+	//printf("FS_r_given_bus\n");
+	LEVEL_DEBUG("FS_r_given_bus\n");
+	Debug_OWQ(owq) ;
+	
+	if (!KnownBus(pn)) {
+		if(pn->type == pn_settings) {
+			/* I think we have to do something here... */
+			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=pn_settings!\n");
+		} else if(pn->type == pn_system) {
+			/* I think we have to do something here... 
+			 * reading /system/adapter/name.0 works
+			 * reading /bus.0/system/adapter/name.0 works
+			 * writing /bus.0/system/adapter/overdrive.0 crash owfs
+			 */
+			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=pn_system!\n");
+		} else {
+			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set! type=%d\n", pn->type);
+		}
+	}
+	if (KnownBus(pn) && BusIsServer(pn->in)) {
+		/* The bus is not local... use a network connection instead */
 #if OW_MT
-        LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
-                    pthread_self());
+		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
+			    pthread_self());
 #endif /* OW_MT */
 		// Read afar -- returns already formatted in buffer
-        read_status = ServerRead(owq);
-        LEVEL_DEBUG("FS_r_given_bus -- back from server\n");
-        Debug_OWQ(owq) ;
-        //printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
-    } else {
-        STAT_ADD1(read_calls);  /* statistics */
-        if (LockGet(pn) == 0) {
-	        read_status = FS_r_local(owq);  // this returns status
-	        LEVEL_DEBUG("FS_r_given_bus FS_r_local return=%d\n", read_status);
-	        if ( read_status >= 0 ) {
-	            // local success -- now format in buffer
-	            read_status = FS_output_owq(owq) ; // this returns nr. bytes
-	        }
-	        LockRelease(pn);
-        } else {
-	        read_status = -EADDRINUSE ;
-	    }
-    }
-    LEVEL_DEBUG("FS_r_given_bus return %d\n", read_status);
-    return read_status ;
+		read_status = ServerRead(owq);
+		LEVEL_DEBUG("FS_r_given_bus -- back from server\n");
+		Debug_OWQ(owq) ;
+		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
+	} else {
+		STAT_ADD1(read_calls);  /* statistics */
+		if (LockGet(pn) == 0) {
+			read_status = FS_r_local(owq);  // this returns status
+			LEVEL_DEBUG("FS_r_given_bus FS_r_local return=%d\n", read_status);
+			if ( read_status >= 0 ) {
+				// local success -- now format in buffer
+				read_status = FS_output_owq(owq) ; // this returns nr. bytes
+			}
+			LockRelease(pn);
+		} else {
+			read_status = -EADDRINUSE ;
+		}
+	}
+	LEVEL_DEBUG("FS_r_given_bus return %d\n", read_status);
+	return read_status ;
 }
 
 size_t FileLength_vascii(struct one_wire_query * owq)

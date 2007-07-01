@@ -66,23 +66,24 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 	} else if ((retbuffer = (char *) malloc((size_t) hd->sm.size)) == NULL) {	// allocate return buffer
 #endif
 		cm->ret = -ENOBUFS;
-    } else {
-        OWQ_buffer(owq) = retbuffer ;
-        read_or_error = FS_read_postparse(owq) ;
-        printf("OWSERVER read on %s return = %d\n",PN(owq)->path,read_or_error) ;
-        Debug_OWQ(owq) ;
-
-        if (read_or_error <= 0) {
-            free(retbuffer);
-            retbuffer = NULL;
-            cm->ret = read_or_error;
-        } else {
+	} else {
+		OWQ_buffer(owq) = retbuffer ;
+		read_or_error = FS_read_postparse(owq) ;
+		printf("OWSERVER read on %s return = %d\n",PN(owq)->path,read_or_error) ;
+		Debug_OWQ(owq) ;
+		
+		if (read_or_error <= 0) {
+			free(retbuffer);
+			retbuffer = NULL;
+			cm->ret = read_or_error;
+		} else {
 			// make return size smaller (just large enough)
-            cm->payload = read_or_error;
-            cm->offset = hd->sm.offset;
-            cm->size = read_or_error;
-            cm->ret = read_or_error;
-        }
+			cm->payload = read_or_error;
+			cm->offset = hd->sm.offset;
+			cm->size = read_or_error;
+			cm->ret = read_or_error;
+			retbuffer[cm->size] = '\0'; // end with null for debug output
+		}
 	}
 	LEVEL_DEBUG
 		("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d\n",

@@ -61,6 +61,12 @@ READ_FUNCTION(FS_r_overdrive);
 WRITE_FUNCTION(FS_w_overdrive);
 READ_FUNCTION(FS_r_ds2404_compliance);
 WRITE_FUNCTION(FS_w_ds2404_compliance);
+READ_FUNCTION(FS_r_pulldownslewrate);
+WRITE_FUNCTION(FS_w_pulldownslewrate);
+READ_FUNCTION(FS_r_writeonelowtime);
+WRITE_FUNCTION(FS_w_writeonelowtime);
+READ_FUNCTION(FS_r_datasampleoffset);
+WRITE_FUNCTION(FS_w_datasampleoffset);
 READ_FUNCTION(FS_define);
 
 /* -------- Structures ---------- */
@@ -71,9 +77,12 @@ struct filetype sys_adapter[] = {
 	// variable length
   {"address", 512, &Asystem, ft_vascii, fc_static,   FS_port, NO_WRITE_FUNCTION, {v:NULL},} ,
 	// variable length
+  {"datasampleoffset",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},} ,
   {"ds2404_compliance",PROPERTY_LENGTH_YESNO, &Asystem, ft_yesno, fc_static,   FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},} ,
   {"overdrive",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_overdrive, FS_w_overdrive, {v:NULL},} ,
+  {"pulldownslewrate",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},} ,
   {"version",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_version, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"writeonelowtime",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_writeonelowtime, FS_w_writeonelowtime, {v:NULL},} ,
 };
 struct device d_sys_adapter =
 	{ "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter };
@@ -120,8 +129,8 @@ struct device d_sys_configure =
 /* Just some tests to support change of extra delay */
 static int FS_r_ds2404_compliance(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
 
 	if (dindex < 0)
@@ -130,14 +139,14 @@ static int FS_r_ds2404_compliance(struct one_wire_query * owq)
 	if (!in)
 		return -ENOENT;
 
-    OWQ_Y(owq) = in->ds2404_compliance;
+	OWQ_Y(owq) = in->ds2404_compliance;
 	return 0;
 }
 
 static int FS_w_ds2404_compliance(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
 
 	if (dindex < 0)
@@ -146,15 +155,15 @@ static int FS_w_ds2404_compliance(struct one_wire_query * owq)
 	if (!in)
 		return -ENOENT;
 
-    in->ds2404_compliance = OWQ_Y(owq);
+	in->ds2404_compliance = OWQ_Y(owq);
 	return 0;
 }
 
 /* Just some tests to support overdrive */
 static int FS_r_overdrive(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
 
 	if (dindex < 0)
@@ -163,14 +172,14 @@ static int FS_r_overdrive(struct one_wire_query * owq)
 	if (!in)
 		return -ENOENT;
 
-    OWQ_U(owq) = in->use_overdrive_speed;
+	OWQ_U(owq) = in->use_overdrive_speed;
 	return 0;
 }
 
 static int FS_w_overdrive(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
 
 	if (dindex < 0)
@@ -179,7 +188,7 @@ static int FS_w_overdrive(struct one_wire_query * owq)
 	if (!in)
 		return -ENOENT;
 
-    switch (OWQ_U(owq)) {
+	switch (OWQ_U(owq)) {
 	case 0:
 		in->use_overdrive_speed = ONEWIREBUSSPEED_REGULAR;
 		break;
@@ -197,13 +206,162 @@ static int FS_w_overdrive(struct one_wire_query * owq)
 	return 0;
 }
 
+/*
+ * Value is between 0 and 7.
+ * Default value is 3.
+ *
+ * PARMSET_Slew15Vus   0x0
+ * PARMSET_Slew2p20Vus 0x1
+ * PARMSET_Slew1p65Vus 0x2
+ * PARMSET_Slew1p37Vus 0x3 (default)
+ * PARMSET_Slew1p10Vus 0x4
+ * PARMSET_Slew0p83Vus 0x5
+ * PARMSET_Slew0p70Vus 0x6
+ * PARMSET_Slew0p55Vus 0x7
+ */
+static int FS_r_pulldownslewrate(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	struct connection_in *in;
+
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	if (in->busmode != bus_usb)
+		OWQ_U(owq) = 3;
+	else
+		OWQ_U(owq) = in->connin.usb.pulldownslewrate;
+
+	return 0;
+}
+
+static int FS_w_pulldownslewrate(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	struct connection_in *in;
+
+	LEVEL_DEBUG("FS_w_pulldownslewrate\n");
+
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	if (in->busmode != bus_usb)
+		return -ENOTSUP;
+
+	if((OWQ_U(owq) < 0) || (OWQ_U(owq) > 7))
+		return -ENOTSUP;
+	in->connin.usb.pulldownslewrate = OWQ_U(owq);
+	LEVEL_DEBUG("Set slewrate to %d\n", in->connin.usb.pulldownslewrate);
+#if OW_USB
+	DS9490_BusParm(in);
+#endif
+	return 0;
+}
+
+/*
+ * Value is between 8 and 15, which represents 8us and 15us.
+ * Default value is 10us.
+ */
+static int FS_r_writeonelowtime(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	struct connection_in *in;
+	
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	if (in->busmode != bus_usb)
+		OWQ_U(owq) = 10;
+	else
+		OWQ_U(owq) = in->connin.usb.writeonelowtime + 8;
+
+	return 0;
+}
+
+static int FS_w_writeonelowtime(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	struct connection_in *in;
+
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	if (in->busmode != bus_usb)
+		return -ENOTSUP;
+
+	if((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15))
+		return -ENOTSUP;
+	in->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
+#if OW_USB
+	DS9490_BusParm(in);
+#endif
+	return 0;
+}
+
+/*
+ * Value is between 3 and 10, which represents 3us and 10us.
+ * Default value is 8us.
+ */
+static int FS_r_datasampleoffset(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	struct connection_in *in;
+
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	if (in->busmode != bus_usb)
+		OWQ_U(owq) = 8;
+	else
+		OWQ_U(owq) = in->connin.usb.datasampleoffset + 3;
+	return 0;
+}
+
+static int FS_w_datasampleoffset(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	struct connection_in *in;
+
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	if (in->busmode != bus_usb)
+		return -ENOTSUP;
+
+	if((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10))
+		return -ENOTSUP;
+	in->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
+#if OW_USB
+	DS9490_BusParm(in);
+#endif
+	return 0;
+}
+
 /* special check, -remote file length won't match local sizes */
 static int FS_name(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
-    char * name = "" ;
+	char * name = "" ;
 
 	if (dindex < 0)
 		dindex = 0;
@@ -213,17 +371,17 @@ static int FS_name(struct one_wire_query * owq)
 
 	if (in->adapter_name )
         name = in->adapter_name ;
-    Fowq_output_offset_and_size_z( name, owq ) ;
+	Fowq_output_offset_and_size_z( name, owq ) ;
 	return 0 ;
 }
 
 /* special check, -remote file length won't match local sizes */
 static int FS_port(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
-    char * name = "" ;
+	char * name = "" ;
 
 	if (dindex < 0)
 		dindex = 0;
@@ -231,16 +389,16 @@ static int FS_port(struct one_wire_query * owq)
 	if (!in)
 		return -ENOENT;
 
-    if (in->name) name = in->name ;
-    Fowq_output_offset_and_size_z( name, owq ) ;
-    return 0 ;
+	if (in->name) name = in->name ;
+	Fowq_output_offset_and_size_z( name, owq ) ;
+	return 0 ;
 }
 
 /* special check, -remote file length won't match local sizes */
 static int FS_version(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
 	struct connection_in *in;
 
 	if (dindex < 0)
@@ -249,40 +407,40 @@ static int FS_version(struct one_wire_query * owq)
 	if (!in)
 		return -ENOENT;
 
-    OWQ_U(owq) = in->Adapter;
+	OWQ_U(owq) = in->Adapter;
 	return 0;
 }
 
 static int FS_pidfile(struct one_wire_query * owq)
 {
-    char * name = "" ;
-    if (pid_file) name = pid_file ;
-    Fowq_output_offset_and_size_z( name, owq ) ;
-    return 0 ;
+	char * name = "" ;
+	if (pid_file) name = pid_file ;
+	Fowq_output_offset_and_size_z( name, owq ) ;
+	return 0 ;
 }
 
 static int FS_pid(struct one_wire_query * owq)
 {
-    OWQ_U(owq) = getpid();
+	OWQ_U(owq) = getpid();
 	return 0;
 }
 
 static int FS_in(struct one_wire_query * owq)
 {
 	CONNINLOCK;
-    OWQ_U(owq) = indevices;
+	OWQ_U(owq) = indevices;
 	CONNINUNLOCK;
 	return 0;
 }
 
 static int FS_out(struct one_wire_query * owq)
 {
-    OWQ_U(owq) = outdevices;
+	OWQ_U(owq) = outdevices;
 	return 0;
 }
 
 static int FS_define(struct one_wire_query * owq)
 {
-    OWQ_Y(owq) = OWQ_pn(owq).ft->data.i;
+	OWQ_Y(owq) = OWQ_pn(owq).ft->data.i;
 	return 0;
 }

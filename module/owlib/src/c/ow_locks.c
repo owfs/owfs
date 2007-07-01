@@ -89,6 +89,16 @@ int LockGet(const struct parsedname *pn)
 		return 0;
 	}
 
+	/* pn->in is null when "cat /tmp/1wire/system/adapter/pulldownslewrate.0"
+	 * and you have owfs -s & owserver -u started. */
+	if(pn->in == NULL) {
+	  if((pn->type == pn_settings) ||
+	     (pn->type == pn_system)) {
+	    /* Probably trying to read/write some adapter settings which
+	     * is not available for remote connections... only local adapters. */
+	    return -ENOTSUP;
+	  }
+	}
 	inindex = pn->in->index; // do this after testing pn->dev since pn->in is perhaps null
 
 	pn->lock[inindex] = NULL;
