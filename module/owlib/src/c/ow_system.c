@@ -67,7 +67,14 @@ READ_FUNCTION(FS_r_writeonelowtime);
 WRITE_FUNCTION(FS_w_writeonelowtime);
 READ_FUNCTION(FS_r_datasampleoffset);
 WRITE_FUNCTION(FS_w_datasampleoffset);
+//#define DEBUG_DS2490
+#ifdef DEBUG_DS2490
+READ_FUNCTION(FS_r_ds2490status);
+#endif
 READ_FUNCTION(FS_define);
+#if OW_USB
+int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
+#endif
 
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
@@ -81,6 +88,9 @@ struct filetype sys_adapter[] = {
   {"ds2404_compliance",PROPERTY_LENGTH_YESNO, &Asystem, ft_yesno, fc_static,   FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},} ,
   {"overdrive",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_overdrive, FS_w_overdrive, {v:NULL},} ,
   {"pulldownslewrate",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},} ,
+#ifdef DEBUG_DS2490
+  {"ds2490status", 128, &Asystem, ft_vascii, fc_static,   FS_r_ds2490status, NO_WRITE_FUNCTION, {v:NULL},} ,
+#endif
   {"version",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_version, NO_WRITE_FUNCTION, {v:NULL},} ,
   {"writeonelowtime",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_writeonelowtime, FS_w_writeonelowtime, {v:NULL},} ,
 };
@@ -89,7 +99,6 @@ struct device d_sys_adapter =
 
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
-	//    {"pidfile"    ,-fl_pidfile, NULL    , ft_ascii,   fc_static, {a:FS_pidfile}, {o:NULL}, {v: NULL }, } ,
   {"pidfile", 128, NULL, ft_vascii, fc_static,   FS_pidfile, NO_WRITE_FUNCTION, {v:NULL},} ,
 	// variable length
   {"pid",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_pid, NO_WRITE_FUNCTION, {v:NULL},} ,
@@ -206,6 +215,58 @@ static int FS_w_overdrive(struct one_wire_query * owq)
 	return 0;
 }
 
+#ifdef DEBUG_DS2490
+static int FS_r_ds2490status(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int dindex = pn->extension;
+	char res[256];
+	char buffer[32+1];
+	int ret;
+	struct connection_in *in;
+
+	if (dindex < 0)
+		dindex = 0;
+	in = find_connection_in(dindex);
+	if (!in)
+		return -ENOENT;
+	res[0] = '\0';
+	if (in->busmode == bus_usb) {
+#if OW_USB
+		ret = DS9490_getstatus(buffer, 0, PN(owq));
+		if(ret < 0) {
+			sprintf(res, "DS9490_getstatus failed: %d\n", ret);
+		} else {
+			sprintf(res,
+				"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
+				buffer[0], buffer[1], buffer[2], buffer[3],
+				buffer[4], buffer[5], buffer[6], buffer[7],
+				buffer[8], buffer[9], buffer[10], buffer[11],
+				buffer[12], buffer[13], buffer[14], buffer[15]);
+		}
+		/*
+		  uchar	EnableFlags;
+		  uchar	OneWireSpeed;
+		  uchar	StrongPullUpDuration;
+		  uchar	ProgPulseDuration;
+		  uchar	PullDownSlewRate;
+		  uchar	Write1LowTime;
+		  uchar	DSOW0RecoveryTime;
+		  uchar	Reserved1;
+		  uchar	StatusFlags;
+		  uchar	CurrentCommCmd1;
+		  uchar	CurrentCommCmd2;
+		  uchar	CommBufferStatus;  // Buffer for COMM commands
+		  uchar	WriteBufferStatus; // Buffer we write to
+		  uchar	ReadBufferStatus;  // Buffer we read from
+		*/
+#endif
+	}
+	Fowq_output_offset_and_size_z( res, owq ) ;
+	return 0;
+}
+#endif
+
 /*
  * Value is between 0 and 7.
  * Default value is 3.
@@ -213,9 +274,9 @@ static int FS_w_overdrive(struct one_wire_query * owq)
  * PARMSET_Slew15Vus   0x0
  * PARMSET_Slew2p20Vus 0x1
  * PARMSET_Slew1p65Vus 0x2
- * PARMSET_Slew1p37Vus 0x3 (default)
+ * PARMSET_Slew1p37Vus 0x3 (default with altUSB)
  * PARMSET_Slew1p10Vus 0x4
- * PARMSET_Slew0p83Vus 0x5
+ * PARMSET_Slew0p83Vus 0x5 (default without altUSB)
  * PARMSET_Slew0p70Vus 0x6
  * PARMSET_Slew0p55Vus 0x7
  */
@@ -254,7 +315,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query * owq)
 	if (in->busmode != bus_usb)
 		return -ENOTSUP;
 
-	if((OWQ_U(owq) < 0) || (OWQ_U(owq) > 7))
+	if(OWQ_U(owq) > 7)
 		return -ENOTSUP;
 	in->connin.usb.pulldownslewrate = OWQ_U(owq);
 	LEVEL_DEBUG("Set slewrate to %d\n", in->connin.usb.pulldownslewrate);
@@ -266,7 +327,8 @@ static int FS_w_pulldownslewrate(struct one_wire_query * owq)
 
 /*
  * Value is between 8 and 15, which represents 8us and 15us.
- * Default value is 10us.
+ * Default value is 10us. (with altUSB)
+ * Default value is 12us. (without altUSB)
  */
 static int FS_r_writeonelowtime(struct one_wire_query * owq)
 {
@@ -312,7 +374,8 @@ static int FS_w_writeonelowtime(struct one_wire_query * owq)
 
 /*
  * Value is between 3 and 10, which represents 3us and 10us.
- * Default value is 8us.
+ * Default value is 8us. (with altUSB)
+ * Default value is 7us. (without altUSB)
  */
 static int FS_r_datasampleoffset(struct one_wire_query * owq)
 {

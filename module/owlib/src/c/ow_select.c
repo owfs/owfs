@@ -78,14 +78,14 @@ int BUS_select(const struct parsedname *pn)
 				return 1;
 			pn->in->branch.sn[0] = 0x00;	// flag as no branches turned on
 		}
-		if (pn->in->use_overdrive_speed) {	// overdrive?
-			if ((ret = BUS_testoverdrive(pn)) < 0) {
-				BUS_selection_error(ret);
-				return ret;
-			} else {
-				//printf("use overdrive speed\n");
-                sent[0] = _1W_OVERDRIVE_MATCH_ROM;
+		if (pn->in->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE) {	// overdrive?
+			if (pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
+				if ((ret = BUS_testoverdrive(pn)) < 0) {
+					BUS_selection_error(ret);
+					return ret;
+				}
 			}
+			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else if (memcmp(pn->in->branch.sn, pn->bp[pl - 1].sn, 8) || pn->in->buspath_bad) {	/* different path */
 		int iclear;
