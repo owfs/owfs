@@ -10,6 +10,7 @@ exec wish "$0" -- "$@"
 set SocketVars {string version type payload size sg offset tokenlength totallength state}
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
+set MessageListPlus [lappend $MessageList Total]
 
 # Global: serve ENOENT EINVAL,... error codes
 #         serve(port) -- same as Ports(tap)
@@ -442,6 +443,19 @@ proc CircBufferEntryResponse { current response } {
     .log.response_list insert $index $response
     .log.response_list delete [expr $index + 1 ]
 }    
+
+# initiqalize statistics
+proc StatsSetup { } {
+	global stats
+	global MessageListPlus
+	foreach x $MessageListPlus {
+		set stats($x.tries) 0
+		set stats($x.errors) 0
+		set stats($x.rate) 0
+		set stats($x.request_bytes) 0
+		set stats($x.response_bytes) 0
+	}
+}
 
 # Popup giving attribution
 proc About { } {
