@@ -7,7 +7,9 @@ exec wish "$0" -- "$@"
 # Global: Ports() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars [list string version type payload size sg offset tokenlength totallength state ]
+set SocketVars {string version type payload size sg offset tokenlength totallength state}
+
+set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
 
 # Global: serve ENOENT EINVAL,... error codes
 #         serve(port) -- same as Ports(tap)
@@ -257,22 +259,21 @@ proc ShowMessage { sock } {
     }
 }
 
+# Limit num to type's range
+proc MessageNunber { num } {
+    global MessageList
+    set len [expr [llength $MessageList] - 1]
+puts "$num $len"
+    if { $num > $len } { return $len }
+    return $num
+}
+
 # Message type (owserver protocol type)
 #  used for client only, same field
 #  is used for "return" back from owserver
 proc MessageType { num } {
-    switch $num {
-        0 {return "ERROR"}
-        1 {return "NOP"}
-        2 {return "READ"}
-        3 {return "WRITE"}
-        4 {return "DIR"}
-        5 {return "SIZE"}
-        6 {return "PRESENCE"}
-        7 {return "DIRALL"}
-        8 {return "GET"}
-        default {return "Unknown"} 
-    }
+    global MessageList
+    return [lindex $MessageList $num]
 }
 
 # callback from scrollbar, moves each listbox field
