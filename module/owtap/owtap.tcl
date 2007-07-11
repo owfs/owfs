@@ -16,6 +16,7 @@ set SocketVars [list string version type payload size sg offset tokenlength tota
 #         serve($sock. version size payload sg offset type tokenlength ) -- message parsed parts
 #         serve($sock.version size 
 
+#Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
     global Ports
 
@@ -27,12 +28,14 @@ proc Main { argv } {
     DisplaySetup
 
     if { $Ports(server) == 0 } {
+        CommandLine
         ErrorMessage "No owserver port"
     }
 
     if { $Ports(tap) } {
         SetupTap
     } else {
+        CommandLine
         ErrorMessage "No tap port"
     }
 }
@@ -71,6 +74,7 @@ proc SetupTap { } {
     StatusMessage [eval {format "Success. Tap server address=%s (%s:%s) "} [fconfigure $serve(socket) -sockname]]
 }
 
+#Main loop. Called whenever the server (listen) port accepts a connection.
 proc TapAccept { sock addr port } {
     global serve
     set serve($sock.state) "Open client"
@@ -159,12 +163,14 @@ proc TapAccept { sock addr port } {
     }
 }
 
+# Initialize array for client request
 proc TapSetup { sock } {
     global serve
     set serve($sock.string) ""
     set serve($sock.totallength) 0
 }
 
+# Clear out client request array after a connection (frees memory)
 proc ClearTap { sock } {
     global serve
     global SocketVars
@@ -175,28 +181,25 @@ proc ClearTap { sock } {
     }
 }
 
+# close client request socket
 proc CloseTap { sock } {
     global serve
     close $sock
     ClearTap $sock
 }
 
+# Wrapper for processing -- either change a vwait var, or just return waiting for more network traffic
 proc TapProcess { sock } {
     global serve
     set read_value [ReadProcess $sock]
     switch $read_value {
-        2  {
-            set serve($sock.state) "Client early end"
-            }
-        0   {
-            return
-            }
-        1   {
-            set serve($sock.state) "Log client input"
-            }
+        2  { set serve($sock.state) "Client early end" }
+        0  { return }
+        1  { set serve($sock.state) "Log client input" }
     }
 }   
 
+# Process a oncomming owserver packet, adjusting size from header information
 proc ReadProcess { sock } {
     global serve
     # test eof
@@ -212,7 +215,7 @@ proc ReadProcess { sock } {
         return 0
     } elseif { $serve($sock.totallength) == 0 } {
         # at least header is in
-        ClientHeaderParse $sock
+        HeaderParse $sock
     }
     #already in payload (and token) portion
     if { $len < $serve($sock.totallength) } {
@@ -224,29 +227,26 @@ proc ReadProcess { sock } {
     return 1
 }
 
+# Wrapper for processing -- either change a vwait var, or just return waiting for more network traffic
 proc RelayProcess { relay sock } {
     global serve
     set read_value [ReadProcess $relay]
     switch $read_value {
-        2  {
-            set serve($sock.state) "Server early end"
-            }
-        0   {
-            return
-            }
-        1   {
-            set serve($sock.state) "Log server input"
-            }
+        2  { set serve($sock.state) "Server early end"}
+        0  { return }
+        1  { set serve($sock.state) "Log server input" }
     }
 }   
 
-proc ClientHeaderParse { sock } {
+# Parse Header information (24 bytes)
+proc HeaderParse { sock } {
     global serve
     binary scan $serve($sock.string) {IIIIII} serve($sock.version) serve($sock.payload) serve($sock.type) serve($sock.sg) serve($sock.size) serve($sock.offset)
     set serve($sock.tokenlength) [expr ( $serve($sock.version) & 0xFFFF) * 16 ]
     set serve($sock.totallength) [expr $serve($sock.tokenlength) + $serve($sock.payload) + 24 ]
 }
 
+# Debugging routine -- show all the packet info
 proc ShowMessage { sock } {
     global serve
     global SocketVars
@@ -257,6 +257,9 @@ proc ShowMessage { sock } {
     }
 }
 
+# Message type (owserver protocol type)
+#  used for client only, same field
+#  is used for "return" back from owserver
 proc MessageType { num } {
     switch $num {
         0 {return "ERROR"}
@@ -272,33 +275,33 @@ proc MessageType { num } {
     }
 }
 
-#Create a scrollable listbox containing color names. When a color is
-# double-clicked, the label on the bottom will change to show the
-# selected color name and will also change the background color
-
+# callback from scrollbar, moves each listbox field
 proc ScrollTogether { args } {
     eval {.log.request_list yview} $args 
     eval {.log.response_list yview} $args 
 }
 
+# scroll other listbox and scrollbar
 proc Left_ScrollByKey { args } {
     eval { .log.transaction_scroll set } $args
     .log.response_list yview moveto [lindex [.log.request_list yview] 0 ]
     .log.response_list activate [.log.request_list index active ]
 }
 
+# scroll other listbox and scrollbar
 proc Right_ScrollByKey { args } {
     eval { .log.transaction_scroll set } $args
     .log.request_list yview moveto [lindex [.log.response_list yview] 0 ]
     .log.request_list activate [.log.response_list index active ]
 }
 
+# Selection from listbox
 proc SelectionMade { widget } {
     set x [ $widget index active ]
     # do something with the selected line
 }    
 
-
+# create visual aspects of program
 proc DisplaySetup { } {
     global circ_buffer
     # Top pane, tranaction logs
@@ -325,19 +328,52 @@ proc DisplaySetup { } {
     label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status
     pack .status -side bottom -fill x
 
+    SetupMenu
 }
 
+# Menu construction
+proc SetupMenu { } {
+#    toplevel . -menu .main_menu
+     menu .main_menu -tearoff 0
+    . config -menu .main_menu
+     menu .main_menu.file -tearoff 0
+     .main_menu add cascade -label File -menu .main_menu.file  -underline 0
+         .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
+         .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
+         .main_menu.file add separator
+         .main_menu.file add command -label Quit -underline 0 -command exit
+# 
+#     menu .main_menu.device -tearoff 1
+#     .main_menu add cascade -label Devices -menu .main_menu.device  -underline 0
+#         .main_menu.device add command -label "Save Log" -underline 0 -command SaveLog
+#         .main_menu.device add command -label "Save Log As..." -underline 9 -command SaveAsLog
+#         .main_menu.device add separator
+#         .main_menu.device add command -label Quit -underline 0 -command exit
+
+    menu .main_menu.help -tearoff 0
+    .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
+        .main_menu.help add command -label "About OWTAP" -underline 0 -command About
+        .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
+        .main_menu.help add command -label "OWSERVER  Protocol" -underline 0 -command Protocol
+}
+
+# error routine -- popup and exit
 proc ErrorMessage { msg } {
     StatusMessage "Fatal error -- $msg"    
     tk_messageBox -title "Fatal error" -message $msg -type ok -icon error
     exit 1
 }
 
+# status -- set status message
+#   possibly store past messages
+#   Use priority to test if should be stored
 proc StatusMessage { msg { priority 1 } } {
     global current_status
     set current_status $msg
 }
 
+# Circular buffer for past connections
+#   size is number of elements 
 proc CircBufferSetup { size } {
     global circ_buffer
     set circ_buffer(size) $size
@@ -345,6 +381,7 @@ proc CircBufferSetup { size } {
     set circ_buffer(current) [expr $size - 1 ]
 }
 
+# Save a spot for the coming connection
 proc CircBufferAllocate { } {
     global circ_buffer
     set size $circ_buffer(size)
@@ -367,6 +404,7 @@ proc CircBufferAllocate { } {
     return $current
 }
 
+# place a new request packet
 proc CircBufferEntryRequest { current request } {
     global circ_buffer
     set size $circ_buffer(size)
@@ -385,6 +423,7 @@ proc CircBufferEntryRequest { current request } {
     .log.request_list delete [expr $index + 1 ]
 }    
      
+# place a new response packet
 proc CircBufferEntryResponse { current response } {
     global circ_buffer
     set size $circ_buffer(size)
@@ -402,6 +441,69 @@ proc CircBufferEntryResponse { current response } {
     .log.response_list insert $index $response
     .log.response_list delete [expr $index + 1 ]
 }    
-     
-Main $argv
 
+# Popup giving attribution
+proc About { } {
+    tk_messageBox -type ok -title {About owtap} -message {
+Program: owtap    
+Synopsis: owserver protocol inspector
+    
+Description: owtap is interposed 
+  between owserver and client.
+  
+  The communication is logged and 
+  shown on screen.
+  
+  All messages are transparently 
+  forwarded  between client and server.
+    
+    
+Author: Paul H Alfille <paul.alfille@gmail.com>
+    
+Copyright: July 2007 GPL 2.0 license
+    
+Website: http://www.owfs.org
+    }
+}
+     
+# Popup giving commandline
+proc CommandLine { } {
+    tk_messageBox -type ok -title {owtap command line} -message {
+syntax: owtap.tcl -s serverport -p tapport
+
+  server port is the address of owserver
+  tapport is the port assigned this program
+
+  Usage (owdir example)
+
+  If owserver was invoked as:
+    owserver -p 3000 -u
+  a client (say owdir) would normally call:
+    owdir -s 3000 /
+
+  To use owtap, invoke it with
+    owtap.tcl -s 3000 -p 4000
+  and now call owdir with:
+    owdir -s 4000 /
+    }
+}
+
+# Popup on protocol
+proc Protocol { } {
+    tk_messageBox -type ok -title {owserver protocol} -message {
+The owserver protocol is a tcp/ip
+protocol for communication between
+owserver and clients.
+
+It is recognized as a "well
+known port" by the IANA (4304)
+and has an associated mDNS
+service (_owserver._tcp).
+
+Datails can be found at:
+http://www.owfs.org/index.php?page=owserver-protocol    
+    }
+}
+
+#Finally, all the Proc-s have been defined, so run everything.
+Main $argv
