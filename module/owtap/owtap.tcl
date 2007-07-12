@@ -10,7 +10,7 @@ exec wish "$0" -- "$@"
 set SocketVars {string version type payload size sg offset tokenlength totallength state}
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
-set MessageListPlus [lappend $MessageList Total]
+set MessageListPlus [lappend $MessageList BadHeader Total]
 
 # Global: serve ENOENT EINVAL,... error codes
 #         serve(port) -- same as Ports(tap)
@@ -80,6 +80,7 @@ proc SetupTap { } {
 #Main loop. Called whenever the server (listen) port accepts a connection.
 proc TapAccept { sock addr port } {
     global serve
+    global stats
     set serve($sock.state) "Open client"
     while {1} {
 #    puts "----------- $serve($sock.state) ---------------"
@@ -99,14 +100,23 @@ proc TapAccept { sock addr port } {
         "Log client input" { 
                 fileevent $sock readable {}
                 StatusMessage "Success reading client request" 0
-                CircBufferEntryRequest $current [format "%s %d bytes" [MessageType $serve($sock.type)] $serve($sock.payload)] 
+                set message_type [MessageType $serve($sock.type)]
+                CircBufferEntryRequest $current [format "%s %d bytes" $message_type $serve($sock.payload)] 
 #                puts "XXXXXXXXXXXXX CLIENT MESSAGE XXXXXXXXXXXXXXXXXXXXXXXXX"
 #                ShowMessage $sock
+                #stats
+                RequestStatsIncr $sock $message_type 0
+                # now owserver
                 set serve($sock.state) "Open server"
             }
         "Client early end" {
                 StatusMessage "FAILURE reading client request"
                 CircBufferEntryRequest $current "network read error"
+                if { [string length $serve($sock.string] < 24 } {
+			RequestStatsIncr $sock BadHeader 1
+                } else {
+			RequestStatsIncr $sock $message_type 1
+                }
                 CloseTap $sock
                 return
             }
@@ -126,6 +136,7 @@ proc TapAccept { sock addr port } {
                 fconfigure $relay -buffering full -encoding binary -blocking 0
                 ClearTap $relay
                 TapSetup $relay
+                ResponseStatsIncr $relay $message_type 0
                 puts -nonewline $relay  $serve($sock.string)
                 flush $relay
                 set serve($sock.state) "Read from server"
@@ -137,6 +148,11 @@ proc TapAccept { sock addr port } {
             }
         "Server early end" {
                 StatusMessage "FAILURE reading OWSERVER response" 0
+                if { [string length $serve($sock.string] < 24 } {
+			RequestStatsIncr $relay BadHeader 1
+                } else {
+			RequestStatsIncr $relay $message_type 1
+                }
                 CircBufferEntryResponse $current "network read error"
                 ShowMessage $relay
                 CloseTap $relay
@@ -164,6 +180,36 @@ proc TapAccept { sock addr port } {
             }                
         }
     }
+}
+
+# increment stats for  request
+proc RequestStatsIncr { $sock $message_type $is_error} {
+    global stats
+    global serve
+    set length [string length $serve($sock.string)]
+    incr stats($message_type.tries)
+    incr stats($message_type.errors) $is_error
+    set stats($message_type.rate) [expr 100 * stats($message_type.errors) / stats($message_type.tries) ]
+    incr stats($message_type.request_bytes) $length
+    incr stats(Total.tries)
+    incr stats(Total.errors) $is_error
+    set stats(Total.rate) [expr 100 * stats(Total.errors) / stats(Total.tries) ]
+    incr stats(Total.request_bytes) $length
+}
+
+# increment stats for  request
+proc ResponseStatsIncr { $sock $message_type $is_error} {
+    global stats
+    global serve
+    set length [string length $serve($sock.string)]
+    
+    incr stats($message_type.errors) $is_error
+    set stats($message_type.rate) [expr 100 * stats($message_type.errors) / stats($message_type.tries) ]
+    incr stats($message_type.response_bytes) $length
+    
+    incr stats(Total.errors) $is_error
+    set stats(Total.rate) [expr 100 * stats(Total.errors) / stats(Total.tries) ]
+    incr stats(Total.response_bytes) $length
 }
 
 # Initialize array for client request
