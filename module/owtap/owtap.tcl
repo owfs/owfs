@@ -10,7 +10,8 @@ exec wish "$0" -- "$@"
 set SocketVars {string version type payload size sg offset tokenlength totallength state}
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
-set MessageListPlus [lappend $MessageList BadHeader Total]
+set MessageListPlus $MessageList
+lappend MessageListPlus BadHeader Total
 
 # Global: serve ENOENT EINVAL,... error codes
 #         serve(port) -- same as Ports(tap)
@@ -26,9 +27,11 @@ proc Main { argv } {
     ArgumentProcess $argv
     wm title . "OWSERVER protocol tap -- port $Ports(tap) to $Ports(server)"
     
+    StatsSetup
     CircBufferSetup 50
     
     DisplaySetup
+    StatByType
 
     if { $Ports(server) == 0 } {
         CommandLine
@@ -564,6 +567,48 @@ service (_owserver._tcp).
 Datails can be found at:
 http://www.owfs.org/index.php?page=owserver-protocol    
     }
+}
+
+proc StatByType { } {
+    global stats
+    global MessageListPlus
+    toplevel .statbytype
+    set column_number 0
+    label .statbytype.l${column_number}0 -text "Type" -bg blue
+    grid .statbytype.l${column_number}0 -row 0 -column $column_number -sticky news
+    label .statbytype.l${column_number}1 -text "Packets" -bg lightblue
+    grid .statbytype.l${column_number}1 -row 1 -column $column_number -sticky news
+    label .statbytype.l${column_number}2 -text "Errors" -bg  lightblue
+    grid .statbytype.l${column_number}2 -row 2 -column $column_number -sticky news
+    label .statbytype.l${column_number}3 -text "Error %" -bg  lightblue
+    grid .statbytype.l${column_number}3 -row 3 -column $column_number -sticky news
+    frame .statbytype.ff4 -bg blue
+    grid .statbytype.ff4 -column 1 -row 0 
+    label .statbytype.l${column_number}5 -text "bytes in" -bg  lightblue
+    grid .statbytype.l${column_number}5 -row 5 -column $column_number -sticky news
+    label .statbytype.l${column_number}6 -text "bytes out" -bg  lightblue
+    grid .statbytype.l${column_number}6 -row 6 -column $column_number -sticky news
+    set bgcolor white
+    set bgcolor2 yellow
+    foreach x $MessageListPlus {
+        incr column_number
+        label .statbytype.${column_number}0 -text $x -bg $bgcolor2
+        grid  .statbytype.${column_number}0 -row 0 -column $column_number -sticky news
+        label .statbytype.${column_number}1 -textvariable stats($x.tries) -bg $bgcolor
+        grid  .statbytype.${column_number}1 -row 1 -column $column_number -sticky news
+        label .statbytype.${column_number}2 -textvariable stats($x.errors) -bg $bgcolor
+        grid  .statbytype.${column_number}2 -row 2 -column $column_number -sticky news
+        label .statbytype.${column_number}3 -textvariable stats($x.rate) -bg $bgcolor
+        grid  .statbytype.${column_number}3 -row 3 -column $column_number -sticky news
+        label .statbytype.${column_number}5 -textvariable stats($x.request_bytes) -bg $bgcolor
+        grid  .statbytype.${column_number}5 -row 5 -column $column_number -sticky news
+        label .statbytype.${column_number}6 -textvariable stats($x.response_bytes) -bg $bgcolor
+        grid  .statbytype.${column_number}6 -row 6 -column $column_number -sticky news
+        if { $bgcolor == "white" } { set bgcolor lightyellow } else { set bgcolor white }
+        if { $bgcolor2 == "yellow" } { set bgcolor2 orange } else { set bgcolor2 yellow }
+    }
+    frame .statbytype.f4 -bg yellow
+    grid .statbytype.f4 -column 1 -row 4 -columnspan [llength MessageListPlus] 
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
