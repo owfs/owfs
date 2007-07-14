@@ -13,12 +13,18 @@ set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
 set MessageListPlus $MessageList
 lappend MessageListPlus BadHeader Total
 
-# Global: serve ENOENT EINVAL,... error codes
+# Global: setup_flags => For object-oriented initialization
+
+# Global: serve => information on current transaction
 #         serve(port) -- same as Ports(tap)
 #         serve(socket) -- listing socket
 #         serve($sock.string) -- message to this point
 #         serve($sock. version size payload sg offset type tokenlength ) -- message parsed parts
 #         serve($sock.version size 
+
+# Global: stats => statistical counts and flags for stats windows
+
+# Global: circ_buffer => data for the last n transactions displayed in the listboxes
 
 #Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
@@ -27,11 +33,9 @@ proc Main { argv } {
     ArgumentProcess $argv
     wm title . "OWSERVER protocol tap -- port $Ports(tap) to $Ports(server)"
     
-    StatsSetup
-    CircBufferSetup 50
-    
+    CircBufferSetup 50    
     DisplaySetup
-    StatByType
+    StatsSetup
 
     if { $Ports(server) == 0 } {
         CommandLine
@@ -86,7 +90,6 @@ proc TapAccept { sock addr port } {
     global stats
     set serve($sock.state) "Open client"
     while {1} {
-#    puts "----------- $serve($sock.state) ---------------"
         switch $serve($sock.state) {
         "Open client" {
                 StatusMessage "Reading client request from $addr port $port" 0
@@ -104,9 +107,7 @@ proc TapAccept { sock addr port } {
                 fileevent $sock readable {}
                 StatusMessage "Success reading client request" 0
                 set message_type [MessageType $serve($sock.type)]
-                CircBufferEntryRequest $current [format "%s %d bytes" $message_type $serve($sock.payload)] 
-#                puts "XXXXXXXXXXXXX CLIENT MESSAGE XXXXXXXXXXXXXXXXXXXXXXXXX"
-#                ShowMessage $sock
+                CircBufferEntryRequest $current [format "%s %d bytes" $message_type $serve($sock.payload)] $sock
                 #stats
                 RequestStatsIncr $sock $message_type 0
                 # now owserver
@@ -114,11 +115,11 @@ proc TapAccept { sock addr port } {
             }
         "Client early end" {
                 StatusMessage "FAILURE reading client request"
-                CircBufferEntryRequest $current "network read error"
+                CircBufferEntryRequest $current "network read error" $sock
                 if { [string length $serve($sock.string] < 24 } {
-			RequestStatsIncr $sock BadHeader 1
+                    RequestStatsIncr $sock BadHeader 1
                 } else {
-			RequestStatsIncr $sock $message_type 1
+                    RequestStatsIncr $sock $message_type 1
                 }
                 CloseTap $sock
                 return
@@ -139,7 +140,6 @@ proc TapAccept { sock addr port } {
                 fconfigure $relay -buffering full -encoding binary -blocking 0
                 ClearTap $relay
                 TapSetup $relay
-                ResponseStatsIncr $relay $message_type 0
                 puts -nonewline $relay  $serve($sock.string)
                 flush $relay
                 set serve($sock.state) "Read from server"
@@ -152,11 +152,11 @@ proc TapAccept { sock addr port } {
         "Server early end" {
                 StatusMessage "FAILURE reading OWSERVER response" 0
                 if { [string length $serve($sock.string] < 24 } {
-			RequestStatsIncr $relay BadHeader 1
+                     ResponseStatsIncr $relay BadHeader 1
                 } else {
-			RequestStatsIncr $relay $message_type 1
+                     ResponseStatsIncr $relay $message_type 1
                 }
-                CircBufferEntryResponse $current "network read error"
+                CircBufferEntryResponse $current "network read error" $relay
                 ShowMessage $relay
                 CloseTap $relay
                 CloseTap $sock
@@ -165,9 +165,9 @@ proc TapAccept { sock addr port } {
         "Log server input" {
                 StatusMessage "Success reading OWSERVER response" 0
                 fileevent $relay readable {}
-                CircBufferEntryResponse $current [format "Return value %d" $serve($relay.type)]
-#                puts "XXXXXXXXXXXXX SERVER MESSAGE XXXXXXXXXXXXXXXXXXXXXXXXX"
-#                ShowMessage $relay
+                CircBufferEntryResponse $current [format "Return value %d" $serve($relay.type)] $relay
+                #stats
+                ResponseStatsIncr $relay $message_type 0
                 set serve($sock.state) "Send to client"
             }
         "Send to client" { 
@@ -186,32 +186,34 @@ proc TapAccept { sock addr port } {
 }
 
 # increment stats for  request
-proc RequestStatsIncr { $sock $message_type $is_error} {
+proc RequestStatsIncr { sock message_type is_error} {
     global stats
     global serve
     set length [string length $serve($sock.string)]
+
     incr stats($message_type.tries)
     incr stats($message_type.errors) $is_error
-    set stats($message_type.rate) [expr 100 * stats($message_type.errors) / stats($message_type.tries) ]
+    set stats($message_type.rate) [expr {100 * $stats($message_type.errors) / $stats($message_type.tries)} ]
     incr stats($message_type.request_bytes) $length
+
     incr stats(Total.tries)
     incr stats(Total.errors) $is_error
-    set stats(Total.rate) [expr 100 * stats(Total.errors) / stats(Total.tries) ]
+    set stats(Total.rate) [expr {100 * $stats(Total.errors) / $stats(Total.tries)} ]
     incr stats(Total.request_bytes) $length
 }
 
 # increment stats for  request
-proc ResponseStatsIncr { $sock $message_type $is_error} {
+proc ResponseStatsIncr { sock message_type is_error} {
     global stats
     global serve
     set length [string length $serve($sock.string)]
     
     incr stats($message_type.errors) $is_error
-    set stats($message_type.rate) [expr 100 * stats($message_type.errors) / stats($message_type.tries) ]
+    set stats($message_type.rate) [expr {100 * $stats($message_type.errors) / $stats($message_type.tries)} ]
     incr stats($message_type.response_bytes) $length
     
     incr stats(Total.errors) $is_error
-    set stats(Total.rate) [expr 100 * stats(Total.errors) / stats(Total.tries) ]
+    set stats(Total.rate) [expr {100 * $stats(Total.errors) / $stats(Total.tries)} ]
     incr stats(Total.response_bytes) $length
 }
 
@@ -356,13 +358,13 @@ proc SelectionMade { widget } {
 proc DisplaySetup { } {
     global circ_buffer
     # Top pane, tranaction logs
-    frame .log -background red
+    frame .log -bg yellow
 
     scrollbar .log.transaction_scroll -command [ list ScrollTogether ]
-    label .log.request_title -text "Client request"
-    label .log.respnse_title -text "Owserver response"
-    listbox .log.request_list -width 40 -height 10 -selectmode single -yscroll [list Left_ScrollByKey ]
-    listbox .log.response_list -width 40 -height 10 -selectmode single -yscroll [list Right_ScrollByKey]
+    label .log.request_title -text "Client request" -bg yellow -relief ridge
+    label .log.respnse_title -text "Owserver response" -bg yellow -relief ridge
+    listbox .log.request_list -width 40 -height 10 -selectmode single -yscroll [list Left_ScrollByKey ] -bg lightyellow
+    listbox .log.response_list -width 40 -height 10 -selectmode single -yscroll [list Right_ScrollByKey] -bg lightyellow
 
     bind Listbox <ButtonRelease-1> {+ SelectionMade %W }
     bind Listbox <space> {+ SelectionMade %W }
@@ -376,7 +378,7 @@ proc DisplaySetup { } {
     pack .log -side top -fill x -expand true
     
     #bottom pane, status
-    label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status
+    label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status -bg white
     pack .status -side bottom -fill x
 
     SetupMenu
@@ -384,15 +386,23 @@ proc DisplaySetup { } {
 
 # Menu construction
 proc SetupMenu { } {
+    global stats
 #    toplevel . -menu .main_menu
      menu .main_menu -tearoff 0
     . config -menu .main_menu
+
+    # file menu
      menu .main_menu.file -tearoff 0
      .main_menu add cascade -label File -menu .main_menu.file  -underline 0
          .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
          .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
          .main_menu.file add separator
          .main_menu.file add command -label Quit -underline 0 -command exit
+
+    # statistics menu
+     menu .main_menu.stats -tearoff 0
+     .main_menu add cascade -label Statistics -menu .main_menu.stats  -underline 0
+         .main_menu.stats add checkbutton -label "by Message type" -underline 3 -indicatoron 1 -command {StatByType}
 # 
 #     menu .main_menu.device -tearoff 1
 #     .main_menu add cascade -label Devices -menu .main_menu.device  -underline 0
@@ -401,6 +411,7 @@ proc SetupMenu { } {
 #         .main_menu.device add separator
 #         .main_menu.device add command -label Quit -underline 0 -command exit
 
+    # help menu
     menu .main_menu.help -tearoff 0
     .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
         .main_menu.help add command -label "About OWTAP" -underline 0 -command About
@@ -428,8 +439,7 @@ proc StatusMessage { msg { priority 1 } } {
 proc CircBufferSetup { size } {
     global circ_buffer
     set circ_buffer(size) $size
-    set circ_buffer(total) 0
-    set circ_buffer(current) [expr $size - 1 ]
+    set circ_buffer(total) -1
 }
 
 # Save a spot for the coming connection
@@ -437,60 +447,65 @@ proc CircBufferAllocate { } {
     global circ_buffer
     set size $circ_buffer(size)
     incr circ_buffer(total)
-    incr circ_buffer(current)
-    set current $circ_buffer(current)
-    if { $current == $size } {
-        set circ_buffer(current) 0
-        set current 0
-    }
-    set circ_buffer($current.request) " "
-    set circ_buffer($current.response) " "
-    set circ_buffer($current.total) $circ_buffer(total)
-    if { $circ_buffer(total) > $size } {
+    set total $circ_buffer(total)
+    set cb_index [ expr { $total % $size } ]
+    set circ_buffer($cb_index.request) ""
+    set circ_buffer($cb_index.response) ""
+    if { $total >= $size } {
         .log.request_list delete 0
         .log.response_list delete 0
     }
     .log.request_list insert end "x"
     .log.response_list insert end "x"
-    return $current
+    return $total
 }
 
 # place a new request packet
-proc CircBufferEntryRequest { current request } {
+proc CircBufferEntryRequest { current request sock} {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
-    set old_total $circ_buffer($current.total)
+    if { [expr {$current + $size}] <= $total } {
+        StatusMessage "Packet buffer history overflow. (nonfatal)" 0
+        return
+    }
     # Still filling for the first time?
     if { $total < $size } {
-        set index [expr $old_total - 1]
+        set index $current
     } else {
-        set index [ expr $size - $total + $old_total - 1 ]
-    }
-    if { $index > [expr $size - 1 ] } {
-        set index 0
+        set index [ expr $size - $total + $current - 1 ]
     }
     .log.request_list insert $index $request
     .log.request_list delete [expr $index + 1 ]
+
+    #Now store packet
+    global serve
+    set cb_index [ expr { $current % $size } ]
+    set circ_buffer($cb_index.request) $serve($sock.string)
 }    
      
 # place a new response packet
-proc CircBufferEntryResponse { current response } {
+proc CircBufferEntryResponse { current response sock s_string } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
-    set old_total $circ_buffer($current.total)
+    if { [expr {$current + $size}] <= $total } {
+        StatusMessage "Packet buffer history overflow. (nonfatal)" 0
+        return
+    }
     # Still filling for the first time?
     if { $total < $size } {
-        set index [expr $old_total - 1]
+        set index $current
     } else {
-        set index [ expr $size - $total + $old_total - 1 ]
+        set index [ expr $size - $total + $current - 1 ]
     }
-    if { $index > [expr $size - 1 ] } {
-        set index 0
-    }
-    .log.response_list insert $index $response
+    .log.response_list insert $index $request
     .log.response_list delete [expr $index + 1 ]
+
+    #Now store packet
+    global serve
+    set cb_index [ expr { $current % $size } ]
+    set circ_buffer($cb_index.response) $serve($sock.string)
 }    
 
 # initiqalize statistics
@@ -569,46 +584,75 @@ http://www.owfs.org/index.php?page=owserver-protocol
     }
 }
 
+# Show a table of packets and bytes by type (DIR, READ,...)
+# Separate window that is pretty self contained.
+# Data values use -textvariable so auto-update
+# linked by "globals" for variables and types
+# linked my menu position and index (checkbox)
+# catches delete and hides instead (via menu action)
 proc StatByType { } {
+    set window_name .statbytype
+    set menu_name .main_menu.stats
+    set menu_index 0
     global stats
     global MessageListPlus
-    toplevel .statbytype
+    global setup_flags
+
+    if { [ info exist setup_flags($window_name) ] } {
+        if { $setup_flags($window_name) } {
+            # hide stats window
+            wm withdraw $window_name
+            set setup_flags($window_name) 0
+        } else {
+            # show stats window
+            wm deiconify $window_name
+            set setup_flags($window_name) 1
+        }
+        return
+    }
+
+    # create stats window
+    toplevel $window_name
     set column_number 0
-    label .statbytype.l${column_number}0 -text "Type" -bg blue
-    grid .statbytype.l${column_number}0 -row 0 -column $column_number -sticky news
-    label .statbytype.l${column_number}1 -text "Packets" -bg lightblue
-    grid .statbytype.l${column_number}1 -row 1 -column $column_number -sticky news
-    label .statbytype.l${column_number}2 -text "Errors" -bg  lightblue
-    grid .statbytype.l${column_number}2 -row 2 -column $column_number -sticky news
-    label .statbytype.l${column_number}3 -text "Error %" -bg  lightblue
-    grid .statbytype.l${column_number}3 -row 3 -column $column_number -sticky news
-    frame .statbytype.ff4 -bg blue
-    grid .statbytype.ff4 -column 1 -row 0 
-    label .statbytype.l${column_number}5 -text "bytes in" -bg  lightblue
-    grid .statbytype.l${column_number}5 -row 5 -column $column_number -sticky news
-    label .statbytype.l${column_number}6 -text "bytes out" -bg  lightblue
-    grid .statbytype.l${column_number}6 -row 6 -column $column_number -sticky news
+    label $window_name.l${column_number}0 -text "Type" -bg blue
+    grid $window_name.l${column_number}0 -row 0 -column $column_number -sticky news
+    label $window_name.l${column_number}1 -text "Packets" -bg lightblue
+    grid $window_name.l${column_number}1 -row 1 -column $column_number -sticky news
+    label $window_name.l${column_number}2 -text "Errors" -bg  lightblue
+    grid $window_name.l${column_number}2 -row 2 -column $column_number -sticky news
+    label $window_name.l${column_number}3 -text "Error %" -bg  lightblue
+    grid $window_name.l${column_number}3 -row 3 -column $column_number -sticky news
+    frame $window_name.ff4 -bg blue
+    grid $window_name.ff4 -column 1 -row 0 
+    label $window_name.l${column_number}5 -text "bytes in" -bg  lightblue
+    grid $window_name.l${column_number}5 -row 5 -column $column_number -sticky news
+    label $window_name.l${column_number}6 -text "bytes out" -bg  lightblue
+    grid $window_name.l${column_number}6 -row 6 -column $column_number -sticky news
     set bgcolor white
     set bgcolor2 yellow
     foreach x $MessageListPlus {
         incr column_number
-        label .statbytype.${column_number}0 -text $x -bg $bgcolor2
-        grid  .statbytype.${column_number}0 -row 0 -column $column_number -sticky news
-        label .statbytype.${column_number}1 -textvariable stats($x.tries) -bg $bgcolor
-        grid  .statbytype.${column_number}1 -row 1 -column $column_number -sticky news
-        label .statbytype.${column_number}2 -textvariable stats($x.errors) -bg $bgcolor
-        grid  .statbytype.${column_number}2 -row 2 -column $column_number -sticky news
-        label .statbytype.${column_number}3 -textvariable stats($x.rate) -bg $bgcolor
-        grid  .statbytype.${column_number}3 -row 3 -column $column_number -sticky news
-        label .statbytype.${column_number}5 -textvariable stats($x.request_bytes) -bg $bgcolor
-        grid  .statbytype.${column_number}5 -row 5 -column $column_number -sticky news
-        label .statbytype.${column_number}6 -textvariable stats($x.response_bytes) -bg $bgcolor
-        grid  .statbytype.${column_number}6 -row 6 -column $column_number -sticky news
+        label $window_name.${column_number}0 -text $x -bg $bgcolor2
+        grid  $window_name.${column_number}0 -row 0 -column $column_number -sticky news
+        label $window_name.${column_number}1 -textvariable stats($x.tries) -bg $bgcolor
+        grid  $window_name.${column_number}1 -row 1 -column $column_number -sticky news
+        label $window_name.${column_number}2 -textvariable stats($x.errors) -bg $bgcolor
+        grid  $window_name.${column_number}2 -row 2 -column $column_number -sticky news
+        label $window_name.${column_number}3 -textvariable stats($x.rate) -bg $bgcolor
+        grid  $window_name.${column_number}3 -row 3 -column $column_number -sticky news
+        label $window_name.${column_number}5 -textvariable stats($x.request_bytes) -bg $bgcolor
+        grid  $window_name.${column_number}5 -row 5 -column $column_number -sticky news
+        label $window_name.${column_number}6 -textvariable stats($x.response_bytes) -bg $bgcolor
+        grid  $window_name.${column_number}6 -row 6 -column $column_number -sticky news
         if { $bgcolor == "white" } { set bgcolor lightyellow } else { set bgcolor white }
         if { $bgcolor2 == "yellow" } { set bgcolor2 orange } else { set bgcolor2 yellow }
     }
-    frame .statbytype.f4 -bg yellow
-    grid .statbytype.f4 -column 1 -row 4 -columnspan [llength MessageListPlus] 
+    frame $window_name.f4 -bg yellow
+    grid $window_name.f4 -column 1 -row 4 -columnspan [llength MessageListPlus] 
+    # delete handler
+    wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index] 
+    # now set flag
+    set setup_flags($window_name) 1
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
