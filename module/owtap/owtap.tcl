@@ -20,7 +20,7 @@ lappend MessageListPlus BadHeader Total
 #         serve(socket) -- listing socket
 #         serve($sock.string) -- message to this point
 #         serve($sock. version size payload sg offset type tokenlength ) -- message parsed parts
-#         serve($sock.version size 
+#         serve($sock.version size
 
 # Global: stats => statistical counts and flags for stats windows
 
@@ -32,8 +32,8 @@ proc Main { argv } {
 
     ArgumentProcess $argv
     wm title . "OWSERVER protocol tap -- port $Ports(tap) to $Ports(server)"
-    
-    CircBufferSetup 50    
+
+    CircBufferSetup 50
     DisplaySetup
     StatsSetup
 
@@ -80,7 +80,7 @@ proc SetupTap { } {
     if {[catch {socket -server TapAccept $Ports(tap)} result] } {
         ErrorMessage $result
     }
-    set serve(socket) $result 
+    set serve(socket) $result
     StatusMessage [eval {format "Success. Tap server address=%s (%s:%s) "} [fconfigure $serve(socket) -sockname]]
 }
 
@@ -99,11 +99,11 @@ proc TapAccept { sock addr port } {
                 TapSetup $sock
                 set serve($sock.state) "Read client"
             }
-        "Read client" { 
+        "Read client" {
                 fileevent $sock readable [list TapProcess $sock]
                 vwait serve($sock.state)
             }
-        "Log client input" { 
+        "Log client input" {
                 fileevent $sock readable {}
                 StatusMessage "Success reading client request" 0
                 set message_type [MessageType $serve($sock.type)]
@@ -135,7 +135,7 @@ proc TapAccept { sock addr port } {
                 set relay $result
                 set serve($sock.state) "Send to server"
             }
-        "Send to server" { 
+        "Send to server" {
                 StatusMessage "Sending client request to OWSERVER" 0
                 fconfigure $relay -buffering full -encoding binary -blocking 0
                 ClearTap $relay
@@ -170,17 +170,19 @@ proc TapAccept { sock addr port } {
                 ResponseStatsIncr $relay $message_type 0
                 set serve($sock.state) "Send to client"
             }
-        "Send to client" { 
+        "Send to client" {
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
                 CloseTap $relay
-                set serve($sock.state) "Done"
+                set ser
+
+ve($sock.state) "Done"
             }
         "Done"  {
                 StatusMessage "Ready" 0
                 CloseTap $sock
                 return
-            }                
+            }
         }
     }
 }
@@ -207,11 +209,11 @@ proc ResponseStatsIncr { sock message_type is_error} {
     global stats
     global serve
     set length [string length $serve($sock.string)]
-    
+
     incr stats($message_type.errors) $is_error
     set stats($message_type.rate) [expr {100 * $stats($message_type.errors) / $stats($message_type.tries)} ]
     incr stats($message_type.response_bytes) $length
-    
+
     incr stats(Total.errors) $is_error
     set stats(Total.rate) [expr {100 * $stats(Total.errors) / $stats(Total.tries)} ]
     incr stats(Total.response_bytes) $length
@@ -251,7 +253,7 @@ proc TapProcess { sock } {
         0  { return }
         1  { set serve($sock.state) "Log client input" }
     }
-}   
+}
 
 # Process a oncomming owserver packet, adjusting size from header information
 proc ReadProcess { sock } {
@@ -290,7 +292,7 @@ proc RelayProcess { relay sock } {
         0  { return }
         1  { set serve($sock.state) "Log server input" }
     }
-}   
+}
 
 # Parse Header information (24 bytes)
 proc HeaderParse { sock } {
@@ -312,7 +314,7 @@ proc ShowMessage { sock } {
 }
 
 # Limit num to type's range
-proc MessageNunber { num } {
+proc MessageNumber { num } {
     global MessageList
     set len [expr [llength $MessageList] - 1]
 puts "$num $len"
@@ -330,8 +332,8 @@ proc MessageType { num } {
 
 # callback from scrollbar, moves each listbox field
 proc ScrollTogether { args } {
-    eval {.log.request_list yview} $args 
-    eval {.log.response_list yview} $args 
+    eval {.log.request_list yview} $args
+    eval {.log.response_list yview} $args
 }
 
 # scroll other listbox and scrollbar
@@ -349,10 +351,12 @@ proc Right_ScrollByKey { args } {
 }
 
 # Selection from listbox
-proc SelectionMade { widget } {
-    set x [ $widget index active ]
-    # do something with the selected line
-}    
+proc SelectionMade { widget y } {
+    set index [ $widget nearest $y ]
+    if { $index >= 0 } {
+        TransactionDetail $index
+    }
+}
 
 # create visual aspects of program
 proc DisplaySetup { } {
@@ -366,7 +370,7 @@ proc DisplaySetup { } {
     listbox .log.request_list -width 40 -height 10 -selectmode single -yscroll [list Left_ScrollByKey ] -bg lightyellow
     listbox .log.response_list -width 40 -height 10 -selectmode single -yscroll [list Right_ScrollByKey] -bg lightyellow
 
-    bind Listbox <ButtonRelease-1> {+ SelectionMade %W }
+    bind Listbox <ButtonRelease-1> {+ SelectionMade %W %y }
     bind Listbox <space> {+ SelectionMade %W }
 
     grid .log.request_title -row 0 -column 0 -sticky news
@@ -376,7 +380,7 @@ proc DisplaySetup { } {
     grid .log.transaction_scroll -row 1 -column 2 -sticky news
 
     pack .log -side top -fill x -expand true
-    
+
     #bottom pane, status
     label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status -bg white
     pack .status -side bottom -fill x
@@ -403,7 +407,7 @@ proc SetupMenu { } {
      menu .main_menu.stats -tearoff 0
      .main_menu add cascade -label Statistics -menu .main_menu.stats  -underline 0
          .main_menu.stats add checkbutton -label "by Message type" -underline 3 -indicatoron 1 -command {StatByType}
-# 
+#
 #     menu .main_menu.device -tearoff 1
 #     .main_menu add cascade -label Devices -menu .main_menu.device  -underline 0
 #         .main_menu.device add command -label "Save Log" -underline 0 -command SaveLog
@@ -421,7 +425,7 @@ proc SetupMenu { } {
 
 # error routine -- popup and exit
 proc ErrorMessage { msg } {
-    StatusMessage "Fatal error -- $msg"    
+    StatusMessage "Fatal error -- $msg"
     tk_messageBox -title "Fatal error" -message $msg -type ok -icon error
     exit 1
 }
@@ -435,7 +439,7 @@ proc StatusMessage { msg { priority 1 } } {
 }
 
 # Circular buffer for past connections
-#   size is number of elements 
+#   size is number of elements
 proc CircBufferSetup { size } {
     global circ_buffer
     set circ_buffer(size) $size
@@ -482,8 +486,8 @@ proc CircBufferEntryRequest { current request sock} {
     global serve
     set cb_index [ expr { $current % $size } ]
     set circ_buffer($cb_index.request) $serve($sock.string)
-}    
-     
+}
+
 # place a new response packet
 proc CircBufferEntryResponse { current response sock s_string } {
     global circ_buffer
@@ -506,7 +510,16 @@ proc CircBufferEntryResponse { current response sock s_string } {
     global serve
     set cb_index [ expr { $current % $size } ]
     set circ_buffer($cb_index.response) $serve($sock.string)
-}    
+}
+
+# get the slot in the circ_buffer from the listbox index
+proc cb_from_index { index } {
+    global circ_buffer
+    set size $circ_buffer(size)
+    set total $circ_buffer(total)
+    if { $total < $size } { return $index }
+    return [expr { ($total + $index) % $size }]
+}
 
 # initiqalize statistics
 proc StatsSetup { } {
@@ -524,27 +537,27 @@ proc StatsSetup { } {
 # Popup giving attribution
 proc About { } {
     tk_messageBox -type ok -title {About owtap} -message {
-Program: owtap    
+Program: owtap
 Synopsis: owserver protocol inspector
-    
-Description: owtap is interposed 
+
+Description: owtap is interposed
   between owserver and client.
-  
-  The communication is logged and 
+
+  The communication is logged and
   shown on screen.
-  
-  All messages are transparently 
+
+  All messages are transparently
   forwarded  between client and server.
-    
-    
+
+
 Author: Paul H Alfille <paul.alfille@gmail.com>
-    
+
 Copyright: July 2007 GPL 2.0 license
-    
+
 Website: http://www.owfs.org
     }
 }
-     
+
 # Popup giving commandline
 proc CommandLine { } {
     tk_messageBox -type ok -title {owtap command line} -message {
@@ -580,7 +593,7 @@ and has an associated mDNS
 service (_owserver._tcp).
 
 Datails can be found at:
-http://www.owfs.org/index.php?page=owserver-protocol    
+http://www.owfs.org/index.php?page=owserver-protocol
     }
 }
 
@@ -600,18 +613,18 @@ proc StatByType { } {
 
     if { [ info exist setup_flags($window_name) ] } {
         if { $setup_flags($window_name) } {
-            # hide stats window
+# hide stats window
             wm withdraw $window_name
             set setup_flags($window_name) 0
-        } else {
-            # show stats window
+} else {
+# show stats window
             wm deiconify $window_name
             set setup_flags($window_name) 1
-        }
+}
         return
-    }
+}
 
-    # create stats window
+# create stats window
     toplevel $window_name
     set column_number 0
     label $window_name.l${column_number}0 -text "Type" -bg blue
@@ -623,7 +636,7 @@ proc StatByType { } {
     label $window_name.l${column_number}3 -text "Error %" -bg  lightblue
     grid $window_name.l${column_number}3 -row 3 -column $column_number -sticky news
     frame $window_name.ff4 -bg blue
-    grid $window_name.ff4 -column 1 -row 0 
+    grid $window_name.ff4 -column 1 -row 0
     label $window_name.l${column_number}5 -text "bytes in" -bg  lightblue
     grid $window_name.l${column_number}5 -row 5 -column $column_number -sticky news
     label $window_name.l${column_number}6 -text "bytes out" -bg  lightblue
@@ -646,13 +659,70 @@ proc StatByType { } {
         grid  $window_name.${column_number}6 -row 6 -column $column_number -sticky news
         if { $bgcolor == "white" } { set bgcolor lightyellow } else { set bgcolor white }
         if { $bgcolor2 == "yellow" } { set bgcolor2 orange } else { set bgcolor2 yellow }
-    }
+}
     frame $window_name.f4 -bg yellow
-    grid $window_name.f4 -column 1 -row 4 -columnspan [llength MessageListPlus] 
-    # delete handler
-    wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index] 
-    # now set flag
+    grid $window_name.f4 -column 1 -row 4 -columnspan [llength MessageListPlus]
+# delete handler
+    wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index]
+# now set flag
     set setup_flags($window_name) 1
+}
+
+#make a window that has to be dismissed by hand
+proc TransactionDetail { index } {
+    # make a unique window name
+    global setup_flags
+    if { [ info exist setup_flags(detail) ] } {
+        incr setup_flags(detail)
+    } else {
+        set setup_flags(detail) 0
+    }
+    set window_name .detail$setup_flags(detail)
+
+    # Make the window
+    toplevel $window_name -bg white
+    # request headers
+    label $window_name.q0 -text "version" -bg yellow
+    label $window_name.q1 -text "payload" -bg orange
+    label $window_name.q2 -text "type"    -bg yellow
+    label $window_name.q3 -text "flags"   -bg orange
+    label $window_name.q4 -text "size"    -bg yellow
+    label $window_name.q5 -text "offset"  -bg orange
+
+    grid  $window_name.q0 $window_name.q1 $window_name.q2 $window_name.q3 $window_name.q4 $window_name.q5 -row 0 -sticky news
+
+    global circ_buffer
+    set cb_index [cb_from_index $index]
+    if { [string length $circ_buffer($cb_index.request)] >= 24 } {
+        binary scan $circ_buffer($cb_index.request) {IIIIII} q(version) q(payload) q(type) q(flags) q(size) q(offset)
+    # request headers
+        label $window_name.r0 -text $q(version) -bg white
+        label $window_name.r1 -text $q(payload) -bg lightyellow
+        label $window_name.r2 -text $q(type) -bg white
+        label $window_name.r3 -text $q(flags)   -bg lightyellow
+        label $window_name.r4 -text $q(size)    -bg white
+        label $window_name.r5 -text $q(offset)  -bg lightyellow
+        grid  $window_name.r0 $window_name.r1 $window_name.r2 $window_name.r3 $window_name.r4 $window_name.r5 -row 1 -sticky news
+    # request headers
+        set tokens [expr { $q(version) & 0xFFFF}]
+        set version [expr { $q(version) >> 16}]
+        label $window_name.s0 -text "T$tokens V$version" -bg white
+        label $window_name.s1 -text $q(payload) -bg lightyellow
+        label $window_name.s2 -text [MessageType [MessageNumber $q(type)]] -bg white
+        label $window_name.s3 -text $q(flags)   -bg lightyellow
+        label $window_name.s4 -text $q(size)    -bg white
+        label $window_name.s5 -text $q(offset)  -bg lightyellow
+        grid  $window_name.s0 $window_name.s1 $window_name.s2 $window_name.s3 $window_name.s4 $window_name.s5 -row 2 -sticky news
+    }
+# response headers
+    label $window_name.t0 -text "version" -bg #a6dcff
+    label $window_name.t1 -text "payload" -bg #a6b1ff
+    label $window_name.t2 -text "return"  -bg #a6dcff
+    label $window_name.t3 -text "flags"   -bg #a6b1ff
+    label $window_name.t4 -text "size"    -bg #a6dcff
+    label $window_name.t5 -text "offset"  -bg #a6b1ff
+# #ceecff
+    grid  $window_name.t0 $window_name.t1 $window_name.t2 $window_name.t3 $window_name.t4 $window_name.t5 -row 3 -sticky news
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
