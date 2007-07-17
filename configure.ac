@@ -541,6 +541,23 @@ AC_ARG_ENABLE(ownet,
 AC_SUBST(ENABLE_OWNET)
 AM_CONDITIONAL(ENABLE_OWNET, test "${ENABLE_OWNET}" = "true")
 
+#Check owtap
+AC_MSG_CHECKING(if owtap is enabled)
+ENABLE_OWTAP="true"
+AC_ARG_ENABLE(owtap,
+[  --enable-owtap          Enable owtap module (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWTAP="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWTAP)
+AM_CONDITIONAL(ENABLE_OWTAP, test "${ENABLE_OWTAP}" = "true")
+
 #Check owcapi
 AC_MSG_CHECKING(if owcapi is enabled)
 ENABLE_OWCAPI="true"
@@ -1510,6 +1527,7 @@ AC_CONFIG_FILES([
     module/owcapi/src/include/Makefile
     module/owcapi/src/c/Makefile
     module/owcapi/src/example/Makefile
+    module/owtap/Makefile
     module/swig/Makefile
     module/swig/perl5/Makefile
     module/swig/perl5/OW/Makefile.linux
@@ -1631,6 +1649,11 @@ if test "${ENABLE_OWNET}" = "true"; then
     AC_MSG_RESULT([       ownet is enabled])
 else
     AC_MSG_RESULT([       ownet is DISABLED])
+fi
+if test "${ENABLE_OWTAP}" = "true"; then
+    AC_MSG_RESULT([       owtap is enabled])
+else
+    AC_MSG_RESULT([       owtap is DISABLED])
 fi
 if test "${ENABLE_OWCAPI}" = "true"; then
     AC_MSG_RESULT([      owcapi is enabled])

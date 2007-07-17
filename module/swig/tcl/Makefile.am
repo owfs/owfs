@@ -50,10 +50,6 @@ AM_CFLAGS = -I../../owlib/src/include \
 LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 #SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
-#install-local: ow.tcl pkgIndex.tcl
-#install-data-local:
-#	$(INSTALL) -d $(DESTDIR)/tcl8.3/owtcl-$(OWTCL_VERSION)
-
 clean-local:
 	@RM@ -f ow.tcl.h pkgIndex.tcl
 

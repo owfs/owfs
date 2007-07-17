@@ -40,7 +40,7 @@ else
 endif
 
 #install-data-local:
-#	$(INSTALL) -d $(DESTDIR)$(EXTENSION_DIR)
+#	@INSTALL@ -d $(DESTDIR)$(EXTENSION_DIR)
 #	@INSTALL@ $(DESTDIR)${libdir}/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/
 #	ln -sf ${exec_prefix}/lib/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/libowphp.so
 #	ln -sf ../../../lib/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/php_OW.so
