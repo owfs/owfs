@@ -1,6 +1,7 @@
 .SS Programs
 .B owfs (1) owhttpd (1) owftpd (1) owserver (1)
 .B owdir (1) owread (1) owwrite (1) owpresent (1)
+.B owtap (1)
 .SS Configuration
 .B owfs (5)
 .SS Language bindings
