@@ -174,9 +174,7 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
                 CloseTap $relay
-                set ser
-
-ve($sock.state) "Done"
+                set serve($sock.state) "Done"
             }
         "Done"  {
                 StatusMessage "Ready" 0
@@ -317,7 +315,6 @@ proc ShowMessage { sock } {
 proc MessageNumber { num } {
     global MessageList
     set len [expr [llength $MessageList] - 1]
-puts "$num $len"
     if { $num > $len } { return $len }
     return $num
 }
@@ -489,7 +486,7 @@ proc CircBufferEntryRequest { current request sock} {
 }
 
 # place a new response packet
-proc CircBufferEntryResponse { current response sock s_string } {
+proc CircBufferEntryResponse { current response sock } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
@@ -503,7 +500,7 @@ proc CircBufferEntryResponse { current response sock s_string } {
     } else {
         set index [ expr $size - $total + $current - 1 ]
     }
-    .log.response_list insert $index $request
+    .log.response_list insert $index $response
     .log.response_list delete [expr $index + 1 ]
 
     #Now store packet
@@ -681,49 +678,79 @@ proc TransactionDetail { index } {
 
     # Make the window
     toplevel $window_name -bg white
-    # request headers
-    label $window_name.q0 -text "version" -bg yellow
-    label $window_name.q1 -text "payload" -bg orange
-    label $window_name.q2 -text "type"    -bg yellow
-    label $window_name.q3 -text "flags"   -bg orange
-    label $window_name.q4 -text "size"    -bg yellow
-    label $window_name.q5 -text "offset"  -bg orange
+    DetailRow $window_name yellow orange version payload type flags size offset
 
-    grid  $window_name.q0 $window_name.q1 $window_name.q2 $window_name.q3 $window_name.q4 $window_name.q5 -row 0 -sticky news
-
+    # get request data
     global circ_buffer
     set cb_index [cb_from_index $index]
+    set q(version) ""
+    set q(payload) ""
+    set q(type) ""
+    set q(flags) ""
+    set q(size) ""
+    set q(offset) ""
+    binary scan $circ_buffer($cb_index.request) {IIIIII} q(version) q(payload) q(type) q(flags) q(size) q(offset)
+    # request headers
+    DetailRow $window_name white lightyellow $q(version) $q(payload) $q(type) $q(flags) $q(size) $q(offset)
+# request headers
     if { [string length $circ_buffer($cb_index.request)] >= 24 } {
-        binary scan $circ_buffer($cb_index.request) {IIIIII} q(version) q(payload) q(type) q(flags) q(size) q(offset)
-    # request headers
-        label $window_name.r0 -text $q(version) -bg white
-        label $window_name.r1 -text $q(payload) -bg lightyellow
-        label $window_name.r2 -text $q(type) -bg white
-        label $window_name.r3 -text $q(flags)   -bg lightyellow
-        label $window_name.r4 -text $q(size)    -bg white
-        label $window_name.r5 -text $q(offset)  -bg lightyellow
-        grid  $window_name.r0 $window_name.r1 $window_name.r2 $window_name.r3 $window_name.r4 $window_name.r5 -row 1 -sticky news
-    # request headers
-        set tokens [expr { $q(version) & 0xFFFF}]
-        set version [expr { $q(version) >> 16}]
-        label $window_name.s0 -text "T$tokens V$version" -bg white
-        label $window_name.s1 -text $q(payload) -bg lightyellow
-        label $window_name.s2 -text [MessageType [MessageNumber $q(type)]] -bg white
-        label $window_name.s3 -text $q(flags)   -bg lightyellow
-        label $window_name.s4 -text $q(size)    -bg white
-        label $window_name.s5 -text $q(offset)  -bg lightyellow
-        grid  $window_name.s0 $window_name.s1 $window_name.s2 $window_name.s3 $window_name.s4 $window_name.s5 -row 2 -sticky news
+        DetailRow $window_name white lightyellow [DetailVersion $q(version)] $q(payload) [DetailType $q(type)] [DetailFlags $q(flags)] $q(size) $q(offset)
     }
-# response headers
-    label $window_name.t0 -text "version" -bg #a6dcff
-    label $window_name.t1 -text "payload" -bg #a6b1ff
-    label $window_name.t2 -text "return"  -bg #a6dcff
-    label $window_name.t3 -text "flags"   -bg #a6b1ff
-    label $window_name.t4 -text "size"    -bg #a6dcff
-    label $window_name.t5 -text "offset"  -bg #a6b1ff
-# #ceecff
-    grid  $window_name.t0 $window_name.t1 $window_name.t2 $window_name.t3 $window_name.t4 $window_name.t5 -row 3 -sticky news
+    DetailRow $window_name #a6dcff #a6b1ff version payload return flags size offset
+    set r(version) ""
+    set r(payload) ""
+    set r(return) ""
+    set r(flags) ""
+    set r(size) ""
+    set r(offset) ""
+    binary scan $circ_buffer($cb_index.response) {IIIIII} r(version) r(payload) r(return) r(flags) r(size) r(offset)
+    DetailRow $window_name white lightblue $r(version) $r(payload) $r(return) $r(flags) $r(size) $r(offset)
+    if { [string length $circ_buffer($cb_index.response)] >= 24 } {
+        DetailRow $window_name white lightblue [DetailVersion $r(version)] $r(payload) $r(return) [DetailFlags $r(flags)] $r(size) $r(offset)
+    }
 }
+
+proc DetailRow { window_name color1 color2 v0 v1 v2 v3 v4 v5 } {
+    set row [lindex [grid size $window_name] 1]
+    label $window_name.x${row}0 -text $v0 -bg $color1
+    label $window_name.x${row}1 -text $v1 -bg $color2
+    label $window_name.x${row}2 -text $v2 -bg $color1
+    label $window_name.x${row}3 -text $v3 -bg $color2
+    label $window_name.x${row}4 -text $v4 -bg $color1
+    label $window_name.x${row}5 -text $v5 -bg $color2
+    grid  $window_name.x${row}0 $window_name.x${row}1 $window_name.x${row}2 $window_name.x${row}3 $window_name.x${row}4 $window_name.x${row}5 -row $row -sticky news
+}
+
+proc DetailVersion { version } {
+    set tok [expr { $version & 0xFFFF}]
+    set ver [expr { $version >> 16}]
+    return "T$tok V$ver"
+}
+
+proc DetailType { typ } {
+    return [MessageType [MessageNumber $typ]]
+}
+
+proc DetailFlags { flags } {
+    switch [expr {($flags >>16)&0xFF}] {
+        0 {set T "C"}
+        1 {set T "F"}
+        2 {set T "K"}
+        3 {set T "R"}
+        default {set T "?temp"}
+    }
+    switch [expr {$flags >>24}] {
+        0 {set F " f.i"}
+        1 {set F " fi"}
+        2 {set F " f.i.c"}
+        3 {set F " f.ic"}
+        4 {set F " fi.c"}
+        5 {set F " fic"}
+        default {set F " ?format"}
+    }
+    return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
+}
+ 
 
 #Finally, all the Proc-s have been defined, so run everything.
 Main $argv
