@@ -678,11 +678,19 @@ proc TransactionDetail { index } {
 
     # Make the window
     toplevel $window_name -bg white
+    set cb_index [cb_from_index $index]
+
+    RequestDetail $window_name $cb_index
+    ResponseDetail $window_name $cb_index
+}
+
+# Request portion
+proc RequestDetail { window_name cb_index } {
+    global circ_buffer
+
     DetailRow $window_name yellow orange version payload type flags size offset
 
     # get request data
-    global circ_buffer
-    set cb_index [cb_from_index $index]
     set q(version) ""
     set q(payload) ""
     set q(type) ""
@@ -696,7 +704,14 @@ proc TransactionDetail { index } {
     if { [string length $circ_buffer($cb_index.request)] >= 24 } {
         DetailRow $window_name white lightyellow [DetailVersion $q(version)] $q(payload) [DetailType $q(type)] [DetailFlags $q(flags)] $q(size) $q(offset)
     }
+}
+
+# Response portion
+proc ResponseDetail { window_name cb_index } {
+    global circ_buffer
+
     DetailRow $window_name #a6dcff #a6b1ff version payload return flags size offset
+
     set r(version) ""
     set r(payload) ""
     set r(return) ""
@@ -704,10 +719,17 @@ proc TransactionDetail { index } {
     set r(size) ""
     set r(offset) ""
     binary scan $circ_buffer($cb_index.response) {IIIIII} r(version) r(payload) r(return) r(flags) r(size) r(offset)
-    DetailRow $window_name white lightblue $r(version) $r(payload) $r(return) $r(flags) $r(size) $r(offset)
+    DetailRow $window_name white #dbedf7 $r(version) $r(payload) $r(return) $r(flags) $r(size) $r(offset)
     if { [string length $circ_buffer($cb_index.response)] >= 24 } {
-        DetailRow $window_name white lightblue [DetailVersion $r(version)] $r(payload) $r(return) [DetailFlags $r(flags)] $r(size) $r(offset)
+        DetailRow $window_name white #dbedf7 [DetailVersion $r(version)] $r(payload) $r(return) [DetailFlags $r(flags)] $r(size) $r(offset)
     }
+}
+
+proc DetailText { window_name color text_string } {
+    set row [lindex [grid size $window_name] 1]
+    set columns [lindex [grid size $window_name] 0]
+    label $window_name.t${row} -text $text_string -bg $color
+    grid  $window_name.t${row0} -row $row -columnspan $columns -sticky news -relief ridge
 }
 
 proc DetailRow { window_name color1 color2 v0 v1 v2 v3 v4 v5 } {
