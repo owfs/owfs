@@ -418,6 +418,7 @@ proc SetupMenu { } {
         .main_menu.help add command -label "About OWTAP" -underline 0 -command About
         .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
         .main_menu.help add command -label "OWSERVER  Protocol" -underline 0 -command Protocol
+        .main_menu.help add command -label "Version" -underline 0 -command Version
 }
 
 # error routine -- popup and exit
@@ -574,6 +575,14 @@ syntax: owtap.tcl -s serverport -p tapport
     owtap.tcl -s 3000 -p 4000
   and now call owdir with:
     owdir -s 4000 /
+    }
+}
+
+# Popup giving version
+proc Version { } {
+    tk_messageBox -type ok -title {owtap version} -message {
+Version $Revision$
+Date    $Date$
     }
 }
 
@@ -773,6 +782,5 @@ proc DetailFlags { flags } {
     return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
 }
  
-
 #Finally, all the Proc-s have been defined, so run everything.
 Main $argv
