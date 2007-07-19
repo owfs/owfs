@@ -580,10 +580,12 @@ syntax: owtap.tcl -s serverport -p tapport
 
 # Popup giving version
 proc Version { } {
-    tk_messageBox -type ok -title {owtap version} -message {
-Version $Revision$
-Date    $Date$
-    }
+    regsub -all {[$:a-zA-Z]} {$Revision$} {} Version
+    regsub -all {[$:a-zA-Z]} {$Date$} {} Date
+    tk_messageBox -type ok -title {owtap version} -message "
+Version $Version
+Date    $Date
+    "
 }
 
 # Popup on protocol
@@ -622,6 +624,7 @@ proc StatByType { } {
 # hide stats window
             wm withdraw $window_name
             set setup_flags($window_name) 0
+
 } else {
 # show stats window
             wm deiconify $window_name
