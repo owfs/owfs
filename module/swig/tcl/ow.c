@@ -15,28 +15,50 @@
 #include "ow.h"
 #include "owcapi.h"
 #include "version.h"
+#include <stdio.h>
 
-//extern int errno;
 
-typedef struct OwtclStateType {
-  int used;
-} OwtclStateType;
-  
-OwtclStateType OwtclState;
 
-#define owtcl_ObjCmdProc(name)						\
+/* Shorthand macros for some cumbersome definitions. */
+#define owtcl_ObjCmdProc(name)            \
   int name (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
 
-#define owtcl_ArgObjIncr		     \
+#define owtcl_ArgObjIncr         \
   int objix;                         \
   for (objix=0; objix<objc; objix++) \
     Tcl_IncrRefCount(objv[objix])
 
-#define owtcl_ArgObjDecr				\
-  for (objix=0; objix<objc; objix++)		\
+#define owtcl_ArgObjDecr        \
+  for (objix=0; objix<objc; objix++)    \
     Tcl_DecrRefCount(objv[objix])
 
-void owtcl_ErrorMsg(Tcl_Interp *interp, const char *format, ...)
+
+
+/* Internally used types and vars. */
+typedef struct OwtclStateType {
+  int used;
+} OwtclStateType;
+  
+static OwtclStateType OwtclState;
+
+
+
+/*
+ * Return error message and code for OWlib errors.
+ */
+void owtcl_ErrorOWlib(Tcl_Interp *interp)
+{
+  /* Generate a posix like error message and code. */
+  Tcl_SetResult(interp, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_STATIC);
+  Tcl_SetErrorCode(interp, "OWTCL", Tcl_ErrnoId(), Tcl_ErrnoMsg(Tcl_GetErrno()), NULL);
+}
+
+
+
+/*
+ * Return error message and code for owtcl internal and syntax errors.
+ */
+void owtcl_Error(Tcl_Interp *interp, char* error_family, char* error_code, char* format, ...)
 {
 #ifdef HAVE_VASPRINTF
   char *buf;
@@ -44,24 +66,40 @@ void owtcl_ErrorMsg(Tcl_Interp *interp, const char *format, ...)
   #define ErrBufSize 500
   char buf[ErrBufSize];
 #endif
-  Tcl_Obj *obj;
   va_list argsPtr;
+
   va_start(argsPtr, format);
+
 #ifdef HAVE_VASPRINTF
   if (vasprintf(&buf, format, argsPtr) < 0)
 #else
   if (vsnprintf(buf, ErrBufSize, format, argsPtr) < 0)
 #endif
-    obj = Tcl_NewStringObj(strerror(errno), -1);
+  {
+    /* Error within vasprintf/vsnprintf */
+    Tcl_SetResult(interp, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_STATIC);
+    Tcl_PosixError(interp);
+  } 
   else
-    obj = Tcl_NewStringObj(buf, -1);
+  {
+    /* Generate a posix like error message and code. */
+    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    Tcl_SetErrorCode(interp, error_family, error_code, NULL);
+  } 
+
   va_end(argsPtr);
 #ifdef HAVE_VASPRINTF
   if (buf) free(buf);
 #endif
-  Tcl_SetObjResult(interp, obj);
 }
 
+
+
+
+
+/*
+ * Connect to onewire host(s).
+ */
 owtcl_ObjCmdProc(Owtcl_Connect)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
@@ -70,19 +108,23 @@ owtcl_ObjCmdProc(Owtcl_Connect)
   int tcl_return = TCL_OK, r;
   owtcl_ArgObjIncr;
 
+  /* Check we aren't already connected to onewire host(s). */
   if (OwtclStatePtr->used) {
-    owtcl_ErrorMsg(interp, "owtcl already connected.");
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  }
-  arg = Tcl_GetStringFromObj(objv[1], &con_len);
-  r = OW_init(arg);
-  if (r != 0) {
-    owtcl_ErrorMsg(interp, strerror(errno));
+    owtcl_Error(interp, "OWTCL", "CONNECTED", "owtcl already connected");
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
 
+  /* Actually connect to onewire host(s). */
+  arg = Tcl_GetStringFromObj(objv[1], &con_len);
+  r = OW_init(arg);
+  if (r != 0) {
+    owtcl_ErrorOWlib(interp);
+    tcl_return = TCL_ERROR;
+    goto common_exit;
+  }
+
+  /* Remember connected state. */
   OwtclStatePtr->used = 1;
 
  common_exit:
@@ -90,6 +132,11 @@ owtcl_ObjCmdProc(Owtcl_Connect)
   return tcl_return;
 }
 
+
+
+/*
+ * Disconnect from onewire host(s).
+ */
 owtcl_ObjCmdProc(Owtcl_Delete)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
@@ -98,12 +145,20 @@ owtcl_ObjCmdProc(Owtcl_Delete)
   (void) objc ; // suppress compiler warning
   (void) objv ; // suppress compiler warning
 
+  /* Disconnect if connected, otherwise ignore. */
   if (OwtclStatePtr->used)
     OW_finish();
+
+  /* Remember disconnected state. */
   OwtclStatePtr->used = 0;
   return TCL_OK;
 }
 
+
+
+/*
+ * Change a owfs node's value. 
+ */
 owtcl_ObjCmdProc(Owtcl_Put)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
@@ -112,22 +167,15 @@ owtcl_ObjCmdProc(Owtcl_Put)
   int tcl_return = TCL_OK;
   owtcl_ArgObjIncr;
   
-  if (OwtclStatePtr->used == 0) {
-    Tcl_AppendResult(interp, "owtcl not connected.", NULL);
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  }
-
+  /* Check for arguments to the commmand. */
   if ((objc < 2) || (objc > 3)) {
     Tcl_WrongNumArgs(interp,
-		     1,
-		     objv,
-		     "path ?value?");
+         1,
+         objv,
+         "path ?value?");
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
-  path = Tcl_GetStringFromObj(objv[1], &path_len);
-
   if (objc == 3)
     value = Tcl_GetStringFromObj(objv[2], &value_len);
   else {
@@ -135,8 +183,17 @@ owtcl_ObjCmdProc(Owtcl_Put)
     value_len = 1;
   }
 
+  /* Check we are connected to onewire host(s). */
+  if (OwtclStatePtr->used == 0) {
+    owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
+    tcl_return = TCL_ERROR;
+    goto common_exit;
+  }
+
+  /* Change the owfs node's value. */  
+  path = Tcl_GetStringFromObj(objv[1], &path_len);
   if ((r = OW_put(path, value, (size_t)value_len)) < 0) {
-    owtcl_ErrorMsg(interp, strerror(r));
+    owtcl_ErrorOWlib(interp);
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
@@ -146,6 +203,11 @@ owtcl_ObjCmdProc(Owtcl_Put)
   return tcl_return;
 }
 
+
+
+/*
+ * Get a owfs node's value. (for directories a directory listing)
+ */
 owtcl_ObjCmdProc(Owtcl_Get)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
@@ -155,42 +217,46 @@ owtcl_ObjCmdProc(Owtcl_Get)
   Tcl_Obj *resultPtr;
   owtcl_ArgObjIncr;
 
-  if (OwtclStatePtr->used == 0) {
-    Tcl_AppendResult(interp, "owtcl not connected.", NULL);
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  }
-
+  /* Check for arguments and options to the commmand. */
   path = "";
   lst = 0;
   for (objix=1; objix<objc; objix++) {
     arg = Tcl_GetStringFromObj(objv[objix], &s);
     if (!strncasecmp(arg, "-", 1)) {
       if (!strncasecmp(arg, "-list", 5)) {
-	lst = 1;
+  lst = 1;
       } else {
-	owtcl_ErrorMsg(interp, "bad switch \"%s\": should be -list\n", arg);
-	tcl_return = TCL_ERROR;
-	goto common_exit;
+  owtcl_Error(interp, "NONE", NULL, "bad switch \"%s\": should be -list", arg);
+  tcl_return = TCL_ERROR;
+  goto common_exit;
       }
     } else {
       path = Tcl_GetStringFromObj(objv[objix], &s);
     }
   }
 
+  /* Check we are connected to onewire host(s). */
+  if (OwtclStatePtr->used == 0) {
+    owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
+    tcl_return = TCL_ERROR;
+    goto common_exit;
+  }
+
+  /* Get the owfs node's value. */
   r = OW_get(path, &buf, &ss);
   s = ss ; // to get around OW_get uses size_t
-  if ( r<0 ) {
-    owtcl_ErrorMsg(interp, strerror(-r));
+  if ( r < 0 ) {
+    owtcl_ErrorOWlib(interp);
     if (buf) free(buf);
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
+
+  /* Arrange the value to form a proper tcl result. */
   if (buf==NULL) {
     tcl_return = TCL_OK;
     goto common_exit;
   }
-
   buf[s] = 0;
   if (lst) {
     if (strchr(buf, ',')) {
@@ -215,12 +281,16 @@ owtcl_ObjCmdProc(Owtcl_Get)
   return tcl_return;
 }
 
+
+
+/*
+ * Get version info for owtcl and used owlib.
+ */
 owtcl_ObjCmdProc(Owtcl_Version)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
   char buf[128];
   Tcl_Obj *resultPtr;
-
 
   (void) OwtclStatePtr ; // suppress compiler warning
   (void) objc ; // suppress compiler warning
@@ -232,6 +302,11 @@ owtcl_ObjCmdProc(Owtcl_Version)
   return TCL_OK;
 }
 
+
+
+/*
+ * Check if a owfs node is a directory.
+ */
 owtcl_ObjCmdProc(Owtcl_IsDir)
 {
   OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
@@ -243,28 +318,33 @@ owtcl_ObjCmdProc(Owtcl_IsDir)
 
   owtcl_ArgObjIncr;
 
-  if (OwtclStatePtr->used == 0) {
-    Tcl_AppendResult(interp, "owtcl not connected.", NULL);
-    tcl_return = TCL_ERROR;
-    goto common_exit;
-  }
-
+  /* Check for arguments to the commmand. */
   if (objc != 2) {
     Tcl_WrongNumArgs(interp,
-		     1,
-		     objv,
-		     "path");
+         1,
+         objv,
+         "path");
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
 
+  /* Check we are connected to onewire host(s). */
+  if (OwtclStatePtr->used == 0) {
+    owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
+    tcl_return = TCL_ERROR;
+    goto common_exit;
+  }
+
+  /* Get the owfs node. */  
   path = Tcl_GetStringFromObj(objv[1], &s);
-
   if ((r = FS_ParsedName(path, &pn))) {
-    owtcl_ErrorMsg(interp, strerror(-r));
+    Tcl_SetErrno(ENOENT); /* No such file or directory */
+    owtcl_ErrorOWlib(interp);
     tcl_return = TCL_ERROR;
     goto common_exit;
   }
+
+  /* Check if directory or file. */
   resultPtr = Tcl_GetObjResult(interp);
   if (pn.dev==NULL || pn.ft == NULL || pn.subdir) /* A directory of some kind */
     Tcl_SetIntObj(resultPtr, 1);
@@ -276,6 +356,8 @@ owtcl_ObjCmdProc(Owtcl_IsDir)
   return tcl_return;
 }
 
+
+
 /*
  *----------------------------------------------------------------------
  * Ow_Init --
@@ -285,11 +367,12 @@ owtcl_ObjCmdProc(Owtcl_IsDir)
  *   Tcl_CreateExtendedInterp.
  *----------------------------------------------------------------------
  */
-
-struct CmdListType {
+struct CmdListType
+{
   char *name;
   void *func;
-} OwtclCmdList[] = {
+} OwtclCmdList[] = 
+{
   {"::OW::_init", Owtcl_Connect},
   {"::OW::put", Owtcl_Put},
   {"::OW::get", Owtcl_Get},
@@ -300,10 +383,9 @@ struct CmdListType {
   {NULL, NULL}
 };
 
-int
-Ow_Init (Tcl_Interp *interp) {
+int Ow_Init (Tcl_Interp *interp)
+{
   int i;
-
 
   /* This defines the static chars tkTable(Safe)InitScript */
 #include "owtclInitScript.h"
@@ -314,50 +396,42 @@ Ow_Init (Tcl_Interp *interp) {
 #else
       Tcl_PkgRequire(interp, "Tcl", "8.1", 0)
 #endif
-      == NULL) {
-    return TCL_ERROR;
-  }
+      == NULL) return TCL_ERROR;
 
   OwtclState.used = 0;
 
-  /*
-   * Initialize the new Tcl commands
-   */
+  /* Initialize the new Tcl commands */
   i = 0;
-  while(OwtclCmdList[i].name != NULL) {
+  while(OwtclCmdList[i].name != NULL)
+  {
     Tcl_CreateObjCommand (interp, OwtclCmdList[i].name, (Tcl_ObjCmdProc*) OwtclCmdList[i].func,
-			  (ClientData) &OwtclState, (Tcl_CmdDeleteProc *) NULL);
+        (ClientData) &OwtclState, (Tcl_CmdDeleteProc *) NULL);
     i++;
   }
   
-  /* callback - clean up procs left open on interpreter deletetion */
-  Tcl_CallWhenDeleted(interp,
-  		      (Tcl_InterpDeleteProc *) Owtcl_Delete,
-  		      (ClientData) &OwtclState);
-  
-  if (Tcl_PkgProvide(interp, "ow", OWTCL_VERSION) != TCL_OK) {
-    return TCL_ERROR;
-  }
+  /* Callback - clean up procs left open on interpreter deletetion. */
+  Tcl_CallWhenDeleted(interp, (Tcl_InterpDeleteProc *) Owtcl_Delete, (ClientData) &OwtclState);
+
+  /* Announce successful package loading to "package require". */
+  if (Tcl_PkgProvide(interp, "ow", OWTCL_VERSION) != TCL_OK) return TCL_ERROR;
 
   /*
    * The init script can't make certain calls in a safe interpreter,
    * so we always have to use the embedded runtime for it
    */
-  return Tcl_Eval(interp, Tcl_IsSafe(interp) ?
-		  owtclSafeInitScript : owtclInitScript);
-
-  return TCL_OK;
+  return Tcl_Eval(interp, Tcl_IsSafe(interp) ? owtclSafeInitScript : owtclInitScript);
 }
+
+
 
 /*
  *----------------------------------------------------------------------
  * Owtcl_SafeInit --
- *	call the standard init point.
+ *  call the standard init point.
  *----------------------------------------------------------------------
  */
-
-int
-Ow_SafeInit (Tcl_Interp *interp) {
+int Ow_SafeInit (Tcl_Interp *interp) 
+{
   int result;
   
   result = Ow_Init(interp);
