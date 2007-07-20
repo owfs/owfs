@@ -737,6 +737,17 @@ proc ResponseDetail { window_name cb_index } {
     }
 }
 
+proc DetailPayload { window_name color full_string payload } {
+    DetailText $window_name $color [string range $full_string 24 [expr {$payload + 24}] ]
+}
+
+proc DetailPayloadPlus { window_name color1 color2 full_string payload size } {
+    set endpay [expr {24+$payload-$size}]
+    DetailText $window_name $color1 [string range $full_string 24 $endpay ]
+    incr endpay
+    DetailText $window_name $color2 [string range $full_string $endpay [expr {$payload + 24}] ]
+}
+
 proc DetailText { window_name color text_string } {
     set row [lindex [grid size $window_name] 1]
     set columns [lindex [grid size $window_name] 0]
