@@ -188,11 +188,11 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset,
 	int rest = 33 - (offset & 0x1F);
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match,},
-		{NULL, &p[3], 1, trxn_read,},
-		{p, NULL, 4, trxn_crc8,},
-		{NULL, q, rest, trxn_read,},
-		{q, NULL, rest, trxn_crc8,},
+        TRXN_WRITE3(p),
+        TRXN_READ1(&p[3]),
+        TRXN_CRC8(p,4),
+        TRXN_READ(q,rest),
+        TRXN_CRC8(q,rest),
 		TRXN_END,
 	};
 	if (BUS_transaction(t, pn))
