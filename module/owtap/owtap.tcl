@@ -714,7 +714,14 @@ proc RequestDetail { window_name cb_index } {
     DetailRow $window_name white lightyellow $q(version) $q(payload) $q(type) $q(flags) $q(size) $q(offset)
 # request headers
     if { [string length $circ_buffer($cb_index.request)] >= 24 } {
-        DetailRow $window_name white lightyellow [DetailVersion $q(version)] $q(payload) [DetailType $q(type)] [DetailFlags $q(flags)] $q(size) $q(offset)
+        set m_type [DetailType $q(type)]
+        DetailRow $window_name white lightyellow [DetailVersion $q(version)] $q(payload) $m_type [DetailFlags $q(flags)] $q(size) $q(offset)
+        if { $q(payload) > 0 } {
+            switch $m_type {
+                "WRITE" { DetailPayloadPlus $window_name lightyellow white $circ_buffer($cb_index.request) $q(payload) $q(size) }
+                default { DetailPayload $window_name lightyellow $circ_buffer($cb_index.request) $q(payload) }
+            }
+        }
     }
 }
 
@@ -731,9 +738,10 @@ proc ResponseDetail { window_name cb_index } {
     set r(size) ""
     set r(offset) ""
     binary scan $circ_buffer($cb_index.response) {IIIIII} r(version) r(payload) r(return) r(flags) r(size) r(offset)
-    DetailRow $window_name white #dbedf7 $r(version) $r(payload) $r(return) $r(flags) $r(size) $r(offset)
+    DetailRow $window_name white #ebeff7 $r(version) $r(payload) $r(return) $r(flags) $r(size) $r(offset)
     if { [string length $circ_buffer($cb_index.response)] >= 24 } {
-        DetailRow $window_name white #dbedf7 [DetailVersion $r(version)] $r(payload) $r(return) [DetailFlags $r(flags)] $r(size) $r(offset)
+        DetailRow $window_name white #ebeff7 [DetailVersion $r(version)] $r(payload) [DetailReturn $r(return)] [DetailFlags $r(flags)] $r(size) $r(offset)
+        DetailPayload $window_name #ebeff7 $circ_buffer($cb_index.response) $r(payload)
     }
 }
 
@@ -751,8 +759,8 @@ proc DetailPayloadPlus { window_name color1 color2 full_string payload size } {
 proc DetailText { window_name color text_string } {
     set row [lindex [grid size $window_name] 1]
     set columns [lindex [grid size $window_name] 0]
-    label $window_name.t${row} -text $text_string -bg $color
-    grid  $window_name.t${row0} -row $row -columnspan $columns -sticky news -relief ridge
+    label $window_name.t${row} -text $text_string -bg $color -relief ridge -wraplength 640 -justify left -anchor w
+    grid  $window_name.t${row} -row $row -columnspan $columns -sticky news
 }
 
 proc DetailRow { window_name color1 color2 v0 v1 v2 v3 v4 v5 } {
@@ -764,6 +772,23 @@ proc DetailRow { window_name color1 color2 v0 v1 v2 v3 v4 v5 } {
     label $window_name.x${row}4 -text $v4 -bg $color1
     label $window_name.x${row}5 -text $v5 -bg $color2
     grid  $window_name.x${row}0 $window_name.x${row}1 $window_name.x${row}2 $window_name.x${row}3 $window_name.x${row}4 $window_name.x${row}5 -row $row -sticky news
+}
+
+proc DetailReturn { ret } {
+    if { $ret >= 0 } { return "OK" }
+    switch -- $ret {
+        -1      { return "EPERM"}
+        -2      { return "ENOENT"}
+        -5      { return "EIO"}
+        -12     { return "ENOMEM"}
+        -14     { return "EFAULT"}
+        -19     { return "ENODEV"}
+        -20     { return "ENOTDIR"}
+        -21     { return "EISDIR"}
+        -22     { return "EINVAL"}
+        -34     { return "ERANGE"}
+        default { return "ERROR"}
+    }
 }
 
 proc DetailVersion { version } {
