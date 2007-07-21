@@ -4,7 +4,7 @@ exec wish "$0" -- "$@"
 
 # $Id$
 
-# Global: Ports() loose tap server
+# Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
 set SocketVars {string version type payload size sg offset tokenlength totallength state}
@@ -16,8 +16,6 @@ lappend MessageListPlus BadHeader Total
 # Global: setup_flags => For object-oriented initialization
 
 # Global: serve => information on current transaction
-#         serve(port) -- same as Ports(tap)
-#         serve(socket) -- listing socket
 #         serve($sock.string) -- message to this point
 #         serve($sock. version size payload sg offset type tokenlength ) -- message parsed parts
 #         serve($sock.version size
@@ -28,26 +26,13 @@ lappend MessageListPlus BadHeader Total
 
 #Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
-    global Ports
-
     ArgumentProcess $argv
-    wm title . "OWSERVER protocol tap -- port $Ports(tap) to $Ports(server)"
 
     CircBufferSetup 50
     DisplaySetup
     StatsSetup
 
-    if { $Ports(server) == 0 } {
-        CommandLine
-        ErrorMessage "No owserver port"
-    }
-
-    if { $Ports(tap) } {
-        SetupTap
-    } else {
-        CommandLine
-        ErrorMessage "No tap port"
-    }
+    SetupTap
 }
 
 # Command line processing
@@ -58,30 +43,33 @@ proc Main { argv } {
 # -p3000 -s 3001
 # etc
 proc ArgumentProcess { arg } {
-    global Ports
+    global IPAddress
     set mode "loose"
     # "Clear" ports
-    set Ports(tap) 0
-    set Ports(server) 0
+    # INADDR_ANY
+    set IPAddress(tap.ip) "0.0.0.0"
+    set IPAddress(tap.port) 0
+    set IPAddress(server.ip) "0.0.0.0"
+    set IPAddress(server.port) 4304
     foreach a $arg {
         if { [regexp {p} $a] } { set mode "tap" }
         if { [regexp {s} $a] } { set mode "server" }
         set pp 0
         regexp {[0-9]{1,}} $a pp
-        if { $pp } { set Ports($mode) $pp }
+        if { $pp } { set IPAddress($mode.port) $pp }
     }
+    MainTitle $IPAddress(tap.ip):$IPAddress(tap.port) $IPAddress(server.ip):$IPAddress(server.port)
 }
 
 # Accept from client (our "server" portion)
 proc SetupTap { } {
-    global serve
-    global Ports
-    StatusMessage "Attempting to open surrogate server on $Ports(tap)"
-    if {[catch {socket -server TapAccept $Ports(tap)} result] } {
+    global IPAddress
+    StatusMessage "Attempting to open surrogate server on $IPAddress(tap.ip):$IPAddress(tap.port)"
+    if {[catch {socket -server TapAccept -myaddr $IPAddress(tap.ip) $IPAddress(tap.port)} result] } {
         ErrorMessage $result
     }
-    set serve(socket) $result
-    StatusMessage [eval {format "Success. Tap server address=%s (%s:%s) "} [fconfigure $serve(socket) -sockname]]
+    StatusMessage "Success. Tap server address=[PrettySock $result]"
+    MainTitle [PrettySock $result] $IPAddress(server.ip):$IPAddress(server.port)
 }
 
 #Main loop. Called whenever the server (listen) port accepts a connection.
@@ -90,12 +78,12 @@ proc TapAccept { sock addr port } {
     global stats
     set serve($sock.state) "Open client"
     while {1} {
+puts $serve($sock.state)
         switch $serve($sock.state) {
         "Open client" {
                 StatusMessage "Reading client request from $addr port $port" 0
                 set current [CircBufferAllocate]
-                fconfigure $sock -buffering full -encoding binary -blocking 0
-                ClearTap $sock
+                fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0
                 TapSetup $sock
                 set serve($sock.state) "Read client"
             }
@@ -107,7 +95,7 @@ proc TapAccept { sock addr port } {
                 fileevent $sock readable {}
                 StatusMessage "Success reading client request" 0
                 set message_type [MessageType $serve($sock.type)]
-                CircBufferEntryRequest $current [format "%s %d bytes" $message_type $serve($sock.payload)] $sock
+                CircBufferEntryRequest $current "[PrettyPeer $sock] $message_type $serve($sock.payload) bytes" $sock
                 #stats
                 RequestStatsIncr $sock $message_type 0
                 # now owserver
@@ -125,9 +113,9 @@ proc TapAccept { sock addr port } {
                 return
             }
         "Open server" {
-                global Ports
-                StatusMessage "Attempting to open connection to OWSERVER port $Ports(server)" 0
-                if {[catch {socket localhost $Ports(server)} result] } {
+                global IPAddress
+                StatusMessage "Attempting to open connection to OWSERVER port $IPAddress(server.ip):$IPAddress(server.port)" 0
+                if {[catch {socket $IPAddress(server.ip) $IPAddress(server.port)} result] } {
                     StatusMessage "OWSERVER error: $result"
                     CloseTap $sock
                     return
@@ -137,8 +125,7 @@ proc TapAccept { sock addr port } {
             }
         "Send to server" {
                 StatusMessage "Sending client request to OWSERVER" 0
-                fconfigure $relay -buffering full -encoding binary -blocking 0
-                ClearTap $relay
+                fconfigure $relay -translation binary -buffering full -encoding binary -blocking 0
                 TapSetup $relay
                 puts -nonewline $relay  $serve($sock.string)
                 flush $relay
@@ -151,7 +138,7 @@ proc TapAccept { sock addr port } {
             }
         "Server early end" {
                 StatusMessage "FAILURE reading OWSERVER response" 0
-                if { [string length $serve($sock.string] < 24 } {
+                if { [string length $serve($relay.string] < 24 } {
                      ResponseStatsIncr $relay BadHeader 1
                 } else {
                      ResponseStatsIncr $relay $message_type 1
@@ -165,7 +152,7 @@ proc TapAccept { sock addr port } {
         "Log server input" {
                 StatusMessage "Success reading OWSERVER response" 0
                 fileevent $relay readable {}
-                CircBufferEntryResponse $current [format "Return value %d" $serve($relay.type)] $relay
+                CircBufferEntryResponse $current "Return value $serve($relay.type)" $relay
                 #stats
                 ResponseStatsIncr $relay $message_type 0
                 set serve($sock.state) "Send to client"
@@ -821,5 +808,19 @@ proc DetailFlags { flags } {
     return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
 }
  
+# socket name in readable format
+proc PrettySock { sock } {
+    set socklist [fconfigure $sock -sockname]
+    return [lindex $socklist 1]:[lindex $socklist 2]
+}
+proc PrettyPeer { sock } {
+    set socklist [fconfigure $sock -peername]
+    return [lindex $socklist 1]:[lindex $socklist 2]
+}
+
+proc MainTitle { tap server } {
+    wm title . "OWSERVER protocol tap ($tap) to owserver ($server)"
+}
+
 #Finally, all the Proc-s have been defined, so run everything.
 Main $argv
