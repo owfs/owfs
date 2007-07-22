@@ -393,8 +393,10 @@ proc DisplaySetup { } {
     listbox .log.request_list -width 40 -height 10 -selectmode single -yscroll [list Left_ScrollByKey ] -bg lightyellow
     listbox .log.response_list -width 40 -height 10 -selectmode single -yscroll [list Right_ScrollByKey] -bg lightyellow
 
-    bind Listbox <ButtonRelease-1> {+ SelectionMade %W %y }
-    bind Listbox <space> {+ SelectionMade %W }
+    foreach lb {request_list response_list} {
+        bind .log.$lb <ButtonRelease-1> {+ SelectionMade %W %y }
+        bind .log.$lb <space> {+ SelectionMade %W }
+    }
 
     grid .log.request_title -row 0 -column 0 -sticky news
     grid .log.respnse_title -row 0 -column 1 -sticky news
@@ -407,6 +409,7 @@ proc DisplaySetup { } {
     #bottom pane, status
     label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status -bg white
     pack .status -side bottom -fill x
+    bind .status <ButtonRelease-1> [list .main_menu.view invoke 2]
 
     SetupMenu
 }
@@ -415,28 +418,23 @@ proc DisplaySetup { } {
 proc SetupMenu { } {
     global stats
 #    toplevel . -menu .main_menu
-     menu .main_menu -tearoff 0
+    menu .main_menu -tearoff 0
     . config -menu .main_menu
 
     # file menu
-     menu .main_menu.file -tearoff 0
-     .main_menu add cascade -label File -menu .main_menu.file  -underline 0
-         .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
-         .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
-         .main_menu.file add separator
-         .main_menu.file add command -label Quit -underline 0 -command exit
+    menu .main_menu.file -tearoff 0
+    .main_menu add cascade -label File -menu .main_menu.file  -underline 0
+        .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
+        .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
+        .main_menu.file add separator
+        .main_menu.file add command -label Quit -underline 0 -command exit
 
     # statistics menu
-     menu .main_menu.stats -tearoff 0
-     .main_menu add cascade -label Statistics -menu .main_menu.stats  -underline 0
-         .main_menu.stats add checkbutton -label "by Message type" -underline 3 -indicatoron 1 -command {StatByType}
-#
-#     menu .main_menu.device -tearoff 1
-#     .main_menu add cascade -label Devices -menu .main_menu.device  -underline 0
-#         .main_menu.device add command -label "Save Log" -underline 0 -command SaveLog
-#         .main_menu.device add command -label "Save Log As..." -underline 9 -command SaveAsLog
-#         .main_menu.device add separator
-#         .main_menu.device add command -label Quit -underline 0 -command exit
+    menu .main_menu.view -tearoff 0
+    .main_menu add cascade -label View -menu .main_menu.view  -underline 0
+        .main_menu.view add checkbutton -label "Statistics by Message type" -underline 14 -indicatoron 1 -command {StatByType}
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
 
     # help menu
     menu .main_menu.help -tearoff 0
@@ -460,6 +458,13 @@ proc ErrorMessage { msg } {
 proc StatusMessage { msg { priority 1 } } {
     global current_status
     set current_status $msg
+    if { $priority > 0 } {
+        global status_messages
+        lappend status_messages $msg
+        if { [llength $status_messages] > 50 } {
+            set status_messages [lreplace $status_messages 0 0]
+        }
+    }
 }
 
 # Circular buffer for past connections
@@ -631,6 +636,43 @@ http://www.owfs.org/index.php?page=owserver-protocol
     }
 }
 
+# Show a table of Past status messages
+proc StatusWindow { } {
+    set window_name .statuswindow
+    set menu_name .main_menu.view
+    set menu_index 2
+    global status_messages
+    global setup_flags
+
+    if { [ info exist setup_flags($window_name) ] } {
+        if { $setup_flags($window_name) } {
+            # hide status window
+            wm withdraw $window_name
+            set setup_flags($window_name) 0
+        } else {
+            # show status window
+            wm deiconify $window_name
+            set setup_flags($window_name) 1
+        }
+        return
+    }
+
+    # create statuss window
+    toplevel $window_name
+    scrollbar $window_name.xsb -orient horizontal -command [list $window_name.lb xview]
+    pack $window_name.xsb -side bottom -fill x -expand 1
+    scrollbar $window_name.ysb -orient vertical -command [list $window_name.lb yview]
+    pack $window_name.ysb -fill y -expand 1 -side right
+    listbox $window_name.lb -listvar status_messages -bg white -yscrollcommand [list $window_name.ysb set] -xscrollcommand [list $window_name.xsb set] -width 80
+    pack $window_name.lb -fill both -expand 1 -side left 
+
+    # delete handler
+    wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index]
+    # now set flag
+    set setup_flags($window_name) 1
+}
+
+
 # Show a table of packets and bytes by type (DIR, READ,...)
 # Separate window that is pretty self contained.
 # Data values use -textvariable so auto-update
@@ -639,7 +681,7 @@ http://www.owfs.org/index.php?page=owserver-protocol
 # catches delete and hides instead (via menu action)
 proc StatByType { } {
     set window_name .statbytype
-    set menu_name .main_menu.stats
+    set menu_name .main_menu.view
     set menu_index 0
     global stats
     global MessageListPlus
