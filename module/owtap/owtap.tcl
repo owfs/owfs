@@ -7,7 +7,7 @@ exec wish "$0" -- "$@"
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string version type payload size sg offset tokenlength totallength state}
+set SocketVars {string version type payload size sg offset tokenlength totallength state sock }
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
 set MessageListPlus $MessageList
@@ -19,6 +19,7 @@ lappend MessageListPlus BadHeader Total
 #         serve($sock.string) -- message to this point
 #         serve($sock. version size payload sg offset type tokenlength ) -- message parsed parts
 #         serve($sock.version size
+#         serve(sockets) -- list of active sockets for timeout
 
 # Global: stats => statistical counts and flags for stats windows
 
@@ -76,26 +77,31 @@ proc SetupTap { } {
 proc TapAccept { sock addr port } {
     global serve
     global stats
+
+    # Start the State machine
     set serve($sock.state) "Open client"
     while {1} {
-puts $serve($sock.state)
+# puts $serve($sock.state)
         switch $serve($sock.state) {
         "Open client" {
                 StatusMessage "Reading client request from $addr port $port" 0
                 set current [CircBufferAllocate]
                 fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0
                 TapSetup $sock
+                set serve($sock.sock) $sock
                 set serve($sock.state) "Read client"
             }
         "Read client" {
+                ResetSockTimer $sock
                 fileevent $sock readable [list TapProcess $sock]
                 vwait serve($sock.state)
             }
-        "Log client input" {
+        "Process client packet" {
                 fileevent $sock readable {}
+                ClearSockTimer $sock
                 StatusMessage "Success reading client request" 0
                 set message_type [MessageType $serve($sock.type)]
-                CircBufferEntryRequest $current "[PrettyPeer $sock] $message_type $serve($sock.payload) bytes" $sock
+                CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $sock
                 #stats
                 RequestStatsIncr $sock $message_type 0
                 # now owserver
@@ -109,31 +115,32 @@ puts $serve($sock.state)
                 } else {
                     RequestStatsIncr $sock $message_type 1
                 }
-                CloseTap $sock
-                return
+                set serve($sock.state) "Done with client"
             }
         "Open server" {
                 global IPAddress
                 StatusMessage "Attempting to open connection to OWSERVER port $IPAddress(server.ip):$IPAddress(server.port)" 0
-                if {[catch {socket $IPAddress(server.ip) $IPAddress(server.port)} result] } {
-                    StatusMessage "OWSERVER error: $result"
-                    CloseTap $sock
-                    return
+                if {[catch {socket $IPAddress(server.ip) $IPAddress(server.port)} relay] } {
+                    StatusMessage "OWSERVER error: $relay"
+                    set serve($sock.state) "Done with client"
+                } else {
+                    set serve($sock.state) "Send to server"
                 }
-                set relay $result
-                set serve($sock.state) "Send to server"
             }
         "Send to server" {
                 StatusMessage "Sending client request to OWSERVER" 0
                 fconfigure $relay -translation binary -buffering full -encoding binary -blocking 0
                 TapSetup $relay
+                set serve($relay.sock) $sock
+                ResetSockTimer $relay
                 puts -nonewline $relay  $serve($sock.string)
                 flush $relay
                 set serve($sock.state) "Read from server"
             }
         "Read from server" {
                 StatusMessage "Reading OWSERVER response" 0
-                fileevent $relay readable [list RelayProcess $relay $sock]
+                ResetSockTimer $relay
+                fileevent $relay readable [list RelayProcess $relay]
                 vwait serve($sock.state)
             }
         "Server early end" {
@@ -145,11 +152,9 @@ puts $serve($sock.state)
                 }
                 CircBufferEntryResponse $current "network read error" $relay
                 ShowMessage $relay
-                CloseTap $relay
-                CloseTap $sock
-                return
+                set serve($sock.state) "Done with server"
             }
-        "Log server input" {
+        "Process server packet" {
                 StatusMessage "Success reading OWSERVER response" 0
                 fileevent $relay readable {}
                 CircBufferEntryResponse $current "Return value $serve($relay.type)" $relay
@@ -158,14 +163,21 @@ puts $serve($sock.state)
                 set serve($sock.state) "Send to client"
             }
         "Send to client" {
+                ClearSockTimer $relay
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
-                CloseTap $relay
-                set serve($sock.state) "Done"
+                set serve($sock.state) "Done with server"
             }
-        "Done"  {
+        "Done with server"  {
+                CloseSock $relay
+                set serve($sock.state) "Done with client"
+            }
+        "Done with client" {
+                CloseSock $sock
+                set serve($sock.state) "Done with all"
+            }
+        "Done with all" {
                 StatusMessage "Ready" 0
-                CloseTap $sock
                 return
             }
         }
@@ -223,10 +235,36 @@ proc ClearTap { sock } {
 }
 
 # close client request socket
-proc CloseTap { sock } {
+proc SockTimeout { sock } {
     global serve
+    switch $serve($serve($sock.sock).state) {
+        "Read client" { set serve($serve($sock.sock).state) "Done with client" }
+        "Read from server" { set serve($serve($sock.sock).state) "Done with server" }
+        default {ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state"}
+    }
+    StatusMessage "Network read timeout [PrettySock $sock]" 1
+}
+
+# close client request socket
+proc CloseSock { sock } {
+    global serve
+    ClearSockTimer $sock
     close $sock
     ClearTap $sock
+}
+
+proc ClearSockTimer { sock } {
+    global serve
+    if { [info exist serve($sock.id)] } {
+        after cancel $serve($sock.id)
+        unset serve($sock.id)
+    }
+}
+
+proc ResetSockTimer { sock } {
+    global serve
+    ClearSockTimer $sock
+    set serve($sock.id) [after 2000 [list SockTimeout $sock ]]
 }
 
 # Wrapper for processing -- either change a vwait var, or just return waiting for more network traffic
@@ -236,7 +274,7 @@ proc TapProcess { sock } {
     switch $read_value {
         2  { set serve($sock.state) "Client early end" }
         0  { return }
-        1  { set serve($sock.state) "Log client input" }
+        1  { set serve($sock.state) "Process client packet" }
     }
 }
 
@@ -250,6 +288,7 @@ proc ReadProcess { sock } {
     set current_length [string length $serve($sock.string)]
     # read what's waiting
     append serve($sock.string) [read $sock]
+    ResetSockTimer $sock
     set len [string length $serve($sock.string)]
     if { $len < 24 } {
         #do nothing -- reloop
@@ -269,13 +308,13 @@ proc ReadProcess { sock } {
 }
 
 # Wrapper for processing -- either change a vwait var, or just return waiting for more network traffic
-proc RelayProcess { relay sock } {
+proc RelayProcess { relay } {
     global serve
     set read_value [ReadProcess $relay]
     switch $read_value {
-        2  { set serve($sock.state) "Server early end"}
+        2  { set serve($serve($relay.sock).state) "Server early end"}
         0  { return }
-        1  { set serve($sock.state) "Log server input" }
+        1  { set serve($serve($relay.sock).state) "Process server packet" }
     }
 }
 
