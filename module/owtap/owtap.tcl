@@ -241,7 +241,7 @@ proc ClearTap { sock } {
     }
 }
 
-proc ResponseAdd { $sock } {
+proc ResponseAdd { sock } {
     global serve
     if { [info exist serve($sock.num)] } {
         incr serve($sock.num)
