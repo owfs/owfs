@@ -21,5 +21,6 @@ $Id$
 
 DeviceHeader(DS2431);
 DeviceHeader(DS2433);
+DeviceHeader(DS28EC20);
 
 #endif

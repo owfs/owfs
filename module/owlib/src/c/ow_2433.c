@@ -75,10 +75,21 @@ struct filetype DS2433[] = {
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr);
 
+struct aggregate A28EC20 = { 80, ag_numbers, ag_separate, };
+struct filetype DS28EC20[] = {
+	F_STANDARD,
+  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"pages/page", 32, &A28EC20, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
+  {"memory", 2560, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+};
+
+DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume);
+
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA
 #define _1W_COPY_SCRATCHPAD 0x55
 #define _1W_READ_MEMORY 0xF0
+#define _1W_EXTENDED_READ_MEMORY 0xA5
 
 /* ------- Functions ------------ */
 

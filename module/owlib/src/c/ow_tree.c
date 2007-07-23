@@ -149,6 +149,7 @@ void DeviceSort(void)
 	Device2Tree(&d_DS2781, pn_real);
 	Device2Tree(&d_DS2890, pn_real);
 	Device2Tree(&d_DS28EA00, pn_real);
+	Device2Tree(&d_DS28EC200, pn_real);
 	Device2Tree(&d_DS28E04, pn_real);
 	Device2Tree(&d_LCD, pn_real);
 	Device2Tree(&d_stats_bus, pn_statistics);
