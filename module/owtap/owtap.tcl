@@ -156,6 +156,7 @@ proc TapAccept { sock addr port } {
             }
         "Process server packet" {
                 StatusMessage "Success reading OWSERVER response" 0
+                ResponseAdd $relay
                 fileevent $relay readable {}
                 CircBufferEntryResponse $current "Return value $serve($relay.type)" $relay
                 #stats
@@ -232,6 +233,22 @@ proc ClearTap { sock } {
             unset serve($sock.$x)
         }
     }
+    if { [info exist serve($sock.num] } {
+        for {set i $serve($sock.num)} {$i >= 0} {incr i -1} {
+            unset serve($sock.$i)
+        }
+        unset serve($sock.num)
+    }
+}
+
+proc ResponseAdd { $sock } {
+    global serve
+    if { [info exist serve($sock.num)] } {
+        incr serve($sock.num)
+    } else {
+        set serve($sock.num) 0
+    }
+    set serve($sock.$serve($sock.num)) $serve($sock.string)
 }
 
 # close client request socket
@@ -322,8 +339,11 @@ proc RelayProcess { relay } {
 proc HeaderParse { sock } {
     global serve
     binary scan $serve($sock.string) {IIIIII} serve($sock.version) serve($sock.payload) serve($sock.type) serve($sock.sg) serve($sock.size) serve($sock.offset)
+    set payload $serve($sock.payload)
+    # test for "PING"
+    if { $payload == -1 } { set $payload 0 }
     set serve($sock.tokenlength) [expr ( $serve($sock.version) & 0xFFFF) * 16 ]
-    set serve($sock.totallength) [expr $serve($sock.tokenlength) + $serve($sock.payload) + 24 ]
+    set serve($sock.totallength) [expr $serve($sock.tokenlength) + $payload + 24 ]
 }
 
 # Debugging routine -- show all the packet info
