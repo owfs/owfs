@@ -197,7 +197,15 @@ static int OW_w_23page( BYTE * data,  size_t size,
 	if (BUS_transaction(twrite, pn))
 		return 1;
 
-	UT_delay(5);
+	// pause for write
+	switch (pn->sn[0]) {
+	case 0x23: 					// DS2433
+		UT_delay(5);
+		break ;
+	case 0x43: 					// DS28EC20
+		UT_delay(10);
+		break ;
+	}
 	return 0;
 }
 
