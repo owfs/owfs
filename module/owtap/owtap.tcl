@@ -7,11 +7,11 @@ exec wish "$0" -- "$@"
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string version type payload size sg offset tokenlength totallength state sock }
+set SocketVars {string version type payload size sg offset tokenlength totallength paylength realtype ping state sock return }
 
-set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET Unknown}
+set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
-lappend MessageListPlus BadHeader Total
+lappend MessageListPlus PING BadHeader Unknown Total
 
 # Global: setup_flags => For object-oriented initialization
 
@@ -782,6 +782,53 @@ proc TransactionDetail { index } {
 
     RequestDetail $window_name $cb_index
     ResponseDetail $window_name $cb_index
+}
+
+# Parse for TYPE after HeaderParser
+proc ErrorParser { array_name prefix string_value } {
+	upvar 1 $array_name a_name
+	set a_name($prefix.return) [DetailReturn $a_name($prefix.type)]
+}
+# Parse for TYPE after HeaderParser
+proc TypeParser { array_name prefix } {
+	upvar 1 $array_name a_name
+	if { $a_name($prefix.totallength) < 24 } {
+		set $a_name($prefix.realtype) BadHeader
+		return
+	}
+	set type [lindex $MessageList $a_name($prefix.type)]
+	if { $type == {} } {
+		set $a_name($prefix.realtype) Unknown
+		return
+	}
+    set a_name($prefix.tokenlength) $type
+}
+
+#Parse header information and place in array
+# works for request or response (though type is "ret" in response)
+proc HeaderParser { array_name prefix string_value } {
+	upvar 1 $array_name a_name
+	set length [string length $string_value]
+    foreach x {version payload type flags size offset realtype} {
+		set a_name($prefix.$x) ""
+	}
+    foreach x {paylength tokenlength totallength realtype} {
+		set a_name($prefix.$x) 0
+	}
+    binary scan $string_value {IIIIII} a_name($prefix.version) a_name($prefix.payload) a_name($prefix.type) a_name($prefix.flags) a_name($prefix.size) a_name($prefix.offset)
+	if { $length < 24 } {
+		set a_name($prefix.totallength) $length
+		set a_name($prefix.realtype) BadHeader
+		return
+	}
+	if { $a_name($prefix.payload) == -1 } {
+		set a_name($prefix.paylength) 0
+		set a_name($prefix.ping) 1
+	} else {
+		set a_name($prefix.paylength) $a_name($prefix.payload)
+	}
+    set a_name($prefix.tokenlength) [expr {( $a_name($prefix.version) & 0xFFFF) * 16} ]
+    set a_name($prefix.totallength) [expr {$a_name($prefix.tokenlength)+$a_name($prefix.paylength)+24}]
 }
 
 # Request portion
