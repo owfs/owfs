@@ -7,7 +7,7 @@ exec wish "$0" -- "$@"
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string version type payload size sg offset tokenlength totallength paylength realtype ping state sock return }
+set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext return }
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
@@ -100,21 +100,18 @@ proc TapAccept { sock addr port } {
                 fileevent $sock readable {}
                 ClearSockTimer $sock
                 StatusMessage "Success reading client request" 0
-                set message_type [MessageType $serve($sock.type)]
+#                TypeParser serve $sock
+                set message_type $serve($sock.typetext)
                 CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $sock
                 #stats
-                RequestStatsIncr $sock $message_type 0
+                RequestStatsIncr $sock 0
                 # now owserver
                 set serve($sock.state) "Open server"
             }
         "Client early end" {
                 StatusMessage "FAILURE reading client request"
                 CircBufferEntryRequest $current "network read error" $sock
-                if { [string length $serve($sock.string] < 24 } {
-                    RequestStatsIncr $sock BadHeader 1
-                } else {
-                    RequestStatsIncr $sock $message_type 1
-                }
+                RequestStatsIncr $sock 1
                 set serve($sock.state) "Done with client"
             }
         "Open server" {
@@ -130,7 +127,6 @@ proc TapAccept { sock addr port } {
         "Send to server" {
                 StatusMessage "Sending client request to OWSERVER" 0
                 fconfigure $relay -translation binary -buffering full -encoding binary -blocking 0
-                TapSetup $relay
                 set serve($relay.sock) $sock
                 ResetSockTimer $relay
                 puts -nonewline $relay  $serve($sock.string)
@@ -139,17 +135,14 @@ proc TapAccept { sock addr port } {
             }
         "Read from server" {
                 StatusMessage "Reading OWSERVER response" 0
+                TapSetup $relay
                 ResetSockTimer $relay
                 fileevent $relay readable [list RelayProcess $relay]
                 vwait serve($sock.state)
             }
         "Server early end" {
                 StatusMessage "FAILURE reading OWSERVER response" 0
-                if { [string length $serve($relay.string] < 24 } {
-                     ResponseStatsIncr $relay BadHeader 1
-                } else {
-                     ResponseStatsIncr $relay $message_type 1
-                }
+                ResponseStatsIncr $relay 1
                 CircBufferEntryResponse $current "network read error" $relay
                 ShowMessage $relay
                 set serve($sock.state) "Done with server"
@@ -158,9 +151,9 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Success reading OWSERVER response" 0
                 ResponseAdd $relay
                 fileevent $relay readable {}
-                CircBufferEntryResponse $current "Return value $serve($relay.type)" $relay
+                CircBufferEntryResponse $current $serve($relay.return) $relay
                 #stats
-                ResponseStatsIncr $relay $message_type 0
+                ResponseStatsIncr $relay 0
                 set serve($sock.state) "Send to client"
             }
         "Send to client" {
@@ -186,9 +179,10 @@ proc TapAccept { sock addr port } {
 }
 
 # increment stats for  request
-proc RequestStatsIncr { sock message_type is_error} {
+proc RequestStatsIncr { sock is_error} {
     global stats
     global serve
+    set message_type $serve($serve($sock.sock).typetext)
     set length [string length $serve($sock.string)]
 
     incr stats($message_type.tries)
@@ -203,9 +197,10 @@ proc RequestStatsIncr { sock message_type is_error} {
 }
 
 # increment stats for  request
-proc ResponseStatsIncr { sock message_type is_error} {
+proc ResponseStatsIncr { sock is_error} {
     global stats
     global serve
+    set message_type $serve($serve($sock.sock).typetext)
     set length [string length $serve($sock.string)]
 
     incr stats($message_type.errors) $is_error
@@ -293,6 +288,7 @@ proc TapProcess { sock } {
         0  { return }
         1  { set serve($sock.state) "Process client packet" }
     }
+    TypeParser serve $sock
 }
 
 # Process a oncomming owserver packet, adjusting size from header information
@@ -312,7 +308,8 @@ proc ReadProcess { sock } {
         return 0
     } elseif { $serve($sock.totallength) == 0 } {
         # at least header is in
-        HeaderParse $sock
+#        HeaderParse $sock
+        HeaderParser serve $sock $serve($sock.string)
     }
     #already in payload (and token) portion
     if { $len < $serve($sock.totallength) } {
@@ -333,17 +330,7 @@ proc RelayProcess { relay } {
         0  { return }
         1  { set serve($serve($relay.sock).state) "Process server packet" }
     }
-}
-
-# Parse Header information (24 bytes)
-proc HeaderParse { sock } {
-    global serve
-    binary scan $serve($sock.string) {IIIIII} serve($sock.version) serve($sock.payload) serve($sock.type) serve($sock.sg) serve($sock.size) serve($sock.offset)
-    set payload $serve($sock.payload)
-    # test for "PING"
-    if { $payload == -1 } { set $payload 0 }
-    set serve($sock.tokenlength) [expr ( $serve($sock.version) & 0xFFFF) * 16 ]
-    set serve($sock.totallength) [expr $serve($sock.tokenlength) + $payload + 24 ]
+    ErrorParser serve $relay
 }
 
 # Debugging routine -- show all the packet info
@@ -355,22 +342,6 @@ proc ShowMessage { sock } {
             puts "\t$sock.$x = $serve($sock.$x)"
         }
     }
-}
-
-# Limit num to type's range
-proc MessageNumber { num } {
-    global MessageList
-    set len [expr [llength $MessageList] - 1]
-    if { $num > $len } { return $len }
-    return $num
-}
-
-# Message type (owserver protocol type)
-#  used for client only, same field
-#  is used for "return" back from owserver
-proc MessageType { num } {
-    global MessageList
-    return [lindex $MessageList $num]
 }
 
 # callback from scrollbar, moves each listbox field
@@ -409,7 +380,7 @@ proc DisplaySetup { } {
 
     scrollbar .log.transaction_scroll -command [ list ScrollTogether ]
     label .log.request_title -text "Client request" -bg yellow -relief ridge
-    label .log.respnse_title -text "Owserver response" -bg yellow -relief ridge
+    label .log.response_title -text "Owserver response" -bg yellow -relief ridge
     listbox .log.request_list -width 40 -height 10 -selectmode single -yscroll [list Left_ScrollByKey ] -bg lightyellow
     listbox .log.response_list -width 40 -height 10 -selectmode single -yscroll [list Right_ScrollByKey] -bg lightyellow
 
@@ -419,7 +390,7 @@ proc DisplaySetup { } {
     }
 
     grid .log.request_title -row 0 -column 0 -sticky news
-    grid .log.respnse_title -row 0 -column 1 -sticky news
+    grid .log.response_title -row 0 -column 1 -sticky news
     grid .log.request_list -row 1 -column 0 -sticky news
     grid .log.response_list -row 1 -column 1 -sticky news
     grid .log.transaction_scroll -row 1 -column 2 -sticky news
@@ -502,12 +473,20 @@ proc CircBufferAllocate { } {
     incr circ_buffer(total)
     set total $circ_buffer(total)
     set cb_index [ expr { $total % $size } ]
-    set circ_buffer($cb_index.request) ""
-    set circ_buffer($cb_index.response) ""
     if { $total >= $size } {
+        # delete top listbox entry (oldest)
         .log.request_list delete 0
         .log.response_list delete 0
+        # clear old entry
+        if { [info exist circ_buffer($cb_index.num)] } {
+            set num $circ_buffer($cb_index.num)
+            for {set x 0} { $x < $num } {incr x} {
+                unset circ_buffer($cb_index.response.$x)
+            }
+        }
     }
+    set circ_buffer($cb_index.num) 0
+    set circ_buffer($cb_index.request) ""
     .log.request_list insert end "x"
     .log.response_list insert end "x"
     return $total
@@ -558,7 +537,8 @@ proc CircBufferEntryResponse { current response sock } {
     #Now store packet
     global serve
     set cb_index [ expr { $current % $size } ]
-    set circ_buffer($cb_index.response) $serve($sock.string)
+    set circ_buffer($cb_index.response.$circ_buffer($cb_index.num)) $serve($sock.string)
+    incr circ_buffer($cb_index.num)
 }
 
 # get the slot in the circ_buffer from the listbox index
@@ -661,37 +641,48 @@ proc StatusWindow { } {
     set window_name .statuswindow
     set menu_name .main_menu.view
     set menu_index 2
-    global status_messages
-    global setup_flags
 
-    if { [ info exist setup_flags($window_name) ] } {
-        if { $setup_flags($window_name) } {
-            # hide status window
-            wm withdraw $window_name
-            set setup_flags($window_name) 0
-        } else {
-            # show status window
-            wm deiconify $window_name
-            set setup_flags($window_name) 1
-        }
+    if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
         return
     }
 
-    # create statuss window
-    toplevel $window_name
+    global status_messages
+
+    # create status window
     scrollbar $window_name.xsb -orient horizontal -command [list $window_name.lb xview]
     pack $window_name.xsb -side bottom -fill x -expand 1
     scrollbar $window_name.ysb -orient vertical -command [list $window_name.lb yview]
     pack $window_name.ysb -fill y -expand 1 -side right
     listbox $window_name.lb -listvar status_messages -bg white -yscrollcommand [list $window_name.ysb set] -xscrollcommand [list $window_name.xsb set] -width 80
     pack $window_name.lb -fill both -expand 1 -side left 
+}
 
+#proc window handler for statistics and status windows
+#return 1 if old, 0 if new
+proc WindowAlreadyExists { window_name menu_name menu_index } {
+    global setup_flags
+
+    if { [ info exist setup_flags($window_name) ] } {
+        if { $setup_flags($window_name) } {
+            # hide window
+            wm withdraw $window_name
+            set setup_flags($window_name) 0
+        } else {
+            # show window
+            wm deiconify $window_name
+            set setup_flags($window_name) 1
+        }
+        return 1
+    }
+
+    # create window
+    toplevel $window_name
     # delete handler
     wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index]
     # now set flag
     set setup_flags($window_name) 1
+    return 0
 }
-
 
 # Show a table of packets and bytes by type (DIR, READ,...)
 # Separate window that is pretty self contained.
@@ -703,26 +694,15 @@ proc StatByType { } {
     set window_name .statbytype
     set menu_name .main_menu.view
     set menu_index 0
+
+    if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
+        return
+    }
+
     global stats
     global MessageListPlus
-    global setup_flags
 
-    if { [ info exist setup_flags($window_name) ] } {
-        if { $setup_flags($window_name) } {
-# hide stats window
-            wm withdraw $window_name
-            set setup_flags($window_name) 0
-
-} else {
-# show stats window
-            wm deiconify $window_name
-            set setup_flags($window_name) 1
-}
-        return
-}
-
-# create stats window
-    toplevel $window_name
+    # create stats window
     set column_number 0
     label $window_name.l${column_number}0 -text "Type" -bg blue
     grid $window_name.l${column_number}0 -row 0 -column $column_number -sticky news
@@ -756,13 +736,9 @@ proc StatByType { } {
         grid  $window_name.${column_number}6 -row 6 -column $column_number -sticky news
         if { $bgcolor == "white" } { set bgcolor lightyellow } else { set bgcolor white }
         if { $bgcolor2 == "yellow" } { set bgcolor2 orange } else { set bgcolor2 yellow }
-}
+    }
     frame $window_name.f4 -bg yellow
     grid $window_name.f4 -column 1 -row 4 -columnspan [llength MessageListPlus]
-# delete handler
-    wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index]
-# now set flag
-    set setup_flags($window_name) 1
 }
 
 #make a window that has to be dismissed by hand
@@ -784,24 +760,27 @@ proc TransactionDetail { index } {
     ResponseDetail $window_name $cb_index
 }
 
-# Parse for TYPE after HeaderParser
-proc ErrorParser { array_name prefix string_value } {
+# Parse for return HeaderParser
+proc ErrorParser { array_name prefix } {
 	upvar 1 $array_name a_name
 	set a_name($prefix.return) [DetailReturn $a_name($prefix.type)]
 }
 # Parse for TYPE after HeaderParser
 proc TypeParser { array_name prefix } {
 	upvar 1 $array_name a_name
+    global MessageList
+puts "TypeParser on $prefix"
 	if { $a_name($prefix.totallength) < 24 } {
-		set $a_name($prefix.realtype) BadHeader
+		set $a_name($prefix.typetext) BadHeader
 		return
 	}
 	set type [lindex $MessageList $a_name($prefix.type)]
 	if { $type == {} } {
-		set $a_name($prefix.realtype) Unknown
+		set $a_name($prefix.typetext) Unknown
 		return
 	}
-    set a_name($prefix.tokenlength) $type
+    set a_name($prefix.typetext) $type
+puts "TypeParser on $prefix is $type"
 }
 
 #Parse header information and place in array
@@ -809,16 +788,16 @@ proc TypeParser { array_name prefix } {
 proc HeaderParser { array_name prefix string_value } {
 	upvar 1 $array_name a_name
 	set length [string length $string_value]
-    foreach x {version payload type flags size offset realtype} {
+    foreach x {version payload type flags size offset typetext} {
 		set a_name($prefix.$x) ""
 	}
-    foreach x {paylength tokenlength totallength realtype} {
+    foreach x {paylength tokenlength totallength typetext} {
 		set a_name($prefix.$x) 0
 	}
     binary scan $string_value {IIIIII} a_name($prefix.version) a_name($prefix.payload) a_name($prefix.type) a_name($prefix.flags) a_name($prefix.size) a_name($prefix.offset)
 	if { $length < 24 } {
 		set a_name($prefix.totallength) $length
-		set a_name($prefix.realtype) BadHeader
+		set a_name($prefix.typetext) BadHeader
 		return
 	}
 	if { $a_name($prefix.payload) == -1 } {
@@ -827,7 +806,11 @@ proc HeaderParser { array_name prefix string_value } {
 	} else {
 		set a_name($prefix.paylength) $a_name($prefix.payload)
 	}
-    set a_name($prefix.tokenlength) [expr {( $a_name($prefix.version) & 0xFFFF) * 16} ]
+    set tok [expr { $a_name($prefix.version) & 0xFFFF}]
+    set ver [expr { $a_name($prefix.version) >> 16}]
+    set a_name($prefix.versiontext) "T$tok V$ver"
+    set a_name($prefix.flagtext) [DetailFlags $a_name($prefix.flags)]
+    set a_name($prefix.tokenlength) [expr {$tok * 16} ]
     set a_name($prefix.totallength) [expr {$a_name($prefix.tokenlength)+$a_name($prefix.paylength)+24}]
 }
 
@@ -838,23 +821,17 @@ proc RequestDetail { window_name cb_index } {
     DetailRow $window_name yellow orange version payload type flags size offset
 
     # get request data
-    set q(version) ""
-    set q(payload) ""
-    set q(type) ""
-    set q(flags) ""
-    set q(size) ""
-    set q(offset) ""
-    binary scan $circ_buffer($cb_index.request) {IIIIII} q(version) q(payload) q(type) q(flags) q(size) q(offset)
+    HeaderParser q x $circ_buffer($cb_index.request)
     # request headers
-    DetailRow $window_name white lightyellow $q(version) $q(payload) $q(type) $q(flags) $q(size) $q(offset)
+    DetailRow $window_name white lightyellow $q(x.version) $q(x.payload) $q(x.type) $q(x.flags) $q(x.size) $q(x.offset)
 # request headers
     if { [string length $circ_buffer($cb_index.request)] >= 24 } {
-        set m_type [DetailType $q(type)]
-        DetailRow $window_name white lightyellow [DetailVersion $q(version)] $q(payload) $m_type [DetailFlags $q(flags)] $q(size) $q(offset)
-        if { $q(payload) > 0 } {
-            switch $m_type {
-                "WRITE" { DetailPayloadPlus $window_name lightyellow white $circ_buffer($cb_index.request) $q(payload) $q(size) }
-                default { DetailPayload $window_name lightyellow $circ_buffer($cb_index.request) $q(payload) }
+        TypeParser q x
+        DetailRow $window_name white lightyellow $q(x.versiontext) $q(x.paylength) $q(x.typetext) $q(x.flagtext) $q(x.size) $q(x.offset)
+        if { $q(x.paylength) > 0 } {
+            switch $q(x.typetext) {
+                "WRITE" { DetailPayloadPlus $window_name lightyellow white $circ_buffer($cb_index.request) $q(x.paylength) $q(x.size) }
+                default { DetailPayload $window_name lightyellow $circ_buffer($cb_index.request) $q(x.paylength) }
             }
         }
     }
@@ -866,17 +843,16 @@ proc ResponseDetail { window_name cb_index } {
 
     DetailRow $window_name #a6dcff #a6b1ff version payload return flags size offset
 
-    set r(version) ""
-    set r(payload) ""
-    set r(return) ""
-    set r(flags) ""
-    set r(size) ""
-    set r(offset) ""
-    binary scan $circ_buffer($cb_index.response) {IIIIII} r(version) r(payload) r(return) r(flags) r(size) r(offset)
-    DetailRow $window_name white #ebeff7 $r(version) $r(payload) $r(return) $r(flags) $r(size) $r(offset)
-    if { [string length $circ_buffer($cb_index.response)] >= 24 } {
-        DetailRow $window_name white #ebeff7 [DetailVersion $r(version)] $r(payload) [DetailReturn $r(return)] [DetailFlags $r(flags)] $r(size) $r(offset)
-        DetailPayload $window_name #ebeff7 $circ_buffer($cb_index.response) $r(payload)
+    # get response data
+    set num $circ_buffer($cb_index.num)
+    for {set i 0} {$i < $num} {incr i} {
+        HeaderParser r x $circ_buffer($cb_index.response.$i)
+        DetailRow $window_name white #ebeff7 $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $r(x.offset)
+        if { [string length $circ_buffer($cb_index.response.$i)] >= 24 } {
+            ErrorParser r x
+            DetailRow $window_name white #ebeff7 $r(x.versiontext) $r(x.paylength) $r(x.return) $r(x.flagtext) $r(x.size) $r(x.offset)
+            DetailPayload $window_name #ebeff7 $circ_buffer($cb_index.response.$i) $r(x.paylength)
+        }
     }
 }
 
@@ -924,16 +900,6 @@ proc DetailReturn { ret } {
         -34     { return "ERANGE"}
         default { return "ERROR"}
     }
-}
-
-proc DetailVersion { version } {
-    set tok [expr { $version & 0xFFFF}]
-    set ver [expr { $version >> 16}]
-    return "T$tok V$ver"
-}
-
-proc DetailType { typ } {
-    return [MessageType [MessageNumber $typ]]
 }
 
 proc DetailFlags { flags } {
