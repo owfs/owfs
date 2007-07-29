@@ -368,7 +368,7 @@ proc Right_ScrollByKey { args } {
 proc SelectionMade { widget y } {
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
-        TransactionDetail $index
+        TransactionDetail [current_from_index $index]
     }
 }
 
@@ -487,8 +487,8 @@ proc CircBufferAllocate { } {
     }
     set circ_buffer($cb_index.num) 0
     set circ_buffer($cb_index.request) ""
-    .log.request_list insert end "x"
-    .log.response_list insert end "x"
+    .log.request_list insert end "$total: pending"
+    .log.response_list insert end "$total: pending"
     return $total
 }
 
@@ -531,7 +531,7 @@ proc CircBufferEntryResponse { current response sock } {
     } else {
         set index [ expr $size - $total + $current - 1 ]
     }
-    .log.response_list insert $index $response
+    .log.response_list insert $index "$current: $response"
     .log.response_list delete [expr $index + 1 ]
 
     #Now store packet
@@ -548,6 +548,15 @@ proc cb_from_index { index } {
     set total $circ_buffer(total)
     if { $total < $size } { return $index }
     return [expr { ($total + $index) % $size }]
+}
+
+# get the total list from listbox index
+proc current_from_index { index } {
+    global circ_buffer
+    set size $circ_buffer(size)
+    set total $circ_buffer(total)
+    if { $total < $size } { return $index }
+    return [expr { $total + $index - $size  + 1 }]
 }
 
 # initiqalize statistics
@@ -745,15 +754,17 @@ proc StatByType { } {
 proc TransactionDetail { index } {
     # make a unique window name
     global setup_flags
-    if { [ info exist setup_flags(detail) ] } {
-        incr setup_flags(detail)
-    } else {
-        set setup_flags(detail) 0
+    set window_name .transaction_$index
+
+    # Does the window exist?
+    if { [winfo exists $window_name] == 1 } {
+        raise $window_name
+        return
     }
-    set window_name .detail$setup_flags(detail)
 
     # Make the window
     toplevel $window_name -bg white
+    wm title $window_name "Transaction $index"
     set cb_index [cb_from_index $index]
 
     RequestDetail $window_name $cb_index
@@ -772,7 +783,6 @@ proc ErrorParser { array_name prefix } {
 proc TypeParser { array_name prefix } {
 	upvar 1 $array_name a_name
     global MessageList
-puts "TypeParser on $prefix"
 	if { $a_name($prefix.totallength) < 24 } {
 		set $a_name($prefix.typetext) BadHeader
 		return
@@ -783,7 +793,6 @@ puts "TypeParser on $prefix"
 		return
 	}
     set a_name($prefix.typetext) $type
-puts "TypeParser on $prefix is $type"
 }
 
 #Parse header information and place in array
@@ -837,6 +846,7 @@ proc RequestDetail { window_name cb_index } {
                 default { DetailPayload $window_name lightyellow $circ_buffer($cb_index.request) $q(x.paylength) }
             }
         }
+        wm title $window_name "[wm title $window_name]: $q(x.typetext)"
     }
 }
 
