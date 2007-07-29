@@ -640,7 +640,7 @@ http://www.owfs.org/index.php?page=owserver-protocol
 proc StatusWindow { } {
     set window_name .statuswindow
     set menu_name .main_menu.view
-    set menu_index 2
+    set menu_index "Status messages"
 
     if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
         return
@@ -693,7 +693,7 @@ proc WindowAlreadyExists { window_name menu_name menu_index } {
 proc StatByType { } {
     set window_name .statbytype
     set menu_name .main_menu.view
-    set menu_index 0
+    set menu_index "Statistics by Message type"
 
     if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
         return
@@ -758,6 +758,9 @@ proc TransactionDetail { index } {
 
     RequestDetail $window_name $cb_index
     ResponseDetail $window_name $cb_index
+
+    # Add to a list
+    lappend setup_flags(detail_list) $window_name
 }
 
 # Parse for return HeaderParser
