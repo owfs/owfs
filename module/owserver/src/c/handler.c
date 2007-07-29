@@ -185,6 +185,7 @@ static void SingleHandler(struct handlerdata *hd)
 #else /* HAVE_NANOSLEEP */
 		usleep((unsigned long) 100000);
 #endif /* HAVE_NANOSLEEP */
+        TOCLIENTLOCK(hd);
 		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
 			loop = 0;
 		} else {				// check timing -- ping if expired
