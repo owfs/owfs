@@ -48,6 +48,10 @@ void LibSetup(enum opt_program opt)
 	Global.clients_persistent_low = 10;
 	Global.clients_persistent_high = 20;
 
+    Global.pingcrazy = 0 ;
+    Global.no_dirall = 0 ;
+    Global.no_get = 0 ;
+
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();
 

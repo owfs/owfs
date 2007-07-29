@@ -166,6 +166,12 @@ static void SingleHandler(struct handlerdata *hd)
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
+    if ( Global.pingcrazy ) { // extra pings
+        TOCLIENTLOCK(hd);
+            ToClient(hd->fd, &ping_cm, NULL);  // send the ping
+        TOCLIENTUNLOCK(hd);
+        LEVEL_DEBUG("Extra ping (pingcrazy mode)\n");
+    }
 	if (pthread_create(&thread, NULL, DataHandler, hd)) {
 		LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
 		DataHandler(hd);		// do it without pings
@@ -179,13 +185,12 @@ static void SingleHandler(struct handlerdata *hd)
 #else /* HAVE_NANOSLEEP */
 		usleep((unsigned long) 100000);
 #endif /* HAVE_NANOSLEEP */
-		TOCLIENTLOCK(hd);
 		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
 			loop = 0;
 		} else {				// check timing -- ping if expired
 			gettimeofday(&now, NULL);	// current time
 			timersub(&now, &delta, &result);	// less delay
-			if (timercmp(&(hd->tv), &result, <)) {	// test against last message time
+			if (timercmp(&(hd->tv), &result, <) || Global.pingcrazy ) {	// test against last message time
 				char *c = NULL;	// dummy argument
 				ToClient(hd->fd, &ping_cm, c);	// send the ping
 				//printf("OWSERVER ping\n") ;

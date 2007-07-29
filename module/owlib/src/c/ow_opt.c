@@ -125,6 +125,10 @@ const struct option owopts_long[] = {
 	{"clients_persistent_low", required_argument, NULL, 312,},
 	{"clients_persistent_high", required_argument, NULL, 313,},
 
+    {"pingcrazy",no_argument, &Global.pingcrazy, 1},
+    {"no_dirall",no_argument, &Global.no_dirall, 1},
+    {"no_get",no_argument, &Global.no_get, 1},
+
 	{0, 0, 0, 0},
 };
 

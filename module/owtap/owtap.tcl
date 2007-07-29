@@ -160,7 +160,12 @@ proc TapAccept { sock addr port } {
                 ClearSockTimer $relay
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
-                set serve($sock.state) "Done with server"
+                if { $serve($relay.ping) == 1 } {
+puts "PING"
+                    set serve($sock.state) "Read from server"
+                } else {
+                    set serve($sock.state) "Done with server"
+                }
             }
         "Done with server"  {
                 CloseSock $relay
@@ -863,7 +868,7 @@ proc ResponseDetail { window_name cb_index } {
         DetailRow $window_name white #ebeff7 $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $r(x.offset)
         if { [string length $circ_buffer($cb_index.response.$i)] >= 24 } {
             ErrorParser r x
-            DetailRow $window_name white #ebeff7 $r(x.versiontext) $r(x.paylength) $r(x.return) $r(x.flagtext) $r(x.size) $r(x.offset)
+            DetailRow $window_name white #ebeff7 $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $r(x.offset)
             DetailPayload $window_name #ebeff7 $circ_buffer($cb_index.response.$i) $r(x.paylength)
         }
     }
