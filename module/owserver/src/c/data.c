@@ -68,7 +68,7 @@ void *DataHandler(void *v)
 
 	switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message
-	case msg_write:			// good message
+	case msg_write:				// good message
 	case msg_dir:				// good message
 	case msg_presence:			// good message
 	case msg_dirall:			// good message
@@ -76,9 +76,10 @@ void *DataHandler(void *v)
 		if (hd->sm.payload == 0) {	/* Bad string -- no trailing null */
 			cm.ret = -EBADMSG;
 		} else {
-            struct one_wire_query struct_owq ;
-            struct one_wire_query * owq = &struct_owq ;
-            struct parsedname * pn = PN(owq) ;
+			OWQ_make(owq);
+			//struct one_wire_query struct_owq ;
+			//struct one_wire_query * owq = &struct_owq ;
+			struct parsedname * pn = PN(owq) ;
             
 			/* Parse the path string */
 			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);
@@ -112,7 +113,7 @@ void *DataHandler(void *v)
 						|| ((int) hd->sp.datasize < hd->sm.size)) {
 						cm.ret = -EMSGSIZE;
 					} else {
-                        OWQ_buffer(owq) = (ASCII *) hd->sp.data ;
+						OWQ_buffer(owq) = (ASCII *) hd->sp.data ;
 						WriteHandler(hd, &cm, owq);
 					}
 				}

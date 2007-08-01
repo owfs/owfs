@@ -53,15 +53,15 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 	char *retbuffer = NULL;
 	ssize_t read_or_error;
 
-	//printf("ReadHandler:\n");
-	LEVEL_DEBUG
-		("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
-		 hd->sm.payload, hd->sm.size, hd->sm.offset);
-
+	LEVEL_DEBUG("ReadHandler:\n");
 	if(!hd) {
 	  LEVEL_DEBUG("ReadHandler: hd == NULL\n");
 	  return -EMSGSIZE;
 	}
+
+	LEVEL_DEBUG
+		("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
+		 hd->sm.payload, hd->sm.size, hd->sm.offset);
 
 	if ((hd->sm.size <= 0) || (hd->sm.size > MAXBUFFERSIZE)) {
 		cm->ret = -EMSGSIZE;
@@ -103,7 +103,8 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 	LEVEL_DEBUG
 		("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d\n",
 		 cm->payload, cm->size, cm->offset);
-	LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n", cm->size, cm->size,
-				retbuffer);
+	if(cm->size>0 && retbuffer)
+		LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n",
+			    cm->size, cm->size, retbuffer);
 	return retbuffer;
 }
