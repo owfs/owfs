@@ -54,8 +54,8 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 	ssize_t read_or_error;
 
 	LEVEL_DEBUG("ReadHandler:\n");
-	if(!hd) {
-	  LEVEL_DEBUG("ReadHandler: hd == NULL\n");
+	if(!hd || !owq || !cm) {
+	  LEVEL_DEBUG("ReadHandler: hd==%p owq==%p cm==%p\n", hd, owq, cm);
 	  return -EMSGSIZE;
 	}
 
@@ -76,21 +76,30 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 	} else {
 		struct parsedname *pn = PN(owq);
 		char *path = "";
+		if(pn) {
+		  if(pn->path) path = pn->path;
+		  LEVEL_DEBUG("ReadHandler: call FS_read_postparse on %s\n",path) ;
+		} else {
+		  LEVEL_DEBUG("ReadHandler: call FS_read_postparse pn==NULL\n") ;
+		}
 		OWQ_buffer(owq) = retbuffer ;
 		read_or_error = FS_read_postparse(owq) ;
 		if(pn) {
 		  if(pn->path) path = pn->path;
-		  LEVEL_CALL("ReadHandler: FS_read_postparse read on %s return = %d\n",path,read_or_error) ;
+		  LEVEL_DEBUG("ReadHandler: FS_read_postparse read on %s return = %d\n",path,read_or_error) ;
 		} else {
-		  LEVEL_CALL("ReadHandler: FS_read_postparse pn==NULL return = %d\n",read_or_error) ;
+		  LEVEL_DEBUG("ReadHandler: FS_read_postparse pn==NULL return = %d\n",read_or_error) ;
 		}
+
 		Debug_OWQ(owq) ;
 		
 		if (read_or_error <= 0) {
+			LEVEL_DEBUG("ReadHandler: FS_read_postparse error %d\n",read_or_error) ;
 			free(retbuffer);
 			retbuffer = NULL;
 			cm->ret = read_or_error;
 		} else {
+			LEVEL_DEBUG("ReadHandler: FS_read_postparse ok size=%d\n",read_or_error) ;
 			// make return size smaller (just large enough)
 			cm->payload = read_or_error;
 			cm->offset = hd->sm.offset;
