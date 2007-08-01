@@ -58,18 +58,32 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 		("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
 		 hd->sm.payload, hd->sm.size, hd->sm.offset);
 
+	if(!hd) {
+	  LEVEL_DEBUG("ReadHandler: hd == NULL\n");
+	  return -EMSGSIZE;
+	}
+
 	if ((hd->sm.size <= 0) || (hd->sm.size > MAXBUFFERSIZE)) {
 		cm->ret = -EMSGSIZE;
+		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d\n", hd->sm.size);
 #ifdef VALGRIND
 	} else if ((retbuffer = (char *) calloc(1, (size_t) hd->sm.size)) == NULL) {	// allocate return buffer
 #else
 	} else if ((retbuffer = (char *) malloc((size_t) hd->sm.size)) == NULL) {	// allocate return buffer
 #endif
+		LEVEL_DEBUG("ReadHandler: can't allocate memory\n");
 		cm->ret = -ENOBUFS;
 	} else {
+		struct parsedname *pn = PN(owq);
+		char *path = "";
 		OWQ_buffer(owq) = retbuffer ;
 		read_or_error = FS_read_postparse(owq) ;
-		printf("OWSERVER read on %s return = %d\n",PN(owq)->path,read_or_error) ;
+		if(pn) {
+		  if(pn->path) path = pn->path;
+		  LEVEL_CALL("ReadHandler: FS_read_postparse read on %s return = %d\n",path,read_or_error) ;
+		} else {
+		  LEVEL_CALL("ReadHandler: FS_read_postparse pn==NULL return = %d\n",read_or_error) ;
+		}
 		Debug_OWQ(owq) ;
 		
 		if (read_or_error <= 0) {
@@ -82,6 +96,7 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 			cm->offset = hd->sm.offset;
 			cm->size = read_or_error;
 			cm->ret = read_or_error;
+			// can this crash owserver ?
 			retbuffer[cm->size] = '\0'; // end with null for debug output
 		}
 	}

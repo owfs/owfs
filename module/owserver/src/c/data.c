@@ -135,6 +135,7 @@ void *DataHandler(void *v)
 				}
 				break;
 			default:			// never reached
+				LEVEL_CALL("Error: unknown message %d\n", (int)hd->sm.type);
 				break;
 			}
 			FS_OWQ_destroy(owq);
