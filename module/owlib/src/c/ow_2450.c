@@ -133,15 +133,15 @@ static int FS_r_page(struct one_wire_query * owq)
 	size_t pagesize = 8 ;
 	if ( OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_crc16_AA ) )
 		return -EINVAL;
-    printf("returning from FS_r_page length=%d\n",(int)OWQ_length(owq)) ;
-    return 0 ;
+	LEVEL_DEBUG("ow_ds2450: returning from FS_r_page length=%d\n",(int)OWQ_length(owq)) ;
+	return 0 ;
 }
 
 /* write an 8-byte page */
 static int FS_w_page(struct one_wire_query * owq)
 {
 	size_t pagesize = 8 ;
-    if ( OW_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_w_mem ) )
+	if ( OW_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_w_mem ) )
 		return -EINVAL;
 	return 0;
 }
@@ -150,10 +150,10 @@ static int FS_w_page(struct one_wire_query * owq)
 static int FS_r_power(struct one_wire_query * owq)
 {
 	BYTE p;
-    if (OW_r_mem(&p, 1, 0x1C, PN(owq)))
+	if (OW_r_mem(&p, 1, 0x1C, PN(owq)))
 		return -EINVAL;
 //printf("Cont %d\n",p) ;
-    OWQ_Y(owq) = (p == 0x40);
+	OWQ_Y(owq) = (p == 0x40);
 	return 0;
 }
 
@@ -162,7 +162,7 @@ static int FS_w_power(struct one_wire_query * owq)
 {
 	BYTE p = 0x40;				/* powered */
 	BYTE q = 0x00;				/* parasitic */
-    if (OW_w_mem(OWQ_Y(owq) ? &p : &q, 1, 0x1C, PN(owq)))
+	if (OW_w_mem(OWQ_Y(owq) ? &p : &q, 1, 0x1C, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -170,7 +170,7 @@ static int FS_w_power(struct one_wire_query * owq)
 /* read "unset" PowerOnReset flag */
 static int FS_r_por(struct one_wire_query * owq)
 {
-    if (OW_r_por(&OWQ_Y(owq), PN(owq)))
+	if (OW_r_por(&OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -178,7 +178,7 @@ static int FS_r_por(struct one_wire_query * owq)
 /* write "unset" PowerOnReset flag */
 static int FS_w_por(struct one_wire_query * owq)
 {
-    if (OW_w_por(OWQ_Y(owq) & 0x01, PN(owq)))
+	if (OW_w_por(OWQ_Y(owq) & 0x01, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -186,28 +186,28 @@ static int FS_w_por(struct one_wire_query * owq)
 /* read high/low voltage enable alarm flags */
 static int FS_r_high(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int Y[4] ;
-    if (OW_r_high(Y, pn->ft->data.i & 0x01, pn))
+	struct parsedname * pn = PN(owq) ;
+	int Y[4] ;
+	if (OW_r_high(Y, pn->ft->data.i & 0x01, pn))
 		return -EINVAL;
-    OWQ_array_Y(owq,0) = Y[0] ;
-    OWQ_array_Y(owq,1) = Y[1] ;
-    OWQ_array_Y(owq,2) = Y[2] ;
-    OWQ_array_Y(owq,3) = Y[3] ;
-    return 0;
+	OWQ_array_Y(owq,0) = Y[0] ;
+	OWQ_array_Y(owq,1) = Y[1] ;
+	OWQ_array_Y(owq,2) = Y[2] ;
+	OWQ_array_Y(owq,3) = Y[3] ;
+	return 0;
 }
 
 /* write high/low voltage enable alarm flags */
 static int FS_w_high(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int Y[4] = {
-        OWQ_array_Y(owq,0),
-        OWQ_array_Y(owq,1),
-        OWQ_array_Y(owq,2),
-        OWQ_array_Y(owq,3),
-    } ;
-    if (OW_w_high(Y, pn->ft->data.i & 0x01, pn))
+	struct parsedname * pn = PN(owq) ;
+	int Y[4] = {
+		OWQ_array_Y(owq,0),
+		OWQ_array_Y(owq,1),
+		OWQ_array_Y(owq,2),
+		OWQ_array_Y(owq,3),
+	} ;
+	if (OW_w_high(Y, pn->ft->data.i & 0x01, pn))
 		return -EINVAL;
 	return 0;
 }
@@ -215,28 +215,28 @@ static int FS_w_high(struct one_wire_query * owq)
 /* read high/low voltage triggered state alarm flags */
 static int FS_r_flag(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int Y[4] ;
-    if (OW_r_flag(Y, pn->ft->data.i & 0x01, pn))
+	struct parsedname * pn = PN(owq) ;
+	int Y[4] ;
+	if (OW_r_flag(Y, pn->ft->data.i & 0x01, pn))
 		return -EINVAL;
-    OWQ_array_Y(owq,0) = Y[0] ;
-    OWQ_array_Y(owq,1) = Y[1] ;
-    OWQ_array_Y(owq,2) = Y[2] ;
-    OWQ_array_Y(owq,3) = Y[3] ;
-    return 0;
+	OWQ_array_Y(owq,0) = Y[0] ;
+	OWQ_array_Y(owq,1) = Y[1] ;
+	OWQ_array_Y(owq,2) = Y[2] ;
+	OWQ_array_Y(owq,3) = Y[3] ;
+	return 0;
 }
 
 /* write high/low voltage triggered state alarm flags */
 static int FS_w_flag(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int Y[4] = {
-        OWQ_array_Y(owq,0),
-        OWQ_array_Y(owq,1),
-        OWQ_array_Y(owq,2),
-        OWQ_array_Y(owq,3),
-    } ;
-    if (OW_w_flag(Y, pn->ft->data.i & 0x01, pn))
+	struct parsedname * pn = PN(owq) ;
+	int Y[4] = {
+		OWQ_array_Y(owq,0),
+		OWQ_array_Y(owq,1),
+		OWQ_array_Y(owq,2),
+		OWQ_array_Y(owq,3),
+	} ;
+	if (OW_w_flag(Y, pn->ft->data.i & 0x01, pn))
 		return -EINVAL;
 	return 0;
 }
@@ -244,42 +244,42 @@ static int FS_w_flag(struct one_wire_query * owq)
 /* 2450 A/D */
 static int FS_r_PIO(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int element = pn->extension;
-    int pio_error ;
-    if ( element == EXTENSION_ALL ) {
-        int y[4]  = {0,0,0,0,} ;
-        pio_error = OW_r_pio(y, pn) ;
-        OWQ_array_Y(owq,0) = y[0] ;
-        OWQ_array_Y(owq,1) = y[1] ;
-        OWQ_array_Y(owq,2) = y[2] ;
-        OWQ_array_Y(owq,3) = y[3] ;
-    } else {
-        pio_error = OW_r_1_pio(&OWQ_Y(owq), element, pn);
-    }
-    if ( pio_error ) return -EINVAL;
-    return 0;
+	struct parsedname * pn = PN(owq) ;
+	int element = pn->extension;
+	int pio_error ;
+	if ( element == EXTENSION_ALL ) {
+		int y[4]  = {0,0,0,0,} ;
+		pio_error = OW_r_pio(y, pn) ;
+		OWQ_array_Y(owq,0) = y[0] ;
+		OWQ_array_Y(owq,1) = y[1] ;
+		OWQ_array_Y(owq,2) = y[2] ;
+		OWQ_array_Y(owq,3) = y[3] ;
+	} else {
+		pio_error = OW_r_1_pio(&OWQ_Y(owq), element, pn);
+	}
+	if ( pio_error ) return -EINVAL;
+	return 0;
 }
 
 /* 2450 A/D */
 /* pio status -- special code for ag_mixed */
 static int FS_w_PIO(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int element = pn->extension;
-    int pio_error ;
-    if ( element == EXTENSION_ALL ) {
-        int y[4] = {
-            OWQ_array_Y(owq,0),
-            OWQ_array_Y(owq,1),
-            OWQ_array_Y(owq,2),
-            OWQ_array_Y(owq,3),
-        };
-        pio_error = OW_w_pio(y, pn) ;
-    } else {
-        pio_error = OW_w_1_pio(OWQ_Y(owq), element, pn);
-    }
-    if ( pio_error ) return -EINVAL;
+	struct parsedname * pn = PN(owq) ;
+	int element = pn->extension;
+	int pio_error ;
+	if ( element == EXTENSION_ALL ) {
+		int y[4] = {
+		  OWQ_array_Y(owq,0),
+		  OWQ_array_Y(owq,1),
+		  OWQ_array_Y(owq,2),
+		  OWQ_array_Y(owq,3),
+		};
+		pio_error = OW_w_pio(y, pn) ;
+	} else {
+		pio_error = OW_w_1_pio(OWQ_Y(owq), element, pn);
+	}
+	if ( pio_error ) return -EINVAL;
 	return 0;
 }
 
@@ -289,14 +289,14 @@ static int FS_r_mem(struct one_wire_query * owq)
 	size_t pagesize = 8 ;
 	if ( OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_crc16_AA ) )
 		return -EINVAL;
-    return 0 ;
+	return 0 ;
 }
 
 /* 2450 A/D */
 static int FS_w_mem(struct one_wire_query * owq)
 {
 	size_t pagesize = 8 ;
-    if ( OW_readwrite_paged( owq, 0, pagesize, OW_w_mem ) )
+	if ( OW_readwrite_paged( owq, 0, pagesize, OW_w_mem ) )
 		return -EINVAL;
 	return 0;
 }
@@ -304,57 +304,57 @@ static int FS_w_mem(struct one_wire_query * owq)
 /* 2450 A/D */
 static int FS_volts(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int element = pn->extension;
-    int volt_error ;
-    if ( element == EXTENSION_ALL ) {
-        _FLOAT V[4] = {0.,0.,0.,0.,} ;
-        volt_error = OW_volts(V, pn->ft->data.i, pn) ;
-        OWQ_array_F(owq,0) = V[0] ;
-        OWQ_array_F(owq,1) = V[1] ;
-        OWQ_array_F(owq,2) = V[2] ;
-        OWQ_array_F(owq,3) = V[3] ;
-    } else {
-        volt_error = OW_1_volts(&OWQ_F(owq), element, pn->ft->data.i, pn) ;
-    }
-    if (volt_error ) return -EINVAL;
+	struct parsedname * pn = PN(owq) ;
+	int element = pn->extension;
+	int volt_error ;
+	if ( element == EXTENSION_ALL ) {
+		_FLOAT V[4] = {0.,0.,0.,0.,} ;
+		volt_error = OW_volts(V, pn->ft->data.i, pn) ;
+		OWQ_array_F(owq,0) = V[0] ;
+		OWQ_array_F(owq,1) = V[1] ;
+		OWQ_array_F(owq,2) = V[2] ;
+		OWQ_array_F(owq,3) = V[3] ;
+	} else {
+		volt_error = OW_1_volts(&OWQ_F(owq), element, pn->ft->data.i, pn) ;
+	}
+	if (volt_error ) return -EINVAL;
 	return 0;
 }
 
 static int FS_r_setvolt(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    _FLOAT V[4] ;
-    if (OW_r_vset(V, (pn->ft->data.i) >> 1, (pn->ft->data.i) & 0x01, pn))
+	struct parsedname * pn = PN(owq) ;
+	_FLOAT V[4] ;
+	if (OW_r_vset(V, (pn->ft->data.i) >> 1, (pn->ft->data.i) & 0x01, pn))
 		return -EINVAL;
-    OWQ_array_F(owq,0) = V[0] ;
-    OWQ_array_F(owq,1) = V[1] ;
-    OWQ_array_F(owq,2) = V[2] ;
-    OWQ_array_F(owq,3) = V[3] ;
-    return 0;
+	OWQ_array_F(owq,0) = V[0] ;
+	OWQ_array_F(owq,1) = V[1] ;
+	OWQ_array_F(owq,2) = V[2] ;
+	OWQ_array_F(owq,3) = V[3] ;
+	return 0;
 }
 
 static int FS_w_setvolt(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    _FLOAT V[4] = {
-        OWQ_array_F(owq,0),
-        OWQ_array_F(owq,1),
-        OWQ_array_F(owq,2),
-        OWQ_array_F(owq,3),
-    } ;
-    if (OW_w_vset(V, (pn->ft->data.i) >> 1, (pn->ft->data.i) & 0x01, pn))
+	struct parsedname * pn = PN(owq) ;
+	_FLOAT V[4] = {
+		OWQ_array_F(owq,0),
+		OWQ_array_F(owq,1),
+		OWQ_array_F(owq,2),
+		OWQ_array_F(owq,3),
+	} ;
+	if (OW_w_vset(V, (pn->ft->data.i) >> 1, (pn->ft->data.i) & 0x01, pn))
 		return -EINVAL;
 	return 0;
 }
 
 static int OW_r_mem( BYTE * p,  size_t size,  off_t offset, struct parsedname *pn)
 {
-    size_t pagesize = 8 ;
-    OWQ_make( owq_read ) ;
+	size_t pagesize = 8 ;
+	OWQ_make( owq_read ) ;
 
-    OWQ_create_temporary( owq_read, (char *) p, size, offset, pn ) ;
-    return OW_r_mem_crc16_AA( owq_read, 0, pagesize ) ;
+	OWQ_create_temporary( owq_read, (char *) p, size, offset, pn ) ;
+	return OW_r_mem_crc16_AA( owq_read, 0, pagesize ) ;
 }
 
 /* write to 2450 */
@@ -363,18 +363,18 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 {
 	// command, address(2) , data , crc(2), databack
 	BYTE buf[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), p[0], };
-    BYTE echo[1] ;
+	BYTE echo[1] ;
 	size_t i;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
-        TRXN_WR_CRC16(buf,4,0),
-        TRXN_READ1(echo),
-        TRXN_COMPARE(echo,p,1),
+		TRXN_WR_CRC16(buf,4,0),
+		TRXN_READ1(echo),
+		TRXN_COMPARE(echo,p,1),
 		TRXN_END,
 	};
 	struct transaction_log trest[] = {	// note no TRXN_START
-        TRXN_WRITE1(buf),
-        TRXN_READ3(&buf[1]),
+		TRXN_WRITE1(buf),
+		TRXN_READ3(&buf[1]),
 		TRXN_END,
 	};
 //printf("2450 W mem size=%d location=%d\n",size,location) ;
@@ -489,7 +489,7 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution,
 	}
 	// read data
 	if (OW_r_mem(data, 2, (0 << 3) + (element << 1), pn)) {
-		LEVEL_DEFAULT("OW_volts: OW_r_mem_crc16_AA failed\n");
+		LEVEL_DEFAULT("OW_1_volts: OW_r_mem_crc16_AA failed\n");
 		return 1;
 	}
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
@@ -507,15 +507,15 @@ static int OW_convert(struct parsedname *pn)
 	BYTE power;
 	struct transaction_log tpower[] = {
 		TRXN_START,
-        TRXN_WR_CRC16(convert,3,0),
+		TRXN_WR_CRC16(convert,3,0),
 		TRXN_END,
 	};
 	struct transaction_log tdead[] = {
 		TRXN_START,
-        TRXN_WRITE3(convert),
-        TRXN_READ1(&convert[3]),
+		TRXN_WRITE3(convert),
+		TRXN_READ1(&convert[3]),
 		{&convert[4], &convert[4], 6, trxn_power},
-        TRXN_CRC16(convert,5),
+		TRXN_CRC16(convert,5),
 		TRXN_END,
 	};
 
@@ -532,7 +532,7 @@ static int OW_convert(struct parsedname *pn)
 	if (power == 0x40) {		//powered
 		if (BUS_transaction(tpower, pn))
 			return 1;
-		UT_delay(6);			/* don't need to hold line for conversion! */
+		UT_delay(6);	/* don't need to hold line for conversion! */
 	} else {
 		if (BUS_transaction(tdead, pn))
 			return 1;
