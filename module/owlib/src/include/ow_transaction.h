@@ -99,7 +99,7 @@ struct transaction_log {
 
 #define TRXN_WR_CRC16(pointer,writelength,readlength) \
                 TRXN_WRITE((BYTE *)pointer,writelength), \
-                TRXN_READ(((BYTE *)pointer)+(writelength),readlength), \
+                TRXN_READ(((BYTE *)pointer)+(writelength),readlength+2), \
                 TRXN_CRC16((BYTE *)pointer,writelength+readlength+2)
 
 int BUS_transaction(const struct transaction_log *tl,
