@@ -67,9 +67,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 		cm->ret = -EMSGSIZE;
 		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d\n", hd->sm.size);
 #ifdef VALGRIND
-	} else if ((retbuffer = (char *) calloc(1, (size_t) hd->sm.size)) == NULL) {	// allocate return buffer
+	} else if ((retbuffer = (char *) calloc(1, (size_t) hd->sm.size+1)) == NULL) {	// allocate return buffer
 #else
-	} else if ((retbuffer = (char *) malloc((size_t) hd->sm.size)) == NULL) {	// allocate return buffer
+	} else if ((retbuffer = (char *) malloc((size_t) hd->sm.size+1)) == NULL) {	// allocate return buffer
 #endif
 		LEVEL_DEBUG("ReadHandler: can't allocate memory\n");
 		cm->ret = -ENOBUFS;
@@ -105,7 +105,6 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 			cm->offset = hd->sm.offset;
 			cm->size = read_or_error;
 			cm->ret = read_or_error;
-			// can this crash owserver ?
 			retbuffer[cm->size] = '\0'; // end with null for debug output
 		}
 	}
