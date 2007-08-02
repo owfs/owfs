@@ -97,6 +97,14 @@ DeviceEntryExtended(20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr);
 #define _1W_WRITE_MEMORY 0x55
 #define _1W_CONVERT 0x3C
 
+#define _1W_2450_POWERED 0x40
+#define _1W_2450_UNPOWERED 0x00
+
+#define _ADDRESS_CONVERSION_PAGE 0x00
+#define _ADDRESS_CONTROL_PAGE 0x08
+#define _ADDRESS_ALARM_PAGE 0x10
+#define _ADDRESS_POWERED 0x1C
+
 /* ------- Functions ------------ */
 
 /* DS2450 */
@@ -150,19 +158,19 @@ static int FS_w_page(struct one_wire_query * owq)
 static int FS_r_power(struct one_wire_query * owq)
 {
 	BYTE p;
-	if (OW_r_mem(&p, 1, 0x1C, PN(owq)))
+	if (OW_r_mem(&p, 1, _ADDRESS_POWERED, PN(owq)))
 		return -EINVAL;
 //printf("Cont %d\n",p) ;
-	OWQ_Y(owq) = (p == 0x40);
+	OWQ_Y(owq) = (p == _1W_2450_POWERED);
 	return 0;
 }
 
 /* write powered flag */
 static int FS_w_power(struct one_wire_query * owq)
 {
-	BYTE p = 0x40;				/* powered */
-	BYTE q = 0x00;				/* parasitic */
-	if (OW_w_mem(OWQ_Y(owq) ? &p : &q, 1, 0x1C, PN(owq)))
+	BYTE p = _1W_2450_POWERED;				/* powered */
+	BYTE q = _1W_2450_UNPOWERED;				/* parasitic */
+	if (OW_w_mem(OWQ_Y(owq) ? &p : &q, 1, _ADDRESS_POWERED, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -374,7 +382,8 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 	};
 	struct transaction_log trest[] = {	// note no TRXN_START
 		TRXN_WRITE1(buf),
-		TRXN_READ3(&buf[1]),
+		TRXN_READ2(&buf[1]),
+        TRXN_READ1(echo),
 		TRXN_END,
 	};
 //printf("2450 W mem size=%d location=%d\n",size,location) ;
@@ -389,7 +398,7 @@ static int OW_w_mem( BYTE * p,  size_t size,  off_t offset,
 	for (i = 1; i < size; ++i) {
 		buf[0] = p[i];
 		if (BUS_transaction(trest, pn) || CRC16seeded(buf, 3, offset + i)
-			|| (buf[3] != p[i]))
+			|| (echo[0] != p[i]))
 			return 1;
 	}
 	return 0;
@@ -407,7 +416,7 @@ static int OW_volts(_FLOAT * f, const int resolution,
 	int writeback = 0;			/* write control back? */
 	//printf("Volts res=%d\n",resolution);OW_r_mem
 	// Get control registers and set to A/D 16 bits
-	if (OW_r_mem(control, 8, 1 << 3, pn))
+	if (OW_r_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
 	for (i = 0; i < 8; i++) {	// warning, counter in incremented in loop, too
@@ -424,7 +433,7 @@ static int OW_volts(_FLOAT * f, const int resolution,
 
 	// Set control registers
 	if (writeback)
-		if (OW_w_mem(control, 8, 1 << 3, pn))
+		if (OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn))
 			return 1;
 	//printf("writeback=%d\n",writeback);
 	// Start A/D process if needed
@@ -433,7 +442,7 @@ static int OW_volts(_FLOAT * f, const int resolution,
 		return 1;
 	}
 	// read data
-	if (OW_r_mem(data, 8, 0 << 3, pn)) {
+	if (OW_r_mem(data, 8, _ADDRESS_CONVERSION_PAGE, pn)) {
 		LEVEL_DEFAULT("OW_volts: OW_r_mem_crc16_AA Failed\n");
 		return 1;
 	}
@@ -467,7 +476,7 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution,
 	int writeback = 0;			/* write control back? */
 
 	// Get control registers and set to A/D 16 bits
-	if (OW_r_mem(control, 2, (1 << 3) + (element << 1), pn))
+	if (OW_r_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn))
 		return 1;
 	if (control[0] & 0x0F) {
 		control[0] &= 0xF0;		// 16bit, A/D
@@ -479,7 +488,7 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution,
 	}
 	// Set control registers
 	if (writeback)
-		if (OW_w_mem(control, 2, (1 << 3) + (element << 1), pn))
+		if (OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn))
 			return 1;
 
 	// Start A/D process
@@ -488,7 +497,7 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution,
 		return 1;
 	}
 	// read data
-	if (OW_r_mem(data, 2, (0 << 3) + (element << 1), pn)) {
+	if (OW_r_mem(data, 2, _ADDRESS_CONVERSION_PAGE + (element << 1), pn)) {
 		LEVEL_DEFAULT("OW_1_volts: OW_r_mem_crc16_AA failed\n");
 		return 1;
 	}
@@ -524,12 +533,12 @@ static int OW_convert(struct parsedname *pn)
 		return 1;
 
 	/* See if a conversion was globally triggered */
-	if (power == 0x40 && Simul_Test(simul_volt, pn) == 0)
+	if ( (power == _1W_2450_POWERED) && Simul_Test(simul_volt, pn) == 0)
 		return 0;
 
 	// Start conversion
 	// 6 msec for 16bytex4channel (5.2)
-	if (power == 0x40) {		//powered
+	if (power == _1W_2450_POWERED) {		//powered
 		if (BUS_transaction(tpower, pn))
 			return 1;
 		UT_delay(6);	/* don't need to hold line for conversion! */
@@ -544,7 +553,7 @@ static int OW_convert(struct parsedname *pn)
 static int OW_r_pio(int *pio, struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	pio[0] = ((p[0] & 0xC0) != 0x80);
 	pio[1] = ((p[2] & 0xC0) != 0x80);
@@ -558,7 +567,7 @@ static int OW_r_1_pio(int *pio, const int element,
 					  struct parsedname *pn)
 {
 	BYTE p[2];
-	if (OW_r_mem(p, 2, (1 << 3) + (element << 1), pn))
+	if (OW_r_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn))
 		return 1;
 	pio[0] = ((p[0] & 0xC0) != 0x80);
 	return 0;
@@ -569,13 +578,13 @@ static int OW_w_pio(const int *pio, struct parsedname *pn)
 {
 	BYTE p[8];
 	int i;
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	for (i = 0; i <= 3; ++i) {
 		p[i << 1] &= 0x3F;
 		p[i << 1] |= pio[i] ? 0xC0 : 0x80;
 	}
-	return OW_w_mem(p, 8, 1 << 3, pn);
+	return OW_w_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn);
 }
 
 /* write just one pio register */
@@ -583,18 +592,18 @@ static int OW_w_1_pio(const int pio, const int element,
 					  struct parsedname *pn)
 {
 	BYTE p[2];
-	if (OW_r_mem(p, 2, (1 << 3) + (element << 1), pn))
+	if (OW_r_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn))
 		return 1;
 	p[0] &= 0x3F;
 	p[0] |= pio ? 0xC0 : 0x80;
-	return OW_w_mem(p, 2, (1 << 3) + (element << 1), pn);
+	return OW_w_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn);
 }
 
 static int OW_r_vset(_FLOAT * V, const int high, const int resolution,
 					 struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 2 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_ALARM_PAGE, pn))
 		return 1;
 	V[0] = (resolution ? .02 : .01) * p[0 + high];
 	V[1] = (resolution ? .02 : .01) * p[2 + high];
@@ -607,28 +616,28 @@ static int OW_w_vset(const _FLOAT * V, const int high,
 					 const int resolution, struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 2 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_ALARM_PAGE, pn))
 		return 1;
 	p[0 + high] = V[0] * (resolution ? 50. : 100.);
 	p[2 + high] = V[1] * (resolution ? 50. : 100.);
 	p[4 + high] = V[2] * (resolution ? 50. : 100.);
 	p[6 + high] = V[3] * (resolution ? 50. : 100.);
-	if (OW_w_mem(p, 8, 2 << 3, pn))
+	if (OW_w_mem(p, 8, _ADDRESS_ALARM_PAGE, pn))
 		return 1;
 	/* turn POR off */
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	UT_setbit(p, 15, 0);
 	UT_setbit(p, 31, 0);
 	UT_setbit(p, 47, 0);
 	UT_setbit(p, 63, 0);
-	return OW_w_mem(p, 8, 1 << 3, pn);
+	return OW_w_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn);
 }
 
 static int OW_r_high(int *y, const int high, struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	y[0] = UT_getbit(p, 8 + 2 + high);
 	y[1] = UT_getbit(p, 24 + 2 + high);
@@ -641,7 +650,7 @@ static int OW_w_high(const int *y, const int high,
 					 struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	UT_setbit(p, 8 + 2 + high, y[0] & 0x01);
 	UT_setbit(p, 24 + 2 + high, y[1] & 0x01);
@@ -652,13 +661,13 @@ static int OW_w_high(const int *y, const int high,
 	UT_setbit(p, 31, 0);
 	UT_setbit(p, 47, 0);
 	UT_setbit(p, 63, 0);
-	return OW_w_mem(p, 8, 1 << 3, pn);
+	return OW_w_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn);
 }
 
 static int OW_r_flag(int *y, const int high, struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	y[0] = UT_getbit(p, 8 + 4 + high);
 	y[1] = UT_getbit(p, 24 + 4 + high);
@@ -671,19 +680,19 @@ static int OW_w_flag(const int *y, const int high,
 					 struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	UT_setbit(p, 8 + 4 + high, y[0] & 0x01);
 	UT_setbit(p, 24 + 4 + high, y[1] & 0x01);
 	UT_setbit(p, 40 + 4 + high, y[2] & 0x01);
 	UT_setbit(p, 56 + 4 + high, y[3] & 0x01);
-	return OW_w_mem(p, 8, 1 << 3, pn);
+	return OW_w_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn);
 }
 
 static int OW_r_por(int *y, struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	y[0] = UT_getbit(p, 15) || UT_getbit(p, 31) || UT_getbit(p, 47)
 		|| UT_getbit(p, 63);
@@ -693,11 +702,11 @@ static int OW_r_por(int *y, struct parsedname *pn)
 static int OW_w_por(const int por, struct parsedname *pn)
 {
 	BYTE p[8];
-	if (OW_r_mem(p, 8, 1 << 3, pn))
+	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn))
 		return 1;
 	UT_setbit(p, 15, por);
 	UT_setbit(p, 31, por);
 	UT_setbit(p, 47, por);
 	UT_setbit(p, 63, por);
-	return OW_w_mem(p, 8, 1 << 3, pn);
+	return OW_w_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn);
 }

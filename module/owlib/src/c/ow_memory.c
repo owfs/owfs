@@ -69,8 +69,8 @@ int OW_r_mem_simple(struct one_wire_query * owq, size_t page, size_t pagesize )
     BYTE p[3] = { _1W_READ_F0, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-        {NULL, (BYTE *) OWQ_buffer(owq), OWQ_size(owq), trxn_read},
+        TRXN_WRITE3(p),
+        TRXN_READ((BYTE *) OWQ_buffer(owq), OWQ_size(owq)),
 		TRXN_END,
 	};
 
@@ -87,7 +87,7 @@ static int OW_r_crc16(BYTE code, struct one_wire_query * owq, size_t page, size_
     int rest = pagesize - (offset % pagesize);
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WR_CRC16(p,3,rest)
+        TRXN_WR_CRC16(p,3,rest),
         TRXN_END,
     };
 
@@ -128,9 +128,7 @@ int OW_r_mem_p8_crc16(struct one_wire_query * owq, size_t page, size_t pagesize,
 	int rest = pagesize - (offset % pagesize);
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match,},
-		{NULL, &p[3], rest + 8 + 2, trxn_read,},
-		{p, NULL, 3 + rest + 8 + 2, trxn_crc16, } ,
+        TRXN_WR_CRC16(p,3,rest+8),
 		TRXN_END,
 	};
 

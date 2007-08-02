@@ -89,6 +89,7 @@ struct transaction_log {
 #define TRXN_COMPARE(data1, data2, length) { data1, data2, length, trxn_match }
 #define TRXN_CRC8(data,length) { data, NULL, length, trxn_crc8, }
 #define TRXN_CRC16(data,length) { data, NULL, length, trxn_crc16, }
+#define TRXN_CRC16_seeded(data,length,seed) { data, seed, length, trxn_crc16, }
 
 #define TRXN_WRITE1(writedata)  TRXN_WRITE(writedata,1)
 #define TRXN_READ1(readdata)    TRXN_READ(readdata,1)
