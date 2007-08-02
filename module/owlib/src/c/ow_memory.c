@@ -87,9 +87,7 @@ static int OW_r_crc16(BYTE code, struct one_wire_query * owq, size_t page, size_
     int rest = pagesize - (offset % pagesize);
     struct transaction_log t[] = {
         TRXN_START,
-        {p, NULL, 3, trxn_match,},
-        {NULL, &p[3], rest + 2, trxn_read,},
-        {p, NULL, 3 + rest + 2, trxn_crc16, } ,
+        TRXN_WR_CRC16(p,3,rest)
         TRXN_END,
     };
 

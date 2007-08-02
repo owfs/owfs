@@ -100,7 +100,6 @@ proc TapAccept { sock addr port } {
                 fileevent $sock readable {}
                 ClearSockTimer $sock
                 StatusMessage "Success reading client request" 0
-#                TypeParser serve $sock
                 set message_type $serve($sock.typetext)
                 CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $sock
                 #stats
@@ -128,7 +127,6 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Sending client request to OWSERVER" 0
                 fconfigure $relay -translation binary -buffering full -encoding binary -blocking 0
                 set serve($relay.sock) $sock
-                ResetSockTimer $relay
                 puts -nonewline $relay  $serve($sock.string)
                 flush $relay
                 set serve($sock.state) "Read from server"
@@ -144,7 +142,6 @@ proc TapAccept { sock addr port } {
                 StatusMessage "FAILURE reading OWSERVER response" 0
                 ResponseStatsIncr $relay 1
                 CircBufferEntryResponse $current "network read error" $relay
-                ShowMessage $relay
                 set serve($sock.state) "Done with server"
             }
         "Process server packet" {
@@ -161,7 +158,6 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
                 if { $serve($relay.ping) == 1 } {
-puts "PING"
                     set serve($sock.state) "Read from server"
                 } else {
                     set serve($sock.state) "Done with server"
@@ -330,12 +326,15 @@ proc ReadProcess { sock } {
 proc RelayProcess { relay } {
     global serve
     set read_value [ReadProcess $relay]
+puts "Current length [string length $serve($relay.string)] return val=$read_value"
     switch $read_value {
         2  { set serve($serve($relay.sock).state) "Server early end"}
         0  { return }
         1  { set serve($serve($relay.sock).state) "Process server packet" }
     }
     ErrorParser serve $relay
+puts $serve($serve($relay.sock).typetext)
+    ShowMessage $relay
 }
 
 # Debugging routine -- show all the packet info
@@ -782,7 +781,7 @@ proc TransactionDetail { index } {
 # Parse for return HeaderParser
 proc ErrorParser { array_name prefix } {
 	upvar 1 $array_name a_name
-	set a_name($prefix.return) [DetailReturn $a_name($prefix.type)]
+	set a_name($prefix.return) [DetailReturn a_name $prefix]
 }
 # Parse for TYPE after HeaderParser
 proc TypeParser { array_name prefix } {
@@ -808,7 +807,7 @@ proc HeaderParser { array_name prefix string_value } {
     foreach x {version payload type flags size offset typetext} {
 		set a_name($prefix.$x) ""
 	}
-    foreach x {paylength tokenlength totallength typetext} {
+    foreach x {paylength tokenlength totallength ping} {
 		set a_name($prefix.$x) 0
 	}
     binary scan $string_value {IIIIII} a_name($prefix.version) a_name($prefix.payload) a_name($prefix.type) a_name($prefix.flags) a_name($prefix.size) a_name($prefix.offset)
@@ -903,7 +902,13 @@ proc DetailRow { window_name color1 color2 v0 v1 v2 v3 v4 v5 } {
     grid  $window_name.x${row}0 $window_name.x${row}1 $window_name.x${row}2 $window_name.x${row}3 $window_name.x${row}4 $window_name.x${row}5 -row $row -sticky news
 }
 
-proc DetailReturn { ret } {
+proc DetailReturn { array_name prefix } {
+    upvar 1 $array_name a_name
+    if { [info exists a_name($prefix.type)] } {
+        set ret $a_name($prefix.type)
+    } else {
+        return "ESHORT"
+    }
     if { $ret >= 0 } { return "OK" }
     switch -- $ret {
         -1      { return "EPERM"}
