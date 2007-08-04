@@ -158,10 +158,13 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
                 if { $serve($relay.ping) == 1 } {
-                    set serve($sock.state) "Read from server"
+                    set serve($sock.state) "Ping received"
                 } else {
                     set serve($sock.state) "Done with server"
                 }
+            }
+        "Ping received" {
+                set serve($sock.state) "Read from server"
             }
         "Done with server"  {
                 CloseSock $relay
