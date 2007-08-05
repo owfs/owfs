@@ -71,7 +71,13 @@ void ow_help_job(void)
 		   "\n"
 		   " Permission\n"
 		   " -r --readonly     Don't allow writing to 1-wire devices\n"
-		   " -w --write        Allow writing to 1-wire\n");
+		   " -w --write        Allow writing to 1-wire\n"
+           "\n"
+           " Development tests (owserver only)"
+           "  --pingcrazy      Add lots of keep-alive messages to the owserver protocol"
+           "  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)"
+           "  --no_get         GET fails, drops back to DIRALL and READ"
+           "  --no_persistence persistent connections refused, drops back to non-persistent");
 }
 
 void ow_help_temperature(void)

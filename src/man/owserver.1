@@ -39,6 +39,16 @@ tcp-port
 .br
 .B owserver
 .B \-V \-\-version
+.br
+.B owserver
+.I --no_dirall
+|
+.I --no_get
+|
+.I --no_persistence
+|
+.I --pingcrazy
+.br
 .SH "DESCRIPTION"
 .so description
 .SS owserver
@@ -78,6 +88,16 @@ TCP port or IPaddress:port for
 .br
 Other OWFS programs will access owserver via this address. (e.g. owfs -s IP:port /1wire)
 .so cmdline
+.SH DEVELOPER OPTIONS
+.SS --no_dirall
+Reject DIRALL messages (requests directory as a single message), forcing client to use older DIR method (each element is an individual message)
+.SS --no_get
+Reject GET messages (lets owserver determine if READ or DIRALL is appropriate). Client will fall back to older methods.
+.SS --no_persistence
+Reject persistence in requests. All transactions will have to be new connections.
+.SS --pingcrazy
+Interject many "keep-alive" (PING) responses. Usually PING responses are only sent when processing is taking a long time to inform client that owserver is still there.
+
 .SH EXAMPLE
 .B owserver -p 3001 -d /dev/ttyS0
 runs owserver on tcp port 3001 and connects to a physical 1-wire bus on a serial port.

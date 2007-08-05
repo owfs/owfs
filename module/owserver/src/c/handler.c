@@ -66,7 +66,13 @@ void Handler(int fd)
 	timersub(&tv_high, &tv_low, &tv_high);	// just the delta
 
 	while (FromClient(&hd) == 0) {
-		int loop_persistent = ((hd.sm.sg & PERSISTENT_MASK) != 0);
+        // Was persistence requested?
+		int loop_persistent = ((hd.sm.sg & PERSISTENT_MASK) != 0) ;
+
+        /* Persistence suppression? */
+        if (Global.no_persistence) {
+            loop_persistent = 0 ;
+        }
 
 		/* Persistence logic */
 		if (loop_persistent) {	/* Requested persistence */

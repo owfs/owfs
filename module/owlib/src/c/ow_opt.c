@@ -128,6 +128,7 @@ const struct option owopts_long[] = {
     {"pingcrazy",no_argument, &Global.pingcrazy, 1},
     {"no_dirall",no_argument, &Global.no_dirall, 1},
     {"no_get",no_argument, &Global.no_get, 1},
+    {"no_persistence",no_argument, &Global.no_persistence, 1},
 
 	{0, 0, 0, 0},
 };

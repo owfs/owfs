@@ -574,6 +574,7 @@ struct global {
     int pingcrazy;
     int no_dirall;
     int no_get;
+    int no_persistence;
 };
 extern struct global Global;
 

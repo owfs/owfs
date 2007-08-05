@@ -66,7 +66,24 @@ void *DataHandler(void *v)
 	memset(&cm, 0, sizeof(struct client_msg));
 	cm.sg = hd->sm.sg;			// default flag return -- includes persistence state
 
-	switch ((enum msg_classification) hd->sm.type) {	// outer switch
+    /* Pre-handling for special testing mode to exclude certain messsages */
+    switch ((enum msg_classification) hd->sm.type) {
+    case msg_dirall:
+        if (Global.no_dirall) {
+            hd->sm.type = msg_error ;
+        }
+        break ;
+    case msg_get:
+        if (Global.no_get) {
+            hd->sm.type = msg_error ;
+        }
+        break ;
+    default:
+        break ;
+    }
+
+    /* Now Check message types and only parse valid messages */
+    switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message
 	case msg_write:				// good message
 	case msg_dir:				// good message
@@ -77,8 +94,6 @@ void *DataHandler(void *v)
 			cm.ret = -EBADMSG;
 		} else {
 			OWQ_make(owq);
-			//struct one_wire_query struct_owq ;
-			//struct one_wire_query * owq = &struct_owq ;
 			struct parsedname * pn = PN(owq) ;
             
 			/* Parse the path string */

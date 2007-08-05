@@ -157,13 +157,19 @@ proc TapAccept { sock addr port } {
                 ClearSockTimer $relay
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
+                # filter out the multi-response types and continue listening
                 if { $serve($relay.ping) == 1 } {
                     set serve($sock.state) "Ping received"
+                } elseif { ( $message_type=="DIR" ) && ($serve($relay.paylength)>0)} {
+                    set serve($sock.state) "Dir element received"
                 } else {
                     set serve($sock.state) "Done with server"
                 }
             }
         "Ping received" {
+                set serve($sock.state) "Read from server"
+            }
+        "Dir element received" {
                 set serve($sock.state) "Read from server"
             }
         "Done with server"  {
