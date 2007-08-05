@@ -59,6 +59,7 @@ READ_FUNCTION(FS_r_blanket);
 WRITE_FUNCTION(FS_w_blanket);
 READ_FUNCTION(FS_r_ad);
 READ_FUNCTION(FS_r_pio);
+READ_FUNCTION(FS_r_latch);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
 
@@ -150,6 +151,7 @@ struct filetype DS28EA00[] = {
   {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
   {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
   {"PIO",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable,   FS_r_pio, FS_w_pio, {v:NULL},} ,
+  {"latch",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable,   FS_r_latch, NULL, {v:NULL},} ,
   {"sensed",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile,   FS_sense, NO_WRITE_FUNCTION, {v:NULL},} ,
 };
 
@@ -287,11 +289,20 @@ static int FS_sense(struct one_wire_query * owq)
 
 static int FS_r_pio(struct one_wire_query * owq)
 {
-	BYTE pio, latch;
+    BYTE pio, latch;
     if (OW_read_pio(&pio, &latch, PN(owq)))
-		return -EINVAL;
-    OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;	/* reverse bits */
-	return 0;
+        return -EINVAL;
+    OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;  /* reverse bits */
+    return 0;
+}
+
+static int FS_r_latch(struct one_wire_query * owq)
+{
+    BYTE pio, latch;
+    if (OW_read_pio(&pio, &latch, PN(owq)))
+        return -EINVAL;
+    OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;  /* reverse bits */
+    return 0;
 }
 
 static int FS_r_templimit(struct one_wire_query * owq)
@@ -793,12 +804,13 @@ static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
   return 0 ;
 }
 
+/* Write to PIO -- both channels. Already inverted and other fields set to 1 */
 static int OW_w_pio( BYTE pio, const struct parsedname * pn )
 {
-  BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, } ;
+  BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, BYTE_INVERSE(pio)} ;
   struct transaction_log t[] = {
     TRXN_START,
-    TRXN_WRITE2(cmd),
+    TRXN_WRITE3(cmd),
     TRXN_END ,
   } ;
   return BUS_transaction(t,pn) ;
