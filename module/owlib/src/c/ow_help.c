@@ -73,11 +73,11 @@ void ow_help_job(void)
 		   " -r --readonly     Don't allow writing to 1-wire devices\n"
 		   " -w --write        Allow writing to 1-wire\n"
            "\n"
-           " Development tests (owserver only)"
-           "  --pingcrazy      Add lots of keep-alive messages to the owserver protocol"
-           "  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)"
-           "  --no_get         GET fails, drops back to DIRALL and READ"
-           "  --no_persistence persistent connections refused, drops back to non-persistent");
+           " Development tests (owserver only)\n"
+           "  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
+           "  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)\n"
+           "  --no_get         GET fails, drops back to DIRALL and READ\n"
+           "  --no_persistence persistent connections refused, drops back to non-persistent\n");
 }
 
 void ow_help_temperature(void)
@@ -171,7 +171,7 @@ void ow_help_device(void)
 		   "  --autoserver    Find owserver using zeroconf\n"
 		   "\n"
 		   " Simulated\n"
-		   "  --fake list     List of devices to simultate (random ID, random data)\n"
+		   "  --fake list     List of devices to simulate (random ID, random data)\n"
 		   "                   use family codes in hex\n"
 		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n");
 }
