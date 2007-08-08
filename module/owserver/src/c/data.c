@@ -165,6 +165,7 @@ void *DataHandler(void *v)
 	case msg_size:				// no longer used
 	case msg_error:
 	default:					// "bad" message
+        cm.ret = -ENOMSG ;
 		LEVEL_CALL("No message\n");
 		break;
 	}

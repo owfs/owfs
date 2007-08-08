@@ -7,7 +7,7 @@ exec wish "$0" -- "$@"
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext return }
+set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return }
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
@@ -86,7 +86,11 @@ proc TapAccept { sock addr port } {
         "Open client" {
                 StatusMessage "Reading client request from $addr port $port" 0
                 set current [CircBufferAllocate]
+                set persist 0
                 fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0
+                set serve($sock.state) "Persistent loop"
+            }
+        "Persistent loop" {
                 TapSetup $sock
                 set serve($sock.sock) $sock
                 set serve($sock.state) "Read client"
@@ -105,7 +109,11 @@ proc TapAccept { sock addr port } {
                 #stats
                 RequestStatsIncr $sock 0
                 # now owserver
-                set serve($sock.state) "Open server"
+                if {$persist} {
+                    set serve($sock.state) "Send to server"
+                } else {
+                    set serve($sock.state) "Open server"
+                }
             }
         "Client early end" {
                 StatusMessage "FAILURE reading client request"
@@ -163,7 +171,7 @@ proc TapAccept { sock addr port } {
                 } elseif { ( $message_type=="DIR" ) && ($serve($relay.paylength)>0)} {
                     set serve($sock.state) "Dir element received"
                 } else {
-                    set serve($sock.state) "Done with server"
+                    set serve($sock.state) "Persistent test"
                 }
             }
         "Ping received" {
@@ -171,6 +179,14 @@ proc TapAccept { sock addr port } {
             }
         "Dir element received" {
                 set serve($sock.state) "Read from server"
+            }
+        "Persistent test" {
+                if { $serve($relay.persist) } {
+                    set $persist 1
+                    set serve($sock.state) "Persistent loop"
+                } else {
+                    set serve($sock.state) "Done with server"
+                }
             }
         "Done with server"  {
                 CloseSock $relay
@@ -318,7 +334,6 @@ proc ReadProcess { sock } {
         return 0
     } elseif { $serve($sock.totallength) == 0 } {
         # at least header is in
-#        HeaderParse $sock
         HeaderParser serve $sock $serve($sock.string)
     }
     #already in payload (and token) portion
@@ -831,8 +846,10 @@ proc HeaderParser { array_name prefix string_value } {
 	} else {
 		set a_name($prefix.paylength) $a_name($prefix.payload)
 	}
-    set tok [expr { $a_name($prefix.version) & 0xFFFF}]
-    set ver [expr { $a_name($prefix.version) >> 16}]
+    set version $a_name($prefix.version)
+    set tok [expr { $version & 0xFFFF}]
+    set ver [expr { $version >> 16}]
+    set a_name($prefix.persist) [expr {($version&0x04)?1:0}]
     set a_name($prefix.versiontext) "T$tok V$ver"
     set a_name($prefix.flagtext) [DetailFlags $a_name($prefix.flags)]
     set a_name($prefix.tokenlength) [expr {$tok * 16} ]
@@ -930,6 +947,7 @@ proc DetailReturn { array_name prefix } {
         -21     { return "EISDIR"}
         -22     { return "EINVAL"}
         -34     { return "ERANGE"}
+        -42     { return "ENOMSG"}
         default { return "ERROR"}
     }
 }
