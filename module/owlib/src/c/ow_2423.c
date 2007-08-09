@@ -194,11 +194,16 @@ static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn)
 {
     BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
-	struct transaction_log tcopy[] = {
-		TRXN_START,
-		TRXN_WR_CRC16(p,3+size,0),
-		TRXN_END,
-	};
+    struct transaction_log tcopy_crc[] = {
+        TRXN_START,
+        TRXN_WR_CRC16(p,3+size,0),
+        TRXN_END,
+    };
+    struct transaction_log tcopy[] = {
+        TRXN_START,
+        TRXN_WRITE(p,3+size),
+        TRXN_END,
+    };
 	struct transaction_log treread[] = {
 		TRXN_START,
 		TRXN_WRITE1(p),
@@ -216,11 +221,10 @@ static int OW_w_mem( BYTE * data,  size_t size,
 	memcpy(&p[3], data, size);
 
 	if (((offset + size) & 0x1F)) {	// doesn't end on page boundary, no crc16
-		tcopy[2].type = tcopy[3].type = trxn_nop;
-	}
-
-	if (BUS_transaction(tcopy, pn))
-		return 1;
+        if (BUS_transaction(tcopy, pn)) { return 1 ;}
+    } else { // DOES end on page boundary, can check CRC16
+        if (BUS_transaction(tcopy_crc, pn)) { return 1 ;}
+    }
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
@@ -238,7 +242,7 @@ static int OW_w_mem( BYTE * data,  size_t size,
 }
 
 /* read memory area and counter (just past memory) */
-/* Nathan Holmes help troubleshoot this one! */
+/* Nathan Holmes helped troubleshoot this one! */
 static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
 {
     /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
@@ -251,7 +255,8 @@ static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pag
         {
             BYTE extra[8];
             OWQ_make( owq_read ) ;
-            OWQ_create_temporary( owq_read, NULL, 1, 31, PN(owq) ) ;
+            // make dummy owq with no buffer, and points to last byte in page (want only counter)
+            OWQ_create_temporary( owq_read, NULL, 1, pagesize-1, PN(owq) ) ;
             if ( OW_r_mem_p8_crc16( owq_read, page, pagesize, extra ) ) return 1 ;
             if (extra[4] != 0x00 || extra[5] != 0x00 || extra[6] != 0x00
                 || extra[7] != 0x00)
