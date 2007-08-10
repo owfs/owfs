@@ -81,6 +81,8 @@ DeviceEntryExtended(1D, DS2423, DEV_ovdr);
 #define _1W_READ_MEMORY 0xF0
 #define _1W_READ_MEMORY_PLUS_COUNTER 0xA5
 
+#define _1W_COUNTER_FILL 0x00
+
 /* Persistent storage */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
 MakeInternalProp(CUM,fc_persistent) ; // cumulative
@@ -90,13 +92,13 @@ MakeInternalProp(CUM,fc_persistent) ; // cumulative
 /* DS2423 */
 static int OW_w_mem( BYTE * data,  size_t size,
 					 off_t offset,  struct parsedname *pn);
-static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize) ;
+static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize) ;
 
 /* 2423A/D Counter */
 static int FS_r_page(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    if ( OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_counter ) )
+    if ( OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8 ) )
 		return -EINVAL;
     return 0;
 }
@@ -112,7 +114,7 @@ static int FS_w_page(struct one_wire_query * owq)
 static int FS_r_mem(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    if ( OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_counter ) )
+    if ( OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_toss8 ) )
 		return -EINVAL;
     return 0;
 }
@@ -128,7 +130,7 @@ static int FS_w_mem(struct one_wire_query * owq)
 static int FS_counter(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    if (OW_r_mem_counter(owq, OWQ_pn(owq).extension + 14, pagesize ))
+    if (OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize ))
         return -EINVAL;
     return 0;
 }
@@ -136,7 +138,7 @@ static int FS_counter(struct one_wire_query * owq)
 static int FS_pagecount(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    if (OW_r_mem_counter(owq, OWQ_pn(owq).extension, pagesize ))
+    if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize ))
         return -EINVAL;
     return 0;
 }
@@ -149,10 +151,10 @@ static int FS_r_mincount(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
 	UINT st[3], ct[2];			// stored and current counter values
     
-    if ( OW_r_mem_counter( owq, 0, 32 ) ) return -EINVAL ;
+    if ( OW_r_counter( owq, 14, 32 ) ) return -EINVAL ;
     ct[0] = OWQ_U(owq) ;
     
-    if ( OW_r_mem_counter( owq, 1, 32 ) ) return -EINVAL ;
+    if ( OW_r_counter( owq, 15, 32 ) ) return -EINVAL ;
     ct[1] = OWQ_U(owq) ;
     
     if (Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {	// record doesn't (yet) exist
@@ -178,10 +180,10 @@ static int FS_w_mincount(struct one_wire_query * owq)
 
     st[2] = OWQ_U(owq) ;
 
-    if ( OW_r_mem_counter( owq, 0, 32 ) ) return -EINVAL ;
+    if ( OW_r_counter( owq, 14, 32 ) ) return -EINVAL ;
     st[0] = OWQ_U(owq) ;
     
-    if ( OW_r_mem_counter( owq, 1, 32 ) ) return -EINVAL ;
+    if ( OW_r_counter( owq, 15, 32 ) ) return -EINVAL ;
     st[1] = OWQ_U(owq) ;
     
     if ( Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn) )
@@ -246,26 +248,22 @@ static int OW_w_mem( BYTE * data,  size_t size,
 static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
 {
     /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-    switch( OWQ_pn(owq).ft->format ) {
-        case ft_binary:
-        case ft_ascii:
-        case ft_vascii:
-            return OW_r_mem_p8_crc16( owq, page, pagesize, NULL ) ;
-        case ft_unsigned:
-        {
-            BYTE extra[8];
-            OWQ_make( owq_read ) ;
-            // make dummy owq with no buffer, and points to last byte in page (want only counter)
-            OWQ_create_temporary( owq_read, NULL, 1, pagesize-1, PN(owq) ) ;
-            if ( OW_r_mem_p8_crc16( owq_read, page, pagesize, extra ) ) return 1 ;
-            if (extra[4] != 0x00 || extra[5] != 0x00 || extra[6] != 0x00
-                || extra[7] != 0x00)
-                return 1;
-            /* counter is held in the 4 bytes after the data */
-            OWQ_U(owq) = UT_uint32(extra);
-            return 0 ;
-        }
-        default:
-            return 1 ;
+        return OW_r_mem_toss8( owq, page, pagesize ) ;
+}
+
+/* read counter (just past memory) */
+/* Nathan Holmes helped troubleshoot this one! */
+static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
+{
+    BYTE extra[8];
+    if ( OW_r_mem_counter_bytes( extra, page, pagesize, PN(owq) ) ) return 1 ;
+    if (extra[4] != _1W_COUNTER_FILL ||
+        extra[5] != _1W_COUNTER_FILL ||
+        extra[6] != _1W_COUNTER_FILL ||
+        extra[7] != _1W_COUNTER_FILL ) {
+        return 1;
     }
+    /* counter is held in the 4 bytes after the data */
+    OWQ_U(owq) = UT_uint32(extra);
+    return 0 ;
 }

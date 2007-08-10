@@ -90,7 +90,7 @@ DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
 
 static int OW_w_mem( BYTE * data,  size_t size,
                      off_t offset,  struct parsedname *pn);
-static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize) ;
+static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize) ;
 
 static int FS_w_password(struct one_wire_query * owq)
 {
@@ -101,7 +101,7 @@ static int FS_w_password(struct one_wire_query * owq)
 static int FS_r_page(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    if (OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_counter ) )
+    if (OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8 ) )
         return -EINVAL;
     return 0;
 }
@@ -110,7 +110,7 @@ static int FS_r_memory(struct one_wire_query * owq)
 {
     /* read is not page-limited */
     size_t pagesize = 32 ;
-    if (OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_counter ) )
+    if (OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_toss8 ) )
         return -EINVAL;
     return 0;
 }
@@ -118,7 +118,7 @@ static int FS_r_memory(struct one_wire_query * owq)
 static int FS_counter(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    if (OW_r_mem_counter(owq, OWQ_pn(owq).extension, pagesize ))
+    if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize ))
         return -EINVAL;
     return 0;
 }
@@ -189,30 +189,19 @@ static int OW_w_mem( BYTE * data,  size_t size,
     return 0;
 }
 
-/* read memory area and counter (just past memory) */
-/* Nathan Holmes help troubleshoot this one! */
-static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
+/* read counter (just past memory) */
+/* Nathan Holmes helped troubleshoot this one! */
+static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
 {
-    /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-    switch( OWQ_pn(owq).ft->format ) {
-        case ft_binary:
-        case ft_ascii:
-        case ft_vascii:
-            return OW_r_mem_p8_crc16( owq, page, pagesize, NULL ) ;
-        case ft_unsigned:
-        {
-            BYTE extra[8];
-            OWQ_make( owq_read ) ;
-            OWQ_create_temporary( owq_read, NULL, 1, 31, PN(owq) ) ;
-            if ( OW_r_mem_p8_crc16( owq_read, page, pagesize, extra ) ) return 1 ;
-            if (extra[4] != _1W_COUNTER_FILL || extra[5] != _1W_COUNTER_FILL || extra[6] != _1W_COUNTER_FILL
-                || extra[7] != _1W_COUNTER_FILL)
-                return 1;
-            /* counter is held in the 4 bytes after the data */
-            OWQ_U(owq) = UT_uint32(extra);
-            return 0 ;
-        }
-        default:
-            return 1 ;
+    BYTE extra[8];
+    if ( OW_r_mem_counter_bytes( extra, page, pagesize, PN(owq) ) ) return 1 ;
+    if (extra[4] != _1W_COUNTER_FILL ||
+        extra[5] != _1W_COUNTER_FILL ||
+        extra[6] != _1W_COUNTER_FILL ||
+        extra[7] != _1W_COUNTER_FILL ) {
+        return 1;
     }
+    /* counter is held in the 4 bytes after the data */
+    OWQ_U(owq) = UT_uint32(extra);
+    return 0 ;
 }

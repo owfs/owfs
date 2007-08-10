@@ -120,26 +120,43 @@ int OW_r_mem_crc16_F0(struct one_wire_query * owq, size_t page, size_t pagesize 
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-/* Extra 8 bytes, too */
-int OW_r_mem_p8_crc16(struct one_wire_query * owq, size_t page, size_t pagesize, BYTE * extra)
+/* Extra 8 bytes, (for counter) too -- discarded */
+int OW_r_mem_toss8(struct one_wire_query * owq, size_t page, size_t pagesize)
 {
     off_t offset = OWQ_offset(owq) + page * pagesize ;
     BYTE p[3 + pagesize + 8 + 2] ;
-	int rest = pagesize - (offset % pagesize);
-	struct transaction_log t[] = {
-		TRXN_START,
+    int rest = pagesize - (offset % pagesize);
+    struct transaction_log t[] = {
+        TRXN_START,
         TRXN_WR_CRC16(p,3,rest+8),
-		TRXN_END,
-	};
+        TRXN_END,
+    };
 
-	p[0] = _1W_READ_A5;
-	p[1] = BYTE_MASK(offset) ;
-	p[2] = BYTE_MASK(offset >> 8) ;
+    p[0] = _1W_READ_A5;
+    p[1] = BYTE_MASK(offset) ;
+    p[2] = BYTE_MASK(offset >> 8) ;
     if (BUS_transaction(t, PN(owq) ))
-		return 1;
-    if (OWQ_buffer(owq)) memcpy(OWQ_buffer(owq), &p[3], OWQ_size(owq) );
-    if ( extra ) memcpy(extra, &p[3 + rest], 8);
+        return 1;
+    memcpy(OWQ_buffer(owq), &p[3], OWQ_size(owq) );
     Set_OWQ_length( owq ) ;
+    return 0;
+}
+
+/*  0xA5 code */
+/* Extra 8 bytes, too */
+int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname * pn)
+{
+    off_t offset = (page+1) * pagesize - 1 ; // last byte of page
+    BYTE p[3 + 1 + 8 + 2] = { _1W_READ_A5, LOW_HIGH_ADDRESS(offset), };
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WR_CRC16(p,3,1+8),
+        TRXN_END,
+    };
+
+    if (BUS_transaction(t, pn ))
+        return 1;
+    if ( extra ) memcpy(extra, &p[3+1], 8);
     return 0;
 }
 
