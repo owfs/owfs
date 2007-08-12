@@ -7,7 +7,7 @@ exec wish "$0" -- "$@"
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return }
+set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id }
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
@@ -81,11 +81,10 @@ proc TapAccept { sock addr port } {
     # Start the State machine
     set serve($sock.state) "Open client"
     while {1} {
-# puts $serve($sock.state)
+#puts $serve($sock.state)
         switch $serve($sock.state) {
         "Open client" {
                 StatusMessage "Reading client request from $addr port $port" 0
-                set current [CircBufferAllocate]
                 set persist 0
                 fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0
                 set serve($sock.state) "Persistent loop"
@@ -93,11 +92,14 @@ proc TapAccept { sock addr port } {
         "Persistent loop" {
                 TapSetup $sock
                 set serve($sock.sock) $sock
+                set current [CircBufferAllocate]
                 set serve($sock.state) "Read client"
             }
         "Read client" {
-                ResetSockTimer $sock
+                # wait a long time (3hr) for very first packet
+                ResetSockTimer $sock 10000000
                 fileevent $sock readable [list TapProcess $sock]
+#   ShowMessage $sock
                 vwait serve($sock.state)
             }
         "Process client packet" {
@@ -109,7 +111,7 @@ proc TapAccept { sock addr port } {
                 #stats
                 RequestStatsIncr $sock 0
                 # now owserver
-                if {$persist} {
+                if {$persist>0} {
                     set serve($sock.state) "Send to server"
                 } else {
                     set serve($sock.state) "Open server"
@@ -165,7 +167,8 @@ proc TapAccept { sock addr port } {
                 ClearSockTimer $relay
                 StatusMessage "Sending OWSERVER response to client" 0
                 puts -nonewline $sock  $serve($relay.string)
-                # filter out the multi-response types and continue listening
+                flush $sock
+# filter out the multi-response types and continue listening
                 if { $serve($relay.ping) == 1 } {
                     set serve($sock.state) "Ping received"
                 } elseif { ( $message_type=="DIR" ) && ($serve($relay.paylength)>0)} {
@@ -181,8 +184,11 @@ proc TapAccept { sock addr port } {
                 set serve($sock.state) "Read from server"
             }
         "Persistent test" {
-                if { $serve($relay.persist) } {
-                    set $persist 1
+                if { $serve($relay.persist)==1 } {
+                    StatPersistCounter $persist
+                    incr persist
+                    ClearTap $sock
+                    ClearTap $relay
                     set serve($sock.state) "Persistent loop"
                 } else {
                     set serve($sock.state) "Done with server"
@@ -200,7 +206,27 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Ready" 0
                 return
             }
+        default {
+                StatusMessage "Internal error -- bad state: $serve($sock.state)" 1
+                return
+            }
         }
+    }
+}
+
+# initialize statistics
+proc StatsSetup { } {
+    global stats
+    global MessageListPlus
+    foreach x $MessageListPlus {
+        set stats($x.tries) 0
+        set stats($x.errors) 0
+        set stats($x.rate) 0
+        set stats($x.request_bytes) 0
+        set stats($x.response_bytes) 0
+    }
+    foreach x { request_yes request_no grant refuse 0 denominator max request_rate grant_rate } {
+        set stats(persistence_length.$x) 0
     }
 }
 
@@ -208,7 +234,7 @@ proc TapAccept { sock addr port } {
 proc RequestStatsIncr { sock is_error} {
     global stats
     global serve
-    set message_type $serve($serve($sock.sock).typetext)
+    set message_type $serve($sock.typetext)
     set length [string length $serve($sock.string)]
 
     incr stats($message_type.tries)
@@ -220,6 +246,18 @@ proc RequestStatsIncr { sock is_error} {
     incr stats(Total.errors) $is_error
     set stats(Total.rate) [expr {100 * $stats(Total.errors) / $stats(Total.tries)} ]
     incr stats(Total.request_bytes) $length
+
+    # persistence stats
+    if { [info exist serve($sock.persist)] } {
+        if { $serve($sock.persist) == 0 } {
+            incr stats(persistence_length.request_no)
+        } else {
+            incr stats(persistence_length.request_yes)
+            incr stats(persistence_length.refuse)
+            set stats(persistence_length.grant_rate) [expr {100 * $stats(persistence_length.grant) / $stats(persistence_length.request_yes)}]
+        }
+        set stats(persistence_length.request_rate) [expr { 100 * $stats(persistence_length.request_yes) / $stats(Total.tries) }]
+    }
 }
 
 # increment stats for  request
@@ -237,6 +275,32 @@ proc ResponseStatsIncr { sock is_error} {
     set stats(Total.rate) [expr {100 * $stats(Total.errors) / $stats(Total.tries)} ]
     incr stats(Total.response_bytes) $length
 }
+
+# Counter of Persistence lengths
+proc StatPersistCounter { persist } {
+    global stats
+    # max persistence length
+    if { $persist > $stats(persistence_length.max) } {
+        set stats(persistence_length.max) $persist
+        set stats(persistence_length.$persist) 0
+    }
+    # increment this bin (and decrement prior)
+    if { $persist>0 } {
+        set old_persist [expr {$persist-1}]
+        incr stats(persistence_length.$old_persist) -1
+    } else {
+        incr stats(persistence_length.denominator)
+}
+    incr stats(persistence_length.$persist)
+    incr stats(persistence_length.grant)
+    incr stats(persistence_length.refuse) -1
+    set stats(persistence_length.grant_rate) [expr {100 * $stats(persistence_length.grant) / $stats(persistence_length.request_yes)}]
+# set up ratios
+    for {set i 0} {$i <= $stats(persistence_length.max) } {incr i} {
+        set stats(persistence_rate.$i) [expr {100 * $stats(persistence_length.$i) / $stats(persistence_length.denominator) } ]
+    }
+}
+
 
 # Initialize array for client request
 proc TapSetup { sock } {
@@ -278,7 +342,7 @@ proc SockTimeout { sock } {
     switch $serve($serve($sock.sock).state) {
         "Read client" { set serve($serve($sock.sock).state) "Done with client" }
         "Read from server" { set serve($serve($sock.sock).state) "Done with server" }
-        default {ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state"}
+        default {ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state)"}
     }
     StatusMessage "Network read timeout [PrettySock $sock]" 1
 }
@@ -299,10 +363,10 @@ proc ClearSockTimer { sock } {
     }
 }
 
-proc ResetSockTimer { sock } {
+proc ResetSockTimer { sock { msec 2000 } } {
     global serve
     ClearSockTimer $sock
-    set serve($sock.id) [after 2000 [list SockTimeout $sock ]]
+    set serve($sock.id) [after $msec [list SockTimeout $sock ]]
 }
 
 # Wrapper for processing -- either change a vwait var, or just return waiting for more network traffic
@@ -324,9 +388,12 @@ proc ReadProcess { sock } {
     if { [eof $sock] } {
         return 2
     }
-    set current_length [string length $serve($sock.string)]
     # read what's waiting
-    append serve($sock.string) [read $sock]
+    set new_string [read $sock]
+    if { $new_string == {} } {
+        return 0
+    }
+    append serve($sock.string) $new_string
     ResetSockTimer $sock
     set len [string length $serve($sock.string)]
     if { $len < 24 } {
@@ -350,15 +417,15 @@ proc ReadProcess { sock } {
 proc RelayProcess { relay } {
     global serve
     set read_value [ReadProcess $relay]
-puts "Current length [string length $serve($relay.string)] return val=$read_value"
+#puts "Current length [string length $serve($relay.string)] return val=$read_value"
     switch $read_value {
         2  { set serve($serve($relay.sock).state) "Server early end"}
         0  { return }
         1  { set serve($serve($relay.sock).state) "Process server packet" }
     }
     ErrorParser serve $relay
-puts $serve($serve($relay.sock).typetext)
-    ShowMessage $relay
+#puts $serve($serve($relay.sock).typetext)
+#    ShowMessage $relay
 }
 
 # Debugging routine -- show all the packet info
@@ -428,7 +495,7 @@ proc DisplaySetup { } {
     #bottom pane, status
     label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status -bg white
     pack .status -side bottom -fill x
-    bind .status <ButtonRelease-1> [list .main_menu.view invoke 2]
+    bind .status <ButtonRelease-1> [list .main_menu.view invoke "Status messages"]
 
     SetupMenu
 }
@@ -452,6 +519,10 @@ proc SetupMenu { } {
     menu .main_menu.view -tearoff 0
     .main_menu add cascade -label View -menu .main_menu.view  -underline 0
         .main_menu.view add checkbutton -label "Statistics by Message type" -underline 14 -indicatoron 1 -command {StatByType}
+        .main_menu.view add checkbutton -label "Persistence rates" -underline 12 -indicatoron 1 -command {RatePersist}
+        .main_menu.view add checkbutton -label "Persistence lengths" -underline 12 -indicatoron 1 -command {LengthPersist}
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient}
         .main_menu.view add separator
         .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
 
@@ -587,19 +658,6 @@ proc current_from_index { index } {
     return [expr { $total + $index - $size  + 1 }]
 }
 
-# initiqalize statistics
-proc StatsSetup { } {
-	global stats
-	global MessageListPlus
-	foreach x $MessageListPlus {
-		set stats($x.tries) 0
-		set stats($x.errors) 0
-		set stats($x.rate) 0
-		set stats($x.request_bytes) 0
-		set stats($x.response_bytes) 0
-	}
-}
-
 # Popup giving attribution
 proc About { } {
     tk_messageBox -type ok -title {About owtap} -message {
@@ -673,6 +731,47 @@ http://www.owfs.org/index.php?page=owserver-protocol
     }
 }
 
+
+# Show a table of Past status messages
+proc RatePersist { } {
+    set window_name .ratepersistwindow
+    set menu_name .main_menu.view
+    set menu_index "Persistence rates"
+
+    if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
+        return
+}
+
+    global stats
+    
+    label $window_name.a0 -text "Persistence" -bg blue -fg white
+    grid  $window_name.a0 -row 0 -column 0 -sticky news
+    label $window_name.a1 -text "Requests" -bg lightblue
+    grid  $window_name.a1 -row 1 -column 0 -sticky news
+    label $window_name.a2 -text "Granted" -bg lightblue
+    grid  $window_name.a2 -row 2 -column 0 -sticky news
+    
+    label $window_name.b0 -text "number" -bg yellow
+    grid  $window_name.b0 -row 0 -column 1 -sticky news
+    label $window_name.b1 -textvariable stats(persistence_length.request_yes) -bg white
+    grid  $window_name.b1 -row 1 -column 1 -sticky news
+    label $window_name.b2 -textvariable stats(persistence_length.grant) -bg white
+    grid  $window_name.b2 -row 2 -column 1 -sticky news
+    
+    label $window_name.c0 -text "total" -bg orange
+    grid  $window_name.c0 -row 0 -column 2 -sticky news
+    label $window_name.c1 -textvariable stats(Total.tries) -bg lightyellow
+    grid  $window_name.c1 -row 1 -column 2 -sticky news
+    label $window_name.c2 -textvariable stats(persistence_length.request_yes) -bg lightyellow
+    grid  $window_name.c2 -row 2 -column 2 -sticky news
+    
+    label $window_name.d0 -text "rate %" -bg yellow
+    grid  $window_name.d0 -row 0 -column 3 -sticky news
+    label $window_name.d1 -textvariable stats(persistence_length.request_rate) -bg white
+    grid  $window_name.d1 -row 1 -column 3 -sticky news
+    label $window_name.d2 -textvariable stats(persistence_length.grant_rate) -bg white
+    grid  $window_name.d2 -row 2 -column 3 -sticky news
+}
 # Show a table of Past status messages
 proc StatusWindow { } {
     set window_name .statuswindow
@@ -741,7 +840,7 @@ proc StatByType { } {
 
     # create stats window
     set column_number 0
-    label $window_name.l${column_number}0 -text "Type" -bg blue
+    label $window_name.l${column_number}0 -text "Type" -bg blue -fg white
     grid $window_name.l${column_number}0 -row 0 -column $column_number -sticky news
     label $window_name.l${column_number}1 -text "Packets" -bg lightblue
     grid $window_name.l${column_number}1 -row 1 -column $column_number -sticky news
@@ -812,12 +911,12 @@ proc TypeParser { array_name prefix } {
 	upvar 1 $array_name a_name
     global MessageList
 	if { $a_name($prefix.totallength) < 24 } {
-		set $a_name($prefix.typetext) BadHeader
+		set a_name($prefix.typetext) BadHeader
 		return
 	}
 	set type [lindex $MessageList $a_name($prefix.type)]
 	if { $type == {} } {
-		set $a_name($prefix.typetext) Unknown
+		set a_name($prefix.typetext) Unknown
 		return
 	}
     set a_name($prefix.typetext) $type
@@ -847,11 +946,12 @@ proc HeaderParser { array_name prefix string_value } {
 		set a_name($prefix.paylength) $a_name($prefix.payload)
 	}
     set version $a_name($prefix.version)
+    set flags $a_name($prefix.flags)
     set tok [expr { $version & 0xFFFF}]
     set ver [expr { $version >> 16}]
-    set a_name($prefix.persist) [expr {($version&0x04)?1:0}]
+    set a_name($prefix.persist) [expr {($flags&0x04)?1:0}]
     set a_name($prefix.versiontext) "T$tok V$ver"
-    set a_name($prefix.flagtext) [DetailFlags $a_name($prefix.flags)]
+    set a_name($prefix.flagtext) [DetailFlags $flags]
     set a_name($prefix.tokenlength) [expr {$tok * 16} ]
     set a_name($prefix.totallength) [expr {$a_name($prefix.tokenlength)+$a_name($prefix.paylength)+24}]
 }
