@@ -225,9 +225,10 @@ proc StatsSetup { } {
         set stats($x.request_bytes) 0
         set stats($x.response_bytes) 0
     }
-    foreach x { request_yes request_no grant refuse 0 denominator max request_rate grant_rate } {
+    foreach x { request_yes request_no grant refuse -1 0 denominator max request_rate grant_rate } {
         set stats(persistence_length.$x) 0
     }
+    set stats(persistence_length.15plus) 0
 }
 
 # increment stats for  request
@@ -285,20 +286,24 @@ proc StatPersistCounter { persist } {
         set stats(persistence_length.$persist) 0
     }
     # increment this bin (and decrement prior)
-    if { $persist>0 } {
-        set old_persist [expr {$persist-1}]
-        incr stats(persistence_length.$old_persist) -1
-    } else {
+    if { $persist==0 } {
         incr stats(persistence_length.denominator)
-}
+    }
+    set old_persist [expr {$persist-1}]
+    incr stats(persistence_length.$old_persist) -1
+    if { $persist == 16 } {
+        incr stats(persistence_length.15plus)
+    }
     incr stats(persistence_length.$persist)
     incr stats(persistence_length.grant)
     incr stats(persistence_length.refuse) -1
     set stats(persistence_length.grant_rate) [expr {100 * $stats(persistence_length.grant) / $stats(persistence_length.request_yes)}]
-# set up ratios
-    for {set i 0} {$i <= $stats(persistence_length.max) } {incr i} {
-        set stats(persistence_rate.$i) [expr {100 * $stats(persistence_length.$i) / $stats(persistence_length.denominator) } ]
+
+    set length_sum 0
+    for {set x 0} {$x <= $stats(persistence_length.max)} {incr x} {
+        incr length_sum $stats(persistence_length.$x)
     }
+    set stats(persistence_length.mean) [expr {(0.0 + $length_sum)/$stats(persistence_length.denominator)}]
 }
 
 
@@ -522,7 +527,7 @@ proc SetupMenu { } {
         .main_menu.view add checkbutton -label "Persistence rates" -underline 12 -indicatoron 1 -command {RatePersist}
         .main_menu.view add checkbutton -label "Persistence lengths" -underline 12 -indicatoron 1 -command {LengthPersist}
         .main_menu.view add separator
-        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient}
+        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient} -state disabled
         .main_menu.view add separator
         .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
 
@@ -731,6 +736,47 @@ http://www.owfs.org/index.php?page=owserver-protocol
     }
 }
 
+# Show a table of Past status messages
+proc LengthPersist { } {
+    set window_name .lengthpersistwindow
+    set menu_name .main_menu.view
+    set menu_index "Persistence lengths"
+
+    if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
+        return
+    }
+    
+    global stats
+
+    label $window_name.at -text "Length" -bg blue -fg white
+    grid  $window_name.at -row 0 -column 0 -sticky news
+    label $window_name.bt -text "Count" -bg blue -fg white
+    grid  $window_name.bt -row 0 -column 1 -sticky news
+    
+    label $window_name.ax -textvariable stats(persistence_length.max) -bg lightyellow
+    grid  $window_name.ax -row 1 -column 0 -sticky news
+    label $window_name.bx -text "Max" -bg lightyellow
+    grid  $window_name.bx -row 1 -column 1 -sticky news
+    label $window_name.am -textvariable stats(persistence_length.mean) -bg lightyellow
+    grid  $window_name.am -row 2 -column 0 -sticky news
+    label $window_name.bm -text "Mean" -bg lightyellow
+    grid  $window_name.bm -row 2 -column 1 -sticky news
+
+    set row 3
+    set bg white
+    for {set x 0} {$x < 16} {incr x} {
+        label $window_name.a${x} -text $x -bg $bg
+        grid  $window_name.a${x} -row $row -column 0 -sticky news
+        label $window_name.b${x} -textvariable stats(persistence_length.$x) -bg $bg
+        grid  $window_name.b${x} -row $row -column 1 -sticky news
+        if {$bg=="white"} { set bg lightyellow} else {set bg white}
+        incr row
+    }
+    label $window_name.ap -text "> 15" -bg $bg
+    grid  $window_name.ap -row $row -column 0 -sticky news
+    label $window_name.bp -textvariable stats(persistence_length.15plus) -bg $bg
+    grid  $window_name.bp -row $row -column 1 -sticky news
+}
 
 # Show a table of Past status messages
 proc RatePersist { } {
@@ -740,7 +786,7 @@ proc RatePersist { } {
 
     if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
         return
-}
+    }
 
     global stats
     
@@ -772,6 +818,7 @@ proc RatePersist { } {
     label $window_name.d2 -textvariable stats(persistence_length.grant_rate) -bg white
     grid  $window_name.d2 -row 2 -column 3 -sticky news
 }
+
 # Show a table of Past status messages
 proc StatusWindow { } {
     set window_name .statuswindow
@@ -813,6 +860,7 @@ proc WindowAlreadyExists { window_name menu_name menu_index } {
 
     # create window
     toplevel $window_name
+    wm title $window_name $menu_index
     # delete handler
     wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index]
     # now set flag
@@ -906,6 +954,7 @@ proc ErrorParser { array_name prefix } {
 	upvar 1 $array_name a_name
 	set a_name($prefix.return) [DetailReturn a_name $prefix]
 }
+
 # Parse for TYPE after HeaderParser
 proc TypeParser { array_name prefix } {
 	upvar 1 $array_name a_name
