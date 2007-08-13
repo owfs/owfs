@@ -109,6 +109,7 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
 		cm->ret = -ENOMEM;
 		cm->size = cm->payload = 0;
 	}
-	CharblobClear(&cb);
+    cm->offset = flags;         /* send the flags in the offset slot */
+    CharblobClear(&cb);
 	return ret;
 }

@@ -990,10 +990,15 @@ proc ResponseDetail { window_name cb_index } {
     set num $circ_buffer($cb_index.num)
     for {set i 0} {$i < $num} {incr i} {
         HeaderParser r x $circ_buffer($cb_index.response.$i)
-        DetailRow $window_name white #ebeff7 $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $r(x.offset)
+        set offset $r(x.offset)
+        DetailRow $window_name white #ebeff7 $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
         if { [string length $circ_buffer($cb_index.response.$i)] >= 24 } {
             ErrorParser r x
-            DetailRow $window_name white #ebeff7 $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $r(x.offset)
+            switch [$window_name.x22 cget -text] {
+                "DIR"   -
+                "DIRALL" {set offset [DetailOffset $offset]}
+            }
+            DetailRow $window_name white #ebeff7 $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
             DetailPayload $window_name #ebeff7 $circ_buffer($cb_index.response.$i) $r(x.paylength)
         }
     }
@@ -1050,6 +1055,10 @@ proc DetailReturn { array_name prefix } {
         -42     { return "ENOMSG"}
         default { return "ERROR"}
     }
+}
+
+proc DetailOffset { offset } {
+    return [expr {$offset&0x0001?"resume ":""}][expr {$offset&0x0002?"alarm ":""}][expr {$offset&0x0004?"ovdr ":""}][expr {$offset&0x8000?"temp ":""}][expr {$offset&0x4000?"volt ":""}][expr {$offset&0x2000?"chain ":""}]
 }
 
 proc DetailFlags { flags } {
