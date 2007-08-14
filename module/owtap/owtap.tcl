@@ -13,6 +13,9 @@ set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
 lappend MessageListPlus PING BadHeader Unknown Total
 
+set stats(clientlist) {}
+set setup_flags(detail_list) {}
+
 # Global: setup_flags => For object-oriented initialization
 
 # Global: serve => information on current transaction
@@ -108,6 +111,7 @@ proc TapAccept { sock addr port } {
                 StatusMessage "Success reading client request" 0
                 set message_type $serve($sock.typetext)
                 CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $sock
+                AddClient $addr:$port
                 #stats
                 RequestStatsIncr $sock 0
                 # now owserver
@@ -301,9 +305,9 @@ proc StatPersistCounter { persist } {
 
     set length_sum 0
     for {set x 0} {$x <= $stats(persistence_length.max)} {incr x} {
-        incr length_sum $stats(persistence_length.$x)
+        incr length_sum [expr {$stats(persistence_length.$x) * $x}]
     }
-    set stats(persistence_length.mean) [expr {(0.0 + $length_sum)/$stats(persistence_length.denominator)}]
+    set stats(persistence_length.mean) [expr {($length_sum)/$stats(persistence_length.denominator)}]
 }
 
 
@@ -527,7 +531,9 @@ proc SetupMenu { } {
         .main_menu.view add checkbutton -label "Persistence rates" -underline 12 -indicatoron 1 -command {RatePersist}
         .main_menu.view add checkbutton -label "Persistence lengths" -underline 12 -indicatoron 1 -command {LengthPersist}
         .main_menu.view add separator
-        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient} -state disabled
+        .main_menu.view add checkbutton -label "Detail window list" -underline 0 -indicatoron 1 -command {DetailList}
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient}
         .main_menu.view add separator
         .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
 
@@ -734,6 +740,96 @@ service (_owserver._tcp).
 Datails can be found at:
 http://www.owfs.org/index.php?page=owserver-protocol
     }
+}
+
+# Show a list of detail windows
+proc DetailList { } {
+    set window_name .detaillist
+    set menu_name .main_menu.view
+    set menu_index "Detail window list"
+
+    if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
+        return
+    }
+
+    global setup_flags
+
+    listbox $window_name.lb -listvariable setup_flags(detail_list) -width 30 -yscrollcommand [list $window_name.sb set] -selectmode extended -bg lightyellow
+    scrollbar $window_name.sb -command [list $window_name.lb yview]
+    set f [frame $window_name.f]
+    set all [button $f.all -text All -command [list $window_name.lb selection set 0 end]]
+    set none [button $f.none -text None -command [list $window_name.lb selection clear 0 end]]
+    set delete [button $f.close -text "Close selected" -command [list DetailClear $window_name.lb]]
+    pack $all -side left
+    pack $none -side left
+    pack $delete -side right
+    pack $f -side bottom -fill x
+    pack $window_name.sb -side right -fill y
+    pack $window_name.lb -side left -fill both -expand true
+}
+
+proc DetailClear { list_box } {
+    foreach i [$list_box curselection] {
+        lappend windows [$list_box get $i]
+    }
+    foreach w $windows {
+    puts $w
+        DetailDelete $w
+    }
+}
+
+proc DetailDelete { window_name } {
+    global setup_flags
+    set i [lsearch -exact $setup_flags(detail_list) $window_name]
+    if { $i >= 0 } {
+        set setup_flags(detail_list) [lreplace $setup_flags(detail_list) $i $i]
+    }
+    destroy $window_name
+}
+
+# Client list
+proc AddClient { client } {
+    global ClientList
+    if { [info exist ClientList($client)] } {
+        incr ClientList($client)
+    } else {
+        set ClientList($client) 1
+    }
+    
+    global setup_flags
+
+    if { [ info exist setup_flags(.clientlist) ] } {
+        BuildClientList
+    }
+}
+
+proc BuildClientList { } {
+    global stats
+    global ClientList
+    set l {}
+    foreach {k v} [array get ClientList] {
+        lappend l [format {%20.20s %8d} $k $v]
+    }
+    set stats(clientlist) $l
+}
+
+# Show a table of Past status messages
+proc StatByClient { } {
+    set window_name .clientlist
+    set menu_name .main_menu.view
+    set menu_index "Clients"
+
+    if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
+        return
+    }
+
+    global stats
+
+    BuildClientList
+    listbox $window_name.lb -listvariable stats(clientlist) -width 30 -yscrollcommand [list $window_name.sb set] -bg lightyellow
+    scrollbar $window_name.sb -command [list $window_name.lb yview]
+    pack $window_name.sb -side right -fill y
+    pack $window_name.lb -side left -fill both -expand true
 }
 
 # Show a table of Past status messages
@@ -946,7 +1042,11 @@ proc TransactionDetail { index } {
     ResponseDetail $window_name $cb_index
 
     # Add to a list
-    lappend setup_flags(detail_list) $window_name
+    set l [concat $setup_flags(detail_list) $window_name]
+    set setup_flags(detail_list) [lsort -unique $l]
+
+    # delete handler
+    wm protocol $window_name WM_DELETE_WINDOW [list DetailDelete $window_name ]
 }
 
 # Parse for return HeaderParser
@@ -1040,15 +1140,15 @@ proc ResponseDetail { window_name cb_index } {
     for {set i 0} {$i < $num} {incr i} {
         HeaderParser r x $circ_buffer($cb_index.response.$i)
         set offset $r(x.offset)
-        DetailRow $window_name white #ebeff7 $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
+        DetailRow $window_name white #EEEEFF $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
         if { [string length $circ_buffer($cb_index.response.$i)] >= 24 } {
             ErrorParser r x
             switch [$window_name.x22 cget -text] {
                 "DIR"   -
                 "DIRALL" {set offset [DetailOffset $offset]}
             }
-            DetailRow $window_name white #ebeff7 $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
-            DetailPayload $window_name #ebeff7 $circ_buffer($cb_index.response.$i) $r(x.paylength)
+            DetailRow $window_name white #EEEEFF $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
+            DetailPayload $window_name #EEEEFF $circ_buffer($cb_index.response.$i) $r(x.paylength)
         }
     }
 }
