@@ -558,6 +558,23 @@ AC_ARG_ENABLE(owtap,
 AC_SUBST(ENABLE_OWTAP)
 AM_CONDITIONAL(ENABLE_OWTAP, test "${ENABLE_OWTAP}" = "true")
 
+#Check owmon
+AC_MSG_CHECKING(if owmon is enabled)
+ENABLE_OWMON="true"
+AC_ARG_ENABLE(owmon,
+[  --enable-owmon          Enable owmon module (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if test ! "$enableval" = "yes" ; then
+        ENABLE_OWMON="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWMON)
+AM_CONDITIONAL(ENABLE_OWMON, test "${ENABLE_OWMON}" = "true")
+
 #Check owcapi
 AC_MSG_CHECKING(if owcapi is enabled)
 ENABLE_OWCAPI="true"
@@ -1528,6 +1545,7 @@ AC_CONFIG_FILES([
     module/owcapi/src/c/Makefile
     module/owcapi/src/example/Makefile
     module/owtap/Makefile
+    module/owmon/Makefile
     module/swig/Makefile
     module/swig/perl5/Makefile
     module/swig/perl5/OW/Makefile.linux
@@ -1654,6 +1672,11 @@ if test "${ENABLE_OWTAP}" = "true"; then
     AC_MSG_RESULT([       owtap is enabled])
 else
     AC_MSG_RESULT([       owtap is DISABLED])
+fi
+if test "${ENABLE_OWMON}" = "true"; then
+    AC_MSG_RESULT([       owmon is enabled])
+else
+    AC_MSG_RESULT([       owmon is DISABLED])
 fi
 if test "${ENABLE_OWCAPI}" = "true"; then
     AC_MSG_RESULT([      owcapi is enabled])
