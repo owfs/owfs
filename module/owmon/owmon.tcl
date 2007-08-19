@@ -2,8 +2,6 @@
 # the next line restarts using wish \
 exec wish "$0" -- "$@"
 
-# This file is misplaced... Should be deleted and moved to module/owmon
-
 # $Id$
 
 # Global: IPAddress() loose tap server

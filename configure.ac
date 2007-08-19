@@ -560,13 +560,13 @@ AM_CONDITIONAL(ENABLE_OWTAP, test "${ENABLE_OWTAP}" = "true")
 
 #Check owmon
 AC_MSG_CHECKING(if owmon is enabled)
-ENABLE_OWMON="true"
+ENABLE_OWMON="false"
 AC_ARG_ENABLE(owmon,
-[  --enable-owmon          Enable owmon module (default true)],
+[  --enable-owmon          Enable owmon module (default false)],
 [
     AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWMON="false"
+    if test "$enableval" = "yes" ; then
+        ENABLE_OWMON="true"
     fi
 ],
 [
