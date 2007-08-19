@@ -1,8 +1,8 @@
 # $Id$
 
-EXTRA_DIST = owtap.tcl
+EXTRA_DIST = owmon.tcl
 
 install:
 	@INSTALL@ -d $(bindir)
-	@INSTALL@ -m 755 owtap.tcl $(bindir)/owtap
+	@INSTALL@ -m 755 owmon.tcl $(bindir)/owmon
 
