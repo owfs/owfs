@@ -183,6 +183,6 @@ static int OW_r_cp(int *val, const struct parsedname *pn)
 	if (BUS_transaction(t, pn))
 		return 1;
 
-	*val = resp[1] & 0x40;
+	*val = ((resp[1] & 0x40) != 0);
 	return 0;
 }
