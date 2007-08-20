@@ -13,6 +13,9 @@ set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
 lappend MessageListPlus PING BadHeader Unknown Total
 
+# see http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
+set HttpList [list "GET " POST HEAD CONN "PUT " DELE TRAC]
+
 set stats(clientlist) {}
 set setup_flags(detail_list) {}
 
@@ -441,7 +444,8 @@ proc ReadProcess { sock } {
         return 0
     } elseif { $serve($sock.totallength) == 0 } {
         # Look for web browser
-        if { [string equal -length 4 $serve($sock.string) "GET "] } {
+        global HttpList
+        if { [lsearch -exact $HttpList [string range $serve($sock.string) 0 3]] >= 0 } {
             return 3
         }
         # at least header is in
