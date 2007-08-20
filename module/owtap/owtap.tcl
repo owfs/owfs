@@ -129,7 +129,7 @@ proc TapAccept { sock addr port } {
                 set serve($sock.state) "Done with client"
             }
         "Web client" {
-                StatusMessage "Trying to use a web browser directly"
+                StatusMessage "Error: owtap is not a web server"
                 CircBufferEntryRequest $current "Not a web server"
                 CircBufferEntryResponse $current "<none>"
                 RequestStatsIncr $sock 1
