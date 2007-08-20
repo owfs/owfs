@@ -124,7 +124,16 @@ proc TapAccept { sock addr port } {
         "Client early end" {
                 StatusMessage "FAILURE reading client request"
                 CircBufferEntryRequest $current "network read error" $serve($sock.string)
+                CircBufferEntryResponse $current "<none>"
                 RequestStatsIncr $sock 1
+                set serve($sock.state) "Done with client"
+            }
+        "Web client" {
+                StatusMessage "Trying to use a web browser directly"
+                CircBufferEntryRequest $current "Not a web server"
+                CircBufferEntryResponse $current "<none>"
+                RequestStatsIncr $sock 1
+                WebResponse $sock
                 set serve($sock.state) "Done with client"
             }
         "Open server" {
@@ -203,8 +212,17 @@ proc TapAccept { sock addr port } {
                     set serve($sock.state) "Done with server"
                 }
             }
+        "Server timeout" {
+                CircBufferEntryResponse $current "owserver read timeout"
+                set serve($sock.state) "Done with server"
+            }
         "Done with server"  {
                 CloseSock $relay
+                set serve($sock.state) "Done with client"
+            }
+        "Client timeout" {
+                CircBufferEntryRequest $current "client read timeout"
+                CircBufferEntryResponse $current "<none>"
                 set serve($sock.state) "Done with client"
             }
         "Done with client" {
@@ -354,9 +372,16 @@ proc ResponseAdd { sock } {
 proc SockTimeout { sock } {
     global serve
     switch $serve($serve($sock.sock).state) {
-        "Read client" { set serve($serve($sock.sock).state) "Done with client" }
-        "Read from server" { set serve($serve($sock.sock).state) "Done with server" }
-        default {ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state)"}
+        "Read client" {
+            set serve($serve($sock.sock).state) "Client timeout"
+        }
+        "Read from server" {
+            set serve($serve($sock.sock).state) "Server timeout"
+        }
+        default {
+            ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state)"
+            set serve($serve($sock.sock).state) "Server timeout"
+        }
     }
     StatusMessage "Network read timeout [PrettySock $sock]" 1
 }
@@ -388,6 +413,7 @@ proc TapProcess { sock } {
     global serve
     set read_value [ReadProcess $sock]
     switch $read_value {
+        3  { set serve($sock.state) "Web client" }
         2  { set serve($sock.state) "Client early end" }
         0  { return }
         1  { set serve($sock.state) "Process client packet" }
@@ -414,6 +440,10 @@ proc ReadProcess { sock } {
         #do nothing -- reloop
         return 0
     } elseif { $serve($sock.totallength) == 0 } {
+        # Look for web browser
+        if { [string equal -length 4 $serve($sock.string) "GET "] } {
+            return 3
+        }
         # at least header is in
         HeaderParser serve $sock $serve($sock.string)
     }
@@ -433,6 +463,7 @@ proc RelayProcess { relay } {
     set read_value [ReadProcess $relay]
 #puts "Current length [string length $serve($relay.string)] return val=$read_value"
     switch $read_value {
+        3  - 
         2  { set serve($serve($relay.sock).state) "Server early end"}
         0  { return }
         1  { set serve($serve($relay.sock).state) "Process server packet" }
@@ -608,7 +639,7 @@ proc CircBufferAllocate { } {
 }
 
 # place a new request packet
-proc CircBufferEntryRequest { current request transaction_string } {
+proc CircBufferEntryRequest { current request {transaction_string "" } } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
@@ -1233,6 +1264,21 @@ proc DetailFlags { flags } {
     return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
 }
  
+proc WebResponse { sock } {
+    set R [lindex {$Revision$} 1]
+    fconfigure $sock -buffering full -translation crlf -blocking 0
+    puts $sock "HTTP/1.0 400 Bad Request"
+    puts $sock "Date: [clock format [clock seconds] -gmt 1]"
+    puts $sock "Server: OWTAP-$R"
+    puts $sock "Last-Modified: [clock format [clock seconds] -gmt 1]"
+    puts $sock "Content-Type: text/html"
+    puts $sock ""
+    puts $sock "<HTML><HEAD><TITLE>OWTAP-$R owserver protocol inspector</TITLE></HEAD>"
+    puts $sock "<BODY><P>Attempt to access OWTAP directly. You probably meant to access OWHTTPD, the 1-wire web server.</P>"
+    puts $sock "<P>For more information see <A HREF=http://www.owfs.org>OWFS website</A> or the <A HREF=http://sourceforge.net/projects/owfs/>Sourceforge site.</A?</P?</BODY></HTML>"
+    flush $sock
+}
+
 # socket name in readable format
 proc PrettySock { sock } {
     set socklist [fconfigure $sock -sockname]

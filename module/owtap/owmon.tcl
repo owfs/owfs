@@ -138,13 +138,17 @@ proc TapAccept { sock addr port } {
             }
         "Open server" {
                 global IPAddress
-                StatusMessage "Attempting to open connection to OWSERVER port $IPAddress(server.ip):$IPAddress(server.port)" 0
+                StatusMessage "Attempting to open connection to OWSERVER port" 0
                 if {[catch {socket $IPAddress(server.ip) $IPAddress(server.port)} relay] } {
-                    StatusMessage "OWSERVER error: $relay"
-                    set serve($sock.state) "Done with client"
+                    set serve($sock.state) "Unopened server"
                 } else {
                     set serve($sock.state) "Send to server"
                 }
+            }
+        "Unopened server" {
+                StatusMessage "OWSERVER error: $relay at $IPAddress(server.ip):$IPAddress(server.port)"
+                CircBufferEntryResponse $current "owserver doesn't respond" $relay
+                set serve($sock.state) "Done with client"
             }
         "Send to server" {
                 StatusMessage "Sending client request to OWSERVER" 0
