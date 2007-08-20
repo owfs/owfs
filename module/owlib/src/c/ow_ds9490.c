@@ -345,13 +345,16 @@ static int DS9490_detect_found(struct usb_list *ul,
 	if (DS9490_open(ul, pn))
 		return -EIO;
 
-	/* We are looking for devices in the root (not the branch
+    /* First time pretend there are devices */
+    pn->in->AnyDevices = 1 ;
+
+    /* We are looking for devices in the root (not the branch
 	 * pn eventually points to */
 	memcpy(&pncopy, pn, sizeof(struct parsedname));
 	pncopy.dev = NULL;
 	pncopy.pathlength = 0;
 
-	/* Do a quick directory listing and find the DS1420 id */
+    /* Do a quick directory listing and find the DS1420 id */
 	if ((ret = BUS_first(&ds, &pncopy))) {
 		// clear it just in case nothing is found
 		memset(pn->in->connin.usb.ds1420_address, 0, 8);
@@ -774,6 +777,7 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 	}
 #endif							// __FreeBSD__
 	do {
+// #undef HAVE_USB_INTERRUPT_READ
 #ifdef HAVE_USB_INTERRUPT_READ
 		// Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
 		if ((ret =
