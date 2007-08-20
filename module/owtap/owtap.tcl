@@ -110,7 +110,7 @@ proc TapAccept { sock addr port } {
                 ClearSockTimer $sock
                 StatusMessage "Success reading client request" 0
                 set message_type $serve($sock.typetext)
-                CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $sock
+                CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $serve($sock.string)
                 AddClient $addr:$port
                 #stats
                 RequestStatsIncr $sock 0
@@ -123,19 +123,24 @@ proc TapAccept { sock addr port } {
             }
         "Client early end" {
                 StatusMessage "FAILURE reading client request"
-                CircBufferEntryRequest $current "network read error" $sock
+                CircBufferEntryRequest $current "network read error" $serve($sock.string)
                 RequestStatsIncr $sock 1
                 set serve($sock.state) "Done with client"
             }
         "Open server" {
                 global IPAddress
-                StatusMessage "Attempting to open connection to OWSERVER port $IPAddress(server.ip):$IPAddress(server.port)" 0
+                StatusMessage "Attempting to open connection to OWSERVER" 0
                 if {[catch {socket $IPAddress(server.ip) $IPAddress(server.port)} relay] } {
-                    StatusMessage "OWSERVER error: $relay"
-                    set serve($sock.state) "Done with client"
+                    set serve($sock.state) "Unopened server"
                 } else {
                     set serve($sock.state) "Send to server"
                 }
+            }
+        "Unopened server" {
+                StatusMessage "OWSERVER error: $relay at $IPAddress(server.ip):$IPAddress(server.port)"
+                set serve($relay.string) {}
+                CircBufferEntryResponse $current "owserver not responding"
+                set serve($sock.state) "Done with client"
             }
         "Send to server" {
                 StatusMessage "Sending client request to OWSERVER" 0
@@ -155,14 +160,14 @@ proc TapAccept { sock addr port } {
         "Server early end" {
                 StatusMessage "FAILURE reading OWSERVER response" 0
                 ResponseStatsIncr $relay 1
-                CircBufferEntryResponse $current "network read error" $relay
+                CircBufferEntryResponse $current "network read error" $serve($relay.string)
                 set serve($sock.state) "Done with server"
             }
         "Process server packet" {
                 StatusMessage "Success reading OWSERVER response" 0
                 ResponseAdd $relay
                 fileevent $relay readable {}
-                CircBufferEntryResponse $current $serve($relay.return) $relay
+                CircBufferEntryResponse $current $serve($relay.return) $serve($relay.string)
                 #stats
                 ResponseStatsIncr $relay 0
                 set serve($sock.state) "Send to client"
@@ -603,7 +608,7 @@ proc CircBufferAllocate { } {
 }
 
 # place a new request packet
-proc CircBufferEntryRequest { current request sock} {
+proc CircBufferEntryRequest { current request transaction_string } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
@@ -621,13 +626,12 @@ proc CircBufferEntryRequest { current request sock} {
     .log.request_list delete [expr $index + 1 ]
 
     #Now store packet
-    global serve
     set cb_index [ expr { $current % $size } ]
-    set circ_buffer($cb_index.request) $serve($sock.string)
+    set circ_buffer($cb_index.request) $transaction_string
 }
 
 # place a new response packet
-proc CircBufferEntryResponse { current response sock } {
+proc CircBufferEntryResponse { current response {transaction_string "" } } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
@@ -645,9 +649,8 @@ proc CircBufferEntryResponse { current response sock } {
     .log.response_list delete [expr $index + 1 ]
 
     #Now store packet
-    global serve
     set cb_index [ expr { $current % $size } ]
-    set circ_buffer($cb_index.response.$circ_buffer($cb_index.num)) $serve($sock.string)
+    set circ_buffer($cb_index.response.$circ_buffer($cb_index.num)) $transaction_string
     incr circ_buffer($cb_index.num)
 }
 
