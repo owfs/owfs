@@ -1191,7 +1191,7 @@ proc ResponseDetail { window_name cb_index } {
     for {set i 0} {$i < $num} {incr i} {
         HeaderParser r x $circ_buffer($cb_index.response.$i)
         set offset $r(x.offset)
-        DetailRow $window_name white #EEEEFF $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
+        DetailRowPlus $window_name white #EEEEFF $i $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
         if { [string length $circ_buffer($cb_index.response.$i)] >= 24 } {
             ErrorParser r x
             switch [$window_name.x22 cget -text] {
@@ -1222,15 +1222,33 @@ proc DetailText { window_name color text_string } {
     grid  $window_name.t${row} -row $row -columnspan $columns -sticky news
 }
 
+# Standard detail row, one cell per value
 proc DetailRow { window_name color1 color2 v0 v1 v2 v3 v4 v5 } {
     set row [lindex [grid size $window_name] 1]
-    label $window_name.x${row}0 -text $v0 -bg $color1
+    set w0 [label $window_name.x${row}0 -text $v0 -bg $color1]
+    DetailRowRest $window_name $color1 $color2 $row $w0 $v1 $v2 $v3 $v4 $v5
+}
+
+# Augmented detail row, one cell per value, plus num in blue
+proc DetailRowPlus { window_name color1 color2 num v0 v1 v2 v3 v4 v5 } {
+    set row [lindex [grid size $window_name] 1]
+    set w0 [frame $window_name.x${row}0 -bd 0 -relief flat]
+    set n0 [label $w0.n -text $num -bg #a6b1ff -fg white]
+    set m0 [label $w0.m -text $v0 -bg $color1]
+    pack $n0 -side left -anchor w -fill none
+    pack $m0 -side right -fill x -expand 1
+    DetailRowRest $window_name $color1 $color2 $row $w0 $v1 $v2 $v3 $v4 $v5
+}
+
+# first element could be augmented by packet number
+# adds row and widget for first cell instead of value
+proc DetailRowRest { window_name color1 color2 row w0 v1 v2 v3 v4 v5 } {
     label $window_name.x${row}1 -text $v1 -bg $color2
     label $window_name.x${row}2 -text $v2 -bg $color1
     label $window_name.x${row}3 -text $v3 -bg $color2
     label $window_name.x${row}4 -text $v4 -bg $color1
     label $window_name.x${row}5 -text $v5 -bg $color2
-    grid  $window_name.x${row}0 $window_name.x${row}1 $window_name.x${row}2 $window_name.x${row}3 $window_name.x${row}4 $window_name.x${row}5 -row $row -sticky news
+    grid  $w0 $window_name.x${row}1 $window_name.x${row}2 $window_name.x${row}3 $window_name.x${row}4 $window_name.x${row}5 -row $row -sticky news
 }
 
 proc DetailReturn { array_name prefix } {
