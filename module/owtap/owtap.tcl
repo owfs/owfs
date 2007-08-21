@@ -55,17 +55,30 @@ proc ArgumentProcess { arg } {
     # "Clear" ports
     # INADDR_ANY
     set IPAddress(tap.ip) "0.0.0.0"
-    set IPAddress(tap.port) 0
+    set IPAddress(tap.port) "0"
     set IPAddress(server.ip) "0.0.0.0"
-    set IPAddress(server.port) 4304
+    set IPAddress(server.port) "4304"
     foreach a $arg {
-        if { [regexp {p} $a] } { set mode "tap" }
-        if { [regexp {s} $a] } { set mode "server" }
-        set pp 0
-        regexp {[0-9]{1,}} $a pp
-        if { $pp } { set IPAddress($mode.port) $pp }
+        if { [regexp -- {^-p(.*)$} $a whole address] } {
+			set mode "tap"
+		} elseif { [regexp -- {^-s(.*)$} $a whole address] } {
+			set mode "server"
+		}  else {
+			set address $a
+		}
+		IPandPort $mode $address
     }
     MainTitle $IPAddress(tap.ip):$IPAddress(tap.port) $IPAddress(server.ip):$IPAddress(server.port)
+}
+
+proc IPandPort { mode argument_string } {
+    global IPAddress
+    if { [regexp -- {^(.*?):(.*)$} $argument_string wholestring firstpart secondpart] } {
+		if { $firstpart != "" } { set IPAddress($mode.ip) $firstpart }
+		if { $secondpart != "" } { set IPAddress($mode.port) $secondpart }
+    } else {
+		if { $argument_string != "" } { set IPAddress($mode.port) $argument_string }
+    }
 }
 
 # Accept from client (our "server" portion)
