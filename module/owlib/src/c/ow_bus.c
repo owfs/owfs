@@ -308,7 +308,7 @@ int BUS_reset(const struct parsedname *pn)
     } else if (ret == BUS_RESET_SHORT) {
         pn->in->AnyDevices = 0;
         STAT_ADD1_BUS(BUS_short_errors, pn->in);
-        LEVEL_CONNECT("1-wire bus short circuit.\n")
+        LEVEL_CONNECT("1-wire bus short circuit.\n") ;
         return 1;
 	} else {
 		pn->in->reconnect_state++;	// Flag for eventual reconnection

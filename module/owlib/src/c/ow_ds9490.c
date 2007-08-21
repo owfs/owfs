@@ -330,7 +330,7 @@ static int DS9490_detect_low(const struct parsedname *pn)
         }
     }
 
-    LEVEL_CONNECT("No available USB DS9490 adapter found\n")
+    LEVEL_CONNECT("No available USB DS9490 adapter found\n");
             return -ENODEV;
 }
 

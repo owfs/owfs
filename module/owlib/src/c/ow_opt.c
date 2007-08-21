@@ -426,13 +426,13 @@ int owopt(const int c, const char *arg)
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
 						   fic);
 		else {
-			LEVEL_DEFAULT("Unrecognized format type %s\n", arg)
+			LEVEL_DEFAULT("Unrecognized format type %s\n", arg);
 				return 1;
 		}
 		break;
 	case 'P':
 		if (arg == NULL || strlen(arg) == 0) {
-			LEVEL_DEFAULT("No PID file specified\n")
+			LEVEL_DEFAULT("No PID file specified\n");
 				return 1;
 		} else if ((pid_file = strdup(arg)) == NULL) {
 			fprintf(stderr,

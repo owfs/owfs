@@ -29,6 +29,10 @@ void LibSetup(enum opt_program opt)
 
 	// global structure of configuration parameters
 	memset(&Global, 0, sizeof(struct global));
+
+    Global.error_level = e_err_default ;
+    Global.error_print = e_err_print_mixed ;
+
 	Global.opt = opt;
 	Global.want_background = 1;
 	Global.SimpleBusName = "None";

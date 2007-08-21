@@ -43,7 +43,7 @@ int handle_socket(FILE * out)
 	struct parsedname pn;
 
 	str = fgets(up.line, PATH_MAX, out);
-	LEVEL_CALL("PreParse line=%s\n", up.line)
+	LEVEL_CALL("PreParse line=%s\n", up.line);
 		URLparse(&up);			/* Braek up URL */
 
 	/* read lines until blank */
@@ -57,7 +57,7 @@ int handle_socket(FILE * out)
 	LEVEL_CALL
 		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",
 		 SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request),
-		 SAFESTRING(up.value), SAFESTRING(up.version))
+		 SAFESTRING(up.value), SAFESTRING(up.version));
 		/*
 		 * This is necessary for some stupid *
 		 * * operating system such as SunOS

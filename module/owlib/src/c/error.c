@@ -28,24 +28,24 @@ int log_available = 0;
 /* Print message and return to caller
  * Caller specifies "errnoflag" and "level" */
 #define MAXLINE     1023
-void err_msg(int errnoflag, int level, const char *fmt, ...)
+void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...)
 {
 	int errno_save = errno;		/* value caller might want printed */
 	int n;
 	char buf[MAXLINE + 1];
-	int sl;						// 0=console 1=syslog
+	enum e_err_print sl;						// 2=console 1=syslog
 	va_list ap;
 
 	/* Print where? */
 	switch (Global.error_print) {
-	case 0:
-		sl = Global.now_background;
+	case e_err_print_mixed:
+		sl = Global.now_background?e_err_print_syslog:e_err_print_console;
 		break;
-	case 1:
-		sl = 1;
+	case e_err_print_syslog:
+		sl = e_err_print_syslog;
 		break;
-	case 2:
-		sl = 0;
+	case e_err_print_console:
+		sl = e_err_print_console;
 		break;
 	default:
 		return;
@@ -60,36 +60,39 @@ void err_msg(int errnoflag, int level, const char *fmt, ...)
 	vsprintf(buf, fmt, ap);		/* not safe */
 #endif
 	n = strlen(buf);
-	if (errnoflag)
+	if (errnoflag==e_err_type_error) {
 		snprintf(buf + n, MAXLINE - n, ": %s", strerror(errno_save));
+    }
 	UCLIBCUNLOCK;
 	va_end(ap);
 
-	if (sl) {					/* All output to syslog */
+	if (sl==e_err_print_syslog) {					/* All output to syslog */
 		strcat(buf, "\n");
 		if (!log_available) {
 			openlog("OWFS", LOG_PID, LOG_DAEMON);
 			log_available = 1;
 		}
-		syslog(errnoflag ? LOG_INFO : LOG_NOTICE, buf);
+		syslog(level<=e_err_default ? LOG_INFO : LOG_NOTICE, buf);
 	} else {
 		fflush(stdout);			/* in case stdout and stderr are the same */
 		switch (level) {
-		case 0:
+		case e_err_default:
 			fputs("DEFAULT: ", stderr);
 			break;
-		case 1:
+		case e_err_connect:
 			fputs("CONNECT: ", stderr);
 			break;
-		case 2:
+		case e_err_call:
 			fputs("   CALL: ", stderr);
 			break;
-		case 3:
+		case e_err_data:
 			fputs("   DATA: ", stderr);
 			break;
-		case 4:
+		case e_err_detail:
 			fputs(" DETAIL: ", stderr);
 			break;
+        case e_err_debug:
+        case e_err_beyond:
 		default:
 			fputs("  DEBUG: ", stderr);
 			break;

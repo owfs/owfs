@@ -17,28 +17,46 @@
 #include <owfs_config.h>
 
 /* error functions */
-void err_msg(int errnoflag, int level, const char *fmt, ...);
+enum e_err_level {e_err_default, e_err_connect, e_err_call, e_err_data, e_err_detail, e_err_debug, e_err_beyond, } ;
+enum e_err_type { e_err_type_level, e_err_type_error, } ;
+enum e_err_print { e_err_print_mixed, e_err_print_syslog, e_err_print_console,} ;
+
+void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
 void _Debug_Bytes( const char * title, const unsigned char * buf, int length) ;
 
 extern int log_available;
 
 #if OW_DEBUG
-#define LEVEL_DEFAULT(...)    if (Global.error_level>0) err_msg(0,0,__VA_ARGS__) ;
-#define LEVEL_CONNECT(...)    if (Global.error_level>1) err_msg(0,1,__VA_ARGS__) ;
-#define LEVEL_CALL(...)       if (Global.error_level>2) err_msg(0,2,__VA_ARGS__) ;
-#define LEVEL_DATA(...)       if (Global.error_level>3) err_msg(0,3,__VA_ARGS__) ;
-#define LEVEL_DETAIL(...)     if (Global.error_level>4) err_msg(0,4,__VA_ARGS__) ;
-#define LEVEL_DEBUG(...)      if (Global.error_level>5) err_msg(0,5,__VA_ARGS__) ;
+#define LEVEL_DEFAULT(...)    if (Global.error_level>=e_err_default) \
+    err_msg(e_err_type_level,e_err_default,__VA_ARGS__)
+#define LEVEL_CONNECT(...)    if (Global.error_level>=e_err_connect) \
+    err_msg(e_err_type_level,e_err_connect,__VA_ARGS__)
+#define LEVEL_CALL(...)       if (Global.error_level>=e_err_call)  \
+    err_msg(e_err_type_level,e_err_call,__VA_ARGS__)
+#define LEVEL_DATA(...)       if (Global.error_level>=e_err_data) \
+    err_msg(e_err_type_level,e_err_data,__VA_ARGS__)
+#define LEVEL_DETAIL(...)     if (Global.error_level>=e_err_detail) \
+    err_msg(e_err_type_level,e_err_detail,__VA_ARGS__)
+#define LEVEL_DEBUG(...)      if (Global.error_level>=e_err_debug) \
+    err_msg(e_err_type_level,e_err_debug,__VA_ARGS__)
 
-#define ERROR_DEFAULT(...)    if (Global.error_level>0) err_msg(1,0,__VA_ARGS__) ;
-#define ERROR_CONNECT(...)    if (Global.error_level>1) err_msg(1,1,__VA_ARGS__) ;
-#define ERROR_CALL(...)       if (Global.error_level>2) err_msg(1,2,__VA_ARGS__) ;
-#define ERROR_DATA(...)       if (Global.error_level>3) err_msg(1,3,__VA_ARGS__) ;
-#define ERROR_DETAIL(...)     if (Global.error_level>4) err_msg(1,4,__VA_ARGS__) ;
-#define ERROR_DEBUG(...)      if (Global.error_level>5) err_msg(1,5,__VA_ARGS__) ;
+#define ERROR_DEFAULT(...)    if (Global.error_level>=e_err_default) \
+    err_msg(e_err_type_error,e_err_default,__VA_ARGS__)
+#define ERROR_CONNECT(...)    if (Global.error_level>=e_err_connect) \
+    err_msg(e_err_type_error,e_err_connect,__VA_ARGS__)
+#define ERROR_CALL(...)       if (Global.error_level>=e_err_call)  \
+    err_msg(e_err_type_error,e_err_call,__VA_ARGS__)
+#define ERROR_DATA(...)       if (Global.error_level>=e_err_data) \
+    err_msg(e_err_type_error,e_err_data,__VA_ARGS__)
+#define ERROR_DETAIL(...)     if (Global.error_level>=e_err_detail) \
+    err_msg(e_err_type_error,e_err_detail,__VA_ARGS__)
+#define ERROR_DEBUG(...)      if (Global.error_level>=e_err_debug) \
+    err_msg(e_err_type_error,e_err_debug,__VA_ARGS__)
 
-#define Debug_OWQ(owq)        if (Global.error_level>6) _print_owq(owq) ;
-#define Debug_Bytes(title,buf,length)    if (Global.error_level>7) _Debug_Bytes(title,buf,length) ;
+#define Debug_OWQ(owq)        if (Global.error_level>=e_err_debug) \
+    _print_owq(owq)
+#define Debug_Bytes(title,buf,length)    if (Global.error_level>=e_err_beyond) \
+    _Debug_Bytes(title,buf,length)
 #else
 #define LEVEL_DEFAULT(...)    { } while (0);
 #define LEVEL_CONNECT(...)    { } while (0);

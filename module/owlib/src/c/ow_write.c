@@ -66,11 +66,12 @@ int FS_write(const char *path, const char *buf, const size_t size,
 	int write_return;
 
 	LEVEL_CALL("WRITE path=%s size=%d offset=%d\n", SAFESTRING(path),
-			   (int) size, (int) offset)
+			   (int) size, (int) offset);
 
-		/* if readonly exit */
-		if (Global.readonly)
-		return -EROFS;
+    /* if readonly exit */
+    if (Global.readonly) {
+        return -EROFS;
+    }
 
 	// parsable path?
 	if (FS_OWQ_create(path, buf, size, offset, owq))
