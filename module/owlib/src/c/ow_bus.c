@@ -77,7 +77,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	ds->LastDiscrepancy = -1;
 	ds->LastDevice = 0;
 	pn->in->ExtraReset = 0;
-    ds->search = _1W_SEARCH_ROM;
+	ds->search = _1W_SEARCH_ROM;
 
 	if (!pn->in->AnyDevices) {
 		LEVEL_DATA("BUS_first: Empty bus -- no presence pulse\n");
@@ -92,7 +92,7 @@ int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 	memset(ds->sn, 0, 8);		// clear the serial number
 	ds->LastDiscrepancy = -1;
 	ds->LastDevice = 0;
-    ds->search = _1W_CONDITIONAL_SEARCH_ROM;
+	ds->search = _1W_CONDITIONAL_SEARCH_ROM;
 	BUS_reset(pn);
 	return BUS_next(ds, pn);
 }
@@ -105,7 +105,7 @@ int BUS_first_family(const BYTE family, struct device_search *ds,
 	ds->sn[0] = family;
 	ds->LastDiscrepancy = 7;
 	ds->LastDevice = 0;
-    ds->search = _1W_SEARCH_ROM;
+	ds->search = _1W_SEARCH_ROM;
 
 	return BUS_next(ds, pn);
 }
@@ -303,17 +303,16 @@ int BUS_reset(const struct parsedname *pn)
 {
 	int ret = (pn->in->iroutines.reset) (pn);
 	/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-    if (ret == BUS_RESET_OK ) {
-        pn->in->reconnect_state = reconnect_ok; // Flag as good!
-    } else if (ret == BUS_RESET_SHORT) {
-        pn->in->AnyDevices = 0;
-        STAT_ADD1_BUS(BUS_short_errors, pn->in);
-        LEVEL_CONNECT("1-wire bus short circuit.\n") ;
-        return 1;
+	if (ret == BUS_RESET_OK ) {
+		pn->in->reconnect_state = reconnect_ok; // Flag as good!
+	} else if (ret == BUS_RESET_SHORT) {
+		pn->in->AnyDevices = 0;
+		STAT_ADD1_BUS(BUS_short_errors, pn->in);
+		LEVEL_CONNECT("1-wire bus short circuit.\n");
+		return 1;
 	} else {
 		pn->in->reconnect_state++;	// Flag for eventual reconnection
 		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
 	}
-
 	return ret;
 }

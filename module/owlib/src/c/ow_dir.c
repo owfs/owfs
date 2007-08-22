@@ -94,9 +94,9 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	LEVEL_CALL("DIRECTORY path=%s\n", SAFESTRING(pn->path));
 
 	STATLOCK;
-	AVERAGE_IN(&dir_avg)
-		AVERAGE_IN(&all_avg)
-		STATUNLOCK;
+	AVERAGE_IN(&dir_avg);
+	AVERAGE_IN(&all_avg);
+	STATUNLOCK;
 	FSTATLOCK;
 	dir_time = time(NULL);		// protected by mutex
 	FSTATUNLOCK;
@@ -174,9 +174,9 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 		}
 	}
 	STATLOCK;
-	AVERAGE_OUT(&dir_avg)
-		AVERAGE_OUT(&all_avg)
-		STATUNLOCK;
+	AVERAGE_OUT(&dir_avg);
+	AVERAGE_OUT(&all_avg);
+	STATUNLOCK;
 	//printf("FS_dir out ret=%d\n", ret);
 	return ret;
 }
