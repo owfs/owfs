@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
 	if (outdevices == 0) {
 		LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n",
-					  argv[0])
+			      argv[0]);
 			ow_exit(1);
 	}
 	// FUSE directory mounting
