@@ -46,103 +46,102 @@ Can break down cases into:
 int FS_read(const char *path, char *buf, const size_t size,
             const off_t offset)
 {
-    OWQ_make( owq ) ;
-    int read_or_error ;
+	OWQ_make( owq ) ;
+	int read_or_error ;
 
-    LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path),
-               (int) size, (int) offset) ;
-    // Parseable path?
-    if (FS_OWQ_create(path,buf,size,offset,owq))
-        return -ENOENT;
+	LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path),
+		   (int) size, (int) offset) ;
+	// Parseable path?
+	if (FS_OWQ_create(path,buf,size,offset,owq))
+		return -ENOENT;
 
-    read_or_error = FS_read_postparse(owq);
-    FS_OWQ_destroy(owq);
+	read_or_error = FS_read_postparse(owq);
+	FS_OWQ_destroy(owq);
     
-    return read_or_error;
+	return read_or_error;
 }
 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
 int FS_read_postparse(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int read_or_error ;
+	struct parsedname * pn = PN(owq) ;
+	int read_or_error ;
 
-    // ServerRead jumps in here, perhaps with non-file entry
-    if (pn->dev == NULL || pn->ft == NULL)
-        return -EISDIR;
+	// ServerRead jumps in here, perhaps with non-file entry
+	if (pn->dev == NULL || pn->ft == NULL)
+		return -EISDIR;
 
-    /* Normal read. Try three times */
-    LEVEL_DEBUG("READ_POSTPARSE %s\n", pn->path);
-    STATLOCK;
-    AVERAGE_IN(&read_avg);
-    AVERAGE_IN(&all_avg);
-    STATUNLOCK;
+	/* Normal read. Try three times */
+	LEVEL_DEBUG("READ_POSTPARSE %s\n", pn->path);
+	STATLOCK;
+	AVERAGE_IN(&read_avg);
+	AVERAGE_IN(&all_avg);
+	STATUNLOCK;
 
-    /* First try */
-    /* in and bus_nr already set */
-    STAT_ADD1(read_tries[0]);
-    read_or_error = FS_read_distribute(owq);
+	/* First try */
+	/* in and bus_nr already set */
+	STAT_ADD1(read_tries[0]);
+	read_or_error = FS_read_distribute(owq);
 
-    /* Second Try */
-    /* if not a specified bus, relook for chip location */
-    if (read_or_error < 0) { //error
-        STAT_ADD1(read_tries[1]);
-        if (Global.opt == opt_server) { // called from owserver
-            // Only one try (repeated remotely)
-            Cache_Del_Device(pn);
-        } else if (SpecifiedBus(pn)) { // this bus or bust!
-            if ( TestConnection(pn) ) {
-                read_or_error = -ECONNABORTED ;
-            } else {
-                read_or_error = FS_read_distribute(owq) ; // 2nd try
-                if ( read_or_error < 0 ) { // third try
-                    STAT_ADD1(read_tries[2]);
-                    read_or_error = FS_read_distribute(owq);
-                }
-            }
-        } else {
-            int busloc_or_error ;
-            UnsetKnownBus(pn) ; // eliminate cached presence
-            busloc_or_error = CheckPresence(pn) ; // search again
-            if ( busloc_or_error < 0 ) {
-                read_or_error = -ENOENT ;
-            } else {
-                read_or_error = FS_read_distribute(owq);
-                if ( read_or_error < 0 ) { // third try
-                    STAT_ADD1(read_tries[2]);
-                    read_or_error = FS_read_distribute(owq);
+	/* Second Try */
+	/* if not a specified bus, relook for chip location */
+	if (read_or_error < 0) { //error
+		STAT_ADD1(read_tries[1]);
+		if (Global.opt == opt_server) { // called from owserver
+			// Only one try (repeated remotely)
+			Cache_Del_Device(pn);
+		} else if (SpecifiedBus(pn)) { // this bus or bust!
+			if ( TestConnection(pn) ) {
+				read_or_error = -ECONNABORTED ;
+			} else {
+				read_or_error = FS_read_distribute(owq) ; // 2nd try
+				if ( read_or_error < 0 ) { // third try
+					STAT_ADD1(read_tries[2]);
+					read_or_error = FS_read_distribute(owq);
+				}
+			}
+		} else {
+			int busloc_or_error ;
+			UnsetKnownBus(pn) ; // eliminate cached presence
+			busloc_or_error = CheckPresence(pn) ; // search again
+			if ( busloc_or_error < 0 ) {
+				read_or_error = -ENOENT ;
+			} else {
+				read_or_error = FS_read_distribute(owq);
+				if ( read_or_error < 0 ) { // third try
+					STAT_ADD1(read_tries[2]);
+					read_or_error = FS_read_distribute(owq);
+				}
+			}
+		}
+	}
 
-                }
-            }
-        }
-    }
-
-    STATLOCK;
-    if (read_or_error >= 0) {
-        ++read_success;         /* statistics */
-        read_bytes += read_or_error;        /* statistics */
-    }
-    AVERAGE_OUT(&read_avg);
-    AVERAGE_OUT(&all_avg);
-    STATUNLOCK;
-    LEVEL_DEBUG("READ_POSTPARSE %s return %d\n", pn->path, read_or_error);
-    return read_or_error;
+	STATLOCK;
+	if (read_or_error >= 0) {
+		++read_success;         /* statistics */
+		read_bytes += read_or_error;        /* statistics */
+	}
+	AVERAGE_OUT(&read_avg);
+	AVERAGE_OUT(&all_avg);
+	STATUNLOCK;
+	LEVEL_DEBUG("READ_POSTPARSE %s return %d\n", pn->path, read_or_error);
+	return read_or_error;
 }
 
 // This function probably need to be modified a bit...
 static int FS_r_simultaneous(struct one_wire_query * owq)
 {
-    if (SpecifiedBus(PN(owq))) {
-    	return FS_r_given_bus(owq);
-    } else {
-    	OWQ_make(owq_given);
+	if (SpecifiedBus(PN(owq))) {
+		return FS_r_given_bus(owq);
+	} else {
+		OWQ_make(owq_given);
 
-	memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
+		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
 
-	// it's hard to know what we should return when reading /simultaneous/temperature
-	SetKnownBus(0, PN(owq_given));
-	return FS_r_given_bus(owq_given);
-    }
+		// it's hard to know what we should return when reading /simultaneous/temperature
+		SetKnownBus(0, PN(owq_given));
+		return FS_r_given_bus(owq_given);
+	}
 }
 
 
@@ -164,41 +163,41 @@ static int FS_r_simultaneous(struct one_wire_query * owq)
 /* After parsing, choose special read based on path type */
 int FS_read_distribute(struct one_wire_query * owq)
 {
-    int r = 0;
+	int r = 0;
 
-    LEVEL_DEBUG("READ_POSTPOSTPARSE %s\n", OWQ_pn(owq).path);
-    STATLOCK;
-    AVERAGE_IN(&read_avg);
-    AVERAGE_IN(&all_avg);
-    STATUNLOCK;
+	LEVEL_DEBUG("READ_POSTPOSTPARSE %s\n", OWQ_pn(owq).path);
+	STATLOCK;
+	AVERAGE_IN(&read_avg);
+	AVERAGE_IN(&all_avg);
+	STATUNLOCK;
 
-    switch (OWQ_pn(owq).type) {
+	switch (OWQ_pn(owq).type) {
         case pn_structure:
-            /* Get structure data from local memory */
-        //printf("FS_read_distribute: pid=%ld call fs_structure\n", pthread_self());
-            r = FS_structure(owq);
-            break;
+		/* Get structure data from local memory */
+		//printf("FS_read_distribute: pid=%ld call fs_structure\n", pthread_self());
+		r = FS_structure(owq);
+		break;
         default:
-	    /* handle DeviceSimultaneous */
-	    if (PN(owq)->dev == DeviceSimultaneous) {
-	        r = FS_r_simultaneous(owq);
-	    } else {
-	        r = FS_r_given_bus(owq);
-	    }
-            break;
-    }
-    STATLOCK;
-    if (r >= 0) {
-        ++read_success;         /* statistics */
-        read_bytes += r;        /* statistics */
-    }
-    AVERAGE_OUT(&read_avg);
-    AVERAGE_OUT(&all_avg);
-    STATUNLOCK;
-
-    LEVEL_DEBUG("READ_POSTPOSTPARSE: %s return %d\n", OWQ_pn(owq).path, r);
-//printf("FS_read_distribute: pid=%ld return %d\n", pthread_self(), r);
-    return r;
+		/* handle DeviceSimultaneous */
+		if (PN(owq)->dev == DeviceSimultaneous) {
+			r = FS_r_simultaneous(owq);
+		} else {
+			r = FS_r_given_bus(owq);
+		}
+		break;
+	}
+	STATLOCK;
+	if (r >= 0) {
+		++read_success;         /* statistics */
+		read_bytes += r;        /* statistics */
+	}
+	AVERAGE_OUT(&read_avg);
+	AVERAGE_OUT(&all_avg);
+	STATUNLOCK;
+	
+	LEVEL_DEBUG("READ_POSTPOSTPARSE: %s return %d\n", OWQ_pn(owq).path, r);
+	//printf("FS_read_distribute: pid=%ld return %d\n", pthread_self(), r);
+	return r;
 }
 
 // This function should return number of bytes read... not status.
@@ -456,54 +455,54 @@ static int FS_read_from_parts(struct one_wire_query * owq)
 /* bitfield -- read the UINT and convert to explicit array */
 static int FS_read_all_bits(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	OWQ_make( owq_single ) ;
 
-    size_t elements = pn->ft->ag->elements ;
-    size_t extension ;
-    int lump_read ;
-    UINT U ;
+	size_t elements = pn->ft->ag->elements ;
+	size_t extension ;
+	int lump_read ;
+	UINT U ;
 
-    STAT_ADD1(read_array);      /* statistics */
+	STAT_ADD1(read_array);      /* statistics */
 
-    /* shallow copy */
-    OWQ_create_shallow_single( owq_single, owq ) ;
+	/* shallow copy */
+	OWQ_create_shallow_single( owq_single, owq ) ;
 
-    /* read the UINT */
-    lump_read = FS_read_lump(owq_single) ;
-    if ( lump_read < 0 ) return lump_read ;
-    U = OWQ_U(owq_single) ;
+	/* read the UINT */
+	lump_read = FS_read_lump(owq_single) ;
+	if ( lump_read < 0 ) return lump_read ;
+	U = OWQ_U(owq_single) ;
 
-    /* Loop through F_r_single, just to get data */
-    for (extension = 0; extension < elements; ++extension) {
-        OWQ_array_Y(owq,extension) = UT_getbit( (void *)(&U), extension ) ;
-    }
+	/* Loop through F_r_single, just to get data */
+	for (extension = 0; extension < elements; ++extension) {
+		OWQ_array_Y(owq,extension) = UT_getbit( (void *)(&U), extension ) ;
+	}
 
-    return 0 ;
+	return 0 ;
 }
 
 /* bitfield -- read the UINT and extract single value */
 static int FS_read_one_bit(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	OWQ_make( owq_single ) ;
 
-    int lump_read ;
-    UINT U ;
+	int lump_read ;
+	UINT U ;
 
-    STAT_ADD1(read_array);      /* statistics */
+	STAT_ADD1(read_array);      /* statistics */
 
-    /* shallow copy */
-    OWQ_create_shallow_single( owq_single, owq ) ;
+	/* shallow copy */
+	OWQ_create_shallow_single( owq_single, owq ) ;
 
-    /* read the UINT */
-    lump_read = FS_read_lump(owq_single) ;
-    if ( lump_read < 0 ) return lump_read ;
-    U = OWQ_U(owq_single) ;
+	/* read the UINT */
+	lump_read = FS_read_lump(owq_single) ;
+	if ( lump_read < 0 ) return lump_read ;
+	U = OWQ_U(owq_single) ;
 
-    OWQ_Y(owq) = UT_getbit( (void *) (&U), pn->extension ) ;
+	OWQ_Y(owq) = UT_getbit( (void *) (&U), pn->extension ) ;
 
-    return 0 ;
+	return 0 ;
 }
 
 /* read the combined data, and then separate */
@@ -512,43 +511,43 @@ static int FS_read_a_part(struct one_wire_query * owq)
 {
 	OWQ_make( owq_all ) ;
     
-    size_t extension = OWQ_pn(owq).extension ;
-    int lump_read ;
+	size_t extension = OWQ_pn(owq).extension ;
+	int lump_read ;
 
-    if ( OWQ_create_shallow_aggregate( owq_all, owq ) ) return -ENOMEM ;
+	if ( OWQ_create_shallow_aggregate( owq_all, owq ) ) return -ENOMEM ;
 
-    lump_read = FS_read_lump(owq_all) ;
-    if ( lump_read < 0 ) {
-        OWQ_destroy_shallow_aggregate(owq_all) ;
-        return lump_read ;
-    }
+	lump_read = FS_read_lump(owq_all) ;
+	if ( lump_read < 0 ) {
+		OWQ_destroy_shallow_aggregate(owq_all) ;
+		return lump_read ;
+	}
 
-    switch (OWQ_pn(owq).ft->format) {
+	switch (OWQ_pn(owq).ft->format) {
         case ft_vascii:
         case ft_ascii:
         case ft_binary:
-        {
-            size_t prior_length = 0 ;
-            size_t extension_index ;
-            int return_status ;
-            for ( extension_index = 0 ; extension_index < extension ; ++extension_index ) {
-                prior_length += OWQ_array_length(owq_all,extension_index) ;
-            }
-            return_status = Fowq_output_offset_and_size( &OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all,extension), owq ) ;
-            if ( return_status < 0 ) {
-                OWQ_destroy_shallow_aggregate(owq_all) ;
-                return return_status ;
-            }
-            OWQ_length(owq) = return_status ;
-            break ;
-        }
+	  {
+		size_t prior_length = 0 ;
+		size_t extension_index ;
+		int return_status ;
+		for ( extension_index = 0 ; extension_index < extension ; ++extension_index ) {
+			prior_length += OWQ_array_length(owq_all,extension_index) ;
+		}
+		return_status = Fowq_output_offset_and_size( &OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all,extension), owq ) ;
+		if ( return_status < 0 ) {
+			OWQ_destroy_shallow_aggregate(owq_all) ;
+			return return_status ;
+		}
+		OWQ_length(owq) = return_status ;
+		break ;
+	  }
         default:
-            memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
-            break ;
-    }
+		memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
+		break ;
+	}
 
-    OWQ_destroy_shallow_aggregate(owq_all) ;
-    return 0 ;
+	OWQ_destroy_shallow_aggregate(owq_all) ;
+	return 0 ;
 }
 
 /* read the combined data, and then separate */
@@ -557,40 +556,40 @@ static int FS_read_mixed_part(struct one_wire_query * owq)
 {
 	OWQ_make( owq_all ) ;
     
-    size_t extension = OWQ_pn(owq).extension ;
+	size_t extension = OWQ_pn(owq).extension ;
 
-    if ( OWQ_create_shallow_aggregate( owq_all, owq ) ) return -ENOMEM ;
+	if ( OWQ_create_shallow_aggregate( owq_all, owq ) ) return -ENOMEM ;
     
-    if ( OWQ_Cache_Get(owq_all) ) { // no "all" cached
-        OWQ_destroy_shallow_aggregate(owq_all) ;
-        return FS_read_lump(owq) ; // read individual value */
-    }
+	if ( OWQ_Cache_Get(owq_all) ) { // no "all" cached
+		OWQ_destroy_shallow_aggregate(owq_all) ;
+		return FS_read_lump(owq) ; // read individual value */
+	}
 
-    switch (OWQ_pn(owq).ft->format) {
+	switch (OWQ_pn(owq).ft->format) {
         case ft_vascii:
         case ft_ascii:
         case ft_binary:
         {
-            size_t prior_length = 0 ;
-            size_t extension_index ;
-            int return_status ;
-            for ( extension_index = 0 ; extension_index < extension ; ++extension_index ) {
-                prior_length += OWQ_array_length(owq_all,extension_index) ;
-            }
-            return_status = Fowq_output_offset_and_size( &OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all,extension), owq ) ;
-            if ( return_status < 0 ) {
-                OWQ_destroy_shallow_aggregate(owq_all) ;
-                return return_status ;
-            }
-            OWQ_length(owq) = return_status ;
-            break ;
+		size_t prior_length = 0 ;
+		size_t extension_index ;
+		int return_status ;
+		for ( extension_index = 0 ; extension_index < extension ; ++extension_index ) {
+			prior_length += OWQ_array_length(owq_all,extension_index) ;
+		}
+		return_status = Fowq_output_offset_and_size( &OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all,extension), owq ) ;
+		if ( return_status < 0 ) {
+			OWQ_destroy_shallow_aggregate(owq_all) ;
+			return return_status ;
+		}
+		OWQ_length(owq) = return_status ;
+		break ;
         }
         default:
-            memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
-            break ;
-    }
+		memcpy( &OWQ_val(owq), &OWQ_array(owq_all)[extension], sizeof(union value_object)) ;
+		break ;
+	}
 
-    OWQ_Cache_Del(owq_all) ;
-    OWQ_destroy_shallow_aggregate(owq_all) ;
-    return 0 ;
+	OWQ_Cache_Del(owq_all) ;
+	OWQ_destroy_shallow_aggregate(owq_all) ;
+	return 0 ;
 }

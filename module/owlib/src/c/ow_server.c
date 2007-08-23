@@ -119,7 +119,7 @@ int ServerRead(struct one_wire_query * owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
-    struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	struct serverpackage sp =
 		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
 	int persistent = 1;
@@ -130,8 +130,8 @@ int ServerRead(struct one_wire_query * owq)
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
-    sm.size = OWQ_size(owq);
-    sm.offset = OWQ_offset(owq);
+	sm.size = OWQ_size(owq);
+	sm.offset = OWQ_offset(owq);
 
 	//printf("ServerRead path=%s\n", pn->path_busless);
 	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index,

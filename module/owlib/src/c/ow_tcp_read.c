@@ -55,7 +55,7 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 	size_t nleft;
 	ssize_t nread;
 	char *ptr;
-    //printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
+	//printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
 	ptr = vptr;
 	nleft = n;
 	while (nleft > 0) {
@@ -70,15 +70,13 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 		/* Read if it doesn't timeout first */
 		rc = select(fd + 1, &readset, NULL, NULL, &tv);
 		if (rc > 0) {
-
 			/* Is there something to read? */
 			if (FD_ISSET(fd, &readset) == 0) {
-//                  STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
+				//STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
 				return -EIO;	/* error */
 			}
-//                    update_max_delay(pn);
+			//update_max_delay(pn);
 			if ((nread = read(fd, ptr, nleft)) < 0) {
-                //printf("NETREAD: return %d\n",(int)nread);
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
@@ -88,24 +86,23 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 					return (-1);
 				}
 			} else if (nread == 0) {
-                //printf("NETREAD: return %d\n",(int)nread);
-                break;			/* EOF */
+				break;			/* EOF */
 			}
-            //Debug_Bytes( "NETREAD",ptr, nread ) ;
+			//Debug_Bytes( "NETREAD",ptr, nread ) ;
 			nleft -= nread;
 			ptr += nread;
 		} else if (rc < 0) {	/* select error */
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
-//                STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
+				//STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->in);
 				continue;
 			}
 			ERROR_DATA("Selection error (network)\n");
-//            STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
+			//STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
 			return -EINTR;
 		} else {				/* timed out */
 			LEVEL_CONNECT("TIMEOUT after %d bytes\n", n - nleft);
-//            STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
+			//STAT_ADD1_BUS(BUS_read_timeout_errors,pn->in);
 			return -EAGAIN;
 		}
 	}

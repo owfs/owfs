@@ -48,6 +48,7 @@ int ServerRead(ASCII * path)
 		return -EIO;
 	//printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
 	memset(&sm, 0, sizeof(struct server_msg));
+	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
 	sm.size = size;
 	sm.sg = SetupSemi();

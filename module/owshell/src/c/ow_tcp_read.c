@@ -38,19 +38,18 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 		/* Read if it doesn't timeout first */
 		rc = select(fd + 1, &readset, NULL, NULL, &tv);
 		if (rc > 0) {
-
 			/* Is there something to read? */
 			if (FD_ISSET(fd, &readset) == 0) {
-//                  STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
+				//STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
 				return -EIO;	/* error */
 			}
-//                    update_max_delay(pn);
+			//update_max_delay(pn);
 			if ((nread = read(fd, ptr, nleft)) < 0) {
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
 				} else {
-					//ERROR_DATA("Network data read error\n") ;
+					//ERROR_DATA("Network data read error\n");
 					return (-1);
 				}
 			} else if (nread == 0) {
