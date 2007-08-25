@@ -137,31 +137,31 @@ static int ParseInterp(struct lineparse *lp)
 {
 	int c = 0;					// default character found
 	int f = 0;					// initialize to avoid compiler warning
-	size_t len;
-	const struct option *so;
+	size_t option_name_length;
+	const struct option *long_option_pointer;
 	int *flag = NULL;
 
 	if (lp->opt == NULL)
 		return 0;
-	len = strlen(lp->opt);
-	if (len == 1)
+	option_name_length = strlen(lp->opt);
+	if (option_name_length == 1)
 		return lp->opt[0];
-	for (so = owopts_long; so->name; ++so) {
-		if (strncasecmp(lp->opt, so->name, len))
+	for (long_option_pointer = owopts_long; long_option_pointer->name != NULL; ++long_option_pointer) {
+		if (strncasecmp(lp->opt, long_option_pointer->name, option_name_length))
 			continue;			// no match
-		//LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
-		//printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,so->name,SAFESTRING(lp->val)) ;
-		if (so->flag) {			// immediate value mode
-			//printf("flag c=%d flag=%p so->flag=%p\n",c,flag,so->flag);
-			if ((c != 0) || (flag != NULL && flag != so->flag)) {
+		//LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
+		//printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
+		if (long_option_pointer->flag) {			// immediate value mode
+			//printf("flag c=%d flag=%p long_option_pointer->flag=%p\n",c,flag,long_option_pointer->flag);
+			if ((c != 0) || (flag != NULL && flag != long_option_pointer->flag)) {
 				//fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
 				return -1;
 			}
-			flag = so->flag;
-			f = so->val;
+			flag = long_option_pointer->flag;
+			f = long_option_pointer->val;
 		} else if (c == 0) {	// char mode first match
-			c = so->val;
-		} else if (c != so->val) {	// char mode -- second match
+			c = long_option_pointer->val;
+		} else if (c != long_option_pointer->val) {	// char mode -- second match
 			//fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
 			return -1;
 		}
@@ -251,13 +251,14 @@ static void ParseTheLine(struct lineparse *lp)
 		}
 	}
 }
+
 static int ConfigurationFile(const ASCII * file)
 {
-	FILE *f = fopen(file, "r");
-	if (f) {
+	FILE *configuration_file_pointer = fopen(file, "r");
+	if (configuration_file_pointer) {
 		int ret = 0;
 		struct lineparse lp;
-		while (fgets(lp.line, 256, f)) {
+		while (fgets(lp.line, 256, configuration_file_pointer)) {
 			// check line length
 			if (strlen(lp.line) > 250) {
 				ERROR_DEFAULT
@@ -271,7 +272,7 @@ static int ConfigurationFile(const ASCII * file)
 			if (ret)
 				break;
 		}
-		fclose(f);
+		fclose(configuration_file_pointer);
 		return ret;
 	} else {
 		ERROR_DEFAULT("Cannot process configuration file %s\n", file);
@@ -281,41 +282,48 @@ static int ConfigurationFile(const ASCII * file)
 
 int owopt_packed(const char *params)
 {
-	char *prms, *p, *q;
+	char *params_copy ; // copy of the input line
+    char *current_location_in_params_copy ; // pointers into the input line copy
+    char *next_location_in_params_copy; // pointers into the input line copy
 	char **argv = NULL;
 	int argc = 0;
 	int ret = 0;
 	int allocated = 0;
-	int c;
+	int option_char;
 
 	if (params == NULL)
 		return 0;
-	p = prms = strdup(params);
-	if (prms == NULL)
+	current_location_in_params_copy = params_copy = strdup(params);
+	if (params_copy == NULL)
 		return -ENOMEM;
 
 	// Stuffs arbitrary first value since argv[0] ignored by getopt
-	for (q = "X"; q; q = strsep(&p, " ")) {
+    // create a synthetic argv/argc for get_opt
+    for (next_location_in_params_copy = "X";
+       next_location_in_params_copy != NULL;
+       next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
 		// make room
 		if (argc >= allocated - 1) {
-			char **temp = realloc(argv, (allocated + 10) * sizeof(char *));
-			if (temp) {
+			char **larger_argv = realloc(argv, (allocated + 10) * sizeof(char *));
+			if (larger_argv != NULL) {
 				allocated += 10;
-				argv = temp;
+				argv = larger_argv;
 			} else {
 				ret = -ENOMEM;
 				break;
 			}
 		}
-		argv[argc] = q;
+		argv[argc] = next_location_in_params_copy;
 		++argc;
 		argv[argc] = NULL;
 	}
-	while (ret == 0) {
-		if ((c =
+
+    // analyze argv/argc as if real comman line arguments
+    while (ret == 0) {
+		if ((option_char =
 			 getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
 			break;
-		ret = owopt(c, optarg);
+		ret = owopt(option_char, optarg);
 	}
 	/* non-option arguments */
 	while ((ret == 0) && (optind < argc)) {
@@ -324,19 +332,19 @@ int owopt_packed(const char *params)
 		++optind;
 	}
 
-	if (argv)
+	if (argv!=NULL)
 		free(argv);
-	free(prms);
+	free(params_copy);
 	return ret;
 }
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt(const int c, const char *arg)
+int owopt(const int option_char, const char *arg)
 {
 	static int config_depth = 0;
 	//printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
-	switch (c) {
+	switch (option_char) {
 	case 'c':
 		if (config_depth > 4) {
 			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n",
@@ -513,7 +521,8 @@ int owopt(const int c, const char *arg)
 			long long int i;
 			if (OW_parsevalue(&i, arg))
 				return 1;
-			(&Global.timeout_volatile)[c - 301] = (int) i;
+            // Using the character as a numeric value -- convenient but risky
+			(&Global.timeout_volatile)[option_char - 301] = (int) i;
 		}
 		break;
 	case 0:
@@ -688,7 +697,7 @@ int OW_ArgUSB(const char *arg)
 	} else if (strcasecmp(arg, "all") == 0) {
 		int number_of_usb_adapters;
 		number_of_usb_adapters = DS9490_enumerate();
-		LEVEL_CONNECT("All USB adapters requested, %d found.\n", n);
+		LEVEL_CONNECT("All USB adapters requested, %d found.\n", number_of_usb_adapters);
         // first one
         in->connin.usb.usb_nr = 1;
         // cycle through rest
