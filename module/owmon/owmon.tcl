@@ -35,11 +35,8 @@ set setup_flags(detail_list) {}
 proc Main { argv } {
     ArgumentProcess $argv
 
-    CircBufferSetup 50
-    DisplaySetup
-    StatsSetup
+    SetupDisplay
 
-    SetupTap
 }
 
 
@@ -52,28 +49,26 @@ proc make_message { type path sock } {
 
 # Command line processing
 # looks at command line arguments
-# two options "p" and "s" for (this) tap's _p_ort, and the target ow_s_erver port
+# options "s" for the target ow_s_erver port
 # Can handle command lines like
-# -p 3000 -s 3001
-# -p3000 -s 3001
+# -s 3001
+# -s3001
 # etc
 proc ArgumentProcess { arg } {
     global IPAddress
-    set mode "loose"
-# "Clear" ports
 # INADDR_ANY
     set IPAddress(ip) "0.0.0.0"
+# default port
     set IPAddress(port) "4304"
     foreach a $arg {
-        if { [regexp -- {^-internal_path(.*)$} $a whole address] } {
-            set IPAddress(path) $address
-        } elseif { [regexp -- {^-s(.*)$} $a whole address] } {
+        if { [regexp -- {^-s(.*)$} $a whole address] } {
             IPandPort $address
         }  else {
             IPandPort $a
         }
     }
     MainTitle $IPAddress(ip):$IPAddress(port)
+}
 
 proc IPandPort { argument_string } {
     global IPAddress
@@ -533,6 +528,72 @@ proc SelectionMade { widget y } {
         TransactionDetail [current_from_index $index]
 }
 }
+
+
+proc SetupDisplay {} {
+    global buslist
+    panedwindow .main -orient horizontal
+    
+    # Bus list is a listbox
+    set f_bus [frame .main.bus]
+    listbox $f_bus.lb -listvariable buslist -width 20 -yscrollcommand [list $f_bus.sb set] -selectmode browse -bg lightyellow
+    scrollbar $f_bus.sb -command [list $f_bus.lb yview]
+    pack $f_bus.sb -side right -fill y
+    pack $f_bus.lb -side left -fill both -expand true
+    
+    # statistics information is a textbox
+    set f_stats [frame .main.stats]
+    text $f_stats.text -yscrollcommand [list $f_stats.sby set] -xscrollcommand [list $f_stats.sbx set] -bg white
+    scrollbar $f_stats.sby -command [list $f_stats.text yview]
+    scrollbar $f_stats.sbx -command [list $f_stats.text xview] -orient horizontal
+    pack $f_stats.sby -side right -fill y
+    pack $f_stats.sbx -side bottom -fill x
+    pack $f_stats.text -side left -fill both -expand true
+    
+    
+    # system information is a textbox
+    set f_system [frame .main.system]
+    text $f_system.text -yscrollcommand [list $f_system.sby set] -xscrollcommand [list $f_system.sbx set] -bg lightblue
+    scrollbar $f_system.sby -command [list $f_system.text yview]
+    scrollbar $f_system.sbx -command [list $f_system.text xview] -orient horizontal
+    pack $f_system.sby -side right -fill y
+    pack $f_system.sbx -side bottom -fill x
+    pack $f_system.text -side left -fill both -expand true
+
+    .main add .main.bus .main.system .main.stats
+    
+    label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status -bg white
+    pack .status -side bottom -fill x
+    bind .status <ButtonRelease-1> [list .main_menu.view invoke "Status messages"]
+    pack .main -side top -fill both -expand true
+    
+    menu .main_menu -tearoff 0
+    . config -menu .main_menu
+    menu .main_menu.view -tearoff 0
+    .main_menu add cascade -label View -menu .main_menu.view  -underline 0
+        .main_menu.view add checkbutton -label "Statistics by Message type" -underline 14 -indicatoron 1 -command {StatByType}
+        .main_menu.view add checkbutton -label "Persistence rates" -underline 12 -indicatoron 1 -command {RatePersist}
+        .main_menu.view add checkbutton -label "Persistence lengths" -underline 12 -indicatoron 1 -command {LengthPersist}
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Detail window list" -underline 0 -indicatoron 1 -command {DetailList}
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient}
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
+
+# help menu
+    menu .main_menu.help -tearoff 0
+    .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
+        .main_menu.help add command -label "About OWTAP" -underline 0 -command About
+        .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
+        .main_menu.help add command -label "OWSERVER  Protocol" -underline 0 -command Protocol
+        .main_menu.help add command -label "Version" -underline 0 -command Version
+    }
+
+
+
+
+
 
 # create visual aspects of program
 proc DisplaySetup { } {
@@ -1329,8 +1390,8 @@ proc PrettyPeer { sock } {
     return [lindex $socklist 1]:[lindex $socklist 2]
 }
 
-proc MainTitle { tap server } {
-    wm title . "OWSERVER protocol tap ($tap) to owserver ($server)"
+proc MainTitle { server_address } {
+    wm title . "OWSERVER ($server_address) Monitor"
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
