@@ -602,7 +602,7 @@ int OW_ArgDevice(const char *arg)
 		return 1;
 	}
 	if (!S_ISCHR(sbuf.st_mode)) {
-		LEVEL_DEFAULT("Not a \"character\" device %s\n", arg);
+		LEVEL_DEFAULT("Not a \"character\" device %s (st_mode=%x)\n", arg, sbuf.st_mode);
 		return 1;
 	}
 	if (major(sbuf.st_rdev) == 99)
