@@ -64,7 +64,7 @@ int DS9097_detect(struct connection_in *in)
 
 	in->Adapter = adapter_DS9097;
 	// in->adapter_name already set, to support HA3 and HA4B
-	in->busmode = bus_passive;
+	in->busmode = bus_passive; // in case initially tried DS9097U
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.in = in;

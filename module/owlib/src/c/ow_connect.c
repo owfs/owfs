@@ -25,18 +25,18 @@ int indevices = 0;
 
 struct connection_in *find_connection_in(int bus_number)
 {
-	struct connection_in *c = indevice;
-	while (c) {
-		if (c->index == bus_number)
-			break;
-		c = c->next;
+	struct connection_in *c_in ;
+    // step through indevice linked list
+	for ( c_in = indevice ; c_in != NULL ; c_in = c_in->next ) {
+		if (c_in->index == bus_number)
+			return c_in;
 	}
-	return c;
+	return NULL;
 }
 
 enum bus_mode get_busmode(struct connection_in *in)
 {
-	if (!in)
+	if (in == NULL)
 		return bus_unknown;
 	return in->busmode;
 }

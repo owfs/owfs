@@ -37,7 +37,7 @@ static int OW_ArgEtherWeather(const char *arg);
 static int OW_ArgFake(const char *arg);
 static int OW_ArgTester(const char *arg);
 static int OW_ArgLink(const char *arg);
-static int OW_ArgPassive(char *name, const char *arg);
+static int OW_ArgPassive(char *adapter_type_name, const char *arg);
 
 const struct option owopts_long[] = {
 	{"configuration", required_argument, NULL, 'c'},
@@ -619,20 +619,18 @@ static int OW_ArgSerial(const char *arg)
 		return 1;
 	in->name = strdup(arg);
 	in->busmode = bus_serial;
-	in->Adapter = adapter_DS9097;	// default serial adapter -- the passive one
-	in->adapter_name = "DS9097";
 	return 0;
 }
 
-static int OW_ArgPassive(char *name, const char *arg)
+static int OW_ArgPassive(char *adapter_type_name, const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL)
 		return 1;
 	in->name = strdup(arg);
 	in->busmode = bus_passive;
-	in->Adapter = adapter_DS9097;	// passive adapter
-	in->adapter_name = name;
+    // special set name of adapter here 
+	in->adapter_name = adapter_type_name;
 	return 0;
 }
 

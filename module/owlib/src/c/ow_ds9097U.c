@@ -283,12 +283,14 @@ int DS2480_detect(struct connection_in *in)
 		//printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 		/* Apparently need to reset again to get the version number properly */
 
-		if ((ret = DS2480_reset(&pn))) {
+	   // reset sets som 	
+        if ((ret = DS2480_reset(&pn))) {
 			return ret;
 		}
 		in->busmode = bus_serial;
 
-		switch (in->Adapter) {
+        // in->Adapter is set in DS2480_reset from some status bits
+        switch (in->Adapter) {
 		case adapter_DS9097U2:
 		case adapter_DS9097U:
 			in->adapter_name = "DS9097U";

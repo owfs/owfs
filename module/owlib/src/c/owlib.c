@@ -298,8 +298,10 @@ int LibStart(void)
 					 in->name);
 				BUS_close(in);
 				BadAdapter_detect(in);	/* reset the methods */
-			} else
+			} else {
 				break;
+            }        
+            in->adapter_name = "DS9097"; // need to set adapter name for this approach to passive adapter
 			// Fall Through
 		case bus_passive:
 			if (DS9097_detect(in)) {
