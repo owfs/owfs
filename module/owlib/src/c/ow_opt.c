@@ -686,21 +686,22 @@ int OW_ArgUSB(const char *arg)
 	if (arg == NULL) {
 		in->connin.usb.usb_nr = 1;
 	} else if (strcasecmp(arg, "all") == 0) {
-		int n;
-		n = DS9490_enumerate();
+		int number_of_usb_adapters;
+		number_of_usb_adapters = DS9490_enumerate();
 		LEVEL_CONNECT("All USB adapters requested, %d found.\n", n);
-		if (n > 1) {
-			int i;
-			for (i = 2; i <= n; ++i) {
+        // first one
+        in->connin.usb.usb_nr = 1;
+        // cycle through rest
+		if (number_of_usb_adapters > 1) {
+			int usb_adapter_index;
+			for (usb_adapter_index = 2; usb_adapter_index <= number_of_usb_adapters; ++usb_adapter_index) {
 				struct connection_in *in2 = NewIn(NULL);
 				if (in2 == NULL)
 					return 1;
 				in2->busmode = bus_usb;
-				in2->connin.usb.usb_nr = i;
+				in2->connin.usb.usb_nr = usb_adapter_index;
 			}
 		}
-		// first one
-		in->connin.usb.usb_nr = 1;
 	} else {
 		in->connin.usb.usb_nr = atoi(arg);
 		//printf("ArgUSB fd=%d\n",in->fd);
