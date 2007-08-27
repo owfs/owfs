@@ -93,7 +93,13 @@ proc OpenOwserver { } {
 
 proc OWSERVER_DirectoryRead{ path } {
     global MessageType
-    set return_code [OWSERVER_Read 
+    set return_code [OWSERVER_Read $MessageType(PreferredDIR) $path]
+	if { $return_code == -42 && $MessageType(PreferredDIR)==$MessageType(DIRALL) } {
+		set MessageType(PreferredDIR) $MessageType(DIR)
+		set return_code OWSERVER_Read $MessageType(PreferredDIR) $path
+	}
+	return $return_code
+}
 
 #Main loop. Called whenever the server (listen) port accepts a connection.
 proc OWSERVER_Read { message_type path } {
