@@ -12,7 +12,7 @@ set SocketVars {string version type payload size sg offset tokenlength totalleng
 set MessageType(READ)   2
 set MessageType(DIR)    4
 set MessageType(DIRALL) 7
-set MessageType(PreferredDIR) DIRALL
+set MessageType(PreferredDIR) $MessageType(DIRALL)
 
 set setup_flags(detail_list) {}
 
@@ -34,7 +34,27 @@ proc Main { argv } {
     global MessageType
 
     SetupDisplay
-    OWSERVER_DirectoryRead $MessageType(DIRALL) "/"
+	SetBusList
+}
+
+proc Busser { path } {
+	global dirlist
+	global buslist
+    if { [OWSERVER_DirectoryRead $path] < 0 } {
+		return
+	}
+	set busses [lsearch -all -regexp -inline $dirlist {bus\.\d*$}]
+puts "$dirlist -> $busses"
+	lappend buslist $busses
+	foreach x $busses {
+		Busser $x
+	}
+}
+
+proc SetBusList { } {
+	global buslist
+	set buslist {"/"}
+	Busser "/"
 }
 
 proc OWSERVER_send_message { type path sock } {
@@ -91,12 +111,12 @@ proc OpenOwserver { } {
     }
 }
 
-proc OWSERVER_DirectoryRead{ path } {
+proc OWSERVER_DirectoryRead { path } {
     global MessageType
     set return_code [OWSERVER_Read $MessageType(PreferredDIR) $path]
 	if { $return_code == -42 && $MessageType(PreferredDIR)==$MessageType(DIRALL) } {
 		set MessageType(PreferredDIR) $MessageType(DIR)
-		set return_code OWSERVER_Read $MessageType(PreferredDIR) $path
+		set return_code [OWSERVER_Read $MessageType(PreferredDIR) $path]
 	}
 	return $return_code
 }
@@ -553,7 +573,7 @@ proc HeaderParser { string_value } {
 proc Payload {} {
     global serve
     # remove trailing null
-    string range $serve(string) 24 [expr {$serve(paylength) + 24 - 1}] ]
+    string range $serve(string) 24 [expr {$serve(paylength) + 24 - 1}]
 }
 
 proc MainTitle { server_address } {
