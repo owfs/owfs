@@ -3,6 +3,6 @@
 EXTRA_DIST = owmon.tcl
 
 install:
-	@INSTALL@ -d $(bindir)
-	@INSTALL@ -m 755 owmon.tcl $(bindir)/owmon
+	@INSTALL@ -d $(DESTDIR)$(bindir)
+	@INSTALL@ -m 755 owmon.tcl $(DESTDIR)$(bindir)/owmon
 
