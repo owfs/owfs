@@ -4,9 +4,6 @@ exec wish "$0" -- "$@"
 
 # $Id$
 
-# Global: IPAddress() loose tap server
-# -- port number of this program (tap) and real owserver (server). loose is stray garbage
-
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state persist id }
 
 set MessageType(READ)   2
@@ -14,19 +11,13 @@ set MessageType(DIR)    4
 set MessageType(DIRALL) 7
 set MessageType(PreferredDIR) $MessageType(DIRALL)
 
-set setup_flags(detail_list) {}
-
 # Global: setup_flags => For object-oriented initialization
 
 # Global: serve => information on current transaction
-#         serve($sock.string) -- message to this point
-#         serve($sock. version size payload sg offset type tokenlength ) -- message parsed parts
-#         serve($sock.version size
-#         serve(sockets) -- list of active sockets for timeout
+#         serve(string) -- message to this point
+#         serve(version size payload sg offset type tokenlength ) -- message parsed parts
 
 # Global: stats => statistical counts and flags for stats windows
-
-# Global: circ_buffer => data for the last n transactions displayed in the listboxes
 
 #Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
@@ -35,69 +26,64 @@ proc Main { argv } {
 
     SetupDisplay
 	SetBusList
-    SetStatList "/statistics"
-    StatValues
+    SetDirList "" statistics
+    DirListValues statistics
 }
 
 proc Busser { path } {
-	global dirlist
-	global buslist
+	global data_array
     if { [OWSERVER_DirectoryRead $path] < 0 } {
 		return
 	}
-	set busses [lsearch -all -regexp -inline $dirlist "^${path}bus"]
-puts "$dirlist -> $busses"
+	set busses [lsearch -all -regexp -inline $data_array(value_from_owserver) "^${path}bus"]
+puts "$data_array(value_from_owserver) -> $busses"
 	foreach bus $busses {
-        lappend buslist $bus
+        lappend data_array(bus.path) $bus
 		Busser $bus
 	}
 }
 
 proc SetBusList { } {
-	global buslist
-	set buslist {"/"}
+	global data_array
+	set data_array(bus_path) {"/"}
 	Busser "/"
 }
 
-proc Statpather { prepath_length path } {
-    global statpath
-    global statname
-    global dirlist
+proc DirListRecurser { prepath_length path type } {
+    global data_array
     if { [OWSERVER_DirectoryRead $path] < 0 } {
-        lappend statpath $path
-        lappend statname [string range $path [expr {$prepath_length + 1 }] end]
+        lappend data_array($type.path) $path
+        lappend data_array($type.name) [string range $path [expr {$prepath_length + 1 }] end]
         return
     }
-    set stats [lsearch -all -regexp -inline -not $dirlist {\.ALL$} ]
-    foreach stat $stats {
-        Statpather $prepath_length $stat
+    set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$} ]
+    foreach dir $dirlist {
+        DirListRecurser $prepath_length $dir $type
     }
 }
 
-proc SetStatList { path } {
-    global statpath
-    global statname
+proc SetDirList { path type } {
+    global data_array
 
-    set statpath {}
-    set statname {}
-    Statpather [string length $path] $path
+	set typepath $path/$type
+
+    set data_array($type.path) {}
+    set data_array($type.name) {}
+    DirListRecurser [string length $typepath] $typepath $type
 }
 
-proc StatValues { } {
-    global statpath
-    global statvalue
-    global readvalue
+proc DirListValues { type } {
+    global data_array
     global MessageType
 
-    set statvalues {}
-    foreach stat $statpath {
-        set readvalue " "
-        OWSERVER_Read $MessageType(READ) $stat
-        lappend statvalue $readvalue
+    set data_array($type.value) {}
+    foreach path $data_array($type.path) {
+        set data_array(value_from_owserver) " "
+        OWSERVER_Read $MessageType(READ) $path
+        lappend data_array($type.value) $data_array(value_from_owserver)
     }
 
-global statname
-foreach n $statname v $statvalue {
+foreach n $data_array($type.name) v $data_array($type.value) {
 puts "$v $n"
 }
 }
@@ -169,12 +155,12 @@ proc OWSERVER_DirectoryRead { path } {
 #Main loop. Called whenever the server (listen) port accepts a connection.
 proc OWSERVER_Read { message_type path } {
     global serve
-    global dirlist
+    global data_array
     global MessageType
 
 # Start the State machine
     set serve(state) "Open server"
-    set dirlist {}
+    set data_array(value_from_owserver) {}
     set error_status 0
     while {1} {
     # puts $serve(state)
@@ -241,17 +227,16 @@ proc OWSERVER_Read { message_type path } {
                 set serve(state) "Done with server"
             } else {
                 # add element to list
-                lappend dirlist [Payload]
+                lappend data_array(value_from_owserver) [Payload]
                 set serve(state) "Read from server"
             }
         }
         "Dirall received" {
-            set dirlist [split [Payload] ,]
+            set data_array(value_from_owserver) [split [Payload] ,]
             set serve(state) "Done with server"
         }
         "Read received" {
-            global readvalue
-            set readvalue [Payload]
+            set data_array(value_from_owserver) [Payload]
             set serve(state) "Done with server"
         }
         "Server timeout" {
@@ -404,13 +389,13 @@ proc SelectionMade { widget y } {
 
 
 proc SetupDisplay {} {
-    global buslist
+    global data_array
     global display_text
     panedwindow .main -orient horizontal
     
     # Bus list is a listbox
     set f_bus [frame .main.bus]
-    listbox $f_bus.lb -listvariable buslist -width 20 -yscrollcommand [list $f_bus.sb set] -selectmode browse -bg lightyellow
+    listbox $f_bus.lb -listvariable data_array(bus.path) -width 20 -yscrollcommand [list $f_bus.sb set] -selectmode browse -bg lightyellow
     scrollbar $f_bus.sb -command [list $f_bus.lb yview]
     pack $f_bus.sb -side right -fill y
     pack $f_bus.lb -side left -fill both -expand true
