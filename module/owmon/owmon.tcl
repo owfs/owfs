@@ -4,7 +4,7 @@ exec wish "$0" -- "$@"
 
 # $Id$
 
-set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state persist id }
+set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state id }
 
 set MessageType(READ)   2
 set MessageType(DIR)    4
@@ -92,8 +92,12 @@ proc OWSERVER_send_message { type path sock } {
     set length [string length $path]
 # add an entra char for null-termination string
     incr length
-    puts -nonewline $sock [binary format "IIIIIIa*a" 0 $length $type 258 1024 0 $path \0 ]
+# 262= f.i, busret and persist flags
+	if { [catch {puts -nonewline $sock [binary format "IIIIIIa*a" 0 $length $type 262 1024 0 $path \0 ] }] } {
+		return 1
+	} 
     flush $sock
+	return 0
 }
 
 
@@ -182,15 +186,29 @@ proc OWSERVER_Read { message_type path } {
             StatusMessage "Sending client request to OWSERVER" 0
             set serve(sock) $sock
             fconfigure $sock -translation binary -buffering full -encoding binary -blocking 0
-            OWSERVER_send_message $message_type $path $sock
-            set serve(state) "Read from server"
+            if { [OWSERVER_send_message $message_type $path $sock]==0 } {
+	            set serve(state) "Read from server"
+			} elseif { [info exist serve(persist)] && $serve(persist)==1 } {
+				CloseSock
+				set serve(persist) 0
+	            set serve(state) "Open server"
+			} else {
+	            set serve(state) "Server wont listen"
+			}
         }
+		"Persistent server" {
+			set sock $serve(sock)
+		}
         "Read from server" {
             StatusMessage "Reading OWSERVER response" 0
             TapSetup
             ResetSockTimer
             fileevent $sock readable [list OWSERVER_Process]
             vwait serve(state)
+        }
+        "Server wont listen" {
+            StatusMessage "FAILURE sending to OWSERVER" 0
+            set serve(state) "Server error"
         }
         "Server early end" {
             StatusMessage "FAILURE reading OWSERVER response" 0
@@ -246,12 +264,25 @@ proc OWSERVER_Read { message_type path } {
         "Server error" {
             set error_return 1
             StatusMessage "Error code $error_return" 1
+			set serve(persist) 0
             set serve(state) "Done with server"
         }
         "Done with server"  {
+			if { [info exist serve(persist)] && $serve(persist)==1 } {
+	            set serve(state) "Server persist"
+			} else {
+	            set serve(state) "Server close"
+			}
+        }
+		"Server persist" {
+            ClearTap
+			ClearSockTimer
+            set serve(state) "Done with all"
+		}
+		"Server close" {
             CloseSock
             set serve(state) "Done with all"
-        }
+		}
         "Done with all" {
             StatusMessage "Ready" 0
             return $error_status
