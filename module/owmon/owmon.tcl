@@ -35,6 +35,8 @@ proc Main { argv } {
 
     SetupDisplay
 	SetBusList
+    SetStatList "/statistics"
+    StatValues
 }
 
 proc Busser { path } {
@@ -43,11 +45,11 @@ proc Busser { path } {
     if { [OWSERVER_DirectoryRead $path] < 0 } {
 		return
 	}
-	set busses [lsearch -all -regexp -inline $dirlist {bus\.\d*$}]
+	set busses [lsearch -all -regexp -inline $dirlist "^${path}bus"]
 puts "$dirlist -> $busses"
-	lappend buslist $busses
-	foreach x $busses {
-		Busser $x
+	foreach bus $busses {
+        lappend buslist $bus
+		Busser $bus
 	}
 }
 
@@ -55,6 +57,49 @@ proc SetBusList { } {
 	global buslist
 	set buslist {"/"}
 	Busser "/"
+}
+
+proc Statpather { prepath_length path } {
+    global statpath
+    global statname
+    global dirlist
+    if { [OWSERVER_DirectoryRead $path] < 0 } {
+        lappend statpath $path
+        lappend statname [string range $path [expr {$prepath_length + 1 }] end]
+        return
+    }
+    set stats [lsearch -all -regexp -inline -not $dirlist {\.ALL$} ]
+    foreach stat $stats {
+        Statpather $prepath_length $stat
+    }
+}
+
+proc SetStatList { path } {
+    global statpath
+    global statname
+
+    set statpath {}
+    set statname {}
+    Statpather [string length $path] $path
+}
+
+proc StatValues { } {
+    global statpath
+    global statvalue
+    global readvalue
+    global MessageType
+
+    set statvalues {}
+    foreach stat $statpath {
+        set readvalue " "
+        OWSERVER_Read $MessageType(READ) $stat
+        lappend statvalue $readvalue
+    }
+
+global statname
+foreach n $statname v $statvalue {
+puts "$v $n"
+}
 }
 
 proc OWSERVER_send_message { type path sock } {
@@ -132,7 +177,7 @@ proc OWSERVER_Read { message_type path } {
     set dirlist {}
     set error_status 0
     while {1} {
-    #puts $serve($sock.state)
+    # puts $serve(state)
         switch $serve(state) {
         "Open server" {
             global IPAddress
@@ -149,7 +194,6 @@ proc OWSERVER_Read { message_type path } {
         }
         "Send to server" {
             StatusMessage "Sending client request to OWSERVER" 0
-            TapSetup
             set serve(sock) $sock
             fconfigure $sock -translation binary -buffering full -encoding binary -blocking 0
             OWSERVER_send_message $message_type $path $sock
@@ -157,6 +201,7 @@ proc OWSERVER_Read { message_type path } {
         }
         "Read from server" {
             StatusMessage "Reading OWSERVER response" 0
+            TapSetup
             ResetSockTimer
             fileevent $sock readable [list OWSERVER_Process]
             vwait serve(state)
@@ -181,6 +226,8 @@ proc OWSERVER_Read { message_type path } {
                 set serve(state) "Done with server"
             } elseif { $message_type==$MessageType(DIRALL) } {
                 set serve(state) "Dirall received"
+            } elseif { $message_type==$MessageType(READ) } {
+                set serve(state) "Read received"
             } else {
                 set serve(state) "Dir element received"
             }
@@ -202,12 +249,18 @@ proc OWSERVER_Read { message_type path } {
             set dirlist [split [Payload] ,]
             set serve(state) "Done with server"
         }
+        "Read received" {
+            global readvalue
+            set readvalue [Payload]
+            set serve(state) "Done with server"
+        }
         "Server timeout" {
             StatusMessage "owserver read timeout" 1
             set serve(state) "Server error"
         }
         "Server error" {
             set error_return 1
+            StatusMessage "Error code $error_return" 1
             set serve(state) "Done with server"
         }
         "Done with server"  {
