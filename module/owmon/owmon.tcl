@@ -26,8 +26,10 @@ proc Main { argv } {
 
     SetupDisplay
 	SetBusList
-    SetDirList "" statistics/cache
-    DirListValues statistics/cache
+    SetDirList "" system
+    DirListValues system
+    SetDirList "" statistics
+    DirListValues statistics
 }
 
 proc Busser { path } {
@@ -36,7 +38,7 @@ proc Busser { path } {
 		return
 	}
 	set busses [lsearch -all -regexp -inline $data_array(value_from_owserver) "^${path}bus"]
-puts "$data_array(value_from_owserver) -> $busses"
+    #puts "$data_array(value_from_owserver) -> $busses"
 	foreach bus $busses {
         lappend data_array(bus.path) $bus
 		Busser $bus
@@ -51,14 +53,15 @@ proc SetBusList { } {
 
 proc DirListRecurser { prepath_length path type } {
     global data_array
+    lappend data_array($type.name) [regsub -all .*?/ [string range $path [expr {$prepath_length + 1 }] end] \t]
     if { [OWSERVER_DirectoryRead $path] < 0 } {
         lappend data_array($type.path) $path
-        lappend data_array($type.name) [string range $path [expr {$prepath_length + 1 }] end]
-        return
-    }
-    set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$} ]
-    foreach dir $dirlist {
-        DirListRecurser $prepath_length $dir $type
+    } else {
+        lappend data_array($type.path) NULL
+        set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$} ]
+        foreach dir $dirlist {
+            DirListRecurser $prepath_length $dir $type
+        }
     }
 }
 
@@ -75,17 +78,21 @@ proc SetDirList { path type } {
 proc DirListValues { type } {
     global data_array
     global MessageType
+    global display_text
+
+    $display_text($type) delete 1.0 end
 
     set data_array($type.value) {}
-    foreach path $data_array($type.path) {
-        set data_array(value_from_owserver) " "
-        OWSERVER_Read $MessageType(READ) $path
+    foreach path $data_array($type.path) name $data_array($type.name) {
+        set data_array(value_from_owserver) "           "
+        if { $path != "NULL" } {
+            OWSERVER_Read $MessageType(READ) $path
+        }
         lappend data_array($type.value) $data_array(value_from_owserver)
+        $display_text($type) insert end "$data_array(value_from_owserver)   $name\n"
     }
 
-foreach n $data_array($type.name) v $data_array($type.value) {
-puts "$v $n"
-}
+#foreach n $data_array($type.name) v $data_array($type.value) {puts "$v $n"}
 }
 
 proc OWSERVER_send_message { type path sock } {
@@ -167,7 +174,7 @@ proc OWSERVER_Read { message_type path } {
     set data_array(value_from_owserver) {}
     set error_status 0
     while {1} {
-    puts $serve(state)
+    #   puts $serve(state)
         switch $serve(state) {
         "Open server" {
             global IPAddress
@@ -433,39 +440,32 @@ proc SetupDisplay {} {
     bind $f_bus.lb <ButtonRelease-1> {+ SelectionMade %W %y }
     bind $f_bus.lb <space> {+ SelectionMade %W }
     
-    # statistics information is a textbox
-    set f_stats [frame .main.stats]
-    set display_text(stats) [
-        text $f_stats.text \
-            -yscrollcommand [list $f_stats.sby set] \
-            -xscrollcommand [list $f_stats.sbx set] \
-            -tabs {12 right 15 20 25 30 35} \
-            -bg white
-        ]
-    scrollbar $f_stats.sby -command [list $f_stats.text yview]
-    scrollbar $f_stats.sbx -command [list $f_stats.text xview] -orient horizontal
-    pack $f_stats.sby -side right -fill y
-    pack $f_stats.sbx -side bottom -fill x
-    pack $f_stats.text -side left -fill both -expand true
-    
-    
-    # system information is a textbox
-    set f_system [frame .main.system]
-    set display_text(system) [
-        text $f_system.text \
-            -yscrollcommand [list $f_system.sby set] \
-            -xscrollcommand [list $f_system.sbx set] \
-            -bg lightblue
-        ]
-    scrollbar $f_system.sby -command [list $f_system.text yview]
-    scrollbar $f_system.sbx -command [list $f_system.text xview] -orient horizontal
-    pack $f_system.sby -side right -fill y
-    pack $f_system.sbx -side bottom -fill x
-    pack $f_system.text -side left -fill both -expand true
+    .main add .main.bus
 
-    .main add .main.bus .main.system .main.stats
+    # statistics information is a textbox
+    foreach w {system statistics} {
+        set f [frame .main.$w]
+        set display_text($w) [
+            text $f.text \
+                -yscrollcommand [list $f.sby set] \
+                -xscrollcommand [list $f.sbx set] \
+                -tabs {12 right 15 20 25} \
+                -wrap none \
+                -width 40 \
+                -bg white
+            ]
+        scrollbar $f.sby -command [list $f.text yview]
+        scrollbar $f.sbx -command [list $f.text xview] -orient horizontal
+        label $f.l -text $w
+        pack $f.l -side top -fill x
+        pack $f.sby -side right -fill y
+        pack $f.sbx -side bottom -fill x
+        pack $f.text -side left -fill both -expand true
+
+        .main add $f
+    }
     
-    label .status -anchor w -width 80 -relief sunken -height 1 -textvariable current_status -bg white
+    label .status -anchor w -relief sunken -height 1 -textvariable current_status -bg white
     pack .status -side bottom -fill x
     bind .status <ButtonRelease-1> [list .main_menu.view invoke "Status messages"]
     pack .main -side top -fill both -expand true
