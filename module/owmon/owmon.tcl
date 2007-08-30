@@ -26,8 +26,8 @@ proc Main { argv } {
 
     SetupDisplay
 	SetBusList
-    SetDirList "" statistics
-    DirListValues statistics
+    SetDirList "" statistics/cache
+    DirListValues statistics/cache
 }
 
 proc Busser { path } {
@@ -167,7 +167,7 @@ proc OWSERVER_Read { message_type path } {
     set data_array(value_from_owserver) {}
     set error_status 0
     while {1} {
-    # puts $serve(state)
+    puts $serve(state)
         switch $serve(state) {
         "Open server" {
             global IPAddress
@@ -646,7 +646,7 @@ proc Payload {} {
 }
 
 proc MainTitle { server_address } {
-    wm title . "OWSERVER ($server_address) Monitor"
+    wm title . "OWMON owserver ($server_address) monitor"
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
