@@ -65,3 +65,4 @@ cat >/etc/udev/ds2490 << SHELL
         logger ow udev: no device file found for "\$1"
     fi
 SHELL
+chmod 755 /etc/udev/ds2490
