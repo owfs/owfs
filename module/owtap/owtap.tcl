@@ -824,7 +824,6 @@ proc DetailClear { list_box } {
         lappend windows [$list_box get $i]
     }
     foreach w $windows {
-    puts $w
         DetailDelete $w
     }
 }
@@ -1325,7 +1324,7 @@ proc PrettyPeer { sock } {
 }
 
 proc MainTitle { tap server } {
-    wm title . "OWSERVER protocol tap ($tap) to owserver ($server)"
+    wm title . "OWTAP ($tap) tap of owserver ($server)"
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
