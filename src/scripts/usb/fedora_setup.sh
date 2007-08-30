@@ -34,10 +34,10 @@ done
 ###  -- Rules --------
 ###  -----------------
 cat >/etc/udev/rules.d/46_ds2490.rules << RULES
-BUS=="usb", SYSFS{manufacturer}=="Dallas Semiconductor", SYSFS{product}=="DS1490F 2-in-1 Fob, 1-Wire adapter", GROUP="users", MODE="0774", PROGRAM="/bin/sh -c 'K=%k; K=\$\$; printf bus/usb/%%03i/%%03i \$\$ \$\$'", NAME="%c", RUN="/etc/udev/ds2490 '%c'"
+BUS=="usb", ACTION=="add", SYSFS{idVendor}=="04fa", SYSFS{idProduct}=="2490", \
+        PROGRAM="/bin/sh -c 'K=%k; K=\$\${K#usbdev}; printf bus/usb/%%03i/%%03i \$\${K%%%%.*} \$\${K#*.}'", \
+        NAME="%c", MODE="0664", RUN+="/etc/udev/ds2490 '%c'"
 RULES
-#  idVendor           0x04fa Dallas Semiconductor
-#  idProduct          0x2490 DS1490F 2-in-1 Fob, 1-Wire adapter
 #
 ###  -----------------
 ###  -- Shell --------
@@ -67,3 +67,4 @@ cat >/etc/udev/ds2490 << SHELL
         logger ow udev: no device file found for "\$1"
     fi
 SHELL
+chmod 755 /etc/udev/ds2490
