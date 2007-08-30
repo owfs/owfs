@@ -496,7 +496,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
 		usb_detach_kernel_driver_np(usb, 0);
 #endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-		if (usb_set_configuration(usb, 1)) {
+		if ((ret = usb_set_configuration(usb, 1))) {
 			LEVEL_CONNECT
 				("Failed to set configuration on USB DS9490 adapter at %s.\n",
 				 pn->in->name);
@@ -505,7 +505,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 				("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n",
 				 pn->in->name, ret);
 		} else {
-			if (usb_set_altinterface(usb, 3)) {
+			if ((ret = usb_set_altinterface(usb, 3))) {
 				LEVEL_CONNECT
 					("Failed to set alt interface on USB DS9490 adapter at %s.\n",
 					 pn->in->name);
@@ -518,15 +518,16 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 
 				// clear endpoints
 				if ((ret =
-					 USB_CLEAR_HALT(usb, DS2490_EP3) ||
+					(USB_CLEAR_HALT(usb, DS2490_EP3) ||
 					 USB_CLEAR_HALT(usb, DS2490_EP2) ||
-					 USB_CLEAR_HALT(usb, DS2490_EP1))) {
+					 USB_CLEAR_HALT(usb, DS2490_EP1)))) {
 					LEVEL_DEFAULT
 						("DS9490_open: USB_CLEAR_HALT failed ret=%d\n",
 						 ret);
-				} else if (DS9490_setup_adapter(pn)
-						   || DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn)
-						   || DS9490_level(MODE_NORMAL, pn)) {
+				} else if ((ret =
+					    (DS9490_setup_adapter(pn)
+					     || DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn)
+					     || DS9490_level(MODE_NORMAL, pn)))) {
 					LEVEL_DEFAULT
 						("Error setting up USB DS9490 adapter at %s.\n",
 						 pn->in->name);
@@ -534,7 +535,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 					return 0;
 				}
 			}
-			ret = usb_release_interface(usb, 0);
+			usb_release_interface(usb, 0);
 		}
 		usb_close(usb);
 		pn->in->connin.usb.usb = NULL;
