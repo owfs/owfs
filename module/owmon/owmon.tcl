@@ -443,7 +443,7 @@ proc SetupDisplay {} {
     .main add .main.bus
 
     # statistics information is a textbox
-    foreach w {system statistics} {
+    foreach w {system statistics} color {#CCFFEE #FFCCEE} {
         set f [frame .main.$w]
         set display_text($w) [
             text $f.text \
@@ -452,12 +452,12 @@ proc SetupDisplay {} {
                 -tabs {12 right 15 20 25} \
                 -wrap none \
                 -width 40 \
-                -bg white
+                -bg $color
             ]
-        scrollbar $f.sby -command [list $f.text yview]
-        scrollbar $f.sbx -command [list $f.text xview] -orient horizontal
-        label $f.l -text $w
-        pack $f.l -side top -fill x
+        scrollbar $f.sby -command [list $f.text yview] -troughcolor $color
+        scrollbar $f.sbx -command [list $f.text xview] -orient horizontal -troughcolor $color
+        button $f.b -text $w -command [list DirListValues $w] -bg $color
+        pack $f.b -side top -fill x
         pack $f.sby -side right -fill y
         pack $f.sbx -side bottom -fill x
         pack $f.text -side left -fill both -expand true
