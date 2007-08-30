@@ -63,7 +63,7 @@ int FromClient(struct handlerdata *hd)
 	hd->sm.sg = ntohl(hd->sm.sg);
 	hd->sm.offset = ntohl(hd->sm.offset);
 	LEVEL_DEBUG
-		("FromClient payload=%d size=%d type=%d tempscale=%X offset=%d\n",
+		("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n",
 		 hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg,
 		 hd->sm.offset);
 	//printf("<%.4d|%.4d\n",sm->type,sm->payload);

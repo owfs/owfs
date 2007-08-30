@@ -76,6 +76,7 @@ void Handler(int fd)
 
 		/* Persistence logic */
 		if (loop_persistent) {	/* Requested persistence */
+            LEVEL_DEBUG("Persistence requested") ;      
 			if (persistent) {	/* already had persistence granted */
 				hd.persistent = 1;	/* so keep it */
 			} else {			/* See if available */
