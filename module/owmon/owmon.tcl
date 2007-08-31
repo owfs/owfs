@@ -4,12 +4,17 @@ exec wish "$0" -- "$@"
 
 # $Id$
 
+# directories to monitor
+set data_array(monitored_directories) [list system statistics]
+
+
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state id }
 
-set MessageType(READ)   2
-set MessageType(DIR)    4
-set MessageType(DIRALL) 7
-set MessageType(PreferredDIR) $MessageType(DIRALL)
+# owserver message types
+set data_array(message_type.READ)   2
+set data_array(message_type.DIR)    4
+set data_array(message_type.DIRALL) 7
+set data_array(message_type.PreferredDIR) $data_array(message_type.DIRALL)
 
 # Global: setup_flags => For object-oriented initialization
 
@@ -22,14 +27,15 @@ set MessageType(PreferredDIR) $MessageType(DIRALL)
 #Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
     ArgumentProcess $argv
-    global MessageType
+    global data_array
 
     SetupDisplay
 	SetBusList
-    SetDirList "" system
-    DirListValues system
-    SetDirList "" statistics
-    DirListValues statistics
+
+	foreach dir $data_array(monitored_directories) {
+	    SetDirList "" $dir
+    	DirListValues $dir
+	}
 }
 
 proc Busser { path } {
@@ -77,7 +83,6 @@ proc SetDirList { path type } {
 
 proc DirListValues { type } {
     global data_array
-    global MessageType
     global display_text
 
     $display_text($type) delete 1.0 end
@@ -86,7 +91,7 @@ proc DirListValues { type } {
     foreach path $data_array($type.path) name $data_array($type.name) {
         set data_array(value_from_owserver) "           "
         if { $path != "NULL" } {
-            OWSERVER_Read $MessageType(READ) $path
+            OWSERVER_Read $data_array(message_type.READ) $path
         }
         lappend data_array($type.value) $data_array(value_from_owserver)
         $display_text($type) insert end "$data_array(value_from_owserver)   $name\n"
@@ -154,11 +159,12 @@ proc OpenOwserver { } {
 }
 
 proc OWSERVER_DirectoryRead { path } {
-    global MessageType
-    set return_code [OWSERVER_Read $MessageType(PreferredDIR) $path]
-	if { $return_code == -42 && $MessageType(PreferredDIR)==$MessageType(DIRALL) } {
-		set MessageType(PreferredDIR) $MessageType(DIR)
-		set return_code [OWSERVER_Read $MessageType(PreferredDIR) $path]
+    global data_array
+
+    set return_code [OWSERVER_Read $data_array(message_type.PreferredDIR) $path]
+	if { $return_code == -42 && $data_array(message_type.PreferredDIR)==$data_array(message_type.DIRALL) } {
+		set data_array(message_type.PreferredDIR) $data_array(message_type.DIR)
+		set return_code [OWSERVER_Read $data_array(message_type.PreferredDIR) $path]
 	}
 	return $return_code
 }
@@ -167,7 +173,6 @@ proc OWSERVER_DirectoryRead { path } {
 proc OWSERVER_Read { message_type path } {
     global serve
     global data_array
-    global MessageType
 
 # Start the State machine
     set serve(state) "Open server"
@@ -235,9 +240,9 @@ proc OWSERVER_Read { message_type path } {
                 # error -- return it (may help find non-DIRALL servers)
                 set error_status $serve(type)
                 set serve(state) "Done with server"
-            } elseif { $message_type==$MessageType(DIRALL) } {
+            } elseif { $message_type==$data_array(message_type.DIRALL) } {
                 set serve(state) "Dirall received"
-            } elseif { $message_type==$MessageType(READ) } {
+            } elseif { $message_type==$data_array(message_type.READ) } {
                 set serve(state) "Read received"
             } else {
                 set serve(state) "Dir element received"
@@ -443,7 +448,7 @@ proc SetupDisplay {} {
     .main add .main.bus
 
     # statistics information is a textbox
-    foreach w {system statistics} color {#CCFFEE #FFCCEE} {
+    foreach w $data_array(monitored_directories) color {#CCFFEE #FFCCEE} {
         set f [frame .main.$w]
         set display_text($w) [
             text $f.text \
