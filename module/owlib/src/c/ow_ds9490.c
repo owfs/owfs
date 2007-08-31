@@ -762,6 +762,15 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 	int i;
 	usb_dev_handle *usb = pn->in->connin.usb.usb;
 
+    // Pretty ugly, but needed for SUSE at least
+    // Try both HAVE_USB_INTERRUPT_READ
+#ifdef HAVE_USB_INTERRUPT_READ
+    static int have_usb_interrupt_read = (1==1) ;
+#else /* HAVE_USB_INTERRUPT_READ */
+    static int have_usb_interrupt_read = (1==0) ;
+#endif /* HAVE_USB_INTERRUPT_READ */
+    static int count_have_usb_interrupt_read = 0 ;
+    
 	memset(buffer, 0, 32);		// should not be needed
 	//LEVEL_DETAIL("DS9490_getstatus: readlen=%d\n", readlen);
 
@@ -779,22 +788,31 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 #endif							// __FreeBSD__
 	do {
 // #undef HAVE_USB_INTERRUPT_READ
-#ifdef HAVE_USB_INTERRUPT_READ
 		// Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-		if ((ret =
-			 usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer,
-								(size_t) 32,
-								pn->in->connin.usb.timeout)) < 0) {
-            LEVEL_DATA("DS9490_getstatus: (HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
-#else
-		if ((ret =
-			 usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32,
-						   pn->in->connin.usb.timeout)) < 0) {
-            LEVEL_DATA("DS9490_getstatus: (no HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
-#endif
-			STAT_ADD1_BUS(BUS_status_errors, pn->in);
-			return -EIO;
-		}
+        if ( have_usb_interrupt_read ) {
+            if ((ret =
+                usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer,
+                                    (size_t) 32,
+                                    pn->in->connin.usb.timeout)) < 0) {
+                LEVEL_DATA("DS9490_getstatus: (HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
+            }
+        }
+        if ( !have_usb_interrupt_read ) {
+            if ((ret =
+                usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32,
+                            pn->in->connin.usb.timeout)) < 0) {
+                LEVEL_DATA("DS9490_getstatus: (no HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
+            }
+        }
+        if ( ret < 0 ) {
+            if ( count_have_usb_interrupt_read != 0 ) {
+    			STAT_ADD1_BUS(BUS_status_errors, pn->in);
+    	   		return -EIO;
+            }
+            have_usb_interrupt_read = ! have_usb_interrupt_read ;
+            count_have_usb_interrupt_read = 1 ;
+            continue ;
+        }
 #if 0
 #ifdef OW_DEBUG
 		if (Global.error_level > 4) {	// LEVEL_DETAIL
