@@ -55,6 +55,7 @@ void LibSetup(enum opt_program opt)
 	Global.pingcrazy = 0 ;
 	Global.no_dirall = 0 ;
 	Global.no_get = 0 ;
+	Global.no_persistence = 0 ;
 	Global.eightbit_serial = 0 ;
 
 	/* special resort in case static data (devices and filetypes) not properly sorted */
