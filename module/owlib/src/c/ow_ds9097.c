@@ -55,7 +55,7 @@ int DS9097_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
-	/* open the COM port */
+	/* open the COM port in 9600 Baud  */
 	if (COM_open(in))
 		return -ENODEV;
 
@@ -105,14 +105,14 @@ static int DS9097_reset(const struct parsedname *pn)
 	switch (c) {
 	case 0:
 		ret = BUS_RESET_SHORT ;
-        break ;
+		break ;
 	case 0xF0:
-        ret = BUS_RESET_OK ;
-        pn->in->AnyDevices = 0;
+		ret = BUS_RESET_OK ;
+		pn->in->AnyDevices = 0;
 		break;
 	default:
-        ret = BUS_RESET_OK ;
-        pn->in->AnyDevices = 1;
+		ret = BUS_RESET_OK ;
+		pn->in->AnyDevices = 1;
 		pn->in->ProgramAvailable = 0;	/* from digitemp docs */
 		if (pn->in->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 compliance

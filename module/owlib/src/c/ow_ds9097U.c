@@ -217,6 +217,15 @@ int DS2480_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.in = in;
 
+	/* Set up low-level routines */
+	DS2480_setroutines(&(in->iroutines));
+
+	/* Open the com port in 9600 Baud.
+	 * This will set in->connin.serial.speed which is used below.
+	 * It might have been a bug before. */
+	if (COM_open(in))
+		return -ENODEV;
+
 	// set the FLEX configuration parameters
 	// copied shamelessly from Brian Lane's Digitemp
 	// default PDSRC = 1.37Vus
@@ -228,16 +237,8 @@ int DS2480_detect(struct connection_in *in)
 	// construct the command to read the baud rate (to test command block)
 	setup[3] = CMD_CONFIG | PARMSEL_PARMREAD | (PARMSEL_BAUDRATE >> 3);
 	// also do 1 bit operation (to test 1-Wire block)
-	setup[4] =
-		CMD_COMM | FUNCTSEL_BIT | DS2480_baud(in->connin.serial.speed,
-											  &pn) | BITPOL_ONE;
-
-	/* Set up low-level routines */
-	DS2480_setroutines(&(in->iroutines));
-
-	/* Open the com port */
-	if (COM_open(in))
-		return -ENODEV;
+	setup[4] = CMD_COMM | FUNCTSEL_BIT |
+	  DS2480_baud(in->connin.serial.speed, &pn) | BITPOL_ONE;
 
 	/* Reset the bus and adapter */
 	DS2480_reset(&pn);
@@ -246,7 +247,7 @@ int DS2480_detect(struct connection_in *in)
 	in->connin.serial.UMode = MODSEL_COMMAND;
 	in->connin.serial.USpeed = SPEEDSEL_FLEX;
 
-	// set the baud rate to 9600
+	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, &pn);
 
 	// send a break to reset the DS2480
@@ -283,14 +284,13 @@ int DS2480_detect(struct connection_in *in)
 		//printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 		/* Apparently need to reset again to get the version number properly */
 
-	   // reset sets som 	
-        if ((ret = DS2480_reset(&pn))) {
+		if ((ret = DS2480_reset(&pn))) {
 			return ret;
 		}
 		in->busmode = bus_serial;
 
-        // in->Adapter is set in DS2480_reset from some status bits
-        switch (in->Adapter) {
+		// in->Adapter is set in DS2480_reset from some status bits
+		switch (in->Adapter) {
 		case adapter_DS9097U2:
 		case adapter_DS9097U:
 			in->adapter_name = "DS9097U";
@@ -299,7 +299,7 @@ int DS2480_detect(struct connection_in *in)
 		case adapter_LINK_10:
 		case adapter_LINK_11:
 		case adapter_LINK_12:
-            in->adapter_name = "LINK(emulate mode)";
+			in->adapter_name = "LINK(emulate mode)";
 			break;
 		default:
 			return -ENODEV;
@@ -349,8 +349,9 @@ int DS2480_baud(speed_t baud, const struct parsedname *pn)
 static int DS2480_reset(const struct parsedname *pn)
 {
 	int ret = 0;
-	BYTE buf =
-		(BYTE) (CMD_COMM | FUNCTSEL_RESET | pn->in->connin.serial.USpeed);
+	BYTE buf = (BYTE)(CMD_COMM |
+			  FUNCTSEL_RESET |
+			  pn->in->connin.serial.USpeed);
 
 	//printf("DS2480_reset\n");
 	// make sure normal level
@@ -370,16 +371,16 @@ static int DS2480_reset(const struct parsedname *pn)
 
 	switch (buf & RB_RESET_MASK) {
 	case RB_1WIRESHORT:
-        ret = BUS_RESET_SHORT ;
-        break ;
+		ret = BUS_RESET_SHORT ;
+		break ;
 	case RB_NOPRESENCE:
-        ret = BUS_RESET_OK ;
-        pn->in->AnyDevices = 0;
+		ret = BUS_RESET_OK ;
+		pn->in->AnyDevices = 0;
 		break;
 	case RB_PRESENCE:
 	case RB_ALARMPRESENCE:
-        ret = BUS_RESET_OK ;
-        pn->in->AnyDevices = 1;
+		ret = BUS_RESET_OK ;
+		pn->in->AnyDevices = 1;
 		// check if programming voltage available
 		pn->in->ProgramAvailable = ((buf & 0x20) == 0x20);
 		if (pn->in->ds2404_compliance) {

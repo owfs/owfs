@@ -69,18 +69,18 @@ int LINK_detect(struct connection_in *in)
 	if (COM_open(in))
 		return -ENODEV;
 
-	// set the baud rate to 9600
+	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, &pn);
 	//COM_flush(&pn);
 	if (LINK_reset(&pn) == 0 && LINK_write(LINK_string(" "), 1, &pn) == 0) {
 		BYTE tmp[36] = "(none)";
 		char *stringp = (char *) tmp;
 		/* read the version string */
-        //printf("LINK 0\n");
-        memset(tmp, 0, 36);
-        LINK_read(tmp, 36, &pn);	// ignore return value -- will time out, probably
-        //Debug_Bytes("Read version from link",tmp,36);
-        COM_flush(&pn);
+		//printf("LINK 0\n");
+		memset(tmp, 0, 36);
+		LINK_read(tmp, 36, &pn);	// ignore return value -- will time out, probably
+		//Debug_Bytes("Read version from link",tmp,36);
+		COM_flush(&pn);
 
 		/* Now find the dot for the version parsing */
 		strsep(&stringp, ".");

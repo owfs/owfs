@@ -292,16 +292,13 @@ int LibStart(void)
 			}
 			break;
 		case bus_serial:
-			if (DS2480_detect(in)) {	/* Set up DS2480/LINK interface */
-				LEVEL_CONNECT
-					("Cannot detect DS2480 or LINK interface on %s.\n",
-					 in->name);
-				BUS_close(in);
-				BadAdapter_detect(in);	/* reset the methods */
-			} else {
-				break;
-            }        
-            in->adapter_name = "DS9097"; // need to set adapter name for this approach to passive adapter
+			/* Set up DS2480/LINK interface */
+			if (!DS2480_detect(in)) break;
+			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",
+				      in->name);
+			BUS_close(in);
+			BadAdapter_detect(in);	/* reset the methods */
+			in->adapter_name = "DS9097"; // need to set adapter name for this approach to passive adapter
 			// Fall Through
 		case bus_passive:
 			if (DS9097_detect(in)) {
