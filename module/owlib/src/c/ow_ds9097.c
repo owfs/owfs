@@ -27,7 +27,9 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 							   const struct parsedname *pn);
 
 #define	OneBit	0xFF
-#define ZeroBit 0xC0
+//#define ZeroBit 0xC0
+// Should be all zero's when we send 8 bits. digitemp write 0xFF or 0x00
+#define ZeroBit 0x00
 
 /* Device-specific functions */
 static void DS9097_setroutines(struct interface_routines *f)
@@ -129,8 +131,29 @@ static int DS9097_reset(const struct parsedname *pn)
 	term.c_cc[VMIN] = 1;
 	term.c_cc[VTIME] = 0;
 
+#if 0
+	/* digitemp seems to contain a really nasty bug.. in
+	   SMALLINT owTouchReset(int portnum)
+	   They use 8bit all the time actually..
+	/* 8 data bits */
+	term[portnum].c_cflag |= CS8;  //(0x60)
+	cfsetispeed(&term[portnum], B9600);
+	cfsetospeed(&term[portnum], B9600);
+	tcsetattr(fd[portnum], TCSANOW, &term[portnum]);
+	send_reset_byte(0xF0);
+	cfsetispeed(&term[portnum], B115200);
+	cfsetospeed(&term[portnum], B115200);
+	/* set to 6 data bits */
+	term[portnum].c_cflag |= CS6;  // (0x20)
+	tcsetattr(fd[portnum], TCSANOW, &term[portnum]);
+	/* Not really a change of data-bits here...
+	   They always use 8bit mode... doohhh? */
+#endif
+
 	/* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-	term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
+	//term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
+	/* coninue with 8 data bits */
+	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
