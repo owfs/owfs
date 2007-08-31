@@ -150,11 +150,13 @@ static int DS9097_reset(const struct parsedname *pn)
 	   They always use 8bit mode... doohhh? */
 #endif
 
-	/* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-	//term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
-	/* coninue with 8 data bits */
-	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
-
+	if(Global.eightbit_serial) {
+	  /* coninue with 8 data bits */
+	  term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
+	} else {
+	  /* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
+	  term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
+	}
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
 	if (cfsetospeed(&term, B38400) < 0 || cfsetispeed(&term, B38400) < 0) {

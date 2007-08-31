@@ -571,10 +571,11 @@ struct global {
 	int timeout_persistent_high;
 	int clients_persistent_low;
 	int clients_persistent_high;
-    int pingcrazy;
-    int no_dirall;
-    int no_get;
-    int no_persistence;
+	int pingcrazy;
+	int no_dirall;
+	int no_get;
+	int no_persistence;
+	int eightbit_serial;
 };
 extern struct global Global;
 

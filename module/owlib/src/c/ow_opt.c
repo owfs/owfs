@@ -98,12 +98,12 @@ const struct option owopts_long[] = {
 	{"ha7e", required_argument, NULL, 277},
 	{"HA7e", required_argument, NULL, 277},
 	{"HA7E", required_argument, NULL, 277},
-    {"TESTER", required_argument, NULL, 278}, /* Tester */
-    {"Tester", required_argument, NULL, 278}, /* Tester */
-    {"tester", required_argument, NULL, 278}, /* Tester */
+	{"TESTER", required_argument, NULL, 278}, /* Tester */
+	{"Tester", required_argument, NULL, 278}, /* Tester */
+	{"tester", required_argument, NULL, 278}, /* Tester */
 	{"etherweather", required_argument, NULL, 279}, /* EtherWeather */
 	{"EtherWeather", required_argument, NULL, 279}, /* EtherWeather */
-    {"zero", no_argument, &Global.announce_off, 0},
+	{"zero", no_argument, &Global.announce_off, 0},
 	{"nozero", no_argument, &Global.announce_off, 1},
 	{"autoserver", no_argument, &Global.autoserver, 1},
 	{"noautoserver", no_argument, &Global.autoserver, 0},
@@ -125,11 +125,12 @@ const struct option owopts_long[] = {
 	{"clients_persistent_low", required_argument, NULL, 312,},
 	{"clients_persistent_high", required_argument, NULL, 313,},
 
-    {"pingcrazy",no_argument, &Global.pingcrazy, 1},
-    {"no_dirall",no_argument, &Global.no_dirall, 1},
-    {"no_get",no_argument, &Global.no_get, 1},
-    {"no_persistence",no_argument, &Global.no_persistence, 1},
-
+	{"pingcrazy",no_argument, &Global.pingcrazy, 1},
+	{"no_dirall",no_argument, &Global.no_dirall, 1},
+	{"no_get",no_argument, &Global.no_get, 1},
+	{"no_persistence",no_argument, &Global.no_persistence, 1},
+	{"8bit", no_argument, &Global.eightbit_serial, 1},
+	{"6bit", no_argument, &Global.eightbit_serial, 0},
 	{0, 0, 0, 0},
 };
 

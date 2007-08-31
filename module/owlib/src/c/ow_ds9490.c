@@ -787,8 +787,8 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 	}
 #endif							// __FreeBSD__
 	do {
-// #undef HAVE_USB_INTERRUPT_READ
 		// Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
+#ifdef HAVE_USB_INTERRUPT_READ
         if ( have_usb_interrupt_read ) {
             if ((ret =
                 usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer,
@@ -796,14 +796,14 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
                                     pn->in->connin.usb.timeout)) < 0) {
                 LEVEL_DATA("DS9490_getstatus: (HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
             }
-        }
-        if ( !have_usb_interrupt_read ) {
+        } else
+#endif
             if ((ret =
                 usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32,
                             pn->in->connin.usb.timeout)) < 0) {
                 LEVEL_DATA("DS9490_getstatus: (no HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
             }
-        }
+
         if ( ret < 0 ) {
             if ( count_have_usb_interrupt_read != 0 ) {
     			STAT_ADD1_BUS(BUS_status_errors, pn->in);
