@@ -355,9 +355,9 @@ struct connection_in {
 		struct connin_tcp tcp;
 		struct connin_usb usb;
 		struct connin_i2c i2c;
-        struct connin_fake fake;
-        struct connin_fake tester;
-        struct connin_ha7 ha7;
+		struct connin_fake fake;
+		struct connin_fake tester;
+		struct connin_ha7 ha7;
 		struct connin_etherweather etherweather;
 	} connin;
 };

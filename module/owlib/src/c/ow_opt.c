@@ -555,7 +555,7 @@ static int OW_ArgHA7(const char *arg)
 		in->busmode = bus_ha7net;
 		return 0;
 	} else {					// Try multicast discovery
-		printf("Find HA7\n");
+		//printf("Find HA7\n");
 		return FS_FindHA7();
 	}
 #else							/* OW_HA7 */

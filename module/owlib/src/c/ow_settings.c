@@ -91,13 +91,13 @@ static int FS_r_timeout(struct one_wire_query * owq)
 static int FS_w_timeout(struct one_wire_query * owq)
 {
 	int previous;
-    struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	CACHELOCK;
-    printf("FS_w_timeout!!!\n");
+	//printf("FS_w_timeout!!!\n");
 	previous = ((UINT *) pn->ft->data.v)[0];
-    ((UINT *) pn->ft->data.v)[0] = OWQ_I(owq);
+	((UINT *) pn->ft->data.v)[0] = OWQ_I(owq);
 	CACHEUNLOCK;
-    if (previous > OWQ_I(owq))
+	if (previous > OWQ_I(owq))
 		Cache_Clear();
 	return 0;
 }
