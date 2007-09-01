@@ -5,7 +5,7 @@ exec wish "$0" -- "$@"
 # $Id$
 
 # directories to monitor
-set data_array(monitored_directories) [list system statistics]
+set data_array(monitored_directories) {system statistics}
 
 
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state id }
@@ -29,72 +29,81 @@ proc Main { argv } {
     ArgumentProcess $argv
     global data_array
 
+    set data_array(current_bus) ""
     SetupDisplay
 	SetBusList
 
 	foreach dir $data_array(monitored_directories) {
-	    SetDirList "" $dir
+#	    SetDirList "" $dir
     	DirListValues $dir
-	}
-}
-
-proc Busser { path } {
-	global data_array
-    if { [OWSERVER_DirectoryRead $path] < 0 } {
-		return
-	}
-	set busses [lsearch -all -regexp -inline $data_array(value_from_owserver) "^${path}bus"]
-    #puts "$data_array(value_from_owserver) -> $busses"
-	foreach bus $busses {
-        lappend data_array(bus.path) $bus
-		Busser $bus
 	}
 }
 
 proc SetBusList { } {
 	global data_array
-	set data_array(bus_path) {"/"}
-	Busser "/"
+	set data_array(bus.path) {/}
+	BusListRecurser /
 }
 
-proc DirListRecurser { prepath_length path type } {
+proc BusListRecurser { path } {
     global data_array
-    lappend data_array($type.name) [regsub -all .*?/ [string range $path [expr {$prepath_length + 1 }] end] \t]
     if { [OWSERVER_DirectoryRead $path] < 0 } {
-        lappend data_array($type.path) $path
+        return
+    }
+    set busses [lsearch -all -regexp -inline $data_array(value_from_owserver) "^${path}bus"]
+    #puts "$data_array(value_from_owserver) -> $busses"
+    foreach bus $busses {
+        lappend data_array(bus.path) $bus
+        BusListRecurser $bus
+    }
+}
+
+proc SetDirList { bus type } {
+    global data_array
+
+    set path $bus/$type
+
+    set data_array($bus.$type.path) {}
+    set data_array($bus.$type.name) {}
+    DirListRecurser  $bus $path $type
+}
+
+proc DirListRecurser { bus path type } {
+    global data_array
+    lappend data_array($bus.$type.name) [regsub -all .*?/ [string range $path [string length $bus/$type/] end] \t]
+    if { [OWSERVER_DirectoryRead $path] < 0 } {
+        lappend data_array($bus.$type.path) $path
     } else {
-        lappend data_array($type.path) NULL
+        lappend data_array($bus.$type.path) NULL
         set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$} ]
         foreach dir $dirlist {
-            DirListRecurser $prepath_length $dir $type
+            DirListRecurser $bus $dir $type
         }
     }
 }
 
-proc SetDirList { path type } {
-    global data_array
-
-	set typepath $path/$type
-
-    set data_array($type.path) {}
-    set data_array($type.name) {}
-    DirListRecurser [string length $typepath] $typepath $type
-}
-
 proc DirListValues { type } {
     global data_array
-    global display_text
+    global window_data
 
-    $display_text($type) delete 1.0 end
+    set bus $data_array(current_bus)
 
-    set data_array($type.value) {}
-    foreach path $data_array($type.path) name $data_array($type.name) {
+    if { ![info exists data_array($bus.$type.path)] } {
+        $window_data($type) delete 1.0 end
+        $window_data($type) insert end "First pass through $bus/$type\n  ... getting parameter list...\n"
+        SetDirList $bus $type
+    }
+    
+    $window_data($type) delete 1.0 end
+
+    set data_array($bus.$type.value) {}
+    foreach path $data_array($bus.$type.path) name $data_array($bus.$type.name) {
         set data_array(value_from_owserver) "           "
         if { $path != "NULL" } {
             OWSERVER_Read $data_array(message_type.READ) $path
         }
-        lappend data_array($type.value) $data_array(value_from_owserver)
-        $display_text($type) insert end "$data_array(value_from_owserver)   $name\n"
+        lappend data_array($bus.$type.value) $data_array(value_from_owserver)
+        $window_data($type) insert end "$data_array(value_from_owserver)   $name\n"
     }
 
 #foreach n $data_array($type.name) v $data_array($type.value) {puts "$v $n"}
@@ -424,33 +433,45 @@ proc ShowMessage {} {
 
 # Selection from listbox
 proc SelectionMade { widget y } {
+    global data_array
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
-        ShowBus [$widget get $index]
-}
+        set bus [$widget get $index]
+        set data_array(current_bus) [expr { ($bus=="/") ? "" : $bus } ]
+        foreach dir $data_array(monitored_directories) {
+            DirListValues $dir
+        }
+    }
 }
 
 
 proc SetupDisplay {} {
     global data_array
-    global display_text
+    global window_data
     panedwindow .main -orient horizontal
     
     # Bus list is a listbox
     set f_bus [frame .main.bus]
-    listbox $f_bus.lb -listvariable data_array(bus.path) -width 20 -yscrollcommand [list $f_bus.sb set] -selectmode browse -bg lightyellow
+    set window_data(bus) [
+        listbox $f_bus.lb \
+            -listvariable data_array(bus.path) \
+            -width 20 \
+            -yscrollcommand [list $f_bus.sb set] \
+            -selectmode browse \
+            -bg lightyellow
+        ]
     scrollbar $f_bus.sb -command [list $f_bus.lb yview]
     pack $f_bus.sb -side right -fill y
     pack $f_bus.lb -side left -fill both -expand true
-    bind $f_bus.lb <ButtonRelease-1> {+ SelectionMade %W %y }
-    bind $f_bus.lb <space> {+ SelectionMade %W }
+    bind $window_data(bus) <ButtonRelease-1> {+ SelectionMade %W %y }
+    bind $window_data(bus) <space> {+ SelectionMade %W }
     
     .main add .main.bus
 
     # statistics information is a textbox
     foreach w $data_array(monitored_directories) color {#CCFFEE #FFCCEE} {
         set f [frame .main.$w]
-        set display_text($w) [
+        set window_data($w) [
             text $f.text \
                 -yscrollcommand [list $f.sby set] \
                 -xscrollcommand [list $f.sbx set] \
@@ -480,6 +501,11 @@ proc SetupDisplay {} {
     menu .main_menu.view -tearoff 0
     .main_menu add cascade -label View -menu .main_menu.view  -underline 0
         .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
+
+    foreach dir $data_array(monitored_directories) {
+        menu .main_menu.$dir -tearoff 0
+        .main_menu add cascade -label $dir -menu .main_menu.$dir -state disabled
+    }
 
 # help menu
     menu .main_menu.help -tearoff 0
