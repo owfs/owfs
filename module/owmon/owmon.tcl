@@ -5,7 +5,7 @@ exec wish "$0" -- "$@"
 # $Id$
 
 # directories to monitor
-set data_array(monitored_directories) {system statistics}
+set data_array(monitored_directories) {system statistics structure settings}
 
 
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state id }
@@ -28,13 +28,29 @@ set data_array(message_type.PreferredDIR) $data_array(message_type.DIRALL)
 proc Main { argv } {
     ArgumentProcess $argv
     global data_array
+    global window_data
 
-    set data_array(current_bus) ""
+    # wait till ready
+    set window_data(busy) 1
+
+    # Set panels to display at start
+    foreach dir $data_array(monitored_directories) {
+        #default
+        set window_data(panelshow.$dir) 0
+    }
+    set window_data(panelshow.system) 1
+    set window_data(panelshow.statistics) 1
+
+    # Show screen
     SetupDisplay
+    
+    # bus list (and default)
+    set data_array(current_bus) ""
 	SetBusList
 
-	foreach dir $data_array(monitored_directories) {
-#	    SetDirList "" $dir
+    # Show data for first time
+    set window_data(busy) 0
+    foreach dir $data_array(monitored_directories) {
     	DirListValues $dir
 	}
 }
@@ -75,7 +91,7 @@ proc DirListRecurser { bus path type } {
         lappend data_array($bus.$type.path) $path
     } else {
         lappend data_array($bus.$type.path) NULL
-        set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$} ]
+        set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$|\.\d{3,}$} ]
         foreach dir $dirlist {
             DirListRecurser $bus $dir $type
         }
@@ -83,30 +99,37 @@ proc DirListRecurser { bus path type } {
 }
 
 proc DirListValues { type } {
-    global data_array
     global window_data
 
-    set bus $data_array(current_bus)
-
-    if { ![info exists data_array($bus.$type.path)] } {
-        $window_data($type) delete 1.0 end
-        $window_data($type) insert end "First pass through $bus/$type\n  ... getting parameter list...\n"
-        SetDirList $bus $type
+    if { $window_data(busy) } {
+        return
     }
+    set window_data(busy) 1
     
-    $window_data($type) delete 1.0 end
-
-    set data_array($bus.$type.value) {}
-    foreach path $data_array($bus.$type.path) name $data_array($bus.$type.name) {
-        set data_array(value_from_owserver) "           "
-        if { $path != "NULL" } {
-            OWSERVER_Read $data_array(message_type.READ) $path
+    if { $window_data(panelshow.$type) } {
+        global data_array
+        set bus $data_array(current_bus)
+    
+        if { ![info exists data_array($bus.$type.path)] } {
+            $window_data($type) delete 1.0 end
+            $window_data($type) insert end "First pass through $bus/$type\n  ... getting parameter list...\n"
+            SetDirList $bus $type
         }
-        lappend data_array($bus.$type.value) $data_array(value_from_owserver)
-        $window_data($type) insert end "$data_array(value_from_owserver)   $name\n"
+        
+        $window_data($type) delete 1.0 end
+    
+        set data_array($bus.$type.value) {}
+        foreach path $data_array($bus.$type.path) name $data_array($bus.$type.name) {
+            set data_array(value_from_owserver) "           "
+            if { $path != "NULL" } {
+                OWSERVER_Read $data_array(message_type.READ) $path
+            }
+            lappend data_array($bus.$type.value) $data_array(value_from_owserver)
+            $window_data($type) insert end "$data_array(value_from_owserver)   $name\n"
+        }
     }
 
-#foreach n $data_array($type.name) v $data_array($type.value) {puts "$v $n"}
+    set window_data(busy) 0
 }
 
 proc OWSERVER_send_message { type path sock } {
@@ -261,21 +284,21 @@ proc OWSERVER_Read { message_type path } {
             set serve(state) "Read from server"
         }
         "Dir element received" {
-            if ( $serve(paylength)==0 ) {
+            if { $serve(paylength)==0 } {
                 # last (null) element
                 set serve(state) "Done with server"
             } else {
                 # add element to list
-                lappend data_array(value_from_owserver) [Payload]
+                lappend data_array(value_from_owserver) [PayloadWithNULL]
                 set serve(state) "Read from server"
             }
         }
         "Dirall received" {
-            set data_array(value_from_owserver) [split [Payload] ,]
+            set data_array(value_from_owserver) [split [PayloadWithNULL] ,]
             set serve(state) "Done with server"
         }
         "Read received" {
-            set data_array(value_from_owserver) [Payload]
+            set data_array(value_from_owserver) [PayloadNoNULL]
             set serve(state) "Done with server"
         }
         "Server timeout" {
@@ -452,15 +475,16 @@ proc SetupDisplay {} {
     
     # Bus list is a listbox
     set f_bus [frame .main.bus]
+    set color [Color bus]
     set window_data(bus) [
         listbox $f_bus.lb \
             -listvariable data_array(bus.path) \
             -width 20 \
             -yscrollcommand [list $f_bus.sb set] \
             -selectmode browse \
-            -bg lightyellow
+            -bg $color
         ]
-    scrollbar $f_bus.sb -command [list $f_bus.lb yview]
+    scrollbar $f_bus.sb -command [list $f_bus.lb yview] -troughcolor $color
     pack $f_bus.sb -side right -fill y
     pack $f_bus.lb -side left -fill both -expand true
     bind $window_data(bus) <ButtonRelease-1> {+ SelectionMade %W %y }
@@ -469,9 +493,45 @@ proc SetupDisplay {} {
     .main add .main.bus
 
     # statistics information is a textbox
-    foreach w $data_array(monitored_directories) color {#CCFFEE #FFCCEE} {
-        set f [frame .main.$w]
-        set window_data($w) [
+    foreach dir $data_array(monitored_directories) {
+        SetupPanel $dir
+    }
+    
+    label .status -anchor w -relief sunken -height 1 -textvariable current_status -bg white
+    pack .status -side bottom -fill x
+    bind .status <ButtonRelease-1> [list .main_menu.view invoke "Status messages"]
+    pack .main -side top -fill both -expand true
+    
+    menu .main_menu -tearoff 0
+    . config -menu .main_menu
+    
+    menu .main_menu.view -tearoff 0
+    .main_menu add cascade -label View -menu .main_menu.view  -underline 0
+        foreach dir $data_array(monitored_directories) {
+            .main_menu.view add checkbutton -label $dir -indicatoron 1 -command [list PanelShow $dir] -variable window_data(panelshow.$dir)
+        }
+        .main_menu.view add separator
+        .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
+
+    foreach dir $data_array(monitored_directories) {
+        menu .main_menu.$dir -tearoff 0
+        .main_menu add cascade -label $dir -menu .main_menu.$dir -state [expr {$window_data(panelshow.$dir)?"normal":"disabled"}]
+    }
+
+# help menu
+    menu .main_menu.help -tearoff 0
+    .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
+        .main_menu.help add command -label "About OWMON" -underline 0 -command About
+        .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
+        .main_menu.help add command -label "Version" -underline 0 -command Version
+}
+
+proc SetupPanel { dir } {
+    global window_data
+    set color [Color $dir]
+    if { $window_data(panelshow.$dir) } {
+        set f [frame .main.$dir]
+        set window_data($dir) [
             text $f.text \
                 -yscrollcommand [list $f.sby set] \
                 -xscrollcommand [list $f.sbx set] \
@@ -482,42 +542,66 @@ proc SetupDisplay {} {
             ]
         scrollbar $f.sby -command [list $f.text yview] -troughcolor $color
         scrollbar $f.sbx -command [list $f.text xview] -orient horizontal -troughcolor $color
-        button $f.b -text $w -command [list DirListValues $w] -bg $color
+        button $f.b -text $dir -command [list DirListValues $dir] -bg $color
         pack $f.b -side top -fill x
         pack $f.sby -side right -fill y
         pack $f.sbx -side bottom -fill x
         pack $f.text -side left -fill both -expand true
-
-        .main add $f
-    }
     
-    label .status -anchor w -relief sunken -height 1 -textvariable current_status -bg white
-    pack .status -side bottom -fill x
-    bind .status <ButtonRelease-1> [list .main_menu.view invoke "Status messages"]
-    pack .main -side top -fill both -expand true
+        set window_data(panel.$dir) $f
+        .main add $f -after .main.[PriorPanel $dir]
+    }
+}
+
+proc PanelShow { dir } {
+    global window_data
+
+    if { $window_data(panelshow.$dir) } {
+        .main_menu entryconfigure $dir -state normal
+
+        if { [info exist window_data(panel.$dir)] } {
+            .main add .main.$dir -after .main.[PriorPanel $dir]
+        } else {
+            SetupPanel $dir
+        }
+        
+        DirListValues $dir
+    } else {
+        .main_menu entryconfigure $dir -state disabled
+        .main forget $window_data(panel.$dir)
+    }
+}
+
+proc PriorPanel { dir } {
+    global window_data
+    global data_array
     
-    menu .main_menu -tearoff 0
-    . config -menu .main_menu
-    menu .main_menu.view -tearoff 0
-    .main_menu add cascade -label View -menu .main_menu.view  -underline 0
-        .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
+    set prior bus
 
-    foreach dir $data_array(monitored_directories) {
-        menu .main_menu.$dir -tearoff 0
-        .main_menu add cascade -label $dir -menu .main_menu.$dir -state disabled
+    foreach prior_dir $data_array(monitored_directories) {
+        if { $prior_dir==$dir } {
+            break
+        }
+        if { $window_data(panelshow.$prior_dir) } {
+            set prior $prior_dir
+        }
     }
+    return $prior
+}
 
-# help menu
-    menu .main_menu.help -tearoff 0
-    .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
-        .main_menu.help add command -label "About OWMON" -underline 0 -command About
-        .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
-        .main_menu.help add command -label "Version" -underline 0 -command Version
+proc Color { dir } {
+    switch $dir {
+    bus         { return #D6E2E0}
+    system      { return #DBF0FF}
+    statistics  { return #E2FFF1}
+    alarm       { return #FFC3C3}
+    structure   { return #F3DEFF}
+    settings    { return #FCFFDE}
+    chain       { return #DDDFC2}
+    simultaneous { return #C3EEF9}
+    default     { return #C8C8C8}
     }
-
-
-
-
+}
 
 
 # error routine -- popup and exit
@@ -670,7 +754,13 @@ proc HeaderParser { string_value } {
     set serve(totallength) [expr {$serve(tokenlength)+$serve(paylength)+24}]
 }
 
-proc Payload {} {
+proc PayloadWithNULL {} {
+    global serve
+    # remove trailing null
+    string range $serve(string) 24 [expr {$serve(paylength) + 24 - 2}]
+}
+
+proc PayloadNoNULL {} {
     global serve
     # remove trailing null
     string range $serve(string) 24 [expr {$serve(paylength) + 24 - 1}]
