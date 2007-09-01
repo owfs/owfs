@@ -16,6 +16,8 @@ set data_array(message_type.DIR)    4
 set data_array(message_type.DIRALL) 7
 set data_array(message_type.PreferredDIR) $data_array(message_type.DIRALL)
 
+set refresh_counter 0
+
 # Global: setup_flags => For object-oriented initialization
 
 # Global: serve => information on current transaction
@@ -37,6 +39,8 @@ proc Main { argv } {
     foreach dir $data_array(monitored_directories) {
         #default
         set window_data(panelshow.$dir) 0
+        # refresh rate
+        set window_data(refresh.$dir) 0
     }
     set window_data(panelshow.system) 1
     set window_data(panelshow.statistics) 1
@@ -53,6 +57,9 @@ proc Main { argv } {
     foreach dir $data_array(monitored_directories) {
     	DirListValues $dir
 	}
+    
+    # Start clock
+    RefreshCounter
 }
 
 proc SetBusList { } {
@@ -171,8 +178,12 @@ proc ArgumentProcess { arg } {
 proc IPandPort { argument_string } {
     global IPAddress
     if { [regexp -- {^(.*?):(.*)$} $argument_string wholestring firstpart secondpart] } {
-        if { $firstpart != "" } { set IPAddress(ip) $firstpart }
-        if { $secondpart != "" } { set IPAddress(port) $secondpart }
+        if { $firstpart != "" } {
+            set IPAddress(ip) $firstpart
+        }
+        if { $secondpart != "" } {
+            set IPAddress(port) $secondpart
+        }
     } else {
         if { $argument_string != "" } { set IPAddress(port) $argument_string }
     }
@@ -353,8 +364,8 @@ proc ClearTap { } {
     foreach x $SocketVars {
         if { [info exist serve($x)] } {
             unset serve($x)
-}
-}
+        }
+    }
 }
 
 # close client request socket
@@ -363,12 +374,12 @@ proc SockTimeout {} {
     switch $serve(state) {
         "Read from server" {
             set serve(state) "Server timeout"
-}
+        }
         default {
             ErrorMessage "Strange timeout for state=$serve(state)"
             set serve(state) "Server timeout"
-}
-}
+        }
+    }
     StatusMessage "Network read timeout" 1
 }
 
@@ -388,7 +399,7 @@ proc ClearSockTimer { } {
     if { [info exist serve(id)] } {
         after cancel $serve(id)
         unset serve(id)
-}
+    }
 }
 
 proc ResetSockTimer { { msec 2000 } } {
@@ -404,27 +415,27 @@ proc ReadProcess {} {
 # test eof
     if { [eof $sock] } {
         return 2
-}
+    }
 # read what's waiting
     set new_string [read $sock]
     if { $new_string == {} } {
         return 0
-}
+    }
     append serve(string) $new_string
     ResetSockTimer
     set len [string length $serve(string)]
     if { $len < 24 } {
-#do nothing -- reloop
+        #do nothing -- reloop
         return 0
-} elseif { $serve(totallength) == 0 } {
+    } elseif { $serve(totallength) == 0 } {
 # at least header is in
         HeaderParser $serve(string)
-}
-#already in payload (and token) portion
+    }
+    #already in payload (and token) portion
     if { $len < $serve(totallength) } {
-#do nothing -- reloop
+        #do nothing -- reloop
         return 0
-}
+    }
 # Fully parsed
     set new_length [string length $serve(string)]
     return 1
@@ -516,6 +527,11 @@ proc SetupDisplay {} {
     foreach dir $data_array(monitored_directories) {
         menu .main_menu.$dir -tearoff 0
         .main_menu add cascade -label $dir -menu .main_menu.$dir -state [expr {$window_data(panelshow.$dir)?"normal":"disabled"}]
+        menu .main_menu.$dir.refresh -tearoff 0
+        .main_menu.$dir add cascade -menu .main_menu.$dir.refresh -label {Refresh rate}
+        foreach {label value} {"Manual" 0 "20 seconds" 1 "1 minute" 3 "5 minutes" 15} {
+            .main_menu.$dir.refresh add radiobutton -label $label -value $value -variable window_data(refresh.$dir)
+        }
     }
 
 # help menu
@@ -622,8 +638,8 @@ proc StatusMessage { msg { priority 1 } } {
         lappend status_messages $msg
         if { [llength $status_messages] > 50 } {
             set status_messages [lreplace $status_messages 0 0]
-}
-}
+        }
+    }
 }
 
 # Popup giving attribution
@@ -681,7 +697,7 @@ proc StatusWindow { } {
 
     if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
         return
-}
+    }
 
     global status_messages
 
@@ -704,13 +720,13 @@ proc WindowAlreadyExists { window_name menu_name menu_index } {
 # hide window
             wm withdraw $window_name
             set setup_flags($window_name) 0
-} else {
+        } else {
 # show window
             wm deiconify $window_name
             set setup_flags($window_name) 1
-}
+        }
         return 1
-}
+    }
 
 # create window
     toplevel $window_name
@@ -732,19 +748,23 @@ proc HeaderParser { string_value } {
 }
     foreach x {paylength tokenlength totallength ping} {
         set serve($x) 0
-}
+    }
+
     binary scan $string_value {IIIIII} serve(version) serve(payload) serve(type) serve(flags) serve(size) serve(offset)
+
     if { $length < 24 } {
         set serve(totallength) $length
         set serve(typetext) BadHeader
         return
-}
+    }
+    
     if { $serve(payload) == -1 } {
         set serve(paylength) 0
         set serve(ping) 1
-} else {
+    } else {
         set serve(paylength) $serve(payload)
-}
+    }
+
     set version $serve(version)
     set flags $serve(flags)
     set tok [expr { $version & 0xFFFF}]
@@ -765,6 +785,26 @@ proc PayloadNoNULL {} {
     # remove trailing null
     string range $serve(string) 24 [expr {$serve(paylength) + 24 - 1}]
 }
+
+proc RefreshCounter { } {
+    global refresh_counter
+    global data_array
+    global window_data
+    
+    incr refresh_counter
+    foreach dir $data_array(monitored_directories) {
+        if { $window_data(refresh.$dir)==0 } {
+            continue
+        }
+        if { [expr { $refresh_counter % $window_data(refresh.$dir) }]==0 } {
+            DirListValues $dir
+        }
+    }
+
+    # set timer again
+    after 20000 RefreshCounter
+}
+
 
 proc MainTitle { server_address } {
     wm title . "OWMON owserver ($server_address) monitor"
