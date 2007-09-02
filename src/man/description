@@ -1,13 +1,13 @@
 .SS 1-Wire
 .I 1-wire 
 is a wiring protocol and series of devices designed and manufactured
-by Dallas Semicondictor, Inc. The bus is a low-power low-speed low-connector
+by Dallas SemicondUctor, Inc. The bus is a low-power low-speed low-connector
 scheme where the data line can also provide power.
 .PP
 Each device is uniquely unalterably numbered during manufacture. There is a wide variety
 of devices, including memory, sensors (humidity, temperature, voltage,
-contact, current), switches, timers, loggers, and more complex devices (like
-thermocouple sensors) can be built wit hte basic devices. There are also
+contact, current), switches, timers and data loggers. More complex devices (like
+thermocouple sensors) can be built with these basic devices. There are also
 1-wire devices that have encryption included.
 .PP
 The 1-wire bus is accessed via one of a number of serial, parallel or USB
