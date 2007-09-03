@@ -384,34 +384,32 @@ int DS9490_BusParm(struct connection_in *in)
 	struct connin_usb *con_usb = &in->connin.usb;
 
 	/* Willy Robison's tweaks */
-	//if (Global.altUSB) {  // always set slewrate since we use flexible speed
-		if(usb == NULL) return -1;
+	if(usb == NULL) return -1;
 
-		/* Slew Rate */
-		if ((ret =
-			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULLDOWN_SLEWRATE,
-					 con_usb->pulldownslewrate, NULL, 0,
-					 con_usb->timeout)) < 0) {
-			LEVEL_DATA("DS9490_BusParm: Error MOD_PULLDOWN_SLEWRATE\n");
-			return -EIO;
-		}
-		/* Low Time */
-		if ((ret =
-			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_WRITE1_LOWTIME,
-					 con_usb->writeonelowtime, NULL, 0,
-					 con_usb->timeout)) < 0) {
-			LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
-			return -EIO;
-		}
-		/* DS0 Low */
-		if ((ret =
-			 usb_control_msg(usb, 0x40, MODE_CMD, MOD_DSOW0_TREC,
-					 con_usb->datasampleoffset, NULL, 0,
-					 con_usb->timeout)) < 0) {
-			LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
-			return -EIO;
-		}
-	//}
+	/* Slew Rate */
+	if ((ret =
+	     usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULLDOWN_SLEWRATE,
+			     con_usb->pulldownslewrate, NULL, 0,
+			     con_usb->timeout)) < 0) {
+		LEVEL_DATA("DS9490_BusParm: Error MOD_PULLDOWN_SLEWRATE\n");
+		return -EIO;
+	}
+	/* Low Time */
+	if ((ret =
+	     usb_control_msg(usb, 0x40, MODE_CMD, MOD_WRITE1_LOWTIME,
+			     con_usb->writeonelowtime, NULL, 0,
+			     con_usb->timeout)) < 0) {
+		LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
+		return -EIO;
+	}
+	/* DS0 Low */
+	if ((ret =
+	     usb_control_msg(usb, 0x40, MODE_CMD, MOD_DSOW0_TREC,
+			     con_usb->datasampleoffset, NULL, 0,
+			     con_usb->timeout)) < 0) {
+		LEVEL_DATA("DS9490_BusParm: Error MOD_DS0W0\n");
+		return -EIO;
+	}
 	return ret;
 }
 
@@ -462,6 +460,7 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 		return ret;
 	}
 
+	// always set slewrate since we use flexible speed
 	if((ret = DS9490_BusParm(pn->in)) < 0) return ret;
 
 	LEVEL_DATA("DS9490_setup_adapter: done (ret=%d)\n", ret);
