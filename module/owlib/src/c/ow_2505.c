@@ -92,9 +92,9 @@ struct filetype DS2506[] = {
 	F_STANDARD,
     {"status",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
     {"status/page", 32, &A2506s, ft_binary, fc_stable,   FS_r_status, FS_w_status, {v:NULL},} ,
-    {"memory", 8192, &A2506, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+    {"memory", 8192, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
   {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 32, NULL, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
+  {"pages/page", 32, &A2506, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
 };
 
 DeviceEntryExtended(0F, DS2506, DEV_ovdr);
@@ -103,9 +103,9 @@ struct filetype DS1986U[] = {
 	F_STANDARD,
     {"status",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
     {"status/page", 32, &A2506s, ft_binary, fc_stable,   FS_r_status, FS_w_status, {v:NULL},} ,
-    {"memory", 8192, &A2506, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+    {"memory", 8192, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
   {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 32, NULL, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
+  {"pages/page", 32, &A2506, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
 };
 
 DeviceEntryExtended(8F, DS1986U, DEV_ovdr);
