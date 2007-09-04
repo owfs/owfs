@@ -1,0 +1,62 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS28EC20 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B DS28EC20
+- EEPROM (20 kBit)
+.SH SYNOPSIS
+Erasable programmable read-only memory (EEPROM)
+.PP
+.B 43
+[.]XXXXXXXXXXXX[XX][/[
+.B memory
+|
+.B pages/page.[0-79|ALL]
+|
+.so standard_mini
+]]
+.SH FAMILY CODE
+.PP
+.I 23
+DS2433
+.SH SPECIAL PROPERTIES
+.SS memory
+.I read-write, binary
+.br
+512 bytes of memory. Initially all bits are set to 1. Writing zero permanently alters the memory.
+.SS pages/page.0 ... pages/page.79 pages/page.ALL
+.I read-write, yes-no
+.br
+Memory is split into 80 pages of 32 bytes each.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
+.SH STANDARD PROPERTIES
+.so standard
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so description
+.SS DS28EC20
+The
+.B DS28EC20 (3)
+is used for storing memory which should be available even after a reset or power off. It's main advantage is for audit trails (i.e. a digital purse).
+.I OWFS
+system handles this automatically.
+.SH ADDRESSING
+.so addressing
+.SH DATASHEET
+http://datasheets.maxim-ic.com/en/ds/DS28EC20.pdf
+.SH SEE ALSO
+.so seealso
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Christian Magnusson (mag@mag.cx)
