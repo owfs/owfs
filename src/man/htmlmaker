@@ -1,7 +1,8 @@
 #!/bin/sh
 for x in *.[1-8n] ; do
     echo $x
-    rman -f HTML $x | /usr/bin/tail -n+4 > html/$x.html
+#    rman -f HTML $x | /usr/bin/tail -n+4 > html/$x.html
+    rman -f HTML $x > html/$x.html
 done
 
 perl -i -p -e "s#(\.[1-9n])'>#$1.html'>#g" html/*.?.html
