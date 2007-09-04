@@ -22,7 +22,7 @@ man_MANS = owfs.1 \
            DS2450.3 \
            DS2502.3 DS2502-E48.3 DS2502-UNW.3 DS2505.3 DS2505-UNW.3 DS2506.3 DS2506-UNW.3 \
            DS2720.3 DS2740.3 DS2751.3 DS2755.3 DS2756.3 DS2760.3 DS2761.3 DS2762.3 DS2770.3 DS2780.3 DS2781.3 \
-           DS2804.3 \
+           DS2804.3 DS28E04.3 DS28EA00.3 \
            DS2890.3 \
            Thermachron.3 \
            LCD.3 \
