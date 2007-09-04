@@ -1,0 +1,74 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS1963S 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B DS1963S
+- 256 byte Monetary iButton with SHA-1
+.SH SYNOPSIS
+Non-volatile R/W memory with counters, SHA-1 (under NDA)
+.PP
+.B 18
+[.]XXXXXXXXXXXX[XX][/[
+.B pages/count.[0-15|ALL]
+|
+.B memory
+|
+.B pages/page.[0-15|ALL]
+|
+.so standard_mini
+]]
+.SH FAMILY CODE
+.PP
+.I 18
+.SH SPECIAL PROPERTIES
+.SS page/count.[0-15|ALL]
+.I read-only, unsigned
+.br
+Each write to the memory page increments the counter. An application can tell if the memory has been changed by another process.
+.P
+Only 4 pages are actually connected to counters:
+.TP
+Counter1
+.I page/counter.12
+.TP
+Counter2
+.I page/counter.13
+.TP
+Counter3
+.I page/counter.14
+.TP
+Counter4
+.I page/counter.15
+.SH STANDARD PROPERTIES
+.so standard
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so description
+.SS DS1963S
+The
+.B DS1963S (3)
+is used for read/write storage. It has SHA-1 authentication. Most of the information is under NDA and was not available for either the implementation of this man page.
+.P
+This man page corresponds to the non-secret
+.B DS1963L (3)
+.I OWFS
+system handles this automatically.
+.SH ADDRESSING
+.so addressing
+.SH DATASHEET
+http://www.maxim-ic.com/quick_view2.cfm/qv_pk/2822
+.SH SEE ALSO
+.so seealso
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (palfille@earthlink.net)
