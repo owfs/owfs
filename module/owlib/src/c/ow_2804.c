@@ -68,7 +68,7 @@ WRITE_FUNCTION(FS_w_por);
 /* ------- Structures ----------- */
 
 struct aggregate A2804 = { 2, ag_numbers, ag_aggregate, };
-struct aggregate A2804p = { 17, ag_numbers, ag_separate, };
+struct aggregate A2804p = { 16, ag_numbers, ag_separate, };
 struct filetype DS28E04[] = {
 	F_STANDARD,
   {"memory", 550, NULL, ft_binary, fc_stable,   FS_r_mem, FS_w_mem, {v:NULL},} ,
