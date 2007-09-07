@@ -4,7 +4,7 @@
 # $Id$
 #
 
-package require ow 0.1
+package require ow 0.2
 
 puts [ ::OW::version ]
 

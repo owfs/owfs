@@ -3,8 +3,15 @@
 #load the php extension
 require "load_php_OW.php";
 
-#initialize the 1-wire bus (usb bus)
-$init_result = init( "u" );
+if ( $argc > 1 )
+{
+  $arg = $argv[1];
+} else {
+  $arg = "u";
+}
+
+#initialize the 1-wire bus with given argument
+$init_result = init( $arg );
 if ( $init_result != '1' )
 {
   echo "could not initialize the 1-wire bus.\n";

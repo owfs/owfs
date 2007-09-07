@@ -6,7 +6,7 @@
 # Start script with this command:  tclsh test.tcl
 #
 
-package require ow 0.1
+package require ow 0.2
 
 puts "Version information:"
 puts [ ::OW::version ]
