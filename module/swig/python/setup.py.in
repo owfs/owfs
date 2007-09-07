@@ -41,17 +41,34 @@ Topic :: Utilities
 """
 
 enable_usb = '@ENABLE_USB@'
-ow_libs = [ 'ow' ]
-if enable_usb == 'true':
-    ow_libs.append( 'usb' )
+enable_mt = '@ENABLE_MT@'
 
-extra_c_args = [ ]
-if len('@LIBUSB_CFLAGS@') > 0:
-	extra_c_args = string.split('@LIBUSB_CFLAGS@', ' ')
+#ow_libs = [ 'ow' ]
 
+# have to split up the _CFLAGS, _LIBS variables since there are problem
+# when they contain spaces. The append() function doesn't work very good.
+# extra_l_args.append ( '@LIBUSB_CFLAGS@' )
+
+# Should perhaps add ${LD_EXTRALIBS} ${OSLIBS} to extra_l_args too if
+# supporting MacOSX.
+
+extra_c_args = [ '-D_FILE_OFFSET_BITS=64' ]
 extra_l_args = [ ]
-if len('@LIBUSB_LIBS@') > 0:
-	extra_l_args = string.split('@LIBUSB_LIBS@', ' ')
+if enable_usb == 'true':
+    if len('@LIBUSB_CFLAGS@') > 0:
+	extra_c_args = extra_c_args + string.split('@LIBUSB_CFLAGS@', ' ')
+
+if enable_usb == 'true':
+    if len('@LIBUSB_LIBS@') > 0:
+	extra_l_args = extra_l_args + string.split('@LIBUSB_LIBS@', ' ')
+
+if enable_mt == 'true':
+    if len('@PTHREAD_CFLAGS@') > 0:
+	extra_c_args = extra_c_args + string.split('@PTHREAD_CFLAGS@', ' ')
+
+if enable_mt == 'true':
+    if len('@PTHREAD_LIBS@') > 0:
+	extra_l_args = extra_l_args + string.split('@PTHREAD_LIBS@', ' ')
 
 setup(
     name             = 'ow',
@@ -64,18 +81,20 @@ setup(
     platforms        = 'Linux',
     long_description = 'Interface with 1-wire controllers and sensors from Python.',
     classifiers      = filter( None, classifiers.split( '\n' ) ),
+    packages         = ['ow'],
     ext_package      = 'ow',
     ext_modules      = [ Extension( '_OW',
                                     [ 'ow_wrap.c' ],
                                     include_dirs = [ '../../owlib/src/include',
-                                                     '../../../src/include',
-                                                     ],
+                                                     '../../../src/include', ],
                                     library_dirs = [ '../../owlib/src/c/.libs', ],
-				    extra_compile_args = extra_c_args,
-				    extra_link_args = extra_l_args,
-                                    libraries    = ow_libs,
+                                    libraries    = [ 'ow' ],
+                                    extra_compile_args = [ arg for arg in extra_c_args
+                                                           if len(arg) > 1 ],
+                                    extra_link_args = [ arg for arg in extra_l_args
+                                                           if len(arg) > 1 ],
                                     runtime_library_dirs = [ '@prefix@/lib' ],
                                     )
                          ],
-    packages         = [ 'ow' ],
     )
+
