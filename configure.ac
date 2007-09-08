@@ -1496,9 +1496,6 @@ fi
 
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 
-#AC_SUBST(MODULE_SUBDIRS)
-#AC_SUBST(SWIG_SUBDIRS)
-
 # Process config.h.in
 AH_TOP([
 #ifndef OWCONFIG_H
