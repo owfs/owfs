@@ -12,7 +12,9 @@ ow_la_DEPENDENCIES = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
 ow.lo: owtclInitScript.h ow.tcl.h version.h
 
 data_DATA = ow.tcl pkgIndex.tcl
-#mann_MANS = owtcl.n
+if HAVE_DARWIN
+noinst_DATA = darwin-relink
+endif
 
 PACKAGE = ow
 MAJOR_VERSION = $(OWTCL_MAJOR_VERSION)
@@ -51,7 +53,7 @@ LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS}
 #SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-local:
-	@RM@ -f ow.tcl.h pkgIndex.tcl
+	@RM@ -f ow.tcl.h pkgIndex.tcl darwin-relink
 
 clean-generic:
 
@@ -59,6 +61,17 @@ clean-generic:
 
 ow.tcl.h: ow.tcl ${ow_la_DEPENDENCIES}
 	sed -e '/^$\#/d' -e '/^$$/d' -e 's/\"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' <ow.tcl > $@ || { $(RM) $@; exit 1; }
+
+# Have to relink the library since it's generated with -bundle, it should be -dynamiclib
+darwin-relink: ow.la
+	#mv .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX).old
+	gcc -dynamiclib -flat_namespace -undefined suppress \
+	  -o .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
+	  .libs/ow.o \
+	  ../../owlib/src/c/.libs/libow.so \
+	  ${LIBUSB_LIBS} \
+	  ../../owcapi/src/c/.libs/libowcapi.so
+	touch $@
 
 pkgIndex.tcl:
 	(echo 'if {[catch {package require Tcl 8.1}]} return';\
