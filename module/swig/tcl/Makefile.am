@@ -64,13 +64,15 @@ ow.tcl.h: ow.tcl ${ow_la_DEPENDENCIES}
 
 # Have to relink the library since it's generated with -bundle, it should be -dynamiclib
 darwin-relink: ow.la
-	#mv .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX).old
+#	mv .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX).old
 	gcc -dynamiclib -flat_namespace -undefined suppress \
 	  -o .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
 	  .libs/ow.o \
 	  ../../owlib/src/c/.libs/libow.so \
 	  ${LIBUSB_LIBS} \
-	  ../../owcapi/src/c/.libs/libowcapi.so
+	  ../../owcapi/src/c/.libs/libowcapi.so \
+	 -install_name /usr/lib/owtcl-$(OWTCL_VERSION)/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
+	 -compatibility_version 1 -current_version 1.0
 	touch $@
 
 pkgIndex.tcl:
