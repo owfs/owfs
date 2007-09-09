@@ -42,8 +42,11 @@ Topic :: Utilities
 
 enable_usb = '@ENABLE_USB@'
 enable_mt = '@ENABLE_MT@'
+have_darwin = '@HAVE_DARWIN@'
 
-#ow_libs = [ 'ow' ]
+ow_libs = [ 'ow' ]
+if have_darwin == 'true':
+	ow_libs = [ ]
 
 # have to split up the _CFLAGS, _LIBS variables since there are problem
 # when they contain spaces. The append() function doesn't work very good.
@@ -70,6 +73,9 @@ if enable_mt == 'true':
     if len('@PTHREAD_LIBS@') > 0:
 	extra_l_args = extra_l_args + string.split('@PTHREAD_LIBS@', ' ')
 
+if have_darwin == 'true':
+	extra_l_args = extra_l_args + string.split('../../owlib/src/c/.libs/libow.so', ' ')
+
 setup(
     name             = 'ow',
     description      = '1-wire hardware interface.',
@@ -88,7 +94,7 @@ setup(
                                     include_dirs = [ '../../owlib/src/include',
                                                      '../../../src/include', ],
                                     library_dirs = [ '../../owlib/src/c/.libs', ],
-                                    libraries    = [ 'ow' ],
+                                    libraries    = ow_libs,
                                     extra_compile_args = [ arg for arg in extra_c_args
                                                            if len(arg) > 1 ],
                                     extra_link_args = [ arg for arg in extra_l_args
