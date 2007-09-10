@@ -3,6 +3,8 @@
 #
 # $Id$
 #
+# Start script with this command:  tclsh owdir.tcl
+#
 
 package require ow 0.2
 
