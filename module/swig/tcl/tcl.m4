@@ -72,12 +72,12 @@ AC_DEFUN([SC_PATH_TCLCONFIG],
 		for i in `ls -d ${libdir} 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
-			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib${LIBPOSTFIX} 2>/dev/null` \
 			../../tcl \
 			`ls -dr /usr/lib${LIBPOSTFIX}/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
 			`ls -dr /usr/lib${LIBPOSTFIX}/tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr /usr/lib${LIBPOSTFIX}/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
+			`ls -d /usr/lib 2>/dev/null` \
 			`ls -dr /usr/lib/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
 			`ls -dr /usr/lib/tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr /usr/lib/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
