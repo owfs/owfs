@@ -6,6 +6,8 @@
 %define build_perl 1
 %define build_python 1
 %define build_php 1
+%define build_tap 1
+%define build_mon 1
 %define build_tcl 1
 %define build_shell 1
 %define build_man 1
@@ -92,6 +94,26 @@ owserver arbitrates access to the bus from multiple client processes. The
 physical bus is usually connected to a serial or USB port, and other processes
 connect to owserver over network sockets (tcp port). Communication can be local
 or over a network.
+%endif
+
+%if %{build_tap}
+%package tap
+Summary: Packet sniffer for the owserver protocol
+Group: System Environment/Daemon
+Requires: tcl >= 8.1
+
+%description tap
+%{name}-tap is a packet sniffer for the owserver protocol
+%endif
+
+%if %{build_mon}
+%package mon
+Summary: Packet sniffer for the owserver protocol
+Group: System Environment/Daemon
+Requires: tcl >= 8.1
+
+%description mon
+%{name}-mon is a packet sniffer for the owserver protocol
 %endif
 
 %if %{build_perl}
@@ -198,6 +220,16 @@ automake -a -c
 %else
 	--disable-owserver \
 %endif
+%if %{build_tap}
+	--enable-owtap \
+%else
+	--disable-owtap \
+%endif
+%if %{build_mon}
+	--enable-owmon \
+%else
+	--disable-owmon \
+%endif
 %if %{build_perl}
 	--enable-owperl \
 %else
@@ -232,16 +264,17 @@ rm -f $RPM_BUILD_ROOT/usr/lib*/libowperl.*
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
 
-install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
-install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man1
-mv -f $RPM_BUILD_ROOT%{prefix}/man/man1/* $RPM_BUILD_ROOT%{_mandir}/man1/
-install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man3
-mv -f $RPM_BUILD_ROOT%{prefix}/man/man3/* $RPM_BUILD_ROOT%{_mandir}/man3/
-install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man5
-mv -f $RPM_BUILD_ROOT%{prefix}/man/man5/* $RPM_BUILD_ROOT%{_mandir}/man5/
-install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/mann
-mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
-rm -rf $RPM_BUILD_ROOT%{prefix}/man
+# man-files already installed at correct place
+#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
+#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man1
+#mv -f $RPM_BUILD_ROOT%{prefix}/man/man1/* $RPM_BUILD_ROOT%{_mandir}/man1/
+#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man3
+#mv -f $RPM_BUILD_ROOT%{prefix}/man/man3/* $RPM_BUILD_ROOT%{_mandir}/man3/
+#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man5
+#mv -f $RPM_BUILD_ROOT%{prefix}/man/man5/* $RPM_BUILD_ROOT%{_mandir}/man5/
+#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/mann
+#mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
+#rm -rf $RPM_BUILD_ROOT%{prefix}/man
 
 %if %{build_fs}
 install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
@@ -267,12 +300,17 @@ install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
 mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
 %endif
+%if %{build_tap}
+%endif
+%if %{build_mon}
+%endif
 %if %{build_perl}
-[ -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm ] && \
-	mv -f $RPM_BUILD_ROOT%{prefix}/bin/OW.pm $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*
-rm -rf $RPM_BUILD_ROOT%{prefix}/lib*/perl5/5.*
-rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/.packlist
-rm -f $RPM_BUILD_ROOT%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OWNet/.packlist
+%define perl_archlib %(eval "`perl -V:installarchlib`"; echo $installarchlib)
+%define perl_sitearch %(eval "`perl -V:installsitearch`"; echo $installsitearch)
+%define perl_sitelib %(eval "`perl -V:installsitelib`"; echo $installsitelib)
+rm -f $RPM_BUILD_ROOT%{perl_archlib}/perllocal.pod
+rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OW/.packlist
+rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
 %endif
 %if %{build_python}
 %endif
@@ -457,16 +495,28 @@ fi
 %{_mandir}/man1/owserver.1.gz
 %endif
 
+%if %{build_tap}
+%files tap
+%defattr(-,root,root)
+%{prefix}/bin/owtap
+%{_mandir}/man1/owtap.1.gz
+%endif
+
+%if %{build_mon}
+%files mon
+%defattr(-,root,root)
+%{prefix}/bin/owmon
+#%{_mandir}/man1/owmon.1.gz
+%endif
+
 %if %{build_perl}
 %files perl
 %defattr(-,root,root)
-%dir %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW
-%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.bs
-%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OW/OW.so
-%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/OW.pm
-%dir %{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OWNet
-#%{prefix}/lib*/perl5/site_perl/*/*-linux-thread-*/auto/OWNet/.packlist
-%{prefix}/lib*/perl5/site_perl/*/OWNet.pm
+%dir %{perl_sitearch}/auto/OW
+%{perl_sitearch}/auto/OW/OW.bs
+%{perl_sitearch}/auto/OW/OW.so
+%{perl_sitearch}/OW.pm
+%{perl_sitelib}/OWNet.pm
 %{_mandir}/man3/OWNet.3pm.gz
 %endif
 
