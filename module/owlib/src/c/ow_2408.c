@@ -213,6 +213,7 @@ static int FS_Mscreen(struct one_wire_query * owq)
     BYTE data[size];
 	size_t i;
 	for (i = 0; i < size; ++i) {
+        // no upper ascii chars
         if (OWQ_buffer(owq)[i] & 0x80)
 			return -EINVAL;
         data[i] = OWQ_buffer(owq)[i] | 0x80;
@@ -437,12 +438,12 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 
 static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_CHANNEL_ACCESS_WRITE, data, ~data, };
-	BYTE r[2];
+    BYTE write_string[] = { _1W_CHANNEL_ACCESS_WRITE, data, ~data, };
+	BYTE read_back[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE3(p),
-		TRXN_READ2(r),
+		TRXN_WRITE3(write_string),
+		TRXN_READ2(read_back),
 		TRXN_END,
 	};
 
@@ -450,11 +451,11 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 	if (BUS_transaction(t, pn))
 		return 1;
 	//printf( "W_PIO attempt\n");
-	//printf("wPIO data = %2X %2X %2X %2X %2X\n",p[0],p[1],p[2],r[0],r[1]) ;
-	if (r[0] != 0xAA)
+	//printf("wPIO data = %2X %2X %2X %2X %2X\n",write_string[0],write_string[1],write_string[2],read_back[0],read_back[1]) ;
+	if (read_back[0] != 0xAA)
 		return 1;
 	//printf( "W_PIO 0xAA ok\n");
-	/* Ignore byte 5 r[1] the PIO status byte */
+	/* Ignore byte 5 read_back[1] the PIO status byte */
 	return 0;
 }
 
@@ -463,37 +464,45 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 					 const struct parsedname *pn)
 {
 	BYTE cmd[] = { _1W_CHANNEL_ACCESS_WRITE, } ;
-	size_t n = 4 * size;
-	BYTE p[n];
-	BYTE *q;
+	size_t formatted_size = 4 * size;
+	BYTE formatted_data[formatted_size];
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(cmd),
-		TRXN_MODIFY(p,p,n),
+		TRXN_MODIFY(formatted_data,formatted_data,formatted_size),
 		TRXN_END,
 	};
 	size_t i;
 
 	// setup the array
-	for (i = 0, q = p; i < size; ++i) {
-		*(q++) = data[i];
-		*(q++) = ~data[i];
-		*(q++) = 0xFF;
-		*(q++) = 0xFF;
+    // each byte takes 4 bytes after formatting
+	for (i = 0, formatted_data_pointer = formatted_data; i < size; ++i) {
+        int formatted_data_pointer = 4 * i ;
+		formatted_data[formatted_data_pointer+0] = data[i];
+		formatted_data[formatted_data_pointer+1] = ~data[i];
+		formatted_data[formatted_data_pointer+2] = 0xFF;
+		formatted_data[formatted_data_pointer+3] = 0xFF;
 	}
-	//{ int j ; printf("IN  "); for (j=0 ; j<n ; ++j ) printf("%.2X ",p[j]); printf("\n") ; }
+	//{ int j ; printf("IN  "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
-	//{ int j ; printf("OUT "); for (j=0 ; j<n ; ++j ) printf("%.2X ",p[j]); printf("\n") ; }
+	//{ int j ; printf("OUT "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	// check the array
-	for (i = 0, q = p; i < size; ++i) {
-		//printf("WPIOS %d\n",(int)i) ;
-		if ((*(q++) != data[i]) || (*(q++) != (BYTE) (~data[i]))
-			|| (*(q++) != 0xAA) || (*(q++) != data[i])) {
-			//printf("WPIOS problem\n") ;
-			return 1;
-		}
+	for (i = 0, formatted_data_pointer = formatted_data; i < size; ++i) {
+        int formatted_data_pointer = 4 * i ;
+        if ( formatted_data[formatted_data_pointer+0] != data[i] ) {
+            return 1;
+        }
+        if ( formatted_data[formatted_data_pointer+1] != ~data[i] ) {
+            return 1;
+        }
+        if ( formatted_data[formatted_data_pointer+2] != 0xAA ) {
+            return 1;
+        }
+        if ( formatted_data[formatted_data_pointer+3] != data[i] ) {
+            return 1;
+        }
 	}
 
 	return 0;
@@ -502,12 +511,12 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 /* Reset activity latch */
 static int OW_c_latch(const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_RESET_ACTIVITY_LATCHES, };
-	BYTE r;
+    BYTE reset_string[] = { _1W_RESET_ACTIVITY_LATCHES, };
+	BYTE read_back[1] ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE1(p),
-		TRXN_READ1(&r),
+		TRXN_WRITE1(reset_string),
+		TRXN_READ1(read_back),
 		TRXN_END,
 	};
 
@@ -515,7 +524,7 @@ static int OW_c_latch(const struct parsedname *pn)
 	if (BUS_transaction(t, pn))
 		return 1;
 	//printf( "C_LATCH transact\n");
-	if (r != 0xAA)
+	if (read_back[0] != 0xAA)
 		return 1;
 	//printf( "C_LATCH 0xAA ok\n");
 
@@ -525,53 +534,55 @@ static int OW_c_latch(const struct parsedname *pn)
 /* Write control/status */
 static int OW_w_control(const BYTE data, const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), data, };
-    BYTE q[3 + 3 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
+    BYTE write_string[1 + 2 + 1] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), data, };
+    BYTE check_string[1 + 2 + 3 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE(p,4),
+		TRXN_WRITE(write_string,4),
 		/* Read registers */
 		TRXN_START,
-		TRXN_WR_CRC16(q,3,3),
+		TRXN_WR_CRC16(check_string,3,3),
 		TRXN_END,
 	};
 
 	//printf( "W_CONTROL attempt\n");
 	if (BUS_transaction(t, pn))
 		return 1;
-	//printf( "W_CONTROL ok, now check %.2X -> %.2X\n",data,q[3]);
+	//printf( "W_CONTROL ok, now check %.2X -> %.2X\n",data,check_string[3]);
 
-	return ((data & 0x0F) != (q[3] & 0x0F));
+	return ((data & 0x0F) != (check_string[3] & 0x0F));
 }
 
 /* write alarm settings */
 static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 {
-	BYTE d[6], cr;
-    BYTE a[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
+    BYTE old_register[6] ;
+    BYTE new_register[6] ;
+    BYTE control_value[1] ;
+    BYTE alarm_access[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE3(a),
+		TRXN_WRITE3(alarm_access),
 		TRXN_WRITE2(data),
-		TRXN_WRITE1(&cr),
+		TRXN_WRITE1(control_value),
 		TRXN_END,
 	};
 
 	// get the existing register contents
-	if (OW_r_reg(d, pn))
+	if (OW_r_reg(old_register, pn))
 		return -EINVAL;
 
 	//printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
-	cr = (data[2] & 0x03) | (d[5] & 0x0C);
+	control_value[0] = (data[2] & 0x03) | (old_register[5] & 0x0C);
 	//printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
 
 	if (BUS_transaction(t, pn))
 		return 1;
 
 	/* Re-Read registers */
-	if (OW_r_reg(d, pn))
+	if (OW_r_reg(new_register, pn))
 		return 1;
 	//printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
-	return (data[0] != d[3]) || (data[1] != d[4]) || (cr != (d[5] & 0x0F));
+	return (data[0] != new_register[3]) || (data[1] != new_register[4]) || (control_value[0] != (new_register[5] & 0x0F));
 }
