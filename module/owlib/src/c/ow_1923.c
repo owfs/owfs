@@ -39,6 +39,25 @@ $Id$
       whether the elements are stored together and split, or separately and joined
 */
 
+/* Notes on DS1923 passwords
+   The DS1923 has (optional) password protection for data reads, and full read/write
+   This creaqtes problems for the filesystem metaphore, that typically doesn't allow aditional information to be sent with every operation.
+   Our solution is to have the password stored in memory in each session, and thus used transparently when read/write pcalls are done.
+
+   There are therefore several password operations:
+   1. Setting/clearing passwords in  the chip
+   2. Setting local (memory) knowledge of the password
+   3. Turning password protection on/off
+
+    So we have two cases:
+    1. No passowrd protection
+        Then any read/write should succeed.
+        There are issues with the testing since password protection needs memory access to test.
+        It should be possible to set passwords (and password protection) from this state
+   2. Passord protection set on chip
+        Passords need to be set in memory to
+*/
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_1923.h"
@@ -138,6 +157,10 @@ struct filetype DS1923[] = {
 DeviceEntryExtended(41, DS1923,
                     DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume);
 
+/* Persistent storage */
+MakeInternalProp(RPW,fc_persistent) ; // Read password
+MakeInternalProp(FPW,fc_persistent) ; // Full password
+
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA
 #define _1W_COPY_SCRATCHPAD_WITH_PASSWORD 0x99
@@ -149,6 +172,13 @@ DeviceEntryExtended(41, DS1923,
     #define _1W_START_MISSION_WITH_PASSWORD_START 0xFF
 #define _1W_STOP_MISSION_WITH_PASSWORD 0x33
     #define _1W_STOP_MISSION_WITH_PASSWORD_START 0xFF
+
+#define _1W_MEM_GENERAL_PURPOSE 0x0000
+#define _1W_MEM_REGISTER_P1 0x0200
+#define _1W_MEM_REGISTER_P2 0x0220
+#define _1W_MEM_CALIBRATION_P1 0x0240
+#define _1W_MEM_CALIBRATION_P2 0x0260
+#define _1W_MEM_DATALOG 0x1000
 
 /* ------- Functions ------------ */
 
