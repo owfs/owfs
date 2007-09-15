@@ -15,6 +15,11 @@
 .B owserver
 access
 .SH SYNOPSIS
+.B owget
+.I -s 
+[host:]port
+[directory] | filepath
+.br
 .B owdir
 .I -s 
 [host:]port
@@ -35,6 +40,10 @@ filepath value
 [host:]port
 filepath
 .PP
+.B owget
+.I --autoserver
+[directory] | filepath
+.br
 .B owdir
 .I --autoserver
 [directory]
@@ -51,6 +60,17 @@ filepath value
 .I --autoserver
 filepath
 .PP
+.B owget
+.I -C --celsius
+.I -K --kelvin
+.I -F --fahrenheit
+.I -R --rankine
+.I -f --format
+f[.]i[[.]c]
+.I -s 
+[host:]port
+[path] [path2 ...]
+.br
 .B owdir
 .I -C --celsius
 .I -K --kelvin
@@ -95,6 +115,9 @@ f[.]i[[.]c]
 [host:]port
 filepath [filepath2 ...]
 .PP
+.B owget
+.I \-V \-\-version
+.br
 .B owdir
 .I \-V \-\-version
 .br
@@ -107,6 +130,9 @@ filepath [filepath2 ...]
 .B owpresent
 .I \-V \-\-version
 .PP
+.B owget
+.I \-h | \-\-help
+.br
 .B owdir
 .I \-h | \-\-help
 .br
@@ -121,7 +147,7 @@ filepath [filepath2 ...]
 .SH "DESCRIPTION"
 .so description
 .SS OWSHELL programs
-.B owdir owread owwrite owpresent
+.B owget owdir owread owwrite owpresent
 are collectively called the
 .B owshell
 programs. They allow lightweight access to an
@@ -165,6 +191,13 @@ read. e.g. 28.0080BE21AA00/temperature gives the DS18B20 temperature. It is the 
 in the
 .B owfs (1)
 filesystem.
+.SS owget
+.B owget
+combines the function of 
+.B owdir 
+and 
+.B owread
+ depending on whether the arguments are directories or files. Multiple arguments are handled independently, printing on separate lines.
 .SS owwrite
 .B owwrite
 performs a
