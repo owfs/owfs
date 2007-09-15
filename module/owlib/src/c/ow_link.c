@@ -123,7 +123,7 @@ static int LINK_reset(const struct parsedname *pn)
         return -EIO;
 	}
 	
-    switch (resp[1]) {
+    switch (resp[0]) {
 	case 'P':
         //printf("LINK 1P\n");
         ret = BUS_RESET_OK ;
