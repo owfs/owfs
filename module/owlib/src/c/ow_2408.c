@@ -476,7 +476,7 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 
 	// setup the array
     // each byte takes 4 bytes after formatting
-	for (i = 0, formatted_data_pointer = formatted_data; i < size; ++i) {
+	for (i = 0; i < size; ++i) {
         int formatted_data_pointer = 4 * i ;
 		formatted_data[formatted_data_pointer+0] = data[i];
 		formatted_data[formatted_data_pointer+1] = ~data[i];
@@ -489,7 +489,7 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 	}
 	//{ int j ; printf("OUT "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	// check the array
-	for (i = 0, formatted_data_pointer = formatted_data; i < size; ++i) {
+	for (i = 0; i < size; ++i) {
         int formatted_data_pointer = 4 * i ;
         if ( formatted_data[formatted_data_pointer+0] != data[i] ) {
             return 1;
