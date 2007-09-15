@@ -108,11 +108,15 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 			LEVEL_DEBUG("  Transaction CRC16 = %d\n", ret);
 			break;
 		case trxn_delay:
-			UT_delay(t->size);
+            if ( t->size > 0 ) {
+    			UT_delay(t->size);
+            }
 			LEVEL_DEBUG("  Transaction Delay %d\n", t->size);
 			break;
 		case trxn_udelay:
-			UT_delay_us(t->size);
+            if ( t->size > 0 ) {
+    			UT_delay_us(t->size);
+            }
 			LEVEL_DEBUG("  Transaction Micro Delay %d\n", t->size);
 			break;
 		case trxn_reset:
