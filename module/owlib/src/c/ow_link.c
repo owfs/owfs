@@ -15,6 +15,22 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+struct LINK_id {
+	char verstring[36];
+	char name[30];
+	enum adapter_type Adapter;
+	};
+
+// Steven Bauer added code for the VM links
+static struct LINK_id LINK_id_tbl[] = {
+	{"1.0","LINK v1.0",adapter_LINK_10},
+	{"1.1","LINK v1.1",adapter_LINK_11},
+	{"1.2","LINK v1.2",adapter_LINK_12},
+	{"VM12a","LINK OEM v1.2a",adapter_LINK_12},
+	{"VM12","LINK OEM v1.2",adapter_LINK_12},
+	{"0","0",0}};
+
+
 //static void byteprint( const BYTE * b, int size ) ;
 static int LINK_read(BYTE * buf, const size_t size,
 					 const struct parsedname *pn);
@@ -55,6 +71,8 @@ static void LINK_setroutines(struct interface_routines *f)
 
 /* Called from DS2480_detect, and is set up to DS9097U emulation by default */
 // bus locking done at a higher level
+// Looks up the device by comparing the version strings to the ones in the
+// LINK_id_table
 int LINK_detect(struct connection_in *in)
 {
 	struct parsedname pn;
@@ -72,38 +90,32 @@ int LINK_detect(struct connection_in *in)
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, &pn);
 	//COM_flush(&pn);
-	if (LINK_reset(&pn) == 0 && LINK_write(LINK_string(" "), 1, &pn) == 0) {
-		BYTE tmp[36] = "(none)";
-		char *stringp = (char *) tmp;
+	if (LINK_reset(&pn) == BUS_RESET_OK 
+		&& LINK_write(LINK_string(" "), 1, &pn) == 0) {
+
+		BYTE version_read_in[36] = "(none)";
+		char *version_pointer = (char *) version_read_in;
+
 		/* read the version string */
-		//printf("LINK 0\n");
-		memset(tmp, 0, 36);
-		LINK_read(tmp, 36, &pn);	// ignore return value -- will time out, probably
-		//Debug_Bytes("Read version from link",tmp,36);
+		LEVEL_DEBUG ("Checking LINK version\n");
+
+		memset(version_read_in, 0, 36);
+		LINK_read(version_read_in, 36, &pn);	// ignore return value -- will time out, probably
+		Debug_Bytes("Read version from link",version_read_in,36);
+
 		COM_flush(&pn);
 
 		/* Now find the dot for the version parsing */
-		strsep(&stringp, ".");
-		if (stringp && stringp[0]) {
-			switch (stringp[0]) {
-			case '0':
-				in->Adapter = adapter_LINK_10;
-				in->adapter_name = "LINK v1.0";
-                //printf("LINK 00\n");
-                break;
-			case '1':
-				in->Adapter = adapter_LINK_11;
-				in->adapter_name = "LINK v1.1";
-                //printf("LINK 01\n");
-                break;
-			case '2':
-			default:
-				in->Adapter = adapter_LINK_12;
-				in->adapter_name = "LINK v1.2";
-                //printf("LINK 02\n");
-                break;
-			}
-			return 0;
+		if (version_pointer) {
+            int version_index ;
+            for (version_index=0; LINK_id_tbl[version_index].verstring[0]!='0'; version_index++ ) {
+                if (strstr(version_pointer,LINK_id_tbl[count].verstring)!=NULL) {
+        			LEVEL_DEBUG("Link version Found %s\n",LINK_id_tbl[version_index].verstring);
+                    in->Adapter = LINK_id_tbl[version_index].Adapter;
+                    in->adapter_name=LINK_id_tbl[version_index].name;
+                    return 0;
+    			}
+		    }
 		}
 	}
 	LEVEL_DEFAULT("LINK detection error\n");
@@ -119,27 +131,27 @@ static int LINK_reset(const struct parsedname *pn)
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
     if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 2, pn)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
-        //printf("LINK 1\n");
+        LEVEL_DEBUG("Error resetting LINK device\n");
         return -EIO;
 	}
 	
     switch (resp[0]) {
 	case 'P':
-        //printf("LINK 1P\n");
+        LEVEL_DEBUG("LINK reset ok, devices Present\n");
         ret = BUS_RESET_OK ;
         pn->in->AnyDevices = 1;
 		break;
 	case 'N':
-        //printf("LINK 1N\n");
+        LEVEL_DEBUG("LINK reset ok, devices Not present\n");
         ret = BUS_RESET_OK ;
         pn->in->AnyDevices = 0;
 		break;
 	case 'S':
-        //printf("LINK 1S\n");
+        LEVEL_DEBUG("LINK reset short, Short circuit on 1-wire bus!\n");
         ret = BUS_RESET_SHORT ;
         break ;
     default:
-        //printf("LINK 1Z\n");
+        LEVEL_DEBUG("LINK reset bad, Unknown LINK response %c\n",resp[0]);
         ret = -EIO ;
 	}
 	
@@ -322,6 +334,7 @@ static int LINK_write(const BYTE * buf, const size_t size,
             STAT_ADD1_BUS(BUS_write_errors, pn->in);
             return write_or_error ;
         }
+	LEVEL_DEBUG("ltow %d woe %d\n",left_to_write,write_or_error);
         left_to_write -= write_or_error ;
     }
     tcdrain(pn->in->fd);
@@ -363,7 +376,10 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 	if (size == 0)
 		return 0;
 	if (LINK_write(LINK_string("b"), 1, pn))
+	{
+		LEVEL_DEBUG ("LINK_sendback_data error sending b\n");
 		return -EIO;
+	}
 //    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
 	for (left = size; left;) {
 		i = (left > 16) ? 16 : left;
@@ -402,6 +418,7 @@ static int LINK_CR(const struct parsedname *pn)
 	BYTE data[3];
 	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn))
 		return -EIO;
+	LEVEL_DEBUG("LINK_CR return 0\n");
 	return 0;
 }
 
