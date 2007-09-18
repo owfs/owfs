@@ -109,7 +109,7 @@ int LINK_detect(struct connection_in *in)
 		if (version_pointer) {
             int version_index ;
             for (version_index=0; LINK_id_tbl[version_index].verstring[0]!='0'; version_index++ ) {
-                if (strstr(version_pointer,LINK_id_tbl[count].verstring)!=NULL) {
+                if (strstr(version_pointer,LINK_id_tbl[version_index].verstring)!=NULL) {
         			LEVEL_DEBUG("Link version Found %s\n",LINK_id_tbl[version_index].verstring);
                     in->Adapter = LINK_id_tbl[version_index].Adapter;
                     in->adapter_name=LINK_id_tbl[version_index].name;
@@ -129,7 +129,8 @@ static int LINK_reset(const struct parsedname *pn)
 
 	COM_flush(pn);
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
-    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 2, pn)) {
+    //Response is 3 bytes:  1 byte for code + \r\n
+    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
         STAT_ADD1_BUS(BUS_reset_errors, pn->in);
         LEVEL_DEBUG("Error resetting LINK device\n");
         return -EIO;
