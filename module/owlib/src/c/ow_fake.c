@@ -15,10 +15,10 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-int fakes = 0;
-int testers = 0 ;
+int global_count_fake_busses = 0;
+int global_count_tester_busses = 0 ;
 
-/* All the rest of the program sees is the Fake_detect and the entry in iroutines */
+/* All the remaining_device_list of the program sees is the Fake_detect and the entry in iroutines */
 
 static int Fake_reset(const struct parsedname *pn);
 static int Fake_overdrive(const UINT ov, const struct parsedname *pn);
@@ -66,30 +66,31 @@ int Fake_detect(struct connection_in *in)
     ASCII *newname;
     ASCII *oldname = in->name;
 
-    in->fd = fakes;
+    in->fd = global_count_fake_busses;
     Fake_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.fake.db));
     in->adapter_name = "Simulated";
     in->Adapter = adapter_fake;
-    in->connin.fake.bus_number_this_type = fakes ;
-    LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", fakes);
+    in->connin.fake.bus_number_this_type = global_count_fake_busses ;
+    LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", global_count_fake_busses);
     if ((newname = (ASCII *) malloc(20))) {
-        const ASCII *dev;
-        ASCII *rest = in->name;
+        const ASCII *current_device_start;
+        ASCII *remaining_device_list = in->name;
 
-        snprintf(newname, 18, "fake.%d", fakes);
+        snprintf(newname, 18, "fake.%d", global_count_fake_busses);
         in->name = newname;
 
-        while (rest) {
+        while (remaining_device_list!=NULL) {
             BYTE sn[8];
-            for (dev = strsep(&rest, " ,"); dev[0]; ++dev) {
-                if (dev[0] != ' ' && dev[0] != ',')
+            for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0]!=NULL; ++current_device_start) {
+                // note that strsep updates "remaining_device_list" pointer
+                if (current_device_start[0] != ' ' && current_device_start[0] != ',')
                     break;
             }
-            if ((isxdigit(dev[0]) && isxdigit(dev[1]))
-                 || (dev = namefind(dev))) {
-                sn[0] = string2num(dev);
+            if ((isxdigit(current_device_start[0]) && isxdigit(current_device_start[1]))
+                 || (current_device_start = namefind(current_device_start))) {
+                sn[0] = string2num(current_device_start);
                 sn[1] = BYTE_MASK(rand()) ;
                 sn[2] = BYTE_MASK(rand()) ;
                 sn[3] = BYTE_MASK(rand()) ;
@@ -105,7 +106,7 @@ int Fake_detect(struct connection_in *in)
             free(oldname);
         }
     }
-    ++fakes;
+    ++global_count_fake_busses;
     return 0;
 }
 
@@ -114,33 +115,33 @@ int Tester_detect(struct connection_in *in)
     ASCII *newname;
     ASCII *oldname = in->name;
 
-    in->fd = testers;
+    in->fd = global_count_tester_busses;
     Tester_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.tester.db));
     in->adapter_name = "Simulated";
     in->Adapter = adapter_tester;
-    in->connin.tester.bus_number_this_type = testers ;
-    LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", testers);
+    in->connin.tester.bus_number_this_type = global_count_tester_busses ;
+    LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", global_count_tester_busses);
     if ((newname = (ASCII *) malloc(20))) {
-        const ASCII *dev;
-        ASCII *rest = in->name;
+        const ASCII *current_device_start;
+        ASCII *remaining_device_list = in->name;
 
-        snprintf(newname, 18, "tester.%d", fakes);
+        snprintf(newname, 18, "tester.%d", global_count_fake_busses);
         in->name = newname;
 
-        while (rest) {
+        while (remaining_device_list) {
             BYTE sn[8];
-            for (dev = strsep(&rest, " ,"); dev[0]; ++dev) {
-                if (dev[0] != ' ' && dev[0] != ',')
+            for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0]; ++current_device_start) {
+                if (current_device_start[0] != ' ' && current_device_start[0] != ',')
                     break;
             }
-            if ((isxdigit(dev[0]) && isxdigit(dev[1]))
-                 || (dev = namefind(dev))) {
+            if ((isxdigit(current_device_start[0]) && isxdigit(current_device_start[1]))
+                 || (current_device_start = namefind(current_device_start))) {
                 unsigned int device_number = in->connin.tester.db.devices ;
-                sn[0] = string2num(dev); // family code
-                sn[1] = BYTE_MASK(testers>>0) ; // "bus" number
-                sn[2] = BYTE_MASK(testers>>8) ; // "bus" number
+                sn[0] = string2num(current_device_start); // family code
+                sn[1] = BYTE_MASK(global_count_tester_busses>>0) ; // "bus" number
+                sn[2] = BYTE_MASK(global_count_tester_busses>>8) ; // "bus" number
                 sn[3] = sn[0] ; // repeat family code
                 sn[4] = BYTE_INVERSE(sn[0]) ; // family code complement
                 sn[5] = BYTE_MASK(device_number>>0) ; // "device" number
@@ -154,7 +155,7 @@ int Tester_detect(struct connection_in *in)
             free(oldname);
         }
     }
-    ++testers;
+    ++global_count_tester_busses;
     return 0;
 }
 
@@ -180,13 +181,13 @@ static int Fake_ProgramPulse(const struct parsedname *pn)
 	return 0;
 }
 static int Fake_sendback_bits(const BYTE * data, BYTE * resp,
-							  const size_t len,
+							  const size_t length,
 							  const struct parsedname *pn)
 {
 	(void) pn;
 	(void) data;
 	(void) resp;
-	(void) len;
+	(void) length;
 	return 0;
 }
 static void Fake_close(struct connection_in *in)
@@ -210,7 +211,7 @@ static int Fake_next_both(struct device_search *ds,
 	return 0;
 }
 
-/* Need to lock struct nfa since twalk requires global data -- can't pass void pointer */
+/* Need to lock struct global_namefind_struct since twalk requires global data -- can't pass void pointer */
 #if OW_MT
 pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
 #define NAMEFINDMUTEXLOCK pthread_mutex_lock(&Namefindmutex)
@@ -223,7 +224,7 @@ pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
 struct {
 	const ASCII *name;
 	const ASCII *ret;
-} nfa;
+} global_namefind_struct;
 void Namefindaction(const void *nodep, const VISIT which, const int depth)
 {
 	const struct device *p = *(struct device * const *) nodep;
@@ -232,9 +233,9 @@ void Namefindaction(const void *nodep, const VISIT which, const int depth)
 	switch (which) {
 	case leaf:
 	case postorder:
-		if (strcasecmp(p->name, nfa.name) == 0
-			|| strcasecmp(p->code, nfa.name) == 0) {
-			nfa.ret = p->code;
+		if (strcasecmp(p->name, global_namefind_struct.name) == 0
+			|| strcasecmp(p->code, global_namefind_struct.name) == 0) {
+			global_namefind_struct.ret = p->code;
 		}
 	case preorder:
 	case endorder:
@@ -248,10 +249,10 @@ static const ASCII *namefind(const char *name)
     
     NAMEFINDMUTEXLOCK ;
 
-	nfa.name = name;
-	nfa.ret = NULL;
+	global_namefind_struct.name = name;
+	global_namefind_struct.ret = NULL;
 	twalk(Tree[pn_real], Namefindaction);
-	ret = nfa.ret;
+	ret = global_namefind_struct.ret;
 
     NAMEFINDMUTEXUNLOCK ;
 
