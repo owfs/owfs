@@ -70,7 +70,8 @@ See: http://www.iana.org/assignments/port-numbers
 #include "ow_transaction.h"
 
 /* Number of "fake" adapters */
-extern int fakes;
+extern int global_count_fake_busses;
+extern int global_count_tester_busses;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
