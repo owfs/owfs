@@ -55,6 +55,9 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+#define DIRBLOB_ELEMENT_LENGTH  8
+#define DIRBLOB_ALLOCATION_INCREMENT 10
+
 /*
     A "dirblob" is a structure holding a list of 1-wire serial numbers
     (8 bytes each) with some housekeeping information
@@ -91,11 +94,11 @@ int DirblobAdd(BYTE * sn, struct dirblob *db)
 {
 	// make more room? -- blocks of 10 devices (80byte)
 	if ((db->devices >= db->allocated) || (db->snlist == NULL)) {
-		int newalloc = db->allocated + 10;
-		BYTE *temp = realloc(db->snlist, 8 * newalloc);
-		if (temp) {
+		int newalloc = db->allocated + DIRBLOB_ALLOCATION_INCREMENT;
+		BYTE *try_bigger_block = realloc(db->snlist, DIRBLOB_ELEMENT_LENGTH * newalloc);
+		if (try_bigger_block!=NULL) {
 			db->allocated = newalloc;
-			db->snlist = temp;
+			db->snlist = try_bigger_block;
 		} else {				// allocation failed -- keep old
 			db->troubled = 1;
 			return -ENOMEM;
@@ -103,16 +106,16 @@ int DirblobAdd(BYTE * sn, struct dirblob *db)
 	} else {
 	}
 	// add the device and increment the counter
-	memcpy(&(db->snlist[8 * db->devices]), sn, 8);
+	memcpy(&(db->snlist[DIRBLOB_ELEMENT_LENGTH * db->devices]), sn, DIRBLOB_ELEMENT_LENGTH);
 	++db->devices;
 	return 0;
 }
 
-int DirblobGet(int dev, BYTE * sn, const struct dirblob *db)
+int DirblobGet(int device_index, BYTE * sn, const struct dirblob *db)
 {
-	if (dev >= db->devices)
+	if (device_index >= db->devices)
 		return -ENODEV;
-	memcpy(sn, &(db->snlist[8 * dev]), 8);
+	memcpy(sn, &(db->snlist[DIRBLOB_ELEMENT_LENGTH * device_index]), DIRBLOB_ELEMENT_LENGTH);
 	return 0;
 }
 
@@ -122,13 +125,13 @@ int DirblobGet(int dev, BYTE * sn, const struct dirblob *db)
  */
 int DirblobSearch( BYTE * sn, const struct dirblob *db)
 {
-    int position ;
+    int device_index ;
     if ( db==NULL || db->devices < 1 ) {
         return -1 ;
     }
-    for ( position = 0 ; position < db->devices ; ++position ) {
-        if (memcmp(sn,&(db->snlist[8*position]),8)==0 ) {
-            return position ;
+    for ( device_index = 0 ; device_index < db->devices ; ++device_index ) {
+        if (memcmp(sn,&(db->snlist[DIRBLOB_ELEMENT_LENGTH*device_index]),DIRBLOB_ELEMENT_LENGTH)==0 ) {
+            return device_index ;
         }
     }
     return -1 ;
