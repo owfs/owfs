@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
 	/* non-option arguments */
 	while (optind < argc) {
-		if (indevice == NULL) {
+		if (head_inbound_list == NULL) {
 			OW_ArgNet(argv[optind]);
 		} else {
 			if (paths_found++ == 0)

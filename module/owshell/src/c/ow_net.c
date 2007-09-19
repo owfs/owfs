@@ -78,7 +78,7 @@ int ClientConnect(void)
 	int file_descriptor;
 	struct addrinfo *ai;
 
-	if (indevice->connin.server.ai == NULL) {
+	if (head_inbound_list->connin.server.ai == NULL) {
 		//LEVEL_DEBUG("Client address not yet parsed\n");
 		return -1;
 	}
@@ -88,7 +88,7 @@ int ClientConnect(void)
 	 * the in-device and loop through the list until it works.
 	 * Not a perfect solution, but it should work at least.
 	 */
-	ai = indevice->connin.server.ai_ok;
+	ai = head_inbound_list->connin.server.ai_ok;
 	if (ai) {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
@@ -98,18 +98,18 @@ int ClientConnect(void)
 		}
 	}
 
-	ai = indevice->connin.server.ai;	// loop from first address info since it failed.
+	ai = head_inbound_list->connin.server.ai;	// loop from first address info since it failed.
 	do {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
 			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
-				indevice->connin.server.ai_ok = ai;
+				head_inbound_list->connin.server.ai_ok = ai;
 				return file_descriptor;
 			}
 			close(file_descriptor);
 		}
 	} while ((ai = ai->ai_next));
-	indevice->connin.server.ai_ok = NULL;
+	head_inbound_list->connin.server.ai_ok = NULL;
 
 	//ERROR_CONNECT("ClientConnect: Socket problem\n") ;
 	return -1;

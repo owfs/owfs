@@ -185,7 +185,7 @@ static int FS_w_simultaneous(struct one_wire_query * owq)
 		int bus_number;
 
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
-		for (bus_number = 0; bus_number < indevices; ++bus_number) {
+		for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
 			SetKnownBus(bus_number, PN(owq_given));
 			FS_w_given_bus(owq_given);
 		}

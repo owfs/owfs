@@ -114,7 +114,7 @@ int ServerOutSetup(struct connection_out *out)
 }
 
 /*
- Loops through outdevices, starting a detached thread for each 
+ Loops through count_outbound_connections, starting a detached thread for each 
  Each loop spawn threads for accepting connections
  Uses my non-patented "pre-threaded technique"
  */
@@ -220,7 +220,7 @@ static void *ServerProcessOut(void *v)
 				(unsigned long int) pthread_self());
 
 	if (ServerOutSetup(out)) {
-		LEVEL_CONNECT("Cannot set up outdevice [%s](%d) -- will exit\n",
+		LEVEL_CONNECT("Cannot set up head_outbound_list [%s](%d) -- will exit\n",
 					  SAFESTRING(out->name), out->index);
 		(out->Exit) (1);
 	}
@@ -243,17 +243,17 @@ static void *ServerProcessOut(void *v)
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 				   void (*Exit) (int errcode))
 {
-	struct connection_out *out = outdevice;
+	struct connection_out *out = head_outbound_list;
 	int err, signo;
 	sigset_t myset;
 
-	if (outdevices == 0) {
+	if (count_outbound_connections == 0) {
 		LEVEL_CALL("No output devices defined\n");
 		Exit(1);
 	}
 
-	/* Start the head of a thread chain for each outdevice */
-	for (out = outdevice; out; out = out->next) {
+	/* Start the head of a thread chain for each head_outbound_list */
+	for (out = head_outbound_list; out; out = out->next) {
 		OUTLOCK(out);
 		out->HandlerRoutine = HandlerRoutine;
 		out->Exit = Exit;
@@ -286,14 +286,14 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 	}
 	LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown initiated\n");
 
-	for (out = outdevice; out; out = out->next) {
+	for (out = head_outbound_list; out; out = out->next) {
 		OUTLOCK(out);
 		if (out->tid) {
 			LEVEL_DEBUG("Shutting down %d of %d thread %ld\n", out->index,
-						outdevices, out->tid);
+						count_outbound_connections, out->tid);
 			if (pthread_cancel(out->tid)) {
 				LEVEL_DEBUG("Can't kill %d of %d\n", out->index,
-							outdevices);
+							count_outbound_connections);
 			}
 			out->tid = 0;
 		}
@@ -312,22 +312,22 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 				   void (*Exit) (int errcode))
 {
-	if (outdevices == 0) {
+	if (count_outbound_connections == 0) {
 		LEVEL_CONNECT("No output device (port) specified. Exiting.\n");
 		Exit(1);
-	} else if (outdevices > 1) {
+	} else if (count_outbound_connections > 1) {
 		LEVEL_CONNECT
 			("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n",
-			 indevices);
+			 count_inbound_connections);
 		Exit(1);
-	} else if (ServerAddr(outdevice) || (ServerListen(outdevice) < 0)) {
-		LEVEL_CONNECT("Cannot set up outdevice [%s] -- will exit\n",
-					  SAFESTRING(outdevice->name));
+	} else if (ServerAddr(head_outbound_list) || (ServerListen(head_outbound_list) < 0)) {
+		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n",
+					  SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {
-		OW_Announce(outdevice);
+		OW_Announce(head_outbound_list);
 		while (1) {
-			int acceptfd = accept(outdevice->file_descriptor, NULL, NULL);
+			int acceptfd = accept(head_outbound_list->file_descriptor, NULL, NULL);
 			if (shutdown_in_progress)
 				break;
 			if (acceptfd < 0) {

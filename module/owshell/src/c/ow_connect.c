@@ -15,9 +15,9 @@ $Id$
 /* typical connection in would be gthe serial port or USB */
 
 /* Globals */
-struct connection_in *indevice = NULL;
+struct connection_in *head_inbound_list = NULL;
 
-/* Make a new indevice, and place it in the chain */
+/* Make a new head_inbound_list, and place it in the chain */
 /* Based on a shallow copy of "in" if not NULL */
 struct connection_in *NewIn(void)
 {
@@ -25,8 +25,8 @@ struct connection_in *NewIn(void)
 	struct connection_in *now = (struct connection_in *) malloc(len);
 	if (now) {
 		memset(now, 0, len);
-		now->next = indevice;	/* put in linked list at start */
-		indevice = now;
+		now->next = head_inbound_list;	/* put in linked list at start */
+		head_inbound_list = now;
 		now->index = 0;
 	} else {
 		fprintf(stderr, "Cannot allocate memory for adapter structure,\n");

@@ -29,7 +29,7 @@ int TestConnection(const struct parsedname *pn)
 		|| pn->in->reconnect_state < reconnect_error)
 		return 0;
 	CONNINLOCK;
-	in = indevice;
+	in = head_inbound_list;
 	CONNINUNLOCK;
 	// Lock the bus
 	BUSLOCK(pn);

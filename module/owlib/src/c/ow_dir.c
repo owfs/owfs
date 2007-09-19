@@ -291,7 +291,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 	size_t len;
 
 	STAT_ADD1(dir_dev.calls);
-	if (pn2->subdir) {			/* indevice subdir, name prepends */
+	if (pn2->subdir) {			/* head_inbound_list subdir, name prepends */
 //printf("DIR device subdirectory\n");
 		len = snprintf(s, 32, "%s/", pn2->subdir->name);
 		firstft = pn2->subdir + 1;
@@ -559,7 +559,7 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
     pn2.state = pn_bus ; // even stronger statement than SetKnownBus
 
-	for (bus_number = 0; bus_number < indevices; ++bus_number) {
+	for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
 		SetKnownBus(bus_number, &pn2);
         //printf("Called FS_busdir on %s bus number %d\n",pn->path,bus_number) ;
         dirfunc(v, &pn2);

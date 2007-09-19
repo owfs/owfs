@@ -611,7 +611,7 @@ static int usbdevice_in_use(char *name)
 {
 	struct connection_in *in;
 	CONNINLOCK;
-	in = indevice;
+	in = head_inbound_list;
 	CONNINUNLOCK;
 	while (in) {
 		if ((in->busmode == bus_usb) && (in->name)
@@ -619,7 +619,7 @@ static int usbdevice_in_use(char *name)
 			return 1;			// It seems to be in use already
 		in = in->next;
 	}
-	return 0;					// not found in the current indevice-list
+	return 0;					// not found in the current head_inbound_list-list
 }
 
 /* Construct the device name */

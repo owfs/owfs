@@ -309,8 +309,8 @@ struct connection_in;
 struct connection_out;
 
 /* Exposed connection info */
-extern int outdevices;
-extern int indevices;
+extern int count_outbound_connections;
+extern int count_inbound_connections;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -509,7 +509,7 @@ struct parsedname {
 	struct filetype *subdir;	// in-device grouping
 	UINT pathlength;			// DS2409 branching depth
 	struct buspath *bp;			// DS2409 branching route
-	struct connection_in *indevice;	// Global indevice at definition time
+	struct connection_in *head_inbound_list;	// Global head_inbound_list at definition time
 	struct connection_in *in;
 	uint32_t sg;				// more state info, packed for network transmission
 	struct devlock **lock;		// need to clear dev lock?

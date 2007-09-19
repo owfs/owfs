@@ -107,8 +107,8 @@ struct device d_sys_process =
 	{ "process", "process", pn_system, NFT(sys_process), sys_process };
 
 struct filetype sys_connections[] = {
-  {"indevices",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_in, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"outdevices",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_out, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"count_inbound_connections",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_in, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"count_outbound_connections",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_out, NO_WRITE_FUNCTION, {v:NULL},} ,
 };
 struct device d_sys_connections =
 	{ "connections", "connections", pn_system, NFT(sys_connections),
@@ -491,14 +491,14 @@ static int FS_pid(struct one_wire_query * owq)
 static int FS_in(struct one_wire_query * owq)
 {
 	CONNINLOCK;
-	OWQ_U(owq) = indevices;
+	OWQ_U(owq) = count_inbound_connections;
 	CONNINUNLOCK;
 	return 0;
 }
 
 static int FS_out(struct one_wire_query * owq)
 {
-	OWQ_U(owq) = outdevices;
+	OWQ_U(owq) = count_outbound_connections;
 	return 0;
 }
 

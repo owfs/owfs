@@ -127,13 +127,13 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 
 	/* connection_in list and start */
 	CONNINLOCK;
-	pn->indevice = indevice;
-	pn->lock = calloc(indevices, sizeof(struct devlock *));
+	pn->head_inbound_list = head_inbound_list;
+	pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
 	CONNINUNLOCK;
-	pn->in = pn->indevice;
+	pn->in = pn->head_inbound_list;
 
 	if (pathcpy == NULL || pn->path == NULL || pn->lock == NULL
-		|| pn->indevice == NULL) {
+		|| pn->head_inbound_list == NULL) {
 		if (pathcpy)
 			free(pathcpy);
 		if (pn->path) {
@@ -144,7 +144,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 			free(pn->lock);
 			pn->lock = NULL;
 		}
-		return (pn->indevice == NULL) ? -ENOENT : -ENOMEM;
+		return (pn->head_inbound_list == NULL) ? -ENOENT : -ENOMEM;
 	}
 
 	/* pointer to rest of path after current token peeled off */
@@ -332,7 +332,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     //printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
     bus_number = atoi(&pathnow[4]);
     CONNINLOCK;
-    if (bus_number < 0 || indevices <= bus_number) {
+    if (bus_number < 0 || count_inbound_connections <= bus_number) {
         CONNINUNLOCK;
         return parse_error;
     }

@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 		++optind;
 	}
 
-	if (outdevices == 0) {
+	if (count_outbound_connections == 0) {
 		if (Global.announce_off) {
 			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",
 						  argv[0]);

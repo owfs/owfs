@@ -18,16 +18,16 @@ $Id$
 /* typical connection in would be gthe serial port or USB */
 
 /* Globals */
-struct connection_out *outdevice = NULL;
-int outdevices = 0;
-struct connection_in *indevice = NULL;
-int indevices = 0;
+struct connection_out *head_outbound_list = NULL;
+int count_outbound_connections = 0;
+struct connection_in *head_inbound_list = NULL;
+int count_inbound_connections = 0;
 
 struct connection_in *find_connection_in(int bus_number)
 {
 	struct connection_in *c_in ;
-    // step through indevice linked list
-	for ( c_in = indevice ; c_in != NULL ; c_in = c_in->next ) {
+    // step through head_inbound_list linked list
+	for ( c_in = head_inbound_list ; c_in != NULL ; c_in = c_in->next ) {
 		if (c_in->index == bus_number)
 			return c_in;
 	}
@@ -46,7 +46,7 @@ int BusIsServer(struct connection_in *in)
 	return (in->busmode == bus_server) || (in->busmode == bus_zero);
 }
 
-/* Make a new indevice, and place it in the chain */
+/* Make a new head_inbound_list, and place it in the chain */
 /* Based on a shallow copy of "in" if not NULL */
 struct connection_in *NewIn(const struct connection_in *in)
 {
@@ -58,10 +58,10 @@ struct connection_in *NewIn(const struct connection_in *in)
 		} else {
 			memset(now, 0, len);
 		}
-		now->next = indevice;	/* put in linked list at start */
-		indevice = now;
-		now->index = indevices++;
-		Asystem.elements = indevices;
+		now->next = head_inbound_list;	/* put in linked list at start */
+		head_inbound_list = now;
+		now->index = count_inbound_connections++;
+		Asystem.elements = count_inbound_connections;
 #if OW_MT
 		pthread_mutex_init(&(now->bus_mutex), pmattr);
 		pthread_mutex_init(&(now->dev_mutex), pmattr);
@@ -88,9 +88,9 @@ struct connection_out *NewOut(void)
 	struct connection_out *now = (struct connection_out *) malloc(len);
 	if (now) {
 		memset(now, 0, len);
-		now->next = outdevice;
-		outdevice = now;
-		now->index = outdevices++;
+		now->next = head_outbound_list;
+		head_outbound_list = now;
+		now->index = count_outbound_connections++;
 #if OW_MT
 		pthread_mutex_init(&(now->accept_mutex), pmattr);
 		pthread_mutex_init(&(now->out_mutex), pmattr);
@@ -106,11 +106,11 @@ struct connection_out *NewOut(void)
 
 void FreeIn(void)
 {
-	struct connection_in *next = indevice;
+	struct connection_in *next = head_inbound_list;
 	struct connection_in *now;
 
-	indevice = NULL;
-	indevices = 0;
+	head_inbound_list = NULL;
+	count_inbound_connections = 0;
 	while (next) {
 		now = next;
 		next = now->next;
@@ -176,11 +176,11 @@ void FreeIn(void)
 
 void FreeOut(void)
 {
-	struct connection_out *next = outdevice;
+	struct connection_out *next = head_outbound_list;
 	struct connection_out *now;
 
-	outdevice = NULL;
-	outdevices = 0;
+	head_outbound_list = NULL;
+	count_outbound_connections = 0;
 	while (next) {
 		now = next;
 		next = now->next;

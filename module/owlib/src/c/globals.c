@@ -16,7 +16,7 @@ $Id$
 
 /* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
-/* i.e. connection_in * indevices ...         */
+/* i.e. connection_in * head_inbound_list ...         */
 
 #if OW_MT
 /* mutex attribute -- needed for uClibc programming */

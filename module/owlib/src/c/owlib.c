@@ -179,7 +179,7 @@ void __pthread_initialize(void);
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart(void)
 {
-	struct connection_in *in = indevice;
+	struct connection_in *in = head_inbound_list;
 	int ret = 0;
 
 	/* Initialize random number generator, make sure fake devices get the same
@@ -236,7 +236,7 @@ int LibStart(void)
 	LockSetup();
 #endif							/* __UCLIBC__ */
 
-	if (indevice == NULL && !Global.autoserver) {
+	if (head_inbound_list == NULL && !Global.autoserver) {
 		LEVEL_DEFAULT
 			("No device port/server specified (-d or -u or -s)\n%s -h for help\n",
 			 SAFESTRING(Global.progname));
@@ -394,8 +394,8 @@ int LibStart(void)
 
 	/* Use first bus for http bus name */
 	CONNINLOCK;
-	if (indevice)
-		Global.SimpleBusName = indevice->name;
+	if (head_inbound_list)
+		Global.SimpleBusName = head_inbound_list->name;
 	CONNINUNLOCK;
 
 	// zeroconf/Bonjour look for new services

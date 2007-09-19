@@ -23,13 +23,13 @@ static uint32_t SetupSemi(void);
 
 void Server_detect(void)
 {
-	if (indevice == NULL) {
-		fprintf(stderr, "No indevice defined\n");
+	if (head_inbound_list == NULL) {
+		fprintf(stderr, "No head_inbound_list defined\n");
 		exit(1);
 	}
-	if (indevice->name == NULL || ClientAddr(indevice->name, indevice)) {
+	if (head_inbound_list->name == NULL || ClientAddr(head_inbound_list->name, head_inbound_list)) {
 		fprintf(stderr, "Could not connect with owserver %s\n",
-				indevice->name);
+				head_inbound_list->name);
 		exit(1);
 	}
 }

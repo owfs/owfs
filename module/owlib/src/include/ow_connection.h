@@ -384,8 +384,8 @@ struct connection_out {
 	DNSServiceRef sref1;
 #endif
 };
-extern struct connection_out *outdevice;
-extern struct connection_in *indevice;
+extern struct connection_out *head_outbound_list;
+extern struct connection_in *head_inbound_list;
 
 #define  FD_PERSISTENT_IN_USE    -2
 #define  FD_PERSISTENT_NONE      -1

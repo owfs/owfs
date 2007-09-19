@@ -179,7 +179,7 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 {
 	struct connection_in *now;
 	CONNINLOCK;
-	for (now = indevice; now; now = now->next) {
+	for (now = head_inbound_list; now; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
 			|| strcasecmp(now->connin.tcp.type, bs->type)
 			|| strcasecmp(now->connin.tcp.domain, bs->domain)

@@ -114,10 +114,10 @@ void owopt(const int c, const char *arg)
 void OW_ArgNet(const char *arg)
 {
 	struct connection_in *in;
-	if (indevice) {
+	if (head_inbound_list) {
 		fprintf(stderr,
 				"Cannot link to more than one owserver. (%s and %s).\n",
-				indevice->name, arg);
+				head_inbound_list->name, arg);
 		exit(1);
 	} else if ((in = NewIn()) == NULL) {
 		fprintf(stderr, "Memory exhausted.\n");

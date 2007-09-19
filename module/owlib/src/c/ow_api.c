@@ -10,7 +10,7 @@ $Id$
 */
 
 /* code for SWIG and owcapi safe access */
-/* Uses two mutexes, one for indevices, showing of there are valid 1-wire adapters */
+/* Uses two mutexes, one for count_inbound_connections, showing of there are valid 1-wire adapters */
 /* Second is paired with a condition variable to prevent "finish" when a "get" or "put" is in progress */
 /* Thanks to Geo Carncross for the implementation */
 
@@ -57,7 +57,7 @@ int OWLIB_can_init_start(void)
 #endif							/* UCLIBC */
 #endif							/* OW_MT */
 	CONNINLOCK;
-	ids = indevices;
+	ids = count_inbound_connections;
 	CONNINUNLOCK;
 	return ids > 0;
 }
@@ -77,7 +77,7 @@ int OWLIB_can_access_start(void)
 	ACCESSUNLOCK;
 	INITLOCK;
 	CONNINLOCK;
-	ret = (indevices == 0);
+	ret = (count_inbound_connections == 0);
 	CONNINUNLOCK;
 	INITUNLOCK;
 	return ret;

@@ -160,7 +160,7 @@ step on each other, but the conversion time for individual is rather costly.
 struct connection_in;
 
 /* Exposed connection info */
-extern int indevices;
+extern int count_inbound_connections;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -343,7 +343,7 @@ struct connection_in {
 	} connin;
 };
 
-extern struct connection_in *indevice;
+extern struct connection_in *head_inbound_list;
 
 void FreeIn(void);
 void DelIn(struct connection_in *in);
