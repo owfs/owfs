@@ -135,7 +135,7 @@ static int DS9097_reset(const struct parsedname *pn)
 	/* digitemp seems to contain a really nasty bug.. in
 	   SMALLINT owTouchReset(int portnum)
 	   They use 8bit all the time actually..
-	/* 8 data bits */
+	   8 data bits */
 	term[portnum].c_cflag |= CS8;  //(0x60)
 	cfsetispeed(&term[portnum], B9600);
 	cfsetospeed(&term[portnum], B9600);
