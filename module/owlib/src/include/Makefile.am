@@ -44,6 +44,7 @@ noinst_HEADERS =          \
         ow_dnssd.h        \
         ow_integer.h      \
         ow_lcd.h          \
+        ow_mutexes.h      \
         ow_none.h         \
         ow_onewirequery.h \
         ow_pid.h          \

@@ -209,77 +209,8 @@ typedef int INT;
 /* Directory blob (strings) separated out for readability */
 #include "ow_charblob.h"
 
-#if OW_MT
-#include <pthread.h>
-
-extern pthread_mutex_t stat_mutex;
-extern pthread_mutex_t cache_mutex;
-extern pthread_mutex_t store_mutex;
-extern pthread_mutex_t fstat_mutex;
-extern pthread_mutex_t simul_mutex;
-extern pthread_mutex_t dir_mutex;
-extern pthread_mutex_t libusb_mutex;
-extern pthread_mutex_t connin_mutex;
-
-extern pthread_mutexattr_t *pmattr;
-#ifdef __UCLIBC__
-extern pthread_mutexattr_t mattr;
-extern pthread_mutex_t uclibc_mutex;
-#endif							/* __UCLIBC__ */
-#define STATLOCK          pthread_mutex_lock(  &stat_mutex   )
-#define STATUNLOCK        pthread_mutex_unlock(&stat_mutex   )
-#define CACHELOCK         pthread_mutex_lock(  &cache_mutex  )
-#define CACHEUNLOCK       pthread_mutex_unlock(&cache_mutex  )
-#define STORELOCK         pthread_mutex_lock(  &store_mutex  )
-#define STOREUNLOCK       pthread_mutex_unlock(&store_mutex  )
-#define FSTATLOCK         pthread_mutex_lock(  &fstat_mutex  )
-#define FSTATUNLOCK       pthread_mutex_unlock(&fstat_mutex  )
-#define SIMULLOCK         pthread_mutex_lock(  &simul_mutex  )
-#define SIMULUNLOCK       pthread_mutex_unlock(&simul_mutex  )
-#define DIRLOCK           pthread_mutex_lock(  &dir_mutex    )
-#define DIRUNLOCK         pthread_mutex_unlock(&dir_mutex    )
-#define LIBUSBLOCK        pthread_mutex_lock(  &libusb_mutex    )
-#define LIBUSBUNLOCK      pthread_mutex_unlock(&libusb_mutex    )
-#define CONNINLOCK        pthread_mutex_lock(  &connin_mutex    )
-#define CONNINUNLOCK      pthread_mutex_unlock(&connin_mutex    )
-#define BUSLOCK(pn)       BUS_lock(pn)
-#define BUSUNLOCK(pn)     BUS_unlock(pn)
-#define BUSLOCKIN(in)       BUS_lock_in(in)
-#define BUSUNLOCKIN(in)     BUS_unlock_in(in)
-#ifdef __UCLIBC__
-#define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
-#define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
-#else							/* __UCLIBC__ */
-#define UCLIBCLOCK
-#define UCLIBCUNLOCK
-#endif							/* __UCLIBC__ */
-
-#else							/* OW_MT */
-#define STATLOCK
-#define STATUNLOCK
-#define CACHELOCK
-#define CACHEUNLOCK
-#define STORELOCK
-#define STOREUNLOCK
-#define FSTATLOCK
-#define FSTATUNLOCK
-#define SIMULLOCK
-#define SIMULUNLOCK
-#define DIRLOCK
-#define DIRUNLOCK
-#define UCLIBCLOCK
-#define UCLIBCUNLOCK
-#define LIBUSBLOCK
-#define LIBUSBUNLOCK
-#define UCLIBCLOCK
-#define UCLIBCUNLOCK
-#define CONNINLOCK
-#define CONNINUNLOCK
-#define BUSLOCK(pn)
-#define BUSUNLOCK(pn)
-#define BUSLOCKIN(in)
-#define BUSUNLOCKIN(in)
-#endif							/* OW_MT */
+/* Many mutexes separated out for readability */
+#include "ow_mutexes.h"
 
 /*
     OW -- One Wire
