@@ -69,20 +69,20 @@ WRITE_FUNCTION(FS_w_lineX);
 #define _LCD_COMMAND_POWER_ON    0x03
 #define _LCD_COMMAND_BACKLIGHT_OFF   0x07
 #define _LCD_COMMAND_BACKLIGHT_ON    0x08
-#define _LCD_COMMAND_REGISTER_READ    0x11
-#define _LCD_COMMAND_REGISTER_WRITE   0x10
-#define _LCD_COMMAND_DATA_READ    0x13
-#define _LCD_COMMAND_DATA_WRITE   0x12
+#define _LCD_COMMAND_REGISTER_TO_SCRATCH    0x11
+#define _LCD_COMMAND_REGISTER_WRITE_BYTE   0x10
+#define _LCD_COMMAND_DATA_TO_SCRATCH    0x13
+#define _LCD_COMMAND_DATA_WRITE_BYTE   0x12
 #define _LCD_COMMAND_SCRATCHPAD_READ   0xBE
 #define _LCD_COMMAND_SCRATCHPAD_WRITE  0x4E
-#define _LCD_COMMAND_SCRATCHPAD_PRINT  0x48
-#define _LCD_COMMAND_EEPROM_READ    0x37
-#define _LCD_COMMAND_EEPROM_WRITE   0x39
-#define _LCD_COMMAND_GPIO_READ    0x22
-#define _LCD_COMMAND_GPIO_WRITE   0x21
-#define _LCD_COMMAND_COUNTER_READ   0x23
+#define _LCD_COMMAND_PRINT_FROM_SCRATCH  0x48
+#define _LCD_COMMAND_EEPROM_READ_TO_SCRATCH    0x37
+#define _LCD_COMMAND_EEPROM_WRITE_FROM_SCRATCH   0x39
+#define _LCD_COMMAND_GPIO_READ_TO_SCRATCH    0x22
+#define _LCD_COMMAND_GPIO_WRITE_BYTE   0x21
+#define _LCD_COMMAND_COUNTER_READ_TO_SCRATCH   0x23
 #define _LCD_COMMAND_LCD_CLEAR   0x49
-#define _LCD_COMMAND_VERSION_READ   0x41
+#define _LCD_COMMAND_VERSION_READ_TO_SCRATCH   0x41
 
 #define _LCD_PAGE_SIZE      16
 
@@ -123,15 +123,14 @@ DeviceEntryExtended(FF, LCD, DEV_alarm);
 /* ------- Functions ------------ */
 
 /* LCD by L. Swart */
-static int OW_r_scratch(BYTE * data, const int length,
+static int OW_r_scratch(BYTE * data, int length, const struct parsedname *pn);
+static int OW_w_scratch(const BYTE * data, int length,
 						const struct parsedname *pn);
-static int OW_w_scratch(const BYTE * data, const int length,
-						const struct parsedname *pn);
-static int OW_w_register(const BYTE data, const struct parsedname *pn);
+static int OW_w_register(BYTE data, const struct parsedname *pn);
 static int OW_r_register(BYTE * data, const struct parsedname *pn);
 static int OW_w_data(const BYTE data, const struct parsedname *pn);
 static int OW_r_data(BYTE * data, const struct parsedname *pn);
-static int OW_w_gpio(const BYTE data, const struct parsedname *pn);
+static int OW_w_gpio(BYTE data, const struct parsedname *pn);
 static int OW_r_gpio(BYTE * data, const struct parsedname *pn);
 static int OW_r_version(BYTE * data, const struct parsedname *pn);
 static int OW_r_counters(UINT * data, const struct parsedname *pn);
@@ -140,11 +139,11 @@ static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
 static int OW_w_memory( BYTE * data,  size_t size,
 					    off_t offset,  struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
-static int OW_w_screen(const BYTE loc, const char *text, const int size,
-					   const struct parsedname *pn);
+static int OW_w_screen(BYTE loc, const char *text, int size, const struct parsedname *pn);
 static int LCD_byte(BYTE byte, int delay, const struct parsedname *pn);
 static int LCD_2byte(BYTE * byte, int delay, const struct parsedname *pn);
 static int OW_simple_command( BYTE lcd_command_code, const struct parsedname * pn ) ;
+static int OW_w_unpaged_to_screen( BYTE start, BYTE length, const char * text, const struct parsedname * pn ) ;
 
 /* Internal files */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
@@ -269,13 +268,19 @@ static int FS_w_lineX(struct one_wire_query * owq)
 	BYTE loc[] = { 0x00, 0x40, 0x00 + width, 0x40 + width };
 	char line[width];
     size_t size = OWQ_size(owq) ;
+    int start = OWQ_offset(owq) ;
 
-    if (OWQ_offset(owq))
+    if ( start >= width ) {
 		return -EADDRNOTAVAIL;
-    memcpy(line, OWQ_buffer(owq), size);
-	memset(&line[size], ' ', width - size);
-	if (OW_w_screen(loc[pn->extension], line, width, pn))
+    }
+    if ( (int) (start + size) > width ) {
+        size = width - start ;
+    }
+    memset(line,' ', width);
+    memcpy(&line[start], OWQ_buffer(owq), size);
+    if (OW_w_screen(loc[pn->extension], line, width, pn)) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -287,36 +292,37 @@ static int FS_w_screenX(struct one_wire_query * owq)
     char *start_of_remaining_text = OWQ_buffer(owq);
     char *pointer_after_all_text = OWQ_buffer(owq) + OWQ_size(owq);
     int extension ;
-	OWQ_make( owq_line ) ;
+	OWQ_allocate_struct_and_pointer( owq_line ) ;
 
     if (OWQ_offset(owq))
 		return -EADDRNOTAVAIL;
 
-	if (OW_clear(pn))
+    if (OW_clear(pn)) {
 		return -EFAULT;
+    }
 
     OWQ_create_shallow_single( owq_line, owq ) ; // won't bother to destroy
+    OWQ_pn(owq_line).ft = OWQ_pn(owq).ft ; // to get the correct width in FS_w_lineX
     
 	for (extension = 0; extension < rows; ++extension) {
 		char * newline_location = memchr(start_of_remaining_text, '\n', pointer_after_all_text - start_of_remaining_text);
         OWQ_pn(owq_line).extension = extension ;
-		if ( (newline_location != NULL) && (newline_location < start_of_remaining_text + width) ) {
-            OWQ_buffer(owq_line) = start_of_remaining_text ;
+        OWQ_buffer(owq_line) = start_of_remaining_text ;
+        if ( (newline_location != NULL) && (newline_location < start_of_remaining_text + width) ) {
             OWQ_size(owq_line) = newline_location - start_of_remaining_text ;
-			if (FS_w_lineX(owq_line))
-				return -EINVAL;
 			start_of_remaining_text = newline_location + 1;			/* skip over newline */
 		} else {
 			char * lineend_location = start_of_remaining_text + width;
-			if (lineend_location > pointer_after_all_text)
+            if (lineend_location > pointer_after_all_text) {
 				lineend_location = pointer_after_all_text;
-            OWQ_buffer(owq_line) = start_of_remaining_text ;
+            }
             OWQ_size(owq_line) = lineend_location - start_of_remaining_text ;
-            if (FS_w_lineX(owq_line))
-                return -EINVAL;
             start_of_remaining_text = lineend_location;
 		}
-		if (start_of_remaining_text >= pointer_after_all_text)
+        if (FS_w_lineX(owq_line)) {
+            return -EINVAL;
+        }
+        if (start_of_remaining_text >= pointer_after_all_text)
 			break;
 	}
 	return 0;
@@ -338,8 +344,7 @@ static int FS_w_memory(struct one_wire_query * owq)
 	return 0;
 }
 
-static int OW_w_scratch(const BYTE * data, const int length,
-						const struct parsedname *pn)
+static int OW_w_scratch(const BYTE * data, int length, const struct parsedname *pn)
 {
 	BYTE write_command[1] = { _LCD_COMMAND_SCRATCHPAD_WRITE, } ;
 	struct transaction_log t[] = {
@@ -352,7 +357,7 @@ static int OW_w_scratch(const BYTE * data, const int length,
 	return BUS_transaction(t, pn);
 }
 
-static int OW_r_scratch(BYTE * data, const int length,
+static int OW_r_scratch(BYTE * data, int length,
 						const struct parsedname *pn)
 {
 	BYTE read_command[1] = { _LCD_COMMAND_SCRATCHPAD_READ, };
@@ -366,9 +371,9 @@ static int OW_r_scratch(BYTE * data, const int length,
 	return BUS_transaction(t, pn);
 }
 
-static int OW_w_register(const BYTE data, const struct parsedname *pn)
+static int OW_w_register(BYTE data, const struct parsedname *pn)
 {
-	BYTE w[] = { _LCD_COMMAND_REGISTER_WRITE, data, };
+	BYTE w[] = { _LCD_COMMAND_REGISTER_WRITE_BYTE, data, };
 	// 100uS
 	return LCD_2byte(w, 1, pn);
 }
@@ -376,12 +381,12 @@ static int OW_w_register(const BYTE data, const struct parsedname *pn)
 static int OW_r_register(BYTE * data, const struct parsedname *pn)
 {
 	// 150uS
-	return LCD_byte(_LCD_COMMAND_REGISTER_READ, 1, pn) || OW_r_scratch(data, 1, pn);
+	return LCD_byte(_LCD_COMMAND_REGISTER_TO_SCRATCH, 1, pn) || OW_r_scratch(data, 1, pn);
 }
 
 static int OW_w_data(const BYTE data, const struct parsedname *pn)
 {
-	BYTE w[] = { _LCD_COMMAND_DATA_WRITE, data, };
+	BYTE w[] = { _LCD_COMMAND_DATA_WRITE_BYTE, data, };
 	// 100uS
 	return LCD_2byte(w, 1, pn);
 }
@@ -389,15 +394,16 @@ static int OW_w_data(const BYTE data, const struct parsedname *pn)
 static int OW_r_data(BYTE * data, const struct parsedname *pn)
 {
 	// 150uS
-	return LCD_byte(_LCD_COMMAND_DATA_READ, 1, pn) || OW_r_scratch(data, 1, pn);
+	return LCD_byte(_LCD_COMMAND_DATA_TO_SCRATCH, 1, pn) || OW_r_scratch(data, 1, pn);
 }
 
-static int OW_w_gpio(const BYTE data, const struct parsedname *pn)
+static int OW_w_gpio(BYTE data, const struct parsedname *pn)
 {
 	/* Note, it would be nice to control separately, nut
 	   we can't know the set state of the pin, i.e. sensed and set
 	   are confused */
-	BYTE w[] = { _LCD_COMMAND_GPIO_WRITE, data, };
+    /* Datasheet says bit 7 should be 1 */
+	BYTE w[] = { _LCD_COMMAND_GPIO_WRITE_BYTE, 0x80&data, };
 	// 20uS
 	return LCD_2byte(w, 1, pn);
 }
@@ -405,7 +411,7 @@ static int OW_w_gpio(const BYTE data, const struct parsedname *pn)
 static int OW_r_gpio(BYTE * data, const struct parsedname *pn)
 {
 	// 70uS
-	return LCD_byte(_LCD_COMMAND_GPIO_READ, 1, pn) || OW_r_scratch(data, 1, pn);
+	return LCD_byte(_LCD_COMMAND_GPIO_READ_TO_SCRATCH, 1, pn) || OW_r_scratch(data, 1, pn);
 }
 
 static int OW_r_counters(UINT * data, const struct parsedname *pn)
@@ -413,7 +419,7 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 	BYTE d[8];
 	UINT cum[4];
 
-	if (LCD_byte(_LCD_COMMAND_COUNTER_READ, 1, pn) || OW_r_scratch(d, 8, pn))
+	if (LCD_byte(_LCD_COMMAND_COUNTER_READ_TO_SCRATCH, 1, pn) || OW_r_scratch(d, 8, pn))
 		return 1;				// 80uS
 
 	data[0] = ((UINT) d[1]) << 8 | d[0];
@@ -445,14 +451,11 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
 					    struct parsedname *pn)
 {
-	BYTE buf[2] = { BYTE_MASK(offset), BYTE_MASK(size), };
-
-	if (buf[1] == 0)
-		return 0;
+	BYTE location_setup[2] = { BYTE_MASK(offset), BYTE_MASK(size), };
 
 	// 500uS
-	return OW_w_scratch(buf, 2, pn) || LCD_byte(_LCD_COMMAND_EEPROM_READ, 1, pn)
-		|| OW_r_scratch(data, buf[1], pn);
+    return OW_w_scratch(location_setup, 2, pn) || LCD_byte(_LCD_COMMAND_EEPROM_READ_TO_SCRATCH, 1, pn)
+            || OW_r_scratch(data, BYTE_MASK(size), pn);
 }
 
 /* memory is 112 bytes */
@@ -463,13 +466,13 @@ static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
 static int OW_w_memory( BYTE * data,  size_t size,
 					    off_t offset,  struct parsedname *pn)
 {
-	BYTE length_and_buffer[1 + _LCD_PAGE_SIZE] = { BYTE_MASK(offset), };
+	BYTE location_and_buffer[1 + _LCD_PAGE_SIZE] = { BYTE_MASK(offset), };
 
 	if (size == 0)
 		return 0;
-	memcpy(&length_and_buffer[1], data, size);
+    memcpy(&location_and_buffer[1], data, size);
 
-	return OW_w_scratch(length_and_buffer, size + 1, pn) || LCD_byte(_LCD_COMMAND_EEPROM_WRITE, 4 * size, pn);
+    return OW_w_scratch(location_and_buffer, size + 1, pn) || LCD_byte(_LCD_COMMAND_EEPROM_WRITE_FROM_SCRATCH, 4 * size, pn);
 	// 4mS/byte
 }
 
@@ -477,28 +480,40 @@ static int OW_w_memory( BYTE * data,  size_t size,
 static int OW_r_version(BYTE * data, const struct parsedname *pn)
 {
 	// 500uS
-	return LCD_byte(_LCD_COMMAND_VERSION_READ, 1, pn) || OW_r_scratch(data, _LCD_PAGE_SIZE, pn);
+	return LCD_byte(_LCD_COMMAND_VERSION_READ_TO_SCRATCH, 1, pn) || OW_r_scratch(data, _LCD_PAGE_SIZE, pn);
 }
 
-static int OW_w_screen(const BYTE loc, const char *text, const int size,
+static int OW_w_screen(BYTE loc, const char *text, int size,
 					   const struct parsedname *pn)
 {
-	BYTE length_and_buffer[1 + _LCD_PAGE_SIZE] = { loc, };
-	int chars_left_to_print ;
-	int chars_printing_now ;
+	int chars_left_to_print = size ;
 
-	for (chars_left_to_print = size; chars_left_to_print > 0; chars_left_to_print -= chars_printing_now) {
-		chars_printing_now = chars_left_to_print;
+	while (chars_left_to_print > 0) {
+        int current_index_in_buffer ;
+		int chars_printing_now = chars_left_to_print;
 		if (chars_printing_now > _LCD_PAGE_SIZE) {
 			chars_printing_now = _LCD_PAGE_SIZE;
         }
-		memcpy(&length_and_buffer[1], &text[size - chars_left_to_print], (size_t) chars_printing_now);
-		if (OW_w_scratch(length_and_buffer, chars_printing_now + 1, pn) || LCD_byte(_LCD_COMMAND_SCRATCHPAD_PRINT, 0, pn))
-			return 1;
-		length_and_buffer[0] += chars_printing_now;
+        current_index_in_buffer = size - chars_left_to_print ;
+        if ( OW_w_unpaged_to_screen( loc+current_index_in_buffer, chars_printing_now, &text[current_index_in_buffer], pn ) ) {
+            return 1 ;
+        }
+        chars_left_to_print -= chars_printing_now ;
 	}
-	UT_delay(2);				// 120uS/byte (max 1.92mS)
 	return 0;
+}
+
+static int OW_w_unpaged_to_screen( BYTE start, BYTE length, const char * text, const struct parsedname * pn )
+{
+    BYTE location_and_string[1 + _LCD_PAGE_SIZE] = { start, } ;
+    memcpy( &location_and_string[1], text, length ) ;
+    if ( OW_w_scratch( location_and_string, 1 + length, pn ) ) {
+        return 1 ;
+    }
+    if ( LCD_byte(_LCD_COMMAND_PRINT_FROM_SCRATCH, 2, pn) ) {
+        return 1 ;
+    }
+    return 0 ;
 }
 
 static int OW_clear(const struct parsedname *pn)
@@ -522,7 +537,7 @@ static int LCD_byte(BYTE byte, int delay, const struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE1(byte),
+        TRXN_WRITE1(&byte),
         TRXN_DELAY(delay),
 		TRXN_END,
 	};

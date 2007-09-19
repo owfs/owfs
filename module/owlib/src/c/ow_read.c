@@ -46,7 +46,7 @@ Can break down cases into:
 int FS_read(const char *path, char *buf, const size_t size,
             const off_t offset)
 {
-	OWQ_make( owq ) ;
+	OWQ_allocate_struct_and_pointer( owq ) ;
 	int read_or_error ;
 
 	LEVEL_CALL("READ path=%s size=%d offset=%d\n", SAFESTRING(path),
@@ -134,7 +134,7 @@ static int FS_r_simultaneous(struct one_wire_query * owq)
 	if (SpecifiedBus(PN(owq))) {
 		return FS_r_given_bus(owq);
 	} else {
-		OWQ_make(owq_given);
+		OWQ_allocate_struct_and_pointer(owq_given);
 
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
 
@@ -368,7 +368,7 @@ static int FS_structure(struct one_wire_query * owq)
     char output_string[PROPERTY_LENGTH_STRUCTURE+1] ;
     int output_length;
     int print_status ;
-    OWQ_make( owq_copy ) ;
+    OWQ_allocate_struct_and_pointer( owq_copy ) ;
     OWQ_create_shallow_single( owq_copy, owq ); /* shallow copy */
     OWQ_pn(owq_copy).type = pn_real;            /* "real" type to get return length, rather than "structure" length */
 
@@ -418,7 +418,7 @@ static int FS_read_lump(struct one_wire_query * owq)
 static int FS_read_from_parts(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    OWQ_make( owq_single ) ;
+    OWQ_allocate_struct_and_pointer( owq_single ) ;
 
     size_t elements = pn->ft->ag->elements ;
     size_t extension ;
@@ -456,7 +456,7 @@ static int FS_read_from_parts(struct one_wire_query * owq)
 static int FS_read_all_bits(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	OWQ_make( owq_single ) ;
+	OWQ_allocate_struct_and_pointer( owq_single ) ;
 
 	size_t elements = pn->ft->ag->elements ;
 	size_t extension ;
@@ -485,7 +485,7 @@ static int FS_read_all_bits(struct one_wire_query * owq)
 static int FS_read_one_bit(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	OWQ_make( owq_single ) ;
+	OWQ_allocate_struct_and_pointer( owq_single ) ;
 
 	int lump_read ;
 	UINT U ;
@@ -509,7 +509,7 @@ static int FS_read_one_bit(struct one_wire_query * owq)
 /* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
 static int FS_read_a_part(struct one_wire_query * owq)
 {
-	OWQ_make( owq_all ) ;
+	OWQ_allocate_struct_and_pointer( owq_all ) ;
     
 	size_t extension = OWQ_pn(owq).extension ;
 	int lump_read ;
@@ -554,7 +554,7 @@ static int FS_read_a_part(struct one_wire_query * owq)
 /* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
 static int FS_read_mixed_part(struct one_wire_query * owq)
 {
-	OWQ_make( owq_all ) ;
+	OWQ_allocate_struct_and_pointer( owq_all ) ;
     
 	size_t extension = OWQ_pn(owq).extension ;
 

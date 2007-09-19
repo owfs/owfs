@@ -62,7 +62,7 @@ static int FS_write_mixed_part(struct one_wire_query * owq) ;
 int FS_write(const char *path, const char *buf, const size_t size,
 			 const off_t offset)
 {
-	OWQ_make( owq ) ;
+	OWQ_allocate_struct_and_pointer( owq ) ;
 	int write_return;
 
 	LEVEL_CALL("WRITE path=%s size=%d offset=%d\n", SAFESTRING(path),
@@ -181,7 +181,7 @@ static int FS_w_simultaneous(struct one_wire_query * owq)
     if (SpecifiedBus(PN(owq))) {
 		return FS_w_given_bus(owq);
 	} else {
-		OWQ_make( owq_given ) ;
+		OWQ_allocate_struct_and_pointer( owq_given ) ;
 		int bus_number;
 
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
@@ -258,7 +258,7 @@ static int FS_w_local(struct one_wire_query * owq)
 
 static int FS_write_single_lump(struct one_wire_query * owq)
 {
-	OWQ_make( owq_copy ) ;
+	OWQ_allocate_struct_and_pointer( owq_copy ) ;
 
 	int write_error ;
 
@@ -275,7 +275,7 @@ static int FS_write_single_lump(struct one_wire_query * owq)
 
 static int FS_write_a_part(struct one_wire_query * owq)
 {
-	OWQ_make( owq_all ) ;
+	OWQ_allocate_struct_and_pointer( owq_all ) ;
 	struct parsedname * pn = PN(owq) ;
 
 	size_t extension = pn->extension ;
@@ -336,7 +336,7 @@ static int FS_write_a_part(struct one_wire_query * owq)
 
 static int FS_write_aggregate_lump(struct one_wire_query * owq)
 {
-	OWQ_make( owq_copy ) ;
+	OWQ_allocate_struct_and_pointer( owq_copy ) ;
 
 	int write_error ;
 
@@ -355,7 +355,7 @@ static int FS_write_aggregate_lump(struct one_wire_query * owq)
 
 static int FS_write_mixed_part(struct one_wire_query * owq)
 {
-	OWQ_make( owq_copy ) ;
+	OWQ_allocate_struct_and_pointer( owq_copy ) ;
 
 	int write_error = FS_write_single_lump(owq);
 
@@ -369,7 +369,7 @@ static int FS_write_mixed_part(struct one_wire_query * owq)
 
 static int FS_write_in_parts(struct one_wire_query * owq)
 {
-	OWQ_make( owq_single ) ;
+	OWQ_allocate_struct_and_pointer( owq_single ) ;
 	struct parsedname * pn = PN(owq) ;
 	size_t elements = pn->ft->ag->elements;
 
@@ -409,7 +409,7 @@ static int FS_write_in_parts(struct one_wire_query * owq)
 
 static int FS_write_all_bits(struct one_wire_query * owq)
 {
-	OWQ_make( owq_single ) ;
+	OWQ_allocate_struct_and_pointer( owq_single ) ;
 	struct parsedname * pn = PN(owq) ;
 	size_t elements = pn->ft->ag->elements;
 
@@ -431,7 +431,7 @@ static int FS_write_all_bits(struct one_wire_query * owq)
 /* Writing a single bit -- need to read in whole byte and change bit */
 static int FS_write_a_bit(struct one_wire_query * owq)
 {
-	OWQ_make( owq_single ) ;
+	OWQ_allocate_struct_and_pointer( owq_single ) ;
 	struct parsedname * pn = PN(owq) ;
 
 	OWQ_create_shallow_single( owq_single, owq ) ;

@@ -1139,7 +1139,7 @@ static void do_stor(struct ftp_session_s *f,
 	struct timeval transfer_time;
 	struct timeval limit_time = { Global.timeout_ftp, 0 };
     
-	OWQ_make( owq ) ;
+	OWQ_allocate_struct_and_pointer( owq ) ;
     struct parsedname * pn = PN(owq);
 
     size_t size_read;

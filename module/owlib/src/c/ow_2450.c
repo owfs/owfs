@@ -359,7 +359,7 @@ static int FS_w_setvolt(struct one_wire_query * owq)
 static int OW_r_mem( BYTE * p,  size_t size,  off_t offset, struct parsedname *pn)
 {
 	size_t pagesize = 8 ;
-	OWQ_make( owq_read ) ;
+	OWQ_allocate_struct_and_pointer( owq_read ) ;
 
 	OWQ_create_temporary( owq_read, (char *) p, size, offset, pn ) ;
 	return OW_r_mem_crc16_AA( owq_read, 0, pagesize ) ;

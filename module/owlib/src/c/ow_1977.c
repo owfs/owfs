@@ -174,7 +174,7 @@ static int FS_nset(struct one_wire_query * owq)
 {
 	char a[48];
 	char *end;
-	OWQ_make( owq_scratch ) ;
+	OWQ_allocate_struct_and_pointer( owq_scratch ) ;
     union {
 		BYTE b[8];
 		int64_t i;
@@ -196,7 +196,7 @@ static int FS_nset(struct one_wire_query * owq)
 static int FS_set(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-	OWQ_make( owq_scratch ) ;
+	OWQ_allocate_struct_and_pointer( owq_scratch ) ;
     int ret;
 	int oldy ;
 
@@ -251,7 +251,7 @@ static int FS_nuse(struct one_wire_query * owq)
 		BYTE b[8];
 		int64_t i;
 	} xfer;
-	OWQ_make( owq_scratch ) ;
+	OWQ_allocate_struct_and_pointer( owq_scratch ) ;
 
 	bzero(a, 48);
 	bzero(xfer.b, 8);

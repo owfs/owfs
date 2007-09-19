@@ -93,7 +93,7 @@ void *DataHandler(void *v)
 		if (hd->sm.payload == 0) {	/* Bad string -- no trailing null */
 			cm.ret = -EBADMSG;
 		} else {
-			OWQ_make(owq);
+			OWQ_allocate_struct_and_pointer(owq);
 			struct parsedname * pn = PN(owq) ;
             
 			/* Parse the path string */

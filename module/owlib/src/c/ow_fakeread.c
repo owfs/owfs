@@ -107,7 +107,7 @@ static int FS_read_fake_array(struct one_wire_query * owq)
     size_t elements = OWQ_pn(owq).ft->ag->elements ;
     size_t extension ;
     size_t entry_length = FileLength(PN(owq)) ;
-    OWQ_make( owq_single ) ;
+    OWQ_allocate_struct_and_pointer( owq_single ) ;
 
     OWQ_create_shallow_single( owq_single, owq ) ;
 

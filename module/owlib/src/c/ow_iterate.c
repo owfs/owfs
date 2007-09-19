@@ -46,7 +46,7 @@ int OWQ_readwrite_paged(struct one_wire_query * owq, size_t page, size_t pagelen
     size_t size              = OWQ_size(owq) ;
     off_t  offset            = OWQ_offset(owq) + pagelen * page ;
     struct parsedname * pn   = PN(owq) ;
-    OWQ_make( owq_page ) ;
+    OWQ_allocate_struct_and_pointer( owq_page ) ;
 
     /* holds a pointer to a position in owq's buffer */
     OWQ_create_temporary( owq_page, OWQ_buffer(owq), size, offset, pn ) ;

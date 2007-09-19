@@ -1072,7 +1072,7 @@ static int OW_alarmlog(int *t, int *c, off_t offset, struct parsedname *pn)
 {
 	BYTE data[48];
 	int i, j = 0;
-	OWQ_make( owq_alog ) ;
+	OWQ_allocate_struct_and_pointer( owq_alog ) ;
 
 	OWQ_create_temporary( owq_alog, (char *) data, sizeof(data), offset, pn ) ;
 
@@ -1157,7 +1157,7 @@ static int OW_w_run(int state, struct parsedname * pn )
 
 static int OW_small_read( BYTE * buffer, size_t size, off_t location, struct parsedname * pn )
 {
-    OWQ_make( owq_small ) ;
+    OWQ_allocate_struct_and_pointer( owq_small ) ;
     OWQ_create_temporary( owq_small, (char *) buffer, size, location, pn ) ;
     return OW_r_mem_crc16_A5( owq_small, 0, 32 ) ;
 }
@@ -1166,7 +1166,7 @@ static int OW_small_read( BYTE * buffer, size_t size, off_t location, struct par
 static int OW_r_histogram_all(struct one_wire_query * owq)
 {
     size_t pagesize = 32 ;
-    OWQ_make( owq_histo ) ;
+    OWQ_allocate_struct_and_pointer( owq_histo ) ;
     int i;
     BYTE data[HISTOGRAM_DATA_ELEMENTS * HISTOGRAM_DATA_SIZE];
 
@@ -1222,7 +1222,7 @@ static int OW_r_logtemp_all(struct Version *v, struct Mission * mission, struct 
     size_t pagesize = 32 ;
     int i;
     BYTE data[LOG_DATA_ELEMENTS];
-    OWQ_make( owq_log ) ;
+    OWQ_allocate_struct_and_pointer( owq_log ) ;
     
     if (mission->rollover) {
         pass = mission->samples / LOG_DATA_ELEMENTS; // samples/2048

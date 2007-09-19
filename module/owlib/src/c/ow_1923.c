@@ -1006,7 +1006,7 @@ static int OW_startmission(unsigned long mdelay,
     if (cc & 0xFC)
         return -EINVAL;
     if (!(cc & 0x01)) {         /* clock stopped */
-		OWQ_make( owq_dateset ) ;
+		OWQ_allocate_struct_and_pointer( owq_dateset ) ;
 		OWQ_create_temporary( owq_dateset, NULL, 0, 0, pn ) ;
         OWQ_D(owq_dateset) = time(NULL);
         /* start clock */

@@ -235,7 +235,7 @@ static int OW_w_2Dpage( BYTE * data,  size_t size,
 	};
 
 	if (size != 8) { // incomplete page
-		OWQ_make( owq_old ) ;
+		OWQ_allocate_struct_and_pointer( owq_old ) ;
         OWQ_create_temporary( owq_old, (char *) &p[3], 8, offset - pageoff, pn ) ;
 		if (OW_r_mem_simple( owq_old, 0 ,0 ))
 			return 1;

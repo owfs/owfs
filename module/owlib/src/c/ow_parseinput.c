@@ -304,7 +304,7 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
     char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
     char * comma = NULL ; // assignment to avoid compiler warning
     char * buffer_position ;
-	OWQ_make( owq_single ) ;
+	OWQ_allocate_struct_and_pointer( owq_single ) ;
 
     if ( OWQ_offset(owq) ) {
         return -EINVAL ;

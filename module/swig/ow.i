@@ -98,7 +98,7 @@ static void getval( struct one_wire_query * owq ) {
 }
 
 char * get( const char * path ) {
-    OWQ_make(owq);
+    OWQ_allocate_struct_and_pointer(owq);
     char * buf = NULL ;
 
     /* Check the parameters */

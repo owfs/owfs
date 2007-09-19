@@ -52,7 +52,7 @@ struct one_wire_query {
 
 #define OWQ_explode(owq)	(BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)
 
-#define OWQ_make( owq_name )		struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name 
+#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name 
 
 int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, struct one_wire_query * owq ) ;
 int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, size_t size, off_t offset, struct one_wire_query * owq ) ;
