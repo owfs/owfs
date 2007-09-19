@@ -66,7 +66,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	prologue[0] = datalen + 1;
 	prologue[1] = command;
 
-	res = write(in->fd, prologue, 2);
+	res = write(in->file_descriptor, prologue, 2);
 	if (res < 1) {
 		ERROR_CONNECT("Trouble writing data to EtherWeather: %s\n",
 			SAFESTRING(in->name));
@@ -74,7 +74,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 */
         while (left > 0) {
-		res = write(in->fd, &packet[datalen + 2 - left], left);
+		res = write(in->file_descriptor, &packet[datalen + 2 - left], left);
 		if (res < 0) {
 			if (errno == EINTR) {
 				STAT_ADD1_BUS(BUS_write_interrupt_errors, in);
@@ -87,7 +87,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		left -= res;
         }
 
-	tcdrain(in->fd);
+	tcdrain(in->file_descriptor);
 	gettimeofday(&(in->bus_write_time), NULL);
 
 	if (left > 0) {
@@ -102,7 +102,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 
 	// Read the response header
-	if (tcp_read(in->fd, packet, 2, &tvnet) != 2) {
+	if (tcp_read(in->file_descriptor, packet, 2, &tvnet) != 2) {
 		LEVEL_CONNECT("EtherWeather_command header read error\n");
 		free(packet);
 		return -EIO;
@@ -117,7 +117,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 
 	// Then read any data
 	if (datalen > 0) {
-		if (tcp_read(in->fd, odata, datalen, &tvnet) != (ssize_t) datalen) {
+		if (tcp_read(in->file_descriptor, odata, datalen, &tvnet) != (ssize_t) datalen) {
 			LEVEL_CONNECT("EtherWeather_command data read error\n");
 			free(packet);
 			return -EIO;
@@ -212,9 +212,9 @@ static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay
 
 
 static void EtherWeather_close(struct connection_in *in) {
-	if (in->fd >= 0) {
-		close(in->fd);
-		in->fd = -1;
+	if (in->file_descriptor >= 0) {
+		close(in->file_descriptor);
+		in->file_descriptor = -1;
 	}
 	FreeClientAddr(in);
 }
@@ -272,7 +272,7 @@ int EtherWeather_detect(struct connection_in *in) {
 
 	if (ClientAddr(in->name, in))
 		return -1;
-	if ((pn.in->fd = ClientConnect(in)) < 0)
+	if ((pn.in->file_descriptor = ClientConnect(in)) < 0)
 		return -EIO;
 
 

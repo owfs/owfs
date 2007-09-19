@@ -81,7 +81,7 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 	dhs->cm->ret = 0;
 
 	TOCLIENTLOCK(dhs->hd);
-	ToClient(dhs->hd->fd, dhs->cm, retbuffer);	// send this directory element
+	ToClient(dhs->hd->file_descriptor, dhs->cm, retbuffer);	// send this directory element
 	gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
 	TOCLIENTUNLOCK(dhs->hd);
 }

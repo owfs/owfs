@@ -33,7 +33,7 @@ $Id$
 #undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
 #include <dev/usb/usb.h>
 struct usb_dev_handle {
-	int fd;
+	int file_descriptor;
 	struct usb_bus *bus;
 	struct usb_device *device;
 	int config;
@@ -251,7 +251,7 @@ int BSD_usb_clear_halt(usb_dev_handle * dev, unsigned int ep)
 	USETW(ctl_req.ucr_request.wLength, 0);
 	ctl_req.ucr_flags = 0;
 
-	if ((ret = ioctl(dev->fd, USB_DO_REQUEST, &ctl_req)) < 0)
+	if ((ret = ioctl(dev->file_descriptor, USB_DO_REQUEST, &ctl_req)) < 0)
 		LEVEL_DATA("DS9490_clear_halt:  failed for %d", ep);
 
 	return ret;

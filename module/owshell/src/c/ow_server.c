@@ -14,10 +14,10 @@ $Id$
 
 #include "owshell.h"
 
-static int FromServer(int fd, struct client_msg *cm, char *msg,
+static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
 					  size_t size);
-static void *FromServerAlloc(int fd, struct client_msg *cm);
-static int ToServer(int fd, struct server_msg *sm,
+static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
+static int ToServer(int file_descriptor, struct server_msg *sm,
 					struct serverpackage *sp);
 static uint32_t SetupSemi(void);
 
@@ -196,7 +196,7 @@ int ServerPresence(ASCII * path)
 }
 
 /* read from server, free return pointer if not Null */
-static void *FromServerAlloc(int fd, struct client_msg *cm)
+static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 {
 	char *msg;
 	int ret;
@@ -204,7 +204,7 @@ static void *FromServerAlloc(int fd, struct client_msg *cm)
 
 	do {						/* loop until non delay message (payload>=0) */
 		//printf("OW_SERVER loop1\n");
-		ret = tcp_read(fd, cm, sizeof(struct client_msg), &tv);
+		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
 		if (ret != sizeof(struct client_msg)) {
 			memset(cm, 0, sizeof(struct client_msg));
 			cm->ret = -EIO;
@@ -230,7 +230,7 @@ static void *FromServerAlloc(int fd, struct client_msg *cm)
 	}
 
 	if ((msg = (char *) malloc((size_t) cm->payload))) {
-		ret = tcp_read(fd, msg, (size_t) (cm->payload), &tv);
+		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
 		if (ret != cm->payload) {
 //printf("FromServer couldn't read payload\n");
 			cm->payload = 0;
@@ -246,7 +246,7 @@ static void *FromServerAlloc(int fd, struct client_msg *cm)
 
 /* Read from server -- return negative on error,
     return 0 or positive giving size of data element */
-static int FromServer(int fd, struct client_msg *cm, char *msg,
+static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
 					  size_t size)
 {
 	size_t rtry;
@@ -255,7 +255,7 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 
 	do {						// read regular header, or delay (delay when payload<0)
 		//printf("OW_SERVER loop2\n");
-		ret = tcp_read(fd, cm, sizeof(struct client_msg), &tv);
+		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
 		if (ret != sizeof(struct client_msg)) {
 			//printf("OW_SERVER loop2 bad\n");
 			cm->size = 0;
@@ -277,7 +277,7 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 		return 0;				// No payload, done.
 
 	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
-	ret = tcp_read(fd, msg, rtry, &tv);	// read expected payload now.
+	ret = tcp_read(file_descriptor, msg, rtry, &tv);	// read expected payload now.
 	if (ret != rtry) {
 		cm->ret = -EIO;
 		return -EIO;
@@ -286,7 +286,7 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. read it in and discard
 		size_t d = cm->payload - size;
 		char extra[d];
-		ret = tcp_read(fd, extra, d, &tv);
+		ret = tcp_read(file_descriptor, extra, d, &tv);
 		if (ret != d) {
 			cm->ret = -EIO;
 			return -EIO;
@@ -297,8 +297,8 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 }
 
 // should be const char * data but iovec has problems with const arguments
-//static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) {
-static int ToServer(int fd, struct server_msg *sm,
+//static int ToServer( int file_descriptor, struct server_msg * sm, const char * path, const char * data, int datasize ) {
+static int ToServer(int file_descriptor, struct server_msg *sm,
 					struct serverpackage *sp)
 {
 	int payload = 0;
@@ -346,7 +346,7 @@ static int ToServer(int fd, struct server_msg *sm,
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(fd, io,
+	return writev(file_descriptor, io,
 				  5) !=
 		(ssize_t) (payload + sizeof(struct server_msg) +
 				   sp->tokens * sizeof(union antiloop));

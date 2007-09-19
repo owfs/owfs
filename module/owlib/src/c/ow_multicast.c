@@ -47,17 +47,17 @@ int FS_FindHA7(void)
 	for (now = ai; now; now = now->ai_next) {
 		BYTE buffer[HA7_response_len];
 		struct timeval tv = { 5, 0 };
-		int fd;
+		int file_descriptor;
 		struct sockaddr_in from;
 		ASCII name[64];
 		struct connection_in *in;
 		printf("Finding...\n");
-		if ((fd =
+		if ((file_descriptor =
 			 socket(now->ai_family, now->ai_socktype,
 					now->ai_protocol)) < 0)
 			continue;
-		printf("Finding fd=%d\n", fd);
-		if (sendto(fd, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
+		printf("Finding file_descriptor=%d\n", file_descriptor);
+		if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
 			!= 4) {
 			ERROR_CONNECT("Trouble sending broadcast message\n");
 			continue;
@@ -69,7 +69,7 @@ int FS_FindHA7(void)
 		/* now read */
 
 		if ((n =
-			 tcp_read(fd, buffer, HA7_response_len,
+			 tcp_read(file_descriptor, buffer, HA7_response_len,
 					  &tv)) != HA7_response_len) {
 			LEVEL_CONNECT("HA7 response bad length\n");
 			printf("HA7 response bad length %d\n", n);

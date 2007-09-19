@@ -49,7 +49,7 @@ int FromClient(struct handlerdata *hd)
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
 	/* read header */
-	if (tcp_read(hd->fd, &hd->sm, sizeof(struct server_msg), &tv) !=
+	if (tcp_read(hd->file_descriptor, &hd->sm, sizeof(struct server_msg), &tv) !=
 		sizeof(struct server_msg)) {
 		hd->sm.type = msg_error;
 		return -EIO;
@@ -88,7 +88,7 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	/* read in data */
-	if (tcp_read(hd->fd, msg, trueload, &tv) != trueload) {	/* read in the expected data */
+	if (tcp_read(hd->file_descriptor, msg, trueload, &tv) != trueload) {	/* read in the expected data */
 		hd->sm.type = msg_error;
 		free(msg);
 		return -EIO;

@@ -754,7 +754,7 @@ static int DS2480_write(const BYTE * buf, const size_t size,
 	while (sl > 0) {
 		if (!pn->in)
 			break;
-		r = write(pn->in->fd, &buf[size - sl], sl);
+		r = write(pn->in->file_descriptor, &buf[size - sl], sl);
 		if (r < 0) {
 			if (errno == EINTR) {
 				STAT_ADD1_BUS(BUS_write_interrupt_errors, pn->in);
@@ -765,7 +765,7 @@ static int DS2480_write(const BYTE * buf, const size_t size,
 		sl -= r;
 	}
 	if (pn->in) {
-		tcdrain(pn->in->fd);
+		tcdrain(pn->in->file_descriptor);
 		gettimeofday(&(pn->in->bus_write_time), NULL);
 	}
 	if (sl > 0) {
@@ -801,7 +801,7 @@ static int DS2480_read(BYTE * buf, const size_t size,
 		}
 		// set a descriptor to wait for a character available
 		FD_ZERO(&fdset);
-		FD_SET(pn->in->fd, &fdset);
+		FD_SET(pn->in->file_descriptor, &fdset);
 		tval.tv_sec = Global.timeout_serial;
 		tval.tv_usec = 0;
 		/* This timeout need to be pretty big for some reason.
@@ -827,15 +827,15 @@ static int DS2480_read(BYTE * buf, const size_t size,
 		 */
 
 		// if byte available read or return bytes read
-		rc = select(pn->in->fd + 1, &fdset, NULL, NULL, &tval);
+		rc = select(pn->in->file_descriptor + 1, &fdset, NULL, NULL, &tval);
 		if (rc > 0) {
-			if (FD_ISSET(pn->in->fd, &fdset) == 0) {
+			if (FD_ISSET(pn->in->file_descriptor, &fdset) == 0) {
 				rc = -EIO;		/* error */
 				STAT_ADD1(DS2480_read_fd_isset);
 				break;
 			}
 			update_max_delay(pn);
-			r = read(pn->in->fd, &buf[size - rl], rl);
+			r = read(pn->in->file_descriptor, &buf[size - rl], rl);
 			if (r < 0) {
 				if (errno == EINTR) {
 					/* read() was interrupted, try again */

@@ -240,14 +240,14 @@ static int LINK_read(BYTE * buf, const size_t size,
         STAT_ADD1(DS2480_read_null);
         return -EIO ;
     }
-    //printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->in->fd,(long int)Global.timeout_serial);
+    //printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->in->file_descriptor,(long int)Global.timeout_serial);
     while (bytes_left > 0) {
         int select_return = 0 ;
         fd_set fdset;
         struct timeval tval;
 		// set a descriptor to wait for a character available
 		FD_ZERO(&fdset);
-		FD_SET(pn->in->fd, &fdset);
+		FD_SET(pn->in->file_descriptor, &fdset);
 		tval.tv_sec = Global.timeout_serial;
 		tval.tv_usec = 0;
 		/* This timeout need to be pretty big for some reason.
@@ -259,17 +259,17 @@ static int LINK_read(BYTE * buf, const size_t size,
 		 */
 
 		// if byte available read or return bytes read
-        select_return = select(pn->in->fd + 1, &fdset, NULL, NULL, &tval);
+        select_return = select(pn->in->file_descriptor + 1, &fdset, NULL, NULL, &tval);
         //printf("Link Read select = %d\n",select_return) ;
         if (select_return > 0) {
             ssize_t read_return ;
-			if (FD_ISSET(pn->in->fd, &fdset) == 0) {
+			if (FD_ISSET(pn->in->file_descriptor, &fdset) == 0) {
                 error_return = -EIO;		/* error */
 				STAT_ADD1(DS2480_read_fd_isset);
 				break;
 			}
 //            update_max_delay(pn);
-            read_return = read(pn->in->fd, &buf[size - bytes_left], bytes_left);
+            read_return = read(pn->in->file_descriptor, &buf[size - bytes_left], bytes_left);
             Debug_Bytes( "LINK read",&buf[size - bytes_left], read_return ) ;
             if (read_return < 0) {
 				if (errno == EINTR) {
@@ -324,9 +324,9 @@ static int LINK_write(const BYTE * buf, const size_t size,
 
     Debug_Bytes( "LINK write", buf, size) ;
 //    COM_flush(pn) ;
-    //printf("Link write attempting %d bytes on %d\n",(int)size,pn->in->fd) ;
+    //printf("Link write attempting %d bytes on %d\n",(int)size,pn->in->file_descriptor) ;
     while ( left_to_write > 0 ) {
-        ssize_t write_or_error = write(pn->in->fd, buf, left_to_write);
+        ssize_t write_or_error = write(pn->in->file_descriptor, buf, left_to_write);
         Debug_Bytes("Link write",buf,left_to_write);
         //printf("Link write = %d\n",(int)write_or_error);
         if (write_or_error < 0) {
@@ -338,7 +338,7 @@ static int LINK_write(const BYTE * buf, const size_t size,
 	LEVEL_DEBUG("ltow %d woe %d\n",left_to_write,write_or_error);
         left_to_write -= write_or_error ;
     }
-    tcdrain(pn->in->fd);
+    tcdrain(pn->in->file_descriptor);
     gettimeofday(&(pn->in->bus_write_time), NULL);
 	
 	return 0;

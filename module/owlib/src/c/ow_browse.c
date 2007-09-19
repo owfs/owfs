@@ -219,18 +219,18 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 				if (DNSServiceResolve
 					(&sr, 0, 0, name, type, domain, ResolveBack,
 					 bs) == kDNSServiceErr_NoError) {
-					int fd = DNSServiceRefSockFD(sr);
+					int file_descriptor = DNSServiceRefSockFD(sr);
 					DNSServiceErrorType err = kDNSServiceErr_Unknown;
-					if (fd >= 0) {
+					if (file_descriptor >= 0) {
 						while (1) {
 							fd_set readfd;
 							struct timeval tv = { 120, 0 };
 
 							FD_ZERO(&readfd);
-							FD_SET(fd, &readfd);
-							if (select(fd + 1, &readfd, NULL, NULL, &tv) >
+							FD_SET(file_descriptor, &readfd);
+							if (select(file_descriptor + 1, &readfd, NULL, NULL, &tv) >
 								0) {
-								if (FD_ISSET(fd, &readfd)) {
+								if (FD_ISSET(file_descriptor, &readfd)) {
 									err = DNSServiceProcessResult(sr);
 								}
 							} else if (errno == EINTR) {

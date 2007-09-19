@@ -787,12 +787,12 @@ void OWLIB_can_finish_end(void);
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
-ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval *ptv);
-void tcp_read_flush(int fd) ;
-int tcp_wait(int fd, const struct timeval *ptv);
+ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
+void tcp_read_flush(int file_descriptor) ;
+int tcp_wait(int file_descriptor, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
-void ServerProcess(void (*HandlerRoutine) (int fd),
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 				   void (*Exit) (int errcode));
 void FreeClientAddr(struct connection_in *in);
 int ServerOutSetup(struct connection_out *out);

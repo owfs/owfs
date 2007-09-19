@@ -70,7 +70,7 @@ int LINKE_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	if ((pn.in->fd = ClientConnect(in)) < 0)
+	if ((pn.in->file_descriptor = ClientConnect(in)) < 0)
 		return -EIO;
 
 	in->Adapter = adapter_LINK_E;
@@ -90,7 +90,7 @@ static int LINK_reset(const struct parsedname *pn)
 	BYTE resp[8];
 	int ret ;
 
-    tcp_read_flush( pn->in->fd ) ;
+    tcp_read_flush( pn->in->file_descriptor ) ;
 
     // Send 'r' reset
     if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
@@ -184,7 +184,7 @@ static int LINK_next_both(struct device_search *ds,
 static int LINK_read(BYTE * buf, const size_t size,
 					 const struct parsedname *pn)
 {
-    if ( tcp_read(pn->in->fd, buf, size, &tvnet) != (ssize_t) size ) {
+    if ( tcp_read(pn->in->file_descriptor, buf, size, &tvnet) != (ssize_t) size ) {
         LEVEL_CONNECT("LINK_read (ethernet) error\n");
         return -EIO ;
 	}
@@ -202,7 +202,7 @@ static int LINK_write(const BYTE * buf, const size_t size,
 {
 	ssize_t r ;
     //Debug_Bytes( "LINK write", buf, size) ;
-    r = write(pn->in->fd, buf, size);
+    r = write(pn->in->file_descriptor, buf, size);
 
     if (r < 0) {
         ERROR_CONNECT("Trouble writing data to LINK: %s\n",
@@ -210,7 +210,7 @@ static int LINK_write(const BYTE * buf, const size_t size,
         return r ;
     }
 
-    tcdrain(pn->in->fd);
+    tcdrain(pn->in->file_descriptor);
     gettimeofday(&(pn->in->bus_write_time), NULL);
 	
     if (r < (ssize_t) size) {
@@ -283,7 +283,7 @@ static int LINKE_preamble(const struct parsedname *pn)
 {
 	BYTE data[6];
 	struct timeval tvnetfirst = { Global.timeout_network, 0, };
-	if (tcp_read(pn->in->fd, data, 6, &tvnetfirst) != 6)
+	if (tcp_read(pn->in->file_descriptor, data, 6, &tvnetfirst) != 6)
 		return -EIO;
 	LEVEL_CONNECT("Good preamble\n");
 	return 0;
@@ -291,9 +291,9 @@ static int LINKE_preamble(const struct parsedname *pn)
 
 static void LINKE_close(struct connection_in *in)
 {
-	if (in->fd >= 0) {
-		close(in->fd);
-		in->fd = -1;
+	if (in->file_descriptor >= 0) {
+		close(in->file_descriptor);
+		in->file_descriptor = -1;
 	}
 	FreeClientAddr(in);
 }

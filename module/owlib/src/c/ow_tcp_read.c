@@ -19,7 +19,7 @@ $Id$
 #include "ow_counters.h"
 
 /* Wait for something to be readable or timeout */
-int tcp_wait(int fd, const struct timeval *ptv)
+int tcp_wait(int file_descriptor, const struct timeval *ptv)
 {
 	int rc;
 	fd_set readset;
@@ -27,11 +27,11 @@ int tcp_wait(int fd, const struct timeval *ptv)
 
 	/* Initialize readset */
 	FD_ZERO(&readset);
-	FD_SET(fd, &readset);
+	FD_SET(file_descriptor, &readset);
 
 	while (1) {
 		// Read if it doesn't timeout first
-		rc = select(fd + 1, &readset, NULL, NULL, &tv);
+		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (rc < 0) {
 			if (errno == EINTR)
 				continue;		/* interrupted */
@@ -40,7 +40,7 @@ int tcp_wait(int fd, const struct timeval *ptv)
 			return -EAGAIN;		/* timeout */
 		} else {
 			// Is there something to read?
-			if (FD_ISSET(fd, &readset)) {
+			if (FD_ISSET(file_descriptor, &readset)) {
 				break;
 			}
 		}
@@ -50,7 +50,7 @@ int tcp_wait(int fd, const struct timeval *ptv)
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
-ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
+ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv)
 {
 	size_t nleft;
 	ssize_t nread;
@@ -65,18 +65,18 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 
 		/* Initialize readset */
 		FD_ZERO(&readset);
-		FD_SET(fd, &readset);
+		FD_SET(file_descriptor, &readset);
 
 		/* Read if it doesn't timeout first */
-		rc = select(fd + 1, &readset, NULL, NULL, &tv);
+		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (rc > 0) {
 			/* Is there something to read? */
-			if (FD_ISSET(fd, &readset) == 0) {
+			if (FD_ISSET(file_descriptor, &readset) == 0) {
 				//STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
-			if ((nread = read(fd, ptr, nleft)) < 0) {
+			if ((nread = read(file_descriptor, ptr, nleft)) < 0) {
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
@@ -109,22 +109,22 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 	return (n - nleft);			/* return >= 0 */
 }
 
-void tcp_read_flush(int fd)
+void tcp_read_flush(int file_descriptor)
 {
     ASCII buffer[16] ;
     ssize_t nread ;
-    int flags = fcntl( fd, F_GETFL, 0 ) ;
+    int flags = fcntl( file_descriptor, F_GETFL, 0 ) ;
 
     // Apparently you can test for GET_FL success like this
     // see http://www.informit.com/articles/article.asp?p=99706&seqNum=13&rl=1
     if ( flags<0 ) return ;
 
-    if ( fcntl(fd, F_SETFL, flags|O_NONBLOCK ) < 0 ) return ;
+    if ( fcntl(file_descriptor, F_SETFL, flags|O_NONBLOCK ) < 0 ) return ;
 
-    while ( ( nread = read( fd, (BYTE *)buffer, 16 ) ) > 0 ) {
+    while ( ( nread = read( file_descriptor, (BYTE *)buffer, 16 ) ) > 0 ) {
         Debug_Bytes("tcp_read_flush",(BYTE *)buffer,nread) ;
         continue;
     }
 
-    fcntl( fd, F_SETFL, flags ) ;
+    fcntl( file_descriptor, F_SETFL, flags ) ;
 }

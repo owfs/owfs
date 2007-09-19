@@ -40,7 +40,7 @@ $Id$
 /* Send fully configured message back to client.
    data is optional and length depends on "payload"
  */
-int ToClient(int fd, struct client_msg *cm, char *data)
+int ToClient(int file_descriptor, struct client_msg *cm, char *data)
 {
 	// note data should be (const char *) but iovec complains about const arguments 
 	int nio = 1;
@@ -67,7 +67,7 @@ int ToClient(int fd, struct client_msg *cm, char *data)
 	cm->ret = htonl(cm->ret);
 	cm->sg = htonl(cm->sg);
 
-	ret = writev(fd, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
+	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 
 	cm->payload = ntohl(cm->payload);
 	cm->size = ntohl(cm->size);

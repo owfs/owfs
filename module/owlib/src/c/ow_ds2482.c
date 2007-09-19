@@ -47,8 +47,8 @@ $Id$
 
 static int DS2482_next_both(struct device_search *ds,
 							const struct parsedname *pn);
-static int DS2482_triple(BYTE * bits, int direction, int fd);
-static int DS2482_send_and_get(int fd, const BYTE wr, BYTE * rd);
+static int DS2482_triple(BYTE * bits, int direction, int file_descriptor);
+static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd);
 static int DS2482_reset(const struct parsedname *pn);
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
@@ -57,7 +57,7 @@ static void DS2482_setroutines(struct interface_routines *f);
 static int HeadChannel(struct connection_in *in);
 static int CreateChannels(struct connection_in *in);
 static int DS2482_channel_select(const struct parsedname *pn);
-static int DS2482_readstatus(BYTE * c, int fd, unsigned long int min_usec,
+static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int min_usec,
 							 unsigned long int max_usec);
 static int SetConfiguration(BYTE c, struct connection_in *in);
 static void DS2482_close(struct connection_in *in);
@@ -136,11 +136,11 @@ int DS2482_detect(struct connection_in *in)
 {
 	int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, };	// the last 4 are -800 only
 	int i;
-	int fd;
+	int file_descriptor;
 
 	/* open the i2c port */
-	fd = open(in->name, O_RDWR);
-	if (fd < 0) {
+	file_descriptor = open(in->name, O_RDWR);
+	if (file_descriptor < 0) {
 		ERROR_CONNECT("Could not open i2c device %s\n", in->name);
 		return -ENODEV;
 	}
@@ -151,7 +151,7 @@ int DS2482_detect(struct connection_in *in)
 	/* cycle though the possible addresses */
 	for (i = 0; i < 8; ++i) {
 		/* set the candidate address */
-		if (ioctl(fd, I2C_SLAVE, test_address[i]) < 0) {
+		if (ioctl(file_descriptor, I2C_SLAVE, test_address[i]) < 0) {
 			ERROR_CONNECT("Cound not set trial i2c address to %.2X\n",
 						  test_address[i]);
 		} else {
@@ -159,7 +159,7 @@ int DS2482_detect(struct connection_in *in)
 			LEVEL_CONNECT("Found an i2c device at %s address %d\n",
 						  in->name, test_address[i]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
-			in->connin.i2c.fd = fd;
+			in->connin.i2c.file_descriptor = file_descriptor;
 			in->connin.i2c.index = 0;
 			in->connin.i2c.channels = 1;
 			in->connin.i2c.current = 0;
@@ -174,8 +174,8 @@ int DS2482_detect(struct connection_in *in)
 			in->Adapter = adapter_DS2482_100;
 
 			/* write the RESET code */
-			if (i2c_smbus_write_byte(fd, DS2482_CMD_RESET)	// reset
-				|| DS2482_readstatus(&c, fd, 1, 2)	// pause .5 usec then read status
+			if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_RESET)	// reset
+				|| DS2482_readstatus(&c, file_descriptor, 1, 2)	// pause .5 usec then read status
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
 				LEVEL_CONNECT
@@ -194,8 +194,8 @@ int DS2482_detect(struct connection_in *in)
 		}
 	}
 	/* fellthough, no device found */
-	close(fd);
-	in->connin.i2c.fd = -1;
+	close(file_descriptor);
+	in->connin.i2c.file_descriptor = -1;
 	return -ENODEV;
 }
 
@@ -204,23 +204,23 @@ static int DS2482_redetect(const struct parsedname *pn)
 {
 	struct connection_in *head = pn->in->connin.i2c.head;
 	int address = head->connin.i2c.i2c_address;
-	int fd;
+	int file_descriptor;
 
 	/* open the i2c port */
-	fd = open(head->name, O_RDWR);
-	if (fd < 0) {
+	file_descriptor = open(head->name, O_RDWR);
+	if (file_descriptor < 0) {
 		ERROR_CONNECT("Could not open i2c device %s\n", head->name);
 		return -ENODEV;
 	}
 
 	/* address is known */
-	if (ioctl(fd, I2C_SLAVE, head->connin.i2c.i2c_address) < 0) {
+	if (ioctl(file_descriptor, I2C_SLAVE, head->connin.i2c.i2c_address) < 0) {
 		ERROR_CONNECT("Cound not set i2c address to %.2X\n", address);
 	} else {
 		BYTE c;
 		/* write the RESET code */
-		if (i2c_smbus_write_byte(fd, DS2482_CMD_RESET)	// reset
-			|| DS2482_readstatus(&c, fd, 1, 2)	// pause .5 usec then read status
+		if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_RESET)	// reset
+			|| DS2482_readstatus(&c, file_descriptor, 1, 2)	// pause .5 usec then read status
 			|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 			) {
 			LEVEL_CONNECT
@@ -228,7 +228,7 @@ static int DS2482_redetect(const struct parsedname *pn)
 				 head->name, address);
 		} else {
 			head->connin.i2c.current = 0;
-			head->connin.i2c.fd = fd;
+			head->connin.i2c.file_descriptor = file_descriptor;
 			head->connin.i2c.configchip = 0x00;	// default configuration register after RESET
 			LEVEL_CONNECT
 				("i2c device at %s address %d reset successfully\n",
@@ -246,7 +246,7 @@ static int DS2482_redetect(const struct parsedname *pn)
 		}
 	}
 	/* fellthough, no device found */
-	close(fd);
+	close(file_descriptor);
 	return -ENODEV;
 }
 
@@ -255,14 +255,14 @@ static int DS2482_redetect(const struct parsedname *pn)
 /* will read at min time, avg time, max time, and another 50% */
 /* returns 0 good, 1 bad */
 /* tests to make sure bus not busy */
-static int DS2482_readstatus(BYTE * c, int fd, unsigned long int min_usec,
+static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int min_usec,
 							 unsigned long int max_usec)
 {
 	unsigned long int delta_usec = (max_usec - min_usec + 1) / 2;
 	int i = 0;
 	UT_delay_us(min_usec);		// at least get minimum out of the way
 	do {
-		int ret = i2c_smbus_read_byte(fd);
+		int ret = i2c_smbus_read_byte(file_descriptor);
 		if (ret < 0) {
 			LEVEL_DEBUG
 				("Reading DS2482 status problem min=%lu max=%lu i=%d ret=%d\n",
@@ -291,7 +291,7 @@ static int DS2482_next_both(struct device_search *ds,
 	int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 	int bit_number;
 	int last_zero = -1;
-	int fd = pn->in->connin.i2c.head->connin.i2c.fd;
+	int file_descriptor = pn->in->connin.i2c.head->connin.i2c.file_descriptor;
 	BYTE bits[3];
 	int ret;
 
@@ -317,7 +317,7 @@ static int DS2482_next_both(struct device_search *ds,
 			search_direction = (bit_number == ds->LastDiscrepancy) ? 1 : 0;
 		}
 		/* Appropriate search command */
-		if ((ret = DS2482_triple(bits, search_direction, fd)))
+		if ((ret = DS2482_triple(bits, search_direction, file_descriptor)))
 			return ret;
 		if (bits[0] || bits[1] || bits[2]) {
 			if (bits[0] && bits[1]) {	/* 1,1 */
@@ -354,21 +354,21 @@ static int DS2482_next_both(struct device_search *ds,
 static int DS2482_reset(const struct parsedname *pn)
 {
 	BYTE c;
-	int fd = pn->in->connin.i2c.head->connin.i2c.fd;
+	int file_descriptor = pn->in->connin.i2c.head->connin.i2c.file_descriptor;
 
 	/* Make sure we're using the correct channel */
 	if (DS2482_channel_select(pn))
 		return -EIO;
 
 	/* write the RESET code */
-	if (i2c_smbus_write_byte(fd, DS2482_CMD_1WIRE_RESET))
+	if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_1WIRE_RESET))
 		return -EIO;
 
 	/* wait */
 	// rstl+rsth+.25 usec
 
 	/* read status */
-	if (DS2482_readstatus(&c, fd, 1125, 1250))
+	if (DS2482_readstatus(&c, file_descriptor, 1125, 1250))
 		return -EIO;				// 8 * Tslot
 
 	pn->in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
@@ -380,7 +380,7 @@ static int DS2482_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn)
 {
-	int fd = pn->in->connin.i2c.head->connin.i2c.fd;
+	int file_descriptor = pn->in->connin.i2c.head->connin.i2c.file_descriptor;
 	size_t i;
 
 	/* Make sure we're using the correct channel */
@@ -388,33 +388,33 @@ static int DS2482_sendback_data(const BYTE * data, BYTE * resp,
 		return -1;
 
 	for (i = 0; i < len; ++i) {
-		if (DS2482_send_and_get(fd, data[i], &resp[i]))
+		if (DS2482_send_and_get(file_descriptor, data[i], &resp[i]))
 			return 1;
 	}
 	return 0;
 }
 
 /* Single byte -- assumes channel selection already done */
-static int DS2482_send_and_get(int fd, const BYTE wr, BYTE * rd)
+static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd)
 {
 	int read_back;
 	BYTE c;
 
 	/* Write data byte */
-	if (i2c_smbus_write_byte_data(fd, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0)
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0)
 		return 1;
 
 	/* read status for done */
-	if (DS2482_readstatus(&c, fd, 530, 585))
+	if (DS2482_readstatus(&c, file_descriptor, 530, 585))
 		return -1;
 
 	/* Select the data register */
 	if (i2c_smbus_write_byte_data
-		(fd, DS2482_CMD_SET_READ_PTR, DS2482_PTR_CODE_DATA) < 0)
+		(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_PTR_CODE_DATA) < 0)
 		return 1;
 
 	/* Read the data byte */
-	read_back = i2c_smbus_read_byte(fd);
+	read_back = i2c_smbus_read_byte(file_descriptor);
 
 	if (read_back < 0)
 		return 1;
@@ -467,7 +467,7 @@ static int CreateChannels(struct connection_in *in)
 	return 0;
 }
 
-static int DS2482_triple(BYTE * bits, int direction, int fd)
+static int DS2482_triple(BYTE * bits, int direction, int file_descriptor)
 {
 	/* 3 bits in bits */
 	BYTE c;
@@ -475,11 +475,11 @@ static int DS2482_triple(BYTE * bits, int direction, int fd)
 	LEVEL_DEBUG("-> TRIPLET attempt direction %d\n", direction);
 	/* Write TRIPLE command */
 	if (i2c_smbus_write_byte_data
-		(fd, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0)
+		(file_descriptor, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0)
 		return 1;
 
 	/* read status */
-	if (DS2482_readstatus(&c, fd, 198, 219))
+	if (DS2482_readstatus(&c, file_descriptor, 198, 219))
 		return -1;				// 250usec = 3*Tslot
 
 	bits[0] = (c & DS2482_REG_STS_SBR) != 0;
@@ -493,7 +493,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 {
 	struct connection_in *head = pn->in->connin.i2c.head;
 	int chan = pn->in->connin.i2c.index;
-	int fd = head->connin.i2c.fd;
+	int file_descriptor = head->connin.i2c.file_descriptor;
 	BYTE config = pn->in->connin.i2c.configreg;
 	int read_back;
 	/**
@@ -506,7 +506,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	static const BYTE R_chan[8] =
 		{ 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
-	if (fd < 0) {
+	if (file_descriptor < 0) {
 		LEVEL_CONNECT("Calling a closed i2c channel (%d)\n", chan);
 		return -EINVAL;
 	}
@@ -518,11 +518,11 @@ static int DS2482_channel_select(const struct parsedname *pn)
 
 	/* Select command */
 	if (i2c_smbus_write_byte_data
-		(fd, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0)
+		(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0)
 		return -EIO;
 
 	/* Read back and confirm */
-	read_back = i2c_smbus_read_byte(fd);
+	read_back = i2c_smbus_read_byte(file_descriptor);
 	if (read_back < 0)
 		return -ENODEV;
 	if (((BYTE) read_back) != R_chan[chan])
@@ -544,14 +544,14 @@ static int DS2482_channel_select(const struct parsedname *pn)
 static int SetConfiguration(BYTE c, struct connection_in *in)
 {
 	struct connection_in *head = in->connin.i2c.head;
-	int fd = head->connin.i2c.fd;
+	int file_descriptor = head->connin.i2c.file_descriptor;
 	int read_back;
 
 	/* Write, readback, and compare configuration register */
 	/* Logic error fix from Uli Raich */
 	if (i2c_smbus_write_byte_data
-		(fd, DS2482_CMD_WRITE_CONFIG, c | ((~c) << 4))
-		|| (read_back = i2c_smbus_read_byte(fd)) < 0
+		(file_descriptor, DS2482_CMD_WRITE_CONFIG, c | ((~c) << 4))
+		|| (read_back = i2c_smbus_read_byte(file_descriptor)) < 0
 		|| ((BYTE) read_back != c)
 		) {
 		head->connin.i2c.configchip = 0xFF;	// bad value to trigger retry
@@ -578,7 +578,7 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 
 	/* send and get byte (and trigger strong pull-up */
 	if (DS2482_send_and_get
-		(pn->in->connin.i2c.head->connin.i2c.fd, byte, resp))
+		(pn->in->connin.i2c.head->connin.i2c.file_descriptor, byte, resp))
 		return -1;
 
 	UT_delay(delay);
@@ -592,9 +592,9 @@ static void DS2482_close(struct connection_in *in)
 	if (in == NULL)
 		return;
 	head = in->connin.i2c.head;
-	if (head->connin.i2c.fd < 0)
+	if (head->connin.i2c.file_descriptor < 0)
 		return;
-	close(head->connin.i2c.fd);
-	head->connin.i2c.fd = -1;
+	close(head->connin.i2c.file_descriptor);
+	head->connin.i2c.file_descriptor = -1;
 }
 #endif							/* OW_I2C */

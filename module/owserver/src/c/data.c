@@ -173,7 +173,7 @@ void *DataHandler(void *v)
 
 	TOCLIENTLOCK(hd);
 	if (cm.ret != -EIO)
-		ToClient(hd->fd, &cm, retbuffer);
+		ToClient(hd->file_descriptor, &cm, retbuffer);
 	timerclear(&(hd->tv));
 	TOCLIENTUNLOCK(hd);
 	if (retbuffer)

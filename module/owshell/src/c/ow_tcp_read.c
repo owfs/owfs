@@ -18,7 +18,7 @@ $Id$
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
-ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
+ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv)
 {
 	size_t nleft;
 	ssize_t nread;
@@ -33,18 +33,18 @@ ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval * ptv)
 
 		/* Initialize readset */
 		FD_ZERO(&readset);
-		FD_SET(fd, &readset);
+		FD_SET(file_descriptor, &readset);
 
 		/* Read if it doesn't timeout first */
-		rc = select(fd + 1, &readset, NULL, NULL, &tv);
+		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (rc > 0) {
 			/* Is there something to read? */
-			if (FD_ISSET(fd, &readset) == 0) {
+			if (FD_ISSET(file_descriptor, &readset) == 0) {
 				//STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
-			if ((nread = read(fd, ptr, nleft)) < 0) {
+			if ((nread = read(file_descriptor, ptr, nleft)) < 0) {
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */

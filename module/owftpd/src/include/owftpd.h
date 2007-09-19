@@ -276,7 +276,7 @@ void ftp_session_destroy(struct ftp_session_s *f);
 struct ftp_listener_s {
 
 	/* file descriptor incoming connections arrive on */
-	int fd;
+	int file_descriptor;
 
 	/* maximum number of connections */
 	int max_connections;

@@ -82,20 +82,20 @@ static int DS9097_reset(const struct parsedname *pn)
 	BYTE resetbyte = 0xF0;
 	BYTE c;
 	struct termios term;
-	int fd = pn->in->fd;
+	int file_descriptor = pn->in->file_descriptor;
 	int ret;
 
-	if (fd < 0)
+	if (file_descriptor < 0)
 		return -1;
 
 	/* 8 data bits */
-	tcgetattr(fd, &term);
+	tcgetattr(file_descriptor, &term);
 	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(&term, B9600) < 0 || cfsetispeed(&term, B9600) < 0) {
 		ERROR_CONNECT("Cannot set speed (9600): %s\n",
 					  SAFESTRING(pn->in->name));
 	}
-	if (tcsetattr(fd, TCSANOW, &term) < 0) {
+	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s\n",
 					  SAFESTRING(pn->in->name));
 		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->in);
@@ -139,13 +139,13 @@ static int DS9097_reset(const struct parsedname *pn)
 	term[portnum].c_cflag |= CS8;  //(0x60)
 	cfsetispeed(&term[portnum], B9600);
 	cfsetospeed(&term[portnum], B9600);
-	tcsetattr(fd[portnum], TCSANOW, &term[portnum]);
+	tcsetattr(file_descriptor[portnum], TCSANOW, &term[portnum]);
 	send_reset_byte(0xF0);
 	cfsetispeed(&term[portnum], B115200);
 	cfsetospeed(&term[portnum], B115200);
 	/* set to 6 data bits */
 	term[portnum].c_cflag |= CS6;  // (0x20)
-	tcsetattr(fd[portnum], TCSANOW, &term[portnum]);
+	tcsetattr(file_descriptor[portnum], TCSANOW, &term[portnum]);
 	/* Not really a change of data-bits here...
 	   They always use 8bit mode... doohhh? */
 #endif
@@ -170,7 +170,7 @@ static int DS9097_reset(const struct parsedname *pn)
 	}
 #endif
 
-	if (tcsetattr(fd, TCSANOW, &term) < 0) {
+	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s\n",
 					  SAFESTRING(pn->in->name));
 		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->in);
@@ -187,7 +187,7 @@ static int setRTS(int on, const struct connection_in *in)
 {
 	int status;
 
-	if (ioctl(in->fd, TIOCMGET, &status) == -1) {
+	if (ioctl(in->file_descriptor, TIOCMGET, &status) == -1) {
 		ERROR_CONNECT("setRTS(): TIOCMGET");
 		return 0;
 	}
@@ -196,7 +196,7 @@ static int setRTS(int on, const struct connection_in *in)
 	} else {
 		status &= ~TIOCM_RTS;
 	}
-	if (ioctl(in->fd, TIOCMSET, &status) == -1) {
+	if (ioctl(in->file_descriptor, TIOCMSET, &status) == -1) {
 		ERROR_CONNECT("setRTS(): TIOCMSET");
 		return 0;
 	}
@@ -263,7 +263,7 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 		while (sl > 0) {
 			if (!pn->in)
 				break;
-			r = write(pn->in->fd, &bussend[length - sl], sl);
+			r = write(pn->in->file_descriptor, &bussend[length - sl], sl);
 			if (r < 0) {
 				if (errno == EINTR) {
 					/* write() was interrupted, try again */
@@ -275,7 +275,7 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 			sl -= r;
 		}
 		if (pn->in) {
-			tcdrain(pn->in->fd);	/* make sure everthing is sent */
+			tcdrain(pn->in->file_descriptor);	/* make sure everthing is sent */
 			gettimeofday(&(pn->in->bus_write_time), NULL);
 		}
 		if (sl > 0) {
@@ -300,19 +300,19 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 			tv.tv_usec = 0;
 			/* Initialize readset */
 			FD_ZERO(&readset);
-			FD_SET(pn->in->fd, &readset);
+			FD_SET(pn->in->file_descriptor, &readset);
 
 			/* Read if it doesn't timeout first */
-			rc = select(pn->in->fd + 1, &readset, NULL, NULL, &tv);
+			rc = select(pn->in->file_descriptor + 1, &readset, NULL, NULL, &tv);
 			if (rc > 0) {
 				//printf("SAG selected\n");
 				/* Is there something to read? */
-				if (FD_ISSET(pn->in->fd, &readset) == 0) {
+				if (FD_ISSET(pn->in->file_descriptor, &readset) == 0) {
 					STAT_ADD1_BUS(BUS_read_select_errors, pn->in);
 					return -EIO;	/* error */
 				}
 				update_max_delay(pn);
-				r = read(pn->in->fd, &busget[length - gl], gl);	/* get available bytes */
+				r = read(pn->in->file_descriptor, &busget[length - gl], gl);	/* get available bytes */
 				//printf("SAG postread ret=%d\n",r);
 				if (r < 0) {
 					if (errno == EINTR) {

@@ -79,7 +79,7 @@ void FreeClientAddr(struct connection_in *in)
 /* Usually called with BUS locked, to protect ai settings */
 int ClientConnect(struct connection_in *in)
 {
-	int fd;
+	int file_descriptor;
 	struct addrinfo *ai;
 
 	if (in->connin.tcp.ai == NULL) {
@@ -94,23 +94,23 @@ int ClientConnect(struct connection_in *in)
 	 */
 	ai = in->connin.tcp.ai_ok;
 	if (ai) {
-		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (fd >= 0) {
-			if (connect(fd, ai->ai_addr, ai->ai_addrlen) == 0)
-				return fd;
-			close(fd);
+		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (file_descriptor >= 0) {
+			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0)
+				return file_descriptor;
+			close(file_descriptor);
 		}
 	}
 
 	ai = in->connin.tcp.ai;		// loop from first address info since it failed.
 	do {
-		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (fd >= 0) {
-			if (connect(fd, ai->ai_addr, ai->ai_addrlen) == 0) {
+		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (file_descriptor >= 0) {
+			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
 				in->connin.tcp.ai_ok = ai;
-				return fd;
+				return file_descriptor;
 			}
-			close(fd);
+			close(file_descriptor);
 		}
 	} while ((ai = ai->ai_next));
 	in->connin.tcp.ai_ok = NULL;

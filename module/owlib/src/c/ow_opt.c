@@ -714,7 +714,7 @@ int OW_ArgUSB(const char *arg)
 		}
 	} else {
 		in->connin.usb.usb_nr = atoi(arg);
-		//printf("ArgUSB fd=%d\n",in->fd);
+		//printf("ArgUSB file_descriptor=%d\n",in->file_descriptor);
 		if (in->connin.usb.usb_nr < 1) {
 			LEVEL_CONNECT("USB option %s implies no USB detection.\n",
 						  arg);

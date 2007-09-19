@@ -76,12 +76,12 @@ int ftp_listener_init(struct ftp_listener_s *f)
 	OW_Announce(outdevice);
 
 	/* prevent socket from blocking on accept() */
-	flags = fcntl(outdevice->fd, F_GETFL);
+	flags = fcntl(outdevice->file_descriptor, F_GETFL);
 	if (flags == -1) {
 		ERROR_CONNECT("Error getting flags on socket\n");
 		return 0;
 	}
-	if (fcntl(outdevice->fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+	if (fcntl(outdevice->file_descriptor, F_SETFL, flags | O_NONBLOCK) != 0) {
 		ERROR_CONNECT("Error setting socket to non-blocking\n");
 		return 0;
 	}
@@ -94,7 +94,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 
 	/* now load the values into the structure, since we can't fail from
 	   here */
-	f->fd = outdevice->fd;
+	f->file_descriptor = outdevice->file_descriptor;
 	f->max_connections = Global.max_clients;
 	f->num_connections = 0;
 	f->inactivity_timeout = Global.timeout_ftp;
@@ -146,7 +146,7 @@ static int invariant(const struct ftp_listener_s *f)
 	if (f == NULL) {
 		return 0;
 	}
-	if (f->fd < 0) {
+	if (f->file_descriptor < 0) {
 		return 0;
 	}
 	if (f->max_connections <= 0) {
@@ -176,7 +176,7 @@ static void *connection_acceptor(void *v)
 	struct ftp_listener_s *f = (struct ftp_listener_s *) v;
 	int num_error;
 
-	int fd;
+	int file_descriptor;
 	int tcp_nodelay;
 	sockaddr_storage_t client_addr;
 	sockaddr_storage_t server_addr;
@@ -200,37 +200,37 @@ static void *connection_acceptor(void *v)
 
 		/* wait for something to happen */
 		FD_ZERO(&readfds);
-		FD_SET(f->fd, &readfds);
+		FD_SET(f->file_descriptor, &readfds);
 		FD_SET(f->shutdown_request_recv_fd, &readfds);
 		select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
 
 		/* if data arrived on our pipe, we've been asked to exit */
 		if (FD_ISSET(f->shutdown_request_recv_fd, &readfds)) {
-			close(f->fd);
+			close(f->file_descriptor);
 			LEVEL_CONNECT("Listener no longer accepting connections\n");
 			pthread_exit(NULL);
 		}
 
 		/* otherwise accept our pending connection (if any) */
 		addr_len = sizeof(sockaddr_storage_t);
-		fd = accept(f->fd, (struct sockaddr *) &client_addr, &addr_len);
-		if (fd >= 0) {
+		file_descriptor = accept(f->file_descriptor, (struct sockaddr *) &client_addr, &addr_len);
+		if (file_descriptor >= 0) {
 			tcp_nodelay = 1;
 			if (setsockopt
-				(fd, IPPROTO_TCP, TCP_NODELAY, (void *) &tcp_nodelay,
+				(file_descriptor, IPPROTO_TCP, TCP_NODELAY, (void *) &tcp_nodelay,
 				 sizeof(int)) != 0) {
 				ERROR_CONNECT
 					("Error in setsockopt(), FTP server dropping connection\n");
-				close(fd);
+				close(file_descriptor);
 				continue;
 			}
 
 			addr_len = sizeof(sockaddr_storage_t);
 			if (getsockname
-				(fd, (struct sockaddr *) &server_addr, &addr_len) == -1) {
+				(file_descriptor, (struct sockaddr *) &server_addr, &addr_len) == -1) {
 				ERROR_CONNECT
 					("Error in getsockname(), FTP server dropping connection\n");
-				close(fd);
+				close(file_descriptor);
 				continue;
 			}
 
@@ -240,12 +240,12 @@ static void *connection_acceptor(void *v)
 			if (info == NULL) {
 				LEVEL_CONNECT
 					("Out of memory, FTP server dropping connection\n");
-				close(fd);
+				close(file_descriptor);
 				continue;
 			}
 			info->ftp_listener = f;
 
-			telnet_session_init(&info->telnet_session, fd, fd);
+			telnet_session_init(&info->telnet_session, file_descriptor, file_descriptor);
 
 			if (!ftp_session_init(&info->ftp_session,
 								  &client_addr,
@@ -253,7 +253,7 @@ static void *connection_acceptor(void *v)
 								  &info->telnet_session, f->dir)) {
 				LEVEL_CONNECT
 					("Eerror initializing FTP session, FTP server exiting\n");
-				close(fd);
+				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
 				free(info);
 				continue;
@@ -266,7 +266,7 @@ static void *connection_acceptor(void *v)
 			if (error_code != 0) {
 				errno = error_code;
 				ERROR_CONNECT("Error creating new thread\n");
-				close(fd);
+				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
 				free(info);
 			}

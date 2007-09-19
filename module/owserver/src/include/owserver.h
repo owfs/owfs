@@ -73,7 +73,7 @@ pthread_t main_threadid;
 
 // this structure holds the data needed for the handler function called in a separate thread by the ping wrapper
 struct handlerdata {
-	int fd;
+	int file_descriptor;
 	int persistent;
 #if OW_MT
 	pthread_mutex_t to_client;
@@ -87,7 +87,7 @@ struct handlerdata {
 int FromClient(struct handlerdata *hd);
 
 /* Send fully configured message back to client */
-int ToClient(int fd, struct client_msg *cm, char *data);
+int ToClient(int file_descriptor, struct client_msg *cm, char *data);
 
 /* Read from 1-wire bus and return file contents */
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
@@ -109,6 +109,6 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
 void *DataHandler(void *v);
 
 /* Handle a client request, including timeout pings */
-void Handler(int fd);
+void Handler(int file_descriptor);
 
 #endif							/* OWSERVER_H */

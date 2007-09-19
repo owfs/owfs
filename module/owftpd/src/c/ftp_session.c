@@ -15,14 +15,14 @@ static int invariant(const struct ftp_session_s *f);
 static void reply(struct ftp_session_s *f, int code, const char *fmt, ...);
 static void change_dir(struct ftp_session_s *f, char *new_dir);
 static int open_connection(struct ftp_session_s *f);
-static int write_fully(int fd, const char *buf, int buflen);
+static int write_fully(int file_descriptor, const char *buf, int buflen);
 static void init_passive_port(void);
 static int get_passive_port(void);
 static int convert_newlines(char *dst, const char *src, int srclen);
 static void get_addr_str(const sockaddr_storage_t * s, char *buf,
 						 int bufsiz);
 static void send_readme(const struct ftp_session_s *f, int code);
-static void netscape_hack(int fd);
+static void netscape_hack(int file_descriptor);
 static void set_port(struct ftp_session_s *f,
 					 const sockaddr_storage_t * host_port);
 static int set_pasv(struct ftp_session_s *f,
@@ -1343,14 +1343,14 @@ static int convert_newlines(char *dst, const char *src, int srclen)
 	return dstlen;
 }
 
-static int write_fully(int fd, const char *buf, int buflen)
+static int write_fully(int file_descriptor, const char *buf, int buflen)
 {
 	int amt_written;
 	int write_ret;
 
 	amt_written = 0;
 	while (amt_written < buflen) {
-		write_ret = write(fd, buf + amt_written, buflen - amt_written);
+		write_ret = write(file_descriptor, buf + amt_written, buflen - amt_written);
 		if (write_ret <= 0) {
 			return -1;
 		}
@@ -1591,23 +1591,23 @@ static void send_readme(const struct ftp_session_s *f, int code)
 }
 
 /* hack which prevents Netscape error in file list */
-static void netscape_hack(int fd)
+static void netscape_hack(int file_descriptor)
 {
 	fd_set readfds;
 	struct timeval ns_timeout;
 	int select_ret;
 	char c;
 
-	daemon_assert(fd >= 0);
+	daemon_assert(file_descriptor >= 0);
 
-	shutdown(fd, 1);
+	shutdown(file_descriptor, 1);
 	FD_ZERO(&readfds);
-	FD_SET(fd, &readfds);
+	FD_SET(file_descriptor, &readfds);
 	ns_timeout.tv_sec = 15;
 	ns_timeout.tv_usec = 0;
-	select_ret = select(fd + 1, &readfds, NULL, NULL, &ns_timeout);
+	select_ret = select(file_descriptor + 1, &readfds, NULL, NULL, &ns_timeout);
 	if (select_ret > 0) {
-		read(fd, &c, 1);
+		read(file_descriptor, &c, 1);
 	}
 }
 

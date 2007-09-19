@@ -53,14 +53,14 @@ pthread_mutex_t persistence_mutex = PTHREAD_MUTEX_INITIALIZER;
  * Main routine for actually handling a request
  * deals with a connection
  */
-void Handler(int fd)
+void Handler(int file_descriptor)
 {
 	struct handlerdata hd;
 	struct timeval tv_low = { Global.timeout_persistent_low, 0, };
 	struct timeval tv_high = { Global.timeout_persistent_high, 0, };
 	int persistent = 0;
 
-	hd.fd = fd;
+	hd.file_descriptor = file_descriptor;
 	pthread_mutex_init(&hd.to_client, pmattr);
 
 	timersub(&tv_high, &tv_low, &tv_high);	// just the delta
@@ -114,7 +114,7 @@ void Handler(int fd)
 			break;				/* easiest one */
 
 		/* Shorter wait */
-		if (tcp_wait(fd, &tv_low)) {	// timed out
+		if (tcp_wait(file_descriptor, &tv_low)) {	// timed out
 			/* test if below threshold for longer wait */
 
             PERSISTENCELOCK;
@@ -129,7 +129,7 @@ void Handler(int fd)
 				break;			/* too many connections and we're slow */
 
 			/*  longer wait */
-			if (tcp_wait(fd, &tv_high))
+			if (tcp_wait(file_descriptor, &tv_high))
 				break;
 		}
 
@@ -175,7 +175,7 @@ static void SingleHandler(struct handlerdata *hd)
 
     if ( Global.pingcrazy ) { // extra pings
         TOCLIENTLOCK(hd);
-            ToClient(hd->fd, &ping_cm, NULL);  // send the ping
+            ToClient(hd->file_descriptor, &ping_cm, NULL);  // send the ping
         TOCLIENTUNLOCK(hd);
         LEVEL_DEBUG("Extra ping (pingcrazy mode)\n");
     }
@@ -200,7 +200,7 @@ static void SingleHandler(struct handlerdata *hd)
 			timersub(&now, &delta, &result);	// less delay
 			if (timercmp(&(hd->tv), &result, <) || Global.pingcrazy ) {	// test against last message time
 				char *c = NULL;	// dummy argument
-				ToClient(hd->fd, &ping_cm, c);	// send the ping
+				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
 				//printf("OWSERVER ping\n") ;
 				gettimeofday(&(hd->tv), NULL);	// reset timer
 			}
@@ -216,10 +216,10 @@ static void SingleHandler(struct handlerdata *hd)
 }
 
 #else							/* no OW_MT */
-void Handler(int fd)
+void Handler(int file_descriptor)
 {
 	struct handlerdata hd;
-	hd.fd = fd;
+	hd.file_descriptor = file_descriptor;
 	if (FromClient(&hd) == 0) {
 		DataHandler(&hd);
 	}

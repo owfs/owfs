@@ -221,7 +221,7 @@ struct connin_i2c {
 	pthread_mutex_t i2c_mutex;	// second level mutex for the entire chip */
 #endif							/* OW_MT */
 	int current;
-	int fd;
+	int file_descriptor;
 	struct connection_in *head;
 };
 struct connin_tcp {
@@ -314,7 +314,7 @@ struct connection_in {
 	struct connection_in *next;
 	int index;
 	char *name;
-	int fd;
+	int file_descriptor;
 #if OW_MT
 	pthread_mutex_t bus_mutex;
 	pthread_mutex_t dev_mutex;
@@ -365,7 +365,7 @@ struct connection_in {
 /* Network connection structure */
 struct connection_out {
 	struct connection_out *next;
-	void (*HandlerRoutine) (int fd);
+	void (*HandlerRoutine) (int file_descriptor);
 	void (*Exit) (int errcode);
 	char *name;
 	char *host;
@@ -373,7 +373,7 @@ struct connection_out {
 	int index;
 	struct addrinfo *ai;
 	struct addrinfo *ai_ok;
-	int fd;
+	int file_descriptor;
 #if OW_MT
 	pthread_mutex_t accept_mutex;
 	pthread_mutex_t out_mutex;

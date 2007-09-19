@@ -66,7 +66,7 @@ int Fake_detect(struct connection_in *in)
     ASCII *newname;
     ASCII *oldname = in->name;
 
-    in->fd = global_count_fake_busses;
+    in->file_descriptor = global_count_fake_busses;
     Fake_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.fake.db));
@@ -115,7 +115,7 @@ int Tester_detect(struct connection_in *in)
     ASCII *newname;
     ASCII *oldname = in->name;
 
-    in->fd = global_count_tester_busses;
+    in->file_descriptor = global_count_tester_busses;
     Tester_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.tester.db));

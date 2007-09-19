@@ -111,7 +111,7 @@ void OW_Announce(struct connection_out *out)
 	if (as == NULL || Global.announce_off)
 		return;
 	as->out = out;
-	if (getsockname(out->fd, &sa, &sl)) {
+	if (getsockname(out->file_descriptor, &sa, &sl)) {
 		ERROR_CONNECT("Could not get port number of device.\n");
 		return;
 	}

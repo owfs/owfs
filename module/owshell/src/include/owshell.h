@@ -272,7 +272,7 @@ struct serverpackage {
 extern time_t start_time;
 extern time_t dir_time;			/* time of last directory scan */
 
-ssize_t tcp_read(int fd, void *vptr, size_t n, const struct timeval *ptv);
+ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(void);
 void FreeClientAddr(struct connection_in *in);
@@ -334,7 +334,7 @@ struct connection_in {
 	struct connection_in *next;
 	int index;
 	char *name;
-	int fd;
+	int file_descriptor;
 
 	char *adapter_name;
 

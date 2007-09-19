@@ -69,7 +69,7 @@ static int ServerAddr(struct connection_out *out)
 
 static int ServerListen(struct connection_out *out)
 {
-	int fd;
+	int file_descriptor;
 	int on = 1;
 	int ret;
 
@@ -82,21 +82,21 @@ static int ServerListen(struct connection_out *out)
 	if (out->ai_ok == NULL)
 		out->ai_ok = out->ai;
 	do {
-		fd = socket(out->ai_ok->ai_family,
+		file_descriptor = socket(out->ai_ok->ai_family,
 					out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
-		if (fd >= 0) {
+		if (file_descriptor >= 0) {
 			ret =
-				setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on,
+				setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on,
 						   sizeof(on))
-				|| bind(fd, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen)
-				|| listen(fd, 10);
+				|| bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen)
+				|| listen(file_descriptor, 10);
 			if (ret) {
 				ERROR_CONNECT("ServerListen: Socket problem [%s]\n",
 							  SAFESTRING(out->name));
-				close(fd);
+				close(file_descriptor);
 			} else {
-				out->fd = fd;
-				return fd;
+				out->file_descriptor = file_descriptor;
+				return file_descriptor;
 			}
 		} else {
 			ERROR_CONNECT("ServerListen: socket() [%s]",
@@ -124,7 +124,7 @@ int ServerOutSetup(struct connection_out *out)
 /* structures */
 struct HandlerThread_data {
 	int acceptfd;
-	void (*HandlerRoutine) (int fd);
+	void (*HandlerRoutine) (int file_descriptor);
 };
 
 void *ServerProcessHandler(void *arg)
@@ -158,7 +158,7 @@ static void ServerProcessAccept(void *vp)
 				out->index);
 
 	do {
-		acceptfd = accept(out->fd, NULL, NULL);
+		acceptfd = accept(out->file_descriptor, NULL, NULL);
 		//LEVEL_DEBUG("ServerProcessAccept %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 		if (shutdown_in_progress)
 			break;
@@ -187,7 +187,7 @@ static void ServerProcessAccept(void *vp)
 
 	if (acceptfd < 0) {
 		ERROR_CONNECT("ServerProcessAccept: accept() problem %d (%d)\n",
-					  out->fd, out->index);
+					  out->file_descriptor, out->index);
 	} else {
 		struct HandlerThread_data *hp;
 		hp = malloc(sizeof(struct HandlerThread_data));
@@ -240,7 +240,7 @@ static void *ServerProcessOut(void *v)
 }
 
 /* Setup Servers -- a thread for each port */
-void ServerProcess(void (*HandlerRoutine) (int fd),
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 				   void (*Exit) (int errcode))
 {
 	struct connection_out *out = outdevice;
@@ -309,7 +309,7 @@ void ServerProcess(void (*HandlerRoutine) (int fd),
 #else							/* OW_MT */
 
 // Non multithreaded
-void ServerProcess(void (*HandlerRoutine) (int fd),
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 				   void (*Exit) (int errcode))
 {
 	if (outdevices == 0) {
@@ -327,7 +327,7 @@ void ServerProcess(void (*HandlerRoutine) (int fd),
 	} else {
 		OW_Announce(outdevice);
 		while (1) {
-			int acceptfd = accept(outdevice->fd, NULL, NULL);
+			int acceptfd = accept(outdevice->file_descriptor, NULL, NULL);
 			if (shutdown_in_progress)
 				break;
 			if (acceptfd < 0) {

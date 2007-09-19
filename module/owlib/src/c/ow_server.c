@@ -17,28 +17,28 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-static int FromServer(int fd, struct client_msg *cm, char *msg,
+static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
 					  size_t size);
-static void *FromServerAlloc(int fd, struct client_msg *cm);
-//static int ToServer( int fd, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
-static int ToServer(int fd, struct server_msg *sm,
+static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
+//static int ToServer( int file_descriptor, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
+static int ToServer(int file_descriptor, struct server_msg *sm,
 					struct serverpackage *sp);
 static void Server_setroutines(struct interface_routines *f);
 static void Zero_setroutines(struct interface_routines *f);
 static void Server_close(struct connection_in *in);
 static uint32_t SetupSemi(int persistent, const struct parsedname *pn);
 static int ConnectToServer(struct connection_in *in);
-static int ToServerTwice(int fd, int persistent, struct server_msg *sm,
+static int ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm,
 						 struct serverpackage *sp,
 						 struct connection_in *in);
 
 static int PersistentStart(int *persistent, struct connection_in *in);
-static void PersistentEnd(int fd, int persistent, int granted,
+static void PersistentEnd(int file_descriptor, int persistent, int granted,
 						  struct connection_in *in);
-static void PersistentFree(int fd, struct connection_in *in);
-static void PersistentClear(int fd, struct connection_in *in);
+static void PersistentFree(int file_descriptor, struct connection_in *in);
+static void PersistentClear(int file_descriptor, struct connection_in *in);
 static int PersistentRequest(struct connection_in *in);
-static int PersistentReRequest(int fd, struct connection_in *in);
+static int PersistentReRequest(int file_descriptor, struct connection_in *in);
 
 
 static void Server_setroutines(struct interface_routines *f)
@@ -83,7 +83,7 @@ int Zero_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->fd = FD_PERSISTENT_NONE;				// No persistent connection yet
+	in->file_descriptor = FD_PERSISTENT_NONE;				// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_zero;
@@ -98,7 +98,7 @@ int Server_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->fd = FD_PERSISTENT_NONE;				// No persistent connection yet
+	in->file_descriptor = FD_PERSISTENT_NONE;				// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
@@ -108,9 +108,9 @@ int Server_detect(struct connection_in *in)
 
 static void Server_close(struct connection_in *in)
 {
-	if (in->fd > FD_PERSISTENT_NONE) {			// persistent connection
-		close(in->fd);
-		in->fd = FD_PERSISTENT_NONE;
+	if (in->file_descriptor > FD_PERSISTENT_NONE) {			// persistent connection
+		close(in->file_descriptor);
+		in->file_descriptor = FD_PERSISTENT_NONE;
 	}
 	FreeClientAddr(in);
 }
@@ -337,7 +337,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 }
 
 /* read from server, free return pointer if not Null */
-static void *FromServerAlloc(int fd, struct client_msg *cm)
+static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 {
 	char *msg;
 	int ret;
@@ -345,7 +345,7 @@ static void *FromServerAlloc(int fd, struct client_msg *cm)
 
 	do {						/* loop until non delay message (payload>=0) */
 		//printf("OW_SERVER loop1\n");
-		ret = tcp_read(fd, cm, sizeof(struct client_msg), &tv);
+		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
 		if (ret != sizeof(struct client_msg)) {
 			memset(cm, 0, sizeof(struct client_msg));
 			cm->ret = -EIO;
@@ -371,7 +371,7 @@ static void *FromServerAlloc(int fd, struct client_msg *cm)
 	}
 
 	if ((msg = (char *) malloc((size_t) cm->payload))) {
-		ret = tcp_read(fd, msg, (size_t) (cm->payload), &tv);
+		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
 		if (ret != cm->payload) {
 //printf("FromServer couldn't read payload\n");
 			cm->payload = 0;
@@ -387,7 +387,7 @@ static void *FromServerAlloc(int fd, struct client_msg *cm)
 
 /* Read from server -- return negative on error,
     return 0 or positive giving size of data element */
-static int FromServer(int fd, struct client_msg *cm, char *msg,
+static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
 					  size_t size)
 {
 	size_t rtry;
@@ -396,7 +396,7 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 
 	do {						// read regular header, or delay (delay when payload<0)
 		//printf("OW_SERVER loop2\n");
-		ret = tcp_read(fd, cm, sizeof(struct client_msg), &tv);
+		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
 		if (ret != sizeof(struct client_msg)) {
 			//printf("OW_SERVER loop2 bad\n");
 			cm->size = 0;
@@ -418,7 +418,7 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 		return 0;				// No payload, done.
 
 	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
-	ret = tcp_read(fd, msg, rtry, &tv);	// read expected payload now.
+	ret = tcp_read(file_descriptor, msg, rtry, &tv);	// read expected payload now.
 	if (ret != rtry) {
 		cm->ret = -EIO;
 		return -EIO;
@@ -427,7 +427,7 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. read it in and discard
 		size_t d = cm->payload - size;
 		char extra[d];
-		ret = tcp_read(fd, extra, d, &tv);
+		ret = tcp_read(file_descriptor, extra, d, &tv);
 		if (ret != d) {
 			cm->ret = -EIO;
 			return -EIO;
@@ -439,18 +439,18 @@ static int FromServer(int fd, struct client_msg *cm, char *msg,
 
 /* Send a message to server, or try a new connection and send again */
 /* return file descriptor */
-static int ToServerTwice(int fd, int persistent, struct server_msg *sm,
+static int ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm,
 						 struct serverpackage *sp,
 						 struct connection_in *in)
 {
 	int newfd;
-	if (ToServer(fd, sm, sp) == 0)
-		return fd;
+	if (ToServer(file_descriptor, sm, sp) == 0)
+		return file_descriptor;
 	if (persistent == 0) {
-		close(fd);
+		close(file_descriptor);
 		return FD_CURRENT_BAD;
 	}
-	newfd = PersistentReRequest(fd, in);
+	newfd = PersistentReRequest(file_descriptor, in);
 	if (newfd < 0)
 		return FD_CURRENT_BAD;
 	if (ToServer(newfd, sm, sp) == 0)
@@ -460,8 +460,8 @@ static int ToServerTwice(int fd, int persistent, struct server_msg *sm,
 }
 
 // should be const char * data but iovec has problems with const arguments
-//static int ToServer( int fd, struct server_msg * sm, const char * path, const char * data, int datasize ) {
-static int ToServer(int fd, struct server_msg *sm,
+//static int ToServer( int file_descriptor, struct server_msg * sm, const char * path, const char * data, int datasize ) {
+static int ToServer(int file_descriptor, struct server_msg *sm,
 					struct serverpackage *sp)
 {
 	int payload = 0;
@@ -509,7 +509,7 @@ static int ToServer(int fd, struct server_msg *sm,
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(fd, io, 5) !=
+	return writev(file_descriptor, io, 5) !=
 		(ssize_t) (payload + sizeof(struct server_msg) +
 				   sp->tokens * sizeof(union antiloop));
 }
@@ -535,114 +535,114 @@ static uint32_t SetupSemi(int persistent, const struct parsedname *pn)
 /* Wrapper for ClientConnect */
 static int ConnectToServer(struct connection_in *in)
 {
-	int fd;
+	int file_descriptor;
 
-	fd = ClientConnect(in);
-	if (fd == FD_CURRENT_BAD) {
+	file_descriptor = ClientConnect(in);
+	if (file_descriptor == FD_CURRENT_BAD) {
 		STAT_ADD1(in->reconnect_state);
 	}
-	return fd;
+	return file_descriptor;
 }
 
 /* Request a persistent connection
    Three possibilities:
-     1. no persistent connection currently (in->fd = -1)
-        create one, flag in->fd as -2, and return fd
+     1. no persistent connection currently (in->file_descriptor = -1)
+        create one, flag in->file_descriptor as -2, and return file_descriptor
         or return -1 if a new one can't be created
-     2. persistent available (in->fd > -1 )
-        use it, flag in->fd as -2, and return in->fd
-     3. in use, (in->fd = -2)
+     2. persistent available (in->file_descriptor > -1 )
+        use it, flag in->file_descriptor as -2, and return in->file_descriptor
+     3. in use, (in->file_descriptor = -2)
         return -1
 */
 static int PersistentRequest(struct connection_in *in)
 {
-	int fd;
+	int file_descriptor;
 	BUSLOCKIN(in);
-	if (in->fd == FD_PERSISTENT_IN_USE) {			// in use
-		fd = FD_CURRENT_BAD;
-	} else if (in->fd > FD_PERSISTENT_NONE) {	// available
-		fd = in->fd;
-		in->fd = FD_PERSISTENT_IN_USE;
-	} else if ((fd = ConnectToServer(in)) == FD_CURRENT_BAD) {	// can't get a connection
-		fd = FD_CURRENT_BAD;
+	if (in->file_descriptor == FD_PERSISTENT_IN_USE) {			// in use
+		file_descriptor = FD_CURRENT_BAD;
+	} else if (in->file_descriptor > FD_PERSISTENT_NONE) {	// available
+		file_descriptor = in->file_descriptor;
+		in->file_descriptor = FD_PERSISTENT_IN_USE;
+	} else if ((file_descriptor = ConnectToServer(in)) == FD_CURRENT_BAD) {	// can't get a connection
+		file_descriptor = FD_CURRENT_BAD;
 	} else {					// new connection -- make it persistent
-		in->fd = FD_PERSISTENT_IN_USE;
+		in->file_descriptor = FD_PERSISTENT_IN_USE;
 	}
 	BUSUNLOCKIN(in);
-	return fd;
+	return file_descriptor;
 }
 
 /* A persistent connection didn't work (probably expired on the other end
    recreate it, or clear and return -1
  */
-static int PersistentReRequest(int fd, struct connection_in *in)
+static int PersistentReRequest(int file_descriptor, struct connection_in *in)
 {
-	close(fd);
+	close(file_descriptor);
 	BUSLOCKIN(in);
-	fd = ConnectToServer(in);
-	if (fd == FD_CURRENT_BAD) {				// bad connection
-		in->fd = FD_PERSISTENT_NONE;
+	file_descriptor = ConnectToServer(in);
+	if (file_descriptor == FD_CURRENT_BAD) {				// bad connection
+		in->file_descriptor = FD_PERSISTENT_NONE;
 	}
-	// else leave as in->fd = -2
+	// else leave as in->file_descriptor = -2
 	BUSUNLOCKIN(in);
-	return fd;
+	return file_descriptor;
 }
 
 /* Clear a persistent connection */
-static void PersistentClear(int fd, struct connection_in *in)
+static void PersistentClear(int file_descriptor, struct connection_in *in)
 {
-	if (fd > FD_CURRENT_BAD) {
-		close(fd);
+	if (file_descriptor > FD_CURRENT_BAD) {
+		close(file_descriptor);
 	}
 	BUSLOCKIN(in);
-	in->fd = FD_PERSISTENT_NONE;
+	in->file_descriptor = FD_PERSISTENT_NONE;
 	BUSUNLOCKIN(in);
 }
 
 /* Free a persistent connection */
-static void PersistentFree(int fd, struct connection_in *in)
+static void PersistentFree(int file_descriptor, struct connection_in *in)
 {
-	if (fd == FD_CURRENT_BAD) {
-		PersistentClear(fd, in);
+	if (file_descriptor == FD_CURRENT_BAD) {
+		PersistentClear(file_descriptor, in);
 	} else {
 		BUSLOCKIN(in);
-		in->fd = fd;
+		in->file_descriptor = file_descriptor;
 		BUSUNLOCKIN(in);
 	}
 }
 
 /* All the startup code
-   fd will get the file descriptor
+   file_descriptor will get the file descriptor
    persistent starts 0 or 1 for whether persistence is wanted
    persistent returns 0 or 1 for whether persistence is granted
 */
 static int PersistentStart(int *persistent, struct connection_in *in)
 {
-	int fd;
+	int file_descriptor;
 	if (*persistent == 0) {
-		fd = ConnectToServer(in);
+		file_descriptor = ConnectToServer(in);
 		*persistent = 0;
-	} else if ((fd = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
-		fd = ConnectToServer(in);
+	} else if ((file_descriptor = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
+		file_descriptor = ConnectToServer(in);
 		*persistent = 0;
 	} else {
 		*persistent = 1;
 	}
-	return fd;
+	return file_descriptor;
 }
 
 /* Clean up at end of routine,
    either leave connection open and persistent flag available,
    or close and leave available
 */
-static void PersistentEnd(int fd, int persistent, int granted,
+static void PersistentEnd(int file_descriptor, int persistent, int granted,
 						  struct connection_in *in)
 {
 	if (persistent == 0) {
-		close(fd);
+		close(file_descriptor);
 	} else if (granted == 0) {
-		PersistentClear(fd, in);
+		PersistentClear(file_descriptor, in);
 	} else {
-		PersistentFree(fd, in);
+		PersistentFree(file_descriptor, in);
 	}
 }

@@ -104,7 +104,7 @@ static int my_daemon(int nochdir, int noclose)
 {
 	struct sigaction act;
 	int pid;
-	int fd;
+	int file_descriptor;
 
 	signal(SIGCHLD, SIG_DFL);
 

@@ -22,7 +22,7 @@ char *alloca();
 # endif
 #endif
 
-static void fdprintf(int fd, const char *fmt, ...);
+static void fdprintf(int file_descriptor, const char *fmt, ...);
 static void List_show(struct file_parse_s *fps,
 					  const struct parsedname *pn);
 static void WildLexParse(struct file_parse_s *fps, ASCII * match);
@@ -304,7 +304,7 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 }
 
 /* write with care for max length and incomplete outout */
-static void fdprintf(int fd, const char *fmt, ...)
+static void fdprintf(int file_descriptor, const char *fmt, ...)
 {
 	char buf[PATH_MAX + 1];
 	ssize_t buflen;
@@ -312,7 +312,7 @@ static void fdprintf(int fd, const char *fmt, ...)
 	int amt_written;
 	int write_ret;
 
-	daemon_assert(fd >= 0);
+	daemon_assert(file_descriptor >= 0);
 	daemon_assert(fmt != NULL);
 
 	va_start(ap, fmt);
@@ -327,7 +327,7 @@ static void fdprintf(int fd, const char *fmt, ...)
 
 	amt_written = 0;
 	while (amt_written < buflen) {
-		write_ret = write(fd, buf + amt_written, buflen - amt_written);
+		write_ret = write(file_descriptor, buf + amt_written, buflen - amt_written);
 		if (write_ret <= 0) {
 			return;
 		}

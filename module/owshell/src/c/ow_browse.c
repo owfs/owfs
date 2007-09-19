@@ -25,27 +25,27 @@ static void HandleCall(DNSServiceRef sref);
 
 static void HandleCall(DNSServiceRef sref)
 {
-	int fd;
+	int file_descriptor;
 	DNSServiceErrorType err = kDNSServiceErr_Unknown;
-	//fd = DNSServiceRefSockFD(NULL) ;
-	//fprintf(stderr, "HandleCall: fd=%d (just a test of function-call, should result -1)\n", fd);
-	fd = DNSServiceRefSockFD(sref);
-	//fprintf(stderr, "HandleCall: fd=%d\n", fd);
-	if (fd >= 0) {
+	//file_descriptor = DNSServiceRefSockFD(NULL) ;
+	//fprintf(stderr, "HandleCall: file_descriptor=%d (just a test of function-call, should result -1)\n", file_descriptor);
+	file_descriptor = DNSServiceRefSockFD(sref);
+	//fprintf(stderr, "HandleCall: file_descriptor=%d\n", file_descriptor);
+	if (file_descriptor >= 0) {
 		while (1) {
 			fd_set readfd;
 			int rc;
 			struct timeval tv = { 10, 0 };
 			FD_ZERO(&readfd);
-			FD_SET(fd, &readfd);
-			rc = select(fd + 1, &readfd, NULL, NULL, &tv);
+			FD_SET(file_descriptor, &readfd);
+			rc = select(file_descriptor + 1, &readfd, NULL, NULL, &tv);
 			if (rc == -1) {
 				if (errno == EINTR) {
 					continue;
 				}
 				perror("Service Discovery select returned error\n");
 			} else if (rc > 0) {
-				if (FD_ISSET(fd, &readfd)) {
+				if (FD_ISSET(file_descriptor, &readfd)) {
 					err = DNSServiceProcessResult(sref);
 				}
 			} else {
