@@ -468,47 +468,8 @@ union antiloop {
 };
 
 /* Global information (for local control) */
-struct global {
-	int announce_off;			// use zeroconf?
-	ASCII *announce_name;
-#if OW_ZERO
-	DNSServiceRef browse;
-#endif
-	enum opt_program opt;
-	ASCII *progname;
-	union antiloop Token;
-	int want_background;
-	int now_background;
-	int error_level;
-	int error_print;
-	int readonly;
-	char *SimpleBusName;
-	int max_clients;			// for ftp
-	int autoserver;
-	size_t cache_size;			// max cache size (or 0 for no max) ;
-	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
-	int altUSB;
-	/* timeouts -- order must match ow_opt.c values for correct indexing */
-	int timeout_volatile;
-	int timeout_stable;
-	int timeout_directory;
-	int timeout_presence;
-	int timeout_serial;
-	int timeout_usb;
-	int timeout_network;
-	int timeout_server;
-	int timeout_ftp;
-	int timeout_persistent_low;
-	int timeout_persistent_high;
-	int clients_persistent_low;
-	int clients_persistent_high;
-	int pingcrazy;
-	int no_dirall;
-	int no_get;
-	int no_persistence;
-	int eightbit_serial;
-};
-extern struct global Global;
+/* Separated out into ow_global.h for readability */
+#include "ow_global.h"
 
 extern int shutdown_in_progress;
 
