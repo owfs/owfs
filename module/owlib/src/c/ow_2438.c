@@ -215,7 +215,7 @@ static int FS_temp(struct one_wire_query * owq)
 static int FS_volts(struct one_wire_query * owq)
 {
 	/* data=1 VDD data=0 VAD */
-    if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).ft->data.i, PN(owq)))
+    if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -337,8 +337,8 @@ static int FS_w_counter(struct one_wire_query * owq)
 static int FS_w_date(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-	int page = ((uint32_t) (pn->ft->data.s)) >> 3;
-	int offset = ((uint32_t) (pn->ft->data.s)) & 0x07;
+	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
+	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
 	BYTE data[8];
 	if (OW_r_page(data, page, pn))
 		return -EINVAL;
@@ -362,8 +362,8 @@ int FS_r_counter(struct one_wire_query * owq)
 int FS_r_date(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int page = ((uint32_t) (pn->ft->data.s)) >> 3;
-	int offset = ((uint32_t) (pn->ft->data.s)) & 0x07;
+    int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
+	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
 	BYTE data[8];
 	if (OW_r_page(data, page, pn))
 		return -EINVAL;

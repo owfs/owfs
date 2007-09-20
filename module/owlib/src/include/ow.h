@@ -504,7 +504,7 @@ struct parsedname {
 	enum pn_state state;		// global branch
 	BYTE sn[8];					// 64-bit serial number
 	struct device *dev;			// 1-wire device
-	struct filetype *ft;		// device property
+	struct filetype *selected_filetype;		// device property
 	int extension;				// numerical extension (for array values) or -1
 	struct filetype *subdir;	// in-device grouping
 	UINT pathlength;			// DS2409 branching depth
@@ -616,9 +616,9 @@ extern time_t dir_time;			/* time of last directory scan */
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
 #define IsDir( pn )    ( ((pn)->dev)==NULL \
-                      || ((pn)->ft)==NULL  \
-                      || ((pn)->ft)->format==ft_subdir \
-                      || ((pn)->ft)->format==ft_directory )
+                      || ((pn)->selected_filetype)==NULL  \
+                      || ((pn)->selected_filetype)->format==ft_subdir \
+                      || ((pn)->selected_filetype)->format==ft_directory )
 #define NotUncachedDir(pn)    ( (((pn)->state)&pn_uncached) == 0 )
 #define  IsUncachedDir(pn)    ( ! NotUncachedDir(pn) )
 #define    NotAlarmDir(pn)    ( (((pn)->state)&pn_alarm) == 0 )

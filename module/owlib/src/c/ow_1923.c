@@ -351,9 +351,9 @@ static int FS_bitread(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     BYTE d;
     struct BitRead *br;
-    if (pn->ft->data.v == NULL)
+    if (pn->selected_filetype->data.v == NULL)
         return -EINVAL;
-    br = ((struct BitRead *) (pn->ft->data.v));
+    br = ((struct BitRead *) (pn->selected_filetype->data.v));
     if (OW_r_mem(&d, 1, br->location, pn))
         return -EINVAL;
     OWQ_Y(owq) = UT_getbit(&d, br->bit);
@@ -365,9 +365,9 @@ static int FS_bitwrite(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     BYTE d;
     struct BitRead *br;
-    if (pn->ft->data.v == NULL)
+    if (pn->selected_filetype->data.v == NULL)
         return -EINVAL;
-    br = ((struct BitRead *) (pn->ft->data.v));
+    br = ((struct BitRead *) (pn->selected_filetype->data.v));
     if (OW_r_mem(&d, 1, br->location, pn))
         return -EINVAL;
     UT_setbit(&d, br->bit, OWQ_Y(owq));

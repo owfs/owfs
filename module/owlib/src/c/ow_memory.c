@@ -51,7 +51,7 @@ static void Set_OWQ_length( struct one_wire_query * owq ) ;
 static int OW_r_crc16(BYTE code, struct one_wire_query * owq, size_t page, size_t pagesize ) ;
 
 static void Set_OWQ_length( struct one_wire_query * owq ) {
-	switch( OWQ_pn(owq).ft->format ) {
+	switch( OWQ_pn(owq).selected_filetype->format ) {
 		case ft_binary:
 		case ft_ascii:
 		case ft_vascii:

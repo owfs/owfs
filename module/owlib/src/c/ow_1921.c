@@ -274,9 +274,9 @@ static int FS_bitread(struct one_wire_query * owq)
 	BYTE d;
     struct parsedname * pn = PN(owq) ;
 	struct BitRead *br;
-	if (pn->ft->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL)
 		return -EINVAL;
-	br = ((struct BitRead *) (pn->ft->data.v));
+	br = ((struct BitRead *) (pn->selected_filetype->data.v));
 	if (OW_small_read(&d, 1, br->location, pn ))
 		return -EINVAL;
     OWQ_Y(owq) = UT_getbit(&d, br->bit);
@@ -288,9 +288,9 @@ static int FS_bitwrite(struct one_wire_query * owq)
 	BYTE d;
     struct parsedname * pn = PN(owq) ;
     struct BitRead *br;
-	if (pn->ft->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL)
 		return -EINVAL;
-	br = ((struct BitRead *) (pn->ft->data.v));
+	br = ((struct BitRead *) (pn->selected_filetype->data.v));
 	if (OW_small_read(&d, 1, br->location, pn ))
 		return -EINVAL;
     UT_setbit(&d, br->bit, OWQ_Y(owq));
@@ -422,7 +422,7 @@ static int FS_r_temperature(struct one_wire_query * owq)
 static int FS_r_3byte(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-	size_t addr = pn->ft->data.s;
+	size_t addr = pn->selected_filetype->data.s;
 	BYTE data[3];
 	if (OW_small_read(data, 3, addr, pn ))
 		return -EINVAL;
@@ -464,7 +464,7 @@ static int FS_alarmelems(struct one_wire_query * owq)
 
 	if (OW_FillMission(&mission, pn))
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->ft->data.s, pn))
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
 	for (i = 0; i < 12; ++i)
 		if (c[i] == 0)
@@ -483,7 +483,7 @@ static int FS_r_alarmtemp(struct one_wire_query * owq)
 								   sizeof(struct Version), VersionCmp);
 	if (v == NULL)
 		return -EINVAL;
-	if (OW_small_read(data, 1, pn->ft->data.s, pn ))
+	if (OW_small_read(data, 1, pn->selected_filetype->data.s, pn ))
 		return -EINVAL;
     OWQ_F(owq) = (_FLOAT) data[0] * v->resolution + v->histolow;
 	return 0;
@@ -502,7 +502,7 @@ static int FS_w_alarmtemp(struct one_wire_query * owq)
 	if (OW_MIP(pn))
 		return -EBUSY;
     data[0] = (OWQ_F(owq) - v->histolow) / v->resolution;
-	return (OW_w_mem(data, 1, pn->ft->data.s, pn)) ? -EINVAL : 0;
+	return (OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ? -EINVAL : 0;
 }
 
 static int FS_alarmudate(struct one_wire_query * owq)
@@ -515,7 +515,7 @@ static int FS_alarmudate(struct one_wire_query * owq)
 
 	if (OW_FillMission(&mission, pn))
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->ft->data.s, pn))
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
 	for (i = 0; i < 12; ++i)
         OWQ_array_U(owq,i) = mission.start + t[i] * mission.interval;
@@ -532,7 +532,7 @@ static int FS_alarmstart(struct one_wire_query * owq)
 
 	if (OW_FillMission(&mission, pn))
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->ft->data.s, pn))
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
 	for (i = 0; i < 12; ++i)
         OWQ_array_D(owq,i) = mission.start + t[i] * mission.interval;
@@ -549,7 +549,7 @@ static int FS_alarmend(struct one_wire_query * owq)
 
 	if (OW_FillMission(&mission, pn))
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->ft->data.s, pn))
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
 	for (i = 0; i < 12; ++i)
         OWQ_array_D(owq,i) = mission.start + (t[i] + c[i]) * mission.interval;
@@ -563,7 +563,7 @@ static int FS_alarmcnt(struct one_wire_query * owq)
 	int c[12];
 	int i;
 
-	if (OW_alarmlog(t, c, pn->ft->data.s, pn))
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
 	for (i = 0; i < 12; ++i)
         OWQ_array_U(owq,i) = c[i];
@@ -671,7 +671,7 @@ static int FS_w_samplerate(struct one_wire_query * owq)
 static int FS_r_atime(struct one_wire_query * owq)
 {
 	BYTE data;
-    if (OW_small_read(&data, 1, OWQ_pn(owq).ft->data.s, PN(owq) ))
+    if (OW_small_read(&data, 1, OWQ_pn(owq).selected_filetype->data.s, PN(owq) ))
 		return -EFAULT;
     OWQ_U(owq) = data & 0x7F;
 	return 0;
@@ -683,10 +683,10 @@ static int FS_w_atime(struct one_wire_query * owq)
 {
 	BYTE data;
     struct parsedname * pn = PN(owq) ;
-	if (OW_small_read(&data, 1, pn->ft->data.s, pn ))
+	if (OW_small_read(&data, 1, pn->selected_filetype->data.s, pn ))
 		return -EFAULT;
     data = ((BYTE) OWQ_U(owq)) | (data & 0x80);	/* EM on */
-	if (OW_w_mem(&data, 1, pn->ft->data.s, pn))
+	if (OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn))
 		return -EFAULT;
 	return 0;
 }

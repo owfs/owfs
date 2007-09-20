@@ -200,7 +200,7 @@ static void WildLexCD(struct cd_parse_s *cps, ASCII * match)
 		return;
 	}
 
-	if (pn.ft) {
+	if (pn.selected_filetype) {
 		cps->ret = -ENOTDIR;
 	} else {
 		struct wildlexcd wlcd = { NULL, match, cps, };

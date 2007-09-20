@@ -85,9 +85,9 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 #endif							/* CALC_NLINK */
 		stbuf->st_nlink += nr;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time;
-	} else if (pn->ft == NULL) {
+	} else if (pn->selected_filetype == NULL) {
 		int nr = 0;
-		//printf("FS_fstat pn.ft == NULL  (1-wire device)\n");
+		//printf("FS_fstat pn.selected_filetype == NULL  (1-wire device)\n");
 		stbuf->st_mode = S_IFDIR | 0777;
 		stbuf->st_nlink = 2;	// plus number of sub-directories
 
@@ -95,8 +95,8 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		{
 			int i;
 			for (i = 0; i < pn->dev->nft; i++) {
-				if ((pn->dev->ft[i].format == ft_directory) ||
-					(pn->dev->ft[i].format == ft_subdir)) {
+				if ((pn->dev->selected_filetype[i].format == ft_directory) ||
+					(pn->dev->selected_filetype[i].format == ft_subdir)) {
 					nr++;
 				}
 			}
@@ -109,7 +109,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		FSTATLOCK;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time;
 		FSTATUNLOCK;
-	} else if (pn->ft->format == ft_directory || pn->ft->format == ft_subdir) {	/* other directory */
+	} else if (pn->selected_filetype->format == ft_directory || pn->selected_filetype->format == ft_subdir) {	/* other directory */
 		int nr = 0;
 //printf("FS_fstat other dir inside device\n");
 		stbuf->st_mode = S_IFDIR | 0777;
@@ -119,7 +119,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 #else							/* CALC_NLINK */
 		nr = -1;				// make it 1
 #endif							/* CALC_NLINK */
-//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.ft));
+//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.selected_filetype));
 		stbuf->st_nlink += nr;
 
 		FSTATLOCK;
@@ -127,13 +127,13 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		FSTATUNLOCK;
 	} else {					/* known 1-wire filetype */
 		stbuf->st_mode = S_IFREG;
-		if (pn->ft->read != NO_READ_FUNCTION)
+		if (pn->selected_filetype->read != NO_READ_FUNCTION)
 			stbuf->st_mode |= 0444;
-		if (!Global.readonly && (pn->ft->write != NO_WRITE_FUNCTION) )
+		if (!Global.readonly && (pn->selected_filetype->write != NO_WRITE_FUNCTION) )
 			stbuf->st_mode |= 0222;
 		stbuf->st_nlink = 1;
 
-		switch (pn->ft->change) {
+		switch (pn->selected_filetype->change) {
 		case fc_volatile:
 		case fc_Avolatile:
 		case fc_second:

@@ -182,7 +182,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 	if ((ret = FS_ParsedName(path, &pn)))
 		return ret;
 
-	if (pn.ft) {
+	if (pn.selected_filetype) {
 		ret = -ENOENT;
 	} else {					/* Good pn */
 		/* Call directory spanning function */

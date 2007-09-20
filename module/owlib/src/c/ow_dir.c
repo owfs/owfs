@@ -53,11 +53,11 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
     ROOT
     pn->dev set
     pn->sn set appropriately
-    pn->ft not set
+    pn->selected_filetype not set
 
     DEVICE
     pn->dev and pn->sn still set
-    pn->ft loops through
+    pn->selected_filetype loops through
 */
 /* path is the path which "pn" parses */
 /* FS_dir produces the "invariant" portion of the directory, passing on to
@@ -104,7 +104,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	/* Make a copy (shallow) of pn to modify for directory entries */
 	memcpy(&pn2, pn, sizeof(struct parsedname));	/*shallow copy */
 
-	if (pn->ft) {
+	if (pn->selected_filetype) {
 		ret = -ENOTDIR;
 	} else if (pn->dev) {		/* device directory */
 		if (pn->type == pn_structure) {
@@ -300,19 +300,19 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 		len = 0;
 		firstft = pn2->dev->ft;
 	}
-	for (pn2->ft = firstft; pn2->ft < lastft; ++pn2->ft) {	/* loop through filetypes */
+	for (pn2->selected_filetype = firstft; pn2->selected_filetype < lastft; ++pn2->selected_filetype) {	/* loop through filetypes */
 		if (len) {				/* subdir */
 			/* test start of name for directory name */
-			if (strncmp(pn2->ft->name, s, len))
+			if (strncmp(pn2->selected_filetype->name, s, len))
 				break;
 		} else {				/* primary device directory */
-			if (strchr(pn2->ft->name, '/'))
+			if (strchr(pn2->selected_filetype->name, '/'))
 				continue;
 		}
-		if (pn2->ft->ag) {
+		if (pn2->selected_filetype->ag) {
 			for (pn2->extension =
-				 (pn2->ft->format == ft_bitfield) ? -2 : -1;
-				 pn2->extension < pn2->ft->ag->elements;
+				 (pn2->selected_filetype->format == ft_bitfield) ? -2 : -1;
+				 pn2->extension < pn2->selected_filetype->ag->elements;
 				 ++pn2->extension) {
 				dirfunc(v, pn2);
 				STAT_ADD1(dir_dev.entries);
@@ -343,7 +343,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
 //printf("DIR alarm directory\n");
 
 	BUSLOCK(pn2);
-	pn2->ft = NULL;				/* just in case not properly set */
+	pn2->selected_filetype = NULL;				/* just in case not properly set */
 	ret = BUS_first_alarm(&ds, pn2);
 	if (ret) {
 		BUSUNLOCK(pn2);
@@ -391,7 +391,7 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 	DirblobInit(&db);			// set up a fresh dirblob
 
 	/* Operate at dev level, not filetype */
-	pn2->ft = NULL;
+	pn2->selected_filetype = NULL;
 	flags[0] = 0;				/* start out with no flags set */
 
 	BUSLOCK(pn2);

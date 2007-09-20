@@ -220,7 +220,7 @@ static int FS_w_local(struct one_wire_query * owq)
 	//printf("FS_w_local\n");
 
 	/* Writable? */
-	if ( pn->ft->write == NO_WRITE_FUNCTION )
+	if ( pn->selected_filetype->write == NO_WRITE_FUNCTION )
 		return -ENOTSUP;
 
 	/* Special case for "fake" adapter */
@@ -228,13 +228,13 @@ static int FS_w_local(struct one_wire_query * owq)
 		return 0;
 
 	/* Array properties? Write all together if aggregate */
-	if (pn->ft->ag) {
+	if (pn->selected_filetype->ag) {
 		switch (pn->extension) {
 		case EXTENSION_BYTE:
 			return FS_write_single_lump(owq) ;
 		case EXTENSION_ALL:
-			if ( pn->ft->format == ft_bitfield ) return FS_write_all_bits(owq) ;
-			switch (pn->ft->ag->combined) {
+			if ( pn->selected_filetype->format == ft_bitfield ) return FS_write_all_bits(owq) ;
+			switch (pn->selected_filetype->ag->combined) {
 			case ag_aggregate:
 			case ag_mixed:
 				return FS_write_aggregate_lump(owq) ;
@@ -242,8 +242,8 @@ static int FS_w_local(struct one_wire_query * owq)
 				return FS_write_in_parts(owq) ;
 			}
 		default:
-			if ( pn->ft->format == ft_bitfield ) return FS_write_a_bit(owq) ;
-			switch (pn->ft->ag->combined) {
+			if ( pn->selected_filetype->format == ft_bitfield ) return FS_write_a_bit(owq) ;
+			switch (pn->selected_filetype->ag->combined) {
 			case ag_aggregate:
 				return FS_write_a_part(owq) ;
 			case ag_mixed:
@@ -264,7 +264,7 @@ static int FS_write_single_lump(struct one_wire_query * owq)
 
 	OWQ_create_shallow_single( owq_copy, owq ) ;
 
-	write_error = (OWQ_pn(owq).ft->write)(owq_copy) ;
+	write_error = (OWQ_pn(owq).selected_filetype->write)(owq_copy) ;
 
 	if ( write_error < 0 ) return write_error ;
 
@@ -285,20 +285,20 @@ static int FS_write_a_part(struct one_wire_query * owq)
 	if ( OWQ_create_shallow_aggregate( owq_all, owq ) < 0 ) return -ENOMEM ;
 
 	if ( OWQ_Cache_Get(owq_all) ) {
-		write_error = (pn->ft->write)(owq_all) ;
+		write_error = (pn->selected_filetype->write)(owq_all) ;
 		if ( write_error < 0 ) {
 			OWQ_destroy_shallow_aggregate(owq_all) ;
 			return write_error ;
 		}
 	}
 
-	switch( pn->ft->format ) {
+	switch( pn->selected_filetype->format ) {
         case ft_binary:
         case ft_ascii:
         case ft_vascii:
         {
             size_t extension_index ;
-            size_t elements = pn->ft->ag->elements;
+            size_t elements = pn->selected_filetype->ag->elements;
             char * buffer_pointer = OWQ_buffer(owq_all) ;
             char * entry_pointer ;
             char * target_pointer ;
@@ -342,7 +342,7 @@ static int FS_write_aggregate_lump(struct one_wire_query * owq)
 
 	OWQ_create_shallow_aggregate( owq_copy, owq ) ;
 
-	write_error = (OWQ_pn(owq).ft->write)(owq_copy) ;
+	write_error = (OWQ_pn(owq).selected_filetype->write)(owq_copy) ;
 
 	OWQ_destroy_shallow_aggregate(owq_copy) ;
 
@@ -371,14 +371,14 @@ static int FS_write_in_parts(struct one_wire_query * owq)
 {
 	OWQ_allocate_struct_and_pointer( owq_single ) ;
 	struct parsedname * pn = PN(owq) ;
-	size_t elements = pn->ft->ag->elements;
+	size_t elements = pn->selected_filetype->ag->elements;
 
 	char * buffer_pointer ;
 	size_t extension ;
 	
 	OWQ_create_shallow_single( owq_single, owq ) ;
 
-	switch (pn->ft->format ) {
+	switch (pn->selected_filetype->format ) {
         case ft_ascii:
         case ft_vascii:
         case ft_binary:
@@ -411,7 +411,7 @@ static int FS_write_all_bits(struct one_wire_query * owq)
 {
 	OWQ_allocate_struct_and_pointer( owq_single ) ;
 	struct parsedname * pn = PN(owq) ;
-	size_t elements = pn->ft->ag->elements;
+	size_t elements = pn->selected_filetype->ag->elements;
 
 	size_t extension ;
 	UINT U = 0 ;
@@ -439,7 +439,7 @@ static int FS_write_a_bit(struct one_wire_query * owq)
 	OWQ_pn(owq_single).extension = EXTENSION_BYTE ;
     
 	if ( OWQ_Cache_Get(owq_single) ) {
-		int read_error = (pn->ft->read)(owq_single) ;
+		int read_error = (pn->selected_filetype->read)(owq_single) ;
 		if ( read_error < 0 ) return read_error ;
 	}
 

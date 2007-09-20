@@ -74,7 +74,7 @@ static void ShowDirCallback(void *v, const struct parsedname *const pn2)
 		nam = loc;
 		typ = name_directory;
 	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
 	fprintf(sds->out,
 			"<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
 			sds->prepath, loc, loc, nam, typ);
@@ -158,8 +158,8 @@ static void ShowDirTextCallback(void *v,
 		nam = loc;
 		typ = name_directory;
 	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->ft=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->ft,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
 	fprintf(sds->out, "%s %s \"%s\"\r\n", loc, nam, typ);
 	free(buffer);
 }

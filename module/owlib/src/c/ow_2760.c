@@ -567,7 +567,7 @@ static int FS_r_page(struct one_wire_query * owq)
 {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
     if (OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) +
-        ((struct LockPage *) OWQ_pn(owq).ft->data.v)->offset[OWQ_pn(owq).extension], PN(owq)))
+        ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq)))
 		return -EINVAL;
     return OWQ_size(owq);
 }
@@ -577,7 +577,7 @@ static int FS_w_page(struct one_wire_query * owq)
 	if (OW_w_mem
            ((BYTE *) OWQ_buffer(owq), OWQ_size(owq),
             OWQ_offset(owq) +
-                    ((struct LockPage *) OWQ_pn(owq).ft->data.v)->offset[OWQ_pn(owq).extension], PN(owq)))
+                    ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -586,7 +586,7 @@ static int FS_w_page(struct one_wire_query * owq)
 static int FS_r_lock(struct one_wire_query * owq)
 {
 	BYTE data;
-    if (OW_r_mem(&data, 1, ((struct LockPage *) OWQ_pn(owq).ft->data.v)->reg, PN(owq)))
+    if (OW_r_mem(&data, 1, ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->reg, PN(owq)))
 		return -EINVAL;
     OWQ_Y(owq) = UT_getbit(&data, OWQ_pn(owq).extension);
 	return 0;
@@ -618,8 +618,8 @@ static int FS_r_vis(struct one_wire_query * owq)
 	switch (pn->sn[0]) {
 	case 0x36:					//DS2740
 		f = 6.25E-6;
-    	if (pn->ft->data.v)
-    		f = pn->ft->data.f;		// for DS2740BU
+    	if (pn->selected_filetype->data.v)
+    		f = pn->selected_filetype->data.f;		// for DS2740BU
 		break;
 	case 0x51:					//DS2751
 	case 0x35:					//DS2755
@@ -680,7 +680,7 @@ static int FS_r_voltlim(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     int I;
-	if (OW_r_int(&I, pn->ft->data.u, pn))
+	if (OW_r_int(&I, pn->selected_filetype->data.u, pn))
 		return -EINVAL;
     OWQ_F(owq) = .00000625 * I;
 	return 0;
@@ -691,7 +691,7 @@ static int FS_w_voltlim(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     int I = OWQ_F(owq) / .00000625;
-	return OW_w_int(&I, pn->ft->data.u, pn) ? -EINVAL : 0;
+	return OW_w_int(&I, pn->selected_filetype->data.u, pn) ? -EINVAL : 0;
 }
 
 // Volt-limits
@@ -699,7 +699,7 @@ static int FS_r_templim(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     int I;
-	if (OW_r_int8(&I, pn->ft->data.u, pn))
+	if (OW_r_int8(&I, pn->selected_filetype->data.u, pn))
 		return -EINVAL;
     OWQ_F(owq) = I;
 	return 0;
@@ -714,7 +714,7 @@ static int FS_w_templim(struct one_wire_query * owq)
 		return -ERANGE;
 	if (I > 127)
 		return -ERANGE;
-	return OW_w_int8(&I, pn->ft->data.u, pn) ? -EINVAL : 0;
+	return OW_w_int8(&I, pn->selected_filetype->data.u, pn) ? -EINVAL : 0;
 }
 
 // timer
@@ -910,8 +910,8 @@ static int FS_r_temp(struct one_wire_query * owq)
 static int FS_r_bit(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int bit = BYTE_MASK(pn->ft->data.u) ;
-	size_t location = pn->ft->data.u >> 8;
+    int bit = BYTE_MASK(pn->selected_filetype->data.u) ;
+	size_t location = pn->selected_filetype->data.u >> 8;
 	BYTE c[1];
 	if (OW_r_mem(c, 1, location, pn))
 		return -EINVAL;
@@ -922,8 +922,8 @@ static int FS_r_bit(struct one_wire_query * owq)
 static int FS_w_bit(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int bit = BYTE_MASK(pn->ft->data.u) ;
-	size_t location = pn->ft->data.u >> 8;
+    int bit = BYTE_MASK(pn->selected_filetype->data.u) ;
+	size_t location = pn->selected_filetype->data.u >> 8;
 	BYTE c[1];
 	if (OW_r_mem(c, 1, location, pn))
 		return -EINVAL;
@@ -1099,7 +1099,7 @@ static int OW_lock(const struct parsedname *pn)
 	};
 
 	UT_setbit(&lock[2], pn->extension, 1);
-	lock[4] = ((struct LockPage *) pn->ft->data.v)->offset[pn->extension];
+	lock[4] = ((struct LockPage *) pn->selected_filetype->data.v)->offset[pn->extension];
 
 	return BUS_transaction(t, pn);
 }
@@ -1109,13 +1109,13 @@ static _FLOAT polycomp(_FLOAT x, _FLOAT * coef);
 
 static int FS_rangelow(struct one_wire_query * owq)
 {
-    OWQ_F(owq) = ((struct thermocouple *) OWQ_pn(owq).ft->data.v)->rangeLow;
+    OWQ_F(owq) = ((struct thermocouple *) OWQ_pn(owq).selected_filetype->data.v)->rangeLow;
 	return 0;
 }
 
 static int FS_rangehigh(struct one_wire_query * owq)
 {
-    OWQ_F(owq) = ((struct thermocouple *) OWQ_pn(owq).ft->data.v)->rangeHigh;
+    OWQ_F(owq) = ((struct thermocouple *) OWQ_pn(owq).selected_filetype->data.v)->rangeHigh;
 	return 0;
 }
 
@@ -1124,7 +1124,7 @@ static int FS_thermocouple(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     _FLOAT T, V;
 	int ret;
-	struct thermocouple *thermo = (struct thermocouple *) pn->ft->data.v;
+	struct thermocouple *thermo = (struct thermocouple *) pn->selected_filetype->data.v;
 
 	/* Get reference temperature */
 	if ((ret = FS_r_temp(owq)))

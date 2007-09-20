@@ -203,7 +203,7 @@ static int FS_w_counter5(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     uint64_t L = ((uint64_t) OWQ_U(owq)) << 8;
-	return OW_w_ulong(&L, 5, pn->ft->data.s, pn);
+	return OW_w_ulong(&L, 5, pn->selected_filetype->data.s, pn);
 }
 
 /* set clock */
@@ -211,7 +211,7 @@ static int FS_w_counter4(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     uint64_t L = ((uint64_t) OWQ_U(owq));
-	return OW_w_ulong(&L, 4, pn->ft->data.s, pn);
+	return OW_w_ulong(&L, 4, pn->selected_filetype->data.s, pn);
 }
 
 /* read clock */
@@ -219,7 +219,7 @@ static int FS_r_counter5(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     uint64_t L;
-	if (OW_r_ulong(&L, 5, pn->ft->data.s, pn))
+	if (OW_r_ulong(&L, 5, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
     OWQ_U(owq) = L >> 8;
 	return 0;
@@ -230,7 +230,7 @@ static int FS_r_counter4(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     uint64_t L;
-	if (OW_r_ulong(&L, 4, pn->ft->data.s, pn))
+	if (OW_r_ulong(&L, 4, pn->selected_filetype->data.s, pn))
 		return -EINVAL;
     OWQ_U(owq) = L;
 	return 0;
@@ -301,7 +301,7 @@ static int FS_w_flag(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
 	OWQ_allocate_struct_and_pointer( owq_flag ) ;
     BYTE cr;
-	BYTE fl = pn->ft->data.c;
+	BYTE fl = pn->selected_filetype->data.c;
     OWQ_create_temporary( owq_flag, (char *) &cr, 1, 0x0201, pn ) ;
 	if (OW_r_mem_simple( owq_flag, 0, 0 ))
 		return -EINVAL;
@@ -324,7 +324,7 @@ static int FS_r_flag(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
 	OWQ_allocate_struct_and_pointer( owq_flag ) ;
     BYTE cr;
-	BYTE fl = pn->ft->data.c;
+	BYTE fl = pn->selected_filetype->data.c;
     OWQ_create_temporary( owq_flag, (char *) &cr, 1, 0x0201, pn ) ;
 	if (OW_r_mem_simple( owq_flag, 0, 0 ))
 		return -EINVAL;

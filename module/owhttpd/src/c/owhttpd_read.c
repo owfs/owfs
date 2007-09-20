@@ -41,9 +41,9 @@ static void Show(FILE * out, const char *path, const char *file)
     if (IsDir(pn)) {			/* Directory jump */
         fprintf(out, "<A HREF='%s'>%s</A>", pn->path, file);
 	} else {
-        int canwrite = !Global.readonly && (pn->ft->write != NO_WRITE_FUNCTION);
-        int canread = (pn->ft->read != NO_READ_FUNCTION);
-        enum ft_format format = pn->ft->format;
+        int canwrite = !Global.readonly && (pn->selected_filetype->write != NO_WRITE_FUNCTION);
+        int canread = (pn->selected_filetype->read != NO_READ_FUNCTION);
+        enum ft_format format = pn->selected_filetype->format;
 		int len = 0;			// initialize to avoid compiler warning
 
         if (pn->type == pn_structure) {
@@ -97,7 +97,7 @@ static void Show(FILE * out, const char *path, const char *file)
 				} else if (canwrite) {	/* rare write-only */
 					fprintf(out,
 							"<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",
-                            file, (pn->ft->suglen) >> 5);
+                            file, (pn->selected_filetype->suglen) >> 5);
 				}
             } else if (pn->extension >= 0
 					   && (format == ft_yesno || format == ft_bitfield)) {
@@ -168,9 +168,9 @@ static void ShowText(FILE * out, const char *path, const char *file)
 
     if (IsDir(pn)) {			/* Directory jump */
 	} else {
-        int canwrite = !Global.readonly && (pn->ft->write != NO_READ_FUNCTION);
-        int canread = (pn->ft->read != NO_WRITE_FUNCTION);
-        enum ft_format format = pn->ft->format;
+        int canwrite = !Global.readonly && (pn->selected_filetype->write != NO_READ_FUNCTION);
+        int canread = (pn->selected_filetype->read != NO_WRITE_FUNCTION);
+        enum ft_format format = pn->selected_filetype->format;
 		int len = 0;			// initialize to avoid compiler warning
 
         if (pn->type == pn_structure) {
@@ -240,7 +240,7 @@ static void ShowDeviceTextCallback(void *v,
 	struct showdevicestruct *sds = v;
 	char file[OW_FULLNAME_MAX + 1];
 	FS_DirName(file, OW_FULLNAME_MAX, pn2);
-	//printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+	//printf("ShowDevice: emb: pn2->selected_filetype=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->selected_filetype, pn2->subdir, pn2->dev, path2, file);
 	ShowText(sds->out, sds->path, file);
 }
 static void ShowDeviceCallback(void *v, const struct parsedname *const pn2)
@@ -248,7 +248,7 @@ static void ShowDeviceCallback(void *v, const struct parsedname *const pn2)
 	struct showdevicestruct *sds = v;
 	char file[OW_FULLNAME_MAX + 1];
 	FS_DirName(file, OW_FULLNAME_MAX, pn2);
-	//printf("ShowDevice: emb: pn2->ft=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->ft, pn2->subdir, pn2->dev, path2, file);
+	//printf("ShowDevice: emb: pn2->selected_filetype=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->selected_filetype, pn2->subdir, pn2->dev, path2, file);
 	Show(sds->out, sds->path, file);
 }
 static void ShowDeviceText(FILE * out, const struct parsedname *const pn)
@@ -262,7 +262,7 @@ static void ShowDeviceText(FILE * out, const struct parsedname *const pn)
 
 	HTTPstart(out, "200 OK", ct_text);
 
-	if (pn->ft) {				/* single item */
+	if (pn->selected_filetype) {				/* single item */
 		//printf("single item path=%s pn->path=%s\n", path2, pn->path);
 		slash = strrchr(sds.path, '/');
 		/* Nested function */
@@ -272,7 +272,7 @@ static void ShowDeviceText(FILE * out, const struct parsedname *const pn)
 		ShowDeviceTextCallback(&sds, pn);
 	} else {					/* whole device */
 		//printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
-		//printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
+		//printf("pn->dev=%p pn->selected_filetype=%p pn->subdir=%p\n", pn->dev, pn->selected_filetype, pn->subdir);
 		FS_dir(ShowDeviceTextCallback, &sds, pn);
 	}
 	free(sds.path);
@@ -304,7 +304,7 @@ void ShowDevice(FILE * out, const struct parsedname *const pn)
 			b, pn->path);
 
 
-	if (pn->ft) {				/* single item */
+	if (pn->selected_filetype) {				/* single item */
 		//printf("single item path=%s pn->path=%s\n", path2, pn->path);
 		slash = strrchr(sds.path, '/');
 		/* Nested function */
@@ -314,7 +314,7 @@ void ShowDevice(FILE * out, const struct parsedname *const pn)
 		ShowDeviceCallback(&sds, pn);
 	} else {					/* whole device */
 		//printf("whole directory path=%s pn->path=%s\n", path2, pn->path);
-		//printf("pn->dev=%p pn->ft=%p pn->subdir=%p\n", pn->dev, pn->ft, pn->subdir);
+		//printf("pn->dev=%p pn->selected_filetype=%p pn->subdir=%p\n", pn->dev, pn->selected_filetype, pn->subdir);
 		FS_dir(ShowDeviceCallback, &sds, pn);
 	}
 	fprintf(out, "</TABLE>");

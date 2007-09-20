@@ -196,7 +196,7 @@ static int FS_r_high(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	int Y[4] ;
-	if (OW_r_high(Y, pn->ft->data.i & 0x01, pn))
+	if (OW_r_high(Y, pn->selected_filetype->data.i & 0x01, pn))
 		return -EINVAL;
 	OWQ_array_Y(owq,0) = Y[0] ;
 	OWQ_array_Y(owq,1) = Y[1] ;
@@ -215,7 +215,7 @@ static int FS_w_high(struct one_wire_query * owq)
 		OWQ_array_Y(owq,2),
 		OWQ_array_Y(owq,3),
 	} ;
-	if (OW_w_high(Y, pn->ft->data.i & 0x01, pn))
+	if (OW_w_high(Y, pn->selected_filetype->data.i & 0x01, pn))
 		return -EINVAL;
 	return 0;
 }
@@ -225,7 +225,7 @@ static int FS_r_flag(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	int Y[4] ;
-	if (OW_r_flag(Y, pn->ft->data.i & 0x01, pn))
+	if (OW_r_flag(Y, pn->selected_filetype->data.i & 0x01, pn))
 		return -EINVAL;
 	OWQ_array_Y(owq,0) = Y[0] ;
 	OWQ_array_Y(owq,1) = Y[1] ;
@@ -244,7 +244,7 @@ static int FS_w_flag(struct one_wire_query * owq)
 		OWQ_array_Y(owq,2),
 		OWQ_array_Y(owq,3),
 	} ;
-	if (OW_w_flag(Y, pn->ft->data.i & 0x01, pn))
+	if (OW_w_flag(Y, pn->selected_filetype->data.i & 0x01, pn))
 		return -EINVAL;
 	return 0;
 }
@@ -317,13 +317,13 @@ static int FS_volts(struct one_wire_query * owq)
 	int volt_error ;
 	if ( element == EXTENSION_ALL ) {
 		_FLOAT V[4] = {0.,0.,0.,0.,} ;
-		volt_error = OW_volts(V, pn->ft->data.i, pn) ;
+		volt_error = OW_volts(V, pn->selected_filetype->data.i, pn) ;
 		OWQ_array_F(owq,0) = V[0] ;
 		OWQ_array_F(owq,1) = V[1] ;
 		OWQ_array_F(owq,2) = V[2] ;
 		OWQ_array_F(owq,3) = V[3] ;
 	} else {
-		volt_error = OW_1_volts(&OWQ_F(owq), element, pn->ft->data.i, pn) ;
+		volt_error = OW_1_volts(&OWQ_F(owq), element, pn->selected_filetype->data.i, pn) ;
 	}
 	if (volt_error ) return -EINVAL;
 	return 0;
@@ -333,7 +333,7 @@ static int FS_r_setvolt(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	_FLOAT V[4] ;
-	if (OW_r_vset(V, (pn->ft->data.i) >> 1, (pn->ft->data.i) & 0x01, pn))
+	if (OW_r_vset(V, (pn->selected_filetype->data.i) >> 1, (pn->selected_filetype->data.i) & 0x01, pn))
 		return -EINVAL;
 	OWQ_array_F(owq,0) = V[0] ;
 	OWQ_array_F(owq,1) = V[1] ;
@@ -351,7 +351,7 @@ static int FS_w_setvolt(struct one_wire_query * owq)
 		OWQ_array_F(owq,2),
 		OWQ_array_F(owq,3),
 	} ;
-	if (OW_w_vset(V, (pn->ft->data.i) >> 1, (pn->ft->data.i) & 0x01, pn))
+	if (OW_w_vset(V, (pn->selected_filetype->data.i) >> 1, (pn->selected_filetype->data.i) & 0x01, pn))
 		return -EINVAL;
 	return 0;
 }

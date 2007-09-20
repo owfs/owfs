@@ -94,7 +94,7 @@ static int FS_w_convert(struct one_wire_query * owq)
     struct parsedname struct_pn2 ;
     struct parsedname * pn2 = & struct_pn2 ;
     
-    enum simul_type type = (enum simul_type) pn->ft->data.i;
+    enum simul_type type = (enum simul_type) pn->selected_filetype->data.i;
 	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
 	FS_LoadPath(pn2->sn, pn2);
 	pn2->dev = NULL;				/* only branch select done, not actual device */
@@ -152,7 +152,7 @@ static int FS_r_convert(struct one_wire_query * owq)
 	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
 	FS_LoadPath(pn2->sn, pn2);
     OWQ_Y(owq) =
-		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->ft->data.i], pn2)
+		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], pn2)
 		 == 0);
 	return 0;
 }
@@ -176,7 +176,7 @@ static int FS_r_present(struct one_wire_query * owq)
 		};
 
 		/* check if DS2400 compatibility is needed */
-		if (pn->ft->data.i)
+		if (pn->selected_filetype->data.i)
 			read_ROM[0] = 0x0F;
 
 		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
@@ -219,7 +219,7 @@ static int FS_r_single(struct one_wire_query * owq)
 		};
 
 		/* check if DS2400 compatibility is needed */
-		if (pn->ft->data.i)
+		if (pn->selected_filetype->data.i)
 			read_ROM[0] = 0x0F;
 
 		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy

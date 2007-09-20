@@ -215,7 +215,7 @@ static int FS_set(struct one_wire_query * owq)
     }
 
 	/* write password */
-    OWQ_offset(owq_scratch) = 0x7FC0 + pn->ft->data.i;
+    OWQ_offset(owq_scratch) = 0x7FC0 + pn->selected_filetype->data.i;
     OWQ_size(owq_scratch) = 8 ;
 	ret = FS_w_mem(owq_scratch);
 	OW_clear(pn);
@@ -270,7 +270,7 @@ static int FS_use(struct one_wire_query * owq)
 {
     if ( OWQ_size(owq) < 8 ) return -ERANGE ;
     
-    if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).ft->data.i ? InternalProp(FUL) : InternalProp(REA), PN(owq)))
+    if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).selected_filetype->data.i ? InternalProp(FUL) : InternalProp(REA), PN(owq)))
 		return -EINVAL;
 	return 0;
 }

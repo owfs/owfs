@@ -504,6 +504,6 @@ static int FS_out(struct one_wire_query * owq)
 
 static int FS_define(struct one_wire_query * owq)
 {
-	OWQ_Y(owq) = OWQ_pn(owq).ft->data.i;
+	OWQ_Y(owq) = OWQ_pn(owq).selected_filetype->data.i;
 	return 0;
 }

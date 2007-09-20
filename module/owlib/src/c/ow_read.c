@@ -68,7 +68,7 @@ int FS_read_postparse(struct one_wire_query * owq)
 	int read_or_error ;
 
 	// ServerRead jumps in here, perhaps with non-file entry
-	if (pn->dev == NULL || pn->ft == NULL)
+	if (pn->dev == NULL || pn->selected_filetype == NULL)
 		return -EISDIR;
 
 	/* Normal read. Try three times */
@@ -258,11 +258,11 @@ size_t FileLength_vascii(struct one_wire_query * owq)
   size_t file_length = 0;
 
   // This is to avoid returning suglen on system/adapter/name.ALL etc with variable length
-  if (PN(owq)->ft->ag) {           /* array property */
+  if (PN(owq)->selected_filetype->ag) {           /* array property */
     switch (PN(owq)->extension) {
     case EXTENSION_ALL:
-      if ( PN(owq)->ft->format == ft_bitfield ) return FileLength(PN(owq));
-      switch (PN(owq)->ft->ag->combined) {
+      if ( PN(owq)->selected_filetype->format == ft_bitfield ) return FileLength(PN(owq));
+      switch (PN(owq)->selected_filetype->ag->combined) {
       case ag_separate:   /* separate reads, artificially combined into a single array */
 	// this is probably the only case needed
 	file_length = FS_read_from_parts(owq);
@@ -300,7 +300,7 @@ static int FS_r_local(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     
     /* Readable? */
-    if ( pn->ft->read == NO_READ_FUNCTION )
+    if ( pn->selected_filetype->read == NO_READ_FUNCTION )
         return -ENOTSUP;
 
     /* Mounting fuse with "direct_io" will cause a second read with offset
@@ -308,7 +308,7 @@ static int FS_r_local(struct one_wire_query * owq)
     // This check is done in FS_output_owq() too, since it's always called when this function returns 0
     if(OWQ_offset(owq)) {
       size_t file_length = 0;
-      if( PN(owq)->ft->format == ft_vascii) {
+      if( PN(owq)->selected_filetype->format == ft_vascii) {
 	file_length = FileLength_vascii(owq);
       } else {
 	file_length = FileLength(PN(owq));
@@ -321,22 +321,22 @@ static int FS_r_local(struct one_wire_query * owq)
     }
 
     /* Special case for "fake" adapter */
-    if (pn->in->Adapter == adapter_fake && pn->ft->change != fc_static && IsRealDir(pn))
+    if (pn->in->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn))
         return FS_read_fake(owq);
 
     /* Special case for "tester" adapter */
-    if (pn->in->Adapter == adapter_tester && pn->ft->change != fc_static)
+    if (pn->in->Adapter == adapter_tester && pn->selected_filetype->change != fc_static)
         return FS_read_tester(owq);
 
     /* Array property? Read separately? Read together and manually separate? */
-    if (pn->ft->ag) {           /* array property */
+    if (pn->selected_filetype->ag) {           /* array property */
         switch (pn->extension) {
             case EXTENSION_BYTE:
                 return FS_read_lump(owq);
             case EXTENSION_ALL:
                 if ( OWQ_offset(owq) > 0 ) return 0 ; // no aggregates can be offset -- too confusing
-                if ( pn->ft->format == ft_bitfield ) return FS_read_all_bits(owq) ;
-                switch (pn->ft->ag->combined) {
+                if ( pn->selected_filetype->format == ft_bitfield ) return FS_read_all_bits(owq) ;
+                switch (pn->selected_filetype->ag->combined) {
                     case ag_separate:   /* separate reads, artificially combined into a single array */
                         return FS_read_from_parts(owq);
                     case ag_mixed:      /* mixed mode, ALL read handled differently */
@@ -345,8 +345,8 @@ static int FS_r_local(struct one_wire_query * owq)
                         return FS_read_lump(owq);
                 }
             default:
-                if ( pn->ft->format == ft_bitfield ) return FS_read_one_bit(owq) ;
-                switch (pn->ft->ag->combined) {
+                if ( pn->selected_filetype->format == ft_bitfield ) return FS_read_one_bit(owq) ;
+                switch (pn->selected_filetype->ag->combined) {
                     case ag_separate:   /* separate reads, artificially combined into a single array */
                         return FS_read_lump(owq);
                     case ag_mixed:      /* mixed mode, ALL read handled differently */
@@ -376,12 +376,12 @@ static int FS_structure(struct one_wire_query * owq)
     output_length = snprintf(output_string,
                    PROPERTY_LENGTH_STRUCTURE,
                    "%c,%.6d,%.6d,%.2s,%.6d,",
-                   ft_format_char[OWQ_pn(owq_copy).ft->format],
-                   (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).extension : 0,
-                   (OWQ_pn(owq_copy).ft->ag) ? OWQ_pn(owq_copy).ft->ag->elements : 1,
-                   (OWQ_pn(owq_copy).ft->read == NO_READ_FUNCTION) ?
-                     ((OWQ_pn(owq_copy).ft->write == NO_WRITE_FUNCTION) ? "oo" : "wo") :
-                     ((OWQ_pn(owq_copy).ft->write == NO_WRITE_FUNCTION) ? "ro" : "rw") ,
+                   ft_format_char[OWQ_pn(owq_copy).selected_filetype->format],
+                   (OWQ_pn(owq_copy).selected_filetype->ag) ? OWQ_pn(owq_copy).extension : 0,
+                   (OWQ_pn(owq_copy).selected_filetype->ag) ? OWQ_pn(owq_copy).selected_filetype->ag->elements : 1,
+                   (OWQ_pn(owq_copy).selected_filetype->read == NO_READ_FUNCTION) ?
+                     ((OWQ_pn(owq_copy).selected_filetype->write == NO_WRITE_FUNCTION) ? "oo" : "wo") :
+                     ((OWQ_pn(owq_copy).selected_filetype->write == NO_WRITE_FUNCTION) ? "ro" : "rw") ,
                    (int) FullFileLength(PN(owq_copy))
                   );
     UCLIBCUNLOCK;
@@ -406,7 +406,7 @@ static int FS_structure(struct one_wire_query * owq)
 static int FS_read_lump(struct one_wire_query * owq)
 {
     if ( OWQ_Cache_Get(owq) ) { // non-zero means not found
-        int read_error = (OWQ_pn(owq).ft->read)(owq) ;
+        int read_error = (OWQ_pn(owq).selected_filetype->read)(owq) ;
         if ( read_error < 0 ) return read_error ;
         OWQ_Cache_Add(owq) ;
     }
@@ -414,13 +414,13 @@ static int FS_read_lump(struct one_wire_query * owq)
 }
 
 /* Read each array element independently, but return as one long string */
-/* called when pn->extension==-1 (ALL) and pn->ft->ag->combined==ag_separate */
+/* called when pn->extension==-1 (ALL) and pn->selected_filetype->ag->combined==ag_separate */
 static int FS_read_from_parts(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     OWQ_allocate_struct_and_pointer( owq_single ) ;
 
-    size_t elements = pn->ft->ag->elements ;
+    size_t elements = pn->selected_filetype->ag->elements ;
     size_t extension ;
 
     STAT_ADD1(read_array);      /* statistics */
@@ -432,13 +432,13 @@ static int FS_read_from_parts(struct one_wire_query * owq)
     for (extension = 0; extension < elements; ++extension) {
         OWQ_pn(owq_single).extension = extension ;
         if ( OWQ_Cache_Get(owq_single) ) { // non-zero if not there
-            int single_or_error = (pn->ft->read)(owq_single) ;
+            int single_or_error = (pn->selected_filetype->read)(owq_single) ;
             if ( single_or_error < 0 ) return single_or_error ;
             OWQ_Cache_Add(owq_single) ;
         }
         //printf("FS_read_from_parts extension=%d, length=%d, <%.*s> %p\n",(int)extension,(int)OWQ_length(owq_single),(int)OWQ_length(owq_single),OWQ_buffer(owq_single),OWQ_buffer(owq_single)) ;
         memcpy( &OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof(union value_object ) ) ;
-        switch ( pn->ft->format ) {
+        switch ( pn->selected_filetype->format ) {
             case ft_ascii:
             case ft_vascii:
             case ft_binary:
@@ -458,7 +458,7 @@ static int FS_read_all_bits(struct one_wire_query * owq)
 	struct parsedname * pn = PN(owq) ;
 	OWQ_allocate_struct_and_pointer( owq_single ) ;
 
-	size_t elements = pn->ft->ag->elements ;
+	size_t elements = pn->selected_filetype->ag->elements ;
 	size_t extension ;
 	int lump_read ;
 	UINT U ;
@@ -506,7 +506,7 @@ static int FS_read_one_bit(struct one_wire_query * owq)
 }
 
 /* read the combined data, and then separate */
-/* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
+/* called when pn->extension>0 (not ALL) and pn->selected_filetype->ag->combined==ag_aggregate */
 static int FS_read_a_part(struct one_wire_query * owq)
 {
 	OWQ_allocate_struct_and_pointer( owq_all ) ;
@@ -522,7 +522,7 @@ static int FS_read_a_part(struct one_wire_query * owq)
 		return lump_read ;
 	}
 
-	switch (OWQ_pn(owq).ft->format) {
+	switch (OWQ_pn(owq).selected_filetype->format) {
         case ft_vascii:
         case ft_ascii:
         case ft_binary:
@@ -551,7 +551,7 @@ static int FS_read_a_part(struct one_wire_query * owq)
 }
 
 /* read the combined data, and then separate */
-/* called when pn->extension>0 (not ALL) and pn->ft->ag->combined==ag_aggregate */
+/* called when pn->extension>0 (not ALL) and pn->selected_filetype->ag->combined==ag_aggregate */
 static int FS_read_mixed_part(struct one_wire_query * owq)
 {
 	OWQ_allocate_struct_and_pointer( owq_all ) ;
@@ -565,7 +565,7 @@ static int FS_read_mixed_part(struct one_wire_query * owq)
 		return FS_read_lump(owq) ; // read individual value */
 	}
 
-	switch (OWQ_pn(owq).ft->format) {
+	switch (OWQ_pn(owq).selected_filetype->format) {
         case ft_vascii:
         case ft_ascii:
         case ft_binary:

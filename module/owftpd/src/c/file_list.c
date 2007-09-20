@@ -283,7 +283,7 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 		return;
 	}
 
-	if (pn.ft) {
+	if (pn.selected_filetype) {
 		fps->ret = -ENOTDIR;
 	} else {
 		struct wildlexparse wlp = { NULL, match, fps, };

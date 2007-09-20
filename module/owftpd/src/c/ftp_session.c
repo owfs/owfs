@@ -1021,12 +1021,12 @@ static void do_retr(struct ftp_session_s *f,
 		goto exit_retr;
     }
     
-    if (OWQ_pn(&owq).ft->read == NO_READ_FUNCTION) {
+    if (OWQ_pn(&owq).selected_filetype->read == NO_READ_FUNCTION) {
 		reply(f, 550, "Error, file is write-only.");
 		goto exit_retr;
     }
     
-    if ((OWQ_pn(&owq).ft->format == ft_binary)
+    if ((OWQ_pn(&owq).selected_filetype->format == ft_binary)
 			   && (f->data_type == TYPE_ASCII)) {
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_retr;
@@ -1170,12 +1170,12 @@ static void do_stor(struct ftp_session_s *f,
 		goto exit_stor;
     }
 
-    if (pn->ft->write == NO_WRITE_FUNCTION) {
+    if (pn->selected_filetype->write == NO_WRITE_FUNCTION) {
 		reply(f, 550, "Error, file is read-only.");
 		goto exit_stor;
 	}
 
-    if ((pn->ft->format == ft_binary)
+    if ((pn->selected_filetype->format == ft_binary)
 			   && (f->data_type == TYPE_ASCII)) {
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_stor;
@@ -1506,7 +1506,7 @@ static void do_size(struct ftp_session_s *f,
 		} else {
 
 			/* verify that the file is not a directory */
-			if (pn.dev == NULL || pn.ft == NULL) {
+			if (pn.dev == NULL || pn.selected_filetype == NULL) {
 				reply(f, 550,
 					  "File is a directory, SIZE command not valid.");
 			} else {

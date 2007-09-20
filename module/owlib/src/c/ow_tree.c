@@ -66,7 +66,7 @@ static void Device2Tree(const struct device *d, enum pn_type type)
 {
 int i ;
 printf("Device(%d) %s: ",type,d->name);
-for(i=0;i<d->nft;++i){ printf( "%s ",d->ft[i].name);}
+for(i=0;i<d->nft;++i){ printf( "%s ",d->selected_filetype[i].name);}
 printf("\n");
 }
 */

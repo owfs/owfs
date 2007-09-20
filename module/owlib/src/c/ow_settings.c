@@ -83,7 +83,7 @@ struct device d_set_units =
 static int FS_r_timeout(struct one_wire_query * owq)
 {
 	CACHELOCK;
-    OWQ_I(owq) = ((UINT *) OWQ_pn(owq).ft->data.v)[0];
+    OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
 	CACHEUNLOCK;
 	return 0;
 }
@@ -94,8 +94,8 @@ static int FS_w_timeout(struct one_wire_query * owq)
 	struct parsedname * pn = PN(owq) ;
 	CACHELOCK;
 	//printf("FS_w_timeout!!!\n");
-	previous = ((UINT *) pn->ft->data.v)[0];
-	((UINT *) pn->ft->data.v)[0] = OWQ_I(owq);
+	previous = ((UINT *) pn->selected_filetype->data.v)[0];
+	((UINT *) pn->selected_filetype->data.v)[0] = OWQ_I(owq);
 	CACHEUNLOCK;
 	if (previous > OWQ_I(owq))
 		Cache_Clear();

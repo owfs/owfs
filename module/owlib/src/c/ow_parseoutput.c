@@ -49,7 +49,7 @@ int FS_output_owq( struct one_wire_query * owq)
     // have to check if offset is beyond the filesize.
     if(OWQ_offset(owq)) {
         size_t file_length = 0;
-        if( PN(owq)->ft->format == ft_vascii) {
+        if( PN(owq)->selected_filetype->format == ft_vascii) {
 	        file_length = FileLength_vascii(owq);
         } else {
 	        file_length = FileLength(PN(owq));
@@ -65,7 +65,7 @@ int FS_output_owq( struct one_wire_query * owq)
         case EXTENSION_BYTE:
             return Fowq_output_unsigned(owq) ;
         case EXTENSION_ALL:
-            switch (OWQ_pn(owq).ft->format) {
+            switch (OWQ_pn(owq).selected_filetype->format) {
                 case ft_ascii:
                 case ft_vascii:
                     return Fowq_output_ascii_array(owq) ;
@@ -75,7 +75,7 @@ int FS_output_owq( struct one_wire_query * owq)
                     return Fowq_output_array_with_commas(owq) ;
             }
         default:
-            switch (OWQ_pn(owq).ft->format) {
+            switch (OWQ_pn(owq).selected_filetype->format) {
                 case ft_integer:
                     return Fowq_output_integer(owq) ;
                 case ft_yesno:
@@ -141,7 +141,7 @@ static int Fowq_output_float(struct one_wire_query * owq)
     char c[PROPERTY_LENGTH_FLOAT+2] ;
     _FLOAT F ;
 
-    switch (OWQ_pn(owq).ft->format) {
+    switch (OWQ_pn(owq).selected_filetype->format) {
         case ft_temperature:
             F = Temperature(OWQ_F(owq),PN(owq)) ;
             break ;
@@ -204,7 +204,7 @@ int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_qu
     
     /* and copy */
     memcpy(OWQ_buffer(owq), &string[offset], copy_length) ;
-    switch (OWQ_pn(owq).ft->format) {
+    switch (OWQ_pn(owq).selected_filetype->format) {
         case ft_vascii:
         case ft_ascii:
         case ft_binary:
@@ -228,7 +228,7 @@ static int Fowq_output_array_with_commas( struct one_wire_query * owq )
     int len ;
     size_t used_size = 0 ;
     size_t remaining_size = OWQ_size(owq) ;
-    size_t elements = OWQ_pn(owq).ft->ag->elements ;
+    size_t elements = OWQ_pn(owq).selected_filetype->ag->elements ;
 
     // loop though all array elements
     for ( extension = 0 ; extension < elements ; ++extension ) {
@@ -259,7 +259,7 @@ static int Fowq_output_array_with_commas( struct one_wire_query * owq )
 static int Fowq_output_ascii_array( struct one_wire_query * owq )
 {
     size_t extension ;
-    size_t elements = OWQ_pn(owq).ft->ag->elements ;
+    size_t elements = OWQ_pn(owq).selected_filetype->ag->elements ;
     size_t total_length = 0 ;
     size_t current_offset = OWQ_array_length(owq,0) ;
 
@@ -281,7 +281,7 @@ static int Fowq_output_array_no_commas( struct one_wire_query * owq )
 {
     size_t extension ;
     size_t total_length = 0 ;
-    size_t elements = OWQ_pn(owq).ft->ag->elements ;
+    size_t elements = OWQ_pn(owq).selected_filetype->ag->elements ;
 
     for ( extension = 0 ; extension < elements ; ++extension ) {
         total_length += OWQ_array_length(owq,extension) ;

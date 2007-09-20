@@ -475,26 +475,26 @@ static enum parse_enum Parse_Property(char *filename,
 	filename = strsep(&dot, ".");
 	//printf("FP name=%s, dot=%s\n", filename, dot);
 	/* Match to known filetypes for this device */
-	if ((pn->ft =
+	if ((pn->selected_filetype =
 		 bsearch(filename, pn->dev->ft, (size_t) pn->dev->nft,
 				 sizeof(struct filetype), filecmp))) {
-		//printf("FP known filetype %s\n",pn->ft->name) ;
+		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
 		if (dot == NULL || dot[0] == '\0') {	/* no extension */
-			if (pn->ft->ag)
+			if (pn->selected_filetype->ag)
 				return parse_error;	/* aggregate filetypes need an extension */
 			pn->extension = 0;	/* default when no aggregate */
-		} else if (pn->ft->ag == NULL) {
+		} else if (pn->selected_filetype->ag == NULL) {
 			return parse_error;	/* An extension not allowed when non-aggregate */
 		} else if (strcasecmp(dot, "ALL") == 0) {
 			//printf("FP ALL\n");
 			pn->extension = EXTENSION_ALL;	/* ALL */
-		} else if (pn->ft->format == ft_bitfield
+		} else if (pn->selected_filetype->format == ft_bitfield
 				   && strcasecmp(dot, "BYTE") == 0) {
 			pn->extension = EXTENSION_BYTE;	/* BYTE */
 			//printf("FP BYTE\n") ;
 		} else {
-			if (pn->ft->ag->letters == ag_letters) {
+			if (pn->selected_filetype->ag->letters == ag_letters) {
 				//printf("FP letters\n") ;
 				if ((strlen(dot) != 1) || !isupper(dot[0]))
 					return parse_error;
@@ -507,7 +507,7 @@ static enum parse_enum Parse_Property(char *filename,
 					|| ((pn->extension == 0) && (errno == -EINVAL)))
 					return parse_error;	/* Bad number */
 			}
-			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->ft->ag->elements) ;
+			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
 			/*
 			 * We have to agree any extension from remote bus
 			 * otherwise /system/adapter/address.4 and
@@ -516,15 +516,15 @@ static enum parse_enum Parse_Property(char *filename,
 			 */
 			if (IsRealDir(pn)) {
 				if ((pn->extension < 0)
-					|| (pn->extension >= pn->ft->ag->elements)) {
-					//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->ft->ag->elements, pn->path);
+					|| (pn->extension >= pn->selected_filetype->ag->elements)) {
+					//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
 					return parse_error;	/* Extension out of range */
 				}
 			}
 			//printf("FP in range\n") ;
 		}
 		//printf("FP Good\n") ;
-		switch (pn->ft->format) {
+		switch (pn->selected_filetype->format) {
 		case ft_directory:
 			if (BranchAdd(pn)) {
 				//printf("PN BranchAdd failed for %s\n", pn->path);
@@ -537,8 +537,8 @@ static enum parse_enum Parse_Property(char *filename,
 			STATUNLOCK;
 			return parse_real;
 		case ft_subdir:
-			pn->subdir = pn->ft;
-			pn->ft = NULL;
+			pn->subdir = pn->selected_filetype;
+			pn->selected_filetype = NULL;
 			return parse_subprop;
 		default:
 			return parse_done;
@@ -563,9 +563,9 @@ static int BranchAdd(struct parsedname *pn)
 		}
 	}
 	memcpy(pn->bp[pn->pathlength].sn, pn->sn, 8);	/* copy over DS2409 name */
-	pn->bp[pn->pathlength].branch = pn->ft->data.i;
+	pn->bp[pn->pathlength].branch = pn->selected_filetype->data.i;
 	++pn->pathlength;
-	pn->ft = NULL;
+	pn->selected_filetype = NULL;
 	pn->dev = NULL;
 	return 0;
 }

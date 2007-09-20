@@ -125,20 +125,20 @@ int FS_dirname_type(char *buffer, const size_t length,
 int FS_FileName(char *name, const size_t size, const struct parsedname *pn)
 {
 	int s;
-	if (pn->ft == NULL)
+	if (pn->selected_filetype == NULL)
 		return -ENOENT;
 	UCLIBCLOCK;
-	if (pn->ft->ag == NULL) {
-		s = snprintf(name, size, "%s", pn->ft->name);
+	if (pn->selected_filetype->ag == NULL) {
+		s = snprintf(name, size, "%s", pn->selected_filetype->name);
 	} else if (pn->extension == EXTENSION_ALL) {
-		s = snprintf(name, size, "%s.ALL", pn->ft->name);
+		s = snprintf(name, size, "%s.ALL", pn->selected_filetype->name);
 	} else if (pn->extension == EXTENSION_BYTE) {
-		s = snprintf(name, size, "%s.BYTE", pn->ft->name);
-	} else if (pn->ft->ag->letters == ag_letters) {
-		s = snprintf(name, size, "%s.%c", pn->ft->name,
+		s = snprintf(name, size, "%s.BYTE", pn->selected_filetype->name);
+	} else if (pn->selected_filetype->ag->letters == ag_letters) {
+		s = snprintf(name, size, "%s.%c", pn->selected_filetype->name,
 					 pn->extension + 'A');
 	} else {
-		s = snprintf(name, size, "%s.%-d", pn->ft->name, pn->extension);
+		s = snprintf(name, size, "%s.%-d", pn->selected_filetype->name, pn->extension);
 	}
 	UCLIBCUNLOCK;
 	return (s < 0) ? -ENOBUFS : 0;
@@ -151,22 +151,22 @@ int FS_FileName(char *name, const size_t size, const struct parsedname *pn)
 void FS_DirName(char *buffer, const size_t size,
 				const struct parsedname *pn)
 {
-	if (pn->ft) {				/* A real file! */
-		char *pname = strchr(pn->ft->name, '/');	// for subdirectories
+	if (pn->selected_filetype) {				/* A real file! */
+		char *pname = strchr(pn->selected_filetype->name, '/');	// for subdirectories
 		if (pname) {
 			++pname;
 		} else {
-			pname = pn->ft->name;
+			pname = pn->selected_filetype->name;
 		}
 
 		UCLIBCLOCK;
-		if (pn->ft->ag == NULL) {
+		if (pn->selected_filetype->ag == NULL) {
 			snprintf(buffer, size, "%s", pname);
 		} else if (pn->extension == EXTENSION_ALL) {
 			snprintf(buffer, size, "%s.ALL", pname);
 		} else if (pn->extension == EXTENSION_BYTE) {
 			snprintf(buffer, size, "%s.BYTE", pname);
-		} else if (pn->ft->ag->letters == ag_letters) {
+		} else if (pn->selected_filetype->ag->letters == ag_letters) {
 			snprintf(buffer, size, "%s.%c", pname, pn->extension + 'A');
 		} else {
 			snprintf(buffer, size, "%s.%-d", pname, pn->extension);

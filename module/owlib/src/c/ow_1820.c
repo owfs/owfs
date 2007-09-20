@@ -246,7 +246,7 @@ static int FS_10temp(struct one_wire_query * owq)
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
 static int FS_22temp(struct one_wire_query * owq)
 {
-    int resolution = OWQ_pn(owq).ft->data.i ;
+    int resolution = OWQ_pn(owq).selected_filetype->data.i ;
     switch (resolution) {
 	case 9:
 	case 10:
@@ -307,7 +307,7 @@ static int FS_r_latch(struct one_wire_query * owq)
 
 static int FS_r_templimit(struct one_wire_query * owq)
 {
-    if (OW_r_templimit(&OWQ_F(owq), PN(owq)->ft->data.i, PN(owq)))
+    if (OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -324,7 +324,7 @@ static int FS_r_ad(struct one_wire_query * owq)
 
 static int FS_w_templimit(struct one_wire_query * owq)
 {
-    if (OW_w_templimit(OWQ_F(owq), PN(owq)->ft->data.i, PN(owq)))
+    if (OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -731,9 +731,9 @@ static enum eDie OW_die(const struct parsedname *pn)
 		{ pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1],
 	};
 	// data gives index into die matrix
-	if (memcmp(die, DIE[pn->ft->data.i].C2, 6) > 0)
+	if (memcmp(die, DIE[pn->selected_filetype->data.i].C2, 6) > 0)
 		return eC2;
-	if (memcmp(die, DIE[pn->ft->data.i].B7, 6) > 0)
+	if (memcmp(die, DIE[pn->selected_filetype->data.i].B7, 6) > 0)
 		return eB7;
 	return eB6;
 }

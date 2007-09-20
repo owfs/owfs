@@ -153,7 +153,7 @@ MakeInternalProp(CUM,fc_persistent) ; //cumulative
 static int FS_simple_command(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    UINT lcd_command_pair = (UINT) pn->ft->data.u ;
+    UINT lcd_command_pair = (UINT) pn->selected_filetype->data.u ;
     BYTE lcd_command_code = OWQ_Y(owq) ? UNPACK_ON(lcd_command_pair) : UNPACK_OFF(lcd_command_pair) ;
     if ( OW_simple_command( lcd_command_code, pn ) ) {
         return -EINVAL ;
@@ -264,7 +264,7 @@ static int FS_w_cum(struct one_wire_query * owq)
 static int FS_w_lineX(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int width = pn->ft->data.i;
+    int width = pn->selected_filetype->data.i;
 	BYTE loc[] = { 0x00, 0x40, 0x00 + width, 0x40 + width };
 	char line[width];
     size_t size = OWQ_size(owq) ;
@@ -287,7 +287,7 @@ static int FS_w_lineX(struct one_wire_query * owq)
 static int FS_w_screenX(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int width = pn->ft->data.i;
+    int width = pn->selected_filetype->data.i;
 	int rows = (width == 40) ? 2 : 4;	/* max number of rows */
     char *start_of_remaining_text = OWQ_buffer(owq);
     char *pointer_after_all_text = OWQ_buffer(owq) + OWQ_size(owq);
@@ -302,7 +302,7 @@ static int FS_w_screenX(struct one_wire_query * owq)
     }
 
     OWQ_create_shallow_single( owq_line, owq ) ; // won't bother to destroy
-    OWQ_pn(owq_line).ft = OWQ_pn(owq).ft ; // to get the correct width in FS_w_lineX
+    OWQ_pn(owq_line).selected_filetype = OWQ_pn(owq).selected_filetype ; // to get the correct width in FS_w_lineX
     
 	for (extension = 0; extension < rows; ++extension) {
 		char * newline_location = memchr(start_of_remaining_text, '\n', pointer_after_all_text - start_of_remaining_text);

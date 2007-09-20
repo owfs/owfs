@@ -125,14 +125,14 @@ static int FS_w_polarity(struct one_wire_query * owq)
 
 static int FS_r_templimit(struct one_wire_query * owq)
 {
-    if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).ft->data.i, PN(owq)))
+    if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 static int FS_w_templimit(struct one_wire_query * owq)
 {
-    if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).ft->data.i, PN(owq)))
+    if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }

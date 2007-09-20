@@ -359,12 +359,12 @@ static int FS_stat(struct one_wire_query * owq)
     int dindex = pn->extension;
 	if (dindex < 0)
 		dindex = 0;
-	if (pn->ft == NULL)
+	if (pn->selected_filetype == NULL)
 		return -ENOENT;
-	if (pn->ft->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL)
 		return -ENOENT;
 	STATLOCK;
-    OWQ_U(owq) = ((UINT *) pn->ft->data.v)[dindex];
+    OWQ_U(owq) = ((UINT *) pn->selected_filetype->data.v)[dindex];
 	STATUNLOCK;
 	return 0;
 }
@@ -381,9 +381,9 @@ static int FS_stat_p(struct one_wire_query * owq)
 	if (!c)
 		return -ENOENT;
 
-	if (pn->ft == NULL)
+	if (pn->selected_filetype == NULL)
 		return -ENOENT;
-	switch (pn->ft->data.i) {
+	switch (pn->selected_filetype->data.i) {
 	case 0:
 		ptr = &c->bus_locks;
 		break;
@@ -420,9 +420,9 @@ static int FS_time_p(struct one_wire_query * owq)
 	if (!c)
 		return -ENOENT;
 
-	if (pn->ft == NULL)
+	if (pn->selected_filetype == NULL)
 		return -ENOENT;
-	switch (pn->ft->data.i) {
+	switch (pn->selected_filetype->data.i) {
 	case 0:
 		tv = &c->bus_time;
 		break;
@@ -443,9 +443,9 @@ static int FS_time(struct one_wire_query * owq)
 	struct timeval *tv;
 	if (dindex < 0)
 		dindex = 0;
-	if (pn->ft == NULL)
+	if (pn->selected_filetype == NULL)
 		return -ENOENT;
-	tv = (struct timeval *) pn->ft->data.v;
+	tv = (struct timeval *) pn->selected_filetype->data.v;
 	if (tv == NULL)
 		return -ENOENT;
 

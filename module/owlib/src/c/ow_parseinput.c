@@ -64,7 +64,7 @@ int FS_input_owq( struct one_wire_query * owq)
         case EXTENSION_BYTE:
             return FS_input_unsigned(owq) ;
         case EXTENSION_ALL:
-            switch (OWQ_pn(owq).ft->format) {
+            switch (OWQ_pn(owq).selected_filetype->format) {
                 case ft_ascii:
                 case ft_vascii:
                     return FS_input_ascii_array(owq) ;
@@ -74,7 +74,7 @@ int FS_input_owq( struct one_wire_query * owq)
                     return FS_input_array_with_commas(owq) ;
             }
         default:
-            switch (OWQ_pn(owq).ft->format) {
+            switch (OWQ_pn(owq).selected_filetype->format) {
                 case ft_integer:
                     return FS_input_integer(owq) ;
                 case ft_yesno:
@@ -239,7 +239,7 @@ static int FS_input_float(struct one_wire_query * owq )
     if (errno) return -errno ; // conversion error
     if (end == input_buffer) return -EINVAL; // nothing valid found for conversion
 
-    switch ( OWQ_pn(owq).ft->format ) {
+    switch ( OWQ_pn(owq).selected_filetype->format ) {
         case ft_temperature:
             OWQ_F(owq) = fromTemperature( F, PN(owq) ) ;
             break ;
@@ -299,7 +299,7 @@ static int FS_input_ascii(struct one_wire_query * owq )
 /* creates a new allocated memory area IF no error */
 static int FS_input_array_with_commas(struct one_wire_query * owq )
 {
-    int elements = OWQ_pn(owq).ft->ag->elements ;
+    int elements = OWQ_pn(owq).selected_filetype->ag->elements ;
     int extension ;
     char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
     char * comma = NULL ; // assignment to avoid compiler warning
@@ -349,7 +349,7 @@ static int FS_input_array_with_commas(struct one_wire_query * owq )
 /* creates a new allocated memory area IF no error */
 static int FS_input_ascii_array(struct one_wire_query * owq )
 {
-    int elements = OWQ_pn(owq).ft->ag->elements ;
+    int elements = OWQ_pn(owq).selected_filetype->ag->elements ;
     int extension ;
     char * end = OWQ_buffer(owq) + OWQ_size(owq) ;
     char * buffer_position = OWQ_buffer(owq) ;
@@ -382,9 +382,9 @@ static int FS_input_ascii_array(struct one_wire_query * owq )
 /* creates a new allocated memory area IF no error */
 static int FS_input_array_no_commas(struct one_wire_query * owq )
 {
-    int elements = OWQ_pn(owq).ft->ag->elements ;
+    int elements = OWQ_pn(owq).selected_filetype->ag->elements ;
     int extension ;
-    int suglen = OWQ_pn(owq).ft->suglen ;
+    int suglen = OWQ_pn(owq).selected_filetype->suglen ;
 
     if ( (OWQ_offset(owq)!=0) || ((int) OWQ_size(owq)!=suglen*elements) ) {
         return -EINVAL ;

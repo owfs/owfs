@@ -29,7 +29,7 @@ void ChangeData(struct one_wire_query * owq)
     /* Do command processing and make changes to 1-wire devices */
     httpunescape((BYTE *) value_string);
     LEVEL_DETAIL("CHANGEDATA path=%s value=%s\n", pn->path, value_string);
-    switch (pn->ft->format) {
+    switch (pn->selected_filetype->format) {
         case ft_binary:
             hex_only(value_string);
             OWQ_size(owq) = hex_convert(value_string);

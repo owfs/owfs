@@ -22,7 +22,7 @@ size_t FileLength( const struct parsedname * pn )
     if (IsDir(pn))
         return PROPERTY_LENGTH_DIRECTORY;
 
-    switch ( pn->ft->format ) {
+    switch ( pn->selected_filetype->format ) {
         case ft_yesno:
             return PROPERTY_LENGTH_YESNO ;
         case ft_integer:
@@ -41,7 +41,7 @@ size_t FileLength( const struct parsedname * pn )
         case ft_ascii:
         case ft_binary:
         default:
-            return pn->ft->suglen ; ;
+            return pn->selected_filetype->suglen ; ;
     }
 }
 
@@ -54,8 +54,8 @@ size_t FullFileLength( const struct parsedname * pn )
     } else if (pn->extension != EXTENSION_ALL ) {
         return entry_length ;
     } else {
-        size_t elements = pn->ft->ag->elements ;
-        if ( pn->ft->format==ft_binary ) {
+        size_t elements = pn->selected_filetype->ag->elements ;
+        if ( pn->selected_filetype->format==ft_binary ) {
             return entry_length * elements ;
         } else { // add room for commas
             return (entry_length + 1) * elements  - 1 ;

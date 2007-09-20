@@ -26,7 +26,7 @@ int FS_OWQ_create( const char * path, char * buffer, size_t size, off_t offset, 
     OWQ_size(  owq) = size ;
     OWQ_offset(owq) = offset ;
     if ( pn->extension == EXTENSION_ALL ) {
-        OWQ_array(owq) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
+        OWQ_array(owq) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object)) ;
         if (OWQ_array(owq) == NULL ) {
             FS_ParsedName_destroy( pn ) ;
             return -ENOMEM ;
@@ -48,7 +48,7 @@ int FS_OWQ_create_plus( const char * path, const char * file, char * buffer, siz
     OWQ_size(  owq) = size ;
     OWQ_offset(owq) = offset ;
     if ( pn->extension == EXTENSION_ALL ) {
-        OWQ_array(owq) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
+        OWQ_array(owq) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object)) ;
         if (OWQ_array(owq) == NULL ) {
             FS_ParsedName_destroy( pn ) ;
             return -ENOMEM ;
@@ -87,16 +87,16 @@ int OWQ_create_shallow_aggregate( struct one_wire_query * owq_shallow, struct on
     memcpy( owq_shallow, owq_original, sizeof(struct one_wire_query) ) ;
     
     /* allocate new value_object array space */
-    OWQ_array(owq_shallow) = calloc((size_t) pn->ft->ag->elements, sizeof(union value_object)) ;
+    OWQ_array(owq_shallow) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object)) ;
     if ( OWQ_array(owq_shallow) == NULL ) return -ENOMEM ;
     if ( pn->extension == EXTENSION_ALL ) {
-        memcpy( OWQ_array(owq_shallow), OWQ_array(owq_original), pn->ft->ag->elements * sizeof(union value_object) ) ;
+        memcpy( OWQ_array(owq_shallow), OWQ_array(owq_original), pn->selected_filetype->ag->elements * sizeof(union value_object) ) ;
     }
     
     OWQ_offset(owq_shallow) = 0 ;
     OWQ_pn(owq_shallow).extension = EXTENSION_ALL ;
     
-    switch ( pn->ft->format ) {
+    switch ( pn->selected_filetype->format ) {
         case ft_binary:
         case ft_ascii:
         case ft_vascii:
@@ -121,7 +121,7 @@ void OWQ_destroy_shallow_aggregate( struct one_wire_query * owq_shallow )
         free( OWQ_array(owq_shallow) ) ;
         OWQ_array(owq_shallow) = NULL ;
     }
-    switch ( OWQ_pn(owq_shallow).ft->format ) {
+    switch ( OWQ_pn(owq_shallow).selected_filetype->format ) {
         case ft_binary:
         case ft_ascii:
         case ft_vascii:

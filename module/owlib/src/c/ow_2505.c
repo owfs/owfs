@@ -138,7 +138,7 @@ static int FS_r_page(struct one_wire_query * owq)
 
 static int FS_r_status(struct one_wire_query * owq)
 {
-    size_t pagesize = PN(owq)->ft->suglen ;
+    size_t pagesize = PN(owq)->selected_filetype->suglen ;
     if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_crc16_AA))
         return -EINVAL;
     return 0 ;

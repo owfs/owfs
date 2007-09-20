@@ -346,7 +346,7 @@ owtcl_ObjCmdProc(Owtcl_IsDir)
 
   /* Check if directory or file. */
   resultPtr = Tcl_GetObjResult(interp);
-  if (pn.dev==NULL || pn.ft == NULL || pn.subdir) /* A directory of some kind */
+  if (pn.dev==NULL || pn.selected_filetype == NULL || pn.subdir) /* A directory of some kind */
     Tcl_SetIntObj(resultPtr, 1);
   else
     Tcl_SetIntObj(resultPtr, 0);

@@ -103,14 +103,14 @@ int LockGet(const struct parsedname *pn)
 
 	pn->lock[inindex] = NULL;
 	/* Need locking? */
-	switch (pn->ft->format) {
+	switch (pn->selected_filetype->format) {
 	case ft_directory:
 	case ft_subdir:
 		return 0;
 	default:
 		break;
 	}
-	switch (pn->ft->change) {
+	switch (pn->selected_filetype->change) {
 	case fc_static:
 	case fc_Astable:
 	case fc_Avolatile:

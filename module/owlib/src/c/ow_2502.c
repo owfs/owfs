@@ -114,7 +114,7 @@ static int FS_r_param(struct one_wire_query * owq)
     BYTE data[32];
 	if (OW_r_data(data, pn))
 		return -EINVAL;
-    return Fowq_output_offset_and_size((ASCII *) & data[pn->ft->data.i], (size_t) pn->ft->suglen, owq ) ;
+    return Fowq_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], (size_t) pn->selected_filetype->suglen, owq ) ;
 }
 
 static int FS_w_memory(struct one_wire_query * owq)

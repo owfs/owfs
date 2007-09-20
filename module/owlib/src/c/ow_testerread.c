@@ -45,7 +45,7 @@ static int FS_read_tester_single(struct one_wire_query * owq)
     int family_code=  pn->sn[0] ;
     int calculated_value = family_code + tester_bus + device + pn->extension ;
     
-    switch (OWQ_pn(owq).ft->format) {
+    switch (OWQ_pn(owq).selected_filetype->format) {
         case ft_integer:
             OWQ_I(owq) = calculated_value ;
             break ;
@@ -109,10 +109,10 @@ static int FS_read_tester_single(struct one_wire_query * owq)
 }
 
 /* Read each array element independently, but return as one long string */
-/* called when pn->extension==EXTENSION_ALL and pn->ft->ag->combined==ag_separate */
+/* called when pn->extension==EXTENSION_ALL and pn->selected_filetype->ag->combined==ag_separate */
 static int FS_read_tester_array(struct one_wire_query * owq)
 {
-    size_t elements = OWQ_pn(owq).ft->ag->elements ;
+    size_t elements = OWQ_pn(owq).selected_filetype->ag->elements ;
     size_t extension ;
     size_t entry_length = FileLength(PN(owq)) ;
     OWQ_allocate_struct_and_pointer( owq_single ) ;
@@ -121,7 +121,7 @@ static int FS_read_tester_array(struct one_wire_query * owq)
 
     for ( extension = 0 ; extension < elements ; ++extension ) {
         OWQ_pn(owq_single).extension = extension ;
-        switch (OWQ_pn(owq).ft->format) {
+        switch (OWQ_pn(owq).selected_filetype->format) {
             case ft_integer:
             case ft_yesno:
             case ft_bitfield:

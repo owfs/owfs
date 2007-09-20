@@ -201,7 +201,7 @@ int OWQ_Cache_Add( const struct one_wire_query * owq )
 {
 	const struct parsedname * pn = PN(owq) ;
 	if ( pn->extension == EXTENSION_ALL ) {
-		switch ( pn->ft->format ) {
+		switch ( pn->selected_filetype->format ) {
 			case ft_ascii:
 			case ft_vascii:
 			case ft_binary:
@@ -213,12 +213,12 @@ int OWQ_Cache_Add( const struct one_wire_query * owq )
 			case ft_float:
 			case ft_temperature:
 			case ft_tempgap:
-				return Cache_Add( OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
+				return Cache_Add( OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn ) ;
 			default:
 				return 1 ;
 		}
 	} else {
-		switch ( pn->ft->format ) {
+		switch ( pn->selected_filetype->format ) {
 			case ft_ascii:
 			case ft_vascii:
 			case ft_binary:
@@ -250,7 +250,7 @@ int Cache_Add(const void *data, const size_t datasize,
 	if (!pn || IsAlarmDir(pn))
 		return 0;				// do check here to avoid needless processing
 
-	duration = TimeOut(pn->ft->change);
+	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0)
 		return 0;				/* in case timeout set to 0 */
 
@@ -262,13 +262,13 @@ int Cache_Add(const void *data, const size_t datasize,
 				(int) datasize);
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 	memcpy(tn->tk.sn, pn->sn, 8);
-	tn->tk.p = pn->ft;
+	tn->tk.p = pn->selected_filetype;
 	tn->tk.extension = pn->extension;
 	tn->expires = duration + time(NULL);
 	tn->dsize = datasize;
 	if (datasize)
 		memcpy(TREE_DATA(tn), data, datasize);
-	switch (pn->ft->change) {
+	switch (pn->selected_filetype->change) {
 	case fc_persistent:
 		return Add_Stat(&cache_sto, Cache_Add_Store(tn));
 	default:
@@ -544,7 +544,7 @@ int OWQ_Cache_Get( struct one_wire_query * owq )
 {
 	struct parsedname * pn = PN(owq) ;
 	if ( pn->extension == EXTENSION_ALL ) {
-		switch ( pn->ft->format ) {
+		switch ( pn->selected_filetype->format ) {
 			case ft_ascii:
 			case ft_vascii:
 			case ft_binary:
@@ -556,12 +556,12 @@ int OWQ_Cache_Get( struct one_wire_query * owq )
 			case ft_float:
 			case ft_temperature:
 			case ft_tempgap:
-				return Cache_Get_Strict( OWQ_array(owq), (pn->ft->ag->elements) * sizeof(union value_object), pn ) ;
+				return Cache_Get_Strict( OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn ) ;
 			default:
 				return 1 ;
 		}
 	} else {
-		switch ( pn->ft->format ) {
+		switch ( pn->selected_filetype->format ) {
 			case ft_ascii:
 			case ft_vascii:
             case ft_binary:
@@ -593,7 +593,7 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 	if (IsUncachedDir(pn) || IsAlarmDir(pn))
 		return 1;
 
-	duration = TimeOut(pn->ft->change);
+	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0)
 		return 1;
 
@@ -601,9 +601,9 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 				SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->ft;
+	tn.tk.p = pn->selected_filetype;
 	tn.tk.extension = pn->extension;
-	switch (pn->ft->change) {
+	switch (pn->selected_filetype->change) {
 	case fc_persistent:
 		return Get_Stat(&cache_sto,
 						Cache_Get_Store(data, dsize, duration, &tn));
@@ -859,15 +859,15 @@ int Cache_Del(const struct parsedname *pn)
 	if (!pn)
 		return 1;				// do check here to avoid needless processing
 
-	duration = TimeOut(pn->ft->change);
+	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0)
 		return 1;				/* in case timeout set to 0 */
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->ft;
+	tn.tk.p = pn->selected_filetype;
 	tn.tk.extension = pn->extension;
-	switch (pn->ft->change) {
+	switch (pn->selected_filetype->change) {
 	case fc_persistent:
 		return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
 	default:
