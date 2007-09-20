@@ -66,6 +66,7 @@ int FS_dir(void (*dirfunc) (void *, const struct parsedname *),
 		   void *v, const struct parsedname *pn)
 {
 	uint32_t flags;
+	LEVEL_DEBUG("In FS_dir(%s)\n",pn->path) ;
 
 	return FS_dir_both(dirfunc, v, pn, &flags);
 }
@@ -76,6 +77,7 @@ int FS_dir(void (*dirfunc) (void *, const struct parsedname *),
 int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
 				  void *v, const struct parsedname *pn, uint32_t * flags)
 {
+	LEVEL_DEBUG("In FS_dir_remote(%s)\n",pn->path) ;
 	return FS_dir_both(dirfunc, v, pn, flags);
 }
 
@@ -117,9 +119,10 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 			ret = FS_devdir(dirfunc, v, &pn2);
 		}
 	} else if (IsAlarmDir(pn)) {	/* root or branch directory -- alarm state */
-		//printf("ALARM\n");
+		LEVEL_DEBUG("ALARM directory\n");
 		ret = SpecifiedBus(pn) ? FS_alarmdir(dirfunc, v, &pn2)
 			: FS_dir_seek(dirfunc, v, pn2.in, &pn2, flags);
+		LEVEL_DEBUG("Return from ALARM is %d\n",ret) ;
 	} else if (NotRealDir(pn)) {	/* stat, sys or set dir */
 		/* there are some files with variable sizes, and /system/adapter have variable
 		 * number of entries and we have to call ServerDir() */
@@ -177,7 +180,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	AVERAGE_OUT(&dir_avg);
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
-	//printf("FS_dir out ret=%d\n", ret);
+	LEVEL_DEBUG("FS_dir_both out ret=%d\n", ret);
 	return ret;
 }
 
@@ -347,6 +350,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
 	ret = BUS_first_alarm(&ds, pn2);
 	if (ret) {
 		BUSUNLOCK(pn2);
+		LEVEL_DEBUG("FS_alarmdir BUS_first_alarm = %d\n",ret) ;
 		if (ret == -ENODEV)
 			return 0;			/* no more alarms is ok */
 		return ret;
