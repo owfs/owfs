@@ -182,8 +182,6 @@ int ServerRead(struct one_wire_query * owq);
 int ServerWrite(struct one_wire_query * owq);
 int ServerDir(void (*dirfunc) (void *, const struct parsedname *),
 			  void *v, const struct parsedname *pn, uint32_t * flags);
-int ServerDirall(void (*dirfunc) (void *, const struct parsedname * const),
-			  void *v, const struct parsedname *pn, uint32_t * flags);
 
 /* High-level callback functions */
 int FS_dir(void (*dirfunc) (void *, const struct parsedname *),

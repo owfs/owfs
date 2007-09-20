@@ -231,7 +231,8 @@ struct connin_tcp {
 	struct addrinfo *ai_ok;
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
-	char *fqdn;
+	char *fqdn; // fully qualified domain name
+	int no_dirall; // flag that server doesn't support DIRALL
 };
 struct connin_ha7 {
 	struct connin_tcp tcp;		// mirror connin.server
@@ -269,9 +270,9 @@ enum bus_mode {
 	bus_ha7net,
 	bus_ha5,
 	bus_ha7e,
-    bus_fake,
-    bus_tester,
-    bus_link,
+	bus_fake,
+	bus_tester,
+	bus_link,
 	bus_elink,
 	bus_etherweather,
 };
