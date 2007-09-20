@@ -444,7 +444,7 @@ static int HA7_select(const struct parsedname *pn)
 {
 	int ret = -EIO;
 
-	if (pn->dev) {
+	if (pn->selected_device) {
 		int file_descriptor = ClientConnect(pn->in);
 
 		if (file_descriptor >= 0) {

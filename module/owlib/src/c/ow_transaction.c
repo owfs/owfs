@@ -130,7 +130,7 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 			{
 				struct parsedname pn2;
 				memcpy(&pn2, pn, sizeof(struct parsedname));	//shallow copy
-				pn2.dev = NULL;
+				pn2.selected_device = NULL;
 				ret = BUS_select(&pn2) || BUS_verify(t->size, pn);
 				LEVEL_DEBUG("  Transaction verify = %d\n", ret);
 			}

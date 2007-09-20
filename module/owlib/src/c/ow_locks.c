@@ -84,7 +84,7 @@ int LockGet(const struct parsedname *pn)
 	int inindex;
 
 	//printf("LockGet() pn->path=%s\n", pn->path);
-	if (pn->dev == DeviceSimultaneous) {
+	if (pn->selected_device == DeviceSimultaneous) {
 		/* Shouldn't call LockGet() on DeviceSimultaneous. No sn exists */
 		return 0;
 	}
@@ -99,7 +99,7 @@ int LockGet(const struct parsedname *pn)
 	    return -ENOTSUP;
 	  }
 	}
-	inindex = pn->in->index; // do this after testing pn->dev since pn->in is perhaps null
+	inindex = pn->in->index; // do this after testing pn->selected_device since pn->in is perhaps null
 
 	pn->lock[inindex] = NULL;
 	/* Need locking? */
@@ -155,7 +155,7 @@ void LockRelease(const struct parsedname *pn)
 	int inindex;
 
 	/* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
-	if (pn->dev == DeviceSimultaneous)
+	if (pn->selected_device == DeviceSimultaneous)
 		return;
 
 	inindex = pn->in->index;

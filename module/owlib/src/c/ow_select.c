@@ -110,8 +110,8 @@ int BUS_select(const struct parsedname *pn)
 	if (BUS_reset(pn) || BUS_select_branch(pn))
 		return 1;
 
-	if (pn->dev && (pn->dev != DeviceThermostat)) {
-		//printf("Really select %s\n",pn->dev->code);
+	if ( (pn->selected_device != NULL) && (pn->selected_device != DeviceThermostat) ) {
+		//printf("Really select %s\n",pn->selected_device->code);
 		memcpy(&sent[1], pn->sn, 8);
 		if ((ret = BUS_send_data(sent, 1, pn))) {
 			BUS_selection_error(ret);

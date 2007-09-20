@@ -60,7 +60,7 @@ int CheckPresence(struct parsedname *pn)
         return 0 ;
     }
     
-    if ( (pn->dev == DeviceSimultaneous) || (pn->dev == DeviceThermostat) ) {
+    if ( (pn->selected_device == DeviceSimultaneous) || (pn->selected_device == DeviceThermostat) ) {
         return 0 ;
     }
 		
@@ -211,8 +211,8 @@ int FS_present(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
 
-	if (NotRealDir(pn) || pn->dev == DeviceSimultaneous
-		|| pn->dev == DeviceThermostat) {
+	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous
+		|| pn->selected_device == DeviceThermostat) {
         OWQ_Y(owq) = 1;
 	} else if (get_busmode(pn->in) == bus_fake) {
         OWQ_Y(owq) = 1;

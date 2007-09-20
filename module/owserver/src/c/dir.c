@@ -68,7 +68,7 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 		retbuffer[++_pathlen] = '\0';
 	}
 
-	if (pn2->dev) {
+	if (pn2->selected_device != NULL) {
 		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 	} else if (NotRealDir(pn2)) {
 		FS_dirname_type(retbuffer, PATH_MAX - _pathlen - 1, pn2);

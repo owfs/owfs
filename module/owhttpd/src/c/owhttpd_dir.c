@@ -55,26 +55,26 @@ static void ShowDirCallback(void *v, const struct parsedname *const pn2)
 	char *nam = buffer;
 	const char *typ = NULL;
 	buffer[0] = '\0';
-	if (pn2->dev == NULL) {
+	if (pn2->selected_device == NULL) {
 		if (NotRealDir(pn2)) {
 			FS_dirname_type(buffer, OW_FULLNAME_MAX, pn2);
 		} else if (pn2->state) {
 			FS_dirname_state(buffer, OW_FULLNAME_MAX, pn2);
 		}
 		typ = name_directory;
-	} else if (pn2->dev == DeviceSimultaneous) {
-		loc = nam = pn2->dev->name;
+	} else if (pn2->selected_device == DeviceSimultaneous) {
+		loc = nam = pn2->selected_device->name;
 		typ = name_onewire_chip;
 	} else if (IsRealDir(pn2)) {
 		FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
-		nam = pn2->dev->name;
+		nam = pn2->selected_device->name;
 		typ = name_onewire_chip;
 	} else {
-		strcpy(loc, pn2->dev->code);
+		strcpy(loc, pn2->selected_device->code);
 		nam = loc;
 		typ = name_directory;
 	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
 	fprintf(sds->out,
 			"<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
 			sds->prepath, loc, loc, nam, typ);
@@ -139,27 +139,27 @@ static void ShowDirTextCallback(void *v,
 	char *nam = buffer;
 	const char *typ = NULL;
 	buffer[0] = '\0';
-	if (pn2->dev == NULL) {
+	if (pn2->selected_device == NULL) {
 		if (NotRealDir(pn2)) {
 			FS_dirname_type(buffer, OW_FULLNAME_MAX, pn2);
 		} else if (pn2->state) {
 			FS_dirname_state(buffer, OW_FULLNAME_MAX, pn2);
 		}
 		typ = name_directory;
-	} else if (pn2->dev == DeviceSimultaneous) {
-		loc = nam = pn2->dev->name;
+	} else if (pn2->selected_device == DeviceSimultaneous) {
+		loc = nam = pn2->selected_device->name;
 		typ = name_onewire_chip;
 	} else if (IsRealDir(pn2)) {
 		FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
-		nam = pn2->dev->name;
+		nam = pn2->selected_device->name;
 		typ = name_onewire_chip;
 	} else {
-		strcpy(loc, pn2->dev->code);
+		strcpy(loc, pn2->selected_device->code);
 		nam = loc;
 		typ = name_directory;
 	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
-	//printf("path=%s loc=%s name=%s typ=%s pn->dev=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->dev,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
 	fprintf(sds->out, "%s %s \"%s\"\r\n", loc, nam, typ);
 	free(buffer);
 }

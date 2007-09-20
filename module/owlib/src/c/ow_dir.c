@@ -44,19 +44,19 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
 /* pn -- input:
-    pn->dev == NULL -- root directory, give list of all devices
-    pn->dev non-null, -- device directory, give all properties
+    pn->selected_device == NULL -- root directory, give list of all devices
+    pn->selected_device non-null, -- device directory, give all properties
     branch aware
     cache aware
 
    pn -- output (with each call to dirfunc)
     ROOT
-    pn->dev set
+    pn->selected_device set
     pn->sn set appropriately
     pn->selected_filetype not set
 
     DEVICE
-    pn->dev and pn->sn still set
+    pn->selected_device and pn->sn still set
     pn->selected_filetype loops through
 */
 /* path is the path which "pn" parses */
@@ -106,7 +106,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 
 	if (pn->selected_filetype) {
 		ret = -ENOTDIR;
-	} else if (pn->dev) {		/* device directory */
+	} else if (pn->selected_device) {		/* device directory */
 		if (pn->type == pn_structure) {
 			/* Device structure is always known for ordinary devices, so don't
 			 * bother calling ServerDir() */
@@ -169,7 +169,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 		}
 		/* simultaneous directory */
 		if (flags[0] & (DEV_temp | DEV_volt)) {
-			pn2.dev = DeviceSimultaneous;
+			pn2.selected_device = DeviceSimultaneous;
 			dirfunc(v, &pn2);
 		}
 	}
@@ -285,7 +285,7 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 					 void *v, struct parsedname *pn2)
 {
-	struct filetype *lastft = &(pn2->dev->ft[pn2->dev->nft]);	/* last filetype struct */
+	struct filetype *lastft = &(pn2->selected_device->ft[pn2->selected_device->nft]);	/* last filetype struct */
 	struct filetype *firstft;	/* first filetype struct */
 	char s[33];
 	size_t len;
@@ -298,7 +298,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 	} else {
 //printf("DIR device directory\n");
 		len = 0;
-		firstft = pn2->dev->ft;
+		firstft = pn2->selected_device->ft;
 	}
 	for (pn2->selected_filetype = firstft; pn2->selected_filetype < lastft; ++pn2->selected_filetype) {	/* loop through filetypes */
 		if (len) {				/* subdir */
@@ -355,11 +355,11 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
 		STAT_ADD1(dir_main.entries);
 		memcpy(pn2->sn, ds.sn, 8);
 		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		FS_devicefindhex(ds.sn[0], pn2);	// lookup ID and set pn2.dev
+		FS_devicefindhex(ds.sn[0], pn2);	// lookup ID and set pn2.selected_device
 		DIRLOCK;
 		dirfunc(v, pn2);
 		DIRUNLOCK;
-		pn2->dev = NULL;		/* clear for the rest of directory listing */
+		pn2->selected_device = NULL;		/* clear for the rest of directory listing */
 		ret = BUS_next(&ds, pn2);
 //printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
 	}
@@ -420,13 +420,13 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 		/* Add to Device location cache */
 		Cache_Add_Device(pn2->in->index, pn2);
 		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		FS_devicefindhex(ds.sn[0], pn2);	// lookup ID and set pn2.dev
+		FS_devicefindhex(ds.sn[0], pn2);	// lookup ID and set pn2.selected_device
 
 		DIRLOCK;
 		dirfunc(v, pn2);
-		flags[0] |= pn2->dev->flags;
+		flags[0] |= pn2->selected_device->flags;
 		DIRUNLOCK;
-		pn2->dev = NULL;		/* clear for the rest of directory listing */
+		pn2->selected_device = NULL;		/* clear for the rest of directory listing */
 
 		BUSLOCK(pn2);
 	} while ((ret = BUS_next(&ds, pn2)) == 0);
@@ -488,14 +488,14 @@ static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), vo
 	/* Get directory from the cache */
 	for (dindex = 0; DirblobGet(dindex, pn2->sn, &db) == 0; ++dindex) {
 		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		FS_devicefindhex(pn2->sn[0], pn2);	// lookup ID and set pn2.dev
+		FS_devicefindhex(pn2->sn[0], pn2);	// lookup ID and set pn2.selected_device
 		DIRLOCK;
 		dirfunc(v, pn2);
-		flags[0] |= pn2->dev->flags;
+		flags[0] |= pn2->selected_device->flags;
 		DIRUNLOCK;
 	}
 	DirblobClear(&db);			/* allocated in Cache_Get_Dir */
-	pn2->dev = NULL;			/* clear for the rest of directory listing */
+	pn2->selected_device = NULL;			/* clear for the rest of directory listing */
 	STATLOCK;
 	dir_main.entries += dindex;
 	STATUNLOCK;
@@ -525,7 +525,7 @@ static void Typediraction(const void *t, const VISIT which,
 	switch (which) {
 	case leaf:
 	case postorder:
-		tda.pn->dev = ((const struct device_opaque *) t)->key;
+		tda.pn->selected_device = ((const struct device_opaque *) t)->key;
 		(tda.dirfunc) (tda.v, tda.pn);
 	default:
 		break;

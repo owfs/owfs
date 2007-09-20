@@ -171,14 +171,14 @@ void DeviceSort(void)
 		struct parsedname pn;
 		pn.type = pn_real;
 		FS_devicefind("simultaneous", &pn);
-		DeviceSimultaneous = pn.dev;
+		DeviceSimultaneous = pn.selected_device;
 	}
 	/* Match thermostat for special processing */
 	{
 		struct parsedname pn;
 		pn.type = pn_real;
 		FS_devicefind("thermostat", &pn);
-		DeviceThermostat = pn.dev;
+		DeviceThermostat = pn.selected_device;
 	}
 
 	/* structure uses same tree as real */
@@ -191,14 +191,14 @@ void FS_devicefindhex(BYTE f, struct parsedname *pn)
 	const struct device d = { ID, NULL, 0, 0, NULL };
 	struct device_opaque *p;
 
-	pn->dev = &NoDevice;
+	pn->selected_device = &NoDevice;
 	num2string(ID, f);
 	if ((p = tfind(&d, &Tree[pn->type], device_compare))) {
-		pn->dev = p->key;
+		pn->selected_device = p->key;
 	} else {
 		num2string(ID, f ^ 0x80);
 		if ((p = tfind(&d, &Tree[pn->type], device_compare)))
-			pn->dev = p->key;
+			pn->selected_device = p->key;
 	}
 }
 
@@ -207,8 +207,8 @@ void FS_devicefind(const char *code, struct parsedname *pn)
 	const struct device d = { code, NULL, 0, 0, NULL };
 	struct device_opaque *p = tfind(&d, &Tree[pn->type], device_compare);
 	if (p) {
-		pn->dev = p->key;
+		pn->selected_device = p->key;
 	} else {
-		pn->dev = &NoDevice;
+		pn->selected_device = &NoDevice;
 	}
 }

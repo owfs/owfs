@@ -119,7 +119,7 @@ int FS_write_postparse(struct one_wire_query * owq)
 //printf("FS_write_postparse: pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
 
 		/* handle DeviceSimultaneous */
-		if (pn->dev == DeviceSimultaneous) {
+		if (pn->selected_device == DeviceSimultaneous) {
 			/* writing to /simultaneous/temperature will write to ALL
 			 * available bus.?/simultaneous/temperature
 			 * not just /simultaneous/temperature

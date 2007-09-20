@@ -68,7 +68,7 @@ int FS_read_postparse(struct one_wire_query * owq)
 	int read_or_error ;
 
 	// ServerRead jumps in here, perhaps with non-file entry
-	if (pn->dev == NULL || pn->selected_filetype == NULL)
+	if (pn->selected_device == NULL || pn->selected_filetype == NULL)
 		return -EISDIR;
 
 	/* Normal read. Try three times */
@@ -179,7 +179,7 @@ int FS_read_distribute(struct one_wire_query * owq)
 		break;
         default:
 		/* handle DeviceSimultaneous */
-		if (PN(owq)->dev == DeviceSimultaneous) {
+		if (PN(owq)->selected_device == DeviceSimultaneous) {
 			r = FS_r_simultaneous(owq);
 		} else {
 			r = FS_r_given_bus(owq);

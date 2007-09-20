@@ -1506,7 +1506,7 @@ static void do_size(struct ftp_session_s *f,
 		} else {
 
 			/* verify that the file is not a directory */
-			if (pn.dev == NULL || pn.selected_filetype == NULL) {
+			if (pn.selected_device == NULL || pn.selected_filetype == NULL) {
 				reply(f, 550,
 					  "File is a directory, SIZE command not valid.");
 			} else {

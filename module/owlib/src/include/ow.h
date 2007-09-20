@@ -503,7 +503,7 @@ struct parsedname {
 	enum pn_type type;			// global branch
 	enum pn_state state;		// global branch
 	BYTE sn[8];					// 64-bit serial number
-	struct device *dev;			// 1-wire device
+	struct device *selected_device;			// 1-wire device
 	struct filetype *selected_filetype;		// device property
 	int extension;				// numerical extension (for array values) or -1
 	struct filetype *subdir;	// in-device grouping
@@ -615,7 +615,7 @@ extern time_t dir_time;			/* time of last directory scan */
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
-#define IsDir( pn )    ( ((pn)->dev)==NULL \
+#define IsDir( pn )    ( ((pn)->selected_device)==NULL \
                       || ((pn)->selected_filetype)==NULL  \
                       || ((pn)->selected_filetype)->format==ft_subdir \
                       || ((pn)->selected_filetype)->format==ft_directory )

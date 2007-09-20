@@ -67,7 +67,7 @@ void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 	}
 
 	LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
-	if (pn2->dev) {
+	if (pn2->selected_device != NULL) {
 		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 	} else if (NotRealDir(pn2)) {
 		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,

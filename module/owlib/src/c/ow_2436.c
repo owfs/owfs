@@ -93,8 +93,6 @@ static int OW_w_page(const BYTE * p, const size_t size, const off_t offset,
 static int OW_temp(_FLOAT * T, const struct parsedname *pn);
 static int OW_volts(_FLOAT * V, const struct parsedname *pn);
 
-static size_t Asize[] = { 24, 8, 8, };
-
 /* 2436 A/D */
 static int FS_r_page(struct one_wire_query * owq)
 {

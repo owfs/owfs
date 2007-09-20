@@ -97,7 +97,7 @@ static int FS_w_convert(struct one_wire_query * owq)
     enum simul_type type = (enum simul_type) pn->selected_filetype->data.i;
 	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
 	FS_LoadPath(pn2->sn, pn2);
-	pn2->dev = NULL;				/* only branch select done, not actual device */
+	pn2->selected_device = NULL;				/* only branch select done, not actual device */
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected
 	 * as a bad adapter. */
@@ -181,7 +181,7 @@ static int FS_r_present(struct one_wire_query * owq)
 
 		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
 		FS_LoadPath(pn2->sn, pn2);
-		pn2->dev = NULL;			// directory only
+		pn2->selected_device = NULL;			// directory only
 		if (BUS_transaction(t, pn2))
 			return -EINVAL;
 		if (memcmp(resp, match, 8)) {	// some device(s) complained
@@ -224,7 +224,7 @@ static int FS_r_single(struct one_wire_query * owq)
 
 		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
 		FS_LoadPath(pn2->sn, pn2);
-		pn2->dev = NULL;			// directory only
+		pn2->selected_device = NULL;			// directory only
 		if (BUS_transaction(t, pn2))
 			return -EINVAL;
 		LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat

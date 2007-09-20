@@ -65,7 +65,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		/* check for presence of first in-device at least since FS_ParsedName
 		 * doesn't do it yet. */
 		return -ENOENT;
-	} else if (pn->dev == NULL) {	/* root directory */
+	} else if (pn->selected_device == NULL) {	/* root directory */
 		int nr = 0;
 		//printf("FS_fstat root\n");
 		stbuf->st_mode = S_IFDIR | 0755;
@@ -94,9 +94,9 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 #ifdef CALC_NLINK
 		{
 			int i;
-			for (i = 0; i < pn->dev->nft; i++) {
-				if ((pn->dev->selected_filetype[i].format == ft_directory) ||
-					(pn->dev->selected_filetype[i].format == ft_subdir)) {
+			for (i = 0; i < pn->selected_device->nft; i++) {
+				if ((pn->selected_device->selected_filetype[i].format == ft_directory) ||
+					(pn->selected_device->selected_filetype[i].format == ft_subdir)) {
 					nr++;
 				}
 			}
@@ -104,7 +104,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 #else							/* CALC_NLINK */
 		nr = -1;				// make it 1
 #endif							/* CALC_NLINK */
-//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.dev->nft, nr);
+//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.selected_device->nft, nr);
 		stbuf->st_nlink += nr;
 		FSTATLOCK;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time;

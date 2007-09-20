@@ -78,7 +78,7 @@ int handle_socket(FILE * out)
 		Bad404(out);
 	} else {
 		/* Root directory -- show the bus */
-		if (pn.dev == NULL) {	/* directory! */
+		if (pn.selected_device == NULL) {	/* directory! */
 			ShowDir(out, &pn);
 		} else if (up.request == NULL) {
 			ShowDevice(out, &pn);

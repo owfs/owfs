@@ -351,7 +351,7 @@ static int DS9490_detect_found(struct usb_list *ul,
 	/* We are looking for devices in the root (not the branch
 	 * pn eventually points to */
 	memcpy(&pncopy, pn, sizeof(struct parsedname));
-	pncopy.dev = NULL;
+	pncopy.selected_device = NULL;
 	pncopy.pathlength = 0;
 
 	/* Do a quick directory listing and find the DS1420 id */
@@ -682,7 +682,7 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 		/* We are looking for devices in the root (not the branch
 		 * pn eventually points to */
 		memcpy(&pncopy, pn, sizeof(struct parsedname));
-		pncopy.dev = NULL;
+		pncopy.selected_device = NULL;
 		pncopy.pathlength = 0;
 
 		if ((ret = BUS_first(&ds, &pncopy))) {

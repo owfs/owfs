@@ -229,7 +229,7 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 		pn->type = pn_settings;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
-		pn->dev = DeviceSimultaneous;
+		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
 		pn->type = pn_statistics;
@@ -249,7 +249,7 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 		pn->state |= pn_text;
 		return parse_first;
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
-		pn->dev = DeviceThermostat;
+		pn->selected_device = DeviceThermostat;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
 		pn->state |= pn_uncached;
@@ -268,13 +268,13 @@ static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_nonreal, pathnow, back_from_remote, pn);
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
-		pn->dev = DeviceSimultaneous;
+		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "text") == 0) {
 		pn->state |= pn_text;
 		return parse_real;
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
-		pn->dev = DeviceThermostat;
+		pn->selected_device = DeviceThermostat;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
 		pn->state |= pn_uncached;
@@ -462,7 +462,7 @@ static enum parse_enum Parse_NonRealDevice(char *filename,
 {
 	//printf("Parse_NonRealDevice: [%s] [%s]\n", filename, pn->path);
 	FS_devicefind(filename, pn);
-	return (pn->dev == &NoDevice) ? parse_error : parse_prop;
+	return (pn->selected_device == &NoDevice) ? parse_error : parse_prop;
 }
 
 static enum parse_enum Parse_Property(char *filename,
@@ -476,7 +476,7 @@ static enum parse_enum Parse_Property(char *filename,
 	//printf("FP name=%s, dot=%s\n", filename, dot);
 	/* Match to known filetypes for this device */
 	if ((pn->selected_filetype =
-		 bsearch(filename, pn->dev->ft, (size_t) pn->dev->nft,
+		 bsearch(filename, pn->selected_device->ft, (size_t) pn->selected_device->nft,
 				 sizeof(struct filetype), filecmp))) {
 		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
@@ -566,7 +566,7 @@ static int BranchAdd(struct parsedname *pn)
 	pn->bp[pn->pathlength].branch = pn->selected_filetype->data.i;
 	++pn->pathlength;
 	pn->selected_filetype = NULL;
-	pn->dev = NULL;
+	pn->selected_device = NULL;
 	return 0;
 }
 

@@ -174,17 +174,17 @@ void FS_DirName(char *buffer, const size_t size,
 		UCLIBCUNLOCK;
 	} else if (pn->subdir) {	/* in-device subdirectory */
 		strncpy(buffer, pn->subdir->name, size);
-	} else if (pn->dev == NULL) {	/* root-type directory */
+	} else if (pn->selected_device == NULL) {	/* root-type directory */
 		if (NotRealDir(pn)) {
 			FS_dirname_type(buffer, size, pn);
 		} else {
 			FS_dirname_state(buffer, size, pn);
 		}
-	} else if (pn->dev == DeviceSimultaneous) {
+	} else if (pn->selected_device == DeviceSimultaneous) {
 		strncpy(buffer, DeviceSimultaneous->code, size);
 	} else if (IsRealDir(pn)) {	/* real device */
 		FS_devicename(buffer, size, pn->sn, pn);
 	} else {					/* pseudo device */
-		strncpy(buffer, pn->dev->code, size);
+		strncpy(buffer, pn->selected_device->code, size);
 	}
 }

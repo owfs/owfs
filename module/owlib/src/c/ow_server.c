@@ -271,7 +271,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			/* only for "read devices" and not alarm */
 			DirblobInit(&db);
 			if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
-				&& pn->dev == NULL) {
+				&& pn->selected_device == NULL) {
 				if (RootNotBranch(&pn2)) {	/* root dir */
 					BUSLOCK(pn);
 					db.allocated = pn->in->last_root_devs;	// root dir estimated length
@@ -295,7 +295,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 				   find it quicker next time we want to do read values from the
 				   the actual device
 				 */
-				if (pn2.dev && IsRealDir(&pn2)) {
+				if (pn2.selected_device && IsRealDir(&pn2)) {
 					/* If we get a device then cache the bus_nr */
 					Cache_Add_Device(pn->in->index, &pn2);
 				}
