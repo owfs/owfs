@@ -251,6 +251,8 @@ struct connin_link {
 	int ULevel;
 	int UMode;
 	struct termios oldSerialTio;	/*old serial port settings */
+	struct dirblob main;		/* main directory */
+	struct dirblob alarm;		/* alarm directory */
 };
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_

@@ -230,10 +230,6 @@ static int HA7_next_both(struct device_search *ds,
 	return ret;
 }
 
-/* Read from Link or Link-E
-   0=good else bad
-   Note that buffer length should 1 exta char long for ethernet reads
-*/
 static int HA7_read(int file_descriptor, ASCII ** buffer)
 {
 	ASCII buf[4097];

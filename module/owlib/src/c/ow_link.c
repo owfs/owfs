@@ -190,7 +190,7 @@ static int LINK_next_both(struct device_search *ds,
     }
     
     // LOOK FOR NEXT ELEMENT
-    ++ds->LastDiscrepancy = 0;
+    ++ds->LastDiscrepancy ;
 
 	LEVEL_DEBUG("LastDiscrepancy %d\n",ds->LastDiscrepancy);
 
