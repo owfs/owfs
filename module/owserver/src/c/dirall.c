@@ -100,16 +100,18 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
 	// Now generate the directory using the callback function above for each element
 	cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
 
-	if (cm->ret) {
+	if ( cm->ret < 0 ) { // error
 		cm->size = cm->payload = 0;
-	} else if ((ret = strdup(cb.blob))) {
+	} else if ( cb.blob == NULL ) { // empty
+		cm->size = cm->payload = 0;
+	} else if ( (ret = strdup(cb.blob)) != NULL ) { // try to copy
 		cm->payload = cb.used + 1;
 		cm->size = cb.used;
-	} else {
+	} else { // couldn't copy
 		cm->ret = -ENOMEM;
 		cm->size = cm->payload = 0;
 	}
-    cm->offset = flags;         /* send the flags in the offset slot */
-    CharblobClear(&cb);
+	cm->offset = flags;         /* send the flags in the offset slot */
+	CharblobClear(&cb);
 	return ret;
 }
