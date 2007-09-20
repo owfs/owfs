@@ -94,7 +94,7 @@ void update_max_delay(const struct parsedname *pn)
 int FS_type(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    return Fowq_output_offset_and_size_z(pn->selected_device->name, owq);
+    return Fowq_output_offset_and_size_z(pn->selected_device->readable_name, owq);
 }
 
 int FS_code(struct one_wire_query * owq)

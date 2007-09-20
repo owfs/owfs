@@ -69,21 +69,21 @@ struct filetype set_cache[] = {
 
 ;
 struct device d_set_cache =
-	{ "timeout", "timeout", pn_settings, NFT(set_cache), set_cache };
+	{ "timeout", "timeout", pn_settings, COUNT_OF_FILETYPES(set_cache), set_cache };
 struct filetype set_units[] = {
   {"temperature_scale", 1, NULL, ft_ascii, fc_static,   FS_r_TS, FS_w_TS, {v:NULL},} ,
 }
 
 ;
 struct device d_set_units =
-	{ "units", "units", pn_settings, NFT(set_units), set_units };
+	{ "units", "units", pn_settings, COUNT_OF_FILETYPES(set_units), set_units };
 
 /* ------- Functions ------------ */
 
 static int FS_r_timeout(struct one_wire_query * owq)
 {
 	CACHELOCK;
-    OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
+	OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
 	CACHEUNLOCK;
 	return 0;
 }

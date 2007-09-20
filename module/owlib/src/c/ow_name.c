@@ -181,10 +181,10 @@ void FS_DirName(char *buffer, const size_t size,
 			FS_dirname_state(buffer, size, pn);
 		}
 	} else if (pn->selected_device == DeviceSimultaneous) {
-		strncpy(buffer, DeviceSimultaneous->code, size);
+		strncpy(buffer, DeviceSimultaneous->family_code, size);
 	} else if (IsRealDir(pn)) {	/* real device */
 		FS_devicename(buffer, size, pn->sn, pn);
 	} else {					/* pseudo device */
-		strncpy(buffer, pn->selected_device->code, size);
+		strncpy(buffer, pn->selected_device->family_code, size);
 	}
 }

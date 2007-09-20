@@ -63,14 +63,14 @@ static void ShowDirCallback(void *v, const struct parsedname *const pn2)
 		}
 		typ = name_directory;
 	} else if (pn2->selected_device == DeviceSimultaneous) {
-		loc = nam = pn2->selected_device->name;
+		loc = nam = pn2->selected_device->readable_name;
 		typ = name_onewire_chip;
 	} else if (IsRealDir(pn2)) {
 		FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
-		nam = pn2->selected_device->name;
+		nam = pn2->selected_device->readable_name;
 		typ = name_onewire_chip;
 	} else {
-		strcpy(loc, pn2->selected_device->code);
+		strcpy(loc, pn2->selected_device->family_code);
 		nam = loc;
 		typ = name_directory;
 	}
@@ -147,14 +147,14 @@ static void ShowDirTextCallback(void *v,
 		}
 		typ = name_directory;
 	} else if (pn2->selected_device == DeviceSimultaneous) {
-		loc = nam = pn2->selected_device->name;
+		loc = nam = pn2->selected_device->readable_name;
 		typ = name_onewire_chip;
 	} else if (IsRealDir(pn2)) {
 		FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
-		nam = pn2->selected_device->name;
+		nam = pn2->selected_device->readable_name;
 		typ = name_onewire_chip;
 	} else {
-		strcpy(loc, pn2->selected_device->code);
+		strcpy(loc, pn2->selected_device->family_code);
 		nam = loc;
 		typ = name_directory;
 	}

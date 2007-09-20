@@ -202,7 +202,7 @@ struct filetype stats_cache[] = {
 };
 
 struct device d_stats_cache =
-	{ "cache", "cache", 0, NFT(stats_cache), stats_cache };
+	{ "cache", "cache", 0, COUNT_OF_FILETYPES(stats_cache), stats_cache };
 	// Note, the store hit rate and deletions are not shown -- too much information!
 
 struct aggregate Aread = { 3, ag_numbers, ag_separate, };
@@ -217,7 +217,7 @@ struct filetype stats_read[] = {
 
 ;
 struct device d_stats_read =
-	{ "read", "read", 0, NFT(stats_read), stats_read };
+	{ "read", "read", 0, COUNT_OF_FILETYPES(stats_read), stats_read };
 
 struct filetype stats_write[] = {
   {"calls",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&write_calls},} ,
@@ -228,7 +228,7 @@ struct filetype stats_write[] = {
 
 ;
 struct device d_stats_write =
-	{ "write", "write", 0, NFT(stats_write), stats_write };
+	{ "write", "write", 0, COUNT_OF_FILETYPES(stats_write), stats_write };
 
 struct filetype stats_directory[] = {
   {"maxdepth",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&dir_depth},} ,
@@ -242,7 +242,7 @@ struct filetype stats_directory[] = {
 
 ;
 struct device d_stats_directory =
-	{ "directory", "directory", 0, NFT(stats_directory), stats_directory };
+	{ "directory", "directory", 0, COUNT_OF_FILETYPES(stats_directory), stats_directory };
 
 struct filetype stats_thread[] = {
   {"directory",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_statistic,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
@@ -269,7 +269,7 @@ struct filetype stats_thread[] = {
 
 ;
 struct device d_stats_thread =
-	{ "threads", "threads", 0, NFT(stats_thread), stats_thread };
+	{ "threads", "threads", 0, COUNT_OF_FILETYPES(stats_thread), stats_thread };
 
 struct filetype stats_bus[] = {
   {"elapsed_time",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_elapsed, NO_WRITE_FUNCTION, {v:NULL},} ,
@@ -283,7 +283,7 @@ struct filetype stats_bus[] = {
   {"total_bus_unlocks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&total_bus_unlocks,},} ,
   {"total_bus_locks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&total_bus_locks},} ,
 };
-struct device d_stats_bus = { "bus", "bus", 0, NFT(stats_bus), stats_bus };
+struct device d_stats_bus = { "bus", "bus", 0, COUNT_OF_FILETYPES(stats_bus), stats_bus };
 
 #define FS_stat_ROW(var) {"" #var "",PROPERTY_LENGTH_UNSIGNED, NULL  , ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v: & var,} }
 
@@ -348,7 +348,7 @@ struct filetype stats_errors[] = {
 ;
 
 struct device d_stats_errors =
-	{ "errors", "errors", 0, NFT(stats_errors), stats_errors };
+	{ "errors", "errors", 0, COUNT_OF_FILETYPES(stats_errors), stats_errors };
 
 
 /* ------- Functions ------------ */

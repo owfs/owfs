@@ -476,7 +476,7 @@ static enum parse_enum Parse_Property(char *filename,
 	//printf("FP name=%s, dot=%s\n", filename, dot);
 	/* Match to known filetypes for this device */
 	if ((pn->selected_filetype =
-		 bsearch(filename, pn->selected_device->ft, (size_t) pn->selected_device->nft,
+		 bsearch(filename, pn->selected_device->filetype_array, (size_t) pn->selected_device->count_of_filetypes,
 				 sizeof(struct filetype), filecmp))) {
 		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */

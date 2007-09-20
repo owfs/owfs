@@ -83,7 +83,7 @@ int Fake_detect(struct connection_in *in)
 
         while (remaining_device_list!=NULL) {
             BYTE sn[8];
-            for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0]!=NULL; ++current_device_start) {
+            for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0]!='\0'; ++current_device_start) {
                 // note that strsep updates "remaining_device_list" pointer
                 if (current_device_start[0] != ' ' && current_device_start[0] != ',')
                     break;
@@ -222,7 +222,7 @@ pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
 #endif                          /* OW_MT */
 
 struct {
-	const ASCII *name;
+	const ASCII *readable_name;
 	const ASCII *ret;
 } global_namefind_struct;
 void Namefindaction(const void *nodep, const VISIT which, const int depth)
@@ -233,9 +233,9 @@ void Namefindaction(const void *nodep, const VISIT which, const int depth)
 	switch (which) {
 	case leaf:
 	case postorder:
-		if (strcasecmp(p->name, global_namefind_struct.name) == 0
-			|| strcasecmp(p->code, global_namefind_struct.name) == 0) {
-			global_namefind_struct.ret = p->code;
+		if (strcasecmp(p->readable_name, global_namefind_struct.readable_name) == 0
+			|| strcasecmp(p->family_code, global_namefind_struct.readable_name) == 0) {
+			global_namefind_struct.ret = p->family_code;
 		}
 	case preorder:
 	case endorder:
@@ -249,7 +249,7 @@ static const ASCII *namefind(const char *name)
     
     NAMEFINDMUTEXLOCK ;
 
-	global_namefind_struct.name = name;
+	global_namefind_struct.readable_name = name;
 	global_namefind_struct.ret = NULL;
 	twalk(Tree[pn_real], Namefindaction);
 	ret = global_namefind_struct.ret;

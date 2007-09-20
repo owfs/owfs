@@ -350,7 +350,6 @@ struct filetype {
 		BYTE c;
 	} data;						// extra data pointer (used for separating similar but differently name functions)
 };
-#define NFT(ft) ((int)(sizeof(ft)/sizeof(struct filetype)))
 
 /* --------- end Filetype -------------------- */
 /* ------------------------------------------- */
@@ -388,19 +387,20 @@ extern void *Tree[6];
 
 
 struct device {
-	const char *code;
-	char *name;
+	const char *family_code;
+	char * readable_name;
 	uint32_t flags;
-	int nft;
-	struct filetype *ft;
+	int count_of_filetypes;
+	struct filetype * filetype_array;
 };
 
 #define DeviceHeader( chip )    extern struct device d_##chip
-//#define DeviceEntry( code , chip )  { #code, #chip, 0, NFT(chip), chip } ;
+
 /* Entries for struct device */
 /* Cannot set the 3rd element (number of filetypes) at compile time because
    filetype arrays aren;t defined at this point */
-#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  NFT(chip), chip }
+#define COUNT_OF_FILETYPES(filetype_array) ((int)(sizeof(filetype_array)/sizeof(struct filetype)))
+#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  COUNT_OF_FILETYPES(chip), chip }
 #define DeviceEntry( code , chip )  DeviceEntryExtended( code, chip, 0 )
 
 /* Bad bad C library */

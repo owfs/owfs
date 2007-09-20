@@ -95,7 +95,7 @@ struct filetype sys_adapter[] = {
   {"writeonelowtime",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_writeonelowtime, FS_w_writeonelowtime, {v:NULL},} ,
 };
 struct device d_sys_adapter =
-	{ "adapter", "adapter", pn_system, NFT(sys_adapter), sys_adapter };
+	{ "adapter", "adapter", pn_system, COUNT_OF_FILETYPES(sys_adapter), sys_adapter };
 
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
@@ -104,14 +104,14 @@ struct filetype sys_process[] = {
   {"pid",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_pid, NO_WRITE_FUNCTION, {v:NULL},} ,
 };
 struct device d_sys_process =
-	{ "process", "process", pn_system, NFT(sys_process), sys_process };
+	{ "process", "process", pn_system, COUNT_OF_FILETYPES(sys_process), sys_process };
 
 struct filetype sys_connections[] = {
   {"count_inbound_connections",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_in, NO_WRITE_FUNCTION, {v:NULL},} ,
   {"count_outbound_connections",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_out, NO_WRITE_FUNCTION, {v:NULL},} ,
 };
 struct device d_sys_connections =
-	{ "connections", "connections", pn_system, NFT(sys_connections),
+	{ "connections", "connections", pn_system, COUNT_OF_FILETYPES(sys_connections),
 	sys_connections
 };
 
@@ -128,7 +128,7 @@ struct filetype sys_configure[] = {
   {"zeroconf",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static,   FS_define, NO_WRITE_FUNCTION, {i:1},} ,
 };
 struct device d_sys_configure =
-	{ "configuration", "configuration", pn_system, NFT(sys_configure),
+	{ "configuration", "configuration", pn_system, COUNT_OF_FILETYPES(sys_configure),
 	sys_configure
 };
 

@@ -44,7 +44,7 @@ $Id$
 /* Read, will return: */
 /* cm fully constructed */
 /* a malloc'ed string, that must be free'd by Handler */
-/* The length of string in cm.payload */
+/* The length of string is cm.payload */
 /* If cm.payload is 0, then a NULL string is returned */
 /* cm.ret is also set to an error <0 or the read length */
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
@@ -54,9 +54,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 	ssize_t read_or_error;
 
 	LEVEL_DEBUG("ReadHandler:\n");
-	if(!hd || !owq || !cm) {
-	  LEVEL_DEBUG("ReadHandler: hd==%p owq==%p cm==%p\n", hd, owq, cm);
-	  return -EMSGSIZE;
+	if( hd==NULL || owq==NULL || cm==NULL ) {
+	  LEVEL_DEBUG("ReadHandler: illegal null inputs hd==%p owq==%p cm==%p\n", hd, owq, cm);
+	  return NULL; // only sane response for bad inputs
 	}
 
 	LEVEL_DEBUG

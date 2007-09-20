@@ -285,7 +285,7 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 					 void *v, struct parsedname *pn2)
 {
-	struct filetype *lastft = &(pn2->selected_device->ft[pn2->selected_device->nft]);	/* last filetype struct */
+	struct filetype *lastft = &(pn2->selected_device->filetype_array[pn2->selected_device->count_of_filetypes]);	/* last filetype struct */
 	struct filetype *firstft;	/* first filetype struct */
 	char s[33];
 	size_t len;
@@ -298,7 +298,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 	} else {
 //printf("DIR device directory\n");
 		len = 0;
-		firstft = pn2->selected_device->ft;
+		firstft = pn2->selected_device->filetype_array;
 	}
 	for (pn2->selected_filetype = firstft; pn2->selected_filetype < lastft; ++pn2->selected_filetype) {	/* loop through filetypes */
 		if (len) {				/* subdir */

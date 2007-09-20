@@ -23,8 +23,8 @@ struct device *DeviceThermostat;
 
 static int device_compare(const void *a, const void *b)
 {
-	return strcmp(((const struct device *) a)->code,
-				  ((const struct device *) b)->code);
+	return strcmp(((const struct device *) a)->family_code,
+				  ((const struct device *) b)->family_code);
 }
 
 static int file_compare(const void *a, const void *b)
@@ -48,18 +48,18 @@ static void Device2Tree(const struct device *d, enum pn_type type)
 	if ((d_copy = (struct device *) malloc(sizeof(struct device)))) {
 		memmove(d_copy, d, sizeof(struct device));
 		tsearch(d_copy, &Tree[type], device_compare);
-		if (d_copy->ft)
-			qsort(d_copy->ft, (size_t) d_copy->nft,
+		if (d_copy->filetype_array)
+			qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes,
 				  sizeof(struct filetype), file_compare);
 	} else {
 		LEVEL_DATA
 			("Device2Tree:  Could not allocate memory for device %s\n",
-			 d->name);
+			 d->readable_name);
 	}
 #else							/* __FreeBSD__ */
 	tsearch(d, &Tree[type], device_compare);
-	if (d->ft)
-		qsort(d->ft, (size_t) d->nft, sizeof(struct filetype),
+	if (d->filetype_array)
+		qsort(d->filetype_array, (size_t) d->count_of_filetypes, sizeof(struct filetype),
 			  file_compare);
 #endif							/* __FreeBSD__ */
 /*
@@ -95,7 +95,7 @@ void DeviceDestroy(void)
 void DeviceSort(void)
 {
 	/* Sort the filetypes for the unrecognized device */
-	qsort(NoDevice.ft, (size_t) NoDevice.nft, sizeof(struct filetype),
+	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype),
 		  file_compare);
 
 	Device2Tree(&d_DS1420, pn_real);

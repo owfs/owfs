@@ -67,7 +67,7 @@ struct filetype NoDev[] = {
 	F_r_address,
 	F_r_id,
 };
-struct device NoDevice = { "XX", "generic", pn_real, NFT(NoDev), NoDev };
+struct device NoDevice = { "XX", "generic", pn_real, COUNT_OF_FILETYPES(NoDev), NoDev };
 
 
 /* ------- Functions ------------ */
