@@ -14,6 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 struct LINK_id {
 	char verstring[36];
@@ -48,6 +49,9 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 							const struct parsedname *pn);
 static int LINK_CR(const struct parsedname *pn);
 static void LINK_setroutines(struct interface_routines *f);
+static void LINK_close (struct connection_in *in);
+static int LINK_directory(struct device_search *ds, struct dirblob *db, 
+			  const struct parsedname *pn);
 
 static void LINK_setroutines(struct interface_routines *f)
 {
@@ -62,7 +66,7 @@ static void LINK_setroutines(struct interface_routines *f)
 //    f->sendback_bits = ;
 	f->select = NULL;
 	f->reconnect = NULL;
-	f->close = COM_close;
+	f->close = LINK_close;
 	f->transaction = NULL;
 	f->flags = ADAP_FLAG_2409path;
 }
@@ -82,6 +86,11 @@ int LINK_detect(struct connection_in *in)
 
 	/* Set up low-level routines */
 	LINK_setroutines(&(in->iroutines));
+
+	/* Initialize dir-at-once structures */
+	DirblobInit (&(in->connin.link.main));
+	DirblobInit (&(in->connin.link.alarm));
+
 
 	/* Open the com port */
 	if (COM_open(in))
@@ -162,8 +171,10 @@ static int LINK_reset(const struct parsedname *pn)
 static int LINK_next_both(struct device_search *ds,
 						  const struct parsedname *pn)
 {
-	char resp[21];
-	int ret;
+	int ret=0;
+	struct dirblob * db = (ds->search ==_1W_CONDITIONAL_SEARCH_ROM) ?
+				&(pn->in->connin.link.alarm) :
+				&(pn->in->connin.link.main);
 
 	if (!pn->in->AnyDevices)
 		ds->LastDevice = 1;
@@ -171,54 +182,34 @@ static int LINK_next_both(struct device_search *ds,
 		return -ENODEV;
 
 	COM_flush(pn);
+
 	if (ds->LastDiscrepancy == -1) {
-		if ((ret = LINK_write(LINK_string("f"), 1, pn)))
-			return ret;
-		ds->LastDiscrepancy = 0;
-	} else {
-		if ((ret = LINK_write(LINK_string("n"), 1, pn)))
-			return ret;
-	}
+        if (LINK_directory(ds,db, pn)) {
+			return -EIO;
+        }
+    }
+    
+    // LOOK FOR NEXT ELEMENT
+    ++ds->LastDiscrepancy = 0;
 
-	if ((ret = LINK_read(LINK_string(resp), 20, pn))) {
-		return ret;
-	}
+	LEVEL_DEBUG("LastDiscrepancy %d\n",ds->LastDiscrepancy);
 
-	switch (resp[0]) {
-	case '-':
-		ds->LastDevice = 1;
-	case '+':
+	ret = DirblobGet (ds->LastDiscrepancy, ds->sn, db);
+	LEVEL_DEBUG("DirblobGet %d\n",ret);
+	switch (ret) {
+	case 0:
+		if ((ds->sn[0] & 0x7F) == 0x04) {
+			/* We found a DS1994/DS2404 which require longer delays */
+			pn->in->ds2404_compliance = 1;
+		}
 		break;
-	case 'N':
-		pn->in->AnyDevices = 0;
-		return -ENODEV;
-	case 'X':
-	default:
-		return -EIO;
-	}
-
-	ds->sn[7] = string2num(&resp[2]);
-	ds->sn[6] = string2num(&resp[4]);
-	ds->sn[5] = string2num(&resp[6]);
-	ds->sn[4] = string2num(&resp[8]);
-	ds->sn[3] = string2num(&resp[10]);
-	ds->sn[2] = string2num(&resp[12]);
-	ds->sn[1] = string2num(&resp[14]);
-	ds->sn[0] = string2num(&resp[16]);
-
-	// CRC check
-	if (CRC8(ds->sn, 8) || (ds->sn[0] == 0)) {
-		/* A minor "error" and should perhaps only return -1 to avoid reconnect */
-		return -EIO;
-	}
-
-	if ((ds->sn[0] & 0x7F) == 0x04) {
-		/* We found a DS1994/DS2404 which require longer delays */
-		pn->in->ds2404_compliance = 1;
+	case -ENODEV:
+		ds->LastDevice = 1;
+		break;
 	}
 
 	LEVEL_DEBUG("LINK_next_both SN found: " SNformat "\n", SNvar(ds->sn));
-	return 0;
+	return ret;
 }
 
 /* Assymetric */
@@ -423,3 +414,150 @@ static int LINK_CR(const struct parsedname *pn)
 	return 0;
 }
 
+/********************************************************/
+/* LINK_close  ** clean local resources before      	*/
+/*                closing the serial port           	*/
+/*							*/
+/********************************************************/
+
+static void LINK_close (struct connection_in *in)
+{
+   DirblobClear (&(in->connin.link.main));
+   DirblobClear (&(in->connin.link.alarm));
+   COM_close(in);
+
+}
+
+/************************************************************************/
+/*									                                     */
+/*	LINK_directory: searches the Directory stores it in a dirblob	     */
+/*			& stores in in a dirblob object depending if it              */
+/*			Supports conditional searches of the bus for 	             */
+/*			/alarm branch					                             */
+/*                                                                       */
+/* Only called for the first element, everything else comes from dirblob */
+/* returns 0 even if no elements, errors only on communication errors    */
+/*									                                     */	
+/************************************************************************/
+static int LINK_directory(struct device_search *ds, struct dirblob *db, 
+			  const struct parsedname *pn)
+{
+	char resp[21];
+	BYTE sn[8];
+	int ret;
+
+    DirblobClear(db);
+
+    //Depending on the search type, the LINK search function
+	//needs to be selected
+	//tEC -- Conditional searching
+	//tF0 -- Normal searching
+    
+    // Send the configuration command and check response
+    if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
+		if ((ret = LINK_write(LINK_string("tEC"),3,pn)))
+			return ret;
+		if ((ret = (LINK_read(LINK_string(resp),5,pn))))
+		   	return ret;
+		if (strncmp(resp,",EC",3)!=0){
+			LEVEL_DEBUG("Did not change to conditional search");
+			return -EIO;
+			}
+		LEVEL_DEBUG("LINK set for conditional search\n");
+	}
+	else	{
+		if ((ret = LINK_write(LINK_string("tF0"),3,pn)))
+			return ret;
+		if ((ret = (LINK_read(LINK_string(resp),5,pn))))
+		   	return ret;
+		if (strncmp(resp,",F0",3)!=0){
+			LEVEL_DEBUG("Did not change to normal search");
+			return -EIO;
+			}
+		LEVEL_DEBUG("LINK set for normal search\n");
+	}
+
+    if ((ret = LINK_write(LINK_string("f"), 1, pn))) {
+        return ret;
+	}
+
+	//One needs to check the first character returned.
+	//If nothing is found, the link will timeout rather then have a quick 
+	//return.  This happens when looking at the alarm directory and
+	//there are no alarms pending
+	//So we grab the first character and check it.  If not an E leave it
+	//in the resp buffer and get the rest of the response from the LINK
+	//device
+
+	if ((ret = LINK_read(LINK_string(resp),1,pn)))
+		return ret;
+
+	if (resp[0]=='E'){
+		if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
+		 	LEVEL_DEBUG ("LINK returned E: No devices in alarm\n");
+			return 0;
+		}
+	}
+    
+	if ((ret = LINK_read(LINK_string((resp+1)), 19, pn))) 
+		return ret;
+
+    // Check if we should start scanning
+    switch (resp[0]) {
+        case '-':
+        case '+':
+            if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
+                pn->in->AnyDevices = 1;
+            }
+            break;
+        case 'N':
+            LEVEL_DEBUG ("LINK returned N: Empty bus\n");
+            if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
+                pn->in->AnyDevices = 0;
+            }
+        case 'X':
+        default:
+            LEVEL_DEBUG("LINK_search default case\n");
+            return -EIO;
+    }
+
+    /* Join the loop after the first query -- subsequent handled differently */
+    while ( (resp[0]=='+') || (resp[0]=='-') ) {
+        sn[7] = string2num(&resp[2]);
+        sn[6] = string2num(&resp[4]);
+        sn[5] = string2num(&resp[6]);
+        sn[4] = string2num(&resp[8]);
+        sn[3] = string2num(&resp[10]);
+        sn[2] = string2num(&resp[12]);
+        sn[1] = string2num(&resp[14]);
+        sn[0] = string2num(&resp[16]);
+        LEVEL_DEBUG("LINK_directory SN found: " SNformat "\n", SNvar(sn));
+
+	// CRC check
+        if (CRC8(sn, 8) || (sn[0] == 0)) {
+            /* A minor "error" and should perhaps only return -1 */
+            /* to avoid reconnect */
+            LEVEL_DEBUG("sn = %s\n",sn);
+            return -EIO;
+        }
+
+    	DirblobAdd (sn, db);
+    
+        switch (resp[0]) {
+            case '+':
+                // get next element
+                if ((ret = LINK_write(LINK_string("n"), 1, pn))) {
+                    return ret;
+                }
+                if ((ret = LINK_read(LINK_string((resp)), 20, pn))) {
+                    return ret;
+                }
+                break;
+            case '-':
+            default:
+                break ;
+        }
+    }
+
+	return 0 ;
+}
