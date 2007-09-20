@@ -554,10 +554,10 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db,
                 }
                 break;
             case '-':
+                return 0 ;
             default:
                 break ;
         }
     }
-
 	return 0 ;
 }
