@@ -69,7 +69,7 @@ $Id$
 
 void DirblobClear(struct dirblob *db)
 {
-	if (db->snlist) {
+	if (db->snlist != NULL) {
 		free(db->snlist);
 		db->snlist = NULL;
 	}
@@ -103,7 +103,6 @@ int DirblobAdd(BYTE * sn, struct dirblob *db)
 			db->troubled = 1;
 			return -ENOMEM;
 		}
-	} else {
 	}
 	// add the device and increment the counter
 	memcpy(&(db->snlist[DIRBLOB_ELEMENT_LENGTH * db->devices]), sn, DIRBLOB_ELEMENT_LENGTH);

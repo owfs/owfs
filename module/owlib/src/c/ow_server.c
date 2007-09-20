@@ -92,6 +92,8 @@ int Zero_detect(struct connection_in *in)
 	return 0;
 }
 
+// Set up inbound connection to an owserver
+// Actual tcp connection created as needed
 int Server_detect(struct connection_in *in)
 {
 	if (in->name == NULL)
@@ -106,6 +108,8 @@ int Server_detect(struct connection_in *in)
 	return 0;
 }
 
+// Free up the owserver inbound connection
+// actual connections opened and closed independently
 static void Server_close(struct connection_in *in)
 {
 	if (in->file_descriptor > FD_PERSISTENT_NONE) {			// persistent connection
@@ -115,6 +119,7 @@ static void Server_close(struct connection_in *in)
 	FreeClientAddr(in);
 }
 
+// Send to an owserver using the READ message
 int ServerRead(struct one_wire_query * owq)
 {
 	struct server_msg sm;
@@ -155,6 +160,7 @@ int ServerRead(struct one_wire_query * owq)
 	return ret;
 }
 
+// Send to an owserver using the PRESENT message
 int ServerPresence(const struct parsedname *pn)
 {
 	struct server_msg sm;
@@ -191,13 +197,14 @@ int ServerPresence(const struct parsedname *pn)
 	return ret;
 }
 
+// Send to an owserver using the WRITE message
 int ServerWrite(struct one_wire_query * owq )
 {
 	struct server_msg sm;
 	struct client_msg cm;
-    struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	struct serverpackage sp =
-    { pn->path_busless, (BYTE *)OWQ_buffer(owq), OWQ_size(owq), pn->tokenstring, pn->tokens, };
+		{ pn->path_busless, (BYTE *)OWQ_buffer(owq), OWQ_size(owq), pn->tokenstring, pn->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;
@@ -205,8 +212,8 @@ int ServerWrite(struct one_wire_query * owq )
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_write;
-    sm.size = OWQ_size(owq);
-    sm.offset = OWQ_offset(owq);
+	sm.size = OWQ_size(owq);
+	sm.offset = OWQ_offset(owq);
 
 	//printf("ServerRead path=%s\n", pn->path_busless);
 	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index,
@@ -237,6 +244,7 @@ int ServerWrite(struct one_wire_query * owq )
 	return ret;
 }
 
+// Send to an owserver using the DIR message
 int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			  void *v, const struct parsedname *pn, uint32_t * flags)
 {
@@ -256,7 +264,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			   SAFESTRING(pn->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn->in);
-	if (connectfd > -1) {
+	if (connectfd > FD_CURRENT_BAD) {
 		sm.sg = SetupSemi(persistent, pn);
 		if ((connectfd =
 			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
@@ -264,7 +272,6 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 		} else {
 			char *path2;
 			size_t devices = 0;
-			struct parsedname pn2;
 			struct dirblob db;
 
 			/* If cacheable, try to allocate a blob for storage */
@@ -272,7 +279,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			DirblobInit(&db);
 			if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
 				&& pn->selected_device == NULL) {
-				if (RootNotBranch(&pn2)) {	/* root dir */
+				if (RootNotBranch(pn)) {	/* root dir */
 					BUSLOCK(pn);
 					db.allocated = pn->in->last_root_devs;	// root dir estimated length
 					BUSUNLOCK(pn);
@@ -282,6 +289,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			}
 
 			while ((path2 = FromServerAlloc(connectfd, &cm))) {
+				struct parsedname pn2;
 				path2[cm.payload - 1] = '\0';	/* Ensure trailing null */
 				LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
 
@@ -290,7 +298,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 					free(path2);
 					break;
 				}
-                //printf("SERVERDIR path=%s\n",pn2.path);
+				//printf("SERVERDIR path=%s\n",pn2.path);
 				/* we got a device on bus_nr = pn->in->index. Cache it so we
 				   find it quicker next time we want to do read values from the
 				   the actual device
@@ -315,7 +323,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 			/* Add to the cache (full list as a single element */
 			if (DirblobPure(&db)) {
 				Cache_Add_Dir(&db, pn);	// end with a null entry
-				if (RootNotBranch(&pn2)) {
+				if (RootNotBranch(pn)) {
 					BUSLOCK(pn);
 					pn->in->last_root_devs = db.devices;	// root dir estimated length
 					BUSUNLOCK(pn);
@@ -336,7 +344,113 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
 	return ret;
 }
 
+// Send to an owserver using the DIRALL message
+int ServerDirall(void (*dirfunc) (void *, const struct parsedname * const),
+			  void *v, const struct parsedname *pn, uint32_t * flags)
+{
+	struct server_msg sm;
+	struct client_msg cm;
+	struct serverpackage sp =
+		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
+	int persistent = 1;
+	int connectfd;
+	int ret;
+
+	memset(&sm, 0, sizeof(struct server_msg));
+	memset(&cm, 0, sizeof(struct client_msg));
+	sm.type = msg_dirall;
+
+	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index,
+			   SAFESTRING(pn->path_busless));
+
+	connectfd = PersistentStart(&persistent, pn->in);
+	if (connectfd > FD_CURRENT_BAD) {
+		ASCII * comma_separated_list ;
+		sm.sg = SetupSemi(persistent, pn);
+		if ((connectfd =
+			ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ret = -EIO;
+		} else if ( (comma_separated_list = FromServerAlloc(connectfd, &cm))==NULL ) {
+			ret = -EIO;
+		} else {
+			ASCII * current_file ;
+			ASCII * rest_of_comma_list = comma_separated_list ;
+			size_t devices = 0;
+			struct dirblob db;
+
+			/* If cacheable, try to allocate a blob for storage */
+			/* only for "read devices" and not alarm */
+			DirblobInit(&db);
+			if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
+				&& pn->selected_device == NULL) {
+				if (RootNotBranch(pn)) {	/* root dir */
+					BUSLOCK(pn);
+					db.allocated = pn->in->last_root_devs;	// root dir estimated length
+					BUSUNLOCK(pn);
+				}
+			} else {
+				db.troubled = 1;	// no dirblob cache
+			}
+
+			while ( (current_file = strsep(&rest_of_comma_list,",")) != NULL ) {
+				struct parsedname pn2;
+				LEVEL_DEBUG("ServerDir: got=[%s]\n", current_file);
+
+				if (FS_ParsedName_BackFromRemote(current_file, &pn2)) {
+					cm.ret = -EINVAL;
+					break;
+				}
+				//printf("SERVERDIR path=%s\n",pn2.path);
+				/* we got a device on bus_nr = pn->in->index. Cache it so we
+				   find it quicker next time we want to do read values from the
+				   the actual device
+				 */
+				if (pn2.selected_device && IsRealDir(&pn2)) {
+					/* If we get a device then cache the bus_nr */
+					Cache_Add_Device(pn->in->index, &pn2);
+				}
+				/* Add to cache Blob -- snlist is also a flag for cachable */
+				if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
+					DirblobAdd(pn2.sn, &db);
+				}
+				++devices;
+
+				DIRLOCK;
+				dirfunc(v, &pn2);
+				DIRUNLOCK;
+
+				FS_ParsedName_destroy(&pn2);	// destroy the last parsed name
+			}
+			/* Add to the cache (full list as a single element */
+			if (DirblobPure(&db)) {
+				Cache_Add_Dir(&db, pn);	// end with a null entry
+				if (RootNotBranch(pn)) {
+					BUSLOCK(pn);
+					pn->in->last_root_devs = db.devices;	// root dir estimated length
+					BUSUNLOCK(pn);
+				}
+			}
+			DirblobClear(&db);
+
+			DIRLOCK;
+			/* flags are sent back in "offset" of final blank entry */
+			flags[0] |= cm.offset;
+			DIRUNLOCK;
+
+			// free the allocated memory
+			free( comma_separated_list ) ;
+
+			ret = cm.ret;
+		}
+	} else {
+		ret = -EIO;
+	}
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	return ret;
+}
+
 /* read from server, free return pointer if not Null */
+/* Adds an extra null byte at end */
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 {
 	char *msg;
@@ -359,29 +473,30 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 	} while (cm->payload < 0);
 	//printf("OW_SERVER loop1 done\n");
 
-//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+	//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	if (cm->payload == 0)
 		return NULL;
 	if (cm->ret < 0)
 		return NULL;
 	if (cm->payload > 65000) {
-//printf("FromServerAlloc payload too large\n");
+	//printf("FromServerAlloc payload too large\n");
 		return NULL;
 	}
 
-	if ((msg = (char *) malloc((size_t) cm->payload))) {
+	if ((msg = (char *) malloc((size_t) cm->payload + 1))) {
 		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
 		if (ret != cm->payload) {
-//printf("FromServer couldn't read payload\n");
+			//printf("FromServer couldn't read payload\n");
 			cm->payload = 0;
 			cm->offset = 0;
 			cm->ret = -EIO;
 			free(msg);
 			msg = NULL;
 		}
-//printf("FromServer payload read ok\n");
+		//printf("FromServer payload read ok\n");
 	}
+	msg[cm->payload] = '\0' ; // safety NULL
 	return msg;
 }
 
@@ -412,8 +527,8 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
 	} while (cm->payload < 0);	// flag to show a delay message
 	//printf("OW_SERVER loop2 done\n");
 
-//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+	//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	if (cm->payload == 0)
 		return 0;				// No payload, done.
 
@@ -460,7 +575,6 @@ static int ToServerTwice(int file_descriptor, int persistent, struct server_msg 
 }
 
 // should be const char * data but iovec has problems with const arguments
-//static int ToServer( int file_descriptor, struct server_msg * sm, const char * path, const char * data, int datasize ) {
 static int ToServer(int file_descriptor, struct server_msg *sm,
 					struct serverpackage *sp)
 {
@@ -503,11 +617,11 @@ static int ToServer(int file_descriptor, struct server_msg *sm,
 
 	// encode in network order (just the header)
 	sm->version = htonl(sm->version);
-	sm->payload = htonl(payload);
-	sm->size = htonl(sm->size);
-	sm->type = htonl(sm->type);
-	sm->sg = htonl(sm->sg);
-	sm->offset = htonl(sm->offset);
+	sm->payload = htonl(    payload);
+	sm->size    = htonl(sm->size   );
+	sm->type    = htonl(sm->type   );
+	sm->sg      = htonl(sm->sg     );
+	sm->offset  = htonl(sm->offset );
 
 	return writev(file_descriptor, io, 5) !=
 		(ssize_t) (payload + sizeof(struct server_msg) +
@@ -619,14 +733,14 @@ static void PersistentFree(int file_descriptor, struct connection_in *in)
 static int PersistentStart(int *persistent, struct connection_in *in)
 {
 	int file_descriptor;
-	if (*persistent == 0) {
+	if (*persistent == 0) { // no persistence wanted
 		file_descriptor = ConnectToServer(in);
-		*persistent = 0;
+		*persistent = 0; // still not persistent
 	} else if ((file_descriptor = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
-		file_descriptor = ConnectToServer(in);
-		*persistent = 0;
-	} else {
-		*persistent = 1;
+		file_descriptor = ConnectToServer(in); // non-persistent backup request
+		*persistent = 0; // not persistent
+	} else {  // successfully
+		*persistent = 1; // flag as persistent
 	}
 	return file_descriptor;
 }
@@ -638,11 +752,11 @@ static int PersistentStart(int *persistent, struct connection_in *in)
 static void PersistentEnd(int file_descriptor, int persistent, int granted,
 						  struct connection_in *in)
 {
-	if (persistent == 0) {
+	if (persistent == 0) { // non-persistence from the start
 		close(file_descriptor);
-	} else if (granted == 0) {
+	} else if (granted == 0) { // not granted
 		PersistentClear(file_descriptor, in);
-	} else {
+	} else { // Let the persistent connection be used
 		PersistentFree(file_descriptor, in);
 	}
 }
