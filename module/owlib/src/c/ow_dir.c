@@ -286,43 +286,50 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 
 /* Device directory -- all from memory */
 static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
-					 void *v, struct parsedname *pn2)
+					 void *v, struct parsedname *pn_device_directory)
 {
-	struct filetype *lastft = &(pn2->selected_device->filetype_array[pn2->selected_device->count_of_filetypes]);	/* last filetype struct */
+	struct filetype *lastft = &(pn_device_directory->selected_device->filetype_array[pn_device_directory->selected_device->count_of_filetypes]);	/* last filetype struct */
 	struct filetype *firstft;	/* first filetype struct */
 	char s[33];
 	size_t len;
 
+	struct parsedname s_pn_file_entry ;
+	struct parsedname * pn_file_entry = &s_pn_file_entry ;
+
 	STAT_ADD1(dir_dev.calls);
-	if (pn2->subdir) {			/* head_inbound_list subdir, name prepends */
-//printf("DIR device subdirectory\n");
-		len = snprintf(s, 32, "%s/", pn2->subdir->name);
-		firstft = pn2->subdir + 1;
+	if (pn_device_directory->subdir != NULL) {			/* head_inbound_list subdir, name prepends */
+		//printf("DIR device subdirectory\n");
+		len = snprintf(s, 32, "%s/", pn_device_directory->subdir->name);
+		firstft = pn_device_directory->subdir + 1;
 	} else {
-//printf("DIR device directory\n");
+		//printf("DIR device directory\n");
 		len = 0;
-		firstft = pn2->selected_device->filetype_array;
+		firstft = pn_device_directory->selected_device->filetype_array;
 	}
-	for (pn2->selected_filetype = firstft; pn2->selected_filetype < lastft; ++pn2->selected_filetype) {	/* loop through filetypes */
+
+	/* Shallow copy */
+	memcpy( pn_file_entry, pn_device_directory, sizeof(struct parsedname)) ;
+
+	for (pn_file_entry->selected_filetype = firstft; pn_file_entry->selected_filetype < lastft; ++pn_file_entry->selected_filetype) {	/* loop through filetypes */
 		if (len) {				/* subdir */
 			/* test start of name for directory name */
-			if (strncmp(pn2->selected_filetype->name, s, len))
+			if (strncmp(pn_file_entry->selected_filetype->name, s, len))
 				break;
 		} else {				/* primary device directory */
-			if (strchr(pn2->selected_filetype->name, '/'))
+			if (strchr(pn_file_entry->selected_filetype->name, '/'))
 				continue;
 		}
-		if (pn2->selected_filetype->ag) {
-			for (pn2->extension =
-				 (pn2->selected_filetype->format == ft_bitfield) ? -2 : -1;
-				 pn2->extension < pn2->selected_filetype->ag->elements;
-				 ++pn2->extension) {
-				dirfunc(v, pn2);
+		if (pn_file_entry->selected_filetype->ag) {
+			for (pn_file_entry->extension =
+				 (pn_file_entry->selected_filetype->format == ft_bitfield) ? -2 : -1;
+				 pn_file_entry->extension < pn_file_entry->selected_filetype->ag->elements;
+				 ++pn_file_entry->extension) {
+				dirfunc(v, pn_file_entry);
 				STAT_ADD1(dir_dev.entries);
 			}
 		} else {
-			pn2->extension = 0;
-			dirfunc(v, pn2);
+			pn_file_entry->extension = 0;
+			dirfunc(v, pn_file_entry);
 			STAT_ADD1(dir_dev.entries);
 		}
 	}
@@ -331,25 +338,30 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *),
 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
 static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
-					   void *v, struct parsedname *pn2)
+					   void *v, struct parsedname *pn_alarm_directory)
 {
 	int ret;
 	uint32_t flags;
 	struct device_search ds;	// holds search state
+	struct parsedname s_pn_alarm_device ;
+	struct parsedname * pn_alarm_device = &s_pn_alarm_device ;
 
 	/* cache from Server if this is a remote bus */
-	if (BusIsServer(pn2->in))
-		return ServerDir(dirfunc, v, pn2, &flags);
+	if (BusIsServer(pn_alarm_directory->in))
+		return ServerDir(dirfunc, v, pn_alarm_directory, &flags);
+
+	/* Shallow copy */
+	memcpy( pn_alarm_device, pn_alarm_directory, sizeof(struct parsedname)) ;
 
 	/* STATISCTICS */
 	STAT_ADD1(dir_main.calls);
 //printf("DIR alarm directory\n");
 
-	BUSLOCK(pn2);
-	pn2->selected_filetype = NULL;				/* just in case not properly set */
-	ret = BUS_first_alarm(&ds, pn2);
+	BUSLOCK(pn_alarm_directory);
+	pn_alarm_directory->selected_filetype = NULL;				/* just in case not properly set */
+	ret = BUS_first_alarm(&ds, pn_alarm_directory);
 	if (ret) {
-		BUSUNLOCK(pn2);
+		BUSUNLOCK(pn_alarm_directory);
 		LEVEL_DEBUG("FS_alarmdir BUS_first_alarm = %d\n",ret) ;
 		if (ret == -ENODEV)
 			return 0;			/* no more alarms is ok */
@@ -357,17 +369,16 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
 	}
 	while (ret == 0) {
 		STAT_ADD1(dir_main.entries);
-		memcpy(pn2->sn, ds.sn, 8);
+		memcpy(pn_alarm_device->sn, ds.sn, 8);
 		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		FS_devicefindhex(ds.sn[0], pn2);	// lookup ID and set pn2.selected_device
+		FS_devicefindhex(ds.sn[0], pn_alarm_device);	// lookup ID and set pn2.selected_device
 		DIRLOCK;
-		dirfunc(v, pn2);
+		dirfunc(v, pn_alarm_device);
 		DIRUNLOCK;
-		pn2->selected_device = NULL;		/* clear for the rest of directory listing */
-		ret = BUS_next(&ds, pn2);
+		ret = BUS_next(&ds, pn_alarm_directory);
 //printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
 	}
-	BUSUNLOCK(pn2);
+	BUSUNLOCK(pn_alarm_directory);
 	if (ret == -ENODEV)
 		return 0;				/* no more alarms is ok */
 	return ret;
@@ -378,16 +389,21 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *),
 /* Also, adapters and stats handled elsewhere */
 /* Scan the directory from the BUS and add to cache */
 static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
-					  void *v, struct parsedname *pn2, uint32_t * flags)
+					  void *v, struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	struct device_search ds;
 	size_t devices = 0;
 	struct dirblob db;
+	struct parsedname s_pn_real_device ;
+	struct parsedname * pn_real_device = &s_pn_real_device ;
 	int ret;
 
 	/* cache from Server if this is a remote bus */
-	if (BusIsServer(pn2->in))
-		return ServerDir(dirfunc, v, pn2, flags);
+	if (BusIsServer(pn_whole_directory->in))
+		return ServerDir(dirfunc, v, pn_whole_directory, flags);
+
+	/* Shallow copy */
+	memcpy( pn_real_device, pn_whole_directory, sizeof(struct parsedname)) ;
 
 	/* STATISTICS */
 	STAT_ADD1(dir_main.calls);
@@ -395,53 +411,52 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 	DirblobInit(&db);			// set up a fresh dirblob
 
 	/* Operate at dev level, not filetype */
-	pn2->selected_filetype = NULL;
+	pn_real_device->selected_filetype = NULL;
 	flags[0] = 0;				/* start out with no flags set */
 
-	BUSLOCK(pn2);
+	BUSLOCK(pn_real_device);
 
 	/* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
-	if ((ret = BUS_first(&ds, pn2))) {
-		BUSUNLOCK(pn2);
+	if ((ret = BUS_first(&ds, pn_whole_directory))) {
+		BUSUNLOCK(pn_whole_directory);
 		if (ret == -ENODEV) {
-			if (RootNotBranch(pn2))
-				pn2->in->last_root_devs = 0;	// root dir estimated length
+			if (RootNotBranch(pn_real_device))
+				pn_real_device->in->last_root_devs = 0;	// root dir estimated length
 			return 0;			/* no more devices is ok */
 		}
 		return -EIO;
 	}
 	/* BUS still locked */
-	if (RootNotBranch(pn2))
-		db.allocated = pn2->in->last_root_devs;	// root dir estimated length
+	if (RootNotBranch(pn_real_device))
+		db.allocated = pn_real_device->in->last_root_devs;	// root dir estimated length
 	do {
-		BUSUNLOCK(pn2);
+		BUSUNLOCK(pn_whole_directory);
 		if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
 			DirblobAdd(ds.sn, &db);
 		}
 		++devices;
 
-		memcpy(pn2->sn, ds.sn, 8);
+		memcpy(pn_real_device->sn, ds.sn, 8);
 		/* Add to Device location cache */
-		Cache_Add_Device(pn2->in->index, pn2);
+		Cache_Add_Device(pn_real_device->in->index, pn_real_device);
 		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		FS_devicefindhex(ds.sn[0], pn2);	// lookup ID and set pn2.selected_device
+		FS_devicefindhex(ds.sn[0], pn_real_device);	// lookup ID and set pn_real_device.selected_device
 
 		DIRLOCK;
-		dirfunc(v, pn2);
-		flags[0] |= pn2->selected_device->flags;
+		dirfunc(v, pn_real_device);
+		flags[0] |= pn_real_device->selected_device->flags;
 		DIRUNLOCK;
-		pn2->selected_device = NULL;		/* clear for the rest of directory listing */
 
-		BUSLOCK(pn2);
-	} while ((ret = BUS_next(&ds, pn2)) == 0);
+		BUSLOCK(pn_whole_directory);
+	} while ((ret = BUS_next(&ds, pn_whole_directory)) == 0);
 	/* BUS still locked */
-	if (RootNotBranch(pn2) && ret == -ENODEV)
-		pn2->in->last_root_devs = devices;	// root dir estimated length
-	BUSUNLOCK(pn2);
+	if (RootNotBranch(pn_real_device) && ret == -ENODEV)
+		pn_real_device->in->last_root_devs = devices;	// root dir estimated length
+	BUSUNLOCK(pn_whole_directory);
 
 	/* Add to the cache (full list as a single element */
 	if (DirblobPure(&db) && ret == -ENODEV) {
-		Cache_Add_Dir(&db, pn2);	// end with a null entry
+		Cache_Add_Dir(&db, pn_real_device);	// end with a null entry
 	}
 	DirblobClear(&db);
 
@@ -455,16 +470,16 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 
 /* points "serial number" to directory
    -- 0 for root
-   -- DS2409/mai|aux for branch
+   -- DS2409/main|aux for branch
    -- DS2409 needs only the last element since each DS2409 is unique
    */
-void FS_LoadPath(BYTE * sn, const struct parsedname *pn_directory)
+void FS_LoadPath(BYTE * sn, const struct parsedname *pn_branch_directory)
 {
-	if (RootNotBranch(pn_directory)) {
+	if (RootNotBranch(pn_branch_directory)) {
 		memset(sn, 0, 8);
 	} else {
-		memcpy(sn, pn_directory->bp[pn_directory->pathlength - 1].sn, 7);
-		sn[7] = pn_directory->bp[pn_directory->pathlength - 1].branch;
+		memcpy(sn, pn_branch_directory->bp[pn_branch_directory->pathlength - 1].sn, 7);
+		sn[7] = pn_branch_directory->bp[pn_branch_directory->pathlength - 1].branch;
 	}
 }
 
