@@ -24,6 +24,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_codes.h"
 
 #if OW_USB						/* conditional inclusion of USB */
 
@@ -74,6 +75,7 @@ static int DS9490_detect_found(struct usb_list *ul,
 							   const struct parsedname *pn);
 static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 							const struct parsedname *pn);
+static int DS9490_ProgramPulse(const struct parsedname *pn) ;
 static int DS9490_read(BYTE * buf, const size_t size,
 					   const struct parsedname *pn);
 static int DS9490_write(BYTE * buf, const size_t size,
@@ -93,7 +95,7 @@ static void DS9490_setroutines(struct interface_routines *f)
 	f->overdrive = DS9490_overdrive;
 	f->testoverdrive = DS9490_testoverdrive;
 	f->PowerByte = DS9490_PowerByte;
-//    f->ProgramPulse = ;
+	f->ProgramPulse = DS9490_ProgramPulse;
 	f->sendback_data = DS9490_sendback_data;
 //    f->sendback_bits = ;
 	f->select = NULL;
@@ -102,6 +104,8 @@ static void DS9490_setroutines(struct interface_routines *f)
 	f->transaction = NULL;
 	f->flags = 0;
 }
+
+#define CONTROL_REQUEST_TYPE  0x40
 
 #define CONTROL_CMD     0x00
 #define COMM_CMD        0x01
@@ -233,6 +237,11 @@ static void DS9490_setroutines(struct interface_routines *f)
 #define DS2490_EP2              0x02
 /** EP3 -- bulk read */
 #define DS2490_EP3              0x83
+
+/* From datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf page 15 */
+/* 480 usec = 8usec * 60 and 60(decimal) = 0x3C */
+/* 480 usec is the recommended program pulse duration in the DS2406 DS2502 DS2505 datasheets */
+#define PROGRAM_PULSE_DURATION_CODE	0x3C
 
 char badUSBname[] = "-1/-1";
 
@@ -388,7 +397,7 @@ int DS9490_BusParm(struct connection_in *in)
 
 	/* Slew Rate */
 	if ((ret =
-	     usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULLDOWN_SLEWRATE,
+	     usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_PULLDOWN_SLEWRATE,
 			     con_usb->pulldownslewrate, NULL, 0,
 			     con_usb->timeout)) < 0) {
 		LEVEL_DATA("DS9490_BusParm: Error MOD_PULLDOWN_SLEWRATE\n");
@@ -396,7 +405,7 @@ int DS9490_BusParm(struct connection_in *in)
 	}
 	/* Low Time */
 	if ((ret =
-	     usb_control_msg(usb, 0x40, MODE_CMD, MOD_WRITE1_LOWTIME,
+	     usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_WRITE1_LOWTIME,
 			     con_usb->writeonelowtime, NULL, 0,
 			     con_usb->timeout)) < 0) {
 		LEVEL_DATA("DS9490_BusParm: Error MOD_WRITE1_LOWTIME\n");
@@ -404,7 +413,7 @@ int DS9490_BusParm(struct connection_in *in)
 	}
 	/* DS0 Low */
 	if ((ret =
-	     usb_control_msg(usb, 0x40, MODE_CMD, MOD_DSOW0_TREC,
+	     usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_DSOW0_TREC,
 			     con_usb->datasampleoffset, NULL, 0,
 			     con_usb->timeout)) < 0) {
 		LEVEL_DATA("DS9490_BusParm: Error MOD_DS0W0\n");
@@ -421,14 +430,14 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 
 	// reset the device (not the 1-wire bus)
 	if ((ret =
-		 usb_control_msg(usb, 0x40, CONTROL_CMD, CTL_RESET_DEVICE, 0x0000,
+		 usb_control_msg(usb, CONTROL_REQUEST_TYPE, CONTROL_CMD, CTL_RESET_DEVICE, 0x0000,
 						 NULL, 0, pn->in->connin.usb.timeout)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: error1 ret=%d\n", ret);
 		return -EIO;
 	}
 	// set the strong pullup duration to infinite
 	if ((ret =
-		 usb_control_msg(usb, 0x40, COMM_CMD, COMM_SET_DURATION | COMM_IM,
+		 usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD, COMM_SET_DURATION | COMM_IM,
 						 0x0000, NULL, 0,
 						 pn->in->connin.usb.timeout)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: error2 ret=%d\n", ret);
@@ -436,7 +445,7 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 	}
 	// set the 12V pullup duration to 512us
 	if ((ret =
-		 usb_control_msg(usb, 0x40, COMM_CMD,
+		 usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD,
 						 COMM_SET_DURATION | COMM_IM | COMM_TYPE, 0x0040,
 						 NULL, 0, pn->in->connin.usb.timeout)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: error3 ret=%d\n", ret);
@@ -445,7 +454,7 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 #if 1
 	// disable strong pullup, but leave program pulse enabled (faster)
 	if ((ret =
-		 usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULSE_EN,
+		 usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_PULSE_EN,
 						 ENABLEPULSE_PRGE, NULL, 0,
 						 pn->in->connin.usb.timeout)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: error4 ret=%d\n", ret);
@@ -930,7 +939,7 @@ static int DS9490_overdrive(const UINT overdrive,
 							const struct parsedname *pn)
 {
 	int ret;
-	BYTE sp = 0x3C;
+	BYTE sp = _1W_OVERDRIVE_SKIP_ROM;
 	BYTE resp;
 	int i;
 	int oldspeed;
@@ -952,17 +961,16 @@ static int DS9490_overdrive(const UINT overdrive,
 		con_usb->USpeed = ONEWIREBUSSPEED_OVERDRIVE;
 
 		// we need to change speed to overdrive
-		// 0x3C is overdriveskip command
 		for (i = 0; i < 3; i++) {
 			if ((ret = BUS_reset(pn)) < 0)
 				continue;
 			if (((ret = DS9490_sendback_data(&sp, &resp, 1, pn)) < 0)
 				|| (sp != resp)) {
-				LEVEL_DEBUG("overdrive: error sending ret=%d 0x3C/0x%02X\n", ret, resp);
+				LEVEL_DEBUG("overdrive: error sending ret=%d %.2X/0x%02X\n", ret, sp, resp);
 				continue;
 			}
 			if((con_usb->usb) &&
-			   ((ret = usb_control_msg(con_usb->usb, 0x40,
+			   ((ret = usb_control_msg(con_usb->usb, CONTROL_REQUEST_TYPE,
 						   MODE_CMD, MOD_1WIRE_SPEED,
 						   ONEWIREBUSSPEED_OVERDRIVE, NULL, 0,
 						   con_usb->timeout)) == 0))
@@ -986,7 +994,7 @@ static int DS9490_overdrive(const UINT overdrive,
 		if (con_usb->usb) {
 			/* Have to make sure usb isn't closed after last reconnect */
 			if ((ret =
-				 usb_control_msg(con_usb->usb, 0x40, MODE_CMD,
+				 usb_control_msg(con_usb->usb, CONTROL_REQUEST_TYPE, MODE_CMD,
 						 MOD_1WIRE_SPEED, ONEWIREBUSSPEED_FLEXIBLE,
 						 NULL, 0, con_usb->timeout)) < 0)
 				return ret;
@@ -1003,7 +1011,7 @@ static int DS9490_overdrive(const UINT overdrive,
 		if (con_usb->usb) {
 			/* Have to make sure usb isn't closed after last reconnect */
 			if ((ret =
-				 usb_control_msg(con_usb->usb, 0x40, MODE_CMD,
+				 usb_control_msg(con_usb->usb, CONTROL_REQUEST_TYPE, MODE_CMD,
 						 MOD_1WIRE_SPEED, ONEWIREBUSSPEED_REGULAR,
 						 NULL, 0, con_usb->timeout)) < 0)
 				return ret;
@@ -1047,7 +1055,7 @@ static int DS9490_reset(const struct parsedname *pn)
 		return ret;
 	}
 
-	if ((ret = usb_control_msg(pn->in->connin.usb.usb, 0x40, COMM_CMD,
+	if ((ret = usb_control_msg(pn->in->connin.usb.usb, CONTROL_REQUEST_TYPE, COMM_CMD,
 							   COMM_1_WIRE_RESET | COMM_F | COMM_IM |
 							   COMM_SE, pn->in->connin.usb.USpeed, NULL, 0,
 							   pn->in->connin.usb.timeout)) < 0) {
@@ -1145,7 +1153,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 	}
 	// COMM_BLOCK_IO | COMM_IM | COMM_F == 0x0075
 	if (((ret =
-		  usb_control_msg(usb, 0x40, COMM_CMD,
+		  usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD,
 						  COMM_BLOCK_IO | COMM_IM | COMM_F, len, NULL, 0,
 						  pn->in->connin.usb.timeout)) < 0)
 		|| ((ret = DS9490_getstatus(buffer, len, pn)) < 0)	// wait for len bytes
@@ -1211,7 +1219,7 @@ static int DS9490_next_both(struct device_search *ds,
 	// COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS
 	// 0xF4 + +0x1 + 0x8 + 0x800 + 0x4000 = 0x48FD
 	if ((ret =
-		 usb_control_msg(usb, 0x40, COMM_CMD, 0x48FD,
+		 usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD, 0x48FD,
 						 0x0100 | (ds->search), NULL, 0,
 						 pn->in->connin.usb.timeout)) < 0) {
 		LEVEL_DATA("USBnextboth control problem ret=%d\n", ret);
@@ -1298,13 +1306,13 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 	}
 	// set the strong pullup
 	if ((ret =
-		 usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULSE_EN,
+		 usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_PULSE_EN,
 						 ENABLEPULSE_SPUE, NULL, 0,
 						 pn->in->connin.usb.timeout)) < 0) {
 		LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 3\n");
 	} else
 		if ((ret =
-			 usb_control_msg(usb, 0x40, COMM_CMD,
+			 usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD,
 							 COMM_BYTE_IO | COMM_IM | COMM_SPU,
 							 byte & 0xFF, NULL, 0,
 							 pn->in->connin.usb.timeout)) < 0) {
@@ -1335,6 +1343,36 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 	return ret;
 }
 
+static int DS9490_ProgramPulse(const struct parsedname *pn)
+{
+	int ret ;
+	usb_dev_handle *usb = pn->in->connin.usb.usb ;
+	
+	if ( DS9490_level(MODE_PROGRAM, pn) != 0 ) {
+		LEVEL_DEBUG("Couldn't set the program pulse level for the DS2490 chip\n");
+		return -EIO ;
+	}
+	
+	// set pullup to strong5 or program
+	// set the strong pullup duration to infinite
+	if (((ret =
+		  usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD, 
+						COMM_SET_DURATION | COMM_TYPE | COMM_IM ,
+						PROGRAM_PULSE_DURATION_CODE, NULL, 0, pn->in->connin.usb.timeout)) < 0)
+		||
+		((ret =
+		  usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD, 
+						COMM_PULSE | COMM_TYPE | COMM_IM,
+						  0, NULL, 0, pn->in->connin.usb.timeout)) < 0)) {
+		STAT_ADD1_BUS(BUS_level_errors, pn->in);
+	}
+	if ( DS9490_level(MODE_NORMAL, pn) != 0 ) {
+		LEVEL_DEBUG("Couldn't reset the program pulse level back to normal\n");
+		return -EIO ;
+	}
+	return ret ;
+}
+
 static int DS9490_HaltPulse(const struct parsedname *pn)
 {
 	BYTE buffer[32];
@@ -1352,14 +1390,14 @@ static int DS9490_HaltPulse(const struct parsedname *pn)
 		LEVEL_DATA("DS9490_HaltPulse: loop\n");
 
 		if ((ret =
-			 usb_control_msg(pn->in->connin.usb.usb, 0x40, CONTROL_CMD,
+			 usb_control_msg(pn->in->connin.usb.usb, CONTROL_REQUEST_TYPE, CONTROL_CMD,
 							 CTL_HALT_EXE_IDLE, 0, NULL, 0,
 							 pn->in->connin.usb.timeout)) < 0) {
 			LEVEL_DEFAULT("DS9490_HaltPulse: err1\n");
 			break;
 		}
 		if ((ret =
-			 usb_control_msg(pn->in->connin.usb.usb, 0x40, CONTROL_CMD,
+			 usb_control_msg(pn->in->connin.usb.usb, CONTROL_REQUEST_TYPE, CONTROL_CMD,
 							 CTL_RESUME_EXE, 0, NULL, 0,
 							 pn->in->connin.usb.timeout)) < 0) {
 			LEVEL_DEFAULT("DS9490_HaltPulse: err2\n");
@@ -1375,7 +1413,7 @@ static int DS9490_HaltPulse(const struct parsedname *pn)
 		if (!(buffer[8] & STATUSFLAGS_SPUA)) {
 			//printf("DS9490_HaltPulse: SPU not set\n");
 			if ((ret =
-				 usb_control_msg(pn->in->connin.usb.usb, 0x40, MODE_CMD,
+				 usb_control_msg(pn->in->connin.usb.usb, CONTROL_REQUEST_TYPE, MODE_CMD,
 								 MOD_PULSE_EN, 0, NULL, 0,
 								 pn->in->connin.usb.timeout)) < 0) {
 				LEVEL_DEFAULT("DS9490_HaltPulse: err4\n");
@@ -1410,7 +1448,6 @@ static int DS9490_HaltPulse(const struct parsedname *pn)
 static int DS9490_level(int new_level, const struct parsedname *pn)
 {
 	int ret;
-	int lev;
 	usb_dev_handle *usb = pn->in->connin.usb.usb;
 
 	if (new_level == pn->in->connin.usb.ULevel) {	// check if need to change level
@@ -1425,37 +1462,43 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 
 	switch (new_level) {
 	case MODE_NORMAL:
-		if (pn->in->connin.usb.ULevel == MODE_STRONG5) {
-			if (DS9490_HaltPulse(pn) == 0) {
-				pn->in->connin.usb.ULevel = MODE_NORMAL;
-				return 0;
-			}
+		if (DS9490_HaltPulse(pn) != 0) {
+			return -EIO;
 		}
-		return 0;
+		break ;
 	case MODE_STRONG5:
-		lev = ENABLEPULSE_SPUE;
+		// set pullup to strong5
+		// set the strong pullup duration to infinite
+		if (((ret =
+			usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_PULSE_EN, ENABLEPULSE_SPUE, NULL, 0,
+							pn->in->connin.usb.timeout)) < 0)
+			||
+			((ret =
+			usb_control_msg(usb, CONTROL_REQUEST_TYPE, COMM_CMD, COMM_PULSE | COMM_IM, 0,
+							NULL, 0, pn->in->connin.usb.timeout)) < 0)) {
+			STAT_ADD1_BUS(BUS_level_errors, pn->in);
+			return ret;
+		}
 		break;
 	case MODE_PROGRAM:
-		//lev = ENABLEPULSE_PRGE ;
-		// Don't support Program pulse right now
-		return -EIO;
+		// set pullup to strong5
+		// set the strong pullup duration to 480usec
+		if (((ret =
+			usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_PULSE_EN, ENABLEPULSE_PRGE, NULL, 0,
+							pn->in->connin.usb.timeout)) < 0)
+			||
+			((ret =
+			usb_control_msg(usb, CONTROL_REQUEST_TYPE, MODE_CMD, MOD_PROG_PULSE_DURATION, PROGRAM_PULSE_DURATION_CODE,
+							NULL, 0, pn->in->connin.usb.timeout)) < 0)) {
+			STAT_ADD1_BUS(BUS_level_errors, pn->in);
+			return ret;
+		}
+		break ;
 	case MODE_BREAK:
 	default:
 		return 1;
 	}
 
-	// set pullup to strong5 or program
-	// set the strong pullup duration to infinite
-	if (((ret =
-		  usb_control_msg(usb, 0x40, MODE_CMD, MOD_PULSE_EN, lev, NULL, 0,
-						  pn->in->connin.usb.timeout)) < 0)
-		||
-		((ret =
-		  usb_control_msg(usb, 0x40, COMM_CMD, COMM_PULSE | COMM_IM, 0,
-						  NULL, 0, pn->in->connin.usb.timeout)) < 0)) {
-		STAT_ADD1_BUS(BUS_level_errors, pn->in);
-		return ret;
-	}
 	pn->in->connin.usb.ULevel = new_level;
 	return 0;
 }
