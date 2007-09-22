@@ -41,9 +41,9 @@ static int PersistentRequest(struct connection_in *in);
 static int PersistentReRequest(int file_descriptor, struct connection_in *in);
 
 int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
-			  void *v, const struct parsedname *pn, uint32_t * flags) ;
+			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags) ;
 int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
-			  void *v, const struct parsedname *pn, uint32_t * flags) ;
+			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags) ;
 
 
 static void Server_setroutines(struct interface_routines *f)
@@ -129,29 +129,29 @@ int ServerRead(struct one_wire_query * owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
-	struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn_file_entry = PN(owq) ;
 	struct serverpackage sp =
-		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
+		{ pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring, pn_file_entry->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;
 
-	//printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
+	//printf("ServerRead pn_file_entry->path=%s, size=%d, offset=%u\n",pn_file_entry->path,size,offset);
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	//printf("ServerRead path=%s\n", pn->path_busless);
-	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn->in->index,
-			   SAFESTRING(pn->path_busless));
+	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
+	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn_file_entry->in->index,
+			   SAFESTRING(pn_file_entry->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn->in);
+	connectfd = PersistentStart(&persistent, pn_file_entry->in);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn);
+		sm.sg = SetupSemi(persistent, pn_file_entry);
 		if ((connectfd =
-			ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->in)) < 0) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq)) < 0) {
 			ret = -EIO;
@@ -161,17 +161,17 @@ int ServerRead(struct one_wire_query * owq)
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_file_entry->in);
 	return ret;
 }
 
 // Send to an owserver using the PRESENT message
-int ServerPresence(const struct parsedname *pn)
+int ServerPresence(const struct parsedname *pn_file_entry)
 {
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp =
-		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
+		{ pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring, pn_file_entry->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;
@@ -180,15 +180,15 @@ int ServerPresence(const struct parsedname *pn)
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
 
-	//printf("ServerPresence path=%s\n", pn->path_busless);
-	LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn->in->index,
-			   SAFESTRING(pn->path_busless));
+	//printf("ServerPresence path=%s\n", pn_file_entry->path_busless);
+	LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn_file_entry->in->index,
+			   SAFESTRING(pn_file_entry->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn->in);
+	connectfd = PersistentStart(&persistent, pn_file_entry->in);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn);
+		sm.sg = SetupSemi(persistent, pn_file_entry);
 		if ((connectfd =
-			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->in)) < 0) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 			ret = -EIO;
@@ -198,7 +198,7 @@ int ServerPresence(const struct parsedname *pn)
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_file_entry->in);
 	return ret;
 }
 
@@ -207,9 +207,9 @@ int ServerWrite(struct one_wire_query * owq )
 {
 	struct server_msg sm;
 	struct client_msg cm;
-	struct parsedname * pn = PN(owq) ;
+	struct parsedname * pn_file_entry = PN(owq) ;
 	struct serverpackage sp =
-		{ pn->path_busless, (BYTE *)OWQ_buffer(owq), OWQ_size(owq), pn->tokenstring, pn->tokens, };
+		{ pn_file_entry->path_busless, (BYTE *)OWQ_buffer(owq), OWQ_size(owq), pn_file_entry->tokenstring, pn_file_entry->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;
@@ -220,15 +220,15 @@ int ServerWrite(struct one_wire_query * owq )
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	//printf("ServerRead path=%s\n", pn->path_busless);
-	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index,
-			   SAFESTRING(pn->path_busless));
+	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
+	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn_file_entry->in->index,
+			   SAFESTRING(pn_file_entry->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn->in);
+	connectfd = PersistentStart(&persistent, pn_file_entry->in);
 	if (connectfd > -1) {
-		sm.sg = SetupSemi(persistent, pn);
+		sm.sg = SetupSemi(persistent, pn_file_entry);
 		if ((connectfd =
-			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->in)) < 0) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 			ret = -EIO;
@@ -245,39 +245,39 @@ int ServerWrite(struct one_wire_query * owq )
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_file_entry->in);
 	return ret;
 }
 
 // Send to an owserver using either the DIR or DIRALL message
 int ServerDir(void (*dirfunc) (void *, const struct parsedname * const),
-			  void *v, const struct parsedname *pn, uint32_t * flags)
+			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	int ret ;
 	// Do we know this server doesn't support DIRALL?
-	if ( pn->in->connin.tcp.no_dirall ) {
-		return ServerDIR( dirfunc, v, pn, flags ) ;
+	if ( pn_whole_directory->in->connin.tcp.no_dirall ) {
+		return ServerDIR( dirfunc, v, pn_whole_directory, flags ) ;
 	}
 	// device directories have lower latency with DIR
-	if ( IsRealDir(pn) || IsAlarmDir(pn) ) {
-		return ServerDIR( dirfunc, v, pn, flags ) ;
+	if ( IsRealDir(pn_whole_directory) || IsAlarmDir(pn_whole_directory) ) {
+		return ServerDIR( dirfunc, v, pn_whole_directory, flags ) ;
 	}
 	// try DIRALL and see if supported
-	if ( (ret = ServerDIRALL( dirfunc, v, pn, flags )) == -ENOMSG ) {
-		pn->in->connin.tcp.no_dirall = 1 ;
-		return ServerDIR( dirfunc, v, pn, flags ) ;
+	if ( (ret = ServerDIRALL( dirfunc, v, pn_whole_directory, flags )) == -ENOMSG ) {
+		pn_whole_directory->in->connin.tcp.no_dirall = 1 ;
+		return ServerDIR( dirfunc, v, pn_whole_directory, flags ) ;
 	}
 	return ret ;
 }
 
 // Send to an owserver using the DIR message
 int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
-			  void *v, const struct parsedname *pn, uint32_t * flags)
+			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp =
-		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
+		{ pn_whole_directory->path_busless, NULL, 0, pn_whole_directory->tokenstring, pn_whole_directory->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret;
@@ -286,14 +286,14 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
 
-	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index,
-			   SAFESTRING(pn->path_busless));
+	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn_whole_directory->in->index,
+			   SAFESTRING(pn_whole_directory->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn->in);
+	connectfd = PersistentStart(&persistent, pn_whole_directory->in);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn);
+		sm.sg = SetupSemi(persistent, pn_whole_directory);
 		if ((connectfd =
-			 ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			 ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->in)) < 0) {
 			ret = -EIO;
 		} else {
 			char *path2;
@@ -303,56 +303,56 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 			/* If cacheable, try to allocate a blob for storage */
 			/* only for "read devices" and not alarm */
 			DirblobInit(&db);
-			if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
-				&& pn->selected_device == NULL) {
-				if (RootNotBranch(pn)) {	/* root dir */
-					BUSLOCK(pn);
-					db.allocated = pn->in->last_root_devs;	// root dir estimated length
-					BUSUNLOCK(pn);
+			if (IsRealDir(pn_whole_directory) && NotAlarmDir(pn_whole_directory) && !SpecifiedBus(pn_whole_directory)
+				&& pn_whole_directory->selected_device == NULL) {
+				if (RootNotBranch(pn_whole_directory)) {	/* root dir */
+					BUSLOCK(pn_whole_directory);
+					db.allocated = pn_whole_directory->in->last_root_devs;	// root dir estimated length
+					BUSUNLOCK(pn_whole_directory);
 				}
 			} else {
 				db.troubled = 1;	// no dirblob cache
 			}
 
 			while ((path2 = FromServerAlloc(connectfd, &cm))) {
-				struct parsedname pn2;
+				struct parsedname pn_directory_element;
 				path2[cm.payload - 1] = '\0';	/* Ensure trailing null */
 				LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
 
-				if (FS_ParsedName_BackFromRemote(path2, &pn2)) {
+				if (FS_ParsedName_BackFromRemote(path2, &pn_directory_element)) {
 					cm.ret = -EINVAL;
 					free(path2);
 					break;
 				}
-				//printf("SERVERDIR path=%s\n",pn2.path);
-				/* we got a device on bus_nr = pn->in->index. Cache it so we
+				//printf("SERVERDIR path=%s\n",pn_directory_element.path);
+				/* we got a device on bus_nr = pn_whole_directory->in->index. Cache it so we
 				   find it quicker next time we want to do read values from the
 				   the actual device
 				 */
-				if (pn2.selected_device && IsRealDir(&pn2)) {
+				if (IsRealDir(pn_whole_directory)) {
 					/* If we get a device then cache the bus_nr */
-					Cache_Add_Device(pn->in->index, &pn2);
+					Cache_Add_Device(pn_whole_directory->in->index, &pn_directory_element);
 				}
 				/* Add to cache Blob -- snlist is also a flag for cachable */
 				if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-					DirblobAdd(pn2.sn, &db);
+					DirblobAdd(pn_directory_element.sn, &db);
 				}
 				++devices;
 
 				DIRLOCK;
-				dirfunc(v, &pn2);
+				dirfunc(v, &pn_directory_element);
 				DIRUNLOCK;
 
-				FS_ParsedName_destroy(&pn2);	// destroy the last parsed name
+				FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
 				free(path2);
 			}
 			/* Add to the cache (full list as a single element */
 			if (DirblobPure(&db)) {
-				Cache_Add_Dir(&db, pn);	// end with a null entry
-				if (RootNotBranch(pn)) {
-					BUSLOCK(pn);
-					pn->in->last_root_devs = db.devices;	// root dir estimated length
-					BUSUNLOCK(pn);
+				Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
+				if (RootNotBranch(pn_whole_directory)) {
+					BUSLOCK(pn_whole_directory);
+					pn_whole_directory->in->last_root_devs = db.devices;	// root dir estimated length
+					BUSUNLOCK(pn_whole_directory);
 				}
 			}
 			DirblobClear(&db);
@@ -366,18 +366,18 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->in);
 	return ret;
 }
 
 // Send to an owserver using the DIRALL message
 int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
-			  void *v, const struct parsedname *pn, uint32_t * flags)
+			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp =
-		{ pn->path_busless, NULL, 0, pn->tokenstring, pn->tokens, };
+		{ pn_whole_directory->path_busless, NULL, 0, pn_whole_directory->tokenstring, pn_whole_directory->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret;
@@ -386,14 +386,14 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
 
-	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn->in->index,
-			   SAFESTRING(pn->path_busless));
+	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn_whole_directory->in->index,
+			   SAFESTRING(pn_whole_directory->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn->in);
+	connectfd = PersistentStart(&persistent, pn_whole_directory->in);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn);
+		sm.sg = SetupSemi(persistent, pn_whole_directory);
 		if ((connectfd =
-			ToServerTwice(connectfd, persistent, &sm, &sp, pn->in)) < 0) {
+			ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->in)) < 0) {
 			ret = -EIO;
 		} else {
 			ASCII * comma_separated_list = FromServerAlloc(connectfd, &cm) ;
@@ -406,53 +406,53 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 				/* If cacheable, try to allocate a blob for storage */
 				/* only for "read devices" and not alarm */
 				DirblobInit(&db);
-				if (IsRealDir(pn) && NotAlarmDir(pn) && !SpecifiedBus(pn)
-					&& pn->selected_device == NULL) {
-					if (RootNotBranch(pn)) {	/* root dir */
-						BUSLOCK(pn);
-						db.allocated = pn->in->last_root_devs;	// root dir estimated length
-						BUSUNLOCK(pn);
+				if (IsRealDir(pn_whole_directory) && NotAlarmDir(pn_whole_directory) && !SpecifiedBus(pn_whole_directory)
+					&& pn_whole_directory->selected_device == NULL) {
+					if (RootNotBranch(pn_whole_directory)) {	/* root dir */
+						BUSLOCK(pn_whole_directory);
+						db.allocated = pn_whole_directory->in->last_root_devs;	// root dir estimated length
+						BUSUNLOCK(pn_whole_directory);
 					}
 				} else {
 					db.troubled = 1;	// no dirblob cache
 				}
 	
 				while ( (current_file = strsep(&rest_of_comma_list,",")) != NULL ) {
-					struct parsedname pn2;
+					struct parsedname pn_directory_element;
 					LEVEL_DEBUG("ServerDir: got=[%s]\n", current_file);
 	
-					if (FS_ParsedName_BackFromRemote(current_file, &pn2)) {
+					if (FS_ParsedName_BackFromRemote(current_file, &pn_directory_element)) {
 						cm.ret = -EINVAL;
 						break;
 					}
-					//printf("SERVERDIR path=%s\n",pn2.path);
-					/* we got a device on bus_nr = pn->in->index. Cache it so we
+					//printf("SERVERDIR path=%s\n",pn_directory_element.path);
+					/* we got a device on bus_nr = pn_whole_directory->in->index. Cache it so we
 					find it quicker next time we want to do read values from the
 					the actual device
 					*/
-					if (pn2.selected_device && IsRealDir(&pn2)) {
+					if (IsRealDir(pn_whole_directory)) {
 						/* If we get a device then cache the bus_nr */
-						Cache_Add_Device(pn->in->index, &pn2);
+						Cache_Add_Device(pn_whole_directory->in->index, &pn_directory_element);
 					}
 					/* Add to cache Blob -- snlist is also a flag for cachable */
 					if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-						DirblobAdd(pn2.sn, &db);
+						DirblobAdd(pn_directory_element.sn, &db);
 					}
 					++devices;
 	
 					DIRLOCK;
-					dirfunc(v, &pn2);
+					dirfunc(v, &pn_directory_element);
 					DIRUNLOCK;
 	
-					FS_ParsedName_destroy(&pn2);	// destroy the last parsed name
+					FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
 				}
 				/* Add to the cache (full list as a single element */
 				if (DirblobPure(&db)) {
-					Cache_Add_Dir(&db, pn);	// end with a null entry
-					if (RootNotBranch(pn)) {
-						BUSLOCK(pn);
-						pn->in->last_root_devs = db.devices;	// root dir estimated length
-						BUSUNLOCK(pn);
+					Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
+					if (RootNotBranch(pn_whole_directory)) {
+						BUSLOCK(pn_whole_directory);
+						pn_whole_directory->in->last_root_devs = db.devices;	// root dir estimated length
+						BUSUNLOCK(pn_whole_directory);
 					}
 				}
 				DirblobClear(&db);
@@ -472,7 +472,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn->in);
+	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->in);
 	return ret;
 }
 
