@@ -17,11 +17,11 @@ $Id$
 #include "ow_dirblob.h"
 
 static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
-					   void *v, const struct parsedname *pn,
+					   void *v, const struct parsedname *pn_directory,
 					   uint32_t * flags);
 static int
 FS_dir_seek(void (*dirfunc) (void *, const struct parsedname * const),
-			void *v, struct connection_in *in, const struct parsedname *pn,
+			void *v, struct connection_in *in, const struct parsedname *pn_directory,
 			uint32_t * flags);
 static int
 FS_devdir(void (*dirfunc) (void *, const struct parsedname * const),
@@ -31,7 +31,7 @@ FS_alarmdir(void (*dirfunc) (void *, const struct parsedname * const),
 			void *v, struct parsedname *pn2);
 static int
 FS_typedir(void (*dirfunc) (void *, const struct parsedname * const),
-		   void *v, struct parsedname *pn2);
+		   void *v, struct parsedname *pn_type_directory);
 static int
 FS_realdir(void (*dirfunc) (void *, const struct parsedname * const),
 		   void *v, struct parsedname *pn2, uint32_t * flags);
@@ -39,51 +39,51 @@ static int
 FS_cache2real(void (*dirfunc) (void *, const struct parsedname * const),
 			  void *v, struct parsedname *pn2, uint32_t * flags);
 static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
-					 void *v, const struct parsedname *pn);
+					 void *v, const struct parsedname *pn_directory);
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
-/* pn -- input:
-    pn->selected_device == NULL -- root directory, give list of all devices
-    pn->selected_device non-null, -- device directory, give all properties
+/* pn_directory -- input:
+    pn_directory->selected_device == NULL -- root directory, give list of all devices
+    pn_directory->selected_device non-null, -- device directory, give all properties
     branch aware
     cache aware
 
-   pn -- output (with each call to dirfunc)
+   pn_directory -- output (with each call to dirfunc)
     ROOT
-    pn->selected_device set
-    pn->sn set appropriately
-    pn->selected_filetype not set
+    pn_directory->selected_device set
+    pn_directory->sn set appropriately
+    pn_directory->selected_filetype not set
 
     DEVICE
-    pn->selected_device and pn->sn still set
-    pn->selected_filetype loops through
+    pn_directory->selected_device and pn_directory->sn still set
+    pn_directory->selected_filetype loops through
 */
-/* path is the path which "pn" parses */
+/* path is the path which "pn_directory" parses */
 /* FS_dir produces the "invariant" portion of the directory, passing on to
    FS_dir_seek the variable part */
 int FS_dir(void (*dirfunc) (void *, const struct parsedname *),
-		   void *v, const struct parsedname *pn)
+		   void *v, const struct parsedname *pn_directory)
 {
 	uint32_t flags;
-	LEVEL_DEBUG("In FS_dir(%s)\n",pn->path) ;
+	LEVEL_DEBUG("In FS_dir(%s)\n",pn_directory->path) ;
 
-	return FS_dir_both(dirfunc, v, pn, &flags);
+	return FS_dir_both(dirfunc, v, pn_directory, &flags);
 }
 
-/* path is the path which "pn" parses */
+/* path is the path which "pn_directory" parses */
 /* FS_dir_remote is the entry into FS_dir_seek from ServerDir */
 /* More checking is done, and the flags are returned */
 int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
-				  void *v, const struct parsedname *pn, uint32_t * flags)
+				  void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	LEVEL_DEBUG("In FS_dir_remote(%s)\n",pn->path) ;
-	return FS_dir_both(dirfunc, v, pn, flags);
+	LEVEL_DEBUG("In FS_dir_remote(%s)\n",pn_directory->path) ;
+	return FS_dir_both(dirfunc, v, pn_directory, flags);
 }
 
 
 static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
-					   void *v, const struct parsedname *pn,
+					   void *v, const struct parsedname *pn_directory,
 					   uint32_t * flags)
 {
 	int ret = 0;
@@ -91,9 +91,9 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 
 	/* initialize flags */
 	flags[0] = 0;
-	if (pn == NULL || pn->in == NULL)
+	if (pn_directory == NULL || pn_directory->in == NULL)
 		return -ENODEV;
-	LEVEL_CALL("DIRECTORY path=%s\n", SAFESTRING(pn->path));
+	LEVEL_CALL("DIRECTORY path=%s\n", SAFESTRING(pn_directory->path));
 
 	STATLOCK;
 	AVERAGE_IN(&dir_avg);
@@ -103,48 +103,48 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	dir_time = time(NULL);		// protected by mutex
 	FSTATUNLOCK;
 
-	/* Make a copy (shallow) of pn to modify for directory entries */
-	memcpy(&pn2, pn, sizeof(struct parsedname));	/*shallow copy */
+	/* Make a copy (shallow) of pn_directory to modify for directory entries */
+	memcpy(&pn2, pn_directory, sizeof(struct parsedname));	/*shallow copy */
 
-	if (pn->selected_filetype) {
+	if (pn_directory->selected_filetype) {
 		ret = -ENOTDIR;
-	} else if (pn->selected_device) {		/* device directory */
-		if (pn->type == pn_structure) {
+	} else if (pn_directory->selected_device) {		/* device directory */
+		if (pn_directory->type == pn_structure) {
 			/* Device structure is always known for ordinary devices, so don't
 			 * bother calling ServerDir() */
 			ret = FS_devdir(dirfunc, v, &pn2);
-		} else if (SpecifiedBus(pn) && BusIsServer(pn->in)) {
+		} else if (SpecifiedBus(pn_directory) && BusIsServer(pn_directory->in)) {
 			ret = ServerDir(dirfunc, v, &pn2, flags);
 		} else {
 			ret = FS_devdir(dirfunc, v, &pn2);
 		}
-	} else if (IsAlarmDir(pn)) {	/* root or branch directory -- alarm state */
+	} else if (IsAlarmDir(pn_directory)) {	/* root or branch directory -- alarm state */
 		LEVEL_DEBUG("ALARM directory\n");
-		ret = SpecifiedBus(pn) ? FS_alarmdir(dirfunc, v, &pn2)
+		ret = SpecifiedBus(pn_directory) ? FS_alarmdir(dirfunc, v, &pn2)
 			: FS_dir_seek(dirfunc, v, pn2.in, &pn2, flags);
 		LEVEL_DEBUG("Return from ALARM is %d\n",ret) ;
-	} else if (NotRealDir(pn)) {	/* stat, sys or set dir */
+	} else if (NotRealDir(pn_directory)) {	/* stat, sys or set dir */
 		/* there are some files with variable sizes, and /system/adapter have variable
 		 * number of entries and we have to call ServerDir() */
-		ret = (SpecifiedBus(pn) && BusIsServer(pn->in))
+		ret = (SpecifiedBus(pn_directory) && BusIsServer(pn_directory->in))
 			? ServerDir(dirfunc, v, &pn2, flags)
 			: FS_typedir(dirfunc, v, &pn2);
 	} else {					/* Directory of some kind */
-		if (RootNotBranch(pn)) {	/* root directory */
-			if ((Global.opt != opt_server) && !SpecifiedBus(pn) && NotUncachedDir(pn)) {	/* structure only in true root */
+		if (RootNotBranch(pn_directory)) {	/* root directory */
+			if ((Global.opt != opt_server) && !SpecifiedBus(pn_directory) && NotUncachedDir(pn_directory)) {	/* structure only in true root */
 				pn2.type = pn_structure;
 				dirfunc(v, &pn2);
 				pn2.type = pn_real;
 			}
-			if (!SpecifiedBus(pn) && ShouldReturnBusList(pn)) {
+			if (!SpecifiedBus(pn_directory) && ShouldReturnBusList(pn_directory)) {
 				/* restore state */
 				pn2.type = pn_real;
-				FS_busdir(dirfunc, v, pn);
-				if (NotUncachedDir(pn)) {
-					if (IsLocalCacheEnabled(pn)) {	/* cached */
-						pn2.state = pn->state | pn_uncached;
+				FS_busdir(dirfunc, v, pn_directory);
+				if (NotUncachedDir(pn_directory)) {
+					if (IsLocalCacheEnabled(pn_directory)) {	/* cached */
+						pn2.state = pn_directory->state | pn_uncached;
 						dirfunc(v, &pn2);
-						pn2.state = pn->state;
+						pn2.state = pn_directory->state;
 					}
 					pn2.type = pn_settings;
 					dirfunc(v, &pn2);
@@ -153,21 +153,21 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 					pn2.type = pn_statistics;
 					dirfunc(v, &pn2);
 				}
-				pn2.type = pn->type;
+				pn2.type = pn_directory->type;
 			}
 		}
 		/* Now get the actual devices */
-		ret = SpecifiedBus(pn) ? FS_cache2real(dirfunc, v, &pn2, flags)
+		ret = SpecifiedBus(pn_directory) ? FS_cache2real(dirfunc, v, &pn2, flags)
 			: FS_dir_seek(dirfunc, v, pn2.in, &pn2, flags);
 	}
 	if (Global.opt != opt_server) {
-		if (NotAlarmDir(pn)) {
+		if (NotAlarmDir(pn_directory)) {
 			/* don't show alarm directory in alarm directory */
 			/* alarm directory */
 			if (flags[0] & DEV_alarm) {
-				pn2.state = (pn_alarm | (pn->state & pn_text));
+				pn2.state = (pn_alarm | (pn_directory->state & pn_text));
 				dirfunc(v, &pn2);
-				pn2.state = pn->state;
+				pn2.state = pn_directory->state;
 			}
 		}
 		/* simultaneous directory */
@@ -184,12 +184,12 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	return ret;
 }
 
-/* path is the path which "pn" parses */
+/* path is the path which "pn_directory" parses */
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
 #if OW_MT
 struct dir_seek_struct {
 	struct connection_in *in;
-	const struct parsedname *pn;
+	const struct parsedname *pn_directory;
 	void (*dirfunc) (void *, const struct parsedname *);
 	void *v;
 	uint32_t *flags;
@@ -201,44 +201,44 @@ static void *FS_dir_seek_callback(void *v)
 {
 	struct dir_seek_struct *dss = v;
 	dss->ret =
-		FS_dir_seek(dss->dirfunc, dss->v, dss->in, dss->pn, dss->flags);
+		FS_dir_seek(dss->dirfunc, dss->v, dss->in, dss->pn_directory, dss->flags);
 	pthread_exit(NULL);
 	return NULL;
 }
 static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 					   void *v, struct connection_in *in,
-					   const struct parsedname *pn, uint32_t * flags)
+					   const struct parsedname *pn_directory, uint32_t * flags)
 {
 	int ret = 0;
-	struct dir_seek_struct dss = { in->next, pn, dirfunc, v, flags, 0 };
+	struct dir_seek_struct dss = { in->next, pn_directory, dirfunc, v, flags, 0 };
 	struct parsedname pn2;
 	pthread_t thread;
 	int threadbad = 1;
 
-	if (!KnownBus(pn)) {
+	if (!KnownBus(pn_directory)) {
 		threadbad = in->next == NULL
 			|| pthread_create(&thread, NULL, FS_dir_seek_callback,
 							  (void *) (&dss));
 	}
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
+	memcpy(&pn2, pn_directory, sizeof(struct parsedname));	// shallow copy
 	pn2.in = in;
 
 	if (TestConnection(&pn2)) {	// reconnect ok?
 		ret = -ECONNABORTED;
-	} else if (KnownBus(pn) && BusIsServer(in)) {	/* is this a remote bus? */
-		//printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
+	} else if (KnownBus(pn_directory) && BusIsServer(in)) {	/* is this a remote bus? */
+		//printf("FS_dir_seek: Call ServerDir %s\n", pn_directory->path);
 		ret = ServerDir(dirfunc, v, &pn2, flags);
 	} else {					/* local bus */
-		if (IsAlarmDir(pn)) {	/* root or branch directory -- alarm state */
-			//printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
+		if (IsAlarmDir(pn_directory)) {	/* root or branch directory -- alarm state */
+			//printf("FS_dir_seek: Call FS_alarmdir %s\n", pn_directory->path);
 			ret = FS_alarmdir(dirfunc, v, &pn2);
 		} else {
-			//printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
+			//printf("FS_dir_seek: call FS_cache2real bus %d\n", pn_directory->in->index);
 			ret = FS_cache2real(dirfunc, v, &pn2, flags);
 		}
 	}
-	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
+	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn_directory->in->index,ret);
 	/* See if next bus was also queried */
 	if (threadbad == 0) {		/* was a thread created? */
 		void *vo;
@@ -252,34 +252,34 @@ static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 
 #else							/* OW_MT */
 
-/* path is the path which "pn" parses */
+/* path is the path which "pn_directory" parses */
 /* FS_dir_seek produces the data that can vary: device lists, etc. */
 static int FS_dir_seek(void (*dirfunc) (void *, const struct parsedname *),
 					   void *v, struct connection_in *in,
-					   const struct parsedname *pn, uint32_t * flags)
+					   const struct parsedname *pn_directory, uint32_t * flags)
 {
 	int ret = 0;
 	struct parsedname pn2;
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	//shallow copy
+	memcpy(&pn2, pn_directory, sizeof(struct parsedname));	//shallow copy
 	pn2.in = in;
 	if (TestConnection(&pn2)) {	// reconnect ok?
 		ret = -ECONNABORTED;
-	} else if (KnownBus(pn) && BusIsServer(in)) {	/* is this a remote bus? */
-		//printf("FS_dir_seek: Call ServerDir %s\n", pn->path);
+	} else if (KnownBus(pn_directory) && BusIsServer(in)) {	/* is this a remote bus? */
+		//printf("FS_dir_seek: Call ServerDir %s\n", pn_directory->path);
 		ret = ServerDir(dirfunc, v, &pn2, flags);
 	} else {					/* local bus */
 		if (IsAlarmDir(&pn2)) {	/* root or branch directory -- alarm state */
-			//printf("FS_dir_seek: Call FS_alarmdir %s\n", pn->path);
+			//printf("FS_dir_seek: Call FS_alarmdir %s\n", pn_directory->path);
 			ret = FS_alarmdir(dirfunc, v, &pn2);
 		} else {
-			//printf("FS_dir_seek: call FS_cache2real bus %d\n", pn->in->index);
+			//printf("FS_dir_seek: call FS_cache2real bus %d\n", pn_directory->in->index);
 			ret = FS_cache2real(dirfunc, v, &pn2, flags);
 		}
 	}
-	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn->in->index,ret);
+	//printf("FS_dir_seek4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn_directory->in->index,ret);
 	if (in->next && ret <= 0)
-		return FS_dir_seek(dirfunc, v, in->next, pn, flags);
+		return FS_dir_seek(dirfunc, v, in->next, pn_directory, flags);
 	return ret;
 }
 #endif							/* OW_MT */
@@ -458,13 +458,13 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
    -- DS2409/mai|aux for branch
    -- DS2409 needs only the last element since each DS2409 is unique
    */
-void FS_LoadPath(BYTE * sn, const struct parsedname *pn)
+void FS_LoadPath(BYTE * sn, const struct parsedname *pn_directory)
 {
-	if (RootNotBranch(pn)) {
+	if (RootNotBranch(pn_directory)) {
 		memset(sn, 0, 8);
 	} else {
-		memcpy(sn, pn->bp[pn->pathlength - 1].sn, 7);
-		sn[7] = pn->bp[pn->pathlength - 1].branch;
+		memcpy(sn, pn_directory->bp[pn_directory->pathlength - 1].sn, 7);
+		sn[7] = pn_directory->bp[pn_directory->pathlength - 1].branch;
 	}
 }
 
@@ -520,8 +520,8 @@ pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER;
 struct {
 	void (*dirfunc) (void *, const struct parsedname *);
 	void *v;
-	struct parsedname *pn;
-} tda;
+	struct parsedname *pn_directory;
+} typedir_action_struct;
 static void Typediraction(const void *t, const VISIT which,
 						  const int depth)
 {
@@ -529,24 +529,24 @@ static void Typediraction(const void *t, const VISIT which,
 	switch (which) {
 	case leaf:
 	case postorder:
-		tda.pn->selected_device = ((const struct device_opaque *) t)->key;
-		(tda.dirfunc) (tda.v, tda.pn);
+		typedir_action_struct.pn_directory->selected_device = ((const struct device_opaque *) t)->key;
+		(typedir_action_struct.dirfunc) (typedir_action_struct.v, typedir_action_struct.pn_directory);
 	default:
 		break;
 	}
 }
 
-/* Show the pn->type (statistics, system, ...) entries */
+/* Show the pn_directory->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
 static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *),
-					  void *v, struct parsedname *pn2)
+					  void *v, struct parsedname *pn_type_directory)
 {
     TYPEDIRMUTEXLOCK ;
 
-    tda.dirfunc = dirfunc;
-	tda.v = v;
-	tda.pn = pn2;
-	twalk(Tree[pn2->type], Typediraction);
+    typedir_action_struct.dirfunc = dirfunc;
+	typedir_action_struct.v = v;
+	typedir_action_struct.pn_directory = pn_type_directory;
+	twalk(Tree[pn_type_directory->type], Typediraction);
 
     TYPEDIRMUTEXUNLOCK ;
 
@@ -555,18 +555,18 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *),
 
 /* Show the bus entries */
 static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
-					 void *v, const struct parsedname *pn)
+					 void *v, const struct parsedname *pn_directory)
 {
-	struct parsedname pn2;
+	struct parsedname pn_bus_directory;
 	int bus_number;
 
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    pn2.state = pn_bus ; // even stronger statement than SetKnownBus
+	memcpy(&pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
+	pn_bus_directory.state = pn_bus ; // even stronger statement than SetKnownBus
 
 	for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
-		SetKnownBus(bus_number, &pn2);
-        //printf("Called FS_busdir on %s bus number %d\n",pn->path,bus_number) ;
-        dirfunc(v, &pn2);
+		SetKnownBus(bus_number, &pn_bus_directory);
+		//printf("Called FS_busdir on %s bus number %d\n",pn_directory->path,bus_number) ;
+		dirfunc(v, &pn_bus_directory);
 	}
 
 	return 0;
