@@ -198,6 +198,7 @@ struct connin_usb {
 	int USpeed;
 	int ULevel;
 	int UMode;
+    int usb_settings_ok ;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
@@ -464,7 +465,6 @@ int DS2482_detect(struct connection_in *in);
 int DS9490_enumerate(void);
 int DS9490_detect(struct connection_in *in);
 void DS9490_close(struct connection_in *in);
-int DS9490_BusParm(struct connection_in *in);
 #endif							/* OW_USB */
 
 #define BUS_RESET_OK    0

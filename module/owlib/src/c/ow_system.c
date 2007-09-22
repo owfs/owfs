@@ -310,7 +310,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query * owq)
 	if (dindex < 0)
 		dindex = 0;
 	in = find_connection_in(dindex);
-	if (!in)
+	if (in==NULL)
 		return -ENOENT;
 	if (in->busmode != bus_usb)
 		return -ENOTSUP;
@@ -318,10 +318,8 @@ static int FS_w_pulldownslewrate(struct one_wire_query * owq)
 	if(OWQ_U(owq) > 7)
 		return -ENOTSUP;
 	in->connin.usb.pulldownslewrate = OWQ_U(owq);
+	in->connin.usb.usb_settings_ok = 0; // force a reset
 	LEVEL_DEBUG("Set slewrate to %d\n", in->connin.usb.pulldownslewrate);
-#if OW_USB
-	DS9490_BusParm(in);
-#endif
 	return 0;
 }
 
@@ -339,7 +337,7 @@ static int FS_r_writeonelowtime(struct one_wire_query * owq)
 	if (dindex < 0)
 		dindex = 0;
 	in = find_connection_in(dindex);
-	if (!in)
+	if (in==NULL)
 		return -ENOENT;
 	if (in->busmode != bus_usb)
 		OWQ_U(owq) = 10;
@@ -358,7 +356,7 @@ static int FS_w_writeonelowtime(struct one_wire_query * owq)
 	if (dindex < 0)
 		dindex = 0;
 	in = find_connection_in(dindex);
-	if (!in)
+	if (in==NULL)
 		return -ENOENT;
 	if (in->busmode != bus_usb)
 		return -ENOTSUP;
@@ -366,9 +364,7 @@ static int FS_w_writeonelowtime(struct one_wire_query * owq)
 	if((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15))
 		return -ENOTSUP;
 	in->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
-#if OW_USB
-	DS9490_BusParm(in);
-#endif
+	in->connin.usb.usb_settings_ok = 0; // force a reset
 	return 0;
 }
 
@@ -386,7 +382,7 @@ static int FS_r_datasampleoffset(struct one_wire_query * owq)
 	if (dindex < 0)
 		dindex = 0;
 	in = find_connection_in(dindex);
-	if (!in)
+	if (in==NULL)
 		return -ENOENT;
 	if (in->busmode != bus_usb)
 		OWQ_U(owq) = 8;
@@ -404,7 +400,7 @@ static int FS_w_datasampleoffset(struct one_wire_query * owq)
 	if (dindex < 0)
 		dindex = 0;
 	in = find_connection_in(dindex);
-	if (!in)
+	if (in==NULL)
 		return -ENOENT;
 	if (in->busmode != bus_usb)
 		return -ENOTSUP;
@@ -412,9 +408,7 @@ static int FS_w_datasampleoffset(struct one_wire_query * owq)
 	if((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10))
 		return -ENOTSUP;
 	in->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
-#if OW_USB
-	DS9490_BusParm(in);
-#endif
+	in->connin.usb.usb_settings_ok = 0 ; // force a reset
 	return 0;
 }
 
