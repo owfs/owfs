@@ -45,6 +45,8 @@ static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *),
                       void *v, struct parsedname *pn_root_directory) ;
 static void FS_structure_dir(void (*dirfunc) (void *, const struct parsedname *),
                       void *v, struct parsedname *pn_root_directory);
+static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *),
+                      void *v, struct parsedname *pn_root_directory) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -142,12 +144,8 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 				pn2.type = pn_real;
 				FS_busdir(dirfunc, v, pn_raw_directory);
 				if (NotUncachedDir(pn_raw_directory)) {
-					if (IsLocalCacheEnabled(pn_raw_directory)) {	/* cached */
-						pn2.state = pn_raw_directory->state | pn_uncached;
-						dirfunc(v, &pn2);
-						pn2.state = pn_raw_directory->state;
-					}
-                    FS_stype_dir(dirfunc,v,&pn2) ;
+					FS_uncached_dir(dirfunc,v,&pn2) ;
+					FS_stype_dir(dirfunc,v,&pn2) ;
 				}
 				pn2.type = pn_raw_directory->type;
 			}
@@ -198,6 +196,23 @@ static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *),
     dirfunc(v, pn_s_directory);
 }
 
+/* status settings sustem */
+static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *),
+                      void *v, struct parsedname *pn_root_directory)
+{
+    struct parsedname s_pn_uncached_directory ;
+    struct parsedname * pn_uncached_directory = &s_pn_uncached_directory ;
+
+	if ( ! IsLocalCacheEnabled(pn_root_directory)) {	/* cached */
+		return ;
+	}
+
+	/* Shallow copy */
+	memcpy( pn_uncached_directory, pn_root_directory, sizeof(struct parsedname)) ;
+
+	pn_uncached_directory->state = pn_root_directory->state | pn_uncached;
+	dirfunc(v, pn_uncached_directory);
+}
 /* status settings sustem */
 static void FS_structure_dir(void (*dirfunc) (void *, const struct parsedname *),
                       void *v, struct parsedname *pn_root_directory)
