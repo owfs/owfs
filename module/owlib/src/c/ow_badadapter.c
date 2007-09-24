@@ -21,9 +21,7 @@ static int BadAdapter_overdrive(const UINT ov,
 								const struct parsedname *pn);
 static int BadAdapter_testoverdrive(const struct parsedname *pn);
 static int BadAdapter_ProgramPulse(const struct parsedname *pn);
-static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp,
-									const size_t len,
-									const struct parsedname *pn);
+static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static void BadAdapter_close(struct connection_in *in);
 
 /* Device-specific functions */
@@ -63,24 +61,22 @@ static int BadAdapter_overdrive(const UINT ov, const struct parsedname *pn)
 {
 	(void) ov;
 	(void) pn;
-	STAT_ADD1_BUS(BUS_Overdrive_errors, pn->in);
+	STAT_ADD1_BUS(BUS_Overdrive_errors, pn->selected_connection);
 	return -ENOTSUP;
 }
 static int BadAdapter_testoverdrive(const struct parsedname *pn)
 {
 	(void) pn;
-	STAT_ADD1_BUS(BUS_TestOverdrive_errors, pn->in);
+	STAT_ADD1_BUS(BUS_TestOverdrive_errors, pn->selected_connection);
 	return -ENOTSUP;
 }
 static int BadAdapter_ProgramPulse(const struct parsedname *pn)
 {
 	(void) pn;
-	STAT_ADD1_BUS(BUS_ProgramPulse_errors, pn->in);
+	STAT_ADD1_BUS(BUS_ProgramPulse_errors, pn->selected_connection);
 	return -ENOTSUP;
 }
-static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp,
-									const size_t len,
-									const struct parsedname *pn)
+static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
 	(void) pn;
 	(void) data;

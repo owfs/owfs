@@ -52,22 +52,22 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	if (!pn)
 		return;
 	LEVEL_DEBUG("ParsedName_destroy %s\n", SAFESTRING(pn->path));
-	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->in)) ;
+	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
 		free(pn->bp);
 		pn->bp = NULL;
 	}
-	//printf("PNDestroy path (%d)\n",BusIsServer(pn->in)) ;
+	//printf("PNDestroy path (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->path) {
 		free(pn->path);
 		pn->path = NULL;
 	}
-	//printf("PNDestroy lock (%d)\n",BusIsServer(pn->in)) ;
+	//printf("PNDestroy lock (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->lock) {
 		free(pn->lock);
 		pn->lock = NULL;
 	}
-	//printf("PNDestroy done (%d)\n",BusIsServer(pn->in)) ;
+	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
 	// Tokenstring is part of a larger allocation and destroyed separately 
 }
 
@@ -130,7 +130,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	pn->head_inbound_list = head_inbound_list;
 	pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
 	CONNINUNLOCK;
-	pn->in = pn->head_inbound_list;
+	pn->selected_connection = pn->head_inbound_list;
 
 	if (pathcpy == NULL || pn->path == NULL || pn->lock == NULL
 		|| pn->head_inbound_list == NULL) {
@@ -240,7 +240,7 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 	} else if (strcasecmp(pathnow, "system") == 0) {
 		if (SpecifiedBus(pn)) {	/* already specified a "bus." */
 			/* structure only for root (remote tested remotely) */
-			if (!BusIsServer(pn->in))
+			if (!BusIsServer(pn->selected_connection))
 				return parse_error;
 		}
 		pn->type = pn_system;
@@ -323,7 +323,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     * they will just end up with empty directory listings. */
     if (SpecifiedBus(pn)) {     /* already specified a "bus." */
         /* too many levels of bus for a non-remote adapter */
-        return BusIsServer(pn->in) ? pe_default : parse_error;
+        return BusIsServer(pn->selected_connection) ? pe_default : parse_error;
     }
 
     /* on return from remote directory ow_server.c:ServerDir
@@ -338,9 +338,9 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     }
     CONNINUNLOCK;
     /* Since we are going to use a specific in-device now, set
-    * pn->in to point at that device at once. */
+    * pn->selected_connection to point at that device at once. */
     SetSpecifiedBus(bus_number, pn);
-    if (!BusIsServer(pn->in)) {
+    if (!BusIsServer(pn->selected_connection)) {
         /* don't return bus-list for local paths. */
         pn->sg &= (~BUSRET_MASK);
     }
@@ -376,7 +376,7 @@ static enum parse_enum Parse_Return_Bus(const enum parse_enum pe_default,
     //printf("Called Parse_Return_Bus on %s bus number %d\n",pn->path,bus_number) ;
     
     /* Since we are going to use a specific in-device now, set
-    * pn->in to point at that device at once. */
+    * pn->selected_connection to point at that device at once. */
     SetKnownBus(bus_number, pn);
     if (!(found = strstr(pn->path, "/bus."))) {
         int length = pn->path_busless - pn->path - 1;

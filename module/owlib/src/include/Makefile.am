@@ -38,17 +38,21 @@ noinst_HEADERS =          \
         ow_counters.h     \
         ow_connection.h   \
         ow_debug.h        \
+        ow_device.h       \
         ow_devices.h      \
         ow_dirblob.h      \
         ow_dl.h           \
         ow_dnssd.h        \
+        ow_filetype.h     \
         ow_functions.h    \
         ow_global.h       \
         ow_integer.h      \
+        ow_localtypes.h   \
         ow_lcd.h          \
         ow_mutexes.h      \
         ow_none.h         \
         ow_onewirequery.h \
+        ow_parsedname.h   \
         ow_pid.h          \
         ow_settings.h     \
         ow_simultaneous.h \

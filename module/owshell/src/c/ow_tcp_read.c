@@ -40,7 +40,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 		if (rc > 0) {
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
-				//STAT_ADD1_BUS(BUS_read_select_errors,pn->in);
+				//STAT_ADD1_BUS(BUS_read_select_errors,pn->selected_connection);
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);

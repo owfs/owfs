@@ -37,7 +37,7 @@ int BUS_send_data(const BYTE * data, const size_t len,
 		if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
 			if ((ret = memcmp(data, resp, (size_t) len))) {
 				ret = -EIO;		/* EPROTO not available for MacOSX */
-				STAT_ADD1_BUS(BUS_echo_errors, pn->in);
+				STAT_ADD1_BUS(BUS_echo_errors, pn->selected_connection);
 			}
 		}
 	}
@@ -68,8 +68,8 @@ int BUS_readin_data(BYTE * data, const size_t len,
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 					  const struct parsedname *pn)
 {
-	if (pn->in->iroutines.sendback_data) {
-		return (pn->in->iroutines.sendback_data) (data, resp, len, pn);
+	if (pn->selected_connection->iroutines.sendback_data) {
+		return (pn->selected_connection->iroutines.sendback_data) (data, resp, len, pn);
 	} else {
 		UINT i, bits = len << 3;
 		int ret;
@@ -84,20 +84,20 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 
 		/* Encode bits */
 		for (i = 0; i < bits; ++i)
-			pn->in->combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
+			pn->selected_connection->combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
 
 		/* Communication with DS9097 routine */
 		if ((ret =
-			 BUS_sendback_bits(pn->in->combuffer, pn->in->combuffer, bits,
+			 BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits,
 							   pn))) {
-			STAT_ADD1_BUS(BUS_byte_errors, pn->in);
+			STAT_ADD1_BUS(BUS_byte_errors, pn->selected_connection);
 			return ret;
 		}
 
 		/* Decode Bits */
 		if (resp) {
 			for (i = 0; i < bits; ++i)
-				UT_setbit(resp, i, pn->in->combuffer[i] & 0x01);
+				UT_setbit(resp, i, pn->selected_connection->combuffer[i] & 0x01);
 		}
 
 		return 0;
@@ -115,13 +115,13 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 int BUS_PowerByte(BYTE data, BYTE * resp, UINT delay,
 				  const struct parsedname *pn)
 {
-	if (pn->in->iroutines.PowerByte) {
-		return (pn->in->iroutines.PowerByte) (data, resp, delay, pn);
+	if (pn->selected_connection->iroutines.PowerByte) {
+		return (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
 	} else {
 		int ret;
 		// send the packet
 		if ((ret = BUS_sendback_data(&data, resp, 1, pn))) {
-			STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
+			STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
 			return ret;
 		}
 		// delay
@@ -134,18 +134,18 @@ int BUS_PowerByte(BYTE data, BYTE * resp, UINT delay,
 // RESET called with bus locked
 int BUS_reset(const struct parsedname *pn)
 {
-	int ret = (pn->in->iroutines.reset) (pn);
+	int ret = (pn->selected_connection->iroutines.reset) (pn);
 	/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
 	if (ret == BUS_RESET_OK ) {
-		pn->in->reconnect_state = reconnect_ok; // Flag as good!
+		pn->selected_connection->reconnect_state = reconnect_ok; // Flag as good!
 	} else if (ret == BUS_RESET_SHORT) {
-		pn->in->AnyDevices = 0;
-		STAT_ADD1_BUS(BUS_short_errors, pn->in);
+		pn->selected_connection->AnyDevices = 0;
+		STAT_ADD1_BUS(BUS_short_errors, pn->selected_connection);
 		LEVEL_CONNECT("1-wire bus short circuit.\n");
 		return 1;
 	} else {
-		pn->in->reconnect_state++;	// Flag for eventual reconnection
-		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+		pn->selected_connection->reconnect_state++;	// Flag for eventual reconnection
+		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 	}
 	return ret;
 }

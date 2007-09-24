@@ -93,7 +93,7 @@ int FS_write_postparse(struct one_wire_query * owq)
 		return -EROFS;			// read-only invokation
 	if (IsDir(pn))
 		return -EISDIR;			// not a file
-	if (pn->in == NULL)
+	if (pn->selected_connection == NULL)
 		return -ENODEV;			// no busses
 
 	STATLOCK;
@@ -201,7 +201,7 @@ static int FS_w_given_bus(struct one_wire_query * owq)
 
 	if (TestConnection(pn)) {
 		write_or_error = -ECONNABORTED;
-	} else if (KnownBus(pn) && BusIsServer(pn->in)) {
+	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		write_or_error = ServerWrite(owq);
 	} else {
 		write_or_error = LockGet(pn) ;
@@ -224,7 +224,7 @@ static int FS_w_local(struct one_wire_query * owq)
 		return -ENOTSUP;
 
 	/* Special case for "fake" adapter */
-	if (pn->in->Adapter == adapter_fake && IsRealDir(pn) )
+	if (pn->selected_connection->Adapter == adapter_fake && IsRealDir(pn) )
 		return 0;
 
 	/* Array properties? Write all together if aggregate */

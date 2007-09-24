@@ -32,10 +32,10 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	memset(ds->sn, 0, 8);		// clear the serial number
 	ds->LastDiscrepancy = -1;
 	ds->LastDevice = 0;
-	pn->in->ExtraReset = 0;
+	pn->selected_connection->ExtraReset = 0;
 	ds->search = _1W_SEARCH_ROM;
 
-	if (!pn->in->AnyDevices) {
+	if (!pn->selected_connection->AnyDevices) {
 		LEVEL_DATA("BUS_first: Empty bus -- no presence pulse\n");
 	}
 
@@ -84,7 +84,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 	ret = BUS_next_both(ds, pn);
 	LEVEL_DEBUG("BUS_next return = %d " SNformat "\n", ret, SNvar(ds->sn));
     if (ret && ret != -ENODEV) { // true error
-		STAT_ADD1_BUS(BUS_next_errors, pn->in);
+		STAT_ADD1_BUS(BUS_next_errors, pn->selected_connection);
 	}
 	return ret;
 }
@@ -93,8 +93,8 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 /* Not used by more advanced adapters */
 int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	if (pn->in->iroutines.next_both) {
-		return (pn->in->iroutines.next_both) (ds, pn);
+	if (pn->selected_connection->iroutines.next_both) {
+		return (pn->selected_connection->iroutines.next_both) (ds, pn);
 	} else {
 		int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 		int bit_number;
@@ -104,7 +104,7 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 
 		// initialize for search
 		// if the last call was not the last one
-		if (!pn->in->AnyDevices)
+		if (!pn->selected_connection->AnyDevices)
 			ds->LastDevice = 1;
 		if (ds->LastDevice)
 			return -ENODEV;
@@ -170,7 +170,7 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 		}
 		if ((ds->sn[0] & 0x7F) == 0x04) {
 			/* We found a DS1994/DS2404 which require longer delays */
-			pn->in->ds2404_compliance = 1;
+			pn->selected_connection->ds2404_compliance = 1;
 		}
 		// if the search was successful then
 

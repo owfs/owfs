@@ -69,7 +69,7 @@ int DS9097_detect(struct connection_in *in)
 	in->busmode = bus_passive; // in case initially tried DS9097U
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 
 	return DS9097_reset(&pn);
 }
@@ -82,7 +82,7 @@ static int DS9097_reset(const struct parsedname *pn)
 	BYTE resetbyte = 0xF0;
 	BYTE c;
 	struct termios term;
-	int file_descriptor = pn->in->file_descriptor;
+	int file_descriptor = pn->selected_connection->file_descriptor;
 	int ret;
 
 	if (file_descriptor < 0)
@@ -93,12 +93,12 @@ static int DS9097_reset(const struct parsedname *pn)
 	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(&term, B9600) < 0 || cfsetispeed(&term, B9600) < 0) {
 		ERROR_CONNECT("Cannot set speed (9600): %s\n",
-					  SAFESTRING(pn->in->name));
+					  SAFESTRING(pn->selected_connection->name));
 	}
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s\n",
-					  SAFESTRING(pn->in->name));
-		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->in);
+					  SAFESTRING(pn->selected_connection->name));
+		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->selected_connection);
 		return -EIO;
 	}
 	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn)))
@@ -110,13 +110,13 @@ static int DS9097_reset(const struct parsedname *pn)
 		break ;
 	case 0xF0:
 		ret = BUS_RESET_OK ;
-		pn->in->AnyDevices = 0;
+		pn->selected_connection->AnyDevices = 0;
 		break;
 	default:
 		ret = BUS_RESET_OK ;
-		pn->in->AnyDevices = 1;
-		pn->in->ProgramAvailable = 0;	/* from digitemp docs */
-		if (pn->in->ds2404_compliance) {
+		pn->selected_connection->AnyDevices = 1;
+		pn->selected_connection->ProgramAvailable = 0;	/* from digitemp docs */
+		if (pn->selected_connection->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 compliance
 			UT_delay(5);
 		}
@@ -161,19 +161,19 @@ static int DS9097_reset(const struct parsedname *pn)
 	/* MacOSX support max 38400 in termios.h ? */
 	if (cfsetospeed(&term, B38400) < 0 || cfsetispeed(&term, B38400) < 0) {
 		ERROR_CONNECT("Cannot set speed (38400): %s\n",
-					  SAFESTRING(pn->in->name));
+					  SAFESTRING(pn->selected_connection->name));
 	}
 #else
 	if (cfsetospeed(&term, B115200) < 0 || cfsetispeed(&term, B115200) < 0) {
 		ERROR_CONNECT("Cannot set speed (115200): %s\n",
-					  SAFESTRING(pn->in->name));
+					  SAFESTRING(pn->selected_connection->name));
 	}
 #endif
 
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s\n",
-					  SAFESTRING(pn->in->name));
-		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->in);
+					  SAFESTRING(pn->selected_connection->name));
+		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->selected_connection);
 		return -EFAULT;
 	}
 	/* Flush the input and output buffers */
@@ -227,7 +227,7 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits,
 		if (l == DS9097_MAX_BITS || i == length) {
 			/* Communication with DS9097 routine */
 			if ((ret = DS9097_send_and_get(d, &inbits[start], l, pn))) {
-				STAT_ADD1_BUS(BUS_bit_errors, pn->in);
+				STAT_ADD1_BUS(BUS_bit_errors, pn->selected_connection);
 				return ret;
 			}
 			l = 0;
@@ -261,25 +261,25 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 
 		/* send out string, and handle interrupted system call too */
 		while (sl > 0) {
-			if (!pn->in)
+			if (!pn->selected_connection)
 				break;
-			r = write(pn->in->file_descriptor, &bussend[length - sl], sl);
+			r = write(pn->selected_connection->file_descriptor, &bussend[length - sl], sl);
 			if (r < 0) {
 				if (errno == EINTR) {
 					/* write() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_write_interrupt_errors, pn->in);
+					STAT_ADD1_BUS(BUS_write_interrupt_errors, pn->selected_connection);
 					continue;
 				}
 				break;
 			}
 			sl -= r;
 		}
-		if (pn->in) {
-			tcdrain(pn->in->file_descriptor);	/* make sure everthing is sent */
-			gettimeofday(&(pn->in->bus_write_time), NULL);
+		if (pn->selected_connection) {
+			tcdrain(pn->selected_connection->file_descriptor);	/* make sure everthing is sent */
+			gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
 		}
 		if (sl > 0) {
-			STAT_ADD1_BUS(BUS_write_errors, pn->in);
+			STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
 			return -EIO;
 		}
 		//printf("SAG written\n");
@@ -291,7 +291,7 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 			fd_set readset;
 			struct timeval tv;
 			//printf("SAG readlength=%d\n",gl);
-			if (!pn->in)
+			if (!pn->selected_connection)
 				break;
 			/* I can't imagine that 5 seconds timeout is needed???
 			 * Any comments Paul ? */
@@ -300,40 +300,40 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 			tv.tv_usec = 0;
 			/* Initialize readset */
 			FD_ZERO(&readset);
-			FD_SET(pn->in->file_descriptor, &readset);
+			FD_SET(pn->selected_connection->file_descriptor, &readset);
 
 			/* Read if it doesn't timeout first */
-			rc = select(pn->in->file_descriptor + 1, &readset, NULL, NULL, &tv);
+			rc = select(pn->selected_connection->file_descriptor + 1, &readset, NULL, NULL, &tv);
 			if (rc > 0) {
 				//printf("SAG selected\n");
 				/* Is there something to read? */
-				if (FD_ISSET(pn->in->file_descriptor, &readset) == 0) {
-					STAT_ADD1_BUS(BUS_read_select_errors, pn->in);
+				if (FD_ISSET(pn->selected_connection->file_descriptor, &readset) == 0) {
+					STAT_ADD1_BUS(BUS_read_select_errors, pn->selected_connection);
 					return -EIO;	/* error */
 				}
 				update_max_delay(pn);
-				r = read(pn->in->file_descriptor, &busget[length - gl], gl);	/* get available bytes */
+				r = read(pn->selected_connection->file_descriptor, &busget[length - gl], gl);	/* get available bytes */
 				//printf("SAG postread ret=%d\n",r);
 				if (r < 0) {
 					if (errno == EINTR) {
 						/* read() was interrupted, try again */
-						STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
+						STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
 						continue;
 					}
-					STAT_ADD1_BUS(BUS_read_errors, pn->in);
+					STAT_ADD1_BUS(BUS_read_errors, pn->selected_connection);
 					return r;
 				}
 				gl -= r;
 			} else if (rc < 0) {	/* select error */
 				if (errno == EINTR) {
 					/* select() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
+					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
 					continue;
 				}
-				STAT_ADD1_BUS(BUS_read_select_errors, pn->in);
+				STAT_ADD1_BUS(BUS_read_select_errors, pn->selected_connection);
 				return -EINTR;
 			} else {			/* timed out */
-				STAT_ADD1_BUS(BUS_read_timeout_errors, pn->in);
+				STAT_ADD1_BUS(BUS_read_timeout_errors, pn->selected_connection);
 				return -EAGAIN;
 			}
 		}

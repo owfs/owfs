@@ -92,7 +92,7 @@ int ServerWrite(ASCII * path, ASCII * data)
 	sm.offset = 0;
 
 	//printf("ServerRead path=%s\n", pn->path_busless);
-	//LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->in->index, SAFESTRING(pn->path_busless));
+	//LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->selected_connection->index, SAFESTRING(pn->path_busless));
 
 	if (ToServer(connectfd, &sm, &sp)) {
 		ret = -EIO;

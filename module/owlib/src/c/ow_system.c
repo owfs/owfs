@@ -202,7 +202,7 @@ static int FS_w_overdrive(struct one_wire_query * owq)
 		in->use_overdrive_speed = ONEWIREBUSSPEED_REGULAR;
 		break;
 	case 1:
-		if (pn->in->Adapter != adapter_DS9490)
+		if (pn->selected_connection->Adapter != adapter_DS9490)
 			return -ENOTSUP;
 		in->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE;
 		break;

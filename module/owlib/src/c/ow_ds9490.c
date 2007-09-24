@@ -291,7 +291,7 @@ int DS9490_detect(struct connection_in *in)
 	in->name = badUSBname;		// initialized
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 
 	// store timeout value -- sec -> msec
 	in->connin.usb.timeout = 1000 * Global.timeout_usb;
@@ -329,7 +329,7 @@ int DS9490_detect(struct connection_in *in)
 static int DS9490_detect_low(const struct parsedname *pn)
 {
 	struct usb_list ul;
-	int useusb = pn->in->connin.usb.usb_nr; /* usb_nr holds the number of the adapter */
+	int useusb = pn->selected_connection->connin.usb.usb_nr; /* usb_nr holds the number of the adapter */
 	int usbnum = 0;
 
 	USB_init(&ul);
@@ -358,7 +358,7 @@ static int DS9490_detect_found(struct usb_list *ul,
 		return -EIO;
 
 	/* First time pretend there are devices */
-	pn->in->AnyDevices = 1 ;
+	pn->selected_connection->AnyDevices = 1 ;
 
 	/* We are looking for devices in the root (not the branch
 	 * pn eventually points to */
@@ -369,21 +369,21 @@ static int DS9490_detect_found(struct usb_list *ul,
 	/* Do a quick directory listing and find the DS1420 id */
 	if ((ret = BUS_first(&ds, &pncopy))) {
 		// clear it just in case nothing is found
-		memset(pn->in->connin.usb.ds1420_address, 0, 8);
-		LEVEL_DATA("BUS_first failed during connect [%s] (Probably non-DS9490 device and empty bus).\n", pn->in->name);
+		memset(pn->selected_connection->connin.usb.ds1420_address, 0, 8);
+		LEVEL_DATA("BUS_first failed during connect [%s] (Probably non-DS9490 device and empty bus).\n", pn->selected_connection->name);
 	} else {
 		while (ret == 0) {
 			if ((ds.sn[0] & 0x7F) == 0x01) { // 0x01 or 0x81 family code
 				LEVEL_CONNECT("Good DS1421 tag found for %s\n",
-							  SAFESTRING(pn->in->name));
+							  SAFESTRING(pn->selected_connection->name));
 				break;			// good tag
 			}
 			ret = BUS_next(&ds, &pncopy);
 		}
-		memcpy(pn->in->connin.usb.ds1420_address, ds.sn, 8);
+		memcpy(pn->selected_connection->connin.usb.ds1420_address, ds.sn, 8);
 		LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat "\n",
-					  SAFESTRING(pn->in->name),
-					  SNvar(pn->in->connin.usb.ds1420_address));
+					  SAFESTRING(pn->selected_connection->name),
+					  SNvar(pn->selected_connection->connin.usb.ds1420_address));
 	}
 	// return good even if no device found.
 	return 0;
@@ -392,36 +392,36 @@ static int DS9490_detect_found(struct usb_list *ul,
 static int DS9490_Set_USB_Parameters(const struct parsedname *pn)
 {
 	int ret = 0;
-	usb_dev_handle *usb = pn->in->connin.usb.usb;
+	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 
 	// in case timeout value changed (via settings) -- sec -> msec
-	pn->in->connin.usb.timeout = 1000 * Global.timeout_usb;
+	pn->selected_connection->connin.usb.timeout = 1000 * Global.timeout_usb;
 
 	/* Willy Robison's tweaks */
 	if(usb == NULL) return -1;
 
 	/* Slew Rate */
 	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_PULLDOWN_SLEWRATE, pn->in->connin.usb.pulldownslewrate, 
+			MODE_CMD, MOD_PULLDOWN_SLEWRATE, pn->selected_connection->connin.usb.pulldownslewrate, 
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_PULLDOWN_SLEWRATE\n");
 		return -EIO;
 	}
 	/* Low Time */
 	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_WRITE1_LOWTIME, pn->in->connin.usb.writeonelowtime,
+			MODE_CMD, MOD_WRITE1_LOWTIME, pn->selected_connection->connin.usb.writeonelowtime,
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_WRITE1_LOWTIME\n");
 		return -EIO;
 	}
 	/* DS0 Low */
 	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_DSOW0_TREC, pn->in->connin.usb.datasampleoffset,
+			MODE_CMD, MOD_DSOW0_TREC, pn->selected_connection->connin.usb.datasampleoffset,
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_DS0W0\n");
 		return -EIO;
 	}
-	pn->in->connin.usb.usb_settings_ok = 1 ;
+	pn->selected_connection->connin.usb.usb_settings_ok = 1 ;
 	return ret;
 }
 
@@ -429,7 +429,6 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 {
 	BYTE buffer[32];
 	int ret;
-	usb_dev_handle *usb = pn->in->connin.usb.usb;
 
 	// reset the device (not the 1-wire bus)
 	if ((ret = USB_Control_Msg(
@@ -462,7 +461,7 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 	}
 #endif
 
-	pn->in->connin.usb.ULevel = MODE_NORMAL;
+	pn->selected_connection->connin.usb.ULevel = MODE_NORMAL;
 
 	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: getstatus failed ret=%d\n", ret);
@@ -487,42 +486,42 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 	int ret = ENODEV;
 	usb_dev_handle *usb;
 
-	if (pn->in->name != badUSBname)
-		free(pn->in->name);
-	pn->in->name = DS9490_device_name(ul);
+	if (pn->selected_connection->name != badUSBname)
+		free(pn->selected_connection->name);
+	pn->selected_connection->name = DS9490_device_name(ul);
 
-	pn->in->connin.usb.dev = ul->dev;
+	pn->selected_connection->connin.usb.dev = ul->dev;
 
-	if (pn->in->name == badUSBname) {
+	if (pn->selected_connection->name == badUSBname) {
 		ret = -ENOMEM;
-	} else if (pn->in->connin.usb.usb) {
+	} else if (pn->selected_connection->connin.usb.usb) {
 		LEVEL_DEFAULT
 			("DS9490_open: usb.usb was NOT closed before DS9490_open() ?\n");
-	} else if (pn->in->connin.usb.dev
-			   && (usb = usb_open(pn->in->connin.usb.dev))) {
-		pn->in->connin.usb.usb = usb;
+	} else if (pn->selected_connection->connin.usb.dev
+			   && (usb = usb_open(pn->selected_connection->connin.usb.dev))) {
+		pn->selected_connection->connin.usb.usb = usb;
 #ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
 		usb_detach_kernel_driver_np(usb, 0);
 #endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
 		if ((ret = usb_set_configuration(usb, 1))) {
 			LEVEL_CONNECT
 				("Failed to set configuration on USB DS9490 adapter at %s.\n",
-				 pn->in->name);
+				 pn->selected_connection->name);
 		} else if ((ret = usb_claim_interface(usb, 0))) {
 			LEVEL_CONNECT
 				("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n",
-				 pn->in->name, ret);
+				 pn->selected_connection->name, ret);
 		} else {
 			if ((ret = usb_set_altinterface(usb, 3))) {
 				LEVEL_CONNECT
 					("Failed to set alt interface on USB DS9490 adapter at %s.\n",
-					 pn->in->name);
+					 pn->selected_connection->name);
 			} else {
 				LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n",
-							  pn->in->name);
-				DS9490_setroutines(&pn->in->iroutines);
-				pn->in->Adapter = adapter_DS9490;	/* OWFS assigned value */
-				pn->in->adapter_name = "DS9490";
+							  pn->selected_connection->name);
+				DS9490_setroutines(&pn->selected_connection->iroutines);
+				pn->selected_connection->Adapter = adapter_DS9490;	/* OWFS assigned value */
+				pn->selected_connection->adapter_name = "DS9490";
 
 				// clear endpoints
 				if ((ret =
@@ -538,7 +537,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 					     || DS9490_level(MODE_NORMAL, pn)))) {
 					LEVEL_DEFAULT
 						("Error setting up USB DS9490 adapter at %s.\n",
-						 pn->in->name);
+						 pn->selected_connection->name);
 				} else {		/* All GOOD */
 					return 0;
 				}
@@ -546,16 +545,16 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 			usb_release_interface(usb, 0);
 		}
 		usb_close(usb);
-		pn->in->connin.usb.usb = NULL;
+		pn->selected_connection->connin.usb.usb = NULL;
 	}
 
-	if (pn->in->name != badUSBname)
-		free(pn->in->name);
-	pn->in->name = badUSBname;
+	if (pn->selected_connection->name != badUSBname)
+		free(pn->selected_connection->name);
+	pn->selected_connection->name = badUSBname;
 
-	pn->in->connin.usb.dev = NULL;	// this will force a re-scan next time
+	pn->selected_connection->connin.usb.dev = NULL;	// this will force a re-scan next time
 	//LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
-	STAT_ADD1_BUS(BUS_open_errors, pn->in);
+	STAT_ADD1_BUS(BUS_open_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -573,7 +572,7 @@ static int DS9490_reconnect(const struct parsedname *pn)
 	if (!DS9490_redetect_low(pn)) {
 		LEVEL_DEFAULT
 			("Found USB DS9490 adapter after USB rescan as [%s]!\n",
-			 pn->in->name);
+			 pn->selected_connection->name);
 		ret = 0;
 	} else {
 		ret = -EIO;
@@ -654,7 +653,7 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 	int ret;
 	struct parsedname pncopy;
 
-	//LEVEL_CONNECT("DS9490_redetect_low: name=%s\n", pn->in->name);
+	//LEVEL_CONNECT("DS9490_redetect_low: name=%s\n", pn->selected_connection->name);
 
 	/*
 	 * I don't think we need to call usb_init() or usb_find_busses() here.
@@ -669,7 +668,7 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 		char *name = DS9490_device_name(&ul);
 		struct device_search ds;
 		int found1420 =
-			((pn->in->connin.usb.ds1420_address[0] & 0x7F) == 0x01);
+			((pn->selected_connection->connin.usb.ds1420_address[0] & 0x7F) == 0x01);
 
 		if (name == badUSBname)
 			return -ENOMEM;
@@ -686,7 +685,7 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 			continue;
 		}
 
-		free(name);				// use pn->in->name created in DS9490_open instead
+		free(name);				// use pn->selected_connection->name created in DS9490_open instead
 
 		/* We are looking for devices in the root (not the branch
 		 * pn eventually points to */
@@ -696,12 +695,12 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 
 		if ((ret = BUS_first(&ds, &pncopy))) {
 			LEVEL_DATA("BUS_first failed during reconnect [%s]\n",
-					   pn->in->name);
+					   pn->selected_connection->name);
 		}
 		while (ret == 0) {
-			if (memcmp(ds.sn, pn->in->connin.usb.ds1420_address, 8) == 0) {
+			if (memcmp(ds.sn, pn->selected_connection->connin.usb.ds1420_address, 8) == 0) {
 				LEVEL_DATA("Found proper tag on %s\n",
-						   SAFESTRING(pn->in->name));
+						   SAFESTRING(pn->selected_connection->name));
 				return 0;
 			}
 			found1420 = found1420 || ((ds.sn[0] & 0x7F) == 0x01);
@@ -712,17 +711,17 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 			/* There are still no unique id, set it to the last device if the
 			 * search above ended normally.  Eg. with -ENODEV */
 			LEVEL_CONNECT("Still poorly tagged adapter (%s) will use "
-						  SNformat "\n", SAFESTRING(pn->in->name),
+						  SNformat "\n", SAFESTRING(pn->selected_connection->name),
 						  SNvar(ds.sn));
-			memcpy(pn->in->connin.usb.ds1420_address, ds.sn, 8);
+			memcpy(pn->selected_connection->connin.usb.ds1420_address, ds.sn, 8);
 			return 0;
 		}
 		// Couldn't find correct ds1420 chip on this adapter
 		LEVEL_CONNECT
 			("Couldn't find correct ds1420 chip on this adapter [%s] (want: "
-			 SNformat ")\n", SAFESTRING(pn->in->name),
-			 SNvar(pn->in->connin.usb.ds1420_address));
-		DS9490_close(pn->in);
+			 SNformat ")\n", SAFESTRING(pn->selected_connection->name),
+			 SNvar(pn->selected_connection->connin.usb.ds1420_address));
+		DS9490_close(pn->selected_connection);
 	}
 	//LEVEL_CONNECT("No available USB DS9490 adapter found\n");
 	return -ENODEV;
@@ -768,7 +767,7 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 {
 	int ret, loops = 0;
 	int i;
-	usb_dev_handle *usb = pn->in->connin.usb.usb;
+	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 
     // Pretty ugly, but needed for SUSE at least
     // Try both HAVE_USB_INTERRUPT_READ
@@ -787,8 +786,8 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 		char junk[1500];
 		if ((ret =
 			 usb_bulk_read(usb, DS2490_EP1, (ASCII *) junk, (size_t) 1500,
-						   pn->in->connin.usb.timeout)) < 0) {
-			STAT_ADD1_BUS(BUS_status_errors, pn->in);
+						   pn->selected_connection->connin.usb.timeout)) < 0) {
+			STAT_ADD1_BUS(BUS_status_errors, pn->selected_connection);
 			LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
 			return -EIO;
 		}
@@ -801,20 +800,20 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
             if ((ret =
                 usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer,
                                     (size_t) 32,
-                                    pn->in->connin.usb.timeout)) < 0) {
+                                    pn->selected_connection->connin.usb.timeout)) < 0) {
                 LEVEL_DATA("DS9490_getstatus: (HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
             }
         } else
 #endif
             if ((ret =
                 usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32,
-                            pn->in->connin.usb.timeout)) < 0) {
+                            pn->selected_connection->connin.usb.timeout)) < 0) {
                 LEVEL_DATA("DS9490_getstatus: (no HAVE_USB_INTERRUPT_READ) error reading ret=%d\n", ret);
             }
 
         if ( ret < 0 ) {
             if ( count_have_usb_interrupt_read != 0 ) {
-    			STAT_ADD1_BUS(BUS_status_errors, pn->in);
+    			STAT_ADD1_BUS(BUS_status_errors, pn->selected_connection);
     	   		return -EIO;
             }
             have_usb_interrupt_read = ! have_usb_interrupt_read ;
@@ -943,11 +942,11 @@ static int DS9490_overdrive(const UINT overdrive,
 	BYTE resp;
 	int i;
 	int oldspeed;
-	struct connin_usb *con_usb = &pn->in->connin.usb;
+	struct connin_usb *con_usb = &pn->selected_connection->connin.usb;
 
 	switch (overdrive) {
 	case ONEWIREBUSSPEED_OVERDRIVE:
-		if (pn->in->use_overdrive_speed != ONEWIREBUSSPEED_OVERDRIVE)
+		if (pn->selected_connection->use_overdrive_speed != ONEWIREBUSSPEED_OVERDRIVE)
 			return -1;	// adapter doesn't use overdrive
 
 		if (con_usb->USpeed == ONEWIREBUSSPEED_OVERDRIVE)
@@ -1023,14 +1022,14 @@ static int DS9490_reset(const struct parsedname *pn)
 	int i, ret;
 	BYTE buffer[32];
 	//printf("9490RESET\n");
-	//printf("DS9490_reset() index=%d pn->in->Adapter=%d %s\n", pn->in->index, pn->in->Adapter, pn->in->adapter_name);
+	//printf("DS9490_reset() index=%d pn->selected_connection->Adapter=%d %s\n", pn->selected_connection->index, pn->selected_connection->Adapter, pn->selected_connection->adapter_name);
 
 	LEVEL_DATA("DS9490_reset\n");
 
-	if (pn->in->connin.usb.usb==NULL || pn->in->connin.usb.dev==NULL)
+	if (pn->selected_connection->connin.usb.usb==NULL || pn->selected_connection->connin.usb.dev==NULL)
 		return -EIO;
 
-	if ( ! pn->in->connin.usb.usb_settings_ok ) {
+	if ( ! pn->selected_connection->connin.usb.usb_settings_ok ) {
 		DS9490_Set_USB_Parameters(pn) ; // reset paramters
 	}
 
@@ -1041,23 +1040,23 @@ static int DS9490_reset(const struct parsedname *pn)
 		return ret;
 	}
 	
-	if((pn->in->connin.usb.USpeed != pn->in->use_overdrive_speed) &&
-	   ((ret = DS9490_overdrive(pn->in->use_overdrive_speed, pn)) < 0)) {
+	if((pn->selected_connection->connin.usb.USpeed != pn->selected_connection->use_overdrive_speed) &&
+	   ((ret = DS9490_overdrive(pn->selected_connection->use_overdrive_speed, pn)) < 0)) {
 		// revert to a flexible speed
-		if(pn->in->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE)
-			pn->in->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE;
+		if(pn->selected_connection->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE)
+			pn->selected_connection->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE;
 		return ret;
 	}
 
 	if ((ret = USB_Control_Msg(
-			COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, pn->in->connin.usb.USpeed,
+			COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, pn->selected_connection->connin.usb.USpeed,
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_reset: error sending reset ret=%d\n", ret);
 		return -EIO;			// fatal error... probably closed usb-handle
 	}
 
-	if (pn->in->ds2404_compliance
-		&& (pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
+	if (pn->selected_connection->ds2404_compliance
+		&& (pn->selected_connection->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
 		// extra delay for alarming DS1994/DS2404 complience
 		UT_delay(5);
 	}
@@ -1066,8 +1065,8 @@ static int DS9490_reset(const struct parsedname *pn)
 		if (ret == -1) {
 			/* Short detected, but otherwise no bigger "problem"?
 			 * Make sure 1-wires won't be scanned */
-			pn->in->AnyDevices = 0;
-			STAT_ADD1_BUS(BUS_short_errors, pn->in);
+			pn->selected_connection->AnyDevices = 0;
+			STAT_ADD1_BUS(BUS_short_errors, pn->selected_connection);
 			LEVEL_DATA("DS9490_reset: short detected\n", ret);
 			return BUS_RESET_SHORT ;
 		}
@@ -1075,7 +1074,7 @@ static int DS9490_reset(const struct parsedname *pn)
 		return ret;
 	}
 	//USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
-	pn->in->AnyDevices = 1;
+	pn->selected_connection->AnyDevices = 1;
 	for (i = 0; i < ret; i++) {
 		BYTE val = buffer[16 + i];
 		//LEVEL_DATA("Status bytes[%d]: %X\n", i, val);
@@ -1083,7 +1082,7 @@ static int DS9490_reset(const struct parsedname *pn)
 			// check for NRS bit (0x01)
 			if (val & COMMCMDERRORRESULT_NRS) {
 				// empty bus detected, no presence pulse detected
-				pn->in->AnyDevices = 0;
+				pn->selected_connection->AnyDevices = 0;
 				LEVEL_DATA("DS9490_reset: no presense pulse detected\n");
 			}
 		}
@@ -1096,15 +1095,15 @@ static int DS9490_read(BYTE * buf, const size_t size,
 					   const struct parsedname *pn)
 {
 	int ret;
-	usb_dev_handle *usb = pn->in->connin.usb.usb;
+	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 	//printf("DS9490_read\n");
 	if ((ret =
 		 usb_bulk_read(usb, DS2490_EP3, (ASCII *) buf, (int) size,
-					   pn->in->connin.usb.timeout)) > 0)
+					   pn->selected_connection->connin.usb.timeout)) > 0)
 		return ret;
 	LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
 	USB_CLEAR_HALT(usb, DS2490_EP3);
-	STAT_ADD1_BUS(BUS_read_errors, pn->in);
+	STAT_ADD1_BUS(BUS_read_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -1112,15 +1111,15 @@ static int DS9490_write(BYTE * buf, const size_t size,
 						const struct parsedname *pn)
 {
 	int ret;
-	usb_dev_handle *usb = pn->in->connin.usb.usb;
+	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 	//printf("DS9490_write\n");
 	if ((ret =
 		 usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (const int) size,
-						pn->in->connin.usb.timeout)) > 0)
+						pn->selected_connection->connin.usb.timeout)) > 0)
 		return ret;
 	LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
 	USB_CLEAR_HALT(usb, DS2490_EP2);
-	STAT_ADD1_BUS(BUS_write_errors, pn->in);
+	STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -1150,7 +1149,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 		|| ((ret = DS9490_getstatus(buffer, len, pn)) < 0)	// wait for len bytes
 		) {
 		LEVEL_DATA("USBsendback control problem ret=%d\n", ret);
-		STAT_ADD1_BUS(BUS_byte_errors, pn->in);
+		STAT_ADD1_BUS(BUS_byte_errors, pn->selected_connection);
 		return ret;
 	}
 
@@ -1172,21 +1171,21 @@ static int DS9490_next_both(struct device_search *ds,
 							const struct parsedname *pn)
 {
 	BYTE buffer[32];
-	BYTE *cb = pn->in->combuffer;
+	BYTE *cb = pn->selected_connection->combuffer;
 	int ret;
 	int i;
 	size_t buflen;
 
 	//LEVEL_DATA("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
 	// if the last call was not the last one
-	if (!pn->in->AnyDevices)
+	if (!pn->selected_connection->AnyDevices)
 		ds->LastDevice = 1;
 
 	/* DS1994/DS2404 might need an extra reset */
-	if (pn->in->ExtraReset) {
+	if (pn->selected_connection->ExtraReset) {
 		if (BUS_reset(pn) < 0)
 			ds->LastDevice = 1;
-		pn->in->ExtraReset = 0;
+		pn->selected_connection->ExtraReset = 0;
 	}
 
 	if (ds->LastDevice)
@@ -1259,7 +1258,7 @@ static int DS9490_next_both(struct device_search *ds,
 	case 0x04:
 	case 0x84:
 		/* We found a DS1994/DS2404 which require longer delays */
-		pn->in->ds2404_compliance = 1;
+		pn->selected_connection->ds2404_compliance = 1;
 		break;
 	default:
 		break;
@@ -1287,7 +1286,7 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 	LEVEL_DATA("DS9490_Powerbyte\n");
 
 	/* This is more likely to be the correct way to handle powerbytes */
-	if (pn->in->connin.usb.ULevel == MODE_STRONG5) {
+	if (pn->selected_connection->connin.usb.ULevel == MODE_STRONG5) {
 		DS9490_level(MODE_NORMAL, pn);
 	}
 	// set the strong pullup
@@ -1302,7 +1301,7 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 		LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n");
 	} else {
 		/* strong pullup is now enabled */
-		pn->in->connin.usb.ULevel = MODE_STRONG5;
+		pn->selected_connection->connin.usb.ULevel = MODE_STRONG5;
 
 		/* Read back the result (should be the same as "byte") */
 		if ((ret = DS9490_read(resp, 1, pn)) < 0) {
@@ -1322,7 +1321,7 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 			}
 		}
 	}
-	STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
+	STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -1344,7 +1343,7 @@ static int DS9490_ProgramPulse(const struct parsedname *pn)
 		((ret = USB_Control_Msg(
 			COMM_CMD, COMM_PULSE | COMM_TYPE | COMM_IM, 0,
 			pn)) < 0)) {
-		STAT_ADD1_BUS(BUS_level_errors, pn->in);
+		STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
 	}
 	if ( DS9490_level(MODE_NORMAL, pn) != 0 ) {
 		LEVEL_DEBUG("Couldn't reset the program pulse level back to normal\n");
@@ -1426,12 +1425,12 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 {
 	int ret;
 
-	if (new_level == pn->in->connin.usb.ULevel) {	// check if need to change level
+	if (new_level == pn->selected_connection->connin.usb.ULevel) {	// check if need to change level
 		return 0;
 	}
 
 	LEVEL_DATA("DS9490_level %d (old = %d)\n", new_level,
-			   pn->in->connin.usb.ULevel);
+			   pn->selected_connection->connin.usb.ULevel);
 
 	switch (new_level) {
 	case MODE_NORMAL:
@@ -1449,7 +1448,7 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 			((ret =	USB_Control_Msg(
 				COMM_CMD, COMM_PULSE | COMM_IM, 0,
 				pn)) < 0)) {
-			STAT_ADD1_BUS(BUS_level_errors, pn->in);
+			STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
 			return ret;
 		}
 		break;
@@ -1463,7 +1462,7 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 			((ret = USB_Control_Msg(
 				MODE_CMD, MOD_PROG_PULSE_DURATION, PROGRAM_PULSE_DURATION_CODE,
 				pn)) < 0)) {
-			STAT_ADD1_BUS(BUS_level_errors, pn->in);
+			STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
 			return ret;
 		}
 		break ;
@@ -1472,7 +1471,7 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 		return 1;
 	}
 
-	pn->in->connin.usb.ULevel = new_level;
+	pn->selected_connection->connin.usb.ULevel = new_level;
 	return 0;
 }
 
@@ -1480,7 +1479,7 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 // Names (bRequest, wValue wIndex) are from datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf 
 static int USB_Control_Msg( BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname * pn ) 
 {
-	usb_dev_handle *usb = pn->in->connin.usb.usb;
+	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 	if (usb==NULL) return -EIO ;
 	return usb_control_msg(
 		usb,
@@ -1490,7 +1489,7 @@ static int USB_Control_Msg( BYTE bRequest, UINT wValue, UINT wIndex, const struc
 		wIndex,
 		NULL, 
 		0, 
-		pn->in->connin.usb.timeout
+		pn->selected_connection->connin.usb.timeout
 	) ;
 }
 

@@ -143,14 +143,14 @@ struct interface_routines {
 	UINT flags;
 };
 #define BUS_detect(in)                      (((in)->iroutines.detect(in)))
-//#define BUS_sendback_data(data,resp,len,pn) (((pn)->in->iroutines.sendback_data)((data),(resp),(len),(pn)))
-#define BUS_sendback_bits(data,resp,len,pn) (((pn)->in->iroutines.sendback_bits)((data),(resp),(len),(pn)))
-//#define BUS_next_both(ds,pn)                (((pn)->in->iroutines.next_both)((ds),(pn)))
-#define BUS_ProgramPulse(pn)                (((pn)->in->iroutines.ProgramPulse)(pn))
-//#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->in->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
-//#define BUS_select(pn)                      (((pn)->in->iroutines.select)(pn))
-#define BUS_overdrive(speed,pn)             (((pn)->in->iroutines.overdrive)((speed),(pn)))
-#define BUS_testoverdrive(pn)               (((pn)->in->iroutines.testoverdrive)((pn)))
+//#define BUS_sendback_data(data,resp,len,pn) (((pn)->selected_connection->iroutines.sendback_data)((data),(resp),(len),(pn)))
+#define BUS_sendback_bits(data,resp,len,pn) (((pn)->selected_connection->iroutines.sendback_bits)((data),(resp),(len),(pn)))
+//#define BUS_next_both(ds,pn)                (((pn)->selected_connection->iroutines.next_both)((ds),(pn)))
+#define BUS_ProgramPulse(pn)                (((pn)->selected_connection->iroutines.ProgramPulse)(pn))
+//#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->selected_connection->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
+//#define BUS_select(pn)                      (((pn)->selected_connection->iroutines.select)(pn))
+#define BUS_overdrive(speed,pn)             (((pn)->selected_connection->iroutines.overdrive)((speed),(pn)))
+#define BUS_testoverdrive(pn)               (((pn)->selected_connection->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
 /* placed in iroutines.flags */
@@ -158,11 +158,11 @@ struct interface_routines {
 #define ADAP_FLAG_2409path      0x00000010
 #define ADAP_FLAG_dirgulp       0x00000100
 
-#define AdapterSupports2409(pn)	(((pn)->in->iroutines.flags&ADAP_FLAG_2409path)!=0)
+#define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_2409path)!=0)
 
 #if OW_MT
-#define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->in)->dev_mutex) )
-#define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->in)->dev_mutex) )
+#define DEVLOCK(pn)           pthread_mutex_lock( &(((pn)->selected_connection)->dev_mutex) )
+#define DEVUNLOCK(pn)         pthread_mutex_unlock( &(((pn)->selected_connection)->dev_mutex) )
 #define ACCEPTLOCK(out)       pthread_mutex_lock(  &((out)->accept_mutex) )
 #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) )
 #define OUTLOCK(out)          pthread_mutex_lock(  &((out)->out_mutex) )

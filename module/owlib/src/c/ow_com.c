@@ -33,7 +33,7 @@ $Id$
 int COM_open(struct connection_in *in)
 {
 	struct termios newSerialTio;	/*new serial port settings */
-	if (!in)
+	if (in != NULL)
 		return -ENODEV;
 
 //    if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
@@ -77,7 +77,7 @@ int COM_open(struct connection_in *in)
 void COM_close(struct connection_in *in)
 {
 	int file_descriptor;
-	if (!in)
+	if (in!=NULL)
 		return;
 	file_descriptor = in->file_descriptor;
 	// restore tty settings
@@ -98,43 +98,43 @@ void COM_close(struct connection_in *in)
 
 void COM_flush(const struct parsedname *pn)
 {
-	if (!pn || !pn->in || (pn->in->file_descriptor < 0))
+	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0))
 		return;
-	tcflush(pn->in->file_descriptor, TCIOFLUSH);
+	tcflush(pn->selected_connection->file_descriptor, TCIOFLUSH);
 }
 
 void COM_break(const struct parsedname *pn)
 {
-	if (!pn || !pn->in || (pn->in->file_descriptor < 0))
+	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0))
 		return;
-	tcsendbreak(pn->in->file_descriptor, 0);
+	tcsendbreak(pn->selected_connection->file_descriptor, 0);
 }
 
 void COM_speed(speed_t new_baud, const struct parsedname *pn)
 {
 	struct termios t;
-	if (!pn || !pn->in || (pn->in->file_descriptor < 0))
+	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0))
 		return;
 
 	// read the attribute structure
-	if (tcgetattr(pn->in->file_descriptor, &t) < 0) {
+	if (tcgetattr(pn->selected_connection->file_descriptor, &t) < 0) {
 		ERROR_CONNECT("Could not get com port attributes: %s\n",
-					  SAFESTRING(pn->in->name));
+					  SAFESTRING(pn->selected_connection->name));
 		return;
 	}
 	// set baud in structure
 	if (cfsetospeed(&t, new_baud) < 0 || cfsetispeed(&t, new_baud) < 0) {
 		ERROR_CONNECT("Trouble setting port speed: %s\n",
-					  SAFESTRING(pn->in->name));
+					  SAFESTRING(pn->selected_connection->name));
 	}
 	// change baud on port
-	if (tcsetattr(pn->in->file_descriptor, TCSAFLUSH, &t) < 0) {
+	if (tcsetattr(pn->selected_connection->file_descriptor, TCSAFLUSH, &t) < 0) {
 		ERROR_CONNECT("Could not set com port attributes: %s\n",
-					  SAFESTRING(pn->in->name));
+					  SAFESTRING(pn->selected_connection->name));
 		if (new_baud != B9600)
 			COM_speed(B9600, pn);
 		return;
 	}
-	pn->in->connin.serial.speed = new_baud;
+	pn->selected_connection->connin.serial.speed = new_baud;
 	return;
 }

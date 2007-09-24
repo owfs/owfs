@@ -82,7 +82,7 @@ int LINK_detect(struct connection_in *in)
 	struct parsedname pn;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 
 	/* Set up low-level routines */
 	LINK_setroutines(&(in->iroutines));
@@ -140,7 +140,7 @@ static int LINK_reset(const struct parsedname *pn)
     //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
     //Response is 3 bytes:  1 byte for code + \r\n
     if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
-        STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+        STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
         LEVEL_DEBUG("Error resetting LINK device\n");
         return -EIO;
 	}
@@ -149,12 +149,12 @@ static int LINK_reset(const struct parsedname *pn)
 	case 'P':
         LEVEL_DEBUG("LINK reset ok, devices Present\n");
         ret = BUS_RESET_OK ;
-        pn->in->AnyDevices = 1;
+        pn->selected_connection->AnyDevices = 1;
 		break;
 	case 'N':
         LEVEL_DEBUG("LINK reset ok, devices Not present\n");
         ret = BUS_RESET_OK ;
-        pn->in->AnyDevices = 0;
+        pn->selected_connection->AnyDevices = 0;
 		break;
 	case 'S':
         LEVEL_DEBUG("LINK reset short, Short circuit on 1-wire bus!\n");
@@ -173,10 +173,10 @@ static int LINK_next_both(struct device_search *ds,
 {
 	int ret=0;
 	struct dirblob * db = (ds->search ==_1W_CONDITIONAL_SEARCH_ROM) ?
-				&(pn->in->connin.link.alarm) :
-				&(pn->in->connin.link.main);
+				&(pn->selected_connection->connin.link.alarm) :
+				&(pn->selected_connection->connin.link.main);
 
-	if (!pn->in->AnyDevices)
+	if (!pn->selected_connection->AnyDevices)
 		ds->LastDevice = 1;
 	if (ds->LastDevice)
 		return -ENODEV;
@@ -200,7 +200,7 @@ static int LINK_next_both(struct device_search *ds,
 	case 0:
 		if ((ds->sn[0] & 0x7F) == 0x04) {
 			/* We found a DS1994/DS2404 which require longer delays */
-			pn->in->ds2404_compliance = 1;
+			pn->selected_connection->ds2404_compliance = 1;
 		}
 		break;
 	case -ENODEV:
@@ -227,18 +227,18 @@ static int LINK_read(BYTE * buf, const size_t size,
     int error_return = 0 ;
     size_t bytes_left = size;
 
-    if (pn->in == NULL) {
+    if (pn->selected_connection == NULL) {
         STAT_ADD1(DS2480_read_null);
         return -EIO ;
     }
-    //printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->in->file_descriptor,(long int)Global.timeout_serial);
+    //printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->selected_connection->file_descriptor,(long int)Global.timeout_serial);
     while (bytes_left > 0) {
         int select_return = 0 ;
         fd_set fdset;
         struct timeval tval;
 		// set a descriptor to wait for a character available
 		FD_ZERO(&fdset);
-		FD_SET(pn->in->file_descriptor, &fdset);
+		FD_SET(pn->selected_connection->file_descriptor, &fdset);
 		tval.tv_sec = Global.timeout_serial;
 		tval.tv_usec = 0;
 		/* This timeout need to be pretty big for some reason.
@@ -250,26 +250,26 @@ static int LINK_read(BYTE * buf, const size_t size,
 		 */
 
 		// if byte available read or return bytes read
-        select_return = select(pn->in->file_descriptor + 1, &fdset, NULL, NULL, &tval);
+        select_return = select(pn->selected_connection->file_descriptor + 1, &fdset, NULL, NULL, &tval);
         //printf("Link Read select = %d\n",select_return) ;
         if (select_return > 0) {
             ssize_t read_return ;
-			if (FD_ISSET(pn->in->file_descriptor, &fdset) == 0) {
+			if (FD_ISSET(pn->selected_connection->file_descriptor, &fdset) == 0) {
                 error_return = -EIO;		/* error */
 				STAT_ADD1(DS2480_read_fd_isset);
 				break;
 			}
 //            update_max_delay(pn);
-            read_return = read(pn->in->file_descriptor, &buf[size - bytes_left], bytes_left);
+            read_return = read(pn->selected_connection->file_descriptor, &buf[size - bytes_left], bytes_left);
             Debug_Bytes( "LINK read",&buf[size - bytes_left], read_return ) ;
             if (read_return < 0) {
 				if (errno == EINTR) {
 					/* read() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
+					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
 					continue;
 				}
 				ERROR_CONNECT("LINK read error: %s\n",
-							  SAFESTRING(pn->in->name));
+							  SAFESTRING(pn->selected_connection->name));
                 error_return = -errno;	/* error */
 				STAT_ADD1(DS2480_read_read);
 				break;
@@ -278,24 +278,24 @@ static int LINK_read(BYTE * buf, const size_t size,
         } else if (select_return < 0) {
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
-				STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->in);
+				STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
 				continue;
 			}
 			ERROR_CONNECT("LINK select error: %s\n",
-						  SAFESTRING(pn->in->name));
-			STAT_ADD1_BUS(BUS_read_select_errors, pn->in);
+						  SAFESTRING(pn->selected_connection->name));
+			STAT_ADD1_BUS(BUS_read_select_errors, pn->selected_connection);
 			return -EINTR;
 		} else {
 			ERROR_CONNECT("LINK timeout error: %s\n",
-						  SAFESTRING(pn->in->name));
-			STAT_ADD1_BUS(BUS_read_timeout_errors, pn->in);
+						  SAFESTRING(pn->selected_connection->name));
+			STAT_ADD1_BUS(BUS_read_timeout_errors, pn->selected_connection);
 			return -EINTR;
 		}
 	}
 	if (bytes_left > 0) {			/* signal that an error was encountered */
 		ERROR_CONNECT("LINK read short error: %s\n",
-					  SAFESTRING(pn->in->name));
-		STAT_ADD1_BUS(BUS_read_errors, pn->in);
+					  SAFESTRING(pn->selected_connection->name));
+		STAT_ADD1_BUS(BUS_read_errors, pn->selected_connection);
         return error_return;				/* error */
 	}
 	//printf("Link_Read_Low <%*s>\n",(int)size,buf) ;
@@ -315,22 +315,22 @@ static int LINK_write(const BYTE * buf, const size_t size,
 
     Debug_Bytes( "LINK write", buf, size) ;
 //    COM_flush(pn) ;
-    //printf("Link write attempting %d bytes on %d\n",(int)size,pn->in->file_descriptor) ;
+    //printf("Link write attempting %d bytes on %d\n",(int)size,pn->selected_connection->file_descriptor) ;
     while ( left_to_write > 0 ) {
-        ssize_t write_or_error = write(pn->in->file_descriptor, buf, left_to_write);
+        ssize_t write_or_error = write(pn->selected_connection->file_descriptor, buf, left_to_write);
         Debug_Bytes("Link write",buf,left_to_write);
         //printf("Link write = %d\n",(int)write_or_error);
         if (write_or_error < 0) {
             ERROR_CONNECT("Trouble writing data to LINK: %s\n",
-                        SAFESTRING(pn->in->name));
-            STAT_ADD1_BUS(BUS_write_errors, pn->in);
+                        SAFESTRING(pn->selected_connection->name));
+            STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
             return write_or_error ;
         }
 	LEVEL_DEBUG("ltow %d woe %d\n",left_to_write,write_or_error);
         left_to_write -= write_or_error ;
     }
-    tcdrain(pn->in->file_descriptor);
-    gettimeofday(&(pn->in->bus_write_time), NULL);
+    tcdrain(pn->selected_connection->file_descriptor);
+    gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
 	
 	return 0;
 }
@@ -341,7 +341,7 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 
 	if (LINK_write(LINK_string("p"), 1, pn)
 		|| LINK_byte_bounce(&data, resp, pn)) {
-		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
+		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
 		return -EIO;			// send just the <CR>
 	}
 	// delay
@@ -363,7 +363,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 {
 	size_t i;
 	size_t left;
-	BYTE *buf = pn->in->combuffer;
+	BYTE *buf = pn->selected_connection->combuffer;
 
 	if (size == 0)
 		return 0;
@@ -507,13 +507,13 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db,
         case '-':
         case '+':
             if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-                pn->in->AnyDevices = 1;
+                pn->selected_connection->AnyDevices = 1;
             }
             break;
         case 'N':
             LEVEL_DEBUG ("LINK returned N: Empty bus\n");
             if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-                pn->in->AnyDevices = 0;
+                pn->selected_connection->AnyDevices = 0;
             }
         case 'X':
         default:

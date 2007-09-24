@@ -94,7 +94,7 @@ int DS1410_detect(struct connection_in *in)
 	in->busmode = bus_parallel;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 
 	if (DS1410_open(&pn))
 		return -EIO;			// Also exits "Passthru mode"
@@ -111,33 +111,33 @@ int DS1410_detect(struct connection_in *in)
 // return 1 if shorted, 0 ok, else <0
 static int DS1410_reset(const struct parsedname *pn)
 {
-	int file_descriptor = pn->in->file_descriptor;
+	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE ad;
 	printf("DS1410E reset try\n");
 	if (DS1410bit(RESET, &ad, file_descriptor))
 		return -EIO;
-	pn->in->AnyDevices = ad;
-	printf("DS1410 reset success, AnyDevices=%d\n", pn->in->AnyDevices);
+	pn->selected_connection->AnyDevices = ad;
+	printf("DS1410 reset success, AnyDevices=%d\n", pn->selected_connection->AnyDevices);
 	return 0;
 }
 
 static int DS1410_open(const struct parsedname *pn)
 {
-	LEVEL_CONNECT("Opening port %s\n", SAFESTRING(pn->in->name));
-	if ((pn->in->file_descriptor = open(pn->in->name, O_RDWR)) < 0) {
-		LEVEL_CONNECT("Cannot open DS1410E at %s\n", pn->in->name);
-	} else if (ioctl(pn->in->file_descriptor, PPCLAIM)) {
-		LEVEL_CONNECT("Cannot claim DS1410E at %s\n", pn->in->name);
-		close(pn->in->file_descriptor);
-		pn->in->file_descriptor = -1;
+	LEVEL_CONNECT("Opening port %s\n", SAFESTRING(pn->selected_connection->name));
+	if ((pn->selected_connection->file_descriptor = open(pn->selected_connection->name, O_RDWR)) < 0) {
+		LEVEL_CONNECT("Cannot open DS1410E at %s\n", pn->selected_connection->name);
+	} else if (ioctl(pn->selected_connection->file_descriptor, PPCLAIM)) {
+		LEVEL_CONNECT("Cannot claim DS1410E at %s\n", pn->selected_connection->name);
+		close(pn->selected_connection->file_descriptor);
+		pn->selected_connection->file_descriptor = -1;
 	} else if (DS1410_PToff(pn)) {
 		LEVEL_CONNECT
 			("Cannot exit PassThru mode for DS1410E at %s\nIs there really an adapter there?\n",
-			 pn->in->name);
+			 pn->selected_connection->name);
 	} else {
 		return 0;
 	}
-	STAT_ADD1_BUS(BUS_open_errors, pn->in);
+	STAT_ADD1_BUS(BUS_open_errors, pn->selected_connection);
 	return -EIO;
 }
 
@@ -160,8 +160,8 @@ static int DS1410_sendback_bits(const BYTE * data, BYTE * resp,
 {
 	int i;
 	for (i = 0; i < len; ++i) {
-		if (DS1410bit(data[i] ? WRITE1 : WRITE0, &resp[i], pn->in->file_descriptor)) {
-			STAT_ADD1_BUS(BUS_bit_errors, pn->in);
+		if (DS1410bit(data[i] ? WRITE1 : WRITE0, &resp[i], pn->selected_connection->file_descriptor)) {
+			STAT_ADD1_BUS(BUS_bit_errors, pn->selected_connection);
 			return -EIO;
 		}
 	}
@@ -295,7 +295,7 @@ static int DS1410_ODtoggle(BYTE * od, int file_descriptor)
 }
 static int DS1410_ODon(const struct parsedname *pn)
 {
-	int file_descriptor = pn->in->file_descriptor;
+	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE od;
 	if (DS1410_ODtoggle(&od, file_descriptor))
 		return 1;
@@ -306,7 +306,7 @@ static int DS1410_ODon(const struct parsedname *pn)
 
 static int DS1410_ODoff(const struct parsedname *pn)
 {
-	int file_descriptor = pn->in->file_descriptor;
+	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE od, cmd[] = { 0x3C, };
 	if (BUS_reset(pn) || BUS_send_data(cmd, 1, pn)
 		|| DS1410_ODtoggle(&od, file_descriptor))
@@ -362,7 +362,7 @@ static int DS1410_PTon(int file_descriptor)
 /* Return 0 if successful */
 static int DS1410_PToff(const struct parsedname *pn)
 {
-	int file_descriptor = pn->in->file_descriptor;
+	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE p;
 	int ret = 1;
 	LEVEL_CONNECT("Attempting to switch DS1410E out of PassThru mode\n");

@@ -59,11 +59,11 @@ void update_max_delay(const struct parsedname *pn)
 	long sec, usec;
 	struct timeval *r, *w;
 	struct timeval last_delay;
-	if (!pn || !pn->in)
+	if (pn==NULL || pn->selected_connection==NULL)
 		return;
-	gettimeofday(&(pn->in->bus_read_time), NULL);
-	r = &pn->in->bus_read_time;
-	w = &pn->in->bus_write_time;
+	gettimeofday(&(pn->selected_connection->bus_read_time), NULL);
+	r = &pn->selected_connection->bus_read_time;
+	w = &pn->selected_connection->bus_write_time;
 
 	sec = r->tv_sec - w->tv_sec;
 	if ((sec >= 0) && (sec <= 5)) {
@@ -87,7 +87,7 @@ void update_max_delay(const struct parsedname *pn)
 	}
 	/* DS9097(1410)_send_and_get() call this function many times, therefore
 	 * I reset bus_write_time after every calls */
-	gettimeofday(&(pn->in->bus_write_time), NULL);
+	gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
 	return;
 }
 

@@ -89,9 +89,9 @@ int LockGet(const struct parsedname *pn)
 		return 0;
 	}
 
-	/* pn->in is null when "cat /tmp/1wire/system/adapter/pulldownslewrate.0"
+	/* pn->selected_connection is null when "cat /tmp/1wire/system/adapter/pulldownslewrate.0"
 	 * and you have owfs -s & owserver -u started. */
-	if(pn->in == NULL) {
+	if(pn->selected_connection == NULL) {
 	  if((pn->type == pn_settings) ||
 	     (pn->type == pn_system)) {
 	    /* Probably trying to read/write some adapter settings which
@@ -99,7 +99,7 @@ int LockGet(const struct parsedname *pn)
 	    return -ENOTSUP;
 	  }
 	}
-	inindex = pn->in->index; // do this after testing pn->selected_device since pn->in is perhaps null
+	inindex = pn->selected_connection->index; // do this after testing pn->selected_device since pn->selected_connection is perhaps null
 
 	pn->lock[inindex] = NULL;
 	/* Need locking? */
@@ -126,7 +126,7 @@ int LockGet(const struct parsedname *pn)
 
 	DEVLOCK(pn);
 	/* in->dev_db points to the root of a tree of devices that are using this device */
-	if ((opaque = tsearch(dlock, &(pn->in->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
+	if ((opaque = tsearch(dlock, &(pn->selected_connection->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
 		DEVUNLOCK(pn);
 		free(dlock);
 		return -ENOMEM;
@@ -158,12 +158,12 @@ void LockRelease(const struct parsedname *pn)
 	if (pn->selected_device == DeviceSimultaneous)
 		return;
 
-	inindex = pn->in->index;
+	inindex = pn->selected_connection->index;
 	if (pn->lock[inindex]) {
 		pthread_mutex_unlock(&(pn->lock[inindex]->lock));
 		DEVLOCK(pn);
 		if (pn->lock[inindex]->users == 1) {
-			tdelete(pn->lock[inindex], &(pn->in->dev_db), dev_compare);
+			tdelete(pn->lock[inindex], &(pn->selected_connection->dev_db), dev_compare);
 			DEVUNLOCK(pn);
 			pthread_mutex_destroy(&(pn->lock[inindex]->lock));
 			free(pn->lock[inindex]);
@@ -181,13 +181,13 @@ void LockRelease(const struct parsedname *pn)
 void BUS_lock(const struct parsedname *pn)
 {
 	if (pn)
-		BUS_lock_in(pn->in);
+		BUS_lock_in(pn->selected_connection);
 }
 
 void BUS_unlock(const struct parsedname *pn)
 {
 	if (pn)
-		BUS_unlock_in(pn->in);
+		BUS_unlock_in(pn->selected_connection);
 }
 
 void BUS_lock_in(struct connection_in *in)

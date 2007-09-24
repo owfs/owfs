@@ -172,7 +172,7 @@ static int OW_discharge(const struct parsedname *pn)
 
 	// Could certainly couple this with next transaction
 	BUSLOCK(pn);
-	pn->in->buspath_bad = 1;
+	pn->selected_connection->buspath_bad = 1;
 	BUSUNLOCK(pn);
 
 	if (BUS_transaction(t, pn))

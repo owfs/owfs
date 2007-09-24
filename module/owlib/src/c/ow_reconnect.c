@@ -15,7 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-/* Tests whether this bus (pn->in) has too many consecutive reset errors */
+/* Tests whether this bus (pn->selected_connection) has too many consecutive reset errors */
 /* If so, the bus is closed and "reconnected" */
 /* Reconnection usually just means reopening (detect) with the same initial name like ttyS0 */
 /* USB is a special case, in gets reenumerated, so we look for similar DS2401 chip */
@@ -25,8 +25,8 @@ int TestConnection(const struct parsedname *pn)
 	struct connection_in *in;
 
 	// Test without a lock -- efficient
-	if (pn == NULL || pn->in == NULL
-		|| pn->in->reconnect_state < reconnect_error)
+	if (pn == NULL || pn->selected_connection == NULL
+		|| pn->selected_connection->reconnect_state < reconnect_error)
 		return 0;
 	CONNINLOCK;
 	in = head_inbound_list;
@@ -34,35 +34,35 @@ int TestConnection(const struct parsedname *pn)
 	// Lock the bus
 	BUSLOCK(pn);
 	// Test again
-	if (pn->in->reconnect_state >= reconnect_error) {
+	if (pn->selected_connection->reconnect_state >= reconnect_error) {
 		// Add Statistics
 		STAT_ADD1(BUS_reconnects);
-		STAT_ADD1(pn->in->bus_reconnect);
+		STAT_ADD1(pn->selected_connection->bus_reconnect);
 
-		if (pn->in == in)
+		if (pn->selected_connection == in)
 			Global.SimpleBusName = "Reconnecting...";
 
 		// Close the bus (should leave enough reconnection information available)
-		BUS_close(pn->in);		// already locked
+		BUS_close(pn->selected_connection);		// already locked
 
 		// Call reconnection
-		if ((pn->in->iroutines.reconnect)
-			? (pn->in->iroutines.reconnect) (pn)	// call bus-specific reconnect
-			: BUS_detect(pn->in)	// call initial opener
+		if ((pn->selected_connection->iroutines.reconnect)
+			? (pn->selected_connection->iroutines.reconnect) (pn)	// call bus-specific reconnect
+			: BUS_detect(pn->selected_connection)	// call initial opener
 			) {
 			STAT_ADD1(BUS_reconnect_errors);
-			STAT_ADD1(pn->in->bus_reconnect_errors);
+			STAT_ADD1(pn->selected_connection->bus_reconnect_errors);
 			LEVEL_DEFAULT("Failed to reconnect %s adapter!\n",
-						  pn->in->adapter_name);
-			pn->in->reconnect_state = reconnect_ok + 1;
+						  pn->selected_connection->adapter_name);
+			pn->selected_connection->reconnect_state = reconnect_ok + 1;
 			// delay to slow thrashing
 			UT_delay(200);
 			ret = -EIO;
 		} else {
 			LEVEL_DEFAULT("%s adapter reconnected\n",
-						  pn->in->adapter_name);
-			pn->in->reconnect_state = reconnect_ok;
-			if (pn->in == in)
+						  pn->selected_connection->adapter_name);
+			pn->selected_connection->reconnect_state = reconnect_ok;
+			if (pn->selected_connection == in)
 				Global.SimpleBusName = in->name;
 		}
 	}

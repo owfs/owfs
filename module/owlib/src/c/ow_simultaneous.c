@@ -105,7 +105,7 @@ static int FS_w_convert(struct one_wire_query * owq)
 	CookTheCache();				// make sure all volatile entries are invalidated
     if (OWQ_Y(owq) == 0)
 		return 0;				// don't send convert
-	if (pn->in->Adapter != adapter_Bad) {
+	if (pn->selected_connection->Adapter != adapter_Bad) {
 		int ret = 1;			// set just to block compiler errors
 		switch (type) {
 		case simul_temp:{
@@ -160,8 +160,8 @@ static int FS_r_convert(struct one_wire_query * owq)
 static int FS_r_present(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    if (pn->in->Adapter == adapter_fake) {	// fake adapter -- simple memory look
-        OWQ_Y(owq) = (pn->in->connin.fake.db.devices > 0);
+    if (pn->selected_connection->Adapter == adapter_fake) {	// fake adapter -- simple memory look
+        OWQ_Y(owq) = (pn->selected_connection->connin.fake.db.devices > 0);
 	} else {					// real adapter
         struct parsedname struct_pn2 ;
         struct parsedname * pn2 = & struct_pn2 ;
@@ -201,9 +201,9 @@ static int FS_r_single(struct one_wire_query * owq)
     struct parsedname * pn = PN(owq) ;
     ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
 	BYTE resp[8];
-	if (pn->in->Adapter == adapter_fake) {	// fake adapter -- look in memory
-		if (pn->in->connin.fake.db.devices == 1) {
-			DirblobGet(0, resp, &(pn->in->connin.fake.db));
+	if (pn->selected_connection->Adapter == adapter_fake) {	// fake adapter -- look in memory
+		if (pn->selected_connection->connin.fake.db.devices == 1) {
+			DirblobGet(0, resp, &(pn->selected_connection->connin.fake.db));
 			FS_devicename(ad, sizeof(ad), resp, pn);
 		}
 	} else {					// real adapter
@@ -249,5 +249,5 @@ static void OW_single2cache(BYTE * sn, const struct parsedname *pn2)
 	if (DirblobPure(&db))
 		Cache_Add_Dir(&db, pn2);	// Directory cache
 	memcpy(pn2->sn, sn, 8);
-	Cache_Add_Device(pn2->in->index, pn2);	// Device cache
+	Cache_Add_Device(pn2->selected_connection->index, pn2);	// Device cache
 }

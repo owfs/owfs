@@ -224,7 +224,7 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set! type=%d\n", pn->type);
 		}
 	}
-	if (KnownBus(pn) && BusIsServer(pn->in)) {
+	if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		/* The bus is not local... use a network connection instead */
 #if OW_MT
 		LEVEL_DEBUG("FS_r_given_bus pid=%ld call ServerRead\n",
@@ -321,11 +321,11 @@ static int FS_r_local(struct one_wire_query * owq)
     }
 
     /* Special case for "fake" adapter */
-    if (pn->in->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn))
+    if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn))
         return FS_read_fake(owq);
 
     /* Special case for "tester" adapter */
-    if (pn->in->Adapter == adapter_tester && pn->selected_filetype->change != fc_static)
+    if (pn->selected_connection->Adapter == adapter_tester && pn->selected_filetype->change != fc_static)
         return FS_read_tester(owq);
 
     /* Array property? Read separately? Read together and manually separate? */

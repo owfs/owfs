@@ -77,7 +77,7 @@ int HA7_detect(struct connection_in *in)
 	struct toHA7 ha7;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 	LEVEL_CONNECT("HA7 detect\n");
 	/* Set up low-level routines */
 	HA7_setroutines(&(in->iroutines));
@@ -122,22 +122,22 @@ int HA7_detect(struct connection_in *in)
 static int HA7_reset(const struct parsedname *pn)
 {
 	ASCII *resp = NULL;
-	int file_descriptor = ClientConnect(pn->in);
+	int file_descriptor = ClientConnect(pn->selected_connection);
 	int ret = BUS_RESET_OK;
 	struct toHA7 ha7;
 
 	if (file_descriptor < 0) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		return -EIO;
 	}
 
 	toHA7init(&ha7);
 	ha7.command = "Reset";
-	if (HA7_toHA7(file_descriptor, &ha7, pn->in)) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
+		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		ret = -EIO;
 	} else if (HA7_read(file_descriptor, &resp)) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		ret = -EIO;
 	}
 	if (resp)
@@ -155,7 +155,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 	ASCII *resp = NULL;
 
 	DirblobClear(db);
-	if ((file_descriptor = ClientConnect(pn->in)) < 0) {
+	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
 		db->troubled = 1;
 		return -EIO;
 	}
@@ -164,7 +164,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 	ha7.command = "Search";
     if (search == _1W_CONDITIONAL_SEARCH_ROM)
 		ha7.conditional[0] = '1';
-	if (HA7_toHA7(file_descriptor, &ha7, pn->in)) {
+	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
 		ret = -EIO;
 	} else if (HA7_read(file_descriptor, &resp)) {
 		ret = -EIO;
@@ -202,11 +202,11 @@ static int HA7_next_both(struct device_search *ds,
 						 const struct parsedname *pn)
 {
     struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->in->connin.ha7.alarm) : &(pn->in->connin.ha7.main);
+		&(pn->selected_connection->connin.ha7.alarm) : &(pn->selected_connection->connin.ha7.main);
 	int ret = 0;
 
 	printf("NextBoth %s\n", pn->path);
-	if (!pn->in->AnyDevices)
+	if (!pn->selected_connection->AnyDevices)
 		ds->LastDevice = 1;
 	if (ds->LastDevice)
 		return -ENODEV;
@@ -220,7 +220,7 @@ static int HA7_next_both(struct device_search *ds,
 	case 0:
 		if ((ds->sn[0] & 0x7F) == 0x04) {
 			/* We found a DS1994/DS2404 which require longer delays */
-			pn->in->ds2404_compliance = 1;
+			pn->selected_connection->ds2404_compliance = 1;
 		}
 		break;
 	case -ENODEV:
@@ -402,15 +402,15 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
 								 pn);
 	}
 
-	if ((file_descriptor = ClientConnect(pn->in)) < 0)
+	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0)
 		return -EIO;
-	bytes2string((ASCII *) pn->in->combuffer, data, size);
+	bytes2string((ASCII *) pn->selected_connection->combuffer, data, size);
 
 	toHA7init(&ha7);
 	ha7.command = "WriteBlock";
-	ha7.data = (ASCII *) pn->in->combuffer;
+	ha7.data = (ASCII *) pn->selected_connection->combuffer;
 	ha7.length = 2 * size;
-	if (HA7_toHA7(file_descriptor, &ha7, pn->in) == 0 && HA7_read(file_descriptor, &r) == 0) {
+	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 && HA7_read(file_descriptor, &r) == 0) {
 		ASCII *p = r;
 		if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
 			&& (p = strstr(p, "VALUE=\""))) {
@@ -445,14 +445,14 @@ static int HA7_select(const struct parsedname *pn)
 	int ret = -EIO;
 
 	if (pn->selected_device) {
-		int file_descriptor = ClientConnect(pn->in);
+		int file_descriptor = ClientConnect(pn->selected_connection);
 
 		if (file_descriptor >= 0) {
 			struct toHA7 ha7;
 			toHA7init(&ha7);
 			ha7.command = "AddressDevice";
 			setHA7address(&ha7, pn->sn);
-			if (HA7_toHA7(file_descriptor, &ha7, pn->in) == 0) {
+			if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0) {
 				ASCII *buf;
 				if (HA7_read(file_descriptor, &buf) == 0) {
 					free(buf);

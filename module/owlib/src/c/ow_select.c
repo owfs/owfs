@@ -60,26 +60,26 @@ int BUS_select(const struct parsedname *pn)
 		return -ENOTSUP;		/* cannot do branching with LINK ascii */
 	}
 	/* Adapter-specific select roputine? */
-	if (pn->in->iroutines.select) {
-		return (pn->in->iroutines.select) (pn);
+	if (pn->selected_connection->iroutines.select) {
+		return (pn->selected_connection->iroutines.select) (pn);
 	}
 
 	LEVEL_DEBUG("Selecting a path (and device) path=%s SN=" SNformat
 				" last path=" SNformat "\n", SAFESTRING(pn->path),
-				SNvar(pn->sn), SNvar(pn->in->branch.sn));
+				SNvar(pn->sn), SNvar(pn->selected_connection->branch.sn));
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {			/* no branches, overdrive possible */
 		//printf("SELECT_LOW root path\n") ;
-		if (pn->in->branch.sn[0] || pn->in->buspath_bad) {	// need clear root branch */
+		if (pn->selected_connection->branch.sn[0] || pn->selected_connection->buspath_bad) {	// need clear root branch */
 			//printf("SELECT_LOW root path will be cleared\n") ;
 			LEVEL_DEBUG("Clearing root branch\n");
 			if (Turnoff(0, pn))
 				return 1;
-			pn->in->branch.sn[0] = 0x00;	// flag as no branches turned on
+			pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
 		}
-		if (pn->in->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE) {	// overdrive?
-			if (pn->in->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
+		if (pn->selected_connection->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE) {	// overdrive?
+			if (pn->selected_connection->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
 				if ((ret = BUS_testoverdrive(pn)) < 0) {
 					BUS_selection_error(ret);
 					return ret;
@@ -87,7 +87,7 @@ int BUS_select(const struct parsedname *pn)
 			}
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
-	} else if (memcmp(pn->in->branch.sn, pn->bp[pl - 1].sn, 8) || pn->in->buspath_bad) {	/* different path */
+	} else if (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8) || pn->selected_connection->buspath_bad) {	/* different path */
 		int iclear;
 		LEVEL_DEBUG("Clearing all branches to level %d\n", pl);
 		for (iclear = 0; iclear <= pl; ++iclear) {
@@ -95,15 +95,15 @@ int BUS_select(const struct parsedname *pn)
 			if (Turnoff(iclear, pn))
 				return 1;
 		}
-		memcpy(pn->in->branch.sn, pn->bp[pl - 1].sn, 8);
-		pn->in->branch.branch = pn->bp[pl - 1].branch;
-	} else if (pn->in->branch.branch != pn->bp[pl - 1].branch) {	/* different branch */
+		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8);
+		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
+	} else if (pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) {	/* different branch */
 		LEVEL_DEBUG("Clearing last branches (level %d)\n", pl);
 		if (Turnoff(pl, pn))
 			return 1;		// clear just last level
-		pn->in->branch.branch = pn->bp[pl - 1].branch;
+		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	}
-	pn->in->buspath_bad = 0;
+	pn->selected_connection->buspath_bad = 0;
 
 	/* proper path now "turned on" */
 	/* Now select */

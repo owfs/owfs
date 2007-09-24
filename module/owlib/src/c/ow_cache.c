@@ -298,7 +298,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn),
 				(int) (db->devices));
 	FS_LoadPath(tn->tk.sn, pn);
-	tn->tk.p = pn->in;
+	tn->tk.p = pn->selected_connection;
 	tn->tk.extension = 0;
 	tn->expires = duration + time(NULL);
 	tn->dsize = size;
@@ -330,7 +330,7 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = NULL;			// value connected to all in-devices
-	//tn->tk.p.in = pn->in ;
+	//tn->tk.p.selected_connection = pn->selected_connection ;
 	tn->tk.extension = EXTENSION_DEVICE;
 	tn->expires = duration + time(NULL);
 	tn->dsize = sizeof(int);
@@ -627,7 +627,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	//printf("GetDir tn=%p\n",tn) ;
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadPath(tn.tk.sn, pn);
-	tn.tk.p = pn->in;
+	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db, duration, &tn));
 }
@@ -884,7 +884,7 @@ int Cache_Del_Dir(const struct parsedname *pn)
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadPath(tn.tk.sn, pn);
-	tn.tk.p = pn->in;
+	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
@@ -898,7 +898,7 @@ int Cache_Del_Device(const struct parsedname *pn)
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->in;
+	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = EXTENSION_DEVICE;
 	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }

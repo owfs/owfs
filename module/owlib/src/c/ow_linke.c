@@ -60,7 +60,7 @@ int LINKE_detect(struct connection_in *in)
 	struct parsedname pn;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 	LEVEL_CONNECT("LinkE detect\n");
 	/* Set up low-level routines */
 	LINKE_setroutines(&(in->iroutines));
@@ -70,7 +70,7 @@ int LINKE_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	if ((pn.in->file_descriptor = ClientConnect(in)) < 0)
+	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0)
 		return -EIO;
 
 	in->Adapter = adapter_LINK_E;
@@ -90,20 +90,20 @@ static int LINK_reset(const struct parsedname *pn)
 	BYTE resp[8];
 	int ret ;
 
-    tcp_read_flush( pn->in->file_descriptor ) ;
+    tcp_read_flush( pn->selected_connection->file_descriptor ) ;
 
     // Send 'r' reset
     if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
-        STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+        STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		return -EIO;
 	}
 	switch (resp[0]) {
 	case 'P':
-		pn->in->AnyDevices = 1;
+		pn->selected_connection->AnyDevices = 1;
         ret = BUS_RESET_OK ;
 		break;
 	case 'N':
-		pn->in->AnyDevices = 0;
+		pn->selected_connection->AnyDevices = 0;
         ret = BUS_RESET_OK ;
         break;
     case 'S':
@@ -122,7 +122,7 @@ static int LINK_next_both(struct device_search *ds,
 	char resp[21];
 	int ret;
 
-	if (!pn->in->AnyDevices)
+	if (!pn->selected_connection->AnyDevices)
 		ds->LastDevice = 1;
 	if (ds->LastDevice)
 		return -ENODEV;
@@ -146,7 +146,7 @@ static int LINK_next_both(struct device_search *ds,
 	case '+':
 		break;
 	case 'N':
-		pn->in->AnyDevices = 0;
+		pn->selected_connection->AnyDevices = 0;
 		return -ENODEV;
 	case 'X':
 	default:
@@ -170,7 +170,7 @@ static int LINK_next_both(struct device_search *ds,
 
 	if ((ds->sn[0] & 0x7F) == 0x04) {
 		/* We found a DS1994/DS2404 which require longer delays */
-		pn->in->ds2404_compliance = 1;
+		pn->selected_connection->ds2404_compliance = 1;
 	}
 
 	LEVEL_DEBUG("LINK_next_both SN found: " SNformat "\n", SNvar(ds->sn));
@@ -184,7 +184,7 @@ static int LINK_next_both(struct device_search *ds,
 static int LINK_read(BYTE * buf, const size_t size,
 					 const struct parsedname *pn)
 {
-    if ( tcp_read(pn->in->file_descriptor, buf, size, &tvnet) != (ssize_t) size ) {
+    if ( tcp_read(pn->selected_connection->file_descriptor, buf, size, &tvnet) != (ssize_t) size ) {
         LEVEL_CONNECT("LINK_read (ethernet) error\n");
         return -EIO ;
 	}
@@ -202,20 +202,20 @@ static int LINK_write(const BYTE * buf, const size_t size,
 {
 	ssize_t r ;
     //Debug_Bytes( "LINK write", buf, size) ;
-    r = write(pn->in->file_descriptor, buf, size);
+    r = write(pn->selected_connection->file_descriptor, buf, size);
 
     if (r < 0) {
         ERROR_CONNECT("Trouble writing data to LINK: %s\n",
-                        SAFESTRING(pn->in->name));
+                        SAFESTRING(pn->selected_connection->name));
         return r ;
     }
 
-    tcdrain(pn->in->file_descriptor);
-    gettimeofday(&(pn->in->bus_write_time), NULL);
+    tcdrain(pn->selected_connection->file_descriptor);
+    gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
 	
     if (r < (ssize_t) size) {
         LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n",(int)size,(int)r) ;
-		STAT_ADD1_BUS(BUS_write_errors, pn->in);
+		STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
 		return -EIO;
 	}
 	//printf("Link wrote <%*s>\n",(int)size,buf);
@@ -230,7 +230,7 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
     num2string( &buf[1], data ) ;
     
     if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf),2,pn) ) {
-		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
+		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
 		return -EIO;			// send just the <CR>
 	}
 
@@ -240,7 +240,7 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 	UT_delay(delay);
 
     if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(LINK_string(buf),3,pn) ) {
-        STAT_ADD1_BUS(BUS_PowerByte_errors, pn->in);
+        STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
         return -EIO;            // send just the <CR>
     }
     
@@ -258,7 +258,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 							  const struct parsedname *pn)
 {
 	size_t left = size ;
-	BYTE *buf = pn->in->combuffer;
+	BYTE *buf = pn->selected_connection->combuffer;
 
     if (size == 0)
 		return 0;
@@ -283,7 +283,7 @@ static int LINKE_preamble(const struct parsedname *pn)
 {
 	BYTE data[6];
 	struct timeval tvnetfirst = { Global.timeout_network, 0, };
-	if (tcp_read(pn->in->file_descriptor, data, 6, &tvnetfirst) != 6)
+	if (tcp_read(pn->selected_connection->file_descriptor, data, 6, &tvnetfirst) != 6)
 		return -EIO;
 	LEVEL_CONNECT("Good preamble\n");
 	return 0;

@@ -26,7 +26,7 @@ int FS_locator(struct one_wire_query * owq)
     BYTE loc[8];
 	ASCII ad[16];
 
-	if (get_busmode(pn->in) == bus_fake) {
+	if (get_busmode(pn->selected_connection) == bus_fake) {
 		if (pn->sn[7] & 0x01) {	// 50% chance of locator
 			loc[0] = 0xFE;
 			loc[7] = CRC8compute(loc, 7, 0);
@@ -45,7 +45,7 @@ int FS_r_locator(struct one_wire_query * owq)
 	ASCII ad[16];
 	size_t i;
 
-	if (get_busmode(pn->in) == bus_fake) {
+	if (get_busmode(pn->selected_connection) == bus_fake) {
 		if (pn->sn[7] & 0x01) {	// 50% chance of locator
 			loc[0] = 0xFE;
 			loc[7] = CRC8compute(loc, 7, 0);

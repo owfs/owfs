@@ -130,7 +130,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 
 static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) {
 
-	if (EtherWeather_command(pn->in, EtherWeather_COMMAND_BYTES, size, data, resp)) {
+	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_BYTES, size, data, resp)) {
 		return -EIO;
 	}
 
@@ -139,7 +139,7 @@ static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size
 
 static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) {
 
-	if (EtherWeather_command(pn->in, EtherWeather_COMMAND_BITS, size, data, resp)) {
+	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_BITS, size, data, resp)) {
 		return -EIO;
 	}
 
@@ -150,7 +150,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	BYTE sendbuf[9];
 
 	// if the last call was not the last one
-	if (!pn->in->AnyDevices)
+	if (!pn->selected_connection->AnyDevices)
 		ds->LastDevice = 1;
 	if (ds->LastDevice)
 		return -ENODEV;
@@ -163,7 +163,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	}
 	if (ds->search == 0xEC) sendbuf[8] |= 0x80;
 
-	if (EtherWeather_command(pn->in, EtherWeather_COMMAND_ACCEL, 9, sendbuf, sendbuf)) {
+	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_ACCEL, 9, sendbuf, sendbuf)) {
 		return -EIO;
 	}
 
@@ -181,7 +181,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 
 	if ((ds->sn[0] & 0x7F) == 0x04) {
 		/* We found a DS1994/DS2404 which require longer delays */
-		pn->in->ds2404_compliance = 1;
+		pn->selected_connection->ds2404_compliance = 1;
 	}
 
 	/* 0xFE indicates no discrepancies */
@@ -202,7 +202,7 @@ static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay
 	pbbuf[0] = (delay + 499) / 500;
 	pbbuf[1] = byte;
 	LEVEL_DEBUG("SPU: %d %d\n", pbbuf[0], pbbuf[1]);
-	if (EtherWeather_command(pn->in, EtherWeather_COMMAND_POWER, 2, pbbuf, pbbuf)) {
+	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_POWER, 2, pbbuf, pbbuf)) {
 		return -EIO;
 	}
 
@@ -220,8 +220,8 @@ static void EtherWeather_close(struct connection_in *in) {
 }
 
 static int EtherWeather_reset(const struct parsedname *pn) {
-	if (EtherWeather_command(pn->in, EtherWeather_COMMAND_RESET, 0, NULL, NULL)) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->in);
+	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_RESET, 0, NULL, NULL)) {
+		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		return -EIO;
 	}
 
@@ -251,7 +251,7 @@ int EtherWeather_detect(struct connection_in *in) {
 	struct parsedname pn;
 
 	FS_ParsedName(NULL, &pn); // minimal parsename -- no destroy needed
-	pn.in = in;
+	pn.selected_connection = in;
 
 	LEVEL_CONNECT("Connecting to EtherWeather\n");
 
@@ -272,7 +272,7 @@ int EtherWeather_detect(struct connection_in *in) {
 
 	if (ClientAddr(in->name, in))
 		return -1;
-	if ((pn.in->file_descriptor = ClientConnect(in)) < 0)
+	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0)
 		return -EIO;
 
 

@@ -188,17 +188,8 @@ $Id$
 #endif /* EPROTO */
 
 
-/* Floating point */
-/* I hate to do this, making everything a double */
-/* The compiler complains mercilessly, however */
-/* 1-wire really is low precision -- float is more than enough */
-/* FLOAT and DATE collides with cygwin windows include-files. */
-typedef double _FLOAT;
-typedef time_t _DATE;
-typedef unsigned char BYTE;
-typedef char ASCII;
-typedef unsigned int UINT;
-typedef int INT;
+/* Define our understanding of integers, floats, ... */
+#include "ow_localtypes.h"
 
 /* Include sone byte conversion convenience routines */
 #include "ow_integer.h"
@@ -235,75 +226,6 @@ int owopt_packed(const char *params);
 
 /* --------------------------------------------------------- */
 /* Filetypes -- directory entries for each 1-wire chip found */
-/*
-Filetype is the most elaborate of the internal structures, though
-simple in concept.
-
-Actually a little misnamed. Each filetype corresponds to a device
-property, and to a file in the file system (though there are Filetype
-entries for some directory elements too)
-
-Filetypes belong to a particular device. (i.e. each device has it's list
-of filetypes) and have a name and pointers to processing functions. Filetypes
-also have a data format (integer, ascii,...) and a data length, and an indication
-of whether the property is static, changes only on command, or is volatile.
-
-Some properties occur are arrays (pages of memory, logs of temperature
-values). The "aggregate" structure holds to allowable size, and the method
-of access. -- Aggregate properties are either accessed all at once, then
-split, or accessed individually. The choice depends on the device hardware.
-There is even a further wrinkle: mixed. In cases where the handling can be either,
-mixed causes separate handling of individual items are querried, and combined
-if ALL are requested. This is useful for the DS2450 quad A/D where volt and PIO functions
-step on each other, but the conversion time for individual is rather costly.
- */
-
-enum ag_index { ag_numbers, ag_letters, };
-enum ag_combined { ag_separate, ag_aggregate, ag_mixed, };
-/* aggregate defines array properties */
-struct aggregate {
-	int elements;				/* Maximum number of elements */
-	enum ag_index letters;		/* name them with letters or numbers */
-	enum ag_combined combined;	/* Combined bitmaps properties, or separately addressed */
-};
-extern struct aggregate Asystem;	/* for remote directories */
-
-	/* property format, controls web display */
-/* Some explanation of ft_format:
-     Each file type is either a device (physical 1-wire chip or virtual statistics container).
-     or a file (property).
-     The devices act as directories of properties.
-     The files are either properties of the device, or sometimes special directories themselves.
-     If properties, they can be integer, text, etc or special directory types.
-     There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
-*/
-enum ft_format {
-	ft_directory,
-	ft_subdir,
-	ft_integer,
-	ft_unsigned,
-	ft_float,
-	ft_ascii,
-	ft_vascii,					// variable length ascii -- must be read and measured.
-	ft_binary,
-	ft_yesno,
-	ft_date,
-	ft_bitfield,
-	ft_temperature,
-	ft_tempgap,
-};
-	/* property changability. Static unchanged, Stable we change, Volatile changes */
-enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile,
-	fc_Avolatile, fc_second, fc_statistic, fc_persistent, fc_directory,
-	fc_presence,
-};
-
-/* Predeclare parsedname */
-struct parsedname;
-
-/* Predeclare one_wire_query */
-struct one_wire_query;
-
 /* predeclare connection_in/out */
 struct connection_in;
 struct connection_out;
@@ -318,145 +240,16 @@ extern int count_inbound_connections;
 #define OW_FULLNAME_MAX  (OW_NAME_MAX+OW_EXT_MAX)
 #define OW_DEFAULT_LENGTH (128)
 
-#define PROPERTY_LENGTH_INTEGER   12
-#define PROPERTY_LENGTH_UNSIGNED  12
-#define PROPERTY_LENGTH_BITFIELD  12
-#define PROPERTY_LENGTH_FLOAT     12
-#define PROPERTY_LENGTH_TEMP      12
-#define PROPERTY_LENGTH_TEMPGAP   12
-#define PROPERTY_LENGTH_DATE      24
-#define PROPERTY_LENGTH_YESNO      1
-#define PROPERTY_LENGTH_STRUCTURE 30
-#define PROPERTY_LENGTH_DIRECTORY  8
-#define PROPERTY_LENGTH_SUBDIR     0
-
-#define NO_READ_FUNCTION NULL
-#define NO_WRITE_FUNCTION NULL
-/* filetype gives -file types- for chip properties */
-struct filetype {
-	char *name;
-	int suglen;					// length of field
-	struct aggregate *ag;		// struct pointer for aggregate
-	enum ft_format format;		// type of data
-	enum fc_change change;		// volatility
-	int (*read)  ( struct one_wire_query * ) ; // read callback function
-	int (*write) ( struct one_wire_query * ) ; // write callback function
-	union {
-		void *v;
-		int i;
-		UINT u;
-		_FLOAT f;
-		size_t s;
-		BYTE c;
-	} data;						// extra data pointer (used for separating similar but differently name functions)
-};
-
-/* --------- end Filetype -------------------- */
+#include "ow_filetype.h"
 /* ------------------------------------------- */
 
 /* -------------------------------- */
 /* Devices -- types of 1-wire chips */
-/*
-device structure corresponds to 1-wire device
-also to virtual devices, like statistical groupings
-and interfaces (LINK, DS2408, ... )
+/*                                  */
+#include "ow_device.h"
 
-devices have a list or properties that appear as
-files under the device directory, they correspond
-to device features (memory, name, temperature) and
-bound the allowable files in a device directory
-*/
-
-/* Device tree for matching names */
-/* Bianry tree implementation */
-/* A separate root for each device type: real, statistics, settings, system, structure */
-extern void *Tree[6];
-
-	/* supports RESUME command */
-#define DEV_resume  0x0001
-	/* can trigger an alarm */
-#define DEV_alarm   0x0002
-	/* support OVERDRIVE */
-#define DEV_ovdr    0x0004
-	/* responds to simultaneous temperature convert 0x44 */
-#define DEV_temp    0x8000
-	/* responds to simultaneous voltage convert 0x3C */
-#define DEV_volt    0x4000
-	/* supports CHAIN command */
-#define DEV_chain   0x2000
-
-
-struct device {
-	const char *family_code;
-	char * readable_name;
-	uint32_t flags;
-	int count_of_filetypes;
-	struct filetype * filetype_array;
-};
-
-#define DeviceHeader( chip )    extern struct device d_##chip
-
-/* Entries for struct device */
-/* Cannot set the 3rd element (number of filetypes) at compile time because
-   filetype arrays aren;t defined at this point */
-#define COUNT_OF_FILETYPES(filetype_array) ((int)(sizeof(filetype_array)/sizeof(struct filetype)))
-#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  COUNT_OF_FILETYPES(chip), chip }
-#define DeviceEntry( code , chip )  DeviceEntryExtended( code, chip, 0 )
-
-/* Bad bad C library */
-/* implementation of tfind, tsearch returns an opaque structure */
-/* you have to know that the first element is a pointer to your data */
-struct device_opaque {
-	struct device *key;
-	void *other;
-};
-
-/* Must be sorted for bsearch */
-//extern struct device * Devices[] ;
-//extern size_t nDevices ;
-extern struct device NoDevice;
-extern struct device *DeviceSimultaneous;
-extern struct device *DeviceThermostat;
-
-/* ---- end device --------------------- */
-/* ------------------------------------- */
-
-
-/* ------------------------}
-struct devlock {
-    BYTE sn[8] ;
-    pthread_mutex_t lock ;
-    int users ;
-} ;
-extern struct devlock DevLock[] ;
--------------------- */
 /* Parsedname -- path converted into components */
-/*
-Parsed name is the primary structure interpreting a
-owfs systrem call. It is the interpretation of the owfs
-file name, or the owhttpd URL. It contains everything
-but the operation requested. The operation (read, write
-or directory is in the extended URL or the actual callback
-function requested).
-*/
-/*
-Parsed name has several components:
-sn is the serial number of the device
-dev and ft are pointers to device and filetype
-  members corresponding to the element
-buspath and pathlength interpret the route through
-  DS2409 branch controllers
-filetype and extension correspond to property
-  (filetype) details
-subdir points to in-device groupings
-*/
-
-/* Semi-global information (for remote control) */
-	/* bit0: cacheenabled  bit1: return bus-list */
-	/* presencecheck */
-	/* tempscale */
-	/* device format */
-extern int32_t SemiGlobal;
+#include "ow_parsedname.h"
 
 /* Unique token for owserver loop checks */
 union antiloop {
@@ -473,54 +266,7 @@ union antiloop {
 
 extern int shutdown_in_progress;
 
-struct buspath {
-	BYTE sn[8];
-	BYTE branch;
-};
-
-struct devlock {
-	BYTE sn[8];
-	UINT users;
-	pthread_mutex_t lock;
-};
-
-#define EXTENSION_BYTE	-2
-#define EXTENSION_ALL	-1
-#define EXTENSION_ALL_SEPARATE	-1
-#define EXTENSION_ALL_MIXED		-1
-#define EXTENSION_ALL_AGGREGATE	-1
-
-enum pn_type { pn_real =
-		0, pn_statistics, pn_system, pn_settings, pn_structure
-};
-enum pn_state { pn_normal = 0, pn_uncached = 1, pn_alarm = 2, pn_text =
-		4, pn_bus = 8, pn_buspath = 16,
-};
-struct parsedname {
-	char *path;					// text-more device name
-	char *path_busless;			// pointer to path without first bus
-	int bus_nr;
-	enum pn_type type;			// global branch
-	enum pn_state state;		// global branch
-	BYTE sn[8];					// 64-bit serial number
-	struct device *selected_device;			// 1-wire device
-	struct filetype *selected_filetype;		// device property
-	int extension;				// numerical extension (for array values) or -1
-	struct filetype *subdir;	// in-device grouping
-	UINT pathlength;			// DS2409 branching depth
-	struct buspath *bp;			// DS2409 branching route
-	struct connection_in *head_inbound_list;	// Global head_inbound_list at definition time
-	struct connection_in *in;
-	uint32_t sg;				// more state info, packed for network transmission
-	struct devlock **lock;		// need to clear dev lock?
-	int tokens;					/* for anti-loop work */
-	BYTE *tokenstring;			/* List of tokens from owservers passed */
-};
-
 enum simul_type { simul_temp, simul_volt, };
-
-/* ---- end Parsedname ----------------- */
-/* ------------------------------------- */
 
 #include "ow_onewirequery.h"
 
@@ -596,53 +342,5 @@ extern time_t dir_time;			/* time of last directory scan */
 /* Prototypes */
 /* Separated out to ow_functions.h for clarity */
 #include "ow_functions.h"
-
-#define CACHE_MASK     ( (UINT) 0x00000001 )
-#define CACHE_BIT      0
-#define BUSRET_MASK    ( (UINT) 0x00000002 )
-#define BUSRET_BIT     1
-#define PERSISTENT_MASK    ( (UINT) 0x00000004 )
-#define PERSISTENT_BIT     2
-#define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
-#define TEMPSCALE_BIT  16
-#define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
-#define DEVFORMAT_BIT  24
-#define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg &  CACHE_MASK) )
-#define IsPersistent(ppn)         ( ((ppn)->sg & PERSISTENT_MASK) )
-#define SetPersistent(ppn,b)      UT_Setbit(((ppn)->sg),PERSISTENT_BIT,(b))
-#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
-#define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
-
-#define IsDir( pn )    ( ((pn)->selected_device)==NULL \
-                      || ((pn)->selected_filetype)==NULL  \
-                      || ((pn)->selected_filetype)->format==ft_subdir \
-                      || ((pn)->selected_filetype)->format==ft_directory )
-#define NotUncachedDir(pn)    ( (((pn)->state)&pn_uncached) == 0 )
-#define  IsUncachedDir(pn)    ( ! NotUncachedDir(pn) )
-#define    NotAlarmDir(pn)    ( (((pn)->state)&pn_alarm) == 0 )
-#define     IsAlarmDir(pn)    ( ! NotAlarmDir(pn) )
-#define     NotRealDir(pn)    ( ((pn)->type) != pn_real )
-#define      IsRealDir(pn)    ( ((pn)->type) == pn_real )
-
-#define KnownBus(pn)          ((((pn)->state) & pn_bus) != 0 )
-#define SetKnownBus(bus_number,pn)  do { (pn)->state |= pn_bus; \
-                                        (pn)->bus_nr=(bus_number); \
-                                        (pn)->in=find_connection_in(bus_number); \
-                                    } while(0)
-#define UnsetKnownBus(pn)           do { (pn)->state &= ~pn_bus; \
-                                        (pn)->bus_nr=-1; \
-                                        (pn)->in=NULL; \
-                                    } while(0)
-
-#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
-#define SpecifiedBus(pn)          ((((pn)->state) & pn_buspath) != 0 )
-#define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= pn_buspath ; SetKnownBus(bus_number,pn); } while(0)
-
-#define RootNotBranch(pn)         (((pn)->pathlength)==0)
-#define BYTE_MASK(x)        ((x)&0xFF)
-#define BYTE_INVERSE(x)     BYTE_MASK((x)^0xFF)
-#define LOW_HIGH_ADDRESS(x)         BYTE_MASK(x),BYTE_MASK((x)>>8)
 
 #endif							/* OW_H */

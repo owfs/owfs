@@ -118,7 +118,7 @@ static int CheckPresence_low(struct connection_in *in,
 							  (void *) (&cps));
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	pn2.in = in;
+	pn2.selected_connection = in;
 
 	//printf("CheckPresence_low:\n");
 	if (TestConnection(&pn2)) {	// reconnect successful?
@@ -131,7 +131,7 @@ static int CheckPresence_low(struct connection_in *in,
 		} else {
 			ret = -1;
 		}
-		//printf("CheckPresence_low: ServerPresence(%s) pn->in->index=%d ret=%d\n", pn->path, pn->in->index, ret);
+		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
 	} else if (get_busmode(in) == bus_fake) {
         ret = (DirblobSearch( pn2.sn, &(in->connin.fake.db) ) < 0) ? -1 : in->index;
 	} else if (get_busmode(in) == bus_tester) {
@@ -168,7 +168,7 @@ static int CheckPresence_low(struct connection_in *in,
 	struct parsedname pn2;
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	pn2.in = in;
+	pn2.selected_connection = in;
 	
     if (TestConnection(&pn2)) {	// reconnect successful?
 		return -ECONNABORTED;
@@ -214,9 +214,9 @@ int FS_present(struct one_wire_query * owq)
 	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous
 		|| pn->selected_device == DeviceThermostat) {
         OWQ_Y(owq) = 1;
-	} else if (get_busmode(pn->in) == bus_fake) {
+	} else if (get_busmode(pn->selected_connection) == bus_fake) {
         OWQ_Y(owq) = 1;
-	} else if (get_busmode(pn->in) == bus_tester) {
+	} else if (get_busmode(pn->selected_connection) == bus_tester) {
         OWQ_Y(owq) = 1;
 	} else {
 		struct transaction_log t[] = {
