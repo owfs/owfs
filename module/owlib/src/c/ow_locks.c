@@ -92,8 +92,8 @@ int LockGet(const struct parsedname *pn)
 	/* pn->selected_connection is null when "cat /tmp/1wire/system/adapter/pulldownslewrate.0"
 	 * and you have owfs -s & owserver -u started. */
 	if(pn->selected_connection == NULL) {
-	  if((pn->type == pn_settings) ||
-	     (pn->type == pn_system)) {
+	  if((pn->type == ePN_settings) ||
+	     (pn->type == ePN_system)) {
 	    /* Probably trying to read/write some adapter settings which
 	     * is not available for remote connections... only local adapters. */
 	    return -ENOTSUP;

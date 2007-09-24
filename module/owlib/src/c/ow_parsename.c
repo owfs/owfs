@@ -118,8 +118,8 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		return 0;
 
 	/* Default attributes */
-	pn->state = pn_normal;
-	pn->type = pn_real;
+	pn->state = ePS_normal;
+	pn->type = ePN_real;
 
 	/* make a copy for destructive parsing */
 	pathcpy = strdup(path);
@@ -221,21 +221,21 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 										 struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "alarm") == 0) {
-		pn->state |= pn_alarm;
+		pn->state |= ePS_alarm;
 		return parse_real;
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_first, pathnow, back_from_remote, pn);
 	} else if (strcasecmp(pathnow, "settings") == 0) {
-		pn->type = pn_settings;
+		pn->type = ePN_settings;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
-		pn->type = pn_statistics;
+		pn->type = ePN_statistics;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "structure") == 0) {
-		pn->type = pn_structure;
+		pn->type = ePN_structure;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "system") == 0) {
 		if (SpecifiedBus(pn)) {	/* already specified a "bus." */
@@ -243,16 +243,16 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 			if (!BusIsServer(pn->selected_connection))
 				return parse_error;
 		}
-		pn->type = pn_system;
+		pn->type = ePN_system;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "text") == 0) {
-		pn->state |= pn_text;
+		pn->state |= ePS_text;
 		return parse_first;
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
 		pn->selected_device = DeviceThermostat;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
-		pn->state |= pn_uncached;
+		pn->state |= ePS_uncached;
 		return parse_first;
 	} else {
 		return Parse_RealDevice(pathnow, back_from_remote, pn);
@@ -263,7 +263,7 @@ static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 								  struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "alarm") == 0) {
-		pn->state |= pn_alarm;
+		pn->state |= ePS_alarm;
 		return parse_real;
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_nonreal, pathnow, back_from_remote, pn);
@@ -271,13 +271,13 @@ static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "text") == 0) {
-		pn->state |= pn_text;
+		pn->state |= ePS_text;
 		return parse_real;
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
 		pn->selected_device = DeviceThermostat;
 		return parse_prop;
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
-		pn->state |= pn_uncached;
+		pn->state |= ePS_uncached;
 		return parse_real;
 	} else {
 		return Parse_RealDevice(pathnow, back_from_remote, pn);
@@ -290,10 +290,10 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 	if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_nonreal, pathnow, 0, pn);
 	} else if (strcasecmp(pathnow, "text") == 0) {
-		pn->state |= pn_text;
+		pn->state |= ePS_text;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
-		pn->state |= pn_uncached;
+		pn->state |= ePS_uncached;
 		return parse_nonreal;
 	} else {
 		return Parse_NonRealDevice(pathnow, pn);

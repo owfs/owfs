@@ -139,11 +139,11 @@ static int OW_r_memory(BYTE * data,  size_t size,  off_t offset,
 static int OW_w_memory( BYTE * data,  size_t size,
 					    off_t offset,  struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
-static int OW_w_screen(BYTE loc, const char *text, int size, const struct parsedname *pn);
+static int OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn);
 static int LCD_byte(BYTE byte, int delay, const struct parsedname *pn);
 static int LCD_2byte(BYTE * byte, int delay, const struct parsedname *pn);
 static int OW_simple_command( BYTE lcd_command_code, const struct parsedname * pn ) ;
-static int OW_w_unpaged_to_screen( BYTE start, BYTE length, const char * text, const struct parsedname * pn ) ;
+static int OW_w_unpaged_to_screen( BYTE lcd_location, BYTE length, const char * text, const struct parsedname * pn ) ;
 
 /* Internal files */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
@@ -265,7 +265,7 @@ static int FS_w_lineX(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
     int width = pn->selected_filetype->data.i;
-	BYTE loc[] = { 0x00, 0x40, 0x00 + width, 0x40 + width };
+	BYTE lcd_line_start[] = { 0x00, 0x40, 0x00 + width, 0x40 + width };
 	char line[width];
     size_t size = OWQ_size(owq) ;
     int start = OWQ_offset(owq) ;
@@ -278,7 +278,7 @@ static int FS_w_lineX(struct one_wire_query * owq)
     }
     memset(line,' ', width);
     memcpy(&line[start], OWQ_buffer(owq), size);
-    if (OW_w_screen(loc[pn->extension], line, width, pn)) {
+    if (OW_w_screen(lcd_line_start[pn->extension], line, width, pn)) {
 		return -EINVAL;
     }
 	return 0;
@@ -483,7 +483,7 @@ static int OW_r_version(BYTE * data, const struct parsedname *pn)
 	return LCD_byte(_LCD_COMMAND_VERSION_READ_TO_SCRATCH, 1, pn) || OW_r_scratch(data, _LCD_PAGE_SIZE, pn);
 }
 
-static int OW_w_screen(BYTE loc, const char *text, int size,
+static int OW_w_screen(BYTE lcd_location, const char *text, int size,
 					   const struct parsedname *pn)
 {
 	int chars_left_to_print = size ;
@@ -495,7 +495,7 @@ static int OW_w_screen(BYTE loc, const char *text, int size,
 			chars_printing_now = _LCD_PAGE_SIZE;
         }
         current_index_in_buffer = size - chars_left_to_print ;
-        if ( OW_w_unpaged_to_screen( loc+current_index_in_buffer, chars_printing_now, &text[current_index_in_buffer], pn ) ) {
+        if ( OW_w_unpaged_to_screen( lcd_location+current_index_in_buffer, chars_printing_now, &text[current_index_in_buffer], pn ) ) {
             return 1 ;
         }
         chars_left_to_print -= chars_printing_now ;
@@ -503,9 +503,9 @@ static int OW_w_screen(BYTE loc, const char *text, int size,
 	return 0;
 }
 
-static int OW_w_unpaged_to_screen( BYTE start, BYTE length, const char * text, const struct parsedname * pn )
+static int OW_w_unpaged_to_screen( BYTE lcd_location, BYTE length, const char * text, const struct parsedname * pn )
 {
-    BYTE location_and_string[1 + _LCD_PAGE_SIZE] = { start, } ;
+    BYTE location_and_string[1 + _LCD_PAGE_SIZE] = { lcd_location, } ;
     memcpy( &location_and_string[1], text, length ) ;
     if ( OW_w_scratch( location_and_string, 1 + length, pn ) ) {
         return 1 ;

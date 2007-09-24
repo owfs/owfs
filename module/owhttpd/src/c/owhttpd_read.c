@@ -46,7 +46,7 @@ static void Show(FILE * out, const char *path, const char *file)
         enum ft_format format = pn->selected_filetype->format;
 		int len = 0;			// initialize to avoid compiler warning
 
-        if (pn->type == pn_structure) {
+        if (IsStructureDir(pn)) {
 			format = ft_ascii;
 			canread = 1;
 			canwrite = 0;
@@ -173,7 +173,7 @@ static void ShowText(FILE * out, const char *path, const char *file)
         enum ft_format format = pn->selected_filetype->format;
 		int len = 0;			// initialize to avoid compiler warning
 
-        if (pn->type == pn_structure) {
+        if (IsStructureDir(pn)) {
 			format = ft_ascii;
 			canread = 1;
 			canwrite = 0;
@@ -282,7 +282,7 @@ void ShowDevice(FILE * out, const struct parsedname *const pn)
 	struct showdevicestruct sds = { NULL, out };
 	char *slash;
 	int b;
-	if (pn->state & pn_text) {
+	if (pn->state & ePS_text) {
 		ShowDeviceText(out, pn);
 		return;
 	}

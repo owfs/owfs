@@ -15,7 +15,7 @@ $Id$
 
 size_t FileLength( const struct parsedname * pn )
 {
-    if (pn->type == pn_structure)
+    if (pn->type == ePN_structure)
         return PROPERTY_LENGTH_STRUCTURE;              /* longest seem to be /1wire/structure/0F/memory.ALL (28 bytes) so far... */
 
     /* directory ? */
@@ -49,7 +49,7 @@ size_t FileLength( const struct parsedname * pn )
 size_t FullFileLength( const struct parsedname * pn )
 {
 	size_t entry_length = FileLength(pn) ;
-    if (pn->type == pn_structure) {
+    if (pn->type == ePN_structure) {
         return entry_length ;
     } else if (pn->extension != EXTENSION_ALL ) {
         return entry_length ;

@@ -251,7 +251,7 @@ static const ASCII *namefind(const char *name)
 
 	global_namefind_struct.readable_name = name;
 	global_namefind_struct.ret = NULL;
-	twalk(Tree[pn_real], Namefindaction);
+	twalk(Tree[ePN_real], Namefindaction);
 	ret = global_namefind_struct.ret;
 
     NAMEFINDMUTEXUNLOCK ;

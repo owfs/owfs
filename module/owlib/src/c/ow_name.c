@@ -18,7 +18,7 @@ void FS_devicename(char *buffer, const size_t length, const BYTE * sn,
 				   const struct parsedname *pn)
 {
 	UCLIBCLOCK;
-//printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
+	//printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
 	switch (DeviceFormat(pn)) {
 	case fdi:
 		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X", sn[0],
@@ -58,11 +58,11 @@ int FS_dirname_state(char *buffer, const size_t length,
 {
 	const char *p;
 	size_t len;
-//printf("dirname state on %.2X\n", pn->state);
+	//printf("dirname state on %.2X\n", pn->state);
 	if (IsAlarmDir(pn)) {
 		p = dirname_state_alarm;
 #if 0
-	} else if (pn->state & pn_text) {
+	} else if (pn->state & ePS_text) {
 		/* should never return text in a directory listing, since it's a
 		 * hidden feature. Uncached should perhaps be the same... */
 		strncpy(buffer, dirname_state_text, length);
@@ -79,7 +79,7 @@ int FS_dirname_state(char *buffer, const size_t length,
 	} else {
 		return 0;
 	}
-//printf("FS_dirname_state: unknown state %.2X on %s\n", pn->state, pn->path);
+	//printf("FS_dirname_state: unknown state %.2X on %s\n", pn->state, pn->path);
 	strncpy(buffer, p, length);
 	len = strlen(p);
 	if (len < length)
@@ -99,16 +99,16 @@ int FS_dirname_type(char *buffer, const size_t length,
 	const char *p;
 	size_t len;
 	switch (pn->type) {
-	case pn_statistics:
+	case ePN_statistics:
 		p = dirname_type_statistics;
 		break;
-	case pn_system:
+	case ePN_system:
 		p = dirname_type_system;
 		break;
-	case pn_settings:
+	case ePN_settings:
 		p = dirname_type_settings;
 		break;
-	case pn_structure:
+	case ePN_structure:
 		p = dirname_type_structure;
 		break;
 	default:

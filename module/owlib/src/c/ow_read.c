@@ -172,7 +172,7 @@ int FS_read_distribute(struct one_wire_query * owq)
 	STATUNLOCK;
 
 	switch (OWQ_pn(owq).type) {
-        case pn_structure:
+        case ePN_structure:
 		/* Get structure data from local memory */
 		//printf("FS_read_distribute: pid=%ld call fs_structure\n", pthread_self());
 		r = FS_structure(owq);
@@ -210,16 +210,16 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 	Debug_OWQ(owq) ;
 	
 	if (!KnownBus(pn)) {
-		if(pn->type == pn_settings) {
+		if(pn->type == ePN_settings) {
 			/* I think we have to do something here... */
-			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=pn_settings!\n");
-		} else if(pn->type == pn_system) {
+			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=ePN_settings!\n");
+		} else if(pn->type == ePN_system) {
 			/* I think we have to do something here... 
 			 * reading /system/adapter/name.0 works
 			 * reading /bus.0/system/adapter/name.0 works
 			 * writing /bus.0/system/adapter/overdrive.0 crash owfs
 			 */
-			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=pn_system!\n");
+			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=ePN_system!\n");
 		} else {
 			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set! type=%d\n", pn->type);
 		}
@@ -370,7 +370,7 @@ static int FS_structure(struct one_wire_query * owq)
     int print_status ;
     OWQ_allocate_struct_and_pointer( owq_copy ) ;
     OWQ_create_shallow_single( owq_copy, owq ); /* shallow copy */
-    OWQ_pn(owq_copy).type = pn_real;            /* "real" type to get return length, rather than "structure" length */
+    OWQ_pn(owq_copy).type = ePN_real;            /* "real" type to get return length, rather than "structure" length */
 
     UCLIBCLOCK;
     output_length = snprintf(output_string,

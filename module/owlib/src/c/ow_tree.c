@@ -16,7 +16,7 @@ $Id$
 
 static int device_compare(const void *a, const void *b);
 static int file_compare(const void *a, const void *b);
-static void Device2Tree(const struct device *d, enum pn_type type);
+static void Device2Tree(const struct device *d, enum ePN_type type);
 
 struct device *DeviceSimultaneous;
 struct device *DeviceThermostat;
@@ -40,7 +40,7 @@ void *Tree[] = { NULL, NULL, NULL, NULL, NULL, };
 /*  In order for DeviceDestroy to work on FreeBSD we must copy the keys.
     Otherwise, tdestroy will attempt to free implicitly allocated structures.
 */
-static void Device2Tree(const struct device *d, enum pn_type type)
+static void Device2Tree(const struct device *d, enum ePN_type type)
 {
 #ifdef __FreeBSD__
 	struct device *d_copy;
@@ -84,8 +84,8 @@ void DeviceDestroy(void)
 	UINT i;
 	for (i = 0; i < (sizeof(Tree) / sizeof(void *)); i++) {
 		if (Tree[i]) {
-			/* pn_structure is just a duplicate of pn_real */
-			if (i != pn_structure)
+			/* ePN_structure is just a duplicate of ePN_real */
+			if (i != ePN_structure)
 				tdestroy(Tree[i], free_node);
 			Tree[i] = NULL;
 		}
@@ -98,91 +98,91 @@ void DeviceSort(void)
 	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype),
 		  file_compare);
 
-	Device2Tree(&d_DS1420, pn_real);
-	Device2Tree(&d_DS1425, pn_real);
-	Device2Tree(&d_DS18S20, pn_real);
-	Device2Tree(&d_DS18B20, pn_real);
-	Device2Tree(&d_DS1821, pn_real);
-	Device2Tree(&d_DS1822, pn_real);
-	Device2Tree(&d_DS1825, pn_real);
-	Device2Tree(&d_DS1921, pn_real);
-	Device2Tree(&d_DS1923, pn_real);
-	Device2Tree(&d_DS1977, pn_real);
-	Device2Tree(&d_DS1963S, pn_real);
-	Device2Tree(&d_DS1963L, pn_real);
-	Device2Tree(&d_DS1982U, pn_real);
-	Device2Tree(&d_DS1985U, pn_real);
-	Device2Tree(&d_DS1986U, pn_real);
-	Device2Tree(&d_DS1991, pn_real);
-	Device2Tree(&d_DS1992, pn_real);
-	Device2Tree(&d_DS1993, pn_real);
-	Device2Tree(&d_DS1995, pn_real);
-	Device2Tree(&d_DS1996, pn_real);
-	Device2Tree(&d_DS2401, pn_real);
-	Device2Tree(&d_DS2404, pn_real);
-	Device2Tree(&d_DS2404S, pn_real);
-	Device2Tree(&d_DS2405, pn_real);
-	Device2Tree(&d_DS2406, pn_real);
-	Device2Tree(&d_DS2408, pn_real);
-	Device2Tree(&d_DS2409, pn_real);
-	Device2Tree(&d_DS2413, pn_real);
-	Device2Tree(&d_DS2415, pn_real);
-	Device2Tree(&d_DS2417, pn_real);
-	Device2Tree(&d_DS2423, pn_real);
-	Device2Tree(&d_DS2430A, pn_real);
-	Device2Tree(&d_DS2431, pn_real);
-	Device2Tree(&d_DS2433, pn_real);
-	Device2Tree(&d_DS2436, pn_real);
-	Device2Tree(&d_DS2437, pn_real);
-	Device2Tree(&d_DS2438, pn_real);
-	Device2Tree(&d_DS2450, pn_real);
-	Device2Tree(&d_DS2502, pn_real);
-	Device2Tree(&d_DS2505, pn_real);
-	Device2Tree(&d_DS2506, pn_real);
-	Device2Tree(&d_DS2720, pn_real);
-	Device2Tree(&d_DS2740, pn_real);
-	Device2Tree(&d_DS2751, pn_real);
-	Device2Tree(&d_DS2755, pn_real);
-	Device2Tree(&d_DS2760, pn_real);
-	Device2Tree(&d_DS2770, pn_real);
-	Device2Tree(&d_DS2780, pn_real);
-	Device2Tree(&d_DS2781, pn_real);
-	Device2Tree(&d_DS2890, pn_real);
-	Device2Tree(&d_DS28EA00, pn_real);
-	Device2Tree(&d_DS28EC20, pn_real);
-	Device2Tree(&d_DS28E04, pn_real);
-	Device2Tree(&d_LCD, pn_real);
-	Device2Tree(&d_stats_bus, pn_statistics);
-	Device2Tree(&d_stats_cache, pn_statistics);
-	Device2Tree(&d_stats_directory, pn_statistics);
-	Device2Tree(&d_stats_errors, pn_statistics);
-	Device2Tree(&d_stats_read, pn_statistics);
-	Device2Tree(&d_stats_thread, pn_statistics);
-	Device2Tree(&d_stats_write, pn_statistics);
-	Device2Tree(&d_set_cache, pn_settings);
-	Device2Tree(&d_set_units, pn_settings);
-	Device2Tree(&d_sys_adapter, pn_system);
-	Device2Tree(&d_sys_process, pn_system);
-	Device2Tree(&d_sys_connections, pn_system);
-	Device2Tree(&d_sys_configure, pn_system);
-	Device2Tree(&d_simultaneous, pn_real);
+	Device2Tree(&d_DS1420, ePN_real);
+	Device2Tree(&d_DS1425, ePN_real);
+	Device2Tree(&d_DS18S20, ePN_real);
+	Device2Tree(&d_DS18B20, ePN_real);
+	Device2Tree(&d_DS1821, ePN_real);
+	Device2Tree(&d_DS1822, ePN_real);
+	Device2Tree(&d_DS1825, ePN_real);
+	Device2Tree(&d_DS1921, ePN_real);
+	Device2Tree(&d_DS1923, ePN_real);
+	Device2Tree(&d_DS1977, ePN_real);
+	Device2Tree(&d_DS1963S, ePN_real);
+	Device2Tree(&d_DS1963L, ePN_real);
+	Device2Tree(&d_DS1982U, ePN_real);
+	Device2Tree(&d_DS1985U, ePN_real);
+	Device2Tree(&d_DS1986U, ePN_real);
+	Device2Tree(&d_DS1991, ePN_real);
+	Device2Tree(&d_DS1992, ePN_real);
+	Device2Tree(&d_DS1993, ePN_real);
+	Device2Tree(&d_DS1995, ePN_real);
+	Device2Tree(&d_DS1996, ePN_real);
+	Device2Tree(&d_DS2401, ePN_real);
+	Device2Tree(&d_DS2404, ePN_real);
+	Device2Tree(&d_DS2404S, ePN_real);
+	Device2Tree(&d_DS2405, ePN_real);
+	Device2Tree(&d_DS2406, ePN_real);
+	Device2Tree(&d_DS2408, ePN_real);
+	Device2Tree(&d_DS2409, ePN_real);
+	Device2Tree(&d_DS2413, ePN_real);
+	Device2Tree(&d_DS2415, ePN_real);
+	Device2Tree(&d_DS2417, ePN_real);
+	Device2Tree(&d_DS2423, ePN_real);
+	Device2Tree(&d_DS2430A, ePN_real);
+	Device2Tree(&d_DS2431, ePN_real);
+	Device2Tree(&d_DS2433, ePN_real);
+	Device2Tree(&d_DS2436, ePN_real);
+	Device2Tree(&d_DS2437, ePN_real);
+	Device2Tree(&d_DS2438, ePN_real);
+	Device2Tree(&d_DS2450, ePN_real);
+	Device2Tree(&d_DS2502, ePN_real);
+	Device2Tree(&d_DS2505, ePN_real);
+	Device2Tree(&d_DS2506, ePN_real);
+	Device2Tree(&d_DS2720, ePN_real);
+	Device2Tree(&d_DS2740, ePN_real);
+	Device2Tree(&d_DS2751, ePN_real);
+	Device2Tree(&d_DS2755, ePN_real);
+	Device2Tree(&d_DS2760, ePN_real);
+	Device2Tree(&d_DS2770, ePN_real);
+	Device2Tree(&d_DS2780, ePN_real);
+	Device2Tree(&d_DS2781, ePN_real);
+	Device2Tree(&d_DS2890, ePN_real);
+	Device2Tree(&d_DS28EA00, ePN_real);
+	Device2Tree(&d_DS28EC20, ePN_real);
+	Device2Tree(&d_DS28E04, ePN_real);
+	Device2Tree(&d_LCD, ePN_real);
+	Device2Tree(&d_stats_bus, ePN_statistics);
+	Device2Tree(&d_stats_cache, ePN_statistics);
+	Device2Tree(&d_stats_directory, ePN_statistics);
+	Device2Tree(&d_stats_errors, ePN_statistics);
+	Device2Tree(&d_stats_read, ePN_statistics);
+	Device2Tree(&d_stats_thread, ePN_statistics);
+	Device2Tree(&d_stats_write, ePN_statistics);
+	Device2Tree(&d_set_cache, ePN_settings);
+	Device2Tree(&d_set_units, ePN_settings);
+	Device2Tree(&d_sys_adapter, ePN_system);
+	Device2Tree(&d_sys_process, ePN_system);
+	Device2Tree(&d_sys_connections, ePN_system);
+	Device2Tree(&d_sys_configure, ePN_system);
+	Device2Tree(&d_simultaneous, ePN_real);
 	/* Match simultaneous for special processing */
 	{
 		struct parsedname pn;
-		pn.type = pn_real;
+		pn.type = ePN_real;
 		FS_devicefind("simultaneous", &pn);
 		DeviceSimultaneous = pn.selected_device;
 	}
 	/* Match thermostat for special processing */
 	{
 		struct parsedname pn;
-		pn.type = pn_real;
+		pn.type = ePN_real;
 		FS_devicefind("thermostat", &pn);
 		DeviceThermostat = pn.selected_device;
 	}
 
 	/* structure uses same tree as real */
-	Tree[pn_structure] = Tree[pn_real];
+	Tree[ePN_structure] = Tree[ePN_real];
 }
 
 void FS_devicefindhex(BYTE f, struct parsedname *pn)

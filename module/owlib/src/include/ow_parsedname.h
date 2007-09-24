@@ -128,18 +128,18 @@ struct devlock {
 #define EXTENSION_ALL_MIXED		-1
 #define EXTENSION_ALL_AGGREGATE	-1
 
-enum pn_type { pn_real =
-		0, pn_statistics, pn_system, pn_settings, pn_structure
+enum ePN_type { ePN_real =
+		0, ePN_statistics, ePN_system, ePN_settings, ePN_structure
 };
-enum pn_state { pn_normal = 0, pn_uncached = 1, pn_alarm = 2, pn_text =
-		4, pn_bus = 8, pn_buspath = 16,
+enum ePS_state { ePS_normal = 0, ePS_uncached = 1, ePS_alarm = 2, ePS_text =
+		4, ePS_bus = 8, ePS_buspath = 16,
 };
 struct parsedname {
 	char *path;					// text-more device name
 	char *path_busless;			// pointer to path without first bus
 	int bus_nr;
-	enum pn_type type;			// global branch
-	enum pn_state state;		// global branch
+	enum ePN_type type;			// global branch
+	enum ePS_state state;		// global branch
 	BYTE sn[8];					// 64-bit serial number
 	struct device *selected_device;			// 1-wire device
 	struct filetype *selected_filetype;		// device property
@@ -178,26 +178,27 @@ struct parsedname {
                       || ((pn)->selected_filetype)==NULL  \
                       || ((pn)->selected_filetype)->format==ft_subdir \
                       || ((pn)->selected_filetype)->format==ft_directory )
-#define NotUncachedDir(pn)    ( (((pn)->state)&pn_uncached) == 0 )
+#define NotUncachedDir(pn)    ( (((pn)->state)&ePS_uncached) == 0 )
 #define  IsUncachedDir(pn)    ( ! NotUncachedDir(pn) )
-#define    NotAlarmDir(pn)    ( (((pn)->state)&pn_alarm) == 0 )
+#define IsStructureDir(pn)    ( ((pn)->type) == ePN_structure )
+#define    NotAlarmDir(pn)    ( (((pn)->state)&ePS_alarm) == 0 )
 #define     IsAlarmDir(pn)    ( ! NotAlarmDir(pn) )
-#define     NotRealDir(pn)    ( ((pn)->type) != pn_real )
-#define      IsRealDir(pn)    ( ((pn)->type) == pn_real )
+#define     NotRealDir(pn)    ( ((pn)->type) != ePN_real )
+#define      IsRealDir(pn)    ( ((pn)->type) == ePN_real )
 
-#define KnownBus(pn)          ((((pn)->state) & pn_bus) != 0 )
-#define SetKnownBus(bus_number,pn)  do { (pn)->state |= pn_bus; \
+#define KnownBus(pn)          ((((pn)->state) & ePS_bus) != 0 )
+#define SetKnownBus(bus_number,pn)  do { (pn)->state |= ePS_bus; \
                                         (pn)->bus_nr=(bus_number); \
                                         (pn)->selected_connection=find_connection_in(bus_number); \
                                     } while(0)
-#define UnsetKnownBus(pn)           do { (pn)->state &= ~pn_bus; \
+#define UnsetKnownBus(pn)           do { (pn)->state &= ~ePS_bus; \
                                         (pn)->bus_nr=-1; \
                                         (pn)->selected_connection=NULL; \
                                     } while(0)
 
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
-#define SpecifiedBus(pn)          ((((pn)->state) & pn_buspath) != 0 )
-#define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= pn_buspath ; SetKnownBus(bus_number,pn); } while(0)
+#define SpecifiedBus(pn)          ((((pn)->state) & ePS_buspath) != 0 )
+#define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= ePS_buspath ; SetKnownBus(bus_number,pn); } while(0)
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)
 #define BYTE_MASK(x)        ((x)&0xFF)

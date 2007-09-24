@@ -107,15 +107,15 @@ int FS_write_postparse(struct one_wire_query * owq)
 	if ( input_or_error < 0 ) return input_or_error ;
 
 	switch (pn->type) {
-	case pn_structure:
-	case pn_statistics:
+	case ePN_structure:
+	case ePN_statistics:
         write_or_error = -ENOTSUP;
 		break;
-	case pn_system:
-	case pn_settings:
+	case ePN_system:
+	case ePN_settings:
         write_or_error = FS_w_given_bus(owq);
 		break;
-	default:					// pn_real
+	default:					// ePN_real
 //printf("FS_write_postparse: pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
 
 		/* handle DeviceSimultaneous */

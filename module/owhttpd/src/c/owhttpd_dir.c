@@ -86,7 +86,7 @@ void ShowDir(FILE * out, const struct parsedname *const pn)
 	int b = Backup(pn->path);
 	struct showdirstruct sds =
 		{ strcmp(pn->path, "/") ? pn->path : "", out, };
-	if (pn->state & pn_text) {
+	if (pn->state & ePS_text) {
 		ShowDirText(out, pn);
 		return;
 	}
@@ -95,7 +95,7 @@ void ShowDir(FILE * out, const struct parsedname *const pn)
 
 	//printf("ShowDir=%s\n", pn->path) ;
 
-//    if(pn->state & pn_text) {
+//    if(pn->state & ePS_text) {
 
 	HTTPtitle(out, "Directory");
 
