@@ -238,11 +238,13 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 		pn->type = ePN_structure;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "system") == 0) {
+#if 0
 		if (SpecifiedBus(pn)) {	/* already specified a "bus." */
 			/* structure only for root (remote tested remotely) */
 			if (!BusIsServer(pn->selected_connection))
 				return parse_error;
 		}
+#endif
 		pn->type = ePN_system;
 		return parse_nonreal;
 	} else if (strcasecmp(pathnow, "text") == 0) {

@@ -194,6 +194,8 @@ static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *),
     dirfunc(v, pn_s_directory);
     pn_s_directory->type = ePN_statistics;
     dirfunc(v, pn_s_directory);
+    pn_s_directory->type = ePN_structure;
+    dirfunc(v, pn_s_directory);
 }
 
 /* status settings sustem */

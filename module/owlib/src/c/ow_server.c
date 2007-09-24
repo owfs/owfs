@@ -225,7 +225,7 @@ int ServerWrite(struct one_wire_query * owq )
 			   SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
-	if (connectfd > -1) {
+	if (connectfd > FD_CURRENT_BAD) {
 		sm.sg = SetupSemi(persistent, pn_file_entry);
 		if ((connectfd =
 			 ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection)) < 0) {
@@ -374,6 +374,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
+	ASCII * comma_separated_list ;
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp =
@@ -386,92 +387,101 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
 
-	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn_whole_directory->selected_connection->index,
+	LEVEL_CALL("SERVER(%d)DIRALL path=%s\n", pn_whole_directory->selected_connection->index,
 			   SAFESTRING(pn_whole_directory->path_busless));
 
+	// Get a file descriptor, possibly a persistent one
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
-	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn_whole_directory);
-		if ((connectfd =
-			ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection)) < 0) {
-			ret = -EIO;
-		} else {
-			ASCII * comma_separated_list = FromServerAlloc(connectfd, &cm) ;
-			if ( cm.ret != 0 ) {
-				ASCII * current_file ;
-				ASCII * rest_of_comma_list = rest_of_comma_list ;
-				size_t devices = 0;
-				struct dirblob db;
-	
-				/* If cacheable, try to allocate a blob for storage */
-				/* only for "read devices" and not alarm */
-				DirblobInit(&db);
-				if (IsRealDir(pn_whole_directory) && NotAlarmDir(pn_whole_directory) && !SpecifiedBus(pn_whole_directory)
-					&& pn_whole_directory->selected_device == NULL) {
-					if (RootNotBranch(pn_whole_directory)) {	/* root dir */
-						BUSLOCK(pn_whole_directory);
-						db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
-						BUSUNLOCK(pn_whole_directory);
-					}
-				} else {
-					db.troubled = 1;	// no dirblob cache
-				}
-	
-				while ( (current_file = strsep(&rest_of_comma_list,",")) != NULL ) {
-					struct parsedname pn_directory_element;
-					LEVEL_DEBUG("ServerDir: got=[%s]\n", current_file);
-	
-					if (FS_ParsedName_BackFromRemote(current_file, &pn_directory_element)) {
-						cm.ret = -EINVAL;
-						break;
-					}
-					//printf("SERVERDIR path=%s\n",pn_directory_element.path);
-					/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
-					find it quicker next time we want to do read values from the
-					the actual device
-					*/
-					if (IsRealDir(pn_whole_directory)) {
-						/* If we get a device then cache the bus_nr */
-						Cache_Add_Device(pn_whole_directory->selected_connection->index, &pn_directory_element);
-					}
-					/* Add to cache Blob -- snlist is also a flag for cachable */
-					if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-						DirblobAdd(pn_directory_element.sn, &db);
-					}
-					++devices;
-	
-					DIRLOCK;
-					dirfunc(v, &pn_directory_element);
-					DIRUNLOCK;
-	
-					FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
-				}
-				/* Add to the cache (full list as a single element */
-				if (DirblobPure(&db)) {
-					Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
-					if (RootNotBranch(pn_whole_directory)) {
-						BUSLOCK(pn_whole_directory);
-						pn_whole_directory->selected_connection->last_root_devs = db.devices;	// root dir estimated length
-						BUSUNLOCK(pn_whole_directory);
-					}
-				}
-				DirblobClear(&db);
-	
-				DIRLOCK;
-				/* flags are sent back in "offset" of final blank entry */
-				flags[0] |= cm.offset;
-				DIRUNLOCK;
-	
-			}
-			// free the allocated memory
-			if ( comma_separated_list != NULL ) {
-				free( comma_separated_list ) ;
-			}
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	if (connectfd < 0) {
+		PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+		return -EIO ;
 	}
+
+	// Now try to get header. If fails, may need a new non-persistent file_descriptor
+	sm.sg = SetupSemi(persistent, pn_whole_directory);
+	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection) ;
+	if (connectfd < 0) {
+		PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+		return -EIO ;
+	}
+
+	// Success, get data
+	comma_separated_list = FromServerAlloc(connectfd, &cm) ;
+	LEVEL_DEBUG("DIRALL got %s\n",SAFESTRING(comma_separated_list)) ;
+	if ( cm.ret == 0 ) {
+		ASCII * current_file ;
+		ASCII * rest_of_comma_list = comma_separated_list ;
+		size_t devices = 0;
+		struct dirblob db;
+
+		LEVEL_DEBUG("DIRALL start parsing\n") ;
+
+		/* If cacheable, try to allocate a blob for storage */
+		/* only for "read devices" and not alarm */
+		DirblobInit(&db);
+		if (IsRealDir(pn_whole_directory) && NotAlarmDir(pn_whole_directory) && !SpecifiedBus(pn_whole_directory)
+			&& pn_whole_directory->selected_device == NULL) {
+			if (RootNotBranch(pn_whole_directory)) {	/* root dir */
+				BUSLOCK(pn_whole_directory);
+				db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
+				BUSUNLOCK(pn_whole_directory);
+			}
+		} else {
+			db.troubled = 1;	// no dirblob cache
+		}
+
+		while ( (current_file = strsep(&rest_of_comma_list,",")) != NULL ) {
+			struct parsedname pn_directory_element;
+			LEVEL_DEBUG("ServerDirall: got=[%s]\n", current_file);
+
+			if (FS_ParsedName_BackFromRemote(current_file, &pn_directory_element)) {
+				cm.ret = -EINVAL;
+				break;
+			}
+			//printf("SERVERDIR path=%s\n",pn_directory_element.path);
+			/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
+			find it quicker next time we want to do read values from the
+			the actual device
+			*/
+			if (IsRealDir(pn_whole_directory)) {
+				/* If we get a device then cache the bus_nr */
+				Cache_Add_Device(pn_whole_directory->selected_connection->index, &pn_directory_element);
+			}
+			/* Add to cache Blob -- snlist is also a flag for cachable */
+			if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
+				DirblobAdd(pn_directory_element.sn, &db);
+			}
+			++devices;
+
+			DIRLOCK;
+			dirfunc(v, &pn_directory_element);
+			DIRUNLOCK;
+
+			FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
+		}
+		/* Add to the cache (full list as a single element */
+		if (DirblobPure(&db)) {
+			Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
+			if (RootNotBranch(pn_whole_directory)) {
+				BUSLOCK(pn_whole_directory);
+				pn_whole_directory->selected_connection->last_root_devs = db.devices;	// root dir estimated length
+				BUSUNLOCK(pn_whole_directory);
+			}
+		}
+		DirblobClear(&db);
+
+		DIRLOCK;
+		/* flags are sent back in "offset" of final blank entry */
+		flags[0] |= cm.offset;
+		DIRUNLOCK;
+
+	}
+	// free the allocated memory
+	if ( comma_separated_list != NULL ) {
+		free( comma_separated_list ) ;
+	}
+	ret = cm.ret;
+
 	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 	return ret;
 }
@@ -506,7 +516,7 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 		return NULL;
 	if (cm->ret < 0)
 		return NULL;
-	if (cm->payload > 65000) {
+	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
 	//printf("FromServerAlloc payload too large\n");
 		return NULL;
 	}

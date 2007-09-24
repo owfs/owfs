@@ -267,6 +267,10 @@ struct serverpackage {
 #define Servermessage       (((int32_t)1)<<16)
 #define isServermessage( version )    (((version)&Servermessage)!=0)
 #define Servertokens(version)    ((version)&0xFFFF)
+
+/* large enough for arrays of 2048 elements of ~49 bytes each */
+#define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
+
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
 extern time_t start_time;

@@ -76,7 +76,7 @@ int FromClient(struct handlerdata *hd)
 		return 0;
 
 	/* valid size? */
-	if ((hd->sm.payload < 0) || (trueload > MAXBUFFERSIZE)) {
+    if ((hd->sm.payload < 0) || (trueload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
 		hd->sm.type = msg_error;
 		return -EMSGSIZE;
 	}

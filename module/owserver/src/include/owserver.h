@@ -19,8 +19,6 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-#define MAXBUFFERSIZE  65000
-
 /* These macros doesn't exist for Solaris */
 /* Convenience macros for operations on timevals.
    NOTE: `timercmp' does not work for >= or <=.  */

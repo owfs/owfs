@@ -69,6 +69,9 @@ See: http://www.iana.org/assignments/port-numbers
 #include <sys/ioctl.h>
 #include "ow_transaction.h"
 
+/* large enough for arrays of 2048 elements of ~49 bytes each */
+#define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
+
 /* Number of "fake" adapters */
 extern int global_count_fake_busses;
 extern int global_count_tester_busses;
