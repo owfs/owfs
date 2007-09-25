@@ -33,8 +33,10 @@ $Id$
 int COM_open(struct connection_in *in)
 {
 	struct termios newSerialTio;	/*new serial port settings */
-	if (in != NULL)
+	if (in == NULL) {
+		LEVEL_DEBUG("Attempt to open a NULL serial device\n");
 		return -ENODEV;
+	}
 
 //    if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
 	if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {

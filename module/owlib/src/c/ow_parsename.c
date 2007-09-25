@@ -223,39 +223,42 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 	if (strcasecmp(pathnow, "alarm") == 0) {
 		pn->state |= ePS_alarm;
 		return parse_real;
+
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_first, pathnow, back_from_remote, pn);
+
 	} else if (strcasecmp(pathnow, "settings") == 0) {
 		pn->type = ePN_settings;
 		return parse_nonreal;
+
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
+
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
 		pn->type = ePN_statistics;
 		return parse_nonreal;
+
 	} else if (strcasecmp(pathnow, "structure") == 0) {
 		pn->type = ePN_structure;
 		return parse_nonreal;
+
 	} else if (strcasecmp(pathnow, "system") == 0) {
-#if 0
-		if (SpecifiedBus(pn)) {	/* already specified a "bus." */
-			/* structure only for root (remote tested remotely) */
-			if (!BusIsServer(pn->selected_connection))
-				return parse_error;
-		}
-#endif
 		pn->type = ePN_system;
 		return parse_nonreal;
+
 	} else if (strcasecmp(pathnow, "text") == 0) {
 		pn->state |= ePS_text;
 		return parse_first;
+
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
 		pn->selected_device = DeviceThermostat;
 		return parse_prop;
+
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
 		pn->state |= ePS_uncached;
 		return parse_first;
+
 	} else {
 		return Parse_RealDevice(pathnow, back_from_remote, pn);
 	}
@@ -267,23 +270,30 @@ static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 	if (strcasecmp(pathnow, "alarm") == 0) {
 		pn->state |= ePS_alarm;
 		return parse_real;
+
 	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_nonreal, pathnow, back_from_remote, pn);
+
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
+
 	} else if (strcasecmp(pathnow, "text") == 0) {
 		pn->state |= ePS_text;
 		return parse_real;
+
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
 		pn->selected_device = DeviceThermostat;
 		return parse_prop;
+
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
 		pn->state |= ePS_uncached;
 		return parse_real;
+
 	} else {
 		return Parse_RealDevice(pathnow, back_from_remote, pn);
 	}
+
 	return parse_error;
 }
 
@@ -291,15 +301,19 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 {
 	if (strncasecmp(pathnow, "bus.", 4) == 0) {
 		return Parse_Bus(parse_nonreal, pathnow, 0, pn);
+
 	} else if (strcasecmp(pathnow, "text") == 0) {
 		pn->state |= ePS_text;
 		return parse_nonreal;
+
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
 		pn->state |= ePS_uncached;
 		return parse_nonreal;
+
 	} else {
 		return Parse_NonRealDevice(pathnow, pn);
 	}
+
 	return parse_error;
 }
 
@@ -333,12 +347,14 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     /* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
     //printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
     bus_number = atoi(&pathnow[4]);
+    if (bus_number < 0) return parse_error ;
+
     CONNINLOCK;
-    if (bus_number < 0 || count_inbound_connections <= bus_number) {
-        CONNINUNLOCK;
-        return parse_error;
-    }
+    if (count_inbound_connections <= bus_number) bus_number = -1 ;
     CONNINUNLOCK;
+
+    if (bus_number < 0) return parse_error ;
+
     /* Since we are going to use a specific in-device now, set
     * pn->selected_connection to point at that device at once. */
     SetSpecifiedBus(bus_number, pn);
@@ -347,16 +363,17 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
         pn->sg &= (~BUSRET_MASK);
     }
 
-    if (!(found = strstr(pn->path, "/bus."))) {
+    /* Create the path without the "bus.x" part in pn->path_busless */
+    if (!(found = strstr(pn->path, "/bus."))) { // no bus
         int length = pn->path_busless - pn->path - 1;
-        strncpy(pn->path_busless, pn->path, length);
+        strncpy(pn->path_busless, pn->path, length); // just copy path
     } else {
         int length = found - pn->path;
         strncpy(pn->path_busless, pn->path, length);
-        if ((found = strchr(found + 1, '/'))) {
-            strcpy(&(pn->path_busless[length]), found);
+        if ((found = strchr(found + 1, '/'))) { // more after bus
+            strcpy(&(pn->path_busless[length]), found); // copy rest
         } else {
-            pn->path_busless[length] = '\0';
+            pn->path_busless[length] = '\0'; // add final null
         }
     }
     //printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
@@ -486,15 +503,19 @@ static enum parse_enum Parse_Property(char *filename,
 			if (pn->selected_filetype->ag)
 				return parse_error;	/* aggregate filetypes need an extension */
 			pn->extension = 0;	/* default when no aggregate */
+
 		} else if (pn->selected_filetype->ag == NULL) {
 			return parse_error;	/* An extension not allowed when non-aggregate */
+
 		} else if (strcasecmp(dot, "ALL") == 0) {
 			//printf("FP ALL\n");
 			pn->extension = EXTENSION_ALL;	/* ALL */
+
 		} else if (pn->selected_filetype->format == ft_bitfield
 				   && strcasecmp(dot, "BYTE") == 0) {
 			pn->extension = EXTENSION_BYTE;	/* BYTE */
 			//printf("FP BYTE\n") ;
+
 		} else {
 			if (pn->selected_filetype->ag->letters == ag_letters) {
 				//printf("FP letters\n") ;
@@ -525,6 +546,7 @@ static enum parse_enum Parse_Property(char *filename,
 			}
 			//printf("FP in range\n") ;
 		}
+
 		//printf("FP Good\n") ;
 		switch (pn->selected_filetype->format) {
 		case ft_directory:
