@@ -264,17 +264,19 @@ rm -f $RPM_BUILD_ROOT/usr/lib*/libowperl.*
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
 
-# man-files already installed at correct place
-#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
-#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man1
-#mv -f $RPM_BUILD_ROOT%{prefix}/man/man1/* $RPM_BUILD_ROOT%{_mandir}/man1/
-#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man3
-#mv -f $RPM_BUILD_ROOT%{prefix}/man/man3/* $RPM_BUILD_ROOT%{_mandir}/man3/
-#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man5
-#mv -f $RPM_BUILD_ROOT%{prefix}/man/man5/* $RPM_BUILD_ROOT%{_mandir}/man5/
-#install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/mann
-#mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
-#rm -rf $RPM_BUILD_ROOT%{prefix}/man
+# man-files already installed at correct place on FC7
+if [ -d $RPM_BUILD_ROOT%{prefix}/man ]; then
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man1
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/man1/* $RPM_BUILD_ROOT%{_mandir}/man1/
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man3
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/man3/* $RPM_BUILD_ROOT%{_mandir}/man3/
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man5
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/man5/* $RPM_BUILD_ROOT%{_mandir}/man5/
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/mann
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
+   rm -rf $RPM_BUILD_ROOT%{prefix}/man
+fi
 
 %if %{build_fs}
 install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
