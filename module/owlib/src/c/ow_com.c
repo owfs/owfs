@@ -79,7 +79,7 @@ int COM_open(struct connection_in *in)
 void COM_close(struct connection_in *in)
 {
 	int file_descriptor;
-	if (in!=NULL)
+	if (in == NULL)
 		return;
 	file_descriptor = in->file_descriptor;
 	// restore tty settings
