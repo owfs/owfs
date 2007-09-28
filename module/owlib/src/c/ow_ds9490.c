@@ -190,6 +190,11 @@ static void DS9490_setroutines(struct interface_routines *f)
 #define ENABLEPULSE_PRGE         0x01	// programming pulse
 #define ENABLEPULSE_SPUE         0x02	// strong pull-up
 
+// Define our combinations:
+#define ENABLE_PROGRAM_ONLY         (ENABLEPULSE_PRGE)
+#define ENABLE_PROGRAM_AND_PULSE    (ENABLEPULSE_PRGE | ENABLEPULSE_SPUE)
+
+
 // 1Wire Bus Speed Setting Constants
 #define ONEWIREBUSSPEED_REGULAR        0x00
 #define ONEWIREBUSSPEED_FLEXIBLE       0x01
@@ -437,30 +442,30 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 		LEVEL_DATA("DS9490_setup_adapter: error1 ret=%d\n", ret);
 		return -EIO;
 	}
-	// set the strong pullup duration to infinite
+	
+    // set the strong pullup duration to infinite
 	if ((ret = USB_Control_Msg(
 			COMM_CMD, COMM_SET_DURATION | COMM_IM, 0x0000, 
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: error2 ret=%d\n", ret);
 		return -EIO;
 	}
-	// set the 12V pullup duration to 512us
-	if ((ret = USB_Control_Msg(
-			COMM_CMD, COMM_SET_DURATION | COMM_IM | COMM_TYPE, 0x0040,
+	
+    // set the 12V pullup duration to 512us
+    if ((ret = USB_Control_Msg(
+            COMM_CMD, COMM_SET_DURATION | COMM_IM | COMM_TYPE, PROGRAM_PULSE_DURATION_CODE,
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: error3 ret=%d\n", ret);
 		return -EIO;
 	}
-#if 1
-	// disable strong pullup, but leave program pulse enabled (faster)
-	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_PULSE_EN, ENABLEPULSE_PRGE,
-			pn)) < 0) {
-		LEVEL_DATA("DS9490_setup_adapter: error4 ret=%d\n", ret);
-		return -EIO;
-	}
-#endif
-
+	
+    // enable both program and strong pulses
+    if ((ret = USB_Control_Msg(
+            MODE_CMD, MOD_PULSE_EN, ENABLE_PROGRAM_AND_PULSE,
+            pn)) < 0) {
+                LEVEL_DATA("DS9490_setup_adapter: error4 ret=%d\n", ret);
+                return -EIO;
+            }
 	pn->selected_connection->connin.usb.ULevel = MODE_NORMAL;
 
 	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
@@ -1291,7 +1296,7 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 	}
 	// set the strong pullup
 	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_PULSE_EN, ENABLEPULSE_SPUE,
+			MODE_CMD, MOD_PULSE_EN, ENABLE_PROGRAM_AND_PULSE,
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 3\n");
 	} else
@@ -1389,12 +1394,6 @@ static int DS9490_HaltPulse(const struct parsedname *pn)
 		// check the SPU flag
 		if (!(buffer[8] & STATUSFLAGS_SPUA)) {
 			//printf("DS9490_HaltPulse: SPU not set\n");
-			if ((ret = USB_Control_Msg(
-					MODE_CMD, MOD_PULSE_EN, 0, 
-					pn)) < 0) {
-				LEVEL_DEFAULT("DS9490_HaltPulse: err4\n");
-				break;
-			}
 			LEVEL_DATA("DS9490_HaltPulse: ok\n");
 			return 0;
 		}
@@ -1441,31 +1440,16 @@ static int DS9490_level(int new_level, const struct parsedname *pn)
 	case MODE_STRONG5:
 		// set pullup to strong5
 		// set the strong pullup duration to infinite
-		if (((ret = USB_Control_Msg(
-				MODE_CMD, MOD_PULSE_EN, ENABLEPULSE_SPUE, 
-				pn)) < 0)
-			||
-			((ret =	USB_Control_Msg(
-				COMM_CMD, COMM_PULSE | COMM_IM, 0,
-				pn)) < 0)) {
-			STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
-			return ret;
-		}
-		break;
+        
+        // Default state set in DS9490_setup_adapter
+        break;
 	case MODE_PROGRAM:
 		// set pullup to strong5
 		// set the strong pullup duration to 480usec
-		if (((ret = USB_Control_Msg(
-				MODE_CMD, MOD_PULSE_EN, ENABLEPULSE_PRGE,
-				pn)) < 0)
-			||
-			((ret = USB_Control_Msg(
-				MODE_CMD, MOD_PROG_PULSE_DURATION, PROGRAM_PULSE_DURATION_CODE,
-				pn)) < 0)) {
-			STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
-			return ret;
-		}
-		break ;
+        
+        // Default state set in DS9490_setup_adapter
+
+        break ;
 	case MODE_BREAK:
 	default:
 		return 1;
