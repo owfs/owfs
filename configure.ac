@@ -1040,8 +1040,8 @@ if test "${ENABLE_OWFS}" != "false" ; then
     ])
 
     if test "${ENABLE_OWFS}" != "false"; then
-        save_CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-        save_LIBS="$LIBS $PTHREAD_LIBS"
+        save_CFLAGS="$CFLAGS"
+        save_LIBS="$LIBS"
         CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
         LIBS="$LIBS $PTHREAD_LIBS"
 	AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="$FUSE_LIBS -lfuse"],[
