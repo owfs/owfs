@@ -109,8 +109,7 @@ DeviceEntryExtended(12, DS2406, DEV_alarm);
 /* DS2406 */
 static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 					const struct parsedname *pn);
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn);
+static int OW_w_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
 //static int OW_r_s_alarm( BYTE * data , const struct parsedname * pn ) ;
 static int OW_w_s_alarm(const BYTE data, const struct parsedname *pn);
 static int OW_r_control(BYTE * data, const struct parsedname *pn);
@@ -120,6 +119,7 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn);
 static int OW_access(BYTE * data, const struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
 static int OW_full_access(BYTE * data, const struct parsedname *pn);
+static int OW_w_mem_byte(BYTE data, off_t offset, const struct parsedname *pn) ;
 
 /* 2406 memory read */
 static int FS_r_mem(struct one_wire_query * owq)
@@ -274,46 +274,27 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 	return 0;
 }
 
-static int OW_w_mem(const BYTE * data, const size_t size,
-					const off_t offset, const struct parsedname *pn)
+static int OW_w_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
-    BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data[0], };
-	BYTE resp;
-	size_t i;
-	struct transaction_log tfirst[] = {
-		TRXN_START,
-		{p, NULL, 4, trxn_match},
-		{NULL, &p[4], 2, trxn_read},
-		{NULL, NULL, 0, trxn_program},
-		{NULL, &resp, 1, trxn_read},
-		TRXN_END,
-	};
-	struct transaction_log trest[] = {
-		TRXN_START,
-		{&p[1], NULL, 3, trxn_match},
-		{NULL, &p[4], 2, trxn_read},
-		{NULL, NULL, 0, trxn_program},
-		{NULL, &resp, 1, trxn_read},
-		TRXN_END,
-	};
+    int byte_number ;
+    for ( byte_number=0 ; byte_number < size ; ++byte_number) {
+        if ( OW_w_mem_byte( data[byte_number], offset+byte_number, pn) ) return 1 ;
+        LEVEL_DEBUG( "Wrote DS2406 byte %d -- no errors\n",(int) offset+byte_number) ;
+    }
+    return 0 ;
+}
 
-	if (size == 0)
-		return 0;
-	if (BUS_transaction(tfirst, pn))
-		return 1;
-	if (CRC16(p, 6) || (resp & ~data[0]))
-		return 1;
-
-	for (i = 1; i < size; ++i) {
-		p[3] = data[i];
-		if ((++p[1]) == 0x00)
-			++p[2];
-		if (BUS_transaction(trest, pn))
-			return 1;
-		if (CRC16(&p[1], 5) || (resp & ~data[i]))
-			return 1;
-	}
-	return 0;
+static int OW_w_mem_byte(BYTE data, off_t offset, const struct parsedname *pn)
+{
+    BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data, };
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WR_CRC16(p,4,0),
+        TRXN_PROGRAM,
+        TRXN_END,
+    };
+    
+    return BUS_transaction(t, pn) ;
 }
 
 /* is Vcc powered?*/

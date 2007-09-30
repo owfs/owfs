@@ -105,6 +105,8 @@ struct transaction_log {
                 TRXN_READ(((BYTE *)pointer)+(writelength),readlength+2), \
                 TRXN_CRC16((BYTE *)pointer,writelength+readlength+2)
 
+#define TRXN_PROGRAM   { NULL, NULL, 0, trxn_program, }
+
 int BUS_transaction(const struct transaction_log *tl,
 					const struct parsedname *pn);
 int BUS_transaction_nolock(const struct transaction_log *tl,

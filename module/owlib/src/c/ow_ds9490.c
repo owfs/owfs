@@ -1349,7 +1349,9 @@ static int DS9490_ProgramPulse(const struct parsedname *pn)
 			COMM_CMD, COMM_PULSE | COMM_TYPE | COMM_IM, 0,
 			pn)) < 0)) {
 		STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
-	}
+    } else {
+        UT_delay(1) ; // 1 msec (480 usec would be enough)
+    }
 	if ( DS9490_level(MODE_NORMAL, pn) != 0 ) {
 		LEVEL_DEBUG("Couldn't reset the program pulse level back to normal\n");
 		return -EIO ;
