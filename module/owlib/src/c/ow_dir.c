@@ -119,22 +119,22 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 		ret = -ENOTDIR;
 
 	} else if (SpecifiedBus(pn_raw_directory)  && BusIsServer(pn_raw_directory->selected_connection) ) { 
-printf("SPECIFIED_BUS BUS_IS_SERVER\n");
+	  //printf("SPECIFIED_BUS BUS_IS_SERVER\n");
 		// Send remotely only (all evaluation done there)
 		ret = ServerDir( dirfunc, v, pn_raw_directory, flags ) ;
 
 	} else if ( pn_raw_directory->selected_device != NULL ) {	
-printf("NO SELECTED_DEVICE\n");
+	  //printf("NO SELECTED_DEVICE\n");
 		// device directory -- not bus-specific
 		ret = FS_devdir(dirfunc, v, pn_raw_directory);
 
 	} else if ( NotRealDir(pn_raw_directory) ) {	
-printf("NOT_REAL_DIR\n");
+	  //printf("NOT_REAL_DIR\n");
 		// structure, statistics, system or setrings dir -- not bus-specific
 		ret = FS_typedir(dirfunc, v, pn_raw_directory);
 
 	} else if ( ! KnownBus(pn_raw_directory) ) {
-printf("KNOWN_BUS\n");
+	  //printf("KNOWN_BUS\n");
 		// Not specified bus, so scan through all and print union
 		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
 		if ( (Global.opt != opt_server) || ShouldReturnBusList(pn_raw_directory) ) { 
@@ -153,13 +153,13 @@ printf("KNOWN_BUS\n");
 		}
 
 	} else if ( IsAlarmDir(pn_raw_directory) ) {	/* root or branch directory -- alarm state */
-printf("ALARM_DIR\n");
+	  //printf("ALARM_DIR\n");
 		LEVEL_DEBUG("ALARM directory\n");
 		ret = FS_alarmdir(dirfunc, v, pn_raw_directory) ;
 		LEVEL_DEBUG("Return from ALARM is %d\n",ret) ;
 
 	} else {		/* Real directory only */
-printf("DEFAULT\n");
+	  //printf("DEFAULT\n");
 		/* Now get the actual devices */
 		ret = FS_cache2real(dirfunc, v, pn_raw_directory, flags) ;
 
