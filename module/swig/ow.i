@@ -125,7 +125,34 @@ char * get( const char * path ) {
 
 void finish( void ) {
     OWLIB_can_finish_start() ;
-    LibClose() ;
+
+    /* Can't call LibClose() here... it will free all cache-structures
+     * and free some other memory which is allocated in LibSetup().
+     * LibClose() should be renamed to LibFree() I guess.
+     */
+    //LibClose() ;
+
+    // Just clear cache and free all in/out connections.
+    Cache_Clear();
+    FreeIn();
+    FreeOut();
+
+    {
+	char *argv[1] = { NULL };
+
+	/* Have to reset more internal variables, and this should be fixed
+	 * by setting optind = 0 and call getopt()
+         * (first_nonopt = last_nonopt = 1;)
+	 */
+	optind = 0;
+	(void)getopt_long(1, argv, " ", " ", NULL);
+
+	optarg = NULL;
+	optind = 1;
+	opterr = 1;
+	optopt = '?';
+    }
+
     OWLIB_can_finish_end() ;
 }
 

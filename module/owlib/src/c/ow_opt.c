@@ -299,10 +299,10 @@ int owopt_packed(const char *params)
 		return -ENOMEM;
 
 	// Stuffs arbitrary first value since argv[0] ignored by getopt
-    // create a synthetic argv/argc for get_opt
-    for (next_location_in_params_copy = "X";
-       next_location_in_params_copy != NULL;
-       next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
+	// create a synthetic argv/argc for get_opt
+	for (next_location_in_params_copy = "X";
+	     next_location_in_params_copy != NULL;
+	     next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
 		// make room
 		if (argc >= allocated - 1) {
 			char **larger_argv = realloc(argv, (allocated + 10) * sizeof(char *));
@@ -319,13 +319,14 @@ int owopt_packed(const char *params)
 		argv[argc] = NULL;
 	}
 
-    // analyze argv/argc as if real comman line arguments
-    while (ret == 0) {
+	// analyze argv/argc as if real comman line arguments
+	while (ret == 0) {
 		if ((option_char =
 			 getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
 			break;
 		ret = owopt(option_char, optarg);
 	}
+
 	/* non-option arguments */
 	while ((ret == 0) && (optind < argc)) {
 		//printf("optind = %d arg=%s\n",optind,SAFESTRING(argv[optind]));

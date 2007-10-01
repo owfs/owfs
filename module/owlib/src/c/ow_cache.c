@@ -168,11 +168,9 @@ static void new_tree(void)
 /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open(void)
 {
-	cache.new_db = NULL;
-	cache.old_db = NULL;
-	cache.old_ram = 0;
-	cache.new_ram = 0;
-	cache.store = NULL;
+	printf("Cache_Open()\n");
+	memset(&cache, 0, sizeof(struct cache));
+
 	cache.lifespan = TimeOut(fc_stable);
 	if (cache.lifespan > 3600)
 		cache.lifespan = 3600;	/* 1 hour tops */

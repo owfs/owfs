@@ -61,11 +61,8 @@ void LibSetup(enum opt_program opt)
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();
 
-	/* DB cache code */
 #if OW_CACHE
-//printf("CacheOpen\n");
 	Cache_Open();
-//printf("CacheOpened\n");
 #endif							/* OW_CACHE */
 
 #ifndef __UCLIBC__
