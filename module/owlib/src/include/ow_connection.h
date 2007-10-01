@@ -206,13 +206,15 @@ struct connin_usb {
 	int writeonelowtime;
 	int pulldownslewrate;
 	unsigned int timeout;
-	BYTE ds1420_address[8];
-	/* "Name" of the device, like "8146572300000051"
-	 * This is set to the first DS1420 id found on the 1-wire adapter which
-	 * exists on the DS9490 adapters. If user only have a DS2490 chip, there
-	 * are no such DS1420 device available. It's used to find the 1-wire adapter
-	 * if it's disconnected and later reconnected again.
-	 */
+    /* "Name" of the device, like "8146572300000051"
+    * This is set to the first DS1420 id found on the 1-wire adapter which
+    * exists on the DS9490 adapters. If user only have a DS2490 chip, there
+    * are no such DS1420 device available. It's used to find the 1-wire adapter
+    * if it's disconnected and later reconnected again.
+    */
+    BYTE ds1420_address[8];
+    struct dirblob main;        /* main directory */
+    struct dirblob alarm;       /* alarm directory */
 };
 struct connin_i2c {
 	int channels;
@@ -313,6 +315,7 @@ enum e_reconnect {
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
+    int index ;
 	BYTE sn[8];
 	BYTE search;
 };
@@ -477,8 +480,6 @@ int BUS_reset(const struct parsedname *pn);
 int BUS_first(struct device_search *ds, const struct parsedname *pn);
 int BUS_next(struct device_search *ds, const struct parsedname *pn);
 int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);
-int BUS_first_family(const BYTE family, struct device_search *ds,
-					 const struct parsedname *pn);
 
 int BUS_select(const struct parsedname *pn);
 

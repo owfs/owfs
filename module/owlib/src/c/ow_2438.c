@@ -378,13 +378,13 @@ static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 	BYTE recall[] = { _1W_RECALL_SCRATCHPAD, page, };
 	BYTE r[] = { _1W_READ_SCRATCHPAD, page, };
 	struct transaction_log t[] = {
-		TRXN_START,
+	TRXN_START,
         TRXN_WRITE2(recall),
-		TRXN_START,
+	TRXN_START,
         TRXN_WRITE2(r),
         TRXN_READ(data,9),
         TRXN_CRC8(data,9),
-		TRXN_END,
+	TRXN_END,
 	};
 
 	// read to scratch, then in
@@ -405,16 +405,16 @@ static int OW_w_page(const BYTE * p, const int page,
 	BYTE r[] = { _1W_READ_SCRATCHPAD, page, };
 	BYTE eeprom[] = { _1W_COPY_SCRATCHPAD, page, };
 	struct transaction_log t[] = {
-		TRXN_START,				// 0
+	TRXN_START,				// 0
         TRXN_WRITE2(w),
         TRXN_WRITE(p,8),
-		TRXN_START,
+	TRXN_START,
         TRXN_WRITE2(r),
         TRXN_READ(data,9),
         TRXN_CRC8(data,9),
-		TRXN_START,
+	TRXN_START,
         TRXN_WRITE2(eeprom),
-		TRXN_END,
+	TRXN_END,
 	};
 
 	if (BUS_transaction(t, pn))
@@ -490,12 +490,12 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 
 // Read current register
 // turn on (temporary) A/D in scratchpad
-static int OW_current(_FLOAT * I, const struct parsedname *pn)
+static int OW_current(_FLOAT * F, const struct parsedname *pn)
 {
 	BYTE data[8];
 	BYTE r[] = { _1W_READ_SCRATCHPAD, 0x00, };
 	BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
-	int enabled;
+	int current_conversion_enabled;
 	struct transaction_log tread[] = {
 		TRXN_START,
         TRXN_WRITE2(r),
@@ -514,8 +514,8 @@ static int OW_current(_FLOAT * I, const struct parsedname *pn)
 	if (BUS_transaction(tread, pn))
 		return 1;
 	//printf("DS2438 current PREread %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
-	enabled = data[0] & 0x01;	// IAC bit
-	if (!enabled) {				// need to temporariliy turn on current measurements
+	current_conversion_enabled = data[0] & 0x01;	// IAC bit
+	if (!current_conversion_enabled) {				// need to temporariliy turn on current measurements
 		//printf("DS2438 Current needs to be enabled\n");
 		data[0] |= 0x01;
 		if (BUS_transaction(twrite, pn))
@@ -525,8 +525,8 @@ static int OW_current(_FLOAT * I, const struct parsedname *pn)
 			return 1;			// reread
 	}
 	//printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
-	I[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
-	if (!enabled) {				// need to restore no current measurements
+	F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
+	if (!current_conversion_enabled) {				// need to restore no current measurements
 		if (BUS_transaction(twrite, pn))
 			return 1;
 	}
@@ -536,13 +536,13 @@ static int OW_current(_FLOAT * I, const struct parsedname *pn)
 static int OW_w_offset(const int I, const struct parsedname *pn)
 {
 	BYTE data[8];
-	int enabled;
+	int current_conversion_enabled;
 
 	// set current readings off source command
 	if (OW_r_page(data, 0, pn))
 		return 1;
-	enabled = UT_getbit(data, 0);
-	if (enabled) {
+	current_conversion_enabled = UT_getbit(data, 0);
+	if (current_conversion_enabled) {
 		UT_setbit(data, 0, 0);	// AD bit in status register
 		if (OW_w_page(data, 0, pn))
 			return 1;
@@ -551,7 +551,7 @@ static int OW_w_offset(const int I, const struct parsedname *pn)
 	if (OW_w_int(I, 0x0D, pn))
 		return 1;				/* page1 byte5 */
 
-	if (enabled) {
+	if (current_conversion_enabled) {
 		// if ( OW_r_page( data , 0 , pn ) ) return 1 ; /* Assume no change to these fields */
 		UT_setbit(data, 0, 1);	// AD bit in status register
 		if (OW_w_page(data, 0, pn))

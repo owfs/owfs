@@ -16,6 +16,8 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
+static void BUS_first_both(struct device_search *ds) ;
+
 //--------------------------------------------------------------------------
 /** The 'owFirst' doesn't find the first device on the 1-Wire Net.
  instead, it sets up for BUS_next interator.
@@ -29,10 +31,8 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	// reset the search state
 	LEVEL_DEBUG("Start of directory path=%s device=" SNformat "\n",
 				SAFESTRING(pn->path), SNvar(pn->sn));
-	memset(ds->sn, 0, 8);		// clear the serial number
-	ds->LastDiscrepancy = -1;
-	ds->LastDevice = 0;
-	pn->selected_connection->ExtraReset = 0;
+    BUS_first_both(ds) ;
+    pn->selected_connection->ExtraReset = 0;
 	ds->search = _1W_SEARCH_ROM;
 
 	if (!pn->selected_connection->AnyDevices) {
@@ -45,25 +45,19 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 {
 	// reset the search state
-	memset(ds->sn, 0, 8);		// clear the serial number
-	ds->LastDiscrepancy = -1;
-	ds->LastDevice = 0;
+    BUS_first_both(ds) ;
 	ds->search = _1W_CONDITIONAL_SEARCH_ROM;
 	BUS_reset(pn);
 	return BUS_next(ds, pn);
 }
 
-int BUS_first_family(const BYTE family, struct device_search *ds,
-					 const struct parsedname *pn)
+static void BUS_first_both(struct device_search *ds)
 {
-	// reset the search state
-	memset(ds->sn, 0, 8);		// clear the serial number
-	ds->sn[0] = family;
-	ds->LastDiscrepancy = 7;
-	ds->LastDevice = 0;
-	ds->search = _1W_SEARCH_ROM;
-
-	return BUS_next(ds, pn);
+    // reset the search state
+    memset(ds->sn, 0, 8);       // clear the serial number
+    ds->LastDiscrepancy = -1;
+    ds->LastDevice = 0;
+    ds->index = -1 ; // true place in dirblob
 }
 
 //--------------------------------------------------------------------------

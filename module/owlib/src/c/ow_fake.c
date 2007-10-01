@@ -198,13 +198,13 @@ static void Fake_close(struct connection_in *in)
 static int Fake_next_both(struct device_search *ds,
 						  const struct parsedname *pn)
 {
-	//printf("Fake_next_both LastDiscrepancy=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->LastDiscrepancy,pn->selected_connection->connin.fake.devices,ds->LastDevice,pn->selected_connection->AnyDevices);
+	//printf("Fake_next_both Index=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->index,pn->selected_connection->connin.fake.devices,ds->LastDevice,pn->selected_connection->AnyDevices);
     if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {	// alarm not supported
 		ds->LastDevice = 1;
 		return -ENODEV;
 	}
 	if (DirblobGet
-		(++ds->LastDiscrepancy, ds->sn, &(pn->selected_connection->connin.fake.db))) {
+		(++ds->index, ds->sn, &(pn->selected_connection->connin.fake.db))) {
 		ds->LastDevice = 1;
 		return -ENODEV;
 	}

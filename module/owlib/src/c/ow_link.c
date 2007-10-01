@@ -183,18 +183,18 @@ static int LINK_next_both(struct device_search *ds,
 
 	COM_flush(pn);
 
-	if (ds->LastDiscrepancy == -1) {
+	if (ds->index == -1) {
         if (LINK_directory(ds,db, pn)) {
 			return -EIO;
         }
     }
     
     // LOOK FOR NEXT ELEMENT
-    ++ds->LastDiscrepancy ;
+    ++ds->index ;
 
-	LEVEL_DEBUG("LastDiscrepancy %d\n",ds->LastDiscrepancy);
+	LEVEL_DEBUG("Index %d\n",ds->index);
 
-	ret = DirblobGet (ds->LastDiscrepancy, ds->sn, db);
+	ret = DirblobGet (ds->index, ds->sn, db);
 	LEVEL_DEBUG("DirblobGet %d\n",ret);
 	switch (ret) {
 	case 0:

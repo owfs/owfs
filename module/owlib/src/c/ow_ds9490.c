@@ -87,6 +87,10 @@ static int DS9490_redetect_low(const struct parsedname *pn);
 static char *DS9490_device_name(const struct usb_list *ul);
 static int DS9490_Set_USB_Parameters(const struct parsedname *pn) ;
 static int USB_Control_Msg( BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname * pn ) ;
+static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy) ;
+static int FindDiscrepancy( BYTE * last_sn ) ;
+static int DS9490_directory(struct device_search *ds, struct dirblob *db,
+                            const struct parsedname *pn) ;
 
 
 /* Device-specific routines */
@@ -825,20 +829,6 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
             count_have_usb_interrupt_read = 1 ;
             continue ;
         }
-#if 0
-#ifdef OW_DEBUG
-		if (Global.error_level > 4) {	// LEVEL_DETAIL
-			char s[97];	// For my fancy display in the log
-			char t[8];
-			s[0] = '\0';
-			for (i = 0; i < ret; i++) {
-				sprintf(t, "-%02x", buffer[i]);
-				strcat(s, t);
-			}
-			LEVEL_DETAIL("DS9490_getstatus: Bytes%s\n", s);
-		}
-#endif							/* OW_DEBIG */
-#endif							/* 0 */
 		if (ret > 16) {
 			if (ret == 32) {	// FreeBSD buffers the input, so this could just be two readings
 				if (!memcmp(buffer, &buffer[16], 6)) {
@@ -1171,106 +1161,152 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
  * return -ENOENT if no devices at all
  * return -EIO    on errors
  */
+#define DS2490_DIR_GULP_ELEMENTS     7
+#define DS2490_DIR_GULP_SIZE     (DS2490_DIR_GULP_ELEMENTS*8)
 
 static int DS9490_next_both(struct device_search *ds,
-							const struct parsedname *pn)
+                            const struct parsedname *pn)
 {
-	BYTE buffer[32];
-	BYTE *cb = pn->selected_connection->combuffer;
-	int ret;
-	int i;
-	size_t buflen;
+    struct dirblob * db = (ds->search ==_1W_CONDITIONAL_SEARCH_ROM) ?
+                &(pn->selected_connection->connin.link.alarm) :
+            &(pn->selected_connection->connin.link.main);
+    int ret;
 
-	//LEVEL_DATA("DS9490_next_both SN in: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
-	// if the last call was not the last one
-	if (!pn->selected_connection->AnyDevices)
-		ds->LastDevice = 1;
+    if (!pn->selected_connection->AnyDevices)
+        return -ENODEV;
+    
+    // LOOK FOR NEXT ELEMENT
+    ++ds->index ;
 
-	/* DS1994/DS2404 might need an extra reset */
-	if (pn->selected_connection->ExtraReset) {
-		if (BUS_reset(pn) < 0)
-			ds->LastDevice = 1;
-		pn->selected_connection->ExtraReset = 0;
-	}
+    LEVEL_DEBUG("Index %d\n",ds->index);
 
-	if (ds->LastDevice)
-		return -ENODEV;
+    if ( ds->index % DS2490_DIR_GULP_ELEMENTS == 0 ) {
+        if ( ds->LastDevice ) return -ENODEV ;
+        if ( (ret = DS9490_directory(ds,db,pn)) ) return ret ;
+    }
 
-	/** Play LastDescrepancy games with bitstream */
-	memcpy(cb, ds->sn, 8);		/* set bufferto zeros */
-	if (ds->LastDiscrepancy > -1)
-		UT_setbit(cb, ds->LastDiscrepancy, 1);
-	/* This could be more efficiently done than bit-setting, but probably wouldnt make a difference */
-	for (i = ds->LastDiscrepancy + 1; i < 64; i++)
-		UT_setbit(cb, i, 0);
-	//LEVEL_DATA("DS9490_next_both EP2: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",cb[0],cb[1],cb[2],cb[3],cb[4],cb[5],cb[6],cb[7]) ;
+    if ( (ret = DirblobGet (ds->index % DS2490_DIR_GULP_ELEMENTS, ds->sn, db)) ) return ret ;
+    
+    /* test for special device families */
+    switch (ds->sn[0]) {
+        case 0x00:
+            LEVEL_DATA("USBnextboth: NULL family found\n");
+            return -EIO;
+        case 0x04:
+        case 0x84:
+            /* We found a DS1994/DS2404 which require longer delays */
+            pn->selected_connection->ds2404_compliance = 1;
+            break;
+        default:
+            break;
+    }
+    LEVEL_DEBUG("DS9490_next_both SN found: " SNformat "\n",
+                SNvar(ds->sn));
+    return 0;
+}
 
-	buflen = 8;
-	if ((ret = DS9490_write(cb, buflen, pn)) < (int) buflen) {
-		LEVEL_DATA("USBnextboth bulk write problem = %d\n", ret);
-		return -EIO;
-	}
-	if ((ret = USB_Control_Msg(
-			COMM_CMD, COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS, (1<<8)|(ds->search),
-			pn)) < 0) {
-		LEVEL_DATA("USBnextboth control problem ret=%d\n", ret);
-		return -EIO;
-	}
+// Read up to 7 (DS2490_DIR_GULP_ELEMENTS) at a time, and  place into
+// a dirblob. Called from DS9490_next_both every 7 devices to fill.
+static int DS9490_directory(struct device_search *ds, struct dirblob *db,
+                            const struct parsedname *pn)
+{
+    BYTE buffer[32];
+    BYTE *cb = pn->selected_connection->combuffer;
+    int ret;
+    int bytes_back;
+    int devices_found ;
+    int device_index ;
 
-	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
-		LEVEL_DATA("USBnextboth: getstatus error\n");
-		return -EIO;
-	}
+    DirblobClear(db) ;
 
-	if (buffer[13] == 0) {		// (ReadBufferStatus)
-		/* Nothing found on the bus. Have to return something != 0 to avoid
-		 * getting stuck in loop in FS_realdir() and FS_alarmdir()
-		 * which ends when ret!=0 */
-		LEVEL_DATA("USBnextboth: ReadBufferstatus == 0\n");
-		return -ENOENT;
-	}
-	//buflen = 16 ;  // try read 16 bytes
-	buflen = buffer[13];
-	//LEVEL_DATA("USBnextboth len=%d (available=%d)\n", buflen, buffer[13]);
-	if ((ret = DS9490_read(cb, buflen, pn)) <= 0) {
-		LEVEL_DATA("USBnextboth: bulk read problem ret=%d\n", ret);
-		return -EIO;
-	}
+    /* DS1994/DS2404 might need an extra reset */
+    if (pn->selected_connection->ExtraReset) {
+        if (BUS_reset(pn) < 0)
+            return -EIO;
+        pn->selected_connection->ExtraReset = 0;
+    }
 
-	memcpy(ds->sn, cb, 8);
-	//LEVEL_DATA("DS9490_next_both SN out: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",serialnumber[0],serialnumber[1],serialnumber[2],serialnumber[3],serialnumber[4],serialnumber[5],serialnumber[6],serialnumber[7]) ;
-	ds->LastDevice = (ret == 8);
+    SetupDiscrepancy( ds, cb ) ;
 
-	for (i = 63; i >= 0; i--) {
-		if (UT_getbit(cb, i + 64) && (UT_getbit(cb, i) == 0)) {
-			ds->LastDiscrepancy = i;
-			//printf("DS9490_next_both lastdiscrepancy=%d\n",si->LastDiscrepancy) ;
-			break;
-		}
-	}
+    if ((ret = DS9490_write(cb, 8, pn)) < 8) {
+        LEVEL_DATA("USBdirectory bulk write problem = %d\n", ret);
+        return -EIO;
+    }
+    if ((ret = USB_Control_Msg(
+         COMM_CMD, COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS, (DS2490_DIR_GULP_ELEMENTS<<8)|(ds->search),
+    pn)) < 0) {
+        LEVEL_DATA("USBdirectory control problem ret=%d\n", ret);
+        return -EIO;
+    }
 
-	/* test for CRC error */
-	if (CRC8(ds->sn, 8)) {
-		LEVEL_DATA("USBnextboth: CRC error\n");
-		return -EIO;
-	}
+    if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
+        LEVEL_DATA("USBdirectory: getstatus error\n");
+        return -EIO;
+    }
 
-	/* test for special device families */
-	switch (ds->sn[0]) {
-	case 0x00:
-		LEVEL_DATA("USBnextboth: NULL family found\n");
-		return -EIO;
-	case 0x04:
-	case 0x84:
-		/* We found a DS1994/DS2404 which require longer delays */
-		pn->selected_connection->ds2404_compliance = 1;
-		break;
-	default:
-		break;
-	}
-	LEVEL_DEBUG("DS9490_next_both SN found: " SNformat "\n",
-				SNvar(ds->sn));
-	return 0;
+    bytes_back = buffer[13] ;
+    if ( bytes_back == 0 ) {
+        /* Nothing found on the bus. Have to return something != 0 to avoid
+        * getting stuck in loop in FS_realdir() and FS_alarmdir()
+        * which ends when ret!=0 */
+        LEVEL_DATA("USBdirectory: ReadBufferstatus == 0\n");
+        return -ENOENT;
+    } else if ( (bytes_back%8!=0) || (bytes_back>DS2490_DIR_GULP_SIZE+8) ) {
+        LEVEL_DATA("USBdirectory: ReadBufferstatus %d not valid\n",bytes_back);
+        return -EIO;
+    }
+
+    devices_found = bytes_back / 8 ;
+    if ( devices_found > DS2490_DIR_GULP_ELEMENTS ) devices_found = DS2490_DIR_GULP_ELEMENTS ;
+    
+    if ((ret = DS9490_read(cb, bytes_back, pn)) <= 0) {
+        LEVEL_DATA("USBdirectory: bulk read problem ret=%d\n", ret);
+        return -EIO;
+    }
+
+    for ( device_index = 0 ; device_index < devices_found ; ++device_index ) {
+        BYTE sn[8] ;
+        memcpy(sn, &cb[device_index*8], 8);
+        /* test for CRC error */
+        if ( CRC8(sn, 8)!=0 || sn[0]==0 ) {
+            LEVEL_DATA("USBdirectory: CRC error\n");
+            return -EIO;
+        }
+        DirblobAdd(sn,db) ;
+    }
+    ds->LastDiscrepancy = FindDiscrepancy(&cb[bytes_back-16]);
+    ds->LastDevice = (bytes_back == devices_found * 8) ; // no more to read
+
+    return 0;
+}
+
+static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)
+{
+    int i ;
+    
+    /** Play LastDescrepancy games with bitstream */
+    memcpy(discrepancy, ds->sn, 8);      /* set bufferto zeros */
+
+    if (ds->LastDiscrepancy > -1) {
+        UT_setbit(discrepancy, ds->LastDiscrepancy, 1);
+    }
+    
+    /* This could be more efficiently done than bit-setting, but probably wouldnt make a difference */
+    for (i = ds->LastDiscrepancy + 1; i < 64; i++) {
+        UT_setbit(discrepancy, i, 0);
+    }
+}
+
+static int FindDiscrepancy( BYTE * last_sn )
+{
+    int i ;
+    BYTE * discrepancy_sn = last_sn + 8 ;
+    for (i = 63; i >= 0; i--) {
+        if ((UT_getbit(discrepancy_sn, i) != 0) && (UT_getbit(last_sn, i) == 0)) {
+            return i;
+        }
+    }
+    return 0 ;
 }
 
 //--------------------------------------------------------------------------
@@ -1424,8 +1460,6 @@ static int DS9490_HaltPulse(const struct parsedname *pn)
  */
 static int DS9490_level(int new_level, const struct parsedname *pn)
 {
-	int ret;
-
 	if (new_level == pn->selected_connection->connin.usb.ULevel) {	// check if need to change level
 		return 0;
 	}

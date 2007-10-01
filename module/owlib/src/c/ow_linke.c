@@ -127,10 +127,10 @@ static int LINK_next_both(struct device_search *ds,
 	if (ds->LastDevice)
 		return -ENODEV;
 
-	if (ds->LastDiscrepancy == -1) {
+    ++ds->index ;
+    if (ds->index == 0) {
 		if ((ret = LINK_write(LINK_string("f"), 1, pn)))
 			return ret;
-		ds->LastDiscrepancy = 0;
 	} else {
 		if ((ret = LINK_write(LINK_string("n"), 1, pn)))
 			return ret;

@@ -211,11 +211,11 @@ static int HA7_next_both(struct device_search *ds,
 	if (ds->LastDevice)
 		return -ENODEV;
 
-	if (++(ds->LastDiscrepancy) == 0) {
+	if (++(ds->index) == 0) {
 		if (HA7_directory(ds->search, db, pn))
 			return -EIO;
 	}
-	ret = DirblobGet(ds->LastDiscrepancy, ds->sn, db);
+	ret = DirblobGet(ds->index, ds->sn, db);
 	switch (ret) {
 	case 0:
 		if ((ds->sn[0] & 0x7F) == 0x04) {
