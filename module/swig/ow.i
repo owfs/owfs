@@ -29,14 +29,25 @@ char *version( ) {
 }
 
 static int finishcalled = 0;
+static int libstart_called = 0;
 
 int init( const char * dev ) {
     int ret = 1 ; /* Good initialization */
     //    LibSetup(opt_swig) ; /* Done in %init section */
-    if ( finishcalled || OWLIB_can_init_start() || owopt_packed(dev) ) {
+
+    if (finishcalled) return 0;
+
+    if(libstart_called) {
+	OWLIB_can_finish_start() ;
+	LibStop() ;
+	libstart_called = 0;
+	OWLIB_can_finish_end() ;
+    }
+    if ( OWLIB_can_init_start() || owopt_packed(dev) ) {
         ret = 0 ; // error
     } else {
-        LibStart() ;
+	LibStart() ;
+	libstart_called = 1;
     }
     OWLIB_can_init_end() ;
     return ret ; 
@@ -129,18 +140,11 @@ void finish( void ) {
 
     LibClose() ;
     finishcalled = 1;
+    libstart_called = 0;
 
     OWLIB_can_finish_end() ;
 }
 
-
-void closeconnection( void ) {
-    OWLIB_can_finish_start() ;
-
-    LibStop() ;
-
-    OWLIB_can_finish_end() ;
-}
 
 void set_error_print(int val) {
     Global.error_print = val;
@@ -167,7 +171,6 @@ extern int init( const char * dev ) ;
 extern char * get( const char * path ) ;
 extern int put( const char * path, const char * value ) ;
 extern void finish( void ) ;
-extern void closeconnection( void ) ;
 extern void set_error_print(int);
 extern int get_error_print(void);
 extern void set_error_level(int);
