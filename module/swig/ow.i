@@ -28,11 +28,12 @@ char *version( ) {
     return VERSION;
 }
 
+static int finishcalled = 0;
 
 int init( const char * dev ) {
     int ret = 1 ; /* Good initialization */
     //    LibSetup(opt_swig) ; /* Done in %init section */
-    if ( OWLIB_can_init_start() || owopt_packed(dev) ) {
+    if ( finishcalled || OWLIB_can_init_start() || owopt_packed(dev) ) {
         ret = 0 ; // error
     } else {
         LibStart() ;
@@ -126,32 +127,17 @@ char * get( const char * path ) {
 void finish( void ) {
     OWLIB_can_finish_start() ;
 
-    /* Can't call LibClose() here... it will free all cache-structures
-     * and free some other memory which is allocated in LibSetup().
-     * LibClose() should be renamed to LibFree() I guess.
-     */
-    //LibClose() ;
+    LibClose() ;
+    finishcalled = 1;
 
-    // Just clear cache and free all in/out connections.
-    Cache_Clear();
-    FreeIn();
-    FreeOut();
+    OWLIB_can_finish_end() ;
+}
 
-    {
-	char *argv[1] = { NULL };
 
-	/* Have to reset more internal variables, and this should be fixed
-	 * by setting optind = 0 and call getopt()
-         * (first_nonopt = last_nonopt = 1;)
-	 */
-	optind = 0;
-	(void)getopt_long(1, argv, " ", " ", NULL);
+void closeconnection( void ) {
+    OWLIB_can_finish_start() ;
 
-	optarg = NULL;
-	optind = 1;
-	opterr = 1;
-	optopt = '?';
-    }
+    LibStop() ;
 
     OWLIB_can_finish_end() ;
 }
@@ -181,6 +167,7 @@ extern int init( const char * dev ) ;
 extern char * get( const char * path ) ;
 extern int put( const char * path, const char * value ) ;
 extern void finish( void ) ;
+extern void closeconnection( void ) ;
 extern void set_error_print(int);
 extern int get_error_print(void);
 extern void set_error_level(int);

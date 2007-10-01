@@ -168,7 +168,6 @@ static void new_tree(void)
 /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open(void)
 {
-	printf("Cache_Open()\n");
 	memset(&cache, 0, sizeof(struct cache));
 
 	cache.lifespan = TimeOut(fc_stable);
@@ -183,8 +182,11 @@ void Cache_Open(void)
 void Cache_Close(void)
 {
 	tdestroy(cache.new_db, free);
+	cache.new_db = NULL;
 	tdestroy(cache.old_db, free);
+	cache.old_db = NULL;
 	tdestroy(cache.store, free);
+	cache.store = NULL;
 }
 
 static int Add_Stat(struct cache *scache, const int result)

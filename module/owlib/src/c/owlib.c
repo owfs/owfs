@@ -511,6 +511,34 @@ void LibClose(void)
 		closelog();
 }
 
+/* Just close in/out devices and clear cache. Just enough to make it possible
+   to call LibStart() again. */
+void LibStop(void)
+{
+	char *argv[1] = { NULL };
+#if OW_CACHE
+	LEVEL_CALL("Clear Cache\n");
+	Cache_Clear();
+#endif							/* OW_CACHE */
+	LEVEL_CALL("Closing input devices\n");
+	FreeIn();
+	LEVEL_CALL("Closing outout devices\n");
+	FreeOut();
+
+
+	/* Have to reset more internal variables, and this should be fixed
+	 * by setting optind = 0 and call getopt()
+         * (first_nonopt = last_nonopt = 1;)
+	 */
+	optind = 0;
+	(void)getopt_long(1, argv, " ", " ", NULL);
+
+	optarg = NULL;
+	optind = 1;
+	opterr = 1;
+	optopt = '?';
+}
+
 void set_signal_handlers(void (*exit_handler)
 						  (int signo, siginfo_t * info, void *context))
 {

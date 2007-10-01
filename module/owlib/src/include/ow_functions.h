@@ -83,6 +83,7 @@ const char *TemperatureScaleName(enum temp_type t);
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup(enum opt_program op);
 int LibStart(void);
+void LibStop(void);
 void LibClose(void);
 
 /* Initial sorting or the device and filetype lists */
