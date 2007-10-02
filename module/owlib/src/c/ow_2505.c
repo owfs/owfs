@@ -113,8 +113,6 @@ DeviceEntryExtended(8F, DS1986U, DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS2505 */
-static int OW_w_mem( BYTE * data,  size_t size,
-                     off_t offset,  struct parsedname *pn);
 static int OW_w_status( BYTE * data,  size_t size,
                      off_t offset,  struct parsedname *pn);
 
@@ -146,7 +144,7 @@ static int FS_r_status(struct one_wire_query * owq)
 
 static int FS_w_memory(struct one_wire_query * owq)
 {
-    if (OW_w_mem(OWQ_explode(owq)))
+    if (OW_w_eprom_mem(OWQ_explode(owq)))
         return -EINVAL;
     return 0;
 }
@@ -161,54 +159,9 @@ static int FS_w_status(struct one_wire_query * owq)
 static int FS_w_page(struct one_wire_query * owq)
 {
 	size_t pagesize = 32 ;
-    if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + OWQ_pn(owq).extension * pagesize, PN(owq)))
+    if (OW_w_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + OWQ_pn(owq).extension * pagesize, PN(owq)))
 		return -EINVAL;
 	return 0;
-}
-
-static int OW_w_mem( BYTE * data,  size_t size,
-                     off_t offset,  struct parsedname *pn)
-{
-    BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data[0] };
-    int ret;
-    struct transaction_log tfirst[] = {
-        TRXN_START,
-        {p, NULL, 4, trxn_match,},
-        {NULL, &p[4], 2, trxn_read,},
-        {p, NULL, 6, trxn_crc16,},
-        {NULL, NULL, 0, trxn_program,},
-        {NULL, p, 1, trxn_read,},
-        TRXN_END,
-    };
-
-    if (size == 0)
-        return 0;
-    if (size == 1)
-        return BUS_transaction(tfirst, pn) || (p[0] & (~data[0]));
-    BUSLOCK(pn);
-    if (BUS_transaction(tfirst, pn) || (p[0] & ~data[0])) {
-        ret = 1;
-    } else {
-        size_t i;
-        const BYTE *d = &data[1];
-        UINT s = offset + 1;
-        struct transaction_log trest[] = {
-            {p, NULL, 1, trxn_match,},
-            {NULL, &p[1], 2, trxn_read,},
-            {p, (BYTE *) & s, 3, trxn_crc16seeded,},
-            {NULL, NULL, 0, trxn_program,},
-            {NULL, p, 1, trxn_read,},
-            TRXN_END,
-        };
-        for (i = 0; i < size; ++i, ++d, ++s) {
-            if (BUS_transaction(trest, pn) || (p[0] & ~d[0])) {
-                ret = 1;
-                break;
-            }
-        }
-    }
-    BUSUNLOCK(pn);
-    return ret;
 }
 
 static int OW_w_status( BYTE * data,  size_t size,

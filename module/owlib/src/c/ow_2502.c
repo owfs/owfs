@@ -85,8 +85,6 @@ DeviceEntry(89, DS1982U);
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static int OW_w_mem( BYTE * data,  size_t size,
-					 off_t offset,  struct parsedname *pn);
 static int OW_r_mem(BYTE * data,  size_t size,  off_t offset,
 					 struct parsedname *pn);
 static int OW_r_data(BYTE * data, struct parsedname *pn);
@@ -119,7 +117,7 @@ static int FS_r_param(struct one_wire_query * owq)
 
 static int FS_w_memory(struct one_wire_query * owq)
 {
-    if (OW_w_mem(OWQ_explode(owq)))
+    if (OW_w_eprom_mem(OWQ_explode(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -128,58 +126,11 @@ static int FS_w_page(struct one_wire_query * owq)
 {
 	size_t pagesize = 32 ;
 	OWQ_offset(owq) += OWQ_pn(owq).extension * pagesize ;
-    if (OW_w_mem(OWQ_explode(owq)))
+    if (OW_w_eprom_mem(OWQ_explode(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-/* Byte-oriented write */
-static int OW_w_mem(BYTE * data, size_t size,
-					off_t offset, struct parsedname *pn)
-{
-	BYTE p[5] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data[0] };
-	int ret;
-	struct transaction_log tfirst[] = {
-		TRXN_START,
-		{p, NULL, 4, trxn_match,},
-		{NULL, &p[4], 1, trxn_read,},
-		{p, NULL, 5, trxn_crc8,},
-		{NULL, NULL, 0, trxn_program,},
-		{NULL, &p[3], 1, trxn_read,},
-		TRXN_END,
-	};
-
-	if (size == 0)
-		return 0;
-	if (size == 1)
-		return BUS_transaction(tfirst, pn) || (p[3] != data[0]);
-
-	BUSLOCK(pn);
-	if ((ret = BUS_transaction_nolock(tfirst, pn)
-		 || (p[3] != data[0])) == 0) {
-		size_t i;
-		const BYTE *d = &data[1];
-		UINT s = offset + 1;
-		struct transaction_log trest[] = {
-			{d, NULL, 1, trxn_match,},
-			{NULL, p, 1, trxn_read,},
-			{p, (BYTE *) (&s), 1, trxn_crc8seeded,},
-			{NULL, NULL, 0, trxn_program,},
-			{NULL, p, 1, trxn_read,},
-			TRXN_END,
-		};
-		for (i = 1; i < size; ++i, ++s, ++d) {
-			if ((ret = BUS_transaction_nolock(trest, pn)
-				 || (p[0] != d[0])))
-				break;
-		}
-	}
-	BUSUNLOCK(pn);
-
-	return ret;
-}
-
-/* page-oriented read -- call will not span page boundaries */
 static int OW_r_mem(BYTE * data, size_t size, off_t offset,
 					struct parsedname *pn)
 {

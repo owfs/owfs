@@ -222,6 +222,8 @@ int OW_r_mem_crc16_F0(struct one_wire_query * owq, size_t page, size_t pagesize)
 int OW_r_mem_toss8(struct one_wire_query * owq, size_t page, size_t pagesize) ;
 int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname * pn) ;
 
+int OW_w_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+
 void BUS_lock(const struct parsedname *pn);
 void BUS_unlock(const struct parsedname *pn);
 void BUS_lock_in(struct connection_in *in);
