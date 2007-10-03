@@ -45,12 +45,13 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_xxxx.h"
-#include "ow_codes.h"`
 
 /* ------- Prototypes ----------- */
 static int OW_w_eprom_mem_byte(BYTE data, off_t offset, const struct parsedname *pn) ;
+static int OW_w_eprom_status_byte(BYTE data, off_t offset, const struct parsedname *pn) ;
 
 #define _1W_WRITE_MEMORY         0x0F
+#define _1W_WRITE_STATUS         0x55
 
 int OW_w_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
@@ -65,6 +66,29 @@ int OW_w_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct pa
 static int OW_w_eprom_mem_byte(BYTE data, off_t offset, const struct parsedname *pn)
 {
     BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data, };
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WR_CRC16(p,4,0),
+        TRXN_PROGRAM,
+        TRXN_END,
+    };
+    
+    return BUS_transaction(t, pn) ;
+}
+
+int OW_w_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+{
+    int byte_number ;
+    for ( byte_number=0 ; byte_number < (int) size ; ++byte_number) {
+        if ( OW_w_eprom_status_byte( data[byte_number], offset+byte_number, pn) ) return 1 ;
+        LEVEL_DEBUG( "Wrote EPROM byte %d -- no errors\n",(int) offset+byte_number) ;
+    }
+    return 0 ;
+}
+
+static int OW_w_eprom_status_byte(BYTE data, off_t offset, const struct parsedname *pn)
+{
+    BYTE p[6] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data, };
     struct transaction_log t[] = {
         TRXN_START,
         TRXN_WR_CRC16(p,4,0),

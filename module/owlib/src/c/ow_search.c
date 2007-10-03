@@ -47,7 +47,7 @@ int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 	// reset the search state
     BUS_first_both(ds) ;
 	ds->search = _1W_CONDITIONAL_SEARCH_ROM;
-	BUS_reset(pn);
+	//BUS_reset(pn);
 	return BUS_next(ds, pn);
 }
 
