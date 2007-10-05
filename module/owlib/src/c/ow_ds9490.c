@@ -68,7 +68,7 @@ static int DS9490_next_both(struct device_search *ds,
 static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn);
-static int DS9490_level(int new_level, const struct parsedname *pn);
+static int DS9490_HaltPulse(const struct parsedname *pn) ;
 static void DS9490_setroutines(struct interface_routines *f);
 static int DS9490_detect_low(const struct parsedname *pn);
 static int DS9490_detect_found(struct usb_list *ul,
@@ -542,9 +542,8 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 						 ret);
 				} else if ((ret =
 					    (DS9490_setup_adapter(pn)
-					     || DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn)
-					     || DS9490_level(MODE_NORMAL, pn)))) {
-					LEVEL_DEFAULT
+					     || DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn) ))) {
+                                LEVEL_DEFAULT
 						("Error setting up USB DS9490 adapter at %s.\n",
 						 pn->selected_connection->name);
 				} else {		/* All GOOD */
@@ -894,10 +893,6 @@ static int DS9490_testoverdrive(const struct parsedname *pn)
 	BYTE p = 0x69;
 	int i, ret;
 
-	// make sure normal level
-	if ((ret = DS9490_level(MODE_NORMAL, pn)) < 0)
-		return ret;
-
 	// force to normal communication speed
 	if ((ret = DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn)) < 0)
 		return ret;
@@ -1030,11 +1025,6 @@ static int DS9490_reset(const struct parsedname *pn)
 
 	memset(buffer, 0, 32);
 
-	if ((ret = DS9490_level(MODE_NORMAL, pn)) < 0) {
-		LEVEL_DATA("DS9490_reset: level failed ret=%d\n", ret);
-		return ret;
-	}
-	
 	if((pn->selected_connection->connin.usb.USpeed != pn->selected_connection->use_overdrive_speed) &&
 	   ((ret = DS9490_overdrive(pn->selected_connection->use_overdrive_speed, pn)) < 0)) {
 		// revert to a flexible speed
@@ -1310,8 +1300,8 @@ static int FindDiscrepancy( BYTE * last_sn )
 }
 
 //--------------------------------------------------------------------------
-// Send 8 bits of communication to the 1-Wire Net and verify that the
-// 8 bits read from the 1-Wire Net is the same (write operation).
+// Send 8 bits of communication to the 1-Wire Net and read the
+// 8 bits back from the 1-Wire Net.
 // The parameter 'byte' least significant 8 bits are used.  After the
 // 8 bits are sent change the level of the 1-Wire net.
 // Delay delay msec and return to normal
@@ -1327,53 +1317,27 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 	LEVEL_DATA("DS9490_Powerbyte\n");
 
 	/* This is more likely to be the correct way to handle powerbytes */
-	if (pn->selected_connection->connin.usb.ULevel == MODE_STRONG5) {
-		DS9490_level(MODE_NORMAL, pn);
-	}
-	// set the strong pullup
-	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_PULSE_EN, ENABLE_PROGRAM_AND_PULSE,
-			pn)) < 0) {
-		LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 3\n");
-	} else
-		if ((ret = USB_Control_Msg(
-			COMM_CMD, COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF,
-			pn)) < 0) {
-		LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n");
-	} else {
-		/* strong pullup is now enabled */
-		pn->selected_connection->connin.usb.ULevel = MODE_STRONG5;
-
-		/* Read back the result (should be the same as "byte") */
-		if ((ret = DS9490_read(resp, 1, pn)) < 0) {
-			LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n",
-					   ret);
-		} else {
-			/* Delay with strong pullup */
-			UT_delay(delay);
-
-			/* Turn off strong pullup */
-			if ((ret = DS9490_level(MODE_NORMAL, pn)) < 0) {
-				LEVEL_DATA("DS9490_Powerbyte: DS9490_level, ret=%d\n",
-						   ret);
-				return ret;
-			} else {
-				return 0;
-			}
-		}
-	}
-	STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
-	return ret;
+    if ((ret = USB_Control_Msg(
+        COMM_CMD, COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF,
+        pn)) < 0) {
+        LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n");
+        STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
+    } else if ((ret = DS9490_read(resp, 1, pn)) < 0) {
+        /* Read back the result (may be the same as "byte") */
+        LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n",
+                    ret);
+    } else {
+        /* Delay with strong pullup */
+        UT_delay(delay);
+        ret = 0 ;
+    }
+    DS9490_HaltPulse(pn) ;
+    return ret;
 }
 
 static int DS9490_ProgramPulse(const struct parsedname *pn)
 {
 	int ret ;
-	
-	if ( DS9490_level(MODE_PROGRAM, pn) != 0 ) {
-		LEVEL_DEBUG("Couldn't set the program pulse level for the DS2490 chip\n");
-		return -EIO ;
-	}
 	
 	// set pullup to strong5 or program
 	// set the strong pullup duration to infinite
@@ -1388,7 +1352,7 @@ static int DS9490_ProgramPulse(const struct parsedname *pn)
     } else {
         UT_delay(1) ; // 1 msec (480 usec would be enough)
     }
-	if ( DS9490_level(MODE_NORMAL, pn) != 0 ) {
+    if ( DS9490_HaltPulse(pn) != 0 ) {
 		LEVEL_DEBUG("Couldn't reset the program pulse level back to normal\n");
 		return -EIO ;
 	}
@@ -1444,56 +1408,6 @@ static int DS9490_HaltPulse(const struct parsedname *pn)
 	return -1;
 }
 
-
-/* Set the 1-Wire Net line level.  The values for new_level are
-// 'new_level' - new level defined as
-//                MODE_NORMAL     0x00
-//                MODE_STRONG5    0x02
-//                MODE_PROGRAM    0x04
-//                MODE_BREAK      0x08 (not supported)
-//
-// Returns:    0 GOOD, !0 Error
-   Actually very simple for passive adapter
-*/
-/* return 0=good
-  -EIO not supported
- */
-static int DS9490_level(int new_level, const struct parsedname *pn)
-{
-	if (new_level == pn->selected_connection->connin.usb.ULevel) {	// check if need to change level
-		return 0;
-	}
-
-	LEVEL_DATA("DS9490_level %d (old = %d)\n", new_level,
-			   pn->selected_connection->connin.usb.ULevel);
-
-	switch (new_level) {
-	case MODE_NORMAL:
-		if (DS9490_HaltPulse(pn) != 0) {
-			return -EIO;
-		}
-		break ;
-	case MODE_STRONG5:
-		// set pullup to strong5
-		// set the strong pullup duration to infinite
-        
-        // Default state set in DS9490_setup_adapter
-        break;
-	case MODE_PROGRAM:
-		// set pullup to strong5
-		// set the strong pullup duration to 480usec
-        
-        // Default state set in DS9490_setup_adapter
-
-        break ;
-	case MODE_BREAK:
-	default:
-		return 1;
-	}
-
-	pn->selected_connection->connin.usb.ULevel = new_level;
-	return 0;
-}
 
 // Call to USB EP1 (control channel)
 // Names (bRequest, wValue wIndex) are from datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf 
