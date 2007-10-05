@@ -470,7 +470,6 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
                 LEVEL_DATA("DS9490_setup_adapter: error4 ret=%d\n", ret);
                 return -EIO;
             }
-	pn->selected_connection->connin.usb.ULevel = MODE_NORMAL;
 
 	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: getstatus failed ret=%d\n", ret);

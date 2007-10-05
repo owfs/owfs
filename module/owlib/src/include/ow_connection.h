@@ -186,20 +186,17 @@ struct connin_serial {
 	int UMode;
 	struct termios oldSerialTio;	/*old serial port settings */
 };
+
 struct connin_fake {
-//    speed_t speed;
-//    int USpeed ;
-//    int ULevel ;
-//    int UMode ;
 	struct dirblob db;
     int bus_number_this_type ;
 };
+
 struct connin_usb {
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
 	int usb_nr;
 	int USpeed;
-	int ULevel;
 	int UMode;
     int usb_settings_ok ;
 	int datasampleoffset;
@@ -216,6 +213,7 @@ struct connin_usb {
     struct dirblob main;        /* main directory */
     struct dirblob alarm;       /* alarm directory */
 };
+
 struct connin_i2c {
 	int channels;
 	int index;
@@ -230,6 +228,7 @@ struct connin_i2c {
 	int file_descriptor;
 	struct connection_in *head;
 };
+
 struct connin_tcp {
 	char *host;
 	char *service;
@@ -240,6 +239,7 @@ struct connin_tcp {
 	char *fqdn; // fully qualified domain name
 	int no_dirall; // flag that server doesn't support DIRALL
 };
+
 struct connin_ha7 {
 	struct connin_tcp tcp;		// mirror connin.server
 	ASCII lock[10];
@@ -248,9 +248,11 @@ struct connin_ha7 {
 	struct dirblob main;		/* main directory */
 	struct dirblob alarm;		/* alarm directory */
 };
+
 struct connin_etherweather {
 	struct connin_tcp tcp;
 };
+
 struct connin_link {
 	struct connin_tcp tcp;		// mirror connin.server
 	speed_t speed;
