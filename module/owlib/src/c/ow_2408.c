@@ -438,7 +438,7 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 
 static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
-    BYTE write_string[] = { _1W_CHANNEL_ACCESS_WRITE, data, ~data, };
+    BYTE write_string[] = { _1W_CHANNEL_ACCESS_WRITE, data, (BYTE) ~data, };
 	BYTE read_back[2];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -479,7 +479,7 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 	for (i = 0; i < size; ++i) {
         int formatted_data_pointer = 4 * i ;
 		formatted_data[formatted_data_pointer+0] = data[i];
-		formatted_data[formatted_data_pointer+1] = ~data[i];
+        formatted_data[formatted_data_pointer+1] = (BYTE) ~data[i];
 		formatted_data[formatted_data_pointer+2] = 0xFF;
 		formatted_data[formatted_data_pointer+3] = 0xFF;
 	}
@@ -494,7 +494,7 @@ static int OW_w_pios(const BYTE * data, const size_t size,
         if ( formatted_data[formatted_data_pointer+0] != data[i] ) {
             return 1;
         }
-        if ( formatted_data[formatted_data_pointer+1] != ~data[i] ) {
+        if ( formatted_data[formatted_data_pointer+1] != (BYTE) ~data[i] ) {
             return 1;
         }
         if ( formatted_data[formatted_data_pointer+2] != 0xAA ) {
