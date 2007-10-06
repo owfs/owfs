@@ -142,21 +142,24 @@ int OW_r_mem_toss8(struct one_wire_query * owq, size_t page, size_t pagesize)
     return 0;
 }
 
+#define _1W_Throw_Away_Bytes    1
+
 /*  0xA5 code */
 /* Extra 8 bytes, too */
 int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname * pn)
 {
-    off_t offset = (page+1) * pagesize - 1 ; // last byte of page
-    BYTE p[3 + 1 + 8 + 2] = { _1W_READ_A5, LOW_HIGH_ADDRESS(offset), };
+    off_t offset = (page+1) * pagesize - _1W_Throw_Away_Bytes ; // last byte of page
+    BYTE p[3 + _1W_Throw_Away_Bytes + 8 + 2] = { _1W_READ_A5, LOW_HIGH_ADDRESS(offset), };
     struct transaction_log t[] = {
         TRXN_START,
-        TRXN_WR_CRC16(p,3,1+8),
+        TRXN_WR_CRC16(p,3,_1W_Throw_Away_Bytes+8),
         TRXN_END,
     };
 
     if (BUS_transaction(t, pn ))
         return 1;
-    if ( extra ) memcpy(extra, &p[3+1], 8);
+    if ( extra ) memcpy(extra, &p[3+_1W_Throw_Away_Bytes], 8);
+    LEVEL_DEBUG("Counter Data: "SNformat"\n",SNvar(extra));
     return 0;
 }
 
