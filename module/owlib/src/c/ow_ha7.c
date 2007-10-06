@@ -56,8 +56,6 @@ static void HA7_setroutines(struct interface_routines *f)
 	f->detect = HA7_detect;
 	f->reset = HA7_reset;
 	f->next_both = HA7_next_both;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 	f->PowerByte = NULL;
 //    f->ProgramPulse = ;
 	f->sendback_data = HA7_sendback_data;

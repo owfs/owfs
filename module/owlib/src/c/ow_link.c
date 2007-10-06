@@ -58,8 +58,6 @@ static void LINK_setroutines(struct interface_routines *f)
 	f->detect = LINK_detect;
 	f->reset = LINK_reset;
 	f->next_both = LINK_next_both;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 	f->PowerByte = LINK_PowerByte;
 //    f->ProgramPulse = ;
 	f->sendback_data = LINK_sendback_data;

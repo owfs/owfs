@@ -37,8 +37,6 @@ static void DS9097_setroutines(struct interface_routines *f)
 	f->detect = DS9097_detect;
 	f->reset = DS9097_reset;
 	f->next_both = NULL;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 	f->PowerByte = NULL;
 //    f->ProgramPulse = ;
 	f->sendback_data = NULL;

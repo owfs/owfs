@@ -21,8 +21,6 @@ int global_count_tester_busses = 0 ;
 /* All the remaining_device_list of the program sees is the Fake_detect and the entry in iroutines */
 
 static int Fake_reset(const struct parsedname *pn);
-static int Fake_overdrive(const UINT ov, const struct parsedname *pn);
-static int Fake_testoverdrive(const struct parsedname *pn);
 static int Fake_ProgramPulse(const struct parsedname *pn);
 static int Fake_sendback_bits(const BYTE * data, BYTE * resp,
 							  const size_t len,
@@ -39,8 +37,6 @@ static void Fake_setroutines(struct interface_routines *f)
     f->detect = Fake_detect;
     f->reset = Fake_reset;
     f->next_both = Fake_next_both;
-    f->overdrive = Fake_overdrive;
-    f->testoverdrive = Fake_testoverdrive;
     f->PowerByte = NULL;
     f->ProgramPulse = Fake_ProgramPulse;
     f->sendback_data = NULL;
@@ -164,22 +160,13 @@ static int Fake_reset(const struct parsedname *pn)
 	(void) pn;
 	return BUS_RESET_OK;
 }
-static int Fake_overdrive(const UINT ov, const struct parsedname *pn)
-{
-	(void) ov;
-	(void) pn;
-	return 0;
-}
-static int Fake_testoverdrive(const struct parsedname *pn)
-{
-	(void) pn;
-	return 0;
-}
+
 static int Fake_ProgramPulse(const struct parsedname *pn)
 {
 	(void) pn;
 	return 0;
 }
+
 static int Fake_sendback_bits(const BYTE * data, BYTE * resp,
 							  const size_t length,
 							  const struct parsedname *pn)
@@ -190,6 +177,7 @@ static int Fake_sendback_bits(const BYTE * data, BYTE * resp,
 	(void) length;
 	return 0;
 }
+
 static void Fake_close(struct connection_in *in)
 {
 	(void) in;

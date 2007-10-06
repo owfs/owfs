@@ -59,6 +59,8 @@ READ_FUNCTION(FS_out);
 READ_FUNCTION(FS_version);
 READ_FUNCTION(FS_r_overdrive);
 WRITE_FUNCTION(FS_w_overdrive);
+READ_FUNCTION(FS_r_flextime);
+WRITE_FUNCTION(FS_w_flextime);
 READ_FUNCTION(FS_r_ds2404_compliance);
 WRITE_FUNCTION(FS_w_ds2404_compliance);
 READ_FUNCTION(FS_r_pulldownslewrate);
@@ -86,7 +88,8 @@ struct filetype sys_adapter[] = {
 	// variable length
   {"datasampleoffset",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},} ,
   {"ds2404_compliance",PROPERTY_LENGTH_YESNO, &Asystem, ft_yesno, fc_static,   FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},} ,
-  {"overdrive",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_overdrive, FS_w_overdrive, {v:NULL},} ,
+  {"overdrive",PROPERTY_LENGTH_YESNO, &Asystem, ft_yesno, fc_static,   FS_r_overdrive, FS_w_overdrive, {v:NULL},} ,
+  {"flexible_timing",PROPERTY_LENGTH_YESNO, &Asystem, ft_yesno, fc_static,   FS_r_flextime, FS_w_flextime, {v:NULL},} ,
   {"pulldownslewrate",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_static,   FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},} ,
 #ifdef DEBUG_DS2490
   {"ds2490status", 128, &Asystem, ft_vascii, fc_static,   FS_r_ds2490status, NO_WRITE_FUNCTION, {v:NULL},} ,
@@ -171,48 +174,73 @@ static int FS_w_ds2404_compliance(struct one_wire_query * owq)
 /* Just some tests to support overdrive */
 static int FS_r_overdrive(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+    struct parsedname * pn = PN(owq) ;
+    int dindex = pn->extension;
+    struct connection_in *in;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    if (dindex < 0)
+        dindex = 0;
+    in = find_connection_in(dindex);
+    if (!in)
+        return -ENOENT;
 
-	OWQ_U(owq) = in->use_overdrive_speed;
-	return 0;
+    OWQ_Y(owq) = (in->set_speed==bus_speed_overdrive);
+    return 0;
+}
+
+/* Just some tests to support flextime */
+static int FS_r_flextime(struct one_wire_query * owq)
+{
+    struct parsedname * pn = PN(owq) ;
+    int dindex = pn->extension;
+    struct connection_in *in;
+
+    if (dindex < 0)
+        dindex = 0;
+    in = find_connection_in(dindex);
+    if (!in)
+        return -ENOENT;
+    if (in->busmode != bus_usb)
+        return -ENOTSUP ;
+    OWQ_Y(owq) = Global.usb_flextime;
+    return 0;
 }
 
 static int FS_w_overdrive(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+    struct parsedname * pn = PN(owq) ;
+    int dindex = pn->extension;
+    struct connection_in *in;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    if (dindex < 0)
+        dindex = 0;
+    in = find_connection_in(dindex);
+    if (!in)
+        return -ENOENT;
 
-	switch (OWQ_U(owq)) {
-	case 0:
-		in->use_overdrive_speed = ONEWIREBUSSPEED_REGULAR;
-		break;
-	case 1:
-		if (pn->selected_connection->Adapter != adapter_DS9490)
-			return -ENOTSUP;
-		in->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE;
-		break;
-	case 2:
-		in->use_overdrive_speed = ONEWIREBUSSPEED_OVERDRIVE;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-	return 0;
+    
+    in->set_speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow ;
+    in->changed_bus_settings = 1 ;
+    return 0;
+}
+
+static int FS_w_flextime(struct one_wire_query * owq)
+{
+    struct parsedname * pn = PN(owq) ;
+    int dindex = pn->extension;
+    struct connection_in *in;
+
+    if (dindex < 0)
+        dindex = 0;
+    in = find_connection_in(dindex);
+    if (!in)
+        return -ENOENT;
+    if (in->busmode != bus_usb)
+        return -ENOTSUP ;
+
+    Global.usb_flextime = OWQ_Y(owq) ;
+    in->changed_bus_settings = 1 ;
+    return 0;
 }
 
 #ifdef DEBUG_DS2490
@@ -318,7 +346,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query * owq)
 	if(OWQ_U(owq) > 7)
 		return -ENOTSUP;
 	in->connin.usb.pulldownslewrate = OWQ_U(owq);
-	in->connin.usb.usb_settings_ok = 0; // force a reset
+	in->changed_bus_settings = 0; // force a reset
 	LEVEL_DEBUG("Set slewrate to %d\n", in->connin.usb.pulldownslewrate);
 	return 0;
 }
@@ -364,8 +392,8 @@ static int FS_w_writeonelowtime(struct one_wire_query * owq)
 	if((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15))
 		return -ENOTSUP;
 	in->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
-	in->connin.usb.usb_settings_ok = 0; // force a reset
-	return 0;
+    in->changed_bus_settings = 0; // force a reset
+    return 0;
 }
 
 /*
@@ -408,8 +436,8 @@ static int FS_w_datasampleoffset(struct one_wire_query * owq)
 	if((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10))
 		return -ENOTSUP;
 	in->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
-	in->connin.usb.usb_settings_ok = 0 ; // force a reset
-	return 0;
+    in->changed_bus_settings = 0; // force a reset
+    return 0;
 }
 
 /* special check, -remote file length won't match local sizes */

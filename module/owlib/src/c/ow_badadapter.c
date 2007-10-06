@@ -17,9 +17,6 @@ $Id$
 /* All the rest of the program sees is the BadAdapter_detect and the entry in iroutines */
 
 static int BadAdapter_reset(const struct parsedname *pn);
-static int BadAdapter_overdrive(const UINT ov,
-								const struct parsedname *pn);
-static int BadAdapter_testoverdrive(const struct parsedname *pn);
 static int BadAdapter_ProgramPulse(const struct parsedname *pn);
 static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static void BadAdapter_close(struct connection_in *in);
@@ -37,8 +34,6 @@ int BadAdapter_detect(struct connection_in *in)
 	in->Adapter = adapter_Bad;	/* OWFS assigned value */
 	in->iroutines.reset = BadAdapter_reset;
 	in->iroutines.next_both = NULL;
-	in->iroutines.overdrive = BadAdapter_overdrive;
-	in->iroutines.testoverdrive = BadAdapter_testoverdrive;
 	in->iroutines.PowerByte = NULL;
 	in->iroutines.ProgramPulse = BadAdapter_ProgramPulse;
 	in->iroutines.sendback_data = NULL;
@@ -57,25 +52,14 @@ static int BadAdapter_reset(const struct parsedname *pn)
 	(void) pn;
 	return -ENOTSUP;
 }
-static int BadAdapter_overdrive(const UINT ov, const struct parsedname *pn)
-{
-	(void) ov;
-	(void) pn;
-	STAT_ADD1_BUS(BUS_Overdrive_errors, pn->selected_connection);
-	return -ENOTSUP;
-}
-static int BadAdapter_testoverdrive(const struct parsedname *pn)
-{
-	(void) pn;
-	STAT_ADD1_BUS(BUS_TestOverdrive_errors, pn->selected_connection);
-	return -ENOTSUP;
-}
+
 static int BadAdapter_ProgramPulse(const struct parsedname *pn)
 {
 	(void) pn;
 	STAT_ADD1_BUS(BUS_ProgramPulse_errors, pn->selected_connection);
 	return -ENOTSUP;
 }
+
 static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
 	(void) pn;
@@ -84,6 +68,7 @@ static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, 
 	(void) len;
 	return -ENOTSUP;
 }
+
 static void BadAdapter_close(struct connection_in *in)
 {
 	(void) in;

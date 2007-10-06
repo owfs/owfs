@@ -71,7 +71,8 @@ struct global {
 	size_t cache_size;			// max cache size (or 0 for no max) ;
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
 	int altUSB;
-	/* timeouts -- order must match ow_opt.c values for correct indexing */
+    int usb_flextime;
+    /* timeouts -- order must match ow_opt.c values for correct indexing */
 	int timeout_volatile;
 	int timeout_stable;
 	int timeout_directory;

@@ -232,8 +232,6 @@ static void EtherWeather_setroutines(struct interface_routines *f) {
 	f->detect = EtherWeather_detect;
 	f->reset = EtherWeather_reset;
 	f->next_both = EtherWeather_next_both;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 	f->PowerByte = EtherWeather_PowerByte;
 //    f->ProgramPulse = ;
 	f->sendback_data = EtherWeather_sendback_data;

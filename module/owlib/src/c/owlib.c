@@ -26,37 +26,8 @@ void LibSetup(enum opt_program opt)
 #if OW_ZERO
 	OW_Load_dnssd_library();
 #endif
-
-	// global structure of configuration parameters
-	memset(&Global, 0, sizeof(struct global));
-
-    Global.error_level = e_err_default ;
-    Global.error_print = e_err_print_mixed ;
-
-	Global.opt = opt;
-	Global.want_background = 1;
-	Global.SimpleBusName = "None";
-	Global.max_clients = 250;
-
-	Global.timeout_volatile = 15;
-	Global.timeout_stable = 300;
-	Global.timeout_directory = 60;
-	Global.timeout_presence = 120;
-	Global.timeout_serial = 5;
-	Global.timeout_usb = 5;		// 5 seconds
-	Global.timeout_network = 1;
-	Global.timeout_server = 10;
-	Global.timeout_ftp = 900;
-	Global.timeout_persistent_low = 600;
-	Global.timeout_persistent_high = 3600;
-	Global.clients_persistent_low = 10;
-	Global.clients_persistent_high = 20;
-
-	Global.pingcrazy = 0 ;
-	Global.no_dirall = 0 ;
-	Global.no_get = 0 ;
-	Global.no_persistence = 0 ;
-	Global.eightbit_serial = 0 ;
+    
+    Global.opt = opt;
 
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();
@@ -531,7 +502,7 @@ void LibStop(void)
          * (first_nonopt = last_nonopt = 1;)
 	 */
 	optind = 0;
-	(void)getopt_long(1, argv, " ", " ", NULL);
+	(void)getopt_long(1, argv, " ", NULL, NULL);
 
 	optarg = NULL;
 	optind = 1;

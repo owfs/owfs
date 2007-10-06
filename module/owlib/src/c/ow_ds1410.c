@@ -62,8 +62,6 @@ static void DS1410_setroutines(struct interface_routines *f)
 	f->detect = DS1410_detect;
 	f->reset = DS1410_reset;
 	f->next_both = NULL;
-//    f->overdrive = ;
-	//   f->testoverdrive = ;
 	f->PowerByte = NULL;
 //    f->ProgramPulse = ;
 	f->sendback_data = NULL;

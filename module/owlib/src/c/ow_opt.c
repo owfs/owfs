@@ -109,7 +109,12 @@ const struct option owopts_long[] = {
 	{"noautoserver", no_argument, &Global.autoserver, 0},
 	{"announce", required_argument, NULL, 280},
 	{"allow_other", no_argument, NULL, 298},
-	{"altUSB", no_argument, &Global.altUSB, 1},	/* Willy Robison's tweaks */
+    {"altUSB", no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
+    {"altusb", no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
+    {"usb_flextime", no_argument, &Global.usb_flextime, 1},
+    {"USB_flextime", no_argument, &Global.usb_flextime, 1},
+    {"usb_regulartime", no_argument, &Global.usb_flextime, 0},
+    {"USB_regulartime", no_argument, &Global.usb_flextime, 0},
 
 	{"timeout_volatile", required_argument, NULL, 301,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, 302,},	// timeout -- unchanging cached values

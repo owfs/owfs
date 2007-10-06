@@ -78,13 +78,7 @@ int BUS_select(const struct parsedname *pn)
 				return 1;
 			pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
 		}
-		if (pn->selected_connection->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE) {	// overdrive?
-			if (pn->selected_connection->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE) {
-				if ((ret = BUS_testoverdrive(pn)) < 0) {
-					BUS_selection_error(ret);
-					return ret;
-				}
-			}
+		if (pn->selected_connection->set_speed == bus_speed_overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else if (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8) || pn->selected_connection->buspath_bad) {	/* different path */
@@ -116,13 +110,6 @@ int BUS_select(const struct parsedname *pn)
 		if ((ret = BUS_send_data(sent, 1, pn))) {
 			BUS_selection_error(ret);
 			return ret;
-		}
-        if (sent[0] == _1W_OVERDRIVE_MATCH_ROM) {
-			if ((ret =
-					BUS_overdrive(ONEWIREBUSSPEED_OVERDRIVE, pn)) < 0) {
-				BUS_selection_error(ret);
-				return ret;
-			}
 		}
 		if ((ret = BUS_send_data(&sent[1], 8, pn))) {
 			BUS_selection_error(ret);

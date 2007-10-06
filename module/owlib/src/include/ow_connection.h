@@ -118,10 +118,6 @@ struct interface_routines {
 	/* Bulk of search routine, after set ups for first or alarm or family */
 	int (*next_both) (struct device_search * ds,
 					  const struct parsedname * pn);
-	/* Change speed between overdrive and normal on the 1-wire bus */
-	int (*overdrive) (const UINT overdrive, const struct parsedname * pn);
-	/* Change speed between overdrive and normal on the 1-wire bus */
-	int (*testoverdrive) (const struct parsedname * pn);
 	/* Send a byte with bus power to follow */
 	int (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay,
 					  const struct parsedname * pn);
@@ -152,8 +148,6 @@ struct interface_routines {
 #define BUS_ProgramPulse(pn)                (((pn)->selected_connection->iroutines.ProgramPulse)(pn))
 //#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->selected_connection->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
 //#define BUS_select(pn)                      (((pn)->selected_connection->iroutines.select)(pn))
-#define BUS_overdrive(speed,pn)             (((pn)->selected_connection->iroutines.overdrive)((speed),(pn)))
-#define BUS_testoverdrive(pn)               (((pn)->selected_connection->iroutines.testoverdrive)((pn)))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
 /* placed in iroutines.flags */
@@ -179,6 +173,8 @@ struct interface_routines {
 #define OUTUNLOCK(out)
 #endif							/* OW_MT */
 
+enum bus_speed { bus_speed_unknown, bus_speed_slow, bus_speed_overdrive } ;
+
 struct connin_serial {
 	speed_t speed;
 	int USpeed;
@@ -196,9 +192,7 @@ struct connin_usb {
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
 	int usb_nr;
-	int USpeed;
 	int UMode;
-    int usb_settings_ok ;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
@@ -351,8 +345,9 @@ struct connection_in {
 	char *adapter_name;
 	int AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
-	int use_overdrive_speed;
-	int ds2404_compliance;
+    enum bus_speed set_speed;
+    int changed_bus_settings ;
+    int ds2404_compliance;
 	int ProgramAvailable;
 	size_t last_root_devs;
 	int buspath_bad;			// should the current DS2409 branches be cleared?

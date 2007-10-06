@@ -46,8 +46,6 @@ static void DS2480_setroutines(struct interface_routines *f)
 	f->detect = DS2480_detect;
 	f->reset = DS2480_reset;
 	f->next_both = DS2480_next_both;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 	f->PowerByte = DS2480_PowerByte;
 	f->ProgramPulse = DS2480_ProgramPulse;
 	f->sendback_data = DS2480_sendback_data;

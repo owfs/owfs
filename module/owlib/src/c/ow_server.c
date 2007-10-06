@@ -51,8 +51,6 @@ static void Server_setroutines(struct interface_routines *f)
 	f->detect = Server_detect;
 //    f->reset         =;
 //    f->next_both  ;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 //    f->PowerByte     = ;
 //    f->ProgramPulse = ;
 //    f->sendback_data = ;
@@ -67,8 +65,6 @@ static void Zero_setroutines(struct interface_routines *f)
 	f->detect = Server_detect;
 //    f->reset         =;
 //    f->next_both  ;
-//    f->overdrive = ;
-//    f->testoverdrive = ;
 //    f->PowerByte     = ;
 //    f->ProgramPulse = ;
 //    f->sendback_data = ;

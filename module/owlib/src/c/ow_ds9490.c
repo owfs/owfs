@@ -80,17 +80,15 @@ static int DS9490_read(BYTE * buf, const size_t size,
 					   const struct parsedname *pn);
 static int DS9490_write(BYTE * buf, const size_t size,
 						const struct parsedname *pn);
-static int DS9490_overdrive(const UINT overdrive,
-							const struct parsedname *pn);
-static int DS9490_testoverdrive(const struct parsedname *pn);
+static int DS9490_overdrive(const struct parsedname * pn ) ;
 static int DS9490_redetect_low(const struct parsedname *pn);
 static char *DS9490_device_name(const struct usb_list *ul);
-static int DS9490_Set_USB_Parameters(const struct parsedname *pn) ;
 static int USB_Control_Msg( BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname * pn ) ;
 static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy) ;
 static int FindDiscrepancy( BYTE * last_sn ) ;
 static int DS9490_directory(struct device_search *ds, struct dirblob *db,
                             const struct parsedname *pn) ;
+static int DS9490_SetSpeed( const struct parsedname * pn ) ;
 
 
 /* Device-specific routines */
@@ -99,8 +97,6 @@ static void DS9490_setroutines(struct interface_routines *f)
 	f->detect = DS9490_detect;
 	f->reset = DS9490_reset;
 	f->next_both = DS9490_next_both;
-	f->overdrive = DS9490_overdrive;
-	f->testoverdrive = DS9490_testoverdrive;
 	f->PowerByte = DS9490_PowerByte;
 	f->ProgramPulse = DS9490_ProgramPulse;
 	f->sendback_data = DS9490_sendback_data;
@@ -303,26 +299,8 @@ int DS9490_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	// store timeout value -- sec -> msec
-	in->connin.usb.timeout = 1000 * Global.timeout_usb;
-
-	// default is to use flexible speed. This makes it possible
-	// to change slew-rate etc...
-	in->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE;
-
-	/* in regular and overdrive speed, slew rate is 15V/us. It's only
-	 * suitable for short 1-wire busses. Use flexible speed instead. */
-
-	// default values for bus-timing when using --altUSB
-	if(Global.altUSB) {
-	  in->connin.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
-	  in->connin.usb.writeonelowtime = PARMSET_W1L_10us;
-	  in->connin.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
-	} else {
-	  /* This seem to be the default value when reseting the ds2490 chip */
-	  in->connin.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
-	  in->connin.usb.writeonelowtime = PARMSET_W1L_12us;
-	  in->connin.usb.datasampleoffset = PARMSET_DS0_W0R_7us;
-	}
+    in->changed_bus_settings = 1 ; // Trigger needing new configuration
+    in->set_speed = bus_speed_slow ; // not overdrive at start
 
 	ret = DS9490_detect_low(&pn);
 	if (ret) {
@@ -398,42 +376,6 @@ static int DS9490_detect_found(struct usb_list *ul,
 	return 0;
 }
 
-static int DS9490_Set_USB_Parameters(const struct parsedname *pn)
-{
-	int ret = 0;
-	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
-
-	// in case timeout value changed (via settings) -- sec -> msec
-	pn->selected_connection->connin.usb.timeout = 1000 * Global.timeout_usb;
-
-	/* Willy Robison's tweaks */
-	if(usb == NULL) return -1;
-
-	/* Slew Rate */
-	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_PULLDOWN_SLEWRATE, pn->selected_connection->connin.usb.pulldownslewrate, 
-			pn)) < 0) {
-		LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_PULLDOWN_SLEWRATE\n");
-		return -EIO;
-	}
-	/* Low Time */
-	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_WRITE1_LOWTIME, pn->selected_connection->connin.usb.writeonelowtime,
-			pn)) < 0) {
-		LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_WRITE1_LOWTIME\n");
-		return -EIO;
-	}
-	/* DS0 Low */
-	if ((ret = USB_Control_Msg(
-			MODE_CMD, MOD_DSOW0_TREC, pn->selected_connection->connin.usb.datasampleoffset,
-			pn)) < 0) {
-		LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_DS0W0\n");
-		return -EIO;
-	}
-	pn->selected_connection->connin.usb.usb_settings_ok = 1 ;
-	return ret;
-}
-
 static int DS9490_setup_adapter(const struct parsedname *pn)
 {
 	BYTE buffer[32];
@@ -469,15 +411,23 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
             pn)) < 0) {
                 LEVEL_DATA("DS9490_setup_adapter: error4 ret=%d\n", ret);
                 return -EIO;
-            }
+    }
 
+    // enable speed changes
+    if ((ret = USB_Control_Msg(
+         MODE_CMD, MOD_SPEED_CHANGE_EN, 1,
+    pn)) < 0) {
+        LEVEL_DATA("DS9490_setup_adapter: error4 ret=%d\n", ret);
+        return -EIO;
+    }
+            
 	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
 		LEVEL_DATA("DS9490_setup_adapter: getstatus failed ret=%d\n", ret);
 		return ret;
 	}
 
 	// always set slewrate since we use flexible speed
-	if((ret = DS9490_Set_USB_Parameters(pn)) < 0) return ret;
+	//if((ret = DS9490_SetSpeed(pn->in)) < 0) return ret;
 
 	LEVEL_DATA("DS9490_setup_adapter: done (ret=%d)\n", ret);
 	return 0;
@@ -539,11 +489,8 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 					LEVEL_DEFAULT
 						("DS9490_open: USB_CLEAR_HALT failed ret=%d\n",
 						 ret);
-				} else if ((ret =
-					    (DS9490_setup_adapter(pn)
-					     || DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn) ))) {
-                                LEVEL_DEFAULT
-						("Error setting up USB DS9490 adapter at %s.\n",
+				} else if ((ret = DS9490_setup_adapter(pn) )) {
+                    LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n",
 						 pn->selected_connection->name);
 				} else {		/* All GOOD */
 					return 0;
@@ -885,122 +832,35 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 	return (ret - 16);			// return number of status bytes in buffer
 }
 
-static int DS9490_testoverdrive(const struct parsedname *pn)
-{
-	BYTE buffer[32];
-	BYTE r[8];
-	BYTE p = 0x69;
-	int i, ret;
-
-	// force to normal communication speed
-	if ((ret = DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn)) < 0)
-		return ret;
-
-	if ((ret = BUS_reset(pn)) < 0)
-		return ret;
-
-	if (!DS9490_sendback_data(&p, buffer, 1, pn) && (p == buffer[0])) {	// match command 0x69
-		if (!DS9490_overdrive(ONEWIREBUSSPEED_OVERDRIVE, pn)) {
-			for (i = 0; i < 8; i++)
-				buffer[i] = pn->sn[i];
-			LEVEL_DEBUG("Test overdrive "SNformat"\n",SNvar(pn->sn));
-			if (!DS9490_sendback_data(buffer, r, 8, pn)) {
-				for (i = 0; i < 8; i++) {
-					if (r[i] != pn->sn[i])
-						break;
-				}
-				if (i == 8) {
-					if ((i = DS9490_getstatus(buffer, 0, pn)) >= 0) {
-						LEVEL_DEBUG("DS9490_testoverdrive: i=%d status=%X\n", i, (i>0 ? buffer[16] : 0));
-						return 0;	// ok
-					}
-				}
-			}
-		}
-	}
-	LEVEL_DEBUG("DS9490_testoverdrive failed\n");
-	DS9490_overdrive(ONEWIREBUSSPEED_FLEXIBLE, pn);
-	return -EINVAL;
-}
-
-static int DS9490_overdrive(const UINT overdrive,
-							const struct parsedname *pn)
+// Switch to overdrive speed -- 3 tries
+static int DS9490_overdrive(const struct parsedname * pn )
 {
 	int ret;
 	BYTE sp = _1W_OVERDRIVE_SKIP_ROM;
 	BYTE resp;
 	int i;
-	int oldspeed;
-	struct connin_usb *con_usb = &pn->selected_connection->connin.usb;
 
-	switch (overdrive) {
-	case ONEWIREBUSSPEED_OVERDRIVE:
-		if (pn->selected_connection->use_overdrive_speed != ONEWIREBUSSPEED_OVERDRIVE)
-			return -1;	// adapter doesn't use overdrive
+    LEVEL_DATA("DS9490_overdrive() set overdrive speed\n");
 
-		if (con_usb->USpeed == ONEWIREBUSSPEED_OVERDRIVE)
-			return 0;	// already in overdrive speed
+    // we need to change speed to overdrive
+    for (i = 0; i < 3; i++) {
+        if ((ret = BUS_reset(pn)) < 0)
+            continue;
+        if (((ret = DS9490_sendback_data(&sp, &resp, 1, pn)) < 0)
+            || (_1W_OVERDRIVE_SKIP_ROM != resp)) {
+            LEVEL_DEBUG("overdrive: error sending ret=%d %.2X/0x%02X\n", ret, _1W_OVERDRIVE_SKIP_ROM, resp);
+            continue;
+        }
+        if( (ret = USB_Control_Msg(
+                MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_OVERDRIVE,
+        pn)) == 0) {
+            LEVEL_DEBUG("overdrive: speed is now set to overdrive\n");
+            return 0 ;
+        }
+    }
 
-		LEVEL_DATA("DS9490_overdrive() set overdrive speed\n");
-
-		// set USpeed here to avoid BUS_reset to call this function
-		// recursively
-		oldspeed = con_usb->USpeed;
-		con_usb->USpeed = ONEWIREBUSSPEED_OVERDRIVE;
-
-		// we need to change speed to overdrive
-		for (i = 0; i < 3; i++) {
-			if ((ret = BUS_reset(pn)) < 0)
-				continue;
-			if (((ret = DS9490_sendback_data(&sp, &resp, 1, pn)) < 0)
-				|| (_1W_OVERDRIVE_SKIP_ROM != resp)) {
-				LEVEL_DEBUG("overdrive: error sending ret=%d %.2X/0x%02X\n", ret, _1W_OVERDRIVE_SKIP_ROM, resp);
-				continue;
-			}
-			if((con_usb->usb) &&
-			   ((ret = USB_Control_Msg(
-					MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_OVERDRIVE,
-					pn)) == 0))
-				break;
-		}
-		if (i == 3) {
-			LEVEL_DEBUG("Error setting overdrive after 3 retries\n");
-			con_usb->USpeed = oldspeed;
-		  	return -EINVAL;
-		}
-		LEVEL_DEBUG("overdrive: speed is now set to overdrive\n");
-		break;
-	case ONEWIREBUSSPEED_FLEXIBLE:
-		/* We should perhaps test if speed already is set, but then we
-		 * might have problem when we can't reach flex-speed if
-		 * overdrive failed. */
-		if (con_usb->USpeed == ONEWIREBUSSPEED_FLEXIBLE)
-			return 0;  // already in flexible speed
-
-		LEVEL_DATA("DS9490_overdrive() set flexible speed\n");
-		/* Have to make sure usb isn't closed after last reconnect */
-		if ((ret = USB_Control_Msg(
-				MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_FLEXIBLE,
-				pn)) < 0)
-			return ret;
-		break;
-	default:
-		/* We should perhaps test if speed already is set, but then we
-		 * might have problem when we can't reach regular-speed if
-		 * overdrive failed. */
-		if (con_usb->USpeed == ONEWIREBUSSPEED_REGULAR)
-			return 0;  // already in regular speed
-
-		LEVEL_DATA("DS9490_overdrive() set regular speed\n");
-		/* Have to make sure usb isn't closed after last reconnect */
-		if ((ret = USB_Control_Msg(
-				MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_REGULAR,
-				pn)) < 0)
-			return ret;
-		break;
-	}
-	con_usb->USpeed = overdrive;
-	return 0;
+    LEVEL_DEBUG("Error setting overdrive after 3 retries\n");
+    return -EIO ;
 }
 
 /* Reset adapter and detect devices on the bus */
@@ -1010,7 +870,9 @@ static int DS9490_reset(const struct parsedname *pn)
 {
 	int i, ret;
 	BYTE buffer[32];
-	//printf("9490RESET\n");
+    int USpeed ;
+
+    //printf("9490RESET\n");
 	//printf("DS9490_reset() index=%d pn->selected_connection->Adapter=%d %s\n", pn->selected_connection->index, pn->selected_connection->Adapter, pn->selected_connection->adapter_name);
 
 	LEVEL_DATA("DS9490_reset\n");
@@ -1018,29 +880,26 @@ static int DS9490_reset(const struct parsedname *pn)
 	if (pn->selected_connection->connin.usb.usb==NULL || pn->selected_connection->connin.usb.dev==NULL)
 		return -EIO;
 
-	if ( ! pn->selected_connection->connin.usb.usb_settings_ok ) {
-		DS9490_Set_USB_Parameters(pn) ; // reset paramters
+    // Do we need to change settings?
+    if ( ! pn->selected_connection->changed_bus_settings ) {
+		DS9490_SetSpeed(pn) ; // reset paramters
 	}
 
 	memset(buffer, 0, 32);
 
-	if((pn->selected_connection->connin.usb.USpeed != pn->selected_connection->use_overdrive_speed) &&
-	   ((ret = DS9490_overdrive(pn->selected_connection->use_overdrive_speed, pn)) < 0)) {
-		// revert to a flexible speed
-		if(pn->selected_connection->use_overdrive_speed == ONEWIREBUSSPEED_OVERDRIVE)
-			pn->selected_connection->use_overdrive_speed = ONEWIREBUSSPEED_FLEXIBLE;
-		return ret;
-	}
+    USpeed =  (pn->selected_connection->set_speed == bus_speed_slow) ?
+            (Global.usb_flextime ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
+    : ONEWIREBUSSPEED_OVERDRIVE ;
 
-	if ((ret = USB_Control_Msg(
-			COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, pn->selected_connection->connin.usb.USpeed,
+    if ((ret = USB_Control_Msg(
+			COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, USpeed,
 			pn)) < 0) {
 		LEVEL_DATA("DS9490_reset: error sending reset ret=%d\n", ret);
 		return -EIO;			// fatal error... probably closed usb-handle
 	}
 
 	if (pn->selected_connection->ds2404_compliance
-		&& (pn->selected_connection->connin.usb.USpeed != ONEWIREBUSSPEED_OVERDRIVE)) {
+           && (pn->selected_connection->set_speed == bus_speed_slow)) {
 		// extra delay for alarming DS1994/DS2404 complience
 		UT_delay(5);
 	}
@@ -1234,6 +1093,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db,
     }
 
     bytes_back = buffer[13] ;
+    LEVEL_DEBUG("Got %d bytes from USB search\n",bytes_back);
     if ( bytes_back == 0 ) {
         /* Nothing found on the bus. Have to return something != 0 to avoid
         * getting stuck in loop in FS_realdir() and FS_alarmdir()
@@ -1274,13 +1134,13 @@ static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)
     int i ;
     
     /** Play LastDescrepancy games with bitstream */
-    memcpy(discrepancy, ds->sn, 8);      /* set bufferto zeros */
+    memcpy(discrepancy, ds->sn, 8);      /* set buffer to zeros */
 
     if (ds->LastDiscrepancy > -1) {
         UT_setbit(discrepancy, ds->LastDiscrepancy, 1);
     }
     
-    /* This could be more efficiently done than bit-setting, but probably wouldnt make a difference */
+    /* This could be more efficiently done than bit-setting, but probably wouldn't make a difference */
     for (i = ds->LastDiscrepancy + 1; i < 64; i++) {
         UT_setbit(discrepancy, i, 0);
     }
@@ -1424,6 +1284,84 @@ static int USB_Control_Msg( BYTE bRequest, UINT wValue, UINT wIndex, const struc
 		0, 
 		pn->selected_connection->connin.usb.timeout
 	) ;
+}
+
+static int DS9490_SetSpeed( const struct parsedname * pn )
+{
+    int ret ;
+
+    // Prevent recursive loops on reset
+    pn->selected_connection->changed_bus_settings = 0 ;
+    
+    // in case timeout value changed (via settings) -- sec -> msec
+    pn->selected_connection->connin.usb.timeout = 1000 * Global.timeout_usb;
+    
+    if (pn->selected_connection->set_speed == bus_speed_overdrive) {
+        if (DS9490_overdrive(pn) == 0 )
+            return 0 ;
+    }
+
+    // Failed overdrive, switch to slow
+    pn->selected_connection->set_speed = bus_speed_slow ;
+        
+    if (Global.usb_flextime) {
+    // default is to use flexible speed. This makes it possible
+    // to change slew-rate etc...
+    /* in regular and overdrive speed, slew rate is 15V/us. It's only
+    * suitable for short 1-wire busses. Use flexible speed instead. */
+
+    // default values for bus-timing when using --altUSB
+        if(Global.altUSB) {
+            pn->selected_connection->connin.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
+            pn->selected_connection->connin.usb.writeonelowtime = PARMSET_W1L_10us;
+            pn->selected_connection->connin.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
+        } else {
+            /* This seem to be the default value when reseting the ds2490 chip */
+            pn->selected_connection->connin.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
+            pn->selected_connection->connin.usb.writeonelowtime = PARMSET_W1L_12us;
+            pn->selected_connection->connin.usb.datasampleoffset = PARMSET_DS0_W0R_7us;
+        }
+        LEVEL_DATA("DS9490_overdrive() set flexible speed\n");
+        
+        /* Have to make sure usb isn't closed after last reconnect */
+        if ((ret = USB_Control_Msg(
+             MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_FLEXIBLE,
+        pn)) < 0)
+            return ret;
+
+        /* Slew Rate */
+        if ((ret = USB_Control_Msg(
+             MODE_CMD, MOD_PULLDOWN_SLEWRATE, pn->selected_connection->connin.usb.pulldownslewrate,
+        pn)) < 0) {
+            LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_PULLDOWN_SLEWRATE\n");
+            return ret;
+        }
+
+        /* Low Time */
+        if ((ret = USB_Control_Msg(
+             MODE_CMD, MOD_WRITE1_LOWTIME, pn->selected_connection->connin.usb.writeonelowtime,
+        pn)) < 0) {
+            LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_WRITE1_LOWTIME\n");
+            return ret;
+        }
+
+        /* DS0 Low */
+        if ((ret = USB_Control_Msg(
+             MODE_CMD, MOD_DSOW0_TREC, pn->selected_connection->connin.usb.datasampleoffset,
+        pn)) < 0) {
+            LEVEL_DATA("DS9490_Set_USB_Parameters: Error MOD_DS0W0\n");
+            return ret;
+        }
+
+    } else {
+        LEVEL_DATA("DS9490_overdrive() set regular speed\n");
+        /* Have to make sure usb isn't closed after last reconnect */
+        if ((ret = USB_Control_Msg(
+             MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_REGULAR,
+        pn)) < 0)
+            return ret;
+    }
+    return 0 ;
 }
 
 #endif							/* OW_USB */
