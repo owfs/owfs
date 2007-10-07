@@ -142,32 +142,20 @@ struct device d_sys_configure =
 static int FS_r_ds2404_compliance(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    SetKnownBus(pn->extension,pn) ;
 
-	OWQ_Y(owq) = in->ds2404_compliance;
+    OWQ_Y(owq) = pn->selected_connection->ds2404_compliance;
 	return 0;
 }
 
 static int FS_w_ds2404_compliance(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    SetKnownBus(pn->extension,pn);
 
-	in->ds2404_compliance = OWQ_Y(owq);
+    pn->selected_connection->ds2404_compliance = OWQ_Y(owq);
 	return 0;
 }
 
@@ -175,16 +163,10 @@ static int FS_w_ds2404_compliance(struct one_wire_query * owq)
 static int FS_r_overdrive(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
-    struct connection_in *in;
 
-    if (dindex < 0)
-        dindex = 0;
-    in = find_connection_in(dindex);
-    if (!in)
-        return -ENOENT;
-
-    OWQ_Y(owq) = (in->set_speed==bus_speed_overdrive);
+    SetKnownBus(pn->extension,pn) ;
+    
+    OWQ_Y(owq) = (pn->selected_connection->set_speed==bus_speed_overdrive);
     return 0;
 }
 
@@ -192,15 +174,10 @@ static int FS_r_overdrive(struct one_wire_query * owq)
 static int FS_r_flextime(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
-    struct connection_in *in;
 
-    if (dindex < 0)
-        dindex = 0;
-    in = find_connection_in(dindex);
-    if (!in)
-        return -ENOENT;
-    if (in->busmode != bus_usb)
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
         return -ENOTSUP ;
     OWQ_Y(owq) = Global.usb_flextime;
     return 0;
@@ -209,37 +186,25 @@ static int FS_r_flextime(struct one_wire_query * owq)
 static int FS_w_overdrive(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
-    struct connection_in *in;
 
-    if (dindex < 0)
-        dindex = 0;
-    in = find_connection_in(dindex);
-    if (!in)
-        return -ENOENT;
-
+    SetKnownBus(pn->extension,pn) ;
     
-    in->set_speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow ;
-    in->changed_bus_settings = 1 ;
+    pn->selected_connection->set_speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow ;
+    pn->selected_connection->changed_bus_settings = 1 ;
     return 0;
 }
 
 static int FS_w_flextime(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
-    struct connection_in *in;
 
-    if (dindex < 0)
-        dindex = 0;
-    in = find_connection_in(dindex);
-    if (!in)
-        return -ENOENT;
-    if (in->busmode != bus_usb)
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
         return -ENOTSUP ;
 
     Global.usb_flextime = OWQ_Y(owq) ;
-    in->changed_bus_settings = 1 ;
+    pn->selected_connection->changed_bus_settings = 1 ;
     return 0;
 }
 
@@ -247,19 +212,14 @@ static int FS_w_flextime(struct one_wire_query * owq)
 static int FS_r_ds2490status(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
 	char res[256];
 	char buffer[32+1];
 	int ret;
-	struct connection_in *in;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    SetKnownBus(pn->extension,pn) ;
+
 	res[0] = '\0';
-	if (in->busmode == bus_usb) {
+    if (pn->selected_connection->busmode == bus_usb) {
 #if OW_USB
 		ret = DS9490_getstatus(buffer, 0, PN(owq));
 		if(ret < 0) {
@@ -311,18 +271,13 @@ static int FS_r_ds2490status(struct one_wire_query * owq)
 static int FS_r_pulldownslewrate(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
-	if (in->busmode != bus_usb)
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
 		OWQ_U(owq) = 3;
 	else
-		OWQ_U(owq) = in->connin.usb.pulldownslewrate;
+        OWQ_U(owq) = pn->selected_connection->connin.usb.pulldownslewrate;
 
 	return 0;
 }
@@ -330,25 +285,23 @@ static int FS_r_pulldownslewrate(struct one_wire_query * owq)
 static int FS_w_pulldownslewrate(struct one_wire_query * owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
+        return -ENOTSUP ;
 
 	LEVEL_DEBUG("FS_w_pulldownslewrate\n");
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (in==NULL)
-		return -ENOENT;
-	if (in->busmode != bus_usb)
-		return -ENOTSUP;
-
 	if(OWQ_U(owq) > 7)
 		return -ENOTSUP;
-	in->connin.usb.pulldownslewrate = OWQ_U(owq);
-	in->changed_bus_settings = 0; // force a reset
-	LEVEL_DEBUG("Set slewrate to %d\n", in->connin.usb.pulldownslewrate);
-	return 0;
+    
+    pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
+    pn->selected_connection->changed_bus_settings = 1; // force a reset
+
+    LEVEL_DEBUG("Set slewrate to %d\n", pn->selected_connection->connin.usb.pulldownslewrate);
+
+    return 0;
 }
 
 /*
@@ -358,41 +311,33 @@ static int FS_w_pulldownslewrate(struct one_wire_query * owq)
  */
 static int FS_r_writeonelowtime(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
-	
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (in==NULL)
-		return -ENOENT;
-	if (in->busmode != bus_usb)
+    struct parsedname * pn = PN(owq) ;
+
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
 		OWQ_U(owq) = 10;
 	else
-		OWQ_U(owq) = in->connin.usb.writeonelowtime + 8;
-
+        OWQ_U(owq) = pn->selected_connection->connin.usb.writeonelowtime + 8;
+    
 	return 0;
 }
 
 static int FS_w_writeonelowtime(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+    struct parsedname * pn = PN(owq) ;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (in==NULL)
-		return -ENOENT;
-	if (in->busmode != bus_usb)
-		return -ENOTSUP;
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
+        return -ENOTSUP ;
 
 	if((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15))
 		return -ENOTSUP;
-	in->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
-    in->changed_bus_settings = 0; // force a reset
+    
+    pn->selected_connection->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
+    pn->selected_connection->changed_bus_settings = 0; // force a reset
+
     return 0;
 }
 
@@ -403,59 +348,45 @@ static int FS_w_writeonelowtime(struct one_wire_query * owq)
  */
 static int FS_r_datasampleoffset(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+    struct parsedname * pn = PN(owq) ;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (in==NULL)
-		return -ENOENT;
-	if (in->busmode != bus_usb)
-		OWQ_U(owq) = 8;
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
+        OWQ_U(owq) = 8;
 	else
-		OWQ_U(owq) = in->connin.usb.datasampleoffset + 3;
+        OWQ_U(owq) = pn->selected_connection->connin.usb.datasampleoffset + 3;
 	return 0;
 }
 
 static int FS_w_datasampleoffset(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+    struct parsedname * pn = PN(owq) ;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (in==NULL)
-		return -ENOENT;
-	if (in->busmode != bus_usb)
-		return -ENOTSUP;
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->busmode != bus_usb)
+        return -ENOTSUP;
 
 	if((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10))
 		return -ENOTSUP;
-	in->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
-    in->changed_bus_settings = 0; // force a reset
+    
+    pn->selected_connection->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
+    pn->selected_connection->changed_bus_settings = 0; // force a reset
+
     return 0;
 }
 
 /* special check, -remote file length won't match local sizes */
 static int FS_name(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
 	char * name = "" ;
+    struct parsedname * pn = PN(owq) ;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
-
-	if (in->adapter_name )
-        name = in->adapter_name ;
+    SetKnownBus(pn->extension,pn) ;
+    
+    if (pn->selected_connection->adapter_name )
+        name = pn->selected_connection->adapter_name ;
 	Fowq_output_offset_and_size_z( name, owq ) ;
 	return 0 ;
 }
@@ -463,18 +394,13 @@ static int FS_name(struct one_wire_query * owq)
 /* special check, -remote file length won't match local sizes */
 static int FS_port(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
 	char * name = "" ;
+    struct parsedname * pn = PN(owq) ;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    SetKnownBus(pn->extension,pn) ;
+    
 
-	if (in->name) name = in->name ;
+    if (pn->selected_connection->name) name = pn->selected_connection->name ;
 	Fowq_output_offset_and_size_z( name, owq ) ;
 	return 0 ;
 }
@@ -482,17 +408,12 @@ static int FS_port(struct one_wire_query * owq)
 /* special check, -remote file length won't match local sizes */
 static int FS_version(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct connection_in *in;
+    struct parsedname * pn = PN(owq) ;
 
-	if (dindex < 0)
-		dindex = 0;
-	in = find_connection_in(dindex);
-	if (!in)
-		return -ENOENT;
+    SetKnownBus(pn->extension,pn) ;
+    
 
-	OWQ_U(owq) = in->Adapter;
+    OWQ_U(owq) = pn->selected_connection->Adapter;
 	return 0;
 }
 

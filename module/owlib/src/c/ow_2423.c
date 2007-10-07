@@ -257,12 +257,14 @@ static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesiz
 {
     BYTE extra[8];
     if ( OW_r_mem_counter_bytes( extra, page, pagesize, PN(owq) ) ) return 1 ;
+#if 0
     if (extra[4] != _1W_COUNTER_FILL ||
         extra[5] != _1W_COUNTER_FILL ||
         extra[6] != _1W_COUNTER_FILL ||
         extra[7] != _1W_COUNTER_FILL ) {
         return 1;
     }
+#endif
     /* counter is held in the 4 bytes after the data */
     OWQ_U(owq) = UT_uint32(extra);
     return 0 ;
