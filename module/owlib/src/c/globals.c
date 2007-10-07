@@ -67,6 +67,8 @@ struct global Global = {
 
     .cache_size = 0 ,
 
+    .one_device = 0,
+
     .altUSB = 0 ,
     .usb_flextime = 1 ,
 

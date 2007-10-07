@@ -69,6 +69,7 @@ struct global {
 	int max_clients;			// for ftp
 	int autoserver;
 	size_t cache_size;			// max cache size (or 0 for no max) ;
+    int one_device ; // Single device, use faster ROM comands
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
 	int altUSB;
     int usb_flextime;

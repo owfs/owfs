@@ -21,6 +21,7 @@ static int BUS_selection_error(int ret);
 static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn);
+static int BUS_Skip_Rom( const struct parsedname * pn ) ;
 
 /* DS2409 commands */
 #define _1W_STATUS_READ_WRITE  0x5A
@@ -54,12 +55,17 @@ int BUS_select(const struct parsedname *pn)
     BYTE sent[9] = { _1W_MATCH_ROM, };
 	int pl = pn->pathlength;
 
+    // if declared only a single device, we can use faster SKIP ROM command
+    if (Global.one_device) {
+        return BUS_Skip_Rom(pn) ;
+    }
+
 	if (!RootNotBranch(pn) && AdapterSupports2409(pn)) {
 		LEVEL_CALL
 			("Attempt to use a branched path (DS2409 main or aux) when adapter doesn't support it.\n");
 		return -ENOTSUP;		/* cannot do branching with LINK ascii */
 	}
-	/* Adapter-specific select roputine? */
+	/* Adapter-specific select routine? */
 	if (pn->selected_connection->iroutines.select) {
 		return (pn->selected_connection->iroutines.select) (pn);
 	}
@@ -120,6 +126,22 @@ int BUS_select(const struct parsedname *pn)
 	return 0;
 }
 
+static int BUS_Skip_Rom( const struct parsedname * pn )
+{
+    BYTE skip[1] ;
+    struct transaction_log t[] = {
+        TRXN_WRITE1(skip),
+        TRXN_END,
+    };
+
+    if ((BUS_reset(pn)))
+        return 1;
+    skip[0] = (pn->selected_connection->set_speed==bus_speed_overdrive) ?
+        _1W_OVERDRIVE_SKIP_ROM :
+        _1W_SKIP_ROM ;
+    return BUS_transaction_nolock(t, pn);
+}
+
 /* All the railroad switches are correctly set, just isolate the last segment */
 static int BUS_select_branch(const struct parsedname *pn)
 {
@@ -136,8 +158,8 @@ static int BUS_select_subbranch(const struct buspath *bp,
     BYTE branch[2] = { _1W_SMART_ON_MAIN, _1W_SMART_ON_AUX, };	/* Main, Aux */
 	BYTE resp[3];
 	struct transaction_log t[] = {
-		{sent, NULL, 10, trxn_match,},
-		{NULL, resp, 3, trxn_read,},
+        TRXN_WRITE(sent,10),
+        TRXN_READ3(resp),
 		TRXN_END,
 	};
 
@@ -159,7 +181,7 @@ static int Turnoff(int depth, const struct parsedname *pn)
 {
     BYTE sent[2] = { _1W_SKIP_ROM, _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
-		{sent, NULL, 2, trxn_match},
+        TRXN_WRITE2(sent),
 		TRXN_END,
 	};
 

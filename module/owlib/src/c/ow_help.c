@@ -175,7 +175,10 @@ void ow_help_device(void)
 		   " Simulated\n"
 		   "  --fake list     List of devices to simulate (random ID, random data)\n"
 		   "                   use family codes in hex\n"
-		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n");
+		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n"
+            "\n"
+           " 1-wire device selection\n"
+           "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 
 void ow_help(const char *arg)
