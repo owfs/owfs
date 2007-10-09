@@ -17,6 +17,10 @@ Temperature Voltages (Humidity) and Memory.
 .PP
 .B 26
 [.]XXXXXXXXXXXX[XX][/[
+.B CA
+|
+.B EE
+|
 .B date
 |
 .B disconnect/date
@@ -33,11 +37,11 @@ Temperature Voltages (Humidity) and Memory.
 |
 .B humidity
 |
-.I Ienable
+.B IAD
 |
 .B MultiSensor/type
 |
-.I offset
+.B offset
 |
 .B pages/page.[0-7|ALL]
 |
@@ -57,6 +61,58 @@ Temperature Voltages (Humidity) and Memory.
 .PP
 .I 26
 .SH SPECIAL PROPERTIES
+.SS pages/page.0 ... pages/page.7 pages/page.ALL
+.I read-write, binary
+.br
+Memory is split into 8 pages of 8 bytes each. Only the pages 3-7 are really available, and some of that appears to be reserved. See the datasheet for details.
+.br
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
+.SS temperature
+.I read-only, floating point
+.br
+.I Temperature
+read by the chip at high resolution (~13 bits). Units are selected from the invoking command line. See
+.B owfs(1)
+or
+.B owhttpd(1)
+for choices. Default is Celsius.
+Conversion takes ~20 msec.
+.SS VAD VDD
+.I read-only, floating point
+.br
+Voltage read (~10 bits) at the one of the chip's two supply voltages. Range VDD= 2.4V to 10V, VAD=1.5 to 10V.
+.SS vis
+.I read-only, floating point
+.br
+Current sensor reading, as a voltage difference. Value is in volts.
+.br
+Actual current depends on Rsens resistor (see datasheet).
+.br
+The formula for current is I = vis / Rsens
+.br
+with units in Amps and Ohms.
+.br
+Current measurement will be temporarily enabled (see
+.I Ienable
+) if not currently enabled (pun intended) for this reading.
+.SH CONFIGURATION PROPERTIES
+.SS CA
+.I read-write, yes-no
+.br
+.I Current Accumulator Configuration
+flag bit. If "on" (1) current is stored in page 7 bytes 4-7. If "off" (0) that page can be used for general storage. See the datasheet for more information.
+.SS EE
+.I read-write, yes-no
+.br
+.I Current Accumulator Shadow
+flag bit. If "on" (1) current reading is stored to EEPROM. If "off" (0) that data will be lost when chip loses power. See the datasheet for more information
+.SS IAD
+.I read-write, yes-no
+.br
+.I Current A/D Control
+flag bit. If "on" (1) current measured at 36.41 Hz. If "off" (0) current measurements won't be made. See the datasheet for more information.
+.SH DATE PROPERTIES
 .SS date
 .I read-write, ascii
 .br
@@ -109,6 +165,19 @@ Representation of
 as a number. See
 .I udate
 for details.
+.SS udate
+.I read-write, unsigned integer
+.br
+Time represented as a number.
+.I udate
+increments once per second.
+.br
+Usually set to unix time standard: number of seconds since Jan 1, 1970. The
+.I date
+field will be the unix representation (ascii text) of
+.I udate
+and setting either will change the other.
+.SH HUMIDITY PROPERTIES
 .SS HIH4000/humidity
 .I read-only, floating point
 .br
@@ -131,26 +200,7 @@ The
 actually does not read humidity, but a widely available and publicised circuit based on the chip, does. This design is for the common Honeywell HIH-3610 humidity chip. The mostly compatible HIH-4000 chip uses different temperature compensation, so is better read from the 
 .I HIH4000/humidity
 value. See the datasheets for details.
-.SS Ienable
-.I read-write, unsigned integer
-.br
-Status of
-.I current
-monitoring. When enabled, current sensing is performed 36.41 times/second. Values of
-.I Ienable
-are:
-.TP
-.B 0
-no current conversion
-.TP
-.B 1
-current conversion enabled
-.TP
-.B 2
-current conversion and accumulation
-.TP
-.B 3
-current conversion and accumulation with EEPROM backup
+.SH MULTISENSOR PROPERTIES
 .SS MultiSensor/type
 .I read-only, ascii
 .br
@@ -166,53 +216,6 @@ Correction for
 readings. A value between -256 and 255. See the datasheet for details. Should be set to the negative of a true zero
 .I current
 reading.
-.SS pages/page.0 ... pages/page.7 pages/page.ALL
-.I read-write, binary
-.br
-Memory is split into 8 pages of 8 bytes each. Only the pages 3-7 are really available, and some of that appears to be reserved. See the datasheet for details.
-.br
-.I ALL
-is an aggregate of the pages. Each page is accessed sequentially.
-.SS temperature
-.I read-only, floating point
-.br
-.I Temperature
-read by the chip at high resolution (~13 bits). Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-Conversion takes ~20 msec.
-.SS udate
-.I read-write, unsigned integer
-.br
-Time represented as a number.
-.I udate
-increments once per second.
-.br
-Usually set to unix time standard: number of seconds since Jan 1, 1970. The
-.I date
-field will be the unix representation (ascii text) of
-.I udate
-and setting either will change the other.
-.SS VAD VDD
-.I read-only, floating point
-.br
-Voltage read (~10 bits) at the one of the chip's two supply voltages. Range VDD= 2.4V to 10V, VAD=1.5 to 10V.
-.SS vis
-.I read-only, floating point
-.br
-Current sensor reading, as a voltage difference. Value is in volts.
-.br
-Actual current depends on Rsens resistor (see datasheet).
-.br
-The formula for current is I = vis / Rsens
-.br
-with units in Amps and Ohms.
-.br
-Current measurement will be temporarily enabled (see
-.I Ienable
-) if not currently enabled (pun intended) for this reading.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS

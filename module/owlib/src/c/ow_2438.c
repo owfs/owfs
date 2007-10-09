@@ -54,8 +54,8 @@ READ_FUNCTION(FS_Humid);
 READ_FUNCTION(FS_Humid_1735);
 READ_FUNCTION(FS_Humid_4000);
 READ_FUNCTION(FS_Current);
-READ_FUNCTION(FS_r_Ienable);
-WRITE_FUNCTION(FS_w_Ienable);
+READ_FUNCTION(FS_r_status);
+WRITE_FUNCTION(FS_w_status);
 READ_FUNCTION(FS_r_Offset);
 WRITE_FUNCTION(FS_w_Offset);
 READ_FUNCTION(FS_r_counter);
@@ -75,7 +75,9 @@ struct filetype DS2437[] = {
   {"VAD",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_volts, NO_WRITE_FUNCTION, {i:0},} ,
   {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_temp, NO_WRITE_FUNCTION, {v:NULL},} ,
   {"vis",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_Current, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"Ienable",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_Ienable, FS_w_Ienable, {v:NULL},} ,
+  {"IAD",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_status, FS_w_status, {i:0},} ,
+  {"CA",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_status, FS_w_status, {i:1},} ,
+  {"EE",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_status, FS_w_status, {i:2},} ,
   {"udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second,   FS_r_counter, FS_w_counter, {s:0x08},} ,
   {"date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second,   FS_r_date, FS_w_date, {s:0x08},} ,
   {"disconnect",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
@@ -99,7 +101,9 @@ struct filetype DS2438[] = {
   {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_temp, NO_WRITE_FUNCTION, {v:NULL},} ,
   {"humidity",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_Humid, NO_WRITE_FUNCTION, {v:NULL},} ,
   {"vis",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_Current, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"Ienable",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_Ienable, FS_w_Ienable, {v:NULL},} ,
+  {"IAD",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_status, FS_w_status, {i:0},} ,
+  {"CA",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_status, FS_w_status, {i:1},} ,
+  {"EE",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_status, FS_w_status, {i:2},} ,
   {"offset",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_Offset, FS_w_Offset, {v:NULL},} ,
   {"udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second,   FS_r_counter, FS_w_counter, {s:0x08},} ,
   {"date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second,   FS_r_date, FS_w_date, {s:0x08},} ,
@@ -291,19 +295,24 @@ static int FS_Current(struct one_wire_query * owq)
 	return 0;
 }
 
-static int FS_r_Ienable(struct one_wire_query * owq)
+// status bit
+static int FS_r_status(struct one_wire_query * owq)
 {
-    if (OW_r_Ienable(&OWQ_U(owq), PN(owq)))
+    BYTE page0[8+1] ;
+    if (OW_r_page(page0, 0, PN(owq)))
 		return -EINVAL;
+    OWQ_Y(owq) = UT_getbit(page0,PN(owq)->selected_filetype->data.i) ;
 	return 0;
 }
 
-static int FS_w_Ienable(struct one_wire_query * owq)
+static int FS_w_status(struct one_wire_query * owq)
 {
-    if (OWQ_U(owq) > 3)
-		return -EINVAL;
-    if (OW_w_Ienable(OWQ_U(owq), PN(owq)))
-		return -EINVAL;
+    BYTE page0[8+1] ;
+    if (OW_r_page(page0, 0, PN(owq)))
+        return -EINVAL;
+    UT_setbit(page0,PN(owq)->selected_filetype->data.i,OWQ_Y(owq)) ;
+    if (OW_w_page(page0, 0, PN(owq)))
+        return -EINVAL;
 	return 0;
 }
 
@@ -513,7 +522,8 @@ static int OW_current(_FLOAT * F, const struct parsedname *pn)
 	// Actual units are volts-- need to know sense resistor for current
 	if (BUS_transaction(tread, pn))
 		return 1;
-	//printf("DS2438 current PREread %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
+#if 0
+    //printf("DS2438 current PREread %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
 	current_conversion_enabled = data[0] & 0x01;	// IAC bit
 	if (!current_conversion_enabled) {				// need to temporariliy turn on current measurements
 		//printf("DS2438 Current needs to be enabled\n");
@@ -524,12 +534,15 @@ static int OW_current(_FLOAT * F, const struct parsedname *pn)
 		if (BUS_transaction(tread, pn))
 			return 1;			// reread
 	}
-	//printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
-	F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
-	if (!current_conversion_enabled) {				// need to restore no current measurements
+#endif   
+    LEVEL_DEBUG("DS2438 vis scratchpad "SNformat"\n",SNvar(data));
+    F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
+#if 0
+    if (!current_conversion_enabled) {				// need to restore no current measurements
 		if (BUS_transaction(twrite, pn))
 			return 1;
 	}
+#endif   
 	return 0;
 }
 
