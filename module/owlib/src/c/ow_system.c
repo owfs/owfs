@@ -177,10 +177,13 @@ static int FS_r_flextime(struct one_wire_query * owq)
 
     SetKnownBus(pn->extension,pn) ;
     
-    if (pn->selected_connection->busmode != bus_usb)
-        return -ENOTSUP ;
-    OWQ_Y(owq) = Global.usb_flextime;
-    return 0;
+    switch (pn->selected_connection->busmode) {
+	bus_usb:
+	    OWQ_Y(owq) = pn->selected_connection->connin.usb.usb_flextime;
+	    return 0;
+	default:
+		return -EPERM ;
+	}
 }
 
 static int FS_w_overdrive(struct one_wire_query * owq)
@@ -200,12 +203,14 @@ static int FS_w_flextime(struct one_wire_query * owq)
 
     SetKnownBus(pn->extension,pn) ;
     
-    if (pn->selected_connection->busmode != bus_usb)
-        return -ENOTSUP ;
-
-    Global.usb_flextime = OWQ_Y(owq) ;
-    pn->selected_connection->changed_bus_settings = 1 ;
-    return 0;
+    switch (pn->selected_connection->busmode) {
+	bus_usb:
+		pn->selected_connection->connin.usb.usb_flextime = OWQ_Y(owq) ;
+		pn->selected_connection->changed_bus_settings = 1 ;
+	    return 0;
+	default:
+		return -EPERM ;
+	}
 }
 
 #ifdef DEBUG_DS2490

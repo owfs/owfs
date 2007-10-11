@@ -301,6 +301,7 @@ int DS9490_detect(struct connection_in *in)
 	// store timeout value -- sec -> msec
     in->changed_bus_settings = 1 ; // Trigger needing new configuration
     in->set_speed = bus_speed_slow ; // not overdrive at start
+	in->connin.usb.usb_flextime = Global.usb_flextime ;
 
 	ret = DS9490_detect_low(&pn);
 	if (ret) {
@@ -888,7 +889,7 @@ static int DS9490_reset(const struct parsedname *pn)
 	memset(buffer, 0, 32);
 
     USpeed =  (pn->selected_connection->set_speed == bus_speed_slow) ?
-            (Global.usb_flextime ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
+            (pn->selected_connection->connin.usb.usb_flextime ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
     : ONEWIREBUSSPEED_OVERDRIVE ;
 
     if ((ret = USB_Control_Msg(
@@ -1304,7 +1305,7 @@ static int DS9490_SetSpeed( const struct parsedname * pn )
     // Failed overdrive, switch to slow
     pn->selected_connection->set_speed = bus_speed_slow ;
         
-    if (Global.usb_flextime) {
+    if (pn->selected_connection->connin.usb.usb_flextime) {
     // default is to use flexible speed. This makes it possible
     // to change slew-rate etc...
     /* in regular and overdrive speed, slew rate is 15V/us. It's only
