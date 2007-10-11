@@ -141,8 +141,6 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn);
 static int OW_volts(_FLOAT * V, const int src,
 					const struct parsedname *pn);
 static int OW_current(_FLOAT * I, const struct parsedname *pn);
-static int OW_r_Ienable(unsigned *u, const struct parsedname *pn);
-static int OW_w_Ienable(const unsigned u, const struct parsedname *pn);
 static int OW_r_int(int *I, const UINT address,
 					const struct parsedname *pn);
 static int OW_w_int(const int I, const UINT address,
@@ -501,49 +499,17 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 // turn on (temporary) A/D in scratchpad
 static int OW_current(_FLOAT * F, const struct parsedname *pn)
 {
-	BYTE data[8];
-	BYTE r[] = { _1W_READ_SCRATCHPAD, 0x00, };
-	BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
-	int current_conversion_enabled;
-	struct transaction_log tread[] = {
-		TRXN_START,
-        TRXN_WRITE2(r),
-        TRXN_READ(data,7),
-		TRXN_END,
-	};
-	struct transaction_log twrite[] = {
-		TRXN_START,
-        TRXN_WRITE2(w),
-        TRXN_WRITE1(data),
-		TRXN_END,
-	};
-
+	BYTE data[9];
 	// set current readings on source command
 	// Actual units are volts-- need to know sense resistor for current
-	if (BUS_transaction(tread, pn))
+	if (OW_r_page(data, 0, pn))
 		return 1;
-#if 0
-    //printf("DS2438 current PREread %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
-	current_conversion_enabled = data[0] & 0x01;	// IAC bit
-	if (!current_conversion_enabled) {				// need to temporariliy turn on current measurements
-		//printf("DS2438 Current needs to be enabled\n");
-		data[0] |= 0x01;
-		if (BUS_transaction(twrite, pn))
-			return 1;
-		UT_delay(30);			// enough time for one conversion (30msec)
-		if (BUS_transaction(tread, pn))
-			return 1;			// reread
-	}
-#endif   
+    
     LEVEL_DEBUG("DS2438 vis scratchpad "SNformat"\n",SNvar(data));
-    F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
-#if 0
-    if (!current_conversion_enabled) {				// need to restore no current measurements
-		if (BUS_transaction(twrite, pn))
-			return 1;
-	}
-#endif   
-	return 0;
+    //F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
+    F[0] = .0002441 * UT_int16( &data[5] );
+	
+    return 0;
 }
 
 static int OW_w_offset(const int I, const struct parsedname *pn)
@@ -572,44 +538,6 @@ static int OW_w_offset(const int I, const struct parsedname *pn)
 	}
 	return 0;
 }
-
-static int OW_r_Ienable(unsigned *u, const struct parsedname *pn)
-{
-	BYTE data[8];
-
-	if (OW_r_page(data, 0, pn))
-		return 1;
-	if (UT_getbit(data, 0)) {
-		if (UT_getbit(data, 1)) {
-			if (UT_getbit(data, 2)) {
-				*u = 3;
-			} else {
-				*u = 2;
-			}
-		} else {
-			*u = 1;
-		}
-	} else {
-		*u = 0;
-	}
-	return 0;
-}
-
-static int OW_w_Ienable(const unsigned u, const struct parsedname *pn)
-{
-	BYTE data[8];
-	static BYTE iad[] = { 0x00, 0x01, 0x3, 0x7, };
-
-	if (OW_r_page(data, 0, pn))
-		return 1;
-	if ((data[0] & 0x07) != iad[u]) {	/* only change if needed */
-		data[0] = (data[0] & 0xF8) | iad[u];
-		if (OW_w_page(data, 0, pn))
-			return 1;
-	}
-	return 0;
-}
-
 
 static int OW_r_int(int *I, const UINT address,
 					const struct parsedname *pn)

@@ -137,7 +137,7 @@ enum ePS_state { ePS_normal = 0, ePS_uncached = 1, ePS_alarm = 2, ePS_text =
 struct parsedname {
 	char *path;					// text-more device name
 	char *path_busless;			// pointer to path without first bus
-	int bus_nr;
+    struct connection_in * known_bus; // where this device is located
 	enum ePN_type type;			// global branch
 	enum ePS_state state;		// global branch
 	BYTE sn[8];					// 64-bit serial number
@@ -188,11 +188,11 @@ struct parsedname {
 
 #define KnownBus(pn)          ((((pn)->state) & ePS_bus) != 0 )
 #define SetKnownBus(bus_number,pn)  do { (pn)->state |= ePS_bus; \
-                                        (pn)->bus_nr=(bus_number); \
                                         (pn)->selected_connection=find_connection_in(bus_number); \
+                                        (pn)->known_bus=(pn)->selected_connection; \
                                     } while(0)
 #define UnsetKnownBus(pn)           do { (pn)->state &= ~ePS_bus; \
-                                        (pn)->bus_nr=-1; \
+                                        (pn)->known_bus=NULL; \
                                         (pn)->selected_connection=NULL; \
                                     } while(0)
 

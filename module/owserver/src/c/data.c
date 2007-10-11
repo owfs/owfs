@@ -111,8 +111,8 @@ void *DataHandler(void *v)
 
 			switch ((enum msg_classification) hd->sm.type) {
 			case msg_presence:
-				LEVEL_CALL("Presence message on %s bus_nr=%d\n",
-						   SAFESTRING(pn->path), pn->bus_nr);
+				LEVEL_CALL("Presence message on %s bus number=%d\n",
+						   SAFESTRING(pn->path), pn->known_bus->index);
 				// Basically, if we were able to ParsedName it's here!
 				cm.size = cm.payload = 0;
 				cm.ret = 0;		// good answer

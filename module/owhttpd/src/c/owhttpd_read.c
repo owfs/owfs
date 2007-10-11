@@ -256,7 +256,7 @@ static void ShowDeviceText(FILE * out, const struct parsedname *const pn)
 	struct showdevicestruct sds = { NULL, out };
 	char *slash;
 
-	//printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->bus_nr, pn->dev) ;
+	//printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->known_bus->index, pn->dev) ;
 	if (!(sds.path = strdup(pn->path)))
 		return;
 
@@ -286,7 +286,7 @@ void ShowDevice(FILE * out, const struct parsedname *const pn)
 		ShowDeviceText(out, pn);
 		return;
 	}
-	//printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->bus_nr, pn->dev) ;
+	//printf("ShowDevice = %s  bus_nr=%d pn->dev=%p\n",pn->path, pn->known_bus->index, pn->dev) ;
 	if (!(sds.path = strdup(pn->path)))
 		return;
 

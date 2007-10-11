@@ -104,7 +104,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		return -EINVAL;
 
 	memset(pn, 0, sizeof(struct parsedname));
-	pn->bus_nr = -1;			/* all busses */
+	pn->known_bus = NULL;			/* all busses */
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
 	pn->sg = SemiGlobal | (1 << BUSRET_BIT);	// initial flag as the bus-returning level, will change if a bus is specified
@@ -462,11 +462,14 @@ static enum parse_enum Parse_RealDevice(char *filename,
 
     if ( back_from_remote ) return parse_prop ;
 
-    //printf("NP2\n");
-	/* Check the presence, and cache the proper bus number for better performance */
-    bus_nr = CheckPresence(pn) ;
-    if (bus_nr < 0) {
-        return parse_error;	/* CheckPresence failed */
+    if( Global.one_device ) {
+        bus_nr = 0 ; // arbitrary assignment
+    } else {
+        /* Check the presence, and cache the proper bus number for better performance */
+        bus_nr = CheckPresence(pn) ;
+        if (bus_nr < 0) {
+            return parse_error; /* CheckPresence failed */
+        }
     }
 	
     return parse_prop;

@@ -98,7 +98,7 @@ void DirHandler(struct handlerdata *hd, struct client_msg *cm,
 	cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2;
 
 	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d path=%s\n",
-				SpecifiedBus(pn), pn->bus_nr, SAFESTRING(pn->path));
+				SpecifiedBus(pn), pn->known_bus->index, SAFESTRING(pn->path));
 	// Now generate the directory using the callback function above for each element
 	cm->ret = FS_dir_remote(DirHandlerCallback, &dhs, pn, &flags);
 

@@ -67,7 +67,7 @@ int CheckPresence(struct parsedname *pn)
     /* If set, already found bus. */
     /* Use UnsetKnownBus to clear and allow a new search */
     if ( KnownBus(pn) ) {
-        return pn->bus_nr ;
+        return pn->known_bus->index ;
     }
     
     if ( Cache_Get_Device(&bus_nr, pn) == 0 ) {
