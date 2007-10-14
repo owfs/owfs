@@ -251,23 +251,12 @@ extern int count_inbound_connections;
 /* Parsedname -- path converted into components */
 #include "ow_parsedname.h"
 
-/* Unique token for owserver loop checks */
-union antiloop {
-	struct {
-		pid_t pid;
-		clock_t clock;
-	} simple;
-	BYTE uuid[16];
-};
-
-/* Global information (for local control) */
-/* Separated out into ow_global.h for readability */
-#include "ow_global.h"
-
 extern int shutdown_in_progress;
 
 enum simul_type { simul_temp, simul_volt, };
 
+/* "Object-type" structure for the anctual owfs query --
+  holds name, flags, values, and path */
 #include "ow_onewirequery.h"
 
 /* Delay for clearing buffer */
@@ -290,50 +279,13 @@ extern void set_signal_handlers(void (*exit_handler)
 #define SI_FROMKERNEL(siptr)    ((siptr)->si_code > 0)
 #endif
 
+/* OWSERVER messages */
+#include "ow_message.h"
 
-/* Server (Socket-based) interface */
-enum msg_classification {
-	msg_error,
-	msg_nop,
-	msg_read,
-	msg_write,
-	msg_dir,
-	msg_size,					// No longer used, leave here to compatibility
-	msg_presence,
-	msg_dirall,
-	msg_get,
-};
-/* message to owserver */
-struct server_msg {
-	int32_t version;
-	int32_t payload;
-	int32_t type;
-	int32_t sg;
-	int32_t size;
-	int32_t offset;
-};
+/* Global information (for local control) */
+/* Separated out into ow_global.h for readability */
+#include "ow_global.h"
 
-/* message to client */
-struct client_msg {
-	int32_t version;
-	int32_t payload;
-	int32_t ret;
-	int32_t sg;
-	int32_t size;
-	int32_t offset;
-};
-
-struct serverpackage {
-	ASCII *path;
-	BYTE *data;
-	size_t datasize;
-	BYTE *tokenstring;
-	size_t tokens;
-};
-
-#define Servermessage       (((int32_t)1)<<16)
-#define isServermessage( version )    (((version)&Servermessage)!=0)
-#define Servertokens(version)    ((version)&0xFFFF)
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
 extern time_t start_time;
