@@ -1,8 +1,10 @@
 #!/bin/sh
 # the next line restarts using wish \
-exec wish "$0" -- "$@"
+if [ -z `which wish` ] ; then exec tclsh "$0" -- "$@" ; else exec wish "$0" -- "$@" ; fi
 
 # $Id$
+
+package require Tk
 
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
