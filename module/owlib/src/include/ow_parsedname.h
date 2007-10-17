@@ -128,8 +128,7 @@ struct devlock {
 #define EXTENSION_ALL_MIXED		-1
 #define EXTENSION_ALL_AGGREGATE	-1
 
-enum ePN_type { ePN_real =
-		0, ePN_statistics, ePN_system, ePN_settings, ePN_structure, ePN_interface,
+enum ePN_type { ePN_root, ePN_real, ePN_statistics, ePN_system, ePN_settings, ePN_structure, ePN_interface,
 };
 enum ePS_state { ePS_normal = 0, ePS_uncached = 1, ePS_alarm = 2, ePS_text =
 		4, ePS_bus = 8, ePS_buslocal = 16, ePS_busremote = 32,
