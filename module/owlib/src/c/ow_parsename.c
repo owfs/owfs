@@ -132,7 +132,8 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	CONNINUNLOCK;
 	pn->selected_connection = pn->head_inbound_list;
 
-	if (pathcpy == NULL || pn->path == NULL || pn->lock == NULL
+    // Check if memory could be malloc-ed, else clean up nicely and return an error
+    if (pathcpy == NULL || pn->path == NULL || pn->lock == NULL
 		|| pn->head_inbound_list == NULL) {
 		if (pathcpy)
 			free(pathcpy);
@@ -162,6 +163,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
 	while (1) {
+        // Check for extreme conditions (done, error)
 		switch (pe) {
 		case parse_done:
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
@@ -173,10 +175,12 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		default:
 			break;
 		}
+        // break out next name in path
 		pathnow = strsep(&pathnext, "/");
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
 		if (pathnow == NULL || pathnow[0] == '\0')
 			goto end;
+        // rest of state machine on parsename
 		switch (pe) {
 		case parse_first:
 			//LEVEL_DEBUG("PARSENAME parse_first\n") ;
@@ -228,7 +232,8 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 		return Parse_Bus(parse_first, pathnow, back_from_remote, pn);
 
 	} else if (strcasecmp(pathnow, "settings") == 0) {
-		pn->type = ePN_settings;
+        if ( SpecifiedLocalBus(pn) ) return parse_error ;
+        pn->type = ePN_settings;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
@@ -236,15 +241,18 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
 		return parse_prop;
 
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
-		pn->type = ePN_statistics;
+        if ( SpecifiedLocalBus(pn) ) return parse_error ;
+        pn->type = ePN_statistics;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "structure") == 0) {
-		pn->type = ePN_structure;
+        if ( SpecifiedLocalBus(pn) ) return parse_error ;
+        pn->type = ePN_structure;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "system") == 0) {
-		pn->type = ePN_system;
+        if ( SpecifiedLocalBus(pn) ) return parse_error ;
+        pn->type = ePN_system;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "text") == 0) {
@@ -337,9 +345,12 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     /* Should make a presence check on remote busses here, but
     * it's not a major problem if people use bad paths since
     * they will just end up with empty directory listings. */
-    if (SpecifiedBus(pn)) {     /* already specified a "bus." */
+    if (SpecifiedLocalBus(pn)) {     /* already specified a "bus." */
         /* too many levels of bus for a non-remote adapter */
-        return BusIsServer(pn->selected_connection) ? pe_default : parse_error;
+        return parse_error;
+    } else if (SpecifiedRemoteBus(pn)) {     /* already specified a "bus." */
+        /* Let the remote bus do the heavy listing */
+        return pe_default ;
     }
 
     /* on return from remote directory ow_server.c:ServerDir
@@ -358,7 +369,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     /* Since we are going to use a specific in-device now, set
     * pn->selected_connection to point at that device at once. */
     SetSpecifiedBus(bus_number, pn);
-    if (!BusIsServer(pn->selected_connection)) {
+    if (SpecifiedLocalBus(pn)) {
         /* don't return bus-list for local paths. */
         pn->sg &= (~BUSRET_MASK);
     }

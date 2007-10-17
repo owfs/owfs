@@ -129,10 +129,10 @@ struct devlock {
 #define EXTENSION_ALL_AGGREGATE	-1
 
 enum ePN_type { ePN_real =
-		0, ePN_statistics, ePN_system, ePN_settings, ePN_structure
+		0, ePN_statistics, ePN_system, ePN_settings, ePN_structure, ePN_interface,
 };
 enum ePS_state { ePS_normal = 0, ePS_uncached = 1, ePS_alarm = 2, ePS_text =
-		4, ePS_bus = 8, ePS_buspath = 16,
+		4, ePS_bus = 8, ePS_buslocal = 16, ePS_busremote = 32,
 };
 struct parsedname {
 	char *path;					// text-more device name
@@ -197,8 +197,10 @@ struct parsedname {
                                     } while(0)
 
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
-#define SpecifiedBus(pn)          ((((pn)->state) & ePS_buspath) != 0 )
-#define SetSpecifiedBus(bus_number,pn) do { (pn)->state |= ePS_buspath ; SetKnownBus(bus_number,pn); } while(0)
+#define SpecifiedRemoteBus(pn)          ((((pn)->state) & ePS_busremote) != 0 )
+#define SpecifiedLocalBus(pn)          ((((pn)->state) & ePS_buslocal) != 0 )
+#define SpecifiedBus(pn)          ( SpecifiedLocalBus(pn) || SpecifiedRemoteBus(pn) )
+#define SetSpecifiedBus(bus_number,pn) do { SetKnownBus(bus_number,pn); (pn)->state |= BusIsServer((pn)->selected_connection) ? ePS_busremote : ePS_buslocal ; } while(0)
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)
 #define BYTE_MASK(x)        ((x)&0xFF)
