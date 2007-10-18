@@ -45,6 +45,8 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
 
 static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *),
                       void *v, const struct parsedname *pn_root_directory) ;
+static void FS_interface_dir(void (*dirfunc) (void *, const struct parsedname *),
+                             void *v, const struct parsedname *pn_root_directory) ;
 static void FS_alarm_entry(void (*dirfunc) (void *, const struct parsedname *),
                       void *v, const struct parsedname *pn_root_directory) ;
 static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedname *),
@@ -118,7 +120,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 		// File, not directory
 		ret = -ENOTDIR;
 
-	} else if (SpecifiedBus(pn_raw_directory)  && BusIsServer(pn_raw_directory->selected_connection) ) { 
+	} else if (SpecifiedRemoteBus(pn_raw_directory) ) { 
 	  //printf("SPECIFIED_BUS BUS_IS_SERVER\n");
 		// Send remotely only (all evaluation done there)
 		ret = ServerDir( dirfunc, v, pn_raw_directory, flags ) ;
@@ -176,7 +178,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 
 /* status settings sustem */
 static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *),
-                      void *v, const struct parsedname *pn_root_directory)
+                         void *v, const struct parsedname *pn_root_directory)
 {
     struct parsedname s_pn_s_directory ;
     struct parsedname * pn_s_directory = &s_pn_s_directory ;
@@ -191,6 +193,20 @@ static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *),
     pn_s_directory->type = ePN_statistics;
     dirfunc(v, pn_s_directory);
     pn_s_directory->type = ePN_structure;
+    dirfunc(v, pn_s_directory);
+}
+
+/* interface (only for bus directories) */
+static void FS_interface_dir(void (*dirfunc) (void *, const struct parsedname *),
+                         void *v, const struct parsedname *pn_root_directory)
+{
+    struct parsedname s_pn_s_directory ;
+    struct parsedname * pn_s_directory = &s_pn_s_directory ;
+
+    /* Shallow copy */
+    memcpy( pn_s_directory, pn_root_directory, sizeof(struct parsedname)) ;
+
+    pn_s_directory->type = ePN_interface;
     dirfunc(v, pn_s_directory);
 }
 

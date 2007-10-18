@@ -33,7 +33,7 @@ static int file_compare(const void *a, const void *b)
 				  ((const struct filetype *) b)->name);
 }
 
-void *Tree[] = { NULL, NULL, NULL, NULL, NULL, };
+void *Tree[] = { NULL, NULL, NULL, NULL, NULL, NULL, };
 
 
 // FreeBSD fix from Robert Nilsson
@@ -152,8 +152,7 @@ void DeviceSort(void)
 	Device2Tree(&d_DS28EC20, ePN_real);
 	Device2Tree(&d_DS28E04, ePN_real);
 	Device2Tree(&d_LCD, ePN_real);
-	Device2Tree(&d_stats_bus, ePN_statistics);
-	Device2Tree(&d_stats_cache, ePN_statistics);
+    Device2Tree(&d_stats_cache, ePN_statistics);
 	Device2Tree(&d_stats_directory, ePN_statistics);
 	Device2Tree(&d_stats_errors, ePN_statistics);
 	Device2Tree(&d_stats_read, ePN_statistics);
@@ -161,12 +160,13 @@ void DeviceSort(void)
 	Device2Tree(&d_stats_write, ePN_statistics);
 	Device2Tree(&d_set_cache, ePN_settings);
 	Device2Tree(&d_set_units, ePN_settings);
-	Device2Tree(&d_sys_adapter, ePN_system);
 	Device2Tree(&d_sys_process, ePN_system);
 	Device2Tree(&d_sys_connections, ePN_system);
 	Device2Tree(&d_sys_configure, ePN_system);
 	Device2Tree(&d_simultaneous, ePN_real);
-	/* Match simultaneous for special processing */
+    Device2Tree(&d_interface_settings, ePN_interface) ;
+    Device2Tree(&d_interface_statistics, ePN_interface) ;
+    /* Match simultaneous for special processing */
 	{
 		struct parsedname pn;
 		pn.type = ePN_real;

@@ -22,7 +22,6 @@ DeviceHeader(stats_cache);
 DeviceHeader(stats_read);
 DeviceHeader(stats_write);
 DeviceHeader(stats_directory);
-DeviceHeader(stats_bus);
 DeviceHeader(stats_errors);
 DeviceHeader(stats_thread);
 

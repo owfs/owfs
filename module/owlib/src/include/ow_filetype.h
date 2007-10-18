@@ -110,7 +110,6 @@ struct aggregate {
 	enum ag_index letters;		/* name them with letters or numbers */
 	enum ag_combined combined;	/* Combined bitmaps properties, or separately addressed */
 };
-extern struct aggregate Asystem;	/* for remote directories */
 
 	/* property format, controls web display */
 /* Some explanation of ft_format:

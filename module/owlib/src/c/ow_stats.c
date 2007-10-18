@@ -151,10 +151,7 @@ struct average all_avg = { 0L, 0L, 0L, 0L, };
 /* ------- Prototypes ----------- */
 /* Statistics reporting */
 READ_FUNCTION(FS_stat);
-READ_FUNCTION(FS_stat_p);
 READ_FUNCTION(FS_time);
-READ_FUNCTION(FS_time_p);
-READ_FUNCTION(FS_elapsed);
 
 /* -------- Structures ---------- */
 struct filetype stats_cache[] = {
@@ -271,20 +268,6 @@ struct filetype stats_thread[] = {
 struct device d_stats_thread =
 	{ "threads", "threads", 0, COUNT_OF_FILETYPES(stats_thread), stats_thread };
 
-struct filetype stats_bus[] = {
-  {"elapsed_time",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_elapsed, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"bus_time",PROPERTY_LENGTH_FLOAT, &Asystem, ft_float, fc_statistic,   FS_time_p, NO_WRITE_FUNCTION, {i:0},} ,
-  {"bus_locks",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:0},} ,
-  {"bus_unlocks",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:1},} ,
-  {"reconnect",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:2},} ,
-  {"reconnect_errors",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:3},} ,
-  {"other_bus_errors",PROPERTY_LENGTH_UNSIGNED, &Asystem, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:4},} ,
-  {"total_bus_time",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_statistic,   FS_time, NO_WRITE_FUNCTION, {v:&total_bus_time},} ,
-  {"total_bus_unlocks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&total_bus_unlocks,},} ,
-  {"total_bus_locks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&total_bus_locks},} ,
-};
-struct device d_stats_bus = { "bus", "bus", 0, COUNT_OF_FILETYPES(stats_bus), stats_bus };
-
 #define FS_stat_ROW(var) {"" #var "",PROPERTY_LENGTH_UNSIGNED, NULL  , ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v: & var,} }
 
 struct filetype stats_errors[] = {
@@ -369,73 +352,6 @@ static int FS_stat(struct one_wire_query * owq)
 	return 0;
 }
 
-static int FS_stat_p(struct one_wire_query * owq)
-{
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
-	UINT *ptr;
-	struct connection_in *c;
-	if (dindex < 0)
-		dindex = 0;
-	c = find_connection_in(dindex);
-	if (!c)
-		return -ENOENT;
-
-	if (pn->selected_filetype == NULL)
-		return -ENOENT;
-	switch (pn->selected_filetype->data.i) {
-	case 0:
-		ptr = &c->bus_locks;
-		break;
-	case 1:
-		ptr = &c->bus_unlocks;
-		break;
-	case 2:
-		ptr = &c->bus_reconnect;
-		break;
-	case 3:
-		ptr = &c->bus_reconnect_errors;
-		break;
-	case 4:
-		ptr = &c->bus_errors;
-		break;
-	default:
-		return -ENOENT;
-	}
-	STATLOCK;
-    OWQ_U(owq) = *ptr;
-	STATUNLOCK;
-	return 0;
-}
-
-static int FS_time_p(struct one_wire_query * owq)
-{
-    struct parsedname * pn = PN(owq) ;
-	int dindex = pn->extension;
-	struct timeval *tv;
-	struct connection_in *c;
-	if (dindex < 0)
-		dindex = 0;
-	c = find_connection_in(dindex);
-	if (!c)
-		return -ENOENT;
-
-	if (pn->selected_filetype == NULL)
-		return -ENOENT;
-	switch (pn->selected_filetype->data.i) {
-	case 0:
-		tv = &c->bus_time;
-		break;
-	default:
-		return -ENOENT;
-	}
-	/* to prevent simultaneous changes to bus timing variables */
-	STATLOCK;
-    OWQ_F(owq) = (_FLOAT) tv->tv_sec + ((_FLOAT) (tv->tv_usec / 1000)) / 1000.0;
-	STATUNLOCK;
-	return 0;
-}
-
 static int FS_time(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
@@ -453,15 +369,6 @@ static int FS_time(struct one_wire_query * owq)
 	STATLOCK;
     OWQ_F(owq) = (_FLOAT) tv[dindex].tv_sec +
 		((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
-	STATUNLOCK;
-	return 0;
-}
-
-static int FS_elapsed(struct one_wire_query * owq)
-{
-//printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
-	STATLOCK;
-    OWQ_U(owq) = time(NULL) - start_time;
 	STATUNLOCK;
 	return 0;
 }

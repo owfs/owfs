@@ -47,6 +47,7 @@ noinst_HEADERS =          \
         ow_functions.h    \
         ow_global.h       \
         ow_integer.h      \
+        ow_interface.h    \
         ow_localtypes.h   \
         ow_lcd.h          \
         ow_message.h      \

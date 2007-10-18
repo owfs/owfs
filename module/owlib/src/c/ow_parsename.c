@@ -33,11 +33,9 @@ static enum parse_enum Parse_NonRealDevice(char *filename,
 										   struct parsedname *pn);
 static enum parse_enum Parse_Property(char *filename,
 									  struct parsedname *pn);
-static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
-								 char *pathnow, int back_from_remote,
+static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote,
 								 struct parsedname *pn);
-static enum parse_enum Parse_Return_Bus(const enum parse_enum pe_default,
-                                        char *pathnow, int back_from_remote,
+static enum parse_enum Parse_Return_Bus(char *pathnow, int back_from_remote,
                                         struct parsedname *pn) ;
 static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 								  struct parsedname *pn);
@@ -119,7 +117,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 
 	/* Default attributes */
 	pn->state = ePS_normal;
-	pn->type = ePN_real;
+	pn->type = ePN_root;
 
 	/* make a copy for destructive parsing */
 	pathcpy = strdup(path);
@@ -165,124 +163,138 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	while (1) {
         // Check for extreme conditions (done, error)
 		switch (pe) {
-		case parse_done:
+        
+        case parse_done: // the only exit!
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
-			goto end;
-		case parse_error:
+            //printf("PARSENAME end ret=%d\n",ret) ;
+            if ( pathcpy) free(pathcpy);
+            if (ret) {
+                FS_ParsedName_destroy(pn);
+            } else if ( pn->type == ePN_root ) {
+                pn->type = ePN_real ; // default state
+            }
+            return ret ;
+
+        case parse_error:
 			//LEVEL_DEBUG("PARSENAME parse_error\n") ;
 			ret = -ENOENT;
-			goto end;
-		default:
+            pe = parse_done ;
+			continue ;
+
+        default:
 			break;
 		}
         // break out next name in path
 		pathnow = strsep(&pathnext, "/");
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
-		if (pathnow == NULL || pathnow[0] == '\0')
-			goto end;
+        if (pathnow == NULL || pathnow[0] == '\0') {
+            pe = parse_done ;
+            continue ;
+        }
+
         // rest of state machine on parsename
 		switch (pe) {
-		case parse_first:
+
+        case parse_first:
 			//LEVEL_DEBUG("PARSENAME parse_first\n") ;
 			pe = Parse_Unspecified(pathnow, back_from_remote, pn);
 			break;
-		case parse_real:
+
+        case parse_real:
 			//LEVEL_DEBUG("PARSENAME parse_real\n") ;
 			pe = Parse_Real(pathnow, back_from_remote, pn);
 			break;
-		case parse_nonreal:
+
+        case parse_nonreal:
 			//LEVEL_DEBUG("PARSENAME parse_nonreal\n") ;
 			pe = Parse_NonReal(pathnow, pn);
 			break;
-		case parse_prop:
+
+        case parse_prop:
 			//LEVEL_DEBUG("PARSENAME parse_prop\n") ;
 			pathlast = pathnow;	/* Save for concatination if subdirectory later wanted */
 			pe = Parse_Property(pathnow, pn);
 			break;
-		case parse_subprop:
+
+        case parse_subprop:
 			//LEVEL_DEBUG("PARSENAME parse_subprop\n") ;
 			pathnow[-1] = '/';
 			pe = Parse_Property(pathlast, pn);
 			break;
-		default:
+
+        default:
+            pe = parse_error ; // unknown state
 			break;
 		}
 		//printf("PARSENAME pe=%d\n",pe) ;
 	}
-  end:
-	//printf("PARSENAME end ret=%d\n",ret) ;
-	free(pathcpy);
-  if (ret) {
-		FS_ParsedName_destroy(pn);
-  }
-	//printf("BIG RETURN from ParsedName:\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
-
-	return ret;
 }
 
+// Early parsing -- only bus entries, uncached and text may have preceeded
 static enum parse_enum Parse_Unspecified(char *pathnow,
-										 int back_from_remote,
-										 struct parsedname *pn)
+                                         int back_from_remote,
+                                         struct parsedname *pn)
 {
-	if (strcasecmp(pathnow, "alarm") == 0) {
-		pn->state |= ePS_alarm;
-		return parse_real;
+    if (strcasecmp(pathnow, "alarm") == 0) {
+        pn->state |= ePS_alarm;
+        pn->type = ePN_real;
+        return parse_real;
 
-	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(parse_first, pathnow, back_from_remote, pn);
+    } else if (strncasecmp(pathnow, "bus.", 4) == 0) {
+        return Parse_Bus(pathnow, back_from_remote, pn);
 
-	} else if (strcasecmp(pathnow, "settings") == 0) {
+    } else if (strcasecmp(pathnow, "settings") == 0) {
         if ( SpecifiedLocalBus(pn) ) return parse_error ;
         pn->type = ePN_settings;
-		return parse_nonreal;
+        return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
-		pn->selected_device = DeviceSimultaneous;
-		return parse_prop;
+    } else if (strcasecmp(pathnow, "simultaneous") == 0) {
+        pn->selected_device = DeviceSimultaneous;
+        return parse_prop;
 
-	} else if (strcasecmp(pathnow, "statistics") == 0) {
+    } else if (strcasecmp(pathnow, "statistics") == 0) {
         if ( SpecifiedLocalBus(pn) ) return parse_error ;
         pn->type = ePN_statistics;
-		return parse_nonreal;
+        return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "structure") == 0) {
+    } else if (strcasecmp(pathnow, "structure") == 0) {
         if ( SpecifiedLocalBus(pn) ) return parse_error ;
         pn->type = ePN_structure;
-		return parse_nonreal;
+        return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "system") == 0) {
+    } else if (strcasecmp(pathnow, "system") == 0) {
         if ( SpecifiedLocalBus(pn) ) return parse_error ;
         pn->type = ePN_system;
-		return parse_nonreal;
+        return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "text") == 0) {
-		pn->state |= ePS_text;
-		return parse_first;
+    } else if (strcasecmp(pathnow, "interface") == 0) {
+        if ( ! SpecifiedBus(pn) ) return parse_error ;
+        pn->type = ePN_interface;
+        return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "thermostat") == 0) {
-		pn->selected_device = DeviceThermostat;
-		return parse_prop;
+    } else if (strcasecmp(pathnow, "text") == 0) {
+        pn->state |= ePS_text;
+        return parse_first;
 
-	} else if (strcasecmp(pathnow, "uncached") == 0) {
-		pn->state |= ePS_uncached;
-		return parse_first;
+    } else if (strcasecmp(pathnow, "thermostat") == 0) {
+        pn->selected_device = DeviceThermostat;
+        pn->type = ePN_real;
+        return parse_prop;
 
-	} else {
-		return Parse_RealDevice(pathnow, back_from_remote, pn);
-	}
+    } else if (strcasecmp(pathnow, "uncached") == 0) {
+        pn->state |= ePS_uncached;
+        return parse_first;
+
+    } else {
+        pn->type = ePN_real;
+        return Parse_RealDevice(pathnow, back_from_remote, pn);
+    }
 }
 
 static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 								  struct parsedname *pn)
 {
-	if (strcasecmp(pathnow, "alarm") == 0) {
-		pn->state |= ePS_alarm;
-		return parse_real;
-
-	} else if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(parse_nonreal, pathnow, back_from_remote, pn);
-
-	} else if (strcasecmp(pathnow, "simultaneous") == 0) {
+	if (strcasecmp(pathnow, "simultaneous") == 0) {
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 
@@ -307,10 +319,7 @@ static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
 
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 {
-	if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(parse_nonreal, pathnow, 0, pn);
-
-	} else if (strcasecmp(pathnow, "text") == 0) {
+	if (strcasecmp(pathnow, "text") == 0) {
 		pn->state |= ePS_text;
 		return parse_nonreal;
 
@@ -326,8 +335,7 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 }
 
 /* We've reached a /bus.n entry */
-static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
-                                 char *pathnow, int back_from_remote,
+static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote,
                                  struct parsedname *pn)
 {
     char *found;
@@ -339,7 +347,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     }
 
     if (back_from_remote) {
-        return Parse_Return_Bus( pe_default, pathnow, back_from_remote,pn) ;
+        return Parse_Return_Bus( pathnow, back_from_remote,pn) ;
     }
 
     /* Should make a presence check on remote busses here, but
@@ -350,7 +358,7 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
         return parse_error;
     } else if (SpecifiedRemoteBus(pn)) {     /* already specified a "bus." */
         /* Let the remote bus do the heavy listing */
-        return pe_default ;
+        return parse_first ;
     }
 
     /* on return from remote directory ow_server.c:ServerDir
@@ -389,12 +397,11 @@ static enum parse_enum Parse_Bus(const enum parse_enum pe_default,
     }
     //printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
     //LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
-    return pe_default;
+    return parse_first;
 }
 
 /* We've reached a /bus.n entry on the return trip */
-static enum parse_enum Parse_Return_Bus(const enum parse_enum pe_default,
-                                 char *pathnow, int back_from_remote,
+static enum parse_enum Parse_Return_Bus(char *pathnow, int back_from_remote,
                                  struct parsedname *pn)
 {
     char *found;
@@ -422,7 +429,7 @@ static enum parse_enum Parse_Return_Bus(const enum parse_enum pe_default,
     }
     //printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
     //LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
-    return pe_default;
+    return parse_first;
 }
 
 /* Parse Name (only device name) part of string */

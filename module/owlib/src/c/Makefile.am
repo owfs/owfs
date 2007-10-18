@@ -60,6 +60,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_filelength.c   \
                ow_fstat.c        \
                ow_help.c         \
+               ow_interface.c    \
                ow_iterate.c      \
                ow_lcd.c          \
                ow_link.c         \

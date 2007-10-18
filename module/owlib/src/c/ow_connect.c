@@ -61,7 +61,6 @@ struct connection_in *NewIn(const struct connection_in *in)
 		now->next = head_inbound_list;	/* put in linked list at start */
 		head_inbound_list = now;
 		now->index = count_inbound_connections++;
-		Asystem.elements = count_inbound_connections;
 #if OW_MT
 		pthread_mutex_init(&(now->bus_mutex), pmattr);
 		pthread_mutex_init(&(now->dev_mutex), pmattr);
