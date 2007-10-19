@@ -122,6 +122,9 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 
 	} else if (SpecifiedRemoteBus(pn_raw_directory) ) { 
 	  //printf("SPECIFIED_BUS BUS_IS_SERVER\n");
+		if ( ! SpecifiedVeryRemoteBus(pn_raw_directory) ) {
+			FS_interface_dir( dirfunc, v, pn_raw_directory ) ;
+		}
 		// Send remotely only (all evaluation done there)
 		ret = ServerDir( dirfunc, v, pn_raw_directory, flags ) ;
 
@@ -135,22 +138,21 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 		// structure, statistics, system or setrings dir -- not bus-specific
 		ret = FS_typedir(dirfunc, v, pn_raw_directory);
 
-	} else if ( ! KnownBus(pn_raw_directory) ) {
-	  //printf("KNOWN_BUS\n");
-		// Not specified bus, so scan through all and print union
-		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
-		if ( (Global.opt != opt_server) || ShouldReturnBusList(pn_raw_directory) ) { 
-			FS_busdir(dirfunc,v,pn_raw_directory);
-			if ( NotAlarmDir(pn_raw_directory) ) {
-				FS_uncached_dir(dirfunc,v,pn_raw_directory) ;
-				FS_stype_dir(dirfunc,v,pn_raw_directory) ;
-				/* simultaneous directory */
-				if (flags[0] & (DEV_temp | DEV_volt)) {
-					FS_simultaneous_entry(dirfunc,v,pn_raw_directory) ;
-				}
-				if (flags[0] & DEV_alarm) {
-					FS_alarm_entry(dirfunc,v,pn_raw_directory) ;
-				}
+	} else if ( SpecifiedLocalBus(pn_raw_directory) ) {
+		if ( IsAlarmDir(pn_raw_directory) ) {	/* root or branch directory -- alarm state */
+			LEVEL_DEBUG("ALARM directory\n");
+			ret = FS_alarmdir(dirfunc, v, pn_raw_directory) ;
+			LEVEL_DEBUG("Return from ALARM is %d\n",ret) ;
+		} else {
+			FS_interface_dir( dirfunc, v, pn_raw_directory ) ;
+			/* Now get the actual devices */
+			ret = FS_cache2real(dirfunc, v, pn_raw_directory, flags) ;
+			/* simultaneous directory */
+			if (flags[0] & (DEV_temp | DEV_volt)) {
+				FS_simultaneous_entry(dirfunc,v,pn_raw_directory) ;
+			}
+			if (flags[0] & DEV_alarm) {
+				FS_alarm_entry(dirfunc,v,pn_raw_directory) ;
 			}
 		}
 
@@ -160,10 +162,22 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 		ret = FS_alarmdir(dirfunc, v, pn_raw_directory) ;
 		LEVEL_DEBUG("Return from ALARM is %d\n",ret) ;
 
-	} else {		/* Real directory only */
-	  //printf("DEFAULT\n");
-		/* Now get the actual devices */
-		ret = FS_cache2real(dirfunc, v, pn_raw_directory, flags) ;
+	} else {
+	  //printf("KNOWN_BUS\n");
+		// Not specified bus, so scan through all and print union
+		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
+		if ( (Global.opt != opt_server) || ShouldReturnBusList(pn_raw_directory) ) { 
+			FS_busdir(dirfunc,v,pn_raw_directory);
+			FS_uncached_dir(dirfunc,v,pn_raw_directory) ;
+			FS_stype_dir(dirfunc,v,pn_raw_directory) ;
+			/* simultaneous directory */
+			if (flags[0] & (DEV_temp | DEV_volt)) {
+				FS_simultaneous_entry(dirfunc,v,pn_raw_directory) ;
+			}
+			if (flags[0] & DEV_alarm) {
+				FS_alarm_entry(dirfunc,v,pn_raw_directory) ;
+			}
+		}
 
 	}
 

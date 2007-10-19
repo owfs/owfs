@@ -170,8 +170,18 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
             if ( pathcpy) free(pathcpy);
             if (ret) {
                 FS_ParsedName_destroy(pn);
-            } else if ( pn->type == ePN_root ) {
-                pn->type = ePN_real ; // default state
+            } else {
+				if ( SpecifiedRemoteBus(pn) ) {
+					// promote interface of remote bus to local
+					if ( ! SpecifiedVeryRemoteBus(pn) && pn->type == ePN_interface ) {
+						pn->state &= ~ePS_busremote ;
+						pn->state |= ePS_buslocal ;
+					}
+					// non-root remote bus
+					if ( pn->type != ePN_root ) pn->state &= ~ePS_busveryremote ;
+				}
+				// root busses are considered "real"
+				if ( pn->type == ePN_root ) pn->type = ePN_real ; // default state
             }
             return ret ;
 
@@ -358,6 +368,7 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote,
         return parse_error;
     } else if (SpecifiedRemoteBus(pn)) {     /* already specified a "bus." */
         /* Let the remote bus do the heavy listing */
+		pn->state |= ePS_busveryremote ;
         return parse_first ;
     }
 

@@ -128,11 +128,27 @@ struct devlock {
 #define EXTENSION_ALL_MIXED		-1
 #define EXTENSION_ALL_AGGREGATE	-1
 
-enum ePN_type { ePN_root, ePN_real, ePN_statistics, ePN_system, ePN_settings, ePN_structure, ePN_interface,
+enum ePN_type {
+	ePN_root,
+	ePN_real,
+	ePN_statistics,
+	ePN_system,
+	ePN_settings,
+	ePN_structure,
+	ePN_interface,
 };
-enum ePS_state { ePS_normal = 0, ePS_uncached = 1, ePS_alarm = 2, ePS_text =
-		4, ePS_bus = 8, ePS_buslocal = 16, ePS_busremote = 32,
+
+enum ePS_state {
+	ePS_normal        = 0x0000,
+	ePS_uncached      = 0x0001,
+	ePS_alarm         = 0x0002,
+	ePS_text          = 0x0004,
+	ePS_bus           = 0x0008,
+	ePS_buslocal      = 0x0010,
+	ePS_busremote     = 0x0020,
+	ePS_busveryremote = 0x0040,
 };
+
 struct parsedname {
 	char *path;					// text-more device name
 	char *path_busless;			// pointer to path without first bus
@@ -196,9 +212,12 @@ struct parsedname {
                                     } while(0)
 
 #define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
-#define SpecifiedRemoteBus(pn)          ((((pn)->state) & ePS_busremote) != 0 )
+
+#define SpecifiedVeryRemoteBus(pn)     ((((pn)->state) & ePS_busveryremote) != 0 )
+#define SpecifiedRemoteBus(pn)         ((((pn)->state) & ePS_busremote) != 0 )
 #define SpecifiedLocalBus(pn)          ((((pn)->state) & ePS_buslocal) != 0 )
 #define SpecifiedBus(pn)          ( SpecifiedLocalBus(pn) || SpecifiedRemoteBus(pn) )
+
 #define SetSpecifiedBus(bus_number,pn) do { SetKnownBus(bus_number,pn); (pn)->state |= BusIsServer((pn)->selected_connection) ? ePS_busremote : ePS_buslocal ; } while(0)
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)

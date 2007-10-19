@@ -91,6 +91,7 @@ static const char dirname_type_statistics[] = "statistics";
 static const char dirname_type_system[] = "system";
 static const char dirname_type_settings[] = "settings";
 static const char dirname_type_structure[] = "structure";
+static const char dirname_type_interface[] = "interface";
 
 /* copy type into buffer (for constructing path) return number of chars added */
 int FS_dirname_type(char *buffer, const size_t length,
@@ -110,6 +111,9 @@ int FS_dirname_type(char *buffer, const size_t length,
 		break;
 	case ePN_structure:
 		p = dirname_type_structure;
+		break;
+	case ePN_interface:
+		p = dirname_type_interface;
 		break;
 	default:
 		return 0;
