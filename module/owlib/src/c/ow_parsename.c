@@ -99,7 +99,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
 	while (1) {
-	//printf("PARSENAME parse_enum=%d pathnow=%s\n",pe,pathnow);
+	//printf("PARSENAME parse_enum=%d pathnow=%s\n",pe,SAFESTRING(pp->pathnow));
         // Check for extreme conditions (done, error)
 		switch (pe) {
         
@@ -200,6 +200,12 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
 	pn->sg = SemiGlobal | (1 << BUSRET_BIT);	// initial flag as the bus-returning level, will change if a bus is specified
 
+	// initialization
+	pp->pathnow = NULL ;
+	pp->pathlast = NULL ;
+	pp->pathcpy = NULL ;
+	pp->pathnext = NULL ;
+
 	/* minimal structure for setup use */
 	if (path == NULL)
 		return 0;
@@ -251,10 +257,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	/* remove initial "/" */
 	if (pp->pathnext[0] == '/')
 		++pp->pathnext;
-
-	// initialization
-	pp->pathnow = NULL ;
-	pp->pathlast = NULL ;
 
 	return 0 ;
 }
