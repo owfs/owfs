@@ -98,6 +98,8 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 	if ( ret ) return ret ;
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
+	if(path == NULL) return 0;
+
 	while (1) {
 	//printf("PARSENAME parse_enum=%d pathnow=%s\n",pe,SAFESTRING(pp->pathnow));
         // Check for extreme conditions (done, error)
@@ -141,8 +143,11 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 			break;
 		}
 
-		// break out next name in path
-		pp->pathnow = strsep(&(pp->pathnext), "/");
+		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
+		if(pp->pathnext)
+		  pp->pathnow = strsep(&(pp->pathnext), "/");
+		else
+		  pp->pathnow = NULL;
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
 		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done ;
