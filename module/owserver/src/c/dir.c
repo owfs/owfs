@@ -71,9 +71,11 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 	if (pn2->selected_device != NULL) {
 		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 	} else if (NotRealDir(pn2)) {
-		FS_dirname_type(retbuffer, PATH_MAX - _pathlen - 1, pn2);
+		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+//		FS_dirname_type(retbuffer, PATH_MAX - _pathlen - 1, pn2);
 	} else {
-		FS_dirname_state(retbuffer, PATH_MAX - _pathlen - 1, pn2);
+		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+//		FS_dirname_state(retbuffer, PATH_MAX - _pathlen - 1, pn2);
 	}
 
 	dhs->cm->size = strlen(retbuffer);
@@ -92,13 +94,14 @@ void DirHandler(struct handlerdata *hd, struct client_msg *cm,
 	uint32_t flags = 0;
 	struct dirhandlerstruct dhs = { hd, cm, pn, };
 
-	//printf("DirHandler: pn->path=%s\n", pn->path);
+	printf("DirHandler: pn->path=%s\n", pn->path);
 
 	// Settings for all directory elements
 	cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2;
+	printf("DirHandler: pn->path=%s\n", pn->path);
 
-	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d pn->bus_nr=%d path=%s\n",
-				SpecifiedBus(pn), pn->known_bus->index, SAFESTRING(pn->path));
+	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d path=%s\n",
+				SpecifiedBus(pn),  SAFESTRING(pn->path));
 	// Now generate the directory using the callback function above for each element
 	cm->ret = FS_dir_remote(DirHandlerCallback, &dhs, pn, &flags);
 

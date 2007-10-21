@@ -123,6 +123,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	} else if (SpecifiedRemoteBus(pn_raw_directory) ) { 
 	  //printf("SPECIFIED_BUS BUS_IS_SERVER\n");
 		if ( ! SpecifiedVeryRemoteBus(pn_raw_directory) ) {
+			//printf("Add extra INTERFACE\n");
 			FS_interface_dir( dirfunc, v, pn_raw_directory ) ;
 		}
 		// Send remotely only (all evaluation done there)

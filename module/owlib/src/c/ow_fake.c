@@ -66,7 +66,7 @@ int Fake_detect(struct connection_in *in)
     Fake_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.fake.db));
-    in->adapter_name = "Simulated";
+    in->adapter_name = "Simulated-Random";
     in->Adapter = adapter_fake;
     in->connin.fake.bus_number_this_type = global_count_fake_busses ;
     LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", global_count_fake_busses);
@@ -115,7 +115,7 @@ int Tester_detect(struct connection_in *in)
     Tester_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.tester.db));
-    in->adapter_name = "Simulated";
+    in->adapter_name = "Simulated-Computed";
     in->Adapter = adapter_tester;
     in->connin.tester.bus_number_this_type = global_count_tester_busses ;
     LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", global_count_tester_busses);

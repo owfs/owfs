@@ -329,9 +329,11 @@ static int FS_w_datasampleoffset(struct one_wire_query * owq)
 static int FS_name(struct one_wire_query * owq)
 {
 	char * name = "" ;
-    struct parsedname * pn = PN(owq) ;
-    if (pn->selected_connection->adapter_name )
-        name = pn->selected_connection->adapter_name ;
+	struct parsedname * pn = PN(owq) ;
+	//printf("NAME %d=%s\n",pn->selected_connection->index,pn->selected_connection->adapter_name);
+	if (pn->selected_connection->adapter_name ) {
+		name = pn->selected_connection->adapter_name ;
+	}
 	Fowq_output_offset_and_size_z( name, owq ) ;
 	return 0 ;
 }
@@ -340,8 +342,10 @@ static int FS_name(struct one_wire_query * owq)
 static int FS_port(struct one_wire_query * owq)
 {
 	char * name = "" ;
-    struct parsedname * pn = PN(owq) ;
-    if (pn->selected_connection->name) name = pn->selected_connection->name ;
+	struct parsedname * pn = PN(owq) ;
+	if (pn->selected_connection->name) {
+		name = pn->selected_connection->name ;
+	}
 	Fowq_output_offset_and_size_z( name, owq ) ;
 	return 0 ;
 }
@@ -349,8 +353,8 @@ static int FS_port(struct one_wire_query * owq)
 /* special check, -remote file length won't match local sizes */
 static int FS_version(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    OWQ_U(owq) = pn->selected_connection->Adapter;
+	struct parsedname * pn = PN(owq) ;
+	OWQ_U(owq) = pn->selected_connection->Adapter;
 	return 0;
 }
 
@@ -447,9 +451,9 @@ static int FS_time(struct one_wire_query * owq)
 
 static int FS_elapsed(struct one_wire_query * owq)
 {
-//printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
-    STATLOCK;
-    OWQ_U(owq) = time(NULL) - start_time;
-    STATUNLOCK;
-    return 0;
+	//printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
+	STATLOCK;
+	OWQ_U(owq) = time(NULL) - start_time;
+	STATUNLOCK;
+	return 0;
 }

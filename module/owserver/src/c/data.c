@@ -134,7 +134,7 @@ void *DataHandler(void *v)
 				}
 				break;
 			case msg_dir:
-				LEVEL_CALL("Directory message (by bits)\n");
+				LEVEL_CALL("Directory message (one at a time)\n");
 				DirHandler(hd, &cm, pn);
 				break;
 			case msg_dirall:

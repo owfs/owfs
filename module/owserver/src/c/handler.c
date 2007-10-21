@@ -76,7 +76,7 @@ void Handler(int file_descriptor)
 
 		/* Persistence logic */
 		if (loop_persistent) {	/* Requested persistence */
-            LEVEL_DEBUG("Persistence requested") ;      
+            LEVEL_DEBUG("Persistence requested\n") ;      
 			if (persistent) {	/* already had persistence granted */
 				hd.persistent = 1;	/* so keep it */
 			} else {			/* See if available */

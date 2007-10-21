@@ -94,8 +94,8 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
 
 	// Now generate the directory (using the embedded callback function above for each element
 	LEVEL_DEBUG
-		("OWSERVER Dir-All SpecifiedBus=%d pn->bus_nr=%d path = %s\n",
-		 SpecifiedBus(pn), pn->known_bus->index, SAFESTRING(pn->path));
+		("OWSERVER Dir-All SpecifiedBus=%d path = %s\n",
+		 SpecifiedBus(pn), SAFESTRING(pn->path));
 
 	// Now generate the directory using the callback function above for each element
 	cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);

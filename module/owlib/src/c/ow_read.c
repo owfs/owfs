@@ -17,6 +17,8 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
+static int FS_r_virtual(struct one_wire_query * owq);
+static int FS_read_real(struct one_wire_query * owq) ;
 static int FS_r_given_bus(struct one_wire_query * owq);
 static int FS_r_local(struct one_wire_query * owq);
 static int FS_read_from_parts(struct one_wire_query * owq);
@@ -79,8 +81,30 @@ int FS_read_postparse(struct one_wire_query * owq)
 	STATUNLOCK;
 
 	/* First try */
-	/* in and bus_nr already set */
 	STAT_ADD1(read_tries[0]);
+
+	read_or_error = (pn->type==ePN_real) ? FS_read_real(owq) : FS_r_virtual(owq) ;
+
+	STATLOCK;
+	if (read_or_error >= 0) {
+		++read_success;         /* statistics */
+		read_bytes += read_or_error;        /* statistics */
+	}
+	AVERAGE_OUT(&read_avg);
+	AVERAGE_OUT(&all_avg);
+	STATUNLOCK;
+	LEVEL_DEBUG("READ_POSTPARSE %s return %d\n", pn->path, read_or_error);
+	return read_or_error;
+}
+
+/* Read real device (Non-virtual). Will repeat 3 times if needed */
+static int FS_read_real(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int read_or_error ;
+
+	/* First try */
+	/* in and bus_nr already set */
 	read_or_error = FS_read_distribute(owq);
 
 	/* Second Try */
@@ -116,15 +140,6 @@ int FS_read_postparse(struct one_wire_query * owq)
 		}
 	}
 
-	STATLOCK;
-	if (read_or_error >= 0) {
-		++read_success;         /* statistics */
-		read_bytes += read_or_error;        /* statistics */
-	}
-	AVERAGE_OUT(&read_avg);
-	AVERAGE_OUT(&all_avg);
-	STATUNLOCK;
-	LEVEL_DEBUG("READ_POSTPARSE %s return %d\n", pn->path, read_or_error);
 	return read_or_error;
 }
 
@@ -250,6 +265,39 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 		}
 	}
 	LEVEL_DEBUG("FS_r_given_bus return %d\n", read_status);
+	return read_status ;
+}
+
+// This function should return number of bytes read... not status.
+// Works for all the fake directories, like statistics, interface, ...
+// Doesn't need three-peat and bus was already set or not needed.
+static int FS_r_virtual(struct one_wire_query * owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int read_status = 0;
+	LEVEL_DEBUG("FS_r_virtual\n");
+	Debug_OWQ(owq) ;
+	
+	if (SpecifiedRemoteBus(pn)) {
+		/* The bus is not local... use a network connection instead */
+		// Read afar -- returns already formatted in buffer
+		read_status = ServerRead(owq);
+		LEVEL_DEBUG("FS_r_virtual -- back from server\n");
+		Debug_OWQ(owq) ;
+	} else {
+		STAT_ADD1(read_calls);  /* statistics */
+		if (LockGet(pn) == 0) {
+			read_status = FS_r_local(owq);  // this returns status
+			if ( read_status >= 0 ) {
+				// local success -- now format in buffer
+				read_status = FS_output_owq(owq) ; // this returns nr. bytes
+			}
+			LockRelease(pn);
+		} else {
+			read_status = -EADDRINUSE ;
+		}
+	}
+	LEVEL_DEBUG("FS_r_virtual return %d\n", read_status);
 	return read_status ;
 }
 
