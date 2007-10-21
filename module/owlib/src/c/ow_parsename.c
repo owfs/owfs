@@ -20,6 +20,14 @@ enum parse_enum { parse_first, parse_done, parse_error, parse_real,
 	parse_nonreal, parse_prop, parse_subprop
 };
 
+struct parsedname_pointers {
+	char * pathcpy ;
+	char * pathnow ;
+	char * pathnext ;
+	char * pathlast ;
+} ;
+
+
 static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote, struct parsedname *pn);
 static enum parse_enum Parse_Real(char *pathnow, int back_from_remote, struct parsedname *pn);
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
@@ -28,7 +36,7 @@ static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn
 static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct parsedname *pn);
 static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct parsedname *pn);
-static int FS_ParsedName_setup(const char *path, char ** pathcpy, struct parsedname *pn) ;
+static int FS_ParsedName_setup(struct parsedname_pointers * pp, const char *path, struct parsedname *pn) ;
 
 #define BRANCH_INCR (9)
 
@@ -75,10 +83,8 @@ int FS_ParsedName_BackFromRemote(const char *path, struct parsedname *pn)
 static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 								  struct parsedname *pn)
 {
-	char *pathcpy = NULL ; // Set in FS_ParsedName_setup but can get compiler warning if no initialization
-	char *pathnow;
-	char *pathnext;
-	char *pathlast = NULL;
+	struct parsedname_pointers s_pp ;
+	struct parsedname_pointers * pp = &s_pp ;
 	int ret = 0;
 	enum parse_enum pe = parse_first;
 
@@ -88,16 +94,8 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 
 	LEVEL_CALL("PARSENAME path=[%s]\n", SAFESTRING(path));
     
-	ret = FS_ParsedName_setup(path,&pathcpy,pn) ;
+	ret = FS_ParsedName_setup(pp,path,pn) ;
 	if ( ret ) return ret ;
-
-	/* pointer to rest of path after current token peeled off */
-	pathnext = pathcpy;
-
-	/* remove initial "/" */
-	if (pathnext[0] == '/')
-		++pathnext;
-
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
 	while (1) {
@@ -108,7 +106,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		case parse_done: // the only exit!
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
 			//printf("PARSENAME end ret=%d\n",ret) ;
-			if ( pathcpy) free(pathcpy);
+			if ( pp->pathcpy) free(pp->pathcpy);
 			if (ret) {
 				FS_ParsedName_destroy(pn);
 			} else {
@@ -144,9 +142,9 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		}
 
 		// break out next name in path
-		pathnow = strsep(&pathnext, "/");
+		pp->pathnow = strsep(&(pp->pathnext), "/");
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
-		if (pathnow == NULL || pathnow[0] == '\0') {
+		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done ;
 			continue ;
 		}
@@ -156,29 +154,29 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		
 		case parse_first:
 			//LEVEL_DEBUG("PARSENAME parse_first\n") ;
-			pe = Parse_Unspecified(pathnow, back_from_remote, pn);
+			pe = Parse_Unspecified(pp->pathnow, back_from_remote, pn);
 			break;
 		
 		case parse_real:
 			//LEVEL_DEBUG("PARSENAME parse_real\n") ;
-			pe = Parse_Real(pathnow, back_from_remote, pn);
+			pe = Parse_Real(pp->pathnow, back_from_remote, pn);
 			break;
 		
 		case parse_nonreal:
 			//LEVEL_DEBUG("PARSENAME parse_nonreal\n") ;
-			pe = Parse_NonReal(pathnow, pn);
+			pe = Parse_NonReal(pp->pathnow, pn);
 			break;
 		
 		case parse_prop:
 			//LEVEL_DEBUG("PARSENAME parse_prop\n") ;
-			pathlast = pathnow;	/* Save for concatination if subdirectory later wanted */
-			pe = Parse_Property(pathnow, pn);
+			pp->pathlast = pp->pathnow;	/* Save for concatination if subdirectory later wanted */
+			pe = Parse_Property(pp->pathnow, pn);
 			break;
 		
 		case parse_subprop:
 			//LEVEL_DEBUG("PARSENAME parse_subprop\n") ;
-			pathnow[-1] = '/';
-			pe = Parse_Property(pathlast, pn);
+			pp->pathnow[-1] = '/';
+			pe = Parse_Property(pp->pathlast, pn);
 			break;
 		
 		default:
@@ -191,7 +189,7 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 }
 
 /* Initial memory allocation and pn setup */
-static int FS_ParsedName_setup(const char *path, char ** pathcpy, struct parsedname *pn)
+static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
 {
 	if (pn == NULL)
 		return -EINVAL;
@@ -211,14 +209,14 @@ static int FS_ParsedName_setup(const char *path, char ** pathcpy, struct parsedn
 	pn->type = ePN_root;
 
 	/* make a copy for destructive parsing */
-	*pathcpy = strdup(path);
-	if ( *pathcpy==NULL ) {
+	pp->pathcpy = strdup(path);
+	if ( pp->pathcpy==NULL ) {
 		return -ENOMEM ;
 	}
 
 	pn->path = (char *) malloc(2 * strlen(path) + 2);
 	if ( pn->path == NULL ) {
-		free( *pathcpy ) ;
+		free( pp->pathcpy ) ;
 		return -ENOMEM ;
 	}
 
@@ -229,13 +227,13 @@ static int FS_ParsedName_setup(const char *path, char ** pathcpy, struct parsedn
 	CONNINUNLOCK;
 	
 	if ( pn->head_inbound_list == NULL ) {
-		free( *pathcpy ) ;
+		free( pp->pathcpy ) ;
 		free( pn->path ) ;
 		return -ENOENT ;
 	}
 
 	if ( pn->lock == NULL ) {
-		free( *pathcpy ) ;
+		free( pp->pathcpy ) ;
 		free( pn->path ) ;
 		return -ENOMEM ;
 	}
@@ -246,6 +244,18 @@ static int FS_ParsedName_setup(const char *path, char ** pathcpy, struct parsedn
 	strcpy(pn->path, path);
 	pn->path_busless = pn->path + strlen(path) + 1;
 	strcpy(pn->path_busless, path);
+
+	/* pointer to rest of path after current token peeled off */
+	pp->pathnext = pp->pathcpy;
+
+	/* remove initial "/" */
+	if (pp->pathnext[0] == '/')
+		++pp->pathnext;
+
+	// initialization
+	pp->pathnow = NULL ;
+	pp->pathlast = NULL ;
+
 	return 0 ;
 }
 

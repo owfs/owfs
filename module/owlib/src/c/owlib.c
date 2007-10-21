@@ -88,6 +88,7 @@ static int my_daemon(int nochdir, int noclose)
 		act.sa_flags = SA_RESTART;
 		sigaction(SIGCHLD, &act, NULL);
 //printf("owlib: my_daemon: pid=%d fork error\n", getpid());
+printf ("Libsetup ok\n");
 
 		return (-1);
 	case 0:
@@ -149,7 +150,6 @@ int LibStart(void)
 {
 	struct connection_in *in = head_inbound_list;
 	int ret = 0;
-
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */
 	srand(1);
@@ -211,6 +211,7 @@ int LibStart(void)
 		BadAdapter_detect(NewIn(NULL));
 		return 1;
 	}
+
 #ifndef __UCLIBC__
 	/* daemon() is called BEFORE initialization of USB adapter etc... Cygwin will fail to
 	 * use the adapter after daemon otherwise. Some permissions are changed on the process
