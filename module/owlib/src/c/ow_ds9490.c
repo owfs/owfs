@@ -298,10 +298,11 @@ int DS9490_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	// store timeout value -- sec -> msec
     in->changed_bus_settings = 1 ; // Trigger needing new configuration
     in->set_speed = bus_speed_slow ; // not overdrive at start
 	in->connin.usb.usb_flextime = Global.usb_flextime ;
+	// store timeout value -- sec -> msec
+	in->connin.usb.timeout = 1000 * Global.timeout_usb;
 
 	ret = DS9490_detect_low(&pn);
 	if (ret) {
