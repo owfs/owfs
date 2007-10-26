@@ -35,7 +35,7 @@ set setup_flags(detail_list) {}
 
 #Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
-    ArgumentProcess $argv
+    ArgumentProcess
 
     CircBufferSetup 50
     DisplaySetup
@@ -51,16 +51,17 @@ proc Main { argv } {
 # -p 3000 -s 3001
 # -p3000 -s 3001
 # etc
-proc ArgumentProcess { arg } {
+proc ArgumentProcess { } {
     global IPAddress
     set mode "loose"
     # "Clear" ports
     # INADDR_ANY
+    # tk_messageBox -message "$::argv" -type ok
     set IPAddress(tap.ip) "0.0.0.0"
     set IPAddress(tap.port) "0"
     set IPAddress(server.ip) "0.0.0.0"
     set IPAddress(server.port) "4304"
-    foreach a $arg {
+    foreach a $::argv {
         if { [regexp -- {^-p(.*)$} $a whole address] } {
 			set mode "tap"
 		} elseif { [regexp -- {^-s(.*)$} $a whole address] } {
@@ -482,7 +483,7 @@ proc RelayProcess { relay } {
     set read_value [ReadProcess $relay]
 #puts "Current length [string length $serve($relay.string)] return val=$read_value"
     switch $read_value {
-        3  - 
+        3  -
         2  { set serve($serve($relay.sock).state) "Server early end"}
         0  { return }
         1  { set serve($serve($relay.sock).state) "Process server packet" }
@@ -577,7 +578,9 @@ proc SetupMenu { } {
         .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
         .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
         .main_menu.file add separator
-        .main_menu.file add command -label Quit -underline 0 -command exit
+        .main_menu.file add command -label "Restart" -underline 0 -command Restart
+        .main_menu.file add separator
+        .main_menu.file add command -label "Quit" -underline 0 -command exit
 
     # statistics menu
     menu .main_menu.view -tearoff 0
@@ -847,7 +850,7 @@ proc AddClient { client } {
     } else {
         set ClientList($client) 1
     }
-    
+
     global setup_flags
 
     if { [ info exist setup_flags(.clientlist) ] } {
@@ -893,14 +896,14 @@ proc LengthPersist { } {
     if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
         return
     }
-    
+
     global stats
 
     label $window_name.at -text "Length" -bg blue -fg white
     grid  $window_name.at -row 0 -column 0 -sticky news
     label $window_name.bt -text "Count" -bg blue -fg white
     grid  $window_name.bt -row 0 -column 1 -sticky news
-    
+
     label $window_name.ax -textvariable stats(persistence_length.max) -bg lightyellow
     grid  $window_name.ax -row 1 -column 0 -sticky news
     label $window_name.bx -text "Max" -bg lightyellow
@@ -937,28 +940,28 @@ proc RatePersist { } {
     }
 
     global stats
-    
+
     label $window_name.a0 -text "Persistence" -bg blue -fg white
     grid  $window_name.a0 -row 0 -column 0 -sticky news
     label $window_name.a1 -text "Requests" -bg lightblue
     grid  $window_name.a1 -row 1 -column 0 -sticky news
     label $window_name.a2 -text "Granted" -bg lightblue
     grid  $window_name.a2 -row 2 -column 0 -sticky news
-    
+
     label $window_name.b0 -text "number" -bg yellow
     grid  $window_name.b0 -row 0 -column 1 -sticky news
     label $window_name.b1 -textvariable stats(persistence_length.request_yes) -bg white
     grid  $window_name.b1 -row 1 -column 1 -sticky news
     label $window_name.b2 -textvariable stats(persistence_length.grant) -bg white
     grid  $window_name.b2 -row 2 -column 1 -sticky news
-    
+
     label $window_name.c0 -text "total" -bg orange
     grid  $window_name.c0 -row 0 -column 2 -sticky news
     label $window_name.c1 -textvariable stats(Total.tries) -bg lightyellow
     grid  $window_name.c1 -row 1 -column 2 -sticky news
     label $window_name.c2 -textvariable stats(persistence_length.request_yes) -bg lightyellow
     grid  $window_name.c2 -row 2 -column 2 -sticky news
-    
+
     label $window_name.d0 -text "rate %" -bg yellow
     grid  $window_name.d0 -row 0 -column 3 -sticky news
     label $window_name.d1 -textvariable stats(persistence_length.request_rate) -bg white
@@ -985,7 +988,7 @@ proc StatusWindow { } {
     scrollbar $window_name.ysb -orient vertical -command [list $window_name.lb yview]
     pack $window_name.ysb -fill y -expand 1 -side right
     listbox $window_name.lb -listvar status_messages -bg white -yscrollcommand [list $window_name.ysb set] -xscrollcommand [list $window_name.xsb set] -width 80
-    pack $window_name.lb -fill both -expand 1 -side left 
+    pack $window_name.lb -fill both -expand 1 -side left
 }
 
 #proc window handler for statistics and status windows
@@ -1299,7 +1302,7 @@ proc DetailFlags { flags } {
     }
     return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
 }
- 
+
 proc WebResponse { sock } {
     set R [lindex {$Revision$} 1]
     fconfigure $sock -buffering full -translation crlf -blocking 0
@@ -1327,6 +1330,28 @@ proc PrettyPeer { sock } {
 
 proc MainTitle { tap server } {
     wm title . "OWTAP ($tap) tap of owserver ($server)"
+}
+
+proc Restart { } {
+#   foreach ch [chan names] { close $ch }
+    foreach channel [file channels] {
+        if { [regexp -- {^std(out|in|err)$} $channel ] == 0 } {
+            # change to non-blocking and close
+            if { [ catch {
+                fconfigure $channel -blocking 0 ;
+                close $channel;
+} reason ] == 1 } {
+            StatusMessage "Error closing channel $channel $reason" 1
+            }
+        }
+    }
+#    exec [info nameofexecutable] $::argv0 "--" {*}$::argv &
+    if { [info nameofexecutable] eq $::argv0 } {
+        eval exec [list [info nameofexecutable]] "--" $::argv &
+    } else {
+        eval exec [list [info nameofexecutable]] [list $::argv0] "--" $::argv "&"
+    }
+    exit
 }
 
 #Finally, all the Proc-s have been defined, so run everything.
