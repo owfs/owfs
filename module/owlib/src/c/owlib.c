@@ -251,16 +251,19 @@ int LibStart(void)
 	while (in) {
 		BadAdapter_detect(in);	/* default "NOTSUP" calls */
 		switch (get_busmode(in)) {
+
 		case bus_zero:
 			if ((ret = Zero_detect(in))) {
 				LEVEL_CONNECT("Cannot open server at %s\n", in->name);
 			}
 			break;
+
 		case bus_server:
 			if ((ret = Server_detect(in))) {
 				LEVEL_CONNECT("Cannot open server at %s\n", in->name);
 			}
 			break;
+
 		case bus_serial:
 			/* Set up DS2480/LINK interface */
 			if (!DS2480_detect(in)) break;
@@ -270,6 +273,7 @@ int LibStart(void)
 			BadAdapter_detect(in);	/* reset the methods */
 			in->adapter_name = "DS9097"; // need to set adapter name for this approach to passive adapter
 			// Fall Through
+
 		case bus_passive:
 			if (DS9097_detect(in)) {
 				LEVEL_DEFAULT
@@ -278,6 +282,7 @@ int LibStart(void)
 				ret = -ENODEV;
 			}
 			break;
+
 		case bus_i2c:
 #if OW_I2C
 			if (DS2482_detect(in)) {
@@ -289,6 +294,7 @@ int LibStart(void)
 			ret = -ENOPROTOOPT;
 #endif							/* OW_I2C */
 			break;
+
 		case bus_ha7net:
 #if OW_HA7
 			if (HA7_detect(in)) {
@@ -300,6 +306,7 @@ int LibStart(void)
 			ret = -ENOPROTOOPT;
 #endif							/* OW_HA7 */
 			break;
+
 		case bus_parallel:
 #if OW_PARPORT
 			if ((ret = DS1410_detect(in))) {
@@ -310,6 +317,7 @@ int LibStart(void)
 			ret = -ENOPROTOOPT;
 #endif							/* OW_PARPORT */
 			break;
+
 		case bus_usb:
 #if OW_USB
 			/* in->connin.usb.ds1420_address should be set to identify the
@@ -322,6 +330,7 @@ int LibStart(void)
 			ret = -ENOPROTOOPT;
 #endif							/* OW_USB */
 			break;
+
 		case bus_link:
 			if ((ret = LINK_detect(in))) {
 				LEVEL_CONNECT("Cannot open LINK adapter at %s\n",
@@ -343,17 +352,21 @@ int LibStart(void)
 			}
 			break;
 
-        case bus_fake:
-            Fake_detect(in);    // never fails
-            break;
-        case bus_tester:
-            Tester_detect(in);    // never fails
-            break;
-        default:
+		case bus_fake:
+			Fake_detect(in);    // never fails
 			break;
+
+		case bus_tester:
+			Tester_detect(in);    // never fails
+			break;
+
+		default:
+			break;
+
 		}
+
 		if (ret) {				/* flag that that the adapter initiation was unsuccessful */
-			STAT_ADD1_BUS(BUS_detect_errors, in);
+			STAT_ADD1_BUS(e_bus_detect_errors, in);
 			BUS_close(in);		/* can use adapter's close */
 			BadAdapter_detect(in);	/* Set to default null assignments */
 		}

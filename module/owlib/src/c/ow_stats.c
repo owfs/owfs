@@ -103,8 +103,6 @@ UINT NET_connection_errors = 0;
 UINT NET_read_errors = 0;
 
 // ow_bus.c
-UINT BUS_reconnects = 0;		// sum from all adapters
-UINT BUS_reconnect_errors = 0;	// sum from all adapters
 UINT BUS_send_data_errors = 0;
 UINT BUS_send_data_memcmp_errors = 0;
 UINT BUS_readin_data_errors = 0;
@@ -112,30 +110,17 @@ UINT BUS_select_low_errors = 0;
 UINT BUS_select_low_branch_errors = 0;
 UINT BUS_detect_errors = 0;
 UINT BUS_open_errors = 0;
-UINT BUS_PowerByte_errors = 0;
 UINT BUS_level_errors = 0;
-UINT BUS_write_errors = 0;
-UINT BUS_write_interrupt_errors = 0;
-UINT BUS_read_errors = 0;
-UINT BUS_read_interrupt_errors = 0;
-UINT BUS_read_select_errors = 0;
-UINT BUS_read_timeout_errors = 0;
 UINT BUS_next_errors = 0;
 UINT BUS_next_alarm_errors = 0;
-UINT BUS_reset_errors = 0;
 UINT BUS_short_errors = 0;
 UINT BUS_bit_errors = 0;
 UINT BUS_byte_errors = 0;
 UINT BUS_echo_errors = 0;
-UINT BUS_ProgramPulse_errors = 0;
-UINT BUS_Overdrive_errors = 0;
-UINT BUS_TestOverdrive_errors = 0;
 UINT BUS_tcsetattr_errors = 0;
 UINT BUS_status_errors = 0;
 
 // ow_ds9097U.c
-UINT DS2480_send_cmd_errors = 0;
-UINT DS2480_send_cmd_memcmp_errors = 0;
 UINT DS2480_sendout_data_errors = 0;
 UINT DS2480_sendout_cmd_errors = 0;
 UINT DS2480_sendback_cmd_errors = 0;
@@ -279,39 +264,22 @@ struct filetype stats_errors[] = {
 	FS_stat_ROW(NET_connection_errors),
 
 // ow_bus.c
-	FS_stat_ROW(BUS_reconnects),
-	FS_stat_ROW(BUS_reconnect_errors),
-	FS_stat_ROW(BUS_send_data_errors),
-	FS_stat_ROW(BUS_send_data_memcmp_errors),
 	FS_stat_ROW(BUS_readin_data_errors),
 	FS_stat_ROW(BUS_select_low_errors),
 	FS_stat_ROW(BUS_select_low_branch_errors),
 	FS_stat_ROW(BUS_open_errors),
 	FS_stat_ROW(BUS_detect_errors),
-	FS_stat_ROW(BUS_PowerByte_errors),
 	FS_stat_ROW(BUS_level_errors),
-	FS_stat_ROW(BUS_write_errors),
-	FS_stat_ROW(BUS_write_interrupt_errors),
-	FS_stat_ROW(BUS_read_errors),
-	FS_stat_ROW(BUS_read_interrupt_errors),
-	FS_stat_ROW(BUS_read_select_errors),
-	FS_stat_ROW(BUS_read_timeout_errors),
 	FS_stat_ROW(BUS_next_errors),
 	FS_stat_ROW(BUS_next_alarm_errors),
-	FS_stat_ROW(BUS_reset_errors),
 	FS_stat_ROW(BUS_short_errors),
 	FS_stat_ROW(BUS_bit_errors),
 	FS_stat_ROW(BUS_byte_errors),
 	FS_stat_ROW(BUS_echo_errors),
-	FS_stat_ROW(BUS_ProgramPulse_errors),
-	FS_stat_ROW(BUS_Overdrive_errors),
-	FS_stat_ROW(BUS_TestOverdrive_errors),
 	FS_stat_ROW(BUS_tcsetattr_errors),
 	FS_stat_ROW(BUS_status_errors),
 
 // ow_ds9097U.c
-	FS_stat_ROW(DS2480_send_cmd_errors),
-	FS_stat_ROW(DS2480_send_cmd_memcmp_errors),
 	FS_stat_ROW(DS2480_sendout_data_errors),
 	FS_stat_ROW(DS2480_sendout_cmd_errors),
 	FS_stat_ROW(DS2480_sendback_cmd_errors),

@@ -133,37 +133,41 @@ static int LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[5];
 	int ret ;
-
+	
 	COM_flush(pn);
-    //if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
-    //Response is 3 bytes:  1 byte for code + \r\n
-    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
-        STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
-        LEVEL_DEBUG("Error resetting LINK device\n");
-        return -EIO;
+	//if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
+	//Response is 3 bytes:  1 byte for code + \r\n
+	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
+		LEVEL_DEBUG("Error resetting LINK device\n");
+		return -EIO;
 	}
 	
     switch (resp[0]) {
+
 	case 'P':
-        LEVEL_DEBUG("LINK reset ok, devices Present\n");
-        ret = BUS_RESET_OK ;
-        pn->selected_connection->AnyDevices = 1;
+		LEVEL_DEBUG("LINK reset ok, devices Present\n");
+		ret = BUS_RESET_OK ;
+		pn->selected_connection->AnyDevices = 1;
 		break;
+
 	case 'N':
-        LEVEL_DEBUG("LINK reset ok, devices Not present\n");
-        ret = BUS_RESET_OK ;
-        pn->selected_connection->AnyDevices = 0;
+		LEVEL_DEBUG("LINK reset ok, devices Not present\n");
+		ret = BUS_RESET_OK ;
+		pn->selected_connection->AnyDevices = 0;
 		break;
+
 	case 'S':
-        LEVEL_DEBUG("LINK reset short, Short circuit on 1-wire bus!\n");
-        ret = BUS_RESET_SHORT ;
-        break ;
-    default:
-        LEVEL_DEBUG("LINK reset bad, Unknown LINK response %c\n",resp[0]);
-        ret = -EIO ;
+		LEVEL_DEBUG("LINK reset short, Short circuit on 1-wire bus!\n");
+		ret = BUS_RESET_SHORT ;
+		break ;
+
+	default:
+		LEVEL_DEBUG("LINK reset bad, Unknown LINK response %c\n",resp[0]);
+		ret = -EIO ;
+		break ;
 	}
 	
-    return ret;
+	return ret;
 }
 
 static int LINK_next_both(struct device_search *ds,
@@ -263,7 +267,7 @@ static int LINK_read(BYTE * buf, const size_t size,
             if (read_return < 0) {
 				if (errno == EINTR) {
 					/* read() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
+					STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 					continue;
 				}
 				ERROR_CONNECT("LINK read error: %s\n",
@@ -276,24 +280,24 @@ static int LINK_read(BYTE * buf, const size_t size,
         } else if (select_return < 0) {
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
-				STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
+				STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 				continue;
 			}
 			ERROR_CONNECT("LINK select error: %s\n",
 						  SAFESTRING(pn->selected_connection->name));
-			STAT_ADD1_BUS(BUS_read_select_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 			return -EINTR;
 		} else {
 			ERROR_CONNECT("LINK timeout error: %s\n",
 						  SAFESTRING(pn->selected_connection->name));
-			STAT_ADD1_BUS(BUS_read_timeout_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_timeouts, pn->selected_connection);
 			return -EINTR;
 		}
 	}
 	if (bytes_left > 0) {			/* signal that an error was encountered */
 		ERROR_CONNECT("LINK read short error: %s\n",
 					  SAFESTRING(pn->selected_connection->name));
-		STAT_ADD1_BUS(BUS_read_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
         return error_return;				/* error */
 	}
 	//printf("Link_Read_Low <%*s>\n",(int)size,buf) ;
@@ -321,7 +325,7 @@ static int LINK_write(const BYTE * buf, const size_t size,
         if (write_or_error < 0) {
             ERROR_CONNECT("Trouble writing data to LINK: %s\n",
                         SAFESTRING(pn->selected_connection->name));
-            STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
+            STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
             return write_or_error ;
         }
 	LEVEL_DEBUG("ltow %d woe %d\n",left_to_write,write_or_error);
@@ -339,7 +343,6 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 
 	if (LINK_write(LINK_string("p"), 1, pn)
 		|| LINK_byte_bounce(&data, resp, pn)) {
-		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
 		return -EIO;			// send just the <CR>
 	}
 	// delay

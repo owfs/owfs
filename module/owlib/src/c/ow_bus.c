@@ -37,7 +37,7 @@ int BUS_send_data(const BYTE * data, const size_t len,
 		if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
 			if ((ret = memcmp(data, resp, (size_t) len))) {
 				ret = -EIO;		/* EPROTO not available for MacOSX */
-				STAT_ADD1_BUS(BUS_echo_errors, pn->selected_connection);
+				STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 			}
 		}
 	}
@@ -90,7 +90,7 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 		if ((ret =
 			 BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits,
 							   pn))) {
-			STAT_ADD1_BUS(BUS_byte_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 			return ret;
 		}
 
@@ -115,20 +115,35 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 int BUS_PowerByte(BYTE data, BYTE * resp, UINT delay,
 				  const struct parsedname *pn)
 {
+	int ret ;
+
 	if (pn->selected_connection->iroutines.PowerByte) {
-		return (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
+		ret = (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
 	} else {
-		int ret;
 		// send the packet
-		if ((ret = BUS_sendback_data(&data, resp, 1, pn))) {
-			STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
-			return ret;
-		}
+		ret = BUS_sendback_data(&data, resp, 1, pn) ;
 		// delay
 		UT_delay(delay);
-
-		return ret;
 	}
+	if ( ret ) {
+		STAT_ADD1_BUS( e_bus_pullup_errors, pn->selected_connection ) ;
+	}
+	return ret;
+}
+
+int BUS_ProgramPulse( const struct parsedname *pn )
+{
+	int ret ;
+
+	if (pn->selected_connection->iroutines.ProgramPulse) {
+		ret = (pn->selected_connection->iroutines.ProgramPulse)(pn);
+	} else {
+		ret = -ENOTSUP ;
+	}
+	if ( ret ) {
+		STAT_ADD1_BUS( e_bus_program_errors, pn->selected_connection ) ;
+	}
+	return ret;
 }
 
 // RESET called with bus locked
@@ -140,12 +155,14 @@ int BUS_reset(const struct parsedname *pn)
 		pn->selected_connection->reconnect_state = reconnect_ok; // Flag as good!
 	} else if (ret == BUS_RESET_SHORT) {
 		pn->selected_connection->AnyDevices = 0;
-		STAT_ADD1_BUS(BUS_short_errors, pn->selected_connection);
+		//STAT_ADD1_BUS(BUS_short_errors, pn->selected_connection);
 		LEVEL_CONNECT("1-wire bus short circuit.\n");
 		return 1;
 	} else {
 		pn->selected_connection->reconnect_state++;	// Flag for eventual reconnection
-		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_reset_errors, pn->selected_connection);
 	}
+	STAT_ADD1_BUS(e_bus_resets, pn->selected_connection);
+
 	return ret;
 }

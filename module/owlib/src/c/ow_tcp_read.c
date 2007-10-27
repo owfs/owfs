@@ -72,7 +72,6 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 		if (rc > 0) {
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
-				//STAT_ADD1_BUS(BUS_read_select_errors,pn->selected_connection);
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
@@ -94,15 +93,12 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 		} else if (rc < 0) {	/* select error */
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
-				//STAT_ADD1_BUS(BUS_read_interrupt_errors,pn->selected_connection);
 				continue;
 			}
 			ERROR_DATA("Selection error (network)\n");
-			//STAT_ADD1_BUS(BUS_read_select_errors,pn->selected_connection);
 			return -EINTR;
 		} else {				/* timed out */
 			LEVEL_CONNECT("TIMEOUT after %d bytes\n", n - nleft);
-			//STAT_ADD1_BUS(BUS_read_timeout_errors,pn->selected_connection);
 			return -EAGAIN;
 		}
 	}

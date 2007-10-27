@@ -142,12 +142,7 @@ struct interface_routines {
 	UINT flags;
 };
 #define BUS_detect(in)                      (((in)->iroutines.detect(in)))
-//#define BUS_sendback_data(data,resp,len,pn) (((pn)->selected_connection->iroutines.sendback_data)((data),(resp),(len),(pn)))
 #define BUS_sendback_bits(data,resp,len,pn) (((pn)->selected_connection->iroutines.sendback_bits)((data),(resp),(len),(pn)))
-//#define BUS_next_both(ds,pn)                (((pn)->selected_connection->iroutines.next_both)((ds),(pn)))
-#define BUS_ProgramPulse(pn)                (((pn)->selected_connection->iroutines.ProgramPulse)(pn))
-//#define BUS_PowerByte(byte,resp,delay,pn)   (((pn)->selected_connection->iroutines.PowerByte)((byte),(resp),(delay),(pn)))
-//#define BUS_select(pn)                      (((pn)->selected_connection->iroutines.select)(pn))
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
 /* placed in iroutines.flags */
@@ -299,8 +294,8 @@ enum adapter_type {
 	adapter_HA5,
 	adapter_HA7E,
 	adapter_EtherWeather,
-    adapter_fake,
-    adapter_tester,
+	adapter_fake,
+	adapter_tester,
 };
 
 enum e_reconnect {
@@ -312,10 +307,30 @@ enum e_reconnect {
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
-    int index ;
+	int index ;
 	BYTE sn[8];
 	BYTE search;
 };
+
+enum e_bus_stat {
+	e_bus_reconnects,
+	e_bus_reconnect_errors,
+	e_bus_locks,
+	e_bus_unlocks,
+	e_bus_errors,
+	e_bus_resets,
+	e_bus_reset_errors,
+	e_bus_program_errors,
+	e_bus_pullup_errors,
+	e_bus_timeouts,
+	e_bus_read_errors,
+	e_bus_write_errors,
+	e_bus_detect_errors,
+	e_bus_open_errors,
+	e_bus_close_errors,
+	e_bus_search_errors,
+	e_bus_status_errors,
+	e_bus_stat_last_marker } ;
 
 struct connection_in {
 	struct connection_in *next;
@@ -330,11 +345,9 @@ struct connection_in {
 	enum e_reconnect reconnect_state;
 	struct timeval last_lock;	/* statistics */
 	struct timeval last_unlock;
-	UINT bus_reconnect;
-	UINT bus_reconnect_errors;
-	UINT bus_locks;
-	UINT bus_unlocks;
-	UINT bus_errors;
+
+	UINT bus_stat[e_bus_stat_last_marker] ;
+
 	struct timeval bus_time;
 
 	struct timeval bus_read_time;
@@ -346,9 +359,9 @@ struct connection_in {
 	char *adapter_name;
 	int AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
-    enum bus_speed set_speed;
-    int changed_bus_settings ;
-    int ds2404_compliance;
+	enum bus_speed set_speed;
+	int changed_bus_settings ;
+	int ds2404_compliance;
 	int ProgramAvailable;
 	size_t last_root_devs;
 	int buspath_bad;			// should the current DS2409 branches be cleared?
@@ -495,13 +508,13 @@ int BUS_verify(BYTE search, const struct parsedname *pn);
 
 int BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay,
 				  const struct parsedname *pn);
+int BUS_ProgramPulse(const struct parsedname *pn);
 int BUS_next_both(struct device_search *ds, const struct parsedname *pn);
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 					  const struct parsedname *pn);
 
 int TestConnection(const struct parsedname *pn);
 
-#define STAT_ADD1_BUS( err, in )     STATLOCK; ++err; ++(in->bus_errors) ; STATUNLOCK ;
+#define STAT_ADD1_BUS( err, in )     STATLOCK; ++((in)->bus_stat[err]) ; STATUNLOCK
 
 #endif							/* OW_CONNECTION_H */
-

@@ -77,7 +77,6 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		res = write(in->file_descriptor, &packet[datalen + 2 - left], left);
 		if (res < 0) {
 			if (errno == EINTR) {
-				STAT_ADD1_BUS(BUS_write_interrupt_errors, in);
 				continue;
 			}
 			ERROR_CONNECT("Trouble writing data to EtherWeather: %s\n",
@@ -91,7 +90,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	gettimeofday(&(in->bus_write_time), NULL);
 
 	if (left > 0) {
-		STAT_ADD1_BUS(BUS_write_errors, in);
+		STAT_ADD1_BUS(e_bus_write_errors, in);
 		free(packet);
 		return -EIO;
 	}
@@ -221,7 +220,6 @@ static void EtherWeather_close(struct connection_in *in) {
 
 static int EtherWeather_reset(const struct parsedname *pn) {
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_RESET, 0, NULL, NULL)) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		return -EIO;
 	}
 

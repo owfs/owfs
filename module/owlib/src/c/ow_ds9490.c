@@ -510,7 +510,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 
 	pn->selected_connection->connin.usb.dev = NULL;	// this will force a re-scan next time
 	//LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
-	STAT_ADD1_BUS(BUS_open_errors, pn->selected_connection);
+	STAT_ADD1_BUS(e_bus_open_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -743,7 +743,7 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 		if ((ret =
 			 usb_bulk_read(usb, DS2490_EP1, (ASCII *) junk, (size_t) 1500,
 						   pn->selected_connection->connin.usb.timeout)) < 0) {
-			STAT_ADD1_BUS(BUS_status_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_status_errors, pn->selected_connection);
 			LEVEL_DATA("DS9490_getstatus: error reading ret=%d\n", ret);
 			return -EIO;
 		}
@@ -769,7 +769,7 @@ int DS9490_getstatus(BYTE * buffer, int readlen,
 
         if ( ret < 0 ) {
             if ( count_have_usb_interrupt_read != 0 ) {
-    			STAT_ADD1_BUS(BUS_status_errors, pn->selected_connection);
+    			STAT_ADD1_BUS(e_bus_status_errors, pn->selected_connection);
     	   		return -EIO;
             }
             have_usb_interrupt_read = ! have_usb_interrupt_read ;
@@ -911,7 +911,6 @@ static int DS9490_reset(const struct parsedname *pn)
 			/* Short detected, but otherwise no bigger "problem"?
 			 * Make sure 1-wires won't be scanned */
 			pn->selected_connection->AnyDevices = 0;
-			STAT_ADD1_BUS(BUS_short_errors, pn->selected_connection);
 			LEVEL_DATA("DS9490_reset: short detected\n", ret);
 			return BUS_RESET_SHORT ;
 		}
@@ -948,7 +947,7 @@ static int DS9490_read(BYTE * buf, const size_t size,
 		return ret;
 	LEVEL_DATA("DS9490_read: failed ret=%d\n", ret);
 	USB_CLEAR_HALT(usb, DS2490_EP3);
-	STAT_ADD1_BUS(BUS_read_errors, pn->selected_connection);
+	STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -964,7 +963,7 @@ static int DS9490_write(BYTE * buf, const size_t size,
 		return ret;
 	LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
 	USB_CLEAR_HALT(usb, DS2490_EP2);
-	STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
+	STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
 	return ret;
 }
 
@@ -994,7 +993,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 		|| ((ret = DS9490_getstatus(buffer, len, pn)) < 0)	// wait for len bytes
 		) {
 		LEVEL_DATA("USBsendback control problem ret=%d\n", ret);
-		STAT_ADD1_BUS(BUS_byte_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		return ret;
 	}
 
@@ -1182,7 +1181,6 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
         COMM_CMD, COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF,
         pn)) < 0) {
         LEVEL_DATA("DS9490_Powerbyte: Error usb_control_msg 4\n");
-        STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
     } else if ((ret = DS9490_read(resp, 1, pn)) < 0) {
         /* Read back the result (may be the same as "byte") */
         LEVEL_DATA("DS9490_Powerbyte: Error DS9490_read ret=%d\n",
@@ -1202,18 +1200,14 @@ static int DS9490_ProgramPulse(const struct parsedname *pn)
 	
 	// set pullup to strong5 or program
 	// set the strong pullup duration to infinite
-	if (((ret = USB_Control_Msg(
-			COMM_CMD, COMM_SET_DURATION | COMM_TYPE | COMM_IM, PROGRAM_PULSE_DURATION_CODE,
-			pn)) < 0)
-		||
-		((ret = USB_Control_Msg(
+	ret = USB_Control_Msg(
 			COMM_CMD, COMM_PULSE | COMM_TYPE | COMM_IM, 0,
-			pn)) < 0)) {
-		STAT_ADD1_BUS(BUS_level_errors, pn->selected_connection);
-    } else {
-        UT_delay(1) ; // 1 msec (480 usec would be enough)
-    }
-    if ( DS9490_HaltPulse(pn) != 0 ) {
+			pn) ;
+	if ( ret == 0 ) {
+		UT_delay_us(520) ; // 520 usec (480 usec would be enough)
+	}
+
+	if ( DS9490_HaltPulse(pn) != 0 ) {
 		LEVEL_DEBUG("Couldn't reset the program pulse level back to normal\n");
 		return -EIO ;
 	}

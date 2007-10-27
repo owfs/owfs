@@ -41,7 +41,6 @@ int COM_open(struct connection_in *in)
 //    if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
 	if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
 		ERROR_DEFAULT("Cannot open port: %s\n", SAFESTRING(in->name));
-		STAT_ADD1_BUS(BUS_open_errors, in);
 		return -ENODEV;
 	}
 
@@ -69,7 +68,6 @@ int COM_open(struct connection_in *in)
 	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &newSerialTio)) {
 		ERROR_CONNECT("Cannot set port attributes: %s\n",
 					  SAFESTRING(in->name));
-		STAT_ADD1_BUS(BUS_tcsetattr_errors, in);
 		return -EIO;
 	}
 	//fcntl(pn->si->file_descriptor, F_SETFL, fcntl(pn->si->file_descriptor, F_GETFL, 0) & ~O_NONBLOCK);
@@ -90,7 +88,6 @@ void COM_close(struct connection_in *in)
 		if (tcsetattr(file_descriptor, TCSANOW, &in->connin.serial.oldSerialTio) < 0) {
 			ERROR_CONNECT("Cannot restore port attributes: %s\n",
 						  SAFESTRING(in->name));
-			STAT_ADD1_BUS(BUS_tcsetattr_errors, in);
 		}
 		LEVEL_DEBUG("COM_close: close\n");
 		close(file_descriptor);

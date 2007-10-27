@@ -125,17 +125,14 @@ static int HA7_reset(const struct parsedname *pn)
 	struct toHA7 ha7;
 
 	if (file_descriptor < 0) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		return -EIO;
 	}
 
 	toHA7init(&ha7);
 	ha7.command = "Reset";
 	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		ret = -EIO;
 	} else if (HA7_read(file_descriptor, &resp)) {
-		STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
 		ret = -EIO;
 	}
 	if (resp)
@@ -165,6 +162,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
 		ret = -EIO;
 	} else if (HA7_read(file_descriptor, &resp)) {
+		STAT_ADD1_BUS(e_bus_read_errors,pn->selected_connection);
 		ret = -EIO;
 	} else {
 		BYTE sn[8];
@@ -296,7 +294,6 @@ static int HA7_write(int file_descriptor, const ASCII * msg, size_t length,
 		r = write(file_descriptor, &msg[size - sl], sl);
 		if (r < 0) {
 			if (errno == EINTR) {
-				STAT_ADD1_BUS(BUS_write_interrupt_errors, in);
 				continue;
 			}
 			ERROR_CONNECT("Trouble writing data to HA7: %s\n",
@@ -307,7 +304,7 @@ static int HA7_write(int file_descriptor, const ASCII * msg, size_t length,
 	}
 	gettimeofday(&(in->bus_write_time), NULL);
 	if (sl > 0) {
-		STAT_ADD1_BUS(BUS_write_errors, in);
+		STAT_ADD1_BUS(e_bus_write_errors, in);
 		return -EIO;
 	}
 	return 0;
@@ -408,19 +405,23 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
 	ha7.command = "WriteBlock";
 	ha7.data = (ASCII *) pn->selected_connection->combuffer;
 	ha7.length = 2 * size;
-	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 && HA7_read(file_descriptor, &r) == 0) {
-		ASCII *p = r;
-		if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
-			&& (p = strstr(p, "VALUE=\""))) {
-			p += 7;
-			LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2,
-						size * 2, p);
-			if (strspn(p, "0123456789ABCDEF") >= size << 1) {
-				string2bytes(p, resp, size);
-				ret = 0;
+	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
+		if ( HA7_read(file_descriptor, &r) == 0 ) {
+			ASCII *p = r;
+			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
+				&& (p = strstr(p, "VALUE=\""))) {
+				p += 7;
+				LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2,
+							size * 2, p);
+				if (strspn(p, "0123456789ABCDEF") >= size << 1) {
+					string2bytes(p, resp, size);
+					ret = 0;
+				}
 			}
+			free(r);
+		} else {
+			STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
 		}
-		free(r);
 	}
 	close(file_descriptor);
 	return ret;

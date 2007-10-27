@@ -321,12 +321,6 @@ struct connin_server {
 	char *fqdn;
 };
 
-enum e_reconnect {
-	reconnect_bad = -1,
-	reconnect_ok = 0,
-	reconnect_error = 5,
-};
-
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search

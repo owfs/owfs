@@ -56,7 +56,6 @@ static int BadAdapter_reset(const struct parsedname *pn)
 static int BadAdapter_ProgramPulse(const struct parsedname *pn)
 {
 	(void) pn;
-	STAT_ADD1_BUS(BUS_ProgramPulse_errors, pn->selected_connection);
 	return -ENOTSUP;
 }
 

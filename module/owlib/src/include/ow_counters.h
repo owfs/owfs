@@ -135,39 +135,22 @@ extern UINT NET_connection_errors;
 extern UINT NET_read_errors;
 
 // ow_bus.c
-extern UINT BUS_reconnects;		// sum from all adapters
-extern UINT BUS_reconnect_errors;	// sum from all adapters
-extern UINT BUS_send_data_errors;
-extern UINT BUS_send_data_memcmp_errors;
 extern UINT BUS_readin_data_errors;
 extern UINT BUS_select_low_errors;
 extern UINT BUS_select_low_branch_errors;
 extern UINT BUS_level_errors;
-extern UINT BUS_write_errors;
-extern UINT BUS_write_interrupt_errors;
-extern UINT BUS_read_errors;
-extern UINT BUS_read_interrupt_errors;
-extern UINT BUS_read_select_errors;
-extern UINT BUS_read_timeout_errors;
 extern UINT BUS_next_errors;
 extern UINT BUS_next_alarm_errors;
 extern UINT BUS_detect_errors;
 extern UINT BUS_open_errors;
-extern UINT BUS_PowerByte_errors;
-extern UINT BUS_reset_errors;
 extern UINT BUS_short_errors;
 extern UINT BUS_bit_errors;
 extern UINT BUS_byte_errors;
 extern UINT BUS_echo_errors;
-extern UINT BUS_ProgramPulse_errors;
-extern UINT BUS_Overdrive_errors;
-extern UINT BUS_TestOverdrive_errors;
 extern UINT BUS_tcsetattr_errors;
 extern UINT BUS_status_errors;
 
 // ow_ds9097U.c
-extern UINT DS2480_send_cmd_errors;
-extern UINT DS2480_send_cmd_memcmp_errors;
 extern UINT DS2480_sendout_data_errors;
 extern UINT DS2480_sendout_cmd_errors;
 extern UINT DS2480_sendback_cmd_errors;

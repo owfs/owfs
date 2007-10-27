@@ -135,7 +135,7 @@ static int DS1410_open(const struct parsedname *pn)
 	} else {
 		return 0;
 	}
-	STAT_ADD1_BUS(BUS_open_errors, pn->selected_connection);
+	STAT_ADD1_BUS(e_bus_open_errors, pn->selected_connection);
 	return -EIO;
 }
 
@@ -159,7 +159,7 @@ static int DS1410_sendback_bits(const BYTE * data, BYTE * resp,
 	int i;
 	for (i = 0; i < len; ++i) {
 		if (DS1410bit(data[i] ? WRITE1 : WRITE0, &resp[i], pn->selected_connection->file_descriptor)) {
-			STAT_ADD1_BUS(BUS_bit_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 			return -EIO;
 		}
 	}

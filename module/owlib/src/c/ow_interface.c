@@ -70,7 +70,6 @@ READ_FUNCTION(FS_r_ds2490status);
 #endif
 
 /* Statistics reporting */
-READ_FUNCTION(FS_stat);
 READ_FUNCTION(FS_stat_p);
 READ_FUNCTION(FS_time);
 READ_FUNCTION(FS_time_p);
@@ -101,18 +100,27 @@ struct filetype interface_settings[] = {
 struct device d_interface_settings =
 { "settings", "settings", ePN_interface, COUNT_OF_FILETYPES(interface_settings), interface_settings };
 
-
 struct filetype interface_statistics[] = {
     {"elapsed_time",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_elapsed, NO_WRITE_FUNCTION, {v:NULL},} ,
     {"bus_time",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_statistic,   FS_time_p, NO_WRITE_FUNCTION, {i:0},} ,
-    {"bus_locks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:0},} ,
-    {"bus_unlocks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:1},} ,
-    {"reconnect",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:2},} ,
-    {"reconnect_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:3},} ,
-    {"other_bus_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:4},} ,
+    {"reconnects",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_reconnects},} ,
+    {"reconnect_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_reconnect_errors},} ,
+    {"locks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_locks},} ,
+    {"unlocks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_unlocks},} ,
+    {"errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_errors},} ,
+    {"resets",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_resets},} ,
+    {"program_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_program_errors},} ,
+    {"pullup_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_pullup_errors},} ,
+    {"reset_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_reset_errors},} ,
+    {"read_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_read_errors},} ,
+    {"write_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_write_errors},} ,
+    {"open_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_open_errors},} ,
+    {"close_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_close_errors},} ,
+    {"detect_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_detect_errors},} ,
+    {"search_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_search_errors},} ,
+    {"status_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_status_errors},} ,
+    {"timeouts",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_timeouts},} ,
     {"total_bus_time",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_statistic,   FS_time, NO_WRITE_FUNCTION, {v:&total_bus_time},} ,
-    {"total_bus_unlocks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&total_bus_unlocks,},} ,
-    {"total_bus_locks",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v:&total_bus_locks},} ,
 };
 struct device d_interface_statistics = { "statistics", "statistics", 0, COUNT_OF_FILETYPES(interface_statistics), interface_statistics };
 
@@ -358,51 +366,12 @@ static int FS_version(struct one_wire_query * owq)
 	return 0;
 }
 
-static int FS_stat(struct one_wire_query * owq)
-{
-    struct parsedname * pn = PN(owq) ;
-    int dindex = pn->extension;
-    if (dindex < 0)
-        dindex = 0;
-    if (pn->selected_filetype == NULL)
-        return -ENOENT;
-    if (pn->selected_filetype->data.v == NULL)
-        return -ENOENT;
-    STATLOCK;
-    OWQ_U(owq) = ((UINT *) pn->selected_filetype->data.v)[dindex];
-    STATUNLOCK;
-    return 0;
-}
-
 static int FS_stat_p(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    UINT *ptr;
-    struct connection_in *c = pn->selected_connection;
 
-    if (pn->selected_filetype == NULL)
-        return -ENOENT;
-    switch (pn->selected_filetype->data.i) {
-        case 0:
-            ptr = &c->bus_locks;
-            break;
-        case 1:
-            ptr = &c->bus_unlocks;
-            break;
-        case 2:
-            ptr = &c->bus_reconnect;
-            break;
-        case 3:
-            ptr = &c->bus_reconnect_errors;
-            break;
-        case 4:
-            ptr = &c->bus_errors;
-            break;
-        default:
-            return -ENOENT;
-    }
     STATLOCK;
-    OWQ_U(owq) = *ptr;
+    OWQ_U(owq) = pn->selected_connection->bus_stat[pn->selected_filetype->data.i] ;
     STATUNLOCK;
     return 0;
 }

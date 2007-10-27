@@ -201,10 +201,7 @@ void BUS_lock_in(struct connection_in *in)
 	}
 #endif							/* OW_MT */
 	gettimeofday(&(in->last_lock), NULL);	/* for statistics */
-	STATLOCK;
-	++in->bus_locks;			/* statistics */
-	++total_bus_locks;			/* statistics */
-	STATUNLOCK;
+	STAT_ADD1_BUS(e_bus_locks,in) ;
 }
 
 void BUS_unlock_in(struct connection_in *in)
@@ -242,8 +239,7 @@ void BUS_unlock_in(struct connection_in *in)
 			--t->tv_sec;
 		}
 	}
-	++in->bus_unlocks;			/* statistics */
-	++total_bus_unlocks;		/* statistics */
+	++in->bus_stat[e_bus_unlocks] ;
 	STATUNLOCK;
 #if OW_MT
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {

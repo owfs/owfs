@@ -87,31 +87,37 @@ static int LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[8];
 	int ret ;
-
-    tcp_read_flush( pn->selected_connection->file_descriptor ) ;
-
-    // Send 'r' reset
-    if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
-        STAT_ADD1_BUS(BUS_reset_errors, pn->selected_connection);
+	
+	tcp_read_flush( pn->selected_connection->file_descriptor ) ;
+	
+	// Send 'r' reset
+	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
 		return -EIO;
 	}
+
 	switch (resp[0]) {
+
 	case 'P':
 		pn->selected_connection->AnyDevices = 1;
-        ret = BUS_RESET_OK ;
+		ret = BUS_RESET_OK ;
 		break;
+
 	case 'N':
 		pn->selected_connection->AnyDevices = 0;
-        ret = BUS_RESET_OK ;
-        break;
-    case 'S':
-        ret = BUS_RESET_SHORT ;
-        break ;
-    default:
-        ret = -EIO;
-        break ;
-    }
-    return ret ;
+		ret = BUS_RESET_OK ;
+		break;
+
+	case 'S':
+		ret = BUS_RESET_SHORT ;
+		break ;
+
+	default:
+		ret = -EIO;
+		break ;
+
+	}
+
+	return ret ;
 }
 
 static int LINK_next_both(struct device_search *ds,
@@ -213,7 +219,7 @@ static int LINK_write(const BYTE * buf, const size_t size,
 	
     if (r < (ssize_t) size) {
         LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n",(int)size,(int)r) ;
-		STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
 		return -EIO;
 	}
 	//printf("Link wrote <%*s>\n",(int)size,buf);
@@ -223,26 +229,24 @@ static int LINK_write(const BYTE * buf, const size_t size,
 static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 						  const struct parsedname *pn)
 {
-    ASCII buf[3] = "pxx" ;
-
-    num2string( &buf[1], data ) ;
-    
-    if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf),2,pn) ) {
-		STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
+	ASCII buf[3] = "pxx" ;
+	
+	num2string( &buf[1], data ) ;
+	
+	if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf),2,pn) ) {
 		return -EIO;			// send just the <CR>
 	}
-
-    resp[0] = string2num(buf) ;
-    
-    // delay
+	
+	resp[0] = string2num(buf) ;
+	
+	// delay
 	UT_delay(delay);
-
-    if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(LINK_string(buf),3,pn) ) {
-        STAT_ADD1_BUS(BUS_PowerByte_errors, pn->selected_connection);
-        return -EIO;            // send just the <CR>
-    }
-    
-    return 0 ;
+	
+	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(LINK_string(buf),3,pn) ) {
+	return -EIO;            // send just the <CR>
+	}
+	
+	return 0 ;
 }
 
 // _sendback_data

@@ -96,7 +96,6 @@ static int DS9097_reset(const struct parsedname *pn)
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s\n",
 					  SAFESTRING(pn->selected_connection->name));
-		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->selected_connection);
 		return -EIO;
 	}
 	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn)))
@@ -171,7 +170,6 @@ static int DS9097_reset(const struct parsedname *pn)
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s\n",
 					  SAFESTRING(pn->selected_connection->name));
-		STAT_ADD1_BUS(BUS_tcsetattr_errors, pn->selected_connection);
 		return -EFAULT;
 	}
 	/* Flush the input and output buffers */
@@ -225,7 +223,7 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits,
 		if (l == DS9097_MAX_BITS || i == length) {
 			/* Communication with DS9097 routine */
 			if ((ret = DS9097_send_and_get(d, &inbits[start], l, pn))) {
-				STAT_ADD1_BUS(BUS_bit_errors, pn->selected_connection);
+				STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 				return ret;
 			}
 			l = 0;
@@ -265,7 +263,6 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 			if (r < 0) {
 				if (errno == EINTR) {
 					/* write() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_write_interrupt_errors, pn->selected_connection);
 					continue;
 				}
 				break;
@@ -277,7 +274,7 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 			gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
 		}
 		if (sl > 0) {
-			STAT_ADD1_BUS(BUS_write_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
 			return -EIO;
 		}
 		//printf("SAG written\n");
@@ -306,7 +303,7 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 				//printf("SAG selected\n");
 				/* Is there something to read? */
 				if (FD_ISSET(pn->selected_connection->file_descriptor, &readset) == 0) {
-					STAT_ADD1_BUS(BUS_read_select_errors, pn->selected_connection);
+					STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 					return -EIO;	/* error */
 				}
 				update_max_delay(pn);
@@ -315,23 +312,22 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 				if (r < 0) {
 					if (errno == EINTR) {
 						/* read() was interrupted, try again */
-						STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
+						STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 						continue;
 					}
-					STAT_ADD1_BUS(BUS_read_errors, pn->selected_connection);
+					STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 					return r;
 				}
 				gl -= r;
 			} else if (rc < 0) {	/* select error */
 				if (errno == EINTR) {
 					/* select() was interrupted, try again */
-					STAT_ADD1_BUS(BUS_read_interrupt_errors, pn->selected_connection);
 					continue;
 				}
-				STAT_ADD1_BUS(BUS_read_select_errors, pn->selected_connection);
+				STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 				return -EINTR;
 			} else {			/* timed out */
-				STAT_ADD1_BUS(BUS_read_timeout_errors, pn->selected_connection);
+				STAT_ADD1_BUS(e_bus_timeouts, pn->selected_connection);
 				return -EAGAIN;
 			}
 		}
