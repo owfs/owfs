@@ -518,6 +518,16 @@ proc SetupDisplay {} {
     menu .main_menu -tearoff 0
     . config -menu .main_menu
     
+    # file menu
+    menu .main_menu.file -tearoff 0
+    .main_menu add cascade -label File -menu .main_menu.file  -underline 0
+        .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
+        .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
+        .main_menu.file add separator
+        .main_menu.file add command -label "Restart" -underline 0 -command Restart
+        .main_menu.file add separator
+        .main_menu.file add command -label "Quit" -underline 0 -command exit
+
     menu .main_menu.view -tearoff 0
     .main_menu add cascade -label View -menu .main_menu.view  -underline 0
         foreach dir $data_array(monitored_directories) {
@@ -807,6 +817,27 @@ proc RefreshCounter { } {
     after 20000 RefreshCounter
 }
 
+proc Restart { } {
+#   foreach ch [chan names] { close $ch }
+    foreach channel [file channels] {
+        if { [regexp -- {^std(out|in|err)$} $channel ] == 0 } {
+            # change to non-blocking and close
+            if { [ catch {
+                fconfigure $channel -blocking 0 ;
+                close $channel;
+} reason ] == 1 } {
+            StatusMessage "Error closing channel $channel $reason" 1
+            }
+        }
+    }
+#    exec [info nameofexecutable] $::argv0 "--" {*}$::argv &
+    if { [info nameofexecutable] eq $::argv0 } {
+        eval exec [list [info nameofexecutable]] "--" $::argv &
+    } else {
+        eval exec [list [info nameofexecutable]] [list $::argv0] "--" $::argv "&"
+    }
+    exit
+}
 
 proc MainTitle { server_address } {
     wm title . "OWMON owserver ($server_address) monitor"
