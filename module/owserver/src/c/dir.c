@@ -67,21 +67,16 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 		retbuffer[_pathlen] = '/';
 		retbuffer[++_pathlen] = '\0';
 	}
-    printf("Part WAY\n");
 
 	if (pn2->selected_device != NULL) {
-        printf("Part 1 WAY _pathlen=%lu PATH_MAX=%lu\n",_pathlen,(size_t)PATH_MAX);
         FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 	} else if (NotRealDir(pn2)) {
-        printf("Part 2 WAY\n");
         FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 //		FS_dirname_type(retbuffer, PATH_MAX - _pathlen - 1, pn2);
 	} else {
-        printf("Part 3 WAY\n");
         FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 //		FS_dirname_state(retbuffer, PATH_MAX - _pathlen - 1, pn2);
 	}
-    printf("Got HERE!\n");
 	dhs->cm->size = strlen(retbuffer);
 	dhs->cm->payload = dhs->cm->size + 1;
 	dhs->cm->ret = 0;
