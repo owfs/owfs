@@ -70,21 +70,22 @@ proc Main { argv } {
 # No trailing "/"
 proc SetBusList { } {
 	global data_array
-	set data_array(bus.path) {""}
+	set data_array(bus.path) "<root>"
 	BusListRecurser ""
 }
 
 # path is searched and added. No trailing "/"
 proc BusListRecurser { path } {
+    puts "? $path"
     global data_array
-    if { [OWSERVER_DirectoryRead $path] < 0 } {
+    if { [OWSERVER_DirectoryRead "$path/"] < 0 } {
         return
     }
-    set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) {/bus\.\d+$} ]
+    set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) "/bus\.\d+$" ]
+    puts $data_array(value_from_owserver)
     foreach bus $busses {
-        set found_bus ${path}${bus}
-        lappend data_array(bus.path) $found_bus
-        BusListRecurser $found_bus/
+        lappend data_array(bus.path) ${path}${bus}
+        BusListRecurser ${path}${bus}
     }
 }
 
@@ -100,10 +101,12 @@ proc SetDirList { bus type } {
 
 proc DirListRecurser { bus path type } {
     global data_array
-    lappend data_array($bus.$type.name) [regsub -all .*?/ [string range $path [string length $bus/$type/] end] \t]
+    lappend data_array($bus.$type.name) [regsub -all .*?/ [string range $path [string length $bus/$type] end] \t]
     if { [OWSERVER_DirectoryRead $path] < 0 } {
+        #puts "F $bus $path"
         lappend data_array($bus.$type.path) $path
     } else {
+        #puts "D $bus $path"
         lappend data_array($bus.$type.path) NULL
         set dirlist [lsearch -all -regexp -inline -not $data_array(value_from_owserver) {\.ALL$|\.\d{3,}$} ]
         foreach dir $dirlist {
@@ -116,11 +119,13 @@ proc DirListRecurser { bus path type } {
 proc DirListValues { type } {
     global window_data
 
+    # prevent stacked refresh
     if { $window_data(busy) } {
         return
     }
     set window_data(busy) 1
     
+    # See if this is a displayed panel
     if { $window_data(panelshow.$type) } {
         global data_array
         set bus $data_array(current_bus)
@@ -133,15 +138,13 @@ proc DirListValues { type } {
         
         $window_data($type) delete 1.0 end
     
-        set data_array($bus.$type.value) {}
         foreach path $data_array($bus.$type.path) name $data_array($bus.$type.name) {
-            set data_array(value_from_owserver) "           "
+            set data_array(value_from_owserver) ""
             if { $path != "NULL" } {
                 OWSERVER_Read $data_array(message_type.READ) $path
             }
-            lappend data_array($bus.$type.value) $data_array(value_from_owserver)
-            $window_data($type) insert end "[format {%.12s} $data_array(value_from_owserver)]   $name\n"
-        }
+            $window_data($type) insert end "[format {%12.12s} $data_array(value_from_owserver)]   $name\n"
+}
     }
 
     set window_data(busy) 0
@@ -211,7 +214,7 @@ proc OpenOwserver { } {
 
 proc OWSERVER_DirectoryRead { path } {
     global data_array
-
+puts "path=$path"
     set return_code [OWSERVER_Read $data_array(message_type.PreferredDIR) $path]
 	if { $return_code == -42 && $data_array(message_type.PreferredDIR)==$data_array(message_type.DIRALL) } {
 		set data_array(message_type.PreferredDIR) $data_array(message_type.DIR)
@@ -230,7 +233,7 @@ proc OWSERVER_Read { message_type path } {
     set data_array(value_from_owserver) {}
     set error_status 0
     while {1} {
-    #   puts $serve(state)
+#puts "State machine = $serve(state)"
         switch $serve(state) {
         "Open server" {
             global IPAddress
@@ -321,6 +324,7 @@ proc OWSERVER_Read { message_type path } {
             set serve(state) "Done with server"
         }
         "Server timeout" {
+            ClearSockTimer
             StatusMessage "owserver read timeout" 1
             set serve(state) "Server error"
         }
@@ -479,7 +483,7 @@ proc SelectionMade { widget y } {
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
         set bus [$widget get $index]
-        set data_array(current_bus) [expr { ($bus=="/") ? "" : $bus } ]
+        set data_array(current_bus) [expr { ($bus eq "<root>") ? "" : $bus } ]
         foreach dir $data_array(monitored_directories) {
             DirListValues $dir
         }
