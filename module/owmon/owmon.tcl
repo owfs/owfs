@@ -7,7 +7,7 @@ if [ -z `which wish` ] ; then exec tclsh "$0" -- "$@" ; else exec wish "$0" -- "
 package require Tk
 
 # directories to monitor
-set data_array(monitored_directories) {system statistics structure settings}
+set data_array(monitored_directories) {system statistics structure settings interface}
 
 
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state id }
@@ -46,6 +46,7 @@ proc Main { argv } {
     }
     set window_data(panelshow.system) 1
     set window_data(panelshow.statistics) 1
+    set window_data(panelshow.interface) 1
 
     # Show screen
     SetupDisplay
@@ -64,29 +65,33 @@ proc Main { argv } {
     RefreshCounter
 }
 
+# Create the list of bus-es by doing recursive directory searches and selecting only bus.x entries
+# the list is put in data_array(bus.path)
+# No trailing "/"
 proc SetBusList { } {
 	global data_array
-	set data_array(bus.path) {/}
-	BusListRecurser /
+	set data_array(bus.path) {""}
+	BusListRecurser ""
 }
 
+# path is searched and added. No trailing "/"
 proc BusListRecurser { path } {
     global data_array
     if { [OWSERVER_DirectoryRead $path] < 0 } {
         return
     }
-    set busses [lsearch -all -regexp -inline $data_array(value_from_owserver) "^${path}bus"]
-    #puts "$data_array(value_from_owserver) -> $busses"
+    set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) {/bus\.\d+$} ]
     foreach bus $busses {
-        lappend data_array(bus.path) $bus
-        BusListRecurser $bus
+        set found_bus ${path}${bus}
+        lappend data_array(bus.path) $found_bus
+        BusListRecurser $found_bus/
     }
 }
 
 proc SetDirList { bus type } {
     global data_array
 
-    set path $bus/$type
+    set path $bus$type
 
     set data_array($bus.$type.path) {}
     set data_array($bus.$type.name) {}
@@ -107,6 +112,7 @@ proc DirListRecurser { bus path type } {
     }
 }
 
+# Get all the data values for a given bus/type
 proc DirListValues { type } {
     global window_data
 
@@ -134,7 +140,7 @@ proc DirListValues { type } {
                 OWSERVER_Read $data_array(message_type.READ) $path
             }
             lappend data_array($bus.$type.value) $data_array(value_from_owserver)
-            $window_data($type) insert end "$data_array(value_from_owserver)   $name\n"
+            $window_data($type) insert end "[format {%.12s} $data_array(value_from_owserver)]   $name\n"
         }
     }
 
@@ -505,7 +511,6 @@ proc SetupDisplay {} {
     
     .main add .main.bus
 
-    # statistics information is a textbox
     foreach dir $data_array(monitored_directories) {
         SetupPanel $dir
     }
@@ -627,6 +632,7 @@ proc Color { dir } {
     settings    { return #FCFFDE}
     chain       { return #DDDFC2}
     simultaneous { return #C3EEF9}
+    interface   { return #FFF6C8}
     default     { return #C8C8C8}
     }
 }
@@ -825,7 +831,7 @@ proc Restart { } {
             if { [ catch {
                 fconfigure $channel -blocking 0 ;
                 close $channel;
-} reason ] == 1 } {
+                } reason ] == 1 } {
             StatusMessage "Error closing channel $channel $reason" 1
             }
         }

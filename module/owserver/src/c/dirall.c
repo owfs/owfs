@@ -97,8 +97,12 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
 		("OWSERVER Dir-All SpecifiedBus=%d path = %s\n",
 		 SpecifiedBus(pn), SAFESTRING(pn->path));
 
-	// Now generate the directory using the callback function above for each element
-	cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
+    if ( hd->sm.payload >= PATH_MAX ) {
+        cm->ret = -EMSGSIZE ;
+    } else {
+       // Now generate the directory using the callback function above for each element
+	   cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
+    }
 
 	if ( cm->ret < 0 ) { // error
 		cm->size = cm->payload = 0;

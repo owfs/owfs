@@ -903,17 +903,13 @@ static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len,
 	if (pn->selected_connection->connin.serial.UMode != MODSEL_COMMAND) {
 		// change back to command mode
 		pn->selected_connection->connin.serial.UMode = MODSEL_COMMAND;
-		if ((ret = DS2480_write(&mc, 1, pn)))
-			return ret;
-		if ((ret = DS2480_write(cmd, (unsigned) len, pn)))
-			return ret;
+		ret = DS2480_write(&mc, 1, pn) ;
+		if (ret) return ret;
+		ret = DS2480_write(cmd, (unsigned) len, pn) ;
 	} else {
-		if ((ret = DS2480_write(cmd, (unsigned) len, pn))) {
-			STAT_ADD1(DS2480_sendout_cmd_errors);
-			return ret;
-		}
+		ret = DS2480_write(cmd, (unsigned) len, pn) ;
 	}
-	return 0;
+	return ret;
 }
 
 //
@@ -930,18 +926,13 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp,
 	int ret;
 	if (len > 16) {
 		int clen = len - (len >> 1);
-		if ((ret = DS2480_sendback_cmd(cmd, resp, clen, pn)))
-			return ret;
-		if ((ret =
-			 DS2480_sendback_cmd(&cmd[clen], &resp[clen], len >> 1, pn)))
-			return ret;
+		ret = DS2480_sendback_cmd(cmd, resp, clen, pn) ;
+		if (ret) return ret;
+		ret = DS2480_sendback_cmd(&cmd[clen], &resp[clen], len >> 1, pn) ;
 	} else {
 		ret = DS2480_sendout_cmd(cmd, len, pn);
-		if (ret == 0)
-			ret = DS2480_read(resp, len, pn);
-		if (ret) {
-			STAT_ADD1(DS2480_sendback_cmd_errors);
-		}
+		if (ret) return ret ;
+		ret = DS2480_read(resp, len, pn);
 	}
 	return ret;
 }
@@ -957,22 +948,19 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp,
 static int DS2480_sendout_data(const BYTE * data, const size_t len,
 							   const struct parsedname *pn)
 {
-	int ret;
+	int ret ;
 	if (pn->selected_connection->connin.serial.UMode != MODSEL_DATA) {
 		BYTE md = MODE_DATA;
 		// change back to command mode
 		pn->selected_connection->connin.serial.UMode = MODSEL_DATA;
-		if ((ret = DS2480_write(&md, 1, pn))) {
-			STAT_ADD1(DS2480_sendout_data_errors);
-			return ret;
-		}
+		ret = DS2480_write(&md, 1, pn) ;
+		if (ret) return ret;
 	}
 	if (len > 16) {
 		int dlen = len - (len >> 1);
-		if ((ret = DS2480_sendout_data(data, dlen, pn)))
-			return ret;
-		if ((ret = DS2480_sendout_data(&data[dlen], len >> 1, pn)))
-			return ret;
+		ret = DS2480_sendout_data(data, dlen, pn) ;
+		if (ret) return ret;
+		ret = DS2480_sendout_data(&data[dlen], len >> 1, pn) ;
 	} else {
 		BYTE data2[32];
 		size_t i;
@@ -982,12 +970,9 @@ static int DS2480_sendout_data(const BYTE * data, const size_t len,
 			if (data[i] == MODE_COMMAND)
 				data2[j++] = MODE_COMMAND;
 		}
-		if ((ret = DS2480_write(data2, j, pn))) {
-			STAT_ADD1(DS2480_sendout_data_errors);
-			return ret;
-		}
+		ret = DS2480_write(data2, j, pn) ;
 	}
-	return 0;
+	return ret ;
 }
 
 //
@@ -1003,10 +988,7 @@ static int DS2480_sendback_data(const BYTE * data, BYTE * resp,
 {
 	int ret;
 	ret = DS2480_sendout_data(data, len, pn);
-	if (ret == 0)
-		ret = DS2480_read(resp, len, pn);
-	if (ret) {
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-	}
+	if (ret) return ret ;
+	ret = DS2480_read(resp, len, pn);
 	return ret;
 }

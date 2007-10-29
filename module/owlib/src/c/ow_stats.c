@@ -106,14 +106,10 @@ UINT NET_read_errors = 0;
 UINT BUS_send_data_errors = 0;
 UINT BUS_send_data_memcmp_errors = 0;
 UINT BUS_readin_data_errors = 0;
-UINT BUS_select_low_errors = 0;
-UINT BUS_select_low_branch_errors = 0;
 UINT BUS_detect_errors = 0;
-UINT BUS_open_errors = 0;
 UINT BUS_level_errors = 0;
 UINT BUS_next_errors = 0;
 UINT BUS_next_alarm_errors = 0;
-UINT BUS_short_errors = 0;
 UINT BUS_bit_errors = 0;
 UINT BUS_byte_errors = 0;
 UINT BUS_echo_errors = 0;
@@ -121,10 +117,6 @@ UINT BUS_tcsetattr_errors = 0;
 UINT BUS_status_errors = 0;
 
 // ow_ds9097U.c
-UINT DS2480_sendout_data_errors = 0;
-UINT DS2480_sendout_cmd_errors = 0;
-UINT DS2480_sendback_cmd_errors = 0;
-UINT DS2480_write_interrupted = 0;
 UINT DS2480_read_fd_isset = 0;
 UINT DS2480_read_null = 0;
 UINT DS2480_read_read = 0;
@@ -265,14 +257,10 @@ struct filetype stats_errors[] = {
 
 // ow_bus.c
 	FS_stat_ROW(BUS_readin_data_errors),
-	FS_stat_ROW(BUS_select_low_errors),
-	FS_stat_ROW(BUS_select_low_branch_errors),
-	FS_stat_ROW(BUS_open_errors),
 	FS_stat_ROW(BUS_detect_errors),
 	FS_stat_ROW(BUS_level_errors),
 	FS_stat_ROW(BUS_next_errors),
 	FS_stat_ROW(BUS_next_alarm_errors),
-	FS_stat_ROW(BUS_short_errors),
 	FS_stat_ROW(BUS_bit_errors),
 	FS_stat_ROW(BUS_byte_errors),
 	FS_stat_ROW(BUS_echo_errors),
@@ -280,10 +268,6 @@ struct filetype stats_errors[] = {
 	FS_stat_ROW(BUS_status_errors),
 
 // ow_ds9097U.c
-	FS_stat_ROW(DS2480_sendout_data_errors),
-	FS_stat_ROW(DS2480_sendout_cmd_errors),
-	FS_stat_ROW(DS2480_sendback_cmd_errors),
-	FS_stat_ROW(DS2480_write_interrupted),
 	FS_stat_ROW(DS2480_read_fd_isset),
 	FS_stat_ROW(DS2480_read_null),
 	FS_stat_ROW(DS2480_read_read),

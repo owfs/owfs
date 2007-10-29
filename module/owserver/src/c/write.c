@@ -48,13 +48,20 @@ $Id$
 void WriteHandler(struct handlerdata *hd, struct client_msg *cm,
 				  struct one_wire_query * owq)
 {
-	int ret =
-		FS_write_postparse(owq);
+    int ret ;
+    
+    if ( hd->sm.payload >= PATH_MAX ) {
+        ret = -EMSGSIZE ;
+    } else {
+        ret = FS_write_postparse(owq);
+    }
 	//printf("Handler: WRITE done\n");
 	if (ret < 0) {
 		cm->size = 0;
+        cm->ret = ret ;
 	} else {
 		cm->size = ret;
+        cm->ret = 0 ;
         cm->sg = OWQ_pn(owq).sg;
 		if (hd->persistent)
 			cm->sg |= PERSISTENT_MASK;

@@ -155,7 +155,7 @@ int BUS_reset(const struct parsedname *pn)
 		pn->selected_connection->reconnect_state = reconnect_ok; // Flag as good!
 	} else if (ret == BUS_RESET_SHORT) {
 		pn->selected_connection->AnyDevices = 0;
-		//STAT_ADD1_BUS(BUS_short_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_short_errors, pn->selected_connection);
 		LEVEL_CONNECT("1-wire bus short circuit.\n");
 		return 1;
 	} else {

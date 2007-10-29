@@ -63,7 +63,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm,
 		("ReadHandler: From Client sm->payload=%d sm->size=%d sm->offset=%d\n",
 		 hd->sm.payload, hd->sm.size, hd->sm.offset);
 
-    if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
+    if ( hd->sm.payload >= PATH_MAX ) {
+        cm->ret = -EMSGSIZE ;
+    } else if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
 		cm->ret = -EMSGSIZE;
 		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d\n", hd->sm.size);
 #ifdef VALGRIND

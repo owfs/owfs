@@ -17,7 +17,6 @@ $Id$
 #include "ow_codes.h"
 
 static int Turnoff(int depth, const struct parsedname *pn);
-static int BUS_selection_error(int ret);
 static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn);
@@ -114,11 +113,13 @@ int BUS_select(const struct parsedname *pn)
 		//printf("Really select %s\n",pn->selected_device->code);
 		memcpy(&sent[1], pn->sn, 8);
 		if ((ret = BUS_send_data(sent, 1, pn))) {
-			BUS_selection_error(ret);
+			STAT_ADD1_BUS(e_bus_select_errors,pn->selected_connection) ;
+			LEVEL_CONNECT("Select error for %s on bus %s\n",pn->selected_device->readable_name,pn->selected_connection->name);
 			return ret;
 		}
 		if ((ret = BUS_send_data(&sent[1], 8, pn))) {
-			BUS_selection_error(ret);
+			STAT_ADD1_BUS(e_bus_select_errors,pn->selected_connection) ;
+			LEVEL_CONNECT("Select error for %s on bus %s\n",pn->selected_device->readable_name,pn->selected_connection->name);
 			return ret;
 		}
 		return ret;
@@ -167,9 +168,8 @@ static int BUS_select_subbranch(const struct buspath *bp,
 	sent[9] = branch[bp->branch];
 	//printf("subbranch start\n");
 	if (BUS_transaction_nolock(t, pn) || (resp[2] != branch[bp->branch])) {
-		STAT_ADD1(BUS_select_low_branch_errors);
-		//printf("SELECT error3\n");
-		//printf("subbranch error\n");
+			STAT_ADD1_BUS(e_bus_select_errors,pn->selected_connection) ;
+			LEVEL_CONNECT("Select subbranch error for %s on bus %s\n",pn->selected_device->readable_name,pn->selected_connection->name);
 		return 1;
 	}
 	//printf("subbranch stop\n");
@@ -192,11 +192,4 @@ static int Turnoff(int depth, const struct parsedname *pn)
 	if (depth && BUS_select_subbranch(&(pn->bp[depth - 1]), pn))
 		return 1;
 	return BUS_transaction_nolock(t, pn);
-}
-
-static int BUS_selection_error(int ret)
-{
-	STAT_ADD1(BUS_select_low_errors);
-	LEVEL_CONNECT("SELECTION ERROR\n");
-	return ret;
 }

@@ -136,14 +136,10 @@ extern UINT NET_read_errors;
 
 // ow_bus.c
 extern UINT BUS_readin_data_errors;
-extern UINT BUS_select_low_errors;
-extern UINT BUS_select_low_branch_errors;
 extern UINT BUS_level_errors;
 extern UINT BUS_next_errors;
 extern UINT BUS_next_alarm_errors;
 extern UINT BUS_detect_errors;
-extern UINT BUS_open_errors;
-extern UINT BUS_short_errors;
 extern UINT BUS_bit_errors;
 extern UINT BUS_byte_errors;
 extern UINT BUS_echo_errors;
@@ -151,10 +147,6 @@ extern UINT BUS_tcsetattr_errors;
 extern UINT BUS_status_errors;
 
 // ow_ds9097U.c
-extern UINT DS2480_sendout_data_errors;
-extern UINT DS2480_sendout_cmd_errors;
-extern UINT DS2480_sendback_cmd_errors;
-extern UINT DS2480_write_interrupted;
 extern UINT DS2480_read_fd_isset;
 extern UINT DS2480_read_null;
 extern UINT DS2480_read_read;

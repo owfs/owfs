@@ -112,6 +112,7 @@ struct filetype interface_statistics[] = {
     {"program_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_program_errors},} ,
     {"pullup_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_pullup_errors},} ,
     {"reset_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_reset_errors},} ,
+    {"shorts",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_short_errors},} ,
     {"read_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_read_errors},} ,
     {"write_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_write_errors},} ,
     {"open_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_open_errors},} ,
@@ -119,6 +120,7 @@ struct filetype interface_statistics[] = {
     {"detect_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_detect_errors},} ,
     {"search_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_search_errors},} ,
     {"status_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_status_errors},} ,
+    {"select_errors",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_select_errors},} ,
     {"timeouts",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic,   FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_timeouts},} ,
     {"total_bus_time",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_statistic,   FS_time, NO_WRITE_FUNCTION, {v:&total_bus_time},} ,
 };

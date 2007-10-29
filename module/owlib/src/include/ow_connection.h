@@ -320,6 +320,7 @@ enum e_bus_stat {
 	e_bus_errors,
 	e_bus_resets,
 	e_bus_reset_errors,
+	e_bus_short_errors,
 	e_bus_program_errors,
 	e_bus_pullup_errors,
 	e_bus_timeouts,
@@ -330,6 +331,7 @@ enum e_bus_stat {
 	e_bus_close_errors,
 	e_bus_search_errors,
 	e_bus_status_errors,
+	e_bus_select_errors,
 	e_bus_stat_last_marker } ;
 
 struct connection_in {

@@ -67,17 +67,21 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 		retbuffer[_pathlen] = '/';
 		retbuffer[++_pathlen] = '\0';
 	}
+    printf("Part WAY\n");
 
 	if (pn2->selected_device != NULL) {
-		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+        printf("Part 1 WAY _pathlen=%lu PATH_MAX=%lu\n",_pathlen,(size_t)PATH_MAX);
+        FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 	} else if (NotRealDir(pn2)) {
-		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+        printf("Part 2 WAY\n");
+        FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 //		FS_dirname_type(retbuffer, PATH_MAX - _pathlen - 1, pn2);
 	} else {
-		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+        printf("Part 3 WAY\n");
+        FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
 //		FS_dirname_state(retbuffer, PATH_MAX - _pathlen - 1, pn2);
 	}
-
+    printf("Got HERE!\n");
 	dhs->cm->size = strlen(retbuffer);
 	dhs->cm->payload = dhs->cm->size + 1;
 	dhs->cm->ret = 0;
@@ -94,16 +98,20 @@ void DirHandler(struct handlerdata *hd, struct client_msg *cm,
 	uint32_t flags = 0;
 	struct dirhandlerstruct dhs = { hd, cm, pn, };
 
-	printf("DirHandler: pn->path=%s\n", pn->path);
+	LEVEL_CALL("DirHandler: pn->path=%s\n", pn->path);
 
 	// Settings for all directory elements
 	cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2;
-	printf("DirHandler: pn->path=%s\n", pn->path);
 
 	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d path=%s\n",
 				SpecifiedBus(pn),  SAFESTRING(pn->path));
-	// Now generate the directory using the callback function above for each element
-	cm->ret = FS_dir_remote(DirHandlerCallback, &dhs, pn, &flags);
+    
+    if ( hd->sm.payload >= PATH_MAX ) {
+        cm->ret = -EMSGSIZE ;
+    } else {
+       // Now generate the directory using the callback function above for each element
+	   cm->ret = FS_dir_remote(DirHandlerCallback, &dhs, pn, &flags);
+    }
 
 	// Finished -- send some flags and set up for a null element to tell client we're done
 	cm->offset = flags;			/* send the flags in the offset slot */
