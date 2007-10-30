@@ -76,13 +76,13 @@ proc SetBusList { } {
 
 # path is searched and added. No trailing "/"
 proc BusListRecurser { path } {
-    puts "? $path"
+    #puts "? $path"
     global data_array
     if { [OWSERVER_DirectoryRead "$path/"] < 0 } {
         return
     }
-    set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) "/bus\.\d+$" ]
-    puts $data_array(value_from_owserver)
+	#puts "$data_array(value_from_owserver) "
+    set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) {/bus\.\d+$} ]
     foreach bus $busses {
         lappend data_array(bus.path) ${path}${bus}
         BusListRecurser ${path}${bus}
@@ -133,6 +133,7 @@ proc DirListValues { type } {
         if { ![info exists data_array($bus.$type.path)] } {
             $window_data($type) delete 1.0 end
             $window_data($type) insert end "First pass through $bus/$type\n  ... getting parameter list...\n"
+puts "bus=$bus type=$type"
             SetDirList $bus $type
         }
         
@@ -214,7 +215,7 @@ proc OpenOwserver { } {
 
 proc OWSERVER_DirectoryRead { path } {
     global data_array
-puts "path=$path"
+	#puts "path=$path"
     set return_code [OWSERVER_Read $data_array(message_type.PreferredDIR) $path]
 	if { $return_code == -42 && $data_array(message_type.PreferredDIR)==$data_array(message_type.DIRALL) } {
 		set data_array(message_type.PreferredDIR) $data_array(message_type.DIR)
