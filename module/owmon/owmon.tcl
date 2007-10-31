@@ -7,20 +7,20 @@ if [ -z `which wish` ] ; then exec tclsh "$0" -- "$@" ; else exec wish "$0" -- "
 package require Tk
 
 # directories to monitor
-set data_array(monitored_directories) {system statistics structure settings interface}
+set PossiblePanels {system statistics structure settings interface}
 
 
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength ping state id }
 
 # owserver message types
-set data_array(message_type.READ)   2
-set data_array(message_type.DIR)    4
-set data_array(message_type.DIRALL) 7
-set data_array(message_type.PreferredDIR) $data_array(message_type.DIRALL)
+set MessageTypes(READ)   2
+set MessageTypes(DIR)    4
+set MessageTypes(DIRALL) 7
+set MessageTypes(PreferredDIR) $MessageTypes(DIRALL)
 
 set refresh_counter 0
 
-# Global: setup_flags => For object-oriented initialization
+# Global: window_exists => For object-oriented initialization
 
 # Global: serve => information on current transaction
 #         serve(string) -- message to this point
@@ -33,20 +33,25 @@ proc Main { argv } {
     ArgumentProcess $argv
     global data_array
     global window_data
+    global IsPanelVisible
+    global PossiblePanels
+    global DisplayLock
+    global BusListbox
 
     # wait till ready
-    set window_data(busy) 1
+    set DisplayLock 1
 
     # Set panels to display at start
-    foreach dir $data_array(monitored_directories) {
+    foreach dir $PossiblePanels {
         #default
-        set window_data(panelshow.$dir) 0
+        set IsPanelVisible($dir) 0
         # refresh rate
         set window_data(refresh.$dir) 0
     }
-    set window_data(panelshow.system) 1
-    set window_data(panelshow.statistics) 1
-    set window_data(panelshow.interface) 1
+    
+    set IsPanelVisible(system) 1
+    set IsPanelVisible(statistics) 1
+    set IsPanelVisible(interface) 1
 
     # Show screen
     SetupDisplay
@@ -54,12 +59,14 @@ proc Main { argv } {
     # bus list (and default)
     set data_array(current_bus) ""
 	SetBusList
+    $BusListbox selection set 0 0
 
     # Show data for first time
-    set window_data(busy) 0
-    foreach dir $data_array(monitored_directories) {
+    set DisplayLock 0
+    foreach dir $PossiblePanels {
     	DirListValues $dir
 	}
+    SetBusList
     
     # Start clock
     RefreshCounter
@@ -76,12 +83,10 @@ proc SetBusList { } {
 
 # path is searched and added. No trailing "/"
 proc BusListRecurser { path } {
-    #puts "? $path"
     global data_array
     if { [OWSERVER_DirectoryRead "$path/"] < 0 } {
         return
     }
-	#puts "$data_array(value_from_owserver) "
     set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) {/bus\.\d+$} ]
     foreach bus $busses {
         lappend data_array(bus.path) ${path}${bus}
@@ -118,37 +123,43 @@ proc DirListRecurser { bus path type } {
 # Get all the data values for a given bus/type
 proc DirListValues { type } {
     global window_data
+    global IsPanelVisible
+    global DisplayLock
 
-    # prevent stacked refresh
-    if { $window_data(busy) } {
+    # See if this is a displayed panel
+    if { $IsPanelVisible($type) == 0 } {
         return
     }
-    set window_data(busy) 1
+
+    # prevent stacked refresh
+    if { $DisplayLock } {
+        return
+    }
     
-    # See if this is a displayed panel
-    if { $window_data(panelshow.$type) } {
-        global data_array
-        set bus $data_array(current_bus)
+    set DisplayLock 1
     
-        if { ![info exists data_array($bus.$type.path)] } {
-            $window_data($type) delete 1.0 end
-            $window_data($type) insert end "First pass through $bus/$type\n  ... getting parameter list...\n"
-puts "bus=$bus type=$type"
-            SetDirList $bus $type
-        }
-        
+    global data_array
+    set bus $data_array(current_bus)
+
+    if { ![info exists data_array($bus.$type.path)] } {
         $window_data($type) delete 1.0 end
-    
-        foreach path $data_array($bus.$type.path) name $data_array($bus.$type.name) {
-            set data_array(value_from_owserver) ""
-            if { $path != "NULL" } {
-                OWSERVER_Read $data_array(message_type.READ) $path
-            }
-            $window_data($type) insert end "[format {%12.12s} $data_array(value_from_owserver)]   $name\n"
-}
+        $window_data($type) insert end "First pass through $bus/$type\n  ... getting parameter list...\n"
+        #puts "bus=$bus type=$type"
+        SetDirList $bus $type
     }
 
-    set window_data(busy) 0
+    $window_data($type) delete 1.0 end
+
+    global MessageTypes
+    foreach path $data_array($bus.$type.path) name $data_array($bus.$type.name) {
+        set data_array(value_from_owserver) ""
+        if { $path != "NULL" } {
+            OWSERVER_Read $MessageTypes(READ) $path
+        }
+        $window_data($type) insert end "[format {%12.12s} $data_array(value_from_owserver)]   $name\n"
+    }
+
+    set DisplayLock 0
 }
 
 proc OWSERVER_send_message { type path sock } {
@@ -162,7 +173,6 @@ proc OWSERVER_send_message { type path sock } {
     flush $sock
 	return 0
 }
-
 
 # Command line processing
 # looks at command line arguments
@@ -215,11 +225,12 @@ proc OpenOwserver { } {
 
 proc OWSERVER_DirectoryRead { path } {
     global data_array
-	#puts "path=$path"
-    set return_code [OWSERVER_Read $data_array(message_type.PreferredDIR) $path]
-	if { $return_code == -42 && $data_array(message_type.PreferredDIR)==$data_array(message_type.DIRALL) } {
-		set data_array(message_type.PreferredDIR) $data_array(message_type.DIR)
-		set return_code [OWSERVER_Read $data_array(message_type.PreferredDIR) $path]
+    global MessageTypes
+
+    set return_code [OWSERVER_Read $MessageTypes(PreferredDIR) $path]
+    if { $return_code == -42 && $MessageTypes(PreferredDIR) == $dMessageTypes(DIRALL) } {
+		set MessageTypes(PreferredDIR) $MessageTypes(DIR)
+		set return_code [OWSERVER_Read $MessageTypes(PreferredDIR) $path]
 	}
 	return $return_code
 }
@@ -234,7 +245,7 @@ proc OWSERVER_Read { message_type path } {
     set data_array(value_from_owserver) {}
     set error_status 0
     while {1} {
-#puts "State machine = $serve(state)"
+        #puts "State machine = $serve(state) message_type=$message_type path=$path"
         switch $serve(state) {
         "Open server" {
             global IPAddress
@@ -289,15 +300,16 @@ proc OWSERVER_Read { message_type path } {
         "Packet complete" {
             ClearSockTimer
             # filter out the multi-response types and continue listening
+            global MessageTypes
             if { $serve(ping) == 1 } {
                 set serve(state) "Ping received"
             } elseif { $serve(type) < 0 } {
                 # error -- return it (may help find non-DIRALL servers)
                 set error_status $serve(type)
                 set serve(state) "Done with server"
-            } elseif { $message_type==$data_array(message_type.DIRALL) } {
+            } elseif { $message_type == $MessageTypes(DIRALL) } {
                 set serve(state) "Dirall received"
-            } elseif { $message_type==$data_array(message_type.READ) } {
+            } elseif { $message_type == $MessageTypes(READ) } {
                 set serve(state) "Read received"
             } else {
                 set serve(state) "Dir element received"
@@ -478,29 +490,34 @@ proc ShowMessage {} {
 }
 }
 
-# Selection from listbox
+# Selection from bus listbox (left panel)
 proc SelectionMade { widget y } {
     global data_array
+    global PossiblePanels
+
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
         set bus [$widget get $index]
         set data_array(current_bus) [expr { ($bus eq "<root>") ? "" : $bus } ]
-        foreach dir $data_array(monitored_directories) {
+        foreach dir $PossiblePanels {
             DirListValues $dir
         }
     }
 }
 
-
 proc SetupDisplay {} {
     global data_array
     global window_data
+    global IsPanelVisible
+    global PossiblePanels
+
     panedwindow .main -orient horizontal
     
     # Bus list is a listbox
     set f_bus [frame .main.bus]
     set color [Color bus]
-    set window_data(bus) [
+    global BusListbox
+    set BusListbox [
         listbox $f_bus.lb \
             -listvariable data_array(bus.path) \
             -width 20 \
@@ -511,12 +528,12 @@ proc SetupDisplay {} {
     scrollbar $f_bus.sb -command [list $f_bus.lb yview] -troughcolor $color
     pack $f_bus.sb -side right -fill y
     pack $f_bus.lb -side left -fill both -expand true
-    bind $window_data(bus) <ButtonRelease-1> {+ SelectionMade %W %y }
-    bind $window_data(bus) <space> {+ SelectionMade %W }
+    bind $BusListbox <ButtonRelease-1> {+ SelectionMade %W %y }
+    bind $BusListbox <space> {+ SelectionMade %W }
     
     .main add .main.bus
 
-    foreach dir $data_array(monitored_directories) {
+    foreach dir $PossiblePanels {
         SetupPanel $dir
     }
     
@@ -540,15 +557,15 @@ proc SetupDisplay {} {
 
     menu .main_menu.view -tearoff 0
     .main_menu add cascade -label View -menu .main_menu.view  -underline 0
-        foreach dir $data_array(monitored_directories) {
-            .main_menu.view add checkbutton -label $dir -indicatoron 1 -command [list PanelShow $dir] -variable window_data(panelshow.$dir)
+        foreach dir $PossiblePanels {
+            .main_menu.view add checkbutton -label $dir -indicatoron 1 -command [list PanelShow $dir] -variable IsPanelVisible($dir)
         }
         .main_menu.view add separator
         .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
 
-    foreach dir $data_array(monitored_directories) {
+    foreach dir $PossiblePanels {
         menu .main_menu.$dir -tearoff 0
-        .main_menu add cascade -label $dir -menu .main_menu.$dir -state [expr {$window_data(panelshow.$dir)?"normal":"disabled"}]
+        .main_menu add cascade -label $dir -menu .main_menu.$dir -state [expr {$IsPanelVisible($dir)?"normal":"disabled"}]
         menu .main_menu.$dir.refresh -tearoff 0
         .main_menu.$dir add cascade -menu .main_menu.$dir.refresh -label {Refresh rate}
         foreach {label value} {"Manual" 0 "20 seconds" 1 "1 minute" 3 "5 minutes" 15} {
@@ -566,8 +583,10 @@ proc SetupDisplay {} {
 
 proc SetupPanel { dir } {
     global window_data
+    global IsPanelVisible
+    
     set color [Color $dir]
-    if { $window_data(panelshow.$dir) } {
+    if { $IsPanelVisible($dir) } {
         set f [frame .main.$dir]
         set window_data($dir) [
             text $f.text \
@@ -593,8 +612,9 @@ proc SetupPanel { dir } {
 
 proc PanelShow { dir } {
     global window_data
+    global IsPanelVisible
 
-    if { $window_data(panelshow.$dir) } {
+    if { $IsPanelVisible($dir) } {
         .main_menu entryconfigure $dir -state normal
 
         if { [info exist window_data(panel.$dir)] } {
@@ -613,14 +633,16 @@ proc PanelShow { dir } {
 proc PriorPanel { dir } {
     global window_data
     global data_array
+    global IsPanelVisible
+    global PossiblePanels
     
     set prior bus
 
-    foreach prior_dir $data_array(monitored_directories) {
+    foreach prior_dir $PossiblePanels {
         if { $prior_dir==$dir } {
             break
         }
-        if { $window_data(panelshow.$prior_dir) } {
+        if { $IsPanelVisible($prior_dir) } {
             set prior $prior_dir
         }
     }
@@ -736,17 +758,17 @@ proc StatusWindow { } {
 #proc window handler for statistics and status windows
 #return 1 if old, 0 if new
 proc WindowAlreadyExists { window_name menu_name menu_index } {
-    global setup_flags
+    global window_exists
 
-    if { [ info exist setup_flags($window_name) ] } {
-        if { $setup_flags($window_name) } {
+    if { [ info exist window_exists($window_name) ] } {
+        if { $window_exists($window_name) } {
 # hide window
             wm withdraw $window_name
-            set setup_flags($window_name) 0
+            set window_exists($window_name) 0
         } else {
 # show window
             wm deiconify $window_name
-            set setup_flags($window_name) 1
+            set window_exists($window_name) 1
         }
         return 1
     }
@@ -757,7 +779,7 @@ proc WindowAlreadyExists { window_name menu_name menu_index } {
 # delete handler
     wm protocol $window_name WM_DELETE_WINDOW [list $menu_name invoke $menu_index]
 # now set flag
-    set setup_flags($window_name) 1
+    set window_exists($window_name) 1
     return 0
 }
 
@@ -813,9 +835,10 @@ proc RefreshCounter { } {
     global refresh_counter
     global data_array
     global window_data
+    global PossiblePanels
     
     incr refresh_counter
-    foreach dir $data_array(monitored_directories) {
+    foreach dir $PossiblePanels {
         if { $window_data(refresh.$dir)==0 } {
             continue
         }
