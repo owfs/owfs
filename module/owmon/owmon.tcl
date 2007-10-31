@@ -37,6 +37,7 @@ proc Main { argv } {
     global PossiblePanels
     global DisplayLock
     global BusListbox
+	global SelectedBus
 
     # wait till ready
     set DisplayLock 1
@@ -57,7 +58,7 @@ proc Main { argv } {
     SetupDisplay
     
     # bus list (and default)
-    set data_array(current_bus) ""
+    set SelectedBus ""
 	SetBusList
     $BusListbox selection set 0 0
 
@@ -73,23 +74,24 @@ proc Main { argv } {
 }
 
 # Create the list of bus-es by doing recursive directory searches and selecting only bus.x entries
-# the list is put in data_array(bus.path)
+# the list is put in DiscoveredBusList
 # No trailing "/"
 proc SetBusList { } {
-	global data_array
-	set data_array(bus.path) "<root>"
+	global DiscoveredBusList
+	set DiscoveredBusList "<root>"
 	BusListRecurser ""
 }
 
 # path is searched and added. No trailing "/"
 proc BusListRecurser { path } {
     global data_array
+	global DiscoveredBusList
     if { [OWSERVER_DirectoryRead "$path/"] < 0 } {
         return
     }
     set busses [ lsearch -all -regexp -inline $data_array(value_from_owserver) {/bus\.\d+$} ]
     foreach bus $busses {
-        lappend data_array(bus.path) ${path}${bus}
+        lappend DiscoveredBusList ${path}${bus}
         BusListRecurser ${path}${bus}
     }
 }
@@ -125,6 +127,7 @@ proc DirListValues { type } {
     global window_data
     global IsPanelVisible
     global DisplayLock
+	global SelectedBus
 
     # See if this is a displayed panel
     if { $IsPanelVisible($type) == 0 } {
@@ -139,7 +142,7 @@ proc DirListValues { type } {
     set DisplayLock 1
     
     global data_array
-    set bus $data_array(current_bus)
+    set bus $SelectedBus
 
     if { ![info exists data_array($bus.$type.path)] } {
         $window_data($type) delete 1.0 end
@@ -494,11 +497,12 @@ proc ShowMessage {} {
 proc SelectionMade { widget y } {
     global data_array
     global PossiblePanels
+	global SelectedBus
 
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
         set bus [$widget get $index]
-        set data_array(current_bus) [expr { ($bus eq "<root>") ? "" : $bus } ]
+        set SelectedBus [expr { ($bus eq "<root>") ? "" : $bus } ]
         foreach dir $PossiblePanels {
             DirListValues $dir
         }
@@ -510,6 +514,7 @@ proc SetupDisplay {} {
     global window_data
     global IsPanelVisible
     global PossiblePanels
+	global DiscoveredBusList
 
     panedwindow .main -orient horizontal
     
@@ -519,7 +524,7 @@ proc SetupDisplay {} {
     global BusListbox
     set BusListbox [
         listbox $f_bus.lb \
-            -listvariable data_array(bus.path) \
+            -listvariable DiscoveredBusList \
             -width 20 \
             -yscrollcommand [list $f_bus.sb set] \
             -selectmode browse \
