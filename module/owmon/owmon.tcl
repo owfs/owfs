@@ -103,6 +103,8 @@ proc SetDirList { bus type } {
     set data_array($bus.$type.path) {}
     set data_array($bus.$type.name) {}
     DirListRecurser  $bus $path $type
+    set data_array($bus.$type.path) [lrange $data_array($bus.$type.path) 1 end]
+    set data_array($bus.$type.name) [lrange $data_array($bus.$type.name) 1 end]
 }
 
 proc DirListRecurser { bus path type } {
@@ -160,10 +162,11 @@ proc DirListValues { type } {
             } else {
                 set value_from_owserver [lindex $value_from_owserver 1]
             }
+            $PanelDataField($type) insert end "[format {%12.12s} $value_from_owserver]   $name\n"
         } else {
                 set value_from_owserver ""
+                $PanelDataField($type) insert end "               " $type.spacing "$name\n" $type.underline
         }
-        $PanelDataField($type) insert end "[format {%12.12s} $value_from_owserver]   $name\n"
     }
 
     set DisplayLock 0
@@ -620,7 +623,10 @@ proc SetupPanel { panel } {
     
         set PanelFrame($panel) $f
         .main add $f -after .main.[PriorPanel $panel]
-    }
+
+        $PanelDataField($panel) tag configure $panel.spacing   -spacing1 5 -spacing3 3
+        $PanelDataField($panel) tag configure $panel.underline -underline 1
+}
 }
 
 proc PanelShow { panel } {
