@@ -608,8 +608,12 @@ proc SetupPanel { panel } {
             ]
         scrollbar $f.sby -command [list $f.text yview] -troughcolor $color
         scrollbar $f.sbx -command [list $f.text xview] -orient horizontal -troughcolor $color
-        button $f.b -text $panel -command [list DirListValues $panel] -bg $color
-        pack $f.b -side top -fill x
+        frame $f.top
+        pack $f.top -side top -fill x
+        button $f.top.b -text $panel -command [list DirListValues $panel] -bg $color
+        button $f.top.x -text "X" -command [list .main_menu.view invoke $panel] -bg $color
+        pack $f.top.x -side right
+        pack $f.top.b -side left -fill x -expand true
         pack $f.sby -side right -fill y
         pack $f.sbx -side bottom -fill x
         pack $f.text -side left -fill both -expand true
