@@ -157,12 +157,21 @@ proc DirListValues { type } {
     foreach path $data_array($SelectedBus.$type.path) name $data_array($SelectedBus.$type.name) {
         if { $path != "NULL" } {
             set value_from_owserver [OWSERVER_Read $MessageTypes(READ) $path]
+            set change_tag $type.black
             if {[lindex $value_from_owserver 0] < 0 } {
                 set value_from_owserver ""
             } else {
                 set value_from_owserver [lindex $value_from_owserver 1]
             }
-            $PanelDataField($type) insert end "[format {%12.12s} $value_from_owserver]   $name\n"
+            if { ![info exists data_array($SelectedBus.$type.$path)] } {
+                set data_array($SelectedBus.$type.$path) $value_from_owserver
+            } elseif { $data_array($SelectedBus.$type.$path) != $value_from_owserver } {
+                set data_array($SelectedBus.$type.$path) $value_from_owserver
+                set change_tag $type.red
+            } elseif { $PanelDataField($type.diff) } {
+                continue
+            }
+            $PanelDataField($type) insert end "[format {%12.12s} $value_from_owserver]   $name\n" $change_tag
         } else {
                 set value_from_owserver ""
                 $PanelDataField($type) insert end "               " $type.spacing "$name\n" $type.underline
@@ -504,8 +513,12 @@ proc ShowMessage {} {
 # Selection from bus listbox (left panel)
 proc SelectionMade { widget y } {
     global PossiblePanels
+    global PanelDataField
 	global SelectedBus
 
+    global data_array
+    unset data_array
+    
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
         set bus [$widget get $index]
@@ -600,6 +613,17 @@ proc SetupPanel { panel } {
     set color [Color $panel]
     if { $IsPanelVisible($panel) } {
         set f [frame .main.$panel]
+        
+        # top bar
+        frame $f.top
+        button $f.top.b -text $panel -command [list DirListValues $panel] -bg $color
+        checkbutton $f.top.d -text "∆" -command [list DirListValues $panel] -variable PanelDataField($panel.diff) -bg $color
+        button $f.top.x -text "X" -command [list .main_menu.view invoke $panel] -bg $color
+        pack $f.top.x -side right
+        pack $f.top.d -side right
+        pack $f.top.b -side left -fill x -expand true
+
+        # text and scroll bars
         set PanelDataField($panel) [
             text $f.text \
                 -yscrollcommand [list $f.sby set] \
@@ -611,12 +635,7 @@ proc SetupPanel { panel } {
             ]
         scrollbar $f.sby -command [list $f.text yview] -troughcolor $color
         scrollbar $f.sbx -command [list $f.text xview] -orient horizontal -troughcolor $color
-        frame $f.top
         pack $f.top -side top -fill x
-        button $f.top.b -text $panel -command [list DirListValues $panel] -bg $color
-        button $f.top.x -text "X" -command [list .main_menu.view invoke $panel] -bg $color
-        pack $f.top.x -side right
-        pack $f.top.b -side left -fill x -expand true
         pack $f.sby -side right -fill y
         pack $f.sbx -side bottom -fill x
         pack $f.text -side left -fill both -expand true
@@ -624,9 +643,13 @@ proc SetupPanel { panel } {
         set PanelFrame($panel) $f
         .main add $f -after .main.[PriorPanel $panel]
 
+        $PanelDataField($panel) tag configure $panel.red       -foreground red
+        $PanelDataField($panel) tag configure $panel.black     -foreground black
         $PanelDataField($panel) tag configure $panel.spacing   -spacing1 5 -spacing3 3
         $PanelDataField($panel) tag configure $panel.underline -underline 1
-}
+
+        set PanelDataField($panel.diff) 0
+    }
 }
 
 proc PanelShow { panel } {
