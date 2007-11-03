@@ -595,7 +595,8 @@ proc SetupDisplay {} {
         foreach {label value} {"Manual" 0 "20 seconds" 1 "1 minute" 3 "5 minutes" 15} {
             .main_menu.$panel.refresh add radiobutton -label $label -value $value -variable RefreshFrequency($panel)
         }
-    }
+        .main_menu.$panel add checkbutton -label "Differences only" -underline 0 -variable PanelDataField($panel.diff)
+}
 
 # help menu
     menu .main_menu.help -tearoff 0
