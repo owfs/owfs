@@ -44,7 +44,7 @@ int handle_socket(FILE * out)
 
 	str = fgets(up.line, PATH_MAX, out);
 	LEVEL_CALL("PreParse line=%s\n", up.line);
-		URLparse(&up);			/* Braek up URL */
+    URLparse(&up);			/* Braek up URL */
 
 	/* read lines until blank */
 	if (up.version) {
@@ -165,12 +165,11 @@ static void URLparse(struct urlparse *up)
                 break;
             }
         }
-    }
-
-    /* Special case -- checkbox off, CHANGE is value read */
-    if ( strcmp("CHANGE",up->value)==0 ) {
-        up->value[0] = '0' ;
-        up->value[1] = '\0' ;
+        /* Special case -- checkbox off, CHANGE is value read */
+        if ( strcmp("CHANGE",up->value)==0 ) {
+            up->value[0] = '0' ;
+            up->value[1] = '\0' ;
+        }
     }
     LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n",
 				SAFESTRING(up->file), SAFESTRING(up->request),
