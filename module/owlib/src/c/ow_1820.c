@@ -772,35 +772,23 @@ int FS_poll_convert(const struct parsedname *pn)
 /* read PIO pins for the DS28EA00 and rearrange slightly */
 static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
 {
-  BYTE data[1] ;
+  BYTE data ;
   BYTE cmd[] = { _1W_PIO_ACCESS_READ, } ;
   struct transaction_log t[] = {
     TRXN_START,
     TRXN_WRITE1(cmd),
-    TRXN_READ1(data),
+    TRXN_READ1(&data),
     TRXN_END ,
   } ;
   if ( BUS_transaction(t,pn) ) return 1 ;
   /* compare lower and upper nibble to be complements */
   if ( (data[0]&0x0F)^(data[0]>>4) ) return 1 ;
-  switch ( data[0]&0x0F ) {
-    case 0x0: pio[0] = 0 ; latch[0] = 0; break ;
-    case 0x1: pio[0] = 1 ; latch[0] = 0; break ;
-    case 0x2: pio[0] = 0 ; latch[0] = 1; break ;
-    case 0x3: pio[0] = 1 ; latch[0] = 1; break ;
-    case 0x4: pio[0] = 2 ; latch[0] = 0; break ;
-    case 0x5: pio[0] = 3 ; latch[0] = 0; break ;
-    case 0x6: pio[0] = 2 ; latch[0] = 1; break ;
-    case 0x7: pio[0] = 3 ; latch[0] = 1; break ;
-    case 0x8: pio[0] = 0 ; latch[0] = 2; break ;
-    case 0x9: pio[0] = 1 ; latch[0] = 2; break ;
-    case 0xA: pio[0] = 0 ; latch[0] = 3; break ;
-    case 0xB: pio[0] = 1 ; latch[0] = 3; break ;
-    case 0xC: pio[0] = 2 ; latch[0] = 2; break ;
-    case 0xD: pio[0] = 3 ; latch[0] = 2; break ;
-    case 0xE: pio[0] = 2 ; latch[0] = 3; break ;
-    case 0xF: pio[0] = 3 ; latch[0] = 3; break ;
-  }
+  
+  // PIO bits 0 and 2 (move to consecutive bits)
+  pio[0] = (data & 0x01) | ((data & 0x04) >> 1 ) ;
+  // latch bits 1 and 3 (move to consecutive bits)
+  latch[0] = ((data & 0x02) >> 1 ) | ((data & 0x08) >> 2 ) ;
+  
   return 0 ;
 }
 
