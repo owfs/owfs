@@ -1213,7 +1213,7 @@ proc DetailPayload { window_name color full_string payload } {
 }
 
 proc DetailPayloadPlus { window_name color1 color2 full_string payload size } {
-    set endpay [expr {24+$payload-$size}]
+    set endpay [expr {24+$payload-$size-1}]
     DetailText $window_name $color1 [string range $full_string 24 $endpay ]
     incr endpay
     DetailText $window_name $color2 [string range $full_string $endpay [expr {$payload + 24}] ]
