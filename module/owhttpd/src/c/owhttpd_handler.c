@@ -146,17 +146,33 @@ static void URLparse(struct urlparse *up)
 			*str = '\0';
 	}
 
-	/* Separate out the FORM field and value */
-	if (up->request) {
-		for (str = up->request; *str; str++) {
-			if (*str == '=') {
-				*str = '\0';
-				up->value = str + 1;
-				break;
-			}
-		}
-	}
-	LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n",
+    /* Separate out the FORM field and value */
+    if (up->request) {
+        for (str = up->request; *str; str++) {
+            if (*str == '=') {
+                *str = '\0';
+                up->value = str + 1;
+                break;
+            }
+        }
+    }
+
+    /* Remove garbage from oned of value */
+    if (up->value) {
+        for (str = up->value; *str; str++) {
+            if (*str == '&') {
+                *str = '\0';
+                break;
+            }
+        }
+    }
+
+    /* Special case -- checkbox off, CHANGE is value read */
+    if ( strcmp("CHANGE",up->value)==0 ) {
+        up->value[0] = '0' ;
+        up->value[1] = '\0' ;
+    }
+    LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n",
 				SAFESTRING(up->file), SAFESTRING(up->request),
 				SAFESTRING(up->value));
 }

@@ -66,7 +66,6 @@ proc Main { } {
     foreach panel $PossiblePanels {
     	DirListValues $panel
 	}
-    SetBusList
     
     # Start clock
     RefreshCounter
@@ -77,8 +76,16 @@ proc Main { } {
 # No trailing "/"
 proc SetBusList { } {
 	global DiscoveredBusList
-	set DiscoveredBusList "<root>"
+    global PanelDataField
+
+    # disable until data is complete
+    $PanelDataField(bus) configure -state disabled
+	
+    set DiscoveredBusList "<root>"
 	BusListRecurser ""
+
+# enable now
+    $PanelDataField(bus) configure -state normal
 }
 
 # path is searched and added. No trailing "/"
@@ -517,7 +524,7 @@ proc SelectionMade { widget y } {
 	global SelectedBus
 
     global data_array
-    unset data_array
+    catch { unset data_array }
     
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
