@@ -53,7 +53,7 @@ struct global Global = {
 #endif
 
     .opt = 0 ,
-    .progname = "One Wire File System" ,
+    .progname = NULL , // "One Wire File System" , Can't allocate here since it's freed
     .want_background = 1 ,
     .now_background = 0 ,
 
