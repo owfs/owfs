@@ -520,8 +520,9 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 		return -EIO;
 	}
 	/* BUS still locked */
-	if (RootNotBranch(pn_real_device))
+    if (RootNotBranch(pn_real_device)) {
 		db.allocated = pn_real_device->selected_connection->last_root_devs;	// root dir estimated length
+    }
 	do {
 		BUSUNLOCK(pn_whole_directory);
 		if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */

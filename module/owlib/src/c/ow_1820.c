@@ -782,7 +782,7 @@ static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
   } ;
   if ( BUS_transaction(t,pn) ) return 1 ;
   /* compare lower and upper nibble to be complements */
-  if ( (data[0]&0x0F)^(data[0]>>4) ) return 1 ;
+  if ( (data&0x0F)^(data>>4) ) return 1 ;
   
   // PIO bits 0 and 2 (move to consecutive bits)
   pio[0] = (data & 0x01) | ((data & 0x04) >> 1 ) ;

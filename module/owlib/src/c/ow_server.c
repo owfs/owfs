@@ -292,7 +292,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 			 ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection)) < 0) {
 			ret = -EIO;
 		} else {
-			char *path2;
+			char *return_path;
 			size_t devices = 0;
 			struct dirblob db;
 
@@ -310,14 +310,14 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 				db.troubled = 1;	// no dirblob cache
 			}
 
-			while ((path2 = FromServerAlloc(connectfd, &cm))) {
+			while ((return_path = FromServerAlloc(connectfd, &cm))) {
 				struct parsedname pn_directory_element;
-				path2[cm.payload - 1] = '\0';	/* Ensure trailing null */
-				LEVEL_DEBUG("ServerDir: got=[%s]\n", path2);
+				return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
+				LEVEL_DEBUG("ServerDir: got=[%s]\n", return_path);
 
-				if (FS_ParsedName_BackFromRemote(path2, &pn_directory_element)) {
+				if (FS_ParsedName_BackFromRemote(return_path, &pn_directory_element)) {
 					cm.ret = -EINVAL;
-					free(path2);
+					free(return_path);
 					break;
 				}
 				//printf("SERVERDIR path=%s\n",pn_directory_element.path);
@@ -340,7 +340,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 				DIRUNLOCK;
 
 				FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
-				free(path2);
+				free(return_path);
 			}
 			/* Add to the cache (full list as a single element */
 			if (DirblobPure(&db)) {
