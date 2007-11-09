@@ -45,7 +45,6 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 			  void *v, const struct parsedname *pn_whole_directory, uint32_t * flags) ;
 
-
 static void Server_setroutines(struct interface_routines *f)
 {
 	f->detect = Server_detect;
@@ -282,8 +281,8 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
 
-	LEVEL_CALL("SERVER(%d)DIR path=%s\n", pn_whole_directory->selected_connection->index,
-			   SAFESTRING(pn_whole_directory->path_busless));
+	LEVEL_CALL("SERVER(%d)DIR path=%s path_busless=%s\n", pn_whole_directory->selected_connection->index,
+               SAFESTRING(pn_whole_directory->path),SAFESTRING(pn_whole_directory->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
@@ -315,12 +314,29 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 				return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
 				LEVEL_DEBUG("ServerDir: got=[%s]\n", return_path);
 
-				if (FS_ParsedName_BackFromRemote(return_path, &pn_directory_element)) {
-					cm.ret = -EINVAL;
-					free(return_path);
-					break;
-				}
-				//printf("SERVERDIR path=%s\n",pn_directory_element.path);
+                ret = -EINVAL ;
+                
+                if (SpecifiedRemoteBus(pn_whole_directory)) {
+                    // Specified remote bus, add the bus to the path (in front)
+                    char BigBuffer[ cm.payload + 12 ] ;
+                    if ( snprintf( BigBuffer, cm.payload + 11, "/bus.%d/%s",
+                              pn_whole_directory->selected_connection->index,
+                              &return_path[ (return_path[0]=='/') ? 1 : 0 ] )
+                    > 0 ) {
+                        ret = FS_ParsedName_BackFromRemote(BigBuffer, &pn_directory_element) ;
+                    }
+                } else {
+                    ret = FS_ParsedName_BackFromRemote(return_path, &pn_directory_element) ;
+                }
+                
+                free(return_path) ;
+                            
+                if ( ret ) {
+                    cm.ret = ret;
+                    break;
+                }
+				
+                //printf("SERVERDIR path=%s\n",pn_directory_element.path);
 				/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
 				   find it quicker next time we want to do read values from the
 				   the actual device
@@ -335,12 +351,11 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const),
 				}
 				++devices;
 
-				DIRLOCK;
+                DIRLOCK;
 				dirfunc(v, &pn_directory_element);
 				DIRUNLOCK;
 
 				FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
-				free(return_path);
 			}
 			/* Add to the cache (full list as a single element */
 			if (DirblobPure(&db)) {
@@ -383,8 +398,8 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
 
-	LEVEL_CALL("SERVER(%d)DIRALL path=%s\n", pn_whole_directory->selected_connection->index,
-			   SAFESTRING(pn_whole_directory->path_busless));
+    LEVEL_CALL("SERVER(%d)DIRALL path=%s path_busless=%s\n", pn_whole_directory->selected_connection->index,
+               SAFESTRING(pn_whole_directory->path),SAFESTRING(pn_whole_directory->path_busless));
 
 	// Get a file descriptor, possibly a persistent one
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
@@ -428,12 +443,30 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 
 		while ( (current_file = strsep(&rest_of_comma_list,",")) != NULL ) {
 			struct parsedname pn_directory_element;
-			LEVEL_DEBUG("ServerDirall: got=[%s]\n", current_file);
+            int path_length = strlen( current_file) ;
+            LEVEL_DEBUG("ServerDirall: got=[%s]\n", current_file);
 
-			if (FS_ParsedName_BackFromRemote(current_file, &pn_directory_element)) {
-				cm.ret = -EINVAL;
-				break;
-			}
+            ret = -EINVAL ;
+                
+            if (SpecifiedRemoteBus(pn_whole_directory)) {
+                    // Specified remote bus, add the bus to the path (in front)
+                char BigBuffer[ path_length + 12 ] ;
+                if ( snprintf( BigBuffer, path_length + 11, "/bus.%d/%s",
+                     pn_whole_directory->selected_connection->index,
+                     &current_file[ (current_file[0]=='/') ? 1 : 0 ] )
+                     > 0 ) {
+                    ret = FS_ParsedName_BackFromRemote(BigBuffer, &pn_directory_element) ;
+                     }
+            } else {
+                ret = FS_ParsedName_BackFromRemote(current_file, &pn_directory_element) ;
+            }
+                            
+            if ( ret ) {
+                cm.ret = ret;
+                break;
+            }
+                
+                
 			//printf("SERVERDIR path=%s\n",pn_directory_element.path);
 			/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
 			find it quicker next time we want to do read values from the
@@ -448,7 +481,6 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const),
 				DirblobAdd(pn_directory_element.sn, &db);
 			}
 			++devices;
-
 			DIRLOCK;
 			dirfunc(v, &pn_directory_element);
 			DIRUNLOCK;

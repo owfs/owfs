@@ -69,11 +69,11 @@ int FS_dirname_state(char *buffer, const size_t length,
 #endif
 	} else if (IsUncachedDir(pn)) {
 		p = dirname_state_uncached;
-	} else if (KnownBus(pn)) {
+    } else if (pn->terminal_bus_number > -1) {
 		int ret;
         //printf("Called FS_dirname_state on %s bus number %d\n",pn->path,pn->bus_nr) ;
         UCLIBCLOCK;
-		ret = snprintf(buffer, length, "bus.%d", pn->known_bus->index);
+        ret = snprintf(buffer, length, "bus.%d", pn->terminal_bus_number);
 		UCLIBCUNLOCK;
 		return ret;
 	} else {

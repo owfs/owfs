@@ -54,9 +54,12 @@ void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 {
 	struct dirallhandlerstruct *dhs = v;
 	char retbuffer[PATH_MAX];
+# if 0
 	char *path = (KnownBus(dhs->pn)
 				  && BusIsServer(dhs->pn->selected_connection)) ? dhs->pn->
 		path_busless : dhs->pn->path;
+#endif
+char * path = dhs->pn->path ;      
 
 	/* make sure path has a "/" before the file is added */
 	size_t _pathlen = strlen(path);
@@ -65,19 +68,17 @@ void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 		retbuffer[_pathlen] = '/';
 		retbuffer[++_pathlen] = '\0';
 	}
-
-	LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
-	if (pn2->selected_device != NULL) {
+	
+    if (pn2->selected_device != NULL) {
 		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	} else if (NotRealDir(pn2)) {
-		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
+    } else if (NotRealDir(pn2)) {
+        FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
 						pn2);
-	} else {
+    } else {
 		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
 						 pn2);
-	}
-
-	CharblobAdd(retbuffer, strlen(retbuffer), dhs->cb);
+    }
+    CharblobAdd(retbuffer, strlen(retbuffer), dhs->cb);
 }
 
 void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,

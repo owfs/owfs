@@ -263,6 +263,8 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	if (pp->pathnext[0] == '/')
 		++pp->pathnext;
 
+    pn->terminal_bus_number = -1; 
+            
 	return 0 ;
 }
 
@@ -381,6 +383,10 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
         return parse_error;
     }
 
+    bus_number = atoi(&pathnow[4]);
+    if (bus_number < 0) return parse_error ;
+    pn->terminal_bus_number = bus_number ;
+
     /* Should make a presence check on remote busses here, but
     * it's not a major problem if people use bad paths since
     * they will just end up with empty directory listings. */
@@ -393,22 +399,13 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
         return parse_first ;
     }
 
-    // on return trip, and the initial (specified bus has already been selected)
-    if (back_from_remote && SpecifiedBus(pn)) {
-        return parse_first ;
-    }
-
     /* on return from remote directory ow_server.c:ServerDir
     the SetKnownBus will be be performed else where since the sending bus number is used */
     /* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
     //printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
-    bus_number = atoi(&pathnow[4]);
-    if (bus_number < 0) return parse_error ;
-
     CONNINLOCK;
     if (count_inbound_connections <= bus_number) bus_number = -1 ;
     CONNINUNLOCK;
-
     if (bus_number < 0) return parse_error ;
 
     /* Since we are going to use a specific in-device now, set

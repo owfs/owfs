@@ -127,7 +127,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 			FS_interface_dir( dirfunc, v, pn_raw_directory ) ;
 		}
 		// Send remotely only (all evaluation done there)
-		ret = ServerDir( dirfunc, v, pn_raw_directory, flags ) ;
+        ret = ServerDir( dirfunc, v, pn_raw_directory, flags ) ;
 
 	} else if ( pn_raw_directory->selected_device != NULL ) {	
 	  //printf("NO SELECTED_DEVICE\n");
@@ -698,7 +698,7 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *),
 	pn_bus_directory->type = ePN_real;
 
 	for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
-		SetKnownBus(bus_number, pn_bus_directory);
+        pn_bus_directory->terminal_bus_number = bus_number ;
 		//printf("Called FS_busdir on %s bus number %d\n",pn_directory->path,bus_number) ;
 		dirfunc(v, pn_bus_directory);
 	}
