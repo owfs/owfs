@@ -15,8 +15,8 @@ AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 # (In our case it's better to always keep AGE to 0, since nobody else will use our library)
 
 VERSION_MAJOR=2
-VERSION_MINOR=6
-VERSION_PATCHLEVEL=8
+VERSION_MINOR=7
+VERSION_PATCHLEVEL=0
 OWFS_INTERFACE_AGE=0
 OWFS_BINARY_AGE=0
 
@@ -560,13 +560,13 @@ AM_CONDITIONAL(ENABLE_OWTAP, test "${ENABLE_OWTAP}" = "true")
 
 #Check owmon
 AC_MSG_CHECKING(if owmon is enabled)
-ENABLE_OWMON="false"
+ENABLE_OWMON="true"
 AC_ARG_ENABLE(owmon,
-[  --enable-owmon          Enable owmon module (default false)],
+[  --enable-owmon          Enable owmon module (default true)],
 [
     AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
-        ENABLE_OWMON="true"
+        ENABLE_OWMON="false"
     fi
 ],
 [
