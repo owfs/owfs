@@ -47,8 +47,7 @@ int main(int argc, char *argv[])
 	if (optind < argc) {
 		fprintf(stderr, "Unpaired <path> <value> entry: %s\n",
 				argv[optind]);
-		exit(1);
+		rc = -1;
 	}
-	Cleanup();
-	exit((rc >= 0 ? 0 : 1));
+	Exit((rc >= 0 ? 0 : 1));
 }

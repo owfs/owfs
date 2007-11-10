@@ -52,9 +52,15 @@ void Setup(void)
 	errno = 0;					/* set error level none */
 }
 
-void Cleanup(void)
+static void Cleanup(void)
 {
 #if OW_ZERO
 	OW_Free_dnssd_library();
 #endif
+}
+
+void Exit( int exit_code )
+{
+	Cleanup();
+	exit( exit_code ) ;
 }

@@ -40,7 +40,7 @@ void owopt(const int c, const char *arg)
 	switch (c) {
 	case 'h':
 		ow_help();
-		exit(0);
+		Exit(0);
 	case 'C':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
 					   temp_celsius);
@@ -59,7 +59,7 @@ void owopt(const int c, const char *arg)
 		break;
 	case 'V':
 		printf("owshell version:\n\t" VERSION "\n");
-		exit(0);
+		Exit(0);
 	case 's':
 		OW_ArgNet(arg);
 		break;
@@ -83,7 +83,7 @@ void owopt(const int c, const char *arg)
 						   fic);
 		else {
 			fprintf(stderr, "Unrecognized format type %s\n", arg);
-			exit(1);
+			Exit(1);
 		}
 		break;
 	case 275:					// autoserver
@@ -91,14 +91,14 @@ void owopt(const int c, const char *arg)
 		if (libdnssd == NULL) {
 			fprintf(stderr,
 					"Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
-			exit(0);
+			Exit(0);
 		} else {
 			OW_Browse();
 		}
 #else
 		fprintf(stderr,
 				"Zeroconf/Bonjour is disabled since it's compiled without support.\n");
-		exit(0);
+		Exit(0);
 #endif
 		break;
 	case 307:
@@ -107,7 +107,7 @@ void owopt(const int c, const char *arg)
 	case 0:
 		break;
 	default:
-		exit(1);
+		Exit(1);
 	}
 }
 
@@ -118,7 +118,7 @@ void OW_ArgNet(const char *arg)
 		fprintf(stderr,
 				"Cannot link to more than one owserver. (%s and %s).\n",
 				owserver_connection->name, arg);
-		exit(1);
+		Exit(1);
 	}
 	owserver_connection->name = strdup(arg);
 }
@@ -130,7 +130,7 @@ static void OW_parsevalue(int *var, const ASCII * str)
 	I = strtol(str, NULL, 10);
 	if (errno) {
 		fprintf(stderr, "Bad configuration value %s\n", str);
-		exit(1);
+		Exit(1);
 	}
 	var[0] = I;
 }

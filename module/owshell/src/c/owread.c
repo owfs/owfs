@@ -43,6 +43,5 @@ int main(int argc, char *argv[])
 		rc = ServerRead(argv[optind]);
 		++optind;
 	}
-	Cleanup();
-	exit((rc >= 0 ? 0 : 1));
+	Exit((rc >= 0 ? 0 : 1));
 }

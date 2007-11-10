@@ -286,7 +286,6 @@ int ClientConnect(void);
 void DefaultOwserver( void ) ;
 void OW_ArgNet(const char *arg);
 void Setup(void);
-void Cleanup(void);
 void ow_help(void);
 void OW_Browse(void);
 
@@ -335,7 +334,6 @@ struct connection_in {
 extern struct connection_in s_owserver_connection ;
 extern struct connection_in *owserver_connection;
 
-void FreeIn(void);
-void DelIn(struct connection_in *in);
+void Exit( int exit_code ) ;
 
 #endif							/* OWSHELL_H */

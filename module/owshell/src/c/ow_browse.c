@@ -60,7 +60,7 @@ static void HandleCall(DNSServiceRef sref)
 	if (err != kDNSServiceErr_NoError) {
 		fprintf(stderr, "Service Discovery Process result error  0x%X\n",
 				(int) err);
-		exit(1);
+		Exit(1);
 	}
 }
 
@@ -83,7 +83,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 		owserver_connection->name = strdup(name);
 		return;
 	}
-	exit(1);
+	Exit(1);
 }
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
@@ -114,7 +114,7 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	} else {
 		fprintf(stderr, "Browse callback error = %d\n", (int) e);
 	}
-	exit(1);
+	Exit(1);
 }
 
 void OW_Browse(void)
@@ -129,7 +129,7 @@ void OW_Browse(void)
 		HandleCall(sref);
 	} else {
 		fprintf(stderr, "DNSServiceBrowse error = %d\n", (int) dnserr);
-		exit(1);
+		Exit(1);
 	}
 }
 
