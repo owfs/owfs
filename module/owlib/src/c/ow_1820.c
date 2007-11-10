@@ -150,8 +150,8 @@ struct filetype DS28EA00[] = {
   {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
   {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
   {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"PIO",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable,   FS_r_pio, FS_w_pio, {v:NULL},} ,
-  {"latch",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable,   FS_r_latch, NULL, {v:NULL},} ,
+  {"PIO",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile,   FS_r_pio, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"latch",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable,   FS_r_latch, FS_w_pio, {v:NULL},} ,
   {"sensed",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile,   FS_sense, NO_WRITE_FUNCTION, {v:NULL},} ,
 };
 
@@ -273,6 +273,7 @@ static int FS_power(struct one_wire_query * owq)
 static int FS_w_pio(struct one_wire_query * owq)
 {
     BYTE data = BYTE_INVERSE(OWQ_U(owq)&0x03) ; /* reverse bits, set unused to 1s */
+    //printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
     if (OW_w_pio(data, PN(owq)))
 		return -EINVAL;
 	return 0;
@@ -284,7 +285,8 @@ static int FS_sense(struct one_wire_query * owq)
     if (OW_read_pio(&pio, &latch, PN(owq)))
 		return -EINVAL;
     OWQ_U(owq) = pio & 0x03;	/* don't reverse bits */
-	return 0;
+    //printf("Read sense raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
+    return 0;
 }
 
 static int FS_r_pio(struct one_wire_query * owq)
@@ -293,6 +295,7 @@ static int FS_r_pio(struct one_wire_query * owq)
     if (OW_read_pio(&pio, &latch, PN(owq)))
         return -EINVAL;
     OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;  /* reverse bits */
+    //printf("Read pio raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
     return 0;
 }
 
@@ -302,6 +305,7 @@ static int FS_r_latch(struct one_wire_query * owq)
     if (OW_read_pio(&pio, &latch, PN(owq)))
         return -EINVAL;
     OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;  /* reverse bits */
+    //printf("Read latch raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
     return 0;
 }
 
@@ -782,12 +786,14 @@ static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
   } ;
   if ( BUS_transaction(t,pn) ) return 1 ;
   /* compare lower and upper nibble to be complements */
-  if ( (data&0x0F)^(data>>4) ) return 1 ;
+  //printf("READ.PIO data=%X data$0x0F=%X data>>4=%X ^=%X\n",data,(data&0x0F),data>>4,(data&0x0F)^(data>>4));
+  if ( ((data&0x0F)^(data>>4)) != 0x0F ) return 1 ;
   
   // PIO bits 0 and 2 (move to consecutive bits)
   pio[0] = (data & 0x01) | ((data & 0x04) >> 1 ) ;
   // latch bits 1 and 3 (move to consecutive bits)
   latch[0] = ((data & 0x02) >> 1 ) | ((data & 0x08) >> 2 ) ;
+  //printf("READ.PIO pio=%X latch=%X\n",pio[0],latch[0]);
   
   return 0 ;
 }
@@ -803,6 +809,3 @@ static int OW_w_pio( BYTE pio, const struct parsedname * pn )
   } ;
   return BUS_transaction(t,pn) ;
 }
-
-
-
