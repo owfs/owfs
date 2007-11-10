@@ -98,8 +98,8 @@ proc BusListRecurser { path } {
     }
     set busses [ lsearch -all -regexp -inline $value_from_owserver {/bus\.\d+$} ]
     foreach bus $busses {
-        lappend DiscoveredBusList ${path}${bus}
-        BusListRecurser ${path}${bus}
+        lappend DiscoveredBusList $bus
+        BusListRecurser $bus
     }
 }
 
