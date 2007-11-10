@@ -113,17 +113,14 @@ void owopt(const int c, const char *arg)
 
 void OW_ArgNet(const char *arg)
 {
-	struct connection_in *in;
-	if (head_inbound_list) {
+	++ count_inbound_connections ;
+	if (count_inbound_connections > 1) {
 		fprintf(stderr,
 				"Cannot link to more than one owserver. (%s and %s).\n",
-				head_inbound_list->name, arg);
-		exit(1);
-	} else if ((in = NewIn()) == NULL) {
-		fprintf(stderr, "Memory exhausted.\n");
+				owserver_connection->name, arg);
 		exit(1);
 	}
-	in->name = strdup(arg);
+	owserver_connection->name = strdup(arg);
 }
 
 static void OW_parsevalue(int *var, const ASCII * str)

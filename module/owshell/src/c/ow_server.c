@@ -23,13 +23,13 @@ static uint32_t SetupSemi(void);
 
 void Server_detect(void)
 {
-	if (head_inbound_list == NULL) {
-		fprintf(stderr, "No head_inbound_list defined\n");
+	if (count_inbound_connections == 0) {
+		fprintf(stderr, "No owserver_connection defined\n");
 		exit(1);
 	}
-	if (head_inbound_list->name == NULL || ClientAddr(head_inbound_list->name, head_inbound_list)) {
+	if (owserver_connection->name == NULL || ClientAddr(owserver_connection->name)) {
 		fprintf(stderr, "Could not connect with owserver %s\n",
-				head_inbound_list->name);
+				owserver_connection->name);
 		exit(1);
 	}
 }

@@ -2,7 +2,6 @@
 
 COMMON_OWSHELL_SOURCE = ow_opt.c   \
                ow_help.c    \
-               ow_connect.c \
                ow_server.c  \
                ow_net.c     \
                ow_browse.c  \

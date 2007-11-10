@@ -13,7 +13,7 @@ $Id$
 
 /* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
-/* i.e. connection_in * head_inbound_list ...         */
+/* i.e. connection_in * owserver_connection ...         */
 
 
 /* State informatoin, sent to remote or kept locally */
@@ -24,12 +24,19 @@ int32_t SemiGlobal =
 
 struct global Global;
 
+/* Globals */
+int count_inbound_connections = 0 ;
+struct connection_in s_owserver_connection ;
+struct connection_in *owserver_connection = & s_owserver_connection ;
+
+
 /* All ow library setup */
 void Setup(void)
 {
 #if OW_ZERO
 	OW_Load_dnssd_library();
 #endif
+	memset( owserver_connection, 0, sizeof(s_owserver_connection) ) ;
 
 	// global structure of configuration parameters
 	memset(&Global, 0, sizeof(struct global));

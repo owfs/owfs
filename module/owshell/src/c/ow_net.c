@@ -15,7 +15,19 @@ $Id$
 
 #include "owshell.h"
 
-int ClientAddr(char *sname, struct connection_in *in)
+void DefaultOwserver( void )
+{
+#if OW_ZERO
+	if ( count_inbound_connections == 0 ) {
+//		OW_Browse() ;
+	}
+#endif /* OW_ZERO */
+	if ( count_inbound_connections == 0 ) {
+		OW_ArgNet(OWSERVER_DEFAULT_PORT) ;
+	}
+}
+
+int ClientAddr(char *sname)
 {
 	struct addrinfo hint;
 	char *p;
@@ -25,16 +37,16 @@ int ClientAddr(char *sname, struct connection_in *in)
 		return -1;
 	if ((p = strrchr(sname, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
-		in->connin.server.host = strdup(sname);
-		in->connin.server.service = strdup(&p[1]);
+		owserver_connection->host = strdup(sname);
+		owserver_connection->service = strdup(&p[1]);
 		p[0] = ':';				/* restore name string */
 	} else {
 #if OW_CYGWIN
-		in->connin.server.host = strdup("127.0.0.1");
+		owserver_connection->host = strdup("127.0.0.1");
 #else
-		in->connin.server.host = NULL;
+		owserver_connection->host = NULL;
 #endif
-		in->connin.server.service = strdup(sname);
+		owserver_connection->service = strdup(sname);
 	}
 
 	memset(&hint, 0, sizeof(struct addrinfo));
@@ -45,31 +57,15 @@ int ClientAddr(char *sname, struct connection_in *in)
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-//printf("ClientAddr: [%s] [%s]\n", in->connin.server.host, in->connin.server.service);
+//printf("ClientAddr: [%s] [%s]\n", owserver_connection->host, owserver_connection->service);
 
 	if ((ret =
-		 getaddrinfo(in->connin.server.host, in->connin.server.service,
-					 &hint, &in->connin.server.ai))) {
+		 getaddrinfo(owserver_connection->host, owserver_connection->service,
+					 &hint, &owserver_connection->ai))) {
 		//LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
 		return -1;
 	}
 	return 0;
-}
-
-void FreeClientAddr(struct connection_in *in)
-{
-	if (in->connin.server.host) {
-		free(in->connin.server.host);
-		in->connin.server.host = NULL;
-	}
-	if (in->connin.server.service) {
-		free(in->connin.server.service);
-		in->connin.server.service = NULL;
-	}
-	if (in->connin.server.ai) {
-		freeaddrinfo(in->connin.server.ai);
-		in->connin.server.ai = NULL;
-	}
 }
 
 /* Usually called with BUS locked, to protect ai settings */
@@ -78,7 +74,7 @@ int ClientConnect(void)
 	int file_descriptor;
 	struct addrinfo *ai;
 
-	if (head_inbound_list->connin.server.ai == NULL) {
+	if (owserver_connection->ai == NULL) {
 		//LEVEL_DEBUG("Client address not yet parsed\n");
 		return -1;
 	}
@@ -88,7 +84,7 @@ int ClientConnect(void)
 	 * the in-device and loop through the list until it works.
 	 * Not a perfect solution, but it should work at least.
 	 */
-	ai = head_inbound_list->connin.server.ai_ok;
+	ai = owserver_connection->ai_ok;
 	if (ai) {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
@@ -98,18 +94,18 @@ int ClientConnect(void)
 		}
 	}
 
-	ai = head_inbound_list->connin.server.ai;	// loop from first address info since it failed.
+	ai = owserver_connection->ai;	// loop from first address info since it failed.
 	do {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
 			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
-				head_inbound_list->connin.server.ai_ok = ai;
+				owserver_connection->ai_ok = ai;
 				return file_descriptor;
 			}
 			close(file_descriptor);
 		}
 	} while ((ai = ai->ai_next));
-	head_inbound_list->connin.server.ai_ok = NULL;
+	owserver_connection->ai_ok = NULL;
 
 	//ERROR_CONNECT("ClientConnect: Socket problem\n") ;
 	return -1;

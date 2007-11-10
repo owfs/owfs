@@ -28,33 +28,35 @@ int main(int argc, char *argv[])
 	int dirall = 1;
 
 	Setup();
+
 	/* process command line arguments */
-	while ((c =
-			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
+	while (1) {
+		c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
+		if ( c == -1 ) {
+			break ;
+		}
 		owopt(c, optarg);
+	}
+
+	DefaultOwserver() ;
+	Server_detect() ;
 
 	/* non-option arguments */
 	while (optind < argc) {
-		if (head_inbound_list == NULL) {
-			OW_ArgNet(argv[optind]);
-		} else {
-			if (paths_found++ == 0)
-				Server_detect();
-			if (dirall) {
-				rc = ServerDirall(argv[optind]);
-				if (rc < 0) {
-					dirall = 0;
-					rc = ServerDir(argv[optind]);
-				}
-			} else {
+		++paths_found ;
+		if (dirall) {
+			rc = ServerDirall(argv[optind]);
+			if (rc < 0) {
+				dirall = 0;
 				rc = ServerDir(argv[optind]);
 			}
+		} else {
+			rc = ServerDir(argv[optind]);
 		}
 		++optind;
 	}
 	// Was anything requested?
 	if (paths_found == 0) {
-		Server_detect();
 		rc = ServerDirall("/");
 		if (rc < 0)
 			rc = ServerDir("/");

@@ -23,24 +23,24 @@ $Id$
 int main(int argc, char *argv[])
 {
 	int c;
-	int paths_found = 0;
 	int rc = -1;
 
 	Setup();
 	/* process command line arguments */
-	while ((c =
-			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
+	while (1) {
+		c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
+		if ( c == -1 ) {
+			break ;
+		}
 		owopt(c, optarg);
+	}
+
+	DefaultOwserver() ;
+	Server_detect() ;
 
 	/* non-option arguments */
 	while (optind < argc) {
-		if (head_inbound_list == NULL) {
-			OW_ArgNet(argv[optind]);
-		} else {
-			if (paths_found++ == 0)
-				Server_detect();
-			rc = ServerRead(argv[optind]);
-		}
+		rc = ServerRead(argv[optind]);
 		++optind;
 	}
 	Cleanup();

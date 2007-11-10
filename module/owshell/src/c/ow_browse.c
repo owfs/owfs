@@ -71,7 +71,6 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						const char *t, void *c)
 {
 	ASCII name[121];
-	struct connection_in *in;
 	(void) tl;
 	(void) t;
 	(void) c;
@@ -79,8 +78,9 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	//fprintf(stderr, "ResolveBack ref=%ld flags=%ld index=%ld, error=%d name=%s host=%s port=%d\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(host),ntohs(port)) ;
 	if (snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) < 0) {
 		perror("Trouble with zeroconf resolve return\n");
-	} else if ((in = NewIn())) {
-		in->name = strdup(name);
+	} else if (count_inbound_connections < 1) {
+		++count_inbound_connections ;
+		owserver_connection->name = strdup(name);
 		return;
 	}
 	exit(1);

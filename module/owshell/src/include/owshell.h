@@ -162,6 +162,9 @@ struct connection_in;
 /* Exposed connection info */
 extern int count_inbound_connections;
 
+// Default owserver port (assigned by the IANA)
+#define OWSERVER_DEFAULT_PORT	"4304"
+
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
 #define OW_EXT_MAX       (6)
@@ -277,10 +280,10 @@ extern time_t start_time;
 extern time_t dir_time;			/* time of last directory scan */
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
-int ClientAddr(char *sname, struct connection_in *in);
+int ClientAddr(char *sname);
 int ClientConnect(void);
-void FreeClientAddr(struct connection_in *in);
 
+void DefaultOwserver( void ) ;
 void OW_ArgNet(const char *arg);
 void Setup(void);
 void Cleanup(void);
@@ -311,16 +314,6 @@ struct connection_in;
 #define ADAP_FLAG_2409path      0x00000010
 #define ADAP_FLAG_dirgulp       0x00000100
 
-struct connin_server {
-	char *host;
-	char *service;
-	struct addrinfo *ai;
-	struct addrinfo *ai_ok;
-	char *type;					// for zeroconf
-	char *domain;				// for zeroconf
-	char *fqdn;
-};
-
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
@@ -329,23 +322,20 @@ struct device_search {
 };
 
 struct connection_in {
-	struct connection_in *next;
-	int index;
 	char *name;
 	int file_descriptor;
+	char *host;
+	char *service;
+	struct addrinfo *ai;
+	struct addrinfo *ai_ok;
 
 	char *adapter_name;
-
-	union {
-		struct connin_server server;
-	} connin;
 };
 
-extern struct connection_in *head_inbound_list;
+extern struct connection_in s_owserver_connection ;
+extern struct connection_in *owserver_connection;
 
 void FreeIn(void);
 void DelIn(struct connection_in *in);
-
-struct connection_in *NewIn(void);
 
 #endif							/* OWSHELL_H */
