@@ -108,12 +108,12 @@ Requires: tcl >= 8.1
 
 %if %{build_mon}
 %package mon
-Summary: Packet sniffer for the owserver protocol
+Summary: Statistics and settings monitor for owserver
 Group: System Environment/Daemon
 Requires: tcl >= 8.1
 
 %description mon
-%{name}-mon is a packet sniffer for the owserver protocol
+%{name}-mon is a graphical monitor of owserver\'s status
 %endif
 
 %if %{build_perl}
