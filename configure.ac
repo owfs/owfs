@@ -565,7 +565,7 @@ AC_ARG_ENABLE(owmon,
 [  --enable-owmon          Enable owmon module (default true)],
 [
     AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
+    if test ! "$enableval" = "yes" ; then
         ENABLE_OWMON="false"
     fi
 ],
