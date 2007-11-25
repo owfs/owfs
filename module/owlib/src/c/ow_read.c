@@ -425,7 +425,7 @@ static int FS_structure(struct one_wire_query * owq)
     OWQ_create_shallow_single( owq_real, owq ); /* shallow copy */
     OWQ_pn(owq_real).type = ePN_real;            /* "real" type to get return length, rather than "structure" length */
 
-    LEVEL_DEBUG("FS_structure read\n");
+    LEVEL_DEBUG("FS_structure start read\n");
     UCLIBCLOCK;
     output_length = snprintf(OWQ_buffer(owq),
                              OWQ_size(owq),
@@ -439,6 +439,7 @@ static int FS_structure(struct one_wire_query * owq)
                    (int) FullFileLength(PN(owq_real))
                   );
     UCLIBCUNLOCK;
+    LEVEL_DEBUG("FS_structure read length=%d\n",output_length);
 
     if ( output_length <0 ) return -EFAULT ;
     

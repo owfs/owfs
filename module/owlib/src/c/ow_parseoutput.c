@@ -61,6 +61,9 @@ int FS_output_owq( struct one_wire_query * owq)
         }
     }
 
+    /* Special case, structure is always ascii */
+    if ( OWQ_pn(owq).type == ePN_structure ) return Fowq_output_ascii(owq) ;
+    
     switch (OWQ_pn(owq).extension) {
         case EXTENSION_BYTE:
             return Fowq_output_unsigned(owq) ;
