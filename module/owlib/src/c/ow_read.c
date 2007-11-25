@@ -186,22 +186,14 @@ int FS_read_distribute(struct one_wire_query * owq)
 	AVERAGE_IN(&all_avg);
 	STATUNLOCK;
 
-	switch (OWQ_pn(owq).type) {
-        case ePN_structure:
-		/* Get structure data from local memory */
-		//printf("FS_read_distribute: pid=%ld call fs_structure\n", pthread_self());
-		r = FS_structure(owq);
-		break;
-        default:
-		/* handle DeviceSimultaneous */
-		if (PN(owq)->selected_device == DeviceSimultaneous) {
-			r = FS_r_simultaneous(owq);
-		} else {
-			r = FS_r_given_bus(owq);
-		}
-		break;
-	}
-	STATLOCK;
+    /* handle DeviceSimultaneous */
+    if (PN(owq)->selected_device == DeviceSimultaneous) {
+        r = FS_r_simultaneous(owq);
+    } else {
+        r = FS_r_given_bus(owq);
+    }
+	
+    STATLOCK;
 	if (r >= 0) {
 		++read_success;         /* statistics */
 		read_bytes += r;        /* statistics */
@@ -224,7 +216,9 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 	LEVEL_DEBUG("FS_r_given_bus\n");
 	Debug_OWQ(owq) ;
 	
-	if (!KnownBus(pn)) {
+#include <assert.h>
+assert(KnownBus(pn)) ;
+    if (!KnownBus(pn)) {
 		if(pn->type == ePN_settings) {
 			/* I think we have to do something here... */
 			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=ePN_settings!\n");
@@ -287,7 +281,10 @@ static int FS_r_virtual(struct one_wire_query * owq)
     } else {
         /* local bus -- any special locking needs? */
 		STAT_ADD1(read_calls);  /* statistics */
-        switch ( OWQ_pn(owq).type ) {
+        switch ( pn->type ) {
+            case ePN_structure:
+                read_status = FS_structure(owq) ;
+                break ;
             case ePN_interface:
                 BUSLOCK(pn) ;
                 read_status = FS_r_local(owq);  // this returns status
@@ -422,41 +419,32 @@ static int FS_r_local(struct one_wire_query * owq)
 static int FS_structure(struct one_wire_query * owq)
 {
     char ft_format_char[] = "  iufaabydytg";    /* return type */
-    char output_string[PROPERTY_LENGTH_STRUCTURE+1] ;
     int output_length;
-    int print_status ;
-    OWQ_allocate_struct_and_pointer( owq_copy ) ;
-    OWQ_create_shallow_single( owq_copy, owq ); /* shallow copy */
-    OWQ_pn(owq_copy).type = ePN_real;            /* "real" type to get return length, rather than "structure" length */
+    
+    OWQ_allocate_struct_and_pointer( owq_real ) ;
+    OWQ_create_shallow_single( owq_real, owq ); /* shallow copy */
+    OWQ_pn(owq_real).type = ePN_real;            /* "real" type to get return length, rather than "structure" length */
 
+    LEVEL_DEBUG("FS_structure read\n");
     UCLIBCLOCK;
-    output_length = snprintf(output_string,
-                   PROPERTY_LENGTH_STRUCTURE,
+    output_length = snprintf(OWQ_buffer(owq),
+                             OWQ_size(owq),
                    "%c,%.6d,%.6d,%.2s,%.6d,",
-                   ft_format_char[OWQ_pn(owq_copy).selected_filetype->format],
-                   (OWQ_pn(owq_copy).selected_filetype->ag) ? OWQ_pn(owq_copy).extension : 0,
-                   (OWQ_pn(owq_copy).selected_filetype->ag) ? OWQ_pn(owq_copy).selected_filetype->ag->elements : 1,
-                   (OWQ_pn(owq_copy).selected_filetype->read == NO_READ_FUNCTION) ?
-                     ((OWQ_pn(owq_copy).selected_filetype->write == NO_WRITE_FUNCTION) ? "oo" : "wo") :
-                     ((OWQ_pn(owq_copy).selected_filetype->write == NO_WRITE_FUNCTION) ? "ro" : "rw") ,
-                   (int) FullFileLength(PN(owq_copy))
+                   ft_format_char[OWQ_pn(owq_real).selected_filetype->format],
+                   (OWQ_pn(owq_real).selected_filetype->ag) ? OWQ_pn(owq_real).extension : 0,
+                   (OWQ_pn(owq_real).selected_filetype->ag) ? OWQ_pn(owq_real).selected_filetype->ag->elements : 1,
+                   (OWQ_pn(owq_real).selected_filetype->read == NO_READ_FUNCTION) ?
+                     ((OWQ_pn(owq_real).selected_filetype->write == NO_WRITE_FUNCTION) ? "oo" : "wo") :
+                     ((OWQ_pn(owq_real).selected_filetype->write == NO_WRITE_FUNCTION) ? "ro" : "rw") ,
+                   (int) FullFileLength(PN(owq_real))
                   );
     UCLIBCUNLOCK;
 
     if ( output_length <0 ) return -EFAULT ;
-
-    /* store value object in owq_copy --
-       if structure of an array, the pointer could get overwritten and cause a seg fault
-       on owq_destroy
-    */
-    memcpy( &OWQ_val(owq_copy), &OWQ_val(owq), sizeof ( union value_object ) ) ;
     
-    print_status = Fowq_output_offset_and_size( output_string, output_length, owq ) ;
-    
-    /* restore */
-    memcpy( &OWQ_val(owq), &OWQ_val(owq_copy), sizeof ( union value_object ) ) ;
+    OWQ_length(owq) = output_length ;
 
-    return print_status ;
+    return 0 ;
 }
 
 /* read without artificial separation or combination */
@@ -660,6 +648,12 @@ static int FS_read_mixed_part(struct one_wire_query * owq)
    4. Device is locked
    5. Cache should be consulted
 */
-int FS_read_sibling( struct one_wire_query * owq_shallow_copy, const char * property )
+int FS_read_sibling( struct one_wire_query * owq_shallow_copy, char * property )
 {
+    struct parsedname * pn = PN(owq_shallow_copy) ; // already set up with native device and property
+
+    if ( FS_ParseProperty_for_sibling( property, pn) ) return -ENOENT ;
+
+    return 0 ;
+
 }

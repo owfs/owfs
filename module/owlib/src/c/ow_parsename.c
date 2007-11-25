@@ -545,8 +545,8 @@ static enum parse_enum Parse_Property(char *filename,
 			pn->extension = EXTENSION_BYTE;	/* BYTE */
 			//printf("FP BYTE\n") ;
 
-		} else {
-			if (pn->selected_filetype->ag->letters == ag_letters) {
+		} else { /* specific extension */
+			if (pn->selected_filetype->ag->letters == ag_letters) { /* Letters */
 				//printf("FP letters\n") ;
 				if ((strlen(dot) != 1) || !isupper(dot[0]))
 					return parse_error;
@@ -554,24 +554,16 @@ static enum parse_enum Parse_Property(char *filename,
 			} else {			/* Numbers */
 				char *p;
 				//printf("FP numbers\n") ;
-				pn->extension = strtol(dot, &p, 0);	/* Number extension */
+				pn->extension = strtol(dot, &p, 0);	/* Number conversion */
 				if ((p == dot)
 					|| ((pn->extension == 0) && (errno == -EINVAL)))
 					return parse_error;	/* Bad number */
 			}
 			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
-			/*
-			 * We have to agree any extension from remote bus
-			 * otherwise /system/adapter/address.4 and
-			 * /statistics/bus/bus_locks.4 wouldn't be accepted
-			 * Should not be needed on known devices...
-			 */
-			if (IsRealDir(pn)) {
-				if ((pn->extension < 0)
-					|| (pn->extension >= pn->selected_filetype->ag->elements)) {
-					//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
-					return parse_error;	/* Extension out of range */
-				}
+			/* Now check range */
+			if ((pn->extension < 0) || (pn->extension >= pn->selected_filetype->ag->elements)) {
+				//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
+				return parse_error;	/* Extension out of range */
 			}
 			//printf("FP in range\n") ;
 		}
@@ -654,4 +646,10 @@ int FS_ParsedNamePlus(const char *path, const char *file,
 		//printf("PARSENAMEPLUS free\n") ;
 		return ret;
 	}
+}
+
+/* For read and write sibling -- much simpler requirements */
+int FS_ParseProperty_for_sibling( char *filename, struct parsedname *pn)
+{
+	return ( Parse_Property( filename, pn ) == parse_done ) ? 0 : 1 ;
 }
