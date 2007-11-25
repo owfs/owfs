@@ -203,14 +203,20 @@ static int FS_w_given_bus(struct one_wire_query * owq)
 		write_or_error = -ECONNABORTED;
 	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		write_or_error = ServerWrite(owq);
-	} else {
-		write_or_error = LockGet(pn) ;
-		if (write_or_error == 0) {
-			write_or_error = FS_w_local(owq);
-			LockRelease(pn);
-		}
-	}
-	return write_or_error;
+    } else if ( OWQ_pn(owq).type == ePN_real ) {
+        write_or_error = LockGet(pn) ;
+        if (write_or_error == 0) {
+            write_or_error = FS_w_local(owq);
+            LockRelease(pn);
+        }
+    } else if ( OWQ_pn(owq).type == ePN_interface ) {
+        BUSLOCK(pn) ;
+        write_or_error = FS_w_local(owq) ;
+        BUSUNLOCK(pn) ;
+    } else {
+        write_or_error = FS_w_local(owq) ;
+    }
+    return write_or_error;
 }
 
 /* return 0 if ok */

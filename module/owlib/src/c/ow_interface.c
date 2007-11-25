@@ -372,9 +372,7 @@ static int FS_stat_p(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
 
-    STATLOCK;
     OWQ_U(owq) = pn->selected_connection->bus_stat[pn->selected_filetype->data.i] ;
-    STATUNLOCK;
     return 0;
 }
 
@@ -392,10 +390,7 @@ static int FS_time_p(struct one_wire_query * owq)
         default:
             return -ENOENT;
     }
-    /* to prevent simultaneous changes to bus timing variables */
-    STATLOCK;
     OWQ_F(owq) = (_FLOAT) tv->tv_sec + ((_FLOAT) (tv->tv_usec / 1000)) / 1000.0;
-    STATUNLOCK;
     return 0;
 }
 
@@ -412,19 +407,13 @@ static int FS_time(struct one_wire_query * owq)
     if (tv == NULL)
         return -ENOENT;
 
-    /* to prevent simultaneous changes to bus timing variables */
-    STATLOCK;
     OWQ_F(owq) = (_FLOAT) tv[dindex].tv_sec +
             ((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
-    STATUNLOCK;
     return 0;
 }
 
 static int FS_elapsed(struct one_wire_query * owq)
 {
-	//printf("ELAPSE start=%u, now=%u, diff=%u\n",start_time,time(NULL),time(NULL)-start_time) ;
-	STATLOCK;
 	OWQ_U(owq) = time(NULL) - start_time;
-	STATUNLOCK;
 	return 0;
 }

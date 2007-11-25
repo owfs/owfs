@@ -284,18 +284,27 @@ static int FS_r_virtual(struct one_wire_query * owq)
 		read_status = ServerRead(owq);
 		LEVEL_DEBUG("FS_r_virtual -- back from server\n");
 		Debug_OWQ(owq) ;
-	} else {
+    } else {
+        /* local bus -- any special locking needs? */
 		STAT_ADD1(read_calls);  /* statistics */
-		if (LockGet(pn) == 0) {
-			read_status = FS_r_local(owq);  // this returns status
-			if ( read_status >= 0 ) {
-				// local success -- now format in buffer
-				read_status = FS_output_owq(owq) ; // this returns nr. bytes
-			}
-			LockRelease(pn);
-		} else {
-			read_status = -EADDRINUSE ;
-		}
+        switch ( OWQ_pn(owq).type ) {
+            case ePN_interface:
+                BUSLOCK(pn) ;
+                read_status = FS_r_local(owq);  // this returns status
+                BUSUNLOCK(pn) ;
+                break ;
+            case ePN_statistics:
+                STATLOCK ;
+                read_status = FS_r_local(owq);  // this returns status
+                STATUNLOCK ;
+                break ;
+            default:
+                read_status = FS_r_local(owq);  // this returns status
+        }
+        if ( read_status >= 0 ) {
+            // local success -- now format in buffer
+            read_status = FS_output_owq(owq) ; // this returns nr. bytes
+        }
 	}
 	LEVEL_DEBUG("FS_r_virtual return %d\n", read_status);
 	return read_status ;
@@ -640,4 +649,17 @@ static int FS_read_mixed_part(struct one_wire_query * owq)
 	OWQ_Cache_Del(owq_all) ;
 	OWQ_destroy_shallow_aggregate(owq_all) ;
 	return 0 ;
+}
+
+/* Read another property from the same device,
+   e.g. a flag status like IAD for vis measurement in the DS2438
+   Some things are different
+   1. Bus is known (since the original device is already determined)
+   2. Read is local
+   3. Bus is already locked
+   4. Device is locked
+   5. Cache should be consulted
+*/
+int FS_read_sibling( struct one_wire_query * owq_shallow_copy, const char * property )
+{
 }
