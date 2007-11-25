@@ -216,23 +216,6 @@ static int FS_r_given_bus(struct one_wire_query * owq)
 	LEVEL_DEBUG("FS_r_given_bus\n");
 	Debug_OWQ(owq) ;
 	
-#include <assert.h>
-assert(KnownBus(pn)) ;
-    if (!KnownBus(pn)) {
-		if(pn->type == ePN_settings) {
-			/* I think we have to do something here... */
-			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=ePN_settings!\n");
-		} else if(pn->type == ePN_system) {
-			/* I think we have to do something here... 
-			 * reading /system/adapter/name.0 works
-			 * reading /bus.0/system/adapter/name.0 works
-			 * writing /bus.0/system/adapter/overdrive.0 crash owfs
-			 */
-			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set and type=ePN_system!\n");
-		} else {
-			LEVEL_DEBUG("FS_r_given_bus: ERROR bus is not set! type=%d\n", pn->type);
-		}
-	}
 	if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		/* The bus is not local... use a network connection instead */
 #if OW_MT
