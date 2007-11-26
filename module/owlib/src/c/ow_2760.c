@@ -774,25 +774,37 @@ static int FS_w_vis_off(struct one_wire_query * owq)
 // Current bias -- using 25mOhm internal resistor
 static int FS_r_abias(struct one_wire_query * owq)
 {
-    int ret = FS_r_vbias(owq);
-    if ( ret ) return ret ;
-    OWQ_F(owq) = OWQ_F(owq) / .025;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+    
+    if ( FS_read_sibling( "vbias", owq_sibling) ) return -EINVAL ;
+
+    OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
 	return 0;
 }
 
 // Current bias -- using 25mOhm internal resistor
 static int FS_w_abias(struct one_wire_query * owq)
 {
-    OWQ_F(owq) = OWQ_F(owq) * .025;
-    return FS_w_vbias(owq);
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    OWQ_F(owq_sibling) = OWQ_F(owq) * .025;
+
+    return FS_write_sibling("vbias", owq_sibling) ? -EINVAL : 0 ;
 }
 
 // Read current using internal 25mOhm resistor and Vis
 static int FS_r_current(struct one_wire_query * owq)
 {
-    int ret = FS_r_vis(owq);
-    OWQ_F(owq) = OWQ_F(owq) / .025;
-	return ret;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    if ( FS_read_sibling( "vis", owq_sibling ) ) return -EINVAL ;
+    
+    OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
+	return 0;
 }
 
 static int FS_r_vbias(struct one_wire_query * owq)
@@ -1122,20 +1134,20 @@ static int FS_rangehigh(struct one_wire_query * owq)
 static int FS_thermocouple(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
+    struct thermocouple *thermo = (struct thermocouple *) pn->selected_filetype->data.v;
     _FLOAT T, V;
-	int ret;
-	struct thermocouple *thermo = (struct thermocouple *) pn->selected_filetype->data.v;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
 
-	/* Get reference temperature */
-	if ((ret = FS_r_temp(owq)))
-		return ret;				/* in C */
-    T = OWQ_F(owq) ;
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    /* Get measured voltage */
+    if ( FS_read_sibling( "vis", owq_sibling ) ) return -EINVAL ;
+    V = OWQ_F(owq_sibling) * 1000;                  /* convert Volts to mVolts */
     
-	/* Get measured voltage */
-	if ((ret = FS_r_vis(owq)))
-		return ret;
-    V = OWQ_F(owq) * 1000;					/* convert Volts to mVolts */
-
+    /* Get reference temperature */
+    if ( FS_read_sibling( "temperature", owq_sibling ) ) return -EINVAL ;
+    T = OWQ_F(owq_sibling) ;
+    
 	/* Correct voltage by adding reference temperature voltage */
 	V += polycomp(T, thermo->mV);
 
