@@ -312,6 +312,16 @@ static int FS_Humid_1735(struct one_wire_query * owq)
 
 static int FS_Current(struct one_wire_query * owq)
 {
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    if ( FS_read_sibling( "IAD", owq_sibling ) ) return -EINVAL ;
+    if ( OWQ_Y(owq_sibling) == 0 ) { // IAD is off
+        OWQ_Y(owq_sibling) = 1 ; // need to turn on IAD for current readings
+        if ( FS_write_sibling("IAD",owq_sibling ) ) return -EINVAL ;
+    }
+    
     if (OW_current(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
