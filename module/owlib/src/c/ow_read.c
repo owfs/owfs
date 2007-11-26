@@ -339,32 +339,32 @@ static int FS_r_local(struct one_wire_query * owq)
     /* Readable? */
     if ( pn->selected_filetype->read == NO_READ_FUNCTION )
         return -ENOTSUP;
-
+    
     /* Mounting fuse with "direct_io" will cause a second read with offset
-     * at end-of-file... Just return 0 if offset == size */
+        * at end-of-file... Just return 0 if offset == size */
     // This check is done in FS_output_owq() too, since it's always called when this function returns 0
     if(OWQ_offset(owq)) {
-      size_t file_length = 0;
-      if( PN(owq)->selected_filetype->format == ft_vascii) {
-	file_length = FileLength_vascii(owq);
-      } else {
-	file_length = FileLength(PN(owq));
-      }
-      LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
-		  (unsigned long)file_length, (unsigned long)OWQ_offset(owq), (unsigned long)OWQ_size(owq));
-      if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
+        size_t file_length = 0;
+        if( PN(owq)->selected_filetype->format == ft_vascii) {
+            file_length = FileLength_vascii(owq);
+        } else {
+            file_length = FileLength(PN(owq));
+        }
+        LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
+            (unsigned long)file_length, (unsigned long)OWQ_offset(owq), (unsigned long)OWQ_size(owq));
+        if ((unsigned long)OWQ_offset(owq) >= (unsigned long)file_length) {
         return 0;  // this is status ok... but 0 bytes were read...
-      }
+        }
     }
-
+    
     /* Special case for "fake" adapter */
     if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn))
         return FS_read_fake(owq);
-
+    
     /* Special case for "tester" adapter */
     if (pn->selected_connection->Adapter == adapter_tester && pn->selected_filetype->change != fc_static)
         return FS_read_tester(owq);
-
+    
     /* Array property? Read separately? Read together and manually separate? */
     if (pn->selected_filetype->ag) {           /* array property */
         switch (pn->extension) {
@@ -393,7 +393,7 @@ static int FS_r_local(struct one_wire_query * owq)
                 }
         }
     }
-
+    
     /* Normal read. */
     return FS_read_lump(owq);
 }
@@ -631,13 +631,25 @@ static int FS_read_mixed_part(struct one_wire_query * owq)
    3. Bus is already locked
    4. Device is locked
    5. Cache should be consulted
+
+   owq_shallow_copy comes in as a single, not aggregate, even if the original value was an aggregate
 */
-int FS_read_sibling( struct one_wire_query * owq_shallow_copy, char * property )
+int FS_read_sibling( char * property, struct one_wire_query * owq_shallow_copy)
 {
     struct parsedname * pn = PN(owq_shallow_copy) ; // already set up with native device and property
 
-    if ( FS_ParseProperty_for_sibling( property, pn) ) return -ENOENT ;
+    if ( FS_ParseProperty_for_sibling( property, pn ) ) return -ENOENT ;
 
-    return 0 ;
+    /* There are a few types that are not supported: binary, ascii, aggregates (.ALL) */
+    switch ( pn->selected_filetype->format ) {
+        case ft_vascii:
+        case ft_ascii:
+        case ft_binary:
+            return -ENOTSUP ;
+        default:
+            break ;
+    }
+    if ( pn->extension == EXTENSION_ALL ) return -ENOTSUP ;
 
+    return FS_r_local(owq_shallow_copy) ;
 }

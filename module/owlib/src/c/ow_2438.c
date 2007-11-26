@@ -224,40 +224,60 @@ static int FS_volts(struct one_wire_query * owq)
 
 static int FS_Humid(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq);
     _FLOAT T, VAD, VDD;
-	if (OW_volts(&VDD, 1, pn) || OW_volts(&VAD, 0, pn) || OW_temp(&T, pn))
-		return -EINVAL;
-	//*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
-	/*
-	   From: Vincent Fleming <vincef@penmax.com>
-	   To: owfs-developers@lists.sourceforge.net
-	   Date: Jun 7, 2006 8:53 PM
-	   Subject: [Owfs-developers] Error in Humidity calculation in ow_2438.c
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
 
-	   OK, this is a nit, but it will make owfs a little more accurate (admittedly, it’s not very significant difference)…
-	   The calculation given by Dallas for a DS2438/HIH-3610 combination is:
-	   Sensor_RH = (VAD/VDD) -0.16 / 0.0062
-	   And Honeywell gives the following:
-	   VAD = VDD (0.0062(sensor_RH) + 0.16), but they specify that VDD = 5V dc, at 25 deg C.
-	   Which is exactly what we have in owfs code (solved for Humidity, of course).
-	   Honeywell’s documentation explains that the HIH-3600 series humidity sensors produce a liner voltage response to humidity that is in the range of 0.8 Vdc to 3.8 Vdc (typical) and is proportional to the input voltage.
-	   So, the error is, their listed calculations don’t correctly adjust for varying input voltage.
-	   The .16 constant is 1/5 of 0.8 – the minimum voltage produced.  When adjusting for voltage (such as (VAD/VDD) portion), this constant should also be divided by the input voltage, not by 5 (the calibrated input voltage), as shown in their documentation.
-	   So, their documentation is a little wrong.
-	   The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
-	 */
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    if ( FS_read_sibling( "VAD", owq_sibling ) ) return -EINVAL ;
+    VAD = OWQ_F(owq_sibling) ;
+    
+    if ( FS_read_sibling( "temperature", owq_sibling ) ) return -EINVAL ;
+    T = OWQ_F(owq_sibling) ;
+
+    if ( FS_read_sibling( "VDD", owq_sibling ) ) return -EINVAL ;
+    VDD = OWQ_F(owq_sibling) ;
+
+    //*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
+    /*
+    From: Vincent Fleming <vincef@penmax.com>
+    To: owfs-developers@lists.sourceforge.net
+    Date: Jun 7, 2006 8:53 PM
+    Subject: [Owfs-developers] Error in Humidity calculation in ow_2438.c
+
+    OK, this is a nit, but it will make owfs a little more accurate (admittedly, it’s not very significant difference)…
+       The calculation given by Dallas for a DS2438/HIH-3610 combination is:
+    Sensor_RH = (VAD/VDD) -0.16 / 0.0062
+       And Honeywell gives the following:
+    VAD = VDD (0.0062(sensor_RH) + 0.16), but they specify that VDD = 5V dc, at 25 deg C.
+    Which is exactly what we have in owfs code (solved for Humidity, of course).
+    Honeywell’s documentation explains that the HIH-3600 series humidity sensors produce a liner voltage response to humidity that is in the range of 0.8 Vdc to 3.8 Vdc (typical) and is proportional to the input voltage.
+    So, the error is, their listed calculations don’t correctly adjust for varying input voltage.
+    The .16 constant is 1/5 of 0.8 – the minimum voltage produced.  When adjusting for voltage (such as (VAD/VDD) portion), this constant should also be divided by the input voltage, not by 5 (the calibrated input voltage), as shown in their documentation.
+    So, their documentation is a little wrong.
+    The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
+    */
     OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0546 - .00216 * T));
 
-	return 0;
+    return 0;
 }
 
 static int FS_Humid_4000(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq);
     _FLOAT T, VAD, VDD;
-	if (OW_volts(&VDD, 1, pn) || OW_volts(&VAD, 0, pn) || OW_temp(&T, pn))
-		return -EINVAL;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    if ( FS_read_sibling( "VAD", owq_sibling ) ) return -EINVAL ;
+    VAD = OWQ_F(owq_sibling) ;
+    
+    if ( FS_read_sibling( "temperature", owq_sibling ) ) return -EINVAL ;
+    T = OWQ_F(owq_sibling) ;
+
+    if ( FS_read_sibling( "VDD", owq_sibling ) ) return -EINVAL ;
+    VDD = OWQ_F(owq_sibling) ;
+
     OWQ_F(owq) =
 		(VAD / VDD -
 		 (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T +
@@ -277,10 +297,14 @@ static int FS_Humid_4000(struct one_wire_query * owq)
  */
 static int FS_Humid_1735(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq);
     _FLOAT VAD;
-	if (OW_volts(&VAD, 0, pn))
-		return -EINVAL;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    if ( FS_read_sibling( "VAD", owq_sibling ) ) return -EINVAL ;
+    VAD = OWQ_F(owq_sibling) ;
+    
     OWQ_F(owq) = 38.92 * VAD - 41.98;
 
 	return 0;
