@@ -145,7 +145,10 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 			ret = FS_alarmdir(dirfunc, v, pn_raw_directory) ;
 			LEVEL_DEBUG("Return from ALARM is %d\n",ret) ;
 		} else {
-			FS_interface_dir( dirfunc, v, pn_raw_directory ) ;
+			if ( pn_raw_directory->pathlength == 0 ) {
+                // only add funny directories for non-micro hub (DS2409) branches
+				FS_interface_dir( dirfunc, v, pn_raw_directory ) ;
+			}
 			/* Now get the actual devices */
 			ret = FS_cache2real(dirfunc, v, pn_raw_directory, flags) ;
 			/* simultaneous directory */
@@ -167,10 +170,13 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *),
 	  //printf("KNOWN_BUS\n");
 		// Not specified bus, so scan through all and print union
 		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
-		if ( (Global.opt != opt_server) || ShouldReturnBusList(pn_raw_directory) ) { 
-			FS_busdir(dirfunc,v,pn_raw_directory);
-			FS_uncached_dir(dirfunc,v,pn_raw_directory) ;
-			FS_stype_dir(dirfunc,v,pn_raw_directory) ;
+		if ( (Global.opt != opt_server) || ShouldReturnBusList(pn_raw_directory) ) {
+			if ( pn_raw_directory->pathlength == 0 ) {
+                // only add funny directories for non-micro hub (DS2409) branches
+				FS_busdir(dirfunc,v,pn_raw_directory);
+				FS_uncached_dir(dirfunc,v,pn_raw_directory) ;
+				FS_stype_dir(dirfunc,v,pn_raw_directory) ;
+			}
 			/* simultaneous directory */
 			if (flags[0] & (DEV_temp | DEV_volt)) {
 				FS_simultaneous_entry(dirfunc,v,pn_raw_directory) ;

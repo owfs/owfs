@@ -570,7 +570,7 @@ static enum parse_enum Parse_Property(char *filename,
 
 		//printf("FP Good\n") ;
 		switch (pn->selected_filetype->format) {
-		case ft_directory:
+            case ft_directory: // aux or main
 			if (BranchAdd(pn)) {
 				//printf("PN BranchAdd failed for %s\n", pn->path);
 				return parse_error;
