@@ -454,7 +454,6 @@ static int FS_write_a_bit(struct one_wire_query * owq)
 	return FS_write_single_lump(owq_single) ;
 }
 
-
 /* Write to another property from the same device,
    e.g. a flag status like IAD for vis measurement in the DS2438
    Some things are different

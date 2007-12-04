@@ -115,6 +115,8 @@ int Cache_Del_Internal(const struct internal_prop *ip,
 					   const struct parsedname *pn);
 void CookTheCache(void);
 
+void FS_cache_sibling( char * property, struct one_wire_query * owq_shallow_copy) ;
+
 #else							/* OW_CACHE */
 
 #define MakeInternalProp(tag)
@@ -145,6 +147,8 @@ void CookTheCache(void);
 #define Cache_Del_Internal(ip,pn )          (1)
 #define OWQ_Cache_Del( owq )                (1)
 #define CookTheCache()
+
+#define FS_cache_sibling( property, owq_shallow_copy)
 
 #endif							/* OW_CACHE */
 
