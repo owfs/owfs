@@ -230,20 +230,6 @@ int DS2480_detect(struct connection_in *in)
 	// Send BREAK to reset device
 	tcsendbreak(in->file_descriptor,0) ;
 
-	// set the FLEX configuration parameters
-	// copied shamelessly from Brian Lane's Digitemp
-	// default PDSRC = 1.37Vus
-	//setup[0] = CMD_CONFIG | PARMSEL_SLEW | PARMSET_Slew1p37Vus;
-	// default W1LT = 10us
-	setup[1] = CMD_CONFIG | PARMSEL_WRITE1LOW | PARMSET_Write10us;
-	// default DSO/WORT = 8us
-	setup[2] = CMD_CONFIG | PARMSEL_SAMPLEOFFSET | PARMSET_SampOff8us;
-	// construct the command to read the baud rate (to test command block)
-	setup[3] = CMD_CONFIG | PARMSEL_PARMREAD | (PARMSEL_BAUDRATE >> 3);
-	// also do 1 bit operation (to test 1-Wire block)
-	setup[4] = CMD_COMM | FUNCTSEL_BIT |
-	  DS2480_baud(in->connin.serial.speed, &pn) | BITPOL_ONE;
-
 	/* Reset the bus and adapter */
 	DS2480_reset(&pn);
 
@@ -273,12 +259,6 @@ int DS2480_detect(struct connection_in *in)
 	// flush the buffers
 	COM_flush(&pn);
 
-	// send the packet
-	// read back the response
-	if (DS2480_sendback_cmd(setup, setup, 5, &pn))
-		return -EIO;
-
-	
 	// default W1LT = 10us
 	if ( DS2480_configuration_code( PARMSEL_WRITE1LOW, PARMSET_Write10us, &pn ) ) return -EINVAL ;
 	// default DSO/WORT = 8us
