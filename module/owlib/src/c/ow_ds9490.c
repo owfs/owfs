@@ -86,7 +86,7 @@ static char *DS9490_device_name(const struct usb_list *ul);
 static int USB_Control_Msg( BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname * pn ) ;
 static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy) ;
 static int FindDiscrepancy( BYTE * last_sn ) ;
-static int DS9490_directory(struct device_search *ds, struct dirblob *db,
+static int DS9490_directory(int gulp_elements, struct device_search *ds, struct dirblob *db,
                             const struct parsedname *pn) ;
 static int DS9490_SetSpeed( const struct parsedname * pn ) ;
 
@@ -107,6 +107,8 @@ static void DS9490_setroutines(struct interface_routines *f)
 	f->transaction = NULL;
 	f->flags = 0;
 }
+
+#define DS2490_DIR_GULP_ELEMENTS     ((64/8) - 1)
 
 #define CONTROL_REQUEST_TYPE  0x40
 
@@ -887,7 +889,7 @@ static int DS9490_reset(const struct parsedname *pn)
 		DS9490_SetSpeed(pn) ; // reset paramters
 	}
 
-	memset(buffer, 0, 32);
+    memset(buffer, 0, 32);
 
     USpeed =  (pn->selected_connection->set_speed == bus_speed_slow) ?
             (pn->selected_connection->connin.usb.usb_flextime ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
@@ -951,12 +953,18 @@ static int DS9490_read(BYTE * buf, const size_t size,
 	return ret;
 }
 
+/* Fills the EP2 buffer in the USB adapter
+   returns number of bytes (size)
+   or <0 for an error */
 static int DS9490_write(BYTE * buf, const size_t size,
 						const struct parsedname *pn)
 {
 	int ret;
 	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 	//printf("DS9490_write\n");
+    
+    if ( size == 0 ) return 0 ;
+    
 	if ((ret =
 		 usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (const int) size,
 						pn->selected_connection->connin.usb.timeout)) > 0)
@@ -1010,8 +1018,6 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
  * return -ENOENT if no devices at all
  * return -EIO    on errors
  */
-#define DS2490_DIR_GULP_ELEMENTS     7
-#define DS2490_DIR_GULP_SIZE     (DS2490_DIR_GULP_ELEMENTS*8)
 
 static int DS9490_next_both(struct device_search *ds,
                             const struct parsedname *pn)
@@ -1019,6 +1025,7 @@ static int DS9490_next_both(struct device_search *ds,
     struct dirblob * db = (ds->search ==_1W_CONDITIONAL_SEARCH_ROM) ?
                 &(pn->selected_connection->connin.link.alarm) :
             &(pn->selected_connection->connin.link.main);
+    int gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
     int ret;
 
     if (!pn->selected_connection->AnyDevices)
@@ -1029,12 +1036,12 @@ static int DS9490_next_both(struct device_search *ds,
 
     LEVEL_DEBUG("Index %d\n",ds->index);
 
-    if ( ds->index % DS2490_DIR_GULP_ELEMENTS == 0 ) {
+    if ( ds->index % gulp_elements == 0 ) {
         if ( ds->LastDevice ) return -ENODEV ;
-        if ( (ret = DS9490_directory(ds,db,pn)) ) return ret ;
+        if ( (ret = DS9490_directory(gulp_elements,ds,db,pn)) ) return ret ;
     }
 
-    if ( (ret = DirblobGet (ds->index % DS2490_DIR_GULP_ELEMENTS, ds->sn, db)) ) return ret ;
+    if ( (ret = DirblobGet (ds->index % gulp_elements, ds->sn, db)) ) return ret ;
     
     /* test for special device families */
     switch (ds->sn[0]) {
@@ -1056,7 +1063,7 @@ static int DS9490_next_both(struct device_search *ds,
 
 // Read up to 7 (DS2490_DIR_GULP_ELEMENTS) at a time, and  place into
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
-static int DS9490_directory(struct device_search *ds, struct dirblob *db,
+static int DS9490_directory(int gulp_elements, struct device_search *ds, struct dirblob *db,
                             const struct parsedname *pn)
 {
     BYTE buffer[32];
@@ -1082,7 +1089,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db,
         return -EIO;
     }
     if ((ret = USB_Control_Msg(
-         COMM_CMD, COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS, (DS2490_DIR_GULP_ELEMENTS<<8)|(ds->search),
+         COMM_CMD, COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS, (gulp_elements<<8)|(ds->search),
     pn)) < 0) {
         LEVEL_DATA("USBdirectory control problem ret=%d\n", ret);
         return -EIO;
@@ -1101,13 +1108,13 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db,
         * which ends when ret!=0 */
         LEVEL_DATA("USBdirectory: ReadBufferstatus == 0\n");
         return -ENOENT;
-    } else if ( (bytes_back%8!=0) || (bytes_back>DS2490_DIR_GULP_SIZE+8) ) {
+    } else if ( (bytes_back%8!=0) || (bytes_back>(gulp_elements+1)*8) ) {
         LEVEL_DATA("USBdirectory: ReadBufferstatus %d not valid\n",bytes_back);
         return -EIO;
     }
 
     devices_found = bytes_back / 8 ;
-    if ( devices_found > DS2490_DIR_GULP_ELEMENTS ) devices_found = DS2490_DIR_GULP_ELEMENTS ;
+    if ( devices_found > gulp_elements ) devices_found = gulp_elements ;
     
     if ((ret = DS9490_read(cb, bytes_back, pn)) <= 0) {
         LEVEL_DATA("USBdirectory: bulk read problem ret=%d\n", ret);
@@ -1118,6 +1125,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db,
         BYTE sn[8] ;
         memcpy(sn, &cb[device_index*8], 8);
         /* test for CRC error */
+        LEVEL_DEBUG("DS9490 directory gulp. Adding element %d:" SNformat "\n",device_index,SNvar(&cb[device_index*8]));
         if ( CRC8(sn, 8)!=0 || sn[0]==0 ) {
             LEVEL_DATA("USBdirectory: CRC error\n");
             return -EIO;
@@ -1359,5 +1367,4 @@ static int DS9490_SetSpeed( const struct parsedname * pn )
     }
     return 0 ;
 }
-
 #endif							/* OW_USB */

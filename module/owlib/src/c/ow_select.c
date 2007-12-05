@@ -53,7 +53,7 @@ int BUS_select(const struct parsedname *pn)
 	// match Serial Number command 0x55
     BYTE sent[9] = { _1W_MATCH_ROM, };
 	int pl = pn->pathlength;
-
+	printf("SELECT WORK: pathlength=%d path=%s\n",pn->pathlength,pn->path);
     // if declared only a single device, we can use faster SKIP ROM command
     if (Global.one_device) {
         return BUS_Skip_Rom(pn) ;
@@ -166,7 +166,7 @@ static int BUS_select_subbranch(const struct buspath *bp,
 
 	memcpy(&sent[1], bp->sn, 8);
 	sent[9] = branch[bp->branch];
-	//printf("subbranch start\n");
+	LEVEL_DEBUG("Selecting subbranch " SNformat "\n", SNvar(bp->sn)) ;
 	if (BUS_transaction_nolock(t, pn) || (resp[2] != branch[bp->branch])) {
 			STAT_ADD1_BUS(e_bus_select_errors,pn->selected_connection) ;
 			LEVEL_CONNECT("Select subbranch error for %s on bus %s\n",pn->selected_device->readable_name,pn->selected_connection->name);
