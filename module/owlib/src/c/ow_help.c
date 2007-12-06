@@ -107,7 +107,7 @@ void ow_help_cache(void)
 		   " Cache timing         [default] (in seconds)\n"
 		   "  --timeout_volatile  [ 15] Expiration time for changing data (e.g. temperature)\n"
 		   "  --timeout_stable    [300] Expiration time for stable data (e.g. temperature limit)\n"
-		   "  --timout_directory  [ 60] Expiration of directory lists\n"
+		   "  --timeout_directory  [ 60] Expiration of directory lists\n"
 		   "  --timeout_presence  [120] Expiration of known 1-wire device location\n"
 		   " \n"
 		   " Communication timing [default] (in seconds)\n"
