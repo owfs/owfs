@@ -45,6 +45,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_2760.h"
+#include "ow_thermocouple.h"
 
 /* ------- Prototypes ----------- */
 
@@ -89,159 +90,47 @@ READ_FUNCTION(FS_rangelow);
 READ_FUNCTION(FS_rangehigh);
  /* ------- Structures ----------- */
 
-struct thermocouple {
-	_FLOAT v1, v2;
-	_FLOAT rangeLow, rangeHigh;
-	_FLOAT low[11];
-	_FLOAT mid[11];
-	_FLOAT high[11];
-	_FLOAT mV[11];
-};
-
-struct thermocouple type_b = {
-	0.437, 1.822, 0, 1820,
-	{-3.34549e+09, 7.57222e+09, -7.34952e+09, 3.9973e+09, -1.3362e+09,
-	 2.83366e+08, -3.80268e+07, 3.13466e+06, -151226, 4738.17, 31.9924,},
-	{-149.905, 1643.07, -7937.72, 22240.5, -40004.8, 48278.9, -39657.6,
-	 22027.5, -8104.23, 2140.22, -26.3893,},
-	{-1.10165e-08, 1.13612e-06, -5.18188e-05, 0.00138477, -0.024161,
-	 0.289846, -2.44837, 14.7621, -65.4035, 303.638, 201.601,},
-	{3.4607e-21, -1.54436e-18, 2.33598e-16, -6.23624e-15, -2.18387e-12,
-	 2.88144e-10, -1.60479e-08, 4.47121e-07, 1.95406e-07, -0.000227614,
-	 8.70069e-05,},
-};
-
-struct thermocouple type_e = {
-	-3.306, 9.86, -270, 1000,
-	{-0.00186348, -0.119593, -3.40982, -56.8497, -613.48, -4475.37,
-	 -22342.6, -75348.3, -164231, -208853, -117692,},
-	{-2.29826e-09, 4.45093e-08, 2.57026e-07, -1.17477e-05, 8.44013e-05,
-	 4.74888e-05, -0.00303068, 0.0185878, -0.248035, 17.057, 0.00354977,},
-	{-1.23525e-15, 4.71812e-13, -7.8381e-11, 7.53249e-09, -4.72537e-07,
-	 2.07906e-05, -0.000672767, 0.0167714, -0.340304, 17.683, -1.55323,},
-	{-1.07611e-22, 1.31153e-20, 4.65438e-18, -5.31167e-16, -7.78362e-14,
-	 7.82564e-12, 7.64931e-10, -1.21373e-07, 5.06679e-05, 0.0586129,
-	 -0.000325966,},
-};
-
-struct thermocouple type_j = {
-	14.055, 27.057, -210, 1200,
-	{-1.86216e-09, 7.06203e-08, -7.40759e-07, -1.68076e-06, 5.62956e-05,
-	 3.08928e-05, -0.00342003, 0.0233241, -0.217611, 19.8171, -0.0342962,},
-	{1.04705e-09, -2.12282e-07, 1.92779e-05, -0.00103258, 0.0361236,
-	 -0.8624, 14.2278, -160.156, 1177.08, -5082.05, 9897.53,},
-	{4.75069e-13, -2.37677e-10, 5.28345e-08, -6.86486e-06, 0.000576832,
-	 -0.0327315, 1.26987, -33.2645, 563.208, -5548.9, 24405.1,},
-	{-6.97491e-24, 1.3658e-21, 2.04292e-19, -5.09902e-17, -1.49481e-15,
-	 4.67638e-13, 1.34732e-10, -8.86546e-08, 3.04846e-05, 0.0503846,
-	 -1.05193e-06,},
-};
-
-struct thermocouple type_k = {
-	11.176, 22.691, -270, 1370,
-	{-2.46084e-07, 6.81532e-06, -4.21632e-05, -0.000322014, 0.00355914,
-	 0.0028323, -0.0906577, 0.124291, 0.192566, 24.9404, -0.722592,},
-	{-2.14528e-09, 3.38578e-07, -2.36415e-05, 0.000959251, -0.0249579,
-	 0.432955, -5.03485, 38.3162, -179.073, 470.662, -403.75,},
-	{1.22956e-13, -4.95882e-11, 8.73994e-09, -8.91551e-07, 5.85688e-05,
-	 -0.00259803, 0.0789352, -1.61945, 21.3873, -139.99, 562.639,},
-	{-6.76827e-23, 4.59786e-21, 3.02777e-18, -1.80296e-16, -5.00204e-14,
-	 2.58284e-12, 3.67046e-10, -1.31662e-07, 2.61205e-05, 0.0394427,
-	 -0.000165505,},
-};
-
-struct thermocouple type_n = {
-	-0.26, 7.631, -270, 1300,
-	{-0.384204, -8.51012, -81.238, -437.501, -1461.59, -3138.2, -4341.49,
-	 -3775.54, -1949.5, -493.211, -57.4264,},
-	{1.79316e-06, -7.06517e-05, 0.00119405, -0.0113121, 0.0659068,
-	 -0.244075, 0.574314, -0.793326, -0.362399, 38.3962, 0.0137761,},
-	{1.50132e-13, -3.64746e-11, 3.78312e-09, -2.17623e-07, 7.49952e-06,
-	 -0.000151796, 0.00137062, 0.0144983, -0.707806, 36.6116, 4.4746,},
-	{-1.67472e-22, -5.75376e-21, 7.87952e-18, 2.66768e-16, -1.44225e-13,
-	 -4.94289e-12, 1.51444e-09, 1.06098e-08, 1.15203e-05, 0.0260828,
-	 -0.000928019,},
-};
-
-struct thermocouple type_r = {
-	1.942, 12.687, -50, 1768,
-	{-2.97833, 28.6494, -117.396, 268.213, -377.551, 347.099, -226.83,
-	 130.345, -93.3971, 188.87, -0.0165138,},
-	{-1.1534e-08, 1.07402e-06, -4.2822e-05, 0.000981669, -0.0145961,
-	 0.149842, -1.09292, 5.68469, -22.0162, 151.516, 11.2428,},
-	{-1.60073e-06, 0.00027281, -0.020812, 0.936039, -27.4906, 550.959,
-	 -7632.14, 72164.2, -445780, 1.62479e+06, -2.65314e+06,},
-	{-2.61253e-22, 5.71644e-20, 4.54127e-18, -1.99547e-15, 1.3374e-13,
-	 3.09864e-12, -4.60676e-10, -1.99743e-08, 1.43025e-05, 0.00528674,
-	 3.13725e-05,},
-};
-
-struct thermocouple type_s = {
-	7.981, 11.483, -50, 1768,
-	{-6.46807e-05, 0.00270224, -0.0485888, 0.492361, -3.09548, 12.5625,
-	 -33.438, 59.3949, -76.2119, 186.708, -0.185908,},
-	{0.00082531, -0.0846629, 3.88937, -105.403, 1866.54, -22574, 188861,
-	 -1.07949e+06, 4.03486e+06, -8.90662e+06, 8.81855e+06,},
-	{-1.42197e-05, 0.00217057, -0.148489, 5.99566, -158.252, 2853.22,
-	 -35589.5, 303277, -1.68982e+06, 5.55955e+06, -8.20142e+06,},
-	{-3.61972e-22, 1.85682e-19, -3.38826e-17, 2.28563e-15, 2.46683e-14,
-	 -8.74753e-12, 2.22002e-10, -1.75089e-08, 1.24207e-05, 0.00540621,
-	 2.31793e-05,},
-};
-
-struct thermocouple type_t = {
-	-1.785, 2.556, -270, 400,
-	{-0.0856873, -3.35591, -58.1948, -587.947, -3829.53, -16790.4,
-	 -50151.1, -100705, -130042, -97452.3, -32202.6,},
-	{0.000151427, 3.35406e-05, -0.00372056, 0.00326535, 0.022672,
-	 -0.0222902, -0.0694538, 0.116881, -0.67161, 25.8257, -0.0024547,},
-	{-5.44871e-11, 6.49228e-09, -3.38465e-07, 1.02385e-05, -0.000201171,
-	 0.00272364, -0.0263712, 0.192645, -1.30813, 27.0402, -0.900659,},
-	{-1.1498e-22, 7.18468e-21, 5.31691e-18, -2.88407e-16, -9.51445e-14,
-	 4.02711e-12, 8.60657e-10, -5.74685e-08, 4.17544e-05, 0.0386747,
-	 -0.000253129,},
-};
 
 #define F_thermocouple  \
 {"typeB"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeB/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_b}, } , \
-{"typeB/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_b}, } , \
-{"typeB/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_b}, } , \
+{"typeB/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_b}, } , \
+{"typeB/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_b}, } , \
+{"typeB/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_b}, } , \
     \
 {"typeE"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeE/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_e}, } , \
-{"typeE/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_e}, } , \
-{"typeE/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_e}, } , \
+{"typeE/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_e}, } , \
+{"typeE/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_e}, } , \
+{"typeE/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_e}, } , \
     \
 {"typeJ"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeJ/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_j}, } , \
-{"typeJ/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_j}, } , \
-{"typeJ/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_j}, } , \
+{"typeJ/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_j}, } , \
+{"typeJ/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_j}, } , \
+{"typeJ/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_j}, } , \
     \
 {"typeK"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeK/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_k}, } , \
-{"typeK/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_k}, } , \
-{"typeK/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_k}, } , \
+{"typeK/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_k}, } , \
+{"typeK/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_k}, } , \
+{"typeK/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_k}, } , \
     \
 {"typeN"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeN/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_n}, } , \
-{"typeN/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_n}, } , \
-{"typeN/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_n}, } , \
+{"typeN/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_n}, } , \
+{"typeN/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_n}, } , \
+{"typeN/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_n}, } , \
     \
 {"typeR"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeR/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_r}, } , \
-{"typeR/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_r}, } , \
-{"typeR/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_r}, } , \
+{"typeR/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_r}, } , \
+{"typeR/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_r}, } , \
+{"typeR/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_r}, } , \
     \
 {"typeS"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeS/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_s}, } , \
-{"typeS/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_s}, } , \
-{"typeS/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_s}, } , \
+{"typeS/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_s}, } , \
+{"typeS/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_s}, } , \
+{"typeS/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_s}, } , \
     \
 {"typeT"            ,PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , {v:NULL}, } , \
-{"typeT/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {v:&type_t}, } , \
-{"typeT/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {v:&type_t}, } , \
-{"typeT/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {v:&type_t}, } ,
+{"typeT/temperature",PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_t}, } , \
+{"typeT/range_low"  ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_t}, } , \
+{"typeT/range_high" ,PROPERTY_LENGTH_TEMP, NULL,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_t}, } ,
 
 #else							/* OW_THERMOCOUPLE */
 #define F_thermocouple
@@ -1117,59 +1006,36 @@ static int OW_lock(const struct parsedname *pn)
 }
 
 #if OW_THERMOCOUPLE
-static _FLOAT polycomp(_FLOAT x, _FLOAT * coef);
-
 static int FS_rangelow(struct one_wire_query * owq)
 {
-    OWQ_F(owq) = ((struct thermocouple *) OWQ_pn(owq).selected_filetype->data.v)->rangeLow;
+	OWQ_F(owq) = Thermocouple_range_low( OWQ_pn(owq).selected_filetype->data.i) ;
 	return 0;
 }
 
 static int FS_rangehigh(struct one_wire_query * owq)
 {
-    OWQ_F(owq) = ((struct thermocouple *) OWQ_pn(owq).selected_filetype->data.v)->rangeHigh;
+	OWQ_F(owq) = Thermocouple_range_high( OWQ_pn(owq).selected_filetype->data.i) ;
 	return 0;
 }
 
 static int FS_thermocouple(struct one_wire_query * owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    struct thermocouple *thermo = (struct thermocouple *) pn->selected_filetype->data.v;
-    _FLOAT T, V;
-    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
-
-    OWQ_create_shallow_single( owq_sibling, owq) ;
-
-    /* Get measured voltage */
-    if ( FS_read_sibling( "vis", owq_sibling ) ) return -EINVAL ;
-    V = OWQ_F(owq_sibling) * 1000;                  /* convert Volts to mVolts */
-    
-    /* Get reference temperature */
-    if ( FS_read_sibling( "temperature", owq_sibling ) ) return -EINVAL ;
-    T = OWQ_F(owq_sibling) ;
-    
-	/* Correct voltage by adding reference temperature voltage */
-	V += polycomp(T, thermo->mV);
-
-	/* Find right range, them compute temparature from voltage */
-	if (V < thermo->v1) {
-        OWQ_F(owq) = polycomp(V, thermo->low);
-	} else if (V < thermo->v2) {
-        OWQ_F(owq) = polycomp(V, thermo->mid);
-	} else {
-        OWQ_F(owq) = polycomp(V, thermo->high);
-	}
+	struct parsedname * pn = PN(owq) ;
+	_FLOAT T_coldjunction, mV;
+	OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+	
+	OWQ_create_shallow_single( owq_sibling, owq) ;
+	
+	/* Get measured voltage */
+	if ( FS_read_sibling( "vis", owq_sibling ) ) return -EINVAL ;
+	mV = OWQ_F(owq_sibling) * 1000;                  /* convert Volts to mVolts */
+	
+	/* Get cold junction temperature */
+	if ( FS_read_sibling( "temperature", owq_sibling ) ) return -EINVAL ;
+	T_coldjunction = OWQ_F(owq_sibling) ;
+	
+	OWQ_F(owq) = ThermocoupleTemperature( mV, T_coldjunction, OWQ_pn(owq).selected_filetype->data.i );
 
 	return 0;
-}
-
-/* Compute a 10th order polynomial with cooef being a10, a9, ... a0 */
-static _FLOAT polycomp(_FLOAT x, _FLOAT * coef)
-{
-	_FLOAT r = coef[0];
-	int i;
-	for (i = 1; i <= 10; ++i)
-		r = x * r + coef[i];
-	return r;
 }
 #endif							/* OW_THERMOCOUPLE */

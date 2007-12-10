@@ -92,6 +92,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_tcp_read.c     \
                ow_temp.c         \
                ow_testerread.c   \
+               ow_thermocouple.c \
                ow_tree.c         \
                ow_transaction.c  \
                ow_util.c         \

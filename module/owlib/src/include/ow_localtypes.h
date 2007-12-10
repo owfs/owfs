@@ -68,6 +68,8 @@ $Id$
 #ifndef OW_LOCALTYPES_H					/* tedious wrapper */
 #define OW_LOCALTYPES_H
 
+#include <time.h>
+
 /* Floating point */
 /* I hate to do this, making everything a double */
 /* The compiler complains mercilessly, however */
