@@ -12,8 +12,14 @@ memmory, temperature, voltage, switches
 Java iButtons and SHA encryption is unsupported. All other 1-wire
 slaves are supported).
 
-We support serial and USB adapters (as well as a separate backend: owserver).
+We support serial, i2c, ethernet and USB adapters (as well as a separate backend: owserver).
 
 We support multiple adapters and clients.
 
 We have caching, simultaneous conversion, multithreading.
+
+We have clients for the owserver that are light weight, platform independent,
+for the shell, perl, python, Visual Basic, Java, ...
+
+We have monitoring programs: owmon and owtap
+

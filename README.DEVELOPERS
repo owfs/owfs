@@ -58,10 +58,8 @@ http://www.ibutton.com
 Developer mailing list (quite active):
 http://lists.sf.net/lists/listinfo/owfs-developers
 
-OWFS website has design information, specifically:
-Component flowchart: http://owfs.sf.net/OWFS_Components.html
-1-wire devices supported: http://owfs.sf.net/ow_table.html
-Example shell scripts: http://owfs.sf.net/shell_hints.html
+OWFS website has design information:
+http://www.owfs.org Especially under the Advanced menu
 
 ------------------------
 2. Packaging
@@ -92,7 +90,7 @@ that - too many opportunities to screw up.
 ------------------------
 3. Contacts
 ------------------------
-Paul Alfille (palfille@earthlink.net)
+Paul Alfille (paul.alfille@gmail.com)
 OWFS sourceforge site (http://www.owfs.org)
 
 ------------------------

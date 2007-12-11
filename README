@@ -41,4 +41,9 @@ If you downloaded the source package:
   make install
   /opt/owfs/bin/owfs -d /dev/ttyS0 /mnt/1wire (for example)
   
+---
+  
+  For more information:
+  http://www.owfs.org
+
   
