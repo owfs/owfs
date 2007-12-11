@@ -155,19 +155,20 @@ static int BUS_select_branch(const struct parsedname *pn)
 static int BUS_select_subbranch(const struct buspath *bp,
 								const struct parsedname *pn)
 {
-    BYTE sent[10] = { _1W_MATCH_ROM, };
+    BYTE sent[11] = { _1W_MATCH_ROM, };
     BYTE branch[2] = { _1W_SMART_ON_MAIN, _1W_SMART_ON_AUX, };	/* Main, Aux */
-	BYTE resp[3];
+	BYTE resp[2];
 	struct transaction_log t[] = {
-        TRXN_WRITE(sent,10),
-        TRXN_READ3(resp),
+        TRXN_WRITE(sent,11),
+        TRXN_READ2(resp),
 		TRXN_END,
 	};
 
 	memcpy(&sent[1], bp->sn, 8);
 	sent[9] = branch[bp->branch];
+    sent[10] = 0xFF ;
 	LEVEL_DEBUG("Selecting subbranch " SNformat "\n", SNvar(bp->sn)) ;
-	if (BUS_transaction_nolock(t, pn) || (resp[2] != branch[bp->branch])) {
+	if (BUS_transaction_nolock(t, pn) || (resp[1] != branch[bp->branch])) {
 			STAT_ADD1_BUS(e_bus_select_errors,pn->selected_connection) ;
 			LEVEL_CONNECT("Select subbranch error for %s on bus %s\n",pn->selected_device->readable_name,pn->selected_connection->name);
 		return 1;
