@@ -39,24 +39,29 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp,
 static int DS2480_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn);
-static void DS2480_setroutines(struct interface_routines *f);
+static int DS2480_setroutines(struct connection_in * in);
 static int DS2480_configuration_code( BYTE parameter_code, BYTE value_code, const struct parsedname * pn ) ;
 static int DS2480_stop_pulse( BYTE * response, const struct parsedname * pn ) ;
 
-static void DS2480_setroutines(struct interface_routines *f)
+static int DS2480_setroutines(struct connection_in * in)
 {
-	f->detect = DS2480_detect;
-	f->reset = DS2480_reset;
-	f->next_both = DS2480_next_both;
-	f->PowerByte = DS2480_PowerByte;
-	f->ProgramPulse = DS2480_ProgramPulse;
-	f->sendback_data = DS2480_sendback_data;
-//    f->sendback_bits = ;
-	f->select = NULL;
-	f->reconnect = NULL;		// use "detect"
-	f->close = COM_close;
-	f->transaction = NULL;
-	f->flags = 0;
+	in->iroutines.detect = DS2480_detect;
+    in->iroutines.reset = DS2480_reset;
+    in->iroutines.next_both = DS2480_next_both;
+    in->iroutines.PowerByte = DS2480_PowerByte;
+    in->iroutines.ProgramPulse = DS2480_ProgramPulse;
+    in->iroutines.sendback_data = DS2480_sendback_data;
+//    in->iroutines.sendback_bits = ;
+    in->iroutines.select = NULL;
+    in->iroutines.reconnect = NULL;		// use "detect"
+    in->iroutines.close = COM_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags = 0;
+    in->combuffer_length = UART_FIFO_SIZE ;
+    if ( in->combuffer == NULL ) {
+        in->combuffer = malloc(in->combuffer_length ) ;
+    }
+    return (in->combuffer==NULL) ? -ENOMEM : 0 ;
 }
 
 /* --------------------------- */
@@ -213,13 +218,14 @@ int DS2480_detect(struct connection_in *in)
 	struct parsedname pn;
 	BYTE timing = 0xC1;
 	int ret;
-	BYTE setup[5];
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
 	/* Set up low-level routines */
-	DS2480_setroutines(&(in->iroutines));
+    if ( DS2480_setroutines(in) ) {
+            return -ENOMEM ;
+    }
 
 	/* Open the com port in 9600 Baud.
 	 * This will set in->connin.serial.speed which is used below.
@@ -267,11 +273,9 @@ int DS2480_detect(struct connection_in *in)
 	if ( DS2480_configuration_code( PARMSEL_5VPULSE, PARMSET_infinite, &pn ) ) return -EINVAL;
 	// Program pulse duration = 512usec
 	if ( DS2480_configuration_code( PARMSEL_12VPULSE, PARMSET_512us, &pn ) ) return -EINVAL;
-
-	//printf("2480Detect response: %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
-	/* Apparently need to reset again to get the version number properly */
-
-	if ((ret = DS2480_reset(&pn))) {
+	
+    /* Apparently need to reset again to get the version number properly */
+    if ((ret = DS2480_reset(&pn))) {
 		return ret;
 	}
 	in->busmode = bus_serial;

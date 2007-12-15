@@ -99,6 +99,7 @@ extern int global_count_tester_busses;
 #define USB_FIFO_READ 0
 #define USB_FIFO_WRITE USB_FIFO_EACH
 #define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
+#define HA7_FIFO_SIZE 20000
 
 #if USB_FIFO_SIZE > UART_FIFO_SIZE
 #define MAX_FIFO_SIZE USB_FIFO_SIZE
@@ -372,7 +373,8 @@ struct connection_in {
 	/* Static buffer for serial conmmunications */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */
-	BYTE combuffer[MAX_FIFO_SIZE];
+    size_t combuffer_length ;
+    BYTE * combuffer ;
 	union {
 		struct connin_serial serial;
 		struct connin_link link;

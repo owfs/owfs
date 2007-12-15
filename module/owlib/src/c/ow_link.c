@@ -48,25 +48,27 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 							const struct parsedname *pn);
 static int LINK_CR(const struct parsedname *pn);
-static void LINK_setroutines(struct interface_routines *f);
+static int LINK_setroutines(struct connection_in *in);
 static void LINK_close (struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, 
 			  const struct parsedname *pn);
 
-static void LINK_setroutines(struct interface_routines *f)
+static int LINK_setroutines(struct connection_in *in)
 {
-	f->detect = LINK_detect;
-	f->reset = LINK_reset;
-	f->next_both = LINK_next_both;
-	f->PowerByte = LINK_PowerByte;
-//    f->ProgramPulse = ;
-	f->sendback_data = LINK_sendback_data;
-//    f->sendback_bits = ;
-	f->select = NULL;
-	f->reconnect = NULL;
-	f->close = LINK_close;
-	f->transaction = NULL;
-	f->flags = ADAP_FLAG_2409path;
+	in->iroutines.detect = LINK_detect;
+    in->iroutines.reset = LINK_reset;
+    in->iroutines.next_both = LINK_next_both;
+    in->iroutines.PowerByte = LINK_PowerByte;
+//    in->iroutines.ProgramPulse = ;
+    in->iroutines.sendback_data = LINK_sendback_data;
+//    in->iroutines.sendback_bits = ;
+    in->iroutines.select = NULL;
+    in->iroutines.reconnect = NULL;
+    in->iroutines.close = LINK_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags = ADAP_FLAG_2409path;
+    in->combuffer_length = 0 ; // no buffer needed
+    return 0 ;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
@@ -83,7 +85,9 @@ int LINK_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	/* Set up low-level routines */
-	LINK_setroutines(&(in->iroutines));
+    if ( LINK_setroutines(in) ) {
+        return -ENOMEM ;
+    }
 
 	/* Initialize dir-at-once structures */
 	DirblobInit (&(in->connin.link.main));

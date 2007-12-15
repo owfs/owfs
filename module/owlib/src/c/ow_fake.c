@@ -29,29 +29,32 @@ static void Fake_close(struct connection_in *in);
 static int Fake_next_both(struct device_search *ds,
 						  const struct parsedname *pn);
 static const ASCII *namefind(const char *name);
-static void Fake_setroutines(struct interface_routines *f) ;
-static void Tester_setroutines(struct interface_routines *f) ;
+static int Fake_setroutines(struct connection_in *in) ;
+static int Tester_setroutines(struct connection_in *in) ;
 
-static void Fake_setroutines(struct interface_routines *f)
+static int Fake_setroutines(struct connection_in *in)
 {
-    f->detect = Fake_detect;
-    f->reset = Fake_reset;
-    f->next_both = Fake_next_both;
-    f->PowerByte = NULL;
-    f->ProgramPulse = Fake_ProgramPulse;
-    f->sendback_data = NULL;
-    f->sendback_bits = Fake_sendback_bits;
-    f->select = NULL;
-    f->reconnect = NULL;
-    f->close = Fake_close;
-    f->transaction = NULL;
-    f->flags = ADAP_FLAG_2409path;
+    in->iroutines.detect = Fake_detect;
+    in->iroutines.reset = Fake_reset;
+    in->iroutines.next_both = Fake_next_both;
+    in->iroutines.PowerByte = NULL;
+    in->iroutines.ProgramPulse = Fake_ProgramPulse;
+    in->iroutines.sendback_data = NULL;
+    in->iroutines.sendback_bits = Fake_sendback_bits;
+    in->iroutines.select = NULL;
+    in->iroutines.reconnect = NULL;
+    in->iroutines.close = Fake_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags = ADAP_FLAG_2409path;
+    in->combuffer_length = 0 ; // no buffer needed
+    return 0 ;
 }
 
-static void Tester_setroutines(struct interface_routines *f)
+static int Tester_setroutines(struct connection_in *in )
 {
-    Fake_setroutines(f) ;
-    f->detect = Fake_detect;
+    Fake_setroutines(in) ;
+    in->iroutines.detect = Fake_detect;
+    return 0 ;
 }
 
 /* Device-specific functions */
@@ -63,7 +66,7 @@ int Fake_detect(struct connection_in *in)
     ASCII *oldname = in->name;
 
     in->file_descriptor = global_count_fake_busses;
-    Fake_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
+    Fake_setroutines(in); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.fake.db));
     in->adapter_name = "Simulated-Random";
@@ -112,7 +115,7 @@ int Tester_detect(struct connection_in *in)
     ASCII *oldname = in->name;
 
     in->file_descriptor = global_count_tester_busses;
-    Tester_setroutines(&in->iroutines); // set up close, reconnect, reset, ...
+    Tester_setroutines(in); // set up close, reconnect, reset, ...
 
     DirblobInit(&(in->connin.tester.db));
     in->adapter_name = "Simulated-Computed";

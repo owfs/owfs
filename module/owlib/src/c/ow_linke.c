@@ -30,24 +30,26 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 							  const size_t len,
 							  const struct parsedname *pn);
-static void LINKE_setroutines(struct interface_routines *f);
+static int LINKE_setroutines(struct connection_in *in);
 static int LINKE_preamble(const struct parsedname *pn);
 static void LINKE_close(struct connection_in *in);
 
-static void LINKE_setroutines(struct interface_routines *f)
+static int LINKE_setroutines(struct connection_in * in)
 {
-	f->detect = LINKE_detect;
-	f->reset = LINK_reset;
-	f->next_both = LINK_next_both;
-	f->PowerByte = LINK_PowerByte;
-//    f->ProgramPulse = ;
-	f->sendback_data = LINK_sendback_data;
-//    f->sendback_bits = ;
-	f->select = NULL;
-	f->reconnect = NULL;
-	f->close = LINKE_close;
-	f->transaction = NULL;
-	f->flags = ADAP_FLAG_2409path;
+	in->iroutines.detect = LINKE_detect;
+    in->iroutines.reset = LINK_reset;
+    in->iroutines.next_both = LINK_next_both;
+    in->iroutines.PowerByte = LINK_PowerByte;
+//    in->iroutines.ProgramPulse = ;
+    in->iroutines.sendback_data = LINK_sendback_data;
+//    in->iroutines.sendback_bits = ;
+    in->iroutines.select = NULL;
+    in->iroutines.reconnect = NULL;
+    in->iroutines.close = LINKE_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags = ADAP_FLAG_2409path;
+    in->combuffer_length = 0 ; // no buffer needed
+    return 0 ;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
@@ -61,7 +63,9 @@ int LINKE_detect(struct connection_in *in)
 	pn.selected_connection = in;
 	LEVEL_CONNECT("LinkE detect\n");
 	/* Set up low-level routines */
-	LINKE_setroutines(&(in->iroutines));
+    if (LINKE_setroutines(in)) {
+        return -ENOMEM ;
+    }
 
     if (in->name ==
         NULL)

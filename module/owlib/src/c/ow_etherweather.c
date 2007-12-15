@@ -226,20 +226,23 @@ static int EtherWeather_reset(const struct parsedname *pn) {
 	return 0;
 }
 
-static void EtherWeather_setroutines(struct interface_routines *f) {
-	f->detect = EtherWeather_detect;
-	f->reset = EtherWeather_reset;
-	f->next_both = EtherWeather_next_both;
-	f->PowerByte = EtherWeather_PowerByte;
-//    f->ProgramPulse = ;
-	f->sendback_data = EtherWeather_sendback_data;
-	f->sendback_bits = EtherWeather_sendback_bits;
-	f->select = NULL;
-	f->reconnect = NULL;
-	f->close = EtherWeather_close;
-	f->transaction = NULL;
-	f->flags =
+static int EtherWeather_setroutines(struct connection_in *in) {
+    struct interface_routines f = in->iroutines ;
+    in->iroutines.detect = EtherWeather_detect;
+    in->iroutines.reset = EtherWeather_reset;
+    in->iroutines.next_both = EtherWeather_next_both;
+    in->iroutines.PowerByte = EtherWeather_PowerByte;
+//    in->iroutines.ProgramPulse = ;
+    in->iroutines.sendback_data = EtherWeather_sendback_data;
+    in->iroutines.sendback_bits = EtherWeather_sendback_bits;
+    in->iroutines.select = NULL;
+    in->iroutines.reconnect = NULL;
+    in->iroutines.close = EtherWeather_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags =
 		ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
+    in->combuffer_length = 0 ; // no buffer needed
+    return 0 ;
 }
 
 int EtherWeather_detect(struct connection_in *in) {
@@ -252,7 +255,7 @@ int EtherWeather_detect(struct connection_in *in) {
 	LEVEL_CONNECT("Connecting to EtherWeather\n");
 
 	/* Set up low-level routines */
-	EtherWeather_setroutines(&(in->iroutines));
+	EtherWeather_setroutines(in);
 
 	if (in->name == NULL)
 		return -1;

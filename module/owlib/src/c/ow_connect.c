@@ -55,6 +55,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 	if (now) {
 		if (in) {
 			memcpy(now, in, len);
+            now->combuffer = NULL ;
 		} else {
 			memset(now, 0, len);
 		}
@@ -165,6 +166,10 @@ void FreeIn(void)
 		default:
 			break;
 		}
+        if (now->combuffer) {
+            free(now->combuffer) ;
+            now->combuffer = NULL ;
+        }
 		if (now->name) {
 			free(now->name);
 			now->name = NULL;

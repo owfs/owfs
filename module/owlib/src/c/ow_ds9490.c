@@ -69,7 +69,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn);
 static int DS9490_HaltPulse(const struct parsedname *pn) ;
-static void DS9490_setroutines(struct interface_routines *f);
+static int DS9490_setroutines(struct connection_in *in);
 static int DS9490_detect_low(const struct parsedname *pn);
 static int DS9490_detect_found(struct usb_list *ul,
 							   const struct parsedname *pn);
@@ -92,20 +92,26 @@ static int DS9490_SetSpeed( const struct parsedname * pn ) ;
 
 
 /* Device-specific routines */
-static void DS9490_setroutines(struct interface_routines *f)
+static int DS9490_setroutines(struct connection_in *in)
 {
-	f->detect = DS9490_detect;
-	f->reset = DS9490_reset;
-	f->next_both = DS9490_next_both;
-	f->PowerByte = DS9490_PowerByte;
-	f->ProgramPulse = DS9490_ProgramPulse;
-	f->sendback_data = DS9490_sendback_data;
-//    f->sendback_bits = ;
-	f->select = NULL;
-	f->reconnect = DS9490_reconnect;
-	f->close = DS9490_close;
-	f->transaction = NULL;
-	f->flags = 0;
+    in->iroutines.detect = DS9490_detect;
+    in->iroutines.reset = DS9490_reset;
+    in->iroutines.next_both = DS9490_next_both;
+    in->iroutines.PowerByte = DS9490_PowerByte;
+    in->iroutines.ProgramPulse = DS9490_ProgramPulse;
+    in->iroutines.sendback_data = DS9490_sendback_data;
+//    in->iroutines.sendback_bits = ;
+    in->iroutines.select = NULL;
+    in->iroutines.reconnect = DS9490_reconnect;
+    in->iroutines.close = DS9490_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags = 0;
+
+    in->combuffer_length = USB_FIFO_SIZE ;
+    if ( in->combuffer == NULL ) {
+        in->combuffer = malloc(in->combuffer_length) ;
+    }
+    return ( in->combuffer == NULL ) ? -ENOMEM : 0 ;
 }
 
 #define DS2490_DIR_GULP_ELEMENTS     ((64/8) - 1)
@@ -294,7 +300,9 @@ int DS9490_detect(struct connection_in *in)
 	struct parsedname pn;
 	int ret;
 
-	DS9490_setroutines(&in->iroutines);	// set up close, reconnect, reset, ...
+    if ( DS9490_setroutines(in) ) { // set up close, reconnect, reset, ...
+        return -ENOMEM ;
+    }
 	in->name = badUSBname;		// initialized
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
@@ -481,7 +489,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 			} else {
 				LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n",
 							  pn->selected_connection->name);
-				DS9490_setroutines(&pn->selected_connection->iroutines);
+				DS9490_setroutines(pn->selected_connection);
 				pn->selected_connection->Adapter = adapter_DS9490;	/* OWFS assigned value */
 				pn->selected_connection->adapter_name = "DS9490";
 

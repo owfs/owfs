@@ -46,26 +46,31 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
 							 const size_t len,
 							 const struct parsedname *pn);
 static int HA7_select(const struct parsedname *pn);
-static void HA7_setroutines(struct interface_routines *f);
+static int HA7_setroutines(struct connection_in *in);
 static void HA7_close(struct connection_in *in);
 static int HA7_directory(BYTE search, struct dirblob *db,
 						 const struct parsedname *pn);
 
-static void HA7_setroutines(struct interface_routines *f)
+static int HA7_setroutines(struct connection_in *in)
 {
-	f->detect = HA7_detect;
-	f->reset = HA7_reset;
-	f->next_both = HA7_next_both;
-	f->PowerByte = NULL;
-//    f->ProgramPulse = ;
-	f->sendback_data = HA7_sendback_data;
-//    f->sendback_bits = ;
-	f->select = HA7_select;
-	f->reconnect = NULL;
-	f->close = HA7_close;
-	f->transaction = NULL;
-	f->flags =
+	in->iroutines.detect = HA7_detect;
+    in->iroutines.reset = HA7_reset;
+    in->iroutines.next_both = HA7_next_both;
+    in->iroutines.PowerByte = NULL;
+//    in->iroutines.ProgramPulse = ;
+    in->iroutines.sendback_data = HA7_sendback_data;
+//    in->iroutines.sendback_bits = ;
+    in->iroutines.select = HA7_select;
+    in->iroutines.reconnect = NULL;
+    in->iroutines.close = HA7_close;
+    in->iroutines.transaction = NULL;
+    in->iroutines.flags =
 		ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
+    in->combuffer_length = HA7_FIFO_SIZE ;
+    if ( in->combuffer == NULL ) {
+        in->combuffer = malloc( in->combuffer_length ) ;
+    }
+    return (in->combuffer==NULL) ? -ENOMEM : 0 ;
 }
 
 int HA7_detect(struct connection_in *in)
@@ -78,7 +83,9 @@ int HA7_detect(struct connection_in *in)
 	pn.selected_connection = in;
 	LEVEL_CONNECT("HA7 detect\n");
 	/* Set up low-level routines */
-	HA7_setroutines(&(in->iroutines));
+    if ( HA7_setroutines(in) ) {
+        return -ENOMEM ;
+    }
 	in->connin.ha7.locked = 0;
 	/* Initialize dir-at-once structures */
 	DirblobInit(&(in->connin.ha7.main));
