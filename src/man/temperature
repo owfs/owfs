@@ -1,0 +1,9 @@
+.SH TEMPERATURE SCALE OPTIONS
+.SS \-C \-\-Celsius 
+.SS \-F \-\-Fahrenheit 
+.SS \-K \-\-Kelvin 
+.SS \-R \-\-Rankine
+Temperature scale used for data output. Celsius is the default.
+.PP
+Can also be changed within the program at
+.I /settings/units/temperature_scale

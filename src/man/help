@@ -1,0 +1,22 @@
+.SH HELP OPTIONS
+See also this man page and the web site http://www.owfs.org
+.SS \-h \-\-help=[device|cache|program|job|temperature]
+Shows basic summary of options.
+.TP
+.I device
+1-wire bus master options
+.TP
+.I cache
+cache and communication size and timing
+.TP
+.I program
+mountpoint or TCP server settings
+.TP
+.I job
+control and debugging options
+.TP
+.I temperature
+Unique ID display format and temperature scale
+.SS \-V \-\-version
+.I Version
+of this program and related libraries.

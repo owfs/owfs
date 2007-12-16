@@ -3,8 +3,6 @@
 Name of a
 .B owfs (5)
 configuration file with more command line parameters
-.SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
-Temperature scale used for data output. Celsius is the default.
 .SS \-r \-\-readonly
 .SS \-w \-\-write
 Do we allow writing to the 1-wire bus (writing memory, setting switches, limits, PIOs)? The
@@ -35,27 +33,6 @@ instead of a number (e.g. \-uall) to discover and use all DS9490 USB adapters.
 Note: multiple instances of
 .I -d, -u, -s
 are allowed. Each corresponds to a different 1-wire bus. The result will reflect the logical union of those buses.
-.SH HELP OPTIONS
-.SS \-h \-\-help=[device|cache|program|job|temperature]
-Shows basic summary of options.
-.TP
-.I device
-1-wire bus master options
-.TP
-.I cache
-cache and communication size and timing
-.TP
-.I program
-mountpoint or TCP server settings
-.TP
-.I job
-control and debugging options
-.TP
-.I temperature
-Unique ID display format and temperature scale
-.SS \-V \-\-version
-.I Version
-of this program and related libraries.
 .SH OTHER OPTIONS
 .SS \-\-background | \-\-foreground
 Whether the program releases the console and runs in the
@@ -97,25 +74,5 @@ details level
 .TP
 .I >4
 debugging chaff
-.SS \-f \-\-format "f[.]i[[.]c]"
-Display format for the 1-wire devices. Each device has a 8byte address, consisting of:
-.TP
-.I f
-family code, 1 byte
-.TP
-.I i
-ID number, 6 bytes
-.TP
-.I c
-CRC checksum, 1 byte
-.PP
-Possible formats are
-.I f.i
-(default, 01.A1B2C3D4E5F6),
-.I fi fic f.ic f.i.c
-and
-.I fi.c
-.PP
-All formats are accepted as input, but the output will be in the specified format.
 .SS \-P \-\-pid-file "filename"
 Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.

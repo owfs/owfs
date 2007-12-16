@@ -1,0 +1,27 @@
+.SH FORMAT OPTIONS
+Choose the representation of the 1-wire unique identifiers. OWFS uses these identifiers as unique directory names.
+.PP
+Although several display formats are selectable, all must be in 
+.I family-code-first
+form, unlike some other programs and the labelling on iButtons, which are
+.I CRC8-first.
+.SS \-f \-\-format="f[.]i[[.]c]"
+Display format for the 1-wire devices. Each device has a 8byte address, consisting of:
+.TP
+.I f
+family code, 1 byte
+.TP
+.I i
+ID number, 6 bytes
+.TP
+.I c
+CRC checksum, 1 byte
+.PP
+Possible formats are
+.I f.i
+(default, 01.A1B2C3D4E5F6),
+.I fi fic f.ic f.i.c
+and
+.I fi.c
+.PP
+All formats are accepted as input, but the output will be in the specified format.
