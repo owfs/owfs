@@ -266,9 +266,13 @@ The following low-level commands are possible:
 .TP
 \fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
 Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR and \fIoptions\fR defines a way of
-connection to the 1-wire bus. See
-.B owfs (1)
-for full syntax.
+connection to the 1-wire bus.
+.PP
+The full set of initialization options is extensive. They correspond roughly to the command line options of
+,B owfs (1)
+.B owhttpd (1)
+and
+.B owftpd (1)
 
 .TP
 \fB::OW::finish

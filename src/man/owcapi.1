@@ -23,6 +23,12 @@ library to link with your program
 .B ssize_t OW_init_args(
 .I int argc, char ** args
 .B )
+.PP
+The full set of initialization options is extensive. They correspond roughly to the command line options of
+,B owfs (1)
+.B owhttpd (1)
+and
+.B owftpd (1)
 .SS Get data
 .B int OW_get{
 .I const char * path, char ** buffer, size_t * buffer_length
@@ -233,7 +239,7 @@ is optional.
 .I OW_finish
 cleans up the
 .I OWFS
-1-wire routines, releases devives and memory.
+1-wire routines, releases devices and memory.
 .TP
 .I Arguments
 None.

@@ -21,6 +21,16 @@
 .I interface
 .B );
 .br
+.B OW::init(
+.I initialization string
+.B );
+.PP
+The full set of initialization options is extensive. They correspond roughly to the command line options of
+,B owfs (1)
+.B owhttpd (1)
+and
+.B owftpd (1)
+.br
 .B OW::get(
 .I path
 .B );
@@ -74,48 +84,6 @@ programs can access the
 process simultaneously. In fact, this will probably be the prefered mode of access to OWFS for
 .I owperl
 except in trivial applications.
-
-Sets the tcp port the web server runs on. Access with the URL http://servernameoripaddress:portnum
-.SS \-h \-\-help
-Shows this summary of options.
-.SS \-d \-\-device "deviceport"
-Sets the serial port. It should have a LINK, DS9097U or DS9097 (passive adapter) attached. The "-d" is implied if two arguments are supplied. (See examples). The
-.I \-d
-and
-.I \-u
-options are mutually exclusive.
-.SS \-u \-\-usb
-Use the USB adapter (DS9490) as 1-wire bus master. An optional number 1,2,... specifies which adapter to use if more than one is present.
-.SS \-t \-\-timeout "seconds"
-Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default.
-.SS \-C \-\-Celsius | \-F \-\-Fahrenheit | \-K \-\-Kelvin | \-R \-\-Rankine
-Temperature scale used for data output. Celsius is the default.
-.SS \-f \-\-format "f[.]i[[.]c]"
-Display format for the 1-wire devices. Each device has a 8byte address, consisting of 1byte
-.I f
-amily code, 6 byte
-.I I
-D number, and 1 byte
-.I C
-RC checksum.
-.PP
-Possible formats are
-.I f.i
-(default, 01.A1B2C3D4E5F6),
-.I fi fic f.ic f.i.c
-and
-.I fi.c
-.PP
-All formats are accepted as input, but the output will be in the specified format.
-.SS \-\-background | \-\-foreground
-Whether the program releases the console and runs in the
-\.I background
-after evaluating command line options.
-.I background
-is the default.
-.SS \-V \-\-version
-.I Version
-of this program and related libraries.
 .SH EXAMPLE
 perl -MOW -e "OW::init('/dev/ttyS1'); printf OW::get('\');"
 .SH SEE ALSO
