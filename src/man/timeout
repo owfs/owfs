@@ -1,0 +1,57 @@
+.SH TIME OPTIONS
+.SS --timeout_volatile=10
+Seconds until a 
+.I volatile 
+property expires in the cache. Volatile properties are those (like temperature) that change on their own.
+.SS --timeout_stable=60
+Seconds until a 
+.I stable 
+property expires in the cache. Stable properties are those that shouldn't change unless explicitly changed. Memory contents for example.
+.SS --timeout_directory=120
+Seconds until a 
+.I directory 
+listing expires in the cache. Directory lists are the 1-wire devices found on the bus.
+.SS --timeout_presence=120
+Seconds until the
+.I presence
+and bus location of a 1-wire device expires in the cache.
+.SS --timeout_serial=5
+Seconds until the expected response from the
+.I serial
+port-connected adapter is deemed tardy.
+.SS --timeout_usb=5
+Seconds until the expected response from the
+.I usb
+port-connected adapter is deemed tardy.
+.SS --timeout_network=5
+Seconds until the expected response from the
+.I tcp
+port-connected adapter is deemed tardy. Includes the
+.B LINK-HUB-E
+and
+.B HA7Net
+.SS --timeout_server=5
+Seconds until the expected response from the
+.B owserver (1)
+is deemed tardy.
+.SS --timeout_ftp
+.SS --timeout_httpd
+.SS --timeout_persistent_low
+Minimum seconds that a persistent tcp connection to
+.B owserver (1)
+is kept open. This is the limit used when the number of connections is above
+.I --clients_persistent_low
+.SS --timeout_persistent_high
+Maximum seconds that a persistent tcp connection to
+.B owserver (1)
+is kept open. This is the limit used when the number of connections is below
+.I --clients_persistent_low
+.SS --clients_persistent_low
+Maximum number of persistent tcp connections to
+.B owserver (1)
+before connections start getting the more stringent time limitation
+.I --timeout_persistent_low
+.SS --clients_persistent_high
+Maximum number of persistent tcp connections to before no more are allowed (only non-persistent at this point).
+.B owserver (1)
+before no more are allowed (only non-persistent at this point).

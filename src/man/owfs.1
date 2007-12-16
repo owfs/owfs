@@ -63,6 +63,7 @@ kernel module and library. (http://fuse.sourceforge.net) which is a user-mode fi
 .PP
 Essentially, the entire 1-wire bus is mounted to a place in your filesystem. All the 1-wire devices are accessible using standard file operations (read, write, directory listing). The system is safe, no actual files are exposed, these files are virtual. Not all operations are supported. Specifically, file creation, deletion, linking and renaming are not allowed. (You can link from outside to a owfs file, but not the other way around).
 .so cmdline
+.so timeout
 .SH SPECIFIC OPTIONS
 .SS \-\-mountpoint
 directory to mount the 1-wire file system

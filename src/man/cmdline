@@ -119,7 +119,3 @@ and
 All formats are accepted as input, but the output will be in the specified format.
 .SS \-P \-\-pid-file "filename"
 Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.
-.SS \-t \-\-timeout "seconds"
-Set the number of seconds that volitile data (measured values like temperature and voltage) should be cached before requerying the BUS. More stable values will be saved ten times longer (switch settings, memory contents). 10 seconds is the default.
-.SS msec_read
-Milliseconds before read timeout (for serial reads). Some embedded systems, and USB->serial adapters seem to need more than the default 500 msec.

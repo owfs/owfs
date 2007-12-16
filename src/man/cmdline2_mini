@@ -14,8 +14,6 @@
 .I \-f
 f[.]i[[.]c]
 ] [
-.I \-t
-timeout ] [
 .I \-\-background
 |
 .I \-\-foreground
@@ -32,8 +30,6 @@ filename
 ] [
 .I \-\-error_level
 0|1|2|3|9 ] [
-.I \-\-msec_read
-milliseconds
 .I \-d
 serialport |
 .I \-u
