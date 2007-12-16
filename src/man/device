@@ -1,0 +1,35 @@
+.SH DEVICE OPTIONS
+These options specify the 1-wire bus master the physically connects to the 1-wire bus. More than one can be specified. The result will be the logical union of all the specified bus masters. Individual adapters can be addressed as 
+.I bus.0 bus.1 ...
+.PP
+Note that your operating system will likely restrict access to physical ports to authorised users.
+.SS \-d /dev/ttyS0
+Serial adapter.  The address of the serial port is operating system-dependent. Adapters supported are the DS2480B-based 
+.I DS9097U
+, iButtonLink's
+.I LINK
+in emulation mode, or the passive
+.I DS9097
+.SS \-d /dev/i2c-0
+Use i2c adapter 0. Based on the DS2482-100 or the DS2482-800. The DS2482-800 is interesting, it actually has 8 separately addressable 1-wire bus lines, and will appear as 8 separate busses.
+.SS \-u \-\-usb
+USB adapter (based on the DS2490, like the DS9490R).
+.PP
+In general the operating system will assign the first avaliable adapter. Use the option:
+.I \-u2
+or
+.I --usb=2
+for the second adapter. To use all the available USB adapters: 
+.I -all
+or
+.I --usb=all
+.SS --LINK=/dev/ttyS0
+The
+.I iButtonlink
+LINK adapter on serial port 0. The LINK uses it's own ascii communication protocol.
+.SS -s localhost:4304
+Connect to an owserver at the listed network location.
+.SS --fake=10,12,28
+Create a simulated bus with simulated devices (family codes 10,12 and 28 in this case). All the responses are random, and writing is not supported.
+.SS --tester=10,12,28
+Create a simulated bus with simulated devices (family codes 10,12 and 28 in this case). All the responses are predictable (see the web site for the algorithm) and thus useful for automated test scripts.
