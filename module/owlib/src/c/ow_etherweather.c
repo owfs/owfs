@@ -227,7 +227,6 @@ static int EtherWeather_reset(const struct parsedname *pn) {
 }
 
 static int EtherWeather_setroutines(struct connection_in *in) {
-    struct interface_routines f = in->iroutines ;
     in->iroutines.detect = EtherWeather_detect;
     in->iroutines.reset = EtherWeather_reset;
     in->iroutines.next_both = EtherWeather_next_both;
