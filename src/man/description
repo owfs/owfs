@@ -1,3 +1,13 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
 .SS 1-Wire
 .I 1-wire 
 is a wiring protocol and series of devices designed and manufactured
@@ -10,7 +20,7 @@ contact, current), switches, timers and data loggers. More complex devices (like
 thermocouple sensors) can be built with these basic devices. There are also
 1-wire devices that have encryption included.
 .PP
-The 1-wire bus is accessed via one of a number of serial, parallel or USB
+The 1-wire bus is accessed via one of a number of serial, parallel, i2c, network or USB
 adapters.
 .SS OWFS design
 .I OWFS

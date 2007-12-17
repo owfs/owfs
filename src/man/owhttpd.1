@@ -17,28 +17,6 @@
 .so cmdline_mini
 .I \-p
 tcp-port
-.br
-.B owhttpd
-.so cmdline2_mini
-.I \-p
-[host:]tcp-port
-.br
-.B owhttpd
-.I \-h \-\-help
-[=
-.I device
-|
-.I program
-|
-.I job
-|
-.I cache
-|
-.I temperature
-]
-.br
-.B owhttpd
-.I \-V \-\-version
 .SH "DESCRIPTION"
 .so description
 .SS owhttpd
@@ -54,6 +32,10 @@ The web server is a modified version of chttpd by Greg Olszewski. It serves no f
 .SH SPECIFIC OPTIONS
 .SS \-p portnum
 Sets the tcp port the web server runs on. Access with the URL http://servernameoripaddress:portnum
+.PP
+If no port is specified, an ephemeral port is selected by the operating system. Use
+.I zeroconf (Bonjour)
+to discover the assigned port.
 .so device
 .so temperature
 .so format
@@ -66,7 +48,7 @@ Sets the tcp port the web server runs on. Access with the URL http://servernameo
 owhttpd -p 3001 -d /dev/ttyS0
 Web server runs on tcp port 3001, serial adapter at ttyS0
 .TP
-owhttpd -p 3001 -s littlehost:3001 --error_level=3
+owhttpd -p 3001 -s littlehost:4304 --error_level=3
 Web server on port 3001, from
 .I owserver
 process on host "littlehost", extensive error messages.
@@ -77,6 +59,5 @@ Read-only web server on port 3001, using two usb adapters.
 http://www.owfs.org
 .SH SEE ALSO
 .so seealso
-
 .SH AUTHOR
-Paul Alfille (palfille@earthlink.net)
+Paul Alfille (paul.alfille@gmail.com)

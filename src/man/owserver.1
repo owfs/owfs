@@ -17,38 +17,6 @@
 .so cmdline_mini
 .I \-p
 tcp-port
-.br
-.B owserver
-.so cmdline2_mini
-.I \-p
-tcp-port
-.br
-.B owserver
-.B \-h \-\-help
-[=
-.I device
-|
-.I program
-|
-.I job
-|
-.I cache
-|
-.I temperature
-]
-.br
-.B owserver
-.B \-V \-\-version
-.br
-.B owserver
-.I --no_dirall
-|
-.I --no_get
-|
-.I --no_persistence
-|
-.I --pingcrazy
-.br
 .SH "DESCRIPTION"
 .so description
 .SS owserver
@@ -81,13 +49,15 @@ buffer?)
 .PP
 .B owserver (1)
 is by default multithreaded. Optional data caching is in the server, not clients, so all the clients gain efficiency.
+.so device
 .SH SPECIFIC OPTIONS
 .SS \-p
 TCP port or IPaddress:port for
 .I owserver
-.br
+.PP
 Other OWFS programs will access owserver via this address. (e.g. owfs -s IP:port /1wire)
-.so device
+.PP
+If no port is specified, the default well-known port (4304 -- assigned by the IANA) will be used.
 .so temperature
 .so format
 .so job_control
@@ -113,4 +83,4 @@ runs owserver on tcp port 3001 and connects to a physical 1-wire bus on a serial
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR
-Paul Alfille (palfille@earthlink.net)
+Paul Alfille (paul.alfille@gmail.com)

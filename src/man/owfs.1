@@ -15,42 +15,7 @@
 .SH SYNOPSIS
 .B owfs
 .so cmdline_mini
-[host:]port
-.I mountdir
-.P
-.B owfs
-.so cmdline_mini
-[host:]port
-.B --mountpoint
-mountdir
-.P
-.B owfs
-.so cmdline2_mini
-[
-.I \-\-fuse_opt
-options ]
-.I mountpoint
-[
-.I \-\-allow_other
-]
-.P
-.B owfs
-.I \-V \-\-version
-.P
-.B owfs
-.I \-h | \-\-help
-[=
-.I device
-|
-.I program
-|
-.I job
-|
-.I cache
-|
-.I temperature
-]
-
+.I \-m mountdir
 .SH "DESCRIPTION"
 .so description
 .SS owfs
@@ -64,8 +29,10 @@ kernel module and library. (http://fuse.sourceforge.net) which is a user-mode fi
 Essentially, the entire 1-wire bus is mounted to a place in your filesystem. All the 1-wire devices are accessible using standard file operations (read, write, directory listing). The system is safe, no actual files are exposed, these files are virtual. Not all operations are supported. Specifically, file creation, deletion, linking and renaming are not allowed. (You can link from outside to a owfs file, but not the other way around).
 .so device
 .SH SPECIFIC OPTIONS
-.SS \-\-mountpoint
-directory to mount the 1-wire file system
+.SS \-m \-\-mountpoint=directory_path
+Path of a directory to mount the 1-wire file system
+.PP
+The mountpoint is required. There is no default.
 .SS \-\-allow_other
 Shorthand for fuse mount option "-o allow_other"  Allows uther users to see the fuse (owfs) mount point and file system. Requires a setting in /etc/fuse.conf as well.
 .SS \-\-fuse-opt "options"
