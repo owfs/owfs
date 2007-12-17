@@ -10,7 +10,7 @@
 '\"
 .SH CONFIGURATION FILE
 .SS -c file | --configuration file
-Name of a
+Name of an
 .B owfs (5)
 configuration file with more command line parameters
 

@@ -24,16 +24,16 @@ after evaluating command line options.
 is the default.
 .SS \-\-error_print=0|1|2|3
 .TP
-.I 0
+.I =0
 default mixed destination: stderr foreground / syslog background
 .TP
-.I 1
+.I =1
 syslog only
 .TP
-.I 2
+.I =2
 stderr only
 .TP
-.I 3
+.I =3
 /dev/null (quiet mode).
 .SS \-\-error_level=0..9
 .TP
@@ -56,4 +56,4 @@ details level
 debugging chaff
 .PP
 .I --error_level=9
-produced a lot of output
+produces a lot of output
