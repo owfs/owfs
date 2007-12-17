@@ -243,14 +243,6 @@ static int OW_w_mem( BYTE * data,  size_t size,
 	return 0;
 }
 
-/* read memory area and counter (just past memory) */
-/* Nathan Holmes helped troubleshoot this one! */
-static int OW_r_mem_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
-{
-    /* read in (after command and location) 'rest' memory bytes, 4 counter bytes, 4 zero bytes, 2 CRC16 bytes */
-        return OW_r_mem_toss8( owq, page, pagesize ) ;
-}
-
 /* read counter (just past memory) */
 /* Nathan Holmes helped troubleshoot this one! */
 static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
