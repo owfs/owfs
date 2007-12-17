@@ -51,16 +51,16 @@ and
 , where the URL corresponds to the filename.
 .PP
 The ftp server is a modified version of oftpd by Shane Kerr. It serves no files from the disk, only virtual files from the 1-wire bus. Security should therefore be good. Only the 1-wire bus is at risk.
+.so device
 .SH SPECIFIC OPTIONS
 .SS \-p host:portnum
 (Optional) Sets the tcp port the ftp server runs on. Access with the URL ftp://anonymous@servernameoripaddress:portnum
-.br
+.PP
 The well known ftp port, 21, will be used by default.
-.so device
-.so cmdline
 .so temperature
 .so format
 .so job_control
+.so configuration
 .so help
 .so timeout
 .SH EXAMPLE
@@ -68,9 +68,9 @@ The well known ftp port, 21, will be used by default.
 owftpd -d /dev/ttyS0
 Ftp server runs on default tcp port 21, serial adapter at ttyS0
 .TP
-owftpd -s littlehost:3001 --error_level=3
+owftpd -s littlehost:4304 --error_level=3
 Ftp server on default port 21, from
-.I owserver
+.B owserver (1)
 process on host "littlehost", extensive error messages.
 .SH AVAILABILITY
 http://www.owfs.org
@@ -78,4 +78,4 @@ http://www.owfs.org
 .so seealso
 
 .SH AUTHOR
-Paul Alfille (palfille@earthlink.net)
+Paul Alfille (paul.alfille@gmail.com)

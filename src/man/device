@@ -1,3 +1,13 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
 .SH DEVICE OPTIONS
 These options specify the 1-wire bus master the physically connects to the 1-wire bus. More than one can be specified. The result will be the logical union of all the specified bus masters. Individual adapters can be addressed as 
 .I bus.0 bus.1 ...

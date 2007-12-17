@@ -63,12 +63,6 @@ kernel module and library. (http://fuse.sourceforge.net) which is a user-mode fi
 .PP
 Essentially, the entire 1-wire bus is mounted to a place in your filesystem. All the 1-wire devices are accessible using standard file operations (read, write, directory listing). The system is safe, no actual files are exposed, these files are virtual. Not all operations are supported. Specifically, file creation, deletion, linking and renaming are not allowed. (You can link from outside to a owfs file, but not the other way around).
 .so device
-.so cmdline
-.so temperature
-.so format
-.so job_control
-.so help
-.so timeout
 .SH SPECIFIC OPTIONS
 .SS \-\-mountpoint
 directory to mount the 1-wire file system
@@ -76,21 +70,27 @@ directory to mount the 1-wire file system
 Shorthand for fuse mount option "-o allow_other"  Allows uther users to see the fuse (owfs) mount point and file system. Requires a setting in /etc/fuse.conf as well.
 .SS \-\-fuse-opt "options"
 Sends options to the fuse-mount process. Options should be quoted, e.g. "\"-o allow_other\"" .
+.so temperature
+.so format
+.so job_control
+.so configuration
+.so help
+.so timeout
 .SH EXAMPLE
 .TP
-owfs -d /dev/ttyS0 /mnt/1wire
+owfs -d /dev/ttyS0 -m /mnt/1wire
 Adapter on serial port
 .TP
-owfs -F -u /mnt/1wire
+owfs -F -u -m /mnt/1wire
 USB adapter, temperatures reported in Fahrenheit
 .TP
-owfs -s 10.0.1.2:3001 /mnt/1wire
-Connect to a OWFS server process (
-.I owserver
-) that was started on another machine at tcp port 3001
+owfs -s 10.0.1.2:4304 -m /mnt/1wire
+Connect to an 
+.B owserver (1)
+ process that was started on another machine at tcp port 4304
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR
-Paul Alfille (palfille@earthlink.net)
+Paul Alfille (paul.alfille@gmail.com)
