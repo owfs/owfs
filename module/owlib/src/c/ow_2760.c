@@ -1020,7 +1020,6 @@ static int FS_rangehigh(struct one_wire_query * owq)
 
 static int FS_thermocouple(struct one_wire_query * owq)
 {
-	struct parsedname * pn = PN(owq) ;
 	_FLOAT T_coldjunction, mV;
 	OWQ_allocate_struct_and_pointer( owq_sibling ) ;
 	
