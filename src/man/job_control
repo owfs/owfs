@@ -18,11 +18,11 @@ option is available for symmetry, it's the default.
 Places the PID -- process ID of owfs into the specified filename. Useful for startup scripts control.
 .SS \-\-background | \-\-foreground
 Whether the program releases the console and runs in the
-\.I background
+.I background
 after evaluating command line options.
 .I background
 is the default.
-.SS \-\-error_print==0|1|2|3
+.SS \-\-error_print=0|1|2|3
 .TP
 .I 0
 default mixed destination: stderr foreground / syslog background
@@ -37,20 +37,23 @@ stderr only
 /dev/null (quiet mode).
 .SS \-\-error_level=0..9
 .TP
-.I 0
+.I =0
 default errors only
 .TP
-.I 1
+.I =1
 connections/disconnections
 .TP
-.I 2
+.I =2
 all high level calls
 .TP
-.I 3
+.I =3
 data summary for each call
 .TP
-.I 4
+.I =4
 details level
 .TP
 .I >4
 debugging chaff
+.PP
+.I --error_level=9
+produced a lot of output
